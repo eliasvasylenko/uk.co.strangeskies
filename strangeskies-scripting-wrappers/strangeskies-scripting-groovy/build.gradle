@@ -1,0 +1,5 @@
+description = 'StrangeSkies Scripting - Groovy'
+
+dependencies {
+    compile group: 'org.codehaus.groovy', name: 'groovy-all', version:'2.1.3'
+}

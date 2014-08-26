@@ -1,0 +1,7 @@
+
+
+description = 'StrangeSkies Scripting - Lua'
+
+dependencies {
+    compile group: 'org.luaj', name: 'luaj-jse', version:'3.0-alpha2'
+}

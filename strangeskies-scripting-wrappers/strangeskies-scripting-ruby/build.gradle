@@ -1,0 +1,7 @@
+
+
+description = 'StrangeSkies Scripting - Ruby'
+
+dependencies {
+    compile group: 'org.jruby', name: 'jruby', version:'1.7.3'
+}

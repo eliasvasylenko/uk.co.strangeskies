@@ -1,0 +1,6 @@
+description = 'StrangeSkies Scripting'
+
+dependencies {
+	compile project(':strangeskies-utilities')
+	compile project(':strangeskies-mathematics')
+}

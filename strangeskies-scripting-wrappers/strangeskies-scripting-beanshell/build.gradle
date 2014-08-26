@@ -1,0 +1,5 @@
+description = 'StrangeSkies Scripting - BeanShell'
+
+dependencies {
+	wrap group: 'org.beanshell', name: 'bsh', version:'2.0b5'
+}

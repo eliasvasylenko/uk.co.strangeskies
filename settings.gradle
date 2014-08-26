@@ -1,0 +1,17 @@
+rootProject.name = 'strangeskies'
+include ':strangeskies-utilities',
+		':strangeskies-utilities-osgi',
+		':strangeskies-mathematics',
+		':strangeskies-mathematics-geometry',
+		':strangeskies-expressions',
+		':strangeskies-scripting',
+		':strangeskies-scripting-wrappers',
+		':strangeskies-scripting-wrappers:strangeskies-scripting-ruby',
+		':strangeskies-scripting-wrappers:strangeskies-scripting-groovy',
+		':strangeskies-scripting-wrappers:strangeskies-scripting-python',
+		':strangeskies-scripting-wrappers:strangeskies-scripting-clojure',
+		':strangeskies-scripting-wrappers:strangeskies-scripting-javascript',
+		':strangeskies-scripting-wrappers:strangeskies-scripting-lua',
+		':strangeskies-scripting-wrappers:strangeskies-scripting-beanshell',
+		':strangeskies-scripting-wrappers:strangeskies-scripting-r',
+		':strangeskies-scripting-wrappers:strangeskies-scripting-frege'
