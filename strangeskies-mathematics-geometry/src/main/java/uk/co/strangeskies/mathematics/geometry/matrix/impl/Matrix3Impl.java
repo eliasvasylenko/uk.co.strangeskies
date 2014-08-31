@@ -3,6 +3,7 @@ package uk.co.strangeskies.mathematics.geometry.matrix.impl;
 import java.util.ArrayList;
 import java.util.List;
 
+import uk.co.strangeskies.mathematics.geometry.matrix.Matrix;
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix3;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector3;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.Vector3Impl;
@@ -18,7 +19,7 @@ public class Matrix3Impl<V extends Value<V>> extends MatrixSImpl<Matrix3<V>, V>
 	public Matrix3Impl(Order order, List<? extends List<? extends V>> values) {
 		super(order, values);
 
-		assertDimensions(this, 3);
+		Matrix.assertDimensions(this, 3);
 	}
 
 	@Override

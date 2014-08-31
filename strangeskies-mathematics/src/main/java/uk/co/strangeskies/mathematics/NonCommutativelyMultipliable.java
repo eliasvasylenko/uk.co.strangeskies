@@ -6,5 +6,7 @@ public interface NonCommutativelyMultipliable<S extends NonCommutativelyMultipli
 		extends Multipliable<S, T>, Self<S> {
 	public S preMultiply(T value);
 
-	public S getPreMultiplied(T value);
+	public default S getPreMultiplied(T value) {
+		return copy().preMultiply(value);
+	}
 }

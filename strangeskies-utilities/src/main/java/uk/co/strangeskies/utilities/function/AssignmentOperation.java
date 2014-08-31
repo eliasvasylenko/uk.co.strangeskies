@@ -2,11 +2,15 @@ package uk.co.strangeskies.utilities.function;
 
 import java.util.function.BiFunction;
 
-public abstract class AssignmentOperation<A, O> implements BiFunction<A, O, A> {
+public interface AssignmentOperation<A, O> extends BiFunction<A, O, A> {
 	public abstract void assign(A assignee, O assignment);
 
 	@Override
-	public final A apply(A assignee, O assignment) {
+	public default A apply(A assignee, O assignment) {
+		if (assignment == null) {
+			throw new IllegalArgumentException(new NullPointerException());
+		}
+
 		assign(assignee, assignment);
 
 		return assignee;

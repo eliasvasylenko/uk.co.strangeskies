@@ -7,7 +7,11 @@ public interface Incrementable<S extends Incrementable<S>> extends Self<S> {
 
 	public S decrement();
 
-	public S getIncremented();
+	public default S getIncremented() {
+		return copy().increment();
+	}
 
-	public S getDecremented();
+	public default S getDecremented() {
+		return copy().decrement();
+	}
 }

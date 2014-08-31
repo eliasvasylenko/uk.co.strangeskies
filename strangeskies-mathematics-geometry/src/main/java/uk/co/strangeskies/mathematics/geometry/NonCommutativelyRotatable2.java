@@ -9,7 +9,11 @@ public interface NonCommutativelyRotatable2<S extends NonCommutativelyRotatable2
 
 	public S preRotate(Value<?> angle, Vector2<?> centre);
 
-	public S getPreRotated(Value<?> value);
+	public default S getPreRotated(Value<?> value) {
+		return copy().getPreRotated(value);
+	}
 
-	public S getPreRotated(Value<?> angle, Vector2<?> centre);
+	public default S getPreRotated(Value<?> angle, Vector2<?> centre) {
+		return copy().getPreRotated(angle, centre);
+	}
 }

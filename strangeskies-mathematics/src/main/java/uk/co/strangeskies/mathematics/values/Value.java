@@ -2,6 +2,10 @@ package uk.co.strangeskies.mathematics.values;
 
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 
 import uk.co.strangeskies.mathematics.Addable;
 import uk.co.strangeskies.mathematics.Incrementable;
@@ -27,23 +31,27 @@ public abstract class Value<S extends Value<S>> extends Number implements
 
 	private final Set<Observer<? super Expression<S>>> observers;
 	private boolean evaluated = true;
+	private final ReadWriteLock lock;
 
 	public Value() {
-		observers = new TreeSet<Observer<? super Expression<S>>>(
-				new IdentityComparator<>());
-		setValue(0);
+		this(0);
 	}
 
 	public Value(Number value) {
 		observers = new TreeSet<Observer<? super Expression<S>>>(
 				new IdentityComparator<>());
+		lock = new ReentrantReadWriteLock();
+
 		setValue(value);
 	}
 
 	public Value(Value<?> value) {
-		observers = new TreeSet<Observer<? super Expression<S>>>(
-				new IdentityComparator<>());
-		set(value);
+		this((Number) value);
+	}
+
+	@Override
+	public ReadWriteLock getLock() {
+		return lock;
 	}
 
 	@Override
@@ -67,68 +75,8 @@ public abstract class Value<S extends Value<S>> extends Number implements
 	}
 
 	@Override
-	public final S getAdded(Value<?> value) {
-		return copy().add(value);
-	}
-
-	@Override
-	public final S getSubtracted(Value<?> value) {
-		return copy().subtract(value);
-	}
-
-	@Override
 	public final S getMultiplied(Value<?> value) {
-		return copy().multiply(value);
-	}
-
-	@Override
-	public final S getDivided(Value<?> value) {
-		return copy().divide(value);
-	}
-
-	@Override
-	public final S getMultiplied(int value) {
-		return copy().multiply(value);
-	}
-
-	@Override
-	public final S getMultiplied(long value) {
-		return copy().multiply(value);
-	}
-
-	@Override
-	public final S getMultiplied(float value) {
-		return copy().multiply(value);
-	}
-
-	@Override
-	public final S getMultiplied(double value) {
-		return copy().multiply(value);
-	}
-
-	@Override
-	public final S getDivided(int value) {
-		return copy().divide(value);
-	}
-
-	@Override
-	public final S getDivided(long value) {
-		return copy().divide(value);
-	}
-
-	@Override
-	public final S getDivided(float value) {
-		return copy().divide(value);
-	}
-
-	@Override
-	public final S getDivided(double value) {
-		return copy().divide(value);
-	}
-
-	@Override
-	public final S getNegated() {
-		return copy().negate();
+		return Scalable.super.getMultiplied(value);
 	}
 
 	@Override
@@ -173,24 +121,17 @@ public abstract class Value<S extends Value<S>> extends Number implements
 	}
 
 	@Override
-	public final S getIncremented() {
-		return copy().increment();
-	}
-
-	@Override
-	public final S getDecremented() {
-		return copy().decrement();
-	}
-
-	@Override
 	public final S get() {
 		return getThis();
 	}
 
 	@Override
 	public final S getValue() {
+		getLock().readLock().lock();
 		evaluated = true;
-		return getThis();
+		S result = getThis();
+		getLock().readLock().unlock();
+		return result;
 	}
 
 	protected final void update() {
@@ -200,10 +141,35 @@ public abstract class Value<S extends Value<S>> extends Number implements
 		}
 	}
 
+	protected final S update(BooleanSupplier runnable) {
+		getLock().writeLock().lock();
+		if (runnable.getAsBoolean())
+			update();
+		getLock().writeLock().unlock();
+
+		return getThis();
+	}
+
+	protected final S update(Runnable runnable) {
+		getLock().writeLock().lock();
+		runnable.run();
+		update();
+		getLock().writeLock().unlock();
+
+		return getThis();
+	}
+
+	protected final <T> T read(Supplier<T> supplier) {
+		getLock().readLock().lock();
+		T result = supplier.get();
+		getLock().readLock().unlock();
+
+		return result;
+	}
+
 	protected final void postUpdate() {
-		for (Observer<? super Expression<S>> observer : observers) {
+		for (Observer<? super Expression<S>> observer : observers)
 			observer.notify(null);
-		}
 	}
 
 	@Override

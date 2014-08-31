@@ -24,11 +24,6 @@ public class MatrixNNImpl<V extends Value<V>> extends
 	}
 
 	@Override
-	public boolean isResizable() {
-		return false;
-	}
-
-	@Override
 	public MatrixNN<V> copy() {
 		return new MatrixNNImpl<V>(getOrder(), getData2());
 	}

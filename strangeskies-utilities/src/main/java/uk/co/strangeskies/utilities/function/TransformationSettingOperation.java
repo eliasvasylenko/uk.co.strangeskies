@@ -4,17 +4,12 @@ import java.util.function.Function;
 
 import uk.co.strangeskies.utilities.Property;
 
-public class TransformationSettingOperation<T extends Property<?, ? super C>, C, F>
+public interface TransformationSettingOperation<T extends Property<?, ? super C>, C, F>
 		extends AssignmentOperation<T, F> {
-	private final Function<? super F, ? extends C> function;
-
-	public TransformationSettingOperation(
-			Function<? super F, ? extends C> function) {
-		this.function = function;
-	}
+	public Function<? super F, ? extends C> getFunction();
 
 	@Override
-	public void assign(T assignee, F assignment) {
-		assignee.set(function.apply(assignment));
+	public default void assign(T assignee, F assignment) {
+		assignee.set(getFunction().apply(assignment));
 	}
 }

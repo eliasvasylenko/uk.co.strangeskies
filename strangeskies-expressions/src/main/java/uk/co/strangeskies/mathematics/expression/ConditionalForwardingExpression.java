@@ -1,5 +1,7 @@
 package uk.co.strangeskies.mathematics.expression;
 
+import java.util.Arrays;
+
 public class ConditionalForwardingExpression<O> extends CompoundExpression<O> {
 	private final Expression<? extends /* @ReadOnly */Boolean> condition;
 	private final Expression<? extends O> expressionWhenFulfilled;
@@ -9,7 +11,7 @@ public class ConditionalForwardingExpression<O> extends CompoundExpression<O> {
 			Expression<? extends /* @ReadOnly */Boolean> condition,
 			Expression<? extends O> expressionWhenFulfilled,
 			Expression<? extends O> expressionWhenUnfulfilled) {
-		super(condition);
+		super(Arrays.asList(condition), false);
 
 		if (condition == expressionWhenFulfilled
 				|| condition == expressionWhenUnfulfilled) {

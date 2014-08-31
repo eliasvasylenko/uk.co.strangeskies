@@ -6,5 +6,7 @@ public interface Negatable<S extends Negatable<S, N>, N extends Negatable<? exte
 		extends Self<S> {
 	public N negate();
 
-	public N getNegated();
+	public default N getNegated() {
+		return copy().negate();
+	}
 }

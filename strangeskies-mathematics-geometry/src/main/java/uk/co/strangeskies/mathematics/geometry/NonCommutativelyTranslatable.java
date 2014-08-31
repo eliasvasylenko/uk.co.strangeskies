@@ -6,5 +6,7 @@ public interface NonCommutativelyTranslatable<S extends NonCommutativelyTranslat
 		extends Translatable<S> {
 	public S preTranslate(Vector<?, ?> translation);
 
-	public S getPreTranslated(Vector<?, ?> translation);
+	public default S getPreTranslated(Vector<?, ?> translation) {
+		return copy().getPreTranslated(translation);
+	}
 }

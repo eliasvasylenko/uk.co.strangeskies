@@ -1,5 +1,8 @@
 package uk.co.strangeskies.mathematics.expression;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+
 import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.Observer;
 
@@ -12,7 +15,7 @@ import uk.co.strangeskies.utilities.Observer;
  * More precisely, they should be notified at any moment at which the value
  * which would be returned from a call getValue() is different from the value
  * which would have been returned before.
- *
+ * 
  * @author Elias N Vasylenko
  *
  * @param <T>
@@ -74,6 +77,23 @@ public interface Expression<T> extends Observable<Expression<T>> {
 					Observer<? super Expression<T>> observer) {
 				return true;
 			}
+
+			@Override
+			public ReadWriteLock getLock() {
+				return new ReadWriteLock() {
+					@Override
+					public Lock writeLock() {
+						return new ImmutableReadWriteLock();
+					}
+
+					@Override
+					public Lock readLock() {
+						return new ImmutableReadWriteLock();
+					}
+				};
+			}
 		};
 	}
+
+	public ReadWriteLock getLock();
 }

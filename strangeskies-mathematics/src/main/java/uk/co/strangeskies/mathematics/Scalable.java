@@ -6,41 +6,69 @@ import uk.co.strangeskies.utilities.Self;
 public interface Scalable<S extends Scalable<S>> extends Self<S> {
 	public S multiply(Value<?> value);
 
-	public S multiply(int value);
+	public default S multiply(int value) {
+		return multiply((long) value);
+	}
 
 	public S multiply(long value);
 
-	public S multiply(float value);
+	public default S multiply(float value) {
+		return multiply((double) value);
+	}
 
 	public S multiply(double value);
 
 	public S divide(Value<?> value);
 
-	public S divide(int value);
+	public default S divide(int value) {
+		return divide((long) value);
+	}
 
 	public S divide(long value);
 
-	public S divide(float value);
+	public default S divide(float value) {
+		return divide((double) value);
+	}
 
 	public S divide(double value);
 
-	public S getMultiplied(Value<?> value);
+	public default S getMultiplied(Value<?> value) {
+		return copy().multiply(value);
+	}
 
-	public S getMultiplied(int value);
+	public default S getMultiplied(int value) {
+		return copy().multiply(value);
+	}
 
-	public S getMultiplied(long value);
+	public default S getMultiplied(long value) {
+		return copy().multiply(value);
+	}
 
-	public S getMultiplied(float value);
+	public default S getMultiplied(float value) {
+		return copy().multiply(value);
+	}
 
-	public S getMultiplied(double value);
+	public default S getMultiplied(double value) {
+		return copy().multiply(value);
+	}
 
-	public S getDivided(Value<?> value);
+	public default S getDivided(Value<?> value) {
+		return copy().divide(value);
+	}
 
-	public S getDivided(int value);
+	public default S getDivided(int value) {
+		return copy().divide(value);
+	}
 
-	public S getDivided(long value);
+	public default S getDivided(long value) {
+		return copy().divide(value);
+	}
 
-	public S getDivided(float value);
+	public default S getDivided(float value) {
+		return copy().divide(value);
+	}
 
-	public S getDivided(double value);
+	public default S getDivided(double value) {
+		return copy().divide(value);
+	}
 }

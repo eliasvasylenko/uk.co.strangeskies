@@ -1,13 +1,15 @@
 package uk.co.strangeskies.mathematics.geometry.matrix.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import uk.co.strangeskies.mathematics.geometry.matrix.Matrix;
 import uk.co.strangeskies.mathematics.geometry.matrix.MatrixH;
 import uk.co.strangeskies.mathematics.geometry.matrix.MatrixNN;
 import uk.co.strangeskies.mathematics.geometry.matrix.MatrixS;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
-import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorH;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector.Orientation;
+import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorH;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorH.Type;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.VectorHNImpl;
 import uk.co.strangeskies.mathematics.values.Value;
@@ -27,23 +29,38 @@ public abstract class MatrixHImpl<S extends MatrixH<S, V>, V extends Value<V>>
 	}
 
 	public MatrixHImpl(Order order, List<? extends List<? extends V>> values) {
-		super(order, values);
+		super(order, resizeColumnsImplementation(values, order));
+
+		Matrix.assertIsSquare(this);
 	}
 
-	@Override
-	protected void finalise() {
-		int size = getColumnSize();
+	protected static <V extends Value<V>> List<List<V>> resizeColumnsImplementation(
+			List<? extends List<? extends V>> data, Order order) {
+		List<List<V>> newData = new ArrayList<>();
+		List<V> newElements = null;
 
-		resizeColumnsImplementation(size + 1);
+		if (order == Order.ColumnMajor) {
+			for (List<? extends V> elements : data) {
+				newElements = new ArrayList<>(elements);
+				newData.add(newElements);
 
-		getElement(size, size).setValue(1);
+				V element = newElements.get(0).copy().setValue(0);
+				newElements.add(element);
+			}
+		} else {
+			for (List<? extends V> elements : data)
+				newData.add(new ArrayList<>(elements));
 
-		assertIsSquare(this);
-	}
+			newElements = new ArrayList<V>();
+			for (V element : data.get(0))
+				newElements.add(element.copy().setValue(0));
 
-	@Override
-	public boolean isResizable() {
-		return false;
+			newData.add(newElements);
+		}
+
+		newElements.get(newElements.size() - 1).setValue(0);
+
+		return newData;
 	}
 
 	@Override

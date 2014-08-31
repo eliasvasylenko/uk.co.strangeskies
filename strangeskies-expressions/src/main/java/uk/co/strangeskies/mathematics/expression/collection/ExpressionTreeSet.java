@@ -6,6 +6,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
 import uk.co.strangeskies.mathematics.expression.Expression;
@@ -23,17 +25,16 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 
 	private Set<Observer<? super Expression<ExpressionTreeSet<E>>>> observers;
 
+	private ReadWriteLock lock;
+
 	public ExpressionTreeSet(Comparator<? super E> comparator) {
 		super(comparator);
 
-		dependencyObserver = new Observer<Expression<?>>() {
-			@Override
-			public void notify(Expression<?> message) {
-				update();
-			}
-		};
+		dependencyObserver = message -> update();
 
 		observers = new TreeSet<>(new IdentityComparator<>());
+
+		lock = new ReentrantReadWriteLock();
 	}
 
 	public ExpressionTreeSet() {
@@ -54,10 +55,14 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 	}
 
 	protected final void update() {
+		getLock().writeLock().lock();
+
 		if (evaluated) {
 			evaluated = false;
 			postUpdate();
 		}
+
+		getLock().writeLock().unlock();
 	}
 
 	protected final void postUpdate() {
@@ -68,6 +73,8 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 
 	@Override
 	public final boolean add(E expression) {
+		getLock().writeLock().lock();
+
 		boolean added = super.add(expression);
 
 		if (added) {
@@ -76,12 +83,16 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 			update();
 		}
 
+		getLock().writeLock().unlock();
+
 		return added;
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public final boolean remove(Object expression) {
+		getLock().writeLock().lock();
+
 		boolean removed = super.remove(expression);
 
 		if (removed) {
@@ -90,23 +101,27 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 			update();
 		}
 
+		getLock().writeLock().unlock();
+
 		return removed;
 	}
 
 	@Override
 	public final boolean addAll(Collection<? extends E> expressions) {
+		getLock().writeLock().lock();
+
 		boolean changed = false;
 
-		for (E expression : expressions) {
+		for (E expression : expressions)
 			if (super.add(expression)) {
 				expression.addObserver(dependencyObserver);
 				changed = true;
 			}
-		}
 
-		if (changed) {
+		if (changed)
 			update();
-		}
+
+		getLock().writeLock().unlock();
 
 		return changed;
 	}
@@ -114,18 +129,20 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 	@SuppressWarnings("unchecked")
 	@Override
 	public final boolean removeAll(Collection<?> expressions) {
+		getLock().writeLock().lock();
+
 		boolean changed = false;
 
-		for (Object expression : expressions) {
+		for (Object expression : expressions)
 			if (super.remove(expression)) {
 				((E) expression).removeObserver(dependencyObserver);
 				changed = true;
 			}
-		}
 
-		if (changed) {
+		if (changed)
 			update();
-		}
+
+		getLock().writeLock().unlock();
 
 		return changed;
 	}
@@ -136,36 +153,42 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 	}
 
 	protected final void clear(boolean update) {
+		getLock().writeLock().lock();
 		if (!isEmpty()) {
-			for (E expression : this) {
+			for (E expression : this)
 				expression.removeObserver(dependencyObserver);
-			}
 
 			super.clear();
 
-			if (update) {
+			if (update)
 				update();
-			}
 		}
+		getLock().writeLock().unlock();
 	}
 
 	@Override
 	public final void set(Collection<? extends E> expressions) {
+		getLock().writeLock().lock();
 		retainAll(expressions);
 		addAll(expressions);
+		getLock().writeLock().unlock();
 	}
 
 	@Override
 	public final boolean retainAll(Collection<?> expressions) {
+		getLock().writeLock().lock();
+
 		TreeSet<E> toRemove = new TreeSet<>();
 
-		for (E expression : this) {
-			if (!expressions.contains(expression)) {
+		for (E expression : this)
+			if (!expressions.contains(expression))
 				toRemove.add(expression);
-			}
-		}
 
-		return removeAll(toRemove);
+		boolean changed = removeAll(toRemove);
+
+		getLock().writeLock().unlock();
+
+		return changed;
 	}
 
 	@Override
@@ -175,7 +198,10 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 
 	@Override
 	public final ExpressionTreeSet<E> getValue() {
+		getLock().writeLock().lock();
 		evaluated = true;
+		getLock().writeLock().unlock();
+
 		return this;
 	}
 
@@ -186,7 +212,11 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 
 	@Override
 	public final ExpressionTreeSet<E> copy() {
-		return new ExpressionTreeSet<>(this);
+		getLock().writeLock().lock();
+		ExpressionTreeSet<E> copy = new ExpressionTreeSet<>(this);
+		getLock().writeLock().unlock();
+
+		return copy;
 	}
 
 	@Override
@@ -199,5 +229,10 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 	public boolean removeObserver(
 			Observer<? super Expression<ExpressionTreeSet<E>>> observer) {
 		return observers.remove(observer);
+	}
+
+	@Override
+	public ReadWriteLock getLock() {
+		return lock;
 	}
 }

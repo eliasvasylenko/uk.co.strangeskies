@@ -5,6 +5,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
 import uk.co.strangeskies.mathematics.expression.Expression;
@@ -21,15 +23,14 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 
 	private final Set<Observer<? super Expression<ExpressionArrayList<E>>>> observers;
 
+	private ReadWriteLock lock;
+
 	public ExpressionArrayList() {
-		dependencyObserver = new Observer<Expression<?>>() {
-			@Override
-			public void notify(Expression<?> message) {
-				update();
-			}
-		};
+		dependencyObserver = message -> update();
 
 		observers = new TreeSet<>();
+
+		lock = new ReentrantReadWriteLock();
 	}
 
 	public ExpressionArrayList(Collection<E> expressions) {
@@ -39,27 +40,33 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 	}
 
 	protected final void update() {
+		getLock().writeLock().lock();
+
 		if (evaluated) {
 			evaluated = false;
 			postUpdate();
 		}
+
+		getLock().writeLock().unlock();
 	}
 
 	protected final void postUpdate() {
-		for (Observer<? super Expression<ExpressionArrayList<E>>> observer : observers) {
+		for (Observer<?> observer : observers)
 			observer.notify(null);
-		}
 	}
 
 	@Override
 	public final boolean add(E expression) {
-		boolean added = super.add(expression);
+		getLock().writeLock().lock();
 
+		boolean added = super.add(expression);
 		if (added) {
 			expression.addObserver(dependencyObserver);
 
 			update();
 		}
+
+		getLock().writeLock().unlock();
 
 		return added;
 	}
@@ -67,31 +74,35 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 	@SuppressWarnings("unchecked")
 	@Override
 	public final boolean remove(Object expression) {
-		boolean removed = super.remove(expression);
+		getLock().writeLock().lock();
 
+		boolean removed = super.remove(expression);
 		if (removed) {
 			((E) expression).removeObserver(dependencyObserver);
 
 			update();
 		}
 
+		getLock().writeLock().unlock();
+
 		return removed;
 	}
 
 	@Override
 	public final boolean addAll(Collection<? extends E> expressions) {
-		boolean changed = false;
+		getLock().writeLock().lock();
 
-		for (E expression : expressions) {
+		boolean changed = false;
+		for (E expression : expressions)
 			if (super.add(expression)) {
 				expression.addObserver(dependencyObserver);
 				changed = true;
 			}
-		}
 
-		if (changed) {
+		if (changed)
 			update();
-		}
+
+		getLock().writeLock().unlock();
 
 		return changed;
 	}
@@ -99,18 +110,19 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 	@SuppressWarnings("unchecked")
 	@Override
 	public final boolean removeAll(Collection<?> expressions) {
-		boolean changed = false;
+		getLock().writeLock().lock();
 
-		for (Object expression : expressions) {
+		boolean changed = false;
+		for (Object expression : expressions)
 			if (super.remove(expression)) {
 				((E) expression).removeObserver(dependencyObserver);
 				changed = true;
 			}
-		}
 
-		if (changed) {
+		if (changed)
 			update();
-		}
+
+		getLock().writeLock().unlock();
 
 		return changed;
 	}
@@ -122,39 +134,49 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 
 	protected final void clear(boolean update) {
 		if (!isEmpty()) {
-			for (E expression : this) {
+			getLock().writeLock().lock();
+
+			for (E expression : this)
 				expression.removeObserver(dependencyObserver);
-			}
 
 			super.clear();
 
-			if (update) {
+			if (update)
 				update();
-			}
+
+			getLock().writeLock().unlock();
 		}
 	}
 
 	@Override
 	public final void set(Collection<? extends E> expressions) {
+		getLock().writeLock().lock();
+
 		clear(false);
 
-		for (E expression : expressions) {
-			if (super.add(expression)) {
+		for (E expression : expressions)
+			if (super.add(expression))
 				expression.addObserver(dependencyObserver);
-			}
-		}
 
 		update();
+
+		getLock().writeLock().unlock();
 	}
 
 	@Override
 	public final boolean retainAll(Collection<?> c) {
+		getLock().writeLock().lock();
+
 		TreeSet<E> toRemove = new TreeSet<>();
 
 		toRemove.addAll(this);
 		toRemove.removeAll(c);
 
-		return removeAll(toRemove);
+		boolean changed = removeAll(toRemove);
+
+		getLock().writeLock().unlock();
+
+		return changed;
 	}
 
 	@Override
@@ -164,7 +186,10 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 
 	@Override
 	public final ExpressionArrayList<E> getValue() {
+		getLock().readLock().lock();
 		evaluated = true;
+		getLock().readLock().unlock();
+
 		return this;
 	}
 
@@ -187,51 +212,70 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 
 	@Override
 	public final ExpressionArrayList<E> copy() {
-		return new ExpressionArrayList<>(this);
+		getLock().writeLock().lock();
+		ExpressionArrayList<E> copy = new ExpressionArrayList<>(this);
+		getLock().writeLock().unlock();
+
+		return copy;
 	}
 
 	@Override
 	public final void add(int index, E expression) {
+		getLock().writeLock().lock();
+
 		super.add(index, expression);
 
 		expression.addObserver(dependencyObserver);
 
 		update();
+
+		getLock().writeLock().unlock();
 	}
 
 	@Override
 	public final boolean addAll(int index, Collection<? extends E> expressions) {
+		getLock().writeLock().lock();
+
 		for (E expression : expressions) {
 			add(index++, expression);
 			expression.addObserver(dependencyObserver);
 		}
 
-		update();
+		getLock().writeLock().unlock();
 
 		return !expressions.isEmpty();
 	}
 
 	@Override
 	public final E remove(int index) {
+		getLock().writeLock().lock();
+
 		E removed = super.remove(index);
 
 		removed.removeObserver(dependencyObserver);
 
-		update();
+		getLock().writeLock().unlock();
 
 		return removed;
 	}
 
 	@Override
 	public final E set(int index, E expression) {
+		getLock().writeLock().lock();
+
 		E removed = super.remove(index);
 		super.add(index, expression);
 
 		removed.removeObserver(dependencyObserver);
 		expression.addObserver(dependencyObserver);
 
-		update();
+		getLock().writeLock().unlock();
 
 		return removed;
+	}
+
+	@Override
+	public ReadWriteLock getLock() {
+		return lock;
 	}
 }

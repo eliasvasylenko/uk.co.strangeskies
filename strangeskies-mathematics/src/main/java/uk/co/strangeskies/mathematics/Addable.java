@@ -10,7 +10,7 @@ public interface Addable<S extends Addable<S, T>, T> extends Self<S> {
 	 *          the value to add to this
 	 * @return this
 	 */
-	public S add(/*@ReadOnly*/T value);
+	public S add(/* @ReadOnly */T value);
 
 	/**
 	 * add the value to a copy of this
@@ -19,5 +19,8 @@ public interface Addable<S extends Addable<S, T>, T> extends Self<S> {
 	 *          the value to add to the copy
 	 * @return the copy with the added value
 	 */
-	public S getAdded(/*@ReadOnly AddableReadOnly<S> this,*//*@ReadOnly*/T value);
+	public default S getAdded(
+	/* @ReadOnly AddableReadOnly<S> this, *//* @ReadOnly */T value) {
+		return copy().add(value);
+	}
 }

@@ -3,6 +3,7 @@ package uk.co.strangeskies.mathematics.geometry.matrix.impl;
 import java.util.ArrayList;
 import java.util.List;
 
+import uk.co.strangeskies.mathematics.geometry.matrix.Matrix;
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix2;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.Vector2Impl;
@@ -18,7 +19,7 @@ public class Matrix2Impl<V extends Value<V>> extends MatrixSImpl<Matrix2<V>, V>
 	public Matrix2Impl(Order order, List<? extends List<? extends V>> values) {
 		super(order, values);
 
-		assertDimensions(this, 2);
+		Matrix.assertDimensions(this, 2);
 	}
 
 	@Override
@@ -33,35 +34,15 @@ public class Matrix2Impl<V extends Value<V>> extends MatrixSImpl<Matrix2<V>, V>
 	}
 
 	@Override
-	public Matrix2<V> getRotated(Value<?> angle) {
-		return copy().rotate(angle);
-	}
-
-	@Override
 	public Matrix2<V> rotate(Value<?> angle) {
 		// TODO implement rotation
 		return null;
 	}
 
 	@Override
-	public Matrix2<V> getPreRotated(Value<?> value) {
-		return copy().preRotate(value);
-	}
-
-	@Override
 	public Matrix2<V> preRotate(Value<?> value) {
 		// TODO implement pre-rotation
 		return null;
-	}
-
-	@Override
-	public Matrix2<V> getPreRotated(Value<?> angle, Vector2<?> centre) {
-		return copy().preRotate(angle, centre);
-	}
-
-	@Override
-	public Matrix2<V> getRotated(Value<?> angle, Vector2<?> centre) {
-		return copy().rotate(angle, centre);
 	}
 
 	@Override

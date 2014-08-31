@@ -3,13 +3,14 @@ package uk.co.strangeskies.mathematics.geometry.matrix.impl;
 import java.util.ArrayList;
 import java.util.List;
 
+import uk.co.strangeskies.mathematics.geometry.matrix.Matrix;
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix3;
 import uk.co.strangeskies.mathematics.geometry.matrix.MatrixH3;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
-import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector4;
-import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorH3;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector.Orientation;
+import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector4;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorH.Type;
+import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorH3;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.Vector4Impl;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.VectorH3Impl;
 import uk.co.strangeskies.mathematics.values.Value;
@@ -24,7 +25,7 @@ public class MatrixH3Impl<V extends Value<V>> extends
 	public MatrixH3Impl(Order order, List<? extends List<? extends V>> values) {
 		super(order, values);
 
-		assertDimensions(getThis(), 4);
+		Matrix.assertDimensions(getThis(), 4);
 	}
 
 	@Override

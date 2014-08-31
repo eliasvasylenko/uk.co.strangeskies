@@ -3,7 +3,7 @@ package uk.co.strangeskies.mathematics.geometry;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 import uk.co.strangeskies.mathematics.values.Value;
 
-public interface LineN<T extends Vector<?, V>, V extends Value<V>> {
+public interface LineN<T extends Vector<T, V>, V extends Value<V>> {
 	public T getA();
 
 	public T getB();
