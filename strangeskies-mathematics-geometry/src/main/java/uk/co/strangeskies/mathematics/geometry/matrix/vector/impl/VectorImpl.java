@@ -30,16 +30,12 @@ import uk.co.strangeskies.utilities.factory.Factory;
 import uk.co.strangeskies.utilities.function.TriFunction;
 import uk.co.strangeskies.utilities.function.collection.ListTransformOnceView;
 
-import com.sun.xml.internal.bind.v2.runtime.reflect.opt.Const;
-
 /**
  *
  * @author Elias N Vasylenko
  *
  * @param <S>
  *          See {@link Self}.
- * @param <C>
- *          See {@link Const}.
  * @param <V>
  *          The type of {@link Value} this Vector operates on.
  */

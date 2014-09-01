@@ -63,8 +63,7 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 
 	@Override
 	public default S set(Matrix<?, ?> to) {
-		withOrder(to.getOrder()).setData2(to.getData2());
-		return getThis();
+		return setData2(to.withOrder(getOrder()).getData2());
 	}
 
 	@Override
@@ -104,88 +103,74 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 
 	@Override
 	public default S negate() {
-		operateOnData(element -> element.negate());
-		return getThis();
+		return operateOnData(element -> element.negate());
 	}
 
 	@Override
 	public default S multiply(Value<?> scalar) {
-		operateOnData(element -> element.multiply(scalar));
-		return getThis();
+		return operateOnData(element -> element.multiply(scalar));
 	}
 
 	@Override
 	public default S multiply(long scalar) {
-		operateOnData(element -> element.multiply(scalar));
-		return getThis();
+		return operateOnData(element -> element.multiply(scalar));
 	}
 
 	@Override
 	public default S multiply(double scalar) {
-		operateOnData(element -> element.multiply(scalar));
-		return getThis();
+		return operateOnData(element -> element.multiply(scalar));
 	}
 
 	@Override
 	public default S divide(Value<?> scalar) {
-		operateOnData(element -> element.divide(scalar));
-		return getThis();
+		return operateOnData(element -> element.divide(scalar));
 	}
 
 	@Override
 	public default S divide(long scalar) {
-		operateOnData(element -> element.divide(scalar));
-		return getThis();
+		return operateOnData(element -> element.divide(scalar));
 	}
 
 	@Override
 	public default S divide(double scalar) {
-		operateOnData(element -> element.divide(scalar));
-		return getThis();
+		return operateOnData(element -> element.divide(scalar));
 	}
 
 	@Override
 	public default S add(Matrix<?, ?> other) {
-		withOrder(other.getOrder()).operateOnData2(other.getData2(),
-				(firstOperand, secondOperand) -> firstOperand.add(secondOperand));
-
-		return getThis();
+		return operateOnData2(other.withOrder(getOrder()).getData2(), (
+				firstOperand, secondOperand) -> firstOperand.add(secondOperand));
 	}
 
 	@Override
 	public default S subtract(Matrix<?, ?> other) {
-		withOrder(other.getOrder()).operateOnData2(other.getData2(),
-				(firstOperand, secondOperand) -> firstOperand.subtract(secondOperand));
-
-		return getThis();
+		return operateOnData2(other.withOrder(getOrder()).getData2(), (
+				firstOperand, secondOperand) -> firstOperand.subtract(secondOperand));
 	}
 
 	@Override
 	public default S multiply(Matrix<?, ?> other) {
-		setData2(multiplyData(this, other.getData2()));
-
-		return getThis();
+		return setData2(multiplyData(getData2(), other.withOrder(getOrder())
+				.getData2()));
 	}
 
 	@Override
 	public default S preMultiply(Matrix<?, ?> other) {
-		setData2(preMultiplyData(this, other.getData2()));
-
-		return getThis();
+		return setData2(preMultiplyData(getData2(), other.withOrder(getOrder())
+				.getData2()));
 	}
 
-	public static <V extends Value<V>> List<List<Value<V>>> multiplyData(
-			Matrix<?, V> matrix, List<? extends List<? extends Value<?>>> otherData) {
+	public static <V extends Value<?>> List<List<V>> multiplyData(
+			List<? extends List<? extends Value<?>>> data,
+			List<? extends List<? extends Value<?>>> otherData) {
 		// TODO implement multiplication! include isResiseable() in parameter
 		// dimensions check...
-
 		return null;
 	}
 
-	public static <V extends Value<V>> List<List<Value<V>>> preMultiplyData(
-			Matrix<?, V> matrix, List<? extends List<? extends Value<?>>> otherData) {
-		// TODO as above.
-
+	public static <V extends Value<?>> List<List<V>> preMultiplyData(
+			List<? extends List<? extends Value<?>>> data,
+			List<? extends List<? extends Value<?>>> otherData) {
 		return null;
 	}
 

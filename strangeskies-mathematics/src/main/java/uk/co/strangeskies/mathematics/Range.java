@@ -130,8 +130,8 @@ public class Range<T> implements Self<Range<T>>, Copyable<Range<T>> {
 	}
 
 	public boolean contains(Comparable<? super T> value) {
-		int fromCompare = value.compareTo(from);
-		int toCompare = value.compareTo(to);
+		int fromCompare = from == null ? 1 : value.compareTo(from);
+		int toCompare = to == null ? -1 : value.compareTo(to);
 
 		if (fromInclusive) {
 			if (toInclusive) {
@@ -153,20 +153,28 @@ public class Range<T> implements Self<Range<T>>, Copyable<Range<T>> {
 	}
 
 	public boolean contains(Range<T> range) {
-		if (range.isFromInclusive()) {
-			if (!contains(range.getFrom()))
+		if (getFrom() != null)
+			if (range.getFrom() == null) {
 				return false;
-		} else {
-			if (!touches(range.getFrom()))
+			} else if (range.isFromInclusive()) {
+				if (!contains(range.getFrom()))
+					return false;
+			} else {
+				if (!touches(range.getFrom()))
+					return false;
+			}
+
+		if (getTo() != null)
+			if (range.getTo() == null) {
 				return false;
-		}
-		if (range.isToInclusive()) {
-			if (!contains(range.getTo()))
-				return false;
-		} else {
-			if (!touches(range.getTo()))
-				return false;
-		}
+			} else if (range.isToInclusive()) {
+				if (!contains(range.getTo()))
+					return false;
+			} else {
+				if (!touches(range.getTo()))
+					return false;
+			}
+
 		return true;
 	}
 

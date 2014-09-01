@@ -168,30 +168,28 @@ public abstract class VectorHImpl<S extends VectorH<S, V>, V extends Value<V>>
 
 	@Override
 	public final S multiply(Matrix<?, ?> other) {
-		List<List<Value<V>>> multiplied = Matrix.multiplyData(this,
+		List<List<Value<V>>> multiplied = Matrix.multiplyData(getData2(),
 				other.getData2());
 
 		List<Value<V>> lastElements = multiplied.get(multiplied.size() - 1);
 		Value<V> lastElement = lastElements.get(lastElements.size() - 1);
 		if (!((lastElement.equals(0) && getType() == Type.Relative) || (lastElement
-				.equals(1) && getType() == Type.Absolute))) {
+				.equals(1) && getType() == Type.Absolute)))
 			throw new IllegalArgumentException();
-		}
 
 		return setData2(multiplied);
 	}
 
 	@Override
 	public final S preMultiply(Matrix<?, ?> other) {
-		List<List<Value<V>>> multiplied = Matrix.preMultiplyData(this,
+		List<List<Value<V>>> multiplied = Matrix.preMultiplyData(getData2(),
 				other.getData2());
 
 		List<Value<V>> lastElements = multiplied.get(multiplied.size() - 1);
 		Value<V> lastElement = lastElements.get(lastElements.size() - 1);
 		if (!((lastElement.equals(0) && getType() == Type.Relative) || (lastElement
-				.equals(1) && getType() == Type.Absolute))) {
+				.equals(1) && getType() == Type.Absolute)))
 			throw new IllegalArgumentException();
-		}
 
 		return setData2(multiplied);
 	}
