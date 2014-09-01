@@ -27,14 +27,15 @@ import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.Self;
 import uk.co.strangeskies.utilities.collection.NullPointerInCollectionException;
 import uk.co.strangeskies.utilities.factory.Factory;
+import uk.co.strangeskies.utilities.function.TriFunction;
 import uk.co.strangeskies.utilities.function.collection.ListTransformOnceView;
 
 import com.sun.xml.internal.bind.v2.runtime.reflect.opt.Const;
 
 /**
- * 
+ *
  * @author Elias N Vasylenko
- * 
+ *
  * @param <S>
  *          See {@link Self}.
  * @param <C>
@@ -45,15 +46,17 @@ import com.sun.xml.internal.bind.v2.runtime.reflect.opt.Const;
 public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 		extends CompoundExpression<S> implements Vector<S, V>,
 		CopyDecouplingExpression<S> {
-	private List<V> data;
+	private final List<V> data;
+	private final Order order;
 
 	private WeakReference<List<List<V>>> data2Reference;
 
 	private IdentityExpression<Orientation> orientation;
-	private Order order;
 
 	/* All constructors must go through here */
 	private VectorImpl(Order order, Orientation orientation) {
+		super(false);
+
 		if (order == null || orientation == null) {
 			throw new IllegalArgumentException(new NullPointerException());
 		}
@@ -83,7 +86,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 			data.add(valueFactory.create());
 		}
 
-		finalise();
+		getDependencies().addAll(getData());
 	}
 
 	public VectorImpl(Order order, Orientation orientation,
@@ -105,7 +108,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 			data.add(value);
 		}
 
-		finalise();
+		getDependencies().addAll(getData());
 	}
 
 	@Override
@@ -113,33 +116,9 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 		return transposeImplementation();
 	}
 
-	protected void finalise() {
-		getDependencies().addAll(getData());
-	}
-
 	@Override
 	public final int getDimensions() {
 		return getData().size();
-	}
-
-	protected final S resizeImplementation(int dimensions) {
-		try {
-			DimensionalityException.checkValid(dimensions);
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e);
-		}
-
-		while (dimensions < getDimensions()) {
-			getDependencies().remove(data.remove(data.size() - 1));
-		}
-		while (dimensions > getDimensions()) {
-			V element = data.get(0).copy().setValue(0);
-			data.add(element);
-
-			getDependencies().add(element);
-		}
-
-		return getThis();
 	}
 
 	@Override
@@ -176,282 +155,6 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 	}
 
 	@Override
-	public final int[] getData(int[] dataArray, Order order) {
-		try {
-			if (dataArray == null || order == null) {
-				throw new NullPointerException();
-			}
-
-			DimensionalityException.checkEquivalence(getDimensions2().getX()
-					.getMultiplied(getDimensions2().getY()).intValue(), dataArray.length);
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e);
-		}
-
-		int i = 0;
-		for (V element : data) {
-			dataArray[i++] = element.intValue();
-		}
-
-		return dataArray;
-	}
-
-	@Override
-	public final long[] getData(long[] dataArray, Order order) {
-		try {
-			if (dataArray == null || order == null) {
-				throw new NullPointerException();
-			}
-
-			DimensionalityException.checkEquivalence(getDimensions2().getX()
-					.getMultiplied(getDimensions2().getY()).intValue(), dataArray.length);
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e);
-		}
-
-		int i = 0;
-		for (V element : data) {
-			dataArray[i++] = element.longValue();
-		}
-
-		return dataArray;
-	}
-
-	@Override
-	public final float[] getData(float[] dataArray, Order order) {
-		try {
-			if (dataArray == null || order == null) {
-				throw new NullPointerException();
-			}
-
-			DimensionalityException.checkEquivalence(getDimensions2().getX()
-					.getMultiplied(getDimensions2().getY()).intValue(), dataArray.length);
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e);
-		}
-
-		int i = 0;
-		for (V element : data) {
-			dataArray[i++] = element.floatValue();
-		}
-
-		return dataArray;
-	}
-
-	@Override
-	public final double[] getData(double[] dataArray, Order order) {
-		try {
-			if (dataArray == null || order == null) {
-				throw new NullPointerException();
-			}
-
-			DimensionalityException.checkEquivalence(getDimensions2().getX()
-					.getMultiplied(getDimensions2().getY()).intValue(), dataArray.length);
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e);
-		}
-
-		int i = 0;
-		for (V element : data) {
-			dataArray[i++] = element.doubleValue();
-		}
-
-		return dataArray;
-	}
-
-	@Override
-	public final int[][] getData2(int[][] dataArray, Order order) {
-		try {
-			if (dataArray == null || order == null) {
-				throw new NullPointerException();
-			}
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e);
-		}
-
-		if (order == getOrientation().getAssociatedOrder()) {
-			try {
-				DimensionalityException.checkEquivalence(dataArray.length, 1);
-
-				int[] major = dataArray[0];
-
-				DimensionalityException.checkEquivalence(major.length, getDimensions());
-			} catch (Exception e) {
-				throw new IllegalArgumentException(e);
-			}
-
-			int i = 0;
-			for (V element : data) {
-				dataArray[0][i] = element.intValue();
-				i++;
-			}
-		} else {
-			try {
-				DimensionalityException.checkEquivalence(dataArray.length,
-						getDimensions());
-
-				for (int[] major : dataArray) {
-					DimensionalityException.checkEquivalence(major.length, 1);
-				}
-			} catch (Exception e) {
-				throw new IllegalArgumentException(e);
-			}
-
-			int i = 0;
-			for (V element : data) {
-				dataArray[i][0] = element.intValue();
-				i++;
-			}
-		}
-
-		return dataArray;
-	}
-
-	@Override
-	public final long[][] getData2(long[][] dataArray, Order order) {
-		try {
-			if (dataArray == null || order == null) {
-				throw new NullPointerException();
-			}
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e);
-		}
-
-		if (order == getOrientation().getAssociatedOrder()) {
-			try {
-				DimensionalityException.checkEquivalence(dataArray.length, 1);
-
-				long[] major = dataArray[0];
-
-				DimensionalityException.checkEquivalence(major.length, getDimensions());
-			} catch (Exception e) {
-				throw new IllegalArgumentException(e);
-			}
-
-			int i = 0;
-			for (V element : data) {
-				dataArray[0][i] = element.longValue();
-				i++;
-			}
-		} else {
-			try {
-				DimensionalityException.checkEquivalence(dataArray.length,
-						getDimensions());
-
-				for (long[] major : dataArray) {
-					DimensionalityException.checkEquivalence(major.length, 1);
-				}
-			} catch (Exception e) {
-				throw new IllegalArgumentException(e);
-			}
-
-			int i = 0;
-			for (V element : data) {
-				dataArray[i][0] = element.longValue();
-				i++;
-			}
-		}
-
-		return dataArray;
-	}
-
-	@Override
-	public final float[][] getData2(float[][] dataArray, Order order) {
-		try {
-			if (dataArray == null || order == null) {
-				throw new NullPointerException();
-			}
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e);
-		}
-
-		if (order == getOrientation().getAssociatedOrder()) {
-			try {
-				DimensionalityException.checkEquivalence(dataArray.length, 1);
-
-				float[] major = dataArray[0];
-
-				DimensionalityException.checkEquivalence(major.length, getDimensions());
-			} catch (Exception e) {
-				throw new IllegalArgumentException(e);
-			}
-
-			int i = 0;
-			for (V element : data) {
-				dataArray[0][i] = element.floatValue();
-				i++;
-			}
-		} else {
-			try {
-				DimensionalityException.checkEquivalence(dataArray.length,
-						getDimensions());
-
-				for (float[] major : dataArray) {
-					DimensionalityException.checkEquivalence(major.length, 1);
-				}
-			} catch (Exception e) {
-				throw new IllegalArgumentException(e);
-			}
-
-			int i = 0;
-			for (V element : data) {
-				dataArray[i][0] = element.floatValue();
-				i++;
-			}
-		}
-
-		return dataArray;
-	}
-
-	@Override
-	public final double[][] getData2(double[][] dataArray, Order order) {
-		try {
-			if (dataArray == null || order == null) {
-				throw new NullPointerException();
-			}
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e);
-		}
-
-		if (order == getOrientation().getAssociatedOrder()) {
-			try {
-				DimensionalityException.checkEquivalence(dataArray.length, 1);
-
-				double[] major = dataArray[0];
-
-				DimensionalityException.checkEquivalence(major.length, getDimensions());
-			} catch (Exception e) {
-				throw new IllegalArgumentException(e);
-			}
-
-			int i = 0;
-			for (V element : data) {
-				dataArray[0][i] = element.doubleValue();
-				i++;
-			}
-		} else {
-			try {
-				DimensionalityException.checkEquivalence(dataArray.length,
-						getDimensions());
-
-				for (double[] major : dataArray) {
-					DimensionalityException.checkEquivalence(major.length, 1);
-				}
-			} catch (Exception e) {
-				throw new IllegalArgumentException(e);
-			}
-
-			int i = 0;
-			for (V element : data) {
-				dataArray[i][0] = element.doubleValue();
-				i++;
-			}
-		}
-
-		return dataArray;
-	}
-
-	@Override
 	public V getElement(int major, int minor) {
 		int index;
 
@@ -476,114 +179,52 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 	}
 
 	@Override
-	public final <I> S operateOnData(Order order, List<? extends I> itemList,
-			BiFunction<? super V, ? super I, ? extends V> operator) {
-		try {
-			if (operator == null || order == null || itemList == null) {
-				throw new NullPointerException();
-			}
-
-			DimensionalityException.checkEquivalence(getMajorSize() * getMinorSize(),
-					itemList.size());
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e);
-		}
-
-		getDependencies().clear();
-
-		Iterator<? extends I> itemIterator = itemList.iterator();
-
-		for (V element : data) {
-			element = operator.apply(element, itemIterator.next());
-		}
-
-		getDependencies().addAll(getData());
-
-		return getThis();
-	}
-
-	@Override
-	public final <I> S operateOnData2(Order order,
-			List<? extends List<? extends I>> itemList,
-			BiFunction<? super V, ? super I, ? extends V> operator) {
-
-		try {
-			if (operator == null || order == null || itemList == null) {
-				throw new NullPointerException();
-			}
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e);
-		}
-
-		if (order == getOrientation().getAssociatedOrder()) {
-			try {
-				DimensionalityException.checkEquivalence(itemList.size(), 1);
-
-				List<? extends I> major = itemList.get(0);
-
-				if (major == null) {
-					throw new NullPointerException();
-				}
-
-				DimensionalityException.checkEquivalence(major.size(), getDimensions());
-
-				NullPointerInCollectionException.checkList(major);
-			} catch (Exception e) {
-				throw new IllegalArgumentException(e);
-			}
-
-			Iterator<? extends I> itemIterator = itemList.get(0).iterator();
-
-			for (V element : data) {
-				element = operator.apply(element, itemIterator.next());
-			}
-
-			getDependencies().set(getData());
-		} else {
-			try {
-				DimensionalityException.checkEquivalence(itemList.size(),
-						getDimensions());
-
-				NullPointerInCollectionException.checkList(itemList);
-
-				for (List<? extends I> major : itemList) {
-					DimensionalityException.checkEquivalence(major.size(), 1);
-
-					if (major.get(0) == null) {
-						throw new NullPointerException();
-					}
-				}
-			} catch (Exception e) {
-				throw new IllegalArgumentException(e);
-			}
-
-			Iterator<? extends List<? extends I>> itemIterator = itemList.iterator();
-
-			for (V element : data) {
-				element = operator.apply(element, itemIterator.next().get(0));
-			}
-
-			getDependencies().set(getData());
-		}
-
-		return getThis();
-	}
-
-	@Override
 	public final S operateOnData(Function<? super V, ? extends V> operator) {
-		try {
-			if (operator == null) {
-				throw new NullPointerException();
-			}
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e);
-		}
+		getLock().writeLock().lock();
 
-		for (V element : data) {
+		for (V element : data)
 			element = operator.apply(element);
-		}
 
 		getDependencies().set(getData());
+
+		getLock().writeLock().unlock();
+
+		return getThis();
+	}
+
+	@Override
+	public final S operateOnData(
+			BiFunction<? super V, Integer, ? extends V> operator) {
+		getLock().writeLock().lock();
+
+		int i = 0;
+		for (V element : data)
+			element = operator.apply(element, i++);
+
+		getDependencies().set(getData());
+
+		getLock().writeLock().unlock();
+
+		return getThis();
+	}
+
+	@Override
+	public final S operateOnData2(
+			TriFunction<? super V, Integer, Integer, ? extends V> operator) {
+		getLock().writeLock().lock();
+
+		int i = 0;
+		int j = 0;
+		if (getOrder() == getOrientation().getAssociatedOrder())
+			for (V element : data)
+				element = operator.apply(element, i++, j);
+		else
+			for (V element : data)
+				element = operator.apply(element, i, j++);
+
+		getDependencies().set(getData());
+
+		getLock().writeLock().unlock();
 
 		return getThis();
 	}
@@ -600,6 +241,8 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 
 	@Override
 	protected final S evaluate() {
+		getLock().readLock().lock();
+		getLock().readLock().unlock();
 		return getThis();
 	}
 

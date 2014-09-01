@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import uk.co.strangeskies.mathematics.Addable;
 import uk.co.strangeskies.mathematics.Negatable;
@@ -18,23 +17,13 @@ import uk.co.strangeskies.mathematics.geometry.matrix.impl.MatrixNImpl;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector.Orientation;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
-import uk.co.strangeskies.mathematics.values.DoubleArrayListView;
-import uk.co.strangeskies.mathematics.values.DoubleValue;
-import uk.co.strangeskies.mathematics.values.DoubleValueFactory;
-import uk.co.strangeskies.mathematics.values.FloatArrayListView;
-import uk.co.strangeskies.mathematics.values.FloatValue;
-import uk.co.strangeskies.mathematics.values.FloatValueFactory;
-import uk.co.strangeskies.mathematics.values.IntArrayListView;
+import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.Vector2Impl;
 import uk.co.strangeskies.mathematics.values.IntValue;
-import uk.co.strangeskies.mathematics.values.IntValueFactory;
-import uk.co.strangeskies.mathematics.values.LongArrayListView;
-import uk.co.strangeskies.mathematics.values.LongValue;
-import uk.co.strangeskies.mathematics.values.LongValueFactory;
 import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.Copyable;
 import uk.co.strangeskies.utilities.Property;
 import uk.co.strangeskies.utilities.Self;
-import uk.co.strangeskies.utilities.function.AssignmentOperation;
+import uk.co.strangeskies.utilities.function.TriFunction;
 import uk.co.strangeskies.utilities.function.collection.ListTransformationView;
 
 public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
@@ -44,7 +33,6 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 		Property<S, Matrix<?, ?>> {
 	public static enum Order {
 		RowMajor {
-
 			@Override
 			public Orientation getAssociatedOrientation() {
 				return Orientation.Row;
@@ -55,8 +43,8 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 				return ColumnMajor;
 			}
 		},
-		ColumnMajor {
 
+		ColumnMajor {
 			@Override
 			public Orientation getAssociatedOrientation() {
 				return Orientation.Column;
@@ -75,7 +63,8 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 
 	@Override
 	public default S set(Matrix<?, ?> to) {
-		return setData2(to.getOrder(), to.getData2());
+		withOrder(to.getOrder()).setData2(to.getData2());
+		return getThis();
 	}
 
 	@Override
@@ -85,6 +74,16 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 
 	public Order getOrder();
 
+	/**
+	 * Creates a view of this matrix with the requested order. Changes to the view
+	 * affect this matrix and vice versa.
+	 *
+	 * @return
+	 */
+	public default Matrix<?, V> withOrder(Order order) {
+		return new ReOrderedMatrix<V>(this);
+	}
+
 	public Vector<?, V> getMajorVector(int index);
 
 	public Vector<?, V> getMinorVector(int index);
@@ -93,7 +92,15 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 
 	public List<List<V>> getData2();
 
-	public Vector2<IntValue> getDimensions2();
+	/**
+	 * Get the dimensions as: [columns, rows].
+	 *
+	 * @return A vector representing the current dimensions.
+	 */
+	public default Vector2<IntValue> getDimensions2() {
+		return new Vector2Impl<IntValue>(Order.ColumnMajor, Orientation.Column,
+				IntValue.factory()).setData(getRowSize(), getColumnSize());
+	}
 
 	@Override
 	public default S negate() {
@@ -139,16 +146,16 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 
 	@Override
 	public default S add(Matrix<?, ?> other) {
-		operateOnData2(other.getOrder(), other.getData2(), (firstOperand,
-				secondOperand) -> firstOperand.add(secondOperand));
+		withOrder(other.getOrder()).operateOnData2(other.getData2(),
+				(firstOperand, secondOperand) -> firstOperand.add(secondOperand));
 
 		return getThis();
 	}
 
 	@Override
 	public default S subtract(Matrix<?, ?> other) {
-		operateOnData2(other.getOrder(), other.getData2(), (firstOperand,
-				secondOperand) -> firstOperand.subtract(secondOperand));
+		withOrder(other.getOrder()).operateOnData2(other.getData2(),
+				(firstOperand, secondOperand) -> firstOperand.subtract(secondOperand));
 
 		return getThis();
 	}
@@ -182,6 +189,8 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 		return null;
 	}
 
+	public S transpose();
+
 	public default Matrix<?, V> getTransposed() {
 		return new MatrixNImpl<V>(getOrder(), getData2()).transpose();
 	}
@@ -195,22 +204,6 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 	public int getMinorSize();
 
 	public V getElement(int major, int minor);
-
-	public default int getMajorSize(Order order) {
-		if (order == getOrder()) {
-			return getMajorSize();
-		} else {
-			return getMinorSize();
-		}
-	}
-
-	public default int getMinorSize(Order order) {
-		if (order == getOrder()) {
-			return getMinorSize();
-		} else {
-			return getMajorSize();
-		}
-	}
 
 	public default int getRowSize() {
 		return getOrder() == Order.RowMajor ? getMajorSize() : getMinorSize();
@@ -248,14 +241,7 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 	}
 
 	public static <T extends Matrix<?, ?>> T assertDimensions(T matrix, int size) {
-		try {
-			DimensionalityException.checkEquivalence(matrix.getMajorSize(), size);
-			DimensionalityException.checkEquivalence(matrix.getMinorSize(), size);
-		} catch (DimensionalityException e) {
-			throw new IllegalArgumentException(e);
-		}
-
-		return matrix;
+		return assertDimensions(matrix, size, size);
 	}
 
 	public default List<? extends Vector<?, V>> getRowVectors() {
@@ -292,7 +278,6 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 
 	public default List<? extends Vector<?, V>> getMajorVectors() {
 		return new AbstractList<Vector<?, V>>() {
-
 			@Override
 			public Vector<?, V> get(int index) {
 				return getMajorVector(index);
@@ -307,7 +292,6 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 
 	public default List<? extends Vector<?, V>> getMinorVectors() {
 		return new AbstractList<Vector<?, V>>() {
-
 			@Override
 			public Vector<?, V> get(int index) {
 				return getMinorVector(index);
@@ -320,195 +304,141 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 		};
 	}
 
-	public int[] getData(int[] dataArray, Order order);
-
-	public long[] getData(long[] dataArray, Order order);
-
-	public float[] getData(float[] dataArray, Order order);
-
-	public double[] getData(double[] dataArray, Order order);
-
-	public int[][] getData2(int[][] dataArray, Order order);
-
-	public long[][] getData2(long[][] dataArray, Order order);
-
-	public float[][] getData2(float[][] dataArray, Order order);
-
-	public double[][] getData2(double[][] dataArray, Order order);
-
-	public default int[] getIntData(Order order) {
-		return getData(new int[getDataSize()], order);
-	}
-
-	public default long[] getLongData(Order order) {
-		return getData(new long[getDataSize()], order);
-	}
-
-	public default float[] getFloatData(Order order) {
-		return getData(new float[getDataSize()], order);
-	}
-
-	public default double[] getDoubleData(Order order) {
-		return getData(new double[getDataSize()], order);
-	}
-
 	public default int[] getData(int[] dataArray) {
-		return getData(dataArray, getOrder());
+		operateOnData((value, index) -> {
+			dataArray[index] = value.intValue();
+			return value;
+		});
+		return dataArray;
 	}
 
 	public default long[] getData(long[] dataArray) {
-		return getData(dataArray, getOrder());
+		operateOnData((value, index) -> {
+			dataArray[index] = value.longValue();
+			return value;
+		});
+		return dataArray;
 	}
 
 	public default float[] getData(float[] dataArray) {
-		return getData(dataArray, getOrder());
+		operateOnData((value, index) -> {
+			dataArray[index] = value.floatValue();
+			return value;
+		});
+		return dataArray;
 	}
 
 	public default double[] getData(double[] dataArray) {
-		return getData(dataArray, getOrder());
-	}
-
-	public default int[] getIntData() {
-		return getIntData(getOrder());
-	}
-
-	public default long[] getLongData() {
-		return getLongData(getOrder());
-	}
-
-	public default float[] getFloatData() {
-		return getFloatData(getOrder());
-	}
-
-	public default double[] getDoubleData() {
-		return getDoubleData(getOrder());
-	}
-
-	public default int[][] getIntData2(Order order) {
-		return getData2(new int[getMajorSize(order)][getMinorSize(order)], order);
-	}
-
-	public default long[][] getLongData2(Order order) {
-		return getData2(new long[getMajorSize(order)][getMinorSize(order)], order);
-	}
-
-	public default float[][] getFloatData2(Order order) {
-		return getData2(new float[getMajorSize(order)][getMinorSize(order)], order);
-	}
-
-	public default double[][] getDoubleData2(Order order) {
-		return getData2(new double[getMajorSize(order)][getMinorSize(order)], order);
+		operateOnData((value, index) -> {
+			dataArray[index] = value.doubleValue();
+			return value;
+		});
+		return dataArray;
 	}
 
 	public default int[][] getData2(int[][] dataArray) {
-		return getData2(dataArray, getOrder());
+		operateOnData2((value, i, j) -> {
+			dataArray[i][j] = value.intValue();
+			return value;
+		});
+		return dataArray;
 	}
 
 	public default long[][] getData2(long[][] dataArray) {
-		return getData2(dataArray, getOrder());
+		operateOnData2((value, i, j) -> {
+			dataArray[i][j] = value.longValue();
+			return value;
+		});
+		return dataArray;
 	}
 
 	public default float[][] getData2(float[][] dataArray) {
-		return getData2(dataArray, getOrder());
+		operateOnData2((value, i, j) -> {
+			dataArray[i][j] = value.floatValue();
+			return value;
+		});
+		return dataArray;
 	}
 
 	public default double[][] getData2(double[][] dataArray) {
-		return getData2(dataArray, getOrder());
+		operateOnData2((value, i, j) -> {
+			dataArray[i][j] = value.doubleValue();
+			return value;
+		});
+		return dataArray;
+	}
+
+	public default int[] getIntData() {
+		return getData(new int[getDataSize()]);
+	}
+
+	public default long[] getLongData() {
+		return getData(new long[getDataSize()]);
+	}
+
+	public default float[] getFloatData() {
+		return getData(new float[getDataSize()]);
+	}
+
+	public default double[] getDoubleData() {
+		return getData(new double[getDataSize()]);
 	}
 
 	public default int[][] getIntData2() {
-		return getIntData2(getOrder());
+		return getData2(new int[getMajorSize()][getMinorSize()]);
 	}
 
 	public default long[][] getLongData2() {
-		return getLongData2(getOrder());
+		return getData2(new long[getMajorSize()][getMinorSize()]);
 	}
 
 	public default float[][] getFloatData2() {
-		return getFloatData2(getOrder());
+		return getData2(new float[getMajorSize()][getMinorSize()]);
 	}
 
 	public default double[][] getDoubleData2() {
-		return getDoubleData2(getOrder());
+		return getData2(new double[getMajorSize()][getMinorSize()]);
 	}
 
 	public S operateOnData(Function<? super V, ? extends V> operator);
 
-	public <I> S operateOnData(Order order, List<? extends I> itemList,
-			BiFunction<? super V, ? super I, ? extends V> operator);
+	public S operateOnData(BiFunction<? super V, Integer, ? extends V> operator);
 
-	public <I> S operateOnData2(Order order,
-			List<? extends List<? extends I>> itemList,
-			BiFunction<? super V, ? super I, ? extends V> operator);
+	public S operateOnData2(
+			TriFunction<? super V, Integer, Integer, ? extends V> operator);
 
 	public default <I> S operateOnData(List<? extends I> itemList,
 			BiFunction<? super V, ? super I, ? extends V> operator) {
-		return operateOnData(getOrder(), itemList, operator);
+		return operateOnData((value, index) -> operator.apply(value,
+				itemList.get(index)));
 	}
 
 	public default <I> S operateOnData2(
 			List<? extends List<? extends I>> itemList,
 			BiFunction<? super V, ? super I, ? extends V> operator) {
-		return operateOnData2(getOrder(), itemList, operator);
-	}
-
-	public default <I> S setData(Order order, List<? extends I> itemList,
-			AssignmentOperation<V, ? super I> operator) {
-		return operateOnData(order, itemList, operator);
-	}
-
-	public default <I> S setData(List<? extends I> itemList,
-			AssignmentOperation<V, ? super I> operator) {
-		return setData(getOrder(), itemList, operator);
-	}
-
-	public default <I> S setData2(Order order,
-			List<? extends List<? extends I>> itemList,
-			AssignmentOperation<V, ? super I> operator) {
-		return operateOnData2(order, itemList, operator);
-	}
-
-	public default <I> S setData2(List<? extends List<? extends I>> itemList,
-			AssignmentOperation<V, ? super I> operator) {
-		return setData2(getOrder(), itemList, operator);
-	}
-
-	public default S setData2(final boolean setByReference, Order order,
-			List<? extends List<? extends V>> to) {
-		if (setByReference) {
-			return operateOnData2(order, to,
-					(V firstOperand, V secondOperand) -> secondOperand);
-		} else {
-			return operateOnData2(order, to,
-					(V firstOperand, V secondOperand) -> firstOperand
-							.setValue(secondOperand));
-		}
+		return operateOnData2((value, i, j) -> operator.apply(value, itemList
+				.get(i).get(j)));
 	}
 
 	public default S setData2(boolean setByReference,
 			List<? extends List<? extends V>> to) {
-		return setData2(setByReference, getOrder(), to);
-	}
-
-	public default S setData(final boolean setByReference, Order order,
-			List<? extends V> to) {
-		if (setByReference) {
-			return operateOnData(order, to,
+		if (setByReference)
+			return operateOnData2(to,
 					(V firstOperand, V secondOperand) -> secondOperand);
-		} else {
-			return operateOnData(order, to,
+		else
+			return operateOnData2(to,
 					(V firstOperand, V secondOperand) -> firstOperand
 							.setValue(secondOperand));
-		}
 	}
 
 	public default S setData(boolean setByReference, List<? extends V> to) {
-		return setData(setByReference, getOrder(), to);
-	}
-
-	@SuppressWarnings("unchecked")
-	public default S setData(boolean setByReference, Order order, V... to) {
-		return setData(setByReference, order, Arrays.asList(to));
+		if (setByReference)
+			return operateOnData(to,
+					(V firstOperand, V secondOperand) -> secondOperand);
+		else
+			return operateOnData(to,
+					(V firstOperand, V secondOperand) -> firstOperand
+							.setValue(secondOperand));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -516,142 +446,64 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 		return setData(setByReference, Arrays.asList(to));
 	}
 
-	public default S setData(Order order, Number... values) {
-		return setData(order, Arrays.asList(values),
-				(V assignee, Number assignment) -> assignee.setValue(assignment));
-	}
-
 	public default S setData(Number... values) {
-		return setData(getOrder(), values);
-	}
-
-	public default S setData(Order order, Value<?>... to) {
-		return setData(order, Arrays.asList(to));
+		return operateOnData(Arrays.asList(values),
+				(assignee, assignment) -> assignee.setValue(assignment));
 	}
 
 	public default S setData(Value<?>... to) {
 		return setData(Arrays.asList(to));
 	}
 
-	public default S setData(Order order, int[] to) {
-		return setData(order,
-				new IntArrayListView<>(to, IntValueFactory.instance()));
-	}
-
-	public default S setData(Order order, long[] to) {
-		return setData(order,
-				new LongArrayListView<>(to, LongValueFactory.instance()));
-	}
-
-	public default S setData(Order order, float[] to) {
-		return setData(order,
-				new FloatArrayListView<>(to, FloatValueFactory.instance()));
-	}
-
-	public default S setData(Order order, double[] to) {
-		return setData(order,
-				new DoubleArrayListView<>(to, DoubleValueFactory.instance()));
-	}
-
 	public default S setData(int[] to) {
-		return setData(getOrder(), to);
+		return operateOnData((value, index) -> value.setValue(to[index]));
 	}
 
 	public default S setData(long[] to) {
-		return setData(getOrder(), to);
+		return operateOnData((value, index) -> value.setValue(to[index]));
 	}
 
 	public default S setData(float[] to) {
-		return setData(getOrder(), to);
+		return operateOnData((value, index) -> value.setValue(to[index]));
 	}
 
 	public default S setData(double[] to) {
-		return setData(getOrder(), to);
-	}
-
-	public default S setData2(Order order, int[]... data) {
-		return setData2(Arrays
-				.stream(data)
-				.map(data2 -> new IntArrayListView<>(data2, IntValueFactory.instance()))
-				.collect(Collectors.toList()));
-	}
-
-	public default S setData2(Order order, long[]... to) {
-		return setData2(Arrays
-				.stream(to)
-				.map(
-						d -> Arrays.stream(d).mapToObj(e -> new LongValue(e))
-								.collect(Collectors.toList())).collect(Collectors.toList()));
-	}
-
-	public default S setData2(Order order, float[]... to) {
-		return setData2(order,
-				new ListTransformationView<float[], List<FloatValue>>(
-						Arrays.asList(to), input -> new FloatArrayListView<>(input,
-								FloatValueFactory.instance())));
-	}
-
-	public default S setData2(Order order, double[]... to) {
-		return setData2(
-				order,
-				new ListTransformationView<double[], List<DoubleValue>>(Arrays
-						.asList(to), input -> new DoubleArrayListView<>(input,
-						DoubleValueFactory.instance())));
+		return operateOnData((value, index) -> value.setValue(to[index]));
 	}
 
 	public default S setData2(int[]... to) {
-		return setData2(getOrder(), to);
+		return operateOnData2((value, i, j) -> value.setValue(to[i][j]));
 	}
 
 	public default S setData2(long[]... to) {
-		return setData2(getOrder(), to);
+		return operateOnData2((value, i, j) -> value.setValue(to[i][j]));
 	}
 
 	public default S setData2(float[]... to) {
-		return setData2(getOrder(), to);
+		return operateOnData2((value, i, j) -> value.setValue(to[i][j]));
 	}
 
 	public default S setData2(double[]... to) {
-		return setData2(getOrder(), to);
+		return operateOnData2((value, i, j) -> value.setValue(to[i][j]));
 	}
 
 	@SuppressWarnings("unchecked")
-	public default S setData2(boolean copyByReference, Order order,
-			Vector<?, V>... to) {
-		return setData2(copyByReference, order,
+	public default S setData2(boolean copyByReference, Vector<?, V>... to) {
+		return setData2(copyByReference,
 				new ListTransformationView<>(Arrays.asList(to), i -> i.getData()));
 	}
 
-	@SuppressWarnings("unchecked")
-	public default S setData2(boolean copyByReference, Vector<?, V>... values) {
-		return setData2(getOrder(), values);
-	}
-
-	public default S setData2(Order order, Vector<?, ?>... values) {
-		return setData2(order, new ListTransformationView<>(Arrays.asList(values),
+	public default S setData2(Vector<?, ?>... values) {
+		return setData2(new ListTransformationView<>(Arrays.asList(values),
 				i -> i.getData()));
 	}
 
-	public default S setData2(Vector<?, ?>... values) {
-		return setData2(getOrder(), values);
-	}
-
-	public default S setData2(Order order,
-			List<? extends List<? extends Value<?>>> to) {
-		return setData2(order, to,
-				(V assignee, Value<?> assignment) -> assignee.set(assignment));
-	}
-
 	public default S setData2(List<? extends List<? extends Value<?>>> to) {
-		return setData2(getOrder(), to);
-	}
-
-	public default S setData(Order order, List<? extends Value<?>> to) {
-		return setData(order, to,
-				(V assignee, Value<?> assignment) -> assignee.set(assignment));
+		return operateOnData2(to,
+				(assignee, assignment) -> assignee.set(assignment));
 	}
 
 	public default S setData(List<? extends Value<?>> to) {
-		return setData(getOrder(), to);
+		return operateOnData(to, (assignee, assignment) -> assignee.set(assignment));
 	}
 }

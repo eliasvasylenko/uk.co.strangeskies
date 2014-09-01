@@ -1,5 +1,6 @@
 package uk.co.strangeskies.mathematics.geometry.matrix.vector.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix;
@@ -14,27 +15,27 @@ public abstract class VectorHImpl<S extends VectorH<S, V>, V extends Value<V>>
 
 	public VectorHImpl(Type type, int size, Order order, Orientation orientation,
 			Factory<V> valueFactory) {
-		super(size, order, orientation, valueFactory);
+		super(size + 1, order, orientation, valueFactory);
+
+		getElement(size).setValue(type == Type.Relative ? 0 : 1);
 
 		this.type = type;
 	}
 
 	public VectorHImpl(Type type, Order order, Orientation orientation,
 			List<? extends V> values) {
-		super(order, orientation, values);
+		super(order, orientation, resizeColumnImplementation(type, values));
 
 		this.type = type;
 	}
 
-	@Override
-	protected void finalise() {
-		int size = getDimensions();
+	protected static <V extends Value<V>> List<V> resizeColumnImplementation(
+			Type type, List<? extends V> data) {
+		List<V> newData = new ArrayList<>(data);
 
-		resizeImplementation(size + 1);
+		newData.add(data.get(0).copy().setValue(type == Type.Relative ? 0 : 1));
 
-		getElement(size).setValue(1);
-
-		super.finalise();
+		return newData;
 	}
 
 	@Override
@@ -167,32 +168,33 @@ public abstract class VectorHImpl<S extends VectorH<S, V>, V extends Value<V>>
 
 	@Override
 	public final S multiply(Matrix<?, ?> other) {
-		List<Value<V>> multiplied = multiplyData(other.getData2());
+		List<List<Value<V>>> multiplied = Matrix.multiplyData(this,
+				other.getData2());
 
-		Value<V> lastElement = multiplied.get(getProjectedDimensions());
+		List<Value<V>> lastElements = multiplied.get(multiplied.size() - 1);
+		Value<V> lastElement = lastElements.get(lastElements.size() - 1);
 		if (!((lastElement.equals(0) && getType() == Type.Relative) || (lastElement
 				.equals(1) && getType() == Type.Absolute))) {
 			throw new IllegalArgumentException();
 		}
 
-		return setData(multiplied);
+		return setData2(multiplied);
 	}
 
 	@Override
 	public final S preMultiply(Matrix<?, ?> other) {
-		List<Value<V>> multiplied = preMultiplyData(other.getData2());
+		List<List<Value<V>>> multiplied = Matrix.preMultiplyData(this,
+				other.getData2());
 
-		Value<V> lastElement = multiplied.get(getProjectedDimensions());
+		List<Value<V>> lastElements = multiplied.get(multiplied.size() - 1);
+		Value<V> lastElement = lastElements.get(lastElements.size() - 1);
 		if (!((lastElement.equals(0) && getType() == Type.Relative) || (lastElement
 				.equals(1) && getType() == Type.Absolute))) {
 			throw new IllegalArgumentException();
 		}
 
-		return setData(multiplied);
+		return setData2(multiplied);
 	}
-
-	@Override
-	public abstract Vector<?, V> getMutableVector();
 
 	@Override
 	public final S translate(Vector<?, ?> translation) {

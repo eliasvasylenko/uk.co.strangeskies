@@ -20,7 +20,7 @@ public class MatrixNNImpl<V extends Value<V>> extends
 
 	@Override
 	public MatrixNN<V> getTransposed() {
-		return ((MatrixNNImpl<V>) copy()).transposeImplementation();
+		return copy().transpose();
 	}
 
 	@Override

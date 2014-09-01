@@ -24,19 +24,4 @@ public class Vector3Impl<V extends Value<V>> extends VectorImpl<Vector3<V>, V>
 	public Vector3<V> copy() {
 		return new Vector3Impl<V>(getOrder(), getOrientation(), getData());
 	}
-
-	@Override
-	public V getX() {
-		return getElement(0);
-	}
-
-	@Override
-	public V getY() {
-		return getElement(1);
-	}
-
-	@Override
-	public V getZ() {
-		return getElement(2);
-	}
 }

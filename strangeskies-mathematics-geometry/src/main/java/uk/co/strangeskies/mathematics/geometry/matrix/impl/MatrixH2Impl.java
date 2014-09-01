@@ -6,11 +6,11 @@ import java.util.List;
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix2;
 import uk.co.strangeskies.mathematics.geometry.matrix.MatrixH2;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
+import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector.Orientation;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector3;
-import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorH2;
-import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector.Orientation;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorH.Type;
+import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorH2;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.Vector3Impl;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.VectorH2Impl;
 import uk.co.strangeskies.mathematics.values.Value;
@@ -37,30 +37,10 @@ public class MatrixH2Impl<V extends Value<V>> extends
 	}
 
 	@Override
-	public MatrixH2<V> getPreRotated(Value<?> value) {
-		return copy().preRotate(value);
-	}
-
-	@Override
-	public MatrixH2<V> getPreRotated(Value<?> angle, Vector2<?> centre) {
-		return copy().preRotate(angle, centre);
-	}
-
-	@Override
-	public MatrixH2<V> getRotated(Value<?> angle) {
-		return copy().rotate(angle);
-	}
-
-	@Override
 	public MatrixH2<V> rotate(Value<?> angle) {
 		getTransformationMatrix().rotate(angle);
 
 		return getThis();
-	}
-
-	@Override
-	public MatrixH2<V> getRotated(Value<?> angle, Vector2<?> centre) {
-		return copy().rotate(angle, centre);
 	}
 
 	@Override

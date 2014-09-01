@@ -9,19 +9,35 @@ import uk.co.strangeskies.mathematics.values.Value;
 
 public interface Vector2<V extends Value<V>> extends Vector<Vector2<V>, V>,
 		Rotatable2<Vector2<V>> {
-	public V getX();
+	public default V getX() {
+		return getElement(0);
+	}
 
-	public V getY();
+	public default V getY() {
+		return getElement(1);
+	}
 
-	public Vector2<V> setData(Dimension dimension);
+	public default Vector2<V> setData(Dimension dimension) {
+		return setData(dimension.getWidth(), dimension.getHeight());
+	}
 
-	public Vector2<V> setData(Point point);
+	public default Vector2<V> setData(Point point) {
+		return setData(point.getX(), point.getY());
+	}
 
-	public Vector2<V> setData(Point2D point);
+	public default Vector2<V> setData(Point2D point) {
+		return setData(point.getX(), point.getY());
+	}
 
-	public Dimension getDimension();
+	public default Dimension getDimension() {
+		return new Dimension(getX().intValue(), getY().intValue());
+	}
 
-	public Point getPoint();
+	public default Point getPoint() {
+		return new Point(getX().intValue(), getY().intValue());
+	}
 
-	public Point2D getPoint2D();
+	public default Point2D getPoint2D() {
+		return new Point2D.Double(getX().doubleValue(), getY().doubleValue());
+	}
 }

@@ -136,9 +136,4 @@ public abstract class MatrixHImpl<S extends MatrixH<S, V>, V extends Value<V>>
 	public V getDeterminant() {
 		return MatrixSImpl.getDeterminant(this);
 	}
-
-	@Override
-	public S transpose() {
-		throw new UnsupportedOperationException();
-	}
 }

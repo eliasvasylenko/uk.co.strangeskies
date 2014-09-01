@@ -30,11 +30,6 @@ public abstract class MatrixSImpl<S extends MatrixS<S, V>, V extends Value<V>>
 	}
 
 	@Override
-	public final S transpose() {
-		return transposeImplementation();
-	}
-
-	@Override
 	public int getDimensions() {
 		return getMinorSize();
 	}

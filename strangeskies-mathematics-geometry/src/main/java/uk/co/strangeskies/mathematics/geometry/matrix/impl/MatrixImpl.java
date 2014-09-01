@@ -12,26 +12,24 @@ import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
 import uk.co.strangeskies.mathematics.geometry.DimensionalityException;
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
-import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector.Orientation;
-import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
-import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.Vector2Impl;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.VectorNImpl;
-import uk.co.strangeskies.mathematics.values.IntValue;
 import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.collection.MergeIndicesListView;
 import uk.co.strangeskies.utilities.collection.NullPointerInCollectionException;
 import uk.co.strangeskies.utilities.factory.Factory;
+import uk.co.strangeskies.utilities.function.TriFunction;
 import uk.co.strangeskies.utilities.function.collection.ListTransformationView;
 
 public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 		extends CompoundExpression<S> implements Matrix<S, V>,
 		CopyDecouplingExpression<S> {
-	private List<List<V>> data;
-
-	private Order order;
+	private final List<List<V>> data;
+	private final Order order;
 
 	/* All constructors must go through here */
 	private MatrixImpl(Order order) {
+		super(false);
+
 		if (order == null) {
 			throw new IllegalArgumentException(new NullPointerException());
 		}
@@ -121,12 +119,10 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 		return order;
 	}
 
-	/**
-	 * Not public by default, as we don't want e.g. a Matrix23 to be able to
-	 * transpose the data without also changing order such that it conceptually
-	 * remains a 2x3 matrix, as opposed to a 3x2 matrix.
-	 */
-	protected final S transposeImplementation() {
+	@Override
+	public final S transpose() {
+		Matrix.assertIsSquare(this);
+
 		List<List<V>> transposedData = new ArrayList<List<V>>();
 		for (int i = 0; i < getMajorSize(); i++) {
 			List<V> elements = new ArrayList<V>();
@@ -141,17 +137,6 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 		update();
 
 		return getThis();
-	}
-
-	/**
-	 * Get the dimensions as: [columns, rows].
-	 *
-	 * @return A vector representing the current dimensions.
-	 */
-	@Override
-	public Vector2<IntValue> getDimensions2() {
-		return new Vector2Impl<IntValue>(Order.ColumnMajor, Orientation.Column,
-				IntValue.factory()).setData(getRowSize(), getColumnSize());
 	}
 
 	@Override
@@ -258,7 +243,8 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 			return false;
 		}
 
-		boolean equalOrder = getOrder().equals(thatMatrix.getOrder());
+		if (!getOrder().equals(thatMatrix.getOrder()))
+			return withOrder(thatMatrix.getOrder()).equals(thatMatrix);
 
 		List<? extends List<? extends Value<?>>> thoseElements = thatMatrix
 				.getData2();
@@ -266,15 +252,8 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 		for (List<V> elements : data) {
 			int j = 0;
 			for (V element : elements) {
-				boolean equalElement;
-				if (equalOrder) {
-					equalElement = element.equals(thoseElements.get(i).get(j));
-				} else {
-					equalElement = element.equals(thoseElements.get(j).get(i));
-				}
-				if (!equalElement) {
+				if (!element.equals(thoseElements.get(i).get(j)))
 					return false;
-				}
 
 				j++;
 			}
@@ -299,18 +278,15 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 		if (comparison != 0)
 			return comparison;
 
-		boolean equalOrder = getOrder().equals(other.getOrder());
+		if (!getOrder().equals(other.getOrder()))
+			return withOrder(other.getOrder()).compareTo(other);
 
 		List<? extends List<? extends Value<?>>> thoseElements = other.getData2();
 		int i = 0;
 		for (List<V> elements : data) {
 			int j = 0;
 			for (V element : elements) {
-				if (equalOrder) {
-					comparison = element.compareTo(thoseElements.get(i).get(j));
-				} else {
-					comparison = element.compareTo(thoseElements.get(j).get(i));
-				}
+				comparison = element.compareTo(thoseElements.get(i).get(j));
 				if (comparison != 0)
 					return comparison;
 
@@ -324,360 +300,8 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 	}
 
 	@Override
-	public final int[] getData(int[] dataArray, Order order) {
-		try {
-			if (dataArray == null || order == null) {
-				throw new NullPointerException();
-			}
-
-			DimensionalityException.checkEquivalence(getDimensions2().getX()
-					.getMultiplied(getDimensions2().getY()).intValue(), dataArray.length);
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e);
-		}
-
-		if (order == getOrder()) {
-			int i = 0;
-			for (List<V> elements : data) {
-				for (V element : elements) {
-					dataArray[i++] = element.intValue();
-				}
-			}
-		} else {
-			int i = 0;
-			for (List<V> elements : data) {
-				int j = 0;
-				for (V element : elements) {
-					dataArray[i + j] = element.intValue();
-					j += data.size();
-				}
-				i++;
-			}
-		}
-
-		return dataArray;
-	}
-
-	@Override
-	public final long[] getData(long[] dataArray, Order order) {
-		try {
-			if (dataArray == null || order == null) {
-				throw new NullPointerException();
-			}
-
-			DimensionalityException.checkEquivalence(getDimensions2().getX()
-					.getMultiplied(getDimensions2().getY()).intValue(), dataArray.length);
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e);
-		}
-
-		if (order == getOrder()) {
-			int i = 0;
-			for (List<V> elements : data) {
-				for (V element : elements) {
-					dataArray[i++] = element.longValue();
-				}
-			}
-		} else {
-			int i = 0;
-			for (List<V> elements : data) {
-				int j = 0;
-				for (V element : elements) {
-					dataArray[i + j] = element.longValue();
-					j += data.size();
-				}
-				i++;
-			}
-		}
-
-		return dataArray;
-	}
-
-	@Override
-	public final float[] getData(float[] dataArray, Order order) {
-		try {
-			if (dataArray == null || order == null) {
-				throw new NullPointerException();
-			}
-
-			DimensionalityException.checkEquivalence(getDimensions2().getX()
-					.getMultiplied(getDimensions2().getY()).intValue(), dataArray.length);
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e);
-		}
-
-		if (order == getOrder()) {
-			int i = 0;
-			for (List<V> elements : data) {
-				for (V element : elements) {
-					dataArray[i++] = element.floatValue();
-				}
-			}
-		} else {
-			int i = 0;
-			for (List<V> elements : data) {
-				int j = 0;
-				for (V element : elements) {
-					dataArray[i + j] = element.floatValue();
-					j += data.size();
-				}
-				i++;
-			}
-		}
-
-		return dataArray;
-	}
-
-	@Override
-	public final double[] getData(double[] dataArray, Order order) {
-		try {
-			if (dataArray == null || order == null) {
-				throw new NullPointerException();
-			}
-
-			DimensionalityException.checkEquivalence(getDimensions2().getX()
-					.getMultiplied(getDimensions2().getY()).intValue(), dataArray.length);
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e);
-		}
-
-		if (order == getOrder()) {
-			int i = 0;
-			for (List<V> elements : data) {
-				for (V element : elements) {
-					dataArray[i++] = element.doubleValue();
-				}
-			}
-		} else {
-			int i = 0;
-			for (List<V> elements : data) {
-				int j = 0;
-				for (V element : elements) {
-					dataArray[i + j] = element.doubleValue();
-					j += data.size();
-				}
-				i++;
-			}
-		}
-
-		return dataArray;
-	}
-
-	@Override
 	protected final S evaluate() {
 		return getThis();
-	}
-
-	@Override
-	public final int[][] getData2(int[][] dataArray, Order order) {
-		try {
-			if (dataArray == null || order == null) {
-				throw new NullPointerException();
-			}
-			NullPointerInCollectionException.checkList(dataArray);
-
-			int majorSize;
-			int minorSize;
-
-			if (order == getOrder()) {
-				majorSize = getMajorSize();
-				minorSize = getMinorSize();
-			} else {
-				majorSize = getMinorSize();
-				minorSize = getMajorSize();
-			}
-
-			DimensionalityException.checkEquivalence(minorSize, dataArray.length);
-			for (int major = 0; major < minorSize; major++) {
-				DimensionalityException.checkEquivalence(majorSize,
-						dataArray[major].length);
-			}
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e);
-		}
-
-		if (order == getOrder()) {
-			int i = 0;
-			for (List<V> major : data) {
-				int j = 0;
-				for (V element : major) {
-					dataArray[i][j] = element.intValue();
-					j++;
-				}
-				i++;
-			}
-		} else {
-			int i = 0;
-			for (List<V> major : data) {
-				int j = 0;
-				for (V element : major) {
-					dataArray[j][i] = element.intValue();
-					j++;
-				}
-				i++;
-			}
-		}
-
-		return dataArray;
-	}
-
-	@Override
-	public final long[][] getData2(long[][] dataArray, Order order) {
-		try {
-			if (dataArray == null || order == null) {
-				throw new NullPointerException();
-			}
-			NullPointerInCollectionException.checkList(dataArray);
-
-			int majorSize;
-			int minorSize;
-
-			if (order == getOrder()) {
-				majorSize = getMajorSize();
-				minorSize = getMinorSize();
-			} else {
-				majorSize = getMinorSize();
-				minorSize = getMajorSize();
-			}
-
-			DimensionalityException.checkEquivalence(minorSize, dataArray.length);
-			for (int major = 0; major < minorSize; major++) {
-				DimensionalityException.checkEquivalence(majorSize,
-						dataArray[major].length);
-			}
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e);
-		}
-
-		if (order == getOrder()) {
-			int i = 0;
-			for (List<V> major : data) {
-				int j = 0;
-				for (V element : major) {
-					dataArray[i][j] = element.longValue();
-					j++;
-				}
-				i++;
-			}
-		} else {
-			int i = 0;
-			for (List<V> major : data) {
-				int j = 0;
-				for (V element : major) {
-					dataArray[j][i] = element.longValue();
-					j++;
-				}
-				i++;
-			}
-		}
-
-		return dataArray;
-	}
-
-	@Override
-	public final float[][] getData2(float[][] dataArray, Order order) {
-		try {
-			if (dataArray == null || order == null) {
-				throw new NullPointerException();
-			}
-			NullPointerInCollectionException.checkList(dataArray);
-
-			int majorSize;
-			int minorSize;
-
-			if (order == getOrder()) {
-				majorSize = getMajorSize();
-				minorSize = getMinorSize();
-			} else {
-				majorSize = getMinorSize();
-				minorSize = getMajorSize();
-			}
-
-			DimensionalityException.checkEquivalence(minorSize, dataArray.length);
-			for (int major = 0; major < minorSize; major++) {
-				DimensionalityException.checkEquivalence(majorSize,
-						dataArray[major].length);
-			}
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e);
-		}
-
-		if (order == getOrder()) {
-			int i = 0;
-			for (List<V> major : data) {
-				int j = 0;
-				for (V element : major) {
-					dataArray[i][j] = element.floatValue();
-					j++;
-				}
-				i++;
-			}
-		} else {
-			int i = 0;
-			for (List<V> major : data) {
-				int j = 0;
-				for (V element : major) {
-					dataArray[j][i] = element.floatValue();
-					j++;
-				}
-				i++;
-			}
-		}
-
-		return dataArray;
-	}
-
-	@Override
-	public final double[][] getData2(double[][] dataArray, Order order) {
-		try {
-			if (dataArray == null || order == null) {
-				throw new NullPointerException();
-			}
-			NullPointerInCollectionException.checkList(dataArray);
-
-			int majorSize;
-			int minorSize;
-
-			if (order == getOrder()) {
-				majorSize = getMajorSize();
-				minorSize = getMinorSize();
-			} else {
-				majorSize = getMinorSize();
-				minorSize = getMajorSize();
-			}
-
-			DimensionalityException.checkEquivalence(minorSize, dataArray.length);
-			for (int major = 0; major < minorSize; major++) {
-				DimensionalityException.checkEquivalence(majorSize,
-						dataArray[major].length);
-			}
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e);
-		}
-
-		if (order == getOrder()) {
-			int i = 0;
-			for (List<V> major : data) {
-				int j = 0;
-				for (V element : major) {
-					dataArray[i][j] = element.doubleValue();
-					j++;
-				}
-				i++;
-			}
-		} else {
-			int i = 0;
-			for (List<V> major : data) {
-				int j = 0;
-				for (V element : major) {
-					dataArray[j][i] = element.doubleValue();
-					j++;
-				}
-				i++;
-			}
-		}
-
-		return dataArray;
 	}
 
 	@Override
@@ -686,125 +310,43 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 	}
 
 	@Override
-	public final <I> S operateOnData(Order order, List<? extends I> itemList,
-			BiFunction<? super V, ? super I, ? extends V> operator) {
-		try {
-			if (operator == null || order == null || itemList == null) {
-				throw new NullPointerException();
-			}
-
-			DimensionalityException.checkEquivalence(getMajorSize() * getMinorSize(),
-					itemList.size());
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e);
-		}
-
-		getDependencies().clear();
-
-		if (order == this.getOrder()) {
-			Iterator<? extends I> itemIterator = itemList.iterator();
-
-			for (List<V> major : data) {
-				for (V element : major) {
-					element = operator.apply(element, itemIterator.next());
-				}
-			}
-		} else {
-			int i = 0;
-			for (List<V> major : data) {
-				int j = 0;
-				for (V element : major) {
-					element = operator.apply(element,
-							itemList.get(i + j * getMajorSize()));
-					j++;
-				}
-				i++;
-			}
-		}
-
-		getDependencies().addAll(getData());
-
-		return getThis();
-	}
-
-	@Override
-	public final <I> S operateOnData2(Order order,
-			List<? extends List<? extends I>> itemList,
-			BiFunction<? super V, ? super I, ? extends V> operator) {
-		try {
-			if (operator == null || order == null || itemList == null) {
-				throw new NullPointerException();
-			}
-
-			int majorSize;
-			int minorSize;
-
-			if (order == getOrder()) {
-				majorSize = getMajorSize();
-				minorSize = getMinorSize();
-			} else {
-				majorSize = getMinorSize();
-				minorSize = getMajorSize();
-			}
-
-			DimensionalityException.checkEquivalence(minorSize, itemList.size());
-			for (int major = 0; major < minorSize; major++) {
-				DimensionalityException.checkEquivalence(majorSize, itemList.get(major)
-						.size());
-			}
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e);
-		}
-
-		getDependencies().clear();
-
-		if (order == this.getOrder()) {
-			Iterator<? extends List<? extends I>> itemListIterator = itemList
-					.iterator();
-
-			for (List<V> major : data) {
-				Iterator<? extends I> itemIterator = itemListIterator.next().iterator();
-
-				for (V element : major) {
-					element = operator.apply(element, itemIterator.next());
-				}
-			}
-		} else {
-			int i = 0;
-			for (List<V> major : data) {
-				int j = 0;
-				for (V element : major) {
-					element = operator.apply(element, itemList.get(j).get(i));
-					j++;
-				}
-				i++;
-			}
-		}
-
-		getDependencies().addAll(getData());
-
-		return getThis();
-	}
-
-	@Override
 	public final S operateOnData(Function<? super V, ? extends V> operator) {
-		try {
-			if (operator == null) {
-				throw new NullPointerException();
-			}
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e);
-		}
+		for (List<V> major : data)
+			for (V element : major)
+				element = operator.apply(element);
 
-		getDependencies().clear();
+		getDependencies().set(getData());
 
+		return getThis();
+	}
+
+	@Override
+	public final S operateOnData(
+			BiFunction<? super V, Integer, ? extends V> operator) {
+		int i = 0;
+		for (List<V> elements : data)
+			for (V element : elements)
+				element = operator.apply(element, i++);
+
+		getDependencies().set(getData());
+
+		return getThis();
+	}
+
+	@Override
+	public final S operateOnData2(
+			TriFunction<? super V, Integer, Integer, ? extends V> operator) {
+		int i = 0;
+		int j = 0;
 		for (List<V> major : data) {
 			for (V element : major) {
-				element = operator.apply(element);
+				element = operator.apply(element, i, j);
+				j++;
 			}
+			i++;
 		}
 
-		getDependencies().addAll(getData());
+		getDependencies().set(getData());
 
 		return getThis();
 	}
