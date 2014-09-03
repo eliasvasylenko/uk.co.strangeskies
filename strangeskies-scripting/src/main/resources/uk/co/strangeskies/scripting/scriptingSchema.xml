@@ -1,0 +1,18 @@
+<?xml version="1.0" ?>
+<schema name="s:scripting"
+	xmlns="http://schema.modabi.strangeskies.co.uk/2014-01-01/" xmlns:s="http://scripting.strangeskies.co.uk/2014-01-01/">
+	<models>
+		<model name="s:script">
+			<choice>
+				<sequence name="s:file">
+					<property name="s:language" optional="true" type="string" />
+					<property name="file" type="file" />
+				</sequence>
+				<sequence name="s:inline">
+					<property name="s:language" type="string" />
+					<content type="string" />
+				</sequence>
+			</choice>
+		</model>
+	</models>
+</schema>
