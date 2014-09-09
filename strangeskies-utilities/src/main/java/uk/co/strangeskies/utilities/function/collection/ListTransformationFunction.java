@@ -21,7 +21,7 @@ public class ListTransformationFunction<F, T> extends
 	}
 
 	public static <X, Y> List<Y> apply(Collection<? extends X> collection,
-			Function<? super X, ? extends Y> function) {
+			Function<? super X, Y> function) {
 		return new ListTransformationFunction<X, Y>(function).apply(collection);
 	}
 
