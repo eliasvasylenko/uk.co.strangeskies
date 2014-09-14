@@ -32,11 +32,12 @@ public class MultiException extends RuntimeException {
 
 	@Override
 	public void printStackTrace(PrintWriter output) {
-		super.printStackTrace();
+		super.printStackTrace(output);
 		int i = 0;
 		for (Throwable cause : causes) {
-			output.println("Cased by (" + i++ + " of " + causes.size() + "):");
+			output.println("Caused by (" + ++i + " of " + causes.size() + "):");
 			cause.printStackTrace(output);
+			output.flush();
 		}
 	}
 }
