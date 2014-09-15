@@ -179,6 +179,8 @@ public class Range<T> implements Self<Range<T>>, Copyable<Range<T>> {
 	}
 
 	public boolean isValueBelow(T value) {
+		if (from == null)
+			return false;
 		if (fromInclusive) {
 			return comparator.compare(value, from) < 0;
 		} else {
@@ -187,6 +189,8 @@ public class Range<T> implements Self<Range<T>>, Copyable<Range<T>> {
 	}
 
 	public boolean isValueAbove(T value) {
+		if (to == null)
+			return false;
 		if (toInclusive) {
 			return comparator.compare(value, to) > 0;
 		} else {
@@ -195,6 +199,8 @@ public class Range<T> implements Self<Range<T>>, Copyable<Range<T>> {
 	}
 
 	public boolean isValueBelow(Comparable<? super T> value) {
+		if (from == null)
+			return false;
 		if (fromInclusive) {
 			return value.compareTo(from) < 0;
 		} else {
@@ -203,6 +209,8 @@ public class Range<T> implements Self<Range<T>>, Copyable<Range<T>> {
 	}
 
 	public boolean isValueAbove(Comparable<? super T> value) {
+		if (to == null)
+			return false;
 		if (toInclusive) {
 			return value.compareTo(to) > 0;
 		} else {
