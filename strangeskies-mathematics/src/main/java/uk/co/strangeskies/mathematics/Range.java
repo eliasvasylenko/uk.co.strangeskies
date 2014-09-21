@@ -36,12 +36,14 @@ public class Range<T> implements Self<Range<T>>, Copyable<Range<T>> {
 	}
 
 	public static Range<Integer> parse(String range) {
-		String[] splitRange = range.split("..");
+		String[] splitRange = range.split("\\.\\.", -1);
 		if (splitRange.length != 2)
 			throw new IllegalArgumentException();
 		try {
-			Integer from = Integer.parseInt(splitRange[0]);
-			Integer to = Integer.parseInt(splitRange[1]);
+			Integer from = splitRange[0].equals("") ? null : Integer
+					.parseInt(splitRange[0]);
+			Integer to = splitRange[1].equals("") ? null : Integer
+					.parseInt(splitRange[1]);
 			return create(from, to);
 		} catch (Exception e) {
 			throw new IllegalArgumentException(e);
