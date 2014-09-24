@@ -48,14 +48,16 @@ public class MultiException extends RuntimeException {
 
 	@Override
 	public void printStackTrace(PrintStream output) {
-		printStackTrace(new PrintWriter(output));
+		PrintWriter writer = new PrintWriter(output);
+		printStackTrace(writer);
 	}
 
 	@Override
 	public void printStackTrace(PrintWriter output) {
 		super.printStackTrace(output);
-		for (int i = 2; i <= causes.size(); i++) {
-			output.println("Caused by (" + i + " of " + causes.size() + "):");
+		output.flush();
+		for (int i = 1; i < causes.size(); i++) {
+			output.println("Caused by (" + (i + 1) + " of " + causes.size() + "):");
 			causes.get(i).printStackTrace(output);
 			output.flush();
 		}
