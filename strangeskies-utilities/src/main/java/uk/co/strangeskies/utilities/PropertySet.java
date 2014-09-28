@@ -54,9 +54,6 @@ public class PropertySet<T> {
 		if (!objectClass.isInstance(object))
 			return false;
 
-		if (hashCode != null && !hashCode.equals(object.hashCode()))
-			return false;
-
 		@SuppressWarnings("unchecked")
 		T thatObject = (T) object;
 		return properties.stream().allMatch(
@@ -69,6 +66,10 @@ public class PropertySet<T> {
 		else
 			return properties.stream().map(p -> Objects.hashCode(p.apply(object)))
 					.reduce(0, (a, b) -> a ^ b);
+	}
+
+	public Class<T> objectClass() {
+		return objectClass;
 	}
 
 	public List<Object> values() {

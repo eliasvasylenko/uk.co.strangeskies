@@ -1,6 +1,7 @@
 package uk.co.strangeskies.mathematics;
 
 import java.util.Comparator;
+import java.util.Objects;
 
 import uk.co.strangeskies.utilities.Copyable;
 import uk.co.strangeskies.utilities.NaturalComparator;
@@ -318,5 +319,25 @@ public class Range<T> implements Self<Range<T>>, Copyable<Range<T>> {
 
 	public Range<T> reversed() {
 		return new Range<T>(getTo(), getFrom(), getComparator().reversed());
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof Range))
+			return false;
+		if (obj == this)
+			return true;
+
+		Range<?> otherRange = (Range<?>) obj;
+
+		return Objects.equals(from, otherRange.from)
+				&& Objects.equals(to, otherRange.to)
+				&& Objects.equals(toInclusive, otherRange.toInclusive)
+				&& Objects.equals(fromInclusive, otherRange.fromInclusive);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(from) ^ Objects.hash(to);
 	}
 }

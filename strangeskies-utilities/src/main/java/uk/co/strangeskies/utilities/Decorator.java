@@ -31,4 +31,14 @@ public abstract class Decorator<T> {
 	public String toString() {
 		return getComponent().toString();
 	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return getComponent().equals(obj);
+	}
+
+	@Override
+	public int hashCode() {
+		return getComponent().hashCode();
+	}
 }
