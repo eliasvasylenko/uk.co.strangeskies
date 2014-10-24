@@ -62,6 +62,12 @@ public class Range<T> implements Self<Range<T>>, Copyable<Range<T>> {
 		return from + ".." + to;
 	}
 
+	@Override
+	public String toString() {
+		return (fromInclusive ? "[" : "(") + (from != null ? from : "") + ","
+				+ (to != null ? to : "") + (toInclusive ? "]" : ")");
+	}
+
 	public T getFrom() {
 		return from;
 	}
