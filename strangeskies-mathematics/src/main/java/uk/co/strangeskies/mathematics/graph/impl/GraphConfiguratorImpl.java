@@ -83,6 +83,8 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 				this.addVertex = addVertex;
 			}
 
+			// TODO this obviously doesn't work for immutable graphs, should be simple
+			// fix.
 			addVertices(configurator.vertices);
 		}
 

@@ -1,6 +1,7 @@
 package uk.co.strangeskies.mathematics.geometry.matrix;
 
 import java.util.AbstractList;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -80,7 +81,10 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 	 * @return
 	 */
 	public default Matrix<?, V> withOrder(Order order) {
-		return new ReOrderedMatrix<V>(this);
+		if (order == getOrder())
+			return this;
+		else
+			return new ReOrderedMatrix<V>(this);
 	}
 
 	public Vector<?, V> getMajorVector(int index);
@@ -177,7 +181,23 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 	public S transpose();
 
 	public default Matrix<?, V> getTransposed() {
-		return new MatrixNImpl<V>(getOrder(), getData2()).transpose();
+		return new MatrixNImpl<V>(getOrder(), transposeData(getData2()));
+	}
+
+	public static <V extends Value<V>> List<List<V>> transposeData(
+			List<List<V>> data) {
+		int majorSize = data.get(0).size();
+		int minorSize = data.size();
+
+		List<List<V>> transposedData = new ArrayList<List<V>>();
+		for (int i = 0; i < majorSize; i++) {
+			List<V> elements = new ArrayList<V>();
+			transposedData.add(elements);
+			for (int j = 0; j < minorSize; j++) {
+				elements.add(data.get(j).get(i));
+			}
+		}
+		return transposedData;
 	}
 
 	public default int getDataSize() {

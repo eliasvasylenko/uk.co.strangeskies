@@ -1,7 +1,9 @@
 package uk.co.strangeskies.utilities.flowcontrol;
 
+import java.util.AbstractSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -37,7 +39,7 @@ public class FutureMap<K, V> implements ComputingMap<K, V> {
 					values.put(key, value);
 			}
 		};
-		mapping = k -> values.get(k);
+		mapping = values::get;
 	}
 
 	public boolean put(final K key) {
@@ -45,24 +47,71 @@ public class FutureMap<K, V> implements ComputingMap<K, V> {
 			if (preparationThreads.containsKey(key))
 				return false;
 
-			Thread thread = new Thread() {
-				@Override
-				public void run() {
-					prepare.accept(key);
-				}
-			};
+			Thread thread = new Thread(() -> prepare.accept(key));
 			thread.start();
 			preparationThreads.put(key, thread);
-			preparationThreads.notifyAll();
 
 			return true;
 		}
 	}
 
 	public V get(K key) {
+		synchronized (preparationThreads) {
+			if (!preparationThreads.containsKey(key))
+				return null;
+		}
+
 		wait(key);
 
-		return mapping.apply(key);
+		synchronized (preparationThreads) {
+			if (!preparationThreads.containsKey(key))
+				return null;
+			return mapping.apply(key);
+		}
+	}
+
+	public V putGet(K key) {
+		V value = get(key);
+		while (value == null) {
+			put(key);
+			value = get(key);
+		}
+		return value;
+	}
+
+	@Override
+	public Set<K> keySet() {
+		return new AbstractSet<K>() {
+			Set<K> baseSet = preparationThreads.keySet();
+
+			@Override
+			public Iterator<K> iterator() {
+				Iterator<K> baseIterator = baseSet.iterator();
+				return new Iterator<K>() {
+					private K last;
+
+					@Override
+					public boolean hasNext() {
+						return baseIterator.hasNext();
+					}
+
+					@Override
+					public K next() {
+						return last = baseIterator.next();
+					}
+
+					public void remove() {
+						FutureMap.this.wait(last);
+						baseIterator.remove();
+					}
+				};
+			}
+
+			@Override
+			public int size() {
+				return baseSet.size();
+			}
+		};
 	}
 
 	@Override
@@ -71,29 +120,25 @@ public class FutureMap<K, V> implements ComputingMap<K, V> {
 			if (!preparationThreads.containsKey(key))
 				return false;
 
-			wait(key);
 			preparationThreads.remove(key).interrupt();
 
 			return true;
 		}
 	}
 
-	private void wait(K key) {
+	private boolean wait(K key) {
 		Thread thread;
 		synchronized (preparationThreads) {
-			while (!preparationThreads.containsKey(key)) {
-				try {
-					preparationThreads.wait();
-					preparationThreads.notifyAll();
-				} catch (InterruptedException e) {
-				}
-			}
 			thread = preparationThreads.get(key);
 		}
+
+		if (thread == null)
+			return false;
+
 		while (true) {
 			try {
 				thread.join();
-				break;
+				return true;
 			} catch (InterruptedException e) {
 			}
 		}
@@ -103,22 +148,34 @@ public class FutureMap<K, V> implements ComputingMap<K, V> {
 		synchronized (preparationThreads) {
 			if (preparationThreads.isEmpty())
 				return false;
+		}
 
-			waitForAll();
+		waitForAll();
+
+		synchronized (preparationThreads) {
 			preparationThreads.clear();
-
 			return true;
 		}
 	}
 
 	public void waitForAll() {
-		Set<K> keys = new HashSet<>();
-		synchronized (preparationThreads) {
-			keys.addAll(preparationThreads.keySet());
-		}
-		for (K key : keys) {
-			wait(key);
-		}
+		Set<K> done = new HashSet<>();
+		Set<K> remaining;
+
+		boolean finished;
+		do {
+			synchronized (preparationThreads) {
+				remaining = new HashSet<>(preparationThreads.keySet());
+			}
+
+			for (K key : remaining)
+				if (done.add(key))
+					wait(key);
+
+			synchronized (preparationThreads) {
+				finished = done.containsAll(preparationThreads.keySet());
+			}
+		} while (!finished);
 	}
 
 	public synchronized Set<K> getKeys() {

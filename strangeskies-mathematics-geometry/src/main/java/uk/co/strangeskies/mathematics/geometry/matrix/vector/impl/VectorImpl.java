@@ -11,12 +11,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import uk.co.strangeskies.mathematics.expression.CompoundExpression;
-import uk.co.strangeskies.mathematics.expression.ConditionalExpression;
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
-import uk.co.strangeskies.mathematics.expression.Expression;
-import uk.co.strangeskies.mathematics.expression.FunctionExpression;
-import uk.co.strangeskies.mathematics.expression.IdentityExpression;
-import uk.co.strangeskies.mathematics.expression.collection.ListExpressionView;
 import uk.co.strangeskies.mathematics.geometry.DimensionalityException;
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
@@ -47,9 +42,8 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 
 	private WeakReference<List<List<V>>> data2Reference;
 
-	private IdentityExpression<Orientation> orientation;
+	private Orientation orientation;
 
-	/* All constructors must go through here */
 	private VectorImpl(Order order, Orientation orientation) {
 		super(false);
 
@@ -61,7 +55,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 		data2Reference = new WeakReference<List<List<V>>>(null);
 
 		this.order = order;
-		this.orientation = new IdentityExpression<>(orientation);
+		this.orientation = orientation;
 	}
 
 	public VectorImpl(int size, Order order, Orientation orientation,
@@ -105,11 +99,6 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 		}
 
 		getDependencies().addAll(getData());
-	}
-
-	@Override
-	public final S transpose() {
-		return transposeImplementation();
 	}
 
 	@Override
@@ -277,34 +266,13 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 		}
 	}
 
-	protected final S transposeImplementation() {
-		if (getOrientation() == Orientation.Column) {
-			setOrientationImplementation(Orientation.Row);
-		} else {
-			setOrientationImplementation(Orientation.Column);
-		}
-
-		return getThis();
-	}
-
 	@Override
 	public final Order getOrder() {
 		return order;
 	}
 
-	protected final S setOrientationImplementation(Orientation orientation) {
-		this.orientation.set(orientation);
-
-		return getThis();
-	}
-
 	@Override
 	public final Orientation getOrientation() {
-		return orientation.getValue();
-	}
-
-	@Override
-	public final IdentityExpression<Orientation> getOrientationExpression() {
 		return orientation;
 	}
 
@@ -328,53 +296,42 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 		List<List<V>> data2 = data2Reference.get();
 
 		if (data2 == null) {
-			Expression</* @ReadOnly */Boolean> isOrientationAlignedWithOrder = new FunctionExpression<Orientation, Boolean>(
-					getOrientationExpression(),
-					orientation -> order == orientation.getAssociatedOrder());
-
-			List<? extends List<V>> aligned = new AbstractList<List<V>>() {
-				@Override
-				public List<V> get(int index) {
-					if (index != 0) {
-						throw new ArrayIndexOutOfBoundsException();
+			if (order != orientation.getAssociatedOrder())
+				data2 = new AbstractList<List<V>>() {
+					@Override
+					public List<V> get(int index) {
+						if (index != 0) {
+							throw new ArrayIndexOutOfBoundsException();
+						}
+						return data;
 					}
-					return data;
-				}
 
-				@Override
-				public int size() {
-					return 1;
-				}
-			};
-
-			List<? extends List<V>> notAligned = new ListTransformOnceView<>(data,
-					input -> new AbstractList<V>() {
-						@Override
-						public V get(int index) {
-							if (index != 0) {
-								throw new ArrayIndexOutOfBoundsException();
+					@Override
+					public int size() {
+						return 1;
+					}
+				};
+			else
+				data2 = new ListTransformOnceView<>(data,
+						input -> new AbstractList<V>() {
+							@Override
+							public V get(int index) {
+								if (index != 0) {
+									throw new ArrayIndexOutOfBoundsException();
+								}
+								return input;
 							}
-							return input;
-						}
 
-						@Override
-						public int size() {
-							return 1;
-						}
-					});
-
-			data2 = new ListExpressionView<>(new ConditionalExpression<>(
-					isOrientationAlignedWithOrder, aligned, notAligned));
+							@Override
+							public int size() {
+								return 1;
+							}
+						});
 
 			data2Reference = new WeakReference<>(data2);
 		}
 
 		return data2;
-	}
-
-	@Override
-	public final S setOrientation(Orientation orientation) {
-		return setOrientationImplementation(orientation);
 	}
 
 	@Override

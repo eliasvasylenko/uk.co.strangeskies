@@ -123,14 +123,7 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 	public final S transpose() {
 		Matrix.assertIsSquare(this);
 
-		List<List<V>> transposedData = new ArrayList<List<V>>();
-		for (int i = 0; i < getMajorSize(); i++) {
-			List<V> elements = new ArrayList<V>();
-			transposedData.add(elements);
-			for (int j = 0; j < getMinorSize(); j++) {
-				elements.add(data.get(j).get(i));
-			}
-		}
+		List<List<V>> transposedData = Matrix.transposeData(data);
 		data.clear();
 		data.addAll(transposedData);
 

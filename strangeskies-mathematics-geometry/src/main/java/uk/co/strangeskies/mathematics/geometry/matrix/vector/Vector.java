@@ -1,6 +1,5 @@
 package uk.co.strangeskies.mathematics.geometry.matrix.vector;
 
-import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.mathematics.geometry.Translatable;
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix;
 import uk.co.strangeskies.mathematics.values.DoubleValue;
@@ -38,15 +37,14 @@ public interface Vector<S extends Vector<S, V>, V extends Value<V>> extends
 		public abstract Orientation getOther();
 	}
 
-	public S transpose();
-
-	public S setOrientation(Orientation orientation);
+	public default S transpose() {
+		Matrix.assertIsSquare(this);
+		return null;
+	}
 
 	public int getDimensions();
 
 	public Orientation getOrientation();
-
-	public Expression<Orientation> getOrientationExpression();
 
 	public V getElement(int index);
 

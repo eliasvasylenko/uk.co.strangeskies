@@ -7,7 +7,7 @@ import java.util.Map;
 public interface MultiMap<K, V, C extends Collection<V>> extends Map<K, C> {
 	public C createCollection();
 
-	public default boolean add(K key, V value) {
+	public default C getCollection(K key) {
 		C values = get(key);
 
 		if (values == null) {
@@ -15,18 +15,15 @@ public interface MultiMap<K, V, C extends Collection<V>> extends Map<K, C> {
 			put(key, values);
 		}
 
-		return values.add(value);
+		return values;
+	}
+
+	public default boolean add(K key, V value) {
+		return getCollection(key).add(value);
 	}
 
 	public default boolean addAll(K key, Collection<? extends V> values) {
-		C currentValues = get(key);
-
-		if (currentValues == null) {
-			currentValues = createCollection();
-			put(key, currentValues);
-		}
-
-		return currentValues.addAll(values);
+		return getCollection(key).addAll(values);
 	}
 
 	public default boolean addAll(K key,

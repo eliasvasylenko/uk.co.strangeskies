@@ -1,5 +1,7 @@
 package uk.co.strangeskies.utilities.collection;
 
+import java.util.Set;
+
 /**
  * Conceptually, this map behaves much like an ordinary map other than the
  * semantics of putting a key value pair into the map. A ComputingMap is
@@ -67,6 +69,8 @@ public interface ComputingMap<K, V> {
 		}
 		return value;
 	}
+
+	Set<K> keySet();
 
 	/**
 	 * Remove the given key and it's associated computed value from the map.
