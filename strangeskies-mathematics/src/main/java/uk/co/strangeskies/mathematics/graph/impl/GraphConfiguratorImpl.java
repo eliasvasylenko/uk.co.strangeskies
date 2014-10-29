@@ -1,10 +1,12 @@
 package uk.co.strangeskies.mathematics.graph.impl;
 
+import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -25,24 +27,94 @@ import uk.co.strangeskies.utilities.IdentityComparator;
 import uk.co.strangeskies.utilities.collection.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.MultiMap;
 import uk.co.strangeskies.utilities.collection.MultiTreeMap;
+import uk.co.strangeskies.utilities.collection.SetDecorator;
 import uk.co.strangeskies.utilities.factory.Configurator;
 import uk.co.strangeskies.utilities.function.Functions;
 
 public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 		implements GraphConfigurator<V, E> {
-	private static class ModifiableGraphImpl<V, E> implements Graph<V, E> {
+	private static class GraphImpl<V, E> implements Graph<V, E> {
+		private class VerticesImpl extends SetDecorator<V> implements Vertices<V> {
+			public VerticesImpl() {
+				super(adjacencyMatrix.keySet());
+			}
+
+			@Override
+			public Set<V> adjacentTo(V vertex) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public Set<V> outgoingFrom(V vertex) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public Set<V> incomingTo(V vertex) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+		}
+
+		private class EdgesImpl extends TreeMap<E, EdgeVertices<V>> implements
+				Edges<E, V> {
+			private static final long serialVersionUID = 1L;
+
+			public EdgesImpl() {
+				super(new IdentityComparator<>());
+			}
+
+			@Override
+			public Set<E> adjacentTo(V vertex) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public Set<E> outgoingFrom(V vertex) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public Set<E> incomingTo(V vertex) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public Set<E> between(V from, V to) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public E betweenUnique(V from, V to) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public double weight(E edge) {
+				// TODO Auto-generated method stub
+				return 0;
+			}
+		}
+
 		private final boolean directed;
 		private final boolean simple;
 		private final boolean weighted;
 		private final Function<E, Double> edgeWeight;
 
 		private final Map<V, MultiMap<V, E, Set<E>>> adjacencyMatrix;
-		private final Map<E, EdgeVertices<V>> edgeList;
+		private final Edges<E, V> edgeList;
 
 		private final Predicate<V> addVertex;
 		private final BiFunction<V, V, E> addEdge;
 
-		public ModifiableGraphImpl(GraphConfiguratorImpl<V, E> configurator) {
+		public GraphImpl(GraphConfiguratorImpl<V, E> configurator) {
 			directed = configurator.directed;
 			simple = !configurator.multigraph;
 			weighted = configurator.edgeWeight != null;
@@ -51,7 +123,7 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 			Comparator<V> comparator = configurator.comparator;
 			adjacencyMatrix = comparator != null ? new TreeMap<>(comparator)
 					: new HashMap<>();
-			edgeList = new TreeMap<>(new IdentityComparator<>());
+			edgeList = new EdgesImpl();
 
 			Predicate<V> addVertex = addVertexPredicate(comparator,
 					configurator.edgeGenerator, configurator.outgoingEdgeGenerator,
@@ -139,17 +211,17 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 		@Override
 		public Graph<V, E> copy() {
 			return new GraphBuilderImpl().configure().unmodifiableStructure()
-					.vertices(getVertices()).edges(getEdgeVertices())
+					.vertices(vertices()).edges(getEdgeVertices())
 					.edgeFactory((v, w) -> getEdge(v, w)).create();
 		}
 
 		@Override
-		public Set<V> getVertices() {
+		public Set<V> vertices() {
 			return adjacencyMatrix.keySet();
 		}
 
 		@Override
-		public Set<E> getEdges() {
+		public Set<E> edges() {
 			return edgeList.keySet();
 		}
 
@@ -263,7 +335,7 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 
 	@Override
 	public Graph<V, E> tryCreate() {
-		return new ModifiableGraphImpl<V, E>(this);
+		return new GraphImpl<V, E>(this);
 	}
 
 	@Override
