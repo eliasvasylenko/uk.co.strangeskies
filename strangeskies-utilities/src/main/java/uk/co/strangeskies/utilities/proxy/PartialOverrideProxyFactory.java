@@ -42,7 +42,8 @@ public class PartialOverrideProxyFactory<T> {
 		try {
 			return (T) e.create();
 		} catch (IllegalArgumentException ex) {
-			return (T) e.create(new Class[] { baseClass }, new Object[] { base });
+			return (T) e.create(new Class[] { baseClass },
+					new Object[] { base });
 		}
 	}
 
@@ -67,7 +68,8 @@ public class PartialOverrideProxyFactory<T> {
 		TestInterface override = new PartialOverrideProxyFactory<>(
 				TestInterface.class, O.class).override(base);
 
-		System.out.println(override.firstMethod() + ", " + override.secondMethod());
+		System.out.println(override.firstMethod() + ", "
+				+ override.secondMethod());
 	}
 
 	interface TestInterface {

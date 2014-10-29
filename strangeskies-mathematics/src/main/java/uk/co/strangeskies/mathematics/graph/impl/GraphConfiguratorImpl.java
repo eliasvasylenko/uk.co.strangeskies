@@ -1,9 +1,11 @@
 package uk.co.strangeskies.mathematics.graph.impl;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -12,6 +14,7 @@ import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.mathematics.graph.EdgeVertices;
@@ -50,47 +53,33 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 					: new HashMap<>();
 			edgeList = new TreeMap<>(new IdentityComparator<>());
 
-			Predicate<V> addVertex = vertex -> {
-				if (!adjacencyMatrix.containsKey(vertex)) {
-					adjacencyMatrix.put(vertex, comparator != null ? new MultiTreeMap<>(
-							comparator, TreeSet::new) : new MultiHashMap<>(TreeSet::new));
-					return true;
-				}
-				return false;
-			};
-			boolean generateNeighbours = configurator.generateNeighbours;
-			if (configurator.edgeGenerator != null) {
-				Function<? super V, ? extends Collection<? extends V>> edgeGenerator = configurator.edgeGenerator;
-				addVertex = addVertex.and(vertex -> {
-					addEdges(vertex, edgeGenerator.apply(vertex), generateNeighbours);
-					return true;
-				});
-			}
-			if (configurator.incomingEdgeGenerator != null) {
-				Function<? super V, ? extends Collection<? extends V>> edgeGenerator = configurator.incomingEdgeGenerator;
-				addVertex = addVertex.and(vertex -> {
-					addEdges(edgeGenerator.apply(vertex), vertex, generateNeighbours);
-					return true;
-				});
-			}
-			if (configurator.outgoingEdgeGenerator != null) {
-				Function<? super V, ? extends Collection<? extends V>> edgeGenerator = configurator.outgoingEdgeGenerator;
-				addVertex = addVertex.and(vertex -> {
-					addEdges(vertex, edgeGenerator.apply(vertex), generateNeighbours);
-					return true;
-				});
-			}
+			Predicate<V> addVertex = addVertexPredicate(comparator,
+					configurator.edgeGenerator, configurator.outgoingEdgeGenerator,
+					configurator.incomingEdgeGenerator);
+			this.addVertex = configurator.unmodifiableVertices ? Graph.super::addVertex
+					: addVertex;
 
 			if (configurator.vertices != null)
 				for (V vertex : configurator.vertices)
 					addVertex.test(vertex);
 
-			this.addVertex = configurator.unmodifiableVertices ? Graph.super::addVertex
-					: addVertex;
+			BiFunction<V, V, E> addEdge = addEdgePredicate(configurator.edgeFactory,
+					configurator.generateNeighbours);
+			this.addEdge = configurator.unmodifiableEdges ? Graph.super::addEdge
+					: addEdge;
 
-			BiFunction<V, V, E> edgeFactory = configurator.edgeFactory;
-			BiFunction<V, V, E> addEdge = (from, to) -> {
-				if (!adjacencyMatrix.containsKey(from)
+			if (configurator.edges != null)
+				for (EdgeVertices<V> edge : configurator.edges)
+					addEdge.apply(edge.getFrom(), edge.getTo());
+		}
+
+		private BiFunction<V, V, E> addEdgePredicate(
+				BiFunction<V, V, E> edgeFactory, boolean generateNeighbours) {
+			return (from, to) -> {
+				if (generateNeighbours) {
+					addVertex(from);
+					addVertex(to);
+				} else if (!adjacencyMatrix.containsKey(from)
 						|| !adjacencyMatrix.containsKey(to))
 					throw new IllegalArgumentException();
 
@@ -102,13 +91,49 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 
 				return edge;
 			};
+		}
 
-			if (configurator.edges != null)
-				for (EdgeVertices<V> edge : configurator.edges)
-					addEdge.apply(edge.getFrom(), edge.getTo());
+		private Predicate<V> addVertexPredicate(Comparator<V> comparator,
+				Function<? super V, ? extends Collection<? extends V>> edges,
+				Function<? super V, ? extends Collection<? extends V>> outgoingEdges,
+				Function<? super V, ? extends Collection<? extends V>> incomingEdges) {
+			Predicate<V> addVertex = vertex -> {
+				if (!adjacencyMatrix.containsKey(vertex)) {
+					adjacencyMatrix.put(vertex, comparator != null ? new MultiTreeMap<>(
+							comparator, TreeSet::new) : new MultiHashMap<>(TreeSet::new));
+					return true;
+				}
+				return false;
+			};
 
-			this.addEdge = configurator.unmodifiableEdges ? Graph.super::addEdge
-					: addEdge;
+			if (outgoingEdges == null) {
+				outgoingEdges = edges;
+			} else if (edges != null) {
+				outgoingEdges = v -> {
+					List<V> adjacent = new ArrayList<>();
+					adjacent.addAll(edges.apply(v));
+					adjacent.addAll(outgoingEdges.apply(v));
+				};
+			}
+			if (outgoingEdges != null) {
+				addVertex = addVertex.and(vertex -> {
+					addEdges(outgoingEdges.apply(vertex).stream()
+							.map(v -> new EdgeVertices<>(vertex, v))
+							.collect(Collectors.toSet()));
+					return true;
+				});
+			}
+
+			if (incomingEdges != null) {
+				addVertex = addVertex.and(vertex -> {
+					addEdges(incomingEdges.apply(vertex).stream()
+							.map(v -> new EdgeVertices<>(v, vertex))
+							.collect(Collectors.toSet()));
+					return true;
+				});
+			}
+
+			return addVertex;
 		}
 
 		@Override
@@ -130,7 +155,14 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 
 		@Override
 		public E getEdge(V from, V to) {
-			Map<V, E> adjacencyMap = adjacencyMatrix.get(from);
+			MultiMap<V, E, Set<E>> adjacencyMap = adjacencyMatrix.get(from);
+			return adjacencyMap == null ? null : adjacencyMap.get(to).iterator()
+					.next();
+		}
+
+		@Override
+		public Set<E> getEdges(V from, V to) {
+			MultiMap<V, E, Set<E>> adjacencyMap = adjacencyMatrix.get(from);
 			return adjacencyMap == null ? null : adjacencyMap.get(to);
 		}
 
@@ -160,10 +192,22 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 
 		@Override
 		public E removeEdge(V from, V to) {
-			E edge = adjacencyMatrix.get(from).remove(to);
+			MultiMap<V, E, Set<E>> adjacencyMap = adjacencyMatrix.get(from);
+			Set<E> edges = adjacencyMap == null ? null : adjacencyMap.get(to);
+			E edge = edges.iterator().next();
+			edges.remove(edge);
 			edgeList.remove(edge);
 
 			return edge;
+		}
+
+		@Override
+		public Set<E> removeEdges(V from, V to) {
+			Set<E> edges = adjacencyMatrix.get(from).remove(to);
+			for (E edge : edges)
+				edgeList.remove(edge);
+
+			return edges;
 		}
 
 		@Override
