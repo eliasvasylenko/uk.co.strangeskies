@@ -2,8 +2,10 @@ package uk.co.strangeskies.utilities.osgi.impl;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
@@ -17,11 +19,11 @@ import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 
-import uk.co.strangeskies.utilities.collection.HashSetMultiHashMap;
-import uk.co.strangeskies.utilities.collection.SetMultiMap;
+import uk.co.strangeskies.utilities.collection.MultiHashMap;
+import uk.co.strangeskies.utilities.collection.MultiMap;
 import uk.co.strangeskies.utilities.osgi.ServiceWrapper;
-import uk.co.strangeskies.utilities.osgi.ServiceWrapperManager;
 import uk.co.strangeskies.utilities.osgi.ServiceWrapper.HideServices;
+import uk.co.strangeskies.utilities.osgi.ServiceWrapperManager;
 
 /**
  * 
@@ -30,13 +32,13 @@ import uk.co.strangeskies.utilities.osgi.ServiceWrapper.HideServices;
  */
 @Component(service = { EventListenerHook.class, FindHook.class })
 public class ServiceWrapperManagerImpl implements ServiceWrapperManager {
-	private final SetMultiMap<Class<?>, ManagedServiceWrapper<?>> wrappedServiceClasses;
+	private final MultiMap<Class<?>, ManagedServiceWrapper<?>, ? extends Set<?>> wrappedServiceClasses;
 	private final Map<ServiceWrapper<?>, ManagedServiceWrapper<?>> managedServiceWrappers;
 
 	private final Map<ServiceReference<?>, WrappingServiceTree> wrappedServices;
 
 	public ServiceWrapperManagerImpl() {
-		wrappedServiceClasses = new HashSetMultiHashMap<>();
+		wrappedServiceClasses = new MultiHashMap<>(HashSet::new);
 		managedServiceWrappers = new HashMap<>();
 
 		wrappedServices = new HashMap<>();

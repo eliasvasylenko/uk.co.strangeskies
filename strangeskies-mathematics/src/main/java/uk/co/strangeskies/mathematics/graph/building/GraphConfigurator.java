@@ -119,20 +119,20 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	}
 
 	public GraphConfigurator<V, E> edgesBetween(
-			Function<? super V, Collection<? extends V>> betweenNeighbours);
+			Function<? super V, ? extends Collection<? extends V>> betweenNeighbours);
 
 	public GraphConfigurator<V, E> edgesFrom(
-			Function<? super V, Collection<? extends V>> fromNeighbours);
+			Function<? super V, ? extends Collection<? extends V>> fromNeighbours);
 
 	public GraphConfigurator<V, E> edgesTo(
-			Function<? super V, Collection<? extends V>> toNeighbours);
+			Function<? super V, ? extends Collection<? extends V>> toNeighbours);
 
 	public GraphConfigurator<V, E> edgeRule(
 			BiPredicate<? super V, ? super V> betweenNeighbours);
 
-	public GraphConfigurator<V, E> edgeRuleAsymmetric();
-
-	public GraphConfigurator<V, E> directed();
+	public default GraphConfigurator<V, E> directed() {
+		return direction((a, b) -> 1);
+	}
 
 	public GraphConfigurator<V, E> acyclic();
 
@@ -219,7 +219,7 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 */
 	public GraphConfigurator<V, E> generateNeighbours();
 
-	public GraphConfigurator<V, E> constraint(Predicate<Graph<V, E>> constraint);
+	public GraphConfigurator<V, E> constrain(Predicate<Graph<V, E>> constraint);
 
 	public GraphConfigurator<V, E> comparator(Comparator<V> comparator);
 }

@@ -2,10 +2,12 @@ package uk.co.strangeskies.mathematics.graph.impl;
 
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
@@ -17,75 +19,96 @@ import uk.co.strangeskies.mathematics.graph.Graph;
 import uk.co.strangeskies.mathematics.graph.GraphTransformer;
 import uk.co.strangeskies.mathematics.graph.building.GraphConfigurator;
 import uk.co.strangeskies.utilities.IdentityComparator;
+import uk.co.strangeskies.utilities.collection.MultiHashMap;
+import uk.co.strangeskies.utilities.collection.MultiMap;
+import uk.co.strangeskies.utilities.collection.MultiTreeMap;
 import uk.co.strangeskies.utilities.factory.Configurator;
 import uk.co.strangeskies.utilities.function.Functions;
 
 public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 		implements GraphConfigurator<V, E> {
-	private static class GraphImpl<V, E> implements Graph<V, E> {
+	private static class ModifiableGraphImpl<V, E> implements Graph<V, E> {
 		private final boolean directed;
 		private final boolean simple;
 		private final boolean weighted;
 		private final Function<E, Double> edgeWeight;
 
-		private final BiFunction<V, V, E> edgeFactory;
-		private final Comparator<V> comparator;
-
-		private final Map<V, Map<V, E>> adjacencyMatrix;
+		private final Map<V, MultiMap<V, E, Set<E>>> adjacencyMatrix;
 		private final Map<E, EdgeVertices<V>> edgeList;
 
 		private final Predicate<V> addVertex;
+		private final BiFunction<V, V, E> addEdge;
 
-		public GraphImpl(GraphConfiguratorImpl<V, E> configurator) {
+		public ModifiableGraphImpl(GraphConfiguratorImpl<V, E> configurator) {
 			directed = configurator.directed;
 			simple = !configurator.multigraph;
 			weighted = configurator.edgeWeight != null;
-			edgeWeight = weighted ? this.edgeWeight : e -> 1d;
+			edgeWeight = weighted ? configurator.edgeWeight : e -> 1d;
 
-			edgeFactory = configurator.edgeFactory;
-			comparator = configurator.comparator;
+			Comparator<V> comparator = configurator.comparator;
+			adjacencyMatrix = comparator != null ? new TreeMap<>(comparator)
+					: new HashMap<>();
+			edgeList = new TreeMap<>(new IdentityComparator<>());
 
-			adjacencyMatrix = new TreeMap<>(configurator.comparator);
-			edgeList = null;
-
-			if (configurator.unmodifiableVertices)
-				addVertex = Graph.super::addVertex;
-			else {
-				Predicate<V> addVertex = (vertex) -> {
-					if (!adjacencyMatrix.containsKey(vertex)) {
-						adjacencyMatrix.put(vertex, new TreeMap<>(comparator));
-						return true;
-					}
-					return false;
-				};
-				boolean generateNeighbours = configurator.generateNeighbours;
-				if (configurator.edgeGenerator != null) {
-					Function<? super V, Collection<? extends V>> edgeGenerator = configurator.edgeGenerator;
-					addVertex = addVertex.and((vertex) -> {
-						addEdges(vertex, edgeGenerator.apply(vertex), generateNeighbours);
-						return true;
-					});
+			Predicate<V> addVertex = vertex -> {
+				if (!adjacencyMatrix.containsKey(vertex)) {
+					adjacencyMatrix.put(vertex, comparator != null ? new MultiTreeMap<>(
+							comparator, TreeSet::new) : new MultiHashMap<>(TreeSet::new));
+					return true;
 				}
-				if (configurator.incomingEdgeGenerator != null) {
-					Function<? super V, Collection<? extends V>> edgeGenerator = configurator.incomingEdgeGenerator;
-					addVertex = addVertex.and((vertex) -> {
-						addEdges(edgeGenerator.apply(vertex), vertex, generateNeighbours);
-						return true;
-					});
-				}
-				if (configurator.outgoingEdgeGenerator != null) {
-					Function<? super V, Collection<? extends V>> edgeGenerator = configurator.outgoingEdgeGenerator;
-					addVertex = addVertex.and((vertex) -> {
-						addEdges(vertex, edgeGenerator.apply(vertex), generateNeighbours);
-						return true;
-					});
-				}
-				this.addVertex = addVertex;
+				return false;
+			};
+			boolean generateNeighbours = configurator.generateNeighbours;
+			if (configurator.edgeGenerator != null) {
+				Function<? super V, ? extends Collection<? extends V>> edgeGenerator = configurator.edgeGenerator;
+				addVertex = addVertex.and(vertex -> {
+					addEdges(vertex, edgeGenerator.apply(vertex), generateNeighbours);
+					return true;
+				});
+			}
+			if (configurator.incomingEdgeGenerator != null) {
+				Function<? super V, ? extends Collection<? extends V>> edgeGenerator = configurator.incomingEdgeGenerator;
+				addVertex = addVertex.and(vertex -> {
+					addEdges(edgeGenerator.apply(vertex), vertex, generateNeighbours);
+					return true;
+				});
+			}
+			if (configurator.outgoingEdgeGenerator != null) {
+				Function<? super V, ? extends Collection<? extends V>> edgeGenerator = configurator.outgoingEdgeGenerator;
+				addVertex = addVertex.and(vertex -> {
+					addEdges(vertex, edgeGenerator.apply(vertex), generateNeighbours);
+					return true;
+				});
 			}
 
-			// TODO this obviously doesn't work for immutable graphs, should be simple
-			// fix.
-			addVertices(configurator.vertices);
+			if (configurator.vertices != null)
+				for (V vertex : configurator.vertices)
+					addVertex.test(vertex);
+
+			this.addVertex = configurator.unmodifiableVertices ? Graph.super::addVertex
+					: addVertex;
+
+			BiFunction<V, V, E> edgeFactory = configurator.edgeFactory;
+			BiFunction<V, V, E> addEdge = (from, to) -> {
+				if (!adjacencyMatrix.containsKey(from)
+						|| !adjacencyMatrix.containsKey(to))
+					throw new IllegalArgumentException();
+
+				E edge = edgeFactory.apply(from, to);
+				EdgeVertices<V> vertices = new EdgeVertices<V>(from, to);
+
+				adjacencyMatrix.get(from).put(to, edge);
+				edgeList.put(edge, vertices);
+
+				return edge;
+			};
+
+			if (configurator.edges != null)
+				for (EdgeVertices<V> edge : configurator.edges)
+					addEdge.apply(edge.getFrom(), edge.getTo());
+
+			this.addEdge = configurator.unmodifiableEdges ? Graph.super::addEdge
+					: addEdge;
 		}
 
 		@Override
@@ -132,17 +155,7 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 
 		@Override
 		public E addEdge(V from, V to) {
-			if (!adjacencyMatrix.containsKey(from)
-					|| !adjacencyMatrix.containsKey(to))
-				throw new IllegalArgumentException();
-
-			E edge = edgeFactory.apply(from, to);
-			EdgeVertices<V> vertices = new EdgeVertices<V>(from, to);
-
-			adjacencyMatrix.get(from).put(to, edge);
-			edgeList.put(edge, vertices);
-
-			return edge;
+			return addEdge.apply(from, to);
 		}
 
 		@Override
@@ -181,7 +194,7 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 
 	private boolean unmodifiableVertices;
 	private boolean unmodifiableEdges;
-	private Set<V> vertices;
+	private Collection<V> vertices;
 	private Set<EdgeVertices<V>> edges;
 	private boolean directed;
 	private boolean acyclic;
@@ -191,10 +204,9 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 	private BiFunction<V, V, ? extends Set<? extends E>> edgeMultiFactory;
 	private Function<E, Double> edgeWeight;
 	private boolean edgeWeightMutable;
-	private Function<? super V, Collection<? extends V>> incomingEdgeGenerator;
-	private Function<? super V, Collection<? extends V>> outgoingEdgeGenerator;
-	private Function<? super V, Collection<? extends V>> edgeGenerator;
-	private boolean asymmetricEdgeGeneration;
+	private Function<? super V, ? extends Collection<? extends V>> incomingEdgeGenerator;
+	private Function<? super V, ? extends Collection<? extends V>> outgoingEdgeGenerator;
+	private Function<? super V, ? extends Collection<? extends V>> edgeGenerator;
 	private BiPredicate<? super V, ? super V> edgeRule;
 	private boolean generateNeighbours;
 	private Predicate<Graph<V, E>> constraint;
@@ -207,7 +219,7 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 
 	@Override
 	public Graph<V, E> tryCreate() {
-		return new GraphImpl<V, E>(this);
+		return new ModifiableGraphImpl<V, E>(this);
 	}
 
 	@Override
@@ -230,7 +242,8 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 	@SuppressWarnings("unchecked")
 	@Override
 	public <W extends V> GraphConfigurator<W, E> vertices(Collection<W> vertices) {
-		this.vertices = new HashSet<>(vertices);
+		assertConfigurable(this.vertices);
+		this.vertices = (Collection<V>) vertices;
 		return (GraphConfigurator<W, E>) this;
 	}
 
@@ -238,13 +251,12 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 	@Override
 	public <W extends Expression<? extends V>> GraphConfigurator<W, E> verticesAsExpressions(
 			Collection<W> vertices) {
+		assertConfigurable(this.vertices, incomingEdgeGenerator,
+				outgoingEdgeGenerator, edgeGenerator);
+
 		this.vertices = (Set<V>) new HashSet<W>(vertices);
 
 		edgeFactory = expressionForward(edgeFactory);
-
-		if (incomingEdgeGenerator != null || outgoingEdgeGenerator != null
-				|| edgeGenerator != null)
-			throw new IllegalArgumentException();
 
 		edgeRule = expressionForward(edgeRule);
 
@@ -265,59 +277,45 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 				.<Expression<? extends W>, W, T> compose(v -> v.getValue(), function);
 	}
 
-	@SuppressWarnings("unchecked")
-	private <W, T> Function<W, T> expressionForward(
-			Function<? super W, T> function) {
-		return function == null ? null : (Function<W, T>) function
-				.<Expression<? extends W>> compose(v -> v.getValue());
-	}
-
 	@Override
 	public GraphConfigurator<V, E> edges(Collection<EdgeVertices<V>> edges) {
+		assertConfigurable(this.edges);
 		this.edges = new HashSet<>(edges);
 		return this;
 	}
 
 	@Override
 	public GraphConfigurator<V, E> edgesBetween(
-			Function<? super V, Collection<? extends V>> neighbours) {
+			Function<? super V, ? extends Collection<? extends V>> neighbours) {
+		assertConfigurable(this.edgeGenerator);
 		edgeGenerator = neighbours;
 		return unmodifiableEdges();
 	}
 
 	@Override
 	public GraphConfigurator<V, E> edgesFrom(
-			Function<? super V, Collection<? extends V>> fromNeighbours) {
+			Function<? super V, ? extends Collection<? extends V>> fromNeighbours) {
+		assertConfigurable(this.incomingEdgeGenerator);
 		incomingEdgeGenerator = fromNeighbours;
-		return unmodifiableEdges().directed();
+		directed = true;
+		return unmodifiableEdges();
 	}
 
 	@Override
 	public GraphConfigurator<V, E> edgesTo(
-			Function<? super V, Collection<? extends V>> toNeighbours) {
+			Function<? super V, ? extends Collection<? extends V>> toNeighbours) {
+		assertConfigurable(this.outgoingEdgeGenerator);
 		outgoingEdgeGenerator = toNeighbours;
-		return unmodifiableEdges().directed();
+		directed = true;
+		return unmodifiableEdges();
 	}
 
 	@Override
 	public GraphConfigurator<V, E> edgeRule(
 			BiPredicate<? super V, ? super V> neighbours) {
+		assertConfigurable(this.edgeRule);
 		edgeRule = neighbours;
 		return unmodifiableEdges();
-	}
-
-	@Override
-	public GraphConfigurator<V, E> edgeRuleAsymmetric() {
-		asymmetricEdgeGeneration = true;
-		return this;
-	}
-
-	@Override
-	public GraphConfigurator<V, E> directed() {
-		directed = true;
-		if (lowToHighDirection == null)
-			direction((v, w) -> 0);
-		return this;
 	}
 
 	@Override
@@ -334,16 +332,18 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 
 	@Override
 	public GraphConfigurator<V, E> direction(Function<E, Comparator<V>> lowToHigh) {
+		assertConfigurable(this.lowToHighDirection);
 		lowToHighDirection = lowToHigh;
-		return directed();
+		directed = true;
+		return this;
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public <F extends E> GraphConfigurator<V, F> edgeFactory(
 			BiFunction<V, V, F> factory) {
+		assertConfigurable(edgeFactory, edgeMultiFactory);
 		edgeFactory = (BiFunction<V, V, E>) factory;
-		edgeMultiFactory = null;
 		return (GraphConfigurator<V, F>) this;
 	}
 
@@ -351,14 +351,15 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 	@Override
 	public <F extends E> GraphConfigurator<V, F> edgeMultiFactory(
 			BiFunction<V, V, Set<F>> factory) {
+		assertConfigurable(edgeFactory, edgeMultiFactory);
 		edgeMultiFactory = (BiFunction<V, V, Set<E>>) (Object) factory;
-		edgeFactory = null;
 		return (GraphConfigurator<V, F>) multigraph();
 	}
 
 	@Override
 	public GraphConfigurator<V, E> edgeWeight(Function<E, Double> weight,
 			boolean mutable) {
+		assertConfigurable(edgeWeight);
 		edgeWeight = weight;
 		edgeWeightMutable = mutable;
 		return this;
@@ -371,13 +372,15 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 	}
 
 	@Override
-	public GraphConfigurator<V, E> constraint(Predicate<Graph<V, E>> constraint) {
+	public GraphConfigurator<V, E> constrain(Predicate<Graph<V, E>> constraint) {
+		assertConfigurable(this.constraint);
 		this.constraint = constraint;
 		return this;
 	}
 
 	@Override
 	public GraphConfigurator<V, E> comparator(Comparator<V> comparator) {
+		assertConfigurable(this.comparator);
 		this.comparator = comparator;
 		return this;
 	}

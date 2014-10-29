@@ -9,14 +9,15 @@ import java.util.TreeSet;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 
-import uk.co.strangeskies.utilities.collection.SetMultiMap;
+import uk.co.strangeskies.utilities.collection.MultiMap;
 
 public class WrappingServiceTree {
 	private final ServiceReference<?> serviceReference;
 	private final WrappingServiceTreeNode root;
 
-	WrappingServiceTree(ServiceReference<?> serviceReference,
-			SetMultiMap<Class<?>, ManagedServiceWrapper<?>> wrappedServiceClasses) {
+	WrappingServiceTree(
+			ServiceReference<?> serviceReference,
+			MultiMap<Class<?>, ManagedServiceWrapper<?>, ? extends Set<?>> wrappedServiceClasses) {
 		this.serviceReference = serviceReference;
 		root = new WrappingServiceTreeNode(serviceReference.getBundle()
 				.getBundleContext().getService(serviceReference),

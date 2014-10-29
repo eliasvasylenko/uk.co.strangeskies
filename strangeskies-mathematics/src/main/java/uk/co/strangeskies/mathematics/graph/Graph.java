@@ -27,6 +27,14 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 
 	public EdgeVertices<V> getVertices(E edge);
 
+	public Set<V> getAdjacentVertices(V vertex);
+
+	public Set<E> getAdjacentEdges(V vertex);
+
+	public Set<E> getOutgoingEdges(V vertex);
+
+	public Set<E> getIncomingEdges(V vertex);
+
 	public default V getFrom(E edge) {
 		return getVertices(edge).getFrom();
 	}
@@ -55,48 +63,28 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 		throw new UnsupportedOperationException();
 	}
 
+	public default E addEdge(EdgeVertices<V> edge) {
+		throw new UnsupportedOperationException();
+	}
+
+	public default boolean addEdges(Set<EdgeVertices<V>> edgeVertices) {
+		boolean changed = false;
+		for (EdgeVertices<V> edge : edgeVertices) {
+			changed = addEdge(edge) != null | changed;
+		}
+		return changed;
+	}
+
 	public default E removeEdge(V from, V to) {
 		throw new UnsupportedOperationException();
 	}
 
-	public default E addEdge(V from, V to, boolean addMissingVertices) {
-		if (addMissingVertices) {
-			addVertex(from);
-			addVertex(to);
-		} else if (!getVertices().contains(from) || !getVertices().contains(to))
-			return null;
-		return addEdge(from, to);
-	}
-
-	public default boolean addEdges(Collection<? extends V> from, V to) {
-		return addEdges(from, to, false);
-	}
-
-	public default boolean addEdges(V from, Collection<? extends V> to) {
-		return addEdges(from, to, false);
-	}
-
-	public default boolean addEdges(Collection<? extends V> from, V to,
-			boolean addMissingVertices) {
-		boolean changed = false;
-		for (V f : from) {
-			changed = addEdge(f, to, addMissingVertices) != null | changed;
-		}
-		return changed;
-	}
-
-	public default boolean addEdges(V from, Collection<? extends V> to,
-			boolean addMissingVertices) {
-		boolean changed = false;
-		for (V t : to) {
-			changed = addEdge(from, t, addMissingVertices) != null | changed;
-		}
-		return changed;
+	public default Set<E> removeEdges(V from, V to) {
+		throw new UnsupportedOperationException();
 	}
 
 	public default boolean removeEdge(E edge) {
-		EdgeVertices<V> vertices = getVertices(edge);
-		return removeEdge(vertices.getFrom(), vertices.getTo()) != null;
+		throw new UnsupportedOperationException();
 	}
 
 	public boolean isDirected();

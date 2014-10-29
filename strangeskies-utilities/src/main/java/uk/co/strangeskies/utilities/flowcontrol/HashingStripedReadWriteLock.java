@@ -7,16 +7,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import uk.co.strangeskies.utilities.collection.HashSetMultiHashMap;
-import uk.co.strangeskies.utilities.collection.SetMultiMap;
+import uk.co.strangeskies.utilities.collection.MultiHashMap;
+import uk.co.strangeskies.utilities.collection.MultiMap;
 
 public class HashingStripedReadWriteLock<K> implements StripedReadWriteLock<K> {
 	private final Map<K, ReentrantReadWriteLock> locks;
-	private final SetMultiMap<K, Thread> readLockingThreads;
+	private final MultiMap<K, Thread, Set<Thread>> readLockingThreads;
 
 	public HashingStripedReadWriteLock() {
 		locks = new HashMap<>();
-		readLockingThreads = new HashSetMultiHashMap<>();
+		readLockingThreads = new MultiHashMap<>(HashSet::new);
 	}
 
 	@Override

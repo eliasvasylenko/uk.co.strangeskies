@@ -51,4 +51,13 @@ public abstract class Configurator<T> implements Factory<T> {
 		if (!complete)
 			throw new IncompleteBuildStateException(this);
 	}
+
+	protected void assertConfigurable(Object... objects) {
+		if (complete)
+			throw new InvalidBuildStateException(this);
+
+		for (Object object : objects)
+			if (object != null)
+				throw new InvalidBuildStateException(this);
+	}
 }
