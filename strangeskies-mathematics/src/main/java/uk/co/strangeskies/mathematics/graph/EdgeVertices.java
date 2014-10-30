@@ -1,41 +1,44 @@
 package uk.co.strangeskies.mathematics.graph;
 
-public class EdgeVertices<V> {
-	private boolean directional;
+public interface EdgeVertices<V> {
+	V getFrom();
 
-	private final V from;
+	V getTo();
 
-	private final V to;
+	boolean isDirectional();
 
-	public EdgeVertices(V from, V to) {
-		this.from = from;
-		this.to = to;
-	}
+	public static <V> EdgeVertices<V> between(V from, V to) {
+		return new EdgeVertices<V>() {
+			@Override
+			public V getFrom() {
+				return from;
+			}
 
-	public V getFrom() {
-		return from;
-	}
+			@Override
+			public V getTo() {
+				return to;
+			}
 
-	public V getTo() {
-		return to;
-	}
+			@Override
+			public boolean isDirectional() {
+				return false;
+			}
 
-	public boolean isDirectional() {
-		return directional;
-	}
+			@Override
+			public int hashCode() {
+				return isDirectional() ? (from.hashCode() ^ to.hashCode() * 7) : (from
+						.hashCode() ^ to.hashCode() * 17);
+			}
 
-	@Override
-	public int hashCode() {
-		return directional ? (from.hashCode() + to.hashCode())
-				: (from.hashCode() * to.hashCode());
-	}
-
-	@Override
-	public boolean equals(Object object) {
-		if (!(object instanceof EdgeVertices))
-			return false;
-		EdgeVertices<?> edge = (EdgeVertices<?>) object;
-		return (from.equals(edge.from) && to.equals(edge.to))
-				|| (!directional && from.equals(edge.to) && to.equals(edge.from));
+			@Override
+			public boolean equals(Object object) {
+				if (!(object instanceof EdgeVertices))
+					return false;
+				EdgeVertices<?> edge = (EdgeVertices<?>) object;
+				return (from.equals(edge.getFrom()) && to.equals(edge.getTo()))
+						|| (!isDirectional() && from.equals(edge.getTo()) && to.equals(edge
+								.getFrom()));
+			}
+		};
 	}
 }

@@ -3,12 +3,11 @@ package uk.co.strangeskies.mathematics;
 import java.util.Comparator;
 import java.util.Objects;
 
-import uk.co.strangeskies.utilities.Copyable;
 import uk.co.strangeskies.utilities.NaturalComparator;
 import uk.co.strangeskies.utilities.Property;
 import uk.co.strangeskies.utilities.Self;
 
-public class Range<T> implements Self<Range<T>>, Copyable<Range<T>> {
+public class Range<T> implements Self<Range<T>> {
 	private T from;
 	private T to;
 
@@ -240,7 +239,10 @@ public class Range<T> implements Self<Range<T>>, Copyable<Range<T>> {
 		return to;
 	}
 
-	public <M extends Property<? extends T, ? super T>> M confine(M value) {
+	/*
+	 * TODO file compiler report with JDK 1.8.0_20... shouldn't need U here.
+	 */
+	public <U extends T, M extends Property<U, ? super T>> M confine(M value) {
 		if (isEmpty()) {
 			return null;
 		}

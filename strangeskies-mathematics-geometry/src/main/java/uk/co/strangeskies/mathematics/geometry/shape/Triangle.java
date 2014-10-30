@@ -10,15 +10,15 @@ public interface Triangle<V extends Value<V>> extends
 	public Triangle<V> set(Number ax, Number ay, Number bx, Number by, Number cx,
 			Number cy);
 
-	public void setA(/*@ReadOnly*/Vector2<V> a);
+	public void setA(/* @ReadOnly */Vector2<V> a);
 
-	public void setB(/*@ReadOnly*/Vector2<V> b);
+	public void setB(/* @ReadOnly */Vector2<V> b);
 
-	public void setC(/*@ReadOnly*/Vector2<V> c);
+	public void setC(/* @ReadOnly */Vector2<V> c);
 
-	public Vector2<V> getA() /*@ReadOnly*/;
+	public Vector2<V> getA() /* @ReadOnly */;
 
-	public Vector2<V> getB() /*@ReadOnly*/;
+	public Vector2<V> getB() /* @ReadOnly */;
 
-	public Vector2<V> getC() /*@ReadOnly*/;
+	public Vector2<V> getC() /* @ReadOnly */;
 }

@@ -1,5 +1,8 @@
 package uk.co.strangeskies.mathematics.graph;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 
@@ -12,6 +15,8 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 		Set<V> outgoingFrom(V vertex);
 
 		Set<V> incomingTo(V vertex);
+
+		Comparator<V> comparator();
 	}
 
 	public interface Edges<E, V> extends Map<E, EdgeVertices<V>> {
@@ -30,7 +35,7 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 		/**
 		 * If there is exactly one edge between the provided vertices, this edge is
 		 * returned, otherwise null is returned.
-		 * 
+		 *
 		 * @param from
 		 * @param to
 		 * @return
@@ -41,19 +46,17 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 			return betweenUnique(vertices.getFrom(), vertices.getTo());
 		}
 
-		default E add(V from, V to) {
-			throw new UnsupportedOperationException();
-		}
+		E add(V from, V to);
 
 		default E add(EdgeVertices<V> edge) {
-			throw new UnsupportedOperationException();
+			return add(edge.getFrom(), edge.getTo());
 		}
 
-		default E add(@SuppressWarnings("unchecked") EdgeVertices<V>... edges) {
-			throw new UnsupportedOperationException();
+		default boolean add(@SuppressWarnings("unchecked") EdgeVertices<V>... edges) {
+			return add(Arrays.asList(edges));
 		}
 
-		default boolean add(Set<EdgeVertices<V>> edgeVertices) {
+		default boolean add(Collection<? extends EdgeVertices<V>> edgeVertices) {
 			boolean changed = false;
 			for (EdgeVertices<V> edge : edgeVertices) {
 				changed = add(edge) != null | changed;
@@ -66,14 +69,14 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 
 	/**
 	 * Returns an unmodifiable set of the vertices in this graph.
-	 * 
+	 *
 	 * @return
 	 */
 	Vertices<V> vertices();
 
 	/**
 	 * Returns an unmodifiable set of the edges in this graph.
-	 * 
+	 *
 	 * @return
 	 */
 	Edges<E, V> edges();

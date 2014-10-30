@@ -3,10 +3,10 @@ package uk.co.strangeskies.mathematics.geometry.shape;
 import uk.co.strangeskies.mathematics.values.Value;
 
 /**
- * A potentially self touching, but otherwise traditionally 'simple', polygon.
- * 
+ * A potentially self-touching, but non-self-crossing, and otherwise traditionally 'simple', polygon.
+ *
  * @author eli
- * 
+ *
  * @param <S>
  * @param <V>
  */
@@ -17,7 +17,7 @@ public interface SimplePolygon<S extends SimplePolygon<S, V>, V extends Value<V>
 	}
 
 	/**
-	 * 
+	 *
 	 * @return
 	 */
 	public WindingDirection getWindingDirection();

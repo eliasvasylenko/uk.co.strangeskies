@@ -114,7 +114,7 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 */
 	public default GraphConfigurator<V, E> edges(Map<V, V> edges) {
 		return edges(edges.entrySet().stream()
-				.map(e -> new EdgeVertices<>(e.getKey(), e.getValue()))
+				.map(e -> EdgeVertices.between(e.getKey(), e.getValue()))
 				.collect(Collectors.toList()));
 	}
 
