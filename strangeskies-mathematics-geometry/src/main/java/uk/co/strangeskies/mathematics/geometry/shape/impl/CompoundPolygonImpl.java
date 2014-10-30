@@ -11,9 +11,9 @@ import uk.co.strangeskies.mathematics.values.ValueFactory;
 
 /**
  * Complex polygons, self intersecting with holes and multiple parts.
- * 
+ *
  * @author eli
- * 
+ *
  * @param <V>
  */
 public class CompoundPolygonImpl<V extends Value<V>> extends

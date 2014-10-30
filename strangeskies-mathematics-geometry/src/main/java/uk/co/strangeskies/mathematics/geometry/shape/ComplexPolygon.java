@@ -11,7 +11,7 @@ import uk.co.strangeskies.mathematics.values.Value;
  */
 public interface ComplexPolygon<S extends ComplexPolygon<S, V>, V extends Value<V>>
 		extends Polygon<S, V> {
-	enum Winding {
+	public enum Winding {
 		Odd, NonZero, CW, CCW
 	}
 }

@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import uk.co.strangeskies.mathematics.Addable;
 import uk.co.strangeskies.mathematics.Negatable;
 import uk.co.strangeskies.mathematics.NonCommutativelyMultipliable;
 import uk.co.strangeskies.mathematics.Scalable;
@@ -21,17 +20,14 @@ import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.Vector2Impl;
 import uk.co.strangeskies.mathematics.values.IntValue;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.Copyable;
 import uk.co.strangeskies.utilities.Property;
-import uk.co.strangeskies.utilities.Self;
 import uk.co.strangeskies.utilities.function.TriFunction;
 import uk.co.strangeskies.utilities.function.collection.ListTransformationView;
 
 public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
-		Self<S>, Copyable<S>, Comparable<Matrix<?, ?>>, Variable<S>,
-		Addable<S, Matrix<?, ?>>, Scalable<S>, Subtractable<S, Matrix<?, ?>>,
-		Negatable<S, S>, NonCommutativelyMultipliable<S, Matrix<?, ?>>,
-		Property<S, Matrix<?, ?>> {
+		Comparable<Matrix<?, ?>>, Variable<S>, Scalable<S>,
+		Subtractable<S, Matrix<?, ?>>, Negatable<S, S>,
+		NonCommutativelyMultipliable<S, Matrix<?, ?>>, Property<S, Matrix<?, ?>> {
 	public static enum Order {
 		RowMajor {
 			@Override

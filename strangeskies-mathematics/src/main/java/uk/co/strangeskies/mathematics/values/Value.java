@@ -7,7 +7,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
-import uk.co.strangeskies.mathematics.Addable;
 import uk.co.strangeskies.mathematics.Incrementable;
 import uk.co.strangeskies.mathematics.Multipliable;
 import uk.co.strangeskies.mathematics.Negatable;
@@ -23,10 +22,9 @@ import uk.co.strangeskies.utilities.Property;
 import uk.co.strangeskies.utilities.Self;
 
 public abstract class Value<S extends Value<S>> extends Number implements
-		Multipliable<S, Value<?>>, Addable<S, Value<?>>, Negatable<S, S>,
-		Subtractable<S, Value<?>>, Scalable<S>, Property<S, Value<?>>,
-		Incrementable<S>, Self<S>, Variable<S>, Copyable<S>, Comparable<Value<?>>,
-		CopyDecouplingExpression<S> {
+		Multipliable<S, Value<?>>, Subtractable<S, Value<?>>, Negatable<S, S>,
+		Scalable<S>, Property<S, Value<?>>, Incrementable<S>, Self<S>, Variable<S>,
+		Copyable<S>, Comparable<Value<?>>, CopyDecouplingExpression<S> {
 	private static final long serialVersionUID = -979949605176385397L;
 
 	private final Set<Observer<? super Expression<S>>> observers;
