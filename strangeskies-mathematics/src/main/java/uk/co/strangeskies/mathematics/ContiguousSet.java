@@ -6,6 +6,10 @@ import java.util.Iterator;
 import java.util.NavigableSet;
 import java.util.SortedSet;
 
+import uk.co.strangeskies.mathematics.operation.Incrementable;
+import uk.co.strangeskies.mathematics.operation.Incrementor;
+import uk.co.strangeskies.mathematics.operation.NaturalIncrementor;
+
 public class ContiguousSet<T> implements Iterable<T>, Collection<T>,
 		NavigableSet<T>, SortedSet<T> {
 	private final Range<T> range;

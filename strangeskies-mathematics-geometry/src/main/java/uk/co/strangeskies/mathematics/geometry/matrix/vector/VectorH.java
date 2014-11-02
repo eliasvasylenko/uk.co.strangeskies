@@ -1,11 +1,11 @@
 package uk.co.strangeskies.mathematics.geometry.matrix.vector;
 
-import uk.co.strangeskies.mathematics.Addable;
-import uk.co.strangeskies.mathematics.NonCommutativelyMultipliable;
-import uk.co.strangeskies.mathematics.Scalable;
-import uk.co.strangeskies.mathematics.Subtractable;
 import uk.co.strangeskies.mathematics.geometry.Translatable;
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix;
+import uk.co.strangeskies.mathematics.operation.Addable;
+import uk.co.strangeskies.mathematics.operation.NonCommutativelyMultipliable;
+import uk.co.strangeskies.mathematics.operation.Scalable;
+import uk.co.strangeskies.mathematics.operation.Subtractable;
 import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.Self;
 

@@ -1,4 +1,4 @@
-package uk.co.strangeskies.mathematics;
+package uk.co.strangeskies.mathematics.operation;
 
 import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.function.TriFunction;

@@ -1,4 +1,4 @@
-package uk.co.strangeskies.mathematics;
+package uk.co.strangeskies.mathematics.operation;
 
 public interface Incrementor<T> {
 	public T increment(T value);

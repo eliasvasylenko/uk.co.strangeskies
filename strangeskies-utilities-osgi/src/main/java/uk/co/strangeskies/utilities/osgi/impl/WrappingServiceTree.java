@@ -17,7 +17,7 @@ public class WrappingServiceTree {
 
 	WrappingServiceTree(
 			ServiceReference<?> serviceReference,
-			MultiMap<Class<?>, ManagedServiceWrapper<?>, ? extends Set<?>> wrappedServiceClasses) {
+			MultiMap<Class<?>, ManagedServiceWrapper<?>, ? extends Set<ManagedServiceWrapper<?>>> wrappedServiceClasses) {
 		this.serviceReference = serviceReference;
 		root = new WrappingServiceTreeNode(serviceReference.getBundle()
 				.getBundleContext().getService(serviceReference),

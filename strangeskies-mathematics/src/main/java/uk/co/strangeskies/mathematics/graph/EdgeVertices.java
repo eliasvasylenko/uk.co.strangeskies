@@ -5,9 +5,7 @@ public interface EdgeVertices<V> {
 
 	V getTo();
 
-	boolean isDirectional();
-
-	public static <V> EdgeVertices<V> between(V from, V to) {
+	static <V> EdgeVertices<V> between(V from, V to) {
 		return new EdgeVertices<V>() {
 			@Override
 			public V getFrom() {
@@ -20,14 +18,8 @@ public interface EdgeVertices<V> {
 			}
 
 			@Override
-			public boolean isDirectional() {
-				return false;
-			}
-
-			@Override
 			public int hashCode() {
-				return isDirectional() ? (from.hashCode() ^ to.hashCode() * 7) : (from
-						.hashCode() ^ to.hashCode() * 17);
+				return from.hashCode() ^ to.hashCode() * 7;
 			}
 
 			@Override
@@ -36,8 +28,7 @@ public interface EdgeVertices<V> {
 					return false;
 				EdgeVertices<?> edge = (EdgeVertices<?>) object;
 				return (from.equals(edge.getFrom()) && to.equals(edge.getTo()))
-						|| (!isDirectional() && from.equals(edge.getTo()) && to.equals(edge
-								.getFrom()));
+						|| (from.equals(edge.getTo()) && to.equals(edge.getFrom()));
 			}
 		};
 	}

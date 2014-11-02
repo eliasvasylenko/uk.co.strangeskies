@@ -16,7 +16,8 @@ public class MultiTreeMap<K, V, C extends Collection<V>> extends TreeMap<K, C>
 		this.collectionFactory = collectionFactory;
 	}
 
-	public MultiTreeMap(Comparator<K> comparator, Factory<C> collectionFactory) {
+	public MultiTreeMap(Comparator<? super K> comparator,
+			Factory<C> collectionFactory) {
 		super(comparator);
 		this.collectionFactory = collectionFactory;
 	}

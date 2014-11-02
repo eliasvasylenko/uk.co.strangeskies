@@ -1,4 +1,4 @@
-package uk.co.strangeskies.mathematics;
+package uk.co.strangeskies.mathematics.operation;
 
 import uk.co.strangeskies.mathematics.expression.BiFunctionExpression;
 import uk.co.strangeskies.mathematics.expression.Expression;

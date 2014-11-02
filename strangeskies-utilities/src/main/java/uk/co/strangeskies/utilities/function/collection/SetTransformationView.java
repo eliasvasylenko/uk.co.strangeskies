@@ -21,13 +21,28 @@ import java.util.function.Function;
  *          The type of the elements of the backing list.
  */
 public class SetTransformationView<F, T> extends AbstractSet<T> {
-	private final Collection<? extends F> backingCollection;
+	private final Collection<F> backingCollection;
 	private final Function<? super F, ? extends T> function;
+	private final Function<? super T, ? extends F> inverse;
 
-	public SetTransformationView(Collection<? extends F> backingCollection,
+	public SetTransformationView(Collection<F> backingCollection,
 			Function<? super F, ? extends T> function) {
+		this(backingCollection, function, t -> {
+			throw new UnsupportedOperationException();
+		});
+	}
+
+	public SetTransformationView(Collection<F> backingCollection,
+			Function<? super F, ? extends T> function,
+			Function<? super T, ? extends F> inverse) {
 		this.backingCollection = backingCollection;
 		this.function = function;
+		this.inverse = inverse;
+	}
+
+	@Override
+	public boolean add(T e) {
+		return backingCollection.add(inverse.apply(e));
 	}
 
 	public final Collection<F> getBackingCollection() {

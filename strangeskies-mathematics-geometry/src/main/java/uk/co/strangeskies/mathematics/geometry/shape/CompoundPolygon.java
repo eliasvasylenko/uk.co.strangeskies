@@ -4,6 +4,7 @@ import java.util.Set;
 
 import uk.co.strangeskies.mathematics.logic.BooleanCombinationBehaviour;
 import uk.co.strangeskies.mathematics.values.Value;
+import uk.co.strangeskies.utilities.Self;
 
 /**
  * Complex polygons, self intersecting with holes and multiple parts.
@@ -13,7 +14,8 @@ import uk.co.strangeskies.mathematics.values.Value;
  * @param <V>
  */
 public interface CompoundPolygon<V extends Value<V>> extends
-		ComplexPolygon<CompoundPolygon<V>, V>, /* @Mutable */
+		Self<CompoundPolygon<V>>, ComplexPolygon<CompoundPolygon<V>, V>,
+		/* @Mutable */
 		BooleanCombinationBehaviour<CompoundPolygon<V>, Polygon<?, V>> {
 	/**
 	 * Return set of component polygons. These polygons may be self intersecting

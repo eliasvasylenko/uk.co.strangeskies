@@ -32,7 +32,7 @@ import uk.co.strangeskies.utilities.osgi.ServiceWrapperManager;
  */
 @Component(service = { EventListenerHook.class, FindHook.class })
 public class ServiceWrapperManagerImpl implements ServiceWrapperManager {
-	private final MultiMap<Class<?>, ManagedServiceWrapper<?>, ? extends Set<?>> wrappedServiceClasses;
+	private final MultiMap<Class<?>, ManagedServiceWrapper<?>, ? extends Set<ManagedServiceWrapper<?>>> wrappedServiceClasses;
 	private final Map<ServiceWrapper<?>, ManagedServiceWrapper<?>> managedServiceWrappers;
 
 	private final Map<ServiceReference<?>, WrappingServiceTree> wrappedServices;

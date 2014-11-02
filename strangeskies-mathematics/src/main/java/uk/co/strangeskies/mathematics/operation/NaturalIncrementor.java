@@ -1,4 +1,4 @@
-package uk.co.strangeskies.mathematics;
+package uk.co.strangeskies.mathematics.operation;
 
 public class NaturalIncrementor<T extends Incrementable<? extends T>>
 		implements Incrementor<T> {

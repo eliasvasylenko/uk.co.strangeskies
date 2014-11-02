@@ -1,5 +1,10 @@
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.1'
+}
+
 allprojects  {
 	apply plugin: 'maven'
+
 	group = 'uk.co.strangeskies'
 	version = '0.0.1-SNAPSHOT'
 }

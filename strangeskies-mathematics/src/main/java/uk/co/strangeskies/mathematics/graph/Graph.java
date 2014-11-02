@@ -16,7 +16,7 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 
 		Set<V> incomingTo(V vertex);
 
-		Comparator<V> comparator();
+		Comparator<? super V> comparator();
 	}
 
 	public interface Edges<E, V> extends Map<E, EdgeVertices<V>> {
@@ -26,11 +26,11 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 
 		Set<E> incomingTo(V vertex);
 
-		Set<E> between(V from, V to);
-
-		default Set<E> between(EdgeVertices<V> vertices) {
-			return between(vertices.getFrom(), vertices.getTo());
+		default Set<E> between(V from, V to) {
+			return between(EdgeVertices.between(from, to));
 		}
+
+		Set<E> between(EdgeVertices<V> vertices);
 
 		/**
 		 * If there is exactly one edge between the provided vertices, this edge is
@@ -40,17 +40,17 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 		 * @param to
 		 * @return
 		 */
-		E betweenUnique(V from, V to);
-
-		default E betweenUnique(EdgeVertices<V> vertices) {
-			return betweenUnique(vertices.getFrom(), vertices.getTo());
+		default E betweenUnique(V from, V to) {
+			return betweenUnique(EdgeVertices.between(from, to));
 		}
 
-		E add(V from, V to);
+		E betweenUnique(EdgeVertices<V> vertices);
 
-		default E add(EdgeVertices<V> edge) {
-			return add(edge.getFrom(), edge.getTo());
+		default E add(V from, V to) {
+			return add(EdgeVertices.between(from, to));
 		}
+
+		E add(EdgeVertices<V> edge);
 
 		default boolean add(@SuppressWarnings("unchecked") EdgeVertices<V>... edges) {
 			return add(Arrays.asList(edges));
@@ -58,13 +58,14 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 
 		default boolean add(Collection<? extends EdgeVertices<V>> edgeVertices) {
 			boolean changed = false;
-			for (EdgeVertices<V> edge : edgeVertices) {
+			for (EdgeVertices<V> edge : edgeVertices)
 				changed = add(edge) != null | changed;
-			}
 			return changed;
 		}
 
 		double weight(E edge);
+
+		Comparator<? super E> comparator();
 	}
 
 	/**

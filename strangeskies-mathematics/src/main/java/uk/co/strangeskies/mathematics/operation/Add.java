@@ -1,4 +1,4 @@
-package uk.co.strangeskies.mathematics;
+package uk.co.strangeskies.mathematics.operation;
 
 import java.util.function.BiFunction;
 
