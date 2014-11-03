@@ -4,6 +4,7 @@ import uk.co.strangeskies.mathematics.expression.CompoundExpression;
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
 import uk.co.strangeskies.mathematics.geometry.Bounds2;
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix.Order;
+import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector.Orientation;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.Vector2Impl;
@@ -66,12 +67,6 @@ public class Line2Impl<V extends Value<V>> extends CompoundExpression<Line2<V>>
 	}
 
 	@Override
-	public boolean touches(Vector2<?> other) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
 	public boolean intersects(Shape<?> other) {
 		// TODO Auto-generated method stub
 		return false;
@@ -110,12 +105,13 @@ public class Line2Impl<V extends Value<V>> extends CompoundExpression<Line2<V>>
 	}
 
 	@Override
-	public Line2<V> get() {
+	protected Line2<V> evaluate() {
 		return getThis();
 	}
 
 	@Override
-	protected Line2<V> evaluate() {
-		return getThis();
+	public boolean touches(Vector<?, ?> point) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 }

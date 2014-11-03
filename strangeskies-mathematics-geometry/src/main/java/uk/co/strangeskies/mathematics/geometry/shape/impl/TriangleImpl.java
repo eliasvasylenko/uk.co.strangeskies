@@ -1,14 +1,17 @@
 package uk.co.strangeskies.mathematics.geometry.shape.impl;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
+import java.util.concurrent.locks.ReadWriteLock;
 
+import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
+import uk.co.strangeskies.mathematics.geometry.shape.ClosedPolyline2;
+import uk.co.strangeskies.mathematics.geometry.shape.Shape;
 import uk.co.strangeskies.mathematics.geometry.shape.Triangle;
 import uk.co.strangeskies.mathematics.values.Value;
+import uk.co.strangeskies.utilities.Observer;
 
-public class TriangleImpl<V extends Value<V>> extends
-		SimplePolygonImpl<Triangle<V>, V> implements Triangle<V> {
+public class TriangleImpl<V extends Value<V>> implements Triangle<V> {
 	private Vector2<V> a;
 	private Vector2<V> b;
 	private Vector2<V> c;
@@ -78,16 +81,77 @@ public class TriangleImpl<V extends Value<V>> extends
 	}
 
 	@Override
-	public List<Vector2<V>> getVertices() {
-		List<Vector2<V>> vertices = new ArrayList<>();
-		vertices.add(a);
-		vertices.add(b);
-		vertices.add(c);
-		return vertices;
+	public ClosedPolyline2<V> boundary() {
+		ClosedPolyline2<V> boundary = new ClosedPolyline2Impl<>();
+		boundary.vertices().add(a);
+		boundary.vertices().add(b);
+		boundary.vertices().add(c);
+		return boundary;
 	}
 
 	@Override
 	public Triangle<V> copy() {
 		return new TriangleImpl<>(this);
+	}
+
+	@Override
+	public Set<Vector2<V>> hullVertexSet() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Set<Vector2<V>> vertexSet() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public uk.co.strangeskies.mathematics.geometry.shape.SimplePolygon.WindingDirection getWindingDirection() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean intersects(Shape<?> shape) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean touches(Shape<?> shape) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public Triangle<V> getValue() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ReadWriteLock getLock() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean addObserver(Observer<? super Expression<Triangle<V>>> observer) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean removeObserver(
+			Observer<? super Expression<Triangle<V>>> observer) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void clearObservers() {
+		// TODO Auto-generated method stub
+
 	}
 }

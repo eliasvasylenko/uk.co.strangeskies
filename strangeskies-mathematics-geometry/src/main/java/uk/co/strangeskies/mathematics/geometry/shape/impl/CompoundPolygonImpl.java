@@ -3,9 +3,11 @@ package uk.co.strangeskies.mathematics.geometry.shape.impl;
 import java.util.List;
 import java.util.Set;
 
+import uk.co.strangeskies.mathematics.expression.CompoundExpression;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
+import uk.co.strangeskies.mathematics.geometry.shape.ClosedPolyline2;
 import uk.co.strangeskies.mathematics.geometry.shape.CompoundPolygon;
-import uk.co.strangeskies.mathematics.geometry.shape.Polygon;
+import uk.co.strangeskies.mathematics.geometry.shape.Shape;
 import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.mathematics.values.ValueFactory;
 
@@ -17,12 +19,13 @@ import uk.co.strangeskies.mathematics.values.ValueFactory;
  * @param <V>
  */
 public class CompoundPolygonImpl<V extends Value<V>> extends
-		PolygonImpl<CompoundPolygon<V>, V> implements CompoundPolygon<V> {
-	public CompoundPolygonImpl(Polygon<?, ?> polygon,
+		CompoundExpression<CompoundPolygonImpl<V>> implements
+		CompoundPolygon<CompoundPolygonImpl<V>, V> {
+	public CompoundPolygonImpl(CompoundPolygon<?, ?> polygon,
 			ValueFactory<? extends V> valueFactory) {
 	}
 
-	public CompoundPolygonImpl(Polygon<?, ? extends V> polygon) {
+	public CompoundPolygonImpl(CompoundPolygon<?, ? extends V> polygon) {
 	}
 
 	public CompoundPolygonImpl(List<? extends Vector2<?>> polygon,
@@ -39,25 +42,48 @@ public class CompoundPolygonImpl<V extends Value<V>> extends
 	}
 
 	@Override
-	public List<Vector2<V>> getVertices() {
+	public boolean intersects(Shape<?> shape) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean touches(Shape<?> shape) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public CompoundPolygonImpl<V> copy() {
+		return new CompoundPolygonImpl<>(this);
+	}
+
+	@Override
+	public CompoundPolygonImpl<V> set(CompoundPolygonImpl<V> to) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public CompoundPolygon<V> copy() {
+	public CompoundPolygonImpl<V> get() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public CompoundPolygon<V> set(CompoundPolygon<V> to) {
+	public uk.co.strangeskies.mathematics.geometry.shape.CompoundPolygon.WindingRule windingRule() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Set<Polygon<?, V>> getComponentSet() {
+	public Set<ClosedPolyline2<V>> boundaryComponents() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	protected CompoundPolygonImpl<V> evaluate() {
 		// TODO Auto-generated method stub
 		return null;
 	}

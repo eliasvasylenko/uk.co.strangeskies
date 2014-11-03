@@ -11,8 +11,8 @@ import uk.co.strangeskies.mathematics.values.Value;
  * 
  * @param <V>
  */
-public interface ConvexPolygon<V extends Value<V>> extends
-		SimplePolygon<ConvexPolygon<V>, V> {
+public interface ConvexPolygon<S extends ConvexPolygon<S, V>, V extends Value<V>>
+		extends SimplePolygon<S, V> {
 	/**
 	 * This method returns a modifiable set containing all vertices which
 	 * currently effectively make a contribution to the convex Hull of this
@@ -52,4 +52,9 @@ public interface ConvexPolygon<V extends Value<V>> extends
 	 * @return
 	 */
 	public Set<Vector2<V>> vertexSet();
+
+	@Override
+	default CompoundPolygon<?, V> and(CompoundPolygon<?, V> value) {
+		return null; // TODO
+	}
 }

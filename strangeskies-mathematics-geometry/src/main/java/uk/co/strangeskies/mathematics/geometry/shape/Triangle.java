@@ -4,7 +4,7 @@ import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.values.Value;
 
 public interface Triangle<V extends Value<V>> extends
-		SimplePolygon<Triangle<V>, V> {
+/* @ReadOnly */ConvexPolygon<Triangle<V>, V> {
 	public Triangle<V> set(Vector2<V> a, Vector2<V> b, Vector2<V> c);
 
 	public Triangle<V> set(Number ax, Number ay, Number bx, Number by, Number cx,

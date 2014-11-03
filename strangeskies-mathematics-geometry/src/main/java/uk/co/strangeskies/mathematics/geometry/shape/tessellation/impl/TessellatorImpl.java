@@ -22,7 +22,9 @@ public class TessellatorImpl implements Tessellator {
 	public <V extends Value<V>> Mesh<Vector2<V>> getTessellationMesh(
 			SimplePolygon<?, V> polygon, final MeshingScheme scheme, int runLimit,
 			boolean restrictToConvex) {
-		final List<Vector2<V>> vertices = polygon.getVertices();
+		// TODO reimplement with sweep for vastly better computational complexity (&
+		// support for complex/compound polygons)
+		final List<Vector2<V>> vertices = polygon.boundary().vertices();
 		final Set<MeshFragment> meshFragments = new HashSet<>();
 
 		// output list
@@ -43,7 +45,7 @@ public class TessellatorImpl implements Tessellator {
 			}
 		};
 
-		List</*@Immutable*/Integer> remainingIndices = new ArrayList<>();
+		List</* @Immutable */Integer> remainingIndices = new ArrayList<>();
 		for (int i = 0; i < vertices.size(); i++)
 			remainingIndices.add(i);
 
@@ -104,9 +106,9 @@ public class TessellatorImpl implements Tessellator {
 	}
 
 	public <V extends Value<V>> boolean isValidEar(
-	/*@ReadOnly*/List</*@Immutable*/Vector2<V>> vertices,
-	/*@ReadOnly*/List</*@Immutable*/Integer> remainingIndices, int earIndex)
-	/*@ReadOnly*/{
+	/* @ReadOnly */List</* @Immutable */Vector2<V>> vertices,
+	/* @ReadOnly */List</* @Immutable */Integer> remainingIndices, int earIndex)
+	/* @ReadOnly */{
 		int indicesLeft = remainingIndices.size();
 
 		// if not even triangle
@@ -114,18 +116,18 @@ public class TessellatorImpl implements Tessellator {
 			return false;
 
 		// ear triangle
-		/*@ReadOnly*/Vector2<V> a = vertices.get(remainingIndices.get(earIndex));
+		/* @ReadOnly */Vector2<V> a = vertices.get(remainingIndices.get(earIndex));
 		if (++earIndex == indicesLeft)
 			earIndex = 0;
-		/*@ReadOnly*/Vector2<V> b = vertices.get(remainingIndices.get(earIndex));
+		/* @ReadOnly */Vector2<V> b = vertices.get(remainingIndices.get(earIndex));
 		if (++earIndex == indicesLeft)
 			earIndex = 0;
-		/*@ReadOnly*/Vector2<V> c = vertices.get(remainingIndices.get(earIndex));
+		/* @ReadOnly */Vector2<V> c = vertices.get(remainingIndices.get(earIndex));
 
 		Triangle<V> triangle = new TriangleImpl<V>(a, b, c);
 
 		// if ear is concave then reject as invalid
-		if (triangle.getWindingDirection() == WindingDirection.Anticlockwise)
+		if (triangle.getWindingDirection() == WindingDirection.COUNTER_CLOCKWISE)
 			return false;
 
 		// if ear intersects with any other geometry it is invalid
@@ -139,16 +141,17 @@ public class TessellatorImpl implements Tessellator {
 			if (triangle.intersects(new Line2Impl<V>(previousVertex, vertex)))
 				return false;
 
-			/* Check if any point(s) 'n' overlap b, then for each check if the angle
-			* swept about b through the solid portion (by winding) between a and c
-			* intersects the angle swept about n through the solid portion between
-			* its own neighbouring points. If intersection found then fail.
-			*
-			* It's worth noting that In this case a valid triangulation may still
-			* fail, but it doesn't matter as the polygon will be reduced elsewhere
-			* until an ear at b is made passable. Also the alternative, to more
-			* thoroughly check validity here, is way too overcomplicated...
-			*/
+			/*
+			 * Check if any point(s) 'n' overlap b, then for each check if the angle
+			 * swept about b through the solid portion (by winding) between a and c
+			 * intersects the angle swept about n through the solid portion between
+			 * its own neighbouring points. If intersection found then fail.
+			 * 
+			 * It's worth noting that In this case a valid triangulation may still
+			 * fail, but it doesn't matter as the polygon will be reduced elsewhere
+			 * until an ear at b is made passable. Also the alternative, to more
+			 * thoroughly check validity here, is way too overcomplicated...
+			 */
 			// TO DO (very rare case, only for *very* redundant empty geometry)
 
 			previousVertex = vertex;

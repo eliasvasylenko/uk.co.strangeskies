@@ -17,4 +17,6 @@ public interface LineN<T extends Vector<T, V>, V extends Value<V>> {
 	public Value<?> getLength();
 
 	public V getLengthSquared();
+
+	public boolean touches(Vector<?, ?> point);
 }
