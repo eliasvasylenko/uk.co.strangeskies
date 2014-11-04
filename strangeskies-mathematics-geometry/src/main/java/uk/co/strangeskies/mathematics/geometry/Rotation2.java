@@ -8,7 +8,7 @@ public class Rotation2<O> extends
 		BiFunctionExpression<Rotatable2<? extends O>, Value<?>, O> {
 	public Rotation2(Expression<? extends Rotatable2<? extends O>> firstOperand,
 			Expression<? extends Value<?>> secondOperand) {
-		super(firstOperand, secondOperand, new Rotate2<O>());
+		super(firstOperand, secondOperand, Rotatable2::rotate);
 	}
 
 	@Override

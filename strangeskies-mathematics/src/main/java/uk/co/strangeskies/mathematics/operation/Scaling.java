@@ -8,7 +8,7 @@ public class Scaling<O> extends
 		BiFunctionExpression<Scalable<? extends O>, Value<?>, O> {
 	public Scaling(Expression<? extends Scalable<? extends O>> firstOperand,
 			Expression<? extends Value<?>> secondOperand) {
-		super(firstOperand, secondOperand, new Scale<O>());
+		super(firstOperand, secondOperand, Scalable::multiply);
 	}
 
 	@Override

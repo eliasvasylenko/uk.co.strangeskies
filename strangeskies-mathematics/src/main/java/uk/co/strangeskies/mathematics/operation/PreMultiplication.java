@@ -9,7 +9,8 @@ public class PreMultiplication<O extends NonCommutativelyMultipliable<?, ? super
 	public PreMultiplication(
 			Expression<? extends NonCommutativelyMultipliable<? extends O, ? super T>> firstOperand,
 			Expression<? extends T> secondOperand) {
-		super(firstOperand, secondOperand, new PreMultiply<O, T>());
+		super(firstOperand, secondOperand,
+				NonCommutativelyMultipliable::preMultiply);
 	}
 
 	@Override

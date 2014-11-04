@@ -4,13 +4,12 @@ import uk.co.strangeskies.mathematics.expression.BiFunctionExpression;
 import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.mathematics.values.Value;
 
-public class PreRotation2<O>
-		extends
+public class PreRotation2<O> extends
 		BiFunctionExpression<NonCommutativelyRotatable2<? extends O>, Value<?>, O> {
 	public PreRotation2(
 			Expression<? extends NonCommutativelyRotatable2<? extends O>> firstOperand,
 			Expression<? extends Value<?>> secondOperand) {
-		super(firstOperand, secondOperand, new PreRotate2<O>());
+		super(firstOperand, secondOperand, NonCommutativelyRotatable2::preRotate);
 	}
 
 	@Override

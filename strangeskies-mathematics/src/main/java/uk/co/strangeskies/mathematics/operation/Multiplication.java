@@ -8,7 +8,7 @@ public class Multiplication<O extends Multipliable<?, ? super T>, T> extends
 	public Multiplication(
 			Expression<? extends Multipliable<? extends O, ? super T>> firstOperand,
 			Expression<? extends T> secondOperand) {
-		super(firstOperand, secondOperand, new Multiply<O, T>());
+		super(firstOperand, secondOperand, Multipliable::multiply);
 	}
 
 	@Override

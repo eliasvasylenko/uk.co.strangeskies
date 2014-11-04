@@ -8,7 +8,7 @@ public class Addition<O extends Addable<?, ? super T>, T> extends
 	public Addition(
 			Expression<? extends Addable<? extends O, ? super T>> firstOperand,
 			Expression<? extends T> secondOperand) {
-		super(firstOperand, secondOperand, new Add<O, T>());
+		super(firstOperand, secondOperand, Addable::add);
 	}
 
 	@Override

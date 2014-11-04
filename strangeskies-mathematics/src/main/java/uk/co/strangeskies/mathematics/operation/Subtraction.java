@@ -8,7 +8,7 @@ public class Subtraction<O extends Subtractable<?, ? super T>, T> extends
 	public Subtraction(
 			Expression<? extends Subtractable<? extends O, ? super T>> firstOperand,
 			Expression<? extends T> secondOperand) {
-		super(firstOperand, secondOperand, new Subtract<O, T>());
+		super(firstOperand, secondOperand, Subtractable::subtract);
 	}
 
 	@Override
