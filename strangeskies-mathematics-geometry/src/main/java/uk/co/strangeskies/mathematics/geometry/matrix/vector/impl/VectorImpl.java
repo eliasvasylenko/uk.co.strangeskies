@@ -17,6 +17,7 @@ import uk.co.strangeskies.mathematics.geometry.matrix.Matrix;
 import uk.co.strangeskies.mathematics.geometry.matrix.ReOrderedMatrix;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
+import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorN;
 import uk.co.strangeskies.mathematics.values.DoubleValue;
 import uk.co.strangeskies.mathematics.values.IntValue;
 import uk.co.strangeskies.mathematics.values.Value;
@@ -109,7 +110,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 
 	@Override
 	public final List<V> getData() {
-		return Collections.<V> unmodifiableList(data);
+		return Collections.unmodifiableList(data);
 	}
 
 	@Override
@@ -292,7 +293,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 	}
 
 	@Override
-	public final VectorNImpl<V> getMajorVector(int index) {
+	public final VectorN<V> getMajorVector(int index) {
 		if (index != 0) {
 			throw new ArrayIndexOutOfBoundsException(index);
 		}
@@ -301,7 +302,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 	}
 
 	@Override
-	public final VectorNImpl<V> getMinorVector(int index) {
+	public final VectorN<V> getMinorVector(int index) {
 		return new VectorNImpl<V>(getOrder(), getOrientation().getOther(),
 				Arrays.asList(data.get(index)));
 	}

@@ -29,8 +29,9 @@ public class Matrix2Impl<V extends Value<V>> extends MatrixSImpl<Matrix2<V>, V>
 
 	@Override
 	public V getDeterminant() {
-		return getElement(0, 0).getMultiplied(getElement(1, 1)).add(
-				getElement(0, 1).getMultiplied(getElement(1, 0)));
+		// TODO YET ANOTHER oracle javac bug, shouldn't have to separate this out.
+		V bd = getElement(0, 1).getMultiplied(getElement(1, 0));
+		return getElement(0, 0).getMultiplied(getElement(1, 1)).add(bd);
 	}
 
 	@Override

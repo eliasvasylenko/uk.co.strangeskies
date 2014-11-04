@@ -146,7 +146,7 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 
 	@Override
 	public Matrix<?, V> getTransposed() {
-		return new MatrixNNImpl<V>(getOrder(), Matrix.transposeData(getData2()));
+		return new MatrixNImpl<V>(getOrder(), Matrix.transposeData(getData2()));
 	}
 
 	@Override
@@ -182,7 +182,7 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 
 	@Override
 	public Vector<?, V> getMajorVector(int index) {
-		return new VectorNImpl<V>(getOrder(),
+		return new VectorNImpl<>(getOrder(),
 				getOrder().getAssociatedOrientation(), getMajorVectorData(index));
 	}
 
@@ -192,7 +192,7 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 
 	@Override
 	public Vector<?, V> getMinorVector(int index) {
-		return new VectorNImpl<V>(getOrder(), getOrder().getOther()
+		return new VectorNImpl<>(getOrder(), getOrder().getOther()
 				.getAssociatedOrientation(), getMinorVectorData(index));
 	}
 
