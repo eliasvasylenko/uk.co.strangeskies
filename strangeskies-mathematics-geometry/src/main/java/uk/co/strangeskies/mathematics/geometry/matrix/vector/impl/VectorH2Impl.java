@@ -40,4 +40,12 @@ public class VectorH2Impl<V extends Value<V>> extends
 
 		return getThis();
 	}
+
+	@Override
+	public Vector2<V> getMutableVector() {
+		Vector2<V> mutableVector = new Vector2Impl<V>(getOrder(), getOrientation(),
+				getData().subList(0, 2));
+
+		return mutableVector;
+	}
 }

@@ -4,7 +4,7 @@ import java.util.Collection;
 
 import uk.co.strangeskies.mathematics.Range;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
-import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.Vector2Impl;
+import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.factory.Factory;
 
@@ -17,7 +17,7 @@ public class Bounds2<V extends Value<V>> extends Bounds<Bounds2<V>, V> {
 		super(other);
 	}
 
-	public Bounds2(Vector2Impl<V> from, Vector2Impl<V> to) {
+	public Bounds2(Vector2<V> from, Vector2<V> to) {
 		super(from, to);
 	}
 
@@ -25,7 +25,7 @@ public class Bounds2<V extends Value<V>> extends Bounds<Bounds2<V>, V> {
 		super(from, to, 2);
 	}
 
-	public Bounds2(@SuppressWarnings("unchecked") Vector2Impl<V>... points) {
+	public Bounds2(@SuppressWarnings("unchecked") Vector2<V>... points) {
 		super(points);
 	}
 

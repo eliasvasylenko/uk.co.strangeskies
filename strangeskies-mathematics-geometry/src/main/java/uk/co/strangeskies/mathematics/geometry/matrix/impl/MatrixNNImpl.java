@@ -3,6 +3,7 @@ package uk.co.strangeskies.mathematics.geometry.matrix.impl;
 import java.util.List;
 
 import uk.co.strangeskies.mathematics.geometry.matrix.MatrixNN;
+import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorN;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.VectorNImpl;
 import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.factory.Factory;
@@ -30,14 +31,14 @@ public class MatrixNNImpl<V extends Value<V>> extends
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public final List<VectorNImpl<V>> getRowVectors() {
-		return (List<VectorNImpl<V>>) super.getRowVectors();
+	public final List<VectorN<V>> getRowVectors() {
+		return (List<VectorN<V>>) super.getRowVectors();
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public final List<VectorNImpl<V>> getColumnVectors() {
-		return (List<VectorNImpl<V>>) super.getColumnVectors();
+	public final List<VectorN<V>> getColumnVectors() {
+		return (List<VectorN<V>>) super.getColumnVectors();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -54,14 +55,14 @@ public class MatrixNNImpl<V extends Value<V>> extends
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public final List<VectorNImpl<V>> getMajorVectors() {
-		return (List<VectorNImpl<V>>) super.getMajorVectors();
+	public final List<VectorN<V>> getMajorVectors() {
+		return (List<VectorN<V>>) super.getMajorVectors();
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public final List<VectorNImpl<V>> getMinorVectors() {
-		return (List<VectorNImpl<V>>) super.getMinorVectors();
+	public final List<VectorN<V>> getMinorVectors() {
+		return (List<VectorN<V>>) super.getMinorVectors();
 	}
 
 	@SuppressWarnings("unchecked")

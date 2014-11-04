@@ -14,6 +14,7 @@ import uk.co.strangeskies.mathematics.expression.CompoundExpression;
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
 import uk.co.strangeskies.mathematics.geometry.DimensionalityException;
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix;
+import uk.co.strangeskies.mathematics.geometry.matrix.ReOrderedMatrix;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.values.DoubleValue;
@@ -137,6 +138,20 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 		}
 
 		return matrix;
+	}
+
+	@Override
+	public Matrix<?, V> withOrder(Order order) {
+		if (order == getOrder())
+			return this;
+		else
+			return new ReOrderedMatrix<V>(this);
+	}
+
+	@Override
+	public Matrix<?, V> getTransposed() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	@Override

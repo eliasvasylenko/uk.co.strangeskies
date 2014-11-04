@@ -1,7 +1,6 @@
 package uk.co.strangeskies.mathematics.geometry.matrix.vector;
 
 import uk.co.strangeskies.mathematics.geometry.Rotatable2;
-import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.Vector2Impl;
 import uk.co.strangeskies.mathematics.values.Value;
 
 public interface VectorH2<V extends Value<V>> extends VectorH<VectorH2<V>, V>,
@@ -19,10 +18,5 @@ public interface VectorH2<V extends Value<V>> extends VectorH<VectorH2<V>, V>,
 	}
 
 	@Override
-	public default Vector2<V> getMutableVector() {
-		Vector2<V> mutableVector = new Vector2Impl<V>(getOrder(), getOrientation(),
-				getData().subList(0, 2));
-
-		return mutableVector;
-	}
+	public Vector2<V> getMutableVector();
 }

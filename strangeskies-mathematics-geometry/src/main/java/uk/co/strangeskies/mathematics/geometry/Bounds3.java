@@ -4,7 +4,7 @@ import java.util.Collection;
 
 import uk.co.strangeskies.mathematics.Range;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
-import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.Vector3Impl;
+import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector3;
 import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.factory.Factory;
 
@@ -21,11 +21,11 @@ public class Bounds3<V extends Value<V>> extends Bounds<Bounds3<V>, V> {
 		super(from, to, 3);
 	}
 
-	public Bounds3(Vector3Impl<V> from, Vector3Impl<V> to) {
+	public Bounds3(Vector3<V> from, Vector3<V> to) {
 		super(from, to);
 	}
 
-	public Bounds3(@SuppressWarnings("unchecked") Vector3Impl<V>... points) {
+	public Bounds3(@SuppressWarnings("unchecked") Vector3<V>... points) {
 		super(points);
 	}
 

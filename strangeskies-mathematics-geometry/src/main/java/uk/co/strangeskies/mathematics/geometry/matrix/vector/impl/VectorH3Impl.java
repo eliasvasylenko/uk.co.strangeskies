@@ -2,6 +2,8 @@ package uk.co.strangeskies.mathematics.geometry.matrix.vector.impl;
 
 import java.util.List;
 
+import uk.co.strangeskies.mathematics.geometry.matrix.Matrix;
+import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector3;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorH3;
 import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.factory.Factory;
@@ -24,5 +26,13 @@ public class VectorH3Impl<V extends Value<V>> extends
 	public VectorH3<V> copy() {
 		return new VectorH3Impl<>(getType(), getOrder(), getOrientation(),
 				getData());
+	}
+
+	@Override
+	public Vector3<V> getMutableVector() {
+		Vector3<V> mutableVector = new Vector3Impl<V>(getOrder(), getOrientation(),
+				getData().subList(0, 3));
+
+		return mutableVector;
 	}
 }

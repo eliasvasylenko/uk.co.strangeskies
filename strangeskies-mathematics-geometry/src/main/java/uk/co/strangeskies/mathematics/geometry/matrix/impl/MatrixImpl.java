@@ -11,8 +11,13 @@ import uk.co.strangeskies.mathematics.expression.CompoundExpression;
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
 import uk.co.strangeskies.mathematics.geometry.DimensionalityException;
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix;
+import uk.co.strangeskies.mathematics.geometry.matrix.ReOrderedMatrix;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
+import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector.Orientation;
+import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
+import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.Vector2Impl;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.VectorNImpl;
+import uk.co.strangeskies.mathematics.values.IntValue;
 import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.collection.MergeIndicesListView;
 import uk.co.strangeskies.utilities.collection.NullPointerInCollectionException;
@@ -132,6 +137,18 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 		return getThis();
 	}
 
+	public Matrix<?, V> withOrder(Order order) {
+		if (order == getOrder())
+			return this;
+		else
+			return new ReOrderedMatrix<V>(this);
+	}
+
+	@Override
+	public Matrix<?, V> getTransposed() {
+		return new MatrixNNImpl<V>(getOrder(), Matrix.transposeData(getData2()));
+	}
+
 	@Override
 	public final int getMajorSize() {
 		return data.get(0).size();
@@ -140,7 +157,12 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 	@Override
 	public final int getMinorSize() {
 		return data.size();
-	};
+	}
+
+	public Vector2<IntValue> getDimensions2() {
+		return new Vector2Impl<IntValue>(Order.ColumnMajor, Orientation.Column,
+				IntValue.factory()).setData(getRowSize(), getColumnSize());
+	}
 
 	protected List<V> getRowVectorData(int row) {
 		if (getOrder() == Order.RowMajor) {

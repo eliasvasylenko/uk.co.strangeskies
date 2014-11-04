@@ -2,7 +2,7 @@ package uk.co.strangeskies.mathematics.geometry.matrix;
 
 import java.util.List;
 
-import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.VectorNImpl;
+import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorN;
 import uk.co.strangeskies.mathematics.values.Value;
 
 public interface MatrixNN<V extends Value<V>> extends Matrix<MatrixNN<V>, V> {
@@ -10,26 +10,26 @@ public interface MatrixNN<V extends Value<V>> extends Matrix<MatrixNN<V>, V> {
 	public MatrixNN<V> getTransposed();
 
 	@Override
-	public List<VectorNImpl<V>> getRowVectors();
+	public List<VectorN<V>> getRowVectors();
 
 	@Override
-	public List<VectorNImpl<V>> getColumnVectors();
+	public List<VectorN<V>> getColumnVectors();
 
 	@Override
-	public VectorNImpl<V> getRowVector(int row);
+	public VectorN<V> getRowVector(int row);
 
 	@Override
-	public VectorNImpl<V> getColumnVector(int column);
+	public VectorN<V> getColumnVector(int column);
 
 	@Override
-	public List<VectorNImpl<V>> getMajorVectors();
+	public List<VectorN<V>> getMajorVectors();
 
 	@Override
-	public List<VectorNImpl<V>> getMinorVectors();
+	public List<VectorN<V>> getMinorVectors();
 
 	@Override
-	public VectorNImpl<V> getMajorVector(int index);
+	public VectorN<V> getMajorVector(int index);
 
 	@Override
-	public VectorNImpl<V> getMinorVector(int index);
+	public VectorN<V> getMinorVector(int index);
 }

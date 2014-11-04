@@ -7,6 +7,8 @@ import java.util.function.Function;
 
 import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
+import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
+import uk.co.strangeskies.mathematics.values.IntValue;
 import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.Decorator;
 import uk.co.strangeskies.utilities.Observer;
@@ -125,5 +127,100 @@ public class ReOrderedMatrix<V extends Value<V>> extends
 	public ReOrderedMatrix<V> transpose() {
 		getComponent().transpose();
 		return this;
+	}
+
+	@Override
+	public ReOrderedMatrix<V> multiply(Value<?> value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ReOrderedMatrix<V> multiply(long value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ReOrderedMatrix<V> multiply(double value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ReOrderedMatrix<V> divide(Value<?> value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ReOrderedMatrix<V> divide(long value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ReOrderedMatrix<V> divide(double value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ReOrderedMatrix<V> subtract(Matrix<?, ?> value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ReOrderedMatrix<V> add(Matrix<?, ?> value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ReOrderedMatrix<V> negate() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ReOrderedMatrix<V> preMultiply(Matrix<?, ?> value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ReOrderedMatrix<V> multiply(Matrix<?, ?> value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ReOrderedMatrix<V> set(Matrix<?, ?> to) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ReOrderedMatrix<V> get() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix<?, V> withOrder(Order order) {
+		return order == getOrder() ? this : getComponent();
+	}
+
+	@Override
+	public Vector2<IntValue> getDimensions2() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix<?, V> getTransposed() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

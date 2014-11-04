@@ -9,11 +9,9 @@ import java.util.function.Function;
 
 import uk.co.strangeskies.mathematics.expression.Variable;
 import uk.co.strangeskies.mathematics.geometry.DimensionalityException;
-import uk.co.strangeskies.mathematics.geometry.matrix.impl.MatrixNImpl;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector.Orientation;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
-import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.Vector2Impl;
 import uk.co.strangeskies.mathematics.operation.Negatable;
 import uk.co.strangeskies.mathematics.operation.NonCommutativelyMultipliable;
 import uk.co.strangeskies.mathematics.operation.Scalable;
@@ -76,12 +74,7 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 	 *
 	 * @return
 	 */
-	public default Matrix<?, V> withOrder(Order order) {
-		if (order == getOrder())
-			return this;
-		else
-			return new ReOrderedMatrix<V>(this);
-	}
+	public Matrix<?, V> withOrder(Order order);
 
 	public Vector<?, V> getMajorVector(int index);
 
@@ -96,10 +89,7 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 	 *
 	 * @return A vector representing the current dimensions.
 	 */
-	public default Vector2<IntValue> getDimensions2() {
-		return new Vector2Impl<IntValue>(Order.ColumnMajor, Orientation.Column,
-				IntValue.factory()).setData(getRowSize(), getColumnSize());
-	}
+	public Vector2<IntValue> getDimensions2();
 
 	@Override
 	public default S negate() {
@@ -176,9 +166,7 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 
 	public S transpose();
 
-	public default Matrix<?, V> getTransposed() {
-		return new MatrixNImpl<V>(getOrder(), transposeData(getData2()));
-	}
+	public Matrix<?, V> getTransposed();
 
 	public static <V extends Value<V>> List<List<V>> transposeData(
 			List<List<V>> data) {
