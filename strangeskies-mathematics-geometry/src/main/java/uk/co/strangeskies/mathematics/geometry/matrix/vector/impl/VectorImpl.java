@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import uk.co.strangeskies.mathematics.expression.CompoundExpression;
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
@@ -101,6 +102,13 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 		}
 
 		getDependencies().addAll(getData());
+	}
+
+	@Override
+	public final String toString() {
+		return "["
+				+ data.stream().map(Object::toString).collect(Collectors.joining(", "))
+				+ "]";
 	}
 
 	@Override

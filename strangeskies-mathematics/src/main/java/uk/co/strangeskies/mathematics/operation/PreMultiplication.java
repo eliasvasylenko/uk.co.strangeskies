@@ -9,8 +9,11 @@ public class PreMultiplication<O extends NonCommutativelyMultipliable<?, ? super
 	public PreMultiplication(
 			Expression<? extends NonCommutativelyMultipliable<? extends O, ? super T>> firstOperand,
 			Expression<? extends T> secondOperand) {
-		super(firstOperand, secondOperand,
-				NonCommutativelyMultipliable::preMultiply);
+		/*
+		 * TODO GETTING SICK OF THESE JAVAC BUGS. Yet another place I can't use ::
+		 * syntax because Oracle javac is broken.
+		 */
+		super(firstOperand, secondOperand, (a, b) -> a.getPreMultiplied(b));
 	}
 
 	@Override

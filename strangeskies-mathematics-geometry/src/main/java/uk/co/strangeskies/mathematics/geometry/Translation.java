@@ -9,7 +9,7 @@ public class Translation<O> extends
 	public Translation(
 			Expression<? extends Translatable<? extends O>> firstOperand,
 			Expression<? extends Vector<?, ?>> secondOperand) {
-		super(firstOperand, secondOperand, Translatable::translate);
+		super(firstOperand, secondOperand, (a, b) -> a.getTranslated(b));
 	}
 
 	@Override

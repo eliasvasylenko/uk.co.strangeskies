@@ -10,8 +10,7 @@ public class PreTranslation<O>
 	public PreTranslation(
 			Expression<? extends NonCommutativelyTranslatable<? extends O>> firstOperand,
 			Expression<? extends Vector<?, ?>> secondOperand) {
-		super(firstOperand, secondOperand,
-				NonCommutativelyTranslatable::preTranslate);
+		super(firstOperand, secondOperand, (a, b) -> a.getPreTranslated(b));
 	}
 
 	@Override

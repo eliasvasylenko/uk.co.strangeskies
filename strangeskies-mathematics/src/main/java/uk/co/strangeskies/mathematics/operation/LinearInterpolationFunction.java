@@ -4,7 +4,7 @@ import java.util.Objects;
 
 import uk.co.strangeskies.mathematics.values.Value;
 
-public class LinearInterpolationOperation<T extends Scalable<S> & Subtractable<S, ? super T>, S extends T>
+public class LinearInterpolationFunction<T extends Scalable<S> & Subtractable<S, ? super T>, S extends T>
 		implements InterpolationFunction<T, S> {
 	@Override
 	public S apply(T from, T to, Value<?> delta) {

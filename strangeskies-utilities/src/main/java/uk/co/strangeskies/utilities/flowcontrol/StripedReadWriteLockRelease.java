@@ -1,8 +1,13 @@
 package uk.co.strangeskies.utilities.flowcontrol;
 
 import java.util.Collection;
+import java.util.Set;
 
 public interface StripedReadWriteLockRelease<K> {
+	public Set<K> readLocksHeldByCurrentThread();
+
+	public Set<K> writeLocksHeldByCurrentThread();
+
 	public boolean releaseLocks(Collection<? extends K> readKeys,
 			Collection<? extends K> writeKeys);
 

@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
 
 import uk.co.strangeskies.utilities.collection.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.MultiMap;
@@ -17,6 +18,24 @@ public class HashingStripedReadWriteLock<K> implements StripedReadWriteLock<K> {
 	public HashingStripedReadWriteLock() {
 		locks = new HashMap<>();
 		readLockingThreads = new MultiHashMap<>(HashSet::new);
+	}
+
+	@Override
+	public Set<K> readLocksHeldByCurrentThread() {
+		synchronized (locks) {
+			return locks.keySet().stream()
+					.filter(this::isReadLockHeldByCurrentThread)
+					.collect(Collectors.toSet());
+		}
+	}
+
+	@Override
+	public Set<K> writeLocksHeldByCurrentThread() {
+		synchronized (locks) {
+			return locks.keySet().stream()
+					.filter(this::isWriteLockHeldByCurrentThread)
+					.collect(Collectors.toSet());
+		}
 	}
 
 	@Override

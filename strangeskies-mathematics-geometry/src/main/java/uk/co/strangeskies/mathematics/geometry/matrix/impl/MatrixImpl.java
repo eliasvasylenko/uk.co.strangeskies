@@ -182,8 +182,8 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 
 	@Override
 	public Vector<?, V> getMajorVector(int index) {
-		return new VectorNImpl<>(getOrder(),
-				getOrder().getAssociatedOrientation(), getMajorVectorData(index));
+		return new VectorNImpl<>(getOrder(), getOrder().getAssociatedOrientation(),
+				getMajorVectorData(index));
 	}
 
 	protected List<V> getMajorVectorData(int index) {

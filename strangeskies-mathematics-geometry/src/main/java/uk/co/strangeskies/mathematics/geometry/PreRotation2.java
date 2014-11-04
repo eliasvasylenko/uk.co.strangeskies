@@ -9,7 +9,7 @@ public class PreRotation2<O> extends
 	public PreRotation2(
 			Expression<? extends NonCommutativelyRotatable2<? extends O>> firstOperand,
 			Expression<? extends Value<?>> secondOperand) {
-		super(firstOperand, secondOperand, NonCommutativelyRotatable2::preRotate);
+		super(firstOperand, secondOperand, (a, b) -> a.getPreRotated(b));
 	}
 
 	@Override

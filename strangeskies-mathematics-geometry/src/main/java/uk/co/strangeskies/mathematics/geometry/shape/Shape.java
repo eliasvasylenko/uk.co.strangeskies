@@ -10,6 +10,15 @@ import uk.co.strangeskies.utilities.Property;
 import uk.co.strangeskies.utilities.Self;
 
 /**
+ * TODO: Decide whether the following decision is sensible! Maybe we should
+ * require all shapes be affinely transformable? Would be okay for polygons,
+ * ellipses, and beziers. Maybe we should use homogeneous coordinates after all?
+ * 
+ * Also TODO, think about passing in triangulator to polygon builder and have
+ * shapes triangulate internally. This would help in cases where triangulation
+ * is necessary for calculation of other properties, so as not to have to
+ * recalculate it...
+ * 
  * In general, classes and interfaces which extend Shape should deal with
  * <em>non-homogeneous</em> vectors, in the interests of a simple and consistent
  * API. Shapes don't generally support affine transformations or related
