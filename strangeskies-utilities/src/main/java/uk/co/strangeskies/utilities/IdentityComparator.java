@@ -13,9 +13,9 @@ import java.util.Map;
  * Defines an arbitrary total ordering over references' identities. Guaranteed
  * to be a consistent ordering for a particular IdentityComparator, but not
  * necessarily between different instances of IdentityComparator.
- * 
+ *
  * @author Elias N Vasylenko
- * 
+ *
  * @param <T>
  *          The type of object to compare.
  */
@@ -87,7 +87,7 @@ public class IdentityComparator<T> implements Comparator<T> {
 		while ((oldReference = (IDReference<?>) referenceQueue.poll()) != null) {
 			List<IDReference<T>> collisions = collisionMap.get(oldReference.getId());
 
-			if (collisions.size() >= 2) {
+			if (collisions.size() > 1) {
 				collisions.remove(oldReference);
 			} else {
 				collisionMap.remove(collisions);
@@ -115,6 +115,11 @@ public class IdentityComparator<T> implements Comparator<T> {
 			}
 
 			return ((Reference<?>) obj).get() == get();
+		}
+
+		@Override
+		public int hashCode() {
+			return get().hashCode();
 		}
 	}
 }

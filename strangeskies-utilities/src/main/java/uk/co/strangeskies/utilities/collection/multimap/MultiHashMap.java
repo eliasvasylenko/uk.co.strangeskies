@@ -1,4 +1,4 @@
-package uk.co.strangeskies.utilities.collection;
+package uk.co.strangeskies.utilities.collection.multimap;
 
 import java.util.Collection;
 import java.util.HashMap;

@@ -1,4 +1,4 @@
-package uk.co.strangeskies.utilities.collection;
+package uk.co.strangeskies.utilities.collection.decorator;
 
 import java.util.ArrayList;
 import java.util.Collection;

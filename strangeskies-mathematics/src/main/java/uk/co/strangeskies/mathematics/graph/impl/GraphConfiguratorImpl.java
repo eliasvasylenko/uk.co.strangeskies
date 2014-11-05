@@ -20,11 +20,11 @@ import uk.co.strangeskies.mathematics.graph.Graph;
 import uk.co.strangeskies.mathematics.graph.GraphTransformer;
 import uk.co.strangeskies.mathematics.graph.building.GraphConfigurator;
 import uk.co.strangeskies.utilities.IdentityComparator;
-import uk.co.strangeskies.utilities.collection.MapDecorator;
-import uk.co.strangeskies.utilities.collection.MultiHashMap;
-import uk.co.strangeskies.utilities.collection.MultiMap;
-import uk.co.strangeskies.utilities.collection.MultiTreeMap;
-import uk.co.strangeskies.utilities.collection.SetDecorator;
+import uk.co.strangeskies.utilities.collection.decorator.MapDecorator;
+import uk.co.strangeskies.utilities.collection.decorator.SetDecorator;
+import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
+import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
+import uk.co.strangeskies.utilities.collection.multimap.MultiTreeMap;
 import uk.co.strangeskies.utilities.factory.Configurator;
 
 public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
