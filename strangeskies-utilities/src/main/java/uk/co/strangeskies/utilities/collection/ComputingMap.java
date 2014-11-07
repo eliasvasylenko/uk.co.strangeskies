@@ -54,6 +54,13 @@ public interface ComputingMap<K, V> {
 	 */
 	boolean put(K key);
 
+	default boolean putAll(Set<K> keys) {
+		boolean changed = false;
+		for (K key : keys)
+			changed = put(key) | changed;
+		return changed;
+	}
+
 	/**
 	 * This method simply makes sure the value for the given key has been computed
 	 * and added to the map, then returns it.
@@ -74,10 +81,21 @@ public interface ComputingMap<K, V> {
 	 */
 	boolean remove(K key);
 
+	default boolean removeAll(Set<K> keys) {
+		boolean changed = false;
+		for (K key : keys)
+			changed = remove(key) | changed;
+		return changed;
+	}
+
 	/**
 	 * Remove all keys and values from the map.
 	 *
 	 * @return True if the map contained keys, false if it was empty.
 	 */
 	boolean clear();
+
+	default boolean isEmpty() {
+		return keySet().isEmpty();
+	}
 }
