@@ -1,11 +1,11 @@
 package uk.co.strangeskies.utilities.collection;
 
 import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
+import java.lang.ref.SoftReference;
 import java.util.function.Function;
 
 public class CacheComputingMap<K, V> extends ComputingHashMap<K, V> {
-	protected class KeyedReference extends WeakReference<V> implements
+	protected class KeyedReference extends SoftReference<V> implements
 			Entry<K, V> {
 		private final K key;
 
