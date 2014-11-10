@@ -3,6 +3,8 @@ package uk.co.strangeskies.utilities.collection;
 import java.util.Set;
 import java.util.function.Function;
 
+import uk.co.strangeskies.utilities.IdentityProperty;
+
 public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 	protected class LinkedEntry extends KeyedReference {
 		private LinkedEntry previous = null;
@@ -23,7 +25,7 @@ public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 
 			previous.next = bounds.previous = this;
 
-			size++;
+			size.set(size.get() + 1);
 		}
 
 		@Override
@@ -45,21 +47,28 @@ public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 			previous.next = next;
 			next.previous = previous;
 
-			size--;
+			size.set(size.get() - 1);
 		}
 	}
 
-	private int size;
+	private final IdentityProperty<Integer> size;
 	private final int maximumSize;
 	private final LinkedEntry bounds;
 
 	public LRUCacheComputingMap(Function<K, V> computation, int maximumSize) {
 		super(computation);
 
-		size = 0;
+		size = new IdentityProperty<>(0);
 		this.maximumSize = maximumSize;
-
 		this.bounds = new LinkedEntry();
+	}
+
+	protected LRUCacheComputingMap(LRUCacheComputingMap<K, V> other) {
+		super(other);
+
+		size = other.size;
+		maximumSize = other.maximumSize;
+		bounds = other.bounds;
 	}
 
 	@Override
@@ -80,7 +89,7 @@ public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 	public boolean put(K key) {
 		boolean added = super.put(key);
 
-		if (size > maximumSize)
+		if (size.get() > maximumSize)
 			remove(bounds.previous.getKey());
 
 		return added;
@@ -91,7 +100,7 @@ public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 		for (K key : keys)
 			changed = super.put(key) | changed;
 
-		while (size > maximumSize)
+		while (size.get() > maximumSize)
 			remove(bounds.previous.getKey());
 
 		return changed;
@@ -101,7 +110,7 @@ public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 	public V putGet(K key) {
 		V value = super.putGet(key);
 
-		if (size > maximumSize)
+		if (size.get() > maximumSize)
 			remove(bounds.previous.getKey());
 
 		return value;

@@ -2,6 +2,7 @@ package uk.co.strangeskies.utilities.collection;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
+import java.util.Set;
 import java.util.function.Function;
 
 public class CacheComputingMap<K, V> extends ComputingHashMap<K, V> {
@@ -33,6 +34,11 @@ public class CacheComputingMap<K, V> extends ComputingHashMap<K, V> {
 	public CacheComputingMap(Function<K, V> computation) {
 		super(computation);
 		references = new ReferenceQueue<>();
+	}
+
+	protected CacheComputingMap(CacheComputingMap<K, V> other) {
+		super(other);
+		references = other.references;
 	}
 
 	@SuppressWarnings("unchecked")

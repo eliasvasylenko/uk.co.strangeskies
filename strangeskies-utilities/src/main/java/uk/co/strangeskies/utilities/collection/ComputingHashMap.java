@@ -17,9 +17,14 @@ public class ComputingHashMap<K, V> implements ComputingMap<K, V> {
 	private final Map<K, Entry<K, V>> map;
 	private final Function<K, V> computation;
 
-	protected ComputingHashMap(Function<K, V> computation) {
+	public ComputingHashMap(Function<K, V> computation) {
 		map = new HashMap<>();
 		this.computation = computation;
+	}
+
+	protected ComputingHashMap(ComputingHashMap<K, V> other) {
+		map = other.map;
+		computation = other.computation;
 	}
 
 	@Override
