@@ -53,9 +53,9 @@ local.properties
 
 # IDE generated project files #
 ###############################
-.classpath
-.project
-.settings
+#.classpath
+#.project
+#.settings
 
 # Temporary and backup files #
 ##############################
