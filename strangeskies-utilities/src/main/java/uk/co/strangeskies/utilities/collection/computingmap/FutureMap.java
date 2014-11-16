@@ -1,4 +1,4 @@
-package uk.co.strangeskies.utilities.flowcontrol;
+package uk.co.strangeskies.utilities.collection.computingmap;
 
 import java.util.AbstractSet;
 import java.util.HashMap;
@@ -9,8 +9,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
-import uk.co.strangeskies.utilities.collection.ComputingMap;
 
 public class FutureMap<K, V> implements ComputingMap<K, V> {
 	private final HashMap<K, Thread> preparationThreads;

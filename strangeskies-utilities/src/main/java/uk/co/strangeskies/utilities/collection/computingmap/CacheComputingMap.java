@@ -1,18 +1,26 @@
-package uk.co.strangeskies.utilities.collection;
+package uk.co.strangeskies.utilities.collection.computingmap;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
-import java.util.Set;
 import java.util.function.Function;
 
-public class CacheComputingMap<K, V> extends ComputingHashMap<K, V> {
+public class CacheComputingMap<K, V> extends ComputingEntryHashMap<K, V> {
 	protected class KeyedReference extends SoftReference<V> implements
 			Entry<K, V> {
 		private final K key;
+		@SuppressWarnings("unused")
+		private final V value;
 
-		public KeyedReference(K key, V value) {
-			super(value, references);
+		protected KeyedReference() {
+			super(null);
+			key = null;
+			value = null;
+		}
+
+		public KeyedReference(K key) {
+			super(computation().apply(key), references);
 			this.key = key;
+			this.value = softReferences ? null : get();
 		}
 
 		public K getKey() {
@@ -30,15 +38,18 @@ public class CacheComputingMap<K, V> extends ComputingHashMap<K, V> {
 	}
 
 	private final ReferenceQueue<V> references;
+	private final boolean softReferences;
 
-	public CacheComputingMap(Function<K, V> computation) {
+	public CacheComputingMap(Function<K, V> computation, boolean softReferences) {
 		super(computation);
 		references = new ReferenceQueue<>();
+		this.softReferences = softReferences;
 	}
 
 	protected CacheComputingMap(CacheComputingMap<K, V> other) {
 		super(other);
 		references = other.references;
+		softReferences = other.softReferences;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -49,8 +60,8 @@ public class CacheComputingMap<K, V> extends ComputingHashMap<K, V> {
 	}
 
 	@Override
-	protected ComputingHashMap.Entry<K, V> createEntry(K key, V value) {
-		return new KeyedReference(key, value);
+	protected ComputingEntryHashMap.Entry<K, V> createEntry(K key) {
+		return new KeyedReference(key);
 	}
 
 	@Override

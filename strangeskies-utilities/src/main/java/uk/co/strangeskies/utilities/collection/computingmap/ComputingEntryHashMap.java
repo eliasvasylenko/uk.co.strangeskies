@@ -1,11 +1,11 @@
-package uk.co.strangeskies.utilities.collection;
+package uk.co.strangeskies.utilities.collection.computingmap;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
-public class ComputingHashMap<K, V> implements ComputingMap<K, V> {
+public class ComputingEntryHashMap<K, V> implements ComputingMap<K, V> {
 	protected interface Entry<K, V> {
 		K getKey();
 
@@ -17,39 +17,49 @@ public class ComputingHashMap<K, V> implements ComputingMap<K, V> {
 	private final Map<K, Entry<K, V>> map;
 	private final Function<K, V> computation;
 
-	public ComputingHashMap(Function<K, V> computation) {
+	public ComputingEntryHashMap(Function<K, V> computation) {
 		map = new HashMap<>();
 		this.computation = computation;
 	}
 
-	protected ComputingHashMap(ComputingHashMap<K, V> other) {
+	protected ComputingEntryHashMap(ComputingEntryHashMap<K, V> other) {
 		map = other.map;
 		computation = other.computation;
 	}
 
 	@Override
 	public V get(K key) {
-		return map.get(key).getValue();
+		Entry<?, V> entry = map.get(key);
+
+		return entry == null ? null : entry.getValue();
 	}
 
 	@Override
 	public boolean put(K key) {
 		if (map.containsKey(key))
 			return false;
-		return putGet(key) != null;
+
+		Entry<K, V> entry = createEntry(key);
+		map.put(key, entry);
+
+		return true;
 	}
 
 	@Override
 	public V putGet(K key) {
-		V value = computation.apply(key);
+		V value = get(key);
 
-		if (value != null)
-			map.put(key, createEntry(key, value));
+		if (value == null) {
+			put(key);
+			value = get(key);
+		}
 
 		return value;
 	}
 
-	protected Entry<K, V> createEntry(K key, V value) {
+	protected Entry<K, V> createEntry(K key) {
+		V value = computation.apply(key);
+
 		return new Entry<K, V>() {
 			@Override
 			public K getKey() {
@@ -65,6 +75,10 @@ public class ComputingHashMap<K, V> implements ComputingMap<K, V> {
 			public void remove() {
 			}
 		};
+	}
+
+	protected Function<K, V> computation() {
+		return computation;
 	}
 
 	@Override

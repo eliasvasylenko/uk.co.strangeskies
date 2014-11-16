@@ -1,5 +1,6 @@
-package uk.co.strangeskies.utilities.collection;
+package uk.co.strangeskies.utilities.collection.computingmap;
 
+import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -17,7 +18,7 @@ import java.util.Set;
  * @param <V>
  * @param <K>
  */
-public interface ComputingMap<K, V> {
+public interface ComputingMap<K, V> extends ReadOnlyMap<K, V> {
 	/**
 	 * For the given key, this method should return the value which has been
 	 * computed.
@@ -34,6 +35,7 @@ public interface ComputingMap<K, V> {
 	 *          The key object for which to return the mapped computed value.
 	 * @return The computed value associated with a given key.
 	 */
+	@Override
 	V get(K key);
 
 	/**
@@ -54,7 +56,7 @@ public interface ComputingMap<K, V> {
 	 */
 	boolean put(K key);
 
-	default boolean putAll(Set<K> keys) {
+	default boolean putAll(Collection<? extends K> keys) {
 		boolean changed = false;
 		for (K key : keys)
 			changed = put(key) | changed;
@@ -70,6 +72,7 @@ public interface ComputingMap<K, V> {
 	 */
 	V putGet(K key);
 
+	@Override
 	Set<K> keySet();
 
 	/**
@@ -81,7 +84,7 @@ public interface ComputingMap<K, V> {
 	 */
 	boolean remove(K key);
 
-	default boolean removeAll(Set<K> keys) {
+	default boolean removeAll(Collection<? extends K> keys) {
 		boolean changed = false;
 		for (K key : keys)
 			changed = remove(key) | changed;
@@ -95,6 +98,7 @@ public interface ComputingMap<K, V> {
 	 */
 	boolean clear();
 
+	@Override
 	default boolean isEmpty() {
 		return keySet().isEmpty();
 	}

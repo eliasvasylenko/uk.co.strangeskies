@@ -1,5 +1,6 @@
-package uk.co.strangeskies.utilities.collection;
+package uk.co.strangeskies.utilities.collection.computingmap;
 
+import java.util.Collection;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -7,18 +8,16 @@ import uk.co.strangeskies.utilities.IdentityProperty;
 
 public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 	protected class LinkedEntry extends KeyedReference {
-		private LinkedEntry previous = null;
-		private LinkedEntry next = null;
+		private LinkedEntry previous;
+		private LinkedEntry next;
 
 		public LinkedEntry() {
-			super(null, null);
-
 			previous = this;
 			next = this;
 		}
 
-		public LinkedEntry(K key, V value) {
-			super(key, value);
+		public LinkedEntry(K key) {
+			super(key);
 
 			previous = bounds.previous;
 			next = bounds;
@@ -55,8 +54,9 @@ public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 	private final int maximumSize;
 	private final LinkedEntry bounds;
 
-	public LRUCacheComputingMap(Function<K, V> computation, int maximumSize) {
-		super(computation);
+	public LRUCacheComputingMap(Function<K, V> computation, int maximumSize,
+			boolean softReferences) {
+		super(computation, softReferences);
 
 		size = new IdentityProperty<>(0);
 		this.maximumSize = maximumSize;
@@ -72,8 +72,8 @@ public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 	}
 
 	@Override
-	protected Entry<K, V> createEntry(K key, V value) {
-		return new LinkedEntry(key, value);
+	protected Entry<K, V> createEntry(K key) {
+		return new LinkedEntry(key);
 	}
 
 	public int cacheSize() {
@@ -95,7 +95,7 @@ public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 		return added;
 	}
 
-	public boolean putAll(Set<K> keys) {
+	public boolean putAll(Collection<? extends K> keys) {
 		boolean changed = false;
 		for (K key : keys)
 			changed = super.put(key) | changed;

@@ -1,15 +1,15 @@
-package uk.co.strangeskies.utilities.collection;
+package uk.co.strangeskies.utilities.collection.computingmap;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
-public class ComputingMapImpl<K, V> implements ComputingMap<K, V> {
+public class ComputingHashMap<K, V> implements ComputingMap<K, V> {
 	private final Map<K, V> map;
 	private final Function<K, V> computation;
 
-	public ComputingMapImpl(Function<K, V> computation) {
+	public ComputingHashMap(Function<K, V> computation) {
 		map = new HashMap<>();
 		this.computation = computation;
 	}
