@@ -1,0 +1,8 @@
+
+-sub:  \
+	*.bnd
+-runee: JavaSE-1.8
+-buildpath:  \
+	org.beanshell:bsh; version=latest,\
+	osgi.core;version=5.0,\
+	osgi.enterprise;version=5.0

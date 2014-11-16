@@ -1,0 +1,23 @@
+Export-Package:  \
+	uk.co.strangeskies.utilities,\
+	uk.co.strangeskies.utilities.collection,\
+	uk.co.strangeskies.utilities.collection.computingmap,\
+	uk.co.strangeskies.utilities.collection.decorator,\
+	uk.co.strangeskies.utilities.collection.multimap,\
+	uk.co.strangeskies.utilities.factory,\
+	uk.co.strangeskies.utilities.flowcontrol,\
+	uk.co.strangeskies.utilities.function,\
+	uk.co.strangeskies.utilities.function.collection,\
+	uk.co.strangeskies.utilities.proxy,\
+	uk.co.strangeskies.utilities.test,\
+	uk.co.strangeskies.utilities.tuples
+Bundle-Name: Strange Skies Utilities
+-dsannotations:  \
+	*
+-runee: JavaSE-1.8
+-runfw: org.eclipse.osgi;version='[3.10.1.v20140909-1633,3.10.1.v20140909-1633]'
+-buildpath:  \
+	org.testng:testng;version=latest,\
+	cglib:cglib;version=latest,\
+	osgi.core;version=5.0,\
+	osgi.enterprise;version=5.0

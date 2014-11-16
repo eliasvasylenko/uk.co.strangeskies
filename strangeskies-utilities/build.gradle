@@ -1,5 +1,0 @@
-description = 'StrangeSkies Utilities'
-
-dependencies {
-	compile group: 'cglib', name: 'cglib', version:'3.1'
-}

@@ -1,5 +1,0 @@
-description = 'StrangeSkies Expressions'
-
-dependencies {
-	compile project(':strangeskies-utilities')
-}

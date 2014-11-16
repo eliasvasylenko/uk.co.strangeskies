@@ -1,0 +1,5 @@
+Private-Package:  \
+	uk.co.strangeskies.scripting.impl
+-dsannotations:  \
+	*
+Bundle-Name: Strange Skies Scripting

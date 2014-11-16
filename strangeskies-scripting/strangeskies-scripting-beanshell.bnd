@@ -1,0 +1,5 @@
+-dsannotations:  \
+	*
+Bundle-Name: Strange Skies Scripting - Beanshell
+#Include-Resource: \
+#	@bsh-2.0b5.jar!/META-INF/services/javax.script.ScriptEngineFactory

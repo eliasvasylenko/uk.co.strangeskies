@@ -1,17 +1,20 @@
-rootProject.name = 'strangeskies'
-include ':strangeskies-utilities',
-		':strangeskies-utilities-osgi',
-		':strangeskies-mathematics',
-		':strangeskies-mathematics-geometry',
-		':strangeskies-expressions',
-		':strangeskies-scripting',
-		':strangeskies-scripting-wrappers',
-		':strangeskies-scripting-wrappers:strangeskies-scripting-ruby',
-		':strangeskies-scripting-wrappers:strangeskies-scripting-groovy',
-		':strangeskies-scripting-wrappers:strangeskies-scripting-python',
-		':strangeskies-scripting-wrappers:strangeskies-scripting-clojure',
-		':strangeskies-scripting-wrappers:strangeskies-scripting-javascript',
-		':strangeskies-scripting-wrappers:strangeskies-scripting-lua',
-		':strangeskies-scripting-wrappers:strangeskies-scripting-beanshell',
-		':strangeskies-scripting-wrappers:strangeskies-scripting-r',
-		':strangeskies-scripting-wrappers:strangeskies-scripting-frege'
+/*
+ * WARNING
+ *
+ * This file is maintained automatically by Bndtools.
+ * You should not edit it.
+ *
+ * See the BUILDING-GRADLE.md document in the root project for more details.
+ *
+ * Include all bnd project and all gradle projects.
+ */
+
+
+properties.rootDir.eachFile {
+  if (it.isDirectory()
+      && (   new File(it, "bnd.bnd"     ).exists()
+          || new File(it, "build.gradle").exists())
+     ) {
+    include "$it.name"
+  }
+}

@@ -1,6 +1,0 @@
-description = 'StrangeSkies OSGi Utilities'
-
-dependencies {
-	compile group: 'org.apache.commons', name: 'commons-proxy', version:'1.0'
-	compile project(':strangeskies-utilities')
-}

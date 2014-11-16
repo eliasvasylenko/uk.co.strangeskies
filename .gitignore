@@ -60,3 +60,6 @@ local.properties
 # Temporary and backup files #
 ##############################
 *~
+/.gradle/
+/reports/
+/generated/
