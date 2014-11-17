@@ -1,5 +1,7 @@
 -dsannotations:  \
 	*
-Bundle-Name: Strange Skies Scripting - Beanshell
+Bundle-Name: Strange Skies Scripting - Frege
+#Private-Package:  \
+#	frege.**
 #Include-Resource: \
 #	@bsh-2.0b5.jar!/META-INF/services/javax.script.ScriptEngineFactory

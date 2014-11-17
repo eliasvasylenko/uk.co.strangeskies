@@ -1,0 +1,7 @@
+-dsannotations:  \
+	*
+Bundle-Name: Strange Skies Scripting - Groovy
+Private-Package:\
+	groovy.**
+Include-Resource:\
+	@groovy-${groovy.version}.jar!/META-INF/services/*

@@ -1,8 +1,0 @@
-description = 'StrangeSkies Scripting - Clojure'
-
-repositories { maven { url "http://clojars.org/repo/" } }
-
-dependencies {
-	wrap group: 'clojure-jsr223', name: 'clojure-jsr223', version:'1.2'
-	wrap group: 'org.clojure', name: 'clojure', version:'1.5.0-alpha3'
-}

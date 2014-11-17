@@ -1,8 +1,20 @@
+groovy.version: 2.3.7
+clojure-jsr223.version: 1.5.1
+clojure.version: 1.6.0
+frege.version: latest
+jython.version: 2.5.3
 
 -sub:  \
 	*.bnd
 -runee: JavaSE-1.8
 -buildpath:  \
-	org.beanshell:bsh; version=latest,\
 	osgi.core;version=5.0,\
-	osgi.enterprise;version=5.0
+	osgi.enterprise;version=5.0,\
+	org.clojure:clojure;version=${clojure.version},\
+	org.clojars.ato:clojure-jsr223;version=${clojure-jsr223.version},\
+	com.theoryinpractise.frege:frege;version=${frege.version},\
+	org.codehaus.groovy:groovy;version=${groovy.version},\
+	org.python:jython;version=${jython.version}
+
+#,\
+#org.luaj:luaj-jse;version=3.0

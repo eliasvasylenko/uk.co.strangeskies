@@ -18,6 +18,6 @@ Bundle-Name: Strange Skies Utilities
 -runfw: org.eclipse.osgi;version='[3.10.1.v20140909-1633,3.10.1.v20140909-1633]'
 -buildpath:  \
 	org.testng:testng;version=latest,\
-	cglib:cglib;version=latest,\
+	cglib:cglib-nodep,\
 	osgi.core;version=5.0,\
 	osgi.enterprise;version=5.0
