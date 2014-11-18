@@ -8,4 +8,5 @@ Bundle-Name: Strange Skies OSGi Utilities
 -runee: JavaSE-1.8
 -buildpath:  \
 	osgi.core;version=5.0,\
-	osgi.enterprise;version=5.0
+	osgi.enterprise;version=5.0,\
+	uk.co.strangeskies.utilities;version=latest

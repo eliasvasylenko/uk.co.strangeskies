@@ -15,3 +15,6 @@ Export-Package:  \
 Bundle-Name: Strange Skies Mathematics - Geometry
 -dsannotations:  \
 	*
+-buildpath:  \
+	uk.co.strangeskies.mathematics;version=latest,\
+	uk.co.strangeskies.utilities;version=latest

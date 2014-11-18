@@ -17,4 +17,6 @@ Bundle-Name: Strange Skies Mathematics
 -dsannotations:  \
 	*
 -buildpath:  \
-	org.testng:testng;version=latest
+	org.testng:testng;version=latest,\
+	uk.co.strangeskies.utilities;version=latest,\
+	uk.co.strangeskies.expressions;version=latest

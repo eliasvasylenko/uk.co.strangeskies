@@ -20,10 +20,10 @@ osgi.version: 5.0
 
 #-verbose:              false
 #project:               ${basedir}
-#src:                   src
-#bin:                   bin
-#testsrc:               test
-#testbin:               bin_test
+src:                   src/main/java
+bin:                   bin
+testsrc:               src/test/java
+testbin:               bin
 #target-dir:            generated
 #target:                ${project}/${target-dir}
 #build:                 ${workspace}/cnf
