@@ -5,22 +5,38 @@ frege.version: latest
 jython.version: 2.5.3
 luaj.version: 3.0
 jruby.version: 1.7.16
+asm-util.version: 4.0
+renjin-core.version: 0.1.2-SNAPSHOT
+xerces.version: 2.11.0
+apache-httpclient.version: 4.3.6
 
 -sub:  \
 	*.bnd
 -runee: JavaSE-1.8
 -buildpath:  \
-	osgi.core;version=${osgi.version},\
-	osgi.enterprise;version=${osgi.version},\
-	org.clojure:clojure;version=${clojure.version},\
-	org.clojars.ato:clojure-jsr223;version=${clojure-jsr223.version},\
-	com.theoryinpractise.frege:frege;version=${frege.version},\
-	org.codehaus.groovy:groovy;version=${groovy.version},\
-	org.python:jython;version=${jython.version},\
-	org.luaj:luaj-jse;version=${luaj.version};strategy=exact,\
-	org.jruby:jruby-complete;version=${jruby.version}
-
-#	org.ow2.asm:asm-util;version=4.0,\
-#	com.bedatadriven.renjin:renjin-core;version=0.1.2-SNAPSHOT,\
-#	xerces:xercesImpl;version=2.11.0,\
-#	org.apache.httpcomponents:httpclient;version=4.3.6
+	osgi.enroute.base.api;  \
+		version = latest,  \
+	org.clojure:clojure;  \
+		version = ${clojure.version},  \
+	org.clojars.ato:clojure-jsr223;  \
+		version = ${clojure-jsr223.version},  \
+	com.theoryinpractise.frege:frege;  \
+		version = ${frege.version},  \
+	org.codehaus.groovy:groovy;  \
+		version = ${groovy.version},  \
+	org.python:jython;  \
+		version = ${jython.version},  \
+	org.luaj:luaj-jse;  \
+		version = ${luaj.version};  \
+		strategy = exact,  \
+	org.jruby:jruby-complete;  \
+		version = ${jruby.version}
+#	org.ow2.asm:asm-util;\
+#		version = ${asm-util.version};\
+#		strategy = exact,\
+#	com.bedatadriven.renjin:renjin-core;\
+#		version = ${renjin-core.version},\
+#	xerces:xercesImpl;\
+#		version = ${xerces.version},\
+#	org.apache.httpcomponents:httpclient;\
+#		version = ${apache-httpclient.version}

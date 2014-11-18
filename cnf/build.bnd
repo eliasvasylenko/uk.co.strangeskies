@@ -13,11 +13,5 @@ testbin: bin
 
 -plugin:\
 	aQute.bnd.deployer.repository.aether.AetherRepository;\
-		name = Maven Central;\
-		url = http://repo1.maven.org/maven2/,\
-	aQute.bnd.deployer.repository.aether.AetherRepository;\
 		name = Clojars;\
-		url = http://clojars.org/repo/,\
-	aQute.bnd.deployer.repository.FixedIndexedRepo;\
-		name = Bndtools Hub;\
-		locations = https://github.com/bndtools/bundle-hub/raw/master/index.xml.gz
+		url = http://clojars.org/repo/
