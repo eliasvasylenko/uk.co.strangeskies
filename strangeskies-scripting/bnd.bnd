@@ -3,18 +3,24 @@ clojure-jsr223.version: 1.5.1
 clojure.version: 1.6.0
 frege.version: latest
 jython.version: 2.5.3
+luaj.version: 2.0.3
+jruby.version: 1.7.16
 
 -sub:  \
 	*.bnd
 -runee: JavaSE-1.8
 -buildpath:  \
-	osgi.core;version=5.0,\
-	osgi.enterprise;version=5.0,\
+	osgi.core;version=${osgi.version},\
+	osgi.enterprise;version=${osgi.version},\
 	org.clojure:clojure;version=${clojure.version},\
 	org.clojars.ato:clojure-jsr223;version=${clojure-jsr223.version},\
 	com.theoryinpractise.frege:frege;version=${frege.version},\
 	org.codehaus.groovy:groovy;version=${groovy.version},\
-	org.python:jython;version=${jython.version}
+	org.python:jython;version=${jython.version},\
+	org.luaj:luaj-jse;version=${luaj.version},\
+	org.jruby:jruby-complete;version=${jruby.version}
 
-#,\
-#org.luaj:luaj-jse;version=3.0
+#	org.ow2.asm:asm-util;version=4.0,\
+#	com.bedatadriven.renjin:renjin-core;version=0.1.2-SNAPSHOT,\
+#	xerces:xercesImpl;version=2.11.0,\
+#	org.apache.httpcomponents:httpclient;version=4.3.6

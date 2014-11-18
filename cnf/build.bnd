@@ -16,6 +16,8 @@
 #project.output:        ${p-output}
 #project.testpath:      ${p-testpath;:}
 
+osgi.version: 5.0
+
 #-verbose:              false
 #project:               ${basedir}
 #src:                   src
@@ -49,10 +51,11 @@ javac.target:          1.8
 -pluginpath: ${ext.pluginpaths.-pluginpath},\
 	${plugin-dir}/biz.aQute.repository/biz.aQute.repository.aether.jar
 
--plugin: ${ext.repositories.-plugin},\
-	aQute.bnd.deployer.repository.aether.AetherRepository; name=Maven Central; url=http://repo1.maven.org/maven2/,\
-	aQute.bnd.deployer.repository.aether.AetherRepository; name=Clojars; url=http://clojars.org/repo/
+-plugin:  \
+	${ext.repositories.-plugin},\
+	aQute.bnd.deployer.repository.aether.AetherRepository;name=Maven Central;url=http://repo1.maven.org/maven2/,\
+	aQute.bnd.deployer.repository.aether.AetherRepository;name=Clojars;url=http://clojars.org/repo/
 
 ## If you use git, you might want to uncomment the following lines:
-# Git-Descriptor:       ${system-allow-fail;git describe --dirty --always}
-# Git-SHA:              ${system-allow-fail;git rev-list -1 HEAD}
+ Git-Descriptor:       ${system-allow-fail;git describe --dirty --always}
+ Git-SHA:              ${system-allow-fail;git rev-list -1 HEAD}

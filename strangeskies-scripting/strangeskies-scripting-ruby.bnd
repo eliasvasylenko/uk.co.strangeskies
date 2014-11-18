@@ -1,0 +1,7 @@
+-dsannotations:  \
+	*
+Bundle-Name: Strange Skies Scripting - Groovy
+Private-Package:\
+	ruby.**
+Include-Resource:\
+	@jruby-complete-${jruby.version}.jar!/META-INF/services/*
