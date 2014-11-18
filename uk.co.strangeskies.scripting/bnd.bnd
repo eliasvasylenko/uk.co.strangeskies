@@ -3,7 +3,7 @@ clojure-jsr223.version: 1.5.1
 clojure.version: 1.6.0
 frege.version: latest
 jython.version: 2.5.3
-luaj.version: 2.0.3
+luaj.version: 3.0
 jruby.version: 1.7.16
 
 -sub:  \
@@ -17,7 +17,7 @@ jruby.version: 1.7.16
 	com.theoryinpractise.frege:frege;version=${frege.version},\
 	org.codehaus.groovy:groovy;version=${groovy.version},\
 	org.python:jython;version=${jython.version},\
-	org.luaj:luaj-jse;version=${luaj.version},\
+	org.luaj:luaj-jse;version=${luaj.version};strategy=exact,\
 	org.jruby:jruby-complete;version=${jruby.version}
 
 #	org.ow2.asm:asm-util;version=4.0,\

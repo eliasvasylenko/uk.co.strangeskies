@@ -1,4 +1,0 @@
--plugin:\
-	aQute.bnd.deployer.repository.FixedIndexedRepo; name=Bndtools Hub; locations=https://github.com/bndtools/bundle-hub/raw/master/index.xml.gz,\
-
--releaserepo: Release

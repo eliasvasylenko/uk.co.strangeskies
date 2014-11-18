@@ -3,5 +3,5 @@
 Bundle-Name: Strange Skies Scripting - Frege
 #Private-Package:  \
 #	frege.**
-#Include-Resource: \
-#	@bsh-2.0b5.jar!/META-INF/services/javax.script.ScriptEngineFactory
+Include-Resource: \
+	/src/main/resources/frege/javax.script.ScriptEngineFactory
