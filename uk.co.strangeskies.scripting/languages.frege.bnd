@@ -4,4 +4,4 @@ Bundle-Name: Strange Skies Scripting - Frege
 #Private-Package:\
 #	frege.**
 #Include-Resource:\
-#	/src/main/resources/frege/javax.script.ScriptEngineFactory
+#	/res/frege/javax.script.ScriptEngineFactory

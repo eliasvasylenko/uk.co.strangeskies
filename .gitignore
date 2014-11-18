@@ -42,6 +42,7 @@ Thumbs.db
 # generated files #
 ###################
 bin/
+bin_test/
 gen/
 target/
 build/

@@ -1,12 +1,3 @@
-# versions
-osgi.version: 5.0
-
-#java
-src: src/main/java
-bin: bin
-testsrc: src/test/java
-testbin: bin
-
 #repositories
 -pluginpath: ${ext.enroute.-pluginpath},\
 	${build}/cache/biz.aQute.repository.aether.jar;url=${bnd-release}/biz.aQute.repository.aether/biz.aQute.repository.aether-latest.jar
