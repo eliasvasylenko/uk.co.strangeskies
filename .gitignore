@@ -45,7 +45,10 @@ bin/
 gen/
 target/
 build/
+generated/
 .gradle/
+reports/
+release/
 
 # Local configuration file (sdk path, etc) #
 ############################################
@@ -56,11 +59,10 @@ local.properties
 #.classpath
 #.project
 #.settings
-.metadata
+.metadata/
 
 # Temporary and backup files #
 ##############################
 *~
-/.gradle/
-/reports/
-/generated/
+enroute.zip
+cache/
