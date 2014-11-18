@@ -19,5 +19,5 @@ Bundle-Name: Strange Skies Utilities
 -buildpath:  \
 	org.testng:testng;version=latest,\
 	cglib:cglib-nodep,\
-	osgi.core;version=5.0,\
-	osgi.enterprise;version=5.0
+	osgi.core;version=${osgi.version},\
+	osgi.enterprise;version=${osgi.version}

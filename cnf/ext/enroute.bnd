@@ -1,12 +1,12 @@
 #
 # -ENROUTE-
-#
+# 
 # This file contains the setup for OSGi enRoute
 #
 
 bnd-release	=	https://bndtools.ci.cloudbees.com/job/bnd.master/lastSuccessfulBuild/artifact/dist/bundles
 
-
+ 
 -pluginpath:\
         ${build}/cache/biz.aQute.repository.jar;url=${bnd-release}/biz.aQute.repository/biz.aQute.repository-latest.jar
 
@@ -15,13 +15,13 @@ bnd-release	=	https://bndtools.ci.cloudbees.com/job/bnd.master/lastSuccessfulBui
             location            =	"${build}/cache/wrapper"; \
             reindex				=	true; \
             augments			=   WORKSPACE
-
+            
 -plugin.enroute.localrepo= \
 	aQute.bnd.deployer.repository.LocalIndexedRepo; \
 		name=Local; \
 		local=${build}/local;\
 		pretty=true
-
+			
 -plugin.enroute.centralrepo = \
 	aQute.bnd.jpm.Repository; \
 	        includeStage	=       true; \
@@ -116,9 +116,9 @@ debug-bundles: \
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.gogo.command)',\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.gogo.shell)', \
 	osgi.identity;filter:='(osgi.identity=osgi.enroute.base.debug.provider)'
-
-
-#
+	
+	
+# 
 org.apache.felix.http.bundle: 			cap=osgi.enroute.whiteboard;osgi.enroute.whiteboard=osgi.enroute.servlet;version:Version=1.0.0;effective:=active
 org.knopflerfish.bundle.useradmin: 		cap=osgi.service;objectClass=org.osgi.service.useradmin.UserAdmin;effective:=active
-
+	
