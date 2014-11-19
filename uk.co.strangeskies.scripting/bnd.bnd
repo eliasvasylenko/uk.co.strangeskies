@@ -16,8 +16,6 @@ apache-httpclient.version: 4.3.6
 -buildpath:  \
 	osgi.enroute.base.api;  \
 		version = latest,  \
-	org.clojure:clojure;  \
-		version = ${clojure.version},  \
 	org.clojars.ato:clojure-jsr223;  \
 		version = ${clojure-jsr223.version},  \
 	com.theoryinpractise.frege:frege;  \
@@ -30,7 +28,10 @@ apache-httpclient.version: 4.3.6
 		version = ${luaj.version};  \
 		strategy = exact,  \
 	org.jruby:jruby-complete;  \
-		version = ${jruby.version}
+		version = ${jruby.version},  \
+		
+#	org.clojure:clojure;  \
+#		version = ${clojure.version},  \
 #	org.ow2.asm:asm-util;\
 #		version = ${asm-util.version};\
 #		strategy = exact,\
