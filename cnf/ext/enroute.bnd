@@ -16,7 +16,7 @@ bnd-release	=	https://bndtools.ci.cloudbees.com/job/bnd.master/lastSuccessfulBui
             reindex				=	true; \
             augments			=   WORKSPACE
             
--plugin.enroute.localrepo = \
+-plugin.enroute.localrepo= \
 	aQute.bnd.deployer.repository.LocalIndexedRepo; \
 		name=Local; \
 		local=${build}/local;\

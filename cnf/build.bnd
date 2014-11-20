@@ -5,10 +5,11 @@
 -plugin:\
 	aQute.bnd.deployer.repository.aether.AetherRepository;\
 		name = Clojars;\
-		url = http://clojars.org/repo/,\
-	aQute.bnd.deployer.repository.aether.AetherRepository;\
-		name = Maven Central;\
-		url = https://repo1.maven.org/maven2/
+		url = http://clojars.org/repo/
+#,\
+#	aQute.bnd.deployer.repository.aether.AetherRepository;\
+#		name = Maven Central;\
+#		url = https://repo1.maven.org/maven2/
 # Shouldn't need Maven Central here, but since this is alpha, the
 # connection through -plugin.enroute.centralrepo doesn't always
 # seem to be available.

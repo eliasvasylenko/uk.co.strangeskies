@@ -17,4 +17,7 @@ Bundle-Name: Strange Skies Mathematics - Geometry
 	*
 -buildpath:  \
 	uk.co.strangeskies.mathematics;version=latest,\
-	uk.co.strangeskies.utilities;version=latest
+	uk.co.strangeskies.utilities;version=latest,  \
+	osgi.enroute.base.api;  \
+		version = latest
+	

@@ -1,5 +1,7 @@
 package uk.co.strangeskies.mathematics.geometry.matrix.building.impl;
 
+import org.osgi.service.component.annotations.Component;
+
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix.Order;
 import uk.co.strangeskies.mathematics.geometry.matrix.building.MatrixBuilder;
 import uk.co.strangeskies.mathematics.geometry.matrix.building.ValueMatrixBuilder;
@@ -11,6 +13,7 @@ import uk.co.strangeskies.mathematics.values.LongValue;
 import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.factory.Factory;
 
+@Component
 public class MatrixBuilderImpl implements MatrixBuilder {
 	private Order defaultOrder = Order.ColumnMajor;
 	private Orientation defaultOrientation = Orientation.Column;
