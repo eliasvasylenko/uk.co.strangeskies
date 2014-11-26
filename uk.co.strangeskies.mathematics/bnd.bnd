@@ -20,6 +20,7 @@ Bundle-Name: Strange Skies Mathematics
 	org.testng:testng;version=latest,\
 	uk.co.strangeskies.utilities;version=latest,\
 	uk.co.strangeskies.expressions;version=latest,  \
+	edu.washington.cs.types.checker:checker-quals,  \
+	edu.washington.cs.types.checker:checker-annotated-jdk8,  \
 	osgi.enroute.base.api;  \
 		version = latest
-	
