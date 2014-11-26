@@ -1,6 +1,6 @@
 package uk.co.strangeskies.utilities;
 
-import checkers.igj.quals.I;
+import org.checkerframework.checker.igj.qual.I;
 
 /**
  * For classes which follow the self-bounding pattern. The self-bounding pattern

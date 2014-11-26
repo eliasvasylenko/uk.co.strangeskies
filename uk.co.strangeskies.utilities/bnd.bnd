@@ -20,7 +20,7 @@ Bundle-Name: Strange Skies Utilities
 	org.testng:testng;  \
 		version = latest,  \
 	cglib:cglib-nodep,  \
-	edu.washington.cs.types.checker:checker-quals,  \
-	edu.washington.cs.types.checker:checker-annotated-jdk8,  \
+	org.checkerframework:checker-qual;version=latest,  \
+	org.checkerframework:jdk8;version=latest,  \
 	osgi.enroute.base.api;  \
 		version = latest

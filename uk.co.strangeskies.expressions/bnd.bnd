@@ -6,4 +6,6 @@ Bundle-Name: Strange Skies Expressions
 -dsannotations:  \
 	*
 -buildpath:  \
-	uk.co.strangeskies.utilities;version=latest
+	uk.co.strangeskies.utilities;version=latest,  \
+	org.checkerframework:checker-qual;version=latest,  \
+	org.checkerframework:jdk8;version=latest

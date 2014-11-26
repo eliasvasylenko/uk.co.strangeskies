@@ -1,8 +1,9 @@
 package uk.co.strangeskies.mathematics.operation;
 
+import org.checkerframework.checker.igj.qual.Mutable;
+import org.checkerframework.checker.igj.qual.ReadOnly;
+
 import uk.co.strangeskies.utilities.Self;
-import checkers.igj.quals.Mutable;
-import checkers.igj.quals.ReadOnly;
 
 public interface Subtractable<S extends Subtractable<S, T>, T> extends
 		Addable<S, T>, Self<S> {
