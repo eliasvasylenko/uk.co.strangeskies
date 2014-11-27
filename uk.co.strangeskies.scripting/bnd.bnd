@@ -27,8 +27,9 @@ apache-httpclient.version: 4.3.6
 	org.luaj:luaj-jse;  \
 		version = ${luaj.version};  \
 		strategy = exact,  \
+	org.checkerframework:jdk8;version=latest,  \
 	org.jruby:jruby-complete;  \
-		version = ${jruby.version},  \
+		version = ${jruby.version}
 		
 #	org.clojure:clojure;  \
 #		version = ${clojure.version},  \

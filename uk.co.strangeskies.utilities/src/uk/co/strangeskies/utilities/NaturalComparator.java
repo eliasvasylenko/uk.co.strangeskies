@@ -2,6 +2,9 @@ package uk.co.strangeskies.utilities;
 
 import java.util.Comparator;
 
+import org.checkerframework.checker.igj.qual.I;
+
+@I
 public class NaturalComparator<T extends Comparable<? super T>> implements
 		Comparator<T> {
 	@Override

@@ -1,7 +1,11 @@
 package uk.co.strangeskies.utilities;
 
-public class IdentityProperty<T> implements SimpleProperty<T> {
-	private T value;
+import org.checkerframework.checker.igj.qual.I;
+import org.checkerframework.checker.igj.qual.Mutable;
+
+@I
+public class IdentityProperty<T> implements @I Property<T, @I T> {
+	private @I T value;
 
 	public IdentityProperty() {
 	}
@@ -11,12 +15,13 @@ public class IdentityProperty<T> implements SimpleProperty<T> {
 	}
 
 	@Override
-	public T set(T to) {
-		return value = to;
+	public @I T set(@Mutable IdentityProperty<T> this, @I T to) {
+		value = to;
+		return value;
 	}
 
 	@Override
-	public T get() {
+	public @I T get() {
 		return value;
 	}
 }
