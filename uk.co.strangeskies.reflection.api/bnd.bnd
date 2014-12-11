@@ -1,0 +1,17 @@
+Export-Package: \
+	uk.co.strangeskies.reflection,\
+	uk.co.strangeskies.reflection.proxy
+Bundle-Name: Strange Skies Reflection
+-dsannotations:  \
+	*
+-runee: JavaSE-1.8
+-runfw: org.eclipse.osgi;version='[3.10.1.v20140909-1633,3.10.1.v20140909-1633]'
+-buildpath:  \
+	org.testng:testng;  \
+		version = latest,  \
+	cglib:cglib-nodep,  \
+	uk.co.strangeskies.utilities;version=latest,\
+	org.checkerframework:checker-qual;version=latest,  \
+	org.checkerframework:jdk8;version=latest,  \
+	osgi.enroute.base.api;  \
+		version = latest
