@@ -1,4 +1,4 @@
-package uk.co.strangeskies.reflection;
+package uk.co.strangeskies.reflection.impl;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
@@ -7,6 +7,9 @@ import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import uk.co.strangeskies.reflection.InvocationResolver;
+import uk.co.strangeskies.reflection.TypeLiteral;
 
 import com.google.common.reflect.Invokable;
 import com.google.common.reflect.TypeToken;

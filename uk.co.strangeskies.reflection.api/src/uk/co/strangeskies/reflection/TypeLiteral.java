@@ -32,7 +32,9 @@ public class TypeLiteral<T> {
 
 	@SuppressWarnings("unchecked")
 	private final Class<? super T> getRawType(Type type) {
-		if (type instanceof TypeVariable) {
+		if (type == null) {
+			return null;
+		} else if (type instanceof TypeVariable) {
 			return getRawType(((TypeVariable<?>) type).getBounds()[0]);
 		} else if (type instanceof WildcardType) {
 			return getRawType(((WildcardType) type).getUpperBounds()[0]);

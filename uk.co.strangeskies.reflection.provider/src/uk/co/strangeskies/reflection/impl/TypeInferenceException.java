@@ -1,4 +1,4 @@
-package uk.co.strangeskies.reflection;
+package uk.co.strangeskies.reflection.impl;
 
 public class TypeInferenceException extends RuntimeException {
 	private static final long serialVersionUID = 1L;

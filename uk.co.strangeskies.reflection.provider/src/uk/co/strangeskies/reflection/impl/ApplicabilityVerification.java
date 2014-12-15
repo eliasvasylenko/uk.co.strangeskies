@@ -1,26 +1,27 @@
-package uk.co.strangeskies.reflection;
+package uk.co.strangeskies.reflection.impl;
 
 import java.lang.reflect.Executable;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
+import uk.co.strangeskies.reflection.IntersectionType;
+import uk.co.strangeskies.reflection.impl.ConstraintFormula.Kind;
 
 import com.google.common.reflect.Invokable;
 import com.google.common.reflect.Parameter;
 import com.google.common.reflect.TypeResolver;
 import com.google.common.reflect.TypeToken;
 
-public class InferenceProcessor {
+public class ApplicabilityVerification {
 	private final List<InferenceVariable> inferenceVariables;
 	private final List<Type> parameters;
 	private final boolean isVarArgs;
 
-	private final Type result;
+	private final Type returnType;
 	private final List<Type> arguments;
 
 	private final BoundSet bounds;
@@ -29,13 +30,13 @@ public class InferenceProcessor {
 	private Boolean looseParameterApplicability;
 	private Boolean variableArityParameterApplicability;
 
-	public InferenceProcessor(Invokable<?, ?> invokable, Type result,
+	public ApplicabilityVerification(Invokable<?, ?> invokable, Type result,
 			Type... arguments) {
 		this(invokable, result, Arrays.asList(arguments));
 	}
 
 	@SuppressWarnings("unchecked")
-	public InferenceProcessor(Invokable<?, ?> invokable, Type target,
+	public ApplicabilityVerification(Invokable<?, ?> invokable, Type returnType,
 			List<Type> arguments) {
 		inferenceVariables = InferenceVariable
 				.forList((TypeVariable<? extends Executable>[]) invokable
@@ -51,15 +52,15 @@ public class InferenceProcessor {
 				.collect(Collectors.toList());
 		isVarArgs = invokable.isVarArgs();
 
-		this.result = target;
+		this.returnType = returnType;
 		this.arguments = arguments;
 
 		bounds = new BoundSet();
 
 		for (InferenceVariable inferenceVariable : inferenceVariables) {
 			boolean anyProper = false;
-			for (Type bound : inferenceVariable.getTypeVariable().getBounds()) {
-				anyProper = anyProper || isProper(bound);
+			for (Type bound : inferenceVariable.getBounds()) {
+				anyProper = anyProper || InferenceVariable.isProperType(bound);
 				bounds.incorporate().acceptSubtype(inferenceVariable, bound);
 			}
 			if (!anyProper)
@@ -104,55 +105,65 @@ public class InferenceProcessor {
 						parameterIndex++;
 				}
 
-				variableArityParameterApplicability = new Resolution(bounds).verify();
+				System.out.println(bounds);
+
+				variableArityParameterApplicability = new Resolution(bounds,
+						inferenceVariables).verify();
 			}
 		}
 
 		return variableArityParameterApplicability;
 	}
 
-	public static boolean isProper(Type type) {
-		return InferenceVariable.getAllMentionedBy(type).isEmpty();
-	}
-
-	public static boolean isUnsafeCastCompatible(Type from, Type to) {
-		TypeToken<?> toToken = to == null ? null : TypeToken.of(to);
-		TypeToken<?> fromToken = from == null ? null : TypeToken.of(from);
-
-		if (toToken.getRawType().getTypeParameters().length < 0
-				&& toToken.getRawType().isAssignableFrom(fromToken.getRawType())) {
-			@SuppressWarnings("unchecked")
-			Type fromSuperTypeArgument = ((ParameterizedType) fromToken.getSupertype(
-					(Class<Object>) toToken.getRawType()).getType())
-					.getActualTypeArguments()[0];
-
-			return fromSuperTypeArgument instanceof TypeVariable
-					&& ((TypeVariable<?>) fromSuperTypeArgument).getGenericDeclaration() instanceof Class;
+	public static boolean isExactlyAssignable(Type from, Type to) {
+		if (from == null || to.equals(from)) {
+			return true;
+		} else if (from instanceof IntersectionType) {
+			/*
+			 * We must be able to assign from at least one member of the intersection
+			 * type.
+			 */
+			return Arrays.stream(((IntersectionType) from).getTypes()).anyMatch(
+					f -> isExactlyAssignable(f, to));
+		} else if (to instanceof IntersectionType) {
+			/*
+			 * We must be able to assign to each member of the intersection type.
+			 */
+			return Arrays.stream(((IntersectionType) to).getTypes()).allMatch(
+					t -> isExactlyAssignable(from, t));
+		} else if (to instanceof WildcardType) {
+			/*
+			 * This Should be taken care of bye the TypeToken check below, but
+			 * currently there is a bug, so we provide a correct implementation here
+			 * for the moment.
+			 */
+			Type[] lowerBounds = ((WildcardType) to).getLowerBounds();
+			if (lowerBounds.length == 0)
+				return false;
+			else
+				return isExactlyAssignable(from, new IntersectionType(lowerBounds));
 		} else
-			return toToken.isArray()
-					&& fromToken.isArray()
-					&& isUnsafeCastCompatible(fromToken.getComponentType().getType(),
-							toToken.getComponentType().getType());
+			return TypeToken.of(to).isAssignableFrom(TypeToken.of(from));
 	}
 
 	public static boolean isStrictlyAssignable(Type from, Type to) {
-		TypeToken<?> toToken = to == null ? null : TypeToken.of(to);
-		TypeToken<?> fromToken = from == null ? null : TypeToken.of(from);
+		TypeToken<?> toToken = TypeToken.of(to);
+		TypeToken<?> fromToken = TypeToken.of(from);
 
 		if (fromToken.isPrimitive())
 			if (toToken.isPrimitive())
-				return toToken.wrap().isAssignableFrom(toToken.wrap());
+				return true; // TODO check widening primitive conversion
 			else
 				return false;
 		else if (toToken.isPrimitive())
 			return false;
 		else
-			return toToken.isAssignableFrom(fromToken.wrap());
+			return isExactlyAssignable(from, to);
 	}
 
 	public static boolean isLooselyAssignable(Type from, Type to) {
-		TypeToken<?> toToken = to == null ? null : TypeToken.of(to);
-		TypeToken<?> fromToken = from == null ? null : TypeToken.of(from);
+		TypeToken<?> toToken = TypeToken.of(to);
+		TypeToken<?> fromToken = TypeToken.of(from);
 
 		if (fromToken.isPrimitive() && !toToken.isPrimitive())
 			fromToken = fromToken.wrap();
@@ -160,5 +171,10 @@ public class InferenceProcessor {
 			fromToken = fromToken.unwrap();
 
 		return isStrictlyAssignable(from, to);
+	}
+
+	public BoundSet getResultingBounds() {
+		verifyVariableArityParameterApplicability();
+		return bounds;
 	}
 }

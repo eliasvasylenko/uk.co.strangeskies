@@ -1,4 +1,4 @@
-package uk.co.strangeskies.reflection.proxy;
+package uk.co.strangeskies.reflection.proxy.impl;
 
 import java.lang.reflect.Method;
 import java.util.function.Function;
@@ -7,6 +7,7 @@ import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 import uk.co.strangeskies.reflection.TypeLiteral;
+import uk.co.strangeskies.reflection.proxy.PartialOverrideProxyFactory;
 
 public class PartialOverrideProxyFactoryImpl implements
 		PartialOverrideProxyFactory {

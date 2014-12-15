@@ -1,14 +1,16 @@
-package uk.co.strangeskies.reflection;
+package uk.co.strangeskies.reflection.impl;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.List;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-import uk.co.strangeskies.reflection.Bound.BoundVisitor;
+import uk.co.strangeskies.reflection.IntersectionType;
+import uk.co.strangeskies.reflection.impl.Bound.BoundVisitor;
+import uk.co.strangeskies.utilities.tuples.Pair;
 
 import com.google.common.reflect.TypeToken;
 
@@ -28,10 +30,10 @@ public class ConstraintFormula {
 
 	@Override
 	public String toString() {
-		return "Constraint '" + kind + "' between '" + from + "' and '" + to + "'.";
+		return kind + " between '" + from + "' and '" + to + "'";
 	}
 
-	public void reduce(BoundVisitor boundConsumer) {
+	public void reduceInto(BoundVisitor boundConsumer) {
 		switch (kind) {
 		case LOOSE_COMPATIBILILTY:
 			reduceLooseCompatibilityConstraint(boundConsumer);
@@ -54,34 +56,32 @@ public class ConstraintFormula {
 	 * A constraint formula of the form ‹S → T› is reduced as follows:
 	 */
 	private void reduceLooseCompatibilityConstraint(BoundVisitor boundConsumer) {
-		TypeToken<?> toToken = to == null ? null : TypeToken.of(to);
-		TypeToken<?> fromToken = from == null ? null : TypeToken.of(from);
-
-		if (InferenceProcessor.isProper(from) && InferenceProcessor.isProper(to)) {
+		if (InferenceVariable.isProperType(from)
+				&& InferenceVariable.isProperType(to)) {
 			/*
 			 * If S and T are proper types, the constraint reduces to true if S is
 			 * compatible in a loose invocation context with T (§5.3), and false
 			 * otherwise.
 			 */
-			if (!InferenceProcessor.isLooselyAssignable(from, to))
+			if (!ApplicabilityVerification.isLooselyAssignable(from, to))
 				boundConsumer.acceptFalsehood();
-		} else if (from != null && fromToken.isPrimitive())
+		} else if (from != null && TypeToken.of(from).isPrimitive())
 			/*
 			 * Otherwise, if S is a primitive type, let S' be the result of applying
 			 * boxing conversion (§5.1.7) to S. Then the constraint reduces to ‹S' →
 			 * T›.
 			 */
-			new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, fromToken.wrap()
-					.getType(), to).reduce(boundConsumer);
-		else if (to != null && toToken.isPrimitive())
+			new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, TypeToken.of(from)
+					.wrap().getType(), to).reduceInto(boundConsumer);
+		else if (to != null && TypeToken.of(to).isPrimitive())
 			/*
 			 * Otherwise, if T is a primitive type, let T' be the result of applying
 			 * boxing conversion (§5.1.7) to T. Then the constraint reduces to ‹S =
 			 * T'›.
 			 */
-			new ConstraintFormula(Kind.EQUALITY, from, toToken.wrap().getType())
-					.reduce(boundConsumer);
-		else if (InferenceProcessor.isUnsafeCastCompatible(from, to))
+			new ConstraintFormula(Kind.EQUALITY, from, TypeToken.of(to).wrap()
+					.getType()).reduceInto(boundConsumer);
+		else if (isUncheckedCompatibleOnly(from, to))
 			/*
 			 * Otherwise, if T is a parameterized type of the form G<T1, ..., Tn>, and
 			 * there exists no type of the form G<...> that is a supertype of S, but
@@ -98,7 +98,27 @@ public class ConstraintFormula {
 			/*
 			 * Otherwise, the constraint reduces to ‹S <: T›.
 			 */
-			new ConstraintFormula(Kind.SUBTYPE, from, to).reduce(boundConsumer);
+			new ConstraintFormula(Kind.SUBTYPE, from, to).reduceInto(boundConsumer);
+	}
+
+	public static boolean isUncheckedCompatibleOnly(Type from, Type to) {
+		TypeToken<?> toToken = TypeToken.of(to);
+		TypeToken<?> fromToken = TypeToken.of(from);
+
+		if (toToken.getRawType().getTypeParameters().length > 0
+				&& toToken.getRawType().isAssignableFrom(fromToken.getRawType())) {
+			@SuppressWarnings("unchecked")
+			Type fromSuperTypeArgument = ((ParameterizedType) fromToken.getSupertype(
+					(Class<Object>) toToken.getRawType()).getType())
+					.getActualTypeArguments()[0];
+
+			return fromSuperTypeArgument instanceof TypeVariable
+					&& ((TypeVariable<?>) fromSuperTypeArgument).getGenericDeclaration() instanceof Class;
+		} else
+			return toToken.isArray()
+					&& fromToken.isArray()
+					&& isUncheckedCompatibleOnly(fromToken.getComponentType().getType(),
+							toToken.getComponentType().getType());
 	}
 
 	/*
@@ -108,7 +128,8 @@ public class ConstraintFormula {
 		TypeToken<?> toToken = to == null ? null : TypeToken.of(to);
 		TypeToken<?> fromToken = from == null ? null : TypeToken.of(from);
 
-		if (InferenceProcessor.isProper(from) && InferenceProcessor.isProper(to)) {
+		if (InferenceVariable.isProperType(from)
+				&& InferenceVariable.isProperType(to)) {
 			/*
 			 * If S and T are proper types, the constraint reduces to true if S is a
 			 * subtype of T (§4.10), and false otherwise.
@@ -153,61 +174,159 @@ public class ConstraintFormula {
 				 * type of a parameterized class or interface type (directly or
 				 * indirectly), let A1, ..., An be the type arguments of T. Among the
 				 * supertypes of S, a corresponding class or interface type is
-				 * identified, with type arguments B1, ..., Bn. If no such type exists,
-				 * the constraint reduces to false. Otherwise, the constraint reduces to
-				 * the following new constraints: for all i (1 ≤ i ≤ n), ‹Bi <= Ai›.
-				 * 
-				 * TODO must we explicitly disallow if S only extends the raw type of T?
+				 * identified, with type arguments B1, ..., Bn.
 				 */
 				Class<?> rawType = toToken.getRawType();
-				do {
-					for (TypeVariable<?> parameter : rawType.getTypeParameters())
-						new ConstraintFormula(Kind.CONTAINMENT, fromToken.resolveType(
-								parameter).getType(), toToken.resolveType(parameter).getType())
-								.reduce(boundConsumer);
-				} while ((rawType = rawType.getEnclosingClass()) != null);
-			} else if (toToken.isArray()) {
-				/*
-				 * If T is an array type, T'[], then among the supertypes of S that are
-				 * array types, a most specific type is identified, S'[] (this may be S
-				 * itself). If no such array type exists, the constraint reduces to
-				 * false. Otherwise:
-				 * 
-				 * - If neither S' nor T' is a primitive type, the constraint reduces to
-				 * ‹S' <: T'›.
-				 * 
-				 * - Otherwise, the constraint reduces to true if S' and T' are the same
-				 * primitive type, and false otherwise.
-				 * 
-				 * TODO must we explicitly disallow if S only extends the raw type of T?
-				 */
-				throw new NotImplementedException(); // TODO
-			} else if (to instanceof InferenceVariable) {
-				/*
-				 * If T is a type variable, there are three cases:
-				 * 
-				 * - If S is an intersection type of which T is an element, the
-				 * constraint reduces to true.
-				 * 
-				 * - Otherwise, if T has a lower bound, B, the constraint reduces to ‹S
-				 * <: B›.
-				 * 
-				 * - Otherwise, the constraint reduces to false.
-				 */
-				throw new NotImplementedException(); // TODO
-			} else {
+				if (!rawType.isAssignableFrom(toToken.getRawType())) {
+					/*
+					 * If no such type exists, the constraint reduces to false.
+					 */
+					boundConsumer.acceptFalsehood();
+				} else {
+					/*
+					 * Otherwise, the constraint reduces to the following new constraints:
+					 * for all i (1 ≤ i ≤ n), ‹Bi <= Ai›.
+					 */
+					List<Pair<Type, Type>> identifiedPairs = new ArrayList<>();
+					do {
+						for (TypeVariable<?> parameter : rawType.getTypeParameters()) {
+							Type toArgument = toToken.resolveType(parameter).getType();
+							if (toArgument instanceof TypeVariable
+									&& ((TypeVariable<?>) toArgument).getGenericDeclaration()
+											.equals(rawType)) {
+								/*
+								 * Again:
+								 * 
+								 * If no such type exists, the constraint reduces to false.
+								 */
+								boundConsumer.acceptFalsehood();
+								return;
+							}
+							Type fromArgument = fromToken.resolveType(parameter).getType();
+
+							identifiedPairs.add(new Pair<>(fromArgument, toArgument));
+						}
+					} while ((rawType = rawType.getEnclosingClass()) != null);
+
+					identifiedPairs.forEach(p -> new ConstraintFormula(Kind.CONTAINMENT,
+							p.getLeft(), p.getRight()).reduceInto(boundConsumer));
+				}
+			} else if (to instanceof Class) {
 				/*
 				 * If T is any other class or interface type, then the constraint
 				 * reduces to true if T is among the supertypes of S, and false
 				 * otherwise.
 				 */
-				throw new NotImplementedException(); // TODO
+				if (!ApplicabilityVerification.isExactlyAssignable(from, to))
+					boundConsumer.acceptFalsehood();
+			} else if (toToken.isArray()) {
+				/*
+				 * If T is an array type, T'[], then among the supertypes of S that are
+				 * array types, a most specific type is identified, S'[] (this may be S
+				 * itself).
+				 */
+				TypeToken<?> fromComponent;
+				if ((fromComponent = findMostSpecificArrayType(from)) == null) {
+					/*
+					 * If no such array type exists, the constraint reduces to false.
+					 */
+					boundConsumer.acceptFalsehood();
+				} else {
+					/*
+					 * Otherwise:
+					 */
+					TypeToken<?> toComponent = toToken.getComponentType();
+					if (!fromComponent.isPrimitive() && !toComponent.isPrimitive()) {
+						/*
+						 * - If neither S' nor T' is a primitive type, the constraint
+						 * reduces to ‹S' <: T'›.
+						 */
+						new ConstraintFormula(Kind.SUBTYPE, fromComponent.getType(),
+								toComponent.getType()).reduceInto(boundConsumer);
+					} else {
+						/*
+						 * - Otherwise, the constraint reduces to true if S' and T' are the
+						 * same primitive type, and false otherwise.
+						 */
+						if (!fromComponent.isPrimitive()
+								|| !fromComponent.equals(toComponent))
+							boundConsumer.acceptFalsehood();
+					}
+				}
+			} else if (to instanceof InferenceVariable) {
+				/*
+				 * If T is a type variable, there are three cases:
+				 */
+				if (from instanceof IntersectionType
+						&& Arrays.stream(((IntersectionType) from).getTypes()).anyMatch(
+								f -> f.equals(to))) {
+					/*
+					 * - If S is an intersection type of which T is an element, the
+					 * constraint reduces to true.
+					 */
+				} else if (((InferenceVariable) to).getBounds().length > 0) {
+					/*
+					 * - Otherwise, if T has a lower bound, B, the constraint reduces to
+					 * ‹S <: B›.
+					 */
+					new ConstraintFormula(Kind.SUBTYPE, from, new IntersectionType(
+							((InferenceVariable) to).getBounds()));
+				} else {
+					/*
+					 * - Otherwise, the constraint reduces to false.
+					 */
+					boundConsumer.acceptFalsehood();
+				}
+			} else if (to instanceof IntersectionType) {
+				/*
+				 * If T is an intersection type, I1 & ... & In, the constraint reduces
+				 * to the following new constraints: for all i (1 ≤ i ≤ n), ‹S <: Ii›.
+				 */
+				for (Type typeComponent : ((IntersectionType) to).getTypes())
+					new ConstraintFormula(Kind.SUBTYPE, from, typeComponent);
+			} else {
+				throw new AssertionError("Type '" + to
+						+ "' of T should not be encountered here.");
 			}
-			/*
-			 * If T is an intersection type, I1 & ... & In, the constraint reduces to
-			 * the following new constraints: for all i (1 ≤ i ≤ n), ‹S <: Ii›.
-			 */
 		}
+	}
+
+	private TypeToken<?> findMostSpecificArrayType(Type from) {
+		TypeToken<?> fromToken = TypeToken.of(from);
+
+		if (fromToken.isArray()) {
+			return fromToken.getComponentType();
+		}
+
+		if (from instanceof WildcardType) {
+			from = new IntersectionType(((WildcardType) from).getUpperBounds());
+		}
+
+		if (from instanceof IntersectionType) {
+			List<Type> candidates = Arrays.asList(((IntersectionType) from)
+					.getTypes());
+
+			// attempt to find most specific from candidates
+			TypeToken<?> mostSpecific = candidates
+					.stream()
+					.map(TypeToken::of)
+					.filter(TypeToken::isArray)
+					.reduce(
+							(a, b) -> (a.getComponentType().isAssignableFrom(b
+									.getComponentType())) ? a : b).orElse(null);
+
+			// verify we really have the most specific
+			if (candidates
+					.stream()
+					.map(TypeToken::of)
+					.filter(TypeToken::isArray)
+					.anyMatch(
+							t -> !t.getComponentType().isAssignableFrom(
+									mostSpecific.getComponentType())))
+				return null;
+		}
+
+		return null;
 	}
 
 	/*
@@ -223,7 +342,8 @@ public class ConstraintFormula {
 				/*
 				 * If S is a type, the constraint reduces to ‹S = T›.
 				 */
-				new ConstraintFormula(Kind.EQUALITY, from, to).reduce(boundConsumer);
+				new ConstraintFormula(Kind.EQUALITY, from, to)
+						.reduceInto(boundConsumer);
 			} else {
 				/*
 				 * If S is a wildcard, the constraint reduces to false.
@@ -243,11 +363,15 @@ public class ConstraintFormula {
 					/*
 					 * If T is a wildcard of the form ? extends T':
 					 */
+					IntersectionType intersectionT = new IntersectionType(
+							to.getUpperBounds());
+
 					if (!(from instanceof WildcardType)) {
 						/*
 						 * If S is a type, the constraint reduces to ‹S <: T'›.
 						 */
-						throw new NotImplementedException(); // TODO
+						new ConstraintFormula(Kind.SUBTYPE, from, intersectionT)
+								.reduceInto(boundConsumer);
 					} else {
 						WildcardType from = (WildcardType) this.from;
 
@@ -256,41 +380,25 @@ public class ConstraintFormula {
 								/*
 								 * If S is a wildcard of the form ?, the constraint reduces to
 								 * ‹Object <: T'›.
-								 * 
-								 * This is a tricky bit. With S = Object we obviously can skip
-								 * most of the conditions depending on S, and the rules for
-								 * whether or not T' is proper are equivalent.
-								 * 
-								 * T' is intersection type, I1 & ... & In. For all i (1 â‰¤ i
-								 * â‰¤ n):
-								 * 
-								 * <S <: Ii>
 								 */
-								Arrays.stream(to.getUpperBounds()).forEach(
-										t -> new ConstraintFormula(Kind.SUBTYPE, Object.class, t)
-												.reduce(boundConsumer));
+								new ConstraintFormula(Kind.SUBTYPE, Object.class, intersectionT)
+										.reduceInto(boundConsumer);
 							} else {
 								/*
 								 * If S is a wildcard of the form ? extends S', the constraint
 								 * reduces to ‹S' <: T'›.
-								 * 
-								 * <S' <: T'>
-								 * 
-								 * Here we know that S and T are not the null type or inference
-								 * variables, as they are both intersection types.
 								 */
-								throw new NotImplementedException(); // TODO
+								new ConstraintFormula(Kind.SUBTYPE, new IntersectionType(
+										from.getUpperBounds()), intersectionT)
+										.reduceInto(boundConsumer);
 							}
 						} else {
 							/*
 							 * If S is a wildcard of the form ? super S', the constraint
 							 * reduces to ‹Object = T'›.
-							 * 
-							 * <Object = T'>
 							 */
-							Arrays.stream(to.getUpperBounds()).forEach(
-									t -> new ConstraintFormula(Kind.EQUALITY, Object.class, t)
-											.reduce(boundConsumer));
+							new ConstraintFormula(Kind.EQUALITY, Object.class, intersectionT)
+									.reduceInto(boundConsumer);
 						}
 					}
 				}
@@ -298,11 +406,14 @@ public class ConstraintFormula {
 				/*
 				 * If T is a wildcard of the form ? super T':
 				 */
+				IntersectionType intersectionT = new IntersectionType(
+						to.getLowerBounds());
+
 				if (!(from instanceof WildcardType)) {
 					/*
 					 * If S is a type, the constraint reduces to ‹T' <: S›.
 					 */
-					throw new NotImplementedException(); // TODO
+					new ConstraintFormula(Kind.SUBTYPE, intersectionT, from);
 				} else {
 					WildcardType from = (WildcardType) this.from;
 
@@ -311,7 +422,9 @@ public class ConstraintFormula {
 						 * If S is a wildcard of the form ? super S', the constraint reduces
 						 * to ‹T' <: S'›.
 						 */
-						throw new NotImplementedException(); // TODO
+						new ConstraintFormula(Kind.SUBTYPE, intersectionT,
+								new IntersectionType(from.getLowerBounds()))
+								.reduceInto(boundConsumer);
 					} else {
 						/*
 						 * Otherwise, the constraint reduces to false.
@@ -349,9 +462,9 @@ public class ConstraintFormula {
 							 * If S has the form ? and T has the form ? extends T', the
 							 * constraint reduces to ‹Object = T'›.
 							 */
-							for (Type t : to.getUpperBounds())
-								new ConstraintFormula(Kind.EQUALITY, Object.class, t)
-										.reduce(boundConsumer);
+							new ConstraintFormula(Kind.EQUALITY, Object.class,
+									new IntersectionType(to.getUpperBounds()))
+									.reduceInto(boundConsumer);
 						}
 					}
 				} else if (to.getLowerBounds().length == 0) {
@@ -360,17 +473,16 @@ public class ConstraintFormula {
 						 * If S has the form ? extends S' and T has the form ?, the
 						 * constraint reduces to ‹S' = Object›.
 						 */
-						for (Type s : from.getUpperBounds())
-							new ConstraintFormula(Kind.EQUALITY, s, Object.class)
-									.reduce(boundConsumer);
+						new ConstraintFormula(Kind.EQUALITY, new IntersectionType(
+								from.getUpperBounds()), Object.class).reduceInto(boundConsumer);
 					} else {
 						/*
 						 * If S has the form ? extends S' and T has the form ? extends T',
 						 * the constraint reduces to ‹S' = T'›.
 						 */
-						if (!new HashSet<>(Arrays.asList(from.getUpperBounds()))
-								.equals(new HashSet<>(Arrays.asList(to.getUpperBounds()))))
-							boundConsumer.acceptFalsehood();
+						new ConstraintFormula(Kind.EQUALITY, new IntersectionType(
+								from.getUpperBounds()), new IntersectionType(
+								to.getUpperBounds()));
 					}
 				}
 			} else if (to.getLowerBounds().length > 0) {
@@ -378,9 +490,8 @@ public class ConstraintFormula {
 				 * If S has the form ? super S' and T has the form ? super T', the
 				 * constraint reduces to ‹S' = T'›.
 				 */
-				if (!new HashSet<>(Arrays.asList(from.getLowerBounds()))
-						.equals(new HashSet<>(Arrays.asList(to.getLowerBounds()))))
-					boundConsumer.acceptFalsehood();
+				new ConstraintFormula(Kind.EQUALITY, new IntersectionType(
+						from.getLowerBounds()), new IntersectionType(to.getLowerBounds()));
 			} else {
 				/*
 				 * Otherwise, the constraint reduces to false.
@@ -392,7 +503,8 @@ public class ConstraintFormula {
 			 * A constraint formula of the form ‹S = T›, where S and T are types, is
 			 * reduced as follows:
 			 */
-			if (InferenceProcessor.isProper(from) && InferenceProcessor.isProper(to)) {
+			if (InferenceVariable.isProperType(from)
+					&& InferenceVariable.isProperType(to)) {
 				/*
 				 * If S and T are proper types, the constraint reduces to true if S is
 				 * the same as T (§4.3.4), and false otherwise.
@@ -422,7 +534,7 @@ public class ConstraintFormula {
 				 */
 				new ConstraintFormula(Kind.EQUALITY, fromToken.getComponentType()
 						.getType(), toToken.getComponentType().getType())
-						.reduce(boundConsumer);
+						.reduceInto(boundConsumer);
 			} else if (fromToken.getRawType().equals(toToken.getRawType())) {
 				/*
 				 * Otherwise, if S and T are class or interface types with the same
@@ -433,7 +545,7 @@ public class ConstraintFormula {
 				for (TypeVariable<?> type : fromToken.getRawType().getTypeParameters())
 					new ConstraintFormula(Kind.EQUALITY, fromToken.resolveType(type)
 							.getType(), toToken.resolveType(type).getType())
-							.reduce(boundConsumer);
+							.reduceInto(boundConsumer);
 			}
 		}
 	}

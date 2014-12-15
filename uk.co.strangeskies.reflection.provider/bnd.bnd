@@ -1,16 +1,6 @@
-Export-Package:  \
-	uk.co.strangeskies.utilities,\
-	uk.co.strangeskies.utilities.collection,\
-	uk.co.strangeskies.utilities.collection.computingmap,\
-	uk.co.strangeskies.utilities.collection.decorator,\
-	uk.co.strangeskies.utilities.collection.multimap,\
-	uk.co.strangeskies.utilities.factory,\
-	uk.co.strangeskies.utilities.flowcontrol,\
-	uk.co.strangeskies.utilities.function,\
-	uk.co.strangeskies.utilities.function.collection,\
-	uk.co.strangeskies.reflection.test,\
-	uk.co.strangeskies.reflection.test,\
-	uk.co.strangeskies.utilities.tuples
+Export-Package: \
+	uk.co.strangeskies.reflection.impl,\
+	uk.co.strangeskies.reflection.proxy.impl
 Bundle-Name: Strange Skies Reflection
 -dsannotations:  \
 	*

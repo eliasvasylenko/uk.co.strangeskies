@@ -1,25 +1,26 @@
-package uk.co.strangeskies.reflection;
+package uk.co.strangeskies.reflection.impl;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.checkerframework.checker.javari.qual.ReadOnly;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
+import uk.co.strangeskies.reflection.RecursiveTypeVisitor;
+
 import com.google.common.reflect.TypeResolver;
 
 public class InferenceVariable implements TypeVariable<Executable> {
 	private TypeVariable<? extends Executable> typeVariable;
+	private Type[] bounds;
 
 	private InferenceVariable(TypeVariable<? extends Executable> typeVariable) {
 		this.typeVariable = typeVariable;
@@ -46,7 +47,7 @@ public class InferenceVariable implements TypeVariable<Executable> {
 
 	@Override
 	public Type[] getBounds() {
-		return typeVariable.getBounds();
+		return bounds;
 	}
 
 	@Override
@@ -66,7 +67,7 @@ public class InferenceVariable implements TypeVariable<Executable> {
 
 	@Override
 	public String toString() {
-		return typeVariable.toString();
+		return getName();
 	}
 
 	@Override
@@ -85,28 +86,39 @@ public class InferenceVariable implements TypeVariable<Executable> {
 		return forList(Arrays.asList(parameters));
 	}
 
-	@SuppressWarnings("unchecked")
 	public static List<InferenceVariable> forList(
 			List<TypeVariable<? extends Executable>> parameters) {
-		Map<Type, InferenceVariable> inferenceVariables = parameters.stream()
-				.collect(Collectors.toMap(Function.identity(), InferenceVariable::new));
+		List<InferenceVariable> inferenceVariables = parameters.stream()
+				.map(InferenceVariable::new).collect(Collectors.toList());
 
-		for (InferenceVariable variable : inferenceVariables.values()) {
-			TypeResolver resolver = new TypeResolver();
+		TypeResolver resolver = new TypeResolver();
+		for (InferenceVariable variable : inferenceVariables)
+			resolver = resolver.where(variable.typeVariable, variable);
 
-			for (Type parameter : inferenceVariables.keySet())
-				if (parameter != variable.typeVariable)
-					resolver = resolver.where(parameter,
-							inferenceVariables.get(parameter));
+		for (InferenceVariable variable : inferenceVariables)
+			variable.bounds = Arrays.stream(variable.typeVariable.getBounds())
+					.map(resolver::resolveType).collect(Collectors.toList())
+					.toArray(new Type[variable.typeVariable.getBounds().length]);
 
-			variable.typeVariable = (TypeVariable<? extends Executable>) resolver
-					.resolveType(variable.typeVariable);
-		}
+		return inferenceVariables;
+	}
 
-		return new ArrayList<>(inferenceVariables.values());
+	public static boolean isProperType(Type type) {
+		return InferenceVariable.getAllMentionedBy(type).isEmpty();
 	}
 
 	public static Set<InferenceVariable> getAllMentionedBy(Type type) {
-		return null;
+		Set<InferenceVariable> inferenceVariables = new HashSet<>();
+
+		new RecursiveTypeVisitor() {
+			@Override
+			protected void visitTypeVariable(TypeVariable<?> type) {
+				if (type instanceof InferenceVariable)
+					inferenceVariables.add((InferenceVariable) type);
+				super.visitTypeVariable(type);
+			}
+		}.visit(type);
+
+		return inferenceVariables;
 	}
 }

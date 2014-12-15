@@ -1,6 +1,10 @@
-package uk.co.strangeskies.reflection;
+package uk.co.strangeskies.reflection.impl;
 
 import java.lang.reflect.Type;
+
+import uk.co.strangeskies.reflection.InvocationResolver;
+import uk.co.strangeskies.reflection.InvocationResolverFactory;
+import uk.co.strangeskies.reflection.TypeLiteral;
 
 public class InvocationResolverFactoryImpl implements InvocationResolverFactory {
 	@Override
