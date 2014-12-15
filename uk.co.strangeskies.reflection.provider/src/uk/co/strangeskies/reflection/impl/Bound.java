@@ -204,6 +204,45 @@ public class Bound {
 
 	@Override
 	public int hashCode() {
-		return 0;
+		IdentityProperty<Integer> result = new IdentityProperty<>();
+
+		accept(new BoundVisitor() {
+			@Override
+			public void acceptEquality(InferenceVariable a, InferenceVariable b) {
+				result.set(a.hashCode() ^ b.hashCode());
+			}
+
+			@Override
+			public void acceptEquality(InferenceVariable a, Type b) {
+				result.set(a.hashCode() ^ b.hashCode() * 7);
+			}
+
+			@Override
+			public void acceptSubtype(InferenceVariable a, InferenceVariable b) {
+				result.set(a.hashCode() ^ b.hashCode() * 23);
+			}
+
+			@Override
+			public void acceptSubtype(InferenceVariable a, Type b) {
+				result.set(a.hashCode() ^ b.hashCode() * 53);
+			}
+
+			@Override
+			public void acceptSubtype(Type a, InferenceVariable b) {
+				result.set(a.hashCode() ^ b.hashCode() * 67);
+			}
+
+			@Override
+			public void acceptFalsehood() {
+				result.set(0);
+			}
+
+			@Override
+			public void acceptCaptureConversion(Map<Type, TypeVariable<?>> c) {
+				result.set(c.hashCode());
+			}
+		});
+
+		return result.get();
 	}
 }

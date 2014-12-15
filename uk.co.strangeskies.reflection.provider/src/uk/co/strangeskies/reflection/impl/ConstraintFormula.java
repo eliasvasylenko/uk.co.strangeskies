@@ -219,7 +219,7 @@ public class ConstraintFormula {
 				 */
 				if (!ApplicabilityVerification.isExactlyAssignable(from, to))
 					boundConsumer.acceptFalsehood();
-			} else if (toToken.isArray()) {
+			} else if (!(to instanceof IntersectionType) && toToken.isArray()) {
 				/*
 				 * If T is an array type, T'[], then among the supertypes of S that are
 				 * array types, a most specific type is identified, S'[] (this may be S
