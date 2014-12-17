@@ -116,10 +116,14 @@ public class ApplicabilityVerification {
 							argument, parameter));
 				}
 
-				System.out.println(bounds);
+				Resolver resolver = new Resolver(bounds, inferenceVariables);
 
-				variableArityParameterApplicability = new Resolution(bounds,
-						inferenceVariables).verify();
+				System.out.println(bounds);
+				System.out.println(resolver.resolve());
+
+				variableArityParameterApplicability = resolver.validate();
+
+				System.out.println();
 			}
 		}
 

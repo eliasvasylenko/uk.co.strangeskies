@@ -27,6 +27,10 @@ public class BoundSet {
 		bounds = new HashSet<>();
 	}
 
+	public BoundSet(BoundSet bounds) {
+		this.bounds = new HashSet<>(bounds.bounds);
+	}
+
 	@Override
 	public String toString() {
 		return new StringBuilder("{ ")
@@ -254,7 +258,7 @@ public class BoundSet {
 	 * (In this section, S and T are inference variables or types, and U is a
 	 * proper type. For conciseness, a bound of the form α = T may also match a
 	 * bound of the form T = α.)
-	 * 
+	 *
 	 * When a bound set contains a pair of bounds that match one of the following
 	 * rules, a new constraint formula is implied:
 	 */

@@ -57,7 +57,7 @@ public class InferenceVariable implements TypeVariable<Executable> {
 
 	@Override
 	public String getName() {
-		return typeVariable.getName() + "i";
+		return typeVariable.getName() + "v";
 	}
 
 	@Override
