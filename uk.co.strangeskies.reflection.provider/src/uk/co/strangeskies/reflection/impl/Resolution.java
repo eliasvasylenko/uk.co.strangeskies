@@ -1,15 +1,16 @@
 package uk.co.strangeskies.reflection.impl;
 
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Consumer;
 
 import uk.co.strangeskies.reflection.impl.Bound.BoundVisitor;
+import uk.co.strangeskies.reflection.impl.Bound.PartialBoundVisitor;
 import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.Property;
 import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
@@ -33,10 +34,115 @@ public class Resolution {
 		calculateRemainingDependencies();
 	}
 
-	private void calculateRemainingDependencies() {
-		for (InferenceVariable inferenceVariable : instantiations.keySet()) {
-			remainingDependencies.add(inferenceVariable, inferenceVariable);
+	private void addRemainingDependency(InferenceVariable variable,
+			InferenceVariable dependency) {
+		/*
+		 * An inference variable α depends on the resolution of an inference
+		 * variable β if there exists an inference variable γ such that α depends on
+		 * the resolution of γ and γ depends on the resolution of β.
+		 */
+		if (remainingDependencies.add(variable, dependency)) {
+			for (InferenceVariable transientDependency : remainingDependencies
+					.get(dependency))
+				addRemainingDependency(variable, transientDependency);
+
+			remainingDependencies
+					.entrySet()
+					.stream()
+					.filter(e -> e.getValue().contains(variable))
+					.map(Entry::getKey)
+					.forEach(
+							transientDependent -> addRemainingDependency(transientDependent,
+									variable));
 		}
+	}
+
+	private void calculateRemainingDependencies() {
+		Set<InferenceVariable> leftOfCapture = new HashSet<>();
+
+		/*
+		 * An inference variable α depends on the resolution of itself.
+		 */
+		for (InferenceVariable inferenceVariable : instantiations.keySet())
+			addRemainingDependency(inferenceVariable, inferenceVariable);
+
+		/*
+		 * An inference variable α appearing on the left-hand side of a bound of the
+		 * form G<..., α, ...> = capture(G<...>) depends on the resolution of every
+		 * other inference variable mentioned in this bound (on both sides of the =
+		 * sign).
+		 */
+		bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
+			@Override
+			public void acceptCaptureConversion(Map<Type, InferenceVariable> c) {
+				for (InferenceVariable variable : c.values()) {
+					for (InferenceVariable dependency : c.values())
+						addRemainingDependency(variable, dependency);
+					for (Type inC : c.keySet())
+						for (InferenceVariable dependency : InferenceVariable
+								.getAllMentionedBy(inC))
+							addRemainingDependency(variable, dependency);
+				}
+
+				leftOfCapture.addAll(c.values());
+			}
+		}));
+
+		/*
+		 * Given a bound of one of the following forms, where T is either an
+		 * inference variable β or a type that mentions β:
+		 */
+		bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
+			/*
+			 * α = T, T = α
+			 */
+			@Override
+			public void acceptEquality(InferenceVariable a, InferenceVariable b) {
+				assessDependency(a, b);
+				assessDependency(b, a);
+			}
+
+			@Override
+			public void acceptEquality(InferenceVariable a, Type b) {
+				for (InferenceVariable inB : InferenceVariable.getAllMentionedBy(b))
+					assessDependency(a, inB);
+			}
+
+			/*
+			 * α <: T, T <: α
+			 */
+			@Override
+			public void acceptSubtype(InferenceVariable a, InferenceVariable b) {
+				assessDependency(a, b);
+				assessDependency(b, a);
+			}
+
+			@Override
+			public void acceptSubtype(InferenceVariable a, Type b) {
+				for (InferenceVariable inB : InferenceVariable.getAllMentionedBy(b))
+					assessDependency(a, inB);
+			}
+
+			@Override
+			public void acceptSubtype(Type a, InferenceVariable b) {
+				for (InferenceVariable inA : InferenceVariable.getAllMentionedBy(a))
+					assessDependency(inA, b);
+			}
+
+			/*
+			 * If α appears on the left-hand side of another bound of the form G<...,
+			 * α, ...> = capture(G<...>), then β depends on the resolution of α.
+			 * Otherwise, α depends on the resolution of β.
+			 */
+			public void assessDependency(InferenceVariable a, InferenceVariable... b) {
+				if (leftOfCapture.contains(a))
+					for (InferenceVariable bItem : b)
+						addRemainingDependency(bItem, a);
+				else
+					for (InferenceVariable bItem : b)
+						addRemainingDependency(a, bItem);
+			}
+		}));
 	}
 
 	public boolean isComplete() {
@@ -104,6 +210,6 @@ public class Resolution {
 		}
 
 		@Override
-		public void acceptCaptureConversion(Map<Type, TypeVariable<?>> c) {}
+		public void acceptCaptureConversion(Map<Type, InferenceVariable> c) {}
 	}
 }

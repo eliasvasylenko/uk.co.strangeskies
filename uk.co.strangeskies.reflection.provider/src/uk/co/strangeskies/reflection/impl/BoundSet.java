@@ -2,7 +2,6 @@ package uk.co.strangeskies.reflection.impl;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -113,7 +112,7 @@ public class BoundSet {
 						}
 
 						@Override
-						public void acceptCaptureConversion(Map<Type, TypeVariable<?>> c2) {
+						public void acceptCaptureConversion(Map<Type, InferenceVariable> c2) {
 							throw new NotImplementedException(); // TODO
 						}
 					});
@@ -246,7 +245,7 @@ public class BoundSet {
 		}
 
 		@Override
-		public void acceptCaptureConversion(Map<Type, TypeVariable<?>> c) {
+		public void acceptCaptureConversion(Map<Type, InferenceVariable> c) {
 			bounds.add(new Bound(visitor -> visitor.acceptCaptureConversion(c)));
 		}
 	}

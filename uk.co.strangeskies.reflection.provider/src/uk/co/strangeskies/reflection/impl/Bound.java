@@ -1,7 +1,6 @@
 package uk.co.strangeskies.reflection.impl;
 
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +23,7 @@ public class Bound {
 
 		void acceptFalsehood();
 
-		void acceptCaptureConversion(Map<Type, TypeVariable<?>> c);
+		void acceptCaptureConversion(Map<Type, InferenceVariable> c);
 	}
 
 	public static abstract class PartialBoundVisitor implements BoundVisitor {
@@ -47,7 +46,7 @@ public class Bound {
 		public void acceptFalsehood() {}
 
 		@Override
-		public void acceptCaptureConversion(Map<Type, TypeVariable<?>> c) {}
+		public void acceptCaptureConversion(Map<Type, InferenceVariable> c) {}
 	}
 
 	private final Consumer<BoundVisitor> visitation;
@@ -96,7 +95,7 @@ public class Bound {
 			}
 
 			@Override
-			public void acceptCaptureConversion(Map<Type, TypeVariable<?>> c) {
+			public void acceptCaptureConversion(Map<Type, InferenceVariable> c) {
 				List<Type> types = new ArrayList<>(c.keySet());
 				StringBuilder stringBuilder = new StringBuilder();
 
@@ -189,10 +188,10 @@ public class Bound {
 			}
 
 			@Override
-			public void acceptCaptureConversion(Map<Type, TypeVariable<?>> c) {
+			public void acceptCaptureConversion(Map<Type, InferenceVariable> c) {
 				that.accept(new PartialBoundVisitor() {
 					@Override
-					public void acceptCaptureConversion(Map<Type, TypeVariable<?>> c2) {
+					public void acceptCaptureConversion(Map<Type, InferenceVariable> c2) {
 						result.set(c.equals(c2));
 					}
 				});
@@ -238,7 +237,7 @@ public class Bound {
 			}
 
 			@Override
-			public void acceptCaptureConversion(Map<Type, TypeVariable<?>> c) {
+			public void acceptCaptureConversion(Map<Type, InferenceVariable> c) {
 				result.set(c.hashCode());
 			}
 		});

@@ -5,6 +5,7 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -97,12 +98,22 @@ public class ApplicabilityVerification {
 			}
 
 			if (variableArityParameterApplicability) {
-				int parameterIndex = 0;
+				Iterator<Type> parameters = this.parameters.iterator();
+				Type nextParameter = parameters.next();
+				Type parameter = nextParameter;
 				for (Type argument : arguments) {
+					if (nextParameter != null) {
+						parameter = nextParameter;
+						if (parameters.hasNext())
+							nextParameter = parameters.next();
+						else if (isVarArgs) {
+							parameter = TypeToken.of(parameter).getComponentType().getType();
+							nextParameter = null;
+						}
+					}
+
 					bounds.incorporate(new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY,
-							argument, parameters.get(parameterIndex)));
-					if (parameterIndex < parameters.size() - 1)
-						parameterIndex++;
+							argument, parameter));
 				}
 
 				System.out.println(bounds);
@@ -141,7 +152,9 @@ public class ApplicabilityVerification {
 			if (lowerBounds.length == 0)
 				return false;
 			else
-				return isExactlyAssignable(from, new IntersectionType(lowerBounds));
+				return isExactlyAssignable(from, new IntersectionType(lowerBounds))
+						&& isExactlyAssignable(from, new IntersectionType(
+								((WildcardType) to).getUpperBounds()));
 		} else
 			return TypeToken.of(to).isAssignableFrom(TypeToken.of(from));
 	}
