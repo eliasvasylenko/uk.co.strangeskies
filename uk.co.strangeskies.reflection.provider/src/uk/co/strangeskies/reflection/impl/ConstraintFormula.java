@@ -135,7 +135,7 @@ public class ConstraintFormula {
 			 * If S and T are proper types, the constraint reduces to true if S is a
 			 * subtype of T (§4.10), and false otherwise.
 			 */
-			if (!toToken.isAssignableFrom(from))
+			if (!ApplicabilityVerifier.isExactlyAssignable(from, to))
 				boundConsumer.acceptFalsehood();
 			else
 				return;

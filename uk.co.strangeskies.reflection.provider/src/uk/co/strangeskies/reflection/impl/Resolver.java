@@ -250,7 +250,6 @@ public class Resolver {
 		}));
 
 		if (!containsCaptureConversion.get()) {
-			System.out.println(" sfagfsdafsdgdf");
 			/*
 			 * If the bound set does not contain a bound of the form G<..., αi, ...> =
 			 * capture(G<...>) for all i (1 ≤ i ≤ n), then a candidate instantiation
@@ -357,6 +356,19 @@ public class Resolver {
 								erasedSupertype.getValue());
 			}
 
+			List<Class<?>> allCandidates = new ArrayList<>(erasedCandidates.keySet());
+			for (int i = 0; i < allCandidates.size(); i++)
+				for (int j = i + 1; j < allCandidates.size(); j++) {
+					if (allCandidates.get(i).isAssignableFrom(allCandidates.get(j))) {
+						allCandidates.remove(i--);
+						j--;
+					} else if (allCandidates.get(j)
+							.isAssignableFrom(allCandidates.get(i)))
+						allCandidates.remove(j--);
+				}
+
+			erasedCandidates.keySet().retainAll(allCandidates);
+
 			return new IntersectionType(erasedCandidates.entrySet().stream()
 					.map(e -> best(e.getKey(), e.getValue())).collect(Collectors.toSet()));
 		}
@@ -372,7 +384,7 @@ public class Resolver {
 			typeVariables.addAll(Arrays.asList(enclosingClass.getTypeParameters()));
 		} while ((enclosingClass = enclosingClass.getEnclosingClass()) != null);
 
-		return null; // TODO
+		return rawClass; // TODO
 	}
 
 	private Map<Class<?>, Type> getErasedSupertypes(Type of) {
