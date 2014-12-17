@@ -5,7 +5,7 @@ import java.util.Collection;
 import java.util.List;
 
 import uk.co.strangeskies.reflection.TypeLiteral;
-import uk.co.strangeskies.reflection.impl.ApplicabilityVerification;
+import uk.co.strangeskies.reflection.impl.ApplicabilityVerifier;
 
 import com.google.common.reflect.Invokable;
 
@@ -31,32 +31,32 @@ public class TestTypeLiteral {
 			SecurityException {
 		Arrays.asList(1, 2.0);
 
-		System.out.println(new ApplicabilityVerification(Invokable
+		System.out.println(new ApplicabilityVerifier(Invokable
 				.from(Arrays.class.getMethod("asList", Object[].class)), null,
 				int.class, double.class).verifyVariableArityParameterApplicability());
 
-		System.out.println(new ApplicabilityVerification(Invokable.from(B.class
+		System.out.println(new ApplicabilityVerifier(Invokable.from(B.class
 				.getMethod("bothways", Comparable.class, Collection.class)), null,
 				String.class, new TypeLiteral<List<String>>() {}.type())
 				.verifyLooseParameterApplicability());
 
-		System.out.println(new ApplicabilityVerification(Invokable.from(B.class
+		System.out.println(new ApplicabilityVerifier(Invokable.from(B.class
 				.getMethod("method", List.class, List.class)), null,
 				new TypeLiteral<List<Integer>>() {}.type(),
 				new TypeLiteral<List<Number>>() {}.type())
 				.verifyLooseParameterApplicability());
 
-		System.out.println(new ApplicabilityVerification(Invokable.from(B.class
+		System.out.println(new ApplicabilityVerifier(Invokable.from(B.class
 				.getMethod("method2", List.class, List.class)), null,
 				new TypeLiteral<List<Integer>>() {}.type(),
 				new TypeLiteral<List<Integer>>() {}.type())
 				.verifyLooseParameterApplicability());
 
-		System.out.println(new ApplicabilityVerification(Invokable.from(B.class
+		System.out.println(new ApplicabilityVerifier(Invokable.from(B.class
 				.getMethod("method", Number.class, Number.class)), null, Integer.class,
 				Double.class).verifyLooseParameterApplicability());
 
-		System.out.println(new ApplicabilityVerification(Invokable.from(B.class
+		System.out.println(new ApplicabilityVerifier(Invokable.from(B.class
 				.getMethod("method", Number.class, Number.class)), null, String.class,
 				String.class).verifyLooseParameterApplicability());
 	}

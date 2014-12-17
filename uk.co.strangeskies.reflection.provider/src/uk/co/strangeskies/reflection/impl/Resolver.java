@@ -1,10 +1,15 @@
 package uk.co.strangeskies.reflection.impl;
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -279,7 +284,7 @@ public class Resolver {
 						 * If αi has one or more proper lower bounds, L1, ..., Lk, then Ti =
 						 * lub(L1, ..., Lk) (§4.10.4).
 						 */
-						instantiationCandidate = lub(lowerBounds);
+						instantiationCandidate = leastUpperBound(lowerBounds);
 					} else if (hasThrowableBounds.get()) {
 						/*
 						 * Otherwise, if the bound set contains throws αi, and the proper
@@ -292,7 +297,7 @@ public class Resolver {
 						 * Otherwise, where αi has proper upper bounds U1, ..., Uk, Ti =
 						 * glb(U1, ..., Uk) (§5.1.10).
 						 */
-						instantiationCandidate = glb(upperBounds);
+						instantiationCandidate = greatestLowerBound(upperBounds);
 					}
 					instantiationCandidates.put(variable, instantiationCandidate);
 					bounds.incorporate().acceptEquality(variable, instantiationCandidate);
@@ -316,16 +321,16 @@ public class Resolver {
 		/*
 		 * the bound set contains a bound of the form G<..., αi, ...> =
 		 * capture(G<...>) for some i (1 ≤ i ≤ n), or;
-		 *
+		 * 
 		 * If the bound set produced in the step above contains the bound false;
-		 *
+		 * 
 		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
 		 */
 		for (InferenceVariable variable : minimalSet)
 			instantiations.put(variable, null);
 	}
 
-	private Type lub(Set<Type> lowerBounds) {
+	private Type leastUpperBound(Set<Type> lowerBounds) {
 		if (lowerBounds.size() == 1)
 			/*
 			 * If k = 1, then the lub is the type itself: lub(U) = U.
@@ -335,18 +340,62 @@ public class Resolver {
 			/*
 			 * For each Ui (1 ≤ i ≤ k):
 			 */
-			Set<Class<?>> minimalErasedSupertypes = new HashSet<>();
-			new RecursiveTypeVisitor(true, false, false, false, false) {
-				@Override
-				protected void visitClass(Class<?> type) {
 
-				}
-			}.visit(lowerBounds.stream().map(TypeLiteral::of)
-					.<Class<?>> map(TypeLiteral::rawClass).collect(Collectors.toSet()));
+			Iterator<Type> lowerBoundsIterator = lowerBounds.iterator();
+			MultiMap<Class<?>, Type, ? extends Set<Type>> erasedCandidates = new MultiHashMap<>(
+					HashSet::new);
+			erasedCandidates.addAll(getErasedSupertypes(lowerBoundsIterator.next()));
+
+			while (lowerBoundsIterator.hasNext()) {
+				Map<Class<?>, Type> erasedSupertypes = getErasedSupertypes(lowerBoundsIterator
+						.next());
+				erasedCandidates.keySet().retainAll(erasedSupertypes.keySet());
+				for (Map.Entry<Class<?>, Type> erasedSupertype : erasedSupertypes
+						.entrySet())
+					if (erasedCandidates.containsKey(erasedSupertype.getKey()))
+						erasedCandidates.add(erasedSupertype.getKey(),
+								erasedSupertype.getValue());
+			}
+
+			return new IntersectionType(erasedCandidates.entrySet().stream()
+					.map(e -> best(e.getKey(), e.getValue())).collect(Collectors.toSet()));
 		}
 	}
 
-	private Type glb(Set<Type> upperBounds) {
+	private Type best(Class<?> rawClass, Set<Type> parametrisations) {
+		if (rawClass.getTypeParameters().length == 0)
+			return rawClass;
+
+		List<TypeVariable<?>> typeVariables = new ArrayList<>();
+		Class<?> enclosingClass = rawClass;
+		do {
+			typeVariables.addAll(Arrays.asList(enclosingClass.getTypeParameters()));
+		} while ((enclosingClass = enclosingClass.getEnclosingClass()) != null);
+
+		return null; // TODO
+	}
+
+	private Map<Class<?>, Type> getErasedSupertypes(Type of) {
+		Map<Class<?>, Type> supertypes = new HashMap<>();
+
+		new RecursiveTypeVisitor(true, false, false, false, false) {
+			@Override
+			protected void visitClass(Class<?> type) {
+				supertypes.put(type, null);
+				super.visitClass(type);
+			}
+
+			@Override
+			protected void visitParameterizedType(ParameterizedType type) {
+				supertypes.put(TypeLiteral.of(type).rawClass(), type);
+				super.visitParameterizedType(type);
+			}
+		}.visit(of);
+
+		return supertypes;
+	}
+
+	private Type greatestLowerBound(Set<Type> upperBounds) {
 		if (upperBounds.size() == 1)
 			return upperBounds.iterator().next();
 		else

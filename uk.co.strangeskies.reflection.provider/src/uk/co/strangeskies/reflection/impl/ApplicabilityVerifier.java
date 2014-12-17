@@ -17,7 +17,7 @@ import com.google.common.reflect.Parameter;
 import com.google.common.reflect.TypeResolver;
 import com.google.common.reflect.TypeToken;
 
-public class ApplicabilityVerification {
+public class ApplicabilityVerifier {
 	private final List<InferenceVariable> inferenceVariables;
 	private final List<Type> parameters;
 	private final boolean isVarArgs;
@@ -31,13 +31,13 @@ public class ApplicabilityVerification {
 	private Boolean looseParameterApplicability;
 	private Boolean variableArityParameterApplicability;
 
-	public ApplicabilityVerification(Invokable<?, ?> invokable, Type result,
+	public ApplicabilityVerifier(Invokable<?, ?> invokable, Type result,
 			Type... arguments) {
 		this(invokable, result, Arrays.asList(arguments));
 	}
 
 	@SuppressWarnings("unchecked")
-	public ApplicabilityVerification(Invokable<?, ?> invokable, Type returnType,
+	public ApplicabilityVerifier(Invokable<?, ?> invokable, Type returnType,
 			List<Type> arguments) {
 		inferenceVariables = InferenceVariable
 				.forList((TypeVariable<? extends Executable>[]) invokable

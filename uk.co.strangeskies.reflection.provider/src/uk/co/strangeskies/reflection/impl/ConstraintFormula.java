@@ -63,7 +63,7 @@ public class ConstraintFormula {
 			 * compatible in a loose invocation context with T (§5.3), and false
 			 * otherwise.
 			 */
-			if (!ApplicabilityVerification.isLooselyAssignable(from, to))
+			if (!ApplicabilityVerifier.isLooselyAssignable(from, to))
 				boundConsumer.acceptFalsehood();
 		} else if (from != null && TypeToken.of(from).isPrimitive())
 			/*
@@ -113,7 +113,8 @@ public class ConstraintFormula {
 					.getActualTypeArguments()[0];
 
 			return fromSuperTypeArgument instanceof TypeVariable
-					&& ((TypeVariable<?>) fromSuperTypeArgument).getGenericDeclaration() instanceof Class;
+					&& ((TypeVariable<?>) fromSuperTypeArgument).getGenericDeclaration()
+							.equals(toToken.getRawType());
 		} else
 			return toToken.isArray()
 					&& fromToken.isArray()
@@ -217,7 +218,7 @@ public class ConstraintFormula {
 				 * reduces to true if T is among the supertypes of S, and false
 				 * otherwise.
 				 */
-				if (!ApplicabilityVerification.isExactlyAssignable(from, to))
+				if (!ApplicabilityVerifier.isExactlyAssignable(from, to))
 					boundConsumer.acceptFalsehood();
 			} else if (!(to instanceof IntersectionType) && toToken.isArray()) {
 				/*
@@ -542,10 +543,13 @@ public class ConstraintFormula {
 				 * arguments A1, ..., An, the constraint reduces to the following new
 				 * constraints: for all i (1 ≤ i ≤ n), ‹Bi = Ai›.
 				 */
-				for (TypeVariable<?> type : fromToken.getRawType().getTypeParameters())
-					new ConstraintFormula(Kind.EQUALITY, fromToken.resolveType(type)
-							.getType(), toToken.resolveType(type).getType())
-							.reduceInto(boundConsumer);
+				Class<?> rawClass = fromToken.getRawType();
+				do {
+					for (TypeVariable<?> type : rawClass.getTypeParameters())
+						new ConstraintFormula(Kind.EQUALITY, fromToken.resolveType(type)
+								.getType(), toToken.resolveType(type).getType())
+								.reduceInto(boundConsumer);
+				} while ((rawClass = rawClass.getEnclosingClass()) != null);
 			}
 		}
 	}

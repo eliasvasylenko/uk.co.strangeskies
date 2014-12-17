@@ -2,6 +2,7 @@ package uk.co.strangeskies.reflection.impl;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -258,7 +259,7 @@ public class BoundSet {
 	 * (In this section, S and T are inference variables or types, and U is a
 	 * proper type. For conciseness, a bound of the form α = T may also match a
 	 * bound of the form T = α.)
-	 *
+	 * 
 	 * When a bound set contains a pair of bounds that match one of the following
 	 * rules, a new constraint formula is implied:
 	 */
@@ -346,22 +347,20 @@ public class BoundSet {
 						TypeToken<?> typeTokenS = TypeToken.of(S);
 						TypeToken<?> typeTokenT = TypeToken.of(T);
 
-						ParameterizedType typeS = (ParameterizedType) typeTokenS
-								.resolveType(type).getType();
-
 						if (typeTokenS.getRawType().isAssignableFrom(
 								typeTokenT.getRawType())) {
-							ParameterizedType typeT = (ParameterizedType) typeTokenT
-									.resolveType(type).getType();
-
-							for (int i = 0; i < type.getActualTypeArguments().length; i++) {
-								constraints.add(new ConstraintFormula(Kind.EQUALITY, typeS
-										.getActualTypeArguments()[i], typeT
-										.getActualTypeArguments()[i]));
-							}
+							Class<?> rawClass = (Class<?>) type.getRawType();
+							do {
+								for (TypeVariable<?> typeVariable : rawClass
+										.getTypeParameters())
+									constraints.add(new ConstraintFormula(Kind.EQUALITY,
+											typeTokenS.resolveType(typeVariable).getType(),
+											typeTokenT.resolveType(typeVariable).getType()));
+							} while ((rawClass = rawClass.getEnclosingClass()) != null);
 						}
 
-						super.visitParameterizedType(typeS);
+						super.visitParameterizedType((ParameterizedType) typeTokenS
+								.resolveType(type).getType());
 					}
 				}.visit(S);
 		}

@@ -26,6 +26,26 @@ public interface MultiMap<K, V, C extends Collection<V>> extends Map<K, C> {
 		return getCollection(key).addAll(values);
 	}
 
+	public default boolean addAll(Map<K, V> values) {
+		boolean added = false;
+
+		for (Map.Entry<K, V> entry : values.entrySet()) {
+			added = add(entry.getKey(), entry.getValue()) || added;
+		}
+
+		return added;
+	}
+
+	public default boolean addAll(MultiMap<K, V, ?> values) {
+		boolean added = false;
+
+		for (Map.Entry<K, ? extends Collection<V>> entry : values.entrySet()) {
+			added = addAll(entry.getKey(), entry.getValue()) || added;
+		}
+
+		return added;
+	}
+
 	public default boolean addAll(K key,
 			@SuppressWarnings("unchecked") V... values) {
 		return addAll(key, Arrays.asList(values));
@@ -91,6 +111,26 @@ public interface MultiMap<K, V, C extends Collection<V>> extends Map<K, C> {
 	public default boolean removeAll(K key,
 			@SuppressWarnings("unchecked") V... values) {
 		return addAll(key, Arrays.asList(values));
+	}
+
+	public default boolean removeAll(Map<K, V> values) {
+		boolean removed = false;
+
+		for (Map.Entry<K, V> entry : values.entrySet()) {
+			removed = remove(entry.getKey(), entry.getValue()) || removed;
+		}
+
+		return removed;
+	}
+
+	public default boolean removeAll(MultiMap<K, V, ?> values) {
+		boolean removed = false;
+
+		for (Map.Entry<K, ? extends Collection<V>> entry : values.entrySet()) {
+			removed = removeAll(entry.getKey(), entry.getValue()) || removed;
+		}
+
+		return removed;
 	}
 
 	public default boolean removeFromAll(V value) {
