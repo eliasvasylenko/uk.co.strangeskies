@@ -3,6 +3,7 @@ package uk.co.strangeskies.reflection.impl;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -23,6 +24,7 @@ import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 
+import com.google.common.reflect.TypeResolver;
 import com.google.common.reflect.TypeToken;
 
 public class Resolver {
@@ -320,9 +322,9 @@ public class Resolver {
 		/*
 		 * the bound set contains a bound of the form G<..., αi, ...> =
 		 * capture(G<...>) for some i (1 ≤ i ≤ n), or;
-		 * 
+		 *
 		 * If the bound set produced in the step above contains the bound false;
-		 * 
+		 *
 		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
 		 */
 		for (InferenceVariable variable : minimalSet)
@@ -341,15 +343,15 @@ public class Resolver {
 			 */
 
 			Iterator<Type> lowerBoundsIterator = lowerBounds.iterator();
-			MultiMap<Class<?>, Type, ? extends Set<Type>> erasedCandidates = new MultiHashMap<>(
+			MultiMap<Class<?>, ParameterizedType, ? extends Set<ParameterizedType>> erasedCandidates = new MultiHashMap<>(
 					HashSet::new);
 			erasedCandidates.addAll(getErasedSupertypes(lowerBoundsIterator.next()));
 
 			while (lowerBoundsIterator.hasNext()) {
-				Map<Class<?>, Type> erasedSupertypes = getErasedSupertypes(lowerBoundsIterator
+				Map<Class<?>, ParameterizedType> erasedSupertypes = getErasedSupertypes(lowerBoundsIterator
 						.next());
 				erasedCandidates.keySet().retainAll(erasedSupertypes.keySet());
-				for (Map.Entry<Class<?>, Type> erasedSupertype : erasedSupertypes
+				for (Map.Entry<Class<?>, ParameterizedType> erasedSupertype : erasedSupertypes
 						.entrySet())
 					if (erasedCandidates.containsKey(erasedSupertype.getKey()))
 						erasedCandidates.add(erasedSupertype.getKey(),
@@ -374,7 +376,7 @@ public class Resolver {
 		}
 	}
 
-	private Type best(Class<?> rawClass, Set<Type> parametrisations) {
+	private Type best(Class<?> rawClass, Set<ParameterizedType> parameterizations) {
 		if (rawClass.getTypeParameters().length == 0)
 			return rawClass;
 
@@ -384,11 +386,101 @@ public class Resolver {
 			typeVariables.addAll(Arrays.asList(enclosingClass.getTypeParameters()));
 		} while ((enclosingClass = enclosingClass.getEnclosingClass()) != null);
 
-		return rawClass; // TODO
+		Map<TypeVariable<?>, TypeToken<?>> leastContainingParameterization = new HashMap<>();
+		for (TypeVariable<?> variable : typeVariables)
+			leastContainingParameterization.put(variable, TypeToken.of(Object.class));
+
+		System.out.println(parameterizations);
+		for (ParameterizedType type : parameterizations)
+			for (TypeVariable<?> variable : typeVariables) {
+				TypeToken<?> argumentU = TypeToken.of(type).resolveType(variable);
+				TypeToken<?> argumentV = leastContainingParameterization.get(variable);
+
+				if (argumentU instanceof WildcardType
+						&& (!(argumentV instanceof WildcardType) || ((WildcardType) argumentV)
+								.getUpperBounds().length > 0)) {
+					TypeToken<?> swap = argumentU;
+					argumentU = argumentV;
+					argumentV = swap;
+				}
+
+				/*
+				 * TODO
+				 *
+				 * lcta(U, V) = U if U = V, otherwise ? extends lub(U, V)
+				 *
+				 * lcta(U, ? extends V) = ? extends lub(U, V)
+				 *
+				 * lcta(U, ? super V) = ? super glb(U, V)
+				 *
+				 * lcta(? extends U, ? extends V) = ? extends lub(U, V)
+				 *
+				 * lcta(? extends U, ? super V) = U if U = V, otherwise ?
+				 *
+				 * lcta(? super U, ? super V) = ? super glb(U, V)
+				 */
+			}
+
+		TypeResolver resolver = new TypeResolver();
+		for (TypeVariable<?> variable : typeVariables) {
+			Type argument = leastContainingParameterization.get(variable).getType();
+			/*
+			 * lcta(U) = ? if U's upper bound is Object, otherwise ? extends
+			 * lub(U,Object)
+			 */
+			if (argument instanceof WildcardType) {
+				WildcardType wildcardArgument = ((WildcardType) argument);
+				if (wildcardArgument.getLowerBounds().length == 0
+						&& wildcardArgument.getUpperBounds().length == 1
+						&& wildcardArgument.getUpperBounds()[0].equals(Object.class))
+					argument = unboundedWildcard();
+			}
+			resolver = resolver.where(variable, argument);
+		}
+
+		return resolver.resolveType(rawClass);
 	}
 
-	private Map<Class<?>, Type> getErasedSupertypes(Type of) {
-		Map<Class<?>, Type> supertypes = new HashMap<>();
+	private WildcardType unboundedWildcard() {
+		return new WildcardType() {
+			@Override
+			public Type[] getUpperBounds() {
+				return new Type[0];
+			}
+
+			@Override
+			public Type[] getLowerBounds() {
+				return new Type[0];
+			}
+
+			@Override
+			public String toString() {
+				return "?";
+			}
+
+			@Override
+			public boolean equals(Object that) {
+				if (!(that instanceof WildcardType))
+					return false;
+				if (that == this)
+					return true;
+
+				WildcardType wildcard = (WildcardType) that;
+
+				return wildcard.getLowerBounds().length == 0
+						&& wildcard.getUpperBounds().length == 0;
+			}
+
+			@Override
+			public int hashCode() {
+				return Arrays.hashCode(getLowerBounds())
+						^ Arrays.hashCode(getUpperBounds());
+			}
+		};
+	}
+
+	private Map<Class<?>, ParameterizedType> getErasedSupertypes(Type of) {
+		Map<Class<?>, ParameterizedType> supertypes = new HashMap<>();
 
 		new RecursiveTypeVisitor(true, false, false, false, false) {
 			@Override

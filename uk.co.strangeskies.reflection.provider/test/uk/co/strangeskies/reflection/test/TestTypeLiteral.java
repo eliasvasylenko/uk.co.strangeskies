@@ -31,9 +31,9 @@ public class TestTypeLiteral {
 			SecurityException {
 		Arrays.asList(1, 2.0);
 
-		System.out.println(new ApplicabilityVerifier(Invokable
-				.from(Arrays.class.getMethod("asList", Object[].class)), null,
-				int.class, double.class).verifyVariableArityParameterApplicability());
+		System.out.println(new ApplicabilityVerifier(Invokable.from(Arrays.class
+				.getMethod("asList", Object[].class)), null, int.class, double.class)
+				.verifyVariableArityParameterApplicability());
 
 		System.out.println(new ApplicabilityVerifier(Invokable.from(B.class
 				.getMethod("bothways", Comparable.class, Collection.class)), null,
