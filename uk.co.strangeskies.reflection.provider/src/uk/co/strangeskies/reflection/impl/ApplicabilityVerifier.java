@@ -3,13 +3,11 @@ package uk.co.strangeskies.reflection.impl;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import uk.co.strangeskies.reflection.IntersectionType;
 import uk.co.strangeskies.reflection.impl.ConstraintFormula.Kind;
 
 import com.google.common.reflect.Invokable;
@@ -61,7 +59,7 @@ public class ApplicabilityVerifier {
 		for (InferenceVariable inferenceVariable : inferenceVariables) {
 			boolean anyProper = false;
 			for (Type bound : inferenceVariable.getBounds()) {
-				anyProper = anyProper || InferenceVariable.isProperType(bound);
+				anyProper = anyProper || Types.isProperType(bound);
 				bounds.incorporate().acceptSubtype(inferenceVariable, bound);
 			}
 			if (!anyProper)
@@ -118,76 +116,13 @@ public class ApplicabilityVerifier {
 
 				Resolver resolver = new Resolver(bounds, inferenceVariables);
 
-				System.out.println(bounds);
 				System.out.println(resolver.resolve());
 
 				variableArityParameterApplicability = resolver.validate();
-
-				System.out.println();
 			}
 		}
 
 		return variableArityParameterApplicability;
-	}
-
-	public static boolean isExactlyAssignable(Type from, Type to) {
-		if (from == null || to.equals(from)) {
-			return true;
-		} else if (from instanceof IntersectionType) {
-			/*
-			 * We must be able to assign from at least one member of the intersection
-			 * type.
-			 */
-			return Arrays.stream(((IntersectionType) from).getTypes()).anyMatch(
-					f -> isExactlyAssignable(f, to));
-		} else if (to instanceof IntersectionType) {
-			/*
-			 * We must be able to assign to each member of the intersection type.
-			 */
-			return Arrays.stream(((IntersectionType) to).getTypes()).allMatch(
-					t -> isExactlyAssignable(from, t));
-		} else if (to instanceof WildcardType) {
-			/*
-			 * This Should be taken care of bye the TypeToken check below, but
-			 * currently there is a bug, so we provide a correct implementation here
-			 * for the moment.
-			 */
-			Type[] lowerBounds = ((WildcardType) to).getLowerBounds();
-			if (lowerBounds.length == 0)
-				return false;
-			else
-				return isExactlyAssignable(from, new IntersectionType(lowerBounds))
-						&& isExactlyAssignable(from, new IntersectionType(
-								((WildcardType) to).getUpperBounds()));
-		} else
-			return TypeToken.of(to).isAssignableFrom(TypeToken.of(from));
-	}
-
-	public static boolean isStrictlyAssignable(Type from, Type to) {
-		TypeToken<?> toToken = TypeToken.of(to);
-		TypeToken<?> fromToken = TypeToken.of(from);
-
-		if (fromToken.isPrimitive())
-			if (toToken.isPrimitive())
-				return true; // TODO check widening primitive conversion
-			else
-				return false;
-		else if (toToken.isPrimitive())
-			return false;
-		else
-			return isExactlyAssignable(from, to);
-	}
-
-	public static boolean isLooselyAssignable(Type from, Type to) {
-		TypeToken<?> toToken = TypeToken.of(to);
-		TypeToken<?> fromToken = TypeToken.of(from);
-
-		if (fromToken.isPrimitive() && !toToken.isPrimitive())
-			fromToken = fromToken.wrap();
-		else if (!fromToken.isPrimitive() && toToken.isPrimitive())
-			fromToken = fromToken.unwrap();
-
-		return isStrictlyAssignable(from, to);
 	}
 
 	public BoundSet getResultingBounds() {

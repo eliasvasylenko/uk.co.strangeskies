@@ -103,10 +103,6 @@ public class InferenceVariable implements TypeVariable<Executable> {
 		return inferenceVariables;
 	}
 
-	public static boolean isProperType(Type type) {
-		return InferenceVariable.getAllMentionedBy(type).isEmpty();
-	}
-
 	public static Set<InferenceVariable> getAllMentionedBy(Type type) {
 		Set<InferenceVariable> inferenceVariables = new HashSet<>();
 
@@ -120,5 +116,9 @@ public class InferenceVariable implements TypeVariable<Executable> {
 		}.visit(type);
 
 		return inferenceVariables;
+	}
+
+	public static boolean isProperType(Type type) {
+		return InferenceVariable.getAllMentionedBy(type).isEmpty();
 	}
 }

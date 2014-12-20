@@ -8,31 +8,39 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class IntersectionType implements Type {
-	private final Type[] types;
+public interface IntersectionType extends Type {
+	Type[] getTypes();
 
-	public IntersectionType(Type[] types) {
-		this(Arrays.asList(types));
+	static IntersectionType of(Type... types) {
+		return of(Arrays.asList(types));
 	}
 
-	public IntersectionType(Collection<? extends Type> types) {
+	static IntersectionType of(Collection<? extends Type> types) {
 		List<Type> flattenedTypes = new ArrayList<>(types);
-		for (int i = 0; i < flattenedTypes.size(); i++) {
-			Type type = flattenedTypes.get(i);
-			if (type instanceof IntersectionType)
-				flattenedTypes.addAll(Arrays.asList(((IntersectionType) type)
-						.getTypes()));
-		}
-		this.types = flattenedTypes.toArray(new Type[flattenedTypes.size()]);
-	}
 
-	public Type[] getTypes() {
-		return types;
-	}
+		if (flattenedTypes.isEmpty())
+			flattenedTypes.add(Object.class);
+		else
+			for (int i = 0; i < flattenedTypes.size(); i++) {
+				Type type = flattenedTypes.get(i);
+				if (type instanceof IntersectionType)
+					flattenedTypes.addAll(Arrays.asList(((IntersectionType) type)
+							.getTypes()));
+			}
 
-	@Override
-	public String toString() {
-		return Arrays.stream(types).map(Objects::toString)
-				.collect(Collectors.joining(" & "));
+		return new IntersectionType() {
+			Type[] types = flattenedTypes.toArray(new Type[flattenedTypes.size()]);
+
+			@Override
+			public Type[] getTypes() {
+				return types;
+			}
+
+			@Override
+			public String toString() {
+				return Arrays.stream(types).map(Objects::toString)
+						.collect(Collectors.joining(" & "));
+			}
+		};
 	}
 }

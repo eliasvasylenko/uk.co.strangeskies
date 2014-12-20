@@ -171,7 +171,7 @@ public class Bound {
 			public void acceptEquality(InferenceVariable a, Type b) {
 				that.accept(new PartialBoundVisitor() {
 					@Override
-					public void acceptSubtype(InferenceVariable a2, Type b2) {
+					public void acceptEquality(InferenceVariable a2, Type b2) {
 						result.set(a.equals(a2) && b.equals(b2));
 					}
 				});

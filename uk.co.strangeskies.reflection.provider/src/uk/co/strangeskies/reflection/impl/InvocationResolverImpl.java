@@ -22,7 +22,7 @@ public class InvocationResolverImpl<T> implements InvocationResolver<T> {
 	}
 
 	public static <T> InvocationResolverImpl<T> over(TypeLiteral<T> receiverType) {
-		return new InvocationResolverImpl<>(receiverType.type());
+		return new InvocationResolverImpl<>(receiverType.getType());
 	}
 
 	public static <T> InvocationResolverImpl<T> over(Class<T> receiverType) {

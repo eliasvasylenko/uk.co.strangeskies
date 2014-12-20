@@ -51,7 +51,7 @@ public class PartialOverrideProxyFactoryImpl implements
 			try {
 				return (T) e.create();
 			} catch (IllegalArgumentException ex) {
-				return (T) e.create(new Class[] { baseClass.rawClass() },
+				return (T) e.create(new Class[] { baseClass.getRawType() },
 						new Object[] { base });
 			}
 		};

@@ -65,7 +65,6 @@ public class BoundSet {
 
 		public boolean addAndCheckPairs(Bound bound,
 				Function<ComplementaryBoundIncorporator, BoundVisitor> visitor) {
-			System.out.println("adding bound " + bound);
 			Set<Bound> bounds = new HashSet<>(BoundSet.this.bounds);
 
 			if (BoundSet.this.bounds.add(bound)) {
@@ -307,7 +306,7 @@ public class BoundSet {
 		 */
 		public void incorporateProperEqualitySubstitution(InferenceVariable a,
 				Type U, Type S, Type T) {
-			if (InferenceVariable.isProperType(U)) {
+			if (Types.isProperType(U)) {
 				TypeResolver resolver = new TypeResolver().where(a, U);
 
 				constraints.add(new ConstraintFormula(Kind.EQUALITY, resolver
@@ -320,7 +319,7 @@ public class BoundSet {
 		 */
 		public void incorporateProperSubtypeSubstitution(InferenceVariable a,
 				Type U, Type S, Type T) {
-			if (InferenceVariable.isProperType(U)) {
+			if (Types.isProperType(U)) {
 				TypeResolver resolver = new TypeResolver().where(a, U);
 
 				constraints.add(new ConstraintFormula(Kind.SUBTYPE, resolver

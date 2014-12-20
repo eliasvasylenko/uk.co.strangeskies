@@ -35,7 +35,8 @@ public abstract class TypeVisitor {
 				else if (type == null)
 					visitNull();
 				else
-					throw new AssertionError("Unknown type: " + type);
+					throw new AssertionError("Unknown type: " + type + " of class "
+							+ type.getClass());
 	}
 
 	protected void visitNull() {}

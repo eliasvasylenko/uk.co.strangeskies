@@ -23,7 +23,7 @@ public class TestTypeLiteral {
 		public <T extends Number, U extends List<? super T>> void method(
 				List<? extends T> a, U b) {}
 
-		public <T extends Comparable<? super U>, U extends Collection<? extends Comparable<? super T>>> void bothways(
+		public <T extends Comparable<? super T>, U extends Collection<? extends Comparable<? super T>>> void bothways(
 				T t, U u) {}
 	}
 
@@ -37,27 +37,23 @@ public class TestTypeLiteral {
 
 		System.out.println(new ApplicabilityVerifier(Invokable.from(B.class
 				.getMethod("bothways", Comparable.class, Collection.class)), null,
-				String.class, new TypeLiteral<List<String>>() {}.type())
+				String.class, new TypeLiteral<List<String>>() {}.getType())
 				.verifyLooseParameterApplicability());
 
 		System.out.println(new ApplicabilityVerifier(Invokable.from(B.class
 				.getMethod("method", List.class, List.class)), null,
-				new TypeLiteral<List<Integer>>() {}.type(),
-				new TypeLiteral<List<Number>>() {}.type())
+				new TypeLiteral<List<Integer>>() {}.getType(),
+				new TypeLiteral<List<Number>>() {}.getType())
 				.verifyLooseParameterApplicability());
 
 		System.out.println(new ApplicabilityVerifier(Invokable.from(B.class
 				.getMethod("method2", List.class, List.class)), null,
-				new TypeLiteral<List<Integer>>() {}.type(),
-				new TypeLiteral<List<Integer>>() {}.type())
+				new TypeLiteral<List<Integer>>() {}.getType(),
+				new TypeLiteral<List<Integer>>() {}.getType())
 				.verifyLooseParameterApplicability());
 
 		System.out.println(new ApplicabilityVerifier(Invokable.from(B.class
 				.getMethod("method", Number.class, Number.class)), null, Integer.class,
 				Double.class).verifyLooseParameterApplicability());
-
-		System.out.println(new ApplicabilityVerifier(Invokable.from(B.class
-				.getMethod("method", Number.class, Number.class)), null, String.class,
-				String.class).verifyLooseParameterApplicability());
 	}
 }

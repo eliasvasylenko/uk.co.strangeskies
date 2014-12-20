@@ -16,6 +16,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.proxy.ProxyFactory;
+
 import uk.co.strangeskies.reflection.IntersectionType;
 import uk.co.strangeskies.reflection.RecursiveTypeVisitor;
 import uk.co.strangeskies.reflection.TypeLiteral;
@@ -28,12 +30,13 @@ import com.google.common.reflect.TypeResolver;
 import com.google.common.reflect.TypeToken;
 
 public class Resolver {
-	private final BoundSet bounds;
+	private BoundSet bounds;
 	private final Set<InferenceVariable> inferenceVariables;
 
 	private final Map<InferenceVariable, Type> instantiations;
 
 	private final MultiMap<InferenceVariable, InferenceVariable, ? extends Set<InferenceVariable>> remainingDependencies;
+	private final Map<Collection<Type>, Type> leastUpperBounds;
 
 	public Resolver(BoundSet bounds,
 			Collection<InferenceVariable> inferenceVariables) {
@@ -43,6 +46,8 @@ public class Resolver {
 		instantiations = new HashMap<>();
 
 		remainingDependencies = new MultiHashMap<>(HashSet::new);
+		leastUpperBounds = new HashMap<>();
+
 		calculateRemainingDependencies();
 	}
 
@@ -269,14 +274,22 @@ public class Resolver {
 					bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
 						@Override
 						public void acceptSubtype(Type a, InferenceVariable b) {
-							if (InferenceVariable.isProperType(a))
+							if (b.equals(variable) && Types.isProperType(a))
 								lowerBounds.add(a);
 						};
 
 						@Override
 						public void acceptSubtype(InferenceVariable a, Type b) {
-							if (InferenceVariable.isProperType(b))
+							if (a.equals(variable) && Types.isProperType(b))
 								upperBounds.add(b);
+						};
+
+						@Override
+						public void acceptEquality(InferenceVariable a, Type b) {
+							if (a.equals(variable) && Types.isProperType(b)) {
+								upperBounds.add(b);
+								lowerBounds.add(b);
+							}
 						};
 					}));
 					Type instantiationCandidate;
@@ -312,9 +325,8 @@ public class Resolver {
 				for (Map.Entry<InferenceVariable, Type> instantiation : instantiationCandidates
 						.entrySet()) {
 					instantiations.put(instantiation.getKey(), instantiation.getValue());
-					this.bounds.incorporate().acceptEquality(instantiation.getKey(),
-							instantiation.getValue());
 				}
+				this.bounds = bounds;
 				return;
 			}
 		}
@@ -322,16 +334,20 @@ public class Resolver {
 		/*
 		 * the bound set contains a bound of the form G<..., αi, ...> =
 		 * capture(G<...>) for some i (1 ≤ i ≤ n), or;
-		 *
+		 * 
 		 * If the bound set produced in the step above contains the bound false;
-		 *
+		 * 
 		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
 		 */
 		for (InferenceVariable variable : minimalSet)
 			instantiations.put(variable, null);
 	}
 
-	private Type leastUpperBound(Set<Type> lowerBounds) {
+	private Type leastUpperBound(Type... lowerBounds) {
+		return leastUpperBound(Arrays.asList(lowerBounds));
+	}
+
+	private Type leastUpperBound(Collection<Type> lowerBounds) {
 		if (lowerBounds.size() == 1)
 			/*
 			 * If k = 1, then the lub is the type itself: lub(U) = U.
@@ -339,46 +355,75 @@ public class Resolver {
 			return lowerBounds.iterator().next();
 		else {
 			/*
+			 * Proxy guard against recursive generation of infinite types
+			 */
+			Type leastUpperBoundProxy = leastUpperBounds.get(lowerBounds);
+			if (leastUpperBoundProxy != null)
+				return Types.unboundedWildcard();
+
+			IdentityProperty<Type> leastUpperBoundResult = new IdentityProperty<>();
+			leastUpperBoundProxy = (Type) new ProxyFactory().createDelegatorProxy(
+					leastUpperBoundResult::get, new Class[] { IntersectionType.class });
+			leastUpperBounds.put(lowerBounds, leastUpperBoundProxy);
+
+			/*
 			 * For each Ui (1 ≤ i ≤ k):
 			 */
-
 			Iterator<Type> lowerBoundsIterator = lowerBounds.iterator();
 			MultiMap<Class<?>, ParameterizedType, ? extends Set<ParameterizedType>> erasedCandidates = new MultiHashMap<>(
 					HashSet::new);
 			erasedCandidates.addAll(getErasedSupertypes(lowerBoundsIterator.next()));
 
 			while (lowerBoundsIterator.hasNext()) {
-				Map<Class<?>, ParameterizedType> erasedSupertypes = getErasedSupertypes(lowerBoundsIterator
-						.next());
+				Type t = lowerBoundsIterator.next();
+				Map<Class<?>, ParameterizedType> erasedSupertypes = getErasedSupertypes(t);
 				erasedCandidates.keySet().retainAll(erasedSupertypes.keySet());
 				for (Map.Entry<Class<?>, ParameterizedType> erasedSupertype : erasedSupertypes
 						.entrySet())
-					if (erasedCandidates.containsKey(erasedSupertype.getKey()))
+					if (erasedCandidates.containsKey(erasedSupertype.getKey())
+							&& erasedSupertype.getValue() != null)
 						erasedCandidates.add(erasedSupertype.getKey(),
 								erasedSupertype.getValue());
 			}
 
-			List<Class<?>> allCandidates = new ArrayList<>(erasedCandidates.keySet());
-			for (int i = 0; i < allCandidates.size(); i++)
-				for (int j = i + 1; j < allCandidates.size(); j++) {
-					if (allCandidates.get(i).isAssignableFrom(allCandidates.get(j))) {
-						allCandidates.remove(i--);
-						j--;
-					} else if (allCandidates.get(j)
-							.isAssignableFrom(allCandidates.get(i)))
-						allCandidates.remove(j--);
-				}
+			minimiseCandidates(erasedCandidates);
 
-			erasedCandidates.keySet().retainAll(allCandidates);
+			List<Type> bestTypes = erasedCandidates.entrySet().stream()
+					.map(e -> best(e.getKey(), e.getValue()))
+					.collect(Collectors.toList());
 
-			return new IntersectionType(erasedCandidates.entrySet().stream()
-					.map(e -> best(e.getKey(), e.getValue())).collect(Collectors.toSet()));
+			leastUpperBoundResult.set(IntersectionType.of(bestTypes));
+
+			return leastUpperBoundResult.get();
 		}
 	}
 
+	private void minimiseCandidates(
+			MultiMap<Class<?>, ParameterizedType, ? extends Set<ParameterizedType>> erasedCandidates) {
+		List<Class<?>> minimalCandidates = new ArrayList<>(
+				erasedCandidates.keySet());
+		if (minimalCandidates.size() > 1)
+			for (int i = 0; i < minimalCandidates.size(); i++)
+				for (int j = i + 1; j < minimalCandidates.size(); j++) {
+					if (minimalCandidates.get(i).isAssignableFrom(
+							minimalCandidates.get(j))) {
+						minimalCandidates.remove(i);
+						j = i;
+					} else if (minimalCandidates.get(j).isAssignableFrom(
+							minimalCandidates.get(i))) {
+						minimalCandidates.remove(j--);
+					}
+				}
+		erasedCandidates.keySet().retainAll(minimalCandidates);
+	}
+
 	private Type best(Class<?> rawClass, Set<ParameterizedType> parameterizations) {
-		if (rawClass.getTypeParameters().length == 0)
+		if (parameterizations.isEmpty())
 			return rawClass;
+		else if (parameterizations.size() == 1) {
+			Type parameterization = parameterizations.iterator().next();
+			return parameterization == null ? rawClass : parameterization;
+		}
 
 		List<TypeVariable<?>> typeVariables = new ArrayList<>();
 		Class<?> enclosingClass = rawClass;
@@ -386,97 +431,93 @@ public class Resolver {
 			typeVariables.addAll(Arrays.asList(enclosingClass.getTypeParameters()));
 		} while ((enclosingClass = enclosingClass.getEnclosingClass()) != null);
 
-		Map<TypeVariable<?>, TypeToken<?>> leastContainingParameterization = new HashMap<>();
-		for (TypeVariable<?> variable : typeVariables)
-			leastContainingParameterization.put(variable, TypeToken.of(Object.class));
+		Map<TypeVariable<?>, Type> leastContainingParameterization = new HashMap<>();
 
-		System.out.println(parameterizations);
 		for (ParameterizedType type : parameterizations)
-			for (TypeVariable<?> variable : typeVariables) {
-				TypeToken<?> argumentU = TypeToken.of(type).resolveType(variable);
-				TypeToken<?> argumentV = leastContainingParameterization.get(variable);
+			for (TypeVariable<?> variable : typeVariables)
+				if (type != null) {
+					Type argumentU = TypeToken.of(type).resolveType(variable).getType();
+					Type argumentV = leastContainingParameterization.get(variable);
 
-				if (argumentU instanceof WildcardType
-						&& (!(argumentV instanceof WildcardType) || ((WildcardType) argumentV)
-								.getUpperBounds().length > 0)) {
-					TypeToken<?> swap = argumentU;
-					argumentU = argumentV;
-					argumentV = swap;
+					if (argumentV == null)
+						leastContainingParameterization.put(variable, argumentU);
+					else {
+						leastContainingParameterization.put(variable,
+								leastContainingArgument(argumentU, argumentV));
+					}
 				}
-
-				/*
-				 * TODO
-				 *
-				 * lcta(U, V) = U if U = V, otherwise ? extends lub(U, V)
-				 *
-				 * lcta(U, ? extends V) = ? extends lub(U, V)
-				 *
-				 * lcta(U, ? super V) = ? super glb(U, V)
-				 *
-				 * lcta(? extends U, ? extends V) = ? extends lub(U, V)
-				 *
-				 * lcta(? extends U, ? super V) = U if U = V, otherwise ?
-				 *
-				 * lcta(? super U, ? super V) = ? super glb(U, V)
-				 */
-			}
 
 		TypeResolver resolver = new TypeResolver();
 		for (TypeVariable<?> variable : typeVariables) {
-			Type argument = leastContainingParameterization.get(variable).getType();
-			/*
-			 * lcta(U) = ? if U's upper bound is Object, otherwise ? extends
-			 * lub(U,Object)
-			 */
+			Type argument = leastContainingParameterization.get(variable);
+			/*-
 			if (argument instanceof WildcardType) {
 				WildcardType wildcardArgument = ((WildcardType) argument);
 				if (wildcardArgument.getLowerBounds().length == 0
 						&& wildcardArgument.getUpperBounds().length == 1
 						&& wildcardArgument.getUpperBounds()[0].equals(Object.class))
 					argument = unboundedWildcard();
-			}
+			}*/
 			resolver = resolver.where(variable, argument);
 		}
 
-		return resolver.resolveType(rawClass);
+		Type best = Types.parameterizedType(rawClass,
+				leastContainingParameterization);
+		return best;
 	}
 
-	private WildcardType unboundedWildcard() {
-		return new WildcardType() {
-			@Override
-			public Type[] getUpperBounds() {
-				return new Type[0];
+	private Type leastContainingArgument(Type argumentU, Type argumentV) {
+		if (argumentU instanceof WildcardType
+				&& (!(argumentV instanceof WildcardType) || ((WildcardType) argumentV)
+						.getUpperBounds().length > 0)) {
+			Type swap = argumentU;
+			argumentU = argumentV;
+			argumentV = swap;
+		}
+
+		if (argumentU instanceof WildcardType) {
+			if (((WildcardType) argumentU).getUpperBounds().length > 0) {
+				if (((WildcardType) argumentV).getUpperBounds().length > 0) {
+					/*
+					 * lcta(? extends U, ? extends V) = ? extends lub(U, V)
+					 */
+					return Types.upperBoundedWildcard(leastUpperBound(argumentU,
+							argumentV));
+				} else {
+					/*
+					 * lcta(? extends U, ? super V) = U if U = V, otherwise ?
+					 */
+					return argumentU.equals(argumentV) ? argumentU : Types
+							.unboundedWildcard();
+				}
+			} else {
+				/*
+				 * lcta(? super U, ? super V) = ? super glb(U, V)
+				 */
+				return Types.lowerBoundedWildcard(greatestLowerBound(argumentU,
+						argumentV));
 			}
-
-			@Override
-			public Type[] getLowerBounds() {
-				return new Type[0];
+		} else if (argumentV instanceof WildcardType) {
+			if (((WildcardType) argumentV).getUpperBounds().length > 0) {
+				/*
+				 * lcta(U, ? extends V) = ? extends lub(U, V)
+				 */
+				return Types
+						.upperBoundedWildcard(leastUpperBound(argumentU, argumentV));
+			} else {
+				/*
+				 * lcta(U, ? super V) = ? super glb(U, V)
+				 */
+				return Types.lowerBoundedWildcard(greatestLowerBound(argumentU,
+						argumentV));
 			}
-
-			@Override
-			public String toString() {
-				return "?";
-			}
-
-			@Override
-			public boolean equals(Object that) {
-				if (!(that instanceof WildcardType))
-					return false;
-				if (that == this)
-					return true;
-
-				WildcardType wildcard = (WildcardType) that;
-
-				return wildcard.getLowerBounds().length == 0
-						&& wildcard.getUpperBounds().length == 0;
-			}
-
-			@Override
-			public int hashCode() {
-				return Arrays.hashCode(getLowerBounds())
-						^ Arrays.hashCode(getUpperBounds());
-			}
-		};
+		} else {
+			/*
+			 * lcta(U, V) = U if U = V, otherwise ? extends lub(U, V)
+			 */
+			return argumentU.equals(argumentV) ? argumentU : Types
+					.upperBoundedWildcard(leastUpperBound(argumentU, argumentV));
+		}
 	}
 
 	private Map<Class<?>, ParameterizedType> getErasedSupertypes(Type of) {
@@ -485,13 +526,20 @@ public class Resolver {
 		new RecursiveTypeVisitor(true, false, false, false, false) {
 			@Override
 			protected void visitClass(Class<?> type) {
-				supertypes.put(type, null);
+				@SuppressWarnings({ "unchecked", "rawtypes" })
+				Type parameterized = ((TypeToken) TypeToken.of(of)).getSupertype(type)
+						.getType();
+				supertypes
+						.put(
+								type,
+								(parameterized instanceof ParameterizedType) ? (ParameterizedType) parameterized
+										: null);
 				super.visitClass(type);
 			}
 
 			@Override
 			protected void visitParameterizedType(ParameterizedType type) {
-				supertypes.put(TypeLiteral.of(type).rawClass(), type);
+				supertypes.put(TypeLiteral.of(type).getRawType(), type);
 				super.visitParameterizedType(type);
 			}
 		}.visit(of);
@@ -499,11 +547,15 @@ public class Resolver {
 		return supertypes;
 	}
 
-	private Type greatestLowerBound(Set<Type> upperBounds) {
+	private Type greatestLowerBound(Type... upperBounds) {
+		return greatestLowerBound(Arrays.asList(upperBounds));
+	}
+
+	private Type greatestLowerBound(Collection<Type> upperBounds) {
 		if (upperBounds.size() == 1)
 			return upperBounds.iterator().next();
 		else
-			return validateGreatestLowerBound(new IntersectionType(upperBounds));
+			return validateGreatestLowerBound(IntersectionType.of(upperBounds));
 	}
 
 	public IntersectionType validateGreatestLowerBound(
