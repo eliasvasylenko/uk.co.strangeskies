@@ -1,4 +1,4 @@
-Export-Package:  \
+Export-Package: \
 	uk.co.strangeskies.utilities,\
 	uk.co.strangeskies.utilities.collection,\
 	uk.co.strangeskies.utilities.collection.computingmap,\
@@ -8,8 +8,7 @@ Export-Package:  \
 	uk.co.strangeskies.utilities.flowcontrol,\
 	uk.co.strangeskies.utilities.function,\
 	uk.co.strangeskies.utilities.function.collection,\
-	uk.co.strangeskies.utilities.proxy,\
-	uk.co.strangeskies.reflection.test,\
+	uk.co.strangeskies.utilities.test,\
 	uk.co.strangeskies.utilities.tuples
 Bundle-Name: Strange Skies Utilities
 -dsannotations:  \
@@ -23,3 +22,4 @@ Bundle-Name: Strange Skies Utilities
 	org.checkerframework:jdk8;version=latest,  \
 	osgi.enroute.base.api;  \
 		version = latest
+Bundle-Version: 0.1.0.${tstamp}

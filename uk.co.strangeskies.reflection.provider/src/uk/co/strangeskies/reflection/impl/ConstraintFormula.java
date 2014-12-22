@@ -62,7 +62,7 @@ public class ConstraintFormula {
 			 * compatible in a loose invocation context with T (§5.3), and false
 			 * otherwise.
 			 */
-			if (!Types.isLooselyInvocationCompatible(from, to))
+			if (!Types.isLooseInvocationContextCompatible(from, to))
 				boundConsumer.acceptFalsehood();
 		} else if (from != null && TypeToken.of(from).isPrimitive())
 			/*

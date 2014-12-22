@@ -1,6 +1,5 @@
 package uk.co.strangeskies.reflection.impl;
 
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
@@ -336,32 +335,26 @@ public class BoundSet {
 		 */
 		public void incorporateSupertypeParameterizationEquality(
 				InferenceVariable a, Type S, InferenceVariable a2, Type T) {
-			if (a == a2)
-				new RecursiveTypeVisitor(true, false, true, false, false) {
-					@Override
-					protected void visitClass(Class<?> type) {};
+			TypeToken<?> typeTokenS = TypeToken.of(S);
+			TypeToken<?> typeTokenT = TypeToken.of(T);
 
-					@Override
-					protected void visitParameterizedType(ParameterizedType type) {
-						TypeToken<?> typeTokenS = TypeToken.of(S);
-						TypeToken<?> typeTokenT = TypeToken.of(T);
-
-						if (typeTokenS.getRawType().isAssignableFrom(
-								typeTokenT.getRawType())) {
-							Class<?> rawClass = (Class<?>) type.getRawType();
-							do {
-								for (TypeVariable<?> typeVariable : rawClass
-										.getTypeParameters())
-									constraints.add(new ConstraintFormula(Kind.EQUALITY,
-											typeTokenS.resolveType(typeVariable).getType(),
-											typeTokenT.resolveType(typeVariable).getType()));
-							} while ((rawClass = rawClass.getEnclosingClass()) != null);
-						}
-
-						super.visitParameterizedType((ParameterizedType) typeTokenS
-								.resolveType(type).getType());
-					}
-				}.visit(S);
+			if (a == a2
+					&& typeTokenS.getRawType().isAssignableFrom(typeTokenT.getRawType()))
+				RecursiveTypeVisitor
+						.build()
+						.visitSupertypes()
+						.visitEnclosingTypes()
+						.parameterizedTypeVisitor(
+								type -> {
+									Class<?> rawClass = (Class<?>) type.getRawType();
+									do {
+										for (TypeVariable<?> typeVariable : rawClass
+												.getTypeParameters())
+											constraints.add(new ConstraintFormula(Kind.EQUALITY,
+													typeTokenS.resolveType(typeVariable).getType(),
+													typeTokenT.resolveType(typeVariable).getType()));
+									} while ((rawClass = rawClass.getEnclosingClass()) != null);
+								}).create().visit(S);
 		}
 	}
 }

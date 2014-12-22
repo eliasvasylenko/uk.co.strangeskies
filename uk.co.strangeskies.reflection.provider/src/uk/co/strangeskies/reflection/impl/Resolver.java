@@ -359,7 +359,7 @@ public class Resolver {
 			 */
 			Type leastUpperBoundProxy = leastUpperBounds.get(lowerBounds);
 			if (leastUpperBoundProxy != null)
-				return Types.unboundedWildcard();
+				return leastUpperBoundProxy;
 
 			IdentityProperty<Type> leastUpperBoundResult = new IdentityProperty<>();
 			leastUpperBoundProxy = (Type) new ProxyFactory().createDelegatorProxy(
@@ -450,14 +450,6 @@ public class Resolver {
 		TypeResolver resolver = new TypeResolver();
 		for (TypeVariable<?> variable : typeVariables) {
 			Type argument = leastContainingParameterization.get(variable);
-			/*-
-			if (argument instanceof WildcardType) {
-				WildcardType wildcardArgument = ((WildcardType) argument);
-				if (wildcardArgument.getLowerBounds().length == 0
-						&& wildcardArgument.getUpperBounds().length == 1
-						&& wildcardArgument.getUpperBounds()[0].equals(Object.class))
-					argument = unboundedWildcard();
-			}*/
 			resolver = resolver.where(variable, argument);
 		}
 
@@ -520,29 +512,26 @@ public class Resolver {
 		}
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private Map<Class<?>, ParameterizedType> getErasedSupertypes(Type of) {
 		Map<Class<?>, ParameterizedType> supertypes = new HashMap<>();
 
-		new RecursiveTypeVisitor(true, false, false, false, false) {
-			@Override
-			protected void visitClass(Class<?> type) {
-				@SuppressWarnings({ "unchecked", "rawtypes" })
-				Type parameterized = ((TypeToken) TypeToken.of(of)).getSupertype(type)
-						.getType();
-				supertypes
-						.put(
-								type,
-								(parameterized instanceof ParameterizedType) ? (ParameterizedType) parameterized
-										: null);
-				super.visitClass(type);
-			}
-
-			@Override
-			protected void visitParameterizedType(ParameterizedType type) {
-				supertypes.put(TypeLiteral.of(type).getRawType(), type);
-				super.visitParameterizedType(type);
-			}
-		}.visit(of);
+		RecursiveTypeVisitor
+				.build()
+				.visitSupertypes()
+				.classVisitor(
+						type -> {
+							Type parameterized = ((TypeToken) TypeToken.of(of)).getSupertype(
+									type).getType();
+							supertypes
+									.put(
+											type,
+											(parameterized instanceof ParameterizedType) ? (ParameterizedType) parameterized
+													: null);
+						})
+				.parameterizedTypeVisitor(
+						type -> supertypes.put(TypeLiteral.of(type).getRawType(), type))
+				.create().visit(of);
 
 		return supertypes;
 	}

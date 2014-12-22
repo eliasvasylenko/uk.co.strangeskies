@@ -106,19 +106,16 @@ public class InferenceVariable implements TypeVariable<Executable> {
 	public static Set<InferenceVariable> getAllMentionedBy(Type type) {
 		Set<InferenceVariable> inferenceVariables = new HashSet<>();
 
-		new RecursiveTypeVisitor() {
-			@Override
-			protected void visitTypeVariable(TypeVariable<?> type) {
-				if (type instanceof InferenceVariable)
-					inferenceVariables.add((InferenceVariable) type);
-				super.visitTypeVariable(type);
-			}
-		}.visit(type);
+		RecursiveTypeVisitor.build().visitEnclosingTypes().visitParameters()
+				.visitBounds().typeVariableVisitor(t -> {
+					if (t instanceof InferenceVariable)
+						inferenceVariables.add((InferenceVariable) t);
+				}).create().visit(type);
 
 		return inferenceVariables;
 	}
 
 	public static boolean isProperType(Type type) {
-		return InferenceVariable.getAllMentionedBy(type).isEmpty();
+		return getAllMentionedBy(type).isEmpty();
 	}
 }

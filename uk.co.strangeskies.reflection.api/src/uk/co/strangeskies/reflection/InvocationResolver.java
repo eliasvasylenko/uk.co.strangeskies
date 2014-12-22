@@ -6,11 +6,15 @@ import java.lang.reflect.Type;
 import java.util.List;
 
 public interface InvocationResolver<T> {
+	public TypeLiteral<T> getType();
+
 	public List<Type> inferTypes(Executable executable, Type result,
 			Type... parameters);
 
-	public Method resolveOverload(String methodName, Type result,
+	public boolean validateInvocation(Executable executable, Type result,
 			Type... parameters);
+
+	public Method resolveOverload(String methodName, Type... parameters);
 
 	public boolean validateParameterization(Executable executable,
 			Type... typeArguments);

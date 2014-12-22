@@ -15,21 +15,21 @@ import com.google.common.reflect.Invokable;
 import com.google.common.reflect.TypeToken;
 
 public class InvocationResolverImpl<T> implements InvocationResolver<T> {
-	private final Type receiverType;
+	private final TypeLiteral<T> receiverType;
 
-	private InvocationResolverImpl(Type receiverType) {
+	private InvocationResolverImpl(TypeLiteral<T> receiverType) {
 		this.receiverType = receiverType;
 	}
 
 	public static <T> InvocationResolverImpl<T> over(TypeLiteral<T> receiverType) {
-		return new InvocationResolverImpl<>(receiverType.getType());
+		return new InvocationResolverImpl<>(receiverType);
 	}
 
 	public static <T> InvocationResolverImpl<T> over(Class<T> receiverType) {
 		if (receiverType.getTypeParameters().length > 0)
 			throw new IllegalArgumentException(
 					"Cannot resolve invocations over raw type '" + receiverType + "'.");
-		return new InvocationResolverImpl<>(receiverType);
+		return new InvocationResolverImpl<>(new TypeLiteral<>(receiverType));
 	}
 
 	public static InvocationResolverImpl<?> over(Type receiverType) {
@@ -39,7 +39,12 @@ public class InvocationResolverImpl<T> implements InvocationResolver<T> {
 					"Cannot resolve invocations over partially resolved type '"
 							+ receiverType + "'.");
 
-		return new InvocationResolverImpl<>(receiverType);
+		return new InvocationResolverImpl<>(TypeLiteral.of(receiverType));
+	}
+
+	@Override
+	public TypeLiteral<T> getType() {
+		return receiverType;
 	}
 
 	@Override
@@ -68,7 +73,13 @@ public class InvocationResolverImpl<T> implements InvocationResolver<T> {
 	}
 
 	@Override
-	public Method resolveOverload(String name, Type result, Type... parameters) {
+	public boolean validateInvocation(Executable executable, Type result,
+			Type... parameters) {
+		return false;
+	}
+
+	@Override
+	public Method resolveOverload(String name, Type... parameters) {
 		return null;
 	}
 

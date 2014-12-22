@@ -11,15 +11,24 @@ import java.util.HashSet;
 import java.util.Set;
 
 public abstract class TypeVisitor {
+	private final boolean allowRepeatVisits;
 	private final Set<Type> visited = new HashSet<>();
 
-	public final void visit(Type... types) {
+	public TypeVisitor() {
+		this(false);
+	}
+
+	public TypeVisitor(boolean allowRepeatVisits) {
+		this.allowRepeatVisits = allowRepeatVisits;
+	}
+
+	public synchronized final void visit(Type... types) {
 		visit(Arrays.asList(types));
 	}
 
-	public final void visit(Collection<? extends Type> types) {
+	public synchronized final void visit(Collection<? extends Type> types) {
 		for (Type type : types)
-			if (visited.add(type))
+			if (visited.add(type)) {
 				if (type instanceof Class)
 					visitClass((Class<?>) type);
 				else if (type instanceof ParameterizedType)
@@ -37,6 +46,10 @@ public abstract class TypeVisitor {
 				else
 					throw new AssertionError("Unknown type: " + type + " of class "
 							+ type.getClass());
+
+				if (allowRepeatVisits)
+					visited.remove(type);
+			}
 	}
 
 	protected void visitNull() {}
