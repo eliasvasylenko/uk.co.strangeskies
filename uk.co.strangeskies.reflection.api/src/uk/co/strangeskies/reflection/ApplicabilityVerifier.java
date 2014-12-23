@@ -1,14 +1,12 @@
-package uk.co.strangeskies.reflection.impl;
+package uk.co.strangeskies.reflection;
 
-import java.lang.reflect.Executable;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import uk.co.strangeskies.reflection.impl.ConstraintFormula.Kind;
+import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 
 import com.google.common.reflect.Invokable;
 import com.google.common.reflect.Parameter;
@@ -16,14 +14,13 @@ import com.google.common.reflect.TypeResolver;
 import com.google.common.reflect.TypeToken;
 
 public class ApplicabilityVerifier {
-	private final List<InferenceVariable> inferenceVariables;
+	private final Resolver resolver;
+
 	private final List<Type> parameters;
 	private final boolean isVarArgs;
 
 	private final Type returnType;
 	private final List<Type> arguments;
-
-	private final BoundSet bounds;
 
 	private Boolean strictParameterApplicability;
 	private Boolean looseParameterApplicability;
@@ -34,15 +31,13 @@ public class ApplicabilityVerifier {
 		this(invokable, result, Arrays.asList(arguments));
 	}
 
-	@SuppressWarnings("unchecked")
 	public ApplicabilityVerifier(Invokable<?, ?> invokable, Type returnType,
 			List<Type> arguments) {
-		inferenceVariables = InferenceVariable
-				.forList((TypeVariable<? extends Executable>[]) invokable
-						.getTypeParameters());
+		resolver = new Resolver();
+		resolver.incorporateGenericDeclaration(invokable);
 
 		TypeResolver resolver = new TypeResolver();
-		for (InferenceVariable variable : inferenceVariables) {
+		for (InferenceVariable variable : this.resolver.getInferenceVariables()) {
 			resolver = resolver.where(variable.getTypeVariable(), variable);
 		}
 
@@ -54,17 +49,6 @@ public class ApplicabilityVerifier {
 		this.returnType = returnType;
 		this.arguments = arguments;
 
-		bounds = new BoundSet();
-
-		for (InferenceVariable inferenceVariable : inferenceVariables) {
-			boolean anyProper = false;
-			for (Type bound : inferenceVariable.getBounds()) {
-				anyProper = anyProper || Types.isProperType(bound);
-				bounds.incorporate().acceptSubtype(inferenceVariable, bound);
-			}
-			if (!anyProper)
-				bounds.incorporate().acceptSubtype(inferenceVariable, Object.class);
-		}
 	}
 
 	public boolean verifyStrictParameterApplicability() {
@@ -110,11 +94,9 @@ public class ApplicabilityVerifier {
 						}
 					}
 
-					bounds.incorporate(new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY,
+					resolver.incorporate(new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY,
 							argument, parameter));
 				}
-
-				Resolver resolver = new Resolver(bounds, inferenceVariables);
 
 				System.out.println(resolver.resolve());
 
@@ -123,10 +105,5 @@ public class ApplicabilityVerifier {
 		}
 
 		return variableArityParameterApplicability;
-	}
-
-	public BoundSet getResultingBounds() {
-		verifyVariableArityParameterApplicability();
-		return bounds;
 	}
 }

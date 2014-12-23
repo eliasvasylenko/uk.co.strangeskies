@@ -1,12 +1,12 @@
-package uk.co.strangeskies.reflection.impl;
+package uk.co.strangeskies.reflection;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
-import java.lang.reflect.Executable;
+import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -14,24 +14,23 @@ import java.util.stream.Collectors;
 import org.checkerframework.checker.javari.qual.ReadOnly;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
-import uk.co.strangeskies.reflection.RecursiveTypeVisitor;
-
 import com.google.common.reflect.TypeResolver;
 
-public class InferenceVariable implements TypeVariable<Executable> {
-	private TypeVariable<? extends Executable> typeVariable;
+public class InferenceVariable<T extends GenericDeclaration> implements
+		TypeVariable<T> {
+	private TypeVariable<? extends T> typeVariable;
 	private Type[] bounds;
 
-	private InferenceVariable(TypeVariable<? extends Executable> typeVariable) {
+	private InferenceVariable(TypeVariable<? extends T> typeVariable) {
 		this.typeVariable = typeVariable;
 	}
 
-	public TypeVariable<? extends Executable> getTypeVariable() {
+	public TypeVariable<? extends T> getTypeVariable() {
 		return typeVariable;
 	}
 
 	@Override
-	public <T extends Annotation> @Nullable T getAnnotation(Class<T> paramClass) {
+	public <U extends Annotation> @Nullable U getAnnotation(Class<U> paramClass) {
 		return typeVariable.getAnnotation(paramClass);
 	}
 
@@ -51,7 +50,7 @@ public class InferenceVariable implements TypeVariable<Executable> {
 	}
 
 	@Override
-	public Executable getGenericDeclaration() {
+	public T getGenericDeclaration() {
 		return typeVariable.getGenericDeclaration();
 	}
 
@@ -80,22 +79,29 @@ public class InferenceVariable implements TypeVariable<Executable> {
 		return typeVariable.hashCode();
 	}
 
-	@SafeVarargs
-	public static List<InferenceVariable> forList(
-			TypeVariable<? extends Executable>... parameters) {
-		return forList(Arrays.asList(parameters));
+	@SuppressWarnings("unchecked")
+	public static <T extends GenericDeclaration> List<InferenceVariable<T>> overGenericDeclaration(
+			T declaration) {
+		return overTypeVariables((TypeVariable<? extends T>[]) declaration
+				.getTypeParameters());
 	}
 
-	public static List<InferenceVariable> forList(
-			List<TypeVariable<? extends Executable>> parameters) {
-		List<InferenceVariable> inferenceVariables = parameters.stream()
-				.map(InferenceVariable::new).collect(Collectors.toList());
+	@SafeVarargs
+	public static <T extends GenericDeclaration> List<InferenceVariable<T>> overTypeVariables(
+			TypeVariable<? extends T>... typeVariables) {
+		return overTypeVariables(Arrays.asList(typeVariables));
+	}
+
+	public static <T extends GenericDeclaration> List<InferenceVariable<T>> overTypeVariables(
+			Collection<? extends TypeVariable<? extends T>> typeVariables) {
+		List<InferenceVariable<T>> inferenceVariables = typeVariables.stream()
+				.map(t -> new InferenceVariable<T>(t)).collect(Collectors.toList());
 
 		TypeResolver resolver = new TypeResolver();
-		for (InferenceVariable variable : inferenceVariables)
+		for (InferenceVariable<T> variable : inferenceVariables)
 			resolver = resolver.where(variable.typeVariable, variable);
 
-		for (InferenceVariable variable : inferenceVariables)
+		for (InferenceVariable<T> variable : inferenceVariables)
 			variable.bounds = Arrays.stream(variable.typeVariable.getBounds())
 					.map(resolver::resolveType).collect(Collectors.toList())
 					.toArray(new Type[variable.typeVariable.getBounds().length]);
@@ -103,16 +109,10 @@ public class InferenceVariable implements TypeVariable<Executable> {
 		return inferenceVariables;
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static Set<InferenceVariable> getAllMentionedBy(Type type) {
-		Set<InferenceVariable> inferenceVariables = new HashSet<>();
-
-		RecursiveTypeVisitor.build().visitEnclosingTypes().visitParameters()
-				.visitBounds().typeVariableVisitor(t -> {
-					if (t instanceof InferenceVariable)
-						inferenceVariables.add((InferenceVariable) t);
-				}).create().visit(type);
-
-		return inferenceVariables;
+		return (Set) Types.getAllMentionedBy(type,
+				InferenceVariable.class::isInstance);
 	}
 
 	public static boolean isProperType(Type type) {

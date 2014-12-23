@@ -4,17 +4,17 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import uk.co.strangeskies.reflection.ApplicabilityVerifier;
 import uk.co.strangeskies.reflection.TypeLiteral;
-import uk.co.strangeskies.reflection.impl.ApplicabilityVerifier;
 
 import com.google.common.reflect.Invokable;
 
 public class TestTypeLiteral {
-	public class A<T> {
+	public static class A<T> {
 		public class B {}
 	}
 
-	public class B {
+	public static class B {
 		public <T extends Number> void method(T a, T b) {}
 
 		public <T extends Number, U extends List<? super T>> void method2(
@@ -30,7 +30,7 @@ public class TestTypeLiteral {
 	public static void main(String... args) throws NoSuchMethodException,
 			SecurityException {
 		Arrays.asList(1, 2.0);
-
+		
 		System.out.println(new ApplicabilityVerifier(Invokable.from(Arrays.class
 				.getMethod("asList", Object[].class)), null, int.class, double.class)
 				.verifyVariableArityParameterApplicability());

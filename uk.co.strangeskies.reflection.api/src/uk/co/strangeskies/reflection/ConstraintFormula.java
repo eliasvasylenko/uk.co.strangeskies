@@ -1,4 +1,4 @@
-package uk.co.strangeskies.reflection.impl;
+package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -8,8 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import uk.co.strangeskies.reflection.IntersectionType;
-import uk.co.strangeskies.reflection.impl.Bound.BoundVisitor;
+import uk.co.strangeskies.reflection.Bound.BoundVisitor;
 import uk.co.strangeskies.utilities.tuples.Pair;
 
 import com.google.common.reflect.TypeToken;

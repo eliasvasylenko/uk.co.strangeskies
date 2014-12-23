@@ -10,11 +10,17 @@ import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import com.google.common.reflect.TypeToken;
 
 public final class Types {
 	public static final Map<Class<?>, Class<?>> WRAPPED_PRIMITIVES = Collections
@@ -59,6 +65,9 @@ public final class Types {
 			return Array.newInstance(
 					(getRawType(((GenericArrayType) type).getGenericComponentType())), 0)
 					.getClass();
+		} else if (type instanceof IntersectionType) {
+			return Array.newInstance(
+					(getRawType(((IntersectionType) type).getTypes()[0])), 0).getClass();
 		}
 		throw new IllegalArgumentException("Type of type '" + type
 				+ "' is unsupported.");
@@ -84,6 +93,10 @@ public final class Types {
 			return UNWRAPPED_PRIMITIVES.get(getRawType(type));
 		else
 			return type;
+	}
+
+	public static boolean isProperType(Type type) {
+		return InferenceVariable.getAllMentionedBy(type).isEmpty();
 	}
 
 	public static boolean isAssignable(Type from, Type to) {
@@ -167,7 +180,42 @@ public final class Types {
 		} else if (to instanceof Class) {
 			return ((Class<?>) to).isAssignableFrom(getRawType(from));
 		} else if (to instanceof ParameterizedType) {
-			return false; // TODO
+			TypeLiteral<?> fromTypeToken = TypeLiteral.of(from);
+			Class<?> matchedClass = TypeLiteral.of(to).getRawType();
+
+			if (from instanceof Class
+					&& matchedClass.isAssignableFrom((Class<?>) from)) {
+				return true;
+			} else if (!matchedClass.isAssignableFrom(fromTypeToken.getRawType())) {
+				return false;
+			}
+			Type[] typeParams = matchedClass.getTypeParameters();
+			Type[] toTypeArgs = ((ParameterizedType) to).getActualTypeArguments();
+			for (int i = 0; i < typeParams.length; i++) {
+				Type fromTypeArg = TypeToken.of(fromTypeToken.getType())
+						.resolveType(typeParams[i]).getType();
+				if (!isContainedBy(fromTypeArg, toTypeArgs[i]))
+					return false;
+			}
+
+			return isAssignable(((ParameterizedType) from).getOwnerType(),
+					((ParameterizedType) to).getOwnerType());
+		} else
+			return false;
+	}
+
+	private static boolean isContainedBy(Type from, Type to) {
+		if (to.equals(from))
+			return true;
+
+		if (to instanceof Class || to instanceof ParameterizedType)
+			return isAssignable(from, to) && isAssignable(to, from);
+		else if (to instanceof WildcardType) {
+			WildcardType toWildcard = (WildcardType) to;
+			return isAssignable(from,
+					IntersectionType.of(toWildcard.getUpperBounds()))
+					&& (toWildcard.getLowerBounds().length == 0 || isAssignable(
+							IntersectionType.of(toWildcard.getLowerBounds()), from));
 		} else
 			return false;
 	}
@@ -190,6 +238,33 @@ public final class Types {
 		else if (!isPrimitive(from) && isPrimitive(to))
 			from = unwrap(from);
 		return isStrictInvocationContextCompatible(from, to);
+	}
+
+	public static Set<Type> getAllMentionedBy(Type type, Predicate<Type> condition) {
+		Set<Type> types = new HashSet<>();
+
+		Consumer<Type> conditionalAdd = t -> {
+			if (condition.test(t))
+				types.add(t);
+		};
+
+		RecursiveTypeVisitor.build().visitEnclosingTypes().visitParameters()
+				.visitBounds().classVisitor(conditionalAdd::accept)
+				.genericArrayVisitor(conditionalAdd::accept)
+				.intersectionTypeVisitor(conditionalAdd::accept)
+				.parameterizedTypeVisitor(conditionalAdd::accept)
+				.wildcardVisitor(conditionalAdd::accept)
+				.typeVariableVisitor(conditionalAdd::accept).create().visit(type);
+
+		return types;
+	}
+
+	public static GenericArrayType genericArrayType(ParameterizedType type) {
+		return () -> type;
+	}
+
+	public static GenericArrayType genericArrayType(TypeVariable<?> type) {
+		return () -> type;
 	}
 
 	public static WildcardType unboundedWildcard() {
@@ -333,44 +408,50 @@ public final class Types {
 		return new ParameterizedTypeImpl(ownerType, rawType, typeArguments);
 	}
 
-	public static ParameterizedType parameterizedType(Class<?> rawClass,
-			Map<TypeVariable<?>, Type> typeArguments) {
-		return new ParameterizedTypeImpl(
-				rawClass.getEnclosingClass() != null ? parameterizedType(
-						rawClass.getEnclosingClass(), typeArguments) : null, rawClass,
-				argumentsForClass(rawClass, typeArguments));
+	public static ParameterizedType parameterizedType(Class<?> rawType) {
+		return parameterizedType(rawType, new HashMap<>());
 	}
 
-	private static Type[] argumentsForClass(Class<?> rawClass,
+	public static ParameterizedType parameterizedType(Class<?> rawType,
 			Map<TypeVariable<?>, Type> typeArguments) {
-		Type[] arguments = new Type[rawClass.getTypeParameters().length];
+		return new ParameterizedTypeImpl(
+				rawType.getEnclosingClass() != null ? parameterizedType(
+						rawType.getEnclosingClass(), typeArguments) : null, rawType,
+				argumentsForClass(rawType, typeArguments));
+	}
+
+	private static Type[] argumentsForClass(Class<?> rawType,
+			Map<TypeVariable<?>, Type> typeArguments) {
+		Type[] arguments = new Type[rawType.getTypeParameters().length];
 		for (int i = 0; i < arguments.length; i++) {
-			arguments[i] = typeArguments.get(rawClass.getTypeParameters()[i]);
+			arguments[i] = typeArguments.get(rawType.getTypeParameters()[i]);
 			if (arguments[i] == null)
-				arguments[i] = rawClass.getTypeParameters()[i];
+				arguments[i] = rawType.getTypeParameters()[i];
 		}
 		return arguments;
 	}
 
 	private static final class ParameterizedTypeImpl implements
 			ParameterizedType, Serializable {
+		private static final long serialVersionUID = 1L;
+
 		private final Type ownerType;
-		private final List<Type> argumentsList;
+		private final List<Type> typeArguments;
 		private final Class<?> rawType;
 
+		private final Set<Thread> recurringThreads;
+
 		ParameterizedTypeImpl(Type ownerType, Class<?> rawType, Type[] typeArguments) {
-			// TODO checkNotNull(rawType);
-			// checkArgument(typeArguments.length ==
-			// rawType.getTypeParameters().length);
-			// disallowPrimitiveType(typeArguments, "type parameter");
 			this.ownerType = ownerType;
 			this.rawType = rawType;
-			this.argumentsList = Arrays.asList(typeArguments);
+			this.typeArguments = Arrays.asList(typeArguments);
+
+			recurringThreads = new HashSet<>();
 		}
 
 		@Override
 		public Type[] getActualTypeArguments() {
-			return argumentsList.toArray(new Type[argumentsList.size()]);
+			return typeArguments.toArray(new Type[typeArguments.size()]);
 		}
 
 		@Override
@@ -388,33 +469,51 @@ public final class Types {
 			StringBuilder builder = new StringBuilder();
 			if (ownerType != null)
 				builder.append(ownerType).append('.');
-			builder
-					.append(rawType.getName())
-					.append('<')
-					.append(
-							argumentsList.stream().map(Type::toString)
-									.collect(Collectors.joining(" & "))).append('>');
+			builder.append(rawType.getName()).append('<');
+
+			if (recurringThreads.add(Thread.currentThread())) {
+				builder.append(typeArguments.stream().map(Type::toString)
+						.collect(Collectors.joining(" & ")));
+
+				recurringThreads.remove(Thread.currentThread());
+			} else
+				builder.append("...");
+
+			builder.append('>');
+
 			return builder.toString();
 		}
 
 		@Override
 		public int hashCode() {
-			return (ownerType == null ? 0 : ownerType.hashCode())
-					^ argumentsList.hashCode() ^ rawType.hashCode();
+			if (recurringThreads.add(Thread.currentThread())) {
+				int hashCode = (ownerType == null ? 0 : ownerType.hashCode())
+						^ typeArguments.hashCode() ^ rawType.hashCode();
+
+				recurringThreads.remove(Thread.currentThread());
+
+				return hashCode;
+			} else
+				return 0;
 		}
 
 		@Override
 		public boolean equals(Object other) {
-			if (!(other instanceof ParameterizedType)) {
-				return false;
-			}
-			ParameterizedType that = (ParameterizedType) other;
-			return getRawType().equals(that.getRawType())
-					&& Objects.equals(getOwnerType(), that.getOwnerType())
-					&& Arrays.equals(getActualTypeArguments(),
-							that.getActualTypeArguments());
-		}
+			if (recurringThreads.add(Thread.currentThread())) {
+				if (!(other instanceof ParameterizedType))
+					return false;
 
-		private static final long serialVersionUID = 0;
+				ParameterizedType that = (ParameterizedType) other;
+
+				boolean equals = getRawType().equals(that.getRawType())
+						&& Objects.equals(getOwnerType(), that.getOwnerType())
+						&& Arrays.equals(getActualTypeArguments(),
+								that.getActualTypeArguments());
+
+				recurringThreads.remove(Thread.currentThread());
+				return equals;
+			} else
+				return true;
+		}
 	}
 }
