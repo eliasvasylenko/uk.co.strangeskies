@@ -1,5 +1,6 @@
 package uk.co.strangeskies.reflection;
 
+import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -8,8 +9,6 @@ import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 
-import com.google.common.reflect.Invokable;
-import com.google.common.reflect.Parameter;
 import com.google.common.reflect.TypeResolver;
 import com.google.common.reflect.TypeToken;
 
@@ -34,17 +33,19 @@ public class ApplicabilityVerifier {
 	public ApplicabilityVerifier(Invokable<?, ?> invokable, Type returnType,
 			List<Type> arguments) {
 		resolver = new Resolver();
-		resolver.incorporateGenericDeclaration(invokable);
+		resolver.incorporateTypeContext(invokable);
 
 		TypeResolver resolver = new TypeResolver();
-		for (InferenceVariable variable : this.resolver.getInferenceVariables()) {
+		for (InferenceVariable<?> variable : this.resolver
+				.getInferenceVariables(invokable)) {
 			resolver = resolver.where(variable.getTypeVariable(), variable);
 		}
 
-		parameters = invokable.getParameters().stream().map(Parameter::getType)
-				.map(TypeToken::getType).map(resolver::resolveType)
+		parameters = Arrays
+				.stream(invokable.getGenericDeclaration().getParameters())
+				.map(Parameter::getParameterizedType).map(resolver::resolveType)
 				.collect(Collectors.toList());
-		isVarArgs = invokable.isVarArgs();
+		isVarArgs = invokable.getGenericDeclaration().isVarArgs();
 
 		this.returnType = returnType;
 		this.arguments = arguments;

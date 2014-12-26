@@ -96,7 +96,8 @@ public final class Types {
 	}
 
 	public static boolean isProperType(Type type) {
-		return InferenceVariable.getAllMentionedBy(type).isEmpty();
+		return !(type instanceof InferenceVariable)
+				&& InferenceVariable.getAllMentionedBy(type).isEmpty();
 	}
 
 	public static boolean isAssignable(Type from, Type to) {
@@ -259,7 +260,7 @@ public final class Types {
 		return types;
 	}
 
-	public static GenericArrayType genericArrayType(ParameterizedType type) {
+	public static GenericArrayType genericArrayType(Type type) {
 		return () -> type;
 	}
 

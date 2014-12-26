@@ -146,22 +146,22 @@ public class ConstraintFormula {
 			 * Otherwise, if T is the null type, the constraint reduces to false.
 			 */
 			boundConsumer.acceptFalsehood();
-		else if (from instanceof InferenceVariable)
+		else if (from instanceof InferenceVariable<?>)
 			/*
 			 * Otherwise, if S is an inference variable, α, the constraint reduces to
 			 * the bound α <: T.
 			 */
-			if (to instanceof InferenceVariable)
-				boundConsumer.acceptSubtype((InferenceVariable) from,
-						(InferenceVariable) to);
+			if (to instanceof InferenceVariable<?>)
+				boundConsumer.acceptSubtype((InferenceVariable<?>) from,
+						(InferenceVariable<?>) to);
 			else
-				boundConsumer.acceptSubtype((InferenceVariable) from, to);
-		else if (to instanceof InferenceVariable)
+				boundConsumer.acceptSubtype((InferenceVariable<?>) from, to);
+		else if (to instanceof InferenceVariable<?>)
 			/*
 			 * Otherwise, if T is an inference variable, α, the constraint reduces to
 			 * the bound S <: α.
 			 */
-			boundConsumer.acceptSubtype(from, (InferenceVariable) to);
+			boundConsumer.acceptSubtype(from, (InferenceVariable<?>) to);
 		else {
 			/*
 			 * Otherwise, the constraint is reduced according to the form of T:
@@ -251,7 +251,7 @@ public class ConstraintFormula {
 							boundConsumer.acceptFalsehood();
 					}
 				}
-			} else if (to instanceof InferenceVariable) {
+			} else if (to instanceof InferenceVariable<?>) {
 				/*
 				 * If T is a type variable, there are three cases:
 				 */
@@ -262,13 +262,13 @@ public class ConstraintFormula {
 					 * - If S is an intersection type of which T is an element, the
 					 * constraint reduces to true.
 					 */
-				} else if (((InferenceVariable) to).getBounds().length > 0) {
+				} else if (((InferenceVariable<?>) to).getBounds().length > 0) {
 					/*
 					 * - Otherwise, if T has a lower bound, B, the constraint reduces to
 					 * ‹S <: B›.
 					 */
 					new ConstraintFormula(Kind.SUBTYPE, from,
-							IntersectionType.of(((InferenceVariable) to).getBounds()));
+							IntersectionType.of(((InferenceVariable<?>) to).getBounds()));
 				} else {
 					/*
 					 * - Otherwise, the constraint reduces to false.
@@ -507,22 +507,22 @@ public class ConstraintFormula {
 				 */
 				if (!from.equals(to))
 					boundConsumer.acceptFalsehood();
-			} else if (from instanceof InferenceVariable) {
+			} else if (from instanceof InferenceVariable<?>) {
 				/*
 				 * Otherwise, if S is an inference variable, α, the constraint reduces
 				 * to the bound α = T.
 				 */
-				if (to instanceof InferenceVariable)
-					boundConsumer.acceptEquality((InferenceVariable) from,
-							(InferenceVariable) to);
+				if (to instanceof InferenceVariable<?>)
+					boundConsumer.acceptEquality((InferenceVariable<?>) from,
+							(InferenceVariable<?>) to);
 				else
-					boundConsumer.acceptEquality((InferenceVariable) from, to);
-			} else if (to instanceof InferenceVariable) {
+					boundConsumer.acceptEquality((InferenceVariable<?>) from, to);
+			} else if (to instanceof InferenceVariable<?>) {
 				/*
 				 * Otherwise, if T is an inference variable, α, the constraint reduces
 				 * to the bound S = α.
 				 */
-				boundConsumer.acceptEquality((InferenceVariable) to, from);
+				boundConsumer.acceptEquality((InferenceVariable<?>) to, from);
 			} else if (fromToken.isArray() && toToken.isArray()) {
 				/*
 				 * Otherwise, if S and T are array types, S'[] and T'[], the constraint

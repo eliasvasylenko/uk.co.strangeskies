@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class Invokable<T, R> {
+public class Invokable<T, R> implements GenericTypeContext<Executable> {
 	private final TypeLiteral<T> receiverType;
 	private final TypeLiteral<R> returnType;
 	private final Executable executable;
@@ -38,8 +38,14 @@ public class Invokable<T, R> {
 			return of((Constructor<?>) executable);
 	}
 
-	public Executable getExecutable() {
+	@Override
+	public Executable getGenericDeclaration() {
 		return executable;
+	}
+
+	@Override
+	public Type getDeclaringType() {
+		return receiverType.getType();
 	}
 
 	public TypeLiteral<T> getReceiverType() {
@@ -48,6 +54,12 @@ public class Invokable<T, R> {
 
 	public TypeLiteral<R> getReturnType() {
 		return returnType;
+	}
+
+	public <U extends T> Invokable<U, ? extends R> withReceiverType(
+			TypeLiteral<U> type) {
+		// TODO also modify return type based on override/more specific constructor.
+		return null;
 	}
 
 	public <U extends R> Invokable<T, U> withInferredTypes(

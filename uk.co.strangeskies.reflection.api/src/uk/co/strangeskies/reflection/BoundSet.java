@@ -84,37 +84,33 @@ public class BoundSet {
 						@Override
 						public void acceptEquality(InferenceVariable<?> a2,
 								InferenceVariable<?> b2) {
-							if ((a == a2 && b == b2) || (a == b2 && b == a2))
-								return;
-
 							incorporator.incorporateTransitiveEquality(a, b, a2, b2);
 							incorporator.incorporateTransitiveEquality(a, b, b2, a2);
 							incorporator.incorporateTransitiveEquality(b, a, a2, b2);
 							incorporator.incorporateTransitiveEquality(b, a, b2, a2);
-
-							throw new NotImplementedException(); // TODO
 						}
 
 						@Override
 						public void acceptEquality(InferenceVariable<?> a2, Type b2) {
 							incorporator.incorporateTransitiveEquality(a, b, a2, b2);
 							incorporator.incorporateTransitiveEquality(b, a, a2, b2);
-
-							throw new NotImplementedException(); // TODO
 						}
 
 						@Override
 						public void acceptSubtype(InferenceVariable<?> a2, Type b2) {
-							throw new NotImplementedException(); // TODO
+							incorporator.incorporateSubtypeSubstitution(a, b, a2, b2);
+							incorporator.incorporateSubtypeSubstitution(b, a, a2, b2);
 						}
 
 						@Override
 						public void acceptSubtype(Type a2, InferenceVariable<?> b2) {
-							throw new NotImplementedException(); // TODO
+							incorporator.incorporateSupertypeSubstitution(a, b, a2, b2);
+							incorporator.incorporateSupertypeSubstitution(b, a, a2, b2);
 						}
 
 						@Override
-						public void acceptCaptureConversion(Map<Type, InferenceVariable<?>> c2) {
+						public void acceptCaptureConversion(
+								Map<Type, InferenceVariable<?>> c2) {
 							throw new NotImplementedException(); // TODO
 						}
 					});
@@ -152,7 +148,8 @@ public class BoundSet {
 						}
 
 						@Override
-						public void acceptSubtype(InferenceVariable<?> a2, InferenceVariable<?> b2) {
+						public void acceptSubtype(InferenceVariable<?> a2,
+								InferenceVariable<?> b2) {
 							incorporator.incorporateSubtypeSubstitution(a, b, a2, b2);
 							incorporator.incorporateSupertypeSubstitution(a, b, a2, b2);
 							incorporator.incorporateProperSubtypeSubstitution(a, b, a2, b2);
@@ -185,7 +182,8 @@ public class BoundSet {
 						}
 
 						@Override
-						public void acceptSubtype(InferenceVariable<?> a2, InferenceVariable<?> b2) {
+						public void acceptSubtype(InferenceVariable<?> a2,
+								InferenceVariable<?> b2) {
 							incorporator.incorporateSupertypeParameterizationEquality(a, b,
 									a2, b2);
 
@@ -224,7 +222,8 @@ public class BoundSet {
 						}
 
 						@Override
-						public void acceptSubtype(InferenceVariable<?> a2, InferenceVariable<?> b2) {
+						public void acceptSubtype(InferenceVariable<?> a2,
+								InferenceVariable<?> b2) {
 							incorporator.incorporateTransitiveSubtype(a, b, a2, b2);
 							incorporator.incorporateTransitiveSubtype(a, b, b2, a2);
 						}
@@ -268,7 +267,7 @@ public class BoundSet {
 		 */
 		public void incorporateTransitiveEquality(InferenceVariable<?> a, Type S,
 				InferenceVariable<?> a2, Type T) {
-			if (a == a2)
+			if (a.equals(a2))
 				constraints.add(new ConstraintFormula(Kind.EQUALITY, S, T));
 		}
 
@@ -277,16 +276,16 @@ public class BoundSet {
 		 */
 		public void incorporateSubtypeSubstitution(InferenceVariable<?> a, Type S,
 				InferenceVariable<?> a2, Type T) {
-			if (a == a2)
+			if (a.equals(a2))
 				constraints.add(new ConstraintFormula(Kind.SUBTYPE, S, T));
 		}
 
 		/*
 		 * α = S and T <: α imply ‹T <: S›
 		 */
-		public void incorporateSupertypeSubstitution(InferenceVariable<?> a, Type S,
-				Type T, InferenceVariable<?> a2) {
-			if (a == a2)
+		public void incorporateSupertypeSubstitution(InferenceVariable<?> a,
+				Type S, Type T, InferenceVariable<?> a2) {
+			if (a.equals(a2))
 				constraints.add(new ConstraintFormula(Kind.SUBTYPE, T, S));
 		}
 
@@ -295,7 +294,7 @@ public class BoundSet {
 		 */
 		public void incorporateTransitiveSubtype(Type S, InferenceVariable<?> a,
 				InferenceVariable<?> a2, Type T) {
-			if (a == a2)
+			if (a.equals(a2))
 				constraints.add(new ConstraintFormula(Kind.SUBTYPE, S, T));
 		}
 
@@ -337,7 +336,7 @@ public class BoundSet {
 			TypeToken<?> typeTokenS = TypeToken.of(S);
 			TypeToken<?> typeTokenT = TypeToken.of(T);
 
-			if (a == a2
+			if (a.equals(a2)
 					&& typeTokenS.getRawType().isAssignableFrom(typeTokenT.getRawType()))
 				RecursiveTypeVisitor
 						.build()

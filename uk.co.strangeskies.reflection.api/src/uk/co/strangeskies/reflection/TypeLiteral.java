@@ -1,20 +1,13 @@
 package uk.co.strangeskies.reflection;
 
-import java.lang.reflect.Executable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
-import java.util.Deque;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
-
-public class TypeLiteral<T> {
+public class TypeLiteral<T> implements GenericTypeContext<Class<? super T>> {
 	private final Type type;
 	private final Class<? super T> rawType;
 
@@ -60,6 +53,16 @@ public class TypeLiteral<T> {
 		return rawType;
 	}
 
+	@Override
+	public Class<? super T> getGenericDeclaration() {
+		return getRawType();
+	}
+
+	@Override
+	public Type getDeclaringType() {
+		return getType();
+	}
+
 	public boolean isPrimitive() {
 		return Types.isPrimitive(type);
 	}
@@ -84,29 +87,57 @@ public class TypeLiteral<T> {
 			return this;
 	}
 
+	public boolean isAssignableFrom(Type type) {
+		return Types.isAssignable(type, this.type);
+	}
+
+	/*-
+	public Type resolveType(Type type) {
+		return resolveType(of(type)).getType();
+	}
+
+	@SuppressWarnings("unchecked")
 	public <U> TypeLiteral<? extends U> resolveType(TypeLiteral<U> type) {
+		Resolver resolver = getResolver();
+
+		if (type instanceof TypeVariable) {
+			return (TypeLiteral<? extends U>) of(resolveTypeVarible((TypeVariable<?>) type));
+		} else {
+			return type.withTypeArguments(instantiations);
+		}
+	}
+
+	private Type resolveTypeVarible(TypeVariable<?> type2) {
+		Type instantiation = resolver
+				.getInstantiation(this, (TypeVariable<?>) type);
+		if (instantiation != null)
+			return instantiation;
+
+		TypeVariable<?> typeVariable = (TypeVariable<?>) type;
+		if (typeVariable.getGenericDeclaration() instanceof Executable) {
+			resolveType(((Executable) typeVariable.getGenericDeclaration())
+					.getDeclaringClass());
+			resolver.incorporateGenericDeclaration(this,
+					typeVariable.getGenericDeclaration());
+			return resolver.getInstantiation(this, typeVariable);
+		}
+
+		Class<?> declaringClass = (Class<?>) typeVariable.getGenericDeclaration();
+		if (!declaringClass.isAssignableFrom(rawType))
+			return type;
+
 		return null;
 	}
 
-	public Type resolveType(Type type) {
-		if (type instanceof TypeVariable) {
-			if (typeMappings.containsKey(type))
-				return typeMappings.get(type);
+	private Resolver getResolver() {
+		resolver.incorporateTypeContext(this);
 
-			TypeVariable<?> typeVariable = (TypeVariable<?>) type;
-			if (typeVariable.getGenericDeclaration() instanceof Executable)
-				return type;
+		if (type instanceof ParameterizedType)
+			resolver.incorporateType(this, (ParameterizedType) type);
 
-			Class<?> declaringClass = (Class<?>) typeVariable.getGenericDeclaration();
-			if (!declaringClass.isAssignableFrom(rawType))
-				return type;
+		resolver.resolve();
 
-			return null;
-		} else {
-			TypeLiteral<?> ofLiteral = TypeLiteral.of(type);
-
-			;
-		}
+		return resolver;
 	}
 
 	public TypeLiteral<? extends T> withTypeArguments(
@@ -141,6 +172,7 @@ public class TypeLiteral<T> {
 			TypeParameter<V> variable, Class<V> instantiation) {
 		return withTypeArgument(variable.getType(), instantiation);
 	}
+	 */
 
 	public Set<Invokable<T, T>> getConstructors() {
 		return Arrays.stream(getRawType().getConstructors())
@@ -170,7 +202,8 @@ public class TypeLiteral<T> {
 				getMethods().stream()
 						.filter(i -> i.getExecutable().getName().equals(name))
 						.collect(Collectors.toSet()), parameters);
-	}*/
+	}
+	*/
 
 	private <R> Invokable<T, R> resolveInvokableOverload(
 			Set<Invokable<T, R>> candidates, Type... parameters) {
