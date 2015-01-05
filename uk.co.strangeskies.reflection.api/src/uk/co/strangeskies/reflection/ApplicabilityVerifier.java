@@ -9,9 +9,6 @@ import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 
-import com.google.common.reflect.TypeResolver;
-import com.google.common.reflect.TypeToken;
-
 public class ApplicabilityVerifier {
 	private final Resolver resolver;
 
@@ -35,7 +32,7 @@ public class ApplicabilityVerifier {
 		resolver = new Resolver();
 		resolver.incorporateTypeContext(invokable);
 
-		TypeResolver resolver = new TypeResolver();
+		TypeSubstitution resolver = new TypeSubstitution();
 		for (InferenceVariable<?> variable : this.resolver
 				.getInferenceVariables(invokable)) {
 			resolver = resolver.where(variable.getTypeVariable(), variable);
@@ -43,7 +40,7 @@ public class ApplicabilityVerifier {
 
 		parameters = Arrays
 				.stream(invokable.getGenericDeclaration().getParameters())
-				.map(Parameter::getParameterizedType).map(resolver::resolveType)
+				.map(Parameter::getParameterizedType).map(resolver::resolve)
 				.collect(Collectors.toList());
 		isVarArgs = invokable.getGenericDeclaration().isVarArgs();
 
@@ -90,16 +87,15 @@ public class ApplicabilityVerifier {
 						if (parameters.hasNext())
 							nextParameter = parameters.next();
 						else if (isVarArgs) {
-							parameter = TypeToken.of(parameter).getComponentType().getType();
+							parameter = Types.getComponentType(parameter);
 							nextParameter = null;
 						}
 					}
-
 					resolver.incorporate(new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY,
 							argument, parameter));
 				}
 
-				System.out.println(resolver.resolve());
+				System.out.println(resolver.infer());
 
 				variableArityParameterApplicability = resolver.validate();
 			}

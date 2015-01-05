@@ -23,98 +23,45 @@ import uk.co.strangeskies.reflection.Bound.PartialBoundVisitor;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.utilities.IdentityComparator;
 import uk.co.strangeskies.utilities.IdentityProperty;
+import uk.co.strangeskies.utilities.collection.computingmap.CacheComputingMap;
 import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 
-import com.google.common.reflect.TypeResolver;
-import com.google.common.reflect.TypeToken;
-
 public class Resolver {
 	private BoundSet bounds;
-	private final Map<GenericTypeContext<?>, Map<TypeVariable<?>, InferenceVariable<?>>> inferenceVariables;
 
+	private final Map<GenericTypeContainer<?>, Map<TypeVariable<?>, InferenceVariable<?>>> inferenceVariables;
 	private final Map<InferenceVariable<?>, Type> instantiations;
-
 	private final MultiMap<InferenceVariable<?>, InferenceVariable<?>, ? extends Set<InferenceVariable<?>>> remainingDependencies;
-	private final Map<Collection<Type>, IntersectionType> leastUpperBounds;
+
+	/*
+	 * A ComputingMap doesn't really make much sense here over a regular Map...
+	 * But it doesn't hurt anything, and it gives us soft-references for values
+	 * out of the box.
+	 */
+	private static final CacheComputingMap<Collection<Type>, IdentityProperty<IntersectionType>> LEAST_UPPER_BOUNDS = new CacheComputingMap<>(
+			c -> new IdentityProperty<>(), true);
+
+	public Resolver(Resolver that) {
+		bounds = new BoundSet(that.bounds);
+
+		inferenceVariables = new TreeMap<>(
+				new IdentityComparator<GenericTypeContainer<?>>());
+		for (GenericTypeContainer<?> context : that.inferenceVariables.keySet())
+			inferenceVariables.put(context,
+					new HashMap<>(that.inferenceVariables.get(context)));
+
+		instantiations = new HashMap<>(that.instantiations);
+		remainingDependencies = new MultiHashMap<>(that.remainingDependencies);
+	}
 
 	public Resolver() {
-		this.bounds = new BoundSet();
-		this.inferenceVariables = new TreeMap<>(
-				new IdentityComparator<GenericTypeContext<?>>());
+		bounds = new BoundSet();
 
+		inferenceVariables = new TreeMap<>(
+				new IdentityComparator<GenericTypeContainer<?>>());
 		instantiations = new HashMap<>();
-
 		remainingDependencies = new MultiHashMap<>(HashSet::new);
-		leastUpperBounds = new HashMap<>();
-	}
-
-	public void incorporateTypeContext(GenericTypeContext<?> context) {
-		if (inferenceVariables.containsKey(context))
-			return;
-
-		inferenceVariables.put(context, new HashMap<>());
-
-		if (context.getDeclaringType() instanceof ParameterizedType)
-			incorporateType(context, (ParameterizedType) context.getDeclaringType());
-		incorporateGenericDeclaration(context, context.getGenericDeclaration());
-	}
-
-	private void incorporateGenericDeclaration(GenericTypeContext<?> context,
-			GenericDeclaration declaration) {
-		Map<TypeVariable<?>, InferenceVariable<?>> typeVariableMappings = inferenceVariables
-				.get(context);
-
-		List<? extends InferenceVariable<?>> newInferenceVariables = InferenceVariable
-				.overGenericTypeContext(context, declaration);
-
-		System.out.println("  " + declaration + " @ " + typeVariableMappings
-				+ " ? " + newInferenceVariables);
-
-		for (InferenceVariable<?> inferenceVariable : newInferenceVariables)
-			if (!typeVariableMappings
-					.containsKey(inferenceVariable.getTypeVariable())) {
-				typeVariableMappings.put(inferenceVariable.getTypeVariable(),
-						inferenceVariable);
-
-				boolean anyProper = false;
-				for (Type bound : inferenceVariable.getBounds()) {
-					anyProper = anyProper || Types.isProperType(bound);
-					bounds.incorporate().acceptSubtype(inferenceVariable, bound);
-				}
-				if (!anyProper)
-					bounds.incorporate().acceptSubtype(inferenceVariable, Object.class);
-			}
-
-		System.out.println("WATTTTTTTTTTTTTTTTTTTTTT" + bounds);
-
-		recalculateRemainingDependencies();
-	}
-
-	public void incorporateType(GenericTypeContext<?> context,
-			ParameterizedType parameterizedType) {
-		incorporateTypeContext(context);
-
-		incorporateGenericDeclaration(context,
-				(Class<?>) parameterizedType.getRawType());
-
-		Map<TypeVariable<?>, InferenceVariable<?>> typeVariableMappings = this.inferenceVariables
-				.get(context);
-
-		TypeResolver resolver = new TypeResolver();
-		for (InferenceVariable<?> variable : typeVariableMappings.values())
-			resolver = resolver.where(variable.getTypeVariable(), variable);
-
-		for (int i = 0; i < parameterizedType.getActualTypeArguments().length; i++) {
-			TypeVariable<?> typeParameter = ((Class<?>) parameterizedType
-					.getRawType()).getTypeParameters()[i];
-
-			incorporate(new ConstraintFormula(Kind.EQUALITY,
-					resolver.resolveType(parameterizedType.getActualTypeArguments()[i]),
-					typeVariableMappings.get(typeParameter)));
-		}
-
-		recalculateRemainingDependencies();
 	}
 
 	private void addRemainingDependency(InferenceVariable<?> variable,
@@ -140,16 +87,18 @@ public class Resolver {
 		}
 	}
 
-	private void recalculateRemainingDependencies() {
+	void recalculateRemainingDependencies() {
 		Set<InferenceVariable<?>> leftOfCapture = new HashSet<>();
 
-		Set<InferenceVariable<?>> inferenceVariables = getInferenceVariables();
+		Set<InferenceVariable<?>> inferenceVariables = this.inferenceVariables
+				.values().stream().map(Map::values).flatMap(Collection::stream)
+				.collect(Collectors.toSet());
 		inferenceVariables.removeAll(instantiations.keySet());
 
 		/*
 		 * An inference variable α depends on the resolution of itself.
 		 */
-		for (InferenceVariable<?> inferenceVariable : getInferenceVariables())
+		for (InferenceVariable<?> inferenceVariable : inferenceVariables)
 			addRemainingDependency(inferenceVariable, inferenceVariable);
 
 		/*
@@ -239,39 +188,96 @@ public class Resolver {
 		}));
 	}
 
-	public boolean validate() {
-		return validate(getInferenceVariables());
+	public void incorporateTypeContext(GenericTypeContainer<?> context) {
+		if (inferenceVariables.get(context) != null)
+			return;
+
+		inferenceVariables.put(context, new HashMap<>());
+
+		if (context.getDeclaringType() instanceof ParameterizedType)
+			incorporateType(context, (ParameterizedType) context.getDeclaringType());
+		incorporateGenericDeclaration(context, context.getGenericDeclaration());
 	}
 
-	public boolean validate(InferenceVariable<?>... variable) {
-		return validate(variable);
+	private void incorporateGenericDeclaration(GenericTypeContainer<?> context,
+			GenericDeclaration declaration) {
+		List<? extends InferenceVariable<?>> newInferenceVariables = InferenceVariable
+				.overGenericTypeContext(context, declaration);
+
+		for (InferenceVariable<?> inferenceVariable : newInferenceVariables)
+			if (!inferenceVariables.get(context).containsKey(
+					inferenceVariable.getTypeVariable())) {
+				inferenceVariables.get(context).put(
+						inferenceVariable.getTypeVariable(), inferenceVariable);
+
+				boolean anyProper = false;
+				for (Type bound : inferenceVariable.getBounds()) {
+					anyProper = anyProper || Types.isProperType(bound);
+					bounds.incorporate().acceptSubtype(inferenceVariable, bound);
+				}
+				if (!anyProper)
+					bounds.incorporate().acceptSubtype(inferenceVariable, Object.class);
+			}
+
+		recalculateRemainingDependencies();
 	}
 
-	public boolean validate(Collection<? extends InferenceVariable<?>> variable) {
-		return resolve(variable).values().stream().allMatch(v -> v != null);
-	}
+	public void incorporateType(GenericTypeContainer<?> context,
+			ParameterizedType parameterizedType) {
+		incorporateTypeContext(context);
 
-	public Map<InferenceVariable<?>, Type> resolve() {
-		return resolve(getInferenceVariables());
-	}
+		incorporateGenericDeclaration(context,
+				(Class<?>) parameterizedType.getRawType());
 
-	public Type resolve(InferenceVariable<?> variable) {
-		Type instantiation = instantiations.get(variable);
+		TypeSubstitution resolver = new TypeSubstitution();
+		for (InferenceVariable<?> variable : inferenceVariables.get(context)
+				.values())
+			resolver = resolver.where(variable.getTypeVariable(), variable);
 
-		if (instantiation == null) {
-			resolveIndependentSet(remainingDependencies.get(variable));
-			instantiation = instantiations.get(variable);
+		System.out.println("incorporating " + parameterizedType);
+
+		for (int i = 0; i < parameterizedType.getActualTypeArguments().length; i++) {
+			TypeVariable<?> typeParameter = ((Class<?>) parameterizedType
+					.getRawType()).getTypeParameters()[i];
+			Type actualTypeArgument = parameterizedType.getActualTypeArguments()[i];
+
+			/*-
+			if (actualTypeArgument instanceof TypeVariable) {
+				System.out.println(" - " + actualTypeArgument + " @ "
+						+ ((TypeVariable<?>) actualTypeArgument).getGenericDeclaration());
+				// actualTypeArgument = inferenceVariables.get(context).get(
+				// actualTypeArgument);
+				if (inferenceVariables.get(context).containsKey(actualTypeArgument))
+					actualTypeArgument = inferenceVariables.get(context).get(
+							actualTypeArgument);
+			} else
+			 * /
+			if (actualTypeArgument instanceof TypeVariable)
+				System.out.println("ac: " + actualTypeArgument + " @ "
+						+ ((TypeVariable<?>) actualTypeArgument).getGenericDeclaration()
+						+ " ~~ " + parameterizedType);
+
+			if (actualTypeArgument instanceof TypeVariable
+					&& ((TypeVariable<?>) actualTypeArgument).getGenericDeclaration()
+							.equals(parameterizedType.getRawType()))
+				return;
+			actualTypeArgument = resolve(context, actualTypeArgument);
+			System.out.println("ac: " + actualTypeArgument);
+
+			if (actualTypeArgument == null)
+				return;
+			 */
+			actualTypeArgument = resolver.resolve(actualTypeArgument);
+
+			incorporate(new ConstraintFormula(Kind.EQUALITY, inferenceVariables.get(
+					context).get(typeParameter), actualTypeArgument));
 		}
+		System.out.println(bounds);
 
-		return instantiation;
+		recalculateRemainingDependencies();
 	}
 
-	public Map<InferenceVariable<?>, Type> resolve(
-			InferenceVariable<?>... variables) {
-		return resolve(Arrays.asList(variables));
-	}
-
-	public Map<InferenceVariable<?>, Type> resolve(
+	public Map<InferenceVariable<?>, Type> infer(
 			Collection<? extends InferenceVariable<?>> variables) {
 		/*
 		 * Given a set of inference variables to resolve, let V be the union of this
@@ -296,7 +302,7 @@ public class Resolver {
 		 * If every variable in V has an instantiation, then resolution succeeds and
 		 * this procedure terminates.
 		 */
-		while (!variables.isEmpty()) {
+		while (variables != null && !variables.isEmpty()) {
 			/*
 			 * Otherwise, let { α1, ..., αn } be a non-empty subset of uninstantiated
 			 * variables in V such that i) for all i (1 ≤ i ≤ n), if αi depends on the
@@ -315,8 +321,6 @@ public class Resolver {
 
 			resolveMinimalIndepdendentSet(minimalSet);
 
-			remainingDependencies.keySet().removeAll(minimalSet);
-			remainingDependencies.removeAllFromAll(minimalSet);
 			variables.removeAll(minimalSet);
 		}
 	}
@@ -391,6 +395,8 @@ public class Resolver {
 						instantiationCandidate = greatestLowerBound(upperBounds);
 					}
 					instantiationCandidates.put(variable, instantiationCandidate);
+					System.out.println("    eqal{{{{ " + variable + " = "
+							+ instantiationCandidate);
 					bounds.incorporate().acceptEquality(variable, instantiationCandidate);
 				}
 			} catch (TypeInferenceException e) {
@@ -401,8 +407,12 @@ public class Resolver {
 			if (instantiationCandidates != null) {
 				for (Map.Entry<InferenceVariable<?>, Type> instantiation : instantiationCandidates
 						.entrySet()) {
-					instantiations.put(instantiation.getKey(), instantiation.getValue());
+					this.instantiations.put(instantiation.getKey(),
+							instantiation.getValue());
 				}
+				remainingDependencies.keySet().removeAll(instantiations.keySet());
+				remainingDependencies.removeAllFromAll(instantiations.keySet());
+
 				this.bounds = bounds;
 				return;
 			}
@@ -420,11 +430,11 @@ public class Resolver {
 			instantiations.put(variable, null);
 	}
 
-	private Type leastUpperBound(Type... lowerBounds) {
+	private static Type leastUpperBound(Type... lowerBounds) {
 		return leastUpperBound(Arrays.asList(lowerBounds));
 	}
 
-	private Type leastUpperBound(Collection<Type> lowerBounds) {
+	private static Type leastUpperBound(Collection<Type> lowerBounds) {
 		if (lowerBounds.size() == 1)
 			/*
 			 * If k = 1, then the lub is the type itself: lub(U) = U.
@@ -434,13 +444,16 @@ public class Resolver {
 			/*
 			 * Proxy guard against recursive generation of infinite types
 			 */
-			IntersectionType leastUpperBoundProxy = leastUpperBounds.get(lowerBounds);
-			if (leastUpperBoundProxy != null)
-				return leastUpperBoundProxy;
+			IdentityProperty<IntersectionType> leastUpperBoundResult;
 
-			IdentityProperty<IntersectionType> leastUpperBoundResult = new IdentityProperty<>();
-			leastUpperBoundProxy = () -> leastUpperBoundResult.get().getTypes();
-			leastUpperBounds.put(lowerBounds, leastUpperBoundProxy);
+			synchronized (LEAST_UPPER_BOUNDS) {
+				if (LEAST_UPPER_BOUNDS.keySet().contains(lowerBounds))
+					return LEAST_UPPER_BOUNDS.get(lowerBounds).get();
+
+				leastUpperBoundResult = new IdentityProperty<>();
+				LEAST_UPPER_BOUNDS.putGet(lowerBounds).set(
+						() -> leastUpperBoundResult.get().getTypes());
+			}
 
 			/*
 			 * For each Ui (1 ≤ i ≤ k):
@@ -464,8 +477,12 @@ public class Resolver {
 
 			minimiseCandidates(erasedCandidates);
 
-			List<Type> bestTypes = erasedCandidates.entrySet().stream()
-					.map(e -> best(e.getKey(), e.getValue()))
+			List<Type> bestTypes = erasedCandidates
+					.entrySet()
+					.stream()
+					.map(
+							e -> best(e.getKey(),
+									new ArrayList<ParameterizedType>(e.getValue())))
 					.collect(Collectors.toList());
 
 			leastUpperBoundResult.set(IntersectionType.of(bestTypes));
@@ -474,7 +491,7 @@ public class Resolver {
 		}
 	}
 
-	private void minimiseCandidates(
+	private static void minimiseCandidates(
 			MultiMap<Class<?>, ParameterizedType, ? extends Set<ParameterizedType>> erasedCandidates) {
 		List<Class<?>> minimalCandidates = new ArrayList<>(
 				erasedCandidates.keySet());
@@ -493,7 +510,8 @@ public class Resolver {
 		erasedCandidates.keySet().retainAll(minimalCandidates);
 	}
 
-	private Type best(Class<?> rawClass, Set<ParameterizedType> parameterizations) {
+	private static Type best(Class<?> rawClass,
+			List<ParameterizedType> parameterizations) {
 		if (parameterizations.isEmpty())
 			return rawClass;
 		else if (parameterizations.size() == 1) {
@@ -501,40 +519,37 @@ public class Resolver {
 			return parameterization == null ? rawClass : parameterization;
 		}
 
-		List<TypeVariable<?>> typeVariables = new ArrayList<>();
-		Class<?> enclosingClass = rawClass;
-		do {
-			typeVariables.addAll(Arrays.asList(enclosingClass.getTypeParameters()));
-		} while ((enclosingClass = enclosingClass.getEnclosingClass()) != null);
-
 		Map<TypeVariable<?>, Type> leastContainingParameterization = new HashMap<>();
 
-		for (ParameterizedType type : parameterizations)
-			for (TypeVariable<?> variable : typeVariables)
-				if (type != null) {
-					Type argumentU = TypeToken.of(type).resolveType(variable).getType();
-					Type argumentV = leastContainingParameterization.get(variable);
+		Class<?> enclosingClass = rawClass;
+		do {
+			for (int i = 0; i < parameterizations.size(); i++) {
+				ParameterizedType parameterization = parameterizations.get(i);
+				for (int j = 0; j < enclosingClass.getTypeParameters().length; j++) {
+					TypeVariable<?> variable = enclosingClass.getTypeParameters()[j];
+					if (parameterization != null) {
+						Type argumentU = parameterization.getActualTypeArguments()[j];
+						Type argumentV = leastContainingParameterization.get(variable);
 
-					if (argumentV == null)
-						leastContainingParameterization.put(variable, argumentU);
-					else {
-						leastContainingParameterization.put(variable,
-								leastContainingArgument(argumentU, argumentV));
+						if (argumentV == null)
+							leastContainingParameterization.put(variable, argumentU);
+						else {
+							leastContainingParameterization.put(variable,
+									leastContainingArgument(argumentU, argumentV));
+						}
 					}
 				}
-
-		TypeResolver resolver = new TypeResolver();
-		for (TypeVariable<?> variable : typeVariables) {
-			Type argument = leastContainingParameterization.get(variable);
-			resolver = resolver.where(variable, argument);
-		}
+				parameterizations.set(i,
+						(ParameterizedType) parameterization.getOwnerType());
+			}
+		} while ((enclosingClass = enclosingClass.getEnclosingClass()) != null);
 
 		Type best = Types.parameterizedType(rawClass,
 				leastContainingParameterization);
 		return best;
 	}
 
-	private Type leastContainingArgument(Type argumentU, Type argumentV) {
+	private static Type leastContainingArgument(Type argumentU, Type argumentV) {
 		if (argumentU instanceof WildcardType
 				&& (!(argumentV instanceof WildcardType) || ((WildcardType) argumentV)
 						.getUpperBounds().length > 0)) {
@@ -588,8 +603,7 @@ public class Resolver {
 		}
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private Map<Class<?>, ParameterizedType> getErasedSupertypes(Type of) {
+	private static Map<Class<?>, ParameterizedType> getErasedSupertypes(Type of) {
 		Map<Class<?>, ParameterizedType> supertypes = new HashMap<>();
 
 		RecursiveTypeVisitor
@@ -597,8 +611,8 @@ public class Resolver {
 				.visitSupertypes()
 				.classVisitor(
 						type -> {
-							Type parameterized = ((TypeToken) TypeToken.of(of)).getSupertype(
-									type).getType();
+							Type parameterized = new Resolver().resolveTypeParameters(
+									TypeLiteral.of(of), type);
 							supertypes
 									.put(
 											type,
@@ -606,24 +620,24 @@ public class Resolver {
 													: null);
 						})
 				.parameterizedTypeVisitor(
-						type -> supertypes.put(TypeLiteral.of(type).getRawType(), type))
-				.create().visit(of);
+						type -> supertypes.put(Types.getRawType(type), type)).create()
+				.visit(of);
 
 		return supertypes;
 	}
 
-	private Type greatestLowerBound(Type... upperBounds) {
+	private static Type greatestLowerBound(Type... upperBounds) {
 		return greatestLowerBound(Arrays.asList(upperBounds));
 	}
 
-	private Type greatestLowerBound(Collection<Type> upperBounds) {
+	private static Type greatestLowerBound(Collection<Type> upperBounds) {
 		if (upperBounds.size() == 1)
 			return upperBounds.iterator().next();
 		else
 			return validateGreatestLowerBound(IntersectionType.of(upperBounds));
 	}
 
-	public IntersectionType validateGreatestLowerBound(
+	public static IntersectionType validateGreatestLowerBound(
 			IntersectionType intersectionType) {
 		Type[] types = intersectionType.getTypes();
 
@@ -636,17 +650,24 @@ public class Resolver {
 		return intersectionType;
 	}
 
-	public Type resolve(GenericTypeContext<?> context, Type type) {
-		return null; // TODO
+	public ResolutionContext resolutionContext(GenericTypeContainer<?> typeContext) {
+		return null;
 	}
 
-	public Type resolveTypeParameters(GenericTypeContext<?> context,
+	public Type resolveType(GenericTypeContainer<?> context, Type type) {
+		return new TypeSubstitution(t -> {
+			if (t instanceof InferenceVariable)
+				return resolveInferenceVariable(context, (InferenceVariable<?>) t);
+			else if (t instanceof TypeVariable)
+				return resolveTypeVariable(context, (TypeVariable<?>) t);
+			else
+				return null;
+		}).resolve(type);
+	}
+
+	public Type resolveTypeParameters(GenericTypeContainer<?> context,
 			Class<?> rawType) {
 		incorporateTypeContext(context);
-
-		if (rawType.isArray())
-			return Types.genericArrayType(resolveTypeParameters(context,
-					rawType.getComponentType()));
 
 		Class<?> enclosingClass = rawType;
 		Map<TypeVariable<?>, Type> typeParameters = new HashMap<>();
@@ -658,6 +679,10 @@ public class Resolver {
 		if (typeParameters.isEmpty())
 			return rawType;
 
+		if (rawType.isArray())
+			return Types.genericArrayType(resolveTypeParameters(context,
+					rawType.getComponentType()));
+
 		Class<?> declaringClass = Types.getRawType(context.getDeclaringType());
 		if (declaringClass.isAssignableFrom(rawType)) {
 			incorporateType(context, Types.parameterizedType(rawType));
@@ -668,7 +693,7 @@ public class Resolver {
 		} else if (!rawType.isAssignableFrom(declaringClass))
 			return Types.parameterizedType(rawType);
 
-		ParameterizedType subtype = null;
+		Type subtype = null;
 		do {
 			Set<Type> supertypes = new HashSet<>();
 			supertypes.addAll(Arrays.asList(declaringClass.getGenericInterfaces()));
@@ -679,26 +704,29 @@ public class Resolver {
 			for (Type supertype : supertypes) {
 				Class<?> superclass = Types.getRawType(supertype);
 				if (rawType.isAssignableFrom(superclass)) {
-					subtype = (ParameterizedType) supertype;
+					subtype = supertype;
 					declaringClass = superclass;
 					break;
 				}
 			}
 
-			if (declaringClass != null)
-				incorporateType(context, subtype);
+			if (declaringClass != null && subtype instanceof ParameterizedType)
+				incorporateType(context, (ParameterizedType) subtype);
 		} while (declaringClass != null && rawType.isAssignableFrom(declaringClass));
 
-		resolve(getInferenceVariables(context, typeParameters.keySet()));
+		// infer(typeParameters.keySet().stream()
+		// .map(inferenceVariables.get(context)::get).collect(Collectors.toSet()));
 
 		for (TypeVariable<?> typeParameter : typeParameters.keySet())
-			typeParameters.put(typeParameter,
-					getInstantiation(context, typeParameter));
+			typeParameters.put(
+					typeParameter,
+					resolveInferenceVariable(context, inferenceVariables.get(context)
+							.get(typeParameter)));
 
 		return Types.parameterizedType(rawType, typeParameters);
 	}
 
-	public Type resolve(GenericTypeContext<?> context,
+	public Type resolveTypeVariable(GenericTypeContainer<?> context,
 			TypeVariable<?> typeVariable) {
 		incorporateTypeContext(context);
 
@@ -713,46 +741,103 @@ public class Resolver {
 			resolveTypeParameters(context,
 					((Executable) typeVariable.getGenericDeclaration())
 							.getDeclaringClass());
-		} else if (typeVariable.getGenericDeclaration() instanceof Class)
+		} else if (typeVariable.getGenericDeclaration() instanceof Class) {
 			resolveTypeParameters(context,
 					((Class<?>) typeVariable.getGenericDeclaration()));
+		}
 
-		resolve(inferenceVariables.get(context).get(typeVariable));
-		return getInstantiation(context, typeVariable);
-	}
-
-	public Type getInstantiation(GenericTypeContext<?> context,
-			TypeVariable<?> variable) {
-		return instantiations.get(inferenceVariables.get(context).get(variable));
-	}
-
-	public InferenceVariable<?> getInferenceVariable(
-			GenericTypeContext<?> context, TypeVariable<?> variable) {
-		return inferenceVariables.get(context).get(variable);
-	}
-
-	public Set<InferenceVariable<?>> getInferenceVariables(
-			GenericTypeContext<?> context,
-			Collection<? extends TypeVariable<?>> variables) {
-		HashSet<InferenceVariable<?>> inferenceVariables = new HashSet<>();
-		for (TypeVariable<?> variable : variables)
-			inferenceVariables
-					.add(this.inferenceVariables.get(context).get(variable));
-		return inferenceVariables;
-	}
-
-	public Set<InferenceVariable<?>> getInferenceVariables(
-			GenericTypeContext<?> context) {
-		return new HashSet<>(inferenceVariables.get(context).values());
-	}
-
-	public Set<InferenceVariable<?>> getInferenceVariables() {
-		return inferenceVariables.values().stream().map(Map::values)
-				.flatMap(Collection::stream).collect(Collectors.toSet());
+		return resolveInferenceVariable(context, inferenceVariables.get(context)
+				.get(typeVariable));
 	}
 
 	public void incorporate(ConstraintFormula constraintFormula) {
 		bounds.incorporate(constraintFormula);
+	}
+
+	public void incorporateInstantiation(GenericTypeContainer<?> container,
+			TypeVariable<?> variable, Type instantiation) {
+		incorporateTypeContext(container);
+		incorporateGenericDeclaration(container, variable.getGenericDeclaration());
+		bounds.incorporate(new ConstraintFormula(Kind.EQUALITY,
+				getInferenceVariable(container, variable), instantiation));
+	}
+
+	public boolean validate(InferenceVariable<?>... variables) {
+		return validate(Arrays.asList(variables));
+	}
+
+	public boolean validate(Collection<? extends InferenceVariable<?>> variable) {
+		return infer(variable).values().stream().allMatch(v -> v != null);
+	}
+
+	private Type resolveInferenceVariable(GenericTypeContainer<?> container,
+			InferenceVariable<?> variable) {
+		IdentityProperty<Type> instantiation = new IdentityProperty<>(
+				instantiations.get(variable));
+
+		if (instantiation.get() == null) {
+			bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
+				@Override
+				public void acceptEquality(InferenceVariable<?> a, Type b) {
+					if (a.equals(variable))
+						System.out.println("WTFISTHISSHIT   " + a + ", " + b);
+					if (a.equals(variable))
+						instantiation.set(b);
+				}
+
+				@Override
+				public void acceptEquality(InferenceVariable<?> a,
+						InferenceVariable<?> b) {
+					System.out.println("WTFISTHISSHIT   " + a + ", " + b + "{} "
+							+ a.getGenericDeclaration() + " > "
+							+ a.getGenericTypeContext().getGenericDeclaration() + "{} "
+							+ variable.getGenericDeclaration() + " > "
+
+							+ variable.getGenericTypeContext().getGenericDeclaration());
+					if (instantiation.get() == null) {
+						if (a.equals(variable)
+								&& b.getGenericDeclaration().equals(
+										a.getGenericTypeContext().getGenericDeclaration()))
+							instantiation.set(b);
+						else if (b.equals(variable)
+								&& a.getGenericDeclaration().equals(
+										b.getGenericTypeContext().getGenericDeclaration()))
+							instantiation.set(a);
+					}
+				}
+			}));
+
+			if (instantiation.get() == null && variable != null)
+				instantiation.set(new InferenceVariable<>(variable, container));
+		}
+		System.out.println("==> " + variable + " INSt= " + instantiation.get());
+
+		return instantiation.get();
+	}
+
+	public Map<InferenceVariable<?>, Type> infer(GenericTypeContainer<?> context) {
+		return infer(inferenceVariables.get(context).values());
+	}
+
+	public Map<InferenceVariable<?>, Type> infer() {
+		return infer(inferenceVariables.values().stream().map(Map::values)
+				.flatMap(Collection::stream).collect(Collectors.toSet()));
+	}
+
+	public Map<InferenceVariable<?>, Type> infer(
+			InferenceVariable<?>... variables) {
+		return infer(Arrays.asList(variables));
+	}
+
+	public Set<InferenceVariable<?>> getInferenceVariables(
+			GenericTypeContainer<?> context) {
+		return new HashSet<>(inferenceVariables.get(context).values());
+	}
+
+	public InferenceVariable<?> getInferenceVariable(
+			GenericTypeContainer<?> context, TypeVariable<?> typeVariable) {
+		incorporateTypeContext(context);
+		return inferenceVariables.get(context).get(typeVariable);
 	}
 
 	static class A<T> {
@@ -764,9 +849,35 @@ public class Resolver {
 	}
 
 	public static void main(String... args) {
-		TypeLiteral<?> stringsType = new TypeLiteral<A<Map<String, String>>.B<HashSet<Map<String, String>>>>() {};
+		test();
+	}
 
+	class X extends ArrayList {}
+
+	public static <T> void test() {
 		Resolver resolver = new Resolver();
+		TypeLiteral<?> stringsType;
+
+		System.out.println("XXX  "
+				+ ((TypeVariable<?>) ((ParameterizedType) new Resolver()
+						.resolveTypeParameters(new TypeLiteral<X>(X.class), Iterable.class))
+						.getActualTypeArguments()[0]).getGenericDeclaration());
+
+		/*-
+		stringsType = new TypeLiteral<List<String>>() {};
+		resolver.incorporateEquality(stringsType,
+				new TypeParameter<T>() {}.getType(), Short.class);
+		System.out.println(resolver.resolve(stringsType,
+				new TypeLiteral<Map<String[], List<T>[][]>>() {}.getType()));
+		System.out.println();
+		 */
+
+		stringsType = new TypeLiteral<ArrayList<String>>() {};
+		System.out.println(resolver.resolveTypeParameters(stringsType,
+				Collection.class));
+		System.out.println();
+
+		stringsType = new TypeLiteral<A<Map<String, String>>.B<HashSet<Map<String, String>>>>() {};
 		System.out.println(resolver.resolveTypeParameters(stringsType, A.C.class));
 	}
 }

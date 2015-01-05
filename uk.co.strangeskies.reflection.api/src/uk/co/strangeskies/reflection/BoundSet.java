@@ -1,7 +1,8 @@
 package uk.co.strangeskies.reflection;
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -15,9 +16,6 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import uk.co.strangeskies.reflection.Bound.BoundVisitor;
 import uk.co.strangeskies.reflection.Bound.PartialBoundVisitor;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
-
-import com.google.common.reflect.TypeResolver;
-import com.google.common.reflect.TypeToken;
 
 public class BoundSet {
 	private final Set<Bound> bounds;
@@ -304,10 +302,15 @@ public class BoundSet {
 		public void incorporateProperEqualitySubstitution(InferenceVariable<?> a,
 				Type U, Type S, Type T) {
 			if (Types.isProperType(U)) {
-				TypeResolver resolver = new TypeResolver().where(a, U);
+				TypeSubstitution resolver = new TypeSubstitution();
+				resolver.where(a, U);
 
-				constraints.add(new ConstraintFormula(Kind.EQUALITY, resolver
-						.resolveType(S), resolver.resolveType(T)));
+				if (!(S instanceof InferenceVariable) && !Types.isProperType(S))
+					S = resolver.resolve(S);
+				if (!(T instanceof InferenceVariable) && !Types.isProperType(T))
+					T = resolver.resolve(T);
+
+				constraints.add(new ConstraintFormula(Kind.EQUALITY, S, T));
 			}
 		}
 
@@ -317,10 +320,15 @@ public class BoundSet {
 		public void incorporateProperSubtypeSubstitution(InferenceVariable<?> a,
 				Type U, Type S, Type T) {
 			if (Types.isProperType(U)) {
-				TypeResolver resolver = new TypeResolver().where(a, U);
+				TypeSubstitution resolver = new TypeSubstitution();
+				resolver = resolver.where(a, U);
 
-				constraints.add(new ConstraintFormula(Kind.SUBTYPE, resolver
-						.resolveType(S), resolver.resolveType(T)));
+				if (!(S instanceof InferenceVariable) && !Types.isProperType(S))
+					S = resolver.resolve(S);
+				if (!(T instanceof InferenceVariable) && !Types.isProperType(T))
+					T = resolver.resolve(T);
+
+				constraints.add(new ConstraintFormula(Kind.SUBTYPE, S, T));
 			}
 		}
 
@@ -333,8 +341,8 @@ public class BoundSet {
 		 */
 		public void incorporateSupertypeParameterizationEquality(
 				InferenceVariable<?> a, Type S, InferenceVariable<?> a2, Type T) {
-			TypeToken<?> typeTokenS = TypeToken.of(S);
-			TypeToken<?> typeTokenT = TypeToken.of(T);
+			TypeLiteral<?> typeTokenS = TypeLiteral.of(S);
+			TypeLiteral<?> typeTokenT = TypeLiteral.of(T);
 
 			if (a.equals(a2)
 					&& typeTokenS.getRawType().isAssignableFrom(typeTokenT.getRawType()))
@@ -346,11 +354,23 @@ public class BoundSet {
 								type -> {
 									Class<?> rawClass = (Class<?>) type.getRawType();
 									do {
-										for (TypeVariable<?> typeVariable : rawClass
-												.getTypeParameters())
-											constraints.add(new ConstraintFormula(Kind.EQUALITY,
-													typeTokenS.resolveType(typeVariable).getType(),
-													typeTokenT.resolveType(typeVariable).getType()));
+										Type supertypeS = new Resolver().resolveTypeParameters(
+												typeTokenS, rawClass);
+										Type supertypeT = new Resolver().resolveTypeParameters(
+												typeTokenT, rawClass);
+
+										for (int i = 0; i < rawClass.getTypeParameters().length; i++) {
+											Type argumentS = ((ParameterizedType) supertypeS)
+													.getActualTypeArguments()[i];
+											Type argumentT = ((ParameterizedType) supertypeT)
+													.getActualTypeArguments()[i];
+
+											if (!(argumentS instanceof WildcardType)
+													&& !(argumentT instanceof WildcardType)) {
+												constraints.add(new ConstraintFormula(Kind.EQUALITY,
+														argumentS, argumentT));
+											}
+										}
 									} while ((rawClass = rawClass.getEnclosingClass()) != null);
 								}).create().visit(S);
 		}

@@ -15,8 +15,5 @@ Bundle-Name: Strange Skies Reflection
 		version=latest,  \
 	org.checkerframework:jdk8;  \
 		version=latest,  \
-	com.google.guava:guava;  \
-		version=18.0;  \
-		strategy=exact,  \
 	osgi.enroute.base.api;  \
 		version = latest

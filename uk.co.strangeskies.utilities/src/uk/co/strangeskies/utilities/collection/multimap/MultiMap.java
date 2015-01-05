@@ -26,20 +26,21 @@ public interface MultiMap<K, V, C extends Collection<V>> extends Map<K, C> {
 		return getCollection(key).addAll(values);
 	}
 
-	public default boolean addAll(Map<K, V> values) {
+	public default boolean addAll(Map<? extends K, ? extends V> values) {
 		boolean added = false;
 
-		for (Map.Entry<K, V> entry : values.entrySet()) {
+		for (Map.Entry<? extends K, ? extends V> entry : values.entrySet()) {
 			added = add(entry.getKey(), entry.getValue()) || added;
 		}
 
 		return added;
 	}
 
-	public default boolean addAll(MultiMap<K, V, ?> values) {
+	public default boolean addAll(MultiMap<? extends K, ? extends V, ?> values) {
 		boolean added = false;
 
-		for (Map.Entry<K, ? extends Collection<V>> entry : values.entrySet()) {
+		for (Map.Entry<? extends K, ? extends Collection<? extends V>> entry : values
+				.entrySet()) {
 			added = addAll(entry.getKey(), entry.getValue()) || added;
 		}
 

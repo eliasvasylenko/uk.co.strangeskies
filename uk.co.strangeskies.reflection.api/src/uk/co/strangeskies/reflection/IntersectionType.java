@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 public interface IntersectionType extends Type {
@@ -38,7 +37,7 @@ public interface IntersectionType extends Type {
 
 			@Override
 			public String toString() {
-				return Arrays.stream(types).map(Objects::toString)
+				return Arrays.stream(types).map(Types::toString)
 						.collect(Collectors.joining(" & "));
 			}
 		};

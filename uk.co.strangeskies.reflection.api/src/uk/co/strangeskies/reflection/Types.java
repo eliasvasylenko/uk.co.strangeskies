@@ -7,6 +7,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -20,7 +21,8 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import com.google.common.reflect.TypeToken;
+import org.checkerframework.checker.javari.qual.ReadOnly;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public final class Types {
 	public static final Map<Class<?>, Class<?>> WRAPPED_PRIMITIVES = Collections
@@ -54,9 +56,17 @@ public final class Types {
 		if (type == null) {
 			return null;
 		} else if (type instanceof TypeVariable) {
-			return getRawType(((TypeVariable<?>) type).getBounds()[0]);
+			Type[] bounds = ((TypeVariable<?>) type).getBounds();
+			if (bounds.length == 0)
+				return Object.class;
+			else
+				return getRawType(bounds[0]);
 		} else if (type instanceof WildcardType) {
-			return getRawType(((WildcardType) type).getUpperBounds()[0]);
+			Type[] bounds = ((WildcardType) type).getUpperBounds();
+			if (bounds.length == 0)
+				return Object.class;
+			else
+				return getRawType(bounds[0]);
 		} else if (type instanceof ParameterizedType) {
 			return (Class<?>) ((ParameterizedType) type).getRawType();
 		} else if (type instanceof Class) {
@@ -93,6 +103,22 @@ public final class Types {
 			return UNWRAPPED_PRIMITIVES.get(getRawType(type));
 		else
 			return type;
+	}
+
+	public static Type getComponentType(Type type) {
+		if (type instanceof Class)
+			return ((Class<?>) type).getComponentType();
+		else if (type instanceof GenericArrayType)
+			return ((GenericArrayType) type).getGenericComponentType();
+		else
+			return null;
+	}
+
+	public static String toString(Type type) {
+		if (type instanceof Class && ((Class<?>) type).isArray()) {
+			return toString(((Class<?>) type).getComponentType()) + "[]";
+		} else
+			return Objects.toString(type);
 	}
 
 	public static boolean isProperType(Type type) {
@@ -193,8 +219,7 @@ public final class Types {
 			Type[] typeParams = matchedClass.getTypeParameters();
 			Type[] toTypeArgs = ((ParameterizedType) to).getActualTypeArguments();
 			for (int i = 0; i < typeParams.length; i++) {
-				Type fromTypeArg = TypeToken.of(fromTypeToken.getType())
-						.resolveType(typeParams[i]).getType();
+				Type fromTypeArg = new Resolver().resolveType(fromTypeToken, typeParams[i]);
 				if (!isContainedBy(fromTypeArg, toTypeArgs[i]))
 					return false;
 			}
@@ -261,11 +286,34 @@ public final class Types {
 	}
 
 	public static GenericArrayType genericArrayType(Type type) {
-		return () -> type;
-	}
+		return new GenericArrayType() {
+			@Override
+			public Type getGenericComponentType() {
+				return type;
+			}
 
-	public static GenericArrayType genericArrayType(TypeVariable<?> type) {
-		return () -> type;
+			@Override
+			public String toString() {
+				return Types.toString(type) + "[]";
+			}
+
+			@Override
+			public boolean equals(@Nullable @ReadOnly Object object) {
+				if (this == object)
+					return true;
+				if (object == null || !(object instanceof GenericArrayType))
+					return false;
+
+				GenericArrayType that = (GenericArrayType) object;
+
+				return type.equals(that.getGenericComponentType());
+			}
+
+			@Override
+			public int hashCode() {
+				return type.hashCode();
+			}
+		};
 	}
 
 	public static WildcardType unboundedWildcard() {
@@ -330,7 +378,7 @@ public final class Types {
 			@Override
 			public String toString() {
 				return "? super "
-						+ Arrays.stream(types.get()).map(Object::toString)
+						+ Arrays.stream(types.get()).map(Types::toString)
 								.collect(Collectors.joining(" & "));
 			}
 
@@ -381,7 +429,7 @@ public final class Types {
 			@Override
 			public String toString() {
 				return "? extends "
-						+ Arrays.stream(types.get()).map(Object::toString)
+						+ Arrays.stream(types.get()).map(Types::toString)
 								.collect(Collectors.joining(" & "));
 			}
 
@@ -405,8 +453,13 @@ public final class Types {
 	}
 
 	public static ParameterizedType parameterizedType(Type ownerType,
-			Class<?> rawType, Type... typeArguments) {
+			Class<?> rawType, List<Type> typeArguments) {
 		return new ParameterizedTypeImpl(ownerType, rawType, typeArguments);
+	}
+
+	public static ParameterizedType parameterizedType(Type ownerType,
+			Class<?> rawType, Type... typeArguments) {
+		return parameterizedType(ownerType, rawType, Arrays.asList(typeArguments));
 	}
 
 	public static ParameterizedType parameterizedType(Class<?> rawType) {
@@ -421,13 +474,13 @@ public final class Types {
 				argumentsForClass(rawType, typeArguments));
 	}
 
-	private static Type[] argumentsForClass(Class<?> rawType,
+	private static List<Type> argumentsForClass(Class<?> rawType,
 			Map<TypeVariable<?>, Type> typeArguments) {
-		Type[] arguments = new Type[rawType.getTypeParameters().length];
-		for (int i = 0; i < arguments.length; i++) {
-			arguments[i] = typeArguments.get(rawType.getTypeParameters()[i]);
-			if (arguments[i] == null)
-				arguments[i] = rawType.getTypeParameters()[i];
+		List<Type> arguments = new ArrayList<>();
+		for (int i = 0; i < rawType.getTypeParameters().length; i++) {
+			Type argument = typeArguments.get(rawType.getTypeParameters()[i]);
+			arguments.add((argument != null) ? argument
+					: rawType.getTypeParameters()[i]);
 		}
 		return arguments;
 	}
@@ -441,13 +494,16 @@ public final class Types {
 		private final Class<?> rawType;
 
 		private final Set<Thread> recurringThreads;
+		private final Set<Thread> doublyRecurringThreads;
 
-		ParameterizedTypeImpl(Type ownerType, Class<?> rawType, Type[] typeArguments) {
+		ParameterizedTypeImpl(Type ownerType, Class<?> rawType,
+				List<Type> typeArguments) {
 			this.ownerType = ownerType;
 			this.rawType = rawType;
-			this.typeArguments = Arrays.asList(typeArguments);
+			this.typeArguments = typeArguments;
 
 			recurringThreads = new HashSet<>();
+			doublyRecurringThreads = new HashSet<>();
 		}
 
 		@Override
@@ -472,11 +528,14 @@ public final class Types {
 				builder.append(ownerType).append('.');
 			builder.append(rawType.getName()).append('<');
 
-			if (recurringThreads.add(Thread.currentThread())) {
-				builder.append(typeArguments.stream().map(Type::toString)
-						.collect(Collectors.joining(" & ")));
+			Thread currentThread = Thread.currentThread();
+			if (recurringThreads.add(currentThread)
+					|| doublyRecurringThreads.add(currentThread)) {
+				builder.append(typeArguments.stream().map(Types::toString)
+						.collect(Collectors.joining(", ")));
 
-				recurringThreads.remove(Thread.currentThread());
+				if (!doublyRecurringThreads.remove(currentThread))
+					recurringThreads.remove(currentThread);
 			} else
 				builder.append("...");
 
@@ -487,11 +546,14 @@ public final class Types {
 
 		@Override
 		public int hashCode() {
-			if (recurringThreads.add(Thread.currentThread())) {
+			Thread currentThread = Thread.currentThread();
+			if (recurringThreads.add(currentThread)
+					|| doublyRecurringThreads.add(currentThread)) {
 				int hashCode = (ownerType == null ? 0 : ownerType.hashCode())
 						^ typeArguments.hashCode() ^ rawType.hashCode();
 
-				recurringThreads.remove(Thread.currentThread());
+				if (!doublyRecurringThreads.remove(currentThread))
+					recurringThreads.remove(currentThread);
 
 				return hashCode;
 			} else
@@ -500,18 +562,31 @@ public final class Types {
 
 		@Override
 		public boolean equals(Object other) {
-			if (recurringThreads.add(Thread.currentThread())) {
-				if (!(other instanceof ParameterizedType))
-					return false;
+			Thread currentThread = Thread.currentThread();
+			if (recurringThreads.add(currentThread)
+					|| doublyRecurringThreads.add(currentThread)) {
+				Boolean equals = null;
 
-				ParameterizedType that = (ParameterizedType) other;
+				if (other == this)
+					equals = true;
 
-				boolean equals = getRawType().equals(that.getRawType())
-						&& Objects.equals(getOwnerType(), that.getOwnerType())
-						&& Arrays.equals(getActualTypeArguments(),
-								that.getActualTypeArguments());
+				if (equals == null) {
+					if (other == null || !(other instanceof ParameterizedType))
+						equals = false;
 
-				recurringThreads.remove(Thread.currentThread());
+					if (equals == null) {
+						ParameterizedType that = (ParameterizedType) other;
+
+						equals = getRawType().equals(that.getRawType())
+								&& Objects.equals(getOwnerType(), that.getOwnerType())
+								&& Arrays.equals(getActualTypeArguments(),
+										that.getActualTypeArguments());
+					}
+				}
+
+				if (!doublyRecurringThreads.remove(currentThread))
+					recurringThreads.remove(currentThread);
+
 				return equals;
 			} else
 				return true;

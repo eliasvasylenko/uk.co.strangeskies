@@ -3,22 +3,47 @@ package uk.co.strangeskies.reflection;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class Invokable<T, R> implements GenericTypeContext<Executable> {
+import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
+
+public class Invokable<T, R> implements GenericTypeContainer<Executable> {
+	private final Resolver resolver;
+
 	private final TypeLiteral<T> receiverType;
 	private final TypeLiteral<R> returnType;
 	private final Executable executable;
+	private final List<Type> parameters;
 
 	Invokable(TypeLiteral<T> receiverType, TypeLiteral<R> returnType,
 			Executable executable) {
+		this(new Resolver(), receiverType, returnType, executable, null);
+	}
+
+	Invokable(Resolver resolver, TypeLiteral<T> receiverType,
+			TypeLiteral<R> returnType, Executable executable, List<Type> arguments) {
 		this.receiverType = receiverType;
 		this.returnType = returnType;
 		this.executable = executable;
+
+		this.resolver = resolver;
+		resolver.incorporateTypeContext(this);
+
+		TypeSubstitution substitution = new TypeSubstitution();
+		for (InferenceVariable<?> variable : this.resolver
+				.getInferenceVariables(this)) {
+			substitution = substitution.where(variable.getTypeVariable(), variable);
+		}
+
+		parameters = Arrays.stream(getGenericDeclaration().getParameters())
+				.map(Parameter::getParameterizedType).map(substitution::resolve)
+				.collect(Collectors.toList());
 	}
 
 	public static <T> Invokable<T, T> of(Constructor<T> constructor) {
@@ -82,8 +107,10 @@ public class Invokable<T, R> implements GenericTypeContext<Executable> {
 	 * partial parameterisation where necessary and return the resulting
 	 * invokable.
 	 */
-	public Invokable<T, R> withStrictApplicability(Type... parameters) {
-		return null;
+	public Invokable<T, R> withStrictApplicability(Type... arguments) {
+		// TODO && make sure no boxing/unboxing occurs!
+
+		return withLooseApplicability(arguments);
 	}
 
 	/*
@@ -92,8 +119,8 @@ public class Invokable<T, R> implements GenericTypeContext<Executable> {
 	 * partial parameterisation where necessary and return the resulting
 	 * invokable.
 	 */
-	public Invokable<T, R> withLooseApplicability(Type... parameters) {
-		return null;
+	public Invokable<T, R> withLooseApplicability(Type... arguments) {
+		return withLooseApplicability(false, arguments);
 	}
 
 	/*
@@ -102,8 +129,44 @@ public class Invokable<T, R> implements GenericTypeContext<Executable> {
 	 * Otherwise, we infer a partial parameterisation where necessary and return
 	 * the resulting invokable.
 	 */
-	public Invokable<T, R> withVariableArityApplicability(Type... parameters) {
-		return null;
+	public Invokable<T, R> withVariableArityApplicability(Type... arguments) {
+		return withLooseApplicability(true, arguments);
+	}
+
+	private Invokable<T, R> withLooseApplicability(boolean variableArity,
+			Type... arguments) {
+		if (variableArity) {
+			if (parameters.size() >= arguments.length)
+				return null;
+		} else if (parameters.size() != arguments.length)
+			return null;
+
+		Resolver resolver = new Resolver(this.resolver);
+
+		Iterator<Type> parameters = this.parameters.iterator();
+		Type nextParameter = parameters.next();
+		Type parameter = nextParameter;
+		for (Type argument : arguments) {
+			if (nextParameter != null) {
+				parameter = nextParameter;
+				if (parameters.hasNext())
+					nextParameter = parameters.next();
+				else if (variableArity) {
+					parameter = Types.getComponentType(parameter);
+					nextParameter = null;
+				}
+			}
+			resolver.incorporate(new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY,
+					argument, parameter));
+		}
+
+		System.out.println(resolver.infer());
+
+		if (!resolver.validate())
+			return null;
+
+		return new Invokable<>(resolver, receiverType, returnType, executable,
+				Arrays.asList(arguments));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -119,15 +182,20 @@ public class Invokable<T, R> implements GenericTypeContext<Executable> {
 
 	public Invokable<T, ? extends R> withTypeArgument(
 			TypeVariable<? extends Executable> variable, Type instantiation) {
-		Arrays.stream(executable.getTypeParameters()).anyMatch(variable::equals);
+		if (Arrays.stream(executable.getTypeParameters())
+				.anyMatch(variable::equals)) {
+			Resolver resolver = new Resolver(this.resolver);
+			resolver.incorporateInstantiation(this, variable, instantiation);
+		}
+
 		return null;
 	}
 
-	public Invokable<T, ? extends R> withParameterization(Type... typeArguments) {
-		return withParameterization(Arrays.asList(typeArguments));
+	public Invokable<T, ? extends R> withTypeArguments(Type... typeArguments) {
+		return withTypeArguments(Arrays.asList(typeArguments));
 	}
 
-	public Invokable<T, ? extends R> withParameterization(List<Type> typeArguments) {
+	public Invokable<T, ? extends R> withTypeArguments(List<Type> typeArguments) {
 		return null;
 	}
 

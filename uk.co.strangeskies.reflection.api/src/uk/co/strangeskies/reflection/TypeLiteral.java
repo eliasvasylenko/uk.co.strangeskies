@@ -2,12 +2,14 @@ package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class TypeLiteral<T> implements GenericTypeContext<Class<? super T>> {
+public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 	private final Type type;
 	private final Class<? super T> rawType;
 
@@ -15,19 +17,28 @@ public class TypeLiteral<T> implements GenericTypeContext<Class<? super T>> {
 
 	@SuppressWarnings("unchecked")
 	protected TypeLiteral() {
-		Type superType = getClass();
+		Resolver resolver = new Resolver();
 
-		do {
-			if (superType instanceof Class)
-				superType = ((Class<?>) superType).getGenericSuperclass();
-			else
-				;// superType = ((ParameterizedType) superType).get
-		} while (false);
+		if (getClass().getSuperclass().equals(TypeLiteral.class))
+			type = ((ParameterizedType) getClass().getGenericSuperclass())
+					.getActualTypeArguments()[0];
+		else
+			type = ((ParameterizedType) resolver.resolveTypeParameters(
+					new GenericTypeContainer<Class<? super TypeLiteral<T>>>() {
+						@Override
+						public Type getDeclaringType() {
+							return TypeLiteral.this.getClass().getGenericSuperclass();
+						}
 
-		type = ((ParameterizedType) superType).getActualTypeArguments()[0];
+						@Override
+						public Class<? super TypeLiteral<T>> getGenericDeclaration() {
+							return TypeLiteral.class;
+						}
+					}, TypeLiteral.class)).getActualTypeArguments()[0];
+
 		rawType = (Class<? super T>) Types.getRawType(type);
 
-		resolver = new Resolver();
+		this.resolver = new Resolver();
 	}
 
 	public TypeLiteral(Class<T> exactClass) {
@@ -43,6 +54,11 @@ public class TypeLiteral<T> implements GenericTypeContext<Class<? super T>> {
 
 	public static TypeLiteral<?> of(Type type) {
 		return new TypeLiteral<>(type, Types.getRawType(type));
+	}
+
+	@Override
+	public String toString() {
+		return type.toString();
 	}
 
 	public Type getType() {
@@ -91,76 +107,27 @@ public class TypeLiteral<T> implements GenericTypeContext<Class<? super T>> {
 		return Types.isAssignable(type, this.type);
 	}
 
-	/*-
 	public Type resolveType(Type type) {
 		return resolveType(of(type)).getType();
 	}
 
-	@SuppressWarnings("unchecked")
 	public <U> TypeLiteral<? extends U> resolveType(TypeLiteral<U> type) {
-		Resolver resolver = getResolver();
-
-		if (type instanceof TypeVariable) {
-			return (TypeLiteral<? extends U>) of(resolveTypeVarible((TypeVariable<?>) type));
-		} else {
-			return type.withTypeArguments(instantiations);
-		}
-	}
-
-	private Type resolveTypeVarible(TypeVariable<?> type2) {
-		Type instantiation = resolver
-				.getInstantiation(this, (TypeVariable<?>) type);
-		if (instantiation != null)
-			return instantiation;
-
-		TypeVariable<?> typeVariable = (TypeVariable<?>) type;
-		if (typeVariable.getGenericDeclaration() instanceof Executable) {
-			resolveType(((Executable) typeVariable.getGenericDeclaration())
-					.getDeclaringClass());
-			resolver.incorporateGenericDeclaration(this,
-					typeVariable.getGenericDeclaration());
-			return resolver.getInstantiation(this, typeVariable);
-		}
-
-		Class<?> declaringClass = (Class<?>) typeVariable.getGenericDeclaration();
-		if (!declaringClass.isAssignableFrom(rawType))
-			return type;
-
 		return null;
 	}
 
-	private Resolver getResolver() {
-		resolver.incorporateTypeContext(this);
-
-		if (type instanceof ParameterizedType)
-			resolver.incorporateType(this, (ParameterizedType) type);
-
-		resolver.resolve();
-
-		return resolver;
+	public <U extends T> TypeLiteral<? extends U> resolveTypeParameters(
+			Class<U> type2) {
+		return null;
 	}
 
 	public TypeLiteral<? extends T> withTypeArguments(
 			Map<TypeVariable<? extends Class<?>>, Type> instantiations) {
-		BoundSet bounds = new BoundSet(this.bounds);
-		for (TypeVariable<?> typeVariable : instantiations.keySet())
-			bounds.incorporate(new ConstraintFormula(Kind.CONTAINMENT, typeVariable,
-					instantiations.get(typeVariable)));
-
-		Deque<Type> supertypeStack;
-		new TypeVisitor() {
-
-		}.visit(type);
+		return null;
 	}
 
-	@SuppressWarnings("serial")
 	public TypeLiteral<? extends T> withTypeArgument(
 			TypeVariable<? extends Class<?>> typeVariable, Type instantiation) {
-		return withTypeArguments(new HashMap<TypeVariable<? extends Class<?>>, Type>() {
-			{
-				put(typeVariable, instantiation);
-			}
-		});
+		return null;
 	}
 
 	public <V> TypeLiteral<? extends T> withTypeArgument(
@@ -172,7 +139,6 @@ public class TypeLiteral<T> implements GenericTypeContext<Class<? super T>> {
 			TypeParameter<V> variable, Class<V> instantiation) {
 		return withTypeArgument(variable.getType(), instantiation);
 	}
-	 */
 
 	public Set<Invokable<T, T>> getConstructors() {
 		return Arrays.stream(getRawType().getConstructors())
@@ -192,34 +158,40 @@ public class TypeLiteral<T> implements GenericTypeContext<Class<? super T>> {
 		return invokables;
 	}
 
-	public Invokable<T, T> resolveConstructorOverload(Type... parameters) {
+	public Invokable<T, ? extends T> resolveConstructorOverload(
+			Type... parameters) {
 		return resolveInvokableOverload(getConstructors(), parameters);
 	}
 
-	/*-
 	public Invokable<T, ?> resolveMethodOverload(String name, Type... parameters) {
-		return resolveInvokableOverload(
-				getMethods().stream()
-						.filter(i -> i.getExecutable().getName().equals(name))
-						.collect(Collectors.toSet()), parameters);
-	}
-	*/
-
-	private <R> Invokable<T, R> resolveInvokableOverload(
-			Set<Invokable<T, R>> candidates, Type... parameters) {
-		Set<Invokable<T, R>> applicableCandidates = candidates.stream()
-				.map(i -> i.withStrictApplicability(parameters)).filter(o -> o != null)
+		Set<Invokable<T, ?>> candidates = getMethods().stream()
+				.filter(i -> i.getGenericDeclaration().getName().equals(name))
 				.collect(Collectors.toSet());
 
-		if (applicableCandidates.isEmpty())
-			applicableCandidates = candidates.stream()
-					.map(i -> i.withLooseApplicability(parameters))
-					.filter(o -> o != null).collect(Collectors.toSet());
+		return resolveInvokableOverload(candidates, parameters);
+	}
 
-		if (applicableCandidates.isEmpty())
-			applicableCandidates = candidates.stream()
-					.map(i -> i.withVariableArityApplicability(parameters))
+	private <R> Invokable<T, ? extends R> resolveInvokableOverload(
+			Set<? extends Invokable<T, ? extends R>> candidates, Type... parameters) {
+		candidates = candidates.stream()
+				.map(i -> i.withVariableArityApplicability(parameters))
+				.filter(o -> o != null).collect(Collectors.toSet());
+
+		if (candidates.isEmpty())
+			throw new IllegalArgumentException();
+		else {
+			Set<Invokable<T, ? extends R>> moreSpecificCandidates = candidates
+					.stream().map(i -> i.withLooseApplicability(parameters))
 					.filter(o -> o != null).collect(Collectors.toSet());
+			if (!moreSpecificCandidates.isEmpty())
+				candidates = moreSpecificCandidates;
+
+			moreSpecificCandidates = candidates.stream()
+					.map(i -> i.withStrictApplicability(parameters))
+					.filter(o -> o != null).collect(Collectors.toSet());
+			if (!moreSpecificCandidates.isEmpty())
+				candidates = moreSpecificCandidates;
+		}
 
 		return null;
 	}

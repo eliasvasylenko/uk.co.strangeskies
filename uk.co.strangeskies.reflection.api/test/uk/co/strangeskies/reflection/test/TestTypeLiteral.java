@@ -7,6 +7,7 @@ import java.util.List;
 import uk.co.strangeskies.reflection.ApplicabilityVerifier;
 import uk.co.strangeskies.reflection.Invokable;
 import uk.co.strangeskies.reflection.TypeLiteral;
+import uk.co.strangeskies.reflection.TypeParameter;
 
 public class TestTypeLiteral {
 	public static class A<T> {
@@ -26,33 +27,49 @@ public class TestTypeLiteral {
 				T t, U u) {}
 	}
 
-	public static void main(String... args) throws NoSuchMethodException,
+	public static <T> void main(String... args) throws NoSuchMethodException,
 			SecurityException {
 		Arrays.asList(1, 2.0);
 
+		System.out.println(new TypeParameter<T>() {});
+		System.out.println();
+
+		System.out.println(new TypeLiteral<List<String>>() {});
+		System.out.println();
+
+		System.out.println("aslist");
 		System.out.println(new ApplicabilityVerifier(Invokable.of(Arrays.class
 				.getMethod("asList", Object[].class)), null, int.class, double.class)
 				.verifyVariableArityParameterApplicability());
+		System.out.println();
 
+		System.out.println("bothways");
 		System.out.println(new ApplicabilityVerifier(Invokable.of(B.class
 				.getMethod("bothways", Comparable.class, Collection.class)), null,
 				String.class, new TypeLiteral<List<String>>() {}.getType())
 				.verifyLooseParameterApplicability());
+		System.out.println();
 
+		System.out.println("method");
 		System.out.println(new ApplicabilityVerifier(Invokable.of(B.class
 				.getMethod("method", List.class, List.class)), null,
 				new TypeLiteral<List<Integer>>() {}.getType(),
 				new TypeLiteral<List<Number>>() {}.getType())
 				.verifyLooseParameterApplicability());
+		System.out.println();
 
+		System.out.println("method2");
 		System.out.println(new ApplicabilityVerifier(Invokable.of(B.class
 				.getMethod("method2", List.class, List.class)), null,
 				new TypeLiteral<List<Integer>>() {}.getType(),
 				new TypeLiteral<List<Integer>>() {}.getType())
 				.verifyLooseParameterApplicability());
+		System.out.println();
 
+		System.out.println("method");
 		System.out.println(new ApplicabilityVerifier(Invokable.of(B.class
 				.getMethod("method", Number.class, Number.class)), null, Integer.class,
 				Double.class).verifyLooseParameterApplicability());
+		System.out.println();
 	}
 }
