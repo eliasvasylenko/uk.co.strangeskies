@@ -207,19 +207,18 @@ public final class Types {
 		} else if (to instanceof Class) {
 			return ((Class<?>) to).isAssignableFrom(getRawType(from));
 		} else if (to instanceof ParameterizedType) {
-			TypeLiteral<?> fromTypeToken = TypeLiteral.of(from);
 			Class<?> matchedClass = TypeLiteral.of(to).getRawType();
 
 			if (from instanceof Class
 					&& matchedClass.isAssignableFrom((Class<?>) from)) {
 				return true;
-			} else if (!matchedClass.isAssignableFrom(fromTypeToken.getRawType())) {
+			} else if (!matchedClass.isAssignableFrom(Types.getRawType(from))) {
 				return false;
 			}
 			Type[] typeParams = matchedClass.getTypeParameters();
 			Type[] toTypeArgs = ((ParameterizedType) to).getActualTypeArguments();
 			for (int i = 0; i < typeParams.length; i++) {
-				Type fromTypeArg = new Resolver().resolveType(fromTypeToken, typeParams[i]);
+				Type fromTypeArg = new Resolver(from).resolveType(typeParams[i]);
 				if (!isContainedBy(fromTypeArg, toTypeArgs[i]))
 					return false;
 			}

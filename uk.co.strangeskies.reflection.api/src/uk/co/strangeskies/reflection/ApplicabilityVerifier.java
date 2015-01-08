@@ -30,11 +30,11 @@ public class ApplicabilityVerifier {
 	public ApplicabilityVerifier(Invokable<?, ?> invokable, Type returnType,
 			List<Type> arguments) {
 		resolver = new Resolver();
-		resolver.incorporateTypeContext(invokable);
+		resolver.incorporateGenericDeclaration(invokable.getGenericDeclaration());
 
 		TypeSubstitution resolver = new TypeSubstitution();
 		for (InferenceVariable<?> variable : this.resolver
-				.getInferenceVariables(invokable)) {
+				.getInferenceVariables(invokable.getGenericDeclaration())) {
 			resolver = resolver.where(variable.getTypeVariable(), variable);
 		}
 

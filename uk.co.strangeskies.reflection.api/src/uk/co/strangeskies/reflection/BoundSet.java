@@ -341,11 +341,8 @@ public class BoundSet {
 		 */
 		public void incorporateSupertypeParameterizationEquality(
 				InferenceVariable<?> a, Type S, InferenceVariable<?> a2, Type T) {
-			TypeLiteral<?> typeTokenS = TypeLiteral.of(S);
-			TypeLiteral<?> typeTokenT = TypeLiteral.of(T);
-
 			if (a.equals(a2)
-					&& typeTokenS.getRawType().isAssignableFrom(typeTokenT.getRawType()))
+					&& Types.getRawType(S).isAssignableFrom(Types.getRawType(T)))
 				RecursiveTypeVisitor
 						.build()
 						.visitSupertypes()
@@ -354,10 +351,10 @@ public class BoundSet {
 								type -> {
 									Class<?> rawClass = (Class<?>) type.getRawType();
 									do {
-										Type supertypeS = new Resolver().resolveTypeParameters(
-												typeTokenS, rawClass);
-										Type supertypeT = new Resolver().resolveTypeParameters(
-												typeTokenT, rawClass);
+										Type supertypeS = new Resolver(S)
+												.resolveTypeParameters(rawClass);
+										Type supertypeT = new Resolver(T)
+												.resolveTypeParameters(rawClass);
 
 										for (int i = 0; i < rawClass.getTypeParameters().length; i++) {
 											Type argumentS = ((ParameterizedType) supertypeS)

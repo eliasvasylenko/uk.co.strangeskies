@@ -17,24 +17,16 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 
 	@SuppressWarnings("unchecked")
 	protected TypeLiteral() {
-		Resolver resolver = new Resolver();
-
 		if (getClass().getSuperclass().equals(TypeLiteral.class))
 			type = ((ParameterizedType) getClass().getGenericSuperclass())
 					.getActualTypeArguments()[0];
-		else
-			type = ((ParameterizedType) resolver.resolveTypeParameters(
-					new GenericTypeContainer<Class<? super TypeLiteral<T>>>() {
-						@Override
-						public Type getDeclaringType() {
-							return TypeLiteral.this.getClass().getGenericSuperclass();
-						}
+		else {
+			Resolver resolver = new Resolver();
+			resolver.incorporateTypes(getClass().getGenericSuperclass());
 
-						@Override
-						public Class<? super TypeLiteral<T>> getGenericDeclaration() {
-							return TypeLiteral.class;
-						}
-					}, TypeLiteral.class)).getActualTypeArguments()[0];
+			type = ((ParameterizedType) resolver
+					.resolveTypeParameters(TypeLiteral.class)).getActualTypeArguments()[0];
+		}
 
 		rawType = (Class<? super T>) Types.getRawType(type);
 

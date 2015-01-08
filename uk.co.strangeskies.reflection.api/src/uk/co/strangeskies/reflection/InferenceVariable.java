@@ -17,19 +17,12 @@ public class InferenceVariable<T extends GenericDeclaration> implements
 		TypeVariable<T> {
 	private final TypeVariable<? extends T> typeVariable;
 	private Type[] bounds;
-	private final GenericTypeContainer<?> genericTypeContext;
+	private final Resolver resolver;
 
-	private InferenceVariable(TypeVariable<? extends T> typeVariable,
-			GenericTypeContainer<?> genericTypeContext) {
+	private InferenceVariable(Resolver resolver,
+			TypeVariable<? extends T> typeVariable) {
+		this.resolver = resolver;
 		this.typeVariable = typeVariable;
-		this.genericTypeContext = genericTypeContext;
-	}
-
-	InferenceVariable(InferenceVariable<T> typeVariable,
-			GenericTypeContainer<?> genericTypeContext) {
-		this.typeVariable = typeVariable.getTypeVariable();
-		this.genericTypeContext = genericTypeContext;
-		this.bounds = typeVariable.getBounds();
 	}
 
 	public TypeVariable<? extends T> getTypeVariable() {
@@ -56,8 +49,8 @@ public class InferenceVariable<T extends GenericDeclaration> implements
 		return bounds;
 	}
 
-	public GenericTypeContainer<?> getGenericTypeContext() {
-		return genericTypeContext;
+	public Resolver getResolver() {
+		return resolver;
 	}
 
 	@Override
@@ -89,8 +82,8 @@ public class InferenceVariable<T extends GenericDeclaration> implements
 
 		InferenceVariable<?> that = (InferenceVariable<?>) object;
 
-		return typeVariable.equals(that.typeVariable)
-				&& genericTypeContext.equals(that.genericTypeContext);
+		return this.typeVariable.equals(that.typeVariable)
+				&& this.resolver == that.resolver;
 	}
 
 	@Override
@@ -98,16 +91,11 @@ public class InferenceVariable<T extends GenericDeclaration> implements
 		return typeVariable.hashCode();
 	}
 
-	public static <T extends GenericDeclaration> List<InferenceVariable<T>> overGenericTypeContext(
-			GenericTypeContainer<T> context) {
-		return overGenericTypeContext(context, context.getGenericDeclaration());
-	}
-
 	@SuppressWarnings("unchecked")
 	public static <T extends GenericDeclaration> List<InferenceVariable<T>> overGenericTypeContext(
-			GenericTypeContainer<?> context, T declaration) {
-		if (context == null)
-			throw new RuntimeException();
+			Resolver resolver, T declaration) {
+		if (resolver == null)
+			throw new IllegalArgumentException(new NullPointerException());
 
 		List<InferenceVariable<T>> inferenceVariables = new ArrayList<>();
 		do {
@@ -115,18 +103,18 @@ public class InferenceVariable<T extends GenericDeclaration> implements
 					.addAll(Arrays
 							.stream(
 									(TypeVariable<? extends T>[]) declaration.getTypeParameters())
-							.map(t -> new InferenceVariable<T>(t, context))
+							.map(t -> new InferenceVariable<T>(resolver, t))
 							.collect(Collectors.toList()));
 		} while (declaration instanceof Class
 				&& (declaration = (T) ((Class<?>) declaration).getEnclosingClass()) != null);
 
-		TypeSubstitution resolver = new TypeSubstitution();
+		TypeSubstitution substitution = new TypeSubstitution();
 		for (InferenceVariable<T> variable : inferenceVariables)
-			resolver = resolver.where(variable.typeVariable, variable);
+			substitution = substitution.where(variable.typeVariable, variable);
 
 		for (InferenceVariable<T> variable : inferenceVariables)
 			variable.bounds = Arrays.stream(variable.typeVariable.getBounds())
-					.map(resolver::resolve).collect(Collectors.toList())
+					.map(substitution::resolve).collect(Collectors.toList())
 					.toArray(new Type[variable.typeVariable.getBounds().length]);
 
 		return inferenceVariables;

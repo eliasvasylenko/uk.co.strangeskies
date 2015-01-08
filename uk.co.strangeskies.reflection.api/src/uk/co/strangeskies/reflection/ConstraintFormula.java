@@ -99,21 +99,19 @@ public class ConstraintFormula {
 	}
 
 	public static boolean isUncheckedCompatibleOnly(Type from, Type to) {
-		TypeLiteral<?> toToken = TypeLiteral.of(to);
-		TypeLiteral<?> fromToken = TypeLiteral.of(from);
+		Class<?> toRaw = Types.getRawType(to);
+		Class<?> fromRaw = Types.getRawType(from);
 
-		if (toToken.getRawType().getTypeParameters().length > 0
-				&& toToken.getRawType().isAssignableFrom(fromToken.getRawType())) {
-			Type fromSuperTypeArgument = ((ParameterizedType) new Resolver()
-					.resolveTypeParameters(fromToken, toToken.getRawType()))
-					.getActualTypeArguments()[0];
+		if (toRaw.getTypeParameters().length > 0 && toRaw.isAssignableFrom(fromRaw)) {
+			Type fromSuperTypeArgument = ((ParameterizedType) new Resolver(from)
+					.resolveTypeParameters(toRaw)).getActualTypeArguments()[0];
 
 			return fromSuperTypeArgument instanceof TypeVariable
 					&& ((TypeVariable<?>) fromSuperTypeArgument).getGenericDeclaration()
-							.equals(toToken.getRawType());
+							.equals(toRaw);
 		} else
-			return toToken.getRawType().isArray()
-					&& fromToken.getRawType().isArray()
+			return toRaw.isArray()
+					&& fromRaw.isArray()
 					&& isUncheckedCompatibleOnly(Types.getRawType(from),
 							Types.getRawType(to));
 	}
@@ -122,9 +120,6 @@ public class ConstraintFormula {
 	 * A constraint formula of the form ‹S <: T› is reduced as follows:
 	 */
 	private void reduceSubtypeConstraint(BoundVisitor boundConsumer) {
-		TypeLiteral<?> toToken = to == null ? null : TypeLiteral.of(to);
-		TypeLiteral<?> fromToken = from == null ? null : TypeLiteral.of(from);
-
 		if (Types.isProperType(from) && Types.isProperType(to)) {
 			/*
 			 * If S and T are proper types, the constraint reduces to true if S is a
@@ -172,8 +167,8 @@ public class ConstraintFormula {
 				 * supertypes of S, a corresponding class or interface type is
 				 * identified, with type arguments B1, ..., Bn.
 				 */
-				Class<?> rawType = toToken.getRawType();
-				if (!rawType.isAssignableFrom(toToken.getRawType())) {
+				Class<?> rawType = Types.getRawType(to);
+				if (!rawType.isAssignableFrom(Types.getRawType(to))) {
 					/*
 					 * If no such type exists, the constraint reduces to false.
 					 */
@@ -186,7 +181,7 @@ public class ConstraintFormula {
 					List<Pair<Type, Type>> identifiedPairs = new ArrayList<>();
 					do {
 						for (TypeVariable<?> parameter : rawType.getTypeParameters()) {
-							Type toArgument = new Resolver().resolveTypeVariable(toToken, parameter);
+							Type toArgument = new Resolver(to).resolveTypeVariable(parameter);
 
 							System.out.println("   to " + to + " from " + from);
 
@@ -204,7 +199,8 @@ public class ConstraintFormula {
 								boundConsumer.acceptFalsehood();
 								return;
 							}
-							Type fromArgument = new Resolver().resolveTypeVariable(fromToken, parameter);
+							Type fromArgument = new Resolver(from)
+									.resolveTypeVariable(parameter);
 							System.out.println("     " + from + "[" + parameter + "] = "
 									+ fromArgument);
 
@@ -224,7 +220,7 @@ public class ConstraintFormula {
 				if (!Types.isAssignable(from, to))
 					boundConsumer.acceptFalsehood();
 			} else if (!(to instanceof IntersectionType)
-					&& toToken.getRawType().isArray()) {
+					&& Types.getRawType(to).isArray()) {
 				/*
 				 * If T is an array type, T'[], then among the supertypes of S that are
 				 * array types, a most specific type is identified, S'[] (this may be S
@@ -441,9 +437,6 @@ public class ConstraintFormula {
 	}
 
 	private void reduceEqualityConstraint(BoundVisitor boundConsumer) {
-		TypeLiteral<?> toToken = to == null ? null : TypeLiteral.of(to);
-		TypeLiteral<?> fromToken = from == null ? null : TypeLiteral.of(from);
-
 		if (from instanceof WildcardType && to instanceof WildcardType) {
 			/*
 			 * A constraint formula of the form ‹S = T›, where S and T are type
@@ -529,8 +522,8 @@ public class ConstraintFormula {
 				 * to the bound S = α.
 				 */
 				boundConsumer.acceptEquality((InferenceVariable<?>) to, from);
-			} else if (fromToken.getRawType().isArray()
-					&& toToken.getRawType().isArray()) {
+			} else if (Types.getRawType(from).isArray()
+					&& Types.getRawType(to).isArray()) {
 				/*
 				 * Otherwise, if S and T are array types, S'[] and T'[], the constraint
 				 * reduces to ‹S' = T'›.
@@ -544,11 +537,12 @@ public class ConstraintFormula {
 				 * arguments A1, ..., An, the constraint reduces to the following new
 				 * constraints: for all i (1 ≤ i ≤ n), ‹Bi = Ai›.
 				 */
-				Class<?> rawClass = fromToken.getRawType();
+				Class<?> rawClass = Types.getRawType(from);
 				do {
 					for (TypeVariable<?> type : rawClass.getTypeParameters())
-						new ConstraintFormula(Kind.EQUALITY, new Resolver().resolveTypeVariable(
-								fromToken, type), new Resolver().resolveTypeVariable(toToken, type))
+						new ConstraintFormula(Kind.EQUALITY,
+								new Resolver(from).resolveTypeVariable(type),
+								new Resolver(to).resolveTypeVariable(type))
 								.reduceInto(boundConsumer);
 				} while ((rawClass = rawClass.getEnclosingClass()) != null);
 			}

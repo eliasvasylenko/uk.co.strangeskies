@@ -33,11 +33,11 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 		this.executable = executable;
 
 		this.resolver = resolver;
-		resolver.incorporateTypeContext(this);
+		resolver.incorporateGenericDeclaration(getGenericDeclaration());
 
 		TypeSubstitution substitution = new TypeSubstitution();
 		for (InferenceVariable<?> variable : this.resolver
-				.getInferenceVariables(this)) {
+				.getInferenceVariables(getGenericDeclaration())) {
 			substitution = substitution.where(variable.getTypeVariable(), variable);
 		}
 
@@ -185,7 +185,7 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 		if (Arrays.stream(executable.getTypeParameters())
 				.anyMatch(variable::equals)) {
 			Resolver resolver = new Resolver(this.resolver);
-			resolver.incorporateInstantiation(this, variable, instantiation);
+			resolver.incorporateInstantiation(variable, instantiation);
 		}
 
 		return null;
