@@ -74,7 +74,8 @@ public class Resolver {
 			@Override
 			public void acceptEquality(InferenceVariable<?> inferenceVariable,
 					Type type) {
-				instantiations.put(inferenceVariable, type);
+				if (Types.isProperType(type))
+					instantiations.put(inferenceVariable, type);
 			}
 		}));
 
@@ -457,9 +458,9 @@ public class Resolver {
 		/*
 		 * the bound set contains a bound of the form G<..., αi, ...> =
 		 * capture(G<...>) for some i (1 ≤ i ≤ n), or;
-		 * 
+		 *
 		 * If the bound set produced in the step above contains the bound false;
-		 * 
+		 *
 		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
 		 */
 		for (InferenceVariable<?> variable : minimalSet)
@@ -716,6 +717,8 @@ public class Resolver {
 		 * set of incorporated generic declarations can be related through subtype
 		 * relationships.
 		 */
+		
+		
 		Class<?> declaringClass = Types.getRawType(context.getDeclaringType());
 		if (declaringClass.isAssignableFrom(rawType)) {
 			incorporateTypes(Types.parameterizedType(rawType));
