@@ -30,7 +30,7 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 
 		rawType = (Class<? super T>) Types.getRawType(type);
 
-		this.resolver = new Resolver();
+		resolver = new Resolver();
 	}
 
 	public TypeLiteral(Class<T> exactClass) {
