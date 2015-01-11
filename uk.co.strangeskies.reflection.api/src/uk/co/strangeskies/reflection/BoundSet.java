@@ -13,8 +13,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-import uk.co.strangeskies.reflection.Bound.BoundVisitor;
-import uk.co.strangeskies.reflection.Bound.PartialBoundVisitor;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 
 public class BoundSet {
@@ -351,10 +349,8 @@ public class BoundSet {
 								type -> {
 									Class<?> rawClass = (Class<?>) type.getRawType();
 									do {
-										Type supertypeS = new Resolver(S)
-												.resolveTypeParameters(rawClass);
-										Type supertypeT = new Resolver(T)
-												.resolveTypeParameters(rawClass);
+										Type supertypeS = TypeLiteral.from(S).resolveType(rawClass);
+										Type supertypeT = TypeLiteral.from(T).resolveType(rawClass);
 
 										for (int i = 0; i < rawClass.getTypeParameters().length; i++) {
 											Type argumentS = ((ParameterizedType) supertypeS)

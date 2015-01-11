@@ -19,7 +19,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import uk.co.strangeskies.reflection.Bound.PartialBoundVisitor;
+import uk.co.strangeskies.reflection.BoundVisitor.PartialBoundVisitor;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.collection.computingmap.CacheComputingMap;
@@ -54,31 +54,18 @@ public class Resolver {
 
 		incorporatedDeclarations = new HashSet<>(that.incorporatedDeclarations);
 		inferenceVariables = new HashMap<>(that.inferenceVariables);
-		remainingDependencies = new MultiHashMap<>(that.remainingDependencies);
+		remainingDependencies = new MultiHashMap<>(HashSet::new,
+				that.remainingDependencies);
 		instantiations = new HashMap<>(that.instantiations);
 	}
 
-	public Resolver(Type... overTypes) {
-		this(new BoundSet(), overTypes);
-	}
-
-	public Resolver(BoundSet bounds, Type... overTypes) {
-		this.bounds = bounds;
+	public Resolver() {
+		bounds = new BoundSet();
 
 		incorporatedDeclarations = new HashSet<>();
 		inferenceVariables = new HashMap<>();
 		remainingDependencies = new MultiHashMap<>(HashSet::new);
 		instantiations = new HashMap<>();
-
-		bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
-			@Override
-			public void acceptEquality(InferenceVariable<?> inferenceVariable,
-					Type type) {
-				instantiations.put(inferenceVariable, type);
-			}
-		}));
-
-		incorporateTypes(overTypes);
 	}
 
 	private void addRemainingDependency(InferenceVariable<?> variable,
@@ -647,7 +634,8 @@ public class Resolver {
 				.visitSupertypes()
 				.classVisitor(
 						type -> {
-							Type parameterized = new Resolver(of).resolveTypeParameters(type);
+							Type parameterized = TypeLiteral.from(of)
+									.resolveTypeParameters(type).getType();
 							supertypes
 									.put(
 											type,
@@ -696,6 +684,16 @@ public class Resolver {
 		}).resolve(type);
 	}
 
+	/*
+	 * Here we find the type arguments for the type parameters of a raw class
+	 * based on inference variables already captured by this resolver. Since we
+	 * only allow type variables to be captured once per resolver, we should be
+	 * able to find a single unique parameterization which is consistent with all
+	 * currently incorporated types. Only subtype and supertype relations are
+	 * considered here, as enclosing relationships may cause conflicts, if, for
+	 * example, an enclosed and its enclosing class both inherit from the same
+	 * interface with different parameterisations. TODO figure this out properly!
+	 */
 	public Type resolveTypeParameters(Class<?> rawType) {
 		Class<?> enclosingClass = rawType;
 		Map<TypeVariable<?>, Type> typeParameters = new HashMap<>();
@@ -716,7 +714,16 @@ public class Resolver {
 		 * set of incorporated generic declarations can be related through subtype
 		 * relationships.
 		 */
-		Class<?> declaringClass = Types.getRawType(context.getDeclaringType());
+		RecursiveTypeVisitor.build().postOrder().allowRepeatVisits(false)
+				.visitSupertypes().parameterizedTypeVisitor(t -> {
+
+				}).create().visit(rawType);
+	}
+
+	private Type resolveTypeParametersOLD(Class<?> rawType, Type fromType) {
+		Map<TypeVariable<?>, Type> typeParameters = new HashMap<>();
+
+		Class<?> declaringClass = Types.getRawType(fromType);
 		if (declaringClass.isAssignableFrom(rawType)) {
 			incorporateTypes(Types.parameterizedType(rawType));
 
@@ -801,26 +808,32 @@ public class Resolver {
 			bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
 				@Override
 				public void acceptEquality(InferenceVariable<?> a, Type b) {
-					instantiation.set(b);
+					@SuppressWarnings("rawtypes")
+					Class<? extends InferenceVariable> clazz = InferenceVariable.class;
+
+					Set<Type> mentioned = Types.getAllMentionedBy(b, clazz::isInstance);
+
+					if (mentioned.isEmpty()
+							|| (instantiation.get() == null && mentioned.stream()
+									.map(clazz::cast)
+									.allMatch(i -> i.getResolver() != Resolver.this)))
+						instantiation.set(b);
 				}
 
 				@Override
 				public void acceptEquality(InferenceVariable<?> a,
 						InferenceVariable<?> b) {
 					if (instantiation.get() == null) {
-						if (a.equals(variable)
-								&& b.getGenericDeclaration().equals(
-										a.getGenericTypeContext().getGenericDeclaration()))
-							instantiation.set(b);
-						else if (b.equals(variable)
-								&& a.getGenericDeclaration().equals(
-										b.getGenericTypeContext().getGenericDeclaration()))
+						if (a.equals(variable)) {
+							if (b.getResolver() != Resolver.this)
+								instantiation.set(b);
+						} else if (b.equals(variable) && a.getResolver() != Resolver.this)
 							instantiation.set(a);
 					}
 				}
 			}));
 
-			if (instantiation.get() == null && variable != null)
+			if (instantiation.get() == null)
 				instantiation.set(variable);
 		}
 		System.out.println("==> " + variable + " INSt= " + instantiation.get());
@@ -870,7 +883,7 @@ public class Resolver {
 	public static <T> void test() {
 		System.out
 				.println("XXX  "
-						+ ((TypeVariable<?>) ((ParameterizedType) new Resolver(X.class)
+						+ ((TypeVariable<?>) ((ParameterizedType) new TypeLiteral<>(X.class)
 								.resolveTypeParameters(Iterable.class))
 								.getActualTypeArguments()[0]).getGenericDeclaration());
 
@@ -883,13 +896,12 @@ public class Resolver {
 		System.out.println();
 		 */
 
-		System.out.println(new Resolver(new TypeLiteral<ArrayList<String>>() {}
-				.getType()).resolveTypeParameters(Collection.class));
+		System.out.println(new TypeLiteral<ArrayList<String>>() {}
+				.resolveTypeParameters(Collection.class));
 		System.out.println();
 
 		System.out
-				.println(new Resolver(
-						new TypeLiteral<A<Map<String, String>>.B<HashSet<Map<String, String>>>>() {}
-								.getType()).resolveTypeParameters(A.C.class));
+				.println(new TypeLiteral<A<Map<String, String>>.B<HashSet<Map<String, String>>>>() {}
+						.resolveTypeParameters(A.C.class));
 	}
 }

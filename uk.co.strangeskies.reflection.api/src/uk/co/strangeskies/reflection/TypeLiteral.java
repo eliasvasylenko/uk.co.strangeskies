@@ -44,8 +44,16 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		resolver = new Resolver();
 	}
 
-	public static TypeLiteral<?> of(Type type) {
+	public static TypeLiteral<?> from(Type type) {
 		return new TypeLiteral<>(type, Types.getRawType(type));
+	}
+
+	public static <T> TypeLiteral<T> from(Class<T> type) {
+		return new TypeLiteral<>(type);
+	}
+
+	public static <T> TypeLiteral<T> from(String typeString) {
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -82,7 +90,7 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 	@SuppressWarnings("unchecked")
 	public TypeLiteral<T> wrap() {
 		if (isPrimitive())
-			return (TypeLiteral<T>) of(Types.wrap(rawType));
+			return (TypeLiteral<T>) from(Types.wrap(rawType));
 		else
 			return this;
 	}
@@ -90,7 +98,7 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 	@SuppressWarnings("unchecked")
 	public TypeLiteral<T> unwrap() {
 		if (isPrimitiveWrapper())
-			return (TypeLiteral<T>) of(Types.unwrap(rawType));
+			return (TypeLiteral<T>) from(Types.unwrap(rawType));
 		else
 			return this;
 	}
@@ -100,15 +108,14 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 	}
 
 	public Type resolveType(Type type) {
-		return resolveType(of(type)).getType();
+		return resolveType(from(type)).getType();
 	}
 
 	public <U> TypeLiteral<? extends U> resolveType(TypeLiteral<U> type) {
 		return null;
 	}
 
-	public <U extends T> TypeLiteral<? extends U> resolveTypeParameters(
-			Class<U> type2) {
+	public <U> TypeLiteral<? extends U> resolveTypeParameters(Class<U> type2) {
 		return null;
 	}
 
@@ -139,7 +146,7 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 
 	public Set<Invokable<T, ?>> getMethods() {
 		return Arrays.stream(getRawType().getMethods())
-				.map(m -> new Invokable<>(this, of(Object.class), m))
+				.map(m -> new Invokable<>(this, from(Object.class), m))
 				.collect(Collectors.toSet());
 	}
 

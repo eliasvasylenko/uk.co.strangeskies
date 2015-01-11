@@ -15,9 +15,9 @@ public class MultiHashMap<K, V, C extends Collection<V>> extends HashMap<K, C>
 		this.collectionFactory = collectionFactory;
 	}
 
-	public MultiHashMap(MultiMap<? extends K, ? extends V, ? extends C> that) {
-		// TODO this will leak memory by retaining references to other map...
-		this(that::createCollection);
+	public MultiHashMap(Factory<C> collectionFactory,
+			MultiMap<? extends K, ? extends V, ? extends C> that) {
+		this(collectionFactory);
 
 		addAll(that);
 	}

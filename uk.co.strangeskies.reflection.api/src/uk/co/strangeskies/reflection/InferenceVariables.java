@@ -11,7 +11,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import uk.co.strangeskies.reflection.Bound.PartialBoundVisitor;
+import uk.co.strangeskies.reflection.BoundVisitor.PartialBoundVisitor;
 import uk.co.strangeskies.utilities.IdentityComparator;
 import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
@@ -69,8 +69,8 @@ public class InferenceVariables {
 		inferenceVariables.put(context, new HashMap<>());
 	}
 
-	public void add(GenericTypeContainer<?> context, TypeVariable<?> typeVariable,
-			InferenceVariable<?> inferenceVariable) {
+	public void add(GenericTypeContainer<?> context,
+			TypeVariable<?> typeVariable, InferenceVariable<?> inferenceVariable) {
 		inferenceVariables.get(context).put(typeVariable, inferenceVariable);
 	}
 

@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import uk.co.strangeskies.reflection.Bound.BoundVisitor;
 import uk.co.strangeskies.utilities.tuples.Pair;
 
 public class ConstraintFormula {
@@ -62,21 +61,21 @@ public class ConstraintFormula {
 			 */
 			if (!Types.isLooseInvocationContextCompatible(from, to))
 				boundConsumer.acceptFalsehood();
-		} else if (from != null && TypeLiteral.of(from).isPrimitive())
+		} else if (from != null && TypeLiteral.from(from).isPrimitive())
 			/*
 			 * Otherwise, if S is a primitive type, let S' be the result of applying
 			 * boxing conversion (§5.1.7) to S. Then the constraint reduces to ‹S' →
 			 * T›.
 			 */
-			new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, TypeLiteral.of(from)
+			new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, TypeLiteral.from(from)
 					.wrap().getType(), to).reduceInto(boundConsumer);
-		else if (to != null && TypeLiteral.of(to).isPrimitive())
+		else if (to != null && TypeLiteral.from(to).isPrimitive())
 			/*
 			 * Otherwise, if T is a primitive type, let T' be the result of applying
 			 * boxing conversion (§5.1.7) to T. Then the constraint reduces to ‹S =
 			 * T'›.
 			 */
-			new ConstraintFormula(Kind.EQUALITY, from, TypeLiteral.of(to).wrap()
+			new ConstraintFormula(Kind.EQUALITY, from, TypeLiteral.from(to).wrap()
 					.getType()).reduceInto(boundConsumer);
 		else if (isUncheckedCompatibleOnly(from, to))
 			/*
@@ -103,8 +102,8 @@ public class ConstraintFormula {
 		Class<?> fromRaw = Types.getRawType(from);
 
 		if (toRaw.getTypeParameters().length > 0 && toRaw.isAssignableFrom(fromRaw)) {
-			Type fromSuperTypeArgument = ((ParameterizedType) new Resolver(from)
-					.resolveTypeParameters(toRaw)).getActualTypeArguments()[0];
+			Type fromSuperTypeArgument = ((ParameterizedType) TypeLiteral.from(from)
+					.resolveTypeParameters(toRaw).getType()).getActualTypeArguments()[0];
 
 			return fromSuperTypeArgument instanceof TypeVariable
 					&& ((TypeVariable<?>) fromSuperTypeArgument).getGenericDeclaration()
@@ -181,7 +180,7 @@ public class ConstraintFormula {
 					List<Pair<Type, Type>> identifiedPairs = new ArrayList<>();
 					do {
 						for (TypeVariable<?> parameter : rawType.getTypeParameters()) {
-							Type toArgument = new Resolver(to).resolveTypeVariable(parameter);
+							Type toArgument = TypeLiteral.from(to).resolveType(parameter);
 
 							System.out.println("   to " + to + " from " + from);
 
@@ -199,8 +198,7 @@ public class ConstraintFormula {
 								boundConsumer.acceptFalsehood();
 								return;
 							}
-							Type fromArgument = new Resolver(from)
-									.resolveTypeVariable(parameter);
+							Type fromArgument = TypeLiteral.from(from).resolveType(parameter);
 							System.out.println("     " + from + "[" + parameter + "] = "
 									+ fromArgument);
 
@@ -236,7 +234,7 @@ public class ConstraintFormula {
 					/*
 					 * Otherwise:
 					 */
-					TypeLiteral<?> toComponent = TypeLiteral.of(Types
+					TypeLiteral<?> toComponent = TypeLiteral.from(Types
 							.getComponentType(to));
 					if (!fromComponent.isPrimitive() && !toComponent.isPrimitive()) {
 						/*
@@ -294,10 +292,10 @@ public class ConstraintFormula {
 	}
 
 	private TypeLiteral<?> findMostSpecificArrayType(Type from) {
-		TypeLiteral<?> fromToken = TypeLiteral.of(from);
+		TypeLiteral<?> fromToken = TypeLiteral.from(from);
 
 		if (fromToken.getRawType().isArray()) {
-			return TypeLiteral.of(Types.getComponentType(from));
+			return TypeLiteral.from(Types.getComponentType(from));
 		}
 
 		if (from instanceof WildcardType) {
@@ -323,7 +321,7 @@ public class ConstraintFormula {
 					.anyMatch(
 							t -> !Types.isAssignable(Types.getComponentType(mostSpecific),
 									Types.getComponentType(t))))
-				return TypeLiteral.of(mostSpecific);
+				return TypeLiteral.from(mostSpecific);
 		}
 
 		return null;
@@ -540,9 +538,8 @@ public class ConstraintFormula {
 				Class<?> rawClass = Types.getRawType(from);
 				do {
 					for (TypeVariable<?> type : rawClass.getTypeParameters())
-						new ConstraintFormula(Kind.EQUALITY,
-								new Resolver(from).resolveTypeVariable(type),
-								new Resolver(to).resolveTypeVariable(type))
+						new ConstraintFormula(Kind.EQUALITY, TypeLiteral.from(from)
+								.resolveType(type), TypeLiteral.from(to).resolveType(type))
 								.reduceInto(boundConsumer);
 				} while ((rawClass = rawClass.getEnclosingClass()) != null);
 			}

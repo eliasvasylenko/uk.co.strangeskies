@@ -10,45 +10,6 @@ import java.util.stream.Collectors;
 import uk.co.strangeskies.utilities.IdentityProperty;
 
 public class Bound {
-	public static interface BoundVisitor {
-		void acceptEquality(InferenceVariable<?> a, InferenceVariable<?> b);
-
-		void acceptEquality(InferenceVariable<?> a, Type b);
-
-		void acceptSubtype(InferenceVariable<?> a, InferenceVariable<?> b);
-
-		void acceptSubtype(InferenceVariable<?> a, Type b);
-
-		void acceptSubtype(Type a, InferenceVariable<?> b);
-
-		void acceptFalsehood();
-
-		void acceptCaptureConversion(Map<Type, InferenceVariable<?>> c);
-	}
-
-	public static abstract class PartialBoundVisitor implements BoundVisitor {
-		@Override
-		public void acceptEquality(InferenceVariable<?> a, InferenceVariable<?> b) {}
-
-		@Override
-		public void acceptEquality(InferenceVariable<?> a, Type b) {}
-
-		@Override
-		public void acceptSubtype(InferenceVariable<?> a, InferenceVariable<?> b) {}
-
-		@Override
-		public void acceptSubtype(InferenceVariable<?> a, Type b) {}
-
-		@Override
-		public void acceptSubtype(Type a, InferenceVariable<?> b) {}
-
-		@Override
-		public void acceptFalsehood() {}
-
-		@Override
-		public void acceptCaptureConversion(Map<Type, InferenceVariable<?>> c) {}
-	}
-
 	private final Consumer<BoundVisitor> visitation;
 
 	public Bound(Consumer<BoundVisitor> visitation) {

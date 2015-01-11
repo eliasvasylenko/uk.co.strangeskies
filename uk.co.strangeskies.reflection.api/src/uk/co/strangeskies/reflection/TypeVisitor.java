@@ -6,7 +6,6 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -26,7 +25,7 @@ public abstract class TypeVisitor {
 		visit(Arrays.asList(types));
 	}
 
-	public synchronized final void visit(Collection<? extends Type> types) {
+	public synchronized final void visit(Iterable<? extends Type> types) {
 		for (Type type : types)
 			if (visited.add(type)) {
 				if (type instanceof Class)

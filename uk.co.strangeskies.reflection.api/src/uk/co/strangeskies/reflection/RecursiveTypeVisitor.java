@@ -179,8 +179,8 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 		visit(type.getComponentType());
 
 		if (supertypes) {
-			visit(type.getSuperclass());
-			visit(type.getInterfaces());
+			visit(type.getGenericSuperclass());
+			visit(type.getGenericInterfaces());
 		}
 		if (parameters)
 			visit(type.getTypeParameters());

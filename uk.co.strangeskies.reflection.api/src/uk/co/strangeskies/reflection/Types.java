@@ -207,7 +207,7 @@ public final class Types {
 		} else if (to instanceof Class) {
 			return ((Class<?>) to).isAssignableFrom(getRawType(from));
 		} else if (to instanceof ParameterizedType) {
-			Class<?> matchedClass = TypeLiteral.of(to).getRawType();
+			Class<?> matchedClass = TypeLiteral.from(to).getRawType();
 
 			if (from instanceof Class
 					&& matchedClass.isAssignableFrom((Class<?>) from)) {
@@ -218,7 +218,7 @@ public final class Types {
 			Type[] typeParams = matchedClass.getTypeParameters();
 			Type[] toTypeArgs = ((ParameterizedType) to).getActualTypeArguments();
 			for (int i = 0; i < typeParams.length; i++) {
-				Type fromTypeArg = new Resolver(from).resolveType(typeParams[i]);
+				Type fromTypeArg = TypeLiteral.from(from).resolveType(typeParams[i]);
 				if (!isContainedBy(fromTypeArg, toTypeArgs[i]))
 					return false;
 			}
@@ -246,12 +246,12 @@ public final class Types {
 	}
 
 	public static boolean isStrictInvocationContextCompatible(Type from, Type to) {
-		if (TypeLiteral.of(from).isPrimitive())
-			if (TypeLiteral.of(to).isPrimitive())
+		if (TypeLiteral.from(from).isPrimitive())
+			if (TypeLiteral.from(to).isPrimitive())
 				return true; // TODO check widening primitive conversion
 			else
 				return false;
-		else if (TypeLiteral.of(to).isPrimitive())
+		else if (TypeLiteral.from(to).isPrimitive())
 			return false;
 		else
 			return isAssignable(from, to);
