@@ -444,9 +444,9 @@ public class Resolver {
 		/*
 		 * the bound set contains a bound of the form G<..., αi, ...> =
 		 * capture(G<...>) for some i (1 ≤ i ≤ n), or;
-		 * 
+		 *
 		 * If the bound set produced in the step above contains the bound false;
-		 * 
+		 *
 		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
 		 */
 		for (InferenceVariable<?> variable : minimalSet)
@@ -718,6 +718,8 @@ public class Resolver {
 				.visitSupertypes().parameterizedTypeVisitor(t -> {
 
 				}).create().visit(rawType);
+
+		return null;
 	}
 
 	private Type resolveTypeParametersOLD(Class<?> rawType, Type fromType) {
@@ -875,7 +877,11 @@ public class Resolver {
 	}
 
 	public static void main(String... args) {
-		test();
+		test2();
+	}
+
+	public static <T> void test2() {
+		;
 	}
 
 	class X extends ArrayList {}
