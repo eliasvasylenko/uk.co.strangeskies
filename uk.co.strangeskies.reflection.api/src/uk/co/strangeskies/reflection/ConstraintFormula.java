@@ -22,7 +22,6 @@ public class ConstraintFormula {
 		this.kind = kind;
 		this.from = from;
 		this.to = to;
-		System.out.println(this);
 	}
 
 	@Override
@@ -83,7 +82,7 @@ public class ConstraintFormula {
 			 * there exists no type of the form G<...> that is a supertype of S, but
 			 * the raw type G is a supertype of S, then the constraint reduces to
 			 * true.
-			 * 
+			 *
 			 * Otherwise, if T is an array type of the form G<T1, ..., Tn>[]k, and
 			 * there exists no type of the form G<...>[]k that is a supertype of S,
 			 * but the raw type G[]k is a supertype of S, then the constraint reduces
@@ -101,18 +100,16 @@ public class ConstraintFormula {
 		Class<?> toRaw = Types.getRawType(to);
 		Class<?> fromRaw = Types.getRawType(from);
 
-		if (toRaw.getTypeParameters().length > 0 && toRaw.isAssignableFrom(fromRaw)) {
-			Type fromSuperTypeArgument = ((ParameterizedType) TypeLiteral.from(from)
-					.resolveTypeParameters(toRaw).getType()).getActualTypeArguments()[0];
-
-			return fromSuperTypeArgument instanceof TypeVariable
-					&& ((TypeVariable<?>) fromSuperTypeArgument).getGenericDeclaration()
-							.equals(toRaw);
+		if (to instanceof ParameterizedType) {
+			return (toRaw.getTypeParameters().length > 0)
+					&& (toRaw.isAssignableFrom(fromRaw))
+					&& (TypeLiteral.from(from).resolveSupertypeParameters(toRaw)
+							.getType() instanceof Class);
 		} else
 			return toRaw.isArray()
 					&& fromRaw.isArray()
-					&& isUncheckedCompatibleOnly(Types.getRawType(from),
-							Types.getRawType(to));
+					&& isUncheckedCompatibleOnly(TypeLiteral.from(from)
+							.getComponentType(), TypeLiteral.from(to).getComponentType());
 	}
 
 	/*
@@ -192,7 +189,7 @@ public class ConstraintFormula {
 											.equals(rawType)) {
 								/*
 								 * Again:
-								 * 
+								 *
 								 * If no such type exists, the constraint reduces to false.
 								 */
 								boundConsumer.acceptFalsehood();

@@ -96,6 +96,7 @@ public class ApplicabilityVerifier {
 				}
 
 				System.out.println(resolver.infer());
+				System.out.println(resolver.bounds);
 
 				variableArityParameterApplicability = resolver.validate();
 			}

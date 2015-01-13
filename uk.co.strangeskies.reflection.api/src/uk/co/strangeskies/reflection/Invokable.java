@@ -86,17 +86,17 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 		return null;
 	}
 
-	public <U extends R> Invokable<T, U> withInferredTypes(
-			TypeLiteral<U> returnType, TypeLiteral<?>... parameters) {
+	public <S extends R> Invokable<T, S> withTargetType(TypeLiteral<S> type) {
 		return null;
 	}
 
 	/*
-	 * Infer types when we are already partially parameterized from applicability
-	 * verification, or assuming all parameters are passed as null.
+	 * If no arguments passed, but parameters expected, infer types when we are
+	 * already partially parameterized from applicability verification, or
+	 * assuming all parameters are passed as null.
 	 */
 	public <U extends R> Invokable<T, U> withInferredTypes(
-			TypeLiteral<U> targetType) {
+			TypeLiteral<U> targetType, TypeLiteral<?>... parameters) {
 		return null;
 	}
 

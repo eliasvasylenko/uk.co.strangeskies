@@ -22,10 +22,15 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 					.getActualTypeArguments()[0];
 		else {
 			Resolver resolver = new Resolver();
-			resolver.incorporateTypes(getClass().getGenericSuperclass());
 
-			type = ((ParameterizedType) resolver
-					.resolveTypeParameters(TypeLiteral.class)).getActualTypeArguments()[0];
+			Class<?> superClass = getClass();
+			do {
+				resolver.incorporateTypes(superClass.getGenericSuperclass());
+				superClass = superClass.getSuperclass();
+			} while (!superClass.equals(TypeLiteral.class));
+
+			type = resolver
+					.resolveTypeVariable(TypeLiteral.class.getTypeParameters()[0]);
 		}
 
 		rawType = (Class<? super T>) Types.getRawType(type);
@@ -53,7 +58,11 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 	}
 
 	private Resolver getResolver() {
-		return resolver == null ? resolver = new Resolver() : resolver;
+		if (resolver == null) {
+			resolver = new Resolver();
+			resolver.incorporateTypes(type);
+		}
+		return resolver;
 	}
 
 	@Override
@@ -108,25 +117,59 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 	}
 
 	public Type resolveType(Type type) {
-		return resolveType(from(type)).getType();
+		return getResolver().resolveType(type);
 	}
 
+	@SuppressWarnings("unchecked")
 	public <U> TypeLiteral<? extends U> resolveType(TypeLiteral<U> type) {
-		return null;
+		return (TypeLiteral<? extends U>) TypeLiteral.from(resolveType(type
+				.getType()));
 	}
 
-	public <U> TypeLiteral<? extends U> resolveTypeParameters(Class<U> type2) {
-		return null;
+	@SuppressWarnings("unchecked")
+	public <U> TypeLiteral<? extends U> resolveSupertypeParameters(Class<U> type) {
+		boolean isGeneric = type.getg(type.getEnclosingClass());
+
+		System.out.println("  resolver parameters of '" + type.getName()
+				+ "' WRT subtype '" + this + "'.");
+		if (!type.isAssignableFrom(rawType))
+			throw new IllegalArgumentException();
+
+		Class<?> superClass = rawType;
+		Type superType = this.type;
+		while (!superClass.equals(type)) {
+			Set<Type> superTypes = new HashSet<>(Arrays.asList(superClass
+					.getGenericInterfaces()));
+			if (superClass.getSuperclass() != null)
+				superTypes.addAll(Arrays.asList(superClass.getGenericSuperclass()));
+
+			superType = superTypes.stream()
+					.filter(t -> type.isAssignableFrom(Types.getRawType(t))).findAny()
+					.get();
+
+			getResolver().incorporateTypes(superType);
+			superClass = Types.getRawType(superType);
+		}
+
+		if (!(superType instanceof Class))
+			superType = resolveType(Types.parameterizedType(type));
+
+		return (TypeLiteral<? extends U>) TypeLiteral.from(superType);
+	}
+
+	public <U extends T> TypeLiteral<? extends U> resolveSubtypeParameters(
+			Class<U> type) {
+		throw new UnsupportedOperationException();
 	}
 
 	public TypeLiteral<? extends T> withTypeArguments(
 			Map<TypeVariable<? extends Class<?>>, Type> instantiations) {
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	public TypeLiteral<? extends T> withTypeArgument(
 			TypeVariable<? extends Class<?>> typeVariable, Type instantiation) {
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	public <V> TypeLiteral<? extends T> withTypeArgument(
@@ -195,6 +238,10 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 				candidates = moreSpecificCandidates;
 		}
 
-		return null;
+		throw new UnsupportedOperationException();
+	}
+
+	public Type getComponentType() {
+		throw new UnsupportedOperationException();
 	}
 }

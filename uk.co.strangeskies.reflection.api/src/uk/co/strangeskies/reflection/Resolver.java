@@ -1,6 +1,5 @@
 package uk.co.strangeskies.reflection;
 
-import java.lang.reflect.Executable;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.ParameterizedType;
@@ -27,7 +26,7 @@ import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 
 public class Resolver {
-	private BoundSet bounds;
+	BoundSet bounds;
 
 	/*
 	 * We maintain a set of generic declarations which have already been
@@ -36,7 +35,7 @@ public class Resolver {
 	 * Classes, such that bounds on inference variables may be implied for other
 	 * classes through enclosing, subtype, and supertype relations.
 	 */
-	private final Set<GenericDeclaration> captures;
+	final Set<GenericDeclaration> captures;
 	private final Map<TypeVariable<?>, InferenceVariable<?>> inferenceVariables;
 	private final MultiMap<InferenceVariable<?>, InferenceVariable<?>, ? extends Set<InferenceVariable<?>>> remainingDependencies;
 	private final Map<InferenceVariable<?>, Type> instantiations;
@@ -49,6 +48,19 @@ public class Resolver {
 	private static final CacheComputingMap<Collection<Type>, IdentityProperty<IntersectionType>> LEAST_UPPER_BOUNDS = new CacheComputingMap<>(
 			c -> new IdentityProperty<>(), true);
 
+	public Resolver(BoundSet bounds) {
+		this.bounds = bounds;
+
+		captures = new HashSet<>();
+		inferenceVariables = new HashMap<>();
+		remainingDependencies = new MultiHashMap<>(HashSet::new);
+		instantiations = new HashMap<>();
+	}
+
+	public Resolver() {
+		this(new BoundSet());
+	}
+
 	public Resolver(Resolver that) {
 		bounds = new BoundSet(that.bounds);
 
@@ -57,15 +69,6 @@ public class Resolver {
 		remainingDependencies = new MultiHashMap<>(HashSet::new,
 				that.remainingDependencies);
 		instantiations = new HashMap<>(that.instantiations);
-	}
-
-	public Resolver() {
-		bounds = new BoundSet();
-
-		captures = new HashSet<>();
-		inferenceVariables = new HashMap<>();
-		remainingDependencies = new MultiHashMap<>(HashSet::new);
-		instantiations = new HashMap<>();
 	}
 
 	private void addRemainingDependency(InferenceVariable<?> variable,
@@ -253,51 +256,34 @@ public class Resolver {
 	public void incorporateParameterizedType(ParameterizedType type) {
 		incorporateGenericDeclaration(Types.getRawType(type));
 
-		TypeSubstitution resolver = new TypeSubstitution();
+		TypeSubstitution substitution = new TypeSubstitution();
 		for (InferenceVariable<?> variable : inferenceVariables.values())
-			resolver = resolver.where(variable.getTypeVariable(), variable);
-
-		System.out.println("incorporating " + type);
+			substitution = substitution.where(variable.getTypeVariable(), variable);
 
 		for (int i = 0; i < type.getActualTypeArguments().length; i++) {
 			TypeVariable<?> typeParameter = ((Class<?>) type.getRawType())
 					.getTypeParameters()[i];
 			Type actualTypeArgument = type.getActualTypeArguments()[i];
-
-			/*-
-			if (actualTypeArgument instanceof TypeVariable) {
-				System.out.println(" - " + actualTypeArgument + " @ "
-						+ ((TypeVariable<?>) actualTypeArgument).getGenericDeclaration());
-				// actualTypeArgument = inferenceVariables.get(context).get(
-				// actualTypeArgument);
-				if (inferenceVariables.get(context).containsKey(actualTypeArgument))
-					actualTypeArgument = inferenceVariables.get(context).get(
-							actualTypeArgument);
-			} else
-			 * /
-			if (actualTypeArgument instanceof TypeVariable)
-				System.out.println("ac: " + actualTypeArgument + " @ "
-						+ ((TypeVariable<?>) actualTypeArgument).getGenericDeclaration()
-						+ " ~~ " + parameterizedType);
-
-			if (actualTypeArgument instanceof TypeVariable
-					&& ((TypeVariable<?>) actualTypeArgument).getGenericDeclaration()
-							.equals(parameterizedType.getRawType()))
-				return;
-			actualTypeArgument = resolve(context, actualTypeArgument);
-			System.out.println("ac: " + actualTypeArgument);
-
-			if (actualTypeArgument == null)
-				return;
-			 */
-			actualTypeArgument = resolver.resolve(actualTypeArgument);
+			actualTypeArgument = substitution.resolve(actualTypeArgument);
 
 			incorporate(new ConstraintFormula(Kind.EQUALITY,
 					inferenceVariables.get(typeParameter), actualTypeArgument));
 		}
-		System.out.println(bounds);
 
 		recalculateRemainingDependencies();
+	}
+
+	public Map<InferenceVariable<?>, Type> infer(GenericDeclaration context) {
+		return infer(getInferenceVariables(context));
+	}
+
+	public Map<InferenceVariable<?>, Type> infer() {
+		return infer(inferenceVariables.values());
+	}
+
+	public Map<InferenceVariable<?>, Type> infer(
+			InferenceVariable<?>... variables) {
+		return infer(Arrays.asList(variables));
 	}
 
 	public Map<InferenceVariable<?>, Type> infer(
@@ -444,9 +430,9 @@ public class Resolver {
 		/*
 		 * the bound set contains a bound of the form G<..., αi, ...> =
 		 * capture(G<...>) for some i (1 ≤ i ≤ n), or;
-		 * 
+		 *
 		 * If the bound set produced in the step above contains the bound false;
-		 * 
+		 *
 		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
 		 */
 		for (InferenceVariable<?> variable : minimalSet)
@@ -629,13 +615,15 @@ public class Resolver {
 	private static Map<Class<?>, ParameterizedType> getErasedSupertypes(Type of) {
 		Map<Class<?>, ParameterizedType> supertypes = new HashMap<>();
 
+		TypeLiteral<?> ofLiteral = TypeLiteral.from(of);
+
 		RecursiveTypeVisitor
 				.build()
 				.visitSupertypes()
 				.classVisitor(
 						type -> {
-							Type parameterized = TypeLiteral.from(of)
-									.resolveTypeParameters(type).getType();
+							Type parameterized = ofLiteral.resolveSupertypeParameters(type)
+									.getType();
 							supertypes
 									.put(
 											type,
@@ -684,103 +672,17 @@ public class Resolver {
 		}).resolve(type);
 	}
 
-	/*
-	 * Here we find the type arguments for the type parameters of a raw class
-	 * based on inference variables already captured by this resolver. Since we
-	 * only allow type variables to be captured once per resolver, we should be
-	 * able to find a single unique parameterization which is consistent with all
-	 * currently incorporated types. Only subtype and supertype relations are
-	 * considered here, as enclosing relationships may cause conflicts, if, for
-	 * example, an enclosed and its enclosing class both inherit from the same
-	 * interface with different parameterisations. TODO figure this out properly!
-	 */
-	public Type resolveTypeParameters(Class<?> rawType) {
-		Class<?> enclosingClass = rawType;
-		Map<TypeVariable<?>, Type> typeParameters = new HashMap<>();
-		do {
-			for (TypeVariable<?> typeParameter : enclosingClass.getTypeParameters())
-				typeParameters.put(typeParameter, null);
-		} while ((enclosingClass = enclosingClass.getEnclosingClass()) != null);
-
-		if (typeParameters.isEmpty())
-			return rawType;
-
-		if (rawType.isArray())
-			return Types.genericArrayType(resolveTypeParameters(rawType
-					.getComponentType()));
-
-		/*
-		 * TODO here we need to figure out which, if any, candidates in the existing
-		 * set of incorporated generic declarations can be related through subtype
-		 * relationships.
-		 */
-		RecursiveTypeVisitor.build().postOrder().allowRepeatVisits(false)
-				.visitSupertypes().parameterizedTypeVisitor(t -> {
-
-				}).create().visit(rawType);
-
-		return null;
-	}
-
-	private Type resolveTypeParametersOLD(Class<?> rawType, Type fromType) {
-		Map<TypeVariable<?>, Type> typeParameters = new HashMap<>();
-
-		Class<?> declaringClass = Types.getRawType(fromType);
-		if (declaringClass.isAssignableFrom(rawType)) {
-			incorporateTypes(Types.parameterizedType(rawType));
-
-			Class<?> temp = declaringClass;
-			declaringClass = rawType;
-			rawType = temp;
-		} else if (!rawType.isAssignableFrom(declaringClass))
-			return Types.parameterizedType(rawType);
-
-		Type subtype = null;
-		do {
-			Set<Type> supertypes = new HashSet<>();
-			supertypes.addAll(Arrays.asList(declaringClass.getGenericInterfaces()));
-			if (declaringClass.getGenericSuperclass() != null)
-				supertypes.add(declaringClass.getGenericSuperclass());
-
-			declaringClass = null;
-			for (Type supertype : supertypes) {
-				Class<?> superclass = Types.getRawType(supertype);
-				if (rawType.isAssignableFrom(superclass)) {
-					subtype = supertype;
-					declaringClass = superclass;
-					break;
-				}
-			}
-
-			if (declaringClass != null && subtype instanceof ParameterizedType)
-				incorporateTypes(subtype);
-		} while (declaringClass != null && rawType.isAssignableFrom(declaringClass));
-
-		// infer(typeParameters.keySet().stream()
-		// .map(inferenceVariables.get(context)::get).collect(Collectors.toSet()));
-
-		for (TypeVariable<?> typeParameter : typeParameters.keySet())
-			typeParameters.put(typeParameter,
-					resolveInferenceVariable(inferenceVariables.get(typeParameter)));
-
-		return Types.parameterizedType(rawType, typeParameters);
-	}
-
 	public Type resolveTypeVariable(TypeVariable<?> typeVariable) {
 		Type instantiation = instantiations.get(inferenceVariables
 				.get(typeVariable));
+
 		if (instantiation != null)
 			return instantiation;
-
-		if (typeVariable.getGenericDeclaration() instanceof Executable) {
+		else {
 			incorporateGenericDeclaration(typeVariable.getGenericDeclaration());
-			resolveTypeParameters(((Executable) typeVariable.getGenericDeclaration())
-					.getDeclaringClass());
-		} else if (typeVariable.getGenericDeclaration() instanceof Class) {
-			resolveTypeParameters(((Class<?>) typeVariable.getGenericDeclaration()));
-		}
 
-		return resolveInferenceVariable(inferenceVariables.get(typeVariable));
+			return resolveInferenceVariable(inferenceVariables.get(typeVariable));
+		}
 	}
 
 	public void incorporate(ConstraintFormula constraintFormula) {
@@ -810,14 +712,16 @@ public class Resolver {
 			bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
 				@Override
 				public void acceptEquality(InferenceVariable<?> a, Type b) {
-					Set<Type> mentioned = Types.getAllMentionedBy(b,
-							InferenceVariable.class::isInstance);
+					if (a.equals(variable)) {
+						Set<Type> mentioned = Types.getAllMentionedBy(b,
+								InferenceVariable.class::isInstance);
 
-					if (mentioned.isEmpty()
-							|| (instantiation.get() == null && mentioned.stream()
-									.map(InferenceVariable.class::cast)
-									.allMatch(i -> i.getResolver() != Resolver.this)))
-						instantiation.set(b);
+						if (mentioned.isEmpty()
+								|| (instantiation.get() == null && mentioned.stream()
+										.map(InferenceVariable.class::cast)
+										.allMatch(i -> i.getResolver() != Resolver.this)))
+							instantiation.set(b);
+					}
 				}
 
 				@Override
@@ -841,15 +745,6 @@ public class Resolver {
 		return instantiation.get();
 	}
 
-	public Map<InferenceVariable<?>, Type> infer(GenericTypeContainer<?> context) {
-		return infer(inferenceVariables.values());
-	}
-
-	public Map<InferenceVariable<?>, Type> infer(
-			InferenceVariable<?>... variables) {
-		return infer(Arrays.asList(variables));
-	}
-
 	public Set<InferenceVariable<?>> getInferenceVariables() {
 		return new HashSet<>(inferenceVariables.values());
 	}
@@ -866,26 +761,20 @@ public class Resolver {
 		return inferenceVariables.get(typeVariable);
 	}
 
-	static class A<T> {
-		class B<U extends Set<T>> {
-
-		}
-
-		class C<V> extends A<Map<V, V>>.B<HashSet<Map<V, V>>> {}
-	}
-
 	public static void main(String... args) {
 		test();
 	}
 
-	class X extends ArrayList {}
+	static class TT<TTT> extends TypeLiteral<TTT> {}
+
+	static class Y<YT> extends TT<Set<YT>> {}
+
+	static class G extends Y<List<String>> {}
 
 	public static <T> void test() {
-		System.out
-				.println("XXX  "
-						+ ((TypeVariable<?>) ((ParameterizedType) new TypeLiteral<>(X.class)
-								.resolveTypeParameters(Iterable.class))
-								.getActualTypeArguments()[0]).getGenericDeclaration());
+		System.out.println("TYPELITTEST: " + new TypeLiteral<String>() {});
+		System.out.println("TYPELITTEST-2: " + new Y<Integer>() {});
+		System.out.println("TYPELITTEST-3: " + new G());
 
 		/*-
 		stringsType = new TypeLiteral<List<String>>() {};
@@ -895,13 +784,5 @@ public class Resolver {
 				new TypeLiteral<Map<String[], List<T>[][]>>() {}.getType()));
 		System.out.println();
 		 */
-
-		System.out.println(new TypeLiteral<ArrayList<String>>() {}
-				.resolveTypeParameters(Collection.class));
-		System.out.println();
-
-		System.out
-				.println(new TypeLiteral<A<Map<String, String>>.B<HashSet<Map<String, String>>>>() {}
-						.resolveTypeParameters(A.C.class));
 	}
 }

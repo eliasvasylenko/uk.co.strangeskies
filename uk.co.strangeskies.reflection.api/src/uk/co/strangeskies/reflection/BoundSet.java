@@ -251,7 +251,7 @@ public class BoundSet {
 	 * (In this section, S and T are inference variables or types, and U is a
 	 * proper type. For conciseness, a bound of the form α = T may also match a
 	 * bound of the form T = α.)
-	 * 
+	 *
 	 * When a bound set contains a pair of bounds that match one of the following
 	 * rules, a new constraint formula is implied:
 	 */
@@ -300,8 +300,7 @@ public class BoundSet {
 		public void incorporateProperEqualitySubstitution(InferenceVariable<?> a,
 				Type U, Type S, Type T) {
 			if (Types.isProperType(U)) {
-				TypeSubstitution resolver = new TypeSubstitution();
-				resolver.where(a, U);
+				TypeSubstitution resolver = new TypeSubstitution().where(a, U);
 
 				if (!(S instanceof InferenceVariable) && !Types.isProperType(S))
 					S = resolver.resolve(S);
@@ -318,8 +317,7 @@ public class BoundSet {
 		public void incorporateProperSubtypeSubstitution(InferenceVariable<?> a,
 				Type U, Type S, Type T) {
 			if (Types.isProperType(U)) {
-				TypeSubstitution resolver = new TypeSubstitution();
-				resolver = resolver.where(a, U);
+				TypeSubstitution resolver = new TypeSubstitution().where(a, U);
 
 				if (!(S instanceof InferenceVariable) && !Types.isProperType(S))
 					S = resolver.resolve(S);
@@ -340,17 +338,21 @@ public class BoundSet {
 		public void incorporateSupertypeParameterizationEquality(
 				InferenceVariable<?> a, Type S, InferenceVariable<?> a2, Type T) {
 			if (a.equals(a2)
-					&& Types.getRawType(S).isAssignableFrom(Types.getRawType(T)))
+					&& Types.getRawType(S).isAssignableFrom(Types.getRawType(T))) {
+				TypeLiteral<?> literalS = TypeLiteral.from(S);
+				TypeLiteral<?> literalT = TypeLiteral.from(T);
+
 				RecursiveTypeVisitor
 						.build()
 						.visitSupertypes()
-						.visitEnclosingTypes()
 						.parameterizedTypeVisitor(
 								type -> {
 									Class<?> rawClass = (Class<?>) type.getRawType();
 									do {
-										Type supertypeS = TypeLiteral.from(S).resolveType(rawClass);
-										Type supertypeT = TypeLiteral.from(T).resolveType(rawClass);
+										Type supertypeS = literalS.resolveSupertypeParameters(
+												rawClass).getType();
+										Type supertypeT = literalT.resolveSupertypeParameters(
+												rawClass).getType();
 
 										for (int i = 0; i < rawClass.getTypeParameters().length; i++) {
 											Type argumentS = ((ParameterizedType) supertypeS)
@@ -366,6 +368,7 @@ public class BoundSet {
 										}
 									} while ((rawClass = rawClass.getEnclosingClass()) != null);
 								}).create().visit(S);
+			}
 		}
 	}
 }

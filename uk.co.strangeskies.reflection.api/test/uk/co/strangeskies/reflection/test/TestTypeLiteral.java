@@ -29,11 +29,7 @@ public class TestTypeLiteral {
 
 	public static <T> void main(String... args) throws NoSuchMethodException,
 			SecurityException {
-		Arrays.asList(1, 2.0);
-
 		System.out.println(new TypeParameter<T>() {});
-		System.out.println();
-
 		System.out.println(new TypeLiteral<List<String>>() {});
 		System.out.println();
 
