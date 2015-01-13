@@ -83,7 +83,6 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 
 	public <U extends T> Invokable<U, ? extends R> withReceiverType(
 			TypeLiteral<U> type) {
-		// TODO also modify return type based on override/more specific constructor.
 		return null;
 	}
 

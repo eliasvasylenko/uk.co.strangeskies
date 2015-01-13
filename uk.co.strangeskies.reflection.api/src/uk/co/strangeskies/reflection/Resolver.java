@@ -36,7 +36,7 @@ public class Resolver {
 	 * Classes, such that bounds on inference variables may be implied for other
 	 * classes through enclosing, subtype, and supertype relations.
 	 */
-	private final Set<GenericDeclaration> incorporatedDeclarations;
+	private final Set<GenericDeclaration> captures;
 	private final Map<TypeVariable<?>, InferenceVariable<?>> inferenceVariables;
 	private final MultiMap<InferenceVariable<?>, InferenceVariable<?>, ? extends Set<InferenceVariable<?>>> remainingDependencies;
 	private final Map<InferenceVariable<?>, Type> instantiations;
@@ -52,7 +52,7 @@ public class Resolver {
 	public Resolver(Resolver that) {
 		bounds = new BoundSet(that.bounds);
 
-		incorporatedDeclarations = new HashSet<>(that.incorporatedDeclarations);
+		captures = new HashSet<>(that.captures);
 		inferenceVariables = new HashMap<>(that.inferenceVariables);
 		remainingDependencies = new MultiHashMap<>(HashSet::new,
 				that.remainingDependencies);
@@ -62,7 +62,7 @@ public class Resolver {
 	public Resolver() {
 		bounds = new BoundSet();
 
-		incorporatedDeclarations = new HashSet<>();
+		captures = new HashSet<>();
 		inferenceVariables = new HashMap<>();
 		remainingDependencies = new MultiHashMap<>(HashSet::new);
 		instantiations = new HashMap<>();
@@ -192,7 +192,7 @@ public class Resolver {
 	}
 
 	public void incorporateGenericDeclaration(GenericDeclaration declaration) {
-		if (incorporatedDeclarations.add(declaration)) {
+		if (captures.add(declaration)) {
 			List<? extends InferenceVariable<?>> newInferenceVariables = InferenceVariable
 					.overGenericTypeContext(this, declaration);
 
@@ -444,9 +444,9 @@ public class Resolver {
 		/*
 		 * the bound set contains a bound of the form G<..., αi, ...> =
 		 * capture(G<...>) for some i (1 ≤ i ≤ n), or;
-		 *
+		 * 
 		 * If the bound set produced in the step above contains the bound false;
-		 *
+		 * 
 		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
 		 */
 		for (InferenceVariable<?> variable : minimalSet)
@@ -810,14 +810,12 @@ public class Resolver {
 			bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
 				@Override
 				public void acceptEquality(InferenceVariable<?> a, Type b) {
-					@SuppressWarnings("rawtypes")
-					Class<? extends InferenceVariable> clazz = InferenceVariable.class;
-
-					Set<Type> mentioned = Types.getAllMentionedBy(b, clazz::isInstance);
+					Set<Type> mentioned = Types.getAllMentionedBy(b,
+							InferenceVariable.class::isInstance);
 
 					if (mentioned.isEmpty()
 							|| (instantiation.get() == null && mentioned.stream()
-									.map(clazz::cast)
+									.map(InferenceVariable.class::cast)
 									.allMatch(i -> i.getResolver() != Resolver.this)))
 						instantiation.set(b);
 				}
@@ -877,11 +875,7 @@ public class Resolver {
 	}
 
 	public static void main(String... args) {
-		test2();
-	}
-
-	public static <T> void test2() {
-		;
+		test();
 	}
 
 	class X extends ArrayList {}

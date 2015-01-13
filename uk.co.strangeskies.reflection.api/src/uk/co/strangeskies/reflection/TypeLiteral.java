@@ -13,7 +13,7 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 	private final Type type;
 	private final Class<? super T> rawType;
 
-	private final Resolver resolver;
+	private Resolver resolver;
 
 	@SuppressWarnings("unchecked")
 	protected TypeLiteral() {
@@ -29,8 +29,6 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		}
 
 		rawType = (Class<? super T>) Types.getRawType(type);
-
-		resolver = new Resolver();
 	}
 
 	public TypeLiteral(Class<T> exactClass) {
@@ -40,8 +38,6 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 	private TypeLiteral(Type type, Class<? super T> rawType) {
 		this.type = type;
 		this.rawType = rawType;
-
-		resolver = new Resolver();
 	}
 
 	public static TypeLiteral<?> from(Type type) {
@@ -54,6 +50,10 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 
 	public static <T> TypeLiteral<T> from(String typeString) {
 		throw new UnsupportedOperationException();
+	}
+
+	private Resolver getResolver() {
+		return resolver == null ? resolver = new Resolver() : resolver;
 	}
 
 	@Override
@@ -144,14 +144,15 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 				.map(m -> new Invokable<>(this, this, m)).collect(Collectors.toSet());
 	}
 
-	public Set<Invokable<T, ?>> getMethods() {
+	public Set<? extends Invokable<? super T, ?>> getMethods() {
+		// TODO include inherited methods.
 		return Arrays.stream(getRawType().getMethods())
 				.map(m -> new Invokable<>(this, from(Object.class), m))
 				.collect(Collectors.toSet());
 	}
 
-	public Set<Invokable<T, ?>> getInvokables() {
-		Set<Invokable<T, ?>> invokables = new HashSet<>();
+	public Set<? extends Invokable<? super T, ?>> getInvokables() {
+		Set<Invokable<? super T, ?>> invokables = new HashSet<>();
 		invokables.addAll(getConstructors());
 		invokables.addAll(getMethods());
 		return invokables;
@@ -162,16 +163,18 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		return resolveInvokableOverload(getConstructors(), parameters);
 	}
 
-	public Invokable<T, ?> resolveMethodOverload(String name, Type... parameters) {
-		Set<Invokable<T, ?>> candidates = getMethods().stream()
+	public Invokable<? super T, ?> resolveMethodOverload(String name,
+			Type... parameters) {
+		Set<Invokable<? super T, ?>> candidates = getMethods().stream()
 				.filter(i -> i.getGenericDeclaration().getName().equals(name))
 				.collect(Collectors.toSet());
 
 		return resolveInvokableOverload(candidates, parameters);
 	}
 
-	private <R> Invokable<T, ? extends R> resolveInvokableOverload(
-			Set<? extends Invokable<T, ? extends R>> candidates, Type... parameters) {
+	private <R, U> Invokable<U, ? extends R> resolveInvokableOverload(
+			Set<? extends Invokable<? super U, ? extends R>> candidates,
+			Type... parameters) {
 		candidates = candidates.stream()
 				.map(i -> i.withVariableArityApplicability(parameters))
 				.filter(o -> o != null).collect(Collectors.toSet());
@@ -179,7 +182,7 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		if (candidates.isEmpty())
 			throw new IllegalArgumentException();
 		else {
-			Set<Invokable<T, ? extends R>> moreSpecificCandidates = candidates
+			Set<Invokable<? super U, ? extends R>> moreSpecificCandidates = candidates
 					.stream().map(i -> i.withLooseApplicability(parameters))
 					.filter(o -> o != null).collect(Collectors.toSet());
 			if (!moreSpecificCandidates.isEmpty())
