@@ -1,5 +1,6 @@
 package uk.co.strangeskies.reflection;
 
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -100,10 +101,7 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 
 	@Override
 	public String toString() {
-		if (type instanceof Class)
-			return type.getTypeName();
-		else
-			return type.toString();
+		return Types.toString(type);
 	}
 
 	public Type getType() {
@@ -236,14 +234,13 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 
 	public Set<Invokable<T, T>> getConstructors() {
 		return Arrays.stream(getRawType().getConstructors())
-				.map(m -> new Invokable<>(this, this, m)).collect(Collectors.toSet());
+				.map(m -> new Invokable<T, T>(this, m)).collect(Collectors.toSet());
 	}
 
 	public Set<? extends Invokable<? super T, ?>> getMethods() {
 		// TODO include inherited methods.
 		return Arrays.stream(getRawType().getMethods())
-				.map(m -> new Invokable<>(this, from(Object.class), m))
-				.collect(Collectors.toSet());
+				.map(m -> new Invokable<>(this, m)).collect(Collectors.toSet());
 	}
 
 	public Set<? extends Invokable<? super T, ?>> getInvokables() {
@@ -294,7 +291,12 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 	}
 
 	public Type getComponentType() {
-		throw new UnsupportedOperationException(); // TODO
+		if (type instanceof Class)
+			return rawType.getComponentType();
+		else if (type instanceof GenericArrayType)
+			return ((GenericArrayType) type).getGenericComponentType();
+		else
+			return null;
 	}
 
 	public Stream<TypeVariable<?>> getTypeParameters() {

@@ -35,7 +35,7 @@ public class Resolver {
 	 * Classes, such that bounds on inference variables may be implied for other
 	 * classes through enclosing, subtype, and supertype relations.
 	 */
-	final Set<GenericDeclaration> captures;
+	private final Set<GenericDeclaration> captures;
 	private final Map<TypeVariable<?>, InferenceVariable<?>> inferenceVariables;
 	private final MultiMap<InferenceVariable<?>, InferenceVariable<?>, ? extends Set<InferenceVariable<?>>> remainingDependencies;
 	private final Map<InferenceVariable<?>, Type> instantiations;
@@ -224,6 +224,14 @@ public class Resolver {
 
 	public boolean isCaptured(GenericDeclaration declaration) {
 		return captures.contains(declaration);
+	}
+
+	public Type substituteCaptures(Type type) {
+		TypeSubstitution substitution = new TypeSubstitution();
+		for (InferenceVariable<?> variable : getInferenceVariables())
+			substitution = substitution.where(variable.getTypeVariable(), variable);
+
+		return substitution.resolve(type);
 	}
 
 	public void incorporateTypes(Type... types) {
@@ -773,8 +781,6 @@ public class Resolver {
 	static class Y<YT> extends TT<Set<YT>> {}
 
 	static class G extends Y<List<String>> {}
-
-	static class P<T extends Number & List<String>> {}
 
 	public static <T> void test() {
 		System.out.println("List with T = String: "

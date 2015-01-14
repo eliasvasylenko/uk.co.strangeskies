@@ -3,6 +3,7 @@ package uk.co.strangeskies.reflection.test;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import uk.co.strangeskies.reflection.Invokable;
 import uk.co.strangeskies.reflection.TypeLiteral;
@@ -16,11 +17,15 @@ public class TestTypeLiteral {
 	public static class B {
 		public <T extends Number> void method(T a, T b) {}
 
-		public <T extends Number, U extends List<? super T>> void method2(
-				List<T> a, U b) {}
+		public <T extends Number, U extends List<? super T>> Map<T, U> method2(
+				List<T> a, U b) {
+			return null;
+		}
 
-		public <T extends Number, U extends List<? super T>> void method(
-				List<? extends T> a, U b) {}
+		public <T extends Number, U extends List<? super T>> U method(
+				List<? extends T> a, U b) {
+			return null;
+		}
 
 		public strictfp <T extends Comparable<? super T>, U extends Collection<? extends Comparable<? super T>>> void bothways(
 				T t, U u) {}
@@ -62,7 +67,7 @@ public class TestTypeLiteral {
 		System.out.println("method");
 		System.out.println(Invokable.of(
 				B.class.getMethod("method", Number.class, Number.class))
-				.withLooseApplicability(Integer.class, Double.class));
+				.withLooseApplicability(int.class, Double.class));
 		System.out.println();
 	}
 }

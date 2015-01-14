@@ -118,10 +118,10 @@ public final class Types {
 	}
 
 	public static String toString(Type type) {
-		if (type instanceof Class && ((Class<?>) type).isArray()) {
+		if (type instanceof Class && getRawType(type).isArray())
 			return toString(((Class<?>) type).getComponentType()) + "[]";
-		} else
-			return Objects.toString(type);
+		else
+			return type.getTypeName();
 	}
 
 	public static boolean isProperType(Type type) {
@@ -321,7 +321,8 @@ public final class Types {
 
 			@Override
 			public String toString() {
-				return Types.toString(type) + "[]";
+				return Types.toString(type)
+						+ (type instanceof IntersectionType ? " " : "") + "[]";
 			}
 
 			@Override

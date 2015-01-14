@@ -4,13 +4,13 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
@@ -21,41 +21,70 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 	private final TypeLiteral<T> receiverType;
 	private final TypeLiteral<R> returnType;
 	private final Executable executable;
+
 	private final List<Type> parameters;
 
-	Invokable(TypeLiteral<T> receiverType, TypeLiteral<R> returnType,
-			Executable executable) {
-		this(new Resolver(), receiverType, returnType, executable);
+	private final BiFunction<T, List<? extends Object>, R> invocationFunction;
+
+	private Invokable(TypeLiteral<T> receiverType, TypeLiteral<R> returnType,
+			Executable executable,
+			BiFunction<T, List<? extends Object>, R> invocationFunction) {
+		this(new Resolver(), receiverType, returnType, executable,
+				invocationFunction);
 	}
 
+	@SuppressWarnings("unchecked")
 	private Invokable(Resolver resolver, TypeLiteral<T> receiverType,
-			TypeLiteral<R> returnType, Executable executable) {
+			TypeLiteral<R> returnType, Executable executable,
+			BiFunction<T, List<? extends Object>, R> invocationFunction) {
 		this.receiverType = receiverType;
-		this.returnType = returnType;
 		this.executable = executable;
+		this.invocationFunction = invocationFunction;
 
 		this.resolver = resolver;
 		resolver.capture(getGenericDeclaration());
 
-		TypeSubstitution substitution = new TypeSubstitution();
-		for (InferenceVariable<?> variable : this.resolver
-				.getInferenceVariables(getGenericDeclaration())) {
-			substitution = substitution.where(variable.getTypeVariable(), variable);
-		}
+		if (receiverType != returnType)
+			returnType = (TypeLiteral<R>) TypeLiteral.from(resolver
+					.resolveType(returnType.getType()));
 
-		parameters = Arrays.stream(getGenericDeclaration().getParameters())
-				.map(Parameter::getParameterizedType).map(substitution::resolve)
-				.map(this.resolver::resolveType).collect(Collectors.toList());
+		this.returnType = returnType;
+
+		parameters = Arrays.stream(executable.getGenericParameterTypes())
+				.map(resolver::resolveType).collect(Collectors.toList());
+	}
+
+	Invokable(TypeLiteral<T> typeLiteral, Constructor<?> constructor) {
+		throw new UnsupportedOperationException(); // TODO
+	}
+
+	Invokable(TypeLiteral<T> typeLiteral, Method method) {
+		throw new UnsupportedOperationException(); // TODO
 	}
 
 	public static <T> Invokable<T, T> of(Constructor<T> constructor) {
 		TypeLiteral<T> type = new TypeLiteral<>(constructor.getDeclaringClass());
-		return new Invokable<>(type, type, constructor);
+		return new Invokable<>(type, type, constructor, (r, a) -> {
+			try {
+				return constructor.newInstance(a);
+			} catch (Exception e) {
+				throw new TypeInferenceException("Cannot invoke constructor '"
+						+ constructor + "' with arguments '" + a + "'.");
+			}
+		});
 	}
 
 	public static Invokable<?, ?> of(Method method) {
 		TypeLiteral<?> type = new TypeLiteral<>(method.getDeclaringClass());
-		return new Invokable<>(type, new TypeLiteral<>(Object.class), method);
+		return new Invokable<>(type,
+				TypeLiteral.from(method.getGenericReturnType()), method, (r, a) -> {
+					try {
+						return method.invoke(r, a);
+					} catch (Exception e) {
+						throw new TypeInferenceException("Cannot invoke method '" + method
+								+ "' on receiver '" + r + "' with arguments '" + a + "'.");
+					}
+				});
 	}
 
 	public static Invokable<?, ?> of(Executable executable) {
@@ -112,11 +141,6 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 		else if (isPublic())
 			builder.append("public ");
 
-		if (isAbstract())
-			builder.append("abstract ");
-		else if (isFinal())
-			builder.append("final ");
-
 		if (isNative())
 			builder.append("native ");
 		if (isStatic())
@@ -125,6 +149,11 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 			builder.append("strictfp ");
 		if (isSynchronized())
 			builder.append("synchronized ");
+
+		if (isAbstract())
+			builder.append("abstract ");
+		else if (isFinal())
+			builder.append("final ");
 
 		return builder
 				.append(returnType)
@@ -234,12 +263,13 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 					Kind.LOOSE_COMPATIBILILTY, argument, parameter));
 		}
 
-		System.out.println(resolver.infer());
+		resolver.infer();
 
 		if (!resolver.validate())
 			return null;
 
-		return new Invokable<>(resolver, receiverType, returnType, executable);
+		return new Invokable<>(resolver, receiverType, returnType, executable,
+				invocationFunction);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -277,7 +307,7 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 	}
 
 	public R invoke(T receiver, List<? extends Object> arguments) {
-		throw new UnsupportedOperationException(); // TODO
+		return invocationFunction.apply(receiver, arguments);
 	}
 
 	public R invokeSafely(T receiver, TypedObject<?>... arguments) {
