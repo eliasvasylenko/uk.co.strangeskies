@@ -33,17 +33,17 @@ public class TestTypeLiteral {
 		System.out.println(new TypeLiteral<List<String>>() {});
 		System.out.println();
 
-		System.out.println("aslist");
-		System.out.println(new ApplicabilityVerifier(Invokable.of(Arrays.class
-				.getMethod("asList", Object[].class)), null, int.class, double.class)
-				.verifyVariableArityParameterApplicability());
-		System.out.println();
-
 		System.out.println("bothways");
 		System.out.println(new ApplicabilityVerifier(Invokable.of(B.class
 				.getMethod("bothways", Comparable.class, Collection.class)), null,
 				String.class, new TypeLiteral<List<String>>() {}.getType())
 				.verifyLooseParameterApplicability());
+		System.out.println();
+
+		System.out.println("aslist");
+		System.out.println(new ApplicabilityVerifier(Invokable.of(Arrays.class
+				.getMethod("asList", Object[].class)), null, int.class, double.class)
+				.verifyVariableArityParameterApplicability());
 		System.out.println();
 
 		System.out.println("method");

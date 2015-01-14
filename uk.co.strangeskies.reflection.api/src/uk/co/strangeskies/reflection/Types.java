@@ -23,7 +23,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.checkerframework.checker.javari.qual.ReadOnly;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
+
+import uk.co.strangeskies.utilities.Property;
 
 public final class Types {
 	public static final Map<Class<?>, Class<?>> WRAPPED_PRIMITIVES = Collections
@@ -246,7 +249,7 @@ public final class Types {
 			return false;
 	}
 
-	private static boolean isContainedBy(Type from, Type to) {
+	public static boolean isContainedBy(Type from, Type to) {
 		if (to.equals(from))
 			return true;
 
@@ -280,6 +283,14 @@ public final class Types {
 		else if (!isPrimitive(from) && isPrimitive(to))
 			from = unwrap(from);
 		return isStrictInvocationContextCompatible(from, to);
+	}
+
+	public static void validate(Type type) {
+		RecursiveTypeVisitor.build().visitBounds().visitEnclosedTypes()
+				.visitEnclosingTypes().visitParameters().visitSupertypes()
+				.parameterizedTypeVisitor(TypeLiteral::from)
+				.intersectionTypeVisitor(i -> IntersectionType.of(i)).create()
+				.visit(type);
 	}
 
 	public static Set<Type> getAllMentionedBy(Type type, Predicate<Type> condition) {
@@ -506,6 +517,41 @@ public final class Types {
 					: rawType.getTypeParameters()[i]);
 		}
 		return arguments;
+	}
+
+	public static ParameterizedType parameterizedTypeProxy(
+			Property<?, ParameterizedType> source) {
+		return new ParameterizedType() {
+			@Override
+			public @NonNull Type getRawType() {
+				return source.get().getRawType();
+			}
+
+			@Override
+			public Type getOwnerType() {
+				return source.get().getOwnerType();
+			}
+
+			@Override
+			public @NonNull Type @NonNull [] getActualTypeArguments() {
+				return source.get().getActualTypeArguments();
+			}
+
+			@Override
+			public String toString() {
+				return source.get().toString();
+			}
+
+			@Override
+			public boolean equals(@Nullable @ReadOnly Object arg0) {
+				return source.get().equals(arg0);
+			}
+
+			@Override
+			public int hashCode() {
+				return source.get().hashCode();
+			}
+		};
 	}
 
 	private static final class ParameterizedTypeImpl implements

@@ -45,7 +45,7 @@ public class Resolver {
 	 * But it doesn't hurt anything, and it gives us soft-references for values
 	 * out of the box.
 	 */
-	private static final CacheComputingMap<Collection<Type>, IdentityProperty<IntersectionType>> LEAST_UPPER_BOUNDS = new CacheComputingMap<>(
+	private static final CacheComputingMap<Set<ParameterizedType>, IdentityProperty<ParameterizedType>> BESTS = new CacheComputingMap<>(
 			c -> new IdentityProperty<>(), true);
 
 	public Resolver(BoundSet bounds) {
@@ -447,48 +447,43 @@ public class Resolver {
 		/*
 		 * the bound set contains a bound of the form G<..., αi, ...> =
 		 * capture(G<...>) for some i (1 ≤ i ≤ n), or;
-		 * 
+		 *
 		 * If the bound set produced in the step above contains the bound false;
-		 * 
+		 *
 		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
 		 */
 		for (InferenceVariable<?> variable : minimalSet)
 			instantiations.put(variable, null);
 	}
 
-	private static Type leastUpperBound(Type... lowerBounds) {
-		return leastUpperBound(Arrays.asList(lowerBounds));
+	public static Type leastUpperBound(Type... upperBounds) {
+		return leastUpperBound(Arrays.asList(upperBounds));
 	}
 
-	private static Type leastUpperBound(Collection<Type> lowerBounds) {
-		if (lowerBounds.size() == 1)
+	public static Type leastUpperBound(Collection<Type> upperBounds) {
+		Type upperBound = leastUpperBoundImpl(upperBounds);
+
+		/*
+		 * Not sure if this is necessary! But it's cheap enough to check. Can't
+		 * validate IntersectionTypes and ParameterizedTypes as we create them, as
+		 * they may contain uninitialised proxies in place of ParameterizedTypes.
+		 */
+		Types.validate(upperBound);
+
+		return upperBound;
+	}
+
+	private static Type leastUpperBoundImpl(Collection<Type> upperBounds) {
+		if (upperBounds.size() == 1)
 			/*
 			 * If k = 1, then the lub is the type itself: lub(U) = U.
 			 */
-			return lowerBounds.iterator().next();
+			return upperBounds.iterator().next();
 		else {
-			/*
-			 * Proxy guard against recursive generation of infinite types
-			 */
-			IdentityProperty<IntersectionType> leastUpperBoundResult;
-
-			synchronized (LEAST_UPPER_BOUNDS) {
-				if (LEAST_UPPER_BOUNDS.keySet().contains(lowerBounds))
-					return LEAST_UPPER_BOUNDS.get(lowerBounds).get();
-
-				leastUpperBoundResult = new IdentityProperty<>();
-				LEAST_UPPER_BOUNDS.putGet(lowerBounds).set(new IntersectionType() {
-					@Override
-					public Type[] getTypes() {
-						return leastUpperBoundResult.get().getTypes();
-					}
-				});
-			}
-
 			/*
 			 * For each Ui (1 ≤ i ≤ k):
 			 */
-			Iterator<Type> lowerBoundsIterator = lowerBounds.iterator();
+			Iterator<Type> lowerBoundsIterator = upperBounds.iterator();
 			MultiMap<Class<?>, ParameterizedType, ? extends Set<ParameterizedType>> erasedCandidates = new MultiHashMap<>(
 					HashSet::new);
 			erasedCandidates.addAll(getErasedSupertypes(lowerBoundsIterator.next()));
@@ -515,11 +510,7 @@ public class Resolver {
 									new ArrayList<ParameterizedType>(e.getValue())))
 					.collect(Collectors.toList());
 
-			leastUpperBoundResult.set(IntersectionType.uncheckedOf(bestTypes));
-
-			System.out.println(" HH????         " + leastUpperBoundResult.get());
-
-			return leastUpperBoundResult.get();
+			return IntersectionType.uncheckedOf(bestTypes);
 		}
 	}
 
@@ -551,6 +542,19 @@ public class Resolver {
 			return parameterization == null ? rawClass : parameterization;
 		}
 
+		/*
+		 * Proxy guard against recursive generation of infinite types
+		 */
+		IdentityProperty<ParameterizedType> bestResult;
+		synchronized (BESTS) {
+			if (BESTS.keySet().contains(new HashSet<>(parameterizations)))
+				return BESTS.get(new HashSet<>(parameterizations)).get();
+
+			bestResult = new IdentityProperty<>();
+			BESTS.putGet(new HashSet<>(parameterizations)).set(
+					Types.parameterizedTypeProxy(bestResult));
+		}
+
 		Map<TypeVariable<?>, Type> leastContainingParameterization = new HashMap<>();
 
 		Class<?> enclosingClass = rawClass;
@@ -576,8 +580,11 @@ public class Resolver {
 			}
 		} while ((enclosingClass = enclosingClass.getEnclosingClass()) != null);
 
-		Type best = Types.uncheckedParameterizedType(rawClass,
-				leastContainingParameterization);
+		ParameterizedType best = (ParameterizedType) Types
+				.uncheckedParameterizedType(rawClass, leastContainingParameterization);
+
+		bestResult.set(best);
+
 		return best;
 	}
 
@@ -596,8 +603,8 @@ public class Resolver {
 					/*
 					 * lcta(? extends U, ? extends V) = ? extends lub(U, V)
 					 */
-					return Types.upperBoundedWildcard(leastUpperBound(argumentU,
-							argumentV));
+					return Types.upperBoundedWildcard(leastUpperBoundImpl(Arrays.asList(
+							argumentU, argumentV)));
 				} else {
 					/*
 					 * lcta(? extends U, ? super V) = U if U = V, otherwise ?
@@ -617,8 +624,8 @@ public class Resolver {
 				/*
 				 * lcta(U, ? extends V) = ? extends lub(U, V)
 				 */
-				return Types
-						.upperBoundedWildcard(leastUpperBound(argumentU, argumentV));
+				return Types.upperBoundedWildcard(leastUpperBoundImpl(Arrays.asList(
+						argumentU, argumentV)));
 			} else {
 				/*
 				 * lcta(U, ? super V) = ? super glb(U, V)
@@ -631,7 +638,8 @@ public class Resolver {
 			 * lcta(U, V) = U if U = V, otherwise ? extends lub(U, V)
 			 */
 			return argumentU.equals(argumentV) ? argumentU : Types
-					.upperBoundedWildcard(leastUpperBound(argumentU, argumentV));
+					.upperBoundedWildcard(leastUpperBoundImpl(Arrays.asList(argumentU,
+							argumentV)));
 		}
 	}
 
@@ -660,27 +668,12 @@ public class Resolver {
 		return supertypes;
 	}
 
-	private static Type greatestLowerBound(Type... upperBounds) {
-		return greatestLowerBound(Arrays.asList(upperBounds));
+	public static Type greatestLowerBound(Type... lowerBounds) {
+		return greatestLowerBound(Arrays.asList(lowerBounds));
 	}
 
-	private static Type greatestLowerBound(Collection<Type> upperBounds) {
-		if (upperBounds.size() == 1)
-			return upperBounds.iterator().next();
-		else
-			return validateGreatestLowerBound(new ArrayList<>(upperBounds));
-	}
-
-	public static Type validateGreatestLowerBound(List<Type> types) {
-		Type intersectionType = IntersectionType.of(types);
-
-		for (int i = 0; i < types.size(); i++)
-			for (int j = i + 1; j < types.size(); j++)
-				if (!Types.isAssignable(types.get(j), types.get(i))
-						&& !Types.isAssignable(types.get(i), types.get(j)))
-					throw new TypeInferenceException("Type '" + intersectionType
-							+ "' is not a valid greater lowest bound.");
-		return intersectionType;
+	public static Type greatestLowerBound(Collection<? extends Type> lowerBounds) {
+		return IntersectionType.of(lowerBounds);
 	}
 
 	public Type resolveType(Type type) {

@@ -162,7 +162,8 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		if (superType instanceof Class)
 			capturedType = type;
 		else
-			capturedType = resolveType(Types.parameterizedType(type).getType());
+			capturedType = resolveType(Types.uncheckedParameterizedType(type,
+					new HashMap<>()));
 
 		return (TypeLiteral<? extends U>) TypeLiteral.from(capturedType);
 	}

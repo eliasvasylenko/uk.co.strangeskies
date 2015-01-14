@@ -35,21 +35,24 @@ public abstract class IntersectionType implements Type {
 		if (flattenedTypes.size() == 1)
 			return flattenedTypes.iterator().next();
 
-		Type rawClassType = null;
+		Type mostSpecificClass = null;
 		for (Type type : new ArrayList<>(flattenedTypes)) {
 			Class<?> rawType = Types.getRawType(type);
-			if (!rawType.isInterface())
-				if (rawClassType == null)
-					rawClassType = rawType;
-				else
+			if (!rawType.isInterface()) {
+				flattenedTypes.remove(type);
+				if (mostSpecificClass == null)
+					mostSpecificClass = type;
+				else if (Types.isAssignable(type, mostSpecificClass))
+					mostSpecificClass = type;
+				else if (!Types.isAssignable(mostSpecificClass, type))
 					throw new TypeInferenceException("Illegal intersection type '"
 							+ flattenedTypes
 							+ "', cannot contain both of the non-interface classes '"
-							+ rawClassType + "' and '" + type + "'.");
+							+ mostSpecificClass + "' and '" + type + "'.");
+			}
 		}
-		if (rawClassType != null) {
-			flattenedTypes.remove(rawClassType);
-			flattenedTypes.add(0, rawClassType);
+		if (mostSpecificClass != null) {
+			flattenedTypes.add(0, mostSpecificClass);
 		}
 
 		try {

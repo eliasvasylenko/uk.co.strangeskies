@@ -82,7 +82,7 @@ public class ConstraintFormula {
 			 * there exists no type of the form G<...> that is a supertype of S, but
 			 * the raw type G is a supertype of S, then the constraint reduces to
 			 * true.
-			 * 
+			 *
 			 * Otherwise, if T is an array type of the form G<T1, ..., Tn>[]k, and
 			 * there exists no type of the form G<...>[]k that is a supertype of S,
 			 * but the raw type G[]k is a supertype of S, then the constraint reduces
@@ -179,25 +179,18 @@ public class ConstraintFormula {
 						for (TypeVariable<?> parameter : rawType.getTypeParameters()) {
 							Type toArgument = TypeLiteral.from(to).resolveType(parameter);
 
-							System.out.println("   to " + to + " from " + from);
-
-							System.out.println("     " + to + "[" + parameter + "] = "
-									+ toArgument);
-
 							if (toArgument instanceof TypeVariable
 									&& ((TypeVariable<?>) toArgument).getGenericDeclaration()
 											.equals(rawType)) {
 								/*
 								 * Again:
-								 * 
+								 *
 								 * If no such type exists, the constraint reduces to false.
 								 */
 								boundConsumer.acceptFalsehood();
 								return;
 							}
 							Type fromArgument = TypeLiteral.from(from).resolveType(parameter);
-							System.out.println("     " + from + "[" + parameter + "] = "
-									+ fromArgument);
 
 							identifiedPairs.add(new Pair<>(fromArgument, toArgument));
 						}

@@ -6,9 +6,14 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import uk.co.strangeskies.utilities.IdentityComparator;
+import uk.co.strangeskies.utilities.IdentityProperty;
 
 // TODO check substitutions are valid!!!!!
 public class TypeSubstitution {
@@ -28,8 +33,13 @@ public class TypeSubstitution {
 	}
 
 	public Type resolve(Type type) {
-		Type mapping = this.mapping.apply(type);
+		return resolve(type, new TreeMap<>(
+				new IdentityComparator<ParameterizedType>()));
+	}
 
+	private Type resolve(Type type,
+			Map<ParameterizedType, ParameterizedType> visited) {
+		Type mapping = this.mapping.apply(type);
 		if (mapping != null)
 			return mapping;
 		else if (type == null)
@@ -39,31 +49,46 @@ public class TypeSubstitution {
 		else if (type instanceof TypeVariable)
 			return type;
 		else if (type instanceof IntersectionType)
-			return IntersectionType.of(Arrays
-					.stream(((IntersectionType) type).getTypes()).map(this::resolve)
-					.collect(Collectors.toList()));
+			return IntersectionType.uncheckedOf(Arrays
+					.stream(((IntersectionType) type).getTypes())
+					.map(t -> resolve(t, visited)).collect(Collectors.toList()));
 		else if (type instanceof WildcardType)
 			if (((WildcardType) type).getLowerBounds().length > 0)
-				return Types.lowerBoundedWildcard(resolve(IntersectionType
-						.of(((WildcardType) type).getLowerBounds())));
+				return Types.lowerBoundedWildcard(resolve(
+						IntersectionType.of(((WildcardType) type).getLowerBounds()),
+						visited));
 			else if (((WildcardType) type).getUpperBounds().length > 0)
-				return Types.upperBoundedWildcard(resolve(IntersectionType
-						.of(((WildcardType) type).getUpperBounds())));
+				return Types.upperBoundedWildcard(resolve(
+						IntersectionType.of(((WildcardType) type).getUpperBounds()),
+						visited));
 			else
 				return Types.unboundedWildcard();
 		else if (type instanceof GenericArrayType)
-			return Types.genericArrayType(resolve(((GenericArrayType) type)
-					.getGenericComponentType()));
+			return Types.genericArrayType(resolve(
+					((GenericArrayType) type).getGenericComponentType(), visited));
 		else if (type instanceof ParameterizedType)
-			return resolve((ParameterizedType) type);
+			return resolve((ParameterizedType) type, visited);
 
 		throw new IllegalArgumentException("Cannot resolve unrecognised type '"
 				+ type + "' of class'" + type.getClass() + "'.");
 	}
 
-	public Type resolve(ParameterizedType type) {
-		return Types.uncheckedParameterizedType(resolve(type.getOwnerType()),
-				Types.getRawType(type), Arrays.stream(type.getActualTypeArguments())
-						.map(t -> resolve(t)).collect(Collectors.toList()));
+	private Type resolve(ParameterizedType type,
+			Map<ParameterizedType, ParameterizedType> visited) {
+		/*
+		 * Here we deal with recursion in infinite types.
+		 */
+		if (visited.containsKey(type))
+			return visited.get(type);
+
+		IdentityProperty<ParameterizedType> result = new IdentityProperty<>();
+		visited.put(type, Types.parameterizedTypeProxy(result));
+
+		result.set(Types.uncheckedParameterizedType(
+				resolve(type.getOwnerType(), visited), Types.getRawType(type), Arrays
+						.stream(type.getActualTypeArguments())
+						.map(t -> resolve(t, visited)).collect(Collectors.toList())));
+
+		return result.get();
 	}
 }
