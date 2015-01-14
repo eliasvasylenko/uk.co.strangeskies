@@ -33,7 +33,7 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 		this.executable = executable;
 
 		this.resolver = resolver;
-		resolver.incorporateGenericDeclaration(getGenericDeclaration());
+		resolver.capture(getGenericDeclaration());
 
 		TypeSubstitution substitution = new TypeSubstitution();
 		for (InferenceVariable<?> variable : this.resolver
@@ -83,11 +83,11 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 
 	public <U extends T> Invokable<U, ? extends R> withReceiverType(
 			TypeLiteral<U> type) {
-		return null;
+		throw new UnsupportedOperationException(); // TODO
 	}
 
 	public <S extends R> Invokable<T, S> withTargetType(TypeLiteral<S> type) {
-		return null;
+		throw new UnsupportedOperationException(); // TODO
 	}
 
 	/*
@@ -97,7 +97,7 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 	 */
 	public <U extends R> Invokable<T, U> withInferredTypes(
 			TypeLiteral<U> targetType, TypeLiteral<?>... parameters) {
-		return null;
+		throw new UnsupportedOperationException(); // TODO
 	}
 
 	/*
@@ -155,7 +155,7 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 					nextParameter = null;
 				}
 			}
-			resolver.incorporate(new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY,
+			resolver.incorporateConstraint(new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY,
 					argument, parameter));
 		}
 
@@ -176,7 +176,7 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 	}
 
 	public List<Type> getTypeArguments() {
-		return null;
+		throw new UnsupportedOperationException(); // TODO
 	}
 
 	public Invokable<T, ? extends R> withTypeArgument(
@@ -187,7 +187,7 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 			resolver.incorporateInstantiation(variable, instantiation);
 		}
 
-		return null;
+		throw new UnsupportedOperationException(); // TODO
 	}
 
 	public Invokable<T, ? extends R> withTypeArguments(Type... typeArguments) {
@@ -195,7 +195,7 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 	}
 
 	public Invokable<T, ? extends R> withTypeArguments(List<Type> typeArguments) {
-		return null;
+		throw new UnsupportedOperationException(); // TODO
 	}
 
 	public R invoke(T receiver, Object... arguments) {
@@ -203,7 +203,7 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 	}
 
 	public R invoke(T receiver, List<? extends Object> arguments) {
-		return null;
+		throw new UnsupportedOperationException(); // TODO
 	}
 
 	public R invokeSafely(T receiver, TypedObject<?>... arguments) {
@@ -211,6 +211,6 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 	}
 
 	public R invokeSafely(T receiver, List<? extends TypedObject<?>> arguments) {
-		return null;
+		throw new UnsupportedOperationException(); // TODO
 	}
 }

@@ -30,7 +30,7 @@ public class ApplicabilityVerifier {
 	public ApplicabilityVerifier(Invokable<?, ?> invokable, Type returnType,
 			List<Type> arguments) {
 		resolver = new Resolver();
-		resolver.incorporateGenericDeclaration(invokable.getGenericDeclaration());
+		resolver.capture(invokable.getGenericDeclaration());
 
 		TypeSubstitution resolver = new TypeSubstitution();
 		for (InferenceVariable<?> variable : this.resolver
@@ -91,12 +91,11 @@ public class ApplicabilityVerifier {
 							nextParameter = null;
 						}
 					}
-					resolver.incorporate(new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY,
+					resolver.incorporateConstraint(new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY,
 							argument, parameter));
 				}
 
 				System.out.println(resolver.infer());
-				System.out.println(resolver.bounds);
 
 				variableArityParameterApplicability = resolver.validate();
 			}

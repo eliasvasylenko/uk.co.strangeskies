@@ -58,7 +58,7 @@ public class TestTypeLiteral {
 		System.out.println(new ApplicabilityVerifier(Invokable.of(B.class
 				.getMethod("method2", List.class, List.class)), null,
 				new TypeLiteral<List<Integer>>() {}.getType(),
-				new TypeLiteral<List<Integer>>() {}.getType())
+				new TypeLiteral<List<Comparable<Integer>>>() {}.getType())
 				.verifyLooseParameterApplicability());
 		System.out.println();
 

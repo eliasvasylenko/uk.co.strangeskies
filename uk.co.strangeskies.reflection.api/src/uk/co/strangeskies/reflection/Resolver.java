@@ -26,7 +26,7 @@ import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 
 public class Resolver {
-	BoundSet bounds;
+	private BoundSet bounds;
 
 	/*
 	 * We maintain a set of generic declarations which have already been
@@ -69,6 +69,10 @@ public class Resolver {
 		remainingDependencies = new MultiHashMap<>(HashSet::new,
 				that.remainingDependencies);
 		instantiations = new HashMap<>(that.instantiations);
+	}
+
+	public BoundSet getBounds() {
+		return bounds;
 	}
 
 	private void addRemainingDependency(InferenceVariable<?> variable,
@@ -194,7 +198,7 @@ public class Resolver {
 		}));
 	}
 
-	public void incorporateGenericDeclaration(GenericDeclaration declaration) {
+	public void capture(GenericDeclaration declaration) {
 		if (captures.add(declaration)) {
 			List<? extends InferenceVariable<?>> newInferenceVariables = InferenceVariable
 					.overGenericTypeContext(this, declaration);
@@ -218,11 +222,15 @@ public class Resolver {
 		}
 	}
 
+	public boolean isCaptured(GenericDeclaration declaration) {
+		return captures.contains(declaration);
+	}
+
 	public void incorporateTypes(Type... types) {
 		new TypeVisitor() {
 			@Override
 			protected void visitClass(Class<?> type) {
-				incorporateGenericDeclaration(type);
+				capture(type);
 			}
 
 			@Override
@@ -242,7 +250,7 @@ public class Resolver {
 
 			@Override
 			protected void visitTypeVariable(TypeVariable<?> type) {
-				incorporateGenericDeclaration(type.getGenericDeclaration());
+				capture(type.getGenericDeclaration());
 			}
 
 			@Override
@@ -254,7 +262,7 @@ public class Resolver {
 	}
 
 	public void incorporateParameterizedType(ParameterizedType type) {
-		incorporateGenericDeclaration(Types.getRawType(type));
+		capture(Types.getRawType(type));
 
 		TypeSubstitution substitution = new TypeSubstitution();
 		for (InferenceVariable<?> variable : inferenceVariables.values())
@@ -266,11 +274,22 @@ public class Resolver {
 			Type actualTypeArgument = type.getActualTypeArguments()[i];
 			actualTypeArgument = substitution.resolve(actualTypeArgument);
 
-			incorporate(new ConstraintFormula(Kind.EQUALITY,
+			incorporateConstraint(new ConstraintFormula(Kind.EQUALITY,
 					inferenceVariables.get(typeParameter), actualTypeArgument));
 		}
 
 		recalculateRemainingDependencies();
+	}
+
+	public void incorporateConstraint(ConstraintFormula constraintFormula) {
+		bounds.incorporate(constraintFormula);
+	}
+
+	public void incorporateInstantiation(TypeVariable<?> variable,
+			Type instantiation) {
+		capture(variable.getGenericDeclaration());
+		bounds.incorporate(new ConstraintFormula(Kind.EQUALITY,
+				getInferenceVariable(variable), instantiation));
 	}
 
 	public Map<InferenceVariable<?>, Type> infer(GenericDeclaration context) {
@@ -404,8 +423,6 @@ public class Resolver {
 						instantiationCandidate = greatestLowerBound(upperBounds);
 					}
 					instantiationCandidates.put(variable, instantiationCandidate);
-					System.out.println("    eqal{{{{ " + variable + " = "
-							+ instantiationCandidate);
 					bounds.incorporate().acceptEquality(variable, instantiationCandidate);
 				}
 			} catch (TypeInferenceException e) {
@@ -430,9 +447,9 @@ public class Resolver {
 		/*
 		 * the bound set contains a bound of the form G<..., αi, ...> =
 		 * capture(G<...>) for some i (1 ≤ i ≤ n), or;
-		 *
+		 * 
 		 * If the bound set produced in the step above contains the bound false;
-		 *
+		 * 
 		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
 		 */
 		for (InferenceVariable<?> variable : minimalSet)
@@ -460,8 +477,12 @@ public class Resolver {
 					return LEAST_UPPER_BOUNDS.get(lowerBounds).get();
 
 				leastUpperBoundResult = new IdentityProperty<>();
-				LEAST_UPPER_BOUNDS.putGet(lowerBounds).set(
-						() -> leastUpperBoundResult.get().getTypes());
+				LEAST_UPPER_BOUNDS.putGet(lowerBounds).set(new IntersectionType() {
+					@Override
+					public Type[] getTypes() {
+						return leastUpperBoundResult.get().getTypes();
+					}
+				});
 			}
 
 			/*
@@ -494,7 +515,9 @@ public class Resolver {
 									new ArrayList<ParameterizedType>(e.getValue())))
 					.collect(Collectors.toList());
 
-			leastUpperBoundResult.set(IntersectionType.of(bestTypes));
+			leastUpperBoundResult.set(IntersectionType.uncheckedOf(bestTypes));
+
+			System.out.println(" HH????         " + leastUpperBoundResult.get());
 
 			return leastUpperBoundResult.get();
 		}
@@ -553,7 +576,7 @@ public class Resolver {
 			}
 		} while ((enclosingClass = enclosingClass.getEnclosingClass()) != null);
 
-		Type best = Types.parameterizedType(rawClass,
+		Type best = Types.uncheckedParameterizedType(rawClass,
 				leastContainingParameterization);
 		return best;
 	}
@@ -645,17 +668,16 @@ public class Resolver {
 		if (upperBounds.size() == 1)
 			return upperBounds.iterator().next();
 		else
-			return validateGreatestLowerBound(IntersectionType.of(upperBounds));
+			return validateGreatestLowerBound(new ArrayList<>(upperBounds));
 	}
 
-	public static IntersectionType validateGreatestLowerBound(
-			IntersectionType intersectionType) {
-		Type[] types = intersectionType.getTypes();
+	public static Type validateGreatestLowerBound(List<Type> types) {
+		Type intersectionType = IntersectionType.of(types);
 
-		for (int i = 0; i < types.length; i++)
-			for (int j = i + 1; j < types.length; j++)
-				if (!Types.isAssignable(types[j], types[i])
-						&& !Types.isAssignable(types[i], types[j]))
+		for (int i = 0; i < types.size(); i++)
+			for (int j = i + 1; j < types.size(); j++)
+				if (!Types.isAssignable(types.get(j), types.get(i))
+						&& !Types.isAssignable(types.get(i), types.get(j)))
 					throw new TypeInferenceException("Type '" + intersectionType
 							+ "' is not a valid greater lowest bound.");
 		return intersectionType;
@@ -679,21 +701,10 @@ public class Resolver {
 		if (instantiation != null)
 			return instantiation;
 		else {
-			incorporateGenericDeclaration(typeVariable.getGenericDeclaration());
+			capture(typeVariable.getGenericDeclaration());
 
 			return resolveInferenceVariable(inferenceVariables.get(typeVariable));
 		}
-	}
-
-	public void incorporate(ConstraintFormula constraintFormula) {
-		bounds.incorporate(constraintFormula);
-	}
-
-	public void incorporateInstantiation(TypeVariable<?> variable,
-			Type instantiation) {
-		incorporateGenericDeclaration(variable.getGenericDeclaration());
-		bounds.incorporate(new ConstraintFormula(Kind.EQUALITY,
-				getInferenceVariable(variable), instantiation));
 	}
 
 	public boolean validate(InferenceVariable<?>... variables) {
@@ -740,7 +751,6 @@ public class Resolver {
 			if (instantiation.get() == null)
 				instantiation.set(variable);
 		}
-		System.out.println("==> " + variable + " INSt= " + instantiation.get());
 
 		return instantiation.get();
 	}
@@ -751,13 +761,13 @@ public class Resolver {
 
 	public Set<InferenceVariable<?>> getInferenceVariables(
 			GenericDeclaration declaration) {
-		incorporateGenericDeclaration(declaration);
+		capture(declaration);
 		return Arrays.stream(declaration.getTypeParameters())
 				.map(this::getInferenceVariable).collect(Collectors.toSet());
 	}
 
 	public InferenceVariable<?> getInferenceVariable(TypeVariable<?> typeVariable) {
-		incorporateGenericDeclaration(typeVariable.getGenericDeclaration());
+		capture(typeVariable.getGenericDeclaration());
 		return inferenceVariables.get(typeVariable);
 	}
 
@@ -771,18 +781,19 @@ public class Resolver {
 
 	static class G extends Y<List<String>> {}
 
+	static class P<T extends Number & List<String>> {}
+
 	public static <T> void test() {
+		System.out.println("List with T = String: "
+				+ new TypeLiteral<List<T>>() {}.withTypeArgument(
+						new TypeParameter<T>() {}.getType(), String.class));
+
 		System.out.println("TYPELITTEST: " + new TypeLiteral<String>() {});
 		System.out.println("TYPELITTEST-2: " + new Y<Integer>() {});
 		System.out.println("TYPELITTEST-3: " + new G());
 
-		/*-
-		stringsType = new TypeLiteral<List<String>>() {};
-		resolver.incorporateEquality(stringsType,
-				new TypeParameter<T>() {}.getType(), Short.class);
-		System.out.println(resolver.resolve(stringsType,
-				new TypeLiteral<Map<String[], List<T>[][]>>() {}.getType()));
-		System.out.println();
-		 */
+		System.out.println("type test: "
+				+ new TypeLiteral<String>() {}
+						.resolveSupertypeParameters(Comparable.class));
 	}
 }

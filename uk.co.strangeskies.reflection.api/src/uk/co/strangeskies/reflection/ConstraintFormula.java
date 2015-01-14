@@ -82,7 +82,7 @@ public class ConstraintFormula {
 			 * there exists no type of the form G<...> that is a supertype of S, but
 			 * the raw type G is a supertype of S, then the constraint reduces to
 			 * true.
-			 *
+			 * 
 			 * Otherwise, if T is an array type of the form G<T1, ..., Tn>[]k, and
 			 * there exists no type of the form G<...>[]k that is a supertype of S,
 			 * but the raw type G[]k is a supertype of S, then the constraint reduces
@@ -189,7 +189,7 @@ public class ConstraintFormula {
 											.equals(rawType)) {
 								/*
 								 * Again:
-								 *
+								 * 
 								 * If no such type exists, the constraint reduces to false.
 								 */
 								boundConsumer.acceptFalsehood();
@@ -358,8 +358,7 @@ public class ConstraintFormula {
 					/*
 					 * If T is a wildcard of the form ? extends T':
 					 */
-					IntersectionType intersectionT = IntersectionType.of(to
-							.getUpperBounds());
+					Type intersectionT = IntersectionType.of(to.getUpperBounds());
 
 					if (!(from instanceof WildcardType)) {
 						/*
@@ -401,8 +400,7 @@ public class ConstraintFormula {
 				/*
 				 * If T is a wildcard of the form ? super T':
 				 */
-				IntersectionType intersectionT = IntersectionType.of(to
-						.getLowerBounds());
+				Type intersectionT = IntersectionType.of(to.getLowerBounds());
 
 				if (!(from instanceof WildcardType)) {
 					/*
@@ -532,13 +530,10 @@ public class ConstraintFormula {
 				 * arguments A1, ..., An, the constraint reduces to the following new
 				 * constraints: for all i (1 ≤ i ≤ n), ‹Bi = Ai›.
 				 */
-				Class<?> rawClass = Types.getRawType(from);
-				do {
-					for (TypeVariable<?> type : rawClass.getTypeParameters())
-						new ConstraintFormula(Kind.EQUALITY, TypeLiteral.from(from)
+				Types.getTypeParameters(Types.getRawType(from)).forEach(
+						type -> new ConstraintFormula(Kind.EQUALITY, TypeLiteral.from(from)
 								.resolveType(type), TypeLiteral.from(to).resolveType(type))
-								.reduceInto(boundConsumer);
-				} while ((rawClass = rawClass.getEnclosingClass()) != null);
+								.reduceInto(boundConsumer));
 			}
 		}
 	}

@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+// TODO check substitutions are valid!!!!!
 public class TypeSubstitution {
 	private final Function<Type, Type> mapping;
 
@@ -31,7 +32,7 @@ public class TypeSubstitution {
 
 		if (mapping != null)
 			return mapping;
-		if (type == null)
+		else if (type == null)
 			return null;
 		else if (type instanceof Class)
 			return type;
@@ -55,13 +56,13 @@ public class TypeSubstitution {
 					.getGenericComponentType()));
 		else if (type instanceof ParameterizedType)
 			return resolve((ParameterizedType) type);
-		else
-			throw new IllegalArgumentException("Cannot resolve unrecognised type '"
-					+ type + "' of class'" + type.getClass() + "'.");
+
+		throw new IllegalArgumentException("Cannot resolve unrecognised type '"
+				+ type + "' of class'" + type.getClass() + "'.");
 	}
 
 	public Type resolve(ParameterizedType type) {
-		return Types.parameterizedType(resolve(type.getOwnerType()),
+		return Types.uncheckedParameterizedType(resolve(type.getOwnerType()),
 				Types.getRawType(type), Arrays.stream(type.getActualTypeArguments())
 						.map(t -> resolve(t)).collect(Collectors.toList()));
 	}

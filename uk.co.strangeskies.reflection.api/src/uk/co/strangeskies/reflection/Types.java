@@ -20,6 +20,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.checkerframework.checker.javari.qual.ReadOnly;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -76,8 +77,7 @@ public final class Types {
 					(getRawType(((GenericArrayType) type).getGenericComponentType())), 0)
 					.getClass();
 		} else if (type instanceof IntersectionType) {
-			return Array.newInstance(
-					(getRawType(((IntersectionType) type).getTypes()[0])), 0).getClass();
+			return getRawType(((IntersectionType) type).getTypes()[0]);
 		}
 		throw new IllegalArgumentException("Type of type '" + type
 				+ "' is unsupported.");
@@ -124,6 +124,15 @@ public final class Types {
 	public static boolean isProperType(Type type) {
 		return !(type instanceof InferenceVariable)
 				&& InferenceVariable.getAllMentionedBy(type).isEmpty();
+	}
+
+	public static Stream<TypeVariable<?>> getTypeParameters(Class<?> rawType) {
+		Stream<TypeVariable<?>> typeParameters = Stream.empty();
+		do {
+			typeParameters = Stream.concat(typeParameters,
+					Arrays.stream(rawType.getTypeParameters()));
+		} while ((rawType = rawType.getEnclosingClass()) != null);
+		return typeParameters;
 	}
 
 	public static boolean isAssignable(Type from, Type to) {
@@ -207,19 +216,27 @@ public final class Types {
 		} else if (to instanceof Class) {
 			return ((Class<?>) to).isAssignableFrom(getRawType(from));
 		} else if (to instanceof ParameterizedType) {
-			Class<?> matchedClass = TypeLiteral.from(to).getRawType();
+			Class<?> matchedClass = getRawType(to);
 
 			if (from instanceof Class
 					&& matchedClass.isAssignableFrom((Class<?>) from)) {
 				return true;
-			} else if (!matchedClass.isAssignableFrom(Types.getRawType(from))) {
+			} else if (!matchedClass.isAssignableFrom(getRawType(from))) {
 				return false;
 			}
+
+			Type fromParameterization = TypeLiteral.from(from)
+					.resolveSupertypeParameters(matchedClass).getType();
+			if (!(fromParameterization instanceof ParameterizedType))
+				return false;
+
 			Type[] typeParams = matchedClass.getTypeParameters();
 			Type[] toTypeArgs = ((ParameterizedType) to).getActualTypeArguments();
+			Type[] fromTypeArgs = ((ParameterizedType) fromParameterization)
+					.getActualTypeArguments();
+
 			for (int i = 0; i < typeParams.length; i++) {
-				Type fromTypeArg = TypeLiteral.from(from).resolveType(typeParams[i]);
-				if (!isContainedBy(fromTypeArg, toTypeArgs[i]))
+				if (!isContainedBy(fromTypeArgs[i], toTypeArgs[i]))
 					return false;
 			}
 
@@ -246,12 +263,12 @@ public final class Types {
 	}
 
 	public static boolean isStrictInvocationContextCompatible(Type from, Type to) {
-		if (TypeLiteral.from(from).isPrimitive())
-			if (TypeLiteral.from(to).isPrimitive())
+		if (isPrimitive(from))
+			if (isPrimitive(to))
 				return true; // TODO check widening primitive conversion
 			else
 				return false;
-		else if (TypeLiteral.from(to).isPrimitive())
+		else if (isPrimitive(to))
 			return false;
 		else
 			return isAssignable(from, to);
@@ -451,26 +468,33 @@ public final class Types {
 		};
 	}
 
-	public static ParameterizedType parameterizedType(Type ownerType,
+	static ParameterizedType uncheckedParameterizedType(Type ownerType,
 			Class<?> rawType, List<Type> typeArguments) {
 		return new ParameterizedTypeImpl(ownerType, rawType, typeArguments);
 	}
 
-	public static ParameterizedType parameterizedType(Type ownerType,
-			Class<?> rawType, Type... typeArguments) {
-		return parameterizedType(ownerType, rawType, Arrays.asList(typeArguments));
+	static <T> Type uncheckedParameterizedType(Class<T> rawType,
+			Map<TypeVariable<?>, Type> typeArguments) {
+		Type ownerType = (rawType.getEnclosingClass() == null) ? null
+				: uncheckedParameterizedType(rawType.getEnclosingClass(), typeArguments);
+
+		if ((ownerType == null || ownerType instanceof Class)
+				&& rawType.getTypeParameters().length == 0)
+			return rawType;
+
+		return new ParameterizedTypeImpl(ownerType, rawType, argumentsForClass(
+				rawType, typeArguments));
 	}
 
-	public static ParameterizedType parameterizedType(Class<?> rawType) {
+	public static <T> TypeLiteral<? extends T> parameterizedType(Class<T> rawType) {
 		return parameterizedType(rawType, new HashMap<>());
 	}
 
-	public static ParameterizedType parameterizedType(Class<?> rawType,
-			Map<TypeVariable<?>, Type> typeArguments) {
-		return new ParameterizedTypeImpl(
-				rawType.getEnclosingClass() != null ? parameterizedType(
-						rawType.getEnclosingClass(), typeArguments) : null, rawType,
-				argumentsForClass(rawType, typeArguments));
+	@SuppressWarnings("unchecked")
+	public static <T> TypeLiteral<? extends T> parameterizedType(
+			Class<T> rawType, Map<TypeVariable<?>, Type> typeArguments) {
+		return (TypeLiteral<? extends T>) TypeLiteral
+				.from(uncheckedParameterizedType(rawType, typeArguments));
 	}
 
 	private static List<Type> argumentsForClass(Class<?> rawType,
@@ -546,13 +570,11 @@ public final class Types {
 		@Override
 		public int hashCode() {
 			Thread currentThread = Thread.currentThread();
-			if (recurringThreads.add(currentThread)
-					|| doublyRecurringThreads.add(currentThread)) {
+			if (recurringThreads.add(currentThread)) {
 				int hashCode = (ownerType == null ? 0 : ownerType.hashCode())
 						^ typeArguments.hashCode() ^ rawType.hashCode();
 
-				if (!doublyRecurringThreads.remove(currentThread))
-					recurringThreads.remove(currentThread);
+				recurringThreads.remove(currentThread);
 
 				return hashCode;
 			} else
@@ -562,8 +584,7 @@ public final class Types {
 		@Override
 		public boolean equals(Object other) {
 			Thread currentThread = Thread.currentThread();
-			if (recurringThreads.add(currentThread)
-					|| doublyRecurringThreads.add(currentThread)) {
+			if (recurringThreads.add(currentThread)) {
 				Boolean equals = null;
 
 				if (other == this)
@@ -583,8 +604,7 @@ public final class Types {
 					}
 				}
 
-				if (!doublyRecurringThreads.remove(currentThread))
-					recurringThreads.remove(currentThread);
+				recurringThreads.remove(currentThread);
 
 				return equals;
 			} else

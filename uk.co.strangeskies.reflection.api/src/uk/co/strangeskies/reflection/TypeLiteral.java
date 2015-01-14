@@ -4,10 +4,12 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 	private final Type type;
@@ -43,6 +45,8 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 	private TypeLiteral(Type type, Class<? super T> rawType) {
 		this.type = type;
 		this.rawType = rawType;
+
+		getResolver();
 	}
 
 	public static TypeLiteral<?> from(Type type) {
@@ -53,8 +57,8 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		return new TypeLiteral<>(type);
 	}
 
-	public static <T> TypeLiteral<T> from(String typeString) {
-		throw new UnsupportedOperationException();
+	public static <T> TypeLiteral<T> fromString(String typeString) {
+		throw new UnsupportedOperationException(); // TODO
 	}
 
 	private Resolver getResolver() {
@@ -112,6 +116,10 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 			return this;
 	}
 
+	public boolean isAssignableFrom(TypeLiteral<?> type) {
+		return isAssignableFrom(type.getType());
+	}
+
 	public boolean isAssignableFrom(Type type) {
 		return Types.isAssignable(type, this.type);
 	}
@@ -128,10 +136,9 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 
 	@SuppressWarnings("unchecked")
 	public <U> TypeLiteral<? extends U> resolveSupertypeParameters(Class<U> type) {
-		boolean isGeneric = type.getg(type.getEnclosingClass());
+		if (!Types.getTypeParameters(type).findAny().isPresent())
+			return TypeLiteral.from(type);
 
-		System.out.println("  resolver parameters of '" + type.getName()
-				+ "' WRT subtype '" + this + "'.");
 		if (!type.isAssignableFrom(rawType))
 			throw new IllegalArgumentException();
 
@@ -151,35 +158,47 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 			superClass = Types.getRawType(superType);
 		}
 
-		if (!(superType instanceof Class))
-			superType = resolveType(Types.parameterizedType(type));
+		Type capturedType;
+		if (superType instanceof Class)
+			capturedType = type;
+		else
+			capturedType = resolveType(Types.parameterizedType(type).getType());
 
-		return (TypeLiteral<? extends U>) TypeLiteral.from(superType);
+		return (TypeLiteral<? extends U>) TypeLiteral.from(capturedType);
 	}
 
 	public <U extends T> TypeLiteral<? extends U> resolveSubtypeParameters(
 			Class<U> type) {
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException(); // TODO
 	}
 
+	@SuppressWarnings("unchecked")
 	public TypeLiteral<? extends T> withTypeArguments(
-			Map<TypeVariable<? extends Class<?>>, Type> instantiations) {
-		throw new UnsupportedOperationException();
+			Map<TypeVariable<?>, Type> arguments) {
+		Resolver resolver = new Resolver(getResolver());
+
+		for (TypeVariable<?> parameter : arguments.keySet())
+			resolver.incorporateInstantiation(parameter, arguments.get(parameter));
+
+		return (TypeLiteral<? extends T>) TypeLiteral.from(resolver
+				.resolveType(rawType));
 	}
 
-	public TypeLiteral<? extends T> withTypeArgument(
-			TypeVariable<? extends Class<?>> typeVariable, Type instantiation) {
-		throw new UnsupportedOperationException();
+	public TypeLiteral<? extends T> withTypeArgument(TypeVariable<?> parameter,
+			Type argument) {
+		HashMap<TypeVariable<?>, Type> arguments = new HashMap<>();
+		arguments.put(parameter, argument);
+		return withTypeArguments(arguments);
 	}
 
 	public <V> TypeLiteral<? extends T> withTypeArgument(
-			TypeParameter<V> variable, TypeLiteral<V> instantiation) {
-		return withTypeArgument(variable.getType(), instantiation.getType());
+			TypeParameter<V> parameter, TypeLiteral<V> argument) {
+		return withTypeArgument(parameter.getType(), argument.getType());
 	}
 
 	public <V> TypeLiteral<? extends T> withTypeArgument(
-			TypeParameter<V> variable, Class<V> instantiation) {
-		return withTypeArgument(variable.getType(), instantiation);
+			TypeParameter<V> parameter, Class<V> argument) {
+		return withTypeArgument(parameter.getType(), argument);
 	}
 
 	public Set<Invokable<T, T>> getConstructors() {
@@ -238,10 +257,14 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 				candidates = moreSpecificCandidates;
 		}
 
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException(); // TODO
 	}
 
 	public Type getComponentType() {
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException(); // TODO
+	}
+
+	public Stream<TypeVariable<?>> getTypeParameters() {
+		return Types.getTypeParameters(rawType);
 	}
 }
