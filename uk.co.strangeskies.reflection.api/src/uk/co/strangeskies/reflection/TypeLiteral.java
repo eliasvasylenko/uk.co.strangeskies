@@ -1,5 +1,6 @@
 package uk.co.strangeskies.reflection;
 
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -61,6 +62,34 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		throw new UnsupportedOperationException(); // TODO
 	}
 
+	public boolean isAbstract() {
+		return Modifier.isAbstract(rawType.getModifiers());
+	}
+
+	public boolean isFinal() {
+		return Modifier.isFinal(rawType.getModifiers());
+	}
+
+	public boolean isInterface() {
+		return Modifier.isInterface(rawType.getModifiers());
+	}
+
+	public boolean isPrivate() {
+		return Modifier.isPrivate(rawType.getModifiers());
+	}
+
+	public boolean isProtected() {
+		return Modifier.isProtected(rawType.getModifiers());
+	}
+
+	public boolean isPublic() {
+		return Modifier.isPublic(rawType.getModifiers());
+	}
+
+	public boolean isStatic() {
+		return Modifier.isStatic(rawType.getModifiers());
+	}
+
 	private Resolver getResolver() {
 		if (resolver == null) {
 			resolver = new Resolver();
@@ -71,7 +100,10 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 
 	@Override
 	public String toString() {
-		return type.toString();
+		if (type instanceof Class)
+			return type.getTypeName();
+		else
+			return type.toString();
 	}
 
 	public Type getType() {

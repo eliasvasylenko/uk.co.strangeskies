@@ -3,12 +3,14 @@ package uk.co.strangeskies.reflection;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
@@ -23,11 +25,11 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 
 	Invokable(TypeLiteral<T> receiverType, TypeLiteral<R> returnType,
 			Executable executable) {
-		this(new Resolver(), receiverType, returnType, executable, null);
+		this(new Resolver(), receiverType, returnType, executable);
 	}
 
-	Invokable(Resolver resolver, TypeLiteral<T> receiverType,
-			TypeLiteral<R> returnType, Executable executable, List<Type> arguments) {
+	private Invokable(Resolver resolver, TypeLiteral<T> receiverType,
+			TypeLiteral<R> returnType, Executable executable) {
 		this.receiverType = receiverType;
 		this.returnType = returnType;
 		this.executable = executable;
@@ -43,7 +45,7 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 
 		parameters = Arrays.stream(getGenericDeclaration().getParameters())
 				.map(Parameter::getParameterizedType).map(substitution::resolve)
-				.collect(Collectors.toList());
+				.map(this.resolver::resolveType).collect(Collectors.toList());
 	}
 
 	public static <T> Invokable<T, T> of(Constructor<T> constructor) {
@@ -61,6 +63,79 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 			return of((Method) executable);
 		else
 			return of((Constructor<?>) executable);
+	}
+
+	public boolean isAbstract() {
+		return Modifier.isAbstract(executable.getModifiers());
+	}
+
+	public boolean isFinal() {
+		return Modifier.isFinal(executable.getModifiers());
+	}
+
+	public boolean isNative() {
+		return Modifier.isNative(executable.getModifiers());
+	}
+
+	public boolean isPrivate() {
+		return Modifier.isPrivate(executable.getModifiers());
+	}
+
+	public boolean isProtected() {
+		return Modifier.isProtected(executable.getModifiers());
+	}
+
+	public boolean isPublic() {
+		return Modifier.isPublic(executable.getModifiers());
+	}
+
+	public boolean isStatic() {
+		return Modifier.isStatic(executable.getModifiers());
+	}
+
+	public boolean isStrict() {
+		return Modifier.isStrict(executable.getModifiers());
+	}
+
+	public boolean isSynchronized() {
+		return Modifier.isSynchronized(executable.getModifiers());
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+
+		if (isPrivate())
+			builder.append("private ");
+		else if (isProtected())
+			builder.append("protected ");
+		else if (isPublic())
+			builder.append("public ");
+
+		if (isAbstract())
+			builder.append("abstract ");
+		else if (isFinal())
+			builder.append("final ");
+
+		if (isNative())
+			builder.append("native ");
+		if (isStatic())
+			builder.append("static ");
+		if (isStrict())
+			builder.append("strictfp ");
+		if (isSynchronized())
+			builder.append("synchronized ");
+
+		return builder
+				.append(returnType)
+				.append(" ")
+				.append(receiverType)
+				.append(".")
+				.append(executable.getName())
+				.append("(")
+				.append(
+						parameters.stream().map(Objects::toString)
+								.collect(Collectors.joining(", "))).append(")").toString();
 	}
 
 	@Override
@@ -155,8 +230,8 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 					nextParameter = null;
 				}
 			}
-			resolver.incorporateConstraint(new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY,
-					argument, parameter));
+			resolver.incorporateConstraint(new ConstraintFormula(
+					Kind.LOOSE_COMPATIBILILTY, argument, parameter));
 		}
 
 		System.out.println(resolver.infer());
@@ -164,8 +239,7 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 		if (!resolver.validate())
 			return null;
 
-		return new Invokable<>(resolver, receiverType, returnType, executable,
-				Arrays.asList(arguments));
+		return new Invokable<>(resolver, receiverType, returnType, executable);
 	}
 
 	@SuppressWarnings("unchecked")
