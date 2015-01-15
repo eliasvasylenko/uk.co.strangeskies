@@ -1,50 +1,32 @@
 package uk.co.strangeskies.reflection;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
-import java.util.ArrayList;
+import java.lang.reflect.WildcardType;
+import java.rmi.server.UID;
 import java.util.Arrays;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.checkerframework.checker.nullness.qual.Nullable;
-
-public class InferenceVariable<T extends GenericDeclaration> implements
-		TypeVariable<T> {
-	private final TypeVariable<? extends T> typeVariable;
+public class InferenceVariable implements Type {
+	private final String name;
 	private Type[] bounds;
 	private final Resolver resolver;
 
-	private InferenceVariable(Resolver resolver,
-			TypeVariable<? extends T> typeVariable) {
+	private InferenceVariable(Resolver resolver, String name) {
+		this.name = name;
 		this.resolver = resolver;
-		this.typeVariable = typeVariable;
 	}
 
-	public TypeVariable<? extends T> getTypeVariable() {
-		return typeVariable;
+	private InferenceVariable(String name) {
+		this.name = name;
+		this.resolver = null;
+		this.bounds = new Type[0];
 	}
 
-	@Override
-	public <U extends Annotation> @Nullable U getAnnotation(Class<U> paramClass) {
-		return typeVariable.getAnnotation(paramClass);
-	}
-
-	@Override
-	public Annotation[] getAnnotations() {
-		return typeVariable.getAnnotations();
-	}
-
-	@Override
-	public Annotation[] getDeclaredAnnotations() {
-		return typeVariable.getDeclaredAnnotations();
-	}
-
-	@Override
 	public Type[] getBounds() {
 		return bounds;
 	}
@@ -53,19 +35,8 @@ public class InferenceVariable<T extends GenericDeclaration> implements
 		return resolver;
 	}
 
-	@Override
-	public T getGenericDeclaration() {
-		return typeVariable.getGenericDeclaration();
-	}
-
-	@Override
 	public String getName() {
-		return "CAP#" + typeVariable.getName();
-	}
-
-	@Override
-	public AnnotatedType[] getAnnotatedBounds() {
-		return typeVariable.getAnnotatedBounds();
+		return name;
 	}
 
 	@Override
@@ -73,49 +44,33 @@ public class InferenceVariable<T extends GenericDeclaration> implements
 		return getName();
 	}
 
-	@Override
-	public boolean equals(Object object) {
-		if (this == object)
-			return true;
-		if (object == null || !(object instanceof InferenceVariable))
-			return false;
-
-		InferenceVariable<?> that = (InferenceVariable<?>) object;
-
-		return this.typeVariable.equals(that.typeVariable)
-				&& this.resolver == that.resolver;
+	public static InferenceVariable capture(WildcardType wildcardType) {
+		return new InferenceVariable("CAP#" + new UID());
 	}
 
-	@Override
-	public int hashCode() {
-		return typeVariable.hashCode();
-	}
-
-	@SuppressWarnings("unchecked")
-	public static <T extends GenericDeclaration> List<InferenceVariable<T>> overGenericTypeContext(
-			Resolver resolver, T declaration) {
+	public static Map<TypeVariable<?>, InferenceVariable> capture(
+			Resolver resolver, GenericDeclaration declaration) {
 		if (resolver == null)
 			throw new IllegalArgumentException(new NullPointerException());
 
-		List<InferenceVariable<T>> inferenceVariables = new ArrayList<>();
+		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = new HashMap<>();
 		do {
-			inferenceVariables
-					.addAll(Arrays
-							.stream(
-									(TypeVariable<? extends T>[]) declaration.getTypeParameters())
-							.map(t -> new InferenceVariable<T>(resolver, t))
-							.collect(Collectors.toList()));
+			Arrays.stream(declaration.getTypeParameters()).forEach(
+					t -> inferenceVariables.put(t,
+							new InferenceVariable(resolver, t.getName() + "#" + new UID())));
 		} while (declaration instanceof Class
-				&& (declaration = (T) ((Class<?>) declaration).getEnclosingClass()) != null);
+				&& (declaration = ((Class<?>) declaration).getEnclosingClass()) != null);
 
 		TypeSubstitution substitution = new TypeSubstitution();
-		for (InferenceVariable<T> variable : inferenceVariables)
-			substitution = substitution.where(variable.typeVariable, variable);
+		for (Map.Entry<TypeVariable<?>, InferenceVariable> variable : inferenceVariables
+				.entrySet())
+			substitution = substitution.where(variable.getKey(), variable.getValue());
 
-		for (InferenceVariable<T> variable : inferenceVariables)
-			variable.bounds = Arrays.stream(variable.typeVariable.getBounds())
+		for (Map.Entry<TypeVariable<?>, InferenceVariable> variable : inferenceVariables
+				.entrySet())
+			variable.getValue().bounds = Arrays.stream(variable.getKey().getBounds())
 					.map(substitution::resolve).collect(Collectors.toList())
-					.toArray(new Type[variable.typeVariable.getBounds().length]);
+					.toArray(new Type[variable.getKey().getBounds().length]);
 
 		return inferenceVariables;
 	}

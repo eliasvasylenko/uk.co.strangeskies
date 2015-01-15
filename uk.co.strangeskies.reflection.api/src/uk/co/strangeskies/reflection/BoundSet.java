@@ -74,12 +74,12 @@ public class BoundSet {
 		}
 
 		@Override
-		public void acceptEquality(InferenceVariable<?> a, InferenceVariable<?> b) {
+		public void acceptEquality(InferenceVariable a, InferenceVariable b) {
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptEquality(a, b)),
 					incorporator -> new PartialBoundVisitor() {
 						@Override
-						public void acceptEquality(InferenceVariable<?> a2,
-								InferenceVariable<?> b2) {
+						public void acceptEquality(InferenceVariable a2,
+								InferenceVariable b2) {
 							incorporator.incorporateTransitiveEquality(a, b, a2, b2);
 							incorporator.incorporateTransitiveEquality(a, b, b2, a2);
 							incorporator.incorporateTransitiveEquality(b, a, a2, b2);
@@ -87,44 +87,44 @@ public class BoundSet {
 						}
 
 						@Override
-						public void acceptEquality(InferenceVariable<?> a2, Type b2) {
+						public void acceptEquality(InferenceVariable a2, Type b2) {
 							incorporator.incorporateTransitiveEquality(a, b, a2, b2);
 							incorporator.incorporateTransitiveEquality(b, a, a2, b2);
 						}
 
 						@Override
-						public void acceptSubtype(InferenceVariable<?> a2, Type b2) {
+						public void acceptSubtype(InferenceVariable a2, Type b2) {
 							incorporator.incorporateSubtypeSubstitution(a, b, a2, b2);
 							incorporator.incorporateSubtypeSubstitution(b, a, a2, b2);
 						}
 
 						@Override
-						public void acceptSubtype(Type a2, InferenceVariable<?> b2) {
+						public void acceptSubtype(Type a2, InferenceVariable b2) {
 							incorporator.incorporateSupertypeSubstitution(a, b, a2, b2);
 							incorporator.incorporateSupertypeSubstitution(b, a, a2, b2);
 						}
 
 						@Override
 						public void acceptCaptureConversion(
-								Map<Type, InferenceVariable<?>> c2) {
+								Map<Type, InferenceVariable> c2) {
 							throw new NotImplementedException(); // TODO
 						}
 					});
 		}
 
 		@Override
-		public void acceptEquality(InferenceVariable<?> a, Type b) {
+		public void acceptEquality(InferenceVariable a, Type b) {
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptEquality(a, b)),
 					incorporator -> new PartialBoundVisitor() {
 						@Override
-						public void acceptEquality(InferenceVariable<?> a2,
-								InferenceVariable<?> b2) {
+						public void acceptEquality(InferenceVariable a2,
+								InferenceVariable b2) {
 							incorporator.incorporateTransitiveEquality(a, b, a2, b2);
 							incorporator.incorporateTransitiveEquality(a, b, b2, a2);
 						}
 
 						@Override
-						public void acceptEquality(InferenceVariable<?> a2, Type b2) {
+						public void acceptEquality(InferenceVariable a2, Type b2) {
 							incorporator.incorporateTransitiveEquality(a, b, a2, b2);
 
 							incorporator.incorporateProperEqualitySubstitution(a, b, a2, b2);
@@ -132,20 +132,20 @@ public class BoundSet {
 						}
 
 						@Override
-						public void acceptSubtype(InferenceVariable<?> a2, Type b2) {
+						public void acceptSubtype(InferenceVariable a2, Type b2) {
 							incorporator.incorporateSubtypeSubstitution(a, b, a2, b2);
 							incorporator.incorporateProperSubtypeSubstitution(a, b, a2, b2);
 						}
 
 						@Override
-						public void acceptSubtype(Type a2, InferenceVariable<?> b2) {
+						public void acceptSubtype(Type a2, InferenceVariable b2) {
 							incorporator.incorporateSupertypeSubstitution(a, b, a2, b2);
 							incorporator.incorporateProperSubtypeSubstitution(a, b, a2, b2);
 						}
 
 						@Override
-						public void acceptSubtype(InferenceVariable<?> a2,
-								InferenceVariable<?> b2) {
+						public void acceptSubtype(InferenceVariable a2,
+								InferenceVariable b2) {
 							incorporator.incorporateSubtypeSubstitution(a, b, a2, b2);
 							incorporator.incorporateSupertypeSubstitution(a, b, a2, b2);
 							incorporator.incorporateProperSubtypeSubstitution(a, b, a2, b2);
@@ -154,32 +154,32 @@ public class BoundSet {
 		}
 
 		@Override
-		public void acceptSubtype(InferenceVariable<?> a, InferenceVariable<?> b) {
+		public void acceptSubtype(InferenceVariable a, InferenceVariable b) {
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptSubtype(a, b)),
 					incorporator -> new PartialBoundVisitor() {});
 			throw new NotImplementedException(); // TODO
 		}
 
 		@Override
-		public void acceptSubtype(InferenceVariable<?> a, Type b) {
+		public void acceptSubtype(InferenceVariable a, Type b) {
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptSubtype(a, b)),
 					incorporator -> new PartialBoundVisitor() {
 						@Override
-						public void acceptEquality(InferenceVariable<?> a2,
-								InferenceVariable<?> b2) {
+						public void acceptEquality(InferenceVariable a2,
+								InferenceVariable b2) {
 							incorporator.incorporateSubtypeSubstitution(a2, b2, a, b);
 							incorporator.incorporateSubtypeSubstitution(b2, a2, a, b);
 						}
 
 						@Override
-						public void acceptEquality(InferenceVariable<?> a2, Type b2) {
+						public void acceptEquality(InferenceVariable a2, Type b2) {
 							incorporator.incorporateSubtypeSubstitution(a2, b2, a, b);
 							incorporator.incorporateProperSubtypeSubstitution(a2, b2, a, b);
 						}
 
 						@Override
-						public void acceptSubtype(InferenceVariable<?> a2,
-								InferenceVariable<?> b2) {
+						public void acceptSubtype(InferenceVariable a2,
+								InferenceVariable b2) {
 							incorporator.incorporateSupertypeParameterizationEquality(a, b,
 									a2, b2);
 
@@ -188,44 +188,44 @@ public class BoundSet {
 						}
 
 						@Override
-						public void acceptSubtype(InferenceVariable<?> a2, Type b2) {
+						public void acceptSubtype(InferenceVariable a2, Type b2) {
 							incorporator.incorporateSupertypeParameterizationEquality(a, b,
 									a2, b2);
 						}
 
 						@Override
-						public void acceptSubtype(Type a2, InferenceVariable<?> b2) {
+						public void acceptSubtype(Type a2, InferenceVariable b2) {
 							incorporator.incorporateTransitiveSubtype(a2, b2, a, b);
 						}
 					});
 		}
 
 		@Override
-		public void acceptSubtype(Type a, InferenceVariable<?> b) {
+		public void acceptSubtype(Type a, InferenceVariable b) {
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptSubtype(a, b)),
 					incorporator -> new PartialBoundVisitor() {
 						@Override
-						public void acceptEquality(InferenceVariable<?> a2,
-								InferenceVariable<?> b2) {
+						public void acceptEquality(InferenceVariable a2,
+								InferenceVariable b2) {
 							incorporator.incorporateSupertypeSubstitution(a2, b2, a, b);
 							incorporator.incorporateSupertypeSubstitution(b2, a2, a, b);
 						}
 
 						@Override
-						public void acceptEquality(InferenceVariable<?> a2, Type b2) {
+						public void acceptEquality(InferenceVariable a2, Type b2) {
 							incorporator.incorporateSupertypeSubstitution(a2, b2, a, b);
 							incorporator.incorporateProperSubtypeSubstitution(a2, b2, a, b);
 						}
 
 						@Override
-						public void acceptSubtype(InferenceVariable<?> a2,
-								InferenceVariable<?> b2) {
+						public void acceptSubtype(InferenceVariable a2,
+								InferenceVariable b2) {
 							incorporator.incorporateTransitiveSubtype(a, b, a2, b2);
 							incorporator.incorporateTransitiveSubtype(a, b, b2, a2);
 						}
 
 						@Override
-						public void acceptSubtype(InferenceVariable<?> a2, Type b2) {
+						public void acceptSubtype(InferenceVariable a2, Type b2) {
 							incorporator.incorporateTransitiveSubtype(a, b, a2, b2);
 						}
 					});
@@ -242,7 +242,7 @@ public class BoundSet {
 		}
 
 		@Override
-		public void acceptCaptureConversion(Map<Type, InferenceVariable<?>> c) {
+		public void acceptCaptureConversion(Map<Type, InferenceVariable> c) {
 			bounds.add(new Bound(visitor -> visitor.acceptCaptureConversion(c)));
 		}
 	}
@@ -261,8 +261,8 @@ public class BoundSet {
 		/*
 		 * α = S and α = T imply ‹S = T›
 		 */
-		public void incorporateTransitiveEquality(InferenceVariable<?> a, Type S,
-				InferenceVariable<?> a2, Type T) {
+		public void incorporateTransitiveEquality(InferenceVariable a, Type S,
+				InferenceVariable a2, Type T) {
 			if (a.equals(a2))
 				constraints.add(new ConstraintFormula(Kind.EQUALITY, S, T));
 		}
@@ -270,8 +270,8 @@ public class BoundSet {
 		/*
 		 * α = S and α <: T imply ‹S <: T›
 		 */
-		public void incorporateSubtypeSubstitution(InferenceVariable<?> a, Type S,
-				InferenceVariable<?> a2, Type T) {
+		public void incorporateSubtypeSubstitution(InferenceVariable a, Type S,
+				InferenceVariable a2, Type T) {
 			if (a.equals(a2))
 				constraints.add(new ConstraintFormula(Kind.SUBTYPE, S, T));
 		}
@@ -279,8 +279,8 @@ public class BoundSet {
 		/*
 		 * α = S and T <: α imply ‹T <: S›
 		 */
-		public void incorporateSupertypeSubstitution(InferenceVariable<?> a,
-				Type S, Type T, InferenceVariable<?> a2) {
+		public void incorporateSupertypeSubstitution(InferenceVariable a,
+				Type S, Type T, InferenceVariable a2) {
 			if (a.equals(a2))
 				constraints.add(new ConstraintFormula(Kind.SUBTYPE, T, S));
 		}
@@ -288,8 +288,8 @@ public class BoundSet {
 		/*
 		 * S <: α and α <: T imply ‹S <: T›
 		 */
-		public void incorporateTransitiveSubtype(Type S, InferenceVariable<?> a,
-				InferenceVariable<?> a2, Type T) {
+		public void incorporateTransitiveSubtype(Type S, InferenceVariable a,
+				InferenceVariable a2, Type T) {
 			if (a.equals(a2))
 				constraints.add(new ConstraintFormula(Kind.SUBTYPE, S, T));
 		}
@@ -297,7 +297,7 @@ public class BoundSet {
 		/*
 		 * α = U and S = T imply ‹S[α:=U] = T[α:=U]›
 		 */
-		public void incorporateProperEqualitySubstitution(InferenceVariable<?> a,
+		public void incorporateProperEqualitySubstitution(InferenceVariable a,
 				Type U, Type S, Type T) {
 			if (Types.isProperType(U)) {
 				TypeSubstitution resolver = new TypeSubstitution().where(a, U);
@@ -314,7 +314,7 @@ public class BoundSet {
 		/*
 		 * α = U and S <: T imply ‹S[α:=U] <: T[α:=U]›
 		 */
-		public void incorporateProperSubtypeSubstitution(InferenceVariable<?> a,
+		public void incorporateProperSubtypeSubstitution(InferenceVariable a,
 				Type U, Type S, Type T) {
 			if (Types.isProperType(U)) {
 				TypeSubstitution resolver = new TypeSubstitution().where(a, U);
@@ -336,7 +336,7 @@ public class BoundSet {
 		 * constraint formula ‹Si = Ti› is implied.
 		 */
 		public void incorporateSupertypeParameterizationEquality(
-				InferenceVariable<?> a, Type S, InferenceVariable<?> a2, Type T) {
+				InferenceVariable a, Type S, InferenceVariable a2, Type T) {
 			if (S.equals(T) || S.equals(Object.class) || T.equals(Object.class))
 				return;
 

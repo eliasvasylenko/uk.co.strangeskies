@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import uk.co.strangeskies.reflection.Invokable;
 import uk.co.strangeskies.reflection.TypeLiteral;
@@ -16,6 +17,10 @@ public class TestTypeLiteral {
 
 	public static class B {
 		public <T extends Number> void method(T a, T b) {}
+
+		public <T> void method(Collection<T> a) {}
+
+		public <T> void method(Collection<T> a, Collection<T> b) {}
 
 		public <T extends Number, U extends List<? super T>> Map<T, U> method2(
 				List<T> a, U b) {
@@ -65,9 +70,19 @@ public class TestTypeLiteral {
 		System.out.println();
 
 		System.out.println("method");
+		System.out.println(Invokable
+				.of(B.class.getMethod("method", Collection.class))
+				.withLooseApplicability(
+						new TypeLiteral<Collection<? super Integer>>() {}.getType())
+				.withLooseApplicability(new TypeLiteral<Set<Number>>() {}.getType()));
+		System.out.println();
+
+		System.out.println("method");
 		System.out.println(Invokable.of(
-				B.class.getMethod("method", Number.class, Number.class))
-				.withLooseApplicability(int.class, Double.class));
+				B.class.getMethod("method", Collection.class, Collection.class))
+				.withLooseApplicability(
+						new TypeLiteral<Collection<? super Integer>>() {}.getType(),
+						new TypeLiteral<Collection<? super Integer>>() {}.getType()));
 		System.out.println();
 	}
 }

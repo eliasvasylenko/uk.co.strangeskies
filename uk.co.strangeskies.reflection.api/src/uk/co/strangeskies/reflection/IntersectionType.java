@@ -58,7 +58,7 @@ public abstract class IntersectionType implements Type {
 		try {
 			Resolver resolver = new Resolver();
 			resolver.incorporateTypes(Comparable.class);
-			InferenceVariable<?> inferenceVariable = resolver
+			InferenceVariable inferenceVariable = resolver
 					.getInferenceVariable(Comparable.class.getTypeParameters()[0]);
 			for (Type type : flattenedTypes) {
 				resolver.incorporateConstraint(new ConstraintFormula(Kind.SUBTYPE,

@@ -263,10 +263,10 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 					Kind.LOOSE_COMPATIBILILTY, argument, parameter));
 		}
 
-		resolver.infer();
+		// if (!resolver.validate())
+		// return null;
 
-		if (!resolver.validate())
-			return null;
+		System.out.println(resolver.bounds);
 
 		return new Invokable<>(resolver, receiverType, returnType, executable,
 				invocationFunction);
@@ -315,6 +315,11 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 	}
 
 	public R invokeSafely(T receiver, List<? extends TypedObject<?>> arguments) {
-		throw new UnsupportedOperationException(); // TODO
+		for (int i = 0; i < arguments.size(); i++)
+			if (!arguments.get(i).getType().isAssignableTo(parameters.get(i)))
+				throw new IllegalArgumentException("Argument '" + arguments.get(i)
+						+ "' is not assignable to parameter '" + parameters.get(i)
+						+ "' at index '" + i + "'.");
+		return invoke(receiver, arguments);
 	}
 }

@@ -65,6 +65,12 @@ public final class Types {
 				return Object.class;
 			else
 				return getRawType(bounds[0]);
+		} else if (type instanceof InferenceVariable) {
+			Type[] bounds = ((InferenceVariable) type).getBounds();
+			if (bounds.length == 0)
+				return Object.class;
+			else
+				return getRawType(bounds[0]);
 		} else if (type instanceof WildcardType) {
 			Type[] bounds = ((WildcardType) type).getUpperBounds();
 			if (bounds.length == 0)
@@ -255,12 +261,20 @@ public final class Types {
 
 		if (to instanceof Class || to instanceof ParameterizedType)
 			return isAssignable(from, to) && isAssignable(to, from);
-		else if (to instanceof WildcardType) {
+		else if (to instanceof IntersectionType) {
+			return Arrays.stream(((IntersectionType) to).getTypes()).allMatch(
+					t -> isContainedBy(from, t));
+		} else if (to instanceof WildcardType) {
 			WildcardType toWildcard = (WildcardType) to;
-			return isAssignable(from,
-					IntersectionType.of(toWildcard.getUpperBounds()))
+
+			boolean contained = (toWildcard.getUpperBounds().length == 0 || isAssignable(
+					from, IntersectionType.of(toWildcard.getUpperBounds())));
+
+			contained = contained
 					&& (toWildcard.getLowerBounds().length == 0 || isAssignable(
 							IntersectionType.of(toWildcard.getLowerBounds()), from));
+
+			return contained;
 		} else
 			return false;
 	}
@@ -273,8 +287,8 @@ public final class Types {
 				return false;
 		else if (isPrimitive(to))
 			return false;
-		else
-			return isAssignable(from, to);
+
+		return isAssignable(from, to);
 	}
 
 	public static boolean isLooseInvocationContextCompatible(Type from, Type to) {
@@ -305,6 +319,7 @@ public final class Types {
 				.visitBounds().classVisitor(conditionalAdd::accept)
 				.genericArrayVisitor(conditionalAdd::accept)
 				.intersectionTypeVisitor(conditionalAdd::accept)
+				.inferenceVariableVisitor(conditionalAdd::accept)
 				.parameterizedTypeVisitor(conditionalAdd::accept)
 				.wildcardVisitor(conditionalAdd::accept)
 				.typeVariableVisitor(conditionalAdd::accept).create().visit(type);

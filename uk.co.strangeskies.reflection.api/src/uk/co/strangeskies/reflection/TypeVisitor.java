@@ -26,7 +26,7 @@ public abstract class TypeVisitor {
 	}
 
 	public synchronized final void visit(Iterable<? extends Type> types) {
-		for (Type type : types)
+		for (Type type : types) {
 			if (visited.add(type)) {
 				if (type instanceof Class)
 					visitClass((Class<?>) type);
@@ -36,10 +36,12 @@ public abstract class TypeVisitor {
 					visitGenericArrayType((GenericArrayType) type);
 				else if (type instanceof WildcardType)
 					visitWildcardType((WildcardType) type);
-				else if (type instanceof TypeVariable)
-					visitTypeVariable((TypeVariable<?>) type);
 				else if (type instanceof IntersectionType)
 					visitIntersectionType((IntersectionType) type);
+				else if (type instanceof TypeVariable)
+					visitTypeVariable((TypeVariable<?>) type);
+				else if (type instanceof InferenceVariable)
+					visitInferenceVariable((InferenceVariable) type);
 				else if (type == null)
 					visitNull();
 				else
@@ -49,6 +51,7 @@ public abstract class TypeVisitor {
 				if (allowRepeatVisits)
 					visited.remove(type);
 			}
+		}
 	}
 
 	protected void visitNull() {}
@@ -62,6 +65,8 @@ public abstract class TypeVisitor {
 	protected void visitWildcardType(WildcardType type) {}
 
 	protected void visitTypeVariable(TypeVariable<?> type) {}
+
+	protected void visitInferenceVariable(InferenceVariable type) {}
 
 	protected void visitIntersectionType(IntersectionType type) {}
 }

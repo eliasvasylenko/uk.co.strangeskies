@@ -48,6 +48,8 @@ public class TypeSubstitution {
 			return type;
 		else if (type instanceof TypeVariable)
 			return type;
+		else if (type instanceof InferenceVariable)
+			return type;
 		else if (type instanceof IntersectionType)
 			return IntersectionType.uncheckedOf(Arrays
 					.stream(((IntersectionType) type).getTypes())
@@ -67,13 +69,13 @@ public class TypeSubstitution {
 			return Types.genericArrayType(resolve(
 					((GenericArrayType) type).getGenericComponentType(), visited));
 		else if (type instanceof ParameterizedType)
-			return resolve((ParameterizedType) type, visited);
+			return resolveParameterizedType((ParameterizedType) type, visited);
 
 		throw new IllegalArgumentException("Cannot resolve unrecognised type '"
 				+ type + "' of class'" + type.getClass() + "'.");
 	}
 
-	private Type resolve(ParameterizedType type,
+	private Type resolveParameterizedType(ParameterizedType type,
 			Map<ParameterizedType, ParameterizedType> visited) {
 		/*
 		 * Here we deal with recursion in infinite types.

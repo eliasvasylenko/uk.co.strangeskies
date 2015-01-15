@@ -2,13 +2,9 @@ package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import uk.co.strangeskies.utilities.tuples.Pair;
 
 public class ConstraintFormula {
 	public enum Kind {
@@ -60,29 +56,29 @@ public class ConstraintFormula {
 			 */
 			if (!Types.isLooseInvocationContextCompatible(from, to))
 				boundConsumer.acceptFalsehood();
-		} else if (from != null && TypeLiteral.from(from).isPrimitive())
+		} else if (from != null && Types.isPrimitive(from))
 			/*
 			 * Otherwise, if S is a primitive type, let S' be the result of applying
 			 * boxing conversion (§5.1.7) to S. Then the constraint reduces to ‹S' →
 			 * T›.
 			 */
-			new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, TypeLiteral.from(from)
-					.wrap().getType(), to).reduceInto(boundConsumer);
-		else if (to != null && TypeLiteral.from(to).isPrimitive())
+			new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, Types.wrap(from), to)
+					.reduceInto(boundConsumer);
+		else if (to != null && Types.isPrimitive(to))
 			/*
 			 * Otherwise, if T is a primitive type, let T' be the result of applying
 			 * boxing conversion (§5.1.7) to T. Then the constraint reduces to ‹S =
 			 * T'›.
 			 */
-			new ConstraintFormula(Kind.EQUALITY, from, TypeLiteral.from(to).wrap()
-					.getType()).reduceInto(boundConsumer);
+			new ConstraintFormula(Kind.EQUALITY, from, Types.wrap(to))
+					.reduceInto(boundConsumer);
 		else if (isUncheckedCompatibleOnly(from, to))
 			/*
 			 * Otherwise, if T is a parameterized type of the form G<T1, ..., Tn>, and
 			 * there exists no type of the form G<...> that is a supertype of S, but
 			 * the raw type G is a supertype of S, then the constraint reduces to
 			 * true.
-			 *
+			 * 
 			 * Otherwise, if T is an array type of the form G<T1, ..., Tn>[]k, and
 			 * there exists no type of the form G<...>[]k that is a supertype of S,
 			 * but the raw type G[]k is a supertype of S, then the constraint reduces
@@ -108,8 +104,8 @@ public class ConstraintFormula {
 		} else
 			return toRaw.isArray()
 					&& fromRaw.isArray()
-					&& isUncheckedCompatibleOnly(TypeLiteral.from(from)
-							.getComponentType(), TypeLiteral.from(to).getComponentType());
+					&& isUncheckedCompatibleOnly(Types.getComponentType(from),
+							Types.getComponentType(to));
 	}
 
 	/*
@@ -135,22 +131,22 @@ public class ConstraintFormula {
 			 * Otherwise, if T is the null type, the constraint reduces to false.
 			 */
 			boundConsumer.acceptFalsehood();
-		else if (from instanceof InferenceVariable<?>)
+		else if (from instanceof InferenceVariable)
 			/*
 			 * Otherwise, if S is an inference variable, α, the constraint reduces to
 			 * the bound α <: T.
 			 */
-			if (to instanceof InferenceVariable<?>)
-				boundConsumer.acceptSubtype((InferenceVariable<?>) from,
-						(InferenceVariable<?>) to);
+			if (to instanceof InferenceVariable)
+				boundConsumer.acceptSubtype((InferenceVariable) from,
+						(InferenceVariable) to);
 			else
-				boundConsumer.acceptSubtype((InferenceVariable<?>) from, to);
-		else if (to instanceof InferenceVariable<?>)
+				boundConsumer.acceptSubtype((InferenceVariable) from, to);
+		else if (to instanceof InferenceVariable)
 			/*
 			 * Otherwise, if T is an inference variable, α, the constraint reduces to
 			 * the bound S <: α.
 			 */
-			boundConsumer.acceptSubtype(from, (InferenceVariable<?>) to);
+			boundConsumer.acceptSubtype(from, (InferenceVariable) to);
 		else {
 			/*
 			 * Otherwise, the constraint is reduced according to the form of T:
@@ -164,40 +160,32 @@ public class ConstraintFormula {
 				 * identified, with type arguments B1, ..., Bn.
 				 */
 				Class<?> rawType = Types.getRawType(to);
-				if (!rawType.isAssignableFrom(Types.getRawType(to))) {
+				if (!rawType.isAssignableFrom(Types.getRawType(to)))
 					/*
 					 * If no such type exists, the constraint reduces to false.
 					 */
 					boundConsumer.acceptFalsehood();
-				} else {
+				else {
+					TypeLiteral<?> toLiteral = TypeLiteral.from(to);
+
+					TypeLiteral<?> fromParameterization = TypeLiteral.from(from)
+							.resolveSupertypeParameters(rawType);
+					if (!(fromParameterization.getType() instanceof ParameterizedType))
+						/*
+						 * If no such type exists, the constraint reduces to false.
+						 */
+						boundConsumer.acceptFalsehood();
+
 					/*
 					 * Otherwise, the constraint reduces to the following new constraints:
 					 * for all i (1 ≤ i ≤ n), ‹Bi <= Ai›.
 					 */
-					List<Pair<Type, Type>> identifiedPairs = new ArrayList<>();
-					do {
-						for (TypeVariable<?> parameter : rawType.getTypeParameters()) {
-							Type toArgument = TypeLiteral.from(to).resolveType(parameter);
-
-							if (toArgument instanceof TypeVariable
-									&& ((TypeVariable<?>) toArgument).getGenericDeclaration()
-											.equals(rawType)) {
-								/*
-								 * Again:
-								 *
-								 * If no such type exists, the constraint reduces to false.
-								 */
-								boundConsumer.acceptFalsehood();
-								return;
-							}
-							Type fromArgument = TypeLiteral.from(from).resolveType(parameter);
-
-							identifiedPairs.add(new Pair<>(fromArgument, toArgument));
-						}
-					} while ((rawType = rawType.getEnclosingClass()) != null);
-
-					identifiedPairs.forEach(p -> new ConstraintFormula(Kind.CONTAINMENT,
-							p.getLeft(), p.getRight()).reduceInto(boundConsumer));
+					fromParameterization.getTypeParameters().forEach(
+							p -> {
+								new ConstraintFormula(Kind.CONTAINMENT, fromParameterization
+										.resolveType(p), toLiteral.resolveType(p))
+										.reduceInto(boundConsumer);
+							});
 				}
 			} else if (to instanceof Class) {
 				/*
@@ -243,7 +231,7 @@ public class ConstraintFormula {
 							boundConsumer.acceptFalsehood();
 					}
 				}
-			} else if (to instanceof InferenceVariable<?>) {
+			} else if (to instanceof InferenceVariable) {
 				/*
 				 * If T is a type variable, there are three cases:
 				 */
@@ -254,13 +242,13 @@ public class ConstraintFormula {
 					 * - If S is an intersection type of which T is an element, the
 					 * constraint reduces to true.
 					 */
-				} else if (((InferenceVariable<?>) to).getBounds().length > 0) {
+				} else if (((InferenceVariable) to).getBounds().length > 0) {
 					/*
 					 * - Otherwise, if T has a lower bound, B, the constraint reduces to
 					 * ‹S <: B›.
 					 */
 					new ConstraintFormula(Kind.SUBTYPE, from,
-							IntersectionType.of(((InferenceVariable<?>) to).getBounds()));
+							IntersectionType.of(((InferenceVariable) to).getBounds()));
 				} else {
 					/*
 					 * - Otherwise, the constraint reduces to false.
@@ -331,6 +319,18 @@ public class ConstraintFormula {
 				 * If S is a type, the constraint reduces to ‹S = T›.
 				 */
 				new ConstraintFormula(Kind.EQUALITY, from, to)
+						.reduceInto(boundConsumer);
+			} else if (to instanceof InferenceVariable) {
+				/*
+				 * THIS IS NOT IN THE SPEC! But it does appear to follow the behaviour
+				 * of javac & JDT.
+				 */
+
+				WildcardType from = (WildcardType) this.from;
+				InferenceVariable capture = InferenceVariable.capture(from);
+				new ConstraintFormula(Kind.SUBTYPE, capture, from)
+						.reduceInto(boundConsumer);
+				new ConstraintFormula(Kind.EQUALITY, to, capture)
 						.reduceInto(boundConsumer);
 			} else {
 				/*
@@ -492,22 +492,22 @@ public class ConstraintFormula {
 				 */
 				if (!from.equals(to))
 					boundConsumer.acceptFalsehood();
-			} else if (from instanceof InferenceVariable<?>) {
+			} else if (from instanceof InferenceVariable) {
 				/*
 				 * Otherwise, if S is an inference variable, α, the constraint reduces
 				 * to the bound α = T.
 				 */
-				if (to instanceof InferenceVariable<?>)
-					boundConsumer.acceptEquality((InferenceVariable<?>) from,
-							(InferenceVariable<?>) to);
+				if (to instanceof InferenceVariable)
+					boundConsumer.acceptEquality((InferenceVariable) from,
+							(InferenceVariable) to);
 				else
-					boundConsumer.acceptEquality((InferenceVariable<?>) from, to);
-			} else if (to instanceof InferenceVariable<?>) {
+					boundConsumer.acceptEquality((InferenceVariable) from, to);
+			} else if (to instanceof InferenceVariable) {
 				/*
 				 * Otherwise, if T is an inference variable, α, the constraint reduces
 				 * to the bound S = α.
 				 */
-				boundConsumer.acceptEquality((InferenceVariable<?>) to, from);
+				boundConsumer.acceptEquality((InferenceVariable) to, from);
 			} else if (Types.getRawType(from).isArray()
 					&& Types.getRawType(to).isArray()) {
 				/*

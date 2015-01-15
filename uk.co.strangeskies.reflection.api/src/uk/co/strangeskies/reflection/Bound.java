@@ -26,17 +26,17 @@ public class Bound {
 
 		accept(new BoundVisitor() {
 			@Override
-			public void acceptSubtype(Type a, InferenceVariable<?> b) {
+			public void acceptSubtype(Type a, InferenceVariable b) {
 				result.set(a + " <: " + b);
 			}
 
 			@Override
-			public void acceptSubtype(InferenceVariable<?> a, Type b) {
+			public void acceptSubtype(InferenceVariable a, Type b) {
 				result.set(a + " <: " + b);
 			}
 
 			@Override
-			public void acceptSubtype(InferenceVariable<?> a, InferenceVariable<?> b) {
+			public void acceptSubtype(InferenceVariable a, InferenceVariable b) {
 				result.set(a + " <: " + b);
 			}
 
@@ -46,17 +46,17 @@ public class Bound {
 			}
 
 			@Override
-			public void acceptEquality(InferenceVariable<?> a, Type b) {
+			public void acceptEquality(InferenceVariable a, Type b) {
 				result.set(a + " = " + b);
 			}
 
 			@Override
-			public void acceptEquality(InferenceVariable<?> a, InferenceVariable<?> b) {
+			public void acceptEquality(InferenceVariable a, InferenceVariable b) {
 				result.set(a + " = " + b);
 			}
 
 			@Override
-			public void acceptCaptureConversion(Map<Type, InferenceVariable<?>> c) {
+			public void acceptCaptureConversion(Map<Type, InferenceVariable> c) {
 				List<Type> types = new ArrayList<>(c.keySet());
 				StringBuilder stringBuilder = new StringBuilder();
 
@@ -89,31 +89,31 @@ public class Bound {
 
 		accept(new BoundVisitor() {
 			@Override
-			public void acceptSubtype(Type a, InferenceVariable<?> b) {
+			public void acceptSubtype(Type a, InferenceVariable b) {
 				that.accept(new PartialBoundVisitor() {
 					@Override
-					public void acceptSubtype(Type a2, InferenceVariable<?> b2) {
+					public void acceptSubtype(Type a2, InferenceVariable b2) {
 						result.set(a.equals(a2) && b.equals(b2));
 					}
 				});
 			}
 
 			@Override
-			public void acceptSubtype(InferenceVariable<?> a, Type b) {
+			public void acceptSubtype(InferenceVariable a, Type b) {
 				that.accept(new PartialBoundVisitor() {
 					@Override
-					public void acceptSubtype(InferenceVariable<?> a2, Type b2) {
+					public void acceptSubtype(InferenceVariable a2, Type b2) {
 						result.set(a.equals(a2) && b.equals(b2));
 					}
 				});
 			}
 
 			@Override
-			public void acceptSubtype(InferenceVariable<?> a, InferenceVariable<?> b) {
+			public void acceptSubtype(InferenceVariable a, InferenceVariable b) {
 				that.accept(new PartialBoundVisitor() {
 					@Override
-					public void acceptSubtype(InferenceVariable<?> a2,
-							InferenceVariable<?> b2) {
+					public void acceptSubtype(InferenceVariable a2,
+							InferenceVariable b2) {
 						result.set(a.equals(a2) && b.equals(b2));
 					}
 				});
@@ -130,21 +130,21 @@ public class Bound {
 			}
 
 			@Override
-			public void acceptEquality(InferenceVariable<?> a, Type b) {
+			public void acceptEquality(InferenceVariable a, Type b) {
 				that.accept(new PartialBoundVisitor() {
 					@Override
-					public void acceptEquality(InferenceVariable<?> a2, Type b2) {
+					public void acceptEquality(InferenceVariable a2, Type b2) {
 						result.set(a.equals(a2) && b.equals(b2));
 					}
 				});
 			}
 
 			@Override
-			public void acceptEquality(InferenceVariable<?> a, InferenceVariable<?> b) {
+			public void acceptEquality(InferenceVariable a, InferenceVariable b) {
 				that.accept(new PartialBoundVisitor() {
 					@Override
-					public void acceptEquality(InferenceVariable<?> a2,
-							InferenceVariable<?> b2) {
+					public void acceptEquality(InferenceVariable a2,
+							InferenceVariable b2) {
 						result.set((a.equals(a2) && b.equals(b2))
 								|| (a.equals(b2) && b.equals(a2)));
 					}
@@ -152,10 +152,10 @@ public class Bound {
 			}
 
 			@Override
-			public void acceptCaptureConversion(Map<Type, InferenceVariable<?>> c) {
+			public void acceptCaptureConversion(Map<Type, InferenceVariable> c) {
 				that.accept(new PartialBoundVisitor() {
 					@Override
-					public void acceptCaptureConversion(Map<Type, InferenceVariable<?>> c2) {
+					public void acceptCaptureConversion(Map<Type, InferenceVariable> c2) {
 						result.set(c.equals(c2));
 					}
 				});
@@ -171,27 +171,27 @@ public class Bound {
 
 		accept(new BoundVisitor() {
 			@Override
-			public void acceptEquality(InferenceVariable<?> a, InferenceVariable<?> b) {
+			public void acceptEquality(InferenceVariable a, InferenceVariable b) {
 				result.set(a.hashCode() ^ b.hashCode());
 			}
 
 			@Override
-			public void acceptEquality(InferenceVariable<?> a, Type b) {
+			public void acceptEquality(InferenceVariable a, Type b) {
 				result.set(a.hashCode() ^ b.hashCode() * 7);
 			}
 
 			@Override
-			public void acceptSubtype(InferenceVariable<?> a, InferenceVariable<?> b) {
+			public void acceptSubtype(InferenceVariable a, InferenceVariable b) {
 				result.set(a.hashCode() ^ b.hashCode() * 23);
 			}
 
 			@Override
-			public void acceptSubtype(InferenceVariable<?> a, Type b) {
+			public void acceptSubtype(InferenceVariable a, Type b) {
 				result.set(a.hashCode() ^ b.hashCode() * 53);
 			}
 
 			@Override
-			public void acceptSubtype(Type a, InferenceVariable<?> b) {
+			public void acceptSubtype(Type a, InferenceVariable b) {
 				result.set(a.hashCode() ^ b.hashCode() * 67);
 			}
 
@@ -201,7 +201,7 @@ public class Bound {
 			}
 
 			@Override
-			public void acceptCaptureConversion(Map<Type, InferenceVariable<?>> c) {
+			public void acceptCaptureConversion(Map<Type, InferenceVariable> c) {
 				result.set(c.hashCode());
 			}
 		});

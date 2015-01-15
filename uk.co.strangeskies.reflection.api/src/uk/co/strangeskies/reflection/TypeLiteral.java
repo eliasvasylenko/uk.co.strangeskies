@@ -1,6 +1,5 @@
 package uk.co.strangeskies.reflection;
 
-import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -146,6 +145,14 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 			return this;
 	}
 
+	public boolean isAssignableTo(TypeLiteral<?> type) {
+		return isAssignableTo(type.getType());
+	}
+
+	public boolean isAssignableTo(Type type) {
+		return Types.isAssignable(this.type, type);
+	}
+
 	public boolean isAssignableFrom(TypeLiteral<?> type) {
 		return isAssignableFrom(type.getType());
 	}
@@ -162,6 +169,15 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 	public <U> TypeLiteral<? extends U> resolveType(TypeLiteral<U> type) {
 		return (TypeLiteral<? extends U>) TypeLiteral.from(resolveType(type
 				.getType()));
+	}
+
+	public static class Outer<T> {
+		public class Inner<N extends T> {}
+
+		// TODO: two different captures of Outer#T could be in the same resolver for
+		// this type when trying to determine the parameterized supertype of 'Inner'
+		// for a given 'Inner2'.
+		public class Inner2<M extends Number> extends Outer<Number>.Inner<M> {}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -267,36 +283,28 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 	private <R, U> Invokable<U, ? extends R> resolveInvokableOverload(
 			Set<? extends Invokable<? super U, ? extends R>> candidates,
 			Type... parameters) {
-		candidates = candidates.stream()
-				.map(i -> i.withVariableArityApplicability(parameters))
+		Set<? extends Invokable<? super U, ? extends R>> compatibleCandidates = candidates
+				.stream().map(i -> i.withLooseApplicability(parameters))
 				.filter(o -> o != null).collect(Collectors.toSet());
 
-		if (candidates.isEmpty())
-			throw new IllegalArgumentException();
-		else {
-			Set<Invokable<? super U, ? extends R>> moreSpecificCandidates = candidates
-					.stream().map(i -> i.withLooseApplicability(parameters))
+		if (compatibleCandidates.isEmpty()) {
+			compatibleCandidates = candidates.stream()
+					.map(i -> i.withVariableArityApplicability(parameters))
 					.filter(o -> o != null).collect(Collectors.toSet());
-			if (!moreSpecificCandidates.isEmpty())
-				candidates = moreSpecificCandidates;
-
-			moreSpecificCandidates = candidates.stream()
+		} else {
+			candidates = compatibleCandidates;
+			compatibleCandidates = compatibleCandidates.stream()
 					.map(i -> i.withStrictApplicability(parameters))
 					.filter(o -> o != null).collect(Collectors.toSet());
-			if (!moreSpecificCandidates.isEmpty())
-				candidates = moreSpecificCandidates;
+			if (compatibleCandidates.isEmpty())
+				compatibleCandidates = candidates;
 		}
 
 		throw new UnsupportedOperationException(); // TODO
 	}
 
 	public Type getComponentType() {
-		if (type instanceof Class)
-			return rawType.getComponentType();
-		else if (type instanceof GenericArrayType)
-			return ((GenericArrayType) type).getGenericComponentType();
-		else
-			return null;
+		return Types.getComponentType(type);
 	}
 
 	public Stream<TypeVariable<?>> getTypeParameters() {

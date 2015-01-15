@@ -38,6 +38,7 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 		private Consumer<GenericArrayType> genericArrayVisitor = t -> {};
 		private Consumer<ParameterizedType> parameterizedTypeVisitor = t -> {};
 		private Consumer<TypeVariable<?>> typeVariableVisitor = t -> {};
+		private Consumer<InferenceVariable> inferenceVariableVisitor = t -> {};
 		private Consumer<WildcardType> wildcardVisitor = t -> {};
 		private Consumer<IntersectionType> intersectionTypeVisitor = t -> {};
 
@@ -48,7 +49,7 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 			return new RecursiveTypeVisitor(allowRepeatVisits, supertypes, enclosed,
 					enclosing, parameters, bounds, postOrder, classVisitor,
 					genericArrayVisitor, parameterizedTypeVisitor, typeVariableVisitor,
-					wildcardVisitor, intersectionTypeVisitor);
+					inferenceVariableVisitor, wildcardVisitor, intersectionTypeVisitor);
 		}
 
 		public Builder allowRepeatVisits(boolean allowRepeatVisits) {
@@ -114,6 +115,12 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 			return this;
 		}
 
+		public Builder inferenceVariableVisitor(
+				Consumer<InferenceVariable> inferenceVariableVisitor) {
+			this.inferenceVariableVisitor = inferenceVariableVisitor;
+			return this;
+		}
+
 		public Builder wildcardVisitor(Consumer<WildcardType> wildcardVisitor) {
 			this.wildcardVisitor = wildcardVisitor;
 			return this;
@@ -138,6 +145,7 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 	private final Consumer<GenericArrayType> genericArrayVisitor;
 	private final Consumer<ParameterizedType> parameterizedTypeVisitor;
 	private final Consumer<TypeVariable<?>> typeVariableVisitor;
+	private final Consumer<InferenceVariable> inferenceVariableVisitor;
 	private final Consumer<WildcardType> wildcardVisitor;
 	private final Consumer<IntersectionType> intersectionTypeVisitor;
 
@@ -147,6 +155,7 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 			Consumer<GenericArrayType> genericArrayVisitor,
 			Consumer<ParameterizedType> parameterizedTypeVisitor,
 			Consumer<TypeVariable<?>> typeVariableVisitor,
+			Consumer<InferenceVariable> inferenceVariableVisitor,
 			Consumer<WildcardType> wildcardVisitor,
 			Consumer<IntersectionType> intersectionTypeVisitor) {
 		super(allowRepeatVisits);
@@ -163,6 +172,7 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 		this.genericArrayVisitor = genericArrayVisitor;
 		this.parameterizedTypeVisitor = parameterizedTypeVisitor;
 		this.typeVariableVisitor = typeVariableVisitor;
+		this.inferenceVariableVisitor = inferenceVariableVisitor;
 		this.wildcardVisitor = wildcardVisitor;
 		this.intersectionTypeVisitor = intersectionTypeVisitor;
 	}
@@ -259,5 +269,17 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 
 		if (postOrder)
 			intersectionTypeVisitor.accept(type);
+	}
+
+	@Override
+	protected void visitInferenceVariable(InferenceVariable type) {
+		if (!postOrder)
+			inferenceVariableVisitor.accept(type);
+
+		if (bounds)
+			visit(type.getBounds());
+
+		if (postOrder)
+			inferenceVariableVisitor.accept(type);
 	}
 }
