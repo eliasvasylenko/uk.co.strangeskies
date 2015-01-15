@@ -1,11 +1,7 @@
 package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import uk.co.strangeskies.utilities.IdentityProperty;
 
@@ -56,19 +52,8 @@ public class Bound {
 			}
 
 			@Override
-			public void acceptCaptureConversion(Map<Type, InferenceVariable> c) {
-				List<Type> types = new ArrayList<>(c.keySet());
-				StringBuilder stringBuilder = new StringBuilder();
-
-				stringBuilder.append("G<");
-				stringBuilder.append(types.stream().map(c::get).map(Object::toString)
-						.collect(Collectors.joining(", ")));
-				stringBuilder.append("> = capture(<G");
-				stringBuilder.append(types.stream().map(Object::toString)
-						.collect(Collectors.joining(", ")));
-				stringBuilder.append(">)");
-
-				result.set(stringBuilder.toString());
+			public void acceptCaptureConversion(CaptureConversion c) {
+				result.set(c.toString());
 			}
 		});
 		if (result.get() == null)
@@ -112,8 +97,7 @@ public class Bound {
 			public void acceptSubtype(InferenceVariable a, InferenceVariable b) {
 				that.accept(new PartialBoundVisitor() {
 					@Override
-					public void acceptSubtype(InferenceVariable a2,
-							InferenceVariable b2) {
+					public void acceptSubtype(InferenceVariable a2, InferenceVariable b2) {
 						result.set(a.equals(a2) && b.equals(b2));
 					}
 				});
@@ -143,8 +127,7 @@ public class Bound {
 			public void acceptEquality(InferenceVariable a, InferenceVariable b) {
 				that.accept(new PartialBoundVisitor() {
 					@Override
-					public void acceptEquality(InferenceVariable a2,
-							InferenceVariable b2) {
+					public void acceptEquality(InferenceVariable a2, InferenceVariable b2) {
 						result.set((a.equals(a2) && b.equals(b2))
 								|| (a.equals(b2) && b.equals(a2)));
 					}
@@ -152,10 +135,10 @@ public class Bound {
 			}
 
 			@Override
-			public void acceptCaptureConversion(Map<Type, InferenceVariable> c) {
+			public void acceptCaptureConversion(CaptureConversion c) {
 				that.accept(new PartialBoundVisitor() {
 					@Override
-					public void acceptCaptureConversion(Map<Type, InferenceVariable> c2) {
+					public void acceptCaptureConversion(CaptureConversion c2) {
 						result.set(c.equals(c2));
 					}
 				});
@@ -201,7 +184,7 @@ public class Bound {
 			}
 
 			@Override
-			public void acceptCaptureConversion(Map<Type, InferenceVariable> c) {
+			public void acceptCaptureConversion(CaptureConversion c) {
 				result.set(c.hashCode());
 			}
 		});

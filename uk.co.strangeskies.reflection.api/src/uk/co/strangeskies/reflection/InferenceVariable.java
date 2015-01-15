@@ -3,32 +3,47 @@ package uk.co.strangeskies.reflection;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
-import java.rmi.server.UID;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class InferenceVariable implements Type {
+	private final static AtomicLong COUNTER = new AtomicLong();
+
 	private final String name;
-	private Type[] bounds;
+	final Type[] upperBounds;
+	final Type[] lowerBounds;
 	private final Resolver resolver;
 
-	private InferenceVariable(Resolver resolver, String name) {
-		this.name = name;
+	private InferenceVariable(Resolver resolver, String name, int lowerBounds) {
+		this.name = name + COUNTER.incrementAndGet();
 		this.resolver = resolver;
+
+		upperBounds = new Type[0];
+		this.lowerBounds = new Type[lowerBounds];
 	}
 
-	private InferenceVariable(String name) {
-		this.name = name;
+	public InferenceVariable() {
+		this(new Type[0], new Type[0]);
+	}
+
+	public InferenceVariable(Type[] upperBounds, Type[] lowerBounds) {
+		this.name = "CAP#" + COUNTER.incrementAndGet();
 		this.resolver = null;
-		this.bounds = new Type[0];
+
+		this.upperBounds = upperBounds.clone();
+		this.lowerBounds = lowerBounds.clone();
 	}
 
-	public Type[] getBounds() {
-		return bounds;
+	public Type[] getUpperBounds() {
+		return upperBounds.clone();
+	}
+
+	public Type[] getLowerBounds() {
+		return lowerBounds.clone();
 	}
 
 	public Resolver getResolver() {
@@ -44,35 +59,41 @@ public class InferenceVariable implements Type {
 		return getName();
 	}
 
-	public static InferenceVariable capture(WildcardType wildcardType) {
-		return new InferenceVariable("CAP#" + new UID());
-	}
-
 	public static Map<TypeVariable<?>, InferenceVariable> capture(
 			Resolver resolver, GenericDeclaration declaration) {
-		if (resolver == null)
-			throw new IllegalArgumentException(new NullPointerException());
-
 		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = new HashMap<>();
-		do {
-			Arrays.stream(declaration.getTypeParameters()).forEach(
-					t -> inferenceVariables.put(t,
-							new InferenceVariable(resolver, t.getName() + "#" + new UID())));
-		} while (declaration instanceof Class
-				&& (declaration = ((Class<?>) declaration).getEnclosingClass()) != null);
 
+		List<TypeVariable<?>> declarationVariables;
+		if (declaration instanceof Class)
+			declarationVariables = Types.getTypeParameters((Class<?>) declaration);
+		else
+			declarationVariables = Arrays.asList(declaration.getTypeParameters());
+		declarationVariables.forEach(t -> inferenceVariables
+				.put(t,
+						new InferenceVariable(resolver, t.getName() + "#",
+								t.getBounds().length)));
+
+		substituteBounds(inferenceVariables);
+
+		return inferenceVariables;
+	}
+
+	static void substituteBounds(
+			Map<TypeVariable<?>, InferenceVariable> inferenceVariables) {
 		TypeSubstitution substitution = new TypeSubstitution();
 		for (Map.Entry<TypeVariable<?>, InferenceVariable> variable : inferenceVariables
 				.entrySet())
 			substitution = substitution.where(variable.getKey(), variable.getValue());
 
 		for (Map.Entry<TypeVariable<?>, InferenceVariable> variable : inferenceVariables
-				.entrySet())
-			variable.getValue().bounds = Arrays.stream(variable.getKey().getBounds())
-					.map(substitution::resolve).collect(Collectors.toList())
-					.toArray(new Type[variable.getKey().getBounds().length]);
-
-		return inferenceVariables;
+				.entrySet()) {
+			for (int i = 0; i < variable.getValue().upperBounds.length; i++)
+				variable.getValue().upperBounds[i] = substitution.resolve(variable
+						.getKey().getBounds()[i]);
+			for (int i = 0; i < variable.getValue().lowerBounds.length; i++)
+				variable.getValue().lowerBounds[i] = substitution.resolve(variable
+						.getKey().getBounds()[i]);
+		}
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })

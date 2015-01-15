@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import uk.co.strangeskies.reflection.Invokable;
 import uk.co.strangeskies.reflection.TypeLiteral;
@@ -70,11 +69,9 @@ public class TestTypeLiteral {
 		System.out.println();
 
 		System.out.println("method");
-		System.out.println(Invokable
-				.of(B.class.getMethod("method", Collection.class))
-				.withLooseApplicability(
-						new TypeLiteral<Collection<? super Integer>>() {}.getType())
-				.withLooseApplicability(new TypeLiteral<Set<Number>>() {}.getType()));
+		System.out.println(Invokable.of(
+				B.class.getMethod("method", Collection.class)).withLooseApplicability(
+				new TypeLiteral<Collection<? super Integer>>() {}.getType()));
 		System.out.println();
 
 		System.out.println("method");

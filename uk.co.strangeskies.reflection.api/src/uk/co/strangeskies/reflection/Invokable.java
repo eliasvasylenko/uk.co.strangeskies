@@ -259,9 +259,12 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 					nextParameter = null;
 				}
 			}
+			BoundVisitor a = null;
 			resolver.incorporateConstraint(new ConstraintFormula(
 					Kind.LOOSE_COMPATIBILILTY, argument, parameter));
 		}
+
+		resolver.infer();
 
 		// if (!resolver.validate())
 		// return null;

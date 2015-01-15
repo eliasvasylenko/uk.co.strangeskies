@@ -66,7 +66,7 @@ public final class Types {
 			else
 				return getRawType(bounds[0]);
 		} else if (type instanceof InferenceVariable) {
-			Type[] bounds = ((InferenceVariable) type).getBounds();
+			Type[] bounds = ((InferenceVariable) type).getUpperBounds();
 			if (bounds.length == 0)
 				return Object.class;
 			else
@@ -135,13 +135,13 @@ public final class Types {
 				&& InferenceVariable.getAllMentionedBy(type).isEmpty();
 	}
 
-	public static Stream<TypeVariable<?>> getTypeParameters(Class<?> rawType) {
+	public static List<TypeVariable<?>> getTypeParameters(Class<?> rawType) {
 		Stream<TypeVariable<?>> typeParameters = Stream.empty();
 		do {
 			typeParameters = Stream.concat(typeParameters,
 					Arrays.stream(rawType.getTypeParameters()));
 		} while ((rawType = rawType.getEnclosingClass()) != null);
-		return typeParameters;
+		return typeParameters.collect(Collectors.toList());
 	}
 
 	public static boolean isAssignable(Type from, Type to) {
@@ -501,7 +501,7 @@ public final class Types {
 	}
 
 	static <T> Type uncheckedParameterizedType(Class<T> rawType,
-			Map<TypeVariable<?>, Type> typeArguments) {
+			Map<? extends TypeVariable<?>, ? extends Type> typeArguments) {
 		Type ownerType = (rawType.getEnclosingClass() == null) ? null
 				: uncheckedParameterizedType(rawType.getEnclosingClass(), typeArguments);
 
@@ -519,13 +519,14 @@ public final class Types {
 
 	@SuppressWarnings("unchecked")
 	public static <T> TypeLiteral<? extends T> parameterizedType(
-			Class<T> rawType, Map<TypeVariable<?>, Type> typeArguments) {
+			Class<T> rawType,
+			Map<? extends TypeVariable<?>, ? extends Type> typeArguments) {
 		return (TypeLiteral<? extends T>) TypeLiteral
 				.from(uncheckedParameterizedType(rawType, typeArguments));
 	}
 
 	private static List<Type> argumentsForClass(Class<?> rawType,
-			Map<TypeVariable<?>, Type> typeArguments) {
+			Map<? extends TypeVariable<?>, ? extends Type> typeArguments) {
 		List<Type> arguments = new ArrayList<>();
 		for (int i = 0; i < rawType.getTypeParameters().length; i++) {
 			Type argument = typeArguments.get(rawType.getTypeParameters()[i]);

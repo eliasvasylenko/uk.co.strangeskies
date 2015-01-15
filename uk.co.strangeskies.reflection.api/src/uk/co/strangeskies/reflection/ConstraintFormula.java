@@ -2,9 +2,16 @@ package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.checkerframework.checker.javari.qual.ReadOnly;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public class ConstraintFormula {
 	public enum Kind {
@@ -48,6 +55,8 @@ public class ConstraintFormula {
 	 * A constraint formula of the form ‹S → T› is reduced as follows:
 	 */
 	private void reduceLooseCompatibilityConstraint(BoundVisitor boundConsumer) {
+		Type from = captureConversion(this.from, boundConsumer);
+
 		if (Types.isProperType(from) && Types.isProperType(to)) {
 			/*
 			 * If S and T are proper types, the constraint reduces to true if S is
@@ -78,7 +87,7 @@ public class ConstraintFormula {
 			 * there exists no type of the form G<...> that is a supertype of S, but
 			 * the raw type G is a supertype of S, then the constraint reduces to
 			 * true.
-			 * 
+			 *
 			 * Otherwise, if T is an array type of the form G<T1, ..., Tn>[]k, and
 			 * there exists no type of the form G<...>[]k that is a supertype of S,
 			 * but the raw type G[]k is a supertype of S, then the constraint reduces
@@ -90,6 +99,153 @@ public class ConstraintFormula {
 			 * Otherwise, the constraint reduces to ‹S <: T›.
 			 */
 			new ConstraintFormula(Kind.SUBTYPE, from, to).reduceInto(boundConsumer);
+	}
+
+	/*
+	 * Let G name a generic type declaration (§8.1.2, §9.1.2) with n type
+	 * parameters A1,...,An with corresponding bounds U1,...,Un.
+	 */
+	private Type captureConversion(Type type, BoundVisitor boundConsumer) {
+		if (type instanceof ParameterizedType) {
+			TypeLiteral<?> typeLiteral = TypeLiteral.from(type);
+			/*
+			 * There exists a capture conversion from a parameterized type
+			 * G<T1,...,Tn> (§4.5) to a parameterized type G<S1,...,Sn>, where, for 1
+			 * ≤ i ≤ n :
+			 */
+
+			Map<TypeVariable<?>, Type> arguments = new HashMap<>();
+			Map<TypeVariable<?>, InferenceVariable> argumentCaptures = new HashMap<>();
+			Map<InferenceVariable, Type> capturedTypes = new HashMap<>();
+			boolean identity = true;
+
+			for (TypeVariable<?> parameter : typeLiteral.getTypeParameters()) {
+				Type argument = typeLiteral.resolveType(parameter);
+				InferenceVariable capturedArgument;
+
+				if (argument instanceof WildcardType) {
+					WildcardType wildcardArgument = (WildcardType) argument;
+					identity = false;
+
+					if (wildcardArgument.getLowerBounds().length > 0) {
+						/*
+						 * If Ti is a wildcard type argument of the form ? super Bi, then Si
+						 * is a fresh type variable whose upper bound is
+						 * Ui[A1:=S1,...,An:=Sn] and whose lower bound is Bi.
+						 */
+						capturedArgument = new InferenceVariable(parameter.getBounds(),
+								wildcardArgument.getUpperBounds());
+					} else if (wildcardArgument.getUpperBounds().length > 0) {
+						/*
+						 * If Ti is a wildcard type argument of the form ? extends Bi, then
+						 * Si is a fresh type variable whose upper bound is glb(Bi,
+						 * Ui[A1:=S1,...,An:=Sn]) and whose lower bound is the null type.
+						 */
+						capturedArgument = new InferenceVariable(parameter.getBounds(),
+								new Type[0]);
+					} else {
+						/*
+						 * If Ti is a wildcard type argument (§4.5.1) of the form ?, then Si
+						 * is a fresh type variable whose upper bound is
+						 * Ui[A1:=S1,...,An:=Sn] and whose lower bound is the null type
+						 * (§4.1).
+						 */
+						capturedArgument = new InferenceVariable(parameter.getBounds(),
+								new Type[0]);
+					}
+				} else {
+					/*
+					 * Otherwise, Si = Ti.
+					 */
+					capturedArgument = new InferenceVariable();
+				}
+
+				arguments.put(parameter, argument);
+				argumentCaptures.put(parameter, capturedArgument);
+				capturedTypes.put(capturedArgument, argument);
+			}
+
+			if (!identity) {
+				InferenceVariable.substituteBounds(argumentCaptures);
+
+				ParameterizedType originalType = (ParameterizedType) type;
+				type = Types.parameterizedType(Types.getRawType(originalType),
+						argumentCaptures).getType();
+				ParameterizedType capturedType = (ParameterizedType) type;
+
+				for (Map.Entry<TypeVariable<?>, InferenceVariable> inferenceVariable : argumentCaptures
+						.entrySet()) {
+					boolean anyProper = false;
+					boolean anyBounds = false;
+					for (Type bound : inferenceVariable.getValue().getUpperBounds()) {
+						anyBounds = true;
+						anyProper = anyProper || Types.isProperType(bound);
+						boundConsumer.acceptSubtype(inferenceVariable.getValue(), bound);
+					}
+					if (!anyProper)
+						boundConsumer.acceptSubtype(inferenceVariable.getValue(),
+								Object.class);
+
+					for (Type bound : inferenceVariable.getValue().getLowerBounds()) {
+						anyBounds = true;
+						boundConsumer.acceptSubtype(bound, inferenceVariable.getValue());
+					}
+
+					if (!anyBounds)
+						boundConsumer.acceptEquality(inferenceVariable.getValue(),
+								arguments.get(inferenceVariable.getKey()));
+				}
+
+				CaptureConversion captureConversion = new CaptureConversion() {
+					@Override
+					public ParameterizedType getOriginalType() {
+						return originalType;
+					}
+
+					@Override
+					public Set<InferenceVariable> getInferenceVariables() {
+						return capturedTypes.keySet();
+					}
+
+					@Override
+					public Type getCapturedType(InferenceVariable variable) {
+						return capturedTypes.get(variable);
+					}
+
+					@Override
+					public ParameterizedType getCapturedType() {
+						return capturedType;
+					}
+
+					@Override
+					public String toString() {
+						return new StringBuilder().append(getCapturedType())
+								.append(" = capture(").append(getOriginalType()).append(")")
+								.toString();
+					}
+
+					@Override
+					public boolean equals(@Nullable @ReadOnly Object object) {
+						if (object == this)
+							return true;
+						if (!(object instanceof CaptureConversion))
+							return false;
+
+						CaptureConversion that = (CaptureConversion) object;
+						return that.getOriginalType().equals(originalType);
+					}
+
+					@Override
+					public int hashCode() {
+						return originalType.hashCode();
+					}
+				};
+				System.out.println(captureConversion);
+				boundConsumer.acceptCaptureConversion(captureConversion);
+			}
+		}
+
+		return type;
 	}
 
 	public static boolean isUncheckedCompatibleOnly(Type from, Type to) {
@@ -242,13 +398,13 @@ public class ConstraintFormula {
 					 * - If S is an intersection type of which T is an element, the
 					 * constraint reduces to true.
 					 */
-				} else if (((InferenceVariable) to).getBounds().length > 0) {
+				} else if (((InferenceVariable) to).getLowerBounds().length > 0) {
 					/*
 					 * - Otherwise, if T has a lower bound, B, the constraint reduces to
 					 * ‹S <: B›.
 					 */
 					new ConstraintFormula(Kind.SUBTYPE, from,
-							IntersectionType.of(((InferenceVariable) to).getBounds()));
+							IntersectionType.of(((InferenceVariable) to).getLowerBounds()));
 				} else {
 					/*
 					 * - Otherwise, the constraint reduces to false.
@@ -319,18 +475,6 @@ public class ConstraintFormula {
 				 * If S is a type, the constraint reduces to ‹S = T›.
 				 */
 				new ConstraintFormula(Kind.EQUALITY, from, to)
-						.reduceInto(boundConsumer);
-			} else if (to instanceof InferenceVariable) {
-				/*
-				 * THIS IS NOT IN THE SPEC! But it does appear to follow the behaviour
-				 * of javac & JDT.
-				 */
-
-				WildcardType from = (WildcardType) this.from;
-				InferenceVariable capture = InferenceVariable.capture(from);
-				new ConstraintFormula(Kind.SUBTYPE, capture, from)
-						.reduceInto(boundConsumer);
-				new ConstraintFormula(Kind.EQUALITY, to, capture)
 						.reduceInto(boundConsumer);
 			} else {
 				/*

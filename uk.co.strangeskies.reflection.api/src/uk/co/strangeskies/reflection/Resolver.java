@@ -119,21 +119,21 @@ public class Resolver {
 		 */
 		bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
 			@Override
-			public void acceptCaptureConversion(Map<Type, InferenceVariable> c) {
-				for (InferenceVariable variable : c.values()) {
+			public void acceptCaptureConversion(CaptureConversion c) {
+				for (InferenceVariable variable : c.getInferenceVariables()) {
 					if (inferenceVariables.contains(variable)) {
-						for (InferenceVariable dependency : c.values())
+						for (InferenceVariable dependency : c.getInferenceVariables())
 							if (inferenceVariables.contains(dependency))
 								addRemainingDependency(variable, dependency);
-						for (Type inC : c.keySet())
+						for (InferenceVariable v : c.getInferenceVariables())
 							for (InferenceVariable dependency : InferenceVariable
-									.getAllMentionedBy(inC))
+									.getAllMentionedBy(c.getCapturedType(v)))
 								if (inferenceVariables.contains(dependency))
 									addRemainingDependency(variable, dependency);
 					}
 				}
 
-				leftOfCapture.addAll(c.values());
+				leftOfCapture.addAll(c.getInferenceVariables());
 			}
 		}));
 
@@ -209,7 +209,7 @@ public class Resolver {
 							inferenceVariable.getValue());
 
 					boolean anyProper = false;
-					for (Type bound : inferenceVariable.getValue().getBounds()) {
+					for (Type bound : inferenceVariable.getValue().getUpperBounds()) {
 						anyProper = anyProper || Types.isProperType(bound);
 						bounds.incorporate().acceptSubtype(inferenceVariable.getValue(),
 								bound);
@@ -365,8 +365,8 @@ public class Resolver {
 				false);
 		bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
 			@Override
-			public void acceptCaptureConversion(Map<Type, InferenceVariable> c) {
-				if (c.values().stream().anyMatch(minimalSet::contains))
+			public void acceptCaptureConversion(CaptureConversion c) {
+				if (c.getInferenceVariables().stream().anyMatch(minimalSet::contains))
 					containsCaptureConversion.set(true);
 			};
 		}));
@@ -453,9 +453,9 @@ public class Resolver {
 		/*
 		 * the bound set contains a bound of the form G<..., αi, ...> =
 		 * capture(G<...>) for some i (1 ≤ i ≤ n), or;
-		 * 
+		 *
 		 * If the bound set produced in the step above contains the bound false;
-		 * 
+		 *
 		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
 		 */
 		for (InferenceVariable variable : minimalSet)

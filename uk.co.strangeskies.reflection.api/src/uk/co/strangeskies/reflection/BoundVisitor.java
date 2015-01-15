@@ -2,7 +2,6 @@ package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.Type;
 import java.util.Arrays;
-import java.util.Map;
 
 public interface BoundVisitor {
 	public static abstract class PartialBoundVisitor implements BoundVisitor {
@@ -25,7 +24,7 @@ public interface BoundVisitor {
 		public void acceptFalsehood() {}
 
 		@Override
-		public void acceptCaptureConversion(Map<Type, InferenceVariable> c) {}
+		public void acceptCaptureConversion(CaptureConversion c) {}
 	}
 
 	void acceptEquality(InferenceVariable a, InferenceVariable b);
@@ -40,7 +39,7 @@ public interface BoundVisitor {
 
 	void acceptFalsehood();
 
-	void acceptCaptureConversion(Map<Type, InferenceVariable> c);
+	void acceptCaptureConversion(CaptureConversion c);
 
 	public default void visit(Bound... bounds) {
 		visit(Arrays.asList(bounds));

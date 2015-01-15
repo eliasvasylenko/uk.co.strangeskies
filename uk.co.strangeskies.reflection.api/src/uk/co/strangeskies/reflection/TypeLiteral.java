@@ -7,10 +7,10 @@ import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 	private final Type type;
@@ -182,7 +182,7 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 
 	@SuppressWarnings("unchecked")
 	public <U> TypeLiteral<? extends U> resolveSupertypeParameters(Class<U> type) {
-		if (!Types.getTypeParameters(type).findAny().isPresent())
+		if (Types.getTypeParameters(type).isEmpty())
 			return TypeLiteral.from(type);
 
 		if (!type.isAssignableFrom(rawType))
@@ -307,7 +307,7 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		return Types.getComponentType(type);
 	}
 
-	public Stream<TypeVariable<?>> getTypeParameters() {
+	public List<TypeVariable<?>> getTypeParameters() {
 		return Types.getTypeParameters(rawType);
 	}
 }

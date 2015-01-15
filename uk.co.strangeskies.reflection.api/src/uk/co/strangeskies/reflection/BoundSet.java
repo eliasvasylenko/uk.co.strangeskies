@@ -6,7 +6,6 @@ import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -103,12 +102,6 @@ public class BoundSet {
 							incorporator.incorporateSupertypeSubstitution(a, b, a2, b2);
 							incorporator.incorporateSupertypeSubstitution(b, a, a2, b2);
 						}
-
-						@Override
-						public void acceptCaptureConversion(
-								Map<Type, InferenceVariable> c2) {
-							throw new NotImplementedException(); // TODO
-						}
 					});
 		}
 
@@ -144,11 +137,15 @@ public class BoundSet {
 						}
 
 						@Override
-						public void acceptSubtype(InferenceVariable a2,
-								InferenceVariable b2) {
+						public void acceptSubtype(InferenceVariable a2, InferenceVariable b2) {
 							incorporator.incorporateSubtypeSubstitution(a, b, a2, b2);
 							incorporator.incorporateSupertypeSubstitution(a, b, a2, b2);
 							incorporator.incorporateProperSubtypeSubstitution(a, b, a2, b2);
+						}
+
+						@Override
+						public void acceptCaptureConversion(CaptureConversion c2) {
+							incorporator.incorporateCaptureEquality(c2, a, b);
 						}
 					});
 		}
@@ -178,8 +175,7 @@ public class BoundSet {
 						}
 
 						@Override
-						public void acceptSubtype(InferenceVariable a2,
-								InferenceVariable b2) {
+						public void acceptSubtype(InferenceVariable a2, InferenceVariable b2) {
 							incorporator.incorporateSupertypeParameterizationEquality(a, b,
 									a2, b2);
 
@@ -196,6 +192,11 @@ public class BoundSet {
 						@Override
 						public void acceptSubtype(Type a2, InferenceVariable b2) {
 							incorporator.incorporateTransitiveSubtype(a2, b2, a, b);
+						}
+
+						@Override
+						public void acceptCaptureConversion(CaptureConversion c2) {
+							incorporator.incorporateCaptureSubtype(c2, a, b);
 						}
 					});
 		}
@@ -218,8 +219,7 @@ public class BoundSet {
 						}
 
 						@Override
-						public void acceptSubtype(InferenceVariable a2,
-								InferenceVariable b2) {
+						public void acceptSubtype(InferenceVariable a2, InferenceVariable b2) {
 							incorporator.incorporateTransitiveSubtype(a, b, a2, b2);
 							incorporator.incorporateTransitiveSubtype(a, b, b2, a2);
 						}
@@ -227,6 +227,33 @@ public class BoundSet {
 						@Override
 						public void acceptSubtype(InferenceVariable a2, Type b2) {
 							incorporator.incorporateTransitiveSubtype(a, b, a2, b2);
+						}
+
+						@Override
+						public void acceptCaptureConversion(CaptureConversion c2) {
+							incorporator.incorporateCaptureSubtype(c2, a, b);
+						}
+					});
+		}
+
+		@Override
+		public void acceptCaptureConversion(CaptureConversion c) {
+			addAndCheckPairs(
+					new Bound(visitor -> visitor.acceptCaptureConversion(c)),
+					incorporator -> new PartialBoundVisitor() {
+						@Override
+						public void acceptEquality(InferenceVariable a2, Type b2) {
+							incorporator.incorporateCaptureEquality(c, a2, b2);
+						}
+
+						@Override
+						public void acceptSubtype(Type a2, InferenceVariable b2) {
+							incorporator.incorporateCaptureSubtype(c, a2, b2);
+						}
+
+						@Override
+						public void acceptSubtype(InferenceVariable a2, Type b2) {
+							incorporator.incorporateCaptureSubtype(c, a2, b2);
 						}
 					});
 		}
@@ -240,23 +267,19 @@ public class BoundSet {
 				throw new TypeInferenceException(
 						"Addition of falsehood into bounds set " + BoundSet.this + ".");
 		}
-
-		@Override
-		public void acceptCaptureConversion(Map<Type, InferenceVariable> c) {
-			bounds.add(new Bound(visitor -> visitor.acceptCaptureConversion(c)));
-		}
 	}
 
-	/*
-	 * (In this section, S and T are inference variables or types, and U is a
-	 * proper type. For conciseness, a bound of the form α = T may also match a
-	 * bound of the form T = α.)
-	 * 
-	 * When a bound set contains a pair of bounds that match one of the following
-	 * rules, a new constraint formula is implied:
-	 */
 	class ComplementaryBoundIncorporator {
 		private final List<ConstraintFormula> constraints = new ArrayList<>();
+
+		/*
+		 * (In this section, S and T are inference variables or types, and U is a
+		 * proper type. For conciseness, a bound of the form α = T may also match a
+		 * bound of the form T = α.)
+		 *
+		 * When a bound set contains a pair of bounds that match one of the
+		 * following rules, a new constraint formula is implied:
+		 */
 
 		/*
 		 * α = S and α = T imply ‹S = T›
@@ -279,8 +302,8 @@ public class BoundSet {
 		/*
 		 * α = S and T <: α imply ‹T <: S›
 		 */
-		public void incorporateSupertypeSubstitution(InferenceVariable a,
-				Type S, Type T, InferenceVariable a2) {
+		public void incorporateSupertypeSubstitution(InferenceVariable a, Type S,
+				Type T, InferenceVariable a2) {
 			if (a.equals(a2))
 				constraints.add(new ConstraintFormula(Kind.SUBTYPE, T, S));
 		}
@@ -381,6 +404,108 @@ public class BoundSet {
 					}
 				}.visit(S);
 			}
+		}
+
+		/*
+		 * When a bound set contains a bound of the form G<α1, ..., αn> =
+		 * capture(G<A1, ..., An>), new bounds are implied and new constraint
+		 * formulas may be implied, as follows.
+		 *
+		 * Let P1, ..., Pn represent the type parameters of G and let B1, ..., Bn
+		 * represent the bounds of these type parameters. Let θ represent the
+		 * substitution [P1:=α1, ..., Pn:=αn]. Let R be a type that is not an
+		 * inference variable (but is not necessarily a proper type).
+		 *
+		 * A set of bounds on α1, ..., αn is implied, constructed from the declared
+		 * bounds of P1, ..., Pn as specified in §18.1.3.
+		 *
+		 * In addition, for all i (1 ≤ i ≤ n):
+		 */
+
+		public void incorporateCaptureEquality(CaptureConversion c,
+				InferenceVariable a, Type R) {
+			/*
+			 * If Ai is a wildcard of the form ?:
+			 *
+			 * αi = R implies the bound false
+			 *
+			 * If Ai is a wildcard of the form ? extends T:
+			 *
+			 * αi = R implies the bound false
+			 *
+			 * If Ai is a wildcard of the form ? super T:
+			 *
+			 * αi = R implies the bound false
+			 */
+			if (c.getCapturedType(a) instanceof WildcardType)
+				incorporate().acceptFalsehood();
+		}
+
+		public void incorporateCaptureSubtype(CaptureConversion c,
+				InferenceVariable a, Type R) {
+			if (c.getCapturedType(a) instanceof WildcardType) {
+				WildcardType A = (WildcardType) c.getCapturedType(a);
+
+				if (A.getUpperBounds().length > 0) {
+					/*
+					 * If Ai is a wildcard of the form ? extends T:
+					 */
+					/*
+					 * If Bi is Object, then αi <: R implies the constraint formula ‹T <:
+					 * R›
+					 */
+					/*
+					 * If T is Object, then αi <: R implies the constraint formula ‹Bi θ
+					 * <: R›
+					 */
+				} else if (A.getLowerBounds().length > 0) {
+					/*
+					 * If Ai is a wildcard of the form ? super T:
+					 *
+					 * αi <: R implies the constraint formula ‹Bi θ <: R›
+					 */
+				} else {
+					/*
+					 * If Ai is a wildcard of the form ?:
+					 *
+					 * αi <: R implies the constraint formula ‹Bi θ <: R›
+					 */
+				}
+				System.out.println(BoundSet.this);
+				throw new UnsupportedOperationException();
+			}
+		}
+
+		public void incorporateCaptureSubtype(CaptureConversion c, Type R,
+				InferenceVariable a) {
+			if (c.getCapturedType(a) instanceof WildcardType) {
+				WildcardType A = (WildcardType) c.getCapturedType(a);
+
+				if (A.getUpperBounds().length > 0) {
+					/*
+					 * If Ai is a wildcard of the form ? extends T:
+					 *
+					 * R <: αi implies the bound false
+					 */
+					incorporate().acceptFalsehood();
+				} else if (A.getLowerBounds().length > 0) {
+					/*
+					 * If Ai is a wildcard of the form ? super T:
+					 *
+					 * R <: αi implies the constraint formula ‹R <: T›
+					 */
+					System.out.println(BoundSet.this);
+					throw new UnsupportedOperationException();
+				} else {
+					/*
+					 * If Ai is a wildcard of the form ?:
+					 *
+					 * R <: αi implies the bound false
+					 */
+					incorporate().acceptFalsehood();
+				}
+			}
+
 		}
 	}
 }

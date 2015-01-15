@@ -277,7 +277,7 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 			inferenceVariableVisitor.accept(type);
 
 		if (bounds)
-			visit(type.getBounds());
+			visit(type.getUpperBounds());
 
 		if (postOrder)
 			inferenceVariableVisitor.accept(type);
