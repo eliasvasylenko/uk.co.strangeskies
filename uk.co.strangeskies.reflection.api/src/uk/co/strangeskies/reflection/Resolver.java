@@ -26,7 +26,7 @@ import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 
 public class Resolver {
-	BoundSet bounds;
+	private BoundSet bounds;
 
 	/*
 	 * We maintain a set of generic declarations which have already been
@@ -35,8 +35,13 @@ public class Resolver {
 	 * Classes, such that bounds on inference variables may be implied for other
 	 * classes through enclosing, subtype, and supertype relations.
 	 */
-	private final Set<GenericDeclaration> captures;
-	private final Map<TypeVariable<?>, InferenceVariable> inferenceVariables;
+	private final Set<GenericDeclaration> capturedDeclarations;
+	private final Map<TypeVariable<?>, InferenceVariable> capturedTypeVariables;
+
+	/*
+	 * TODO don't store remaining dependencies as member, since we not need to
+	 * recalculate at every use anyway...
+	 */
 	private final MultiMap<InferenceVariable, InferenceVariable, ? extends Set<InferenceVariable>> remainingDependencies;
 	private final Map<InferenceVariable, Type> instantiations;
 
@@ -51,8 +56,9 @@ public class Resolver {
 	public Resolver(BoundSet bounds) {
 		this.bounds = bounds;
 
-		captures = new HashSet<>();
-		inferenceVariables = new HashMap<>();
+		capturedDeclarations = new HashSet<>();
+		capturedTypeVariables = new HashMap<>();
+
 		remainingDependencies = new MultiHashMap<>(HashSet::new);
 		instantiations = new HashMap<>();
 	}
@@ -64,8 +70,9 @@ public class Resolver {
 	public Resolver(Resolver that) {
 		bounds = new BoundSet(that.bounds);
 
-		captures = new HashSet<>(that.captures);
-		inferenceVariables = new HashMap<>(that.inferenceVariables);
+		capturedDeclarations = new HashSet<>(that.capturedDeclarations);
+		capturedTypeVariables = new HashMap<>(that.capturedTypeVariables);
+
 		remainingDependencies = new MultiHashMap<>(HashSet::new,
 				that.remainingDependencies);
 		instantiations = new HashMap<>(that.instantiations);
@@ -102,7 +109,7 @@ public class Resolver {
 		Set<InferenceVariable> leftOfCapture = new HashSet<>();
 
 		Set<InferenceVariable> inferenceVariables = new HashSet<>(
-				this.inferenceVariables.values());
+				getInferenceVariables());
 		inferenceVariables.removeAll(instantiations.keySet());
 
 		/*
@@ -127,7 +134,7 @@ public class Resolver {
 								addRemainingDependency(variable, dependency);
 						for (InferenceVariable v : c.getInferenceVariables())
 							for (InferenceVariable dependency : InferenceVariable
-									.getAllMentionedBy(c.getCapturedType(v)))
+									.getAllMentionedBy(c.getCapturedArgument(v)))
 								if (inferenceVariables.contains(dependency))
 									addRemainingDependency(variable, dependency);
 					}
@@ -198,40 +205,35 @@ public class Resolver {
 	}
 
 	public void capture(GenericDeclaration declaration) {
-		if (captures.add(declaration)) {
+		if (capturedDeclarations.add(declaration)) {
 			Map<TypeVariable<?>, InferenceVariable> newInferenceVariables = InferenceVariable
 					.capture(this, declaration);
 
 			for (Map.Entry<TypeVariable<?>, InferenceVariable> inferenceVariable : newInferenceVariables
-					.entrySet())
-				if (!inferenceVariables.containsKey(inferenceVariable.getKey())) {
-					inferenceVariables.put(inferenceVariable.getKey(),
-							inferenceVariable.getValue());
+					.entrySet()) {
+				capturedTypeVariables.put(inferenceVariable.getKey(),
+						inferenceVariable.getValue());
 
-					boolean anyProper = false;
-					for (Type bound : inferenceVariable.getValue().getUpperBounds()) {
-						anyProper = anyProper || Types.isProperType(bound);
-						bounds.incorporate().acceptSubtype(inferenceVariable.getValue(),
-								bound);
-					}
-					if (!anyProper)
-						bounds.incorporate().acceptSubtype(inferenceVariable.getValue(),
-								Object.class);
+				boolean anyProper = false;
+				for (Type bound : inferenceVariable.getValue().getUpperBounds()) {
+					anyProper = anyProper || Types.isProperType(bound);
+					bounds.incorporate().acceptSubtype(inferenceVariable.getValue(),
+							bound);
 				}
-
-			recalculateRemainingDependencies();
+				if (!anyProper)
+					bounds.incorporate().acceptSubtype(inferenceVariable.getValue(),
+							Object.class);
+			}
 		}
 	}
 
 	public boolean isCaptured(GenericDeclaration declaration) {
-		return captures.contains(declaration);
+		return capturedDeclarations.contains(declaration);
 	}
 
 	public TypeSubstitution getCaptureSubstitution() {
-		TypeSubstitution substitution = new TypeSubstitution();
-		for (Map.Entry<TypeVariable<?>, InferenceVariable> variable : inferenceVariables
-				.entrySet())
-			substitution = substitution.where(variable.getKey(), variable.getValue());
+		TypeSubstitution substitution = new TypeSubstitution(
+				capturedTypeVariables::get);
 
 		return substitution;
 	}
@@ -283,10 +285,8 @@ public class Resolver {
 			actualTypeArgument = substitution.resolve(actualTypeArgument);
 
 			incorporateConstraint(new ConstraintFormula(Kind.EQUALITY,
-					inferenceVariables.get(typeParameter), actualTypeArgument));
+					capturedTypeVariables.get(typeParameter), actualTypeArgument));
 		}
-
-		recalculateRemainingDependencies();
 	}
 
 	public void incorporateConstraint(ConstraintFormula constraintFormula) {
@@ -305,7 +305,10 @@ public class Resolver {
 	}
 
 	public Map<InferenceVariable, Type> infer() {
-		return infer(inferenceVariables.values());
+		Map<InferenceVariable, Type> inference = infer(getInferenceVariables());
+		System.out.println(" " + bounds);
+
+		return inference;
 	}
 
 	public Map<InferenceVariable, Type> infer(InferenceVariable... variables) {
@@ -314,20 +317,32 @@ public class Resolver {
 
 	public Map<InferenceVariable, Type> infer(
 			Collection<? extends InferenceVariable> variables) {
-		/*
-		 * Given a set of inference variables to resolve, let V be the union of this
-		 * set and all variables upon which the resolution of at least one variable
-		 * in this set depends.
-		 */
-		resolveIndependentSet(variables.stream()
-				.filter(v -> !instantiations.containsKey(v))
-				.map(remainingDependencies::get).flatMap(Set::stream)
-				.collect(Collectors.toSet()));
-
 		Map<InferenceVariable, Type> instantiations = new HashMap<>();
 
-		for (InferenceVariable variable : variables)
-			instantiations.put(variable, this.instantiations.get(variable));
+		Set<InferenceVariable> remainingVariables = new HashSet<>(variables);
+		do {
+			recalculateRemainingDependencies();
+			System.out.println(" ~ " + variables + " IIII "
+					+ this.remainingDependencies + " ? " + bounds);
+
+			/*
+			 * Given a set of inference variables to resolve, let V be the union of
+			 * this set and all variables upon which the resolution of at least one
+			 * variable in this set depends.
+			 */
+			resolveIndependentSet(variables.stream()
+					.filter(v -> !instantiations.containsKey(v))
+					.map(remainingDependencies::get).flatMap(Set::stream)
+					.collect(Collectors.toSet()));
+
+			for (InferenceVariable variable : new HashSet<>(remainingVariables)) {
+				Type instantiation = this.instantiations.get(variable);
+				if (instantiation != null) {
+					instantiations.put(variable, instantiation);
+					remainingVariables.remove(variable);
+				}
+			}
+		} while (!remainingVariables.isEmpty());
 
 		return instantiations;
 	}
@@ -361,17 +376,16 @@ public class Resolver {
 	}
 
 	private void resolveMinimalIndepdendentSet(Set<InferenceVariable> minimalSet) {
-		IdentityProperty<Boolean> containsCaptureConversion = new IdentityProperty<Boolean>(
-				false);
+		Set<CaptureConversion> relatedCaptureConversions = new HashSet<>();
 		bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
 			@Override
 			public void acceptCaptureConversion(CaptureConversion c) {
 				if (c.getInferenceVariables().stream().anyMatch(minimalSet::contains))
-					containsCaptureConversion.set(true);
+					relatedCaptureConversions.add(c);
 			};
 		}));
 
-		if (!containsCaptureConversion.get()) {
+		if (relatedCaptureConversions.isEmpty()) {
 			/*
 			 * If the bound set does not contain a bound of the form G<..., αi, ...> =
 			 * capture(G<...>) for all i (1 ≤ i ≤ n), then a candidate instantiation
@@ -432,7 +446,6 @@ public class Resolver {
 					bounds.incorporate().acceptEquality(variable, instantiationCandidate);
 				}
 			} catch (TypeInferenceException e) {
-				e.printStackTrace();
 				instantiationCandidates = null;
 			}
 
@@ -458,8 +471,65 @@ public class Resolver {
 		 *
 		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
 		 */
-		for (InferenceVariable variable : minimalSet)
-			instantiations.put(variable, null);
+		Map<InferenceVariable, InferenceVariable> freshVariables = new HashMap<>();
+		for (InferenceVariable inferenceVariable : minimalSet) {
+			/*
+			 * For all i (1 ≤ i ≤ n), if αi has one or more proper lower bounds L1,
+			 * ..., Lk, then let the lower bound of Yi be lub(L1, ..., Lk); if not,
+			 * then Yi has no lower bound.
+			 */
+			Set<Type> lowerBoundSet = Arrays
+					.stream(inferenceVariable.getLowerBounds())
+					.filter(Types::isProperType).collect(Collectors.toSet());
+
+			Type[] lowerBounds;
+			if (lowerBoundSet.isEmpty())
+				lowerBounds = new Type[0];
+			else
+				lowerBounds = IntersectionType.asArray(leastUpperBound(lowerBoundSet));
+
+			/*
+			 * For all i (1 ≤ i ≤ n), where αi has upper bounds U1, ..., Uk, let the
+			 * upper bound of Yi be glb(U1 θ, ..., Uk θ), where θ is the substitution
+			 * [α1:=Y1, ..., αn:=Yn].
+			 */
+			Set<Type> upperBoundSet = Arrays
+					.stream(inferenceVariable.getLowerBounds())
+					.filter(Types::isProperType).collect(Collectors.toSet());
+
+			Type[] upperBounds;
+			if (upperBoundSet.isEmpty())
+				upperBounds = new Type[0];
+			else
+				upperBounds = IntersectionType.asArray(IntersectionType
+						.of(upperBoundSet));
+
+			freshVariables.put(inferenceVariable, new InferenceVariable(upperBounds,
+					lowerBounds));
+			/*
+			 * If the type variables Y1, ..., Yn do not have well-formed bounds (that
+			 * is, a lower bound is not a subtype of an upper bound, or an
+			 * intersection type is inconsistent), then resolution fails.
+			 */
+		}
+		InferenceVariable.substituteBounds(freshVariables);
+
+		/*
+		 * Otherwise, for all i (1 ≤ i ≤ n), all bounds of the form G<..., αi, ...>
+		 * = capture(G<...>) are removed from the current bound set, and the bounds
+		 * α1 = Y1, ..., αn = Yn are incorporated.
+		 *
+		 * If the result does not contain the bound false, then the result becomes
+		 * the new bound set, and resolution proceeds by selecting a new set of
+		 * variables to instantiate (if necessary), as described above.
+		 *
+		 * Otherwise, the result contains the bound false, and resolution fails.
+		 */
+		bounds.removeCaptureConversions(relatedCaptureConversions);
+		for (Map.Entry<InferenceVariable, InferenceVariable> inferenceVariable : freshVariables
+				.entrySet())
+			bounds.incorporate().acceptEquality(inferenceVariable.getKey(),
+					inferenceVariable.getValue());
 	}
 
 	public static Type leastUpperBound(Type... upperBounds) {
@@ -694,7 +764,7 @@ public class Resolver {
 	}
 
 	public Type resolveTypeVariable(TypeVariable<?> typeVariable) {
-		Type instantiation = instantiations.get(inferenceVariables
+		Type instantiation = instantiations.get(capturedTypeVariables
 				.get(typeVariable));
 
 		if (instantiation != null)
@@ -702,7 +772,7 @@ public class Resolver {
 		else {
 			capture(typeVariable.getGenericDeclaration());
 
-			return resolveInferenceVariable(inferenceVariables.get(typeVariable));
+			return resolveInferenceVariable(capturedTypeVariables.get(typeVariable));
 		}
 	}
 
@@ -758,7 +828,42 @@ public class Resolver {
 	}
 
 	public Set<InferenceVariable> getInferenceVariables() {
-		return new HashSet<>(inferenceVariables.values());
+		Set<InferenceVariable> inferenceVariables = new HashSet<>();
+		new PartialBoundVisitor() {
+			@Override
+			public void acceptSubtype(Type a, InferenceVariable b) {
+				inferenceVariables.add(b);
+			}
+
+			@Override
+			public void acceptSubtype(InferenceVariable a, Type b) {
+				inferenceVariables.add(a);
+			}
+
+			@Override
+			public void acceptSubtype(InferenceVariable a, InferenceVariable b) {
+				inferenceVariables.add(a);
+				inferenceVariables.add(b);
+			}
+
+			@Override
+			public void acceptEquality(InferenceVariable a, Type b) {
+				inferenceVariables.add(a);
+			}
+
+			@Override
+			public void acceptEquality(InferenceVariable a, InferenceVariable b) {
+				inferenceVariables.add(a);
+				inferenceVariables.add(b);
+			}
+
+			@Override
+			public void acceptCaptureConversion(CaptureConversion c) {
+				inferenceVariables.addAll(c.getInferenceVariables());
+			}
+		}.visit(bounds);
+
+		return inferenceVariables;
 	}
 
 	public Set<InferenceVariable> getInferenceVariables(
@@ -770,7 +875,7 @@ public class Resolver {
 
 	public InferenceVariable getInferenceVariable(TypeVariable<?> typeVariable) {
 		capture(typeVariable.getGenericDeclaration());
-		return inferenceVariables.get(typeVariable);
+		return capturedTypeVariables.get(typeVariable);
 	}
 
 	public static void main(String... args) {

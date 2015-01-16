@@ -10,9 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.checkerframework.checker.javari.qual.ReadOnly;
-import org.checkerframework.checker.nullness.qual.Nullable;
-
 public class ConstraintFormula {
 	public enum Kind {
 		LOOSE_COMPATIBILILTY, SUBTYPE, CONTAINMENT, EQUALITY
@@ -114,9 +111,10 @@ public class ConstraintFormula {
 			 * ≤ i ≤ n :
 			 */
 
-			Map<TypeVariable<?>, Type> arguments = new HashMap<>();
-			Map<TypeVariable<?>, InferenceVariable> argumentCaptures = new HashMap<>();
-			Map<InferenceVariable, Type> capturedTypes = new HashMap<>();
+			Map<TypeVariable<?>, Type> parameterArguments = new HashMap<>();
+			Map<TypeVariable<?>, InferenceVariable> parameterCaptures = new HashMap<>();
+			Map<InferenceVariable, Type> capturedArguments = new HashMap<>();
+			Map<InferenceVariable, TypeVariable<?>> capturedParameters = new HashMap<>();
 			boolean identity = true;
 
 			for (TypeVariable<?> parameter : typeLiteral.getTypeParameters()) {
@@ -141,7 +139,10 @@ public class ConstraintFormula {
 						 * Si is a fresh type variable whose upper bound is glb(Bi,
 						 * Ui[A1:=S1,...,An:=Sn]) and whose lower bound is the null type.
 						 */
-						capturedArgument = new InferenceVariable(parameter.getBounds(),
+						capturedArgument = new InferenceVariable(
+								IntersectionType.asArray(IntersectionType.of(IntersectionType
+										.uncheckedOf(wildcardArgument.getUpperBounds()),
+										IntersectionType.uncheckedOf(parameter.getBounds()))),
 								new Type[0]);
 					} else {
 						/*
@@ -160,20 +161,21 @@ public class ConstraintFormula {
 					capturedArgument = new InferenceVariable();
 				}
 
-				arguments.put(parameter, argument);
-				argumentCaptures.put(parameter, capturedArgument);
-				capturedTypes.put(capturedArgument, argument);
+				parameterArguments.put(parameter, argument);
+				parameterCaptures.put(parameter, capturedArgument);
+				capturedArguments.put(capturedArgument, argument);
+				capturedParameters.put(capturedArgument, parameter);
 			}
 
 			if (!identity) {
-				InferenceVariable.substituteBounds(argumentCaptures);
+				InferenceVariable.substituteBounds(parameterCaptures);
 
 				ParameterizedType originalType = (ParameterizedType) type;
 				type = Types.parameterizedType(Types.getRawType(originalType),
-						argumentCaptures).getType();
+						parameterCaptures).getType();
 				ParameterizedType capturedType = (ParameterizedType) type;
 
-				for (Map.Entry<TypeVariable<?>, InferenceVariable> inferenceVariable : argumentCaptures
+				for (Map.Entry<TypeVariable<?>, InferenceVariable> inferenceVariable : parameterCaptures
 						.entrySet()) {
 					boolean anyProper = false;
 					boolean anyBounds = false;
@@ -193,7 +195,7 @@ public class ConstraintFormula {
 
 					if (!anyBounds)
 						boundConsumer.acceptEquality(inferenceVariable.getValue(),
-								arguments.get(inferenceVariable.getKey()));
+								parameterArguments.get(inferenceVariable.getKey()));
 				}
 
 				CaptureConversion captureConversion = new CaptureConversion() {
@@ -204,12 +206,17 @@ public class ConstraintFormula {
 
 					@Override
 					public Set<InferenceVariable> getInferenceVariables() {
-						return capturedTypes.keySet();
+						return capturedArguments.keySet();
 					}
 
 					@Override
-					public Type getCapturedType(InferenceVariable variable) {
-						return capturedTypes.get(variable);
+					public Type getCapturedArgument(InferenceVariable variable) {
+						return capturedArguments.get(variable);
+					}
+
+					@Override
+					public TypeVariable<?> getCapturedParameter(InferenceVariable variable) {
+						return capturedParameters.get(variable);
 					}
 
 					@Override
@@ -223,24 +230,8 @@ public class ConstraintFormula {
 								.append(" = capture(").append(getOriginalType()).append(")")
 								.toString();
 					}
-
-					@Override
-					public boolean equals(@Nullable @ReadOnly Object object) {
-						if (object == this)
-							return true;
-						if (!(object instanceof CaptureConversion))
-							return false;
-
-						CaptureConversion that = (CaptureConversion) object;
-						return that.getOriginalType().equals(originalType);
-					}
-
-					@Override
-					public int hashCode() {
-						return originalType.hashCode();
-					}
 				};
-				System.out.println(captureConversion);
+				System.out.println("new(): " + captureConversion);
 				boundConsumer.acceptCaptureConversion(captureConversion);
 			}
 		}

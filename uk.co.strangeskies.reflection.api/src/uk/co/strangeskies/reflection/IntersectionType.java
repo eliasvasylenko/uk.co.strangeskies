@@ -73,6 +73,10 @@ public abstract class IntersectionType implements Type {
 		return uncheckedOf(flattenedTypes);
 	}
 
+	static IntersectionType uncheckedOf(Type... types) {
+		return uncheckedOf(Arrays.asList(types));
+	}
+
 	static IntersectionType uncheckedOf(Collection<? extends Type> types) {
 		return new IntersectionType() {
 			Type[] typeArray = types.toArray(new Type[types.size()]);
@@ -103,5 +107,12 @@ public abstract class IntersectionType implements Type {
 	@Override
 	public int hashCode() {
 		return Arrays.hashCode(getTypes());
+	}
+
+	public static Type[] asArray(Type of) {
+		if (of instanceof IntersectionType)
+			return ((IntersectionType) of).getTypes();
+		else
+			return new Type[] { of };
 	}
 }

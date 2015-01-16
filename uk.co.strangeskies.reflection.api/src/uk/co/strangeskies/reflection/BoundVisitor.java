@@ -1,7 +1,6 @@
 package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.Type;
-import java.util.Arrays;
 
 public interface BoundVisitor {
 	public static abstract class PartialBoundVisitor implements BoundVisitor {
@@ -41,12 +40,7 @@ public interface BoundVisitor {
 
 	void acceptCaptureConversion(CaptureConversion c);
 
-	public default void visit(Bound... bounds) {
-		visit(Arrays.asList(bounds));
-	}
-
-	default void visit(Iterable<? extends Bound> bounds) {
-		for (Bound bound : bounds)
-			bound.accept(this);
+	public default void visit(BoundSet bounds) {
+		bounds.stream().forEach(b -> b.accept(this));
 	}
 }

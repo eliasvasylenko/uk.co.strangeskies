@@ -78,21 +78,21 @@ public class InferenceVariable implements Type {
 		return inferenceVariables;
 	}
 
-	static void substituteBounds(
-			Map<TypeVariable<?>, InferenceVariable> inferenceVariables) {
+	static <T extends Type> void substituteBounds(
+			Map<T, InferenceVariable> inferenceVariables) {
 		TypeSubstitution substitution = new TypeSubstitution();
-		for (Map.Entry<TypeVariable<?>, InferenceVariable> variable : inferenceVariables
+		for (Map.Entry<T, InferenceVariable> variable : inferenceVariables
 				.entrySet())
 			substitution = substitution.where(variable.getKey(), variable.getValue());
 
-		for (Map.Entry<TypeVariable<?>, InferenceVariable> variable : inferenceVariables
+		for (Map.Entry<T, InferenceVariable> variable : inferenceVariables
 				.entrySet()) {
 			for (int i = 0; i < variable.getValue().upperBounds.length; i++)
 				variable.getValue().upperBounds[i] = substitution.resolve(variable
-						.getKey().getBounds()[i]);
+						.getValue().upperBounds[i]);
 			for (int i = 0; i < variable.getValue().lowerBounds.length; i++)
 				variable.getValue().lowerBounds[i] = substitution.resolve(variable
-						.getKey().getBounds()[i]);
+						.getValue().lowerBounds[i]);
 		}
 	}
 

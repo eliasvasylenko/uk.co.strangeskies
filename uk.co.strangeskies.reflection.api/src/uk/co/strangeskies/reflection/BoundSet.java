@@ -4,6 +4,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -425,61 +426,76 @@ public class BoundSet {
 		public void incorporateCaptureEquality(CaptureConversion c,
 				InferenceVariable a, Type R) {
 			/*
-			 * If Ai is a wildcard of the form ?:
+			 * If Ai is a wildcard of the form ?, or;
 			 *
-			 * αi = R implies the bound false
-			 *
-			 * If Ai is a wildcard of the form ? extends T:
-			 *
-			 * αi = R implies the bound false
+			 * If Ai is a wildcard of the form ? extends T, or;
 			 *
 			 * If Ai is a wildcard of the form ? super T:
 			 *
 			 * αi = R implies the bound false
 			 */
-			if (c.getCapturedType(a) instanceof WildcardType)
+			if (c.getCapturedArgument(a) instanceof WildcardType)
 				incorporate().acceptFalsehood();
 		}
 
 		public void incorporateCaptureSubtype(CaptureConversion c,
 				InferenceVariable a, Type R) {
-			if (c.getCapturedType(a) instanceof WildcardType) {
-				WildcardType A = (WildcardType) c.getCapturedType(a);
+			if (c.getCapturedArgument(a) instanceof WildcardType) {
+				WildcardType A = (WildcardType) c.getCapturedArgument(a);
 
 				if (A.getUpperBounds().length > 0) {
 					/*
 					 * If Ai is a wildcard of the form ? extends T:
 					 */
-					/*
-					 * If Bi is Object, then αi <: R implies the constraint formula ‹T <:
-					 * R›
-					 */
-					/*
-					 * If T is Object, then αi <: R implies the constraint formula ‹Bi θ
-					 * <: R›
-					 */
+
+					Type[] bounds = c.getCapturedParameter(a).getBounds();
+					if (bounds.length == 0
+							|| (bounds.length == 1 && bounds[0].equals(Object.class))) {
+						/*
+						 * If Bi is Object, then αi <: R implies the constraint formula ‹T
+						 * <: R›
+						 */
+						incorporate(new ConstraintFormula(Kind.SUBTYPE,
+								IntersectionType.of(A.getUpperBounds()), R));
+					}
+
+					bounds = A.getUpperBounds();
+					if (bounds.length == 0
+							|| (bounds.length == 1 && bounds[0].equals(Object.class))) {
+						/*
+						 * If T is Object, then αi <: R implies the constraint formula ‹Bi θ
+						 * <: R›
+						 */
+						// incorporate(new ConstraintFormula(Kind.SUBTYPE,
+						// IntersectionType.of(A.getUpperBounds()), R));
+
+						System.out.println(BoundSet.this);
+						throw new UnsupportedOperationException();
+					}
 				} else if (A.getLowerBounds().length > 0) {
 					/*
 					 * If Ai is a wildcard of the form ? super T:
 					 *
 					 * αi <: R implies the constraint formula ‹Bi θ <: R›
 					 */
+					constraints.add(new ConstraintFormula(Kind.SUBTYPE, IntersectionType
+							.of(a.getLowerBounds()), R));
 				} else {
 					/*
 					 * If Ai is a wildcard of the form ?:
 					 *
 					 * αi <: R implies the constraint formula ‹Bi θ <: R›
 					 */
+					System.out.println(BoundSet.this);
+					throw new UnsupportedOperationException();
 				}
-				System.out.println(BoundSet.this);
-				throw new UnsupportedOperationException();
 			}
 		}
 
 		public void incorporateCaptureSubtype(CaptureConversion c, Type R,
 				InferenceVariable a) {
-			if (c.getCapturedType(a) instanceof WildcardType) {
-				WildcardType A = (WildcardType) c.getCapturedType(a);
+			if (c.getCapturedArgument(a) instanceof WildcardType) {
+				WildcardType A = (WildcardType) c.getCapturedArgument(a);
 
 				if (A.getUpperBounds().length > 0) {
 					/*
@@ -507,5 +523,11 @@ public class BoundSet {
 			}
 
 		}
+	}
+
+	public void removeCaptureConversions(
+			Collection<? extends CaptureConversion> captureConversions) {
+		captureConversions.forEach(c -> bounds.remove(new Bound(b -> b
+				.acceptCaptureConversion(c))));
 	}
 }

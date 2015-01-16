@@ -239,7 +239,7 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 	private Invokable<T, R> withLooseApplicability(boolean variableArity,
 			Type... arguments) {
 		if (variableArity) {
-			if (parameters.size() >= arguments.length)
+			if (parameters.size() > arguments.length)
 				return null;
 		} else if (parameters.size() != arguments.length)
 			return null;
@@ -259,7 +259,6 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 					nextParameter = null;
 				}
 			}
-			BoundVisitor a = null;
 			resolver.incorporateConstraint(new ConstraintFormula(
 					Kind.LOOSE_COMPATIBILILTY, argument, parameter));
 		}
@@ -268,8 +267,6 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 
 		// if (!resolver.validate())
 		// return null;
-
-		System.out.println(resolver.bounds);
 
 		return new Invokable<>(resolver, receiverType, returnType, executable,
 				invocationFunction);
