@@ -1,5 +1,6 @@
 package uk.co.strangeskies.reflection;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.ParameterizedType;
@@ -17,6 +18,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import uk.co.strangeskies.reflection.BoundVisitor.PartialBoundVisitor;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
@@ -466,12 +469,37 @@ public class Resolver {
 		/*
 		 * the bound set contains a bound of the form G<..., αi, ...> =
 		 * capture(G<...>) for some i (1 ≤ i ≤ n), or;
-		 *
+		 * 
 		 * If the bound set produced in the step above contains the bound false;
-		 *
+		 * 
 		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
 		 */
-		Map<InferenceVariable, InferenceVariable> freshVariables = new HashMap<>();
+		TypeVariable<?>[] captures = new TypeVariable<?>[minimalSet.size()];
+		GenericDeclaration declaration = new GenericDeclaration() {
+			@Override
+			public Annotation[] getDeclaredAnnotations() {
+				return new Annotation[0];
+			}
+
+			@Override
+			public Annotation[] getAnnotations() {
+				return new Annotation[0];
+			}
+
+			@Override
+			public <T extends Annotation> @Nullable T getAnnotation(
+					Class<T> paramClass) {
+				return null;
+			}
+
+			@Override
+			public TypeVariable<?>[] getTypeParameters() {
+				return null;
+			}
+		};
+
+		Map<InferenceVariable, TypeVariableCapture> freshVariables = new HashMap<>();
+		int i = 0;
 		for (InferenceVariable inferenceVariable : minimalSet) {
 			/*
 			 * For all i (1 ≤ i ≤ n), if αi has one or more proper lower bounds L1,
@@ -504,29 +532,31 @@ public class Resolver {
 				upperBounds = IntersectionType.asArray(IntersectionType
 						.of(upperBoundSet));
 
-			freshVariables.put(inferenceVariable, new InferenceVariable(upperBounds,
-					lowerBounds));
+			TypeVariableCapture capture = new TypeVariableCapture(upperBounds,
+					lowerBounds, declaration);
+			freshVariables.put(inferenceVariable, capture);
+			captures[i++] = capture;
 			/*
 			 * If the type variables Y1, ..., Yn do not have well-formed bounds (that
 			 * is, a lower bound is not a subtype of an upper bound, or an
 			 * intersection type is inconsistent), then resolution fails.
 			 */
 		}
-		InferenceVariable.substituteBounds(freshVariables);
+		TypeVariableCapture.substituteBounds(freshVariables);
 
 		/*
 		 * Otherwise, for all i (1 ≤ i ≤ n), all bounds of the form G<..., αi, ...>
 		 * = capture(G<...>) are removed from the current bound set, and the bounds
 		 * α1 = Y1, ..., αn = Yn are incorporated.
-		 *
+		 * 
 		 * If the result does not contain the bound false, then the result becomes
 		 * the new bound set, and resolution proceeds by selecting a new set of
 		 * variables to instantiate (if necessary), as described above.
-		 *
+		 * 
 		 * Otherwise, the result contains the bound false, and resolution fails.
 		 */
 		bounds.removeCaptureConversions(relatedCaptureConversions);
-		for (Map.Entry<InferenceVariable, InferenceVariable> inferenceVariable : freshVariables
+		for (Map.Entry<InferenceVariable, TypeVariableCapture> inferenceVariable : freshVariables
 				.entrySet())
 			bounds.incorporate().acceptEquality(inferenceVariable.getKey(),
 					inferenceVariable.getValue());
