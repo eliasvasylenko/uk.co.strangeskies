@@ -5,66 +5,102 @@ import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
 
-// TODO common supertype with InferenceVariable to share behaviour.
-public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
-	private final static AtomicLong COUNTER = new AtomicLong();
+import uk.co.strangeskies.utilities.IdentityProperty;
 
-	private final String name;
-	private final Type[] upperBounds;
-	private final Type[] lowerBounds;
-
+public class TypeVariableCapture extends CaptureType implements
+		TypeVariable<GenericDeclaration> {
 	private final GenericDeclaration declaration;
 
-	public TypeVariableCapture(Type[] upperBounds, Type[] lowerBounds,
+	private TypeVariableCapture(Type[] upperBounds, Type[] lowerBounds,
 			GenericDeclaration declaration) {
-		this.name = "CAP#" + COUNTER.incrementAndGet();
-
-		this.upperBounds = upperBounds.clone();
-		this.lowerBounds = lowerBounds.clone();
+		super(upperBounds, lowerBounds);
 
 		this.declaration = declaration;
 	}
 
-	public Type[] getUpperBounds() {
-		return upperBounds.clone();
-	}
+	public static Map<InferenceVariable, TypeVariableCapture> capture(
+			Collection<? extends InferenceVariable> types) {
+		TypeVariable<?>[] captures = new TypeVariable<?>[types.size()];
+		GenericDeclaration declaration = new GenericDeclaration() {
+			@Override
+			public Annotation[] getDeclaredAnnotations() {
+				return new Annotation[0];
+			}
 
-	public Type[] getLowerBounds() {
-		return lowerBounds.clone();
-	}
+			@Override
+			public Annotation[] getAnnotations() {
+				return new Annotation[0];
+			}
 
-	@Override
-	public String getName() {
-		return name;
-	}
+			@Override
+			public <T extends Annotation> @Nullable T getAnnotation(
+					Class<T> paramClass) {
+				return null;
+			}
 
-	@Override
-	public String toString() {
-		return getName();
-	}
+			@Override
+			public TypeVariable<?>[] getTypeParameters() {
+				return null;
+			}
+		};
 
-	static <T extends Type> void substituteBounds(
-			Map<T, TypeVariableCapture> inferenceVariables) {
-		TypeSubstitution substitution = new TypeSubstitution();
-		for (Map.Entry<T, TypeVariableCapture> variable : inferenceVariables
-				.entrySet())
-			substitution = substitution.where(variable.getKey(), variable.getValue());
+		IdentityProperty<Integer> count = new IdentityProperty<>(0);
+		return CaptureType.capture(
+				types,
+				inferenceVariable -> {
+					/*
+					 * For all i (1 ≤ i ≤ n), if αi has one or more proper lower bounds
+					 * L1, ..., Lk, then let the lower bound of Yi be lub(L1, ..., Lk); if
+					 * not, then Yi has no lower bound.
+					 */
+					Set<Type> lowerBoundSet = Arrays
+							.stream(inferenceVariable.getLowerBounds())
+							.filter(Types::isProperType).collect(Collectors.toSet());
 
-		for (Map.Entry<T, TypeVariableCapture> variable : inferenceVariables
-				.entrySet()) {
-			for (int i = 0; i < variable.getValue().upperBounds.length; i++)
-				variable.getValue().upperBounds[i] = substitution.resolve(variable
-						.getValue().upperBounds[i]);
-			for (int i = 0; i < variable.getValue().lowerBounds.length; i++)
-				variable.getValue().lowerBounds[i] = substitution.resolve(variable
-						.getValue().lowerBounds[i]);
-		}
+					Type[] lowerBounds;
+					if (lowerBoundSet.isEmpty())
+						lowerBounds = new Type[0];
+					else
+						lowerBounds = IntersectionType.asArray(Resolver
+								.leastUpperBound(lowerBoundSet));
+
+					/*
+					 * For all i (1 ≤ i ≤ n), where αi has upper bounds U1, ..., Uk, let
+					 * the upper bound of Yi be glb(U1 θ, ..., Uk θ), where θ is the
+					 * substitution [α1:=Y1, ..., αn:=Yn].
+					 */
+					Set<Type> upperBoundSet = Arrays
+							.stream(inferenceVariable.getLowerBounds())
+							.filter(Types::isProperType).collect(Collectors.toSet());
+
+					Type[] upperBounds;
+					if (upperBoundSet.isEmpty())
+						upperBounds = new Type[0];
+					else
+						upperBounds = IntersectionType.asArray(IntersectionType
+								.of(upperBoundSet));
+
+					TypeVariableCapture capture = new TypeVariableCapture(upperBounds,
+							lowerBounds, declaration);
+					/*
+					 * If the type variables Y1, ..., Yn do not have well-formed bounds
+					 * (that is, a lower bound is not a subtype of an upper bound, or an
+					 * intersection type is inconsistent), then resolution fails.
+					 */
+
+					captures[count.get()] = capture;
+					count.set(count.get() + 1);
+
+					return capture;
+				});
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -94,7 +130,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 
 	@Override
 	public Type[] getBounds() {
-		return upperBounds.clone();
+		return getUpperBounds();
 	}
 
 	@Override

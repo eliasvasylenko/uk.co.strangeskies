@@ -2,13 +2,9 @@ package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 public class ConstraintFormula {
 	public enum Kind {
@@ -84,7 +80,7 @@ public class ConstraintFormula {
 			 * there exists no type of the form G<...> that is a supertype of S, but
 			 * the raw type G is a supertype of S, then the constraint reduces to
 			 * true.
-			 *
+			 * 
 			 * Otherwise, if T is an array type of the form G<T1, ..., Tn>[]k, and
 			 * there exists no type of the form G<...>[]k that is a supertype of S,
 			 * but the raw type G[]k is a supertype of S, then the constraint reduces
@@ -103,140 +99,37 @@ public class ConstraintFormula {
 	 * parameters A1,...,An with corresponding bounds U1,...,Un.
 	 */
 	private Type captureConversion(Type type, BoundVisitor boundConsumer) {
-		if (type instanceof ParameterizedType) {
-			TypeLiteral<?> typeLiteral = TypeLiteral.from(type);
-			/*
-			 * There exists a capture conversion from a parameterized type
-			 * G<T1,...,Tn> (§4.5) to a parameterized type G<S1,...,Sn>, where, for 1
-			 * ≤ i ≤ n :
-			 */
+		CaptureConversion captureConversion;
+		if (type instanceof ParameterizedType
+				&& (captureConversion = InferenceVariable
+						.capture((ParameterizedType) type)) != null) {
+			for (InferenceVariable inferenceVariable : captureConversion
+					.getInferenceVariables()) {
+				boolean anyProper = false;
+				boolean anyBounds = false;
+				for (Type bound : inferenceVariable.getUpperBounds()) {
+					anyBounds = true;
+					anyProper = anyProper || Types.isProperType(bound);
+					boundConsumer.acceptSubtype(inferenceVariable, bound);
+				}
+				if (!anyProper)
+					boundConsumer.acceptSubtype(inferenceVariable, Object.class);
 
-			Map<TypeVariable<?>, Type> parameterArguments = new HashMap<>();
-			Map<TypeVariable<?>, InferenceVariable> parameterCaptures = new HashMap<>();
-			Map<InferenceVariable, Type> capturedArguments = new HashMap<>();
-			Map<InferenceVariable, TypeVariable<?>> capturedParameters = new HashMap<>();
-			boolean identity = true;
-
-			for (TypeVariable<?> parameter : typeLiteral.getTypeParameters()) {
-				Type argument = typeLiteral.resolveType(parameter);
-				InferenceVariable capturedArgument;
-
-				if (argument instanceof WildcardType) {
-					WildcardType wildcardArgument = (WildcardType) argument;
-					identity = false;
-
-					if (wildcardArgument.getLowerBounds().length > 0) {
-						/*
-						 * If Ti is a wildcard type argument of the form ? super Bi, then Si
-						 * is a fresh type variable whose upper bound is
-						 * Ui[A1:=S1,...,An:=Sn] and whose lower bound is Bi.
-						 */
-						capturedArgument = new InferenceVariable(parameter.getBounds(),
-								wildcardArgument.getUpperBounds());
-					} else if (wildcardArgument.getUpperBounds().length > 0) {
-						/*
-						 * If Ti is a wildcard type argument of the form ? extends Bi, then
-						 * Si is a fresh type variable whose upper bound is glb(Bi,
-						 * Ui[A1:=S1,...,An:=Sn]) and whose lower bound is the null type.
-						 */
-						capturedArgument = new InferenceVariable(
-								IntersectionType.asArray(IntersectionType.of(IntersectionType
-										.uncheckedOf(wildcardArgument.getUpperBounds()),
-										IntersectionType.uncheckedOf(parameter.getBounds()))),
-								new Type[0]);
-					} else {
-						/*
-						 * If Ti is a wildcard type argument (§4.5.1) of the form ?, then Si
-						 * is a fresh type variable whose upper bound is
-						 * Ui[A1:=S1,...,An:=Sn] and whose lower bound is the null type
-						 * (§4.1).
-						 */
-						capturedArgument = new InferenceVariable(parameter.getBounds(),
-								new Type[0]);
-					}
-				} else {
-					/*
-					 * Otherwise, Si = Ti.
-					 */
-					capturedArgument = new InferenceVariable();
+				for (Type bound : inferenceVariable.getLowerBounds()) {
+					anyBounds = true;
+					boundConsumer.acceptSubtype(bound, inferenceVariable);
 				}
 
-				parameterArguments.put(parameter, argument);
-				parameterCaptures.put(parameter, capturedArgument);
-				capturedArguments.put(capturedArgument, argument);
-				capturedParameters.put(capturedArgument, parameter);
+				if (!anyBounds)
+					boundConsumer.acceptEquality(inferenceVariable,
+							captureConversion.getCapturedArgument(inferenceVariable));
 			}
 
-			if (!identity) {
-				InferenceVariable.substituteBounds(parameterCaptures);
+			boundConsumer.acceptCaptureConversion(captureConversion);
 
-				ParameterizedType originalType = (ParameterizedType) type;
-				type = Types.parameterizedType(Types.getRawType(originalType),
-						parameterCaptures).getType();
-				ParameterizedType capturedType = (ParameterizedType) type;
-
-				for (Map.Entry<TypeVariable<?>, InferenceVariable> inferenceVariable : parameterCaptures
-						.entrySet()) {
-					boolean anyProper = false;
-					boolean anyBounds = false;
-					for (Type bound : inferenceVariable.getValue().getUpperBounds()) {
-						anyBounds = true;
-						anyProper = anyProper || Types.isProperType(bound);
-						boundConsumer.acceptSubtype(inferenceVariable.getValue(), bound);
-					}
-					if (!anyProper)
-						boundConsumer.acceptSubtype(inferenceVariable.getValue(),
-								Object.class);
-
-					for (Type bound : inferenceVariable.getValue().getLowerBounds()) {
-						anyBounds = true;
-						boundConsumer.acceptSubtype(bound, inferenceVariable.getValue());
-					}
-
-					if (!anyBounds)
-						boundConsumer.acceptEquality(inferenceVariable.getValue(),
-								parameterArguments.get(inferenceVariable.getKey()));
-				}
-
-				CaptureConversion captureConversion = new CaptureConversion() {
-					@Override
-					public ParameterizedType getOriginalType() {
-						return originalType;
-					}
-
-					@Override
-					public Set<InferenceVariable> getInferenceVariables() {
-						return capturedArguments.keySet();
-					}
-
-					@Override
-					public Type getCapturedArgument(InferenceVariable variable) {
-						return capturedArguments.get(variable);
-					}
-
-					@Override
-					public TypeVariable<?> getCapturedParameter(InferenceVariable variable) {
-						return capturedParameters.get(variable);
-					}
-
-					@Override
-					public ParameterizedType getCapturedType() {
-						return capturedType;
-					}
-
-					@Override
-					public String toString() {
-						return new StringBuilder().append(getCapturedType())
-								.append(" = capture(").append(getOriginalType()).append(")")
-								.toString();
-					}
-				};
-				System.out.println("new(): " + captureConversion);
-				boundConsumer.acceptCaptureConversion(captureConversion);
-			}
-		}
-
-		return type;
+			return captureConversion.getCapturedType();
+		} else
+			return type;
 	}
 
 	public static boolean isUncheckedCompatibleOnly(Type from, Type to) {

@@ -1,29 +1,25 @@
 package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.GenericDeclaration;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 
-public class InferenceVariable implements Type {
-	private final static AtomicLong COUNTER = new AtomicLong();
+import uk.co.strangeskies.utilities.IdentityProperty;
 
-	private final String name;
-	final Type[] upperBounds;
-	final Type[] lowerBounds;
+public class InferenceVariable extends CaptureType implements Type {
 	private final Resolver resolver;
 
 	private InferenceVariable(Resolver resolver, String name, int lowerBounds) {
-		this.name = name + COUNTER.incrementAndGet();
-		this.resolver = resolver;
+		super(name, new Type[0], new Type[lowerBounds]);
 
-		upperBounds = new Type[0];
-		this.lowerBounds = new Type[lowerBounds];
+		this.resolver = resolver;
 	}
 
 	public InferenceVariable() {
@@ -31,69 +27,141 @@ public class InferenceVariable implements Type {
 	}
 
 	public InferenceVariable(Type[] upperBounds, Type[] lowerBounds) {
-		this.name = "CAP#" + COUNTER.incrementAndGet();
+		super(upperBounds, lowerBounds);
+
 		this.resolver = null;
-
-		this.upperBounds = upperBounds.clone();
-		this.lowerBounds = lowerBounds.clone();
-	}
-
-	public Type[] getUpperBounds() {
-		return upperBounds.clone();
-	}
-
-	public Type[] getLowerBounds() {
-		return lowerBounds.clone();
 	}
 
 	public Resolver getResolver() {
 		return resolver;
 	}
 
-	public String getName() {
-		return name;
-	}
-
-	@Override
-	public String toString() {
-		return getName();
-	}
-
 	public static Map<TypeVariable<?>, InferenceVariable> capture(
 			Resolver resolver, GenericDeclaration declaration) {
-		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = new HashMap<>();
-
 		List<TypeVariable<?>> declarationVariables;
 		if (declaration instanceof Class)
 			declarationVariables = Types.getTypeParameters((Class<?>) declaration);
 		else
 			declarationVariables = Arrays.asList(declaration.getTypeParameters());
-		declarationVariables.forEach(t -> inferenceVariables
-				.put(t,
-						new InferenceVariable(resolver, t.getName() + "#",
-								t.getBounds().length)));
 
-		substituteBounds(inferenceVariables);
-
-		return inferenceVariables;
+		return CaptureType
+				.capture(declarationVariables,
+						t -> new InferenceVariable(resolver, t.getName(),
+								t.getBounds().length));
 	}
 
-	static <T extends Type> void substituteBounds(
-			Map<T, InferenceVariable> inferenceVariables) {
-		TypeSubstitution substitution = new TypeSubstitution();
-		for (Map.Entry<T, InferenceVariable> variable : inferenceVariables
-				.entrySet())
-			substitution = substitution.where(variable.getKey(), variable.getValue());
+	public static CaptureConversion capture(ParameterizedType type) {
+		TypeLiteral<?> typeLiteral = TypeLiteral.from(type);
+		/*
+		 * There exists a capture conversion from a parameterized type G<T1,...,Tn>
+		 * (§4.5) to a parameterized type G<S1,...,Sn>, where, for 1 ≤ i ≤ n :
+		 */
 
-		for (Map.Entry<T, InferenceVariable> variable : inferenceVariables
-				.entrySet()) {
-			for (int i = 0; i < variable.getValue().upperBounds.length; i++)
-				variable.getValue().upperBounds[i] = substitution.resolve(variable
-						.getValue().upperBounds[i]);
-			for (int i = 0; i < variable.getValue().lowerBounds.length; i++)
-				variable.getValue().lowerBounds[i] = substitution.resolve(variable
-						.getValue().lowerBounds[i]);
+		Map<TypeVariable<?>, Type> parameterArguments = new HashMap<>();
+		Map<InferenceVariable, Type> capturedArguments = new HashMap<>();
+		Map<InferenceVariable, TypeVariable<?>> capturedParameters = new HashMap<>();
+		IdentityProperty<Boolean> identity = new IdentityProperty<>(true);
+
+		Map<TypeVariable<?>, InferenceVariable> parameterCaptures = CaptureType
+				.capture(
+						typeLiteral.getTypeParameters(),
+						parameter -> {
+							Type argument = typeLiteral.resolveType(parameter);
+							InferenceVariable capturedArgument;
+
+							if (argument instanceof WildcardType) {
+								WildcardType wildcardArgument = (WildcardType) argument;
+								identity.set(false);
+
+								if (wildcardArgument.getLowerBounds().length > 0) {
+									/*
+									 * If Ti is a wildcard type argument of the form ? super Bi,
+									 * then Si is a fresh type variable whose upper bound is
+									 * Ui[A1:=S1,...,An:=Sn] and whose lower bound is Bi.
+									 */
+									capturedArgument = new InferenceVariable(parameter
+											.getBounds(), wildcardArgument.getUpperBounds());
+								} else if (wildcardArgument.getUpperBounds().length > 0) {
+									/*
+									 * If Ti is a wildcard type argument of the form ? extends Bi,
+									 * then Si is a fresh type variable whose upper bound is
+									 * glb(Bi, Ui[A1:=S1,...,An:=Sn]) and whose lower bound is the
+									 * null type.
+									 */
+									capturedArgument = new InferenceVariable(
+											IntersectionType.asArray(IntersectionType.of(
+													IntersectionType.uncheckedOf(wildcardArgument
+															.getUpperBounds()), IntersectionType
+															.uncheckedOf(parameter.getBounds()))),
+											new Type[0]);
+								} else {
+									/*
+									 * If Ti is a wildcard type argument (§4.5.1) of the form ?,
+									 * then Si is a fresh type variable whose upper bound is
+									 * Ui[A1:=S1,...,An:=Sn] and whose lower bound is the null
+									 * type (§4.1).
+									 */
+									capturedArgument = new InferenceVariable(parameter
+											.getBounds(), new Type[0]);
+								}
+							} else {
+								/*
+								 * Otherwise, Si = Ti.
+								 */
+								capturedArgument = new InferenceVariable();
+							}
+
+							parameterArguments.put(parameter, argument);
+							capturedArguments.put(capturedArgument, argument);
+							capturedParameters.put(capturedArgument, parameter);
+
+							return capturedArgument;
+						});
+
+		if (!identity.get()) {
+			ParameterizedType originalType = type;
+			type = (ParameterizedType) Types.parameterizedType(
+					Types.getRawType(originalType), parameterCaptures).getType();
+			ParameterizedType capturedType = type;
+
+			CaptureConversion captureConversion = new CaptureConversion() {
+				@Override
+				public ParameterizedType getOriginalType() {
+					return originalType;
+				}
+
+				@Override
+				public Set<InferenceVariable> getInferenceVariables() {
+					return capturedArguments.keySet();
+				}
+
+				@Override
+				public Type getCapturedArgument(InferenceVariable variable) {
+					return capturedArguments.get(variable);
+				}
+
+				@Override
+				public TypeVariable<?> getCapturedParameter(InferenceVariable variable) {
+					return capturedParameters.get(variable);
+				}
+
+				@Override
+				public ParameterizedType getCapturedType() {
+					return capturedType;
+				}
+
+				@Override
+				public String toString() {
+					return new StringBuilder().append(getCapturedType())
+							.append(" = capture(").append(getOriginalType()).append(")")
+							.toString();
+				}
+			};
+
+			return captureConversion;
 		}
+
+		return null;
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })

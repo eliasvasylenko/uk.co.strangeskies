@@ -1,6 +1,5 @@
 package uk.co.strangeskies.reflection;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.ParameterizedType;
@@ -18,8 +17,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import org.checkerframework.checker.nullness.qual.Nullable;
 
 import uk.co.strangeskies.reflection.BoundVisitor.PartialBoundVisitor;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
@@ -474,75 +471,8 @@ public class Resolver {
 		 * 
 		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
 		 */
-		TypeVariable<?>[] captures = new TypeVariable<?>[minimalSet.size()];
-		GenericDeclaration declaration = new GenericDeclaration() {
-			@Override
-			public Annotation[] getDeclaredAnnotations() {
-				return new Annotation[0];
-			}
-
-			@Override
-			public Annotation[] getAnnotations() {
-				return new Annotation[0];
-			}
-
-			@Override
-			public <T extends Annotation> @Nullable T getAnnotation(
-					Class<T> paramClass) {
-				return null;
-			}
-
-			@Override
-			public TypeVariable<?>[] getTypeParameters() {
-				return null;
-			}
-		};
-
-		Map<InferenceVariable, TypeVariableCapture> freshVariables = new HashMap<>();
-		int i = 0;
-		for (InferenceVariable inferenceVariable : minimalSet) {
-			/*
-			 * For all i (1 ≤ i ≤ n), if αi has one or more proper lower bounds L1,
-			 * ..., Lk, then let the lower bound of Yi be lub(L1, ..., Lk); if not,
-			 * then Yi has no lower bound.
-			 */
-			Set<Type> lowerBoundSet = Arrays
-					.stream(inferenceVariable.getLowerBounds())
-					.filter(Types::isProperType).collect(Collectors.toSet());
-
-			Type[] lowerBounds;
-			if (lowerBoundSet.isEmpty())
-				lowerBounds = new Type[0];
-			else
-				lowerBounds = IntersectionType.asArray(leastUpperBound(lowerBoundSet));
-
-			/*
-			 * For all i (1 ≤ i ≤ n), where αi has upper bounds U1, ..., Uk, let the
-			 * upper bound of Yi be glb(U1 θ, ..., Uk θ), where θ is the substitution
-			 * [α1:=Y1, ..., αn:=Yn].
-			 */
-			Set<Type> upperBoundSet = Arrays
-					.stream(inferenceVariable.getLowerBounds())
-					.filter(Types::isProperType).collect(Collectors.toSet());
-
-			Type[] upperBounds;
-			if (upperBoundSet.isEmpty())
-				upperBounds = new Type[0];
-			else
-				upperBounds = IntersectionType.asArray(IntersectionType
-						.of(upperBoundSet));
-
-			TypeVariableCapture capture = new TypeVariableCapture(upperBounds,
-					lowerBounds, declaration);
-			freshVariables.put(inferenceVariable, capture);
-			captures[i++] = capture;
-			/*
-			 * If the type variables Y1, ..., Yn do not have well-formed bounds (that
-			 * is, a lower bound is not a subtype of an upper bound, or an
-			 * intersection type is inconsistent), then resolution fails.
-			 */
-		}
-		TypeVariableCapture.substituteBounds(freshVariables);
+		Map<InferenceVariable, TypeVariableCapture> freshVariables = TypeVariableCapture
+				.capture(minimalSet);
 
 		/*
 		 * Otherwise, for all i (1 ≤ i ≤ n), all bounds of the form G<..., αi, ...>
