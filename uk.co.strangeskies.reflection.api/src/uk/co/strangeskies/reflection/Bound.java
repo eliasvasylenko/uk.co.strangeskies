@@ -23,17 +23,17 @@ public class Bound {
 		accept(new BoundVisitor() {
 			@Override
 			public void acceptSubtype(Type a, InferenceVariable b) {
-				result.set(a + " <: " + b);
+				result.set(a.getTypeName() + " <: " + b.getTypeName());
 			}
 
 			@Override
 			public void acceptSubtype(InferenceVariable a, Type b) {
-				result.set(a + " <: " + b);
+				result.set(a.getTypeName() + " <: " + b.getTypeName());
 			}
 
 			@Override
 			public void acceptSubtype(InferenceVariable a, InferenceVariable b) {
-				result.set(a + " <: " + b);
+				result.set(a.getTypeName() + " <: " + b.getTypeName());
 			}
 
 			@Override
@@ -43,12 +43,12 @@ public class Bound {
 
 			@Override
 			public void acceptEquality(InferenceVariable a, Type b) {
-				result.set(a + " = " + b);
+				result.set(a.getTypeName() + " = " + b.getTypeName());
 			}
 
 			@Override
 			public void acceptEquality(InferenceVariable a, InferenceVariable b) {
-				result.set(a + " = " + b);
+				result.set(a.getTypeName() + " = " + b.getTypeName());
 			}
 
 			@Override

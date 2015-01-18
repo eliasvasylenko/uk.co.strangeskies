@@ -66,7 +66,7 @@ public class InferenceVariable extends CaptureType implements Type {
 				.capture(
 						typeLiteral.getTypeParameters(),
 						parameter -> {
-							Type argument = typeLiteral.resolveType(parameter);
+							Type argument = typeLiteral.getTypeArgument(parameter);
 							InferenceVariable capturedArgument;
 
 							if (argument instanceof WildcardType) {
@@ -152,9 +152,9 @@ public class InferenceVariable extends CaptureType implements Type {
 
 				@Override
 				public String toString() {
-					return new StringBuilder().append(getCapturedType())
-							.append(" = capture(").append(getOriginalType()).append(")")
-							.toString();
+					return new StringBuilder().append(getCapturedType().getTypeName())
+							.append(" = capture(").append(getOriginalType().getTypeName())
+							.append(")").toString();
 				}
 			};
 

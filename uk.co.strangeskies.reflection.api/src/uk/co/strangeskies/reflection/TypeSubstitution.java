@@ -17,13 +17,13 @@ import uk.co.strangeskies.utilities.IdentityProperty;
 
 // TODO check substitutions are valid!!!!!
 public class TypeSubstitution {
-	private final Function<Type, Type> mapping;
+	private final Function<? super Type, ? extends Type> mapping;
 
 	public TypeSubstitution() {
 		mapping = t -> null;
 	}
 
-	public TypeSubstitution(Function<Type, Type> mapping) {
+	public TypeSubstitution(Function<? super Type, ? extends Type> mapping) {
 		this.mapping = mapping;
 	}
 

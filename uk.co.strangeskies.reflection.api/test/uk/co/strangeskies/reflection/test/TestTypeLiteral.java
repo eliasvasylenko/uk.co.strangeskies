@@ -17,7 +17,7 @@ public class TestTypeLiteral {
 	public static class B {
 		public <T extends Number> void method(T a, T b) {}
 
-		public <T> void method(Collection<T>... a) {}
+		public <T> void method(@SuppressWarnings("unchecked") Collection<T>... a) {}
 
 		public <T> void bethod(Collection<T> a) {}
 
@@ -42,41 +42,41 @@ public class TestTypeLiteral {
 		System.out.println();
 
 		System.out.println("bothways");
-		System.out.println(Invokable.of(
+		System.out.println(Invokable.from(
 				B.class.getMethod("bothways", Comparable.class, Collection.class))
 				.withLooseApplicability(String.class,
 						new TypeLiteral<List<String>>() {}.getType()));
 		System.out.println();
 
 		System.out.println("aslist");
-		System.out.println(Invokable.of(
+		System.out.println(Invokable.from(
 				Arrays.class.getMethod("asList", Object[].class))
 				.withVariableArityApplicability(int.class, double.class));
 		System.out.println();
 
 		System.out.println("method");
-		System.out.println(Invokable.of(
+		System.out.println(Invokable.from(
 				B.class.getMethod("method", List.class, List.class))
 				.withLooseApplicability(new TypeLiteral<List<Integer>>() {}.getType(),
 						new TypeLiteral<List<Number>>() {}.getType()));
 		System.out.println();
 
 		System.out.println("method2");
-		System.out.println(Invokable.of(
+		System.out.println(Invokable.from(
 				B.class.getMethod("method2", List.class, List.class))
 				.withLooseApplicability(new TypeLiteral<List<Integer>>() {}.getType(),
 						new TypeLiteral<List<Comparable<Integer>>>() {}.getType()));
 		System.out.println();
 
 		System.out.println("method");
-		System.out.println(Invokable.of(
+		System.out.println(Invokable.from(
 				B.class.getMethod("method", Collection[].class))
 				.withVariableArityApplicability(
 						new TypeLiteral<Collection<? super Integer>>() {}.getType()));
 		System.out.println();
 
 		System.out.println("method");
-		System.out.println(Invokable.of(
+		System.out.println(Invokable.from(
 				B.class.getMethod("method", Collection[].class))
 				.withVariableArityApplicability(
 						new TypeLiteral<Collection<? super Integer>>() {}.getType(),
@@ -84,7 +84,7 @@ public class TestTypeLiteral {
 		System.out.println();
 
 		System.out.println("method");
-		System.out.println(Invokable.of(
+		System.out.println(Invokable.from(
 				B.class.getMethod("method", Collection[].class))
 				.withVariableArityApplicability(
 						new TypeLiteral<Collection<? extends Integer>>() {}.getType()));

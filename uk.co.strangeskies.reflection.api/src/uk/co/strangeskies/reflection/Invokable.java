@@ -24,11 +24,10 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 
 	private final List<Type> parameters;
 
-	private final BiFunction<T, List<? extends Object>, R> invocationFunction;
+	private final BiFunction<T, List<?>, R> invocationFunction;
 
 	private Invokable(TypeLiteral<T> receiverType, TypeLiteral<R> returnType,
-			Executable executable,
-			BiFunction<T, List<? extends Object>, R> invocationFunction) {
+			Executable executable, BiFunction<T, List<?>, R> invocationFunction) {
 		this(new Resolver(), receiverType, returnType, executable,
 				invocationFunction);
 	}
@@ -36,7 +35,7 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 	@SuppressWarnings("unchecked")
 	private Invokable(Resolver resolver, TypeLiteral<T> receiverType,
 			TypeLiteral<R> returnType, Executable executable,
-			BiFunction<T, List<? extends Object>, R> invocationFunction) {
+			BiFunction<T, List<?>, R> invocationFunction) {
 		this.receiverType = receiverType;
 		this.executable = executable;
 		this.invocationFunction = invocationFunction;
@@ -62,7 +61,7 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 		throw new UnsupportedOperationException(); // TODO
 	}
 
-	public static <T> Invokable<T, T> of(Constructor<T> constructor) {
+	public static <T> Invokable<T, T> from(Constructor<T> constructor) {
 		TypeLiteral<T> type = new TypeLiteral<>(constructor.getDeclaringClass());
 		return new Invokable<>(type, type, constructor, (r, a) -> {
 			try {
@@ -74,24 +73,29 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 		});
 	}
 
-	public static Invokable<?, ?> of(Method method) {
-		TypeLiteral<?> type = new TypeLiteral<>(method.getDeclaringClass());
-		return new Invokable<>(type,
-				TypeLiteral.from(method.getGenericReturnType()), method, (r, a) -> {
-					try {
-						return method.invoke(r, a);
-					} catch (Exception e) {
-						throw new TypeInferenceException("Cannot invoke method '" + method
-								+ "' on receiver '" + r + "' with arguments '" + a + "'.");
-					}
-				});
+	public static Invokable<?, ?> from(Method method) {
+		return from(method, TypeLiteral.from(method.getDeclaringClass()),
+				TypeLiteral.from(method.getGenericReturnType()));
 	}
 
-	public static Invokable<?, ?> of(Executable executable) {
+	@SuppressWarnings("unchecked")
+	private static <T, R> Invokable<T, R> from(Method method,
+			TypeLiteral<T> receiver, TypeLiteral<R> result) {
+		return new Invokable<>(receiver, result, method, (T r, List<?> a) -> {
+			try {
+				return (R) method.invoke(r, a);
+			} catch (Exception e) {
+				throw new TypeInferenceException("Cannot invoke method '" + method
+						+ "' on receiver '" + r + "' with arguments '" + a + "'.");
+			}
+		});
+	}
+
+	public static Invokable<?, ?> from(Executable executable) {
 		if (executable instanceof Method)
-			return of((Method) executable);
+			return from((Method) executable);
 		else
-			return of((Constructor<?>) executable);
+			return from((Constructor<?>) executable);
 	}
 
 	public boolean isAbstract() {

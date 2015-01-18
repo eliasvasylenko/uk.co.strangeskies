@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
@@ -27,9 +28,20 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 			Resolver resolver = new Resolver();
 
 			Class<?> superClass = getClass();
+			Function<Type, InferenceVariable> inferenceVariables = t -> null;
 			do {
-				resolver.incorporateTypes(superClass.getGenericSuperclass());
+				resolver.incorporateType(new TypeSubstitution(inferenceVariables)
+						.resolve(superClass.getGenericSuperclass()));
 				superClass = superClass.getSuperclass();
+
+				Class<?> subClass = superClass;
+				inferenceVariables = t -> {
+					if (t instanceof TypeVariable)
+						return resolver.getInferenceVariable(subClass, (TypeVariable<?>) t);
+					else
+						return null;
+				};
+
 			} while (!superClass.equals(TypeLiteral.class));
 
 			type = resolver
@@ -93,7 +105,7 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 	private Resolver getResolver() {
 		if (resolver == null) {
 			resolver = new Resolver();
-			resolver.incorporateTypes(type);
+			resolver.incorporateType(type);
 		}
 		return resolver;
 	}
@@ -161,23 +173,18 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		return Types.isAssignable(type, this.type);
 	}
 
-	public Type resolveType(Type type) {
-		return getResolver().resolveType(type);
+	public List<TypeVariable<?>> getTypeParameters() {
+		return Types.getTypeParameters(rawType);
+	}
+
+	public Type getTypeArgument(TypeVariable<?> type) {
+		return getResolver().resolveTypeVariable(rawType, type);
 	}
 
 	@SuppressWarnings("unchecked")
 	public <U> TypeLiteral<? extends U> resolveType(TypeLiteral<U> type) {
-		return (TypeLiteral<? extends U>) TypeLiteral.from(resolveType(type
-				.getType()));
-	}
-
-	public static class Outer<T> {
-		public class Inner<N extends T> {}
-
-		// TODO: two different captures of Outer#T could be in the same resolver for
-		// this type when trying to determine the parameterized supertype of 'Inner'
-		// for a given 'Inner2'.
-		public class Inner2<M extends Number> extends Outer<Number>.Inner<M> {}
+		return (TypeLiteral<? extends U>) TypeLiteral.from(getResolver()
+				.resolveType(type.getType()));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -190,6 +197,12 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 
 		Class<?> superClass = rawType;
 		Type superType = this.type;
+		Function<Type, Type> inferenceVariables = t -> {
+			if (t instanceof TypeVariable)
+				return getResolver().getInferenceVariable(rawType, (TypeVariable<?>) t);
+			else
+				return null;
+		};
 		while (!superClass.equals(type)) {
 			Set<Type> superTypes = new HashSet<>(Arrays.asList(superClass
 					.getGenericInterfaces()));
@@ -199,17 +212,27 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 			superType = superTypes.stream()
 					.filter(t -> type.isAssignableFrom(Types.getRawType(t))).findAny()
 					.get();
+			superType = new TypeSubstitution(inferenceVariables).resolve(superType);
 
-			getResolver().incorporateTypes(superType);
+			getResolver().incorporateType(superType);
+			Class<?> subClass = superClass;
 			superClass = Types.getRawType(superType);
+
+			inferenceVariables = t -> {
+				if (t instanceof TypeVariable)
+					return getResolver().getInferenceVariable(subClass,
+							(TypeVariable<?>) t);
+				else
+					return null;
+			};
 		}
 
 		Type capturedType;
 		if (superType instanceof Class)
 			capturedType = type;
 		else
-			capturedType = resolveType(Types.uncheckedParameterizedType(type,
-					new HashMap<>()));
+			capturedType = getResolver().resolveType(type,
+					Types.uncheckedParameterizedType(type, new HashMap<>()));
 
 		return (TypeLiteral<? extends U>) TypeLiteral.from(capturedType);
 	}
@@ -305,9 +328,5 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 
 	public Type getComponentType() {
 		return Types.getComponentType(type);
-	}
-
-	public List<TypeVariable<?>> getTypeParameters() {
-		return Types.getTypeParameters(rawType);
 	}
 }

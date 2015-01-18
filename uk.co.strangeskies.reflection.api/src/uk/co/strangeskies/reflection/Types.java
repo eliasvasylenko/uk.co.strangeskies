@@ -127,7 +127,7 @@ public final class Types {
 		if (type instanceof Class && getRawType(type).isArray())
 			return toString(((Class<?>) type).getComponentType()) + "[]";
 		else
-			return type.getTypeName();
+			return type == null ? "null" : type.getTypeName();
 	}
 
 	public static boolean isProperType(Type type) {
@@ -610,9 +610,13 @@ public final class Types {
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			if (ownerType != null)
-				builder.append(ownerType).append('.');
-			builder.append(rawType.getName()).append('<');
+			if (ownerType != null) {
+				builder.append(ownerType.getTypeName()).append(".");
+				builder.append(rawType.getSimpleName());
+			} else
+				builder.append(rawType.getTypeName());
+
+			builder.append('<');
 
 			Thread currentThread = Thread.currentThread();
 			if (recurringThreads.add(currentThread)

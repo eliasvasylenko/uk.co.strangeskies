@@ -10,9 +10,6 @@ Bundle-Name: Strange Skies Reflection
 	org.testng:testng;  \
 		version = latest,  \
 	cglib:cglib-nodep,  \
-	org.apache.commons:commons-proxy;  \
-		version=1.0;  \
-		strategy=exact,  \
 	uk.co.strangeskies.utilities;  \
 		version=latest,  \
 	uk.co.strangeskies.reflection.api;  \
@@ -21,12 +18,6 @@ Bundle-Name: Strange Skies Reflection
 		version=latest,  \
 	org.checkerframework:jdk8;  \
 		version=latest,  \
-	com.google.guava:guava;  \
-		version=18.0;  \
-		strategy=exact,  \
-	org.jparsec:jparsec-g;  \
-		version=1.1;  \
-		strategy=exact,  \
 	osgi.enroute.base.api;  \
-		version = latest
+		version=latest
 Bundle-Version: 0.0.1.${tstamp}

@@ -56,13 +56,10 @@ public abstract class IntersectionType implements Type {
 		}
 
 		try {
-			Resolver resolver = new Resolver();
-			resolver.incorporateTypes(Comparable.class);
-			InferenceVariable inferenceVariable = resolver
-					.getInferenceVariable(Comparable.class.getTypeParameters()[0]);
+			BoundSet bounds = new BoundSet();
 			for (Type type : flattenedTypes) {
-				resolver.incorporateConstraint(new ConstraintFormula(Kind.SUBTYPE,
-						inferenceVariable, type));
+				bounds.incorporate(new ConstraintFormula(Kind.SUBTYPE,
+						new InferenceVariable(), type));
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

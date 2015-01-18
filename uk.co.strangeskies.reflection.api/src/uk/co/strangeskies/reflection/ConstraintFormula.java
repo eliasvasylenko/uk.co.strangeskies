@@ -223,7 +223,7 @@ public class ConstraintFormula {
 					fromParameterization.getTypeParameters().forEach(
 							p -> {
 								new ConstraintFormula(Kind.CONTAINMENT, fromParameterization
-										.resolveType(p), toLiteral.resolveType(p))
+										.getTypeArgument(p), toLiteral.getTypeArgument(p))
 										.reduceInto(boundConsumer);
 							});
 				}
@@ -553,7 +553,7 @@ public class ConstraintFormula {
 				 */
 				Types.getTypeParameters(Types.getRawType(from)).forEach(
 						type -> new ConstraintFormula(Kind.EQUALITY, TypeLiteral.from(from)
-								.resolveType(type), TypeLiteral.from(to).resolveType(type))
+								.getTypeArgument(type), TypeLiteral.from(to).getTypeArgument(type))
 								.reduceInto(boundConsumer));
 			}
 		}

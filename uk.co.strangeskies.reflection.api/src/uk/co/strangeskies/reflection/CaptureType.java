@@ -11,6 +11,7 @@ abstract class CaptureType implements Type {
 	private final static AtomicLong COUNTER = new AtomicLong();
 
 	private final String name;
+
 	private final Type[] upperBounds;
 	private final Type[] lowerBounds;
 
@@ -23,6 +24,10 @@ abstract class CaptureType implements Type {
 
 		this.upperBounds = upperBounds.clone();
 		this.lowerBounds = lowerBounds.clone();
+
+		if (!Types.isAssignable(null, IntersectionType.of(upperBounds)))
+			throw new TypeInferenceException("Bounds on capture '" + this
+					+ "' are invalid.");
 	}
 
 	public String getName() {
@@ -36,7 +41,18 @@ abstract class CaptureType implements Type {
 
 	@Override
 	public String toString() {
-		return getName();
+		StringBuilder builder = new StringBuilder().append(getName());
+
+		if (upperBounds.length > 0
+				&& !(upperBounds.length == 1 && upperBounds[0] == null))
+			builder.append(" extends ").append(IntersectionType.of(upperBounds));
+
+		if (lowerBounds.length > 0
+				&& !(lowerBounds.length == 1 && lowerBounds[0] == null))
+			builder.append(" super ").append(
+					IntersectionType.uncheckedOf(lowerBounds));
+
+		return builder.toString();
 	}
 
 	public Type[] getUpperBounds() {
