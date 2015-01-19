@@ -30,7 +30,7 @@ apache-httpclient.version: 4.3.6
 	org.checkerframework:jdk8;version=latest,  \
 	org.jruby:jruby-complete;  \
 		version = ${jruby.version}
-		
+
 #	org.clojure:clojure;  \
 #		version = ${clojure.version},  \
 #	org.ow2.asm:asm-util;\
