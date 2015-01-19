@@ -20,14 +20,6 @@ public class ConstraintFormula {
 		this.kind = kind;
 		this.from = from;
 		this.to = to;
-
-		if (from instanceof IntersectionType
-				&& ((IntersectionType) from).getTypes().length == 0)
-			throw new RuntimeException();
-
-		if (kind == Kind.EQUALITY && Number.class.equals(from)
-				&& Integer.class.equals(to))
-			new Exception().printStackTrace();
 	}
 
 	@Override
@@ -90,7 +82,7 @@ public class ConstraintFormula {
 			 * there exists no type of the form G<...> that is a supertype of S, but
 			 * the raw type G is a supertype of S, then the constraint reduces to
 			 * true.
-			 * 
+			 *
 			 * Otherwise, if T is an array type of the form G<T1, ..., Tn>[]k, and
 			 * there exists no type of the form G<...>[]k that is a supertype of S,
 			 * but the raw type G[]k is a supertype of S, then the constraint reduces

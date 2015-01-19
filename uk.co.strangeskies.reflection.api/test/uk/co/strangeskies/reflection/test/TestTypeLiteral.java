@@ -27,7 +27,7 @@ public class TestTypeLiteral {
 		}
 
 		public <T extends Number, U extends List<? super T>> U method(
-				List<? extends T> a, U b) {
+				Collection<? extends T> a, U b) {
 			return null;
 		}
 
@@ -56,7 +56,7 @@ public class TestTypeLiteral {
 
 		System.out.println("method");
 		System.out.println(Invokable.from(
-				B.class.getMethod("method", List.class, List.class))
+				B.class.getMethod("method", Collection.class, List.class))
 				.withLooseApplicability(new TypeLiteral<List<Integer>>() {}.getType(),
 						new TypeLiteral<List<Number>>() {}.getType()));
 		System.out.println();
@@ -77,17 +77,18 @@ public class TestTypeLiteral {
 
 		System.out.println("method");
 		System.out.println(Invokable.from(
-				B.class.getMethod("method", Collection[].class))
-				.withVariableArityApplicability(
-						new TypeLiteral<Collection<? super Integer>>() {}.getType(),
-						new TypeLiteral<Collection<? super Integer>>() {}.getType()));
+				B.class.getMethod("method", Collection.class, List.class))
+				.withLooseApplicability(
+						new TypeLiteral<Collection<? extends Integer>>() {}.getType(),
+						new TypeLiteral<List<? super Number>>() {}.getType()));
 		System.out.println();
 
 		System.out.println("method");
 		System.out.println(Invokable.from(
 				B.class.getMethod("method", Collection[].class))
 				.withVariableArityApplicability(
-						new TypeLiteral<Collection<? extends Integer>>() {}.getType()));
+						new TypeLiteral<Collection<? super Integer>>() {}.getType(),
+						new TypeLiteral<Collection<? super Integer>>() {}.getType()));
 		System.out.println();
 	}
 }

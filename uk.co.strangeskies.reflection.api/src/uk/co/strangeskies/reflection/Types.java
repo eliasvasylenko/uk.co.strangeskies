@@ -139,7 +139,7 @@ public final class Types {
 	 * This method retrieves a list of all type variables present on the given raw
 	 * type, as well as all type variables on any enclosing types recursively, in
 	 * the order encountered.
-	 * 
+	 *
 	 * @param rawType
 	 * @return
 	 */
@@ -156,7 +156,7 @@ public final class Types {
 	 * For a given parameterized type, we retrieve a mapping of all type variables
 	 * on its raw type, as given by {@link Types#getAllTypeParameters(Class)}, to
 	 * their arguments within the context of this type.
-	 * 
+	 *
 	 * @param type
 	 * @return
 	 */
@@ -190,8 +190,9 @@ public final class Types {
 			 */
 			return true;
 		} else if (to instanceof CaptureType) {
-			return isAssignable(from,
-					IntersectionType.uncheckedOf(((CaptureType) to).getLowerBounds()));
+			return ((CaptureType) to).getLowerBounds().length > 0
+					&& isAssignable(from,
+							IntersectionType.uncheckedOf(((CaptureType) to).getLowerBounds()));
 		} else if (to instanceof TypeVariable) {
 			/*
 			 * We can only assign to a type variable if it is from the exact same

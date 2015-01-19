@@ -243,6 +243,10 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 	private Invokable<T, R> withLooseApplicability(boolean variableArity,
 			Type... arguments) {
 		if (variableArity) {
+			if (!executable.isVarArgs())
+				throw new IllegalArgumentException("Invokable '" + this
+						+ "' cannot be invoked in variable arity invocation context.");
+
 			if (parameters.size() > arguments.length)
 				return null;
 		} else if (parameters.size() != arguments.length)
