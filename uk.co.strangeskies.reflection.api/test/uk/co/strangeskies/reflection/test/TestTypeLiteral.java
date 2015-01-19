@@ -69,9 +69,11 @@ public class TestTypeLiteral {
 				new TypeLiteral<List<? super Number>>() {}.getType()));
 		System.out.println();
 
+		/*-
 		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
 				"method", new TypeLiteral<Collection<? super Integer>>() {}.getType(),
 				new TypeLiteral<Collection<? super Integer>>() {}.getType()));
 		System.out.println();
+		 */
 	}
 }

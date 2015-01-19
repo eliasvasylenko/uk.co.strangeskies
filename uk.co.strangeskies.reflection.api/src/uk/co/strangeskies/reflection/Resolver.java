@@ -114,20 +114,13 @@ public class Resolver {
 	}
 
 	private void recalculateRemainingDependencies() {
-		IdentityProperty<Boolean> instantiatedAll = new IdentityProperty<>(false);
-		while (!instantiatedAll.get()) {
-			instantiatedAll.set(true);
-			bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
-				@Override
-				public void acceptEquality(InferenceVariable a, Type b) {
-					if (Types.isProperType(b) && !instantiations.containsKey(a)) {
-						System.out.println(" ok: " + a + " = " + b);
-						instantiate(a, b);
-						instantiatedAll.set(false);
-					}
-				};
-			}));
-		}
+		bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
+			@Override
+			public void acceptEquality(InferenceVariable a, Type b) {
+				if (Types.isProperType(b) && !instantiations.containsKey(a))
+					instantiate(a, b);
+			}
+		}));
 
 		Set<InferenceVariable> leftOfCapture = new HashSet<>();
 
@@ -378,10 +371,11 @@ public class Resolver {
 
 			resolveMinimalIndepdendentSet(minimalSet);
 
-			// TODO why does behaviour fail when following line is removed???
-			bounds.stream().map(Object::toString).collect(Collectors.joining(", "));
-			recalculateRemainingDependencies();
 			variables.removeAll(instantiations.keySet());
+			if (!variables.isEmpty()) {
+				recalculateRemainingDependencies();
+				variables.removeAll(instantiations.keySet());
+			}
 		}
 	}
 
@@ -470,9 +464,9 @@ public class Resolver {
 		/*
 		 * the bound set contains a bound of the form G<..., αi, ...> =
 		 * capture(G<...>) for some i (1 ≤ i ≤ n), or;
-		 *
+		 * 
 		 * If the bound set produced in the step above contains the bound false;
-		 *
+		 * 
 		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
 		 */
 		Map<InferenceVariable, TypeVariableCapture> freshVariables = TypeVariableCapture
@@ -482,11 +476,11 @@ public class Resolver {
 		 * Otherwise, for all i (1 ≤ i ≤ n), all bounds of the form G<..., αi, ...>
 		 * = capture(G<...>) are removed from the current bound set, and the bounds
 		 * α1 = Y1, ..., αn = Yn are incorporated.
-		 *
+		 * 
 		 * If the result does not contain the bound false, then the result becomes
 		 * the new bound set, and resolution proceeds by selecting a new set of
 		 * variables to instantiate (if necessary), as described above.
-		 *
+		 * 
 		 * Otherwise, the result contains the bound false, and resolution fails.
 		 */
 		bounds.removeCaptureConversions(relatedCaptureConversions);
