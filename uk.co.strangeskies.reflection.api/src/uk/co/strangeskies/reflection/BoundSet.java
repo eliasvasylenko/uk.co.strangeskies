@@ -13,7 +13,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 
 public class BoundSet {
@@ -155,8 +154,37 @@ public class BoundSet {
 		@Override
 		public void acceptSubtype(InferenceVariable a, InferenceVariable b) {
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptSubtype(a, b)),
-					incorporator -> new PartialBoundVisitor() {});
-			throw new NotImplementedException(); // TODO
+					incorporator -> new PartialBoundVisitor() {
+						@Override
+						public void acceptEquality(InferenceVariable a2,
+								InferenceVariable b2) {
+							incorporator.incorporateSubtypeSubstitution(a2, b2, a, b);
+							incorporator.incorporateSubtypeSubstitution(b2, a2, a, b);
+						}
+
+						@Override
+						public void acceptEquality(InferenceVariable a2, Type b2) {
+							incorporator.incorporateSubtypeSubstitution(a2, b2, a, b);
+						}
+
+						@Override
+						public void acceptSubtype(InferenceVariable a2, InferenceVariable b2) {
+							incorporator.incorporateTransitiveSubtype(a2, b2, a, b);
+							incorporator.incorporateTransitiveSubtype(a, b, a2, b2);
+						}
+
+						@Override
+						public void acceptSubtype(InferenceVariable a2, Type b2) {
+							incorporator.incorporateTransitiveSubtype(a, b, a2, b2);
+							incorporator.incorporateSupertypeParameterizationEquality(a, b,
+									a2, b2);
+						}
+
+						@Override
+						public void acceptSubtype(Type a2, InferenceVariable b2) {
+							incorporator.incorporateTransitiveSubtype(a2, b2, a, b);
+						}
+					});
 		}
 
 		@Override
@@ -180,9 +208,7 @@ public class BoundSet {
 						public void acceptSubtype(InferenceVariable a2, InferenceVariable b2) {
 							incorporator.incorporateSupertypeParameterizationEquality(a, b,
 									a2, b2);
-
 							incorporator.incorporateTransitiveSubtype(a2, b2, a, b);
-							incorporator.incorporateTransitiveSubtype(b2, a2, a, b);
 						}
 
 						@Override
@@ -205,6 +231,8 @@ public class BoundSet {
 
 		@Override
 		public void acceptSubtype(Type a, InferenceVariable b) {
+			if (a.equals(Object.class))
+				throw new RuntimeException("poo " + BoundSet.this);
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptSubtype(a, b)),
 					incorporator -> new PartialBoundVisitor() {
 						@Override
@@ -223,7 +251,6 @@ public class BoundSet {
 						@Override
 						public void acceptSubtype(InferenceVariable a2, InferenceVariable b2) {
 							incorporator.incorporateTransitiveSubtype(a, b, a2, b2);
-							incorporator.incorporateTransitiveSubtype(a, b, b2, a2);
 						}
 
 						@Override
@@ -388,7 +415,7 @@ public class BoundSet {
 									.resolveSupertypeParameters(rawClass);
 
 							for (TypeVariable<?> parameter : Types
-									.getTypeParameters(rawClass)) {
+									.getAllTypeParameters(rawClass)) {
 								Type argumentS = supertypeS.getTypeArgument(parameter);
 								Type argumentT = supertypeT.getTypeArgument(parameter);
 
@@ -463,11 +490,14 @@ public class BoundSet {
 						 * If T is Object, then αi <: R implies the constraint formula ‹Bi θ
 						 * <: R›
 						 */
-						// incorporate(new ConstraintFormula(Kind.SUBTYPE,
-						// IntersectionType.of(A.getUpperBounds()), R));
+						TypeSubstitution substitution = new TypeSubstitution();
+						for (InferenceVariable variable : c.getInferenceVariables())
+							substitution = substitution.where(
+									c.getCapturedParameter(variable), variable);
 
-						System.out.println(BoundSet.this);
-						throw new UnsupportedOperationException();
+						incorporate(new ConstraintFormula(Kind.SUBTYPE,
+								substitution.resolve(IntersectionType.of(c
+										.getCapturedParameter(a).getBounds())), R));
 					}
 				} else if (A.getLowerBounds().length > 0) {
 					/*
@@ -494,21 +524,21 @@ public class BoundSet {
 			if (c.getCapturedArgument(a) instanceof WildcardType) {
 				WildcardType A = (WildcardType) c.getCapturedArgument(a);
 
-				if (A.getUpperBounds().length > 0) {
+				if (A.getLowerBounds().length > 0) {
+					/*
+					 * If Ai is a wildcard of the form ? super T:
+					 * 
+					 * R <: αi implies the constraint formula ‹R <: T›
+					 */
+					incorporate(new ConstraintFormula(Kind.SUBTYPE, R,
+							IntersectionType.uncheckedOf(A.getLowerBounds())));
+				} else if (A.getUpperBounds().length > 0) {
 					/*
 					 * If Ai is a wildcard of the form ? extends T:
 					 * 
 					 * R <: αi implies the bound false
 					 */
 					incorporate().acceptFalsehood();
-				} else if (A.getLowerBounds().length > 0) {
-					/*
-					 * If Ai is a wildcard of the form ? super T:
-					 * 
-					 * R <: αi implies the constraint formula ‹R <: T›
-					 */
-					System.out.println(BoundSet.this);
-					throw new UnsupportedOperationException();
 				} else {
 					/*
 					 * If Ai is a wildcard of the form ?:

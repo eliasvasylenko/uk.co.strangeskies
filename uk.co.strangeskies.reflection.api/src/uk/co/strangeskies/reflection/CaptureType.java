@@ -1,6 +1,7 @@
 package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -25,9 +26,12 @@ abstract class CaptureType implements Type {
 		this.upperBounds = upperBounds.clone();
 		this.lowerBounds = lowerBounds.clone();
 
-		if (!Types.isAssignable(null, IntersectionType.of(upperBounds)))
+		if (lowerBounds.length > 0
+				&& !Types.isAssignable(IntersectionType.uncheckedOf(lowerBounds),
+						IntersectionType.of(upperBounds)))
 			throw new TypeInferenceException("Bounds on capture '" + this
-					+ "' are invalid.");
+					+ "' are invalid. (" + Arrays.toString(lowerBounds) + " <: "
+					+ Arrays.toString(upperBounds) + ")");
 	}
 
 	public String getName() {

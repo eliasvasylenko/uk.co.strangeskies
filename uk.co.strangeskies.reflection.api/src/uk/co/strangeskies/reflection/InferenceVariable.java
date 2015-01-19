@@ -11,13 +11,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import uk.co.strangeskies.utilities.IdentityProperty;
-
 public class InferenceVariable extends CaptureType implements Type {
 	private final Resolver resolver;
 
-	private InferenceVariable(Resolver resolver, String name, int lowerBounds) {
-		super(name, new Type[0], new Type[lowerBounds]);
+	private InferenceVariable(Resolver resolver, String name, Type[] upperBounds) {
+		super(name, upperBounds, new Type[0]);
 
 		this.resolver = resolver;
 	}
@@ -27,7 +25,7 @@ public class InferenceVariable extends CaptureType implements Type {
 	}
 
 	public InferenceVariable(Type[] upperBounds, Type[] lowerBounds) {
-		super(upperBounds, lowerBounds);
+		super("INF", upperBounds, lowerBounds);
 
 		this.resolver = null;
 	}
@@ -40,18 +38,17 @@ public class InferenceVariable extends CaptureType implements Type {
 			Resolver resolver, GenericDeclaration declaration) {
 		List<TypeVariable<?>> declarationVariables;
 		if (declaration instanceof Class)
-			declarationVariables = Types.getTypeParameters((Class<?>) declaration);
+			declarationVariables = Types.getAllTypeParameters((Class<?>) declaration);
 		else
 			declarationVariables = Arrays.asList(declaration.getTypeParameters());
 
-		return CaptureType
-				.capture(declarationVariables,
-						t -> new InferenceVariable(resolver, t.getName(),
-								t.getBounds().length));
+		return CaptureType.capture(declarationVariables,
+				t -> new InferenceVariable(resolver, t.getName(), t.getBounds()));
 	}
 
 	public static CaptureConversion capture(ParameterizedType type) {
-		TypeLiteral<?> typeLiteral = TypeLiteral.from(type);
+		ParameterizedType originalType = type;
+
 		/*
 		 * There exists a capture conversion from a parameterized type G<T1,...,Tn>
 		 * (§4.5) to a parameterized type G<S1,...,Sn>, where, for 1 ≤ i ≤ n :
@@ -60,18 +57,17 @@ public class InferenceVariable extends CaptureType implements Type {
 		Map<TypeVariable<?>, Type> parameterArguments = new HashMap<>();
 		Map<InferenceVariable, Type> capturedArguments = new HashMap<>();
 		Map<InferenceVariable, TypeVariable<?>> capturedParameters = new HashMap<>();
-		IdentityProperty<Boolean> identity = new IdentityProperty<>(true);
 
 		Map<TypeVariable<?>, InferenceVariable> parameterCaptures = CaptureType
 				.capture(
-						typeLiteral.getTypeParameters(),
+						Types.getAllTypeParameters(Types.getRawType(originalType)),
 						parameter -> {
-							Type argument = typeLiteral.getTypeArgument(parameter);
+							Type argument = Types.getAllTypeArguments(originalType).get(
+									parameter);
 							InferenceVariable capturedArgument;
 
 							if (argument instanceof WildcardType) {
 								WildcardType wildcardArgument = (WildcardType) argument;
-								identity.set(false);
 
 								if (wildcardArgument.getLowerBounds().length > 0) {
 									/*
@@ -80,7 +76,7 @@ public class InferenceVariable extends CaptureType implements Type {
 									 * Ui[A1:=S1,...,An:=Sn] and whose lower bound is Bi.
 									 */
 									capturedArgument = new InferenceVariable(parameter
-											.getBounds(), wildcardArgument.getUpperBounds());
+											.getBounds(), wildcardArgument.getLowerBounds());
 								} else if (wildcardArgument.getUpperBounds().length > 0) {
 									/*
 									 * If Ti is a wildcard type argument of the form ? extends Bi,
@@ -115,53 +111,51 @@ public class InferenceVariable extends CaptureType implements Type {
 							capturedArguments.put(capturedArgument, argument);
 							capturedParameters.put(capturedArgument, parameter);
 
+							System.out.println("CAPTURE!!!!............. " + capturedArgument
+									+ " from parameter '" + parameter + "' of: " + originalType);
+
 							return capturedArgument;
 						});
 
-		if (!identity.get()) {
-			ParameterizedType originalType = type;
-			type = (ParameterizedType) Types.parameterizedType(
-					Types.getRawType(originalType), parameterCaptures).getType();
-			ParameterizedType capturedType = type;
+		type = (ParameterizedType) Types.parameterizedType(
+				Types.getRawType(originalType), parameterCaptures).getType();
+		ParameterizedType capturedType = type;
 
-			CaptureConversion captureConversion = new CaptureConversion() {
-				@Override
-				public ParameterizedType getOriginalType() {
-					return originalType;
-				}
+		CaptureConversion captureConversion = new CaptureConversion() {
+			@Override
+			public ParameterizedType getOriginalType() {
+				return originalType;
+			}
 
-				@Override
-				public Set<InferenceVariable> getInferenceVariables() {
-					return capturedArguments.keySet();
-				}
+			@Override
+			public Set<InferenceVariable> getInferenceVariables() {
+				return capturedArguments.keySet();
+			}
 
-				@Override
-				public Type getCapturedArgument(InferenceVariable variable) {
-					return capturedArguments.get(variable);
-				}
+			@Override
+			public Type getCapturedArgument(InferenceVariable variable) {
+				return capturedArguments.get(variable);
+			}
 
-				@Override
-				public TypeVariable<?> getCapturedParameter(InferenceVariable variable) {
-					return capturedParameters.get(variable);
-				}
+			@Override
+			public TypeVariable<?> getCapturedParameter(InferenceVariable variable) {
+				return capturedParameters.get(variable);
+			}
 
-				@Override
-				public ParameterizedType getCapturedType() {
-					return capturedType;
-				}
+			@Override
+			public ParameterizedType getCapturedType() {
+				return capturedType;
+			}
 
-				@Override
-				public String toString() {
-					return new StringBuilder().append(getCapturedType().getTypeName())
-							.append(" = capture(").append(getOriginalType().getTypeName())
-							.append(")").toString();
-				}
-			};
+			@Override
+			public String toString() {
+				return new StringBuilder().append(getCapturedType().getTypeName())
+						.append(" = capture(").append(getOriginalType().getTypeName())
+						.append(")").toString();
+			}
+		};
 
-			return captureConversion;
-		}
-
-		return null;
+		return captureConversion;
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })

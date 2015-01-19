@@ -37,6 +37,7 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 		private Consumer<Class<?>> classVisitor = t -> {};
 		private Consumer<GenericArrayType> genericArrayVisitor = t -> {};
 		private Consumer<ParameterizedType> parameterizedTypeVisitor = t -> {};
+		private Consumer<TypeVariableCapture> typeVariableCaptureVisitor = t -> {};
 		private Consumer<TypeVariable<?>> typeVariableVisitor = t -> {};
 		private Consumer<InferenceVariable> inferenceVariableVisitor = t -> {};
 		private Consumer<WildcardType> wildcardVisitor = t -> {};
@@ -48,7 +49,8 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 		protected RecursiveTypeVisitor tryCreate() {
 			return new RecursiveTypeVisitor(allowRepeatVisits, supertypes, enclosed,
 					enclosing, parameters, bounds, postOrder, classVisitor,
-					genericArrayVisitor, parameterizedTypeVisitor, typeVariableVisitor,
+					genericArrayVisitor, parameterizedTypeVisitor,
+					typeVariableCaptureVisitor, typeVariableVisitor,
 					inferenceVariableVisitor, wildcardVisitor, intersectionTypeVisitor);
 		}
 
@@ -109,6 +111,12 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 			return this;
 		}
 
+		public Builder typeVariableCaptureVisitor(
+				Consumer<TypeVariableCapture> typeVariableCaptureVisitor) {
+			this.typeVariableCaptureVisitor = typeVariableCaptureVisitor;
+			return this;
+		}
+
 		public Builder typeVariableVisitor(
 				Consumer<TypeVariable<?>> typeVariableVisitor) {
 			this.typeVariableVisitor = typeVariableVisitor;
@@ -144,6 +152,7 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 	private final Consumer<Class<?>> classVisitor;
 	private final Consumer<GenericArrayType> genericArrayVisitor;
 	private final Consumer<ParameterizedType> parameterizedTypeVisitor;
+	private final Consumer<TypeVariableCapture> typeVariableCaptureVisitor;
 	private final Consumer<TypeVariable<?>> typeVariableVisitor;
 	private final Consumer<InferenceVariable> inferenceVariableVisitor;
 	private final Consumer<WildcardType> wildcardVisitor;
@@ -154,6 +163,7 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 			boolean postOrder, Consumer<Class<?>> classVisitor,
 			Consumer<GenericArrayType> genericArrayVisitor,
 			Consumer<ParameterizedType> parameterizedTypeVisitor,
+			Consumer<TypeVariableCapture> typeVariableCaptureVisitor,
 			Consumer<TypeVariable<?>> typeVariableVisitor,
 			Consumer<InferenceVariable> inferenceVariableVisitor,
 			Consumer<WildcardType> wildcardVisitor,
@@ -171,6 +181,7 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 		this.classVisitor = classVisitor;
 		this.genericArrayVisitor = genericArrayVisitor;
 		this.parameterizedTypeVisitor = parameterizedTypeVisitor;
+		this.typeVariableCaptureVisitor = typeVariableCaptureVisitor;
 		this.typeVariableVisitor = typeVariableVisitor;
 		this.inferenceVariableVisitor = inferenceVariableVisitor;
 		this.wildcardVisitor = wildcardVisitor;
@@ -232,6 +243,20 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 
 		if (postOrder)
 			parameterizedTypeVisitor.accept(type);
+	}
+
+	@Override
+	protected void visitTypeVariableCapture(TypeVariableCapture type) {
+		if (!postOrder)
+			typeVariableCaptureVisitor.accept(type);
+
+		if (bounds)
+			visit(type.getBounds());
+		if (supertypes)
+			visit(type.getUpperBounds());
+
+		if (postOrder)
+			typeVariableCaptureVisitor.accept(type);
 	}
 
 	@Override

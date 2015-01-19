@@ -7,8 +7,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
-
 public abstract class IntersectionType implements Type {
 	IntersectionType() {}
 
@@ -21,16 +19,16 @@ public abstract class IntersectionType implements Type {
 	public static Type of(Collection<? extends Type> types) {
 		List<Type> flattenedTypes = new ArrayList<>(types);
 
+		for (Type type : new ArrayList<>(flattenedTypes)) {
+			if (type instanceof IntersectionType) {
+				flattenedTypes.remove(type);
+				flattenedTypes.addAll(Arrays.asList(((IntersectionType) type)
+						.getTypes()));
+			}
+		}
+
 		if (flattenedTypes.isEmpty())
 			return Object.class;
-		else
-			for (Type type : new ArrayList<>(flattenedTypes)) {
-				if (type instanceof IntersectionType) {
-					flattenedTypes.remove(type);
-					flattenedTypes.addAll(Arrays.asList(((IntersectionType) type)
-							.getTypes()));
-				}
-			}
 
 		if (flattenedTypes.size() == 1)
 			return flattenedTypes.iterator().next();
@@ -55,6 +53,7 @@ public abstract class IntersectionType implements Type {
 			flattenedTypes.add(0, mostSpecificClass);
 		}
 
+		/*-TODO
 		try {
 			BoundSet bounds = new BoundSet();
 			for (Type type : flattenedTypes) {
@@ -66,6 +65,7 @@ public abstract class IntersectionType implements Type {
 			throw new TypeInferenceException("Illegal intersection type '"
 					+ flattenedTypes + "'.", e);
 		}
+		 */
 
 		return uncheckedOf(flattenedTypes);
 	}

@@ -48,7 +48,7 @@ public class TypeVariableCapture extends CaptureType implements
 
 			@Override
 			public TypeVariable<?>[] getTypeParameters() {
-				return null;
+				return captures;
 			}
 		};
 
@@ -78,7 +78,7 @@ public class TypeVariableCapture extends CaptureType implements
 					 * substitution [α1:=Y1, ..., αn:=Yn].
 					 */
 					Set<Type> upperBoundSet = Arrays
-							.stream(inferenceVariable.getLowerBounds())
+							.stream(inferenceVariable.getUpperBounds())
 							.filter(Types::isProperType).collect(Collectors.toSet());
 
 					Type[] upperBounds;
@@ -98,6 +98,9 @@ public class TypeVariableCapture extends CaptureType implements
 
 					captures[count.get()] = capture;
 					count.set(count.get() + 1);
+
+					System.out.println("FRESH!............. " + capture
+							+ " from inference variable '" + inferenceVariable);
 
 					return capture;
 				});

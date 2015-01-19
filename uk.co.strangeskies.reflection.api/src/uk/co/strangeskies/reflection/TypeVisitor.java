@@ -38,6 +38,8 @@ public abstract class TypeVisitor {
 					visitWildcardType((WildcardType) type);
 				else if (type instanceof IntersectionType)
 					visitIntersectionType((IntersectionType) type);
+				else if (type instanceof TypeVariableCapture)
+					visitTypeVariableCapture((TypeVariableCapture) type);
 				else if (type instanceof TypeVariable)
 					visitTypeVariable((TypeVariable<?>) type);
 				else if (type instanceof InferenceVariable)
@@ -63,6 +65,8 @@ public abstract class TypeVisitor {
 	protected void visitGenericArrayType(GenericArrayType type) {}
 
 	protected void visitWildcardType(WildcardType type) {}
+
+	protected void visitTypeVariableCapture(TypeVariableCapture type) {}
 
 	protected void visitTypeVariable(TypeVariable<?> type) {}
 

@@ -2,9 +2,11 @@ package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class ConstraintFormula {
 	public enum Kind {
@@ -18,6 +20,14 @@ public class ConstraintFormula {
 		this.kind = kind;
 		this.from = from;
 		this.to = to;
+
+		if (from instanceof IntersectionType
+				&& ((IntersectionType) from).getTypes().length == 0)
+			throw new RuntimeException();
+
+		if (kind == Kind.EQUALITY && Number.class.equals(from)
+				&& Integer.class.equals(to))
+			new Exception().printStackTrace();
 	}
 
 	@Override
@@ -99,37 +109,44 @@ public class ConstraintFormula {
 	 * parameters A1,...,An with corresponding bounds U1,...,Un.
 	 */
 	private Type captureConversion(Type type, BoundVisitor boundConsumer) {
-		CaptureConversion captureConversion;
-		if (type instanceof ParameterizedType
-				&& (captureConversion = InferenceVariable
-						.capture((ParameterizedType) type)) != null) {
-			for (InferenceVariable inferenceVariable : captureConversion
-					.getInferenceVariables()) {
-				boolean anyProper = false;
-				boolean anyBounds = false;
-				for (Type bound : inferenceVariable.getUpperBounds()) {
-					anyBounds = true;
-					anyProper = anyProper || Types.isProperType(bound);
-					boundConsumer.acceptSubtype(inferenceVariable, bound);
-				}
-				if (!anyProper)
-					boundConsumer.acceptSubtype(inferenceVariable, Object.class);
+		if (type instanceof ParameterizedType) {
+			Map<TypeVariable<?>, Type> typeArguments = Types
+					.getAllTypeArguments((ParameterizedType) type);
 
-				for (Type bound : inferenceVariable.getLowerBounds()) {
-					anyBounds = true;
-					boundConsumer.acceptSubtype(bound, inferenceVariable);
+			if (typeArguments.values().stream()
+					.anyMatch(WildcardType.class::isInstance)) {
+				CaptureConversion captureConversion = InferenceVariable
+						.capture((ParameterizedType) type);
+
+				for (InferenceVariable inferenceVariable : captureConversion
+						.getInferenceVariables()) {
+					boolean anyProper = false;
+					boolean anyBounds = false;
+					for (Type bound : inferenceVariable.getUpperBounds()) {
+						anyBounds = true;
+						anyProper = anyProper || Types.isProperType(bound);
+						boundConsumer.acceptSubtype(inferenceVariable, bound);
+					}
+					if (!anyProper)
+						boundConsumer.acceptSubtype(inferenceVariable, Object.class);
+
+					for (Type bound : inferenceVariable.getLowerBounds()) {
+						anyBounds = true;
+						boundConsumer.acceptSubtype(bound, inferenceVariable);
+					}
+
+					if (!anyBounds)
+						boundConsumer.acceptEquality(inferenceVariable,
+								captureConversion.getCapturedArgument(inferenceVariable));
 				}
 
-				if (!anyBounds)
-					boundConsumer.acceptEquality(inferenceVariable,
-							captureConversion.getCapturedArgument(inferenceVariable));
+				boundConsumer.acceptCaptureConversion(captureConversion);
+
+				return captureConversion.getCapturedType();
 			}
+		}
 
-			boundConsumer.acceptCaptureConversion(captureConversion);
-
-			return captureConversion.getCapturedType();
-		} else
-			return type;
+		return type;
 	}
 
 	public static boolean isUncheckedCompatibleOnly(Type from, Type to) {
@@ -551,10 +568,10 @@ public class ConstraintFormula {
 				 * arguments A1, ..., An, the constraint reduces to the following new
 				 * constraints: for all i (1 ≤ i ≤ n), ‹Bi = Ai›.
 				 */
-				Types.getTypeParameters(Types.getRawType(from)).forEach(
+				Types.getAllTypeParameters(Types.getRawType(from)).forEach(
 						type -> new ConstraintFormula(Kind.EQUALITY, TypeLiteral.from(from)
-								.getTypeArgument(type), TypeLiteral.from(to).getTypeArgument(type))
-								.reduceInto(boundConsumer));
+								.getTypeArgument(type), TypeLiteral.from(to).getTypeArgument(
+								type)).reduceInto(boundConsumer));
 			}
 		}
 	}

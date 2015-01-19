@@ -3,6 +3,7 @@ package uk.co.strangeskies.reflection;
 import java.lang.reflect.Type;
 import java.util.function.Consumer;
 
+import uk.co.strangeskies.reflection.BoundVisitor.PartialBoundVisitor;
 import uk.co.strangeskies.utilities.IdentityProperty;
 
 public class Bound {
@@ -10,6 +11,20 @@ public class Bound {
 
 	public Bound(Consumer<BoundVisitor> visitation) {
 		this.visitation = visitation;
+
+		visitation.accept(new PartialBoundVisitor() {
+			@Override
+			public void acceptEquality(InferenceVariable a, Type b) {
+				if (b.equals(Object.class))
+					new IllegalArgumentException("SHITTER").printStackTrace();
+			}
+
+			@Override
+			public void acceptEquality(InferenceVariable a, InferenceVariable b) {
+				// TODO Auto-generated method stub
+
+			}
+		});
 	}
 
 	public void accept(BoundVisitor visitor) {

@@ -34,14 +34,14 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 						.resolve(superClass.getGenericSuperclass()));
 				superClass = superClass.getSuperclass();
 
-				Class<?> subClass = superClass;
+				final Class<?> finalClass = superClass;
 				inferenceVariables = t -> {
 					if (t instanceof TypeVariable)
-						return resolver.getInferenceVariable(subClass, (TypeVariable<?>) t);
+						return resolver.getInferenceVariable(finalClass,
+								(TypeVariable<?>) t);
 					else
 						return null;
 				};
-
 			} while (!superClass.equals(TypeLiteral.class));
 
 			type = resolver
@@ -49,6 +49,8 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		}
 
 		rawType = (Class<? super T>) Types.getRawType(type);
+
+		getResolver(); // TODO remove
 	}
 
 	public TypeLiteral(Class<T> exactClass) {
@@ -174,7 +176,7 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 	}
 
 	public List<TypeVariable<?>> getTypeParameters() {
-		return Types.getTypeParameters(rawType);
+		return Types.getAllTypeParameters(rawType);
 	}
 
 	public Type getTypeArgument(TypeVariable<?> type) {
@@ -189,7 +191,7 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 
 	@SuppressWarnings("unchecked")
 	public <U> TypeLiteral<? extends U> resolveSupertypeParameters(Class<U> type) {
-		if (Types.getTypeParameters(type).isEmpty())
+		if (Types.getAllTypeParameters(type).isEmpty())
 			return TypeLiteral.from(type);
 
 		if (!type.isAssignableFrom(rawType))

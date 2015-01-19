@@ -114,6 +114,14 @@ public class Resolver {
 	}
 
 	private void recalculateRemainingDependencies() {
+		bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
+			@Override
+			public void acceptEquality(InferenceVariable a, Type b) {
+				if (Types.isProperType(b))
+					instantiate(a, b);
+			};
+		}));
+
 		Set<InferenceVariable> leftOfCapture = new HashSet<>();
 
 		Set<InferenceVariable> inferenceVariables = new HashSet<>(
@@ -244,8 +252,8 @@ public class Resolver {
 	public void incorporateType(Type types) {
 		new TypeVisitor() {
 			@Override
-			protected void visitClass(Class<?> type) {
-				capture(type);
+			protected void visitClass(Class<?> t) {
+				capture(t);
 			}
 
 			@Override
@@ -264,9 +272,7 @@ public class Resolver {
 			}
 
 			@Override
-			protected void visitTypeVariable(TypeVariable<?> type) {
-				capture(type.getGenericDeclaration());
-			}
+			protected void visitTypeVariable(TypeVariable<?> type) {}
 
 			@Override
 			protected void visitWildcardType(WildcardType type) {
@@ -280,21 +286,11 @@ public class Resolver {
 		Class<?> rawType = Types.getRawType(type);
 		capture(rawType);
 
-		Class<?> containingClass = rawType;
-		do {
-			for (int i = 0; i < containingClass.getTypeParameters().length; i++) {
-				TypeVariable<?> typeParameter = containingClass.getTypeParameters()[i];
-
-				Type actualTypeArgument = type.getActualTypeArguments()[i];
-
-				incorporateConstraint(new ConstraintFormula(Kind.EQUALITY,
-						capturedTypeVariables.get(rawType).get(typeParameter),
-						actualTypeArgument));
-			}
-			type = type.getOwnerType() instanceof ParameterizedType ? (ParameterizedType) type
-					.getOwnerType() : null;
-			containingClass = containingClass.getEnclosingClass();
-		} while (type != null && containingClass != null);
+		for (Map.Entry<TypeVariable<?>, Type> typeArgument : Types
+				.getAllTypeArguments(type).entrySet())
+			incorporateConstraint(new ConstraintFormula(Kind.EQUALITY,
+					capturedTypeVariables.get(rawType).get(typeArgument.getKey()),
+					typeArgument.getValue()));
 	}
 
 	public void incorporateConstraint(ConstraintFormula constraintFormula) {
@@ -327,8 +323,6 @@ public class Resolver {
 		Set<InferenceVariable> remainingVariables = new HashSet<>(variables);
 		do {
 			recalculateRemainingDependencies();
-			System.out.println(" ~ " + variables + " IIII "
-					+ this.remainingDependencies + " ? " + bounds);
 
 			/*
 			 * Given a set of inference variables to resolve, let V be the union of
@@ -336,7 +330,7 @@ public class Resolver {
 			 * variable in this set depends.
 			 */
 			resolveIndependentSet(variables.stream()
-					.filter(v -> !instantiations.containsKey(v))
+					.filter(v -> !this.instantiations.containsKey(v))
 					.map(remainingDependencies::get).flatMap(Set::stream)
 					.collect(Collectors.toSet()));
 
@@ -376,7 +370,8 @@ public class Resolver {
 
 			resolveMinimalIndepdendentSet(minimalSet);
 
-			variables.removeAll(minimalSet);
+			recalculateRemainingDependencies();
+			variables.removeAll(instantiations.keySet());
 		}
 	}
 
@@ -403,6 +398,7 @@ public class Resolver {
 				for (InferenceVariable variable : minimalSet) {
 					Set<Type> lowerBounds = new HashSet<>();
 					Set<Type> upperBounds = new HashSet<>();
+
 					IdentityProperty<Boolean> hasThrowableBounds = new IdentityProperty<>(
 							false);
 					bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
@@ -417,22 +413,16 @@ public class Resolver {
 							if (a.equals(variable) && Types.isProperType(b))
 								upperBounds.add(b);
 						};
-
-						@Override
-						public void acceptEquality(InferenceVariable a, Type b) {
-							if (a.equals(variable) && Types.isProperType(b)) {
-								upperBounds.add(b);
-								lowerBounds.add(b);
-							}
-						};
 					}));
+
 					Type instantiationCandidate;
 					if (!lowerBounds.isEmpty()) {
 						/*
 						 * If αi has one or more proper lower bounds, L1, ..., Lk, then Ti =
 						 * lub(L1, ..., Lk) (§4.10.4).
 						 */
-						instantiationCandidate = leastUpperBound(lowerBounds);
+						instantiationCandidate = IntersectionType
+								.of(leastUpperBound(lowerBounds));
 					} else if (hasThrowableBounds.get()) {
 						/*
 						 * Otherwise, if the bound set contains throws αi, and the proper
@@ -447,23 +437,22 @@ public class Resolver {
 						 */
 						instantiationCandidate = greatestLowerBound(upperBounds);
 					}
+
 					instantiationCandidates.put(variable, instantiationCandidate);
 					bounds.incorporate().acceptEquality(variable, instantiationCandidate);
 				}
 			} catch (TypeInferenceException e) {
+				e.printStackTrace();
 				instantiationCandidates = null;
 			}
 
 			if (instantiationCandidates != null) {
-				for (Map.Entry<InferenceVariable, Type> instantiation : instantiationCandidates
-						.entrySet()) {
-					this.instantiations.put(instantiation.getKey(),
-							instantiation.getValue());
-				}
-				remainingDependencies.keySet().removeAll(instantiations.keySet());
-				remainingDependencies.removeAllFromAll(instantiations.keySet());
-
 				this.bounds = bounds;
+
+				for (Map.Entry<InferenceVariable, Type> instantiation : instantiationCandidates
+						.entrySet())
+					instantiate(instantiation.getKey(), instantiation.getValue());
+
 				return;
 			}
 		}
@@ -493,8 +482,15 @@ public class Resolver {
 		bounds.removeCaptureConversions(relatedCaptureConversions);
 		for (Map.Entry<InferenceVariable, TypeVariableCapture> inferenceVariable : freshVariables
 				.entrySet())
-			bounds.incorporate().acceptEquality(inferenceVariable.getKey(),
-					inferenceVariable.getValue());
+			instantiate(inferenceVariable.getKey(), inferenceVariable.getValue());
+	}
+
+	private void instantiate(InferenceVariable variable, Type instantiation) {
+		this.instantiations.put(variable, instantiation);
+		remainingDependencies.keySet().remove(variable);
+		remainingDependencies.removeFromAll(variable);
+
+		bounds.incorporate().acceptEquality(variable, instantiation);
 	}
 
 	public static Type leastUpperBound(Type... upperBounds) {
@@ -598,7 +594,7 @@ public class Resolver {
 
 		Map<TypeVariable<?>, Type> leastContainingParameterization = new HashMap<>();
 
-		List<TypeVariable<?>> typeParameters = Types.getTypeParameters(rawClass);
+		List<TypeVariable<?>> typeParameters = Types.getAllTypeParameters(rawClass);
 		for (int i = 0; i < parameterizations.size(); i++) {
 			ParameterizedType parameterization = parameterizations.get(i);
 			for (int j = 0; j < typeParameters.size(); j++) {
@@ -861,10 +857,7 @@ public class Resolver {
 	public InferenceVariable getInferenceVariable(GenericDeclaration declaration,
 			TypeVariable<?> typeVariable) {
 		capture(declaration);
-		if (!capturedTypeVariables.containsKey(declaration))
-			return null;
-		else
-			return capturedTypeVariables.get(declaration).get(typeVariable);
+		return capturedTypeVariables.get(declaration).get(typeVariable);
 	}
 
 	public static void main(String... args) {
@@ -878,17 +871,14 @@ public class Resolver {
 	static class G extends Y<List<String>> {}
 
 	public static class Outer<T> {
-		public class Inner<N extends T, J extends Collection<? extends T>> {}
+		public class Inner<N extends T, J extends Collection<? extends T>, P> {}
 
-		// TODO: two different captures of Outer#T could be in the same resolver for
-		// this type when trying to determine the parameterized supertype of 'Inner'
-		// for a given 'Inner2'.
 		public class Inner2<M extends Number & Comparable<?>> extends
-				Outer<Comparable<?>>.Inner<M, List<Integer>> {}
+				Outer<Comparable<?>>.Inner<M, List<Integer>, T> {}
 	}
 
 	public static class Outer2<F, Z extends F> {
-		public class Inner3<X extends Set<F>> extends Outer<F>.Inner<Z, X> {
+		public class Inner3<X extends Set<F>> extends Outer<F>.Inner<Z, X, Set<Z>> {
 			Inner3() {
 				new Outer<F>() {}.super();
 			}
@@ -896,23 +886,25 @@ public class Resolver {
 	}
 
 	public static <T> void test() {
-		System.out
-				.println(new TypeLiteral<Outer2<Serializable, String>.Inner3<HashSet<Serializable>>>() {}
-						.resolveSupertypeParameters(Outer.Inner.class));
-
-		System.out.println(new TypeLiteral<Outer<String>.Inner2<Double>>() {}
-				.resolveSupertypeParameters(Outer.Inner.class));
-
 		System.out.println("List with T = String: "
 				+ new TypeLiteral<List<T>>() {}.withTypeArgument(
 						new TypeParameter<T>() {}.getType(), String.class));
 
 		System.out.println("TYPELITTEST: " + new TypeLiteral<String>() {});
-		System.out.println("TYPELITTEST-2: " + new Y<Integer>() {});
+		System.out.println("TYPELITTEST-2: "
+				+ new Y<Integer>() {}.resolveSupertypeParameters(Collection.class));
 		System.out.println("TYPELITTEST-3: " + new G());
 
 		System.out.println("type test: "
 				+ new TypeLiteral<String>() {}
 						.resolveSupertypeParameters(Comparable.class));
+
+		System.out.println(new TypeLiteral<Outer<String>.Inner2<Double>>() {}
+				.resolveSupertypeParameters(Outer.Inner.class));
+
+		System.out
+				.println(new TypeLiteral<Outer2<Serializable, String>.Inner3<HashSet<Serializable>>>() {}
+						.resolveSupertypeParameters(Outer.Inner.class));
+
 	}
 }

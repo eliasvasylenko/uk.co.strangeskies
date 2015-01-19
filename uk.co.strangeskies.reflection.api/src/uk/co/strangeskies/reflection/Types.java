@@ -135,13 +135,50 @@ public final class Types {
 				&& InferenceVariable.getAllMentionedBy(type).isEmpty();
 	}
 
-	public static List<TypeVariable<?>> getTypeParameters(Class<?> rawType) {
+	/**
+	 * This method retrieves a list of all type variables present on the given raw
+	 * type, as well as all type variables on any enclosing types recursively, in
+	 * the order encountered.
+	 * 
+	 * @param rawType
+	 * @return
+	 */
+	public static List<TypeVariable<?>> getAllTypeParameters(Class<?> rawType) {
 		Stream<TypeVariable<?>> typeParameters = Stream.empty();
 		do {
 			typeParameters = Stream.concat(typeParameters,
 					Arrays.stream(rawType.getTypeParameters()));
 		} while ((rawType = rawType.getEnclosingClass()) != null);
 		return typeParameters.collect(Collectors.toList());
+	}
+
+	/**
+	 * For a given parameterized type, we retrieve a mapping of all type variables
+	 * on its raw type, as given by {@link Types#getAllTypeParameters(Class)}, to
+	 * their arguments within the context of this type.
+	 * 
+	 * @param type
+	 * @return
+	 */
+	public static Map<TypeVariable<?>, Type> getAllTypeArguments(
+			ParameterizedType type) {
+		Map<TypeVariable<?>, Type> typeArguments = new HashMap<>();
+
+		Class<?> rawType = getRawType(type);
+		do {
+			for (int i = 0; i < rawType.getTypeParameters().length; i++) {
+				TypeVariable<?> typeParameter = rawType.getTypeParameters()[i];
+				Type typeArgument = type.getActualTypeArguments()[i];
+
+				typeArguments.put(typeParameter, typeArgument);
+			}
+
+			type = type.getOwnerType() instanceof ParameterizedType ? (ParameterizedType) type
+					.getOwnerType() : null;
+			rawType = rawType.getEnclosingClass();
+		} while (type != null && rawType != null);
+
+		return typeArguments;
 	}
 
 	public static boolean isAssignable(Type from, Type to) {
@@ -152,6 +189,9 @@ public final class Types {
 			 * Object.
 			 */
 			return true;
+		} else if (to instanceof CaptureType) {
+			return isAssignable(from,
+					IntersectionType.uncheckedOf(((CaptureType) to).getLowerBounds()));
 		} else if (to instanceof TypeVariable) {
 			/*
 			 * We can only assign to a type variable if it is from the exact same
@@ -172,14 +212,15 @@ public final class Types {
 			 * We must be able to assign from at least one member of the intersection
 			 * type.
 			 */
-			return Arrays.stream(((IntersectionType) from).getTypes()).anyMatch(
-					f -> isAssignable(f, to));
+			Type[] types = ((IntersectionType) from).getTypes();
+			return types.length == 0
+					|| Arrays.stream(types).anyMatch(f -> isAssignable(f, to));
 		} else if (to instanceof IntersectionType) {
 			/*
 			 * We must be able to assign to each member of the intersection type.
 			 */
-			return Arrays.stream(((IntersectionType) to).getTypes()).allMatch(
-					t -> isAssignable(from, t));
+			Type[] types = ((IntersectionType) to).getTypes();
+			return Arrays.stream(types).allMatch(t -> isAssignable(from, t));
 		} else if (from instanceof WildcardType) {
 			/*
 			 * We must be able to assign from at least one of the upper bound,
