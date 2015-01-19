@@ -894,6 +894,13 @@ public class Resolver {
 	}
 
 	public static <T> void test() {
+		System.out
+				.println(new TypeLiteral<Outer2<Serializable, String>.Inner3<HashSet<Serializable>>>() {}
+						.resolveSupertypeParameters(Outer.Inner.class));
+
+		System.out.println(new TypeLiteral<Outer<String>.Inner2<Double>>() {}
+				.resolveSupertypeParameters(Outer.Inner.class));
+
 		System.out.println("List with T = String: "
 				+ new TypeLiteral<List<T>>() {}.withTypeArgument(
 						new TypeParameter<T>() {}.getType(), String.class));
@@ -906,13 +913,5 @@ public class Resolver {
 		System.out.println("type test: "
 				+ new TypeLiteral<String>() {}
 						.resolveSupertypeParameters(Comparable.class));
-
-		System.out.println(new TypeLiteral<Outer<String>.Inner2<Double>>() {}
-				.resolveSupertypeParameters(Outer.Inner.class));
-
-		System.out
-				.println(new TypeLiteral<Outer2<Serializable, String>.Inner3<HashSet<Serializable>>>() {}
-						.resolveSupertypeParameters(Outer.Inner.class));
-
 	}
 }

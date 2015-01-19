@@ -217,8 +217,8 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 			superType = new TypeSubstitution(inferenceVariables).resolve(superType);
 
 			getResolver().incorporateType(superType);
-			Class<?> subClass = superClass;
 			superClass = Types.getRawType(superType);
+			Class<?> subClass = superClass;
 
 			inferenceVariables = t -> {
 				if (t instanceof TypeVariable)
