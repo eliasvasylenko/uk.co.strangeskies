@@ -114,13 +114,20 @@ public class Resolver {
 	}
 
 	private void recalculateRemainingDependencies() {
-		bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
-			@Override
-			public void acceptEquality(InferenceVariable a, Type b) {
-				if (Types.isProperType(b))
-					instantiate(a, b);
-			};
-		}));
+		IdentityProperty<Boolean> instantiatedAll = new IdentityProperty<>(false);
+		while (!instantiatedAll.get()) {
+			instantiatedAll.set(true);
+			bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
+				@Override
+				public void acceptEquality(InferenceVariable a, Type b) {
+					if (Types.isProperType(b) && !instantiations.containsKey(a)) {
+						System.out.println(" ok: " + a + " = " + b);
+						instantiate(a, b);
+						instantiatedAll.set(false);
+					}
+				};
+			}));
+		}
 
 		Set<InferenceVariable> leftOfCapture = new HashSet<>();
 
@@ -371,13 +378,9 @@ public class Resolver {
 
 			resolveMinimalIndepdendentSet(minimalSet);
 
-			bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
-				@Override
-				public void acceptEquality(InferenceVariable a, Type b) {
-					if (Types.isProperType(b))
-						instantiate(a, b);
-				};
-			}));
+			// TODO why does behaviour fail when following line is removed???
+			bounds.stream().map(Object::toString).collect(Collectors.joining(", "));
+			recalculateRemainingDependencies();
 			variables.removeAll(instantiations.keySet());
 		}
 	}

@@ -88,8 +88,8 @@ public class BoundSet {
 
 						@Override
 						public void acceptEquality(InferenceVariable a2, Type b2) {
-							incorporator.incorporateTransitiveEquality(a, b, a2, b2);
-							incorporator.incorporateTransitiveEquality(b, a, a2, b2);
+							incorporator.incorporateTransitiveEquality(a2, b2, a, b);
+							incorporator.incorporateTransitiveEquality(a2, b2, b, a);
 						}
 
 						@Override
@@ -165,6 +165,8 @@ public class BoundSet {
 						@Override
 						public void acceptEquality(InferenceVariable a2, Type b2) {
 							incorporator.incorporateSubtypeSubstitution(a2, b2, a, b);
+							incorporator.incorporateSupertypeSubstitution(a2, b2, a, b);
+							incorporator.incorporateProperSubtypeSubstitution(a2, b2, a, b);
 						}
 
 						@Override
