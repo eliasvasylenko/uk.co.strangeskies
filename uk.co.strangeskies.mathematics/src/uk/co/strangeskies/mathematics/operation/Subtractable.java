@@ -1,8 +1,5 @@
 package uk.co.strangeskies.mathematics.operation;
 
-import org.checkerframework.checker.igj.qual.Mutable;
-import org.checkerframework.checker.igj.qual.ReadOnly;
-
 import uk.co.strangeskies.utilities.Self;
 
 public interface Subtractable<S extends Subtractable<S, T>, T> extends
@@ -14,7 +11,7 @@ public interface Subtractable<S extends Subtractable<S, T>, T> extends
 	 *          the value to add to the copy
 	 * @return the copy with the added value
 	 */
-	public S subtract(@Mutable Subtractable<S, T> this, @ReadOnly T value);
+	public S subtract(Subtractable<S, T> this, T value);
 
 	/**
 	 * subtract the value from a copy of this
@@ -23,8 +20,7 @@ public interface Subtractable<S extends Subtractable<S, T>, T> extends
 	 *          the value to add to the copy
 	 * @return the copy with the added value
 	 */
-	public default S getSubtracted(@ReadOnly Subtractable<S, T> this,
-			@ReadOnly T value) {
+	public default S getSubtracted(Subtractable<S, T> this, T value) {
 		return copy().subtract(value);
 	}
 }

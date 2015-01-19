@@ -19,7 +19,7 @@ import uk.co.strangeskies.utilities.function.collection.ListTransformOnceView;
 import uk.co.strangeskies.utilities.function.collection.ListTransformationFunction;
 
 public abstract class MatrixHImpl<S extends MatrixH<S, V>, V extends Value<V>>
-		extends /* @ReadOnly */MatrixImpl<S, V> implements MatrixH<S, V> {
+		extends /*  */MatrixImpl<S, V> implements MatrixH<S, V> {
 	public MatrixHImpl(int size, Order order, Factory<V> valueFactory) {
 		super(size + 1, size, order, valueFactory);
 

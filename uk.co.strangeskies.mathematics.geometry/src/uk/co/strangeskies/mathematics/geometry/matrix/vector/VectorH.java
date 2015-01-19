@@ -10,10 +10,10 @@ import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.Self;
 
 public interface VectorH<S extends VectorH<S, V>, V extends Value<V>> extends
-/*@ReadOnly*/Vector<S, V>, Translatable<S>, /*@ReadOnly*/
+/**/Vector<S, V>, Translatable<S>, /**/
 Addable<S, Matrix<?, ?>>,
-/*@ReadOnly*/Subtractable<S, Matrix<?, ?>>,
-/*@ReadOnly*/NonCommutativelyMultipliable<S, Matrix<?, ?>>, Scalable<S>,
+/**/Subtractable<S, Matrix<?, ?>>,
+/**/NonCommutativelyMultipliable<S, Matrix<?, ?>>, Scalable<S>,
 		Self<S> {
 	public enum Type {
 		Absolute, Relative;

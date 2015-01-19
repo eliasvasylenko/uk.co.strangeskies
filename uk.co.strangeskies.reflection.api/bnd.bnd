@@ -11,9 +11,5 @@ Bundle-Name: Strange Skies Reflection
 		version = latest,  \
 	uk.co.strangeskies.utilities;  \
 		version = latest,  \
-	org.checkerframework:checker-qual;  \
-		version=latest,  \
-	org.checkerframework:jdk8;  \
-		version=latest,  \
 	osgi.enroute.base.api;  \
 		version = latest

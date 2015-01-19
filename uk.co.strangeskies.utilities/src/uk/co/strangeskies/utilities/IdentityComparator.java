@@ -9,9 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.checkerframework.checker.igj.qual.Mutable;
-import org.checkerframework.checker.igj.qual.ReadOnly;
-
 /**
  * Defines an arbitrary total ordering over references' identities. Guaranteed
  * to be a consistent ordering for a particular IdentityComparator, but not
@@ -22,20 +19,19 @@ import org.checkerframework.checker.igj.qual.ReadOnly;
  * @param <T>
  *          The type of object to compare.
  */
-public class IdentityComparator<T> implements @ReadOnly Comparator<@Mutable T> {
-	private final Map<Integer, List<IDReference<@ReadOnly T>>> collisionMap;
+public class IdentityComparator<T> implements Comparator<T> {
+	private final Map<Integer, List<IDReference<T>>> collisionMap;
 
 	private final ReferenceQueue<Object> referenceQueue;
 
 	public IdentityComparator() {
-		collisionMap = new HashMap<Integer, List<IDReference<@ReadOnly T>>>();
+		collisionMap = new HashMap<Integer, List<IDReference<T>>>();
 
 		referenceQueue = new ReferenceQueue<>();
 	}
 
 	@Override
-	public int compare(@ReadOnly IdentityComparator<T> this, @ReadOnly T first,
-			@ReadOnly T second) {
+	public int compare(IdentityComparator<T> this, T first, T second) {
 		clean();
 
 		if (first == second) {
@@ -54,10 +50,9 @@ public class IdentityComparator<T> implements @ReadOnly Comparator<@Mutable T> {
 		IDReference<T> secondReference = new IDReference<T>(second, secondHash,
 				referenceQueue);
 
-		@Mutable
-		List<IDReference<@ReadOnly T>> collisions = collisionMap.get(firstHash);
+		List<IDReference<T>> collisions = collisionMap.get(firstHash);
 		if (collisions == null) {
-			collisions = new ArrayList<IDReference<@ReadOnly T>>();
+			collisions = new ArrayList<IDReference<T>>();
 
 			collisions.add(firstReference);
 			collisions.add(secondReference);
@@ -87,7 +82,7 @@ public class IdentityComparator<T> implements @ReadOnly Comparator<@Mutable T> {
 	 * This method can be called to prune stale references from the hash-collision
 	 * map. It is also called automatically
 	 */
-	public void clean(@ReadOnly IdentityComparator<T> this) {
+	public void clean( IdentityComparator<T> this) {
 		IDReference<?> oldReference;
 		while ((oldReference = (IDReference<?>) referenceQueue.poll()) != null) {
 			List<IDReference<T>> collisions = collisionMap.get(oldReference.getId());
@@ -100,12 +95,12 @@ public class IdentityComparator<T> implements @ReadOnly Comparator<@Mutable T> {
 		}
 	}
 
-	@ReadOnly
-	protected class IDReference<R> extends @ReadOnly WeakReference<@Mutable R> {
+	
+	protected class IDReference<R> extends  WeakReference< R> {
 		private final int id;
 
-		public IDReference(@ReadOnly R referent, int id,
-				@ReadOnly ReferenceQueue<? super @ReadOnly R> q) {
+		public IDReference( R referent, int id,
+				 ReferenceQueue<? super  R> q) {
 			super(referent, q);
 
 			this.id = id;

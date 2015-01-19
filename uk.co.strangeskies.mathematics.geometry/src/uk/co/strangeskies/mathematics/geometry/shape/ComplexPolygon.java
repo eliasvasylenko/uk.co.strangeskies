@@ -19,7 +19,7 @@ public interface ComplexPolygon<S extends ComplexPolygon<S, V>, V extends Value<
 	 * The path described is <em>not</em> guaranteed to not contain degenerate
 	 * edges or self intersections.
 	 */
-	public/* @ReadOnly */ClosedPolyline2<V> boundary();
+	public/*  */ClosedPolyline2<V> boundary();
 
 	@Override
 	public default Set<ClosedPolyline2<V>> boundaryComponents() {

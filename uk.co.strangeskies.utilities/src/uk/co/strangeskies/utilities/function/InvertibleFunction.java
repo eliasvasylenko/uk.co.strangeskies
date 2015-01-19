@@ -2,6 +2,8 @@ package uk.co.strangeskies.utilities.function;
 
 import java.util.function.Function;
 
+import jdk.nashorn.internal.ir.annotations.Immutable;
+
 /**
  * Describes a function from F to T. A function should be stateless, hence the
  * implementing of {@link Immutable}.

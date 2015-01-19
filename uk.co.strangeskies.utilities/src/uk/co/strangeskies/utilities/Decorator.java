@@ -9,7 +9,7 @@ package uk.co.strangeskies.utilities;
  * @param <T>
  */
 public abstract class Decorator<T> {
-	private final/* @ReadOnly */Property<T, ? super T> componentProperty;
+	private final/*  */Property<T, ? super T> componentProperty;
 
 	public Decorator(T component) {
 		this.componentProperty = new IdentityProperty<>(component);

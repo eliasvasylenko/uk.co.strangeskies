@@ -1,27 +1,22 @@
 package uk.co.strangeskies.utilities;
 
-import org.checkerframework.checker.igj.qual.I;
-import org.checkerframework.checker.igj.qual.Mutable;
+public class IdentityProperty<T> implements Property<T, T> {
+	private T value;
 
-@I
-public class IdentityProperty<T> implements @I Property<T, @I T> {
-	private @I T value;
-
-	public IdentityProperty() {
-	}
+	public IdentityProperty() {}
 
 	public IdentityProperty(T value) {
 		this.value = value;
 	}
 
 	@Override
-	public @I T set(@Mutable IdentityProperty<T> this, @I T to) {
+	public T set(IdentityProperty<T> this, T to) {
 		value = to;
 		return value;
 	}
 
 	@Override
-	public @I T get() {
+	public T get() {
 		return value;
 	}
 }

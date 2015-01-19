@@ -1,7 +1,5 @@
 package uk.co.strangeskies.utilities;
 
-import org.checkerframework.checker.igj.qual.I;
-
 /**
  * For classes which follow the self-bounding pattern. The self-bounding pattern
  * is the use of the final derived class as a type parameter.
@@ -13,7 +11,7 @@ import org.checkerframework.checker.igj.qual.I;
  */
 public interface Self<S extends Self<S>> extends Copyable<S> {
 	@SuppressWarnings("unchecked")
-	public default @I S getThis(@I Self<S> this) {
-		return (@I S) this;
+	public default S getThis(Self<S> this) {
+		return (S) this;
 	}
 }

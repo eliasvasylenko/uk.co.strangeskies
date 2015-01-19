@@ -18,7 +18,7 @@ import uk.co.strangeskies.mathematics.values.Value;
  */
 public interface CompoundPolygon<S extends CompoundPolygon<S, V>, V extends Value<V>>
 		extends Shape<S>,
-		/* @Mutable */
+		/*  */
 		BooleanCombinationBehaviour<CompoundPolygon<?, V>, CompoundPolygon<?, V>> {
 	enum WindingRule {
 		EVEN_ODD, NON_ZERO

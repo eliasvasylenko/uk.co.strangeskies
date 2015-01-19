@@ -3,12 +3,12 @@ package uk.co.strangeskies.mathematics.expression;
 import java.util.Arrays;
 
 public class ConditionalForwardingExpression<O> extends CompoundExpression<O> {
-	private final Expression<? extends /* @ReadOnly */Boolean> condition;
+	private final Expression<? extends /*  */Boolean> condition;
 	private final Expression<? extends O> expressionWhenFulfilled;
 	private final Expression<? extends O> expressionWhenUnfulfilled;
 
 	public ConditionalForwardingExpression(
-			Expression<? extends /* @ReadOnly */Boolean> condition,
+			Expression<? extends /*  */Boolean> condition,
 			Expression<? extends O> expressionWhenFulfilled,
 			Expression<? extends O> expressionWhenUnfulfilled) {
 		super(Arrays.asList(condition), false);
@@ -43,7 +43,7 @@ public class ConditionalForwardingExpression<O> extends CompoundExpression<O> {
 		}
 	}
 
-	public final Expression<? extends /* @ReadOnly */Boolean> getCondition() {
+	public final Expression<? extends /*  */Boolean> getCondition() {
 		return condition;
 	}
 

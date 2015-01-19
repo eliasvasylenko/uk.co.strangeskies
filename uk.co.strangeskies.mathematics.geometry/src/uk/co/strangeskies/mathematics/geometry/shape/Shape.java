@@ -32,21 +32,21 @@ import uk.co.strangeskies.utilities.Self;
  */
 public interface Shape<S extends Shape<S>> extends Self<S>, Copyable<S>,
 		Property<S, S>, Variable<S> {
-	Value<?> getArea(/* @readOnly this */);
+	Value<?> getArea(/*  this */);
 
-	Value<?> getPerimeter(/* @readOnly this */);
+	Value<?> getPerimeter(/*  this */);
 
 	boolean contains(
-	/* @readOnly this, *//* @ReadOnly */Vector2<?> point);
+	/*  this, *//*  */Vector2<?> point);
 
-	boolean touches(/* @readOnly this, *//* @ReadOnly */Vector2<?> point);
+	boolean touches(/*  this, *//*  */Vector2<?> point);
 
 	boolean intersects(
-	/* @readOnly this, *//* @ReadOnly */Shape<?> shape);
+	/*  this, *//*  */Shape<?> shape);
 
-	boolean touches(/* @readOnly this, *//* @ReadOnly */Shape<?> shape);
+	boolean touches(/*  this, *//*  */Shape<?> shape);
 
-	Bounds2<?> getBounds(/* @readOnly this */);
+	Bounds2<?> getBounds(/*  this */);
 
 	@Override
 	default S get() {

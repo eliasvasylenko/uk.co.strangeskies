@@ -16,7 +16,7 @@ import uk.co.strangeskies.mathematics.values.Value;
  * @param <V>
  */
 public interface SimplePolygon<S extends SimplePolygon<S, V>, V extends Value<V>>
-		extends /* @ReadOnly */ComplexPolygon<S, V> {
+		extends /*  */ComplexPolygon<S, V> {
 	public enum WindingDirection {
 		CLOCKWISE, COUNTER_CLOCKWISE;
 	}

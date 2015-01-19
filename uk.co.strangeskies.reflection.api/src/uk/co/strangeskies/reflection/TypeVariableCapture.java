@@ -11,8 +11,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.checkerframework.checker.nullness.qual.Nullable;
-
 import uk.co.strangeskies.utilities.IdentityProperty;
 
 public class TypeVariableCapture extends CaptureType implements
@@ -41,7 +39,7 @@ public class TypeVariableCapture extends CaptureType implements
 			}
 
 			@Override
-			public <T extends Annotation> @Nullable T getAnnotation(
+			public <T extends Annotation>  T getAnnotation(
 					Class<T> paramClass) {
 				return null;
 			}
@@ -114,7 +112,7 @@ public class TypeVariableCapture extends CaptureType implements
 	}
 
 	@Override
-	public <U extends Annotation> @Nullable U getAnnotation(Class<U> arg0) {
+	public <U extends Annotation>  U getAnnotation(Class<U> arg0) {
 		return null;
 	}
 
@@ -155,7 +153,7 @@ public class TypeVariableCapture extends CaptureType implements
 				}
 
 				@Override
-				public <T extends Annotation> @Nullable T getAnnotation(
+				public <T extends Annotation>  T getAnnotation(
 						Class<T> paramClass) {
 					return null;
 				}

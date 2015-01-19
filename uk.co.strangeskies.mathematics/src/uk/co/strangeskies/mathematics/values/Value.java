@@ -200,7 +200,7 @@ public abstract class Value<S extends Value<S>> extends Number implements
 	public abstract boolean equals(long value);
 
 	public abstract int compareToAtSupportedPrecision(
-	/* @ReadOnly */Value<?> other);
+	/*  */Value<?> other);
 
 	public abstract int getMultipliedPrimitive(int value);
 

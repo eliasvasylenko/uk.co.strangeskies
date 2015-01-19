@@ -7,13 +7,13 @@ import java.util.Set;
 
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.geometry.shape.SimplePolygon;
-import uk.co.strangeskies.mathematics.geometry.shape.Triangle;
 import uk.co.strangeskies.mathematics.geometry.shape.SimplePolygon.WindingDirection;
+import uk.co.strangeskies.mathematics.geometry.shape.Triangle;
 import uk.co.strangeskies.mathematics.geometry.shape.impl.Line2Impl;
 import uk.co.strangeskies.mathematics.geometry.shape.impl.TriangleImpl;
 import uk.co.strangeskies.mathematics.geometry.shape.mesh.Mesh;
-import uk.co.strangeskies.mathematics.geometry.shape.mesh.MeshFragment;
 import uk.co.strangeskies.mathematics.geometry.shape.mesh.Mesh.MeshingScheme;
+import uk.co.strangeskies.mathematics.geometry.shape.mesh.MeshFragment;
 import uk.co.strangeskies.mathematics.geometry.shape.tessellation.Tessellator;
 import uk.co.strangeskies.mathematics.values.Value;
 
@@ -106,9 +106,9 @@ public class TessellatorImpl implements Tessellator {
 	}
 
 	public <V extends Value<V>> boolean isValidEar(
-	/* @ReadOnly */List</* @Immutable */Vector2<V>> vertices,
-	/* @ReadOnly */List</* @Immutable */Integer> remainingIndices, int earIndex)
-	/* @ReadOnly */{
+	/*  */List</* @Immutable */Vector2<V>> vertices,
+	/*  */List</* @Immutable */Integer> remainingIndices, int earIndex)
+	/*  */{
 		int indicesLeft = remainingIndices.size();
 
 		// if not even triangle
@@ -116,13 +116,13 @@ public class TessellatorImpl implements Tessellator {
 			return false;
 
 		// ear triangle
-		/* @ReadOnly */Vector2<V> a = vertices.get(remainingIndices.get(earIndex));
+		/*  */Vector2<V> a = vertices.get(remainingIndices.get(earIndex));
 		if (++earIndex == indicesLeft)
 			earIndex = 0;
-		/* @ReadOnly */Vector2<V> b = vertices.get(remainingIndices.get(earIndex));
+		/*  */Vector2<V> b = vertices.get(remainingIndices.get(earIndex));
 		if (++earIndex == indicesLeft)
 			earIndex = 0;
-		/* @ReadOnly */Vector2<V> c = vertices.get(remainingIndices.get(earIndex));
+		/*  */Vector2<V> c = vertices.get(remainingIndices.get(earIndex));
 
 		Triangle<V> triangle = new TriangleImpl<V>(a, b, c);
 

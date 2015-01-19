@@ -9,15 +9,15 @@ import uk.co.strangeskies.mathematics.values.Fraction;
 import uk.co.strangeskies.utilities.factory.Factory;
 
 public class Dimension {
-	private final Map<QuantityType, /*@ReadOnly*/Fraction> quantityTypepowers;
+	private final Map<QuantityType, /**/Fraction> quantityTypepowers;
 
 	protected Dimension(
-			Map<QuantityType, /*@ReadOnly*/Fraction> quantityTypepowers) {
+			Map<QuantityType, /**/Fraction> quantityTypepowers) {
 		this.quantityTypepowers = Collections.unmodifiableMap(new HashMap<>(
 				quantityTypepowers));
 	}
 
-	public Map<QuantityType, /*@ReadOnly*/Fraction> getQuantityTypePowers() {
+	public Map<QuantityType, /**/Fraction> getQuantityTypePowers() {
 		return quantityTypepowers;
 	}
 
@@ -26,7 +26,7 @@ public class Dimension {
 	}
 
 	public static class Builder implements Factory<Dimension> {
-		private final Map<QuantityType, /*@ReadOnly*/Fraction> quantityTypePowers;
+		private final Map<QuantityType, /**/Fraction> quantityTypePowers;
 
 		public Builder() {
 			quantityTypePowers = new HashMap<>();
@@ -40,9 +40,9 @@ public class Dimension {
 			return multiply(quantityType, new Fraction(power));
 		}
 
-		public final Builder multiply(QuantityType quantityType, /*@ReadOnly*/
+		public final Builder multiply(QuantityType quantityType, /**/
 				Fraction power) {
-			/*@ReadOnly*/Fraction existingpower = quantityTypePowers
+			/**/Fraction existingpower = quantityTypePowers
 					.get(quantityType);
 			if (existingpower != null) {
 				power = power.getAdded(existingpower);
@@ -58,7 +58,7 @@ public class Dimension {
 		}
 
 		public final Builder multiply(Dimension dimension) {
-			for (Map.Entry<QuantityType, /*@ReadOnly*/Fraction> quantityTypepower : dimension
+			for (Map.Entry<QuantityType, /**/Fraction> quantityTypepower : dimension
 					.getQuantityTypePowers().entrySet()) {
 				multiply(quantityTypepower.getKey(), quantityTypepower.getValue());
 			}
@@ -70,9 +70,9 @@ public class Dimension {
 			return multiply(dimension, new Fraction(power));
 		}
 
-		public final Builder multiply(Dimension dimension, /*@ReadOnly*/
+		public final Builder multiply(Dimension dimension, /**/
 				Fraction power) {
-			for (Map.Entry<QuantityType, /*@ReadOnly*/Fraction> quantityTypepower : dimension
+			for (Map.Entry<QuantityType, /**/Fraction> quantityTypepower : dimension
 					.getQuantityTypePowers().entrySet()) {
 				multiply(quantityTypepower.getKey(), quantityTypepower.getValue()
 						.getMultiplied(power));

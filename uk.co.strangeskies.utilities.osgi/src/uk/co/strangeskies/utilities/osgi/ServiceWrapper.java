@@ -45,7 +45,7 @@ public interface ServiceWrapper<T> {
 	 *          The service implementation to be wrapped.
 	 * @return The wrapping implementation.
 	 */
-	public T wrapService(/* @ReadOnly */T service);
+	public T wrapService(/*  */T service);
 
 	/**
 	 * <p>
@@ -102,7 +102,7 @@ public interface ServiceWrapper<T> {
 	 *         otherwise.
 	 */
 	public boolean wrapServiceProperties(
-			Map<String, /* @ReadOnly */Object> serviceProperties);
+			Map<String, /*  */Object> serviceProperties);
 
 	/**
 	 * This method should return the target class of services to be wrapped.

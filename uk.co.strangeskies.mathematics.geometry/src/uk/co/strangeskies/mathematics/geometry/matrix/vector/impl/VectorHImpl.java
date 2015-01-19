@@ -10,7 +10,7 @@ import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.factory.Factory;
 
 public abstract class VectorHImpl<S extends VectorH<S, V>, V extends Value<V>>
-		extends /* @ReadOnly */VectorImpl<S, V> implements VectorH<S, V> {
+		extends /*  */VectorImpl<S, V> implements VectorH<S, V> {
 	private Type type;
 
 	public VectorHImpl(Type type, int size, Order order, Orientation orientation,

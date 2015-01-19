@@ -20,7 +20,5 @@ Bundle-Name: Strange Skies Mathematics
 	org.testng:testng;version=latest,\
 	uk.co.strangeskies.utilities;version=latest,\
 	uk.co.strangeskies.expressions;version=latest,  \
-	org.checkerframework:checker-qual;version=latest,  \
-	org.checkerframework:jdk8;version=latest,  \
 	osgi.enroute.base.api;  \
 		version = latest

@@ -22,10 +22,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.checkerframework.checker.javari.qual.ReadOnly;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
-
 import uk.co.strangeskies.utilities.Property;
 
 public final class Types {
@@ -387,7 +383,7 @@ public final class Types {
 			}
 
 			@Override
-			public boolean equals(@Nullable @ReadOnly Object object) {
+			public boolean equals(Object object) {
 				if (this == object)
 					return true;
 				if (object == null || !(object instanceof GenericArrayType))
@@ -586,7 +582,7 @@ public final class Types {
 			Property<?, ParameterizedType> source) {
 		return new ParameterizedType() {
 			@Override
-			public @NonNull Type getRawType() {
+			public Type getRawType() {
 				return source.get().getRawType();
 			}
 
@@ -596,7 +592,7 @@ public final class Types {
 			}
 
 			@Override
-			public @NonNull Type @NonNull [] getActualTypeArguments() {
+			public Type[] getActualTypeArguments() {
 				return source.get().getActualTypeArguments();
 			}
 
@@ -606,7 +602,7 @@ public final class Types {
 			}
 
 			@Override
-			public boolean equals(@Nullable @ReadOnly Object arg0) {
+			public boolean equals(Object arg0) {
 				return source.get().equals(arg0);
 			}
 
