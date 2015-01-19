@@ -2,6 +2,7 @@ package uk.co.strangeskies.utilities.collection.multimap;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 
 public interface MultiMap<K, V, C extends Collection<V>> extends Map<K, C> {
@@ -150,9 +151,8 @@ public interface MultiMap<K, V, C extends Collection<V>> extends Map<K, C> {
 	public default boolean removeFromAll(Collection<? extends K> keys, V value) {
 		boolean removed = false;
 
-		for (K key : keys) {
+		for (K key : new HashSet<>(keys))
 			removed = removeValue(key, value) || removed;
-		}
 
 		return removed;
 	}

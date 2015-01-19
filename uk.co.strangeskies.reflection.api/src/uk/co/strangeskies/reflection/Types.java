@@ -495,11 +495,16 @@ public final class Types {
 			else
 				return unboundedWildcard();
 		}
+
+		if (Object.class.equals(type))
+			return unboundedWildcard();
+
 		Supplier<Type[]> types;
 		if (type instanceof IntersectionType)
 			types = ((IntersectionType) type)::getTypes;
 		else
 			types = () -> new Type[] { type };
+
 		return new WildcardType() {
 			@Override
 			public Type[] getUpperBounds() {

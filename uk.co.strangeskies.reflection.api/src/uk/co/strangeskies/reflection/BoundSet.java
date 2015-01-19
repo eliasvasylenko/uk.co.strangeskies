@@ -240,8 +240,6 @@ public class BoundSet {
 
 		@Override
 		public void acceptSubtype(Type a, InferenceVariable b) {
-			if (a.equals(Object.class))
-				throw new RuntimeException("poo " + BoundSet.this);
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptSubtype(a, b)),
 					incorporator -> new PartialBoundVisitor() {
 						@Override

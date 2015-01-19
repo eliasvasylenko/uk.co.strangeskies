@@ -69,8 +69,10 @@ abstract class CaptureType implements Type {
 
 	protected static <T extends Type, C extends CaptureType> Map<T, C> capture(
 			Collection<? extends T> types, Function<T, C> captureFunction) {
-		Map<T, C> captures = types.stream().collect(
-				Collectors.toMap(Function.identity(), captureFunction::apply));
+		Map<T, C> captures = types.stream()
+				.collect(
+						Collectors.<T, T, C> toMap(Function.identity(),
+								captureFunction::apply));
 
 		substituteBounds(captures);
 

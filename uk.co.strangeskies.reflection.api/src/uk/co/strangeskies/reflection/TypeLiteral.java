@@ -8,6 +8,7 @@ import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -65,7 +66,15 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 	}
 
 	public static TypeLiteral<?> from(Type type) {
-		return new TypeLiteral<>(type, Types.getRawType(type));
+		return from(type, Types.getRawType(type));
+	}
+
+	/*
+	 * This indirection shouldn't be necessary, but javac isn't handling the
+	 * wildcard capture properly without it.
+	 */
+	private static <T> TypeLiteral<? extends T> from(Type type, Class<T> rawType) {
+		return new TypeLiteral<>(type, rawType);
 	}
 
 	public static <T> TypeLiteral<T> from(Class<T> type) {
@@ -298,7 +307,7 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 				.collect(Collectors.toSet());
 	}
 
-	public Set<? extends Invokable<? super T, ?>> getMethods() {
+	public Set<Invokable<T, ?>> getMethods() {
 		// TODO include inherited methods.
 		return Arrays
 				.stream(getRawType().getMethods())
@@ -325,16 +334,22 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		return resolveInvokableOverload(getConstructors(), parameters);
 	}
 
-	public Invokable<? super T, ?> resolveMethodOverload(String name,
-			Type... parameters) {
+	public Invokable<T, ?> resolveMethodOverload(String name, Type... parameters) {
 		return resolveMethodOverload(name, Arrays.asList(parameters));
 	}
 
-	public Invokable<? super T, ?> resolveMethodOverload(String name,
+	public Invokable<T, ?> resolveMethodOverload(String name,
 			List<? extends Type> parameters) {
-		Set<? extends Invokable<? super T, ?>> candidates = getMethods().stream()
-				.filter(i -> i.getGenericDeclaration().getName().equals(name))
-				.collect(Collectors.toSet());
+		/*
+		 * javac falls over if you use streams for this (in the obvious way at
+		 * least), don't modify without checking.
+		 */
+		Set<Invokable<T, ?>> candidates = getMethods();
+		Iterator<Invokable<T, ?>> candidateIterator = candidates.iterator();
+		while (candidateIterator.hasNext())
+			if (!candidateIterator.next().getGenericDeclaration().getName()
+					.equals(name))
+				candidateIterator.remove();
 
 		if (candidates.isEmpty())
 			throw new IllegalArgumentException("Cannot find any method '" + name
@@ -355,11 +370,11 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 			compatibleCandidates = filterOverloadCandidates(candidates,
 					i -> i.withVariableArityApplicability(parameters), failures::add);
 		else {
-			candidates = compatibleCandidates;
+			Set<? extends Invokable<U, ? extends R>> oldCompatibleCandidates = compatibleCandidates;
 			compatibleCandidates = filterOverloadCandidates(compatibleCandidates,
 					i -> i.withStrictApplicability(parameters), failures::add);
 			if (compatibleCandidates.isEmpty())
-				compatibleCandidates = candidates;
+				compatibleCandidates = oldCompatibleCandidates;
 		}
 
 		if (compatibleCandidates.isEmpty())

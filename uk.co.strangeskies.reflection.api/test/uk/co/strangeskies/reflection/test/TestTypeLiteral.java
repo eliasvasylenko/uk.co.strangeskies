@@ -1,10 +1,13 @@
 package uk.co.strangeskies.reflection.test;
 
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import uk.co.strangeskies.reflection.Invokable;
 import uk.co.strangeskies.reflection.TypeLiteral;
 import uk.co.strangeskies.reflection.TypeParameter;
 
@@ -30,14 +33,27 @@ public class TestTypeLiteral {
 			return null;
 		}
 
+		public <T, R> void accept(Set<Invokable<T, R>> set) {}
+
 		public strictfp <T extends Comparable<? super T>, U extends Collection<? extends Comparable<? super T>>> void bothways(
 				T t, U u) {}
+
+		public <U, R> Invokable<U, ? extends R> okay(
+				Set<? extends Invokable<U, ? extends R>> candidates,
+				List<? extends Type> parameters) {
+			return null;
+		}
 	}
 
 	public static <T> void main(String... args) throws NoSuchMethodException,
 			SecurityException {
 		System.out.println(new TypeParameter<T>() {});
 		System.out.println(new TypeLiteral<List<String>>() {});
+		System.out.println();
+
+		System.out.println(new TypeLiteral<B>() {}.resolveMethodOverload("okay",
+				new TypeLiteral<Set<Invokable<T, ?>>>() {}.getType(),
+				new TypeLiteral<List<? extends Type>>() {}.getType()));
 		System.out.println();
 
 		System.out
