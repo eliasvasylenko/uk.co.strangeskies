@@ -1,5 +1,6 @@
 package uk.co.strangeskies.reflection;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -10,6 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -49,8 +51,6 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		}
 
 		rawType = (Class<? super T>) Types.getRawType(type);
-
-		getResolver(); // TODO remove
 	}
 
 	public TypeLiteral(Class<T> exactClass) {
@@ -61,7 +61,7 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		this.type = type;
 		this.rawType = rawType;
 
-		getResolver();
+		getInternalResolver();
 	}
 
 	public static TypeLiteral<?> from(Type type) {
@@ -104,7 +104,11 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		return Modifier.isStatic(rawType.getModifiers());
 	}
 
-	private Resolver getResolver() {
+	public Resolver getResolver() {
+		return new Resolver(getInternalResolver());
+	}
+
+	private Resolver getInternalResolver() {
 		if (resolver == null) {
 			resolver = new Resolver();
 			resolver.incorporateType(type);
@@ -180,74 +184,88 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 	}
 
 	public Type getTypeArgument(TypeVariable<?> type) {
-		return getResolver().resolveTypeVariable(rawType, type);
+		return getInternalResolver().resolveTypeVariable(rawType, type);
 	}
 
 	@SuppressWarnings("unchecked")
 	public <U> TypeLiteral<? extends U> resolveType(TypeLiteral<U> type) {
-		return (TypeLiteral<? extends U>) TypeLiteral.from(getResolver()
+		return (TypeLiteral<? extends U>) TypeLiteral.from(getInternalResolver()
 				.resolveType(type.getType()));
 	}
 
 	@SuppressWarnings("unchecked")
-	public <U> TypeLiteral<? extends U> resolveSupertypeParameters(Class<U> type) {
-		if (Types.getAllTypeParameters(type).isEmpty())
-			return TypeLiteral.from(type);
+	public <U> TypeLiteral<? extends U> resolveSupertypeParameters(
+			Class<U> superclass) {
+		if (!Types.isGeneric(superclass))
+			return TypeLiteral.from(superclass);
 
-		if (!type.isAssignableFrom(rawType))
+		Type parameterizedType = Types.uncheckedParameterizedType(superclass,
+				new HashMap<>());
+
+		resolveTypeHierarchy(getInternalResolver(), type, superclass);
+
+		return (TypeLiteral<? extends U>) TypeLiteral.from(getInternalResolver()
+				.resolveType(superclass, parameterizedType));
+	}
+
+	@SuppressWarnings("unchecked")
+	public <U> TypeLiteral<? extends U> resolveSubtypeParameters(Class<U> subclass) {
+		if (!Types.isGeneric(subclass))
+			return TypeLiteral.from(subclass);
+
+		ParameterizedType parameterizedType = (ParameterizedType) Types
+				.uncheckedParameterizedType(subclass, new HashMap<>());
+
+		resolveTypeHierarchy(getInternalResolver(), parameterizedType, rawType);
+
+		return (TypeLiteral<? extends U>) TypeLiteral.from(getInternalResolver()
+				.resolveType(subclass, parameterizedType));
+	}
+
+	private static void resolveTypeHierarchy(Resolver resolver, Type subtype,
+			Class<?> superclass) {
+		Class<?> subclass = Types.getRawType(subtype);
+
+		if (!superclass.isAssignableFrom(subclass))
 			throw new IllegalArgumentException();
 
-		Class<?> superClass = rawType;
-		Type superType = this.type;
+		Class<?> finalSubclass2 = subclass;
 		Function<Type, Type> inferenceVariables = t -> {
 			if (t instanceof TypeVariable)
-				return getResolver().getInferenceVariable(rawType, (TypeVariable<?>) t);
+				return resolver.getInferenceVariable(finalSubclass2,
+						(TypeVariable<?>) t);
 			else
 				return null;
 		};
-		while (!superClass.equals(type)) {
-			Set<Type> superTypes = new HashSet<>(Arrays.asList(superClass
+		while (!subclass.equals(superclass)) {
+			Set<Type> lesserSubtypes = new HashSet<>(Arrays.asList(subclass
 					.getGenericInterfaces()));
-			if (superClass.getSuperclass() != null)
-				superTypes.addAll(Arrays.asList(superClass.getGenericSuperclass()));
+			if (subclass.getSuperclass() != null)
+				lesserSubtypes.addAll(Arrays.asList(subclass.getGenericSuperclass()));
 
-			superType = superTypes.stream()
-					.filter(t -> type.isAssignableFrom(Types.getRawType(t))).findAny()
-					.get();
-			superType = new TypeSubstitution(inferenceVariables).resolve(superType);
+			subtype = lesserSubtypes.stream()
+					.filter(t -> superclass.isAssignableFrom(Types.getRawType(t)))
+					.findAny().get();
+			subtype = new TypeSubstitution(inferenceVariables).resolve(subtype);
 
-			getResolver().incorporateType(superType);
-			superClass = Types.getRawType(superType);
-			Class<?> subClass = superClass;
+			resolver.incorporateType(subtype);
+			subclass = Types.getRawType(subtype);
 
+			Class<?> finalSubclass = subclass;
 			inferenceVariables = t -> {
 				if (t instanceof TypeVariable)
-					return getResolver().getInferenceVariable(subClass,
+					return resolver.getInferenceVariable(finalSubclass,
 							(TypeVariable<?>) t);
 				else
 					return null;
 			};
 		}
-
-		Type capturedType;
-		if (superType instanceof Class)
-			capturedType = type;
-		else
-			capturedType = getResolver().resolveType(type,
-					Types.uncheckedParameterizedType(type, new HashMap<>()));
-
-		return (TypeLiteral<? extends U>) TypeLiteral.from(capturedType);
-	}
-
-	public <U extends T> TypeLiteral<? extends U> resolveSubtypeParameters(
-			Class<U> type) {
-		throw new UnsupportedOperationException(); // TODO
 	}
 
 	@SuppressWarnings("unchecked")
 	public TypeLiteral<? extends T> withTypeArguments(
 			Map<TypeVariable<?>, Type> arguments) {
-		Resolver resolver = new Resolver(getResolver());
+		Resolver resolver = new Resolver(getInternalResolver());
 
 		for (TypeVariable<?> parameter : arguments.keySet())
 			resolver.incorporateInstantiation(parameter, arguments.get(parameter));
@@ -273,15 +291,21 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		return withTypeArgument(parameter.getType(), argument);
 	}
 
+	@SuppressWarnings("unchecked")
 	public Set<Invokable<T, T>> getConstructors() {
 		return Arrays.stream(getRawType().getConstructors())
-				.map(m -> new Invokable<T, T>(this, m)).collect(Collectors.toSet());
+				.map(m -> Invokable.from((Constructor<T>) m, this))
+				.collect(Collectors.toSet());
 	}
 
 	public Set<? extends Invokable<? super T, ?>> getMethods() {
 		// TODO include inherited methods.
-		return Arrays.stream(getRawType().getMethods())
-				.map(m -> new Invokable<>(this, m)).collect(Collectors.toSet());
+		return Arrays
+				.stream(getRawType().getMethods())
+				.map(
+						m -> Invokable.from(m, this,
+								TypeLiteral.from(m.getGenericReturnType())))
+				.collect(Collectors.toSet());
 	}
 
 	public Set<? extends Invokable<? super T, ?>> getInvokables() {
@@ -293,39 +317,69 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 
 	public Invokable<T, ? extends T> resolveConstructorOverload(
 			Type... parameters) {
+		return resolveConstructorOverload(Arrays.asList(parameters));
+	}
+
+	public Invokable<T, ? extends T> resolveConstructorOverload(
+			List<? extends Type> parameters) {
 		return resolveInvokableOverload(getConstructors(), parameters);
 	}
 
 	public Invokable<? super T, ?> resolveMethodOverload(String name,
 			Type... parameters) {
-		Set<Invokable<? super T, ?>> candidates = getMethods().stream()
+		return resolveMethodOverload(name, Arrays.asList(parameters));
+	}
+
+	public Invokable<? super T, ?> resolveMethodOverload(String name,
+			List<? extends Type> parameters) {
+		Set<? extends Invokable<? super T, ?>> candidates = getMethods().stream()
 				.filter(i -> i.getGenericDeclaration().getName().equals(name))
 				.collect(Collectors.toSet());
+
+		if (candidates.isEmpty())
+			throw new IllegalArgumentException("Cannot find any method '" + name
+					+ "' in '" + this + "'.");
 
 		return resolveInvokableOverload(candidates, parameters);
 	}
 
-	private <R, U> Invokable<U, ? extends R> resolveInvokableOverload(
-			Set<? extends Invokable<? super U, ? extends R>> candidates,
-			Type... parameters) {
-		Set<? extends Invokable<? super U, ? extends R>> compatibleCandidates = candidates
-				.stream().map(i -> i.withLooseApplicability(parameters))
-				.filter(o -> o != null).collect(Collectors.toSet());
+	private <U, R> Invokable<U, ? extends R> resolveInvokableOverload(
+			Set<? extends Invokable<U, ? extends R>> candidates,
+			List<? extends Type> parameters) {
+		Set<RuntimeException> failures = new HashSet<>();
 
-		if (compatibleCandidates.isEmpty()) {
-			compatibleCandidates = candidates.stream()
-					.map(i -> i.withVariableArityApplicability(parameters))
-					.filter(o -> o != null).collect(Collectors.toSet());
-		} else {
+		Set<? extends Invokable<U, ? extends R>> compatibleCandidates = filterOverloadCandidates(
+				candidates, i -> i.withLooseApplicability(parameters), failures::add);
+
+		if (compatibleCandidates.isEmpty())
+			compatibleCandidates = filterOverloadCandidates(candidates,
+					i -> i.withVariableArityApplicability(parameters), failures::add);
+		else {
 			candidates = compatibleCandidates;
-			compatibleCandidates = compatibleCandidates.stream()
-					.map(i -> i.withStrictApplicability(parameters))
-					.filter(o -> o != null).collect(Collectors.toSet());
+			compatibleCandidates = filterOverloadCandidates(compatibleCandidates,
+					i -> i.withStrictApplicability(parameters), failures::add);
 			if (compatibleCandidates.isEmpty())
 				compatibleCandidates = candidates;
 		}
 
-		throw new UnsupportedOperationException(); // TODO
+		if (compatibleCandidates.isEmpty())
+			throw failures.iterator().next();
+
+		return compatibleCandidates.iterator().next();
+	}
+
+	private static <U, R> Set<? extends Invokable<U, ? extends R>> filterOverloadCandidates(
+			Set<? extends Invokable<U, ? extends R>> candidates,
+			Function<? super Invokable<U, ? extends R>, Invokable<U, ? extends R>> applicabilityFunction,
+			Consumer<RuntimeException> failures) {
+		return candidates.stream().map(i -> {
+			try {
+				return applicabilityFunction.apply(i);
+			} catch (RuntimeException e) {
+				failures.accept(e);
+				return null;
+			}
+		}).filter(o -> o != null).collect(Collectors.toSet());
 	}
 
 	public Type getComponentType() {

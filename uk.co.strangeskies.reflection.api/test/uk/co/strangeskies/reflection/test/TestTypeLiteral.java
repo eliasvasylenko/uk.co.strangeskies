@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import uk.co.strangeskies.reflection.Invokable;
 import uk.co.strangeskies.reflection.TypeLiteral;
 import uk.co.strangeskies.reflection.TypeParameter;
 
@@ -41,54 +40,38 @@ public class TestTypeLiteral {
 		System.out.println(new TypeLiteral<List<String>>() {});
 		System.out.println();
 
-		System.out.println("bothways");
-		System.out.println(Invokable.from(
-				B.class.getMethod("bothways", Comparable.class, Collection.class))
-				.withLooseApplicability(String.class,
-						new TypeLiteral<List<String>>() {}.getType()));
+		System.out
+				.println(TypeLiteral.from(B.class).resolveMethodOverload("bothways",
+						String.class, new TypeLiteral<List<String>>() {}.getType()));
 		System.out.println();
 
-		System.out.println("aslist");
-		System.out.println(Invokable.from(
-				Arrays.class.getMethod("asList", Object[].class))
-				.withVariableArityApplicability(int.class, double.class));
+		System.out.println(TypeLiteral.from(Arrays.class).resolveMethodOverload(
+				"asList", int.class, double.class));
 		System.out.println();
 
-		System.out.println("method");
-		System.out.println(Invokable.from(
-				B.class.getMethod("method", Collection.class, List.class))
-				.withLooseApplicability(new TypeLiteral<List<Integer>>() {}.getType(),
-						new TypeLiteral<List<Number>>() {}.getType()));
+		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
+				"method", new TypeLiteral<List<Integer>>() {}.getType(),
+				new TypeLiteral<List<Number>>() {}.getType()));
 		System.out.println();
 
-		System.out.println("method2");
-		System.out.println(Invokable.from(
-				B.class.getMethod("method2", List.class, List.class))
-				.withLooseApplicability(new TypeLiteral<List<Integer>>() {}.getType(),
-						new TypeLiteral<List<Comparable<Integer>>>() {}.getType()));
+		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
+				"method2", new TypeLiteral<List<Integer>>() {}.getType(),
+				new TypeLiteral<List<Comparable<Integer>>>() {}.getType()));
 		System.out.println();
 
-		System.out.println("method");
-		System.out.println(Invokable.from(
-				B.class.getMethod("method", Collection[].class))
-				.withVariableArityApplicability(
-						new TypeLiteral<Collection<? super Integer>>() {}.getType()));
+		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
+				"method", new TypeLiteral<Collection<? super Integer>>() {}.getType()));
 		System.out.println();
 
-		System.out.println("method");
-		System.out.println(Invokable.from(
-				B.class.getMethod("method", Collection.class, List.class))
-				.withLooseApplicability(
-						new TypeLiteral<Collection<? extends Integer>>() {}.getType(),
-						new TypeLiteral<List<? super Number>>() {}.getType()));
+		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
+				"method",
+				new TypeLiteral<Collection<? extends Integer>>() {}.getType(),
+				new TypeLiteral<List<? super Number>>() {}.getType()));
 		System.out.println();
 
-		System.out.println("method");
-		System.out.println(Invokable.from(
-				B.class.getMethod("method", Collection[].class))
-				.withVariableArityApplicability(
-						new TypeLiteral<Collection<? super Integer>>() {}.getType(),
-						new TypeLiteral<Collection<? super Integer>>() {}.getType()));
+		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
+				"method", new TypeLiteral<Collection<? super Integer>>() {}.getType(),
+				new TypeLiteral<Collection<? super Integer>>() {}.getType()));
 		System.out.println();
 	}
 }

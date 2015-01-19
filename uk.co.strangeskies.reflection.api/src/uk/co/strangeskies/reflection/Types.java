@@ -135,6 +135,10 @@ public final class Types {
 				&& InferenceVariable.getAllMentionedBy(type).isEmpty();
 	}
 
+	public static boolean isGeneric(Class<?> type) {
+		return !getAllTypeParameters(type).isEmpty();
+	}
+
 	/**
 	 * This method retrieves a list of all type variables present on the given raw
 	 * type, as well as all type variables on any enclosing types recursively, in

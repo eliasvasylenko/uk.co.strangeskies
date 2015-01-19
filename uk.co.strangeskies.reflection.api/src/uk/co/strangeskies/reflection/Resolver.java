@@ -310,7 +310,6 @@ public class Resolver {
 
 	public Map<InferenceVariable, Type> infer() {
 		infer(getInferenceVariables());
-		System.out.println(bounds);
 		return instantiations;
 	}
 
@@ -894,6 +893,13 @@ public class Resolver {
 	}
 
 	public static <T> void test() {
+		System.out.println(new TypeLiteral<Collection<? super String>>() {}
+				.resolveSubtypeParameters(HashSet.class));
+
+		System.out
+				.println(new TypeLiteral<Outer<Serializable>.Inner<String, HashSet<Serializable>, Set<String>>>() {}
+						.resolveSubtypeParameters(Outer2.Inner3.class));
+
 		System.out
 				.println(new TypeLiteral<Outer2<Serializable, String>.Inner3<HashSet<Serializable>>>() {}
 						.resolveSupertypeParameters(Outer.Inner.class));

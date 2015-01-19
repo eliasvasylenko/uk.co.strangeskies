@@ -28,7 +28,7 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 
 	private Invokable(TypeLiteral<T> receiverType, TypeLiteral<R> returnType,
 			Executable executable, BiFunction<T, List<?>, R> invocationFunction) {
-		this(new Resolver(), receiverType, returnType, executable,
+		this(receiverType.getResolver(), receiverType, returnType, executable,
 				invocationFunction);
 	}
 
@@ -53,24 +53,22 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 				.map(resolver::resolveType).collect(Collectors.toList());
 	}
 
-	Invokable(TypeLiteral<T> typeLiteral, Constructor<?> constructor) {
-		throw new UnsupportedOperationException(); // TODO
-	}
-
-	Invokable(TypeLiteral<T> typeLiteral, Method method) {
-		throw new UnsupportedOperationException(); // TODO
-	}
-
 	public static <T> Invokable<T, T> from(Constructor<T> constructor) {
 		TypeLiteral<T> type = new TypeLiteral<>(constructor.getDeclaringClass());
-		return new Invokable<>(type, type, constructor, (r, a) -> {
-			try {
-				return constructor.newInstance(a);
-			} catch (Exception e) {
-				throw new TypeInferenceException("Cannot invoke constructor '"
-						+ constructor + "' with arguments '" + a + "'.");
-			}
-		});
+		return from(constructor, type);
+	}
+
+	static <T> Invokable<T, T> from(Constructor<T> constructor,
+			TypeLiteral<T> receiver) {
+		return new Invokable<>(receiver, receiver, constructor,
+				(T r, List<?> a) -> {
+					try {
+						return constructor.newInstance(a);
+					} catch (Exception e) {
+						throw new TypeInferenceException("Cannot invoke constructor '"
+								+ constructor + "' with arguments '" + a + "'.");
+					}
+				});
 	}
 
 	public static Invokable<?, ?> from(Method method) {
@@ -79,8 +77,8 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static <T, R> Invokable<T, R> from(Method method,
-			TypeLiteral<T> receiver, TypeLiteral<R> result) {
+	static <T, R> Invokable<T, R> from(Method method, TypeLiteral<T> receiver,
+			TypeLiteral<R> result) {
 		return new Invokable<>(receiver, result, method, (T r, List<?> a) -> {
 			try {
 				return (R) method.invoke(r, a);
@@ -215,6 +213,10 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 	 * invokable.
 	 */
 	public Invokable<T, R> withStrictApplicability(Type... arguments) {
+		return withStrictApplicability(Arrays.asList(arguments));
+	}
+
+	public Invokable<T, R> withStrictApplicability(List<? extends Type> arguments) {
 		// TODO && make sure no boxing/unboxing occurs!
 
 		return withLooseApplicability(arguments);
@@ -227,6 +229,10 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 	 * invokable.
 	 */
 	public Invokable<T, R> withLooseApplicability(Type... arguments) {
+		return withLooseApplicability(Arrays.asList(arguments));
+	}
+
+	public Invokable<T, R> withLooseApplicability(List<? extends Type> arguments) {
 		return withLooseApplicability(false, arguments);
 	}
 
@@ -237,19 +243,24 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 	 * the resulting invokable.
 	 */
 	public Invokable<T, R> withVariableArityApplicability(Type... arguments) {
+		return withVariableArityApplicability(Arrays.asList(arguments));
+	}
+
+	public Invokable<T, R> withVariableArityApplicability(
+			List<? extends Type> arguments) {
 		return withLooseApplicability(true, arguments);
 	}
 
 	private Invokable<T, R> withLooseApplicability(boolean variableArity,
-			Type... arguments) {
+			List<? extends Type> arguments) {
 		if (variableArity) {
 			if (!executable.isVarArgs())
 				throw new IllegalArgumentException("Invokable '" + this
 						+ "' cannot be invoked in variable arity invocation context.");
 
-			if (parameters.size() > arguments.length)
+			if (parameters.size() > arguments.size())
 				return null;
-		} else if (parameters.size() != arguments.length)
+		} else if (parameters.size() != arguments.size())
 			return null;
 
 		Resolver resolver = new Resolver(this.resolver);
@@ -273,8 +284,10 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 
 		resolver.infer();
 
-		// if (!resolver.validate())
-		// return null;
+		if (!resolver.validate())
+			throw new TypeInferenceException(
+					"Cannot resolve generic type parameters for invocation of '" + this
+							+ "' with arguments '" + arguments + "'.");
 
 		return new Invokable<>(resolver, receiverType, returnType, executable,
 				invocationFunction);

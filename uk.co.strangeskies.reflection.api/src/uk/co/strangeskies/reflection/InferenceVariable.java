@@ -111,9 +111,6 @@ public class InferenceVariable extends CaptureType implements Type {
 							capturedArguments.put(capturedArgument, argument);
 							capturedParameters.put(capturedArgument, parameter);
 
-							System.out.println("CAPTURE!!!!............. " + capturedArgument
-									+ " from parameter '" + parameter + "' of: " + originalType);
-
 							return capturedArgument;
 						});
 

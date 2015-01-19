@@ -99,9 +99,6 @@ public class TypeVariableCapture extends CaptureType implements
 					captures[count.get()] = capture;
 					count.set(count.get() + 1);
 
-					System.out.println("FRESH!............. " + capture
-							+ " from inference variable '" + inferenceVariable);
-
 					return capture;
 				});
 	}
