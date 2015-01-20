@@ -25,6 +25,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -203,6 +204,10 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 
 	public TypeLiteral<R> getReturnType() {
 		return returnType;
+	}
+
+	public List<Type> getParameters() {
+		return Collections.unmodifiableList(parameters);
 	}
 
 	public <U extends T> Invokable<U, ? extends R> withReceiverType(

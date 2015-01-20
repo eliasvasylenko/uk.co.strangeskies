@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 import uk.co.strangeskies.reflection.BoundVisitor.PartialBoundVisitor;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.utilities.IdentityProperty;
+import uk.co.strangeskies.utilities.Self;
 import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 
@@ -677,7 +678,25 @@ public class Resolver {
 		}
 	}
 
-	public static <T> void test() {
+	public static <T> TypeLiteral<List<T>> listOf(Class<T> sub) {
+		return new TypeLiteral<List<T>>() {}.withTypeArgument(
+				new TypeParameter<T>() {}, sub);
+	}
+
+	class Poo<T extends Poo<T>> implements Self<T> {
+		@Override
+		public T copy() {
+			return null;
+		}
+	}
+
+	public static void test() {
+		System.out.println(new TypeLiteral<Self<?>>() {}
+				.isAssignableFrom(new TypeLiteral<Poo<?>>() {}));
+
+		System.out
+				.println(TypeLiteral.from(new TypeLiteral<Poo<?>>() {}.getType()));
+
 		System.out.println(new TypeLiteral<Collection<? super String>>() {}
 				.resolveSubtypeParameters(HashSet.class));
 
@@ -692,9 +711,7 @@ public class Resolver {
 		System.out.println(new TypeLiteral<Outer<String>.Inner2<Double>>() {}
 				.resolveSupertypeParameters(Outer.Inner.class));
 
-		System.out.println("List with T = String: "
-				+ new TypeLiteral<List<T>>() {}.withTypeArgument(
-						new TypeParameter<T>() {}.getType(), String.class));
+		System.out.println("List with T = String: " + listOf(String.class));
 
 		System.out.println("TYPELITTEST: " + new TypeLiteral<String>() {});
 		System.out.println("TYPELITTEST-2: "

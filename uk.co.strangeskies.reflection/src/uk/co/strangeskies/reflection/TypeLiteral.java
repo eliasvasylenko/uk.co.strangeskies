@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -254,7 +253,8 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		Class<?> subclass = Types.getRawType(subtype);
 
 		if (!superclass.isAssignableFrom(subclass))
-			throw new IllegalArgumentException();
+			throw new IllegalArgumentException("Type '" + subtype
+					+ "' is not a valid subtype of '" + superclass + "'.");
 
 		Class<?> finalSubclass2 = subclass;
 		Function<Type, Type> inferenceVariables = t -> {
@@ -290,27 +290,22 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 	}
 
 	@SuppressWarnings("unchecked")
-	public TypeLiteral<? extends T> withTypeArguments(
-			Map<TypeVariable<?>, Type> arguments) {
-		return (TypeLiteral<? extends T>) TypeLiteral.from(new TypeSubstitution(
-				arguments::get).resolve(type));
+	public <V> TypeLiteral<T> withTypeArgument(TypeParameter<V> parameter,
+			TypeLiteral<V> argument) {
+		return (TypeLiteral<T>) withTypeArgument(parameter.getType(),
+				argument.getType());
 	}
 
-	public TypeLiteral<? extends T> withTypeArgument(TypeVariable<?> parameter,
+	@SuppressWarnings("unchecked")
+	public <V> TypeLiteral<T> withTypeArgument(TypeParameter<V> parameter,
+			Class<V> argument) {
+		return (TypeLiteral<T>) withTypeArgument(parameter.getType(), argument);
+	}
+
+	private TypeLiteral<?> withTypeArgument(TypeVariable<?> parameter,
 			Type argument) {
-		HashMap<TypeVariable<?>, Type> arguments = new HashMap<>();
-		arguments.put(parameter, argument);
-		return withTypeArguments(arguments);
-	}
-
-	public <V> TypeLiteral<? extends T> withTypeArgument(
-			TypeParameter<V> parameter, TypeLiteral<V> argument) {
-		return withTypeArgument(parameter.getType(), argument.getType());
-	}
-
-	public <V> TypeLiteral<? extends T> withTypeArgument(
-			TypeParameter<V> parameter, Class<V> argument) {
-		return withTypeArgument(parameter.getType(), argument);
+		return TypeLiteral.from(new TypeSubstitution().where(parameter, argument)
+				.resolve(type));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -344,7 +339,10 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 
 	public Invokable<T, ? extends T> resolveConstructorOverload(
 			List<? extends Type> parameters) {
-		return resolveInvokableOverload(getConstructors(), parameters);
+		Set<? extends Invokable<T, ? extends T>> candidates = resolveApplicableCandidates(
+				getConstructors(), parameters);
+
+		return resolveMostSpecificCandidate(candidates, parameters);
 	}
 
 	public Invokable<T, ?> resolveMethodOverload(String name, Type... parameters) {
@@ -357,8 +355,9 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		 * javac falls over if you use streams for this (in the obvious way at
 		 * least), don't modify without checking.
 		 */
-		Set<Invokable<T, ?>> candidates = getMethods();
-		Iterator<Invokable<T, ?>> candidateIterator = candidates.iterator();
+		Set<? extends Invokable<T, ?>> candidates = getMethods();
+		Iterator<? extends Invokable<T, ?>> candidateIterator = candidates
+				.iterator();
 		while (candidateIterator.hasNext())
 			if (!candidateIterator.next().getGenericDeclaration().getName()
 					.equals(name))
@@ -368,22 +367,24 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 			throw new IllegalArgumentException("Cannot find any method '" + name
 					+ "' in '" + this + "'.");
 
-		return resolveInvokableOverload(candidates, parameters);
+		candidates = resolveApplicableCandidates(candidates, parameters);
+
+		return resolveMostSpecificCandidate(candidates, parameters);
 	}
 
-	private <U, R> Invokable<U, ? extends R> resolveInvokableOverload(
-			Set<? extends Invokable<U, ? extends R>> candidates,
+	private <R> Set<? extends Invokable<T, ? extends R>> resolveApplicableCandidates(
+			Set<? extends Invokable<T, ? extends R>> candidates,
 			List<? extends Type> parameters) {
 		Set<RuntimeException> failures = new HashSet<>();
 
-		Set<? extends Invokable<U, ? extends R>> compatibleCandidates = filterOverloadCandidates(
+		Set<? extends Invokable<T, ? extends R>> compatibleCandidates = filterOverloadCandidates(
 				candidates, i -> i.withLooseApplicability(parameters), failures::add);
 
 		if (compatibleCandidates.isEmpty())
 			compatibleCandidates = filterOverloadCandidates(candidates,
 					i -> i.withVariableArityApplicability(parameters), failures::add);
 		else {
-			Set<? extends Invokable<U, ? extends R>> oldCompatibleCandidates = compatibleCandidates;
+			Set<? extends Invokable<T, ? extends R>> oldCompatibleCandidates = compatibleCandidates;
 			compatibleCandidates = filterOverloadCandidates(compatibleCandidates,
 					i -> i.withStrictApplicability(parameters), failures::add);
 			if (compatibleCandidates.isEmpty())
@@ -393,12 +394,12 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		if (compatibleCandidates.isEmpty())
 			throw failures.iterator().next();
 
-		return compatibleCandidates.iterator().next();
+		return compatibleCandidates;
 	}
 
-	private static <U, R> Set<? extends Invokable<U, ? extends R>> filterOverloadCandidates(
-			Set<? extends Invokable<U, ? extends R>> candidates,
-			Function<? super Invokable<U, ? extends R>, Invokable<U, ? extends R>> applicabilityFunction,
+	private <R> Set<? extends Invokable<T, ? extends R>> filterOverloadCandidates(
+			Set<? extends Invokable<T, R>> candidates,
+			Function<? super Invokable<T, ? extends R>, Invokable<T, ? extends R>> applicabilityFunction,
 			Consumer<RuntimeException> failures) {
 		return candidates.stream().map(i -> {
 			try {
@@ -412,5 +413,64 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 
 	public Type getComponentType() {
 		return Types.getComponentType(type);
+	}
+
+	private <R> Invokable<T, ? extends R> resolveMostSpecificCandidate(
+			Set<? extends Invokable<T, R>> candidates,
+			List<? extends Type> parameterTypes) {
+		if (candidates.size() == 1)
+			return candidates.iterator().next();
+
+		/*
+		 * Find which candidates have the joint most specific parameters, one
+		 * parameter at a time.
+		 */
+		Set<Invokable<T, ? extends R>> mostSpecificSoFar = new HashSet<>(candidates);
+		int parameters = candidates.iterator().next().getParameters().size();
+		for (int i = 0; i < parameters; i++) {
+			Set<Invokable<T, ?>> mostSpecificForParameter = new HashSet<>();
+
+			TypeLiteral<?> mostSpecificParameterType = TypeLiteral.from(candidates
+					.iterator().next().getParameters().get(i));
+
+			for (Invokable<T, ?> overloadCandidate : candidates) {
+				TypeLiteral<?> parameterClass = TypeLiteral.from(overloadCandidate
+						.getParameters().get(i));
+
+				if (parameterClass.isAssignableFrom(mostSpecificParameterType)) {
+					mostSpecificParameterType = parameterClass;
+
+					if (!mostSpecificParameterType.isAssignableFrom(parameterClass))
+						mostSpecificForParameter.clear();
+					mostSpecificForParameter.add(overloadCandidate);
+				} else if (!mostSpecificParameterType.isAssignableFrom(parameterClass)) {
+					throw new TypeInferenceException("Cannot resolve method ambiguity.");
+				}
+			}
+
+			mostSpecificSoFar.retainAll(mostSpecificForParameter);
+
+			if (mostSpecificSoFar.isEmpty())
+				throw new TypeInferenceException("Cannot resolve method ambiguity.");
+		}
+
+		/*
+		 * Find which of the remaining candidates, which should all have identical
+		 * parameter types, is declared in the lowermost class.
+		 */
+		Iterator<Invokable<T, ? extends R>> overrideCandidateIterator = mostSpecificSoFar
+				.iterator();
+		Invokable<T, ? extends R> mostSpecific = overrideCandidateIterator.next();
+		while (overrideCandidateIterator.hasNext()) {
+			Invokable<T, ? extends R> candidate = overrideCandidateIterator.next();
+			mostSpecific = candidate
+					.getGenericDeclaration()
+					.getDeclaringClass()
+					.isAssignableFrom(
+							mostSpecific.getGenericDeclaration().getDeclaringClass()) ? candidate
+					: mostSpecific;
+		}
+
+		return mostSpecific;
 	}
 }
