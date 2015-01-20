@@ -33,10 +33,15 @@ subprojects {
 
   license {
     header rootProject.file('HEADER')
+
     ext.year = Calendar.getInstance().get(Calendar.YEAR)
     ext.name = 'Elias N Vasylenko'
     ext.email = 'eliasvasylenko@gmail.com'
-    ext.software = 'uk.co.strangeskies'
+    ext.software = project.name
+
+    mapping {
+      java = 'SLASHSTAR_STYLE'
+    }
   }
 
   def bndProject = bndWorkspace.getProject(name)

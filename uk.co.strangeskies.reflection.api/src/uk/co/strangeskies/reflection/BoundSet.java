@@ -1,20 +1,20 @@
-/**
+/*
  * Copyright (C) 2015 Elias N Vasylenko <eliasvasylenko@gmail.com>
  *
- * This file is part of uk.co.strangeskies.
+ * This file is part of uk.co.strangeskies.reflection.api.
  *
- *     uk.co.strangeskies is free software: you can redistribute it and/or modify
- *     it under the terms of the GNU Lesser General Public License as published by
- *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version.
+ * uk.co.strangeskies.reflection.api is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *     uk.co.strangeskies is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU Lesser General Public License for more details.
+ * uk.co.strangeskies.reflection.api is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
  *
- *     You should have received a copy of the GNU Lesser General Public License
- *     along with uk.co.strangeskies.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with uk.co.strangeskies.reflection.api.  If not, see <http://www.gnu.org/licenses/>.
  */
 package uk.co.strangeskies.reflection;
 
@@ -330,7 +330,7 @@ public class BoundSet {
 		 * (In this section, S and T are inference variables or types, and U is a
 		 * proper type. For conciseness, a bound of the form α = T may also match a
 		 * bound of the form T = α.)
-		 * 
+		 *
 		 * When a bound set contains a pair of bounds that match one of the
 		 * following rules, a new constraint formula is implied:
 		 */
@@ -460,15 +460,15 @@ public class BoundSet {
 		 * When a bound set contains a bound of the form G<α1, ..., αn> =
 		 * capture(G<A1, ..., An>), new bounds are implied and new constraint
 		 * formulas may be implied, as follows.
-		 * 
+		 *
 		 * Let P1, ..., Pn represent the type parameters of G and let B1, ..., Bn
 		 * represent the bounds of these type parameters. Let θ represent the
 		 * substitution [P1:=α1, ..., Pn:=αn]. Let R be a type that is not an
 		 * inference variable (but is not necessarily a proper type).
-		 * 
+		 *
 		 * A set of bounds on α1, ..., αn is implied, constructed from the declared
 		 * bounds of P1, ..., Pn as specified in §18.1.3.
-		 * 
+		 *
 		 * In addition, for all i (1 ≤ i ≤ n):
 		 */
 
@@ -476,11 +476,11 @@ public class BoundSet {
 				InferenceVariable a, Type R) {
 			/*
 			 * If Ai is a wildcard of the form ?, or;
-			 * 
+			 *
 			 * If Ai is a wildcard of the form ? extends T, or;
-			 * 
+			 *
 			 * If Ai is a wildcard of the form ? super T:
-			 * 
+			 *
 			 * αi = R implies the bound false
 			 */
 			if (c.getCapturedArgument(a) instanceof WildcardType)
@@ -527,7 +527,7 @@ public class BoundSet {
 				} else if (A.getLowerBounds().length > 0) {
 					/*
 					 * If Ai is a wildcard of the form ? super T:
-					 * 
+					 *
 					 * αi <: R implies the constraint formula ‹Bi θ <: R›
 					 */
 					constraints.add(new ConstraintFormula(Kind.SUBTYPE, IntersectionType
@@ -535,7 +535,7 @@ public class BoundSet {
 				} else {
 					/*
 					 * If Ai is a wildcard of the form ?:
-					 * 
+					 *
 					 * αi <: R implies the constraint formula ‹Bi θ <: R›
 					 */
 					System.out.println(BoundSet.this);
@@ -552,7 +552,7 @@ public class BoundSet {
 				if (A.getLowerBounds().length > 0) {
 					/*
 					 * If Ai is a wildcard of the form ? super T:
-					 * 
+					 *
 					 * R <: αi implies the constraint formula ‹R <: T›
 					 */
 					incorporate(new ConstraintFormula(Kind.SUBTYPE, R,
@@ -560,14 +560,14 @@ public class BoundSet {
 				} else if (A.getUpperBounds().length > 0) {
 					/*
 					 * If Ai is a wildcard of the form ? extends T:
-					 * 
+					 *
 					 * R <: αi implies the bound false
 					 */
 					incorporate().acceptFalsehood();
 				} else {
 					/*
 					 * If Ai is a wildcard of the form ?:
-					 * 
+					 *
 					 * R <: αi implies the bound false
 					 */
 					incorporate().acceptFalsehood();
