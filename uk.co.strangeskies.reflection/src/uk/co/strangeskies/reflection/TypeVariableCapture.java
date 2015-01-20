@@ -57,8 +57,7 @@ public class TypeVariableCapture extends CaptureType implements
 			}
 
 			@Override
-			public <T extends Annotation>  T getAnnotation(
-					Class<T> paramClass) {
+			public <T extends Annotation> T getAnnotation(Class<T> paramClass) {
 				return null;
 			}
 
@@ -85,7 +84,7 @@ public class TypeVariableCapture extends CaptureType implements
 					if (lowerBoundSet.isEmpty())
 						lowerBounds = new Type[0];
 					else
-						lowerBounds = IntersectionType.asArray(Resolver
+						lowerBounds = IntersectionType.asArray(Types
 								.leastUpperBound(lowerBoundSet));
 
 					/*
@@ -101,8 +100,8 @@ public class TypeVariableCapture extends CaptureType implements
 					if (upperBoundSet.isEmpty())
 						upperBounds = new Type[0];
 					else
-						upperBounds = IntersectionType.asArray(IntersectionType
-								.from(upperBoundSet));
+						upperBounds = IntersectionType.asArray(Types
+								.greatestLowerBound(upperBoundSet));
 
 					TypeVariableCapture capture = new TypeVariableCapture(upperBounds,
 							lowerBounds, declaration);
@@ -130,7 +129,7 @@ public class TypeVariableCapture extends CaptureType implements
 	}
 
 	@Override
-	public <U extends Annotation>  U getAnnotation(Class<U> arg0) {
+	public <U extends Annotation> U getAnnotation(Class<U> arg0) {
 		return null;
 	}
 
@@ -171,8 +170,7 @@ public class TypeVariableCapture extends CaptureType implements
 				}
 
 				@Override
-				public <T extends Annotation>  T getAnnotation(
-						Class<T> paramClass) {
+				public <T extends Annotation> T getAnnotation(Class<T> paramClass) {
 					return null;
 				}
 

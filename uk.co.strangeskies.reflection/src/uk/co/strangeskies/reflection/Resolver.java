@@ -25,12 +25,10 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -40,7 +38,6 @@ import java.util.stream.Collectors;
 import uk.co.strangeskies.reflection.BoundVisitor.PartialBoundVisitor;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.utilities.IdentityProperty;
-import uk.co.strangeskies.utilities.collection.computingmap.CacheComputingMap;
 import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 
@@ -70,14 +67,6 @@ public class Resolver {
 	 */
 	private final MultiMap<InferenceVariable, InferenceVariable, ? extends Set<InferenceVariable>> remainingDependencies;
 	private final Map<InferenceVariable, Type> instantiations;
-
-	/*
-	 * A ComputingMap doesn't really make much sense here over a regular Map...
-	 * But it doesn't hurt anything, and it gives us soft-references for values
-	 * out of the box.
-	 */
-	private static final CacheComputingMap<Set<ParameterizedType>, IdentityProperty<ParameterizedType>> BESTS = new CacheComputingMap<>(
-			c -> new IdentityProperty<>(), true);
 
 	public Resolver(BoundSet bounds) {
 		this.bounds = bounds;
@@ -443,8 +432,8 @@ public class Resolver {
 						 * If αi has one or more proper lower bounds, L1, ..., Lk, then Ti =
 						 * lub(L1, ..., Lk) (§4.10.4).
 						 */
-						instantiationCandidate = IntersectionType
-								.from(leastUpperBound(lowerBounds));
+						instantiationCandidate = IntersectionType.from(Types
+								.leastUpperBound(lowerBounds));
 					} else if (hasThrowableBounds.get()) {
 						/*
 						 * Otherwise, if the bound set contains throws αi, and the proper
@@ -457,7 +446,7 @@ public class Resolver {
 						 * Otherwise, where αi has proper upper bounds U1, ..., Uk, Ti =
 						 * glb(U1, ..., Uk) (§5.1.10).
 						 */
-						instantiationCandidate = greatestLowerBound(upperBounds);
+						instantiationCandidate = Types.greatestLowerBound(upperBounds);
 					}
 
 					instantiationCandidates.put(variable, instantiationCandidate);
@@ -513,225 +502,6 @@ public class Resolver {
 		remainingDependencies.removeFromAll(variable);
 
 		bounds.incorporate().acceptEquality(variable, instantiation);
-	}
-
-	public static Type leastUpperBound(Type... upperBounds) {
-		return leastUpperBound(Arrays.asList(upperBounds));
-	}
-
-	public static Type leastUpperBound(Collection<Type> upperBounds) {
-		Type upperBound = leastUpperBoundImpl(upperBounds);
-
-		/*
-		 * Not sure if this is necessary! But it's cheap enough to check. Can't
-		 * validate IntersectionTypes and ParameterizedTypes as we create them, as
-		 * they may contain uninitialised proxies in place of ParameterizedTypes.
-		 */
-		Types.validate(upperBound);
-
-		return upperBound;
-	}
-
-	private static Type leastUpperBoundImpl(Collection<Type> upperBounds) {
-		if (upperBounds.size() == 1)
-			/*
-			 * If k = 1, then the lub is the type itself: lub(U) = U.
-			 */
-			return upperBounds.iterator().next();
-		else {
-			/*
-			 * For each Ui (1 ≤ i ≤ k):
-			 */
-			Iterator<Type> lowerBoundsIterator = upperBounds.iterator();
-			MultiMap<Class<?>, ParameterizedType, ? extends Set<ParameterizedType>> erasedCandidates = new MultiHashMap<>(
-					HashSet::new);
-			erasedCandidates.addAll(getErasedSupertypes(lowerBoundsIterator.next()));
-
-			while (lowerBoundsIterator.hasNext()) {
-				Type t = lowerBoundsIterator.next();
-				Map<Class<?>, ParameterizedType> erasedSupertypes = getErasedSupertypes(t);
-				erasedCandidates.keySet().retainAll(erasedSupertypes.keySet());
-				for (Map.Entry<Class<?>, ParameterizedType> erasedSupertype : erasedSupertypes
-						.entrySet())
-					if (erasedCandidates.containsKey(erasedSupertype.getKey())
-							&& erasedSupertype.getValue() != null)
-						erasedCandidates.add(erasedSupertype.getKey(),
-								erasedSupertype.getValue());
-			}
-
-			minimiseCandidates(erasedCandidates);
-
-			List<Type> bestTypes = erasedCandidates
-					.entrySet()
-					.stream()
-					.map(
-							e -> best(e.getKey(),
-									new ArrayList<ParameterizedType>(e.getValue())))
-					.collect(Collectors.toList());
-
-			return IntersectionType.uncheckedFrom(bestTypes);
-		}
-	}
-
-	private static void minimiseCandidates(
-			MultiMap<Class<?>, ParameterizedType, ? extends Set<ParameterizedType>> erasedCandidates) {
-		List<Class<?>> minimalCandidates = new ArrayList<>(
-				erasedCandidates.keySet());
-		if (minimalCandidates.size() > 1)
-			for (int i = 0; i < minimalCandidates.size(); i++)
-				for (int j = i + 1; j < minimalCandidates.size(); j++) {
-					if (minimalCandidates.get(i).isAssignableFrom(
-							minimalCandidates.get(j))) {
-						minimalCandidates.remove(i);
-						j = i;
-					} else if (minimalCandidates.get(j).isAssignableFrom(
-							minimalCandidates.get(i))) {
-						minimalCandidates.remove(j--);
-					}
-				}
-		erasedCandidates.keySet().retainAll(minimalCandidates);
-	}
-
-	private static Type best(Class<?> rawClass,
-			List<ParameterizedType> parameterizations) {
-		if (parameterizations.isEmpty())
-			return rawClass;
-		else if (parameterizations.size() == 1) {
-			Type parameterization = parameterizations.iterator().next();
-			return parameterization == null ? rawClass : parameterization;
-		}
-
-		/*
-		 * Proxy guard against recursive generation of infinite types
-		 */
-		IdentityProperty<ParameterizedType> bestResult;
-		synchronized (BESTS) {
-			if (BESTS.keySet().contains(new HashSet<>(parameterizations)))
-				return BESTS.get(new HashSet<>(parameterizations)).get();
-
-			bestResult = new IdentityProperty<>();
-			BESTS.putGet(new HashSet<>(parameterizations)).set(
-					ParameterizedTypes.proxy(bestResult));
-		}
-
-		Map<TypeVariable<?>, Type> leastContainingParameterization = new HashMap<>();
-
-		List<TypeVariable<?>> typeParameters = ParameterizedTypes
-				.getAllTypeParameters(rawClass);
-		for (int i = 0; i < parameterizations.size(); i++) {
-			ParameterizedType parameterization = parameterizations.get(i);
-			for (int j = 0; j < typeParameters.size(); j++) {
-				TypeVariable<?> variable = typeParameters.get(j);
-				if (parameterization != null) {
-					Type argumentU = parameterization.getActualTypeArguments()[j];
-					Type argumentV = leastContainingParameterization.get(variable);
-
-					if (argumentV == null)
-						leastContainingParameterization.put(variable, argumentU);
-					else {
-						leastContainingParameterization.put(variable,
-								leastContainingArgument(argumentU, argumentV));
-					}
-				}
-			}
-			parameterizations.set(i,
-					(ParameterizedType) parameterization.getOwnerType());
-		}
-
-		ParameterizedType best = (ParameterizedType) ParameterizedTypes
-				.uncheckedFrom(rawClass, leastContainingParameterization);
-
-		bestResult.set(best);
-
-		return best;
-	}
-
-	private static Type leastContainingArgument(Type argumentU, Type argumentV) {
-		if (argumentU instanceof WildcardType
-				&& (!(argumentV instanceof WildcardType) || ((WildcardType) argumentV)
-						.getUpperBounds().length > 0)) {
-			Type swap = argumentU;
-			argumentU = argumentV;
-			argumentV = swap;
-		}
-
-		if (argumentU instanceof WildcardType) {
-			if (((WildcardType) argumentU).getUpperBounds().length > 0) {
-				if (((WildcardType) argumentV).getUpperBounds().length > 0) {
-					/*
-					 * lcta(? extends U, ? extends V) = ? extends lub(U, V)
-					 */
-					return WildcardTypes.upperBounded(leastUpperBoundImpl(Arrays
-							.asList(argumentU, argumentV)));
-				} else {
-					/*
-					 * lcta(? extends U, ? super V) = U if U = V, otherwise ?
-					 */
-					return argumentU.equals(argumentV) ? argumentU : WildcardTypes
-							.unbounded();
-				}
-			} else {
-				/*
-				 * lcta(? super U, ? super V) = ? super glb(U, V)
-				 */
-				return WildcardTypes.lowerBounded(greatestLowerBound(argumentU,
-						argumentV));
-			}
-		} else if (argumentV instanceof WildcardType) {
-			if (((WildcardType) argumentV).getUpperBounds().length > 0) {
-				/*
-				 * lcta(U, ? extends V) = ? extends lub(U, V)
-				 */
-				return WildcardTypes.upperBounded(leastUpperBoundImpl(Arrays
-						.asList(argumentU, argumentV)));
-			} else {
-				/*
-				 * lcta(U, ? super V) = ? super glb(U, V)
-				 */
-				return WildcardTypes.lowerBounded(greatestLowerBound(argumentU,
-						argumentV));
-			}
-		} else {
-			/*
-			 * lcta(U, V) = U if U = V, otherwise ? extends lub(U, V)
-			 */
-			return argumentU.equals(argumentV) ? argumentU : WildcardTypes
-					.upperBounded(leastUpperBoundImpl(Arrays.asList(argumentU,
-							argumentV)));
-		}
-	}
-
-	private static Map<Class<?>, ParameterizedType> getErasedSupertypes(Type of) {
-		Map<Class<?>, ParameterizedType> supertypes = new HashMap<>();
-
-		TypeLiteral<?> ofLiteral = TypeLiteral.from(of);
-
-		RecursiveTypeVisitor
-				.build()
-				.visitSupertypes()
-				.classVisitor(
-						type -> {
-							Type parameterized = ofLiteral.resolveSupertypeParameters(type)
-									.getType();
-							supertypes
-									.put(
-											type,
-											(parameterized instanceof ParameterizedType) ? (ParameterizedType) parameterized
-													: null);
-						})
-				.parameterizedTypeVisitor(
-						type -> supertypes.put(Types.getRawType(type), type)).create()
-				.visit(of);
-
-		return supertypes;
-	}
-
-	public static Type greatestLowerBound(Type... lowerBounds) {
-		return greatestLowerBound(Arrays.asList(lowerBounds));
-	}
-
-	public static Type greatestLowerBound(Collection<? extends Type> lowerBounds) {
-		return IntersectionType.from(lowerBounds);
 	}
 
 	public Type resolveType(Type type) {
