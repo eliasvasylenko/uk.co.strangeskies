@@ -453,7 +453,6 @@ public class Resolver {
 					bounds.incorporate().acceptEquality(variable, instantiationCandidate);
 				}
 			} catch (TypeInferenceException e) {
-				e.printStackTrace();
 				instantiationCandidates = null;
 			}
 

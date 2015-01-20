@@ -207,21 +207,87 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 
 	public <U extends T> Invokable<U, ? extends R> withReceiverType(
 			TypeLiteral<U> type) {
-		throw new UnsupportedOperationException(); // TODO
+		throw new UnsupportedOperationException(); // TODO resolve override
 	}
 
-	public <S extends R> Invokable<T, S> withTargetType(TypeLiteral<S> type) {
-		throw new UnsupportedOperationException(); // TODO
+	public <S extends R> Invokable<T, S> withTargetType(Class<S> target) {
+		return withTargetType(TypeLiteral.from(target));
 	}
 
-	/*
-	 * If no arguments passed, but parameters expected, infer types when we are
-	 * already partially parameterized from applicability verification, or
-	 * assuming all parameters are passed as null.
-	 */
-	public <U extends R> Invokable<T, U> withInferredTypes(
-			TypeLiteral<U> targetType, TypeLiteral<?>... parameters) {
-		throw new UnsupportedOperationException(); // TODO
+	@SuppressWarnings("unchecked")
+	public <S extends R> Invokable<T, S> withTargetType(TypeLiteral<S> target) {
+		return (Invokable<T, S>) withTargetType(target.getType());
+	}
+
+	public Invokable<T, ? extends R> withTargetType(Type target) {
+		return withTargetTypeCapture(target);
+	}
+
+	@SuppressWarnings("unchecked")
+	private <S extends R> Invokable<T, S> withTargetTypeCapture(Type target) {
+		Resolver resolver = new Resolver(this.resolver);
+
+		resolver.incorporateConstraint(new ConstraintFormula(
+				Kind.LOOSE_COMPATIBILILTY, returnType.getType(), target));
+
+		Resolver testResolver = new Resolver(resolver);
+
+		testResolver.infer();
+
+		if (!testResolver.validate())
+			throw new TypeInferenceException(
+					"Cannot resolve generic type parameters for invocation of '" + this
+							+ "' with target '" + target + "'.");
+
+		return new Invokable<>(resolver, receiverType,
+				(TypeLiteral<S>) TypeLiteral.from(resolver.resolveType(returnType
+						.getType())), executable,
+				(BiFunction<T, List<?>, S>) invocationFunction);
+	}
+
+	public <U extends R> Invokable<T, U> withInferredType(
+			TypeLiteral<U> targetType, TypeLiteral<?>... arguments) {
+		return withInferredType(targetType, Arrays.asList(arguments));
+	}
+
+	@SuppressWarnings("unchecked")
+	public <U extends R> Invokable<T, U> withInferredType(
+			TypeLiteral<U> targetType, List<? extends TypeLiteral<?>> arguments) {
+		return (Invokable<T, U>) withInferredType(targetType.getType(), arguments
+				.stream().map(TypeLiteral::getType).collect(Collectors.toList()));
+	}
+
+	public Invokable<T, ? extends R> withInferredType(Type targetType,
+			Type... arguments) {
+		return withInferredType(targetType, Arrays.asList(arguments));
+	}
+
+	public Invokable<T, ? extends R> withInferredType(Type targetType,
+			List<? extends Type> arguments) {
+		Invokable<T, R> invokable;
+		try {
+			invokable = withLooseApplicability(arguments);
+		} catch (Exception e) {
+			invokable = withVariableArityApplicability(arguments);
+		}
+		return invokable.withTargetType(targetType);
+	}
+
+	@SuppressWarnings("unchecked")
+	public <U extends R> Invokable<T, U> withInferredType() {
+		Resolver resolver = new Resolver(this.resolver);
+
+		resolver.infer();
+
+		if (!resolver.validate())
+			throw new TypeInferenceException(
+					"Cannot resolve generic type parameters for invocation of '" + this
+							+ "'.");
+
+		return new Invokable<>(resolver, receiverType,
+				(TypeLiteral<U>) TypeLiteral.from(resolver.resolveType(returnType
+						.getType())), executable,
+				(BiFunction<T, List<?>, U>) invocationFunction);
 	}
 
 	/*
@@ -300,9 +366,11 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 					Kind.LOOSE_COMPATIBILILTY, argument, parameter));
 		}
 
-		resolver.infer();
+		Resolver testResolver = new Resolver(resolver);
 
-		if (!resolver.validate())
+		testResolver.infer();
+
+		if (!testResolver.validate())
 			throw new TypeInferenceException(
 					"Cannot resolve generic type parameters for invocation of '" + this
 							+ "' with arguments '" + arguments + "'.");

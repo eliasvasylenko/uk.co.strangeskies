@@ -79,12 +79,19 @@ public class TestTypeLiteral {
 						String.class, new TypeLiteral<List<String>>() {}.getType()));
 		System.out.println();
 
-		System.out.println(TypeLiteral.from(Arrays.class).resolveMethodOverload(
-				"asList", int.class, double.class));
+		System.out.println(TypeLiteral.from(Arrays.class)
+				.resolveMethodOverload("asList", int.class, double.class)
+				.withTargetType(new TypeLiteral<List<? extends Number>>() {}.getType())
+				.withInferredType());
 		System.out.println();
 
-		TypeLiteral.from(Arrays.class).resolveMethodOverload("asList", int.class,
-				double.class);
+		System.out.println(TypeLiteral
+				.from(Arrays.class)
+				.resolveMethodOverload("asList", int.class, double.class)
+				.withTargetType(
+						new TypeLiteral<List<? super Comparable<? extends Number>>>() {}
+								.getType()).withInferredType());
+		System.out.println();
 
 		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
 				"method", new TypeLiteral<List<Integer>>() {}.getType(),
@@ -100,10 +107,12 @@ public class TestTypeLiteral {
 				"method", new TypeLiteral<Collection<? super Integer>>() {}.getType()));
 		System.out.println();
 
-		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
-				"method",
-				new TypeLiteral<Collection<? extends Integer>>() {}.getType(),
-				new TypeLiteral<List<? super Number>>() {}.getType()));
+		System.out.println(TypeLiteral
+				.from(B.class)
+				.resolveMethodOverload("method",
+						new TypeLiteral<Collection<? extends Integer>>() {}.getType(),
+						new TypeLiteral<List<? super Number>>() {}.getType())
+				.withInferredType());
 		System.out.println();
 
 		/*-

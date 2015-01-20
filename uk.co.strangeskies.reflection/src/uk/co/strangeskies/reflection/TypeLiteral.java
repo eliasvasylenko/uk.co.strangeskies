@@ -226,8 +226,8 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		if (!ParameterizedTypes.isGeneric(superclass))
 			return TypeLiteral.from(superclass);
 
-		Type parameterizedType = ParameterizedTypes.uncheckedFrom(
-				superclass, new HashMap<>());
+		Type parameterizedType = ParameterizedTypes.uncheckedFrom(superclass,
+				new HashMap<>());
 
 		resolveTypeHierarchy(getInternalResolver(), type, superclass);
 

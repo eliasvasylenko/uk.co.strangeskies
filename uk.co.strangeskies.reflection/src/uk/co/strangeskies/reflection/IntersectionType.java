@@ -25,6 +25,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
+
 public abstract class IntersectionType implements Type {
 	IntersectionType() {}
 
@@ -71,19 +73,18 @@ public abstract class IntersectionType implements Type {
 			flattenedTypes.add(0, mostSpecificClass);
 		}
 
-		/*-TODO
 		try {
 			BoundSet bounds = new BoundSet();
+			InferenceVariable inferenceVariable = new InferenceVariable();
 			for (Type type : flattenedTypes) {
 				bounds.incorporate(new ConstraintFormula(Kind.SUBTYPE,
-						new InferenceVariable(), type));
+						inferenceVariable, type));
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new TypeInferenceException("Illegal intersection type '"
 					+ flattenedTypes + "'.", e);
 		}
-		 */
 
 		return uncheckedFrom(flattenedTypes);
 	}
