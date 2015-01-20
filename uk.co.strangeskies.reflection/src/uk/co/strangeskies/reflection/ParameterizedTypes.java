@@ -117,6 +117,21 @@ public class ParameterizedTypes {
 				typeArguments));
 	}
 
+	public static <T> TypeLiteral<? extends T> from(Class<T> rawType,
+			Type... typeArguments) {
+		return from(rawType, Arrays.asList(typeArguments));
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T> TypeLiteral<? extends T> from(Class<T> rawType,
+			List<Type> typeArguments) {
+		if (isGeneric(rawType.getEnclosingClass()))
+			throw new IllegalArgumentException();
+
+		return (TypeLiteral<? extends T>) TypeLiteral.from(uncheckedFrom(null,
+				rawType, typeArguments));
+	}
+
 	private static List<Type> argumentsForClass(Class<?> rawType,
 			Map<? extends TypeVariable<?>, ? extends Type> typeArguments) {
 		List<Type> arguments = new ArrayList<>();

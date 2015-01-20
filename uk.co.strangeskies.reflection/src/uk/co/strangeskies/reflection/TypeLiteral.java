@@ -99,8 +99,8 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		return new TypeLiteral<>(type);
 	}
 
-	public static <T> TypeLiteral<T> fromString(String typeString) {
-		throw new UnsupportedOperationException(); // TODO
+	public static TypeLiteral<?> fromString(String typeString) {
+		return from(Types.fromString(typeString));
 	}
 
 	public boolean isAbstract() {
@@ -292,13 +292,8 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 	@SuppressWarnings("unchecked")
 	public TypeLiteral<? extends T> withTypeArguments(
 			Map<TypeVariable<?>, Type> arguments) {
-		Resolver resolver = new Resolver(getInternalResolver());
-
-		for (TypeVariable<?> parameter : arguments.keySet())
-			resolver.incorporateInstantiation(parameter, arguments.get(parameter));
-
-		return (TypeLiteral<? extends T>) TypeLiteral.from(resolver
-				.resolveType(rawType));
+		return (TypeLiteral<? extends T>) TypeLiteral.from(new TypeSubstitution(
+				arguments::get).resolve(type));
 	}
 
 	public TypeLiteral<? extends T> withTypeArgument(TypeVariable<?> parameter,

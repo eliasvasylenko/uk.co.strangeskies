@@ -274,7 +274,7 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 	}
 
 	@SuppressWarnings("unchecked")
-	public <U extends R> Invokable<T, U> withInferredType() {
+	public <U extends R> Invokable<T, U> infer() {
 		Resolver resolver = new Resolver(this.resolver);
 
 		resolver.infer();

@@ -82,7 +82,7 @@ public class TestTypeLiteral {
 		System.out.println(TypeLiteral.from(Arrays.class)
 				.resolveMethodOverload("asList", int.class, double.class)
 				.withTargetType(new TypeLiteral<List<? extends Number>>() {}.getType())
-				.withInferredType());
+				.infer());
 		System.out.println();
 
 		System.out.println(TypeLiteral
@@ -90,7 +90,7 @@ public class TestTypeLiteral {
 				.resolveMethodOverload("asList", int.class, double.class)
 				.withTargetType(
 						new TypeLiteral<List<? super Comparable<? extends Number>>>() {}
-								.getType()).withInferredType());
+								.getType()).infer());
 		System.out.println();
 
 		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
@@ -111,8 +111,7 @@ public class TestTypeLiteral {
 				.from(B.class)
 				.resolveMethodOverload("method",
 						new TypeLiteral<Collection<? extends Integer>>() {}.getType(),
-						new TypeLiteral<List<? super Number>>() {}.getType())
-				.withInferredType());
+						new TypeLiteral<List<? super Number>>() {}.getType()).infer());
 		System.out.println();
 
 		/*-

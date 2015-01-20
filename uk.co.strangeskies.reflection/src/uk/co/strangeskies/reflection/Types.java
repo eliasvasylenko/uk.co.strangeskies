@@ -153,6 +153,11 @@ public final class Types {
 			return type == null ? "null" : type.getTypeName();
 	}
 
+	public static Type fromString(String typeString) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	public static boolean isProperType(Type type) {
 		return !(type instanceof InferenceVariable)
 				&& InferenceVariable.getAllMentionedBy(type).isEmpty();
