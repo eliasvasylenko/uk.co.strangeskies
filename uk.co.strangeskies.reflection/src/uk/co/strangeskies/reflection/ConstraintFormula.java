@@ -20,11 +20,9 @@ package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 public class ConstraintFormula {
 	public enum Kind {
@@ -121,45 +119,40 @@ public class ConstraintFormula {
 	 * Let G name a generic type declaration (§8.1.2, §9.1.2) with n type
 	 * parameters A1,...,An with corresponding bounds U1,...,Un.
 	 */
-	private Type captureConversion(Type type, BoundVisitor boundConsumer) {
-		if (type instanceof ParameterizedType) {
-			Map<TypeVariable<?>, Type> typeArguments = ParameterizedTypes
-					.getAllTypeArguments((ParameterizedType) type);
+	static Type captureConversion(Type type, BoundVisitor boundConsumer) {
+		if (type instanceof ParameterizedType
+				&& ParameterizedTypes.getAllTypeArguments((ParameterizedType) type)
+						.values().stream().anyMatch(WildcardType.class::isInstance)) {
+			CaptureConversion captureConversion = InferenceVariable
+					.capture((ParameterizedType) type);
 
-			if (typeArguments.values().stream()
-					.anyMatch(WildcardType.class::isInstance)) {
-				CaptureConversion captureConversion = InferenceVariable
-						.capture((ParameterizedType) type);
+			for (InferenceVariable inferenceVariable : captureConversion
+					.getInferenceVariables()) {
+				boolean anyProper = false;
+				boolean anyBounds = false;
+				for (Type bound : inferenceVariable.getUpperBounds()) {
+					anyBounds = true;
+					anyProper = anyProper || Types.isProperType(bound);
+					boundConsumer.acceptSubtype(inferenceVariable, bound);
+				}
+				if (!anyProper)
+					boundConsumer.acceptSubtype(inferenceVariable, Object.class);
 
-				for (InferenceVariable inferenceVariable : captureConversion
-						.getInferenceVariables()) {
-					boolean anyProper = false;
-					boolean anyBounds = false;
-					for (Type bound : inferenceVariable.getUpperBounds()) {
-						anyBounds = true;
-						anyProper = anyProper || Types.isProperType(bound);
-						boundConsumer.acceptSubtype(inferenceVariable, bound);
-					}
-					if (!anyProper)
-						boundConsumer.acceptSubtype(inferenceVariable, Object.class);
-
-					for (Type bound : inferenceVariable.getLowerBounds()) {
-						anyBounds = true;
-						boundConsumer.acceptSubtype(bound, inferenceVariable);
-					}
-
-					if (!anyBounds)
-						boundConsumer.acceptEquality(inferenceVariable,
-								captureConversion.getCapturedArgument(inferenceVariable));
+				for (Type bound : inferenceVariable.getLowerBounds()) {
+					anyBounds = true;
+					boundConsumer.acceptSubtype(bound, inferenceVariable);
 				}
 
-				boundConsumer.acceptCaptureConversion(captureConversion);
-
-				return captureConversion.getCapturedType();
+				if (!anyBounds)
+					boundConsumer.acceptEquality(inferenceVariable,
+							captureConversion.getCapturedArgument(inferenceVariable));
 			}
-		}
 
-		return type;
+			boundConsumer.acceptCaptureConversion(captureConversion);
+
+			return captureConversion.getCapturedType();
+		} else
+			return type;
 	}
 
 	public static boolean isUncheckedCompatibleOnly(Type from, Type to) {

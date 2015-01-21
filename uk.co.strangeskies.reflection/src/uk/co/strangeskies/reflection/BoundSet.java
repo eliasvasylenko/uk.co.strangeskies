@@ -538,8 +538,8 @@ public class BoundSet {
 					 *
 					 * αi <: R implies the constraint formula ‹Bi θ <: R›
 					 */
-					System.out.println(BoundSet.this);
-					throw new UnsupportedOperationException();
+					constraints.add(new ConstraintFormula(Kind.SUBTYPE, IntersectionType
+							.from(a.getLowerBounds()), R));
 				}
 			}
 		}

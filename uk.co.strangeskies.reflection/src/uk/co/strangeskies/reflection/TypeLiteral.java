@@ -33,11 +33,19 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import uk.co.strangeskies.utilities.IdentityProperty;
+import uk.co.strangeskies.utilities.Property;
+import uk.co.strangeskies.utilities.collection.computingmap.ComputingMap;
+import uk.co.strangeskies.utilities.collection.computingmap.LRUCacheComputingMap;
+
 public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 	private final Type type;
 	private final Class<? super T> rawType;
 
 	private Resolver resolver;
+
+	private static ComputingMap<Type, Property<Resolver, Resolver>> RESOLVER_CACHE = new LRUCacheComputingMap<>(
+			type -> new IdentityProperty<>(), 2000, true);
 
 	@SuppressWarnings("unchecked")
 	protected TypeLiteral() {
@@ -136,9 +144,21 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 
 	private Resolver getInternalResolver() {
 		if (resolver == null) {
-			resolver = new Resolver();
-			resolver.incorporateType(type);
+			System.out.println(" <" + type);
+
+			Property<Resolver, Resolver> resolver;
+			synchronized (RESOLVER_CACHE) {
+				resolver = RESOLVER_CACHE.get(type);
+				if (resolver == null) {
+					System.out.println("   ?");
+					resolver = RESOLVER_CACHE.putGet(type);
+					resolver.set(new Resolver());
+					resolver.get().incorporateType(type); // TODO move out of sync block
+				}
+			}
+			this.resolver = resolver.get();
 		}
+
 		return resolver;
 	}
 

@@ -294,6 +294,9 @@ public class Resolver {
 		Class<?> rawType = Types.getRawType(type);
 		capture(rawType);
 
+		type = (ParameterizedType) ConstraintFormula.captureConversion(type,
+				bounds.incorporate());
+
 		for (Map.Entry<TypeVariable<?>, Type> typeArgument : ParameterizedTypes
 				.getAllTypeArguments(type).entrySet())
 			incorporateConstraint(new ConstraintFormula(Kind.EQUALITY,
@@ -471,9 +474,9 @@ public class Resolver {
 		/*
 		 * the bound set contains a bound of the form G<..., αi, ...> =
 		 * capture(G<...>) for some i (1 ≤ i ≤ n), or;
-		 * 
+		 *
 		 * If the bound set produced in the step above contains the bound false;
-		 * 
+		 *
 		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
 		 */
 		Map<InferenceVariable, TypeVariableCapture> freshVariables = TypeVariableCapture
@@ -483,11 +486,11 @@ public class Resolver {
 		 * Otherwise, for all i (1 ≤ i ≤ n), all bounds of the form G<..., αi, ...>
 		 * = capture(G<...>) are removed from the current bound set, and the bounds
 		 * α1 = Y1, ..., αn = Yn are incorporated.
-		 * 
+		 *
 		 * If the result does not contain the bound false, then the result becomes
 		 * the new bound set, and resolution proceeds by selecting a new set of
 		 * variables to instantiate (if necessary), as described above.
-		 * 
+		 *
 		 * Otherwise, the result contains the bound false, and resolution fails.
 		 */
 		bounds.removeCaptureConversions(relatedCaptureConversions);
@@ -691,11 +694,11 @@ public class Resolver {
 	}
 
 	public static void test() {
-		System.out.println(new TypeLiteral<Self<?>>() {}
-				.isAssignableFrom(new TypeLiteral<Poo<?>>() {}));
-
 		System.out
 				.println(TypeLiteral.from(new TypeLiteral<Poo<?>>() {}.getType()));
+
+		System.out.println(new TypeLiteral<Self<?>>() {}
+				.isAssignableFrom(new TypeLiteral<Poo<?>>() {}));
 
 		System.out.println(new TypeLiteral<Collection<? super String>>() {}
 				.resolveSubtypeParameters(HashSet.class));
