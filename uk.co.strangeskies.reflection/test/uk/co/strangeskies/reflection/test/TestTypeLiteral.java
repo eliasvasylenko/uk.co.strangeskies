@@ -69,11 +69,6 @@ public class TestTypeLiteral {
 		System.out.println(new TypeLiteral<List<String>>() {});
 		System.out.println();
 
-		System.out.println(new TypeLiteral<B>() {}.resolveMethodOverload("okay",
-				new TypeLiteral<Set<Invokable<T, ?>>>() {}.getType(),
-				new TypeLiteral<List<? extends Type>>() {}.getType()));
-		System.out.println();
-
 		System.out
 				.println(TypeLiteral.from(B.class).resolveMethodOverload("bothways",
 						String.class, new TypeLiteral<List<String>>() {}.getType()));
@@ -91,6 +86,11 @@ public class TestTypeLiteral {
 				.withTargetType(
 						new TypeLiteral<List<? super Comparable<? extends Number>>>() {}
 								.getType()).infer());
+		System.out.println();
+
+		System.out.println(new TypeLiteral<B>() {}.resolveMethodOverload("okay",
+				new TypeLiteral<Set<Invokable<T, ?>>>() {}.getType(),
+				new TypeLiteral<List<? extends Type>>() {}.getType()));
 		System.out.println();
 
 		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(

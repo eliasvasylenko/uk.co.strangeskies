@@ -232,8 +232,8 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 	private <S extends R> Invokable<T, S> withTargetTypeCapture(Type target) {
 		Resolver resolver = new Resolver(this.resolver);
 
-		resolver.incorporateConstraint(new ConstraintFormula(
-				Kind.LOOSE_COMPATIBILILTY, returnType.getType(), target));
+		new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, returnType.getType(),
+				target).reduceInto(resolver.getBounds());
 
 		Resolver testResolver = new Resolver(resolver);
 
@@ -288,6 +288,8 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 			throw new TypeInferenceException(
 					"Cannot resolve generic type parameters for invocation of '" + this
 							+ "'.");
+
+		System.out.println(resolver.getBounds());
 
 		return new Invokable<>(resolver, receiverType,
 				(TypeLiteral<U>) TypeLiteral.from(resolver.resolveType(returnType
@@ -367,8 +369,8 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 					nextParameter = null;
 				}
 			}
-			resolver.incorporateConstraint(new ConstraintFormula(
-					Kind.LOOSE_COMPATIBILILTY, argument, parameter));
+			new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, argument, parameter)
+					.reduceInto(resolver.getBounds());
 		}
 
 		Resolver testResolver = new Resolver(resolver);

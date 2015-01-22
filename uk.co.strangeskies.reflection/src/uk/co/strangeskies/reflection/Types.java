@@ -89,7 +89,8 @@ public final class Types {
 			else
 				return getRawType(bounds[0]);
 		} else if (type instanceof InferenceVariable) {
-			throw new IllegalArgumentException();
+			return getRawType(IntersectionType.from(((InferenceVariable) type)
+					.getLowerBounds()));
 		} else if (type instanceof WildcardType) {
 			Type[] bounds = ((WildcardType) type).getUpperBounds();
 			if (bounds.length == 0)

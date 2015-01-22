@@ -28,28 +28,104 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
-import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
-import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 
 public class BoundSet {
+	private final AtomicLong COUNTER = new AtomicLong();
+
+	/*
+	 * TODO
+	 * 
+	 * TODO
+	 * 
+	 * TODO
+	 * 
+	 * TODO
+	 * 
+	 * TODO
+	 * 
+	 * TODO
+	 * 
+	 * TODO
+	 * 
+	 * TODO
+	 * 
+	 * TODO
+	 * 
+	 * figure out the most sensible way to treat bounds on inference variables
+	 * depending on whether they belong to this bound set (and are therefore
+	 * instances of InferenceVariableImpl) or belong to another bound set (and
+	 * therefore should probably be treated as proper types [move
+	 * Types.isProperType here to begin with?])
+	 */
+	private class InferenceVariableImpl implements InferenceVariable {
+		private final String name;
+
+		private final Set<Type> upperBounds;
+		private final Set<Type> lowerBounds;
+		private final Set<Type> equalities;
+
+		public InferenceVariableImpl(String name) {
+			this.name = name + "#" + COUNTER.incrementAndGet();
+
+			upperBounds = new HashSet<>();
+			lowerBounds = new HashSet<>();
+			equalities = new HashSet<>();
+		}
+
+		public InferenceVariableImpl() {
+			this("INF");
+		}
+
+		@Override
+		public String toString() {
+			return name;
+		}
+
+		@Override
+		public Type[] getUpperBounds() {
+			return (Type[]) upperBounds.toArray();
+		}
+
+		@Override
+		public Type[] getLowerBounds() {
+			return (Type[]) lowerBounds.toArray();
+		}
+
+		@Override
+		public Type[] getProperUpperBounds() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public Type[] getProperLowerBounds() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public Type[] getEqualities() {
+			return (Type[]) equalities.toArray();
+		}
+
+		@Override
+		public Optional<Type> getInstantiation() {
+			return equalities.stream().filter(Types::isProperType).findAny();
+		}
+	}
+
 	private final Set<Bound> bounds;
 	private final Set<InferenceVariable> inferenceVariables;
-
-	private final MultiMap<InferenceVariable, Type, Set<Type>> upperBounds;
-	private final MultiMap<InferenceVariable, Type, Set<Type>> lowerBounds;
-	private final MultiMap<InferenceVariable, Type, Set<Type>> equalities;
 
 	public BoundSet() {
 		bounds = new HashSet<>();
 		inferenceVariables = new HashSet<>();
-		upperBounds = new MultiHashMap<>(HashSet::new);
-		lowerBounds = new MultiHashMap<>(HashSet::new);
-		equalities = new MultiHashMap<>(HashSet::new);
 	}
 
 	public BoundSet(BoundSet boundSet) {
@@ -57,9 +133,6 @@ public class BoundSet {
 
 		bounds.addAll(boundSet.bounds);
 		inferenceVariables.addAll(boundSet.inferenceVariables);
-		upperBounds.putAll(boundSet.upperBounds);
-		lowerBounds.putAll(boundSet.lowerBounds);
-		equalities.putAll(boundSet.equalities);
 	}
 
 	@Override
@@ -75,36 +148,9 @@ public class BoundSet {
 	}
 
 	public Set<InferenceVariable> getInstantiatedVariables() {
-		return equalities.keySet().stream()
-				.filter(i -> getInstantiation(i).isPresent())
+		return inferenceVariables.stream()
+				.filter(i -> i.getInstantiation().isPresent())
 				.collect(Collectors.toSet());
-	}
-
-	public Set<Type> getUpperBounds(InferenceVariable inferenceVariable) {
-		return upperBounds.get(inferenceVariable);
-	}
-
-	public Set<Type> getProperUpperBounds(InferenceVariable inferenceVariable) {
-		return upperBounds.get(inferenceVariable).stream()
-				.filter(InferenceVariable::isProperType).collect(Collectors.toSet());
-	}
-
-	public Set<Type> getLowerBounds(InferenceVariable inferenceVariable) {
-		return lowerBounds.get(inferenceVariable);
-	}
-
-	public Set<Type> getProperLowerBounds(InferenceVariable inferenceVariable) {
-		return lowerBounds.get(inferenceVariable).stream()
-				.filter(InferenceVariable::isProperType).collect(Collectors.toSet());
-	}
-
-	public Set<Type> getEqualities(InferenceVariable inferenceVariable) {
-		return equalities.get(inferenceVariable);
-	}
-
-	public Optional<Type> getInstantiation(InferenceVariable inferenceVariable) {
-		return equalities.get(inferenceVariable).stream()
-				.filter(InferenceVariable::isProperType).findAny();
 	}
 
 	public Stream<Bound> stream() {
@@ -113,10 +159,6 @@ public class BoundSet {
 
 	public BoundVisitor incorporate() {
 		return new ReductionTarget();
-	}
-
-	public void incorporate(ConstraintFormula constraintFormula) {
-		constraintFormula.reduceInto(this);
 	}
 
 	class ReductionTarget implements BoundVisitor {
@@ -139,7 +181,7 @@ public class BoundSet {
 
 				bounds.forEach(b -> b.accept(visitor.apply(incorporator)));
 
-				incorporator.constraints.forEach(BoundSet.this::incorporate);
+				incorporator.constraints.forEach(c -> c.reduceInto(BoundSet.this));
 
 				return true;
 			} else
@@ -148,6 +190,9 @@ public class BoundSet {
 
 		@Override
 		public void acceptEquality(InferenceVariable a, InferenceVariable b) {
+			equalities.add(a, b);
+			equalities.add(b, a);
+
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptEquality(a, b)),
 					incorporator -> new PartialBoundVisitor() {
 						@Override
@@ -187,6 +232,8 @@ public class BoundSet {
 
 		@Override
 		public void acceptEquality(InferenceVariable a, Type b) {
+			equalities.add(a, b);
+
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptEquality(a, b)),
 					incorporator -> new PartialBoundVisitor() {
 						@Override
@@ -232,6 +279,9 @@ public class BoundSet {
 
 		@Override
 		public void acceptSubtype(InferenceVariable a, InferenceVariable b) {
+			lowerBounds.add(a, b);
+			upperBounds.add(b, a);
+
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptSubtype(a, b)),
 					incorporator -> new PartialBoundVisitor() {
 						@Override
@@ -270,6 +320,8 @@ public class BoundSet {
 
 		@Override
 		public void acceptSubtype(InferenceVariable a, Type b) {
+			lowerBounds.add(a, b);
+
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptSubtype(a, b)),
 					incorporator -> new PartialBoundVisitor() {
 						@Override
@@ -312,6 +364,8 @@ public class BoundSet {
 
 		@Override
 		public void acceptSubtype(Type a, InferenceVariable b) {
+			upperBounds.add(b, a);
+
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptSubtype(a, b)),
 					incorporator -> new PartialBoundVisitor() {
 						@Override
@@ -384,7 +438,7 @@ public class BoundSet {
 		 * (In this section, S and T are inference variables or types, and U is a
 		 * proper type. For conciseness, a bound of the form α = T may also match a
 		 * bound of the form T = α.)
-		 *
+		 * 
 		 * When a bound set contains a pair of bounds that match one of the
 		 * following rules, a new constraint formula is implied:
 		 */
@@ -514,15 +568,15 @@ public class BoundSet {
 		 * When a bound set contains a bound of the form G<α1, ..., αn> =
 		 * capture(G<A1, ..., An>), new bounds are implied and new constraint
 		 * formulas may be implied, as follows.
-		 *
+		 * 
 		 * Let P1, ..., Pn represent the type parameters of G and let B1, ..., Bn
 		 * represent the bounds of these type parameters. Let θ represent the
 		 * substitution [P1:=α1, ..., Pn:=αn]. Let R be a type that is not an
 		 * inference variable (but is not necessarily a proper type).
-		 *
+		 * 
 		 * A set of bounds on α1, ..., αn is implied, constructed from the declared
 		 * bounds of P1, ..., Pn as specified in §18.1.3.
-		 *
+		 * 
 		 * In addition, for all i (1 ≤ i ≤ n):
 		 */
 
@@ -530,11 +584,11 @@ public class BoundSet {
 				InferenceVariable a, Type R) {
 			/*
 			 * If Ai is a wildcard of the form ?, or;
-			 *
+			 * 
 			 * If Ai is a wildcard of the form ? extends T, or;
-			 *
+			 * 
 			 * If Ai is a wildcard of the form ? super T:
-			 *
+			 * 
 			 * αi = R implies the bound false
 			 */
 			if (c.getCapturedArgument(a) instanceof WildcardType)
@@ -580,7 +634,7 @@ public class BoundSet {
 				} else if (A.getLowerBounds().length > 0) {
 					/*
 					 * If Ai is a wildcard of the form ? super T:
-					 *
+					 * 
 					 * αi <: R implies the constraint formula ‹Bi θ <: R›
 					 */
 					constraints.add(new ConstraintFormula(Kind.SUBTYPE, θ
@@ -589,7 +643,7 @@ public class BoundSet {
 				} else {
 					/*
 					 * If Ai is a wildcard of the form ?:
-					 *
+					 * 
 					 * αi <: R implies the constraint formula ‹Bi θ <: R›
 					 */
 					constraints.add(new ConstraintFormula(Kind.SUBTYPE, θ
@@ -607,7 +661,7 @@ public class BoundSet {
 				if (A.getLowerBounds().length > 0) {
 					/*
 					 * If Ai is a wildcard of the form ? super T:
-					 *
+					 * 
 					 * R <: αi implies the constraint formula ‹R <: T›
 					 */
 					incorporate(new ConstraintFormula(Kind.SUBTYPE, R,
@@ -615,14 +669,14 @@ public class BoundSet {
 				} else if (A.getUpperBounds().length > 0) {
 					/*
 					 * If Ai is a wildcard of the form ? extends T:
-					 *
+					 * 
 					 * R <: αi implies the bound false
 					 */
 					incorporate().acceptFalsehood();
 				} else {
 					/*
 					 * If Ai is a wildcard of the form ?:
-					 *
+					 * 
 					 * R <: αi implies the bound false
 					 */
 					incorporate().acceptFalsehood();

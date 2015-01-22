@@ -100,7 +100,7 @@ public class ConstraintFormula {
 			 * there exists no type of the form G<...> that is a supertype of S, but
 			 * the raw type G is a supertype of S, then the constraint reduces to
 			 * true.
-			 *
+			 * 
 			 * Otherwise, if T is an array type of the form G<T1, ..., Tn>[]k, and
 			 * there exists no type of the form G<...>[]k that is a supertype of S,
 			 * but the raw type G[]k is a supertype of S, then the constraint reduces
@@ -264,13 +264,14 @@ public class ConstraintFormula {
 					 * - If S is an intersection type of which T is an element, the
 					 * constraint reduces to true.
 					 */
-				} else if (bounds.getLowerBounds(((InferenceVariable) to)).size() > 0) {
+				} else if (((InferenceVariable) to).getLowerBounds().length > 0) {
 					/*
 					 * - Otherwise, if T has a lower bound, B, the constraint reduces to
 					 * ‹S <: B›.
 					 */
-					reduce(Kind.SUBTYPE, from, IntersectionType.from(bounds
-							.getLowerBounds(((InferenceVariable) to))), bounds);
+					reduce(Kind.SUBTYPE, from,
+							IntersectionType.from(((InferenceVariable) to).getLowerBounds()),
+							bounds);
 				} else {
 					/*
 					 * - Otherwise, the constraint reduces to false.

@@ -27,28 +27,23 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class InferenceVariable implements Type {
-	private final static AtomicLong COUNTER = new AtomicLong();
+public interface InferenceVariable extends Type {
+	Type[] getUpperBounds();
 
-	private final String name;
+	Type[] getLowerBounds();
 
-	public InferenceVariable(String name) {
-		this.name = name + "#" + COUNTER.incrementAndGet();
-	}
+	Type[] getProperUpperBounds();
 
-	public InferenceVariable() {
-		this("INF");
-	}
+	Type[] getProperLowerBounds();
 
-	@Override
-	public String toString() {
-		return name;
-	}
+	Type[] getEqualities();
+
+	Optional<Type> getInstantiation();;
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static Set<InferenceVariable> getAllMentionedBy(Type type) {
@@ -72,7 +67,7 @@ public class InferenceVariable implements Type {
 		Map<TypeVariable<?>, InferenceVariable> captures = declarationVariables
 				.stream().collect(
 						Collectors.toMap(Function.identity(),
-								t -> (InferenceVariable) new InferenceVariable(t.getName())));
+								t -> new InferenceVariable(t.getName())));
 
 		TypeSubstitution substitution = new TypeSubstitution(captures::get);
 		for (TypeVariable<?> variable : captures.keySet())
@@ -113,7 +108,7 @@ public class InferenceVariable implements Type {
 					.stream()
 					.collect(
 							Collectors.toMap(Function.identity(),
-									t -> (InferenceVariable) new InferenceVariable()));
+									t -> new InferenceVariable()));
 
 			for (TypeVariable<?> parameter : parameterCaptures.keySet()) {
 				Type argument = parameterArguments.get(parameter);
@@ -173,8 +168,8 @@ public class InferenceVariable implements Type {
 				capturedParameters.put(inferenceVariable, parameter);
 			}
 
-			type = (ParameterizedType) ParameterizedTypes.from(
-					Types.getRawType(originalType), parameterCaptures).getType();
+			type = ParameterizedTypes.from(Types.getRawType(originalType),
+					parameterCaptures).getType();
 			ParameterizedType capturedType = (ParameterizedType) type;
 
 			CaptureConversion captureConversion = new CaptureConversion() {

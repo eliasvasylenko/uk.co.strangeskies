@@ -31,8 +31,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -124,7 +124,7 @@ public class Resolver {
 		bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
 			@Override
 			public void acceptEquality(InferenceVariable a, Type b) {
-				if (Types.isProperType(b) && !bounds.getInstantiation(a).isPresent())
+				if (Types.isProperType(b) && !a.getInstantiation().isPresent())
 					instantiate(a, b);
 			}
 		}));
@@ -242,7 +242,7 @@ public class Resolver {
 				declarationCaptures.put(typeVariable, inferenceVariable);
 
 				boolean anyProper = false;
-				for (Type bound : bounds.getUpperBounds(inferenceVariable)) {
+				for (Type bound : inferenceVariable.getUpperBounds()) {
 					anyProper = anyProper || Types.isProperType(bound);
 					bounds.incorporate().acceptSubtype(inferenceVariable, bound);
 				}
@@ -298,20 +298,16 @@ public class Resolver {
 
 		for (Map.Entry<TypeVariable<?>, Type> typeArgument : ParameterizedTypes
 				.getAllTypeArguments(type).entrySet())
-			incorporateConstraint(new ConstraintFormula(Kind.EQUALITY,
-					capturedTypeVariables.get(rawType).get(typeArgument.getKey()),
-					typeArgument.getValue()));
-	}
-
-	public void incorporateConstraint(ConstraintFormula constraintFormula) {
-		bounds.incorporate(constraintFormula);
+			new ConstraintFormula(Kind.EQUALITY, capturedTypeVariables.get(rawType)
+					.get(typeArgument.getKey()), typeArgument.getValue())
+					.reduceInto(bounds);
 	}
 
 	public void incorporateInstantiation(TypeVariable<?> variable,
 			Type instantiation) {
 		capture(variable.getGenericDeclaration());
-		bounds.incorporate(new ConstraintFormula(Kind.EQUALITY,
-				getInferenceVariable(variable), instantiation));
+		new ConstraintFormula(Kind.EQUALITY, getInferenceVariable(variable),
+				instantiation).reduceInto(bounds);
 	}
 
 	public Map<InferenceVariable, Type> infer(GenericDeclaration context) {
@@ -324,8 +320,8 @@ public class Resolver {
 				.getInstantiatedVariables()
 				.stream()
 				.collect(
-						Collectors.toMap(Function.identity(),
-								i -> bounds.getInstantiation(i).get()));
+						Collectors.toMap(Function.identity(), i -> i.getInstantiation()
+								.get()));
 	}
 
 	public Map<InferenceVariable, Type> infer(InferenceVariable... variables) {
@@ -346,12 +342,12 @@ public class Resolver {
 			 * variable in this set depends.
 			 */
 			resolveIndependentSet(variables.stream()
-					.filter(v -> !bounds.getInstantiation(v).isPresent())
+					.filter(v -> !v.getInstantiation().isPresent())
 					.map(remainingDependencies::get).flatMap(Set::stream)
 					.collect(Collectors.toSet()));
 
 			for (InferenceVariable variable : new HashSet<>(remainingVariables)) {
-				Optional<Type> instantiation = bounds.getInstantiation(variable);
+				Optional<Type> instantiation = variable.getInstantiation();
 				if (instantiation.isPresent()) {
 					instantiations.put(variable, instantiation.get());
 					remainingVariables.remove(variable);
@@ -386,10 +382,10 @@ public class Resolver {
 
 			resolveMinimalIndepdendentSet(minimalSet);
 
-			variables.removeAll(instantiations.keySet());
+			variables.removeAll(bounds.getInstantiatedVariables());
 			if (!variables.isEmpty()) {
 				recalculateRemainingDependencies();
-				variables.removeAll(instantiations.keySet());
+				variables.removeAll(bounds.getInstantiatedVariables());
 			}
 		}
 	}
@@ -415,33 +411,17 @@ public class Resolver {
 
 			try {
 				for (InferenceVariable variable : minimalSet) {
-					Set<Type> lowerBounds = new HashSet<>();
-					Set<Type> upperBounds = new HashSet<>();
-
 					IdentityProperty<Boolean> hasThrowableBounds = new IdentityProperty<>(
 							false);
-					bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
-						@Override
-						public void acceptSubtype(Type a, InferenceVariable b) {
-							if (b.equals(variable) && Types.isProperType(a))
-								lowerBounds.add(a);
-						};
-
-						@Override
-						public void acceptSubtype(InferenceVariable a, Type b) {
-							if (a.equals(variable) && Types.isProperType(b))
-								upperBounds.add(b);
-						};
-					}));
 
 					Type instantiationCandidate;
-					if (!lowerBounds.isEmpty()) {
+					if (variable.getLowerBounds().length > 0) {
 						/*
 						 * If αi has one or more proper lower bounds, L1, ..., Lk, then Ti =
 						 * lub(L1, ..., Lk) (§4.10.4).
 						 */
 						instantiationCandidate = IntersectionType.from(Types
-								.leastUpperBound(lowerBounds));
+								.leastUpperBound(variable.getLowerBounds()));
 					} else if (hasThrowableBounds.get()) {
 						/*
 						 * Otherwise, if the bound set contains throws αi, and the proper
@@ -454,7 +434,8 @@ public class Resolver {
 						 * Otherwise, where αi has proper upper bounds U1, ..., Uk, Ti =
 						 * glb(U1, ..., Uk) (§5.1.10).
 						 */
-						instantiationCandidate = Types.greatestLowerBound(upperBounds);
+						instantiationCandidate = Types.greatestLowerBound(variable
+								.getUpperBounds());
 					}
 
 					instantiationCandidates.put(variable, instantiationCandidate);
@@ -478,9 +459,9 @@ public class Resolver {
 		/*
 		 * the bound set contains a bound of the form G<..., αi, ...> =
 		 * capture(G<...>) for some i (1 ≤ i ≤ n), or;
-		 *
+		 * 
 		 * If the bound set produced in the step above contains the bound false;
-		 *
+		 * 
 		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
 		 */
 		Map<InferenceVariable, TypeVariableCapture> freshVariables = TypeVariableCapture
@@ -490,11 +471,11 @@ public class Resolver {
 		 * Otherwise, for all i (1 ≤ i ≤ n), all bounds of the form G<..., αi, ...>
 		 * = capture(G<...>) are removed from the current bound set, and the bounds
 		 * α1 = Y1, ..., αn = Yn are incorporated.
-		 *
+		 * 
 		 * If the result does not contain the bound false, then the result becomes
 		 * the new bound set, and resolution proceeds by selecting a new set of
 		 * variables to instantiate (if necessary), as described above.
-		 *
+		 * 
 		 * Otherwise, the result contains the bound false, and resolution fails.
 		 */
 		bounds.removeCaptureConversions(relatedCaptureConversions);
@@ -504,7 +485,6 @@ public class Resolver {
 	}
 
 	private void instantiate(InferenceVariable variable, Type instantiation) {
-		this.instantiations.put(variable, instantiation);
 		remainingDependencies.keySet().remove(variable);
 		remainingDependencies.removeFromAll(variable);
 
@@ -540,17 +520,10 @@ public class Resolver {
 
 	public Type resolveTypeVariable(GenericDeclaration declaration,
 			TypeVariable<?> typeVariable) {
-		Type instantiation = instantiations.get(capturedTypeVariables
-				.get(typeVariable));
+		capture(typeVariable.getGenericDeclaration());
 
-		if (instantiation != null)
-			return instantiation;
-		else {
-			capture(typeVariable.getGenericDeclaration());
-
-			return resolveInferenceVariable(capturedTypeVariables.get(declaration)
-					.get(typeVariable));
-		}
+		return resolveInferenceVariable(capturedTypeVariables.get(declaration).get(
+				typeVariable));
 	}
 
 	public boolean validate() {
@@ -566,10 +539,7 @@ public class Resolver {
 	}
 
 	private Type resolveInferenceVariable(InferenceVariable variable) {
-		IdentityProperty<Type> instantiation = new IdentityProperty<>(
-				instantiations.get(variable));
-
-		return instantiation.get();
+		return variable.getInstantiation().orElse(variable);
 	}
 
 	public Set<InferenceVariable> getInferenceVariables() {
@@ -666,12 +636,6 @@ public class Resolver {
 	}
 
 	public static void test() {
-		System.out
-				.println(TypeLiteral.from(new TypeLiteral<Poo<?>>() {}.getType()));
-
-		System.out.println(new TypeLiteral<Self<?>>() {}
-				.isAssignableFrom(new TypeLiteral<Poo<?>>() {}));
-
 		System.out.println(new TypeLiteral<Collection<? super String>>() {}
 				.resolveSubtypeParameters(HashSet.class));
 
@@ -696,5 +660,11 @@ public class Resolver {
 		System.out.println("type test: "
 				+ new TypeLiteral<String>() {}
 						.resolveSupertypeParameters(Comparable.class));
+
+		System.out
+				.println(TypeLiteral.from(new TypeLiteral<Poo<?>>() {}.getType()));
+
+		System.out.println(new TypeLiteral<Self<?>>() {}
+				.isAssignableFrom(new TypeLiteral<Poo<?>>() {}));
 	}
 }

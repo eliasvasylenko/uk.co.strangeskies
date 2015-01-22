@@ -23,6 +23,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -144,13 +145,10 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 
 	private Resolver getInternalResolver() {
 		if (resolver == null) {
-			System.out.println(" <" + type);
-
 			Property<Resolver, Resolver> resolver;
 			synchronized (RESOLVER_CACHE) {
 				resolver = RESOLVER_CACHE.get(type);
 				if (resolver == null) {
-					System.out.println("   ?");
 					resolver = RESOLVER_CACHE.putGet(type);
 					resolver.set(new Resolver());
 					resolver.get().incorporateType(type); // TODO move out of sync block
@@ -395,7 +393,7 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 	private <R> Set<? extends Invokable<T, ? extends R>> resolveApplicableCandidates(
 			Set<? extends Invokable<T, ? extends R>> candidates,
 			List<? extends Type> parameters) {
-		Set<RuntimeException> failures = new HashSet<>();
+		List<RuntimeException> failures = new ArrayList<>();
 
 		Set<? extends Invokable<T, ? extends R>> compatibleCandidates = filterOverloadCandidates(
 				candidates, i -> i.withLooseApplicability(parameters), failures::add);
@@ -412,7 +410,9 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		}
 
 		if (compatibleCandidates.isEmpty())
-			throw failures.iterator().next();
+			throw new TypeInferenceException("Parameters '" + parameters
+					+ "' are not applicable to invokable candidates '" + candidates
+					+ "'.", failures.iterator().next());
 
 		return compatibleCandidates;
 	}
