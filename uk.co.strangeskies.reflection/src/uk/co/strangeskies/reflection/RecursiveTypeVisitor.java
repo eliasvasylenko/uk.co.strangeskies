@@ -50,6 +50,8 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 		private boolean parameters = false;
 		private boolean bounds = false;
 
+		private BoundSet boundSet = null;
+
 		private boolean postOrder = false;
 
 		private Consumer<Class<?>> classVisitor = t -> {};
@@ -69,7 +71,8 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 					enclosing, parameters, bounds, postOrder, classVisitor,
 					genericArrayVisitor, parameterizedTypeVisitor,
 					typeVariableCaptureVisitor, typeVariableVisitor,
-					inferenceVariableVisitor, wildcardVisitor, intersectionTypeVisitor);
+					inferenceVariableVisitor, wildcardVisitor, intersectionTypeVisitor,
+					boundSet);
 		}
 
 		public Builder allowRepeatVisits(boolean allowRepeatVisits) {
@@ -99,6 +102,12 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 
 		public Builder visitBounds() {
 			this.bounds = true;
+			return this;
+		}
+
+		public Builder visitBounds(BoundSet boundSet) {
+			this.bounds = true;
+			this.boundSet = boundSet;
 			return this;
 		}
 
@@ -165,6 +174,8 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 	private final boolean parameters;
 	private final boolean bounds;
 
+	private final BoundSet boundSet;
+
 	private final boolean postOrder;
 
 	private final Consumer<Class<?>> classVisitor;
@@ -185,7 +196,7 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 			Consumer<TypeVariable<?>> typeVariableVisitor,
 			Consumer<InferenceVariable> inferenceVariableVisitor,
 			Consumer<WildcardType> wildcardVisitor,
-			Consumer<IntersectionType> intersectionTypeVisitor) {
+			Consumer<IntersectionType> intersectionTypeVisitor, BoundSet boundSet) {
 		super(allowRepeatVisits);
 
 		this.supertypes = supertypes;
@@ -193,6 +204,8 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 		this.enclosing = enclosing;
 		this.parameters = parameters;
 		this.bounds = bounds;
+
+		this.boundSet = boundSet;
 
 		this.postOrder = postOrder;
 
@@ -319,8 +332,8 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 		if (!postOrder)
 			inferenceVariableVisitor.accept(type);
 
-		if (bounds)
-			visit(type.getUpperBounds());
+		if (bounds && boundSet != null)
+			visit(boundSet.getUpperBounds(type));
 
 		if (postOrder)
 			inferenceVariableVisitor.accept(type);

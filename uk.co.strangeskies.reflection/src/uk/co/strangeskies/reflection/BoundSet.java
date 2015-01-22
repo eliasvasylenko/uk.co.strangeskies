@@ -25,24 +25,41 @@ import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
+import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
+import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 
 public class BoundSet {
 	private final Set<Bound> bounds;
+	private final Set<InferenceVariable> inferenceVariables;
+
+	private final MultiMap<InferenceVariable, Type, Set<Type>> upperBounds;
+	private final MultiMap<InferenceVariable, Type, Set<Type>> lowerBounds;
+	private final MultiMap<InferenceVariable, Type, Set<Type>> equalities;
 
 	public BoundSet() {
-		bounds = new LinkedHashSet<>();
+		bounds = new HashSet<>();
+		inferenceVariables = new HashSet<>();
+		upperBounds = new MultiHashMap<>(HashSet::new);
+		lowerBounds = new MultiHashMap<>(HashSet::new);
+		equalities = new MultiHashMap<>(HashSet::new);
 	}
 
-	public BoundSet(BoundSet bounds) {
-		this.bounds = new LinkedHashSet<>(bounds.bounds);
+	public BoundSet(BoundSet boundSet) {
+		this();
+
+		bounds.addAll(boundSet.bounds);
+		inferenceVariables.addAll(boundSet.inferenceVariables);
+		upperBounds.putAll(boundSet.upperBounds);
+		lowerBounds.putAll(boundSet.lowerBounds);
+		equalities.putAll(boundSet.equalities);
 	}
 
 	@Override
@@ -51,6 +68,43 @@ public class BoundSet {
 				.append(
 						bounds.stream().map(Object::toString)
 								.collect(Collectors.joining(", "))).append(" } ").toString();
+	}
+
+	public Set<InferenceVariable> getInferenceVariables() {
+		return inferenceVariables;
+	}
+
+	public Set<InferenceVariable> getInstantiatedVariables() {
+		return equalities.keySet().stream()
+				.filter(i -> getInstantiation(i).isPresent())
+				.collect(Collectors.toSet());
+	}
+
+	public Set<Type> getUpperBounds(InferenceVariable inferenceVariable) {
+		return upperBounds.get(inferenceVariable);
+	}
+
+	public Set<Type> getProperUpperBounds(InferenceVariable inferenceVariable) {
+		return upperBounds.get(inferenceVariable).stream()
+				.filter(InferenceVariable::isProperType).collect(Collectors.toSet());
+	}
+
+	public Set<Type> getLowerBounds(InferenceVariable inferenceVariable) {
+		return lowerBounds.get(inferenceVariable);
+	}
+
+	public Set<Type> getProperLowerBounds(InferenceVariable inferenceVariable) {
+		return lowerBounds.get(inferenceVariable).stream()
+				.filter(InferenceVariable::isProperType).collect(Collectors.toSet());
+	}
+
+	public Set<Type> getEqualities(InferenceVariable inferenceVariable) {
+		return equalities.get(inferenceVariable);
+	}
+
+	public Optional<Type> getInstantiation(InferenceVariable inferenceVariable) {
+		return equalities.get(inferenceVariable).stream()
+				.filter(InferenceVariable::isProperType).findAny();
 	}
 
 	public Stream<Bound> stream() {
@@ -62,7 +116,7 @@ public class BoundSet {
 	}
 
 	public void incorporate(ConstraintFormula constraintFormula) {
-		constraintFormula.reduceInto(new ReductionTarget(constraintFormula));
+		constraintFormula.reduceInto(this);
 	}
 
 	class ReductionTarget implements BoundVisitor {
@@ -492,6 +546,10 @@ public class BoundSet {
 			if (c.getCapturedArgument(a) instanceof WildcardType) {
 				WildcardType A = (WildcardType) c.getCapturedArgument(a);
 
+				TypeSubstitution θ = new TypeSubstitution();
+				for (InferenceVariable variable : c.getInferenceVariables())
+					θ = θ.where(c.getCapturedParameter(variable), variable);
+
 				if (A.getUpperBounds().length > 0) {
 					/*
 					 * If Ai is a wildcard of the form ? extends T:
@@ -515,13 +573,8 @@ public class BoundSet {
 						 * If T is Object, then αi <: R implies the constraint formula ‹Bi θ
 						 * <: R›
 						 */
-						TypeSubstitution substitution = new TypeSubstitution();
-						for (InferenceVariable variable : c.getInferenceVariables())
-							substitution = substitution.where(
-									c.getCapturedParameter(variable), variable);
-
 						incorporate(new ConstraintFormula(Kind.SUBTYPE,
-								substitution.resolve(IntersectionType.from(c
+								θ.resolve(IntersectionType.uncheckedFrom(c
 										.getCapturedParameter(a).getBounds())), R));
 					}
 				} else if (A.getLowerBounds().length > 0) {
@@ -530,16 +583,18 @@ public class BoundSet {
 					 *
 					 * αi <: R implies the constraint formula ‹Bi θ <: R›
 					 */
-					constraints.add(new ConstraintFormula(Kind.SUBTYPE, IntersectionType
-							.from(a.getLowerBounds()), R));
+					constraints.add(new ConstraintFormula(Kind.SUBTYPE, θ
+							.resolve(IntersectionType.uncheckedFrom(c.getCapturedParameter(a)
+									.getBounds())), R));
 				} else {
 					/*
 					 * If Ai is a wildcard of the form ?:
 					 *
 					 * αi <: R implies the constraint formula ‹Bi θ <: R›
 					 */
-					constraints.add(new ConstraintFormula(Kind.SUBTYPE, IntersectionType
-							.from(a.getLowerBounds()), R));
+					constraints.add(new ConstraintFormula(Kind.SUBTYPE, θ
+							.resolve(IntersectionType.uncheckedFrom(c.getCapturedParameter(a)
+									.getBounds())), R));
 				}
 			}
 		}

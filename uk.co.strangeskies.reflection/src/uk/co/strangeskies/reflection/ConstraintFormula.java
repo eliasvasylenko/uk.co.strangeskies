@@ -43,24 +43,23 @@ public class ConstraintFormula {
 		return kind + " between '" + from + "' and '" + to + "'";
 	}
 
-	private static void reduce(Kind kind, Type from, Type to,
-			BoundVisitor boundConsumer) {
-		new ConstraintFormula(kind, from, to).reduceInto(boundConsumer);
+	private static void reduce(Kind kind, Type from, Type to, BoundSet bounds) {
+		new ConstraintFormula(kind, from, to).reduceInto(bounds);
 	}
 
-	void reduceInto(BoundVisitor boundConsumer) {
+	void reduceInto(BoundSet bounds) {
 		switch (kind) {
 		case LOOSE_COMPATIBILILTY:
-			reduceLooseCompatibilityConstraint(boundConsumer);
+			reduceLooseCompatibilityConstraint(bounds);
 			break;
 		case SUBTYPE:
-			reduceSubtypeConstraint(boundConsumer);
+			reduceSubtypeConstraint(bounds);
 			break;
 		case CONTAINMENT:
-			reduceContainmentConstraint(boundConsumer);
+			reduceContainmentConstraint(bounds);
 			break;
 		case EQUALITY:
-			reduceEqualityConstraint(boundConsumer);
+			reduceEqualityConstraint(bounds);
 			break;
 		default:
 			throw new AssertionError();
@@ -70,8 +69,8 @@ public class ConstraintFormula {
 	/*
 	 * A constraint formula of the form ‹S → T› is reduced as follows:
 	 */
-	private void reduceLooseCompatibilityConstraint(BoundVisitor boundConsumer) {
-		Type from = captureConversion(this.from, boundConsumer);
+	private void reduceLooseCompatibilityConstraint(BoundSet bounds) {
+		Type from = InferenceVariable.captureConversion(this.from, bounds);
 
 		if (Types.isProperType(from) && Types.isProperType(to)) {
 			/*
@@ -80,21 +79,21 @@ public class ConstraintFormula {
 			 * otherwise.
 			 */
 			if (!Types.isLooseInvocationContextCompatible(from, to))
-				boundConsumer.acceptFalsehood();
+				bounds.incorporate().acceptFalsehood();
 		} else if (from != null && Types.isPrimitive(from))
 			/*
 			 * Otherwise, if S is a primitive type, let S' be the result of applying
 			 * boxing conversion (§5.1.7) to S. Then the constraint reduces to ‹S' →
 			 * T›.
 			 */
-			reduce(Kind.LOOSE_COMPATIBILILTY, Types.wrap(from), to, boundConsumer);
+			reduce(Kind.LOOSE_COMPATIBILILTY, Types.wrap(from), to, bounds);
 		else if (to != null && Types.isPrimitive(to))
 			/*
 			 * Otherwise, if T is a primitive type, let T' be the result of applying
 			 * boxing conversion (§5.1.7) to T. Then the constraint reduces to ‹S =
 			 * T'›.
 			 */
-			reduce(Kind.EQUALITY, from, Types.wrap(to), boundConsumer);
+			reduce(Kind.EQUALITY, from, Types.wrap(to), bounds);
 		else if (isUncheckedCompatibleOnly(from, to))
 			/*
 			 * Otherwise, if T is a parameterized type of the form G<T1, ..., Tn>, and
@@ -112,47 +111,7 @@ public class ConstraintFormula {
 			/*
 			 * Otherwise, the constraint reduces to ‹S <: T›.
 			 */
-			reduce(Kind.SUBTYPE, from, to, boundConsumer);
-	}
-
-	/*
-	 * Let G name a generic type declaration (§8.1.2, §9.1.2) with n type
-	 * parameters A1,...,An with corresponding bounds U1,...,Un.
-	 */
-	static Type captureConversion(Type type, BoundVisitor boundConsumer) {
-		if (type instanceof ParameterizedType
-				&& ParameterizedTypes.getAllTypeArguments((ParameterizedType) type)
-						.values().stream().anyMatch(WildcardType.class::isInstance)) {
-			CaptureConversion captureConversion = InferenceVariable
-					.capture((ParameterizedType) type);
-
-			for (InferenceVariable inferenceVariable : captureConversion
-					.getInferenceVariables()) {
-				boolean anyProper = false;
-				boolean anyBounds = false;
-				for (Type bound : inferenceVariable.getUpperBounds()) {
-					anyBounds = true;
-					anyProper = anyProper || Types.isProperType(bound);
-					boundConsumer.acceptSubtype(inferenceVariable, bound);
-				}
-				if (!anyProper)
-					boundConsumer.acceptSubtype(inferenceVariable, Object.class);
-
-				for (Type bound : inferenceVariable.getLowerBounds()) {
-					anyBounds = true;
-					boundConsumer.acceptSubtype(bound, inferenceVariable);
-				}
-
-				if (!anyBounds)
-					boundConsumer.acceptEquality(inferenceVariable,
-							captureConversion.getCapturedArgument(inferenceVariable));
-			}
-
-			boundConsumer.acceptCaptureConversion(captureConversion);
-
-			return captureConversion.getCapturedType();
-		} else
-			return type;
+			reduce(Kind.SUBTYPE, from, to, bounds);
 	}
 
 	public static boolean isUncheckedCompatibleOnly(Type from, Type to) {
@@ -174,14 +133,14 @@ public class ConstraintFormula {
 	/*
 	 * A constraint formula of the form ‹S <: T› is reduced as follows:
 	 */
-	private void reduceSubtypeConstraint(BoundVisitor boundConsumer) {
+	private void reduceSubtypeConstraint(BoundSet bounds) {
 		if (Types.isProperType(from) && Types.isProperType(to)) {
 			/*
 			 * If S and T are proper types, the constraint reduces to true if S is a
 			 * subtype of T (§4.10), and false otherwise.
 			 */
 			if (!Types.isAssignable(from, to))
-				boundConsumer.acceptFalsehood();
+				bounds.incorporate().acceptFalsehood();
 			else
 				return;
 		} else if (from == null)
@@ -193,23 +152,23 @@ public class ConstraintFormula {
 			/*
 			 * Otherwise, if T is the null type, the constraint reduces to false.
 			 */
-			boundConsumer.acceptFalsehood();
+			bounds.incorporate().acceptFalsehood();
 		else if (from instanceof InferenceVariable)
 			/*
 			 * Otherwise, if S is an inference variable, α, the constraint reduces to
 			 * the bound α <: T.
 			 */
 			if (to instanceof InferenceVariable)
-				boundConsumer.acceptSubtype((InferenceVariable) from,
+				bounds.incorporate().acceptSubtype((InferenceVariable) from,
 						(InferenceVariable) to);
 			else
-				boundConsumer.acceptSubtype((InferenceVariable) from, to);
+				bounds.incorporate().acceptSubtype((InferenceVariable) from, to);
 		else if (to instanceof InferenceVariable)
 			/*
 			 * Otherwise, if T is an inference variable, α, the constraint reduces to
 			 * the bound S <: α.
 			 */
-			boundConsumer.acceptSubtype(from, (InferenceVariable) to);
+			bounds.incorporate().acceptSubtype(from, (InferenceVariable) to);
 		else {
 			/*
 			 * Otherwise, the constraint is reduced according to the form of T:
@@ -227,7 +186,7 @@ public class ConstraintFormula {
 					/*
 					 * If no such type exists, the constraint reduces to false.
 					 */
-					boundConsumer.acceptFalsehood();
+					bounds.incorporate().acceptFalsehood();
 				else {
 					TypeLiteral<?> toLiteral = TypeLiteral.from(to);
 
@@ -237,7 +196,7 @@ public class ConstraintFormula {
 						/*
 						 * If no such type exists, the constraint reduces to false.
 						 */
-						boundConsumer.acceptFalsehood();
+						bounds.incorporate().acceptFalsehood();
 
 					/*
 					 * Otherwise, the constraint reduces to the following new constraints:
@@ -247,7 +206,7 @@ public class ConstraintFormula {
 							p -> {
 								reduce(Kind.CONTAINMENT,
 										fromParameterization.getTypeArgument(p),
-										toLiteral.getTypeArgument(p), boundConsumer);
+										toLiteral.getTypeArgument(p), bounds);
 							});
 				}
 			} else if (to instanceof Class) {
@@ -257,7 +216,7 @@ public class ConstraintFormula {
 				 * otherwise.
 				 */
 				if (!Types.isAssignable(from, to))
-					boundConsumer.acceptFalsehood();
+					bounds.incorporate().acceptFalsehood();
 			} else if (!(to instanceof IntersectionType)
 					&& Types.getRawType(to).isArray()) {
 				/*
@@ -270,7 +229,7 @@ public class ConstraintFormula {
 					/*
 					 * If no such array type exists, the constraint reduces to false.
 					 */
-					boundConsumer.acceptFalsehood();
+					bounds.incorporate().acceptFalsehood();
 				} else {
 					/*
 					 * Otherwise:
@@ -283,7 +242,7 @@ public class ConstraintFormula {
 						 * reduces to ‹S' <: T'›.
 						 */
 						reduce(Kind.SUBTYPE, fromComponent.getType(),
-								toComponent.getType(), boundConsumer);
+								toComponent.getType(), bounds);
 					} else {
 						/*
 						 * - Otherwise, the constraint reduces to true if S' and T' are the
@@ -291,7 +250,7 @@ public class ConstraintFormula {
 						 */
 						if (!fromComponent.isPrimitive()
 								|| !fromComponent.equals(toComponent))
-							boundConsumer.acceptFalsehood();
+							bounds.incorporate().acceptFalsehood();
 					}
 				}
 			} else if (to instanceof InferenceVariable) {
@@ -305,19 +264,18 @@ public class ConstraintFormula {
 					 * - If S is an intersection type of which T is an element, the
 					 * constraint reduces to true.
 					 */
-				} else if (((InferenceVariable) to).getLowerBounds().length > 0) {
+				} else if (bounds.getLowerBounds(((InferenceVariable) to)).size() > 0) {
 					/*
 					 * - Otherwise, if T has a lower bound, B, the constraint reduces to
 					 * ‹S <: B›.
 					 */
-					reduce(Kind.SUBTYPE, from,
-							IntersectionType.from(((InferenceVariable) to).getLowerBounds()),
-							boundConsumer);
+					reduce(Kind.SUBTYPE, from, IntersectionType.from(bounds
+							.getLowerBounds(((InferenceVariable) to))), bounds);
 				} else {
 					/*
 					 * - Otherwise, the constraint reduces to false.
 					 */
-					boundConsumer.acceptFalsehood();
+					bounds.incorporate().acceptFalsehood();
 				}
 			} else if (to instanceof IntersectionType) {
 				/*
@@ -325,7 +283,7 @@ public class ConstraintFormula {
 				 * to the following new constraints: for all i (1 ≤ i ≤ n), ‹S <: Ii›.
 				 */
 				for (Type typeComponent : ((IntersectionType) to).getTypes())
-					reduce(Kind.SUBTYPE, from, typeComponent, boundConsumer);
+					reduce(Kind.SUBTYPE, from, typeComponent, bounds);
 			} else {
 				throw new AssertionError("Type '" + to
 						+ "' of T should not be encountered in constraint '" + this + "'.");
@@ -373,7 +331,7 @@ public class ConstraintFormula {
 	 * A constraint formula of the form ‹S <= T›, where S and T are type arguments
 	 * (§4.5.1), is reduced as follows:
 	 */
-	private void reduceContainmentConstraint(BoundVisitor boundConsumer) {
+	private void reduceContainmentConstraint(BoundSet bounds) {
 		if (!(to instanceof WildcardType)) {
 			/*
 			 * If T is a type:
@@ -382,12 +340,12 @@ public class ConstraintFormula {
 				/*
 				 * If S is a type, the constraint reduces to ‹S = T›.
 				 */
-				reduce(Kind.EQUALITY, from, to, boundConsumer);
+				reduce(Kind.EQUALITY, from, to, bounds);
 			} else {
 				/*
 				 * If S is a wildcard, the constraint reduces to false.
 				 */
-				boundConsumer.acceptFalsehood();
+				bounds.incorporate().acceptFalsehood();
 			}
 		} else {
 			WildcardType to = (WildcardType) this.to;
@@ -408,7 +366,7 @@ public class ConstraintFormula {
 						/*
 						 * If S is a type, the constraint reduces to ‹S <: T'›.
 						 */
-						reduce(Kind.SUBTYPE, from, intersectionT, boundConsumer);
+						reduce(Kind.SUBTYPE, from, intersectionT, bounds);
 					} else {
 						WildcardType from = (WildcardType) this.from;
 
@@ -418,7 +376,7 @@ public class ConstraintFormula {
 								 * If S is a wildcard of the form ?, the constraint reduces to
 								 * ‹Object <: T'›.
 								 */
-								reduce(Kind.SUBTYPE, Object.class, intersectionT, boundConsumer);
+								reduce(Kind.SUBTYPE, Object.class, intersectionT, bounds);
 							} else {
 								/*
 								 * If S is a wildcard of the form ? extends S', the constraint
@@ -426,14 +384,14 @@ public class ConstraintFormula {
 								 */
 								reduce(Kind.SUBTYPE,
 										IntersectionType.from(from.getUpperBounds()),
-										intersectionT, boundConsumer);
+										intersectionT, bounds);
 							}
 						} else {
 							/*
 							 * If S is a wildcard of the form ? super S', the constraint
 							 * reduces to ‹Object = T'›.
 							 */
-							reduce(Kind.EQUALITY, Object.class, intersectionT, boundConsumer);
+							reduce(Kind.EQUALITY, Object.class, intersectionT, bounds);
 						}
 					}
 				}
@@ -447,7 +405,7 @@ public class ConstraintFormula {
 					/*
 					 * If S is a type, the constraint reduces to ‹T' <: S›.
 					 */
-					reduce(Kind.SUBTYPE, intersectionT, from, boundConsumer);
+					reduce(Kind.SUBTYPE, intersectionT, from, bounds);
 				} else {
 					WildcardType from = (WildcardType) this.from;
 
@@ -457,19 +415,19 @@ public class ConstraintFormula {
 						 * to ‹T' <: S'›.
 						 */
 						reduce(Kind.SUBTYPE, intersectionT,
-								IntersectionType.from(from.getLowerBounds()), boundConsumer);
+								IntersectionType.from(from.getLowerBounds()), bounds);
 					} else {
 						/*
 						 * Otherwise, the constraint reduces to false.
 						 */
-						boundConsumer.acceptFalsehood();
+						bounds.incorporate().acceptFalsehood();
 					}
 				}
 			}
 		}
 	}
 
-	private void reduceEqualityConstraint(BoundVisitor boundConsumer) {
+	private void reduceEqualityConstraint(BoundSet bounds) {
 		if (from instanceof WildcardType && to instanceof WildcardType) {
 			/*
 			 * A constraint formula of the form ‹S = T›, where S and T are type
@@ -493,7 +451,7 @@ public class ConstraintFormula {
 							 * constraint reduces to ‹Object = T'›.
 							 */
 							reduce(Kind.EQUALITY, Object.class,
-									IntersectionType.from(to.getUpperBounds()), boundConsumer);
+									IntersectionType.from(to.getUpperBounds()), bounds);
 						}
 					}
 				} else if (to.getLowerBounds().length == 0) {
@@ -503,14 +461,14 @@ public class ConstraintFormula {
 						 * constraint reduces to ‹S' = Object›.
 						 */
 						reduce(Kind.EQUALITY, IntersectionType.from(from.getUpperBounds()),
-								Object.class, boundConsumer);
+								Object.class, bounds);
 					} else {
 						/*
 						 * If S has the form ? extends S' and T has the form ? extends T',
 						 * the constraint reduces to ‹S' = T'›.
 						 */
 						reduce(Kind.EQUALITY, IntersectionType.from(from.getUpperBounds()),
-								IntersectionType.from(to.getUpperBounds()), boundConsumer);
+								IntersectionType.from(to.getUpperBounds()), bounds);
 					}
 				}
 			} else if (to.getLowerBounds().length > 0) {
@@ -519,12 +477,12 @@ public class ConstraintFormula {
 				 * constraint reduces to ‹S' = T'›.
 				 */
 				reduce(Kind.EQUALITY, IntersectionType.from(from.getLowerBounds()),
-						IntersectionType.from(to.getLowerBounds()), boundConsumer);
+						IntersectionType.from(to.getLowerBounds()), bounds);
 			} else {
 				/*
 				 * Otherwise, the constraint reduces to false.
 				 */
-				boundConsumer.acceptFalsehood();
+				bounds.incorporate().acceptFalsehood();
 			}
 		} else {
 			/*
@@ -537,23 +495,23 @@ public class ConstraintFormula {
 				 * the same as T (§4.3.4), and false otherwise.
 				 */
 				if (!from.equals(to))
-					boundConsumer.acceptFalsehood();
+					bounds.incorporate().acceptFalsehood();
 			} else if (from instanceof InferenceVariable) {
 				/*
 				 * Otherwise, if S is an inference variable, α, the constraint reduces
 				 * to the bound α = T.
 				 */
 				if (to instanceof InferenceVariable)
-					boundConsumer.acceptEquality((InferenceVariable) from,
+					bounds.incorporate().acceptEquality((InferenceVariable) from,
 							(InferenceVariable) to);
 				else
-					boundConsumer.acceptEquality((InferenceVariable) from, to);
+					bounds.incorporate().acceptEquality((InferenceVariable) from, to);
 			} else if (to instanceof InferenceVariable) {
 				/*
 				 * Otherwise, if T is an inference variable, α, the constraint reduces
 				 * to the bound S = α.
 				 */
-				boundConsumer.acceptEquality((InferenceVariable) to, from);
+				bounds.incorporate().acceptEquality((InferenceVariable) to, from);
 			} else if (Types.getRawType(from).isArray()
 					&& Types.getRawType(to).isArray()) {
 				/*
@@ -561,7 +519,7 @@ public class ConstraintFormula {
 				 * reduces to ‹S' = T'›.
 				 */
 				reduce(Kind.EQUALITY, Types.getComponentType(from),
-						Types.getComponentType(to), boundConsumer);
+						Types.getComponentType(to), bounds);
 			} else if (Types.getRawType(from).equals(Types.getRawType(to))) {
 				/*
 				 * Otherwise, if S and T are class or interface types with the same
@@ -573,7 +531,7 @@ public class ConstraintFormula {
 						.forEach(
 								type -> reduce(Kind.EQUALITY, TypeLiteral.from(from)
 										.getTypeArgument(type), TypeLiteral.from(to)
-										.getTypeArgument(type), boundConsumer));
+										.getTypeArgument(type), bounds));
 			}
 		}
 	}

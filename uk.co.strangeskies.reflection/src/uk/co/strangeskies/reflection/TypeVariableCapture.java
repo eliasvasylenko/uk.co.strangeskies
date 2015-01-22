@@ -23,7 +23,6 @@ import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -43,7 +42,7 @@ public class TypeVariableCapture extends CaptureType implements
 	}
 
 	public static Map<InferenceVariable, TypeVariableCapture> capture(
-			Collection<? extends InferenceVariable> types) {
+			Collection<? extends InferenceVariable> types, BoundSet bounds) {
 		TypeVariable<?>[] captures = new TypeVariable<?>[types.size()];
 		GenericDeclaration declaration = new GenericDeclaration() {
 			@Override
@@ -68,54 +67,56 @@ public class TypeVariableCapture extends CaptureType implements
 		};
 
 		IdentityProperty<Integer> count = new IdentityProperty<>(0);
-		return CaptureType.capture(
-				types,
-				inferenceVariable -> {
-					/*
-					 * For all i (1 ≤ i ≤ n), if αi has one or more proper lower bounds
-					 * L1, ..., Lk, then let the lower bound of Yi be lub(L1, ..., Lk); if
-					 * not, then Yi has no lower bound.
-					 */
-					Set<Type> lowerBoundSet = Arrays
-							.stream(inferenceVariable.getLowerBounds())
-							.filter(Types::isProperType).collect(Collectors.toSet());
+		return CaptureType
+				.capture(
+						types,
+						inferenceVariable -> {
+							/*
+							 * For all i (1 ≤ i ≤ n), if αi has one or more proper lower
+							 * bounds L1, ..., Lk, then let the lower bound of Yi be lub(L1,
+							 * ..., Lk); if not, then Yi has no lower bound.
+							 */
+							Set<Type> lowerBoundSet = bounds
+									.getLowerBounds(inferenceVariable).stream()
+									.filter(Types::isProperType).collect(Collectors.toSet());
 
-					Type[] lowerBounds;
-					if (lowerBoundSet.isEmpty())
-						lowerBounds = new Type[0];
-					else
-						lowerBounds = IntersectionType.asArray(Types
-								.leastUpperBound(lowerBoundSet));
+							Type[] lowerBounds;
+							if (lowerBoundSet.isEmpty())
+								lowerBounds = new Type[0];
+							else
+								lowerBounds = IntersectionType.asArray(Types
+										.leastUpperBound(lowerBoundSet));
 
-					/*
-					 * For all i (1 ≤ i ≤ n), where αi has upper bounds U1, ..., Uk, let
-					 * the upper bound of Yi be glb(U1 θ, ..., Uk θ), where θ is the
-					 * substitution [α1:=Y1, ..., αn:=Yn].
-					 */
-					Set<Type> upperBoundSet = Arrays
-							.stream(inferenceVariable.getUpperBounds())
-							.filter(Types::isProperType).collect(Collectors.toSet());
+							/*
+							 * For all i (1 ≤ i ≤ n), where αi has upper bounds U1, ..., Uk,
+							 * let the upper bound of Yi be glb(U1 θ, ..., Uk θ), where θ is
+							 * the substitution [α1:=Y1, ..., αn:=Yn].
+							 */
+							Set<Type> upperBoundSet = bounds
+									.getUpperBounds(inferenceVariable).stream()
+									.filter(Types::isProperType).collect(Collectors.toSet());
 
-					Type[] upperBounds;
-					if (upperBoundSet.isEmpty())
-						upperBounds = new Type[0];
-					else
-						upperBounds = IntersectionType.asArray(Types
-								.greatestLowerBound(upperBoundSet));
+							Type[] upperBounds;
+							if (upperBoundSet.isEmpty())
+								upperBounds = new Type[0];
+							else
+								upperBounds = IntersectionType.asArray(Types
+										.greatestLowerBound(upperBoundSet));
 
-					TypeVariableCapture capture = new TypeVariableCapture(upperBounds,
-							lowerBounds, declaration);
-					/*
-					 * If the type variables Y1, ..., Yn do not have well-formed bounds
-					 * (that is, a lower bound is not a subtype of an upper bound, or an
-					 * intersection type is inconsistent), then resolution fails.
-					 */
+							TypeVariableCapture capture = new TypeVariableCapture(
+									upperBounds, lowerBounds, declaration);
+							/*
+							 * If the type variables Y1, ..., Yn do not have well-formed
+							 * bounds (that is, a lower bound is not a subtype of an upper
+							 * bound, or an intersection type is inconsistent), then
+							 * resolution fails.
+							 */
 
-					captures[count.get()] = capture;
-					count.set(count.get() + 1);
+							captures[count.get()] = capture;
+							count.set(count.get() + 1);
 
-					return capture;
-				});
+							return capture;
+						});
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })

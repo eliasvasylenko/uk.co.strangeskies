@@ -75,7 +75,7 @@ public abstract class IntersectionType implements Type {
 
 		try {
 			BoundSet bounds = new BoundSet();
-			InferenceVariable inferenceVariable = new InferenceVariable();
+			InferenceVariable inferenceVariable = new InferenceVariable() {};
 			for (Type type : flattenedTypes) {
 				bounds.incorporate(new ConstraintFormula(Kind.SUBTYPE,
 						inferenceVariable, type));
