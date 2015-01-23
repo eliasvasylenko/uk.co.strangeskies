@@ -72,14 +72,15 @@ public class ConstraintFormula {
 	private void reduceLooseCompatibilityConstraint(BoundSet bounds) {
 		Type from = InferenceVariable.captureConversion(this.from, bounds);
 
-		if (Types.isProperType(from) && Types.isProperType(to)) {
+		if (bounds.isProperType(from) && bounds.isProperType(to)) {
 			/*
 			 * If S and T are proper types, the constraint reduces to true if S is
 			 * compatible in a loose invocation context with T (§5.3), and false
 			 * otherwise.
 			 */
-			if (!Types.isLooseInvocationContextCompatible(from, to))
+			if (!Types.isLooseInvocationContextCompatible(from, to)) {
 				bounds.incorporate().acceptFalsehood();
+			}
 		} else if (from != null && Types.isPrimitive(from))
 			/*
 			 * Otherwise, if S is a primitive type, let S' be the result of applying
@@ -100,7 +101,7 @@ public class ConstraintFormula {
 			 * there exists no type of the form G<...> that is a supertype of S, but
 			 * the raw type G is a supertype of S, then the constraint reduces to
 			 * true.
-			 * 
+			 *
 			 * Otherwise, if T is an array type of the form G<T1, ..., Tn>[]k, and
 			 * there exists no type of the form G<...>[]k that is a supertype of S,
 			 * but the raw type G[]k is a supertype of S, then the constraint reduces
@@ -134,7 +135,7 @@ public class ConstraintFormula {
 	 * A constraint formula of the form ‹S <: T› is reduced as follows:
 	 */
 	private void reduceSubtypeConstraint(BoundSet bounds) {
-		if (Types.isProperType(from) && Types.isProperType(to)) {
+		if (bounds.isProperType(from) && bounds.isProperType(to)) {
 			/*
 			 * If S and T are proper types, the constraint reduces to true if S is a
 			 * subtype of T (§4.10), and false otherwise.
@@ -490,13 +491,15 @@ public class ConstraintFormula {
 			 * A constraint formula of the form ‹S = T›, where S and T are types, is
 			 * reduced as follows:
 			 */
-			if (Types.isProperType(from) && Types.isProperType(to)) {
+			if (bounds.isProperType(from) && bounds.isProperType(to)) {
 				/*
 				 * If S and T are proper types, the constraint reduces to true if S is
 				 * the same as T (§4.3.4), and false otherwise.
 				 */
-				if (!from.equals(to))
+				if (!from.equals(to)) {
+					System.out.println(" " + from + " ----- " + to);
 					bounds.incorporate().acceptFalsehood();
+				}
 			} else if (from instanceof InferenceVariable) {
 				/*
 				 * Otherwise, if S is an inference variable, α, the constraint reduces

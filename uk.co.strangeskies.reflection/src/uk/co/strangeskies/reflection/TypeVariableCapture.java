@@ -78,7 +78,7 @@ public class TypeVariableCapture extends CaptureType implements
 					 */
 					Set<Type> lowerBoundSet = Arrays
 							.stream(inferenceVariable.getLowerBounds())
-							.filter(Types::isProperType).collect(Collectors.toSet());
+							.filter(bounds::isProperType).collect(Collectors.toSet());
 
 					Type[] lowerBounds;
 					if (lowerBoundSet.isEmpty())
@@ -94,7 +94,7 @@ public class TypeVariableCapture extends CaptureType implements
 					 */
 					Set<Type> upperBoundSet = Arrays
 							.stream(inferenceVariable.getUpperBounds())
-							.filter(Types::isProperType).collect(Collectors.toSet());
+							.filter(bounds::isProperType).collect(Collectors.toSet());
 
 					Type[] upperBounds;
 					if (upperBoundSet.isEmpty())

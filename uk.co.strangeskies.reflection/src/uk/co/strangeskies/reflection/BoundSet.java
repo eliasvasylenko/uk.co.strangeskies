@@ -23,6 +23,7 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -38,31 +39,6 @@ import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 public class BoundSet {
 	private final AtomicLong COUNTER = new AtomicLong();
 
-	/*
-	 * TODO
-	 * 
-	 * TODO
-	 * 
-	 * TODO
-	 * 
-	 * TODO
-	 * 
-	 * TODO
-	 * 
-	 * TODO
-	 * 
-	 * TODO
-	 * 
-	 * TODO
-	 * 
-	 * TODO
-	 * 
-	 * figure out the most sensible way to treat bounds on inference variables
-	 * depending on whether they belong to this bound set (and are therefore
-	 * instances of InferenceVariableImpl) or belong to another bound set (and
-	 * therefore should probably be treated as proper types [move
-	 * Types.isProperType here to begin with?])
-	 */
 	private class InferenceVariableImpl implements InferenceVariable {
 		private final String name;
 
@@ -78,10 +54,6 @@ public class BoundSet {
 			equalities = new HashSet<>();
 		}
 
-		public InferenceVariableImpl() {
-			this("INF");
-		}
-
 		@Override
 		public String toString() {
 			return name;
@@ -89,39 +61,53 @@ public class BoundSet {
 
 		@Override
 		public Type[] getUpperBounds() {
-			return (Type[]) upperBounds.toArray();
+			return upperBounds.toArray(new Type[upperBounds.size()]);
 		}
 
 		@Override
 		public Type[] getLowerBounds() {
-			return (Type[]) lowerBounds.toArray();
+			return lowerBounds.toArray(new Type[lowerBounds.size()]);
 		}
 
 		@Override
 		public Type[] getProperUpperBounds() {
-			// TODO Auto-generated method stub
-			return null;
+			List<Type> types = upperBounds.stream()
+					.filter(BoundSet.this::isProperType).collect(Collectors.toList());
+			return types.toArray(new Type[types.size()]);
 		}
 
 		@Override
 		public Type[] getProperLowerBounds() {
-			// TODO Auto-generated method stub
-			return null;
+			List<Type> types = lowerBounds.stream()
+					.filter(BoundSet.this::isProperType).collect(Collectors.toList());
+			return types.toArray(new Type[types.size()]);
 		}
 
 		@Override
 		public Type[] getEqualities() {
-			return (Type[]) equalities.toArray();
+			return equalities.toArray(new Type[equalities.size()]);
 		}
 
 		@Override
 		public Optional<Type> getInstantiation() {
-			return equalities.stream().filter(Types::isProperType).findAny();
+			return equalities.stream().filter(BoundSet.this::isProperType).findAny();
+		}
+
+		public void addEquality(Type a) {
+			equalities.add(a);
+		}
+
+		public void addUpperBound(Type b) {
+			upperBounds.add(b);
+		}
+
+		public void addLowerBound(Type a) {
+			lowerBounds.add(a);
 		}
 	}
 
 	private final Set<Bound> bounds;
-	private final Set<InferenceVariable> inferenceVariables;
+	private final Set<InferenceVariableImpl> inferenceVariables;
 
 	public BoundSet() {
 		bounds = new HashSet<>();
@@ -135,6 +121,16 @@ public class BoundSet {
 		inferenceVariables.addAll(boundSet.inferenceVariables);
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public Set<InferenceVariable> getAllMentionedBy(Type type) {
+		return (Set) Types.getAllMentionedBy(type,
+				InferenceVariable.class::isInstance);
+	}
+
+	public boolean isProperType(Type type) {
+		return getAllMentionedBy(type).isEmpty();
+	}
+
 	@Override
 	public String toString() {
 		return new StringBuilder("{ ")
@@ -144,7 +140,7 @@ public class BoundSet {
 	}
 
 	public Set<InferenceVariable> getInferenceVariables() {
-		return inferenceVariables;
+		return new HashSet<>(inferenceVariables);
 	}
 
 	public Set<InferenceVariable> getInstantiatedVariables() {
@@ -190,8 +186,10 @@ public class BoundSet {
 
 		@Override
 		public void acceptEquality(InferenceVariable a, InferenceVariable b) {
-			equalities.add(a, b);
-			equalities.add(b, a);
+		//	if (inferenceVariables.contains(a))
+				((InferenceVariableImpl) a).addEquality(b);
+		//	if (inferenceVariables.contains(b))
+				((InferenceVariableImpl) b).addEquality(a);
 
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptEquality(a, b)),
 					incorporator -> new PartialBoundVisitor() {
@@ -232,7 +230,19 @@ public class BoundSet {
 
 		@Override
 		public void acceptEquality(InferenceVariable a, Type b) {
-			equalities.add(a, b);
+			if (a.toString().equals("E#1")) {
+				System.out.println(inferenceVariables);
+				System.out
+						.println(a + " = " + b + "( " + System.identityHashCode(this));
+				if (b.equals(Object.class)) {
+					System.out.println("== " + Arrays.toString(a.getEqualities()) + " =="
+							+ BoundSet.this);
+					throw new IllegalArgumentException();
+				}
+			}
+
+		//	if (inferenceVariables.contains(a))
+				((InferenceVariableImpl) a).addEquality(b);
 
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptEquality(a, b)),
 					incorporator -> new PartialBoundVisitor() {
@@ -279,8 +289,10 @@ public class BoundSet {
 
 		@Override
 		public void acceptSubtype(InferenceVariable a, InferenceVariable b) {
-			lowerBounds.add(a, b);
-			upperBounds.add(b, a);
+	//		if (inferenceVariables.contains(a))
+				((InferenceVariableImpl) a).addUpperBound(b);
+	//		if (inferenceVariables.contains(b))
+				((InferenceVariableImpl) b).addLowerBound(a);
 
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptSubtype(a, b)),
 					incorporator -> new PartialBoundVisitor() {
@@ -320,7 +332,8 @@ public class BoundSet {
 
 		@Override
 		public void acceptSubtype(InferenceVariable a, Type b) {
-			lowerBounds.add(a, b);
+	//		if (inferenceVariables.contains(a))
+				((InferenceVariableImpl) a).addUpperBound(b);
 
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptSubtype(a, b)),
 					incorporator -> new PartialBoundVisitor() {
@@ -364,7 +377,8 @@ public class BoundSet {
 
 		@Override
 		public void acceptSubtype(Type a, InferenceVariable b) {
-			upperBounds.add(b, a);
+		//	if (inferenceVariables.contains(b))
+				((InferenceVariableImpl) b).addLowerBound(a);
 
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptSubtype(a, b)),
 					incorporator -> new PartialBoundVisitor() {
@@ -438,7 +452,7 @@ public class BoundSet {
 		 * (In this section, S and T are inference variables or types, and U is a
 		 * proper type. For conciseness, a bound of the form α = T may also match a
 		 * bound of the form T = α.)
-		 * 
+		 *
 		 * When a bound set contains a pair of bounds that match one of the
 		 * following rules, a new constraint formula is implied:
 		 */
@@ -484,12 +498,12 @@ public class BoundSet {
 		 */
 		public void incorporateProperEqualitySubstitution(InferenceVariable a,
 				Type U, Type S, Type T) {
-			if (Types.isProperType(U)) {
+			if (BoundSet.this.isProperType(U)) {
 				TypeSubstitution resolver = new TypeSubstitution().where(a, U);
 
-				if (!(S instanceof InferenceVariable) && !Types.isProperType(S))
+				if (!(S instanceof InferenceVariable) && !BoundSet.this.isProperType(S))
 					S = resolver.resolve(S);
-				if (!(T instanceof InferenceVariable) && !Types.isProperType(T))
+				if (!(T instanceof InferenceVariable) && !BoundSet.this.isProperType(T))
 					T = resolver.resolve(T);
 
 				constraints.add(new ConstraintFormula(Kind.EQUALITY, S, T));
@@ -501,12 +515,12 @@ public class BoundSet {
 		 */
 		public void incorporateProperSubtypeSubstitution(InferenceVariable a,
 				Type U, Type S, Type T) {
-			if (Types.isProperType(U)) {
+			if (BoundSet.this.isProperType(U)) {
 				TypeSubstitution resolver = new TypeSubstitution().where(a, U);
 
-				if (!(S instanceof InferenceVariable) && !Types.isProperType(S))
+				if (!(S instanceof InferenceVariable) && !BoundSet.this.isProperType(S))
 					S = resolver.resolve(S);
-				if (!(T instanceof InferenceVariable) && !Types.isProperType(T))
+				if (!(T instanceof InferenceVariable) && !BoundSet.this.isProperType(T))
 					T = resolver.resolve(T);
 
 				constraints.add(new ConstraintFormula(Kind.SUBTYPE, S, T));
@@ -568,15 +582,15 @@ public class BoundSet {
 		 * When a bound set contains a bound of the form G<α1, ..., αn> =
 		 * capture(G<A1, ..., An>), new bounds are implied and new constraint
 		 * formulas may be implied, as follows.
-		 * 
+		 *
 		 * Let P1, ..., Pn represent the type parameters of G and let B1, ..., Bn
 		 * represent the bounds of these type parameters. Let θ represent the
 		 * substitution [P1:=α1, ..., Pn:=αn]. Let R be a type that is not an
 		 * inference variable (but is not necessarily a proper type).
-		 * 
+		 *
 		 * A set of bounds on α1, ..., αn is implied, constructed from the declared
 		 * bounds of P1, ..., Pn as specified in §18.1.3.
-		 * 
+		 *
 		 * In addition, for all i (1 ≤ i ≤ n):
 		 */
 
@@ -584,11 +598,11 @@ public class BoundSet {
 				InferenceVariable a, Type R) {
 			/*
 			 * If Ai is a wildcard of the form ?, or;
-			 * 
+			 *
 			 * If Ai is a wildcard of the form ? extends T, or;
-			 * 
+			 *
 			 * If Ai is a wildcard of the form ? super T:
-			 * 
+			 *
 			 * αi = R implies the bound false
 			 */
 			if (c.getCapturedArgument(a) instanceof WildcardType)
@@ -616,7 +630,7 @@ public class BoundSet {
 						 * If Bi is Object, then αi <: R implies the constraint formula ‹T
 						 * <: R›
 						 */
-						incorporate(new ConstraintFormula(Kind.SUBTYPE,
+						constraints.add(new ConstraintFormula(Kind.SUBTYPE,
 								IntersectionType.from(A.getUpperBounds()), R));
 					}
 
@@ -627,14 +641,14 @@ public class BoundSet {
 						 * If T is Object, then αi <: R implies the constraint formula ‹Bi θ
 						 * <: R›
 						 */
-						incorporate(new ConstraintFormula(Kind.SUBTYPE,
-								θ.resolve(IntersectionType.uncheckedFrom(c
-										.getCapturedParameter(a).getBounds())), R));
+						constraints.add(new ConstraintFormula(Kind.SUBTYPE, θ
+								.resolve(IntersectionType.uncheckedFrom(c.getCapturedParameter(
+										a).getBounds())), R));
 					}
 				} else if (A.getLowerBounds().length > 0) {
 					/*
 					 * If Ai is a wildcard of the form ? super T:
-					 * 
+					 *
 					 * αi <: R implies the constraint formula ‹Bi θ <: R›
 					 */
 					constraints.add(new ConstraintFormula(Kind.SUBTYPE, θ
@@ -643,7 +657,7 @@ public class BoundSet {
 				} else {
 					/*
 					 * If Ai is a wildcard of the form ?:
-					 * 
+					 *
 					 * αi <: R implies the constraint formula ‹Bi θ <: R›
 					 */
 					constraints.add(new ConstraintFormula(Kind.SUBTYPE, θ
@@ -661,22 +675,22 @@ public class BoundSet {
 				if (A.getLowerBounds().length > 0) {
 					/*
 					 * If Ai is a wildcard of the form ? super T:
-					 * 
+					 *
 					 * R <: αi implies the constraint formula ‹R <: T›
 					 */
-					incorporate(new ConstraintFormula(Kind.SUBTYPE, R,
+					constraints.add(new ConstraintFormula(Kind.SUBTYPE, R,
 							IntersectionType.uncheckedFrom(A.getLowerBounds())));
 				} else if (A.getUpperBounds().length > 0) {
 					/*
 					 * If Ai is a wildcard of the form ? extends T:
-					 * 
+					 *
 					 * R <: αi implies the bound false
 					 */
 					incorporate().acceptFalsehood();
 				} else {
 					/*
 					 * If Ai is a wildcard of the form ?:
-					 * 
+					 *
 					 * R <: αi implies the bound false
 					 */
 					incorporate().acceptFalsehood();
@@ -690,5 +704,15 @@ public class BoundSet {
 			Collection<? extends CaptureConversion> captureConversions) {
 		captureConversions.forEach(c -> bounds.remove(new Bound(b -> b
 				.acceptCaptureConversion(c))));
+	}
+
+	public InferenceVariable createInferenceVariable() {
+		return createInferenceVariable("INF");
+	}
+
+	public InferenceVariable createInferenceVariable(String name) {
+		InferenceVariableImpl inferenceVariable = new InferenceVariableImpl(name);
+		inferenceVariables.add(inferenceVariable);
+		return inferenceVariable;
 	}
 }

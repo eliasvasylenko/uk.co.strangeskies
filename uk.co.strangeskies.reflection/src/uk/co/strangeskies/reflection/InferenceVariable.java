@@ -45,16 +45,6 @@ public interface InferenceVariable extends Type {
 
 	Optional<Type> getInstantiation();;
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public static Set<InferenceVariable> getAllMentionedBy(Type type) {
-		return (Set) Types.getAllMentionedBy(type,
-				InferenceVariable.class::isInstance);
-	}
-
-	public static boolean isProperType(Type type) {
-		return getAllMentionedBy(type).isEmpty();
-	}
-
 	public static Map<TypeVariable<?>, InferenceVariable> capture(
 			Resolver resolver, GenericDeclaration declaration) {
 		List<TypeVariable<?>> declarationVariables;
@@ -66,8 +56,8 @@ public interface InferenceVariable extends Type {
 
 		Map<TypeVariable<?>, InferenceVariable> captures = declarationVariables
 				.stream().collect(
-						Collectors.toMap(Function.identity(),
-								t -> new InferenceVariable(t.getName())));
+						Collectors.toMap(Function.identity(), t -> resolver.getBounds()
+								.createInferenceVariable(t.getName())));
 
 		TypeSubstitution substitution = new TypeSubstitution(captures::get);
 		for (TypeVariable<?> variable : captures.keySet())
@@ -108,7 +98,7 @@ public interface InferenceVariable extends Type {
 					.stream()
 					.collect(
 							Collectors.toMap(Function.identity(),
-									t -> new InferenceVariable()));
+									t -> bounds.createInferenceVariable()));
 
 			for (TypeVariable<?> parameter : parameterCaptures.keySet()) {
 				Type argument = parameterArguments.get(parameter);

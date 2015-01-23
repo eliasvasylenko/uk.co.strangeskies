@@ -75,11 +75,10 @@ public abstract class IntersectionType implements Type {
 
 		try {
 			BoundSet bounds = new BoundSet();
-			InferenceVariable inferenceVariable = new InferenceVariable() {};
-			for (Type type : flattenedTypes) {
+			InferenceVariable inferenceVariable = bounds.createInferenceVariable();
+			for (Type type : flattenedTypes)
 				new ConstraintFormula(Kind.SUBTYPE, inferenceVariable, type)
 						.reduceInto(bounds);
-			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new TypeInferenceException("Illegal intersection type '"

@@ -155,12 +155,8 @@ public final class Types {
 		return null;
 	}
 
-	public static boolean isProperType(Type type) {
-		return !(type instanceof InferenceVariable)
-				&& InferenceVariable.getAllMentionedBy(type).isEmpty();
-	}
-
 	public static boolean isAssignable(Type from, Type to) {
+		System.out.println(to + " = " + from);
 		if (from == null || from.equals(to) || to == null
 				|| to.equals(Object.class)) {
 			/*

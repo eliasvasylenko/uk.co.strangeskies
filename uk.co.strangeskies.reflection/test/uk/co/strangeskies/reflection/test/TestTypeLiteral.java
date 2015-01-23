@@ -28,6 +28,7 @@ import java.util.Set;
 import uk.co.strangeskies.reflection.Invokable;
 import uk.co.strangeskies.reflection.TypeLiteral;
 import uk.co.strangeskies.reflection.TypeParameter;
+import uk.co.strangeskies.reflection.Types;
 
 public class TestTypeLiteral {
 	public static class A<T> {
@@ -65,6 +66,9 @@ public class TestTypeLiteral {
 
 	public static <T> void main(String... args) throws NoSuchMethodException,
 			SecurityException {
+		java.util.List<java.lang.Comparable<? extends java.lang.Number>> a = null;
+		java.util.List<? super java.lang.Comparable<? extends java.lang.Number>> b = a;
+
 		System.out.println(new TypeParameter<T>() {});
 		System.out.println(new TypeLiteral<List<String>>() {});
 		System.out.println();
