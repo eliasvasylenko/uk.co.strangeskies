@@ -23,7 +23,6 @@ import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -76,9 +75,9 @@ public class TypeVariableCapture extends CaptureType implements
 					 * L1, ..., Lk, then let the lower bound of Yi be lub(L1, ..., Lk); if
 					 * not, then Yi has no lower bound.
 					 */
-					Set<Type> lowerBoundSet = Arrays
-							.stream(inferenceVariable.getLowerBounds())
-							.filter(bounds::isProperType).collect(Collectors.toSet());
+					Set<Type> lowerBoundSet = bounds.getLowerBounds(inferenceVariable)
+							.stream().filter(bounds::isProperType)
+							.collect(Collectors.toSet());
 
 					Type[] lowerBounds;
 					if (lowerBoundSet.isEmpty())
@@ -92,9 +91,9 @@ public class TypeVariableCapture extends CaptureType implements
 					 * the upper bound of Yi be glb(U1 θ, ..., Uk θ), where θ is the
 					 * substitution [α1:=Y1, ..., αn:=Yn].
 					 */
-					Set<Type> upperBoundSet = Arrays
-							.stream(inferenceVariable.getUpperBounds())
-							.filter(bounds::isProperType).collect(Collectors.toSet());
+					Set<Type> upperBoundSet = bounds.getUpperBounds(inferenceVariable)
+							.stream().filter(bounds::isProperType)
+							.collect(Collectors.toSet());
 
 					Type[] upperBounds;
 					if (upperBoundSet.isEmpty())

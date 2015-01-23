@@ -23,10 +23,11 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
@@ -37,88 +38,72 @@ import java.util.stream.Stream;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 
 public class BoundSet {
-	private final AtomicLong COUNTER = new AtomicLong();
+	private static final AtomicLong COUNTER = new AtomicLong();
 
-	private class InferenceVariableImpl implements InferenceVariable {
-		private final String name;
-
+	private class InferenceVariableData {
 		private final Set<Type> upperBounds;
 		private final Set<Type> lowerBounds;
 		private final Set<Type> equalities;
 
-		public InferenceVariableImpl(String name) {
-			this.name = name + "#" + COUNTER.incrementAndGet();
-
+		public InferenceVariableData() {
 			upperBounds = new HashSet<>();
 			lowerBounds = new HashSet<>();
 			equalities = new HashSet<>();
 		}
-
-		@Override
-		public String toString() {
-			return name;
-		}
-
-		@Override
-		public Type[] getUpperBounds() {
-			return upperBounds.toArray(new Type[upperBounds.size()]);
-		}
-
-		@Override
-		public Type[] getLowerBounds() {
-			return lowerBounds.toArray(new Type[lowerBounds.size()]);
-		}
-
-		@Override
-		public Type[] getProperUpperBounds() {
-			List<Type> types = upperBounds.stream()
-					.filter(BoundSet.this::isProperType).collect(Collectors.toList());
-			return types.toArray(new Type[types.size()]);
-		}
-
-		@Override
-		public Type[] getProperLowerBounds() {
-			List<Type> types = lowerBounds.stream()
-					.filter(BoundSet.this::isProperType).collect(Collectors.toList());
-			return types.toArray(new Type[types.size()]);
-		}
-
-		@Override
-		public Type[] getEqualities() {
-			return equalities.toArray(new Type[equalities.size()]);
-		}
-
-		@Override
-		public Optional<Type> getInstantiation() {
-			return equalities.stream().filter(BoundSet.this::isProperType).findAny();
-		}
-
-		public void addEquality(Type a) {
-			equalities.add(a);
-		}
-
-		public void addUpperBound(Type b) {
-			upperBounds.add(b);
-		}
-
-		public void addLowerBound(Type a) {
-			lowerBounds.add(a);
-		}
 	}
 
 	private final Set<Bound> bounds;
-	private final Set<InferenceVariableImpl> inferenceVariables;
+	private final Map<InferenceVariable, InferenceVariableData> inferenceVariables;
 
 	public BoundSet() {
 		bounds = new HashSet<>();
-		inferenceVariables = new HashSet<>();
+		inferenceVariables = new HashMap<>();
 	}
 
 	public BoundSet(BoundSet boundSet) {
 		this();
 
 		bounds.addAll(boundSet.bounds);
-		inferenceVariables.addAll(boundSet.inferenceVariables);
+		inferenceVariables.putAll(boundSet.inferenceVariables);
+	}
+
+	public Set<Type> getUpperBounds(InferenceVariable variable) {
+		return new HashSet<>(inferenceVariables.get(variable).upperBounds);
+	}
+
+	public Set<Type> getLowerBounds(InferenceVariable variable) {
+		return new HashSet<>(inferenceVariables.get(variable).lowerBounds);
+	}
+
+	public Set<Type> getProperUpperBounds(InferenceVariable variable) {
+		return new HashSet<>(inferenceVariables.get(variable).upperBounds.stream()
+				.filter(BoundSet.this::isProperType).collect(Collectors.toList()));
+	}
+
+	public Set<Type> getProperLowerBounds(InferenceVariable variable) {
+		return new HashSet<>(inferenceVariables.get(variable).lowerBounds.stream()
+				.filter(BoundSet.this::isProperType).collect(Collectors.toList()));
+	}
+
+	public Set<Type> getEqualities(InferenceVariable variable) {
+		return new HashSet<>(inferenceVariables.get(variable).equalities);
+	}
+
+	public Optional<Type> getInstantiation(InferenceVariable variable) {
+		return inferenceVariables.get(variable).equalities.stream()
+				.filter(BoundSet.this::isProperType).findAny();
+	}
+
+	public void addEquality(InferenceVariable variable, Type a) {
+		inferenceVariables.get(variable).equalities.add(a);
+	}
+
+	public void addUpperBound(InferenceVariable variable, Type b) {
+		inferenceVariables.get(variable).upperBounds.add(b);
+	}
+
+	public void addLowerBound(InferenceVariable variable, Type a) {
+		inferenceVariables.get(variable).lowerBounds.add(a);
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -140,12 +125,12 @@ public class BoundSet {
 	}
 
 	public Set<InferenceVariable> getInferenceVariables() {
-		return new HashSet<>(inferenceVariables);
+		return new HashSet<>(inferenceVariables.keySet());
 	}
 
 	public Set<InferenceVariable> getInstantiatedVariables() {
-		return inferenceVariables.stream()
-				.filter(i -> i.getInstantiation().isPresent())
+		return inferenceVariables.keySet().stream()
+				.filter(i -> getInstantiation(i).isPresent())
 				.collect(Collectors.toSet());
 	}
 
@@ -186,10 +171,10 @@ public class BoundSet {
 
 		@Override
 		public void acceptEquality(InferenceVariable a, InferenceVariable b) {
-		//	if (inferenceVariables.contains(a))
-				((InferenceVariableImpl) a).addEquality(b);
-		//	if (inferenceVariables.contains(b))
-				((InferenceVariableImpl) b).addEquality(a);
+			// if (inferenceVariables.contains(a))
+			addEquality(a, b);
+			// if (inferenceVariables.contains(b))
+			addEquality(b, a);
 
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptEquality(a, b)),
 					incorporator -> new PartialBoundVisitor() {
@@ -230,19 +215,9 @@ public class BoundSet {
 
 		@Override
 		public void acceptEquality(InferenceVariable a, Type b) {
-			if (a.toString().equals("E#1")) {
-				System.out.println(inferenceVariables);
-				System.out
-						.println(a + " = " + b + "( " + System.identityHashCode(this));
-				if (b.equals(Object.class)) {
-					System.out.println("== " + Arrays.toString(a.getEqualities()) + " =="
-							+ BoundSet.this);
-					throw new IllegalArgumentException();
-				}
-			}
-
-		//	if (inferenceVariables.contains(a))
-				((InferenceVariableImpl) a).addEquality(b);
+			// if (inferenceVariables.contains(a))
+			addEquality(a, b);
+			System.out.println(BoundSet.this);
 
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptEquality(a, b)),
 					incorporator -> new PartialBoundVisitor() {
@@ -289,10 +264,10 @@ public class BoundSet {
 
 		@Override
 		public void acceptSubtype(InferenceVariable a, InferenceVariable b) {
-	//		if (inferenceVariables.contains(a))
-				((InferenceVariableImpl) a).addUpperBound(b);
-	//		if (inferenceVariables.contains(b))
-				((InferenceVariableImpl) b).addLowerBound(a);
+			// if (inferenceVariables.contains(a))
+			addUpperBound(a, b);
+			// if (inferenceVariables.contains(b))
+			addLowerBound(b, a);
 
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptSubtype(a, b)),
 					incorporator -> new PartialBoundVisitor() {
@@ -332,8 +307,8 @@ public class BoundSet {
 
 		@Override
 		public void acceptSubtype(InferenceVariable a, Type b) {
-	//		if (inferenceVariables.contains(a))
-				((InferenceVariableImpl) a).addUpperBound(b);
+			// if (inferenceVariables.contains(a))
+			addUpperBound(a, b);
 
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptSubtype(a, b)),
 					incorporator -> new PartialBoundVisitor() {
@@ -377,8 +352,8 @@ public class BoundSet {
 
 		@Override
 		public void acceptSubtype(Type a, InferenceVariable b) {
-		//	if (inferenceVariables.contains(b))
-				((InferenceVariableImpl) b).addLowerBound(a);
+			// if (inferenceVariables.contains(b))
+			addLowerBound(b, a);
 
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptSubtype(a, b)),
 					incorporator -> new PartialBoundVisitor() {
@@ -711,8 +686,15 @@ public class BoundSet {
 	}
 
 	public InferenceVariable createInferenceVariable(String name) {
-		InferenceVariableImpl inferenceVariable = new InferenceVariableImpl(name);
-		inferenceVariables.add(inferenceVariable);
+		String finalName = name + "#" + COUNTER.incrementAndGet();
+
+		InferenceVariable inferenceVariable = new InferenceVariable() {
+			@Override
+			public String toString() {
+				return finalName;
+			}
+		};
+		inferenceVariables.put(inferenceVariable, new InferenceVariableData());
 		return inferenceVariable;
 	}
 }

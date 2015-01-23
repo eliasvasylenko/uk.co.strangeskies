@@ -27,24 +27,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public interface InferenceVariable extends Type {
-	Type[] getUpperBounds();
-
-	Type[] getLowerBounds();
-
-	Type[] getProperUpperBounds();
-
-	Type[] getProperLowerBounds();
-
-	Type[] getEqualities();
-
-	Optional<Type> getInstantiation();;
-
 	public static Map<TypeVariable<?>, InferenceVariable> capture(
 			Resolver resolver, GenericDeclaration declaration) {
 		List<TypeVariable<?>> declarationVariables;

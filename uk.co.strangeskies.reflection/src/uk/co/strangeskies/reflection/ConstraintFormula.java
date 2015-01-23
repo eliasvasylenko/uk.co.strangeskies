@@ -265,14 +265,13 @@ public class ConstraintFormula {
 					 * - If S is an intersection type of which T is an element, the
 					 * constraint reduces to true.
 					 */
-				} else if (((InferenceVariable) to).getLowerBounds().length > 0) {
+				} else if (bounds.getLowerBounds((InferenceVariable) to).size() > 0) {
 					/*
 					 * - Otherwise, if T has a lower bound, B, the constraint reduces to
 					 * ‹S <: B›.
 					 */
-					reduce(Kind.SUBTYPE, from,
-							IntersectionType.from(((InferenceVariable) to).getLowerBounds()),
-							bounds);
+					reduce(Kind.SUBTYPE, from, IntersectionType.from(bounds
+							.getLowerBounds((InferenceVariable) to)), bounds);
 				} else {
 					/*
 					 * - Otherwise, the constraint reduces to false.

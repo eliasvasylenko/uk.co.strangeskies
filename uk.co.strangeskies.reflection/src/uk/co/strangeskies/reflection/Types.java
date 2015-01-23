@@ -89,8 +89,10 @@ public final class Types {
 			else
 				return getRawType(bounds[0]);
 		} else if (type instanceof InferenceVariable) {
-			return getRawType(IntersectionType.from(((InferenceVariable) type)
-					.getLowerBounds()));
+			return Object.class;
+			// throw new RuntimeException("fix needed?"); TODO
+			// return getRawType(IntersectionType.from(((InferenceVariable) type)
+			// .getLowerBounds()));
 		} else if (type instanceof WildcardType) {
 			Type[] bounds = ((WildcardType) type).getUpperBounds();
 			if (bounds.length == 0)
@@ -156,7 +158,6 @@ public final class Types {
 	}
 
 	public static boolean isAssignable(Type from, Type to) {
-		System.out.println(to + " = " + from);
 		if (from == null || from.equals(to) || to == null
 				|| to.equals(Object.class)) {
 			/*
@@ -257,13 +258,16 @@ public final class Types {
 			if (!(fromParameterization instanceof ParameterizedType))
 				return false;
 
-			Type[] typeParams = matchedClass.getTypeParameters();
-			Type[] toTypeArgs = ((ParameterizedType) to).getActualTypeArguments();
-			Type[] fromTypeArgs = ((ParameterizedType) fromParameterization)
-					.getActualTypeArguments();
+			List<TypeVariable<?>> typeParameters = ParameterizedTypes
+					.getAllTypeParameters(matchedClass);
+			Map<TypeVariable<?>, Type> toTypeArguments = ParameterizedTypes
+					.getAllTypeArguments((ParameterizedType) to);
+			Map<TypeVariable<?>, Type> fromTypeArguments = ParameterizedTypes
+					.getAllTypeArguments((ParameterizedType) fromParameterization);
 
-			for (int i = 0; i < typeParams.length; i++) {
-				if (!isContainedBy(fromTypeArgs[i], toTypeArgs[i]))
+			for (TypeVariable<?> parameter : typeParameters) {
+				if (!isContainedBy(fromTypeArguments.get(parameter),
+						toTypeArguments.get(parameter)))
 					return false;
 			}
 

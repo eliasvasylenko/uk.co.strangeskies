@@ -124,7 +124,7 @@ public class Resolver {
 		bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
 			@Override
 			public void acceptEquality(InferenceVariable a, Type b) {
-				if (bounds.isProperType(b) && !a.getInstantiation().isPresent())
+				if (bounds.isProperType(b) && !bounds.getInstantiation(a).isPresent())
 					instantiate(a, b);
 			}
 		}));
@@ -242,7 +242,7 @@ public class Resolver {
 				declarationCaptures.put(typeVariable, inferenceVariable);
 
 				boolean anyProper = false;
-				for (Type bound : inferenceVariable.getUpperBounds()) {
+				for (Type bound : bounds.getUpperBounds(inferenceVariable)) {
 					anyProper = anyProper || bounds.isProperType(bound);
 					bounds.incorporate().acceptSubtype(inferenceVariable, bound);
 				}
@@ -320,8 +320,8 @@ public class Resolver {
 				.getInstantiatedVariables()
 				.stream()
 				.collect(
-						Collectors.toMap(Function.identity(), i -> i.getInstantiation()
-								.get()));
+						Collectors.toMap(Function.identity(),
+								i -> bounds.getInstantiation(i).get()));
 	}
 
 	public Map<InferenceVariable, Type> infer(InferenceVariable... variables) {
@@ -342,12 +342,12 @@ public class Resolver {
 			 * variable in this set depends.
 			 */
 			resolveIndependentSet(variables.stream()
-					.filter(v -> !v.getInstantiation().isPresent())
+					.filter(v -> !bounds.getInstantiation(v).isPresent())
 					.map(remainingDependencies::get).flatMap(Set::stream)
 					.collect(Collectors.toSet()));
 
 			for (InferenceVariable variable : new HashSet<>(remainingVariables)) {
-				Optional<Type> instantiation = variable.getInstantiation();
+				Optional<Type> instantiation = bounds.getInstantiation(variable);
 				if (instantiation.isPresent()) {
 					instantiations.put(variable, instantiation.get());
 					remainingVariables.remove(variable);
@@ -417,13 +417,13 @@ public class Resolver {
 							false);
 
 					Type instantiationCandidate;
-					if (variable.getLowerBounds().length > 0) {
+					if (!bounds.getLowerBounds(variable).isEmpty()) {
 						/*
 						 * If αi has one or more proper lower bounds, L1, ..., Lk, then Ti =
 						 * lub(L1, ..., Lk) (§4.10.4).
 						 */
 						instantiationCandidate = IntersectionType.from(Types
-								.leastUpperBound(variable.getLowerBounds()));
+								.leastUpperBound(bounds.getLowerBounds(variable)));
 					} else if (hasThrowableBounds.get()) {
 						/*
 						 * Otherwise, if the bound set contains throws αi, and the proper
@@ -436,8 +436,8 @@ public class Resolver {
 						 * Otherwise, where αi has proper upper bounds U1, ..., Uk, Ti =
 						 * glb(U1, ..., Uk) (§5.1.10).
 						 */
-						instantiationCandidate = Types.greatestLowerBound(variable
-								.getUpperBounds());
+						instantiationCandidate = Types.greatestLowerBound(bounds
+								.getUpperBounds(variable));
 					}
 
 					instantiationCandidates.put(variable, instantiationCandidate);
@@ -543,7 +543,7 @@ public class Resolver {
 	}
 
 	private Type resolveInferenceVariable(InferenceVariable variable) {
-		return variable.getInstantiation().orElse(variable);
+		return bounds.getInstantiation(variable).orElse(variable);
 	}
 
 	public Set<InferenceVariable> getInferenceVariables() {
@@ -643,8 +643,13 @@ public class Resolver {
 		System.out.println(new TypeLiteral<HashSet<String>>() {}
 				.resolveSupertypeParameters(Set.class));
 
+		System.out.println("List with T = String: " + listOf(String.class));
+
 		System.out.println(new TypeLiteral<Collection<? super String>>() {}
 				.resolveSubtypeParameters(HashSet.class));
+
+		new TypeLiteral<Outer<Serializable>.Inner<String, HashSet<Serializable>, Set<String>>>() {}
+				.getResolver();
 
 		System.out
 				.println(new TypeLiteral<Outer<Serializable>.Inner<String, HashSet<Serializable>, Set<String>>>() {}
@@ -656,8 +661,6 @@ public class Resolver {
 
 		System.out.println(new TypeLiteral<Outer<String>.Inner2<Double>>() {}
 				.resolveSupertypeParameters(Outer.Inner.class));
-
-		System.out.println("List with T = String: " + listOf(String.class));
 
 		System.out.println("TYPELITTEST: " + new TypeLiteral<String>() {});
 		System.out.println("TYPELITTEST-2: "
