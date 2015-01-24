@@ -289,8 +289,6 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 					"Cannot resolve generic type parameters for invocation of '" + this
 							+ "'.");
 
-		System.out.println(resolver.getBounds());
-
 		return new Invokable<>(resolver, receiverType,
 				(TypeLiteral<U>) TypeLiteral.from(resolver.resolveType(returnType
 						.getType())), executable,
@@ -374,8 +372,6 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 		}
 
 		Resolver testResolver = new Resolver(resolver);
-
-		testResolver.infer();
 
 		if (!testResolver.validate())
 			throw new TypeInferenceException(

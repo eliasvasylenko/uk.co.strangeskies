@@ -57,11 +57,6 @@ abstract class CaptureType implements Type {
 	}
 
 	@Override
-	public String getTypeName() {
-		return getName();
-	}
-
-	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder().append(getName());
 

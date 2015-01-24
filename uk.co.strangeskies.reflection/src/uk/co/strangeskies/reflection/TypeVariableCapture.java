@@ -91,9 +91,7 @@ public class TypeVariableCapture extends CaptureType implements
 					 * the upper bound of Yi be glb(U1 θ, ..., Uk θ), where θ is the
 					 * substitution [α1:=Y1, ..., αn:=Yn].
 					 */
-					Set<Type> upperBoundSet = bounds.getUpperBounds(inferenceVariable)
-							.stream().filter(bounds::isProperType)
-							.collect(Collectors.toSet());
+					Set<Type> upperBoundSet = bounds.getUpperBounds(inferenceVariable);
 
 					Type[] upperBounds;
 					if (upperBoundSet.isEmpty())

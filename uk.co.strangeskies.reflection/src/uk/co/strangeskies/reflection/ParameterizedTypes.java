@@ -125,7 +125,8 @@ public class ParameterizedTypes {
 	@SuppressWarnings("unchecked")
 	public static <T> TypeLiteral<? extends T> from(Class<T> rawType,
 			List<Type> typeArguments) {
-		if (isGeneric(rawType.getEnclosingClass()))
+		if (rawType.getEnclosingClass() != null
+				&& isGeneric(rawType.getEnclosingClass()))
 			throw new IllegalArgumentException();
 
 		return (TypeLiteral<? extends T>) TypeLiteral.from(uncheckedFrom(null,

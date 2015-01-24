@@ -350,14 +350,13 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		return invokables;
 	}
 
-	public Invokable<T, ? extends T> resolveConstructorOverload(
-			Type... parameters) {
+	public Invokable<T, T> resolveConstructorOverload(Type... parameters) {
 		return resolveConstructorOverload(Arrays.asList(parameters));
 	}
 
-	public Invokable<T, ? extends T> resolveConstructorOverload(
+	public Invokable<T, T> resolveConstructorOverload(
 			List<? extends Type> parameters) {
-		Set<? extends Invokable<T, ? extends T>> candidates = resolveApplicableCandidates(
+		Set<? extends Invokable<T, T>> candidates = resolveApplicableCandidates(
 				getConstructors(), parameters);
 
 		return resolveMostSpecificCandidate(candidates, parameters);
@@ -385,24 +384,33 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 			throw new IllegalArgumentException("Cannot find any method '" + name
 					+ "' in '" + this + "'.");
 
-		candidates = resolveApplicableCandidates(candidates, parameters);
+		candidates = resolveApplicableCandidatesCapture(candidates, parameters);
 
-		return resolveMostSpecificCandidate(candidates, parameters);
+		return resolveMostSpecificCandidateCapture(candidates, parameters);
 	}
 
-	private <R> Set<? extends Invokable<T, ? extends R>> resolveApplicableCandidates(
-			Set<? extends Invokable<T, ? extends R>> candidates,
-			List<? extends Type> parameters) {
+	/*
+	 * Javac is apparently unable to deal with this capture properly unless we
+	 * force it.
+	 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private Set<? extends Invokable<T, ?>> resolveApplicableCandidatesCapture(
+			Set<? extends Invokable<T, ?>> candidates, List<? extends Type> parameters) {
+		return resolveApplicableCandidates((Set) candidates, parameters);
+	}
+
+	private <R> Set<? extends Invokable<T, R>> resolveApplicableCandidates(
+			Set<? extends Invokable<T, R>> candidates, List<? extends Type> parameters) {
 		List<RuntimeException> failures = new ArrayList<>();
 
-		Set<? extends Invokable<T, ? extends R>> compatibleCandidates = filterOverloadCandidates(
+		Set<? extends Invokable<T, R>> compatibleCandidates = filterOverloadCandidates(
 				candidates, i -> i.withLooseApplicability(parameters), failures::add);
 
 		if (compatibleCandidates.isEmpty())
 			compatibleCandidates = filterOverloadCandidates(candidates,
 					i -> i.withVariableArityApplicability(parameters), failures::add);
 		else {
-			Set<? extends Invokable<T, ? extends R>> oldCompatibleCandidates = compatibleCandidates;
+			Set<? extends Invokable<T, R>> oldCompatibleCandidates = compatibleCandidates;
 			compatibleCandidates = filterOverloadCandidates(compatibleCandidates,
 					i -> i.withStrictApplicability(parameters), failures::add);
 			if (compatibleCandidates.isEmpty())
@@ -417,9 +425,9 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		return compatibleCandidates;
 	}
 
-	private <R> Set<? extends Invokable<T, ? extends R>> filterOverloadCandidates(
+	private <R> Set<? extends Invokable<T, R>> filterOverloadCandidates(
 			Set<? extends Invokable<T, R>> candidates,
-			Function<? super Invokable<T, ? extends R>, Invokable<T, ? extends R>> applicabilityFunction,
+			Function<? super Invokable<T, R>, Invokable<T, R>> applicabilityFunction,
 			Consumer<RuntimeException> failures) {
 		return candidates.stream().map(i -> {
 			try {
@@ -435,17 +443,30 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		return Types.getComponentType(type);
 	}
 
-	private <R> Invokable<T, ? extends R> resolveMostSpecificCandidate(
+	/*
+	 * Javac is apparently unable to deal with this capture properly unless we
+	 * force it.
+	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private Invokable<T, ?> resolveMostSpecificCandidateCapture(
+			Set<? extends Invokable<T, ?>> candidates,
+			List<? extends Type> parameterTypes) {
+		return resolveMostSpecificCandidate((Set) candidates, parameterTypes);
+	}
+
+	private <R> Invokable<T, R> resolveMostSpecificCandidate(
 			Set<? extends Invokable<T, R>> candidates,
 			List<? extends Type> parameterTypes) {
 		if (candidates.size() == 1)
 			return candidates.iterator().next();
 
 		/*
+		 * TODO consider generics in invokable overload specificity
+		 * 
 		 * Find which candidates have the joint most specific parameters, one
 		 * parameter at a time.
 		 */
-		Set<Invokable<T, ? extends R>> mostSpecificSoFar = new HashSet<>(candidates);
+		Set<Invokable<T, R>> mostSpecificSoFar = new HashSet<>(candidates);
 		int parameters = candidates.iterator().next().getParameters().size();
 		for (int i = 0; i < parameters; i++) {
 			Set<Invokable<T, ?>> mostSpecificForParameter = new HashSet<>();
@@ -478,11 +499,11 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		 * Find which of the remaining candidates, which should all have identical
 		 * parameter types, is declared in the lowermost class.
 		 */
-		Iterator<Invokable<T, ? extends R>> overrideCandidateIterator = mostSpecificSoFar
+		Iterator<Invokable<T, R>> overrideCandidateIterator = mostSpecificSoFar
 				.iterator();
-		Invokable<T, ? extends R> mostSpecific = overrideCandidateIterator.next();
+		Invokable<T, R> mostSpecific = overrideCandidateIterator.next();
 		while (overrideCandidateIterator.hasNext()) {
-			Invokable<T, ? extends R> candidate = overrideCandidateIterator.next();
+			Invokable<T, R> candidate = overrideCandidateIterator.next();
 			mostSpecific = candidate
 					.getGenericDeclaration()
 					.getDeclaringClass()

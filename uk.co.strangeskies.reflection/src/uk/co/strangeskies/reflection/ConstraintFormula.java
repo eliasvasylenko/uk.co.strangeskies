@@ -48,6 +48,7 @@ public class ConstraintFormula {
 	}
 
 	void reduceInto(BoundSet bounds) {
+		System.out.println(this + "    >    " + bounds);
 		switch (kind) {
 		case LOOSE_COMPATIBILILTY:
 			reduceLooseCompatibilityConstraint(bounds);
@@ -101,7 +102,7 @@ public class ConstraintFormula {
 			 * there exists no type of the form G<...> that is a supertype of S, but
 			 * the raw type G is a supertype of S, then the constraint reduces to
 			 * true.
-			 *
+			 * 
 			 * Otherwise, if T is an array type of the form G<T1, ..., Tn>[]k, and
 			 * there exists no type of the form G<...>[]k that is a supertype of S,
 			 * but the raw type G[]k is a supertype of S, then the constraint reduces
@@ -154,17 +155,17 @@ public class ConstraintFormula {
 			 * Otherwise, if T is the null type, the constraint reduces to false.
 			 */
 			bounds.incorporate().acceptFalsehood();
-		else if (from instanceof InferenceVariable)
+		else if (bounds.getInferenceVariables().contains(from))
 			/*
 			 * Otherwise, if S is an inference variable, α, the constraint reduces to
 			 * the bound α <: T.
 			 */
-			if (to instanceof InferenceVariable)
+			if (bounds.getInferenceVariables().contains(to))
 				bounds.incorporate().acceptSubtype((InferenceVariable) from,
 						(InferenceVariable) to);
 			else
 				bounds.incorporate().acceptSubtype((InferenceVariable) from, to);
-		else if (to instanceof InferenceVariable)
+		else if (bounds.getInferenceVariables().contains(to))
 			/*
 			 * Otherwise, if T is an inference variable, α, the constraint reduces to
 			 * the bound S <: α.
@@ -216,6 +217,10 @@ public class ConstraintFormula {
 				 * reduces to true if T is among the supertypes of S, and false
 				 * otherwise.
 				 */
+				Type from = this.from;
+				if (bounds.getInferenceVariables().contains(from))
+					from = IntersectionType.uncheckedFrom(bounds
+							.getUpperBounds((InferenceVariable) from));
 				if (!Types.isAssignable(from, to))
 					bounds.incorporate().acceptFalsehood();
 			} else if (!(to instanceof IntersectionType)
@@ -254,7 +259,7 @@ public class ConstraintFormula {
 							bounds.incorporate().acceptFalsehood();
 					}
 				}
-			} else if (to instanceof InferenceVariable) {
+			} else if (bounds.getInferenceVariables().contains(to)) {
 				/*
 				 * If T is a type variable, there are three cases:
 				 */
@@ -495,21 +500,19 @@ public class ConstraintFormula {
 				 * If S and T are proper types, the constraint reduces to true if S is
 				 * the same as T (§4.3.4), and false otherwise.
 				 */
-				if (!from.equals(to)) {
-					System.out.println(" " + from + " ----- " + to);
+				if (!from.equals(to))
 					bounds.incorporate().acceptFalsehood();
-				}
-			} else if (from instanceof InferenceVariable) {
+			} else if (bounds.getInferenceVariables().contains(from)) {
 				/*
 				 * Otherwise, if S is an inference variable, α, the constraint reduces
 				 * to the bound α = T.
 				 */
-				if (to instanceof InferenceVariable)
+				if (bounds.getInferenceVariables().contains(to))
 					bounds.incorporate().acceptEquality((InferenceVariable) from,
 							(InferenceVariable) to);
 				else
 					bounds.incorporate().acceptEquality((InferenceVariable) from, to);
-			} else if (to instanceof InferenceVariable) {
+			} else if (bounds.getInferenceVariables().contains(to)) {
 				/*
 				 * Otherwise, if T is an inference variable, α, the constraint reduces
 				 * to the bound S = α.

@@ -497,8 +497,11 @@ public final class Types {
 					/*
 					 * lcta(? extends U, ? extends V) = ? extends lub(U, V)
 					 */
-					return WildcardTypes.upperBounded(leastUpperBoundImpl(Arrays.asList(
-							argumentU, argumentV)));
+					return WildcardTypes
+							.upperBounded(leastUpperBoundImpl(Arrays.asList(IntersectionType
+									.uncheckedFrom(((WildcardType) argumentU).getUpperBounds()),
+									IntersectionType.uncheckedFrom(((WildcardType) argumentV)
+											.getUpperBounds()))));
 				} else {
 					/*
 					 * lcta(? extends U, ? super V) = U if U = V, otherwise ?
@@ -510,22 +513,27 @@ public final class Types {
 				/*
 				 * lcta(? super U, ? super V) = ? super glb(U, V)
 				 */
-				return WildcardTypes.lowerBounded(greatestLowerBound(argumentU,
-						argumentV));
+				return WildcardTypes.lowerBounded(greatestLowerBound(IntersectionType
+						.uncheckedFrom(((WildcardType) argumentU).getLowerBounds()),
+						IntersectionType.uncheckedFrom(((WildcardType) argumentV)
+								.getLowerBounds())));
 			}
 		} else if (argumentV instanceof WildcardType) {
 			if (((WildcardType) argumentV).getUpperBounds().length > 0) {
 				/*
 				 * lcta(U, ? extends V) = ? extends lub(U, V)
 				 */
-				return WildcardTypes.upperBounded(leastUpperBoundImpl(Arrays.asList(
-						argumentU, argumentV)));
+				List<Type> bounds = new ArrayList<>(
+						Arrays.asList(((WildcardType) argumentV).getUpperBounds()));
+				bounds.add(argumentU);
+				return WildcardTypes.upperBounded(leastUpperBoundImpl(bounds));
 			} else {
 				/*
 				 * lcta(U, ? super V) = ? super glb(U, V)
 				 */
 				return WildcardTypes.lowerBounded(greatestLowerBound(argumentU,
-						argumentV));
+						IntersectionType.uncheckedFrom(((WildcardType) argumentV)
+								.getLowerBounds())));
 			}
 		} else {
 			/*

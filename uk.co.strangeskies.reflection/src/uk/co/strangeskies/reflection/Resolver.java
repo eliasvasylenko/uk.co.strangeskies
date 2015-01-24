@@ -391,8 +391,6 @@ public class Resolver {
 	}
 
 	private void resolveMinimalIndepdendentSet(Set<InferenceVariable> minimalSet) {
-		System.out.println("!!!!! " + minimalSet);
-
 		Set<CaptureConversion> relatedCaptureConversions = new HashSet<>();
 		bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
 			@Override
@@ -444,7 +442,6 @@ public class Resolver {
 					bounds.incorporate().acceptEquality(variable, instantiationCandidate);
 				}
 			} catch (TypeInferenceException e) {
-				System.out.println(bounds);
 				e.printStackTrace();
 				instantiationCandidates = null;
 			}
@@ -463,9 +460,9 @@ public class Resolver {
 		/*
 		 * the bound set contains a bound of the form G<..., αi, ...> =
 		 * capture(G<...>) for some i (1 ≤ i ≤ n), or;
-		 *
+		 * 
 		 * If the bound set produced in the step above contains the bound false;
-		 *
+		 * 
 		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
 		 */
 		Map<InferenceVariable, TypeVariableCapture> freshVariables = TypeVariableCapture
@@ -475,11 +472,11 @@ public class Resolver {
 		 * Otherwise, for all i (1 ≤ i ≤ n), all bounds of the form G<..., αi, ...>
 		 * = capture(G<...>) are removed from the current bound set, and the bounds
 		 * α1 = Y1, ..., αn = Yn are incorporated.
-		 *
+		 * 
 		 * If the result does not contain the bound false, then the result becomes
 		 * the new bound set, and resolution proceeds by selecting a new set of
 		 * variables to instantiate (if necessary), as described above.
-		 *
+		 * 
 		 * Otherwise, the result contains the bound false, and resolution fails.
 		 */
 		bounds.removeCaptureConversions(relatedCaptureConversions);

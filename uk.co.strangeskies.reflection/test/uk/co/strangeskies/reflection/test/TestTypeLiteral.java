@@ -21,11 +21,14 @@ package uk.co.strangeskies.reflection.test;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import uk.co.strangeskies.reflection.BoundSet;
 import uk.co.strangeskies.reflection.Invokable;
+import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.TypeLiteral;
 import uk.co.strangeskies.reflection.TypeParameter;
 
@@ -69,6 +72,11 @@ public class TestTypeLiteral {
 		System.out.println(new TypeLiteral<List<String>>() {});
 		System.out.println();
 
+		System.out.println(ParameterizedTypes.from(HashSet.class,
+				Arrays.asList(new BoundSet().createInferenceVariable()))
+				.resolveSupertypeParameters(Collection.class));
+		System.out.println();
+
 		System.out
 				.println(TypeLiteral.from(B.class).resolveMethodOverload("bothways",
 						String.class, new TypeLiteral<List<String>>() {}.getType()));
@@ -103,8 +111,11 @@ public class TestTypeLiteral {
 				new TypeLiteral<List<Comparable<Integer>>>() {}.getType()));
 		System.out.println();
 
-		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
-				"method", new TypeLiteral<Collection<? super Integer>>() {}.getType()));
+		System.out.println(TypeLiteral
+				.from(B.class)
+				.resolveMethodOverload("method",
+						new TypeLiteral<Collection<? super Integer>>() {}.getType())
+				.infer());
 		System.out.println();
 
 		System.out.println(TypeLiteral
@@ -113,6 +124,9 @@ public class TestTypeLiteral {
 						new TypeLiteral<Collection<? extends Integer>>() {}.getType(),
 						new TypeLiteral<List<? super Number>>() {}.getType()).infer());
 		System.out.println();
+
+		B b = null;
+		b.method((Collection<? extends Integer>) null, (List<? super Number>) null);
 
 		/*-
 		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
