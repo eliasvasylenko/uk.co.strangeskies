@@ -119,7 +119,10 @@ public final class Types {
 					(getRawType(((GenericArrayType) type).getGenericComponentType())), 0)
 					.getClass();
 		} else if (type instanceof IntersectionType) {
-			return getRawType(((IntersectionType) type).getTypes()[0]);
+			if (((IntersectionType) type).getTypes().length == 0)
+				return Object.class;
+			else
+				return getRawType(((IntersectionType) type).getTypes()[0]);
 		}
 		throw new IllegalArgumentException("Type of type '" + type
 				+ "' is unsupported.");
@@ -559,15 +562,13 @@ public final class Types {
 	private static Map<Class<?>, ParameterizedType> getErasedSupertypes(Type of) {
 		Map<Class<?>, ParameterizedType> supertypes = new HashMap<>();
 
-		TypeLiteral<?> ofLiteral = TypeLiteral.from(of);
-
 		RecursiveTypeVisitor
 				.build()
 				.visitSupertypes()
 				.classVisitor(
 						type -> {
-							Type parameterized = ofLiteral.resolveSupertypeParameters(type)
-									.getType();
+							Type parameterized = ParameterizedTypes
+									.resolveSupertypeParameters(of, type);
 							supertypes
 									.put(
 											type,

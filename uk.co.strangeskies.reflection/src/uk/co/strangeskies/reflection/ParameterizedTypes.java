@@ -285,4 +285,42 @@ public class ParameterizedTypes {
 				return true;
 		}
 	}
+
+	private static final List<InferenceVariable> SUBSTITUTE_ARGUMENTS = new ArrayList<>();
+
+	public static Type resolveSupertypeParameters(Type type, Class<?> superclass) {
+		Class<?> rawType = Types.getRawType(type);
+
+		Map<TypeVariable<?>, InferenceVariable> parameterSubstitutes = new HashMap<>();
+		Map<InferenceVariable, Type> substitutedArguments = new HashMap<>();
+		int index = 0;
+		if (type instanceof ParameterizedType)
+			for (Map.Entry<TypeVariable<?>, Type> parameter : getAllTypeArguments(
+					(ParameterizedType) type).entrySet()) {
+				int finalIndex = index;
+				if (index == SUBSTITUTE_ARGUMENTS.size())
+					SUBSTITUTE_ARGUMENTS.add(new InferenceVariable() {
+						@Override
+						public String toString() {
+							return "SUB#" + finalIndex;
+						}
+					});
+				InferenceVariable substituteArgument = SUBSTITUTE_ARGUMENTS
+						.get(index++);
+				parameterSubstitutes.put(parameter.getKey(), substituteArgument);
+				substitutedArguments.put(substituteArgument, parameter.getValue());
+			}
+
+		System.out
+				.println(" ------------ " + type + " /// " + superclass + " /// ");
+
+		Type supertype = new TypeSubstitution(substitutedArguments::get)
+				.resolve(from(rawType, parameterSubstitutes)
+						.resolveSupertypeParameters(superclass).getType());
+
+		System.out.println(" -============ " + type + " /// " + superclass
+				+ " /// " + supertype + " === " + (type.equals(supertype)));
+
+		return supertype;
+	}
 }

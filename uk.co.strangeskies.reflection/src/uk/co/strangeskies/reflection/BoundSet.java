@@ -119,13 +119,13 @@ public class BoundSet {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public Set<InferenceVariable> getAllMentionedBy(Type type) {
+	public Set<InferenceVariable> getInferenceVariablesMentionedBy(Type type) {
 		return (Set) Types.getAllMentionedBy(type,
 				inferenceVariables.keySet()::contains);
 	}
 
 	public boolean isProperType(Type type) {
-		return getAllMentionedBy(type).isEmpty();
+		return getInferenceVariablesMentionedBy(type).isEmpty();
 	}
 
 	@Override
@@ -438,7 +438,7 @@ public class BoundSet {
 		 * (In this section, S and T are inference variables or types, and U is a
 		 * proper type. For conciseness, a bound of the form α = T may also match a
 		 * bound of the form T = α.)
-		 *
+		 * 
 		 * When a bound set contains a pair of bounds that match one of the
 		 * following rules, a new constraint formula is implied:
 		 */
@@ -527,9 +527,6 @@ public class BoundSet {
 
 			if (a.equals(a2)
 					&& Types.getRawType(S).isAssignableFrom(Types.getRawType(T))) {
-				TypeLiteral<?> literalS = TypeLiteral.from(S);
-				TypeLiteral<?> literalT = TypeLiteral.from(T);
-
 				new TypeVisitor() {
 					@Override
 					protected void visitClass(Class<?> type) {
@@ -541,16 +538,18 @@ public class BoundSet {
 					protected void visitParameterizedType(ParameterizedType type) {
 						Class<?> rawClass = (Class<?>) type.getRawType();
 
-						if (rawClass.isAssignableFrom(literalT.getRawType())) {
-							TypeLiteral<?> supertypeS = literalS
-									.resolveSupertypeParameters(rawClass);
-							TypeLiteral<?> supertypeT = literalT
-									.resolveSupertypeParameters(rawClass);
+						if (rawClass.isAssignableFrom(Types.getRawType(T))) {
+							Type supertypeS = ParameterizedTypes.resolveSupertypeParameters(
+									S, rawClass);
+							Type supertypeT = ParameterizedTypes.resolveSupertypeParameters(
+									T, rawClass);
 
 							for (TypeVariable<?> parameter : ParameterizedTypes
 									.getAllTypeParameters(rawClass)) {
-								Type argumentS = supertypeS.getTypeArgument(parameter);
-								Type argumentT = supertypeT.getTypeArgument(parameter);
+								Type argumentS = ParameterizedTypes.getAllTypeArguments(
+										(ParameterizedType) supertypeS).get(parameter);
+								Type argumentT = ParameterizedTypes.getAllTypeArguments(
+										(ParameterizedType) supertypeT).get(parameter);
 
 								if (!(argumentS instanceof WildcardType)
 										&& !(argumentT instanceof WildcardType))
@@ -568,15 +567,15 @@ public class BoundSet {
 		 * When a bound set contains a bound of the form G<α1, ..., αn> =
 		 * capture(G<A1, ..., An>), new bounds are implied and new constraint
 		 * formulas may be implied, as follows.
-		 *
+		 * 
 		 * Let P1, ..., Pn represent the type parameters of G and let B1, ..., Bn
 		 * represent the bounds of these type parameters. Let θ represent the
 		 * substitution [P1:=α1, ..., Pn:=αn]. Let R be a type that is not an
 		 * inference variable (but is not necessarily a proper type).
-		 *
+		 * 
 		 * A set of bounds on α1, ..., αn is implied, constructed from the declared
 		 * bounds of P1, ..., Pn as specified in §18.1.3.
-		 *
+		 * 
 		 * In addition, for all i (1 ≤ i ≤ n):
 		 */
 
@@ -584,11 +583,11 @@ public class BoundSet {
 				InferenceVariable a, Type R) {
 			/*
 			 * If Ai is a wildcard of the form ?, or;
-			 *
+			 * 
 			 * If Ai is a wildcard of the form ? extends T, or;
-			 *
+			 * 
 			 * If Ai is a wildcard of the form ? super T:
-			 *
+			 * 
 			 * αi = R implies the bound false
 			 */
 			if (c.getCapturedArgument(a) instanceof WildcardType)
@@ -634,7 +633,7 @@ public class BoundSet {
 				} else if (A.getLowerBounds().length > 0) {
 					/*
 					 * If Ai is a wildcard of the form ? super T:
-					 *
+					 * 
 					 * αi <: R implies the constraint formula ‹Bi θ <: R›
 					 */
 					constraints.add(new ConstraintFormula(Kind.SUBTYPE, θ
@@ -643,7 +642,7 @@ public class BoundSet {
 				} else {
 					/*
 					 * If Ai is a wildcard of the form ?:
-					 *
+					 * 
 					 * αi <: R implies the constraint formula ‹Bi θ <: R›
 					 */
 					constraints.add(new ConstraintFormula(Kind.SUBTYPE, θ
@@ -661,7 +660,7 @@ public class BoundSet {
 				if (A.getLowerBounds().length > 0) {
 					/*
 					 * If Ai is a wildcard of the form ? super T:
-					 *
+					 * 
 					 * R <: αi implies the constraint formula ‹R <: T›
 					 */
 					constraints.add(new ConstraintFormula(Kind.SUBTYPE, R,
@@ -669,14 +668,14 @@ public class BoundSet {
 				} else if (A.getUpperBounds().length > 0) {
 					/*
 					 * If Ai is a wildcard of the form ? extends T:
-					 *
+					 * 
 					 * R <: αi implies the bound false
 					 */
 					incorporate().acceptFalsehood();
 				} else {
 					/*
 					 * If Ai is a wildcard of the form ?:
-					 *
+					 * 
 					 * R <: αi implies the bound false
 					 */
 					incorporate().acceptFalsehood();
@@ -698,10 +697,6 @@ public class BoundSet {
 
 	public InferenceVariable createInferenceVariable(String name) {
 		String finalName = name + "#" + COUNTER.incrementAndGet();
-		if ("T#87".equals(finalName))
-			new IllegalArgumentException(finalName).printStackTrace();
-		if ("T#88".equals(finalName))
-			new IllegalArgumentException(finalName).printStackTrace();
 
 		InferenceVariable inferenceVariable = new InferenceVariable() {
 			@Override

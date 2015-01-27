@@ -156,8 +156,8 @@ public class Resolver {
 							if (inferenceVariables.contains(dependency))
 								addRemainingDependency(variable, dependency);
 						for (InferenceVariable v : c.getInferenceVariables())
-							for (InferenceVariable dependency : bounds.getAllMentionedBy(c
-									.getCapturedArgument(v)))
+							for (InferenceVariable dependency : bounds
+									.getInferenceVariablesMentionedBy(c.getCapturedArgument(v)))
 								if (inferenceVariables.contains(dependency))
 									addRemainingDependency(variable, dependency);
 					}
@@ -183,7 +183,7 @@ public class Resolver {
 
 			@Override
 			public void acceptEquality(InferenceVariable a, Type b) {
-				for (InferenceVariable inB : bounds.getAllMentionedBy(b))
+				for (InferenceVariable inB : bounds.getInferenceVariablesMentionedBy(b))
 					assessDependency(a, inB);
 			}
 
@@ -198,13 +198,13 @@ public class Resolver {
 
 			@Override
 			public void acceptSubtype(InferenceVariable a, Type b) {
-				for (InferenceVariable inB : bounds.getAllMentionedBy(b))
+				for (InferenceVariable inB : bounds.getInferenceVariablesMentionedBy(b))
 					assessDependency(a, inB);
 			}
 
 			@Override
 			public void acceptSubtype(Type a, InferenceVariable b) {
-				for (InferenceVariable inA : bounds.getAllMentionedBy(a))
+				for (InferenceVariable inA : bounds.getInferenceVariablesMentionedBy(a))
 					assessDependency(inA, b);
 			}
 
@@ -559,9 +559,9 @@ public class Resolver {
 		/*
 		 * the bound set contains a bound of the form G<..., αi, ...> =
 		 * capture(G<...>) for some i (1 ≤ i ≤ n), or;
-		 *
+		 * 
 		 * If the bound set produced in the step above contains the bound false;
-		 *
+		 * 
 		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
 		 */
 		Map<InferenceVariable, TypeVariableCapture> freshVariables = TypeVariableCapture
@@ -571,11 +571,11 @@ public class Resolver {
 		 * Otherwise, for all i (1 ≤ i ≤ n), all bounds of the form G<..., αi, ...>
 		 * = capture(G<...>) are removed from the current bound set, and the bounds
 		 * α1 = Y1, ..., αn = Yn are incorporated.
-		 *
+		 * 
 		 * If the result does not contain the bound false, then the result becomes
 		 * the new bound set, and resolution proceeds by selecting a new set of
 		 * variables to instantiate (if necessary), as described above.
-		 *
+		 * 
 		 * Otherwise, the result contains the bound false, and resolution fails.
 		 */
 		bounds.removeCaptureConversions(relatedCaptureConversions);
@@ -786,20 +786,17 @@ public class Resolver {
 		System.out.println();
 		System.out.println();
 
-		class Nest<T extends Set<Nest<T>>> {}
 		System.out
 				.println(TypeLiteral.from(new TypeLiteral<Nest<?>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 
-		class Nest2<T extends Nest2<T>> {}
-		class Nest22<T> extends Nest2<Nest22<T>> {}
 		System.out.println(TypeLiteral.from(new TypeLiteral<Nest22<?>>() {}
 				.getType()));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeLiteral.from(new TypeLiteral<Nest2<Nest22<?>>>() {}
+		System.out.println(TypeLiteral.from(new TypeLiteral<Nest2<?>>() {}
 				.getType()));
 		System.out.println();
 		System.out.println();
@@ -809,8 +806,13 @@ public class Resolver {
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeLiteral.from(new TypeLiteral<Nest2<?>>() {}
-				.getType()));
+		System.out.println(TypeLiteral.from(new TypeLiteral<RightN>() {}
+				.resolveSupertypeParameters(Base.class).getType()));
+		System.out.println();
+		System.out.println();
+
+		System.out.println(TypeLiteral
+				.from(new TypeLiteral<Nest2<? extends Nest22<?>>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 
@@ -818,6 +820,12 @@ public class Resolver {
 				.isAssignableFrom(new TypeLiteral<Nest<?>>() {}));
 	}
 }
+
+class Nest<T extends Set<Nest<T>>> {}
+
+class Nest2<T extends Nest2<T>> {}
+
+class Nest22<T> extends Nest2<Nest22<T>> {}
 
 class Base<T extends Base<U, T>, U extends Base<T, U>> {}
 

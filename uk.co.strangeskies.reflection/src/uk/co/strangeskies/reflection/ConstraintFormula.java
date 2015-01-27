@@ -107,7 +107,7 @@ public class ConstraintFormula {
 			 * there exists no type of the form G<...> that is a supertype of S, but
 			 * the raw type G is a supertype of S, then the constraint reduces to
 			 * true.
-			 *
+			 * 
 			 * Otherwise, if T is an array type of the form G<T1, ..., Tn>[]k, and
 			 * there exists no type of the form G<...>[]k that is a supertype of S,
 			 * but the raw type G[]k is a supertype of S, then the constraint reduces
@@ -146,9 +146,10 @@ public class ConstraintFormula {
 			 * If S and T are proper types, the constraint reduces to true if S is a
 			 * subtype of T (§4.10), and false otherwise.
 			 */
-			if (!Types.isAssignable(from, to))
+			if (!Types.isAssignable(from, to) && !(from instanceof InferenceVariable)
+					&& !(to instanceof InferenceVariable)) {
 				bounds.incorporate().acceptFalsehood();
-			else
+			} else
 				return;
 		} else if (from == null)
 			/*
@@ -210,11 +211,12 @@ public class ConstraintFormula {
 						fromSet = Arrays.asList(from);
 
 					for (Type from : fromSet) {
-						if (rawType.isAssignableFrom(Types.getRawType(from))) {
+						if (rawType.isAssignableFrom(Types.getRawType(from))
+								&& from instanceof ParameterizedType) {
 
-							TypeLiteral<?> fromParameterization = TypeLiteral.from(from)
-									.resolveSupertypeParameters(rawType);
-							if (!(fromParameterization.getType() instanceof ParameterizedType))
+							ParameterizedType fromParameterization = (ParameterizedType) ParameterizedTypes
+									.resolveSupertypeParameters(from, rawType);
+							if (!(fromParameterization instanceof ParameterizedType))
 								/*
 								 * If no such type exists, the constraint reduces to false.
 								 */
@@ -224,12 +226,14 @@ public class ConstraintFormula {
 							 * Otherwise, the constraint reduces to the following new
 							 * constraints: for all i (1 ≤ i ≤ n), ‹Bi <= Ai›.
 							 */
-							fromParameterization.getTypeParameters().forEach(
-									p -> {
-										reduce(Kind.CONTAINMENT,
-												fromParameterization.getTypeArgument(p),
-												toArguments.get(p), bounds);
-									});
+							ParameterizedTypes
+									.getAllTypeArguments(fromParameterization)
+									.entrySet()
+									.forEach(
+											e -> {
+												reduce(Kind.CONTAINMENT, e.getValue(),
+														toArguments.get(e.getKey()), bounds);
+											});
 						}
 					}
 				}
@@ -363,6 +367,15 @@ public class ConstraintFormula {
 	 * (§4.5.1), is reduced as follows:
 	 */
 	private void reduceContainmentConstraint(BoundSet bounds) {
+		/*
+		 * THE NEXT THREE LINES ARE NON-SPEC! This solves some problems relating to
+		 * recursive types which don't seem to occur with normal inference. It
+		 * should not give false positives in validation, so far as I can see.
+		 */
+		Type to = this.to;
+		if (bounds.getInferenceVariables().contains(to))
+			to = bounds.getInstantiation((InferenceVariable) to).orElse(to);
+
 		if (!(to instanceof WildcardType)) {
 			/*
 			 * If T is a type:
@@ -379,10 +392,10 @@ public class ConstraintFormula {
 				bounds.incorporate().acceptFalsehood();
 			}
 		} else {
-			WildcardType to = (WildcardType) this.to;
+			WildcardType toWildcard = (WildcardType) to;
 
-			if (to.getLowerBounds().length == 0) {
-				if (to.getUpperBounds().length == 0) {
+			if (toWildcard.getLowerBounds().length == 0) {
+				if (toWildcard.getUpperBounds().length == 0) {
 					/*
 					 * If T is a wildcard of the form ?, the constraint reduces to true.
 					 */
@@ -391,7 +404,8 @@ public class ConstraintFormula {
 					/*
 					 * If T is a wildcard of the form ? extends T':
 					 */
-					Type intersectionT = IntersectionType.from(to.getUpperBounds());
+					Type intersectionT = IntersectionType.from(toWildcard
+							.getUpperBounds());
 
 					if (!(from instanceof WildcardType)) {
 						/*
@@ -430,7 +444,7 @@ public class ConstraintFormula {
 				/*
 				 * If T is a wildcard of the form ? super T':
 				 */
-				Type intersectionT = IntersectionType.from(to.getLowerBounds());
+				Type intersectionT = IntersectionType.from(toWildcard.getLowerBounds());
 
 				if (!(from instanceof WildcardType)) {
 					/*
