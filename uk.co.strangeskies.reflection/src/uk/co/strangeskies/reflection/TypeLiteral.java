@@ -467,7 +467,7 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 
 		/*
 		 * TODO consider generics in invokable overload specificity
-		 * 
+		 *
 		 * Find which candidates have the joint most specific parameters, one
 		 * parameter at a time.
 		 */

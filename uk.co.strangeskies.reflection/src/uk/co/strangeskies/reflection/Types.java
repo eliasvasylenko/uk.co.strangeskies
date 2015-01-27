@@ -79,6 +79,17 @@ public final class Types {
 
 	private Types() {}
 
+	public static Set<Class<?>> getRawTypes(Type type) {
+		if (type instanceof IntersectionType) {
+			return Arrays.stream(((IntersectionType) type).getTypes())
+					.flatMap(t -> getRawTypes(t).stream()).collect(Collectors.toSet());
+		} else if (type instanceof WildcardType) {
+			return getRawTypes(IntersectionType.uncheckedFrom(((WildcardType) type)
+					.getUpperBounds()));
+		} else
+			return new HashSet<>(Arrays.asList(getRawType(type)));
+	}
+
 	public static Class<?> getRawType(Type type) {
 		if (type == null) {
 			return null;

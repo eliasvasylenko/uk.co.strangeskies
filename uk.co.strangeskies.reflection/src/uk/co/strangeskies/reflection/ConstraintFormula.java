@@ -107,7 +107,7 @@ public class ConstraintFormula {
 			 * there exists no type of the form G<...> that is a supertype of S, but
 			 * the raw type G is a supertype of S, then the constraint reduces to
 			 * true.
-			 * 
+			 *
 			 * Otherwise, if T is an array type of the form G<T1, ..., Tn>[]k, and
 			 * there exists no type of the form G<...>[]k that is a supertype of S,
 			 * but the raw type G[]k is a supertype of S, then the constraint reduces
@@ -189,7 +189,8 @@ public class ConstraintFormula {
 				 * identified, with type arguments B1, ..., Bn.
 				 */
 				Class<?> rawType = Types.getRawType(to);
-				if (!rawType.isAssignableFrom(Types.getRawType(from))) {
+				if (!Types.getRawTypes(from).stream()
+						.anyMatch(t -> rawType.isAssignableFrom(t))) {
 					/*
 					 * If no such type exists, the constraint reduces to false.
 					 */
@@ -200,26 +201,37 @@ public class ConstraintFormula {
 							.getAllTypeArguments((ParameterizedType) to);
 
 					System.out.println("    @   " + from);
-					if (from instanceof WildcardType)
-						TypeLiteral.from(((WildcardType) from).getUpperBounds()[0]);
-					TypeLiteral<?> fromParameterization = TypeLiteral.from(from)
-							.resolveSupertypeParameters(rawType);
-					if (!(fromParameterization.getType() instanceof ParameterizedType))
-						/*
-						 * If no such type exists, the constraint reduces to false.
-						 */
-						bounds.incorporate().acceptFalsehood();
+					List<Type> fromSet;
+					if (this.from instanceof WildcardType)
+						fromSet = Arrays.asList(((WildcardType) from).getUpperBounds()[0]);
+					else if (this.from instanceof IntersectionType)
+						fromSet = Arrays.asList(((IntersectionType) from).getTypes());
+					else
+						fromSet = Arrays.asList(from);
 
-					/*
-					 * Otherwise, the constraint reduces to the following new constraints:
-					 * for all i (1 ≤ i ≤ n), ‹Bi <= Ai›.
-					 */
-					fromParameterization.getTypeParameters().forEach(
-							p -> {
-								reduce(Kind.CONTAINMENT,
-										fromParameterization.getTypeArgument(p),
-										toArguments.get(p), bounds);
-							});
+					for (Type from : fromSet) {
+						if (rawType.isAssignableFrom(Types.getRawType(from))) {
+
+							TypeLiteral<?> fromParameterization = TypeLiteral.from(from)
+									.resolveSupertypeParameters(rawType);
+							if (!(fromParameterization.getType() instanceof ParameterizedType))
+								/*
+								 * If no such type exists, the constraint reduces to false.
+								 */
+								bounds.incorporate().acceptFalsehood();
+
+							/*
+							 * Otherwise, the constraint reduces to the following new
+							 * constraints: for all i (1 ≤ i ≤ n), ‹Bi <= Ai›.
+							 */
+							fromParameterization.getTypeParameters().forEach(
+									p -> {
+										reduce(Kind.CONTAINMENT,
+												fromParameterization.getTypeArgument(p),
+												toArguments.get(p), bounds);
+									});
+						}
+					}
 				}
 			} else if (to instanceof Class) {
 				/*

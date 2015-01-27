@@ -559,9 +559,9 @@ public class Resolver {
 		/*
 		 * the bound set contains a bound of the form G<..., αi, ...> =
 		 * capture(G<...>) for some i (1 ≤ i ≤ n), or;
-		 * 
+		 *
 		 * If the bound set produced in the step above contains the bound false;
-		 * 
+		 *
 		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
 		 */
 		Map<InferenceVariable, TypeVariableCapture> freshVariables = TypeVariableCapture
@@ -571,11 +571,11 @@ public class Resolver {
 		 * Otherwise, for all i (1 ≤ i ≤ n), all bounds of the form G<..., αi, ...>
 		 * = capture(G<...>) are removed from the current bound set, and the bounds
 		 * α1 = Y1, ..., αn = Yn are incorporated.
-		 * 
+		 *
 		 * If the result does not contain the bound false, then the result becomes
 		 * the new bound set, and resolution proceeds by selecting a new set of
 		 * variables to instantiate (if necessary), as described above.
-		 * 
+		 *
 		 * Otherwise, the result contains the bound false, and resolution fails.
 		 */
 		bounds.removeCaptureConversions(relatedCaptureConversions);
@@ -728,44 +728,54 @@ public class Resolver {
 				new TypeParameter<T>() {}, sub);
 	}
 
-	class Poo<T extends Poo<T>> implements Self<T> {
-		@Override
-		public T copy() {
-			return null;
-		}
-	}
-
 	public static void test() {
 		System.out.println(new TypeLiteral<HashSet<String>>() {}
 				.resolveSupertypeParameters(Set.class));
+		System.out.println();
+		System.out.println();
 
 		System.out.println("List with T = String: " + listOf(String.class));
+		System.out.println();
+		System.out.println();
 
 		System.out.println(new TypeLiteral<Collection<? super String>>() {}
 				.resolveSubtypeParameters(HashSet.class));
+		System.out.println();
+		System.out.println();
 
 		new TypeLiteral<Outer<Serializable>.Inner<String, HashSet<Serializable>, Set<String>>>() {}
 				.getResolver();
 
+		System.out.println();
+		System.out.println();
 		System.out
 				.println(new TypeLiteral<Outer<Serializable>.Inner<String, HashSet<Serializable>, Set<String>>>() {}
 						.resolveSubtypeParameters(Outer2.Inner3.class));
+		System.out.println();
+		System.out.println();
 
 		System.out
 				.println(new TypeLiteral<Outer2<Serializable, String>.Inner3<HashSet<Serializable>>>() {}
 						.resolveSupertypeParameters(Outer.Inner.class));
+		System.out.println();
+		System.out.println();
 
 		System.out.println(new TypeLiteral<Outer<String>.Inner2<Double>>() {}
 				.resolveSupertypeParameters(Outer.Inner.class));
+		System.out.println();
+		System.out.println();
 
 		System.out.println("TYPELITTEST: " + new TypeLiteral<String>() {});
 		System.out.println("TYPELITTEST-2: "
 				+ new Y<Integer>() {}.resolveSupertypeParameters(Collection.class));
 		System.out.println("TYPELITTEST-3: " + new G());
+		System.out.println();
+		System.out.println();
 
 		System.out.println("type test: "
 				+ new TypeLiteral<String>() {}
 						.resolveSupertypeParameters(Comparable.class));
+		System.out.println();
 		System.out.println();
 
 		class SM<YO> {}
@@ -774,11 +784,43 @@ public class Resolver {
 		System.out.println(new TypeLiteral<NM<?>>() {}
 				.resolveSupertypeParameters(SM.class));
 		System.out.println();
+		System.out.println();
 
+		class Nest<T extends Set<Nest<T>>> {}
 		System.out
-				.println(TypeLiteral.from(new TypeLiteral<Poo<?>>() {}.getType()));
+				.println(TypeLiteral.from(new TypeLiteral<Nest<?>>() {}.getType()));
+		System.out.println();
+		System.out.println();
+
+		class Nest2<T extends Nest2<T>> {}
+		class Nest22<T> extends Nest2<Nest22<T>> {}
+		System.out.println(TypeLiteral.from(new TypeLiteral<Nest22<?>>() {}
+				.getType()));
+		System.out.println();
+		System.out.println();
+
+		System.out.println(TypeLiteral.from(new TypeLiteral<Nest2<Nest22<?>>>() {}
+				.getType()));
+		System.out.println();
+		System.out.println();
+
+		System.out.println(TypeLiteral
+				.from(new TypeLiteral<Base<LeftN, RightN>>() {}.getType()));
+		System.out.println();
+		System.out.println();
+
+		System.out.println(TypeLiteral.from(new TypeLiteral<Nest2<?>>() {}
+				.getType()));
+		System.out.println();
+		System.out.println();
 
 		System.out.println(new TypeLiteral<Self<?>>() {}
-				.isAssignableFrom(new TypeLiteral<Poo<?>>() {}));
+				.isAssignableFrom(new TypeLiteral<Nest<?>>() {}));
 	}
 }
+
+class Base<T extends Base<U, T>, U extends Base<T, U>> {}
+
+class LeftN extends Base<RightN, LeftN> {}
+
+class RightN extends Base<LeftN, RightN> {}
