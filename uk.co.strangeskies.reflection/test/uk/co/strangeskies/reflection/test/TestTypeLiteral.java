@@ -54,6 +54,11 @@ public class TestTypeLiteral {
 			return null;
 		}
 
+		public <T extends Number, U extends List<? super T>> U method4(
+				Collection<? extends T> a, U b) {
+			return null;
+		}
+
 		public <T, R> void accept(Set<Invokable<T, R>> set) {}
 
 		public strictfp <T extends Comparable<? super T>, U extends Collection<? extends Comparable<? super T>>> void bothways(
@@ -120,13 +125,10 @@ public class TestTypeLiteral {
 
 		System.out.println(TypeLiteral
 				.from(B.class)
-				.resolveMethodOverload("method",
+				.resolveMethodOverload("method4",
 						new TypeLiteral<Collection<? extends Integer>>() {}.getType(),
 						new TypeLiteral<List<? super Number>>() {}.getType()).infer());
 		System.out.println();
-
-		B b = null;
-		b.method((Collection<? extends Integer>) null, (List<? super Number>) null);
 
 		/*-
 		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(

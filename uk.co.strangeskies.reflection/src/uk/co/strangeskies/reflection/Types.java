@@ -165,10 +165,10 @@ public final class Types {
 			 * Object.
 			 */
 			return true;
-		} else if (to instanceof CaptureType) {
-			return ((CaptureType) to).getLowerBounds().length > 0
+		} else if (to instanceof TypeVariableCapture) {
+			return ((TypeVariableCapture) to).getLowerBounds().length > 0
 					&& isAssignable(from,
-							IntersectionType.uncheckedFrom(((CaptureType) to)
+							IntersectionType.uncheckedFrom(((TypeVariableCapture) to)
 									.getLowerBounds()));
 		} else if (to instanceof TypeVariable) {
 			/*
@@ -184,7 +184,7 @@ public final class Types {
 			Type[] upperBounds = ((TypeVariable<?>) from).getBounds();
 			if (upperBounds.length == 0)
 				upperBounds = new Type[] { Object.class };
-			return isAssignable(IntersectionType.from(upperBounds), to);
+			return isAssignable(IntersectionType.uncheckedFrom(upperBounds), to);
 		} else if (from instanceof IntersectionType) {
 			/*
 			 * We must be able to assign from at least one member of the intersection

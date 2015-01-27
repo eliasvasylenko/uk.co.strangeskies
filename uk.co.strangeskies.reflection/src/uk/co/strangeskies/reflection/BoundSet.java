@@ -59,7 +59,7 @@ public class BoundSet {
 		}
 	}
 
-	private final Set<Bound> bounds;
+	final Set<Bound> bounds;
 	private final Map<InferenceVariable, InferenceVariableData> inferenceVariables;
 
 	public BoundSet() {
@@ -183,10 +183,10 @@ public class BoundSet {
 
 		@Override
 		public void acceptEquality(InferenceVariable a, InferenceVariable b) {
-			// if (inferenceVariables.contains(a))
-			addEquality(a, b);
-			// if (inferenceVariables.contains(b))
-			addEquality(b, a);
+			if (inferenceVariables.containsKey(a))
+				addEquality(a, b);
+			if (inferenceVariables.containsKey(b))
+				addEquality(b, a);
 
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptEquality(a, b)),
 					incorporator -> new PartialBoundVisitor() {
@@ -227,8 +227,8 @@ public class BoundSet {
 
 		@Override
 		public void acceptEquality(InferenceVariable a, Type b) {
-			// if (inferenceVariables.contains(a))
-			addEquality(a, b);
+			if (inferenceVariables.containsKey(a))
+				addEquality(a, b);
 
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptEquality(a, b)),
 					incorporator -> new PartialBoundVisitor() {
@@ -275,10 +275,10 @@ public class BoundSet {
 
 		@Override
 		public void acceptSubtype(InferenceVariable a, InferenceVariable b) {
-			// if (inferenceVariables.contains(a))
-			addUpperBound(a, b);
-			// if (inferenceVariables.contains(b))
-			addLowerBound(b, a);
+			if (inferenceVariables.containsKey(a))
+				addUpperBound(a, b);
+			if (inferenceVariables.containsKey(b))
+				addLowerBound(b, a);
 
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptSubtype(a, b)),
 					incorporator -> new PartialBoundVisitor() {
@@ -318,8 +318,8 @@ public class BoundSet {
 
 		@Override
 		public void acceptSubtype(InferenceVariable a, Type b) {
-			// if (inferenceVariables.contains(a))
-			addUpperBound(a, b);
+			if (inferenceVariables.containsKey(a))
+				addUpperBound(a, b);
 
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptSubtype(a, b)),
 					incorporator -> new PartialBoundVisitor() {
@@ -363,8 +363,8 @@ public class BoundSet {
 
 		@Override
 		public void acceptSubtype(Type a, InferenceVariable b) {
-			// if (inferenceVariables.contains(b))
-			addLowerBound(b, a);
+			if (inferenceVariables.containsKey(b))
+				addLowerBound(b, a);
 
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptSubtype(a, b)),
 					incorporator -> new PartialBoundVisitor() {
@@ -698,6 +698,10 @@ public class BoundSet {
 
 	public InferenceVariable createInferenceVariable(String name) {
 		String finalName = name + "#" + COUNTER.incrementAndGet();
+		if ("T#87".equals(finalName))
+			new IllegalArgumentException(finalName).printStackTrace();
+		if ("T#88".equals(finalName))
+			new IllegalArgumentException(finalName).printStackTrace();
 
 		InferenceVariable inferenceVariable = new InferenceVariable() {
 			@Override

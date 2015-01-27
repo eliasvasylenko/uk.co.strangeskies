@@ -64,17 +64,19 @@ public class WildcardTypes {
 	}
 
 	public static WildcardType lowerBounded(Type type) {
+		Supplier<Type[]> types;
+
 		if (type instanceof WildcardType) {
 			WildcardType wildcardType = ((WildcardType) type);
-			if (wildcardType.getLowerBounds().length > 0
-					|| wildcardType.getUpperBounds().length == 0)
-				return wildcardType;
-		}
-		Supplier<Type[]> types;
-		if (type instanceof IntersectionType)
+			if (wildcardType.getUpperBounds().length == 0)
+				types = () -> new Type[] { Object.class };
+			else
+				types = () -> wildcardType.getUpperBounds();
+		} else if (type instanceof IntersectionType)
 			types = ((IntersectionType) type)::getTypes;
 		else
 			types = () -> new Type[] { type };
+
 		return new WildcardType() {
 			@Override
 			public Type[] getUpperBounds() {
@@ -113,20 +115,18 @@ public class WildcardTypes {
 	}
 
 	public static WildcardType upperBounded(Type type) {
-		if (type instanceof WildcardType) {
-			WildcardType wildcardType = ((WildcardType) type);
-			if (wildcardType.getUpperBounds().length > 0
-					|| wildcardType.getLowerBounds().length == 0)
-				return wildcardType;
-			else
-				return unbounded();
-		}
+		Supplier<Type[]> types;
 
 		if (Object.class.equals(type))
 			return unbounded();
-
-		Supplier<Type[]> types;
-		if (type instanceof IntersectionType)
+		else if (type instanceof WildcardType) {
+			WildcardType wildcardType = ((WildcardType) type);
+			if (wildcardType.getLowerBounds().length == 0)
+				throw new TypeInferenceException(
+						"Cannot have define an upper bounding on a wildcard with no lower bounds.");
+			else
+				types = () -> wildcardType.getLowerBounds();
+		} else if (type instanceof IntersectionType)
 			types = ((IntersectionType) type)::getTypes;
 		else
 			types = () -> new Type[] { type };
@@ -158,6 +158,90 @@ public class WildcardTypes {
 				WildcardType wildcard = (WildcardType) that;
 				return Arrays.equals(types.get(), wildcard.getUpperBounds())
 						&& wildcard.getLowerBounds().length == 0;
+			}
+
+			@Override
+			public int hashCode() {
+				return Arrays.hashCode(getLowerBounds())
+						^ Arrays.hashCode(getUpperBounds());
+			}
+		};
+	}
+
+	static WildcardType fullyBounded(Type upperBound, Type lowerBound) {
+		Supplier<Type[]> upperBounds;
+
+		if (Object.class.equals(upperBound))
+			return lowerBounded(lowerBound);
+		else if (upperBound instanceof WildcardType) {
+			WildcardType wildcardType = ((WildcardType) upperBound);
+			if (wildcardType.getLowerBounds().length == 0)
+				throw new TypeInferenceException(
+						"Cannot have define an upper bounding on a wildcard with no lower bounds.");
+			else
+				upperBounds = () -> wildcardType.getLowerBounds();
+		} else if (upperBound instanceof IntersectionType)
+			upperBounds = ((IntersectionType) upperBound)::getTypes;
+		else
+			upperBounds = () -> new Type[] { upperBound };
+
+		if (lowerBound instanceof WildcardType) {
+			WildcardType wildcardType = ((WildcardType) lowerBound);
+			if (wildcardType.getLowerBounds().length > 0
+					|| wildcardType.getUpperBounds().length == 0)
+				return wildcardType;
+		}
+
+		Supplier<Type[]> lowerBounds;
+
+		if (lowerBound instanceof WildcardType) {
+			WildcardType wildcardType = ((WildcardType) lowerBound);
+			if (wildcardType.getUpperBounds().length == 0)
+				lowerBounds = () -> new Type[] { Object.class };
+			else
+				lowerBounds = () -> wildcardType.getUpperBounds();
+		} else if (lowerBound instanceof IntersectionType)
+			lowerBounds = ((IntersectionType) lowerBound)::getTypes;
+		else
+			lowerBounds = () -> new Type[] { lowerBound };
+
+		return new WildcardType() {
+			@Override
+			public Type[] getUpperBounds() {
+				return upperBounds.get();
+			}
+
+			@Override
+			public Type[] getLowerBounds() {
+				return lowerBounds.get();
+			}
+
+			@Override
+			public String toString() {
+				StringBuilder builder = new StringBuilder("?");
+
+				if (upperBounds.get().length > 0)
+					builder.append(" extends ").append(
+							Arrays.stream(upperBounds.get()).map(Types::toString)
+									.collect(Collectors.joining(" & ")));
+
+				if (lowerBounds.get().length > 0)
+					builder.append(" super ").append(
+							Arrays.stream(lowerBounds.get()).map(Types::toString)
+									.collect(Collectors.joining(" & ")));
+
+				return builder.toString();
+			}
+
+			@Override
+			public boolean equals(Object that) {
+				if (!(that instanceof WildcardType))
+					return false;
+				if (that == this)
+					return true;
+				WildcardType wildcard = (WildcardType) that;
+				return Arrays.equals(upperBounds.get(), wildcard.getUpperBounds())
+						&& Arrays.equals(lowerBounds.get(), wildcard.getLowerBounds());
 			}
 
 			@Override

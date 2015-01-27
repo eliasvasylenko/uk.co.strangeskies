@@ -289,18 +289,117 @@ public class Resolver {
 		}.visit(types);
 	}
 
+	static ParameterizedType constrainWildcards(ParameterizedType type) {
+		Map<TypeVariable<?>, Type> capturedArguments = new HashMap<>(
+				ParameterizedTypes.getAllTypeArguments(type));
+
+		for (TypeVariable<?> parameter : new HashSet<>(capturedArguments.keySet())) {
+			Type capturedArgument = capturedArguments.get(parameter);
+			if (capturedArgument instanceof WildcardType)
+				capturedArguments.put(parameter, new ConstrainedWildcard(parameter,
+						(WildcardType) capturedArgument));
+		}
+
+		substituteBounds(capturedArguments);
+
+		type = (ParameterizedType) ParameterizedTypes.uncheckedFrom(
+				(Class<?>) type.getRawType(), capturedArguments);
+
+		return type;
+	}
+
+	private static void substituteBounds(
+			Map<? extends Type, ? extends Type> captures) {
+		TypeSubstitution substitution = new TypeSubstitution(captures::get);
+
+		for (Type type : captures.keySet()) {
+			if (captures.get(type) instanceof ConstrainedWildcard) {
+				ConstrainedWildcard capture = (ConstrainedWildcard) captures.get(type);
+
+				for (int i = 0; i < capture.upperBounds.length; i++)
+					capture.upperBounds[i] = substitution.resolve(capture.upperBounds[i]);
+
+				for (int i = 0; i < capture.lowerBounds.length; i++)
+					capture.lowerBounds[i] = substitution.resolve(capture.lowerBounds[i]);
+			}
+		}
+	}
+
+	private static class ConstrainedWildcard implements WildcardType {
+		private final Type[] upperBounds;
+		private final Type[] lowerBounds;
+
+		public ConstrainedWildcard(TypeVariable<?> parameter, WildcardType type) {
+			IntersectionType firstUpperBound = IntersectionType
+					.uncheckedFrom(parameter.getBounds());
+			IntersectionType secondUpperBound = IntersectionType.uncheckedFrom(type
+					.getUpperBounds());
+
+			upperBounds = IntersectionType.asArray(IntersectionType.from(
+					firstUpperBound, secondUpperBound));
+
+			lowerBounds = type.getLowerBounds();
+		}
+
+		@Override
+		public Type[] getUpperBounds() {
+			return upperBounds;
+		}
+
+		@Override
+		public Type[] getLowerBounds() {
+			return lowerBounds;
+		}
+
+		@Override
+		public String toString() {
+			StringBuilder builder = new StringBuilder("?");
+
+			if (upperBounds.length > 0)
+				builder.append(" extends ").append(
+						Arrays.stream(upperBounds).map(Types::toString)
+								.collect(Collectors.joining(" & ")));
+
+			if (lowerBounds.length > 0)
+				builder.append(" super ").append(
+						Arrays.stream(lowerBounds).map(Types::toString)
+								.collect(Collectors.joining(" & ")));
+
+			return builder.toString();
+		}
+
+		@Override
+		public boolean equals(Object that) {
+			if (!(that instanceof WildcardType))
+				return false;
+			if (that == this)
+				return true;
+			WildcardType wildcard = (WildcardType) that;
+			return Arrays.equals(upperBounds, wildcard.getUpperBounds())
+					&& Arrays.equals(lowerBounds, wildcard.getLowerBounds());
+		}
+
+		@Override
+		public int hashCode() {
+			return Arrays.hashCode(getLowerBounds())
+					^ Arrays.hashCode(getUpperBounds());
+		}
+	}
+
 	public void incorporateParameterizedType(ParameterizedType type) {
 		Class<?> rawType = Types.getRawType(type);
 		capture(rawType);
 
-		// type = (ParameterizedType) ConstraintFormula.captureConversion(type,
-		// bounds.incorporate()); TODO
+		// type = TypeVariableCapture.capture(type);
+		type = constrainWildcards(type);
+		System.out.println("  FUCKERS " + type);
 
 		for (Map.Entry<TypeVariable<?>, Type> typeArgument : ParameterizedTypes
 				.getAllTypeArguments(type).entrySet())
 			new ConstraintFormula(Kind.EQUALITY, capturedTypeVariables.get(rawType)
 					.get(typeArgument.getKey()), typeArgument.getValue())
 					.reduceInto(bounds);
+		System.out.println("   FUCKERS2 " + type);
 	}
 
 	public void incorporateInstantiation(TypeVariable<?> variable,
@@ -667,6 +766,14 @@ public class Resolver {
 		System.out.println("type test: "
 				+ new TypeLiteral<String>() {}
 						.resolveSupertypeParameters(Comparable.class));
+		System.out.println();
+
+		class SM<YO> {}
+		class NM<V extends Number> extends SM<V> {}
+		System.out.println(new TypeLiteral<NM<?>>() {});
+		System.out.println(new TypeLiteral<NM<?>>() {}
+				.resolveSupertypeParameters(SM.class));
+		System.out.println();
 
 		System.out
 				.println(TypeLiteral.from(new TypeLiteral<Poo<?>>() {}.getType()));

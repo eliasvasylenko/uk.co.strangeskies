@@ -19,6 +19,7 @@
 package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.utilities.IdentityProperty;
@@ -87,6 +89,8 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 	private TypeLiteral(Type type, Class<? super T> rawType) {
 		this.type = type;
 		this.rawType = rawType;
+
+		System.out.println("           creating TL: " + type);
 
 		getInternalResolver();
 	}
@@ -151,7 +155,8 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 				if (resolver == null) {
 					resolver = RESOLVER_CACHE.putGet(type);
 					resolver.set(new Resolver());
-					resolver.get().incorporateType(type); // TODO move out of sync block
+					// TODO move following out of sync block:
+					resolver.get().incorporateType(type);
 				}
 			}
 			this.resolver = resolver.get();
@@ -334,9 +339,14 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 	}
 
 	public Set<Invokable<T, ?>> getMethods() {
+		return getMethods(m -> true);
+	}
+
+	private Set<Invokable<T, ?>> getMethods(Predicate<Method> filter) {
 		// TODO include inherited methods.
 		return Arrays
 				.stream(getRawType().getMethods())
+				.filter(filter)
 				.map(
 						m -> Invokable.from(m, this,
 								TypeLiteral.from(m.getGenericReturnType())))
@@ -372,13 +382,8 @@ public class TypeLiteral<T> implements GenericTypeContainer<Class<? super T>> {
 		 * javac falls over if you use streams for this (in the obvious way at
 		 * least), don't modify without checking.
 		 */
-		Set<? extends Invokable<T, ?>> candidates = getMethods();
-		Iterator<? extends Invokable<T, ?>> candidateIterator = candidates
-				.iterator();
-		while (candidateIterator.hasNext())
-			if (!candidateIterator.next().getGenericDeclaration().getName()
-					.equals(name))
-				candidateIterator.remove();
+		Set<? extends Invokable<T, ?>> candidates = getMethods(m -> m.getName()
+				.equals(name));
 
 		if (candidates.isEmpty())
 			throw new IllegalArgumentException("Cannot find any method '" + name

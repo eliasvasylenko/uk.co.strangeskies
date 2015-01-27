@@ -20,9 +20,11 @@ package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class ConstraintFormula {
 	public enum Kind {
@@ -36,6 +38,10 @@ public class ConstraintFormula {
 		this.kind = kind;
 		this.from = from;
 		this.to = to;
+
+		System.out.println(this);
+		// if ("T#88".equals(from.getTypeName()))
+		// throw new IllegalArgumentException();
 	}
 
 	@Override
@@ -48,7 +54,6 @@ public class ConstraintFormula {
 	}
 
 	void reduceInto(BoundSet bounds) {
-		System.out.println(this + "    >    " + bounds);
 		switch (kind) {
 		case LOOSE_COMPATIBILILTY:
 			reduceLooseCompatibilityConstraint(bounds);
@@ -184,14 +189,19 @@ public class ConstraintFormula {
 				 * identified, with type arguments B1, ..., Bn.
 				 */
 				Class<?> rawType = Types.getRawType(to);
-				if (!rawType.isAssignableFrom(Types.getRawType(to)))
+				if (!rawType.isAssignableFrom(Types.getRawType(from))) {
 					/*
 					 * If no such type exists, the constraint reduces to false.
 					 */
-					bounds.incorporate().acceptFalsehood();
-				else {
-					TypeLiteral<?> toLiteral = TypeLiteral.from(to);
+					if (!(from instanceof InferenceVariable))
+						bounds.incorporate().acceptFalsehood();
+				} else {
+					Map<TypeVariable<?>, Type> toArguments = ParameterizedTypes
+							.getAllTypeArguments((ParameterizedType) to);
 
+					System.out.println("    @   " + from);
+					if (from instanceof WildcardType)
+						TypeLiteral.from(((WildcardType) from).getUpperBounds()[0]);
 					TypeLiteral<?> fromParameterization = TypeLiteral.from(from)
 							.resolveSupertypeParameters(rawType);
 					if (!(fromParameterization.getType() instanceof ParameterizedType))
@@ -208,7 +218,7 @@ public class ConstraintFormula {
 							p -> {
 								reduce(Kind.CONTAINMENT,
 										fromParameterization.getTypeArgument(p),
-										toLiteral.getTypeArgument(p), bounds);
+										toArguments.get(p), bounds);
 							});
 				}
 			} else if (to instanceof Class) {
@@ -259,7 +269,7 @@ public class ConstraintFormula {
 							bounds.incorporate().acceptFalsehood();
 					}
 				}
-			} else if (bounds.getInferenceVariables().contains(to)) {
+			} else if (to instanceof TypeVariableCapture) {
 				/*
 				 * If T is a type variable, there are three cases:
 				 */
@@ -270,13 +280,16 @@ public class ConstraintFormula {
 					 * - If S is an intersection type of which T is an element, the
 					 * constraint reduces to true.
 					 */
-				} else if (bounds.getLowerBounds((InferenceVariable) to).size() > 0) {
+				} else if (((TypeVariableCapture) to).getLowerBounds().length > 0) {
 					/*
 					 * - Otherwise, if T has a lower bound, B, the constraint reduces to
 					 * ‹S <: B›.
 					 */
-					reduce(Kind.SUBTYPE, from, IntersectionType.from(bounds
-							.getLowerBounds((InferenceVariable) to)), bounds);
+					reduce(
+							Kind.SUBTYPE,
+							from,
+							IntersectionType.from(((TypeVariableCapture) to).getLowerBounds()),
+							bounds);
 				} else {
 					/*
 					 * - Otherwise, the constraint reduces to false.
