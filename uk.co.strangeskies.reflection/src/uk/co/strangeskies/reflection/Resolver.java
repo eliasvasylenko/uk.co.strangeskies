@@ -321,12 +321,15 @@ public class Resolver {
 
 				for (int i = 0; i < capture.lowerBounds.length; i++)
 					capture.lowerBounds[i] = substitution.resolve(capture.lowerBounds[i]);
+
+				capture.upperBounds = IntersectionType.asArray(IntersectionType
+						.from(capture.upperBounds));
 			}
 		}
 	}
 
 	private static class ConstrainedWildcard implements WildcardType {
-		private final Type[] upperBounds;
+		private Type[] upperBounds;
 		private final Type[] lowerBounds;
 
 		public ConstrainedWildcard(TypeVariable<?> parameter, WildcardType type) {
@@ -335,7 +338,7 @@ public class Resolver {
 			IntersectionType secondUpperBound = IntersectionType.uncheckedFrom(type
 					.getUpperBounds());
 
-			upperBounds = IntersectionType.asArray(IntersectionType.from(
+			upperBounds = IntersectionType.asArray(IntersectionType.uncheckedFrom(
 					firstUpperBound, secondUpperBound));
 
 			lowerBounds = type.getLowerBounds();
@@ -392,14 +395,12 @@ public class Resolver {
 
 		// type = TypeVariableCapture.capture(type);
 		type = constrainWildcards(type);
-		System.out.println("  FUCKERS " + type);
 
 		for (Map.Entry<TypeVariable<?>, Type> typeArgument : ParameterizedTypes
 				.getAllTypeArguments(type).entrySet())
 			new ConstraintFormula(Kind.EQUALITY, capturedTypeVariables.get(rawType)
 					.get(typeArgument.getKey()), typeArgument.getValue())
 					.reduceInto(bounds);
-		System.out.println("   FUCKERS2 " + type);
 	}
 
 	public void incorporateInstantiation(TypeVariable<?> variable,
@@ -559,9 +560,9 @@ public class Resolver {
 		/*
 		 * the bound set contains a bound of the form G<..., αi, ...> =
 		 * capture(G<...>) for some i (1 ≤ i ≤ n), or;
-		 * 
+		 *
 		 * If the bound set produced in the step above contains the bound false;
-		 * 
+		 *
 		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
 		 */
 		Map<InferenceVariable, TypeVariableCapture> freshVariables = TypeVariableCapture
@@ -571,11 +572,11 @@ public class Resolver {
 		 * Otherwise, for all i (1 ≤ i ≤ n), all bounds of the form G<..., αi, ...>
 		 * = capture(G<...>) are removed from the current bound set, and the bounds
 		 * α1 = Y1, ..., αn = Yn are incorporated.
-		 * 
+		 *
 		 * If the result does not contain the bound false, then the result becomes
 		 * the new bound set, and resolution proceeds by selecting a new set of
 		 * variables to instantiate (if necessary), as described above.
-		 * 
+		 *
 		 * Otherwise, the result contains the bound false, and resolution fails.
 		 */
 		bounds.removeCaptureConversions(relatedCaptureConversions);

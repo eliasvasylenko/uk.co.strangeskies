@@ -172,6 +172,7 @@ public final class Types {
 	}
 
 	public static boolean isAssignable(Type from, Type to) {
+		System.out.println(from + " -> " + to);
 		if (from == null || from.equals(to) || to == null
 				|| to.equals(Object.class)) {
 			/*
@@ -267,8 +268,8 @@ public final class Types {
 				return false;
 			}
 
-			Type fromParameterization = TypeLiteral.from(from)
-					.resolveSupertypeParameters(matchedClass).getType();
+			Type fromParameterization = ParameterizedTypes
+					.resolveSupertypeParameters(from, matchedClass);
 			if (!(fromParameterization instanceof ParameterizedType))
 				return false;
 
@@ -304,11 +305,11 @@ public final class Types {
 			WildcardType toWildcard = (WildcardType) to;
 
 			boolean contained = (toWildcard.getUpperBounds().length == 0 || isAssignable(
-					from, IntersectionType.from(toWildcard.getUpperBounds())));
+					from, IntersectionType.uncheckedFrom(toWildcard.getUpperBounds())));
 
 			contained = contained
 					&& (toWildcard.getLowerBounds().length == 0 || isAssignable(
-							IntersectionType.from(toWildcard.getLowerBounds()), from));
+							IntersectionType.uncheckedFrom(toWildcard.getLowerBounds()), from));
 
 			return contained;
 		} else

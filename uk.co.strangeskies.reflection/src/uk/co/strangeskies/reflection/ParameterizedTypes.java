@@ -311,15 +311,9 @@ public class ParameterizedTypes {
 				substitutedArguments.put(substituteArgument, parameter.getValue());
 			}
 
-		System.out
-				.println(" ------------ " + type + " /// " + superclass + " /// ");
-
 		Type supertype = new TypeSubstitution(substitutedArguments::get)
 				.resolve(from(rawType, parameterSubstitutes)
 						.resolveSupertypeParameters(superclass).getType());
-
-		System.out.println(" -============ " + type + " /// " + superclass
-				+ " /// " + supertype + " === " + (type.equals(supertype)));
 
 		return supertype;
 	}
