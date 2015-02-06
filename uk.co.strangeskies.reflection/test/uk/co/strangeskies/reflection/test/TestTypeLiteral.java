@@ -54,6 +54,12 @@ public class TestTypeLiteral {
 			return null;
 		}
 
+		public void moothod(Integer integer, Number number) {}
+
+		public void moothod(Number integer, Integer number) {}
+
+		public void moothod(Number integer, Number number) {}
+
 		public <T extends Number, U extends List<? super T>> U method4(
 				Collection<? extends T> a, U b) {
 			return null;
@@ -85,6 +91,22 @@ public class TestTypeLiteral {
 		System.out
 				.println(TypeLiteral.from(B.class).resolveMethodOverload("bothways",
 						String.class, new TypeLiteral<List<String>>() {}.getType()));
+		System.out.println();
+
+		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
+				"moothod", Integer.class, Number.class));
+		System.out.println();
+
+		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
+				"moothod", Number.class, Integer.class));
+		System.out.println();
+
+		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
+				"moothod", Number.class, Number.class));
+		System.out.println();
+
+		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
+				"moothod", Integer.class, Integer.class));
 		System.out.println();
 
 		System.out.println(TypeLiteral.from(Arrays.class)

@@ -136,16 +136,18 @@ public final class Types {
 		return UNWRAPPED_PRIMITIVES.keySet().contains(getRawType(type));
 	}
 
-	public static Type wrap(Type type) {
+	@SuppressWarnings("unchecked")
+	public static <T extends Type> T wrap(T type) {
 		if (isPrimitive(type))
-			return WRAPPED_PRIMITIVES.get(getRawType(type));
+			return (T) WRAPPED_PRIMITIVES.get(getRawType(type));
 		else
 			return type;
 	}
 
-	public static Type unwrap(Type type) {
+	@SuppressWarnings("unchecked")
+	public static <T extends Type> T unwrap(T type) {
 		if (isPrimitiveWrapper(type))
-			return UNWRAPPED_PRIMITIVES.get(getRawType(type));
+			return (T) UNWRAPPED_PRIMITIVES.get(getRawType(type));
 		else
 			return type;
 	}

@@ -187,7 +187,6 @@ public class ParameterizedTypes {
 		private final Class<?> rawType;
 
 		private final Set<Thread> recurringThreads;
-		private final Set<Thread> doublyRecurringThreads;
 
 		ParameterizedTypeImpl(Type ownerType, Class<?> rawType,
 				List<Type> typeArguments) {
@@ -196,7 +195,6 @@ public class ParameterizedTypes {
 			this.typeArguments = typeArguments;
 
 			recurringThreads = new HashSet<>();
-			doublyRecurringThreads = new HashSet<>();
 		}
 
 		@Override
@@ -226,13 +224,11 @@ public class ParameterizedTypes {
 			builder.append('<');
 
 			Thread currentThread = Thread.currentThread();
-			if (recurringThreads.add(currentThread)
-					|| doublyRecurringThreads.add(currentThread)) {
+			if (recurringThreads.add(currentThread)) {
 				builder.append(typeArguments.stream().map(Types::toString)
 						.collect(Collectors.joining(", ")));
 
-				if (!doublyRecurringThreads.remove(currentThread))
-					recurringThreads.remove(currentThread);
+				recurringThreads.remove(currentThread);
 			} else
 				builder.append("...");
 

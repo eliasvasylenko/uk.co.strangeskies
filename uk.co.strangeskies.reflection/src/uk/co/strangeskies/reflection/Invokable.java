@@ -354,29 +354,31 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 
 		Resolver resolver = new Resolver(this.resolver);
 
-		Iterator<Type> parameters = this.parameters.iterator();
-		Type nextParameter = parameters.next();
-		Type parameter = nextParameter;
-		for (Type argument : arguments) {
-			if (nextParameter != null) {
-				parameter = nextParameter;
-				if (parameters.hasNext())
-					nextParameter = parameters.next();
-				else if (variableArity) {
-					parameter = Types.getComponentType(parameter);
-					nextParameter = null;
+		if (!parameters.isEmpty()) {
+			Iterator<Type> parameters = this.parameters.iterator();
+			Type nextParameter = parameters.next();
+			Type parameter = nextParameter;
+			for (Type argument : arguments) {
+				if (nextParameter != null) {
+					parameter = nextParameter;
+					if (parameters.hasNext())
+						nextParameter = parameters.next();
+					else if (variableArity) {
+						parameter = Types.getComponentType(parameter);
+						nextParameter = null;
+					}
 				}
+				new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, argument, parameter)
+						.reduceInto(resolver.getBounds());
 			}
-			new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, argument, parameter)
-					.reduceInto(resolver.getBounds());
+
+			Resolver testResolver = new Resolver(resolver);
+
+			if (!testResolver.validate())
+				throw new TypeInferenceException(
+						"Cannot resolve generic type parameters for invocation of '" + this
+								+ "' with arguments '" + arguments + "'.");
 		}
-
-		Resolver testResolver = new Resolver(resolver);
-
-		if (!testResolver.validate())
-			throw new TypeInferenceException(
-					"Cannot resolve generic type parameters for invocation of '" + this
-							+ "' with arguments '" + arguments + "'.");
 
 		return new Invokable<>(resolver, receiverType, returnType, executable,
 				invocationFunction);

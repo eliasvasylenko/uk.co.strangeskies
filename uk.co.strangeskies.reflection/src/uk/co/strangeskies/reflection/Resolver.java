@@ -560,9 +560,9 @@ public class Resolver {
 		/*
 		 * the bound set contains a bound of the form G<..., αi, ...> =
 		 * capture(G<...>) for some i (1 ≤ i ≤ n), or;
-		 *
+		 * 
 		 * If the bound set produced in the step above contains the bound false;
-		 *
+		 * 
 		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
 		 */
 		Map<InferenceVariable, TypeVariableCapture> freshVariables = TypeVariableCapture
@@ -572,11 +572,11 @@ public class Resolver {
 		 * Otherwise, for all i (1 ≤ i ≤ n), all bounds of the form G<..., αi, ...>
 		 * = capture(G<...>) are removed from the current bound set, and the bounds
 		 * α1 = Y1, ..., αn = Yn are incorporated.
-		 *
+		 * 
 		 * If the result does not contain the bound false, then the result becomes
 		 * the new bound set, and resolution proceeds by selecting a new set of
 		 * variables to instantiate (if necessary), as described above.
-		 *
+		 * 
 		 * Otherwise, the result contains the bound false, and resolution fails.
 		 */
 		bounds.removeCaptureConversions(relatedCaptureConversions);
@@ -730,6 +730,16 @@ public class Resolver {
 	}
 
 	public static void test() {
+		System.out.println(TypeLiteral.from(new TypeLiteral<SchemaNode<?, ?>>() {}
+				.getType()));
+		System.out.println();
+		System.out.println();
+
+		/*
+		 * System.out.println(new TypeLiteral<SchemaNode.Effective<?, ?>>() {}
+		 * .resolveSupertypeParameters(SchemaNode.class)); System.out.println();
+		 * System.out.println();
+		 */
 		System.out.println(new TypeLiteral<HashSet<String>>() {}
 				.resolveSupertypeParameters(Set.class));
 		System.out.println();
@@ -821,6 +831,11 @@ public class Resolver {
 				.isAssignableFrom(new TypeLiteral<Nest<?>>() {}));
 	}
 }
+
+interface Effective<S extends SchemaNode<S, E>, E extends Effective<S, E>>
+		extends SchemaNode<S, E> {}
+
+interface SchemaNode<S extends SchemaNode<S, E>, E extends Effective<S, E>> {}
 
 class Nest<T extends Set<Nest<T>>> {}
 

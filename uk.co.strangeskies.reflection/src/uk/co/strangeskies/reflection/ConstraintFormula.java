@@ -201,7 +201,6 @@ public class ConstraintFormula {
 					Map<TypeVariable<?>, Type> toArguments = ParameterizedTypes
 							.getAllTypeArguments((ParameterizedType) to);
 
-					System.out.println("    @   " + from);
 					List<Type> fromSet;
 					if (this.from instanceof WildcardType)
 						fromSet = Arrays.asList(((WildcardType) from).getUpperBounds()[0]);
