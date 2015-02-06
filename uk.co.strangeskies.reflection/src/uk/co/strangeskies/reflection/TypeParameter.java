@@ -20,7 +20,7 @@ package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.TypeVariable;
 
-public class TypeParameter<T> extends TypeLiteral<T> {
+public class TypeParameter<T> extends ParameterizedTypeLiteral<T> {
 	protected TypeParameter() {}
 
 	@Override

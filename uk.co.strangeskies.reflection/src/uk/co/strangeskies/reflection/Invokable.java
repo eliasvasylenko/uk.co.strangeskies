@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 
-public class Invokable<T, R> implements GenericTypeContainer<Executable> {
+public class Invokable<T, R> {
 	private final Resolver resolver;
 
 	private final TypeLiteral<T> receiverType;
@@ -60,10 +60,10 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 		this.invocationFunction = invocationFunction;
 
 		this.resolver = resolver;
-		resolver.capture(getGenericDeclaration());
+		resolver.capture(getExecutable());
 
 		if (receiverType != returnType)
-			returnType = (TypeLiteral<R>) TypeLiteral.from(resolver
+			returnType = (TypeLiteral<R>) ParameterizedTypeLiteral.from(resolver
 					.resolveType(returnType.getType()));
 
 		this.returnType = returnType;
@@ -73,7 +73,8 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 	}
 
 	public static <T> Invokable<T, T> from(Constructor<T> constructor) {
-		TypeLiteral<T> type = new TypeLiteral<>(constructor.getDeclaringClass());
+		TypeLiteral<T> type = new ParameterizedTypeLiteral<>(
+				constructor.getDeclaringClass());
 		return from(constructor, type);
 	}
 
@@ -91,8 +92,9 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 	}
 
 	public static Invokable<?, ?> from(Method method) {
-		return from(method, TypeLiteral.from(method.getDeclaringClass()),
-				TypeLiteral.from(method.getGenericReturnType()));
+		return from(method,
+				ParameterizedTypeLiteral.from(method.getDeclaringClass()),
+				ParameterizedTypeLiteral.from(method.getGenericReturnType()));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -188,12 +190,10 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 								.collect(Collectors.joining(", "))).append(")").toString();
 	}
 
-	@Override
-	public Executable getGenericDeclaration() {
+	public Executable getExecutable() {
 		return executable;
 	}
 
-	@Override
 	public Type getDeclaringType() {
 		return receiverType.getType();
 	}
@@ -216,7 +216,7 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 	}
 
 	public <S extends R> Invokable<T, S> withTargetType(Class<S> target) {
-		return withTargetType(TypeLiteral.from(target));
+		return withTargetType(ParameterizedTypeLiteral.from(target));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -245,21 +245,24 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 							+ "' with target '" + target + "'.");
 
 		return new Invokable<>(resolver, receiverType,
-				(TypeLiteral<S>) TypeLiteral.from(resolver.resolveType(returnType
-						.getType())), executable,
+				(TypeLiteral<S>) ParameterizedTypeLiteral.from(resolver
+						.resolveType(returnType.getType())), executable,
 				(BiFunction<T, List<?>, S>) invocationFunction);
 	}
 
 	public <U extends R> Invokable<T, U> withInferredType(
-			TypeLiteral<U> targetType, TypeLiteral<?>... arguments) {
+			TypeLiteral<U> targetType, ParameterizedTypeLiteral<?>... arguments) {
 		return withInferredType(targetType, Arrays.asList(arguments));
 	}
 
 	@SuppressWarnings("unchecked")
 	public <U extends R> Invokable<T, U> withInferredType(
-			TypeLiteral<U> targetType, List<? extends TypeLiteral<?>> arguments) {
-		return (Invokable<T, U>) withInferredType(targetType.getType(), arguments
-				.stream().map(TypeLiteral::getType).collect(Collectors.toList()));
+			TypeLiteral<U> targetType,
+			List<? extends ParameterizedTypeLiteral<?>> arguments) {
+		return (Invokable<T, U>) withInferredType(
+				targetType.getType(),
+				arguments.stream().map(ParameterizedTypeLiteral::getType)
+						.collect(Collectors.toList()));
 	}
 
 	public Invokable<T, ? extends R> withInferredType(Type targetType,
@@ -290,8 +293,8 @@ public class Invokable<T, R> implements GenericTypeContainer<Executable> {
 							+ "'.");
 
 		return new Invokable<>(resolver, receiverType,
-				(TypeLiteral<U>) TypeLiteral.from(resolver.resolveType(returnType
-						.getType())), executable,
+				(TypeLiteral<U>) ParameterizedTypeLiteral.from(resolver
+						.resolveType(returnType.getType())), executable,
 				(BiFunction<T, List<?>, U>) invocationFunction);
 	}
 
