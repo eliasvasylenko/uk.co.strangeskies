@@ -28,7 +28,7 @@ import java.util.Set;
 
 import uk.co.strangeskies.reflection.BoundSet;
 import uk.co.strangeskies.reflection.Invokable;
-import uk.co.strangeskies.reflection.ParameterizedTypeLiteral;
+import uk.co.strangeskies.reflection.TypeLiteral;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.TypeParameter;
 
@@ -80,7 +80,7 @@ public class TestTypeLiteral {
 	public static <T> void main(String... args) throws NoSuchMethodException,
 			SecurityException {
 		System.out.println(new TypeParameter<T>() {});
-		System.out.println(new ParameterizedTypeLiteral<List<String>>() {});
+		System.out.println(new TypeLiteral<List<String>>() {});
 		System.out.println();
 
 		System.out.println(ParameterizedTypes.from(HashSet.class,
@@ -89,67 +89,67 @@ public class TestTypeLiteral {
 		System.out.println();
 
 		System.out
-				.println(ParameterizedTypeLiteral.from(B.class).resolveMethodOverload("bothways",
-						String.class, new ParameterizedTypeLiteral<List<String>>() {}.getType()));
+				.println(TypeLiteral.from(B.class).resolveMethodOverload("bothways",
+						String.class, new TypeLiteral<List<String>>() {}.getType()));
 		System.out.println();
 
-		System.out.println(ParameterizedTypeLiteral.from(B.class).resolveMethodOverload(
+		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
 				"moothod", Integer.class, Number.class));
 		System.out.println();
 
-		System.out.println(ParameterizedTypeLiteral.from(B.class).resolveMethodOverload(
+		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
 				"moothod", Number.class, Integer.class));
 		System.out.println();
 
-		System.out.println(ParameterizedTypeLiteral.from(B.class).resolveMethodOverload(
+		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
 				"moothod", Number.class, Number.class));
 		System.out.println();
 
-		System.out.println(ParameterizedTypeLiteral.from(B.class).resolveMethodOverload(
+		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
 				"moothod", Integer.class, Integer.class));
 		System.out.println();
 
-		System.out.println(ParameterizedTypeLiteral.from(Arrays.class)
+		System.out.println(TypeLiteral.from(Arrays.class)
 				.resolveMethodOverload("asList", int.class, double.class)
-				.withTargetType(new ParameterizedTypeLiteral<List<? extends Number>>() {}.getType())
+				.withTargetType(new TypeLiteral<List<? extends Number>>() {}.getType())
 				.infer());
 		System.out.println();
 
-		System.out.println(ParameterizedTypeLiteral
+		System.out.println(TypeLiteral
 				.from(Arrays.class)
 				.resolveMethodOverload("asList", int.class, double.class)
 				.withTargetType(
-						new ParameterizedTypeLiteral<List<? super Comparable<? extends Number>>>() {}
+						new TypeLiteral<List<? super Comparable<? extends Number>>>() {}
 								.getType()).infer());
 		System.out.println();
 
-		System.out.println(new ParameterizedTypeLiteral<B>() {}.resolveMethodOverload("okay",
-				new ParameterizedTypeLiteral<Set<Invokable<T, ?>>>() {}.getType(),
-				new ParameterizedTypeLiteral<List<? extends Type>>() {}.getType()));
+		System.out.println(new TypeLiteral<B>() {}.resolveMethodOverload("okay",
+				new TypeLiteral<Set<Invokable<T, ?>>>() {}.getType(),
+				new TypeLiteral<List<? extends Type>>() {}.getType()));
 		System.out.println();
 
-		System.out.println(ParameterizedTypeLiteral.from(B.class).resolveMethodOverload(
-				"method", new ParameterizedTypeLiteral<List<Integer>>() {}.getType(),
-				new ParameterizedTypeLiteral<List<Number>>() {}.getType()));
+		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
+				"method", new TypeLiteral<List<Integer>>() {}.getType(),
+				new TypeLiteral<List<Number>>() {}.getType()));
 		System.out.println();
 
-		System.out.println(ParameterizedTypeLiteral.from(B.class).resolveMethodOverload(
-				"method2", new ParameterizedTypeLiteral<List<Integer>>() {}.getType(),
-				new ParameterizedTypeLiteral<List<Comparable<Integer>>>() {}.getType()));
+		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
+				"method2", new TypeLiteral<List<Integer>>() {}.getType(),
+				new TypeLiteral<List<Comparable<Integer>>>() {}.getType()));
 		System.out.println();
 
-		System.out.println(ParameterizedTypeLiteral
+		System.out.println(TypeLiteral
 				.from(B.class)
 				.resolveMethodOverload("method",
-						new ParameterizedTypeLiteral<Collection<? super Integer>>() {}.getType())
+						new TypeLiteral<Collection<? super Integer>>() {}.getType())
 				.infer());
 		System.out.println();
 
-		System.out.println(ParameterizedTypeLiteral
+		System.out.println(TypeLiteral
 				.from(B.class)
 				.resolveMethodOverload("method4",
-						new ParameterizedTypeLiteral<Collection<? extends Integer>>() {}.getType(),
-						new ParameterizedTypeLiteral<List<? super Number>>() {}.getType()).infer());
+						new TypeLiteral<Collection<? extends Integer>>() {}.getType(),
+						new TypeLiteral<List<? super Number>>() {}.getType()).infer());
 		System.out.println();
 
 		/*-

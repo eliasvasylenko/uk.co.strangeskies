@@ -42,31 +42,64 @@ public class BoundSet {
 	private static final AtomicLong COUNTER = new AtomicLong();
 
 	private class InferenceVariableData {
+		private final InferenceVariable inferenceVariable;
 		private final Set<Type> upperBounds;
 		private final Set<Type> lowerBounds;
 		private final Set<Type> equalities;
 
-		public InferenceVariableData() {
+		public InferenceVariableData(InferenceVariable inferenceVariable) {
+			this.inferenceVariable = inferenceVariable;
 			upperBounds = new HashSet<>();
 			lowerBounds = new HashSet<>();
 			equalities = new HashSet<>();
 		}
 
 		public InferenceVariableData(InferenceVariableData that) {
+			inferenceVariable = that.inferenceVariable;
 			upperBounds = new HashSet<>(that.upperBounds);
 			lowerBounds = new HashSet<>(that.lowerBounds);
 			equalities = new HashSet<>(that.equalities);
 		}
 
+		public InferenceVariable getInferenceVariable() {
+			return inferenceVariable;
+		}
+
 		public void addEquality(Type type) {
 			equalities.add(type);
+
+			ComplementaryBoundIncorporator incorporator = new ComplementaryBoundIncorporator();
+			for (Type equality : equalities) {
+				incorporator.incorporateTransitiveEquality(inferenceVariable, type,
+						inferenceVariable, equality);
+			}
+			incorporator.constraints.forEach(c -> c.reduceInto(BoundSet.this));
+		}
+
+		public void addEquality(InferenceVariable type) {
+			equalities.add(type);
+
+			ComplementaryBoundIncorporator incorporator = new ComplementaryBoundIncorporator();
+			for (Type equality : equalities) {
+				incorporator.incorporateTransitiveEquality(inferenceVariable, type,
+						inferenceVariable, equality);
+			}
+			incorporator.constraints.forEach(c -> c.reduceInto(BoundSet.this));
 		}
 
 		public void addUpperBound(Type type) {
 			upperBounds.add(type);
 		}
 
+		public void addUpperBound(InferenceVariable type) {
+			upperBounds.add(type);
+		}
+
 		public void addLowerBound(Type type) {
+			lowerBounds.add(type);
+		}
+
+		public void addLowerBound(InferenceVariable type) {
 			lowerBounds.add(type);
 		}
 	}
@@ -84,11 +117,11 @@ public class BoundSet {
 
 		bounds.addAll(boundSet.bounds);
 		inferenceVariables.putAll(boundSet.inferenceVariables
-				.entrySet()
+				.values()
 				.stream()
 				.collect(
-						Collectors.toMap(Entry::getKey,
-								k -> new InferenceVariableData(k.getValue()))));
+						Collectors.toMap(InferenceVariableData::getInferenceVariable,
+								InferenceVariableData::new)));
 	}
 
 	public Set<Type> getUpperBounds(InferenceVariable variable) {
@@ -183,26 +216,24 @@ public class BoundSet {
 
 		@Override
 		public void acceptEquality(InferenceVariable a, InferenceVariable b) {
-			if (inferenceVariables.containsKey(a))
-				inferenceVariables.get(a).addEquality(b);
-			if (inferenceVariables.containsKey(b))
-				inferenceVariables.get(b).addEquality(a);
+			inferenceVariables.get(a).addEquality(b);
+			inferenceVariables.get(b).addEquality(a);
 
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptEquality(a, b)),
 					incorporator -> new PartialBoundVisitor() {
 						@Override
 						public void acceptEquality(InferenceVariable a2,
 								InferenceVariable b2) {
-							incorporator.incorporateTransitiveEquality(a, b, a2, b2);
-							incorporator.incorporateTransitiveEquality(a, b, b2, a2);
-							incorporator.incorporateTransitiveEquality(b, a, a2, b2);
-							incorporator.incorporateTransitiveEquality(b, a, b2, a2);
+							// incorporator.incorporateTransitiveEquality(a, b, a2, b2);
+							// incorporator.incorporateTransitiveEquality(a, b, b2, a2);
+							// incorporator.incorporateTransitiveEquality(b, a, a2, b2);
+							// incorporator.incorporateTransitiveEquality(b, a, b2, a2);
 						}
 
 						@Override
 						public void acceptEquality(InferenceVariable a2, Type b2) {
-							incorporator.incorporateTransitiveEquality(a2, b2, a, b);
-							incorporator.incorporateTransitiveEquality(a2, b2, b, a);
+							// incorporator.incorporateTransitiveEquality(a2, b2, a, b);
+							// incorporator.incorporateTransitiveEquality(a2, b2, b, a);
 						}
 
 						@Override
@@ -227,21 +258,20 @@ public class BoundSet {
 
 		@Override
 		public void acceptEquality(InferenceVariable a, Type b) {
-			if (inferenceVariables.containsKey(a))
-				inferenceVariables.get(a).addEquality(b);
+			inferenceVariables.get(a).addEquality(b);
 
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptEquality(a, b)),
 					incorporator -> new PartialBoundVisitor() {
 						@Override
 						public void acceptEquality(InferenceVariable a2,
 								InferenceVariable b2) {
-							incorporator.incorporateTransitiveEquality(a, b, a2, b2);
-							incorporator.incorporateTransitiveEquality(a, b, b2, a2);
+							// incorporator.incorporateTransitiveEquality(a, b, a2, b2);
+							// incorporator.incorporateTransitiveEquality(a, b, b2, a2);
 						}
 
 						@Override
 						public void acceptEquality(InferenceVariable a2, Type b2) {
-							incorporator.incorporateTransitiveEquality(a, b, a2, b2);
+							// incorporator.incorporateTransitiveEquality(a, b, a2, b2);
 
 							incorporator.incorporateProperEqualitySubstitution(a, b, a2, b2);
 							incorporator.incorporateProperEqualitySubstitution(a2, b2, a, b);
@@ -275,10 +305,8 @@ public class BoundSet {
 
 		@Override
 		public void acceptSubtype(InferenceVariable a, InferenceVariable b) {
-			if (inferenceVariables.containsKey(a))
-				inferenceVariables.get(a).addUpperBound(b);
-			if (inferenceVariables.containsKey(b))
-				inferenceVariables.get(b).addLowerBound(a);
+			inferenceVariables.get(a).addUpperBound(b);
+			inferenceVariables.get(b).addLowerBound(a);
 
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptSubtype(a, b)),
 					incorporator -> new PartialBoundVisitor() {
@@ -318,8 +346,7 @@ public class BoundSet {
 
 		@Override
 		public void acceptSubtype(InferenceVariable a, Type b) {
-			if (inferenceVariables.containsKey(a))
-				inferenceVariables.get(a).addUpperBound(b);
+			inferenceVariables.get(a).addUpperBound(b);
 
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptSubtype(a, b)),
 					incorporator -> new PartialBoundVisitor() {
@@ -363,8 +390,7 @@ public class BoundSet {
 
 		@Override
 		public void acceptSubtype(Type a, InferenceVariable b) {
-			if (inferenceVariables.containsKey(b))
-				inferenceVariables.get(b).addLowerBound(a);
+			inferenceVariables.get(b).addLowerBound(a);
 
 			addAndCheckPairs(new Bound(visitor -> visitor.acceptSubtype(a, b)),
 					incorporator -> new PartialBoundVisitor() {
@@ -704,7 +730,8 @@ public class BoundSet {
 				return finalName;
 			}
 		};
-		inferenceVariables.put(inferenceVariable, new InferenceVariableData());
+		inferenceVariables.put(inferenceVariable, new InferenceVariableData(
+				inferenceVariable));
 		return inferenceVariable;
 	}
 }

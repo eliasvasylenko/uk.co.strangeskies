@@ -63,7 +63,7 @@ public class Invokable<T, R> {
 		resolver.capture(getExecutable());
 
 		if (receiverType != returnType)
-			returnType = (TypeLiteral<R>) ParameterizedTypeLiteral.from(resolver
+			returnType = (TypeLiteral<R>) TypeLiteral.from(resolver
 					.resolveType(returnType.getType()));
 
 		this.returnType = returnType;
@@ -73,7 +73,7 @@ public class Invokable<T, R> {
 	}
 
 	public static <T> Invokable<T, T> from(Constructor<T> constructor) {
-		TypeLiteral<T> type = new ParameterizedTypeLiteral<>(
+		TypeLiteral<T> type = new TypeLiteral<>(
 				constructor.getDeclaringClass());
 		return from(constructor, type);
 	}
@@ -93,8 +93,8 @@ public class Invokable<T, R> {
 
 	public static Invokable<?, ?> from(Method method) {
 		return from(method,
-				ParameterizedTypeLiteral.from(method.getDeclaringClass()),
-				ParameterizedTypeLiteral.from(method.getGenericReturnType()));
+				TypeLiteral.from(method.getDeclaringClass()),
+				TypeLiteral.from(method.getGenericReturnType()));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -216,7 +216,7 @@ public class Invokable<T, R> {
 	}
 
 	public <S extends R> Invokable<T, S> withTargetType(Class<S> target) {
-		return withTargetType(ParameterizedTypeLiteral.from(target));
+		return withTargetType(TypeLiteral.from(target));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -245,23 +245,23 @@ public class Invokable<T, R> {
 							+ "' with target '" + target + "'.");
 
 		return new Invokable<>(resolver, receiverType,
-				(TypeLiteral<S>) ParameterizedTypeLiteral.from(resolver
+				(TypeLiteral<S>) TypeLiteral.from(resolver
 						.resolveType(returnType.getType())), executable,
 				(BiFunction<T, List<?>, S>) invocationFunction);
 	}
 
 	public <U extends R> Invokable<T, U> withInferredType(
-			TypeLiteral<U> targetType, ParameterizedTypeLiteral<?>... arguments) {
+			TypeLiteral<U> targetType, TypeLiteral<?>... arguments) {
 		return withInferredType(targetType, Arrays.asList(arguments));
 	}
 
 	@SuppressWarnings("unchecked")
 	public <U extends R> Invokable<T, U> withInferredType(
 			TypeLiteral<U> targetType,
-			List<? extends ParameterizedTypeLiteral<?>> arguments) {
+			List<? extends TypeLiteral<?>> arguments) {
 		return (Invokable<T, U>) withInferredType(
 				targetType.getType(),
-				arguments.stream().map(ParameterizedTypeLiteral::getType)
+				arguments.stream().map(TypeLiteral::getType)
 						.collect(Collectors.toList()));
 	}
 
@@ -293,7 +293,7 @@ public class Invokable<T, R> {
 							+ "'.");
 
 		return new Invokable<>(resolver, receiverType,
-				(TypeLiteral<U>) ParameterizedTypeLiteral.from(resolver
+				(TypeLiteral<U>) TypeLiteral.from(resolver
 						.resolveType(returnType.getType())), executable,
 				(BiFunction<T, List<?>, U>) invocationFunction);
 	}

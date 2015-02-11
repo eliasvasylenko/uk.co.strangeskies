@@ -113,7 +113,7 @@ public class ParameterizedTypes {
 	@SuppressWarnings("unchecked")
 	public static <T> TypeLiteral<? extends T> from(Class<T> rawType,
 			Map<? extends TypeVariable<?>, ? extends Type> typeArguments) {
-		return (TypeLiteral<? extends T>) ParameterizedTypeLiteral.from(uncheckedFrom(rawType,
+		return (TypeLiteral<? extends T>) TypeLiteral.from(uncheckedFrom(rawType,
 				typeArguments));
 	}
 
@@ -129,7 +129,7 @@ public class ParameterizedTypes {
 				&& isGeneric(rawType.getEnclosingClass()))
 			throw new IllegalArgumentException();
 
-		return (TypeLiteral<? extends T>) ParameterizedTypeLiteral.from(uncheckedFrom(null,
+		return (TypeLiteral<? extends T>) TypeLiteral.from(uncheckedFrom(null,
 				rawType, typeArguments));
 	}
 

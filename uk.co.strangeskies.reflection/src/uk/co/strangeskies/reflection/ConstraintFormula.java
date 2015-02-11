@@ -128,7 +128,7 @@ public class ConstraintFormula {
 		if (to instanceof ParameterizedType) {
 			return (toRaw.getTypeParameters().length > 0)
 					&& (toRaw.isAssignableFrom(fromRaw))
-					&& (ParameterizedTypeLiteral.from(from).resolveSupertypeParameters(toRaw)
+					&& (TypeLiteral.from(from).resolveSupertypeParameters(toRaw)
 							.getType() instanceof Class);
 		} else
 			return toRaw.isArray()
@@ -265,7 +265,7 @@ public class ConstraintFormula {
 					/*
 					 * Otherwise:
 					 */
-					TypeLiteral<?> toComponent = ParameterizedTypeLiteral.from(Types
+					TypeLiteral<?> toComponent = TypeLiteral.from(Types
 							.getComponentType(to));
 					if (!fromComponent.isPrimitive() && !toComponent.isPrimitive()) {
 						/*
@@ -326,10 +326,10 @@ public class ConstraintFormula {
 	}
 
 	private TypeLiteral<?> findMostSpecificArrayType(Type from) {
-		TypeLiteral<?> fromToken = ParameterizedTypeLiteral.from(from);
+		TypeLiteral<?> fromToken = TypeLiteral.from(from);
 
 		if (fromToken.getRawType().isArray()) {
-			return ParameterizedTypeLiteral.from(Types.getComponentType(from));
+			return TypeLiteral.from(Types.getComponentType(from));
 		}
 
 		if (from instanceof WildcardType) {
@@ -355,7 +355,7 @@ public class ConstraintFormula {
 					.anyMatch(
 							t -> !Types.isAssignable(Types.getComponentType(mostSpecific),
 									Types.getComponentType(t))))
-				return ParameterizedTypeLiteral.from(mostSpecific);
+				return TypeLiteral.from(mostSpecific);
 		}
 
 		return null;
@@ -573,8 +573,8 @@ public class ConstraintFormula {
 				 */
 				ParameterizedTypes.getAllTypeParameters(Types.getRawType(from))
 						.forEach(
-								type -> reduce(Kind.EQUALITY, ParameterizedTypeLiteral.from(from)
-										.getTypeArgument(type), ParameterizedTypeLiteral.from(to)
+								type -> reduce(Kind.EQUALITY, TypeLiteral.from(from)
+										.getTypeArgument(type), TypeLiteral.from(to)
 										.getTypeArgument(type), bounds));
 			}
 		}
