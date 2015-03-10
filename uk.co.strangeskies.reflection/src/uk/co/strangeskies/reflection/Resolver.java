@@ -730,11 +730,6 @@ public class Resolver {
 	}
 
 	public static void test() {
-		System.out.println(TypeLiteral
-				.from(new TypeLiteral<SchemaNode<?, ?>>() {}.getType()));
-		System.out.println();
-		System.out.println();
-
 		/*
 		 * System.out.println(new TypeLiteral<SchemaNode.Effective<?, ?>>() {}
 		 * .resolveSupertypeParameters(SchemaNode.class)); System.out.println();
@@ -749,9 +744,8 @@ public class Resolver {
 		System.out.println();
 		System.out.println();
 
-		System.out
-				.println(new TypeLiteral<Collection<? super String>>() {}
-						.resolveSubtypeParameters(HashSet.class));
+		System.out.println(new TypeLiteral<Collection<? super String>>() {}
+				.resolveSubtypeParameters(HashSet.class));
 		System.out.println();
 		System.out.println();
 
@@ -772,14 +766,12 @@ public class Resolver {
 		System.out.println();
 		System.out.println();
 
-		System.out
-				.println(new TypeLiteral<Outer<String>.Inner2<Double>>() {}
-						.resolveSupertypeParameters(Outer.Inner.class));
+		System.out.println(new TypeLiteral<Outer<String>.Inner2<Double>>() {}
+				.resolveSupertypeParameters(Outer.Inner.class));
 		System.out.println();
 		System.out.println();
 
-		System.out.println("TYPELITTEST: "
-				+ new TypeLiteral<String>() {});
+		System.out.println("TYPELITTEST: " + new TypeLiteral<String>() {});
 		System.out.println("TYPELITTEST-2: "
 				+ new Y<Integer>() {}.resolveSupertypeParameters(Collection.class));
 		System.out.println("TYPELITTEST-3: " + new G());
@@ -800,37 +792,38 @@ public class Resolver {
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeLiteral
-				.from(new TypeLiteral<Nest<?>>() {}.getType()));
-		System.out.println();
-		System.out.println();
-
-		System.out.println(TypeLiteral
-				.from(new TypeLiteral<Nest22<?>>() {}.getType()));
-		System.out.println();
-		System.out.println();
-
-		System.out.println(TypeLiteral
-				.from(new TypeLiteral<Nest2<?>>() {}.getType()));
+		System.out.println(TypeLiteral.from(new TypeLiteral<SchemaNode<?, ?>>() {}
+				.getType()));
 		System.out.println();
 		System.out.println();
 
 		System.out
-				.println(TypeLiteral
-						.from(new TypeLiteral<Base<LeftN, RightN>>() {}
-								.getType()));
+				.println(TypeLiteral.from(new TypeLiteral<Nest<?>>() {}.getType()));
+		System.out.println();
+		System.out.println();
+
+		System.out.println(TypeLiteral.from(new TypeLiteral<Nest22<?>>() {}
+				.getType()));
+		System.out.println();
+		System.out.println();
+
+		System.out.println(TypeLiteral.from(new TypeLiteral<Nest2<?>>() {}
+				.getType()));
 		System.out.println();
 		System.out.println();
 
 		System.out.println(TypeLiteral
-				.from(new TypeLiteral<RightN>() {}
-						.resolveSupertypeParameters(Base.class).getType()));
+				.from(new TypeLiteral<Base<LeftN, RightN>>() {}.getType()));
+		System.out.println();
+		System.out.println();
+
+		System.out.println(TypeLiteral.from(new TypeLiteral<RightN>() {}
+				.resolveSupertypeParameters(Base.class).getType()));
 		System.out.println();
 		System.out.println();
 
 		System.out.println(TypeLiteral
-				.from(new TypeLiteral<Nest2<? extends Nest22<?>>>() {}
-						.getType()));
+				.from(new TypeLiteral<Nest2<? extends Nest22<?>>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 

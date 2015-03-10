@@ -39,9 +39,7 @@ public class ConstraintFormula {
 		this.from = from;
 		this.to = to;
 
-		System.out.println(this);
-		// if ("T#88".equals(from.getTypeName()))
-		// throw new IllegalArgumentException();
+		// System.out.println(this);
 	}
 
 	@Override
