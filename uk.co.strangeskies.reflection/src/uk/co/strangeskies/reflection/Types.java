@@ -174,7 +174,6 @@ public final class Types {
 	}
 
 	public static boolean isAssignable(Type from, Type to) {
-		System.out.println(from + " -> " + to);
 		if (from == null || from.equals(to) || to == null
 				|| to.equals(Object.class)) {
 			/*

@@ -751,9 +751,9 @@ public class Resolver {
 
 		new TypeLiteral<Outer<Serializable>.Inner<String, HashSet<Serializable>, Set<String>>>() {}
 				.getResolver();
+		System.out.println();
+		System.out.println();
 
-		System.out.println();
-		System.out.println();
 		System.out
 				.println(new TypeLiteral<Outer<Serializable>.Inner<String, HashSet<Serializable>, Set<String>>>() {}
 						.resolveSubtypeParameters(Outer2.Inner3.class));
@@ -771,13 +771,6 @@ public class Resolver {
 		System.out.println();
 		System.out.println();
 
-		System.out.println("TYPELITTEST: " + new TypeLiteral<String>() {});
-		System.out.println("TYPELITTEST-2: "
-				+ new Y<Integer>() {}.resolveSupertypeParameters(Collection.class));
-		System.out.println("TYPELITTEST-3: " + new G());
-		System.out.println();
-		System.out.println();
-
 		System.out.println("type test: "
 				+ new TypeLiteral<String>() {}
 						.resolveSupertypeParameters(Comparable.class));
@@ -789,11 +782,6 @@ public class Resolver {
 		System.out.println(new TypeLiteral<NM<?>>() {});
 		System.out.println(new TypeLiteral<NM<?>>() {}
 				.resolveSupertypeParameters(SM.class));
-		System.out.println();
-		System.out.println();
-
-		System.out.println(TypeLiteral.from(new TypeLiteral<SchemaNode<?, ?>>() {}
-				.getType()));
 		System.out.println();
 		System.out.println();
 
@@ -822,13 +810,33 @@ public class Resolver {
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeLiteral
-				.from(new TypeLiteral<Nest2<? extends Nest22<?>>>() {}.getType()));
+		System.out.println("TYPELITTEST: " + new TT<String>() {});
+		System.out.println("TYPELITTEST-2: " + new Y<String>() {});
+		System.out.println("TYPELITTEST-3: " + new G() {});
+		System.out.println("TYPELITTEST-4: "
+				+ new Y<Integer>() {}.resolveSupertypeParameters(Collection.class));
 		System.out.println();
 		System.out.println();
 
 		System.out.println(new TypeLiteral<Self<?>>() {}
 				.isAssignableFrom(new TypeLiteral<Nest<?>>() {}));
+		System.out.println();
+		System.out.println();
+
+		System.out.println(TypeLiteral
+				.from(new TypeLiteral<Nest2<? extends Nest2<?>>>() {}.getType()));
+		System.out.println();
+		System.out.println();
+
+		System.out.println(TypeLiteral.from(new TypeLiteral<SchemaNode<?, ?>>() {}
+				.getType()));
+		System.out.println();
+		System.out.println();
+
+		System.out.println(TypeLiteral
+				.from(new TypeLiteral<Nest2<? extends Nest22<?>>>() {}.getType()));
+		System.out.println();
+		System.out.println();
 	}
 }
 
@@ -837,7 +845,12 @@ interface Effective<S extends SchemaNode<S, E>, E extends Effective<S, E>>
 
 interface SchemaNode<S extends SchemaNode<S, E>, E extends Effective<S, E>> {}
 
-class Nest<T extends Set<Nest<T>>> {}
+class Nest<T extends Set<Nest<T>>> implements Self<Nest<T>> {
+	@Override
+	public Nest<T> copy() {
+		return null;
+	}
+}
 
 class Nest2<T extends Nest2<T>> {}
 

@@ -28,7 +28,8 @@ import java.util.stream.Collectors;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 
 public abstract class IntersectionType implements Type {
-	IntersectionType() {}
+	IntersectionType() {
+	}
 
 	public abstract Type[] getTypes();
 
@@ -62,11 +63,19 @@ public abstract class IntersectionType implements Type {
 					mostSpecificClass = type;
 				else if (Types.isAssignable(type, mostSpecificClass))
 					mostSpecificClass = type;
-				else if (!Types.isAssignable(mostSpecificClass, type))
-					throw new TypeInferenceException("Illegal intersection type '"
-							+ flattenedTypes
-							+ "', cannot contain both of the non-interface classes '"
-							+ mostSpecificClass + "' and '" + type + "'.");
+				else if (!Types.isAssignable(mostSpecificClass, type)) {
+					/*
+					 * TODO try to properly intersect compatible generic types
+					 * with wildcard parameters which have no subtype relation.
+					 */
+
+					throw new TypeInferenceException(
+							"Illegal intersection type '"
+									+ flattenedTypes
+									+ "', cannot contain both of the non-interface classes '"
+									+ mostSpecificClass + "' and '" + type
+									+ "'.");
+				}
 			}
 		}
 		if (mostSpecificClass != null) {
@@ -75,7 +84,8 @@ public abstract class IntersectionType implements Type {
 
 		try {
 			BoundSet bounds = new BoundSet();
-			InferenceVariable inferenceVariable = bounds.createInferenceVariable();
+			InferenceVariable inferenceVariable = bounds
+					.createInferenceVariable();
 			for (Type type : flattenedTypes)
 				new ConstraintFormula(Kind.SUBTYPE, inferenceVariable, type)
 						.reduceInto(bounds);

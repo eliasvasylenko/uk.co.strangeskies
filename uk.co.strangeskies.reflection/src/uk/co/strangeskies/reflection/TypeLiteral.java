@@ -61,8 +61,9 @@ public class TypeLiteral<T> {
 			Class<?> superClass = getClass();
 			Function<Type, InferenceVariable> inferenceVariables = t -> null;
 			do {
-				resolver.incorporateType(new TypeSubstitution(inferenceVariables)
-						.resolve(superClass.getGenericSuperclass()));
+				resolver.incorporateType(new TypeSubstitution(
+						inferenceVariables).resolve(superClass
+						.getGenericSuperclass()));
 				superClass = superClass.getSuperclass();
 
 				final Class<?> finalClass = superClass;
@@ -75,8 +76,8 @@ public class TypeLiteral<T> {
 				};
 			} while (!superClass.equals(TypeLiteral.class));
 
-			type = resolver
-					.resolveTypeVariable(TypeLiteral.class.getTypeParameters()[0]);
+			type = resolver.resolveTypeVariable(TypeLiteral.class
+					.getTypeParameters()[0]);
 		}
 
 		rawType = (Class<? super T>) Types.getRawType(type);
@@ -240,8 +241,8 @@ public class TypeLiteral<T> {
 
 	@SuppressWarnings("unchecked")
 	public <U> TypeLiteral<? extends U> resolveType(TypeLiteral<U> type) {
-		return (TypeLiteral<? extends U>) TypeLiteral.from(getInternalResolver()
-				.resolveType(type.getType()));
+		return (TypeLiteral<? extends U>) TypeLiteral
+				.from(getInternalResolver().resolveType(type.getType()));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -255,12 +256,14 @@ public class TypeLiteral<T> {
 
 		resolveTypeHierarchy(getInternalResolver(), type, superclass);
 
-		return (TypeLiteral<? extends U>) TypeLiteral.from(getInternalResolver()
-				.resolveType(superclass, parameterizedType));
+		return (TypeLiteral<? extends U>) TypeLiteral
+				.from(getInternalResolver().resolveType(superclass,
+						parameterizedType));
 	}
 
 	@SuppressWarnings("unchecked")
-	public <U> TypeLiteral<? extends U> resolveSubtypeParameters(Class<U> subclass) {
+	public <U> TypeLiteral<? extends U> resolveSubtypeParameters(
+			Class<U> subclass) {
 		if (!ParameterizedTypes.isGeneric(subclass))
 			return TypeLiteral.from(subclass);
 
@@ -269,8 +272,9 @@ public class TypeLiteral<T> {
 
 		resolveTypeHierarchy(getInternalResolver(), parameterizedType, rawType);
 
-		return (TypeLiteral<? extends U>) TypeLiteral.from(getInternalResolver()
-				.resolveType(subclass, parameterizedType));
+		return (TypeLiteral<? extends U>) TypeLiteral
+				.from(getInternalResolver().resolveType(subclass,
+						parameterizedType));
 	}
 
 	private static void resolveTypeHierarchy(Resolver resolver, Type subtype,
@@ -293,11 +297,13 @@ public class TypeLiteral<T> {
 			Set<Type> lesserSubtypes = new HashSet<>(Arrays.asList(subclass
 					.getGenericInterfaces()));
 			if (subclass.getSuperclass() != null)
-				lesserSubtypes.addAll(Arrays.asList(subclass.getGenericSuperclass()));
+				lesserSubtypes.addAll(Arrays.asList(subclass
+						.getGenericSuperclass()));
 
-			subtype = lesserSubtypes.stream()
-					.filter(t -> superclass.isAssignableFrom(Types.getRawType(t)))
-					.findAny().get();
+			subtype = lesserSubtypes
+					.stream()
+					.filter(t -> superclass.isAssignableFrom(Types
+							.getRawType(t))).findAny().get();
 			subtype = new TypeSubstitution(inferenceVariables).resolve(subtype);
 
 			resolver.incorporateType(subtype);
@@ -329,8 +335,8 @@ public class TypeLiteral<T> {
 
 	private TypeLiteral<?> withTypeArgument(TypeVariable<?> parameter,
 			Type argument) {
-		return TypeLiteral.from(new TypeSubstitution().where(parameter, argument)
-				.resolve(type));
+		return TypeLiteral.from(new TypeSubstitution().where(parameter,
+				argument).resolve(type));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -349,9 +355,8 @@ public class TypeLiteral<T> {
 		return Arrays
 				.stream(getRawType().getMethods())
 				.filter(filter)
-				.map(
-						m -> Invokable.from(m, this,
-								TypeLiteral.from(m.getGenericReturnType())))
+				.map(m -> Invokable.from(m, this,
+						TypeLiteral.from(m.getGenericReturnType())))
 				.collect(Collectors.toSet());
 	}
 
@@ -374,7 +379,8 @@ public class TypeLiteral<T> {
 		return resolveMostSpecificCandidate(candidates, parameters);
 	}
 
-	public Invokable<T, ?> resolveMethodOverload(String name, Type... parameters) {
+	public Invokable<T, ?> resolveMethodOverload(String name,
+			Type... parameters) {
 		return resolveMethodOverload(name, Arrays.asList(parameters));
 	}
 
@@ -388,8 +394,8 @@ public class TypeLiteral<T> {
 				.equals(name));
 
 		if (candidates.isEmpty())
-			throw new IllegalArgumentException("Cannot find any method '" + name
-					+ "' in '" + this + "'.");
+			throw new IllegalArgumentException("Cannot find any method '"
+					+ name + "' in '" + this + "'.");
 
 		candidates = resolveApplicableCandidatesCapture(candidates, parameters);
 
@@ -402,23 +408,28 @@ public class TypeLiteral<T> {
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private Set<? extends Invokable<T, ?>> resolveApplicableCandidatesCapture(
-			Set<? extends Invokable<T, ?>> candidates, List<? extends Type> parameters) {
+			Set<? extends Invokable<T, ?>> candidates,
+			List<? extends Type> parameters) {
 		return resolveApplicableCandidates((Set) candidates, parameters);
 	}
 
 	private <R> Set<? extends Invokable<T, R>> resolveApplicableCandidates(
-			Set<? extends Invokable<T, R>> candidates, List<? extends Type> parameters) {
+			Set<? extends Invokable<T, R>> candidates,
+			List<? extends Type> parameters) {
 		List<RuntimeException> failures = new ArrayList<>();
 
 		Set<? extends Invokable<T, R>> compatibleCandidates = filterOverloadCandidates(
-				candidates, i -> i.withLooseApplicability(parameters), failures::add);
+				candidates, i -> i.withLooseApplicability(parameters),
+				failures::add);
 
 		if (compatibleCandidates.isEmpty())
 			compatibleCandidates = filterOverloadCandidates(candidates,
-					i -> i.withVariableArityApplicability(parameters), failures::add);
+					i -> i.withVariableArityApplicability(parameters),
+					failures::add);
 		else {
 			Set<? extends Invokable<T, R>> oldCompatibleCandidates = compatibleCandidates;
-			compatibleCandidates = filterOverloadCandidates(compatibleCandidates,
+			compatibleCandidates = filterOverloadCandidates(
+					compatibleCandidates,
 					i -> i.withStrictApplicability(parameters), failures::add);
 			if (compatibleCandidates.isEmpty())
 				compatibleCandidates = oldCompatibleCandidates;
@@ -426,8 +437,8 @@ public class TypeLiteral<T> {
 
 		if (compatibleCandidates.isEmpty())
 			throw new TypeInferenceException("Parameters '" + parameters
-					+ "' are not applicable to invokable candidates '" + candidates
-					+ "'.", failures.iterator().next());
+					+ "' are not applicable to invokable candidates '"
+					+ candidates + "'.", failures.iterator().next());
 
 		return compatibleCandidates;
 	}
@@ -478,41 +489,48 @@ public class TypeLiteral<T> {
 		for (int i = 0; i < parameters; i++) {
 			Set<Invokable<T, ?>> mostSpecificForParameter = new HashSet<>();
 
-			TypeLiteral<?> mostSpecificParameterType = TypeLiteral.from(candidates
-					.iterator().next().getParameters().get(i));
+			TypeLiteral<?> mostSpecificParameterType = TypeLiteral
+					.from(candidates.iterator().next().getParameters().get(i));
 
 			for (Invokable<T, ?> overloadCandidate : candidates) {
-				TypeLiteral<?> parameterClass = TypeLiteral.from(overloadCandidate
-						.getParameters().get(i));
+				TypeLiteral<?> parameterClass = TypeLiteral
+						.from(overloadCandidate.getParameters().get(i));
 
 				if (parameterClass.isAssignableFrom(mostSpecificParameterType)) {
 					mostSpecificParameterType = parameterClass;
 
-					if (!mostSpecificParameterType.isAssignableFrom(parameterClass))
+					if (!mostSpecificParameterType
+							.isAssignableFrom(parameterClass))
 						mostSpecificForParameter.clear();
 					mostSpecificForParameter.add(overloadCandidate);
-				} else if (!mostSpecificParameterType.isAssignableFrom(parameterClass)) {
-					throw new TypeInferenceException("Cannot resolve method ambiguity.");
+				} else if (!mostSpecificParameterType
+						.isAssignableFrom(parameterClass)) {
+					throw new TypeInferenceException(
+							"Cannot resolve method ambiguity.");
 				}
 			}
 
 			mostSpecificSoFar.retainAll(mostSpecificForParameter);
 
 			if (mostSpecificSoFar.isEmpty())
-				throw new TypeInferenceException("Cannot resolve method ambiguity.");
+				throw new TypeInferenceException(
+						"Cannot resolve method ambiguity.");
 		}
 
 		/*
-		 * Find which of the remaining candidates, which should all have identical
-		 * parameter types, is declared in the lowermost class.
+		 * Find which of the remaining candidates, which should all have
+		 * identical parameter types, is declared in the lowermost class.
 		 */
 		Iterator<Invokable<T, R>> overrideCandidateIterator = mostSpecificSoFar
 				.iterator();
 		Invokable<T, R> mostSpecific = overrideCandidateIterator.next();
 		while (overrideCandidateIterator.hasNext()) {
 			Invokable<T, R> candidate = overrideCandidateIterator.next();
-			mostSpecific = candidate.getExecutable().getDeclaringClass()
-					.isAssignableFrom(mostSpecific.getExecutable().getDeclaringClass()) ? candidate
+			mostSpecific = candidate
+					.getExecutable()
+					.getDeclaringClass()
+					.isAssignableFrom(
+							mostSpecific.getExecutable().getDeclaringClass()) ? candidate
 					: mostSpecific;
 		}
 
