@@ -88,9 +88,10 @@ public class TestTypeLiteral {
 				.resolveSupertypeParameters(Collection.class));
 		System.out.println();
 
-		System.out
-				.println(TypeLiteral.from(B.class).resolveMethodOverload("bothways",
-						String.class, new TypeLiteral<List<String>>() {}.getType()));
+		System.out.println(TypeLiteral
+				.from(B.class)
+				.resolveMethodOverload("bothways", String.class,
+						new TypeLiteral<List<String>>() {}.getType()).infer());
 		System.out.println();
 
 		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
@@ -105,9 +106,11 @@ public class TestTypeLiteral {
 				"moothod", Number.class, Number.class));
 		System.out.println();
 
+		/*-
 		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
 				"moothod", Integer.class, Integer.class));
 		System.out.println();
+		 */
 
 		System.out.println(TypeLiteral.from(Arrays.class)
 				.resolveMethodOverload("asList", int.class, double.class)

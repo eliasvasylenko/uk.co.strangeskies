@@ -318,22 +318,14 @@ class InferenceVariableData {
 		new TypeVisitor() {
 			@Override
 			protected void visitClass(Class<?> type) {
-				visit(type.getGenericInterfaces());
-				visit(type.getGenericSuperclass());
-			}
-
-			@Override
-			protected void visitParameterizedType(ParameterizedType type) {
-				Class<?> rawClass = (Class<?>) type.getRawType();
-
-				if (rawClass.isAssignableFrom(Types.getRawType(T))) {
+				if (type.isAssignableFrom(Types.getRawType(T))) {
 					Type supertypeS = ParameterizedTypes.resolveSupertypeParameters(S,
-							rawClass);
+							type);
 					Type supertypeT = ParameterizedTypes.resolveSupertypeParameters(T,
-							rawClass);
+							type);
 
 					for (TypeVariable<?> parameter : ParameterizedTypes
-							.getAllTypeParameters(rawClass)) {
+							.getAllTypeParameters(type)) {
 						Type argumentS = ParameterizedTypes.getAllTypeArguments(
 								(ParameterizedType) supertypeS).get(parameter);
 						Type argumentT = ParameterizedTypes.getAllTypeArguments(
@@ -344,8 +336,15 @@ class InferenceVariableData {
 							new ConstraintFormula(Kind.EQUALITY, argumentS, argumentT)
 									.reduceInto(boundSet);
 					}
-				} else
-					visitClass(rawClass);
+				} else {
+					visit(type.getInterfaces());
+					visit(type.getSuperclass());
+				}
+			}
+
+			@Override
+			protected void visitParameterizedType(ParameterizedType type) {
+				visit(type.getRawType());
 			}
 		}.visit(S);
 	}

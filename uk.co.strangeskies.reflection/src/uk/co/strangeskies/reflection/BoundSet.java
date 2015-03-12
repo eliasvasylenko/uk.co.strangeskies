@@ -27,7 +27,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class BoundSet {
 	private static final AtomicLong COUNTER = new AtomicLong();
@@ -117,8 +116,8 @@ public class BoundSet {
 				.collect(Collectors.toSet());
 	}
 
-	public Stream<Bound> stream() {
-		return bounds.stream();
+	public Set<Bound> getBounds() {
+		return new HashSet<>(bounds);
 	}
 
 	public BoundVisitor incorporate() {
@@ -138,33 +137,45 @@ public class BoundSet {
 
 		@Override
 		public void acceptEquality(InferenceVariable a, InferenceVariable b) {
+			bounds.add(new Bound(v -> v.acceptEquality(a, b)));
+
 			inferenceVariableData.get(a).addEquality(b);
 			inferenceVariableData.get(b).addEquality(a);
 		}
 
 		@Override
 		public void acceptEquality(InferenceVariable a, Type b) {
+			bounds.add(new Bound(v -> v.acceptEquality(a, b)));
+
 			inferenceVariableData.get(a).addEquality(b);
 		}
 
 		@Override
 		public void acceptSubtype(InferenceVariable a, InferenceVariable b) {
+			bounds.add(new Bound(v -> v.acceptSubtype(a, b)));
+
 			inferenceVariableData.get(a).addUpperBound(b);
 			inferenceVariableData.get(b).addLowerBound(a);
 		}
 
 		@Override
 		public void acceptSubtype(InferenceVariable a, Type b) {
+			bounds.add(new Bound(v -> v.acceptSubtype(a, b)));
+
 			inferenceVariableData.get(a).addUpperBound(b);
 		}
 
 		@Override
 		public void acceptSubtype(Type a, InferenceVariable b) {
+			bounds.add(new Bound(v -> v.acceptSubtype(a, b)));
+
 			inferenceVariableData.get(b).addLowerBound(a);
 		}
 
 		@Override
 		public void acceptCaptureConversion(CaptureConversion c) {
+			bounds.add(new Bound(v -> v.acceptCaptureConversion(c)));
+
 			captureConversions.add(c);
 
 			for (InferenceVariableData inferenceVariable : inferenceVariableData
@@ -196,8 +207,10 @@ public class BoundSet {
 
 	public void removeCaptureConversions(
 			Collection<? extends CaptureConversion> captureConversions) {
-		captureConversions.forEach(c -> bounds.remove(new Bound(b -> b
-				.acceptCaptureConversion(c))));
+		captureConversions.forEach(c -> {
+			this.captureConversions.remove(c);
+			bounds.remove(new Bound(b -> b.acceptCaptureConversion(c)));
+		});
 	}
 
 	public InferenceVariable createInferenceVariable() {

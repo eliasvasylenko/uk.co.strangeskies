@@ -59,6 +59,6 @@ public interface BoundVisitor {
 	void acceptCaptureConversion(CaptureConversion c);
 
 	public default void visit(BoundSet bounds) {
-		bounds.stream().forEach(b -> b.accept(this));
+		bounds.getBounds().forEach(b -> b.accept(this));
 	}
 }

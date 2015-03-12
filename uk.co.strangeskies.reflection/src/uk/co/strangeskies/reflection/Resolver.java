@@ -121,7 +121,7 @@ public class Resolver {
 	}
 
 	private void recalculateRemainingDependencies() {
-		bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
+		bounds.getBounds().forEach(b -> b.accept(new PartialBoundVisitor() {
 			@Override
 			public void acceptEquality(InferenceVariable a, Type b) {
 				if (bounds.isProperType(b) && !bounds.getInstantiation(a).isPresent())
@@ -147,7 +147,7 @@ public class Resolver {
 		 * other inference variable mentioned in this bound (on both sides of the =
 		 * sign).
 		 */
-		bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
+		bounds.getBounds().forEach(b -> b.accept(new PartialBoundVisitor() {
 			@Override
 			public void acceptCaptureConversion(CaptureConversion c) {
 				for (InferenceVariable variable : c.getInferenceVariables()) {
@@ -171,7 +171,7 @@ public class Resolver {
 		 * Given a bound of one of the following forms, where T is either an
 		 * inference variable β or a type that mentions β:
 		 */
-		bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
+		bounds.getBounds().forEach(b -> b.accept(new PartialBoundVisitor() {
 			/*
 			 * α = T, T = α
 			 */
@@ -492,7 +492,7 @@ public class Resolver {
 
 	private void resolveMinimalIndepdendentSet(Set<InferenceVariable> minimalSet) {
 		Set<CaptureConversion> relatedCaptureConversions = new HashSet<>();
-		bounds.stream().forEach(b -> b.accept(new PartialBoundVisitor() {
+		bounds.getBounds().forEach(b -> b.accept(new PartialBoundVisitor() {
 			@Override
 			public void acceptCaptureConversion(CaptureConversion c) {
 				if (c.getInferenceVariables().stream().anyMatch(minimalSet::contains))
@@ -828,13 +828,18 @@ public class Resolver {
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeLiteral.from(new TypeLiteral<SchemaNode<?, ?>>() {}
-				.getType()));
+		System.out.println(TypeLiteral
+				.from(new TypeLiteral<Nest2<? extends Nest22<?>>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeLiteral
-				.from(new TypeLiteral<Nest2<? extends Nest22<?>>>() {}.getType()));
+		/*
+		 * TODO The proper infinite types are correctly inferred for the actual
+		 * bounds on S and E here. The problem must be some sort of non-terminating
+		 * subsequent validation or infinite unnecessary bound inference...
+		 */
+		System.out.println(TypeLiteral.from(new TypeLiteral<SchemaNode<?, ?>>() {}
+				.getType()));
 		System.out.println();
 		System.out.println();
 	}
