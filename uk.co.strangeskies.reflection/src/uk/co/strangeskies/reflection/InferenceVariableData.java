@@ -74,6 +74,12 @@ class InferenceVariableData {
 		Set<Type> equalities = new HashSet<>(this.equalities);
 		if (this.equalities.add(type)) {
 			/*
+			 * TODO this infinite recursion seems to be caused by an insufficiency of
+			 * ParameterizedTypeImpl.equals in testing infinite types? Maybe not.
+			 */
+			System.out.println(α + " ==== " + type + " @@@@ " + this);
+
+			/*
 			 * α = S and α = T imply ‹S = T›
 			 */
 			for (Type equality : equalities)

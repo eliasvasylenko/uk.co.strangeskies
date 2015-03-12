@@ -220,6 +220,9 @@ public class BoundSet {
 	public InferenceVariable createInferenceVariable(String name) {
 		String finalName = name + "#" + COUNTER.incrementAndGet();
 
+		if (COUNTER.get() > 9000)
+			throw new IllegalAccessError();
+
 		InferenceVariable inferenceVariable = new InferenceVariable() {
 			@Override
 			public String toString() {

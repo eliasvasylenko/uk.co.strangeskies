@@ -254,6 +254,7 @@ public class ParameterizedTypes {
 		@Override
 		public boolean equals(Object other) {
 			Thread currentThread = Thread.currentThread();
+
 			if (recurringThreads.add(currentThread)) {
 				Boolean equals = null;
 
