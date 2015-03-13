@@ -71,6 +71,8 @@ class InferenceVariableData {
 	}
 
 	public void addEquality(Type type) {
+		System.out.println();
+		System.out.println("    " + equalities);
 		Set<Type> equalities = new HashSet<>(this.equalities);
 		if (this.equalities.add(type)) {
 			/*
@@ -134,13 +136,13 @@ class InferenceVariableData {
 			/*
 			 * α = S and α <: T imply ‹S <: T›
 			 */
-			for (Type supertype : upperBounds)
+			for (Type supertype : new HashSet<>(upperBounds))
 				incorporateSubtypeSubstitution(type, supertype);
 
 			/*
 			 * α = S and T <: α imply ‹T <: S›
 			 */
-			for (Type subtype : lowerBounds)
+			for (Type subtype : new HashSet<>(lowerBounds))
 				incorporateSupertypeSubstitution(type, subtype);
 		}
 	}
