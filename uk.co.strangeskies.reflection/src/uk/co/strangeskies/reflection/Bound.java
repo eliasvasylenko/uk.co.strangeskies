@@ -157,7 +157,7 @@ public class Bound {
 				that.accept(new PartialBoundVisitor() {
 					@Override
 					public void acceptCaptureConversion(CaptureConversion c2) {
-						result.set(c.equals(c2));
+						result.set(c == c2);
 					}
 				});
 			}

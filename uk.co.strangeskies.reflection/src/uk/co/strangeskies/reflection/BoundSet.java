@@ -19,6 +19,7 @@
 package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,12 +46,13 @@ public class BoundSet {
 		this();
 
 		bounds.addAll(boundSet.bounds);
+		captureConversions.addAll(boundSet.captureConversions);
 		inferenceVariableData.putAll(boundSet.inferenceVariableData
 				.values()
 				.stream()
 				.collect(
 						Collectors.toMap(InferenceVariableData::getInferenceVariable,
-								InferenceVariableData::new)));
+								i -> new InferenceVariableData(this, i))));
 	}
 
 	Map<InferenceVariable, InferenceVariableData> getInferenceVariableData() {
@@ -58,7 +60,7 @@ public class BoundSet {
 	}
 
 	public Set<CaptureConversion> getCaptureConversions() {
-		return captureConversions;
+		return new HashSet<>(captureConversions);
 	}
 
 	public Set<Type> getUpperBounds(InferenceVariable variable) {
@@ -70,8 +72,11 @@ public class BoundSet {
 	}
 
 	public Set<Type> getProperUpperBounds(InferenceVariable variable) {
-		return inferenceVariableData.get(variable).getUpperBounds().stream()
-				.filter(BoundSet.this::isProperType).collect(Collectors.toSet());
+		Set<Type> upperBounds = inferenceVariableData.get(variable)
+				.getUpperBounds().stream().filter(BoundSet.this::isProperType)
+				.collect(Collectors.toSet());
+		return upperBounds.isEmpty() ? new HashSet<>(Arrays.asList(Object.class))
+				: upperBounds;
 	}
 
 	public Set<Type> getProperLowerBounds(InferenceVariable variable) {
@@ -116,8 +121,13 @@ public class BoundSet {
 				.collect(Collectors.toSet());
 	}
 
+	@Deprecated
 	public Set<Bound> getBounds() {
 		return new HashSet<>(bounds);
+	}
+
+	public BoundVisitor incorporate(ConstraintFormula constraintFormula) {
+		return new ReductionTarget(constraintFormula);
 	}
 
 	public BoundVisitor incorporate() {
@@ -207,8 +217,8 @@ public class BoundSet {
 
 	public void removeCaptureConversions(
 			Collection<? extends CaptureConversion> captureConversions) {
+		this.captureConversions.removeAll(captureConversions);
 		captureConversions.forEach(c -> {
-			this.captureConversions.remove(c);
 			bounds.remove(new Bound(b -> b.acceptCaptureConversion(c)));
 		});
 	}

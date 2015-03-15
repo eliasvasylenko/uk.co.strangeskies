@@ -126,11 +126,6 @@ public class TestTypeLiteral {
 								.getType()).infer());
 		System.out.println();
 
-		System.out.println(new TypeLiteral<B>() {}.resolveMethodOverload("okay",
-				new TypeLiteral<Set<Invokable<T, ?>>>() {}.getType(),
-				new TypeLiteral<List<? extends Type>>() {}.getType()));
-		System.out.println();
-
 		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
 				"method", new TypeLiteral<List<Integer>>() {}.getType(),
 				new TypeLiteral<List<Number>>() {}.getType()));
@@ -143,23 +138,28 @@ public class TestTypeLiteral {
 
 		System.out.println(TypeLiteral
 				.from(B.class)
-				.resolveMethodOverload("method",
-						new TypeLiteral<Collection<? super Integer>>() {}.getType())
-				.infer());
-		System.out.println();
-
-		System.out.println(TypeLiteral
-				.from(B.class)
 				.resolveMethodOverload("method4",
 						new TypeLiteral<Collection<? extends Integer>>() {}.getType(),
 						new TypeLiteral<List<? super Number>>() {}.getType()).infer());
 		System.out.println();
 
-		/*-
-		System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
-				"method", new TypeLiteral<Collection<? super Integer>>() {}.getType(),
-				new TypeLiteral<Collection<? super Integer>>() {}.getType()));
+		System.out.println(TypeLiteral
+				.from(B.class)
+				.resolveMethodOverload("method",
+						new TypeLiteral<Collection<? super Integer>>() {}.getType())
+				.infer());
 		System.out.println();
+
+		System.out.println(new TypeLiteral<B>() {}.resolveMethodOverload("okay",
+				new TypeLiteral<Set<Invokable<T, ?>>>() {}.getType(),
+				new TypeLiteral<List<? extends Type>>() {}.getType()));
+		System.out.println();
+
+		/*
+		 * System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
+		 * "method", new TypeLiteral<Collection<? super Integer>>() {}.getType(),
+		 * new TypeLiteral<Collection<? super Integer>>() {}.getType()));
+		 * System.out.println();
 		 */
 	}
 }

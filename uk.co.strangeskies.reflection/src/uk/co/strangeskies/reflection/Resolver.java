@@ -492,13 +492,10 @@ public class Resolver {
 
 	private void resolveMinimalIndepdendentSet(Set<InferenceVariable> minimalSet) {
 		Set<CaptureConversion> relatedCaptureConversions = new HashSet<>();
-		bounds.getBounds().forEach(b -> b.accept(new PartialBoundVisitor() {
-			@Override
-			public void acceptCaptureConversion(CaptureConversion c) {
-				if (c.getInferenceVariables().stream().anyMatch(minimalSet::contains))
-					relatedCaptureConversions.add(c);
-			};
-		}));
+		bounds.getCaptureConversions().forEach(c -> {
+			if (c.getInferenceVariables().stream().anyMatch(minimalSet::contains))
+				relatedCaptureConversions.add(c);
+		});
 
 		if (relatedCaptureConversions.isEmpty()) {
 			/*
@@ -515,13 +512,13 @@ public class Resolver {
 							false);
 
 					Type instantiationCandidate;
-					if (!bounds.getLowerBounds(variable).isEmpty()) {
+					if (!bounds.getProperLowerBounds(variable).isEmpty()) {
 						/*
 						 * If αi has one or more proper lower bounds, L1, ..., Lk, then Ti =
 						 * lub(L1, ..., Lk) (§4.10.4).
 						 */
 						instantiationCandidate = IntersectionType.from(Types
-								.leastUpperBound(bounds.getLowerBounds(variable)));
+								.leastUpperBound(bounds.getProperLowerBounds(variable)));
 					} else if (hasThrowableBounds.get()) {
 						/*
 						 * Otherwise, if the bound set contains throws αi, and the proper
@@ -535,14 +532,13 @@ public class Resolver {
 						 * glb(U1, ..., Uk) (§5.1.10).
 						 */
 						instantiationCandidate = Types.greatestLowerBound(bounds
-								.getUpperBounds(variable));
+								.getProperUpperBounds(variable));
 					}
 
 					instantiationCandidates.put(variable, instantiationCandidate);
 					bounds.incorporate().acceptEquality(variable, instantiationCandidate);
 				}
 			} catch (TypeInferenceException e) {
-				e.printStackTrace();
 				instantiationCandidates = null;
 			}
 

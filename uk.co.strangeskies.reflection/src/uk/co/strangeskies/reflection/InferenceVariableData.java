@@ -30,7 +30,7 @@ import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 class InferenceVariableData {
 	private final BoundSet boundSet;
 
-	private final InferenceVariable α;
+	private final InferenceVariable a;
 	private final Set<Type> equalities;
 	private final Set<Type> upperBounds;
 	private final Set<Type> lowerBounds;
@@ -38,16 +38,16 @@ class InferenceVariableData {
 	public InferenceVariableData(BoundSet boundSet,
 			InferenceVariable inferenceVariable) {
 		this.boundSet = boundSet;
-		this.α = inferenceVariable;
+		this.a = inferenceVariable;
 
 		upperBounds = new HashSet<>();
 		lowerBounds = new HashSet<>();
 		equalities = new HashSet<>();
 	}
 
-	public InferenceVariableData(InferenceVariableData that) {
-		boundSet = that.boundSet;
-		α = that.α;
+	public InferenceVariableData(BoundSet boundSet, InferenceVariableData that) {
+		this.boundSet = boundSet;
+		a = that.a;
 
 		upperBounds = new HashSet<>(that.upperBounds);
 		lowerBounds = new HashSet<>(that.lowerBounds);
@@ -55,7 +55,7 @@ class InferenceVariableData {
 	}
 
 	public InferenceVariable getInferenceVariable() {
-		return α;
+		return a;
 	}
 
 	public Set<Type> getEqualities() {
@@ -71,16 +71,8 @@ class InferenceVariableData {
 	}
 
 	public void addEquality(Type type) {
-		System.out.println();
-		System.out.println("    " + equalities);
 		Set<Type> equalities = new HashSet<>(this.equalities);
 		if (this.equalities.add(type)) {
-			/*
-			 * TODO this infinite recursion seems to be caused by an insufficiency of
-			 * ParameterizedTypeImpl.equals in testing infinite types? Maybe not.
-			 */
-			System.out.println(α + " ==== " + type + " @@@@ " + this);
-
 			/*
 			 * α = S and α = T imply ‹S = T›
 			 */
@@ -93,7 +85,8 @@ class InferenceVariableData {
 			for (InferenceVariableData other : boundSet.getInferenceVariableData()
 					.values())
 				for (Type equality : other.getEqualities())
-					incorporateProperEqualitySubstitution(α, type, other.α, equality);
+					if (equality != type)
+						incorporateProperEqualitySubstitution(a, type, other.a, equality);
 
 			/*
 			 * α = U and S <: T imply ‹S[α:=U] <: T[α:=U]›
@@ -101,9 +94,9 @@ class InferenceVariableData {
 			for (InferenceVariableData other : boundSet.getInferenceVariableData()
 					.values()) {
 				for (Type supertype : other.getUpperBounds())
-					incorporateProperSubtypeSubstitution(type, other.α, supertype);
+					incorporateProperSubtypeSubstitution(type, other.a, supertype);
 				for (Type subtype : other.getLowerBounds())
-					incorporateProperSupertypeSubstitution(type, subtype, other.α);
+					incorporateProperSupertypeSubstitution(type, subtype, other.a);
 			}
 
 			/*
@@ -118,9 +111,10 @@ class InferenceVariableData {
 			for (Type subtype : getLowerBounds())
 				incorporateSupertypeSubstitution(type, subtype);
 
-			for (CaptureConversion captureConversion : boundSet
-					.getCaptureConversions())
-				incorporateCapturedEquality(captureConversion, type);
+			if (boundSet.getInferenceVariables().contains(type))
+				for (CaptureConversion captureConversion : boundSet
+						.getCaptureConversions())
+					incorporateCapturedEquality(captureConversion, type);
 		}
 	}
 
@@ -155,9 +149,10 @@ class InferenceVariableData {
 			 */
 			for (InferenceVariableData other : boundSet.getInferenceVariableData()
 					.values())
-				for (Type supertype : new HashSet<>(other.equalities))
-					boundSet.getInferenceVariableData().get(other.α)
-							.incorporateProperSubtypeSubstitution(supertype, α, type);
+				for (Type equality : new HashSet<>(other.equalities))
+					if (equality != type)
+						boundSet.getInferenceVariableData().get(other.a)
+								.incorporateProperSubtypeSubstitution(equality, a, type);
 
 			/*
 			 * α = S and α <: T imply ‹S <: T›
@@ -210,9 +205,10 @@ class InferenceVariableData {
 			 */
 			for (InferenceVariableData other : boundSet.getInferenceVariableData()
 					.values())
-				for (Type supertype : new HashSet<>(other.equalities))
-					boundSet.getInferenceVariableData().get(other.α)
-							.incorporateProperSupertypeSubstitution(supertype, type, α);
+				for (Type equality : new HashSet<>(other.equalities))
+					if (equality != type)
+						boundSet.getInferenceVariableData().get(other.a)
+								.incorporateProperSupertypeSubstitution(equality, type, a);
 
 			/*
 			 * α = S and T <: α imply ‹T <: S›
@@ -288,16 +284,16 @@ class InferenceVariableData {
 	/*
 	 * α = U and S = T imply ‹S[α:=U] = T[α:=U]›
 	 */
-	public void incorporateProperEqualitySubstitution(InferenceVariable α,
+	public void incorporateProperEqualitySubstitution(InferenceVariable a,
 			Type U, InferenceVariable S, Type T) {
-		incorporateProperEqualitySubstitutionImpl(α, U, S, T);
-		incorporateProperEqualitySubstitutionImpl(S, T, α, U);
+		incorporateProperEqualitySubstitutionImpl(a, U, S, T);
+		incorporateProperEqualitySubstitutionImpl(S, T, a, U);
 	}
 
-	public void incorporateProperEqualitySubstitutionImpl(InferenceVariable α,
+	public void incorporateProperEqualitySubstitutionImpl(InferenceVariable a,
 			Type U, InferenceVariable S, Type T) {
 		if (boundSet.isProperType(U)) {
-			TypeSubstitution resolver = new TypeSubstitution().where(α, U);
+			TypeSubstitution resolver = new TypeSubstitution().where(a, U);
 
 			T = resolver.resolve(T);
 
@@ -311,7 +307,7 @@ class InferenceVariableData {
 	public void incorporateProperSubtypeSubstitution(Type U, InferenceVariable S,
 			Type T) {
 		if (boundSet.isProperType(U)) {
-			TypeSubstitution resolver = new TypeSubstitution().where(α, U);
+			TypeSubstitution resolver = new TypeSubstitution().where(a, U);
 
 			T = resolver.resolve(T);
 
@@ -322,7 +318,7 @@ class InferenceVariableData {
 	public void incorporateProperSupertypeSubstitution(Type U, Type S,
 			InferenceVariable T) {
 		if (boundSet.isProperType(U)) {
-			TypeSubstitution resolver = new TypeSubstitution().where(α, U);
+			TypeSubstitution resolver = new TypeSubstitution().where(a, U);
 
 			S = resolver.resolve(S);
 
@@ -401,13 +397,13 @@ class InferenceVariableData {
 		 * 
 		 * αi = R implies the bound false
 		 */
-		if (c.getCapturedArgument(α) instanceof WildcardType)
+		if (c.getCapturedArgument(a) instanceof WildcardType || a.equals(R))
 			boundSet.incorporate().acceptFalsehood();
 	}
 
 	public void incorporateCapturedSubtype(CaptureConversion c, Type R) {
-		if (c.getCapturedArgument(α) instanceof WildcardType) {
-			WildcardType A = (WildcardType) c.getCapturedArgument(α);
+		if (c.getCapturedArgument(a) instanceof WildcardType) {
+			WildcardType A = (WildcardType) c.getCapturedArgument(a);
 
 			TypeSubstitution θ = new TypeSubstitution();
 			for (InferenceVariable variable : c.getInferenceVariables())
@@ -418,7 +414,7 @@ class InferenceVariableData {
 				 * If Ai is a wildcard of the form ? extends T:
 				 */
 
-				Type[] bounds = c.getCapturedParameter(α).getBounds();
+				Type[] bounds = c.getCapturedParameter(a).getBounds();
 				if (bounds.length == 0
 						|| (bounds.length == 1 && bounds[0].equals(Object.class))) {
 					/*
@@ -437,7 +433,7 @@ class InferenceVariableData {
 					 * <: R›
 					 */
 					new ConstraintFormula(Kind.SUBTYPE, θ.resolve(IntersectionType
-							.uncheckedFrom(c.getCapturedParameter(α).getBounds())), R)
+							.uncheckedFrom(c.getCapturedParameter(a).getBounds())), R)
 							.reduceInto(boundSet);
 				}
 			} else if (A.getLowerBounds().length > 0) {
@@ -447,7 +443,7 @@ class InferenceVariableData {
 				 * αi <: R implies the constraint formula ‹Bi θ <: R›
 				 */
 				new ConstraintFormula(Kind.SUBTYPE, θ.resolve(IntersectionType
-						.uncheckedFrom(c.getCapturedParameter(α).getBounds())), R)
+						.uncheckedFrom(c.getCapturedParameter(a).getBounds())), R)
 						.reduceInto(boundSet);
 			} else {
 				/*
@@ -456,15 +452,15 @@ class InferenceVariableData {
 				 * αi <: R implies the constraint formula ‹Bi θ <: R›
 				 */
 				new ConstraintFormula(Kind.SUBTYPE, θ.resolve(IntersectionType
-						.uncheckedFrom(c.getCapturedParameter(α).getBounds())), R)
+						.uncheckedFrom(c.getCapturedParameter(a).getBounds())), R)
 						.reduceInto(boundSet);
 			}
 		}
 	}
 
 	public void incorporateCapturedSupertype(CaptureConversion c, Type R) {
-		if (c.getCapturedArgument(α) instanceof WildcardType) {
-			WildcardType A = (WildcardType) c.getCapturedArgument(α);
+		if (c.getCapturedArgument(a) instanceof WildcardType) {
+			WildcardType A = (WildcardType) c.getCapturedArgument(a);
 
 			if (A.getLowerBounds().length > 0) {
 				/*

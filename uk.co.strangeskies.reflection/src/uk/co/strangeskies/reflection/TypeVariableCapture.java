@@ -163,8 +163,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 			 * ..., Lk, then let the lower bound of Yi be lub(L1, ..., Lk); if not,
 			 * then Yi has no lower bound.
 			 */
-			Set<Type> lowerBoundSet = bounds.getLowerBounds(inferenceVariable)
-					.stream().filter(bounds::isProperType).collect(Collectors.toSet());
+			Set<Type> lowerBoundSet = bounds.getProperLowerBounds(inferenceVariable);
 
 			Type[] lowerBounds;
 			if (lowerBoundSet.isEmpty())

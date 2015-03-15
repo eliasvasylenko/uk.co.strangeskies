@@ -90,8 +90,6 @@ public class TypeLiteral<T> {
 		this.type = type;
 		this.rawType = rawType;
 
-		System.out.println("           creating TL: " + type);
-
 		getInternalResolver();
 	}
 

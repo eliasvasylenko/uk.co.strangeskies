@@ -74,6 +74,8 @@ public class ConstraintFormula {
 	 * A constraint formula of the form ‹S → T› is reduced as follows:
 	 */
 	private void reduceLooseCompatibilityConstraint(BoundSet bounds) {
+		BoundVisitor incorporate = bounds.incorporate(this);
+
 		Type from = InferenceVariable.captureConversion(this.from, bounds);
 
 		if (bounds.isProperType(from) && bounds.isProperType(to)) {
@@ -83,7 +85,7 @@ public class ConstraintFormula {
 			 * otherwise.
 			 */
 			if (!Types.isLooseInvocationContextCompatible(from, to)) {
-				bounds.incorporate().acceptFalsehood();
+				incorporate.acceptFalsehood();
 			}
 		} else if (from != null && Types.isPrimitive(from))
 			/*
@@ -139,6 +141,8 @@ public class ConstraintFormula {
 	 * A constraint formula of the form ‹S <: T› is reduced as follows:
 	 */
 	private void reduceSubtypeConstraint(BoundSet bounds) {
+		BoundVisitor incorporate = bounds.incorporate(this);
+
 		if (bounds.isProperType(from) && bounds.isProperType(to)) {
 			/*
 			 * If S and T are proper types, the constraint reduces to true if S is a
@@ -146,7 +150,7 @@ public class ConstraintFormula {
 			 */
 			if (!Types.isAssignable(from, to) && !(from instanceof InferenceVariable)
 					&& !(to instanceof InferenceVariable)) {
-				bounds.incorporate().acceptFalsehood();
+				incorporate.acceptFalsehood();
 			} else
 				return;
 		} else if (from == null)
@@ -158,23 +162,23 @@ public class ConstraintFormula {
 			/*
 			 * Otherwise, if T is the null type, the constraint reduces to false.
 			 */
-			bounds.incorporate().acceptFalsehood();
+			incorporate.acceptFalsehood();
 		else if (bounds.getInferenceVariables().contains(from))
 			/*
 			 * Otherwise, if S is an inference variable, α, the constraint reduces to
 			 * the bound α <: T.
 			 */
 			if (bounds.getInferenceVariables().contains(to))
-				bounds.incorporate().acceptSubtype((InferenceVariable) from,
+				incorporate.acceptSubtype((InferenceVariable) from,
 						(InferenceVariable) to);
 			else
-				bounds.incorporate().acceptSubtype((InferenceVariable) from, to);
+				incorporate.acceptSubtype((InferenceVariable) from, to);
 		else if (bounds.getInferenceVariables().contains(to))
 			/*
 			 * Otherwise, if T is an inference variable, α, the constraint reduces to
 			 * the bound S <: α.
 			 */
-			bounds.incorporate().acceptSubtype(from, (InferenceVariable) to);
+			incorporate.acceptSubtype(from, (InferenceVariable) to);
 		else {
 			/*
 			 * Otherwise, the constraint is reduced according to the form of T:
@@ -194,7 +198,7 @@ public class ConstraintFormula {
 					 * If no such type exists, the constraint reduces to false.
 					 */
 					if (!(from instanceof InferenceVariable))
-						bounds.incorporate().acceptFalsehood();
+						incorporate.acceptFalsehood();
 				} else {
 					Map<TypeVariable<?>, Type> toArguments = ParameterizedTypes
 							.getAllTypeArguments((ParameterizedType) to);
@@ -217,7 +221,7 @@ public class ConstraintFormula {
 								/*
 								 * If no such type exists, the constraint reduces to false.
 								 */
-								bounds.incorporate().acceptFalsehood();
+								incorporate.acceptFalsehood();
 
 							/*
 							 * Otherwise, the constraint reduces to the following new
@@ -245,7 +249,7 @@ public class ConstraintFormula {
 					from = IntersectionType.uncheckedFrom(bounds
 							.getUpperBounds((InferenceVariable) from));
 				if (!Types.isAssignable(from, to))
-					bounds.incorporate().acceptFalsehood();
+					incorporate.acceptFalsehood();
 			} else if (!(to instanceof IntersectionType)
 					&& Types.getRawType(to).isArray()) {
 				/*
@@ -258,7 +262,7 @@ public class ConstraintFormula {
 					/*
 					 * If no such array type exists, the constraint reduces to false.
 					 */
-					bounds.incorporate().acceptFalsehood();
+					incorporate.acceptFalsehood();
 				} else {
 					/*
 					 * Otherwise:
@@ -279,7 +283,7 @@ public class ConstraintFormula {
 						 */
 						if (!fromComponent.isPrimitive()
 								|| !fromComponent.equals(toComponent))
-							bounds.incorporate().acceptFalsehood();
+							incorporate.acceptFalsehood();
 					}
 				}
 			} else if (to instanceof TypeVariableCapture) {
@@ -307,7 +311,7 @@ public class ConstraintFormula {
 					/*
 					 * - Otherwise, the constraint reduces to false.
 					 */
-					bounds.incorporate().acceptFalsehood();
+					incorporate.acceptFalsehood();
 				}
 			} else if (to instanceof IntersectionType) {
 				/*
@@ -364,6 +368,8 @@ public class ConstraintFormula {
 	 * (§4.5.1), is reduced as follows:
 	 */
 	private void reduceContainmentConstraint(BoundSet bounds) {
+		BoundVisitor incorporate = bounds.incorporate(this);
+
 		/*
 		 * THE NEXT THREE LINES ARE NON-SPEC! This solves some problems relating to
 		 * recursive types which don't seem to occur with normal inference. It
@@ -386,7 +392,7 @@ public class ConstraintFormula {
 				/*
 				 * If S is a wildcard, the constraint reduces to false.
 				 */
-				bounds.incorporate().acceptFalsehood();
+				incorporate.acceptFalsehood();
 			}
 		} else {
 			WildcardType toWildcard = (WildcardType) to;
@@ -462,7 +468,7 @@ public class ConstraintFormula {
 						/*
 						 * Otherwise, the constraint reduces to false.
 						 */
-						bounds.incorporate().acceptFalsehood();
+						incorporate.acceptFalsehood();
 					}
 				}
 			}
@@ -470,6 +476,8 @@ public class ConstraintFormula {
 	}
 
 	private void reduceEqualityConstraint(BoundSet bounds) {
+		BoundVisitor incorporate = bounds.incorporate(this);
+
 		if (from instanceof WildcardType && to instanceof WildcardType) {
 			/*
 			 * A constraint formula of the form ‹S = T›, where S and T are type
@@ -524,7 +532,7 @@ public class ConstraintFormula {
 				/*
 				 * Otherwise, the constraint reduces to false.
 				 */
-				bounds.incorporate().acceptFalsehood();
+				incorporate.acceptFalsehood();
 			}
 		} else {
 			/*
@@ -537,23 +545,23 @@ public class ConstraintFormula {
 				 * the same as T (§4.3.4), and false otherwise.
 				 */
 				if (!from.equals(to))
-					bounds.incorporate().acceptFalsehood();
+					incorporate.acceptFalsehood();
 			} else if (bounds.getInferenceVariables().contains(from)) {
 				/*
 				 * Otherwise, if S is an inference variable, α, the constraint reduces
 				 * to the bound α = T.
 				 */
 				if (bounds.getInferenceVariables().contains(to))
-					bounds.incorporate().acceptEquality((InferenceVariable) from,
+					incorporate.acceptEquality((InferenceVariable) from,
 							(InferenceVariable) to);
 				else
-					bounds.incorporate().acceptEquality((InferenceVariable) from, to);
+					incorporate.acceptEquality((InferenceVariable) from, to);
 			} else if (bounds.getInferenceVariables().contains(to)) {
 				/*
 				 * Otherwise, if T is an inference variable, α, the constraint reduces
 				 * to the bound S = α.
 				 */
-				bounds.incorporate().acceptEquality((InferenceVariable) to, from);
+				incorporate.acceptEquality((InferenceVariable) to, from);
 			} else if (Types.getRawType(from).isArray()
 					&& Types.getRawType(to).isArray()) {
 				/*
