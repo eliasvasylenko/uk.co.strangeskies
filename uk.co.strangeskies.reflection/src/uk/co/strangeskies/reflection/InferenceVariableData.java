@@ -292,7 +292,8 @@ class InferenceVariableData {
 
 	public void incorporateProperEqualitySubstitutionImpl(InferenceVariable a,
 			Type U, InferenceVariable S, Type T) {
-		if (boundSet.isProperType(U)) {
+		if (boundSet.isProperType(U)
+				&& !Types.getAllMentionedBy(T, a::equals).isEmpty()) {
 			TypeSubstitution resolver = new TypeSubstitution().where(a, U);
 
 			T = resolver.resolve(T);
@@ -306,7 +307,8 @@ class InferenceVariableData {
 	 */
 	public void incorporateProperSubtypeSubstitution(Type U, InferenceVariable S,
 			Type T) {
-		if (boundSet.isProperType(U)) {
+		if (boundSet.isProperType(U)
+				&& !Types.getAllMentionedBy(T, a::equals).isEmpty()) {
 			TypeSubstitution resolver = new TypeSubstitution().where(a, U);
 
 			T = resolver.resolve(T);
@@ -317,7 +319,8 @@ class InferenceVariableData {
 
 	public void incorporateProperSupertypeSubstitution(Type U, Type S,
 			InferenceVariable T) {
-		if (boundSet.isProperType(U)) {
+		if (boundSet.isProperType(U)
+				&& !Types.getAllMentionedBy(S, a::equals).isEmpty()) {
 			TypeSubstitution resolver = new TypeSubstitution().where(a, U);
 
 			S = resolver.resolve(S);
