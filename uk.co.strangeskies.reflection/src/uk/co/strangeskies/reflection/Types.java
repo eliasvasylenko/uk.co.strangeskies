@@ -87,6 +87,9 @@ public final class Types {
 		} else if (type instanceof WildcardType) {
 			return getRawTypes(IntersectionType.uncheckedFrom(((WildcardType) type)
 					.getUpperBounds()));
+		} else if (type instanceof TypeVariable<?>) {
+			return getRawTypes(IntersectionType
+					.uncheckedFrom(((TypeVariable<?>) type).getBounds()));
 		} else
 			return new HashSet<>(Arrays.asList(getRawType(type)));
 	}

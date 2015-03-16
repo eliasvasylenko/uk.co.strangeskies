@@ -37,7 +37,16 @@ public class BoundSet {
 	private final Set<CaptureConversion> captureConversions;
 
 	public BoundSet() {
-		bounds = new HashSet<>();
+		bounds = new HashSet<Bound>() {
+			@Override
+			public boolean add(Bound e) {
+				if (super.add(e)) {
+					System.out.println("   ? " + e);
+					return true;
+				} else
+					return false;
+			}
+		};
 		inferenceVariableData = new HashMap<>();
 		captureConversions = new HashSet<>();
 	}

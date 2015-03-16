@@ -18,18 +18,21 @@
  */
 package uk.co.strangeskies.reflection;
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 
 public abstract class IntersectionType implements Type {
-	IntersectionType() {
-	}
+	IntersectionType() {}
 
 	public abstract Type[] getTypes();
 
@@ -63,19 +66,9 @@ public abstract class IntersectionType implements Type {
 					mostSpecificClass = type;
 				else if (Types.isAssignable(type, mostSpecificClass))
 					mostSpecificClass = type;
-				else if (!Types.isAssignable(mostSpecificClass, type)) {
-					/*
-					 * TODO try to properly intersect compatible generic types
-					 * with wildcard parameters which have no subtype relation.
-					 */
-
-					throw new TypeInferenceException(
-							"Illegal intersection type '"
-									+ flattenedTypes
-									+ "', cannot contain both of the non-interface classes '"
-									+ mostSpecificClass + "' and '" + type
-									+ "'.");
-				}
+				else if (!Types.isAssignable(mostSpecificClass, type))
+					mostSpecificClass = mergeClasses(mostSpecificClass, type,
+							flattenedTypes);
 			}
 		}
 		if (mostSpecificClass != null) {
@@ -84,8 +77,7 @@ public abstract class IntersectionType implements Type {
 
 		try {
 			BoundSet bounds = new BoundSet();
-			InferenceVariable inferenceVariable = bounds
-					.createInferenceVariable();
+			InferenceVariable inferenceVariable = bounds.createInferenceVariable();
 			for (Type type : flattenedTypes)
 				new ConstraintFormula(Kind.SUBTYPE, inferenceVariable, type)
 						.reduceInto(bounds);
@@ -96,6 +88,59 @@ public abstract class IntersectionType implements Type {
 		}
 
 		return uncheckedFrom(flattenedTypes);
+	}
+
+	private static Type mergeClasses(Type mostSpecificType, Type typeToMerge,
+			List<Type> flattenedTypes) {
+		Class<?> mostSpecificClass = Types.getRawType(mostSpecificType);
+		Class<?> classToMerge = Types.getRawType(typeToMerge);
+
+		if (mostSpecificClass.isAssignableFrom(classToMerge)) {
+			Type temp = mostSpecificType;
+			mostSpecificType = typeToMerge;
+			typeToMerge = temp;
+
+			Class<?> tempClass = mostSpecificClass;
+			mostSpecificClass = classToMerge;
+			classToMerge = tempClass;
+		}
+
+		if (mostSpecificType instanceof ParameterizedType
+				&& classToMerge.isAssignableFrom(mostSpecificClass)) {
+			Map<TypeVariable<?>, Type> mostSpecificArguments = ParameterizedTypes
+					.getAllTypeArguments((ParameterizedType) mostSpecificType);
+			Map<TypeVariable<?>, Type> argumentsToMerge = TypeLiteral
+					.from(typeToMerge).resolveSubtypeParameters(mostSpecificClass)
+					.getAllTypeArguments();
+
+			Map<TypeVariable<?>, Type> mergedArguments = new HashMap<>();
+
+			for (TypeVariable<?> parameter : ParameterizedTypes
+					.getAllTypeParameters(mostSpecificClass)) {
+				Type mostSpecificArgument = mostSpecificArguments.get(parameter);
+				Type argumentToMerge = argumentsToMerge.get(parameter);
+
+				if (Types.isContainedBy(mostSpecificArgument, argumentToMerge))
+					mostSpecificArgument = argumentToMerge;
+				else if (!Types.isContainedBy(argumentToMerge, mostSpecificArgument))
+					throw new TypeInferenceException("Illegal intersection type '"
+							+ flattenedTypes
+							+ "', cannot contain both of the non-interface classes '"
+							+ mostSpecificClass + "' and '" + typeToMerge
+							+ "', cannot merge parameters '" + mostSpecificArgument
+							+ "' and '" + argumentToMerge + "'.");
+
+				mergedArguments.put(parameter, mostSpecificArgument);
+			}
+
+			return ParameterizedTypes.from(mostSpecificClass, mergedArguments)
+					.getType();
+		}
+
+		throw new TypeInferenceException("Illegal intersection type '"
+				+ flattenedTypes
+				+ "', cannot contain both of the non-interface classes '"
+				+ mostSpecificClass + "' and '" + typeToMerge + "'.");
 	}
 
 	static IntersectionType uncheckedFrom(Type... types) {

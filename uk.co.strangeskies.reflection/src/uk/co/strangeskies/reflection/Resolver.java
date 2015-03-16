@@ -393,14 +393,17 @@ public class Resolver {
 		Class<?> rawType = Types.getRawType(type);
 		capture(rawType);
 
-		// type = TypeVariableCapture.capture(type);
-		type = constrainWildcards(type);
+		type = TypeVariableCapture.capture(type);
+		//type = constrainWildcards(type);
 
+		System.out.println(ParameterizedTypes.getAllTypeArguments(type));
+		System.out.println(bounds);
 		for (Map.Entry<TypeVariable<?>, Type> typeArgument : ParameterizedTypes
-				.getAllTypeArguments(type).entrySet())
+				.getAllTypeArguments(type).entrySet()) {
 			new ConstraintFormula(Kind.EQUALITY, capturedTypeVariables.get(rawType)
 					.get(typeArgument.getKey()), typeArgument.getValue())
 					.reduceInto(bounds);
+		}
 	}
 
 	public void incorporateInstantiation(TypeVariable<?> variable,
@@ -834,11 +837,19 @@ public class Resolver {
 		 * bounds on S and E here. The problem must be some sort of non-terminating
 		 * subsequent validation or infinite unnecessary bound inference...
 		 */
-		System.out.println(TypeLiteral.from(new TypeLiteral<SchemaNode<?, ?>>() {}
-				.getType()));
+		System.out.println(new TypeLiteral<Effective<?, ?>>() {}
+				.resolveSupertypeParameters(SchemaNode.class));
 		System.out.println();
 		System.out.println();
+
+		TypeLiteral<?> receiver = new TypeLiteral<BindingState>() {};
+		System.out.println("RESOLVE:");
+		receiver.resolveMethodOverload("bindingNode", Arrays.asList(int.class));
 	}
+}
+
+interface BindingState {
+	Effective<?, ?> bindingNode(int parent);
 }
 
 interface Effective<S extends SchemaNode<S, E>, E extends Effective<S, E>>

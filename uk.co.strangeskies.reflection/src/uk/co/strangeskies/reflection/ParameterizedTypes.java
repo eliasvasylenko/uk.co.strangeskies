@@ -286,13 +286,15 @@ public class ParameterizedTypes {
 	private static final List<InferenceVariable> SUBSTITUTE_ARGUMENTS = new ArrayList<>();
 
 	private static InferenceVariable getSubstituteArgument(int index) {
-		while (index >= SUBSTITUTE_ARGUMENTS.size())
+		while (index >= SUBSTITUTE_ARGUMENTS.size()) {
+			String name = "SUB#" + SUBSTITUTE_ARGUMENTS.size();
 			SUBSTITUTE_ARGUMENTS.add(new InferenceVariable() {
 				@Override
 				public String toString() {
-					return "SUB#" + SUBSTITUTE_ARGUMENTS.size();
+					return name;
 				}
 			});
+		}
 		return SUBSTITUTE_ARGUMENTS.get(index);
 	}
 
@@ -301,14 +303,16 @@ public class ParameterizedTypes {
 
 		Map<TypeVariable<?>, InferenceVariable> parameterSubstitutes = new HashMap<>();
 		Map<InferenceVariable, Type> substitutedArguments = new HashMap<>();
+
 		int index = 0;
-		if (type instanceof ParameterizedType)
-			for (Map.Entry<TypeVariable<?>, Type> parameter : getAllTypeArguments(
-					(ParameterizedType) type).entrySet()) {
+		if (type instanceof ParameterizedType) {
+			Map<TypeVariable<?>, Type> arguments = getAllTypeArguments((ParameterizedType) type);
+			for (TypeVariable<?> parameter : getAllTypeParameters(rawType)) {
 				InferenceVariable substituteArgument = getSubstituteArgument(index++);
-				parameterSubstitutes.put(parameter.getKey(), substituteArgument);
-				substitutedArguments.put(substituteArgument, parameter.getValue());
+				parameterSubstitutes.put(parameter, substituteArgument);
+				substitutedArguments.put(substituteArgument, arguments.get(parameter));
 			}
+		}
 
 		Type supertype = new TypeSubstitution(substitutedArguments::get)
 				.resolve(from(rawType, parameterSubstitutes)

@@ -26,10 +26,12 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -73,7 +75,7 @@ public class TypeLiteral<T> {
 					else
 						return null;
 				};
-			} while (!superClass.equals(TypeLiteral.class));
+			} while (!TypeLiteral.class.equals(superClass));
 
 			type = resolver
 					.resolveTypeVariable(TypeLiteral.class.getTypeParameters()[0]);
@@ -228,8 +230,15 @@ public class TypeLiteral<T> {
 		return Types.isAssignable(type, this.type);
 	}
 
-	public List<TypeVariable<?>> getTypeParameters() {
+	public List<TypeVariable<?>> getAllTypeParameters() {
 		return ParameterizedTypes.getAllTypeParameters(rawType);
+	}
+
+	public Map<TypeVariable<?>, Type> getAllTypeArguments() {
+		if (type instanceof ParameterizedType)
+			return ParameterizedTypes.getAllTypeArguments((ParameterizedType) type);
+		else
+			return Collections.emptyMap();
 	}
 
 	public Type getTypeArgument(TypeVariable<?> type) {
