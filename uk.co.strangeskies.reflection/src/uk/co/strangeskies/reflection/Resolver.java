@@ -31,13 +31,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import uk.co.strangeskies.reflection.BoundVisitor.PartialBoundVisitor;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.Self;
@@ -45,6 +44,42 @@ import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 
 public class Resolver {
+	private class RemainingDependencies
+			extends
+			MultiHashMap<InferenceVariable, InferenceVariable, Set<InferenceVariable>> {
+		private static final long serialVersionUID = 1L;
+
+		public RemainingDependencies() {
+			super(HashSet::new);
+		}
+
+		public RemainingDependencies(
+				MultiMap<? extends InferenceVariable, ? extends InferenceVariable, ? extends Set<InferenceVariable>> that) {
+			super(HashSet::new, that);
+		}
+
+		private void addRemainingDependency(InferenceVariable variable,
+				InferenceVariable dependency) {
+			/*
+			 * An inference variable α depends on the resolution of an inference
+			 * variable β if there exists an inference variable γ such that α depends
+			 * on the resolution of γ and γ depends on the resolution of β.
+			 */
+			if (add(variable, dependency)) {
+				for (InferenceVariable transientDependency : get(dependency))
+					addRemainingDependency(variable, transientDependency);
+
+				entrySet()
+						.stream()
+						.filter(e -> e.getValue().contains(variable))
+						.map(Entry::getKey)
+						.forEach(
+								transientDependent -> addRemainingDependency(
+										transientDependent, variable));
+			}
+		}
+	}
+
 	private BoundSet bounds;
 
 	/*
@@ -64,19 +99,11 @@ public class Resolver {
 	 */
 	private final Map<GenericDeclaration, Map<TypeVariable<?>, InferenceVariable>> capturedTypeVariables;
 
-	/*
-	 * TODO don't store remaining dependencies as member, since we not need to
-	 * recalculate at every use anyway...
-	 */
-	private final MultiMap<InferenceVariable, InferenceVariable, ? extends Set<InferenceVariable>> remainingDependencies;
-
 	public Resolver(BoundSet bounds) {
 		this.bounds = bounds;
 
 		capturedDeclarations = new HashSet<>();
 		capturedTypeVariables = new HashMap<>();
-
-		remainingDependencies = new MultiHashMap<>(HashSet::new);
 	}
 
 	public Resolver() {
@@ -88,58 +115,27 @@ public class Resolver {
 
 		capturedDeclarations = new HashSet<>(that.capturedDeclarations);
 		capturedTypeVariables = new HashMap<>(that.capturedTypeVariables);
-
-		remainingDependencies = new MultiHashMap<>(HashSet::new,
-				that.remainingDependencies);
 	}
 
 	public BoundSet getBounds() {
 		return bounds;
 	}
 
-	private void addRemainingDependency(InferenceVariable variable,
-			InferenceVariable dependency) {
-		/*
-		 * An inference variable α depends on the resolution of an inference
-		 * variable β if there exists an inference variable γ such that α depends on
-		 * the resolution of γ and γ depends on the resolution of β.
-		 */
-		if (remainingDependencies.add(variable, dependency)) {
-			for (InferenceVariable transientDependency : remainingDependencies
-					.get(dependency))
-				addRemainingDependency(variable, transientDependency);
-
-			remainingDependencies
-					.entrySet()
-					.stream()
-					.filter(e -> e.getValue().contains(variable))
-					.map(Entry::getKey)
-					.forEach(
-							transientDependent -> addRemainingDependency(transientDependent,
-									variable));
-		}
-	}
-
-	private void recalculateRemainingDependencies() {
-		bounds.getBounds().forEach(b -> b.accept(new PartialBoundVisitor() {
-			@Override
-			public void acceptEquality(InferenceVariable a, Type b) {
-				if (bounds.isProperType(b) && !bounds.getInstantiation(a).isPresent())
-					instantiate(a, b);
-			}
-		}));
+	private RemainingDependencies recalculateRemainingDependencies() {
+		RemainingDependencies remainingDependencies = new RemainingDependencies();
 
 		Set<InferenceVariable> leftOfCapture = new HashSet<>();
 
-		Set<InferenceVariable> inferenceVariables = new HashSet<>(
+		Set<InferenceVariable> remainingInferenceVariables = new HashSet<>(
 				getInferenceVariables());
-		inferenceVariables.removeAll(bounds.getInstantiatedVariables());
+		remainingInferenceVariables.removeAll(bounds.getInstantiatedVariables());
 
 		/*
 		 * An inference variable α depends on the resolution of itself.
 		 */
-		for (InferenceVariable inferenceVariable : inferenceVariables)
-			addRemainingDependency(inferenceVariable, inferenceVariable);
+		for (InferenceVariable inferenceVariable : remainingInferenceVariables)
+			remainingDependencies.addRemainingDependency(inferenceVariable,
+					inferenceVariable);
 
 		/*
 		 * An inference variable α appearing on the left-hand side of a bound of the
@@ -147,84 +143,65 @@ public class Resolver {
 		 * other inference variable mentioned in this bound (on both sides of the =
 		 * sign).
 		 */
-		bounds.getBounds().forEach(b -> b.accept(new PartialBoundVisitor() {
-			@Override
-			public void acceptCaptureConversion(CaptureConversion c) {
-				for (InferenceVariable variable : c.getInferenceVariables()) {
-					if (inferenceVariables.contains(variable)) {
-						for (InferenceVariable dependency : c.getInferenceVariables())
-							if (inferenceVariables.contains(dependency))
-								addRemainingDependency(variable, dependency);
-						for (InferenceVariable v : c.getInferenceVariables())
-							for (InferenceVariable dependency : bounds
-									.getInferenceVariablesMentionedBy(c.getCapturedArgument(v)))
-								if (inferenceVariables.contains(dependency))
-									addRemainingDependency(variable, dependency);
-					}
-				}
+		bounds
+				.getCaptureConversions()
+				.forEach(
+						c -> {
+							for (InferenceVariable variable : c.getInferenceVariables()) {
+								if (remainingInferenceVariables.contains(variable)) {
+									for (InferenceVariable dependency : c.getInferenceVariables())
+										if (remainingInferenceVariables.contains(dependency))
+											remainingDependencies.addRemainingDependency(variable,
+													dependency);
+									for (InferenceVariable v : c.getInferenceVariables())
+										for (InferenceVariable dependency : bounds
+												.getInferenceVariablesMentionedBy(c
+														.getCapturedArgument(v)))
+											if (remainingInferenceVariables.contains(dependency))
+												remainingDependencies.addRemainingDependency(variable,
+														dependency);
+								}
+							}
 
-				leftOfCapture.addAll(c.getInferenceVariables());
-			}
-		}));
+							leftOfCapture.addAll(c.getInferenceVariables());
+						});
 
 		/*
 		 * Given a bound of one of the following forms, where T is either an
 		 * inference variable β or a type that mentions β:
 		 */
-		bounds.getBounds().forEach(b -> b.accept(new PartialBoundVisitor() {
-			/*
-			 * α = T, T = α
-			 */
-			@Override
-			public void acceptEquality(InferenceVariable a, InferenceVariable b) {
-				assessDependency(a, b);
-				assessDependency(b, a);
-			}
+		for (InferenceVariable a : bounds.getInferenceVariables()) {
+			InferenceVariableData aData = bounds.getInferenceVariableData().get(a);
 
-			@Override
-			public void acceptEquality(InferenceVariable a, Type b) {
-				for (InferenceVariable inB : bounds.getInferenceVariablesMentionedBy(b))
-					assessDependency(a, inB);
-			}
+			Stream
+					.concat(
+							/*
+							 * α = T, T = α
+							 */
+							aData.getEqualities().stream(),
+							/*
+							 * α <: T, T <: α
+							 */
+							Stream.concat(aData.getLowerBounds().stream(), aData
+									.getUpperBounds().stream())
+					/*
+					 * If α appears on the left-hand side of another bound of the form
+					 * G<..., α, ...> = capture(G<...>), then β depends on the resolution
+					 * of α. Otherwise, α depends on the resolution of β.
+					 */
+					).map(bounds::getInferenceVariablesMentionedBy)
+					.flatMap(Collection::stream).forEach(b -> {
+						if (leftOfCapture.contains(a)) {
+							if (remainingInferenceVariables.contains(b))
+								remainingDependencies.addRemainingDependency(b, a);
+						} else {
+							if (remainingInferenceVariables.contains(b))
+								remainingDependencies.addRemainingDependency(a, b);
+						}
+					});
+		}
 
-			/*
-			 * α <: T, T <: α
-			 */
-			@Override
-			public void acceptSubtype(InferenceVariable a, InferenceVariable b) {
-				assessDependency(a, b);
-				assessDependency(b, a);
-			}
-
-			@Override
-			public void acceptSubtype(InferenceVariable a, Type b) {
-				for (InferenceVariable inB : bounds.getInferenceVariablesMentionedBy(b))
-					assessDependency(a, inB);
-			}
-
-			@Override
-			public void acceptSubtype(Type a, InferenceVariable b) {
-				for (InferenceVariable inA : bounds.getInferenceVariablesMentionedBy(a))
-					assessDependency(inA, b);
-			}
-
-			/*
-			 * If α appears on the left-hand side of another bound of the form G<...,
-			 * α, ...> = capture(G<...>), then β depends on the resolution of α.
-			 * Otherwise, α depends on the resolution of β.
-			 */
-			public void assessDependency(InferenceVariable a, InferenceVariable... b) {
-				if (leftOfCapture.contains(a)) {
-					for (InferenceVariable bItem : b)
-						if (inferenceVariables.contains(bItem))
-							addRemainingDependency(bItem, a);
-				} else {
-					for (InferenceVariable bItem : b)
-						if (inferenceVariables.contains(bItem))
-							addRemainingDependency(a, bItem);
-				}
-			}
-		}));
+		return remainingDependencies;
 	}
 
 	public void capture(GenericDeclaration declaration) {
@@ -435,17 +412,18 @@ public class Resolver {
 
 		Set<InferenceVariable> remainingVariables = new HashSet<>(variables);
 		do {
-			recalculateRemainingDependencies();
+			RemainingDependencies remainingDependencies = recalculateRemainingDependencies();
 
 			/*
 			 * Given a set of inference variables to resolve, let V be the union of
 			 * this set and all variables upon which the resolution of at least one
 			 * variable in this set depends.
 			 */
-			resolveIndependentSet(variables.stream()
-					.filter(v -> !bounds.getInstantiation(v).isPresent())
-					.map(remainingDependencies::get).flatMap(Set::stream)
-					.collect(Collectors.toSet()));
+			resolveIndependentSet(
+					variables.stream()
+							.filter(v -> !bounds.getInstantiation(v).isPresent())
+							.map(remainingDependencies::get).flatMap(Set::stream)
+							.collect(Collectors.toSet()), remainingDependencies);
 
 			for (InferenceVariable variable : new HashSet<>(remainingVariables)) {
 				Optional<Type> instantiation = bounds.getInstantiation(variable);
@@ -459,7 +437,8 @@ public class Resolver {
 		return instantiations;
 	}
 
-	private void resolveIndependentSet(Set<InferenceVariable> variables) {
+	private void resolveIndependentSet(Set<InferenceVariable> variables,
+			RemainingDependencies remainingDependencies) {
 		/*
 		 * If every variable in V has an instantiation, then resolution succeeds and
 		 * this procedure terminates.
@@ -583,9 +562,6 @@ public class Resolver {
 	}
 
 	private void instantiate(InferenceVariable variable, Type instantiation) {
-		remainingDependencies.keySet().remove(variable);
-		remainingDependencies.removeFromAll(variable);
-
 		bounds.incorporate().acceptEquality(variable, instantiation);
 	}
 
@@ -641,42 +617,7 @@ public class Resolver {
 	}
 
 	public Set<InferenceVariable> getInferenceVariables() {
-		Set<InferenceVariable> inferenceVariables = new HashSet<>();
-		new PartialBoundVisitor() {
-			@Override
-			public void acceptSubtype(Type a, InferenceVariable b) {
-				inferenceVariables.add(b);
-			}
-
-			@Override
-			public void acceptSubtype(InferenceVariable a, Type b) {
-				inferenceVariables.add(a);
-			}
-
-			@Override
-			public void acceptSubtype(InferenceVariable a, InferenceVariable b) {
-				inferenceVariables.add(a);
-				inferenceVariables.add(b);
-			}
-
-			@Override
-			public void acceptEquality(InferenceVariable a, Type b) {
-				inferenceVariables.add(a);
-			}
-
-			@Override
-			public void acceptEquality(InferenceVariable a, InferenceVariable b) {
-				inferenceVariables.add(a);
-				inferenceVariables.add(b);
-			}
-
-			@Override
-			public void acceptCaptureConversion(CaptureConversion c) {
-				inferenceVariables.addAll(c.getInferenceVariables());
-			}
-		}.visit(bounds);
-
-		return inferenceVariables;
+		return bounds.getInferenceVariables();
 	}
 
 	public Set<InferenceVariable> getInferenceVariables(
@@ -835,25 +776,57 @@ public class Resolver {
 		 * bounds on S and E here. The problem must be some sort of non-terminating
 		 * subsequent validation or infinite unnecessary bound inference...
 		 */
-		System.out.println(new TypeLiteral<Effective<?, ?>>() {}
+		System.out.println(new TypeLiteral<SchemaNode.Effective<?, ?>>() {}
 				.resolveSupertypeParameters(SchemaNode.class));
 		System.out.println();
 		System.out.println();
 
 		TypeLiteral<?> receiver = new TypeLiteral<BindingState>() {};
-		System.out.println("RESOLVE:");
-		receiver.resolveMethodOverload("bindingNode", Arrays.asList(int.class));
+		System.out.println("RESOLVE 1:");
+		System.out.println(receiver.resolveMethodOverload("bindingNode",
+				Arrays.asList(int.class)));
+		System.out.println();
+		System.out.println();
+
+		receiver = new TypeLiteral<SchemaNodeConfigurator<?, ?>>() {};
+		System.out.println("RESOLVE 2:");
+		System.out.println(TypeLiteral.from(receiver.getType())
+				.resolveMethodOverload("name", Arrays.asList(String.class)));
+		System.out.println();
+		System.out.println();
+
+		receiver = new TypeLiteral<ChildNodeConfigurator<?, ?>>() {};
+		System.out.println("RESOLVE 3:");
+		System.out.println(TypeLiteral.from(receiver.getType())
+				.resolveMethodOverload("name", Arrays.asList(String.class)));
+		System.out.println();
+		System.out.println();
 	}
 }
 
 interface BindingState {
-	Effective<?, ?> bindingNode(int parent);
+	SchemaNode.Effective<?, ?> bindingNode(int parent);
 }
 
-interface Effective<S extends SchemaNode<S, E>, E extends Effective<S, E>>
-		extends SchemaNode<S, E> {}
+interface SchemaNode<S extends SchemaNode<S, E>, E extends SchemaNode.Effective<S, E>> {
+	interface Effective<S extends SchemaNode<S, E>, E extends Effective<S, E>>
+			extends SchemaNode<S, E> {}
+}
 
-interface SchemaNode<S extends SchemaNode<S, E>, E extends Effective<S, E>> {}
+interface ChildNode<S extends ChildNode<S, E>, E extends ChildNode.Effective<S, E>>
+		extends SchemaNode<S, E> {
+	interface Effective<S extends ChildNode<S, E>, E extends Effective<S, E>>
+			extends ChildNode<S, E>, SchemaNode.Effective<S, E> {}
+}
+
+interface SchemaNodeConfigurator<S extends SchemaNodeConfigurator<S, N>, N extends SchemaNode<?, ?>> {
+	public S name(String name);
+}
+
+interface ChildNodeConfigurator<S extends ChildNodeConfigurator<S, N>, N extends ChildNode<?, ?>>
+		extends SchemaNodeConfigurator<S, N> {
+	public S name(String name);
+}
 
 class Nest<T extends Set<Nest<T>>> implements Self<Nest<T>> {
 	@Override
