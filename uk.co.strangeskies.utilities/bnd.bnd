@@ -20,4 +20,4 @@ Bundle-Name: Strange Skies Utilities
 		version = latest,  \
 	osgi.enroute.base.api;  \
 		version = latest
-Bundle-Version: 0.1.0.${tstamp}
+Bundle-Version: 0.2.0.${tstamp}

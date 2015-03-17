@@ -57,8 +57,4 @@ public interface BoundVisitor {
 	void acceptFalsehood();
 
 	void acceptCaptureConversion(CaptureConversion c);
-
-	public default void visit(BoundSet bounds) {
-		bounds.getBounds().forEach(b -> b.accept(this));
-	}
 }

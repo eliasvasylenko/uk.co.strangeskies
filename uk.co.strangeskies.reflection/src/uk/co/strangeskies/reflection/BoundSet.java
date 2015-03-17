@@ -37,7 +37,29 @@ public class BoundSet {
 	private final Set<CaptureConversion> captureConversions;
 
 	public BoundSet() {
-		bounds = new HashSet<>();
+		bounds = new HashSet<Bound>() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public boolean addAll(Collection<? extends Bound> c) {
+				boolean okay = true;
+				for (Bound b : c) {
+					okay = super.add(b) && okay;
+				}
+				return okay;
+			}
+
+			@Override
+			public boolean add(Bound e) {
+				if (super.add(e)) {
+					if (bounds.size() > 24)
+						System.out.println(System.identityHashCode(BoundSet.this) + "  "
+								+ e);
+					return true;
+				}
+				return false;
+			}
+		};
 		inferenceVariableData = new HashMap<>();
 		captureConversions = new HashSet<>();
 	}
@@ -122,11 +144,6 @@ public class BoundSet {
 		return inferenceVariableData.keySet().stream()
 				.filter(i -> getInstantiation(i).isPresent())
 				.collect(Collectors.toSet());
-	}
-
-	@Deprecated
-	public Set<Bound> getBounds() {
-		return new HashSet<>(bounds);
 	}
 
 	public BoundVisitor incorporate(ConstraintFormula constraintFormula) {
