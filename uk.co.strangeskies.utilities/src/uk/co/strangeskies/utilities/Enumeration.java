@@ -131,10 +131,16 @@ public class Enumeration<S extends Enumeration<S>> implements Self<S> {
 				.getInstances());
 	}
 
-	public static <T extends Enumeration<T>> T valueOf(Class<T> enumerationClass,
+	public static <T extends Enumeration<?>> T valueOf(Class<T> enumerationClass,
 			String name) {
 		return getConstants(enumerationClass).stream()
 				.filter(e -> e.name().equals(name)).findAny().get();
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public static <T extends Enum<?>> T valueOfEnum(Class<T> enumerationClass,
+			String name) {
+		return (T) Enum.valueOf((Class) enumerationClass, name);
 	}
 
 	private static void forceInitialisation(Class<?> initialiseClass) {
