@@ -109,9 +109,9 @@ public abstract class IntersectionType implements Type {
 				&& classToMerge.isAssignableFrom(mostSpecificClass)) {
 			Map<TypeVariable<?>, Type> mostSpecificArguments = ParameterizedTypes
 					.getAllTypeArguments((ParameterizedType) mostSpecificType);
-			Map<TypeVariable<?>, Type> argumentsToMerge = TypeLiteral
-					.from(typeToMerge).resolveSubtypeParameters(mostSpecificClass)
-					.getAllTypeArguments();
+			Map<TypeVariable<?>, Type> argumentsToMerge = ParameterizedTypes
+					.getAllTypeArguments((ParameterizedType) ParameterizedTypes
+							.resolveSubtypeParameters(typeToMerge, mostSpecificClass));
 
 			Map<TypeVariable<?>, Type> mergedArguments = new HashMap<>();
 
@@ -120,9 +120,9 @@ public abstract class IntersectionType implements Type {
 				Type mostSpecificArgument = mostSpecificArguments.get(parameter);
 				Type argumentToMerge = argumentsToMerge.get(parameter);
 
-				if (Types.isContainedBy(mostSpecificArgument, argumentToMerge))
+				if (Types.isContainedBy(argumentToMerge, mostSpecificArgument))
 					mostSpecificArgument = argumentToMerge;
-				else if (!Types.isContainedBy(argumentToMerge, mostSpecificArgument))
+				else if (!Types.isContainedBy(mostSpecificArgument, argumentToMerge))
 					throw new TypeInferenceException("Illegal intersection type '"
 							+ flattenedTypes
 							+ "', cannot contain both of the non-interface classes '"

@@ -37,16 +37,7 @@ public class BoundSet {
 	private final Set<CaptureConversion> captureConversions;
 
 	public BoundSet() {
-		bounds = new HashSet<Bound>() {
-			@Override
-			public boolean add(Bound e) {
-				if (super.add(e)) {
-					System.out.println("   ? " + e);
-					return true;
-				} else
-					return false;
-			}
-		};
+		bounds = new HashSet<>();
 		inferenceVariableData = new HashMap<>();
 		captureConversions = new HashSet<>();
 	}
@@ -98,8 +89,11 @@ public class BoundSet {
 	}
 
 	public Optional<Type> getInstantiation(InferenceVariable variable) {
-		return inferenceVariableData.get(variable).getEqualities().stream()
-				.filter(BoundSet.this::isProperType).findAny();
+		if (inferenceVariableData.containsKey(variable))
+			return inferenceVariableData.get(variable).getEqualities().stream()
+					.filter(BoundSet.this::isProperType).findAny();
+		else
+			return Optional.ofNullable(variable);
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })

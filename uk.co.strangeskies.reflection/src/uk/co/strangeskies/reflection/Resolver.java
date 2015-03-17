@@ -394,10 +394,8 @@ public class Resolver {
 		capture(rawType);
 
 		type = TypeVariableCapture.capture(type);
-		//type = constrainWildcards(type);
+		// type = constrainWildcards(type);
 
-		System.out.println(ParameterizedTypes.getAllTypeArguments(type));
-		System.out.println(bounds);
 		for (Map.Entry<TypeVariable<?>, Type> typeArgument : ParameterizedTypes
 				.getAllTypeArguments(type).entrySet()) {
 			new ConstraintFormula(Kind.EQUALITY, capturedTypeVariables.get(rawType)

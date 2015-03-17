@@ -31,7 +31,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
 public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	private final static AtomicLong COUNTER = new AtomicLong();
@@ -127,7 +126,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 			Type capture;
 
 			if (argument instanceof WildcardType) {
-				Type upperBound = IntersectionType.from(
+				Type upperBound = IntersectionType.uncheckedFrom(
 						IntersectionType.from(parameter.getBounds()),
 						IntersectionType.from(((WildcardType) argument).getUpperBounds()));
 
@@ -145,8 +144,10 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 
 		substituteBounds(captures);
 
-		return (ParameterizedType) ParameterizedTypes.uncheckedFrom(
-				Types.getRawType(type), captures);
+		ParameterizedType capture = (ParameterizedType) ParameterizedTypes
+				.uncheckedFrom(Types.getRawType(type), captures);
+
+		return capture;
 	}
 
 	public static Map<InferenceVariable, TypeVariableCapture> capture(

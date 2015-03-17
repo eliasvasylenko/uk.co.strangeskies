@@ -39,7 +39,7 @@ public class ConstraintFormula {
 		this.from = from;
 		this.to = to;
 
-		System.out.println("    : " + this);
+		// System.out.println("    : " + this);
 	}
 
 	@Override
@@ -192,8 +192,6 @@ public class ConstraintFormula {
 				 * identified, with type arguments B1, ..., Bn.
 				 */
 				Class<?> rawType = Types.getRawType(to);
-				System.out.println(rawType + " from " + Types.getRawTypes(from) + " @ "
-						+ from);
 				if (!Types.getRawTypes(from).stream()
 						.anyMatch(t -> rawType.isAssignableFrom(t))) {
 					/*

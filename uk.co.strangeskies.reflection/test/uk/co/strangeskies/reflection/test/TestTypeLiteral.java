@@ -27,10 +27,12 @@ import java.util.Map;
 import java.util.Set;
 
 import uk.co.strangeskies.reflection.BoundSet;
+import uk.co.strangeskies.reflection.InferenceVariable;
 import uk.co.strangeskies.reflection.Invokable;
-import uk.co.strangeskies.reflection.TypeLiteral;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
+import uk.co.strangeskies.reflection.TypeLiteral;
 import uk.co.strangeskies.reflection.TypeParameter;
+import uk.co.strangeskies.utilities.Enumeration;
 
 public class TestTypeLiteral {
 	public static class A<T> {
@@ -75,11 +77,19 @@ public class TestTypeLiteral {
 				List<? extends Type> parameters) {
 			return null;
 		}
+
+		public static <T> T testeroonie(Class<T> t, String s) {
+			return null;
+		}
 	}
 
-	public static <T> void main(String... args) throws NoSuchMethodException,
-			SecurityException {
-		System.out.println(new TypeParameter<T>() {});
+	class Nest2<T extends Nest2<T>> {}
+
+	class Nest22<T> extends Nest2<Nest22<T>> {}
+
+	public static <H extends Nest2<H>> void main(String... args)
+			throws NoSuchMethodException, SecurityException {
+		System.out.println(new TypeParameter<H>() {});
 		System.out.println(new TypeLiteral<List<String>>() {});
 		System.out.println();
 
@@ -151,7 +161,7 @@ public class TestTypeLiteral {
 		System.out.println();
 
 		System.out.println(new TypeLiteral<B>() {}.resolveMethodOverload("okay",
-				new TypeLiteral<Set<Invokable<T, ?>>>() {}.getType(),
+				new TypeLiteral<Set<Invokable<H, ?>>>() {}.getType(),
 				new TypeLiteral<List<? extends Type>>() {}.getType()));
 		System.out.println();
 
@@ -161,5 +171,18 @@ public class TestTypeLiteral {
 		 * new TypeLiteral<Collection<? super Integer>>() {}.getType()));
 		 * System.out.println();
 		 */
+
+		System.out.println(new TypeLiteral<Collection<H>>() {}
+				.resolveSubtypeParameters(HashSet.class));
+		System.out.println();
+
+		System.out.println(new TypeLiteral<Nest2<H>>() {}
+				.resolveSubtypeParameters(Nest22.class).getAllTypeArguments().values()
+				.iterator().next() instanceof InferenceVariable);
+		System.out.println();
+
+		System.out.println(new TypeLiteral<B>() {}.resolveMethodOverload(
+				"testeroonie", new TypeLiteral<Class<?>>() {}.getType(), String.class));
+		System.out.println();
 	}
 }

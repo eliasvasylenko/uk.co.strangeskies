@@ -297,7 +297,7 @@ public class ParameterizedTypes {
 		}
 		return SUBSTITUTE_ARGUMENTS.get(index);
 	}
-
+	
 	public static Type resolveSupertypeParameters(Type type, Class<?> superclass) {
 		Class<?> rawType = Types.getRawType(type);
 
@@ -317,6 +317,29 @@ public class ParameterizedTypes {
 		Type supertype = new TypeSubstitution(substitutedArguments::get)
 				.resolve(from(rawType, parameterSubstitutes)
 						.resolveSupertypeParameters(superclass).getType());
+
+		return supertype;
+	}
+
+	public static Type resolveSubtypeParameters(Type type, Class<?> subclass) {
+		Class<?> rawType = Types.getRawType(type);
+
+		Map<TypeVariable<?>, InferenceVariable> parameterSubstitutes = new HashMap<>();
+		Map<InferenceVariable, Type> substitutedArguments = new HashMap<>();
+
+		int index = 0;
+		if (type instanceof ParameterizedType) {
+			Map<TypeVariable<?>, Type> arguments = getAllTypeArguments((ParameterizedType) type);
+			for (TypeVariable<?> parameter : getAllTypeParameters(rawType)) {
+				InferenceVariable substituteArgument = getSubstituteArgument(index++);
+				parameterSubstitutes.put(parameter, substituteArgument);
+				substitutedArguments.put(substituteArgument, arguments.get(parameter));
+			}
+		}
+
+		Type supertype = new TypeSubstitution(substitutedArguments::get)
+				.resolve(from(rawType, parameterSubstitutes).resolveSubtypeParameters(
+						subclass).getType());
 
 		return supertype;
 	}
