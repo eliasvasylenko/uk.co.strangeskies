@@ -55,7 +55,7 @@ public class ParameterizedTypes {
 		do {
 			typeParameters = Stream.concat(typeParameters,
 					Arrays.stream(rawType.getTypeParameters()));
-		} while ((rawType = rawType.getEnclosingClass()) != null);
+		} while ((rawType = Types.getNonStaticallyEnclosingClass(rawType)) != null);
 		return typeParameters.collect(Collectors.toList());
 	}
 
@@ -82,7 +82,7 @@ public class ParameterizedTypes {
 
 			type = type.getOwnerType() instanceof ParameterizedType ? (ParameterizedType) type
 					.getOwnerType() : null;
-			rawType = rawType.getEnclosingClass();
+			rawType = Types.getNonStaticallyEnclosingClass(rawType);
 		} while (type != null && rawType != null);
 
 		return typeArguments;
@@ -95,8 +95,9 @@ public class ParameterizedTypes {
 
 	static <T> Type uncheckedFrom(Class<T> rawType,
 			Map<? extends TypeVariable<?>, ? extends Type> typeArguments) {
-		Type ownerType = (rawType.getEnclosingClass() == null) ? null
-				: uncheckedFrom(rawType.getEnclosingClass(), typeArguments);
+		Type ownerType = (Types.getNonStaticallyEnclosingClass(rawType) == null) ? null
+				: uncheckedFrom(Types.getNonStaticallyEnclosingClass(rawType),
+						typeArguments);
 
 		if ((ownerType == null || ownerType instanceof Class)
 				&& rawType.getTypeParameters().length == 0)
@@ -125,8 +126,8 @@ public class ParameterizedTypes {
 	@SuppressWarnings("unchecked")
 	public static <T> TypeLiteral<? extends T> from(Class<T> rawType,
 			List<Type> typeArguments) {
-		if (rawType.getEnclosingClass() != null
-				&& isGeneric(rawType.getEnclosingClass()))
+		if (Types.getNonStaticallyEnclosingClass(rawType) != null
+				&& isGeneric(Types.getNonStaticallyEnclosingClass(rawType)))
 			throw new IllegalArgumentException();
 
 		return (TypeLiteral<? extends T>) TypeLiteral.from(uncheckedFrom(null,
@@ -297,7 +298,7 @@ public class ParameterizedTypes {
 		}
 		return SUBSTITUTE_ARGUMENTS.get(index);
 	}
-	
+
 	public static Type resolveSupertypeParameters(Type type, Class<?> superclass) {
 		Class<?> rawType = Types.getRawType(type);
 

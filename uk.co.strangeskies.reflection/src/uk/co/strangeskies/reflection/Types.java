@@ -20,6 +20,7 @@ package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -154,6 +155,38 @@ public final class Types {
 			return (T) UNWRAPPED_PRIMITIVES.get(getRawType(type));
 		else
 			return type;
+	}
+
+	public static boolean isAbstract(Class<?> rawType) {
+		return Modifier.isAbstract(rawType.getModifiers());
+	}
+
+	public static boolean isFinal(Class<?> rawType) {
+		return Modifier.isFinal(rawType.getModifiers());
+	}
+
+	public static boolean isInterface(Class<?> rawType) {
+		return Modifier.isInterface(rawType.getModifiers());
+	}
+
+	public static boolean isPrivate(Class<?> rawType) {
+		return Modifier.isPrivate(rawType.getModifiers());
+	}
+
+	public static boolean isProtected(Class<?> rawType) {
+		return Modifier.isProtected(rawType.getModifiers());
+	}
+
+	public static boolean isPublic(Class<?> rawType) {
+		return Modifier.isPublic(rawType.getModifiers());
+	}
+
+	public static boolean isStatic(Class<?> rawType) {
+		return Modifier.isStatic(rawType.getModifiers());
+	}
+
+	public static Class<?> getNonStaticallyEnclosingClass(Class<?> innerClass) {
+		return isStatic(innerClass) ? null : innerClass.getEnclosingClass();
 	}
 
 	public static Type getComponentType(Type type) {

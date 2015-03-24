@@ -145,9 +145,8 @@ public interface InferenceVariable extends Type {
 				capturedParameters.put(inferenceVariable, parameter);
 			}
 
-			type = ParameterizedTypes.from(Types.getRawType(originalType),
-					parameterCaptures).getType();
-			ParameterizedType capturedType = (ParameterizedType) type;
+			ParameterizedType capturedType = (ParameterizedType) ParameterizedTypes
+					.from(Types.getRawType(originalType), parameterCaptures).getType();
 
 			CaptureConversion captureConversion = new CaptureConversion() {
 				@Override

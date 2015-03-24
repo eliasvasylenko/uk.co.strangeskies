@@ -464,7 +464,7 @@ public class Resolver {
 
 			variables.removeAll(bounds.getInstantiatedVariables());
 			if (!variables.isEmpty()) {
-				recalculateRemainingDependencies();
+				remainingDependencies = recalculateRemainingDependencies();
 				variables.removeAll(bounds.getInstantiatedVariables());
 			}
 		}
@@ -771,13 +771,13 @@ public class Resolver {
 		System.out.println();
 		System.out.println();
 
-		/*
-		 * TODO The proper infinite types are correctly inferred for the actual
-		 * bounds on S and E here. The problem must be some sort of non-terminating
-		 * subsequent validation or infinite unnecessary bound inference...
-		 */
 		System.out.println(new TypeLiteral<SchemaNode.Effective<?, ?>>() {}
 				.resolveSupertypeParameters(SchemaNode.class));
+		System.out.println();
+		System.out.println();
+
+		System.out.println(new TypeLiteral<Gurn<Integer>>() {}.getMethods()
+				.iterator().next().infer());
 		System.out.println();
 		System.out.println();
 
@@ -801,8 +801,37 @@ public class Resolver {
 				.resolveMethodOverload("name", Arrays.asList(String.class)));
 		System.out.println();
 		System.out.println();
+
+		receiver = new TypeLiteral<DataBindingType.Effective<?>>() {};
+		System.out.println("RESOLVE 4:");
+		System.out.println(TypeLiteral.from(receiver.getType())
+				.resolveMethodOverload("child", Arrays.asList(String.class)));
+		System.out.println();
+		System.out.println();
+
+		System.out.println(new TypeLiteral<IncludeTarget>() {}
+				.resolveMethodOverload("includer", Model.class, Collection.class));
+		System.out.println();
+		System.out.println();
+
+		System.out.println(new TypeLiteral<IncludeTarget>() {}
+				.resolveMethodOverload("include", Model.class, Collection.class));
+		System.out.println();
+		System.out.println();
 	}
 }
+
+interface IncludeTarget {
+	<T> void include(Model<T> model, T object);
+
+	<T> void include(Model<T> model, Collection<? extends T> objects);
+
+	void includer(Model<?> model, Object object);
+
+	void includer(Model<?> model, Collection<?> objects);
+}
+
+interface Model<T> {}
 
 interface BindingState {
 	SchemaNode.Effective<?, ?> bindingNode(int parent);
@@ -811,6 +840,8 @@ interface BindingState {
 interface SchemaNode<S extends SchemaNode<S, E>, E extends SchemaNode.Effective<S, E>> {
 	interface Effective<S extends SchemaNode<S, E>, E extends Effective<S, E>>
 			extends SchemaNode<S, E> {}
+
+	ChildNode<?, ?> child(String name);
 }
 
 interface ChildNode<S extends ChildNode<S, E>, E extends ChildNode.Effective<S, E>>
@@ -819,13 +850,23 @@ interface ChildNode<S extends ChildNode<S, E>, E extends ChildNode.Effective<S, 
 			extends ChildNode<S, E>, SchemaNode.Effective<S, E> {}
 }
 
-interface SchemaNodeConfigurator<S extends SchemaNodeConfigurator<S, N>, N extends SchemaNode<?, ?>> {
+interface SchemaNodeConfigurator<S extends SchemaNodeConfigurator<S, N>, N extends SchemaNode<N, ?>> {
 	public S name(String name);
 }
 
-interface ChildNodeConfigurator<S extends ChildNodeConfigurator<S, N>, N extends ChildNode<?, ?>>
-		extends SchemaNodeConfigurator<S, N> {
-	public S name(String name);
+interface ChildNodeConfigurator<S extends ChildNodeConfigurator<S, N>, N extends ChildNode<N, ?>>
+		extends SchemaNodeConfigurator<S, N> {}
+
+interface DataBindingType<T> extends
+		BindingNode<T, DataBindingType<T>, DataBindingType.Effective<T>> {
+	interface Effective<T> extends DataBindingType<T>,
+			BindingNode.Effective<T, DataBindingType<T>, Effective<T>> {}
+}
+
+interface BindingNode<T, S extends BindingNode<T, S, E>, E extends BindingNode.Effective<T, S, E>>
+		extends SchemaNode<S, E> {
+	interface Effective<T, S extends BindingNode<T, S, E>, E extends Effective<T, S, E>>
+			extends BindingNode<T, S, E>, SchemaNode.Effective<S, E> {}
 }
 
 class Nest<T extends Set<Nest<T>>> implements Self<Nest<T>> {
@@ -834,6 +875,12 @@ class Nest<T extends Set<Nest<T>>> implements Self<Nest<T>> {
 		return null;
 	}
 }
+
+interface Blurn<T> {
+	Set<T> blurn();
+}
+
+interface Gurn<X> extends Blurn<List<X>> {}
 
 class Nest2<T extends Nest2<T>> {}
 

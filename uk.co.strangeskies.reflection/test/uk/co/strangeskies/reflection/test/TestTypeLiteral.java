@@ -32,7 +32,6 @@ import uk.co.strangeskies.reflection.Invokable;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.TypeLiteral;
 import uk.co.strangeskies.reflection.TypeParameter;
-import uk.co.strangeskies.utilities.Enumeration;
 
 public class TestTypeLiteral {
 	public static class A<T> {
@@ -146,6 +145,10 @@ public class TestTypeLiteral {
 				new TypeLiteral<List<Comparable<Integer>>>() {}.getType()));
 		System.out.println();
 
+		System.out
+				.println("<T extends Number, U extends List<? super T>> U method4(Collection<? extends T> a, U b)");
+		System.out
+				.println("B.method4((Collection<? extends Integer>) null, (List<? super Number>) null)");
 		System.out.println(TypeLiteral
 				.from(B.class)
 				.resolveMethodOverload("method4",
@@ -182,7 +185,13 @@ public class TestTypeLiteral {
 		System.out.println();
 
 		System.out.println(new TypeLiteral<B>() {}.resolveMethodOverload(
-				"testeroonie", new TypeLiteral<Class<?>>() {}.getType(), String.class));
+				"testeroonie", new TypeLiteral<Class<?>>() {}.getType(), String.class)
+				.infer());
 		System.out.println();
+
+		TypeLiteral<?> targetClass = new TypeLiteral<List<?>>() {};
+		TypeLiteral<?> resultClass = new TypeLiteral<Iterable<String>>() {};
+		System.out.println(resultClass.isContainedBy(targetClass
+				.resolveSupertypeParameters(resultClass.getRawType())));
 	}
 }

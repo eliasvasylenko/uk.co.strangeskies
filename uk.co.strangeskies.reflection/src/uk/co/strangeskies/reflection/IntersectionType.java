@@ -139,8 +139,8 @@ public abstract class IntersectionType implements Type {
 
 		throw new TypeInferenceException("Illegal intersection type '"
 				+ flattenedTypes
-				+ "', cannot contain both of the non-interface classes '"
-				+ mostSpecificClass + "' and '" + typeToMerge + "'.");
+				+ "', cannot contain both of the non-interface types '"
+				+ mostSpecificType + "' and '" + typeToMerge + "'.");
 	}
 
 	static IntersectionType uncheckedFrom(Type... types) {

@@ -42,8 +42,8 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 
 	private final GenericDeclaration declaration;
 
-	private TypeVariableCapture(Set<Type> upperBounds, Set<Type> lowerBounds,
-			GenericDeclaration declaration) {
+	TypeVariableCapture(Collection<? extends Type> upperBounds,
+			Collection<? extends Type> lowerBounds, GenericDeclaration declaration) {
 		this(upperBounds.toArray(new Type[upperBounds.size()]), lowerBounds
 				.toArray(new Type[lowerBounds.size()]), declaration);
 	}
@@ -85,6 +85,13 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 					IntersectionType.uncheckedFrom(lowerBounds));
 
 		return builder.toString();
+	}
+
+	public boolean isPossibleInstantiation(Type type) {
+		return Types.isAssignable(type,
+				IntersectionType.uncheckedFrom(getUpperBounds()))
+				&& (getLowerBounds().length == 0 || Types.isAssignable(
+						IntersectionType.uncheckedFrom(), type));
 	}
 
 	public Type[] getUpperBounds() {

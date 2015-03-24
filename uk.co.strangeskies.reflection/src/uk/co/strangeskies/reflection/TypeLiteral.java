@@ -20,7 +20,6 @@ package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -37,6 +36,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.Property;
@@ -116,31 +116,35 @@ public class TypeLiteral<T> {
 	}
 
 	public boolean isAbstract() {
-		return Modifier.isAbstract(rawType.getModifiers());
+		return Types.isAbstract(rawType);
 	}
 
 	public boolean isFinal() {
-		return Modifier.isFinal(rawType.getModifiers());
+		return Types.isFinal(rawType);
 	}
 
 	public boolean isInterface() {
-		return Modifier.isInterface(rawType.getModifiers());
+		return Types.isInterface(rawType);
 	}
 
 	public boolean isPrivate() {
-		return Modifier.isPrivate(rawType.getModifiers());
+		return Types.isPrivate(rawType);
 	}
 
 	public boolean isProtected() {
-		return Modifier.isProtected(rawType.getModifiers());
+		return Types.isProtected(rawType);
 	}
 
 	public boolean isPublic() {
-		return Modifier.isPublic(rawType.getModifiers());
+		return Types.isPublic(rawType);
 	}
 
 	public boolean isStatic() {
-		return Modifier.isStatic(rawType.getModifiers());
+		return Types.isStatic(rawType);
+	}
+
+	public Class<?> getNonStaticallyEnclosingClass() {
+		return Types.getNonStaticallyEnclosingClass(rawType);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -230,6 +234,22 @@ public class TypeLiteral<T> {
 		return Types.isAssignable(type, this.type);
 	}
 
+	public boolean isContainedBy(TypeLiteral<?> type) {
+		return isContainedBy(type.getType());
+	}
+
+	public boolean isContainedBy(Type type) {
+		return Types.isContainedBy(type, this.type);
+	}
+
+	public boolean isContainingOf(TypeLiteral<?> type) {
+		return isContainingOf(type.getType());
+	}
+
+	public boolean isContainingOf(Type type) {
+		return Types.isContainedBy(this.type, type);
+	}
+
 	public List<TypeVariable<?>> getAllTypeParameters() {
 		return ParameterizedTypes.getAllTypeParameters(rawType);
 	}
@@ -254,6 +274,9 @@ public class TypeLiteral<T> {
 	@SuppressWarnings("unchecked")
 	public <U> TypeLiteral<? extends U> resolveSupertypeParameters(
 			Class<U> superclass) {
+		if (superclass.equals(rawType))
+			return (TypeLiteral<? extends U>) this;
+
 		if (!ParameterizedTypes.isGeneric(superclass))
 			return TypeLiteral.from(superclass);
 
@@ -268,6 +291,9 @@ public class TypeLiteral<T> {
 
 	@SuppressWarnings("unchecked")
 	public <U> TypeLiteral<? extends U> resolveSubtypeParameters(Class<U> subclass) {
+		if (subclass.equals(rawType))
+			return (TypeLiteral<? extends U>) this;
+
 		if (!ParameterizedTypes.isGeneric(subclass))
 			return TypeLiteral.from(subclass);
 
@@ -347,17 +373,22 @@ public class TypeLiteral<T> {
 				.collect(Collectors.toSet());
 	}
 
-	public Set<Invokable<T, ?>> getMethods() {
+	public Set<Invokable<? super T, ?>> getMethods() {
 		return getMethods(m -> true);
 	}
 
-	private Set<Invokable<T, ?>> getMethods(Predicate<Method> filter) {
-		// TODO include inherited methods.
-		return Arrays
-				.stream(getRawType().getMethods())
+	private Set<Invokable<? super T, ?>> getMethods(Predicate<Method> filter) {
+		Stream<Method> methodStream = Arrays.stream(getRawType().getMethods());
+
+		if (isInterface())
+			methodStream = Stream.concat(methodStream,
+					Arrays.stream(Object.class.getMethods()));
+
+		return methodStream
 				.filter(filter)
 				.map(
-						m -> Invokable.from(m, this,
+						m -> Invokable.from(m,
+								resolveSupertypeParameters(m.getDeclaringClass()),
 								TypeLiteral.from(m.getGenericReturnType())))
 				.collect(Collectors.toSet());
 	}
@@ -381,18 +412,19 @@ public class TypeLiteral<T> {
 		return resolveMostSpecificCandidate(candidates, parameters);
 	}
 
-	public Invokable<T, ?> resolveMethodOverload(String name, Type... parameters) {
+	public Invokable<? super T, ?> resolveMethodOverload(String name,
+			Type... parameters) {
 		return resolveMethodOverload(name, Arrays.asList(parameters));
 	}
 
-	public Invokable<T, ?> resolveMethodOverload(String name,
+	public Invokable<? super T, ?> resolveMethodOverload(String name,
 			List<? extends Type> parameters) {
 		/*
 		 * javac falls over if you use streams for this (in the obvious way at
 		 * least), don't modify without checking.
 		 */
-		Set<? extends Invokable<T, ?>> candidates = getMethods(m -> m.getName()
-				.equals(name));
+		Set<? extends Invokable<? super T, ?>> candidates = getMethods(m -> m
+				.getName().equals(name));
 
 		if (candidates.isEmpty())
 			throw new IllegalArgumentException("Cannot find any method '" + name
@@ -408,8 +440,9 @@ public class TypeLiteral<T> {
 	 * force it.
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private Set<? extends Invokable<T, ?>> resolveApplicableCandidatesCapture(
-			Set<? extends Invokable<T, ?>> candidates, List<? extends Type> parameters) {
+	private Set<? extends Invokable<? super T, ?>> resolveApplicableCandidatesCapture(
+			Set<? extends Invokable<? super T, ?>> candidates,
+			List<? extends Type> parameters) {
 		return resolveApplicableCandidates((Set) candidates, parameters);
 	}
 
@@ -462,8 +495,8 @@ public class TypeLiteral<T> {
 	 * force it.
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private Invokable<T, ?> resolveMostSpecificCandidateCapture(
-			Set<? extends Invokable<T, ?>> candidates,
+	private Invokable<? super T, ?> resolveMostSpecificCandidateCapture(
+			Set<? extends Invokable<? super T, ?>> candidates,
 			List<? extends Type> parameterTypes) {
 		return resolveMostSpecificCandidate((Set) candidates, parameterTypes);
 	}
@@ -474,9 +507,30 @@ public class TypeLiteral<T> {
 		if (candidates.size() == 1)
 			return candidates.iterator().next();
 
+		Set<Invokable<T, R>> mostSpecificSoFar = resolveMostSpecificNonGenericCandidate(
+				candidates, parameterTypes);
+
 		/*
-		 * TODO consider generics in invokable overload specificity
-		 * 
+		 * Find which of the remaining candidates, which should all have identical
+		 * parameter types, is declared in the lowermost class.
+		 */
+		Iterator<Invokable<T, R>> overrideCandidateIterator = mostSpecificSoFar
+				.iterator();
+		Invokable<T, R> mostSpecific = overrideCandidateIterator.next();
+		while (overrideCandidateIterator.hasNext()) {
+			Invokable<T, R> candidate = overrideCandidateIterator.next();
+			mostSpecific = candidate.getExecutable().getDeclaringClass()
+					.isAssignableFrom(mostSpecific.getExecutable().getDeclaringClass()) ? candidate
+					: mostSpecific;
+		}
+
+		return mostSpecific;
+	}
+
+	private <R> Set<Invokable<T, R>> resolveMostSpecificNonGenericCandidate(
+			Set<? extends Invokable<T, R>> candidates,
+			List<? extends Type> parameterTypes) {
+		/*
 		 * Find which candidates have the joint most specific parameters, one
 		 * parameter at a time.
 		 */
@@ -512,20 +566,6 @@ public class TypeLiteral<T> {
 				throw new TypeInferenceException("Cannot resolve method ambiguity.");
 		}
 
-		/*
-		 * Find which of the remaining candidates, which should all have identical
-		 * parameter types, is declared in the lowermost class.
-		 */
-		Iterator<Invokable<T, R>> overrideCandidateIterator = mostSpecificSoFar
-				.iterator();
-		Invokable<T, R> mostSpecific = overrideCandidateIterator.next();
-		while (overrideCandidateIterator.hasNext()) {
-			Invokable<T, R> candidate = overrideCandidateIterator.next();
-			mostSpecific = candidate.getExecutable().getDeclaringClass()
-					.isAssignableFrom(mostSpecific.getExecutable().getDeclaringClass()) ? candidate
-					: mostSpecific;
-		}
-
-		return mostSpecific;
+		return mostSpecificSoFar;
 	}
 }

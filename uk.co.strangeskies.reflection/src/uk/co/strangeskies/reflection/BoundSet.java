@@ -32,34 +32,10 @@ import java.util.stream.Collectors;
 public class BoundSet {
 	private static final AtomicLong COUNTER = new AtomicLong();
 
-	private final Set<Bound> bounds;
 	private final Map<InferenceVariable, InferenceVariableData> inferenceVariableData;
 	private final Set<CaptureConversion> captureConversions;
 
 	public BoundSet() {
-		bounds = new HashSet<Bound>() {
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public boolean addAll(Collection<? extends Bound> c) {
-				boolean okay = true;
-				for (Bound b : c) {
-					okay = super.add(b) && okay;
-				}
-				return okay;
-			}
-
-			@Override
-			public boolean add(Bound e) {
-				if (super.add(e)) {
-					if (bounds.size() > 24)
-						System.out.println(System.identityHashCode(BoundSet.this) + "  "
-								+ e);
-					return true;
-				}
-				return false;
-			}
-		};
 		inferenceVariableData = new HashMap<>();
 		captureConversions = new HashSet<>();
 	}
@@ -67,7 +43,9 @@ public class BoundSet {
 	public BoundSet(BoundSet boundSet) {
 		this();
 
-		bounds.addAll(boundSet.bounds);
+		// System.out.println(System.identityHashCode(boundSet) + " -> "
+		// + System.identityHashCode(this));
+
 		captureConversions.addAll(boundSet.captureConversions);
 		inferenceVariableData.putAll(boundSet.inferenceVariableData
 				.values()
@@ -130,10 +108,23 @@ public class BoundSet {
 
 	@Override
 	public String toString() {
-		return new StringBuilder("{ ")
-				.append(
-						bounds.stream().map(Object::toString)
-								.collect(Collectors.joining(", "))).append(" } ").toString();
+		StringBuilder stringBuilder = new StringBuilder("{ ");
+
+		for (InferenceVariableData inferenceVariable : inferenceVariableData
+				.values()) {
+			String name = inferenceVariable.getInferenceVariable().getTypeName();
+			for (Type equality : inferenceVariable.getEqualities())
+				stringBuilder.append(name).append(" = ").append(equality.getTypeName())
+						.append(", ");
+			for (Type supertype : inferenceVariable.getUpperBounds())
+				stringBuilder.append(name).append(" <: ")
+						.append(supertype.getTypeName()).append(", ");
+			for (Type subtype : inferenceVariable.getLowerBounds())
+				stringBuilder.append(subtype.getTypeName()).append(" <: ").append(name)
+						.append(", ");
+		}
+
+		return stringBuilder.append("}").toString();
 	}
 
 	public Set<InferenceVariable> getInferenceVariables() {
@@ -167,45 +158,33 @@ public class BoundSet {
 
 		@Override
 		public void acceptEquality(InferenceVariable a, InferenceVariable b) {
-			bounds.add(new Bound(v -> v.acceptEquality(a, b)));
-
 			inferenceVariableData.get(a).addEquality(b);
 			inferenceVariableData.get(b).addEquality(a);
 		}
 
 		@Override
 		public void acceptEquality(InferenceVariable a, Type b) {
-			bounds.add(new Bound(v -> v.acceptEquality(a, b)));
-
 			inferenceVariableData.get(a).addEquality(b);
 		}
 
 		@Override
 		public void acceptSubtype(InferenceVariable a, InferenceVariable b) {
-			bounds.add(new Bound(v -> v.acceptSubtype(a, b)));
-
 			inferenceVariableData.get(a).addUpperBound(b);
 			inferenceVariableData.get(b).addLowerBound(a);
 		}
 
 		@Override
 		public void acceptSubtype(InferenceVariable a, Type b) {
-			bounds.add(new Bound(v -> v.acceptSubtype(a, b)));
-
 			inferenceVariableData.get(a).addUpperBound(b);
 		}
 
 		@Override
 		public void acceptSubtype(Type a, InferenceVariable b) {
-			bounds.add(new Bound(v -> v.acceptSubtype(a, b)));
-
 			inferenceVariableData.get(b).addLowerBound(a);
 		}
 
 		@Override
 		public void acceptCaptureConversion(CaptureConversion c) {
-			bounds.add(new Bound(v -> v.acceptCaptureConversion(c)));
-
 			captureConversions.add(c);
 
 			for (InferenceVariableData inferenceVariable : inferenceVariableData
@@ -238,9 +217,6 @@ public class BoundSet {
 	public void removeCaptureConversions(
 			Collection<? extends CaptureConversion> captureConversions) {
 		this.captureConversions.removeAll(captureConversions);
-		captureConversions.forEach(c -> {
-			bounds.remove(new Bound(b -> b.acceptCaptureConversion(c)));
-		});
 	}
 
 	public InferenceVariable createInferenceVariable() {

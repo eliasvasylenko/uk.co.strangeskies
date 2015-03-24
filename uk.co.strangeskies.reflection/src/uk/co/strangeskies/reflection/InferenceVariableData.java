@@ -73,30 +73,32 @@ class InferenceVariableData {
 	public void addEquality(Type type) {
 		Set<Type> equalities = new HashSet<>(this.equalities);
 		if (this.equalities.add(type)) {
+			logBound(a, type, "=");
+
 			/*
 			 * α = S and α = T imply ‹S = T›
 			 */
 			for (Type equality : equalities)
 				incorporateTransitiveEquality(type, equality);
 
-			/*
-			 * α = U and S = T imply ‹S[α:=U] = T[α:=U]›
-			 */
 			for (InferenceVariableData other : boundSet.getInferenceVariableData()
-					.values())
+					.values()) {
+				/*
+				 * α = U and S = T imply ‹S[α:=U] = T[α:=U]›
+				 */
 				for (Type equality : other.getEqualities())
 					if (equality != type)
 						incorporateProperEqualitySubstitution(a, type, other.a, equality);
 
-			/*
-			 * α = U and S <: T imply ‹S[α:=U] <: T[α:=U]›
-			 */
-			for (InferenceVariableData other : boundSet.getInferenceVariableData()
-					.values()) {
+				/*
+				 * α = U and S <: T imply ‹S[α:=U] <: T[α:=U]›
+				 */
 				for (Type supertype : other.getUpperBounds())
-					incorporateProperSubtypeSubstitution(type, other.a, supertype);
+					if (supertype != type)
+						incorporateProperSubtypeSubstitution(type, other.a, supertype);
 				for (Type subtype : other.getLowerBounds())
-					incorporateProperSupertypeSubstitution(type, subtype, other.a);
+					if (subtype != type)
+						incorporateProperSupertypeSubstitution(type, subtype, other.a);
 			}
 
 			/*
@@ -111,16 +113,17 @@ class InferenceVariableData {
 			for (Type subtype : getLowerBounds())
 				incorporateSupertypeSubstitution(type, subtype);
 
-			if (boundSet.getInferenceVariables().contains(type))
-				for (CaptureConversion captureConversion : boundSet
-						.getCaptureConversions())
-					incorporateCapturedEquality(captureConversion, type);
+			for (CaptureConversion captureConversion : boundSet
+					.getCaptureConversions())
+				incorporateCapturedEquality(captureConversion, type);
 		}
 	}
 
 	public void addEquality(InferenceVariable type) {
 		Set<Type> equalities = new HashSet<>(this.equalities);
 		if (this.equalities.add(type)) {
+			logBound(a, type, "=");
+
 			/*
 			 * α = S and α = T imply ‹S = T›
 			 */
@@ -144,11 +147,13 @@ class InferenceVariableData {
 	public void addUpperBound(Type type) {
 		Set<Type> upperBounds = new HashSet<>(this.upperBounds);
 		if (this.upperBounds.add(type)) {
+			logBound(a, type, "<:");
+
 			/*
 			 * α = U and S <: T imply ‹S[α:=U] <: T[α:=U]›
 			 */
-			for (InferenceVariableData other : boundSet.getInferenceVariableData()
-					.values())
+			for (InferenceVariableData other : new HashSet<>(boundSet
+					.getInferenceVariableData().values()))
 				for (Type equality : new HashSet<>(other.equalities))
 					if (equality != type)
 						boundSet.getInferenceVariableData().get(other.a)
@@ -157,13 +162,13 @@ class InferenceVariableData {
 			/*
 			 * α = S and α <: T imply ‹S <: T›
 			 */
-			for (Type equality : equalities)
+			for (Type equality : new HashSet<>(equalities))
 				incorporateSubtypeSubstitution(equality, type);
 
 			/*
 			 * S <: α and α <: T imply ‹S <: T›
 			 */
-			for (Type lowerBound : lowerBounds)
+			for (Type lowerBound : new HashSet<>(lowerBounds))
 				incorporateTransitiveSubtype(lowerBound, type);
 
 			/*
@@ -183,6 +188,8 @@ class InferenceVariableData {
 	}
 
 	public void addUpperBound(InferenceVariable type) {
+		logBound(a, type, "<:");
+
 		if (upperBounds.add(type)) {
 			/*
 			 * α = S and α <: T imply ‹S <: T›
@@ -199,6 +206,8 @@ class InferenceVariableData {
 	}
 
 	public void addLowerBound(Type type) {
+		logBound(type, a, "<:");
+
 		if (lowerBounds.add(type)) {
 			/*
 			 * α = U and S <: T imply ‹S[α:=U] <: T[α:=U]›
@@ -229,6 +238,8 @@ class InferenceVariableData {
 	}
 
 	public void addLowerBound(InferenceVariable type) {
+		logBound(type, a, "<:");
+
 		if (lowerBounds.add(type)) {
 			/*
 			 * α = S and T <: α imply ‹T <: S›
@@ -242,6 +253,11 @@ class InferenceVariableData {
 			for (Type upperBound : upperBounds)
 				incorporateTransitiveSubtype(type, upperBound);
 		}
+	}
+
+	private void logBound(Type from, Type to, String boundString) {
+		// System.out.println(System.identityHashCode(boundSet) + "  " + from + " "
+		// + boundString + " " + to);
 	}
 
 	/*
