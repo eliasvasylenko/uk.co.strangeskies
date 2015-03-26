@@ -605,7 +605,15 @@ public class TypeLiteral<T> {
 								"Cannot resolve method invokation ambiguity between candidate '"
 										+ firstCandidate + "' and '" + secondCandidate + "'.");
 					else
-						; // enter 'not all remaining candidates are equal' mode...
+						/*
+						 * Enter 'not all remaining candidates are equal' mode...
+						 * 
+						 * TODO Think about when we can EXIT this 'mode'!
+						 * 
+						 * TODO consider only keeping one of any equally specific methods in
+						 * remainingCandidates at this point.
+						 */
+						;
 				}
 			}
 		}
