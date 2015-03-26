@@ -38,6 +38,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.management.RuntimeErrorException;
+
 import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.Property;
 import uk.co.strangeskies.utilities.collection.computingmap.ComputingMap;
@@ -50,7 +52,7 @@ public class TypeLiteral<T> {
 	private Resolver resolver;
 
 	private static ComputingMap<Type, Property<Resolver, Resolver>> RESOLVER_CACHE = new LRUCacheComputingMap<>(
-			type -> new IdentityProperty<>(), 2000, true);
+			type -> new IdentityProperty<>(), 200, true);
 
 	@SuppressWarnings("unchecked")
 	protected TypeLiteral() {
@@ -409,7 +411,7 @@ public class TypeLiteral<T> {
 		Set<? extends Invokable<T, T>> candidates = resolveApplicableCandidates(
 				getConstructors(), parameters);
 
-		return resolveMostSpecificCandidate(candidates, parameters);
+		return resolveMostSpecificCandidate(candidates);
 	}
 
 	public Invokable<? super T, ?> resolveMethodOverload(String name,
@@ -432,7 +434,7 @@ public class TypeLiteral<T> {
 
 		candidates = resolveApplicableCandidatesCapture(candidates, parameters);
 
-		return resolveMostSpecificCandidateCapture(candidates, parameters);
+		return resolveMostSpecificCandidateCapture(candidates);
 	}
 
 	/*
@@ -496,19 +498,16 @@ public class TypeLiteral<T> {
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private Invokable<? super T, ?> resolveMostSpecificCandidateCapture(
-			Set<? extends Invokable<? super T, ?>> candidates,
-			List<? extends Type> parameterTypes) {
-		return resolveMostSpecificCandidate((Set) candidates, parameterTypes);
+			Set<? extends Invokable<? super T, ?>> candidates) {
+		return resolveMostSpecificCandidate((Set) candidates);
 	}
 
 	private <R> Invokable<T, R> resolveMostSpecificCandidate(
-			Set<? extends Invokable<T, R>> candidates,
-			List<? extends Type> parameterTypes) {
+			Set<? extends Invokable<T, R>> candidates) {
 		if (candidates.size() == 1)
 			return candidates.iterator().next();
 
-		Set<Invokable<T, R>> mostSpecificSoFar = resolveMostSpecificNonGenericCandidate(
-				candidates, parameterTypes);
+		Set<Invokable<T, R>> mostSpecificSoFar = resolveMostSpecificCandidateSet(candidates);
 
 		/*
 		 * Find which of the remaining candidates, which should all have identical
@@ -527,45 +526,90 @@ public class TypeLiteral<T> {
 		return mostSpecific;
 	}
 
-	private <R> Set<Invokable<T, R>> resolveMostSpecificNonGenericCandidate(
-			Set<? extends Invokable<T, R>> candidates,
-			List<? extends Type> parameterTypes) {
+	private <R> Set<Invokable<T, R>> resolveMostSpecificCandidateSet(
+			Set<? extends Invokable<T, R>> candidates) {
+		HashSet<Invokable<T, R>> genericCandidates = new HashSet<>();
+		List<Invokable<T, R>> remainingCandidates = new ArrayList<>();
+		for (Invokable<T, R> candidate : candidates)
+			if (candidate.isGeneric())
+				genericCandidates.add(candidate);
+			else
+				remainingCandidates.add(candidate);
+
 		/*
-		 * Find which candidates have the joint most specific parameters, one
-		 * parameter at a time.
+		 * For each remaining candidate in the list...
 		 */
-		Set<Invokable<T, R>> mostSpecificSoFar = new HashSet<>(candidates);
-		int parameters = candidates.iterator().next().getParameters().size();
-		for (int i = 0; i < parameters; i++) {
-			Set<Invokable<T, ?>> mostSpecificForParameter = new HashSet<>();
+		for (int first = 0; first < remainingCandidates.size(); first++) {
+			Invokable<T, R> firstCandidate = remainingCandidates.get(first);
 
-			TypeLiteral<?> mostSpecificParameterType = TypeLiteral.from(candidates
-					.iterator().next().getParameters().get(i));
+			/*
+			 * Compare with each other remaining candidate...
+			 */
+			for (int second = first + 1; second < remainingCandidates.size(); second++) {
+				Invokable<T, R> secondCandidate = remainingCandidates.get(second);
 
-			for (Invokable<T, ?> overloadCandidate : candidates) {
-				TypeLiteral<?> candidateParameterType = TypeLiteral
-						.from(overloadCandidate.getParameters().get(i));
+				/*
+				 * By comparing the specificity of each parameter, to determine which of
+				 * the invokables, if either, are more specific.
+				 */
+				boolean firstMoreSpecific = true;
+				boolean secondMoreSpecific = true;
+				int i = 0;
+				for (Type firstParameter : firstCandidate.getParameters()) {
+					Type secondParameter = secondCandidate.getParameters().get(i++);
 
-				if (mostSpecificParameterType.isAssignableFrom(candidateParameterType)) {
-					if (!candidateParameterType
-							.isAssignableFrom(mostSpecificParameterType))
-						mostSpecificForParameter.clear();
+					if (!secondMoreSpecific) {
+						if (!Types.isAssignable(firstParameter, secondParameter)) {
+							firstMoreSpecific = false;
+							break;
+						}
+					} else if (!firstMoreSpecific) {
+						if (!Types.isAssignable(secondParameter, firstParameter)) {
+							secondMoreSpecific = false;
+							break;
+						}
+					} else {
+						secondMoreSpecific = Types.isAssignable(secondParameter,
+								firstParameter);
+						firstMoreSpecific = Types.isAssignable(firstParameter,
+								secondParameter);
 
-					mostSpecificParameterType = candidateParameterType;
+						if (!(firstMoreSpecific || secondMoreSpecific))
+							break;
+					}
+				}
 
-					mostSpecificForParameter.add(overloadCandidate);
-				} else if (!candidateParameterType
-						.isAssignableFrom(mostSpecificParameterType)) {
-					throw new TypeInferenceException("Cannot resolve method ambiguity.");
+				if (firstMoreSpecific)
+					if (secondMoreSpecific)
+						/*
+						 * First and second are equally specific.
+						 */
+						;
+					else
+						/*
+						 * First is strictly more specific.
+						 */
+						remainingCandidates.remove(second--);
+				else if (secondMoreSpecific) {
+					/*
+					 * Second is strictly more specific.
+					 */
+					remainingCandidates.remove(first--);
+					break;
+				} else {
+					/*
+					 * Neither first nor second are more specific.
+					 */
+					if (genericCandidates.isEmpty())
+						throw new TypeInferenceException(
+								"Cannot resolve method invokation ambiguity between candidate '"
+										+ firstCandidate + "' and '" + secondCandidate + "'.");
+					else
+						; // enter 'not all remaining candidates are equal' mode...
 				}
 			}
-
-			mostSpecificSoFar.retainAll(mostSpecificForParameter);
-
-			if (mostSpecificSoFar.isEmpty())
-				throw new TypeInferenceException("Cannot resolve method ambiguity.");
 		}
 
-		return mostSpecificSoFar;
+		return new HashSet<>(remainingCandidates);
 	}
 }

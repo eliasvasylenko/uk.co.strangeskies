@@ -73,8 +73,7 @@ public class Invokable<T, R> {
 	}
 
 	public static <T> Invokable<T, T> from(Constructor<T> constructor) {
-		TypeLiteral<T> type = new TypeLiteral<>(
-				constructor.getDeclaringClass());
+		TypeLiteral<T> type = new TypeLiteral<>(constructor.getDeclaringClass());
 		return from(constructor, type);
 	}
 
@@ -92,8 +91,7 @@ public class Invokable<T, R> {
 	}
 
 	public static Invokable<?, ?> from(Method method) {
-		return from(method,
-				TypeLiteral.from(method.getDeclaringClass()),
+		return from(method, TypeLiteral.from(method.getDeclaringClass()),
 				TypeLiteral.from(method.getGenericReturnType()));
 	}
 
@@ -151,6 +149,10 @@ public class Invokable<T, R> {
 
 	public boolean isSynchronized() {
 		return Modifier.isSynchronized(executable.getModifiers());
+	}
+
+	public boolean isGeneric() {
+		return executable.getTypeParameters().length > 0;
 	}
 
 	@Override
@@ -245,8 +247,8 @@ public class Invokable<T, R> {
 							+ "' with target '" + target + "'.");
 
 		return new Invokable<>(resolver, receiverType,
-				(TypeLiteral<S>) TypeLiteral.from(resolver
-						.resolveType(returnType.getType())), executable,
+				(TypeLiteral<S>) TypeLiteral.from(resolver.resolveType(returnType
+						.getType())), executable,
 				(BiFunction<T, List<?>, S>) invocationFunction);
 	}
 
@@ -257,12 +259,9 @@ public class Invokable<T, R> {
 
 	@SuppressWarnings("unchecked")
 	public <U extends R> Invokable<T, U> withInferredType(
-			TypeLiteral<U> targetType,
-			List<? extends TypeLiteral<?>> arguments) {
-		return (Invokable<T, U>) withInferredType(
-				targetType.getType(),
-				arguments.stream().map(TypeLiteral::getType)
-						.collect(Collectors.toList()));
+			TypeLiteral<U> targetType, List<? extends TypeLiteral<?>> arguments) {
+		return (Invokable<T, U>) withInferredType(targetType.getType(), arguments
+				.stream().map(TypeLiteral::getType).collect(Collectors.toList()));
 	}
 
 	public Invokable<T, ? extends R> withInferredType(Type targetType,
@@ -293,8 +292,8 @@ public class Invokable<T, R> {
 							+ "'.");
 
 		return new Invokable<>(resolver, receiverType,
-				(TypeLiteral<U>) TypeLiteral.from(resolver
-						.resolveType(returnType.getType())), executable,
+				(TypeLiteral<U>) TypeLiteral.from(resolver.resolveType(returnType
+						.getType())), executable,
 				(BiFunction<T, List<?>, U>) invocationFunction);
 	}
 
