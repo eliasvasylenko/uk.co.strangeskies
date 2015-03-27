@@ -672,11 +672,11 @@ public class Resolver {
 	}
 
 	public static void test() {
-		/*
-		 * System.out.println(new TypeLiteral<SchemaNode.Effective<?, ?>>() {}
-		 * .resolveSupertypeParameters(SchemaNode.class)); System.out.println();
-		 * System.out.println();
-		 */
+		System.out.println(new TypeLiteral<SchemaNode.Effective<?, ?>>() {}
+				.resolveSupertypeParameters(SchemaNode.class));
+		System.out.println();
+		System.out.println();
+
 		System.out.println(new TypeLiteral<HashSet<String>>() {}
 				.resolveSupertypeParameters(Set.class));
 		System.out.println();
