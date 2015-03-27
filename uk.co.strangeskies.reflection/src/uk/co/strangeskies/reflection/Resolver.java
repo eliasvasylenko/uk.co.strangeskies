@@ -542,7 +542,7 @@ public class Resolver {
 		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
 		 */
 		Map<InferenceVariable, TypeVariableCapture> freshVariables = TypeVariableCapture
-				.capture(minimalSet, bounds);
+				.capture(minimalSet, bounds, this);
 
 		/*
 		 * Otherwise, for all i (1 ≤ i ≤ n), all bounds of the form G<..., αi, ...>
@@ -569,6 +569,8 @@ public class Resolver {
 		return new TypeSubstitution(t -> {
 			if (t instanceof InferenceVariable)
 				return resolveInferenceVariable((InferenceVariable) t);
+			else if (t instanceof TypeVariableCapture)
+				return t;
 			else if (t instanceof TypeVariable)
 				return resolveTypeVariable((TypeVariable<?>) t);
 			else
@@ -580,6 +582,8 @@ public class Resolver {
 		return new TypeSubstitution(t -> {
 			if (t instanceof InferenceVariable)
 				return resolveInferenceVariable((InferenceVariable) t);
+			else if (t instanceof TypeVariableCapture)
+				return t;
 			else if (t instanceof TypeVariable)
 				return resolveTypeVariable(declaration, (TypeVariable<?>) t);
 			else

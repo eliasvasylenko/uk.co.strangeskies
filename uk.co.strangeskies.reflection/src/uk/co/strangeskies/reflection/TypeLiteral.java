@@ -38,8 +38,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.management.RuntimeErrorException;
-
 import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.Property;
 import uk.co.strangeskies.utilities.collection.computingmap.ComputingMap;
@@ -379,6 +377,7 @@ public class TypeLiteral<T> {
 		return getMethods(m -> true);
 	}
 
+	@SuppressWarnings("unchecked")
 	private Set<Invokable<? super T, ?>> getMethods(Predicate<Method> filter) {
 		Stream<Method> methodStream = Arrays.stream(getRawType().getMethods());
 
@@ -390,9 +389,9 @@ public class TypeLiteral<T> {
 				.filter(filter)
 				.map(
 						m -> Invokable.from(m,
-								resolveSupertypeParameters(m.getDeclaringClass()),
-								TypeLiteral.from(m.getGenericReturnType())))
-				.collect(Collectors.toSet());
+								(TypeLiteral<? super T>) resolveSupertypeParameters(m
+										.getDeclaringClass()), TypeLiteral.from(m
+										.getGenericReturnType()))).collect(Collectors.toSet());
 	}
 
 	public Set<? extends Invokable<? super T, ?>> getInvokables() {

@@ -34,6 +34,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.utilities.Property;
+import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
+import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 
 public class ParameterizedTypes {
 	private ParameterizedTypes() {}
@@ -188,6 +190,7 @@ public class ParameterizedTypes {
 		private final Class<?> rawType;
 
 		private final Set<Thread> recurringThreads;
+		private final Map<Thread, MultiMap<ParameterizedType, ParameterizedType, Set<ParameterizedType>>> assumedEqualities;
 
 		ParameterizedTypeImpl(Type ownerType, Class<?> rawType,
 				List<Type> typeArguments) {
@@ -196,6 +199,7 @@ public class ParameterizedTypes {
 			this.typeArguments = typeArguments;
 
 			recurringThreads = new HashSet<>();
+			assumedEqualities = new HashMap<>();
 		}
 
 		@Override
@@ -242,6 +246,10 @@ public class ParameterizedTypes {
 		public int hashCode() {
 			Thread currentThread = Thread.currentThread();
 			if (recurringThreads.add(currentThread)) {
+				/*
+				 * If we have not encountered this type so far in calculating this hash
+				 * code:
+				 */
 				int hashCode = (ownerType == null ? 0 : ownerType.hashCode())
 						^ typeArguments.hashCode() ^ rawType.hashCode();
 
@@ -255,38 +263,55 @@ public class ParameterizedTypes {
 		@Override
 		public boolean equals(Object other) {
 			Thread currentThread = Thread.currentThread();
+			boolean newThread = false;
 
-			if (recurringThreads.add(currentThread)) {
-				Boolean equals = null;
+			MultiMap<ParameterizedType, ParameterizedType, Set<ParameterizedType>> equalitiesForThread = assumedEqualities
+					.get(currentThread);
+			if (equalitiesForThread == null) {
+				assumedEqualities.put(currentThread,
+						equalitiesForThread = new MultiHashMap<>(HashSet::new));
+				newThread = true;
+			}
 
-				if (other == this)
-					equals = true;
+			Boolean equals = null;
+
+			if (other == this)
+				equals = true;
+
+			if (equals == null) {
+				if (other == null || !(other instanceof ParameterizedType))
+					equals = false;
 
 				if (equals == null) {
-					if (other == null || !(other instanceof ParameterizedType))
-						equals = false;
+					ParameterizedType that = (ParameterizedType) other;
 
-					if (equals == null) {
-						ParameterizedType that = (ParameterizedType) other;
+					if (equalitiesForThread.contains(this, that))
+						return true;
+					else {
+						equalitiesForThread.add(this, that);
+						equalitiesForThread.add(that, this);
 
 						equals = getRawType().equals(that.getRawType())
 								&& Objects.equals(getOwnerType(), that.getOwnerType())
 								&& Arrays.equals(getActualTypeArguments(),
 										that.getActualTypeArguments());
+
+						equalitiesForThread.remove(this, that);
+						equalitiesForThread.remove(that, this);
 					}
 				}
+			}
 
-				recurringThreads.remove(currentThread);
+			if (newThread)
+				assumedEqualities.remove(currentThread);
 
-				return equals;
-			} else
-				return true;
+			return equals;
 		}
 	}
 
 	private static final List<InferenceVariable> SUBSTITUTE_ARGUMENTS = new ArrayList<>();
 
-	private static InferenceVariable getSubstituteArgument(int index) {
+	private static InferenceVariable getSubstitutionArgument(int index) {
 		while (index >= SUBSTITUTE_ARGUMENTS.size()) {
 			String name = "SUB#" + SUBSTITUTE_ARGUMENTS.size();
 			SUBSTITUTE_ARGUMENTS.add(new InferenceVariable() {
@@ -309,7 +334,7 @@ public class ParameterizedTypes {
 		if (type instanceof ParameterizedType) {
 			Map<TypeVariable<?>, Type> arguments = getAllTypeArguments((ParameterizedType) type);
 			for (TypeVariable<?> parameter : getAllTypeParameters(rawType)) {
-				InferenceVariable substituteArgument = getSubstituteArgument(index++);
+				InferenceVariable substituteArgument = getSubstitutionArgument(index++);
 				parameterSubstitutes.put(parameter, substituteArgument);
 				substitutedArguments.put(substituteArgument, arguments.get(parameter));
 			}
@@ -332,7 +357,7 @@ public class ParameterizedTypes {
 		if (type instanceof ParameterizedType) {
 			Map<TypeVariable<?>, Type> arguments = getAllTypeArguments((ParameterizedType) type);
 			for (TypeVariable<?> parameter : getAllTypeParameters(rawType)) {
-				InferenceVariable substituteArgument = getSubstituteArgument(index++);
+				InferenceVariable substituteArgument = getSubstitutionArgument(index++);
 				parameterSubstitutes.put(parameter, substituteArgument);
 				substitutedArguments.put(substituteArgument, arguments.get(parameter));
 			}

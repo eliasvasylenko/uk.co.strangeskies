@@ -52,6 +52,9 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 			GenericDeclaration declaration) {
 		this.name = "CAP#" + COUNTER.incrementAndGet();
 
+		if (COUNTER.get() > 160)
+			throw new StackOverflowError();
+
 		this.upperBounds = upperBounds.clone();
 		this.lowerBounds = lowerBounds.clone();
 
@@ -158,7 +161,8 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	}
 
 	public static Map<InferenceVariable, TypeVariableCapture> capture(
-			Collection<? extends InferenceVariable> types, BoundSet bounds) {
+			Collection<? extends InferenceVariable> types, BoundSet bounds,
+			Resolver resolver) {
 		TypeVariable<?>[] parameters = new TypeVariable<?>[types.size()];
 		GenericDeclaration declaration = createGenericDeclarationOver(parameters);
 
@@ -191,11 +195,12 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 			if (upperBoundSet.isEmpty())
 				upperBounds = new Type[0];
 			else
-				upperBounds = IntersectionType.asArray(IntersectionType
-						.uncheckedFrom(upperBoundSet));
+				upperBounds = IntersectionType.asArray(resolver
+						.resolveType(IntersectionType.uncheckedFrom(upperBoundSet)));
 
 			TypeVariableCapture capture = new TypeVariableCapture(upperBounds,
 					lowerBounds, declaration);
+
 			/*
 			 * If the type variables Y1, ..., Yn do not have well-formed bounds (that
 			 * is, a lower bound is not a subtype of an upper bound, or an
