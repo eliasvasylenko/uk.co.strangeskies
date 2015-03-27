@@ -115,6 +115,14 @@ public class Invokable<T, R> {
 			return from((Constructor<?>) executable);
 	}
 
+	public Resolver getResolver() {
+		return new Resolver(getInternalResolver());
+	}
+
+	private Resolver getInternalResolver() {
+		return resolver;
+	}
+
 	public boolean isAbstract() {
 		return Modifier.isAbstract(executable.getModifiers());
 	}
@@ -153,6 +161,10 @@ public class Invokable<T, R> {
 
 	public boolean isGeneric() {
 		return executable.getTypeParameters().length > 0;
+	}
+
+	public boolean isVariableArity() {
+		return executable.isVarArgs();
 	}
 
 	@Override
@@ -232,7 +244,7 @@ public class Invokable<T, R> {
 
 	@SuppressWarnings("unchecked")
 	private <S extends R> Invokable<T, S> withTargetTypeCapture(Type target) {
-		Resolver resolver = new Resolver(this.resolver);
+		Resolver resolver = getResolver();
 
 		new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, returnType.getType(),
 				target).reduceInto(resolver.getBounds());
@@ -282,7 +294,7 @@ public class Invokable<T, R> {
 
 	@SuppressWarnings("unchecked")
 	public <U extends R> Invokable<T, U> infer() {
-		Resolver resolver = new Resolver(this.resolver);
+		Resolver resolver = getResolver();
 
 		resolver.infer();
 
@@ -354,7 +366,7 @@ public class Invokable<T, R> {
 		} else if (parameters.size() != arguments.size())
 			return null;
 
-		Resolver resolver = new Resolver(this.resolver);
+		Resolver resolver = getResolver();
 
 		if (!parameters.isEmpty()) {
 			Iterator<Type> parameters = this.parameters.iterator();

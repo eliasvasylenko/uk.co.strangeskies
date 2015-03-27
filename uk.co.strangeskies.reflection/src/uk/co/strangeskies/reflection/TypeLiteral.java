@@ -38,10 +38,12 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.Property;
 import uk.co.strangeskies.utilities.collection.computingmap.ComputingMap;
 import uk.co.strangeskies.utilities.collection.computingmap.LRUCacheComputingMap;
+import uk.co.strangeskies.utilities.tuples.Pair;
 
 public class TypeLiteral<T> {
 	private final Type type;
@@ -517,6 +519,12 @@ public class TypeLiteral<T> {
 		Invokable<T, R> mostSpecific = overrideCandidateIterator.next();
 		while (overrideCandidateIterator.hasNext()) {
 			Invokable<T, R> candidate = overrideCandidateIterator.next();
+
+			if (!candidate.equals(mostSpecific))
+				throw new TypeInferenceException(
+						"Cannot resolve method invokation ambiguity between candidate '"
+								+ candidate + "' and '" + mostSpecific + "'.");
+
 			mostSpecific = candidate.getExecutable().getDeclaringClass()
 					.isAssignableFrom(mostSpecific.getExecutable().getDeclaringClass()) ? candidate
 					: mostSpecific;
@@ -527,13 +535,7 @@ public class TypeLiteral<T> {
 
 	private <R> Set<Invokable<T, R>> resolveMostSpecificCandidateSet(
 			Set<? extends Invokable<T, R>> candidates) {
-		HashSet<Invokable<T, R>> genericCandidates = new HashSet<>();
-		List<Invokable<T, R>> remainingCandidates = new ArrayList<>();
-		for (Invokable<T, R> candidate : candidates)
-			if (candidate.isGeneric())
-				genericCandidates.add(candidate);
-			else
-				remainingCandidates.add(candidate);
+		List<Invokable<T, R>> remainingCandidates = new ArrayList<>(candidates);
 
 		/*
 		 * For each remaining candidate in the list...
@@ -548,75 +550,110 @@ public class TypeLiteral<T> {
 				Invokable<T, R> secondCandidate = remainingCandidates.get(second);
 
 				/*
-				 * By comparing the specificity of each parameter, to determine which of
-				 * the invokables, if either, are more specific.
+				 * Determine which of the invokables, if either, are more specific.
 				 */
-				boolean firstMoreSpecific = true;
-				boolean secondMoreSpecific = true;
-				int i = 0;
-				for (Type firstParameter : firstCandidate.getParameters()) {
-					Type secondParameter = secondCandidate.getParameters().get(i++);
+				Pair<Boolean, Boolean> moreSpecific = compareCandidates(firstCandidate,
+						secondCandidate);
 
-					if (!secondMoreSpecific) {
-						if (!Types.isAssignable(firstParameter, secondParameter)) {
-							firstMoreSpecific = false;
-							break;
-						}
-					} else if (!firstMoreSpecific) {
-						if (!Types.isAssignable(secondParameter, firstParameter)) {
-							secondMoreSpecific = false;
-							break;
-						}
-					} else {
-						secondMoreSpecific = Types.isAssignable(secondParameter,
-								firstParameter);
-						firstMoreSpecific = Types.isAssignable(firstParameter,
-								secondParameter);
-
-						if (!(firstMoreSpecific || secondMoreSpecific))
-							break;
-					}
-				}
-
-				if (firstMoreSpecific)
-					if (secondMoreSpecific)
+				if (moreSpecific.getLeft()) {
+					if (moreSpecific.getRight()) {
 						/*
 						 * First and second are equally specific.
 						 */
-						;
-					else
+					} else {
 						/*
 						 * First is strictly more specific.
 						 */
 						remainingCandidates.remove(second--);
-				else if (secondMoreSpecific) {
+					}
+				} else if (moreSpecific.getRight()) {
 					/*
 					 * Second is strictly more specific.
 					 */
 					remainingCandidates.remove(first--);
+
 					break;
 				} else {
 					/*
 					 * Neither first nor second are more specific.
 					 */
-					if (genericCandidates.isEmpty())
-						throw new TypeInferenceException(
-								"Cannot resolve method invokation ambiguity between candidate '"
-										+ firstCandidate + "' and '" + secondCandidate + "'.");
-					else
-						/*
-						 * Enter 'not all remaining candidates are equal' mode...
-						 * 
-						 * TODO Think about when we can EXIT this 'mode'!
-						 * 
-						 * TODO consider only keeping one of any equally specific methods in
-						 * remainingCandidates at this point.
-						 */
-						;
+					throw new TypeInferenceException(
+							"Cannot resolve method invokation ambiguity between candidate '"
+									+ firstCandidate + "' and '" + secondCandidate + "'.");
 				}
 			}
 		}
 
 		return new HashSet<>(remainingCandidates);
+	}
+
+	public Pair<Boolean, Boolean> compareCandidates(
+			Invokable<?, ?> firstCandidate, Invokable<?, ?> secondCandidate) {
+		boolean firstMoreSpecific = true;
+		boolean secondMoreSpecific = true;
+
+		if (firstCandidate.isGeneric())
+			secondMoreSpecific = compareGenericCandidate(secondCandidate,
+					firstCandidate);
+		if (secondCandidate.isGeneric())
+			firstMoreSpecific = compareGenericCandidate(firstCandidate,
+					secondCandidate);
+
+		if (!firstCandidate.isGeneric() || !secondCandidate.isGeneric()) {
+			int i = 0;
+			for (Type firstParameter : firstCandidate.getParameters()) {
+				Type secondParameter = secondCandidate.getParameters().get(i++);
+
+				if (!secondMoreSpecific && !secondCandidate.isGeneric()) {
+					if (!Types.isAssignable(firstParameter, secondParameter)) {
+						firstMoreSpecific = false;
+						break;
+					}
+				} else if (!firstMoreSpecific && !firstCandidate.isGeneric()) {
+					if (!Types.isAssignable(secondParameter, firstParameter)) {
+						secondMoreSpecific = false;
+						break;
+					}
+				} else {
+					secondMoreSpecific = Types.isAssignable(secondParameter,
+							firstParameter);
+					firstMoreSpecific = Types.isAssignable(firstParameter,
+							secondParameter);
+
+					if (!(firstMoreSpecific || secondMoreSpecific))
+						break;
+				}
+			}
+		}
+
+		return new Pair<Boolean, Boolean>(firstMoreSpecific, secondMoreSpecific);
+	}
+
+	private boolean compareGenericCandidate(Invokable<?, ?> firstCandidate,
+			Invokable<?, ?> genericCandidate) {
+		Resolver resolver = genericCandidate.getResolver();
+
+		try {
+			int parameters = firstCandidate.getParameters().size();
+			if (firstCandidate.isVariableArity()) {
+				parameters--;
+
+				new ConstraintFormula(Kind.SUBTYPE, firstCandidate.getParameters().get(
+						parameters), genericCandidate.getParameters().get(parameters))
+						.reduceInto(resolver.getBounds());
+			}
+
+			for (int i = 0; i < parameters; i++) {
+				new ConstraintFormula(Kind.SUBTYPE, firstCandidate.getParameters().get(
+						i), genericCandidate.getParameters().get(i)).reduceInto(resolver
+						.getBounds());
+			}
+
+			resolver.validate();
+		} catch (Exception e) {
+			return false;
+		}
+
+		return true;
 	}
 }

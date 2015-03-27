@@ -137,7 +137,7 @@ public class BoundSet {
 				.collect(Collectors.toSet());
 	}
 
-	public BoundVisitor incorporate(ConstraintFormula constraintFormula) {
+	BoundVisitor incorporate(ConstraintFormula constraintFormula) {
 		return new ReductionTarget(constraintFormula);
 	}
 
