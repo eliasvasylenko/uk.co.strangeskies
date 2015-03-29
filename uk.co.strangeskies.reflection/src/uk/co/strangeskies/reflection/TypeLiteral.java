@@ -23,6 +23,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -143,6 +144,20 @@ public class TypeLiteral<T> {
 
 	public boolean isStatic() {
 		return Types.isStatic(rawType);
+	}
+
+	public boolean isWildcard() {
+		return type instanceof WildcardType;
+	}
+
+	@SuppressWarnings("unchecked")
+	public TypeLiteral<? extends T> getWildcardExtending() {
+		return (TypeLiteral<? extends T>) from(WildcardTypes.upperBounded(type));
+	}
+
+	@SuppressWarnings("unchecked")
+	public TypeLiteral<? super T> getWildcardSuper() {
+		return (TypeLiteral<? super T>) from(WildcardTypes.lowerBounded(type));
 	}
 
 	public Class<?> getNonStaticallyEnclosingClass() {

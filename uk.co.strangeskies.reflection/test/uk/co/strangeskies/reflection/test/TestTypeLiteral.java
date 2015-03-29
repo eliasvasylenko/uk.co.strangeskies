@@ -168,13 +168,6 @@ public class TestTypeLiteral {
 				new TypeLiteral<List<? extends Type>>() {}.getType()));
 		System.out.println();
 
-		/*
-		 * System.out.println(TypeLiteral.from(B.class).resolveMethodOverload(
-		 * "method", new TypeLiteral<Collection<? super Integer>>() {}.getType(),
-		 * new TypeLiteral<Collection<? super Integer>>() {}.getType()));
-		 * System.out.println();
-		 */
-
 		System.out.println(new TypeLiteral<Collection<H>>() {}
 				.resolveSubtypeParameters(HashSet.class));
 		System.out.println();
