@@ -20,11 +20,22 @@ package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.TypeVariable;
 
-public class TypeParameter<T> extends TypeLiteral<T> {
-	protected TypeParameter() {}
+public class TypeParameter<T> extends TypeToken<T> {
+	protected TypeParameter() {
+		if (!(getType() instanceof TypeVariable))
+			throw new IllegalArgumentException();
+	}
+
+	private TypeParameter(TypeVariable<?> type) {
+		super(type);
+	}
 
 	@Override
 	public TypeVariable<?> getType() {
 		return (TypeVariable<?>) super.getType();
+	}
+
+	public static TypeParameter<?> of(TypeVariable<?> type) {
+		return new TypeParameter<>(type);
 	}
 }

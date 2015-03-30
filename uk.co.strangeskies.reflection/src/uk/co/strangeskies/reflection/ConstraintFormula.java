@@ -128,8 +128,7 @@ public class ConstraintFormula {
 		if (to instanceof ParameterizedType) {
 			return (toRaw.getTypeParameters().length > 0)
 					&& (toRaw.isAssignableFrom(fromRaw))
-					&& (TypeLiteral.from(from).resolveSupertypeParameters(toRaw)
-							.getType() instanceof Class);
+					&& (TypeToken.of(from).resolveSupertypeParameters(toRaw).getType() instanceof Class);
 		} else
 			return toRaw.isArray()
 					&& fromRaw.isArray()
@@ -257,7 +256,7 @@ public class ConstraintFormula {
 				 * array types, a most specific type is identified, S'[] (this may be S
 				 * itself).
 				 */
-				TypeLiteral<?> fromComponent;
+				TypeToken<?> fromComponent;
 				if ((fromComponent = findMostSpecificArrayType(from)) == null) {
 					/*
 					 * If no such array type exists, the constraint reduces to false.
@@ -267,8 +266,7 @@ public class ConstraintFormula {
 					/*
 					 * Otherwise:
 					 */
-					TypeLiteral<?> toComponent = TypeLiteral.from(Types
-							.getComponentType(to));
+					TypeToken<?> toComponent = TypeToken.of(Types.getComponentType(to));
 					if (!fromComponent.isPrimitive() && !toComponent.isPrimitive()) {
 						/*
 						 * - If neither S' nor T' is a primitive type, the constraint
@@ -327,11 +325,11 @@ public class ConstraintFormula {
 		}
 	}
 
-	private TypeLiteral<?> findMostSpecificArrayType(Type from) {
-		TypeLiteral<?> fromToken = TypeLiteral.from(from);
+	private TypeToken<?> findMostSpecificArrayType(Type from) {
+		TypeToken<?> fromToken = TypeToken.of(from);
 
 		if (fromToken.getRawType().isArray()) {
-			return TypeLiteral.from(Types.getComponentType(from));
+			return TypeToken.of(Types.getComponentType(from));
 		}
 
 		if (from instanceof WildcardType) {
@@ -357,7 +355,7 @@ public class ConstraintFormula {
 					.anyMatch(
 							t -> !Types.isAssignable(Types.getComponentType(mostSpecific),
 									Types.getComponentType(t))))
-				return TypeLiteral.from(mostSpecific);
+				return TypeToken.of(mostSpecific);
 		}
 
 		return null;
@@ -581,9 +579,9 @@ public class ConstraintFormula {
 				 */
 				ParameterizedTypes.getAllTypeParameters(Types.getRawType(from))
 						.forEach(
-								type -> reduce(Kind.EQUALITY, TypeLiteral.from(from)
-										.getTypeArgument(type), TypeLiteral.from(to)
-										.getTypeArgument(type), bounds));
+								type -> reduce(Kind.EQUALITY, TypeToken.of(from)
+										.getTypeArgument(type),
+										TypeToken.of(to).getTypeArgument(type), bounds));
 			}
 		}
 	}

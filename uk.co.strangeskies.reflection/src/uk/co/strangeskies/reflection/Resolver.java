@@ -367,6 +367,10 @@ public class Resolver {
 								i -> bounds.getInstantiation(i).get()));
 	}
 
+	public Type infer(InferenceVariable variable) {
+		return infer(Arrays.asList(variable)).get(variable);
+	}
+
 	public Map<InferenceVariable, Type> infer(InferenceVariable... variables) {
 		return infer(Arrays.asList(variables));
 	}
@@ -432,6 +436,44 @@ public class Resolver {
 				remainingDependencies = recalculateRemainingDependencies();
 				variables.removeAll(bounds.getInstantiatedVariables());
 			}
+		}
+	}
+
+	public void resolveTypeHierarchy(Type subtype, Class<?> superclass) {
+		Class<?> subclass = Types.getRawType(subtype);
+
+		if (!superclass.isAssignableFrom(subclass))
+			throw new IllegalArgumentException("Type '" + subtype
+					+ "' is not a valid subtype of '" + superclass + "'.");
+
+		Class<?> finalSubclass2 = subclass;
+		Function<Type, Type> inferenceVariables = t -> {
+			if (t instanceof TypeVariable)
+				return getInferenceVariable(finalSubclass2, (TypeVariable<?>) t);
+			else
+				return null;
+		};
+		while (!subclass.equals(superclass)) {
+			Set<Type> lesserSubtypes = new HashSet<>(Arrays.asList(subclass
+					.getGenericInterfaces()));
+			if (subclass.getSuperclass() != null)
+				lesserSubtypes.addAll(Arrays.asList(subclass.getGenericSuperclass()));
+
+			subtype = lesserSubtypes.stream()
+					.filter(t -> superclass.isAssignableFrom(Types.getRawType(t)))
+					.findAny().get();
+			subtype = new TypeSubstitution(inferenceVariables).resolve(subtype);
+
+			incorporateType(subtype);
+			subclass = Types.getRawType(subtype);
+
+			Class<?> finalSubclass = subclass;
+			inferenceVariables = t -> {
+				if (t instanceof TypeVariable)
+					return getInferenceVariable(finalSubclass, (TypeVariable<?>) t);
+				else
+					return null;
+			};
 		}
 	}
 
@@ -631,7 +673,7 @@ public class Resolver {
 		}
 	}
 
-	public static <T> TypeLiteral<List<T>> listOf(Class<T> sub) {
+	public static <T> TypeToken<List<T>> listOf(Class<T> sub) {
 		return new TypeLiteral<List<T>>() {}.withTypeArgument(
 				new TypeParameter<T>() {}, sub);
 	}
@@ -692,27 +734,24 @@ public class Resolver {
 		System.out.println();
 		System.out.println();
 
-		System.out
-				.println(TypeLiteral.from(new TypeLiteral<Nest<?>>() {}.getType()));
+		System.out.println(TypeToken.of(new TypeLiteral<Nest<?>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeLiteral.from(new TypeLiteral<Nest22<?>>() {}
+		System.out.println(TypeToken.of(new TypeLiteral<Nest22<?>>() {}.getType()));
+		System.out.println();
+		System.out.println();
+
+		System.out.println(TypeToken.of(new TypeLiteral<Nest2<?>>() {}.getType()));
+		System.out.println();
+		System.out.println();
+
+		System.out.println(TypeToken.of(new TypeLiteral<Base<LeftN, RightN>>() {}
 				.getType()));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeLiteral.from(new TypeLiteral<Nest2<?>>() {}
-				.getType()));
-		System.out.println();
-		System.out.println();
-
-		System.out.println(TypeLiteral
-				.from(new TypeLiteral<Base<LeftN, RightN>>() {}.getType()));
-		System.out.println();
-		System.out.println();
-
-		System.out.println(TypeLiteral.from(new TypeLiteral<RightN>() {}
+		System.out.println(TypeToken.of(new TypeLiteral<RightN>() {}
 				.resolveSupertypeParameters(Base.class).getType()));
 		System.out.println();
 		System.out.println();
@@ -730,13 +769,13 @@ public class Resolver {
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeLiteral
-				.from(new TypeLiteral<Nest2<? extends Nest2<?>>>() {}.getType()));
+		System.out.println(TypeToken
+				.of(new TypeLiteral<Nest2<? extends Nest2<?>>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeLiteral
-				.from(new TypeLiteral<Nest2<? extends Nest22<?>>>() {}.getType()));
+		System.out.println(TypeToken
+				.of(new TypeLiteral<Nest2<? extends Nest22<?>>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 
@@ -750,7 +789,7 @@ public class Resolver {
 		System.out.println();
 		System.out.println();
 
-		TypeLiteral<?> receiver = new TypeLiteral<BindingState>() {};
+		TypeToken<?> receiver = new TypeLiteral<BindingState>() {};
 		System.out.println("RESOLVE 1:");
 		System.out.println(receiver.resolveMethodOverload("bindingNode",
 				Arrays.asList(int.class)));
@@ -759,22 +798,22 @@ public class Resolver {
 
 		receiver = new TypeLiteral<SchemaNodeConfigurator<?, ?>>() {};
 		System.out.println("RESOLVE 2:");
-		System.out.println(TypeLiteral.from(receiver.getType())
-				.resolveMethodOverload("name", Arrays.asList(String.class)));
+		System.out.println(TypeToken.of(receiver.getType()).resolveMethodOverload(
+				"name", Arrays.asList(String.class)));
 		System.out.println();
 		System.out.println();
 
 		receiver = new TypeLiteral<ChildNodeConfigurator<?, ?>>() {};
 		System.out.println("RESOLVE 3:");
-		System.out.println(TypeLiteral.from(receiver.getType())
-				.resolveMethodOverload("name", Arrays.asList(String.class)));
+		System.out.println(TypeToken.of(receiver.getType()).resolveMethodOverload(
+				"name", Arrays.asList(String.class)));
 		System.out.println();
 		System.out.println();
 
 		receiver = new TypeLiteral<DataBindingType.Effective<?>>() {};
 		System.out.println("RESOLVE 4:");
-		System.out.println(TypeLiteral.from(receiver.getType())
-				.resolveMethodOverload("child", Arrays.asList(String.class)));
+		System.out.println(TypeToken.of(receiver.getType()).resolveMethodOverload(
+				"child", Arrays.asList(String.class)));
 		System.out.println();
 		System.out.println();
 

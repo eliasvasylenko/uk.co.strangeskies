@@ -109,31 +109,31 @@ public class ParameterizedTypes {
 				rawType, typeArguments));
 	}
 
-	public static <T> TypeLiteral<? extends T> from(Class<T> rawType) {
+	public static <T> TypeToken<? extends T> from(Class<T> rawType) {
 		return from(rawType, new HashMap<>());
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <T> TypeLiteral<? extends T> from(Class<T> rawType,
+	public static <T> TypeToken<? extends T> from(Class<T> rawType,
 			Map<? extends TypeVariable<?>, ? extends Type> typeArguments) {
-		return (TypeLiteral<? extends T>) TypeLiteral.from(uncheckedFrom(rawType,
+		return (TypeToken<? extends T>) TypeToken.of(uncheckedFrom(rawType,
 				typeArguments));
 	}
 
-	public static <T> TypeLiteral<? extends T> from(Class<T> rawType,
+	public static <T> TypeToken<? extends T> from(Class<T> rawType,
 			Type... typeArguments) {
 		return from(rawType, Arrays.asList(typeArguments));
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <T> TypeLiteral<? extends T> from(Class<T> rawType,
+	public static <T> TypeToken<? extends T> from(Class<T> rawType,
 			List<Type> typeArguments) {
 		if (Types.getNonStaticallyEnclosingClass(rawType) != null
 				&& isGeneric(Types.getNonStaticallyEnclosingClass(rawType)))
 			throw new IllegalArgumentException();
 
-		return (TypeLiteral<? extends T>) TypeLiteral.from(uncheckedFrom(null,
-				rawType, typeArguments));
+		return (TypeToken<? extends T>) TypeToken.of(uncheckedFrom(null, rawType,
+				typeArguments));
 	}
 
 	private static List<Type> argumentsForClass(Class<?> rawType,

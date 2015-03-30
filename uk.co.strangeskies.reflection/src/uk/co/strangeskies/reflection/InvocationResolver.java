@@ -24,7 +24,7 @@ import java.lang.reflect.Type;
 import java.util.List;
 
 public interface InvocationResolver<T> {
-	public TypeLiteral<T> getType();
+	public TypeToken<T> getType();
 
 	public List<Type> inferTypes(Executable executable, Type result,
 			Type... parameters);

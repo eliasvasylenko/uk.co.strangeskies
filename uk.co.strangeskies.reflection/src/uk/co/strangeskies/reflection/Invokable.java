@@ -28,9 +28,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -46,48 +46,57 @@ import uk.co.strangeskies.utilities.tuples.Pair;
 public class Invokable<T, R> {
 	private final Resolver resolver;
 
-	private final TypeLiteral<T> receiverType;
-	private final TypeLiteral<R> returnType;
+	private final TypeToken<T> receiverType;
+	private final TypeToken<R> returnType;
 	private final Executable executable;
 
 	private final List<Type> parameters;
 
 	private final BiFunction<T, List<?>, R> invocationFunction;
 
-	private Invokable(TypeLiteral<T> receiverType, TypeLiteral<R> returnType,
+	protected Invokable(Invokable<T, R> that) {
+		resolver = that.resolver;
+		receiverType = that.receiverType;
+		returnType = that.returnType;
+		executable = that.executable;
+		parameters = that.parameters;
+		invocationFunction = that.invocationFunction;
+	}
+
+	private Invokable(TypeToken<T> receiverType, TypeToken<R> returnType,
 			Executable executable, BiFunction<T, List<?>, R> invocationFunction) {
 		this(receiverType.getResolver(), receiverType, returnType, executable,
 				invocationFunction);
 	}
 
 	@SuppressWarnings("unchecked")
-	private Invokable(Resolver resolver, TypeLiteral<T> receiverType,
-			TypeLiteral<R> returnType, Executable executable,
+	private Invokable(Resolver resolver, TypeToken<T> receiverType,
+			TypeToken<R> returnType, Executable executable,
 			BiFunction<T, List<?>, R> invocationFunction) {
-		this.receiverType = receiverType;
-		this.executable = executable;
-		this.invocationFunction = invocationFunction;
-
 		this.resolver = resolver;
+
+		this.executable = executable;
 		resolver.capture(getExecutable());
 
-		if (receiverType != returnType)
-			returnType = (TypeLiteral<R>) TypeLiteral.from(resolver
-					.resolveType(returnType.getType()));
+		this.receiverType = (TypeToken<T>) TypeToken.of(resolver,
+				receiverType.getType());
 
-		this.returnType = returnType;
+		this.returnType = (TypeToken<R>) TypeToken.of(resolver,
+				returnType.getType());
 
 		parameters = Arrays.stream(executable.getGenericParameterTypes())
 				.map(resolver::resolveType).collect(Collectors.toList());
+
+		this.invocationFunction = invocationFunction;
 	}
 
 	public static <T> Invokable<T, T> from(Constructor<T> constructor) {
-		TypeLiteral<T> type = new TypeLiteral<>(constructor.getDeclaringClass());
+		TypeToken<T> type = TypeToken.of(constructor.getDeclaringClass());
 		return from(constructor, type);
 	}
 
 	static <T> Invokable<T, T> from(Constructor<T> constructor,
-			TypeLiteral<T> receiver) {
+			TypeToken<T> receiver) {
 		return new Invokable<>(receiver, receiver, constructor,
 				(T r, List<?> a) -> {
 					try {
@@ -100,13 +109,14 @@ public class Invokable<T, R> {
 	}
 
 	public static Invokable<?, ?> from(Method method) {
-		return from(method, TypeLiteral.from(method.getDeclaringClass()),
-				TypeLiteral.from(method.getGenericReturnType()));
+		return from(method, TypeToken.of(method.getDeclaringClass()),
+				TypeToken.of(method.getGenericReturnType()));
 	}
 
 	@SuppressWarnings("unchecked")
-	static <T, R> Invokable<T, R> from(Method method, TypeLiteral<T> receiver,
-			TypeLiteral<R> result) {
+	static <T, R> Invokable<T, R> from(Method method, TypeToken<T> receiver,
+			TypeToken<R> result) {
+		System.out.println(receiver.getResolver().getBounds());
 		return new Invokable<>(receiver, result, method, (T r, List<?> a) -> {
 			try {
 				return (R) method.invoke(r, a);
@@ -221,11 +231,11 @@ public class Invokable<T, R> {
 		return receiverType.getType();
 	}
 
-	public TypeLiteral<T> getReceiverType() {
+	public TypeToken<T> getReceiverType() {
 		return receiverType;
 	}
 
-	public TypeLiteral<R> getReturnType() {
+	public TypeToken<R> getReturnType() {
 		return returnType;
 	}
 
@@ -234,16 +244,16 @@ public class Invokable<T, R> {
 	}
 
 	public <U extends T> Invokable<U, ? extends R> withReceiverType(
-			TypeLiteral<U> type) {
+			TypeToken<U> type) {
 		throw new UnsupportedOperationException(); // TODO resolve override
 	}
 
 	public <S extends R> Invokable<T, S> withTargetType(Class<S> target) {
-		return withTargetType(TypeLiteral.from(target));
+		return withTargetType(TypeToken.of(target));
 	}
 
 	@SuppressWarnings("unchecked")
-	public <S extends R> Invokable<T, S> withTargetType(TypeLiteral<S> target) {
+	public <S extends R> Invokable<T, S> withTargetType(TypeToken<S> target) {
 		return (Invokable<T, S>) withTargetType(target.getType());
 	}
 
@@ -258,31 +268,21 @@ public class Invokable<T, R> {
 		new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, returnType.getType(),
 				target).reduceInto(resolver.getBounds());
 
-		Resolver testResolver = new Resolver(resolver);
-
-		testResolver.infer();
-
-		if (!testResolver.validate())
-			throw new TypeInferenceException(
-					"Cannot resolve generic type parameters for invocation of '" + this
-							+ "' with target '" + target + "'.");
-
 		return new Invokable<>(resolver, receiverType,
-				(TypeLiteral<S>) TypeLiteral.from(resolver.resolveType(returnType
-						.getType())), executable,
-				(BiFunction<T, List<?>, S>) invocationFunction);
+				(TypeToken<S>) TypeToken.of(target), executable,
+				(BiFunction<T, List<?>, S>) invocationFunction).infer();
 	}
 
 	public <U extends R> Invokable<T, U> withInferredType(
-			TypeLiteral<U> targetType, TypeLiteral<?>... arguments) {
+			TypeToken<U> targetType, TypeToken<?>... arguments) {
 		return withInferredType(targetType, Arrays.asList(arguments));
 	}
 
 	@SuppressWarnings("unchecked")
 	public <U extends R> Invokable<T, U> withInferredType(
-			TypeLiteral<U> targetType, List<? extends TypeLiteral<?>> arguments) {
+			TypeToken<U> targetType, List<? extends TypeToken<?>> arguments) {
 		return (Invokable<T, U>) withInferredType(targetType.getType(), arguments
-				.stream().map(TypeLiteral::getType).collect(Collectors.toList()));
+				.stream().map(TypeToken::getType).collect(Collectors.toList()));
 	}
 
 	public Invokable<T, ? extends R> withInferredType(Type targetType,
@@ -301,21 +301,16 @@ public class Invokable<T, R> {
 		return invokable.withTargetType(targetType);
 	}
 
-	@SuppressWarnings("unchecked")
-	public <U extends R> Invokable<T, U> infer() {
+	public Invokable<T, R> infer() {
 		Resolver resolver = getResolver();
 
-		resolver.infer();
-
-		if (!resolver.validate())
+		if (!resolver.validate(resolver.getInferenceVariables(executable)))
 			throw new TypeInferenceException(
 					"Cannot resolve generic type parameters for invocation of '" + this
 							+ "'.");
 
-		return new Invokable<>(resolver, receiverType,
-				(TypeLiteral<U>) TypeLiteral.from(resolver.resolveType(returnType
-						.getType())), executable,
-				(BiFunction<T, List<?>, U>) invocationFunction);
+		return new Invokable<>(resolver, receiverType, returnType, executable,
+				invocationFunction);
 	}
 
 	/*
@@ -461,18 +456,19 @@ public class Invokable<T, R> {
 	public static <T, R> Set<? extends Invokable<T, ? extends R>> resolveApplicableCandidates(
 			Set<? extends Invokable<T, ? extends R>> candidates,
 			List<? extends Type> parameters) {
-		Map<Invokable<T, ? extends R>, RuntimeException> failures = new HashMap<>();
+		Map<Invokable<T, ? extends R>, RuntimeException> failures = new LinkedHashMap<>();
+		BiConsumer<Invokable<T, ? extends R>, RuntimeException> putFailures = failures::put;
 
 		Set<? extends Invokable<T, ? extends R>> compatibleCandidates = filterOverloadCandidates(
-				candidates, i -> i.withLooseApplicability(parameters), failures::put);
+				candidates, i -> i.withLooseApplicability(parameters), putFailures);
 
 		if (compatibleCandidates.isEmpty())
 			compatibleCandidates = filterOverloadCandidates(candidates,
-					i -> i.withVariableArityApplicability(parameters), failures::put);
+					i -> i.withVariableArityApplicability(parameters), putFailures);
 		else {
 			Set<? extends Invokable<T, ? extends R>> oldCompatibleCandidates = compatibleCandidates;
 			compatibleCandidates = filterOverloadCandidates(compatibleCandidates,
-					i -> i.withStrictApplicability(parameters), failures::put);
+					i -> i.withStrictApplicability(parameters), putFailures);
 			if (compatibleCandidates.isEmpty())
 				compatibleCandidates = oldCompatibleCandidates;
 		}
@@ -480,13 +476,13 @@ public class Invokable<T, R> {
 		if (compatibleCandidates.isEmpty())
 			throw new TypeInferenceException("Parameters '" + parameters
 					+ "' are not applicable to invokable candidates '" + candidates
-					+ "'.", failures.values().stream().findAny().get());
+					+ "'.", failures.get(failures.keySet().stream().findFirst().get()));
 
 		return compatibleCandidates;
 	}
 
 	private static <T, R> Set<? extends Invokable<T, ? extends R>> filterOverloadCandidates(
-			Set<? extends Invokable<T, ? extends R>> candidates,
+			Collection<? extends Invokable<T, ? extends R>> candidates,
 			Function<? super Invokable<T, ? extends R>, Invokable<T, ? extends R>> applicabilityFunction,
 			BiConsumer<Invokable<T, ? extends R>, RuntimeException> failures) {
 		return candidates.stream().map(i -> {
