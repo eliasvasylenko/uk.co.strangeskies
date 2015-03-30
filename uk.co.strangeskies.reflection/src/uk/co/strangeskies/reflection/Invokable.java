@@ -24,15 +24,24 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
+import uk.co.strangeskies.utilities.tuples.Pair;
 
 public class Invokable<T, R> {
 	private final Resolver resolver;
@@ -447,5 +456,200 @@ public class Invokable<T, R> {
 						+ "' is not assignable to parameter '" + parameters.get(i)
 						+ "' at index '" + i + "'.");
 		return invoke(receiver, arguments);
+	}
+
+	public static <T, R> Set<? extends Invokable<T, ? extends R>> resolveApplicableCandidates(
+			Set<? extends Invokable<T, ? extends R>> candidates,
+			List<? extends Type> parameters) {
+		Map<Invokable<T, ? extends R>, RuntimeException> failures = new HashMap<>();
+
+		Set<? extends Invokable<T, ? extends R>> compatibleCandidates = filterOverloadCandidates(
+				candidates, i -> i.withLooseApplicability(parameters), failures::put);
+
+		if (compatibleCandidates.isEmpty())
+			compatibleCandidates = filterOverloadCandidates(candidates,
+					i -> i.withVariableArityApplicability(parameters), failures::put);
+		else {
+			Set<? extends Invokable<T, ? extends R>> oldCompatibleCandidates = compatibleCandidates;
+			compatibleCandidates = filterOverloadCandidates(compatibleCandidates,
+					i -> i.withStrictApplicability(parameters), failures::put);
+			if (compatibleCandidates.isEmpty())
+				compatibleCandidates = oldCompatibleCandidates;
+		}
+
+		if (compatibleCandidates.isEmpty())
+			throw new TypeInferenceException("Parameters '" + parameters
+					+ "' are not applicable to invokable candidates '" + candidates
+					+ "'.", failures.values().stream().findAny().get());
+
+		return compatibleCandidates;
+	}
+
+	private static <T, R> Set<? extends Invokable<T, ? extends R>> filterOverloadCandidates(
+			Set<? extends Invokable<T, ? extends R>> candidates,
+			Function<? super Invokable<T, ? extends R>, Invokable<T, ? extends R>> applicabilityFunction,
+			BiConsumer<Invokable<T, ? extends R>, RuntimeException> failures) {
+		return candidates.stream().map(i -> {
+			try {
+				return applicabilityFunction.apply(i);
+			} catch (RuntimeException e) {
+				failures.accept(i, e);
+				return null;
+			}
+		}).filter(o -> o != null).collect(Collectors.toSet());
+	}
+
+	public static <T, R> Invokable<T, R> resolveMostSpecificCandidate(
+			Collection<? extends Invokable<T, R>> candidates) {
+		if (candidates.size() == 1)
+			return candidates.iterator().next();
+
+		Set<Invokable<T, R>> mostSpecificSoFar = resolveMostSpecificCandidateSet(candidates);
+
+		/*
+		 * Find which of the remaining candidates, which should all have identical
+		 * parameter types, is declared in the lowermost class.
+		 */
+		Iterator<Invokable<T, R>> overrideCandidateIterator = mostSpecificSoFar
+				.iterator();
+		Invokable<T, R> mostSpecific = overrideCandidateIterator.next();
+		while (overrideCandidateIterator.hasNext()) {
+			Invokable<T, R> candidate = overrideCandidateIterator.next();
+
+			if (!candidate.equals(mostSpecific))
+				throw new TypeInferenceException(
+						"Cannot resolve method invokation ambiguity between candidate '"
+								+ candidate + "' and '" + mostSpecific + "'.");
+
+			mostSpecific = candidate.getExecutable().getDeclaringClass()
+					.isAssignableFrom(mostSpecific.getExecutable().getDeclaringClass()) ? candidate
+					: mostSpecific;
+		}
+
+		return mostSpecific;
+	}
+
+	private static <T, R> Set<Invokable<T, R>> resolveMostSpecificCandidateSet(
+			Collection<? extends Invokable<T, R>> candidates) {
+		List<Invokable<T, R>> remainingCandidates = new ArrayList<>(candidates);
+
+		/*
+		 * For each remaining candidate in the list...
+		 */
+		for (int first = 0; first < remainingCandidates.size(); first++) {
+			Invokable<T, R> firstCandidate = remainingCandidates.get(first);
+
+			/*
+			 * Compare with each other remaining candidate...
+			 */
+			for (int second = first + 1; second < remainingCandidates.size(); second++) {
+				Invokable<T, R> secondCandidate = remainingCandidates.get(second);
+
+				/*
+				 * Determine which of the invokables, if either, are more specific.
+				 */
+				Pair<Boolean, Boolean> moreSpecific = compareCandidates(firstCandidate,
+						secondCandidate);
+
+				if (moreSpecific.getLeft()) {
+					if (moreSpecific.getRight()) {
+						/*
+						 * First and second are equally specific.
+						 */
+					} else {
+						/*
+						 * First is strictly more specific.
+						 */
+						remainingCandidates.remove(second--);
+					}
+				} else if (moreSpecific.getRight()) {
+					/*
+					 * Second is strictly more specific.
+					 */
+					remainingCandidates.remove(first--);
+
+					break;
+				} else {
+					/*
+					 * Neither first nor second are more specific.
+					 */
+					throw new TypeInferenceException(
+							"Cannot resolve method invokation ambiguity between candidate '"
+									+ firstCandidate + "' and '" + secondCandidate + "'.");
+				}
+			}
+		}
+
+		return new HashSet<>(remainingCandidates);
+	}
+
+	private static Pair<Boolean, Boolean> compareCandidates(
+			Invokable<?, ?> firstCandidate, Invokable<?, ?> secondCandidate) {
+		boolean firstMoreSpecific = true;
+		boolean secondMoreSpecific = true;
+
+		if (firstCandidate.isGeneric())
+			secondMoreSpecific = compareGenericCandidate(secondCandidate,
+					firstCandidate);
+		if (secondCandidate.isGeneric())
+			firstMoreSpecific = compareGenericCandidate(firstCandidate,
+					secondCandidate);
+
+		if (!firstCandidate.isGeneric() || !secondCandidate.isGeneric()) {
+			int i = 0;
+			for (Type firstParameter : firstCandidate.getParameters()) {
+				Type secondParameter = secondCandidate.getParameters().get(i++);
+
+				if (!secondMoreSpecific && !secondCandidate.isGeneric()) {
+					if (!Types.isAssignable(firstParameter, secondParameter)) {
+						firstMoreSpecific = false;
+						break;
+					}
+				} else if (!firstMoreSpecific && !firstCandidate.isGeneric()) {
+					if (!Types.isAssignable(secondParameter, firstParameter)) {
+						secondMoreSpecific = false;
+						break;
+					}
+				} else {
+					secondMoreSpecific = Types.isAssignable(secondParameter,
+							firstParameter);
+					firstMoreSpecific = Types.isAssignable(firstParameter,
+							secondParameter);
+
+					if (!(firstMoreSpecific || secondMoreSpecific))
+						break;
+				}
+			}
+		}
+
+		return new Pair<Boolean, Boolean>(firstMoreSpecific, secondMoreSpecific);
+	}
+
+	private static boolean compareGenericCandidate(
+			Invokable<?, ?> firstCandidate, Invokable<?, ?> genericCandidate) {
+		Resolver resolver = genericCandidate.getResolver();
+
+		try {
+			int parameters = firstCandidate.getParameters().size();
+			if (firstCandidate.isVariableArity()) {
+				parameters--;
+
+				new ConstraintFormula(Kind.SUBTYPE, firstCandidate.getParameters().get(
+						parameters), genericCandidate.getParameters().get(parameters))
+						.reduceInto(resolver.getBounds());
+			}
+
+			for (int i = 0; i < parameters; i++) {
+				new ConstraintFormula(Kind.SUBTYPE, firstCandidate.getParameters().get(
+						i), genericCandidate.getParameters().get(i)).reduceInto(resolver
+						.getBounds());
+			}
+
+			resolver.validate();
+		} catch (Exception e) {
+			return false;
+		}
+
+		return true;
 	}
 }

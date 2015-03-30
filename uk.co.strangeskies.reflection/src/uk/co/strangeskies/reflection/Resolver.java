@@ -260,118 +260,81 @@ public class Resolver {
 
 			@Override
 			protected void visitWildcardType(WildcardType type) {
-				visit(type.getLowerBounds());
-				visit(type.getUpperBounds());
+				captureWildcardType(type);
 			}
 		}.visit(types);
 	}
 
-	static ParameterizedType constrainWildcards(ParameterizedType type) {
-		Map<TypeVariable<?>, Type> capturedArguments = new HashMap<>(
-				ParameterizedTypes.getAllTypeArguments(type));
+	public TypeVariableCapture captureWildcardType(WildcardType type) {
+		InferenceVariable w = bounds.createInferenceVariable();
 
-		for (TypeVariable<?> parameter : new HashSet<>(capturedArguments.keySet())) {
-			Type capturedArgument = capturedArguments.get(parameter);
-			if (capturedArgument instanceof WildcardType)
-				capturedArguments.put(parameter, new ConstrainedWildcard(parameter,
-						(WildcardType) capturedArgument));
+		for (Type lowerBound : type.getLowerBounds()) {
+			Class<?> rawType = Types.getRawType(lowerBound);
+			capture(rawType);
+
+			if (lowerBound instanceof ParameterizedType)
+				new ConstraintFormula(Kind.SUBTYPE,
+						incorporateParameterizedType((ParameterizedType) lowerBound), w)
+						.reduceInto(bounds);
+		}
+		for (Type upperBound : type.getUpperBounds()) {
+			Class<?> rawType = Types.getRawType(upperBound);
+			capture(rawType);
+
+			if (upperBound instanceof ParameterizedType)
+				new ConstraintFormula(Kind.SUBTYPE, w,
+						incorporateParameterizedType((ParameterizedType) upperBound))
+						.reduceInto(bounds);
 		}
 
-		substituteBounds(capturedArguments);
+		TypeVariableCapture capture = TypeVariableCapture.capture(Arrays.asList(w),
+				this).get(w);
 
-		type = (ParameterizedType) ParameterizedTypes.uncheckedFrom(
-				(Class<?>) type.getRawType(), capturedArguments);
+		new ConstraintFormula(Kind.EQUALITY, w, capture).reduceInto(bounds);
 
-		return type;
+		return capture;
 	}
 
-	private static void substituteBounds(
-			Map<? extends Type, ? extends Type> captures) {
-		TypeSubstitution substitution = new TypeSubstitution(captures::get);
+	public InferenceVariable inferWildcardType(WildcardType type) {
+		InferenceVariable w = bounds.createInferenceVariable();
 
-		for (Type type : captures.keySet()) {
-			if (captures.get(type) instanceof ConstrainedWildcard) {
-				ConstrainedWildcard capture = (ConstrainedWildcard) captures.get(type);
+		for (Type lowerBound : type.getLowerBounds()) {
+			Class<?> rawType = Types.getRawType(lowerBound);
+			capture(rawType);
 
-				for (int i = 0; i < capture.upperBounds.length; i++)
-					capture.upperBounds[i] = substitution.resolve(capture.upperBounds[i]);
+			new ConstraintFormula(Kind.SUBTYPE, ParameterizedTypes.from(rawType,
+					capturedTypeVariables.get(rawType)).getType(), w).reduceInto(bounds);
 
-				for (int i = 0; i < capture.lowerBounds.length; i++)
-					capture.lowerBounds[i] = substitution.resolve(capture.lowerBounds[i]);
-
-				capture.upperBounds = IntersectionType.asArray(IntersectionType
-						.from(capture.upperBounds));
-			}
+			if (lowerBound instanceof ParameterizedType)
+				for (Map.Entry<TypeVariable<?>, Type> typeArgument : ParameterizedTypes
+						.getAllTypeArguments((ParameterizedType) lowerBound).entrySet())
+					new ConstraintFormula(Kind.CONTAINMENT, typeArgument.getValue(),
+							capturedTypeVariables.get(rawType).get(typeArgument.getKey()))
+							.reduceInto(bounds);
 		}
+		for (Type upperBound : type.getUpperBounds()) {
+			Class<?> rawType = Types.getRawType(upperBound);
+			capture(rawType);
+
+			new ConstraintFormula(Kind.SUBTYPE, w, ParameterizedTypes.from(rawType,
+					capturedTypeVariables.get(rawType)).getType()).reduceInto(bounds);
+
+			if (upperBound instanceof ParameterizedType)
+				for (Map.Entry<TypeVariable<?>, Type> typeArgument : ParameterizedTypes
+						.getAllTypeArguments((ParameterizedType) upperBound).entrySet())
+					new ConstraintFormula(Kind.CONTAINMENT, capturedTypeVariables.get(
+							rawType).get(typeArgument.getKey()), typeArgument.getValue())
+							.reduceInto(bounds);
+		}
+
+		return w;
 	}
 
-	private static class ConstrainedWildcard implements WildcardType {
-		private Type[] upperBounds;
-		private final Type[] lowerBounds;
-
-		public ConstrainedWildcard(TypeVariable<?> parameter, WildcardType type) {
-			IntersectionType firstUpperBound = IntersectionType
-					.uncheckedFrom(parameter.getBounds());
-			IntersectionType secondUpperBound = IntersectionType.uncheckedFrom(type
-					.getUpperBounds());
-
-			upperBounds = IntersectionType.asArray(IntersectionType.uncheckedFrom(
-					firstUpperBound, secondUpperBound));
-
-			lowerBounds = type.getLowerBounds();
-		}
-
-		@Override
-		public Type[] getUpperBounds() {
-			return upperBounds;
-		}
-
-		@Override
-		public Type[] getLowerBounds() {
-			return lowerBounds;
-		}
-
-		@Override
-		public String toString() {
-			StringBuilder builder = new StringBuilder("?");
-
-			if (upperBounds.length > 0)
-				builder.append(" extends ").append(
-						Arrays.stream(upperBounds).map(Types::toString)
-								.collect(Collectors.joining(" & ")));
-
-			if (lowerBounds.length > 0)
-				builder.append(" super ").append(
-						Arrays.stream(lowerBounds).map(Types::toString)
-								.collect(Collectors.joining(" & ")));
-
-			return builder.toString();
-		}
-
-		@Override
-		public boolean equals(Object that) {
-			if (!(that instanceof WildcardType))
-				return false;
-			if (that == this)
-				return true;
-			WildcardType wildcard = (WildcardType) that;
-			return Arrays.equals(upperBounds, wildcard.getUpperBounds())
-					&& Arrays.equals(lowerBounds, wildcard.getLowerBounds());
-		}
-
-		@Override
-		public int hashCode() {
-			return Arrays.hashCode(getLowerBounds())
-					^ Arrays.hashCode(getUpperBounds());
-		}
-	}
-
-	public void incorporateParameterizedType(ParameterizedType type) {
+	public ParameterizedType incorporateParameterizedType(ParameterizedType type) {
 		Class<?> rawType = Types.getRawType(type);
 		capture(rawType);
 
 		type = TypeVariableCapture.capture(type);
-		// type = constrainWildcards(type);
 
 		for (Map.Entry<TypeVariable<?>, Type> typeArgument : ParameterizedTypes
 				.getAllTypeArguments(type).entrySet()) {
@@ -379,6 +342,8 @@ public class Resolver {
 					.get(typeArgument.getKey()), typeArgument.getValue())
 					.reduceInto(bounds);
 		}
+
+		return type;
 	}
 
 	public void incorporateInstantiation(TypeVariable<?> variable,
@@ -542,7 +507,7 @@ public class Resolver {
 		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
 		 */
 		Map<InferenceVariable, TypeVariableCapture> freshVariables = TypeVariableCapture
-				.capture(minimalSet, bounds, this);
+				.capture(minimalSet, this);
 
 		/*
 		 * Otherwise, for all i (1 ≤ i ≤ n), all bounds of the form G<..., αi, ...>
@@ -815,11 +780,6 @@ public class Resolver {
 
 		System.out.println(new TypeLiteral<IncludeTarget>() {}
 				.resolveMethodOverload("includer", Model.class, Collection.class));
-		System.out.println();
-		System.out.println();
-
-		System.out.println(new TypeLiteral<IncludeTarget>() {}
-				.resolveMethodOverload("include", Model.class, Collection.class));
 		System.out.println();
 		System.out.println();
 	}

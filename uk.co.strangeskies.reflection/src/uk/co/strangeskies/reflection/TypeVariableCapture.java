@@ -42,12 +42,6 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 
 	private final GenericDeclaration declaration;
 
-	TypeVariableCapture(Collection<? extends Type> upperBounds,
-			Collection<? extends Type> lowerBounds, GenericDeclaration declaration) {
-		this(upperBounds.toArray(new Type[upperBounds.size()]), lowerBounds
-				.toArray(new Type[lowerBounds.size()]), declaration);
-	}
-
 	private TypeVariableCapture(Type[] upperBounds, Type[] lowerBounds,
 			GenericDeclaration declaration) {
 		this.name = "CAP#" + COUNTER.incrementAndGet();
@@ -161,8 +155,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	}
 
 	public static Map<InferenceVariable, TypeVariableCapture> capture(
-			Collection<? extends InferenceVariable> types, BoundSet bounds,
-			Resolver resolver) {
+			Collection<? extends InferenceVariable> types, Resolver resolver) {
 		TypeVariable<?>[] parameters = new TypeVariable<?>[types.size()];
 		GenericDeclaration declaration = createGenericDeclarationOver(parameters);
 
@@ -175,7 +168,8 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 			 * ..., Lk, then let the lower bound of Yi be lub(L1, ..., Lk); if not,
 			 * then Yi has no lower bound.
 			 */
-			Set<Type> lowerBoundSet = bounds.getProperLowerBounds(inferenceVariable);
+			Set<Type> lowerBoundSet = resolver.getBounds().getProperLowerBounds(
+					inferenceVariable);
 
 			Type[] lowerBounds;
 			if (lowerBoundSet.isEmpty())
@@ -189,7 +183,8 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 			 * upper bound of Yi be glb(U1 θ, ..., Uk θ), where θ is the substitution
 			 * [α1:=Y1, ..., αn:=Yn].
 			 */
-			Set<Type> upperBoundSet = bounds.getUpperBounds(inferenceVariable);
+			Set<Type> upperBoundSet = resolver.getBounds().getUpperBounds(
+					inferenceVariable);
 
 			Type[] upperBounds;
 			if (upperBoundSet.isEmpty())

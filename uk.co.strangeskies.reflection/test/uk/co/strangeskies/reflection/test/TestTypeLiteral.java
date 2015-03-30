@@ -186,5 +186,17 @@ public class TestTypeLiteral {
 		TypeLiteral<?> resultClass = new TypeLiteral<Iterable<String>>() {};
 		System.out.println(resultClass.isContainedBy(targetClass
 				.resolveSupertypeParameters(resultClass.getRawType())));
+		System.out.println();
+
+		System.out.println(new TypeLiteral<List<?>>() {}.captureWildcardExtending()
+				.resolveSupertypeParameters(Collection.class));
+		System.out.println();
+
+		System.out.println(new TypeLiteral<List<?>>() {}.inferceExtending()
+				.resolveMethodOverload("add", Integer.class).getReceiverType()
+				.resolveMethodOverload("add", Double.class).getReceiverType()
+				.resolveMethodOverload("toArray", Double[].class).getReceiverType()
+				.getResolver().getBounds());
+		System.out.println();
 	}
 }
