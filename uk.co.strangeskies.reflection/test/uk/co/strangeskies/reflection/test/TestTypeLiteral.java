@@ -198,17 +198,8 @@ public class TestTypeLiteral {
 		System.out.println();
 
 		System.out.println(new TypeLiteral<List<? extends String>>() {}
-				.inferceExtending().resolveSupertypeParameters(Iterable.class));
-		System.out.println();
-
-		System.out.println(new TypeLiteral<List<?>>() {}
-				.inferceExtending()
-				.getMethods()
-				.stream()
-				.filter(
-						m -> m.getExecutable().getName().equals("add")
-								&& m.getParameters().size() == 1).findAny().get()
-				.withLooseApplicability(Integer.class));
+				.inferceExtending().getInferred()
+				.resolveSupertypeParameters(Iterable.class));
 		System.out.println();
 
 		System.out.println(new TypeLiteral<List<? super Number>>() {}
@@ -226,24 +217,6 @@ public class TestTypeLiteral {
 				.inferceExtending().resolveMethodOverload("add", Integer.class)
 				.getReceiverType().resolveMethodOverload("add", Double.class)
 				.getReceiverType().infer());
-		System.out.println();
-
-		System.out.println(new TypeLiteral<List<?>>() {}
-				.inferceExtending()
-				.getMethods()
-				.stream()
-				.filter(
-						m -> m.getExecutable().getName().equals("toArray")
-								&& m.getParameters().size() == 1).findAny().get()
-				.withLooseApplicability(Double[].class));
-		System.out.println();
-
-		System.out.println(new TypeLiteral<List<?>>() {}.inferceExtending()
-				.resolveMethodOverload("add", Integer.class).getReceiverType()
-				.resolveMethodOverload("add", Double.class).getReceiverType()
-				.resolveMethodOverload("toArray", Double[].class).getReceiverType()
-				.resolveMethodOverload("toArray", Integer[].class).infer()
-				.getReceiverType());
 		System.out.println();
 	}
 }

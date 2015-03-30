@@ -104,7 +104,6 @@ public class TypeToken<T> {
 
 	public static TypeToken<?> of(Resolver resolver, Type type) {
 		type = resolver.resolveType(type);
-		System.out.println(resolver.getBounds());
 		if (resolver.getBounds().getInferenceVariables().contains(type))
 			return InferenceTypeToken.of((InferenceVariable) type, new Resolver(
 					resolver));
@@ -123,6 +122,8 @@ public class TypeToken<T> {
 		else if (type instanceof WildcardType)
 			return new TypeToken<>(type);
 		else if (type instanceof GenericArrayType)
+			return new TypeToken<>(type);
+		else if (type instanceof InferenceVariable)
 			return new TypeToken<>(type);
 
 		throw new IllegalArgumentException("Unexpected type class '"
@@ -393,7 +394,6 @@ public class TypeToken<T> {
 		return getMethods(m -> true);
 	}
 
-	@SuppressWarnings("unchecked")
 	private Set<? extends Invokable<? super T, ?>> getMethods(
 			Predicate<Method> filter) {
 		Stream<Method> methodStream = getRawTypes().stream().flatMap(
@@ -403,14 +403,8 @@ public class TypeToken<T> {
 			methodStream = Stream.concat(methodStream,
 					Arrays.stream(Object.class.getMethods()));
 
-		System.out.println(getResolver().getBounds());
-
-		return methodStream
-				.filter(filter)
-				.map(
-						m -> Invokable.from(m,
-								(TypeToken<? super T>) resolveSupertypeParameters(m
-										.getDeclaringClass()), of(m.getGenericReturnType())))
+		return methodStream.filter(filter)
+				.map(m -> Invokable.from(m, this, of(m.getGenericReturnType())))
 				.collect(Collectors.toSet());
 	}
 
@@ -451,5 +445,18 @@ public class TypeToken<T> {
 		candidates = Invokable.resolveApplicableCandidates(candidates, parameters);
 
 		return Invokable.resolveMostSpecificCandidate(candidates);
+	}
+
+	@SuppressWarnings("unchecked")
+	public TypeToken<T> getResolved() {
+		return (TypeToken<T>) TypeToken.of(getInternalResolver(), getType());
+	}
+
+	@SuppressWarnings("unchecked")
+	public TypeToken<T> getInferred() {
+		Resolver resolver = getResolver();
+		resolver.infer(resolver.getBounds().getInferenceVariablesMentionedBy(
+				getType()));
+		return (TypeToken<T>) TypeToken.of(resolver, getType());
 	}
 }

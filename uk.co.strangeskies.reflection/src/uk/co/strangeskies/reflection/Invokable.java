@@ -116,7 +116,6 @@ public class Invokable<T, R> {
 	@SuppressWarnings("unchecked")
 	static <T, R> Invokable<T, R> from(Method method, TypeToken<T> receiver,
 			TypeToken<R> result) {
-		System.out.println(receiver.getResolver().getBounds());
 		return new Invokable<>(receiver, result, method, (T r, List<?> a) -> {
 			try {
 				return (R) method.invoke(r, a);
