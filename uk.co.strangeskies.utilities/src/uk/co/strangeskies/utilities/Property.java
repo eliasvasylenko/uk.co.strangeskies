@@ -18,8 +18,28 @@
  */
 package uk.co.strangeskies.utilities;
 
+/**
+ * This inferface respresents a gettable and settable property of a given type.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <T>
+ * @param <R>
+ */
 public interface Property<T extends R, R> {
+	/**
+	 * Set the value of this property to the given value.
+	 * 
+	 * @param to
+	 *          The new value to set for this property.
+	 * @return The previous value of this property.
+	 */
 	public T set(Property<T, R> this, R to);
 
+	/**
+	 * Get the current value of the property.
+	 * 
+	 * @return The current value.
+	 */
 	public T get();
 }

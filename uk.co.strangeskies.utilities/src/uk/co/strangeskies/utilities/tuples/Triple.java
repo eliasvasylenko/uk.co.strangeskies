@@ -18,20 +18,48 @@
  */
 package uk.co.strangeskies.utilities.tuples;
 
+/**
+ * A three tuple.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <A>
+ *          The type of the first item.
+ * @param <B>
+ *          The type of the second item.
+ * @param <C>
+ *          The type of the third, and last, item.
+ */
 public class Triple<A, B, C> extends Tuple<A, Pair<B, C>> {
-  public Triple(A a, B b, C c) {
-    super(a, new Pair<>(b, c));
-  }
+	/**
+	 * Initialise a triple with the given three values.
+	 * 
+	 * @param a
+	 * @param b
+	 * @param c
+	 */
+	public Triple(A a, B b, C c) {
+		super(a, new Pair<>(b, c));
+	}
 
-  public A get0() {
-    return getHead();
-  }
+	/**
+	 * @return The head value.
+	 */
+	public A get0() {
+		return getHead();
+	}
 
-  public B get1() {
-    return getTail().getHead();
-  }
+	/**
+	 * @return The second value.
+	 */
+	public B get1() {
+		return getTail().getHead();
+	}
 
-  public C get2() {
-    return getTail().getTail().getHead();
-  }
+	/**
+	 * @return The third value.
+	 */
+	public C get2() {
+		return getTail().getTail().getHead();
+	}
 }

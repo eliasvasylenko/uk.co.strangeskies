@@ -20,19 +20,54 @@ package uk.co.strangeskies.utilities.function;
 
 import java.util.function.Function;
 
-import jdk.nashorn.internal.ir.annotations.Immutable;
-
 /**
- * Describes a function from F to T. A function should be stateless, hence the
- * implementing of {@link Immutable}.
+ * Describes a function from F to T. A function should be stateless.
  * 
  * @author Elias N Vasylenko
  * 
  * @param <T>
- *          To
- * @param <F>
- *          From
+ *          Operand type.
+ * @param <R>
+ *          Result type.
  */
 public interface InvertibleFunction<T, R> extends Function<T, R> {
+	/**
+	 * This returns the mathematical inverse of the receiving function.
+	 * 
+	 * @return A new Invertible function performing the inverse operation.
+	 */
 	public InvertibleFunction<R, T> getInverse();
+
+	/**
+	 * @param function
+	 * @param reverse
+	 * @return An invertible function using the two given functions.
+	 */
+	public static <T, R> InvertibleFunction<T, R> over(
+			Function<? super T, ? extends R> function,
+			Function<? super R, ? extends T> reverse) {
+		return new InvertibleFunction<T, R>() {
+			@Override
+			public R apply(T t) {
+				return function.apply(t);
+			}
+
+			@Override
+			public InvertibleFunction<R, T> getInverse() {
+				return over(reverse, function);
+			}
+		};
+	}
+
+	/**
+	 * @param first
+	 * @param second
+	 * @return Composition of two invertible functions into a single invertible
+	 *         function.
+	 */
+	public static <T, I, R> InvertibleFunction<T, R> compose(
+			InvertibleFunction<T, I> first, InvertibleFunction<I, R> second) {
+		return over(first.andThen(second),
+				second.getInverse().andThen(first.getInverse()));
+	}
 }

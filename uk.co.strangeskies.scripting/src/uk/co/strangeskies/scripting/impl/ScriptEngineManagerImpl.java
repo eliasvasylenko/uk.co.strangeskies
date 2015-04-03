@@ -35,7 +35,15 @@ import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 
-@Component(service = ScriptEngineManagerImpl.class)
+/**
+ * An implementation of {@link ScriptEngineManager} for the OSGi environment.
+ * Services registered for {@link ScriptEngineFactory} will be registered
+ * automatically.
+ * 
+ * @author Elias N Vasylenko
+ *
+ */
+@Component(service = ScriptEngineManager.class)
 public class ScriptEngineManagerImpl extends ScriptEngineManager {
 	private final Set<ScriptEngineFactory> scriptEngineFactories;
 
@@ -43,6 +51,9 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager {
 	private final Map<String, ScriptEngineFactory> extensionAssociations;
 	private final Map<String, ScriptEngineFactory> mimeTypeAssociations;
 
+	/**
+	 * Default contructor.
+	 */
 	public ScriptEngineManagerImpl() {
 		scriptEngineFactories = new HashSet<>();
 

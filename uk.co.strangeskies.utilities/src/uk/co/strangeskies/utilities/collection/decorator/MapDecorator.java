@@ -21,6 +21,7 @@ package uk.co.strangeskies.utilities.collection.decorator;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import uk.co.strangeskies.utilities.Decorator;
 import uk.co.strangeskies.utilities.Property;
@@ -31,7 +32,7 @@ public class MapDecorator<K, V> extends Decorator<Map<K, V>> implements
 		super(component);
 	}
 
-	public MapDecorator(Property<Map<K, V>, ? super Map<K, V>> component) {
+	public MapDecorator(Supplier<Map<K, V>> component) {
 		super(component);
 	}
 

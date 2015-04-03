@@ -20,4 +20,9 @@ Bundle-Name: Strange Skies Utilities
 		version = latest,  \
 	osgi.enroute.base.api;  \
 		version = latest
+#,  \
+#	edu.washington.cs.types.checker:checker-annotated-jdk8;  \
+#		version = 1.7.5,  \
+#	edu.washington.cs.types.checker:checker-framework;  \
+#		version = 1.7.5
 Bundle-Version: 0.2.0.${tstamp}

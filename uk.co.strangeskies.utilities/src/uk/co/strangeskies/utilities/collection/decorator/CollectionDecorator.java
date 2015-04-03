@@ -20,6 +20,7 @@ package uk.co.strangeskies.utilities.collection.decorator;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.function.Supplier;
 
 import uk.co.strangeskies.utilities.Decorator;
 import uk.co.strangeskies.utilities.Property;
@@ -30,7 +31,7 @@ public abstract class CollectionDecorator<T extends Collection<E>, E> extends
 		super(component);
 	}
 
-	public CollectionDecorator(Property<T, ? super T> component) {
+	public CollectionDecorator(Supplier<T> component) {
 		super(component);
 	}
 

@@ -32,7 +32,7 @@ import org.osgi.framework.ServiceRegistration;
 
 import uk.co.strangeskies.utilities.osgi.ServiceWrapper.HideServices;
 
-public class WrappingServiceTreeNode {
+class WrappingServiceTreeNode {
 	private final Object service;
 	private final Hashtable<String, Object> properties;
 

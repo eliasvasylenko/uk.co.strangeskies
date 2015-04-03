@@ -23,13 +23,42 @@ import java.util.Map;
 import org.osgi.framework.hooks.service.EventListenerHook;
 import org.osgi.framework.hooks.service.FindHook;
 
+/**
+ * Adding and removing service wrappers from this manager should see their
+ * effects applied to all services within the OSGi service registry this manager
+ * is registered with.
+ * 
+ * @author Elias N Vasylenko
+ */
 public interface ServiceWrapperManager extends EventListenerHook, FindHook {
+	/**
+	 * Add a wrapper to the manager. Existing services may be wrapped at this
+	 * point according to the configuration of the wrapper.
+	 * 
+	 * @param serviceWrapper
+	 * @param serviceProperties
+	 */
 	public void addServiceWrapper(ServiceWrapper<?> serviceWrapper,
 			Map<String, Object> serviceProperties);
 
+	/**
+	 * Unregister a service wrapper from the manager. The effects of the new
+	 * properties will be propagated immediately to any wrapping services as
+	 * appropriate.
+	 * 
+	 * @param serviceWrapper
+	 * @param serviceProperties
+	 */
 	public void modifyServiceWrapper(ServiceWrapper<?> serviceWrapper,
 			Map<String, Object> serviceProperties);
 
+	/**
+	 * Unregister a service wrapper from the manager. This will have the side
+	 * effect of removing all instances of wrapped services from the service
+	 * registry, which could mean services in use are removed.
+	 * 
+	 * @param serviceWrapper
+	 */
 	public void removeServiceWrapper(ServiceWrapper<?> serviceWrapper);
 
 	/**
@@ -56,14 +85,13 @@ public interface ServiceWrapperManager extends EventListenerHook, FindHook {
 	 * </p>
 	 * 
 	 * <p>
-	 * Implementations of {@link ServiceWrapperManagerRetroactingImpl} may choose
-	 * to not accept or to ignore wrappers with this property set to true, as it
-	 * may be necessary to incur a slight overhead over the entire
-	 * service-framework in order to support this feature (all services may need
-	 * to be proxied preemptively). It should also be noted that an implementation
-	 * of {@link ServiceWrapperManagerRetroactingImpl} may only be able to wrap
-	 * services which were registered after the manager was registered or created
-	 * itself.
+	 * Implementations of {@link ServiceWrapperManager} may choose to not accept
+	 * or to ignore wrappers with this property set to true, as it may be
+	 * necessary to incur a slight overhead over the entire service-framework in
+	 * order to support this feature (all services may need to be proxied
+	 * preemptively). It should also be noted that an implementation of
+	 * {@link ServiceWrapperManager} may only be able to wrap services which were
+	 * registered after the manager was registered or created itself.
 	 * </p>
 	 */
 	public static String SUPPORTS_WRAP_EXISTING_SERVICES = "supports.wrap.existing.services";

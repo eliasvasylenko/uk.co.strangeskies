@@ -325,6 +325,9 @@ public class ParameterizedTypes {
 	}
 
 	public static Type resolveSupertypeParameters(Type type, Class<?> superclass) {
+		if (!ParameterizedTypes.isGeneric(superclass))
+			return superclass;
+
 		Class<?> rawType = Types.getRawType(type);
 
 		Map<TypeVariable<?>, InferenceVariable> parameterSubstitutes = new HashMap<>();
@@ -348,6 +351,9 @@ public class ParameterizedTypes {
 	}
 
 	public static Type resolveSubtypeParameters(Type type, Class<?> subclass) {
+		if (!ParameterizedTypes.isGeneric(subclass))
+			return subclass;
+
 		Class<?> rawType = Types.getRawType(type);
 
 		Map<TypeVariable<?>, InferenceVariable> parameterSubstitutes = new HashMap<>();

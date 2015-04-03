@@ -18,11 +18,28 @@
  */
 package uk.co.strangeskies.utilities;
 
+/**
+ * A basic implementation of {@link Property} which simple stores it's value as
+ * a member variable, which can be updated and retrieved through get and set.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <T>
+ */
 public class IdentityProperty<T> implements Property<T, T> {
 	private T value;
 
+	/**
+	 * Create an IndentityProperty with null as the initial value.
+	 */
 	public IdentityProperty() {}
 
+	/**
+	 * Create an identity with an initial value.
+	 * 
+	 * @param value
+	 *          The initial value for this property.
+	 */
 	public IdentityProperty(T value) {
 		this.value = value;
 	}

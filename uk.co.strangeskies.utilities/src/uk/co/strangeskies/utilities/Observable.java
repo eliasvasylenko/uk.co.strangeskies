@@ -18,10 +18,35 @@
  */
 package uk.co.strangeskies.utilities;
 
+/**
+ * Simple interface for an observable object, with methods to add and remove
+ * observers expecting the applicable type of message.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <M>
+ */
 public interface Observable<M> {
+	/**
+	 * Observers added will receive messages from this Observable.
+	 * 
+	 * @param observer
+	 *          An observer to add.
+	 * @return True if the observer was successfully added, false otherwise.
+	 */
 	public boolean addObserver(Observer<? super M> observer);
 
+	/**
+	 * Observers removed will no longer receive messages from this Observable.
+	 * 
+	 * @param observer
+	 *          An observer to remove.
+	 * @return True if the observer was successfully removed, false otherwise.
+	 */
 	public boolean removeObserver(Observer<? super M> observer);
 
+	/**
+	 * Remove all observers from this Observable.
+	 */
 	public void clearObservers();
 }

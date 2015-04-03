@@ -44,6 +44,8 @@ import uk.co.strangeskies.utilities.osgi.ServiceWrapper.HideServices;
 import uk.co.strangeskies.utilities.osgi.ServiceWrapperManager;
 
 /**
+ * This implementation will automatically pick up and apply any implementations
+ * of {@link ServiceWrapper} which are themselves registered as a service.
  * 
  * @author Elias N Vasylenko
  * 
@@ -55,6 +57,9 @@ public class ServiceWrapperManagerImpl implements ServiceWrapperManager {
 
 	private final Map<ServiceReference<?>, WrappingServiceTree> wrappedServices;
 
+	/**
+	 * Default constructor.
+	 */
 	public ServiceWrapperManagerImpl() {
 		wrappedServiceClasses = new MultiHashMap<>(HashSet::new);
 		managedServiceWrappers = new HashMap<>();
@@ -107,8 +112,7 @@ public class ServiceWrapperManagerImpl implements ServiceWrapperManager {
 						ServiceWrapper.WRAP_EXISTING_SERVICES + " = true @ "
 								+ serviceWrapper);
 			}
-		} catch (ClassCastException e) {
-		}
+		} catch (ClassCastException e) {}
 
 		int serviceRanking;
 		try {

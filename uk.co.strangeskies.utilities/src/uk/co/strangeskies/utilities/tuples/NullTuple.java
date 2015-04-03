@@ -18,8 +18,14 @@
  */
 package uk.co.strangeskies.utilities.tuples;
 
+/**
+ * The null tuple entry, used for terminating a tuple.
+ * 
+ * @author Elias N Vasylenko
+ *
+ */
 public final class NullTuple extends Tuple<Void, Tuple<?, ?>> {
-  private NullTuple() {
-    super(null, null);
-  }
+	private NullTuple() {
+		super(null, null);
+	}
 }

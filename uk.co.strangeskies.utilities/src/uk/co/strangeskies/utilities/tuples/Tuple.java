@@ -20,6 +20,15 @@ package uk.co.strangeskies.utilities.tuples;
 
 import java.util.NoSuchElementException;
 
+/**
+ * A tuple entry, parameterised recursively with type information for each
+ * subsequent entry. Currently entries must be non-null.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <H>
+ * @param <T>
+ */
 public class Tuple<H, T extends Tuple<?, ?>> {
 	private H head;
 	private T tail;
@@ -35,6 +44,13 @@ public class Tuple<H, T extends Tuple<?, ?>> {
 		this.head = head;
 	}
 
+	/**
+	 * Create a Tuple instance with the given values for its head and tail
+	 * entries.
+	 * 
+	 * @param head
+	 * @param tail
+	 */
 	public Tuple(H head, T tail) {
 		try {
 			if (head == null) {
@@ -47,10 +63,22 @@ public class Tuple<H, T extends Tuple<?, ?>> {
 		this.tail = tail;
 	}
 
+	/**
+	 * Return the value of the head entry.
+	 * 
+	 * @return Head entry/
+	 */
 	public H getHead() {
 		return head;
 	}
 
+	/**
+	 * Set the value of the head entry.
+	 * 
+	 * @param head
+	 *          New head value. This parameter should be non-null.
+	 * 
+	 */
 	public void setHead(H head) {
 		try {
 			if (head == null) {
@@ -63,6 +91,11 @@ public class Tuple<H, T extends Tuple<?, ?>> {
 		this.head = head;
 	}
 
+	/**
+	 * Return the value of the tail entry.
+	 * 
+	 * @return Tail value, which is itself a tuple.
+	 */
 	public T getTail() {
 		if (tail == null) {
 			throw new NoSuchElementException();
@@ -70,6 +103,12 @@ public class Tuple<H, T extends Tuple<?, ?>> {
 		return tail;
 	}
 
+	/**
+	 * Set the tuple entry which represents the tail of this tuple.
+	 * 
+	 * @param tail
+	 *          A new tuple of the exact expected type of the tail of this tuple.
+	 */
 	public void setTail(T tail) {
 		if (this.tail == null) {
 			throw new NoSuchElementException();
@@ -85,10 +124,21 @@ public class Tuple<H, T extends Tuple<?, ?>> {
 		this.tail = tail;
 	}
 
+	/**
+	 * Does this tuple have a tail, or is it terminating.
+	 * 
+	 * @return True if the tuple has a tail, false otherwise.
+	 */
 	public boolean hasTail() {
 		return tail != null;
 	}
 
+	/**
+	 * The number of entries in this tuple, including the head and every entry in
+	 * the tail.
+	 * 
+	 * @return The number of entries.
+	 */
 	public int getSize() {
 		return tailCounter(1);
 	}
@@ -101,10 +151,26 @@ public class Tuple<H, T extends Tuple<?, ?>> {
 		}
 	}
 
+	/**
+	 * This method prepends the tuple with another tuple entry with the given
+	 * value, resulting in a tuple one extra in size. The receiving tuple remains
+	 * unchanged.
+	 * 
+	 * @param prepend
+	 *          The head value of the new tuple.
+	 * @return A new tuple instance with the given value as its head, and this
+	 *         tuple as its tail.
+	 */
 	public <P> Tuple<P, Tuple<H, T>> prepend(P prepend) {
 		return new Tuple<P, Tuple<H, T>>(prepend, this);
 	}
 
+	/**
+	 * @param head
+	 *          The value to set head with.
+	 * @return The tail of the tuple, ready to be chained with another invocation
+	 *         of {@link Tuple#next(Object)} such that every value can be set.
+	 */
 	public T next(H head) {
 		setHead(head);
 

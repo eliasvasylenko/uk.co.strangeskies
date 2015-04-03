@@ -125,31 +125,16 @@ public interface ServiceWrapper<T> {
 	/**
 	 * This method should return the target class of services to be wrapped.
 	 * 
-	 * @return
+	 * @return The class of the service objects dealt with.
 	 */
 	public Class<T> getServiceClass();
 
 	/**
 	 * <p>
-	 * If a property with this key is present on a service wrapper service it
-	 * should be of the type {@link HideServices}. Be careful when using the value
-	 * {@link HideServices#Always}, as this will act as a filter, only registering
-	 * services for those which are successfully wrapped. If no services are
-	 * matched by {@link ServiceWrapper#wrapServiceProperties(Map)} then none will
-	 * be available to any bundles, no matter what service ranking the wrapper
-	 * has. The value {@link HideServices#WhenWrapped} on the other hand indicates
-	 * that services will only be hidden in the case that a valid wrap will be
-	 * provided instead, which is often safer. {@link HideServices#SILENTLY}
-	 * behaves in the same way as this, with the added stipulation that wrapping
-	 * and unwrapping will be invisible to bundles which are using the services
-	 * being wrapped.
-	 * </p>
-	 * 
-	 * <p>
-	 * Wrappers which maintain state should normally be careful not set this value
-	 * to {@link HideServices#Never}, as they won't be able to guarantee they are
-	 * not subverted, with the wrapped service being manipulated without their
-	 * knowledge.
+	 * Wrappers which maintain state through some sort of decorator should
+	 * normally be careful not set this value to {@link HideServices#NEVER}, as
+	 * they won't be able to guarantee they are not subverted, with the wrapped
+	 * service being manipulated without their knowledge.
 	 * </p>
 	 * 
 	 * <p>
@@ -169,7 +154,40 @@ public interface ServiceWrapper<T> {
 	 * 
 	 */
 	public enum HideServices {
-		ALWAYS, NEVER, WHEN_WRAPPED, SILENTLY;
+		/**
+		 * <p>
+		 * Always remove services applicable by class from the service registry, so
+		 * only the wrapping service will be visible. Be careful, as this will act
+		 * as a filter, only registering wrapping services for those which are
+		 * successfully wrapped, simply removing them otherwise. If no services are
+		 * matched by {@link ServiceWrapper#wrapServiceProperties(Map)} then none
+		 * will be available to any bundles, no matter what service ranking the
+		 * wrapper has.
+		 * </p>
+		 * 
+		 * <p>
+		 * The default value when none is provided is
+		 * {@link HideServices#WHEN_WRAPPED}.
+		 * </p>
+		 */
+		ALWAYS,
+		/**
+		 * Never remove wrapped services from the service registry, so both will be
+		 * visible.
+		 */
+		NEVER,
+		/**
+		 * This value indicates that services will only be hidden in the case that a
+		 * valid wrap will be provided instead, which is often safer than
+		 * {@link HideServices#ALWAYS}.
+		 */
+		WHEN_WRAPPED,
+		/**
+		 * This option behaves in the same way as {@link HideServices#WHEN_WRAPPED},
+		 * with the added stipulation that wrapping and unwrapping will be invisible
+		 * to bundles which are already using the services being wrapped.
+		 */
+		SILENTLY;
 	}
 
 	/**
@@ -178,6 +196,9 @@ public interface ServiceWrapper<T> {
 	 * then the value should be of the type {@link Boolean}. This value then
 	 * determines whether a wrapper be applied retroactively to services which
 	 * already exist, and therefore may already be in use by other bundles.
+	 * 
+	 * If the {@link HideServices} property is set to {@link HideServices#NEVER},
+	 * this value is ignored.
 	 * </p>
 	 * 
 	 * <p>
@@ -204,17 +225,16 @@ public interface ServiceWrapper<T> {
 	 * </p>
 	 * 
 	 * <p>
-	 * Implementations of {@link ServiceWrapperManagerRetroactingImpl} may choose
-	 * to not accept or to ignore wrappers with this property set to true, as it
-	 * may be necessary to incur a slight overhead over the entire
-	 * service-framework in order to support this feature (all services may need
-	 * to be proxied preemptively). Managers which are registered as a service
-	 * themselves should advertise whether they support this feature with the
+	 * Implementations of {@link ServiceWrapperManager} may choose to not accept
+	 * or to ignore wrappers with this property set to true, as it may be
+	 * necessary to incur a slight overhead over the entire service-framework in
+	 * order to support this feature (all services may need to be proxied
+	 * preemptively). Managers which are registered as a service themselves should
+	 * advertise whether they support this feature with the
 	 * {@link ServiceWrapperManager#SUPPORTS_WRAP_EXISTING_SERVICES} property. It
 	 * should also be noted that an implementation of
-	 * {@link ServiceWrapperManagerRetroactingImpl} may only be able to wrap
-	 * services which were registered after the manager was registered or created
-	 * itself.
+	 * {@link ServiceWrapperManager} may only be able to wrap services which were
+	 * registered after the manager was registered or created itself.
 	 * </p>
 	 */
 	public static final String WRAP_EXISTING_SERVICES = "wrap.existing.services";

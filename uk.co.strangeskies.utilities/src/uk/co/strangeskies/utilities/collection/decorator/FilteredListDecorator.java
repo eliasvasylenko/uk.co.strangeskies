@@ -21,6 +21,7 @@ package uk.co.strangeskies.utilities.collection.decorator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Supplier;
 
 import uk.co.strangeskies.utilities.Property;
 
@@ -43,8 +44,7 @@ public class FilteredListDecorator<E> extends ListDecorator<E> {
 		this.filter = filter;
 	}
 
-	public FilteredListDecorator(Property<List<E>, ? super List<E>> component,
-			Filter<E> filter) {
+	public FilteredListDecorator(Supplier<List<E>> component, Filter<E> filter) {
 		super(component);
 
 		this.filter = filter;

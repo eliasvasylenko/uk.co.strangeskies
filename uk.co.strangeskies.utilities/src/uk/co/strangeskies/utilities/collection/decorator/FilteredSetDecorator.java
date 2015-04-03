@@ -21,6 +21,7 @@ package uk.co.strangeskies.utilities.collection.decorator;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import uk.co.strangeskies.utilities.Property;
 
@@ -43,8 +44,7 @@ public class FilteredSetDecorator<E> extends SetDecorator<E> {
 		this.filter = filter;
 	}
 
-	public FilteredSetDecorator(Property<Set<E>, ? super Set<E>> component,
-			Filter<E> filter) {
+	public FilteredSetDecorator(Supplier<Set<E>> component, Filter<E> filter) {
 		super(component);
 
 		this.filter = filter;

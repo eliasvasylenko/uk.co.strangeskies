@@ -21,7 +21,6 @@ package uk.co.strangeskies.mathematics;
 import java.util.Comparator;
 import java.util.Objects;
 
-import uk.co.strangeskies.utilities.NaturalComparator;
 import uk.co.strangeskies.utilities.Property;
 import uk.co.strangeskies.utilities.Self;
 
@@ -50,7 +49,7 @@ public class Range<T> implements Self<Range<T>> {
 	}
 
 	public static <T extends Comparable<? super T>> Range<T> create(T from, T to) {
-		return new Range<T>(from, to, new NaturalComparator<T>());
+		return new Range<T>(from, to, Comparable::compareTo);
 	}
 
 	public static Range<Integer> parse(String range) {

@@ -33,6 +33,9 @@ import uk.co.strangeskies.utilities.IdentityComparator;
  *
  */
 public class IdentityComparatorTest {
+	/**
+	 * This test compares identity equal references.
+	 */
 	@Test
 	public void compareIdenticalReferences() {
 		IdentityComparator<Object> identityComparator = new IdentityComparator<>();
@@ -41,6 +44,9 @@ public class IdentityComparatorTest {
 		Assert.assertEquals(identityComparator.compare(reference, reference), 0);
 	}
 
+	/**
+	 * This test compares identity unequal references.
+	 */
 	@Test
 	public void compareDifferentReferences() {
 		IdentityComparator<Object> identityComparator = new IdentityComparator<>();

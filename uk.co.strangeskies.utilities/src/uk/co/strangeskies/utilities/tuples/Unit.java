@@ -18,8 +18,19 @@
  */
 package uk.co.strangeskies.utilities.tuples;
 
+/**
+ * A one tuple.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <H>
+ *          The type of the first and only item.
+ */
 public class Unit<H> extends Tuple<H, NullTuple> {
-  public Unit(H head) {
-    super(head);
-  }
+	/**
+	 * @param head
+	 */
+	public Unit(H head) {
+		super(head);
+	}
 }

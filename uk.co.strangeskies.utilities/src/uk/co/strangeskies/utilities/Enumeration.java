@@ -24,6 +24,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * A reimplementation of Java's Enum class, primarily for the purpose of
+ * facilitating enumerations with generics. This class should enforce most of
+ * the rules governing Enums, including limiting instance creation to static
+ * initialiser blocks. Unfortunately error detection of such problems is
+ * inevitably shifted to runtime rather than compile time.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <S>
+ *          Self bounding on the type of the enumeration class.
+ */
 public class Enumeration<S extends Enumeration<S>> implements Self<S> {
 	private static class EnumerationType<T extends Enumeration<T>> {
 		private final List<T> instances;
@@ -68,6 +80,9 @@ public class Enumeration<S extends Enumeration<S>> implements Self<S> {
 		ordinal = addInstance(getThis());
 	}
 
+	/**
+	 * @return The name of this enumeration item instance.
+	 */
 	public String name() {
 		return name;
 	}
@@ -82,6 +97,9 @@ public class Enumeration<S extends Enumeration<S>> implements Self<S> {
 		return super.hashCode();
 	}
 
+	/**
+	 * @return The ordinal number of this enumeration item instance.
+	 */
 	public int ordinal() {
 		return ordinal;
 	}
@@ -124,6 +142,12 @@ public class Enumeration<S extends Enumeration<S>> implements Self<S> {
 		return enumType;
 	}
 
+	/**
+	 * @param enumerationClass
+	 *          An Enumeration class for which to retrieve all declared constants.
+	 * @return A list of all enumeration item instances for the given class, in
+	 *         the order they were declared.
+	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static <T extends Enumeration> List<T> getConstants(
 			Class<T> enumerationClass) {
@@ -131,12 +155,32 @@ public class Enumeration<S extends Enumeration<S>> implements Self<S> {
 				.getInstances());
 	}
 
+	/**
+	 * Effectively a reimplementation of {@link Enumeration#valueOf} for the
+	 * Enumeration class.
+	 * 
+	 * @param enumerationClass
+	 *          The class of Enumeration we wish to retrieve an instance of.
+	 * @param name
+	 *          The name of the instance to retrieve.
+	 * @return The instance value with the given name.
+	 */
 	public static <T extends Enumeration<?>> T valueOf(Class<T> enumerationClass,
 			String name) {
 		return getConstants(enumerationClass).stream()
 				.filter(e -> e.name().equals(name)).findAny().get();
 	}
 
+	/**
+	 * A reimplementation of {@link Enum#valueOf} with less pointlessly
+	 * restrictive generic bounds.
+	 * 
+	 * @param enumerationClass
+	 *          The class of Enum we wish to retrieve an instance of.
+	 * @param name
+	 *          The name of the instance to retrieve.
+	 * @return The instance value with the given name.
+	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static <T extends Enum<?>> T valueOfEnum(Class<T> enumerationClass,
 			String name) {

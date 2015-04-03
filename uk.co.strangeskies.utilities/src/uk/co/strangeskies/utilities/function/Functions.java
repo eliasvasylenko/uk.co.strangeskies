@@ -25,9 +25,14 @@ import java.util.stream.Collector;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+/**
+ * A collection of utility methods relating to use of the Function class.
+ * 
+ * @author Elias N Vasylenko
+ *
+ */
 public class Functions {
-	private Functions() {
-	}
+	private Functions() {}
 
 	public static <T, U, I, J, R> BiFunction<T, U, R> compose(
 			Function<? super T, ? extends I> a, Function<? super U, ? extends J> b,

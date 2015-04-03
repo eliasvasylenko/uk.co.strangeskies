@@ -18,6 +18,20 @@
  */
 package uk.co.strangeskies.utilities;
 
+/**
+ * A simple observer interface, with a single method to receive messages of a
+ * given type.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <M>
+ */
 public interface Observer<M> {
+	/**
+	 * Notification method to be invoked by {@link Observable} instances.
+	 * 
+	 * @param message
+	 *          The message received from an Observable.
+	 */
 	public void notify(M message);
 }

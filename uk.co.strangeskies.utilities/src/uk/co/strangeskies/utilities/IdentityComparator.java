@@ -42,6 +42,9 @@ public class IdentityComparator<T> implements Comparator<T> {
 
 	private final ReferenceQueue<Object> referenceQueue;
 
+	/**
+	 * Create a fresh identity comparator.
+	 */
 	public IdentityComparator() {
 		collisionMap = new HashMap<Integer, List<IDReference<T>>>();
 
@@ -100,7 +103,7 @@ public class IdentityComparator<T> implements Comparator<T> {
 	 * This method can be called to prune stale references from the hash-collision
 	 * map. It is also called automatically
 	 */
-	public void clean( IdentityComparator<T> this) {
+	public void clean(IdentityComparator<T> this) {
 		IDReference<?> oldReference;
 		while ((oldReference = (IDReference<?>) referenceQueue.poll()) != null) {
 			List<IDReference<T>> collisions = collisionMap.get(oldReference.getId());
@@ -113,12 +116,10 @@ public class IdentityComparator<T> implements Comparator<T> {
 		}
 	}
 
-	
-	protected class IDReference<R> extends  WeakReference< R> {
+	protected class IDReference<R> extends WeakReference<R> {
 		private final int id;
 
-		public IDReference( R referent, int id,
-				 ReferenceQueue<? super  R> q) {
+		public IDReference(R referent, int id, ReferenceQueue<? super R> q) {
 			super(referent, q);
 
 			this.id = id;

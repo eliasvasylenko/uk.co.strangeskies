@@ -21,6 +21,7 @@ package uk.co.strangeskies.utilities.collection.decorator;
 import java.util.Collection;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.function.Supplier;
 
 import uk.co.strangeskies.utilities.Property;
 
@@ -30,7 +31,7 @@ public class ListDecorator<E> extends CollectionDecorator<List<E>, E> implements
 		super(component);
 	}
 
-	public ListDecorator(Property<List<E>, ? super List<E>> component) {
+	public ListDecorator(Supplier<List<E>> component) {
 		super(component);
 	}
 

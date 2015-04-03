@@ -18,24 +18,52 @@
  */
 package uk.co.strangeskies.utilities.tuples;
 
+/**
+ * A two tuple.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <L>
+ *          The type of the first, left, item.
+ * @param <R>
+ *          The type of the second, right, item.
+ */
 public class Pair<L, R> extends Tuple<L, Unit<R>> {
-  public Pair(L left, R right) {
-    super(left, new Unit<>(right));
-  }
+	/**
+	 * Initialise a pair with the given two values.
+	 * 
+	 * @param left
+	 * @param right
+	 */
+	public Pair(L left, R right) {
+		super(left, new Unit<>(right));
+	}
 
-  public L get0() {
-    return getHead();
-  }
+	/**
+	 * @return The head value.
+	 */
+	public L get0() {
+		return getHead();
+	}
 
-  public L getLeft() {
-    return getHead();
-  }
+	/**
+	 * @return The head value.
+	 */
+	public L getLeft() {
+		return getHead();
+	}
 
-  public R get1() {
-    return getTail().getHead();
-  }
+	/**
+	 * @return The tail value.
+	 */
+	public R get1() {
+		return getTail().getHead();
+	}
 
-  public R getRight() {
-    return getTail().getHead();
-  }
+	/**
+	 * @return The tail value.
+	 */
+	public R getRight() {
+		return getTail().getHead();
+	}
 }

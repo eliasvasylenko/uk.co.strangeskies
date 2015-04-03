@@ -368,17 +368,6 @@ public class ConstraintFormula {
 	private void reduceContainmentConstraint(BoundSet bounds) {
 		BoundVisitor incorporate = bounds.incorporate(this);
 
-		/*-
-		 * THE NEXT THREE LINES ARE NON-SPEC! This solves some problems relating to
-		 * recursive types which don't seem to occur with normal inference. It
-		 * should not give false positives in validation, so far as I can see.
-
-		Type to = this.to;
-		if (bounds.getInferenceVariables().contains(to))
-			to = bounds.getInstantiation((InferenceVariable) to).orElse(to);
-
-		 */
-
 		if (!(to instanceof WildcardType)) {
 			/*
 			 * If T is a type:

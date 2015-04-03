@@ -18,6 +18,18 @@
  */
 package uk.co.strangeskies.utilities;
 
+/**
+ * An object which can be copied.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <S>
+ *          Self bounding on the type of the object, so that copies can be
+ *          correctly typed.
+ */
 public interface Copyable<S extends Copyable<S>> {
+	/**
+	 * @return A copy of the receiving instance.
+	 */
 	public S copy();
 }

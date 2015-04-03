@@ -19,8 +19,10 @@
 package uk.co.strangeskies.reflection.test;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -34,12 +36,18 @@ import uk.co.strangeskies.reflection.TypeLiteral;
 import uk.co.strangeskies.reflection.TypeParameter;
 import uk.co.strangeskies.reflection.TypeToken;
 
+/**
+ * Informal series of tests...	
+ * 
+ * @author eli
+ *
+ */
 public class TestTypeLiteral {
-	public static class A<T> {
+	static class A<T> {
 		public class B {}
 	}
 
-	public static class B {
+	static class B {
 		public <T extends Number> void method(T a, T b) {}
 
 		public <T> void method(@SuppressWarnings("unchecked") Collection<T>... a) {}
@@ -87,6 +95,13 @@ public class TestTypeLiteral {
 
 	class Nest22<T> extends Nest2<Nest22<T>> {}
 
+	/**
+	 * Entry point.
+	 * 
+	 * @param args
+	 * @throws NoSuchMethodException
+	 * @throws SecurityException
+	 */
 	public static <H extends Nest2<H>> void main(String... args)
 			throws NoSuchMethodException, SecurityException {
 		System.out.println(new TypeParameter<H>() {});
@@ -193,13 +208,20 @@ public class TestTypeLiteral {
 				.resolveSupertypeParameters(Collection.class));
 		System.out.println();
 
-		System.out
-				.println(new TypeLiteral<List<?>>() {}.inferceExtending().infer());
+		System.out.println(new TypeLiteral<List<?>>() {}.inferceExtending()
+				.infer());
 		System.out.println();
 
-		System.out.println(new TypeLiteral<List<? extends String>>() {}
-				.inferceExtending().getInferred()
-				.resolveSupertypeParameters(Iterable.class));
+		System.out.println(new TypeLiteral<Collection<? extends String>>() {}
+				.inferceExtending()
+				.withUpperBound(new TypeLiteral<ArrayList<?>>() {}.getType())
+				.getResolver().getBounds());
+		System.out.println();
+
+		System.out.println(new TypeLiteral<Collection<? extends String>>() {}
+				.inferceExtending()
+				.withUpperBound(new TypeLiteral<ArrayList<?>>() {}.getType())
+				.infer().resolveSupertypeParameters(Iterable.class));
 		System.out.println();
 
 		System.out.println(new TypeLiteral<List<? super Number>>() {}
@@ -217,6 +239,25 @@ public class TestTypeLiteral {
 				.inferceExtending().resolveMethodOverload("add", Integer.class)
 				.getReceiverType().resolveMethodOverload("add", Double.class)
 				.getReceiverType().infer());
+		System.out.println();
+
+		System.out.println(new TypeLiteral<ArrayList<? super Integer>>() {}
+				.inferceExtending().resolveConstructorOverload()
+				.withTargetType(new TypeLiteral<Iterable<? extends Number>>() {})
+				.infer());
+		System.out.println();
+
+		System.out.println(new TypeLiteral<HashMap<?, ?>>() {}
+				.inferceExtending()
+				.resolveConstructorOverload()
+				.withTargetType(
+						new TypeLiteral<Map<? extends String, ? extends Number>>() {})
+				.infer());
+		System.out.println();
+
+		System.out.println(new TypeLiteral<HashMap<String, Number>>() {}
+				.inferceExtending().resolveConstructorOverload()
+				.withTargetType(new TypeLiteral<Map<?, ?>>() {}).infer());
 		System.out.println();
 	}
 }

@@ -18,85 +18,133 @@
  */
 package uk.co.strangeskies.utilities;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * This class identifies a set of properties relating to a certain class, such
+ * that they can be used to more easily implement hash code generation and
+ * equality testing.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <T>
+ */
 public class PropertySet<T> {
-	private final Class<T> objectClass;
-	private final T object;
 	private final Set<Function<? super T, Object>> properties;
-	private final Integer hashCode;
+	private final Class<T> objectClass;
 
-	public PropertySet(Class<T> objectClass, T object, boolean immutable) {
+	/**
+	 * Create a PropertySet over the given class.
+	 * 
+	 * @param objectClass
+	 *          The class of object this set of properties is applicable to.
+	 */
+	public PropertySet(Class<T> objectClass) {
 		this.objectClass = objectClass;
-		this.object = object;
-		properties = new HashSet<>();
 
-		hashCode = immutable ? generateHashCode() : null;
+		properties = new LinkedHashSet<>();
 	}
 
-	@SuppressWarnings("unchecked")
-	public PropertySet(Class<T> objectClass, PropertySet<?> propertySet,
-			boolean immutable) {
-		if (!propertySet.objectClass.isAssignableFrom(objectClass)
-				|| !objectClass.isInstance(propertySet.object))
-			throw new IllegalArgumentException();
-
-		this.objectClass = objectClass;
-		this.object = (T) propertySet.object;
-		properties = new HashSet<>(
-				((PropertySet<? super T>) propertySet).properties);
-
-		hashCode = immutable ? generateHashCode() : null;
-	}
-
+	/**
+	 * Add a property to the set.
+	 * 
+	 * @param property
+	 *          A function describing a property as a transformation from an
+	 *          object instance to that properties value for that instance.
+	 * @return The property set the property has been added to.
+	 */
 	public PropertySet<T> add(Function<? super T, Object> property) {
 		properties.add(property);
 		return this;
 	}
 
+	/**
+	 * Add a set of properties to the set.
+	 * 
+	 * @param properties
+	 *          The set of properties to add.
+	 * @return The property set the properties have been added to.
+	 */
 	public PropertySet<T> add(PropertySet<? super T> properties) {
 		for (Function<? super T, Object> property : properties.properties)
 			this.properties.add(property);
 		return this;
 	}
 
-	public boolean testEquality(Object object) {
-		if (this.object == object)
-			return true;
-
-		if (!objectClass.isInstance(object))
-			return false;
-
-		@SuppressWarnings("unchecked")
-		T thatObject = (T) object;
-		return properties.stream().allMatch(
-				p -> Objects.equals(p.apply(this.object), p.apply(thatObject)));
-	}
-
-	public int generateHashCode() {
-		if (hashCode != null)
-			return hashCode;
-		else
-			return properties.stream().map(p -> Objects.hashCode(p.apply(object)))
-					.reduce(0, (a, b) -> a ^ b);
-	}
-
+	/**
+	 * Retrieve the class of objects this property set is applicable to.
+	 * 
+	 * @return The object class.
+	 */
 	public Class<T> objectClass() {
 		return objectClass;
 	}
 
-	public List<Object> values() {
+	/**
+	 * Retrieve the list of property values for the given object of applicable
+	 * class.
+	 * 
+	 * @param object
+	 *          The instance for which to retrieve values.
+	 * @return A list of values in the order they were added to the property set.
+	 */
+	public List<Object> values(T object) {
 		return properties.stream().map(p -> p.apply(object))
 				.collect(Collectors.toList());
 	}
 
-	@Override
-	public String toString() {
+	/**
+	 * Compare the given object of applicable class to another object, to test for
+	 * equality.
+	 * 
+	 * @param first
+	 *          The first object, of applicable class.
+	 * @param second
+	 *          The second object, of any class.
+	 * @return True if the objects are equal according to the equality of each
+	 *         property in this set, false otherwise.
+	 */
+	public boolean testEquality(T first, Object second) {
+		if (first == second)
+			return true;
+
+		if (!objectClass.isInstance(second))
+			return false;
+
+		@SuppressWarnings("unchecked")
+		T secondObject = (T) second;
+		return properties.stream().allMatch(
+				p -> Objects.equals(p.apply(first), p.apply(secondObject)));
+	}
+
+	/**
+	 * Calculate the hash code of a given object of the applicable class.
+	 * 
+	 * @param object
+	 *          The object for which to calculate the hash code.
+	 * @return The hash code, derived from the hash codes of the values of each
+	 *         property in this set.
+	 */
+	public int generateHashCode(T object) {
+		return properties.stream().map(p -> Objects.hashCode(p.apply(object)))
+				.reduce(0, (a, b) -> a ^ b);
+	}
+
+	/**
+	 * String output for an object of the applicable class, based on the toString
+	 * implementations of each value in the set.
+	 * 
+	 * @param object
+	 *          The object to give a String representation of.
+	 * @return A string representation based on the values of each property in
+	 *         this set.
+	 */
+	public String toString(T object) {
 		String lineSeparator = System.getProperty("line.separator");
 
 		StringBuilder stringBuilder = new StringBuilder().append("{").append(

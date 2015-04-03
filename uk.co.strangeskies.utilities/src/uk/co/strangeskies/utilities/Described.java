@@ -18,6 +18,14 @@
  */
 package uk.co.strangeskies.utilities;
 
+/**
+ * An interface to provides a canonical description for an object.
+ * 
+ * @author Elias N Vasylenko
+ */
 public interface Described {
+	/**
+	 * @return The canonical description of this instance.
+	 */
 	public String getDescription();
 }

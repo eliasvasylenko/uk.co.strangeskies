@@ -28,6 +28,10 @@ package uk.co.strangeskies.utilities;
  *          The final implementing class.
  */
 public interface Self<S extends Self<S>> extends Copyable<S> {
+	/**
+	 * @return A reference to the receiver, cast to it's type as denoted by the
+	 *         parameterization of Self.
+	 */
 	@SuppressWarnings("unchecked")
 	public default S getThis(Self<S> this) {
 		return (S) this;

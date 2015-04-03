@@ -30,7 +30,7 @@ import org.osgi.framework.ServiceReference;
 import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 
 
-public class WrappingServiceTree {
+class WrappingServiceTree {
 	private final ServiceReference<?> serviceReference;
 	private final WrappingServiceTreeNode root;
 

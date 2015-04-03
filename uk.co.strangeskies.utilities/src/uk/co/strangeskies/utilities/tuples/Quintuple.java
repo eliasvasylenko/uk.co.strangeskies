@@ -18,28 +18,68 @@
  */
 package uk.co.strangeskies.utilities.tuples;
 
+/**
+ * A five tuple.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <A>
+ *          The type of the first item.
+ * @param <B>
+ *          The type of the second item.
+ * @param <C>
+ *          The type of the third item.
+ * @param <D>
+ *          The type of the fourth item.
+ * @param <E>
+ *          The type of the fifth, and last, item.
+ */
 public class Quintuple<A, B, C, D, E> extends Tuple<A, Quadruple<B, C, D, E>> {
-  public Quintuple(A a, B b, C c, D d, E e) {
-    super(a, new Quadruple<>(b, c, d, e));
-  }
+	/**
+	 * Initialise a quintuple with the given five values.
+	 * 
+	 * @param a
+	 * @param b
+	 * @param c
+	 * @param d
+	 * @param e
+	 */
+	public Quintuple(A a, B b, C c, D d, E e) {
+		super(a, new Quadruple<>(b, c, d, e));
+	}
 
-  public A get0() {
-    return getHead();
-  }
+	/**
+	 * @return The head value.
+	 */
+	public A get0() {
+		return getHead();
+	}
 
-  public B get1() {
-    return getTail().getHead();
-  }
+	/**
+	 * @return The second value.
+	 */
+	public B get1() {
+		return getTail().getHead();
+	}
 
-  public C get2() {
-    return getTail().getTail().getHead();
-  }
+	/**
+	 * @return The third value.
+	 */
+	public C get2() {
+		return getTail().getTail().getHead();
+	}
 
-  public D get3() {
-    return getTail().getTail().getTail().getHead();
-  }
+	/**
+	 * @return The fourth value.
+	 */
+	public D get3() {
+		return getTail().getTail().getTail().getHead();
+	}
 
-  public E get4() {
-    return getTail().getTail().getTail().getTail().getHead();
-  }
+	/**
+	 * @return The fifth value.
+	 */
+	public E get4() {
+		return getTail().getTail().getTail().getTail().getHead();
+	}
 }

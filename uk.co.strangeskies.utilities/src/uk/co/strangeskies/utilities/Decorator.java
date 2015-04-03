@@ -18,6 +18,8 @@
  */
 package uk.co.strangeskies.utilities;
 
+import java.util.function.Supplier;
+
 /**
  * A basic abstract implementation of the decorator pattern. Derived classes
  * should try to implement some common interface with T.
@@ -27,22 +29,34 @@ package uk.co.strangeskies.utilities;
  * @param <T>
  */
 public abstract class Decorator<T> {
-	private final/*  */Property<T, ? super T> componentProperty;
+	private final/*  */Supplier<T> component;
 
+	/**
+	 * Create a decorator for a given instance.
+	 * 
+	 * @param component
+	 */
 	public Decorator(T component) {
-		this.componentProperty = new IdentityProperty<>(component);
+		this.component = () -> component;
 	}
 
-	public Decorator(Property<T, ? super T> component) {
-		this.componentProperty = component;
+	/**
+	 * Create a decorator for a given mutable Property.
+	 * 
+	 * @param component
+	 *          A supplier of components, to be retrieved every time the decorator
+	 *          needs a reference to the actual component.
+	 */
+	public Decorator(Supplier<T> component) {
+		this.component = component;
 	}
 
 	protected final T getComponent() {
-		return componentProperty.get();
+		return component.get();
 	}
 
-	protected final Property<T, ? super T> getComponentProperty() {
-		return componentProperty;
+	protected final Supplier<T> getComponentProperty() {
+		return component;
 	}
 
 	@Override

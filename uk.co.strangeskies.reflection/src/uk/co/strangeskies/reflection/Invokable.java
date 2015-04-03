@@ -252,7 +252,7 @@ public class Invokable<T, R> {
 	}
 
 	@SuppressWarnings("unchecked")
-	public <S extends R> Invokable<T, S> withTargetType(TypeToken<S> target) {
+	public <S> Invokable<T, S> withTargetType(TypeToken<S> target) {
 		return (Invokable<T, S>) withTargetType(target.getType());
 	}
 
@@ -264,22 +264,21 @@ public class Invokable<T, R> {
 	private <S extends R> Invokable<T, S> withTargetTypeCapture(Type target) {
 		Resolver resolver = getResolver();
 
-		new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, returnType.getType(),
-				target).reduceInto(resolver.getBounds());
+		resolver.addLooseCompatibility(returnType.getType(), target);
 
-		return new Invokable<>(resolver, receiverType,
-				(TypeToken<S>) TypeToken.of(target), executable,
+		return new Invokable<>(resolver, receiverType, (TypeToken<S>) TypeToken.of(
+				resolver, returnType.getType()), executable,
 				(BiFunction<T, List<?>, S>) invocationFunction).infer();
 	}
 
-	public <U extends R> Invokable<T, U> withInferredType(
-			TypeToken<U> targetType, TypeToken<?>... arguments) {
+	public <U> Invokable<T, U> withInferredType(TypeToken<U> targetType,
+			TypeToken<?>... arguments) {
 		return withInferredType(targetType, Arrays.asList(arguments));
 	}
 
 	@SuppressWarnings("unchecked")
-	public <U extends R> Invokable<T, U> withInferredType(
-			TypeToken<U> targetType, List<? extends TypeToken<?>> arguments) {
+	public <U> Invokable<T, U> withInferredType(TypeToken<U> targetType,
+			List<? extends TypeToken<?>> arguments) {
 		return (Invokable<T, U>) withInferredType(targetType.getType(), arguments
 				.stream().map(TypeToken::getType).collect(Collectors.toList()));
 	}
@@ -303,7 +302,8 @@ public class Invokable<T, R> {
 	public Invokable<T, R> infer() {
 		Resolver resolver = getResolver();
 
-		if (!resolver.validate(resolver.getInferenceVariables(executable)))
+		if (executable instanceof Method ? !resolver.validate(resolver
+				.getInferenceVariables(executable).values()) : !resolver.validate())
 			throw new TypeInferenceException(
 					"Cannot resolve generic type parameters for invocation of '" + this
 							+ "'.");
@@ -452,20 +452,20 @@ public class Invokable<T, R> {
 		return invoke(receiver, arguments);
 	}
 
-	public static <T, R> Set<? extends Invokable<T, ? extends R>> resolveApplicableCandidates(
-			Set<? extends Invokable<T, ? extends R>> candidates,
+	public static <T, R> Set<? extends Invokable<? super T, ? extends R>> resolveApplicableCandidates(
+			Set<? extends Invokable<? super T, ? extends R>> candidates,
 			List<? extends Type> parameters) {
-		Map<Invokable<T, ? extends R>, RuntimeException> failures = new LinkedHashMap<>();
-		BiConsumer<Invokable<T, ? extends R>, RuntimeException> putFailures = failures::put;
+		Map<Invokable<? super T, ? extends R>, RuntimeException> failures = new LinkedHashMap<>();
+		BiConsumer<Invokable<? super T, ? extends R>, RuntimeException> putFailures = failures::put;
 
-		Set<? extends Invokable<T, ? extends R>> compatibleCandidates = filterOverloadCandidates(
+		Set<? extends Invokable<? super T, ? extends R>> compatibleCandidates = filterOverloadCandidates(
 				candidates, i -> i.withLooseApplicability(parameters), putFailures);
 
 		if (compatibleCandidates.isEmpty())
 			compatibleCandidates = filterOverloadCandidates(candidates,
 					i -> i.withVariableArityApplicability(parameters), putFailures);
 		else {
-			Set<? extends Invokable<T, ? extends R>> oldCompatibleCandidates = compatibleCandidates;
+			Set<? extends Invokable<? super T, ? extends R>> oldCompatibleCandidates = compatibleCandidates;
 			compatibleCandidates = filterOverloadCandidates(compatibleCandidates,
 					i -> i.withStrictApplicability(parameters), putFailures);
 			if (compatibleCandidates.isEmpty())
@@ -480,10 +480,10 @@ public class Invokable<T, R> {
 		return compatibleCandidates;
 	}
 
-	private static <T, R> Set<? extends Invokable<T, ? extends R>> filterOverloadCandidates(
-			Collection<? extends Invokable<T, ? extends R>> candidates,
-			Function<? super Invokable<T, ? extends R>, Invokable<T, ? extends R>> applicabilityFunction,
-			BiConsumer<Invokable<T, ? extends R>, RuntimeException> failures) {
+	private static <T, R> Set<? extends Invokable<? super T, ? extends R>> filterOverloadCandidates(
+			Collection<? extends Invokable<? super T, ? extends R>> candidates,
+			Function<? super Invokable<? super T, ? extends R>, Invokable<? super T, ? extends R>> applicabilityFunction,
+			BiConsumer<Invokable<? super T, ? extends R>, RuntimeException> failures) {
 		return candidates.stream().map(i -> {
 			try {
 				return applicabilityFunction.apply(i);
@@ -494,22 +494,24 @@ public class Invokable<T, R> {
 		}).filter(o -> o != null).collect(Collectors.toSet());
 	}
 
-	public static <T, R> Invokable<T, R> resolveMostSpecificCandidate(
-			Collection<? extends Invokable<T, R>> candidates) {
+	public static <T, R> Invokable<? super T, ? extends R> resolveMostSpecificCandidate(
+			Collection<? extends Invokable<? super T, ? extends R>> candidates) {
 		if (candidates.size() == 1)
 			return candidates.iterator().next();
 
-		Set<Invokable<T, R>> mostSpecificSoFar = resolveMostSpecificCandidateSet(candidates);
+		Set<Invokable<? super T, ? extends R>> mostSpecificSoFar = resolveMostSpecificCandidateSet(candidates);
 
 		/*
 		 * Find which of the remaining candidates, which should all have identical
 		 * parameter types, is declared in the lowermost class.
 		 */
-		Iterator<Invokable<T, R>> overrideCandidateIterator = mostSpecificSoFar
+		Iterator<Invokable<? super T, ? extends R>> overrideCandidateIterator = mostSpecificSoFar
 				.iterator();
-		Invokable<T, R> mostSpecific = overrideCandidateIterator.next();
+		Invokable<? super T, ? extends R> mostSpecific = overrideCandidateIterator
+				.next();
 		while (overrideCandidateIterator.hasNext()) {
-			Invokable<T, R> candidate = overrideCandidateIterator.next();
+			Invokable<? super T, ? extends R> candidate = overrideCandidateIterator
+					.next();
 
 			if (!candidate.equals(mostSpecific))
 				throw new TypeInferenceException(
@@ -524,21 +526,24 @@ public class Invokable<T, R> {
 		return mostSpecific;
 	}
 
-	private static <T, R> Set<Invokable<T, R>> resolveMostSpecificCandidateSet(
-			Collection<? extends Invokable<T, R>> candidates) {
-		List<Invokable<T, R>> remainingCandidates = new ArrayList<>(candidates);
+	private static <T, R> Set<Invokable<? super T, ? extends R>> resolveMostSpecificCandidateSet(
+			Collection<? extends Invokable<? super T, ? extends R>> candidates) {
+		List<Invokable<? super T, ? extends R>> remainingCandidates = new ArrayList<>(
+				candidates);
 
 		/*
 		 * For each remaining candidate in the list...
 		 */
 		for (int first = 0; first < remainingCandidates.size(); first++) {
-			Invokable<T, R> firstCandidate = remainingCandidates.get(first);
+			Invokable<? super T, ? extends R> firstCandidate = remainingCandidates
+					.get(first);
 
 			/*
 			 * Compare with each other remaining candidate...
 			 */
 			for (int second = first + 1; second < remainingCandidates.size(); second++) {
-				Invokable<T, R> secondCandidate = remainingCandidates.get(second);
+				Invokable<? super T, ? extends R> secondCandidate = remainingCandidates
+						.get(second);
 
 				/*
 				 * Determine which of the invokables, if either, are more specific.
