@@ -18,6 +18,12 @@
  */
 package uk.co.strangeskies.reflection;
 
+/**
+ * @author Elias N Vasylenko
+ *
+ * @param <T>
+ */
+@SuppressWarnings("javadoc")
 public abstract class TypeLiteral<T> extends TypeToken<T> {
 	protected TypeLiteral() {}
 }

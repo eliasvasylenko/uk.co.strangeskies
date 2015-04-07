@@ -43,6 +43,22 @@ import java.util.stream.Collectors;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.utilities.tuples.Pair;
 
+/**
+ * A type safe wrapper around {@link Executable} instances, with proper handling
+ * of generic methods, and methods on generic classes. Instances of this class
+ * can be created from instances of Executable directly from
+ * {@link #from(Executable)} and its overloads, or using the
+ * {@link TypeToken#resolveConstructorOverload(List)} and
+ * {@link TypeToken#resolveMethodOverload(String, List)} methods on TypeToken
+ * instances.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <T>
+ *          The receiver type of the executable.
+ * @param <R>
+ *          The return type of the executable.
+ */
 public class Invokable<T, R> {
 	private final Resolver resolver;
 
@@ -76,7 +92,7 @@ public class Invokable<T, R> {
 		this.resolver = resolver;
 
 		this.executable = executable;
-		resolver.capture(getExecutable());
+		resolver.incorporateGenericTypeParameters(getExecutable());
 
 		this.receiverType = (TypeToken<T>) TypeToken.of(resolver,
 				receiverType.getType());
@@ -90,6 +106,18 @@ public class Invokable<T, R> {
 		this.invocationFunction = invocationFunction;
 	}
 
+	/**
+	 * Create a new Invokable instance from a reference to a {@link Constructor}.
+	 * The type of T here should only ever be raw, and only its raw type will be
+	 * available for inspection reflectively, so it is possible to subsequently
+	 * specify the receiver type using an overload of
+	 * {@link #withReceiverType(TypeToken)}, or to attempt to infer a more
+	 * specific type from a target type using an overload of
+	 * {@link #withTargetType(TypeToken)}.
+	 * 
+	 * @param constructor
+	 * @return
+	 */
 	public static <T> Invokable<T, T> from(Constructor<T> constructor) {
 		TypeToken<T> type = TypeToken.of(constructor.getDeclaringClass());
 		return from(constructor, type);

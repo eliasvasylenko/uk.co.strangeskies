@@ -32,6 +32,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * A representation of an unknown instantitation of a type variable or inference
+ * variable which is known to satisfy a certain set of upper and lower bonds.
+ * 
+ * @author Elias N Vasylenko
+ */
 public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	private final static AtomicLong COUNTER = new AtomicLong();
 
@@ -84,6 +90,15 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 		return builder.toString();
 	}
 
+	/**
+	 * Determine whether a given type is a valid instantiation of this
+	 * TypeVariableCapture, or in other words, whether it is contained by the
+	 * bounds of this capture.
+	 * 
+	 * @param type
+	 *          The potential instantiation to validate.
+	 * @return True if the instantiation is valid, false otherwise.
+	 */
 	public boolean isPossibleInstantiation(Type type) {
 		return Types.isAssignable(type,
 				IntersectionType.uncheckedFrom(getUpperBounds()))
@@ -91,10 +106,16 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 						IntersectionType.uncheckedFrom(), type));
 	}
 
+	/**
+	 * @return The upper bounds of this TypeVariableCapture.
+	 */
 	public Type[] getUpperBounds() {
 		return upperBounds.clone();
 	}
 
+	/**
+	 * @return The lower bounds of this TypeVariableCapture.
+	 */
 	public Type[] getLowerBounds() {
 		return lowerBounds.clone();
 	}
@@ -116,7 +137,16 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 		}
 	}
 
-	public static ParameterizedType capture(ParameterizedType type) {
+	/**
+	 * Capture fresh type variables as valid stand-in instantiations for a set of
+	 * type arguments which may be wildcards.
+	 * 
+	 * @param type
+	 *          The parameterized type whose arguments we wish to capture.
+	 * @return A new parameterized type of the same class as the passed type,
+	 *         parameterized with the captures of the original arguments.
+	 */
+	public static ParameterizedType captureArguments(ParameterizedType type) {
 		Map<TypeVariable<?>, Type> arguments = ParameterizedTypes
 				.getAllTypeArguments(type);
 		Map<TypeVariable<?>, Type> captures = new HashMap<>();
@@ -154,6 +184,18 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 		return capture;
 	}
 
+	/**
+	 * Capture fresh type variables as valid stand-in instantiations for a set of
+	 * inference variables.
+	 * 
+	 * @param types
+	 *          The inference variables to capture.
+	 * @param resolver
+	 *          The resolution context from which to determine the current bounds
+	 *          on the given inference variables.
+	 * @return A mapping from the inference variables passes to their new
+	 *         captures.
+	 */
 	public static Map<InferenceVariable, TypeVariableCapture> capture(
 			Collection<? extends InferenceVariable> types, Resolver resolver) {
 		TypeVariable<?>[] parameters = new TypeVariable<?>[types.size()];
@@ -235,16 +277,6 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 				return captures.clone();
 			}
 		};
-	}
-
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public static Set<TypeVariableCapture> getAllMentionedBy(Type type) {
-		return (Set) Types.getAllMentionedBy(type,
-				TypeVariableCapture.class::isInstance);
-	}
-
-	public static boolean isProperType(Type type) {
-		return getAllMentionedBy(type).isEmpty();
 	}
 
 	@Override

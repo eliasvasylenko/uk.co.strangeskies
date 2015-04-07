@@ -93,14 +93,14 @@ public class ConstraintFormula {
 			 * boxing conversion (§5.1.7) to S. Then the constraint reduces to ‹S' →
 			 * T›.
 			 */
-			reduce(Kind.LOOSE_COMPATIBILILTY, Types.wrap(from), to, bounds);
+			reduce(Kind.LOOSE_COMPATIBILILTY, Types.wrapPrimitive(from), to, bounds);
 		else if (to != null && Types.isPrimitive(to))
 			/*
 			 * Otherwise, if T is a primitive type, let T' be the result of applying
 			 * boxing conversion (§5.1.7) to T. Then the constraint reduces to ‹S =
 			 * T'›.
 			 */
-			reduce(Kind.EQUALITY, from, Types.wrap(to), bounds);
+			reduce(Kind.EQUALITY, from, Types.wrapPrimitive(to), bounds);
 		else if (isUncheckedCompatibleOnly(from, to))
 			/*
 			 * Otherwise, if T is a parameterized type of the form G<T1, ..., Tn>, and

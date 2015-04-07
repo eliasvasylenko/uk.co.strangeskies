@@ -18,13 +18,28 @@
  */
 package uk.co.strangeskies.reflection;
 
+/**
+ * An exception relating to failure of the Java inference algorithm.
+ * 
+ * @author Elias N Vasylenko
+ */
 public class TypeInferenceException extends RuntimeException {
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * @param message
+	 *          A text description of the cause of the problem.
+	 * @param cause
+	 *          Causing exception.
+	 */
 	public TypeInferenceException(String message, Throwable cause) {
 		super(message, cause);
 	}
 
+	/**
+	 * @param message
+	 *          A text description of the cause of the problem.
+	 */
 	public TypeInferenceException(String message) {
 		super(message);
 	}

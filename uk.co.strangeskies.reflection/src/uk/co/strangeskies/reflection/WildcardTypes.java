@@ -24,9 +24,21 @@ import java.util.Arrays;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+/**
+ * A collection of utility methods for dealing with wildcard types.
+ * 
+ * @author Elias N Vasylenko
+ *
+ */
 public class WildcardTypes {
 	private WildcardTypes() {}
 
+	/**
+	 * Create an unbounded wildcard type.
+	 * 
+	 * @return An instance of {@link WildcardType} representing an unbounded
+	 *         wildcard.
+	 */
 	public static WildcardType unbounded() {
 		return new WildcardType() {
 			@Override
@@ -63,6 +75,14 @@ public class WildcardTypes {
 		};
 	}
 
+	/**
+	 * Create an lower bounded wildcard type.
+	 * 
+	 * @param type
+	 *          The type we wish to be a lower bound for a wildcard.
+	 * @return An instance of {@link WildcardType} representing a wildcard with
+	 *         the given lower bound.
+	 */
 	public static WildcardType lowerBounded(Type type) {
 		Supplier<Type[]> types;
 
@@ -114,6 +134,14 @@ public class WildcardTypes {
 		};
 	}
 
+	/**
+	 * Create an upper bounded wildcard type.
+	 * 
+	 * @param type
+	 *          The type we wish to be a upper bound for a wildcard.
+	 * @return An instance of {@link WildcardType} representing a wildcard with
+	 *         the given upper bound.
+	 */
 	public static WildcardType upperBounded(Type type) {
 		Supplier<Type[]> types;
 

@@ -45,8 +45,16 @@ import uk.co.strangeskies.utilities.collection.computingmap.CacheComputingMap;
 import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 
+/**
+ * A collection of general utility methods relating to the Java type system.
+ * Utilities related to more specific classes of type may be found in
+ * {@link WildcardTypes}, {@link ParameterizedTypes}, and
+ * {@link GenericArrayTypes}.
+ * 
+ * @author Elias N Vasylenko
+ */
 public final class Types {
-	public static final Map<Class<?>, Class<?>> WRAPPED_PRIMITIVES = Collections
+	private static final Map<Class<?>, Class<?>> WRAPPED_PRIMITIVES = Collections
 			.unmodifiableMap(new HashMap<Class<?>, Class<?>>() {
 				private static final long serialVersionUID = 1L;
 				{
@@ -62,7 +70,7 @@ public final class Types {
 				}
 			});
 
-	public static final Map<Class<?>, Class<?>> UNWRAPPED_PRIMITIVES = Collections
+	private static final Map<Class<?>, Class<?>> UNWRAPPED_PRIMITIVES = Collections
 			.unmodifiableMap(new HashMap<Class<?>, Class<?>>() {
 				private static final long serialVersionUID = 1L;
 				{
@@ -81,6 +89,17 @@ public final class Types {
 
 	private Types() {}
 
+	/**
+	 * The raw types of the type represented by this TypeToken. In the case of
+	 * most simple TypeTokens, this will be a set with one entry, equal to the
+	 * result of {@link #getRawType(Type type)}. For more complex types, a set of
+	 * multiple raw types may be derived, for example, from each upper bound, of
+	 * from each item in an intersection type.
+	 * 
+	 * @param type
+	 *          The type of which we wish to determine the raw types.
+	 * @return The raw types of the type represented by this TypeToken.
+	 */
 	public static Set<Class<?>> getRawTypes(Type type) {
 		if (type instanceof IntersectionType) {
 			return Arrays.stream(((IntersectionType) type).getTypes())
@@ -95,6 +114,16 @@ public final class Types {
 			return new HashSet<>(Arrays.asList(getRawType(type)));
 	}
 
+	/**
+	 * The raw type of the given type. In the case of Types of certain classes,
+	 * for example InferenceVariable or IntersectionType, this single raw type may
+	 * be insufficient to fully describe the type, in which case
+	 * {@link Types#getRawTypes(Type)} may be more appropriate.
+	 * 
+	 * @param type
+	 *          The type of which we wish to determine the raw type.
+	 * @return The raw type of the type represented by this TypeToken.
+	 */
 	public static Class<?> getRawType(Type type) {
 		if (type == null) {
 			return null;
@@ -133,62 +162,166 @@ public final class Types {
 				+ "' is unsupported.");
 	}
 
+	/**
+	 * Is the given type a primitive type as per the Java type system.
+	 * 
+	 * @param type
+	 *          The type we wish to classify.
+	 * @return True if the type is primitive, false otherwise.
+	 */
 	public static boolean isPrimitive(Type type) {
 		return WRAPPED_PRIMITIVES.keySet().contains(getRawType(type));
 	}
 
+	/**
+	 * Is the type a wrapper for a primitive type as per the Java type system.
+	 * 
+	 * @param type
+	 *          The type we wish to classify.
+	 * @return True if the type is a primitive wrapper, false otherwise.
+	 */
 	public static boolean isPrimitiveWrapper(Type type) {
 		return UNWRAPPED_PRIMITIVES.keySet().contains(getRawType(type));
 	}
 
+	/**
+	 * If this TypeToken is a primitive type, determine the wrapped primitive
+	 * type.
+	 * 
+	 * @param type
+	 *          The type we wish to wrap.
+	 * @return The wrapper type of the primitive type this TypeToken represents,
+	 *         otherwise this TypeToken itself.
+	 */
 	@SuppressWarnings("unchecked")
-	public static <T extends Type> T wrap(T type) {
+	public static <T extends Type> T wrapPrimitive(T type) {
 		if (isPrimitive(type))
 			return (T) WRAPPED_PRIMITIVES.get(getRawType(type));
 		else
 			return type;
 	}
 
+	/**
+	 * If this TypeToken is a wrapper of a primitive type, determine the unwrapped
+	 * primitive type.
+	 * 
+	 * @param type
+	 *          The type we wish to unwrap.
+	 * @return The primitive type wrapped by this TypeToken, otherwise this
+	 *         TypeToken itself.
+	 */
 	@SuppressWarnings("unchecked")
-	public static <T extends Type> T unwrap(T type) {
+	public static <T extends Type> T unwrapPrimitive(T type) {
 		if (isPrimitiveWrapper(type))
 			return (T) UNWRAPPED_PRIMITIVES.get(getRawType(type));
 		else
 			return type;
 	}
 
+	/**
+	 * Determine whether a given class is abstract.
+	 * 
+	 * @param rawType
+	 *          The type we wish to classify.
+	 * @return True if the type is abstract, false otherwise.
+	 */
 	public static boolean isAbstract(Class<?> rawType) {
 		return Modifier.isAbstract(rawType.getModifiers());
 	}
 
+	/**
+	 * Determine whether a given class is final.
+	 * 
+	 * @param rawType
+	 *          The type we wish to classify.
+	 * @return True if the type is final, false otherwise.
+	 */
 	public static boolean isFinal(Class<?> rawType) {
 		return Modifier.isFinal(rawType.getModifiers());
 	}
 
+	/**
+	 * Determine whether a given class is an interface.
+	 * 
+	 * @param rawType
+	 *          The type we wish to classify.
+	 * @return True if the type is an interface, false otherwise.
+	 */
 	public static boolean isInterface(Class<?> rawType) {
 		return Modifier.isInterface(rawType.getModifiers());
 	}
 
+	/**
+	 * Determine whether a given class is private.
+	 * 
+	 * @param rawType
+	 *          The type we wish to classify.
+	 * @return True if the type is private, false otherwise.
+	 */
 	public static boolean isPrivate(Class<?> rawType) {
 		return Modifier.isPrivate(rawType.getModifiers());
 	}
 
+	/**
+	 * Determine whether a given class is protected.
+	 * 
+	 * @param rawType
+	 *          The type we wish to classify.
+	 * @return True if the type is protected, false otherwise.
+	 */
 	public static boolean isProtected(Class<?> rawType) {
 		return Modifier.isProtected(rawType.getModifiers());
 	}
 
+	/**
+	 * Determine whether a given class is public.
+	 * 
+	 * @param rawType
+	 *          The type we wish to classify.
+	 * @return True if the type is public, false otherwise.
+	 */
 	public static boolean isPublic(Class<?> rawType) {
 		return Modifier.isPublic(rawType.getModifiers());
 	}
 
+	/**
+	 * Determine whether a given class is static.
+	 * 
+	 * @param rawType
+	 *          The type we wish to classify.
+	 * @return True if the type is static, false otherwise.
+	 */
 	public static boolean isStatic(Class<?> rawType) {
 		return Modifier.isStatic(rawType.getModifiers());
 	}
 
+	/**
+	 * Find the enclosing class of the given class, if the given class is
+	 * non-static. In other words, determine the class of the enclosing
+	 * <em>instance</em> of an instance of the given class.
+	 * 
+	 * This has the same behaviour as {@link Class#getEnclosingClass()}, except
+	 * that null is also returned in the case that the given class is static.
+	 * 
+	 * @param innerClass
+	 *          The class of which we wish to determine the enclosing class.
+	 * @return The enclosing class, if one exists, and if the {@code innerClass}
+	 *         is non-static, otherwise null.
+	 */
 	public static Class<?> getNonStaticallyEnclosingClass(Class<?> innerClass) {
 		return isStatic(innerClass) ? null : innerClass.getEnclosingClass();
 	}
 
+	/**
+	 * Find the component type of the given type, if the given {@link Type}
+	 * instance is an array {@link Class} or an instance of
+	 * {@link GenericArrayType}.
+	 * 
+	 * @param type
+	 *          The type of which we wish to determine the component type.
+	 * @return The component type of the given type, if it is an array type,
+	 *         otherwise null.
+	 */
 	public static Type getComponentType(Type type) {
 		if (type instanceof Class)
 			return ((Class<?>) type).getComponentType();
@@ -198,6 +331,15 @@ public final class Types {
 			return null;
 	}
 
+	/**
+	 * Give a canonical String representation of a given type, which is intended
+	 * to be more easily human-readable than implementations of
+	 * {@link Type#toString()} for certain implementations of {@link Type}.
+	 * 
+	 * @param type
+	 *          The type of which we wish to determine a string representation.
+	 * @return A canonical string representation of the given type.
+	 */
 	public static String toString(Type type) {
 		if (type instanceof Class && getRawType(type).isArray())
 			return toString(((Class<?>) type).getComponentType()) + "[]";
@@ -205,15 +347,55 @@ public final class Types {
 			return type == null ? "null" : type.getTypeName();
 	}
 
+	/**
+	 * Create a Type instance from a parsed String. Here infinitely recurring
+	 * types are represented by, for example:
+	 * 
+	 * {@code java.util.List<java.lang.Number & java.lang.Comparable<? extends java.lang.Number & java.lang.Comparable<? extends java.lang.Number & java.lang.Comparable<...>>>>}
+	 * 
+	 * Where "..." would be substituted, recursively, with the parameterization of
+	 * the an outer instance of the same raw class. TODO add clarity, and a proper
+	 * description of how ambiguity is resolved here.
+	 * 
+	 * @param typeString
+	 *          The String to parse.
+	 * @return The type described by the String.
+	 */
 	public static Type fromString(String typeString) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
+	/**
+	 * Determine if a given type, {@code to}, is assignable from another given
+	 * type, {@code from}. Or in other words, if {@code to} is a supertype of
+	 * {@code from}. Types are considered assignable if they involve unchecked
+	 * generic casts.
+	 * 
+	 * @param from
+	 *          The type from which we wish to determine assignability.
+	 * @param to
+	 *          The type to which we wish to determine assignability.
+	 * @return True if the types are assignable, false otherwise.
+	 */
 	public static boolean isAssignable(Type from, Type to) {
 		return isAssignable(from, to, new HashSet<>());
 	}
 
+	/**
+	 * Determine if the given type, {@code from}, contains the given type,
+	 * {@code to}. In other words, if either of the given types are wildcards,
+	 * determine if every possible instantiation of {@to} is also a valid
+	 * instantiation of {@from}. Or if neither type is a wildcard,
+	 * determine whether both types are assignable to each other as per
+	 * {@link Types#isAssignable(Type, Type)}.
+	 * 
+	 * @param from
+	 *          The type within which we are determining containment.
+	 * @param to
+	 *          The type of which we are determining containment.
+	 * @return True if {@code from} <em>contains</em> {@to}, false otherwise.
+	 */
 	public static boolean isContainedBy(Type from, Type to) {
 		return isContainedBy(from, to, new HashSet<>());
 	}
@@ -241,7 +423,7 @@ public final class Types {
 		}
 	}
 
-	public static boolean isAssignable(Type from, Type to,
+	private static boolean isAssignable(Type from, Type to,
 			HashSet<Assignment> assignsEncountered) {
 		Assignment assignment = new Assignment(from, to);
 
@@ -389,7 +571,7 @@ public final class Types {
 		return assignable;
 	}
 
-	public static boolean isContainedBy(Type from, Type to,
+	private static boolean isContainedBy(Type from, Type to,
 			HashSet<Assignment> assignsEncountered) {
 		if (to.equals(from))
 			return true;
@@ -417,6 +599,18 @@ public final class Types {
 			return false;
 	}
 
+	/**
+	 * Determine whether a given type, {@code from}, is compatible with a given
+	 * type, {@code to}, within a strict invocation context, as per the Java
+	 * language specification.
+	 * 
+	 * @param from
+	 *          The type from which to determine compatibility.
+	 * @param to
+	 *          The type to which to determine compatibility.
+	 * @return True if the type {@code from} is compatible with the type
+	 *         {@code to}, false otherwise.
+	 */
 	public static boolean isStrictInvocationContextCompatible(Type from, Type to) {
 		if (isPrimitive(from))
 			if (isPrimitive(to))
@@ -429,14 +623,69 @@ public final class Types {
 		return isAssignable(from, to);
 	}
 
+	/**
+	 * Determine whether a given type, {@code from}, is compatible with a given
+	 * type, {@code to}, within a loose invocation context, as per the Java
+	 * language specification.
+	 * 
+	 * @param from
+	 *          The type from which to determine compatibility.
+	 * @param to
+	 *          The type to which to determine compatibility.
+	 * @return True if the type {@code from} is compatible with the type
+	 *         {@code to}, false otherwise.
+	 */
 	public static boolean isLooseInvocationContextCompatible(Type from, Type to) {
 		if (isPrimitive(from) && !isPrimitive(to))
-			from = wrap(from);
+			from = wrapPrimitive(from);
 		else if (!isPrimitive(from) && isPrimitive(to))
-			from = unwrap(from);
+			from = unwrapPrimitive(from);
 		return isStrictInvocationContextCompatible(from, to);
 	}
 
+	/**
+	 * Find the upper bounds of a given type.
+	 * 
+	 * @param type
+	 *          The type whose bounds we wish to discover.
+	 * @return The upper bounds of the given type.
+	 */
+	public static Set<Type> getUpperBounds(Type type) {
+		if (type instanceof WildcardType)
+			return new HashSet<>(
+					Arrays.asList(((WildcardType) type).getUpperBounds()));
+		else if (type instanceof TypeVariable)
+			return new HashSet<>(Arrays.asList(((TypeVariable<?>) type).getBounds()));
+		else
+			return new HashSet<>(Arrays.asList(type));
+	}
+
+	/**
+	 * Find the lower bounds of a given type.
+	 * 
+	 * @param type
+	 *          The type whose bounds we wish to discover.
+	 * @return The lower bounds of the given type, or null if no such bounds
+	 *         exist.
+	 */
+	public static Set<Type> getLowerBounds(Type type) {
+		if (type instanceof WildcardType)
+			return new HashSet<>(
+					Arrays.asList(((WildcardType) type).getLowerBounds()));
+		else if (type instanceof TypeVariableCapture)
+			return new HashSet<>(Arrays.asList(((TypeVariableCapture) type)
+					.getLowerBounds()));
+		else
+			return new HashSet<>(Arrays.asList(type));
+	}
+
+	/**
+	 * Determine whether a given type is well formed with respect to the
+	 * satisfaction of any bounds on any parameterizations in all mentioned types.
+	 * 
+	 * @param type
+	 *          The type of which we wish to determine validity.
+	 */
 	public static void validate(Type type) {
 		RecursiveTypeVisitor.build().visitBounds().visitEnclosedTypes()
 				.visitEnclosingTypes().visitParameters().visitSupertypes()
@@ -445,6 +694,17 @@ public final class Types {
 				.visit(type);
 	}
 
+	/**
+	 * Search through all types mentioned by a given type, whether by identity, or
+	 * through bound relationships, type parameterizations, type intersections, or
+	 * generic array components, and collect all types meeting a given condition.
+	 * 
+	 * @param type
+	 *          The type to search for mentions which match the given condition.
+	 * @param condition
+	 *          The condition to classify matching types.
+	 * @return A set of all mentioned types matching the condition.
+	 */
 	public static Set<Type> getAllMentionedBy(Type type, Predicate<Type> condition) {
 		Set<Type> types = new HashSet<>();
 
@@ -465,10 +725,27 @@ public final class Types {
 		return types;
 	}
 
+	/**
+	 * See {@link Types#leastUpperBound(Collection)}.
+	 * 
+	 * @param upperBounds
+	 *          Forwards to {@code upperBounds} parameter.
+	 * @return As referenced method.
+	 */
 	public static Type leastUpperBound(Type... upperBounds) {
 		return leastUpperBound(Arrays.asList(upperBounds));
 	}
 
+	/**
+	 * Derive the least upper bound for a set of types, as defined in the Java
+	 * language specification.
+	 * 
+	 * @param upperBounds
+	 *          A collection of types representing the upper bounds of an unknown
+	 *          type.
+	 * @return The least specific single type which, as an upper bound, will also
+	 *         satisfy each upper bound in the given set.
+	 */
 	public static Type leastUpperBound(Collection<Type> upperBounds) {
 		Type upperBound = leastUpperBoundImpl(upperBounds);
 
@@ -684,10 +961,27 @@ public final class Types {
 		return supertypes;
 	}
 
+	/**
+	 * See {@link Types#greatestLowerBound(Collection)}.
+	 * 
+	 * @param lowerBounds
+	 *          Forwards to {@code lowerBounds} parameter.
+	 * @return As referenced method.
+	 */
 	public static Type greatestLowerBound(Type... lowerBounds) {
 		return greatestLowerBound(Arrays.asList(lowerBounds));
 	}
 
+	/**
+	 * Derive the greatest lower bound for a set of types, as defined in the Java
+	 * language specification.
+	 * 
+	 * @param lowerBounds
+	 *          A collection of types representing the lower bounds of an unknown
+	 *          type.
+	 * @return The most specific single type which, as a lower bound, will also
+	 *         satisfy each lower bound in the given set.
+	 */
 	public static Type greatestLowerBound(Collection<? extends Type> lowerBounds) {
 		return IntersectionType.from(lowerBounds);
 	}

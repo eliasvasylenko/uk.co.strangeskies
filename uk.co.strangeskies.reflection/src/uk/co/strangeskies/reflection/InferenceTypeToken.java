@@ -37,7 +37,7 @@ public class InferenceTypeToken<T> extends TypeToken<T> {
 
 	@SuppressWarnings("unchecked")
 	private InferenceTypeToken(Resolver resolver, WildcardType type) {
-		super(resolver, resolver.inferWildcardType(type), (Class<? super T>) Types
+		super(resolver, resolver.incorporateWildcardType(type), (Class<? super T>) Types
 				.getRawType(type));
 	}
 
@@ -78,7 +78,7 @@ public class InferenceTypeToken<T> extends TypeToken<T> {
 
 		Resolver resolver = getInternalResolver();
 
-		resolver.capture(superclass);
+		resolver.incorporateGenericTypeParameters(superclass);
 		Type parameterizedType = resolver.resolveType(ParameterizedTypes.from(
 				superclass).getType());
 
@@ -98,7 +98,7 @@ public class InferenceTypeToken<T> extends TypeToken<T> {
 
 		Resolver resolver = getInternalResolver();
 
-		resolver.capture(subclass);
+		resolver.incorporateGenericTypeParameters(subclass);
 		Type parameterizedType = resolver.resolveType(ParameterizedTypes.from(
 				subclass).getType());
 

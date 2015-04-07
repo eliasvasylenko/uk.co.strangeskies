@@ -20,7 +20,21 @@ package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.TypeVariable;
 
+/**
+ * A capture of a type variable, with all of the reflective functionality
+ * provided by {@link TypeToken}.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <T>
+ *          The type variable we wish to capture.
+ */
 public class TypeParameter<T> extends TypeToken<T> {
+	/**
+	 * Capture the type variable provided as an argument to the type parameter of
+	 * this constructor. This should only ever be parameterised with an
+	 * uninstantiated type variable.
+	 */
 	protected TypeParameter() {
 		if (!(getType() instanceof TypeVariable))
 			throw new IllegalArgumentException();
@@ -35,6 +49,13 @@ public class TypeParameter<T> extends TypeToken<T> {
 		return (TypeVariable<?>) super.getType();
 	}
 
+	/**
+	 * Capture the given type variable in a TypeToken.
+	 * 
+	 * @param type
+	 *          The type variable to capture.
+	 * @return A type token instance over the given type.
+	 */
 	public static TypeParameter<?> of(TypeVariable<?> type) {
 		return new TypeParameter<>(type);
 	}

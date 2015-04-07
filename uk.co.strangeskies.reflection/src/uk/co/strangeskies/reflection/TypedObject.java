@@ -18,19 +18,41 @@
  */
 package uk.co.strangeskies.reflection;
 
+/**
+ * @author Elias N Vasylenko
+ * 
+ *         Facilitates the ability to track the exact type of an object in cases
+ *         where it would normally be erased and so unavailable through
+ *         reflection.
+ *
+ * @param <T>
+ *          The type of the object instance to track.
+ */
 public class TypedObject<T> {
 	private final TypeToken<T> type;
 	private final T object;
 
+	/**
+	 * @param type
+	 *          The exact type of an object to keep track of.
+	 * @param object
+	 *          An object reference of the given type.
+	 */
 	public TypedObject(TypeToken<T> type, T object) {
 		this.type = type;
 		this.object = object;
 	}
 
+	/**
+	 * @return The type of the reference.
+	 */
 	public TypeToken<T> getType() {
 		return type;
 	}
 
+	/**
+	 * @return An object reference guaranteed to be of the given type.
+	 */
 	public T getObject() {
 		return object;
 	}

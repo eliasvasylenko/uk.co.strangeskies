@@ -24,26 +24,61 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * A visitor to allow types to be dealt with as their specific class without the
+ * need for manual type checking and casting. Types can be visited recursively
+ * by calling {@link TypeVisitor#visit(Collection)} or
+ * {@link TypeVisitor#visit(Type...)} within each implementation of the abstract
+ * visiting methods.
+ * 
+ * @author Elias N Vasylenko
+ */
 public abstract class TypeVisitor {
 	private final boolean allowRepeatVisits;
 	private final Set<Type> visited = new HashSet<>();
 
+	/**
+	 * Instantiate a new TypeVisitor which does not allow repeat visits.
+	 */
 	public TypeVisitor() {
 		this(false);
 	}
 
+	/**
+	 * Instantiate a new TypeVisitor.
+	 * 
+	 * @param allowRepeatVisits
+	 *          If this is true, types which are encountered multiple times will
+	 *          be visited each time they are encountered, otherwise they will
+	 *          only be visited the first time they are encountered.
+	 */
 	public TypeVisitor(boolean allowRepeatVisits) {
 		this.allowRepeatVisits = allowRepeatVisits;
 	}
 
+	/**
+	 * Visit each type in a given collection, passing them to the appropriate
+	 * member methods as encountered.
+	 * 
+	 * @param types
+	 *          The collection of types to visit.
+	 */
 	public synchronized final void visit(Type... types) {
 		visit(Arrays.asList(types));
 	}
 
-	public synchronized final void visit(Iterable<? extends Type> types) {
+	/**
+	 * Visit each type in a given collection, passing them to the appropriate
+	 * member methods as encountered.
+	 * 
+	 * @param types
+	 *          The collection of types to visit.
+	 */
+	public synchronized final void visit(Collection<? extends Type> types) {
 		for (Type type : types) {
 			if (visited.add(type)) {
 				if (type instanceof Class)

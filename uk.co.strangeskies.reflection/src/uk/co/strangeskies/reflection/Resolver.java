@@ -43,6 +43,21 @@ import uk.co.strangeskies.utilities.Self;
 import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 
+/**
+ * A resolver maintains a set of <em>inference variables</em>, and
+ * <em>inference variable bounds</em>, as they are described in chapter 18 of
+ * the Java 8 language specification, and provides a number of methods to
+ * facilitate interaction with them. This makes for a very flexible and powerful
+ * type inference and manipulation engine, though for typical use-cases it may
+ * be recommended to use the more limited, but more type safe facilities
+ * provided by the {@link TypeToken} and {@link Invokable} classes.
+ * 
+ * Inference variables can be thought of as place holders for types which we
+ * don't yet exactly know, and which may have a number of interrelating bounds
+ * and equalities between them.
+ * 
+ * @author Elias N Vasylenko
+ */
 public class Resolver {
 	private class RemainingDependencies
 			extends
@@ -111,10 +126,10 @@ public class Resolver {
 	}
 
 	public Resolver(Resolver that) {
-		bounds = new BoundSet(that.bounds);
+		this(that.bounds);
 
-		capturedDeclarations = new HashSet<>(that.capturedDeclarations);
-		capturedTypeVariables = new HashMap<>(that.capturedTypeVariables);
+		capturedDeclarations.addAll(that.capturedDeclarations);
+		capturedTypeVariables.putAll(that.capturedTypeVariables);
 	}
 
 	public BoundSet getBounds() {
@@ -204,7 +219,7 @@ public class Resolver {
 		return remainingDependencies;
 	}
 
-	public void capture(GenericDeclaration declaration) {
+	public void incorporateGenericTypeParameters(GenericDeclaration declaration) {
 		if (capturedDeclarations.add(declaration)) {
 			Map<TypeVariable<?>, InferenceVariable> declarationCaptures = new HashMap<>();
 			capturedTypeVariables.put(declaration, declarationCaptures);
@@ -229,7 +244,7 @@ public class Resolver {
 		}
 	}
 
-	public boolean isCaptured(GenericDeclaration declaration) {
+	public boolean isIncorporated(GenericDeclaration declaration) {
 		return capturedDeclarations.contains(declaration);
 	}
 
@@ -237,12 +252,12 @@ public class Resolver {
 		new TypeVisitor() {
 			@Override
 			protected void visitClass(Class<?> t) {
-				capture(t);
+				incorporateGenericTypeParameters(t);
 			}
 
 			@Override
 			protected void visitParameterizedType(ParameterizedType type) {
-				incorporateParameterizedType(type);
+				incorporateGenericTypeArguments(type);
 			}
 
 			@Override
@@ -260,42 +275,22 @@ public class Resolver {
 
 			@Override
 			protected void visitWildcardType(WildcardType type) {
-				captureWildcardType(type);
+				incorporateWildcardType(type);
 			}
 		}.visit(types);
 	}
 
-	public TypeVariableCapture captureWildcardType(WildcardType type) {
-		InferenceVariable w = bounds.createInferenceVariable();
-
-		for (Type lowerBound : type.getLowerBounds()) {
-			Class<?> rawType = Types.getRawType(lowerBound);
-			capture(rawType);
-
-			if (lowerBound instanceof ParameterizedType)
-				new ConstraintFormula(Kind.SUBTYPE,
-						incorporateParameterizedType((ParameterizedType) lowerBound), w)
-						.reduceInto(bounds);
-		}
-		for (Type upperBound : type.getUpperBounds()) {
-			Class<?> rawType = Types.getRawType(upperBound);
-			capture(rawType);
-
-			if (upperBound instanceof ParameterizedType)
-				new ConstraintFormula(Kind.SUBTYPE, w,
-						incorporateParameterizedType((ParameterizedType) upperBound))
-						.reduceInto(bounds);
-		}
-
-		TypeVariableCapture capture = TypeVariableCapture.capture(Arrays.asList(w),
-				this).get(w);
-
-		new ConstraintFormula(Kind.EQUALITY, w, capture).reduceInto(bounds);
-
-		return capture;
-	}
-
-	public InferenceVariable inferWildcardType(WildcardType type) {
+	/**
+	 * Incorporate a new inference variable for a given wildcard type, and add the
+	 * bounds of the wildcard as bounds to the inference variable, as per the
+	 * functionality of {@link #addLowerBound(Type, Type)} and
+	 * {@link #addUpperBound(Type, Type)}.
+	 * 
+	 * @param type
+	 *          The wildcard type to capture as a bounded inference variable.
+	 * @return The new inference variable created to satisfy the given wildcard.
+	 */
+	public InferenceVariable incorporateWildcardType(WildcardType type) {
 		InferenceVariable w = bounds.createInferenceVariable();
 
 		for (Type lowerBound : type.getLowerBounds())
@@ -307,70 +302,107 @@ public class Resolver {
 		return w;
 	}
 
+	/**
+	 * Incorporate a new lower bound into the bound set. If the lower bound is a
+	 * parameterized type, or if it is a wildcard or intersection type containing
+	 * parameterized types, those parameters which are themselves wildcards will
+	 * be replaced by inference variables.
+	 * 
+	 * @param type
+	 *          The type to add the bounding to.
+	 * @param lowerBound
+	 *          The bounds to add to the given type.
+	 */
 	public void addLowerBound(Type type, Type lowerBound) {
-		Class<?> rawType = Types.getRawType(lowerBound);
-		capture(rawType);
+		for (Type bound : Types.getUpperBounds(lowerBound)) {
+			Class<?> rawType = Types.getRawType(bound);
+			incorporateGenericTypeParameters(rawType);
 
-		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getInferenceVariables(rawType);
-		new ConstraintFormula(Kind.SUBTYPE, ParameterizedTypes.uncheckedFrom(
-				rawType, inferenceVariables), type).reduceInto(bounds);
+			Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getInferenceVariables(rawType);
+			new ConstraintFormula(Kind.SUBTYPE, ParameterizedTypes.uncheckedFrom(
+					rawType, inferenceVariables), type).reduceInto(bounds);
 
-		if (lowerBound instanceof ParameterizedType) {
-			Map<TypeVariable<?>, Type> arguments = ParameterizedTypes
-					.getAllTypeArguments((ParameterizedType) lowerBound);
+			if (!inferenceVariables.isEmpty()) {
+				Map<TypeVariable<?>, Type> arguments = ParameterizedTypes
+						.getAllTypeArguments((ParameterizedType) bound);
 
-			for (TypeVariable<?> typeVariable : inferenceVariables.keySet())
-				new ConstraintFormula(Kind.CONTAINMENT, arguments.get(typeVariable),
-						inferenceVariables.get(typeVariable)).reduceInto(bounds);
+				for (TypeVariable<?> typeVariable : inferenceVariables.keySet())
+					new ConstraintFormula(Kind.CONTAINMENT, arguments.get(typeVariable),
+							inferenceVariables.get(typeVariable)).reduceInto(bounds);
+			}
 		}
 	}
 
+	/**
+	 * Incorporate a new upper bound into the bound set. If the upper bound is a
+	 * parameterized type, or if it is a wildcard or intersection type containing
+	 * parameterized types, those type arguments which are themselves wildcards
+	 * will be replaced by inference variables.
+	 * 
+	 * @param type
+	 *          The type to add the bounding to.
+	 * @param upperBound
+	 *          The bounds to add to the given type.
+	 */
 	public void addUpperBound(Type type, Type upperBound) {
 		addConstraint(Kind.SUBTYPE, type, upperBound);
 	}
 
+	/**
+	 * Incorporate a new loose compatibility with an upper bound into the bound
+	 * set. If the upper bound is a parameterized type, or if it is a wildcard or
+	 * intersection type containing parameterized types, those type arguments
+	 * which are themselves wildcards will be replaced by inference variables.
+	 * 
+	 * @param type
+	 *          The type to add the bounding to.
+	 * @param upperBound
+	 *          The bounds to add to the given type.
+	 */
 	public void addLooseCompatibility(Type type, Type upperBound) {
 		addConstraint(Kind.LOOSE_COMPATIBILILTY, type, upperBound);
 	}
 
 	private void addConstraint(Kind kind, Type type, Type upperBound) {
-		Class<?> rawType = Types.getRawType(upperBound);
-		capture(rawType);
+		for (Type bound : Types.getUpperBounds(upperBound)) {
+			Class<?> rawType = Types.getRawType(bound);
+			incorporateGenericTypeParameters(rawType);
 
-		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getInferenceVariables(rawType);
-		new ConstraintFormula(kind, type, ParameterizedTypes.uncheckedFrom(rawType,
-				inferenceVariables)).reduceInto(bounds);
+			Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getInferenceVariables(rawType);
+			new ConstraintFormula(kind, type, ParameterizedTypes.uncheckedFrom(
+					rawType, inferenceVariables)).reduceInto(bounds);
 
-		if (upperBound instanceof ParameterizedType) {
-			Map<TypeVariable<?>, Type> arguments = ParameterizedTypes
-					.getAllTypeArguments((ParameterizedType) upperBound);
+			if (bound instanceof ParameterizedType) {
+				Map<TypeVariable<?>, Type> arguments = ParameterizedTypes
+						.getAllTypeArguments((ParameterizedType) bound);
 
-			for (TypeVariable<?> typeVariable : inferenceVariables.keySet())
-				new ConstraintFormula(Kind.CONTAINMENT,
-						inferenceVariables.get(typeVariable), arguments.get(typeVariable))
-						.reduceInto(bounds);
+				for (TypeVariable<?> typeVariable : inferenceVariables.keySet())
+					new ConstraintFormula(Kind.CONTAINMENT,
+							inferenceVariables.get(typeVariable), arguments.get(typeVariable))
+							.reduceInto(bounds);
+			}
 		}
 	}
 
-	public ParameterizedType incorporateParameterizedType(ParameterizedType type) {
+	public ParameterizedType incorporateGenericTypeArguments(
+			ParameterizedType type) {
 		Class<?> rawType = Types.getRawType(type);
-		capture(rawType);
+		incorporateGenericTypeParameters(rawType);
 
-		type = TypeVariableCapture.capture(type);
+		type = TypeVariableCapture.captureArguments(type);
 
 		for (Map.Entry<TypeVariable<?>, Type> typeArgument : ParameterizedTypes
-				.getAllTypeArguments(type).entrySet()) {
+				.getAllTypeArguments(type).entrySet())
 			new ConstraintFormula(Kind.EQUALITY, capturedTypeVariables.get(rawType)
 					.get(typeArgument.getKey()), typeArgument.getValue())
 					.reduceInto(bounds);
-		}
 
 		return type;
 	}
 
 	public void incorporateInstantiation(TypeVariable<?> variable,
 			Type instantiation) {
-		capture(variable.getGenericDeclaration());
+		incorporateGenericTypeParameters(variable.getGenericDeclaration());
 		new ConstraintFormula(Kind.EQUALITY, getInferenceVariable(variable),
 				instantiation).reduceInto(bounds);
 	}
@@ -627,7 +659,7 @@ public class Resolver {
 
 	public Type resolveTypeVariable(GenericDeclaration declaration,
 			TypeVariable<?> typeVariable) {
-		capture(typeVariable.getGenericDeclaration());
+		incorporateGenericTypeParameters(typeVariable.getGenericDeclaration());
 
 		return resolveInferenceVariable(capturedTypeVariables.get(declaration).get(
 				typeVariable));
@@ -655,7 +687,7 @@ public class Resolver {
 
 	public Map<TypeVariable<?>, InferenceVariable> getInferenceVariables(
 			GenericDeclaration declaration) {
-		capture(declaration);
+		incorporateGenericTypeParameters(declaration);
 		return new HashMap<>(capturedTypeVariables.get(declaration));
 	}
 
@@ -666,7 +698,7 @@ public class Resolver {
 
 	public InferenceVariable getInferenceVariable(GenericDeclaration declaration,
 			TypeVariable<?> typeVariable) {
-		capture(declaration);
+		incorporateGenericTypeParameters(declaration);
 		return capturedTypeVariables.get(declaration).get(typeVariable);
 	}
 
