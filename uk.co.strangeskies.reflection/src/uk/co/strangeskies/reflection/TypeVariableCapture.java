@@ -48,7 +48,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 
 	private final GenericDeclaration declaration;
 
-	private TypeVariableCapture(Type[] upperBounds, Type[] lowerBounds,
+	TypeVariableCapture(Type[] upperBounds, Type[] lowerBounds,
 			GenericDeclaration declaration) {
 		this.name = "CAP#" + COUNTER.incrementAndGet();
 
@@ -58,14 +58,16 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 		this.upperBounds = upperBounds.clone();
 		this.lowerBounds = lowerBounds.clone();
 
+		this.declaration = declaration;
+	}
+
+	private final void validate() {
 		if (lowerBounds.length > 0
 				&& !Types.isAssignable(IntersectionType.uncheckedFrom(lowerBounds),
 						IntersectionType.from(upperBounds)))
 			throw new TypeInferenceException("Bounds on capture '" + this
 					+ "' are invalid. (" + Arrays.toString(lowerBounds) + " <: "
 					+ Arrays.toString(upperBounds) + ")");
-
-		this.declaration = declaration;
 	}
 
 	@Override
@@ -79,13 +81,14 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 
 		if (upperBounds.length > 0
 				&& !(upperBounds.length == 1 && upperBounds[0] == null))
-			builder.append(" extends ").append(
-					IntersectionType.uncheckedFrom(upperBounds));
+			builder.append(" extends [ ")
+					.append(IntersectionType.uncheckedFrom(upperBounds)).append(" ]");
 
 		if (lowerBounds.length > 0
 				&& !(lowerBounds.length == 1 && lowerBounds[0] == null))
-			builder.append(" super ").append(
-					IntersectionType.uncheckedFrom(lowerBounds));
+			builder.append(" super [ ")
+					.append(IntersectionType.uncheckedFrom(lowerBounds)).append(" ]");
+		;
 
 		return builder.toString();
 	}
@@ -133,6 +136,8 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 
 				for (int i = 0; i < capture.lowerBounds.length; i++)
 					capture.lowerBounds[i] = substitution.resolve(capture.lowerBounds[i]);
+
+				capture.validate();
 			}
 		}
 	}
@@ -235,14 +240,13 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 				upperBounds = IntersectionType.asArray(resolver
 						.resolveType(IntersectionType.uncheckedFrom(upperBoundSet)));
 
-			TypeVariableCapture capture = new TypeVariableCapture(upperBounds,
-					lowerBounds, declaration);
-
 			/*
 			 * If the type variables Y1, ..., Yn do not have well-formed bounds (that
 			 * is, a lower bound is not a subtype of an upper bound, or an
 			 * intersection type is inconsistent), then resolution fails.
 			 */
+			TypeVariableCapture capture = new TypeVariableCapture(upperBounds,
+					lowerBounds, declaration);
 
 			parameters[count++] = capture;
 

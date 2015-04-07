@@ -432,35 +432,13 @@ public final class Types {
 
 		boolean assignable;
 
-		if (from == null || from.equals(to) || to == null
-				|| to.equals(Object.class)) {
+		if (from == null || to == null || to.equals(Object.class)
+				|| from.equals(to)) {
 			/*
 			 * We can always assign to or from 'null', and we can always assign to
 			 * Object.
 			 */
 			assignable = true;
-		} else if (to instanceof TypeVariableCapture) {
-			assignable = ((TypeVariableCapture) to).getLowerBounds().length > 0
-					&& isAssignable(from,
-							IntersectionType.uncheckedFrom(((TypeVariableCapture) to)
-									.getLowerBounds()), assignsEncountered);
-		} else if (to instanceof TypeVariable) {
-			/*
-			 * We can only assign to a type variable if it is from the exact same
-			 * type.
-			 */
-			assignable = false;
-		} else if (from instanceof TypeVariable) {
-			/*
-			 * We must be able to assign from at least one of the upper bound,
-			 * including the implied upper bound of Object, to the target type.
-			 */
-			Type[] upperBounds = ((TypeVariable<?>) from).getBounds();
-			if (upperBounds.length == 0)
-				upperBounds = new Type[] { Object.class };
-
-			assignable = isAssignable(IntersectionType.uncheckedFrom(upperBounds),
-					to, assignsEncountered);
 		} else if (from instanceof IntersectionType) {
 			/*
 			 * We must be able to assign from at least one member of the intersection
@@ -481,7 +459,7 @@ public final class Types {
 					t -> isAssignable(from, t, assignsEncountered));
 		} else if (from instanceof WildcardType) {
 			/*
-			 * We must be able to assign from at least one of the upper bound,
+			 * We must be able to assign from at least one of the upper bounds,
 			 * including the implied upper bound of Object, to the target type.
 			 */
 			Type[] upperBounds = ((WildcardType) from).getUpperBounds();
@@ -503,6 +481,33 @@ public final class Types {
 			else
 				assignable = isAssignable(from, IntersectionType.from(lowerBounds),
 						assignsEncountered);
+		} else if (from instanceof TypeVariable) {
+			/*
+			 * We must be able to assign from at least one of the upper bound,
+			 * including the implied upper bound of Object, to the target type.
+			 */
+			Type[] upperBounds = ((TypeVariable<?>) from).getBounds();
+			if (upperBounds.length == 0)
+				upperBounds = new Type[] { Object.class };
+
+			assignable = isAssignable(IntersectionType.uncheckedFrom(upperBounds),
+					to, assignsEncountered);
+		} else if (to instanceof TypeVariableCapture) {
+			/*
+			 * We assign to a type variable capture if we can assign to its lower
+			 * bounds, or if it is from the exact same type, or explicitly mentioned
+			 * in an upper bound or intersection type.
+			 */
+			assignable = ((TypeVariableCapture) to).getLowerBounds().length > 0
+					&& isAssignable(from,
+							IntersectionType.uncheckedFrom(((TypeVariableCapture) to)
+									.getLowerBounds()), assignsEncountered);
+		} else if (to instanceof TypeVariable) {
+			/*
+			 * We can only assign to a type variable if it is from the exact same
+			 * type, or explicitly mentioned in an upper bound or intersection type.
+			 */
+			assignable = false;
 		} else if (from instanceof GenericArrayType) {
 			GenericArrayType fromArray = (GenericArrayType) from;
 

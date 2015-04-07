@@ -104,6 +104,18 @@ public class TestTypeLiteral {
 	 */
 	public static <H extends Nest2<H>> void main(String... args)
 			throws NoSuchMethodException, SecurityException {
+		// TODO
+		System.out
+				.println("<T extends Number, U extends List<? super T>> U method4(Collection<? extends T> a, U b)");
+		System.out
+				.println("((B) null).method4((Collection<? extends Integer>) null, (List<? super Number>) null)");
+		System.out.println(TypeToken
+				.of(B.class)
+				.resolveMethodOverload("method4",
+						new TypeLiteral<Collection<? extends Integer>>() {}.getType(),
+						new TypeLiteral<List<? super Number>>() {}.getType()).infer());
+		System.out.println();
+
 		System.out.println(new TypeParameter<H>() {});
 		System.out.println(new TypeLiteral<List<String>>() {});
 		System.out.println();
@@ -160,18 +172,6 @@ public class TestTypeLiteral {
 		System.out.println(TypeToken.of(B.class).resolveMethodOverload("method2",
 				new TypeLiteral<List<Integer>>() {}.getType(),
 				new TypeLiteral<List<Comparable<Integer>>>() {}.getType()));
-		System.out.println();
-
-		// TODO
-		System.out
-				.println("<T extends Number, U extends List<? super T>> U method4(Collection<? extends T> a, U b)");
-		System.out
-				.println("((B) null).method4((Collection<? extends Integer>) null, (List<? super Number>) null)");
-		System.out.println(TypeToken
-				.of(B.class)
-				.resolveMethodOverload("method4",
-						new TypeLiteral<Collection<? extends Integer>>() {}.getType(),
-						new TypeLiteral<List<? super Number>>() {}.getType()).infer());
 		System.out.println();
 
 		System.out.println(TypeToken

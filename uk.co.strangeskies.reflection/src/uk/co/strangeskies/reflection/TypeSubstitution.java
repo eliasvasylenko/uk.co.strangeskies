@@ -144,18 +144,21 @@ public class TypeSubstitution {
 			return IntersectionType.uncheckedFrom(Arrays
 					.stream(((IntersectionType) type).getTypes())
 					.map(t -> resolve(t, visited)).collect(Collectors.toList()));
-		else if (type instanceof WildcardType)
-			if (((WildcardType) type).getLowerBounds().length > 0)
+		else if (type instanceof WildcardType) {
+			WildcardType wildcardType = (WildcardType) type;
+
+			if (wildcardType.getLowerBounds().length > 0) {
 				return WildcardTypes.lowerBounded(resolve(
-						IntersectionType.from(((WildcardType) type).getLowerBounds()),
+						IntersectionType.uncheckedFrom(wildcardType.getLowerBounds()),
 						visited));
-			else if (((WildcardType) type).getUpperBounds().length > 0)
+
+			} else if (wildcardType.getUpperBounds().length > 0) {
 				return WildcardTypes.upperBounded(resolve(
-						IntersectionType.from(((WildcardType) type).getUpperBounds()),
-						visited));
-			else
+						IntersectionType.from(wildcardType.getUpperBounds()), visited));
+
+			} else
 				return WildcardTypes.unbounded();
-		else if (type instanceof GenericArrayType)
+		} else if (type instanceof GenericArrayType)
 			return GenericArrayTypes.fromComponentType(resolve(
 					((GenericArrayType) type).getGenericComponentType(), visited));
 		else if (type instanceof ParameterizedType)

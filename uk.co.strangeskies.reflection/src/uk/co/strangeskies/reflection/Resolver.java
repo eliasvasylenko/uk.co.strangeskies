@@ -126,7 +126,7 @@ public class Resolver {
 	}
 
 	public Resolver(Resolver that) {
-		this(that.bounds);
+		this(new BoundSet(that.bounds));
 
 		capturedDeclarations.addAll(that.capturedDeclarations);
 		capturedTypeVariables.putAll(that.capturedTypeVariables);
