@@ -364,7 +364,7 @@ public class Resolver {
 	}
 
 	private void addConstraint(Kind kind, Type type, Type upperBound) {
-		for (Type bound : Types.getUpperBounds(upperBound)) {
+		for (Type bound : Types.getLowerBounds(upperBound)) {
 			Class<?> rawType = Types.getRawType(bound);
 			incorporateGenericTypeParameters(rawType);
 

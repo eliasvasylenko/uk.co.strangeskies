@@ -37,7 +37,7 @@ import uk.co.strangeskies.reflection.TypeParameter;
 import uk.co.strangeskies.reflection.TypeToken;
 
 /**
- * Informal series of tests...	
+ * Informal series of tests...
  * 
  * @author eli
  *
@@ -48,7 +48,7 @@ public class TestTypeLiteral {
 	}
 
 	static class B {
-		public <T extends Number> void method(T a, T b) {}
+		public <T extends Number> void method999(T a, T b) {}
 
 		public <T> void method(@SuppressWarnings("unchecked") Collection<T>... a) {}
 
@@ -151,6 +151,7 @@ public class TestTypeLiteral {
 								.getType()).infer());
 		System.out.println();
 
+		// TODO
 		System.out.println(TypeToken.of(B.class).resolveMethodOverload("method",
 				new TypeLiteral<List<Integer>>() {}.getType(),
 				new TypeLiteral<List<Number>>() {}.getType()));
@@ -161,10 +162,11 @@ public class TestTypeLiteral {
 				new TypeLiteral<List<Comparable<Integer>>>() {}.getType()));
 		System.out.println();
 
+		// TODO
 		System.out
 				.println("<T extends Number, U extends List<? super T>> U method4(Collection<? extends T> a, U b)");
 		System.out
-				.println("B.method4((Collection<? extends Integer>) null, (List<? super Number>) null)");
+				.println("((B) null).method4((Collection<? extends Integer>) null, (List<? super Number>) null)");
 		System.out.println(TypeToken
 				.of(B.class)
 				.resolveMethodOverload("method4",
@@ -208,8 +210,8 @@ public class TestTypeLiteral {
 				.resolveSupertypeParameters(Collection.class));
 		System.out.println();
 
-		System.out.println(new TypeLiteral<List<?>>() {}.inferceExtending()
-				.infer());
+		System.out
+				.println(new TypeLiteral<List<?>>() {}.inferceExtending().infer());
 		System.out.println();
 
 		System.out.println(new TypeLiteral<Collection<? extends String>>() {}
@@ -220,8 +222,8 @@ public class TestTypeLiteral {
 
 		System.out.println(new TypeLiteral<Collection<? extends String>>() {}
 				.inferceExtending()
-				.withUpperBound(new TypeLiteral<ArrayList<?>>() {}.getType())
-				.infer().resolveSupertypeParameters(Iterable.class));
+				.withUpperBound(new TypeLiteral<ArrayList<?>>() {}.getType()).infer()
+				.resolveSupertypeParameters(Iterable.class));
 		System.out.println();
 
 		System.out.println(new TypeLiteral<List<? super Number>>() {}

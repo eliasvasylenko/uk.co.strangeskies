@@ -490,7 +490,8 @@ public class Invokable<T, R> {
 				candidates, i -> i.withLooseApplicability(parameters), putFailures);
 
 		if (compatibleCandidates.isEmpty())
-			compatibleCandidates = filterOverloadCandidates(candidates,
+			compatibleCandidates = filterOverloadCandidates(candidates.stream()
+					.filter(Invokable::isVariableArity).collect(Collectors.toSet()),
 					i -> i.withVariableArityApplicability(parameters), putFailures);
 		else {
 			Set<? extends Invokable<? super T, ? extends R>> oldCompatibleCandidates = compatibleCandidates;
