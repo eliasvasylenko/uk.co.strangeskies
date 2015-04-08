@@ -333,7 +333,7 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 			inferenceVariableVisitor.accept(type);
 
 		if (bounds && boundSet != null)
-			visit(boundSet.getUpperBounds(type));
+			visit(boundSet.getBoundsOn(type).getUpperBounds());
 
 		if (postOrder)
 			inferenceVariableVisitor.accept(type);

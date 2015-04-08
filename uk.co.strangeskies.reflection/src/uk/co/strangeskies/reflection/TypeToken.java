@@ -254,7 +254,7 @@ public class TypeToken<T> {
 		if (resolver != null
 				&& resolver.getBounds().getInferenceVariables().contains(getType()))
 			return Types.getRawTypes(IntersectionType.uncheckedFrom(resolver
-					.getBounds().getInferenceVariableData().get(getType())
+					.getBounds().getBoundsOn((InferenceVariable) getType())
 					.getUpperBounds()));
 		return Types.getRawTypes(getType());
 	}

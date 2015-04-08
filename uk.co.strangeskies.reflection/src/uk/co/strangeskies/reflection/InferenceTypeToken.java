@@ -32,13 +32,13 @@ public class InferenceTypeToken<T> extends TypeToken<T> {
 	private InferenceTypeToken(InferenceVariable type, Resolver resolver) {
 		super(new Resolver(resolver), type, (Class<? super T>) Types
 				.getRawType(IntersectionType.uncheckedFrom(resolver.getBounds()
-						.getUpperBounds(type))));
+						.getBoundsOn(type).getUpperBounds())));
 	}
 
 	@SuppressWarnings("unchecked")
 	private InferenceTypeToken(Resolver resolver, WildcardType type) {
-		super(resolver, resolver.incorporateWildcardType(type), (Class<? super T>) Types
-				.getRawType(type));
+		super(resolver, resolver.incorporateWildcardType(type),
+				(Class<? super T>) Types.getRawType(type));
 	}
 
 	public static InferenceTypeToken<?> of(InferenceVariable type,

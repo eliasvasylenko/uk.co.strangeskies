@@ -19,27 +19,270 @@
 package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.Type;
-import java.util.Arrays;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
+/**
+ * <p>
+ * A bound set as described in chapter 18 of the Java 8 language specification.
+ * (Note that some sorts of bounds present in the document are missing from this
+ * implementation, as this API is not intended to offer the full capabilities of
+ * the compiler with respect to method references and closures.)
+ * </p>
+ * 
+ * <p>
+ * A bound set contains a number of {@link InferenceVariable} instances, and
+ * maintains a set of bounds between them and between other types. Types which
+ * are not inference variables, and do not mention inference variables, are
+ * considered <em>proper types</em>.
+ * </p>
+ * 
+ * <p>
+ * Note that instances of {@link InferenceVariable} which are not contained
+ * within a bound set are not considered inference variables within that
+ * context, and are treated as proper types. Inference variables are considered
+ * contained within a bound set if they were added through
+ * {@link #BoundSet(BoundSet)}, any overload of {@link #addInferenceVariable()},
+ * or as part of a capture conversion added through a
+ * {@link IncorporationTarget} belonging to that bound set.
+ * </p>
+ * 
+ * <p>
+ * An inference variable can be thought of as a placeholder for an
+ * <em>instantiation</em> of a {@link TypeVariable} of which we do not yet know
+ * the exact type. The purpose of a bound set is to allow us to infer all
+ * relevant and applicable bounds on any such variables in a given context such
+ * that we can infer the most specific possible instantiations for these type
+ * variables.
+ * </p>
+ * 
+ * <p>
+ * The types of bounds which may be included in a bound set are as follows:
+ * <ul>
+ * <li>Equalities between inference variables and other types, which may or may
+ * not be inference variables.</li>
+ * <li>Upper bounds on inference variables, to types which may or may not
+ * themselves be inference variables.</li>
+ * <li>Lower bounds on inference variables, from types which may or may not
+ * themselves be inference variables.</li>
+ * <li>Instances of {@link CaptureConversion} which mention inference variables.
+ * </li>
+ * <li>The bound 'false', typically meaning that a type inference attempt has
+ * failed.</li>
+ * </ul>
+ * </p>
+ * 
+ * <p>
+ * An equality bound between an inference variable and a <em>proper type</em> is
+ * considered that inference variable's <em>instantiation</em>.
+ * </p>
+ * 
+ * <p>
+ * When you add such a bound to a bound set, it may imply the addition of
+ * further bounds, or the reduction of any number of {@link ConstraintFormula}
+ * instances into the bound set.
+ * </p>
+ * 
+ * <p>
+ * Bound sets, along with the processes of incorporation and reduction
+ * described, are typically used to facilitate inference of the type arguments
+ * of a generic method invocations, and to resolve overloads for such
+ * invocations between multiple methods when some are generic. This
+ * implementation therefore allows us to type check and resolve such an
+ * invocations at runtime.
+ * </p>
+ * 
+ * <p>
+ * We may also employ these processes towards other ends, such as type checking
+ * for data serialisation formats and libraries, injection frameworks, etc.,
+ * which may have slightly different rules and requirements to generic method
+ * invocation. There are also applications further outside these areas, such as
+ * inference of the type arguments of a generic supertype of a given type.
+ * </p>
+ * 
+ * @author Elias N Vasylenko
+ */
 public class BoundSet {
-	private static final AtomicLong COUNTER = new AtomicLong();
+	/**
+	 * Consumer of different sorts of bounds which can be a applied to inference
+	 * variables, as per chapter 18 of the Java 8 language specification.
+	 * 
+	 * @author Elias N Vasylenko
+	 */
+	public class IncorporationTarget {
+		private final ConstraintFormula constraintFormula;
 
-	private final Map<InferenceVariable, InferenceVariableData> inferenceVariableData;
-	private final Set<CaptureConversion> captureConversions;
+		IncorporationTarget(ConstraintFormula constraintFormula) {
+			this.constraintFormula = constraintFormula;
+		}
 
-	public BoundSet() {
-		inferenceVariableData = new HashMap<>();
-		captureConversions = new HashSet<>();
+		IncorporationTarget() {
+			this.constraintFormula = null;
+		}
+
+		/**
+		 * If one or both of the arguments passed are considered inference variables
+		 * within the enclosing BoundSet, the appropriate equality bound is added
+		 * and further bounds are inferred as per the Java language specification.
+		 * Otherwise, the invocation has no effect.
+		 * 
+		 * @param first
+		 * @param second
+		 */
+		public void equality(Type first, Type second) {
+			if (inferenceVariableBounds.containsKey(first))
+				inferenceVariableBounds.get(first).addEquality(second);
+
+			if (inferenceVariableBounds.containsKey(second))
+				inferenceVariableBounds.get(second).addEquality(first);
+		}
+
+		/**
+		 * If one or both of the arguments passed are considered inference variables
+		 * within the enclosing BoundSet, the appropriate subtype bound is added and
+		 * further bounds are inferred as per the Java language specification.
+		 * Otherwise, the invocation has no effect.
+		 * 
+		 * @param subtype
+		 * @param supertype
+		 */
+		public void subtype(Type subtype, Type supertype) {
+			if (inferenceVariableBounds.containsKey(subtype))
+				inferenceVariableBounds.get(subtype).addUpperBound(supertype);
+
+			if (inferenceVariableBounds.containsKey(supertype))
+				inferenceVariableBounds.get(supertype).addLowerBound(subtype);
+		}
+
+		/**
+		 * The given capture conversion is added to the enclosing bound set, and
+		 * further bounds may be inferred as per the Java language specification.
+		 * 
+		 * @param captureConversion
+		 */
+		public void captureConversion(CaptureConversion captureConversion) {
+			captureConversions.add(captureConversion);
+
+			/*
+			 * When a bound set contains a bound of the form G<α1, ..., αn> =
+			 * capture(G<A1, ..., An>), new bounds are implied and new constraint
+			 * formulas may be implied, as follows.
+			 * 
+			 * Let P1, ..., Pn represent the type parameters of G and let B1, ..., Bn
+			 * represent the bounds of these type parameters. Let θ represent the
+			 * substitution [P1:=α1, ..., Pn:=αn]. Let R be a type that is not an
+			 * inference variable (but is not necessarily a proper type).
+			 * 
+			 * A set of bounds on α1, ..., αn is implied, constructed from the
+			 * declared bounds of P1, ..., Pn as specified in §18.1.3.
+			 * 
+			 * In addition, for all i (1 ≤ i ≤ n):
+			 */
+			for (InferenceVariable inferenceVariable : captureConversion
+					.getInferenceVariables()) {
+				InferenceVariableBounds bounds = inferenceVariableBounds
+						.get(inferenceVariable);
+
+				if (bounds == null) {
+					bounds = new InferenceVariableBounds(BoundSet.this, inferenceVariable);
+					inferenceVariableBounds.put(inferenceVariable, bounds);
+				}
+
+				Type capturedArgument = captureConversion
+						.getCapturedArgument(inferenceVariable);
+				TypeVariable<?> capturedParmeter = captureConversion
+						.getCapturedParameter(inferenceVariable);
+
+				if (capturedArgument instanceof WildcardType) {
+					/*
+					 * If Ai is a wildcard of the form ?, or;
+					 * 
+					 * If Ai is a wildcard of the form ? extends T, or;
+					 * 
+					 * If Ai is a wildcard of the form ? super T:
+					 */
+					WildcardType capturedWildcard = (WildcardType) capturedArgument;
+
+					for (Type equality : bounds.getEqualities())
+						if (!inferenceVariableBounds.containsKey(equality))
+							bounds.incorporateCapturedEquality(capturedWildcard, equality);
+
+					for (Type upperBound : bounds.getUpperBounds())
+						if (!inferenceVariableBounds.containsKey(upperBound))
+							bounds.incorporateCapturedSubtype(captureConversion,
+									capturedWildcard, capturedParmeter, upperBound);
+
+					for (Type lowerBound : bounds.getLowerBounds())
+						if (!inferenceVariableBounds.containsKey(lowerBound))
+							bounds.incorporateCapturedSupertype(capturedWildcard, lowerBound);
+				} else
+					/*
+					 * If Ai is not a wildcard, then the bound αi = Ai is implied.
+					 */
+					incorporate().equality(inferenceVariable, capturedArgument);
+			}
+		}
+
+		/**
+		 * As {@link #falsehood(boolean)} with the argument {@code true} passed to
+		 * the parameter {@throwing}.
+		 */
+		public void falsehood() {
+			falsehood(true);
+		}
+
+		/**
+		 * False is added to the bound set, invalidating it, and an exception is
+		 * optionally thrown describing the problem.
+		 * 
+		 * @param throwing
+		 *          If this parameter is set to true, an exception will be thrown
+		 *          detailing the problem, including information about any
+		 *          constraint formula which may have been the cause.
+		 */
+		public void falsehood(boolean throwing) {
+			valid = false;
+			if (throwing)
+				if (constraintFormula != null)
+					throw new TypeInferenceException("Cannot reduce constraint "
+							+ constraintFormula + " into bounds set " + BoundSet.this + ".");
+				else
+					throw new TypeInferenceException(
+							"Addition of falsehood into bounds set " + BoundSet.this + ".");
+		}
 	}
 
+	private static final AtomicLong COUNTER = new AtomicLong();
+
+	final Map<InferenceVariable, InferenceVariableBounds> inferenceVariableBounds;
+	final Set<CaptureConversion> captureConversions;
+	boolean valid;
+
+	/**
+	 * Create an empty bound set.
+	 */
+	public BoundSet() {
+		inferenceVariableBounds = new HashMap<>();
+		captureConversions = new HashSet<>();
+		valid = true;
+	}
+
+	/**
+	 * Create a copy of an existing bound set. All the inference variables
+	 * contained within the given bound set will also be contained in the new
+	 * bound set, and all the bounds on them will also be copied. Subsequent
+	 * modifications to the given bound set will not affect the new one, and vice
+	 * versa.
+	 * 
+	 * @param boundSet
+	 */
 	public BoundSet(BoundSet boundSet) {
 		this();
 
@@ -47,61 +290,62 @@ public class BoundSet {
 		// + System.identityHashCode(this));
 
 		captureConversions.addAll(boundSet.captureConversions);
-		inferenceVariableData.putAll(boundSet.inferenceVariableData
+		inferenceVariableBounds.putAll(boundSet.inferenceVariableBounds
 				.values()
 				.stream()
 				.collect(
-						Collectors.toMap(InferenceVariableData::getInferenceVariable,
-								i -> new InferenceVariableData(this, i))));
+						Collectors.toMap(InferenceVariableBounds::getInferenceVariable,
+								i -> new InferenceVariableBounds(this, i))));
 	}
 
-	Map<InferenceVariable, InferenceVariableData> getInferenceVariableData() {
-		return inferenceVariableData;
+	/**
+	 * @return True if the bound set contains the bound 'false', false otherwise.
+	 */
+	public boolean containsFalse() {
+		return !valid;
 	}
 
+	/**
+	 * @return A set of all inference variables contained by this bound set.
+	 */
+	public Set<InferenceVariable> getInferenceVariables() {
+		return new HashSet<>(inferenceVariableBounds.keySet());
+	}
+
+	/**
+	 * @param inferenceVariable
+	 *          An inference variable whose state we wish to query.
+	 * @return A container representing the state of the given inference variable
+	 *         with respect to its bounds.
+	 */
+	public InferenceVariableBounds getBoundsOn(InferenceVariable inferenceVariable) {
+		return inferenceVariableBounds.get(inferenceVariable);
+	}
+
+	/**
+	 * @return All capture conversion bounds contained within this bound set.
+	 */
 	public Set<CaptureConversion> getCaptureConversions() {
 		return new HashSet<>(captureConversions);
 	}
 
-	public Set<Type> getUpperBounds(InferenceVariable variable) {
-		return inferenceVariableData.get(variable).getUpperBounds();
-	}
-
-	public Set<Type> getLowerBounds(InferenceVariable variable) {
-		return inferenceVariableData.get(variable).getLowerBounds();
-	}
-
-	public Set<Type> getProperUpperBounds(InferenceVariable variable) {
-		Set<Type> upperBounds = inferenceVariableData.get(variable)
-				.getUpperBounds().stream().filter(BoundSet.this::isProperType)
-				.collect(Collectors.toSet());
-		return upperBounds.isEmpty() ? new HashSet<>(Arrays.asList(Object.class))
-				: upperBounds;
-	}
-
-	public Set<Type> getProperLowerBounds(InferenceVariable variable) {
-		return inferenceVariableData.get(variable).getLowerBounds().stream()
-				.filter(BoundSet.this::isProperType).collect(Collectors.toSet());
-	}
-
-	public Set<Type> getEqualities(InferenceVariable variable) {
-		return inferenceVariableData.get(variable).getEqualities();
-	}
-
-	public Optional<Type> getInstantiation(InferenceVariable variable) {
-		if (inferenceVariableData.containsKey(variable))
-			return inferenceVariableData.get(variable).getEqualities().stream()
-					.filter(BoundSet.this::isProperType).findAny();
-		else
-			return Optional.ofNullable(variable);
-	}
-
+	/**
+	 * @param type
+	 *          The type for which to find all mentioned inference variables.
+	 * @return A set of all the inference variables which are contained within
+	 *         this bound set and which are mentioned by the given type.
+	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public Set<InferenceVariable> getInferenceVariablesMentionedBy(Type type) {
 		return (Set) Types.getAllMentionedBy(type,
-				inferenceVariableData.keySet()::contains);
+				inferenceVariableBounds.keySet()::contains);
 	}
 
+	/**
+	 * @param type
+	 *          The type for which to determine properness.
+	 * @return True if the given type is proper, false otherwise.
+	 */
 	public boolean isProperType(Type type) {
 		return getInferenceVariablesMentionedBy(type).isEmpty();
 	}
@@ -110,7 +354,7 @@ public class BoundSet {
 	public String toString() {
 		StringBuilder stringBuilder = new StringBuilder("{ ");
 
-		for (InferenceVariableData inferenceVariable : inferenceVariableData
+		for (InferenceVariableBounds inferenceVariable : inferenceVariableBounds
 				.values()) {
 			String name = inferenceVariable.getInferenceVariable().getTypeName();
 			for (Type equality : inferenceVariable.getEqualities())
@@ -123,107 +367,54 @@ public class BoundSet {
 				stringBuilder.append(subtype.getTypeName()).append(" <: ").append(name)
 						.append(", ");
 		}
+		for (CaptureConversion capture : captureConversions)
+			stringBuilder.append(capture).append(", ");
+		stringBuilder.append(valid);
 
-		return stringBuilder.append("}").toString();
+		return stringBuilder.append(" }").toString();
 	}
 
-	public Set<InferenceVariable> getInferenceVariables() {
-		return new HashSet<>(inferenceVariableData.keySet());
-	}
-
+	/**
+	 * @return Each member of the set returned by {@link #getInferenceVariables()}
+	 *         which has a valid instantiation.
+	 */
 	public Set<InferenceVariable> getInstantiatedVariables() {
-		return inferenceVariableData.keySet().stream()
-				.filter(i -> getInstantiation(i).isPresent())
+		return inferenceVariableBounds.keySet().stream()
+				.filter(i -> getBoundsOn(i).getInstantiation().isPresent())
 				.collect(Collectors.toSet());
 	}
 
-	BoundVisitor incorporate(ConstraintFormula constraintFormula) {
-		return new ReductionTarget(constraintFormula);
+	IncorporationTarget incorporate(ConstraintFormula constraintFormula) {
+		return new IncorporationTarget(constraintFormula);
 	}
 
-	public BoundVisitor incorporate() {
-		return new ReductionTarget();
+	/**
+	 * @return A consumer through which bounds may be added to this bound set.
+	 */
+	public IncorporationTarget incorporate() {
+		return new IncorporationTarget();
 	}
 
-	class ReductionTarget implements BoundVisitor {
-		private final ConstraintFormula constraintFormula;
-
-		public ReductionTarget(ConstraintFormula constraintFormula) {
-			this.constraintFormula = constraintFormula;
-		}
-
-		public ReductionTarget() {
-			this.constraintFormula = null;
-		}
-
-		@Override
-		public void acceptEquality(InferenceVariable a, InferenceVariable b) {
-			inferenceVariableData.get(a).addEquality(b);
-			inferenceVariableData.get(b).addEquality(a);
-		}
-
-		@Override
-		public void acceptEquality(InferenceVariable a, Type b) {
-			inferenceVariableData.get(a).addEquality(b);
-		}
-
-		@Override
-		public void acceptSubtype(InferenceVariable a, InferenceVariable b) {
-			inferenceVariableData.get(a).addUpperBound(b);
-			inferenceVariableData.get(b).addLowerBound(a);
-		}
-
-		@Override
-		public void acceptSubtype(InferenceVariable a, Type b) {
-			inferenceVariableData.get(a).addUpperBound(b);
-		}
-
-		@Override
-		public void acceptSubtype(Type a, InferenceVariable b) {
-			inferenceVariableData.get(b).addLowerBound(a);
-		}
-
-		@Override
-		public void acceptCaptureConversion(CaptureConversion c) {
-			captureConversions.add(c);
-
-			for (InferenceVariableData inferenceVariable : inferenceVariableData
-					.values()) {
-				for (Type equality : inferenceVariable.getEqualities())
-					if (!inferenceVariableData.containsKey(equality))
-						inferenceVariable.incorporateCapturedEquality(c, equality);
-
-				for (Type lowerBound : inferenceVariable.getLowerBounds())
-					if (!inferenceVariableData.containsKey(lowerBound))
-						inferenceVariable.incorporateCapturedSupertype(c, lowerBound);
-
-				for (Type upperBound : inferenceVariable.getUpperBounds())
-					if (!inferenceVariableData.containsKey(upperBound))
-						inferenceVariable.incorporateCapturedSubtype(c, upperBound);
-			}
-		}
-
-		@Override
-		public void acceptFalsehood() {
-			if (constraintFormula != null)
-				throw new TypeInferenceException("Cannot reduce constraint "
-						+ constraintFormula + " into bounds set " + BoundSet.this + ".");
-			else
-				throw new TypeInferenceException(
-						"Addition of falsehood into bounds set " + BoundSet.this + ".");
-		}
-	}
-
-	public void removeCaptureConversions(
+	void removeCaptureConversions(
 			Collection<? extends CaptureConversion> captureConversions) {
 		this.captureConversions.removeAll(captureConversions);
 	}
 
-	public InferenceVariable createInferenceVariable() {
-		return createInferenceVariable("INF");
+	/**
+	 * @return An newly created inference variable with a basic generated name,
+	 *         which is contained within this bound set.
+	 */
+	public InferenceVariable addInferenceVariable() {
+		return addInferenceVariable("INF");
 	}
 
-	public InferenceVariable createInferenceVariable(String name) {
+	/**
+	 * @param name
+	 *          A name to assign to a new inference variable.
+	 * @return An newly created inference variable with the given name, which is
+	 *         contained within this bound set.
+	 */
+	public InferenceVariable addInferenceVariable(String name) {
 		String numberedName = name + "#" + COUNTER.incrementAndGet();
 
 		InferenceVariable inferenceVariable = new InferenceVariable() {
@@ -232,7 +423,7 @@ public class BoundSet {
 				return numberedName;
 			}
 		};
-		inferenceVariableData.put(inferenceVariable, new InferenceVariableData(
+		inferenceVariableBounds.put(inferenceVariable, new InferenceVariableBounds(
 				this, inferenceVariable));
 		return inferenceVariable;
 	}

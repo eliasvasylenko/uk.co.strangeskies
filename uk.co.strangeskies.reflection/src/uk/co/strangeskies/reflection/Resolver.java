@@ -44,17 +44,20 @@ import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 
 /**
+ * <p>
  * A resolver maintains a set of <em>inference variables</em>, and
- * <em>inference variable bounds</em>, as they are described in chapter 18 of
- * the Java 8 language specification, and provides a number of methods to
- * facilitate interaction with them. This makes for a very flexible and powerful
- * type inference and manipulation engine, though for typical use-cases it may
- * be recommended to use the more limited, but more type safe facilities
- * provided by the {@link TypeToken} and {@link Invokable} classes.
+ * <em>inference variable bounds</em>, by way of a {@link BoundSet} instance. It
+ * also provides a number of methods to facilitate interaction with these
+ * inference variables and bounds, and track from which
+ * {@link GenericDeclaration} context they were incorporated or inferred.
+ * </p>
  * 
- * Inference variables can be thought of as place holders for types which we
- * don't yet exactly know, and which may have a number of interrelating bounds
- * and equalities between them.
+ * <p>
+ * This makes for a very flexible and powerful type inference and manipulation
+ * engine, though for typical use-cases it may be recommended to use the more
+ * limited, but more type safe facilities provided by the {@link TypeToken} and
+ * {@link Invokable} classes.
+ * </p>
  * 
  * @author Elias N Vasylenko
  */
@@ -186,7 +189,7 @@ public class Resolver {
 		 * inference variable β or a type that mentions β:
 		 */
 		for (InferenceVariable a : bounds.getInferenceVariables()) {
-			InferenceVariableData aData = bounds.getInferenceVariableData().get(a);
+			InferenceVariableBounds aData = bounds.getBoundsOn(a);
 
 			Stream
 					.concat(
@@ -234,12 +237,13 @@ public class Resolver {
 				declarationCaptures.put(typeVariable, inferenceVariable);
 
 				boolean anyProper = false;
-				for (Type bound : bounds.getUpperBounds(inferenceVariable)) {
+				for (Type bound : bounds.getBoundsOn(inferenceVariable)
+						.getUpperBounds()) {
 					anyProper = anyProper || bounds.isProperType(bound);
-					bounds.incorporate().acceptSubtype(inferenceVariable, bound);
+					bounds.incorporate().subtype(inferenceVariable, bound);
 				}
 				if (!anyProper)
-					bounds.incorporate().acceptSubtype(inferenceVariable, Object.class);
+					bounds.incorporate().subtype(inferenceVariable, Object.class);
 			}
 		}
 	}
@@ -291,7 +295,7 @@ public class Resolver {
 	 * @return The new inference variable created to satisfy the given wildcard.
 	 */
 	public InferenceVariable incorporateWildcardType(WildcardType type) {
-		InferenceVariable w = bounds.createInferenceVariable();
+		InferenceVariable w = bounds.addInferenceVariable();
 
 		for (Type lowerBound : type.getLowerBounds())
 			addLowerBound(w, lowerBound);
@@ -417,8 +421,8 @@ public class Resolver {
 				.getInstantiatedVariables()
 				.stream()
 				.collect(
-						Collectors.toMap(Function.identity(),
-								i -> bounds.getInstantiation(i).get()));
+						Collectors.toMap(Function.identity(), i -> bounds.getBoundsOn(i)
+								.getInstantiation().get()));
 	}
 
 	public Type infer(InferenceVariable variable) {
@@ -443,13 +447,16 @@ public class Resolver {
 			 * variable in this set depends.
 			 */
 			resolveIndependentSet(
-					variables.stream()
-							.filter(v -> !bounds.getInstantiation(v).isPresent())
+					variables
+							.stream()
+							.filter(
+									v -> !bounds.getBoundsOn(v).getInstantiation().isPresent())
 							.map(remainingDependencies::get).flatMap(Set::stream)
 							.collect(Collectors.toSet()), remainingDependencies);
 
 			for (InferenceVariable variable : new HashSet<>(remainingVariables)) {
-				Optional<Type> instantiation = bounds.getInstantiation(variable);
+				Optional<Type> instantiation = bounds.getBoundsOn(variable)
+						.getInstantiation();
 				if (instantiation.isPresent()) {
 					instantiations.put(variable, instantiation.get());
 					remainingVariables.remove(variable);
@@ -553,13 +560,14 @@ public class Resolver {
 							false);
 
 					Type instantiationCandidate;
-					if (!bounds.getProperLowerBounds(variable).isEmpty()) {
+					if (!bounds.getBoundsOn(variable).getProperLowerBounds().isEmpty()) {
 						/*
 						 * If αi has one or more proper lower bounds, L1, ..., Lk, then Ti =
 						 * lub(L1, ..., Lk) (§4.10.4).
 						 */
 						instantiationCandidate = IntersectionType.from(Types
-								.leastUpperBound(bounds.getProperLowerBounds(variable)));
+								.leastUpperBound(bounds.getBoundsOn(variable)
+										.getProperLowerBounds()));
 					} else if (hasThrowableBounds.get()) {
 						/*
 						 * Otherwise, if the bound set contains throws αi, and the proper
@@ -573,11 +581,11 @@ public class Resolver {
 						 * glb(U1, ..., Uk) (§5.1.10).
 						 */
 						instantiationCandidate = Types.greatestLowerBound(bounds
-								.getProperUpperBounds(variable));
+								.getBoundsOn(variable).getProperUpperBounds());
 					}
 
 					instantiationCandidates.put(variable, instantiationCandidate);
-					bounds.incorporate().acceptEquality(variable, instantiationCandidate);
+					bounds.incorporate().equality(variable, instantiationCandidate);
 				}
 			} catch (TypeInferenceException e) {
 				instantiationCandidates = null;
@@ -623,7 +631,7 @@ public class Resolver {
 	}
 
 	private void instantiate(InferenceVariable variable, Type instantiation) {
-		bounds.incorporate().acceptEquality(variable, instantiation);
+		bounds.incorporate().equality(variable, instantiation);
 	}
 
 	public Type resolveType(Type type) {
@@ -678,7 +686,7 @@ public class Resolver {
 	}
 
 	private Type resolveInferenceVariable(InferenceVariable variable) {
-		return bounds.getInstantiation(variable).orElse(variable);
+		return bounds.getBoundsOn(variable).getInstantiation().orElse(variable);
 	}
 
 	public Set<InferenceVariable> getInferenceVariables() {

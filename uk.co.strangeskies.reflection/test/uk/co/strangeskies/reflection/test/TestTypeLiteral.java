@@ -104,7 +104,6 @@ public class TestTypeLiteral {
 	 */
 	public static <H extends Nest2<H>> void main(String... args)
 			throws NoSuchMethodException, SecurityException {
-		// TODO
 		System.out
 				.println("<T extends Number, U extends List<? super T>> U method4(Collection<? extends T> a, U b)");
 		System.out
@@ -121,7 +120,7 @@ public class TestTypeLiteral {
 		System.out.println();
 
 		System.out.println(ParameterizedTypes.from(HashSet.class,
-				Arrays.asList(new BoundSet().createInferenceVariable()))
+				Arrays.asList(new BoundSet().addInferenceVariable()))
 				.resolveSupertypeParameters(Collection.class));
 		System.out.println();
 
@@ -163,7 +162,6 @@ public class TestTypeLiteral {
 								.getType()).infer());
 		System.out.println();
 
-		// TODO
 		System.out.println(TypeToken.of(B.class).resolveMethodOverload("method",
 				new TypeLiteral<List<Integer>>() {}.getType(),
 				new TypeLiteral<List<Number>>() {}.getType()));

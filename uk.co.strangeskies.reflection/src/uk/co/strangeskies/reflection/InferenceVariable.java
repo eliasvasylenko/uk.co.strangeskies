@@ -44,14 +44,14 @@ public interface InferenceVariable extends Type {
 		Map<TypeVariable<?>, InferenceVariable> captures = declarationVariables
 				.stream().collect(
 						Collectors.toMap(Function.identity(), t -> resolver.getBounds()
-								.createInferenceVariable(t.getName())));
+								.addInferenceVariable(t.getName())));
 
 		TypeSubstitution substitution = new TypeSubstitution(captures::get);
 		for (TypeVariable<?> variable : captures.keySet())
 			resolver
 					.getBounds()
 					.incorporate()
-					.acceptSubtype(
+					.subtype(
 							captures.get(variable),
 							substitution.resolve(IntersectionType.uncheckedFrom(variable
 									.getBounds())));
@@ -85,7 +85,7 @@ public interface InferenceVariable extends Type {
 					.stream()
 					.collect(
 							Collectors.toMap(Function.identity(),
-									t -> bounds.createInferenceVariable()));
+									t -> bounds.addInferenceVariable()));
 
 			for (TypeVariable<?> parameter : parameterCaptures.keySet()) {
 				Type argument = parameterArguments.get(parameter);
@@ -129,16 +129,16 @@ public interface InferenceVariable extends Type {
 
 					upperBound = new TypeSubstitution(parameterCaptures::get)
 							.resolve(upperBound);
-					bounds.incorporate().acceptSubtype(inferenceVariable, upperBound);
+					bounds.incorporate().subtype(inferenceVariable, upperBound);
 
 					if (lowerBound != null)
-						bounds.incorporate().acceptSubtype(lowerBound, inferenceVariable);
+						bounds.incorporate().subtype(lowerBound, inferenceVariable);
 				} else {
 					/*
 					 * Otherwise, Si = Ti.
 					 */
 					// TODO do this properly...
-					bounds.incorporate().acceptEquality(inferenceVariable, parameter);
+					bounds.incorporate().equality(inferenceVariable, parameter);
 				}
 
 				capturedArguments.put(inferenceVariable, argument);
@@ -182,7 +182,7 @@ public interface InferenceVariable extends Type {
 				}
 			};
 
-			bounds.incorporate().acceptCaptureConversion(captureConversion);
+			bounds.incorporate().captureConversion(captureConversion);
 
 			return captureConversion.getCapturedType();
 		} else

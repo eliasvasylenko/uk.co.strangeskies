@@ -93,7 +93,7 @@ public abstract class IntersectionType implements Type {
 
 		try {
 			BoundSet bounds = new BoundSet();
-			InferenceVariable inferenceVariable = bounds.createInferenceVariable();
+			InferenceVariable inferenceVariable = bounds.addInferenceVariable();
 			for (Type type : flattenedTypes)
 				new ConstraintFormula(Kind.SUBTYPE, inferenceVariable, type)
 						.reduceInto(bounds);

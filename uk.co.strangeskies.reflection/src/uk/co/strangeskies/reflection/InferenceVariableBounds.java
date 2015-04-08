@@ -22,12 +22,21 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 
-class InferenceVariableData {
+/**
+ * To make it more natural to query the state of a {@link BoundSet} and to
+ * 
+ * @author Elias N Vasylenko
+ *
+ */
+public class InferenceVariableBounds {
 	private final BoundSet boundSet;
 
 	private final InferenceVariable a;
@@ -35,8 +44,7 @@ class InferenceVariableData {
 	private final Set<Type> upperBounds;
 	private final Set<Type> lowerBounds;
 
-	public InferenceVariableData(BoundSet boundSet,
-			InferenceVariable inferenceVariable) {
+	InferenceVariableBounds(BoundSet boundSet, InferenceVariable inferenceVariable) {
 		this.boundSet = boundSet;
 		this.a = inferenceVariable;
 
@@ -45,7 +53,7 @@ class InferenceVariableData {
 		equalities = new HashSet<>();
 	}
 
-	public InferenceVariableData(BoundSet boundSet, InferenceVariableData that) {
+	InferenceVariableBounds(BoundSet boundSet, InferenceVariableBounds that) {
 		this.boundSet = boundSet;
 		a = that.a;
 
@@ -70,7 +78,23 @@ class InferenceVariableData {
 		return new HashSet<>(lowerBounds);
 	}
 
-	public void addEquality(Type type) {
+	public Set<Type> getProperUpperBounds() {
+		Set<Type> upperBounds = getUpperBounds().stream()
+				.filter(boundSet::isProperType).collect(Collectors.toSet());
+		return upperBounds.isEmpty() ? new HashSet<>(Arrays.asList(Object.class))
+				: upperBounds;
+	}
+
+	public Set<Type> getProperLowerBounds() {
+		return getLowerBounds().stream().filter(boundSet::isProperType)
+				.collect(Collectors.toSet());
+	}
+
+	public Optional<Type> getInstantiation() {
+		return getEqualities().stream().filter(boundSet::isProperType).findAny();
+	}
+
+	void addEquality(Type type) {
 		Set<Type> equalities = new HashSet<>(this.equalities);
 		if (this.equalities.add(type)) {
 			logBound(a, type, "=");
@@ -81,24 +105,26 @@ class InferenceVariableData {
 			for (Type equality : equalities)
 				incorporateTransitiveEquality(type, equality);
 
-			for (InferenceVariableData other : boundSet.getInferenceVariableData()
-					.values()) {
+			for (InferenceVariable other : boundSet.getInferenceVariables()) {
+				InferenceVariableBounds otherBounds = boundSet.getBoundsOn(other);
+
 				/*
 				 * α = U and S = T imply ‹S[α:=U] = T[α:=U]›
 				 */
-				for (Type equality : other.getEqualities())
+				for (Type equality : otherBounds.getEqualities())
 					if (equality != type)
-						incorporateProperEqualitySubstitution(a, type, other.a, equality);
+						incorporateProperEqualitySubstitution(a, type, otherBounds.a,
+								equality);
 
 				/*
 				 * α = U and S <: T imply ‹S[α:=U] <: T[α:=U]›
 				 */
-				for (Type supertype : other.getUpperBounds())
+				for (Type supertype : otherBounds.getUpperBounds())
 					if (supertype != type)
-						incorporateProperSubtypeSubstitution(type, other.a, supertype);
-				for (Type subtype : other.getLowerBounds())
+						incorporateProperSubtypeSubstitution(type, otherBounds.a, supertype);
+				for (Type subtype : otherBounds.getLowerBounds())
 					if (subtype != type)
-						incorporateProperSupertypeSubstitution(type, subtype, other.a);
+						incorporateProperSupertypeSubstitution(type, subtype, otherBounds.a);
 			}
 
 			/*
@@ -114,12 +140,16 @@ class InferenceVariableData {
 				incorporateSupertypeSubstitution(type, subtype);
 
 			for (CaptureConversion captureConversion : boundSet
-					.getCaptureConversions())
-				incorporateCapturedEquality(captureConversion, type);
+					.getCaptureConversions()) {
+				Type capturedArgument = captureConversion.getCapturedArgument(a);
+
+				if (capturedArgument instanceof WildcardType)
+					incorporateCapturedEquality((WildcardType) capturedArgument, type);
+			}
 		}
 	}
 
-	public void addEquality(InferenceVariable type) {
+	void addEquality(InferenceVariable type) {
 		Set<Type> equalities = new HashSet<>(this.equalities);
 		if (this.equalities.add(type)) {
 			logBound(a, type, "=");
@@ -144,7 +174,7 @@ class InferenceVariableData {
 		}
 	}
 
-	public void addUpperBound(Type type) {
+	void addUpperBound(Type type) {
 		Set<Type> upperBounds = new HashSet<>(this.upperBounds);
 		if (this.upperBounds.add(type)) {
 			logBound(a, type, "<:");
@@ -152,12 +182,14 @@ class InferenceVariableData {
 			/*
 			 * α = U and S <: T imply ‹S[α:=U] <: T[α:=U]›
 			 */
-			for (InferenceVariableData other : new HashSet<>(boundSet
-					.getInferenceVariableData().values()))
-				for (Type equality : new HashSet<>(other.equalities))
+			for (InferenceVariable other : boundSet.getInferenceVariables()) {
+				InferenceVariableBounds otherBounds = boundSet.getBoundsOn(other);
+
+				for (Type equality : new HashSet<>(otherBounds.equalities))
 					if (equality != type)
-						boundSet.getInferenceVariableData().get(other.a)
+						boundSet.getBoundsOn(otherBounds.a)
 								.incorporateProperSubtypeSubstitution(equality, a, type);
+			}
 
 			/*
 			 * α = S and α <: T imply ‹S <: T›
@@ -182,12 +214,19 @@ class InferenceVariableData {
 				incorporateSupertypeParameterizationEquality(type, upperBound);
 
 			for (CaptureConversion captureConversion : boundSet
-					.getCaptureConversions())
-				incorporateCapturedSubtype(captureConversion, type);
+					.getCaptureConversions()) {
+				Type capturedArgument = captureConversion.getCapturedArgument(a);
+				TypeVariable<?> capturedParmeter = captureConversion
+						.getCapturedParameter(a);
+
+				if (capturedArgument instanceof WildcardType)
+					incorporateCapturedSubtype(captureConversion,
+							(WildcardType) capturedArgument, capturedParmeter, type);
+			}
 		}
 	}
 
-	public void addUpperBound(InferenceVariable type) {
+	void addUpperBound(InferenceVariable type) {
 		logBound(a, type, "<:");
 
 		if (upperBounds.add(type)) {
@@ -205,19 +244,21 @@ class InferenceVariableData {
 		}
 	}
 
-	public void addLowerBound(Type type) {
+	void addLowerBound(Type type) {
 		logBound(type, a, "<:");
 
 		if (lowerBounds.add(type)) {
 			/*
 			 * α = U and S <: T imply ‹S[α:=U] <: T[α:=U]›
 			 */
-			for (InferenceVariableData other : boundSet.getInferenceVariableData()
-					.values())
-				for (Type equality : new HashSet<>(other.equalities))
+			for (InferenceVariable other : boundSet.getInferenceVariables()) {
+				InferenceVariableBounds otherBounds = boundSet.getBoundsOn(other);
+
+				for (Type equality : new HashSet<>(otherBounds.equalities))
 					if (equality != type)
-						boundSet.getInferenceVariableData().get(other.a)
+						boundSet.getBoundsOn(otherBounds.a)
 								.incorporateProperSupertypeSubstitution(equality, type, a);
+			}
 
 			/*
 			 * α = S and T <: α imply ‹T <: S›
@@ -232,12 +273,16 @@ class InferenceVariableData {
 				incorporateTransitiveSubtype(type, upperBound);
 
 			for (CaptureConversion captureConversion : boundSet
-					.getCaptureConversions())
-				incorporateCapturedSupertype(captureConversion, type);
+					.getCaptureConversions()) {
+				Type capturedArgument = captureConversion.getCapturedArgument(a);
+
+				if (capturedArgument instanceof WildcardType)
+					incorporateCapturedSupertype((WildcardType) capturedArgument, type);
+			}
 		}
 	}
 
-	public void addLowerBound(InferenceVariable type) {
+	void addLowerBound(InferenceVariable type) {
 		logBound(type, a, "<:");
 
 		if (lowerBounds.add(type)) {
@@ -272,42 +317,42 @@ class InferenceVariableData {
 	/*
 	 * α = S and α = T imply ‹S = T›
 	 */
-	public void incorporateTransitiveEquality(Type S, Type T) {
+	void incorporateTransitiveEquality(Type S, Type T) {
 		new ConstraintFormula(Kind.EQUALITY, S, T).reduceInto(boundSet);
 	}
 
 	/*
 	 * α = S and α <: T imply ‹S <: T›
 	 */
-	public void incorporateSubtypeSubstitution(Type S, Type T) {
+	void incorporateSubtypeSubstitution(Type S, Type T) {
 		new ConstraintFormula(Kind.SUBTYPE, S, T).reduceInto(boundSet);
 	}
 
 	/*
 	 * α = S and T <: α imply ‹T <: S›
 	 */
-	public void incorporateSupertypeSubstitution(Type S, Type T) {
+	void incorporateSupertypeSubstitution(Type S, Type T) {
 		new ConstraintFormula(Kind.SUBTYPE, T, S).reduceInto(boundSet);
 	}
 
 	/*
 	 * S <: α and α <: T imply ‹S <: T›
 	 */
-	public void incorporateTransitiveSubtype(Type S, Type T) {
+	void incorporateTransitiveSubtype(Type S, Type T) {
 		new ConstraintFormula(Kind.SUBTYPE, S, T).reduceInto(boundSet);
 	}
 
 	/*
 	 * α = U and S = T imply ‹S[α:=U] = T[α:=U]›
 	 */
-	public void incorporateProperEqualitySubstitution(InferenceVariable a,
-			Type U, InferenceVariable S, Type T) {
+	void incorporateProperEqualitySubstitution(InferenceVariable a, Type U,
+			InferenceVariable S, Type T) {
 		incorporateProperEqualitySubstitutionImpl(a, U, S, T);
 		incorporateProperEqualitySubstitutionImpl(S, T, a, U);
 	}
 
-	public void incorporateProperEqualitySubstitutionImpl(InferenceVariable a,
-			Type U, InferenceVariable S, Type T) {
+	void incorporateProperEqualitySubstitutionImpl(InferenceVariable a, Type U,
+			InferenceVariable S, Type T) {
 		if (boundSet.isProperType(U)
 				&& !Types.getAllMentionedBy(T, a::equals).isEmpty()) {
 			TypeSubstitution resolver = new TypeSubstitution().where(a, U);
@@ -321,8 +366,7 @@ class InferenceVariableData {
 	/*
 	 * α = U and S <: T imply ‹S[α:=U] <: T[α:=U]›
 	 */
-	public void incorporateProperSubtypeSubstitution(Type U, InferenceVariable S,
-			Type T) {
+	void incorporateProperSubtypeSubstitution(Type U, InferenceVariable S, Type T) {
 		if (boundSet.isProperType(U)
 				&& !Types.getAllMentionedBy(T, a::equals).isEmpty()) {
 			TypeSubstitution resolver = new TypeSubstitution().where(a, U);
@@ -333,7 +377,7 @@ class InferenceVariableData {
 		}
 	}
 
-	public void incorporateProperSupertypeSubstitution(Type U, Type S,
+	void incorporateProperSupertypeSubstitution(Type U, Type S,
 			InferenceVariable T) {
 		if (boundSet.isProperType(U)
 				&& !Types.getAllMentionedBy(S, a::equals).isEmpty()) {
@@ -352,7 +396,7 @@ class InferenceVariableData {
 	 * all i (1 ≤ i ≤ n), if Si and Ti are types (not wildcards), the constraint
 	 * formula ‹Si = Ti› is implied.
 	 */
-	public void incorporateSupertypeParameterizationEquality(Type S, Type T) {
+	void incorporateSupertypeParameterizationEquality(Type S, Type T) {
 		if (S.equals(T) || S.equals(Object.class) || T.equals(Object.class))
 			return;
 
@@ -406,104 +450,86 @@ class InferenceVariableData {
 	 * In addition, for all i (1 ≤ i ≤ n):
 	 */
 
-	public void incorporateCapturedEquality(CaptureConversion c, Type R) {
+	void incorporateCapturedEquality(WildcardType A, Type R) {
 		/*
-		 * If Ai is a wildcard of the form ?, or;
-		 * 
-		 * If Ai is a wildcard of the form ? extends T, or;
-		 * 
-		 * If Ai is a wildcard of the form ? super T:
-		 * 
 		 * αi = R implies the bound false
 		 */
-		if (c.getCapturedArgument(a) instanceof WildcardType || a.equals(R))
-			boundSet.incorporate().acceptFalsehood();
+		if (A instanceof WildcardType && a.equals(R))
+			boundSet.incorporate().falsehood();
 	}
 
-	public void incorporateCapturedSubtype(CaptureConversion c, Type R) {
-		if (c.getCapturedArgument(a) instanceof WildcardType) {
-			WildcardType A = (WildcardType) c.getCapturedArgument(a);
+	void incorporateCapturedSubtype(CaptureConversion c, WildcardType A,
+			TypeVariable<?> P, Type R) {
+		TypeSubstitution θ = new TypeSubstitution();
+		for (InferenceVariable variable : c.getInferenceVariables())
+			θ = θ.where(c.getCapturedParameter(variable), variable);
 
-			TypeSubstitution θ = new TypeSubstitution();
-			for (InferenceVariable variable : c.getInferenceVariables())
-				θ = θ.where(c.getCapturedParameter(variable), variable);
+		Type[] B = P.getBounds();
 
-			if (A.getUpperBounds().length > 0) {
+		if (A.getUpperBounds().length > 0) {
+			/*
+			 * If Ai is a wildcard of the form ? extends T:
+			 */
+
+			if (B.length == 0 || (B.length == 1 && B[0].equals(Object.class))) {
 				/*
-				 * If Ai is a wildcard of the form ? extends T:
+				 * If Bi is Object, then αi <: R implies the constraint formula ‹T <: R›
 				 */
-
-				Type[] bounds = c.getCapturedParameter(a).getBounds();
-				if (bounds.length == 0
-						|| (bounds.length == 1 && bounds[0].equals(Object.class))) {
-					/*
-					 * If Bi is Object, then αi <: R implies the constraint formula ‹T <:
-					 * R›
-					 */
-					new ConstraintFormula(Kind.SUBTYPE, IntersectionType.from(A
-							.getUpperBounds()), R).reduceInto(boundSet);
-				}
-
-				bounds = A.getUpperBounds();
-				if (bounds.length == 0
-						|| (bounds.length == 1 && bounds[0].equals(Object.class))) {
-					/*
-					 * If T is Object, then αi <: R implies the constraint formula ‹Bi θ
-					 * <: R›
-					 */
-					new ConstraintFormula(Kind.SUBTYPE, θ.resolve(IntersectionType
-							.uncheckedFrom(c.getCapturedParameter(a).getBounds())), R)
-							.reduceInto(boundSet);
-				}
-			} else if (A.getLowerBounds().length > 0) {
-				/*
-				 * If Ai is a wildcard of the form ? super T:
-				 * 
-				 * αi <: R implies the constraint formula ‹Bi θ <: R›
-				 */
-				new ConstraintFormula(Kind.SUBTYPE, θ.resolve(IntersectionType
-						.uncheckedFrom(c.getCapturedParameter(a).getBounds())), R)
-						.reduceInto(boundSet);
-			} else {
-				/*
-				 * If Ai is a wildcard of the form ?:
-				 * 
-				 * αi <: R implies the constraint formula ‹Bi θ <: R›
-				 */
-				new ConstraintFormula(Kind.SUBTYPE, θ.resolve(IntersectionType
-						.uncheckedFrom(c.getCapturedParameter(a).getBounds())), R)
-						.reduceInto(boundSet);
+				new ConstraintFormula(Kind.SUBTYPE, IntersectionType.from(A
+						.getUpperBounds()), R).reduceInto(boundSet);
 			}
+
+			Type[] T = A.getUpperBounds();
+			if (T.length == 0 || (T.length == 1 && T[0].equals(Object.class))) {
+				/*
+				 * If T is Object, then αi <: R implies the constraint formula ‹Bi θ <:
+				 * R›
+				 */
+				new ConstraintFormula(Kind.SUBTYPE, θ.resolve(IntersectionType
+						.uncheckedFrom(B)), R).reduceInto(boundSet);
+			}
+		} else if (A.getLowerBounds().length > 0) {
+			/*
+			 * If Ai is a wildcard of the form ? super T:
+			 * 
+			 * αi <: R implies the constraint formula ‹Bi θ <: R›
+			 */
+			new ConstraintFormula(Kind.SUBTYPE, θ.resolve(IntersectionType
+					.uncheckedFrom(B)), R).reduceInto(boundSet);
+		} else {
+			/*
+			 * If Ai is a wildcard of the form ?:
+			 * 
+			 * αi <: R implies the constraint formula ‹Bi θ <: R›
+			 */
+			new ConstraintFormula(Kind.SUBTYPE, θ.resolve(IntersectionType
+					.uncheckedFrom(B)), R).reduceInto(boundSet);
 		}
 	}
 
-	public void incorporateCapturedSupertype(CaptureConversion c, Type R) {
-		if (c.getCapturedArgument(a) instanceof WildcardType) {
-			WildcardType A = (WildcardType) c.getCapturedArgument(a);
-
-			if (A.getLowerBounds().length > 0) {
-				/*
-				 * If Ai is a wildcard of the form ? super T:
-				 * 
-				 * R <: αi implies the constraint formula ‹R <: T›
-				 */
-				new ConstraintFormula(Kind.SUBTYPE, R, IntersectionType.uncheckedFrom(A
-						.getLowerBounds())).reduceInto(boundSet);
-			} else if (A.getUpperBounds().length > 0) {
-				/*
-				 * If Ai is a wildcard of the form ? extends T:
-				 * 
-				 * R <: αi implies the bound false
-				 */
-				boundSet.incorporate().acceptFalsehood();
-			} else {
-				/*
-				 * If Ai is a wildcard of the form ?:
-				 * 
-				 * R <: αi implies the bound false
-				 */
-				boundSet.incorporate().acceptFalsehood();
-			}
+	public void incorporateCapturedSupertype(WildcardType A, Type R) {
+		if (A.getLowerBounds().length > 0) {
+			/*
+			 * If Ai is a wildcard of the form ? super T:
+			 * 
+			 * R <: αi implies the constraint formula ‹R <: T›
+			 */
+			new ConstraintFormula(Kind.SUBTYPE, R, IntersectionType.uncheckedFrom(A
+					.getLowerBounds())).reduceInto(boundSet);
+		} else if (A.getUpperBounds().length > 0) {
+			/*
+			 * If Ai is a wildcard of the form ? extends T:
+			 * 
+			 * R <: αi implies the bound false
+			 */
+			boundSet.incorporate().falsehood();
+		} else {
+			/*
+			 * If Ai is a wildcard of the form ?:
+			 * 
+			 * R <: αi implies the bound false
+			 */
+			boundSet.incorporate().falsehood();
 		}
 	}
 }
