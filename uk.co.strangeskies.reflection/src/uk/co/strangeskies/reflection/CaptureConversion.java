@@ -23,14 +23,46 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Set;
 
+/**
+ * A {@link CaptureConversion} is a special sort of bound which can be contained
+ * within a {@link BoundSet}. It represents a capture conversion, as the process
+ * is described in the Java 8 language specification, where the types of the
+ * captured variables, and the bounds on those types, may involve
+ * {@link InferenceVariable}s.
+ * 
+ * @author Elias N Vasylenko
+ */
 public interface CaptureConversion {
+	/**
+	 * @return The original type which has been captured.
+	 */
 	public ParameterizedType getOriginalType();
 
-	public ParameterizedType getCapturedType();
+	/**
+	 * @return A {@link ParameterizedType} whose arguments are the same as those
+	 *         in the {@link #getOriginalType() original type}, or in the case of
+	 *         {@link WildcardTypes}, the {@link InferenceVariable}s which capture
+	 *         those arguments.
+	 */
+	public ParameterizedType getCaptureType();
 
+	/**
+	 * @return The set of inference variables created through this capture
+	 *         conversion operation.
+	 */
 	public Set<InferenceVariable> getInferenceVariables();
 
+	/**
+	 * @param variable
+	 * @return The argument of the {@link #getOriginalType() original type}
+	 *         captured by a given {@link InferenceVariable}.
+	 */
 	public Type getCapturedArgument(InferenceVariable variable);
 
+	/**
+	 * @param variable
+	 * @return The parameter of the {@link #getOriginalType() original type}
+	 *         captured by a given {@link InferenceVariable}.
+	 */
 	public TypeVariable<?> getCapturedParameter(InferenceVariable variable);
 }

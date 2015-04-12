@@ -466,8 +466,8 @@ public final class Types {
 			if (upperBounds.length == 0)
 				upperBounds = new Type[] { Object.class };
 
-			assignable = isAssignable(IntersectionType.from(upperBounds), to,
-					assignsEncountered);
+			assignable = isAssignable(IntersectionType.uncheckedFrom(upperBounds),
+					to, assignsEncountered);
 		} else if (to instanceof WildcardType) {
 			/*
 			 * If there are no lower bounds the target may be arbitrarily specific, so
@@ -479,8 +479,8 @@ public final class Types {
 			if (lowerBounds.length == 0)
 				assignable = false;
 			else
-				assignable = isAssignable(from, IntersectionType.from(lowerBounds),
-						assignsEncountered);
+				assignable = isAssignable(from,
+						IntersectionType.uncheckedFrom(lowerBounds), assignsEncountered);
 		} else if (from instanceof TypeVariable) {
 			/*
 			 * We must be able to assign from at least one of the upper bound,
@@ -871,7 +871,7 @@ public final class Types {
 
 			bestResult = new IdentityProperty<>();
 			BEST_PARAMETERIZATIONS.putGet(new HashSet<>(parameterizations)).set(
-					ParameterizedTypes.proxy(bestResult));
+					ParameterizedTypes.proxy(bestResult::get));
 		}
 
 		Map<TypeVariable<?>, Type> leastContainingParameterization = new HashMap<>();

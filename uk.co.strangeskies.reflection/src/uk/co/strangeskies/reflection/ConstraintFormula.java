@@ -147,7 +147,12 @@ public class ConstraintFormula {
 	private void reduceLooseCompatibilityConstraint(BoundSet bounds) {
 		IncorporationTarget incorporate = bounds.incorporate();
 
-		Type from = InferenceVariable.captureConversion(this.from, bounds);
+		Type from;
+		if (this.from instanceof ParameterizedType)
+			from = InferenceVariable.captureConversion((ParameterizedType) this.from,
+					bounds);
+		else
+			from = this.from;
 
 		if (bounds.isProperType(from) && bounds.isProperType(to)) {
 			/*
@@ -312,7 +317,7 @@ public class ConstraintFormula {
 				 */
 				Type from = this.from;
 				if (bounds.getInferenceVariables().contains(from))
-					from = IntersectionType.uncheckedFrom(bounds.getBoundsOn(
+					from = IntersectionType.from(bounds.getBoundsOn(
 							(InferenceVariable) from).getUpperBounds());
 				if (!Types.isAssignable(from, to))
 					incorporate.falsehood();

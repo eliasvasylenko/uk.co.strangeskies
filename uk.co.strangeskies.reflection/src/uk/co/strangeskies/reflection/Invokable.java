@@ -44,6 +44,7 @@ import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.utilities.tuples.Pair;
 
 /**
+ * <p>
  * A type safe wrapper around {@link Executable} instances, with proper handling
  * of generic methods, and methods on generic classes. Instances of this class
  * can be created from instances of Executable directly from
@@ -51,6 +52,12 @@ import uk.co.strangeskies.utilities.tuples.Pair;
  * {@link TypeToken#resolveConstructorOverload(List)} and
  * {@link TypeToken#resolveMethodOverload(String, List)} methods on TypeToken
  * instances.
+ * </p>
+ * 
+ * <p>
+ * Invokables may be created over types which mention inference variables, or
+ * even over inference variables themselves.
+ * </p>
  * 
  * @author Elias N Vasylenko
  *
@@ -92,7 +99,7 @@ public class Invokable<T, R> {
 		this.resolver = resolver;
 
 		this.executable = executable;
-		resolver.incorporateGenericTypeParameters(getExecutable());
+		resolver.incorporateTypeParameters(getExecutable());
 
 		this.receiverType = (TypeToken<T>) TypeToken.of(resolver,
 				receiverType.getType());
@@ -116,7 +123,7 @@ public class Invokable<T, R> {
 	 * {@link #withTargetType(TypeToken)}.
 	 * 
 	 * @param constructor
-	 * @return
+	 * @return An invokable wrapping the given constructor.
 	 */
 	public static <T> Invokable<T, T> from(Constructor<T> constructor) {
 		TypeToken<T> type = TypeToken.of(constructor.getDeclaringClass());
@@ -136,6 +143,12 @@ public class Invokable<T, R> {
 				});
 	}
 
+	/**
+	 * Create a new Invokable instance from a reference to a {@link Method}.
+	 * 
+	 * @param method
+	 * @return An invokable wrapping the given method.
+	 */
 	public static Invokable<?, ?> from(Method method) {
 		return from(method, TypeToken.of(method.getDeclaringClass()),
 				TypeToken.of(method.getGenericReturnType()));
@@ -154,6 +167,13 @@ public class Invokable<T, R> {
 		});
 	}
 
+	/**
+	 * As invocation of {@link #from(Constructor)} or {@link Method} as
+	 * appropriate.
+	 * 
+	 * @param executable
+	 * @return An invokable wrapping the given Executable.
+	 */
 	public static Invokable<?, ?> from(Executable executable) {
 		if (executable instanceof Method)
 			return from((Method) executable);
@@ -161,6 +181,10 @@ public class Invokable<T, R> {
 			return from((Constructor<?>) executable);
 	}
 
+	/**
+	 * @return A copy of the {@link Resolver} instance backing this
+	 *         {@link Invokable}.
+	 */
 	public Resolver getResolver() {
 		return new Resolver(getInternalResolver());
 	}
@@ -169,46 +193,79 @@ public class Invokable<T, R> {
 		return resolver;
 	}
 
+	/**
+	 * @return True if the wrapped executable is abstract, false otherwise.
+	 */
 	public boolean isAbstract() {
 		return Modifier.isAbstract(executable.getModifiers());
 	}
 
+	/**
+	 * @return True if the wrapped executable is final, false otherwise.
+	 */
 	public boolean isFinal() {
 		return Modifier.isFinal(executable.getModifiers());
 	}
 
+	/**
+	 * @return True if the wrapped executable is native, false otherwise.
+	 */
 	public boolean isNative() {
 		return Modifier.isNative(executable.getModifiers());
 	}
 
+	/**
+	 * @return True if the wrapped executable is private, false otherwise.
+	 */
 	public boolean isPrivate() {
 		return Modifier.isPrivate(executable.getModifiers());
 	}
 
+	/**
+	 * @return True if the wrapped executable is protected, false otherwise.
+	 */
 	public boolean isProtected() {
 		return Modifier.isProtected(executable.getModifiers());
 	}
 
+	/**
+	 * @return True if the wrapped executable is public, false otherwise.
+	 */
 	public boolean isPublic() {
 		return Modifier.isPublic(executable.getModifiers());
 	}
 
+	/**
+	 * @return True if the wrapped executable is static, false otherwise.
+	 */
 	public boolean isStatic() {
 		return Modifier.isStatic(executable.getModifiers());
 	}
 
+	/**
+	 * @return True if the wrapped executable is strict, false otherwise.
+	 */
 	public boolean isStrict() {
 		return Modifier.isStrict(executable.getModifiers());
 	}
 
+	/**
+	 * @return True if the wrapped executable is synchronized, false otherwise.
+	 */
 	public boolean isSynchronized() {
 		return Modifier.isSynchronized(executable.getModifiers());
 	}
 
+	/**
+	 * @return True if the wrapped executable is generic, false otherwise.
+	 */
 	public boolean isGeneric() {
 		return executable.getTypeParameters().length > 0;
 	}
 
+	/**
+	 * @return True if the wrapped executable is variable arity, false otherwise.
+	 */
 	public boolean isVariableArity() {
 		return executable.isVarArgs();
 	}
@@ -259,40 +316,94 @@ public class Invokable<T, R> {
 								.collect(Collectors.joining(", "))).append(")").toString();
 	}
 
+	/**
+	 * @return The executable represented by this {@link Invokable}.
+	 */
 	public Executable getExecutable() {
 		return executable;
 	}
 
-	public Type getDeclaringType() {
-		return receiverType.getType();
+	/**
+	 * @return The type which declares this {@link Invokable}. As
+	 *         {@link Executable#getDeclaringClass()}, but with any generic type
+	 *         parameters resolved according to the type of
+	 *         {@link #getReceiverType()}.
+	 */
+	@SuppressWarnings("unchecked")
+	public TypeToken<? super T> getDeclaringType() {
+		return (TypeToken<? super T>) receiverType
+				.resolveSupertypeParameters(executable.getDeclaringClass());
 	}
 
+	/**
+	 * @return The exact receiving type of this invokable instance. Generic type
+	 *         parameters may include inference variables.
+	 */
 	public TypeToken<T> getReceiverType() {
 		return receiverType;
 	}
 
+	/**
+	 * @return The exact return type of this invokable instance. Generic type
+	 *         parameters may include inference variables.
+	 */
 	public TypeToken<R> getReturnType() {
 		return returnType;
 	}
 
+	/**
+	 * @return The exact types of the expected parameters of this invokable
+	 *         instance. Inference variables may be mentioned.
+	 */
 	public List<Type> getParameters() {
 		return Collections.unmodifiableList(parameters);
 	}
 
+	/**
+	 * @param type
+	 * @return As {@link #withReceiverType(Type)}.
+	 */
+	@SuppressWarnings("unchecked")
 	public <U extends T> Invokable<U, ? extends R> withReceiverType(
 			TypeToken<U> type) {
+		return (Invokable<U, ? extends R>) withReceiverType(type.getType());
+	}
+
+	/**
+	 * @param type
+	 * @return A new instance of {@link Invokable} with the given receiver type.
+	 *         This will resolve any overriding {@link Executable}, and possibly
+	 *         substitute instantiations for inference variables or type variable
+	 *         captures.
+	 */
+	public Invokable<? extends T, ? extends R> withReceiverType(Type type) {
 		throw new UnsupportedOperationException(); // TODO resolve override
 	}
 
+	/**
+	 * @param target
+	 * @return As {@link #withTargetType(Type)}.
+	 */
 	public <S extends R> Invokable<T, S> withTargetType(Class<S> target) {
 		return withTargetType(TypeToken.of(target));
 	}
 
+	/**
+	 * @param target
+	 * @return As {@link #withTargetType(Type)}.
+	 */
 	@SuppressWarnings("unchecked")
 	public <S> Invokable<T, S> withTargetType(TypeToken<S> target) {
 		return (Invokable<T, S>) withTargetType(target.getType());
 	}
 
+	/**
+	 * @param target
+	 * @return If the invocation type of this {@link Invokable} contains inference
+	 *         variables such that the return type is not exactly known, this
+	 *         method will attempt to create a new instance which is assignment
+	 *         compatible with the given target.
+	 */
 	public Invokable<T, ? extends R> withTargetType(Type target) {
 		return withTargetTypeCapture(target);
 	}
@@ -308,11 +419,21 @@ public class Invokable<T, R> {
 				(BiFunction<T, List<?>, S>) invocationFunction).infer();
 	}
 
+	/**
+	 * @param targetType
+	 * @param arguments
+	 * @return As {@link #withInferredType(Type, Type...)}.
+	 */
 	public <U> Invokable<T, U> withInferredType(TypeToken<U> targetType,
 			TypeToken<?>... arguments) {
 		return withInferredType(targetType, Arrays.asList(arguments));
 	}
 
+	/**
+	 * @param targetType
+	 * @param arguments
+	 * @return As {@link #withInferredType(Type, Type...)}.
+	 */
 	@SuppressWarnings("unchecked")
 	public <U> Invokable<T, U> withInferredType(TypeToken<U> targetType,
 			List<? extends TypeToken<?>> arguments) {
@@ -320,22 +441,44 @@ public class Invokable<T, R> {
 				.stream().map(TypeToken::getType).collect(Collectors.toList()));
 	}
 
+	/**
+	 * @param targetType
+	 * @param arguments
+	 * @return As {@link #withInferredType(Type, Type...)}.
+	 */
 	public Invokable<T, ? extends R> withInferredType(Type targetType,
 			Type... arguments) {
 		return withInferredType(targetType, Arrays.asList(arguments));
 	}
 
+	/**
+	 * @param targetType
+	 * @param arguments
+	 * @return A new derived {@link Invokable} instance with inferred type such
+	 *         that it is compatible with the given target type and arguments. If
+	 *         an invocation is not possible with loose parameter applicability
+	 *         and this is a variable arity method, an attempt is then made to
+	 *         resolve with variable arity invocation.
+	 */
 	public Invokable<T, ? extends R> withInferredType(Type targetType,
 			List<? extends Type> arguments) {
 		Invokable<T, R> invokable;
 		try {
 			invokable = withLooseApplicability(arguments);
 		} catch (Exception e) {
-			invokable = withVariableArityApplicability(arguments);
+			if (isVariableArity())
+				invokable = withVariableArityApplicability(arguments);
+			else
+				throw e;
 		}
 		return invokable.withTargetType(targetType);
 	}
 
+	/**
+	 * @return A new derived {@link Invokable} instance with generic method
+	 *         parameters inferred, and if this is a constructor on a generic
+	 *         type, with generic type parameters inferred, too.
+	 */
 	public Invokable<T, R> infer() {
 		Resolver resolver = getResolver();
 
@@ -349,46 +492,61 @@ public class Invokable<T, R> {
 				invocationFunction);
 	}
 
-	/*
-	 * If the given parameters are not compatible with this invokable in a strict
-	 * compatibility invocation context, we return null. Otherwise, we infer a
-	 * partial parameterisation where necessary and return the resulting
-	 * invokable.
+	/**
+	 * @param arguments
+	 * @return As {@link #withStrictApplicability(Type...)}.
 	 */
 	public Invokable<T, R> withStrictApplicability(Type... arguments) {
 		return withStrictApplicability(Arrays.asList(arguments));
 	}
 
+	/**
+	 * @param arguments
+	 * @return If the given parameters are not compatible with this invokable in a
+	 *         strict compatibility invocation context, we return null. Otherwise,
+	 *         we infer a partial parameterisation where necessary and return the
+	 *         resulting derived invokable.
+	 */
 	public Invokable<T, R> withStrictApplicability(List<? extends Type> arguments) {
 		// TODO && make sure no boxing/unboxing occurs!
 
 		return withLooseApplicability(arguments);
 	}
 
-	/*
-	 * If the given parameters are not compatible with this invokable in a loose
-	 * compatibility invocation context, we return null. Otherwise, we infer a
-	 * partial parameterisation where necessary and return the resulting
-	 * invokable.
+	/**
+	 * @param arguments
+	 * @return As {@link #withLooseApplicability(Type...)}.
 	 */
 	public Invokable<T, R> withLooseApplicability(Type... arguments) {
 		return withLooseApplicability(Arrays.asList(arguments));
 	}
 
+	/**
+	 * @param arguments
+	 * @return If the given parameters are not compatible with this invokable in a
+	 *         loose compatibility invocation context, we return null. Otherwise,
+	 *         we infer a partial parameterisation where necessary and return the
+	 *         resulting invokable.
+	 */
 	public Invokable<T, R> withLooseApplicability(List<? extends Type> arguments) {
 		return withLooseApplicability(false, arguments);
 	}
 
-	/*
-	 * If the given parameters are not compatible with this invokable in a loose
-	 * compatibility invocation context, and with variable arity, we return null.
-	 * Otherwise, we infer a partial parameterisation where necessary and return
-	 * the resulting invokable.
+	/**
+	 * @param arguments
+	 * @return As {@link #withVariableArityApplicability(Type...)}.
 	 */
 	public Invokable<T, R> withVariableArityApplicability(Type... arguments) {
 		return withVariableArityApplicability(Arrays.asList(arguments));
 	}
 
+	/**
+	 * @param arguments
+	 * @return If the given parameters are not compatible with this invokable in a
+	 *         loose compatibility invocation context, and with variable arity, we
+	 *         return null. Otherwise, we infer a partial parameterisation where
+	 *         necessary and return the resulting invokable.
+	 */
 	public Invokable<T, R> withVariableArityApplicability(
 			List<? extends Type> arguments) {
 		return withLooseApplicability(true, arguments);
@@ -404,7 +562,9 @@ public class Invokable<T, R> {
 			if (parameters.size() > arguments.size())
 				return null;
 		} else if (parameters.size() != arguments.size())
-			return null;
+			throw new TypeInferenceException(
+					"Cannot resolve generic type parameters for invocation of '" + this
+							+ "' with arguments '" + arguments + "'.");
 
 		Resolver resolver = getResolver();
 
@@ -438,6 +598,9 @@ public class Invokable<T, R> {
 				invocationFunction);
 	}
 
+	/**
+	 * @return All generic type parameters of the wrapped {@link Executable}.
+	 */
 	@SuppressWarnings("unchecked")
 	public List<TypeVariable<? extends Executable>> getTypeParameters() {
 		return Arrays.asList(executable.getTypeParameters()).stream()
@@ -445,12 +608,23 @@ public class Invokable<T, R> {
 				.collect(Collectors.toList());
 	}
 
+	/**
+	 * @return All generic type parameters instantiations of the wrapped
+	 *         {@link Executable}, or their inference variables if not yet
+	 *         instantiated.
+	 */
 	public Map<TypeVariable<? extends Executable>, Type> getTypeArguments() {
 		return getTypeParameters().stream().collect(
 				Collectors.toMap(t -> (TypeVariable<? extends Executable>) t,
 						t -> resolver.resolveType(executable, t)));
 	}
 
+	/**
+	 * @param variable
+	 * @param instantiation
+	 * @return A new derived {@link Invokable} instance with the given
+	 *         instantiation substituted for the given type variable.
+	 */
 	public Invokable<T, ? extends R> withTypeArgument(
 			TypeVariable<? extends Executable> variable, Type instantiation) {
 		if (Arrays.stream(executable.getTypeParameters())
@@ -462,26 +636,95 @@ public class Invokable<T, R> {
 		throw new UnsupportedOperationException(); // TODO
 	}
 
+	/**
+	 * @param variable
+	 * @param instantiation
+	 * @return As {@link #withTypeArgument(TypeVariable, Type)}.
+	 */
+	@SuppressWarnings("unchecked")
+	public <U> Invokable<T, ? extends R> withTypeArgument(
+			TypeParameter<U> variable, TypeToken<U> instantiation) {
+		return withTypeArgument(
+				(TypeVariable<? extends Executable>) variable.getType(),
+				instantiation.getType());
+	}
+
+	/**
+	 * @param typeArguments
+	 * @return A new derived {@link Invokable} instance with the given
+	 *         instantiations substituted for each generic type parameter, in
+	 *         order.
+	 */
 	public Invokable<T, ? extends R> withTypeArguments(Type... typeArguments) {
 		return withTypeArguments(Arrays.asList(typeArguments));
 	}
 
+	/**
+	 * @param typeArguments
+	 * @return As {@link #withTypeArguments(Type...)}.
+	 */
 	public Invokable<T, ? extends R> withTypeArguments(List<Type> typeArguments) {
 		throw new UnsupportedOperationException(); // TODO
 	}
 
+	/**
+	 * <P>
+	 * Invoke the wrapped {@link Executable} on the given receiver and with the
+	 * given parameters. The receiver will be ignored for static methods or
+	 * constructors. Variable arity invocation is not attempted.
+	 * </p>
+	 * 
+	 * <p>
+	 * Due to erasure of the types of the arguments, there is a limit to what type
+	 * checking can be performed at runtime. For type safe invocation, wrap
+	 * arguments in {@link TypedObject} instances and use an overload of
+	 * {@link #invokeSafely(Object, TypedObject...)} instead.
+	 * </p>
+	 * 
+	 * @param receiver
+	 * @param arguments
+	 * @return The result of the invocation.
+	 */
 	public R invoke(T receiver, Object... arguments) {
 		return invoke(receiver, Arrays.asList(arguments));
 	}
 
+	/**
+	 * @param receiver
+	 * @param arguments
+	 * @return As {@link #invoke(Object, Object...)}.
+	 */
 	public R invoke(T receiver, List<? extends Object> arguments) {
 		return invocationFunction.apply(receiver, arguments);
 	}
 
+	/**
+	 * <p>
+	 * As {@link #invoke(Object, Object...)}, but with arguments passed with their
+	 * exact types, meaning full type checking can be performed at runtime. Also,
+	 * here it is possible to determine whether the invocation is intended to be
+	 * variable arity, and if so an attempt is made to invoke as such.
+	 * </p>
+	 * 
+	 * <p>
+	 * If the expected parameter types of this invokable contain inference
+	 * variables or type variable captures, an attempt will be made to satisfy
+	 * their bounds according to the given argument types.
+	 * </p>
+	 * 
+	 * @param receiver
+	 * @param arguments
+	 * @return The result of the invocation.
+	 */
 	public R invokeSafely(T receiver, TypedObject<?>... arguments) {
 		return invokeSafely(receiver, Arrays.asList(arguments));
 	}
 
+	/**
+	 * @param receiver
+	 * @param arguments
+	 * @return As {@link #invokeSafely(Object, TypedObject...)}.
+	 */
 	public R invokeSafely(T receiver, List<? extends TypedObject<?>> arguments) {
 		for (int i = 0; i < arguments.size(); i++)
 			if (!arguments.get(i).getType().isAssignableTo(parameters.get(i)))
@@ -491,7 +734,19 @@ public class Invokable<T, R> {
 		return invoke(receiver, arguments);
 	}
 
-	public static <T, R> Set<? extends Invokable<? super T, ? extends R>> resolveApplicableCandidates(
+	/**
+	 * Find the set of all given overload candidates which are applicable to
+	 * invocation with the given parameters. Strict applicability is considered
+	 * first, then if no candidates are found loose applicability is considered,
+	 * then if still no candidates are found, variable arity applicability is
+	 * considered.
+	 * 
+	 * @param candidates
+	 * @param parameters
+	 * @return The set of all given overload candidates which are applicable to
+	 *         invocation with the given parameters.
+	 */
+	public static <T, R> Set<? extends Invokable<? super T, ? extends R>> resolveApplicableInvokables(
 			Set<? extends Invokable<? super T, ? extends R>> candidates,
 			List<? extends Type> parameters) {
 		Map<Invokable<? super T, ? extends R>, RuntimeException> failures = new LinkedHashMap<>();
@@ -500,11 +755,15 @@ public class Invokable<T, R> {
 		Set<? extends Invokable<? super T, ? extends R>> compatibleCandidates = filterOverloadCandidates(
 				candidates, i -> i.withLooseApplicability(parameters), putFailures);
 
-		if (compatibleCandidates.isEmpty())
-			compatibleCandidates = filterOverloadCandidates(candidates.stream()
-					.filter(Invokable::isVariableArity).collect(Collectors.toSet()),
+		if (compatibleCandidates.isEmpty()) {
+			compatibleCandidates = new HashSet<>(candidates);
+			for (Invokable<? super T, ? extends R> candidate : candidates)
+				if (!candidate.isVariableArity())
+					compatibleCandidates.remove(candidate);
+
+			compatibleCandidates = filterOverloadCandidates(compatibleCandidates,
 					i -> i.withVariableArityApplicability(parameters), putFailures);
-		else {
+		} else {
 			Set<? extends Invokable<? super T, ? extends R>> oldCompatibleCandidates = compatibleCandidates;
 			compatibleCandidates = filterOverloadCandidates(compatibleCandidates,
 					i -> i.withStrictApplicability(parameters), putFailures);
@@ -534,7 +793,15 @@ public class Invokable<T, R> {
 		}).filter(o -> o != null).collect(Collectors.toSet());
 	}
 
-	public static <T, R> Invokable<? super T, ? extends R> resolveMostSpecificCandidate(
+	/**
+	 * Find which of the given overload candidates is the most specific according
+	 * to the rules described by the Java 8 language specification.
+	 * 
+	 * @param candidates
+	 * @return The set of all given overload candidates which are applicable to
+	 *         invocation with the given parameters.
+	 */
+	public static <T, R> Invokable<? super T, ? extends R> resolveMostSpecificInvokable(
 			Collection<? extends Invokable<? super T, ? extends R>> candidates) {
 		if (candidates.size() == 1)
 			return candidates.iterator().next();

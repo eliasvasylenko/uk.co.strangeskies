@@ -117,6 +117,11 @@ public class Resolver {
 	 */
 	private final Map<GenericDeclaration, Map<TypeVariable<?>, InferenceVariable>> capturedTypeVariables;
 
+	/**
+	 * Create a new resolver over the given bound set.
+	 * 
+	 * @param bounds
+	 */
 	public Resolver(BoundSet bounds) {
 		this.bounds = bounds;
 
@@ -124,10 +129,19 @@ public class Resolver {
 		capturedTypeVariables = new HashMap<>();
 	}
 
+	/**
+	 * Create a new resolver over a new bound set.
+	 */
 	public Resolver() {
 		this(new BoundSet());
 	}
 
+	/**
+	 * Create a copy of a given resolver, over a copy of that resolver's bound
+	 * set.
+	 * 
+	 * @param that
+	 */
 	public Resolver(Resolver that) {
 		this(new BoundSet(that.bounds));
 
@@ -135,6 +149,9 @@ public class Resolver {
 		capturedTypeVariables.putAll(that.capturedTypeVariables);
 	}
 
+	/**
+	 * @return The bound set backing this resolver.
+	 */
 	public BoundSet getBounds() {
 		return bounds;
 	}
@@ -222,46 +239,67 @@ public class Resolver {
 		return remainingDependencies;
 	}
 
-	public void incorporateGenericTypeParameters(GenericDeclaration declaration) {
+	/**
+	 * Each type variable within the given {@link GenericDeclaration}, and each
+	 * enclosing declaration thereof, is incorporated into the backing
+	 * {@link BoundSet} as per
+	 * {@link InferenceVariable#capture(BoundSet, GenericDeclaration)}. Each new
+	 * {@link InferenceVariable} created in this process is registered in this
+	 * {@link Resolver} under the given declaration, even those of enclosing
+	 * {@link GenericDeclaration}s.
+	 * 
+	 * @param declaration
+	 */
+	public void incorporateTypeParameters(GenericDeclaration declaration) {
 		if (capturedDeclarations.add(declaration)) {
 			Map<TypeVariable<?>, InferenceVariable> declarationCaptures = new HashMap<>();
 			capturedTypeVariables.put(declaration, declarationCaptures);
 
 			Map<TypeVariable<?>, InferenceVariable> newInferenceVariables = InferenceVariable
-					.capture(this, declaration);
+					.capture(getBounds(), declaration);
 
 			for (TypeVariable<?> typeVariable : newInferenceVariables.keySet()) {
 				InferenceVariable inferenceVariable = newInferenceVariables
 						.get(typeVariable);
 
 				declarationCaptures.put(typeVariable, inferenceVariable);
-
-				boolean anyProper = false;
-				for (Type bound : bounds.getBoundsOn(inferenceVariable)
-						.getUpperBounds()) {
-					anyProper = anyProper || bounds.isProperType(bound);
-					bounds.incorporate().subtype(inferenceVariable, bound);
-				}
-				if (!anyProper)
-					bounds.incorporate().subtype(inferenceVariable, Object.class);
 			}
 		}
 	}
 
-	public boolean isIncorporated(GenericDeclaration declaration) {
-		return capturedDeclarations.contains(declaration);
-	}
-
+	/**
+	 * The given type is incorporated into the resolver, in a fashion dictated by
+	 * the class of that type, as follows:
+	 * 
+	 * <ul>
+	 * <li>{@link Class} as per
+	 * {@link #incorporateTypeParameters(GenericDeclaration)}.</li>
+	 * 
+	 * <li>{@link ParameterizedType} as per
+	 * {@link #incorporateTypeArguments(ParameterizedType)}.</li>
+	 * 
+	 * <li>{@link GenericArrayType} as per {@link #incorporateType(Type)} invoked
+	 * for it's component type.</li>
+	 * 
+	 * <li>{@link IntersectionType} as per {@link #incorporateType(Type)} invoked
+	 * for each member.</li>
+	 * 
+	 * <li>{@link WildcardType} as per
+	 * {@link #incorporateWildcardType(WildcardType)}.</li>
+	 * </ul>
+	 * 
+	 * @param types
+	 */
 	public void incorporateType(Type types) {
 		new TypeVisitor() {
 			@Override
 			protected void visitClass(Class<?> t) {
-				incorporateGenericTypeParameters(t);
+				incorporateTypeParameters(t);
 			}
 
 			@Override
 			protected void visitParameterizedType(ParameterizedType type) {
-				incorporateGenericTypeArguments(type);
+				incorporateTypeArguments(type);
 			}
 
 			@Override
@@ -320,7 +358,7 @@ public class Resolver {
 	public void addLowerBound(Type type, Type lowerBound) {
 		for (Type bound : Types.getUpperBounds(lowerBound)) {
 			Class<?> rawType = Types.getRawType(bound);
-			incorporateGenericTypeParameters(rawType);
+			incorporateTypeParameters(rawType);
 
 			Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getInferenceVariables(rawType);
 			ConstraintFormula.reduce(Kind.SUBTYPE,
@@ -372,7 +410,7 @@ public class Resolver {
 	private void addConstraint(Kind kind, Type type, Type upperBound) {
 		for (Type bound : Types.getLowerBounds(upperBound)) {
 			Class<?> rawType = Types.getRawType(bound);
-			incorporateGenericTypeParameters(rawType);
+			incorporateTypeParameters(rawType);
 
 			Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getInferenceVariables(rawType);
 			ConstraintFormula
@@ -381,15 +419,29 @@ public class Resolver {
 							bounds);
 
 			if (bound instanceof ParameterizedType) {
-				Map<TypeVariable<?>, Type> arguments = ParameterizedTypes
-						.getAllTypeArguments((ParameterizedType) bound);
-
-				for (TypeVariable<?> typeVariable : inferenceVariables.keySet())
-					ConstraintFormula.reduce(Kind.CONTAINMENT,
-							inferenceVariables.get(typeVariable),
-							arguments.get(typeVariable), bounds);
+				incorporateWildcardParameters((ParameterizedType) bound);
 			}
 		}
+	}
+
+	/**
+	 * @param type
+	 * @return
+	 */
+	public ParameterizedType incorporateWildcardParameters(ParameterizedType type) {
+		Class<?> rawType = Types.getRawType(type);
+
+		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getInferenceVariables(rawType);
+		Map<TypeVariable<?>, Type> arguments = ParameterizedTypes
+				.getAllTypeArguments((ParameterizedType) type);
+
+		for (TypeVariable<?> typeVariable : inferenceVariables.keySet())
+			ConstraintFormula.reduce(Kind.CONTAINMENT,
+					inferenceVariables.get(typeVariable), arguments.get(typeVariable),
+					getBounds());
+
+		return (ParameterizedType) ParameterizedTypes.uncheckedFrom(rawType,
+				inferenceVariables);
 	}
 
 	public Class<?> getRawType(Type type) {
@@ -400,10 +452,9 @@ public class Resolver {
 			return Types.getRawType(resolveType(type));
 	}
 
-	public ParameterizedType incorporateGenericTypeArguments(
-			ParameterizedType type) {
+	public ParameterizedType incorporateTypeArguments(ParameterizedType type) {
 		Class<?> rawType = Types.getRawType(type);
-		incorporateGenericTypeParameters(rawType);
+		incorporateTypeParameters(rawType);
 
 		type = TypeVariableCapture.captureWildcardArguments(type);
 
@@ -418,7 +469,7 @@ public class Resolver {
 
 	public void incorporateInstantiation(TypeVariable<?> variable,
 			Type instantiation) {
-		incorporateGenericTypeParameters(variable.getGenericDeclaration());
+		incorporateTypeParameters(variable.getGenericDeclaration());
 		ConstraintFormula.reduce(Kind.EQUALITY, getInferenceVariable(variable),
 				instantiation, bounds);
 	}
@@ -679,7 +730,7 @@ public class Resolver {
 
 	public Type resolveTypeVariable(GenericDeclaration declaration,
 			TypeVariable<?> typeVariable) {
-		incorporateGenericTypeParameters(typeVariable.getGenericDeclaration());
+		incorporateTypeParameters(typeVariable.getGenericDeclaration());
 
 		return resolveInferenceVariable(capturedTypeVariables.get(declaration).get(
 				typeVariable));
@@ -710,7 +761,7 @@ public class Resolver {
 
 	public Map<TypeVariable<?>, InferenceVariable> getInferenceVariables(
 			GenericDeclaration declaration) {
-		incorporateGenericTypeParameters(declaration);
+		incorporateTypeParameters(declaration);
 		return new HashMap<>(capturedTypeVariables.get(declaration));
 	}
 
@@ -721,7 +772,7 @@ public class Resolver {
 
 	public InferenceVariable getInferenceVariable(GenericDeclaration declaration,
 			TypeVariable<?> typeVariable) {
-		incorporateGenericTypeParameters(declaration);
+		incorporateTypeParameters(declaration);
 		return capturedTypeVariables.get(declaration).get(typeVariable);
 	}
 

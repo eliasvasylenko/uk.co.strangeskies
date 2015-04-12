@@ -30,16 +30,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.utilities.Property;
 import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 
+/**
+ * A collection of utility methods relating to generic array types.
+ * 
+ * @author Elias N Vasylenko
+ */
 public class ParameterizedTypes {
 	private ParameterizedTypes() {}
 
+	/**
+	 * @param type
+	 * @return True if the given class is generic or if a non-statically enclosing
+	 *         class is generic, false otherwise.
+	 */
 	public static boolean isGeneric(Class<?> type) {
 		return !getAllTypeParameters(type).isEmpty();
 	}
@@ -110,10 +120,23 @@ public class ParameterizedTypes {
 				rawType, typeArguments));
 	}
 
+	/**
+	 * @param rawType
+	 * @return A {@link ParameterizedType} instance over the given class, with
+	 *         type parameters substituted with the type variables themselves.
+	 */
 	public static <T> TypeToken<? extends T> from(Class<T> rawType) {
 		return from(rawType, new HashMap<>());
 	}
 
+	/**
+	 * @param rawType
+	 * @param typeArguments
+	 * @return A {@link ParameterizedType} instance over the given class,
+	 *         parameterized with the given type arguments. Type parameters with
+	 *         no provided argument will be parameterized with the type variables
+	 *         themselves.
+	 */
 	@SuppressWarnings("unchecked")
 	public static <T> TypeToken<? extends T> from(Class<T> rawType,
 			Map<? extends TypeVariable<?>, ? extends Type> typeArguments) {
@@ -121,11 +144,22 @@ public class ParameterizedTypes {
 				typeArguments));
 	}
 
+	/**
+	 * @param rawType
+	 * @param typeArguments
+	 * @return As {@link #from(Class, Type...)}.
+	 */
 	public static <T> TypeToken<? extends T> from(Class<T> rawType,
 			Type... typeArguments) {
 		return from(rawType, Arrays.asList(typeArguments));
 	}
 
+	/**
+	 * @param rawType
+	 * @param typeArguments
+	 * @return A {@link ParameterizedType} instance over the given class,
+	 *         parameterized with the given type arguments, in order
+	 */
 	@SuppressWarnings("unchecked")
 	public static <T> TypeToken<? extends T> from(Class<T> rawType,
 			List<Type> typeArguments) {
@@ -148,7 +182,13 @@ public class ParameterizedTypes {
 		return arguments;
 	}
 
-	public static ParameterizedType proxy(Property<?, ParameterizedType> source) {
+	/**
+	 * @param source
+	 * @return A proxy for a parameterized type, forwarding to the instance
+	 *         provided by the given supplier. This is generally useful for
+	 *         algorithms which deal with infinite types.
+	 */
+	public static ParameterizedType proxy(Supplier<ParameterizedType> source) {
 		return new ParameterizedType() {
 			@Override
 			public Type getRawType() {
@@ -325,6 +365,11 @@ public class ParameterizedTypes {
 		return SUBSTITUTE_ARGUMENTS.get(index);
 	}
 
+	/**
+	 * @param type
+	 * @param superclass
+	 * @return As {@link TypeToken#resolveSupertypeParameters(Class)}.
+	 */
 	public static Type resolveSupertypeParameters(Type type, Class<?> superclass) {
 		if (!ParameterizedTypes.isGeneric(superclass))
 			return superclass;
@@ -351,6 +396,11 @@ public class ParameterizedTypes {
 		return supertype;
 	}
 
+	/**
+	 * @param type
+	 * @param subclass
+	 * @return As {@link TypeToken#resolveSubtypeParameters(Class)}.
+	 */
 	public static Type resolveSubtypeParameters(Type type, Class<?> subclass) {
 		if (!ParameterizedTypes.isGeneric(subclass))
 			return subclass;

@@ -25,10 +25,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
- * A collection of utility methods for dealing with wildcard types.
+ * A collection of utility methods relating to wildcard types.
  * 
  * @author Elias N Vasylenko
- *
  */
 public class WildcardTypes {
 	private WildcardTypes() {}

@@ -37,10 +37,16 @@ import uk.co.strangeskies.utilities.factory.Configurator;
  * Comparable<String> will be visited. If the raw type List is visited, then the
  * raw supertype Collection will be visited subsequently.
  *
- * @author eli
+ * @author Elias N Vasylenko
  *
  */
 public class RecursiveTypeVisitor extends TypeVisitor {
+	/**
+	 * A builder for specifying the behaviour of a new
+	 * {@link RecursiveTypeVisitor} instance.
+	 * 
+	 * @author Elias N Vasylenko
+	 */
 	public static class Builder extends Configurator<RecursiveTypeVisitor> {
 		private boolean allowRepeatVisits = false;
 
@@ -75,92 +81,188 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 					boundSet);
 		}
 
+		/**
+		 * @param allowRepeatVisits
+		 *          If true, visit the each class as many times as it is
+		 *          encountered, if false, visit each encountered class only once.
+		 * @return The receiving builder instance.
+		 */
 		public Builder allowRepeatVisits(boolean allowRepeatVisits) {
 			this.allowRepeatVisits = allowRepeatVisits;
 			return this;
 		}
 
+		/**
+		 * The created {@link TypeVisitor} should recursively visit the supertypes
+		 * of encountered types.
+		 * 
+		 * @return The receiving builder instance.
+		 */
 		public Builder visitSupertypes() {
 			this.supertypes = true;
 			return this;
 		}
 
+		/**
+		 * The created {@link TypeVisitor} should recursively visit the enclosed
+		 * types of encountered types.
+		 * 
+		 * @return The receiving builder instance.
+		 */
 		public Builder visitEnclosedTypes() {
 			this.enclosed = true;
 			return this;
 		}
 
+		/**
+		 * The created {@link TypeVisitor} should recursively visit the enclosing
+		 * types of encountered types.
+		 * 
+		 * @return The receiving builder instance.
+		 */
 		public Builder visitEnclosingTypes() {
 			this.enclosing = true;
 			return this;
 		}
 
+		/**
+		 * The created {@link TypeVisitor} should recursively visit the parameter
+		 * types of encountered types.
+		 * 
+		 * @return The receiving builder instance.
+		 */
 		public Builder visitParameters() {
 			this.parameters = true;
 			return this;
 		}
 
+		/**
+		 * The created {@link TypeVisitor} should recursively visit the bound types
+		 * of encountered types.
+		 * 
+		 * @return The receiving builder instance.
+		 */
 		public Builder visitBounds() {
 			this.bounds = true;
 			return this;
 		}
 
+		/**
+		 * The created {@link TypeVisitor} should recursively visit the bound types
+		 * of encountered types, and for {@link InferenceVariable}, according to the
+		 * given {@link BoundSet}.
+		 * 
+		 * @param boundSet
+		 *          The context within which to resolve bounds on inference
+		 *          variables.
+		 * @return The receiving builder instance.
+		 */
 		public Builder visitBounds(BoundSet boundSet) {
 			this.bounds = true;
 			this.boundSet = boundSet;
 			return this;
 		}
 
+		/**
+		 * The visitation method should be invoked <em>after</em> each visit.
+		 * 
+		 * @return The receiving builder instance.
+		 */
 		public Builder postOrder() {
 			this.postOrder = true;
 			return this;
 		}
 
+		/**
+		 * The visitation method should be invoked <em>before</em> each visit.
+		 * 
+		 * @return The receiving builder instance.
+		 */
 		public Builder preOrder() {
 			this.postOrder = false;
 			return this;
 		}
 
+		/**
+		 * @param classVisitor
+		 *          The visitation method for {@link Class}es.
+		 * @return The receiving builder instance.
+		 */
 		public Builder classVisitor(Consumer<Class<?>> classVisitor) {
 			this.classVisitor = classVisitor;
 			return this;
 		}
 
+		/**
+		 * @param genericArrayVisitor
+		 *          The visitation method for {@link GenericArrayType}s.
+		 * @return The receiving builder instance.
+		 */
 		public Builder genericArrayVisitor(
 				Consumer<GenericArrayType> genericArrayVisitor) {
 			this.genericArrayVisitor = genericArrayVisitor;
 			return this;
 		}
 
+		/**
+		 * @param parameterizedTypeVisitor
+		 *          The visitation method for {@link ParameterizedType}s.
+		 * @return The receiving builder instance.
+		 */
 		public Builder parameterizedTypeVisitor(
 				Consumer<ParameterizedType> parameterizedTypeVisitor) {
 			this.parameterizedTypeVisitor = parameterizedTypeVisitor;
 			return this;
 		}
 
+		/**
+		 * @param typeVariableCaptureVisitor
+		 *          The visitation method for {@link TypeVariableCapture}s.
+		 * @return The receiving builder instance.
+		 */
 		public Builder typeVariableCaptureVisitor(
 				Consumer<TypeVariableCapture> typeVariableCaptureVisitor) {
 			this.typeVariableCaptureVisitor = typeVariableCaptureVisitor;
 			return this;
 		}
 
+		/**
+		 * @param typeVariableVisitor
+		 *          The visitation method for {@link TypeVariable}s.
+		 * @return The receiving builder instance.
+		 */
 		public Builder typeVariableVisitor(
 				Consumer<TypeVariable<?>> typeVariableVisitor) {
 			this.typeVariableVisitor = typeVariableVisitor;
 			return this;
 		}
 
+		/**
+		 * @param inferenceVariableVisitor
+		 *          The visitation method for {@link InferenceVariable}s.
+		 * @return The receiving builder instance.
+		 */
 		public Builder inferenceVariableVisitor(
 				Consumer<InferenceVariable> inferenceVariableVisitor) {
 			this.inferenceVariableVisitor = inferenceVariableVisitor;
 			return this;
 		}
 
+		/**
+		 * @param wildcardVisitor
+		 *          The visitation method for {@link WildcardType}s.
+		 * @return The receiving builder instance.
+		 */
 		public Builder wildcardVisitor(Consumer<WildcardType> wildcardVisitor) {
 			this.wildcardVisitor = wildcardVisitor;
 			return this;
 		}
 
+		/**
+		 * @param intersectionTypeVisitor
+		 *          The visitation method for {@link IntersectionType}s.
+		 * @return The receiving builder instance.
+		 */
 		public Builder intersectionTypeVisitor(
 				Consumer<IntersectionType> intersectionTypeVisitor) {
 			this.intersectionTypeVisitor = intersectionTypeVisitor;
@@ -219,6 +321,10 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 		this.intersectionTypeVisitor = intersectionTypeVisitor;
 	}
 
+	/**
+	 * @return An instance of {@link Builder} with which to describe a new
+	 *         {@link RecursiveTypeVisitor}.
+	 */
 	public static Builder build() {
 		return new Builder();
 	}

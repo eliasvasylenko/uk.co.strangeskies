@@ -87,8 +87,8 @@ public class TypeToken<T> {
 
 	/*
 	 * TODO we could do a better job of caching here if we cached parameterized
-	 * types <em>before</em> type variable capture, then substituted any captures
-	 * out of the cached resolver for new ones.
+	 * types *before* type variable capture, then substituted any captures out of
+	 * the cached resolver for new ones.
 	 */
 	private static ComputingMap<Type, Resolver> RESOLVER_CACHE = new LRUCacheComputingMap<>(
 			type -> {
@@ -139,28 +139,19 @@ public class TypeToken<T> {
 			type = resolver
 					.resolveTypeVariable(TypeToken.class.getTypeParameters()[0]);
 		}
-		if (type instanceof ParameterizedType)
-			if (wildcards == Wildcards.CAPTURE)
-				this.type = TypeVariableCapture
-						.captureWildcardArguments((ParameterizedType) type);
-			else if (wildcards == Wildcards.INFERENCE) {
+
+		if (type instanceof ParameterizedType) {
+			ParameterizedType parameterizedType = (ParameterizedType) type;
+
+			if (wildcards == Wildcards.CAPTURE) {
+				type = TypeVariableCapture.captureWildcardArguments(parameterizedType);
+			} else if (wildcards == Wildcards.INFERENCE) {
 				resolver = new Resolver();
-				Map<TypeVariable<?>, InferenceVariable> inferenceVariables = resolver
-						.getInferenceVariables(Types.getRawType(type));
-				Map<TypeVariable<?>, Type> arguments = ParameterizedTypes
-						.getAllTypeArguments((ParameterizedType) type);
+				type = resolver.incorporateWildcardParameters(parameterizedType);
+			}
+		}
 
-				for (TypeVariable<?> typeVariable : inferenceVariables.keySet())
-					ConstraintFormula.reduce(Kind.CONTAINMENT,
-							inferenceVariables.get(typeVariable),
-							arguments.get(typeVariable), resolver.getBounds());
-
-				this.type = ParameterizedTypes.uncheckedFrom(Types.getRawType(type),
-						inferenceVariables);
-			} else
-				this.type = type;
-		else
-			this.type = type;
+		this.type = type;
 
 		rawType = (Class<? super T>) Types.getRawType(type);
 	}
@@ -337,7 +328,7 @@ public class TypeToken<T> {
 	}
 
 	/**
-	 * The type described by this TypeToken.
+	 * The type represented by this {@link TypeToken}.
 	 * 
 	 * @return The actual Type object described.
 	 */
@@ -608,7 +599,7 @@ public class TypeToken<T> {
 				new HashMap<>());
 
 		if (resolver.getBounds().getInferenceVariables().contains(getType())) {
-			resolver.incorporateGenericTypeParameters(superclass);
+			resolver.incorporateTypeParameters(superclass);
 			parameterizedType = resolver.resolveType(parameterizedType);
 
 			ConstraintFormula.reduce(Kind.SUBTYPE, getType(), parameterizedType,
@@ -642,7 +633,7 @@ public class TypeToken<T> {
 				.uncheckedFrom(subclass, new HashMap<>());
 
 		if (resolver.getBounds().getInferenceVariables().contains(getType())) {
-			resolver.incorporateGenericTypeParameters(subclass);
+			resolver.incorporateTypeParameters(subclass);
 			parameterizedType = resolver.resolveType(parameterizedType);
 
 			ConstraintFormula.reduce(Kind.SUBTYPE, parameterizedType, getType(),
@@ -834,9 +825,9 @@ public class TypeToken<T> {
 	public Invokable<? super T, ? extends T> resolveConstructorOverload(
 			List<? extends Type> arguments) {
 		Set<? extends Invokable<? super T, ? extends T>> candidates = Invokable
-				.resolveApplicableCandidates(getConstructors(), arguments);
+				.resolveApplicableInvokables(getConstructors(), arguments);
 
-		return Invokable.resolveMostSpecificCandidate(candidates);
+		return Invokable.resolveMostSpecificInvokable(candidates);
 	}
 
 	/**
@@ -877,9 +868,9 @@ public class TypeToken<T> {
 			throw new IllegalArgumentException("Cannot find any method '" + name
 					+ "' in '" + this + "'.");
 
-		candidates = Invokable.resolveApplicableCandidates(candidates, arguments);
+		candidates = Invokable.resolveApplicableInvokables(candidates, arguments);
 
-		return Invokable.resolveMostSpecificCandidate(candidates);
+		return Invokable.resolveMostSpecificInvokable(candidates);
 	}
 
 	/**

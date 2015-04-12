@@ -21,9 +21,18 @@ package uk.co.strangeskies.reflection;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Type;
 
+/**
+ * A collection of utility methods relating to generic array types.
+ * 
+ * @author Elias N Vasylenko
+ */
 public class GenericArrayTypes {
 	private GenericArrayTypes() {}
 
+	/**
+	 * @param type
+	 * @return A generic array type whose component type is the given type.
+	 */
 	public static GenericArrayType fromComponentType(Type type) {
 		return new GenericArrayType() {
 			@Override

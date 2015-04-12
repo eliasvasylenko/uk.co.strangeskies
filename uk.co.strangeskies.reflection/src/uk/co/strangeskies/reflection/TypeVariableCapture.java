@@ -64,7 +64,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	private final void validate() {
 		if (lowerBounds.length > 0
 				&& !Types.isAssignable(IntersectionType.uncheckedFrom(lowerBounds),
-						IntersectionType.from(upperBounds)))
+						IntersectionType.uncheckedFrom(upperBounds)))
 			throw new TypeInferenceException("Bounds on capture '" + this
 					+ "' are invalid. (" + Arrays.toString(lowerBounds) + " <: "
 					+ Arrays.toString(upperBounds) + ")");
@@ -81,13 +81,13 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 
 		if (upperBounds.length > 0
 				&& !(upperBounds.length == 1 && upperBounds[0] == null))
-			builder.append(" extends [ ")
-					.append(IntersectionType.uncheckedFrom(upperBounds)).append(" ]");
+			builder.append(" extends ").append(
+					IntersectionType.uncheckedFrom(upperBounds));
 
 		if (lowerBounds.length > 0
 				&& !(lowerBounds.length == 1 && lowerBounds[0] == null))
-			builder.append(" super [ ")
-					.append(IntersectionType.uncheckedFrom(lowerBounds)).append(" ]");
+			builder.append(" super ").append(
+					IntersectionType.uncheckedFrom(lowerBounds));
 		;
 
 		return builder.toString();
@@ -106,7 +106,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 		return Types.isAssignable(type,
 				IntersectionType.uncheckedFrom(getUpperBounds()))
 				&& (getLowerBounds().length == 0 || Types.isAssignable(
-						IntersectionType.uncheckedFrom(), type));
+						IntersectionType.uncheckedFrom(getLowerBounds()), type));
 	}
 
 	/**
@@ -151,7 +151,8 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	 * @return A new parameterized type of the same class as the passed type,
 	 *         parameterized with the captures of the original arguments.
 	 */
-	public static ParameterizedType captureWildcardArguments(ParameterizedType type) {
+	public static ParameterizedType captureWildcardArguments(
+			ParameterizedType type) {
 		Map<TypeVariable<?>, Type> arguments = ParameterizedTypes
 				.getAllTypeArguments(type);
 		Map<TypeVariable<?>, Type> captures = new HashMap<>();
@@ -165,9 +166,9 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 			Type capture;
 
 			if (argument instanceof WildcardType) {
-				Type upperBound = IntersectionType.uncheckedFrom(
-						IntersectionType.from(parameter.getBounds()),
-						IntersectionType.from(((WildcardType) argument).getUpperBounds()));
+				Type upperBound = IntersectionType.from(IntersectionType
+						.uncheckedFrom(parameter.getBounds()), IntersectionType
+						.uncheckedFrom(((WildcardType) argument).getUpperBounds()));
 
 				WildcardType constrained = WildcardTypes.fullyBounded(upperBound,
 						IntersectionType.uncheckedFrom(((WildcardType) argument)
@@ -238,7 +239,8 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 				upperBounds = new Type[0];
 			else
 				upperBounds = IntersectionType.asArray(resolver
-						.resolveType(IntersectionType.uncheckedFrom(upperBoundSet)));
+						.resolveType(IntersectionType.from(upperBoundSet,
+								resolver.getBounds())));
 
 			/*
 			 * If the type variables Y1, ..., Yn do not have well-formed bounds (that

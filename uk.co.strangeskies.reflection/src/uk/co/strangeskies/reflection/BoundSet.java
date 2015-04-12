@@ -55,15 +55,6 @@ import java.util.stream.Collectors;
  * </p>
  * 
  * <p>
- * An inference variable can be thought of as a placeholder for an
- * <em>instantiation</em> of a {@link TypeVariable} of which we do not yet know
- * the exact type. The purpose of a bound set is to allow us to infer all
- * relevant and applicable bounds on any such variables in a given context such
- * that we can infer the most specific possible instantiations for these type
- * variables.
- * </p>
- * 
- * <p>
  * The types of bounds which may be included in a bound set are as follows:
  * <ul>
  * <li>Equalities between inference variables and other types, which may or may

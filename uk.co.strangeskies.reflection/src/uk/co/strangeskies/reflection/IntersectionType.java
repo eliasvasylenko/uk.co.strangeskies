@@ -27,16 +27,39 @@ import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 
+/**
+ * An intersection type, as described in the Java 8 language specification.
+ * Roughly, such a type generally behaves as a class which extends each of its
+ * component types, but is otherwise an empty definition.
+ * 
+ * @author Elias N Vasylenko
+ */
 public abstract class IntersectionType implements Type {
 	IntersectionType() {}
 
+	/**
+	 * @return Each type which is a member of this intersection.
+	 */
 	public abstract Type[] getTypes();
 
+	/**
+	 * @param types
+	 * @return As {@link #from(Collection)}.
+	 */
 	public static Type from(Type... types) {
 		return from(Arrays.asList(types));
 	}
 
+	/**
+	 * @param types
+	 * @return An intersection type containing each of the given types, or a
+	 *         single type, if they can all be represented by one.
+	 */
 	public static Type from(Collection<? extends Type> types) {
+		return from(types, new BoundSet());
+	}
+
+	static Type from(Collection<? extends Type> types, BoundSet bounds) {
 		List<Type> flattenedTypes = new ArrayList<>(types);
 
 		for (Type type : new ArrayList<>(flattenedTypes)) {
@@ -56,19 +79,21 @@ public abstract class IntersectionType implements Type {
 		Type mostSpecificType = null;
 
 		for (Type type : new ArrayList<>(flattenedTypes)) {
-			Class<?> rawType = Types.getRawType(type);
+			if (bounds.isProperType(type)) {
+				Class<?> rawType = Types.getRawType(type);
 
-			if (!rawType.isInterface()) {
-				flattenedTypes.remove(type);
+				if (!rawType.isInterface()) {
+					flattenedTypes.remove(type);
 
-				if (mostSpecificType == null
-						|| Types.isAssignable(type, mostSpecificType)) {
-					mostSpecificType = type;
-				} else if (!Types.isAssignable(mostSpecificType, type)) {
-					throw new TypeInferenceException("Illegal intersection type '"
-							+ flattenedTypes
-							+ "', cannot contain both of the non-interface classes '"
-							+ mostSpecificType + "' and '" + type + "'.");
+					if (mostSpecificType == null
+							|| Types.isAssignable(type, mostSpecificType)) {
+						mostSpecificType = type;
+					} else if (!Types.isAssignable(mostSpecificType, type)) {
+						throw new TypeInferenceException("Illegal intersection type '"
+								+ flattenedTypes
+								+ "', cannot contain both of the non-interface classes '"
+								+ mostSpecificType + "' and '" + type + "'.");
+					}
 				}
 			}
 		}
@@ -79,20 +104,22 @@ public abstract class IntersectionType implements Type {
 		for (int i = 0; i < flattenedTypes.size(); i++) {
 			Type iType = flattenedTypes.get(i);
 
-			for (int j = i + 1; j < flattenedTypes.size(); j++) {
-				Type jType = flattenedTypes.get(j);
+			if (bounds.isProperType(iType))
+				for (int j = i + 1; j < flattenedTypes.size(); j++) {
+					Type jType = flattenedTypes.get(j);
 
-				if (Types.isAssignable(iType, jType))
-					flattenedTypes.remove(j--);
-				else if (Types.isAssignable(jType, iType)) {
-					flattenedTypes.remove(i--);
-					break;
+					if (bounds.isProperType(jType))
+						if (Types.isAssignable(iType, jType))
+							flattenedTypes.remove(j--);
+						else if (Types.isAssignable(jType, iType)) {
+							flattenedTypes.remove(i--);
+							break;
+						}
 				}
-			}
 		}
 
 		try {
-			BoundSet bounds = new BoundSet();
+			bounds = new BoundSet(bounds);
 			InferenceVariable inferenceVariable = bounds.addInferenceVariable();
 			for (Type type : flattenedTypes)
 				ConstraintFormula.reduce(Kind.SUBTYPE, inferenceVariable, type, bounds);
@@ -121,8 +148,16 @@ public abstract class IntersectionType implements Type {
 
 	@Override
 	public String toString() {
-		return Arrays.stream(getTypes()).map(Types::toString)
-				.collect(Collectors.joining(" & "));
+		return Arrays
+				.stream(getTypes())
+				.map(
+						t -> {
+							String typeName = Types.toString(t);
+							if (t instanceof TypeVariableCapture)
+								typeName = new StringBuilder().append("[ ").append(typeName)
+										.append(" ]").toString();
+							return typeName;
+						}).collect(Collectors.joining(" & "));
 	}
 
 	@Override
@@ -140,6 +175,12 @@ public abstract class IntersectionType implements Type {
 		return Arrays.hashCode(getTypes());
 	}
 
+	/**
+	 * @param of
+	 * @return And array containing the component types of the given type, or if
+	 *         the given type is not an intersection type, an array containing
+	 *         only the given type.
+	 */
 	public static Type[] asArray(Type of) {
 		if (of instanceof IntersectionType)
 			return ((IntersectionType) of).getTypes();

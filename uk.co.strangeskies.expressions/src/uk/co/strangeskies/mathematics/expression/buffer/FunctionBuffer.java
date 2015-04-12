@@ -24,7 +24,6 @@ import java.util.function.Function;
 
 import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.mathematics.expression.IdentityExpression;
-import uk.co.strangeskies.utilities.function.TransformationOperation;
 
 public class FunctionBuffer<B, F> extends IdentityExpression<F> implements
 		DoubleBuffer<B, F> {
@@ -44,12 +43,11 @@ public class FunctionBuffer<B, F> extends IdentityExpression<F> implements
 
 	public FunctionBuffer(F front, B back,
 			Function<? super B, ? extends F> function) {
-		this(front, back, new TransformationOperation<F, B>(function));
+		this(front, back, (a, b) -> function.apply(b));
 	}
 
 	public FunctionBuffer(B back, Function<? super B, ? extends F> function) {
-		this(function.apply(back), back,
-				new TransformationOperation<F, B>(function));
+		this(function.apply(back), back, function);
 	}
 
 	public FunctionBuffer(FunctionBuffer<B, F> doubleBuffer) {

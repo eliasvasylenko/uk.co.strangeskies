@@ -31,9 +31,34 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * <p>
+ * An inference variable can be thought of as a placeholder for an
+ * <em>instantiation</em> of a {@link TypeVariable} of which we do not yet know
+ * the exact type. An {@link InferenceVariable} alone has no bounds or type
+ * information attached to it. Instead, typically, they are contained within the
+ * context of one or more {@link BoundSet}s, which will track bounds on a set of
+ * inference variables such they their exact type can ultimately be inferred.
+ * </p>
+ * 
+ * @author Elias N Vasylenko
+ */
 public interface InferenceVariable extends Type {
+	/**
+	 * Each {@link TypeVariable} in the given {@link GenericDeclaration} - and
+	 * each non-statically enclosing declaration thereof - is incorporated into
+	 * the given {@link BoundSet}, and new bounds are added to the bound set
+	 * according to the bounds on those type variables.
+	 * 
+	 * @param bounds
+	 *          The {@link BoundSet} context within which to capture the generic
+	 *          declaration.
+	 * @param declaration
+	 * @return A mapping of the type variables on the given declaration to the new
+	 *         inference variables which capture them.
+	 */
 	public static Map<TypeVariable<?>, InferenceVariable> capture(
-			Resolver resolver, GenericDeclaration declaration) {
+			BoundSet bounds, GenericDeclaration declaration) {
 		List<TypeVariable<?>> declarationVariables;
 		if (declaration instanceof Class)
 			declarationVariables = ParameterizedTypes
@@ -43,32 +68,55 @@ public interface InferenceVariable extends Type {
 
 		Map<TypeVariable<?>, InferenceVariable> captures = declarationVariables
 				.stream().collect(
-						Collectors.toMap(Function.identity(), t -> resolver.getBounds()
-								.addInferenceVariable(t.getName())));
+						Collectors.toMap(Function.identity(),
+								t -> bounds.addInferenceVariable(t.getName())));
 
 		TypeSubstitution substitution = new TypeSubstitution(captures::get);
 		for (TypeVariable<?> variable : captures.keySet())
-			resolver
-					.getBounds()
-					.incorporate()
-					.subtype(
-							captures.get(variable),
-							substitution.resolve(IntersectionType.uncheckedFrom(variable
-									.getBounds())));
+			bounds.incorporate().subtype(
+					captures.get(variable),
+					substitution.resolve(IntersectionType.uncheckedFrom(variable
+							.getBounds())));
+
+		for (TypeVariable<?> typeVariable : captures.keySet()) {
+			InferenceVariable inferenceVariable = captures.get(typeVariable);
+
+			boolean anyProper = false;
+			for (Type bound : bounds.getBoundsOn(inferenceVariable).getUpperBounds()) {
+				anyProper = anyProper || bounds.isProperType(bound);
+				bounds.incorporate().subtype(inferenceVariable, bound);
+			}
+			if (!anyProper)
+				bounds.incorporate().subtype(inferenceVariable, Object.class);
+		}
 
 		return captures;
 	}
 
+	/**
+	 * Create fresh {@link InferenceVariable}s for each parameter of the given
+	 * type - and each non-statically enclosing type thereof - which is a
+	 * {@link WildcardType}. New bounds based on the bounds of those wildcards,
+	 * and the bounds of the {@link TypeVariable}s they substitute, will be
+	 * incorporated into the given {@link BoundSet}, along with a
+	 * {@link CaptureConversion} bound representing this capture conversion. The
+	 * process of capture conversion is described in more detail in the Java 8
+	 * language specification.
+	 * 
+	 * @param type
+	 * @param bounds
+	 * @return A new parameterized type derived from the given parameterized type,
+	 *         with any fresh {@link InferenceVariable}s substituted for the type
+	 *         arguments.
+	 */
 	/*
 	 * Let G name a generic type declaration (§8.1.2, §9.1.2) with n type
 	 * parameters A1,...,An with corresponding bounds U1,...,Un.
 	 */
-	public static Type captureConversion(Type type, BoundSet bounds) {
-		if (type instanceof ParameterizedType
-				&& ParameterizedTypes.getAllTypeArguments((ParameterizedType) type)
-						.values().stream().anyMatch(WildcardType.class::isInstance)) {
-			ParameterizedType originalType = (ParameterizedType) type;
-
+	public static ParameterizedType captureConversion(ParameterizedType type,
+			BoundSet bounds) {
+		if (ParameterizedTypes.getAllTypeArguments(type).values().stream()
+				.anyMatch(WildcardType.class::isInstance)) {
 			/*
 			 * There exists a capture conversion from a parameterized type
 			 * G<T1,...,Tn> (§4.5) to a parameterized type G<S1,...,Sn>, where, for 1
@@ -76,12 +124,12 @@ public interface InferenceVariable extends Type {
 			 */
 
 			Map<TypeVariable<?>, Type> parameterArguments = ParameterizedTypes
-					.getAllTypeArguments(originalType);
+					.getAllTypeArguments(type);
 			Map<InferenceVariable, Type> capturedArguments = new HashMap<>();
 			Map<InferenceVariable, TypeVariable<?>> capturedParameters = new HashMap<>();
 
 			Map<TypeVariable<?>, InferenceVariable> parameterCaptures = ParameterizedTypes
-					.getAllTypeParameters(Types.getRawType(originalType))
+					.getAllTypeParameters(Types.getRawType(type))
 					.stream()
 					.collect(
 							Collectors.toMap(Function.identity(),
@@ -102,7 +150,7 @@ public interface InferenceVariable extends Type {
 						 * is a fresh type variable whose upper bound is
 						 * Ui[A1:=S1,...,An:=Sn] and whose lower bound is Bi.
 						 */
-						upperBound = IntersectionType.uncheckedFrom(parameter.getBounds());
+						upperBound = IntersectionType.from(parameter.getBounds());
 						lowerBound = IntersectionType.uncheckedFrom(wildcardArgument
 								.getLowerBounds());
 					} else if (wildcardArgument.getUpperBounds().length > 0) {
@@ -124,7 +172,6 @@ public interface InferenceVariable extends Type {
 						 */
 						upperBound = IntersectionType.from(parameter.getBounds());
 						lowerBound = null;
-						;
 					}
 
 					upperBound = new TypeSubstitution(parameterCaptures::get)
@@ -146,12 +193,12 @@ public interface InferenceVariable extends Type {
 			}
 
 			ParameterizedType capturedType = (ParameterizedType) ParameterizedTypes
-					.from(Types.getRawType(originalType), parameterCaptures).getType();
+					.from(Types.getRawType(type), parameterCaptures).getType();
 
 			CaptureConversion captureConversion = new CaptureConversion() {
 				@Override
 				public ParameterizedType getOriginalType() {
-					return originalType;
+					return type;
 				}
 
 				@Override
@@ -170,13 +217,13 @@ public interface InferenceVariable extends Type {
 				}
 
 				@Override
-				public ParameterizedType getCapturedType() {
+				public ParameterizedType getCaptureType() {
 					return capturedType;
 				}
 
 				@Override
 				public String toString() {
-					return new StringBuilder().append(getCapturedType().getTypeName())
+					return new StringBuilder().append(getCaptureType().getTypeName())
 							.append(" = capture(").append(getOriginalType().getTypeName())
 							.append(")").toString();
 				}
@@ -184,7 +231,7 @@ public interface InferenceVariable extends Type {
 
 			bounds.incorporate().captureConversion(captureConversion);
 
-			return captureConversion.getCapturedType();
+			return captureConversion.getCaptureType();
 		} else
 			return type;
 	}

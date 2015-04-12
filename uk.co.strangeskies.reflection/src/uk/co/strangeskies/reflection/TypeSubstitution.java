@@ -177,7 +177,7 @@ public class TypeSubstitution {
 			return visited.get(type);
 
 		IdentityProperty<ParameterizedType> result = new IdentityProperty<>();
-		visited.put(type, ParameterizedTypes.proxy(result));
+		visited.put(type, ParameterizedTypes.proxy(result::get));
 
 		result.set(ParameterizedTypes.uncheckedFrom(
 				resolve(type.getOwnerType(), visited), Types.getRawType(type), Arrays

@@ -509,7 +509,7 @@ public class InferenceVariableBounds {
 				 * R›
 				 */
 				ConstraintFormula.reduce(Kind.SUBTYPE,
-						θ.resolve(IntersectionType.uncheckedFrom(B)), R, boundSet);
+						θ.resolve(IntersectionType.from(B)), R, boundSet);
 			}
 		} else if (A.getLowerBounds().length > 0) {
 			/*
@@ -518,7 +518,7 @@ public class InferenceVariableBounds {
 			 * αi <: R implies the constraint formula ‹Bi θ <: R›
 			 */
 			ConstraintFormula.reduce(Kind.SUBTYPE,
-					θ.resolve(IntersectionType.uncheckedFrom(B)), R, boundSet);
+					θ.resolve(IntersectionType.from(B)), R, boundSet);
 		} else {
 			/*
 			 * If Ai is a wildcard of the form ?:
@@ -526,7 +526,7 @@ public class InferenceVariableBounds {
 			 * αi <: R implies the constraint formula ‹Bi θ <: R›
 			 */
 			ConstraintFormula.reduce(Kind.SUBTYPE,
-					θ.resolve(IntersectionType.uncheckedFrom(B)), R, boundSet);
+					θ.resolve(IntersectionType.from(B)), R, boundSet);
 		}
 	}
 
