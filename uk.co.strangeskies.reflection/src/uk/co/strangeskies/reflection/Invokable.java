@@ -238,12 +238,21 @@ public class Invokable<T, R> {
 		else if (isFinal())
 			builder.append("final ");
 
+		if (isGeneric()) {
+			builder
+					.append("<")
+					.append(
+							getTypeParameters().stream().map(getTypeArguments()::get)
+									.map(Objects::toString).collect(Collectors.joining(", ")))
+					.append("> ");
+		}
+
+		builder.append(returnType).toString();
+		if (executable instanceof Method)
+			builder.append(" ").append(receiverType).append(".")
+					.append(executable.getName());
+
 		return builder
-				.append(returnType)
-				.append(" ")
-				.append(receiverType)
-				.append(".")
-				.append(executable.getName())
 				.append("(")
 				.append(
 						parameters.stream().map(Objects::toString)
@@ -413,8 +422,8 @@ public class Invokable<T, R> {
 						nextParameter = null;
 					}
 				}
-				new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, argument, parameter)
-						.reduceInto(resolver.getBounds());
+				ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, argument,
+						parameter, resolver.getBounds());
 			}
 
 			Resolver testResolver = new Resolver(resolver);
@@ -436,8 +445,10 @@ public class Invokable<T, R> {
 				.collect(Collectors.toList());
 	}
 
-	public List<Type> getTypeArguments() {
-		throw new UnsupportedOperationException(); // TODO
+	public Map<TypeVariable<? extends Executable>, Type> getTypeArguments() {
+		return getTypeParameters().stream().collect(
+				Collectors.toMap(t -> (TypeVariable<? extends Executable>) t,
+						t -> resolver.resolveType(executable, t)));
 	}
 
 	public Invokable<T, ? extends R> withTypeArgument(
@@ -663,14 +674,14 @@ public class Invokable<T, R> {
 			if (firstCandidate.isVariableArity()) {
 				parameters--;
 
-				new ConstraintFormula(Kind.SUBTYPE, firstCandidate.getParameters().get(
-						parameters), genericCandidate.getParameters().get(parameters))
-						.reduceInto(resolver.getBounds());
+				ConstraintFormula.reduce(Kind.SUBTYPE, firstCandidate.getParameters()
+						.get(parameters), genericCandidate.getParameters().get(parameters),
+						resolver.getBounds());
 			}
 
 			for (int i = 0; i < parameters; i++) {
-				new ConstraintFormula(Kind.SUBTYPE, firstCandidate.getParameters().get(
-						i), genericCandidate.getParameters().get(i)).reduceInto(resolver
+				ConstraintFormula.reduce(Kind.SUBTYPE, firstCandidate.getParameters()
+						.get(i), genericCandidate.getParameters().get(i), resolver
 						.getBounds());
 			}
 

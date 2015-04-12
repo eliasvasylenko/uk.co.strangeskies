@@ -117,16 +117,6 @@ public class BoundSet {
 	 * @author Elias N Vasylenko
 	 */
 	public class IncorporationTarget {
-		private final ConstraintFormula constraintFormula;
-
-		IncorporationTarget(ConstraintFormula constraintFormula) {
-			this.constraintFormula = constraintFormula;
-		}
-
-		IncorporationTarget() {
-			this.constraintFormula = null;
-		}
-
 		/**
 		 * If one or both of the arguments passed are considered inference variables
 		 * within the enclosing BoundSet, the appropriate equality bound is added
@@ -137,11 +127,17 @@ public class BoundSet {
 		 * @param second
 		 */
 		public void equality(Type first, Type second) {
-			if (inferenceVariableBounds.containsKey(first))
-				inferenceVariableBounds.get(first).addEquality(second);
+			try {
+				if (inferenceVariableBounds.containsKey(first))
+					inferenceVariableBounds.get(first).addEquality(second);
 
-			if (inferenceVariableBounds.containsKey(second))
-				inferenceVariableBounds.get(second).addEquality(first);
+				if (inferenceVariableBounds.containsKey(second))
+					inferenceVariableBounds.get(second).addEquality(first);
+			} catch (Exception e) {
+				throw new TypeInferenceException("Cannot add equality bound between '"
+						+ first + "' and '" + second + "' to bound set '" + BoundSet.this,
+						e);
+			}
 		}
 
 		/**
@@ -154,11 +150,17 @@ public class BoundSet {
 		 * @param supertype
 		 */
 		public void subtype(Type subtype, Type supertype) {
-			if (inferenceVariableBounds.containsKey(subtype))
-				inferenceVariableBounds.get(subtype).addUpperBound(supertype);
+			try {
+				if (inferenceVariableBounds.containsKey(subtype))
+					inferenceVariableBounds.get(subtype).addUpperBound(supertype);
 
-			if (inferenceVariableBounds.containsKey(supertype))
-				inferenceVariableBounds.get(supertype).addLowerBound(subtype);
+				if (inferenceVariableBounds.containsKey(supertype))
+					inferenceVariableBounds.get(supertype).addLowerBound(subtype);
+			} catch (Exception e) {
+				throw new TypeInferenceException("Cannot add subtype bound between '"
+						+ subtype + "' and '" + supertype + "' to bound set '"
+						+ BoundSet.this, e);
+			}
 		}
 
 		/**
@@ -168,65 +170,11 @@ public class BoundSet {
 		 * @param captureConversion
 		 */
 		public void captureConversion(CaptureConversion captureConversion) {
-			captureConversions.add(captureConversion);
-
-			/*
-			 * When a bound set contains a bound of the form G<α1, ..., αn> =
-			 * capture(G<A1, ..., An>), new bounds are implied and new constraint
-			 * formulas may be implied, as follows.
-			 * 
-			 * Let P1, ..., Pn represent the type parameters of G and let B1, ..., Bn
-			 * represent the bounds of these type parameters. Let θ represent the
-			 * substitution [P1:=α1, ..., Pn:=αn]. Let R be a type that is not an
-			 * inference variable (but is not necessarily a proper type).
-			 * 
-			 * A set of bounds on α1, ..., αn is implied, constructed from the
-			 * declared bounds of P1, ..., Pn as specified in §18.1.3.
-			 * 
-			 * In addition, for all i (1 ≤ i ≤ n):
-			 */
-			for (InferenceVariable inferenceVariable : captureConversion
-					.getInferenceVariables()) {
-				InferenceVariableBounds bounds = inferenceVariableBounds
-						.get(inferenceVariable);
-
-				if (bounds == null) {
-					bounds = new InferenceVariableBounds(BoundSet.this, inferenceVariable);
-					inferenceVariableBounds.put(inferenceVariable, bounds);
-				}
-
-				Type capturedArgument = captureConversion
-						.getCapturedArgument(inferenceVariable);
-				TypeVariable<?> capturedParmeter = captureConversion
-						.getCapturedParameter(inferenceVariable);
-
-				if (capturedArgument instanceof WildcardType) {
-					/*
-					 * If Ai is a wildcard of the form ?, or;
-					 * 
-					 * If Ai is a wildcard of the form ? extends T, or;
-					 * 
-					 * If Ai is a wildcard of the form ? super T:
-					 */
-					WildcardType capturedWildcard = (WildcardType) capturedArgument;
-
-					for (Type equality : bounds.getEqualities())
-						if (!inferenceVariableBounds.containsKey(equality))
-							bounds.incorporateCapturedEquality(capturedWildcard, equality);
-
-					for (Type upperBound : bounds.getUpperBounds())
-						if (!inferenceVariableBounds.containsKey(upperBound))
-							bounds.incorporateCapturedSubtype(captureConversion,
-									capturedWildcard, capturedParmeter, upperBound);
-
-					for (Type lowerBound : bounds.getLowerBounds())
-						if (!inferenceVariableBounds.containsKey(lowerBound))
-							bounds.incorporateCapturedSupertype(capturedWildcard, lowerBound);
-				} else
-					/*
-					 * If Ai is not a wildcard, then the bound αi = Ai is implied.
-					 */
-					incorporate().equality(inferenceVariable, capturedArgument);
+			try {
+				addCaptureConversion(captureConversion);
+			} catch (Exception e) {
+				throw new TypeInferenceException("Cannot add capture conversion '"
+						+ captureConversion + "' to bound set '" + BoundSet.this, e);
 			}
 		}
 
@@ -250,12 +198,8 @@ public class BoundSet {
 		public void falsehood(boolean throwing) {
 			valid = false;
 			if (throwing)
-				if (constraintFormula != null)
-					throw new TypeInferenceException("Cannot reduce constraint "
-							+ constraintFormula + " into bounds set " + BoundSet.this + ".");
-				else
-					throw new TypeInferenceException(
-							"Addition of falsehood into bounds set " + BoundSet.this + ".");
+				throw new TypeInferenceException(
+						"Addition of falsehood into bounds set '" + BoundSet.this + "'.");
 		}
 	}
 
@@ -285,9 +229,6 @@ public class BoundSet {
 	 */
 	public BoundSet(BoundSet boundSet) {
 		this();
-
-		// System.out.println(System.identityHashCode(boundSet) + " -> "
-		// + System.identityHashCode(this));
 
 		captureConversions.addAll(boundSet.captureConversions);
 		inferenceVariableBounds.putAll(boundSet.inferenceVariableBounds
@@ -384,15 +325,74 @@ public class BoundSet {
 				.collect(Collectors.toSet());
 	}
 
-	IncorporationTarget incorporate(ConstraintFormula constraintFormula) {
-		return new IncorporationTarget(constraintFormula);
-	}
-
 	/**
 	 * @return A consumer through which bounds may be added to this bound set.
 	 */
 	public IncorporationTarget incorporate() {
 		return new IncorporationTarget();
+	}
+
+	void addCaptureConversion(CaptureConversion captureConversion) {
+		captureConversions.add(captureConversion);
+
+		/*
+		 * When a bound set contains a bound of the form G<α1, ..., αn> =
+		 * capture(G<A1, ..., An>), new bounds are implied and new constraint
+		 * formulas may be implied, as follows.
+		 * 
+		 * Let P1, ..., Pn represent the type parameters of G and let B1, ..., Bn
+		 * represent the bounds of these type parameters. Let θ represent the
+		 * substitution [P1:=α1, ..., Pn:=αn]. Let R be a type that is not an
+		 * inference variable (but is not necessarily a proper type).
+		 * 
+		 * A set of bounds on α1, ..., αn is implied, constructed from the declared
+		 * bounds of P1, ..., Pn as specified in §18.1.3.
+		 * 
+		 * In addition, for all i (1 ≤ i ≤ n):
+		 */
+		for (InferenceVariable inferenceVariable : captureConversion
+				.getInferenceVariables()) {
+			InferenceVariableBounds bounds = inferenceVariableBounds
+					.get(inferenceVariable);
+
+			if (bounds == null) {
+				bounds = new InferenceVariableBounds(BoundSet.this, inferenceVariable);
+				inferenceVariableBounds.put(inferenceVariable, bounds);
+			}
+
+			Type capturedArgument = captureConversion
+					.getCapturedArgument(inferenceVariable);
+			TypeVariable<?> capturedParmeter = captureConversion
+					.getCapturedParameter(inferenceVariable);
+
+			if (capturedArgument instanceof WildcardType) {
+				/*
+				 * If Ai is a wildcard of the form ?, or;
+				 * 
+				 * If Ai is a wildcard of the form ? extends T, or;
+				 * 
+				 * If Ai is a wildcard of the form ? super T:
+				 */
+				WildcardType capturedWildcard = (WildcardType) capturedArgument;
+
+				for (Type equality : bounds.getEqualities())
+					if (!inferenceVariableBounds.containsKey(equality))
+						bounds.incorporateCapturedEquality(capturedWildcard, equality);
+
+				for (Type upperBound : bounds.getUpperBounds())
+					if (!inferenceVariableBounds.containsKey(upperBound))
+						bounds.incorporateCapturedSubtype(captureConversion,
+								capturedWildcard, capturedParmeter, upperBound);
+
+				for (Type lowerBound : bounds.getLowerBounds())
+					if (!inferenceVariableBounds.containsKey(lowerBound))
+						bounds.incorporateCapturedSupertype(capturedWildcard, lowerBound);
+			} else
+				/*
+				 * If Ai is not a wildcard, then the bound αi = Ai is implied.
+				 */
+				incorporate().equality(inferenceVariable, capturedArgument);
+		}
 	}
 
 	void removeCaptureConversions(

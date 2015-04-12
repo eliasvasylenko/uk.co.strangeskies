@@ -95,8 +95,7 @@ public abstract class IntersectionType implements Type {
 			BoundSet bounds = new BoundSet();
 			InferenceVariable inferenceVariable = bounds.addInferenceVariable();
 			for (Type type : flattenedTypes)
-				new ConstraintFormula(Kind.SUBTYPE, inferenceVariable, type)
-						.reduceInto(bounds);
+				ConstraintFormula.reduce(Kind.SUBTYPE, inferenceVariable, type, bounds);
 		} catch (Exception e) {
 			throw new TypeInferenceException("Illegal intersection type '"
 					+ flattenedTypes + "'.", e);

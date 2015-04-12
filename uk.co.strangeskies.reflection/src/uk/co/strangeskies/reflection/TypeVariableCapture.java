@@ -151,7 +151,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	 * @return A new parameterized type of the same class as the passed type,
 	 *         parameterized with the captures of the original arguments.
 	 */
-	public static ParameterizedType captureArguments(ParameterizedType type) {
+	public static ParameterizedType captureWildcardArguments(ParameterizedType type) {
 		Map<TypeVariable<?>, Type> arguments = ParameterizedTypes
 				.getAllTypeArguments(type);
 		Map<TypeVariable<?>, Type> captures = new HashMap<>();
@@ -201,7 +201,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	 * @return A mapping from the inference variables passes to their new
 	 *         captures.
 	 */
-	public static Map<InferenceVariable, TypeVariableCapture> capture(
+	public static Map<InferenceVariable, TypeVariableCapture> captureInferenceVariables(
 			Collection<? extends InferenceVariable> types, Resolver resolver) {
 		TypeVariable<?>[] parameters = new TypeVariable<?>[types.size()];
 		GenericDeclaration declaration = createGenericDeclarationOver(parameters);

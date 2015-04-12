@@ -323,16 +323,18 @@ public class Resolver {
 			incorporateGenericTypeParameters(rawType);
 
 			Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getInferenceVariables(rawType);
-			new ConstraintFormula(Kind.SUBTYPE, ParameterizedTypes.uncheckedFrom(
-					rawType, inferenceVariables), type).reduceInto(bounds);
+			ConstraintFormula.reduce(Kind.SUBTYPE,
+					ParameterizedTypes.uncheckedFrom(rawType, inferenceVariables), type,
+					bounds);
 
 			if (!inferenceVariables.isEmpty()) {
 				Map<TypeVariable<?>, Type> arguments = ParameterizedTypes
 						.getAllTypeArguments((ParameterizedType) bound);
 
 				for (TypeVariable<?> typeVariable : inferenceVariables.keySet())
-					new ConstraintFormula(Kind.CONTAINMENT, arguments.get(typeVariable),
-							inferenceVariables.get(typeVariable)).reduceInto(bounds);
+					ConstraintFormula.reduce(Kind.CONTAINMENT,
+							arguments.get(typeVariable),
+							inferenceVariables.get(typeVariable), bounds);
 			}
 		}
 	}
@@ -373,19 +375,29 @@ public class Resolver {
 			incorporateGenericTypeParameters(rawType);
 
 			Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getInferenceVariables(rawType);
-			new ConstraintFormula(kind, type, ParameterizedTypes.uncheckedFrom(
-					rawType, inferenceVariables)).reduceInto(bounds);
+			ConstraintFormula
+					.reduce(kind, type,
+							ParameterizedTypes.uncheckedFrom(rawType, inferenceVariables),
+							bounds);
 
 			if (bound instanceof ParameterizedType) {
 				Map<TypeVariable<?>, Type> arguments = ParameterizedTypes
 						.getAllTypeArguments((ParameterizedType) bound);
 
 				for (TypeVariable<?> typeVariable : inferenceVariables.keySet())
-					new ConstraintFormula(Kind.CONTAINMENT,
-							inferenceVariables.get(typeVariable), arguments.get(typeVariable))
-							.reduceInto(bounds);
+					ConstraintFormula.reduce(Kind.CONTAINMENT,
+							inferenceVariables.get(typeVariable),
+							arguments.get(typeVariable), bounds);
 			}
 		}
+	}
+
+	public Class<?> getRawType(Type type) {
+		if (getBounds().getInferenceVariables().contains(type))
+			return Types.getRawType(IntersectionType.uncheckedFrom(getBounds()
+					.getBoundsOn((InferenceVariable) type).getUpperBounds()));
+		else
+			return Types.getRawType(resolveType(type));
 	}
 
 	public ParameterizedType incorporateGenericTypeArguments(
@@ -393,13 +405,13 @@ public class Resolver {
 		Class<?> rawType = Types.getRawType(type);
 		incorporateGenericTypeParameters(rawType);
 
-		type = TypeVariableCapture.captureArguments(type);
+		type = TypeVariableCapture.captureWildcardArguments(type);
 
 		for (Map.Entry<TypeVariable<?>, Type> typeArgument : ParameterizedTypes
 				.getAllTypeArguments(type).entrySet())
-			new ConstraintFormula(Kind.EQUALITY, capturedTypeVariables.get(rawType)
-					.get(typeArgument.getKey()), typeArgument.getValue())
-					.reduceInto(bounds);
+			ConstraintFormula.reduce(Kind.EQUALITY, capturedTypeVariables
+					.get(rawType).get(typeArgument.getKey()), typeArgument.getValue(),
+					bounds);
 
 		return type;
 	}
@@ -407,8 +419,8 @@ public class Resolver {
 	public void incorporateInstantiation(TypeVariable<?> variable,
 			Type instantiation) {
 		incorporateGenericTypeParameters(variable.getGenericDeclaration());
-		new ConstraintFormula(Kind.EQUALITY, getInferenceVariable(variable),
-				instantiation).reduceInto(bounds);
+		ConstraintFormula.reduce(Kind.EQUALITY, getInferenceVariable(variable),
+				instantiation, bounds);
 	}
 
 	public Map<InferenceVariable, Type> infer(GenericDeclaration context) {
@@ -611,7 +623,7 @@ public class Resolver {
 		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
 		 */
 		Map<InferenceVariable, TypeVariableCapture> freshVariables = TypeVariableCapture
-				.capture(minimalSet, this);
+				.captureInferenceVariables(minimalSet, this);
 
 		/*
 		 * Otherwise, for all i (1 ≤ i ≤ n), all bounds of the form G<..., αi, ...>
@@ -686,7 +698,10 @@ public class Resolver {
 	}
 
 	private Type resolveInferenceVariable(InferenceVariable variable) {
-		return bounds.getBoundsOn(variable).getInstantiation().orElse(variable);
+		if (bounds.getInferenceVariables().contains(variable))
+			return bounds.getBoundsOn(variable).getInstantiation().orElse(variable);
+		else
+			return variable;
 	}
 
 	public Set<InferenceVariable> getInferenceVariables() {
@@ -714,7 +729,7 @@ public class Resolver {
 		test();
 	}
 
-	static class TT<TTT> extends TypeLiteral<TTT> {}
+	static class TT<TTT> extends TypeToken<TTT> {}
 
 	static class Y<YT> extends TT<Set<YT>> {}
 
@@ -736,17 +751,17 @@ public class Resolver {
 	}
 
 	public static <T> TypeToken<List<T>> listOf(Class<T> sub) {
-		return new TypeLiteral<List<T>>() {}.withTypeArgument(
+		return new TypeToken<List<T>>() {}.withTypeArgument(
 				new TypeParameter<T>() {}, sub);
 	}
 
 	public static void test() {
-		System.out.println(new TypeLiteral<SchemaNode.Effective<?, ?>>() {}
+		System.out.println(new TypeToken<SchemaNode.Effective<?, ?>>() {}
 				.resolveSupertypeParameters(SchemaNode.class));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(new TypeLiteral<HashSet<String>>() {}
+		System.out.println(new TypeToken<HashSet<String>>() {}
 				.resolveSupertypeParameters(Set.class));
 		System.out.println();
 		System.out.println();
@@ -755,65 +770,65 @@ public class Resolver {
 		System.out.println();
 		System.out.println();
 
-		System.out.println(new TypeLiteral<Collection<? super String>>() {}
+		System.out.println(new TypeToken<Collection<? super String>>() {}
 				.resolveSubtypeParameters(HashSet.class));
 		System.out.println();
 		System.out.println();
 
-		new TypeLiteral<Outer<Serializable>.Inner<String, HashSet<Serializable>, Set<String>>>() {}
+		new TypeToken<Outer<Serializable>.Inner<String, HashSet<Serializable>, Set<String>>>() {}
 				.getResolver();
 		System.out.println();
 		System.out.println();
 
 		System.out
-				.println(new TypeLiteral<Outer<Serializable>.Inner<String, HashSet<Serializable>, Set<String>>>() {}
+				.println(new TypeToken<Outer<Serializable>.Inner<String, HashSet<Serializable>, Set<String>>>() {}
 						.resolveSubtypeParameters(Outer2.Inner3.class));
 		System.out.println();
 		System.out.println();
 
 		System.out
-				.println(new TypeLiteral<Outer2<Serializable, String>.Inner3<HashSet<Serializable>>>() {}
+				.println(new TypeToken<Outer2<Serializable, String>.Inner3<HashSet<Serializable>>>() {}
 						.resolveSupertypeParameters(Outer.Inner.class));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(new TypeLiteral<Outer<String>.Inner2<Double>>() {}
+		System.out.println(new TypeToken<Outer<String>.Inner2<Double>>() {}
 				.resolveSupertypeParameters(Outer.Inner.class));
 		System.out.println();
 		System.out.println();
 
 		System.out.println("type test: "
-				+ new TypeLiteral<String>() {}
+				+ new TypeToken<String>() {}
 						.resolveSupertypeParameters(Comparable.class));
 		System.out.println();
 		System.out.println();
 
 		class SM<YO> {}
 		class NM<V extends Number> extends SM<V> {}
-		System.out.println(new TypeLiteral<NM<?>>() {});
-		System.out.println(new TypeLiteral<NM<?>>() {}
+		System.out.println(new TypeToken<NM<?>>() {});
+		System.out.println(new TypeToken<NM<?>>() {}
 				.resolveSupertypeParameters(SM.class));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeToken.of(new TypeLiteral<Nest<?>>() {}.getType()));
+		System.out.println(TypeToken.of(new TypeToken<Nest<?>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeToken.of(new TypeLiteral<Nest22<?>>() {}.getType()));
+		System.out.println(TypeToken.of(new TypeToken<Nest22<?>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeToken.of(new TypeLiteral<Nest2<?>>() {}.getType()));
+		System.out.println(TypeToken.of(new TypeToken<Nest2<?>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeToken.of(new TypeLiteral<Base<LeftN, RightN>>() {}
+		System.out.println(TypeToken.of(new TypeToken<Base<LeftN, RightN>>() {}
 				.getType()));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeToken.of(new TypeLiteral<RightN>() {}
+		System.out.println(TypeToken.of(new TypeToken<RightN>() {}
 				.resolveSupertypeParameters(Base.class).getType()));
 		System.out.println();
 		System.out.println();
@@ -826,61 +841,61 @@ public class Resolver {
 		System.out.println();
 		System.out.println();
 
-		System.out.println(new TypeLiteral<Self<?>>() {}
-				.isAssignableFrom(new TypeLiteral<Nest<?>>() {}));
+		System.out.println(new TypeToken<Self<?>>() {}
+				.isAssignableFrom(new TypeToken<Nest<?>>() {}));
 		System.out.println();
 		System.out.println();
 
 		System.out.println(TypeToken
-				.of(new TypeLiteral<Nest2<? extends Nest2<?>>>() {}.getType()));
+				.of(new TypeToken<Nest2<? extends Nest2<?>>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 
 		System.out.println(TypeToken
-				.of(new TypeLiteral<Nest2<? extends Nest22<?>>>() {}.getType()));
+				.of(new TypeToken<Nest2<? extends Nest22<?>>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(new TypeLiteral<SchemaNode.Effective<?, ?>>() {}
+		System.out.println(new TypeToken<SchemaNode.Effective<?, ?>>() {}
 				.resolveSupertypeParameters(SchemaNode.class));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(new TypeLiteral<Gurn<Integer>>() {}.getMethods()
+		System.out.println(new TypeToken<Gurn<Integer>>() {}.getMethods()
 				.iterator().next().infer());
 		System.out.println();
 		System.out.println();
 
-		TypeToken<?> receiver = new TypeLiteral<BindingState>() {};
+		TypeToken<?> receiver = new TypeToken<BindingState>() {};
 		System.out.println("RESOLVE 1:");
 		System.out
 				.println(receiver.resolveMethodOverload("bindingNode", int.class));
 		System.out.println();
 		System.out.println();
 
-		receiver = new TypeLiteral<SchemaNodeConfigurator<?, ?>>() {};
+		receiver = new TypeToken<SchemaNodeConfigurator<?, ?>>() {};
 		System.out.println("RESOLVE 2:");
 		System.out.println(TypeToken.of(receiver.getType()).resolveMethodOverload(
 				"name", Arrays.asList(String.class)));
 		System.out.println();
 		System.out.println();
 
-		receiver = new TypeLiteral<ChildNodeConfigurator<?, ?>>() {};
+		receiver = new TypeToken<ChildNodeConfigurator<?, ?>>() {};
 		System.out.println("RESOLVE 3:");
 		System.out.println(TypeToken.of(receiver.getType()).resolveMethodOverload(
 				"name", Arrays.asList(String.class)));
 		System.out.println();
 		System.out.println();
 
-		receiver = new TypeLiteral<DataBindingType.Effective<?>>() {};
+		receiver = new TypeToken<DataBindingType.Effective<?>>() {};
 		System.out.println("RESOLVE 4:");
 		System.out.println(TypeToken.of(receiver.getType()).resolveMethodOverload(
 				"child", Arrays.asList(String.class)));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(new TypeLiteral<IncludeTarget>() {}
-				.resolveMethodOverload("includer", Model.class, Collection.class));
+		System.out.println(new TypeToken<IncludeTarget>() {}.resolveMethodOverload(
+				"includer", Model.class, Collection.class));
 		System.out.println();
 		System.out.println();
 	}

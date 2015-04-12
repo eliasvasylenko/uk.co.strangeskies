@@ -50,7 +50,7 @@ public class ParameterizedTypes {
 	 * the order encountered.
 	 *
 	 * @param rawType
-	 * @return
+	 * @return A list of all relevant type variables.
 	 */
 	public static List<TypeVariable<?>> getAllTypeParameters(Class<?> rawType) {
 		Stream<TypeVariable<?>> typeParameters = Stream.empty();
@@ -63,11 +63,12 @@ public class ParameterizedTypes {
 
 	/**
 	 * For a given parameterized type, we retrieve a mapping of all type variables
-	 * on its raw type, as given by {@link Types#getAllTypeParameters(Class)}, to
-	 * their arguments within the context of this type.
+	 * on its raw type, as given by {@link #getAllTypeParameters(Class)}, to their
+	 * arguments within the context of this type.
 	 *
 	 * @param type
-	 * @return
+	 * @return A mapping of all type variables to their arguments in the context
+	 *         of the given type.
 	 */
 	public static Map<TypeVariable<?>, Type> getAllTypeArguments(
 			ParameterizedType type) {

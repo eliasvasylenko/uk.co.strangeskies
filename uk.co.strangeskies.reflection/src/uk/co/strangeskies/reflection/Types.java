@@ -605,9 +605,20 @@ public final class Types {
 	}
 
 	/**
+	 * <p>
 	 * Determine whether a given type, {@code from}, is compatible with a given
-	 * type, {@code to}, within a strict invocation context, as per the Java
-	 * language specification.
+	 * type, {@code to}, within a strict invocation context.
+	 * </p>
+	 * 
+	 * <p>
+	 * Types are considered so compatible if assignment is possible through
+	 * application of the following conversions:
+	 * <ul>
+	 * <li>an identity conversion (§5.1.1)</li>
+	 * <li>a widening primitive conversion (§5.1.2)</li>
+	 * <li>a widening reference conversion (§5.1.5)</li>
+	 * </ul>
+	 * </p>
 	 * 
 	 * @param from
 	 *          The type from which to determine compatibility.
@@ -629,9 +640,24 @@ public final class Types {
 	}
 
 	/**
+	 * <p>
 	 * Determine whether a given type, {@code from}, is compatible with a given
-	 * type, {@code to}, within a loose invocation context, as per the Java
-	 * language specification.
+	 * type, {@code to}, within a loose invocation context.
+	 * </p>
+	 * 
+	 * <p>
+	 * Types are considered so compatible if assignment is possible through
+	 * application of the following conversions:
+	 * <ul>
+	 * <li>an identity conversion</li>
+	 * <li>a widening primitive conversion</li>
+	 * <li>a widening reference conversion</li>
+	 * <li>a boxing conversion, optionally followed by widening reference
+	 * conversion</li>
+	 * <li>an unboxing conversion, optionally followed by a widening primitive
+	 * conversion</li>
+	 * </ul>
+	 * </p>
 	 * 
 	 * @param from
 	 *          The type from which to determine compatibility.
@@ -694,7 +720,7 @@ public final class Types {
 	public static void validate(Type type) {
 		RecursiveTypeVisitor.build().visitBounds().visitEnclosedTypes()
 				.visitEnclosingTypes().visitParameters().visitSupertypes()
-				.parameterizedTypeVisitor(ParameterizedTypeToken::of)
+				.parameterizedTypeVisitor(TypeToken::of)
 				.intersectionTypeVisitor(i -> IntersectionType.from(i)).create()
 				.visit(type);
 	}

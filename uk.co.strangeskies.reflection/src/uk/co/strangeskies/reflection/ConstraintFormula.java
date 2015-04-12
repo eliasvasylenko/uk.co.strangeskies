@@ -28,20 +28,60 @@ import java.util.Map;
 
 import uk.co.strangeskies.reflection.BoundSet.IncorporationTarget;
 
+/**
+ * <p>
+ * A constraint formula, as they are described in chapter 18 of that Java 8
+ * language specification.
+ * </p>
+ * 
+ * <p>
+ * Roughly, a constraint formula describes an assertion of compatibility between
+ * two types, with respect to a particular constraining relationship. This
+ * relationship may be reduced into a number of secondary, tertiary, etc.
+ * constraint formulae, and then ultimately into a number of bounds, which in
+ * turn may be incorporated into a {@link BoundSet}.
+ * </p>
+ * 
+ * @author Elias N Vasylenko
+ */
 public class ConstraintFormula {
+	/**
+	 * The kind of a constraint formula describes the nature of the constraint it
+	 * represents.
+	 * 
+	 * @author Elias N Vasylenko
+	 */
 	public enum Kind {
-		LOOSE_COMPATIBILILTY, SUBTYPE, CONTAINMENT, EQUALITY
+		/**
+		 * A loose compatibility constraint implies that two types be compatible
+		 * within a loose invocation context, as described by
+		 * {@link Types#isLooseInvocationContextCompatible(Type, Type)}.
+		 */
+		LOOSE_COMPATIBILILTY,
+		/**
+		 * A subtype constraint between two types implies that the first be
+		 * assignable to the second.
+		 */
+		SUBTYPE,
+		/**
+		 * A containment constraint between two types implies that one contains the
+		 * other, as described by {@link Types#isContainedBy(Type, Type)}.
+		 */
+		CONTAINMENT,
+		/**
+		 * An equality constraint between two types implies that they are exactly
+		 * identical.
+		 */
+		EQUALITY
 	}
 
 	private final Kind kind;
 	private final Type from, to;
 
-	public ConstraintFormula(Kind kind, Type from, Type to) {
+	private ConstraintFormula(Kind kind, Type from, Type to) {
 		this.kind = kind;
 		this.from = from;
 		this.to = to;
-
-		// System.out.println("    : " + this);
 	}
 
 	@Override
@@ -49,11 +89,35 @@ public class ConstraintFormula {
 		return kind + " between '" + from + "' and '" + to + "'";
 	}
 
-	private static void reduce(Kind kind, Type from, Type to, BoundSet bounds) {
-		new ConstraintFormula(kind, from, to).reduceInto(bounds);
+	/**
+	 * Creates a {@link ConstraintFormula} and reduces it into the given
+	 * {@link BoundSet}.
+	 * 
+	 * @param kind
+	 *          The kind of the constraint formula to create.
+	 * @param from
+	 *          The first type of the constraint formula.
+	 * @param to
+	 *          The second type of the constraint formula.
+	 * @param bounds
+	 *          The bound set to reduce the created constraint formula into.
+	 * @return The constraint formula created.
+	 */
+	public static ConstraintFormula reduce(Kind kind, Type from, Type to,
+			BoundSet bounds) {
+		ConstraintFormula constraintFormula = new ConstraintFormula(kind, from, to);
+		try {
+			constraintFormula.reduceInto(bounds);
+		} catch (Exception e) {
+			throw new TypeInferenceException("Cannot reduce constraint '"
+					+ constraintFormula + "' into bound set '" + bounds + "'.", e);
+		}
+		return constraintFormula;
 	}
 
 	void reduceInto(BoundSet bounds) {
+		logConstraint(this, bounds);
+
 		switch (kind) {
 		case LOOSE_COMPATIBILILTY:
 			reduceLooseCompatibilityConstraint(bounds);
@@ -72,11 +136,16 @@ public class ConstraintFormula {
 		}
 	}
 
+	private void logConstraint(ConstraintFormula constraintFormula,
+			BoundSet boundSet) {
+		// System.out.println(constraintFormula + " into '" + boundSet + "'.");
+	}
+
 	/*
 	 * A constraint formula of the form ‹S → T› is reduced as follows:
 	 */
 	private void reduceLooseCompatibilityConstraint(BoundSet bounds) {
-		IncorporationTarget incorporate = bounds.incorporate(this);
+		IncorporationTarget incorporate = bounds.incorporate();
 
 		Type from = InferenceVariable.captureConversion(this.from, bounds);
 
@@ -123,7 +192,7 @@ public class ConstraintFormula {
 			reduce(Kind.SUBTYPE, from, to, bounds);
 	}
 
-	public static boolean isUncheckedCompatibleOnly(Type from, Type to) {
+	private static boolean isUncheckedCompatibleOnly(Type from, Type to) {
 		Class<?> toRaw = Types.getRawType(to);
 		Class<?> fromRaw = Types.getRawType(from);
 
@@ -142,7 +211,7 @@ public class ConstraintFormula {
 	 * A constraint formula of the form ‹S <: T› is reduced as follows:
 	 */
 	private void reduceSubtypeConstraint(BoundSet bounds) {
-		IncorporationTarget incorporate = bounds.incorporate(this);
+		IncorporationTarget incorporate = bounds.incorporate();
 
 		if (bounds.isProperType(from) && bounds.isProperType(to)) {
 			/*
@@ -169,16 +238,13 @@ public class ConstraintFormula {
 			 * Otherwise, if S is an inference variable, α, the constraint reduces to
 			 * the bound α <: T.
 			 */
-			if (bounds.getInferenceVariables().contains(to))
-				incorporate.subtype((InferenceVariable) from, (InferenceVariable) to);
-			else
-				incorporate.subtype((InferenceVariable) from, to);
+			incorporate.subtype(from, to);
 		else if (bounds.getInferenceVariables().contains(to))
 			/*
 			 * Otherwise, if T is an inference variable, α, the constraint reduces to
 			 * the bound S <: α.
 			 */
-			incorporate.subtype(from, (InferenceVariable) to);
+			incorporate.subtype(from, to);
 		else {
 			/*
 			 * Otherwise, the constraint is reduced according to the form of T:
@@ -367,7 +433,7 @@ public class ConstraintFormula {
 	 * (§4.5.1), is reduced as follows:
 	 */
 	private void reduceContainmentConstraint(BoundSet bounds) {
-		IncorporationTarget incorporate = bounds.incorporate(this);
+		IncorporationTarget incorporate = bounds.incorporate();
 
 		if (!(to instanceof WildcardType)) {
 			/*
@@ -466,7 +532,7 @@ public class ConstraintFormula {
 	}
 
 	private void reduceEqualityConstraint(BoundSet bounds) {
-		IncorporationTarget incorporate = bounds.incorporate(this);
+		IncorporationTarget incorporate = bounds.incorporate();
 
 		if (from instanceof WildcardType && to instanceof WildcardType) {
 			/*
@@ -541,17 +607,13 @@ public class ConstraintFormula {
 				 * Otherwise, if S is an inference variable, α, the constraint reduces
 				 * to the bound α = T.
 				 */
-				if (bounds.getInferenceVariables().contains(to))
-					incorporate
-							.equality((InferenceVariable) from, (InferenceVariable) to);
-				else
-					incorporate.equality((InferenceVariable) from, to);
+				incorporate.equality(from, to);
 			} else if (bounds.getInferenceVariables().contains(to)) {
 				/*
 				 * Otherwise, if T is an inference variable, α, the constraint reduces
 				 * to the bound S = α.
 				 */
-				incorporate.equality((InferenceVariable) to, from);
+				incorporate.equality(from, to);
 			} else if (Types.getRawType(from).isArray()
 					&& Types.getRawType(to).isArray()) {
 				/*
