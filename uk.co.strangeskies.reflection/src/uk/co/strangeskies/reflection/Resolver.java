@@ -276,7 +276,7 @@ public class Resolver {
 	 * {@link #incorporateTypeParameters(GenericDeclaration)}.</li>
 	 * 
 	 * <li>{@link ParameterizedType} as per
-	 * {@link #incorporateTypeArguments(ParameterizedType)}.</li>
+	 * {@link #captureTypeArguments(ParameterizedType)}.</li>
 	 * 
 	 * <li>{@link GenericArrayType} as per {@link #incorporateType(Type)} invoked
 	 * for it's component type.</li>
@@ -299,7 +299,7 @@ public class Resolver {
 
 			@Override
 			protected void visitParameterizedType(ParameterizedType type) {
-				incorporateTypeArguments(type);
+				captureTypeArguments(type);
 			}
 
 			@Override
@@ -419,29 +419,34 @@ public class Resolver {
 							bounds);
 
 			if (bound instanceof ParameterizedType) {
-				incorporateWildcardParameters((ParameterizedType) bound);
+				inferTypeArguments((ParameterizedType) bound);
 			}
 		}
 	}
 
 	/**
+	 * Add inference variables for the type parameters of the given type to the
+	 * resolver, then incorporate containment constraints based on the arguments
+	 * of the given type.
+	 * 
 	 * @param type
-	 * @return
+	 * @return A parameterized type derived from the given type, with inference
+	 *         variables in place of wildcards where appropriate.
 	 */
-	public ParameterizedType incorporateWildcardParameters(ParameterizedType type) {
+	public ParameterizedType inferTypeArguments(ParameterizedType type) {
 		Class<?> rawType = Types.getRawType(type);
 
 		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getInferenceVariables(rawType);
 		Map<TypeVariable<?>, Type> arguments = ParameterizedTypes
-				.getAllTypeArguments((ParameterizedType) type);
+				.getAllTypeArguments(type);
 
 		for (TypeVariable<?> typeVariable : inferenceVariables.keySet())
 			ConstraintFormula.reduce(Kind.CONTAINMENT,
 					inferenceVariables.get(typeVariable), arguments.get(typeVariable),
 					getBounds());
 
-		return (ParameterizedType) ParameterizedTypes.uncheckedFrom(rawType,
-				inferenceVariables);
+		return (ParameterizedType) resolveType(ParameterizedTypes.uncheckedFrom(
+				rawType, inferenceVariables));
 	}
 
 	public Class<?> getRawType(Type type) {
@@ -452,7 +457,7 @@ public class Resolver {
 			return Types.getRawType(resolveType(type));
 	}
 
-	public ParameterizedType incorporateTypeArguments(ParameterizedType type) {
+	public ParameterizedType captureTypeArguments(ParameterizedType type) {
 		Class<?> rawType = Types.getRawType(type);
 		incorporateTypeParameters(rawType);
 

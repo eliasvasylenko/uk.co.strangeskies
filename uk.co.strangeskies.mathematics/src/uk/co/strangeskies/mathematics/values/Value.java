@@ -20,6 +20,7 @@ package uk.co.strangeskies.mathematics.values;
 
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BooleanSupplier;
@@ -66,8 +67,12 @@ public abstract class Value<S extends Value<S>> extends Number implements
 	}
 
 	@Override
-	public ReadWriteLock getLock() {
-		return lock;
+	public Lock getReadLock() {
+		return lock.readLock();
+	}
+
+	public Lock getWriteLock() {
+		return lock.writeLock();
 	}
 
 	@Override
@@ -143,10 +148,10 @@ public abstract class Value<S extends Value<S>> extends Number implements
 
 	@Override
 	public final S getValue() {
-		getLock().readLock().lock();
+		getReadLock().lock();
 		evaluated = true;
 		S result = getThis();
-		getLock().readLock().unlock();
+		getReadLock().unlock();
 		return result;
 	}
 
@@ -158,27 +163,27 @@ public abstract class Value<S extends Value<S>> extends Number implements
 	}
 
 	protected final S update(BooleanSupplier runnable) {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 		if (runnable.getAsBoolean())
 			update();
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 
 		return getThis();
 	}
 
 	protected final S update(Runnable runnable) {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 		runnable.run();
 		update();
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 
 		return getThis();
 	}
 
 	protected final <T> T read(Supplier<T> supplier) {
-		getLock().readLock().lock();
+		getReadLock().lock();
 		T result = supplier.get();
-		getLock().readLock().unlock();
+		getReadLock().unlock();
 
 		return result;
 	}

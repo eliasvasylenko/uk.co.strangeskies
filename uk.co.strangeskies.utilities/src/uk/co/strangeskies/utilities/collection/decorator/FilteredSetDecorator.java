@@ -23,8 +23,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import uk.co.strangeskies.utilities.Property;
-
 public class FilteredSetDecorator<E> extends SetDecorator<E> {
 	public interface Filter<E> {
 		public boolean filter(E element);

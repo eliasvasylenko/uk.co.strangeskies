@@ -20,6 +20,14 @@ package uk.co.strangeskies.mathematics.expression;
 
 import uk.co.strangeskies.utilities.Copyable;
 
+/**
+ * A basic interface extension of {@link Expression} providing a default
+ * implementation of {@link #decoupleValue()} which simply copies the result of
+ * {@link #getValue()}.
+ * 
+ * @author Elias N Vasylenko
+ * @param <T>
+ */
 public interface CopyDecouplingExpression<T extends Copyable<T>> extends
 		Expression<T> {
 	@Override

@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -73,14 +74,14 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 	}
 
 	protected final void update() {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 
 		if (evaluated) {
 			evaluated = false;
 			postUpdate();
 		}
 
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 	}
 
 	protected final void postUpdate() {
@@ -91,7 +92,7 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 
 	@Override
 	public final boolean add(E expression) {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 
 		boolean added = super.add(expression);
 
@@ -101,7 +102,7 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 			update();
 		}
 
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 
 		return added;
 	}
@@ -109,7 +110,7 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 	@SuppressWarnings("unchecked")
 	@Override
 	public final boolean remove(Object expression) {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 
 		boolean removed = super.remove(expression);
 
@@ -119,14 +120,14 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 			update();
 		}
 
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 
 		return removed;
 	}
 
 	@Override
 	public final boolean addAll(Collection<? extends E> expressions) {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 
 		boolean changed = false;
 
@@ -139,7 +140,7 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 		if (changed)
 			update();
 
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 
 		return changed;
 	}
@@ -147,7 +148,7 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 	@SuppressWarnings("unchecked")
 	@Override
 	public final boolean removeAll(Collection<?> expressions) {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 
 		boolean changed = false;
 
@@ -160,7 +161,7 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 		if (changed)
 			update();
 
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 
 		return changed;
 	}
@@ -171,7 +172,7 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 	}
 
 	protected final void clear(boolean update) {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 		if (!isEmpty()) {
 			for (E expression : this)
 				expression.removeObserver(dependencyObserver);
@@ -181,20 +182,20 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 			if (update)
 				update();
 		}
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 	}
 
 	@Override
 	public final void set(Collection<? extends E> expressions) {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 		retainAll(expressions);
 		addAll(expressions);
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 	}
 
 	@Override
 	public final boolean retainAll(Collection<?> expressions) {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 
 		TreeSet<E> toRemove = new TreeSet<>();
 
@@ -204,7 +205,7 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 
 		boolean changed = removeAll(toRemove);
 
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 
 		return changed;
 	}
@@ -216,9 +217,9 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 
 	@Override
 	public final ExpressionTreeSet<E> getValue() {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 		evaluated = true;
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 
 		return this;
 	}
@@ -230,9 +231,9 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 
 	@Override
 	public final ExpressionTreeSet<E> copy() {
-		getLock().writeLock().lock();
+		getReadLock().lock();
 		ExpressionTreeSet<E> copy = new ExpressionTreeSet<>(this);
-		getLock().writeLock().unlock();
+		getReadLock().unlock();
 
 		return copy;
 	}
@@ -250,7 +251,11 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 	}
 
 	@Override
-	public ReadWriteLock getLock() {
-		return lock;
+	public Lock getReadLock() {
+		return lock.readLock();
+	}
+
+	public Lock getWriteLock() {
+		return lock.writeLock();
 	}
 }

@@ -23,8 +23,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.function.Supplier;
 
-import uk.co.strangeskies.utilities.Property;
-
 public class ListDecorator<E> extends CollectionDecorator<List<E>, E> implements
 		List<E> {
 	public ListDecorator(List<E> component) {

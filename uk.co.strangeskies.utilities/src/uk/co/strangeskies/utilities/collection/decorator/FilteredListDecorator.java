@@ -23,8 +23,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Supplier;
 
-import uk.co.strangeskies.utilities.Property;
-
 public class FilteredListDecorator<E> extends ListDecorator<E> {
 	public interface Filter<E> {
 		public boolean filter(E element);

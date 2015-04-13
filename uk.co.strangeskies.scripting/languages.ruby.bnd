@@ -1,7 +1,8 @@
 -dsannotations:  \
 	*
 Bundle-Name: Strange Skies Scripting - Groovy
-Private-Package:\
-	ruby.**
+Private-Package: \
+	jruby.**,\
+	org.jruby.**
 Include-Resource:\
-	@jruby-complete-${jruby.version}.jar!/META-INF/services/*
+	@jruby-core-${jruby.version}.jar!/META-INF/services/*

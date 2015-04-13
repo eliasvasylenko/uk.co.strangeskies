@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -58,14 +59,14 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 	}
 
 	protected final void update() {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 
 		if (evaluated) {
 			evaluated = false;
 			postUpdate();
 		}
 
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 	}
 
 	protected final void postUpdate() {
@@ -75,7 +76,7 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 
 	@Override
 	public final boolean add(E expression) {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 
 		boolean added = super.add(expression);
 		if (added) {
@@ -84,7 +85,7 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 			update();
 		}
 
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 
 		return added;
 	}
@@ -92,7 +93,7 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 	@SuppressWarnings("unchecked")
 	@Override
 	public final boolean remove(Object expression) {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 
 		boolean removed = super.remove(expression);
 		if (removed) {
@@ -101,14 +102,14 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 			update();
 		}
 
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 
 		return removed;
 	}
 
 	@Override
 	public final boolean addAll(Collection<? extends E> expressions) {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 
 		boolean changed = false;
 		for (E expression : expressions)
@@ -120,7 +121,7 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 		if (changed)
 			update();
 
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 
 		return changed;
 	}
@@ -128,7 +129,7 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 	@SuppressWarnings("unchecked")
 	@Override
 	public final boolean removeAll(Collection<?> expressions) {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 
 		boolean changed = false;
 		for (Object expression : expressions)
@@ -140,7 +141,7 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 		if (changed)
 			update();
 
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 
 		return changed;
 	}
@@ -152,7 +153,7 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 
 	protected final void clear(boolean update) {
 		if (!isEmpty()) {
-			getLock().writeLock().lock();
+			getWriteLock().lock();
 
 			for (E expression : this)
 				expression.removeObserver(dependencyObserver);
@@ -162,13 +163,13 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 			if (update)
 				update();
 
-			getLock().writeLock().unlock();
+			getWriteLock().unlock();
 		}
 	}
 
 	@Override
 	public final void set(Collection<? extends E> expressions) {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 
 		clear(false);
 
@@ -178,12 +179,12 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 
 		update();
 
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 	}
 
 	@Override
 	public final boolean retainAll(Collection<?> c) {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 
 		TreeSet<E> toRemove = new TreeSet<>();
 
@@ -192,7 +193,7 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 
 		boolean changed = removeAll(toRemove);
 
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 
 		return changed;
 	}
@@ -204,9 +205,9 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 
 	@Override
 	public final ExpressionArrayList<E> getValue() {
-		getLock().readLock().lock();
+		getReadLock().lock();
 		evaluated = true;
-		getLock().readLock().unlock();
+		getReadLock().unlock();
 
 		return this;
 	}
@@ -230,16 +231,16 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 
 	@Override
 	public final ExpressionArrayList<E> copy() {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 		ExpressionArrayList<E> copy = new ExpressionArrayList<>(this);
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 
 		return copy;
 	}
 
 	@Override
 	public final void add(int index, E expression) {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 
 		super.add(index, expression);
 
@@ -247,39 +248,39 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 
 		update();
 
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 	}
 
 	@Override
 	public final boolean addAll(int index, Collection<? extends E> expressions) {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 
 		for (E expression : expressions) {
 			add(index++, expression);
 			expression.addObserver(dependencyObserver);
 		}
 
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 
 		return !expressions.isEmpty();
 	}
 
 	@Override
 	public final E remove(int index) {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 
 		E removed = super.remove(index);
 
 		removed.removeObserver(dependencyObserver);
 
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 
 		return removed;
 	}
 
 	@Override
 	public final E set(int index, E expression) {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 
 		E removed = super.remove(index);
 		super.add(index, expression);
@@ -287,13 +288,17 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 		removed.removeObserver(dependencyObserver);
 		expression.addObserver(dependencyObserver);
 
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 
 		return removed;
 	}
 
 	@Override
-	public ReadWriteLock getLock() {
-		return lock;
+	public Lock getReadLock() {
+		return lock.readLock();
+	}
+
+	public Lock getWriteLock() {
+		return lock.writeLock();
 	}
 }

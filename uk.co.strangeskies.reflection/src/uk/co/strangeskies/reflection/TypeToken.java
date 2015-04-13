@@ -91,7 +91,7 @@ public class TypeToken<T> {
 	 * the cached resolver for new ones.
 	 */
 	private static ComputingMap<Type, Resolver> RESOLVER_CACHE = new LRUCacheComputingMap<>(
-			type -> {
+			(Type type) -> {
 				Resolver resolver = new Resolver();
 				resolver.incorporateType(type);
 				return resolver;
@@ -147,7 +147,7 @@ public class TypeToken<T> {
 				type = TypeVariableCapture.captureWildcardArguments(parameterizedType);
 			} else if (wildcards == Wildcards.INFERENCE) {
 				resolver = new Resolver();
-				type = resolver.incorporateWildcardParameters(parameterizedType);
+				type = resolver.inferTypeArguments(parameterizedType);
 			}
 		}
 
@@ -273,7 +273,7 @@ public class TypeToken<T> {
 	 */
 	public TypeToken<? super T> inferceSuper() {
 		Resolver resolver = getResolver();
-		return (TypeToken<? super T>) new TypeToken<>(resolver,
+		return new TypeToken<>(resolver,
 				resolver.incorporateWildcardType(WildcardTypes.lowerBounded(getType())));
 	}
 
@@ -629,8 +629,8 @@ public class TypeToken<T> {
 
 		Resolver resolver = getInternalResolver();
 
-		Type parameterizedType = (ParameterizedType) ParameterizedTypes
-				.uncheckedFrom(subclass, new HashMap<>());
+		Type parameterizedType = ParameterizedTypes.uncheckedFrom(subclass,
+				new HashMap<>());
 
 		if (resolver.getBounds().getInferenceVariables().contains(getType())) {
 			resolver.incorporateTypeParameters(subclass);
@@ -641,8 +641,8 @@ public class TypeToken<T> {
 		} else
 			resolver.resolveTypeHierarchy(parameterizedType, getRawType());
 
-		return (TypeToken<? extends U>) TypeToken.of((ParameterizedType) resolver
-				.resolveType(subclass, parameterizedType));
+		return (TypeToken<? extends U>) TypeToken.of(resolver.resolveType(subclass,
+				parameterizedType));
 	}
 
 	/**

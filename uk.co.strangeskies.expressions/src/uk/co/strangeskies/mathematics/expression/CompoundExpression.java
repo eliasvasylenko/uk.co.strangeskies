@@ -26,7 +26,7 @@ import uk.co.strangeskies.mathematics.expression.collection.ExpressionTreeSet;
 import uk.co.strangeskies.mathematics.expression.collection.SortedExpressionSet;
 import uk.co.strangeskies.utilities.IdentityComparator;
 
-public abstract class CompoundExpression<T> extends MutableExpression<T> {
+public abstract class CompoundExpression<T> extends MutableExpressionImpl<T> {
 	private final SortedExpressionSet<?, Expression<? extends Object>> dependencies;
 
 	private T value;
@@ -64,12 +64,12 @@ public abstract class CompoundExpression<T> extends MutableExpression<T> {
 	protected final void update() {
 		synchronized (dependencies) {
 			if (evaluated) {
-				getLock().writeLock().lock();
+				getWriteLock().lock();
 
 				evaluated = false;
 				postUpdate();
 
-				getLock().writeLock().unlock();
+				getWriteLock().unlock();
 			}
 		}
 	}
@@ -80,10 +80,10 @@ public abstract class CompoundExpression<T> extends MutableExpression<T> {
 
 		synchronized (dependencies) {
 			if (!evaluated) {
-				getLock().readLock().lock();
+				getReadLock().lock();
 				if (parallel)
 					for (Expression<?> dependency : dependencies) {
-						dependency.getLock().readLock().lock();
+						dependency.getReadLock().lock();
 						new Thread(() -> dependency.getValue()).run();
 					}
 
@@ -92,8 +92,8 @@ public abstract class CompoundExpression<T> extends MutableExpression<T> {
 
 				if (parallel)
 					for (Expression<?> dependency : dependencies)
-						dependency.getLock().readLock().unlock();
-				getLock().readLock().unlock();
+						dependency.getReadLock().unlock();
+				getReadLock().unlock();
 			}
 		}
 
@@ -104,6 +104,14 @@ public abstract class CompoundExpression<T> extends MutableExpression<T> {
 		return evaluated;
 	}
 
+	/**
+	 * All dependency {@link Expression}s are guaranteed to be read locked for the
+	 * duration of any internal invocation of this method. It may be useful to
+	 * relinquish read locks before termination of this method where possible.
+	 * 
+	 * @return The value of this {@link Expression} as derived from the dependency
+	 *         {@link Expression}s.
+	 */
 	protected abstract T evaluate();
 
 	protected SortedExpressionSet<?, Expression<?>> getDependencies() {

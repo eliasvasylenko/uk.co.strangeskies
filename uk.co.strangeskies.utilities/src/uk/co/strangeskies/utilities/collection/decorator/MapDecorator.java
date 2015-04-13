@@ -24,7 +24,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import uk.co.strangeskies.utilities.Decorator;
-import uk.co.strangeskies.utilities.Property;
 
 public class MapDecorator<K, V> extends Decorator<Map<K, V>> implements
 		Map<K, V> {

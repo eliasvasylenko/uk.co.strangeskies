@@ -207,14 +207,14 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 
 	@Override
 	public final S operateOnData(Function<? super V, ? extends V> operator) {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 
 		for (V element : data)
 			element = operator.apply(element);
 
 		getDependencies().set(getData());
 
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 
 		return getThis();
 	}
@@ -222,7 +222,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 	@Override
 	public final S operateOnData(
 			BiFunction<? super V, Integer, ? extends V> operator) {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 
 		int i = 0;
 		for (V element : data)
@@ -230,7 +230,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 
 		getDependencies().set(getData());
 
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 
 		return getThis();
 	}
@@ -238,7 +238,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 	@Override
 	public final S operateOnData2(
 			TriFunction<? super V, Integer, Integer, ? extends V> operator) {
-		getLock().writeLock().lock();
+		getWriteLock().lock();
 
 		int i = 0;
 		int j = 0;
@@ -251,7 +251,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 
 		getDependencies().set(getData());
 
-		getLock().writeLock().unlock();
+		getWriteLock().unlock();
 
 		return getThis();
 	}
@@ -268,8 +268,8 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 
 	@Override
 	protected final S evaluate() {
-		getLock().readLock().lock();
-		getLock().readLock().unlock();
+		getReadLock().lock();
+		getReadLock().unlock();
 		return getThis();
 	}
 

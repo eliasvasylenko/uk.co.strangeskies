@@ -19,7 +19,7 @@
 package uk.co.strangeskies.mathematics.geometry.matrix;
 
 import java.util.List;
-import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.Lock;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -55,8 +55,8 @@ public class ReOrderedMatrix<V extends Value<V>> extends
 	}
 
 	@Override
-	public ReadWriteLock getLock() {
-		return getComponent().getLock();
+	public Lock getReadLock() {
+		return getComponent().getReadLock();
 	}
 
 	@Override

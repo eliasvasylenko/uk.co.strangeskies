@@ -20,10 +20,27 @@ package uk.co.strangeskies.mathematics.expression;
 
 import java.util.function.Function;
 
+/**
+ * An implementation of {@link Expression} with a single data dependency, whose
+ * value is derived through the application of a function to the value of that
+ * dependency. This function may also be provided through an {@link Expression}
+ * dependency.
+ * 
+ * @author Elias N Vasylenko
+ * @param <O>
+ * @param <R>
+ */
 public class FunctionExpression<O, R> extends CompoundExpression<R> {
 	private Expression<? extends O> operand;
 	private final Expression<? extends Function<? super O, ? extends R>> operation;
 
+	/**
+	 * @param operand
+	 *          An expression providing an operand for the function.
+	 * @param operation
+	 *          A expression providing a function transforming an operand into a
+	 *          value of this expression's type.
+	 */
 	public FunctionExpression(Expression<? extends O> operand,
 			Expression<? extends Function<? super O, ? extends R>> operation) {
 		super(operand, operation);
@@ -33,6 +50,13 @@ public class FunctionExpression<O, R> extends CompoundExpression<R> {
 		this.operation = operation;
 	}
 
+	/**
+	 * @param operand
+	 *          An expression providing an operand for the function.
+	 * @param operation
+	 *          A function transforming an operand into a value of this
+	 *          expression's type.
+	 */
 	public FunctionExpression(Expression<? extends O> operand,
 			Function<? super O, ? extends R> operation) {
 		super(operand);
@@ -42,22 +66,27 @@ public class FunctionExpression<O, R> extends CompoundExpression<R> {
 		this.operation = Expression.immutable(operation);
 	}
 
-	public Expression<? extends Function<? super O, ? extends R>> getOperation() {
-		return operation;
-	}
-
+	/**
+	 * @return The operand expression.
+	 */
 	public Expression<? extends O> getOperand() {
 		return operand;
 	}
 
+	/**
+	 * @param operand
+	 *          A new operand.
+	 */
 	public void setOperand(Expression<? extends O> operand) {
 		if (this.operand != operand) {
+			getWriteLock().lock();
 			getDependencies().remove(this.operand);
 
 			this.operand = operand;
 			getDependencies().add(this.operand);
 
 			update();
+			getWriteLock().unlock();
 		}
 	}
 

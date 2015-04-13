@@ -23,7 +23,6 @@ import java.util.Iterator;
 import java.util.function.Supplier;
 
 import uk.co.strangeskies.utilities.Decorator;
-import uk.co.strangeskies.utilities.Property;
 
 public abstract class CollectionDecorator<T extends Collection<E>, E> extends
 		Decorator<T> implements Collection<E> {

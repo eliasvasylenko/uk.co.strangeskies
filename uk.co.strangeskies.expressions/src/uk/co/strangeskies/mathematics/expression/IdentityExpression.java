@@ -20,12 +20,11 @@ package uk.co.strangeskies.mathematics.expression;
 
 import uk.co.strangeskies.utilities.Property;
 
-public class IdentityExpression<T> extends MutableExpression<T> implements
+public class IdentityExpression<T> extends MutableExpressionImpl<T> implements
 		Property<T, T> {
 	private T value;
 
-	public IdentityExpression() {
-	}
+	public IdentityExpression() {}
 
 	public IdentityExpression(T value) {
 		this.value = value;
@@ -33,6 +32,7 @@ public class IdentityExpression<T> extends MutableExpression<T> implements
 
 	@Override
 	public T set(T value) {
+		getWriteLock().lock();
 		T previous = this.value;
 		this.value = value;
 		postUpdate();
@@ -41,6 +41,9 @@ public class IdentityExpression<T> extends MutableExpression<T> implements
 
 	@Override
 	public final T getValue() {
+		getReadLock().lock();
+		T value = this.value;
+		getReadLock().unlock();
 		return value;
 	}
 

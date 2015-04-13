@@ -29,6 +29,6 @@ public class Negation<O> extends
 
 	@Override
 	public String toString() {
-		return "¬" + getOperand();
+		return "¬" + getValue();
 	}
 }

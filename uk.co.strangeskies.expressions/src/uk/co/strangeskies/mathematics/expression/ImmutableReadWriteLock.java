@@ -23,15 +23,19 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
+/**
+ * A read write lock over an immutable object. All locks are always available to
+ * as many threads as want them.
+ * 
+ * @author Elias N Vasylenko
+ */
 public class ImmutableReadWriteLock implements Lock {
 	private class ImmutableCondition implements Condition {
 		@Override
-		public void signalAll() {
-		}
+		public void signalAll() {}
 
 		@Override
-		public void signal() {
-		}
+		public void signal() {}
 
 		@Override
 		public boolean awaitUntil(Date deadline) {
@@ -39,8 +43,7 @@ public class ImmutableReadWriteLock implements Lock {
 		}
 
 		@Override
-		public void awaitUninterruptibly() {
-		}
+		public void awaitUninterruptibly() {}
 
 		@Override
 		public long awaitNanos(long nanosTimeout) {
@@ -53,13 +56,11 @@ public class ImmutableReadWriteLock implements Lock {
 		}
 
 		@Override
-		public void await() {
-		}
+		public void await() {}
 	}
 
 	@Override
-	public void unlock() {
-	}
+	public void unlock() {}
 
 	@Override
 	public boolean tryLock(long time, TimeUnit unit) {
@@ -77,10 +78,8 @@ public class ImmutableReadWriteLock implements Lock {
 	}
 
 	@Override
-	public void lockInterruptibly() {
-	}
+	public void lockInterruptibly() {}
 
 	@Override
-	public void lock() {
-	}
+	public void lock() {}
 }
