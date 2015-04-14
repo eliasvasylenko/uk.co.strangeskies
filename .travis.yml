@@ -1,10 +1,17 @@
 language: java
+
 jdk:
-  - oraclejdk8
+- oraclejdk8
 
 env:
+  matrix:
   - TERM=dumb
+  global:
+    secure: SJtapBI6YGHZEowrAGhLX7MdaiV7wnGAp/8gH042MB70Gd+AoJ9hylaA9qtcaJ9BxHlf9HtWrocxKXbXwGdBZD67VBqx4B3HcjgbRokkyJ2XJkbdnGR8sEFQ6bl1PuueE3CQRPtQeAgjYLEwbAq1fdO8cSN7uC8RGlgJzIgbArQ=
 
-install: ./gradlew --version
+install: "./gradlew --version"
 
-script: ./gradlew --continue build
+script: "./gradlew --continue build"
+
+after_success:
+- ".travis/push-javadoc-to-gh-pages.sh"
