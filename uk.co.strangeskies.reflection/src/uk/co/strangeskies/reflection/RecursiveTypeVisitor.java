@@ -27,16 +27,21 @@ import java.util.function.Consumer;
 import uk.co.strangeskies.utilities.factory.Configurator;
 
 /**
+ * <p>
  * An implementation of TypeVisitor which provides recursion over the related
  * types specified by the arguments passed to constructor. Supertypes of
  * parameterised types are visited without those type arguments passed through.
- *
- * This means that if the type List<String> is visited, the supertype
- * Collections<E> will be visited subsequently, rather than Collection<String>.
- * If the type String is visited, on the other hand, the supertype
- * Comparable<String> will be visited. If the raw type List is visited, then the
- * raw supertype Collection will be visited subsequently.
- *
+ * </p>
+ * 
+ * <p>
+ * This means that if the type {@code List<String>} is visited, the supertype
+ * {@code Collections<E>} will be visited subsequently, rather than
+ * {@code Collection<String>}. If the type String is visited, on the other hand,
+ * the supertype {@code Comparable<String>} will be visited. If the raw type
+ * List is visited, then the raw supertype Collection will be visited
+ * subsequently.
+ * </p>
+ * 
  * @author Elias N Vasylenko
  *
  */

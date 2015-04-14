@@ -56,6 +56,7 @@ import java.util.stream.Collectors;
  * 
  * <p>
  * The types of bounds which may be included in a bound set are as follows:
+ * </p>
  * <ul>
  * <li>Equalities between inference variables and other types, which may or may
  * not be inference variables.</li>
@@ -68,7 +69,6 @@ import java.util.stream.Collectors;
  * <li>The bound 'false', typically meaning that a type inference attempt has
  * failed.</li>
  * </ul>
- * </p>
  * 
  * <p>
  * An equality bound between an inference variable and a <em>proper type</em> is
@@ -171,7 +171,7 @@ public class BoundSet {
 
 		/**
 		 * As {@link #falsehood(boolean)} with the argument {@code true} passed to
-		 * the parameter {@throwing}.
+		 * the parameter {@code throwing}.
 		 */
 		public void falsehood() {
 			falsehood(true);

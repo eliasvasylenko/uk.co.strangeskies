@@ -35,7 +35,7 @@ public interface ConvexPolygon<S extends ConvexPolygon<S, V>, V extends Value<V>
 	 * This method returns a modifiable set containing all vertices which
 	 * currently effectively make a contribution to the convex Hull of this
 	 * Polygon, i.e. all vertices which form a part of the outside edge and are
-	 * returned by the {@link ConvexPolygon#getVertices()}.
+	 * returned by the {@link ConvexPolygon#vertexSet()}.
 	 * 
 	 * The Set is backed by the shape and changes will be reflected in it. If
 	 * vertices are moved around such that the convex hull changes any set

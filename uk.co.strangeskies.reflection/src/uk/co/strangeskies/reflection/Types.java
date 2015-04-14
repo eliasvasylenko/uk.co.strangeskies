@@ -334,7 +334,7 @@ public final class Types {
 	/**
 	 * Give a canonical String representation of a given type, which is intended
 	 * to be more easily human-readable than implementations of
-	 * {@link Type#toString()} for certain implementations of {@link Type}.
+	 * {@link Object#toString()} for certain implementations of {@link Type}.
 	 * 
 	 * @param type
 	 *          The type of which we wish to determine a string representation.
@@ -385,8 +385,8 @@ public final class Types {
 	/**
 	 * Determine if the given type, {@code from}, contains the given type,
 	 * {@code to}. In other words, if either of the given types are wildcards,
-	 * determine if every possible instantiation of {@to} is also a valid
-	 * instantiation of {@from}. Or if neither type is a wildcard,
+	 * determine if every possible instantiation of {@code to} is also a valid
+	 * instantiation of {@code from}. Or if neither type is a wildcard,
 	 * determine whether both types are assignable to each other as per
 	 * {@link Types#isAssignable(Type, Type)}.
 	 * 
@@ -394,7 +394,7 @@ public final class Types {
 	 *          The type within which we are determining containment.
 	 * @param to
 	 *          The type of which we are determining containment.
-	 * @return True if {@code from} <em>contains</em> {@to}, false otherwise.
+	 * @return True if {@code from} <em>contains</em> {@code to}, false otherwise.
 	 */
 	public static boolean isContainedBy(Type from, Type to) {
 		return isContainedBy(from, to, new HashSet<>());
@@ -613,12 +613,12 @@ public final class Types {
 	 * <p>
 	 * Types are considered so compatible if assignment is possible through
 	 * application of the following conversions:
+	 * </p>
 	 * <ul>
 	 * <li>an identity conversion (§5.1.1)</li>
 	 * <li>a widening primitive conversion (§5.1.2)</li>
 	 * <li>a widening reference conversion (§5.1.5)</li>
 	 * </ul>
-	 * </p>
 	 * 
 	 * @param from
 	 *          The type from which to determine compatibility.
@@ -648,6 +648,7 @@ public final class Types {
 	 * <p>
 	 * Types are considered so compatible if assignment is possible through
 	 * application of the following conversions:
+	 * </p>
 	 * <ul>
 	 * <li>an identity conversion</li>
 	 * <li>a widening primitive conversion</li>
@@ -657,7 +658,6 @@ public final class Types {
 	 * <li>an unboxing conversion, optionally followed by a widening primitive
 	 * conversion</li>
 	 * </ul>
-	 * </p>
 	 * 
 	 * @param from
 	 *          The type from which to determine compatibility.
