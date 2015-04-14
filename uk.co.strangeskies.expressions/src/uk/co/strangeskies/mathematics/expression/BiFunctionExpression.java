@@ -28,7 +28,7 @@ import java.util.function.BiFunction;
  * @param <O2>
  * @param <R>
  */
-public class BiFunctionExpression<O1, O2, R> extends CompoundExpression<R> {
+public class BiFunctionExpression<O1, O2, R> extends DependentExpression<R> {
 	private Expression<? extends O1> firstOperand;
 	private Expression<? extends O2> secondOperand;
 	private Expression<? extends BiFunction<? super O1, ? super O2, ? extends R>> operation;
@@ -91,9 +91,9 @@ public class BiFunctionExpression<O1, O2, R> extends CompoundExpression<R> {
 	 */
 	public void setOperands(Expression<? extends O1> firstOperand,
 			Expression<? extends O2> secondOperand) {
+		getWriteLock().lock();
 		if (this.firstOperand != firstOperand
 				|| this.secondOperand != secondOperand) {
-			getWriteLock().lock();
 			getDependencies().remove(this.firstOperand);
 			getDependencies().remove(this.secondOperand);
 
@@ -103,9 +103,9 @@ public class BiFunctionExpression<O1, O2, R> extends CompoundExpression<R> {
 			getDependencies().add(this.firstOperand);
 			getDependencies().add(this.secondOperand);
 
-			update();
-			getWriteLock().unlock();
+			postUpdateAndUnlock();
 		}
+		getWriteLock().unlock();
 	}
 
 	/**
@@ -113,8 +113,8 @@ public class BiFunctionExpression<O1, O2, R> extends CompoundExpression<R> {
 	 *          A new first operand.
 	 */
 	public void setFirstOperand(Expression<? extends O1> operand) {
+		getWriteLock().lock();
 		if (firstOperand != operand) {
-			getWriteLock().lock();
 			if (firstOperand != secondOperand) {
 				getDependencies().remove(firstOperand);
 			}
@@ -122,9 +122,9 @@ public class BiFunctionExpression<O1, O2, R> extends CompoundExpression<R> {
 			firstOperand = operand;
 			getDependencies().add(firstOperand);
 
-			update();
-			getWriteLock().unlock();
+			postUpdateAndUnlock();
 		}
+		getWriteLock().unlock();
 	}
 
 	/**
@@ -132,8 +132,8 @@ public class BiFunctionExpression<O1, O2, R> extends CompoundExpression<R> {
 	 *          A new second operand.
 	 */
 	public void setSecondOperand(Expression<? extends O2> operand) {
+		getWriteLock().lock();
 		if (secondOperand != operand) {
-			getWriteLock().lock();
 			if (firstOperand != secondOperand) {
 				getDependencies().remove(secondOperand);
 			}
@@ -141,9 +141,9 @@ public class BiFunctionExpression<O1, O2, R> extends CompoundExpression<R> {
 			secondOperand = operand;
 			getDependencies().add(secondOperand);
 
-			update();
-			getWriteLock().unlock();
+			postUpdateAndUnlock();
 		}
+		getWriteLock().unlock();
 	}
 
 	@Override

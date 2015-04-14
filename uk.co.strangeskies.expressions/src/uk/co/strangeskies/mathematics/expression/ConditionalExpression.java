@@ -18,9 +18,89 @@
  */
 package uk.co.strangeskies.mathematics.expression;
 
-public class ConditionalExpression<O> extends FunctionExpression<Boolean, O> {
-	public ConditionalExpression(Expression<? extends Boolean> condition,
-			final O valueWhenFulfilled, final O valueWhenUnfulfilled) {
-		super(condition, t -> t ? valueWhenFulfilled : valueWhenUnfulfilled);
+import java.util.Arrays;
+
+/**
+ * An {@link Expression} whose primary dependency is conditional on a
+ * {@link Boolean} {@link Expression} dependency. The primary dependency, in
+ * this instance, provides the value of this {@link Expression} directly.
+ * 
+ * @author Elias N Vasylenko
+ * @param <O>
+ */
+public class ConditionalExpression<O> extends DependentExpression<O> {
+	private final Expression<? extends /*  */Boolean> condition;
+	private final Expression<? extends O> expressionWhenFulfilled;
+	private final Expression<? extends O> expressionWhenUnfulfilled;
+
+	/**
+	 * @param condition
+	 *          The condition to switch between primary dependencies.
+	 * @param expressionWhenFulfilled
+	 *          The {@link Expression} to set as primary dependency when the given
+	 *          condition is fulfilled.
+	 * @param expressionWhenUnfulfilled
+	 *          The {@link Expression} to set as primary dependency when the given
+	 *          condition is unfulfilled.
+	 */
+	public ConditionalExpression(Expression<? extends /*  */Boolean> condition,
+			Expression<? extends O> expressionWhenFulfilled,
+			Expression<? extends O> expressionWhenUnfulfilled) {
+		super(Arrays.asList(condition), false);
+
+		if (condition == expressionWhenFulfilled
+				|| condition == expressionWhenUnfulfilled) {
+			throw new IllegalArgumentException(
+					"The Condition is the same reference as one or more other Expressions.");
+		}
+
+		this.condition = condition;
+		this.expressionWhenFulfilled = expressionWhenFulfilled;
+		this.expressionWhenUnfulfilled = expressionWhenUnfulfilled;
+
+		getWriteLock().lock();
+		getDependencies().add(condition);
+		if (condition.getValue()) {
+			getDependencies().add(expressionWhenFulfilled);
+		} else {
+			getDependencies().add(expressionWhenUnfulfilled);
+		}
+		getWriteLock().unlock();
+	}
+
+	@Override
+	protected final O evaluate() {
+		if (condition.getValue()) {
+			getDependencies().remove(expressionWhenUnfulfilled);
+			getDependencies().add(expressionWhenFulfilled);
+			return expressionWhenFulfilled.getValue();
+		} else {
+			getDependencies().remove(expressionWhenFulfilled);
+			getDependencies().add(expressionWhenUnfulfilled);
+			return expressionWhenUnfulfilled.getValue();
+		}
+	}
+
+	/**
+	 * @return The condition to switch between primary dependencies.
+	 */
+	public final Expression<? extends /*  */Boolean> getCondition() {
+		return condition;
+	}
+
+	/**
+	 * @return The {@link Expression} which behaves as primary dependency when the
+	 *         given condition is fulfilled.
+	 */
+	public final Expression<? extends O> getExpressionWhenFulfilled() {
+		return expressionWhenFulfilled;
+	}
+
+	/**
+	 * @return The {@link Expression} which behaves as primary dependency when the
+	 *         given condition is unfulfilled.
+	 */
+	public final Expression<? extends O> getExpressionWhenUnfulfilled() {
+		return expressionWhenUnfulfilled;
 	}
 }

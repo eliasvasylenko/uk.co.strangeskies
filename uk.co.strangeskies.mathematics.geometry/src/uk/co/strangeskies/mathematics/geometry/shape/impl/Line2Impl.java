@@ -18,8 +18,8 @@
  */
 package uk.co.strangeskies.mathematics.geometry.shape.impl;
 
-import uk.co.strangeskies.mathematics.expression.CompoundExpression;
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
+import uk.co.strangeskies.mathematics.expression.DependentExpression;
 import uk.co.strangeskies.mathematics.geometry.Bounds2;
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix.Order;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
@@ -33,8 +33,9 @@ import uk.co.strangeskies.mathematics.values.IntValue;
 import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.factory.Factory;
 
-public class Line2Impl<V extends Value<V>> extends CompoundExpression<Line2<V>>
-		implements Line2<V>, CopyDecouplingExpression<Line2<V>> {
+public class Line2Impl<V extends Value<V>> extends
+		DependentExpression<Line2<V>> implements Line2<V>,
+		CopyDecouplingExpression<Line2<V>> {
 	private final Vector2<V> a;
 	private final Vector2<V> b;
 

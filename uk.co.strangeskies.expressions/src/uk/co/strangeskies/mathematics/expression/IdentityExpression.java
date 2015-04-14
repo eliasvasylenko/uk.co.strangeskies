@@ -18,14 +18,32 @@
  */
 package uk.co.strangeskies.mathematics.expression;
 
+import uk.co.strangeskies.utilities.IdentityProperty;
+import uk.co.strangeskies.utilities.Observer;
 import uk.co.strangeskies.utilities.Property;
 
+/**
+ * An {@link Expression} based on the behaviour of the {@link IdentityProperty}
+ * class, with the lazy updating behaviour of {@link MutableExpressionImpl} for
+ * {@link Observer}s.
+ * 
+ * @author Elias N Vasylenko
+ * @param <T>
+ */
 public class IdentityExpression<T> extends MutableExpressionImpl<T> implements
 		Property<T, T> {
 	private T value;
 
+	/**
+	 * Construct with a default value of {@code null}.
+	 */
 	public IdentityExpression() {}
 
+	/**
+	 * Construct with the given default value.
+	 * 
+	 * @param value
+	 */
 	public IdentityExpression(T value) {
 		this.value = value;
 	}
@@ -35,15 +53,12 @@ public class IdentityExpression<T> extends MutableExpressionImpl<T> implements
 		getWriteLock().lock();
 		T previous = this.value;
 		this.value = value;
-		postUpdate();
+		postUpdateAndUnlock();
 		return previous;
 	}
 
 	@Override
-	public final T getValue() {
-		getReadLock().lock();
-		T value = this.value;
-		getReadLock().unlock();
+	protected final T getValueImpl(boolean dirty) {
 		return value;
 	}
 

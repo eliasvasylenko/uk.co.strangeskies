@@ -24,7 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import uk.co.strangeskies.mathematics.expression.CompoundExpression;
+import uk.co.strangeskies.mathematics.expression.DependentExpression;
 import uk.co.strangeskies.mathematics.expression.collection.ExpressionSet;
 import uk.co.strangeskies.mathematics.expression.collection.ExpressionTreeSet;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
@@ -37,7 +37,7 @@ import uk.co.strangeskies.utilities.Observer;
 
 //convex only polygon
 public class ConvexPolygonImpl<V extends Value<V>> extends
-		CompoundExpression<ConvexPolygonImpl<V>> implements
+		DependentExpression<ConvexPolygonImpl<V>> implements
 		ConvexPolygon<ConvexPolygonImpl<V>, V> {
 	public class ConvexHull<T> extends AbstractSet<Vector2<V>> {
 		private final ArrayList<Vector2<V>> backingList;
@@ -156,9 +156,11 @@ public class ConvexPolygonImpl<V extends Value<V>> extends
 	}
 
 	public void setWindingDirection(WindingDirection windingDirection) {
+		getWriteLock().lock();
 		this.windingDirection = windingDirection;
 
-		update();
+		postUpdate();
+		getWriteLock().unlock();
 	}
 
 	@Override

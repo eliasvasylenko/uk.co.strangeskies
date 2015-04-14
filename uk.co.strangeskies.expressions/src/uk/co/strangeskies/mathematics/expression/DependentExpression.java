@@ -26,82 +26,59 @@ import uk.co.strangeskies.mathematics.expression.collection.ExpressionTreeSet;
 import uk.co.strangeskies.mathematics.expression.collection.SortedExpressionSet;
 import uk.co.strangeskies.utilities.IdentityComparator;
 
-public abstract class CompoundExpression<T> extends MutableExpressionImpl<T> {
+public abstract class DependentExpression<T> extends MutableExpressionImpl<T> {
 	private final SortedExpressionSet<?, Expression<? extends Object>> dependencies;
 
 	private T value;
 
-	private boolean evaluated;
 	private final boolean parallel;
 
-	public CompoundExpression(Collection<? extends Expression<?>> dependencies) {
+	public DependentExpression(Collection<? extends Expression<?>> dependencies) {
 		this();
 
 		this.dependencies.addAll(dependencies);
 	}
 
-	public CompoundExpression(Collection<? extends Expression<?>> dependencies,
+	public DependentExpression(Collection<? extends Expression<?>> dependencies,
 			boolean parallel) {
 		this(parallel);
 
 		this.dependencies.addAll(dependencies);
 	}
 
-	public CompoundExpression(Expression<?>... dependencies) {
+	public DependentExpression(Expression<?>... dependencies) {
 		this(true);
 
 		this.dependencies.addAll(Arrays.asList(dependencies));
 	}
 
-	public CompoundExpression(boolean parallel) {
+	public DependentExpression(boolean parallel) {
 		dependencies = new ExpressionTreeSet<>(new IdentityComparator<>());
-		dependencies.addObserver(m -> update());
+		dependencies.addObserver(m -> postUpdateAndUnlock());
 
-		evaluated = false;
 		this.parallel = parallel;
 	}
 
-	protected final void update() {
-		synchronized (dependencies) {
-			if (evaluated) {
-				getWriteLock().lock();
-
-				evaluated = false;
-				postUpdate();
-
-				getWriteLock().unlock();
-			}
-		}
-	}
-
 	@Override
-	public final T getValue() {
-		Set<Expression<?>> dependencies = getDependencies();
+	public final T getValueImpl(boolean dirty) {
+		if (dirty) {
+			Set<Expression<?>> dependencies = getDependencies();
 
-		synchronized (dependencies) {
-			if (!evaluated) {
-				getReadLock().lock();
+			for (Expression<?> dependency : dependencies) {
+				dependency.getReadLock().lock();
 				if (parallel)
-					for (Expression<?> dependency : dependencies) {
-						dependency.getReadLock().lock();
-						new Thread(() -> dependency.getValue()).run();
-					}
-
-				value = evaluate();
-				evaluated = true;
-
-				if (parallel)
-					for (Expression<?> dependency : dependencies)
-						dependency.getReadLock().unlock();
-				getReadLock().unlock();
+					new Thread(() -> dependency.getValue()).run();
+				else
+					dependency.getValue();
 			}
+
+			value = evaluate();
+
+			for (Expression<?> dependency : dependencies)
+				dependency.getReadLock().unlock();
 		}
 
 		return value;
-	}
-
-	public final boolean isEvaluated() {
-		return evaluated;
 	}
 
 	/**

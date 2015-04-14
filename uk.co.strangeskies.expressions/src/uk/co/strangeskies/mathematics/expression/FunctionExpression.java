@@ -30,7 +30,7 @@ import java.util.function.Function;
  * @param <O>
  * @param <R>
  */
-public class FunctionExpression<O, R> extends CompoundExpression<R> {
+public class FunctionExpression<O, R> extends DependentExpression<R> {
 	private Expression<? extends O> operand;
 	private final Expression<? extends Function<? super O, ? extends R>> operation;
 
@@ -78,16 +78,16 @@ public class FunctionExpression<O, R> extends CompoundExpression<R> {
 	 *          A new operand.
 	 */
 	public void setOperand(Expression<? extends O> operand) {
+		getWriteLock().lock();
 		if (this.operand != operand) {
-			getWriteLock().lock();
 			getDependencies().remove(this.operand);
 
 			this.operand = operand;
 			getDependencies().add(this.operand);
 
-			update();
-			getWriteLock().unlock();
+			postUpdateAndUnlock();
 		}
+		getWriteLock().unlock();
 	}
 
 	@Override

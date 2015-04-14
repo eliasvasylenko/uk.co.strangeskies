@@ -68,10 +68,15 @@ public interface Expression<T> extends Observable<Expression<T>> {
 	 * of the time it could be very wasteful to require a value be copied, but at
 	 * the same time, it could often be impossible to return a persistently linked
 	 * value, e.g. for the case of a value type which is an immutable class, such
-	 * as String. It is expected, though, that the result remain valid at least
-	 * until the observer callback returns, though a lock should be obtained at
-	 * this point to guarantee any held references will remain valid without a
-	 * copy.
+	 * as String.
+	 * </p>
+	 * 
+	 * <p>
+	 * The observers should only ever be notified of an update from the thread
+	 * which has the write lock on an {@link Expression}, and {@link Expression}s
+	 * should be careful to only notify observers when they are in a state where
+	 * their value can be fetched. This is discouraged, though. Expressions should
+	 * generally update lazily, not eagerly.
 	 * </p>
 	 * 
 	 * @return The fully evaluated value of this Expression at the time of method
@@ -124,7 +129,8 @@ public interface Expression<T> extends Observable<Expression<T>> {
 	/**
 	 * @return A read lock on the current value of this {@link Expression}.
 	 *         Implementing classes are responsible for providing access to write
-	 *         locks if and where appropriate.
+	 *         locks if and where appropriate. {@link MutableExpression} provides
+	 *         a simple interface over this.
 	 */
 	public Lock getReadLock();
 }

@@ -37,8 +37,10 @@ public abstract class MutableExpressionImpl<T> implements MutableExpression<T> {
 	private final Set<Observer<? super Expression<T>>> observers;
 	private final ReentrantReadWriteLock lock;
 
+	private boolean dirty;
+
 	/**
-	 * 
+	 * Default constructor.
 	 */
 	public MutableExpressionImpl() {
 		observers = new TreeSet<Observer<? super Expression<T>>>(
@@ -61,15 +63,51 @@ public abstract class MutableExpressionImpl<T> implements MutableExpression<T> {
 		observers.clear();
 	}
 
+	protected final void postUpdateAndUnlock() {
+		postUpdate();
+
+		getWriteLock().unlock();
+	}
+
 	protected final void postUpdate() {
 		getWriteLock().lock();
-		getReadLock().lock();
-		getWriteLock().unlock();
-		for (Observer<? super Expression<T>> observer : observers)
-			observer.notify(null);
-		getReadLock().unlock();
-		// TODO this needs thought...
+
+		if (!dirty) {
+			dirty = true;
+			for (Observer<? super Expression<T>> observer : observers)
+				observer.notify(null);
+		}
 	}
+
+	@Override
+	public final T getValue() {
+		getReadLock().lock();
+
+		boolean dirty = this.dirty;
+		if (this.dirty)
+			this.dirty = false;
+		T value = getValueImpl(dirty);
+
+		getReadLock().unlock();
+
+		return value;
+	}
+
+	protected boolean isDirty() {
+		return dirty;
+	}
+
+	/**
+	 * Implementing classes should compute the value of the {@link Expression}
+	 * here. Read lock is guaranteed to be obtained. This method should never be
+	 * invoked manually.
+	 * 
+	 * @param dirty
+	 *          Whether the expression has been mutated since this method was last
+	 *          invoked.
+	 * @return The value of this {@link Expression}.
+	 */
+	protected abstract T getValueImpl(boolean dirty);
 
 	@Override
 	public Lock getReadLock() {

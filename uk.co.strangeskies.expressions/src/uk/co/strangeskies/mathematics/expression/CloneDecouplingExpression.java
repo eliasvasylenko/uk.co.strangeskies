@@ -20,6 +20,13 @@ package uk.co.strangeskies.mathematics.expression;
 
 import java.lang.reflect.InvocationTargetException;
 
+/**
+ * Similar to {@link CopyDecouplingExpression} for {@link Cloneable}
+ * {@link Expression} types.
+ * 
+ * @author Elias N Vasylenko
+ * @param <T>
+ */
 public interface CloneDecouplingExpression<T extends Cloneable> extends
 		Expression<T> {
 	@Override

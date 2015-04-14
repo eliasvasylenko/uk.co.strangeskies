@@ -29,8 +29,8 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import uk.co.strangeskies.mathematics.expression.CompoundExpression;
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
+import uk.co.strangeskies.mathematics.expression.DependentExpression;
 import uk.co.strangeskies.mathematics.geometry.DimensionalityException;
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix;
 import uk.co.strangeskies.mathematics.geometry.matrix.ReOrderedMatrix;
@@ -56,7 +56,7 @@ import uk.co.strangeskies.utilities.function.collection.ListTransformOnceView;
  *          The type of {@link Value} this Vector operates on.
  */
 public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
-		extends CompoundExpression<S> implements Vector<S, V>,
+		extends DependentExpression<S> implements Vector<S, V>,
 		CopyDecouplingExpression<S> {
 	private final List<V> data;
 	private final Order order;

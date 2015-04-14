@@ -21,7 +21,7 @@ package uk.co.strangeskies.mathematics.geometry.shape.impl;
 import java.util.List;
 import java.util.Set;
 
-import uk.co.strangeskies.mathematics.expression.CompoundExpression;
+import uk.co.strangeskies.mathematics.expression.DependentExpression;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.geometry.shape.ClosedPolyline2;
 import uk.co.strangeskies.mathematics.geometry.shape.CompoundPolygon;
@@ -37,21 +37,17 @@ import uk.co.strangeskies.mathematics.values.ValueFactory;
  * @param <V>
  */
 public class CompoundPolygonImpl<V extends Value<V>> extends
-		CompoundExpression<CompoundPolygonImpl<V>> implements
+		DependentExpression<CompoundPolygonImpl<V>> implements
 		CompoundPolygon<CompoundPolygonImpl<V>, V> {
 	public CompoundPolygonImpl(CompoundPolygon<?, ?> polygon,
-			ValueFactory<? extends V> valueFactory) {
-	}
+			ValueFactory<? extends V> valueFactory) {}
 
-	public CompoundPolygonImpl(CompoundPolygon<?, ? extends V> polygon) {
-	}
+	public CompoundPolygonImpl(CompoundPolygon<?, ? extends V> polygon) {}
 
 	public CompoundPolygonImpl(List<? extends Vector2<?>> polygon,
-			ValueFactory<? extends V> valueFactory) {
-	}
+			ValueFactory<? extends V> valueFactory) {}
 
-	public CompoundPolygonImpl(List<? extends Vector2<V>> polygon) {
-	}
+	public CompoundPolygonImpl(List<? extends Vector2<V>> polygon) {}
 
 	@Override
 	public Value<?> getArea() {

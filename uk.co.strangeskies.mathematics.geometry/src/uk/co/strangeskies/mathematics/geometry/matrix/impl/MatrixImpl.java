@@ -25,8 +25,8 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import uk.co.strangeskies.mathematics.expression.CompoundExpression;
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
+import uk.co.strangeskies.mathematics.expression.DependentExpression;
 import uk.co.strangeskies.mathematics.geometry.DimensionalityException;
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix;
 import uk.co.strangeskies.mathematics.geometry.matrix.ReOrderedMatrix;
@@ -44,7 +44,7 @@ import uk.co.strangeskies.utilities.function.TriFunction;
 import uk.co.strangeskies.utilities.function.collection.ListTransformationView;
 
 public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
-		extends CompoundExpression<S> implements Matrix<S, V>,
+		extends DependentExpression<S> implements Matrix<S, V>,
 		CopyDecouplingExpression<S> {
 	private final List<List<V>> data;
 	private final Order order;
@@ -150,7 +150,7 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 		data.clear();
 		data.addAll(transposedData);
 
-		update();
+		postUpdate();
 
 		return getThis();
 	}

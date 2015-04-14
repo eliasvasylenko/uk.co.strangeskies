@@ -30,7 +30,7 @@ import uk.co.strangeskies.utilities.function.TriFunction;
  * @param <R>
  */
 public abstract class TriFunctionExpression<O1, O2, O3, R> extends
-		CompoundExpression<R> {
+		DependentExpression<R> {
 	private Expression<? extends O1> firstOperand;
 	private Expression<? extends O2> secondOperand;
 	private Expression<? extends O3> thirdOperand;
@@ -112,10 +112,10 @@ public abstract class TriFunctionExpression<O1, O2, O3, R> extends
 	public void setOperands(Expression<? extends O1> firstOperand,
 			Expression<? extends O2> secondOperand,
 			Expression<? extends O3> thirdOperand) {
+		getWriteLock().lock();
 		if (this.firstOperand != firstOperand
 				|| this.secondOperand != secondOperand
 				|| this.thirdOperand != thirdOperand) {
-			getWriteLock().lock();
 			getDependencies().remove(this.firstOperand);
 			getDependencies().remove(this.secondOperand);
 			getDependencies().remove(this.thirdOperand);
@@ -128,9 +128,9 @@ public abstract class TriFunctionExpression<O1, O2, O3, R> extends
 			getDependencies().add(this.secondOperand);
 			getDependencies().add(this.thirdOperand);
 
-			update();
-			getWriteLock().unlock();
+			postUpdateAndUnlock();
 		}
+		getWriteLock().unlock();
 	}
 
 	/**
@@ -138,8 +138,8 @@ public abstract class TriFunctionExpression<O1, O2, O3, R> extends
 	 *          A new first operand.
 	 */
 	public void setFirstOperand(Expression<? extends O1> operand) {
+		getWriteLock().lock();
 		if (firstOperand != operand) {
-			getWriteLock().lock();
 			if (firstOperand != secondOperand && firstOperand != thirdOperand) {
 				getDependencies().remove(firstOperand);
 			}
@@ -147,9 +147,9 @@ public abstract class TriFunctionExpression<O1, O2, O3, R> extends
 			firstOperand = operand;
 			getDependencies().add(firstOperand);
 
-			update();
-			getWriteLock().unlock();
+			postUpdateAndUnlock();
 		}
+		getWriteLock().unlock();
 	}
 
 	/**
@@ -157,8 +157,8 @@ public abstract class TriFunctionExpression<O1, O2, O3, R> extends
 	 *          A new second operand.
 	 */
 	public void setSecondOperand(Expression<? extends O2> operand) {
+		getWriteLock().lock();
 		if (secondOperand != operand) {
-			getWriteLock().lock();
 			if (firstOperand != secondOperand && secondOperand != thirdOperand) {
 				getDependencies().remove(secondOperand);
 			}
@@ -166,9 +166,9 @@ public abstract class TriFunctionExpression<O1, O2, O3, R> extends
 			secondOperand = operand;
 			getDependencies().add(secondOperand);
 
-			update();
-			getWriteLock().unlock();
+			postUpdateAndUnlock();
 		}
+		getWriteLock().unlock();
 	}
 
 	/**
@@ -176,8 +176,8 @@ public abstract class TriFunctionExpression<O1, O2, O3, R> extends
 	 *          A new third operand.
 	 */
 	public void setThirdOperand(Expression<? extends O3> operand) {
+		getWriteLock().lock();
 		if (thirdOperand != operand) {
-			getWriteLock().lock();
 			if (firstOperand != thirdOperand && secondOperand != thirdOperand) {
 				getDependencies().remove(secondOperand);
 			}
@@ -185,9 +185,9 @@ public abstract class TriFunctionExpression<O1, O2, O3, R> extends
 			thirdOperand = operand;
 			getDependencies().add(secondOperand);
 
-			update();
-			getWriteLock().unlock();
+			postUpdateAndUnlock();
 		}
+		getWriteLock().unlock();
 	}
 
 	@Override
