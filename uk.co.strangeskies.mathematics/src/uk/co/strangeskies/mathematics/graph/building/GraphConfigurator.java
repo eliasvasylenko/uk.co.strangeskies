@@ -31,6 +31,12 @@ import uk.co.strangeskies.mathematics.graph.EdgeVertices;
 import uk.co.strangeskies.mathematics.graph.Graph;
 import uk.co.strangeskies.utilities.factory.Factory;
 
+/**
+ *
+ * @author Elias N Vasylenko
+ * @param <V>
+ * @param <E>
+ */
 public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	/**
 	 * Calling this method has the same effect as calling both
@@ -111,7 +117,7 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * This method sets a rule to determine whether edges should be generated
 	 * between vertices.
 	 *
-	 * @param lowToHigh
+	 * @param betweenNeighbours
 	 * @return
 	 */
 	public GraphConfigurator<V, E> edgesBetween(
@@ -127,7 +133,7 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * This method creates a rule to determine whether edges should be generated
 	 * between vertices.
 	 *
-	 * @param lowToHigh
+	 * @param betweenNeighbours
 	 * @return
 	 */
 	public GraphConfigurator<V, E> edgeRule(
@@ -216,7 +222,7 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	/**
 	 * This method accepts a metric over edge objects to describe their weight.
 	 *
-	 * @param factory
+	 * @param weight
 	 * @return
 	 */
 	public GraphConfigurator<V, E> edgeWeight(Function<E, Double> weight);
@@ -227,7 +233,6 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * automatically trigger the addition of any missing vertices of that edge to
 	 * the graph.
 	 *
-	 * @param factory
 	 * @return
 	 */
 	public GraphConfigurator<V, E> generateNeighbours();

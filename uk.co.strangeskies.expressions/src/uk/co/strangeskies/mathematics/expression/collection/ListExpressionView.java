@@ -34,8 +34,6 @@ import uk.co.strangeskies.mathematics.expression.Expression;
  *
  * @param <T>
  *          The type of the elements of this list.
- * @param <F>
- *          The type of the elements of the backing list.
  */
 public class ListExpressionView<T> extends AbstractList<T> {
 	private final Expression<? extends List<? extends T>> backingList;

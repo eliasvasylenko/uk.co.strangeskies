@@ -42,8 +42,9 @@ import uk.co.strangeskies.utilities.collection.computingmap.LRUCacheComputingMap
 /**
  * <p>
  * TypeToken provides reflective operations and services over the Java type
- * system. It is analogous to Class<?>, but provides access to a much richer set
- * of tools, and can be used over the domain of all types, not just raw types.
+ * system. It is analogous to {@code Class<?>}, but provides access to a much
+ * richer set of tools, and can be used over the domain of all types, not just
+ * raw types.
  * </p>
  * 
  * <p>
@@ -104,7 +105,7 @@ public class TypeToken<T> {
 
 	/**
 	 * As {@link #TypeToken(Wildcards)} invoked with the argument
-	 * {@link Wildcards#RAW}.
+	 * {@link Wildcards#PRESERVE}.
 	 */
 	protected TypeToken() {
 		this(Wildcards.PRESERVE);
@@ -227,8 +228,8 @@ public class TypeToken<T> {
 	/**
 	 * Create a TypeToken over a fresh TypeVariableCapture of the wildcard type
 	 * which has the type represented by this TypeToken as an upper bound. For
-	 * example, invoking this method on a TypeToken<List<?>> will give a
-	 * TypeToken<? extends List<?>>.
+	 * example, invoking this method on a {@code TypeToken<List<?>>} will give a
+	 * {@code TypeToken<? extends List<?>>}.
 	 * 
 	 * @return The TypeToken representing a capture of the wildcard described.
 	 */
@@ -240,8 +241,8 @@ public class TypeToken<T> {
 	/**
 	 * Create a TypeToken over a fresh TypeVariableCapture of the wildcard type
 	 * which has the type represented by this TypeToken as a lower bound. For
-	 * example, invoking this method on a TypeToken<List<?>> will give a
-	 * TypeToken<? super List<?>>. TypeVariableCapture.
+	 * example, invoking this method on a {@code TypeToken<List<?>>} will give a
+	 * {@code TypeToken<? super List<?>>}. TypeVariableCapture.
 	 * 
 	 * @return The TypeToken representing a capture of the wildcard described.
 	 */
@@ -253,7 +254,7 @@ public class TypeToken<T> {
 	/**
 	 * Create a TypeToken over a fresh InferenceVariable with the type represented
 	 * by this TypeToken as an upper bound. For example, invoking this method on a
-	 * TypeToken<List<?>> will give a TypeToken<? extends List<?>>.
+	 * {@code TypeToken<List<?>>} will give a {@code TypeToken<? extends List<?>>}.
 	 * 
 	 * @return The resulting TypeToken.
 	 */
@@ -267,7 +268,7 @@ public class TypeToken<T> {
 	/**
 	 * Create a TypeToken over a fresh InferenceVariable with the type represented
 	 * by this TypeToken as a lower bound. For example, invoking this method on a
-	 * TypeToken<List<?>> will give a TypeToken<? super List<?>>.
+	 * {@code TypeToken<List<?>>} will give a {@code TypeToken<? super List<?>>}.
 	 * 
 	 * @return The resulting TypeToken.
 	 */
@@ -699,7 +700,7 @@ public class TypeToken<T> {
 	 * type with a specific type satisfying the bounds of that parameter.
 	 * 
 	 * As an example, the following method could be used to derive instances of
-	 * TypeToken over different parameterizations of List<?> at runtime.
+	 * TypeToken over different parameterizations of {@code List<?>} at runtime.
 	 * </p>
 	 * 
 	 * <pre>

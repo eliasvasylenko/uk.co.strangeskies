@@ -48,6 +48,13 @@ subprojects {
   if (bndProject != null) {
     plugins.apply 'biz.aQute.bnd'
   }
+
+  apply plugin: 'java'
+
+  javadoc {
+    options.charSet = 'UTF-8'
+    options.encoding = 'UTF-8'
+  }
 }
 
 task wrapper(type: Wrapper) {
