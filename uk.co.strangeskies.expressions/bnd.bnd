@@ -1,9 +1,0 @@
-Export-Package:  \
-	uk.co.strangeskies.mathematics.expression,\
-	uk.co.strangeskies.mathematics.expression.buffer,\
-	uk.co.strangeskies.mathematics.expression.collection
-Bundle-Name: Strange Skies Expressions
--dsannotations:  \
-	*
--buildpath:  \
-	uk.co.strangeskies.utilities;version=latest

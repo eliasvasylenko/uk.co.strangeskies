@@ -1,7 +1,0 @@
--dsannotations:  \
-	*
-Bundle-Name: Strange Skies Scripting - Frege
-Private-Package:\
-	frege.**
-Include-Resource:\
-	META-INF/services/javax.script.ScriptEngineFactory=res/frege/javax.script.ScriptEngineFactory
