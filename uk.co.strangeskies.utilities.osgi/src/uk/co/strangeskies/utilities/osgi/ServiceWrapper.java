@@ -37,7 +37,7 @@ public interface ServiceWrapper<T> {
 	 * the implementation provided as a parameter. It doesn't matter if a
 	 * different object is returned by multiple calls providing an identical
 	 * 'service' parameter.
-	 * </p>
+	 * 
 	 * 
 	 * <p>
 	 * Classes published under this service with higher property values for the
@@ -49,7 +49,7 @@ public interface ServiceWrapper<T> {
 	 * {@link ServiceWrapper#HIDE_SERVICES} property set to ALWAYS will be
 	 * selected preferentially, then WHEN_WRAPPED, otherwise the ordering is
 	 * arbitrary.
-	 * </p>
+	 * 
 	 * 
 	 * <p>
 	 * Bear in mind that any method calls on the underlying object by the
@@ -57,7 +57,7 @@ public interface ServiceWrapper<T> {
 	 * consumer context will be wrapped. This means, for example, that calls from
 	 * the OSGi framework on declarative service objects on deactivation or on
 	 * reference binding will be made directly on the underlying service object.
-	 * </p>
+	 * 
 	 * 
 	 * @param service
 	 *          The service implementation to be wrapped.
@@ -72,12 +72,12 @@ public interface ServiceWrapper<T> {
 	 * originally passed as a parameter to
 	 * {@link ServiceWrapper#wrapService(Object)}, rather than the wrapper object
 	 * returned from that method.
-	 * </p>
+	 * 
 	 * 
 	 * <p>
 	 * Calls to this method will always precede, and correspond 1:1, with calls to
 	 * the wrapping method.
-	 * </p>
+	 * 
 	 * 
 	 * @param service
 	 *          The service implementation which has been wrapped and is now being
@@ -90,7 +90,7 @@ public interface ServiceWrapper<T> {
 	 * This method will be called directly before the wrapper is applied to a
 	 * service through {@link ServiceWrapper#wrapService(Object)}, and then once
 	 * again each time any of the properties of the wrapped service change.
-	 * </p>
+	 * 
 	 * 
 	 * <p>
 	 * The map passed as an argument will contain the properties of the service to
@@ -99,20 +99,20 @@ public interface ServiceWrapper<T> {
 	 * will need to be made, though an example of a sensible change would be to
 	 * increase the {@link Constants#SERVICE_RANKING} so the wrapping service
 	 * takes precedence over the original.
-	 * </p>
+	 * 
 	 * 
 	 * <p>
 	 * Values for the {@link Constants#OBJECTCLASS} and
 	 * {@link Constants#SERVICE_ID} keys can not be changed. These values are set
 	 * by the Framework when the service is registered in the OSGi environment.
-	 * </p>
+	 * 
 	 * 
 	 * <p>
 	 * {@link ServiceWrapper#wrapService(Object)} will only ever be called to wrap
 	 * a service if this method returns 'true' for the properties of that service.
 	 * This can act as a filter for the service wrapper, such that it is only
 	 * applied when certain conditions are met.
-	 * </p>
+	 * 
 	 * 
 	 * @param serviceProperties
 	 *          The properties of the service to be wrapped.
@@ -135,12 +135,12 @@ public interface ServiceWrapper<T> {
 	 * normally be careful not set this value to {@link HideServices#NEVER}, as
 	 * they won't be able to guarantee they are not subverted, with the wrapped
 	 * service being manipulated without their knowledge.
-	 * </p>
+	 * 
 	 * 
 	 * <p>
 	 * The default value when none is provided is
 	 * {@link HideServices#WHEN_WRAPPED}.
-	 * </p>
+	 * 
 	 */
 	public static final String HIDE_SERVICES = "hide.services";
 
@@ -148,7 +148,7 @@ public interface ServiceWrapper<T> {
 	 * <p>
 	 * Enumeration of possible values for the {@link ServiceWrapper#HIDE_SERVICES}
 	 * property of any {@link ServiceWrapper} services.
-	 * </p>
+	 * 
 	 * 
 	 * @author Elias N Vasylenko
 	 * 
@@ -163,12 +163,12 @@ public interface ServiceWrapper<T> {
 		 * matched by {@link ServiceWrapper#wrapServiceProperties(Map)} then none
 		 * will be available to any bundles, no matter what service ranking the
 		 * wrapper has.
-		 * </p>
+		 * 
 		 * 
 		 * <p>
 		 * The default value when none is provided is
 		 * {@link HideServices#WHEN_WRAPPED}.
-		 * </p>
+		 * 
 		 */
 		ALWAYS,
 		/**
@@ -199,7 +199,7 @@ public interface ServiceWrapper<T> {
 	 * 
 	 * If the {@link HideServices} property is set to {@link HideServices#NEVER},
 	 * this value is ignored.
-	 * </p>
+	 * 
 	 * 
 	 * <p>
 	 * Wrappers which maintain state should normally not set this value to
@@ -207,14 +207,14 @@ public interface ServiceWrapper<T> {
 	 * state they should adopt at the point at which they are added, since they
 	 * may be added and removed multiple times, through multiple calls to
 	 * {@link ServiceWrapper#wrapService(Object)}.
-	 * </p>
+	 * 
 	 * 
 	 * <p>
 	 * If this property is set to {@link Boolean#FALSE} then existing services
 	 * will not be wrapped, so the wrapper can be sure that
 	 * {@link ServiceWrapper#wrapService(Object)} is only ever called once for any
 	 * service, at the point when that services is registered.
-	 * </p>
+	 * 
 	 * 
 	 * <p>
 	 * If this property is set to {@link Boolean#TRUE} then wrappers may be
@@ -222,7 +222,7 @@ public interface ServiceWrapper<T> {
 	 * Otherwise, wrapping services will ignore reorderings unless their raking
 	 * drops below that of the service they are wrapping, in which case they will
 	 * be unregistered.
-	 * </p>
+	 * 
 	 * 
 	 * <p>
 	 * Implementations of {@link ServiceWrapperManager} may choose to not accept
@@ -235,7 +235,7 @@ public interface ServiceWrapper<T> {
 	 * should also be noted that an implementation of
 	 * {@link ServiceWrapperManager} may only be able to wrap services which were
 	 * registered after the manager was registered or created itself.
-	 * </p>
+	 * 
 	 */
 	public static final String WRAP_EXISTING_SERVICES = "wrap.existing.services";
 }

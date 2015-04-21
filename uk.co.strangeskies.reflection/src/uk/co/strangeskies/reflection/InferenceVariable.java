@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
  * information attached to it. Instead, typically, they are contained within the
  * context of one or more {@link BoundSet}s, which will track bounds on a set of
  * inference variables such they their exact type can ultimately be inferred.
- * </p>
+ * 
  * 
  * @author Elias N Vasylenko
  */
@@ -54,6 +54,8 @@ public interface InferenceVariable extends Type {
 	 *          The {@link BoundSet} context within which to capture the generic
 	 *          declaration.
 	 * @param declaration
+	 *          The generic declaration whose declared type variables we wish to
+	 *          capture as inference variables.
 	 * @return A mapping of the type variables on the given declaration to the new
 	 *         inference variables which capture them.
 	 */
@@ -104,7 +106,11 @@ public interface InferenceVariable extends Type {
 	 * language specification.
 	 * 
 	 * @param type
+	 *          A parameterised type whose wildcard type arguments, if present, we
+	 *          wish to capture as inference variables.
 	 * @param bounds
+	 *          The bound set we wish to create any fresh inference variables
+	 *          within, and incorporate any newly implied bounds into.
 	 * @return A new parameterized type derived from the given parameterized type,
 	 *         with any fresh {@link InferenceVariable}s substituted for the type
 	 *         arguments.

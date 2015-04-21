@@ -45,13 +45,13 @@ import uk.co.strangeskies.utilities.collection.computingmap.LRUCacheComputingMap
  * system. It is analogous to {@code Class<?>}, but provides access to a much
  * richer set of tools, and can be used over the domain of all types, not just
  * raw types.
- * </p>
+ * 
  * 
  * <p>
  * TypeToken is effectively immutable, though may perform shared caching of
  * results transparently to the user. Like Class, A TypeToken will always be
  * parameterised with the type it reflects over when used as intended.
- * </p>
+ * 
  * 
  * @author Elias N Vasylenko
  *
@@ -148,7 +148,7 @@ public class TypeToken<T> {
 				type = TypeVariableCapture.captureWildcardArguments(parameterizedType);
 			} else if (wildcards == Wildcards.INFERENCE) {
 				resolver = new Resolver();
-				type = resolver.inferTypeArguments(parameterizedType);
+				type = resolver.inferOverTypeArguments(parameterizedType);
 			}
 		}
 
@@ -172,6 +172,8 @@ public class TypeToken<T> {
 	/**
 	 * Create a TypeToken for a raw class.
 	 * 
+	 * @param <T>
+	 *          The type of the new {@link TypeToken}.
 	 * @param type
 	 *          The class to create a TypeToken for.
 	 * @return A TypeToken over the requested class.
@@ -254,7 +256,8 @@ public class TypeToken<T> {
 	/**
 	 * Create a TypeToken over a fresh InferenceVariable with the type represented
 	 * by this TypeToken as an upper bound. For example, invoking this method on a
-	 * {@code TypeToken<List<?>>} will give a {@code TypeToken<? extends List<?>>}.
+	 * {@code TypeToken<List<?>>} will give a {@code TypeToken<? extends List<?>>}
+	 * .
 	 * 
 	 * @return The resulting TypeToken.
 	 */
@@ -262,7 +265,7 @@ public class TypeToken<T> {
 	public TypeToken<? extends T> inferceExtending() {
 		Resolver resolver = getResolver();
 		return (TypeToken<? extends T>) new TypeToken<>(resolver,
-				resolver.incorporateWildcardType(WildcardTypes.upperBounded(getType())));
+				resolver.inferOverWildcardType(WildcardTypes.upperBounded(getType())));
 	}
 
 	/**
@@ -275,7 +278,7 @@ public class TypeToken<T> {
 	public TypeToken<? super T> inferceSuper() {
 		Resolver resolver = getResolver();
 		return new TypeToken<>(resolver,
-				resolver.incorporateWildcardType(WildcardTypes.lowerBounded(getType())));
+				resolver.inferOverWildcardType(WildcardTypes.lowerBounded(getType())));
 	}
 
 	/**
@@ -311,7 +314,7 @@ public class TypeToken<T> {
 		return new Resolver(getInternalResolver());
 	}
 
-	protected Resolver getInternalResolver() {
+	private Resolver getInternalResolver() {
 		if (resolver == null) {
 			synchronized (RESOLVER_CACHE) {
 				return resolver = RESOLVER_CACHE
@@ -502,12 +505,13 @@ public class TypeToken<T> {
 	}
 
 	/**
-	 * See {@link TypeToken#getTypeArgument(TypeParameter)}.
+	 * Try to find an instantiation of the given type variable within the context
+	 * provided by the type hierarchy of the type described by this TypeToken.
 	 * 
 	 * @param type
-	 *          The type variable for which we wish to determine an instantiation.
-	 * @return The type instantiating the given type parameter, if such an
-	 *         instantiation exists, otherwise the given parameter itself.
+	 *          The type variable of which we wish to determine an instantiation.
+	 * @return A TypeToken over the instantiation of the given type parameter, if
+	 *         one exists, otherwise a TypeToken over the given parameter.
 	 */
 	public Type getTypeArgument(TypeVariable<?> type) {
 		return getInternalResolver().resolveTypeVariable(getRawType(), type);
@@ -517,8 +521,10 @@ public class TypeToken<T> {
 	 * Try to find an instantiation of the given type variable within the context
 	 * provided by the type hierarchy of the type described by this TypeToken.
 	 * 
+	 * @param <U>
+	 *          The type variable of which we wish to determine an instantiation.
 	 * @param type
-	 *          The type variable for which we wish to determine an instantiation.
+	 *          The type variable of which we wish to determine an instantiation.
 	 * @return A TypeToken over the instantiation of the given type parameter, if
 	 *         one exists, otherwise a TypeToken over the given parameter.
 	 */
@@ -533,6 +539,8 @@ public class TypeToken<T> {
 	 * InferenceVariable objects will be substituted by any instantiations thereof
 	 * which may be present as part of this TypeToken's type hierarchy.
 	 * 
+	 * @param <U>
+	 *          The type we wish to resolve.
 	 * @param type
 	 *          The type we wish to resolve.
 	 * @return A new TypeToken with all type variables and inference variables
@@ -584,6 +592,8 @@ public class TypeToken<T> {
 	 * For a given generic superclass of this type, determine the type arguments
 	 * of the exact supertype.
 	 * 
+	 * @param <U>
+	 *          The class of the supertype parameterization we wish to determine.
 	 * @param superclass
 	 *          The class of the supertype parameterization we wish to determine.
 	 * @return A TypeToken over the supertype of the requested class.
@@ -606,7 +616,7 @@ public class TypeToken<T> {
 			ConstraintFormula.reduce(Kind.SUBTYPE, getType(), parameterizedType,
 					resolver.getBounds());
 		} else
-			resolver.resolveTypeHierarchy(getType(), superclass);
+			resolver.incorporateTypeHierarchy(getRawType(), superclass);
 
 		return (TypeToken<? extends U>) of(resolver.resolveType(superclass,
 				parameterizedType));
@@ -618,6 +628,8 @@ public class TypeToken<T> {
 	 * always be possible, but for certain subtype relations it will, based on the
 	 * reduction and incorporation rules of the Java type inference algorithm.
 	 * 
+	 * @param <U>
+	 *          The class of the subtype parameterization we wish to determine.
 	 * @param subclass
 	 *          The class of the subtype parameterization we wish to determine.
 	 * @return A TypeToken over the best effort parameterization of the requested
@@ -640,7 +652,7 @@ public class TypeToken<T> {
 			ConstraintFormula.reduce(Kind.SUBTYPE, parameterizedType, getType(),
 					resolver.getBounds());
 		} else
-			resolver.resolveTypeHierarchy(parameterizedType, getRawType());
+			resolver.incorporateTypeHierarchy(subclass, getRawType());
 
 		return (TypeToken<? extends U>) TypeToken.of(resolver.resolveType(subclass,
 				parameterizedType));
@@ -650,13 +662,13 @@ public class TypeToken<T> {
 	 * <p>
 	 * As {@link ParameterizedTypes#getAllTypeParameters(Class)} called on each of
 	 * {@link #getRawTypes()} merged into a single list.
-	 * </p>
+	 * 
 	 * 
 	 * <p>
 	 * For type tokens over a single parameterized type, this method will return
 	 * the equivalent of an invocation of
 	 * {@link ParameterizedTypes#getAllTypeParameters(Class)} on that type.
-	 * </p>
+	 * 
 	 * 
 	 * @return A list of all type parameters present on all raw types.
 	 */
@@ -671,14 +683,11 @@ public class TypeToken<T> {
 	 * for each type variable returned by {@link #getAllTypeParameters()}. Type
 	 * arguments are as those given by {@link #resolveSupertypeParameters(Class)}
 	 * invoked on each of {@link #getRawTypes()}.
-	 * </p>
-	 * 
 	 * <p>
 	 * For type tokens over a single parameterized type, this method will return
 	 * the equivalent of an invocation of
 	 * {@link ParameterizedTypes#getAllTypeArguments(ParameterizedType)} on that
 	 * type.
-	 * </p>
 	 * 
 	 * @return A mapping of all type parameters present on all raw types, to their
 	 *         appropriate argument parameterizations according to this type.
@@ -695,22 +704,41 @@ public class TypeToken<T> {
 	}
 
 	/**
+	 * Resolve the type argument which instantiates the given
+	 * {@link TypeParameter} in the context of the type of this {@link TypeToken}.
+	 * 
+	 * @param <U>
+	 *          The type parameter whose instantiation we sish to determine.
+	 * @param typeParameter
+	 *          The type parameter whose instantiation we sish to determine.
+	 * @return The proper instantiation of the given parameter, if one exists,
+	 *         otherwise a type token over the {@link TypeVariable} itself.
+	 */
+	@SuppressWarnings("unchecked")
+	public <U> TypeToken<U> resolveTypeArgument(TypeParameter<U> typeParameter) {
+		return (TypeToken<U>) of(getInternalResolver().resolveTypeVariable(rawType,
+				typeParameter.getType()));
+	}
+
+	/**
 	 * <p>
 	 * Substitute all occurrences of a TypeParameter instance mentioned by this
 	 * type with a specific type satisfying the bounds of that parameter.
 	 * 
 	 * As an example, the following method could be used to derive instances of
 	 * TypeToken over different parameterizations of {@code List<?>} at runtime.
-	 * </p>
+	 * 
 	 * 
 	 * <pre>
 	 * <code>
-	 * {@code public List<T> getList(TypeToken<T> clazz)} {
-	 * 	{@code return new TypeToken<T>()} {}.withTypeArgument(new {@code TypeParameter<T>()} {}, clazz);
+	 * public List&lt;T&gt; getList(TypeToken&lt;T&gt; clazz)} {
+	 * 	 return new TypeToken&lt;T&gt;()} {}.withTypeArgument(new TypeParameter&lt;T&gt;() {}, clazz);
 	 * }
 	 * </code>
 	 * </pre>
 	 * 
+	 * @param <V>
+	 *          The parameter to make a substitution for.
 	 * @param parameter
 	 *          The parameter to make a substitution for.
 	 * @param argument
@@ -728,6 +756,8 @@ public class TypeToken<T> {
 	/**
 	 * As with {@link TypeToken#withTypeArgument(TypeParameter, TypeToken)}.
 	 * 
+	 * @param <V>
+	 *          The parameter to make a substitution for.
 	 * @param parameter
 	 *          The parameter to make a substitution for.
 	 * @param argument

@@ -46,7 +46,10 @@ public class ParameterizedTypes {
 	private ParameterizedTypes() {}
 
 	/**
+	 * Determine whether a {@link Class} represents a generic type.
+	 * 
 	 * @param type
+	 *          The type we wish to classify.
 	 * @return True if the given class is generic or if a non-statically enclosing
 	 *         class is generic, false otherwise.
 	 */
@@ -60,6 +63,7 @@ public class ParameterizedTypes {
 	 * the order encountered.
 	 *
 	 * @param rawType
+	 *          The class whose generic type parameters we wish to determine.
 	 * @return A list of all relevant type variables.
 	 */
 	public static List<TypeVariable<?>> getAllTypeParameters(Class<?> rawType) {
@@ -77,6 +81,7 @@ public class ParameterizedTypes {
 	 * arguments within the context of this type.
 	 *
 	 * @param type
+	 *          The type whose generic type arguments we wish to determine.
 	 * @return A mapping of all type variables to their arguments in the context
 	 *         of the given type.
 	 */
@@ -121,21 +126,37 @@ public class ParameterizedTypes {
 	}
 
 	/**
+	 * Derive an instance of {@link ParameterizedType} from a raw {@link Class},
+	 * substituting the type parameters of that class as their own argument
+	 * instantiations.
+	 * 
+	 * @param <T>
+	 *          A raw {@link Class} from which we wish to determine a
+	 *          {@link ParameterizedType}.
 	 * @param rawType
-	 * @return A {@link ParameterizedType} instance over the given class, with
-	 *         type parameters substituted with the type variables themselves.
+	 *          A raw {@link Class} from which we wish to determine a
+	 *          {@link ParameterizedType}.
+	 * @return A {@link ParameterizedType} instance over the given class.
 	 */
 	public static <T> TypeToken<? extends T> from(Class<T> rawType) {
 		return from(rawType, new HashMap<>());
 	}
 
 	/**
+	 * Derive an instance of {@link ParameterizedType} from a raw {@link Class}
+	 * using the given generic type arguments. Type parameters with no provided
+	 * argument will be parameterized with the type variables themselves.
+	 * 
+	 * @param <T>
+	 *          A raw {@link Class} from which we wish to determine a
+	 *          {@link ParameterizedType}.
 	 * @param rawType
+	 *          A raw {@link Class} from which we wish to determine a
+	 *          {@link ParameterizedType}.
 	 * @param typeArguments
+	 *          A mapping of generic type variables to arguments.
 	 * @return A {@link ParameterizedType} instance over the given class,
-	 *         parameterized with the given type arguments. Type parameters with
-	 *         no provided argument will be parameterized with the type variables
-	 *         themselves.
+	 *         parameterized with the given type arguments.
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T> TypeToken<? extends T> from(Class<T> rawType,
@@ -145,9 +166,23 @@ public class ParameterizedTypes {
 	}
 
 	/**
+	 * Derive an instance of {@link ParameterizedType} from a raw {@link Class}
+	 * using the given generic type arguments, in the order given.
+	 * 
+	 * @param <T>
+	 *          A raw {@link Class} from which we wish to determine a
+	 *          {@link ParameterizedType}. The raw type must not have a non
+	 *          statically enclosing type which is itself generic.
 	 * @param rawType
+	 *          A raw {@link Class} from which we wish to determine a
+	 *          {@link ParameterizedType}. The raw type must not have a non
+	 *          statically enclosing type which is itself generic.
 	 * @param typeArguments
-	 * @return As {@link #from(Class, Type...)}.
+	 *          A list of {@link Type}s to substitute as type arguments for the
+	 *          given generic class. There should be exactly as many type
+	 *          arguments as there are type parameters for the given class.
+	 * @return A {@link ParameterizedType} instance over the given class,
+	 *         parameterized with the given type arguments, in order
 	 */
 	public static <T> TypeToken<? extends T> from(Class<T> rawType,
 			Type... typeArguments) {
@@ -155,8 +190,21 @@ public class ParameterizedTypes {
 	}
 
 	/**
+	 * Derive an instance of {@link ParameterizedType} from a raw {@link Class}
+	 * using the given generic type arguments, in the order given.
+	 * 
+	 * @param <T>
+	 *          A raw {@link Class} from which we wish to determine a
+	 *          {@link ParameterizedType}. The raw type must not have a non
+	 *          statically enclosing type which is itself generic.
 	 * @param rawType
+	 *          A raw {@link Class} from which we wish to determine a
+	 *          {@link ParameterizedType}. The raw type must not have a non
+	 *          statically enclosing type which is itself generic.
 	 * @param typeArguments
+	 *          A list of {@link Type}s to substitute as type arguments for the
+	 *          given generic class. There should be exactly as many type
+	 *          arguments as there are type parameters for the given class.
 	 * @return A {@link ParameterizedType} instance over the given class,
 	 *         parameterized with the given type arguments, in order
 	 */
@@ -184,9 +232,11 @@ public class ParameterizedTypes {
 
 	/**
 	 * @param source
+	 *          A supplier of the parameterized class we wish to proxy.
 	 * @return A proxy for a parameterized type, forwarding to the instance
-	 *         provided by the given supplier. This is generally useful for
-	 *         algorithms which deal with infinite types.
+	 *         provided by the given supplier at the moment of each invocation.
+	 *         This is generally useful for algorithms which deal with infinite
+	 *         types.
 	 */
 	public static ParameterizedType proxy(Supplier<ParameterizedType> source) {
 		return new ParameterizedType() {
@@ -366,9 +416,15 @@ public class ParameterizedTypes {
 	}
 
 	/**
+	 * For a given generic superclass of a given exact type, determine the type
+	 * arguments of the exact supertype.
+	 * 
 	 * @param type
+	 *          The type providing a context within which to determine the
+	 *          arguments of the supertype.
 	 * @param superclass
-	 * @return As {@link TypeToken#resolveSupertypeParameters(Class)}.
+	 *          The class of the supertype parameterization we wish to determine.
+	 * @return A TypeToken over the supertype of the requested class.
 	 */
 	public static Type resolveSupertypeParameters(Type type, Class<?> superclass) {
 		if (!ParameterizedTypes.isGeneric(superclass))
@@ -397,9 +453,18 @@ public class ParameterizedTypes {
 	}
 
 	/**
+	 * Attempt to determine the type arguments with which a subtype of a given
+	 * class would be parameterized such that it be a valid subtype. This may not
+	 * always be possible, but for certain subtype relations it will, based on the
+	 * reduction and incorporation rules of the Java type inference algorithm.
+	 * 
 	 * @param type
+	 *          The type providing a context within which to determine the
+	 *          arguments of the subtype.
 	 * @param subclass
-	 * @return As {@link TypeToken#resolveSubtypeParameters(Class)}.
+	 *          The class of the subtype parameterization we wish to determine.
+	 * @return A TypeToken over the best effort parameterization of the requested
+	 *         class such that it be a subtype.
 	 */
 	public static Type resolveSubtypeParameters(Type type, Class<?> subclass) {
 		if (!ParameterizedTypes.isGeneric(subclass))

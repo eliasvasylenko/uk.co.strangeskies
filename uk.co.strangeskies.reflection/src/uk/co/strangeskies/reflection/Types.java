@@ -188,6 +188,8 @@ public final class Types {
 	 * If this TypeToken is a primitive type, determine the wrapped primitive
 	 * type.
 	 * 
+	 * @param <T>
+	 *          The type we wish to wrap.
 	 * @param type
 	 *          The type we wish to wrap.
 	 * @return The wrapper type of the primitive type this TypeToken represents,
@@ -205,6 +207,8 @@ public final class Types {
 	 * If this TypeToken is a wrapper of a primitive type, determine the unwrapped
 	 * primitive type.
 	 * 
+	 * @param <T>
+	 *          The type we wish to unwrap.
 	 * @param type
 	 *          The type we wish to unwrap.
 	 * @return The primitive type wrapped by this TypeToken, otherwise this
@@ -386,8 +390,8 @@ public final class Types {
 	 * Determine if the given type, {@code from}, contains the given type,
 	 * {@code to}. In other words, if either of the given types are wildcards,
 	 * determine if every possible instantiation of {@code to} is also a valid
-	 * instantiation of {@code from}. Or if neither type is a wildcard,
-	 * determine whether both types are assignable to each other as per
+	 * instantiation of {@code from}. Or if neither type is a wildcard, determine
+	 * whether both types are assignable to each other as per
 	 * {@link Types#isAssignable(Type, Type)}.
 	 * 
 	 * @param from
@@ -608,12 +612,12 @@ public final class Types {
 	 * <p>
 	 * Determine whether a given type, {@code from}, is compatible with a given
 	 * type, {@code to}, within a strict invocation context.
-	 * </p>
+	 * 
 	 * 
 	 * <p>
 	 * Types are considered so compatible if assignment is possible through
 	 * application of the following conversions:
-	 * </p>
+	 * 
 	 * <ul>
 	 * <li>an identity conversion (§5.1.1)</li>
 	 * <li>a widening primitive conversion (§5.1.2)</li>
@@ -643,12 +647,12 @@ public final class Types {
 	 * <p>
 	 * Determine whether a given type, {@code from}, is compatible with a given
 	 * type, {@code to}, within a loose invocation context.
-	 * </p>
+	 * 
 	 * 
 	 * <p>
 	 * Types are considered so compatible if assignment is possible through
 	 * application of the following conversions:
-	 * </p>
+	 * 
 	 * <ul>
 	 * <li>an identity conversion</li>
 	 * <li>a widening primitive conversion</li>

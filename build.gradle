@@ -16,6 +16,7 @@ buildscript {
   dependencies {
     classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
     classpath bndPlugin
+    classpath 'org.ajoberstar:gradle-git:1.1.0'
   }
 }
 
@@ -27,8 +28,21 @@ if (bndWorkspace == null) {
 
 ext.cnf = rootProject.project(bnd_cnf)
 
-/* Configure the subprojects */
+/* Configure Subprojects */
 subprojects {
+  def bndProject = bndWorkspace.getProject(name)
+  if (bndProject != null) {
+    plugins.apply 'biz.aQute.bnd'
+  }
+}
+
+/* Configure Java Projects */
+def javaProjects() {
+  return subprojects.findAll { new File(it.projectDir, "src").exists() }
+}
+
+configure(javaProjects()) {
+  /* Source License Generation */
   apply plugin: 'license'
 
   license {
@@ -43,20 +57,36 @@ subprojects {
       java = 'SLASHSTAR_STYLE'
     }
   }
+}
 
-  def bndProject = bndWorkspace.getProject(name)
-  if (bndProject != null) {
-    plugins.apply 'biz.aQute.bnd'
+apply plugin: 'license'
+apply plugin: 'java'
+
+/* Javadoc Generation */
+task javadocGen(type: Javadoc) {
+  options.charSet = 'UTF-8'
+  options.encoding = 'UTF-8'
+  source subprojects.collect {project -> project.sourceSets.main.allJava }
+  destinationDir = new File(buildDir, 'javadoc')
+  classpath = files(subprojects.collect {project -> project.sourceSets.main.compileClasspath})
+}
+
+/* Javadoc Publish to GH Pages */
+apply plugin: 'org.ajoberstar.github-pages'
+
+githubPages {
+  repoUri = 'https://github.com/StrangeSkies/uk.co.strangeskies.git'
+  if (project.hasProperty('githubUser') && project.hasProperty('githubPassword')) {
+    credentials.setUsername githubUser
+    credentials.setPassword githubPassword
   }
 
-  apply plugin: 'java'
-
-  javadoc {
-    options.charSet = 'UTF-8'
-    options.encoding = 'UTF-8'
+  pages {
+    from javadocGen
   }
 }
 
+/* Wrapper */
 task wrapper(type: Wrapper) {
   jarFile = rootProject.file('.gradle-wrapper/gradle-wrapper.jar')
 }

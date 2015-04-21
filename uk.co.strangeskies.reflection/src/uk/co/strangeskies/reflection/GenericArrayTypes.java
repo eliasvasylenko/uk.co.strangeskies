@@ -30,7 +30,11 @@ public class GenericArrayTypes {
 	private GenericArrayTypes() {}
 
 	/**
+	 * Obtain a reference to a {@link GenericArrayType} derived from a given
+	 * component type.
+	 * 
 	 * @param type
+	 *          The component type of the generic array type to be created.
 	 * @return A generic array type whose component type is the given type.
 	 */
 	public static GenericArrayType fromComponentType(Type type) {

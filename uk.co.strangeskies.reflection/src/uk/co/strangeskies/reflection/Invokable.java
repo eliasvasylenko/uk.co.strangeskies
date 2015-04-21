@@ -52,12 +52,12 @@ import uk.co.strangeskies.utilities.tuples.Pair;
  * {@link TypeToken#resolveConstructorOverload(List)} and
  * {@link TypeToken#resolveMethodOverload(String, List)} methods on TypeToken
  * instances.
- * </p>
+ * 
  * 
  * <p>
  * Invokables may be created over types which mention inference variables, or
  * even over inference variables themselves.
- * </p>
+ * 
  * 
  * @author Elias N Vasylenko
  *
@@ -122,7 +122,10 @@ public class Invokable<T, R> {
 	 * specific type from a target type using an overload of
 	 * {@link #withTargetType(TypeToken)}.
 	 * 
+	 * @param <T>
+	 *          The type of the given {@link Constructor}.
 	 * @param constructor
+	 *          The constructor to wrap.
 	 * @return An invokable wrapping the given constructor.
 	 */
 	public static <T> Invokable<T, T> from(Constructor<T> constructor) {
@@ -137,8 +140,8 @@ public class Invokable<T, R> {
 					try {
 						return constructor.newInstance(a);
 					} catch (Exception e) {
-						throw new TypeInferenceException("Cannot invoke constructor '"
-								+ constructor + "' with arguments '" + a + "'.");
+						throw new TypeException("Cannot invoke constructor '" + constructor
+								+ "' with arguments '" + a + "'.");
 					}
 				});
 	}
@@ -147,6 +150,7 @@ public class Invokable<T, R> {
 	 * Create a new Invokable instance from a reference to a {@link Method}.
 	 * 
 	 * @param method
+	 *          The method to wrap.
 	 * @return An invokable wrapping the given method.
 	 */
 	public static Invokable<?, ?> from(Method method) {
@@ -161,7 +165,7 @@ public class Invokable<T, R> {
 			try {
 				return (R) method.invoke(r, a);
 			} catch (Exception e) {
-				throw new TypeInferenceException("Cannot invoke method '" + method
+				throw new TypeException("Cannot invoke method '" + method
 						+ "' on receiver '" + r + "' with arguments '" + a + "'.");
 			}
 		});
@@ -172,6 +176,7 @@ public class Invokable<T, R> {
 	 * appropriate.
 	 * 
 	 * @param executable
+	 *          The executable to wrap.
 	 * @return An invokable wrapping the given Executable.
 	 */
 	public static Invokable<?, ?> from(Executable executable) {
@@ -360,8 +365,33 @@ public class Invokable<T, R> {
 	}
 
 	/**
+	 * Derive a new instance of {@link Invokable} with the given receiver type.
+	 * This will resolve any overriding {@link Executable} to determine a new
+	 * return type if necessary.
+	 * 
+	 * <p>
+	 * The new {@link Invokable} will always have a receiver type which is as or
+	 * more specific than both the current receiver type <em>and</em> the given
+	 * type. This means that the new receiver will be assignment compatible with
+	 * the given type, but if the given type contains wildcards or inference
+	 * variables which are less specific that those implied by the
+	 * <em>current</em> receiver type, new type arguments will be inferred in
+	 * their place, or further bounds may be added to them.
+	 * 
+	 * @param <U>
+	 *          The new receiver type. The raw type of this type must be a subtype
+	 *          of the raw type of the current receiver type.
 	 * @param type
-	 * @return As {@link #withReceiverType(Type)}.
+	 *          The new receiver type. The raw type of this type must be a subtype
+	 *          of the raw type of the current receiver type.
+	 * @return A new {@link Invokable} compatible with the given receiver type.
+	 * 
+	 *         <p>
+	 *         The new receiver type will not be effectively more specific than
+	 *         the intersection type of the current receiver type and the given
+	 *         type. That is, any type which can be assigned to both the given
+	 *         type and the current receiver type, will also be assignable to the
+	 *         new type.
 	 */
 	@SuppressWarnings("unchecked")
 	public <U extends T> Invokable<U, ? extends R> withReceiverType(
@@ -370,27 +400,90 @@ public class Invokable<T, R> {
 	}
 
 	/**
+	 * Derive a new instance of {@link Invokable} with the given receiver type.
+	 * This will resolve any overriding {@link Executable} to determine a new
+	 * return type if necessary.
+	 * 
+	 * <p>
+	 * The new {@link Invokable} will always have a receiver type which is as or
+	 * more specific than both the current receiver type <em>and</em> the given
+	 * type. This means that the new receiver will be assignment compatible with
+	 * the given type, but if the given type contains wildcards or inference
+	 * variables which are less specific that those implied by the
+	 * <em>current</em> receiver type, new type arguments will be inferred in
+	 * their place, or further bounds may be added to them.
+	 * 
 	 * @param type
-	 * @return A new instance of {@link Invokable} with the given receiver type.
-	 *         This will resolve any overriding {@link Executable}, and possibly
-	 *         substitute instantiations for inference variables or type variable
-	 *         captures.
+	 *          The new receiver type. The raw type of this type must be a subtype
+	 *          of the raw type of the current receiver type.
+	 * @return A new {@link Invokable} compatible with the given receiver type.
+	 * 
+	 *         <p>
+	 *         The new receiver type will not be effectively more specific than
+	 *         the intersection type of the current receiver type and the given
+	 *         type. That is, any type which can be assigned to both the given
+	 *         type and the current receiver type, will also be assignable to the
+	 *         new type.
 	 */
 	public Invokable<? extends T, ? extends R> withReceiverType(Type type) {
 		throw new UnsupportedOperationException(); // TODO resolve override
 	}
 
 	/**
+	 * Derive a new instance of {@link Invokable} with the given target type.
+	 * 
+	 * <p>
+	 * The new {@link Invokable} will always have a target type which is as or
+	 * more specific than both the current target type <em>and</em> the given
+	 * type. This means that the new target will be assignment compatible with the
+	 * given type, but if the given type contains wildcards or inference variables
+	 * which are less specific that those implied by the <em>current</em> target
+	 * type, new type arguments will be inferred in their place, or further bounds
+	 * may be added to them.
+	 * 
+	 * @param <S>
+	 *          The derived {@link Invokable} must be assignment compatible with
+	 *          this type.
 	 * @param target
-	 * @return As {@link #withTargetType(Type)}.
+	 *          The derived {@link Invokable} must be assignment compatible with
+	 *          this type.
+	 * @return A new {@link Invokable} compatible with the given target type.
+	 * 
+	 *         <p>
+	 *         The new target type will not be effectively more specific than the
+	 *         intersection type of the current target type and the given type.
+	 *         That is, any type which can be assigned to both the given type and
+	 *         the current target type, will also be assignable to the new type.
 	 */
 	public <S extends R> Invokable<T, S> withTargetType(Class<S> target) {
 		return withTargetType(TypeToken.of(target));
 	}
 
 	/**
+	 * Derive a new instance of {@link Invokable} with the given target type.
+	 * 
+	 * <p>
+	 * The new {@link Invokable} will always have a target type which is as or
+	 * more specific than both the current target type <em>and</em> the given
+	 * type. This means that the new target will be assignment compatible with the
+	 * given type, but if the given type contains wildcards or inference variables
+	 * which are less specific that those implied by the <em>current</em> target
+	 * type, new type arguments will be inferred in their place, or further bounds
+	 * may be added to them.
+	 * 
+	 * @param <S>
+	 *          The derived {@link Invokable} must be assignment compatible with
+	 *          this type.
 	 * @param target
-	 * @return As {@link #withTargetType(Type)}.
+	 *          The derived {@link Invokable} must be assignment compatible with
+	 *          this type.
+	 * @return A new {@link Invokable} compatible with the given target type.
+	 * 
+	 *         <p>
+	 *         The new target type will not be effectively more specific than the
+	 *         intersection type of the current target type and the given type.
+	 *         That is, any type which can be assigned to both the given type and
+	 *         the current target type, will also be assignable to the new type.
 	 */
 	@SuppressWarnings("unchecked")
 	public <S> Invokable<T, S> withTargetType(TypeToken<S> target) {
@@ -398,11 +491,27 @@ public class Invokable<T, R> {
 	}
 
 	/**
+	 * Derive a new instance of {@link Invokable} with the given target type.
+	 * 
+	 * <p>
+	 * The new {@link Invokable} will always have a target type which is as or
+	 * more specific than both the current target type <em>and</em> the given
+	 * type. This means that the new target will be assignment compatible with the
+	 * given type, but if the given type contains wildcards or inference variables
+	 * which are less specific that those implied by the <em>current</em> target
+	 * type, new type arguments will be inferred in their place, or further bounds
+	 * may be added to them.
+	 * 
 	 * @param target
-	 * @return If the invocation type of this {@link Invokable} contains inference
-	 *         variables such that the return type is not exactly known, this
-	 *         method will attempt to create a new instance which is assignment
-	 *         compatible with the given target.
+	 *          The derived {@link Invokable} must be assignment compatible with
+	 *          this type.
+	 * @return A new {@link Invokable} compatible with the given target type.
+	 * 
+	 *         <p>
+	 *         The new target type will not be effectively more specific than the
+	 *         intersection type of the current target type and the given type.
+	 *         That is, any type which can be assigned to both the given type and
+	 *         the current target type, will also be assignable to the new type.
 	 */
 	public Invokable<T, ? extends R> withTargetType(Type target) {
 		return withTargetTypeCapture(target);
@@ -420,9 +529,35 @@ public class Invokable<T, R> {
 	}
 
 	/**
+	 * Derive a new {@link Invokable} fulfilling two conditions.
+	 * 
+	 * <ul>
+	 * <li>Firstly, that the result be assignment compatible with the given target
+	 * type.</li>
+	 * <li>Secondly, that the arguments are compatible in either a
+	 * {@link #withLooseApplicability(List) loose invocation context}, or failing
+	 * that, a {@link #withVariableArityApplicability(List) variable arity
+	 * invocation context}.</li>
+	 * </ul>
+	 * 
+	 * <p>
+	 * This method uses the same type inference algorithm as the Java language,
+	 * and so will only fail in those cases where the Java compiler would have
+	 * failed to infer a type.
+	 * 
+	 * @param <U>
+	 *          The derived {@link Invokable} must be assignment compatible with
+	 *          this type.
 	 * @param targetType
+	 *          The derived {@link Invokable} must be assignment compatible with
+	 *          this type.
 	 * @param arguments
-	 * @return As {@link #withInferredType(Type, Type...)}.
+	 *          The derived {@link Invokable} must be loose invocation compatible,
+	 *          or failing that variable arity compatible, with the given
+	 *          arguments.
+	 * @return A new {@link Invokable} compatible with the given target type and
+	 *         parameters, and which has more specific arguments, type arguments,
+	 *         and return type than the receiving {@link Invokable}.
 	 */
 	public <U> Invokable<T, U> withInferredType(TypeToken<U> targetType,
 			TypeToken<?>... arguments) {
@@ -430,11 +565,37 @@ public class Invokable<T, R> {
 	}
 
 	/**
+	 * Derive a new {@link Invokable} fulfilling two conditions.
+	 * 
+	 * <ul>
+	 * <li>Firstly, that the result be assignment compatible with the given target
+	 * type.</li>
+	 * <li>Secondly, that the arguments are compatible in either a
+	 * {@link #withLooseApplicability(List) loose invocation context}, or failing
+	 * that, a {@link #withVariableArityApplicability(List) variable arity
+	 * invocation context}.</li>
+	 * </ul>
+	 * 
+	 * <p>
+	 * This method uses the same type inference algorithm as the Java language,
+	 * and so will only fail in those cases where the Java compiler would have
+	 * failed to infer a type.
+	 * 
+	 * @param <U>
+	 *          The derived {@link Invokable} must be assignment compatible with
+	 *          this type.
 	 * @param targetType
+	 *          The derived {@link Invokable} must be assignment compatible with
+	 *          this type.
 	 * @param arguments
-	 * @return As {@link #withInferredType(Type, Type...)}.
+	 *          The derived {@link Invokable} must be loose invocation compatible,
+	 *          or failing that variable arity compatible, with the given
+	 *          arguments.
+	 * @return A new {@link Invokable} compatible with the given target type and
+	 *         parameters, and which has more specific arguments, type arguments,
+	 *         and return type than the receiving {@link Invokable}.
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked" })
 	public <U> Invokable<T, U> withInferredType(TypeToken<U> targetType,
 			List<? extends TypeToken<?>> arguments) {
 		return (Invokable<T, U>) withInferredType(targetType.getType(), arguments
@@ -442,9 +603,32 @@ public class Invokable<T, R> {
 	}
 
 	/**
+	 * Derive a new {@link Invokable} fulfilling two conditions.
+	 * 
+	 * <ul>
+	 * <li>Firstly, that the result be assignment compatible with the given target
+	 * type.</li>
+	 * <li>Secondly, that the arguments are compatible in either a
+	 * {@link #withLooseApplicability(List) loose invocation context}, or failing
+	 * that, a {@link #withVariableArityApplicability(List) variable arity
+	 * invocation context}.</li>
+	 * </ul>
+	 * 
+	 * <p>
+	 * This method uses the same type inference algorithm as the Java language,
+	 * and so will only fail in those cases where the Java compiler would have
+	 * failed to infer a type.
+	 * 
 	 * @param targetType
+	 *          The derived {@link Invokable} must be assignment compatible with
+	 *          this type.
 	 * @param arguments
-	 * @return As {@link #withInferredType(Type, Type...)}.
+	 *          The derived {@link Invokable} must be loose invocation compatible,
+	 *          or failing that variable arity compatible, with the given
+	 *          arguments.
+	 * @return A new {@link Invokable} compatible with the given target type and
+	 *         parameters, and which has more specific arguments, type arguments,
+	 *         and return type than the receiving {@link Invokable}.
 	 */
 	public Invokable<T, ? extends R> withInferredType(Type targetType,
 			Type... arguments) {
@@ -452,13 +636,32 @@ public class Invokable<T, R> {
 	}
 
 	/**
+	 * Derive a new {@link Invokable} fulfilling two conditions.
+	 * 
+	 * <ul>
+	 * <li>Firstly, that the result be assignment compatible with the given target
+	 * type.</li>
+	 * <li>Secondly, that the arguments are compatible in either a
+	 * {@link #withLooseApplicability(List) loose invocation context}, or failing
+	 * that, a {@link #withVariableArityApplicability(List) variable arity
+	 * invocation context}.</li>
+	 * </ul>
+	 * 
+	 * <p>
+	 * This method uses the same type inference algorithm as the Java language,
+	 * and so will only fail in those cases where the Java compiler would have
+	 * failed to infer a type.
+	 * 
 	 * @param targetType
+	 *          The derived {@link Invokable} must be assignment compatible with
+	 *          this type.
 	 * @param arguments
-	 * @return A new derived {@link Invokable} instance with inferred type such
-	 *         that it is compatible with the given target type and arguments. If
-	 *         an invocation is not possible with loose parameter applicability
-	 *         and this is a variable arity method, an attempt is then made to
-	 *         resolve with variable arity invocation.
+	 *          The derived {@link Invokable} must be loose invocation compatible,
+	 *          or failing that variable arity compatible, with the given
+	 *          arguments.
+	 * @return A new {@link Invokable} compatible with the given target type and
+	 *         parameters, and which has more specific arguments, type arguments,
+	 *         and return type than the receiving {@link Invokable}.
 	 */
 	public Invokable<T, ? extends R> withInferredType(Type targetType,
 			List<? extends Type> arguments) {
@@ -477,35 +680,46 @@ public class Invokable<T, R> {
 	/**
 	 * @return A new derived {@link Invokable} instance with generic method
 	 *         parameters inferred, and if this is a constructor on a generic
-	 *         type, with generic type parameters inferred, too.
+	 *         type, with generic type parameters inferred, also.
 	 */
 	public Invokable<T, R> infer() {
 		Resolver resolver = getResolver();
 
-		if (executable instanceof Method ? !resolver.validate(resolver
-				.getInferenceVariables(executable).values()) : !resolver.validate())
-			throw new TypeInferenceException(
-					"Cannot resolve generic type parameters for invocation of '" + this
-							+ "'.");
+		resolver.infer(executable);
+		if (executable instanceof Constructor)
+			resolver.infer(getReceiverType().getType());
 
 		return new Invokable<>(resolver, receiverType, returnType, executable,
 				invocationFunction);
 	}
 
 	/**
+	 * Derive a new {@link Invokable} instance with inferred invocation type such
+	 * that it is compatible with the given arguments in a strict invocation
+	 * context. Where necessary, the derived {@link Invokable} may infer new
+	 * bounds or instantiations on type parameters.
+	 * 
 	 * @param arguments
-	 * @return As {@link #withStrictApplicability(Type...)}.
+	 *          The argument types of an invocation of this {@link Invokable}.
+	 * @return If the given parameters are not compatible with this invokable in a
+	 *         strict compatibility invocation context, we throw an exception.
+	 *         Otherwise, we return the derived {@link Invokable}.
 	 */
 	public Invokable<T, R> withStrictApplicability(Type... arguments) {
 		return withStrictApplicability(Arrays.asList(arguments));
 	}
 
 	/**
+	 * Derive a new {@link Invokable} instance with inferred invocation type such
+	 * that it is compatible with the given arguments in a strict invocation
+	 * context. Where necessary, the derived {@link Invokable} may infer new
+	 * bounds or instantiations on type parameters.
+	 * 
 	 * @param arguments
+	 *          The argument types of an invocation of this {@link Invokable}.
 	 * @return If the given parameters are not compatible with this invokable in a
-	 *         strict compatibility invocation context, we return null. Otherwise,
-	 *         we infer a partial parameterisation where necessary and return the
-	 *         resulting derived invokable.
+	 *         strict compatibility invocation context, we throw an exception.
+	 *         Otherwise, we return the derived {@link Invokable}.
 	 */
 	public Invokable<T, R> withStrictApplicability(List<? extends Type> arguments) {
 		// TODO && make sure no boxing/unboxing occurs!
@@ -514,38 +728,64 @@ public class Invokable<T, R> {
 	}
 
 	/**
+	 * Derive a new {@link Invokable} instance with inferred invocation type such
+	 * that it is compatible with the given arguments in a loose invocation
+	 * context. Where necessary, the derived {@link Invokable} may infer new
+	 * bounds or instantiations on type parameters.
+	 * 
 	 * @param arguments
-	 * @return As {@link #withLooseApplicability(Type...)}.
+	 *          The argument types of an invocation of this {@link Invokable}.
+	 * @return If the given parameters are not compatible with this invokable in a
+	 *         loose compatibility invocation context, we throw an exception.
+	 *         Otherwise, we return the derived {@link Invokable}.
 	 */
 	public Invokable<T, R> withLooseApplicability(Type... arguments) {
 		return withLooseApplicability(Arrays.asList(arguments));
 	}
 
 	/**
+	 * Derive a new {@link Invokable} instance with inferred invocation type such
+	 * that it is compatible with the given arguments in a loose invocation
+	 * context. Where necessary, the derived {@link Invokable} may infer new
+	 * bounds or instantiations on type parameters.
+	 * 
 	 * @param arguments
+	 *          The argument types of an invocation of this {@link Invokable}.
 	 * @return If the given parameters are not compatible with this invokable in a
-	 *         loose compatibility invocation context, we return null. Otherwise,
-	 *         we infer a partial parameterisation where necessary and return the
-	 *         resulting invokable.
+	 *         loose compatibility invocation context, we throw an exception.
+	 *         Otherwise, we return the derived {@link Invokable}.
 	 */
 	public Invokable<T, R> withLooseApplicability(List<? extends Type> arguments) {
 		return withLooseApplicability(false, arguments);
 	}
 
 	/**
+	 * Derive a new {@link Invokable} instance with inferred invocation type such
+	 * that it is compatible with the given arguments in a variable arity
+	 * invocation context. Where necessary, the derived {@link Invokable} may
+	 * infer new bounds or instantiations on type parameters.
+	 * 
 	 * @param arguments
-	 * @return As {@link #withVariableArityApplicability(Type...)}.
+	 *          The argument types of an invocation of this {@link Invokable}.
+	 * @return If the given parameters are not compatible with this invokable in a
+	 *         variable arity invocation context, we throw an exception.
+	 *         Otherwise, we return the derived {@link Invokable}.
 	 */
 	public Invokable<T, R> withVariableArityApplicability(Type... arguments) {
 		return withVariableArityApplicability(Arrays.asList(arguments));
 	}
 
 	/**
+	 * Derive a new {@link Invokable} instance with inferred invocation type such
+	 * that it is compatible with the given arguments in a variable arity
+	 * invocation context. Where necessary, the derived {@link Invokable} may
+	 * infer new bounds or instantiations on type parameters.
+	 * 
 	 * @param arguments
+	 *          The argument types of an invocation of this {@link Invokable}.
 	 * @return If the given parameters are not compatible with this invokable in a
-	 *         loose compatibility invocation context, and with variable arity, we
-	 *         return null. Otherwise, we infer a partial parameterisation where
-	 *         necessary and return the resulting invokable.
+	 *         variable arity invocation context, we throw an exception.
+	 *         Otherwise, we return the derived {@link Invokable}.
 	 */
 	public Invokable<T, R> withVariableArityApplicability(
 			List<? extends Type> arguments) {
@@ -562,7 +802,7 @@ public class Invokable<T, R> {
 			if (parameters.size() > arguments.size())
 				return null;
 		} else if (parameters.size() != arguments.size())
-			throw new TypeInferenceException(
+			throw new TypeException(
 					"Cannot resolve generic type parameters for invocation of '" + this
 							+ "' with arguments '" + arguments + "'.");
 
@@ -586,12 +826,8 @@ public class Invokable<T, R> {
 						parameter, resolver.getBounds());
 			}
 
-			Resolver testResolver = new Resolver(resolver);
-
-			if (!testResolver.validate())
-				throw new TypeInferenceException(
-						"Cannot resolve generic type parameters for invocation of '" + this
-								+ "' with arguments '" + arguments + "'.");
+			// Test resolution is possible.
+			new Resolver(resolver).infer();
 		}
 
 		return new Invokable<>(resolver, receiverType, returnType, executable,
@@ -620,8 +856,20 @@ public class Invokable<T, R> {
 	}
 
 	/**
+	 * Derive a new {@link Invokable} instance from this, with the given
+	 * instantiation substituted for the given {@link TypeVariable}.
+	 * 
+	 * <p>
+	 * The substitution will only succeed if it is compatible with the bounds on
+	 * that type variable, and if it is more specific than the current type of the
+	 * type variable, whether it is an {@link InferenceVariable}, a
+	 * {@link TypeVariableCapture}, or another class of {@link Type}.
+	 * 
 	 * @param variable
+	 *          The type variable on the generic declaration which is the
+	 *          {@link Executable} wrapped by this {@link Invokable}.
 	 * @param instantiation
+	 *          The type with which to instantiate the given type variable.
 	 * @return A new derived {@link Invokable} instance with the given
 	 *         instantiation substituted for the given type variable.
 	 */
@@ -637,9 +885,25 @@ public class Invokable<T, R> {
 	}
 
 	/**
+	 * Derive a new {@link Invokable} instance from this, with the given
+	 * instantiation substituted for the given {@link TypeVariable}.
+	 * 
+	 * <p>
+	 * The substitution will only succeed if it is compatible with the bounds on
+	 * that type variable, and if it is more specific than the current type of the
+	 * type variable, whether it is an {@link InferenceVariable}, a
+	 * {@link TypeVariableCapture}, or another class of {@link Type}.
+	 * 
+	 * @param <U>
+	 *          The type variable on the generic declaration which is the
+	 *          {@link Executable} wrapped by this {@link Invokable}.
 	 * @param variable
+	 *          The type variable on the generic declaration which is the
+	 *          {@link Executable} wrapped by this {@link Invokable}.
 	 * @param instantiation
-	 * @return As {@link #withTypeArgument(TypeVariable, Type)}.
+	 *          The type with which to instantiate the given type variable.
+	 * @return A new derived {@link Invokable} instance with the given
+	 *         instantiation substituted for the given type variable.
 	 */
 	@SuppressWarnings("unchecked")
 	public <U> Invokable<T, ? extends R> withTypeArgument(
@@ -650,7 +914,14 @@ public class Invokable<T, R> {
 	}
 
 	/**
+	 * Derive a new {@link Invokable} instance with the given generic type
+	 * argument substitutions, as per the behaviour of
+	 * {@link #withTypeArgument(TypeVariable, Type)}, but with every argument
+	 * provided in order.
+	 * 
 	 * @param typeArguments
+	 *          A list of arguments for each generic type parameter of the
+	 *          underlying {@link Executable}.
 	 * @return A new derived {@link Invokable} instance with the given
 	 *         instantiations substituted for each generic type parameter, in
 	 *         order.
@@ -660,29 +931,40 @@ public class Invokable<T, R> {
 	}
 
 	/**
+	 * Derive a new {@link Invokable} instance with the given generic type
+	 * argument substitutions, as per the behaviour of
+	 * {@link #withTypeArgument(TypeVariable, Type)}, but with every argument
+	 * provided in order.
+	 * 
 	 * @param typeArguments
-	 * @return As {@link #withTypeArguments(Type...)}.
+	 *          A list of arguments for each generic type parameter of the
+	 *          underlying {@link Executable}.
+	 * @return A new derived {@link Invokable} instance with the given
+	 *         instantiations substituted for each generic type parameter, in
+	 *         order.
 	 */
 	public Invokable<T, ? extends R> withTypeArguments(List<Type> typeArguments) {
 		throw new UnsupportedOperationException(); // TODO
 	}
 
 	/**
-	 * <P>
 	 * Invoke the wrapped {@link Executable} on the given receiver and with the
 	 * given parameters. The receiver will be ignored for static methods or
 	 * constructors. Variable arity invocation is not attempted.
-	 * </p>
 	 * 
 	 * <p>
 	 * Due to erasure of the types of the arguments, there is a limit to what type
 	 * checking can be performed at runtime. For type safe invocation, wrap
 	 * arguments in {@link TypedObject} instances and use an overload of
 	 * {@link #invokeSafely(Object, TypedObject...)} instead.
-	 * </p>
+	 * 
 	 * 
 	 * @param receiver
+	 *          The receiving object for the invocation. This parameter will be
+	 *          ignored in the case of a constructor invocation or other static
+	 *          method invocation.
 	 * @param arguments
+	 *          The argument list for the invocation.
 	 * @return The result of the invocation.
 	 */
 	public R invoke(T receiver, Object... arguments) {
@@ -690,9 +972,24 @@ public class Invokable<T, R> {
 	}
 
 	/**
+	 * Invoke the wrapped {@link Executable} on the given receiver and with the
+	 * given parameters. The receiver will be ignored for static methods or
+	 * constructors. Variable arity invocation is not attempted.
+	 * 
+	 * <p>
+	 * Due to erasure of the types of the arguments, there is a limit to what type
+	 * checking can be performed at runtime. For type safe invocation, wrap
+	 * arguments in {@link TypedObject} instances and use an overload of
+	 * {@link #invokeSafely(Object, TypedObject...)} instead.
+	 * 
+	 * 
 	 * @param receiver
+	 *          The receiving object for the invocation. This parameter will be
+	 *          ignored in the case of a constructor invocation or other static
+	 *          method invocation.
 	 * @param arguments
-	 * @return As {@link #invoke(Object, Object...)}.
+	 *          The argument list for the invocation.
+	 * @return The result of the invocation.
 	 */
 	public R invoke(T receiver, List<? extends Object> arguments) {
 		return invocationFunction.apply(receiver, arguments);
@@ -704,16 +1001,18 @@ public class Invokable<T, R> {
 	 * exact types, meaning full type checking can be performed at runtime. Also,
 	 * here it is possible to determine whether the invocation is intended to be
 	 * variable arity, and if so an attempt is made to invoke as such.
-	 * </p>
 	 * 
 	 * <p>
 	 * If the expected parameter types of this invokable contain inference
 	 * variables or type variable captures, an attempt will be made to satisfy
 	 * their bounds according to the given argument types.
-	 * </p>
 	 * 
 	 * @param receiver
+	 *          The receiving object for the invocation. This parameter will be
+	 *          ignored in the case of a constructor invocation or other static
+	 *          method invocation.
 	 * @param arguments
+	 *          The typed argument list for the invocation.
 	 * @return The result of the invocation.
 	 */
 	public R invokeSafely(T receiver, TypedObject<?>... arguments) {
@@ -721,9 +1020,24 @@ public class Invokable<T, R> {
 	}
 
 	/**
+	 * <p>
+	 * As {@link #invoke(Object, Object...)}, but with arguments passed with their
+	 * exact types, meaning full type checking can be performed at runtime. Also,
+	 * here it is possible to determine whether the invocation is intended to be
+	 * variable arity, and if so an attempt is made to invoke as such.
+	 * 
+	 * <p>
+	 * If the expected parameter types of this invokable contain inference
+	 * variables or type variable captures, an attempt will be made to satisfy
+	 * their bounds according to the given argument types.
+	 * 
 	 * @param receiver
+	 *          The receiving object for the invocation. This parameter will be
+	 *          ignored in the case of a constructor invocation or other static
+	 *          method invocation.
 	 * @param arguments
-	 * @return As {@link #invokeSafely(Object, TypedObject...)}.
+	 *          The typed argument list for the invocation.
+	 * @return The result of the invocation.
 	 */
 	public R invokeSafely(T receiver, List<? extends TypedObject<?>> arguments) {
 		for (int i = 0; i < arguments.size(); i++)
@@ -741,10 +1055,17 @@ public class Invokable<T, R> {
 	 * then if still no candidates are found, variable arity applicability is
 	 * considered.
 	 * 
+	 * @param <T>
+	 *          The receiving type of the given invokables.
+	 * @param <R>
+	 *          The return type of the given invokables.
 	 * @param candidates
+	 *          The candidates for which we wish to determine applicability.
 	 * @param parameters
-	 * @return The set of all given overload candidates which are applicable to
-	 *         invocation with the given parameters.
+	 *          The parameters representing the invocation for which we wish to
+	 *          determine applicability.
+	 * @return The set of all given overload candidates which are most applicable
+	 *         to invocation with the given parameters.
 	 */
 	public static <T, R> Set<? extends Invokable<? super T, ? extends R>> resolveApplicableInvokables(
 			Set<? extends Invokable<? super T, ? extends R>> candidates,
@@ -772,7 +1093,7 @@ public class Invokable<T, R> {
 		}
 
 		if (compatibleCandidates.isEmpty())
-			throw new TypeInferenceException("Parameters '" + parameters
+			throw new TypeException("Parameters '" + parameters
 					+ "' are not applicable to invokable candidates '" + candidates
 					+ "'.", failures.get(failures.keySet().stream().findFirst().get()));
 
@@ -797,9 +1118,17 @@ public class Invokable<T, R> {
 	 * Find which of the given overload candidates is the most specific according
 	 * to the rules described by the Java 8 language specification.
 	 * 
+	 * <p>
+	 * If no single most specific candidate can be found, the method will throw a
+	 * {@link TypeException}.
+	 * 
+	 * @param <T>
+	 *          The receiving type of the given invokables.
+	 * @param <R>
+	 *          The return type of the given invokables.
 	 * @param candidates
-	 * @return The set of all given overload candidates which are applicable to
-	 *         invocation with the given parameters.
+	 *          The candidates from which to select the most specific.
+	 * @return The most specific of the given candidates.
 	 */
 	public static <T, R> Invokable<? super T, ? extends R> resolveMostSpecificInvokable(
 			Collection<? extends Invokable<? super T, ? extends R>> candidates) {
@@ -821,7 +1150,7 @@ public class Invokable<T, R> {
 					.next();
 
 			if (!candidate.equals(mostSpecific))
-				throw new TypeInferenceException(
+				throw new TypeException(
 						"Cannot resolve method invokation ambiguity between candidate '"
 								+ candidate + "' and '" + mostSpecific + "'.");
 
@@ -880,7 +1209,7 @@ public class Invokable<T, R> {
 					/*
 					 * Neither first nor second are more specific.
 					 */
-					throw new TypeInferenceException(
+					throw new TypeException(
 							"Cannot resolve method invokation ambiguity between candidate '"
 									+ firstCandidate + "' and '" + secondCandidate + "'.");
 				}
@@ -952,7 +1281,7 @@ public class Invokable<T, R> {
 						.getBounds());
 			}
 
-			resolver.validate();
+			resolver.infer();
 		} catch (Exception e) {
 			return false;
 		}

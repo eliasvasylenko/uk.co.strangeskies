@@ -18,12 +18,15 @@
  */
 package uk.co.strangeskies.reflection;
 
+import java.lang.reflect.Type;
+
 /**
- * An exception relating to failure of the Java inference algorithm.
+ * An exception relating to reflective operations over the Java {@link Type}
+ * system.
  * 
  * @author Elias N Vasylenko
  */
-public class TypeInferenceException extends RuntimeException {
+public class TypeException extends RuntimeException {
 	private static final long serialVersionUID = 1L;
 
 	/**
@@ -32,7 +35,7 @@ public class TypeInferenceException extends RuntimeException {
 	 * @param cause
 	 *          Causing exception.
 	 */
-	public TypeInferenceException(String message, Throwable cause) {
+	public TypeException(String message, Throwable cause) {
 		super(message, cause);
 	}
 
@@ -40,7 +43,7 @@ public class TypeInferenceException extends RuntimeException {
 	 * @param message
 	 *          A text description of the cause of the problem.
 	 */
-	public TypeInferenceException(String message) {
+	public TypeException(String message) {
 		super(message);
 	}
 }

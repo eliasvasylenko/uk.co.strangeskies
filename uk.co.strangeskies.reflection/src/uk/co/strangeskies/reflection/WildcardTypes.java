@@ -149,7 +149,7 @@ public class WildcardTypes {
 		else if (type instanceof WildcardType) {
 			WildcardType wildcardType = ((WildcardType) type);
 			if (wildcardType.getLowerBounds().length == 0)
-				throw new TypeInferenceException(
+				throw new TypeException(
 						"Cannot have define an upper bounding on a wildcard with no lower bounds.");
 			else
 				types = () -> wildcardType.getLowerBounds();
@@ -203,7 +203,7 @@ public class WildcardTypes {
 		else if (upperBound instanceof WildcardType) {
 			WildcardType wildcardType = ((WildcardType) upperBound);
 			if (wildcardType.getLowerBounds().length == 0)
-				throw new TypeInferenceException(
+				throw new TypeException(
 						"Cannot have define an upper bounding on a wildcard with no lower bounds.");
 			else
 				upperBounds = () -> wildcardType.getLowerBounds();

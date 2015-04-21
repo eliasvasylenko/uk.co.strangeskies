@@ -44,7 +44,9 @@ public abstract class IntersectionType implements Type {
 
 	/**
 	 * @param types
-	 * @return As {@link #from(Collection)}.
+	 *          The set of types from which to derive a new intersection type.
+	 * @return An intersection type containing each of the given types, or a
+	 *         single type, if they can all be represented as such.
 	 */
 	public static Type from(Type... types) {
 		return from(Arrays.asList(types));
@@ -52,8 +54,9 @@ public abstract class IntersectionType implements Type {
 
 	/**
 	 * @param types
+	 *          The set of types from which to derive a new intersection type.
 	 * @return An intersection type containing each of the given types, or a
-	 *         single type, if they can all be represented by one.
+	 *         single type, if they can all be represented as such.
 	 */
 	public static Type from(Collection<? extends Type> types) {
 		return from(types, new BoundSet());
@@ -89,7 +92,7 @@ public abstract class IntersectionType implements Type {
 							|| Types.isAssignable(type, mostSpecificType)) {
 						mostSpecificType = type;
 					} else if (!Types.isAssignable(mostSpecificType, type)) {
-						throw new TypeInferenceException("Illegal intersection type '"
+						throw new TypeException("Illegal intersection type '"
 								+ flattenedTypes
 								+ "', cannot contain both of the non-interface classes '"
 								+ mostSpecificType + "' and '" + type + "'.");
@@ -124,8 +127,8 @@ public abstract class IntersectionType implements Type {
 			for (Type type : flattenedTypes)
 				ConstraintFormula.reduce(Kind.SUBTYPE, inferenceVariable, type, bounds);
 		} catch (Exception e) {
-			throw new TypeInferenceException("Illegal intersection type '"
-					+ flattenedTypes + "'.", e);
+			throw new TypeException("Illegal intersection type '" + flattenedTypes
+					+ "'.", e);
 		}
 
 		return uncheckedFrom(flattenedTypes);
@@ -173,18 +176,5 @@ public abstract class IntersectionType implements Type {
 	@Override
 	public int hashCode() {
 		return Arrays.hashCode(getTypes());
-	}
-
-	/**
-	 * @param of
-	 * @return And array containing the component types of the given type, or if
-	 *         the given type is not an intersection type, an array containing
-	 *         only the given type.
-	 */
-	public static Type[] asArray(Type of) {
-		if (of instanceof IntersectionType)
-			return ((IntersectionType) of).getTypes();
-		else
-			return new Type[] { of };
 	}
 }

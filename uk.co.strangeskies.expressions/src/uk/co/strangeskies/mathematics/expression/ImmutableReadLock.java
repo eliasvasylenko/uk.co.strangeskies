@@ -24,12 +24,12 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
 /**
- * A read write lock over an immutable object. All locks are always available to
- * as many threads as want them.
+ * A read lock over an immutable object. All locks are always available to as
+ * many threads as want them.
  * 
  * @author Elias N Vasylenko
  */
-public class ImmutableReadWriteLock implements Lock {
+public class ImmutableReadLock implements Lock {
 	private class ImmutableCondition implements Condition {
 		@Override
 		public void signalAll() {}

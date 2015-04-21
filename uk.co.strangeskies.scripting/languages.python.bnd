@@ -1,7 +1,7 @@
 -dsannotations:  \
 	*
 Bundle-Name: Strange Skies Scripting - Groovy
-Private-Package:\
-	org.python.**
-Include-Resource:\
-	@jython-${jython.version}.jar!/META-INF/services/*
+#Private-Package:\
+#	org.python.**
+#Include-Resource:\
+#	@jython-${jython.version}.jar!/META-INF/services/*

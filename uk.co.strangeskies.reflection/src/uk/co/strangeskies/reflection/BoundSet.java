@@ -35,14 +35,12 @@ import java.util.stream.Collectors;
  * (Note that some sorts of bounds present in the document are missing from this
  * implementation, as this API is not intended to offer the full capabilities of
  * the compiler with respect to method references and closures.)
- * </p>
  * 
  * <p>
  * A bound set contains a number of {@link InferenceVariable} instances, and
  * maintains a set of bounds between them and between other types. Types which
  * are not inference variables, and do not mention inference variables, are
  * considered <em>proper types</em>.
- * </p>
  * 
  * <p>
  * Note that instances of {@link InferenceVariable} which are not contained
@@ -52,11 +50,10 @@ import java.util.stream.Collectors;
  * {@link #BoundSet(BoundSet)}, any overload of {@link #addInferenceVariable()},
  * or as part of a capture conversion added through a
  * {@link IncorporationTarget} belonging to that bound set.
- * </p>
  * 
  * <p>
  * The types of bounds which may be included in a bound set are as follows:
- * </p>
+ * 
  * <ul>
  * <li>Equalities between inference variables and other types, which may or may
  * not be inference variables.</li>
@@ -73,13 +70,11 @@ import java.util.stream.Collectors;
  * <p>
  * An equality bound between an inference variable and a <em>proper type</em> is
  * considered that inference variable's <em>instantiation</em>.
- * </p>
  * 
  * <p>
  * When you add such a bound to a bound set, it may imply the addition of
  * further bounds, or the reduction of any number of {@link ConstraintFormula}
  * instances into the bound set.
- * </p>
  * 
  * <p>
  * Bound sets, along with the processes of incorporation and reduction
@@ -88,7 +83,6 @@ import java.util.stream.Collectors;
  * invocations between multiple methods when some are generic. This
  * implementation therefore allows us to type check and resolve such an
  * invocations at runtime.
- * </p>
  * 
  * <p>
  * We may also employ these processes towards other ends, such as type checking
@@ -96,7 +90,6 @@ import java.util.stream.Collectors;
  * which may have slightly different rules and requirements to generic method
  * invocation. There are also applications further outside these areas, such as
  * inference of the type arguments of a generic supertype of a given type.
- * </p>
  * 
  * @author Elias N Vasylenko
  */
@@ -115,7 +108,9 @@ public class BoundSet {
 		 * Otherwise, the invocation has no effect.
 		 * 
 		 * @param first
+		 *          The first of two types whose equality we wish to assert.
 		 * @param second
+		 *          The second of two types whose equality we wish to assert.
 		 */
 		public void equality(Type first, Type second) {
 			try {
@@ -125,9 +120,8 @@ public class BoundSet {
 				if (inferenceVariableBounds.containsKey(second))
 					inferenceVariableBounds.get(second).addEquality(first);
 			} catch (Exception e) {
-				throw new TypeInferenceException("Cannot add equality bound between '"
-						+ first + "' and '" + second + "' to bound set '" + BoundSet.this,
-						e);
+				throw new TypeException("Cannot add equality bound between '" + first
+						+ "' and '" + second + "' to bound set '" + BoundSet.this, e);
 			}
 		}
 
@@ -138,7 +132,9 @@ public class BoundSet {
 		 * Otherwise, the invocation has no effect.
 		 * 
 		 * @param subtype
+		 *          A type which we wish to assert is a subtype of another.
 		 * @param supertype
+		 *          A type which we wish to assert is a supertype of another.
 		 */
 		public void subtype(Type subtype, Type supertype) {
 			try {
@@ -148,9 +144,8 @@ public class BoundSet {
 				if (inferenceVariableBounds.containsKey(supertype))
 					inferenceVariableBounds.get(supertype).addLowerBound(subtype);
 			} catch (Exception e) {
-				throw new TypeInferenceException("Cannot add subtype bound between '"
-						+ subtype + "' and '" + supertype + "' to bound set '"
-						+ BoundSet.this, e);
+				throw new TypeException("Cannot add subtype bound between '" + subtype
+						+ "' and '" + supertype + "' to bound set '" + BoundSet.this, e);
 			}
 		}
 
@@ -159,12 +154,13 @@ public class BoundSet {
 		 * further bounds may be inferred as per the Java language specification.
 		 * 
 		 * @param captureConversion
+		 *          The capture conversion to be incorporated into the bound set.
 		 */
 		public void captureConversion(CaptureConversion captureConversion) {
 			try {
 				addCaptureConversion(captureConversion);
 			} catch (Exception e) {
-				throw new TypeInferenceException("Cannot add capture conversion '"
+				throw new TypeException("Cannot add capture conversion '"
 						+ captureConversion + "' to bound set '" + BoundSet.this, e);
 			}
 		}
@@ -189,8 +185,8 @@ public class BoundSet {
 		public void falsehood(boolean throwing) {
 			valid = false;
 			if (throwing)
-				throw new TypeInferenceException(
-						"Addition of falsehood into bounds set '" + BoundSet.this + "'.");
+				throw new TypeException("Addition of falsehood into bounds set '"
+						+ BoundSet.this + "'.");
 		}
 	}
 
@@ -217,6 +213,8 @@ public class BoundSet {
 	 * versa.
 	 * 
 	 * @param boundSet
+	 *          An existing bound set whose contained bounds and inference
+	 *          variables are to be copied into the new bound set.
 	 */
 	public BoundSet(BoundSet boundSet) {
 		this();
@@ -280,6 +278,16 @@ public class BoundSet {
 	 */
 	public boolean isProperType(Type type) {
 		return getInferenceVariablesMentionedBy(type).isEmpty();
+	}
+
+	/**
+	 * @param type
+	 *          The type we wish to classify.
+	 * @return True if the given type an inference variable within the context of
+	 *         this bound set, false otherwise.
+	 */
+	public boolean isInferenceVariable(Type type) {
+		return inferenceVariableBounds.containsKey(type);
 	}
 
 	@Override

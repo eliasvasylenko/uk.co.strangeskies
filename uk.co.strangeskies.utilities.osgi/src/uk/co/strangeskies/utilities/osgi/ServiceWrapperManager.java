@@ -67,7 +67,7 @@ public interface ServiceWrapperManager extends EventListenerHook, FindHook {
 	 * service then the value should be of the type {@link Boolean}. This value
 	 * then determines whether a wrapper be applied retroactively to services
 	 * which already exist, and therefore may already be in use by other bundles.
-	 * </p>
+	 * 
 	 * 
 	 * <p>
 	 * Wrappers which maintain state should normally not set this value to
@@ -75,14 +75,14 @@ public interface ServiceWrapperManager extends EventListenerHook, FindHook {
 	 * state they should adopt at the point at which they are added, since they
 	 * may be added and removed multiple times, through multiple calls to
 	 * {@link ServiceWrapper#wrapService(Object)}.
-	 * </p>
+	 * 
 	 * 
 	 * <p>
 	 * If this property is set to {@link Boolean#FALSE} then existing services
 	 * will not be wrapped, so the wrapper can be sure that
 	 * {@link ServiceWrapper#wrapService(Object)} is only ever called once for any
 	 * service, at the point when that services is registered.
-	 * </p>
+	 * 
 	 * 
 	 * <p>
 	 * Implementations of {@link ServiceWrapperManager} may choose to not accept
@@ -92,7 +92,7 @@ public interface ServiceWrapperManager extends EventListenerHook, FindHook {
 	 * preemptively). It should also be noted that an implementation of
 	 * {@link ServiceWrapperManager} may only be able to wrap services which were
 	 * registered after the manager was registered or created itself.
-	 * </p>
+	 * 
 	 */
 	public static String SUPPORTS_WRAP_EXISTING_SERVICES = "supports.wrap.existing.services";
 }

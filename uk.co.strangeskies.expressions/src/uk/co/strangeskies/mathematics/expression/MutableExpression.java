@@ -27,16 +27,15 @@ import uk.co.strangeskies.utilities.Observer;
  * A basic interface for mutable {@link Expression} implementations.
  * Implementing classes are responsible for making sure write locks are held for
  * mutating operations, and for notifications to {@link Observer}s.
- * </p>
  * 
  * <p>
  * A mutating operation is considered to be any method or section of code which
  * can be considered to atomically result in a change in the value of this
  * {@link Expression}.
- * </p>
  * 
  * @author Elias N Vasylenko
  * @param <T>
+ *          The type of the value of this expression.
  */
 public interface MutableExpression<T> extends Expression<T> {
 	/**

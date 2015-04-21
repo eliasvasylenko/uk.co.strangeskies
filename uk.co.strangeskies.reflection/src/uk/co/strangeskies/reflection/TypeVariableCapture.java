@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 /**
  * A representation of an unknown instantitation of a type variable or inference
@@ -48,7 +49,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 
 	private final GenericDeclaration declaration;
 
-	TypeVariableCapture(Type[] upperBounds, Type[] lowerBounds,
+	private TypeVariableCapture(Type[] upperBounds, Type[] lowerBounds,
 			GenericDeclaration declaration) {
 		this.name = "CAP#" + COUNTER.incrementAndGet();
 
@@ -65,7 +66,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 		if (lowerBounds.length > 0
 				&& !Types.isAssignable(IntersectionType.uncheckedFrom(lowerBounds),
 						IntersectionType.uncheckedFrom(upperBounds)))
-			throw new TypeInferenceException("Bounds on capture '" + this
+			throw new TypeException("Bounds on capture '" + this
 					+ "' are invalid. (" + Arrays.toString(lowerBounds) + " <: "
 					+ Arrays.toString(upperBounds) + ")");
 	}
@@ -222,9 +223,11 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 			Type[] lowerBounds;
 			if (lowerBoundSet.isEmpty())
 				lowerBounds = new Type[0];
-			else
-				lowerBounds = IntersectionType.asArray(Types
-						.leastUpperBound(lowerBoundSet));
+			else {
+				Type lub = Types.leastUpperBound(lowerBoundSet);
+				lowerBounds = (lub instanceof IntersectionType) ? ((IntersectionType) lub)
+						.getTypes() : new Type[] { lub };
+			}
 
 			/*
 			 * For all i (1 ≤ i ≤ n), where αi has upper bounds U1, ..., Uk, let the
@@ -234,13 +237,11 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 			Set<Type> upperBoundSet = resolver.getBounds()
 					.getBoundsOn(inferenceVariable).getUpperBounds();
 
-			Type[] upperBounds;
-			if (upperBoundSet.isEmpty())
-				upperBounds = new Type[0];
-			else
-				upperBounds = IntersectionType.asArray(resolver
-						.resolveType(IntersectionType.from(upperBoundSet,
-								resolver.getBounds())));
+			Type glb = IntersectionType.from(
+					upperBoundSet.stream().map(resolver::resolveType)
+							.collect(Collectors.toSet()), resolver.getBounds());
+			Type[] upperBounds = (glb instanceof IntersectionType) ? ((IntersectionType) glb)
+					.getTypes() : new Type[] { glb };
 
 			/*
 			 * If the type variables Y1, ..., Yn do not have well-formed bounds (that

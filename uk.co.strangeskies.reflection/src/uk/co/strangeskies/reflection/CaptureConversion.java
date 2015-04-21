@@ -26,9 +26,11 @@ import java.util.Set;
 /**
  * A {@link CaptureConversion} is a special sort of bound which can be contained
  * within a {@link BoundSet}. It represents a capture conversion, as the process
- * is described in the Java 8 language specification, where the types of the
- * captured variables, and the bounds on those types, may involve
- * {@link InferenceVariable}s.
+ * is described in the Java 8 language specification.
+ * <p>
+ * The captures made by this capture conversion are not yet fully instantiated,
+ * meaning that the types of the capturing variables, and the bounds on those
+ * types, may involve {@link InferenceVariable}s.
  * 
  * @author Elias N Vasylenko
  */
@@ -54,6 +56,8 @@ public interface CaptureConversion {
 
 	/**
 	 * @param variable
+	 *          An inference variable which may represent a capture which is part
+	 *          of this capture conversion.
 	 * @return The argument of the {@link #getOriginalType() original type}
 	 *         captured by a given {@link InferenceVariable}.
 	 */
@@ -61,6 +65,8 @@ public interface CaptureConversion {
 
 	/**
 	 * @param variable
+	 *          An inference variable which may represent a capture which is part
+	 *          of this capture conversion.
 	 * @return The parameter of the {@link #getOriginalType() original type}
 	 *         captured by a given {@link InferenceVariable}.
 	 */

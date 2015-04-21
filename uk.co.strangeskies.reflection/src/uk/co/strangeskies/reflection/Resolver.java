@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -45,19 +46,24 @@ import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 
 /**
  * <p>
- * A resolver maintains a set of <em>inference variables</em>, and
- * <em>inference variable bounds</em>, by way of a {@link BoundSet} instance. It
- * also provides a number of methods to facilitate interaction with these
- * inference variables and bounds, and track from which
- * {@link GenericDeclaration} context they were incorporated or inferred.
- * </p>
+ * A {@link Resolver} represents a view over an underlying {@link BoundSet}, and
+ * provides a number of important functionalities for interacting with that
+ * {@link BoundSet}. Multiple {@link Resolver}s can provide different views of
+ * the same {@link BoundSet} instance.
  * 
  * <p>
- * This makes for a very flexible and powerful type inference and manipulation
- * engine, though for typical use-cases it may be recommended to use the more
- * limited, but more type safe facilities provided by the {@link TypeToken} and
- * {@link Invokable} classes.
- * </p>
+ * Whenever any {@link InferenceVariable} is created by way of a
+ * {@link Resolver} instance, that {@link InferenceVariable} will be associated
+ * with a particular {@link GenericDeclaration}. Within this context, which is
+ * so described by a {@link GenericDeclaration}, at most only one
+ * {@link InferenceVariable} may by created for any given {@link TypeVariable}.
+ * A {@link Resolver} always creates {@link InferenceVariable} according to the
+ * behaviour of {@link Resolver#incorporateTypeParameters(GenericDeclaration)}.
+ * 
+ * <p>
+ * A {@link Resolver} is a flexible and powerful tool, but for typical use-cases
+ * it may be recommended to use the more limited, but more type safe, facilities
+ * provided by the {@link TypeToken} and {@link Invokable} classes.
  * 
  * @author Elias N Vasylenko
  */
@@ -118,9 +124,11 @@ public class Resolver {
 	private final Map<GenericDeclaration, Map<TypeVariable<?>, InferenceVariable>> capturedTypeVariables;
 
 	/**
-	 * Create a new resolver over the given bound set.
+	 * Create a new {@link Resolver} over the given {@link BoundSet}.
 	 * 
 	 * @param bounds
+	 *          The exact bound set we wish to create a resolver over. Operations
+	 *          on the new resolver may mutate the given bound set.
 	 */
 	public Resolver(BoundSet bounds) {
 		this.bounds = bounds;
@@ -141,6 +149,7 @@ public class Resolver {
 	 * set.
 	 * 
 	 * @param that
+	 *          The resolver we wish to copy.
 	 */
 	public Resolver(Resolver that) {
 		this(new BoundSet(that.bounds));
@@ -241,14 +250,15 @@ public class Resolver {
 
 	/**
 	 * Each type variable within the given {@link GenericDeclaration}, and each
-	 * enclosing declaration thereof, is incorporated into the backing
-	 * {@link BoundSet} as per
+	 * non-statically enclosing declaration thereof, is incorporated into the
+	 * backing {@link BoundSet} as per
 	 * {@link InferenceVariable#capture(BoundSet, GenericDeclaration)}. Each new
 	 * {@link InferenceVariable} created in this process is registered in this
-	 * {@link Resolver} under the given declaration, even those of enclosing
+	 * {@link Resolver} under the given declaration, including those of enclosing
 	 * {@link GenericDeclaration}s.
 	 * 
 	 * @param declaration
+	 *          The declaration we wish to incorporate.
 	 */
 	public void incorporateTypeParameters(GenericDeclaration declaration) {
 		if (capturedDeclarations.add(declaration)) {
@@ -285,10 +295,11 @@ public class Resolver {
 	 * for each member.</li>
 	 * 
 	 * <li>{@link WildcardType} as per
-	 * {@link #incorporateWildcardType(WildcardType)}.</li>
+	 * {@link #inferOverWildcardType(WildcardType)}.</li>
 	 * </ul>
 	 * 
 	 * @param types
+	 *          The type we wish to incorporate.
 	 */
 	public void incorporateType(Type types) {
 		new TypeVisitor() {
@@ -317,7 +328,7 @@ public class Resolver {
 
 			@Override
 			protected void visitWildcardType(WildcardType type) {
-				incorporateWildcardType(type);
+				inferOverWildcardType(type);
 			}
 		}.visit(types);
 	}
@@ -332,7 +343,7 @@ public class Resolver {
 	 *          The wildcard type to capture as a bounded inference variable.
 	 * @return The new inference variable created to satisfy the given wildcard.
 	 */
-	public InferenceVariable incorporateWildcardType(WildcardType type) {
+	public InferenceVariable inferOverWildcardType(WildcardType type) {
 		InferenceVariable w = bounds.addInferenceVariable();
 
 		for (Type lowerBound : type.getLowerBounds())
@@ -419,7 +430,7 @@ public class Resolver {
 							bounds);
 
 			if (bound instanceof ParameterizedType) {
-				inferTypeArguments((ParameterizedType) bound);
+				inferOverTypeArguments((ParameterizedType) bound);
 			}
 		}
 	}
@@ -430,10 +441,12 @@ public class Resolver {
 	 * of the given type.
 	 * 
 	 * @param type
+	 *          The type whose generic type arguments we wish to perform inference
+	 *          operations over.
 	 * @return A parameterized type derived from the given type, with inference
 	 *         variables in place of wildcards where appropriate.
 	 */
-	public ParameterizedType inferTypeArguments(ParameterizedType type) {
+	public ParameterizedType inferOverTypeArguments(ParameterizedType type) {
 		Class<?> rawType = Types.getRawType(type);
 
 		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getInferenceVariables(rawType);
@@ -449,14 +462,35 @@ public class Resolver {
 				rawType, inferenceVariables));
 	}
 
+	/**
+	 * Determine the raw type of a given type, accounting for inference variables
+	 * which may have instantiations or upper bounds within the context of this
+	 * resolver.
+	 * 
+	 * @param type
+	 *          The type of which we wish to determine the raw type.
+	 * @return The raw type of the given type.
+	 */
 	public Class<?> getRawType(Type type) {
+		type = resolveType(type);
 		if (getBounds().getInferenceVariables().contains(type))
 			return Types.getRawType(IntersectionType.uncheckedFrom(getBounds()
 					.getBoundsOn((InferenceVariable) type).getUpperBounds()));
 		else
-			return Types.getRawType(resolveType(type));
+			return Types.getRawType(type);
 	}
 
+	/**
+	 * Add inference variables for the type parameters of the given type to the
+	 * resolver, then incorporate equality constraints to new
+	 * {@link TypeVariableCapture}s for those inference variables, based on the
+	 * bounds on the arguments.
+	 * 
+	 * @param type
+	 *          The type whose generic type arguments we wish to capture.
+	 * @return A parameterized type derived from the given type, with type
+	 *         variable captures in place of wildcards where appropriate.
+	 */
 	public ParameterizedType captureTypeArguments(ParameterizedType type) {
 		Class<?> rawType = Types.getRawType(type);
 		incorporateTypeParameters(rawType);
@@ -472,17 +506,37 @@ public class Resolver {
 		return type;
 	}
 
+	/**
+	 * Incorporate an instantiation for a type variable. In other words, find the
+	 * {@link InferenceVariable} registered for the given {@link TypeVariable}
+	 * under the {@link GenericDeclaration} it belongs to, and incorporate an
+	 * equality bound on that inference variable to the given type.
+	 * 
+	 * @param variable
+	 *          The type variable whose inference variable we wish to instantiate.
+	 * @param instantiation
+	 *          The type with which to instantiate the given type variable. This
+	 *          should be a proper type.
+	 */
 	public void incorporateInstantiation(TypeVariable<?> variable,
 			Type instantiation) {
+		if (!getBounds().isProperType(instantiation))
+			throw new IllegalArgumentException("The given type, '" + instantiation
+					+ "', is not proper, and so is not a valid instantiation for '"
+					+ variable + "'.");
+
 		incorporateTypeParameters(variable.getGenericDeclaration());
 		ConstraintFormula.reduce(Kind.EQUALITY, getInferenceVariable(variable),
 				instantiation, bounds);
 	}
 
-	public Map<InferenceVariable, Type> infer(GenericDeclaration context) {
-		return infer(getInferenceVariables(context).values());
-	}
-
+	/**
+	 * Infer proper instantiations for each inference variable registered within
+	 * this {@link Resolver} instance.
+	 * 
+	 * @return A mapping from each inference variable registered under this
+	 *         resolver, to their newly inferred instantiations.
+	 */
 	public Map<InferenceVariable, Type> infer() {
 		infer(getInferenceVariables());
 		return bounds
@@ -493,14 +547,75 @@ public class Resolver {
 								.getInstantiation().get()));
 	}
 
-	public Type infer(InferenceVariable variable) {
-		return infer(Arrays.asList(variable)).get(variable);
+	/**
+	 * Infer proper instantiations for each {@link InferenceVariable} registered
+	 * under the given {@link GenericDeclaration}.
+	 * 
+	 * @param context
+	 *          The generic declaration whose inference variables we wish to infer
+	 *          instantiations for.
+	 * @return A mapping from each inference variable registered under the given
+	 *         generic declaration, to their newly inferred instantiations.
+	 */
+	public Map<TypeVariable<?>, Type> infer(GenericDeclaration context) {
+		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getInferenceVariables(context);
+		Map<InferenceVariable, Type> instantiations = infer(inferenceVariables
+				.values());
+		return inferenceVariables
+				.entrySet()
+				.stream()
+				.collect(
+						Collectors.toMap(Entry::getKey,
+								e -> instantiations.get(e.getValue())));
 	}
 
+	/**
+	 * Infer a proper instantiations for the {@link InferenceVariable} registered
+	 * for the given {@link TypeVariable} under the {@link GenericDeclaration} it
+	 * belongs to.
+	 * 
+	 * @param variable
+	 *          The type variable whose instantiation we wish to infer.
+	 * @return The proper instantiation inferred for the given type variable.
+	 */
+	public Type infer(TypeVariable<?> variable) {
+		return infer(Arrays.asList(getInferenceVariable(variable))).get(variable);
+	}
+
+	/**
+	 * Infer a proper instantiations for each {@link InferenceVariable} mentioned
+	 * by the given type.
+	 * 
+	 * @param type
+	 *          The type whose proper form we wish to infer.
+	 * @return A new type derived from the given type by substitution of
+	 *         instantiations for each {@link InferenceVariable} mentioned.
+	 */
+	public Type infer(Type type) {
+		return new TypeSubstitution(infer(getBounds()
+				.getInferenceVariablesMentionedBy(type))::get).resolve(type);
+	}
+
+	/**
+	 * Infer proper instantiations for the given {@link InferenceVariable}s.
+	 * 
+	 * @param variables
+	 *          The inference variables for which we wish to infer instantiations.
+	 * @return A mapping from each of the given inference variables to their
+	 *         inferred instantiations.
+	 */
 	public Map<InferenceVariable, Type> infer(InferenceVariable... variables) {
 		return infer(Arrays.asList(variables));
 	}
 
+	/**
+	 * Infer proper instantiations for the given {@link InferenceVariable}s.
+	 * 
+	 * @param variables
+	 *          The inference variables for which we wish to infer instantiations.
+	 * @return A mapping from each of the given inference variables to their
+	 *         inferred instantiations.
+	 */
 	public Map<InferenceVariable, Type> infer(
 			Collection<? extends InferenceVariable> variables) {
 		Map<InferenceVariable, Type> instantiations = new HashMap<>();
@@ -568,8 +683,27 @@ public class Resolver {
 		}
 	}
 
-	public void resolveTypeHierarchy(Type subtype, Class<?> superclass) {
-		Class<?> subclass = Types.getRawType(subtype);
+	/**
+	 * Any type parameters of the given subclass and superclass are incorporated
+	 * into the {@link Resolver}, as are the parameters of any classes between,
+	 * i.e. those classes which are a supertype of the given subclass, and a
+	 * subtype of the given superclass. For each subclass in the hierarchy which
+	 * provides a parameterization of a corresponding superclass, these bounds are
+	 * created and incorporated.
+	 * 
+	 * <p>
+	 * This has the effect, when either the given subclass or superclass are
+	 * generic, of establishing any relationship the type arguments of that class
+	 * may have with the other class.
+	 * 
+	 * @param subclass
+	 *          A subclass of the given superclass.
+	 * @param superclass
+	 *          A superclass of the given subclass.
+	 */
+	public void incorporateTypeHierarchy(Class<?> subclass, Class<?> superclass) {
+		Type subtype = ParameterizedTypes.uncheckedFrom(subclass, new HashMap<>());
+		incorporateTypeParameters(subclass);
 
 		if (!superclass.isAssignableFrom(subclass))
 			throw new IllegalArgumentException("Type '" + subtype
@@ -655,7 +789,7 @@ public class Resolver {
 					instantiationCandidates.put(variable, instantiationCandidate);
 					bounds.incorporate().equality(variable, instantiationCandidate);
 				}
-			} catch (TypeInferenceException e) {
+			} catch (TypeException e) {
 				instantiationCandidates = null;
 			}
 
@@ -702,6 +836,17 @@ public class Resolver {
 		bounds.incorporate().equality(variable, instantiation);
 	}
 
+	/**
+	 * Derive a new type from the type given, with any mentioned instances of
+	 * {@link InferenceVariable} and {@link TypeVariable} substituted with their
+	 * proper instantiations where available, as per
+	 * {@link #resolveInferenceVariable(InferenceVariable)} and
+	 * {@link #resolveTypeVariable(TypeVariable)} respectively.
+	 * 
+	 * @param type
+	 *          The type we wish to resolve.
+	 * @return The resolved type.
+	 */
 	public Type resolveType(Type type) {
 		return new TypeSubstitution(t -> {
 			if (t instanceof InferenceVariable)
@@ -715,6 +860,20 @@ public class Resolver {
 		}).resolve(type);
 	}
 
+	/**
+	 * Derive a new type from the type given, with any mentioned instances of
+	 * {@link InferenceVariable} and {@link TypeVariable} substituted with their
+	 * proper instantiations where available, as per
+	 * {@link #resolveInferenceVariable(InferenceVariable)} and
+	 * {@link #resolveTypeVariable(GenericDeclaration, TypeVariable)}
+	 * respectively.
+	 * 
+	 * @param declaration
+	 *          The generic declaration whose context will provide
+	 * @param type
+	 *          The type we wish to resolve.
+	 * @return The resolved type.
+	 */
 	public Type resolveType(GenericDeclaration declaration, Type type) {
 		return new TypeSubstitution(t -> {
 			if (t instanceof InferenceVariable)
@@ -728,32 +887,45 @@ public class Resolver {
 		}).resolve(type);
 	}
 
+	/**
+	 * Resolve the proper instantiation of a given {@link TypeVariable} if one
+	 * exists. The type variable will be resolved within the context provided by
+	 * its declaring class.
+	 * 
+	 * @param typeVariable
+	 *          The type variable whose proper instantiation we wish to determine.
+	 * @return The proper instantiation of the given {@link TypeVariable} if one
+	 *         exists, otherwise the {@link TypeVariable} itself.
+	 */
 	public Type resolveTypeVariable(TypeVariable<?> typeVariable) {
 		return resolveTypeVariable(typeVariable.getGenericDeclaration(),
 				typeVariable);
 	}
 
+	/**
+	 * Resolve the proper instantiation of a given {@link TypeVariable} if one
+	 * exists. The type variable will be resolved within the context provided by
+	 * its the given {@link GenericDeclaration}.
+	 * 
+	 * @param declaration
+	 *          The {@link GenericDeclaration} under which we will check
+	 *          registration of the given {@link TypeVariable}.
+	 * @param typeVariable
+	 *          The type variable whose proper instantiation we wish to determine.
+	 * @return The proper instantiation of the given {@link TypeVariable} if one
+	 *         exists, otherwise the {@link TypeVariable} itself.
+	 */
 	public Type resolveTypeVariable(GenericDeclaration declaration,
 			TypeVariable<?> typeVariable) {
-		incorporateTypeParameters(typeVariable.getGenericDeclaration());
+		incorporateTypeParameters(declaration);
 
-		return resolveInferenceVariable(capturedTypeVariables.get(declaration).get(
-				typeVariable));
+		InferenceVariable inferenceVariable = capturedTypeVariables
+				.get(declaration).get(typeVariable);
+		return inferenceVariable == null ? typeVariable
+				: resolveInferenceVariable(inferenceVariable);
 	}
 
-	public boolean validate() {
-		return validate(getInferenceVariables());
-	}
-
-	public boolean validate(InferenceVariable... variables) {
-		return validate(Arrays.asList(variables));
-	}
-
-	public boolean validate(Collection<? extends InferenceVariable> variable) {
-		return infer(variable).values().stream().allMatch(v -> v != null);
-	}
-
-	private Type resolveInferenceVariable(InferenceVariable variable) {
+	public Type resolveInferenceVariable(InferenceVariable variable) {
 		if (bounds.getInferenceVariables().contains(variable))
 			return bounds.getBoundsOn(variable).getInstantiation().orElse(variable);
 		else
@@ -780,250 +952,4 @@ public class Resolver {
 		incorporateTypeParameters(declaration);
 		return capturedTypeVariables.get(declaration).get(typeVariable);
 	}
-
-	public static void main(String... args) {
-		test();
-	}
-
-	static class TT<TTT> extends TypeToken<TTT> {}
-
-	static class Y<YT> extends TT<Set<YT>> {}
-
-	static class G extends Y<List<String>> {}
-
-	public static class Outer<T> {
-		public class Inner<N extends T, J extends Collection<? extends T>, P> {}
-
-		public class Inner2<M extends Number & Comparable<?>> extends
-				Outer<Comparable<?>>.Inner<M, List<Integer>, T> {}
-	}
-
-	public static class Outer2<F, Z extends F> {
-		public class Inner3<X extends Set<F>> extends Outer<F>.Inner<Z, X, Set<Z>> {
-			Inner3() {
-				new Outer<F>() {}.super();
-			}
-		}
-	}
-
-	public static <T> TypeToken<List<T>> listOf(Class<T> sub) {
-		return new TypeToken<List<T>>() {}.withTypeArgument(
-				new TypeParameter<T>() {}, sub);
-	}
-
-	public static void test() {
-		System.out.println(new TypeToken<SchemaNode.Effective<?, ?>>() {}
-				.resolveSupertypeParameters(SchemaNode.class));
-		System.out.println();
-		System.out.println();
-
-		System.out.println(new TypeToken<HashSet<String>>() {}
-				.resolveSupertypeParameters(Set.class));
-		System.out.println();
-		System.out.println();
-
-		System.out.println("List with T = String: " + listOf(String.class));
-		System.out.println();
-		System.out.println();
-
-		System.out.println(new TypeToken<Collection<? super String>>() {}
-				.resolveSubtypeParameters(HashSet.class));
-		System.out.println();
-		System.out.println();
-
-		new TypeToken<Outer<Serializable>.Inner<String, HashSet<Serializable>, Set<String>>>() {}
-				.getResolver();
-		System.out.println();
-		System.out.println();
-
-		System.out
-				.println(new TypeToken<Outer<Serializable>.Inner<String, HashSet<Serializable>, Set<String>>>() {}
-						.resolveSubtypeParameters(Outer2.Inner3.class));
-		System.out.println();
-		System.out.println();
-
-		System.out
-				.println(new TypeToken<Outer2<Serializable, String>.Inner3<HashSet<Serializable>>>() {}
-						.resolveSupertypeParameters(Outer.Inner.class));
-		System.out.println();
-		System.out.println();
-
-		System.out.println(new TypeToken<Outer<String>.Inner2<Double>>() {}
-				.resolveSupertypeParameters(Outer.Inner.class));
-		System.out.println();
-		System.out.println();
-
-		System.out.println("type test: "
-				+ new TypeToken<String>() {}
-						.resolveSupertypeParameters(Comparable.class));
-		System.out.println();
-		System.out.println();
-
-		class SM<YO> {}
-		class NM<V extends Number> extends SM<V> {}
-		System.out.println(new TypeToken<NM<?>>() {});
-		System.out.println(new TypeToken<NM<?>>() {}
-				.resolveSupertypeParameters(SM.class));
-		System.out.println();
-		System.out.println();
-
-		System.out.println(TypeToken.of(new TypeToken<Nest<?>>() {}.getType()));
-		System.out.println();
-		System.out.println();
-
-		System.out.println(TypeToken.of(new TypeToken<Nest22<?>>() {}.getType()));
-		System.out.println();
-		System.out.println();
-
-		System.out.println(TypeToken.of(new TypeToken<Nest2<?>>() {}.getType()));
-		System.out.println();
-		System.out.println();
-
-		System.out.println(TypeToken.of(new TypeToken<Base<LeftN, RightN>>() {}
-				.getType()));
-		System.out.println();
-		System.out.println();
-
-		System.out.println(TypeToken.of(new TypeToken<RightN>() {}
-				.resolveSupertypeParameters(Base.class).getType()));
-		System.out.println();
-		System.out.println();
-
-		System.out.println("TYPELITTEST: " + new TT<String>() {});
-		System.out.println("TYPELITTEST-2: " + new Y<String>() {});
-		System.out.println("TYPELITTEST-3: " + new G() {});
-		System.out.println("TYPELITTEST-4: "
-				+ new Y<Integer>() {}.resolveSupertypeParameters(Collection.class));
-		System.out.println();
-		System.out.println();
-
-		System.out.println(new TypeToken<Self<?>>() {}
-				.isAssignableFrom(new TypeToken<Nest<?>>() {}));
-		System.out.println();
-		System.out.println();
-
-		System.out.println(TypeToken
-				.of(new TypeToken<Nest2<? extends Nest2<?>>>() {}.getType()));
-		System.out.println();
-		System.out.println();
-
-		System.out.println(TypeToken
-				.of(new TypeToken<Nest2<? extends Nest22<?>>>() {}.getType()));
-		System.out.println();
-		System.out.println();
-
-		System.out.println(new TypeToken<SchemaNode.Effective<?, ?>>() {}
-				.resolveSupertypeParameters(SchemaNode.class));
-		System.out.println();
-		System.out.println();
-
-		System.out.println(new TypeToken<Gurn<Integer>>() {}.getMethods()
-				.iterator().next().infer());
-		System.out.println();
-		System.out.println();
-
-		TypeToken<?> receiver = new TypeToken<BindingState>() {};
-		System.out.println("RESOLVE 1:");
-		System.out
-				.println(receiver.resolveMethodOverload("bindingNode", int.class));
-		System.out.println();
-		System.out.println();
-
-		receiver = new TypeToken<SchemaNodeConfigurator<?, ?>>() {};
-		System.out.println("RESOLVE 2:");
-		System.out.println(TypeToken.of(receiver.getType()).resolveMethodOverload(
-				"name", Arrays.asList(String.class)));
-		System.out.println();
-		System.out.println();
-
-		receiver = new TypeToken<ChildNodeConfigurator<?, ?>>() {};
-		System.out.println("RESOLVE 3:");
-		System.out.println(TypeToken.of(receiver.getType()).resolveMethodOverload(
-				"name", Arrays.asList(String.class)));
-		System.out.println();
-		System.out.println();
-
-		receiver = new TypeToken<DataBindingType.Effective<?>>() {};
-		System.out.println("RESOLVE 4:");
-		System.out.println(TypeToken.of(receiver.getType()).resolveMethodOverload(
-				"child", Arrays.asList(String.class)));
-		System.out.println();
-		System.out.println();
-
-		System.out.println(new TypeToken<IncludeTarget>() {}.resolveMethodOverload(
-				"includer", Model.class, Collection.class));
-		System.out.println();
-		System.out.println();
-	}
 }
-
-interface IncludeTarget {
-	<T> void include(Model<T> model, T object);
-
-	<T> void include(Model<T> model, Collection<? extends T> objects);
-
-	void includer(Model<?> model, Object object);
-
-	void includer(Model<?> model, Collection<?> objects);
-}
-
-interface Model<T> {}
-
-interface BindingState {
-	SchemaNode.Effective<?, ?> bindingNode(int parent);
-}
-
-interface SchemaNode<S extends SchemaNode<S, E>, E extends SchemaNode.Effective<S, E>> {
-	interface Effective<S extends SchemaNode<S, E>, E extends Effective<S, E>>
-			extends SchemaNode<S, E> {}
-
-	ChildNode<?, ?> child(String name);
-}
-
-interface ChildNode<S extends ChildNode<S, E>, E extends ChildNode.Effective<S, E>>
-		extends SchemaNode<S, E> {
-	interface Effective<S extends ChildNode<S, E>, E extends Effective<S, E>>
-			extends ChildNode<S, E>, SchemaNode.Effective<S, E> {}
-}
-
-interface SchemaNodeConfigurator<S extends SchemaNodeConfigurator<S, N>, N extends SchemaNode<N, ?>> {
-	public S name(String name);
-}
-
-interface ChildNodeConfigurator<S extends ChildNodeConfigurator<S, N>, N extends ChildNode<N, ?>>
-		extends SchemaNodeConfigurator<S, N> {}
-
-interface DataBindingType<T> extends
-		BindingNode<T, DataBindingType<T>, DataBindingType.Effective<T>> {
-	interface Effective<T> extends DataBindingType<T>,
-			BindingNode.Effective<T, DataBindingType<T>, Effective<T>> {}
-}
-
-interface BindingNode<T, S extends BindingNode<T, S, E>, E extends BindingNode.Effective<T, S, E>>
-		extends SchemaNode<S, E> {
-	interface Effective<T, S extends BindingNode<T, S, E>, E extends Effective<T, S, E>>
-			extends BindingNode<T, S, E>, SchemaNode.Effective<S, E> {}
-}
-
-class Nest<T extends Set<Nest<T>>> implements Self<Nest<T>> {
-	@Override
-	public Nest<T> copy() {
-		return null;
-	}
-}
-
-interface Blurn<T> {
-	Set<T> blurn();
-}
-
-interface Gurn<X> extends Blurn<List<X>> {}
-
-class Nest2<T extends Nest2<T>> {}
-
-class Nest22<T> extends Nest2<Nest22<T>> {}
-
-class Base<T extends Base<U, T>, U extends Base<T, U>> {}
-
-class LeftN extends Base<RightN, LeftN> {}
-
-class RightN extends Base<LeftN, RightN> {}

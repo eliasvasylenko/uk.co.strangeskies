@@ -32,7 +32,7 @@ import uk.co.strangeskies.reflection.BoundSet.IncorporationTarget;
  * <p>
  * A constraint formula, as they are described in chapter 18 of that Java 8
  * language specification.
- * </p>
+ * 
  * 
  * <p>
  * Roughly, a constraint formula describes an assertion of compatibility between
@@ -40,7 +40,7 @@ import uk.co.strangeskies.reflection.BoundSet.IncorporationTarget;
  * relationship may be reduced into a number of secondary, tertiary, etc.
  * constraint formulae, and then ultimately into a number of bounds, which in
  * turn may be incorporated into a {@link BoundSet}.
- * </p>
+ * 
  * 
  * @author Elias N Vasylenko
  */
@@ -109,7 +109,7 @@ public class ConstraintFormula {
 		try {
 			constraintFormula.reduceInto(bounds);
 		} catch (Exception e) {
-			throw new TypeInferenceException("Cannot reduce constraint '"
+			throw new TypeException("Cannot reduce constraint '"
 					+ constraintFormula + "' into bound set '" + bounds + "'.", e);
 		}
 		return constraintFormula;
