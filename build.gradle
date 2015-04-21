@@ -63,7 +63,7 @@ apply plugin: 'license'
 apply plugin: 'java'
 
 /* Javadoc Generation */
-task javadocGen(type: Javadoc) {
+task aggregateJavadoc(type: Javadoc) {
   options.charSet = 'UTF-8'
   options.encoding = 'UTF-8'
   source subprojects.collect {project -> project.sourceSets.main.allJava }
