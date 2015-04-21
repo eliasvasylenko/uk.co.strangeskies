@@ -82,7 +82,7 @@ githubPages {
   }
 
   pages {
-    from javadocGen
+    from aggregateJavadoc
   }
 }
 
