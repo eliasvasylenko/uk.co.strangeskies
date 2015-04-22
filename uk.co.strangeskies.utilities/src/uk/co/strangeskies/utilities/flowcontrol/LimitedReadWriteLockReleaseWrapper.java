@@ -217,20 +217,4 @@ public class LimitedReadWriteLockReleaseWrapper<L> extends
 			return writeDependencies.contains(key);
 		}
 	}
-
-	@Override
-	public void wait(L key) throws InterruptedException {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void wait(L key, long milliseconds) throws InterruptedException {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void wait(L key, long milliseconds, int nanoseconds)
-			throws InterruptedException {
-		throw new UnsupportedOperationException();
-	}
 }

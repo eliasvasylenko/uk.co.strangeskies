@@ -21,6 +21,15 @@ package uk.co.strangeskies.utilities.flowcontrol;
 import java.util.Collection;
 import java.util.Set;
 
+/**
+ * An interface exposing part of the functionality of a
+ * {@link StripedReadWriteLock}. This interface allows clients to release locks,
+ * but not to obtain them or wait for them.
+ * 
+ * @author Elias N Vasylenko
+ * @param <K>
+ *          The type of the keys used to index into the locks.
+ */
 public interface StripedReadWriteLockRelease<K> {
 	public Set<K> readLocksHeldByCurrentThread();
 
@@ -48,11 +57,4 @@ public interface StripedReadWriteLockRelease<K> {
 	public boolean releaseWriteLock(K key);
 
 	public boolean isWriteLockHeldByCurrentThread(K key);
-
-	public void wait(K key) throws InterruptedException;
-
-	public void wait(K key, long milliseconds) throws InterruptedException;
-
-	public void wait(K key, long milliseconds, int nanoseconds)
-			throws InterruptedException;
 }

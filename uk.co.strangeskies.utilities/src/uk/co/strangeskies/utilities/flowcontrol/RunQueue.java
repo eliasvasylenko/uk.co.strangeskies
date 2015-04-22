@@ -27,6 +27,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * the order they are passed. run(Runnable) does not block the calling thread to
  * wait for completion, but runAndWait(Runnable) does.
  * 
+ * <p>
  * This works a little like e.g. the swing event queue.
  * 
  * @author Elias N Vasylenko
@@ -180,8 +181,7 @@ public class RunQueue {
 			while (releasing < waitingFor) {
 				try {
 					runThread.wait();
-				} catch (InterruptedException e) {
-				}
+				} catch (InterruptedException e) {}
 			}
 		}
 
@@ -210,8 +210,7 @@ public class RunQueue {
 	public void waitForUninterruptible(long waitingFor) {
 		try {
 			waitFor(waitingFor, false);
-		} catch (RunQueueInterruptedException e) {
-		}
+		} catch (RunQueueInterruptedException e) {}
 	}
 
 	public synchronized long getQueuePosition() {
@@ -230,8 +229,7 @@ public class RunQueue {
 	public void waitForCurrentUninterruptible() {
 		try {
 			waitForCurrent(false);
-		} catch (RunQueueInterruptedException e) {
-		}
+		} catch (RunQueueInterruptedException e) {}
 	}
 
 	public void waitForEmpty(boolean interruptible)
@@ -250,8 +248,7 @@ public class RunQueue {
 	public void waitForEmptyUninterruptible() {
 		try {
 			waitForEmpty(false);
-		} catch (RunQueueInterruptedException e) {
-		}
+		} catch (RunQueueInterruptedException e) {}
 	}
 
 	/**
@@ -321,8 +318,7 @@ public class RunQueue {
 			while (!dead) {
 				try {
 					runnables.wait();
-				} catch (InterruptedException e) {
-				}
+				} catch (InterruptedException e) {}
 			}
 		}
 		return runnables;

@@ -18,9 +18,19 @@
  */
 package uk.co.strangeskies.utilities.factory;
 
+/**
+ * Indicates that {@link Configurator#create()} has been invoked on a
+ * {@link Configurator} which has already produced its result.
+ *
+ * @author Elias N Vasylenko
+ */
 public class StaleBuilderStateException extends BuilderStateException {
 	private static final long serialVersionUID = 2380924166435297716L;
 
+	/**
+	 * @param configurator
+	 *          The configurator from which a result was requested.
+	 */
 	public StaleBuilderStateException(Factory<?> configurator) {
 		super(configurator, "Builder state is stale.");
 	}

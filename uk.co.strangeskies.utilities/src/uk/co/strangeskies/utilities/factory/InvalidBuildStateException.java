@@ -18,13 +18,31 @@
  */
 package uk.co.strangeskies.utilities.factory;
 
+/**
+ * Indicates that {@link Configurator#create()} has been invoked on a
+ * {@link Configurator} which has already produced its result, or that the
+ * {@link Configurator} has been adjusted in a way which is incompatible with
+ * its prior state.
+ *
+ * @author Elias N Vasylenko
+ */
 public class InvalidBuildStateException extends BuilderStateException {
 	private static final long serialVersionUID = -84782003263925409L;
 
+	/**
+	 * @param configurator
+	 *          The configurator with which the problem occurred.
+	 */
 	public InvalidBuildStateException(Factory<?> configurator) {
 		super(configurator, "Build state is invalid.");
 	}
 
+	/**
+	 * @param configurator
+	 *          The configurator with which the problem occurred.
+	 * @param cause
+	 *          The cause of the problem.
+	 */
 	public InvalidBuildStateException(Factory<?> configurator, Throwable cause) {
 		super(configurator, "Build state is invalid.", cause);
 	}

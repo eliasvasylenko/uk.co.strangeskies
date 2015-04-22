@@ -22,17 +22,30 @@ import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import uk.co.strangeskies.utilities.IdentityComparator;
+import uk.co.strangeskies.utilities.function.InvertibleFunction;
 
 /**
- * A view of a list which will be automatically updated along with the original,
- * but who's elements will be a transformation of the original associated
- * elements by way of the function passed to the constructor. The implementation
- * employs lazy evaluation, so try to use get() as little as possible by reusing
- * the result.
+ * A view of a {@link Set} which will be automatically updated along with the
+ * original, but whose elements will be a transformation of the original
+ * associated elements by way of the function passed to the constructor. The
+ * implementation employs lazy evaluation, and only evaluates a transformation
+ * once for each element of the collection, as distinguished by identity.
+ * 
+ * <p>
+ * Unlike the {@link Stream#map(Function)} function, which can provide similar
+ * functionality in certain circumstances, this class provides a view which is
+ * reusable and backed by the original collection, such that it will reflect
+ * changes.
+ * 
+ * <p>
+ * If the constructor is supplied with an {@link InvertibleFunction}, it will be
+ * possible to add elements to this collection.
  * 
  * @author Elias N Vasylenko
  * 
@@ -42,24 +55,57 @@ import uk.co.strangeskies.utilities.IdentityComparator;
  *          The type of the elements of the backing list.
  */
 public class SetTransformOnceView<F, T> extends AbstractSet<T> {
-	private final Collection<? extends F> backingCollection;
-	private final Function<? super F, ? extends T> function;
+	private final Collection<F> backingCollection;
+	private final InvertibleFunction<F, T> function;
 
 	private final Map<F, T> transformations;
 
-	public SetTransformOnceView(Collection<? extends F> backingCollection,
+	/**
+	 * @param backingCollection
+	 *          The backing collection this class presents a view over.
+	 * @param function
+	 *          The function which transforms elements into the form in which they
+	 *          are represented in by this view.
+	 */
+	public SetTransformOnceView(Collection<F> backingCollection,
 			final Function<? super F, ? extends T> function) {
+		this(backingCollection, InvertibleFunction.over(function, i -> {
+			throw new UnsupportedOperationException();
+		}));
+	}
+
+	/**
+	 * @param backingCollection
+	 *          The backing collection this class presents a view over.
+	 * @param function
+	 *          The function which transforms elements into the form in which they
+	 *          are represented in by this view.
+	 */
+	public SetTransformOnceView(Collection<F> backingCollection,
+			final InvertibleFunction<F, T> function) {
 		transformations = new TreeMap<>(new IdentityComparator<>());
 
 		this.backingCollection = backingCollection;
 		this.function = function;
 	}
 
-	public final Collection<? extends F> getBackingCollection() {
+	@Override
+	public boolean add(T e) {
+		return backingCollection.add(function.getInverse().apply(e));
+	}
+
+	/**
+	 * @return The backing collection this class presents a view over.
+	 */
+	public final Collection<F> getBackingCollection() {
 		return backingCollection;
 	}
 
-	public final Function<? super F, ? extends T> getFunction() {
+	/**
+	 * @return The function which transforms elements into the form in which they
+	 *         are represented in by this view.
+	 */
+	public final Function<F, T> getFunction() {
 		return function;
 	}
 

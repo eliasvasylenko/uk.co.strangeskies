@@ -20,6 +20,7 @@ package uk.co.strangeskies.mathematics.geometry.matrix.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix;
 import uk.co.strangeskies.mathematics.geometry.matrix.MatrixH;
@@ -34,7 +35,6 @@ import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.collection.SubList;
 import uk.co.strangeskies.utilities.factory.Factory;
 import uk.co.strangeskies.utilities.function.collection.ListTransformOnceView;
-import uk.co.strangeskies.utilities.function.collection.ListTransformationFunction;
 
 public abstract class MatrixHImpl<S extends MatrixH<S, V>, V extends Value<V>>
 		extends /*  */MatrixImpl<S, V> implements MatrixH<S, V> {
@@ -106,9 +106,9 @@ public abstract class MatrixHImpl<S extends MatrixH<S, V>, V extends Value<V>>
 	}
 
 	protected List<List<V>> getTransformationData2() {
-		return ListTransformationFunction.apply(
-				getData2().subList(0, getProjectedDimensions()),
-				l -> l.subList(0, getProjectedDimensions()));
+		return getData2().subList(0, getProjectedDimensions()).stream()
+				.map(l -> l.subList(0, getProjectedDimensions()))
+				.collect(Collectors.toList());
 	}
 
 	@Override

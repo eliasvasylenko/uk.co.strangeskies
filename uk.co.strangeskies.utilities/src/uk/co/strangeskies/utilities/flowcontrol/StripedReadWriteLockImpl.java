@@ -29,13 +29,17 @@ import java.util.stream.Collectors;
 import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 
-public class HashingStripedReadWriteLock<K> implements StripedReadWriteLock<K> {
+public class StripedReadWriteLockImpl<K> implements StripedReadWriteLock<K> {
 	private final Map<K, ReentrantReadWriteLock> locks;
-	private final MultiMap<K, Thread, Set<Thread>> readLockingThreads;
+	private final MultiMap<K, Thread, HashSet<Thread>> readLockingThreads;
 
-	public HashingStripedReadWriteLock() {
+	public StripedReadWriteLockImpl() {
+		this(new MultiHashMap<>(HashSet::new));
+	}
+
+	public StripedReadWriteLockImpl(MultiMap<K, Thread, HashSet<Thread>> multiMap) {
 		locks = new HashMap<>();
-		readLockingThreads = new MultiHashMap<>(HashSet::new);
+		readLockingThreads = multiMap;
 	}
 
 	@Override

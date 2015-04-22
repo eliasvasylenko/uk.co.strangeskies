@@ -18,6 +18,36 @@
  */
 package uk.co.strangeskies.utilities.function;
 
+/**
+ * Represents a function that accepts two arguments and produces a result. This
+ * is the two-arity specialization of Function.
+ * 
+ * <p>
+ * This is a functional interface whose functional method is
+ * {@link #apply(Object, Object, Object)}.
+ * 
+ * @author Elias N Vasylenko
+ * @param <O1>
+ *          the type of the first argument to the function
+ * @param <O2>
+ *          the type of the second argument to the function
+ * @param <O3>
+ *          the type of the third argument to the function
+ * @param <R>
+ *          the type of the result of the function
+ */
+@FunctionalInterface
 public interface TriFunction<O1, O2, O3, R> {
+	/**
+	 * Applies this function to the given arguments.
+	 * 
+	 * @param firstOperand
+	 *          the first function argument
+	 * @param secondOperand
+	 *          the second function argument
+	 * @param thirdOperand
+	 *          the third function argument
+	 * @return the result of a function application.
+	 */
 	public R apply(O1 firstOperand, O2 secondOperand, O3 thirdOperand);
 }

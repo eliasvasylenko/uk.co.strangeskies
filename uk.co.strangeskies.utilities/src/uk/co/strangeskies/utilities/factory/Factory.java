@@ -18,6 +18,17 @@
  */
 package uk.co.strangeskies.utilities.factory;
 
+/**
+ * A simple functional interface representing a factory.
+ * 
+ * @author Elias N Vasylenko
+ * @param <T>
+ *          The type of the product of the factory.
+ */
+@FunctionalInterface
 public interface Factory<T> {
+	/**
+	 * @return A new instance of an object of this factories product type.
+	 */
 	public T create();
 }

@@ -20,6 +20,30 @@ package uk.co.strangeskies.utilities.flowcontrol;
 
 import java.util.Collection;
 
+/**
+ * The purpose of a striped lock is generally to avoid deadlock in systems with
+ * many different locks. This is achieved by requiring {@link Thread}s to
+ * acquire all the locks they will need in one go, then releasing them when
+ * possible, meaning that a thread will never be waiting for a lock when it
+ * already has one.
+ * 
+ * <p>
+ * This class does not enforce that a {@link Thread} does not try to obtain more
+ * locks when it already has some, this is expected to be dealt with in user
+ * code, though it would be trivial to implement a subclass providing this
+ * functionality. Instead the {@link StripedReadWriteLockRelease} interface is
+ * provided such that once locks are acquired, processes can be given the means
+ * to release and query the state of those locks without leaking the ability to
+ * acquire more.
+ * 
+ * <p>
+ * The three overloads of {@link #obtainLocks(Collection, Collection)} will
+ * block until every requested lock is obtained, without allowing deadlocks to
+ * occur between multiple blocking threads.
+ *
+ * @author Elias N Vasylenko
+ * @param <K>
+ */
 public interface StripedReadWriteLock<K> extends StripedReadWriteLockRelease<K> {
 	/**
 	 * Multiple concurrent calls from different threads do not lock. Blocks until
@@ -54,5 +78,12 @@ public interface StripedReadWriteLock<K> extends StripedReadWriteLockRelease<K> 
 	 * @throws InterruptedException
 	 */
 	public void obtainWriteLocks(Collection<K> writeKeys)
+			throws InterruptedException;
+
+	public void wait(K key) throws InterruptedException;
+
+	public void wait(K key, long milliseconds) throws InterruptedException;
+
+	public void wait(K key, long milliseconds, int nanoseconds)
 			throws InterruptedException;
 }

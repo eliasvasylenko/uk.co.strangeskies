@@ -23,15 +23,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import uk.co.strangeskies.utilities.IdentityComparator;
+import uk.co.strangeskies.utilities.function.InvertibleFunction;
 
 /**
- * A view of a list which will be automatically updated along with the original,
- * but who's elements will be a transformation of the original associated
- * elements by way of the function passed to the constructor. The implementation
- * employs lazy evaluation, so try to use get() as little as possible by reusing
- * the result.
+ * A view of a {@link List} which will be automatically updated along with the
+ * original, but whose elements will be a transformation of the original
+ * associated elements by way of the function passed to the constructor. The
+ * implementation employs lazy evaluation, and only evaluates a transformation
+ * once for each element of the collection, as distinguished by identity.
+ * 
+ * <p>
+ * Unlike the {@link Stream#map(Function)} function, which can provide similar
+ * functionality in certain circumstances, this class provides a view which is
+ * reusable and backed by the original collection, such that it will reflect
+ * changes.
+ * 
+ * <p>
+ * If the constructor is supplied with an {@link InvertibleFunction}, it will be
+ * possible to add elements to this collection.
  * 
  * @author Elias N Vasylenko
  * 
@@ -41,44 +53,95 @@ import uk.co.strangeskies.utilities.IdentityComparator;
  *          The type of the elements of the backing list.
  */
 public class ListTransformOnceView<F, T> extends AbstractList<T> {
-	private final List<? extends F> backingList;
-	private final Function<? super F, ? extends T> function;
+	private final List<F> backingCollection;
+	private final InvertibleFunction<F, T> function;
 
 	private final Map<F, T> transformations;
 
-	public ListTransformOnceView(List<? extends F> backingList,
+	/**
+	 * @param backingCollection
+	 *          The backing collection this class presents a view over.
+	 * @param function
+	 *          The function which transforms elements into the form in which they
+	 *          are represented in by this view.
+	 */
+	public ListTransformOnceView(List<F> backingCollection,
 			final Function<? super F, ? extends T> function) {
+		this(backingCollection, InvertibleFunction.over(function, i -> {
+			throw new UnsupportedOperationException();
+		}));
+	}
+
+	@Override
+	public T set(int index, T element) {
+		T previous = get(index);
+		F next = function.getInverse().apply(element);
+		backingCollection.set(index, next);
+		transformations.put(next, element);
+		return previous;
+	}
+
+	@Override
+	public void add(int index, T element) {
+		F next = function.getInverse().apply(element);
+		backingCollection.add(index, next);
+		transformations.put(next, element);
+	}
+
+	@Override
+	public T remove(int index) {
+		T removed = get(index);
+		transformations.remove(backingCollection.remove(index));
+		return removed;
+	}
+
+	/**
+	 * @param backingCollection
+	 *          The backing collection this class presents a view over.
+	 * @param function
+	 *          The function which transforms elements into the form in which they
+	 *          are represented in by this view.
+	 */
+	public ListTransformOnceView(List<F> backingCollection,
+			final InvertibleFunction<F, T> function) {
 		transformations = new TreeMap<>(new IdentityComparator<>());
 
-		this.backingList = backingList;
+		this.backingCollection = backingCollection;
 		this.function = function;
 	}
 
 	@Override
 	public final T get(int index) {
-		F backingElement = backingList.get(index);
+		F backingElement = backingCollection.get(index);
 		T transformation = transformations.get(backingElement);
 		if (transformation == null) {
 			transformation = function.apply(backingElement);
 			transformations.put(backingElement, transformation);
 
-			if (transformations.keySet().size() > backingList.size() * 1.5) {
-				transformations.keySet().retainAll(backingList);
+			if (transformations.keySet().size() > backingCollection.size() * 1.5) {
+				transformations.keySet().retainAll(backingCollection);
 			}
 		}
 		return transformation;
 	}
 
-	public final List<? extends F> getBackingList() {
-		return backingList;
+	/**
+	 * @return The backing collection this class presents a view over.
+	 */
+	public final List<F> getBackingList() {
+		return backingCollection;
 	}
 
-	public final Function<? super F, ? extends T> getFunction() {
+	/**
+	 * @return The function which transforms elements into the form in which they
+	 *         are represented in by this view.
+	 */
+	public final Function<F, T> getFunction() {
 		return function;
 	}
 
 	@Override
 	public final int size() {
-		return backingList.size();
+		return backingCollection.size();
 	}
 }

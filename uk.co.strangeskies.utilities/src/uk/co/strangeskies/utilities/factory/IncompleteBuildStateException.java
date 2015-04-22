@@ -18,9 +18,19 @@
  */
 package uk.co.strangeskies.utilities.factory;
 
+/**
+ * Indicates that {@link Configurator#create()} has been invoked on a
+ * {@link Configurator} which is not ready to produce its result.
+ *
+ * @author Elias N Vasylenko
+ */
 public class IncompleteBuildStateException extends BuilderStateException {
 	private static final long serialVersionUID = -84782003263925409L;
 
+	/**
+	 * @param configurator
+	 *          The configurator from which a result was requested.
+	 */
 	public IncompleteBuildStateException(Factory<?> configurator) {
 		super(configurator, "Build state is incomplete.");
 	}
