@@ -141,30 +141,53 @@ public class TypeToken<T> {
 					.resolveTypeVariable(TypeToken.class.getTypeParameters()[0]);
 		}
 
-		if (type instanceof ParameterizedType) {
-			ParameterizedType parameterizedType = (ParameterizedType) type;
-
-			if (wildcards == Wildcards.CAPTURE) {
-				type = TypeVariableCapture.captureWildcardArguments(parameterizedType);
-			} else if (wildcards == Wildcards.INFERENCE) {
-				resolver = new Resolver();
-				type = resolver.inferOverTypeArguments(parameterizedType);
-			}
-		}
+		type = dealWithWildcards(type, wildcards);
 
 		this.type = type;
 
 		rawType = (Class<? super T>) Types.getRawType(type);
 	}
 
+	private Type dealWithWildcards(Type type, Wildcards wildcards) {
+		if (type instanceof ParameterizedType) {
+			ParameterizedType parameterizedType = (ParameterizedType) type;
+
+			if (wildcards == Wildcards.CAPTURE) {
+				type = TypeVariableCapture.captureWildcardArguments(parameterizedType);
+			} else if (wildcards == Wildcards.INFERENCE) {
+				if (this.resolver == null)
+					this.resolver = new Resolver();
+				type = this.resolver.inferOverTypeArguments(parameterizedType);
+			}
+		}
+		return type;
+	}
+
 	TypeToken(Type type) {
 		this(null, type);
 	}
 
-	@SuppressWarnings("unchecked")
+	TypeToken(Type type, Wildcards wildcards) {
+		this(null, type, wildcards);
+	}
+
 	TypeToken(Resolver resolver, Type type) {
+		this(resolver, type, Wildcards.PRESERVE);
+	}
+
+	@SuppressWarnings("unchecked")
+	TypeToken(Resolver resolver, Type type, Wildcards wildcards) {
 		this.resolver = resolver;
-		this.type = resolver == null ? type : resolver.resolveType(type);
+
+		type = dealWithWildcards(type, wildcards);
+		if (resolver == null)
+			this.type = type;
+		else {
+			if (type instanceof ParameterizedType)
+				resolver.incorporateType(type);
+			this.type = resolver.resolveType(type);
+		}
+
 		this.rawType = (Class<? super T>) (resolver == null ? Types
 				.getRawType(this.type) : resolver.getRawType(this.type));
 	}
@@ -194,14 +217,30 @@ public class TypeToken<T> {
 	 */
 	public static TypeToken<?> of(Resolver resolver, Type type) {
 		type = resolver.resolveType(type);
-		if (type instanceof InferenceVariable)
-			return new TypeToken<>(resolver, type);
-		else
-			return of(type);
+		return new TypeToken<>(new Resolver(resolver.getBounds()), type);
 	}
 
 	/**
-	 * Create a TypeToken for an arbitrary type.
+	 * Create a TypeToken for an arbitrary type, resolved with respect to a given
+	 * Resolver.
+	 * 
+	 * @param resolver
+	 *          The resolution context within which to create the class.
+	 * @param type
+	 *          The requested type.
+	 * @param wildcards
+	 *          How to deal with wildcard parameters on the given type.
+	 * @return A TypeToken over the requested type.
+	 */
+	public static TypeToken<?> of(Resolver resolver, Type type,
+			Wildcards wildcards) {
+		type = resolver.resolveType(type);
+		return new TypeToken<>(new Resolver(resolver), type);
+	}
+
+	/**
+	 * Create a TypeToken for an arbitrary type, preserving wildcards where
+	 * possible.
 	 * 
 	 * @param type
 	 *          The requested type.
@@ -209,6 +248,19 @@ public class TypeToken<T> {
 	 */
 	public static TypeToken<?> of(Type type) {
 		return new TypeToken<>(type);
+	}
+
+	/**
+	 * Create a TypeToken for an arbitrary type.
+	 * 
+	 * @param type
+	 *          The requested type.
+	 * @param wildcards
+	 *          How to deal with wildcard parameters on the given type.
+	 * @return A TypeToken over the requested type.
+	 */
+	public static TypeToken<?> of(Type type, Wildcards wildcards) {
+		return new TypeToken<>(type, wildcards);
 	}
 
 	/**
@@ -832,6 +884,8 @@ public class TypeToken<T> {
 	 * Resolve which constructor invocation matches the given name and argument
 	 * list, according to the Java 8 method overload resolution rules.
 	 * 
+	 * @param argument
+	 *          The first argument type for this invocation.
 	 * @param arguments
 	 *          The list of argument types for this invocation.
 	 * @return An {@link Invokable} object wrapping the resolved {@link Method},
@@ -839,7 +893,24 @@ public class TypeToken<T> {
 	 *         argument types.
 	 */
 	public Invokable<? super T, ? extends T> resolveConstructorOverload(
-			Type... arguments) {
+			Type argument, Type... arguments) {
+		return resolveConstructorOverload(Stream
+				.concat(Arrays.asList(argument).stream(), Arrays.stream(arguments))
+				.map(TypeToken::of).collect(Collectors.toList()));
+	}
+
+	/**
+	 * Resolve which constructor invocation matches the given name and argument
+	 * list, according to the Java 8 method overload resolution rules.
+	 * 
+	 * @param arguments
+	 *          The list of argument types for this invocation.
+	 * @return An {@link Invokable} object wrapping the resolved {@link Method},
+	 *         with bounds on any generic type parameters derived from the
+	 *         argument types.
+	 */
+	public Invokable<? super T, ? extends T> resolveConstructorOverload(
+			TypeToken<?>... arguments) {
 		return resolveConstructorOverload(Arrays.asList(arguments));
 	}
 
@@ -854,11 +925,34 @@ public class TypeToken<T> {
 	 *         argument types.
 	 */
 	public Invokable<? super T, ? extends T> resolveConstructorOverload(
-			List<? extends Type> arguments) {
+			List<? extends TypeToken<?>> arguments) {
 		Set<? extends Invokable<? super T, ? extends T>> candidates = Invokable
 				.resolveApplicableInvokables(getConstructors(), arguments);
 
 		return Invokable.resolveMostSpecificInvokable(candidates);
+	}
+
+	/**
+	 * Resolve which method invocation matches the given name and argument list,
+	 * according to the Java 8 method overload resolution rules.
+	 * 
+	 * @param name
+	 *          The name of the method.
+	 * @param argument
+	 *          The first argument type for this invocation.
+	 * @param arguments
+	 *          The list of argument types for this invocation.
+	 * @return An {@link Invokable} object wrapping the resolved {@link Method},
+	 *         with bounds on any generic type parameters derived from the
+	 *         argument types.
+	 */
+	public Invokable<? super T, ?> resolveMethodOverload(String name,
+			Type argument, Type... arguments) {
+		return resolveMethodOverload(
+				name,
+				Stream
+						.concat(Arrays.asList(argument).stream(), Arrays.stream(arguments))
+						.map(TypeToken::of).collect(Collectors.toList()));
 	}
 
 	/**
@@ -874,7 +968,7 @@ public class TypeToken<T> {
 	 *         argument types.
 	 */
 	public Invokable<? super T, ?> resolveMethodOverload(String name,
-			Type... arguments) {
+			TypeToken<?>... arguments) {
 		return resolveMethodOverload(name, Arrays.asList(arguments));
 	}
 
@@ -891,7 +985,7 @@ public class TypeToken<T> {
 	 *         argument types.
 	 */
 	public Invokable<? super T, ?> resolveMethodOverload(String name,
-			List<? extends Type> arguments) {
+			List<? extends TypeToken<?>> arguments) {
 		Set<? extends Invokable<? super T, ? extends Object>> candidates = getMethods(m -> m
 				.getName().equals(name));
 

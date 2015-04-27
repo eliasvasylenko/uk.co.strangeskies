@@ -29,6 +29,7 @@ import uk.co.strangeskies.utilities.Property;
  * 
  * @author Elias N Vasylenko
  * @param <T>
+ *          The type of the expression.
  */
 public class IdentityExpression<T> extends MutableExpressionImpl<T> implements
 		Property<T, T> {
@@ -43,6 +44,7 @@ public class IdentityExpression<T> extends MutableExpressionImpl<T> implements
 	 * Construct with the given default value.
 	 * 
 	 * @param value
+	 *          The initial value of the expression.
 	 */
 	public IdentityExpression(T value) {
 		this.value = value;

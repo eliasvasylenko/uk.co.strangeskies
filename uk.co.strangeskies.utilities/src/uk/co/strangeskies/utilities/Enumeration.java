@@ -143,6 +143,8 @@ public class Enumeration<S extends Enumeration<S>> implements Self<S> {
 	}
 
 	/**
+	 * @param <T>
+	 *          The {@link Enumeration} class.
 	 * @param enumerationClass
 	 *          An Enumeration class for which to retrieve all declared constants.
 	 * @return A list of all enumeration item instances for the given class, in
@@ -159,6 +161,8 @@ public class Enumeration<S extends Enumeration<S>> implements Self<S> {
 	 * Effectively a reimplementation of {@link Enumeration#valueOf} for the
 	 * Enumeration class.
 	 * 
+	 * @param <T>
+	 *          The {@link Enumeration} class.
 	 * @param enumerationClass
 	 *          The class of Enumeration we wish to retrieve an instance of.
 	 * @param name
@@ -175,6 +179,8 @@ public class Enumeration<S extends Enumeration<S>> implements Self<S> {
 	 * A reimplementation of {@link Enum#valueOf} with less pointlessly
 	 * restrictive generic bounds.
 	 * 
+	 * @param <T>
+	 *          The {@link Enum} class.
 	 * @param enumerationClass
 	 *          The class of Enum we wish to retrieve an instance of.
 	 * @param name

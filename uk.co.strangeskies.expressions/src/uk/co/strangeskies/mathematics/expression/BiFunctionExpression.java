@@ -25,8 +25,11 @@ import java.util.function.BiFunction;
  *
  * @author Elias N Vasylenko
  * @param <O1>
+ *          The type of the first operand.
  * @param <O2>
+ *          The type of the second operand.
  * @param <R>
+ *          The type of the result.
  */
 public class BiFunctionExpression<O1, O2, R> extends DependentExpression<R> {
 	private Expression<? extends O1> firstOperand;

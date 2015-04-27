@@ -26,6 +26,7 @@ import java.lang.reflect.InvocationTargetException;
  * 
  * @author Elias N Vasylenko
  * @param <T>
+ *          The type of the expression.
  */
 public interface CloneDecouplingExpression<T extends Cloneable> extends
 		Expression<T> {

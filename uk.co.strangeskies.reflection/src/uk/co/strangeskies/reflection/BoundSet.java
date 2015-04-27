@@ -331,6 +331,33 @@ public class BoundSet {
 		return new IncorporationTarget();
 	}
 
+	/**
+	 * Incorporate each bound from this given bound set into the receiver bound
+	 * set. Inference variables which are contained in the given bound set will
+	 * also be contained within the receiver bound set after incorporation.
+	 * 
+	 * @param boundSet
+	 *          The bound whose bounds we wish to incorporate.
+	 */
+	public void incorporate(BoundSet boundSet) {
+		for (InferenceVariable inferenceVariable : boundSet.getInferenceVariables())
+			if (!inferenceVariableBounds.containsKey(inferenceVariable))
+				inferenceVariableBounds.put(inferenceVariable,
+						new InferenceVariableBounds(this, inferenceVariable));
+
+		for (InferenceVariable inferenceVariable : boundSet.getInferenceVariables()) {
+			InferenceVariableBounds bounds = boundSet.getBoundsOn(inferenceVariable);
+			for (Type equality : bounds.getEqualities())
+				incorporate().equality(inferenceVariable, equality);
+
+			for (Type lowerBound : bounds.getLowerBounds())
+				incorporate().subtype(lowerBound, inferenceVariable);
+
+			for (Type upperBound : bounds.getUpperBounds())
+				incorporate().subtype(inferenceVariable, upperBound);
+		}
+	}
+
 	void addCaptureConversion(CaptureConversion captureConversion) {
 		captureConversions.add(captureConversion);
 

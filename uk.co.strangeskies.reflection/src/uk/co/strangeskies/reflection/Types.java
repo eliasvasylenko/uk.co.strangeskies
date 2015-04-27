@@ -443,6 +443,14 @@ public final class Types {
 			 * Object.
 			 */
 			assignable = true;
+		} else if (to instanceof IntersectionType) {
+			/*
+			 * We must be able to assign to each member of the intersection type.
+			 */
+			Type[] types = ((IntersectionType) to).getTypes();
+
+			assignable = Arrays.stream(types).allMatch(
+					t -> isAssignable(from, t, assignsEncountered));
 		} else if (from instanceof IntersectionType) {
 			/*
 			 * We must be able to assign from at least one member of the intersection
@@ -453,14 +461,6 @@ public final class Types {
 			assignable = types.length == 0
 					|| Arrays.stream(types).anyMatch(
 							f -> isAssignable(f, to, assignsEncountered));
-		} else if (to instanceof IntersectionType) {
-			/*
-			 * We must be able to assign to each member of the intersection type.
-			 */
-			Type[] types = ((IntersectionType) to).getTypes();
-
-			assignable = Arrays.stream(types).allMatch(
-					t -> isAssignable(from, t, assignsEncountered));
 		} else if (from instanceof WildcardType) {
 			/*
 			 * We must be able to assign from at least one of the upper bounds,

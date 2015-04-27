@@ -19,12 +19,15 @@
 package uk.co.strangeskies.utilities;
 
 /**
- * This inferface respresents a gettable and settable property of a given type.
+ * This interface represents a gettable and settable property of a given type.
  * 
  * @author Elias N Vasylenko
  *
  * @param <T>
+ *          The type of the property.
  * @param <R>
+ *          The supertype of the property type with which we can set a property.
+ *          Commonly this is the same as {@code T}.
  */
 public interface Property<T extends R, R> {
 	/**

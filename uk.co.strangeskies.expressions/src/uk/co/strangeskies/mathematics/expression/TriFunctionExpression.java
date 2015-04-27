@@ -25,9 +25,13 @@ import uk.co.strangeskies.utilities.function.TriFunction;
  *
  * @author Elias N Vasylenko
  * @param <O1>
+ *          The type of the first operand.
  * @param <O2>
+ *          The type of the second operand.
  * @param <O3>
+ *          The type of the third operand.
  * @param <R>
+ *          The type of the result.
  */
 public abstract class TriFunctionExpression<O1, O2, O3, R> extends
 		DependentExpression<R> {

@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
  * @author Elias N Vasylenko
  *
  * @param <T>
+ *          The type of the objects whose properties we wish to identify.
  */
 public class PropertySet<T> {
 	private final Set<Function<? super T, Object>> properties;

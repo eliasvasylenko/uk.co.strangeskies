@@ -27,7 +27,9 @@ import java.util.NoSuchElementException;
  * @author Elias N Vasylenko
  *
  * @param <H>
+ *          The type of the head item.
  * @param <T>
+ *          The fully qualified type of the tail {@link Tuple}.
  */
 public class Tuple<H, T extends Tuple<?, ?>> {
 	private H head;
@@ -49,7 +51,9 @@ public class Tuple<H, T extends Tuple<?, ?>> {
 	 * entries.
 	 * 
 	 * @param head
+	 *          The head item.
 	 * @param tail
+	 *          The tail {@link Tuple}.
 	 */
 	public Tuple(H head, T tail) {
 		try {
@@ -156,6 +160,8 @@ public class Tuple<H, T extends Tuple<?, ?>> {
 	 * value, resulting in a tuple one extra in size. The receiving tuple remains
 	 * unchanged.
 	 * 
+	 * @param <P>
+	 *          The type of the item to prepend.
 	 * @param prepend
 	 *          The head value of the new tuple.
 	 * @return A new tuple instance with the given value as its head, and this

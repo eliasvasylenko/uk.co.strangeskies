@@ -25,6 +25,7 @@ package uk.co.strangeskies.utilities;
  * @author Elias N Vasylenko
  *
  * @param <T>
+ *          The type of the property.
  */
 public class IdentityProperty<T> implements Property<T, T> {
 	private T value;

@@ -35,8 +35,11 @@ public class Triple<A, B, C> extends Tuple<A, Pair<B, C>> {
 	 * Initialise a triple with the given three values.
 	 * 
 	 * @param a
+	 *          The first item.
 	 * @param b
+	 *          The second item.
 	 * @param c
+	 *          The third, and last, item.
 	 */
 	public Triple(A a, B b, C c) {
 		super(a, new Pair<>(b, c));

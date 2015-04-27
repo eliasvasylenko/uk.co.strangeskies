@@ -27,6 +27,7 @@ import java.util.function.Supplier;
  * @author Elias N Vasylenko
  * 
  * @param <T>
+ *          The type of the component to be decorated.
  */
 public abstract class Decorator<T> {
 	private final/*  */Supplier<T> component;
@@ -35,6 +36,7 @@ public abstract class Decorator<T> {
 	 * Create a decorator for a given instance.
 	 * 
 	 * @param component
+	 *          The component we wish to decorate.
 	 */
 	public Decorator(T component) {
 		this.component = () -> component;

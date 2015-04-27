@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 /**
- * A representation of an unknown instantitation of a type variable or inference
+ * A representation of an unknown instantiation of a type variable or inference
  * variable which is known to satisfy a certain set of upper and lower bonds.
  * 
  * @author Elias N Vasylenko
@@ -52,9 +52,6 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	private TypeVariableCapture(Type[] upperBounds, Type[] lowerBounds,
 			GenericDeclaration declaration) {
 		this.name = "CAP#" + COUNTER.incrementAndGet();
-
-		if (COUNTER.get() > 160)
-			throw new StackOverflowError();
 
 		this.upperBounds = upperBounds.clone();
 		this.lowerBounds = lowerBounds.clone();

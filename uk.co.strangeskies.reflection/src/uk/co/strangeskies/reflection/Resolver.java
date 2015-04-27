@@ -18,7 +18,6 @@
  */
 package uk.co.strangeskies.reflection;
 
-import java.io.Serializable;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.ParameterizedType;
@@ -29,18 +28,16 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.utilities.IdentityProperty;
-import uk.co.strangeskies.utilities.Self;
 import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 
@@ -171,7 +168,7 @@ public class Resolver {
 		Set<InferenceVariable> leftOfCapture = new HashSet<>();
 
 		Set<InferenceVariable> remainingInferenceVariables = new HashSet<>(
-				getInferenceVariables());
+				bounds.getInferenceVariables());
 		remainingInferenceVariables.removeAll(bounds.getInstantiatedVariables());
 
 		/*
@@ -889,8 +886,8 @@ public class Resolver {
 
 	/**
 	 * Resolve the proper instantiation of a given {@link TypeVariable} if one
-	 * exists. The type variable will be resolved within the context provided by
-	 * its declaring class.
+	 * exists. The type variable will be resolved to an {@link InferenceVariable}
+	 * with respect to the context provided by its declaring class.
 	 * 
 	 * @param typeVariable
 	 *          The type variable whose proper instantiation we wish to determine.
@@ -904,8 +901,9 @@ public class Resolver {
 
 	/**
 	 * Resolve the proper instantiation of a given {@link TypeVariable} if one
-	 * exists. The type variable will be resolved within the context provided by
-	 * its the given {@link GenericDeclaration}.
+	 * exists. The type variable will be resolved to an {@link InferenceVariable}
+	 * with respect to the context provided by the given
+	 * {@link GenericDeclaration}.
 	 * 
 	 * @param declaration
 	 *          The {@link GenericDeclaration} under which we will check
@@ -925,6 +923,16 @@ public class Resolver {
 				: resolveInferenceVariable(inferenceVariable);
 	}
 
+	/**
+	 * Resolve the proper instantiation of a given {@link InferenceVariable} if
+	 * one exists.
+	 * 
+	 * @param variable
+	 *          The inference variable whose proper instantiation we wish to
+	 *          determine.
+	 * @return The proper instantiation of the given {@link InferenceVariable} if
+	 *         one exists, otherwise the {@link InferenceVariable} itself.
+	 */
 	public Type resolveInferenceVariable(InferenceVariable variable) {
 		if (bounds.getInferenceVariables().contains(variable))
 			return bounds.getBoundsOn(variable).getInstantiation().orElse(variable);
@@ -932,21 +940,64 @@ public class Resolver {
 			return variable;
 	}
 
+	/**
+	 * Find all the inference variables which have been created through
+	 * interaction with this {@link Resolver}. Note that this set of collections
+	 * may only be a subset of those which would be returned by an invocation of
+	 * {@link BoundSet#getInferenceVariables()} on the underlying resolver.
+	 * 
+	 * @return The set of variables incorporated into this {@link Resolver}.
+	 */
 	public Set<InferenceVariable> getInferenceVariables() {
-		return bounds.getInferenceVariables();
+		return capturedTypeVariables.values().stream().map(Map::values)
+				.flatMap(Collection::stream).collect(Collectors.toSet());
 	}
 
+	/**
+	 * Find all the inference variables registered within the context of the given
+	 * {@link GenericDeclaration}. Typically this will be one for each of the
+	 * {@link TypeVariable}s in the declaration, and one for each
+	 * {@link TypeVariable} in any non-statically enclosing classes.
+	 * 
+	 * @param declaration
+	 *          The {@link GenericDeclaration} for which we will resolve inference
+	 *          variables.
+	 * @return The set of variables incorporated into this {@link Resolver} under
+	 *         the context provided by the given declaration.
+	 */
 	public Map<TypeVariable<?>, InferenceVariable> getInferenceVariables(
 			GenericDeclaration declaration) {
 		incorporateTypeParameters(declaration);
 		return new HashMap<>(capturedTypeVariables.get(declaration));
 	}
 
+	/**
+	 * Resolve the proper {@link InferenceVariable} for a given
+	 * {@link TypeVariable} with respect to the context provided by its declaring
+	 * class.
+	 * 
+	 * @param typeVariable
+	 *          The type variable whose proper instantiation we wish to determine.
+	 * @return The proper instantiation of the given {@link TypeVariable} if one
+	 *         exists, otherwise the {@link TypeVariable} itself.
+	 */
 	public InferenceVariable getInferenceVariable(TypeVariable<?> typeVariable) {
 		return getInferenceVariable(typeVariable.getGenericDeclaration(),
 				typeVariable);
 	}
 
+	/**
+	 * Resolve the {@link InferenceVariable} for a given {@link TypeVariable} with
+	 * respect to the context provided by the given {@link GenericDeclaration}.
+	 * 
+	 * @param declaration
+	 *          The {@link GenericDeclaration} under which we will check
+	 *          registration of the given {@link TypeVariable}.
+	 * @param typeVariable
+	 *          The type variable whose proper instantiation we wish to determine.
+	 * @return The proper instantiation of the given {@link TypeVariable} if one
+	 *         exists, otherwise the {@link TypeVariable} itself.
+	 */
 	public InferenceVariable getInferenceVariable(GenericDeclaration declaration,
 			TypeVariable<?> typeVariable) {
 		incorporateTypeParameters(declaration);

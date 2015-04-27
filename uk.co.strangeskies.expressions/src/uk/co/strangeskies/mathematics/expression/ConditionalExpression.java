@@ -27,6 +27,7 @@ import java.util.Arrays;
  * 
  * @author Elias N Vasylenko
  * @param <O>
+ *          The type of the expression.
  */
 public class ConditionalExpression<O> extends DependentExpression<O> {
 	private final Expression<? extends /*  */Boolean> condition;

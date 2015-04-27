@@ -33,7 +33,9 @@ public class Pair<L, R> extends Tuple<L, Unit<R>> {
 	 * Initialise a pair with the given two values.
 	 * 
 	 * @param left
+	 *          The first, left, item.
 	 * @param right
+	 *          The second, right, item.
 	 */
 	public Pair(L left, R right) {
 		super(left, new Unit<>(right));

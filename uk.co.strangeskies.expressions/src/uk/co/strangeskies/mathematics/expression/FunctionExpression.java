@@ -28,7 +28,9 @@ import java.util.function.Function;
  * 
  * @author Elias N Vasylenko
  * @param <O>
+ *          The type of the operand.
  * @param <R>
+ *          The type of the result.
  */
 public class FunctionExpression<O, R> extends DependentExpression<R> {
 	private Expression<? extends O> operand;

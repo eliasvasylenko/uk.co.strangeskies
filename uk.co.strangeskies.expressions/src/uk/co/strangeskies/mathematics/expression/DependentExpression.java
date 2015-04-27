@@ -26,6 +26,12 @@ import uk.co.strangeskies.mathematics.expression.collection.ExpressionTreeSet;
 import uk.co.strangeskies.mathematics.expression.collection.SortedExpressionSet;
 import uk.co.strangeskies.utilities.IdentityComparator;
 
+/**
+ * TODO
+ * 
+ * @author Elias N Vasylenko
+ * @param <T>
+ */
 public abstract class DependentExpression<T> extends MutableExpressionImpl<T> {
 	private final SortedExpressionSet<?, Expression<? extends Object>> dependencies;
 

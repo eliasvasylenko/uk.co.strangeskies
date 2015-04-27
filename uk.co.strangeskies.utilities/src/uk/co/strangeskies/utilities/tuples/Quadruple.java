@@ -37,9 +37,13 @@ public class Quadruple<A, B, C, D> extends Tuple<A, Triple<B, C, D>> {
 	 * Initialise a quadruple with the given five values.
 	 * 
 	 * @param a
+	 *          The first item.
 	 * @param b
+	 *          The second item.
 	 * @param c
+	 *          The third item.
 	 * @param d
+	 *          The fourth, and last, item.
 	 */
 	public Quadruple(A a, B b, C c, D d) {
 		super(a, new Triple<>(b, c, d));

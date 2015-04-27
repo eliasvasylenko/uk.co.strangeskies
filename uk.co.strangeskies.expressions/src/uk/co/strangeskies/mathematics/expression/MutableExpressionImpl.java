@@ -32,6 +32,7 @@ import uk.co.strangeskies.utilities.Observer;
  * 
  * @author Elias N Vasylenko
  * @param <T>
+ *          The type of the expression.
  */
 public abstract class MutableExpressionImpl<T> implements MutableExpression<T> {
 	private final Set<Observer<? super Expression<T>>> observers;

@@ -39,8 +39,16 @@ public interface InvertibleFunction<T, R> extends Function<T, R> {
 	public InvertibleFunction<R, T> getInverse();
 
 	/**
+	 * @param <T>
+	 *          The operand type of the forward function, and the result type of
+	 *          its reverse.
+	 * @param <R>
+	 *          The result type of the forward function, and the operand type of
+	 *          its reverse.
 	 * @param function
+	 *          The function in forward direction.
 	 * @param reverse
+	 *          The reverse of the function.
 	 * @return An invertible function using the two given functions.
 	 */
 	public static <T, R> InvertibleFunction<T, R> over(
@@ -60,8 +68,18 @@ public interface InvertibleFunction<T, R> extends Function<T, R> {
 	}
 
 	/**
+	 * @param <T>
+	 *          The operand type of the first function.
+	 * @param <I>
+	 *          An intermediate type which the result type of the first function
+	 *          can be assigned to, and which can assign to the operand type of
+	 *          the second function.
+	 * @param <R>
+	 *          The result type of the second function.
 	 * @param first
+	 *          The first function to compose.
 	 * @param second
+	 *          The second function to compose.
 	 * @return Composition of two invertible functions into a single invertible
 	 *         function.
 	 */

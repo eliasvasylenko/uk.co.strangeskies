@@ -18,7 +18,6 @@
  */
 package uk.co.strangeskies.utilities.flowcontrol;
 
-import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -47,12 +46,22 @@ public class RunQueue {
 	private boolean killOnInterrupt;
 
 	/**
-	 * create run queue
+	 * Create run queue which does not die when a runnable throws an
+	 * {@link InterruptedException}.
 	 */
 	public RunQueue() {
 		this(false);
 	}
 
+	/**
+	 * Create run queue which may or may not die when a runnable throws an
+	 * {@link InterruptedException}.
+	 * 
+	 * @param killOnInterrupt
+	 *          If true, the {@link RunQueue} should die when an
+	 *          {@link InterruptedException} is encountered, ignoring any
+	 *          remaining queue.
+	 */
 	public RunQueue(boolean killOnInterrupt) {
 		killed = false;
 		dead = false;
@@ -98,11 +107,13 @@ public class RunQueue {
 	}
 
 	/**
-	 * add a runnable to the back of the queue for execution and continue
-	 * execution in calling thread
+	 * Add a runnable to the back of the queue for execution then return
+	 * immediately.
 	 * 
 	 * @param runnable
 	 *          the runnable to add to the queue
+	 * @return True if the runnable was added to the queue successfully, false
+	 *         otherwise.
 	 */
 	public synchronized boolean run(Runnable runnable) {
 		if (runnable == null || isKilled()) {
@@ -115,26 +126,28 @@ public class RunQueue {
 	}
 
 	/**
-	 * add a runnable to the back of the queue for execution and block execution
-	 * in calling thread until done
+	 * Add a runnable to the back of the queue for execution, and block execution
+	 * in the invoking thread until done.
 	 * 
 	 * @param runnable
 	 *          the runnable to add to the queue
+	 * @return True if the runnable was added to the queue and run successfully,
+	 *         false otherwise.
+	 * @throws InterruptedException
+	 *           Thrown if interrupted when waiting for the runnable to complete.
 	 */
-	public Boolean runAndWait(Runnable runnable)
-			throws RunQueueInterruptedException {
-		if (runnable == null || isKilled()) {
-			return false;
-		}
-
-		if (Thread.currentThread() == runThread) {
-			System.out.println("   !!! from runqueue runthread...");
-			runnable.run();
-			return true;
-		}
-
+	public boolean runAndWait(Runnable runnable) throws InterruptedException {
 		long waitingFor;
 		synchronized (this) {
+			if (runnable == null || isKilled()) {
+				return false;
+			}
+
+			if (Thread.currentThread() == runThread) {
+				runnable.run();
+				return true;
+			}
+
 			if (!run(runnable)) {
 				return false;
 			}
@@ -148,7 +161,7 @@ public class RunQueue {
 					runThread.wait();
 				} catch (InterruptedException e) {
 					if (previousRelease == releasing) {
-						throw new RunQueueInterruptedException(e, waitingFor);
+						throw e;
 					}
 				}
 			}
@@ -157,20 +170,23 @@ public class RunQueue {
 		return true;
 	}
 
+	// TODO could wait forever if queue is killed.
 	/**
-	 * same as run and wait, but ignores interrupts while waiting for the runnable
-	 * to be run. Be careful when using this method!
+	 * THe same as {@link #runAndWait(Runnable)}, but ignores interrupts while
+	 * waiting for the runnable to be run. Be careful when using this method!
 	 * 
 	 * @param runnable
-	 * @return
+	 *          The {@link Runnable} we wish to add to the queue.
+	 * @return True the {@link Runnable} was successfully added to the queue,
+	 *         false otherwise.
 	 */
 	public boolean runAndWaitUninterruptible(Runnable runnable) {
-		if (runnable == null || isKilled()) {
-			return false;
-		}
-
 		long waitingFor;
 		synchronized (this) {
+			if (runnable == null || isKilled()) {
+				return false;
+			}
+
 			if (!run(runnable)) {
 				return false;
 			}
@@ -188,52 +204,76 @@ public class RunQueue {
 		return true;
 	}
 
-	public void waitFor(long waitingFor, boolean interruptible)
-			throws RunQueueInterruptedException {
+	private void waitFor(long waitingFor, boolean interruptible)
+			throws InterruptedException {
 		synchronized (runThread) {
 			while (releasing < waitingFor) {
 				try {
 					runThread.wait();
 				} catch (InterruptedException e) {
 					if (interruptible) {
-						throw new RunQueueInterruptedException(e, waitingFor);
+						throw e;
 					}
 				}
 			}
 		}
 	}
 
-	public void waitFor(long waitingFor) throws RunQueueInterruptedException {
-		waitFor(waitingFor, true);
-	}
-
-	public void waitForUninterruptible(long waitingFor) {
-		try {
-			waitFor(waitingFor, false);
-		} catch (RunQueueInterruptedException e) {}
-	}
-
+	/**
+	 * Find to which position in the queue execution has reached.
+	 * 
+	 * @return The number of {@link Runnable}s which have already been completed.
+	 */
 	public synchronized long getQueuePosition() {
 		return waiting;
 	}
 
-	public void waitForCurrent(boolean interruptible)
-			throws RunQueueInterruptedException {
+	/**
+	 * Wait for the currently running {@link Runnable}.
+	 * 
+	 * @param interruptible
+	 *          True if the invoking thread should stop waiting when interrupted,
+	 *          false otherwise.
+	 * @throws InterruptedException
+	 *           If the thread is interrupted whilst waiting.
+	 */
+	public void waitForCurrent(boolean interruptible) throws InterruptedException {
 		waitFor(getQueuePosition(), interruptible);
 	}
 
-	public void waitForCurrent() throws RunQueueInterruptedException {
+	/**
+	 * Wait for the currently running {@link Runnable}. As
+	 * {@link #waitForCurrent(boolean)} with the argument {@code true} provided to
+	 * the single parameter.
+	 * 
+	 * @throws InterruptedException
+	 *           If the thread is interrupted whilst waiting.
+	 */
+	public void waitForCurrent() throws InterruptedException {
 		waitForCurrent(true);
 	}
 
+	/**
+	 * Wait for the currently running {@link Runnable}. As
+	 * {@link #waitForCurrent(boolean)} with the argument {@code false} provided
+	 * to the single parameter.
+	 */
 	public void waitForCurrentUninterruptible() {
 		try {
 			waitForCurrent(false);
-		} catch (RunQueueInterruptedException e) {}
+		} catch (InterruptedException e) {}
 	}
 
-	public void waitForEmpty(boolean interruptible)
-			throws RunQueueInterruptedException {
+	/**
+	 * Wait until all items in the queue have completed.
+	 * 
+	 * @param interruptible
+	 *          True if the invoking thread should stop waiting when interrupted,
+	 *          false otherwise.
+	 * @throws InterruptedException
+	 *           If the thread is interrupted whilst waiting.
+	 */
+	public void waitForEmpty(boolean interruptible) throws InterruptedException {
 		synchronized (runThread) {
 			while (releasing < getQueuePosition()) {
 				waitForCurrent(interruptible);
@@ -241,14 +281,27 @@ public class RunQueue {
 		}
 	}
 
-	public void waitForEmpty() throws RunQueueInterruptedException {
+	/**
+	 * Wait until all items in the queue have completed. As
+	 * {@link #waitForEmpty(boolean)} with the argument {@code true} provided to
+	 * the single parameter.
+	 * 
+	 * @throws InterruptedException
+	 *           If the thread is interrupted whilst waiting.
+	 */
+	public void waitForEmpty() throws InterruptedException {
 		waitForEmpty(true);
 	}
 
+	/**
+	 * Wait until all items in the queue have completed. As
+	 * {@link #waitForEmpty(boolean)} with the argument {@code false} provided to
+	 * the single parameter.
+	 */
 	public void waitForEmptyUninterruptible() {
 		try {
 			waitForEmpty(false);
-		} catch (RunQueueInterruptedException e) {}
+		} catch (InterruptedException e) {}
 	}
 
 	/**
@@ -291,7 +344,7 @@ public class RunQueue {
 	 * 
 	 * returns instantly
 	 * 
-	 * @return remaining unexecuted runnables
+	 * @return The remaining {@link Runnable}s left unexecuted.
 	 */
 	public synchronized LinkedBlockingQueue<Runnable> kill() {
 		new Thread() {
@@ -306,7 +359,7 @@ public class RunQueue {
 	/**
 	 * same as kill() but blocks until finished execution
 	 * 
-	 * @return
+	 * @return The remaining {@link Runnable}s left unexecuted.
 	 */
 	public LinkedBlockingQueue<Runnable> killAndWait() {
 		synchronized (this) {
@@ -326,15 +379,5 @@ public class RunQueue {
 
 	protected synchronized boolean isKilled() {
 		return killed;
-	}
-
-	public static void dumpAllThreads() {
-		for (Map.Entry<Thread, StackTraceElement[]> stackTrace : Thread
-				.getAllStackTraces().entrySet()) {
-			System.out.println(stackTrace.getKey());
-			for (StackTraceElement stackTraceElement : stackTrace.getValue()) {
-				System.out.println("  " + stackTraceElement);
-			}
-		}
 	}
 }

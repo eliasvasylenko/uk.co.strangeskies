@@ -36,7 +36,9 @@ public interface ServiceWrapperManager extends EventListenerHook, FindHook {
 	 * point according to the configuration of the wrapper.
 	 * 
 	 * @param serviceWrapper
+	 *          The {@link ServiceWrapper} instance to register.
 	 * @param serviceProperties
+	 *          The service properties of the service wrapper.
 	 */
 	public void addServiceWrapper(ServiceWrapper<?> serviceWrapper,
 			Map<String, Object> serviceProperties);
@@ -47,7 +49,9 @@ public interface ServiceWrapperManager extends EventListenerHook, FindHook {
 	 * appropriate.
 	 * 
 	 * @param serviceWrapper
+	 *          The {@link ServiceWrapper} instance to update.
 	 * @param serviceProperties
+	 *          The updated service properties of the service wrapper.
 	 */
 	public void modifyServiceWrapper(ServiceWrapper<?> serviceWrapper,
 			Map<String, Object> serviceProperties);
@@ -58,6 +62,7 @@ public interface ServiceWrapperManager extends EventListenerHook, FindHook {
 	 * registry, which could mean services in use are removed.
 	 * 
 	 * @param serviceWrapper
+	 *          The {@link ServiceWrapper} instance to unregister.
 	 */
 	public void removeServiceWrapper(ServiceWrapper<?> serviceWrapper);
 

@@ -127,7 +127,7 @@ public class ServiceWrapperManagerImpl implements ServiceWrapperManager {
 			hideServices = HideServices.valueOf((String) serviceProperties
 					.get(ServiceWrapper.HIDE_SERVICES));
 		} catch (ClassCastException | NullPointerException e) {
-			hideServices = HideServices.NEVER;
+			hideServices = HideServices.WHEN_WRAPPED;
 		}
 
 		managedServiceWrappers.get(serviceWrapper).update(serviceRanking,

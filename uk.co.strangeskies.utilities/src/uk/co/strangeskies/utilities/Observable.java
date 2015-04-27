@@ -25,6 +25,8 @@ package uk.co.strangeskies.utilities;
  * @author Elias N Vasylenko
  *
  * @param <M>
+ *          The message type. This may be {@link Void} if no message need be
+ *          sent.
  */
 public interface Observable<M> {
 	/**

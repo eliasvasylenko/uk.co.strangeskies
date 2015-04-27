@@ -97,6 +97,8 @@ public interface Expression<T> extends Observable<Expression<T>> {
 	 * set is not maintained, as observers will never receive notifications, so
 	 * attempting to add or remove them will always return {@code true}.
 	 * 
+	 * @param <T>
+	 *          The type of the expression.
 	 * @param value
 	 *          The value of the new immutable {@link Expression}.
 	 * @return An immutable {@link Expression} instance whose value is always that

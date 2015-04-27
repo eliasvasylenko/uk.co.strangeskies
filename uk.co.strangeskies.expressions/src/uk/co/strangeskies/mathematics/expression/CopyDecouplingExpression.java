@@ -27,6 +27,7 @@ import uk.co.strangeskies.utilities.Copyable;
  * 
  * @author Elias N Vasylenko
  * @param <T>
+ *          The type of the expression.
  */
 public interface CopyDecouplingExpression<T extends Copyable<T>> extends
 		Expression<T> {

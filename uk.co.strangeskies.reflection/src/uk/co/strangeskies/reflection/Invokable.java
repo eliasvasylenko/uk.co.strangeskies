@@ -89,25 +89,47 @@ public class Invokable<T, R> {
 	private Invokable(TypeToken<T> receiverType, TypeToken<R> returnType,
 			Executable executable, BiFunction<T, List<?>, R> invocationFunction) {
 		this(receiverType.getResolver(), receiverType, returnType, executable,
-				invocationFunction);
+				invocationFunction, null);
 	}
 
 	@SuppressWarnings("unchecked")
 	private Invokable(Resolver resolver, TypeToken<T> receiverType,
 			TypeToken<R> returnType, Executable executable,
-			BiFunction<T, List<?>, R> invocationFunction) {
+			BiFunction<T, List<?>, R> invocationFunction,
+			List<? extends Type> parameters) {
 		this.resolver = resolver;
 
 		this.executable = executable;
 		resolver.incorporateTypeParameters(getExecutable());
 
-		this.receiverType = (TypeToken<T>) TypeToken.of(resolver,
-				receiverType.getType());
+		if (isStatic())
+			this.receiverType = (TypeToken<T>) TypeToken.of(resolver.getRawType(receiverType
+					.getType()));
+		else
+			this.receiverType = (TypeToken<T>) TypeToken.of(resolver,
+					receiverType.getType());
 
 		this.returnType = (TypeToken<R>) TypeToken.of(resolver,
 				returnType.getType());
 
-		parameters = Arrays.stream(executable.getGenericParameterTypes())
+		Type[] genericParameters = executable.getGenericParameterTypes();
+		if (parameters == null)
+			parameters = Arrays.asList(genericParameters);
+		else {
+			for (int i = 0; i < parameters.size(); i++) {
+				Type first = resolver.resolveType(parameters.get(i));
+				Type second = resolver.resolveType(genericParameters[i]);
+
+				if (Types.isAssignable(second, first))
+					first = second;
+				else if (!Types.isAssignable(first, second))
+					throw new IllegalArgumentException();
+
+				genericParameters[i] = first;
+			}
+		}
+
+		this.parameters = Arrays.stream(genericParameters)
 				.map(resolver::resolveType).collect(Collectors.toList());
 
 		this.invocationFunction = invocationFunction;
@@ -525,7 +547,7 @@ public class Invokable<T, R> {
 
 		return new Invokable<>(resolver, receiverType, (TypeToken<S>) TypeToken.of(
 				resolver, returnType.getType()), executable,
-				(BiFunction<T, List<?>, S>) invocationFunction).infer();
+				(BiFunction<T, List<?>, S>) invocationFunction, parameters).infer();
 	}
 
 	/**
@@ -561,110 +583,6 @@ public class Invokable<T, R> {
 	 */
 	public <U> Invokable<T, U> withInferredType(TypeToken<U> targetType,
 			TypeToken<?>... arguments) {
-		return withInferredType(targetType, Arrays.asList(arguments));
-	}
-
-	/**
-	 * Derive a new {@link Invokable} fulfilling two conditions.
-	 * 
-	 * <ul>
-	 * <li>Firstly, that the result be assignment compatible with the given target
-	 * type.</li>
-	 * <li>Secondly, that the arguments are compatible in either a
-	 * {@link #withLooseApplicability(List) loose invocation context}, or failing
-	 * that, a {@link #withVariableArityApplicability(List) variable arity
-	 * invocation context}.</li>
-	 * </ul>
-	 * 
-	 * <p>
-	 * This method uses the same type inference algorithm as the Java language,
-	 * and so will only fail in those cases where the Java compiler would have
-	 * failed to infer a type.
-	 * 
-	 * @param <U>
-	 *          The derived {@link Invokable} must be assignment compatible with
-	 *          this type.
-	 * @param targetType
-	 *          The derived {@link Invokable} must be assignment compatible with
-	 *          this type.
-	 * @param arguments
-	 *          The derived {@link Invokable} must be loose invocation compatible,
-	 *          or failing that variable arity compatible, with the given
-	 *          arguments.
-	 * @return A new {@link Invokable} compatible with the given target type and
-	 *         parameters, and which has more specific arguments, type arguments,
-	 *         and return type than the receiving {@link Invokable}.
-	 */
-	@SuppressWarnings({ "unchecked" })
-	public <U> Invokable<T, U> withInferredType(TypeToken<U> targetType,
-			List<? extends TypeToken<?>> arguments) {
-		return (Invokable<T, U>) withInferredType(targetType.getType(), arguments
-				.stream().map(TypeToken::getType).collect(Collectors.toList()));
-	}
-
-	/**
-	 * Derive a new {@link Invokable} fulfilling two conditions.
-	 * 
-	 * <ul>
-	 * <li>Firstly, that the result be assignment compatible with the given target
-	 * type.</li>
-	 * <li>Secondly, that the arguments are compatible in either a
-	 * {@link #withLooseApplicability(List) loose invocation context}, or failing
-	 * that, a {@link #withVariableArityApplicability(List) variable arity
-	 * invocation context}.</li>
-	 * </ul>
-	 * 
-	 * <p>
-	 * This method uses the same type inference algorithm as the Java language,
-	 * and so will only fail in those cases where the Java compiler would have
-	 * failed to infer a type.
-	 * 
-	 * @param targetType
-	 *          The derived {@link Invokable} must be assignment compatible with
-	 *          this type.
-	 * @param arguments
-	 *          The derived {@link Invokable} must be loose invocation compatible,
-	 *          or failing that variable arity compatible, with the given
-	 *          arguments.
-	 * @return A new {@link Invokable} compatible with the given target type and
-	 *         parameters, and which has more specific arguments, type arguments,
-	 *         and return type than the receiving {@link Invokable}.
-	 */
-	public Invokable<T, ? extends R> withInferredType(Type targetType,
-			Type... arguments) {
-		return withInferredType(targetType, Arrays.asList(arguments));
-	}
-
-	/**
-	 * Derive a new {@link Invokable} fulfilling two conditions.
-	 * 
-	 * <ul>
-	 * <li>Firstly, that the result be assignment compatible with the given target
-	 * type.</li>
-	 * <li>Secondly, that the arguments are compatible in either a
-	 * {@link #withLooseApplicability(List) loose invocation context}, or failing
-	 * that, a {@link #withVariableArityApplicability(List) variable arity
-	 * invocation context}.</li>
-	 * </ul>
-	 * 
-	 * <p>
-	 * This method uses the same type inference algorithm as the Java language,
-	 * and so will only fail in those cases where the Java compiler would have
-	 * failed to infer a type.
-	 * 
-	 * @param targetType
-	 *          The derived {@link Invokable} must be assignment compatible with
-	 *          this type.
-	 * @param arguments
-	 *          The derived {@link Invokable} must be loose invocation compatible,
-	 *          or failing that variable arity compatible, with the given
-	 *          arguments.
-	 * @return A new {@link Invokable} compatible with the given target type and
-	 *         parameters, and which has more specific arguments, type arguments,
-	 *         and return type than the receiving {@link Invokable}.
-	 */
-	public Invokable<T, ? extends R> withInferredType(Type targetType,
-			List<? extends Type> arguments) {
 		Invokable<T, R> invokable;
 		try {
 			invokable = withLooseApplicability(arguments);
@@ -690,7 +608,23 @@ public class Invokable<T, R> {
 			resolver.infer(getReceiverType().getType());
 
 		return new Invokable<>(resolver, receiverType, returnType, executable,
-				invocationFunction);
+				invocationFunction, parameters);
+	}
+
+	/**
+	 * @return A new derived {@link Invokable} instance with generic method
+	 *         parameters inferred, and if this is a constructor on a generic
+	 *         type, with generic type parameters inferred, also.
+	 */
+	public Invokable<T, R> inferParameterTypes() {
+		Resolver resolver = getResolver();
+
+		for (Type parameter : parameters)
+			resolver.infer(resolver.getBounds().getInferenceVariablesMentionedBy(
+					parameter));
+
+		return new Invokable<>(resolver, receiverType, returnType, executable,
+				invocationFunction, parameters);
 	}
 
 	/**
@@ -705,7 +639,7 @@ public class Invokable<T, R> {
 	 *         strict compatibility invocation context, we throw an exception.
 	 *         Otherwise, we return the derived {@link Invokable}.
 	 */
-	public Invokable<T, R> withStrictApplicability(Type... arguments) {
+	public Invokable<T, R> withStrictApplicability(TypeToken<?>... arguments) {
 		return withStrictApplicability(Arrays.asList(arguments));
 	}
 
@@ -721,7 +655,8 @@ public class Invokable<T, R> {
 	 *         strict compatibility invocation context, we throw an exception.
 	 *         Otherwise, we return the derived {@link Invokable}.
 	 */
-	public Invokable<T, R> withStrictApplicability(List<? extends Type> arguments) {
+	public Invokable<T, R> withStrictApplicability(
+			List<? extends TypeToken<?>> arguments) {
 		// TODO && make sure no boxing/unboxing occurs!
 
 		return withLooseApplicability(arguments);
@@ -739,7 +674,7 @@ public class Invokable<T, R> {
 	 *         loose compatibility invocation context, we throw an exception.
 	 *         Otherwise, we return the derived {@link Invokable}.
 	 */
-	public Invokable<T, R> withLooseApplicability(Type... arguments) {
+	public Invokable<T, R> withLooseApplicability(TypeToken<?>... arguments) {
 		return withLooseApplicability(Arrays.asList(arguments));
 	}
 
@@ -755,7 +690,8 @@ public class Invokable<T, R> {
 	 *         loose compatibility invocation context, we throw an exception.
 	 *         Otherwise, we return the derived {@link Invokable}.
 	 */
-	public Invokable<T, R> withLooseApplicability(List<? extends Type> arguments) {
+	public Invokable<T, R> withLooseApplicability(
+			List<? extends TypeToken<?>> arguments) {
 		return withLooseApplicability(false, arguments);
 	}
 
@@ -771,7 +707,8 @@ public class Invokable<T, R> {
 	 *         variable arity invocation context, we throw an exception.
 	 *         Otherwise, we return the derived {@link Invokable}.
 	 */
-	public Invokable<T, R> withVariableArityApplicability(Type... arguments) {
+	public Invokable<T, R> withVariableArityApplicability(
+			TypeToken<?>... arguments) {
 		return withVariableArityApplicability(Arrays.asList(arguments));
 	}
 
@@ -788,12 +725,12 @@ public class Invokable<T, R> {
 	 *         Otherwise, we return the derived {@link Invokable}.
 	 */
 	public Invokable<T, R> withVariableArityApplicability(
-			List<? extends Type> arguments) {
+			List<? extends TypeToken<?>> arguments) {
 		return withLooseApplicability(true, arguments);
 	}
 
 	private Invokable<T, R> withLooseApplicability(boolean variableArity,
-			List<? extends Type> arguments) {
+			List<? extends TypeToken<?>> arguments) {
 		if (variableArity) {
 			if (!executable.isVarArgs())
 				throw new IllegalArgumentException("Invokable '" + this
@@ -812,7 +749,7 @@ public class Invokable<T, R> {
 			Iterator<Type> parameters = this.parameters.iterator();
 			Type nextParameter = parameters.next();
 			Type parameter = nextParameter;
-			for (Type argument : arguments) {
+			for (TypeToken<?> argument : arguments) {
 				if (nextParameter != null) {
 					parameter = nextParameter;
 					if (parameters.hasNext())
@@ -822,7 +759,8 @@ public class Invokable<T, R> {
 						nextParameter = null;
 					}
 				}
-				ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, argument,
+				resolver.getBounds().incorporate(argument.getResolver().getBounds());
+				ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, argument.getType(),
 						parameter, resolver.getBounds());
 			}
 
@@ -831,7 +769,7 @@ public class Invokable<T, R> {
 		}
 
 		return new Invokable<>(resolver, receiverType, returnType, executable,
-				invocationFunction);
+				invocationFunction, parameters);
 	}
 
 	/**
@@ -1069,7 +1007,7 @@ public class Invokable<T, R> {
 	 */
 	public static <T, R> Set<? extends Invokable<? super T, ? extends R>> resolveApplicableInvokables(
 			Set<? extends Invokable<? super T, ? extends R>> candidates,
-			List<? extends Type> parameters) {
+			List<? extends TypeToken<?>> parameters) {
 		Map<Invokable<? super T, ? extends R>, RuntimeException> failures = new LinkedHashMap<>();
 		BiConsumer<Invokable<? super T, ? extends R>, RuntimeException> putFailures = failures::put;
 

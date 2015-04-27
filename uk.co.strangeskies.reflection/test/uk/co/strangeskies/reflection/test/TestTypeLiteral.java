@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.BoundSet;
 import uk.co.strangeskies.reflection.InferenceVariable;
@@ -99,14 +100,12 @@ public class TestTypeLiteral {
 	class Nest22<T> extends Nest2<Nest22<T>> {}
 
 	@SuppressWarnings("javadoc")
-	public static <H extends Nest2<H>> void main(String... args)
-			throws NoSuchMethodException, SecurityException {
+	public static void main(String... args) {
 		test1();
-		TestTypeLiteral.<H> test2();
+		test2();
 	}
 
 	static void test1() {
-
 		System.out.println(new TypeToken<SchemaNode.Effective<?, ?>>() {}
 				.resolveSupertypeParameters(SchemaNode.class));
 		System.out.println();
@@ -227,21 +226,21 @@ public class TestTypeLiteral {
 		receiver = new TypeToken<SchemaNodeConfigurator<?, ?>>() {};
 		System.out.println("RESOLVE 2:");
 		System.out.println(TypeToken.of(receiver.getType()).resolveMethodOverload(
-				"name", Arrays.asList(String.class)));
+				"name", String.class));
 		System.out.println();
 		System.out.println();
 
 		receiver = new TypeToken<ChildNodeConfigurator<?, ?>>() {};
 		System.out.println("RESOLVE 3:");
 		System.out.println(TypeToken.of(receiver.getType()).resolveMethodOverload(
-				"name", Arrays.asList(String.class)));
+				"name", String.class));
 		System.out.println();
 		System.out.println();
 
 		receiver = new TypeToken<DataBindingType.Effective<?>>() {};
 		System.out.println("RESOLVE 4:");
 		System.out.println(TypeToken.of(receiver.getType()).resolveMethodOverload(
-				"child", Arrays.asList(String.class)));
+				"child", String.class));
 		System.out.println();
 		System.out.println();
 
@@ -298,37 +297,35 @@ public class TestTypeLiteral {
 
 		System.out.println(TypeToken.of(Arrays.class)
 				.resolveMethodOverload("asList", int.class, double.class)
-				.withTargetType(new TypeToken<List<? extends Number>>() {}.getType())
-				.infer());
+				.withTargetType(new TypeToken<List<? extends Number>>() {}).infer());
 		System.out.println();
 
 		System.out.println(TypeToken
 				.of(Arrays.class)
 				.resolveMethodOverload("asList", int.class, double.class)
 				.withTargetType(
-						new TypeToken<List<? super Comparable<? extends Number>>>() {}
-								.getType()).infer());
+						new TypeToken<List<? super Comparable<? extends Number>>>() {})
+				.infer());
 		System.out.println();
 
 		System.out.println(TypeToken.of(B.class).resolveMethodOverload("method",
-				new TypeToken<List<Integer>>() {}.getType(),
-				new TypeToken<List<Number>>() {}.getType()));
+				new TypeToken<List<Integer>>() {}, new TypeToken<List<Number>>() {}));
 		System.out.println();
 
 		System.out.println(TypeToken.of(B.class).resolveMethodOverload("method2",
-				new TypeToken<List<Integer>>() {}.getType(),
-				new TypeToken<List<Comparable<Integer>>>() {}.getType()));
+				new TypeToken<List<Integer>>() {},
+				new TypeToken<List<Comparable<Integer>>>() {}));
 		System.out.println();
 
 		System.out.println(TypeToken
 				.of(B.class)
 				.resolveMethodOverload("method",
-						new TypeToken<Collection<? super Integer>>() {}.getType()).infer());
+						new TypeToken<Collection<? super Integer>>() {}).infer());
 		System.out.println();
 
 		System.out.println(new TypeToken<B>() {}.resolveMethodOverload("okay",
-				new TypeToken<Set<Invokable<H, ?>>>() {}.getType(),
-				new TypeToken<List<? extends Type>>() {}.getType()));
+				new TypeToken<Set<Invokable<H, ?>>>() {},
+				new TypeToken<List<? extends Type>>() {}));
 		System.out.println();
 
 		System.out.println(new TypeToken<Collection<H>>() {}
@@ -420,6 +417,18 @@ public class TestTypeLiteral {
 		System.out.println(new TypeToken<HashMap<String, Number>>(
 				Wildcards.INFERENCE) {}.inferceExtending().resolveConstructorOverload()
 				.withTargetType(new TypeToken<Map<?, ?>>() {}).infer());
+		System.out.println();
+
+		System.out.println(new TypeToken<Set<String>>() {}
+				.resolveMethodOverload("addAll",
+						Arrays.asList(new TypeToken<List<?>>(Wildcards.INFERENCE) {}))
+				.inferParameterTypes());
+		System.out.println();
+
+		System.out.println(new TypeToken<Set<?>>(Wildcards.INFERENCE) {}
+				.resolveMethodOverload("addAll",
+						Arrays.asList(new TypeToken<List<Stream<?>>>() {}))
+				.inferParameterTypes());
 		System.out.println();
 	}
 

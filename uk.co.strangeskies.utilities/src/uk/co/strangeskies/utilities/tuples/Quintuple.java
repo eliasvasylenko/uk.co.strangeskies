@@ -39,10 +39,15 @@ public class Quintuple<A, B, C, D, E> extends Tuple<A, Quadruple<B, C, D, E>> {
 	 * Initialise a quintuple with the given five values.
 	 * 
 	 * @param a
+	 *          The first item.
 	 * @param b
+	 *          The second item.
 	 * @param c
+	 *          The third item.
 	 * @param d
+	 *          The fourth item.
 	 * @param e
+	 *          The fifth, and last, item.
 	 */
 	public Quintuple(A a, B b, C c, D d, E e) {
 		super(a, new Quadruple<>(b, c, d, e));

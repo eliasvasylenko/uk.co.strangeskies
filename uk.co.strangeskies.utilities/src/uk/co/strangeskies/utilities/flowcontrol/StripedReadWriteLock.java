@@ -21,6 +21,10 @@ package uk.co.strangeskies.utilities.flowcontrol;
 import java.util.Collection;
 
 /**
+ * A striped lock may contain any number of locks, which are indexed by a keys
+ * of a given type.
+ * 
+ * <p>
  * The purpose of a striped lock is generally to avoid deadlock in systems with
  * many different locks. This is achieved by requiring {@link Thread}s to
  * acquire all the locks they will need in one go, then releasing them when
@@ -43,6 +47,7 @@ import java.util.Collection;
  *
  * @author Elias N Vasylenko
  * @param <K>
+ *          The type of the keys by which locks are indexed.
  */
 public interface StripedReadWriteLock<K> extends StripedReadWriteLockRelease<K> {
 	/**
@@ -54,6 +59,8 @@ public interface StripedReadWriteLock<K> extends StripedReadWriteLockRelease<K> 
 	 * @param writeKeys
 	 *          Keys for write locks to be obtained
 	 * @throws InterruptedException
+	 *           The obtaining thread was interrupted before the locks could be
+	 *           obtained.
 	 */
 	public void obtainLocks(Collection<K> readKeys, Collection<K> writeKeys)
 			throws InterruptedException;
@@ -65,6 +72,8 @@ public interface StripedReadWriteLock<K> extends StripedReadWriteLockRelease<K> 
 	 * @param readKeys
 	 *          Keys for read locks to be obtained
 	 * @throws InterruptedException
+	 *           The obtaining thread was interrupted before the locks could be
+	 *           obtained.
 	 */
 	public void obtainReadLocks(Collection<K> readKeys)
 			throws InterruptedException;
@@ -76,14 +85,49 @@ public interface StripedReadWriteLock<K> extends StripedReadWriteLockRelease<K> 
 	 * @param writeKeys
 	 *          Keys for write locks to be obtained
 	 * @throws InterruptedException
+	 *           The obtaining thread was interrupted before the locks could be
+	 *           obtained.
 	 */
 	public void obtainWriteLocks(Collection<K> writeKeys)
 			throws InterruptedException;
 
+	/**
+	 * Wait for the given lock to become available.
+	 * 
+	 * @param key
+	 *          The key to the lock on which we wish to wait.
+	 * @throws InterruptedException
+	 *           The waiting thread was interrupted before the lock could be
+	 *           obtained.
+	 */
 	public void wait(K key) throws InterruptedException;
 
-	public void wait(K key, long milliseconds) throws InterruptedException;
+	/**
+	 * Wait for the given lock to become available.
+	 * 
+	 * @param key
+	 *          The key to the lock on which we wish to wait.
+	 * @param timeoutMilliseconds
+	 *          The timeout in milliseconds to wait.
+	 * @throws InterruptedException
+	 *           The waiting thread was interrupted before the lock could be
+	 *           obtained.
+	 */
+	public void wait(K key, long timeoutMilliseconds) throws InterruptedException;
 
-	public void wait(K key, long milliseconds, int nanoseconds)
+	/**
+	 * Wait for the given lock to become available.
+	 * 
+	 * @param key
+	 *          The key to the lock on which we wish to wait.
+	 * @param timeoutMilliseconds
+	 *          The timeout component in milliseconds to wait.
+	 * @param timeoutNanoseconds
+	 *          The timeout component in nanoseconds to wait.
+	 * @throws InterruptedException
+	 *           The waiting thread was interrupted before the lock could be
+	 *           obtained.
+	 */
+	public void wait(K key, long timeoutMilliseconds, int timeoutNanoseconds)
 			throws InterruptedException;
 }
