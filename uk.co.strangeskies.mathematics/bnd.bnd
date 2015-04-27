@@ -24,4 +24,4 @@ Bundle-Name: Strange Skies Mathematics
 	uk.co.strangeskies.expressions;version=latest,  \
 	osgi.enroute.base.api;  \
 		version = latest
-Bundle-Version: 0.0.1.${tstamp}
+Bundle-Version: 1.0.0.${tstamp}
