@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 /**
@@ -47,8 +46,8 @@ import java.util.stream.Collectors;
  * within a bound set are not considered inference variables within that
  * context, and are treated as proper types. Inference variables are considered
  * contained within a bound set if they were added through
- * {@link #BoundSet(BoundSet)}, any overload of {@link #addInferenceVariable()},
- * or as part of a capture conversion added through a
+ * {@link #BoundSet(BoundSet)}, {@link #addInferenceVariable(InferenceVariable)}
+ * , or as part of a capture conversion added through a
  * {@link IncorporationTarget} belonging to that bound set.
  * 
  * <p>
@@ -189,8 +188,6 @@ public class BoundSet {
 						+ BoundSet.this + "'.");
 		}
 	}
-
-	private static final AtomicLong COUNTER = new AtomicLong();
 
 	final Map<InferenceVariable, InferenceVariableBounds> inferenceVariableBounds;
 	final Set<CaptureConversion> captureConversions;
@@ -427,30 +424,15 @@ public class BoundSet {
 	}
 
 	/**
-	 * @return An newly created inference variable with a basic generated name,
-	 *         which is contained within this bound set.
+	 * Add an inference variable to this bound set such that bounds can be
+	 * inferred over it.
+	 * 
+	 * @param inferenceVariable
+	 *          The inference variable to add to the bound set.
 	 */
-	public InferenceVariable addInferenceVariable() {
-		return addInferenceVariable("INF");
-	}
-
-	/**
-	 * @param name
-	 *          A name to assign to a new inference variable.
-	 * @return An newly created inference variable with the given name, which is
-	 *         contained within this bound set.
-	 */
-	public InferenceVariable addInferenceVariable(String name) {
-		String numberedName = name + "#" + COUNTER.incrementAndGet();
-
-		InferenceVariable inferenceVariable = new InferenceVariable() {
-			@Override
-			public String toString() {
-				return numberedName;
-			}
-		};
-		inferenceVariableBounds.put(inferenceVariable, new InferenceVariableBounds(
-				this, inferenceVariable));
-		return inferenceVariable;
+	public void addInferenceVariable(InferenceVariable inferenceVariable) {
+		if (!inferenceVariableBounds.containsKey(inferenceVariable))
+			inferenceVariableBounds.put(inferenceVariable,
+					new InferenceVariableBounds(this, inferenceVariable));
 	}
 }

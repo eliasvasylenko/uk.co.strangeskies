@@ -49,7 +49,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 
 	private final GenericDeclaration declaration;
 
-	private TypeVariableCapture(Type[] upperBounds, Type[] lowerBounds,
+	TypeVariableCapture(Type[] upperBounds, Type[] lowerBounds,
 			GenericDeclaration declaration) {
 		this.name = "CAP#" + COUNTER.incrementAndGet();
 
@@ -63,8 +63,8 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 		if (lowerBounds.length > 0
 				&& !Types.isAssignable(IntersectionType.uncheckedFrom(lowerBounds),
 						IntersectionType.uncheckedFrom(upperBounds)))
-			throw new TypeException("Bounds on capture '" + this
-					+ "' are invalid. (" + Arrays.toString(lowerBounds) + " <: "
+			throw new TypeException("Bounds on capture '" + this + "' are invalid. ("
+					+ Arrays.toString(lowerBounds) + " <: "
 					+ Arrays.toString(upperBounds) + ")");
 	}
 
@@ -121,8 +121,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 		return lowerBounds.clone();
 	}
 
-	private static void substituteBounds(
-			Map<? extends Type, ? extends Type> captures) {
+	static void substituteBounds(Map<? extends Type, ? extends Type> captures) {
 		TypeSubstitution substitution = new TypeSubstitution(captures::get);
 
 		for (Type type : captures.keySet()) {
@@ -194,14 +193,14 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	 * 
 	 * @param types
 	 *          The inference variables to capture.
-	 * @param resolver
-	 *          The resolution context from which to determine the current bounds
-	 *          on the given inference variables.
+	 * @param bounds
+	 *          The context from which to determine the current bounds on the
+	 *          given inference variables, and to incorporate new bounds into.
 	 * @return A mapping from the inference variables passes to their new
 	 *         captures.
 	 */
 	public static Map<InferenceVariable, TypeVariableCapture> captureInferenceVariables(
-			Collection<? extends InferenceVariable> types, Resolver resolver) {
+			Collection<? extends InferenceVariable> types, BoundSet bounds) {
 		TypeVariable<?>[] parameters = new TypeVariable<?>[types.size()];
 		GenericDeclaration declaration = createGenericDeclarationOver(parameters);
 
@@ -214,8 +213,8 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 			 * ..., Lk, then let the lower bound of Yi be lub(L1, ..., Lk); if not,
 			 * then Yi has no lower bound.
 			 */
-			Set<Type> lowerBoundSet = resolver.getBounds()
-					.getBoundsOn(inferenceVariable).getProperLowerBounds();
+			Set<Type> lowerBoundSet = bounds.getBoundsOn(inferenceVariable)
+					.getProperLowerBounds();
 
 			Type[] lowerBounds;
 			if (lowerBoundSet.isEmpty())
@@ -231,12 +230,11 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 			 * upper bound of Yi be glb(U1 θ, ..., Uk θ), where θ is the substitution
 			 * [α1:=Y1, ..., αn:=Yn].
 			 */
-			Set<Type> upperBoundSet = resolver.getBounds()
-					.getBoundsOn(inferenceVariable).getUpperBounds();
+			Set<Type> upperBoundSet = bounds.getBoundsOn(inferenceVariable)
+					.getUpperBounds();
 
 			Type glb = IntersectionType.from(
-					upperBoundSet.stream().map(resolver::resolveType)
-							.collect(Collectors.toSet()), resolver.getBounds());
+					upperBoundSet.stream().collect(Collectors.toSet()), bounds);
 			Type[] upperBounds = (glb instanceof IntersectionType) ? ((IntersectionType) glb)
 					.getTypes() : new Type[] { glb };
 
@@ -255,10 +253,15 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 
 		substituteBounds(typeVariableCaptures);
 
+		for (Map.Entry<InferenceVariable, TypeVariableCapture> inferenceVariable : typeVariableCaptures
+				.entrySet())
+			bounds.incorporate().equality(inferenceVariable.getKey(),
+					inferenceVariable.getValue());
+
 		return typeVariableCaptures;
 	}
 
-	private static GenericDeclaration createGenericDeclarationOver(
+	static GenericDeclaration createGenericDeclarationOver(
 			TypeVariable<?>[] captures) {
 		return new GenericDeclaration() {
 			@Override

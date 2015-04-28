@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.reflection.BoundSet;
 import uk.co.strangeskies.reflection.InferenceVariable;
 import uk.co.strangeskies.reflection.Invokable;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
@@ -267,8 +266,8 @@ public class TestTypeLiteral {
 		System.out.println();
 
 		System.out.println(ParameterizedTypes.from(HashSet.class,
-				Arrays.asList(new BoundSet().addInferenceVariable()))
-				.resolveSupertypeParameters(Collection.class));
+				Arrays.asList(new InferenceVariable())).resolveSupertypeParameters(
+				Collection.class));
 		System.out.println();
 
 		System.out.println(TypeToken

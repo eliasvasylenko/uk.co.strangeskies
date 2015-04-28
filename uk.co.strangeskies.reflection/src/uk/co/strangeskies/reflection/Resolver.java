@@ -18,8 +18,10 @@
  */
 package uk.co.strangeskies.reflection;
 
+import java.lang.reflect.Executable;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.GenericDeclaration;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -28,6 +30,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -248,30 +251,82 @@ public class Resolver {
 	/**
 	 * Each type variable within the given {@link GenericDeclaration}, and each
 	 * non-statically enclosing declaration thereof, is incorporated into the
-	 * backing {@link BoundSet} as per
-	 * {@link InferenceVariable#capture(BoundSet, GenericDeclaration)}. Each new
-	 * {@link InferenceVariable} created in this process is registered in this
-	 * {@link Resolver} under the given declaration, including those of enclosing
-	 * {@link GenericDeclaration}s.
+	 * backing {@link BoundSet}. Each new {@link InferenceVariable} created in
+	 * this process is registered in this {@link Resolver} under the given
+	 * declaration, including those of enclosing {@link GenericDeclaration}s.
+	 * 
+	 * <p>
+	 * If the declaration is a non-static {@link Executable}, first the declaring
+	 * class is incorporated, then the resulting inference variables are also
+	 * registered under the {@link Executable}, then the type parameters of the
+	 * {@link Executable} itself are registered. This means that any
+	 * {@link Executable}s registered within a single resolver will always share
+	 * the inference variables on their declaring class with those registered
+	 * directly under that class.
 	 * 
 	 * @param declaration
 	 *          The declaration we wish to incorporate.
+	 * @return A mapping from the {@link InferenceVariable}s on the given
+	 *         declaration, to their new capturing {@link InferenceVariable}s.
 	 */
-	public void incorporateTypeParameters(GenericDeclaration declaration) {
+	public Map<TypeVariable<?>, InferenceVariable> incorporateTypeParameters(
+			GenericDeclaration declaration) {
 		if (capturedDeclarations.add(declaration)) {
 			Map<TypeVariable<?>, InferenceVariable> declarationCaptures = new HashMap<>();
 			capturedTypeVariables.put(declaration, declarationCaptures);
 
-			Map<TypeVariable<?>, InferenceVariable> newInferenceVariables = InferenceVariable
-					.capture(getBounds(), declaration);
+			if (declaration instanceof Executable
+					&& !Modifier.isStatic(((Executable) declaration).getModifiers()))
+				declarationCaptures
+						.putAll(incorporateTypeParameters(((Executable) declaration)
+								.getDeclaringClass()));
 
-			for (TypeVariable<?> typeVariable : newInferenceVariables.keySet()) {
-				InferenceVariable inferenceVariable = newInferenceVariables
-						.get(typeVariable);
+			capture(getBounds(), declaration, declarationCaptures);
 
-				declarationCaptures.put(typeVariable, inferenceVariable);
-			}
+			return declarationCaptures;
 		}
+		return getInferenceVariables(declaration);
+	}
+
+	private static Map<TypeVariable<?>, InferenceVariable> capture(
+			BoundSet bounds, GenericDeclaration declaration,
+			Map<TypeVariable<?>, InferenceVariable> existingCaptures) {
+		List<TypeVariable<?>> declarationVariables;
+		if (declaration instanceof Class)
+			declarationVariables = ParameterizedTypes
+					.getAllTypeParameters((Class<?>) declaration);
+		else
+			declarationVariables = Arrays.asList(declaration.getTypeParameters());
+
+		Map<TypeVariable<?>, InferenceVariable> captures = declarationVariables
+				.stream().collect(
+						Collectors.toMap(Function.identity(),
+								t -> new InferenceVariable(t.getName())));
+		existingCaptures.putAll(captures);
+
+		for (InferenceVariable variable : captures.values())
+			bounds.addInferenceVariable(variable);
+
+		TypeSubstitution substitution = new TypeSubstitution(existingCaptures::get);
+		for (TypeVariable<?> variable : captures.keySet())
+			bounds.incorporate().subtype(
+					captures.get(variable),
+					substitution.resolve(IntersectionType.uncheckedFrom(variable
+							.getBounds())));
+
+		for (TypeVariable<?> typeVariable : captures.keySet()) {
+			InferenceVariable inferenceVariable = captures.get(typeVariable);
+
+			boolean anyProper = false;
+			for (Type bound : bounds.getBoundsOn(inferenceVariable).getUpperBounds()) {
+				anyProper = anyProper || bounds.isProperType(bound);
+				bounds.incorporate().subtype(inferenceVariable, bound);
+			}
+			if (!anyProper)
+				bounds.incorporate().subtype(inferenceVariable, Object.class);
+		}
+
+		return captures;
 	}
 
 	/**
@@ -341,7 +396,8 @@ public class Resolver {
 	 * @return The new inference variable created to satisfy the given wildcard.
 	 */
 	public InferenceVariable inferOverWildcardType(WildcardType type) {
-		InferenceVariable w = bounds.addInferenceVariable();
+		InferenceVariable w = new InferenceVariable();
+		bounds.addInferenceVariable(w);
 
 		for (Type lowerBound : type.getLowerBounds())
 			addLowerBound(w, lowerBound);
@@ -446,7 +502,7 @@ public class Resolver {
 	public ParameterizedType inferOverTypeArguments(ParameterizedType type) {
 		Class<?> rawType = Types.getRawType(type);
 
-		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getInferenceVariables(rawType);
+		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = incorporateTypeParameters(rawType);
 		Map<TypeVariable<?>, Type> arguments = ParameterizedTypes
 				.getAllTypeArguments(type);
 
@@ -718,9 +774,11 @@ public class Resolver {
 					.getGenericInterfaces()));
 			if (subclass.getSuperclass() != null)
 				lesserSubtypes.addAll(Arrays.asList(subclass.getGenericSuperclass()));
+			if (lesserSubtypes.isEmpty())
+				lesserSubtypes.add(Object.class);
 
 			subtype = lesserSubtypes.stream()
-					.filter(t -> superclass.isAssignableFrom(Types.getRawType(t)))
+					.filter(t -> Types.isAssignable(Types.getRawType(t), superclass))
 					.findAny().get();
 			subtype = new TypeSubstitution(inferenceVariables).resolve(subtype);
 
@@ -809,8 +867,7 @@ public class Resolver {
 		 * 
 		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
 		 */
-		Map<InferenceVariable, TypeVariableCapture> freshVariables = TypeVariableCapture
-				.captureInferenceVariables(minimalSet, this);
+		TypeVariableCapture.captureInferenceVariables(minimalSet, getBounds());
 
 		/*
 		 * Otherwise, for all i (1 ≤ i ≤ n), all bounds of the form G<..., αi, ...>
@@ -824,9 +881,6 @@ public class Resolver {
 		 * Otherwise, the result contains the bound false, and resolution fails.
 		 */
 		bounds.removeCaptureConversions(relatedCaptureConversions);
-		for (Map.Entry<InferenceVariable, TypeVariableCapture> inferenceVariable : freshVariables
-				.entrySet())
-			instantiate(inferenceVariable.getKey(), inferenceVariable.getValue());
 	}
 
 	private void instantiate(InferenceVariable variable, Type instantiation) {
@@ -967,7 +1021,6 @@ public class Resolver {
 	 */
 	public Map<TypeVariable<?>, InferenceVariable> getInferenceVariables(
 			GenericDeclaration declaration) {
-		incorporateTypeParameters(declaration);
 		return new HashMap<>(capturedTypeVariables.get(declaration));
 	}
 
@@ -1000,7 +1053,6 @@ public class Resolver {
 	 */
 	public InferenceVariable getInferenceVariable(GenericDeclaration declaration,
 			TypeVariable<?> typeVariable) {
-		incorporateTypeParameters(declaration);
 		return capturedTypeVariables.get(declaration).get(typeVariable);
 	}
 }

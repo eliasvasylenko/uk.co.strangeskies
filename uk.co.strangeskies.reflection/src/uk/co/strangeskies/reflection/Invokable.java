@@ -98,13 +98,27 @@ public class Invokable<T, R> {
 			BiFunction<T, List<?>, R> invocationFunction,
 			List<? extends Type> parameters) {
 		this.resolver = resolver;
-
 		this.executable = executable;
+		this.invocationFunction = invocationFunction;
+
+		/*
+		 * Incorporate relevant type parameters:
+		 */
 		resolver.incorporateTypeParameters(getExecutable());
 
+		if (!isStatic()) {
+			Class<?> declaringClass = executable.getDeclaringClass();
+			resolver.incorporateTypeHierarchy(receiverType.getRawTypes().stream()
+					.filter(t -> Types.isAssignable(t, declaringClass)).findAny().get(),
+					declaringClass);
+		}
+
+		/*
+		 * Resolve types within context of given Resolver:
+		 */
 		if (isStatic())
-			this.receiverType = (TypeToken<T>) TypeToken.of(resolver.getRawType(receiverType
-					.getType()));
+			this.receiverType = (TypeToken<T>) TypeToken.of(resolver
+					.getRawType(receiverType.getType()));
 		else
 			this.receiverType = (TypeToken<T>) TypeToken.of(resolver,
 					receiverType.getType());
@@ -112,27 +126,77 @@ public class Invokable<T, R> {
 		this.returnType = (TypeToken<R>) TypeToken.of(resolver,
 				returnType.getType());
 
+		/*
+		 * Determine parameter types:
+		 */
 		Type[] genericParameters = executable.getGenericParameterTypes();
-		if (parameters == null)
-			parameters = Arrays.asList(genericParameters);
-		else {
-			for (int i = 0; i < parameters.size(); i++) {
-				Type first = resolver.resolveType(parameters.get(i));
-				Type second = resolver.resolveType(genericParameters[i]);
+		for (int i = 0; i < genericParameters.length; i++) {
+			genericParameters[i] = resolver.resolveType(genericParameters[i]);
 
-				if (Types.isAssignable(second, first))
-					first = second;
-				else if (!Types.isAssignable(first, second))
-					throw new IllegalArgumentException();
+			if (parameters != null) {
+				Type givenArgument = resolver.resolveType(parameters.get(i));
 
-				genericParameters[i] = first;
+				if (Types.isAssignable(givenArgument, genericParameters[i]))
+					genericParameters[i] = givenArgument;
+				else if (!Types.isAssignable(genericParameters[i], givenArgument))
+					throw new IllegalArgumentException("Given argument '" + givenArgument
+							+ "' is incompatible with generic parameter type '"
+							+ genericParameters[i] + "' for parameter '" + i
+							+ "' of executable '"
+							+ toString(Arrays.asList(genericParameters)) + "'.");
 			}
 		}
+		this.parameters = Arrays.asList(genericParameters);
+	}
 
-		this.parameters = Arrays.stream(genericParameters)
-				.map(resolver::resolveType).collect(Collectors.toList());
+	@Override
+	public String toString() {
+		return toString(parameters);
+	}
 
-		this.invocationFunction = invocationFunction;
+	private String toString(List<Type> parameters) {
+		StringBuilder builder = new StringBuilder();
+
+		if (isPrivate())
+			builder.append("private ");
+		else if (isProtected())
+			builder.append("protected ");
+		else if (isPublic())
+			builder.append("public ");
+
+		if (isNative())
+			builder.append("native ");
+		if (isStatic())
+			builder.append("static ");
+		if (isStrict())
+			builder.append("strictfp ");
+		if (isSynchronized())
+			builder.append("synchronized ");
+
+		if (isAbstract())
+			builder.append("abstract ");
+		else if (isFinal())
+			builder.append("final ");
+
+		if (isGeneric()) {
+			builder
+					.append("<")
+					.append(
+							getTypeParameters().stream().map(getTypeArguments()::get)
+									.map(Objects::toString).collect(Collectors.joining(", ")))
+					.append("> ");
+		}
+
+		builder.append(returnType).toString();
+		if (executable instanceof Method)
+			builder.append(" ").append(receiverType).append(".")
+					.append(executable.getName());
+
+		return builder
+				.append("(")
+				.append(
+						parameters.stream().map(Objects::toString)
+								.collect(Collectors.joining(", "))).append(")").toString();
 	}
 
 	/**
@@ -295,52 +359,6 @@ public class Invokable<T, R> {
 	 */
 	public boolean isVariableArity() {
 		return executable.isVarArgs();
-	}
-
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-
-		if (isPrivate())
-			builder.append("private ");
-		else if (isProtected())
-			builder.append("protected ");
-		else if (isPublic())
-			builder.append("public ");
-
-		if (isNative())
-			builder.append("native ");
-		if (isStatic())
-			builder.append("static ");
-		if (isStrict())
-			builder.append("strictfp ");
-		if (isSynchronized())
-			builder.append("synchronized ");
-
-		if (isAbstract())
-			builder.append("abstract ");
-		else if (isFinal())
-			builder.append("final ");
-
-		if (isGeneric()) {
-			builder
-					.append("<")
-					.append(
-							getTypeParameters().stream().map(getTypeArguments()::get)
-									.map(Objects::toString).collect(Collectors.joining(", ")))
-					.append("> ");
-		}
-
-		builder.append(returnType).toString();
-		if (executable instanceof Method)
-			builder.append(" ").append(receiverType).append(".")
-					.append(executable.getName());
-
-		return builder
-				.append("(")
-				.append(
-						parameters.stream().map(Objects::toString)
-								.collect(Collectors.joining(", "))).append(")").toString();
 	}
 
 	/**
@@ -596,16 +614,24 @@ public class Invokable<T, R> {
 	}
 
 	/**
-	 * @return A new derived {@link Invokable} instance with generic method
-	 *         parameters inferred, and if this is a constructor on a generic
-	 *         type, with generic type parameters inferred, also.
+	 * Derived a new {@link Invokable} instance with generic method parameters
+	 * inferred, and if this is a constructor on a generic type, with generic type
+	 * parameters inferred, too.
+	 * 
+	 * <p>
+	 * Note that this will <em>not</em> infer the type parameters of the receiving
+	 * type if the {@link Executable} is not a constructor.
+	 * 
+	 * @return The derived {@link Invokable} with inferred invocation type.
 	 */
 	public Invokable<T, R> infer() {
 		Resolver resolver = getResolver();
 
-		resolver.infer(executable);
 		if (executable instanceof Constructor)
-			resolver.infer(getReceiverType().getType());
+			resolver.infer(executable);
+		else
+			for (TypeVariable<?> parameter : executable.getTypeParameters())
+				resolver.infer(parameter);
 
 		return new Invokable<>(resolver, receiverType, returnType, executable,
 				invocationFunction, parameters);

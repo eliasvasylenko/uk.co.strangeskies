@@ -192,6 +192,17 @@ public class TypeToken<T> {
 				.getRawType(this.type) : resolver.getRawType(this.type));
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		return obj instanceof TypeToken
+				&& type.equals(((TypeToken<?>) obj).getType());
+	}
+
+	@Override
+	public int hashCode() {
+		return type.hashCode();
+	}
+
 	/**
 	 * Create a TypeToken for a raw class.
 	 * 
@@ -654,7 +665,7 @@ public class TypeToken<T> {
 	public <U> TypeToken<? extends U> resolveSupertypeParameters(
 			Class<U> superclass) {
 		if (!ParameterizedTypes.isGeneric(superclass))
-			throw new IllegalArgumentException();
+			return TypeToken.of(superclass);
 
 		Resolver resolver = getInternalResolver();
 
@@ -690,7 +701,7 @@ public class TypeToken<T> {
 	@SuppressWarnings("unchecked")
 	public <U> TypeToken<? extends U> resolveSubtypeParameters(Class<U> subclass) {
 		if (!ParameterizedTypes.isGeneric(subclass))
-			throw new IllegalArgumentException();
+			return TypeToken.of(subclass);
 
 		Resolver resolver = getInternalResolver();
 
