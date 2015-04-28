@@ -815,7 +815,7 @@ public class Invokable<T, R> {
 	 */
 	public Map<TypeVariable<? extends Executable>, Type> getTypeArguments() {
 		return getTypeParameters().stream().collect(
-				Collectors.toMap(t -> (TypeVariable<? extends Executable>) t,
+				Collectors.toMap(t -> t,
 						t -> resolver.resolveType(executable, t)));
 	}
 
@@ -1115,7 +1115,7 @@ public class Invokable<T, R> {
 
 			if (!candidate.equals(mostSpecific))
 				throw new TypeException(
-						"Cannot resolve method invokation ambiguity between candidate '"
+						"Cannot resolve method invocation ambiguity between candidate '"
 								+ candidate + "' and '" + mostSpecific + "'.");
 
 			mostSpecific = candidate.getExecutable().getDeclaringClass()
