@@ -37,10 +37,10 @@ public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 		public LinkedEntry(K key) {
 			super(key);
 
-			previous = bounds.previous;
-			next = bounds;
+			previous = bounds;
+			next = bounds.next;
 
-			previous.next = bounds.previous = this;
+			next.previous = bounds.next = this;
 
 			size.set(size.get() + 1);
 		}

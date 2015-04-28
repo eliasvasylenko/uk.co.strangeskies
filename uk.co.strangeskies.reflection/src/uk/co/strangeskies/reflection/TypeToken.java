@@ -163,20 +163,20 @@ public class TypeToken<T> {
 		return type;
 	}
 
-	TypeToken(Type type) {
+	protected TypeToken(Type type) {
 		this(null, type);
 	}
 
-	TypeToken(Type type, Wildcards wildcards) {
+	private TypeToken(Type type, Wildcards wildcards) {
 		this(null, type, wildcards);
 	}
 
-	TypeToken(Resolver resolver, Type type) {
+	private TypeToken(Resolver resolver, Type type) {
 		this(resolver, type, Wildcards.PRESERVE);
 	}
 
 	@SuppressWarnings("unchecked")
-	TypeToken(Resolver resolver, Type type, Wildcards wildcards) {
+	private TypeToken(Resolver resolver, Type type, Wildcards wildcards) {
 		this.resolver = resolver;
 
 		type = dealWithWildcards(type, wildcards);
@@ -184,7 +184,7 @@ public class TypeToken<T> {
 			this.type = type;
 		else {
 			if (type instanceof ParameterizedType)
-				resolver.incorporateType(type);
+				resolver.captureTypeArguments((ParameterizedType) type);
 			this.type = resolver.resolveType(type);
 		}
 
@@ -212,41 +212,8 @@ public class TypeToken<T> {
 	 *          The class to create a TypeToken for.
 	 * @return A TypeToken over the requested class.
 	 */
-	public static <T> TypeToken<T> of(Class<T> type) {
+	public static <T> TypeToken<T> over(Class<T> type) {
 		return new TypeToken<T>(type);
-	}
-
-	/**
-	 * Create a TypeToken for an arbitrary type, resolved with respect to a given
-	 * Resolver.
-	 * 
-	 * @param resolver
-	 *          The resolution context within which to create the class.
-	 * @param type
-	 *          The requested type.
-	 * @return A TypeToken over the requested type.
-	 */
-	public static TypeToken<?> of(Resolver resolver, Type type) {
-		type = resolver.resolveType(type);
-		return new TypeToken<>(new Resolver(resolver.getBounds()), type);
-	}
-
-	/**
-	 * Create a TypeToken for an arbitrary type, resolved with respect to a given
-	 * Resolver.
-	 * 
-	 * @param resolver
-	 *          The resolution context within which to create the class.
-	 * @param type
-	 *          The requested type.
-	 * @param wildcards
-	 *          How to deal with wildcard parameters on the given type.
-	 * @return A TypeToken over the requested type.
-	 */
-	public static TypeToken<?> of(Resolver resolver, Type type,
-			Wildcards wildcards) {
-		type = resolver.resolveType(type);
-		return new TypeToken<>(new Resolver(resolver), type);
 	}
 
 	/**
@@ -257,7 +224,7 @@ public class TypeToken<T> {
 	 *          The requested type.
 	 * @return A TypeToken over the requested type.
 	 */
-	public static TypeToken<?> of(Type type) {
+	public static TypeToken<?> over(Type type) {
 		return new TypeToken<>(type);
 	}
 
@@ -270,12 +237,45 @@ public class TypeToken<T> {
 	 *          How to deal with wildcard parameters on the given type.
 	 * @return A TypeToken over the requested type.
 	 */
-	public static TypeToken<?> of(Type type, Wildcards wildcards) {
+	public static TypeToken<?> over(Type type, Wildcards wildcards) {
 		return new TypeToken<>(type, wildcards);
 	}
 
 	/**
-	 * Equivalent to the application of {@link TypeToken#of(Type)} to the result
+	 * Create a TypeToken view over a raw type with respect to its
+	 * parameterisations within a given resolver.
+	 * 
+	 * @param resolver
+	 *          The resolution context for the type.
+	 * @param rawType
+	 *          The requested type.
+	 * @param <T>
+	 *          The requested type.
+	 * @return A TypeToken over the requested type.
+	 */
+	public static <T> TypeToken<? extends T> over(Resolver resolver,
+			Class<T> rawType) {
+		return new TypeToken<>(new Resolver(resolver),
+				resolver.resolveTypeParameters(rawType));
+	}
+
+	/**
+	 * Derive a new {@link TypeToken} instance, with the given bounds incorporated
+	 * into the bounds of the underlying resolver. The original {@link TypeToken}
+	 * will remain unmodified.
+	 * 
+	 * @param bounds
+	 *          The new bounds to incorporate.
+	 * @return The newly derived {@link TypeToken}.
+	 */
+	public TypeToken<T> withBounds(BoundSet bounds) {
+		Resolver resolver = getResolver();
+		resolver.getBounds().incorporate(bounds);
+		return new TypeToken<T>(resolver, resolver.resolveTypeParameters(rawType));
+	}
+
+	/**
+	 * Equivalent to the application of {@link TypeToken#over(Type)} to the result
 	 * of {@link Types#fromString(String)}.
 	 * 
 	 * @param typeString
@@ -283,7 +283,7 @@ public class TypeToken<T> {
 	 * @return A TypeToken representing the type described by the String.
 	 */
 	public static TypeToken<?> fromString(String typeString) {
-		return of(Types.fromString(typeString));
+		return over(Types.fromString(typeString));
 	}
 
 	protected void validate() {
@@ -300,7 +300,7 @@ public class TypeToken<T> {
 	 */
 	@SuppressWarnings("unchecked")
 	public TypeToken<? extends T> captureWildcardExtending() {
-		return (TypeToken<? extends T>) of(WildcardTypes.upperBounded(getType()));
+		return (TypeToken<? extends T>) over(WildcardTypes.upperBounded(getType()));
 	}
 
 	/**
@@ -313,7 +313,7 @@ public class TypeToken<T> {
 	 */
 	@SuppressWarnings("unchecked")
 	public TypeToken<? super T> captureWildcardSuper() {
-		return (TypeToken<? super T>) of(WildcardTypes.lowerBounded(getType()));
+		return (TypeToken<? super T>) over(WildcardTypes.lowerBounded(getType()));
 	}
 
 	/**
@@ -380,11 +380,12 @@ public class TypeToken<T> {
 	private Resolver getInternalResolver() {
 		if (resolver == null) {
 			synchronized (RESOLVER_CACHE) {
-				return resolver = RESOLVER_CACHE
+				resolver = RESOLVER_CACHE
 						.putGet(getType() instanceof ParameterizedType ? TypeVariableCapture
 								.captureWildcardArguments((ParameterizedType) getType())
 								: getType());
 			}
+			return resolver;
 		} else
 			return resolver;
 	}
@@ -431,7 +432,7 @@ public class TypeToken<T> {
 	@SuppressWarnings("unchecked")
 	public TypeToken<T> wrapPrimitive() {
 		if (isPrimitive())
-			return (TypeToken<T>) of(Types.wrapPrimitive(getRawType()));
+			return (TypeToken<T>) over(Types.wrapPrimitive(getRawType()));
 		else
 			return this;
 	}
@@ -446,7 +447,7 @@ public class TypeToken<T> {
 	@SuppressWarnings("unchecked")
 	public TypeToken<T> unwrapPrimitive() {
 		if (isPrimitiveWrapper())
-			return (TypeToken<T>) of(Types.unwrapPrimitive(getRawType()));
+			return (TypeToken<T>) over(Types.unwrapPrimitive(getRawType()));
 		else
 			return this;
 	}
@@ -593,7 +594,7 @@ public class TypeToken<T> {
 	 */
 	@SuppressWarnings("unchecked")
 	public <U> TypeToken<U> getTypeArgument(TypeParameter<U> type) {
-		return (TypeToken<U>) of(getTypeArgument(type.getType()));
+		return (TypeToken<U>) over(getTypeArgument(type.getType()));
 	}
 
 	/**
@@ -611,7 +612,7 @@ public class TypeToken<T> {
 	 */
 	@SuppressWarnings("unchecked")
 	public <U> TypeToken<? extends U> resolveType(TypeToken<U> type) {
-		return (TypeToken<? extends U>) of(getInternalResolver().resolveType(
+		return (TypeToken<? extends U>) over(getInternalResolver().resolveType(
 				type.getType()));
 	}
 
@@ -665,7 +666,7 @@ public class TypeToken<T> {
 	public <U> TypeToken<? extends U> resolveSupertypeParameters(
 			Class<U> superclass) {
 		if (!ParameterizedTypes.isGeneric(superclass))
-			return TypeToken.of(superclass);
+			return TypeToken.over(superclass);
 
 		Resolver resolver = getInternalResolver();
 
@@ -681,7 +682,7 @@ public class TypeToken<T> {
 		} else
 			resolver.incorporateTypeHierarchy(getRawType(), superclass);
 
-		return (TypeToken<? extends U>) of(resolver.resolveType(superclass,
+		return (TypeToken<? extends U>) over(resolver.resolveType(superclass,
 				parameterizedType));
 	}
 
@@ -701,7 +702,7 @@ public class TypeToken<T> {
 	@SuppressWarnings("unchecked")
 	public <U> TypeToken<? extends U> resolveSubtypeParameters(Class<U> subclass) {
 		if (!ParameterizedTypes.isGeneric(subclass))
-			return TypeToken.of(subclass);
+			return TypeToken.over(subclass);
 
 		Resolver resolver = getInternalResolver();
 
@@ -717,8 +718,8 @@ public class TypeToken<T> {
 		} else
 			resolver.incorporateTypeHierarchy(subclass, getRawType());
 
-		return (TypeToken<? extends U>) TypeToken.of(resolver.resolveType(subclass,
-				parameterizedType));
+		return (TypeToken<? extends U>) TypeToken.over(resolver.resolveType(
+				subclass, parameterizedType));
 	}
 
 	/**
@@ -779,8 +780,8 @@ public class TypeToken<T> {
 	 */
 	@SuppressWarnings("unchecked")
 	public <U> TypeToken<U> resolveTypeArgument(TypeParameter<U> typeParameter) {
-		return (TypeToken<U>) of(getInternalResolver().resolveTypeVariable(rawType,
-				typeParameter.getType()));
+		return (TypeToken<U>) over(getInternalResolver().resolveTypeVariable(
+				rawType, typeParameter.getType()));
 	}
 
 	/**
@@ -835,7 +836,7 @@ public class TypeToken<T> {
 	}
 
 	private TypeToken<?> withTypeArgument(TypeVariable<?> parameter, Type argument) {
-		return of(new TypeSubstitution().where(parameter, argument).resolve(
+		return over(new TypeSubstitution().where(parameter, argument).resolve(
 				getType()));
 	}
 
@@ -848,7 +849,7 @@ public class TypeToken<T> {
 	@SuppressWarnings("unchecked")
 	public Set<? extends Invokable<T, T>> getConstructors() {
 		return Arrays.stream(getRawType().getConstructors())
-				.map(m -> Invokable.from((Constructor<T>) m, this))
+				.map(m -> Invokable.over((Constructor<T>) m, this))
 				.collect(Collectors.toSet());
 	}
 
@@ -873,7 +874,7 @@ public class TypeToken<T> {
 					Arrays.stream(Object.class.getMethods()));
 
 		return methodStream.filter(filter)
-				.map(m -> Invokable.from(m, this, of(m.getGenericReturnType())))
+				.map(m -> Invokable.over(m, this, over(m.getGenericReturnType())))
 				.collect(Collectors.toSet());
 	}
 
@@ -907,7 +908,7 @@ public class TypeToken<T> {
 			Type argument, Type... arguments) {
 		return resolveConstructorOverload(Stream
 				.concat(Arrays.asList(argument).stream(), Arrays.stream(arguments))
-				.map(TypeToken::of).collect(Collectors.toList()));
+				.map(TypeToken::over).collect(Collectors.toList()));
 	}
 
 	/**
@@ -963,7 +964,7 @@ public class TypeToken<T> {
 				name,
 				Stream
 						.concat(Arrays.asList(argument).stream(), Arrays.stream(arguments))
-						.map(TypeToken::of).collect(Collectors.toList()));
+						.map(TypeToken::over).collect(Collectors.toList()));
 	}
 
 	/**
@@ -1016,9 +1017,8 @@ public class TypeToken<T> {
 	 * 
 	 * @return A TypeToken with the fully inferred type.
 	 */
-	@SuppressWarnings("unchecked")
 	public TypeToken<T> resolve() {
-		return (TypeToken<T>) TypeToken.of(getInternalResolver(), getType());
+		return new TypeToken<>(resolver, resolver.resolveType(type));
 	}
 
 	/**
@@ -1029,11 +1029,10 @@ public class TypeToken<T> {
 	 * 
 	 * @return A TypeToken with the fully inferred type.
 	 */
-	@SuppressWarnings("unchecked")
 	public TypeToken<T> infer() {
 		Resolver resolver = getResolver();
 		resolver.infer(resolver.getBounds().getInferenceVariablesMentionedBy(
 				getType()));
-		return (TypeToken<T>) TypeToken.of(resolver, getType());
+		return new TypeToken<>(resolver, resolver.resolveType(type));
 	}
 }

@@ -48,7 +48,7 @@ import uk.co.strangeskies.utilities.tuples.Pair;
  * A type safe wrapper around {@link Executable} instances, with proper handling
  * of generic methods, and methods on generic classes. Instances of this class
  * can be created from instances of Executable directly from
- * {@link #from(Executable)} and its overloads, or using the
+ * {@link #over(Executable)} and its overloads, or using the
  * {@link TypeToken#resolveConstructorOverload(List)} and
  * {@link TypeToken#resolveMethodOverload(String, List)} methods on TypeToken
  * instances.
@@ -117,14 +117,12 @@ public class Invokable<T, R> {
 		 * Resolve types within context of given Resolver:
 		 */
 		if (isStatic())
-			this.receiverType = (TypeToken<T>) TypeToken.of(resolver
+			this.receiverType = (TypeToken<T>) TypeToken.over(resolver
 					.getRawType(receiverType.getType()));
 		else
-			this.receiverType = (TypeToken<T>) TypeToken.of(resolver,
-					receiverType.getType());
+			this.receiverType = receiverType.withBounds(resolver.getBounds());
 
-		this.returnType = (TypeToken<R>) TypeToken.of(resolver,
-				returnType.getType());
+		this.returnType = returnType.withBounds(resolver.getBounds());
 
 		/*
 		 * Determine parameter types:
@@ -214,12 +212,12 @@ public class Invokable<T, R> {
 	 *          The constructor to wrap.
 	 * @return An invokable wrapping the given constructor.
 	 */
-	public static <T> Invokable<T, T> from(Constructor<T> constructor) {
-		TypeToken<T> type = TypeToken.of(constructor.getDeclaringClass());
-		return from(constructor, type);
+	public static <T> Invokable<T, T> over(Constructor<T> constructor) {
+		TypeToken<T> type = TypeToken.over(constructor.getDeclaringClass());
+		return over(constructor, type);
 	}
 
-	static <T> Invokable<T, T> from(Constructor<T> constructor,
+	static <T> Invokable<T, T> over(Constructor<T> constructor,
 			TypeToken<T> receiver) {
 		return new Invokable<>(receiver, receiver, constructor,
 				(T r, List<?> a) -> {
@@ -239,13 +237,13 @@ public class Invokable<T, R> {
 	 *          The method to wrap.
 	 * @return An invokable wrapping the given method.
 	 */
-	public static Invokable<?, ?> from(Method method) {
-		return from(method, TypeToken.of(method.getDeclaringClass()),
-				TypeToken.of(method.getGenericReturnType()));
+	public static Invokable<?, ?> over(Method method) {
+		return over(method, TypeToken.over(method.getDeclaringClass()),
+				TypeToken.over(method.getGenericReturnType()));
 	}
 
 	@SuppressWarnings("unchecked")
-	static <T, R> Invokable<T, R> from(Method method, TypeToken<T> receiver,
+	static <T, R> Invokable<T, R> over(Method method, TypeToken<T> receiver,
 			TypeToken<R> result) {
 		return new Invokable<>(receiver, result, method, (T r, List<?> a) -> {
 			try {
@@ -258,18 +256,18 @@ public class Invokable<T, R> {
 	}
 
 	/**
-	 * As invocation of {@link #from(Constructor)} or {@link Method} as
+	 * As invocation of {@link #over(Constructor)} or {@link Method} as
 	 * appropriate.
 	 * 
 	 * @param executable
 	 *          The executable to wrap.
 	 * @return An invokable wrapping the given Executable.
 	 */
-	public static Invokable<?, ?> from(Executable executable) {
+	public static Invokable<?, ?> over(Executable executable) {
 		if (executable instanceof Method)
-			return from((Method) executable);
+			return over((Method) executable);
 		else
-			return from((Constructor<?>) executable);
+			return over((Constructor<?>) executable);
 	}
 
 	/**
@@ -496,7 +494,7 @@ public class Invokable<T, R> {
 	 *         the current target type, will also be assignable to the new type.
 	 */
 	public <S extends R> Invokable<T, S> withTargetType(Class<S> target) {
-		return withTargetType(TypeToken.of(target));
+		return withTargetType(TypeToken.over(target));
 	}
 
 	/**
@@ -563,9 +561,9 @@ public class Invokable<T, R> {
 
 		resolver.addLooseCompatibility(returnType.getType(), target);
 
-		return new Invokable<>(resolver, receiverType, (TypeToken<S>) TypeToken.of(
-				resolver, returnType.getType()), executable,
-				(BiFunction<T, List<?>, S>) invocationFunction, parameters).infer();
+		return new Invokable<>(resolver, receiverType, (TypeToken<S>) returnType,
+				executable, (BiFunction<T, List<?>, S>) invocationFunction, parameters)
+				.infer();
 	}
 
 	/**
@@ -815,8 +813,7 @@ public class Invokable<T, R> {
 	 */
 	public Map<TypeVariable<? extends Executable>, Type> getTypeArguments() {
 		return getTypeParameters().stream().collect(
-				Collectors.toMap(t -> t,
-						t -> resolver.resolveType(executable, t)));
+				Collectors.toMap(t -> t, t -> resolver.resolveType(executable, t)));
 	}
 
 	/**

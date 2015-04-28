@@ -113,8 +113,8 @@ public class ConstraintFormula {
 		try {
 			constraintFormula.reduceInto(bounds);
 		} catch (Exception e) {
-			throw new TypeException("Cannot reduce constraint '" + constraintFormula
-					+ "' into bound set '" + bounds + "'.", e);
+			throw new TypeException("Cannot reduce constraint " + constraintFormula
+					+ " into bound set '" + bounds + "'.", e);
 		}
 		return constraintFormula;
 	}
@@ -357,7 +357,7 @@ public class ConstraintFormula {
 		if (to instanceof ParameterizedType) {
 			return (toRaw.getTypeParameters().length > 0)
 					&& (toRaw.isAssignableFrom(fromRaw))
-					&& (TypeToken.of(from).resolveSupertypeParameters(toRaw).getType() instanceof Class);
+					&& (TypeToken.over(from).resolveSupertypeParameters(toRaw).getType() instanceof Class);
 		} else
 			return toRaw.isArray()
 					&& fromRaw.isArray()
@@ -491,7 +491,7 @@ public class ConstraintFormula {
 					/*
 					 * Otherwise:
 					 */
-					TypeToken<?> toComponent = TypeToken.of(Types.getComponentType(to));
+					TypeToken<?> toComponent = TypeToken.over(Types.getComponentType(to));
 					if (!fromComponent.isPrimitive() && !toComponent.isPrimitive()) {
 						/*
 						 * - If neither S' nor T' is a primitive type, the constraint
@@ -551,10 +551,10 @@ public class ConstraintFormula {
 	}
 
 	private TypeToken<?> findMostSpecificArrayType(Type from) {
-		TypeToken<?> fromToken = TypeToken.of(from);
+		TypeToken<?> fromToken = TypeToken.over(from);
 
 		if (fromToken.getRawType().isArray()) {
-			return TypeToken.of(Types.getComponentType(from));
+			return TypeToken.over(Types.getComponentType(from));
 		}
 
 		if (from instanceof WildcardType) {
@@ -580,7 +580,7 @@ public class ConstraintFormula {
 					.anyMatch(
 							t -> !Types.isAssignable(Types.getComponentType(mostSpecific),
 									Types.getComponentType(t))))
-				return TypeToken.of(mostSpecific);
+				return TypeToken.over(mostSpecific);
 		}
 
 		return null;
@@ -789,9 +789,9 @@ public class ConstraintFormula {
 				 */
 				ParameterizedTypes.getAllTypeParameters(Types.getRawType(from))
 						.forEach(
-								type -> reduce(Kind.EQUALITY, TypeToken.of(from)
+								type -> reduce(Kind.EQUALITY, TypeToken.over(from)
 										.getTypeArgument(type),
-										TypeToken.of(to).getTypeArgument(type), bounds));
+										TypeToken.over(to).getTypeArgument(type), bounds));
 			}
 		}
 	}

@@ -61,9 +61,13 @@ public class WildcardTypes {
 					return false;
 				if (that == this)
 					return true;
+
 				WildcardType wildcard = (WildcardType) that;
+
 				return wildcard.getLowerBounds().length == 0
-						&& wildcard.getUpperBounds().length == 0;
+						&& wildcard.getUpperBounds().length == 0
+						|| (Arrays.equals(wildcard.getUpperBounds(),
+								new Type[] { Object.class }));
 			}
 
 			@Override
@@ -122,7 +126,8 @@ public class WildcardTypes {
 					return true;
 				WildcardType wildcard = (WildcardType) that;
 				return Arrays.equals(types.get(), wildcard.getLowerBounds())
-						&& wildcard.getUpperBounds().length == 0;
+						&& (wildcard.getUpperBounds().length == 0 || (Arrays.equals(
+								wildcard.getUpperBounds(), new Type[] { Object.class })));
 			}
 
 			@Override
@@ -183,8 +188,11 @@ public class WildcardTypes {
 				if (that == this)
 					return true;
 				WildcardType wildcard = (WildcardType) that;
-				return Arrays.equals(types.get(), wildcard.getUpperBounds())
-						&& wildcard.getLowerBounds().length == 0;
+				return wildcard.getLowerBounds().length == 0
+						&& (Arrays.equals(types.get(), wildcard.getUpperBounds()) || ((getUpperBounds().length == 0 || Arrays
+								.equals(getUpperBounds(), new Type[] { Object.class })) && (wildcard
+								.getUpperBounds().length == 0 || Arrays.equals(
+								wildcard.getUpperBounds(), new Type[] { Object.class }))));
 			}
 
 			@Override

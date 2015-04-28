@@ -939,6 +939,24 @@ public class Resolver {
 	}
 
 	/**
+	 * Resolve the type parameters registered under the given class, and derive a
+	 * parameterized type using these parameters if appropriate. If the given
+	 * class is not generic, it is returned unchanged.
+	 * 
+	 * @param type
+	 *          The type whose parameterization we wish to determine within the
+	 *          context of this {@link Resolver}.
+	 * @return A parameterized type over the given type, according to the
+	 *         inference variables and parameters registered in this resolver, or
+	 *         the given type if it is not generic.
+	 */
+	public Type resolveTypeParameters(Class<?> type) {
+		incorporateTypeParameters(type);
+		return resolveType(ParameterizedTypes.uncheckedFrom(type,
+				getInferenceVariables(type)));
+	}
+
+	/**
 	 * Resolve the proper instantiation of a given {@link TypeVariable} if one
 	 * exists. The type variable will be resolved to an {@link InferenceVariable}
 	 * with respect to the context provided by its declaring class.

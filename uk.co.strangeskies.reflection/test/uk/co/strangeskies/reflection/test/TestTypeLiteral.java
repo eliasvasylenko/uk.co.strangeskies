@@ -160,24 +160,24 @@ public class TestTypeLiteral {
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeToken.of(new TypeToken<Nest<?>>() {}.getType()));
+		System.out.println(TypeToken.over(new TypeToken<Nest<?>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeToken.of(new TypeToken<Nest22<?>>() {}.getType()));
+		System.out.println(TypeToken.over(new TypeToken<Nest22<?>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeToken.of(new TypeToken<Nest2<?>>() {}.getType()));
+		System.out.println(TypeToken.over(new TypeToken<Nest2<?>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeToken.of(new TypeToken<Base<LeftN, RightN>>() {}
+		System.out.println(TypeToken.over(new TypeToken<Base<LeftN, RightN>>() {}
 				.getType()));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeToken.of(new TypeToken<RightN>() {}
+		System.out.println(TypeToken.over(new TypeToken<RightN>() {}
 				.resolveSupertypeParameters(Base.class).getType()));
 		System.out.println();
 		System.out.println();
@@ -196,12 +196,12 @@ public class TestTypeLiteral {
 		System.out.println();
 
 		System.out.println(TypeToken
-				.of(new TypeToken<Nest2<? extends Nest2<?>>>() {}.getType()));
+				.over(new TypeToken<Nest2<? extends Nest2<?>>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 
 		System.out.println(TypeToken
-				.of(new TypeToken<Nest2<? extends Nest22<?>>>() {}.getType()));
+				.over(new TypeToken<Nest2<? extends Nest22<?>>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 
@@ -224,21 +224,21 @@ public class TestTypeLiteral {
 
 		receiver = new TypeToken<SchemaNodeConfigurator<?, ?>>() {};
 		System.out.println("RESOLVE 2:");
-		System.out.println(TypeToken.of(receiver.getType()).resolveMethodOverload(
+		System.out.println(TypeToken.over(receiver.getType()).resolveMethodOverload(
 				"name", String.class));
 		System.out.println();
 		System.out.println();
 
 		receiver = new TypeToken<ChildNodeConfigurator<?, ?>>() {};
 		System.out.println("RESOLVE 3:");
-		System.out.println(TypeToken.of(receiver.getType()).resolveMethodOverload(
+		System.out.println(TypeToken.over(receiver.getType()).resolveMethodOverload(
 				"name", String.class));
 		System.out.println();
 		System.out.println();
 
 		receiver = new TypeToken<DataBindingType.Effective<?>>() {};
 		System.out.println("RESOLVE 4:");
-		System.out.println(TypeToken.of(receiver.getType()).resolveMethodOverload(
+		System.out.println(TypeToken.over(receiver.getType()).resolveMethodOverload(
 				"child", String.class));
 		System.out.println();
 		System.out.println();
@@ -255,7 +255,7 @@ public class TestTypeLiteral {
 		System.out
 				.println("((B) null).method4((Collection<? extends Integer>) null, (List<? super Number>) null)");
 		System.out.println(TypeToken
-				.of(B.class)
+				.over(B.class)
 				.resolveMethodOverload("method4",
 						new TypeToken<Collection<? extends Integer>>() {}.getType(),
 						new TypeToken<List<? super Number>>() {}.getType()).infer());
@@ -271,20 +271,20 @@ public class TestTypeLiteral {
 		System.out.println();
 
 		System.out.println(TypeToken
-				.of(B.class)
+				.over(B.class)
 				.resolveMethodOverload("bothways", String.class,
 						new TypeToken<List<String>>() {}.getType()).infer());
 		System.out.println();
 
-		System.out.println(TypeToken.of(B.class).resolveMethodOverload("moothod",
+		System.out.println(TypeToken.over(B.class).resolveMethodOverload("moothod",
 				Integer.class, Number.class));
 		System.out.println();
 
-		System.out.println(TypeToken.of(B.class).resolveMethodOverload("moothod",
+		System.out.println(TypeToken.over(B.class).resolveMethodOverload("moothod",
 				Number.class, Integer.class));
 		System.out.println();
 
-		System.out.println(TypeToken.of(B.class).resolveMethodOverload("moothod",
+		System.out.println(TypeToken.over(B.class).resolveMethodOverload("moothod",
 				Number.class, Number.class));
 		System.out.println();
 
@@ -294,30 +294,30 @@ public class TestTypeLiteral {
 		System.out.println();
 		 */
 
-		System.out.println(TypeToken.of(Arrays.class)
+		System.out.println(TypeToken.over(Arrays.class)
 				.resolveMethodOverload("asList", int.class, double.class)
 				.withTargetType(new TypeToken<List<? extends Number>>() {}).infer());
 		System.out.println();
 
 		System.out.println(TypeToken
-				.of(Arrays.class)
+				.over(Arrays.class)
 				.resolveMethodOverload("asList", int.class, double.class)
 				.withTargetType(
 						new TypeToken<List<? super Comparable<? extends Number>>>() {})
 				.infer());
 		System.out.println();
 
-		System.out.println(TypeToken.of(B.class).resolveMethodOverload("method",
+		System.out.println(TypeToken.over(B.class).resolveMethodOverload("method",
 				new TypeToken<List<Integer>>() {}, new TypeToken<List<Number>>() {}));
 		System.out.println();
 
-		System.out.println(TypeToken.of(B.class).resolveMethodOverload("method2",
+		System.out.println(TypeToken.over(B.class).resolveMethodOverload("method2",
 				new TypeToken<List<Integer>>() {},
 				new TypeToken<List<Comparable<Integer>>>() {}));
 		System.out.println();
 
 		System.out.println(TypeToken
-				.of(B.class)
+				.over(B.class)
 				.resolveMethodOverload("method",
 						new TypeToken<Collection<? super Integer>>() {}).infer());
 		System.out.println();

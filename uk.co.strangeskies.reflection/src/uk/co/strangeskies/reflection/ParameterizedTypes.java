@@ -161,7 +161,7 @@ public class ParameterizedTypes {
 	@SuppressWarnings("unchecked")
 	public static <T> TypeToken<? extends T> from(Class<T> rawType,
 			Map<? extends TypeVariable<?>, ? extends Type> typeArguments) {
-		return (TypeToken<? extends T>) TypeToken.of(uncheckedFrom(rawType,
+		return (TypeToken<? extends T>) TypeToken.over(uncheckedFrom(rawType,
 				typeArguments));
 	}
 
@@ -215,7 +215,7 @@ public class ParameterizedTypes {
 				&& isGeneric(Types.getNonStaticallyEnclosingClass(rawType)))
 			throw new IllegalArgumentException();
 
-		return (TypeToken<? extends T>) TypeToken.of(uncheckedFrom(null, rawType,
+		return (TypeToken<? extends T>) TypeToken.over(uncheckedFrom(null, rawType,
 				typeArguments));
 	}
 
@@ -364,32 +364,28 @@ public class ParameterizedTypes {
 				newThread = true;
 			}
 
-			Boolean equals = null;
+			boolean equals;
 
 			if (other == this)
 				equals = true;
+			else if (other == null || !(other instanceof ParameterizedType))
+				equals = false;
+			else {
+				ParameterizedType that = (ParameterizedType) other;
 
-			if (equals == null) {
-				if (other == null || !(other instanceof ParameterizedType))
-					equals = false;
+				if (equalitiesForThread.contains(this, that))
+					equals = true;
+				else {
+					equalitiesForThread.add(this, that);
+					equalitiesForThread.add(that, this);
 
-				if (equals == null) {
-					ParameterizedType that = (ParameterizedType) other;
+					equals = getRawType().equals(that.getRawType())
+							&& Objects.equals(getOwnerType(), that.getOwnerType())
+							&& Arrays.equals(getActualTypeArguments(),
+									that.getActualTypeArguments());
 
-					if (equalitiesForThread.contains(this, that))
-						return true;
-					else {
-						equalitiesForThread.add(this, that);
-						equalitiesForThread.add(that, this);
-
-						equals = getRawType().equals(that.getRawType())
-								&& Objects.equals(getOwnerType(), that.getOwnerType())
-								&& Arrays.equals(getActualTypeArguments(),
-										that.getActualTypeArguments());
-
-						equalitiesForThread.remove(this, that);
-						equalitiesForThread.remove(that, this);
-					}
+					equalitiesForThread.remove(this, that);
+					equalitiesForThread.remove(that, this);
 				}
 			}
 

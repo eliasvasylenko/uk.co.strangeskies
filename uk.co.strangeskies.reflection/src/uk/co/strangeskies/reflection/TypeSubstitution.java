@@ -111,7 +111,7 @@ public class TypeSubstitution {
 	 *         otherwise an exception will be thrown.
 	 */
 	public TypeToken<?> resolve(TypeToken<?> type) {
-		return TypeToken.of(resolve(type.getType()));
+		return TypeToken.over(resolve(type.getType()));
 	}
 
 	/**
