@@ -25,4 +25,4 @@ Bundle-Name: Strange Skies Utilities
 #		version = 1.7.5,  \
 #	edu.washington.cs.types.checker:checker-framework;  \
 #		version = 1.7.5
-Bundle-Version: 0.2.0.${tstamp}
+Bundle-Version: 1.0.0.${tstamp}
