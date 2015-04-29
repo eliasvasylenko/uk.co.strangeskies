@@ -79,11 +79,6 @@ public final class Types {
 				}
 			});
 
-	/*
-	 * A ComputingMap doesn't really make much sense here over a regular Map...
-	 * But it doesn't hurt anything, and it gives us soft-references for values
-	 * out of the box.
-	 */
 	private static final CacheComputingMap<Set<ParameterizedType>, IdentityProperty<ParameterizedType>> BEST_PARAMETERIZATIONS = new CacheComputingMap<>(
 			c -> new IdentityProperty<>(), true);
 
@@ -135,9 +130,6 @@ public final class Types {
 				return getRawType(bounds[0]);
 		} else if (type instanceof InferenceVariable) {
 			return Object.class;
-			// throw new RuntimeException("fix needed?"); TODO
-			// return getRawType(IntersectionType.from(((InferenceVariable) type)
-			// .getLowerBounds()));
 		} else if (type instanceof WildcardType) {
 			Type[] bounds = ((WildcardType) type).getUpperBounds();
 			if (bounds.length == 0)
@@ -150,7 +142,7 @@ public final class Types {
 			return (Class<?>) type;
 		} else if (type instanceof GenericArrayType) {
 			return Array.newInstance(
-					(getRawType(((GenericArrayType) type).getGenericComponentType())), 0)
+					getRawType(((GenericArrayType) type).getGenericComponentType()), 0)
 					.getClass();
 		} else if (type instanceof IntersectionType) {
 			if (((IntersectionType) type).getTypes().length == 0)

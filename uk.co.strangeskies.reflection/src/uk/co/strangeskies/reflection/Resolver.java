@@ -516,21 +516,84 @@ public class Resolver {
 	}
 
 	/**
+	 * Find the upper bounds of a given type. Unlike
+	 * {@link Types#getUpperBounds(Type)} this respects bounds on the inference
+	 * variables in this resolver.
+	 * 
+	 * @param type
+	 *          The type whose bounds we wish to discover.
+	 * @return The upper bounds of the given type.
+	 */
+	public Set<Type> getUpperBounds(Type type) {
+		Set<Type> upperBounds = Types.getUpperBounds(type);
+
+		for (Type upperBound : new HashSet<>(upperBounds))
+			if (getBounds().isInferenceVariable(upperBound)) {
+				upperBounds.remove(upperBound);
+				upperBounds.addAll(getBounds().getBoundsOn(
+						(InferenceVariable) upperBound).getProperUpperBounds());
+			}
+
+		return upperBounds;
+	}
+
+	/**
+	 * Find the lower bounds of a given type. Unlike
+	 * {@link Types#getLowerBounds(Type)} this respects bounds on the inference
+	 * variables in this resolver.
+	 * 
+	 * @param type
+	 *          The type whose bounds we wish to discover.
+	 * @return The lower bounds of the given type, or null if no such bounds
+	 *         exist.
+	 */
+	public Set<Type> getLowerBounds(Type type) {
+		Set<Type> lowerBounds = Types.getLowerBounds(type);
+
+		for (Type lowerBound : new HashSet<>(lowerBounds))
+			if (getBounds().isInferenceVariable(lowerBound)) {
+				lowerBounds.remove(lowerBound);
+				lowerBounds.addAll(getBounds().getBoundsOn(
+						(InferenceVariable) lowerBound).getProperLowerBounds());
+			}
+
+		return lowerBounds;
+	}
+
+	/**
 	 * Determine the raw type of a given type, accounting for inference variables
 	 * which may have instantiations or upper bounds within the context of this
 	 * resolver.
+	 * 
+	 * TODO
 	 * 
 	 * @param type
 	 *          The type of which we wish to determine the raw type.
 	 * @return The raw type of the given type.
 	 */
 	public Class<?> getRawType(Type type) {
+		return Types.getRawType(new TypeSubstitution().where(
+				getBounds()::isInferenceVariable, null).resolve(type));
+	}
+
+	/**
+	 * Determine the raw type of a given type, accounting for inference variables
+	 * which may have instantiations or upper bounds within the context of this
+	 * resolver.
+	 * 
+	 * TODO
+	 * 
+	 * @param type
+	 *          The type of which we wish to determine the raw type.
+	 * @return The raw type of the given type.
+	 */
+	public Set<Class<?>> getRawTypes(Type type) {
 		type = resolveType(type);
 		if (getBounds().getInferenceVariables().contains(type))
-			return Types.getRawType(IntersectionType.uncheckedFrom(getBounds()
+			return Types.getRawTypes(IntersectionType.uncheckedFrom(getBounds()
 					.getBoundsOn((InferenceVariable) type).getUpperBounds()));
 		else
-			return Types.getRawType(type);
+			return Types.getRawTypes(type);
 	}
 
 	/**

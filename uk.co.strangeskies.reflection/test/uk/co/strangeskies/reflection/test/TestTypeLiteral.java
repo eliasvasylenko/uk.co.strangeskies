@@ -434,6 +434,11 @@ public class TestTypeLiteral {
 				+ " + + + "
 				+ new TypeToken<ChildNode<?, ?>>() {}
 						.isAssignableTo(new TypeToken<ChildNode<?, ?>>() {}));
+		System.out.println();
+
+		System.out.println(new TypeToken<ChildNode<?, ?>>() {}.getType()
+				+ " ~ = ~ " + new TypeToken<ChildNode<?, ?>>() {}.resolve());
+		System.out.println();
 	}
 
 	static <T> TypeToken<List<T>> listOf(Class<T> sub) {

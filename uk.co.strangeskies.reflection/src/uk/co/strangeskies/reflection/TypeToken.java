@@ -591,22 +591,8 @@ public class TypeToken<T> {
 		return isContainingOf(over(type));
 	}
 
-	/*
-	 * TODO
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * From here down we still need to have API involving TypeTokens incorporate
-	 * the bounds from them properly...
-	 * 
-	 * TODO the same thing with Invokables!
-	 */
-
 	/**
+	 * 
 	 * Derive a new type from this one, with a lower bounding on this type by a
 	 * given type. The invocation will fail if the lower bound cannot be
 	 * satisfied. For types which mention inference variables, this lower bounding
@@ -625,6 +611,25 @@ public class TypeToken<T> {
 	}
 
 	/**
+	 * 
+	 * Derive a new type from this one, with a lower bounding on this type by a
+	 * given type. The invocation will fail if the lower bound cannot be
+	 * satisfied. For types which mention inference variables, this lower bounding
+	 * may have an effect on the bounds of those inference variables within the
+	 * resulting type.
+	 * 
+	 * @param type
+	 *          The lower bound.
+	 * @return A new type token which satisfies the bounding.
+	 */
+	public TypeToken<T> withLowerBound(TypeToken<?> type) {
+		Resolver resolver = getResolverWithBounds(type.getResolver().getBounds());
+		resolver.addLowerBound(getType(), type.getType());
+
+		return new TypeToken<>(resolver, resolveType());
+	}
+
+	/**
 	 * Derive a new type from this one, with an upper bounding on this type by a
 	 * given type. The invocation will fail if the lower bound cannot be
 	 * satisfied. For types which mention inference variables, this lower bounding
@@ -640,6 +645,24 @@ public class TypeToken<T> {
 		resolver.addUpperBound(getType(), type);
 
 		return new TypeToken<>(resolver, getType());
+	}
+
+	/**
+	 * Derive a new type from this one, with an upper bounding on this type by a
+	 * given type. The invocation will fail if the lower bound cannot be
+	 * satisfied. For types which mention inference variables, this lower bounding
+	 * may have an effect on the bounds of those inference variables within the
+	 * resulting type.
+	 * 
+	 * @param type
+	 *          The upper bound.
+	 * @return A new type token which satisfies the bounding.
+	 */
+	public TypeToken<T> withUpperBound(TypeToken<?> type) {
+		Resolver resolver = getResolverWithBounds(type.getResolver().getBounds());
+		resolver.addUpperBound(getType(), type.getType());
+
+		return new TypeToken<>(resolver, resolveType());
 	}
 
 	/**
@@ -718,6 +741,11 @@ public class TypeToken<T> {
 	 * InferenceVariable objects will be substituted by any instantiations thereof
 	 * which may be present as part of this TypeToken's type hierarchy.
 	 * 
+	 * <p>
+	 * Inference variables which are mentioned by the given type will also be
+	 * considered, along with their bounds with respect to both {@link TypeToken}
+	 * instances.
+	 * 
 	 * @param <U>
 	 *          The type we wish to resolve.
 	 * @param type
@@ -725,10 +753,23 @@ public class TypeToken<T> {
 	 * @return A new TypeToken with all type variables and inference variables
 	 *         which have instantiations resolved.
 	 */
-	@SuppressWarnings("unchecked")
 	public <U> TypeToken<U> resolveType(TypeToken<U> type) {
-		return (TypeToken<U>) over(getInternalResolver()
-				.resolveType(type.getType()));
+		return type.withBounds(getResolver().getBounds()).resolve();
+	}
+
+	/**
+	 * Resolve a given type with respect to the type represented by this
+	 * TypeToken. This means that any occurrences of TypeVariable or
+	 * InferenceVariable objects will be substituted by any instantiations thereof
+	 * which may be present as part of this TypeToken's type hierarchy.
+	 * 
+	 * @param type
+	 *          The type we wish to resolve.
+	 * @return A new TypeToken with all type variables and inference variables
+	 *         which have instantiations resolved.
+	 */
+	public Type resolveType(Type type) {
+		return getInternalResolver().resolveType(type);
 	}
 
 	/**
@@ -802,8 +843,8 @@ public class TypeToken<T> {
 	 */
 	@SuppressWarnings("unchecked")
 	public <U> TypeToken<U> resolveTypeArgument(TypeParameter<U> typeParameter) {
-		return (TypeToken<U>) over(getInternalResolver().resolveTypeVariable(
-				rawType, typeParameter.getType()));
+		return (TypeToken<U>) resolveType(getInternalResolver()
+				.resolveTypeVariable(getRawType(), typeParameter.getType()));
 	}
 
 	/**
@@ -835,8 +876,8 @@ public class TypeToken<T> {
 	@SuppressWarnings("unchecked")
 	public <V> TypeToken<T> withTypeArgument(TypeParameter<V> parameter,
 			TypeToken<V> argument) {
-		return (TypeToken<T>) withTypeArgument(parameter.getType(),
-				argument.getType());
+		return (TypeToken<T>) withBounds(argument.getResolver().getBounds())
+				.withTypeArgument(parameter.getType(), argument.getType());
 	}
 
 	/**
@@ -1040,7 +1081,7 @@ public class TypeToken<T> {
 	 * @return A TypeToken with the fully inferred type.
 	 */
 	public TypeToken<T> resolve() {
-		return new TypeToken<>(resolver, resolver.resolveType(type));
+		return new TypeToken<>(getInternalResolver(), resolveType());
 	}
 
 	/**
@@ -1053,8 +1094,18 @@ public class TypeToken<T> {
 	 */
 	public TypeToken<T> infer() {
 		Resolver resolver = getResolver();
-		resolver.infer(resolver.getBounds().getInferenceVariablesMentionedBy(
-				getType()));
-		return new TypeToken<>(resolver, resolver.resolveType(type));
+
+		Type type = resolveType();
+
+		resolver.infer(resolver.getBounds().getInferenceVariablesMentionedBy(type));
+
+		return new TypeToken<>(resolver, type);
+	}
+
+	private Type resolveType() {
+		if (getType() instanceof ParameterizedType)
+			return getInternalResolver().resolveTypeParameters(getRawType());
+		else
+			return getInternalResolver().resolveType(getType());
 	}
 }

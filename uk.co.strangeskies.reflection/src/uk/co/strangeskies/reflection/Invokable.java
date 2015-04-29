@@ -403,6 +403,22 @@ public class Invokable<T, R> {
 	}
 
 	/**
+	 * Derive a new {@link Invokable} instance, with the given bounds incorporated
+	 * into the bounds of the underlying resolver. The original {@link Invokable}
+	 * will remain unmodified.
+	 * 
+	 * @param bounds
+	 *          The new bounds to incorporate.
+	 * @return The newly derived {@link Invokable}.
+	 */
+	public Invokable<T, R> withBounds(BoundSet bounds) {
+		Resolver resolver = getResolver();
+		resolver.getBounds().incorporate(bounds);
+		return new Invokable<>(resolver, receiverType, returnType, executable,
+				invocationFunction, parameters);
+	}
+
+	/**
 	 * Derive a new instance of {@link Invokable} with the given receiver type.
 	 * This will resolve any overriding {@link Executable} to determine a new
 	 * return type if necessary.
@@ -434,7 +450,8 @@ public class Invokable<T, R> {
 	@SuppressWarnings("unchecked")
 	public <U extends T> Invokable<U, ? extends R> withReceiverType(
 			TypeToken<U> type) {
-		return (Invokable<U, ? extends R>) withReceiverType(type.getType());
+		return (Invokable<U, ? extends R>) withBounds(
+				type.getResolver().getBounds()).withReceiverType(type.getType());
 	}
 
 	/**
@@ -464,7 +481,8 @@ public class Invokable<T, R> {
 	 *         new type.
 	 */
 	public Invokable<? extends T, ? extends R> withReceiverType(Type type) {
-		throw new UnsupportedOperationException(); // TODO resolve override
+		Class<?> rawType = resolver.getRawType(type);
+		throw new RuntimeException();
 	}
 
 	/**
