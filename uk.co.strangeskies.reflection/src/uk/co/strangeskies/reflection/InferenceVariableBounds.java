@@ -477,7 +477,7 @@ public class InferenceVariableBounds {
 		/*
 		 * αi = R implies the bound false
 		 */
-		if (A instanceof WildcardType && a.equals(R))
+		if (a.equals(R))
 			boundSet.incorporate().falsehood();
 	}
 

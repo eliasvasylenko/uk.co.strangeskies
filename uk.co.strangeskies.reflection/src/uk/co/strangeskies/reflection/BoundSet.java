@@ -112,16 +112,17 @@ public class BoundSet {
 		 *          The second of two types whose equality we wish to assert.
 		 */
 		public void equality(Type first, Type second) {
-			try {
-				if (inferenceVariableBounds.containsKey(first))
-					inferenceVariableBounds.get(first).addEquality(second);
+			if (!first.equals(second))
+				try {
+					if (inferenceVariableBounds.containsKey(first))
+						inferenceVariableBounds.get(first).addEquality(second);
 
-				if (inferenceVariableBounds.containsKey(second))
-					inferenceVariableBounds.get(second).addEquality(first);
-			} catch (Exception e) {
-				throw new TypeException("Cannot add equality bound between '" + first
-						+ "' and '" + second + "' to bound set '" + BoundSet.this, e);
-			}
+					if (inferenceVariableBounds.containsKey(second))
+						inferenceVariableBounds.get(second).addEquality(first);
+				} catch (Exception e) {
+					throw new TypeException("Cannot add equality bound between '" + first
+							+ "' and '" + second + "' to bound set '" + BoundSet.this, e);
+				}
 		}
 
 		/**
@@ -136,16 +137,18 @@ public class BoundSet {
 		 *          A type which we wish to assert is a supertype of another.
 		 */
 		public void subtype(Type subtype, Type supertype) {
-			try {
-				if (inferenceVariableBounds.containsKey(subtype))
-					inferenceVariableBounds.get(subtype).addUpperBound(supertype);
+			if (!subtype.equals(supertype))
+				try {
+					if (inferenceVariableBounds.containsKey(subtype))
+						inferenceVariableBounds.get(subtype).addUpperBound(supertype);
 
-				if (inferenceVariableBounds.containsKey(supertype))
-					inferenceVariableBounds.get(supertype).addLowerBound(subtype);
-			} catch (Exception e) {
-				throw new TypeException("Cannot add subtype bound between '" + subtype
-						+ "' and '" + supertype + "' to bound set '" + BoundSet.this, e);
-			}
+					if (inferenceVariableBounds.containsKey(supertype))
+						inferenceVariableBounds.get(supertype).addLowerBound(subtype);
+				} catch (Exception e) {
+					throw new TypeException("Cannot add subtype bound between '"
+							+ subtype + "' and '" + supertype + "' to bound set '"
+							+ BoundSet.this, e);
+				}
 		}
 
 		/**
@@ -332,6 +335,20 @@ public class BoundSet {
 	 * Incorporate each bound from this given bound set into the receiver bound
 	 * set. Inference variables which are contained in the given bound set will
 	 * also be contained within the receiver bound set after incorporation.
+	 * 
+	 * TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	 * 
+	 * 
+	 * 
+	 * 
+	 * Allow incorporation of only a few inference variables from the given
+	 * boundset, ignoring unrelated ones... Also there will be many ways to
+	 * improve the efficiency of this method.
+	 * 
+	 * 
+	 * 
+	 * 
+	 * TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	 * 
 	 * @param boundSet
 	 *          The bound whose bounds we wish to incorporate.

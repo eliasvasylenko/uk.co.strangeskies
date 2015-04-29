@@ -299,7 +299,7 @@ public class ConstraintFormula {
 					 * Otherwise, Si = Ti.
 					 */
 					// TODO do this properly...
-					bounds.incorporate().equality(inferenceVariable, parameter);
+					bounds.incorporate().equality(inferenceVariable, argument);
 				}
 
 				capturedArguments.put(inferenceVariable, argument);
@@ -790,8 +790,8 @@ public class ConstraintFormula {
 				ParameterizedTypes.getAllTypeParameters(Types.getRawType(from))
 						.forEach(
 								type -> reduce(Kind.EQUALITY, TypeToken.over(from)
-										.getTypeArgument(type),
-										TypeToken.over(to).getTypeArgument(type), bounds));
+										.resolveTypeArgument(type), TypeToken.over(to)
+										.resolveTypeArgument(type), bounds));
 			}
 		}
 	}

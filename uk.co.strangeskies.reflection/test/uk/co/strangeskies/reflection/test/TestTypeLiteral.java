@@ -224,22 +224,22 @@ public class TestTypeLiteral {
 
 		receiver = new TypeToken<SchemaNodeConfigurator<?, ?>>() {};
 		System.out.println("RESOLVE 2:");
-		System.out.println(TypeToken.over(receiver.getType()).resolveMethodOverload(
-				"name", String.class));
+		System.out.println(TypeToken.over(receiver.getType())
+				.resolveMethodOverload("name", String.class));
 		System.out.println();
 		System.out.println();
 
 		receiver = new TypeToken<ChildNodeConfigurator<?, ?>>() {};
 		System.out.println("RESOLVE 3:");
-		System.out.println(TypeToken.over(receiver.getType()).resolveMethodOverload(
-				"name", String.class));
+		System.out.println(TypeToken.over(receiver.getType())
+				.resolveMethodOverload("name", String.class));
 		System.out.println();
 		System.out.println();
 
 		receiver = new TypeToken<DataBindingType.Effective<?>>() {};
 		System.out.println("RESOLVE 4:");
-		System.out.println(TypeToken.over(receiver.getType()).resolveMethodOverload(
-				"child", String.class));
+		System.out.println(TypeToken.over(receiver.getType())
+				.resolveMethodOverload("child", String.class));
 		System.out.println();
 		System.out.println();
 
@@ -429,6 +429,11 @@ public class TestTypeLiteral {
 						Arrays.asList(new TypeToken<List<Stream<?>>>() {}))
 				.inferParameterTypes());
 		System.out.println();
+
+		System.out.println(new TypeToken<ChildNode<?, ?>>() {}.getType()
+				+ " + + + "
+				+ new TypeToken<ChildNode<?, ?>>() {}
+						.isAssignableTo(new TypeToken<ChildNode<?, ?>>() {}));
 	}
 
 	static <T> TypeToken<List<T>> listOf(Class<T> sub) {

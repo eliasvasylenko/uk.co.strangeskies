@@ -390,6 +390,12 @@ public class TypeToken<T> {
 			return resolver;
 	}
 
+	private Resolver getResolverWithBounds(BoundSet bounds) {
+		Resolver resolver = getResolver();
+		resolver.getBounds().incorporate(bounds);
+		return resolver;
+	}
+
 	@Override
 	public String toString() {
 		return Types.toString(getType());
@@ -453,14 +459,24 @@ public class TypeToken<T> {
 	}
 
 	/**
-	 * See {@link TypeToken#isAssignableTo(TypeToken)}.
+	 * Determine whether the type described by this {@link TypeToken} can be
+	 * assigned to the type described by the given {@link TypeToken}. If either of
+	 * the types mention unresolved inference variables, any bounds implied
+	 * between the two bound sets will be considered.
 	 * 
 	 * @param type
-	 *          Forwards to {@code type}.
-	 * @return As referenced method.
+	 *          The type to which we wish to determine assignability.
+	 * @return True if the assignment is possible, false otherwise.
 	 */
 	public boolean isAssignableTo(TypeToken<?> type) {
-		return isAssignableTo(type.getType());
+		try {
+			Resolver resolver = getResolverWithBounds(type.getResolver().getBounds());
+			ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, getType(),
+					type.getType(), resolver.getBounds());
+			return true;
+		} catch (Exception e) {
+			return false;
+		}
 	}
 
 	/**
@@ -473,7 +489,7 @@ public class TypeToken<T> {
 	 *         otherwise.
 	 */
 	public boolean isAssignableTo(Type type) {
-		return Types.isAssignable(getType(), type);
+		return isAssignableTo(over(type));
 	}
 
 	/**
@@ -484,7 +500,7 @@ public class TypeToken<T> {
 	 * @return As referenced method.
 	 */
 	public boolean isAssignableFrom(TypeToken<?> type) {
-		return isAssignableFrom(type.getType());
+		return type.isAssignableTo(this);
 	}
 
 	/**
@@ -498,7 +514,7 @@ public class TypeToken<T> {
 	 *         otherwise.
 	 */
 	public boolean isAssignableFrom(Type type) {
-		return Types.isAssignable(type, getType());
+		return isAssignableFrom(over(type));
 	}
 
 	/**
@@ -512,7 +528,14 @@ public class TypeToken<T> {
 	 *         TypeToken, false otherwise.
 	 */
 	public boolean isContainedBy(TypeToken<?> type) {
-		return isContainedBy(type.getType());
+		try {
+			Resolver resolver = getResolverWithBounds(type.getResolver().getBounds());
+			ConstraintFormula.reduce(Kind.CONTAINMENT, getType(), type.getType(),
+					resolver.getBounds());
+			return true;
+		} catch (Exception e) {
+			return false;
+		}
 	}
 
 	/**
@@ -529,7 +552,7 @@ public class TypeToken<T> {
 	 *         TypeToken, false otherwise.
 	 */
 	public boolean isContainedBy(Type type) {
-		return Types.isContainedBy(type, getType());
+		return isContainedBy(over(type));
 	}
 
 	/**
@@ -547,7 +570,7 @@ public class TypeToken<T> {
 	 *         this TypeToken, false otherwise.
 	 */
 	public boolean isContainingOf(TypeToken<?> type) {
-		return isContainingOf(type.getType());
+		return type.isContainedBy(this);
 	}
 
 	/**
@@ -565,56 +588,23 @@ public class TypeToken<T> {
 	 *         this TypeToken, false otherwise.
 	 */
 	public boolean isContainingOf(Type type) {
-		return Types.isContainedBy(getType(), type);
+		return isContainingOf(over(type));
 	}
 
-	/**
-	 * Try to find an instantiation of the given type variable within the context
-	 * provided by the type hierarchy of the type described by this TypeToken.
+	/*
+	 * TODO
 	 * 
-	 * @param type
-	 *          The type variable of which we wish to determine an instantiation.
-	 * @return A TypeToken over the instantiation of the given type parameter, if
-	 *         one exists, otherwise a TypeToken over the given parameter.
-	 */
-	public Type getTypeArgument(TypeVariable<?> type) {
-		return getInternalResolver().resolveTypeVariable(getRawType(), type);
-	}
-
-	/**
-	 * Try to find an instantiation of the given type variable within the context
-	 * provided by the type hierarchy of the type described by this TypeToken.
 	 * 
-	 * @param <U>
-	 *          The type variable of which we wish to determine an instantiation.
-	 * @param type
-	 *          The type variable of which we wish to determine an instantiation.
-	 * @return A TypeToken over the instantiation of the given type parameter, if
-	 *         one exists, otherwise a TypeToken over the given parameter.
-	 */
-	@SuppressWarnings("unchecked")
-	public <U> TypeToken<U> getTypeArgument(TypeParameter<U> type) {
-		return (TypeToken<U>) over(getTypeArgument(type.getType()));
-	}
-
-	/**
-	 * Resolve a given type with respect to the type represented by this
-	 * TypeToken. This means that any occurrences of TypeVariable or
-	 * InferenceVariable objects will be substituted by any instantiations thereof
-	 * which may be present as part of this TypeToken's type hierarchy.
 	 * 
-	 * @param <U>
-	 *          The type we wish to resolve.
-	 * @param type
-	 *          The type we wish to resolve.
-	 * @return A new TypeToken with all type variables and inference variables
-	 *         which have instantiations resolved.
+	 * 
+	 * 
+	 * 
+	 * 
+	 * From here down we still need to have API involving TypeTokens incorporate
+	 * the bounds from them properly...
+	 * 
+	 * TODO the same thing with Invokables!
 	 */
-	@SuppressWarnings("unchecked")
-	public <U> TypeToken<? extends U> resolveType(TypeToken<U> type) {
-		return (TypeToken<? extends U>) over(getInternalResolver().resolveType(
-				type.getType()));
-	}
 
 	/**
 	 * Derive a new type from this one, with a lower bounding on this type by a
@@ -723,6 +713,25 @@ public class TypeToken<T> {
 	}
 
 	/**
+	 * Resolve a given type with respect to the type represented by this
+	 * TypeToken. This means that any occurrences of TypeVariable or
+	 * InferenceVariable objects will be substituted by any instantiations thereof
+	 * which may be present as part of this TypeToken's type hierarchy.
+	 * 
+	 * @param <U>
+	 *          The type we wish to resolve.
+	 * @param type
+	 *          The type we wish to resolve.
+	 * @return A new TypeToken with all type variables and inference variables
+	 *         which have instantiations resolved.
+	 */
+	@SuppressWarnings("unchecked")
+	public <U> TypeToken<U> resolveType(TypeToken<U> type) {
+		return (TypeToken<U>) over(getInternalResolver()
+				.resolveType(type.getType()));
+	}
+
+	/**
 	 * <p>
 	 * As {@link ParameterizedTypes#getAllTypeParameters(Class)} called on each of
 	 * {@link #getRawTypes()} merged into a single list.
@@ -765,6 +774,19 @@ public class TypeToken<T> {
 										(ParameterizedType) resolveSupertypeParameters(t).getType())
 								.entrySet().stream())
 				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+	}
+
+	/**
+	 * Try to find an instantiation of the given type variable within the context
+	 * provided by the type hierarchy of the type described by this TypeToken.
+	 * 
+	 * @param type
+	 *          The type variable of which we wish to determine an instantiation.
+	 * @return A TypeToken over the instantiation of the given type parameter, if
+	 *         one exists, otherwise a TypeToken over the given parameter.
+	 */
+	public Type resolveTypeArgument(TypeVariable<?> type) {
+		return getInternalResolver().resolveTypeVariable(getRawType(), type);
 	}
 
 	/**

@@ -675,7 +675,8 @@ public final class Types {
 			from = wrapPrimitive(from);
 		else if (!isPrimitive(from) && isPrimitive(to))
 			from = unwrapPrimitive(from);
-		return isStrictInvocationContextCompatible(from, to);
+
+		return isAssignable(from, to);
 	}
 
 	/**
