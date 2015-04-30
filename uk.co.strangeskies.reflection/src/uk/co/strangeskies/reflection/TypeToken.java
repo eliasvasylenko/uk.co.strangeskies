@@ -765,6 +765,9 @@ public class TypeToken<T> {
 	 *         which have instantiations resolved.
 	 */
 	public Type resolveType(Type type) {
+		if (getType() instanceof ParameterizedType)
+			type = getInternalResolver().resolveType(getRawType(), type);
+
 		return getInternalResolver().resolveType(type);
 	}
 
@@ -932,8 +935,11 @@ public class TypeToken<T> {
 			methodStream = Stream.concat(methodStream,
 					Arrays.stream(Object.class.getMethods()));
 
-		return methodStream.filter(filter)
-				.map(m -> Invokable.over(m, this, over(m.getGenericReturnType())))
+		return methodStream
+				.filter(filter)
+				.map(
+						m -> Invokable.over(m, this,
+								over(resolveType(m.getGenericReturnType()))))
 				.collect(Collectors.toSet());
 	}
 

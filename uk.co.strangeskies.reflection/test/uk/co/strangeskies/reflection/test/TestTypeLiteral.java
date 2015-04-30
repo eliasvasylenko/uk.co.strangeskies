@@ -303,8 +303,15 @@ public class TestTypeLiteral {
 				.over(Arrays.class)
 				.resolveMethodOverload("asList", int.class, double.class)
 				.withTargetType(
-						new TypeToken<List<? super Comparable<? extends Number>>>() {})
-				.infer());
+						new TypeToken<List<? super Comparable<? extends Number>>>() {}));
+		System.out.println();
+
+		System.out.println(TypeToken
+				.over(Arrays.class)
+				.resolveMethodOverload("asList", int.class, double.class)
+				.withTargetType(
+						new TypeToken<List<? super Comparable<? extends Number>>>(
+								Wildcards.INFERENCE) {}).infer());
 		System.out.println();
 
 		System.out.println(TypeToken.over(B.class).resolveMethodOverload("method",
@@ -444,7 +451,7 @@ public class TestTypeLiteral {
 				Wildcards.INFERENCE) {}.resolveMethodOverload("blurn")
 				.withReceiverType(new TypeToken<Gurn<Integer>>() {});
 		System.out.println(blurner);
-		System.out.println(blurner.getResolver().getBounds());
+		System.out.println();
 	}
 
 	static <T> TypeToken<List<T>> listOf(Class<T> sub) {
@@ -534,6 +541,7 @@ interface Blurn<T> {
 }
 
 interface Gurn<X> extends Blurn<List<X>> {
+	@Override
 	HashSet<List<X>> blurn();
 }
 

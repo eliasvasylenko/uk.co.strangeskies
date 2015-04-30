@@ -30,12 +30,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
+import uk.co.strangeskies.utilities.IdentityComparator;
 import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
+import uk.co.strangeskies.utilities.collection.multimap.MultiTreeMap;
 
 /**
  * A collection of utility methods relating to generic array types.
@@ -360,7 +362,9 @@ public class ParameterizedTypes {
 					.get(currentThread);
 			if (equalitiesForThread == null) {
 				assumedEqualities.put(currentThread,
-						equalitiesForThread = new MultiHashMap<>(HashSet::new));
+						equalitiesForThread = new MultiTreeMap<>(
+								new IdentityComparator<>(), () -> new TreeSet<>(
+										new IdentityComparator<>())));
 				newThread = true;
 			}
 
@@ -368,6 +372,8 @@ public class ParameterizedTypes {
 
 			if (other == this)
 				equals = true;
+			else if (other instanceof IntersectionType)
+				equals = other.equals(this);
 			else if (other == null || !(other instanceof ParameterizedType))
 				equals = false;
 			else {

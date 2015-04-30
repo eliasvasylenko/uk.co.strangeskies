@@ -41,7 +41,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
-import uk.co.strangeskies.reflection.TypeToken.Wildcards;
 import uk.co.strangeskies.utilities.tuples.Pair;
 
 /**
@@ -89,14 +88,13 @@ public class Invokable<T, R> {
 
 	private Invokable(TypeToken<T> receiverType, TypeToken<R> returnType,
 			Executable executable, BiFunction<T, List<?>, R> invocationFunction) {
-		this(receiverType.getResolver(), receiverType, returnType, executable,
+		this(receiverType.getResolver(), receiverType, executable,
 				invocationFunction, null);
 	}
 
 	@SuppressWarnings("unchecked")
 	private Invokable(Resolver resolver, TypeToken<T> receiverType,
-			TypeToken<R> returnType, Executable executable,
-			BiFunction<T, List<?>, R> invocationFunction,
+			Executable executable, BiFunction<T, List<?>, R> invocationFunction,
 			List<? extends Type> parameters) {
 		this.resolver = resolver;
 		this.executable = executable;
@@ -118,24 +116,21 @@ public class Invokable<T, R> {
 		 * Resolve types within context of given Resolver:
 		 */
 		if (isStatic())
-			this.receiverType = (TypeToken<T>) TypeToken.over(resolver
-					.getRawType(receiverType.getType()));
-		else
-			this.receiverType = receiverType.withBounds(resolver.getBounds());
+			this.receiverType = (TypeToken<T>) TypeToken.over(receiverType
+					.getRawType());
+		else {
+			resolver.incorporateType(receiverType.resolve().getType());
+			receiverType = receiverType.withBounds(resolver.getBounds());
+			this.receiverType = receiverType;
+		}
 
-		returnType = returnType.withBounds(resolver.getBounds());
 		if (executable instanceof Method) {
 			Method method = (Method) executable;
-			Resolver returnResolver = returnType.resolveSubtypeParameters(
-					method.getReturnType()).getResolver();
-			returnResolver.incorporateType(returnResolver.resolveType(method
-					.getGenericReturnType()));
-			returnType = (TypeToken<R>) TypeToken.over(returnResolver,
-					((Method) executable).getReturnType());
-		} else {
-
-		}
-		this.returnType = returnType;
+			returnType = (TypeToken<R>) TypeToken.over(
+					resolver.resolveType(method, method.getGenericReturnType()))
+					.withBounds(resolver.getBounds());
+		} else
+			returnType = (TypeToken<R>) receiverType;
 
 		/*
 		 * Determine parameter types:
@@ -251,8 +246,9 @@ public class Invokable<T, R> {
 	 * @return An invokable wrapping the given method.
 	 */
 	public static Invokable<?, ?> over(Method method) {
-		return over(method, TypeToken.over(method.getDeclaringClass()),
-				TypeToken.over(method.getGenericReturnType()));
+		TypeToken<?> receiver = TypeToken.over(method.getDeclaringClass());
+		return over(method, receiver,
+				TypeToken.over(receiver.resolveType(method.getGenericReturnType())));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -427,7 +423,7 @@ public class Invokable<T, R> {
 	public Invokable<T, R> withBounds(BoundSet bounds) {
 		Resolver resolver = getResolver();
 		resolver.getBounds().incorporate(bounds);
-		return new Invokable<>(resolver, receiverType, returnType, executable,
+		return new Invokable<>(resolver, receiverType, executable,
 				invocationFunction, parameters);
 	}
 
@@ -511,7 +507,7 @@ public class Invokable<T, R> {
 					.getMethod(executable.getName(), executable.getParameterTypes());
 
 			return new Invokable<>(resolver, (TypeToken<T>) TypeToken.over(type),
-					returnType, override, invocationFunction, parameters);
+					override, invocationFunction, parameters);
 		} catch (NoSuchMethodException | SecurityException e) {
 			throw new TypeException("Cannot resolve method override.", e);
 		}
@@ -575,7 +571,8 @@ public class Invokable<T, R> {
 	 */
 	@SuppressWarnings("unchecked")
 	public <S> Invokable<T, S> withTargetType(TypeToken<S> target) {
-		return (Invokable<T, S>) withTargetType(target.getType());
+		return (Invokable<T, S>) withBounds(target.getResolver().getBounds())
+				.withTargetType(target.getType());
 	}
 
 	/**
@@ -611,9 +608,8 @@ public class Invokable<T, R> {
 
 		resolver.addLooseCompatibility(returnType.getType(), target);
 
-		return new Invokable<>(resolver, receiverType, (TypeToken<S>) returnType,
-				executable, (BiFunction<T, List<?>, S>) invocationFunction, parameters)
-				.infer();
+		return new Invokable<>(resolver, receiverType, executable,
+				(BiFunction<T, List<?>, S>) invocationFunction, parameters);
 	}
 
 	/**
@@ -681,7 +677,7 @@ public class Invokable<T, R> {
 			for (TypeVariable<?> parameter : executable.getTypeParameters())
 				resolver.infer(parameter);
 
-		return new Invokable<>(resolver, receiverType, returnType, executable,
+		return new Invokable<>(resolver, receiverType, executable,
 				invocationFunction, parameters);
 	}
 
@@ -697,7 +693,7 @@ public class Invokable<T, R> {
 			resolver.infer(resolver.getBounds().getInferenceVariablesMentionedBy(
 					parameter));
 
-		return new Invokable<>(resolver, receiverType, returnType, executable,
+		return new Invokable<>(resolver, receiverType, executable,
 				invocationFunction, parameters);
 	}
 
@@ -842,7 +838,7 @@ public class Invokable<T, R> {
 			new Resolver(resolver).infer();
 		}
 
-		return new Invokable<>(resolver, receiverType, returnType, executable,
+		return new Invokable<>(resolver, receiverType, executable,
 				invocationFunction, parameters);
 	}
 

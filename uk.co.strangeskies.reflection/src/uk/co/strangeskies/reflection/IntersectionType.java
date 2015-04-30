@@ -167,6 +167,9 @@ public abstract class IntersectionType implements Type {
 
 	@Override
 	public boolean equals(Object obj) {
+		if (obj == this)
+			return true;
+
 		if (!(obj instanceof IntersectionType))
 			if (getTypes().length == 0)
 				return obj.equals(Object.class);
@@ -175,8 +178,6 @@ public abstract class IntersectionType implements Type {
 			else
 				return false;
 
-		if (obj == this)
-			return true;
 		IntersectionType that = (IntersectionType) obj;
 		return Arrays.equals(this.getTypes(), that.getTypes());
 	}
