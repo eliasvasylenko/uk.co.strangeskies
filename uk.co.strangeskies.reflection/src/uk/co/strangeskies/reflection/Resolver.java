@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -525,13 +526,21 @@ public class Resolver {
 	 * @return The upper bounds of the given type.
 	 */
 	public Set<Type> getUpperBounds(Type type) {
+		type = resolveType(type);
+
 		Set<Type> upperBounds = Types.getUpperBounds(type);
 
 		for (Type upperBound : new HashSet<>(upperBounds))
 			if (getBounds().isInferenceVariable(upperBound)) {
 				upperBounds.remove(upperBound);
-				upperBounds.addAll(getBounds().getBoundsOn(
-						(InferenceVariable) upperBound).getProperUpperBounds());
+
+				InferenceVariableBounds bounds = getBounds().getBoundsOn(
+						(InferenceVariable) upperBound);
+				Stream
+						.concat(bounds.getUpperBounds().stream(),
+								bounds.getEqualities().stream())
+						.filter(t -> !getBounds().isInferenceVariable(t))
+						.forEach(upperBounds::add);
 			}
 
 		return upperBounds;
@@ -548,40 +557,30 @@ public class Resolver {
 	 *         exist.
 	 */
 	public Set<Type> getLowerBounds(Type type) {
+		type = resolveType(type);
+
 		Set<Type> lowerBounds = Types.getLowerBounds(type);
 
 		for (Type lowerBound : new HashSet<>(lowerBounds))
 			if (getBounds().isInferenceVariable(lowerBound)) {
 				lowerBounds.remove(lowerBound);
-				lowerBounds.addAll(getBounds().getBoundsOn(
-						(InferenceVariable) lowerBound).getProperLowerBounds());
+
+				InferenceVariableBounds bounds = getBounds().getBoundsOn(
+						(InferenceVariable) lowerBound);
+				Stream
+						.concat(bounds.getLowerBounds().stream(),
+								bounds.getEqualities().stream())
+						.filter(t -> !getBounds().isInferenceVariable(t))
+						.forEach(lowerBounds::add);
 			}
 
 		return lowerBounds;
 	}
 
 	/**
-	 * Determine the raw type of a given type, accounting for inference variables
+	 * Determine the raw types of a given type, accounting for inference variables
 	 * which may have instantiations or upper bounds within the context of this
 	 * resolver.
-	 * 
-	 * TODO
-	 * 
-	 * @param type
-	 *          The type of which we wish to determine the raw type.
-	 * @return The raw type of the given type.
-	 */
-	public Class<?> getRawType(Type type) {
-		return Types.getRawType(new TypeSubstitution().where(
-				getBounds()::isInferenceVariable, null).resolve(type));
-	}
-
-	/**
-	 * Determine the raw type of a given type, accounting for inference variables
-	 * which may have instantiations or upper bounds within the context of this
-	 * resolver.
-	 * 
-	 * TODO
 	 * 
 	 * @param type
 	 *          The type of which we wish to determine the raw type.
@@ -589,11 +588,25 @@ public class Resolver {
 	 */
 	public Set<Class<?>> getRawTypes(Type type) {
 		type = resolveType(type);
-		if (getBounds().getInferenceVariables().contains(type))
-			return Types.getRawTypes(IntersectionType.uncheckedFrom(getBounds()
-					.getBoundsOn((InferenceVariable) type).getUpperBounds()));
-		else
-			return Types.getRawTypes(type);
+
+		return getUpperBounds(type).stream().map(Types::getRawType)
+				.collect(Collectors.toCollection(LinkedHashSet::new));
+	}
+
+	/**
+	 * Determine the raw type of a given type, accounting for inference variables
+	 * which may have instantiations or upper bounds within the context of this
+	 * resolver.
+	 * 
+	 * @param type
+	 *          The type of which we wish to determine the raw type.
+	 * @return The raw type of the given type.
+	 */
+	public Class<?> getRawType(Type type) {
+		type = resolveType(type);
+
+		return Types.getRawType(getUpperBounds(type).stream().findFirst()
+				.orElse(Object.class));
 	}
 
 	/**

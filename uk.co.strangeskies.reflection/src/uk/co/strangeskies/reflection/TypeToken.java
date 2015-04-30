@@ -189,7 +189,8 @@ public class TypeToken<T> {
 		}
 
 		this.rawType = (Class<? super T>) (resolver == null ? Types
-				.getRawType(this.type) : resolver.getRawType(this.type));
+				.getRawType(this.type) : resolver.getRawTypes(this.type).iterator()
+				.next());
 	}
 
 	@Override
@@ -359,12 +360,7 @@ public class TypeToken<T> {
 	 * @return The raw types of the type represented by this TypeToken.
 	 */
 	public Set<Class<?>> getRawTypes() {
-		if (resolver != null
-				&& resolver.getBounds().getInferenceVariables().contains(getType()))
-			return Types.getRawTypes(IntersectionType.uncheckedFrom(resolver
-					.getBounds().getBoundsOn((InferenceVariable) getType())
-					.getUpperBounds()));
-		return Types.getRawTypes(getType());
+		return getInternalResolver().getRawTypes(getType());
 	}
 
 	/**

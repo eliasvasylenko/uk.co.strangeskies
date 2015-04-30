@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -96,17 +97,8 @@ public final class Types {
 	 * @return The raw types of the type represented by this TypeToken.
 	 */
 	public static Set<Class<?>> getRawTypes(Type type) {
-		if (type instanceof IntersectionType) {
-			return Arrays.stream(((IntersectionType) type).getTypes())
-					.flatMap(t -> getRawTypes(t).stream()).collect(Collectors.toSet());
-		} else if (type instanceof WildcardType) {
-			return getRawTypes(IntersectionType.uncheckedFrom(((WildcardType) type)
-					.getUpperBounds()));
-		} else if (type instanceof TypeVariable<?>) {
-			return getRawTypes(IntersectionType
-					.uncheckedFrom(((TypeVariable<?>) type).getBounds()));
-		} else
-			return new HashSet<>(Arrays.asList(getRawType(type)));
+		return getUpperBounds(type).stream().map(Types::getRawType)
+				.collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 
 	/**
@@ -152,6 +144,51 @@ public final class Types {
 		}
 		throw new IllegalArgumentException("Type of type '" + type
 				+ "' is unsupported.");
+	}
+
+	/**
+	 * Find the upper bounds of a given type.
+	 * 
+	 * @param type
+	 *          The type whose bounds we wish to discover.
+	 * @return The upper bounds of the given type.
+	 */
+	public static Set<Type> getUpperBounds(Type type) {
+		Type[] types;
+
+		if (type instanceof IntersectionType)
+			types = ((IntersectionType) type).getTypes();
+		else if (type instanceof WildcardType)
+			types = ((WildcardType) type).getUpperBounds();
+		else if (type instanceof TypeVariable)
+			types = ((TypeVariable<?>) type).getBounds();
+		else
+			types = new Type[] { type };
+
+		return new LinkedHashSet<>(Arrays.asList(types));
+	}
+
+	/**
+	 * Find the lower bounds of a given type.
+	 * 
+	 * @param type
+	 *          The type whose bounds we wish to discover.
+	 * @return The lower bounds of the given type, or null if no such bounds
+	 *         exist.
+	 */
+	public static Set<Type> getLowerBounds(Type type) {
+		Type[] types;
+
+		if (type instanceof IntersectionType)
+			types = ((IntersectionType) type).getTypes();
+		else if (type instanceof WildcardType)
+			types = ((WildcardType) type).getLowerBounds();
+		else if (type instanceof TypeVariableCapture)
+			types = ((TypeVariableCapture) type).getLowerBounds();
+		else
+			types = new Type[] { type };
+
+		return new LinkedHashSet<>(Arrays.asList(types));
 	}
 
 	/**
@@ -672,42 +709,6 @@ public final class Types {
 	}
 
 	/**
-	 * Find the upper bounds of a given type.
-	 * 
-	 * @param type
-	 *          The type whose bounds we wish to discover.
-	 * @return The upper bounds of the given type.
-	 */
-	public static Set<Type> getUpperBounds(Type type) {
-		if (type instanceof WildcardType)
-			return new HashSet<>(
-					Arrays.asList(((WildcardType) type).getUpperBounds()));
-		else if (type instanceof TypeVariable)
-			return new HashSet<>(Arrays.asList(((TypeVariable<?>) type).getBounds()));
-		else
-			return new HashSet<>(Arrays.asList(type));
-	}
-
-	/**
-	 * Find the lower bounds of a given type.
-	 * 
-	 * @param type
-	 *          The type whose bounds we wish to discover.
-	 * @return The lower bounds of the given type, or null if no such bounds
-	 *         exist.
-	 */
-	public static Set<Type> getLowerBounds(Type type) {
-		if (type instanceof WildcardType)
-			return new HashSet<>(
-					Arrays.asList(((WildcardType) type).getLowerBounds()));
-		else if (type instanceof TypeVariableCapture)
-			return new HashSet<>(Arrays.asList(((TypeVariableCapture) type)
-					.getLowerBounds()));
-		else
-			return new HashSet<>(Arrays.asList(type));
-	}
-
-	/**
 	 * Determine whether a given type is well formed with respect to the
 	 * satisfaction of any bounds on any parameterizations in all mentioned types.
 	 * 
@@ -983,8 +984,7 @@ public final class Types {
 													: null);
 						})
 				.parameterizedTypeVisitor(
-						type -> supertypes.put(Types.getRawType(type), type)).create()
-				.visit(of);
+						type -> supertypes.put(getRawType(type), type)).create().visit(of);
 
 		return supertypes;
 	}

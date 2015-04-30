@@ -439,6 +439,12 @@ public class TestTypeLiteral {
 		System.out.println(new TypeToken<ChildNode<?, ?>>() {}.getType()
 				+ " ~ = ~ " + new TypeToken<ChildNode<?, ?>>() {}.resolve());
 		System.out.println();
+
+		Invokable<?, ?> blurner = new TypeToken<Blurn<? extends List<? extends Number>>>(
+				Wildcards.INFERENCE) {}.resolveMethodOverload("blurn")
+				.withReceiverType(new TypeToken<Gurn<Integer>>() {});
+		System.out.println(blurner);
+		System.out.println(blurner.getResolver().getBounds());
 	}
 
 	static <T> TypeToken<List<T>> listOf(Class<T> sub) {
@@ -527,7 +533,9 @@ interface Blurn<T> {
 	Set<T> blurn();
 }
 
-interface Gurn<X> extends Blurn<List<X>> {}
+interface Gurn<X> extends Blurn<List<X>> {
+	HashSet<List<X>> blurn();
+}
 
 class Nest2<T extends Nest2<T>> {}
 

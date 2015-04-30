@@ -41,6 +41,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
+import uk.co.strangeskies.reflection.TypeToken.Wildcards;
 import uk.co.strangeskies.utilities.tuples.Pair;
 
 /**
@@ -122,7 +123,19 @@ public class Invokable<T, R> {
 		else
 			this.receiverType = receiverType.withBounds(resolver.getBounds());
 
-		this.returnType = returnType.withBounds(resolver.getBounds());
+		returnType = returnType.withBounds(resolver.getBounds());
+		if (executable instanceof Method) {
+			Method method = (Method) executable;
+			Resolver returnResolver = returnType.resolveSubtypeParameters(
+					method.getReturnType()).getResolver();
+			returnResolver.incorporateType(returnResolver.resolveType(method
+					.getGenericReturnType()));
+			returnType = (TypeToken<R>) TypeToken.over(returnResolver,
+					((Method) executable).getReturnType());
+		} else {
+
+		}
+		this.returnType = returnType;
 
 		/*
 		 * Determine parameter types:
@@ -480,9 +493,28 @@ public class Invokable<T, R> {
 	 *         type and the current receiver type, will also be assignable to the
 	 *         new type.
 	 */
+	@SuppressWarnings("unchecked")
 	public Invokable<? extends T, ? extends R> withReceiverType(Type type) {
-		Class<?> rawType = resolver.getRawType(type);
-		throw new RuntimeException();
+		try {
+			Resolver resolver = getResolver();
+
+			resolver.addUpperBound(type, receiverType.getType());
+
+			Class<?> mostSpecificOverridingClass = this.executable
+					.getDeclaringClass();
+			for (Class<?> candidate : resolver.getRawTypes(type))
+				if (mostSpecificOverridingClass.isAssignableFrom(candidate))
+					mostSpecificOverridingClass = candidate;
+
+			Executable override = mostSpecificOverridingClass.equals(executable
+					.getDeclaringClass()) ? executable : mostSpecificOverridingClass
+					.getMethod(executable.getName(), executable.getParameterTypes());
+
+			return new Invokable<>(resolver, (TypeToken<T>) TypeToken.over(type),
+					returnType, override, invocationFunction, parameters);
+		} catch (NoSuchMethodException | SecurityException e) {
+			throw new TypeException("Cannot resolve method override.", e);
+		}
 	}
 
 	/**

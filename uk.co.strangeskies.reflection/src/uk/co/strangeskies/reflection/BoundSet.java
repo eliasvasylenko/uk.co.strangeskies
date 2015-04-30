@@ -336,7 +336,7 @@ public class BoundSet {
 	 * set. Inference variables which are contained in the given bound set will
 	 * also be contained within the receiver bound set after incorporation.
 	 * 
-	 * TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	 * TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!! {
 	 * 
 	 * 
 	 * 
@@ -348,7 +348,7 @@ public class BoundSet {
 	 * 
 	 * 
 	 * 
-	 * TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	 * TODO } !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	 * 
 	 * @param boundSet
 	 *          The bound whose bounds we wish to incorporate.
