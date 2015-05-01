@@ -231,7 +231,8 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 			 * [α1:=Y1, ..., αn:=Yn].
 			 */
 			Set<Type> upperBoundSet = bounds.getBoundsOn(inferenceVariable)
-					.getUpperBounds();
+					.getUpperBounds().stream().map(new Resolver(bounds)::resolveType)
+					.collect(Collectors.toSet());
 
 			Type glb = IntersectionType.from(
 					upperBoundSet.stream().collect(Collectors.toSet()), bounds);
@@ -252,6 +253,8 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 		}
 
 		substituteBounds(typeVariableCaptures);
+
+		System.out.println(typeVariableCaptures);
 
 		for (Map.Entry<InferenceVariable, TypeVariableCapture> inferenceVariable : typeVariableCaptures
 				.entrySet())

@@ -86,8 +86,8 @@ public class Invokable<T, R> {
 		invocationFunction = that.invocationFunction;
 	}
 
-	private Invokable(TypeToken<T> receiverType, TypeToken<R> returnType,
-			Executable executable, BiFunction<T, List<?>, R> invocationFunction) {
+	private Invokable(TypeToken<T> receiverType, Executable executable,
+			BiFunction<T, List<?>, R> invocationFunction) {
 		this(receiverType.getResolver(), receiverType, executable,
 				invocationFunction, null);
 	}
@@ -207,12 +207,6 @@ public class Invokable<T, R> {
 
 	/**
 	 * Create a new Invokable instance from a reference to a {@link Constructor}.
-	 * The type of T here should only ever be raw, and only its raw type will be
-	 * available for inspection reflectively, so it is possible to subsequently
-	 * specify the receiver type using an overload of
-	 * {@link #withReceiverType(TypeToken)}, or to attempt to infer a more
-	 * specific type from a target type using an overload of
-	 * {@link #withTargetType(TypeToken)}.
 	 * 
 	 * @param <T>
 	 *          The type of the given {@link Constructor}.
@@ -225,17 +219,27 @@ public class Invokable<T, R> {
 		return over(constructor, type);
 	}
 
-	static <T> Invokable<T, T> over(Constructor<T> constructor,
+	/**
+	 * Create a new Invokable instance from a reference to a {@link Constructor}.
+	 * 
+	 * @param <T>
+	 * @param constructor
+	 *          The constructor to wrap.
+	 * @param receiver
+	 *          The target type of the given {@link Constructor}.
+	 * @return An invokable wrapping the given constructor.
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> Invokable<T, T> over(Constructor<? super T> constructor,
 			TypeToken<T> receiver) {
-		return new Invokable<>(receiver, receiver, constructor,
-				(T r, List<?> a) -> {
-					try {
-						return constructor.newInstance(a);
-					} catch (Exception e) {
-						throw new TypeException("Cannot invoke constructor '" + constructor
-								+ "' with arguments '" + a + "'.");
-					}
-				});
+		return new Invokable<>(receiver, constructor, (T r, List<?> a) -> {
+			try {
+				return (T) constructor.newInstance(a);
+			} catch (Exception e) {
+				throw new TypeException("Cannot invoke constructor '" + constructor
+						+ "' with arguments '" + a + "'.");
+			}
+		});
 	}
 
 	/**
@@ -247,16 +251,23 @@ public class Invokable<T, R> {
 	 */
 	public static Invokable<?, ?> over(Method method) {
 		TypeToken<?> receiver = TypeToken.over(method.getDeclaringClass());
-		return over(method, receiver,
-				TypeToken.over(receiver.resolveType(method.getGenericReturnType())));
+		return over(method, receiver);
 	}
 
-	@SuppressWarnings("unchecked")
-	static <T, R> Invokable<T, R> over(Method method, TypeToken<T> receiver,
-			TypeToken<R> result) {
-		return new Invokable<>(receiver, result, method, (T r, List<?> a) -> {
+	/**
+	 * Create a new Invokable instance from a reference to a {@link Constructor}.
+	 * 
+	 * @param <T>
+	 * @param method
+	 *          The method to wrap.
+	 * @param receiver
+	 *          The target type of the given {@link Method}.
+	 * @return An invokable wrapping the given method.
+	 */
+	public static <T> Invokable<T, ?> over(Method method, TypeToken<T> receiver) {
+		return new Invokable<>(receiver, method, (T r, List<?> a) -> {
 			try {
-				return (R) method.invoke(r, a);
+				return method.invoke(r, a);
 			} catch (Exception e) {
 				throw new TypeException("Cannot invoke method '" + method
 						+ "' on receiver '" + r + "' with arguments '" + a + "'.");
@@ -277,6 +288,26 @@ public class Invokable<T, R> {
 			return over((Method) executable);
 		else
 			return over((Constructor<?>) executable);
+	}
+
+	/**
+	 * As invocation of {@link #over(Constructor)} or {@link Method} as
+	 * appropriate.
+	 * 
+	 * @param <T>
+	 *          The target type of the given {@link Executable}.
+	 * @param executable
+	 *          The executable to wrap.
+	 * @param receiver
+	 * @return An invokable wrapping the given Executable.
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> Invokable<T, ?> over(Executable executable,
+			TypeToken<T> receiver) {
+		if (executable instanceof Method)
+			return over((Method) executable, receiver);
+		else
+			return over((Constructor<? super T>) executable, receiver);
 	}
 
 	/**

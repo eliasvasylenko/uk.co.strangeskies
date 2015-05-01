@@ -452,11 +452,27 @@ public class TestTypeLiteral {
 				.withReceiverType(new TypeToken<Gurn<Integer>>() {});
 		System.out.println(blurner);
 		System.out.println();
+
+		System.out.println(getIteratorType(new TypeToken<String>() {}));
+		System.out.println();
+
+		try {
+			System.out.println(Invokable.over(Blurn.class.getMethod("blurn"),
+					new TypeToken<Blurn<Long>>() {}));
+		} catch (NoSuchMethodException | SecurityException e) {
+			throw new RuntimeException(e);
+		}
+		System.out.println();
 	}
 
 	static <T> TypeToken<List<T>> listOf(Class<T> sub) {
 		return new TypeToken<List<T>>() {}.withTypeArgument(
 				new TypeParameter<T>() {}, sub);
+	}
+
+	static <U> TypeToken<Iterable<U>> getIteratorType(TypeToken<U> type) {
+		return new TypeToken<Iterable<U>>() {}.withTypeArgument(
+				new TypeParameter<U>() {}, type);
 	}
 }
 

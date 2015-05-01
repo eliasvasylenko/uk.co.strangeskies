@@ -898,8 +898,8 @@ public class TypeToken<T> {
 	}
 
 	private TypeToken<?> withTypeArgument(TypeVariable<?> parameter, Type argument) {
-		return over(new TypeSubstitution().where(parameter, argument).resolve(
-				getType()));
+		return over(new TypeSubstitution().where(resolveType(parameter), argument)
+				.resolve(getType()));
 	}
 
 	/**
@@ -935,12 +935,10 @@ public class TypeToken<T> {
 			methodStream = Stream.concat(methodStream,
 					Arrays.stream(Object.class.getMethods()));
 
-		return methodStream
-				.filter(filter)
-				.map(
-						m -> Invokable.over(m, this,
-								over(resolveType(m.getGenericReturnType()))))
-				.collect(Collectors.toSet());
+		return methodStream.filter(filter).map(m -> {
+			Invokable<T, ?> invokable = Invokable.over(m, this);
+			return invokable;
+		}).collect(Collectors.toSet());
 	}
 
 	/**
