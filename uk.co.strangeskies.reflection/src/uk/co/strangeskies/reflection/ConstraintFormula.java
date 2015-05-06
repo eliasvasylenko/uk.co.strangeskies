@@ -23,12 +23,8 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.BoundSet.IncorporationTarget;
 
@@ -151,11 +147,23 @@ public class ConstraintFormula {
 	private void reduceLooseCompatibilityConstraint(BoundSet bounds) {
 		IncorporationTarget incorporate = bounds.incorporate();
 
-		Type from;
-		if (this.from instanceof ParameterizedType)
-			from = captureConversion((ParameterizedType) this.from, bounds);
-		else
-			from = this.from;
+		Type from = this.from;
+		if (bounds.isInferenceVariable(from))
+			from = new Resolver(bounds).infer(from);
+
+		if (from instanceof ParameterizedType)
+			if (bounds.getInferenceVariablesMentionedBy(from).isEmpty())
+				from = TypeVariableCapture
+						.captureWildcardArguments((ParameterizedType) from);
+			else {
+				from = InferenceVariable.captureConversion((ParameterizedType) from,
+						bounds);
+			}
+		System.out.println(from);
+
+		/*
+		 * TODO why do we do the following capture conversion?:
+		 */
 
 		if (bounds.isProperType(from) && bounds.isProperType(to)) {
 			/*
@@ -198,156 +206,6 @@ public class ConstraintFormula {
 			 * Otherwise, the constraint reduces to ‹S <: T›.
 			 */
 			reduce(Kind.SUBTYPE, from, to, bounds);
-	}
-
-	/**
-	 * Create fresh {@link InferenceVariable}s for each parameter of the given
-	 * type - and each non-statically enclosing type thereof - which is a
-	 * {@link WildcardType}. New bounds based on the bounds of those wildcards,
-	 * and the bounds of the {@link TypeVariable}s they substitute, will be
-	 * incorporated into the given {@link BoundSet}, along with a
-	 * {@link CaptureConversion} bound representing this capture conversion. The
-	 * process of capture conversion is described in more detail in the Java 8
-	 * language specification.
-	 * 
-	 * @param type
-	 *          A parameterised type whose wildcard type arguments, if present, we
-	 *          wish to capture as inference variables.
-	 * @param bounds
-	 *          The bound set we wish to create any fresh inference variables
-	 *          within, and incorporate any newly implied bounds into.
-	 * @return A new parameterized type derived from the given parameterized type,
-	 *         with any fresh {@link InferenceVariable}s substituted for the type
-	 *         arguments.
-	 */
-	/*
-	 * Let G name a generic type declaration (§8.1.2, §9.1.2) with n type
-	 * parameters A1,...,An with corresponding bounds U1,...,Un.
-	 */
-	private static ParameterizedType captureConversion(ParameterizedType type,
-			BoundSet bounds) {
-		if (ParameterizedTypes.getAllTypeArguments(type).values().stream()
-				.anyMatch(WildcardType.class::isInstance)) {
-			/*
-			 * There exists a capture conversion from a parameterized type
-			 * G<T1,...,Tn> (§4.5) to a parameterized type G<S1,...,Sn>, where, for 1
-			 * ≤ i ≤ n :
-			 */
-
-			Map<TypeVariable<?>, Type> parameterArguments = ParameterizedTypes
-					.getAllTypeArguments(type);
-			Map<InferenceVariable, Type> capturedArguments = new HashMap<>();
-			Map<InferenceVariable, TypeVariable<?>> capturedParameters = new HashMap<>();
-
-			Map<TypeVariable<?>, InferenceVariable> parameterCaptures = ParameterizedTypes
-					.getAllTypeParameters(Types.getRawType(type))
-					.stream()
-					.collect(
-							Collectors.toMap(Function.identity(),
-									t -> new InferenceVariable()));
-
-			for (InferenceVariable variable : parameterCaptures.values())
-				bounds.addInferenceVariable(variable);
-
-			for (TypeVariable<?> parameter : parameterCaptures.keySet()) {
-				Type argument = parameterArguments.get(parameter);
-				InferenceVariable inferenceVariable = parameterCaptures.get(parameter);
-
-				if (argument instanceof WildcardType) {
-					WildcardType wildcardArgument = (WildcardType) argument;
-					Type upperBound;
-					Type lowerBound;
-
-					if (wildcardArgument.getLowerBounds().length > 0) {
-						/*
-						 * If Ti is a wildcard type argument of the form ? super Bi, then Si
-						 * is a fresh type variable whose upper bound is
-						 * Ui[A1:=S1,...,An:=Sn] and whose lower bound is Bi.
-						 */
-						upperBound = IntersectionType.from(parameter.getBounds());
-						lowerBound = IntersectionType.uncheckedFrom(wildcardArgument
-								.getLowerBounds());
-					} else if (wildcardArgument.getUpperBounds().length > 0) {
-						/*
-						 * If Ti is a wildcard type argument of the form ? extends Bi, then
-						 * Si is a fresh type variable whose upper bound is glb(Bi,
-						 * Ui[A1:=S1,...,An:=Sn]) and whose lower bound is the null type.
-						 */
-						upperBound = IntersectionType.from(IntersectionType
-								.uncheckedFrom(wildcardArgument.getUpperBounds()),
-								IntersectionType.uncheckedFrom(parameter.getBounds()));
-						lowerBound = null;
-					} else {
-						/*
-						 * If Ti is a wildcard type argument (§4.5.1) of the form ?, then Si
-						 * is a fresh type variable whose upper bound is
-						 * Ui[A1:=S1,...,An:=Sn] and whose lower bound is the null type
-						 * (§4.1).
-						 */
-						upperBound = IntersectionType.from(parameter.getBounds());
-						lowerBound = null;
-					}
-
-					upperBound = new TypeSubstitution(parameterCaptures::get)
-							.resolve(upperBound);
-					bounds.incorporate().subtype(inferenceVariable, upperBound);
-
-					if (lowerBound != null)
-						bounds.incorporate().subtype(lowerBound, inferenceVariable);
-				} else {
-					/*
-					 * Otherwise, Si = Ti.
-					 */
-					// TODO do this properly...
-					bounds.incorporate().equality(inferenceVariable, argument);
-				}
-
-				capturedArguments.put(inferenceVariable, argument);
-				capturedParameters.put(inferenceVariable, parameter);
-			}
-
-			ParameterizedType capturedType = (ParameterizedType) ParameterizedTypes
-					.from(Types.getRawType(type), parameterCaptures).getType();
-
-			CaptureConversion captureConversion = new CaptureConversion() {
-				@Override
-				public ParameterizedType getOriginalType() {
-					return type;
-				}
-
-				@Override
-				public Set<InferenceVariable> getInferenceVariables() {
-					return capturedArguments.keySet();
-				}
-
-				@Override
-				public Type getCapturedArgument(InferenceVariable variable) {
-					return capturedArguments.get(variable);
-				}
-
-				@Override
-				public TypeVariable<?> getCapturedParameter(InferenceVariable variable) {
-					return capturedParameters.get(variable);
-				}
-
-				@Override
-				public ParameterizedType getCaptureType() {
-					return capturedType;
-				}
-
-				@Override
-				public String toString() {
-					return new StringBuilder().append(getCaptureType().getTypeName())
-							.append(" = capture(").append(getOriginalType().getTypeName())
-							.append(")").toString();
-				}
-			};
-
-			bounds.incorporate().captureConversion(captureConversion);
-
-			return captureConversion.getCaptureType();
-		} else
-			return type;
 	}
 
 	private static boolean isUncheckedCompatibleOnly(Type from, Type to) {
@@ -787,11 +645,20 @@ public class ConstraintFormula {
 				 * arguments A1, ..., An, the constraint reduces to the following new
 				 * constraints: for all i (1 ≤ i ≤ n), ‹Bi = Ai›.
 				 */
-				ParameterizedTypes.getAllTypeParameters(Types.getRawType(from))
-						.forEach(
-								type -> reduce(Kind.EQUALITY, TypeToken.over(from)
-										.resolveTypeArgument(type), TypeToken.over(to)
-										.resolveTypeArgument(type), bounds));
+				if (from instanceof ParameterizedType)
+					if (to instanceof ParameterizedType)
+						ParameterizedTypes.getAllTypeParameters(Types.getRawType(from))
+								.forEach(
+										type -> reduce(
+												Kind.EQUALITY,
+												ParameterizedTypes.getAllTypeArguments(
+														(ParameterizedType) from).get(type),
+												ParameterizedTypes.getAllTypeArguments(
+														(ParameterizedType) to).get(type), bounds));
+					else
+						incorporate.falsehood();
+				else if (to instanceof ParameterizedType)
+					incorporate.falsehood();
 			}
 		}
 	}

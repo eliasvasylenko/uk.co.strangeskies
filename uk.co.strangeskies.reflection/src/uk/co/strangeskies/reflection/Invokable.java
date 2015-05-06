@@ -105,13 +105,6 @@ public class Invokable<T, R> {
 		 */
 		resolver.incorporateTypeParameters(getExecutable());
 
-		if (!isStatic()) {
-			Class<?> declaringClass = executable.getDeclaringClass();
-			resolver.incorporateTypeHierarchy(receiverType.getRawTypes().stream()
-					.filter(t -> Types.isAssignable(t, declaringClass)).findAny().get(),
-					declaringClass);
-		}
-
 		/*
 		 * Resolve types within context of given Resolver:
 		 */
@@ -119,8 +112,11 @@ public class Invokable<T, R> {
 			this.receiverType = (TypeToken<T>) TypeToken.over(receiverType
 					.getRawType());
 		else {
-			resolver.incorporateType(receiverType.resolve().getType());
-			receiverType = receiverType.withBounds(resolver.getBounds());
+			TypeToken<?> superType = receiverType
+					.resolveSupertypeParameters(executable.getDeclaringClass());
+			resolver.getBounds().incorporate(superType.getResolver().getBounds());
+			resolver.incorporateType(superType.getType());
+			receiverType = receiverType.withBounds(resolver.getBounds()).resolve();
 			this.receiverType = receiverType;
 		}
 
@@ -223,6 +219,7 @@ public class Invokable<T, R> {
 	 * Create a new Invokable instance from a reference to a {@link Constructor}.
 	 * 
 	 * @param <T>
+	 *          The exact type of the constructor.
 	 * @param constructor
 	 *          The constructor to wrap.
 	 * @param receiver
@@ -258,6 +255,7 @@ public class Invokable<T, R> {
 	 * Create a new Invokable instance from a reference to a {@link Constructor}.
 	 * 
 	 * @param <T>
+	 *          The exact type of the method receiver.
 	 * @param method
 	 *          The method to wrap.
 	 * @param receiver
@@ -299,6 +297,7 @@ public class Invokable<T, R> {
 	 * @param executable
 	 *          The executable to wrap.
 	 * @param receiver
+	 *          The type of the constructor or method receiver.
 	 * @return An invokable wrapping the given Executable.
 	 */
 	@SuppressWarnings("unchecked")
@@ -637,7 +636,8 @@ public class Invokable<T, R> {
 	private <S extends R> Invokable<T, S> withTargetTypeCapture(Type target) {
 		Resolver resolver = getResolver();
 
-		resolver.addLooseCompatibility(returnType.getType(), target);
+		ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, returnType.getType(),
+				target, resolver.getBounds());
 
 		return new Invokable<>(resolver, receiverType, executable,
 				(BiFunction<T, List<?>, S>) invocationFunction, parameters);
@@ -702,11 +702,8 @@ public class Invokable<T, R> {
 	public Invokable<T, R> infer() {
 		Resolver resolver = getResolver();
 
-		if (executable instanceof Constructor)
-			resolver.infer(executable);
-		else
-			for (TypeVariable<?> parameter : executable.getTypeParameters())
-				resolver.infer(parameter);
+		resolver.infer(executable);
+		resolver.infer(getReceiverType().getType());
 
 		return new Invokable<>(resolver, receiverType, executable,
 				invocationFunction, parameters);
@@ -861,6 +858,7 @@ public class Invokable<T, R> {
 					}
 				}
 				resolver.getBounds().incorporate(argument.getResolver().getBounds());
+
 				ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, argument.getType(),
 						parameter, resolver.getBounds());
 			}

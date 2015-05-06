@@ -33,21 +33,21 @@ public class GenericArrayTypes {
 	 * Obtain a reference to a {@link GenericArrayType} derived from a given
 	 * component type.
 	 * 
-	 * @param type
+	 * @param component
 	 *          The component type of the generic array type to be created.
 	 * @return A generic array type whose component type is the given type.
 	 */
-	public static GenericArrayType fromComponentType(Type type) {
+	public static GenericArrayType fromComponentType(Type component) {
 		return new GenericArrayType() {
 			@Override
 			public Type getGenericComponentType() {
-				return type;
+				return component;
 			}
 
 			@Override
 			public String toString() {
-				return Types.toString(type)
-						+ (type instanceof IntersectionType ? " " : "") + "[]";
+				return Types.toString(component)
+						+ (component instanceof IntersectionType ? " " : "") + "[]";
 			}
 
 			@Override
@@ -59,13 +59,34 @@ public class GenericArrayTypes {
 
 				GenericArrayType that = (GenericArrayType) object;
 
-				return type.equals(that.getGenericComponentType());
+				return component.equals(that.getGenericComponentType());
 			}
 
 			@Override
 			public int hashCode() {
-				return type.hashCode();
+				return component.hashCode();
 			}
 		};
+	}
+
+	/**
+	 * Obtain a reference to a {@link GenericArrayType} derived from a given
+	 * component type, with the given number of dimensions.
+	 * 
+	 * @param component
+	 *          The component type of the generic array type to be created.
+	 * @param arrayDimensions
+	 *          The number of dimensions to create over the given component.
+	 * @return A generic array type whose component type is the given type.
+	 */
+	public static GenericArrayType fromComponentType(Type component,
+			int arrayDimensions) {
+		GenericArrayType array;
+
+		do {
+			component = array = fromComponentType(component);
+		} while (--arrayDimensions > 0);
+
+		return array;
 	}
 }

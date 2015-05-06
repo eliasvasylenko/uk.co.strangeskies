@@ -19,6 +19,7 @@
 package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -141,9 +142,7 @@ public class TypeToken<T> {
 					.resolveTypeVariable(TypeToken.class.getTypeParameters()[0]);
 		}
 
-		type = dealWithWildcards(type, wildcards);
-
-		this.type = type;
+		this.type = dealWithWildcards(type, wildcards);
 
 		rawType = (Class<? super T>) Types.getRawType(type);
 	}
@@ -155,11 +154,22 @@ public class TypeToken<T> {
 			if (wildcards == Wildcards.CAPTURE) {
 				type = TypeVariableCapture.captureWildcardArguments(parameterizedType);
 			} else if (wildcards == Wildcards.INFERENCE) {
-				if (this.resolver == null)
-					this.resolver = new Resolver();
-				type = this.resolver.inferOverTypeArguments(parameterizedType);
+				if (resolver == null)
+					resolver = new Resolver();
+				type = resolver.inferOverTypeArguments(parameterizedType);
+			}
+		} else if (type instanceof GenericArrayType) {
+			GenericArrayType arrayType = (GenericArrayType) type;
+
+			if (wildcards == Wildcards.CAPTURE) {
+				type = TypeVariableCapture.captureWildcardArguments(arrayType);
+			} else if (wildcards == Wildcards.INFERENCE) {
+				if (resolver == null)
+					resolver = new Resolver();
+				type = resolver.inferOverTypeArguments(arrayType);
 			}
 		}
+
 		return type;
 	}
 
@@ -179,14 +189,11 @@ public class TypeToken<T> {
 	private TypeToken(Resolver resolver, Type type, Wildcards wildcards) {
 		this.resolver = resolver;
 
-		type = dealWithWildcards(type, wildcards);
-		if (resolver == null)
-			this.type = type;
-		else {
-			if (type instanceof ParameterizedType)
-				resolver.captureTypeArguments((ParameterizedType) type);
-			this.type = resolver.resolveType(type);
-		}
+		if (type instanceof Class && resolver != null)
+			resolver.incorporateTypeParameters((Class<?>) type);
+		else
+			type = dealWithWildcards(type, wildcards);
+		this.type = type;
 
 		this.rawType = (Class<? super T>) (resolver == null ? Types
 				.getRawType(this.type) : resolver.getRawTypes(this.type).iterator()
@@ -272,7 +279,7 @@ public class TypeToken<T> {
 	public TypeToken<T> withBounds(BoundSet bounds) {
 		Resolver resolver = getResolver();
 		resolver.getBounds().incorporate(bounds);
-		return new TypeToken<T>(resolver, resolver.resolveTypeParameters(rawType));
+		return new TypeToken<T>(resolver, getType());
 	}
 
 	/**
@@ -854,7 +861,6 @@ public class TypeToken<T> {
 	 * As an example, the following method could be used to derive instances of
 	 * TypeToken over different parameterizations of {@code List<?>} at runtime.
 	 * 
-	 * 
 	 * <pre>
 	 * <code>
 	 * public List&lt;T&gt; getList(TypeToken&lt;T&gt; clazz)} {
@@ -898,8 +904,8 @@ public class TypeToken<T> {
 	}
 
 	private TypeToken<?> withTypeArgument(TypeVariable<?> parameter, Type argument) {
-		return over(new TypeSubstitution().where(resolveType(parameter), argument)
-				.resolve(getType()));
+		return new TypeToken<>(new Resolver(getResolver().getBounds()),
+				new TypeSubstitution().where(parameter, argument).resolve(getType()));
 	}
 
 	/**
@@ -1085,6 +1091,22 @@ public class TypeToken<T> {
 	}
 
 	/**
+	 * Derive a new {@link TypeToken} by capturing all inference variables
+	 * mentioned by this {@link TypeToken}.
+	 * 
+	 * @return The newly derived {@link TypeToken}
+	 */
+	public TypeToken<T> captureInferenceVariables() {
+		Resolver resolver = getResolver();
+
+		TypeVariableCapture.captureInferenceVariables(resolver.getBounds()
+				.getInferenceVariablesMentionedBy(resolver.resolveType(getType())),
+				resolver.getBounds());
+
+		return withBounds(resolver.getBounds());
+	}
+
+	/**
 	 * This method will attempt to infer the actual type represented by this
 	 * TypeToken, which means the types of any inference variables mentioned will
 	 * be inferred and substituted. The receiver TypeToken instance will not be
@@ -1099,13 +1121,10 @@ public class TypeToken<T> {
 
 		resolver.infer(resolver.getBounds().getInferenceVariablesMentionedBy(type));
 
-		return new TypeToken<>(resolver, type);
+		return new TypeToken<>(resolver, resolver.resolveType(type));
 	}
 
 	private Type resolveType() {
-		if (getType() instanceof ParameterizedType)
-			return getInternalResolver().resolveTypeParameters(getRawType());
-		else
-			return getInternalResolver().resolveType(getType());
+		return getInternalResolver().resolveType(getType());
 	}
 }

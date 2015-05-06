@@ -421,8 +421,8 @@ public class Resolver {
 	 *          The bounds to add to the given type.
 	 */
 	public void addLowerBound(Type type, Type lowerBound) {
-		for (Type bound : Types.getUpperBounds(lowerBound)) {
-			Class<?> rawType = Types.getRawType(bound);
+		for (Type bound : getUpperBounds(lowerBound)) {
+			Class<?> rawType = getRawType(bound);
 			incorporateTypeParameters(rawType);
 
 			Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getInferenceVariables(rawType);
@@ -473,8 +473,8 @@ public class Resolver {
 	}
 
 	private void addConstraint(Kind kind, Type type, Type upperBound) {
-		for (Type bound : Types.getLowerBounds(upperBound)) {
-			Class<?> rawType = Types.getRawType(bound);
+		for (Type bound : getLowerBounds(upperBound)) {
+			Class<?> rawType = getRawType(bound);
 			incorporateTypeParameters(rawType);
 
 			Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getInferenceVariables(rawType);
@@ -487,6 +487,38 @@ public class Resolver {
 				inferOverTypeArguments((ParameterizedType) bound);
 			}
 		}
+	}
+
+	/**
+	 * Add inference variables for the type parameters of the given type to the
+	 * resolver, then incorporate containment constraints based on the arguments
+	 * of the given type.
+	 * 
+	 * @param type
+	 *          The type whose generic type arguments we wish to perform inference
+	 *          operations over.
+	 * @return A parameterized type derived from the given type, with inference
+	 *         variables in place of wildcards where appropriate.
+	 */
+	public GenericArrayType inferOverTypeArguments(GenericArrayType type) {
+		Type innerComponent = Types.getInnerComponentType(type);
+		if (innerComponent instanceof ParameterizedType) {
+			Class<?> rawType = Types.getRawType(type);
+
+			Map<TypeVariable<?>, InferenceVariable> inferenceVariables = incorporateTypeParameters(rawType);
+			Map<TypeVariable<?>, Type> arguments = ParameterizedTypes
+					.getAllTypeArguments((ParameterizedType) innerComponent);
+
+			for (TypeVariable<?> typeVariable : inferenceVariables.keySet())
+				ConstraintFormula.reduce(Kind.CONTAINMENT,
+						inferenceVariables.get(typeVariable), arguments.get(typeVariable),
+						getBounds());
+
+			return GenericArrayTypes.fromComponentType(resolveType(ParameterizedTypes
+					.uncheckedFrom(rawType, inferenceVariables)), Types
+					.getArrayDimensions(type));
+		} else
+			return type;
 	}
 
 	/**
@@ -747,6 +779,9 @@ public class Resolver {
 	 */
 	public Map<InferenceVariable, Type> infer(
 			Collection<? extends InferenceVariable> variables) {
+		variables = variables.stream().filter(getBounds()::isInferenceVariable)
+				.collect(Collectors.toSet());
+
 		Map<InferenceVariable, Type> instantiations = new HashMap<>();
 
 		Set<InferenceVariable> remainingVariables = new HashSet<>(variables);

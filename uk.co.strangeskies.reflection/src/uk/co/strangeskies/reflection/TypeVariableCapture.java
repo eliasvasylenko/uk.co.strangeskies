@@ -20,6 +20,7 @@ package uk.co.strangeskies.reflection;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -144,6 +145,27 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	 * type arguments which may be wildcards.
 	 * 
 	 * @param type
+	 *          The generic array type whose arguments we wish to capture.
+	 * @return A new parameterized type of the same class as the passed type,
+	 *         parameterized with the captures of the original arguments.
+	 */
+	public static GenericArrayType captureWildcardArguments(GenericArrayType type) {
+		Type component = Types.getInnerComponentType(type);
+
+		if (component instanceof ParameterizedType)
+			component = captureWildcardArguments((GenericArrayType) component);
+
+		component = type = GenericArrayTypes.fromComponentType(component,
+				Types.getArrayDimensions(type));
+
+		return type;
+	}
+
+	/**
+	 * Capture fresh type variables as valid stand-in instantiations for a set of
+	 * type arguments which may be wildcards.
+	 * 
+	 * @param type
 	 *          The parameterized type whose arguments we wish to capture.
 	 * @return A new parameterized type of the same class as the passed type,
 	 *         parameterized with the captures of the original arguments.
@@ -253,8 +275,6 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 		}
 
 		substituteBounds(typeVariableCaptures);
-
-		System.out.println(typeVariableCaptures);
 
 		for (Map.Entry<InferenceVariable, TypeVariableCapture> inferenceVariable : typeVariableCaptures
 				.entrySet())

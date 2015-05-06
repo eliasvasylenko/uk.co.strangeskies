@@ -429,29 +429,41 @@ public class ParameterizedTypes {
 	 * @return A TypeToken over the supertype of the requested class.
 	 */
 	public static Type resolveSupertypeParameters(Type type, Class<?> superclass) {
-		if (!ParameterizedTypes.isGeneric(superclass))
+		if (!isGeneric(superclass))
 			return superclass;
 
-		Class<?> rawType = Types.getRawType(type);
+		Class<?> subclass = Types.getRawType(type);
 
-		Map<TypeVariable<?>, InferenceVariable> parameterSubstitutes = new HashMap<>();
-		Map<InferenceVariable, Type> substitutedArguments = new HashMap<>();
+		if (subclass.equals(superclass))
+			return type;
 
-		int index = 0;
-		if (type instanceof ParameterizedType) {
-			Map<TypeVariable<?>, Type> arguments = getAllTypeArguments((ParameterizedType) type);
-			for (TypeVariable<?> parameter : getAllTypeParameters(rawType)) {
-				InferenceVariable substituteArgument = getSubstitutionArgument(index++);
-				parameterSubstitutes.put(parameter, substituteArgument);
-				substitutedArguments.put(substituteArgument, arguments.get(parameter));
-			}
-		}
+		if (!(type instanceof ParameterizedType) && !(type instanceof Class))
+			throw new IllegalArgumentException("Unexpected class '" + type.getClass()
+					+ "' of type '" + type + "'.");
 
-		Type supertype = new TypeSubstitution(substitutedArguments::get)
-				.resolve(from(rawType, parameterSubstitutes)
-						.resolveSupertypeParameters(superclass).getType());
+		do {
+			Set<Type> lesserSubtypes = new HashSet<>(Arrays.asList(subclass
+					.getGenericInterfaces()));
+			if (subclass.getSuperclass() != null)
+				lesserSubtypes.addAll(Arrays.asList(subclass.getGenericSuperclass()));
+			if (lesserSubtypes.isEmpty())
+				lesserSubtypes.add(Object.class);
 
-		return supertype;
+			Type subtype = lesserSubtypes.stream()
+					.filter(t -> Types.isAssignable(Types.getRawType(t), superclass))
+					.findAny().get();
+
+			if (type instanceof ParameterizedType)
+				type = new TypeSubstitution(
+						getAllTypeArguments((ParameterizedType) type)::get)
+						.resolve(subtype);
+			else
+				type = subtype;
+
+			subclass = Types.getRawType(type);
+		} while (subclass != superclass);
+
+		return type;
 	}
 
 	/**
@@ -469,10 +481,17 @@ public class ParameterizedTypes {
 	 *         class such that it be a subtype.
 	 */
 	public static Type resolveSubtypeParameters(Type type, Class<?> subclass) {
-		if (!ParameterizedTypes.isGeneric(subclass))
+		if (!isGeneric(subclass))
 			return subclass;
 
 		Class<?> rawType = Types.getRawType(type);
+
+		if (rawType.equals(subclass))
+			return type;
+
+		if (!(type instanceof ParameterizedType) && !(type instanceof Class))
+			throw new IllegalArgumentException("Unexpected class '" + type.getClass()
+					+ "' of type '" + type + "'.");
 
 		Map<TypeVariable<?>, InferenceVariable> parameterSubstitutes = new HashMap<>();
 		Map<InferenceVariable, Type> substitutedArguments = new HashMap<>();

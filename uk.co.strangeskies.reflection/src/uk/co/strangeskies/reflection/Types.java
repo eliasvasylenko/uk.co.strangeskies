@@ -365,6 +365,52 @@ public final class Types {
 	}
 
 	/**
+	 * Find the innermost component type of the given type, if the given
+	 * {@link Type} instance is an array {@link Class} or an instance of
+	 * {@link GenericArrayType} with any number of dimensions.
+	 * 
+	 * @param type
+	 *          The type of which we wish to determine the component type.
+	 * @return The component type of the given type if it is an array type,
+	 *         otherwise null.
+	 */
+	public static Type getInnerComponentType(Type type) {
+		Type component = null;
+
+		if (type instanceof Class)
+			while ((type = ((Class<?>) type).getComponentType()) != null)
+				component = type;
+		else
+			while (type instanceof GenericArrayType
+					&& (type = ((GenericArrayType) type).getGenericComponentType()) != null)
+				component = type;
+
+		return component;
+	}
+
+	/**
+	 * Determine the number of array dimensions exist on the given type.
+	 * 
+	 * @param type
+	 *          A type which may or may not be an array.
+	 * @return The number of dimensions on the given type, or 0 if it is not an
+	 *         array type.
+	 */
+	public static int getArrayDimensions(Type type) {
+		int count = 0;
+
+		if (type instanceof Class)
+			while ((type = ((Class<?>) type).getComponentType()) != null)
+				count++;
+		else
+			while (type instanceof GenericArrayType
+					&& (type = ((GenericArrayType) type).getGenericComponentType()) != null)
+				count++;
+
+		return count;
+	}
+
+	/**
 	 * Give a canonical String representation of a given type, which is intended
 	 * to be more easily human-readable than implementations of
 	 * {@link Object#toString()} for certain implementations of {@link Type}.

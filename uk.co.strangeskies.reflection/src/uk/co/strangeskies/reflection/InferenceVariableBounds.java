@@ -250,9 +250,9 @@ public class InferenceVariableBounds {
 	}
 
 	void addUpperBound(InferenceVariable type) {
-		logBound(a, type, "<:");
-
 		if (upperBounds.add(type)) {
+			logBound(a, type, "<:");
+
 			/*
 			 * α = S and α <: T imply ‹S <: T›
 			 */
@@ -268,9 +268,9 @@ public class InferenceVariableBounds {
 	}
 
 	void addLowerBound(Type type) {
-		logBound(type, a, "<:");
-
 		if (lowerBounds.add(type)) {
+			logBound(type, a, "<:");
+
 			/*
 			 * α = U and S <: T imply ‹S[α:=U] <: T[α:=U]›
 			 */
@@ -423,38 +423,45 @@ public class InferenceVariableBounds {
 		if (S.equals(T) || S.equals(Object.class) || T.equals(Object.class))
 			return;
 
-		new TypeVisitor() {
-			@Override
-			protected void visitClass(Class<?> type) {
-				if (type.isAssignableFrom(Types.getRawType(T))) {
-					Type supertypeS = ParameterizedTypes.resolveSupertypeParameters(S,
-							type);
-					Type supertypeT = ParameterizedTypes.resolveSupertypeParameters(T,
-							type);
+		if (S instanceof IntersectionType)
+			for (Type itemS : ((IntersectionType) S).getTypes())
+				incorporateSupertypeParameterizationEquality(itemS, T);
+		else if (T instanceof IntersectionType)
+			for (Type itemT : ((IntersectionType) T).getTypes())
+				incorporateSupertypeParameterizationEquality(S, itemT);
+		else
+			new TypeVisitor() {
+				@Override
+				protected void visitClass(Class<?> type) {
+					if (type.isAssignableFrom(Types.getRawType(T))) {
+						Type supertypeS = ParameterizedTypes.resolveSupertypeParameters(S,
+								type);
+						Type supertypeT = ParameterizedTypes.resolveSupertypeParameters(T,
+								type);
 
-					for (TypeVariable<?> parameter : ParameterizedTypes
-							.getAllTypeParameters(type)) {
-						Type argumentS = ParameterizedTypes.getAllTypeArguments(
-								(ParameterizedType) supertypeS).get(parameter);
-						Type argumentT = ParameterizedTypes.getAllTypeArguments(
-								(ParameterizedType) supertypeT).get(parameter);
+						for (TypeVariable<?> parameter : ParameterizedTypes
+								.getAllTypeParameters(type)) {
+							Type argumentS = ParameterizedTypes.getAllTypeArguments(
+									(ParameterizedType) supertypeS).get(parameter);
+							Type argumentT = ParameterizedTypes.getAllTypeArguments(
+									(ParameterizedType) supertypeT).get(parameter);
 
-						if (!(argumentS instanceof WildcardType)
-								&& !(argumentT instanceof WildcardType))
-							ConstraintFormula.reduce(Kind.EQUALITY, argumentS, argumentT,
-									boundSet);
+							if (!(argumentS instanceof WildcardType)
+									&& !(argumentT instanceof WildcardType))
+								ConstraintFormula.reduce(Kind.EQUALITY, argumentS, argumentT,
+										boundSet);
+						}
+					} else {
+						visit(type.getInterfaces());
+						visit(type.getSuperclass());
 					}
-				} else {
-					visit(type.getInterfaces());
-					visit(type.getSuperclass());
 				}
-			}
 
-			@Override
-			protected void visitParameterizedType(ParameterizedType type) {
-				visit(type.getRawType());
-			}
-		}.visit(S);
+				@Override
+				protected void visitParameterizedType(ParameterizedType type) {
+					visit(type.getRawType());
+				}
+			}.visit(S);
 	}
 
 	/*

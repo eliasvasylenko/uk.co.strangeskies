@@ -447,13 +447,28 @@ public class TestTypeLiteral {
 				+ " ~ = ~ " + new TypeToken<ChildNode<?, ?>>() {}.resolve());
 		System.out.println();
 
+		System.out.println(getIteratorType(new TypeToken<String>() {}));
+		System.out.println();
+
+		System.out.println(getIteratorType2(String.class));
+		System.out.println();
+
+		System.out.println(getIteratorType3(new TypeToken<String>() {}));
+		System.out.println();
+
+		System.out
+				.println(getIteratorExtending(new TypeToken<List<? extends String>>(
+						Wildcards.INFERENCE) {}));
+		System.out.println();
+
+		System.out.println(getIteratorExtending(
+				new TypeToken<List<? extends String>>(Wildcards.INFERENCE) {}).infer());
+		System.out.println();
+
 		Invokable<?, ?> blurner = new TypeToken<Blurn<? extends List<? extends Number>>>(
 				Wildcards.INFERENCE) {}.resolveMethodOverload("blurn")
 				.withReceiverType(new TypeToken<Gurn<Integer>>() {});
 		System.out.println(blurner);
-		System.out.println();
-
-		System.out.println(getIteratorType(new TypeToken<String>() {}));
 		System.out.println();
 
 		try {
@@ -463,6 +478,25 @@ public class TestTypeLiteral {
 			throw new RuntimeException(e);
 		}
 		System.out.println();
+
+		System.out.println(new TypeToken<SchemaNode<?, ?>>() {}
+				.resolveMethodOverload("children").withTargetType(
+						getIteratorExtending(new TypeToken<ChildNode<?, ?>>(
+								Wildcards.INFERENCE) {})));
+		System.out.println();
+
+		System.out.println(new TypeToken<ChoiceNode>() {}.resolveMethodOverload(
+				"getName", new ArrayList<>()));
+		System.out.println();
+
+		System.out.println(ParameterizedTypes.resolveSupertypeParameters(
+				new TypeToken<G>() {}.getType(), TypeToken.class));
+	}
+
+	private static <U> TypeToken<Iterable<? extends U>> getIteratorExtending(
+			TypeToken<U> type) {
+		return new TypeToken<Iterable<? extends U>>() {}.withTypeArgument(
+				new TypeParameter<U>() {}, type);
 	}
 
 	static <T> TypeToken<List<T>> listOf(Class<T> sub) {
@@ -472,6 +506,16 @@ public class TestTypeLiteral {
 
 	static <U> TypeToken<Iterable<U>> getIteratorType(TypeToken<U> type) {
 		return new TypeToken<Iterable<U>>() {}.withTypeArgument(
+				new TypeParameter<U>() {}, type);
+	}
+
+	static <U> TypeToken<Iterable<U>> getIteratorType2(Class<U> type) {
+		return new TypeToken<Iterable<U>>() {}.withTypeArgument(
+				new TypeParameter<U>() {}, type);
+	}
+
+	static <U> TypeToken<Iterable<? extends U>> getIteratorType3(TypeToken<U> type) {
+		return new TypeToken<Iterable<? extends U>>() {}.withTypeArgument(
 				new TypeParameter<U>() {}, type);
 	}
 }
@@ -517,13 +561,22 @@ interface SchemaNode<S extends SchemaNode<S, E>, E extends SchemaNode.Effective<
 	interface Effective<S extends SchemaNode<S, E>, E extends Effective<S, E>>
 			extends SchemaNode<S, E> {}
 
+	String getName();
+
 	ChildNode<?, ?> child(String name);
+
+	List<? extends ChildNode<?, ?>> children();
 }
 
 interface ChildNode<S extends ChildNode<S, E>, E extends ChildNode.Effective<S, E>>
 		extends SchemaNode<S, E> {
 	interface Effective<S extends ChildNode<S, E>, E extends Effective<S, E>>
 			extends ChildNode<S, E>, SchemaNode.Effective<S, E> {}
+}
+
+interface ChoiceNode extends ChildNode<ChoiceNode, ChoiceNode.Effective> {
+	interface Effective extends ChoiceNode,
+			ChildNode.Effective<ChoiceNode, ChoiceNode.Effective> {}
 }
 
 interface SchemaNodeConfigurator<S extends SchemaNodeConfigurator<S, N>, N extends SchemaNode<N, ?>> {
