@@ -159,7 +159,6 @@ public class ConstraintFormula {
 				from = InferenceVariable.captureConversion((ParameterizedType) from,
 						bounds);
 			}
-		System.out.println(from + " --> " + to);
 
 		/*
 		 * TODO why do we do the following capture conversion?:
@@ -215,7 +214,7 @@ public class ConstraintFormula {
 		if (to instanceof ParameterizedType) {
 			return (toRaw.getTypeParameters().length > 0)
 					&& (toRaw.isAssignableFrom(fromRaw))
-					&& (TypeToken.over(from).resolveSupertypeParameters(toRaw).getType() instanceof Class);
+					&& (ParameterizedTypes.resolveSupertypeParameters(from, toRaw) instanceof Class);
 		} else
 			return toRaw.isArray()
 					&& fromRaw.isArray()

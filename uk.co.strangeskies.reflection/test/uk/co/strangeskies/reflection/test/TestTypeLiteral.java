@@ -491,7 +491,37 @@ public class TestTypeLiteral {
 
 		System.out.println(ParameterizedTypes.resolveSupertypeParameters(
 				new TypeToken<G>() {}.getType(), TypeToken.class));
+		System.out.println();
+
+		Invokable<?, ?> tister = new TypeToken<TestTypeLiteral>() {}
+				.resolveMethodOverload("targetTester",
+						new TypeToken<List<? extends Model<?>>>() {});
+		Type lister2 = tister.getParameters().get(0);
+		System.out.println(lister2);
+		Invokable<?, ?> blister2 = new TypeToken<DataBindingType<?>>(
+				Wildcards.INFERENCE) {}.resolveMethodOverload("baseModel")
+				.withBounds(tister.getResolver().getBounds()).withTargetType(lister2);
+		System.out.println(blister2);
+		System.out.println();
+
+		targetTester(((DataBindingType<H>) null).baseModel());
+		targetTester((List<? extends Model<?>>) null);
+
+		TypeToken<?> lister = listOf(new TypeToken<Model<?>>(Wildcards.INFERENCE) {}
+				.inferceExtending());
+		System.out
+				.println("''''''''''''''''''''''''''''''[-0342352362475yqertagfbsrgera");
+		System.out.println(lister);
+		Invokable<?, ?> blister = new TypeToken<DataBindingType<?>>(
+				Wildcards.INFERENCE) {}.resolveMethodOverload("baseModel")
+				.withTargetType(lister);
+		System.out.println(blister);
+		System.out.println(lister.withBounds(blister.getResolver().getBounds()));
+		System.out.println(blister.getResolver().getBounds());
+		System.out.println();
 	}
+
+	public static <T extends Model<U>, U> void targetTester(List<T> listergit) {}
 
 	private static <U> TypeToken<Iterable<? extends U>> getIteratorExtending(
 			TypeToken<U> type) {
@@ -500,6 +530,11 @@ public class TestTypeLiteral {
 	}
 
 	static <T> TypeToken<List<T>> listOf(Class<T> sub) {
+		return new TypeToken<List<T>>() {}.withTypeArgument(
+				new TypeParameter<T>() {}, sub);
+	}
+
+	static <T> TypeToken<List<T>> listOf(TypeToken<T> sub) {
 		return new TypeToken<List<T>>() {}.withTypeArgument(
 				new TypeParameter<T>() {}, sub);
 	}
@@ -590,6 +625,8 @@ interface DataBindingType<T> extends
 		BindingNode<T, DataBindingType<T>, DataBindingType.Effective<T>> {
 	interface Effective<T> extends DataBindingType<T>,
 			BindingNode.Effective<T, DataBindingType<T>, Effective<T>> {}
+
+	List<? extends Model<? super T>> baseModel();
 }
 
 interface BindingNode<T, S extends BindingNode<T, S, E>, E extends BindingNode.Effective<T, S, E>>
