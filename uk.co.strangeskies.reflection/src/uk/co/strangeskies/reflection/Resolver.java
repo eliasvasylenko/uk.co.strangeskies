@@ -780,7 +780,7 @@ public class Resolver {
 	public Map<InferenceVariable, Type> infer(
 			Collection<? extends InferenceVariable> variables) {
 		variables = variables.stream().filter(getBounds()::isInferenceVariable)
-				.collect(Collectors.toSet());
+				.map(InferenceVariable.class::cast).collect(Collectors.toSet());
 
 		Map<InferenceVariable, Type> instantiations = new HashMap<>();
 

@@ -149,7 +149,7 @@ public class ConstraintFormula {
 
 		Type from = this.from;
 		if (bounds.isInferenceVariable(from))
-			from = new Resolver(bounds).infer(from);
+			from = new Resolver(bounds).resolveType(from);
 
 		if (from instanceof ParameterizedType)
 			if (bounds.getInferenceVariablesMentionedBy(from).isEmpty())
@@ -159,7 +159,7 @@ public class ConstraintFormula {
 				from = InferenceVariable.captureConversion((ParameterizedType) from,
 						bounds);
 			}
-		System.out.println(from);
+		System.out.println(from + " --> " + to);
 
 		/*
 		 * TODO why do we do the following capture conversion?:
