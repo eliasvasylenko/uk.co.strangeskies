@@ -601,6 +601,9 @@ public class Invokable<T, R> {
 	 */
 	@SuppressWarnings("unchecked")
 	public <S> Invokable<T, S> withTargetType(TypeToken<S> target) {
+		if (target == null)
+			return (Invokable<T, S>) this;
+
 		return (Invokable<T, S>) withBounds(target.getResolver().getBounds())
 				.withTargetType(target.getType());
 	}
@@ -634,6 +637,9 @@ public class Invokable<T, R> {
 
 	@SuppressWarnings("unchecked")
 	private <S extends R> Invokable<T, S> withTargetTypeCapture(Type target) {
+		if (target == null)
+			return (Invokable<T, S>) this;
+
 		Resolver resolver = getResolver();
 
 		ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, returnType.getType(),

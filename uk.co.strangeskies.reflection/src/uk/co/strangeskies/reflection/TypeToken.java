@@ -678,7 +678,6 @@ public class TypeToken<T> {
 	 *          The class of the supertype parameterization we wish to determine.
 	 * @return A TypeToken over the supertype of the requested class.
 	 */
-	@SuppressWarnings("unchecked")
 	public <U> TypeToken<? extends U> resolveSupertypeParameters(
 			Class<U> superclass) {
 		if (!ParameterizedTypes.isGeneric(superclass))
@@ -698,8 +697,7 @@ public class TypeToken<T> {
 		} else
 			resolver.incorporateTypeHierarchy(getRawType(), superclass);
 
-		return (TypeToken<? extends U>) over(resolver.resolveType(superclass,
-				parameterizedType));
+		return over(resolver, superclass);
 	}
 
 	/**
@@ -734,8 +732,7 @@ public class TypeToken<T> {
 		} else
 			resolver.incorporateTypeHierarchy(subclass, getRawType());
 
-		return (TypeToken<? extends U>) TypeToken.over(resolver.resolveType(
-				subclass, parameterizedType));
+		return over(resolver, subclass);
 	}
 
 	/**

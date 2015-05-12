@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -489,39 +490,12 @@ public class TestTypeLiteral {
 				"getName", new ArrayList<>()));
 		System.out.println();
 
-		System.out.println(ParameterizedTypes.resolveSupertypeParameters(
-				new TypeToken<G>() {}.getType(), TypeToken.class));
-		System.out.println();
-
-		Invokable<?, ?> tister = new TypeToken<TestTypeLiteral>() {}
-				.resolveMethodOverload("targetTester",
-						new TypeToken<List<? extends Model<?>>>() {});
-		Type lister2 = tister.getParameters().get(0);
-		System.out.println(lister2);
-		Invokable<?, ?> blister2 = new TypeToken<DataBindingType<?>>(
-				Wildcards.INFERENCE) {}.resolveMethodOverload("baseModel")
-				.withBounds(tister.getResolver().getBounds()).withTargetType(lister2);
-		System.out.println(blister2);
-		System.out.println();
-
-		targetTester(((DataBindingType<H>) null).baseModel());
-		targetTester((List<? extends Model<?>>) null);
-
-		TypeToken<?> lister = listOf(new TypeToken<Model<?>>(Wildcards.INFERENCE) {}
-				.inferceExtending());
 		System.out
-				.println("''''''''''''''''''''''''''''''[-0342352362475yqertagfbsrgera");
-		System.out.println(lister);
-		Invokable<?, ?> blister = new TypeToken<DataBindingType<?>>(
-				Wildcards.INFERENCE) {}.resolveMethodOverload("baseModel")
-				.withTargetType(lister);
-		System.out.println(blister);
-		System.out.println(lister.withBounds(blister.getResolver().getBounds()));
-		System.out.println(blister.getResolver().getBounds());
+				.println(new TypeToken<LinkedHashSet<?>>(Wildcards.INFERENCE) {}
+						.resolveMethodOverload("add", new TypeToken<StringBuffer>() {})
+						.infer());
 		System.out.println();
 	}
-
-	public static <T extends Model<U>, U> void targetTester(List<T> listergit) {}
 
 	private static <U> TypeToken<Iterable<? extends U>> getIteratorExtending(
 			TypeToken<U> type) {

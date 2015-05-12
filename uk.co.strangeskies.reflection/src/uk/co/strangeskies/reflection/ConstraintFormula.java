@@ -401,8 +401,8 @@ public class ConstraintFormula {
 				for (Type typeComponent : ((IntersectionType) to).getTypes())
 					reduce(Kind.SUBTYPE, from, typeComponent, bounds);
 			} else {
-				throw new AssertionError("Type '" + to
-						+ "' of T should not be encountered in constraint '" + this + "'.");
+				throw new TypeException("Type '" + to + "' of class '" + to.getClass()
+						+ "' should not be encountered for T in constraint '" + this + "'.");
 			}
 		}
 	}
