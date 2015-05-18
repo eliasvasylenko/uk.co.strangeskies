@@ -42,8 +42,6 @@ import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.utilities.IdentityProperty;
-import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
-import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 
 /**
  * <p>
@@ -69,42 +67,6 @@ import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
  * @author Elias N Vasylenko
  */
 public class Resolver {
-	private class RemainingDependencies
-			extends
-			MultiHashMap<InferenceVariable, InferenceVariable, Set<InferenceVariable>> {
-		private static final long serialVersionUID = 1L;
-
-		public RemainingDependencies() {
-			super(HashSet::new);
-		}
-
-		public RemainingDependencies(
-				MultiMap<? extends InferenceVariable, ? extends InferenceVariable, ? extends Set<InferenceVariable>> that) {
-			super(HashSet::new, that);
-		}
-
-		private void addRemainingDependency(InferenceVariable variable,
-				InferenceVariable dependency) {
-			/*
-			 * An inference variable α depends on the resolution of an inference
-			 * variable β if there exists an inference variable γ such that α depends
-			 * on the resolution of γ and γ depends on the resolution of β.
-			 */
-			if (add(variable, dependency)) {
-				for (InferenceVariable transientDependency : get(dependency))
-					addRemainingDependency(variable, transientDependency);
-
-				entrySet()
-						.stream()
-						.filter(e -> e.getValue().contains(variable))
-						.map(Entry::getKey)
-						.forEach(
-								transientDependent -> addRemainingDependency(
-										transientDependent, variable));
-			}
-		}
-	}
-
 	private BoundSet bounds;
 
 	/*
@@ -164,89 +126,6 @@ public class Resolver {
 	 */
 	public BoundSet getBounds() {
 		return bounds;
-	}
-
-	private RemainingDependencies recalculateRemainingDependencies() {
-		RemainingDependencies remainingDependencies = new RemainingDependencies();
-
-		Set<InferenceVariable> leftOfCapture = new HashSet<>();
-
-		Set<InferenceVariable> remainingInferenceVariables = new HashSet<>(
-				bounds.getInferenceVariables());
-		remainingInferenceVariables.removeAll(bounds.getInstantiatedVariables());
-
-		/*
-		 * An inference variable α depends on the resolution of itself.
-		 */
-		for (InferenceVariable inferenceVariable : remainingInferenceVariables)
-			remainingDependencies.addRemainingDependency(inferenceVariable,
-					inferenceVariable);
-
-		/*
-		 * An inference variable α appearing on the left-hand side of a bound of the
-		 * form G<..., α, ...> = capture(G<...>) depends on the resolution of every
-		 * other inference variable mentioned in this bound (on both sides of the =
-		 * sign).
-		 */
-		bounds
-				.getCaptureConversions()
-				.forEach(
-						c -> {
-							for (InferenceVariable variable : c.getInferenceVariables()) {
-								if (remainingInferenceVariables.contains(variable)) {
-									for (InferenceVariable dependency : c.getInferenceVariables())
-										if (remainingInferenceVariables.contains(dependency))
-											remainingDependencies.addRemainingDependency(variable,
-													dependency);
-									for (InferenceVariable v : c.getInferenceVariables())
-										for (InferenceVariable dependency : bounds
-												.getInferenceVariablesMentionedBy(c
-														.getCapturedArgument(v)))
-											if (remainingInferenceVariables.contains(dependency))
-												remainingDependencies.addRemainingDependency(variable,
-														dependency);
-								}
-							}
-
-							leftOfCapture.addAll(c.getInferenceVariables());
-						});
-
-		/*
-		 * Given a bound of one of the following forms, where T is either an
-		 * inference variable β or a type that mentions β:
-		 */
-		for (InferenceVariable a : bounds.getInferenceVariables()) {
-			InferenceVariableBounds aData = bounds.getBoundsOn(a);
-
-			Stream
-					.concat(
-							/*
-							 * α = T, T = α
-							 */
-							aData.getEqualities().stream(),
-							/*
-							 * α <: T, T <: α
-							 */
-							Stream.concat(aData.getLowerBounds().stream(), aData
-									.getUpperBounds().stream())
-					/*
-					 * If α appears on the left-hand side of another bound of the form
-					 * G<..., α, ...> = capture(G<...>), then β depends on the resolution
-					 * of α. Otherwise, α depends on the resolution of β.
-					 */
-					).map(bounds::getInferenceVariablesMentionedBy)
-					.flatMap(Collection::stream).forEach(b -> {
-						if (leftOfCapture.contains(a)) {
-							if (remainingInferenceVariables.contains(b))
-								remainingDependencies.addRemainingDependency(b, a);
-						} else {
-							if (remainingInferenceVariables.contains(b))
-								remainingDependencies.addRemainingDependency(a, b);
-						}
-					});
-		}
-
-		return remainingDependencies;
 	}
 
 	/**
@@ -789,20 +668,15 @@ public class Resolver {
 
 		Set<InferenceVariable> remainingVariables = new HashSet<>(variables);
 		do {
-			RemainingDependencies remainingDependencies = recalculateRemainingDependencies();
-
 			/*
 			 * Given a set of inference variables to resolve, let V be the union of
 			 * this set and all variables upon which the resolution of at least one
 			 * variable in this set depends.
 			 */
-			resolveIndependentSet(
-					variables
-							.stream()
-							.filter(
-									v -> !bounds.getBoundsOn(v).getInstantiation().isPresent())
-							.map(remainingDependencies::get).flatMap(Set::stream)
-							.collect(Collectors.toSet()), remainingDependencies);
+			resolveIndependentSet(variables.stream()
+					.filter(v -> !bounds.getBoundsOn(v).getInstantiation().isPresent())
+					.map(v -> bounds.getBoundsOn(v).getRemainingDependencies())
+					.flatMap(Set::stream).collect(Collectors.toSet()));
 
 			for (InferenceVariable variable : new HashSet<>(remainingVariables)) {
 				Optional<Type> instantiation = bounds.getBoundsOn(variable)
@@ -817,8 +691,7 @@ public class Resolver {
 		return instantiations;
 	}
 
-	private void resolveIndependentSet(Set<InferenceVariable> variables,
-			RemainingDependencies remainingDependencies) {
+	private void resolveIndependentSet(Set<InferenceVariable> variables) {
 		/*
 		 * If every variable in V has an instantiation, then resolution succeeds and
 		 * this procedure terminates.
@@ -835,16 +708,17 @@ public class Resolver {
 			 */
 			Set<InferenceVariable> minimalSet = new HashSet<>(variables);
 			int minimalSetSize = variables.size();
-			for (InferenceVariable variable : variables)
-				if (remainingDependencies.get(variable).size() < minimalSetSize)
-					minimalSetSize = (minimalSet = remainingDependencies.get(variable))
-							.size();
+			for (InferenceVariable variable : variables) {
+				Set<InferenceVariable> remainingOnVariable = bounds.getBoundsOn(
+						variable).getRemainingDependencies();
+				if (remainingOnVariable.size() < minimalSetSize)
+					minimalSetSize = (minimalSet = remainingOnVariable).size();
+			}
 
 			resolveMinimalIndepdendentSet(minimalSet);
 
 			variables.removeAll(bounds.getInstantiatedVariables());
 			if (!variables.isEmpty()) {
-				remainingDependencies = recalculateRemainingDependencies();
 				variables.removeAll(bounds.getInstantiatedVariables());
 			}
 		}

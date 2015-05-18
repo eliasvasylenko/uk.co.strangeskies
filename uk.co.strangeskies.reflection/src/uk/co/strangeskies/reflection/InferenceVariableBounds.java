@@ -23,10 +23,13 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 
@@ -45,6 +48,10 @@ public class InferenceVariableBounds {
 	private final Set<Type> upperBounds;
 	private final Set<Type> lowerBounds;
 
+	private final Set<CaptureConversion> captures;
+	private Set<InferenceVariable> allDependencies;
+	private Set<InferenceVariable> externalDependencies;
+
 	InferenceVariableBounds(BoundSet boundSet, InferenceVariable inferenceVariable) {
 		this.boundSet = boundSet;
 		this.a = inferenceVariable;
@@ -52,6 +59,11 @@ public class InferenceVariableBounds {
 		upperBounds = new HashSet<>();
 		lowerBounds = new HashSet<>();
 		equalities = new HashSet<>();
+
+		captures = new HashSet<>();
+		allDependencies = new HashSet<>();
+		allDependencies.add(inferenceVariable);
+		externalDependencies = new HashSet<>();
 	}
 
 	InferenceVariableBounds(BoundSet boundSet, InferenceVariableBounds that) {
@@ -61,6 +73,110 @@ public class InferenceVariableBounds {
 		upperBounds = new HashSet<>(that.upperBounds);
 		lowerBounds = new HashSet<>(that.lowerBounds);
 		equalities = new HashSet<>(that.equalities);
+
+		captures = new HashSet<>(that.captures);
+		allDependencies = that.allDependencies == null ? null : new HashSet<>(
+				that.allDependencies);
+		externalDependencies = that.externalDependencies == null ? null
+				: new HashSet<>(that.externalDependencies);
+	}
+
+	void addCaptureConversion(CaptureConversion captureConversion) {
+		captures.add(captureConversion);
+		recalculateInternalDependencies();
+	}
+
+	void removeCaptureConversion(CaptureConversion captureConversion) {
+		captures.remove(captureConversion);
+		recalculateInternalDependencies();
+	}
+
+	private void recalculateInternalDependencies() {
+		if (allDependencies != null) {
+			allDependencies.clear();
+
+			for (CaptureConversion capture : captures)
+				for (InferenceVariable inferenceVariable : capture
+						.getInferenceVariablesMentioned())
+					allDependencies.addAll(boundSet.getBoundsOn(inferenceVariable)
+							.getRemainingDependencies());
+
+			allDependencies.add(a);
+			allDependencies.addAll(externalDependencies);
+
+			/*
+			 * Given a bound of one of the following forms, where T is either an
+			 * inference variable β or a type that mentions β:
+			 * 
+			 * α = T
+			 * 
+			 * α <: T
+			 * 
+			 * T = α
+			 * 
+			 * T <: α
+			 * 
+			 * If α appears on the left-hand side of another bound of the form G<...,
+			 * α, ...> = capture(G<...>), then β depends on the resolution of α.
+			 * Otherwise, α depends on the resolution of β.
+			 */
+			Stream
+					.concat(equalities.stream(),
+							Stream.concat(lowerBounds.stream(), upperBounds.stream()))
+					.flatMap(
+							bound -> boundSet.getInferenceVariablesMentionedBy(bound)
+									.stream())
+					.map(mentions -> boundSet.getBoundsOn(mentions).externalDependencies)
+					.forEach(dependencies -> dependencies.addAll(allDependencies));
+		}
+	}
+
+	private void addExternalDependencies(Set<InferenceVariable> allMentioned) {
+		if (allDependencies != null) {
+			allDependencies.addAll(allMentioned);
+			externalDependencies.addAll(allMentioned);
+		}
+	}
+
+	private void addDependenciesFromMentiones(
+			Collection<InferenceVariable> mentions) {
+		/*
+		 * Given a bound of one of the following forms, where T is either an
+		 * inference variable β or a type that mentions β:
+		 * 
+		 * α = T
+		 * 
+		 * α <: T
+		 * 
+		 * T = α
+		 * 
+		 * T <: α
+		 */
+		if (captures.isEmpty()) {
+			/*
+			 * If α appears on the left-hand side of another bound of the form G<...,
+			 * α, ...> = capture(G<...>), then β depends on the resolution of α.
+			 */
+			for (InferenceVariable mention : mentions)
+				if (allDependencies != null)
+					allDependencies.addAll(boundSet.getBoundsOn(mention)
+							.getRemainingDependencies());
+		} else {
+			/*
+			 * Otherwise, α depends on the resolution of β.
+			 */
+			for (InferenceVariable mention : mentions)
+				if (allDependencies != null)
+					boundSet.getBoundsOn(mention)
+							.addExternalDependencies(allDependencies);
+		}
+	}
+
+	private void removeDependency(InferenceVariable dependency) {
+		if (allDependencies != null) {
+			allDependencies.remove(dependency);
+			externalDependencies.remove(dependency);
+		}
 	}
 
 	/**
@@ -117,10 +233,33 @@ public class InferenceVariableBounds {
 		return getEqualities().stream().filter(boundSet::isProperType).findAny();
 	}
 
+	/**
+	 * @return All inference variables related to this one through bounds. This
+	 *         set includes the inference variable itself.
+	 */
+	public Set<InferenceVariable> getRemainingDependencies() {
+		return (allDependencies != null) ? allDependencies : Collections.emptySet();
+	}
+
 	void addEquality(Type type) {
 		Set<Type> equalities = new HashSet<>(this.equalities);
 		if (this.equalities.add(type)) {
 			logBound(a, type, "=");
+
+			Set<InferenceVariable> mentions = boundSet
+					.getInferenceVariablesMentionedBy(type);
+			if (mentions.isEmpty()) {
+				/*
+				 * An instantiation has been found.
+				 */
+				allDependencies = null;
+				externalDependencies = null;
+				for (InferenceVariable inferenceVariable : boundSet
+						.getInferenceVariables())
+					boundSet.getBoundsOn(inferenceVariable).removeDependency(a);
+			} else {
+				addDependenciesFromMentiones(mentions);
+			}
 
 			/*
 			 * α = S and α = T imply ‹S = T›
@@ -177,6 +316,8 @@ public class InferenceVariableBounds {
 		if (this.equalities.add(type)) {
 			logBound(a, type, "=");
 
+			addDependenciesFromMentiones(Arrays.asList(type));
+
 			/*
 			 * α = S and α = T imply ‹S = T›
 			 */
@@ -201,6 +342,9 @@ public class InferenceVariableBounds {
 		Set<Type> upperBounds = new HashSet<>(this.upperBounds);
 		if (this.upperBounds.add(type)) {
 			logBound(a, type, "<:");
+
+			addDependenciesFromMentiones(boundSet
+					.getInferenceVariablesMentionedBy(type));
 
 			/*
 			 * α = U and S <: T imply ‹S[α:=U] <: T[α:=U]›
@@ -253,6 +397,8 @@ public class InferenceVariableBounds {
 		if (upperBounds.add(type)) {
 			logBound(a, type, "<:");
 
+			addDependenciesFromMentiones(Arrays.asList(type));
+
 			/*
 			 * α = S and α <: T imply ‹S <: T›
 			 */
@@ -270,6 +416,9 @@ public class InferenceVariableBounds {
 	void addLowerBound(Type type) {
 		if (lowerBounds.add(type)) {
 			logBound(type, a, "<:");
+
+			addDependenciesFromMentiones(boundSet
+					.getInferenceVariablesMentionedBy(type));
 
 			/*
 			 * α = U and S <: T imply ‹S[α:=U] <: T[α:=U]›
@@ -306,9 +455,11 @@ public class InferenceVariableBounds {
 	}
 
 	void addLowerBound(InferenceVariable type) {
-		logBound(type, a, "<:");
-
 		if (lowerBounds.add(type)) {
+			logBound(type, a, "<:");
+
+			addDependenciesFromMentiones(Arrays.asList(type));
+
 			/*
 			 * α = S and T <: α imply ‹T <: S›
 			 */

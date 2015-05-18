@@ -55,6 +55,12 @@ public interface CaptureConversion {
 	public Set<InferenceVariable> getInferenceVariables();
 
 	/**
+	 * @return The set of all inference variables mentioned by this capture
+	 *         conversion operation.
+	 */
+	public Set<InferenceVariable> getInferenceVariablesMentioned();
+
+	/**
 	 * @param variable
 	 *          An inference variable which may represent a capture which is part
 	 *          of this capture conversion.

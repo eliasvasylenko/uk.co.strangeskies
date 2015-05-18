@@ -23,6 +23,7 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
@@ -126,6 +127,11 @@ public class InferenceVariable implements Type {
 				capturedParameters.put(inferenceVariable, parameter);
 			}
 
+			Set<InferenceVariable> allMentioned = new HashSet<>(
+					capturedArguments.keySet());
+			for (Type captured : capturedArguments.values())
+				allMentioned.addAll(bounds.getInferenceVariablesMentionedBy(captured));
+
 			ParameterizedType capturedType = (ParameterizedType) ParameterizedTypes
 					.from(Types.getRawType(type), parameterCaptures).getType();
 
@@ -138,6 +144,10 @@ public class InferenceVariable implements Type {
 				@Override
 				public Set<InferenceVariable> getInferenceVariables() {
 					return capturedArguments.keySet();
+				}
+
+				public Set<InferenceVariable> getInferenceVariablesMentioned() {
+					return allMentioned;
 				}
 
 				@Override
