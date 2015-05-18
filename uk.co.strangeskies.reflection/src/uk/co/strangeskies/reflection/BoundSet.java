@@ -21,9 +21,11 @@ package uk.co.strangeskies.reflection;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -260,6 +262,8 @@ public class BoundSet {
 	}
 
 	/**
+	 * Determine which inference variables are mentioned by a given type.
+	 * 
 	 * @param type
 	 *          The type for which to find all mentioned inference variables.
 	 * @return A set of all the inference variables which are contained within
@@ -272,6 +276,8 @@ public class BoundSet {
 	}
 
 	/**
+	 * Determine whether a given type is proper.
+	 * 
 	 * @param type
 	 *          The type for which to determine properness.
 	 * @return True if the given type is proper, false otherwise.
@@ -336,39 +342,89 @@ public class BoundSet {
 	 * set. Inference variables which are contained in the given bound set will
 	 * also be contained within the receiver bound set after incorporation.
 	 * 
-	 * TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!! {
-	 * 
-	 * 
-	 * 
-	 * 
-	 * Allow incorporation of only a few inference variables from the given
-	 * boundset, ignoring unrelated ones... Also there will be many ways to
-	 * improve the efficiency of this method.
-	 * 
-	 * 
-	 * 
-	 * 
-	 * TODO } !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	 * 
 	 * @param boundSet
-	 *          The bound whose bounds we wish to incorporate.
+	 *          The bound set whose bounds we wish to incorporate.
 	 */
 	public void incorporate(BoundSet boundSet) {
-		for (InferenceVariable inferenceVariable : boundSet.getInferenceVariables())
-			if (!inferenceVariableBounds.containsKey(inferenceVariable))
-				inferenceVariableBounds.put(inferenceVariable,
-						new InferenceVariableBounds(this, inferenceVariable));
+		incorporate(boundSet, boundSet.getInferenceVariables());
+	}
 
-		for (InferenceVariable inferenceVariable : boundSet.getInferenceVariables()) {
-			InferenceVariableBounds bounds = boundSet.getBoundsOn(inferenceVariable);
-			for (Type equality : bounds.getEqualities())
-				incorporate().equality(inferenceVariable, equality);
+	/**
+	 * Incorporate each bound on the given inference variables from this given
+	 * bound set into the receiver bound set. Inference variables which are
+	 * contained in the given bound set will also be contained within the receiver
+	 * bound set after incorporation.
+	 * 
+	 * @param boundSet
+	 *          The bound set whose bounds we wish to incorporate.
+	 * @param inferenceVariables
+	 *          The inference variables whose bounds we wish to incorporate.
+	 */
+	public void incorporate(BoundSet boundSet,
+			Collection<? extends InferenceVariable> inferenceVariables) {
+		Set<InferenceVariable> inferenceVariableSet = new HashSet<>(
+				inferenceVariables);
+		List<InferenceVariable> inferenceVariableList = new ArrayList<>(
+				inferenceVariables);
 
-			for (Type lowerBound : bounds.getLowerBounds())
-				incorporate().subtype(lowerBound, inferenceVariable);
+		for (int i = 0; i < inferenceVariableList.size(); i++) {
+			InferenceVariable inferenceVariable = inferenceVariableList.get(i);
+			/*
+			 * Add given inference variables to the bound set.
+			 */
+			inferenceVariableBounds.putIfAbsent(inferenceVariable,
+					new InferenceVariableBounds(this, inferenceVariable));
 
-			for (Type upperBound : bounds.getUpperBounds())
-				incorporate().subtype(inferenceVariable, upperBound);
+			/*
+			 * Add mentioned inference variables to the bound set.
+			 */
+			if (boundSet.isInferenceVariable(inferenceVariable)) {
+				InferenceVariableBounds bounds = boundSet
+						.getBoundsOn(inferenceVariable);
+
+				for (Type lowerBound : bounds.getLowerBounds())
+					for (InferenceVariable mention : boundSet
+							.getInferenceVariablesMentionedBy(lowerBound))
+						if (inferenceVariableSet.add(mention))
+							inferenceVariableList.add(mention);
+
+				for (Type upperBound : bounds.getUpperBounds())
+					for (InferenceVariable mention : boundSet
+							.getInferenceVariablesMentionedBy(upperBound))
+						if (inferenceVariableSet.add(mention))
+							inferenceVariableList.add(mention);
+			}
+		}
+
+		for (InferenceVariable inferenceVariable : inferenceVariableList) {
+			if (boundSet.isInferenceVariable(inferenceVariable)) {
+				InferenceVariableBounds bounds = boundSet
+						.getBoundsOn(inferenceVariable);
+
+				/*
+				 * Incorporate lower bounds, not including ignored inference variables.
+				 */
+				for (Type lowerBound : bounds.getLowerBounds())
+					if (!boundSet.isInferenceVariable(lowerBound)
+							|| isInferenceVariable(lowerBound))
+						incorporate().subtype(lowerBound, inferenceVariable);
+
+				/*
+				 * Incorporate upper bounds, not including ignored inference variables.
+				 */
+				for (Type upperBound : bounds.getUpperBounds())
+					if (!boundSet.isInferenceVariable(upperBound)
+							|| isInferenceVariable(upperBound))
+						incorporate().subtype(inferenceVariable, upperBound);
+
+				/*
+				 * Incorporate equalities, not including ignored inference variables.
+				 */
+				for (Type equality : bounds.getEqualities())
+					if (!boundSet.isInferenceVariable(equality)
+							|| isInferenceVariable(equality))
+						incorporate().equality(inferenceVariable, equality);
+			}
 		}
 	}
 

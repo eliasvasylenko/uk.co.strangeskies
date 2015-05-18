@@ -114,7 +114,8 @@ public class Invokable<T, R> {
 		else {
 			TypeToken<?> superType = receiverType
 					.resolveSupertypeParameters(executable.getDeclaringClass());
-			resolver.getBounds().incorporate(superType.getResolver().getBounds());
+			resolver.getBounds().incorporate(superType.getResolver().getBounds(),
+					superType.getInferenceVariablesMentioned());
 			resolver.incorporateType(superType.getType());
 			receiverType = receiverType.withBounds(resolver.getBounds()).resolve();
 			this.receiverType = receiverType;
@@ -451,10 +452,41 @@ public class Invokable<T, R> {
 	 * @return The newly derived {@link Invokable}.
 	 */
 	public Invokable<T, R> withBounds(BoundSet bounds) {
+		return withBounds(bounds, bounds.getInferenceVariables());
+	}
+
+	/**
+	 * Derive a new {@link Invokable} instance, with the bounds on the given
+	 * inference variables, with respect to the given bound set, incorporated into
+	 * the bounds of the underlying resolver. The original {@link Invokable} will
+	 * remain unmodified.
+	 * 
+	 * @param bounds
+	 *          The new bounds to incorporate.
+	 * @param inferenceVariables
+	 *          The new inference variables whose bounds are to be incorporated.
+	 * @return The newly derived {@link Invokable}.
+	 */
+	public Invokable<T, R> withBounds(BoundSet bounds,
+			Collection<? extends InferenceVariable> inferenceVariables) {
 		Resolver resolver = getResolver();
-		resolver.getBounds().incorporate(bounds);
+		resolver.getBounds().incorporate(bounds, inferenceVariables);
 		return new Invokable<>(resolver, receiverType, executable,
 				invocationFunction, parameters);
+	}
+
+	/**
+	 * Derive a new {@link Invokable} instance, with the bounds on the given type
+	 * incorporated into the bounds of the underlying resolver. The original
+	 * {@link Invokable} will remain unmodified.
+	 * 
+	 * @param type
+	 *          The type whose bounds are to be incorporated.
+	 * @return The newly derived {@link Invokable}.
+	 */
+	public Invokable<T, R> withBoundsFrom(TypeToken<?> type) {
+		return withBounds(type.getResolver().getBounds(),
+				type.getInferenceVariablesMentioned());
 	}
 
 	/**
@@ -489,8 +521,8 @@ public class Invokable<T, R> {
 	@SuppressWarnings("unchecked")
 	public <U extends T> Invokable<U, ? extends R> withReceiverType(
 			TypeToken<U> type) {
-		return (Invokable<U, ? extends R>) withBounds(
-				type.getResolver().getBounds()).withReceiverType(type.getType());
+		return (Invokable<U, ? extends R>) withBoundsFrom(type).withReceiverType(
+				type.getType());
 	}
 
 	/**
@@ -604,8 +636,8 @@ public class Invokable<T, R> {
 		if (target == null)
 			return (Invokable<T, S>) this;
 
-		return (Invokable<T, S>) withBounds(target.getResolver().getBounds())
-				.withTargetType(target.getType());
+		return (Invokable<T, S>) withBoundsFrom(target).withTargetType(
+				target.getType());
 	}
 
 	/**
@@ -863,7 +895,8 @@ public class Invokable<T, R> {
 						nextParameter = null;
 					}
 				}
-				resolver.getBounds().incorporate(argument.getResolver().getBounds());
+				resolver.getBounds().incorporate(argument.getResolver().getBounds(),
+						argument.getInferenceVariablesMentioned());
 
 				ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, argument.getType(),
 						parameter, resolver.getBounds());

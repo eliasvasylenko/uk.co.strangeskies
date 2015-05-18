@@ -575,6 +575,9 @@ public class Resolver {
 						.forEach(upperBounds::add);
 			}
 
+		if (upperBounds.isEmpty())
+			upperBounds.add(Object.class);
+
 		return upperBounds;
 	}
 

@@ -277,9 +277,38 @@ public class TypeToken<T> {
 	 * @return The newly derived {@link TypeToken}.
 	 */
 	public TypeToken<T> withBounds(BoundSet bounds) {
-		Resolver resolver = getResolver();
-		resolver.getBounds().incorporate(bounds);
-		return new TypeToken<T>(resolver, getType());
+		return new TypeToken<T>(getResolverWithBounds(bounds), getType());
+	}
+
+	/**
+	 * Derive a new {@link TypeToken} instance, with the bounds on the given
+	 * inference variables, with respect to the given bound set, incorporated into
+	 * the bounds of the underlying resolver. The original {@link TypeToken} will
+	 * remain unmodified.
+	 * 
+	 * @param bounds
+	 *          The new bounds to incorporate.
+	 * @param inferenceVariables
+	 *          The inference variables whose bounds are to be incorporated.
+	 * @return The newly derived {@link TypeToken}.
+	 */
+	public TypeToken<T> withBounds(BoundSet bounds,
+			Collection<? extends InferenceVariable> inferenceVariables) {
+		return new TypeToken<T>(getResolverWithBounds(bounds, inferenceVariables),
+				getType());
+	}
+
+	/**
+	 * Derive a new {@link TypeToken} instance, with the bounds on the given type
+	 * incorporated into the bounds of the underlying resolver. The original
+	 * {@link TypeToken} will remain unmodified.
+	 * 
+	 * @param type
+	 *          The type whose bounds are to be incorporated.
+	 * @return The newly derived {@link TypeToken}.
+	 */
+	public TypeToken<T> withBoundsFrom(TypeToken<?> type) {
+		return new TypeToken<T>(getResolverWithBoundsFrom(type), getType());
 	}
 
 	/**
@@ -395,8 +424,22 @@ public class TypeToken<T> {
 
 	private Resolver getResolverWithBounds(BoundSet bounds) {
 		Resolver resolver = getResolver();
-		resolver.getBounds().incorporate(bounds);
+		resolver.getBounds().incorporate(bounds, getInferenceVariablesMentioned());
 		return resolver;
+	}
+
+	private Resolver getResolverWithBounds(BoundSet bounds,
+			Collection<? extends InferenceVariable> inferenceVariables) {
+		Resolver resolver = getResolver();
+		Set<InferenceVariable> withMentioned = new HashSet<>(inferenceVariables);
+		withMentioned.addAll(getInferenceVariablesMentioned());
+		resolver.getBounds().incorporate(bounds, withMentioned);
+		return resolver;
+	}
+
+	private Resolver getResolverWithBoundsFrom(TypeToken<?> type) {
+		return getResolverWithBounds(type.getResolver().getBounds(),
+				type.getInferenceVariablesMentioned());
 	}
 
 	@Override
@@ -473,7 +516,7 @@ public class TypeToken<T> {
 	 */
 	public boolean isAssignableTo(TypeToken<?> type) {
 		try {
-			Resolver resolver = getResolverWithBounds(type.getResolver().getBounds());
+			Resolver resolver = getResolverWithBoundsFrom(type);
 			ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, getType(),
 					type.getType(), resolver.getBounds());
 			return true;
@@ -532,7 +575,7 @@ public class TypeToken<T> {
 	 */
 	public boolean isContainedBy(TypeToken<?> type) {
 		try {
-			Resolver resolver = getResolverWithBounds(type.getResolver().getBounds());
+			Resolver resolver = getResolverWithBoundsFrom(type);
 			ConstraintFormula.reduce(Kind.CONTAINMENT, getType(), type.getType(),
 					resolver.getBounds());
 			return true;
@@ -626,7 +669,7 @@ public class TypeToken<T> {
 	 * @return A new type token which satisfies the bounding.
 	 */
 	public TypeToken<T> withLowerBound(TypeToken<?> type) {
-		Resolver resolver = getResolverWithBounds(type.getResolver().getBounds());
+		Resolver resolver = getResolverWithBoundsFrom(type);
 		resolver.addLowerBound(getType(), type.getType());
 
 		return new TypeToken<>(resolver, resolveType());
@@ -662,7 +705,7 @@ public class TypeToken<T> {
 	 * @return A new type token which satisfies the bounding.
 	 */
 	public TypeToken<T> withUpperBound(TypeToken<?> type) {
-		Resolver resolver = getResolverWithBounds(type.getResolver().getBounds());
+		Resolver resolver = getResolverWithBoundsFrom(type);
 		resolver.addUpperBound(getType(), type.getType());
 
 		return new TypeToken<>(resolver, resolveType());
@@ -713,7 +756,6 @@ public class TypeToken<T> {
 	 * @return A TypeToken over the best effort parameterization of the requested
 	 *         class such that it be a subtype.
 	 */
-	@SuppressWarnings("unchecked")
 	public <U> TypeToken<? extends U> resolveSubtypeParameters(Class<U> subclass) {
 		if (!ParameterizedTypes.isGeneric(subclass))
 			return TypeToken.over(subclass);
@@ -754,7 +796,7 @@ public class TypeToken<T> {
 	 *         which have instantiations resolved.
 	 */
 	public <U> TypeToken<U> resolveType(TypeToken<U> type) {
-		return type.withBounds(getResolver().getBounds()).resolve();
+		return type.withBoundsFrom(this).resolve();
 	}
 
 	/**
@@ -878,8 +920,8 @@ public class TypeToken<T> {
 	@SuppressWarnings("unchecked")
 	public <V> TypeToken<T> withTypeArgument(TypeParameter<V> parameter,
 			TypeToken<V> argument) {
-		return (TypeToken<T>) withBounds(argument.getResolver().getBounds())
-				.withTypeArgument(parameter.getType(), argument.getType());
+		return (TypeToken<T>) withBoundsFrom(argument).withTypeArgument(
+				parameter.getType(), argument.getType());
 	}
 
 	/**
@@ -1123,5 +1165,27 @@ public class TypeToken<T> {
 
 	private Type resolveType() {
 		return getInternalResolver().resolveType(getType());
+	}
+
+	/**
+	 * Determine whether this {@link TypeToken} represents a proper type.
+	 * 
+	 * @return True if the type is proper, false otherwise.
+	 */
+	public boolean isProper() {
+		return getInternalResolver().getBounds().isProperType(type);
+	}
+
+	/**
+	 * Determine which inference variables are mentioned by the type of this
+	 * {@link TypeToken}.
+	 * 
+	 * @return A set of all the inference variables which are contained within the
+	 *         bound set backing this {@link TypeToken} and which are mentioned by
+	 *         its type.
+	 */
+	public Set<InferenceVariable> getInferenceVariablesMentioned() {
+		return getInternalResolver().getBounds().getInferenceVariablesMentionedBy(
+				type);
 	}
 }
