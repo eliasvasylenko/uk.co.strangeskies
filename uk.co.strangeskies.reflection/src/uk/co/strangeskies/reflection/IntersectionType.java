@@ -122,7 +122,7 @@ public abstract class IntersectionType implements Type {
 		}
 
 		try {
-			bounds = new BoundSet(bounds);
+			bounds = bounds.copy();
 			InferenceVariable inferenceVariable = new InferenceVariable();
 			bounds.addInferenceVariable(inferenceVariable);
 

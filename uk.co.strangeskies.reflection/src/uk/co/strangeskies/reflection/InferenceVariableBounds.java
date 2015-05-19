@@ -24,7 +24,6 @@ import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -49,8 +48,8 @@ public class InferenceVariableBounds {
 	private final Set<Type> lowerBounds;
 
 	private final Set<CaptureConversion> captures;
-	private Set<InferenceVariable> allDependencies;
-	private Set<InferenceVariable> externalDependencies;
+	private final Set<InferenceVariable> allDependencies;
+	private final Set<InferenceVariable> externalDependencies;
 
 	InferenceVariableBounds(BoundSet boundSet, InferenceVariable inferenceVariable) {
 		this.boundSet = boundSet;
@@ -66,19 +65,18 @@ public class InferenceVariableBounds {
 		externalDependencies = new HashSet<>();
 	}
 
-	InferenceVariableBounds(BoundSet boundSet, InferenceVariableBounds that) {
-		this.boundSet = boundSet;
-		a = that.a;
+	InferenceVariableBounds copyInto(BoundSet boundSet) {
+		InferenceVariableBounds copy = new InferenceVariableBounds(boundSet, a);
 
-		upperBounds = new HashSet<>(that.upperBounds);
-		lowerBounds = new HashSet<>(that.lowerBounds);
-		equalities = new HashSet<>(that.equalities);
+		copy.upperBounds.addAll(upperBounds);
+		copy.lowerBounds.addAll(lowerBounds);
+		copy.equalities.addAll(equalities);
 
-		captures = new HashSet<>(that.captures);
-		allDependencies = that.allDependencies == null ? null : new HashSet<>(
-				that.allDependencies);
-		externalDependencies = that.externalDependencies == null ? null
-				: new HashSet<>(that.externalDependencies);
+		copy.captures.addAll(captures);
+		copy.allDependencies.addAll(allDependencies);
+		copy.externalDependencies.addAll(externalDependencies);
+
+		return copy;
 	}
 
 	void addCaptureConversion(CaptureConversion captureConversion) {
@@ -99,7 +97,7 @@ public class InferenceVariableBounds {
 				for (InferenceVariable inferenceVariable : capture
 						.getInferenceVariablesMentioned())
 					allDependencies.addAll(boundSet.getBoundsOn(inferenceVariable)
-							.getRemainingDependencies());
+							.getDependencies());
 
 			allDependencies.add(a);
 			allDependencies.addAll(externalDependencies);
@@ -138,7 +136,7 @@ public class InferenceVariableBounds {
 		}
 	}
 
-	private void addDependenciesFromMentiones(
+	private void addDependenciesFromMentions(
 			Collection<InferenceVariable> mentions) {
 		/*
 		 * Given a bound of one of the following forms, where T is either an
@@ -160,7 +158,7 @@ public class InferenceVariableBounds {
 			for (InferenceVariable mention : mentions)
 				if (allDependencies != null)
 					allDependencies.addAll(boundSet.getBoundsOn(mention)
-							.getRemainingDependencies());
+							.getDependencies());
 		} else {
 			/*
 			 * Otherwise, α depends on the resolution of β.
@@ -172,12 +170,14 @@ public class InferenceVariableBounds {
 		}
 	}
 
+	/*-
 	private void removeDependency(InferenceVariable dependency) {
 		if (allDependencies != null) {
 			allDependencies.remove(dependency);
 			externalDependencies.remove(dependency);
 		}
 	}
+	 */
 
 	/**
 	 * @return The inference variable the bounds described by this object apply
@@ -237,8 +237,33 @@ public class InferenceVariableBounds {
 	 * @return All inference variables related to this one through bounds. This
 	 *         set includes the inference variable itself.
 	 */
+	public Set<InferenceVariable> getDependencies() {
+		return allDependencies;
+	}
+
+	/**
+	 * @return All inference variables related to this one through bounds. This
+	 *         set includes the inference variable itself.
+	 */
 	public Set<InferenceVariable> getRemainingDependencies() {
-		return (allDependencies != null) ? allDependencies : Collections.emptySet();
+		return allDependencies.stream()
+				.filter(b -> !boundSet.getBoundsOn(b).getInstantiation().isPresent())
+				.collect(Collectors.toSet());
+	}
+
+	void applyTypeSubstitution(TypeSubstitution where) {
+		Set<Type> equalities = this.equalities.stream().map(where::resolve)
+				.collect(Collectors.toSet());
+		this.equalities.clear();
+		this.equalities.addAll(equalities);
+
+		Set<Type> upperBounds = this.upperBounds.stream().map(where::resolve)
+				.collect(Collectors.toSet());
+		this.upperBounds.clear();
+		this.upperBounds.addAll(upperBounds);
+
+		this.lowerBounds.clear();
+		this.lowerBounds.addAll(lowerBounds);
 	}
 
 	void addEquality(Type type) {
@@ -252,13 +277,14 @@ public class InferenceVariableBounds {
 				/*
 				 * An instantiation has been found.
 				 */
-				allDependencies = null;
-				externalDependencies = null;
+
+				/*-
 				for (InferenceVariable inferenceVariable : boundSet
 						.getInferenceVariables())
 					boundSet.getBoundsOn(inferenceVariable).removeDependency(a);
+				 */
 			} else {
-				addDependenciesFromMentiones(mentions);
+				addDependenciesFromMentions(mentions);
 			}
 
 			/*
@@ -316,7 +342,7 @@ public class InferenceVariableBounds {
 		if (this.equalities.add(type)) {
 			logBound(a, type, "=");
 
-			addDependenciesFromMentiones(Arrays.asList(type));
+			addDependenciesFromMentions(Arrays.asList(type));
 
 			/*
 			 * α = S and α = T imply ‹S = T›
@@ -343,7 +369,7 @@ public class InferenceVariableBounds {
 		if (this.upperBounds.add(type)) {
 			logBound(a, type, "<:");
 
-			addDependenciesFromMentiones(boundSet
+			addDependenciesFromMentions(boundSet
 					.getInferenceVariablesMentionedBy(type));
 
 			/*
@@ -397,7 +423,7 @@ public class InferenceVariableBounds {
 		if (upperBounds.add(type)) {
 			logBound(a, type, "<:");
 
-			addDependenciesFromMentiones(Arrays.asList(type));
+			addDependenciesFromMentions(Arrays.asList(type));
 
 			/*
 			 * α = S and α <: T imply ‹S <: T›
@@ -417,7 +443,7 @@ public class InferenceVariableBounds {
 		if (lowerBounds.add(type)) {
 			logBound(type, a, "<:");
 
-			addDependenciesFromMentiones(boundSet
+			addDependenciesFromMentions(boundSet
 					.getInferenceVariablesMentionedBy(type));
 
 			/*
@@ -458,7 +484,7 @@ public class InferenceVariableBounds {
 		if (lowerBounds.add(type)) {
 			logBound(type, a, "<:");
 
-			addDependenciesFromMentiones(Arrays.asList(type));
+			addDependenciesFromMentions(Arrays.asList(type));
 
 			/*
 			 * α = S and T <: α imply ‹T <: S›

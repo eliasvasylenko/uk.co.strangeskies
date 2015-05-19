@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
+import uk.co.strangeskies.utilities.DeepCopyable;
 import uk.co.strangeskies.utilities.IdentityProperty;
 
 /**
@@ -66,7 +67,7 @@ import uk.co.strangeskies.utilities.IdentityProperty;
  * 
  * @author Elias N Vasylenko
  */
-public class Resolver {
+public class Resolver implements DeepCopyable<Resolver> {
 	private BoundSet bounds;
 
 	/*
@@ -107,18 +108,24 @@ public class Resolver {
 		this(new BoundSet());
 	}
 
-	/**
-	 * Create a copy of a given resolver, over a copy of that resolver's bound
-	 * set.
-	 * 
-	 * @param that
-	 *          The resolver we wish to copy.
-	 */
-	public Resolver(Resolver that) {
-		this(new BoundSet(that.bounds));
+	@Override
+	public Resolver copy() {
+		Resolver copy = new Resolver(bounds.copy());
 
-		capturedDeclarations.addAll(that.capturedDeclarations);
-		capturedTypeVariables.putAll(that.capturedTypeVariables);
+		copy.capturedDeclarations.addAll(capturedDeclarations);
+		copy.capturedTypeVariables.putAll(capturedTypeVariables);
+
+		return copy;
+	}
+
+	@Override
+	public Resolver deepCopy() {
+		Resolver copy = new Resolver(bounds.deepCopy());
+
+		copy.capturedDeclarations.addAll(capturedDeclarations);
+		copy.capturedTypeVariables.putAll(capturedTypeVariables);
+
+		return copy;
 	}
 
 	/**
@@ -796,7 +803,7 @@ public class Resolver {
 			 * capture(G<...>) for all i (1 ≤ i ≤ n), then a candidate instantiation
 			 * Ti is defined for each αi:
 			 */
-			BoundSet bounds = new BoundSet(this.bounds);
+			BoundSet bounds = this.bounds.copy();
 			Map<InferenceVariable, Type> instantiationCandidates = new HashMap<>();
 
 			try {

@@ -55,8 +55,8 @@ import uk.co.strangeskies.utilities.tuples.Pair;
  * 
  * 
  * <p>
- * Invokables may be created over types which mention inference variables, or
- * even over inference variables themselves.
+ * {@link Invokable}s may be created over types which mention inference
+ * variables, or even over inference variables themselves.
  * 
  * 
  * @author Elias N Vasylenko
@@ -315,7 +315,7 @@ public class Invokable<T, R> {
 	 *         {@link Invokable}.
 	 */
 	public Resolver getResolver() {
-		return new Resolver(getInternalResolver());
+		return getInternalResolver().copy();
 	}
 
 	private Resolver getInternalResolver() {
@@ -903,7 +903,7 @@ public class Invokable<T, R> {
 			}
 
 			// Test resolution is possible.
-			new Resolver(resolver).infer();
+			resolver.copy().infer();
 		}
 
 		return new Invokable<>(resolver, receiverType, executable,
@@ -952,7 +952,7 @@ public class Invokable<T, R> {
 			TypeVariable<? extends Executable> variable, Type instantiation) {
 		if (Arrays.stream(executable.getTypeParameters())
 				.anyMatch(variable::equals)) {
-			Resolver resolver = new Resolver(this.resolver);
+			Resolver resolver = this.resolver.copy();
 			resolver.incorporateInstantiation(variable, instantiation);
 		}
 

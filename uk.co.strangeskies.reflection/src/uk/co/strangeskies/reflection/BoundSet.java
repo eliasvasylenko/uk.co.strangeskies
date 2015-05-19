@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import uk.co.strangeskies.utilities.DeepCopyable;
+
 /**
  * <p>
  * A bound set as described in chapter 18 of the Java 8 language specification.
@@ -45,10 +47,10 @@ import java.util.stream.Collectors;
  * Note that instances of {@link InferenceVariable} which are not contained
  * within a bound set are not considered inference variables within that
  * context, and are treated as proper types. Inference variables are considered
- * contained within a bound set if they were added through
- * {@link #BoundSet(BoundSet)}, {@link #addInferenceVariable(InferenceVariable)}
- * , or as part of a capture conversion added through a
- * {@link IncorporationTarget} belonging to that bound set.
+ * contained within a bound set if they were added through {@link #copy()},
+ * {@link #addInferenceVariable(InferenceVariable)} , or as part of a capture
+ * conversion added through a {@link IncorporationTarget} belonging to that
+ * bound set.
  * 
  * <p>
  * The types of bounds which may be included in a bound set are as follows:
@@ -92,7 +94,7 @@ import java.util.stream.Collectors;
  * 
  * @author Elias N Vasylenko
  */
-public class BoundSet {
+public class BoundSet implements DeepCopyable<BoundSet> {
 	/**
 	 * Consumer of different sorts of bounds which can be a applied to inference
 	 * variables, as per chapter 18 of the Java 8 language specification.
@@ -211,21 +213,67 @@ public class BoundSet {
 	 * bound set, and all the bounds on them will also be copied. Subsequent
 	 * modifications to the given bound set will not affect the new one, and vice
 	 * versa.
-	 * 
-	 * @param boundSet
-	 *          An existing bound set whose contained bounds and inference
-	 *          variables are to be copied into the new bound set.
 	 */
-	public BoundSet(BoundSet boundSet) {
-		this();
+	@Override
+	public BoundSet copy() {
+		BoundSet copy = new BoundSet();
 
-		captureConversions.addAll(boundSet.captureConversions);
-		inferenceVariableBounds.putAll(boundSet.inferenceVariableBounds
+		copy.captureConversions.addAll(captureConversions);
+		copy.inferenceVariableBounds.putAll(inferenceVariableBounds
 				.values()
 				.stream()
 				.collect(
 						Collectors.toMap(InferenceVariableBounds::getInferenceVariable,
-								i -> new InferenceVariableBounds(this, i))));
+								i -> i.copyInto(copy))));
+
+		return copy;
+	}
+
+	/**
+	 * Create a copy of an existing bound set. All the inference variables
+	 * contained within the given bound set will be substituted for new inference
+	 * variables in the new bound set, and all the bounds on them will be
+	 * substituted for equivalent bounds.
+	 */
+	@Override
+	public BoundSet deepCopy() {
+		BoundSet copy = new BoundSet();
+
+		/*- 
+		Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions = new HashMap<>();
+
+		for (InferenceVariable inferenceVariable : inferenceVariableBounds.keySet()) {
+			InferenceVariable inferenceVariableCopy = new InferenceVariable(
+					inferenceVariable.getName());
+
+			inferenceVariableSubstitutions.put(inferenceVariable,
+					inferenceVariableCopy);
+
+			copy.inferenceVariableBounds.put(
+					inferenceVariableCopy,
+					new InferenceVariableBounds(copy, inferenceVariableBounds
+							.get(inferenceVariable), inferenceVariableCopy));
+		}
+
+		copy.inferenceVariableBounds.putAll(inferenceVariableBounds
+				.values()
+				.stream()
+				.collect(
+						Collectors.toMap(InferenceVariableBounds::getInferenceVariable,
+								i -> new InferenceVariableBounds(copy, i))));
+
+		copy.captureConversions.addAll(captureConversions);
+
+		copy.applyTypeSubstitution(new TypeSubstitution(
+				inferenceVariableSubstitutions::get));
+		 */
+
+		return copy;
+	}
+
+	private void applyTypeSubstitution(TypeSubstitution where) {
+		inferenceVariableBounds.values().forEach(
+				b -> b.applyTypeSubstitution(where));
 	}
 
 	/**

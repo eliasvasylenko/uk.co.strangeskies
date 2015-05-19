@@ -45,7 +45,8 @@ import java.util.stream.Collectors;
 public class InferenceVariable implements Type {
 	private static final AtomicLong COUNTER = new AtomicLong();
 
-	private final String numberedName;
+	private final String name;
+	private final long number;
 
 	/**
 	 * Create a new inference variable with a basic generated name, which is
@@ -62,12 +63,28 @@ public class InferenceVariable implements Type {
 	 *          A name to assign to a new inference variable.
 	 */
 	public InferenceVariable(String name) {
-		numberedName = name + "#" + COUNTER.incrementAndGet();
+		this.name = name;
+		number = COUNTER.incrementAndGet();
+	}
+
+	/**
+	 * @return The given name of the inference variable.
+	 */
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * @return The internally assigned number which uniquely distinguishes the
+	 *         inference variable from others with the same name.
+	 */
+	public long getNumber() {
+		return number;
 	}
 
 	@Override
 	public String toString() {
-		return numberedName;
+		return name + "#" + number;
 	}
 
 	/**
@@ -146,6 +163,7 @@ public class InferenceVariable implements Type {
 					return capturedArguments.keySet();
 				}
 
+				@Override
 				public Set<InferenceVariable> getInferenceVariablesMentioned() {
 					return allMentioned;
 				}

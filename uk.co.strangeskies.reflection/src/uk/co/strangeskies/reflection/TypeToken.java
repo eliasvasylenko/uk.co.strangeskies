@@ -263,7 +263,7 @@ public class TypeToken<T> {
 	 */
 	public static <T> TypeToken<? extends T> over(Resolver resolver,
 			Class<T> rawType) {
-		return new TypeToken<>(new Resolver(resolver),
+		return new TypeToken<>(resolver.copy(),
 				resolver.resolveTypeParameters(rawType));
 	}
 
@@ -271,6 +271,10 @@ public class TypeToken<T> {
 	 * Derive a new {@link TypeToken} instance, with the given bounds incorporated
 	 * into the bounds of the underlying resolver. The original {@link TypeToken}
 	 * will remain unmodified.
+	 * 
+	 * <p>
+	 * All bounds are incorporated if and only if they have the potential to
+	 * affect the resolution of inference variables mentioned by this type.
 	 * 
 	 * @param bounds
 	 *          The new bounds to incorporate.
@@ -285,6 +289,10 @@ public class TypeToken<T> {
 	 * inference variables, with respect to the given bound set, incorporated into
 	 * the bounds of the underlying resolver. The original {@link TypeToken} will
 	 * remain unmodified.
+	 * 
+	 * <p>
+	 * All bounds are incorporated if and only if they have the potential to
+	 * affect the resolution of inference variables mentioned by this type.
 	 * 
 	 * @param bounds
 	 *          The new bounds to incorporate.
@@ -302,6 +310,10 @@ public class TypeToken<T> {
 	 * Derive a new {@link TypeToken} instance, with the bounds on the given type
 	 * incorporated into the bounds of the underlying resolver. The original
 	 * {@link TypeToken} will remain unmodified.
+	 * 
+	 * <p>
+	 * All bounds are incorporated if and only if they have the potential to
+	 * affect the resolution of inference variables mentioned by this type.
 	 * 
 	 * @param type
 	 *          The type whose bounds are to be incorporated.
@@ -406,7 +418,7 @@ public class TypeToken<T> {
 	 *         internally derived from the type of this TypeToken.
 	 */
 	public Resolver getResolver() {
-		return new Resolver(getInternalResolver());
+		return getInternalResolver().copy();
 	}
 
 	private Resolver getInternalResolver() {
@@ -424,7 +436,8 @@ public class TypeToken<T> {
 
 	private Resolver getResolverWithBounds(BoundSet bounds) {
 		Resolver resolver = getResolver();
-		resolver.getBounds().incorporate(bounds, getInferenceVariablesMentioned());
+		resolver.getBounds()
+				.incorporate(bounds, getInferenceVariableDependencies());
 		return resolver;
 	}
 
@@ -432,14 +445,14 @@ public class TypeToken<T> {
 			Collection<? extends InferenceVariable> inferenceVariables) {
 		Resolver resolver = getResolver();
 		Set<InferenceVariable> withMentioned = new HashSet<>(inferenceVariables);
-		withMentioned.addAll(getInferenceVariablesMentioned());
+		withMentioned.addAll(getInferenceVariableDependencies());
 		resolver.getBounds().incorporate(bounds, withMentioned);
 		return resolver;
 	}
 
 	private Resolver getResolverWithBoundsFrom(TypeToken<?> type) {
 		return getResolverWithBounds(type.getResolver().getBounds(),
-				type.getInferenceVariablesMentioned());
+				type.getInferenceVariableDependencies());
 	}
 
 	@Override
@@ -1187,5 +1200,38 @@ public class TypeToken<T> {
 	public Set<InferenceVariable> getInferenceVariablesMentioned() {
 		return getInternalResolver().getBounds().getInferenceVariablesMentionedBy(
 				type);
+	}
+
+	/**
+	 * Determine which inference variables are dependencies of those mentioned by
+	 * the type of this {@link TypeToken}.
+	 * 
+	 * @return A set of all the dependencies of the inference variables which are
+	 *         contained within the bound set backing this {@link TypeToken} and
+	 *         which are mentioned by its type.
+	 */
+	public Set<InferenceVariable> getRemainingInferenceVariableDependencies() {
+		return getInferenceVariablesMentioned()
+				.stream()
+				.flatMap(
+						d -> getInternalResolver().getBounds().getBoundsOn(d)
+								.getRemainingDependencies().stream())
+				.collect(Collectors.toSet());
+	}
+
+	/**
+	 * Determine which inference variables are dependencies of those mentioned by
+	 * the type of this {@link TypeToken}.
+	 * 
+	 * @return A set of all the dependencies of the inference variables which are
+	 *         contained within the bound set backing this {@link TypeToken} and
+	 *         which are mentioned by its type.
+	 */
+	public Set<InferenceVariable> getInferenceVariableDependencies() {
+		return getInferenceVariablesMentioned()
+				.stream()
+				.flatMap(
+						d -> getInternalResolver().getBounds().getBoundsOn(d)
+								.getDependencies().stream()).collect(Collectors.toSet());
 	}
 }
