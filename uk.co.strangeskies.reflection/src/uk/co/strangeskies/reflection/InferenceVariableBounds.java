@@ -87,6 +87,8 @@ public class InferenceVariableBounds {
 		upperBounds.stream().map(where::resolve).forEach(copy.upperBounds::add);
 		lowerBounds.stream().map(where::resolve).forEach(copy.lowerBounds::add);
 
+		// TODO
+
 		return this;
 	}
 
@@ -94,8 +96,8 @@ public class InferenceVariableBounds {
 			Map<CaptureConversion, CaptureConversion> where) {
 		InferenceVariableBounds copy = new InferenceVariableBounds(boundSet, a);
 
-		
-		
+		// TODO
+
 		return this;
 	}
 

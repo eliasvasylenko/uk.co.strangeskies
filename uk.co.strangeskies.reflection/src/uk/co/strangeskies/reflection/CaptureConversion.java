@@ -54,17 +54,15 @@ public class CaptureConversion {
 	 * @param originalType
 	 *          The type to capture.
 	 */
-	public CaptureConversion(ParameterizedType originalType) {
+	CaptureConversion(ParameterizedType originalType,
+			Map<TypeVariable<?>, InferenceVariable> parameterCaptures) {
 		this.originalType = originalType;
+
+		captureType = (ParameterizedType) ParameterizedTypes.from(
+				Types.getRawType(originalType), parameterCaptures).getType();
 
 		Map<TypeVariable<?>, Type> parameterArguments = ParameterizedTypes
 				.getAllTypeArguments(originalType);
-
-		Map<TypeVariable<?>, InferenceVariable> parameterCaptures = ParameterizedTypes
-				.getAllTypeParameters(Types.getRawType(originalType))
-				.stream()
-				.collect(
-						Collectors.toMap(Function.identity(), t -> new InferenceVariable()));
 
 		for (TypeVariable<?> parameter : parameterCaptures.keySet()) {
 			Type argument = parameterArguments.get(parameter);
@@ -73,9 +71,25 @@ public class CaptureConversion {
 			capturedArguments.put(inferenceVariable, argument);
 			capturedParameters.put(inferenceVariable, parameter);
 		}
+	}
 
-		captureType = (ParameterizedType) ParameterizedTypes.from(
-				Types.getRawType(originalType), parameterCaptures).getType();
+	/**
+	 * Create a capture conversion over a given {@link ParameterizedType}.
+	 * Arguments will be substituted with new {@link InferenceVariable}s, such
+	 * that a new type is described which represents the result of capture
+	 * conversion on the given type.
+	 * 
+	 * @param originalType
+	 *          The type to capture.
+	 */
+	public CaptureConversion(ParameterizedType originalType) {
+		this(originalType,
+				ParameterizedTypes
+						.getAllTypeParameters(Types.getRawType(originalType))
+						.stream()
+						.collect(
+								Collectors.toMap(Function.identity(),
+										t -> new InferenceVariable())));
 	}
 
 	@Override
@@ -130,13 +144,5 @@ public class CaptureConversion {
 	 */
 	public TypeVariable<?> getCapturedParameter(InferenceVariable variable) {
 		return capturedParameters.get(variable);
-	}
-
-	public CaptureConversion withBoundTypeSubstitution(
-			TypeSubstitution substitution) {
-		Type originalType = substitution.resolve(getOriginalType());
-		Type captureType = substitution.resolve(getCaptureType());
-
-		return null; // TODO
 	}
 }

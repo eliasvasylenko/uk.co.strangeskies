@@ -18,6 +18,7 @@
  */
 package uk.co.strangeskies.reflection;
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
@@ -25,6 +26,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -240,6 +242,9 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	public BoundSet deepCopy() {
 		BoundSet copy = new BoundSet();
 
+		/*
+		 * Substitutions of inference variables:
+		 */
 		Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions = new HashMap<>();
 		for (InferenceVariable inferenceVariable : inferenceVariableBounds.keySet())
 			inferenceVariableSubstitutions.put(inferenceVariable,
@@ -248,10 +253,25 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		TypeSubstitution substitution = new TypeSubstitution(
 				inferenceVariableSubstitutions::get);
 
+		/*
+		 * Substitutions of capture conversions:
+		 */
 		Map<CaptureConversion, CaptureConversion> captureConversionSubstitutions = new HashMap<>();
-		for (CaptureConversion captureConversion : captureConversions)
+		for (CaptureConversion captureConversion : captureConversions) {
+			ParameterizedType newType = (ParameterizedType) substitution
+					.resolve(captureConversion.getOriginalType());
+
+			Map<TypeVariable<?>, InferenceVariable> newCaptures = ParameterizedTypes
+					.getAllTypeArguments(captureConversion.getCaptureType())
+					.entrySet()
+					.stream()
+					.collect(
+							Collectors.toMap(Entry::getKey,
+									e -> inferenceVariableSubstitutions.get(e.getValue())));
+
 			captureConversionSubstitutions.put(captureConversion,
-					captureConversion.withBoundTypeSubstitution(substitution));
+					new CaptureConversion(newType, newCaptures));
+		}
 
 		captureConversions.stream().forEach(copy.captureConversions::add);
 		copy.inferenceVariableBounds.putAll(inferenceVariableBounds
