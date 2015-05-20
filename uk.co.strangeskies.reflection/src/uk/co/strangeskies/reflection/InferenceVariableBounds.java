@@ -25,6 +25,7 @@ import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -68,15 +69,46 @@ public class InferenceVariableBounds {
 	InferenceVariableBounds copyInto(BoundSet boundSet) {
 		InferenceVariableBounds copy = new InferenceVariableBounds(boundSet, a);
 
-		copy.upperBounds.addAll(upperBounds);
-		copy.lowerBounds.addAll(lowerBounds);
-		copy.equalities.addAll(equalities);
+		return copy.copyFrom(this);
+	}
 
-		copy.captures.addAll(captures);
-		copy.allDependencies.addAll(allDependencies);
-		copy.externalDependencies.addAll(externalDependencies);
+	InferenceVariableBounds withInferenceVariable(
+			InferenceVariable inferenceVariable) {
+		InferenceVariableBounds copy = new InferenceVariableBounds(boundSet,
+				inferenceVariable);
 
-		return copy;
+		return copy.copyFrom(this);
+	}
+
+	InferenceVariableBounds withBoundTypeSubstitution(TypeSubstitution where) {
+		InferenceVariableBounds copy = new InferenceVariableBounds(boundSet, a);
+
+		equalities.stream().map(where::resolve).forEach(copy.equalities::add);
+		upperBounds.stream().map(where::resolve).forEach(copy.upperBounds::add);
+		lowerBounds.stream().map(where::resolve).forEach(copy.lowerBounds::add);
+
+		return this;
+	}
+
+	InferenceVariableBounds withCaptureConversionSubstitution(
+			Map<CaptureConversion, CaptureConversion> where) {
+		InferenceVariableBounds copy = new InferenceVariableBounds(boundSet, a);
+
+		
+		
+		return this;
+	}
+
+	private InferenceVariableBounds copyFrom(InferenceVariableBounds other) {
+		upperBounds.addAll(other.upperBounds);
+		lowerBounds.addAll(other.lowerBounds);
+		equalities.addAll(other.equalities);
+
+		captures.addAll(other.captures);
+		allDependencies.addAll(other.allDependencies);
+		externalDependencies.addAll(other.externalDependencies);
+
+		return this;
 	}
 
 	void addCaptureConversion(CaptureConversion captureConversion) {
@@ -93,11 +125,19 @@ public class InferenceVariableBounds {
 		if (allDependencies != null) {
 			allDependencies.clear();
 
-			for (CaptureConversion capture : captures)
-				for (InferenceVariable inferenceVariable : capture
-						.getInferenceVariablesMentioned())
+			for (CaptureConversion capture : captures) {
+				Set<InferenceVariable> allMentioned = new HashSet<>(
+						capture.getInferenceVariables());
+				for (Type captured : ParameterizedTypes.getAllTypeArguments(
+						capture.getOriginalType()).values())
+					allMentioned.addAll(boundSet
+							.getInferenceVariablesMentionedBy(captured));
+
+				for (InferenceVariable inferenceVariable : allMentioned) {
 					allDependencies.addAll(boundSet.getBoundsOn(inferenceVariable)
 							.getDependencies());
+				}
+			}
 
 			allDependencies.add(a);
 			allDependencies.addAll(externalDependencies);
@@ -249,21 +289,6 @@ public class InferenceVariableBounds {
 		return allDependencies.stream()
 				.filter(b -> !boundSet.getBoundsOn(b).getInstantiation().isPresent())
 				.collect(Collectors.toSet());
-	}
-
-	void applyTypeSubstitution(TypeSubstitution where) {
-		Set<Type> equalities = this.equalities.stream().map(where::resolve)
-				.collect(Collectors.toSet());
-		this.equalities.clear();
-		this.equalities.addAll(equalities);
-
-		Set<Type> upperBounds = this.upperBounds.stream().map(where::resolve)
-				.collect(Collectors.toSet());
-		this.upperBounds.clear();
-		this.upperBounds.addAll(upperBounds);
-
-		this.lowerBounds.clear();
-		this.lowerBounds.addAll(lowerBounds);
 	}
 
 	void addEquality(Type type) {

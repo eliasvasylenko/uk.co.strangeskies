@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.utilities.DeepCopyable;
@@ -220,11 +221,11 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 
 		copy.captureConversions.addAll(captureConversions);
 		copy.inferenceVariableBounds.putAll(inferenceVariableBounds
-				.values()
+				.keySet()
 				.stream()
 				.collect(
-						Collectors.toMap(InferenceVariableBounds::getInferenceVariable,
-								i -> i.copyInto(copy))));
+						Collectors.toMap(Function.identity(), i -> inferenceVariableBounds
+								.get(i).copyInto(copy))));
 
 		return copy;
 	}
@@ -239,41 +240,38 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	public BoundSet deepCopy() {
 		BoundSet copy = new BoundSet();
 
-		/*- 
 		Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions = new HashMap<>();
-
-		for (InferenceVariable inferenceVariable : inferenceVariableBounds.keySet()) {
-			InferenceVariable inferenceVariableCopy = new InferenceVariable(
-					inferenceVariable.getName());
-
+		for (InferenceVariable inferenceVariable : inferenceVariableBounds.keySet())
 			inferenceVariableSubstitutions.put(inferenceVariable,
-					inferenceVariableCopy);
+					new InferenceVariable(inferenceVariable.getName()));
 
-			copy.inferenceVariableBounds.put(
-					inferenceVariableCopy,
-					new InferenceVariableBounds(copy, inferenceVariableBounds
-							.get(inferenceVariable), inferenceVariableCopy));
-		}
+		TypeSubstitution substitution = new TypeSubstitution(
+				inferenceVariableSubstitutions::get);
 
+		Map<CaptureConversion, CaptureConversion> captureConversionSubstitutions = new HashMap<>();
+		for (CaptureConversion captureConversion : captureConversions)
+			captureConversionSubstitutions.put(captureConversion,
+					captureConversion.withBoundTypeSubstitution(substitution));
+
+		captureConversions.stream().forEach(copy.captureConversions::add);
 		copy.inferenceVariableBounds.putAll(inferenceVariableBounds
-				.values()
+				.keySet()
 				.stream()
 				.collect(
-						Collectors.toMap(InferenceVariableBounds::getInferenceVariable,
-								i -> new InferenceVariableBounds(copy, i))));
-
-		copy.captureConversions.addAll(captureConversions);
-
-		copy.applyTypeSubstitution(new TypeSubstitution(
-				inferenceVariableSubstitutions::get));
-		 */
+						Collectors.toMap(
+								inferenceVariableSubstitutions::get,
+								i -> inferenceVariableBounds
+										.get(i)
+										.copyInto(copy)
+										.withInferenceVariable(
+												inferenceVariableSubstitutions.get(i))
+										.withBoundTypeSubstitution(
+												new TypeSubstitution(
+														inferenceVariableSubstitutions::get))
+										.withCaptureConversionSubstitution(
+												captureConversionSubstitutions))));
 
 		return copy;
-	}
-
-	private void applyTypeSubstitution(TypeSubstitution where) {
-		inferenceVariableBounds.values().forEach(
-				b -> b.applyTypeSubstitution(where));
 	}
 
 	/**

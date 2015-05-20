@@ -22,13 +22,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -121,75 +115,7 @@ public class InferenceVariable implements Type {
 			 * ≤ i ≤ n :
 			 */
 
-			Map<TypeVariable<?>, Type> parameterArguments = ParameterizedTypes
-					.getAllTypeArguments(type);
-			Map<InferenceVariable, Type> capturedArguments = new HashMap<>();
-			Map<InferenceVariable, TypeVariable<?>> capturedParameters = new HashMap<>();
-
-			Map<TypeVariable<?>, InferenceVariable> parameterCaptures = ParameterizedTypes
-					.getAllTypeParameters(Types.getRawType(type))
-					.stream()
-					.collect(
-							Collectors.toMap(Function.identity(),
-									t -> new InferenceVariable()));
-
-			for (InferenceVariable variable : parameterCaptures.values())
-				bounds.addInferenceVariable(variable);
-
-			for (TypeVariable<?> parameter : parameterCaptures.keySet()) {
-				Type argument = parameterArguments.get(parameter);
-				InferenceVariable inferenceVariable = parameterCaptures.get(parameter);
-
-				capturedArguments.put(inferenceVariable, argument);
-				capturedParameters.put(inferenceVariable, parameter);
-			}
-
-			Set<InferenceVariable> allMentioned = new HashSet<>(
-					capturedArguments.keySet());
-			for (Type captured : capturedArguments.values())
-				allMentioned.addAll(bounds.getInferenceVariablesMentionedBy(captured));
-
-			ParameterizedType capturedType = (ParameterizedType) ParameterizedTypes
-					.from(Types.getRawType(type), parameterCaptures).getType();
-
-			CaptureConversion captureConversion = new CaptureConversion() {
-				@Override
-				public ParameterizedType getOriginalType() {
-					return type;
-				}
-
-				@Override
-				public Set<InferenceVariable> getInferenceVariables() {
-					return capturedArguments.keySet();
-				}
-
-				@Override
-				public Set<InferenceVariable> getInferenceVariablesMentioned() {
-					return allMentioned;
-				}
-
-				@Override
-				public Type getCapturedArgument(InferenceVariable variable) {
-					return capturedArguments.get(variable);
-				}
-
-				@Override
-				public TypeVariable<?> getCapturedParameter(InferenceVariable variable) {
-					return capturedParameters.get(variable);
-				}
-
-				@Override
-				public ParameterizedType getCaptureType() {
-					return capturedType;
-				}
-
-				@Override
-				public String toString() {
-					return new StringBuilder().append(getCaptureType().getTypeName())
-							.append(" = capture(").append(getOriginalType().getTypeName())
-							.append(")").toString();
-				}
-			};
+			CaptureConversion captureConversion = new CaptureConversion(type);
 
 			bounds.incorporate().captureConversion(captureConversion);
 
