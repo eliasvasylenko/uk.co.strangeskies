@@ -1062,6 +1062,11 @@ public class TypeToken<T> {
 		Set<? extends Invokable<? super T, ? extends T>> candidates = Invokable
 				.resolveApplicableInvokables(getConstructors(), arguments);
 
+		if (candidates.isEmpty())
+			throw new IllegalArgumentException(
+					"Cannot find any applicable constructor in '" + this
+							+ "' for arguments '" + arguments + "'.");
+
 		return Invokable.resolveMostSpecificInvokable(candidates);
 	}
 
@@ -1124,7 +1129,7 @@ public class TypeToken<T> {
 
 		if (candidates.isEmpty())
 			throw new IllegalArgumentException("Cannot find any method '" + name
-					+ "' in '" + this + "'.");
+					+ "' in '" + this + "' for arguments '" + arguments + "'.");
 
 		candidates = Invokable.resolveApplicableInvokables(candidates, arguments);
 

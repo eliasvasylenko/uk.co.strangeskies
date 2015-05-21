@@ -24,6 +24,7 @@ import java.lang.reflect.TypeVariable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -45,16 +46,7 @@ public class CaptureConversion {
 	private final Map<InferenceVariable, TypeVariable<?>> capturedParameters = new HashMap<>();
 	private final Map<InferenceVariable, Type> capturedArguments = new HashMap<>();
 
-	/**
-	 * Create a capture conversion over a given {@link ParameterizedType}.
-	 * Arguments will be substituted with new {@link InferenceVariable}s, such
-	 * that a new type is described which represents the result of capture
-	 * conversion on the given type.
-	 * 
-	 * @param originalType
-	 *          The type to capture.
-	 */
-	CaptureConversion(ParameterizedType originalType,
+	private CaptureConversion(ParameterizedType originalType,
 			Map<TypeVariable<?>, InferenceVariable> parameterCaptures) {
 		this.originalType = originalType;
 
@@ -144,5 +136,32 @@ public class CaptureConversion {
 	 */
 	public TypeVariable<?> getCapturedParameter(InferenceVariable variable) {
 		return capturedParameters.get(variable);
+	}
+
+	/**
+	 * Substitute any mentions of the inference variables present as keys in the
+	 * given map with their associated values in the map.
+	 * 
+	 * @param inferenceVariableSubstitutions
+	 *          A mapping from inference variables which may be present in this
+	 *          capture conversion, to the inference variables they should be
+	 *          substituted with.
+	 * @return A new {@link CaptureConversion} instance which is equal to the
+	 *         receiving instance but for the substitutions made.
+	 */
+	public CaptureConversion withInferenceVariableSubstitution(
+			Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions) {
+		ParameterizedType newType = (ParameterizedType) new TypeSubstitution(
+				inferenceVariableSubstitutions::get).resolve(getOriginalType());
+
+		Map<TypeVariable<?>, InferenceVariable> newCaptures = ParameterizedTypes
+				.getAllTypeArguments(getCaptureType())
+				.entrySet()
+				.stream()
+				.collect(
+						Collectors.toMap(Entry::getKey,
+								e -> inferenceVariableSubstitutions.get(e.getValue())));
+
+		return new CaptureConversion(newType, newCaptures);
 	}
 }

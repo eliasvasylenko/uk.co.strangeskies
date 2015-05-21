@@ -1226,7 +1226,7 @@ public class Invokable<T, R> {
 
 			if (!candidate.equals(mostSpecific))
 				throw new TypeException(
-						"Cannot resolve method invocation ambiguity between candidate '"
+						"Cannot resolve invocation ambiguity between candidate '"
 								+ candidate + "' and '" + mostSpecific + "'.");
 
 			mostSpecific = candidate.getExecutable().getDeclaringClass()

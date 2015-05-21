@@ -173,21 +173,21 @@ public class ConstraintFormula {
 			if (!Types.isLooseInvocationContextCompatible(from, to)) {
 				incorporate.falsehood();
 			}
-		} else if (from != null && Types.isPrimitive(from))
+		} else if (from != null && Types.isPrimitive(from)) {
 			/*
 			 * Otherwise, if S is a primitive type, let S' be the result of applying
 			 * boxing conversion (§5.1.7) to S. Then the constraint reduces to ‹S' →
 			 * T›.
 			 */
 			reduce(Kind.LOOSE_COMPATIBILILTY, Types.wrapPrimitive(from), to, bounds);
-		else if (to != null && Types.isPrimitive(to))
+		} else if (to != null && Types.isPrimitive(to)) {
 			/*
 			 * Otherwise, if T is a primitive type, let T' be the result of applying
 			 * boxing conversion (§5.1.7) to T. Then the constraint reduces to ‹S =
 			 * T'›.
 			 */
 			reduce(Kind.EQUALITY, from, Types.wrapPrimitive(to), bounds);
-		else if (isUncheckedCompatibleOnly(from, to))
+		} else if (isUncheckedCompatibleOnly(from, to)) {
 			/*
 			 * Otherwise, if T is a parameterized type of the form G<T1, ..., Tn>, and
 			 * there exists no type of the form G<...> that is a supertype of S, but
@@ -200,11 +200,12 @@ public class ConstraintFormula {
 			 * to true. (The notation []k indicates an array type of k dimensions.)
 			 */
 			return;
-		else
+		} else {
 			/*
 			 * Otherwise, the constraint reduces to ‹S <: T›.
 			 */
 			reduce(Kind.SUBTYPE, from, to, bounds);
+		}
 	}
 
 	private static boolean isUncheckedCompatibleOnly(Type from, Type to) {
@@ -658,6 +659,11 @@ public class ConstraintFormula {
 						incorporate.falsehood();
 				else if (to instanceof ParameterizedType)
 					incorporate.falsehood();
+			} else {
+				/*
+				 * Otherwise, the constraint reduces to false.
+				 */
+				incorporate.falsehood();
 			}
 		}
 	}

@@ -18,7 +18,6 @@
  */
 package uk.co.strangeskies.reflection;
 
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
@@ -26,7 +25,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -197,7 +195,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		}
 	}
 
-	private final Map<InferenceVariable, InferenceVariableBounds> inferenceVariableBounds;
+	private final Map<InferenceVariable, InferenceVariableBoundsImpl> inferenceVariableBounds;
 	private final Set<CaptureConversion> captureConversions;
 	private boolean valid;
 
@@ -250,28 +248,13 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 			inferenceVariableSubstitutions.put(inferenceVariable,
 					new InferenceVariable(inferenceVariable.getName()));
 
-		TypeSubstitution substitution = new TypeSubstitution(
-				inferenceVariableSubstitutions::get);
-
 		/*
 		 * Substitutions of capture conversions:
 		 */
 		Map<CaptureConversion, CaptureConversion> captureConversionSubstitutions = new HashMap<>();
-		for (CaptureConversion captureConversion : captureConversions) {
-			ParameterizedType newType = (ParameterizedType) substitution
-					.resolve(captureConversion.getOriginalType());
-
-			Map<TypeVariable<?>, InferenceVariable> newCaptures = ParameterizedTypes
-					.getAllTypeArguments(captureConversion.getCaptureType())
-					.entrySet()
-					.stream()
-					.collect(
-							Collectors.toMap(Entry::getKey,
-									e -> inferenceVariableSubstitutions.get(e.getValue())));
-
-			captureConversionSubstitutions.put(captureConversion,
-					new CaptureConversion(newType, newCaptures));
-		}
+		for (CaptureConversion captureConversion : captureConversions)
+			captureConversionSubstitutions.put(captureConversion, captureConversion
+					.withInferenceVariableSubstitution(inferenceVariableSubstitutions));
 
 		captureConversions.stream().forEach(copy.captureConversions::add);
 		copy.inferenceVariableBounds.putAll(inferenceVariableBounds
@@ -283,13 +266,10 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 								i -> inferenceVariableBounds
 										.get(i)
 										.copyInto(copy)
-										.withInferenceVariable(
-												inferenceVariableSubstitutions.get(i))
-										.withBoundTypeSubstitution(
-												new TypeSubstitution(
-														inferenceVariableSubstitutions::get))
-										.withCaptureConversionSubstitution(
-												captureConversionSubstitutions))));
+										.withInferenceVariableSubstitution(
+												inferenceVariableSubstitutions))));
+
+		copy.valid = valid;
 
 		return copy;
 	}
@@ -314,7 +294,8 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	 * @return A container representing the state of the given inference variable
 	 *         with respect to its bounds.
 	 */
-	public InferenceVariableBounds getBoundsOn(InferenceVariable inferenceVariable) {
+	public InferenceVariableBoundsImpl getBoundsOn(
+			InferenceVariable inferenceVariable) {
 		return inferenceVariableBounds.get(inferenceVariable);
 	}
 
@@ -443,7 +424,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		 */
 		for (InferenceVariable inferenceVariable : inferenceVariableSet)
 			inferenceVariableBounds.putIfAbsent(inferenceVariable,
-					new InferenceVariableBounds(this, inferenceVariable));
+					new InferenceVariableBoundsImpl(this, inferenceVariable));
 
 		/*
 		 * Incorporate their bounds.
@@ -482,11 +463,12 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		 */
 		for (InferenceVariable inferenceVariable : captureConversion
 				.getInferenceVariables()) {
-			InferenceVariableBounds bounds = inferenceVariableBounds
+			InferenceVariableBoundsImpl bounds = inferenceVariableBounds
 					.get(inferenceVariable);
 
 			if (bounds == null) {
-				bounds = new InferenceVariableBounds(BoundSet.this, inferenceVariable);
+				bounds = new InferenceVariableBoundsImpl(BoundSet.this,
+						inferenceVariable);
 				inferenceVariableBounds.put(inferenceVariable, bounds);
 			}
 
@@ -553,6 +535,6 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	public void addInferenceVariable(InferenceVariable inferenceVariable) {
 		if (!inferenceVariableBounds.containsKey(inferenceVariable))
 			inferenceVariableBounds.put(inferenceVariable,
-					new InferenceVariableBounds(this, inferenceVariable));
+					new InferenceVariableBoundsImpl(this, inferenceVariable));
 	}
 }
