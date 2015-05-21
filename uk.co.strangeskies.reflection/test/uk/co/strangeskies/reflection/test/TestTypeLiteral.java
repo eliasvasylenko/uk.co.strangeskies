@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.reflection.BoundSet;
 import uk.co.strangeskies.reflection.InferenceVariable;
 import uk.co.strangeskies.reflection.Invokable;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
@@ -505,13 +504,12 @@ public class TestTypeLiteral {
 				.infer());
 		System.out.println();
 
-		BoundSet bball = new TypeToken<HashSet<? super Double>>(Wildcards.INFERENCE) {}
-				.resolveConstructorOverload(
-						new TypeToken<ArrayList<? super Integer>>(Wildcards.INFERENCE) {}
-								.resolveConstructorOverload().getReturnType()).getReturnType()
-				.getResolver().getBounds();
-		System.out.println(bball);
-		System.out.println(bball.deepCopy());
+		TypeToken<?> bball = new TypeToken<HashSet<? super Double>>(
+				Wildcards.INFERENCE) {}.resolveConstructorOverload(
+				new TypeToken<ArrayList<? super Integer>>(Wildcards.INFERENCE) {}
+						.resolveConstructorOverload().getReturnType()).getReturnType();
+		System.out.println(bball.getResolver().getBounds());
+		System.out.println(bball.deepCopy().getResolver().getBounds());
 	}
 
 	private static <U> TypeToken<Iterable<? extends U>> getIteratorExtending(

@@ -23,8 +23,8 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -159,8 +159,15 @@ public class CaptureConversion {
 				.entrySet()
 				.stream()
 				.collect(
-						Collectors.toMap(Entry::getKey,
-								e -> inferenceVariableSubstitutions.get(e.getValue())));
+						Collectors.toMap(
+								Entry::getKey,
+								e -> {
+									InferenceVariable substitution = inferenceVariableSubstitutions
+											.get(e.getValue());
+									if (substitution == null)
+										substitution = (InferenceVariable) e.getValue();
+									return substitution;
+								}));
 
 		return new CaptureConversion(newType, newCaptures);
 	}

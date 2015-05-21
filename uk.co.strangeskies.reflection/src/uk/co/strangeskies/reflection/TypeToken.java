@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
+import uk.co.strangeskies.utilities.DeepCopyable;
 import uk.co.strangeskies.utilities.collection.computingmap.ComputingMap;
 import uk.co.strangeskies.utilities.collection.computingmap.LRUCacheComputingMap;
 
@@ -59,7 +60,7 @@ import uk.co.strangeskies.utilities.collection.computingmap.LRUCacheComputingMap
  * @param <T>
  *          This is the type which the TypeToken object references.
  */
-public class TypeToken<T> {
+public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	/**
 	 * Treatment of wildcards for {@link TypeToken}s created over parameterized
 	 * types.
@@ -200,17 +201,6 @@ public class TypeToken<T> {
 				.next());
 	}
 
-	@Override
-	public boolean equals(Object obj) {
-		return obj instanceof TypeToken
-				&& type.equals(((TypeToken<?>) obj).getType());
-	}
-
-	@Override
-	public int hashCode() {
-		return type.hashCode();
-	}
-
 	/**
 	 * Create a TypeToken for a raw class.
 	 * 
@@ -263,8 +253,36 @@ public class TypeToken<T> {
 	 */
 	public static <T> TypeToken<? extends T> over(Resolver resolver,
 			Class<T> rawType) {
+		resolver.incorporateTypeParameters(rawType);
 		return new TypeToken<>(resolver.copy(),
 				resolver.resolveTypeParameters(rawType));
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return obj instanceof TypeToken
+				&& type.equals(((TypeToken<?>) obj).getType());
+	}
+
+	@Override
+	public int hashCode() {
+		return type.hashCode();
+	}
+
+	@Override
+	public TypeToken<T> copy() {
+		return this;
+	}
+
+	@Override
+	public TypeToken<T> deepCopy() {
+		Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions = new HashMap<>();
+
+		Resolver resolver = getInternalResolver()
+				.withNewInferenceVariableSubstitution(inferenceVariableSubstitutions);
+
+		return new TypeToken<T>(resolver, new TypeSubstitution(
+				inferenceVariableSubstitutions::get).resolve(type));
 	}
 
 	/**

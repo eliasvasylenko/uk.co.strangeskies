@@ -71,14 +71,6 @@ public class Resolver implements DeepCopyable<Resolver> {
 	private BoundSet bounds;
 
 	/*
-	 * We maintain a set of generic declarations which have already been
-	 * incorporated into the resolver such that inference variables have been
-	 * captured over the type variables where appropriate - and in the case of
-	 * Classes, such that bounds on inference variables may be implied for other
-	 * classes through enclosing, subtype, and supertype relations.
-	 */
-	private final Set<GenericDeclaration> capturedDeclarations;
-	/*
 	 * The extra indirection here, rather than just a Map<TypeVariable<?>,
 	 * InferenceVariable> by itself, is because we store TypeVariables for
 	 * containing types, meaning otherwise we may have unexpected collisions if we
@@ -97,7 +89,6 @@ public class Resolver implements DeepCopyable<Resolver> {
 	public Resolver(BoundSet bounds) {
 		this.bounds = bounds;
 
-		capturedDeclarations = new HashSet<>();
 		capturedTypeVariables = new HashMap<>();
 	}
 
@@ -112,7 +103,6 @@ public class Resolver implements DeepCopyable<Resolver> {
 	public Resolver copy() {
 		Resolver copy = new Resolver(bounds.copy());
 
-		copy.capturedDeclarations.addAll(capturedDeclarations);
 		copy.capturedTypeVariables.putAll(capturedTypeVariables);
 
 		return copy;
@@ -120,10 +110,47 @@ public class Resolver implements DeepCopyable<Resolver> {
 
 	@Override
 	public Resolver deepCopy() {
-		Resolver copy = new Resolver(bounds.deepCopy());
+		return withNewInferenceVariableSubstitution(new HashMap<>());
+	}
 
-		copy.capturedDeclarations.addAll(capturedDeclarations);
-		copy.capturedTypeVariables.putAll(capturedTypeVariables);
+	Resolver withNewInferenceVariableSubstitution(
+			Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions) {
+		return withNewBoundsSubstitution(
+				inferenceVariableSubstitutions,
+				bounds
+						.withNewInferenceVariableSubstitution(inferenceVariableSubstitutions));
+	}
+
+	/**
+	 * Create a copy of an existing bound set. All the inference variables
+	 * contained within the given bound set will be substituted for the values
+	 * they index to in the given map in the new bound set, and all the bounds on
+	 * them will be substituted for equivalent bounds.
+	 * 
+	 * @param inferenceVariableSubstitutions
+	 * @return A newly derived bound set, with each instance of an inference
+	 *         variable substituted for its mapping in the given map, where one
+	 *         exists.
+	 */
+	public Resolver withInferenceVariableSubstitution(
+			Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions) {
+		return withNewBoundsSubstitution(inferenceVariableSubstitutions,
+				bounds
+						.withInferenceVariableSubstitution(inferenceVariableSubstitutions));
+	}
+
+	private Resolver withNewBoundsSubstitution(
+			Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions,
+			BoundSet bounds) {
+		Resolver copy = new Resolver(bounds);
+
+		for (GenericDeclaration declaration : capturedTypeVariables.keySet())
+			copy.capturedTypeVariables.put(
+					declaration,
+					capturedTypeVariables.get(declaration).entrySet().stream()
+							.collect(Collectors.toMap(Entry::getKey, i -> {
+								return inferenceVariableSubstitutions.get(i.getValue());
+							})));
 
 		return copy;
 	}
@@ -158,7 +185,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 */
 	public Map<TypeVariable<?>, InferenceVariable> incorporateTypeParameters(
 			GenericDeclaration declaration) {
-		if (capturedDeclarations.add(declaration)) {
+		if (!capturedTypeVariables.containsKey(declaration)) {
 			Map<TypeVariable<?>, InferenceVariable> declarationCaptures = new HashMap<>();
 			capturedTypeVariables.put(declaration, declarationCaptures);
 
