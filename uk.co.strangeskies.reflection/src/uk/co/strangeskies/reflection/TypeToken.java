@@ -18,6 +18,11 @@
  */
 package uk.co.strangeskies.reflection;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
@@ -31,12 +36,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
+import uk.co.strangeskies.reflection.TypeToken.Wildcards.Behaviour;
 import uk.co.strangeskies.utilities.DeepCopyable;
 import uk.co.strangeskies.utilities.collection.computingmap.ComputingMap;
 import uk.co.strangeskies.utilities.collection.computingmap.LRUCacheComputingMap;
@@ -62,30 +67,49 @@ import uk.co.strangeskies.utilities.collection.computingmap.LRUCacheComputingMap
  */
 public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	/**
-	 * Treatment of wildcards for {@link TypeToken}s created over parameterized
-	 * types.
+	 * Specifies treatment of wildcards for the annotated type, and if the type is
+	 * a parameterized type, for each of its parameters, but not recursively.
+	 * Annotations directly on wildcard types override that on any containing
+	 * generic parameterized type.
 	 * 
 	 * @author Elias N Vasylenko
 	 */
-	public enum Wildcards {
+	@Retention(RetentionPolicy.RUNTIME)
+	@Target(ElementType.TYPE_USE)
+	public @interface Wildcards {
 		/**
-		 * Wildcards will be left alone, though capture may be necessary for
-		 * incorporation into backing {@link Resolver}, as wildcards alone do not
-		 * always fully specify valid bounds.
+		 * Treatment of wildcards for {@link TypeToken}s created over parameterized
+		 * types.
+		 * 
+		 * @author Elias N Vasylenko
 		 */
-		PRESERVE,
+		public enum Behaviour {
+			/**
+			 * Wildcards will be left alone, though capture may be necessary for
+			 * incorporation into backing {@link Resolver}, as wildcards alone do not
+			 * always fully specify valid bounds.
+			 */
+			PRESERVE,
+			/**
+			 * Wildcards should be substituted with inference variables, with
+			 * appropriate bounds incorporated based on both type variable bounds and
+			 * wildcard bounds.
+			 */
+			INFER,
+			/**
+			 * Wildcards should be substituted with fresh {@link TypeVariableCapture}
+			 * instances, as per
+			 * {@link TypeVariableCapture#captureWildcardArguments(ParameterizedType)}
+			 * .
+			 */
+			CAPTURE;
+		}
+
 		/**
-		 * Wildcards should be substituted with inference variables, with
-		 * appropriate bounds incorporated based on both type variable bounds and
-		 * wildcard bounds.
+		 * @return The default behaviour of annotated wildcard types when a
+		 *         {@link TypeToken} is built over the type.
 		 */
-		INFERENCE,
-		/**
-		 * Wildcards should be substituted with fresh {@link TypeVariableCapture}
-		 * instances, as per
-		 * {@link TypeVariableCapture#captureWildcardArguments(ParameterizedType)}.
-		 */
-		CAPTURE;
+		Behaviour value() default Behaviour.PRESERVE;
 	}
 
 	/*
@@ -106,55 +130,33 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	private final Class<? super T> rawType;
 
 	/**
-	 * As {@link #TypeToken(Wildcards)} invoked with the argument
-	 * {@link Wildcards#PRESERVE}.
+	 * As {@link #TypeToken(Behaviour)} invoked with the argument
+	 * {@link Behaviour#PRESERVE}.
 	 */
 	protected TypeToken() {
-		this(Wildcards.PRESERVE);
+		this(Behaviour.PRESERVE);
 	}
 
 	@SuppressWarnings("unchecked")
-	protected TypeToken(Wildcards wildcards) {
-		Type type;
-		if (getClass().getSuperclass().equals(TypeToken.class))
-			type = ((ParameterizedType) getClass().getGenericSuperclass())
-					.getActualTypeArguments()[0];
-		else {
-			Resolver resolver = new Resolver();
+	protected TypeToken(Behaviour wildcards) {
+		AnnotatedType subType = getClass().getAnnotatedSuperclass();
 
-			Class<?> superClass = getClass();
-			Function<Type, InferenceVariable> inferenceVariables = t -> null;
-			do {
-				resolver.incorporateType(new TypeSubstitution(inferenceVariables)
-						.resolve(superClass.getGenericSuperclass()));
-				superClass = superClass.getSuperclass();
-
-				final Class<?> finalClass = superClass;
-				inferenceVariables = t -> {
-					if (t instanceof TypeVariable)
-						return resolver.getInferenceVariable(finalClass,
-								(TypeVariable<?>) t);
-					else
-						return null;
-				};
-			} while (!TypeToken.class.equals(superClass));
-
-			type = resolver
-					.resolveTypeVariable(TypeToken.class.getTypeParameters()[0]);
-		}
+		Type type = ((ParameterizedType) ParameterizedTypes
+				.resolveSupertypeParameters(subType.getType(), TypeToken.class))
+				.getActualTypeArguments()[0];
 
 		this.type = dealWithWildcards(type, wildcards);
 
 		rawType = (Class<? super T>) Types.getRawType(type);
 	}
 
-	private Type dealWithWildcards(Type type, Wildcards wildcards) {
+	private Type dealWithWildcards(Type type, Behaviour wildcards) {
 		if (type instanceof ParameterizedType) {
 			ParameterizedType parameterizedType = (ParameterizedType) type;
 
-			if (wildcards == Wildcards.CAPTURE) {
+			if (wildcards == Behaviour.CAPTURE) {
 				type = TypeVariableCapture.captureWildcardArguments(parameterizedType);
-			} else if (wildcards == Wildcards.INFERENCE) {
+			} else if (wildcards == Behaviour.INFER) {
 				if (resolver == null)
 					resolver = new Resolver();
 				type = resolver.inferOverTypeArguments(parameterizedType);
@@ -162,9 +164,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 		} else if (type instanceof GenericArrayType) {
 			GenericArrayType arrayType = (GenericArrayType) type;
 
-			if (wildcards == Wildcards.CAPTURE) {
+			if (wildcards == Behaviour.CAPTURE) {
 				type = TypeVariableCapture.captureWildcardArguments(arrayType);
-			} else if (wildcards == Wildcards.INFERENCE) {
+			} else if (wildcards == Behaviour.INFER) {
 				if (resolver == null)
 					resolver = new Resolver();
 				type = resolver.inferOverTypeArguments(arrayType);
@@ -178,16 +180,16 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 		this(null, type);
 	}
 
-	private TypeToken(Type type, Wildcards wildcards) {
+	private TypeToken(Type type, Behaviour wildcards) {
 		this(null, type, wildcards);
 	}
 
 	private TypeToken(Resolver resolver, Type type) {
-		this(resolver, type, Wildcards.PRESERVE);
+		this(resolver, type, Behaviour.PRESERVE);
 	}
 
 	@SuppressWarnings("unchecked")
-	private TypeToken(Resolver resolver, Type type, Wildcards wildcards) {
+	private TypeToken(Resolver resolver, Type type, Behaviour wildcards) {
 		this.resolver = resolver;
 
 		if (type instanceof Class && resolver != null)
@@ -235,7 +237,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 *          How to deal with wildcard parameters on the given type.
 	 * @return A TypeToken over the requested type.
 	 */
-	public static TypeToken<?> over(Type type, Wildcards wildcards) {
+	public static TypeToken<?> over(Type type, Behaviour wildcards) {
 		return new TypeToken<>(type, wildcards);
 	}
 
@@ -358,57 +360,85 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	}
 
 	/**
-	 * Create a TypeToken over a fresh TypeVariableCapture of the wildcard type
-	 * which has the type represented by this TypeToken as an upper bound. For
-	 * example, invoking this method on a {@code TypeToken<List<?>>} will give a
-	 * {@code TypeToken<? extends List<?>>}.
+	 * Create a TypeToken over a wildcard type which has the type represented by
+	 * this TypeToken as an upper bound.
+	 * 
+	 * For example, invoking this method on a {@code TypeToken<List<?>>} will give
+	 * a {@code TypeToken<? extends List<?>>}.
 	 * 
 	 * @return The TypeToken representing a capture of the wildcard described.
 	 */
-	@SuppressWarnings("unchecked")
-	public TypeToken<? extends T> captureWildcardExtending() {
-		return (TypeToken<? extends T>) over(WildcardTypes.upperBounded(getType()));
+	public TypeToken<? extends T> getWildcardExtending() {
+		return getExtending(Behaviour.PRESERVE);
 	}
 
 	/**
-	 * Create a TypeToken over a fresh TypeVariableCapture of the wildcard type
-	 * which has the type represented by this TypeToken as a lower bound. For
-	 * example, invoking this method on a {@code TypeToken<List<?>>} will give a
-	 * {@code TypeToken<? super List<?>>}. TypeVariableCapture.
+	 * Create a TypeToken over a wildcard type which has the type represented by
+	 * this TypeToken as an upper bound.
 	 * 
+	 * The wildcard will be represented according to the {@link Wildcards}
+	 * argument given. Either the wildcard will be preserved, a fresh
+	 * {@link TypeVariableCapture} of the wildcard type will be captured, or an
+	 * {@link InferenceVariable} will be substituted.
+	 * 
+	 * For example, invoking this method on a {@code TypeToken<List<?>>} will give
+	 * a {@code TypeToken<? extends List<?>>}.
+	 * 
+	 * @param wildcards
+	 *          How to deal with the wildcard parameter on the new type.
 	 * @return The TypeToken representing a capture of the wildcard described.
 	 */
 	@SuppressWarnings("unchecked")
-	public TypeToken<? super T> captureWildcardSuper() {
-		return (TypeToken<? super T>) over(WildcardTypes.lowerBounded(getType()));
+	public TypeToken<? extends T> getExtending(Behaviour wildcards) {
+		if (wildcards == Behaviour.INFER) {
+			Resolver resolver = getResolver();
+			return (TypeToken<? extends T>) new TypeToken<>(resolver,
+					resolver.inferOverWildcardType(WildcardTypes.upperBounded(getType())));
+		} else {
+			return (TypeToken<? extends T>) over(
+					WildcardTypes.upperBounded(getType()), wildcards);
+		}
 	}
 
 	/**
-	 * Create a TypeToken over a fresh InferenceVariable with the type represented
-	 * by this TypeToken as an upper bound. For example, invoking this method on a
-	 * {@code TypeToken<List<?>>} will give a {@code TypeToken<? extends List<?>>}
-	 * .
+	 * Create a TypeToken over a wildcard type which has the type represented by
+	 * this TypeToken as a lower bound.
 	 * 
-	 * @return The resulting TypeToken.
+	 * For example, invoking this method on a {@code TypeToken<List<?>>} will give
+	 * a {@code TypeToken<? super List<?>>}.
+	 * 
+	 * @return The TypeToken representing a capture of the wildcard described.
+	 */
+	public TypeToken<? super T> getWildcardSuper() {
+		return getSuper(Behaviour.PRESERVE);
+	}
+
+	/**
+	 * Create a TypeToken over a wildcard type which has the type represented by
+	 * this TypeToken as a lower bound.
+	 * 
+	 * The wildcard will be represented according to the {@link Wildcards}
+	 * argument given. Either the wildcard will be preserved, a fresh
+	 * {@link TypeVariableCapture} of the wildcard type will be captured, or an
+	 * {@link InferenceVariable} will be substituted.
+	 * 
+	 * For example, invoking this method on a {@code TypeToken<List<?>>} will give
+	 * a {@code TypeToken<? super List<?>>}.
+	 * 
+	 * @param wildcards
+	 *          How to deal with the wildcard parameter on the new type.
+	 * @return The TypeToken representing a capture of the wildcard described.
 	 */
 	@SuppressWarnings("unchecked")
-	public TypeToken<? extends T> inferceExtending() {
-		Resolver resolver = getResolver();
-		return (TypeToken<? extends T>) new TypeToken<>(resolver,
-				resolver.inferOverWildcardType(WildcardTypes.upperBounded(getType())));
-	}
-
-	/**
-	 * Create a TypeToken over a fresh InferenceVariable with the type represented
-	 * by this TypeToken as a lower bound. For example, invoking this method on a
-	 * {@code TypeToken<List<?>>} will give a {@code TypeToken<? super List<?>>}.
-	 * 
-	 * @return The resulting TypeToken.
-	 */
-	public TypeToken<? super T> inferceSuper() {
-		Resolver resolver = getResolver();
-		return new TypeToken<>(resolver,
-				resolver.inferOverWildcardType(WildcardTypes.lowerBounded(getType())));
+	public TypeToken<? super T> getSuper(Behaviour wildcards) {
+		if (wildcards == Behaviour.INFER) {
+			Resolver resolver = getResolver();
+			return new TypeToken<>(resolver,
+					resolver.inferOverWildcardType(WildcardTypes.lowerBounded(getType())));
+		} else {
+			return (TypeToken<? super T>) over(WildcardTypes.lowerBounded(getType()),
+					wildcards);
+		}
 	}
 
 	/**

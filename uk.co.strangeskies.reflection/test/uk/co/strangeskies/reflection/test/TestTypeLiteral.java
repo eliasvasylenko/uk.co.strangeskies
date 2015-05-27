@@ -37,7 +37,7 @@ import uk.co.strangeskies.reflection.Invokable;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.TypeParameter;
 import uk.co.strangeskies.reflection.TypeToken;
-import uk.co.strangeskies.reflection.TypeToken.Wildcards;
+import uk.co.strangeskies.reflection.TypeToken.Wildcards.Behaviour;
 import uk.co.strangeskies.utilities.Self;
 
 /**
@@ -312,7 +312,7 @@ public class TestTypeLiteral {
 				.resolveMethodOverload("asList", int.class, double.class)
 				.withTargetType(
 						new TypeToken<List<? super Comparable<? extends Number>>>(
-								Wildcards.INFERENCE) {}).infer());
+								Behaviour.INFER) {}).infer());
 		System.out.println();
 
 		System.out.println(TypeToken.over(B.class).resolveMethodOverload("method",
@@ -350,83 +350,88 @@ public class TestTypeLiteral {
 				.resolveSupertypeParameters(resultClass.getRawType())));
 		System.out.println();
 
-		System.out.println(new TypeToken<List<?>>() {}.captureWildcardExtending());
+		System.out.println(new TypeToken<List<?>>() {}
+				.getExtending(Behaviour.CAPTURE));
 		System.out.println();
 
-		System.out.println(new TypeToken<List<?>>() {}.captureWildcardExtending()
-				.resolveSupertypeParameters(Collection.class));
+		System.out.println(new TypeToken<List<?>>() {}.getExtending(
+				Behaviour.CAPTURE).resolveSupertypeParameters(Collection.class));
 		System.out.println();
 
-		System.out.println(new TypeToken<List<BigInteger>>() {}.inferceExtending()
-				.resolveSupertypeParameters(Collection.class));
+		System.out.println(new TypeToken<List<BigInteger>>() {}.getExtending(
+				Behaviour.INFER).resolveSupertypeParameters(Collection.class));
 		System.out.println();
 
 		System.out.println(new TypeToken<HashSet<?>>() {}.getResolver());
 		System.out.println();
 
 		System.out.println(new TypeToken<Collection<? extends String>>() {}
-				.inferceExtending()
+				.getExtending(Behaviour.INFER)
 				.withUpperBound(new TypeToken<ArrayList<?>>() {}.getType())
 				.getResolver().getBounds());
 		System.out.println();
 
 		System.out.println(new TypeToken<Collection<? extends String>>() {}
-				.inferceExtending()
+				.getExtending(Behaviour.INFER)
 				.withUpperBound(new TypeToken<ArrayList<?>>() {}.getType()).infer());
 		System.out.println();
 
 		System.out.println(new TypeToken<List<? super Number>>() {}
-				.inferceExtending().resolveMethodOverload("add", Integer.class)
-				.getReceiverType().infer());
-		System.out.println();
-
-		System.out.println(new TypeToken<List<? extends Number>>(
-				Wildcards.INFERENCE) {}.inferceExtending()
-				.resolveMethodOverload("add", Integer.class).getReceiverType()
-				.resolveMethodOverload("add", Double.class).infer().getReceiverType());
+				.getExtending(Behaviour.INFER)
+				.resolveMethodOverload("add", Integer.class).getReceiverType().infer());
 		System.out.println();
 
 		System.out
-				.println(new TypeToken<Collection<? extends String>>(
-						Wildcards.INFERENCE) {}
-						.inferceExtending()
+				.println(new TypeToken<List<? extends Number>>(Behaviour.INFER) {}
+						.getExtending(Behaviour.INFER)
+						.resolveMethodOverload("add", Integer.class).getReceiverType()
+						.resolveMethodOverload("add", Double.class).infer()
+						.getReceiverType());
+		System.out.println();
+
+		System.out
+				.println(new TypeToken<Collection<? extends String>>(Behaviour.INFER) {}
+						.getExtending(Behaviour.INFER)
 						.withUpperBound(
 								new TypeToken<ArrayList<? super String>>() {}.getType())
 						.infer().resolveSupertypeParameters(Iterable.class));
 		System.out.println();
 
-		System.out.println(new TypeToken<List<? extends Number>>(
-				Wildcards.INFERENCE) {}.inferceExtending()
-				.resolveMethodOverload("add", Integer.class).getReceiverType()
-				.resolveMethodOverload("add", Double.class).getReceiverType().infer());
+		System.out
+				.println(new TypeToken<List<? extends Number>>(Behaviour.INFER) {}
+						.getExtending(Behaviour.INFER)
+						.resolveMethodOverload("add", Integer.class).getReceiverType()
+						.resolveMethodOverload("add", Double.class).getReceiverType()
+						.infer());
 		System.out.println();
 
 		System.out
-				.println(new TypeToken<ArrayList<? super Integer>>(Wildcards.INFERENCE) {}
-						.inferceExtending().resolveConstructorOverload()
+				.println(new TypeToken<ArrayList<? super Integer>>(Behaviour.INFER) {}
+						.getExtending(Behaviour.INFER).resolveConstructorOverload()
 						.withTargetType(new TypeToken<Iterable<? extends Number>>() {})
 						.infer());
 		System.out.println();
 
-		System.out.println(new TypeToken<HashMap<?, ?>>(Wildcards.INFERENCE) {}
-				.inferceExtending()
+		System.out.println(new TypeToken<HashMap<?, ?>>(Behaviour.INFER) {}
+				.getExtending(Behaviour.INFER)
 				.resolveConstructorOverload()
 				.withTargetType(
 						new TypeToken<Map<? extends String, ? extends Number>>() {})
 				.infer());
 		System.out.println();
 
-		System.out.println(new TypeToken<HashMap<String, Number>>(
-				Wildcards.INFERENCE) {}.inferceExtending().resolveConstructorOverload()
-				.withTargetType(new TypeToken<Map<?, ?>>() {}).infer());
+		System.out
+				.println(new TypeToken<HashMap<String, Number>>(Behaviour.INFER) {}
+						.getExtending(Behaviour.INFER).resolveConstructorOverload()
+						.withTargetType(new TypeToken<Map<?, ?>>() {}).infer());
 		System.out.println();
 
 		System.out.println(new TypeToken<Set<String>>() {}.resolveMethodOverload(
-				"addAll", new TypeToken<List<?>>(Wildcards.INFERENCE) {})
+				"addAll", new TypeToken<List<?>>(Behaviour.INFER) {})
 				.inferParameterTypes());
 		System.out.println();
 
-		System.out.println(new TypeToken<Set<?>>(Wildcards.INFERENCE) {}
+		System.out.println(new TypeToken<Set<?>>(Behaviour.INFER) {}
 				.resolveMethodOverload("addAll", new TypeToken<List<Stream<?>>>() {})
 				.inferParameterTypes());
 		System.out.println();
@@ -452,16 +457,16 @@ public class TestTypeLiteral {
 
 		System.out
 				.println(getIteratorExtending(new TypeToken<List<? extends String>>(
-						Wildcards.INFERENCE) {}));
+						Behaviour.INFER) {}));
 		System.out.println();
 
 		System.out.println(getIteratorExtending(
-				new TypeToken<List<? extends String>>(Wildcards.INFERENCE) {}).infer());
+				new TypeToken<List<? extends String>>(Behaviour.INFER) {}).infer());
 		System.out.println();
 
 		Invokable<?, ?> blurner = new TypeToken<Blurn<? extends List<? extends Number>>>(
-				Wildcards.INFERENCE) {}.resolveMethodOverload("blurn")
-				.withReceiverType(new TypeToken<Gurn<Integer>>() {});
+				Behaviour.INFER) {}.resolveMethodOverload("blurn").withReceiverType(
+				new TypeToken<Gurn<Integer>>() {});
 		System.out.println(blurner);
 		System.out.println();
 
@@ -473,10 +478,12 @@ public class TestTypeLiteral {
 		}
 		System.out.println();
 
-		System.out.println(new TypeToken<SchemaNode<?, ?>>() {}
-				.resolveMethodOverload("children").withTargetType(
-						getIteratorExtending(new TypeToken<ChildNode<?, ?>>(
-								Wildcards.INFERENCE) {})));
+		System.out
+				.println(new TypeToken<SchemaNode<?, ?>>() {}.resolveMethodOverload(
+						"children")
+						.withTargetType(
+								getIteratorExtending(new TypeToken<ChildNode<?, ?>>(
+										Behaviour.INFER) {})));
 		System.out.println();
 
 		System.out.println(new TypeToken<ChoiceNode>() {}.resolveMethodOverload(
@@ -484,32 +491,47 @@ public class TestTypeLiteral {
 		System.out.println();
 
 		System.out
-				.println(new TypeToken<LinkedHashSet<?>>(Wildcards.INFERENCE) {}
+				.println(new TypeToken<LinkedHashSet<?>>(Behaviour.INFER) {}
 						.resolveMethodOverload("add", new TypeToken<StringBuffer>() {})
 						.infer());
 		System.out.println();
 
-		System.out.println(new TypeToken<Set<?>>(Wildcards.INFERENCE) {}
+		System.out.println(new TypeToken<Set<?>>(Behaviour.INFER) {}
 				.resolveMethodOverload(
 						"addAll",
-						new TypeToken<ArrayList<? super Integer>>(Wildcards.INFERENCE) {}
+						new TypeToken<ArrayList<? super Integer>>(Behaviour.INFER) {}
 								.resolveConstructorOverload().getReturnType()).infer());
 		System.out.println();
 
-		System.out.println(new TypeToken<HashSet<? super Double>>(
-				Wildcards.INFERENCE) {}
-				.resolveConstructorOverload(
-						new TypeToken<ArrayList<? super Integer>>(Wildcards.INFERENCE) {}
-								.resolveConstructorOverload().getReturnType()).getReturnType()
-				.infer());
+		System.out
+				.println(new TypeToken<HashSet<? super Double>>(Behaviour.INFER) {}
+						.resolveConstructorOverload(
+								new TypeToken<ArrayList<? super Integer>>(Behaviour.INFER) {}
+										.resolveConstructorOverload().getReturnType())
+						.getReturnType().infer());
 		System.out.println();
 
-		TypeToken<?> bball = new TypeToken<HashSet<? super Double>>(
-				Wildcards.INFERENCE) {}.resolveConstructorOverload(
-				new TypeToken<ArrayList<? super Integer>>(Wildcards.INFERENCE) {}
-						.resolveConstructorOverload().getReturnType()).getReturnType();
+		TypeToken<?> bball = new TypeToken<HashSet<? super Double>>(Behaviour.INFER) {}
+				.resolveConstructorOverload(
+						new TypeToken<ArrayList<? super Integer>>(Behaviour.INFER) {}
+								.resolveConstructorOverload().getReturnType()).getReturnType();
 		System.out.println(bball.getResolver().getBounds());
 		System.out.println(bball.deepCopy().getResolver().getBounds());
+		System.out.println();
+
+		TypeToken<?> eqsel = new TypeToken<Nest2<?>>(Behaviour.INFER) {};
+		System.out.println(eqsel.getResolver().getBounds());
+		eqsel = eqsel.withUpperBound(eqsel.deepCopy());
+		System.out.println(eqsel.getResolver().getBounds());
+		System.out.println(eqsel.infer());
+		System.out.println();
+
+		TypeToken<?> eqselente = new TypeToken<SchemaNode<?, ?>>(Behaviour.INFER) {};
+		System.out.println(eqselente.getResolver().getBounds());
+		eqselente = eqselente.withUpperBound(eqselente.deepCopy());
+		System.out.println(eqselente.getResolver().getBounds());
+		System.out.println(eqselente.infer());
+		System.out.println();
 	}
 
 	private static <U> TypeToken<Iterable<? extends U>> getIteratorExtending(

@@ -48,9 +48,9 @@ import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 
 /**
  * A collection of general utility methods relating to the Java type system.
- * Utilities related to more specific classes of type may be found in
- * {@link WildcardTypes}, {@link ParameterizedTypes}, and
- * {@link GenericArrayTypes}.
+ * Some utilities related to more specific classes of type may be found in
+ * {@link WildcardTypes}, {@link ParameterizedTypes}, {@link GenericArrayTypes},
+ * and {@link AnnotatedTypes}.
  * 
  * @author Elias N Vasylenko
  */
