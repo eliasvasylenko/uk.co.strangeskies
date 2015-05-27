@@ -29,6 +29,11 @@ import java.util.Set;
  * @author Elias N Vasylenko
  */
 public interface InferenceVariableBounds {
+	/**
+	 * @return The capture conversion with this inference variable on its left
+	 *         side, if one exists.
+	 */
+	public CaptureConversion getCaptureConversion();
 
 	/**
 	 * @return The inference variable the bounds described by this object apply

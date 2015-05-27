@@ -122,13 +122,16 @@ public class Resolver implements DeepCopyable<Resolver> {
 	}
 
 	/**
-	 * Create a copy of an existing bound set. All the inference variables
-	 * contained within the given bound set will be substituted for the values
-	 * they index to in the given map in the new bound set, and all the bounds on
-	 * them will be substituted for equivalent bounds.
+	 * Create a copy of an existing resolver. All the inference variables
+	 * contained within the resolver will be substituted for the values they index
+	 * to in the given map in the new resolver, and all the bounds on them will be
+	 * substituted for equivalent bounds.
 	 * 
 	 * @param inferenceVariableSubstitutions
-	 * @return A newly derived bound set, with each instance of an inference
+	 *          A mapping from inference variables which may be mentioned in the
+	 *          resolver to inference variables they should be substituted for in
+	 *          the derived resolver.
+	 * @return A newly derived resolver, with each instance of an inference
 	 *         variable substituted for its mapping in the given map, where one
 	 *         exists.
 	 */

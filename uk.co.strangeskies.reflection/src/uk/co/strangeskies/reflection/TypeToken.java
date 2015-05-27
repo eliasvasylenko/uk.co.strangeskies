@@ -1287,4 +1287,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 						d -> getInternalResolver().getBounds().getBoundsOn(d)
 								.getDependencies().stream()).collect(Collectors.toSet());
 	}
+
+	public AnnotatedType getAnnotatedType() {
+		return null;
+	}
 }

@@ -255,11 +255,14 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 
 	/**
 	 * Create a copy of an existing bound set. All the inference variables
-	 * contained within the given bound set will be substituted for the values
-	 * they index to in the given map in the new bound set, and all the bounds on
-	 * them will be substituted for equivalent bounds.
+	 * contained within the bound set will be substituted for the values they
+	 * index to in the given map in the new bound set, and all the bounds on them
+	 * will be substituted for equivalent bounds.
 	 * 
 	 * @param inferenceVariableSubstitutions
+	 *          A mapping from inference variables which may be mentioned in the
+	 *          bound set to inference variables they should be substituted for in
+	 *          the derived bound set.
 	 * @return A newly derived bound set, with each instance of an inference
 	 *         variable substituted for its mapping in the given map, where one
 	 *         exists.
@@ -452,13 +455,23 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 			InferenceVariableBounds bounds = boundSet.getBoundsOn(inferenceVariable);
 
 			for (Type lowerBound : bounds.getLowerBounds())
-				incorporate().subtype(lowerBound, inferenceVariable);
+				if (boundSet.getInferenceVariablesMentionedBy(lowerBound).stream()
+						.allMatch(inferenceVariableSet::contains))
+					incorporate().subtype(lowerBound, inferenceVariable);
 
 			for (Type upperBound : bounds.getUpperBounds())
-				incorporate().subtype(inferenceVariable, upperBound);
+				if (boundSet.getInferenceVariablesMentionedBy(upperBound).stream()
+						.allMatch(inferenceVariableSet::contains))
+					incorporate().subtype(inferenceVariable, upperBound);
 
 			for (Type equality : bounds.getEqualities())
-				incorporate().equality(inferenceVariable, equality);
+				if (boundSet.getInferenceVariablesMentionedBy(equality).stream()
+						.allMatch(inferenceVariableSet::contains))
+					incorporate().equality(inferenceVariable, equality);
+
+			CaptureConversion captureConversion = bounds.getCaptureConversion();
+			if (captureConversion != null)
+				incorporate().captureConversion(captureConversion);
 		}
 	}
 
@@ -540,8 +553,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		for (CaptureConversion captureConversion : captureConversions)
 			for (InferenceVariable inferenceVariable : captureConversion
 					.getInferenceVariables())
-				getBoundsOn(inferenceVariable).removeCaptureConversion(
-						captureConversion);
+				getBoundsOn(inferenceVariable).removeCaptureConversion();
 	}
 
 	/**
