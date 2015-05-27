@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -230,48 +231,56 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 
 		Map<InferenceVariable, TypeVariableCapture> typeVariableCaptures = new HashMap<>();
 		for (InferenceVariable inferenceVariable : types) {
-			/*
-			 * For all i (1 ≤ i ≤ n), if αi has one or more proper lower bounds L1,
-			 * ..., Lk, then let the lower bound of Yi be lub(L1, ..., Lk); if not,
-			 * then Yi has no lower bound.
-			 */
-			Set<Type> lowerBoundSet = bounds.getBoundsOn(inferenceVariable)
-					.getProperLowerBounds();
+			Optional<Type> existingMatch = bounds.getBoundsOn(inferenceVariable)
+					.getEqualities().stream().filter(typeVariableCaptures::containsKey)
+					.findAny();
 
-			Type[] lowerBounds;
-			if (lowerBoundSet.isEmpty())
-				lowerBounds = new Type[0];
-			else {
-				Type lub = Types.leastUpperBound(lowerBoundSet);
-				lowerBounds = (lub instanceof IntersectionType) ? ((IntersectionType) lub)
-						.getTypes() : new Type[] { lub };
+			if (existingMatch.isPresent()) {
+				typeVariableCaptures.put(inferenceVariable,
+						typeVariableCaptures.get(existingMatch.get()));
+			} else {
+				/*
+				 * For all i (1 ≤ i ≤ n), if αi has one or more proper lower bounds L1,
+				 * ..., Lk, then let the lower bound of Yi be lub(L1, ..., Lk); if not,
+				 * then Yi has no lower bound.
+				 */
+				Set<Type> lowerBoundSet = bounds.getBoundsOn(inferenceVariable)
+						.getProperLowerBounds();
+
+				Type[] lowerBounds;
+				if (lowerBoundSet.isEmpty())
+					lowerBounds = new Type[0];
+				else {
+					Type lub = Types.leastUpperBound(lowerBoundSet);
+					lowerBounds = (lub instanceof IntersectionType) ? ((IntersectionType) lub)
+							.getTypes() : new Type[] { lub };
+				}
+
+				/*
+				 * For all i (1 ≤ i ≤ n), where αi has upper bounds U1, ..., Uk, let the
+				 * upper bound of Yi be glb(U1 θ, ..., Uk θ), where θ is the
+				 * substitution [α1:=Y1, ..., αn:=Yn].
+				 */
+				Set<Type> upperBoundSet = bounds.getBoundsOn(inferenceVariable)
+						.getUpperBounds().stream().map(new Resolver(bounds)::resolveType)
+						.collect(Collectors.toSet());
+
+				Type glb = IntersectionType.from(upperBoundSet, bounds);
+				Type[] upperBounds = (glb instanceof IntersectionType) ? ((IntersectionType) glb)
+						.getTypes() : new Type[] { glb };
+
+				/*
+				 * If the type variables Y1, ..., Yn do not have well-formed bounds
+				 * (that is, a lower bound is not a subtype of an upper bound, or an
+				 * intersection type is inconsistent), then resolution fails.
+				 */
+				TypeVariableCapture capture = new TypeVariableCapture(upperBounds,
+						lowerBounds, declaration);
+
+				parameters[count++] = capture;
+
+				typeVariableCaptures.put(inferenceVariable, capture);
 			}
-
-			/*
-			 * For all i (1 ≤ i ≤ n), where αi has upper bounds U1, ..., Uk, let the
-			 * upper bound of Yi be glb(U1 θ, ..., Uk θ), where θ is the substitution
-			 * [α1:=Y1, ..., αn:=Yn].
-			 */
-			Set<Type> upperBoundSet = bounds.getBoundsOn(inferenceVariable)
-					.getUpperBounds().stream().map(new Resolver(bounds)::resolveType)
-					.collect(Collectors.toSet());
-
-			Type glb = IntersectionType.from(
-					upperBoundSet.stream().collect(Collectors.toSet()), bounds);
-			Type[] upperBounds = (glb instanceof IntersectionType) ? ((IntersectionType) glb)
-					.getTypes() : new Type[] { glb };
-
-			/*
-			 * If the type variables Y1, ..., Yn do not have well-formed bounds (that
-			 * is, a lower bound is not a subtype of an upper bound, or an
-			 * intersection type is inconsistent), then resolution fails.
-			 */
-			TypeVariableCapture capture = new TypeVariableCapture(upperBounds,
-					lowerBounds, declaration);
-
-			parameters[count++] = capture;
-
-			typeVariableCaptures.put(inferenceVariable, capture);
 		}
 
 		substituteBounds(typeVariableCaptures);

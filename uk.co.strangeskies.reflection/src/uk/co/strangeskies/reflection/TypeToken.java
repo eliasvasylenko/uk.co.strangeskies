@@ -358,57 +358,85 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	}
 
 	/**
-	 * Create a TypeToken over a fresh TypeVariableCapture of the wildcard type
-	 * which has the type represented by this TypeToken as an upper bound. For
-	 * example, invoking this method on a {@code TypeToken<List<?>>} will give a
-	 * {@code TypeToken<? extends List<?>>}.
+	 * Create a TypeToken over a wildcard type which has the type represented by
+	 * this TypeToken as an upper bound.
+	 * 
+	 * For example, invoking this method on a {@code TypeToken<List<?>>} will give
+	 * a {@code TypeToken<? extends List<?>>}.
 	 * 
 	 * @return The TypeToken representing a capture of the wildcard described.
 	 */
-	@SuppressWarnings("unchecked")
-	public TypeToken<? extends T> captureWildcardExtending() {
-		return (TypeToken<? extends T>) over(WildcardTypes.upperBounded(getType()));
+	public TypeToken<? extends T> getWildcardExtending() {
+		return getExtending(Wildcards.PRESERVE);
 	}
 
 	/**
-	 * Create a TypeToken over a fresh TypeVariableCapture of the wildcard type
-	 * which has the type represented by this TypeToken as a lower bound. For
-	 * example, invoking this method on a {@code TypeToken<List<?>>} will give a
-	 * {@code TypeToken<? super List<?>>}. TypeVariableCapture.
+	 * Create a TypeToken over a wildcard type which has the type represented by
+	 * this TypeToken as an upper bound.
 	 * 
+	 * The wildcard will be represented according to the {@link Wildcards}
+	 * argument given. Either the wildcard will be preserved, a fresh
+	 * {@link TypeVariableCapture} of the wildcard type will be captured, or an
+	 * {@link InferenceVariable} will be substituted.
+	 * 
+	 * For example, invoking this method on a {@code TypeToken<List<?>>} will give
+	 * a {@code TypeToken<? extends List<?>>}.
+	 * 
+	 * @param wildcards
+	 *          How to deal with the wildcard parameter on the new type.
 	 * @return The TypeToken representing a capture of the wildcard described.
 	 */
 	@SuppressWarnings("unchecked")
-	public TypeToken<? super T> captureWildcardSuper() {
-		return (TypeToken<? super T>) over(WildcardTypes.lowerBounded(getType()));
+	public TypeToken<? extends T> getExtending(Wildcards wildcards) {
+		if (wildcards == Wildcards.INFERENCE) {
+			Resolver resolver = getResolver();
+			return (TypeToken<? extends T>) new TypeToken<>(resolver,
+					resolver.inferOverWildcardType(WildcardTypes.upperBounded(getType())));
+		} else {
+			return (TypeToken<? extends T>) over(
+					WildcardTypes.upperBounded(getType()), wildcards);
+		}
 	}
 
 	/**
-	 * Create a TypeToken over a fresh InferenceVariable with the type represented
-	 * by this TypeToken as an upper bound. For example, invoking this method on a
-	 * {@code TypeToken<List<?>>} will give a {@code TypeToken<? extends List<?>>}
-	 * .
+	 * Create a TypeToken over a wildcard type which has the type represented by
+	 * this TypeToken as a lower bound.
 	 * 
-	 * @return The resulting TypeToken.
+	 * For example, invoking this method on a {@code TypeToken<List<?>>} will give
+	 * a {@code TypeToken<? super List<?>>}.
+	 * 
+	 * @return The TypeToken representing a capture of the wildcard described.
+	 */
+	public TypeToken<? super T> getWildcardSuper() {
+		return getSuper(Wildcards.PRESERVE);
+	}
+
+	/**
+	 * Create a TypeToken over a wildcard type which has the type represented by
+	 * this TypeToken as a lower bound.
+	 * 
+	 * The wildcard will be represented according to the {@link Wildcards}
+	 * argument given. Either the wildcard will be preserved, a fresh
+	 * {@link TypeVariableCapture} of the wildcard type will be captured, or an
+	 * {@link InferenceVariable} will be substituted.
+	 * 
+	 * For example, invoking this method on a {@code TypeToken<List<?>>} will give
+	 * a {@code TypeToken<? super List<?>>}.
+	 * 
+	 * @param wildcards
+	 *          How to deal with the wildcard parameter on the new type.
+	 * @return The TypeToken representing a capture of the wildcard described.
 	 */
 	@SuppressWarnings("unchecked")
-	public TypeToken<? extends T> inferceExtending() {
-		Resolver resolver = getResolver();
-		return (TypeToken<? extends T>) new TypeToken<>(resolver,
-				resolver.inferOverWildcardType(WildcardTypes.upperBounded(getType())));
-	}
-
-	/**
-	 * Create a TypeToken over a fresh InferenceVariable with the type represented
-	 * by this TypeToken as a lower bound. For example, invoking this method on a
-	 * {@code TypeToken<List<?>>} will give a {@code TypeToken<? super List<?>>}.
-	 * 
-	 * @return The resulting TypeToken.
-	 */
-	public TypeToken<? super T> inferceSuper() {
-		Resolver resolver = getResolver();
-		return new TypeToken<>(resolver,
-				resolver.inferOverWildcardType(WildcardTypes.lowerBounded(getType())));
+	public TypeToken<? super T> getSuper(Wildcards wildcards) {
+		if (wildcards == Wildcards.INFERENCE) {
+			Resolver resolver = getResolver();
+			return new TypeToken<>(resolver,
+					resolver.inferOverWildcardType(WildcardTypes.lowerBounded(getType())));
+		} else {
+			return (TypeToken<? super T>) over(WildcardTypes.lowerBounded(getType()),
+					wildcards);
+		}
 	}
 
 	/**

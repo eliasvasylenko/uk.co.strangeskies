@@ -41,7 +41,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	private final Set<Type> upperBounds;
 	private final Set<Type> lowerBounds;
 
-	private boolean capture;
+	private CaptureConversion capture;
 	private final Set<InferenceVariable> allDependencies;
 	private final Set<InferenceVariable> externalDependencies;
 
@@ -107,8 +107,18 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				.map(InferenceVariable.class::cast).forEach(externalDependencies::add);
 	}
 
+	public CaptureConversion getCaptureConversion() {
+		return capture;
+	}
+
 	public void addCaptureConversion(CaptureConversion captureConversion) {
-		capture = true;
+		if (capture != null)
+			throw new TypeException("Inference variable '" + a
+					+ "' Cannot be captured by two capture conversions '" + capture
+					+ "' and '" + captureConversion + "' simultaniously.");
+		else
+			capture = captureConversion;
+
 		allDependencies.clear();
 
 		Set<InferenceVariable> allMentioned = new HashSet<>(
@@ -125,8 +135,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		addDependencies();
 	}
 
-	public void removeCaptureConversion(CaptureConversion captureConversion) {
-		capture = false;
+	public void removeCaptureConversion() {
+		capture = null;
 		allDependencies.clear();
 
 		addDependencies();
@@ -180,7 +190,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		 * 
 		 * T <: α
 		 */
-		if (capture) {
+		if (capture != null) {
 			/*
 			 * If α appears on the left-hand side of another bound of the form G<...,
 			 * α, ...> = capture(G<...>), then β depends on the resolution of α.
