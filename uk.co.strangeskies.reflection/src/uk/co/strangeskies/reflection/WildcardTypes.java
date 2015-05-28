@@ -21,6 +21,7 @@ package uk.co.strangeskies.reflection;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -30,6 +31,44 @@ import java.util.stream.Collectors;
  * @author Elias N Vasylenko
  */
 public class WildcardTypes {
+	private static WildcardType UNBOUNDED = new WildcardType() {
+		@Override
+		public Type[] getUpperBounds() {
+			return new Type[0];
+		}
+
+		@Override
+		public Type[] getLowerBounds() {
+			return new Type[0];
+		}
+
+		@Override
+		public String toString() {
+			return "?";
+		}
+
+		@Override
+		public boolean equals(Object that) {
+			if (!(that instanceof WildcardType))
+				return false;
+			if (that == this)
+				return true;
+
+			WildcardType wildcard = (WildcardType) that;
+
+			return wildcard.getLowerBounds().length == 0
+					&& wildcard.getUpperBounds().length == 0
+					|| (Arrays.equals(wildcard.getUpperBounds(),
+							new Type[] { Object.class }));
+		}
+
+		@Override
+		public int hashCode() {
+			return Arrays.hashCode(getLowerBounds())
+					^ Arrays.hashCode(getUpperBounds());
+		}
+	};
+
 	private WildcardTypes() {}
 
 	/**
@@ -39,54 +78,32 @@ public class WildcardTypes {
 	 *         wildcard.
 	 */
 	public static WildcardType unbounded() {
-		return new WildcardType() {
-			@Override
-			public Type[] getUpperBounds() {
-				return new Type[0];
-			}
-
-			@Override
-			public Type[] getLowerBounds() {
-				return new Type[0];
-			}
-
-			@Override
-			public String toString() {
-				return "?";
-			}
-
-			@Override
-			public boolean equals(Object that) {
-				if (!(that instanceof WildcardType))
-					return false;
-				if (that == this)
-					return true;
-
-				WildcardType wildcard = (WildcardType) that;
-
-				return wildcard.getLowerBounds().length == 0
-						&& wildcard.getUpperBounds().length == 0
-						|| (Arrays.equals(wildcard.getUpperBounds(),
-								new Type[] { Object.class }));
-			}
-
-			@Override
-			public int hashCode() {
-				return Arrays.hashCode(getLowerBounds())
-						^ Arrays.hashCode(getUpperBounds());
-			}
-		};
+		return UNBOUNDED;
 	}
 
 	/**
 	 * Create an lower bounded wildcard type.
 	 * 
-	 * @param type
-	 *          The type we wish to be a lower bound for a wildcard.
+	 * @param bounds
+	 *          The types we wish form the lower bounds for a wildcard.
 	 * @return An instance of {@link WildcardType} representing a wildcard with
 	 *         the given lower bound.
 	 */
-	public static WildcardType lowerBounded(Type type) {
+	public static WildcardType lowerBounded(Type... bounds) {
+		return lowerBounded(Arrays.asList(bounds));
+	}
+
+	/**
+	 * Create an lower bounded wildcard type.
+	 * 
+	 * @param bounds
+	 *          The types we wish form the lower bounds for a wildcard.
+	 * @return An instance of {@link WildcardType} representing a wildcard with
+	 *         the given lower bound.
+	 */
+	public static WildcardType lowerBounded(Collection<? extends Type> bounds) {
+		Type type = IntersectionType.uncheckedFrom(bounds);
+
 		Supplier<Type[]> types;
 
 		if (type instanceof WildcardType) {
@@ -141,12 +158,26 @@ public class WildcardTypes {
 	/**
 	 * Create an upper bounded wildcard type.
 	 * 
-	 * @param type
-	 *          The type we wish to be a upper bound for a wildcard.
+	 * @param bounds
+	 *          The types we wish form the upper bounds for a wildcard.
 	 * @return An instance of {@link WildcardType} representing a wildcard with
 	 *         the given upper bound.
 	 */
-	public static WildcardType upperBounded(Type type) {
+	public static WildcardType upperBounded(Type... bounds) {
+		return upperBounded(Arrays.asList(bounds));
+	}
+
+	/**
+	 * Create an upper bounded wildcard type.
+	 * 
+	 * @param bounds
+	 *          The types we wish form the upper bounds for a wildcard.
+	 * @return An instance of {@link WildcardType} representing a wildcard with
+	 *         the given upper bound.
+	 */
+	public static WildcardType upperBounded(Collection<? extends Type> bounds) {
+		Type type = IntersectionType.uncheckedFrom(bounds);
+
 		Supplier<Type[]> types;
 
 		if (Object.class.equals(type))
@@ -166,7 +197,9 @@ public class WildcardTypes {
 		return new WildcardType() {
 			@Override
 			public Type[] getUpperBounds() {
-				return types.get();
+				Type[] type = types.get();
+				return (type == null || type.length == 0) ? new Type[] { Object.class }
+						: type;
 			}
 
 			@Override

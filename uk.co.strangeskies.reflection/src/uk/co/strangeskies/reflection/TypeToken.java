@@ -22,8 +22,11 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.AnnotatedArrayType;
 import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.AnnotatedType;
+import java.lang.reflect.AnnotatedTypeVariable;
+import java.lang.reflect.AnnotatedWildcardType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
@@ -160,17 +163,6 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 
 		do {
 			AnnotatedType annotatedType = subclass.getAnnotatedSuperclass();
-			if (annotatedType instanceof AnnotatedParameterizedType) {
-				Map<TypeVariable<?>, AnnotatedType> annotated = new HashMap<>();
-				TypeVariable<?>[] typeParameters = Types.getRawType(
-						annotatedType.getType()).getTypeParameters();
-				AnnotatedType[] annotatedTypeArguments = ((AnnotatedParameterizedType) annotatedType)
-						.getAnnotatedActualTypeArguments();
-
-				for (int i = 0; i < typeParameters.length; i++) {
-					annotated.put(typeParameters[i], annotatedTypeArguments[i]);
-				}
-			}
 
 			if (type instanceof ParameterizedType) {
 				type = new TypeSubstitution(
@@ -188,7 +180,63 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 
 	private Type dealWithAnnotatedWildcards(AnnotatedType type,
 			Behaviour defaultBehaviour) {
-		return dealWithWildcards(type.getType(), defaultBehaviour);
+		Wildcards wildcards = type.getAnnotation(Wildcards.class);
+		Behaviour behaviour = wildcards != null ? wildcards.value()
+				: defaultBehaviour;
+
+		if (type instanceof AnnotatedParameterizedType) {
+			/*
+			 * TODO recursive argument visit, as per AnnotatedWildcardType
+			 * 
+			 * Then...
+			 * 
+			 * TODO capture of ParameterizedType analogous to dealWithWildcards, but
+			 * with ability for parameters to be inference variables / type variable
+			 * captures separately.
+			 */
+
+			return type.getType();
+		} else if (type instanceof AnnotatedTypeVariable) {
+			/*
+			 * TODO substitution required for type variable instantiation propagation
+			 * through subtypes! perfect.
+			 */
+
+			return type.getType();
+		} else if (type instanceof AnnotatedWildcardType) {
+			AnnotatedWildcardType annotatedWildcardType = (AnnotatedWildcardType) type;
+			WildcardType wildcardType;
+
+			if (annotatedWildcardType.getAnnotatedLowerBounds().length > 0) {
+				wildcardType = WildcardTypes.lowerBounded(dealWithAnnotatedWildcards(
+						annotatedWildcardType.getAnnotatedLowerBounds(), defaultBehaviour));
+
+			} else if (annotatedWildcardType.getAnnotatedUpperBounds().length > 0) {
+				wildcardType = WildcardTypes.upperBounded(dealWithAnnotatedWildcards(
+						annotatedWildcardType.getAnnotatedUpperBounds(), defaultBehaviour));
+
+			} else {
+				wildcardType = WildcardTypes.unbounded();
+			}
+
+			/*
+			 * TODO capture of an individual wildcard for "wildcardType"
+			 */
+
+			return wildcardType;
+		} else if (type instanceof AnnotatedArrayType) {
+			return type.getType();
+		} else {
+			return type.getType();
+		}
+	}
+
+	private Type[] dealWithAnnotatedWildcards(AnnotatedType[] annotatedTypes,
+			Behaviour defaultBehaviour) {
+		Type[] types = new Type[annotatedTypes.length];
+		for (int i = 0; i < types.length; i++)
+			types[i] = dealWithAnnotatedWildcards(annotatedTypes[i], defaultBehaviour);
+		return types;
 	}
 
 	private Type dealWithWildcards(Type type, Behaviour wildcards) {
