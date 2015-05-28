@@ -22,6 +22,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.GenericArrayType;
@@ -29,6 +30,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -52,7 +54,6 @@ import uk.co.strangeskies.utilities.collection.computingmap.LRUCacheComputingMap
  * system. It is analogous to {@code Class<?>}, but provides access to a much
  * richer set of tools, and can be used over the domain of all types, not just
  * raw types.
- * 
  * 
  * <p>
  * TypeToken is effectively immutable, though may perform shared caching of
@@ -144,10 +145,50 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 		Type type = ((ParameterizedType) ParameterizedTypes
 				.resolveSupertypeParameters(subType.getType(), TypeToken.class))
 				.getActualTypeArguments()[0];
+		type = dealWithWildcards(type, wildcards);
 
-		this.type = dealWithWildcards(type, wildcards);
+		// type = resolveAnnotatedSuperclassParameter(wildcards);
+
+		this.type = type;
 
 		rawType = (Class<? super T>) Types.getRawType(type);
+	}
+
+	private Type resolveAnnotatedSuperclassParameter(Behaviour defaultBehaviour) {
+		Class<?> subclass = getClass();
+		Type type = null;
+
+		do {
+			AnnotatedType annotatedType = subclass.getAnnotatedSuperclass();
+			if (annotatedType instanceof AnnotatedParameterizedType) {
+				Map<TypeVariable<?>, AnnotatedType> annotated = new HashMap<>();
+				TypeVariable<?>[] typeParameters = Types.getRawType(
+						annotatedType.getType()).getTypeParameters();
+				AnnotatedType[] annotatedTypeArguments = ((AnnotatedParameterizedType) annotatedType)
+						.getAnnotatedActualTypeArguments();
+
+				for (int i = 0; i < typeParameters.length; i++) {
+					annotated.put(typeParameters[i], annotatedTypeArguments[i]);
+				}
+			}
+
+			if (type instanceof ParameterizedType) {
+				type = new TypeSubstitution(
+						ParameterizedTypes.getAllTypeArguments((ParameterizedType) type)::get)
+						.resolve(annotatedType.getType());
+			} else {
+				type = annotatedType.getType();
+			}
+
+			subclass = Types.getRawType(type);
+		} while (subclass != TypeToken.class);
+
+		return ((ParameterizedType) type).getActualTypeArguments()[0];
+	}
+
+	private Type dealWithAnnotatedWildcards(AnnotatedType type,
+			Behaviour defaultBehaviour) {
+		return dealWithWildcards(type.getType(), defaultBehaviour);
 	}
 
 	private Type dealWithWildcards(Type type, Behaviour wildcards) {
@@ -170,6 +211,14 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 				if (resolver == null)
 					resolver = new Resolver();
 				type = resolver.inferOverTypeArguments(arrayType);
+			}
+		} else if (type instanceof WildcardType) {
+			if (wildcards == Behaviour.CAPTURE) {
+				type = TypeVariableCapture.captureWildcard((WildcardType) type);
+			} else if (wildcards == Behaviour.INFER) {
+				if (resolver == null)
+					resolver = new Resolver();
+				type = resolver.inferOverWildcardType((WildcardType) type);
 			}
 		}
 

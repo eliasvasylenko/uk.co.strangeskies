@@ -35,6 +35,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
+import uk.co.strangeskies.utilities.IdentityProperty;
+
 /**
  * A representation of an unknown instantiation of a type variable or inference
  * variable which is known to satisfy a certain set of upper and lower bonds.
@@ -142,8 +144,8 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	}
 
 	/**
-	 * Capture fresh type variables as valid stand-in instantiations for a set of
-	 * type arguments which may be wildcards.
+	 * Capture new type variable instantiations over any wildcard arguments of the
+	 * given generic array type.
 	 * 
 	 * @param type
 	 *          The generic array type whose arguments we wish to capture.
@@ -163,8 +165,8 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	}
 
 	/**
-	 * Capture fresh type variables as valid stand-in instantiations for a set of
-	 * type arguments which may be wildcards.
+	 * Capture new type variable instantiations over any wildcard arguments of the
+	 * given parameterized type.
 	 * 
 	 * @param type
 	 *          The parameterized type whose arguments we wish to capture.
@@ -193,6 +195,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 				WildcardType constrained = WildcardTypes.fullyBounded(upperBound,
 						IntersectionType.uncheckedFrom(((WildcardType) argument)
 								.getLowerBounds()));
+
 				capture = new TypeVariableCapture(constrained.getUpperBounds(),
 						constrained.getLowerBounds(), declaration);
 			} else
@@ -208,6 +211,90 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 				.uncheckedFrom(Types.getRawType(type), captures);
 
 		return capture;
+	}
+
+	/**
+	 * Capture new type variable instantiation over a given wildcard type.
+	 * 
+	 * @param typeVariable
+	 *          The type variable the new capture of the given wildcard is
+	 *          intended to represent an instantiation of.
+	 * @param type
+	 *          The parameterized type whose arguments we wish to capture.
+	 * @return A new parameterized type of the same class as the passed type,
+	 *         parameterized with the captures of the original arguments.
+	 */
+	public static TypeVariableCapture captureWildcard(
+			TypeVariable<?> typeVariable, WildcardType type) {
+		return captureWildcard(createGenericDeclarationOver(typeVariable),
+				typeVariable, type);
+	}
+
+	/**
+	 * Capture new type variable instantiation over a given wildcard type.
+	 * 
+	 * @param type
+	 *          The parameterized type whose arguments we wish to capture.
+	 * @return A new parameterized type of the same class as the passed type,
+	 *         parameterized with the captures of the original arguments.
+	 */
+	public static TypeVariableCapture captureWildcard(WildcardType type) {
+		IdentityProperty<GenericDeclaration> genericDeclaration = new IdentityProperty<>();
+
+		TypeVariable<GenericDeclaration> typeVariable = new TypeVariable<GenericDeclaration>() {
+			@Override
+			public <T extends Annotation> T getAnnotation(Class<T> arg0) {
+				return null;
+			}
+
+			@Override
+			public Annotation[] getAnnotations() {
+				return new Annotation[0];
+			}
+
+			@Override
+			public Annotation[] getDeclaredAnnotations() {
+				return new Annotation[0];
+			}
+
+			@Override
+			public AnnotatedType[] getAnnotatedBounds() {
+				return new AnnotatedType[0];
+			}
+
+			@Override
+			public Type[] getBounds() {
+				return new Type[0];
+			}
+
+			@Override
+			public GenericDeclaration getGenericDeclaration() {
+				return genericDeclaration.get();
+			}
+
+			@Override
+			public String getName() {
+				return "?";
+			}
+		};
+
+		genericDeclaration.set(createGenericDeclarationOver(typeVariable));
+
+		return captureWildcard(genericDeclaration.get(), typeVariable, type);
+	}
+
+	private static TypeVariableCapture captureWildcard(
+			GenericDeclaration declaration, TypeVariable<?> typeVariable,
+			WildcardType type) {
+		Type upperBound = IntersectionType.from(
+				IntersectionType.uncheckedFrom(typeVariable.getBounds()),
+				IntersectionType.uncheckedFrom(type.getUpperBounds()));
+
+		WildcardType constrained = WildcardTypes.fullyBounded(upperBound,
+				IntersectionType.uncheckedFrom(type.getLowerBounds()));
+
+		return new TypeVariableCapture(constrained.getUpperBounds(),
+				constrained.getLowerBounds(), declaration);
 	}
 
 	/**
@@ -294,7 +381,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	}
 
 	static GenericDeclaration createGenericDeclarationOver(
-			TypeVariable<?>[] captures) {
+			TypeVariable<?>... captures) {
 		return new GenericDeclaration() {
 			@Override
 			public Annotation[] getDeclaredAnnotations() {
