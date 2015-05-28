@@ -157,7 +157,7 @@ public class TypeSubstitution {
 						IntersectionType.from(wildcardType.getUpperBounds()), visited));
 
 			} else
-				return WildcardTypes.unbounded();
+				return type;
 		} else if (type instanceof GenericArrayType)
 			return GenericArrayTypes.fromComponentType(resolve(
 					((GenericArrayType) type).getGenericComponentType(), visited));

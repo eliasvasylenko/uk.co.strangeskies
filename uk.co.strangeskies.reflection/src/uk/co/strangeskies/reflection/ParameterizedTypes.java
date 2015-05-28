@@ -108,6 +108,48 @@ public class ParameterizedTypes {
 		return typeArguments;
 	}
 
+	/**
+	 * @param source
+	 *          A supplier of the parameterized class we wish to proxy.
+	 * @return A proxy for a parameterized type, forwarding to the instance
+	 *         provided by the given supplier at the moment of each invocation.
+	 *         This is generally useful for algorithms which deal with infinite
+	 *         types.
+	 */
+	public static ParameterizedType proxy(Supplier<ParameterizedType> source) {
+		return new ParameterizedType() {
+			@Override
+			public Type getRawType() {
+				return source.get().getRawType();
+			}
+
+			@Override
+			public Type getOwnerType() {
+				return source.get().getOwnerType();
+			}
+
+			@Override
+			public Type[] getActualTypeArguments() {
+				return source.get().getActualTypeArguments();
+			}
+
+			@Override
+			public String toString() {
+				return source.get().toString();
+			}
+
+			@Override
+			public boolean equals(Object arg0) {
+				return source.get().equals(arg0);
+			}
+
+			@Override
+			public int hashCode() {
+				return source.get().hashCode();
+			}
+		};
+	}
+
 	static ParameterizedType uncheckedFrom(Type ownerType, Class<?> rawType,
 			List<Type> typeArguments) {
 		return new ParameterizedTypeImpl(ownerType, rawType, typeArguments);
@@ -230,48 +272,6 @@ public class ParameterizedTypes {
 					: rawType.getTypeParameters()[i]);
 		}
 		return arguments;
-	}
-
-	/**
-	 * @param source
-	 *          A supplier of the parameterized class we wish to proxy.
-	 * @return A proxy for a parameterized type, forwarding to the instance
-	 *         provided by the given supplier at the moment of each invocation.
-	 *         This is generally useful for algorithms which deal with infinite
-	 *         types.
-	 */
-	public static ParameterizedType proxy(Supplier<ParameterizedType> source) {
-		return new ParameterizedType() {
-			@Override
-			public Type getRawType() {
-				return source.get().getRawType();
-			}
-
-			@Override
-			public Type getOwnerType() {
-				return source.get().getOwnerType();
-			}
-
-			@Override
-			public Type[] getActualTypeArguments() {
-				return source.get().getActualTypeArguments();
-			}
-
-			@Override
-			public String toString() {
-				return source.get().toString();
-			}
-
-			@Override
-			public boolean equals(Object arg0) {
-				return source.get().equals(arg0);
-			}
-
-			@Override
-			public int hashCode() {
-				return source.get().hashCode();
-			}
-		};
 	}
 
 	private static final class ParameterizedTypeImpl implements
