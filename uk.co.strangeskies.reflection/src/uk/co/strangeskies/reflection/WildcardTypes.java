@@ -102,7 +102,7 @@ public class WildcardTypes {
 	 *         the given lower bound.
 	 */
 	public static WildcardType lowerBounded(Collection<? extends Type> bounds) {
-		Type type = IntersectionType.uncheckedFrom(bounds);
+		Type type = IntersectionType.from(bounds);
 
 		Supplier<Type[]> types;
 
@@ -176,30 +176,42 @@ public class WildcardTypes {
 	 *         the given upper bound.
 	 */
 	public static WildcardType upperBounded(Collection<? extends Type> bounds) {
-		Type type = IntersectionType.uncheckedFrom(bounds);
-
-		Supplier<Type[]> types;
-
-		if (Object.class.equals(type))
-			return unbounded();
-		else if (type instanceof WildcardType) {
-			WildcardType wildcardType = ((WildcardType) type);
-			if (wildcardType.getLowerBounds().length == 0)
-				throw new TypeException(
-						"Cannot have define an upper bounding on a wildcard with no lower bounds.");
-			else
-				types = () -> wildcardType.getLowerBounds();
-		} else if (type instanceof IntersectionType)
-			types = ((IntersectionType) type)::getTypes;
-		else
-			types = () -> new Type[] { type };
-
 		return new WildcardType() {
+			private Type[] types;
+			private final Supplier<Type[]> typeSupplier = () -> {
+				if (bounds.isEmpty()) {
+					return new Type[0];
+				} else if (bounds.size() == 1) {
+					Type type = bounds.iterator().next();
+					if (type.equals(Object.class)) {
+						return new Type[0];
+					} else {
+						return new Type[] { type };
+					}
+				} else {
+					Type type = IntersectionType.from(bounds);
+
+					if (type instanceof WildcardType) {
+						WildcardType wildcardType = ((WildcardType) type);
+						if (wildcardType.getLowerBounds().length == 0) {
+							throw new TypeException(
+									"Cannot have define an upper bounding on a wildcard with no lower bounds.");
+						} else {
+							return wildcardType.getLowerBounds();
+						}
+					} else if (type instanceof IntersectionType) {
+						return ((IntersectionType) type).getTypes();
+					} else {
+						return new Type[] { type };
+					}
+				}
+			};
+
 			@Override
 			public Type[] getUpperBounds() {
-				Type[] type = types.get();
-				return (type == null || type.length == 0) ? new Type[] { Object.class }
-						: type;
+				if (types == null)
+					types = typeSupplier.get();
+				return types;
 			}
 
 			@Override
@@ -209,9 +221,13 @@ public class WildcardTypes {
 
 			@Override
 			public String toString() {
-				return "? extends "
-						+ Arrays.stream(types.get()).map(Types::toString)
-								.collect(Collectors.joining(" & "));
+				Type[] bounds = getUpperBounds();
+				if (bounds.length == 0)
+					return "?";
+				else
+					return "? extends "
+							+ Arrays.stream(bounds).map(Types::toString)
+									.collect(Collectors.joining(" & "));
 			}
 
 			@Override
@@ -222,7 +238,7 @@ public class WildcardTypes {
 					return true;
 				WildcardType wildcard = (WildcardType) that;
 				return wildcard.getLowerBounds().length == 0
-						&& (Arrays.equals(types.get(), wildcard.getUpperBounds()) || ((getUpperBounds().length == 0 || Arrays
+						&& (Arrays.equals(getUpperBounds(), wildcard.getUpperBounds()) || ((getUpperBounds().length == 0 || Arrays
 								.equals(getUpperBounds(), new Type[] { Object.class })) && (wildcard
 								.getUpperBounds().length == 0 || Arrays.equals(
 								wildcard.getUpperBounds(), new Type[] { Object.class }))));
