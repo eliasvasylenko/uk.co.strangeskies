@@ -186,12 +186,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	private Type dealWithAnnotatedWildcards(AnnotatedType annotatedType,
 			Map<TypeVariable<?>, Type> resolvedParameters) {
 		Wildcards behaviour = annotatedType.isAnnotationPresent(Preserve.class) ? Wildcards.PRESERVE
-
 				: annotatedType.isAnnotationPresent(Infer.class) ? Wildcards.INFER
-
-				: annotatedType.isAnnotationPresent(Capture.class) ? Wildcards.CAPTURE
-
-				: null;
+						: annotatedType.isAnnotationPresent(Capture.class) ? Wildcards.CAPTURE
+								: null;
 
 		if (annotatedType instanceof AnnotatedParameterizedType) {
 			/*
@@ -1032,7 +1029,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	/**
 	 * <p>
 	 * A mapping of type variables to type argument instantiations for this class,
-	 * for each type variable returned by {@link #getAllTypeParameters()}. Type
+	 * for each type variable returned by {@link #getAllTypeParameters()} . Type
 	 * arguments are as those given by {@link #resolveSupertypeParameters(Class)}
 	 * invoked on each of {@link #getRawTypes()}.
 	 * <p>
@@ -1073,9 +1070,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 * {@link TypeParameter} in the context of the type of this {@link TypeToken}.
 	 * 
 	 * @param <U>
-	 *          The type parameter whose instantiation we sish to determine.
+	 *          The type parameter whose instantiation we wish to determine.
 	 * @param typeParameter
-	 *          The type parameter whose instantiation we sish to determine.
+	 *          The type parameter whose instantiation we wish to determine.
 	 * @return The proper instantiation of the given parameter, if one exists,
 	 *         otherwise a type token over the {@link TypeVariable} itself.
 	 */
