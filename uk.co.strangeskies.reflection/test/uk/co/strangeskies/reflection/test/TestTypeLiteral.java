@@ -96,9 +96,9 @@ public class TestTypeLiteral {
 		}
 	}
 
-	class Nest2<T extends Nest2<T>> {}
+	static class Nest2<T extends Nest2<T>> {}
 
-	class Nest22<T> extends Nest2<Nest22<T>> {}
+	static class Nest22<T> extends Nest2<Nest22<T>> {}
 
 	@SuppressWarnings("javadoc")
 	public static void main(String... args) {
@@ -508,14 +508,8 @@ public class TestTypeLiteral {
 		System.out.println(bball.deepCopy().getResolver().getBounds());
 		System.out.println();
 
-		TypeToken<?> eqsel = new TypeToken<@Infer Nest2<?>>() {};
-		System.out.println(eqsel.getResolver().getBounds());
-		eqsel = eqsel.withUpperBound(eqsel.deepCopy());
-		System.out.println(eqsel.getResolver().getBounds());
-		System.out.println(eqsel.infer());
-		System.out.println();
-
 		TypeToken<?> eqselente = new TypeToken<@Infer SchemaNode<?, ?>>() {};
+		System.out.println(eqselente);
 		System.out.println(eqselente.getResolver().getBounds());
 		eqselente = eqselente.withUpperBound(eqselente.deepCopy());
 		System.out.println(eqselente.getResolver().getBounds());

@@ -89,4 +89,5 @@ githubPages {
 /* Wrapper */
 task wrapper(type: Wrapper) {
   jarFile = rootProject.file('.gradle-wrapper/gradle-wrapper.jar')
+  gradleVersion = '2.4'
 }
