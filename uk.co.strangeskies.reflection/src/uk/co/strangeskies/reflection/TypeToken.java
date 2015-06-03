@@ -156,6 +156,13 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 		rawType = (Class<? super T>) Types.getRawType(type);
 	}
 
+	@SuppressWarnings("unchecked")
+	protected TypeToken(AnnotatedType type) {
+		this.type = dealWithAnnotatedWildcards(type, new HashMap<>());
+
+		rawType = (Class<? super T>) Types.getRawType(this.type);
+	}
+
 	private Type resolveAnnotatedSuperclassParameter() {
 		Class<?> subclass = getClass();
 
