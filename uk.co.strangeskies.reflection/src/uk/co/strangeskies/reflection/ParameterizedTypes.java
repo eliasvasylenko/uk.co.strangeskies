@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -40,7 +41,7 @@ import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 import uk.co.strangeskies.utilities.collection.multimap.MultiTreeMap;
 
 /**
- * A collection of utility methods relating to generic array types.
+ * A collection of utility methods relating to parameterised types.
  * 
  * @author Elias N Vasylenko
  */
@@ -156,7 +157,7 @@ public class ParameterizedTypes {
 	}
 
 	static <T> Type uncheckedFrom(Class<T> rawType,
-			Map<? extends TypeVariable<?>, ? extends Type> typeArguments) {
+			Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
 		Type ownerType = (Types.getNonStaticallyEnclosingClass(rawType) == null) ? null
 				: uncheckedFrom(Types.getNonStaticallyEnclosingClass(rawType),
 						typeArguments);
@@ -183,7 +184,7 @@ public class ParameterizedTypes {
 	 * @return A {@link ParameterizedType} instance over the given class.
 	 */
 	public static <T> TypeToken<? extends T> from(Class<T> rawType) {
-		return from(rawType, new HashMap<>());
+		return from(rawType, i -> null);
 	}
 
 	/**
@@ -204,7 +205,7 @@ public class ParameterizedTypes {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T> TypeToken<? extends T> from(Class<T> rawType,
-			Map<? extends TypeVariable<?>, ? extends Type> typeArguments) {
+			Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
 		return (TypeToken<? extends T>) TypeToken.over(uncheckedFrom(rawType,
 				typeArguments));
 	}
@@ -264,10 +265,10 @@ public class ParameterizedTypes {
 	}
 
 	private static List<Type> argumentsForClass(Class<?> rawType,
-			Map<? extends TypeVariable<?>, ? extends Type> typeArguments) {
+			Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
 		List<Type> arguments = new ArrayList<>();
 		for (int i = 0; i < rawType.getTypeParameters().length; i++) {
-			Type argument = typeArguments.get(rawType.getTypeParameters()[i]);
+			Type argument = typeArguments.apply(rawType.getTypeParameters()[i]);
 			arguments.add((argument != null) ? argument
 					: rawType.getTypeParameters()[i]);
 		}
@@ -507,8 +508,8 @@ public class ParameterizedTypes {
 		}
 
 		Type supertype = new TypeSubstitution(substitutedArguments::get)
-				.resolve(from(rawType, parameterSubstitutes).resolveSubtypeParameters(
-						subclass).getType());
+				.resolve(from(rawType, parameterSubstitutes::get)
+						.resolveSubtypeParameters(subclass).getType());
 
 		return supertype;
 	}

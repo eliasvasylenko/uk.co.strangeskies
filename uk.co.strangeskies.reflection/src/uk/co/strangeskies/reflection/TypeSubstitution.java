@@ -159,7 +159,7 @@ public class TypeSubstitution {
 			} else
 				return WildcardTypes.unbounded();
 		} else if (type instanceof GenericArrayType)
-			return GenericArrayTypes.fromComponentType(resolve(
+			return ArrayTypes.fromComponentType(resolve(
 					((GenericArrayType) type).getGenericComponentType(), visited));
 		else if (type instanceof ParameterizedType)
 			return resolveParameterizedType((ParameterizedType) type, visited);

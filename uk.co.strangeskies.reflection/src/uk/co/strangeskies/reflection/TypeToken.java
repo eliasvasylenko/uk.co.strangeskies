@@ -157,7 +157,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected TypeToken(AnnotatedType type) {
+	TypeToken(AnnotatedType type) {
 		this.type = dealWithAnnotatedWildcards(type, new HashMap<>());
 
 		rawType = (Class<? super T>) Types.getRawType(this.type);
@@ -225,7 +225,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 			 */
 			ParameterizedType parameterizedType = (ParameterizedType) ParameterizedTypes
 					.uncheckedFrom(Types.getRawType(annotatedType.getType()),
-							allArguments);
+							allArguments::get);
 			if (allArguments.values().stream()
 					.anyMatch(WildcardType.class::isInstance)) {
 				if (behaviour == Wildcards.CAPTURE) {
@@ -278,7 +278,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 		return types;
 	}
 
-	protected TypeToken(Type type) {
+	TypeToken(Type type) {
 		this(null, type);
 	}
 
@@ -926,7 +926,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 		Resolver resolver = getInternalResolver();
 
 		Type parameterizedType = ParameterizedTypes.uncheckedFrom(superclass,
-				new HashMap<>());
+				i -> null);
 
 		if (resolver.getBounds().getInferenceVariables().contains(getType())) {
 			resolver.incorporateTypeParameters(superclass);
@@ -960,7 +960,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 		Resolver resolver = getInternalResolver();
 
 		Type parameterizedType = ParameterizedTypes.uncheckedFrom(subclass,
-				new HashMap<>());
+				i -> null);
 
 		if (resolver.getBounds().getInferenceVariables().contains(getType())) {
 			resolver.incorporateTypeParameters(subclass);

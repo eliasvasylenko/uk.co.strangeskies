@@ -28,26 +28,35 @@ import java.util.Collection;
 import uk.co.strangeskies.reflection.AnnotatedTypes.AnnotatedTypeImpl;
 
 /**
- * A collection of general utility methods relating to annotated types within
- * the Java type system. Utilities related to more specific classes of type may
- * be found in {@link WildcardTypes}, {@link ParameterizedTypes}, and
- * {@link GenericArrayTypes}.
+ * A collection of utility methods relating to annotated array types.
  * 
  * @author Elias N Vasylenko
  */
 public final class AnnotatedArrayTypes {
 	private static class AnnotatedArrayTypeImpl extends AnnotatedTypeImpl
 			implements AnnotatedArrayType {
-		private AnnotatedType annotatedComponentType;
+		private final AnnotatedType annotatedComponentType;
 
 		public AnnotatedArrayTypeImpl(GenericArrayType type,
 				Collection<Annotation> annotations) {
 			super(type, annotations);
+
+			annotatedComponentType = AnnotatedTypes.over(type
+					.getGenericComponentType());
 		}
 
 		public AnnotatedArrayTypeImpl(Class<?> type,
 				Collection<Annotation> annotations) {
 			super(type, annotations);
+
+			annotatedComponentType = AnnotatedTypes.over(type.getComponentType());
+		}
+
+		public AnnotatedArrayTypeImpl(AnnotatedType type,
+				Collection<Annotation> annotations) {
+			super(ArrayTypes.fromComponentType(type.getType()), annotations);
+
+			annotatedComponentType = type;
 		}
 
 		@Override
@@ -58,23 +67,95 @@ public final class AnnotatedArrayTypes {
 
 	private AnnotatedArrayTypes() {}
 
-	public static AnnotatedArrayType over(GenericArrayType component,
+	/**
+	 * Derive a new {@link AnnotatedArrayType} instance from a given annotated
+	 * component type, and the given annotations.
+	 * 
+	 * @param component
+	 *          The annotated component type of the new annotated array.
+	 * @param annotations
+	 *          The annotations for the new annotated array type.
+	 * @return A new annotated array type with the given component and given
+	 *         annotations.
+	 */
+	public static AnnotatedArrayType fromComponent(AnnotatedType component,
 			Annotation... annotations) {
-		return over(component, Arrays.asList(annotations));
+		return fromComponent(component, Arrays.asList(annotations));
 	}
 
-	public static AnnotatedArrayType over(GenericArrayType component,
+	/**
+	 * Derive a new {@link AnnotatedArrayType} instance from a given annotated
+	 * component type, and the given annotations.
+	 * 
+	 * @param component
+	 *          The annotated component type of the new annotated array.
+	 * @param annotations
+	 *          The annotations for the new annotated array type.
+	 * @return A new annotated array type with the given component and given
+	 *         annotations.
+	 */
+	public static AnnotatedArrayType fromComponent(AnnotatedType component,
 			Collection<Annotation> annotations) {
-		return null;
+		return new AnnotatedArrayTypeImpl(component, annotations);
 	}
 
-	public static AnnotatedArrayType over(Class<?> component,
+	/**
+	 * Create a new annotated representation of a given generic array type.
+	 * 
+	 * @param arrayType
+	 *          The array type to be annotated.
+	 * @param annotations
+	 *          The annotations for the annotated array type.
+	 * @return A new annotated array type over the given array type and with the
+	 *         given annotations.
+	 */
+	public static AnnotatedArrayType over(GenericArrayType arrayType,
 			Annotation... annotations) {
-		return over(component, Arrays.asList(annotations));
+		return over(arrayType, Arrays.asList(annotations));
 	}
 
-	public static AnnotatedArrayType over(Class<?> component,
+	/**
+	 * Create a new annotated representation of a given generic array type.
+	 * 
+	 * @param arrayType
+	 *          The array type to be annotated.
+	 * @param annotations
+	 *          The annotations for the annotated array type.
+	 * @return A new annotated array type over the given array type and with the
+	 *         given annotations.
+	 */
+	public static AnnotatedArrayType over(GenericArrayType arrayType,
 			Collection<Annotation> annotations) {
-		return null;
+		return new AnnotatedArrayTypeImpl(arrayType, annotations);
+	}
+
+	/**
+	 * Create a new annotated representation of a given array type.
+	 * 
+	 * @param arrayType
+	 *          The array type to be annotated.
+	 * @param annotations
+	 *          The annotations for the annotated array type.
+	 * @return A new annotated array type over the given array type and with the
+	 *         given annotations.
+	 */
+	public static AnnotatedArrayType over(Class<?> arrayType,
+			Annotation... annotations) {
+		return over(arrayType, Arrays.asList(annotations));
+	}
+
+	/**
+	 * Create a new annotated representation of a given array type.
+	 * 
+	 * @param arrayType
+	 *          The array type to be annotated.
+	 * @param annotations
+	 *          The annotations for the annotated array type.
+	 * @return A new annotated array type over the given array type and with the
+	 *         given annotations.
+	 */
+	public static AnnotatedArrayType over(Class<?> arrayType,
+			Collection<Annotation> annotations) {
+		return new AnnotatedArrayTypeImpl(arrayType, annotations);
 	}
 }

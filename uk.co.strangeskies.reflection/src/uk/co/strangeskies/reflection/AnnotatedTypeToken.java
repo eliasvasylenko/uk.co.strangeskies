@@ -22,6 +22,16 @@ import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.TypeVariable;
 
+/**
+ * <p>
+ * AnnotatedTypeToken behaves as {@link TypeToken}, but also maintains
+ * annotation information over its type.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <T>
+ *          This is the type which the TypeToken object references.
+ */
 public class AnnotatedTypeToken<T> extends TypeToken<T> {
 	private final AnnotatedType annotatedType;
 
@@ -57,7 +67,7 @@ public class AnnotatedTypeToken<T> extends TypeToken<T> {
 				.getAnnotatedActualTypeArguments()[0];
 	}
 
-	public AnnotatedTypeToken(AnnotatedType type) {
+	private AnnotatedTypeToken(AnnotatedType type) {
 		super(type);
 
 		if (!isProper())
@@ -68,10 +78,27 @@ public class AnnotatedTypeToken<T> extends TypeToken<T> {
 		annotatedType = type;
 	}
 
+	/**
+	 * Create a AnnotatedTypeToken for an arbitrary annotated type, preserving
+	 * wildcards where possible. This will behave the same as
+	 * {@link TypeToken#over(java.lang.reflect.Type)} invoked for the type wrapped
+	 * by the given annotated type, with the additional behaviour that annotations
+	 * will be preserved for retrieval via {@link #getAnnotatedType()}.
+	 * 
+	 * @param type
+	 *          The requested type.
+	 * @return A TypeToken over the requested type.
+	 */
 	public static AnnotatedTypeToken<?> over(AnnotatedType type) {
 		return new AnnotatedTypeToken<>(type);
 	}
 
+	/**
+	 * Return the annotated form of the type represented by this type token.
+	 * 
+	 * @return An {@link AnnotatedType} over the type which would be returned by
+	 *         {@link #getType()}, and which may have annotations.
+	 */
 	public AnnotatedType getAnnotatedType() {
 		return annotatedType;
 	}

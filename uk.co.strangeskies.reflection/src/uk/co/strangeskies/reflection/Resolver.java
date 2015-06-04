@@ -343,8 +343,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 
 			Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getInferenceVariables(rawType);
 			ConstraintFormula.reduce(Kind.SUBTYPE,
-					ParameterizedTypes.uncheckedFrom(rawType, inferenceVariables), type,
-					bounds);
+					ParameterizedTypes.uncheckedFrom(rawType, inferenceVariables::get),
+					type, bounds);
 
 			if (!inferenceVariables.isEmpty()) {
 				Map<TypeVariable<?>, Type> arguments = ParameterizedTypes
@@ -394,10 +394,9 @@ public class Resolver implements DeepCopyable<Resolver> {
 			incorporateTypeParameters(rawType);
 
 			Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getInferenceVariables(rawType);
-			ConstraintFormula
-					.reduce(kind, type,
-							ParameterizedTypes.uncheckedFrom(rawType, inferenceVariables),
-							bounds);
+			ConstraintFormula.reduce(kind, type,
+					ParameterizedTypes.uncheckedFrom(rawType, inferenceVariables::get),
+					bounds);
 
 			if (bound instanceof ParameterizedType) {
 				inferOverTypeArguments((ParameterizedType) bound);
@@ -430,9 +429,9 @@ public class Resolver implements DeepCopyable<Resolver> {
 						inferenceVariables.get(typeVariable), arguments.get(typeVariable),
 						getBounds());
 
-			return GenericArrayTypes.fromComponentType(resolveType(ParameterizedTypes
-					.uncheckedFrom(rawType, inferenceVariables)), Types
-					.getArrayDimensions(type));
+			return (GenericArrayType) ArrayTypes.fromComponentType(
+					resolveType(ParameterizedTypes.uncheckedFrom(rawType,
+							inferenceVariables::get)), Types.getArrayDimensions(type));
 		} else
 			return type;
 	}
@@ -461,7 +460,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 					getBounds());
 
 		return (ParameterizedType) resolveType(ParameterizedTypes.uncheckedFrom(
-				rawType, inferenceVariables));
+				rawType, inferenceVariables::get));
 	}
 
 	/**
@@ -780,7 +779,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 *          A superclass of the given subclass.
 	 */
 	public void incorporateTypeHierarchy(Class<?> subclass, Class<?> superclass) {
-		Type subtype = ParameterizedTypes.uncheckedFrom(subclass, new HashMap<>());
+		Type subtype = ParameterizedTypes.uncheckedFrom(subclass, i -> null);
 		incorporateTypeParameters(subclass);
 
 		if (!superclass.isAssignableFrom(subclass))
@@ -978,7 +977,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	public Type resolveTypeParameters(Class<?> type) {
 		incorporateTypeParameters(type);
 		return resolveType(ParameterizedTypes.uncheckedFrom(type,
-				getInferenceVariables(type)));
+				getInferenceVariables(type)::get));
 	}
 
 	/**

@@ -49,7 +49,7 @@ import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 /**
  * A collection of general utility methods relating to the Java type system.
  * Some utilities related to more specific classes of type may be found in
- * {@link WildcardTypes}, {@link ParameterizedTypes}, and {@link GenericArrayTypes}..
+ * {@link WildcardTypes}, {@link ParameterizedTypes}, and {@link ArrayTypes}..
  * 
  * @author Elias N Vasylenko
  */
@@ -942,7 +942,7 @@ public final class Types {
 		}
 
 		ParameterizedType best = (ParameterizedType) ParameterizedTypes
-				.uncheckedFrom(rawClass, leastContainingParameterization);
+				.uncheckedFrom(rawClass, leastContainingParameterization::get);
 
 		bestResult.set(best);
 

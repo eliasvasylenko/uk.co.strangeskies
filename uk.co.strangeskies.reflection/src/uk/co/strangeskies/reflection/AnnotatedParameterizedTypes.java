@@ -22,32 +22,46 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.function.Function;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes.AnnotatedTypeImpl;
 
 /**
- * A collection of general utility methods relating to annotated types within
- * the Java type system. Utilities related to more specific classes of type may
- * be found in {@link WildcardTypes}, {@link ParameterizedTypes}, and
- * {@link GenericArrayTypes}.
+ * A collection of utility methods relating to annotated parameterised types.
  * 
  * @author Elias N Vasylenko
  */
 public final class AnnotatedParameterizedTypes {
 	private static class AnnotatedParameterizedTypeImpl extends AnnotatedTypeImpl
 			implements AnnotatedParameterizedType {
-		private AnnotatedType[] annotatedTypeArguments;
+		private final AnnotatedType[] annotatedTypeArguments;
 
 		public AnnotatedParameterizedTypeImpl(ParameterizedType type,
 				Collection<? extends Annotation> annotations) {
 			super(type, annotations);
+
+			annotatedTypeArguments = AnnotatedTypes.over(type
+					.getActualTypeArguments());
 		}
 
-		public AnnotatedParameterizedTypeImpl(Class<?> type,
+		public AnnotatedParameterizedTypeImpl(
+				Class<?> rawType,
+				Function<? super TypeVariable<?>, ? extends AnnotatedType> annotatedTypes,
 				Collection<? extends Annotation> annotations) {
-			super(type, annotations);
+			super(ParameterizedTypes.from(rawType,
+					annotatedTypes.andThen(AnnotatedType::getType)).getType(),
+					annotations);
+
+			annotatedTypeArguments = (AnnotatedType[]) Arrays
+					.stream(rawType.getTypeParameters()).map(p -> {
+						AnnotatedType type = annotatedTypes.apply(p);
+						if (type == null)
+							type = AnnotatedTypes.over(p);
+						return type;
+					}).toArray();
 		}
 
 		@Override
@@ -63,13 +77,56 @@ public final class AnnotatedParameterizedTypes {
 
 	private AnnotatedParameterizedTypes() {}
 
-	public static AnnotatedType over(ParameterizedType type,
+	/**
+	 * Annotate an existing {@link ParameterizedType} with the given annotations.
+	 * 
+	 * @param type
+	 *          The parameterized type we wish to annotate.
+	 * @param annotations
+	 *          Annotations to put on the resulting
+	 *          {@link AnnotatedParameterizedType}.
+	 * @return A new {@link AnnotatedParameterizedType} instance over the given
+	 *         parameterized type, with the given annotations.
+	 */
+	public static AnnotatedParameterizedType over(ParameterizedType type,
 			Annotation... annotations) {
 		return over(type, Arrays.asList(annotations));
 	}
 
-	public static AnnotatedType over(ParameterizedType type,
+	/**
+	 * Annotate an existing {@link ParameterizedType} with the given annotations.
+	 * 
+	 * @param type
+	 *          The parameterized type we wish to annotate.
+	 * @param annotations
+	 *          Annotations to put on the resulting
+	 *          {@link AnnotatedParameterizedType}.
+	 * @return A new {@link AnnotatedParameterizedType} instance over the given
+	 *         parameterized type, with the given annotations.
+	 */
+	public static AnnotatedParameterizedType over(ParameterizedType type,
 			Collection<Annotation> annotations) {
 		return new AnnotatedParameterizedTypeImpl(type, annotations);
+	}
+
+	/**
+	 * Parameterize a generic class with the given annotated type arguments.
+	 * 
+	 * @param rawType
+	 *          The generic class we wish to parameterize.
+	 * @param arguments
+	 *          A mapping from the type variables on the generic class to their
+	 *          annotated arguments.
+	 * @param annotations
+	 *          Annotations to put on the resulting
+	 *          {@link AnnotatedParameterizedType}.
+	 * @return A new {@link AnnotatedParameterizedType} instance with the given
+	 *         type arguments, and the given annotations.
+	 */
+	public static AnnotatedParameterizedType from(Class<?> rawType,
+			Function<? super TypeVariable<?>, ? extends AnnotatedType> arguments,
+			Annotation... annotations) {
+		return new AnnotatedParameterizedTypeImpl(rawType, arguments,
+				Arrays.asList(annotations));
 	}
 }

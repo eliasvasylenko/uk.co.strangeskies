@@ -26,14 +26,17 @@ import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * A collection of general utility methods relating to annotated types within
- * the Java type system. Utilities related to more specific classes of type may
- * be found in {@link WildcardTypes}, {@link ParameterizedTypes}, and
- * {@link GenericArrayTypes}.
+ * the Java type system. Utilities related to more specific classes of annotated
+ * type may be found in {@link AnnotatedWildcardTypes},
+ * {@link AnnotatedParameterizedTypes}, and {@link AnnotatedArrayTypes}.
  * 
  * @author Elias N Vasylenko
  */
@@ -74,10 +77,73 @@ public final class AnnotatedTypes {
 
 	private AnnotatedTypes() {}
 
+	/**
+	 * Transform an array of {@link Type}s into a new array of
+	 * {@link AnnotatedType}s, according to the behaviour of {@link #over(Type)}
+	 * applied to element of the array.
+	 * 
+	 * @param types
+	 *          The array of types to transform.
+	 * @return A new array of unannotated {@link AnnotatedType} instances.
+	 */
+	public static AnnotatedType[] over(Type... types) {
+		return Arrays.stream(types).map(AnnotatedTypes::over)
+				.toArray(AnnotatedType[]::new);
+	}
+
+	/**
+	 * Transform a collection of {@link Type}s into a new list of
+	 * {@link AnnotatedType}s, according to the behaviour of {@link #over(Type)}
+	 * applied to element of the collection.
+	 * 
+	 * @param types
+	 *          The collection of types to transform.
+	 * @return A new list of unannotated {@link AnnotatedType} instances.
+	 */
+	public static List<AnnotatedType> over(Collection<? extends Type> types) {
+		return types.stream().map(AnnotatedTypes::over)
+				.collect(Collectors.toList());
+	}
+
+	/**
+	 * Derive a representation of a given type according the appropriate class of
+	 * {@link AnnotatedType}.
+	 * 
+	 * @param type
+	 *          The type for which we wish to derive the annotated form.
+	 * @return An {@link AnnotatedType} instance of the appropriate class over the
+	 *         given type containing no annotations.
+	 */
+	public static AnnotatedType over(Type type) {
+		return over(type, Collections.emptySet());
+	}
+
+	/**
+	 * Derive a representation of a given type according the appropriate class of
+	 * {@link AnnotatedType}, and with the given annotations.
+	 * 
+	 * @param type
+	 *          The type for which we wish to derive the annotated form.
+	 * @param annotations
+	 *          The annotations we wish for the annotated type to contain.
+	 * @return An {@link AnnotatedType} instance of the appropriate class over the
+	 *         given type containing the given annotations.
+	 */
 	public static AnnotatedType over(Type type, Annotation... annotations) {
 		return over(type, Arrays.asList(annotations));
 	}
 
+	/**
+	 * Derive a representation of a given type according the appropriate class of
+	 * {@link AnnotatedType}, and with the given annotations.
+	 * 
+	 * @param type
+	 *          The type for which we wish to derive the annotated form.
+	 * @param annotations
+	 *          The annotations we wish for the annotated type to contain.
+	 * @return An {@link AnnotatedType} instance of the appropriate class over the
+	 *         given type containing the given annotations.
+	 */
 	public static AnnotatedType over(Type type, Collection<Annotation> annotations) {
 		if (type instanceof ParameterizedType) {
 			return AnnotatedParameterizedTypes.over((ParameterizedType) type,

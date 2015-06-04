@@ -158,8 +158,8 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 		if (component instanceof ParameterizedType)
 			component = captureWildcardArguments((GenericArrayType) component);
 
-		component = type = GenericArrayTypes.fromComponentType(component,
-				Types.getArrayDimensions(type));
+		component = type = (GenericArrayType) ArrayTypes.fromComponentType(
+				component, Types.getArrayDimensions(type));
 
 		return type;
 	}
@@ -188,16 +188,8 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 			Type capture;
 
 			if (argument instanceof WildcardType) {
-				Type upperBound = IntersectionType.from(IntersectionType
-						.uncheckedFrom(parameter.getBounds()), IntersectionType
-						.uncheckedFrom(((WildcardType) argument).getUpperBounds()));
-
-				WildcardType constrained = WildcardTypes.fullyBounded(upperBound,
-						IntersectionType.uncheckedFrom(((WildcardType) argument)
-								.getLowerBounds()));
-
-				capture = new TypeVariableCapture(constrained.getUpperBounds(),
-						constrained.getLowerBounds(), declaration);
+				capture = captureWildcard(declaration, parameter,
+						(WildcardType) argument);
 			} else
 				capture = argument;
 
@@ -208,7 +200,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 		substituteBounds(captures);
 
 		ParameterizedType capture = (ParameterizedType) ParameterizedTypes
-				.uncheckedFrom(Types.getRawType(type), captures);
+				.uncheckedFrom(Types.getRawType(type), captures::get);
 
 		return capture;
 	}
@@ -290,11 +282,14 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 				IntersectionType.uncheckedFrom(typeVariable.getBounds()),
 				IntersectionType.uncheckedFrom(type.getUpperBounds()));
 
-		WildcardType constrained = WildcardTypes.fullyBounded(upperBound,
-				IntersectionType.uncheckedFrom(type.getLowerBounds()));
+		Type[] upperBounds;
+		if (upperBound instanceof IntersectionType)
+			upperBounds = ((IntersectionType) upperBound).getTypes();
+		else
+			upperBounds = new Type[] { upperBound };
 
-		return new TypeVariableCapture(constrained.getUpperBounds(),
-				constrained.getLowerBounds(), declaration);
+		return new TypeVariableCapture(upperBounds, type.getLowerBounds(),
+				declaration);
 	}
 
 	/**

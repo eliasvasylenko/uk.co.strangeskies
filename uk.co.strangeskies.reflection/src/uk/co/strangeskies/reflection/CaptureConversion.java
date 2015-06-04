@@ -51,7 +51,7 @@ public class CaptureConversion {
 		this.originalType = originalType;
 
 		captureType = (ParameterizedType) ParameterizedTypes.from(
-				Types.getRawType(originalType), parameterCaptures).getType();
+				Types.getRawType(originalType), parameterCaptures::get).getType();
 
 		Map<TypeVariable<?>, Type> parameterArguments = ParameterizedTypes
 				.getAllTypeArguments(originalType);
