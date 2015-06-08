@@ -105,12 +105,15 @@ public class Resolver implements DeepCopyable<Resolver> {
 	@Override
 	public Resolver copy() {
 		Resolver copy = new Resolver(bounds.copy());
-
+		copy.wildcardCaptures.addAll(wildcardCaptures);
 		copy.capturedTypeVariables.putAll(capturedTypeVariables);
 
 		return copy;
 	}
 
+	/*
+	 * TODO also deep copy wildcardCaptures!
+	 */
 	@Override
 	public Resolver deepCopy() {
 		return deepCopy(new HashMap<>());
@@ -149,6 +152,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 			Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions,
 			BoundSet bounds) {
 		Resolver copy = new Resolver(bounds);
+
+		copy.wildcardCaptures.addAll(wildcardCaptures);
 
 		for (GenericDeclaration declaration : capturedTypeVariables.keySet())
 			copy.capturedTypeVariables.put(
@@ -573,12 +578,16 @@ public class Resolver implements DeepCopyable<Resolver> {
 		return type;
 	}
 
-	private Type resubstituteCapturedWildcards(Type type) {
+	public Type resubstituteCapturedWildcards(Type type) {
 		if (wildcardCaptures.isEmpty())
 			return type;
 		else
 			return new TypeSubstitution().where(wildcardCaptures::contains,
 					t -> ((TypeVariableCapture) t).getCapturedType()).resolve(type);
+	}
+
+	public Set<TypeVariableCapture> getWildcardCaptures() {
+		return wildcardCaptures;
 	}
 
 	/**

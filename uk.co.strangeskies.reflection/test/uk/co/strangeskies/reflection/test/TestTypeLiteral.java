@@ -514,9 +514,6 @@ public class TestTypeLiteral {
 		System.out.println(eqselente.getResolver().getBounds());
 		System.out.println(eqselente.infer());
 		System.out.println();
-		
-		System.out.println(new TypeToken<@Infer List<? extends String>>() {});
-		System.out.println();
 
 		System.out.println(new TypeToken<@Infer List<? extends String>>() {});
 		System.out.println();
@@ -527,8 +524,19 @@ public class TestTypeLiteral {
 		System.out.println(new TypeToken<@Infer List<? extends String>>() {});
 		System.out.println();
 
-		System.out.println(TypeToken
-				.over(new TypeToken<Nest2<? extends Nest22<?>>>() {}.getType()));
+		System.out.println(new TypeToken<@Infer List<? extends String>>() {});
+		System.out.println();
+
+		System.out.println(new TypeToken<List<? extends String>>() {}
+				.resolveSupertypeParameters(Iterable.class));
+		System.out.println();
+
+		TypeToken<?> tttt = new TypeToken<List<? extends String>>() {};
+		System.out.println(tttt.getResolver().resubstituteCapturedWildcards(
+				tttt.resolveSupertypeParameters(Iterable.class).getType()));
+		System.out.println();
+
+		System.out.println(new TypeToken<Nest2<? extends Nest22<?>>>() {});
 		System.out.println();
 		System.out.println();
 	}
