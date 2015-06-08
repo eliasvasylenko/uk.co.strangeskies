@@ -383,6 +383,10 @@ public class TestTypeLiteral {
 				.resolveMethodOverload("add", Integer.class).getReceiverType().infer());
 		System.out.println();
 
+		System.out.println(new TypeToken<@Infer List<@Infer ? extends Number>>() {}
+				.getResolver().getBounds());
+		System.out.println();
+
 		System.out.println(new TypeToken<@Infer List<? extends Number>>() {}
 				.getExtending(Wildcards.INFER)
 				.resolveMethodOverload("add", Integer.class).getReceiverType()

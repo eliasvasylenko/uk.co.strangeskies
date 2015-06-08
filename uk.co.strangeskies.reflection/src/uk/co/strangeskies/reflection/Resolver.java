@@ -337,25 +337,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 *          The bounds to add to the given type.
 	 */
 	public void addLowerBound(Type type, Type lowerBound) {
-		for (Type bound : getUpperBounds(lowerBound)) {
-			Class<?> rawType = getRawType(bound);
-			incorporateTypeParameters(rawType);
-
-			Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getInferenceVariables(rawType);
-			ConstraintFormula.reduce(Kind.SUBTYPE,
-					ParameterizedTypes.uncheckedFrom(rawType, inferenceVariables::get),
-					type, bounds);
-
-			if (!inferenceVariables.isEmpty()) {
-				Map<TypeVariable<?>, Type> arguments = ParameterizedTypes
-						.getAllTypeArguments((ParameterizedType) bound);
-
-				for (TypeVariable<?> typeVariable : inferenceVariables.keySet())
-					ConstraintFormula.reduce(Kind.CONTAINMENT,
-							arguments.get(typeVariable),
-							inferenceVariables.get(typeVariable), bounds);
-			}
-		}
+		for (Type bound : getUpperBounds(lowerBound))
+			ConstraintFormula.reduce(Kind.SUBTYPE, bound, type, bounds);
 	}
 
 	/**
@@ -389,19 +372,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 	}
 
 	private void addConstraint(Kind kind, Type type, Type upperBound) {
-		for (Type bound : getLowerBounds(upperBound)) {
-			Class<?> rawType = getRawType(bound);
-			incorporateTypeParameters(rawType);
-
-			Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getInferenceVariables(rawType);
-			ConstraintFormula.reduce(kind, type,
-					ParameterizedTypes.uncheckedFrom(rawType, inferenceVariables::get),
-					bounds);
-
-			if (bound instanceof ParameterizedType) {
-				inferOverTypeArguments((ParameterizedType) bound);
-			}
-		}
+		for (Type bound : getLowerBounds(upperBound))
+			ConstraintFormula.reduce(kind, type, bound, bounds);
 	}
 
 	/**
@@ -573,8 +545,6 @@ public class Resolver implements DeepCopyable<Resolver> {
 	public ParameterizedType captureTypeArguments(ParameterizedType type) {
 		Class<?> rawType = Types.getRawType(type);
 		incorporateTypeParameters(rawType);
-
-		type = TypeVariableCapture.captureWildcardArguments(type);
 
 		for (Map.Entry<TypeVariable<?>, Type> typeArgument : ParameterizedTypes
 				.getAllTypeArguments(type).entrySet())

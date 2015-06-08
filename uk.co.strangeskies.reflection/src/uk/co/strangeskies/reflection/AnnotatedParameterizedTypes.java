@@ -22,9 +22,12 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Function;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes.AnnotatedTypeImpl;
@@ -51,17 +54,16 @@ public final class AnnotatedParameterizedTypes {
 				Class<?> rawType,
 				Function<? super TypeVariable<?>, ? extends AnnotatedType> annotatedTypes,
 				Collection<? extends Annotation> annotations) {
-			super(ParameterizedTypes.from(rawType,
-					annotatedTypes.andThen(AnnotatedType::getType)).getType(),
-					annotations);
+			super(ParameterizedTypes.uncheckedFrom(rawType,
+					annotatedTypes.andThen(AnnotatedType::getType)), annotations);
 
-			annotatedTypeArguments = (AnnotatedType[]) Arrays
-					.stream(rawType.getTypeParameters()).map(p -> {
+			annotatedTypeArguments = Arrays.stream(rawType.getTypeParameters())
+					.map(p -> {
 						AnnotatedType type = annotatedTypes.apply(p);
 						if (type == null)
 							type = AnnotatedTypes.over(p);
 						return type;
-					}).toArray();
+					}).toArray(AnnotatedType[]::new);
 		}
 
 		@Override
@@ -128,5 +130,34 @@ public final class AnnotatedParameterizedTypes {
 			Annotation... annotations) {
 		return new AnnotatedParameterizedTypeImpl(rawType, arguments,
 				Arrays.asList(annotations));
+	}
+
+	/**
+	 * For a given parameterized type, we retrieve a mapping of all type variables
+	 * on its raw type, as given by
+	 * {@link ParameterizedTypes#getAllTypeParameters(Class)} applied to the raw
+	 * type of this annotated type, to their annotated arguments within the
+	 * context of this type.
+	 *
+	 * @param type
+	 *          The type whose generic type arguments we wish to determine.
+	 * @return A mapping of all type variables to their arguments in the context
+	 *         of the given type.
+	 */
+	public static Map<TypeVariable<?>, AnnotatedType> getAllTypeArguments(
+			AnnotatedParameterizedType type) {
+		AnnotatedType[] arguments = type.getAnnotatedActualTypeArguments();
+
+		Map<TypeVariable<?>, AnnotatedType> allArguments = new HashMap<>();
+		TypeVariable<?>[] parameters = Types.getRawType(type.getType())
+				.getTypeParameters();
+		for (int i = 0; i < arguments.length; i++)
+			allArguments.put(parameters[i], arguments[i]);
+		for (Map.Entry<TypeVariable<?>, Type> entry : ParameterizedTypes
+				.getAllTypeArguments((ParameterizedType) type.getType()).entrySet())
+			if (!allArguments.containsKey(entry.getKey()))
+				allArguments.put(entry.getKey(), AnnotatedTypes.over(entry.getValue()));
+
+		return allArguments;
 	}
 }

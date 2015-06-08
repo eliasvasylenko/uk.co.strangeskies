@@ -48,17 +48,21 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 
 	private final String name;
 
+	private final Type source;
+
 	private final Type[] upperBounds;
 	private final Type[] lowerBounds;
 
 	private final GenericDeclaration declaration;
 
-	TypeVariableCapture(Type[] upperBounds, Type[] lowerBounds,
+	TypeVariableCapture(Type[] upperBounds, Type[] lowerBounds, Type source,
 			GenericDeclaration declaration) {
 		this.name = "CAP#" + COUNTER.incrementAndGet();
 
 		this.upperBounds = upperBounds.clone();
 		this.lowerBounds = lowerBounds.clone();
+
+		this.source = source;
 
 		this.declaration = declaration;
 	}
@@ -77,6 +81,14 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 		return name;
 	}
 
+	/**
+	 * @return The {@link InferenceVariable} or {@link WildcardType} captured by
+	 *         this type variable capture.
+	 */
+	public Type getCapturedType() {
+		return source;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder().append(getName());
@@ -90,7 +102,6 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 				&& !(lowerBounds.length == 1 && lowerBounds[0] == null))
 			builder.append(" super ").append(
 					IntersectionType.uncheckedFrom(lowerBounds));
-		;
 
 		return builder.toString();
 	}
@@ -288,7 +299,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 		else
 			upperBounds = new Type[] { upperBound };
 
-		return new TypeVariableCapture(upperBounds, type.getLowerBounds(),
+		return new TypeVariableCapture(upperBounds, type.getLowerBounds(), type,
 				declaration);
 	}
 
@@ -357,7 +368,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 				 * intersection type is inconsistent), then resolution fails.
 				 */
 				TypeVariableCapture capture = new TypeVariableCapture(upperBounds,
-						lowerBounds, declaration);
+						lowerBounds, inferenceVariable, declaration);
 
 				parameters[count++] = capture;
 

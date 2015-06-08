@@ -74,7 +74,8 @@ public class ParameterizedTypes {
 		do {
 			typeParameters = Stream.concat(typeParameters,
 					Arrays.stream(rawType.getTypeParameters()));
-		} while ((rawType = Types.getNonStaticallyEnclosingClass(rawType)) != null);
+		} while (!Types.isStatic(rawType)
+				&& (rawType = rawType.getEnclosingClass()) != null);
 		return typeParameters.collect(Collectors.toList());
 	}
 
@@ -103,7 +104,7 @@ public class ParameterizedTypes {
 
 			type = type.getOwnerType() instanceof ParameterizedType ? (ParameterizedType) type
 					.getOwnerType() : null;
-			rawType = Types.getNonStaticallyEnclosingClass(rawType);
+			rawType = Types.isStatic(rawType) ? null : rawType.getEnclosingClass();
 		} while (type != null && rawType != null);
 
 		return typeArguments;
@@ -158,9 +159,12 @@ public class ParameterizedTypes {
 
 	static <T> Type uncheckedFrom(Class<T> rawType,
 			Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
-		Type ownerType = (Types.getNonStaticallyEnclosingClass(rawType) == null) ? null
-				: uncheckedFrom(Types.getNonStaticallyEnclosingClass(rawType),
-						typeArguments);
+		Class<?> enclosing = rawType.getEnclosingClass();
+		Type ownerType;
+		if (enclosing == null || Types.isStatic(rawType))
+			ownerType = enclosing;
+		else
+			ownerType = uncheckedFrom(enclosing, typeArguments);
 
 		if ((ownerType == null || ownerType instanceof Class)
 				&& rawType.getTypeParameters().length == 0)
@@ -256,8 +260,8 @@ public class ParameterizedTypes {
 	@SuppressWarnings("unchecked")
 	public static <T> TypeToken<? extends T> from(Class<T> rawType,
 			List<Type> typeArguments) {
-		if (Types.getNonStaticallyEnclosingClass(rawType) != null
-				&& isGeneric(Types.getNonStaticallyEnclosingClass(rawType)))
+		if (!Types.isStatic(rawType) && rawType.getEnclosingClass() != null
+				&& isGeneric(rawType.getEnclosingClass()))
 			throw new IllegalArgumentException();
 
 		return (TypeToken<? extends T>) TypeToken.over(uncheckedFrom(null, rawType,

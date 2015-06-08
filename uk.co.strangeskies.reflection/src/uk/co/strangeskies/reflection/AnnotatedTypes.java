@@ -50,7 +50,7 @@ public final class AnnotatedTypes {
 			this.type = type;
 			this.annotations = new LinkedHashMap<>();
 			for (Annotation annotation : annotations)
-				this.annotations.put(annotation.getClass(), annotation);
+				this.annotations.put(annotation.annotationType(), annotation);
 		}
 
 		@SuppressWarnings("unchecked")
@@ -157,5 +157,31 @@ public final class AnnotatedTypes {
 		} else {
 			return new AnnotatedTypeImpl(type, annotations);
 		}
+	}
+
+	/**
+	 * Give a canonical String representation of a given annotated type, which is
+	 * intended to be more easily human-readable than implementations of
+	 * {@link Object#toString()} for certain implementations of {@link Type}.
+	 * 
+	 * @param type
+	 *          The type of which we wish to determine a string representation.
+	 * @return A canonical string representation of the given type.
+	 */
+	public static String toString(AnnotatedType type) {
+		// TODO
+		return null;
+	}
+
+	/**
+	 * Create an AnnotatedType instance from a parsed String.
+	 * 
+	 * @param typeString
+	 *          The String to parse.
+	 * @return The type described by the String.
+	 */
+	public static AnnotatedType fromString(String typeString) {
+		// TODO
+		return null;
 	}
 }

@@ -328,23 +328,6 @@ public final class Types {
 	}
 
 	/**
-	 * Find the enclosing class of the given class, if the given class is
-	 * non-static. In other words, determine the class of the enclosing
-	 * <em>instance</em> of an instance of the given class.
-	 * 
-	 * This has the same behaviour as {@link Class#getEnclosingClass()}, except
-	 * that null is also returned in the case that the given class is static.
-	 * 
-	 * @param innerClass
-	 *          The class of which we wish to determine the enclosing class.
-	 * @return The enclosing class, if one exists, and if the {@code innerClass}
-	 *         is non-static, otherwise null.
-	 */
-	public static Class<?> getNonStaticallyEnclosingClass(Class<?> innerClass) {
-		return isStatic(innerClass) ? null : innerClass.getEnclosingClass();
-	}
-
-	/**
 	 * Find the component type of the given type, if the given {@link Type}
 	 * instance is an array {@link Class} or an instance of
 	 * {@link GenericArrayType}.
@@ -440,7 +423,7 @@ public final class Types {
 	 * @return The type described by the String.
 	 */
 	public static Type fromString(String typeString) {
-		// TODO Auto-generated method stub
+		// TODO
 		return null;
 	}
 
