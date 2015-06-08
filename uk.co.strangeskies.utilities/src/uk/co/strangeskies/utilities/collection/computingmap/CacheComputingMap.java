@@ -29,7 +29,7 @@ public class CacheComputingMap<K, V> extends ComputingEntryHashMap<K, V> {
 	protected class KeyedReference extends SoftReference<V> {
 		private final K key;
 
-		public KeyedReference(K key, V value) {
+		public KeyedReference(K key) {
 			super(computation().apply(key), references);
 			this.key = key;
 		}
@@ -45,16 +45,15 @@ public class CacheComputingMap<K, V> extends ComputingEntryHashMap<K, V> {
 
 		protected ReferenceEntry() {
 			key = null;
-			value = CompletableFuture
-					.supplyAsync(() -> new KeyedReference(null, null));
+			value = CompletableFuture.supplyAsync(() -> new KeyedReference(null));
 		}
 
 		public ReferenceEntry(K key) {
 			this.key = key;
-			value = CompletableFuture.supplyAsync(() -> new KeyedReference(key,
-					computation().apply(key)));
+			value = CompletableFuture.supplyAsync(() -> new KeyedReference(key));
 		}
 
+		@Override
 		public K getKey() {
 			return key;
 		}
