@@ -79,6 +79,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 */
 	private final Map<GenericDeclaration, Map<TypeVariable<?>, InferenceVariable>> capturedTypeVariables;
 
+	private final Set<TypeVariableCapture> wildcardCaptures;
+
 	/**
 	 * Create a new {@link Resolver} over the given {@link BoundSet}.
 	 * 
@@ -90,6 +92,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 		this.bounds = bounds;
 
 		capturedTypeVariables = new HashMap<>();
+		wildcardCaptures = new HashSet<>();
 	}
 
 	/**
@@ -110,10 +113,10 @@ public class Resolver implements DeepCopyable<Resolver> {
 
 	@Override
 	public Resolver deepCopy() {
-		return withNewInferenceVariableSubstitution(new HashMap<>());
+		return deepCopy(new HashMap<>());
 	}
 
-	Resolver withNewInferenceVariableSubstitution(
+	Resolver deepCopy(
 			Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions) {
 		return withNewBoundsSubstitution(
 				inferenceVariableSubstitutions,
@@ -545,6 +548,21 @@ public class Resolver implements DeepCopyable<Resolver> {
 	public ParameterizedType captureTypeArguments(ParameterizedType type) {
 		Class<?> rawType = Types.getRawType(type);
 		incorporateTypeParameters(rawType);
+
+		Map<TypeVariable<?>, Type> originalArguments = ParameterizedTypes
+				.getAllTypeArguments(type);
+
+		type = TypeVariableCapture.captureWildcardArguments(type);
+
+		Map<TypeVariable<?>, Type> capturedArguments = ParameterizedTypes
+				.getAllTypeArguments(type);
+
+		for (TypeVariable<?> parameter : originalArguments.keySet()) {
+			if (originalArguments.get(parameter) instanceof WildcardType) {
+				wildcardCaptures.add((TypeVariableCapture) capturedArguments
+						.get(parameter));
+			}
+		}
 
 		for (Map.Entry<TypeVariable<?>, Type> typeArgument : ParameterizedTypes
 				.getAllTypeArguments(type).entrySet())

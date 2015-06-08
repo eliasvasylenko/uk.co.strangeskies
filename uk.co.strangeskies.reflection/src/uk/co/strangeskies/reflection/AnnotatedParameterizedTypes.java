@@ -42,6 +42,14 @@ public final class AnnotatedParameterizedTypes {
 			implements AnnotatedParameterizedType {
 		private final AnnotatedType[] annotatedTypeArguments;
 
+		public AnnotatedParameterizedTypeImpl(
+				AnnotatedParameterizedType annotatedParameterizedType) {
+			super(annotatedParameterizedType);
+
+			annotatedTypeArguments = annotatedParameterizedType
+					.getAnnotatedActualTypeArguments();
+		}
+
 		public AnnotatedParameterizedTypeImpl(ParameterizedType type,
 				Collection<? extends Annotation> annotations) {
 			super(type, annotations);
@@ -55,20 +63,30 @@ public final class AnnotatedParameterizedTypes {
 				Function<? super TypeVariable<?>, ? extends AnnotatedType> annotatedTypes,
 				Collection<? extends Annotation> annotations) {
 			super(ParameterizedTypes.uncheckedFrom(rawType,
-					annotatedTypes.andThen(AnnotatedType::getType)), annotations);
+					unannotatedTypes(annotatedTypes)), annotations);
 
 			annotatedTypeArguments = Arrays.stream(rawType.getTypeParameters())
 					.map(p -> {
 						AnnotatedType type = annotatedTypes.apply(p);
 						if (type == null)
-							type = AnnotatedTypes.over(p);
-						return type;
+							return AnnotatedTypes.over(p);
+						else
+							return type;
 					}).toArray(AnnotatedType[]::new);
+		}
+
+		/*
+		 * This really shouldn't need to be factored out into its own method, but
+		 * the JDT was having internal errors in Windows and this fixed it...
+		 */
+		private static Function<? super TypeVariable<?>, ? extends Type> unannotatedTypes(
+				Function<? super TypeVariable<?>, ? extends AnnotatedType> annotatedTypes) {
+			return annotatedTypes.andThen(AnnotatedType::getType);
 		}
 
 		@Override
 		public AnnotatedType[] getAnnotatedActualTypeArguments() {
-			return annotatedTypeArguments;
+			return annotatedTypeArguments.clone();
 		}
 
 		@Override
@@ -159,5 +177,17 @@ public final class AnnotatedParameterizedTypes {
 				allArguments.put(entry.getKey(), AnnotatedTypes.over(entry.getValue()));
 
 		return allArguments;
+	}
+
+	/**
+	 * Wrap an existing annotated parameterized type.
+	 * 
+	 * @param type
+	 *          The type we wish to wrap.
+	 * @return A new instance of {@link AnnotatedParameterizedType} which is equal
+	 *         to the given type.
+	 */
+	public static AnnotatedParameterizedType wrap(AnnotatedParameterizedType type) {
+		return new AnnotatedParameterizedTypeImpl(type);
 	}
 }

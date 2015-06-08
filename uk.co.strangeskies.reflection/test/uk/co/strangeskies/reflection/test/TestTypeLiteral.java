@@ -202,11 +202,6 @@ public class TestTypeLiteral {
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeToken
-				.over(new TypeToken<Nest2<? extends Nest22<?>>>() {}.getType()));
-		System.out.println();
-		System.out.println();
-
 		System.out.println(new TypeToken<SchemaNode.Effective<?, ?>>() {}
 				.resolveSupertypeParameters(SchemaNode.class));
 		System.out.println();
@@ -518,6 +513,23 @@ public class TestTypeLiteral {
 		eqselente = eqselente.withUpperBound(eqselente.deepCopy());
 		System.out.println(eqselente.getResolver().getBounds());
 		System.out.println(eqselente.infer());
+		System.out.println();
+		
+		System.out.println(new TypeToken<@Infer List<? extends String>>() {});
+		System.out.println();
+
+		System.out.println(new TypeToken<@Infer List<? extends String>>() {});
+		System.out.println();
+
+		System.out.println(new TypeToken<@Infer List<? extends String>>() {});
+		System.out.println();
+
+		System.out.println(new TypeToken<@Infer List<? extends String>>() {});
+		System.out.println();
+
+		System.out.println(TypeToken
+				.over(new TypeToken<Nest2<? extends Nest22<?>>>() {}.getType()));
+		System.out.println();
 		System.out.println();
 	}
 

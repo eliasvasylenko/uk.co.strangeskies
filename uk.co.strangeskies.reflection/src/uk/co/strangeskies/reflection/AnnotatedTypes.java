@@ -19,7 +19,10 @@
 package uk.co.strangeskies.reflection;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedArrayType;
+import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.AnnotatedType;
+import java.lang.reflect.AnnotatedWildcardType;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -27,6 +30,7 @@ import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +48,11 @@ public final class AnnotatedTypes {
 	static class AnnotatedTypeImpl implements AnnotatedType {
 		private final Type type;
 		private final Map<Class<? extends Annotation>, Annotation> annotations;
+
+		public AnnotatedTypeImpl(AnnotatedType annotatedType) {
+			this(annotatedType.getType(), Arrays.asList(annotatedType
+					.getAnnotations()));
+		}
 
 		public AnnotatedTypeImpl(Type type,
 				Collection<? extends Annotation> annotations) {
@@ -73,6 +82,129 @@ public final class AnnotatedTypes {
 		public Type getType() {
 			return type;
 		}
+
+		@Override
+		public boolean equals(Object that) {
+			if (that instanceof AnnotatedType)
+				return AnnotatedTypes.equals(this, (AnnotatedType) that);
+			else
+				return false;
+		}
+
+		@Override
+		public int hashCode() {
+			return AnnotatedTypes.hashCode(this);
+		}
+	}
+
+	/**
+	 * A correct hash code implementation for annotated types, since the Java
+	 * specification does not require implementors to provide this.
+	 * 
+	 * @param annotatedType
+	 *          The annotated type whose hash code we wish to determine.
+	 * @return A hash code for the given annotated type.
+	 */
+	public static int hashCode(AnnotatedType annotatedType) {
+		return annotatedType.getType().hashCode() ^ annotationHash(annotatedType);
+	}
+
+	private static int annotationHash(AnnotatedType annotatedType) {
+		int hash = new HashSet<>(Arrays.asList(annotatedType.getAnnotations()))
+				.hashCode();
+
+		if (annotatedType instanceof AnnotatedParameterizedType) {
+			hash ^= annotationHash(((AnnotatedParameterizedType) annotatedType)
+					.getAnnotatedActualTypeArguments());
+		} else if (annotatedType instanceof AnnotatedArrayType) {
+			hash ^= annotationHash(((AnnotatedArrayType) annotatedType)
+					.getAnnotatedGenericComponentType());
+		} else if (annotatedType instanceof AnnotatedWildcardType) {
+			hash ^= annotationHash(((AnnotatedWildcardType) annotatedType)
+					.getAnnotatedLowerBounds())
+					^ annotationHash(((AnnotatedWildcardType) annotatedType)
+							.getAnnotatedUpperBounds());
+		}
+
+		return hash;
+	}
+
+	private static int annotationHash(AnnotatedType[] annotatedTypes) {
+		int hash = annotatedTypes.length;
+		for (int i = 0; i < annotatedTypes.length; i++)
+			hash ^= annotationHash(annotatedTypes[i]);
+		return hash;
+	}
+
+	/**
+	 * A correct equality implementation for annotated types, since the Java
+	 * specification does not require implementors to provide this.
+	 * 
+	 * @param first
+	 *          The first of the two annotated types whose equality we wish to
+	 *          determine.
+	 * @param second
+	 *          The second of the two annotated types whose equality we wish to
+	 *          determine.
+	 * @return True if the two given annotated types are equal, false otherwise.
+	 */
+	public static boolean equals(AnnotatedType first, AnnotatedType second) {
+		if (first == null)
+			return second == null;
+		else if (second == null)
+			return false;
+		else if (!first.getType().equals(second.getType()))
+			return false;
+		else
+			return annotationEquals(first, second);
+	}
+
+	private static boolean annotationEquals(AnnotatedType first,
+			AnnotatedType second) {
+		if (!new HashSet<>(Arrays.asList(first.getAnnotations()))
+				.equals(new HashSet<>(Arrays.asList(second.getAnnotations()))))
+			return false;
+
+		if (first instanceof AnnotatedParameterizedType) {
+			if (second instanceof AnnotatedParameterizedType) {
+				return annotationEquals(
+						((AnnotatedParameterizedType) first)
+								.getAnnotatedActualTypeArguments(),
+						((AnnotatedParameterizedType) second)
+								.getAnnotatedActualTypeArguments());
+			} else
+				return false;
+		} else if (first instanceof AnnotatedArrayType) {
+			if (second instanceof AnnotatedArrayType) {
+				return annotationEquals(
+						((AnnotatedArrayType) first).getAnnotatedGenericComponentType(),
+						((AnnotatedArrayType) second).getAnnotatedGenericComponentType());
+			} else
+				return false;
+		} else if (first instanceof AnnotatedWildcardType) {
+			if (second instanceof AnnotatedWildcardType) {
+				return annotationEquals(
+						((AnnotatedWildcardType) first).getAnnotatedLowerBounds(),
+						((AnnotatedWildcardType) second).getAnnotatedLowerBounds())
+						&& annotationEquals(
+								((AnnotatedWildcardType) first).getAnnotatedUpperBounds(),
+								((AnnotatedWildcardType) second).getAnnotatedUpperBounds());
+			} else
+				return false;
+		} else
+			return true;
+	}
+
+	private static boolean annotationEquals(AnnotatedType[] first,
+			AnnotatedType[] second) {
+		if (first.length != second.length)
+			return false;
+
+		for (int i = 0; i < first.length; i++)
+			if (!annotationEquals(first[i], second[i]))
+				return false;
+
+		return true;
 	}
 
 	private AnnotatedTypes() {}
@@ -156,6 +288,29 @@ public final class AnnotatedTypes {
 			return AnnotatedArrayTypes.over((Class<?>) type, annotations);
 		} else {
 			return new AnnotatedTypeImpl(type, annotations);
+		}
+	}
+
+	/**
+	 * Re-implement the given annotated type with correctly working
+	 * {@link Object#hashCode()} and {@link Object#equals(Object)}
+	 * implementations.
+	 * 
+	 * @param type
+	 *          The annotated type we wish to re-implement.
+	 * @return An {@link AnnotatedType} instance equal to the given annotated
+	 *         type.
+	 */
+	public static AnnotatedType wrap(AnnotatedType type) {
+		if (type instanceof AnnotatedParameterizedType) {
+			return AnnotatedParameterizedTypes
+					.wrap((AnnotatedParameterizedType) type);
+		} else if (type instanceof WildcardType) {
+			return AnnotatedWildcardTypes.wrap((AnnotatedWildcardType) type);
+		} else if (type instanceof GenericArrayType) {
+			return AnnotatedArrayTypes.wrap((AnnotatedArrayType) type);
+		} else {
+			return new AnnotatedTypeImpl(type);
 		}
 	}
 

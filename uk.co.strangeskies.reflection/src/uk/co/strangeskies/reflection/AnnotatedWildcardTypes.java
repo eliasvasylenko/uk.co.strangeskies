@@ -41,6 +41,13 @@ public final class AnnotatedWildcardTypes {
 		private final AnnotatedType[] annotatedUpperBounds;
 		private final AnnotatedType[] annotatedLowerBounds;
 
+		public AnnotatedWildcardTypeImpl(AnnotatedWildcardType annotatedWildcardType) {
+			super(annotatedWildcardType);
+
+			annotatedUpperBounds = annotatedWildcardType.getAnnotatedUpperBounds();
+			annotatedLowerBounds = annotatedWildcardType.getAnnotatedLowerBounds();
+		}
+
 		public AnnotatedWildcardTypeImpl(WildcardType type,
 				Collection<Annotation> annotations) {
 			super(type, annotations);
@@ -76,12 +83,12 @@ public final class AnnotatedWildcardTypes {
 
 		@Override
 		public AnnotatedType[] getAnnotatedUpperBounds() {
-			return annotatedUpperBounds;
+			return annotatedUpperBounds.clone();
 		}
 
 		@Override
 		public AnnotatedType[] getAnnotatedLowerBounds() {
-			return annotatedLowerBounds;
+			return annotatedLowerBounds.clone();
 		}
 
 		@Override
@@ -259,5 +266,17 @@ public final class AnnotatedWildcardTypes {
 	public static AnnotatedWildcardType upperBounded(
 			Collection<? extends AnnotatedType> bounds) {
 		return upperBounded(Collections.emptySet(), bounds);
+	}
+
+	/**
+	 * Wrap an existing annotated wildcard type.
+	 * 
+	 * @param type
+	 *          The type we wish to wrap.
+	 * @return A new instance of {@link AnnotatedWildcardType} which is equal to
+	 *         the given type.
+	 */
+	public static AnnotatedWildcardType wrap(AnnotatedWildcardType type) {
+		return new AnnotatedWildcardTypeImpl(type);
 	}
 }

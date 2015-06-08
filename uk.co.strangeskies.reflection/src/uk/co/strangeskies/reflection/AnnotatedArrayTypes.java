@@ -37,6 +37,13 @@ public final class AnnotatedArrayTypes {
 			implements AnnotatedArrayType {
 		private final AnnotatedType annotatedComponentType;
 
+		public AnnotatedArrayTypeImpl(AnnotatedArrayType annotatedArrayType) {
+			super(annotatedArrayType);
+
+			annotatedComponentType = annotatedArrayType
+					.getAnnotatedGenericComponentType();
+		}
+
 		public AnnotatedArrayTypeImpl(GenericArrayType type,
 				Collection<Annotation> annotations) {
 			super(type, annotations);
@@ -157,5 +164,17 @@ public final class AnnotatedArrayTypes {
 	public static AnnotatedArrayType over(Class<?> arrayType,
 			Collection<Annotation> annotations) {
 		return new AnnotatedArrayTypeImpl(arrayType, annotations);
+	}
+
+	/**
+	 * Wrap an existing annotated array type.
+	 * 
+	 * @param type
+	 *          The type we wish to wrap.
+	 * @return A new instance of {@link AnnotatedArrayType} which is equal to the
+	 *         given type.
+	 */
+	public static AnnotatedArrayType wrap(AnnotatedArrayType type) {
+		return new AnnotatedArrayTypeImpl(type);
 	}
 }
