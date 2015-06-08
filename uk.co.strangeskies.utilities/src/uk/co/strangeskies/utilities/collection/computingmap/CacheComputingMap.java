@@ -20,25 +20,39 @@ package uk.co.strangeskies.utilities.collection.computingmap;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.function.Function;
 
 public class CacheComputingMap<K, V> extends ComputingEntryHashMap<K, V> {
-	protected class KeyedReference extends SoftReference<V> implements
-			Entry<K, V> {
+	protected class KeyedReference extends SoftReference<V> {
 		private final K key;
-		@SuppressWarnings("unused")
-		private final V value;
 
-		protected KeyedReference() {
-			super(null);
-			key = null;
-			value = null;
-		}
-
-		public KeyedReference(K key) {
+		public KeyedReference(K key, V value) {
 			super(computation().apply(key), references);
 			this.key = key;
-			this.value = softReferences ? null : get();
+		}
+
+		public K getKey() {
+			return key;
+		}
+	}
+
+	protected class ReferenceEntry implements Entry<K, V> {
+		private final K key;
+		private final Future<KeyedReference> value;
+
+		protected ReferenceEntry() {
+			key = null;
+			value = CompletableFuture
+					.supplyAsync(() -> new KeyedReference(null, null));
+		}
+
+		public ReferenceEntry(K key) {
+			this.key = key;
+			value = CompletableFuture.supplyAsync(() -> new KeyedReference(key,
+					computation().apply(key)));
 		}
 
 		public K getKey() {
@@ -47,11 +61,16 @@ public class CacheComputingMap<K, V> extends ComputingEntryHashMap<K, V> {
 
 		@Override
 		public V getValue() {
-			return get();
+			try {
+				return value.get().get();
+			} catch (InterruptedException | ExecutionException e) {
+				throw new IllegalArgumentException(e);
+			}
 		}
 
 		@Override
 		public void remove() {
+			value.cancel(true);
 		}
 	}
 
@@ -78,8 +97,8 @@ public class CacheComputingMap<K, V> extends ComputingEntryHashMap<K, V> {
 	}
 
 	@Override
-	protected ComputingEntryHashMap.Entry<K, V> createEntry(K key) {
-		return new KeyedReference(key);
+	protected Entry<K, V> createEntry(K key) {
+		return new ReferenceEntry(key);
 	}
 
 	@Override

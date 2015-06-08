@@ -22,6 +22,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.function.Function;
 
 public class ComputingEntryHashMap<K, V> implements ComputingMap<K, V> {
@@ -33,11 +36,39 @@ public class ComputingEntryHashMap<K, V> implements ComputingMap<K, V> {
 		void remove();
 	}
 
+	protected class DeferredEntry implements Entry<K, V> {
+		private final K key;
+		private V value;
+
+		public DeferredEntry(K key) {
+			this.key = key;
+		}
+
+		public K getKey() {
+			return key;
+		}
+
+		@Override
+		public synchronized V getValue() {
+			return value != null ? value : (value = computation().apply(getKey()));
+		}
+
+		@Override
+		public void remove() {}
+	}
+
+	protected class ComputingEntry extends DeferredEntry {
+		public ComputingEntry(K key) {
+			super(key);
+			new Thread(this::getValue).start();
+		}
+	}
+
 	private final Map<K, Entry<K, V>> map;
 	private final Function<K, V> computation;
 
-	public ComputingEntryHashMap(Function<K, V> computation) {
-		map = new HashMap<>();
+	protected ComputingEntryHashMap(Function<K, V> computation) {
+		this.map = new HashMap<>();
 		this.computation = computation;
 	}
 
@@ -77,22 +108,7 @@ public class ComputingEntryHashMap<K, V> implements ComputingMap<K, V> {
 	}
 
 	protected Entry<K, V> createEntry(K key) {
-		V value = computation.apply(key);
-
-		return new Entry<K, V>() {
-			@Override
-			public K getKey() {
-				return key;
-			}
-
-			@Override
-			public V getValue() {
-				return value;
-			}
-
-			@Override
-			public void remove() {}
-		};
+		return new ComputingEntry(key);
 	}
 
 	protected Function<K, V> computation() {

@@ -25,7 +25,7 @@ import java.util.function.Function;
 import uk.co.strangeskies.utilities.IdentityProperty;
 
 public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
-	protected class LinkedEntry extends KeyedReference {
+	protected class LinkedEntry extends ReferenceEntry {
 		private LinkedEntry previous;
 		private LinkedEntry next;
 
