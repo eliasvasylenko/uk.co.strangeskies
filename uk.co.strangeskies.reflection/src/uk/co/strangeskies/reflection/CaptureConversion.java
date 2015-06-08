@@ -152,7 +152,7 @@ public class CaptureConversion {
 	public CaptureConversion withInferenceVariableSubstitution(
 			Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions) {
 		ParameterizedType newType = (ParameterizedType) new TypeSubstitution(
-				inferenceVariableSubstitutions::get).resolve(getOriginalType());
+				inferenceVariableSubstitutions).resolve(getOriginalType());
 
 		Map<TypeVariable<?>, InferenceVariable> newCaptures = ParameterizedTypes
 				.getAllTypeArguments(getCaptureType())

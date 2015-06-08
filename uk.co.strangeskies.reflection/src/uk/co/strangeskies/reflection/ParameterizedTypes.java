@@ -460,8 +460,7 @@ public class ParameterizedTypes {
 
 			if (type instanceof ParameterizedType)
 				type = new TypeSubstitution(
-						getAllTypeArguments((ParameterizedType) type)::get)
-						.resolve(subtype);
+						getAllTypeArguments((ParameterizedType) type)).resolve(subtype);
 			else
 				type = subtype;
 
@@ -511,9 +510,9 @@ public class ParameterizedTypes {
 			}
 		}
 
-		Type supertype = new TypeSubstitution(substitutedArguments::get)
-				.resolve(from(rawType, parameterSubstitutes::get)
-						.resolveSubtypeParameters(subclass).getType());
+		Type supertype = new TypeSubstitution(substitutedArguments).resolve(from(
+				rawType, parameterSubstitutes::get).resolveSubtypeParameters(subclass)
+				.getType());
 
 		return supertype;
 	}

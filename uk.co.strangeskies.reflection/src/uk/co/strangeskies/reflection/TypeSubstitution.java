@@ -29,6 +29,7 @@ import java.util.Objects;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.utilities.IdentityComparator;
@@ -44,19 +45,23 @@ import uk.co.strangeskies.utilities.IdentityProperty;
  */
 public class TypeSubstitution {
 	private final Function<? super Type, ? extends Type> mapping;
+	private final Supplier<Boolean> empty;
 
 	/**
 	 * Create a new TypeSubstitution with no initial substitution rules.
 	 */
 	public TypeSubstitution() {
 		mapping = t -> null;
+		empty = () -> true;
 	}
 
 	/**
 	 * Create a new TypeSubstitution to apply the given mapping function.
-	 * Typically we might create an instance from a {@link Map} of Type instances
-	 * to other Type instances by passing the method reference of
-	 * {@link Map#get(Object)} for that map to this constructor.
+	 * Typically we do something like create an instance from a {@link Map} of
+	 * Type instances to other Type instances, then pass the method reference of
+	 * {@link Map#get(Object)} for that map to this constructor. For this specific
+	 * example use case though, {@link #TypeSubstitution(Map)} would perform
+	 * slightly better.
 	 * 
 	 * @param mapping
 	 *          A mapping function for transforming encountered types to their
@@ -64,6 +69,21 @@ public class TypeSubstitution {
 	 */
 	public TypeSubstitution(Function<? super Type, ? extends Type> mapping) {
 		this.mapping = mapping;
+		empty = () -> false;
+	}
+
+	/**
+	 * Create a new TypeSubstitution to apply the given mapping. This is more
+	 * efficient than the more general {@link #TypeSubstitution(Function)}
+	 * constructor, as it can skip type traversal for empty maps.
+	 * 
+	 * @param mapping
+	 *          A mapping function for transforming encountered types to their
+	 *          substitution types.
+	 */
+	public TypeSubstitution(Map<?, ? extends Type> mapping) {
+		this.mapping = mapping::get;
+		empty = mapping::isEmpty;
 	}
 
 	/**
@@ -106,25 +126,15 @@ public class TypeSubstitution {
 	 * 
 	 * @param type
 	 *          The type for which we want to make a substitution.
-	 * @return The result of application of this substitution. The result
-	 *         <em>is</em> guaranteed to be well formed with respect to bounds,
-	 *         otherwise an exception will be thrown.
-	 */
-	public TypeToken<?> resolve(TypeToken<?> type) {
-		return TypeToken.over(resolve(type.getType()));
-	}
-
-	/**
-	 * Resolve the result of this substitution as applied to the given type.
-	 * 
-	 * @param type
-	 *          The type for which we want to make a substitution.
 	 * @return The result of application of this substitution. The result is
 	 *         <em>not</em> guaranteed to be well formed with respect to bounds.
 	 */
 	public Type resolve(Type type) {
-		return resolve(type, new TreeMap<>(
-				new IdentityComparator<ParameterizedType>()));
+		if (empty.get())
+			return type;
+		else
+			return resolve(type, new TreeMap<>(
+					new IdentityComparator<ParameterizedType>()));
 	}
 
 	private Type resolve(Type type,

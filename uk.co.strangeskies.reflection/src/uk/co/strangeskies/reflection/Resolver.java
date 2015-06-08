@@ -227,7 +227,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 		for (InferenceVariable variable : captures.values())
 			bounds.addInferenceVariable(variable);
 
-		TypeSubstitution substitution = new TypeSubstitution(existingCaptures::get);
+		TypeSubstitution substitution = new TypeSubstitution(existingCaptures);
 		for (TypeVariable<?> variable : captures.keySet())
 			bounds.incorporate().subtype(
 					captures.get(variable),
@@ -573,6 +573,14 @@ public class Resolver implements DeepCopyable<Resolver> {
 		return type;
 	}
 
+	private Type resubstituteCapturedWildcards(Type type) {
+		if (wildcardCaptures.isEmpty())
+			return type;
+		else
+			return new TypeSubstitution().where(wildcardCaptures::contains,
+					t -> ((TypeVariableCapture) t).getCapturedType()).resolve(type);
+	}
+
 	/**
 	 * Incorporate an instantiation for a type variable. In other words, find the
 	 * {@link InferenceVariable} registered for the given {@link TypeVariable}
@@ -660,7 +668,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 */
 	public Type infer(Type type) {
 		return new TypeSubstitution(infer(getBounds()
-				.getInferenceVariablesMentionedBy(type))::get).resolve(type);
+				.getInferenceVariablesMentionedBy(type))).resolve(type);
 	}
 
 	/**

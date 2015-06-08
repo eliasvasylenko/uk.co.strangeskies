@@ -327,7 +327,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 		Pair<Resolver, Type> resolvedType = RESOLVER_CACHE_2.putGet(annotatedType);
 		HashMap<InferenceVariable, InferenceVariable> map = new HashMap<>();
 		return new Pair<>(resolvedType.getLeft().deepCopy(map),
-				new TypeSubstitution(map::get).resolve(resolvedType.getRight()));
+				new TypeSubstitution(map).resolve(resolvedType.getRight()));
 	}
 
 	private static Type substituteAnnotatedWildcards(AnnotatedType annotatedType,
@@ -504,7 +504,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 				inferenceVariableSubstitutions);
 
 		return new TypeToken<T>(resolver, new TypeSubstitution(
-				inferenceVariableSubstitutions::get).resolve(type));
+				inferenceVariableSubstitutions).resolve(type));
 	}
 
 	/**

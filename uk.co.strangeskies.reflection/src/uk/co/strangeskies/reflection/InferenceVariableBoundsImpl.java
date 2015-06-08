@@ -84,7 +84,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				boundSet, aSubstitution);
 
 		copy.addBoundsWithTypeSubstitution(this, new TypeSubstitution(
-				inferenceVariableSubstitutions::get));
+				inferenceVariableSubstitutions));
 
 		return copy;
 	}
@@ -107,6 +107,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				.map(InferenceVariable.class::cast).forEach(externalDependencies::add);
 	}
 
+	@Override
 	public CaptureConversion getCaptureConversion() {
 		return capture;
 	}

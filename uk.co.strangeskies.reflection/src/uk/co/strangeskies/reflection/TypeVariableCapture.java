@@ -137,7 +137,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	}
 
 	static void substituteBounds(Map<? extends Type, ? extends Type> captures) {
-		TypeSubstitution substitution = new TypeSubstitution(captures::get);
+		TypeSubstitution substitution = new TypeSubstitution(captures);
 
 		for (Type type : captures.keySet()) {
 			if (captures.get(type) instanceof TypeVariableCapture) {
