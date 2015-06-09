@@ -289,9 +289,16 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	private static TypeVariableCapture captureWildcard(
 			GenericDeclaration declaration, TypeVariable<?> typeVariable,
 			WildcardType type) {
-		Type upperBound = IntersectionType.from(
-				IntersectionType.uncheckedFrom(typeVariable.getBounds()),
-				IntersectionType.uncheckedFrom(type.getUpperBounds()));
+		IntersectionType upperBoundA = IntersectionType.uncheckedFrom(typeVariable
+				.getBounds());
+		IntersectionType upperBoundB = IntersectionType.uncheckedFrom(type
+				.getUpperBounds());
+		Type upperBound;
+		try {
+			upperBound = IntersectionType.uncheckedFrom(upperBoundA, upperBoundB);
+		} catch (TypeException e) {
+			upperBound = IntersectionType.from(upperBoundA, upperBoundB);
+		}
 
 		Type[] upperBounds;
 		if (upperBound instanceof IntersectionType)

@@ -212,6 +212,10 @@ public class TestTypeLiteral {
 		System.out.println();
 		System.out.println();
 
+		System.out.println(new TypeToken<List<? extends String>>() {}
+				.resolveSupertypeParameters(Iterable.class));
+		System.out.println();
+
 		TypeToken<?> receiver = new TypeToken<BindingState>() {};
 		System.out.println("RESOLVE 1:");
 		System.out

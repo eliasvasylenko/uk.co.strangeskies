@@ -1508,4 +1508,10 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	public AnnotatedType getAnnotatedDeclaration() {
 		return declaration;
 	}
+
+	public void incorporateInto(Resolver resolver) {
+		resolver.getBounds().incorporate(getResolver().getBounds(),
+				getInferenceVariablesMentioned());
+		resolver.incorporateType(getType());
+	}
 }

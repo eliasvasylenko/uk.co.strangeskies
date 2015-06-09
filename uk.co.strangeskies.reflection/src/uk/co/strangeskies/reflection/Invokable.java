@@ -112,11 +112,9 @@ public class Invokable<T, R> {
 			this.receiverType = (TypeToken<T>) TypeToken.over(receiverType
 					.getRawType());
 		else {
-			TypeToken<?> superType = receiverType
-					.resolveSupertypeParameters(executable.getDeclaringClass());
-			resolver.getBounds().incorporate(superType.getResolver().getBounds(),
-					superType.getInferenceVariablesMentioned());
-			resolver.incorporateType(superType.getType());
+			receiverType.resolveSupertypeParameters(executable.getDeclaringClass())
+					.incorporateInto(resolver);
+
 			receiverType = receiverType.withBounds(resolver.getBounds()).resolve();
 			this.receiverType = receiverType;
 		}

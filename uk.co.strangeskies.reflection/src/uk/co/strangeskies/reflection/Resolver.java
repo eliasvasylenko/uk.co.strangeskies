@@ -930,6 +930,63 @@ public class Resolver implements DeepCopyable<Resolver> {
 	public Type resolveType(Type type) {
 		return new TypeSubstitution(t -> {
 			if (t instanceof InferenceVariable)
+				t = resolveInferenceVariable((InferenceVariable) t);
+			else if (t instanceof TypeVariable)
+				t = resolveTypeVariable((TypeVariable<?>) t);
+			else
+				return null;
+
+			if (wildcardCaptures.contains(t))
+				return ((TypeVariableCapture) t).getCapturedType();
+			else
+				return t;
+		}).resolve(type);
+	}
+
+	/**
+	 * Derive a new type from the type given, with any mentioned instances of
+	 * {@link InferenceVariable} and {@link TypeVariable} substituted with their
+	 * proper instantiations where available, as per
+	 * {@link #resolveInferenceVariable(InferenceVariable)} and
+	 * {@link #resolveTypeVariable(GenericDeclaration, TypeVariable)}
+	 * respectively.
+	 * 
+	 * @param declaration
+	 *          The generic declaration whose context will provide
+	 * @param type
+	 *          The type we wish to resolve.
+	 * @return The resolved type.
+	 */
+	public Type resolveType(GenericDeclaration declaration, Type type) {
+		return new TypeSubstitution(t -> {
+			if (t instanceof InferenceVariable)
+				t = resolveInferenceVariable((InferenceVariable) t);
+			else if (t instanceof TypeVariable)
+				t = resolveTypeVariable(declaration, (TypeVariable<?>) t);
+			else
+				return null;
+
+			if (wildcardCaptures.contains(t))
+				return ((TypeVariableCapture) t).getCapturedType();
+			else
+				return t;
+		}).resolve(type);
+	}
+
+	/**
+	 * Derive a new type from the type given, with any mentioned instances of
+	 * {@link InferenceVariable} and {@link TypeVariable} substituted with their
+	 * proper instantiations where available, as per
+	 * {@link #resolveInferenceVariable(InferenceVariable)} and
+	 * {@link #resolveTypeVariable(TypeVariable)} respectively.
+	 * 
+	 * @param type
+	 *          The type we wish to resolve.
+	 * @return The resolved type.
+	 */
+	public Type resolveInternalType(Type type) {
+		return new TypeSubstitution(t -> {
+			if (t instanceof InferenceVariable)
 				return resolveInferenceVariable((InferenceVariable) t);
 			else if (t instanceof TypeVariableCapture)
 				return t;
@@ -954,7 +1011,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 *          The type we wish to resolve.
 	 * @return The resolved type.
 	 */
-	public Type resolveType(GenericDeclaration declaration, Type type) {
+	public Type resolveInternalType(GenericDeclaration declaration, Type type) {
 		return new TypeSubstitution(t -> {
 			if (t instanceof InferenceVariable)
 				return resolveInferenceVariable((InferenceVariable) t);
