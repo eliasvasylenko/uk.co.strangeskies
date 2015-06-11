@@ -46,6 +46,7 @@ import uk.co.strangeskies.reflection.TypeToken.Capture;
 import uk.co.strangeskies.reflection.TypeToken.Infer;
 import uk.co.strangeskies.reflection.TypeToken.Preserve;
 import uk.co.strangeskies.reflection.TypeToken.Wildcards;
+import uk.co.strangeskies.reflection.Types;
 import uk.co.strangeskies.utilities.Self;
 
 /**
@@ -542,11 +543,8 @@ public class TestTypeLiteral {
 		System.out.println(new TypeToken<List<? extends @Infer Set<?>>>() {});
 		System.out.println();
 
-		System.out.println(ParameterizedTypes.from(C1.class,
-				new TypeToken<C2<?>>() {}.getType()));
-		System.out.println();
-
-		System.out.println(new TypeToken<C1<C2<?>>>() {}.getResolver().getBounds());
+		System.out.println(new TypeToken<C1<C2<String>>>() {}
+				.isAssignableFrom(new TypeToken<C2<String>>() {}));
 		System.out.println();
 
 		System.out
@@ -557,20 +555,10 @@ public class TestTypeLiteral {
 		System.out.println(new TypeToken<@Infer TreeSet<? extends C2<?>>>() {});
 		System.out.println();
 
-		System.out.println(ParameterizedTypes.from(C5.class,
-				new TypeToken<C4<?, ?>>() {}.getType()).resolveSupertypeParameters(
-				C5.class));
-		System.out.println();
-
-		System.out.println(ParameterizedTypes.from(C5.class,
-				new TypeToken<C6<?, ?>>() {}.getType()).resolveSupertypeParameters(
-				C5.class));
+		System.out.println(new TypeToken<C1<? extends C2<String>>>() {});
 		System.out.println();
 
 		System.out.println(new TypeToken<C1<? extends C2<?>>>() {});
-		System.out.println();
-
-		System.out.println(new TypeToken<C1<? extends C2<String>>>() {});
 		System.out.println();
 	}
 
@@ -585,6 +573,8 @@ public class TestTypeLiteral {
 	static class C1<T extends C1<T>> {}
 
 	static class C2<U> extends C1<C2<U>> {}
+
+	static class C22<U> extends C1<C22<U>> {}
 
 	static class C3<T extends C3<?>> {}
 

@@ -198,12 +198,15 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 		TypeVariable<?>[] parameters = new TypeVariable<?>[arguments.size()];
 		GenericDeclaration declaration = createGenericDeclarationOver(parameters);
 
+		boolean containsWildcards = false;
+
 		int i = 0;
 		for (TypeVariable<?> parameter : arguments.keySet()) {
 			Type argument = arguments.get(parameter);
 			Type capture;
 
 			if (argument instanceof WildcardType) {
+				containsWildcards = true;
 				capture = captureWildcard(declaration, parameter,
 						(WildcardType) argument, false);
 			} else
@@ -213,7 +216,8 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 			captures.put(parameter, capture);
 		}
 
-		substituteBounds(captures);
+		if (containsWildcards)
+			substituteBounds(captures);
 
 		ParameterizedType capture = (ParameterizedType) ParameterizedTypes
 				.uncheckedFrom(Types.getRawType(type), captures::get);

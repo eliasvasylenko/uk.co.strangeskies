@@ -488,6 +488,13 @@ public final class Types {
 			HashSet<Assignment> assignsEncountered) {
 		Assignment assignment = new Assignment(from, to);
 
+		if (from instanceof IntersectionType
+				&& ((IntersectionType) from).getTypes().length == 1)
+			from = ((IntersectionType) from).getTypes()[0];
+		if (to instanceof IntersectionType
+				&& ((IntersectionType) to).getTypes().length == 1)
+			to = ((IntersectionType) to).getTypes()[0];
+
 		if (!assignsEncountered.add(assignment))
 			return true;
 
@@ -506,8 +513,9 @@ public final class Types {
 			 */
 			Type[] types = ((IntersectionType) to).getTypes();
 
+			Type fromFinal = from; // shouldn't be necessary, eclipse.
 			assignable = Arrays.stream(types).allMatch(
-					t -> isAssignable(from, t, assignsEncountered));
+					t -> isAssignable(fromFinal, t, assignsEncountered));
 		} else if (from instanceof IntersectionType) {
 			/*
 			 * We must be able to assign from at least one member of the intersection
@@ -515,9 +523,10 @@ public final class Types {
 			 */
 			Type[] types = ((IntersectionType) from).getTypes();
 
+			Type toFinal = to;
 			assignable = types.length == 0
 					|| Arrays.stream(types).anyMatch(
-							f -> isAssignable(f, to, assignsEncountered));
+							f -> isAssignable(f, toFinal, assignsEncountered));
 		} else if (from instanceof WildcardType) {
 			/*
 			 * We must be able to assign from at least one of the upper bounds,
@@ -606,7 +615,9 @@ public final class Types {
 				assignable = false;
 			} else {
 				Type fromParameterization = ParameterizedTypes
-						.resolveSupertypeParameters(from, matchedClass);
+						.resolveSupertypeParameters(TypeVariableCapture
+								.captureWildcardArguments((ParameterizedType) from),
+								matchedClass);
 				if (!(fromParameterization instanceof ParameterizedType))
 					assignable = false;
 				else {
