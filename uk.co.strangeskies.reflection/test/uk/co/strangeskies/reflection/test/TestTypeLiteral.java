@@ -37,8 +37,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 
-import org.testng.annotations.NoInjection;
-
 import uk.co.strangeskies.reflection.InferenceVariable;
 import uk.co.strangeskies.reflection.Invokable;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
@@ -171,11 +169,11 @@ public class TestTypeLiteral {
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeToken.over(new TypeToken<I2<?>>() {}.getType()));
+		System.out.println(TypeToken.over(new TypeToken<C2<?>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeToken.over(new TypeToken<I1<?>>() {}.getType()));
+		System.out.println(TypeToken.over(new TypeToken<C1<?>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 
@@ -190,10 +188,10 @@ public class TestTypeLiteral {
 		System.out.println();
 
 		System.out.println("TYPELITTEST: " + new TT<String>() {});
-		System.out.println("TYPELITTEST-2: " + new Y<String>() {});
+		System.out.println("TYPELITTEST-2: " + new YY<String>() {});
 		System.out.println("TYPELITTEST-3: " + new G() {});
 		System.out.println("TYPELITTEST-4: "
-				+ new Y<Integer>() {}.resolveSupertypeParameters(Collection.class));
+				+ new YY<Integer>() {}.resolveSupertypeParameters(Collection.class));
 		System.out.println();
 		System.out.println();
 
@@ -202,7 +200,7 @@ public class TestTypeLiteral {
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeToken.over(new TypeToken<I1<? extends I1<?>>>() {}
+		System.out.println(TypeToken.over(new TypeToken<C1<? extends C1<?>>>() {}
 				.getType()));
 		System.out.println();
 		System.out.println();
@@ -251,7 +249,7 @@ public class TestTypeLiteral {
 		System.out.println();
 	}
 
-	static <H extends I2<H>> void test2() {
+	static <H extends C2<H>> void test2() {
 		System.out
 				.println("<T extends Number, U extends List<? super T>> U method4(Collection<? extends T> a, U b)");
 		System.out
@@ -544,24 +542,36 @@ public class TestTypeLiteral {
 		System.out.println(new TypeToken<List<? extends @Infer Set<?>>>() {});
 		System.out.println();
 
-		// System.out.println(new TypeToken<I1<I2<?>>>() {}.getResolver().getBounds());
-		// System.out.println();
+		System.out.println(ParameterizedTypes.from(C1.class,
+				new TypeToken<C2<?>>() {}.getType()));
+		System.out.println();
+
+		System.out.println(new TypeToken<C1<C2<?>>>() {}.getResolver().getBounds());
+		System.out.println();
 
 		System.out
 				.println(new TypeToken<@Test List<@Test2 ? extends @Preserve Number> @Capture [] @Infer []>() {}
 						.getAnnotatedDeclaration());
 		System.out.println();
 
-		System.out.println(new TypeToken<@Infer TreeSet<? extends I2<?>>>() {});
+		System.out.println(new TypeToken<@Infer TreeSet<? extends C2<?>>>() {});
 		System.out.println();
 
-		System.out.println(new TypeToken<I1<? extends I2<?>>>() {});
+		System.out.println(ParameterizedTypes.from(C5.class,
+				new TypeToken<C4<?, ?>>() {}.getType()).resolveSupertypeParameters(
+				C5.class));
 		System.out.println();
 
-		System.out.println(new TypeToken<I1<? extends I2<String>>>() {});
+		System.out.println(ParameterizedTypes.from(C5.class,
+				new TypeToken<C6<?, ?>>() {}.getType()).resolveSupertypeParameters(
+				C5.class));
 		System.out.println();
 
-		I1<I2<String>> a;
+		System.out.println(new TypeToken<C1<? extends C2<?>>>() {});
+		System.out.println();
+
+		System.out.println(new TypeToken<C1<? extends C2<String>>>() {});
+		System.out.println();
 	}
 
 	@Retention(RetentionPolicy.RUNTIME)
@@ -572,9 +582,17 @@ public class TestTypeLiteral {
 	@Target(ElementType.TYPE_USE)
 	@interface Test {};
 
-	static class I1<T extends I1<T>> {}
+	static class C1<T extends C1<T>> {}
 
-	static class I2<T> extends I1<I2<T>> {}
+	static class C2<U> extends C1<C2<U>> {}
+
+	static class C3<T extends C3<?>> {}
+
+	static class C4<V, W> extends C3<C4<V, W>> {}
+
+	static class C5<X extends C3<X>> {}
+
+	static class C6<Y, Z> extends C3<C6<Z, Y>> {}
 
 	private static <U> TypeToken<Iterable<? extends U>> getIteratorExtending(
 			TypeToken<U> type) {
@@ -610,9 +628,9 @@ public class TestTypeLiteral {
 
 class TT<TTT> extends TypeToken<TTT> {}
 
-class Y<YT> extends TT<Set<YT>> {}
+class YY<YT> extends TT<Set<YT>> {}
 
-class G extends Y<List<String>> {}
+class G extends YY<List<String>> {}
 
 class Outer<T> {
 	public class Inner<N extends T, J extends Collection<? extends T>, P> {}
