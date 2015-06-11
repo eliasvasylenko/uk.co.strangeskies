@@ -50,7 +50,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 
 	private final Type source;
 
-	private final Type[] upperBounds;
+	private Type[] upperBounds;
 	private final Type[] lowerBounds;
 
 	private final GenericDeclaration declaration;
@@ -145,6 +145,11 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 
 				for (int i = 0; i < capture.upperBounds.length; i++)
 					capture.upperBounds[i] = substitution.resolve(capture.upperBounds[i]);
+				Type upperBound = Types.greatestLowerBound(capture.upperBounds);
+				if (upperBound instanceof IntersectionType)
+					capture.upperBounds = ((IntersectionType) upperBound).getTypes();
+				else
+					capture.upperBounds = new Type[] { upperBound };
 
 				for (int i = 0; i < capture.lowerBounds.length; i++)
 					capture.lowerBounds[i] = substitution.resolve(capture.lowerBounds[i]);
@@ -200,7 +205,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 
 			if (argument instanceof WildcardType) {
 				capture = captureWildcard(declaration, parameter,
-						(WildcardType) argument);
+						(WildcardType) argument, false);
 			} else
 				capture = argument;
 
@@ -230,7 +235,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	public static TypeVariableCapture captureWildcard(
 			TypeVariable<?> typeVariable, WildcardType type) {
 		return captureWildcard(createGenericDeclarationOver(typeVariable),
-				typeVariable, type);
+				typeVariable, type, true);
 	}
 
 	/**
@@ -283,22 +288,21 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 
 		genericDeclaration.set(createGenericDeclarationOver(typeVariable));
 
-		return captureWildcard(genericDeclaration.get(), typeVariable, type);
+		return captureWildcard(genericDeclaration.get(), typeVariable, type, true);
 	}
 
 	private static TypeVariableCapture captureWildcard(
 			GenericDeclaration declaration, TypeVariable<?> typeVariable,
-			WildcardType type) {
-		IntersectionType upperBoundA = IntersectionType.uncheckedFrom(typeVariable
-				.getBounds());
-		IntersectionType upperBoundB = IntersectionType.uncheckedFrom(type
-				.getUpperBounds());
+			WildcardType type, boolean validate) {
 		Type upperBound;
-		try {
-			upperBound = IntersectionType.uncheckedFrom(upperBoundA, upperBoundB);
-		} catch (TypeException e) {
-			upperBound = IntersectionType.from(upperBoundA, upperBoundB);
-		}
+		if (validate)
+			upperBound = IntersectionType.from(
+					IntersectionType.uncheckedFrom(typeVariable.getBounds()),
+					IntersectionType.uncheckedFrom(type.getUpperBounds()));
+		else
+			upperBound = IntersectionType.uncheckedFrom(
+					IntersectionType.uncheckedFrom(typeVariable.getBounds()),
+					IntersectionType.uncheckedFrom(type.getUpperBounds()));
 
 		Type[] upperBounds;
 		if (upperBound instanceof IntersectionType)
@@ -306,8 +310,13 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 		else
 			upperBounds = new Type[] { upperBound };
 
-		return new TypeVariableCapture(upperBounds, type.getLowerBounds(), type,
-				declaration);
+		TypeVariableCapture capture = new TypeVariableCapture(upperBounds,
+				type.getLowerBounds(), type, declaration);
+
+		if (validate)
+			capture.validate();
+
+		return capture;
 	}
 
 	/**

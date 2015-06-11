@@ -95,6 +95,30 @@ public final class AnnotatedTypes {
 		public int hashCode() {
 			return AnnotatedTypes.hashCode(this);
 		}
+
+		@Override
+		public String toString() {
+			return new StringBuilder().append(annotationString(annotations.values()))
+					.append(type.toString()).toString();
+		}
+
+		protected static String annotationString(Annotation... annotations) {
+			return annotationString(Arrays.asList(annotations));
+		}
+
+		protected static String annotationString(
+				Collection<? extends Annotation> annotations) {
+			if (!annotations.isEmpty()) {
+				StringBuilder builder = new StringBuilder();
+
+				for (Annotation annotation : annotations)
+					builder.append(annotation).append(" ");
+
+				return builder.toString();
+			} else {
+				return "";
+			}
+		}
 	}
 
 	/**
@@ -305,9 +329,9 @@ public final class AnnotatedTypes {
 		if (type instanceof AnnotatedParameterizedType) {
 			return AnnotatedParameterizedTypes
 					.wrap((AnnotatedParameterizedType) type);
-		} else if (type instanceof WildcardType) {
+		} else if (type instanceof AnnotatedWildcardType) {
 			return AnnotatedWildcardTypes.wrap((AnnotatedWildcardType) type);
-		} else if (type instanceof GenericArrayType) {
+		} else if (type instanceof AnnotatedArrayType) {
 			return AnnotatedArrayTypes.wrap((AnnotatedArrayType) type);
 		} else {
 			return new AnnotatedTypeImpl(type);
@@ -319,13 +343,12 @@ public final class AnnotatedTypes {
 	 * intended to be more easily human-readable than implementations of
 	 * {@link Object#toString()} for certain implementations of {@link Type}.
 	 * 
-	 * @param type
+	 * @param annotatedType
 	 *          The type of which we wish to determine a string representation.
 	 * @return A canonical string representation of the given type.
 	 */
-	public static String toString(AnnotatedType type) {
-		// TODO
-		return null;
+	public static String toString(AnnotatedType annotatedType) {
+		return wrap(annotatedType).toString();
 	}
 
 	/**

@@ -275,10 +275,14 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 * {@link #inferOverWildcardType(WildcardType)}.</li>
 	 * </ul>
 	 * 
-	 * @param types
+	 * @param type
 	 *          The type we wish to incorporate.
+	 * @return The new internal representation of the given type, which may
+	 *         substitute type variable captures in place of wildcards.
 	 */
-	public void incorporateType(Type types) {
+	public Type incorporateType(Type type) {
+		IdentityProperty<Type> result = new IdentityProperty<>(type);
+
 		new TypeVisitor() {
 			@Override
 			protected void visitClass(Class<?> t) {
@@ -287,7 +291,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 
 			@Override
 			protected void visitParameterizedType(ParameterizedType type) {
-				captureTypeArguments(type);
+				result.set(captureTypeArguments(type));
 			}
 
 			@Override
@@ -307,7 +311,9 @@ public class Resolver implements DeepCopyable<Resolver> {
 			protected void visitWildcardType(WildcardType type) {
 				inferOverWildcardType(type);
 			}
-		}.visit(types);
+		}.visit(type);
+
+		return result.get();
 	}
 
 	/**
@@ -1043,6 +1049,24 @@ public class Resolver implements DeepCopyable<Resolver> {
 	}
 
 	/**
+	 * Resolve the type parameters registered under the given class, and derive a
+	 * parameterized type using these parameters if appropriate. If the given
+	 * class is not generic, it is returned unchanged.
+	 * 
+	 * @param type
+	 *          The type whose parameterization we wish to determine within the
+	 *          context of this {@link Resolver}.
+	 * @return A parameterized type over the given type, according to the
+	 *         inference variables and parameters registered in this resolver, or
+	 *         the given type if it is not generic.
+	 */
+	public Type resolveInternalTypeParameters(Class<?> type) {
+		incorporateTypeParameters(type);
+		return resolveInternalType(ParameterizedTypes.uncheckedFrom(type,
+				getInferenceVariables(type)::get));
+	}
+
+	/**
 	 * Resolve the proper instantiation of a given {@link TypeVariable} if one
 	 * exists. The type variable will be resolved to an {@link InferenceVariable}
 	 * with respect to the context provided by its declaring class.
@@ -1073,7 +1097,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 */
 	public Type resolveTypeVariable(GenericDeclaration declaration,
 			TypeVariable<?> typeVariable) {
-		incorporateTypeParameters(declaration);
+		if (!capturedTypeVariables.containsKey(declaration))
+			return typeVariable;
 
 		InferenceVariable inferenceVariable = capturedTypeVariables
 				.get(declaration).get(typeVariable);

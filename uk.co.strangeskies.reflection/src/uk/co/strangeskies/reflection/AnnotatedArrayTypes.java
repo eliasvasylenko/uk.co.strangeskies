@@ -70,6 +70,21 @@ public final class AnnotatedArrayTypes {
 		public AnnotatedType getAnnotatedGenericComponentType() {
 			return annotatedComponentType;
 		}
+
+		@Override
+		public String toString() {
+			StringBuilder builder = new StringBuilder();
+
+			AnnotatedType type = this;
+			do {
+				builder.append(" ").append(annotationString(type.getAnnotations()))
+						.append("[]");
+
+				type = ((AnnotatedArrayType) type).getAnnotatedGenericComponentType();
+			} while (type instanceof AnnotatedArrayType);
+
+			return builder.insert(0, AnnotatedTypes.wrap(type)).toString();
+		}
 	}
 
 	private AnnotatedArrayTypes() {}

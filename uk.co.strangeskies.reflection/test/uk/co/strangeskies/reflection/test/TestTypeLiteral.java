@@ -19,6 +19,10 @@
 package uk.co.strangeskies.reflection.test;
 
 import java.io.Serializable;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.Type;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -30,14 +34,19 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Stream;
+
+import org.testng.annotations.NoInjection;
 
 import uk.co.strangeskies.reflection.InferenceVariable;
 import uk.co.strangeskies.reflection.Invokable;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.TypeParameter;
 import uk.co.strangeskies.reflection.TypeToken;
+import uk.co.strangeskies.reflection.TypeToken.Capture;
 import uk.co.strangeskies.reflection.TypeToken.Infer;
+import uk.co.strangeskies.reflection.TypeToken.Preserve;
 import uk.co.strangeskies.reflection.TypeToken.Wildcards;
 import uk.co.strangeskies.utilities.Self;
 
@@ -95,10 +104,6 @@ public class TestTypeLiteral {
 			return null;
 		}
 	}
-
-	static class Nest2<T extends Nest2<T>> {}
-
-	static class Nest22<T> extends Nest2<Nest22<T>> {}
 
 	@SuppressWarnings("javadoc")
 	public static void main(String... args) {
@@ -166,11 +171,11 @@ public class TestTypeLiteral {
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeToken.over(new TypeToken<Nest22<?>>() {}.getType()));
+		System.out.println(TypeToken.over(new TypeToken<I2<?>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeToken.over(new TypeToken<Nest2<?>>() {}.getType()));
+		System.out.println(TypeToken.over(new TypeToken<I1<?>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 
@@ -197,8 +202,8 @@ public class TestTypeLiteral {
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeToken
-				.over(new TypeToken<Nest2<? extends Nest2<?>>>() {}.getType()));
+		System.out.println(TypeToken.over(new TypeToken<I1<? extends I1<?>>>() {}
+				.getType()));
 		System.out.println();
 		System.out.println();
 
@@ -210,10 +215,6 @@ public class TestTypeLiteral {
 		System.out.println(new TypeToken<Gurn<Integer>>() {}.getMethods()
 				.iterator().next().infer());
 		System.out.println();
-		System.out.println();
-
-		System.out.println(new TypeToken<List<? extends String>>() {}
-				.resolveSupertypeParameters(Iterable.class));
 		System.out.println();
 
 		TypeToken<?> receiver = new TypeToken<BindingState>() {};
@@ -250,7 +251,7 @@ public class TestTypeLiteral {
 		System.out.println();
 	}
 
-	static <H extends Nest22<H>> void test2() {
+	static <H extends I2<H>> void test2() {
 		System.out
 				.println("<T extends Number, U extends List<? super T>> U method4(Collection<? extends T> a, U b)");
 		System.out
@@ -540,10 +541,40 @@ public class TestTypeLiteral {
 				tttt.resolveSupertypeParameters(Iterable.class).getType()));
 		System.out.println();
 
-		System.out.println(new TypeToken<Nest2<? extends Nest22<?>>>() {});
+		System.out.println(new TypeToken<List<? extends @Infer Set<?>>>() {});
 		System.out.println();
+
+		// System.out.println(new TypeToken<I1<I2<?>>>() {}.getResolver().getBounds());
+		// System.out.println();
+
+		System.out
+				.println(new TypeToken<@Test List<@Test2 ? extends @Preserve Number> @Capture [] @Infer []>() {}
+						.getAnnotatedDeclaration());
 		System.out.println();
+
+		System.out.println(new TypeToken<@Infer TreeSet<? extends I2<?>>>() {});
+		System.out.println();
+
+		System.out.println(new TypeToken<I1<? extends I2<?>>>() {});
+		System.out.println();
+
+		System.out.println(new TypeToken<I1<? extends I2<String>>>() {});
+		System.out.println();
+
+		I1<I2<String>> a;
 	}
+
+	@Retention(RetentionPolicy.RUNTIME)
+	@Target(ElementType.TYPE_USE)
+	@interface Test2 {};
+
+	@Retention(RetentionPolicy.RUNTIME)
+	@Target(ElementType.TYPE_USE)
+	@interface Test {};
+
+	static class I1<T extends I1<T>> {}
+
+	static class I2<T> extends I1<I2<T>> {}
 
 	private static <U> TypeToken<Iterable<? extends U>> getIteratorExtending(
 			TypeToken<U> type) {
@@ -672,10 +703,6 @@ interface Gurn<X> extends Blurn<List<X>> {
 	@Override
 	HashSet<List<X>> blurn();
 }
-
-class Nest2<T extends Nest2<T>> {}
-
-class Nest22<T> extends Nest2<Nest22<T>> {}
 
 class Base<T extends Base<U, T>, U extends Base<T, U>> {}
 

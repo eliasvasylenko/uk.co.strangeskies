@@ -93,6 +93,18 @@ public final class AnnotatedParameterizedTypes {
 		public ParameterizedType getType() {
 			return (ParameterizedType) super.getType();
 		}
+
+		@Override
+		public String toString() {
+			StringBuilder builder = new StringBuilder(
+					annotationString(getAnnotations())).append(
+					getType().getRawType().getTypeName()).append("<");
+
+			for (AnnotatedType argument : getAnnotatedActualTypeArguments())
+				builder.append(AnnotatedTypes.toString(argument));
+
+			return builder.append(">").toString();
+		}
 	}
 
 	private AnnotatedParameterizedTypes() {}

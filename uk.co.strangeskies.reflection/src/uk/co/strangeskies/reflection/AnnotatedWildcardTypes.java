@@ -95,6 +95,28 @@ public final class AnnotatedWildcardTypes {
 		public WildcardType getType() {
 			return (WildcardType) super.getType();
 		}
+
+		@Override
+		public String toString() {
+			StringBuilder builder = new StringBuilder(
+					annotationString(getAnnotations()));
+
+			AnnotatedType[] bounds;
+			if ((bounds = getAnnotatedUpperBounds()).length > 0) {
+				builder.append("? extends ");
+			} else if ((bounds = getAnnotatedLowerBounds()).length > 0) {
+				builder.append("? super ");
+			} else {
+				builder.append("?");
+			}
+
+			return builder.append(annotatedBounds(bounds)).toString();
+		}
+
+		private String annotatedBounds(AnnotatedType[] bounds) {
+			return Arrays.stream(bounds).map(AnnotatedTypes::toString)
+					.collect(Collectors.joining(" & "));
+		}
 	}
 
 	private AnnotatedWildcardTypes() {}
