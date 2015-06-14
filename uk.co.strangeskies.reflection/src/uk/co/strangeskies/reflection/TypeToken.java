@@ -1653,7 +1653,6 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 * wildcards which they originally captured, if they were captured through
 	 * incorporation of wildcard types into this {@link Resolver} instance.
 	 * 
-	 * @param type
 	 * @return
 	 */
 	public TypeToken<?> resubstituteCapturedWildcards() {
