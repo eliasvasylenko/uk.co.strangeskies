@@ -34,6 +34,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -93,7 +94,18 @@ public final class AnnotatedTypes {
 
 		@Override
 		public int hashCode() {
-			return AnnotatedTypes.hashCode(this);
+			return (getType() == null ? 0 : getType().hashCode()) ^ annotationHash();
+		}
+
+		public int annotationHash() {
+			return new HashSet<>(Arrays.asList(getAnnotations())).hashCode();
+		}
+
+		protected static int annotationHash(AnnotatedTypeImpl... annotatedTypes) {
+			int hash = annotatedTypes.length;
+			for (int i = 0; i < annotatedTypes.length; i++)
+				hash ^= annotatedTypes[i].annotationHash();
+			return hash;
 		}
 
 		@Override
@@ -130,34 +142,7 @@ public final class AnnotatedTypes {
 	 * @return A hash code for the given annotated type.
 	 */
 	public static int hashCode(AnnotatedType annotatedType) {
-		return annotatedType.getType().hashCode() ^ annotationHash(annotatedType);
-	}
-
-	private static int annotationHash(AnnotatedType annotatedType) {
-		int hash = new HashSet<>(Arrays.asList(annotatedType.getAnnotations()))
-				.hashCode();
-
-		if (annotatedType instanceof AnnotatedParameterizedType) {
-			hash ^= annotationHash(((AnnotatedParameterizedType) annotatedType)
-					.getAnnotatedActualTypeArguments());
-		} else if (annotatedType instanceof AnnotatedArrayType) {
-			hash ^= annotationHash(((AnnotatedArrayType) annotatedType)
-					.getAnnotatedGenericComponentType());
-		} else if (annotatedType instanceof AnnotatedWildcardType) {
-			hash ^= annotationHash(((AnnotatedWildcardType) annotatedType)
-					.getAnnotatedLowerBounds())
-					^ annotationHash(((AnnotatedWildcardType) annotatedType)
-							.getAnnotatedUpperBounds());
-		}
-
-		return hash;
-	}
-
-	private static int annotationHash(AnnotatedType[] annotatedTypes) {
-		int hash = annotatedTypes.length;
-		for (int i = 0; i < annotatedTypes.length; i++)
-			hash ^= annotationHash(annotatedTypes[i]);
-		return hash;
+		return AnnotatedTypes.wrap(annotatedType).hashCode();
 	}
 
 	/**
@@ -286,6 +271,7 @@ public final class AnnotatedTypes {
 	 *         given type containing the given annotations.
 	 */
 	public static AnnotatedType over(Type type, Annotation... annotations) {
+		Objects.requireNonNull(type);
 		return over(type, Arrays.asList(annotations));
 	}
 
@@ -315,6 +301,26 @@ public final class AnnotatedTypes {
 		}
 	}
 
+	protected static AnnotatedTypeImpl[] wrapImpl(AnnotatedType... type) {
+		return Arrays.stream(type).map(AnnotatedTypes::wrapImpl)
+				.toArray(AnnotatedTypeImpl[]::new);
+	}
+
+	protected static AnnotatedTypeImpl wrapImpl(AnnotatedType type) {
+		if (type instanceof AnnotatedTypeImpl) {
+			return (AnnotatedTypeImpl) type;
+		} else if (type instanceof AnnotatedParameterizedType) {
+			return AnnotatedParameterizedTypes
+					.wrapImpl((AnnotatedParameterizedType) type);
+		} else if (type instanceof AnnotatedWildcardType) {
+			return AnnotatedWildcardTypes.wrapImpl((AnnotatedWildcardType) type);
+		} else if (type instanceof AnnotatedArrayType) {
+			return AnnotatedArrayTypes.wrapImpl((AnnotatedArrayType) type);
+		} else {
+			return new AnnotatedTypeImpl(type);
+		}
+	}
+
 	/**
 	 * Re-implement the given annotated type with correctly working
 	 * {@link Object#hashCode()} and {@link Object#equals(Object)}
@@ -326,16 +332,7 @@ public final class AnnotatedTypes {
 	 *         type.
 	 */
 	public static AnnotatedType wrap(AnnotatedType type) {
-		if (type instanceof AnnotatedParameterizedType) {
-			return AnnotatedParameterizedTypes
-					.wrap((AnnotatedParameterizedType) type);
-		} else if (type instanceof AnnotatedWildcardType) {
-			return AnnotatedWildcardTypes.wrap((AnnotatedWildcardType) type);
-		} else if (type instanceof AnnotatedArrayType) {
-			return AnnotatedArrayTypes.wrap((AnnotatedArrayType) type);
-		} else {
-			return new AnnotatedTypeImpl(type);
-		}
+		return wrapImpl(type);
 	}
 
 	/**
@@ -359,7 +356,8 @@ public final class AnnotatedTypes {
 	 * @return The type described by the String.
 	 */
 	public static AnnotatedType fromString(String typeString) {
-		// TODO
-		return null;
+		throw new UnsupportedOperationException(
+				"Unable to parse the annotated type literal string '" + typeString
+						+ "'.");
 	}
 }

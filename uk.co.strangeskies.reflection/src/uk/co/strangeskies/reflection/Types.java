@@ -423,8 +423,22 @@ public final class Types {
 	 * @return The type described by the String.
 	 */
 	public static Type fromString(String typeString) {
-		// TODO
-		return null;
+		throw new UnsupportedOperationException(
+				"Unable to parse the type literal string '" + typeString + "'.");
+	}
+
+	/**
+	 * Determine if a given type, {@code to}, is legally castable from another
+	 * given type, {@code from}.
+	 * 
+	 * @param from
+	 *          The type from which we wish to determine castability.
+	 * @param to
+	 *          The type to which we wish to determine castability.
+	 * @return True if the types are castable, false otherwise.
+	 */
+	public static boolean isCastable(Type from, Type to) {
+		throw new UnsupportedOperationException();
 	}
 
 	/**

@@ -72,10 +72,10 @@ public class Resolver implements DeepCopyable<Resolver> {
 
 	/*
 	 * The extra indirection here, rather than just a Map<TypeVariable<?>,
-	 * InferenceVariable> by itself, is because we store TypeVariables for
-	 * containing types, meaning otherwise we may have unexpected collisions if we
-	 * incorporate two types with different parameterizations of the same
-	 * containing type.
+	 * InferenceVariable> by itself, is because we store TypeVariables for owning
+	 * types of generic declarations, meaning otherwise we may have unexpected
+	 * collisions if we incorporate two types with different parameterizations of
+	 * the same containing type.
 	 */
 	private final Map<GenericDeclaration, Map<TypeVariable<?>, InferenceVariable>> capturedTypeVariables;
 
@@ -119,12 +119,24 @@ public class Resolver implements DeepCopyable<Resolver> {
 		return deepCopy(new HashMap<>());
 	}
 
-	Resolver deepCopy(
+	/**
+	 * Create a copy of an existing resolver. All the inference variables
+	 * contained within the resolver will be substituted for the new inference
+	 * variables, and all the bounds on them will be substituted for equivalent
+	 * bounds. These mappings will be entered into the given map when they are
+	 * made.
+	 * 
+	 * @param inferenceVariableSubstitutions
+	 *          A map which will contain mappings from inference variables which
+	 *          are mentioned in the resolver to the new inference variables they
+	 *          have been substituted with in the derived resolver.
+	 * @return A newly derived resolver, with each instance of an inference
+	 *         variable substituted for new mappings.
+	 */
+	public Resolver deepCopy(
 			Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions) {
-		return withNewBoundsSubstitution(
-				inferenceVariableSubstitutions,
-				bounds
-						.withNewInferenceVariableSubstitution(inferenceVariableSubstitutions));
+		return withNewBoundsSubstitution(inferenceVariableSubstitutions,
+				bounds.deepCopy(inferenceVariableSubstitutions));
 	}
 
 	/**
@@ -155,13 +167,17 @@ public class Resolver implements DeepCopyable<Resolver> {
 
 		copy.wildcardCaptures.addAll(wildcardCaptures);
 
-		for (GenericDeclaration declaration : capturedTypeVariables.keySet())
-			copy.capturedTypeVariables.put(
-					declaration,
-					capturedTypeVariables.get(declaration).entrySet().stream()
-							.collect(Collectors.toMap(Entry::getKey, i -> {
-								return inferenceVariableSubstitutions.get(i.getValue());
-							})));
+		if (inferenceVariableSubstitutions.isEmpty()) {
+			copy.capturedTypeVariables.putAll(capturedTypeVariables);
+		} else {
+			for (GenericDeclaration declaration : capturedTypeVariables.keySet())
+				copy.capturedTypeVariables.put(
+						declaration,
+						capturedTypeVariables.get(declaration).entrySet().stream()
+								.collect(Collectors.toMap(Entry::getKey, i -> {
+									return inferenceVariableSubstitutions.get(i.getValue());
+								})));
+		}
 
 		return copy;
 	}
@@ -318,9 +334,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 
 	/**
 	 * Incorporate a new inference variable for a given wildcard type, and add the
-	 * bounds of the wildcard as bounds to the inference variable, as per the
-	 * functionality of {@link #addLowerBound(Type, Type)} and
-	 * {@link #addUpperBound(Type, Type)}.
+	 * bounds of the wildcard as bounds to the inference variable.
 	 * 
 	 * @param type
 	 *          The wildcard type to capture as a bounded inference variable.
@@ -331,63 +345,12 @@ public class Resolver implements DeepCopyable<Resolver> {
 		bounds.addInferenceVariable(w);
 
 		for (Type lowerBound : type.getLowerBounds())
-			addLowerBound(w, lowerBound);
+			ConstraintFormula.reduce(Kind.SUBTYPE, lowerBound, w, bounds);
 
 		for (Type upperBound : type.getUpperBounds())
-			addUpperBound(w, upperBound);
+			ConstraintFormula.reduce(Kind.SUBTYPE, w, upperBound, bounds);
 
 		return w;
-	}
-
-	/**
-	 * Incorporate a new lower bound into the bound set. If the lower bound is a
-	 * parameterized type, or if it is a wildcard or intersection type containing
-	 * parameterized types, those parameters which are themselves wildcards will
-	 * be replaced by inference variables.
-	 * 
-	 * @param type
-	 *          The type to add the bounding to.
-	 * @param lowerBound
-	 *          The bounds to add to the given type.
-	 */
-	public void addLowerBound(Type type, Type lowerBound) {
-		for (Type bound : getUpperBounds(lowerBound))
-			ConstraintFormula.reduce(Kind.SUBTYPE, bound, type, bounds);
-	}
-
-	/**
-	 * Incorporate a new upper bound into the bound set. If the upper bound is a
-	 * parameterized type, or if it is a wildcard or intersection type containing
-	 * parameterized types, those type arguments which are themselves wildcards
-	 * will be replaced by inference variables.
-	 * 
-	 * @param type
-	 *          The type to add the bounding to.
-	 * @param upperBound
-	 *          The bounds to add to the given type.
-	 */
-	public void addUpperBound(Type type, Type upperBound) {
-		addConstraint(Kind.SUBTYPE, type, upperBound);
-	}
-
-	/**
-	 * Incorporate a new loose compatibility with an upper bound into the bound
-	 * set. If the upper bound is a parameterized type, or if it is a wildcard or
-	 * intersection type containing parameterized types, those type arguments
-	 * which are themselves wildcards will be replaced by inference variables.
-	 * 
-	 * @param type
-	 *          The type to add the bounding to.
-	 * @param upperBound
-	 *          The bounds to add to the given type.
-	 */
-	public void addLooseCompatibility(Type type, Type upperBound) {
-		addConstraint(Kind.LOOSE_COMPATIBILILTY, type, upperBound);
-	}
-
-	private void addConstraint(Kind kind, Type type, Type upperBound) {
-		for (Type bound : getLowerBounds(upperBound))
-			ConstraintFormula.reduce(kind, type, bound, bounds);
 	}
 
 	/**
@@ -458,7 +421,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 *          The type whose bounds we wish to discover.
 	 * @return The upper bounds of the given type.
 	 */
-	public Set<Type> getUpperBounds(Type type) {
+	public Set<Type> getProperUpperBounds(Type type) {
 		type = resolveType(type);
 
 		Set<Type> upperBounds = Types.getUpperBounds(type);
@@ -492,7 +455,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 * @return The lower bounds of the given type, or null if no such bounds
 	 *         exist.
 	 */
-	public Set<Type> getLowerBounds(Type type) {
+	public Set<Type> getProperLowerBounds(Type type) {
 		type = resolveType(type);
 
 		Set<Type> lowerBounds = Types.getLowerBounds(type);
@@ -525,7 +488,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	public Set<Class<?>> getRawTypes(Type type) {
 		type = resolveType(type);
 
-		return getUpperBounds(type).stream().map(Types::getRawType)
+		return getProperUpperBounds(type).stream().map(Types::getRawType)
 				.collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 
@@ -541,7 +504,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	public Class<?> getRawType(Type type) {
 		type = resolveType(type);
 
-		return Types.getRawType(getUpperBounds(type).stream().findFirst()
+		return Types.getRawType(getProperUpperBounds(type).stream().findFirst()
 				.orElse(Object.class));
 	}
 
@@ -584,6 +547,15 @@ public class Resolver implements DeepCopyable<Resolver> {
 		return type;
 	}
 
+	/**
+	 * Resubstitute any type variable captures mentioned in the given type for the
+	 * wildcards which they originally captured, if they were captured through
+	 * incorporation of wildcard types into this {@link Resolver} instance.
+	 * 
+	 * @param type
+	 *          The type for which we wish to make the substitution.
+	 * @return A new type derived from that given by making the substitution.
+	 */
 	public Type resubstituteCapturedWildcards(Type type) {
 		if (wildcardCaptures.isEmpty())
 			return type;
@@ -592,8 +564,26 @@ public class Resolver implements DeepCopyable<Resolver> {
 					t -> ((TypeVariableCapture) t).getCapturedType()).resolve(type);
 	}
 
+	/**
+	 * @return The set of type variable captures which were captured from plain
+	 *         wildcards, such that those wildcards might be resubstituted for
+	 *         them.
+	 */
 	public Set<TypeVariableCapture> getWildcardCaptures() {
 		return wildcardCaptures;
+	}
+
+	/**
+	 * Add to the set of type variable captures which are considered to have been
+	 * captured from plain wildcards, such that those wildcards might be
+	 * resubstituted for them.
+	 * 
+	 * @param wildcardCaptures
+	 *          The new type varible captures.
+	 */
+	public void incorporateWildcardCaptures(
+			Collection<? extends TypeVariableCapture> wildcardCaptures) {
+		this.wildcardCaptures.addAll(wildcardCaptures);
 	}
 
 	/**
@@ -933,7 +923,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 *          The type we wish to resolve.
 	 * @return The resolved type.
 	 */
-	public Type resolveType(Type type) {
+	public Type resolveTypeWithResubstitutedWildcardCaptures(Type type) {
 		return new TypeSubstitution(t -> {
 			if (t instanceof InferenceVariable)
 				t = resolveInferenceVariable((InferenceVariable) t);
@@ -963,7 +953,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 *          The type we wish to resolve.
 	 * @return The resolved type.
 	 */
-	public Type resolveType(GenericDeclaration declaration, Type type) {
+	public Type resolveTypeWithResubstitutedWildcardCaptures(
+			GenericDeclaration declaration, Type type) {
 		return new TypeSubstitution(t -> {
 			if (t instanceof InferenceVariable)
 				t = resolveInferenceVariable((InferenceVariable) t);
@@ -990,7 +981,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 *          The type we wish to resolve.
 	 * @return The resolved type.
 	 */
-	public Type resolveInternalType(Type type) {
+	public Type resolveType(Type type) {
 		return new TypeSubstitution(t -> {
 			if (t instanceof InferenceVariable)
 				return resolveInferenceVariable((InferenceVariable) t);
@@ -1017,7 +1008,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 *          The type we wish to resolve.
 	 * @return The resolved type.
 	 */
-	public Type resolveInternalType(GenericDeclaration declaration, Type type) {
+	public Type resolveType(GenericDeclaration declaration, Type type) {
 		return new TypeSubstitution(t -> {
 			if (t instanceof InferenceVariable)
 				return resolveInferenceVariable((InferenceVariable) t);
@@ -1042,10 +1033,11 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 *         inference variables and parameters registered in this resolver, or
 	 *         the given type if it is not generic.
 	 */
-	public Type resolveTypeParameters(Class<?> type) {
+	public Type resolveTypeParametersWithResubstitutedWildcardCaptures(
+			Class<?> type) {
 		incorporateTypeParameters(type);
-		return resolveType(ParameterizedTypes.uncheckedFrom(type,
-				getInferenceVariables(type)::get));
+		return resolveTypeWithResubstitutedWildcardCaptures(ParameterizedTypes
+				.uncheckedFrom(type, getInferenceVariables(type)::get));
 	}
 
 	/**
@@ -1060,9 +1052,9 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 *         inference variables and parameters registered in this resolver, or
 	 *         the given type if it is not generic.
 	 */
-	public Type resolveInternalTypeParameters(Class<?> type) {
+	public Type resolveTypeParameters(Class<?> type) {
 		incorporateTypeParameters(type);
-		return resolveInternalType(ParameterizedTypes.uncheckedFrom(type,
+		return resolveType(ParameterizedTypes.uncheckedFrom(type,
 				getInferenceVariables(type)::get));
 	}
 

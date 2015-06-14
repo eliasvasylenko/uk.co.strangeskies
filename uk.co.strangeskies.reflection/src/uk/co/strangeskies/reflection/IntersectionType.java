@@ -62,7 +62,20 @@ public abstract class IntersectionType implements Type {
 		return from(types, new BoundSet());
 	}
 
-	static Type from(Collection<? extends Type> types, BoundSet bounds) {
+	/**
+	 * Create an intersection type from the given types, with leniency towards
+	 * validation of intersections between types which may contain inference
+	 * variables according to the given bound set.
+	 * 
+	 * @param types
+	 *          The set of types from which to derive a new intersection type.
+	 * @param bounds
+	 *          The bound set which provides context for any inference variables
+	 *          which may be mentioned by the given types.
+	 * @return An intersection type containing each of the given types, or a
+	 *         single type, if they can all be represented as such.
+	 */
+	public static Type from(Collection<? extends Type> types, BoundSet bounds) {
 		List<Type> flattenedTypes = new ArrayList<>(types);
 
 		for (Type type : new ArrayList<>(flattenedTypes)) {

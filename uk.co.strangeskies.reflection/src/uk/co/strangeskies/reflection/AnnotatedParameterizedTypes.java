@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes.AnnotatedTypeImpl;
 
@@ -40,22 +41,23 @@ import uk.co.strangeskies.reflection.AnnotatedTypes.AnnotatedTypeImpl;
 public final class AnnotatedParameterizedTypes {
 	private static class AnnotatedParameterizedTypeImpl extends AnnotatedTypeImpl
 			implements AnnotatedParameterizedType {
-		private final AnnotatedType[] annotatedTypeArguments;
+		private final AnnotatedTypeImpl[] annotatedTypeArguments;
 
 		public AnnotatedParameterizedTypeImpl(
 				AnnotatedParameterizedType annotatedParameterizedType) {
 			super(annotatedParameterizedType);
 
-			annotatedTypeArguments = annotatedParameterizedType
-					.getAnnotatedActualTypeArguments();
+			annotatedTypeArguments = AnnotatedTypes
+					.wrapImpl(annotatedParameterizedType
+							.getAnnotatedActualTypeArguments());
 		}
 
 		public AnnotatedParameterizedTypeImpl(ParameterizedType type,
 				Collection<? extends Annotation> annotations) {
 			super(type, annotations);
 
-			annotatedTypeArguments = AnnotatedTypes.over(type
-					.getActualTypeArguments());
+			annotatedTypeArguments = AnnotatedTypes.wrapImpl(AnnotatedTypes.over(type
+					.getActualTypeArguments()));
 		}
 
 		public AnnotatedParameterizedTypeImpl(
@@ -65,14 +67,14 @@ public final class AnnotatedParameterizedTypes {
 			super(ParameterizedTypes.uncheckedFrom(rawType,
 					unannotatedTypes(annotatedTypes)), annotations);
 
-			annotatedTypeArguments = Arrays.stream(rawType.getTypeParameters())
-					.map(p -> {
+			annotatedTypeArguments = AnnotatedTypes.wrapImpl(Arrays
+					.stream(rawType.getTypeParameters()).map(p -> {
 						AnnotatedType type = annotatedTypes.apply(p);
 						if (type == null)
 							return AnnotatedTypes.over(p);
 						else
 							return type;
-					}).toArray(AnnotatedType[]::new);
+					}).toArray(AnnotatedType[]::new));
 		}
 
 		/*
@@ -100,10 +102,15 @@ public final class AnnotatedParameterizedTypes {
 					annotationString(getAnnotations())).append(
 					getType().getRawType().getTypeName()).append("<");
 
-			for (AnnotatedType argument : getAnnotatedActualTypeArguments())
-				builder.append(AnnotatedTypes.toString(argument));
+			builder.append(Arrays.stream(getAnnotatedActualTypeArguments())
+					.map(AnnotatedTypes::toString).collect(Collectors.joining(", ")));
 
 			return builder.append(">").toString();
+		}
+
+		@Override
+		public int annotationHash() {
+			return super.annotationHash() ^ annotationHash(annotatedTypeArguments);
 		}
 	}
 
@@ -191,6 +198,14 @@ public final class AnnotatedParameterizedTypes {
 		return allArguments;
 	}
 
+	protected static AnnotatedParameterizedTypeImpl wrapImpl(
+			AnnotatedParameterizedType type) {
+		if (type instanceof AnnotatedParameterizedTypeImpl) {
+			return (AnnotatedParameterizedTypeImpl) type;
+		} else
+			return new AnnotatedParameterizedTypeImpl(type);
+	}
+
 	/**
 	 * Wrap an existing annotated parameterized type.
 	 * 
@@ -200,6 +215,6 @@ public final class AnnotatedParameterizedTypes {
 	 *         to the given type.
 	 */
 	public static AnnotatedParameterizedType wrap(AnnotatedParameterizedType type) {
-		return new AnnotatedParameterizedTypeImpl(type);
+		return wrapImpl(type);
 	}
 }

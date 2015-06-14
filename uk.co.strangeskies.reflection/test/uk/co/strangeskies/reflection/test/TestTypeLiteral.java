@@ -46,7 +46,6 @@ import uk.co.strangeskies.reflection.TypeToken.Capture;
 import uk.co.strangeskies.reflection.TypeToken.Infer;
 import uk.co.strangeskies.reflection.TypeToken.Preserve;
 import uk.co.strangeskies.reflection.TypeToken.Wildcards;
-import uk.co.strangeskies.reflection.Types;
 import uk.co.strangeskies.utilities.Self;
 
 /**
@@ -295,6 +294,7 @@ public class TestTypeLiteral {
 		System.out.println();
 		 */
 
+		System.out.println(new TypeToken<List<? extends Number>>() {}.getType());
 		System.out.println(TypeToken.over(Arrays.class)
 				.resolveMethodOverload("asList", int.class, double.class)
 				.withTargetType(new TypeToken<List<? extends Number>>() {}).infer());
@@ -531,13 +531,13 @@ public class TestTypeLiteral {
 		System.out.println(new TypeToken<@Infer List<? extends String>>() {});
 		System.out.println();
 
-		System.out.println(new TypeToken<List<? extends String>>() {}
-				.resolveSupertypeParameters(Iterable.class));
+		System.out.println(new TypeToken<List<? extends Long>>() {}
+				.resolveSupertypeParameters(Iterable.class).getType());
 		System.out.println();
 
-		TypeToken<?> tttt = new TypeToken<List<? extends String>>() {};
-		System.out.println(tttt.getResolver().resubstituteCapturedWildcards(
-				tttt.resolveSupertypeParameters(Iterable.class).getType()));
+		System.out.println(new TypeToken<List<? extends Long>>() {}
+				.resolveSupertypeParameters(Iterable.class)
+				.resubstituteCapturedWildcards().getType());
 		System.out.println();
 
 		System.out.println(new TypeToken<List<? extends @Infer Set<?>>>() {});
@@ -553,6 +553,10 @@ public class TestTypeLiteral {
 		System.out.println();
 
 		System.out.println(new TypeToken<@Infer TreeSet<? extends C2<?>>>() {});
+		System.out.println();
+
+		System.out.println(new TypeToken<SchemaNode<?, ?>>() {}
+				.isAssignableTo(new TypeToken<SchemaNode<?, ?>>() {}));
 		System.out.println();
 
 		System.out.println(new TypeToken<C1<? extends C2<String>>>() {});

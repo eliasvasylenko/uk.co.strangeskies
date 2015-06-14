@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -159,7 +160,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 
 				Type type = substituteAnnotatedWildcards(annotatedType, resolver);
 
-				type = resolver.incorporateType(type);
+				type = resolver.resubstituteCapturedWildcards(resolver
+						.incorporateType(type));
 
 				return new Pair<>(resolver, type);
 			}, 1000, true);
@@ -178,6 +180,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	}
 
 	private TypeToken(AnnotatedType annotatedType) {
+		Objects.requireNonNull(annotatedType);
+
 		declaration = AnnotatedTypes.wrap(annotatedType);
 
 		Pair<Resolver, Type> resolvedType = resolveAnnotatedWildcards(declaration);
@@ -468,13 +472,12 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 			Class<T> rawType) {
 		resolver.incorporateTypeParameters(rawType);
 		return new TypeToken<>(resolver.copy(),
-				resolver.resolveInternalTypeParameters(rawType));
+				resolver.resolveTypeParameters(rawType));
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof TypeToken
-				&& type.equals(((TypeToken<?>) obj).getType());
+		return obj instanceof TypeToken && type.equals(((TypeToken<?>) obj).type);
 	}
 
 	@Override
@@ -535,6 +538,45 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 			Collection<? extends InferenceVariable> inferenceVariables) {
 		return new TypeToken<T>(getResolverWithBounds(bounds, inferenceVariables),
 				getType());
+	}
+
+	/**
+	 * Derive a new {@link TypeToken} instance, with the bounds and wildcard
+	 * captures of the given resolver incorporated into the bounds of the
+	 * underlying resolver. The original {@link TypeToken} will remain unmodified.
+	 * 
+	 * <p>
+	 * All bounds are incorporated if and only if they have the potential to
+	 * affect the resolution of inference variables mentioned by this type.
+	 * 
+	 * @param bounds
+	 *          The new bounds to incorporate.
+	 * @return The newly derived {@link TypeToken}.
+	 */
+	public TypeToken<T> withBoundsFrom(Resolver bounds) {
+		return new TypeToken<T>(getResolverWithBoundsFrom(bounds), getType());
+	}
+
+	/**
+	 * Derive a new {@link TypeToken} instance, with the bounds and wildcard
+	 * captures on the given inference variables, with respect to the given
+	 * resolver, incorporated into the bounds of the underlying resolver. The
+	 * original {@link TypeToken} will remain unmodified.
+	 * 
+	 * <p>
+	 * All bounds are incorporated if and only if they have the potential to
+	 * affect the resolution of inference variables mentioned by this type.
+	 * 
+	 * @param bounds
+	 *          The new bounds to incorporate.
+	 * @param inferenceVariables
+	 *          The inference variables whose bounds are to be incorporated.
+	 * @return The newly derived {@link TypeToken}.
+	 */
+	public TypeToken<T> withBoundsFrom(Resolver bounds,
+			Collection<? extends InferenceVariable> inferenceVariables) {
+		return new TypeToken<T>(getResolverWithBoundsFrom(bounds,
+				inferenceVariables), getType());
 	}
 
 	/**
@@ -702,8 +744,22 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 		return resolver;
 	}
 
+	private Resolver getResolverWithBoundsFrom(Resolver bounds) {
+		Resolver resolver = getResolverWithBounds(bounds.getBounds());
+		resolver.incorporateWildcardCaptures(bounds.getWildcardCaptures());
+		return resolver;
+	}
+
+	private Resolver getResolverWithBoundsFrom(Resolver bounds,
+			Collection<? extends InferenceVariable> inferenceVariables) {
+		Resolver resolver = getResolverWithBounds(bounds.getBounds(),
+				inferenceVariables);
+		resolver.incorporateWildcardCaptures(bounds.getWildcardCaptures());
+		return resolver;
+	}
+
 	private Resolver getResolverWithBoundsFrom(TypeToken<?> type) {
-		return getResolverWithBounds(type.getResolver().getBounds(),
+		return getResolverWithBoundsFrom(type.getInternalResolver(),
 				type.getInferenceVariableDependencies());
 	}
 
@@ -904,6 +960,46 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 
 	/**
 	 * 
+	 * Derive a new type from this one, with an equality between this type and a
+	 * given type. The invocation will fail if the equality cannot be satisfied.
+	 * For types which mention inference variables, this equality may have an
+	 * effect on the bounds of those inference variables within the resulting
+	 * type.
+	 * 
+	 * @param type
+	 *          The lower bound.
+	 * @return A new type token which satisfies the bounding.
+	 */
+	public TypeToken<T> withEquality(Type type) {
+		Resolver resolver = getResolver();
+		ConstraintFormula.reduce(Kind.EQUALITY, type, getType(),
+				resolver.getBounds());
+
+		return new TypeToken<>(resolver, getType());
+	}
+
+	/**
+	 * 
+	 * Derive a new type from this one, with an equality between this type and a
+	 * given type. The invocation will fail if the equality cannot be satisfied.
+	 * For types which mention inference variables, this equality may have an
+	 * effect on the bounds of those inference variables within the resulting
+	 * type.
+	 * 
+	 * @param type
+	 *          The lower bound.
+	 * @return A new type token which satisfies the bounding.
+	 */
+	public TypeToken<T> withEquality(TypeToken<?> type) {
+		Resolver resolver = getResolverWithBoundsFrom(type);
+		ConstraintFormula.reduce(Kind.EQUALITY, type.getType(), getType(),
+				resolver.getBounds());
+
+		return new TypeToken<>(resolver, resolveType());
+	}
+
+	/**
+	 * 
 	 * Derive a new type from this one, with a lower bounding on this type by a
 	 * given type. The invocation will fail if the lower bound cannot be
 	 * satisfied. For types which mention inference variables, this lower bounding
@@ -916,7 +1012,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 */
 	public TypeToken<T> withLowerBound(Type type) {
 		Resolver resolver = getResolver();
-		resolver.addLowerBound(getType(), type);
+		ConstraintFormula.reduce(Kind.SUBTYPE, type, getType(),
+				resolver.getBounds());
 
 		return new TypeToken<>(resolver, getType());
 	}
@@ -935,7 +1032,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 */
 	public TypeToken<T> withLowerBound(TypeToken<?> type) {
 		Resolver resolver = getResolverWithBoundsFrom(type);
-		resolver.addLowerBound(getType(), type.getType());
+		ConstraintFormula.reduce(Kind.SUBTYPE, type.getType(), getType(),
+				resolver.getBounds());
 
 		return new TypeToken<>(resolver, resolveType());
 	}
@@ -953,7 +1051,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 */
 	public TypeToken<T> withUpperBound(Type type) {
 		Resolver resolver = getResolver();
-		resolver.addUpperBound(getType(), type);
+		ConstraintFormula.reduce(Kind.SUBTYPE, getType(), type,
+				resolver.getBounds());
 
 		return new TypeToken<>(resolver, getType());
 	}
@@ -971,7 +1070,46 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 */
 	public TypeToken<T> withUpperBound(TypeToken<?> type) {
 		Resolver resolver = getResolverWithBoundsFrom(type);
-		resolver.addUpperBound(getType(), type.getType());
+		ConstraintFormula.reduce(Kind.SUBTYPE, getType(), type.getType(),
+				resolver.getBounds());
+
+		return new TypeToken<>(resolver, resolveType());
+	}
+
+	/**
+	 * Derive a new type from this one, with a loose compatibility on this type to
+	 * a given type. The invocation will fail if the loose compatibility cannot be
+	 * satisfied. For types which mention inference variables, this loose
+	 * compatibility may have an effect on the bounds of those inference variables
+	 * within the resulting type.
+	 * 
+	 * @param type
+	 *          The upper bound.
+	 * @return A new type token which satisfies the bounding.
+	 */
+	public TypeToken<T> withLooseCompatibility(Type type) {
+		Resolver resolver = getResolver();
+		ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, getType(), type,
+				resolver.getBounds());
+
+		return new TypeToken<>(resolver, getType());
+	}
+
+	/**
+	 * Derive a new type from this one, with a loose compatibility on this type to
+	 * a given type. The invocation will fail if the loose compatibility cannot be
+	 * satisfied. For types which mention inference variables, this loose
+	 * compatibility may have an effect on the bounds of those inference variables
+	 * within the resulting type.
+	 * 
+	 * @param type
+	 *          The upper bound.
+	 * @return A new type token which satisfies the bounding.
+	 */
+	public TypeToken<T> withLooseCompatibility(TypeToken<?> type) {
+		Resolver resolver = getResolverWithBoundsFrom(type);
+		ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, getType(),
+				type.getType(), resolver.getBounds());
 
 		return new TypeToken<>(resolver, resolveType());
 	}
@@ -1208,7 +1346,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	}
 
 	private TypeToken<?> withTypeArgument(TypeVariable<?> parameter, Type argument) {
-		return new TypeToken<>(new Resolver(getResolver().getBounds()),
+		return new TypeToken<>(new Resolver(getInternalResolver().getBounds()),
 				new TypeSubstitution().where(parameter, argument).resolve(getType()));
 	}
 
@@ -1501,8 +1639,25 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	}
 
 	public void incorporateInto(Resolver resolver) {
-		resolver.getBounds().incorporate(getResolver().getBounds(),
-				getResolver().getBounds().getInferenceVariablesMentionedBy(type));
+		resolver.getBounds().incorporate(
+				getInternalResolver().getBounds(),
+				getInternalResolver().getBounds()
+						.getInferenceVariablesMentionedBy(type));
+		resolver.incorporateWildcardCaptures(getInternalResolver()
+				.getWildcardCaptures());
 		resolver.incorporateType(type);
+	}
+
+	/**
+	 * Resubstitute any type variable captures mentioned in the given type for the
+	 * wildcards which they originally captured, if they were captured through
+	 * incorporation of wildcard types into this {@link Resolver} instance.
+	 * 
+	 * @param type
+	 * @return
+	 */
+	public TypeToken<?> resubstituteCapturedWildcards() {
+		return new TypeToken<T>(getResolver(), getInternalResolver()
+				.resubstituteCapturedWildcards(type));
 	}
 }

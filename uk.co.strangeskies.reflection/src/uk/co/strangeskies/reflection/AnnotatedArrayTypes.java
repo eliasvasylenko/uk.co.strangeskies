@@ -35,20 +35,20 @@ import uk.co.strangeskies.reflection.AnnotatedTypes.AnnotatedTypeImpl;
 public final class AnnotatedArrayTypes {
 	private static class AnnotatedArrayTypeImpl extends AnnotatedTypeImpl
 			implements AnnotatedArrayType {
-		private final AnnotatedType annotatedComponentType;
+		private final AnnotatedTypeImpl annotatedComponentType;
 
 		public AnnotatedArrayTypeImpl(AnnotatedArrayType annotatedArrayType) {
 			super(annotatedArrayType);
 
-			annotatedComponentType = annotatedArrayType
-					.getAnnotatedGenericComponentType();
+			annotatedComponentType = (AnnotatedTypeImpl) AnnotatedTypes
+					.wrap(annotatedArrayType.getAnnotatedGenericComponentType());
 		}
 
 		public AnnotatedArrayTypeImpl(GenericArrayType type,
 				Collection<Annotation> annotations) {
 			super(type, annotations);
 
-			annotatedComponentType = AnnotatedTypes.over(type
+			annotatedComponentType = (AnnotatedTypeImpl) AnnotatedTypes.over(type
 					.getGenericComponentType());
 		}
 
@@ -56,14 +56,15 @@ public final class AnnotatedArrayTypes {
 				Collection<Annotation> annotations) {
 			super(type, annotations);
 
-			annotatedComponentType = AnnotatedTypes.over(type.getComponentType());
+			annotatedComponentType = (AnnotatedTypeImpl) AnnotatedTypes.over(type
+					.getComponentType());
 		}
 
 		public AnnotatedArrayTypeImpl(AnnotatedType type,
 				Collection<Annotation> annotations) {
 			super(ArrayTypes.fromComponentType(type.getType()), annotations);
 
-			annotatedComponentType = type;
+			annotatedComponentType = (AnnotatedTypeImpl) AnnotatedTypes.wrap(type);
 		}
 
 		@Override
@@ -84,6 +85,11 @@ public final class AnnotatedArrayTypes {
 			} while (type instanceof AnnotatedArrayType);
 
 			return builder.insert(0, AnnotatedTypes.wrap(type)).toString();
+		}
+
+		@Override
+		public int annotationHash() {
+			return super.annotationHash() ^ annotationHash(annotatedComponentType);
 		}
 	}
 
@@ -181,6 +187,13 @@ public final class AnnotatedArrayTypes {
 		return new AnnotatedArrayTypeImpl(arrayType, annotations);
 	}
 
+	protected static AnnotatedArrayTypeImpl wrapImpl(AnnotatedArrayType type) {
+		if (type instanceof AnnotatedArrayTypeImpl) {
+			return (AnnotatedArrayTypeImpl) type;
+		} else
+			return new AnnotatedArrayTypeImpl(type);
+	}
+
 	/**
 	 * Wrap an existing annotated array type.
 	 * 
@@ -190,6 +203,6 @@ public final class AnnotatedArrayTypes {
 	 *         given type.
 	 */
 	public static AnnotatedArrayType wrap(AnnotatedArrayType type) {
-		return new AnnotatedArrayTypeImpl(type);
+		return wrapImpl(type);
 	}
 }

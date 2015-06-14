@@ -235,20 +235,41 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	 * contained within the given bound set will be substituted for new inference
 	 * variables in the new bound set, and all the bounds on them will be
 	 * substituted for equivalent bounds.
+	 * <p>
+	 * Inference variables which already have proper instantiations may not be
+	 * substituted, as this is generally unnecessary in practice and so avoiding
+	 * it can save time.
 	 */
 	@Override
 	public BoundSet deepCopy() {
-		return withNewInferenceVariableSubstitution(new HashMap<>());
+		return deepCopy(new HashMap<>());
 	}
 
-	BoundSet withNewInferenceVariableSubstitution(
+	/**
+	 * Create a copy of an existing bound set. All the inference variables
+	 * contained within the given bound set will be substituted for new inference
+	 * variables in the new bound set, and all the bounds on them will be
+	 * substituted for equivalent bounds. Any such inference variable
+	 * substitutions made will be put into the given map.
+	 * <p>
+	 * Inference variables which already have proper instantiations may not be
+	 * substituted, as this is generally unnecessary in practice and so avoiding
+	 * it can save time.
+	 * 
+	 * @param inferenceVariableSubstitutions
+	 *          A map in which the method invocation will put mappings from
+	 *          inference variables to new inference variables which are made.
+	 * @return A deep copy of this bound set.
+	 */
+	public BoundSet deepCopy(
 			Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions) {
 		/*
 		 * Substitutions of inference variables:
 		 */
 		for (InferenceVariable inferenceVariable : getInferenceVariables())
-			inferenceVariableSubstitutions.put(inferenceVariable,
-					new InferenceVariable(inferenceVariable.getName()));
+			if (!getBoundsOn(inferenceVariable).getInstantiation().isPresent())
+				inferenceVariableSubstitutions.put(inferenceVariable,
+						new InferenceVariable(inferenceVariable.getName()));
 
 		return withInferenceVariableSubstitution(inferenceVariableSubstitutions);
 	}
@@ -269,6 +290,9 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	 */
 	public BoundSet withInferenceVariableSubstitution(
 			Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions) {
+		if (inferenceVariableSubstitutions.isEmpty())
+			return copy();
+
 		BoundSet copy = new BoundSet();
 		/*
 		 * Substitutions of capture conversions:

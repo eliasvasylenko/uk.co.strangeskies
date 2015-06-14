@@ -115,7 +115,7 @@ public class Invokable<T, R> {
 			receiverType.resolveSupertypeParameters(executable.getDeclaringClass())
 					.incorporateInto(resolver);
 
-			receiverType = receiverType.withBounds(resolver.getBounds()).resolve();
+			receiverType = receiverType.withBoundsFrom(resolver).resolve();
 			this.receiverType = receiverType;
 		}
 
@@ -123,7 +123,7 @@ public class Invokable<T, R> {
 			Method method = (Method) executable;
 			returnType = (TypeToken<R>) TypeToken.over(
 					resolver.resolveType(method, method.getGenericReturnType()))
-					.withBounds(resolver.getBounds());
+					.withBoundsFrom(resolver);
 		} else
 			returnType = (TypeToken<R>) receiverType;
 
@@ -554,7 +554,8 @@ public class Invokable<T, R> {
 		try {
 			Resolver resolver = getResolver();
 
-			resolver.addUpperBound(type, receiverType.getType());
+			ConstraintFormula.reduce(Kind.SUBTYPE, type, receiverType.getType(),
+					resolver.getBounds());
 
 			Class<?> mostSpecificOverridingClass = this.executable
 					.getDeclaringClass();
