@@ -30,6 +30,8 @@ import java.util.Set;
  * @author Elias N Vasylenko
  */
 public class Imports {
+	private static final Imports EMPTY = new Imports();
+
 	private final Map<String, Class<?>> namedClasses = new HashMap<>();
 	private final Set<Package> packages = new HashSet<>();
 
@@ -46,15 +48,21 @@ public class Imports {
 		importPackages(packages);
 	}
 
-	public void importClass(Class<?> classImport) {
-		importClasses(classImport);
+	public Imports withImports(Class<?> classImport) {
+		return withImports(classImport);
 	}
 
-	public void importClasses(Class<?>... classes) {
-		importClasses(Arrays.asList(classes));
+	public Imports withImports(Class<?>... classes) {
+		return withImports(Arrays.asList(classes));
 	}
 
-	public void importClasses(Collection<? extends Class<?>> classes) {
+	public Imports withImports(Collection<? extends Class<?>> classes) {
+		Imports imports = new Imports(this);
+		imports.importClasses(classes);
+		return imports;
+	}
+
+	private void importClasses(Collection<? extends Class<?>> classes) {
 		for (Class<?> clazz : classes) {
 			if (namedClasses.putIfAbsent(clazz.getSimpleName(), clazz) != null) {
 				throw new TypeException("Cannot import both '"
@@ -64,7 +72,7 @@ public class Imports {
 		}
 	}
 
-	public Set<Class<?>> getClasses() {
+	public Set<Class<?>> getImportedClasses() {
 		return new HashSet<>(namedClasses.values());
 	}
 
@@ -80,21 +88,36 @@ public class Imports {
 			return clazz.getCanonicalName();
 	}
 
-	public void importPackage(Package packageImport) {
-		importPackages(packageImport);
+	public Imports withPackageImports(Package packageImport) {
+		return withPackageImports(packageImport);
 	}
 
-	public void importPackages(Package... packages) {
-		importPackages(Arrays.asList(packages));
+	public Imports withPackageImports(Package... packages) {
+		return withPackageImports(Arrays.asList(packages));
 	}
 
-	public void importPackages(Collection<? extends Package> packages) {
+	public Imports withPackageImports(Collection<? extends Package> packages) {
+		Imports imports = new Imports(this);
+		imports.importPackages(packages);
+		return imports;
+	}
+
+	private void importPackages(Collection<? extends Package> packages) {
 		for (Package packageImport : packages) {
 			this.packages.add(packageImport);
 		}
 	}
 
-	public Set<Package> getPackages() {
+	public Set<Package> getImportedPackages() {
 		return new HashSet<>(packages);
+	}
+
+	public static Imports empty() {
+		return EMPTY;
+	}
+
+	public boolean isImported(Class<?> clazz) {
+		return packages.contains(clazz.getPackage())
+				|| namedClasses.containsValue(clazz);
 	}
 }

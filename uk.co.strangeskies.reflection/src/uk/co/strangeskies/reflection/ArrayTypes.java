@@ -30,6 +30,45 @@ import java.lang.reflect.TypeVariable;
  * @author Elias N Vasylenko
  */
 public class ArrayTypes {
+	private static class GenericArrayTypeImpl implements GenericArrayType {
+		private final Type component;
+
+		public GenericArrayTypeImpl(Type component) {
+			this.component = component;
+		}
+
+		@Override
+		public Type getGenericComponentType() {
+			return component;
+		}
+
+		@Override
+		public String toString() {
+			StringBuilder builder = new StringBuilder(
+					Types.toString(getGenericComponentType()));
+			if (getGenericComponentType() instanceof IntersectionType)
+				builder.append(" ");
+			return builder.append("[]").toString();
+		}
+
+		@Override
+		public boolean equals(Object object) {
+			if (this == object)
+				return true;
+			if (object == null || !(object instanceof GenericArrayType))
+				return false;
+
+			GenericArrayType that = (GenericArrayType) object;
+
+			return component.equals(that.getGenericComponentType());
+		}
+
+		@Override
+		public int hashCode() {
+			return component.hashCode();
+		}
+	}
+
 	private ArrayTypes() {}
 
 	/**
@@ -280,34 +319,6 @@ public class ArrayTypes {
 	}
 
 	private static GenericArrayType fromGenericComponentType(Type component) {
-		return new GenericArrayType() {
-			@Override
-			public Type getGenericComponentType() {
-				return component;
-			}
-
-			@Override
-			public String toString() {
-				return Types.toString(component)
-						+ (component instanceof IntersectionType ? " " : "") + "[]";
-			}
-
-			@Override
-			public boolean equals(Object object) {
-				if (this == object)
-					return true;
-				if (object == null || !(object instanceof GenericArrayType))
-					return false;
-
-				GenericArrayType that = (GenericArrayType) object;
-
-				return component.equals(that.getGenericComponentType());
-			}
-
-			@Override
-			public int hashCode() {
-				return component.hashCode();
-			}
-		};
+		return new GenericArrayTypeImpl(component);
 	}
 }

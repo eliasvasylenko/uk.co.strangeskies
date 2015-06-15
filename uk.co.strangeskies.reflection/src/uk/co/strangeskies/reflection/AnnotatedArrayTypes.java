@@ -73,18 +73,20 @@ public final class AnnotatedArrayTypes {
 		}
 
 		@Override
-		public String toString() {
+		public String toString(Imports imports) {
 			StringBuilder builder = new StringBuilder();
 
 			AnnotatedType type = this;
 			do {
-				builder.append(" ").append(annotationString(type.getAnnotations()))
+				builder.append(" ")
+						.append(annotationString(imports, type.getAnnotations()))
 						.append("[]");
 
 				type = ((AnnotatedArrayType) type).getAnnotatedGenericComponentType();
 			} while (type instanceof AnnotatedArrayType);
 
-			return builder.insert(0, AnnotatedTypes.wrap(type)).toString();
+			return builder.insert(0, AnnotatedTypes.wrapImpl(type).toString(imports))
+					.toString();
 		}
 
 		@Override

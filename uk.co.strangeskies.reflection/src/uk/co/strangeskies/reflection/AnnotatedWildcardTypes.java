@@ -101,9 +101,9 @@ public final class AnnotatedWildcardTypes {
 		}
 
 		@Override
-		public String toString() {
-			StringBuilder builder = new StringBuilder(
-					annotationString(getAnnotations()));
+		public String toString(Imports imports) {
+			StringBuilder builder = new StringBuilder(annotationString(imports,
+					getAnnotations()));
 
 			AnnotatedType[] bounds;
 			if ((bounds = getAnnotatedUpperBounds()).length > 0) {
@@ -114,11 +114,12 @@ public final class AnnotatedWildcardTypes {
 				builder.append("?");
 			}
 
-			return builder.append(annotatedBounds(bounds)).toString();
+			return builder.append(annotatedBounds(bounds, imports)).toString();
 		}
 
-		private String annotatedBounds(AnnotatedType[] bounds) {
-			return Arrays.stream(bounds).map(AnnotatedTypes::toString)
+		private String annotatedBounds(AnnotatedType[] bounds, Imports imports) {
+			return Arrays.stream(bounds)
+					.map(t -> AnnotatedTypes.toString(t, imports))
 					.collect(Collectors.joining(" & "));
 		}
 

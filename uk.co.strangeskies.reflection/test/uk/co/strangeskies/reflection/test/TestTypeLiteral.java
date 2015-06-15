@@ -37,6 +37,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 
+import uk.co.strangeskies.reflection.AnnotatedTypes;
+import uk.co.strangeskies.reflection.Imports;
 import uk.co.strangeskies.reflection.InferenceVariable;
 import uk.co.strangeskies.reflection.Invokable;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
@@ -547,9 +549,14 @@ public class TestTypeLiteral {
 				.isAssignableFrom(new TypeToken<C2<String>>() {}));
 		System.out.println();
 
+		Imports imports = new Imports().withImports(Capture.class, Preserve.class,
+				Test2.class, List.class);
+		;
 		System.out
-				.println(new TypeToken<@Test List<@Test2 ? extends @Preserve Number> @Capture [] @Infer []>() {}
-						.getAnnotatedDeclaration());
+				.println(AnnotatedTypes
+						.toString(
+								new TypeToken<@Test(thisIsTest = "yeah!", wat = 2.5) List<@Test2(idk = "helo", wat = 2) ? extends @Preserve Number> @Capture [] @Infer []>() {}
+										.getAnnotatedDeclaration(), imports));
 		System.out.println();
 
 		System.out.println(new TypeToken<@Infer TreeSet<? extends C2<?>>>() {});
@@ -568,11 +575,19 @@ public class TestTypeLiteral {
 
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target(ElementType.TYPE_USE)
-	@interface Test2 {};
+	@interface Test2 {
+		String idk();
+
+		int wat();
+	};
 
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target(ElementType.TYPE_USE)
-	@interface Test {};
+	@interface Test {
+		String thisIsTest();
+
+		double wat();
+	};
 
 	static class C1<T extends C1<T>> {}
 

@@ -300,6 +300,11 @@ public class ParameterizedTypes {
 			assumedEqualities = new HashMap<>();
 		}
 
+		ParameterizedTypeImpl(ParameterizedType type) {
+			this(type.getOwnerType(), (Class<?>) type.getRawType(), Arrays
+					.asList(type.getActualTypeArguments()));
+		}
+
 		@Override
 		public Type[] getActualTypeArguments() {
 			return typeArguments.toArray(new Type[typeArguments.size()]);
@@ -317,27 +322,41 @@ public class ParameterizedTypes {
 
 		@Override
 		public String toString() {
+			return toString(Imports.empty());
+		}
+
+		public String toString(Imports imports) {
 			StringBuilder builder = new StringBuilder();
-			if (ownerType != null) {
-				builder.append(ownerType.getTypeName()).append(".");
-				builder.append(rawType.getSimpleName());
-			} else
-				builder.append(rawType.getTypeName());
+			if (ownerType == null) {
+				builder.append(Types.toString(rawType, imports));
+			} else {
+				builder.append(Types.toString(ownerType, imports)).append(".");
+
+				if (ownerType instanceof ParameterizedType) {
+					String rawTypeName = rawType.getName();
+					int index = rawTypeName.indexOf('$');
+					if (index > 0) {
+						rawTypeName = rawTypeName.substring(index + 1);
+					}
+					builder.append(rawTypeName);
+				} else {
+					builder.append(Types.toString(rawType, imports));
+				}
+			}
 
 			builder.append('<');
 
 			Thread currentThread = Thread.currentThread();
 			if (recurringThreads.add(currentThread)) {
-				builder.append(typeArguments.stream().map(Types::toString)
+				builder.append(typeArguments.stream()
+						.map(t -> Types.toString(t, imports))
 						.collect(Collectors.joining(", ")));
-
 				recurringThreads.remove(currentThread);
-			} else
+			} else {
 				builder.append("...");
+			}
 
-			builder.append('>');
-
-			return builder.toString();
+			return builder.append(">").toString();
 		}
 
 		@Override
@@ -516,5 +535,24 @@ public class ParameterizedTypes {
 				.getType());
 
 		return supertype;
+	}
+
+	/**
+	 * Give a canonical String representation of a parameterized type which
+	 * supports infinite types. Provided class and package imports allow the names
+	 * of some classes to be output without full package qualification.
+	 * 
+	 * @param type
+	 *          The type for which we wish to determine a string representation.
+	 * @param imports
+	 *          Classes and packages for which full package qualification may be
+	 *          omitted from output.
+	 * @return A canonical string representation of the given type.
+	 */
+	public static String toString(ParameterizedType type, Imports imports) {
+		if (type instanceof ParameterizedTypeImpl)
+			return ((ParameterizedTypeImpl) type).toString(imports);
+		else
+			return new ParameterizedTypeImpl(type).toString(imports);
 	}
 }

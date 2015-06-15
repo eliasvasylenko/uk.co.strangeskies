@@ -109,22 +109,29 @@ public final class AnnotatedTypes {
 		}
 
 		@Override
-		public String toString() {
-			return new StringBuilder().append(annotationString(annotations.values()))
-					.append(type.toString()).toString();
+		public final String toString() {
+			return toString(Imports.empty());
 		}
 
-		protected static String annotationString(Annotation... annotations) {
-			return annotationString(Arrays.asList(annotations));
+		public String toString(Imports imports) {
+			return new StringBuilder()
+					.append(annotationString(imports, annotations.values()))
+					.append(Types.toString(type, imports)).toString();
 		}
 
-		protected static String annotationString(
+		protected static String annotationString(Imports imports,
+				Annotation... annotations) {
+			return annotationString(imports, Arrays.asList(annotations));
+		}
+
+		protected static String annotationString(Imports imports,
 				Collection<? extends Annotation> annotations) {
 			if (!annotations.isEmpty()) {
 				StringBuilder builder = new StringBuilder();
 
 				for (Annotation annotation : annotations)
-					builder.append(annotation).append(" ");
+					builder.append(AnnotatedTypes.toString(annotation, imports)).append(
+							" ");
 
 				return builder.toString();
 			} else {
@@ -339,6 +346,24 @@ public final class AnnotatedTypes {
 	 * Give a canonical String representation of a given annotated type, which is
 	 * intended to be more easily human-readable than implementations of
 	 * {@link Object#toString()} for certain implementations of {@link Type}.
+	 * Provided class and package imports allow the names of some classes to be
+	 * output without full package qualification.
+	 * 
+	 * @param annotatedType
+	 *          The type of which we wish to determine a string representation.
+	 * @param imports
+	 *          Classes and packages for which full package qualification may be
+	 *          omitted from output.
+	 * @return A canonical string representation of the given type.
+	 */
+	public static String toString(AnnotatedType annotatedType, Imports imports) {
+		return wrapImpl(annotatedType).toString(imports);
+	}
+
+	/**
+	 * Give a canonical String representation of a given annotated type, which is
+	 * intended to be more easily human-readable than implementations of
+	 * {@link Object#toString()} for certain implementations of {@link Type}.
 	 * 
 	 * @param annotatedType
 	 *          The type of which we wish to determine a string representation.
@@ -346,6 +371,49 @@ public final class AnnotatedTypes {
 	 */
 	public static String toString(AnnotatedType annotatedType) {
 		return wrap(annotatedType).toString();
+	}
+
+	/**
+	 * Give a canonical String representation of a given annotation.
+	 * 
+	 * @param annotation
+	 *          The annotation of which we wish to determine a string
+	 *          representation.
+	 * @return A canonical string representation of the given type.
+	 */
+	public static String toString(Annotation annotation) {
+		return toString(annotation, Imports.empty());
+	}
+
+	/**
+	 * Give a canonical String representation of a given annotation.Provided class
+	 * and package imports allow the names of some classes to be output without
+	 * full package qualification.
+	 * 
+	 * @param annotation
+	 *          The annotation of which we wish to determine a string
+	 *          representation.
+	 * @param imports
+	 *          Classes and packages for which full package qualification may be
+	 *          omitted from output.
+	 * @return A canonical string representation of the given type.
+	 */
+	public static String toString(Annotation annotation, Imports imports) {
+		String annotationString = annotation.toString();
+
+		Class<?> annotationType = annotation.annotationType();
+		if (imports.isImported(annotationType)) {
+			annotationString = new StringBuilder("@")
+					.append(imports.getClassName(annotationType))
+					.append(annotationString.substring(annotationString.indexOf("(")))
+					.toString();
+		}
+
+		if (annotationString.endsWith("()"))
+			annotationString = annotationString.substring(0,
+					annotationString.length() - 2);
+
+		return annotationString;
 	}
 
 	/**

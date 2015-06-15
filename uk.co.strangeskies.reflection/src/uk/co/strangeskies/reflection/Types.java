@@ -402,7 +402,7 @@ public final class Types {
 	 * @return A canonical string representation of the given type.
 	 */
 	public static String toString(Type type) {
-		return toString(type, new Imports());
+		return toString(type, Imports.empty());
 	}
 
 	/**
@@ -427,9 +427,7 @@ public final class Types {
 			else
 				return imports.getClassName((Class<?>) type);
 		} else if (type instanceof ParameterizedType) {
-			ParameterizedType parameterizedType = (ParameterizedType) type;
-
-			throw new UnsupportedOperationException();
+			return ParameterizedTypes.toString((ParameterizedType) type, imports);
 		} else if (type instanceof GenericArrayType) {
 			return new StringBuilder(toString(
 					((GenericArrayType) type).getGenericComponentType(), imports))
@@ -450,16 +448,13 @@ public final class Types {
 					typeVariableCapture.getLowerBounds(), imports);
 
 			return builder.toString();
-		} else if (type instanceof TypeVariable) {
-			return type.getTypeName();
 		} else if (type instanceof IntersectionType) {
-			return toString(((IntersectionType) type).getTypes(), " & ", imports);
+			return ((IntersectionType) type).toString(imports);
 		} else
-			throw new TypeException("Unexpected class '" + type.getClass()
-					+ "' of type '" + type + "'.");
+			return type.getTypeName();
 	}
 
-	private static String toString(Type[] types, String delimiter, Imports imports) {
+	static String toString(Type[] types, String delimiter, Imports imports) {
 		return Arrays.stream(types).map(t -> toString(t, imports))
 				.collect(Collectors.joining(delimiter));
 	}

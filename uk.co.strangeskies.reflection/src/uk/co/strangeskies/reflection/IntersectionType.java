@@ -166,11 +166,25 @@ public abstract class IntersectionType implements Type {
 
 	@Override
 	public String toString() {
+		return toString(Imports.empty());
+	}
+
+	/**
+	 * Give a canonical String representation of an intersection type which
+	 * supports infinite types. Provided class and package imports allow the names
+	 * of some classes to be output without full package qualification.
+	 * 
+	 * @param imports
+	 *          Classes and packages for which full package qualification may be
+	 *          omitted from output.
+	 * @return A canonical string representation of the given type.
+	 */
+	public String toString(Imports imports) {
 		return Arrays
 				.stream(getTypes())
 				.map(
 						t -> {
-							String typeName = Types.toString(t);
+							String typeName = Types.toString(t, imports);
 							if (t instanceof TypeVariableCapture)
 								typeName = new StringBuilder().append("[ ").append(typeName)
 										.append(" ]").toString();

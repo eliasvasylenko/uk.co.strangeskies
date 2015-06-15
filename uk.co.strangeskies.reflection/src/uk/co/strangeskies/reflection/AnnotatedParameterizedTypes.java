@@ -97,13 +97,14 @@ public final class AnnotatedParameterizedTypes {
 		}
 
 		@Override
-		public String toString() {
-			StringBuilder builder = new StringBuilder(
-					annotationString(getAnnotations())).append(
-					getType().getRawType().getTypeName()).append("<");
+		public String toString(Imports imports) {
+			StringBuilder builder = new StringBuilder(annotationString(imports,
+					getAnnotations())).append(
+					Types.toString(getType().getRawType(), imports)).append("<");
 
 			builder.append(Arrays.stream(getAnnotatedActualTypeArguments())
-					.map(AnnotatedTypes::toString).collect(Collectors.joining(", ")));
+					.map(t -> AnnotatedTypes.toString(t, imports))
+					.collect(Collectors.joining(", ")));
 
 			return builder.append(">").toString();
 		}
