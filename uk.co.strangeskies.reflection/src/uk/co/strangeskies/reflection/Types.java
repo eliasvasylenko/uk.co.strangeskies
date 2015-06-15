@@ -398,14 +398,82 @@ public final class Types {
 	 * {@link Object#toString()} for certain implementations of {@link Type}.
 	 * 
 	 * @param type
-	 *          The type of which we wish to determine a string representation.
+	 *          The type for which we wish to determine a string representation.
 	 * @return A canonical string representation of the given type.
 	 */
 	public static String toString(Type type) {
-		if (type instanceof Class && getRawType(type).isArray())
-			return toString(((Class<?>) type).getComponentType()) + "[]";
-		else
-			return type == null ? "null" : type.getTypeName();
+		return toString(type, new Imports());
+	}
+
+	/**
+	 * Give a canonical String representation of a given type, which is intended
+	 * to be more easily human-readable than implementations of
+	 * {@link Object#toString()} for certain implementations of {@link Type}.
+	 * Provided class and package imports allow the names of some classes to be
+	 * output without full package qualification.
+	 * 
+	 * @param imports
+	 *          Classes and packages for which full package qualification may be
+	 *          omitted from output.
+	 * @param type
+	 *          The type for which we wish to determine a string representation.
+	 * @return A canonical string representation of the given type.
+	 */
+	public static String toString(Type type, Imports imports) {
+		if (type instanceof Class) {
+			if (((Class<?>) type).isArray())
+				return new StringBuilder(toString(((Class<?>) type).getComponentType(),
+						imports)).append("[]").toString();
+			else
+				return imports.getClassName((Class<?>) type);
+		} else if (type instanceof ParameterizedType) {
+			ParameterizedType parameterizedType = (ParameterizedType) type;
+
+			throw new UnsupportedOperationException();
+		} else if (type instanceof GenericArrayType) {
+			return new StringBuilder(toString(
+					((GenericArrayType) type).getGenericComponentType(), imports))
+					.append("[]").toString();
+		} else if (type instanceof WildcardType) {
+			WildcardType wildcardType = (WildcardType) type;
+			StringBuilder builder = new StringBuilder("?");
+
+			appendBounds(builder, wildcardType.getUpperBounds(),
+					wildcardType.getLowerBounds(), imports);
+
+			return builder.toString();
+		} else if (type instanceof TypeVariableCapture) {
+			TypeVariableCapture typeVariableCapture = (TypeVariableCapture) type;
+			StringBuilder builder = new StringBuilder(typeVariableCapture.getName());
+
+			appendBounds(builder, typeVariableCapture.getUpperBounds(),
+					typeVariableCapture.getLowerBounds(), imports);
+
+			return builder.toString();
+		} else if (type instanceof TypeVariable) {
+			return type.getTypeName();
+		} else if (type instanceof IntersectionType) {
+			return toString(((IntersectionType) type).getTypes(), " & ", imports);
+		} else
+			throw new TypeException("Unexpected class '" + type.getClass()
+					+ "' of type '" + type + "'.");
+	}
+
+	private static String toString(Type[] types, String delimiter, Imports imports) {
+		return Arrays.stream(types).map(t -> toString(t, imports))
+				.collect(Collectors.joining(delimiter));
+	}
+
+	private static void appendBounds(StringBuilder builder, Type[] upperBounds,
+			Type[] lowerBounds, Imports imports) {
+		if (upperBounds.length > 0
+				&& (upperBounds.length != 1 || (upperBounds[0] != null && upperBounds[0]
+						.equals(Object.class))))
+			builder.append(" extends ").append(toString(upperBounds, " & ", imports));
+
+		if (lowerBounds.length > 0
+				&& !(lowerBounds.length == 1 && lowerBounds[0] == null))
+			builder.append(" super ").append(toString(lowerBounds, " & ", imports));
 	}
 
 	/**

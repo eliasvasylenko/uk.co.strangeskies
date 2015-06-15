@@ -91,7 +91,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder().append(getName());
+		StringBuilder builder = new StringBuilder(getName());
 
 		if (upperBounds.length > 0
 				&& !(upperBounds.length == 1 && upperBounds[0] == null))

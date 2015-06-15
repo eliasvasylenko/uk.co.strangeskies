@@ -1638,6 +1638,14 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 		return declaration;
 	}
 
+	/**
+	 * Incorporate all inference variables and wildcard captures mentioned by this
+	 * type into the given resolver.
+	 * 
+	 * @param resolver
+	 *          The resolver instance into which we wish to incorporate
+	 *          information about this type token.
+	 */
 	public void incorporateInto(Resolver resolver) {
 		resolver.getBounds().incorporate(
 				getInternalResolver().getBounds(),
@@ -1653,7 +1661,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 * wildcards which they originally captured, if they were captured through
 	 * incorporation of wildcard types into this {@link Resolver} instance.
 	 * 
-	 * @return
+	 * @return A derived type token with mentions of captures of {@link Preserve}d
+	 *         wildcards substituted for those wildcards.
 	 */
 	public TypeToken<?> resubstituteCapturedWildcards() {
 		return new TypeToken<T>(getResolver(), getInternalResolver()

@@ -349,7 +349,8 @@ public class ParameterizedTypes {
 				 * code:
 				 */
 				int hashCode = (ownerType == null ? 0 : ownerType.hashCode())
-						^ typeArguments.hashCode() ^ rawType.hashCode();
+						^ (rawType == null ? 0 : rawType.hashCode())
+						^ typeArguments.hashCode();
 
 				recurringThreads.remove(currentThread);
 
