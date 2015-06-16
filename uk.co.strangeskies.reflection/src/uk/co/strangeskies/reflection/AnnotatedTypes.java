@@ -27,14 +27,18 @@ import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
+import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -424,8 +428,32 @@ public final class AnnotatedTypes {
 	 * @return The type described by the String.
 	 */
 	public static AnnotatedType fromString(String typeString) {
-		throw new UnsupportedOperationException(
-				"Unable to parse the annotated type literal string '" + typeString
-						+ "'.");
+		return fromString(typeString, Imports.empty());
+	}
+
+	/**
+	 * Create an AnnotatedType instance from a parsed String. Provided class and
+	 * package imports allow the names of some classes to be given without full
+	 * package qualification.
+	 * 
+	 * @param typeString
+	 *          The String to parse.
+	 * @param imports
+	 *          Classes and packages for which full package qualification may be
+	 *          omitted from input.
+	 * @return The type described by the String.
+	 */
+	public static AnnotatedType fromString(String typeString, Imports imports) {
+		char[] characters = typeString.toCharArray();
+		int index = 0;
+		throw new UnsupportedOperationException();
+	}
+
+	private enum ParseState {
+		TYPE(null), ANNOTATION('@', TYPE);
+
+		private ParseState(char start, ParseState... next) {}
+
+		private ParseState(Predicate<Character> start, ParseState... next) {}
 	}
 }

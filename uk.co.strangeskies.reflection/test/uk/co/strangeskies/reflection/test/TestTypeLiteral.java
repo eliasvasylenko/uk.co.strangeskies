@@ -551,12 +551,14 @@ public class TestTypeLiteral {
 
 		Imports imports = new Imports().withImports(Capture.class, Preserve.class,
 				Test2.class, List.class);
-		;
-		System.out
-				.println(AnnotatedTypes
-						.toString(
-								new TypeToken<@Test(thisIsTest = "yeah!", wat = 2.5) List<@Test2(idk = "helo", wat = 2) ? extends @Preserve Number> @Capture [] @Infer []>() {}
-										.getAnnotatedDeclaration(), imports));
+		String annotationString = AnnotatedTypes
+				.toString(
+						new TypeToken<@Test(thisIsTest = "yeah!", wat = 2.5) List<@Test2(idk = "helo", wat = 2) ? extends @Preserve Number> @Capture [] @Infer []>() {}
+								.getAnnotatedDeclaration(), imports);
+		System.out.println(annotationString);
+		System.out.println();
+
+		System.out.println(AnnotatedTypes.fromString(annotationString, imports));
 		System.out.println();
 
 		System.out.println(new TypeToken<@Infer TreeSet<? extends C2<?>>>() {});
