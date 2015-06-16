@@ -27,19 +27,20 @@ import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
-import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.TreeMap;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
+import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 
 /**
  * A collection of general utility methods relating to annotated types within
@@ -446,14 +447,36 @@ public final class AnnotatedTypes {
 	public static AnnotatedType fromString(String typeString, Imports imports) {
 		char[] characters = typeString.toCharArray();
 		int index = 0;
+
+		for (int i = 0; i < characters.length; i++) {
+			// characters[i] ;
+		}
+
 		throw new UnsupportedOperationException();
 	}
 
 	private enum ParseState {
-		TYPE(null), ANNOTATION('@', TYPE);
+		TYPE(Character::isAlphabetic),
+		TYPE_PARAMETERS('<'),
+		TYPE_PARAMETERS_NEXT(','),
+		TYPE_PARAMETERS_END('>'),
+		ANNOTATION('@'),
+		ANNOTATION_PROPERTIES('('),
+		ANNOTATION_PROPERTY_NAME(Character::isAlphabetic),
+		ANNOTATION_PROPERTY_VALUE('='),
+		ANNOTATION_PROPERTIES_NEXT(','),
+		ANNOTATION_PROPERTIES_END(')');
 
-		private ParseState(char start, ParseState... next) {}
+		private static final MultiMap<ParseState, ParseState, Set<ParseState>> NEXT = new MultiHashMap<>(
+				HashSet::new);
+		static {
+			NEXT.add(TYPE, TYPE_PARAMETERS);
+		}
 
-		private ParseState(Predicate<Character> start, ParseState... next) {}
+		private ParseState(Character start) {
+			this(start::equals);
+		}
+
+		private ParseState(Predicate<Character> start) {}
 	}
 }
