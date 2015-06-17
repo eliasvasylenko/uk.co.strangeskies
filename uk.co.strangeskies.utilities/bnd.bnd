@@ -9,7 +9,8 @@ Export-Package: \
 	uk.co.strangeskies.utilities.function,\
 	uk.co.strangeskies.utilities.function.collection,\
 	uk.co.strangeskies.utilities.test,\
-	uk.co.strangeskies.utilities.tuples
+	uk.co.strangeskies.utilities.tuples,\
+	uk.co.strangeskies.utilities.parser
 Bundle-Name: Strange Skies Utilities
 -dsannotations:  \
 	*

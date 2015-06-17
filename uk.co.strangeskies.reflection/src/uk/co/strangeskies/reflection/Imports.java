@@ -77,7 +77,17 @@ public class Imports {
 	}
 
 	public Class<?> getNamedClass(String name) {
-		return namedClasses.get(name);
+		Class<?> namedClass = namedClasses.get(name);
+		if (namedClass == null) {
+			try {
+				namedClass = Class.forName(name);
+			} catch (ClassNotFoundException e) {
+				throw new IllegalArgumentException("Cannot load class '" + name + "'",
+						e);
+			}
+		}
+
+		return namedClass;
 	}
 
 	public String getClassName(Class<?> clazz) {

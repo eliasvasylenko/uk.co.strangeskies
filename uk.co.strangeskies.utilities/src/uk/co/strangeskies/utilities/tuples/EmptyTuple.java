@@ -24,8 +24,27 @@ package uk.co.strangeskies.utilities.tuples;
  * @author Elias N Vasylenko
  *
  */
-public final class NullTuple extends Tuple<Void, Tuple<?, ?>> {
-	private NullTuple() {
+public final class EmptyTuple extends Tuple<Void, Tuple<?, ?>> {
+	private static EmptyTuple NULL_TUPLE = new EmptyTuple();
+
+	private EmptyTuple() {
 		super(null, null);
+	}
+
+	/**
+	 * @return Return an instance of the empty tuple.
+	 */
+	public static EmptyTuple get() {
+		return NULL_TUPLE;
+	}
+
+	@Override
+	public boolean hasTail() {
+		return false;
+	}
+
+	@Override
+	public int getSize() {
+		return 0;
 	}
 }

@@ -26,12 +26,12 @@ package uk.co.strangeskies.utilities.tuples;
  * @param <H>
  *          The type of the first and only item.
  */
-public class Unit<H> extends Tuple<H, NullTuple> {
+public class Unit<H> extends Tuple<H, EmptyTuple> {
 	/**
 	 * @param head
 	 *          The the first and only item.
 	 */
 	public Unit(H head) {
-		super(head);
+		super(head, EmptyTuple.get());
 	}
 }

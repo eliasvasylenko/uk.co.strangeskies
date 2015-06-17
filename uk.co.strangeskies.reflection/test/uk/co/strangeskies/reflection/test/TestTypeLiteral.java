@@ -558,6 +558,23 @@ public class TestTypeLiteral {
 		System.out.println(annotationString);
 		System.out.println();
 
+		System.out.println(AnnotatedTypes.cfromString("java.lang.reflect.Type"));
+		System.out.println();
+
+		System.out.println(AnnotatedTypes.fromString(
+				"@Infer java.lang.reflect.Type", imports));
+		System.out.println();
+
+		System.out.println(AnnotatedTypes
+				.fromString("fdsafsa,FSDAF23132,   abc   ,  1 ,"));
+		System.out.println();
+
+		System.out.println(AnnotatedTypes.fromString(""));
+		System.out.println();
+
+		System.out.println(AnnotatedTypes.fromString(",12"));
+		System.out.println();
+
 		System.out.println(AnnotatedTypes.fromString(annotationString, imports));
 		System.out.println();
 

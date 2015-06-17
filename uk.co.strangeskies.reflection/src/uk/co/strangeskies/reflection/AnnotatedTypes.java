@@ -31,21 +31,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import uk.co.strangeskies.utilities.IdentityProperty;
-import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
-import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
+import uk.co.strangeskies.utilities.parser.Parser;
+import uk.co.strangeskies.utilities.tuples.Pair;
 
 /**
  * A collection of general utility methods relating to annotated types within
@@ -450,23 +445,32 @@ public final class AnnotatedTypes {
 	 * @return The type described by the String.
 	 */
 	public static AnnotatedType fromString(String typeString, Imports imports) {
-		char[] characters = typeString.toCharArray();
-		int index = 0;
+		return new AnnotatedTypeParser(imports).parse(typeString);
+	}
 
-		for (int i = 0; i < characters.length; i++) {
-			// characters[i] ;
-		}
+	/**
+	 * Create an AnnotatedType instance from a parsed String.
+	 * 
+	 * @param typeString
+	 *          The String to parse.
+	 * @return The type described by the String.
+	 */
+	public static Class<?> cfromString(String typeString) {
+		return new AnnotatedTypeParser(Imports.empty()).cparse(typeString);
+	}
 
-		throw new UnsupportedOperationException();
+	public static <T extends Annotation> T annotationFrom(
+			Class<T> annotationClass, Map<String, Object> properties) {
+		return null;
 	}
 
 	/*-
 	 *	AlphaNumericString
 	 *
-	 *	Type<AnnotatedType>								->	Annotations WildcardType | ClassType
+	 *	Type<AnnotatedType>								->	Annotations ClassType | WildcardType
 	 *	ClassType<Type>										->	TypeName[ < TypeList >]
 	 *	WildcardType<WildcardType>				->	?[ extends|super ClassTypeList]
-	 *	TypeName<String[]>								->	AlphaNumericString[ . TypeName]
+	 *	TypeName<String[]>								->	 AlphaNumericString[ .TypeName]
 	 *	TypeList<List<AnnotatedType>>			->	Type[ , TypeList]
 	 *	ClassTypeList<List<Type>>					->	Annotations ClassType[ & ClassTypeList]
 	 *
@@ -476,44 +480,72 @@ public final class AnnotatedTypes {
 	 *	PropertyValue											->	?
 	 */
 
-	static Parser buildParser() {
-		ParserBuilder<String> alphanumeric = null;
+	public static class AnnotatedTypeParser {
+		private final Parser<Class<?>> typeName;
 
-		IdentityProperty<Parser<AnnotatedType>> type = new IdentityProperty<>();
-		IdentityProperty<Parser<Type>> classType = new IdentityProperty<>();
-		IdentityProperty<Parser<WildcardType>> wildcardType = new IdentityProperty<>();
-		IdentityProperty<Parser<List<String>>> typeName = new IdentityProperty<>();
-		IdentityProperty<Parser<List<AnnotatedType>>> typeList = new IdentityProperty<>();
-		IdentityProperty<Parser<List<Type>>> classTypeList = new IdentityProperty<>();
+		private final Parser<AnnotatedType> type;
+		private final Parser<List<AnnotatedType>> typeList;
+		private Parser<Type> classType;
+		private Parser<WildcardType> wildcardType;
+		private Parser<List<Type>> classTypeList;
 
-		IdentityProperty<Parser<Annotation>> annotations = new IdentityProperty<>();
-		IdentityProperty<Parser<Map<String, Object>>> annotationProperties = new IdentityProperty<>();
+		private final Parser<Annotation> annotation;
+		private final Parser<List<Annotation>> annotationList;
+		private final Parser<Map<String, Object>> annotationProperties;
+		private final Parser<Pair<String, Object>> annotationProperty;
 
-		// with(ArrayList::new).then(type, List::add)
-		// .then(typeList, List::addAll);
+		public AnnotatedTypeParser(Imports imports) {
+			typeName = Parser.matching(
+					"[_a-zA-Z][_a-zA-Z0-9]*(\\.[_a-zA-Z][_a-zA-Z0-9]*)*").to(
+					imports::getNamedClass);
 
-		return null;
-	}
+			annotationProperty = Parser.matching("[_a-zA-Z][_a-zA-Z0-9]")
+					.append("\\s*=\\s*")
+					.appendTransform("[a-zA-Z0-9_]+", (s, t) -> new Pair<>(s, t));
+			annotationProperties = Parser
+					.proxy(this::getAnnotationProperties)
+					.prepend("\\s*,\\s*")
+					.orElse(HashMap::new)
+					.prepend(annotationProperty.optional(),
+							(m, p) -> m.put(p.getLeft(), p.getRight())).prepend("\\(\\s*")
+					.append("\\s*\\)");
+			annotation = typeName
+					.prepend("@")
+					.to(t -> (Class<? extends Annotation>) t.asSubclass(Annotation.class))
+					.appendTransform(annotationProperties.optional(),
+							(c, p) -> annotationFrom(c, p));
+			annotationList = Parser.proxy(this::getAnnotationList)
+					.prepend("\\s*,\\s*").orElse(ArrayList::new)
+					.prepend(annotation.optional(), List::add);
 
-	private interface Parser<T> {
+			type = typeName.prependTransform(annotationList, AnnotatedTypes::over);
 
-	}
+			typeList = Parser.proxy(this::getTypeList).prepend("\\s*,\\s*")
+					.orElse(ArrayList::new).prepend(type, List::add);
+		}
 
-	private interface ParserBuilder<T> {
-		ParserBuilder<T> with(Supplier<T> supplier);
+		public Parser<AnnotatedType> getType() {
+			return type;
+		}
 
-		ParserBuilder<T> then(String literal);
+		public Parser<List<AnnotatedType>> getTypeList() {
+			return typeList;
+		}
 
-		<U> ParserBuilder<T> then(Supplier<Parser<U>> parser,
-				BiConsumer<T, U> incorporate);
+		public Parser<Map<String, Object>> getAnnotationProperties() {
+			return annotationProperties;
+		}
 
-		<U> ParserBuilder<T> thenOptional(Supplier<Parser<U>> parser,
-				BiConsumer<T, U> incorporate);
+		public Parser<List<Annotation>> getAnnotationList() {
+			return annotationList;
+		}
 
-		<U> ParserBuilder<T> thenChoice(
-				@SuppressWarnings("unchecked") Supplier<Parser<? extends U>>... parsers);
+		public AnnotatedType parse(String literal) {
+			return type.parse(literal);
+		}
 
-		<U, V> ParserBuilder<T> thenChoice(Supplier<Parser<U>> first,
-				ParserBuilder<V> secondParser);
+		public Class<?> cparse(String literal) {
+			return typeName.parse(literal);
+		}
 	}
 }

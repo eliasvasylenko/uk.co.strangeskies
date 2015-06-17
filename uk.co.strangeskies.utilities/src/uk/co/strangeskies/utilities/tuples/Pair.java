@@ -18,6 +18,8 @@
  */
 package uk.co.strangeskies.utilities.tuples;
 
+import java.util.function.Function;
+
 /**
  * A two tuple.
  * 
@@ -67,5 +69,10 @@ public class Pair<L, R> extends Tuple<L, Unit<R>> {
 	 */
 	public R getRight() {
 		return getTail().getHead();
+	}
+
+	@Override
+	public <I> Pair<I, R> mapHead(Function<L, I> headMap) {
+		return new Pair<>(headMap.apply(getLeft()), getRight());
 	}
 }

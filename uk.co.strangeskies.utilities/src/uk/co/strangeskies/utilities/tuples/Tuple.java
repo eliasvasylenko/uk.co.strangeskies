@@ -19,6 +19,8 @@
 package uk.co.strangeskies.utilities.tuples;
 
 import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * A tuple entry, parameterised recursively with type information for each
@@ -35,17 +37,6 @@ public class Tuple<H, T extends Tuple<?, ?>> {
 	private H head;
 	private T tail;
 
-	protected Tuple(H head) {
-		try {
-			if (head == null) {
-				throw new NullPointerException();
-			}
-		} catch (NullPointerException e) {
-			throw new IllegalArgumentException(e);
-		}
-		this.head = head;
-	}
-
 	/**
 	 * Create a Tuple instance with the given values for its head and tail
 	 * entries.
@@ -56,13 +47,6 @@ public class Tuple<H, T extends Tuple<?, ?>> {
 	 *          The tail {@link Tuple}.
 	 */
 	public Tuple(H head, T tail) {
-		try {
-			if (head == null) {
-				throw new NullPointerException();
-			}
-		} catch (NullPointerException e) {
-			throw new IllegalArgumentException(e);
-		}
 		this.head = head;
 		this.tail = tail;
 	}
@@ -84,15 +68,39 @@ public class Tuple<H, T extends Tuple<?, ?>> {
 	 * 
 	 */
 	public void setHead(H head) {
-		try {
-			if (head == null) {
-				throw new NullPointerException();
-			}
-		} catch (NullPointerException e) {
-			throw new IllegalArgumentException(e);
-		}
-
 		this.head = head;
+	}
+
+	/**
+	 * Map the value of the head entry.
+	 * 
+	 * @param headMap
+	 *          A mapping to a new head value. The result should be non-null.
+	 * @param <I>
+	 *          The type of the head of the new Tuple.
+	 * 
+	 * @return A new derived tuple with the head value transformed by the given
+	 *         mapping.
+	 * 
+	 */
+	public <I> Tuple<I, T> mapHead(Function<H, I> headMap) {
+		return new Tuple<>(headMap.apply(head), tail);
+	}
+
+	/**
+	 * Map the value of the tail entry.
+	 * 
+	 * @param tailMap
+	 *          A mapping to a new tail value. The result should be non-null.
+	 * @param <U>
+	 *          The type of the tail of the new Tuple.
+	 * 
+	 * @return A new derived tuple with the tail value transformed by the given
+	 *         mapping.
+	 * 
+	 */
+	public <U extends Tuple<?, ?>> Tuple<H, U> mapTail(Function<T, U> tailMap) {
+		return new Tuple<>(head, tailMap.apply(tail));
 	}
 
 	/**
@@ -101,7 +109,7 @@ public class Tuple<H, T extends Tuple<?, ?>> {
 	 * @return Tail value, which is itself a tuple.
 	 */
 	public T getTail() {
-		if (tail == null) {
+		if (tail.equals(EmptyTuple.get())) {
 			throw new NoSuchElementException();
 		}
 		return tail;
@@ -114,15 +122,8 @@ public class Tuple<H, T extends Tuple<?, ?>> {
 	 *          A new tuple of the exact expected type of the tail of this tuple.
 	 */
 	public void setTail(T tail) {
-		if (this.tail == null) {
+		if (this.tail.equals(EmptyTuple.get())) {
 			throw new NoSuchElementException();
-		}
-		try {
-			if (tail == null) {
-				throw new NullPointerException();
-			}
-		} catch (NullPointerException e) {
-			throw new IllegalArgumentException(e);
 		}
 
 		this.tail = tail;
@@ -134,7 +135,7 @@ public class Tuple<H, T extends Tuple<?, ?>> {
 	 * @return True if the tuple has a tail, false otherwise.
 	 */
 	public boolean hasTail() {
-		return tail != null;
+		return !tail.equals(EmptyTuple.get());
 	}
 
 	/**
@@ -208,7 +209,7 @@ public class Tuple<H, T extends Tuple<?, ?>> {
 			return false;
 		}
 
-		if (!getHead().equals(otherTuple.getHead())) {
+		if (!Objects.equals(getHead(), otherTuple.getHead())) {
 			return false;
 		}
 
