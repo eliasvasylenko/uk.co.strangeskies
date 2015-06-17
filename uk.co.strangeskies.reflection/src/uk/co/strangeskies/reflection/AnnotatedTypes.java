@@ -27,6 +27,7 @@ import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -36,9 +37,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 
@@ -455,28 +460,60 @@ public final class AnnotatedTypes {
 		throw new UnsupportedOperationException();
 	}
 
-	private enum ParseState {
-		TYPE(Character::isAlphabetic),
-		TYPE_PARAMETERS('<'),
-		TYPE_PARAMETERS_NEXT(','),
-		TYPE_PARAMETERS_END('>'),
-		ANNOTATION('@'),
-		ANNOTATION_PROPERTIES('('),
-		ANNOTATION_PROPERTY_NAME(Character::isAlphabetic),
-		ANNOTATION_PROPERTY_VALUE('='),
-		ANNOTATION_PROPERTIES_NEXT(','),
-		ANNOTATION_PROPERTIES_END(')');
+	/*-
+	 *	AlphaNumericString
+	 *
+	 *	Type<AnnotatedType>								->	Annotations WildcardType | ClassType
+	 *	ClassType<Type>										->	TypeName[ < TypeList >]
+	 *	WildcardType<WildcardType>				->	?[ extends|super ClassTypeList]
+	 *	TypeName<String[]>								->	AlphaNumericString[ . TypeName]
+	 *	TypeList<List<AnnotatedType>>			->	Type[ , TypeList]
+	 *	ClassTypeList<List<Type>>					->	Annotations ClassType[ & ClassTypeList]
+	 *
+	 *	Annotations												->	[ @TypeName[ ( AnnotationProperties )] [Annotations]]
+	 *	AnnotationProperties							->	PropertyName = PropertyValue
+	 *	PropertyName											->	AlphaNumericString
+	 *	PropertyValue											->	?
+	 */
 
-		private static final MultiMap<ParseState, ParseState, Set<ParseState>> NEXT = new MultiHashMap<>(
-				HashSet::new);
-		static {
-			NEXT.add(TYPE, TYPE_PARAMETERS);
-		}
+	static Parser buildParser() {
+		ParserBuilder<String> alphanumeric = null;
 
-		private ParseState(Character start) {
-			this(start::equals);
-		}
+		IdentityProperty<Parser<AnnotatedType>> type = new IdentityProperty<>();
+		IdentityProperty<Parser<Type>> classType = new IdentityProperty<>();
+		IdentityProperty<Parser<WildcardType>> wildcardType = new IdentityProperty<>();
+		IdentityProperty<Parser<List<String>>> typeName = new IdentityProperty<>();
+		IdentityProperty<Parser<List<AnnotatedType>>> typeList = new IdentityProperty<>();
+		IdentityProperty<Parser<List<Type>>> classTypeList = new IdentityProperty<>();
 
-		private ParseState(Predicate<Character> start) {}
+		IdentityProperty<Parser<Annotation>> annotations = new IdentityProperty<>();
+		IdentityProperty<Parser<Map<String, Object>>> annotationProperties = new IdentityProperty<>();
+
+		// with(ArrayList::new).then(type, List::add)
+		// .then(typeList, List::addAll);
+
+		return null;
+	}
+
+	private interface Parser<T> {
+
+	}
+
+	private interface ParserBuilder<T> {
+		ParserBuilder<T> with(Supplier<T> supplier);
+
+		ParserBuilder<T> then(String literal);
+
+		<U> ParserBuilder<T> then(Supplier<Parser<U>> parser,
+				BiConsumer<T, U> incorporate);
+
+		<U> ParserBuilder<T> thenOptional(Supplier<Parser<U>> parser,
+				BiConsumer<T, U> incorporate);
+
+		<U> ParserBuilder<T> thenChoice(
+				@SuppressWarnings("unchecked") Supplier<Parser<? extends U>>... parsers);
+
+		<U, V> ParserBuilder<T> thenChoice(Supplier<Parser<U>> first,
+				ParserBuilder<V> secondParser);
 	}
 }
