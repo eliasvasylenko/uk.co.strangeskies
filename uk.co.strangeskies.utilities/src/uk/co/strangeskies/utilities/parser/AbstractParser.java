@@ -31,61 +31,62 @@ public abstract class AbstractParser<T> implements Parser<T> {
 	}
 
 	@Override
-	public Parser<T> orElse(Supplier<T> onFailure) {
+	public Parser<T> orElse(Supplier<? extends T> onFailure) {
 		return orElse(new RegexParser<>("", s -> onFailure.get()));
 	}
 
 	@Override
-	public Parser<T> orElse(Parser<T> onFailure) {
+	public Parser<T> orElse(Parser<? extends T> onFailure) {
 		return new ParserProxy<T, T>(this, Function.identity()) {
+			@SuppressWarnings("unchecked")
 			@Override
 			public Pair<T, Integer> parseSubstring(String literal, boolean parseToEnd) {
-				Pair<T, Integer> value;
+				Pair<? extends T, Integer> value;
 				try {
 					value = super.parseSubstring(literal, parseToEnd);
 				} catch (Exception e) {
 					value = onFailure.parseSubstring(literal, parseToEnd);
 				}
-				return value;
+				return (Pair<T, Integer>) value;
 			}
 		};
 	}
 
 	@Override
 	public <U> Parser<U> appendTransform(String pattern,
-			BiFunction<T, String, U> incorporate) {
+			BiFunction<T, String, ? extends U> incorporate) {
 		return new JoiningParser<>(this, new RegexParser<String>(pattern,
 				Function.identity()), incorporate);
 	}
 
 	@Override
 	public <U> Parser<U> prependTransform(String pattern,
-			BiFunction<T, String, U> incorporate) {
+			BiFunction<T, String, ? extends U> incorporate) {
 		return new JoiningParser<>(new RegexParser<String>(pattern,
 				Function.identity()), this, (s, t) -> incorporate.apply(t, s));
 	}
 
 	@Override
 	public <U, V> Parser<V> appendTransform(Parser<U> parser,
-			BiFunction<T, U, V> incorporate) {
+			BiFunction<T, U, ? extends V> incorporate) {
 		return new JoiningParser<>(this, parser, incorporate);
 	}
 
 	@Override
 	public <U, V> Parser<V> prependTransform(Parser<U> parser,
-			BiFunction<T, U, V> incorporate) {
+			BiFunction<T, U, ? extends V> incorporate) {
 		return new JoiningParser<>(parser, this, (v, t) -> incorporate.apply(t, v));
 	}
 
 	@Override
 	public <U> Parser<T> tryAppendTransform(Parser<U> parser,
-			BiFunction<T, U, T> incorporate) {
+			BiFunction<T, U, ? extends T> incorporate) {
 		return new AppendingParser<>(this, parser, incorporate);
 	}
 
 	@Override
 	public <U> Parser<T> tryPrependTransform(Parser<U> parser,
-			BiFunction<T, U, T> incorporate) {
+			BiFunction<T, U, ? extends T> incorporate) {
 		return new PrependingParser<>(this, parser, incorporate);
 	}
 

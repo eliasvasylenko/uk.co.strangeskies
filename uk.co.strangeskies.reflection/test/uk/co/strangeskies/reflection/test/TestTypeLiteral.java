@@ -37,8 +37,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 
-import org.testng.collections.Objects.ToStringHelper;
-
 import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.Annotations;
 import uk.co.strangeskies.reflection.Imports;
@@ -567,30 +565,10 @@ public class TestTypeLiteral {
 		System.out.println(AnnotatedTypes.fromString("Type", imports));
 		System.out.println();
 
-		System.out.println(Annotations.getParser(imports).getAnnotation()
-				.parse("@Capture"));
-		System.out.println();
-
-		System.out.println(Annotations.getParser(imports).getAnnotationList()
-				.parse("@Capture"));
-		System.out.println();
-
-		System.out.println(Annotations.getParser(imports).getAnnotationList()
-				.parse("@Capture @Preserve()"));
-		System.out.println();
-
-		System.out.println(AnnotatedTypes.fromString(
-				"@Capture java.lang.reflect.Type", imports));
-		System.out.println();
-
 		imports = imports.withImport(Test.class);
 
 		System.out.println(Annotations.getParser(imports).getProperty()
 				.parse("thisIsTest = \"yeah!\""));
-		System.out.println();
-
-		System.out.println(Annotations.getParser(imports).getProperty()
-				.parse("stupid = 5"));
 		System.out.println();
 
 		System.out.println(Annotations.getParser(imports).getPropertyMap()
@@ -616,19 +594,36 @@ public class TestTypeLiteral {
 		System.out
 				.println(AnnotatedTypes
 						.fromString(
-								"@Test(thisIsTest = \"yeah!\", wat = 2.5) java.util.ArrayList<java.lang.String>",
-								imports));
-		System.out.println();
-
-		System.out
-				.println(AnnotatedTypes
-						.fromString(
 								"@Test(thisIsTest = \"yeah!\", wat = .2) java.util.ArrayList<@Capture java.lang.String>",
 								imports));
 		System.out.println();
 
 		System.out.println(Annotations.getParser(imports).getAnnotation()
 				.parse("@Test2(idk = \"helo\", wat = 2)"));
+		System.out.println();
+
+		System.out.println(AnnotatedTypes.fromString(
+				"@Capture java.util.ArrayList @Preserve [][]", imports));
+		System.out.println();
+
+		System.out.println(AnnotatedTypes.fromString(
+				"@Capture java.util.ArrayList [] @Preserve []", imports));
+		System.out.println();
+
+		System.out.println(AnnotatedTypes.fromString(
+				"java.util.ArrayList<@Preserve?>", imports));
+		System.out.println();
+
+		System.out.println(AnnotatedTypes.fromString("List<? extends java.lang.String>",
+				imports));
+		System.out.println();
+
+		System.out
+				.println(AnnotatedTypes
+						.fromString(
+								"@Test(thisIsTest = \"yeah!\", wat = 2.5) List<@Test2(idk = \"helo\", wat = 2) ? extends @Preserve Number>",
+								imports));
+		System.out.println();
 
 		System.out.println(AnnotatedTypes.fromString(annotationString, imports));
 		System.out.println();

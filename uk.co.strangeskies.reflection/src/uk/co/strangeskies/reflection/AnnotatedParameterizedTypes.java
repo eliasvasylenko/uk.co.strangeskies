@@ -171,28 +171,6 @@ public final class AnnotatedParameterizedTypes {
 	}
 
 	/**
-	 * Parameterize a generic class with the given annotated type arguments.
-	 * 
-	 * @param annotatedRawType
-	 *          The generic class we wish to parameterize, with annotations to put
-	 *          on the resulting {@link AnnotatedParameterizedType}.
-	 * @param arguments
-	 *          A mapping from the type variables on the generic class to their
-	 *          annotated arguments.
-	 * @return A new {@link AnnotatedParameterizedType} instance with the given
-	 *         type arguments, and the given annotations.
-	 */
-	public static AnnotatedParameterizedType from(AnnotatedType annotatedRawType,
-			Function<? super TypeVariable<?>, ? extends AnnotatedType> arguments) {
-		if (!(annotatedRawType.getType() instanceof Class))
-			throw new IllegalArgumentException();
-
-		return new AnnotatedParameterizedTypeImpl(
-				(Class<?>) annotatedRawType.getType(), arguments,
-				Arrays.asList(annotatedRawType.getAnnotations()));
-	}
-
-	/**
 	 * For a given parameterized type, we retrieve a mapping of all type variables
 	 * on its raw type, as given by
 	 * {@link ParameterizedTypes#getAllTypeParameters(Class)} applied to the raw

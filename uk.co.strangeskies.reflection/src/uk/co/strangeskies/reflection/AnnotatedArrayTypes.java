@@ -78,9 +78,12 @@ public final class AnnotatedArrayTypes {
 
 			AnnotatedType type = this;
 			do {
-				builder.append(" ")
-						.append(annotationString(imports, type.getAnnotations()))
-						.append("[]");
+				if (type.getAnnotations().length > 0) {
+					builder.append(" ").append(
+							annotationString(imports, type.getAnnotations()));
+				}
+
+				builder.append("[]");
 
 				type = ((AnnotatedArrayType) type).getAnnotatedGenericComponentType();
 			} while (type instanceof AnnotatedArrayType);

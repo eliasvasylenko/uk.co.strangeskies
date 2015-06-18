@@ -26,10 +26,10 @@ public class PrependingParser<T, U> extends AbstractParser<T> {
 	private final Parser<T> main;
 	private final Parser<U> prepend;
 
-	private final BiFunction<T, U, T> combinor;
+	private final BiFunction<T, U, ? extends T> combinor;
 
 	public PrependingParser(Parser<T> main, Parser<U> prepend,
-			BiFunction<T, U, T> combinor) {
+			BiFunction<T, U, ? extends T> combinor) {
 		this.main = main;
 		this.prepend = prepend;
 

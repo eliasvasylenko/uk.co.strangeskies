@@ -42,9 +42,7 @@ import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.Annotations.AnnotationParser;
 import uk.co.strangeskies.reflection.Types.TypeParser;
-import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.parser.Parser;
-import uk.co.strangeskies.utilities.tuples.Pair;
 
 /**
  * A collection of general utility methods relating to annotated types within
@@ -437,7 +435,9 @@ public final class AnnotatedTypes {
 
 	public static class AnnotatedTypeParser {
 		private final Parser<AnnotatedType> rawType;
-		private final Parser<AnnotatedType> classType;
+		private final Parser<AnnotatedType> classOrArrayType;
+		private final Parser<AnnotatedWildcardType> wildcardType;
+		private final Parser<AnnotatedType> typeParameter;
 		private final Parser<List<AnnotatedType>> typeList;
 
 		private AnnotatedTypeParser(Imports imports) {
@@ -448,10 +448,9 @@ public final class AnnotatedTypes {
 					annotationParser.getAnnotationList().append("\\s*")
 							.orElse(ArrayList::new), AnnotatedTypes::over);
 
-			IdentityProperty<Parser<AnnotatedType>> classTypeProperty = new IdentityProperty<>();
-			classTypeProperty
-					.set(rawType.tryAppendTransform(
-							Parser.list(Parser.proxy(classTypeProperty::get), "\\s*,\\s*")
+			classOrArrayType = rawType
+					.tryAppendTransform(
+							Parser.list(Parser.proxy(this::getTypeParameter), "\\s*,\\s*")
 									.prepend("\\s*<\\s*").append("\\s*>\\s*"),
 							(r, l) -> {
 								Map<TypeVariable<?>, AnnotatedType> annotatedTypes = new HashMap<>();
@@ -464,27 +463,54 @@ public final class AnnotatedTypes {
 								for (int i = 0; i < l.size(); i++)
 									annotatedTypes.put(typeVariables[i], l.get(i));
 
-								return AnnotatedParameterizedTypes.from(r, annotatedTypes::get);
-							}));
-			classType = classTypeProperty.get();
+								return AnnotatedParameterizedTypes.from((Class<?>) r.getType(),
+										annotatedTypes::get, r.getAnnotations());
+							}).appendTransform(
+							Parser
+									.list(
+											annotationParser.getAnnotationList().append(
+													"\\s*\\[\\s*\\]"), "\\s*").prepend("\\s*"),
+							(t, l) -> {
+								for (List<Annotation> annotationList : l)
+									t = AnnotatedArrayTypes.fromComponent(t, annotationList);
+								return t;
+							});
+
+			wildcardType = annotationParser
+					.getAnnotationList()
+					.append("\\?")
+					.transform(AnnotatedWildcardTypes::unbounded)
+					.orElse(
+							annotationParser
+									.getAnnotationList()
+									.append("\\?\\s*extends(?![_a-zA-Z0-9])")
+									.appendTransform(Parser.list(classOrArrayType, "\\s*&\\s"),
+											AnnotatedWildcardTypes::upperBounded));
+
+			typeParameter = classOrArrayType.orElse(wildcardType
+					.transform(AnnotatedType.class::cast));
 
 			typeList = Parser.list(rawType, "\\s*,\\s*");
 		}
 
-		public Parser<AnnotatedType> getType() {
+		public Parser<AnnotatedType> getRawType() {
 			return rawType;
 		}
 
 		public Parser<AnnotatedType> getClassType() {
-			return classType;
+			return classOrArrayType;
 		}
 
 		public Parser<List<AnnotatedType>> getTypeList() {
 			return typeList;
 		}
 
+		public Parser<AnnotatedType> getTypeParameter() {
+			return typeParameter;
+		}
+
 		public AnnotatedType parse(String literal) {
-			return classType.parse(literal);
+			return classOrArrayType.parse(literal);
 		}
 	}
 }

@@ -25,10 +25,10 @@ import uk.co.strangeskies.utilities.tuples.Pair;
 public class JoiningParser<T, U, V> extends AbstractParser<T> {
 	private final Parser<U> first;
 	private final Parser<V> second;
-	private final BiFunction<U, V, T> combinor;
+	private final BiFunction<U, V, ? extends T> combinor;
 
 	public JoiningParser(Parser<U> first, Parser<V> second,
-			BiFunction<U, V, T> combinor) {
+			BiFunction<U, V, ? extends T> combinor) {
 		this.first = first;
 		this.second = second;
 		this.combinor = combinor;

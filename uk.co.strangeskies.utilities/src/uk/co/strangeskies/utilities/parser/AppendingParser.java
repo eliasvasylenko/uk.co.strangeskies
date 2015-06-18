@@ -26,10 +26,10 @@ public class AppendingParser<T, U> extends AbstractParser<T> {
 	private final Parser<T> main;
 	private final Parser<U> append;
 
-	private final BiFunction<T, U, T> combinor;
+	private final BiFunction<T, U, ? extends T> combinor;
 
 	public AppendingParser(Parser<T> main, Parser<U> append,
-			BiFunction<T, U, T> combinor) {
+			BiFunction<T, U, ? extends T> combinor) {
 		this.main = main;
 		this.append = append;
 
