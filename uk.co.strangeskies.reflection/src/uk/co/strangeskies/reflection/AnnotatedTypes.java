@@ -26,6 +26,7 @@ import java.lang.reflect.AnnotatedWildcardType;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,6 +40,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import uk.co.strangeskies.reflection.Annotations.AnnotationParser;
+import uk.co.strangeskies.reflection.Types.TypeParser;
+import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.parser.Parser;
 import uk.co.strangeskies.utilities.tuples.Pair;
 
@@ -51,6 +55,9 @@ import uk.co.strangeskies.utilities.tuples.Pair;
  * @author Elias N Vasylenko
  */
 public final class AnnotatedTypes {
+	private static final AnnotatedTypeParser ANNOTATED_TYPE_PARSER = new AnnotatedTypeParser(
+			Imports.empty());
+
 	static class AnnotatedTypeImpl implements AnnotatedType {
 		private final Type type;
 		private final Map<Class<? extends Annotation>, Annotation> annotations;
@@ -135,8 +142,7 @@ public final class AnnotatedTypes {
 				StringBuilder builder = new StringBuilder();
 
 				for (Annotation annotation : annotations)
-					builder.append(AnnotatedTypes.toString(annotation, imports)).append(
-							" ");
+					builder.append(Annotations.toString(annotation, imports)).append(" ");
 
 				return builder.toString();
 			} else {
@@ -379,49 +385,6 @@ public final class AnnotatedTypes {
 	}
 
 	/**
-	 * Give a canonical String representation of a given annotation.
-	 * 
-	 * @param annotation
-	 *          The annotation of which we wish to determine a string
-	 *          representation.
-	 * @return A canonical string representation of the given type.
-	 */
-	public static String toString(Annotation annotation) {
-		return toString(annotation, Imports.empty());
-	}
-
-	/**
-	 * Give a canonical String representation of a given annotation.Provided class
-	 * and package imports allow the names of some classes to be output without
-	 * full package qualification.
-	 * 
-	 * @param annotation
-	 *          The annotation of which we wish to determine a string
-	 *          representation.
-	 * @param imports
-	 *          Classes and packages for which full package qualification may be
-	 *          omitted from output.
-	 * @return A canonical string representation of the given type.
-	 */
-	public static String toString(Annotation annotation, Imports imports) {
-		String annotationString = annotation.toString();
-
-		Class<?> annotationType = annotation.annotationType();
-		if (imports.isImported(annotationType)) {
-			annotationString = new StringBuilder("@")
-					.append(imports.getClassName(annotationType))
-					.append(annotationString.substring(annotationString.indexOf("(")))
-					.toString();
-		}
-
-		if (annotationString.endsWith("()"))
-			annotationString = annotationString.substring(0,
-					annotationString.length() - 2);
-
-		return annotationString;
-	}
-
-	/**
 	 * Create an AnnotatedType instance from a parsed String.
 	 * 
 	 * @param typeString
@@ -448,20 +411,12 @@ public final class AnnotatedTypes {
 		return new AnnotatedTypeParser(imports).parse(typeString);
 	}
 
-	/**
-	 * Create an AnnotatedType instance from a parsed String.
-	 * 
-	 * @param typeString
-	 *          The String to parse.
-	 * @return The type described by the String.
-	 */
-	public static Class<?> cfromString(String typeString) {
-		return new AnnotatedTypeParser(Imports.empty()).cparse(typeString);
+	public static AnnotatedTypeParser getParser() {
+		return ANNOTATED_TYPE_PARSER;
 	}
 
-	public static <T extends Annotation> T annotationFrom(
-			Class<T> annotationClass, Map<String, Object> properties) {
-		return null;
+	public static AnnotatedTypeParser getParser(Imports imports) {
+		return new AnnotatedTypeParser(imports);
 	}
 
 	/*-
@@ -481,71 +436,55 @@ public final class AnnotatedTypes {
 	 */
 
 	public static class AnnotatedTypeParser {
-		private final Parser<Class<?>> typeName;
-
-		private final Parser<AnnotatedType> type;
+		private final Parser<AnnotatedType> rawType;
+		private final Parser<AnnotatedType> classType;
 		private final Parser<List<AnnotatedType>> typeList;
-		private Parser<Type> classType;
-		private Parser<WildcardType> wildcardType;
-		private Parser<List<Type>> classTypeList;
 
-		private final Parser<Annotation> annotation;
-		private final Parser<List<Annotation>> annotationList;
-		private final Parser<Map<String, Object>> annotationProperties;
-		private final Parser<Pair<String, Object>> annotationProperty;
+		private AnnotatedTypeParser(Imports imports) {
+			AnnotationParser annotationParser = Annotations.getParser(imports);
+			TypeParser typeParser = Types.getParser(imports);
 
-		public AnnotatedTypeParser(Imports imports) {
-			typeName = Parser.matching(
-					"[_a-zA-Z][_a-zA-Z0-9]*(\\.[_a-zA-Z][_a-zA-Z0-9]*)*").to(
-					imports::getNamedClass);
+			rawType = typeParser.getRawType().prependTransform(
+					annotationParser.getAnnotationList().append("\\s*")
+							.orElse(ArrayList::new), AnnotatedTypes::over);
 
-			annotationProperty = Parser.matching("[_a-zA-Z][_a-zA-Z0-9]")
-					.append("\\s*=\\s*")
-					.appendTransform("[a-zA-Z0-9_]+", (s, t) -> new Pair<>(s, t));
-			annotationProperties = Parser
-					.proxy(this::getAnnotationProperties)
-					.prepend("\\s*,\\s*")
-					.orElse(HashMap::new)
-					.prepend(annotationProperty.optional(),
-							(m, p) -> m.put(p.getLeft(), p.getRight())).prepend("\\(\\s*")
-					.append("\\s*\\)");
-			annotation = typeName
-					.prepend("@")
-					.to(t -> (Class<? extends Annotation>) t.asSubclass(Annotation.class))
-					.appendTransform(annotationProperties.optional(),
-							(c, p) -> annotationFrom(c, p));
-			annotationList = Parser.proxy(this::getAnnotationList)
-					.prepend("\\s*,\\s*").orElse(ArrayList::new)
-					.prepend(annotation.optional(), List::add);
+			IdentityProperty<Parser<AnnotatedType>> classTypeProperty = new IdentityProperty<>();
+			classTypeProperty
+					.set(rawType.tryAppendTransform(
+							Parser.list(Parser.proxy(classTypeProperty::get), "\\s*,\\s*")
+									.prepend("\\s*<\\s*").append("\\s*>\\s*"),
+							(r, l) -> {
+								Map<TypeVariable<?>, AnnotatedType> annotatedTypes = new HashMap<>();
+								TypeVariable<?>[] typeVariables = ((Class<?>) r.getType())
+										.getTypeParameters();
 
-			type = typeName.prependTransform(annotationList, AnnotatedTypes::over);
+								if (typeVariables.length != l.size())
+									throw new IllegalArgumentException();
 
-			typeList = Parser.proxy(this::getTypeList).prepend("\\s*,\\s*")
-					.orElse(ArrayList::new).prepend(type, List::add);
+								for (int i = 0; i < l.size(); i++)
+									annotatedTypes.put(typeVariables[i], l.get(i));
+
+								return AnnotatedParameterizedTypes.from(r, annotatedTypes::get);
+							}));
+			classType = classTypeProperty.get();
+
+			typeList = Parser.list(rawType, "\\s*,\\s*");
 		}
 
 		public Parser<AnnotatedType> getType() {
-			return type;
+			return rawType;
+		}
+
+		public Parser<AnnotatedType> getClassType() {
+			return classType;
 		}
 
 		public Parser<List<AnnotatedType>> getTypeList() {
 			return typeList;
 		}
 
-		public Parser<Map<String, Object>> getAnnotationProperties() {
-			return annotationProperties;
-		}
-
-		public Parser<List<Annotation>> getAnnotationList() {
-			return annotationList;
-		}
-
 		public AnnotatedType parse(String literal) {
-			return type.parse(literal);
-		}
-
-		public Class<?> cparse(String literal) {
-			return typeName.parse(literal);
+			return classType.parse(literal);
 		}
 	}
 }

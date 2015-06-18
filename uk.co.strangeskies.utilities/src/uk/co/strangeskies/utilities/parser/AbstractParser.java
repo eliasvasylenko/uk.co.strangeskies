@@ -22,9 +22,11 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import uk.co.strangeskies.utilities.tuples.Pair;
+
 public abstract class AbstractParser<T> implements Parser<T> {
 	@Override
-	public <W> Parser<W> to(Function<T, W> transform) {
+	public <W> Parser<W> transform(Function<T, W> transform) {
 		return new ParserProxy<>(this, transform);
 	}
 
@@ -35,33 +37,68 @@ public abstract class AbstractParser<T> implements Parser<T> {
 
 	@Override
 	public Parser<T> orElse(Parser<T> onFailure) {
-		return new ParserProxy<>(() -> this, Function.identity()).orElse(onFailure);
+		return new ParserProxy<T, T>(this, Function.identity()) {
+			@Override
+			public Pair<T, Integer> parseSubstring(String literal, boolean parseToEnd) {
+				Pair<T, Integer> value;
+				try {
+					value = super.parseSubstring(literal, parseToEnd);
+				} catch (Exception e) {
+					value = onFailure.parseSubstring(literal, parseToEnd);
+				}
+				return value;
+			}
+		};
 	}
 
 	@Override
 	public <U> Parser<U> appendTransform(String pattern,
 			BiFunction<T, String, U> incorporate) {
-		return new ParserJoin<U, T, String>(this, new RegexParser<String>(pattern,
+		return new JoiningParser<>(this, new RegexParser<String>(pattern,
 				Function.identity()), incorporate);
 	}
 
 	@Override
 	public <U> Parser<U> prependTransform(String pattern,
 			BiFunction<T, String, U> incorporate) {
-		return new ParserJoin<U, String, T>(new RegexParser<String>(pattern,
+		return new JoiningParser<>(new RegexParser<String>(pattern,
 				Function.identity()), this, (s, t) -> incorporate.apply(t, s));
 	}
 
 	@Override
 	public <U, V> Parser<V> appendTransform(Parser<U> parser,
 			BiFunction<T, U, V> incorporate) {
-		return new ParserJoin<V, T, U>(this, parser, incorporate);
+		return new JoiningParser<>(this, parser, incorporate);
 	}
 
 	@Override
 	public <U, V> Parser<V> prependTransform(Parser<U> parser,
 			BiFunction<T, U, V> incorporate) {
-		return new ParserJoin<V, U, T>(parser, this, (v, t) -> incorporate.apply(t,
-				v));
+		return new JoiningParser<>(parser, this, (v, t) -> incorporate.apply(t, v));
+	}
+
+	@Override
+	public <U> Parser<T> tryAppendTransform(Parser<U> parser,
+			BiFunction<T, U, T> incorporate) {
+		return new AppendingParser<>(this, parser, incorporate);
+	}
+
+	@Override
+	public <U> Parser<T> tryPrependTransform(Parser<U> parser,
+			BiFunction<T, U, T> incorporate) {
+		return new PrependingParser<>(this, parser, incorporate);
+	}
+
+	protected void assertToEnd(int end, String literal, Exception e) {
+		if (end < literal.length()) {
+			throw new IllegalStateException("Cannot match literal '" + literal
+					+ "' with parser '" + this + "', as end of input not reached (" + end
+					+ " < " + literal.length() + ")", e);
+		}
+	}
+
+	protected void assertToEnd(Pair<?, Integer> result, String literal,
+			Exception e) {
+		assertToEnd(result.getRight(), literal, e);
 	}
 }

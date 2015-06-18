@@ -37,7 +37,10 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 
+import org.testng.collections.Objects.ToStringHelper;
+
 import uk.co.strangeskies.reflection.AnnotatedTypes;
+import uk.co.strangeskies.reflection.Annotations;
 import uk.co.strangeskies.reflection.Imports;
 import uk.co.strangeskies.reflection.InferenceVariable;
 import uk.co.strangeskies.reflection.Invokable;
@@ -550,7 +553,7 @@ public class TestTypeLiteral {
 		System.out.println();
 
 		Imports imports = new Imports().withImports(Capture.class, Preserve.class,
-				Test2.class, List.class);
+				Test2.class, List.class, Type.class);
 		String annotationString = AnnotatedTypes
 				.toString(
 						new TypeToken<@Test(thisIsTest = "yeah!", wat = 2.5) List<@Test2(idk = "helo", wat = 2) ? extends @Preserve Number> @Capture [] @Infer []>() {}
@@ -558,22 +561,74 @@ public class TestTypeLiteral {
 		System.out.println(annotationString);
 		System.out.println();
 
-		System.out.println(AnnotatedTypes.cfromString("java.lang.reflect.Type"));
+		System.out.println(AnnotatedTypes.fromString("java.lang.reflect.Type"));
+		System.out.println();
+
+		System.out.println(AnnotatedTypes.fromString("Type", imports));
+		System.out.println();
+
+		System.out.println(Annotations.getParser(imports).getAnnotation()
+				.parse("@Capture"));
+		System.out.println();
+
+		System.out.println(Annotations.getParser(imports).getAnnotationList()
+				.parse("@Capture"));
+		System.out.println();
+
+		System.out.println(Annotations.getParser(imports).getAnnotationList()
+				.parse("@Capture @Preserve()"));
 		System.out.println();
 
 		System.out.println(AnnotatedTypes.fromString(
-				"@Infer java.lang.reflect.Type", imports));
+				"@Capture java.lang.reflect.Type", imports));
 		System.out.println();
 
-		System.out.println(AnnotatedTypes
-				.fromString("fdsafsa,FSDAF23132,   abc   ,  1 ,"));
+		imports = imports.withImport(Test.class);
+
+		System.out.println(Annotations.getParser(imports).getProperty()
+				.parse("thisIsTest = \"yeah!\""));
 		System.out.println();
 
-		System.out.println(AnnotatedTypes.fromString(""));
+		System.out.println(Annotations.getParser(imports).getProperty()
+				.parse("stupid = 5"));
 		System.out.println();
 
-		System.out.println(AnnotatedTypes.fromString(",12"));
+		System.out.println(Annotations.getParser(imports).getPropertyMap()
+				.parse("wat = 2.5"));
 		System.out.println();
+
+		System.out.println(AnnotatedTypes.fromString(
+				"@Capture() java.lang.reflect.Type", imports));
+		System.out.println();
+
+		System.out.println(Annotations.getParser(imports).getPropertyMap()
+				.parse("thisIsTest = \"yeah!\", wat = 2.5"));
+		System.out.println();
+
+		System.out.println(Annotations.fromString(
+				"@Test(thisIsTest = \"yeah!\", wat = 2.5)", imports));
+		System.out.println();
+
+		System.out.println(AnnotatedTypes.fromString(
+				"java.util.ArrayList<java.lang.String>", imports));
+		System.out.println();
+
+		System.out
+				.println(AnnotatedTypes
+						.fromString(
+								"@Test(thisIsTest = \"yeah!\", wat = 2.5) java.util.ArrayList<java.lang.String>",
+								imports));
+		System.out.println();
+
+		System.out
+				.println(AnnotatedTypes
+						.fromString(
+								"@Test(thisIsTest = \"yeah!\", wat = .2) java.util.ArrayList<@Capture java.lang.String>",
+								imports));
+		System.out.println();
+
+		System.out.println(Annotations.getParser(imports).getAnnotation()
+				.parse("@Test2(idk = \"helo\", wat = 2)"));
 
 		System.out.println(AnnotatedTypes.fromString(annotationString, imports));
 		System.out.println();
@@ -597,7 +652,7 @@ public class TestTypeLiteral {
 	@interface Test2 {
 		String idk();
 
-		int wat();
+		long wat();
 	};
 
 	@Retention(RetentionPolicy.RUNTIME)

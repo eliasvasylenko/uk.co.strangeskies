@@ -18,37 +18,44 @@
  */
 package uk.co.strangeskies.utilities.parser;
 
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.BiFunction;
 
 import uk.co.strangeskies.utilities.tuples.Pair;
 
-public class ParserProxy<U, T> extends AbstractParser<T> {
-	private final Supplier<Parser<U>> component;
-	private final Function<U, T> transform;
+public class PrependingParser<T, U> extends AbstractParser<T> {
+	private final Parser<T> main;
+	private final Parser<U> prepend;
 
-	public ParserProxy(Parser<U> component, Function<U, T> transform) {
-		this(() -> component, transform);
-	}
+	private final BiFunction<T, U, T> combinor;
 
-	public ParserProxy(Supplier<Parser<U>> component, Function<U, T> transform) {
-		this.component = component;
-		this.transform = transform;
-	}
+	public PrependingParser(Parser<T> main, Parser<U> prepend,
+			BiFunction<T, U, T> combinor) {
+		this.main = main;
+		this.prepend = prepend;
 
-	@Override
-	public <V> Parser<V> transform(Function<T, V> transform) {
-		return new ParserProxy<>(component, this.transform.andThen(transform));
+		this.combinor = combinor;
 	}
 
 	@Override
 	public Pair<T, Integer> parseSubstring(String literal, boolean parseToEnd) {
-		return component.get().parseSubstring(literal, parseToEnd)
-				.mapHead(transform);
+		Pair<T, Integer> mainValue;
+		Pair<U, Integer> prependValue;
+
+		try {
+			prependValue = prepend.parseSubstring(literal);
+			literal = literal.substring(prependValue.getRight());
+		} catch (Exception e) {
+			return main.parseSubstring(literal);
+		}
+
+		mainValue = main.parseSubstring(literal);
+
+		return new Pair<>(combinor.apply(mainValue.getLeft(),
+				prependValue.getLeft()), mainValue.getRight() + prependValue.getRight());
 	}
 
 	@Override
 	public String toString() {
-		return "Proxy Parser (" + component + ")";
+		return "Prepending Parser [" + prepend + " > " + main + "]";
 	}
 }

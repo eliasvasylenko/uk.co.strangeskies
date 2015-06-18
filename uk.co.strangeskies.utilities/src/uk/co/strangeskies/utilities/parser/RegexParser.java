@@ -34,7 +34,7 @@ public class RegexParser<T> extends AbstractParser<T> {
 	}
 
 	@Override
-	public Pair<T, Integer> parseSubstring(String literal) {
+	public Pair<T, Integer> parseSubstring(String literal, boolean parseToEnd) {
 		Matcher matcher = pattern.matcher(literal);
 
 		if (!matcher.find()) {
@@ -43,9 +43,12 @@ public class RegexParser<T> extends AbstractParser<T> {
 		}
 
 		int end = matcher.end();
-		System.out.println(literal + " > " + this);
+
+		if (parseToEnd)
+			assertToEnd(end, literal, null);
+
 		literal = literal.substring(0, end);
-		System.out.println(literal);
+
 		return new Pair<>(transform.apply(literal), end);
 	}
 

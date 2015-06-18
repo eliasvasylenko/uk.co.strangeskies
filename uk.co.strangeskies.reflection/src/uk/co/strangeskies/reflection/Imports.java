@@ -48,7 +48,7 @@ public class Imports {
 		importPackages(packages);
 	}
 
-	public Imports withImports(Class<?> classImport) {
+	public Imports withImport(Class<?> classImport) {
 		return withImports(classImport);
 	}
 
@@ -98,7 +98,7 @@ public class Imports {
 			return clazz.getCanonicalName();
 	}
 
-	public Imports withPackageImports(Package packageImport) {
+	public Imports withPackageImport(Package packageImport) {
 		return withPackageImports(packageImport);
 	}
 

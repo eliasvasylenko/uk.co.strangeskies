@@ -18,6 +18,7 @@
  */
 package uk.co.strangeskies.reflection;
 
+import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Modifier;
@@ -41,10 +42,12 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import uk.co.strangeskies.reflection.Annotations.AnnotationParser;
 import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.collection.computingmap.CacheComputingMap;
 import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
+import uk.co.strangeskies.utilities.parser.Parser;
 
 /**
  * A collection of general utility methods relating to the Java type system.
@@ -54,6 +57,8 @@ import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
  * @author Elias N Vasylenko
  */
 public final class Types {
+	private static final TypeParser TYPE_PARSER = new TypeParser(Imports.empty());
+
 	private static final Map<Class<?>, Class<?>> WRAPPED_PRIMITIVES = Collections
 			.unmodifiableMap(new HashMap<Class<?>, Class<?>>() {
 				private static final long serialVersionUID = 1L;
@@ -390,104 +395,6 @@ public final class Types {
 				count++;
 
 		return count;
-	}
-
-	/**
-	 * Give a canonical String representation of a given type, which is intended
-	 * to be more easily human-readable than implementations of
-	 * {@link Object#toString()} for certain implementations of {@link Type}.
-	 * 
-	 * @param type
-	 *          The type for which we wish to determine a string representation.
-	 * @return A canonical string representation of the given type.
-	 */
-	public static String toString(Type type) {
-		return toString(type, Imports.empty());
-	}
-
-	/**
-	 * Give a canonical String representation of a given type, which is intended
-	 * to be more easily human-readable than implementations of
-	 * {@link Object#toString()} for certain implementations of {@link Type}.
-	 * Provided class and package imports allow the names of some classes to be
-	 * output without full package qualification.
-	 * 
-	 * @param imports
-	 *          Classes and packages for which full package qualification may be
-	 *          omitted from output.
-	 * @param type
-	 *          The type for which we wish to determine a string representation.
-	 * @return A canonical string representation of the given type.
-	 */
-	public static String toString(Type type, Imports imports) {
-		if (type instanceof Class) {
-			if (((Class<?>) type).isArray())
-				return new StringBuilder(toString(((Class<?>) type).getComponentType(),
-						imports)).append("[]").toString();
-			else
-				return imports.getClassName((Class<?>) type);
-		} else if (type instanceof ParameterizedType) {
-			return ParameterizedTypes.toString((ParameterizedType) type, imports);
-		} else if (type instanceof GenericArrayType) {
-			return new StringBuilder(toString(
-					((GenericArrayType) type).getGenericComponentType(), imports))
-					.append("[]").toString();
-		} else if (type instanceof WildcardType) {
-			WildcardType wildcardType = (WildcardType) type;
-			StringBuilder builder = new StringBuilder("?");
-
-			appendBounds(builder, wildcardType.getUpperBounds(),
-					wildcardType.getLowerBounds(), imports);
-
-			return builder.toString();
-		} else if (type instanceof TypeVariableCapture) {
-			TypeVariableCapture typeVariableCapture = (TypeVariableCapture) type;
-			StringBuilder builder = new StringBuilder(typeVariableCapture.getName());
-
-			appendBounds(builder, typeVariableCapture.getUpperBounds(),
-					typeVariableCapture.getLowerBounds(), imports);
-
-			return builder.toString();
-		} else if (type instanceof IntersectionType) {
-			return ((IntersectionType) type).toString(imports);
-		} else
-			return type.getTypeName();
-	}
-
-	static String toString(Type[] types, String delimiter, Imports imports) {
-		return Arrays.stream(types).map(t -> toString(t, imports))
-				.collect(Collectors.joining(delimiter));
-	}
-
-	private static void appendBounds(StringBuilder builder, Type[] upperBounds,
-			Type[] lowerBounds, Imports imports) {
-		if (upperBounds.length > 0
-				&& (upperBounds.length != 1 || (upperBounds[0] != null && upperBounds[0]
-						.equals(Object.class))))
-			builder.append(" extends ").append(toString(upperBounds, " & ", imports));
-
-		if (lowerBounds.length > 0
-				&& !(lowerBounds.length == 1 && lowerBounds[0] == null))
-			builder.append(" super ").append(toString(lowerBounds, " & ", imports));
-	}
-
-	/**
-	 * Create a Type instance from a parsed String. Here infinitely recurring
-	 * types are represented by, for example:
-	 * 
-	 * {@code java.util.List<java.lang.Number & java.lang.Comparable<? extends java.lang.Number & java.lang.Comparable<? extends java.lang.Number & java.lang.Comparable<...>>>>}
-	 * 
-	 * Where "..." would be substituted, recursively, with the parameterization of
-	 * the an outer instance of the same raw class. TODO add clarity, and a proper
-	 * description of how ambiguity is resolved here.
-	 * 
-	 * @param typeString
-	 *          The String to parse.
-	 * @return The type described by the String.
-	 */
-	public static Type fromString(String typeString) {
-		throw new UnsupportedOperationException(
-				"Unable to parse the type literal string '" + typeString + "'.");
 	}
 
 	/**
@@ -1128,5 +1035,145 @@ public final class Types {
 	 */
 	public static Type greatestLowerBound(Collection<? extends Type> lowerBounds) {
 		return IntersectionType.from(lowerBounds);
+	}
+
+	/**
+	 * Give a canonical String representation of a given type, which is intended
+	 * to be more easily human-readable than implementations of
+	 * {@link Object#toString()} for certain implementations of {@link Type}.
+	 * 
+	 * @param type
+	 *          The type for which we wish to determine a string representation.
+	 * @return A canonical string representation of the given type.
+	 */
+	public static String toString(Type type) {
+		return toString(type, Imports.empty());
+	}
+
+	/**
+	 * Give a canonical String representation of a given type, which is intended
+	 * to be more easily human-readable than implementations of
+	 * {@link Object#toString()} for certain implementations of {@link Type}.
+	 * Provided class and package imports allow the names of some classes to be
+	 * output without full package qualification.
+	 * 
+	 * @param imports
+	 *          Classes and packages for which full package qualification may be
+	 *          omitted from output.
+	 * @param type
+	 *          The type for which we wish to determine a string representation.
+	 * @return A canonical string representation of the given type.
+	 */
+	public static String toString(Type type, Imports imports) {
+		if (type instanceof Class) {
+			if (((Class<?>) type).isArray())
+				return new StringBuilder(toString(((Class<?>) type).getComponentType(),
+						imports)).append("[]").toString();
+			else
+				return imports.getClassName((Class<?>) type);
+		} else if (type instanceof ParameterizedType) {
+			return ParameterizedTypes.toString((ParameterizedType) type, imports);
+		} else if (type instanceof GenericArrayType) {
+			return new StringBuilder(toString(
+					((GenericArrayType) type).getGenericComponentType(), imports))
+					.append("[]").toString();
+		} else if (type instanceof WildcardType) {
+			WildcardType wildcardType = (WildcardType) type;
+			StringBuilder builder = new StringBuilder("?");
+
+			appendBounds(builder, wildcardType.getUpperBounds(),
+					wildcardType.getLowerBounds(), imports);
+
+			return builder.toString();
+		} else if (type instanceof TypeVariableCapture) {
+			TypeVariableCapture typeVariableCapture = (TypeVariableCapture) type;
+			StringBuilder builder = new StringBuilder(typeVariableCapture.getName());
+
+			appendBounds(builder, typeVariableCapture.getUpperBounds(),
+					typeVariableCapture.getLowerBounds(), imports);
+
+			return builder.toString();
+		} else if (type instanceof IntersectionType) {
+			return ((IntersectionType) type).toString(imports);
+		} else
+			return type.getTypeName();
+	}
+
+	static String toString(Type[] types, String delimiter, Imports imports) {
+		return Arrays.stream(types).map(t -> toString(t, imports))
+				.collect(Collectors.joining(delimiter));
+	}
+
+	private static void appendBounds(StringBuilder builder, Type[] upperBounds,
+			Type[] lowerBounds, Imports imports) {
+		if (upperBounds.length > 0
+				&& (upperBounds.length != 1 || (upperBounds[0] != null && upperBounds[0]
+						.equals(Object.class))))
+			builder.append(" extends ").append(toString(upperBounds, " & ", imports));
+
+		if (lowerBounds.length > 0
+				&& !(lowerBounds.length == 1 && lowerBounds[0] == null))
+			builder.append(" super ").append(toString(lowerBounds, " & ", imports));
+	}
+
+	/**
+	 * Create a Type instance from a parsed String. Here infinitely recurring
+	 * types are represented by, for example:
+	 * 
+	 * {@code java.util.List<java.lang.Number & java.lang.Comparable<? extends java.lang.Number & java.lang.Comparable<? extends java.lang.Number & java.lang.Comparable<...>>>>}
+	 * 
+	 * Where "..." would be substituted, recursively, with the parameterization of
+	 * the an outer instance of the same raw class. TODO add clarity, and a proper
+	 * description of how ambiguity is resolved here.
+	 * 
+	 * @param typeString
+	 *          The String to parse.
+	 * @return The type described by the String.
+	 */
+	public static Type fromString(String typeString) {
+		throw new UnsupportedOperationException(
+				"Unable to parse the type literal string '" + typeString + "'.");
+	}
+
+	public static TypeParser getParser() {
+		return TYPE_PARSER;
+	}
+
+	public static TypeParser getParser(Imports imports) {
+		return new TypeParser(imports);
+	}
+
+	/*-
+	 *	AlphaNumericString
+	 *
+	 *	Type<AnnotatedType>								->	Annotations ClassType | WildcardType
+	 *	ClassType<Type>										->	TypeName[ < TypeList >]
+	 *	WildcardType<WildcardType>				->	?[ extends|super ClassTypeList]
+	 *	TypeName<String[]>								->	 AlphaNumericString[ .TypeName]
+	 *	TypeList<List<AnnotatedType>>			->	Type[ , TypeList]
+	 *	ClassTypeList<List<Type>>					->	Annotations ClassType[ & ClassTypeList]
+	 *
+	 *	Annotations												->	[ @TypeName[ ( AnnotationProperties )] [Annotations]]
+	 *	AnnotationProperties							->	PropertyName = PropertyValue
+	 *	PropertyName											->	AlphaNumericString
+	 *	PropertyValue											->	?
+	 */
+
+	public static class TypeParser {
+		private final Parser<Class<?>> rawType;
+
+		private Parser<Type> classType;
+		private Parser<WildcardType> wildcardType;
+		private Parser<List<Type>> classTypeList;
+
+		private TypeParser(Imports imports) {
+			rawType = Parser.matching(
+					"[_a-zA-Z][_a-zA-Z0-9]*(\\.[_a-zA-Z][_a-zA-Z0-9]*)*").transform(
+					imports::getNamedClass);
+		}
+
+		public Parser<Class<?>> getRawType() {
+			return rawType;
+		}
 	}
 }

@@ -18,14 +18,36 @@
  */
 package uk.co.strangeskies.utilities.parser;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.tuples.Pair;
 
 public interface Parser<T> {
+	public static <T> Parser<List<T>> list(Parser<T> element, String delimiter) {
+		return list(element, delimiter, 0);
+	}
+
+	public static <T> Parser<List<T>> list(Parser<T> element, String delimiter,
+			int minimum) {
+		IdentityProperty<Parser<List<T>>> listParser = new IdentityProperty<>();
+
+		listParser.set(
+				Parser.proxy(listParser::get).prepend(delimiter).orElse(ArrayList::new)
+						.prepend(element, List::add)).orElse(ArrayList::new);
+
+		for (int i = 0; i < minimum; i++)
+			listParser.set(listParser.get().prepend(delimiter)
+					.prepend(element, List::add));
+
+		return listParser.get();
+	}
+
 	public static Parser<String> matching(String regex) {
 		return new RegexParser<>(regex, Function.identity());
 	}
@@ -38,11 +60,7 @@ public interface Parser<T> {
 		return new ParserProxy<>(parser, Function.identity());
 	}
 
-	<U> Parser<U> to(Function<T, U> transform);
-
-	default Parser<T> optional() {
-		return orElse(() -> null);
-	}
+	<U> Parser<U> transform(Function<T, U> transform);
 
 	Parser<T> orElse(Supplier<T> onFailure);
 
@@ -86,6 +104,16 @@ public interface Parser<T> {
 		});
 	}
 
+	<U> Parser<T> tryAppendTransform(Parser<U> parser,
+			BiFunction<T, U, T> incorporate);
+
+	default <U> Parser<T> tryAppend(Parser<U> parser, BiConsumer<T, U> incorporate) {
+		return tryAppendTransform(parser, (t, u) -> {
+			incorporate.accept(t, u);
+			return t;
+		});
+	}
+
 	<U, V> Parser<V> prependTransform(Parser<U> parser,
 			BiFunction<T, U, V> incorporate);
 
@@ -96,21 +124,28 @@ public interface Parser<T> {
 		});
 	}
 
+	<U> Parser<T> tryPrependTransform(Parser<U> parser,
+			BiFunction<T, U, T> incorporate);
+
+	default <U> Parser<T> tryPrepend(Parser<U> parser,
+			BiConsumer<T, U> incorporate) {
+		return tryPrependTransform(parser, (t, u) -> {
+			incorporate.accept(t, u);
+			return t;
+		});
+	}
+
 	default T parse(String literal) {
 		return parse(literal, true);
 	}
 
 	default T parse(String literal, boolean parseToEnd) {
-		Pair<T, Integer> result = parseSubstring(literal);
-
-		if (parseToEnd && result.getRight() < literal.length()) {
-			throw new IllegalStateException("Cannot match literal '" + literal
-					+ "' with parser '" + this + "', as end of input not reached ("
-					+ result.getRight() + " < " + literal.length() + ")");
-		}
-
-		return result.getHead();
+		return parseSubstring(literal, true).getHead();
 	}
 
-	Pair<T, Integer> parseSubstring(String literal);
+	default Pair<T, Integer> parseSubstring(String literal) {
+		return parseSubstring(literal, false);
+	}
+
+	Pair<T, Integer> parseSubstring(String literal, boolean parseToEnd);
 }
