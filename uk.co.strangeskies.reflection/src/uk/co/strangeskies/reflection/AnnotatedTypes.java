@@ -483,7 +483,7 @@ public final class AnnotatedTypes {
 					.orElse(
 							annotationParser
 									.getAnnotationList()
-									.append("\\?\\s*extends(?![_a-zA-Z0-9])")
+									.append("\\?\\s*extends(?![_a-zA-Z0-9])\\s*")
 									.appendTransform(Parser.list(classOrArrayType, "\\s*&\\s"),
 											AnnotatedWildcardTypes::upperBounded));
 

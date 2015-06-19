@@ -38,6 +38,7 @@ import java.util.TreeSet;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
+import uk.co.strangeskies.reflection.AnnotatedWildcardTypes;
 import uk.co.strangeskies.reflection.Annotations;
 import uk.co.strangeskies.reflection.Imports;
 import uk.co.strangeskies.reflection.InferenceVariable;
@@ -50,6 +51,7 @@ import uk.co.strangeskies.reflection.TypeToken.Infer;
 import uk.co.strangeskies.reflection.TypeToken.Preserve;
 import uk.co.strangeskies.reflection.TypeToken.Wildcards;
 import uk.co.strangeskies.utilities.Self;
+import uk.co.strangeskies.utilities.parser.Parser;
 
 /**
  * Informal series of tests...
@@ -614,8 +616,24 @@ public class TestTypeLiteral {
 				"java.util.ArrayList<@Preserve?>", imports));
 		System.out.println();
 
-		System.out.println(AnnotatedTypes.fromString("List<? extends java.lang.String>",
-				imports));
+		System.out.println(Annotations
+				.getParser(imports)
+				.getAnnotationList()
+				.append("\\?")
+				.transform(AnnotatedWildcardTypes::unbounded)
+				.orElse(
+						Annotations
+								.getParser(imports)
+								.getAnnotationList()
+								.append("\\?\\s*extends(?![_a-zA-Z0-9])\\s*")
+								.appendTransform(
+										Parser.list(AnnotatedTypes.getParser(imports)
+												.getClassType(), "\\s*&\\s"),
+										AnnotatedWildcardTypes::upperBounded))
+				.parse("@Capture?extends@Preserve java.lang.String"));
+
+		System.out.println(AnnotatedTypes.fromString(
+				"List<? extends java.lang.String>", imports));
 		System.out.println();
 
 		System.out
