@@ -478,14 +478,18 @@ public final class AnnotatedTypes {
 
 			wildcardType = annotationParser
 					.getAnnotationList()
-					.append("\\?")
-					.transform(AnnotatedWildcardTypes::unbounded)
+					.append("\\s*\\?\\s*extends(?![_a-zA-Z0-9])\\s*")
+					.appendTransform(Parser.list(classOrArrayType, "\\s*\\&\\s*"),
+							AnnotatedWildcardTypes::upperBounded)
 					.orElse(
 							annotationParser
 									.getAnnotationList()
-									.append("\\?\\s*extends(?![_a-zA-Z0-9])\\s*")
-									.appendTransform(Parser.list(classOrArrayType, "\\s*&\\s"),
-											AnnotatedWildcardTypes::upperBounded));
+									.append("\\s*\\?\\s*super(?![_a-zA-Z0-9])\\s*")
+									.appendTransform(Parser.list(classOrArrayType, "\\s*\\&\\s*"),
+											AnnotatedWildcardTypes::lowerBounded))
+					.orElse(
+							annotationParser.getAnnotationList().append("\\s*\\?")
+									.transform(AnnotatedWildcardTypes::unbounded));
 
 			typeParameter = classOrArrayType.orElse(wildcardType
 					.transform(AnnotatedType.class::cast));

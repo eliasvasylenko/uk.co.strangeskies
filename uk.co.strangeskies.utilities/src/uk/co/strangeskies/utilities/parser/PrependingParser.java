@@ -20,9 +20,7 @@ package uk.co.strangeskies.utilities.parser;
 
 import java.util.function.BiFunction;
 
-import uk.co.strangeskies.utilities.tuples.Pair;
-
-public class PrependingParser<T, U> extends AbstractParser<T> {
+public class PrependingParser<T, U> implements AbstractParser<T> {
 	private final Parser<T> main;
 	private final Parser<U> prepend;
 
@@ -37,21 +35,29 @@ public class PrependingParser<T, U> extends AbstractParser<T> {
 	}
 
 	@Override
-	public Pair<T, Integer> parseSubstring(String literal, boolean parseToEnd) {
-		Pair<T, Integer> mainValue;
-		Pair<U, Integer> prependValue;
+	public ParseResult<T> parseSubstring(ParseState state) {
+		System.out.println(getClass());
+
+		ParseResult<U> prependValue;
+		ParseResult<T> mainValue;
 
 		try {
-			prependValue = prepend.parseSubstring(literal);
-			literal = literal.substring(prependValue.getRight());
+			prependValue = prepend.parseSubstring(state.toEnd(false));
+		} catch (ParsingException e) {
+			try {
+				return main.parseSubstring(state);
+			} catch (ParsingException e2) {
+				throw ParsingException.getHigher(e, e2);
+			} catch (Exception e2) {
+				throw e;
+			}
 		} catch (Exception e) {
-			return main.parseSubstring(literal);
+			return main.parseSubstring(state);
 		}
 
-		mainValue = main.parseSubstring(literal);
+		mainValue = main.parseSubstring(prependValue.state().toEnd(state.toEnd()));
 
-		return new Pair<>(combinor.apply(mainValue.getLeft(),
-				prependValue.getLeft()), mainValue.getRight() + prependValue.getRight());
+		return mainValue.map(m -> combinor.apply(m, prependValue.result()));
 	}
 
 	@Override

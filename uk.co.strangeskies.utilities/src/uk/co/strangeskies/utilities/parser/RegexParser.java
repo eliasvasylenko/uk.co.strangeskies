@@ -22,34 +22,42 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import uk.co.strangeskies.utilities.tuples.Pair;
-
-public class RegexParser<T> extends AbstractParser<T> {
+public class RegexParser<T> implements AbstractParser<T> {
 	private final Pattern pattern;
 	private final Function<String, T> transform;
 
 	public RegexParser(String pattern, Function<String, T> transform) {
-		this.pattern = Pattern.compile("\\A" + pattern);
+		this.pattern = Pattern.compile(pattern);
 		this.transform = transform;
 	}
 
 	@Override
-	public Pair<T, Integer> parseSubstring(String literal, boolean parseToEnd) {
-		Matcher matcher = pattern.matcher(literal);
+	public ParseResult<T> parseSubstring(ParseState state) {
+		Matcher matcher = pattern.matcher(state.literal()).region(
+				state.fromIndex(), state.literal().length());
 
-		if (!matcher.find()) {
-			throw new IllegalStateException("Cannot match literal '" + literal
-					+ "' to pattern '" + pattern + "' in parser '" + this + "'");
+		boolean matches;
+		if (state.toEnd())
+			matches = matcher.matches();
+		else
+			matches = matcher.lookingAt();
+
+		System.out.println(state.literal() + " , " + state.fromIndex() + " -> "
+				+ state.toEnd() + " with " + pattern + " ==== " + matches);
+
+		if (!matches) {
+			for (int endIndex = state.fromIndex() + 1; endIndex < state.literal()
+					.length(); endIndex++) {
+				// TODO binary search for length
+
+				Matcher partialMatcher = matcher.region(state.fromIndex(), endIndex);
+				if (!partialMatcher.matches())
+					throw state.addException("Cannot match pattern '" + pattern + "'",
+							endIndex - 1).getException();
+			}
 		}
 
-		int end = matcher.end();
-
-		if (parseToEnd)
-			assertToEnd(end, literal, null);
-
-		literal = literal.substring(0, end);
-
-		return new Pair<>(transform.apply(literal), end);
+		return state.parseTo(matcher.end(), transform);
 	}
 
 	@Override

@@ -38,7 +38,6 @@ import java.util.TreeSet;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
-import uk.co.strangeskies.reflection.AnnotatedWildcardTypes;
 import uk.co.strangeskies.reflection.Annotations;
 import uk.co.strangeskies.reflection.Imports;
 import uk.co.strangeskies.reflection.InferenceVariable;
@@ -51,7 +50,6 @@ import uk.co.strangeskies.reflection.TypeToken.Infer;
 import uk.co.strangeskies.reflection.TypeToken.Preserve;
 import uk.co.strangeskies.reflection.TypeToken.Wildcards;
 import uk.co.strangeskies.utilities.Self;
-import uk.co.strangeskies.utilities.parser.Parser;
 
 /**
  * Informal series of tests...
@@ -561,7 +559,8 @@ public class TestTypeLiteral {
 		System.out.println(annotationString);
 		System.out.println();
 
-		System.out.println(AnnotatedTypes.fromString("java.lang.reflect.Type"));
+		System.out.println(AnnotatedTypes.getParser().getRawType().append("-000")
+				.parse("java.lang.reflect.Type-000"));
 		System.out.println();
 
 		System.out.println(AnnotatedTypes.fromString("Type", imports));
@@ -609,39 +608,48 @@ public class TestTypeLiteral {
 		System.out.println();
 
 		System.out.println(AnnotatedTypes.fromString(
-				"@Capture java.util.ArrayList [] @Preserve []", imports));
+				"@Capture java.util.ArrayList<java.lang.String> [] @Preserve []",
+				imports));
 		System.out.println();
 
 		System.out.println(AnnotatedTypes.fromString(
 				"java.util.ArrayList<@Preserve?>", imports));
 		System.out.println();
 
-		System.out.println(Annotations
-				.getParser(imports)
-				.getAnnotationList()
-				.append("\\?")
-				.transform(AnnotatedWildcardTypes::unbounded)
-				.orElse(
-						Annotations
-								.getParser(imports)
-								.getAnnotationList()
-								.append("\\?\\s*extends(?![_a-zA-Z0-9])\\s*")
-								.appendTransform(
-										Parser.list(AnnotatedTypes.getParser(imports)
-												.getClassType(), "\\s*&\\s"),
-										AnnotatedWildcardTypes::upperBounded))
-				.parse("@Capture?extends@Preserve java.lang.String"));
-
-		System.out.println(AnnotatedTypes.fromString(
-				"List<? extends java.lang.String>", imports));
+		System.out.println(Annotations.fromString(
+				"@uk.co.strangeskies.reflection.TypeToken.Infer", imports));
 		System.out.println();
 
 		System.out
 				.println(AnnotatedTypes
 						.fromString(
-								"@Test(thisIsTest = \"yeah!\", wat = 2.5) List<@Test2(idk = \"helo\", wat = 2) ? extends @Preserve Number>",
+								"@uk.co.strangeskies.reflection.TypeToken.Infer List<? extends java.lang.String>",
 								imports));
 		System.out.println();
+
+		System.out
+				.println(AnnotatedTypes
+						.fromString(
+								"@Test(thisIsTest = \"yeah!\", wat = 2.5) List<@Test2(idk = \"helo\", wat = 2) ? extends @Preserve java.lang.String>",
+								imports));
+		System.out.println();
+
+		System.out
+				.println(AnnotatedTypes
+						.fromString(
+								"List<@Test2(idk = \"helo\", wat = 2) ? extends @Preserve java.lang.Number>@Capture []@Capture []",
+								imports));
+		System.out.println();
+
+		System.out
+				.println(AnnotatedTypes
+						.fromString(
+								"@Test(thisIsTest = \"yeah!\", wat = 2.5) List<@Test2(idk = \"helo\", wat = 2) ? extends @Preserve java.lang.Number> @Capture [] @uk.co.strangeskies.reflection.TypeToken.Infer []",
+								imports));
+		System.out.println();
+
+		System.out.println(Annotations.fromString(
+				"@Test(thisIsTest = yeah!, wat = 2.5)", imports));
 
 		System.out.println(AnnotatedTypes.fromString(annotationString, imports));
 		System.out.println();

@@ -83,7 +83,7 @@ public class Tuple<H, T extends Tuple<?, ?>> {
 	 *         mapping.
 	 * 
 	 */
-	public <I> Tuple<I, T> mapHead(Function<H, I> headMap) {
+	public <I> Tuple<I, T> mapHead(Function<? super H, ? extends I> headMap) {
 		return new Tuple<>(headMap.apply(head), tail);
 	}
 

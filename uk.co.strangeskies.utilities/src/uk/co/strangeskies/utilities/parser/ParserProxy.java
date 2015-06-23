@@ -21,30 +21,37 @@ package uk.co.strangeskies.utilities.parser;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import uk.co.strangeskies.utilities.tuples.Pair;
-
-public class ParserProxy<U, T> extends AbstractParser<T> {
+public class ParserProxy<U, T> implements AbstractParser<T> {
 	private final Supplier<Parser<U>> component;
-	private final Function<U, T> transform;
+	private final Function<? super U, ? extends T> transform;
 
-	public ParserProxy(Parser<U> component, Function<U, T> transform) {
+	public ParserProxy(Parser<U> component,
+			Function<? super U, ? extends T> transform) {
 		this(() -> component, transform);
 	}
 
-	public ParserProxy(Supplier<Parser<U>> component, Function<U, T> transform) {
+	public ParserProxy(Supplier<Parser<U>> component,
+			Function<? super U, ? extends T> transform) {
 		this.component = component;
 		this.transform = transform;
 	}
 
+	protected Supplier<Parser<U>> getComponent() {
+		return component;
+	}
+
+	public Function<? super U, ? extends T> getTransform() {
+		return transform;
+	}
+
 	@Override
-	public <V> Parser<V> transform(Function<T, V> transform) {
+	public <V> Parser<V> transform(Function<? super T, ? extends V> transform) {
 		return new ParserProxy<>(component, this.transform.andThen(transform));
 	}
 
 	@Override
-	public Pair<T, Integer> parseSubstring(String literal, boolean parseToEnd) {
-		return component.get().parseSubstring(literal, parseToEnd)
-				.mapHead(transform);
+	public ParseResult<T> parseSubstring(ParseState state) {
+		return component.get().parseSubstring(state).map(transform);
 	}
 
 	@Override

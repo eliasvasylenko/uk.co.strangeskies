@@ -20,9 +20,7 @@ package uk.co.strangeskies.utilities.parser;
 
 import java.util.function.BiFunction;
 
-import uk.co.strangeskies.utilities.tuples.Pair;
-
-public class JoiningParser<T, U, V> extends AbstractParser<T> {
+public class JoiningParser<T, U, V> implements AbstractParser<T> {
 	private final Parser<U> first;
 	private final Parser<V> second;
 	private final BiFunction<U, V, ? extends T> combinor;
@@ -35,16 +33,18 @@ public class JoiningParser<T, U, V> extends AbstractParser<T> {
 	}
 
 	@Override
-	public Pair<T, Integer> parseSubstring(String literal, boolean parseToEnd) {
-		Pair<U, Integer> firstValue;
-		Pair<V, Integer> secondValue;
+	public ParseResult<T> parseSubstring(ParseState state) {
+		System.out.println(getClass());
 
-		firstValue = first.parseSubstring(literal);
-		secondValue = second.parseSubstring(
-				literal.substring(firstValue.getRight()), parseToEnd);
+		ParseResult<U> firstValue;
+		ParseResult<V> secondValue;
 
-		return new Pair<>(combinor.apply(firstValue.getLeft(),
-				secondValue.getLeft()), firstValue.getRight() + secondValue.getRight());
+		firstValue = first.parseSubstring(state.toEnd(false));
+		secondValue = second
+				.parseSubstring(firstValue.state().toEnd(state.toEnd()));
+
+		return secondValue.addException(firstValue.state()).map(
+				s -> combinor.apply(firstValue.result(), s));
 	}
 
 	@Override

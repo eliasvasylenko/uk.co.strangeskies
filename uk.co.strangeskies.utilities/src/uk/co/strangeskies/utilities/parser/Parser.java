@@ -26,13 +26,68 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import uk.co.strangeskies.utilities.IdentityProperty;
-import uk.co.strangeskies.utilities.tuples.Pair;
 
+/**
+ * A composable, type safe text parser.
+ * <p>
+ * Usage should be intuitive enough for users familiar with context free
+ * grammars, where a {@link Parser} instance represents a single symbol, and all
+ * production rules on that symbol. {@link Parser} instances should be
+ * immutable.
+ * <p>
+ * By this interpretation, production rules for new symbols can be derived by
+ * appending and prepending text, or other symbols, to existing symbols.
+ * Multiple production rules can effectively be created for a new symbol by
+ * "piping" production rules through {@link #orElse(Parser)} and
+ * {@link #orElse(Supplier)}.
+ * <p>
+ * For the sake of simplicity, all parsers are composed and evaluated greedily
+ * from left to right, unless otherwise noted.
+ * 
+ * @author Elias N Vasylenko
+ * @param <T>
+ *          The type of the object created by successful application of a
+ *          {@link Parser} to a piece of text.
+ */
 public interface Parser<T> {
+	/**
+	 * Convenience method to create a {@link Parser} which accepts a list of text
+	 * items, delimited by the given string, which are each parsable according to
+	 * the given parser.
+	 * 
+	 * @param <T>
+	 *          The type of the objects to be parsed as elements of the list.
+	 * @param element
+	 *          The parser responsible for parsing the elements of the list.
+	 * @param delimiter
+	 *          The string delimiter between parsable text items in the list. This
+	 *          may be set to an empty string.
+	 * @return A newly derived {@link Parser} which will accept a {@link String}
+	 *         representation of a list of items, and parse it into a {@link List}
+	 *         instance containing objects parsed from its elements.
+	 */
 	public static <T> Parser<List<T>> list(Parser<T> element, String delimiter) {
 		return list(element, delimiter, 0);
 	}
 
+	/**
+	 * Convenience method to create a {@link Parser} which accepts a list of text
+	 * items, delimited by the given string, which are each parsable according to
+	 * the given parser.
+	 * 
+	 * @param <T>
+	 *          The type of the objects to be parsed as elements of the list.
+	 * @param element
+	 *          The parser responsible for parsing the elements of the list.
+	 * @param delimiter
+	 *          The string delimiter between parsable text items in the list. This
+	 *          may be set to an empty string.
+	 * @param minimum
+	 *          The minimum length of the list to be parsed.
+	 * @return A newly derived {@link Parser} which will accept a {@link String}
+	 *         representation of a list of items, and parse it into a {@link List}
+	 *         instance containing objects parsed from its elements.
+	 */
 	public static <T> Parser<List<T>> list(Parser<T> element, String delimiter,
 			int minimum) {
 		IdentityProperty<Parser<List<T>>> listParser = new IdentityProperty<>();
@@ -60,7 +115,7 @@ public interface Parser<T> {
 		return new ParserProxy<>(parser, Function.identity());
 	}
 
-	<U> Parser<U> transform(Function<T, U> transform);
+	<U> Parser<U> transform(Function<? super T, ? extends U> transform);
 
 	Parser<T> orElse(Supplier<? extends T> onFailure);
 
@@ -135,17 +190,15 @@ public interface Parser<T> {
 		});
 	}
 
-	default T parse(String literal) {
-		return parse(literal, true);
-	}
+	/*
+	 * TODO greedy append: evaluate appended value first, not needing to match
+	 * from the beginning of the unmatched region.
+	 * 
+	 * lazy prepend: evaluate original value first, not needing to match from the
+	 * beginning of the unmatched region.
+	 */
 
-	default T parse(String literal, boolean parseToEnd) {
-		return parseSubstring(literal, true).getHead();
-	}
+	T parse(String literal);
 
-	default Pair<T, Integer> parseSubstring(String literal) {
-		return parseSubstring(literal, false);
-	}
-
-	Pair<T, Integer> parseSubstring(String literal, boolean parseToEnd);
+	ParseResult<T> parseSubstring(ParseState currentState);
 }

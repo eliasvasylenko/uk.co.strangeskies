@@ -18,41 +18,44 @@
  */
 package uk.co.strangeskies.utilities.parser;
 
-import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
-public class AppendingParser<T, U> implements AbstractParser<T> {
-	private final Parser<T> main;
-	private final Parser<U> append;
+public class ChoiceParser<U, T> extends ParserProxy<U, T> {
+	private final Parser<? extends U> onFailure;
 
-	private final BiFunction<T, U, ? extends T> combinor;
+	public ChoiceParser(Supplier<Parser<U>> component,
+			Parser<? extends U> onFailure, Function<? super U, ? extends T> transform) {
+		super(component, transform);
 
-	public AppendingParser(Parser<T> main, Parser<U> append,
-			BiFunction<T, U, ? extends T> combinor) {
-		this.main = main;
-		this.append = append;
-
-		this.combinor = combinor;
+		this.onFailure = onFailure;
 	}
 
 	@Override
 	public ParseResult<T> parseSubstring(ParseState state) {
 		System.out.println(getClass());
 
-		ParseResult<T> mainValue = main.parseSubstring(state.toEnd(false));
-		ParseResult<U> appendValue;
-
+		ParseResult<T> value;
 		try {
-			appendValue = append.parseSubstring(mainValue.state()
-					.toEnd(state.toEnd()));
+			value = super.parseSubstring(state);
+		} catch (ParsingException e) {
+			try {
+				value = onFailure.transform(getTransform()).parseSubstring(state)
+						.map(Function.identity());
+			} catch (ParsingException e2) {
+				throw ParsingException.getHigher(e, e2);
+			}
 		} catch (Exception e) {
-			return mainValue.toEnd(state.toEnd());
+			e.printStackTrace();
+			value = onFailure.transform(getTransform()).parseSubstring(state)
+					.map(Function.identity());
 		}
-
-		return appendValue.map(a -> combinor.apply(mainValue.result(), a));
+		return value;
 	}
 
 	@Override
-	public String toString() {
-		return "Appending Parser [" + main + " > " + append + "]";
+	public <V> Parser<V> transform(Function<? super T, ? extends V> transform) {
+		return new ChoiceParser<>(getComponent(), onFailure, getTransform()
+				.andThen(transform));
 	}
 }

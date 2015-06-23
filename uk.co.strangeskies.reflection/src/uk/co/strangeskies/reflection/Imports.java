@@ -78,12 +78,26 @@ public class Imports {
 
 	public Class<?> getNamedClass(String name) {
 		Class<?> namedClass = namedClasses.get(name);
+
 		if (namedClass == null) {
 			try {
 				namedClass = Class.forName(name);
 			} catch (ClassNotFoundException e) {
-				throw new IllegalArgumentException("Cannot load class '" + name + "'",
-						e);
+				int lastDot;
+				while ((lastDot = name.lastIndexOf('.')) >= 0) {
+					name = new StringBuilder(name).replace(lastDot, lastDot + 1, "$")
+							.toString();
+
+					try {
+						namedClass = Class.forName(name);
+
+						return namedClass;
+					} catch (ClassNotFoundException f) {}
+				}
+
+				if (namedClass == null)
+					throw new IllegalArgumentException(
+							"Cannot load class '" + name + "'", e);
 			}
 		}
 

@@ -72,7 +72,7 @@ public class Pair<L, R> extends Tuple<L, Unit<R>> {
 	}
 
 	@Override
-	public <I> Pair<I, R> mapHead(Function<L, I> headMap) {
+	public <I> Pair<I, R> mapHead(Function<? super L, ? extends I> headMap) {
 		return new Pair<>(headMap.apply(getLeft()), getRight());
 	}
 }
