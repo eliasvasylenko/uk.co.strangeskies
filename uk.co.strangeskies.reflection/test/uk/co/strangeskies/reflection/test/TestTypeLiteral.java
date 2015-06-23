@@ -550,11 +550,11 @@ public class TestTypeLiteral {
 				.isAssignableFrom(new TypeToken<C2<String>>() {}));
 		System.out.println();
 
-		Imports imports = new Imports().withImports(Capture.class, Preserve.class,
-				Test2.class, List.class, Type.class);
+		Imports imports = Imports.empty().withImports(Capture.class,
+				Preserve.class, Test2.class, List.class, Type.class);
 		String annotationString = AnnotatedTypes
 				.toString(
-						new TypeToken<@Test(thisIsTest = "yeah!", wat = 2.5) List<@Test2(idk = "helo", wat = 2) ? extends @Preserve Number> @Capture [] @Infer []>() {}
+						new TypeToken<@Test(thisIsTest = "yeah!", wat = 2.5f) List<@Test2(idk = "helo", wat = 2) ? extends @Preserve Number> @Capture [] @Infer []>() {}
 								.getAnnotatedDeclaration(), imports);
 		System.out.println(annotationString);
 		System.out.println();
@@ -585,7 +585,7 @@ public class TestTypeLiteral {
 		System.out.println();
 
 		System.out.println(Annotations.fromString(
-				"@Test(thisIsTest = \"yeah!\", wat = 2.5)", imports));
+				"@Test(thisIsTest = \"yeah!\", wat = 2.5f)", imports));
 		System.out.println();
 
 		System.out.println(AnnotatedTypes.fromString(
@@ -595,7 +595,7 @@ public class TestTypeLiteral {
 		System.out
 				.println(AnnotatedTypes
 						.fromString(
-								"@Test(thisIsTest = \"yeah!\", wat = .2) java.util.ArrayList<@Capture java.lang.String>",
+								"@Test(thisIsTest = \"yeah!\", wat = .2f) java.util.ArrayList<@Capture java.lang.String>",
 								imports));
 		System.out.println();
 
@@ -630,7 +630,7 @@ public class TestTypeLiteral {
 		System.out
 				.println(AnnotatedTypes
 						.fromString(
-								"@Test(thisIsTest = \"yeah!\", wat = 2.5) List<@Test2(idk = \"helo\", wat = 2) ? extends @Preserve java.lang.String>",
+								"@Test(thisIsTest = \"yeah!\", wat = 2.5f) List<@Test2(idk = \"helo\", wat = 2) ? extends @Preserve java.lang.String>",
 								imports));
 		System.out.println();
 
@@ -644,12 +644,12 @@ public class TestTypeLiteral {
 		System.out
 				.println(AnnotatedTypes
 						.fromString(
-								"@Test(thisIsTest = \"yeah!\", wat = 2.5) List<@Test2(idk = \"helo\", wat = 2) ? extends @Preserve java.lang.Number> @Capture [] @uk.co.strangeskies.reflection.TypeToken.Infer []",
+								"@Test(thisIsTest = \"yeah!\", wat = 2.5f) List<@Test2(idk = \"helo\", wat = 2) ? extends @Preserve java.lang.Number> @Capture [] @uk.co.strangeskies.reflection.TypeToken.Infer []",
 								imports));
 		System.out.println();
 
 		System.out.println(Annotations.fromString(
-				"@Test(thisIsTest = yeah!, wat = 2.5)", imports));
+				"@Test(thisIsTest = \"yeah!\", wat = 2.5f)", imports));
 
 		System.out.println(AnnotatedTypes.fromString(annotationString, imports));
 		System.out.println();
@@ -661,11 +661,13 @@ public class TestTypeLiteral {
 				.isAssignableTo(new TypeToken<SchemaNode<?, ?>>() {}));
 		System.out.println();
 
+		/*- TODO Current open question on compiler-dev
 		System.out.println(new TypeToken<C1<? extends C2<String>>>() {});
 		System.out.println();
 
 		System.out.println(new TypeToken<C1<? extends C2<?>>>() {});
 		System.out.println();
+		 */
 	}
 
 	@Retention(RetentionPolicy.RUNTIME)
@@ -673,7 +675,7 @@ public class TestTypeLiteral {
 	@interface Test2 {
 		String idk();
 
-		long wat();
+		int wat();
 	};
 
 	@Retention(RetentionPolicy.RUNTIME)
@@ -681,9 +683,18 @@ public class TestTypeLiteral {
 	@interface Test {
 		String thisIsTest();
 
-		double wat();
+		float wat();
 	};
 
+	@Retention(RetentionPolicy.RUNTIME)
+	@Target(ElementType.TYPE_USE)
+	@interface Tester {
+		String thisIsTest();
+
+		double[] wat();
+	};
+
+	@Tester(thisIsTest = "yes", wat = { 2, 3 })
 	static class C1<T extends C1<T>> {}
 
 	static class C2<U> extends C1<C2<U>> {}

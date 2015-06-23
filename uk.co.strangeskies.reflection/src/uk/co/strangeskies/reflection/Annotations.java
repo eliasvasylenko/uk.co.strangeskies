@@ -97,22 +97,17 @@ public final class Annotations {
 				/*
 				 * For each method declared on the annotation type:
 				 */
+				boolean equal;
 				if (propertyMethod.getReturnType().isArray()) {
-					if (!Arrays.equals((Object[]) value, (Object[]) defaultValue)) {
-						/*
-						 * Print an array if it is different from the default value
-						 */
-						annotationProperties.add(new StringBuilder()
-								.append(propertyMethod.getName()).append(" = ")
-								.append(Arrays.toString((Object[]) value)).toString());
-					}
-				} else if (!Objects.equals(value, defaultValue)) {
-					/*
-					 * Print an object if it is different from the default value
-					 */
+					equal = Arrays.equals((Object[]) value, (Object[]) defaultValue);
+				} else {
+					equal = Objects.equals(value, defaultValue);
+				}
+
+				if (!equal) {
 					annotationProperties.add(new StringBuilder()
-							.append(propertyMethod.getName()).append(" = ").append(value)
-							.toString());
+							.append(propertyMethod.getName()).append(" = ")
+							.append(toPropertyString(value, imports)).toString());
 				}
 			}
 		}
@@ -126,6 +121,37 @@ public final class Annotations {
 		}
 
 		return builder.toString();
+	}
+
+	protected static StringBuilder toPropertyString(Object object) {
+		return toPropertyString(object, Imports.empty());
+	}
+
+	protected static StringBuilder toPropertyString(Object object, Imports imports) {
+		if (object.getClass().isArray()) {
+			return new StringBuilder()
+					.append(" { ")
+					.append(
+							Arrays.stream((Object[]) object)
+									.map(Annotations::toPropertyString)
+									.collect(Collectors.joining(", "))).append(" }");
+		} else {
+			String objectString = object.toString();
+			StringBuilder builder = new StringBuilder(objectString);
+
+			if (String.class.isInstance(object)) {
+				builder.append('"').insert(0, '"');
+			} else if (Double.class.isInstance(object)) {
+				if (!objectString.contains("."))
+					builder.append("d");
+			} else if (Float.class.isInstance(object)) {
+				builder.append("f");
+			} else if (Long.class.isInstance(object)) {
+				builder.append("l");
+			}
+
+			return builder;
+		}
 	}
 
 	/**
@@ -152,11 +178,55 @@ public final class Annotations {
 	 * @return The type described by the String.
 	 */
 	public static Annotation fromString(String typeString, Imports imports) {
-		return new AnnotationParser(imports).parse(typeString);
+		return new AnnotationParser(imports).getAnnotation().parse(typeString);
 	}
 
+	static Map<Method, Object> sanitizeProperties(Class<?> annotationClass,
+			Map<String, Object> properties) {
+		Map<Method, Object> castProperties = new HashMap<>();
+
+		for (String propertyName : properties.keySet()) {
+			Object propertyValue = properties.get(propertyName);
+			Method propertyMethod;
+			try {
+				propertyMethod = annotationClass.getMethod(propertyName);
+				propertyMethod.setAccessible(true);
+			} catch (NoSuchMethodException | SecurityException e) {
+				throw new TypeException("Annotation property does not exist", e);
+			}
+
+			try {
+				propertyValue = Types.assign(propertyValue,
+						propertyMethod.getReturnType());
+			} catch (TypeException e) {
+				throw new TypeException("Annotation property " + propertyName
+						+ " has invalid value " + propertyValue + " of class "
+						+ propertyValue.getClass(), e);
+			}
+
+			castProperties.put(propertyMethod, propertyValue);
+		}
+
+		return castProperties;
+	}
+
+	/**
+	 * Instantiate an instance of a given annotation type, with the given mapping
+	 * from properties to their values.
+	 * 
+	 * @param <T>
+	 *          The type of the annotation to instantiate
+	 * @param annotationClass
+	 *          The type of the annotation to instantiate
+	 * @param properties
+	 *          A mapping from names of properties on the annotation to values
+	 * @return A new annotation of the given type and properties
+	 */
 	public static <T extends Annotation> T annotationInstance(
 			Class<T> annotationClass, Map<String, Object> properties) {
+		Map<Method, Object> castProperties = sanitizeProperties(annotationClass,
+				properties);
+
 		@SuppressWarnings("unchecked")
 		T proxy = (T) Proxy.newProxyInstance(annotationClass.getClassLoader(),
 				new Class[] { annotationClass }, new InvocationHandler() {
@@ -205,8 +275,8 @@ public final class Annotations {
 								&& method.getParameterTypes().length == 0) {
 							return Annotations.toString((Annotation) proxy);
 						} else if (method.getDeclaringClass().equals(annotationClass)) {
-							if (properties.containsKey(method.getName())) {
-								return properties.get(method.getName());
+							if (castProperties.containsKey(method)) {
+								return castProperties.get(method);
 							} else {
 								return method.getDefaultValue();
 							}
@@ -218,14 +288,34 @@ public final class Annotations {
 		return proxy;
 	}
 
+	/**
+	 * Get the default annotation parser. All type names will need to be fully
+	 * qualified to correctly parse.
+	 * 
+	 * @return The default annotation parser
+	 */
 	public static AnnotationParser getParser() {
 		return ANNOTATION_PARSER;
 	}
 
+	/**
+	 * Get an annotation parser with knowledge of the given imports. Type names
+	 * may omit full qualification if those types are imported according to the
+	 * given imports.
+	 * 
+	 * @param imports
+	 *          A list of imports the annotation parser should be aware of
+	 * @return An annotation parser with knowledge of the given imports
+	 */
 	public static AnnotationParser getParser(Imports imports) {
 		return new AnnotationParser(imports);
 	}
 
+	/**
+	 * A parser for {@link Annotation}s, and various related types.
+	 * 
+	 * @author Elias N Vasylenko
+	 */
 	public static class AnnotationParser {
 		private final Parser<Annotation> annotation;
 		private final Parser<List<Annotation>> annotationList;
@@ -242,8 +332,19 @@ public final class Annotations {
 					.prepend("\"")
 					.append("\"")
 					.orElse(
+							Parser.matching("[0-9]*\\.[0-9]+").append("d")
+									.transform(Double::parseDouble))
+					.orElse(
+							Parser.matching("[0-9]*\\.[0-9]+").append("f")
+									.transform(Float::parseFloat))
+					.orElse(
+							Parser.matching("[0-9]+").append("l").transform(Long::parseLong))
+					.orElse(
+							Parser.matching("[0-9]+").append("i")
+									.transform(Integer::parseInt))
+					.orElse(
 							Parser.matching("[0-9]*\\.[0-9]+").transform(Double::parseDouble))
-					.orElse(Parser.matching("[0-9]+").transform(Long::parseLong));
+					.orElse(Parser.matching("[0-9]+").transform(Integer::parseInt));
 
 			property = Parser.matching("[_a-zA-Z][_a-zA-Z0-9]*").append("\\s*=\\s*")
 					.appendTransform(propertyValue, (s, t) -> new Pair<>(s, t));
@@ -266,28 +367,49 @@ public final class Annotations {
 			annotationList = Parser.list(annotation, "\\s*");
 		}
 
+		/**
+		 * A parser for the properties of an annotation.
+		 * 
+		 * @return A mapping from property names to parsed values
+		 */
 		public Parser<Map<String, Object>> getPropertyMap() {
 			return propertyMap;
 		}
 
+		/**
+		 * A parser for a property of an annotation, as a key, value pair.
+		 * 
+		 * @return A pair representing the properties name and value
+		 */
 		public Parser<Pair<String, Object>> getProperty() {
 			return property;
 		}
 
+		/**
+		 * A parser for the value of a property of an annotation
+		 * 
+		 * @return An object of a valid type for an annotation
+		 */
 		public Parser<Object> getPropertyValue() {
 			return propertyValue;
 		}
 
+		/**
+		 * A parser for a Java language annotation.
+		 * 
+		 * @return An {@link Annotation} object parsed from a given string
+		 */
 		public Parser<Annotation> getAnnotation() {
 			return annotation;
 		}
 
+		/**
+		 * A parser for a whitespace delimited list of Java language annotations.
+		 * 
+		 * @return A list of {@link Annotation} objects parsed from a given string
+		 */
 		public Parser<List<Annotation>> getAnnotationList() {
 			return annotationList;
-		}
-
-		public Annotation parse(String literal) {
-			return annotation.parse(literal);
 		}
 	}
 }

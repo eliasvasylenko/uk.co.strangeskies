@@ -406,33 +406,37 @@ public final class AnnotatedTypes {
 	 * @return The type described by the String.
 	 */
 	public static AnnotatedType fromString(String typeString, Imports imports) {
-		return new AnnotatedTypeParser(imports).parse(typeString);
+		return new AnnotatedTypeParser(imports).getClassType().parse(typeString);
 	}
 
+	/**
+	 * Get the default annotated type parser. All type names will need to be fully
+	 * qualified to correctly parse.
+	 * 
+	 * @return The default annotated type parser
+	 */
 	public static AnnotatedTypeParser getParser() {
 		return ANNOTATED_TYPE_PARSER;
 	}
 
+	/**
+	 * Get an annotated type parser with knowledge of the given imports. Type
+	 * names may omit full qualification if those types are imported according to
+	 * the given imports.
+	 * 
+	 * @param imports
+	 *          A list of imports the annotated type parser should be aware of
+	 * @return An annotated type parser with knowledge of the given imports
+	 */
 	public static AnnotatedTypeParser getParser(Imports imports) {
 		return new AnnotatedTypeParser(imports);
 	}
 
-	/*-
-	 *	AlphaNumericString
-	 *
-	 *	Type<AnnotatedType>								->	Annotations ClassType | WildcardType
-	 *	ClassType<Type>										->	TypeName[ < TypeList >]
-	 *	WildcardType<WildcardType>				->	?[ extends|super ClassTypeList]
-	 *	TypeName<String[]>								->	 AlphaNumericString[ .TypeName]
-	 *	TypeList<List<AnnotatedType>>			->	Type[ , TypeList]
-	 *	ClassTypeList<List<Type>>					->	Annotations ClassType[ & ClassTypeList]
-	 *
-	 *	Annotations												->	[ @TypeName[ ( AnnotationProperties )] [Annotations]]
-	 *	AnnotationProperties							->	PropertyName = PropertyValue
-	 *	PropertyName											->	AlphaNumericString
-	 *	PropertyValue											->	?
+	/**
+	 * A parser for {@link AnnotatedType}s, and various related types.
+	 * 
+	 * @author Elias N Vasylenko
 	 */
-
 	public static class AnnotatedTypeParser {
 		private final Parser<AnnotatedType> rawType;
 		private final Parser<AnnotatedType> classOrArrayType;
@@ -485,7 +489,8 @@ public final class AnnotatedTypes {
 							annotationParser
 									.getAnnotationList()
 									.append("\\s*\\?\\s*super(?![_a-zA-Z0-9])\\s*")
-									.appendTransform(Parser.list(classOrArrayType, "\\s*\\&\\s*"),
+									.appendTransform(
+											Parser.list(classOrArrayType, "\\s*\\&\\s*"),
 											AnnotatedWildcardTypes::lowerBounded))
 					.orElse(
 							annotationParser.getAnnotationList().append("\\s*\\?")
@@ -497,24 +502,51 @@ public final class AnnotatedTypes {
 			typeList = Parser.list(rawType, "\\s*,\\s*");
 		}
 
+		/**
+		 * A parser for annotated raw class types.
+		 * 
+		 * @return The annotated raw type of the parsed type name
+		 */
 		public Parser<AnnotatedType> getRawType() {
 			return rawType;
 		}
 
+		/**
+		 * A parser for an annotated class type, which may be parameterized.
+		 * 
+		 * @return The type of the expressed name, and the given parameterization
+		 *         where appropriate
+		 */
 		public Parser<AnnotatedType> getClassType() {
 			return classOrArrayType;
 		}
 
+		/**
+		 * A parser for an annotated wildcard type.
+		 * 
+		 * @return The type of the expressed wildcard type
+		 */
+		public Parser<AnnotatedWildcardType> getWildcardType() {
+			return wildcardType;
+		}
+
+		/**
+		 * A parser for a comma delimited list of annotated Java language types.
+		 * 
+		 * @return A list of {@link AnnotatedType} objects parsed from a given
+		 *         string
+		 */
 		public Parser<List<AnnotatedType>> getTypeList() {
 			return typeList;
 		}
 
+		/**
+		 * A parser for an annotated class type or wildcard type.
+		 * 
+		 * @return The annotated type of the expressed type
+		 */
 		public Parser<AnnotatedType> getTypeParameter() {
 			return typeParameter;
-		}
-
-		public AnnotatedType parse(String literal) {
-			return classOrArrayType.parse(literal);
 		}
 	}
 }

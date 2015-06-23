@@ -26,7 +26,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- *
+ * An immutable set of imports of java classes.
+ * 
  * @author Elias N Vasylenko
  */
 public class Imports {
@@ -35,27 +36,51 @@ public class Imports {
 	private final Map<String, Class<?>> namedClasses = new HashMap<>();
 	private final Set<Package> packages = new HashSet<>();
 
-	public Imports() {}
+	private Imports() {}
 
-	public Imports(Imports imports) {
+	private Imports(Imports imports) {
 		namedClasses.putAll(imports.namedClasses);
 		packages.addAll(imports.packages);
 	}
 
-	public Imports(Collection<? extends Class<?>> classes,
+	private Imports(Collection<? extends Class<?>> classes,
 			Collection<? extends Package> packages) {
 		importClasses(classes);
 		importPackages(packages);
 	}
 
+	/**
+	 * Derive a new set of imports, including the given class import.
+	 * 
+	 * @param classImport
+	 *          A class import with which to derive a new set of imports.
+	 * @return A new set of imports including all those on the receiver, along
+	 *         with the given class import.
+	 */
 	public Imports withImport(Class<?> classImport) {
 		return withImports(classImport);
 	}
 
+	/**
+	 * Derive a new set of imports, including the given class imports.
+	 * 
+	 * @param classes
+	 *          Class imports with which to derive a new set of imports.
+	 * @return A new set of imports including all those on the receiver, along
+	 *         with the given class imports.
+	 */
 	public Imports withImports(Class<?>... classes) {
 		return withImports(Arrays.asList(classes));
 	}
 
+	/**
+	 * Derive a new set of imports, including the given class imports.
+	 * 
+	 * @param classes
+	 *          Class imports with which to derive a new set of imports.
+	 * @return A new set of imports including all those on the receiver, along
+	 *         with the given class imports.
+	 */
 	public Imports withImports(Collection<? extends Class<?>> classes) {
 		Imports imports = new Imports(this);
 		imports.importClasses(classes);
@@ -72,10 +97,24 @@ public class Imports {
 		}
 	}
 
+	/**
+	 * Get all classes directly imported by this set of imports.
+	 * 
+	 * @return A set of all direct class imports.
+	 */
 	public Set<Class<?>> getImportedClasses() {
 		return new HashSet<>(namedClasses.values());
 	}
 
+	/**
+	 * Resolve the class object of the given name, allowing full package
+	 * qualification to be omitted for included classes.
+	 * 
+	 * @param name
+	 *          The name for which we wish to find the class object.
+	 * @return A class object satisfying the given name according to this set of
+	 *         imports.
+	 */
 	public Class<?> getNamedClass(String name) {
 		Class<?> namedClass = namedClasses.get(name);
 
@@ -104,6 +143,14 @@ public class Imports {
 		return namedClass;
 	}
 
+	/**
+	 * Resolve the name of a class object, allowing full package qualification to
+	 * be omitted for included classes.
+	 * 
+	 * @param clazz
+	 *          The class of which we wish to find the name.
+	 * @return A name for the given class object according to this set of imports.
+	 */
 	public String getClassName(Class<?> clazz) {
 		if (namedClasses.containsValue(clazz)
 				|| packages.contains(clazz.getPackage()))
@@ -112,14 +159,38 @@ public class Imports {
 			return clazz.getCanonicalName();
 	}
 
+	/**
+	 * Derive a new set of imports, including the given package import.
+	 * 
+	 * @param packageImport
+	 *          A package import with which to derive a new set of imports.
+	 * @return A new set of imports including all those on the receiver, along
+	 *         with the given package import.
+	 */
 	public Imports withPackageImport(Package packageImport) {
 		return withPackageImports(packageImport);
 	}
 
+	/**
+	 * Derive a new set of imports, including the given package imports.
+	 * 
+	 * @param packages
+	 *          Package imports with which to derive a new set of imports.
+	 * @return A new set of imports including all those on the receiver, along
+	 *         with the given package imports.
+	 */
 	public Imports withPackageImports(Package... packages) {
 		return withPackageImports(Arrays.asList(packages));
 	}
 
+	/**
+	 * Derive a new set of imports, including the given package imports.
+	 * 
+	 * @param packages
+	 *          Package imports with which to derive a new set of imports.
+	 * @return A new set of imports including all those on the receiver, along
+	 *         with the given package imports.
+	 */
 	public Imports withPackageImports(Collection<? extends Package> packages) {
 		Imports imports = new Imports(this);
 		imports.importPackages(packages);
@@ -132,14 +203,31 @@ public class Imports {
 		}
 	}
 
+	/**
+	 * Get all packages imported by this set of imports.
+	 * 
+	 * @return A set of all package imports.
+	 */
 	public Set<Package> getImportedPackages() {
 		return new HashSet<>(packages);
 	}
 
+	/**
+	 * @return An empty {@link Imports} instance.
+	 */
 	public static Imports empty() {
 		return EMPTY;
 	}
 
+	/**
+	 * Determine whether a class is imported by this {@link Imports} instance.
+	 * 
+	 * @param clazz
+	 *          The class whose status we wish to determine.
+	 * @return True if the class is imported by this {@link Imports} instance,
+	 *         either directly, or indirectly through a package import, and false
+	 *         otherwise.
+	 */
 	public boolean isImported(Class<?> clazz) {
 		return packages.contains(clazz.getPackage())
 				|| namedClasses.containsValue(clazz);

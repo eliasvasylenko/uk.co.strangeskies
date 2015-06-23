@@ -18,7 +18,6 @@
  */
 package uk.co.strangeskies.reflection;
 
-import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Modifier;
@@ -42,7 +41,6 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import uk.co.strangeskies.reflection.Annotations.AnnotationParser;
 import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.collection.computingmap.CacheComputingMap;
 import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
@@ -412,6 +410,47 @@ public final class Types {
 	}
 
 	/**
+	 * If a given object is assignable to a given raw type, it will be converted
+	 * to that type. Generally this is an identity conversion, but for wrapped
+	 * primitive types the extra step is taken to make conversions to which are
+	 * consistent with widening primitive conversions.
+	 * 
+	 * @param object
+	 *          The type from which we wish to assign.
+	 * @param type
+	 *          The type to which we wish to assign.
+	 * @return True if the types are assignable, false otherwise.
+	 */
+	public static Object assign(Object object, Class<?> type) {
+		Class<?> currentType = unwrapPrimitive(object.getClass());
+		Class<?> rawTargetType = unwrapPrimitive(getRawType(type));
+
+		if (isStrictInvocationContextCompatible(currentType, rawTargetType)) {
+			if (isPrimitive(rawTargetType)) {
+				/*
+				 * If assignable primitives:
+				 */
+				if (rawTargetType.equals(double.class)) {
+					object = ((Number) object).doubleValue();
+				} else if (rawTargetType.equals(float.class)) {
+					object = ((Number) object).floatValue();
+				} else if (rawTargetType.equals(long.class)) {
+					object = ((Number) object).longValue();
+				} else if (rawTargetType.equals(int.class)) {
+					object = ((Number) object).intValue();
+				} else if (rawTargetType.equals(short.class)) {
+					object = ((Number) object).shortValue();
+				}
+			}
+		} else {
+			throw new TypeException("Cannot assign '" + object + "' of type '"
+					+ object.getClass() + "' to type '" + type + "'.");
+		}
+
+		return object;
+	}
+
+	/**
 	 * Determine if a given type, {@code to}, is assignable from another given
 	 * type, {@code from}. Or in other words, if {@code to} is a supertype of
 	 * {@code from}. Types are considered assignable if they involve unchecked
@@ -684,13 +723,28 @@ public final class Types {
 	 *         {@code to}, false otherwise.
 	 */
 	public static boolean isStrictInvocationContextCompatible(Type from, Type to) {
-		if (isPrimitive(from))
-			if (isPrimitive(to))
-				return true; // TODO check widening primitive conversion
-			else
+		if (isPrimitive(from)) {
+			if (isPrimitive(to)) {
+				if (to.equals(from) || to.equals(double.class)) {
+					return true;
+				} else if (to.equals(float.class)) {
+					return !from.equals(double.class);
+				} else if (to.equals(long.class)) {
+					return !from.equals(double.class) && !from.equals(float.class);
+				} else if (to.equals(int.class)) {
+					return from.equals(byte.class) || from.equals(short.class)
+							|| from.equals(char.class);
+				} else if (to.equals(short.class)) {
+					return from.equals(byte.class);
+				} else {
+					return false;
+				}
+			} else {
 				return false;
-		else if (isPrimitive(to))
+			}
+		} else if (isPrimitive(to)) {
 			return false;
+		}
 
 		return isAssignable(from, to);
 	}
@@ -1135,45 +1189,86 @@ public final class Types {
 				"Unable to parse the type literal string '" + typeString + "'.");
 	}
 
+	/**
+	 * Get the default type parser. All type names will need to be fully qualified
+	 * to correctly parse.
+	 * 
+	 * @return The default annotated type parser
+	 */
 	public static TypeParser getParser() {
 		return TYPE_PARSER;
 	}
 
+	/**
+	 * Get a type parser with knowledge of the given imports. Type names may omit
+	 * full qualification if those types are imported according to the given
+	 * imports.
+	 * 
+	 * @param imports
+	 *          A list of imports the type parser should be aware of
+	 * @return A type parser with knowledge of the given imports
+	 */
 	public static TypeParser getParser(Imports imports) {
 		return new TypeParser(imports);
 	}
 
-	/*-
-	 *	AlphaNumericString
-	 *
-	 *	Type<AnnotatedType>								->	Annotations ClassType | WildcardType
-	 *	ClassType<Type>										->	TypeName[ < TypeList >]
-	 *	WildcardType<WildcardType>				->	?[ extends|super ClassTypeList]
-	 *	TypeName<String[]>								->	 AlphaNumericString[ .TypeName]
-	 *	TypeList<List<AnnotatedType>>			->	Type[ , TypeList]
-	 *	ClassTypeList<List<Type>>					->	Annotations ClassType[ & ClassTypeList]
-	 *
-	 *	Annotations												->	[ @TypeName[ ( AnnotationProperties )] [Annotations]]
-	 *	AnnotationProperties							->	PropertyName = PropertyValue
-	 *	PropertyName											->	AlphaNumericString
-	 *	PropertyValue											->	?
+	/**
+	 * A parser for {@link Type}s, and various related types.
+	 * 
+	 * @author Elias N Vasylenko
 	 */
-
 	public static class TypeParser {
 		private final Parser<Class<?>> rawType;
 
-		private Parser<Type> classType;
-		private Parser<WildcardType> wildcardType;
-		private Parser<List<Type>> classTypeList;
+		private final Parser<Type> classType;
+		private final Parser<WildcardType> wildcardType;
+		private final Parser<List<Type>> classTypeList;
 
 		private TypeParser(Imports imports) {
 			rawType = Parser.matching(
 					"[_a-zA-Z][_a-zA-Z0-9]*(\\.[_a-zA-Z][_a-zA-Z0-9]*)*").transform(
 					imports::getNamedClass);
+
+			classType = null;
+			wildcardType = null;
+			classTypeList = null;
 		}
 
+		/**
+		 * A parser for raw class types.
+		 * 
+		 * @return The raw type of the parsed type name
+		 */
 		public Parser<Class<?>> getRawType() {
 			return rawType;
+		}
+
+		/**
+		 * A parser for a class type, which may be parameterized.
+		 * 
+		 * @return The type of the expressed name, and the given parameterization
+		 *         where appropriate
+		 */
+		public Parser<Type> getClassType() {
+			return classType;
+		}
+
+		/**
+		 * A parser for a wildcard type.
+		 * 
+		 * @return The type of the expressed wildcard type
+		 */
+		public Parser<WildcardType> getWildcardType() {
+			return wildcardType;
+		}
+
+		/**
+		 * A parser for a comma delimited list of Java language types.
+		 * 
+		 * @return A list of {@link Type} objects parsed from a given string
+		 */
+		public Parser<List<Type>> getClassTypeList() {
+			return classTypeList;
 		}
 	}
 }
