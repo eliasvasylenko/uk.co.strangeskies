@@ -18,13 +18,13 @@
  */
 package uk.co.strangeskies.utilities.parser;
 
-public class ParsingException extends RuntimeException {
+public class ParseException extends RuntimeException {
 	private final String message;
 	private final String literal;
 	private final int fromIndex;
 	private final int toIndex;
 
-	public ParsingException(String message, String literal, int fromIndex,
+	public ParseException(String message, String literal, int fromIndex,
 			int toIndex, Throwable cause) {
 		super(composeMessage(message, literal, fromIndex, toIndex), cause);
 		this.message = message;
@@ -33,7 +33,7 @@ public class ParsingException extends RuntimeException {
 		this.toIndex = toIndex;
 	}
 
-	public ParsingException(String message, String literal, int fromIndex,
+	public ParseException(String message, String literal, int fromIndex,
 			int toIndex) {
 		super(composeMessage(message, literal, fromIndex, toIndex));
 		this.message = message;
@@ -45,8 +45,8 @@ public class ParsingException extends RuntimeException {
 	private static String composeMessage(String message, String literal,
 			int fromIndex, int toIndex) {
 		StringBuilder builder = new StringBuilder(message)
-				.append(System.lineSeparator()).append("\t").append(literal)
-				.append(System.lineSeparator()).append("\t");
+				.append(System.lineSeparator()).append(literal)
+				.append(System.lineSeparator());
 
 		for (int i = 0; i < fromIndex; i++)
 			builder.append(" ");
@@ -75,8 +75,8 @@ public class ParsingException extends RuntimeException {
 		return message;
 	}
 
-	public static ParsingException getHigher(ParsingException first,
-			ParsingException second) {
+	public static ParseException getHigher(ParseException first,
+			ParseException second) {
 		if (first.getIndexReached() > second.getIndexReached())
 			return first;
 		else

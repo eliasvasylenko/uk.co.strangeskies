@@ -26,13 +26,13 @@ public class ParseResult<T> {
 	private final T result;
 
 	ParseResult(ParseState state, int toIndex, T result) {
-		this(state.fromIndex(), new ParseState(state.literal(), toIndex,
-				state.toEnd()), result);
+		this(state.fromIndex(), state.fromIndex(toIndex), result);
 	}
 
 	ParseResult(int fromIndex, ParseState state, T result) {
 		if (state.toEnd() && state.fromIndex() < state.literal().length())
-			throw new ParseState(state.literal(), fromIndex, state.toEnd())
+			throw state
+					.fromIndex(fromIndex)
 					.addException("Cannot match literal as end of input not reached",
 							state.fromIndex()).getException();
 
@@ -41,23 +41,28 @@ public class ParseResult<T> {
 		this.result = result;
 	}
 
-	ParseState state() {
+	public ParseState state() {
 		return state;
 	}
 
-	T result() {
+	public T result() {
 		return result;
 	}
 
-	<U> ParseResult<U> map(Function<? super T, ? extends U> transform) {
-		return new ParseResult<U>(fromIndex, state, transform.apply(result));
+	public <U> ParseResult<U> mapResult(Function<? super T, ? extends U> transform) {
+		try {
+			return new ParseResult<U>(fromIndex, state, transform.apply(result));
+		} catch (Exception e) {
+			System.out.println(fromIndex);
+			System.out.println(state.fromIndex());
+			throw state
+					.fromIndex(fromIndex)
+					.addException("Cannot apply transformation to parse result",
+							state.fromIndex(), e).getException();
+		}
 	}
 
-	public ParseResult<T> toEnd(boolean toEnd) {
-		return new ParseResult<>(fromIndex, state.toEnd(toEnd), result);
-	}
-
-	public ParseResult<T> addException(ParseState state) {
-		return new ParseResult<>(fromIndex, this.state.addException(state), result);
+	public ParseResult<T> mapState(Function<ParseState, ParseState> transform) {
+		return new ParseResult<>(fromIndex, transform.apply(state), result);
 	}
 }

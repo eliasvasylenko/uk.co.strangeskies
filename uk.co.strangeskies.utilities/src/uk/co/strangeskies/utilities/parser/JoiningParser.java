@@ -33,9 +33,7 @@ public class JoiningParser<T, U, V> implements AbstractParser<T> {
 	}
 
 	@Override
-	public ParseResult<T> parseSubstring(ParseState state) {
-		System.out.println(getClass());
-
+	public ParseResult<T> parseSubstringImpl(ParseState state) {
 		ParseResult<U> firstValue;
 		ParseResult<V> secondValue;
 
@@ -43,12 +41,14 @@ public class JoiningParser<T, U, V> implements AbstractParser<T> {
 		secondValue = second
 				.parseSubstring(firstValue.state().toEnd(state.toEnd()));
 
-		return secondValue.addException(firstValue.state()).map(
-				s -> combinor.apply(firstValue.result(), s));
+		return firstValue.mapState(
+				s -> s.addException(secondValue.state()).fromIndex(
+						secondValue.state().fromIndex())).mapResult(
+				f -> combinor.apply(f, secondValue.result()));
 	}
 
 	@Override
 	public String toString() {
-		return "Joining Parser (" + first + " & " + second + ")";
+		return "Joining Parser";
 	}
 }

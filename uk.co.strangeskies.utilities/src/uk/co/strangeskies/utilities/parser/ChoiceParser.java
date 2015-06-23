@@ -22,40 +22,43 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class ChoiceParser<U, T> extends ParserProxy<U, T> {
-	private final Parser<? extends U> onFailure;
+	private final Parser<T> onFailure;
 
 	public ChoiceParser(Supplier<Parser<U>> component,
 			Parser<? extends U> onFailure, Function<? super U, ? extends T> transform) {
 		super(component, transform);
 
-		this.onFailure = onFailure;
+		this.onFailure = onFailure.transform(transform);
+	}
+
+	public ChoiceParser(Supplier<Parser<U>> component,
+			Function<? super U, ? extends T> transform, Parser<? extends T> onFailure) {
+		super(component, transform);
+
+		this.onFailure = onFailure.transform(Function.identity());
 	}
 
 	@Override
-	public ParseResult<T> parseSubstring(ParseState state) {
-		System.out.println(getClass());
-
+	public ParseResult<T> parseSubstringImpl(ParseState state) {
 		ParseResult<T> value;
 		try {
-			value = super.parseSubstring(state);
-		} catch (ParsingException e) {
+			value = super.parseSubstringImpl(state);
+		} catch (ParseException e) {
 			try {
-				value = onFailure.transform(getTransform()).parseSubstring(state)
-						.map(Function.identity());
-			} catch (ParsingException e2) {
-				throw ParsingException.getHigher(e, e2);
+				value = onFailure.parseSubstring(state)
+						.mapState(s -> s.addException(e));
+			} catch (ParseException e2) {
+				throw ParseException.getHigher(e, e2);
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
-			value = onFailure.transform(getTransform()).parseSubstring(state)
-					.map(Function.identity());
+			value = onFailure.parseSubstring(state);
 		}
 		return value;
 	}
 
 	@Override
 	public <V> Parser<V> transform(Function<? super T, ? extends V> transform) {
-		return new ChoiceParser<>(getComponent(), onFailure, getTransform()
-				.andThen(transform));
+		return new ChoiceParser<>(getComponent(),
+				getTransform().andThen(transform), onFailure.transform(transform));
 	}
 }

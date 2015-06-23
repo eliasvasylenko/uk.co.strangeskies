@@ -35,19 +35,17 @@ public class PrependingParser<T, U> implements AbstractParser<T> {
 	}
 
 	@Override
-	public ParseResult<T> parseSubstring(ParseState state) {
-		System.out.println(getClass());
-
+	public ParseResult<T> parseSubstringImpl(ParseState state) {
 		ParseResult<U> prependValue;
 		ParseResult<T> mainValue;
 
 		try {
 			prependValue = prepend.parseSubstring(state.toEnd(false));
-		} catch (ParsingException e) {
+		} catch (ParseException e) {
 			try {
-				return main.parseSubstring(state);
-			} catch (ParsingException e2) {
-				throw ParsingException.getHigher(e, e2);
+				return main.parseSubstring(state).mapState(s -> s.addException(e));
+			} catch (ParseException e2) {
+				throw ParseException.getHigher(e, e2);
 			} catch (Exception e2) {
 				throw e;
 			}
@@ -57,7 +55,8 @@ public class PrependingParser<T, U> implements AbstractParser<T> {
 
 		mainValue = main.parseSubstring(prependValue.state().toEnd(state.toEnd()));
 
-		return mainValue.map(m -> combinor.apply(m, prependValue.result()));
+		return mainValue.mapState(s -> s.addException(prependValue.state()))
+				.mapResult(m -> combinor.apply(m, prependValue.result()));
 	}
 
 	@Override

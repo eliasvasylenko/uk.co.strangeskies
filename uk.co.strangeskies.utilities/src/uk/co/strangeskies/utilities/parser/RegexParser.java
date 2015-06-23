@@ -32,7 +32,7 @@ public class RegexParser<T> implements AbstractParser<T> {
 	}
 
 	@Override
-	public ParseResult<T> parseSubstring(ParseState state) {
+	public ParseResult<T> parseSubstringImpl(ParseState state) {
 		Matcher matcher = pattern.matcher(state.literal()).region(
 				state.fromIndex(), state.literal().length());
 
@@ -42,19 +42,20 @@ public class RegexParser<T> implements AbstractParser<T> {
 		else
 			matches = matcher.lookingAt();
 
-		System.out.println(state.literal() + " , " + state.fromIndex() + " -> "
-				+ state.toEnd() + " with " + pattern + " ==== " + matches);
-
 		if (!matches) {
 			for (int endIndex = state.fromIndex() + 1; endIndex < state.literal()
 					.length(); endIndex++) {
 				// TODO binary search for length
 
 				Matcher partialMatcher = matcher.region(state.fromIndex(), endIndex);
-				if (!partialMatcher.matches())
+				if (!partialMatcher.matches()) {
 					throw state.addException("Cannot match pattern '" + pattern + "'",
 							endIndex - 1).getException();
+				}
 			}
+
+			throw state.addException("Cannot match pattern '" + pattern + "'",
+					state.literal().length()).getException();
 		}
 
 		return state.parseTo(matcher.end(), transform);

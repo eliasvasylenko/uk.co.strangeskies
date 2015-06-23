@@ -35,20 +35,22 @@ public class AppendingParser<T, U> implements AbstractParser<T> {
 	}
 
 	@Override
-	public ParseResult<T> parseSubstring(ParseState state) {
-		System.out.println(getClass());
-
+	public ParseResult<T> parseSubstringImpl(ParseState state) {
 		ParseResult<T> mainValue = main.parseSubstring(state.toEnd(false));
 		ParseResult<U> appendValue;
 
 		try {
 			appendValue = append.parseSubstring(mainValue.state()
 					.toEnd(state.toEnd()));
+		} catch (ParseException e) {
+			return mainValue.mapState(s -> s.addException(e)).mapState(
+					s -> s.toEnd(state.toEnd()));
 		} catch (Exception e) {
-			return mainValue.toEnd(state.toEnd());
+			return mainValue.mapState(s -> s.toEnd(state.toEnd()));
 		}
 
-		return appendValue.map(a -> combinor.apply(mainValue.result(), a));
+		return appendValue.mapState(s -> s.addException(mainValue.state()))
+				.mapResult(a -> combinor.apply(mainValue.result(), a));
 	}
 
 	@Override

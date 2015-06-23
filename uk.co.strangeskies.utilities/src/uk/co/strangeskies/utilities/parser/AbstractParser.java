@@ -80,4 +80,12 @@ public interface AbstractParser<T> extends Parser<T> {
 	default T parse(String literal) {
 		return parseSubstring(new ParseState(literal)).result();
 	}
+
+	@Override
+	default ParseResult<T> parseSubstring(ParseState currentState) {
+		return parseSubstringImpl(currentState.push(this)).mapState(
+				s -> s.pop(this));
+	}
+
+	ParseResult<T> parseSubstringImpl(ParseState currentState);
 }

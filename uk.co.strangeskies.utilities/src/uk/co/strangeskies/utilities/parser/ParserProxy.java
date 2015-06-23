@@ -50,8 +50,8 @@ public class ParserProxy<U, T> implements AbstractParser<T> {
 	}
 
 	@Override
-	public ParseResult<T> parseSubstring(ParseState state) {
-		return component.get().parseSubstring(state).map(transform);
+	public ParseResult<T> parseSubstringImpl(ParseState state) {
+		return component.get().parseSubstring(state).mapResult(transform);
 	}
 
 	@Override
