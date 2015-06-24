@@ -71,11 +71,6 @@ import uk.co.strangeskies.utilities.tuples.Pair;
  *          This is the type which the TypeToken object references.
  */
 public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
-	@Preserve
-	@Infer
-	@Capture
-	private static class AnnotationInstances {};
-
 	/**
 	 * Treatment of wildcards for {@link TypeToken}s created over parameterized
 	 * types.
@@ -105,8 +100,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 		private final Annotation annotation;
 
 		private Wildcards(Class<? extends Annotation> annotationClass) {
-			this.annotation = AnnotationInstances.class
-					.getAnnotation(annotationClass);
+			this.annotation = Annotations.from(annotationClass);
 		}
 
 		/**
@@ -198,8 +192,18 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	}
 
 	private TypeToken(Resolver resolver, Type type) {
-		declaration = AnnotatedTypes.over(type, Wildcards.PRESERVE.getAnnotation());
+		declaration = AnnotatedTypes.over(type);
 
+		this.resolver = resolver;
+		this.type = type;
+	}
+
+	/*
+	 * Warning: This is a dangerous constructor to use without a thorough
+	 * understanding of the potential consequences.
+	 */
+	private TypeToken(Resolver resolver, AnnotatedType declaration, Type type) {
+		this.declaration = declaration;
 		this.resolver = resolver;
 		this.type = type;
 	}
@@ -497,7 +501,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 		Resolver resolver = getInternalResolver().deepCopy(
 				inferenceVariableSubstitutions);
 
-		return new TypeToken<T>(resolver, new TypeSubstitution(
+		return new TypeToken<T>(resolver, declaration, new TypeSubstitution(
 				inferenceVariableSubstitutions).resolve(type));
 	}
 
@@ -605,7 +609,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 * @return A TypeToken representing the type described by the String.
 	 */
 	public static TypeToken<?> fromString(String typeString) {
-		return over(Types.fromString(typeString));
+		return over(AnnotatedTypes.fromString(typeString));
 	}
 
 	protected void validate() {

@@ -27,6 +27,7 @@ import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -168,6 +169,33 @@ public final class AnnotatedParameterizedTypes {
 			Annotation... annotations) {
 		return new AnnotatedParameterizedTypeImpl(rawType, arguments,
 				Arrays.asList(annotations));
+	}
+
+	/**
+	 * Parameterize a generic class with the given annotated type arguments.
+	 * 
+	 * @param rawType
+	 *          The annotated generic class we wish to parameterize.
+	 * @param arguments
+	 *          A mapping from the type variables on the generic class to their
+	 *          annotated arguments.
+	 * @return A new {@link AnnotatedParameterizedType} instance with the given
+	 *         type arguments, and the given annotations.
+	 */
+	public static AnnotatedType from(AnnotatedType rawType,
+			List<AnnotatedType> arguments) {
+		Map<TypeVariable<?>, AnnotatedType> annotatedTypes = new HashMap<>();
+		TypeVariable<?>[] typeVariables = ((Class<?>) rawType.getType())
+				.getTypeParameters();
+
+		if (typeVariables.length != arguments.size())
+			throw new IllegalArgumentException();
+
+		for (int i = 0; i < arguments.size(); i++)
+			annotatedTypes.put(typeVariables[i], arguments.get(i));
+
+		return AnnotatedParameterizedTypes.from((Class<?>) rawType.getType(),
+				annotatedTypes::get, rawType.getAnnotations());
 	}
 
 	/**

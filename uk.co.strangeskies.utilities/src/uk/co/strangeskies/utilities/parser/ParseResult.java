@@ -53,8 +53,6 @@ public class ParseResult<T> {
 		try {
 			return new ParseResult<U>(fromIndex, state, transform.apply(result));
 		} catch (Exception e) {
-			System.out.println(fromIndex);
-			System.out.println(state.fromIndex());
 			throw state
 					.fromIndex(fromIndex)
 					.addException("Cannot apply transformation to parse result",

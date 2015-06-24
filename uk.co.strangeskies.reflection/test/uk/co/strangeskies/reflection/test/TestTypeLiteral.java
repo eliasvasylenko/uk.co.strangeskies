@@ -661,6 +661,18 @@ public class TestTypeLiteral {
 				.isAssignableTo(new TypeToken<SchemaNode<?, ?>>() {}));
 		System.out.println();
 
+		System.out.println(TypeToken.fromString(
+				"uk.co.strangeskies.reflection.test.SchemaNode<?, ?>")
+				.getAnnotatedDeclaration());
+		System.out.println();
+
+		System.out
+				.println(TypeToken
+						.fromString(
+								"uk.co.strangeskies.reflection.test.SchemaNode<?, @uk.co.strangeskies.reflection.TypeToken.Infer ?>")
+						.deepCopy().getAnnotatedDeclaration());
+		System.out.println();
+
 		/*- TODO Current open question on compiler-dev
 		System.out.println(new TypeToken<C1<? extends C2<String>>>() {});
 		System.out.println();

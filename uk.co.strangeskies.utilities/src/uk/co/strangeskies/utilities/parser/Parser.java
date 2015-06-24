@@ -93,7 +93,7 @@ public interface Parser<T> {
 		IdentityProperty<Parser<List<T>>> listParser = new IdentityProperty<>();
 
 		listParser.set(Parser.proxy(listParser::get).prepend(delimiter)
-				.orElse(ArrayList::new).prepend(element, List::add)
+				.orElse(ArrayList::new).prepend(element, (l, e) -> l.add(0, e))
 				.orElse(ArrayList::new));
 
 		for (int i = 0; i < minimum; i++)

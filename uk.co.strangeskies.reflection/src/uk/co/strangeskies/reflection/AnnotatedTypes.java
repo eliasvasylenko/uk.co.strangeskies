@@ -26,13 +26,11 @@ import java.lang.reflect.AnnotatedWildcardType;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -452,33 +450,17 @@ public final class AnnotatedTypes {
 					annotationParser.getAnnotationList().append("\\s*")
 							.orElse(ArrayList::new), AnnotatedTypes::over);
 
-			classOrArrayType = rawType
-					.tryAppendTransform(
-							Parser.list(Parser.proxy(this::getTypeParameter), "\\s*,\\s*")
-									.prepend("\\s*<\\s*").append("\\s*>\\s*"),
-							(r, l) -> {
-								Map<TypeVariable<?>, AnnotatedType> annotatedTypes = new HashMap<>();
-								TypeVariable<?>[] typeVariables = ((Class<?>) r.getType())
-										.getTypeParameters();
-
-								if (typeVariables.length != l.size())
-									throw new IllegalArgumentException();
-
-								for (int i = 0; i < l.size(); i++)
-									annotatedTypes.put(typeVariables[i], l.get(i));
-
-								return AnnotatedParameterizedTypes.from((Class<?>) r.getType(),
-										annotatedTypes::get, r.getAnnotations());
-							}).appendTransform(
-							Parser
-									.list(
-											annotationParser.getAnnotationList().append(
-													"\\s*\\[\\s*\\]"), "\\s*").prepend("\\s*"),
-							(t, l) -> {
-								for (List<Annotation> annotationList : l)
-									t = AnnotatedArrayTypes.fromComponent(t, annotationList);
-								return t;
-							});
+			classOrArrayType = rawType.tryAppendTransform(
+					Parser.list(Parser.proxy(this::getTypeParameter), "\\s*,\\s*")
+							.prepend("\\s*<\\s*").append("\\s*>\\s*"),
+					AnnotatedParameterizedTypes::from).appendTransform(
+					Parser.list(
+							annotationParser.getAnnotationList().append("\\s*\\[\\s*\\]"),
+							"\\s*").prepend("\\s*"), (t, l) -> {
+						for (List<Annotation> annotationList : l)
+							t = AnnotatedArrayTypes.fromComponent(t, annotationList);
+						return t;
+					});
 
 			wildcardType = annotationParser
 					.getAnnotationList()

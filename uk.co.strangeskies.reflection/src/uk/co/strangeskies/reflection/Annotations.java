@@ -211,6 +211,20 @@ public final class Annotations {
 	}
 
 	/**
+	 * Try to instantiate an instance of a given annotation type, with default
+	 * values for any properties.
+	 * 
+	 * @param <T>
+	 *          The type of the annotation to instantiate
+	 * @param annotationClass
+	 *          The type of the annotation to instantiate
+	 * @return A new annotation of the given type and properties
+	 */
+	public static <T extends Annotation> T from(Class<T> annotationClass) {
+		return from(annotationClass, new HashMap<>());
+	}
+
+	/**
 	 * Instantiate an instance of a given annotation type, with the given mapping
 	 * from properties to their values.
 	 * 
@@ -222,8 +236,8 @@ public final class Annotations {
 	 *          A mapping from names of properties on the annotation to values
 	 * @return A new annotation of the given type and properties
 	 */
-	public static <T extends Annotation> T annotationInstance(
-			Class<T> annotationClass, Map<String, Object> properties) {
+	public static <T extends Annotation> T from(Class<T> annotationClass,
+			Map<String, Object> properties) {
 		Map<Method, Object> castProperties = sanitizeProperties(annotationClass,
 				properties);
 
@@ -357,12 +371,12 @@ public final class Annotations {
 			annotation = typeParser
 					.getRawType()
 					.prepend("@")
-					.transform(
-							t -> (Class<? extends Annotation>) t.asSubclass(Annotation.class))
+					.<Class<? extends Annotation>> transform(
+							t -> t.asSubclass(Annotation.class))
 					.appendTransform(
 							propertyMap.prepend("\\(\\s*").append("\\s*\\)")
 									.orElse(Collections::emptyMap),
-							(a, m) -> Annotations.annotationInstance(a, m));
+							(a, m) -> Annotations.from(a, m));
 
 			annotationList = Parser.list(annotation, "\\s*");
 		}
