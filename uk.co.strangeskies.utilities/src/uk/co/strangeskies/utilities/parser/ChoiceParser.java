@@ -31,11 +31,12 @@ public class ChoiceParser<U, T> extends ParserProxy<U, T> {
 		this.onFailure = onFailure.transform(transform);
 	}
 
+	@SuppressWarnings("unchecked")
 	public ChoiceParser(Supplier<Parser<U>> component,
 			Function<? super U, ? extends T> transform, Parser<? extends T> onFailure) {
 		super(component, transform);
 
-		this.onFailure = onFailure.transform(Function.identity());
+		this.onFailure = (Parser<T>) onFailure;
 	}
 
 	@Override
