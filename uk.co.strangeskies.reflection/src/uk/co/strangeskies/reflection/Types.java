@@ -523,8 +523,7 @@ public final class Types {
 
 		boolean assignable;
 
-		if (from == null || to == null || to.equals(Object.class)
-				|| from.equals(to)) {
+		if (from == null || to == null || to.equals(Object.class) || from == to) {
 			/*
 			 * We can always assign to or from 'null', and we can always assign to
 			 * Object.
@@ -676,12 +675,10 @@ public final class Types {
 		if (to.equals(from))
 			return true;
 
-		if (to instanceof Class || to instanceof ParameterizedType)
+		if (to instanceof Class || to instanceof ParameterizedType
+				|| to instanceof IntersectionType) {
 			return isAssignable(from, to, assignsEncountered)
 					&& isAssignable(to, from, assignsEncountered);
-		else if (to instanceof IntersectionType) {
-			return Arrays.stream(((IntersectionType) to).getTypes()).allMatch(
-					t -> isContainedBy(from, t, assignsEncountered));
 		} else if (to instanceof WildcardType) {
 			WildcardType toWildcard = (WildcardType) to;
 
@@ -1161,7 +1158,7 @@ public final class Types {
 	private static void appendBounds(StringBuilder builder, Type[] upperBounds,
 			Type[] lowerBounds, Imports imports) {
 		if (upperBounds.length > 0
-				&& (upperBounds.length != 1 || (upperBounds[0] != null && upperBounds[0]
+				&& (upperBounds.length != 1 || (upperBounds[0] != null && !upperBounds[0]
 						.equals(Object.class))))
 			builder.append(" extends ").append(toString(upperBounds, " & ", imports));
 

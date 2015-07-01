@@ -106,11 +106,14 @@ public final class AnnotatedWildcardTypes {
 					getAnnotations()));
 
 			AnnotatedType[] bounds;
-			if ((bounds = getAnnotatedUpperBounds()).length > 0) {
+			if ((bounds = getAnnotatedUpperBounds()).length > 1
+					|| (bounds.length == 1 && !bounds[0].equals(AnnotatedTypes
+							.over(Object.class)))) {
 				builder.append("? extends ");
 			} else if ((bounds = getAnnotatedLowerBounds()).length > 0) {
 				builder.append("? super ");
 			} else {
+				bounds = new AnnotatedType[0];
 				builder.append("?");
 			}
 

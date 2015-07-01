@@ -178,8 +178,9 @@ public final class AnnotatedTypes {
 			return false;
 		else if (!first.getType().equals(second.getType()))
 			return false;
-		else
+		else {
 			return annotationEquals(first, second);
+		}
 	}
 
 	private static boolean annotationEquals(AnnotatedType first,
@@ -206,12 +207,23 @@ public final class AnnotatedTypes {
 				return false;
 		} else if (first instanceof AnnotatedWildcardType) {
 			if (second instanceof AnnotatedWildcardType) {
+				AnnotatedType[] firstUpperBounds = ((AnnotatedWildcardType) first)
+						.getAnnotatedUpperBounds();
+				AnnotatedType[] secondUpperBounds = ((AnnotatedWildcardType) second)
+						.getAnnotatedUpperBounds();
+
+				if (firstUpperBounds.length == 0)
+					firstUpperBounds = new AnnotatedType[] { AnnotatedTypes
+							.over(Object.class) };
+
+				if (secondUpperBounds.length == 0)
+					secondUpperBounds = new AnnotatedType[] { AnnotatedTypes
+							.over(Object.class) };
+
 				return annotationEquals(
 						((AnnotatedWildcardType) first).getAnnotatedLowerBounds(),
 						((AnnotatedWildcardType) second).getAnnotatedLowerBounds())
-						&& annotationEquals(
-								((AnnotatedWildcardType) first).getAnnotatedUpperBounds(),
-								((AnnotatedWildcardType) second).getAnnotatedUpperBounds());
+						&& annotationEquals(firstUpperBounds, secondUpperBounds);
 			} else
 				return false;
 		} else

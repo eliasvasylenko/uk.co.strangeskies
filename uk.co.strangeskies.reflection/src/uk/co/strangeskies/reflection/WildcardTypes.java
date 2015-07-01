@@ -34,7 +34,7 @@ public class WildcardTypes {
 	private static WildcardType UNBOUNDED = new WildcardType() {
 		@Override
 		public Type[] getUpperBounds() {
-			return new Type[0];
+			return new Type[] { Object.class };
 		}
 
 		@Override
@@ -57,9 +57,9 @@ public class WildcardTypes {
 			WildcardType wildcard = (WildcardType) that;
 
 			return wildcard.getLowerBounds().length == 0
-					&& wildcard.getUpperBounds().length == 0
-					|| (Arrays.equals(wildcard.getUpperBounds(),
-							new Type[] { Object.class }));
+					&& (wildcard.getUpperBounds().length == 0 || (wildcard
+							.getUpperBounds().length == 1 && wildcard.getUpperBounds()[0]
+							.equals(Object.class)));
 		}
 
 		@Override
@@ -141,10 +141,15 @@ public class WildcardTypes {
 					return false;
 				if (that == this)
 					return true;
+
 				WildcardType wildcard = (WildcardType) that;
+
+				Type[] thatUpperBounds = wildcard.getUpperBounds();
+				if (thatUpperBounds.length == 0)
+					thatUpperBounds = new Type[] { Object.class };
+
 				return Arrays.equals(types.get(), wildcard.getLowerBounds())
-						&& (wildcard.getUpperBounds().length == 0 || (Arrays.equals(
-								wildcard.getUpperBounds(), new Type[] { Object.class })));
+						&& Arrays.equals(thatUpperBounds, new Type[] { Object.class });
 			}
 
 			@Override
@@ -180,14 +185,9 @@ public class WildcardTypes {
 			private Type[] types;
 			private final Supplier<Type[]> typeSupplier = () -> {
 				if (bounds.isEmpty()) {
-					return new Type[0];
+					return new Type[] { Object.class };
 				} else if (bounds.size() == 1) {
-					Type type = bounds.iterator().next();
-					if (type.equals(Object.class)) {
-						return new Type[0];
-					} else {
-						return new Type[] { type };
-					}
+					return new Type[] { bounds.iterator().next() };
 				} else {
 					Type type = IntersectionType.from(bounds);
 
@@ -222,7 +222,8 @@ public class WildcardTypes {
 			@Override
 			public String toString() {
 				Type[] bounds = getUpperBounds();
-				if (bounds.length == 0)
+				if (bounds.length == 0
+						|| (bounds.length == 1 && bounds[0].equals(Object.class)))
 					return "?";
 				else
 					return "? extends "
@@ -237,11 +238,19 @@ public class WildcardTypes {
 				if (that == this)
 					return true;
 				WildcardType wildcard = (WildcardType) that;
+
+				Type[] thisUpperBounds = getUpperBounds();
+				if (thisUpperBounds.length == 1
+						&& thisUpperBounds[0].equals(Object.class))
+					thisUpperBounds = new Type[0];
+
+				Type[] thatUpperBounds = wildcard.getUpperBounds();
+				if (thatUpperBounds.length == 1
+						&& thatUpperBounds[0].equals(Object.class))
+					thatUpperBounds = new Type[0];
+
 				return wildcard.getLowerBounds().length == 0
-						&& (Arrays.equals(getUpperBounds(), wildcard.getUpperBounds()) || ((getUpperBounds().length == 0 || Arrays
-								.equals(getUpperBounds(), new Type[] { Object.class })) && (wildcard
-								.getUpperBounds().length == 0 || Arrays.equals(
-								wildcard.getUpperBounds(), new Type[] { Object.class }))));
+						&& Arrays.equals(thisUpperBounds, thatUpperBounds);
 			}
 
 			@Override

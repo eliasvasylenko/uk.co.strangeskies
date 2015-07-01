@@ -313,7 +313,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 			upperBounds = ((IntersectionType) upperBound).getTypes();
 		else
 			upperBounds = new Type[] { upperBound };
-
+		
 		TypeVariableCapture capture = new TypeVariableCapture(upperBounds,
 				type.getLowerBounds(), type, declaration);
 

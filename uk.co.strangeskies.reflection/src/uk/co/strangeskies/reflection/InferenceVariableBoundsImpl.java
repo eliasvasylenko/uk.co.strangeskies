@@ -216,53 +216,26 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	}
 	 */
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * uk.co.strangeskies.reflection.InferenceVariableB#getInferenceVariable()
-	 */
 	@Override
 	public InferenceVariable getInferenceVariable() {
 		return a;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see uk.co.strangeskies.reflection.InferenceVariableB#getEqualities()
-	 */
 	@Override
 	public Set<Type> getEqualities() {
 		return new HashSet<>(equalities);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see uk.co.strangeskies.reflection.InferenceVariableB#getUpperBounds()
-	 */
 	@Override
 	public Set<Type> getUpperBounds() {
 		return new HashSet<>(upperBounds);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see uk.co.strangeskies.reflection.InferenceVariableB#getLowerBounds()
-	 */
 	@Override
 	public Set<Type> getLowerBounds() {
 		return new HashSet<>(lowerBounds);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * uk.co.strangeskies.reflection.InferenceVariableB#getProperUpperBounds()
-	 */
 	@Override
 	public Set<Type> getProperUpperBounds() {
 		Set<Type> upperBounds = getUpperBounds().stream()
@@ -271,44 +244,22 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				: upperBounds;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * uk.co.strangeskies.reflection.InferenceVariableB#getProperLowerBounds()
-	 */
 	@Override
 	public Set<Type> getProperLowerBounds() {
 		return getLowerBounds().stream().filter(boundSet::isProperType)
 				.collect(Collectors.toSet());
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see uk.co.strangeskies.reflection.InferenceVariableB#getInstantiation()
-	 */
 	@Override
 	public Optional<Type> getInstantiation() {
 		return getEqualities().stream().filter(boundSet::isProperType).findAny();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see uk.co.strangeskies.reflection.InferenceVariableB#getDependencies()
-	 */
 	@Override
 	public Set<InferenceVariable> getDependencies() {
 		return allDependencies;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * uk.co.strangeskies.reflection.InferenceVariableB#getRemainingDependencies()
-	 */
 	@Override
 	public Set<InferenceVariable> getRemainingDependencies() {
 		return allDependencies.stream()
@@ -725,19 +676,12 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		Type[] B = P.getBounds();
 
 		if (A.getUpperBounds().length > 0) {
+			Type[] T = A.getUpperBounds();
+
 			/*
 			 * If Ai is a wildcard of the form ? extends T:
 			 */
 
-			if (B.length == 0 || (B.length == 1 && B[0].equals(Object.class))) {
-				/*
-				 * If Bi is Object, then αi <: R implies the constraint formula ‹T <: R›
-				 */
-				ConstraintFormula.reduce(Kind.SUBTYPE,
-						IntersectionType.from(A.getUpperBounds()), R, boundSet);
-			}
-
-			Type[] T = A.getUpperBounds();
 			if (T.length == 0 || (T.length == 1 && T[0].equals(Object.class))) {
 				/*
 				 * If T is Object, then αi <: R implies the constraint formula ‹Bi θ <:
@@ -745,6 +689,14 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				 */
 				ConstraintFormula.reduce(Kind.SUBTYPE,
 						θ.resolve(IntersectionType.from(B)), R, boundSet);
+			}
+
+			if (B.length == 0 || (B.length == 1 && B[0].equals(Object.class))) {
+				/*
+				 * If Bi is Object, then αi <: R implies the constraint formula ‹T <: R›
+				 */
+				ConstraintFormula.reduce(Kind.SUBTYPE, IntersectionType.from(T), R,
+						boundSet);
 			}
 		} else if (A.getLowerBounds().length > 0) {
 			/*
@@ -778,11 +730,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			/*
 			 * If Ai is a wildcard of the form ? extends T:
 			 * 
-			 * R <: αi implies the bound false
-			 */
-			boundSet.incorporate().falsehood();
-		} else {
-			/*
+			 * Else:
+			 * 
 			 * If Ai is a wildcard of the form ?:
 			 * 
 			 * R <: αi implies the bound false

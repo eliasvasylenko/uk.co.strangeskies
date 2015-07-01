@@ -287,7 +287,7 @@ public class ConstraintFormula {
 
 					List<Type> fromSet;
 					if (this.from instanceof WildcardType)
-						fromSet = Arrays.asList(((WildcardType) from).getUpperBounds()[0]);
+						fromSet = Arrays.asList(((WildcardType) from).getUpperBounds());
 					else if (this.from instanceof IntersectionType)
 						fromSet = Arrays.asList(((IntersectionType) from).getTypes());
 					else
@@ -470,7 +470,9 @@ public class ConstraintFormula {
 			WildcardType toWildcard = (WildcardType) to;
 
 			if (toWildcard.getLowerBounds().length == 0) {
-				if (toWildcard.getUpperBounds().length == 0) {
+				if (toWildcard.getUpperBounds().length == 0
+						|| (toWildcard.getUpperBounds().length == 1 && toWildcard
+								.getUpperBounds()[0].equals(Object.class))) {
 					/*
 					 * If T is a wildcard of the form ?, the constraint reduces to true.
 					 */
@@ -503,7 +505,7 @@ public class ConstraintFormula {
 								 * reduces to ‹S' <: T'›.
 								 */
 								reduce(Kind.SUBTYPE,
-										IntersectionType.from(from.getUpperBounds()),
+										IntersectionType.uncheckedFrom(from.getUpperBounds()),
 										intersectionT, bounds);
 							}
 						} else {
@@ -559,9 +561,13 @@ public class ConstraintFormula {
 			WildcardType to = (WildcardType) this.to;
 
 			if (from.getLowerBounds().length == 0) {
-				if (from.getUpperBounds().length == 0) {
+				if (from.getUpperBounds().length == 0
+						|| (from.getUpperBounds().length == 1 && from.getUpperBounds()[0]
+								.equals(Object.class))) {
 					if (to.getLowerBounds().length == 0) {
-						if (to.getUpperBounds().length == 0) {
+						if (to.getUpperBounds().length == 0
+								|| (to.getUpperBounds().length == 1 && to.getUpperBounds()[0]
+										.equals(Object.class))) {
 							/*
 							 * If S has the form ? and T has the form ?, the constraint
 							 * reduces to true.

@@ -38,6 +38,7 @@ import java.util.TreeSet;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
+import uk.co.strangeskies.reflection.AnnotatedWildcardTypes;
 import uk.co.strangeskies.reflection.Annotations;
 import uk.co.strangeskies.reflection.Imports;
 import uk.co.strangeskies.reflection.InferenceVariable;
@@ -671,6 +672,12 @@ public class TestTypeLiteral {
 						.fromString(
 								"uk.co.strangeskies.reflection.test.SchemaNode<?, @uk.co.strangeskies.reflection.TypeToken.Infer ?>")
 						.deepCopy().getAnnotatedDeclaration());
+		System.out.println();
+
+		System.out.println("annotationseq: "
+				+ AnnotatedWildcardTypes.unbounded().equals(
+						AnnotatedWildcardTypes.upperBounded(AnnotatedTypes
+								.over(Object.class))));
 		System.out.println();
 
 		/*- TODO Current open question on compiler-dev
