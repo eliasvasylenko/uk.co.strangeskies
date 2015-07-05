@@ -94,21 +94,24 @@ public class BiFunctionExpression<O1, O2, R> extends DependentExpression<R> {
 	 */
 	public void setOperands(Expression<? extends O1> firstOperand,
 			Expression<? extends O2> secondOperand) {
-		getWriteLock().lock();
-		if (this.firstOperand != firstOperand
-				|| this.secondOperand != secondOperand) {
-			getDependencies().remove(this.firstOperand);
-			getDependencies().remove(this.secondOperand);
+		try {
+			getWriteLock().lock();
+			if (this.firstOperand != firstOperand
+					|| this.secondOperand != secondOperand) {
+				getDependencies().remove(this.firstOperand);
+				getDependencies().remove(this.secondOperand);
 
-			this.firstOperand = firstOperand;
-			this.secondOperand = secondOperand;
+				this.firstOperand = firstOperand;
+				this.secondOperand = secondOperand;
 
-			getDependencies().add(this.firstOperand);
-			getDependencies().add(this.secondOperand);
+				getDependencies().add(this.firstOperand);
+				getDependencies().add(this.secondOperand);
 
-			postUpdateAndUnlock();
+				postUpdate();
+			}
+		} finally {
+			unlockWriteLock();
 		}
-		getWriteLock().unlock();
 	}
 
 	/**
@@ -116,18 +119,20 @@ public class BiFunctionExpression<O1, O2, R> extends DependentExpression<R> {
 	 *          A new first operand.
 	 */
 	public void setFirstOperand(Expression<? extends O1> operand) {
-		getWriteLock().lock();
-		if (firstOperand != operand) {
-			if (firstOperand != secondOperand) {
-				getDependencies().remove(firstOperand);
+		try {
+			getWriteLock().lock();
+			if (firstOperand != operand) {
+				if (firstOperand != secondOperand) {
+					getDependencies().remove(firstOperand);
+				}
+
+				firstOperand = operand;
+				getDependencies().add(firstOperand);
+				postUpdate();
 			}
-
-			firstOperand = operand;
-			getDependencies().add(firstOperand);
-
-			postUpdateAndUnlock();
+		} finally {
+			unlockWriteLock();
 		}
-		getWriteLock().unlock();
 	}
 
 	/**
@@ -135,18 +140,21 @@ public class BiFunctionExpression<O1, O2, R> extends DependentExpression<R> {
 	 *          A new second operand.
 	 */
 	public void setSecondOperand(Expression<? extends O2> operand) {
-		getWriteLock().lock();
-		if (secondOperand != operand) {
-			if (firstOperand != secondOperand) {
-				getDependencies().remove(secondOperand);
+		try {
+			getWriteLock().lock();
+			if (secondOperand != operand) {
+				if (firstOperand != secondOperand) {
+					getDependencies().remove(secondOperand);
+				}
+
+				secondOperand = operand;
+				getDependencies().add(secondOperand);
+
+				postUpdate();
 			}
-
-			secondOperand = operand;
-			getDependencies().add(secondOperand);
-
-			postUpdateAndUnlock();
+		} finally {
+			unlockWriteLock();
 		}
-		getWriteLock().unlock();
 	}
 
 	@Override

@@ -207,16 +207,18 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 
 	@Override
 	public final S operateOnData(Function<? super V, ? extends V> operator) {
-		getWriteLock().lock();
+		try {
+			getWriteLock().lock();
 
-		for (V element : data)
-			element = operator.apply(element);
+			for (V element : data)
+				element = operator.apply(element);
 
-		getDependencies().set(getData());
+			getDependencies().set(getData());
 
-		getWriteLock().unlock();
-
-		return getThis();
+			return getThis();
+		} finally {
+			unlockWriteLock();
+		}
 	}
 
 	@Override
@@ -230,7 +232,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 
 		getDependencies().set(getData());
 
-		getWriteLock().unlock();
+		unlockWriteLock();
 
 		return getThis();
 	}
@@ -238,22 +240,24 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 	@Override
 	public final S operateOnData2(
 			TriFunction<? super V, Integer, Integer, ? extends V> operator) {
-		getWriteLock().lock();
+		try {
+			getWriteLock().lock();
 
-		int i = 0;
-		int j = 0;
-		if (getOrder() == getOrientation().getAssociatedOrder())
-			for (V element : data)
-				element = operator.apply(element, i++, j);
-		else
-			for (V element : data)
-				element = operator.apply(element, i, j++);
+			int i = 0;
+			int j = 0;
+			if (getOrder() == getOrientation().getAssociatedOrder())
+				for (V element : data)
+					element = operator.apply(element, i++, j);
+			else
+				for (V element : data)
+					element = operator.apply(element, i, j++);
 
-		getDependencies().set(getData());
+			getDependencies().set(getData());
 
-		getWriteLock().unlock();
-
-		return getThis();
+			return getThis();
+		} finally {
+			unlockWriteLock();
+		}
 	}
 
 	@Override
@@ -268,9 +272,12 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 
 	@Override
 	protected final S evaluate() {
-		getReadLock().lock();
-		getReadLock().unlock();
-		return getThis();
+		try {
+			getReadLock().lock();
+			return getThis();
+		} finally {
+			getReadLock().unlock();
+		}
 	}
 
 	@Override

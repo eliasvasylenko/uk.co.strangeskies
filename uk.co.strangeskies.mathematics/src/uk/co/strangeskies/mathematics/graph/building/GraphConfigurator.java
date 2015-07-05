@@ -44,7 +44,7 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 *
 	 * @return
 	 */
-	public GraphConfigurator<V, E> unmodifiableStructure();
+	public GraphConfigurator<V, E> unmodifiable();
 
 	/**
 	 * Calling this method has the effect of making the resulting graph

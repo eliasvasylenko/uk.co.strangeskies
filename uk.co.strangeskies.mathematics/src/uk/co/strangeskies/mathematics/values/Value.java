@@ -21,7 +21,6 @@ package uk.co.strangeskies.mathematics.values;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
@@ -48,7 +47,7 @@ public abstract class Value<S extends Value<S>> extends Number implements
 
 	private final Set<Observer<? super Expression<S>>> observers;
 	private boolean evaluated = true;
-	private final ReadWriteLock lock;
+	private final ReentrantReadWriteLock lock;
 
 	public Value() {
 		this(0);
@@ -73,6 +72,11 @@ public abstract class Value<S extends Value<S>> extends Number implements
 
 	public Lock getWriteLock() {
 		return lock.writeLock();
+	}
+
+	protected void unlockWriteLock() {
+		while (lock.writeLock().isHeldByCurrentThread())
+			getWriteLock().unlock();
 	}
 
 	@Override
@@ -148,11 +152,14 @@ public abstract class Value<S extends Value<S>> extends Number implements
 
 	@Override
 	public final S getValue() {
-		getReadLock().lock();
-		evaluated = true;
-		S result = getThis();
-		getReadLock().unlock();
-		return result;
+		try {
+			getReadLock().lock();
+			evaluated = true;
+			S result = getThis();
+			return result;
+		} finally {
+			getReadLock().unlock();
+		}
 	}
 
 	protected final void update() {
@@ -163,29 +170,38 @@ public abstract class Value<S extends Value<S>> extends Number implements
 	}
 
 	protected final S update(BooleanSupplier runnable) {
-		getWriteLock().lock();
-		if (runnable.getAsBoolean())
-			update();
-		getWriteLock().unlock();
+		try {
+			getWriteLock().lock();
+			if (runnable.getAsBoolean())
+				update();
 
-		return getThis();
+			return getThis();
+		} finally {
+			unlockWriteLock();
+		}
 	}
 
 	protected final S update(Runnable runnable) {
-		getWriteLock().lock();
-		runnable.run();
-		update();
-		getWriteLock().unlock();
+		try {
+			getWriteLock().lock();
+			runnable.run();
+			update();
 
-		return getThis();
+			return getThis();
+		} finally {
+			unlockWriteLock();
+		}
 	}
 
 	protected final <T> T read(Supplier<T> supplier) {
-		getReadLock().lock();
-		T result = supplier.get();
-		getReadLock().unlock();
+		try {
+			getReadLock().lock();
+			T result = supplier.get();
 
-		return result;
+			return result;
+		} finally {
+			getReadLock().unlock();
+		}
 	}
 
 	protected final void postUpdate() {

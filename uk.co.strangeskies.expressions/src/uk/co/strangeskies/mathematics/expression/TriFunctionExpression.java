@@ -116,25 +116,28 @@ public abstract class TriFunctionExpression<O1, O2, O3, R> extends
 	public void setOperands(Expression<? extends O1> firstOperand,
 			Expression<? extends O2> secondOperand,
 			Expression<? extends O3> thirdOperand) {
-		getWriteLock().lock();
-		if (this.firstOperand != firstOperand
-				|| this.secondOperand != secondOperand
-				|| this.thirdOperand != thirdOperand) {
-			getDependencies().remove(this.firstOperand);
-			getDependencies().remove(this.secondOperand);
-			getDependencies().remove(this.thirdOperand);
+		try {
+			getWriteLock().lock();
+			if (this.firstOperand != firstOperand
+					|| this.secondOperand != secondOperand
+					|| this.thirdOperand != thirdOperand) {
+				getDependencies().remove(this.firstOperand);
+				getDependencies().remove(this.secondOperand);
+				getDependencies().remove(this.thirdOperand);
 
-			this.firstOperand = firstOperand;
-			this.secondOperand = secondOperand;
-			this.thirdOperand = thirdOperand;
+				this.firstOperand = firstOperand;
+				this.secondOperand = secondOperand;
+				this.thirdOperand = thirdOperand;
 
-			getDependencies().add(this.firstOperand);
-			getDependencies().add(this.secondOperand);
-			getDependencies().add(this.thirdOperand);
+				getDependencies().add(this.firstOperand);
+				getDependencies().add(this.secondOperand);
+				getDependencies().add(this.thirdOperand);
 
-			postUpdateAndUnlock();
+				postUpdate();
+			}
+		} finally {
+			unlockWriteLock();
 		}
-		getWriteLock().unlock();
 	}
 
 	/**
@@ -142,18 +145,21 @@ public abstract class TriFunctionExpression<O1, O2, O3, R> extends
 	 *          A new first operand.
 	 */
 	public void setFirstOperand(Expression<? extends O1> operand) {
-		getWriteLock().lock();
-		if (firstOperand != operand) {
-			if (firstOperand != secondOperand && firstOperand != thirdOperand) {
-				getDependencies().remove(firstOperand);
+		try {
+			getWriteLock().lock();
+			if (firstOperand != operand) {
+				if (firstOperand != secondOperand && firstOperand != thirdOperand) {
+					getDependencies().remove(firstOperand);
+				}
+
+				firstOperand = operand;
+				getDependencies().add(firstOperand);
+
+				postUpdate();
 			}
-
-			firstOperand = operand;
-			getDependencies().add(firstOperand);
-
-			postUpdateAndUnlock();
+		} finally {
+			unlockWriteLock();
 		}
-		getWriteLock().unlock();
 	}
 
 	/**
@@ -161,18 +167,21 @@ public abstract class TriFunctionExpression<O1, O2, O3, R> extends
 	 *          A new second operand.
 	 */
 	public void setSecondOperand(Expression<? extends O2> operand) {
-		getWriteLock().lock();
-		if (secondOperand != operand) {
-			if (firstOperand != secondOperand && secondOperand != thirdOperand) {
-				getDependencies().remove(secondOperand);
+		try {
+			getWriteLock().lock();
+			if (secondOperand != operand) {
+				if (firstOperand != secondOperand && secondOperand != thirdOperand) {
+					getDependencies().remove(secondOperand);
+				}
+
+				secondOperand = operand;
+				getDependencies().add(secondOperand);
+
+				postUpdate();
 			}
-
-			secondOperand = operand;
-			getDependencies().add(secondOperand);
-
-			postUpdateAndUnlock();
+		} finally {
+			unlockWriteLock();
 		}
-		getWriteLock().unlock();
 	}
 
 	/**
@@ -180,18 +189,21 @@ public abstract class TriFunctionExpression<O1, O2, O3, R> extends
 	 *          A new third operand.
 	 */
 	public void setThirdOperand(Expression<? extends O3> operand) {
-		getWriteLock().lock();
-		if (thirdOperand != operand) {
-			if (firstOperand != thirdOperand && secondOperand != thirdOperand) {
-				getDependencies().remove(secondOperand);
+		try {
+			getWriteLock().lock();
+			if (thirdOperand != operand) {
+				if (firstOperand != thirdOperand && secondOperand != thirdOperand) {
+					getDependencies().remove(secondOperand);
+				}
+
+				thirdOperand = operand;
+				getDependencies().add(secondOperand);
+
+				postUpdate();
 			}
-
-			thirdOperand = operand;
-			getDependencies().add(secondOperand);
-
-			postUpdateAndUnlock();
+		} finally {
+			unlockWriteLock();
 		}
-		getWriteLock().unlock();
 	}
 
 	@Override

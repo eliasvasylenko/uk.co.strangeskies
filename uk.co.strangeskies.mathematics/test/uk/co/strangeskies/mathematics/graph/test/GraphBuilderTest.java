@@ -116,7 +116,7 @@ public class GraphBuilderTest {
 				EdgeVertices.between("two", "three"));
 
 		Graph<String, Object> graph = graph().vertices(vertices)
-				.edgeVertices(edges).unmodifiableStructure().create();
+				.edgeVertices(edges).unmodifiable().create();
 
 		Assert.assertEquals(vertices, graph.vertices());
 		Assert.assertEquals(edges, graph.edges().values());

@@ -20,8 +20,9 @@ package uk.co.strangeskies.mathematics.expression;
 
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 import uk.co.strangeskies.utilities.IdentityComparator;
 import uk.co.strangeskies.utilities.Observer;
@@ -64,34 +65,34 @@ public abstract class MutableExpressionImpl<T> implements MutableExpression<T> {
 		observers.clear();
 	}
 
-	protected final void postUpdateAndUnlock() {
-		postUpdate();
-
-		getWriteLock().unlock();
-	}
-
 	protected final void postUpdate() {
 		getWriteLock().lock();
 
-		if (!dirty) {
-			dirty = true;
-			for (Observer<? super Expression<T>> observer : observers)
-				observer.notify(null);
+		try {
+			if (!dirty) {
+				dirty = true;
+				for (Observer<? super Expression<T>> observer : observers)
+					observer.notify(null);
+			}
+		} finally {
+			unlockWriteLock();
 		}
 	}
 
 	@Override
 	public final T getValue() {
-		getReadLock().lock();
+		try {
+			getReadLock().lock();
 
-		boolean dirty = this.dirty;
-		if (this.dirty)
-			this.dirty = false;
-		T value = getValueImpl(dirty);
+			boolean dirty = this.dirty;
+			if (this.dirty)
+				this.dirty = false;
+			T value = getValueImpl(dirty);
 
-		getReadLock().unlock();
-
-		return value;
+			return value;
+		} finally {
+			getReadLock().unlock();
+		}
 	}
 
 	protected boolean isDirty() {
@@ -111,12 +112,17 @@ public abstract class MutableExpressionImpl<T> implements MutableExpression<T> {
 	protected abstract T getValueImpl(boolean dirty);
 
 	@Override
-	public Lock getReadLock() {
+	public ReadLock getReadLock() {
 		return lock.readLock();
 	}
 
 	@Override
-	public Lock getWriteLock() {
+	public WriteLock getWriteLock() {
 		return lock.writeLock();
+	}
+
+	protected void unlockWriteLock() {
+		while (getWriteLock().isHeldByCurrentThread())
+			getWriteLock().unlock();
 	}
 }

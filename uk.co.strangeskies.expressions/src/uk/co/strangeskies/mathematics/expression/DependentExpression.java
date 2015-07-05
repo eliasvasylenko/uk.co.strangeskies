@@ -60,7 +60,7 @@ public abstract class DependentExpression<T> extends MutableExpressionImpl<T> {
 
 	public DependentExpression(boolean parallel) {
 		dependencies = new ExpressionTreeSet<>(new IdentityComparator<>());
-		dependencies.addObserver(m -> postUpdateAndUnlock());
+		dependencies.addObserver(m -> postUpdate());
 
 		this.parallel = parallel;
 	}
@@ -68,20 +68,22 @@ public abstract class DependentExpression<T> extends MutableExpressionImpl<T> {
 	@Override
 	public final T getValueImpl(boolean dirty) {
 		if (dirty) {
-			Set<Expression<?>> dependencies = getDependencies();
+			try {
+				Set<Expression<?>> dependencies = getDependencies();
 
-			for (Expression<?> dependency : dependencies) {
-				dependency.getReadLock().lock();
-				if (parallel)
-					new Thread(() -> dependency.getValue()).run();
-				else
-					dependency.getValue();
+				for (Expression<?> dependency : dependencies) {
+					dependency.getReadLock().lock();
+					if (parallel)
+						new Thread(() -> dependency.getValue()).run();
+					else
+						dependency.getValue();
+				}
+
+				value = evaluate();
+			} finally {
+				for (Expression<?> dependency : dependencies)
+					dependency.getReadLock().unlock();
 			}
-
-			value = evaluate();
-
-			for (Expression<?> dependency : dependencies)
-				dependency.getReadLock().unlock();
 		}
 
 		return value;

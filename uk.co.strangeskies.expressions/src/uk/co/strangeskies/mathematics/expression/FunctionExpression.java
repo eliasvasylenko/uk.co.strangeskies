@@ -80,16 +80,19 @@ public class FunctionExpression<O, R> extends DependentExpression<R> {
 	 *          A new operand.
 	 */
 	public void setOperand(Expression<? extends O> operand) {
-		getWriteLock().lock();
-		if (this.operand != operand) {
-			getDependencies().remove(this.operand);
+		try {
+			getWriteLock().lock();
+			if (this.operand != operand) {
+				getDependencies().remove(this.operand);
 
-			this.operand = operand;
-			getDependencies().add(this.operand);
+				this.operand = operand;
+				getDependencies().add(this.operand);
 
-			postUpdateAndUnlock();
+				postUpdate();
+			}
+		} finally {
+			unlockWriteLock();
 		}
-		getWriteLock().unlock();
 	}
 
 	@Override

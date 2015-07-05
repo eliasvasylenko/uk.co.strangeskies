@@ -52,11 +52,14 @@ public class IdentityExpression<T> extends MutableExpressionImpl<T> implements
 
 	@Override
 	public T set(T value) {
-		getWriteLock().lock();
-		T previous = this.value;
-		this.value = value;
-		postUpdateAndUnlock();
-		return previous;
+		try {
+			getWriteLock().lock();
+			T previous = this.value;
+			this.value = value;
+			return previous;
+		} finally {
+			postUpdate();
+		}
 	}
 
 	@Override

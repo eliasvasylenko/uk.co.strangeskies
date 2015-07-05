@@ -160,7 +160,6 @@ public class ConvexPolygonImpl<V extends Value<V>> extends
 		this.windingDirection = windingDirection;
 
 		postUpdate();
-		getWriteLock().unlock();
 	}
 
 	@Override

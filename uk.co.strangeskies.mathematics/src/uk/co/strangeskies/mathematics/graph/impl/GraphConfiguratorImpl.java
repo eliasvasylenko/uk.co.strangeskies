@@ -259,23 +259,30 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 			vertices = new VerticesImpl();
 			edges = new EdgesImpl(configurator.edgeComparator);
 
-			// Vertex addition function
-			this.addVertex = addVertexPredicate(configurator.vertexComparator,
-					configurator.edgeGenerator, configurator.outgoingEdgeGenerator,
-					configurator.incomingEdgeGenerator);
-
 			// Edge addition function
 			this.addEdge = addEdgeFunction(configurator.edgeFactory,
 					configurator.generateNeighbours);
 
+			// Vertex addition function
+			this.addVertex = addVertexPredicate(configurator.vertexComparator,
+					configurator.edgeGenerator, configurator.outgoingEdgeGenerator,
+					configurator.incomingEdgeGenerator, addEdge);
+
+			Function<EdgeVertices<V>, E> addEdgeConstructor = addEdgeFunction(
+					configurator.edgeFactory, true);
+			Predicate<V> addVertexConstructor = addVertexPredicate(
+					configurator.vertexComparator, configurator.edgeGenerator,
+					configurator.outgoingEdgeGenerator,
+					configurator.incomingEdgeGenerator, addEdgeConstructor);
+
 			// Add initial vertices and edges
 			if (configurator.vertices != null)
 				for (V vertex : configurator.vertices)
-					addVertex.test(vertex);
+					addVertexConstructor.test(vertex);
 
 			if (configurator.edgeVertices != null)
 				for (EdgeVertices<V> edge : configurator.edgeVertices)
-					addEdge.apply(edge);
+					addEdgeConstructor.apply(edge);
 		}
 
 		public Set<V> createVertexSet() {
@@ -297,9 +304,15 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 				} else if (generateNeighbours) {
 					addVertex.test(v.getFrom());
 					addVertex.test(v.getTo());
-				} else if (!adjacencyMatrix.containsKey(v.getFrom())
-						|| !adjacencyMatrix.containsKey(v.getTo()))
-					throw new IllegalArgumentException();
+				} else if (!adjacencyMatrix.containsKey(v.getFrom())) {
+					throw new IllegalArgumentException("Cannot create edge from vertex '"
+							+ v.getFrom() + "' as it is not a member of the graph '"
+							+ adjacencyMatrix.keySet() + "'");
+				} else if (!adjacencyMatrix.containsKey(v.getTo())) {
+					throw new IllegalArgumentException("Cannot create edge to vertex '"
+							+ v.getTo() + "' as it is not a member of the graph '"
+							+ adjacencyMatrix.keySet() + "'");
+				}
 
 				E edge = edgeFactory.apply(v);
 
@@ -315,7 +328,8 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 				Comparator<? super V> vertexComparator,
 				Function<? super V, ? extends Collection<? extends V>> edges,
 				Function<? super V, ? extends Collection<? extends V>> outgoingEdges,
-				Function<? super V, ? extends Collection<? extends V>> incomingEdges) {
+				Function<? super V, ? extends Collection<? extends V>> incomingEdges,
+				Function<EdgeVertices<V>, E> addEdge) {
 			Predicate<V> addVertex = vertex -> {
 				if (!adjacencyMatrix.containsKey(vertex)) {
 					MultiMap<V, E, Set<E>> map;
@@ -366,7 +380,7 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 
 		@Override
 		public Graph<V, E> copy() {
-			return new GraphBuilderImpl().configure().unmodifiableStructure()
+			return new GraphBuilderImpl().configure().unmodifiable()
 					.vertices(vertices()).edgeVertices(edges.values())
 					.edgeFactory(v -> edges.betweenUnique(v)).create();
 		}
@@ -440,7 +454,7 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 	}
 
 	@Override
-	public GraphConfigurator<V, E> unmodifiableStructure() {
+	public GraphConfigurator<V, E> unmodifiable() {
 		return unmodifiableVertices().unmodifiableEdges();
 	}
 

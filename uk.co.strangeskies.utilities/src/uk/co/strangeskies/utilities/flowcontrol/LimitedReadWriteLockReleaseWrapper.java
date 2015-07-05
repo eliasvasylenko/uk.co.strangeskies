@@ -69,12 +69,12 @@ public class LimitedReadWriteLockReleaseWrapper<L> extends
 	public boolean releaseLocks(Collection<? extends L> keys) {
 		keys = new ArrayList<>(keys);
 
-		for (L key : keys)
-			if (!isLockHeldByCurrentThread(key))
-				throw new IllegalStateException();
-
 		synchronized (readDependencies) {
 			synchronized (writeDependencies) {
+				for (L key : keys)
+					if (!isLockHeldByCurrentThread(key))
+						throw new IllegalStateException();
+
 				for (L key : keys) {
 					readDependencies.remove(key);
 					writeDependencies.remove(key);
@@ -88,15 +88,15 @@ public class LimitedReadWriteLockReleaseWrapper<L> extends
 	@Override
 	public boolean releaseLocks(Collection<? extends L> readKeys,
 			Collection<? extends L> writeKeys) {
-		for (L key : readKeys)
-			if (!isReadLockHeldByCurrentThread(key))
-				throw new IllegalStateException();
-		for (L key : writeKeys)
-			if (!isWriteLockHeldByCurrentThread(key))
-				throw new IllegalStateException();
-
 		synchronized (readDependencies) {
 			synchronized (writeDependencies) {
+				for (L key : readKeys)
+					if (!isReadLockHeldByCurrentThread(key))
+						throw new IllegalStateException();
+				for (L key : writeKeys)
+					if (!isWriteLockHeldByCurrentThread(key))
+						throw new IllegalStateException();
+
 				for (L key : readKeys)
 					readDependencies.remove(key);
 				for (L key : writeKeys)
@@ -109,13 +109,13 @@ public class LimitedReadWriteLockReleaseWrapper<L> extends
 
 	@Override
 	public boolean releaseLock(L key) {
-		if (!isReadLockHeldByCurrentThread(key))
-			throw new IllegalStateException();
-		if (!isWriteLockHeldByCurrentThread(key))
-			throw new IllegalStateException();
-
 		synchronized (readDependencies) {
 			synchronized (writeDependencies) {
+				if (!isReadLockHeldByCurrentThread(key))
+					throw new IllegalStateException();
+				if (!isWriteLockHeldByCurrentThread(key))
+					throw new IllegalStateException();
+
 				if (!readDependencies.remove(key) & !writeDependencies.remove(key))
 					throw new IllegalStateException();
 			}
@@ -126,13 +126,13 @@ public class LimitedReadWriteLockReleaseWrapper<L> extends
 
 	@Override
 	public boolean downgradeLock(L key) {
-		if (!isReadLockHeldByCurrentThread(key))
-			throw new IllegalStateException();
-		if (!isWriteLockHeldByCurrentThread(key))
-			throw new IllegalStateException();
-
 		synchronized (readDependencies) {
 			synchronized (writeDependencies) {
+				if (!isReadLockHeldByCurrentThread(key))
+					throw new IllegalStateException();
+				if (!isWriteLockHeldByCurrentThread(key))
+					throw new IllegalStateException();
+
 				if (!writeDependencies.remove(key))
 					throw new IllegalStateException();
 			}
@@ -153,11 +153,11 @@ public class LimitedReadWriteLockReleaseWrapper<L> extends
 
 	@Override
 	public boolean releaseReadLocks(Collection<? extends L> readKeys) {
-		for (L key : readKeys)
-			if (!isReadLockHeldByCurrentThread(key))
-				throw new IllegalStateException();
-
 		synchronized (readDependencies) {
+			for (L key : readKeys)
+				if (!isReadLockHeldByCurrentThread(key))
+					throw new IllegalStateException();
+
 			for (L key : readKeys)
 				readDependencies.remove(key);
 		}
@@ -167,10 +167,10 @@ public class LimitedReadWriteLockReleaseWrapper<L> extends
 
 	@Override
 	public boolean releaseReadLock(L key) {
-		if (!isReadLockHeldByCurrentThread(key))
-			throw new IllegalStateException();
-
 		synchronized (readDependencies) {
+			if (!isReadLockHeldByCurrentThread(key))
+				throw new IllegalStateException();
+
 			if (!readDependencies.remove(key))
 				throw new IllegalStateException();
 		}
@@ -187,11 +187,11 @@ public class LimitedReadWriteLockReleaseWrapper<L> extends
 
 	@Override
 	public boolean releaseWriteLocks(Collection<? extends L> writeKeys) {
-		for (L key : writeKeys)
-			if (!isWriteLockHeldByCurrentThread(key))
-				throw new IllegalStateException();
-
 		synchronized (writeDependencies) {
+			for (L key : writeKeys)
+				if (!isWriteLockHeldByCurrentThread(key))
+					throw new IllegalStateException();
+
 			for (L key : writeKeys)
 				writeDependencies.remove(key);
 		}
@@ -201,10 +201,10 @@ public class LimitedReadWriteLockReleaseWrapper<L> extends
 
 	@Override
 	public boolean releaseWriteLock(L key) {
-		if (!isReadLockHeldByCurrentThread(key))
-			throw new IllegalStateException();
-
 		synchronized (writeDependencies) {
+			if (!isReadLockHeldByCurrentThread(key))
+				throw new IllegalStateException();
+
 			if (!writeDependencies.remove(key))
 				throw new IllegalStateException();
 		}
