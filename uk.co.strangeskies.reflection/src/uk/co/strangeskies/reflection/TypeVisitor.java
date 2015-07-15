@@ -61,13 +61,48 @@ public abstract class TypeVisitor {
 	}
 
 	/**
+	 * Visit a given type by passing it to the appropriate visitation methods.
+	 * 
+	 * @param type
+	 *          The type to visit.
+	 */
+	public synchronized final void visit(Type type) {
+		if (visited.add(type)) {
+			if (type instanceof Class)
+				visitClass((Class<?>) type);
+			else if (type instanceof ParameterizedType)
+				visitParameterizedType((ParameterizedType) type);
+			else if (type instanceof GenericArrayType)
+				visitGenericArrayType((GenericArrayType) type);
+			else if (type instanceof WildcardType)
+				visitWildcardType((WildcardType) type);
+			else if (type instanceof IntersectionType)
+				visitIntersectionType((IntersectionType) type);
+			else if (type instanceof TypeVariableCapture)
+				visitTypeVariableCapture((TypeVariableCapture) type);
+			else if (type instanceof TypeVariable)
+				visitTypeVariable((TypeVariable<?>) type);
+			else if (type instanceof InferenceVariable)
+				visitInferenceVariable((InferenceVariable) type);
+			else if (type == null)
+				visitNull();
+			else
+				throw new AssertionError("Unknown type: " + type + " of class "
+						+ type.getClass());
+
+			if (allowRepeatVisits)
+				visited.remove(type);
+		}
+	}
+
+	/**
 	 * Visit each type in a given collection, passing them to the appropriate
 	 * member methods as encountered.
 	 * 
 	 * @param types
 	 *          The collection of types to visit.
 	 */
-	public synchronized final void visit(Type... types) {
+	public synchronized void visit(Type... types) {
 		visit(Arrays.asList(types));
 	}
 
@@ -78,34 +113,9 @@ public abstract class TypeVisitor {
 	 * @param types
 	 *          The collection of types to visit.
 	 */
-	public synchronized final void visit(Collection<? extends Type> types) {
+	public synchronized void visit(Collection<? extends Type> types) {
 		for (Type type : types) {
-			if (visited.add(type)) {
-				if (type instanceof Class)
-					visitClass((Class<?>) type);
-				else if (type instanceof ParameterizedType)
-					visitParameterizedType((ParameterizedType) type);
-				else if (type instanceof GenericArrayType)
-					visitGenericArrayType((GenericArrayType) type);
-				else if (type instanceof WildcardType)
-					visitWildcardType((WildcardType) type);
-				else if (type instanceof IntersectionType)
-					visitIntersectionType((IntersectionType) type);
-				else if (type instanceof TypeVariableCapture)
-					visitTypeVariableCapture((TypeVariableCapture) type);
-				else if (type instanceof TypeVariable)
-					visitTypeVariable((TypeVariable<?>) type);
-				else if (type instanceof InferenceVariable)
-					visitInferenceVariable((InferenceVariable) type);
-				else if (type == null)
-					visitNull();
-				else
-					throw new AssertionError("Unknown type: " + type + " of class "
-							+ type.getClass());
-
-				if (allowRepeatVisits)
-					visited.remove(type);
-			}
+			visit(type);
 		}
 	}
 

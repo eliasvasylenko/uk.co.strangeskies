@@ -18,18 +18,23 @@
  */
 package uk.co.strangeskies.reflection;
 
+import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.utilities.DeepCopyable;
+import uk.co.strangeskies.utilities.IdentityProperty;
 
 /**
  * <p>
@@ -331,7 +336,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	 * @return A set of all inference variables contained by this bound set.
 	 */
 	public Set<InferenceVariable> getInferenceVariables() {
-		return new HashSet<>(inferenceVariableBounds.keySet());
+		return Collections.unmodifiableSet(inferenceVariableBounds.keySet());
 	}
 
 	/**
@@ -349,7 +354,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	 * @return All capture conversion bounds contained within this bound set.
 	 */
 	public Set<CaptureConversion> getCaptureConversions() {
-		return new HashSet<>(captureConversions);
+		return Collections.unmodifiableSet(captureConversions);
 	}
 
 	/**
@@ -360,10 +365,55 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	 * @return A set of all the inference variables which are contained within
 	 *         this bound set and which are mentioned by the given type.
 	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public Set<InferenceVariable> getInferenceVariablesMentionedBy(Type type) {
-		return (Set) Types.getAllMentionedBy(type,
-				inferenceVariableBounds.keySet()::contains);
+		if (inferenceVariableBounds.isEmpty())
+			return Collections.emptySet();
+
+		Set<InferenceVariable> inferenceVariables = new HashSet<>();
+
+		new TypeVisitor() {
+			@Override
+			protected void visitParameterizedType(ParameterizedType type) {
+				visit(type.getActualTypeArguments());
+				visit(type.getOwnerType());
+			}
+
+			@Override
+			protected void visitGenericArrayType(GenericArrayType type) {
+				visit(type.getGenericComponentType());
+
+			}
+
+			@Override
+			protected void visitWildcardType(WildcardType type) {
+				visit(type.getUpperBounds());
+				visit(type.getLowerBounds());
+			}
+
+			@Override
+			protected void visitTypeVariableCapture(TypeVariableCapture type) {
+				visit(type.getUpperBounds());
+				visit(type.getLowerBounds());
+			}
+
+			@Override
+			protected void visitTypeVariable(TypeVariable<?> type) {
+				visit(type.getBounds());
+			}
+
+			@Override
+			protected void visitInferenceVariable(InferenceVariable type) {
+				if (inferenceVariableBounds.containsKey(type))
+					inferenceVariables.add(type);
+			}
+
+			@Override
+			protected void visitIntersectionType(IntersectionType type) {
+				visit(type.getTypes());
+			}
+		}.visit(type);
+
+		return inferenceVariables;
 	}
 
 	/**
@@ -374,7 +424,64 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	 * @return True if the given type is proper, false otherwise.
 	 */
 	public boolean isProperType(Type type) {
-		return getInferenceVariablesMentionedBy(type).isEmpty();
+		if (inferenceVariableBounds.isEmpty())
+			return true;
+
+		IdentityProperty<Boolean> proper = new IdentityProperty<>(true);
+
+		new TypeVisitor() {
+			@Override
+			public synchronized final void visit(Collection<? extends Type> types) {
+				if (proper.get()) {
+					Iterator<? extends Type> typeIterator = types.iterator();
+					while (typeIterator.hasNext() && proper.get()) {
+						visit(typeIterator.next());
+					}
+				}
+			}
+
+			@Override
+			protected void visitParameterizedType(ParameterizedType type) {
+				visit(type.getActualTypeArguments());
+				visit(type.getOwnerType());
+			}
+
+			@Override
+			protected void visitGenericArrayType(GenericArrayType type) {
+				visit(type.getGenericComponentType());
+
+			}
+
+			@Override
+			protected void visitWildcardType(WildcardType type) {
+				visit(type.getUpperBounds());
+				visit(type.getLowerBounds());
+			}
+
+			@Override
+			protected void visitTypeVariableCapture(TypeVariableCapture type) {
+				visit(type.getUpperBounds());
+				visit(type.getLowerBounds());
+			}
+
+			@Override
+			protected void visitTypeVariable(TypeVariable<?> type) {
+				visit(type.getBounds());
+			}
+
+			@Override
+			protected void visitInferenceVariable(InferenceVariable type) {
+				if (inferenceVariableBounds.containsKey(type))
+					proper.set(false);
+			}
+
+			@Override
+			protected void visitIntersectionType(IntersectionType type) {
+				visit(type.getTypes());
+			}
+		}.visit(type);
+
+		return proper.get();
 	}
 
 	/**

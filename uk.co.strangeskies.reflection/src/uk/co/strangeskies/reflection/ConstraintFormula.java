@@ -617,59 +617,60 @@ public class ConstraintFormula {
 			 * A constraint formula of the form ‹S = T›, where S and T are types, is
 			 * reduced as follows:
 			 */
-			if (bounds.isProperType(from) && bounds.isProperType(to)) {
+			if (!from.equals(to)) {
 				/*
 				 * If S and T are proper types, the constraint reduces to true if S is
 				 * the same as T (§4.3.4), and false otherwise.
 				 */
-				if (!from.equals(to))
+				if (bounds.isProperType(from) && bounds.isProperType(to)) {
 					incorporate.falsehood();
-			} else if (bounds.getInferenceVariables().contains(from)) {
-				/*
-				 * Otherwise, if S is an inference variable, α, the constraint reduces
-				 * to the bound α = T.
-				 */
-				incorporate.equality(from, to);
-			} else if (bounds.getInferenceVariables().contains(to)) {
-				/*
-				 * Otherwise, if T is an inference variable, α, the constraint reduces
-				 * to the bound S = α.
-				 */
-				incorporate.equality(from, to);
-			} else if (Types.getRawType(from).isArray()
-					&& Types.getRawType(to).isArray()) {
-				/*
-				 * Otherwise, if S and T are array types, S'[] and T'[], the constraint
-				 * reduces to ‹S' = T'›.
-				 */
-				reduce(Kind.EQUALITY, Types.getComponentType(from),
-						Types.getComponentType(to), bounds);
-			} else if (Types.getRawType(from).equals(Types.getRawType(to))) {
-				/*
-				 * Otherwise, if S and T are class or interface types with the same
-				 * erasure, where S has type arguments B1, ..., Bn and T has type
-				 * arguments A1, ..., An, the constraint reduces to the following new
-				 * constraints: for all i (1 ≤ i ≤ n), ‹Bi = Ai›.
-				 */
-				if (from instanceof ParameterizedType)
-					if (to instanceof ParameterizedType)
-						ParameterizedTypes.getAllTypeParameters(Types.getRawType(from))
-								.forEach(
-										type -> reduce(
-												Kind.EQUALITY,
-												ParameterizedTypes.getAllTypeArguments(
-														(ParameterizedType) from).get(type),
-												ParameterizedTypes.getAllTypeArguments(
-														(ParameterizedType) to).get(type), bounds));
-					else
+				} else if (bounds.getInferenceVariables().contains(from)) {
+					/*
+					 * Otherwise, if S is an inference variable, α, the constraint reduces
+					 * to the bound α = T.
+					 */
+					incorporate.equality(from, to);
+				} else if (bounds.getInferenceVariables().contains(to)) {
+					/*
+					 * Otherwise, if T is an inference variable, α, the constraint reduces
+					 * to the bound S = α.
+					 */
+					incorporate.equality(from, to);
+				} else if (Types.getRawType(from).isArray()
+						&& Types.getRawType(to).isArray()) {
+					/*
+					 * Otherwise, if S and T are array types, S'[] and T'[], the
+					 * constraint reduces to ‹S' = T'›.
+					 */
+					reduce(Kind.EQUALITY, Types.getComponentType(from),
+							Types.getComponentType(to), bounds);
+				} else if (Types.getRawType(from).equals(Types.getRawType(to))) {
+					/*
+					 * Otherwise, if S and T are class or interface types with the same
+					 * erasure, where S has type arguments B1, ..., Bn and T has type
+					 * arguments A1, ..., An, the constraint reduces to the following new
+					 * constraints: for all i (1 ≤ i ≤ n), ‹Bi = Ai›.
+					 */
+					if (from instanceof ParameterizedType)
+						if (to instanceof ParameterizedType)
+							ParameterizedTypes.getAllTypeParameters(Types.getRawType(from))
+									.forEach(
+											type -> reduce(
+													Kind.EQUALITY,
+													ParameterizedTypes.getAllTypeArguments(
+															(ParameterizedType) from).get(type),
+													ParameterizedTypes.getAllTypeArguments(
+															(ParameterizedType) to).get(type), bounds));
+						else
+							incorporate.falsehood();
+					else if (to instanceof ParameterizedType)
 						incorporate.falsehood();
-				else if (to instanceof ParameterizedType)
+				} else {
+					/*
+					 * Otherwise, the constraint reduces to false.
+					 */
 					incorporate.falsehood();
-			} else {
-				/*
-				 * Otherwise, the constraint reduces to false.
-				 */
-				incorporate.falsehood();
+				}
 			}
 		}
 	}

@@ -24,6 +24,7 @@ import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -223,17 +224,17 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 
 	@Override
 	public Set<Type> getEqualities() {
-		return new HashSet<>(equalities);
+		return Collections.unmodifiableSet(equalities);
 	}
 
 	@Override
 	public Set<Type> getUpperBounds() {
-		return new HashSet<>(upperBounds);
+		return Collections.unmodifiableSet(upperBounds);
 	}
 
 	@Override
 	public Set<Type> getLowerBounds() {
-		return new HashSet<>(lowerBounds);
+		return Collections.unmodifiableSet(lowerBounds);
 	}
 
 	@Override
@@ -300,7 +301,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				/*
 				 * α = U and S = T imply ‹S[α:=U] = T[α:=U]›
 				 */
-				for (Type equality : otherBounds.getEqualities())
+				for (Type equality : new HashSet<>(otherBounds.getEqualities()))
 					if (equality != type)
 						incorporateProperEqualitySubstitution(a, type, otherBounds.a,
 								equality);
@@ -308,10 +309,10 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				/*
 				 * α = U and S <: T imply ‹S[α:=U] <: T[α:=U]›
 				 */
-				for (Type supertype : otherBounds.getUpperBounds())
+				for (Type supertype : new HashSet<>(otherBounds.getUpperBounds()))
 					if (supertype != type)
 						incorporateProperSubtypeSubstitution(type, otherBounds.a, supertype);
-				for (Type subtype : otherBounds.getLowerBounds())
+				for (Type subtype : new HashSet<>(otherBounds.getLowerBounds()))
 					if (subtype != type)
 						incorporateProperSupertypeSubstitution(type, subtype, otherBounds.a);
 			}
@@ -319,13 +320,13 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			/*
 			 * α = S and α <: T imply ‹S <: T›
 			 */
-			for (Type supertype : getUpperBounds())
+			for (Type supertype : new HashSet<>(getUpperBounds()))
 				incorporateSubtypeSubstitution(type, supertype);
 
 			/*
 			 * α = S and T <: α imply ‹T <: S›
 			 */
-			for (Type subtype : getLowerBounds())
+			for (Type subtype : new HashSet<>(getLowerBounds()))
 				incorporateSupertypeSubstitution(type, subtype);
 
 			for (CaptureConversion captureConversion : boundSet
@@ -339,7 +340,6 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	}
 
 	public void addEquality(InferenceVariable type) {
-		Set<Type> equalities = new HashSet<>(this.equalities);
 		if (this.equalities.add(type)) {
 			logBound(a, type, "=");
 
@@ -366,7 +366,6 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	}
 
 	public void addUpperBound(Type type) {
-		Set<Type> upperBounds = new HashSet<>(this.upperBounds);
 		if (this.upperBounds.add(type)) {
 			logBound(a, type, "<:");
 
@@ -404,7 +403,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			 * then for all i (1 ≤ i ≤ n), if Si and Ti are types (not wildcards), the
 			 * constraint formula ‹Si = Ti› is implied.
 			 */
-			for (Type upperBound : upperBounds)
+			for (Type upperBound : new HashSet<>(upperBounds))
 				incorporateSupertypeParameterizationEquality(type, upperBound);
 
 			for (CaptureConversion captureConversion : boundSet

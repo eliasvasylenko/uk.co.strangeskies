@@ -28,6 +28,7 @@ import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -1142,7 +1143,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 */
 	public Map<TypeVariable<?>, InferenceVariable> getInferenceVariables(
 			GenericDeclaration declaration) {
-		return new HashMap<>(capturedTypeVariables.get(declaration));
+		return Collections.unmodifiableMap(capturedTypeVariables.get(declaration));
 	}
 
 	/**

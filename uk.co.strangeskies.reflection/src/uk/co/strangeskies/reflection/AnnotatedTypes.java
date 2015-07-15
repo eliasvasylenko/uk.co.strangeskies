@@ -106,7 +106,11 @@ public final class AnnotatedTypes {
 		}
 
 		public int annotationHash() {
-			return new HashSet<>(Arrays.asList(getAnnotations())).hashCode();
+			int hash = 0;
+			for (Annotation annotation : getAnnotations())
+				if (annotation != null)
+					hash += annotation.hashCode();
+			return hash;
 		}
 
 		protected static int annotationHash(AnnotatedTypeImpl... annotatedTypes) {
