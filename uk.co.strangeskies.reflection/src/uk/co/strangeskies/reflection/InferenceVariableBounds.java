@@ -75,12 +75,12 @@ public interface InferenceVariableBounds {
 	 * @return All inference variables related to this one through bounds. This
 	 *         set includes the inference variable itself.
 	 */
-	public abstract Set<InferenceVariable> getDependencies();
+	public abstract Set<InferenceVariable> getRemainingDependencies();
 
 	/**
 	 * @return All inference variables related to this one through bounds. This
 	 *         set includes the inference variable itself.
 	 */
-	public abstract Set<InferenceVariable> getRemainingDependencies();
+	public abstract Set<InferenceVariable> getRelated();
 
 }

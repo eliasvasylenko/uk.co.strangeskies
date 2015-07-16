@@ -43,8 +43,10 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	private final Set<Type> lowerBounds;
 
 	private CaptureConversion capture;
+
 	private final Set<InferenceVariable> allDependencies;
 	private final Set<InferenceVariable> externalDependencies;
+	private final Set<InferenceVariable> relations;
 
 	public InferenceVariableBoundsImpl(BoundSet boundSet,
 			InferenceVariable inferenceVariable) {
@@ -54,6 +56,9 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		upperBounds = new HashSet<>();
 		lowerBounds = new HashSet<>();
 		equalities = new HashSet<>();
+
+		relations = new HashSet<>();
+		relations.add(inferenceVariable);
 
 		allDependencies = new HashSet<>();
 		allDependencies.add(inferenceVariable);
@@ -69,6 +74,9 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		copy.equalities.addAll(equalities);
 
 		copy.capture = capture;
+
+		copy.relations.addAll(relations);
+
 		copy.allDependencies.addAll(allDependencies);
 		copy.externalDependencies.addAll(externalDependencies);
 
@@ -102,6 +110,9 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 
 		capture = inferenceVariableBounds.capture;
 
+		inferenceVariableBounds.relations.stream().map(where::resolve)
+				.map(InferenceVariable.class::cast).forEach(relations::add);
+
 		inferenceVariableBounds.allDependencies.stream().map(where::resolve)
 				.map(InferenceVariable.class::cast).forEach(allDependencies::add);
 		inferenceVariableBounds.externalDependencies.stream().map(where::resolve)
@@ -121,8 +132,17 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		else
 			capture = captureConversion;
 
-		allDependencies.clear();
+		if (allDependencies.isEmpty() || getInstantiation().isPresent())
+			return;
 
+		refreshDependencies();
+
+		/*
+		 * An inference variable α appearing on the left-hand side of a bound of the
+		 * form G<..., α, ...> = capture(G<...>) depends on the resolution of every
+		 * other inference variable mentioned in this bound (on both sides of the =
+		 * sign).
+		 */
 		Set<InferenceVariable> allMentioned = new HashSet<>(
 				captureConversion.getInferenceVariables());
 		for (Type captured : ParameterizedTypes.getAllTypeArguments(
@@ -130,21 +150,21 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			allMentioned.addAll(boundSet.getInferenceVariablesMentionedBy(captured));
 
 		for (InferenceVariable inferenceVariable : allMentioned) {
-			allDependencies.addAll(boundSet.getBoundsOn(inferenceVariable)
-					.getDependencies());
+			allDependencies
+					.addAll(boundSet.getBoundsOn(inferenceVariable).allDependencies);
 		}
-
-		addDependencies();
 	}
 
 	public void removeCaptureConversion() {
 		capture = null;
-		allDependencies.clear();
-
-		addDependencies();
 	}
 
-	private void addDependencies() {
+	private void refreshDependencies() {
+		if (allDependencies.isEmpty() || getInstantiation().isPresent())
+			return;
+
+		allDependencies.clear();
+
 		allDependencies.add(a);
 		allDependencies.addAll(externalDependencies);
 
@@ -159,27 +179,51 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		 * T = α
 		 * 
 		 * T <: α
-		 * 
-		 * If α appears on the left-hand side of another bound of the form G<..., α,
-		 * ...> = capture(G<...>), then β depends on the resolution of α. Otherwise,
-		 * α depends on the resolution of β.
 		 */
-		Stream
+		Stream<InferenceVariableBoundsImpl> mentions = Stream
 				.concat(equalities.stream(),
 						Stream.concat(lowerBounds.stream(), upperBounds.stream()))
 				.flatMap(
 						bound -> boundSet.getInferenceVariablesMentionedBy(bound).stream())
-				.map(mentions -> boundSet.getBoundsOn(mentions).externalDependencies)
-				.forEach(dependencies -> dependencies.addAll(allDependencies));
+				.map(mention -> boundSet.getBoundsOn(mention))
+				.filter(mention -> !mention.allDependencies.isEmpty());
+		if (capture != null) {
+			/*
+			 * If α appears on the left-hand side of another bound of the form G<...,
+			 * α, ...> = capture(G<...>), then β depends on the resolution of α.
+			 */
+			mentions.forEach(dependencies -> dependencies
+					.addExternalDependencies(allDependencies));
+		} else {
+			/*
+			 * Otherwise, α depends on the resolution of β.
+			 */
+			mentions.map(mention -> mention.allDependencies).forEach(
+					dependencies -> allDependencies.addAll(dependencies));
+		}
 	}
 
 	private void addExternalDependencies(Set<InferenceVariable> allMentioned) {
-		allDependencies.addAll(allMentioned);
-		externalDependencies.addAll(allMentioned);
+		if (allDependencies.isEmpty() || getInstantiation().isPresent())
+			return;
+
+		for (InferenceVariable mentioned : allMentioned) {
+			if (!boundSet.getBoundsOn(mentioned).allDependencies.isEmpty()
+					&& !boundSet.getBoundsOn(mentioned).getInstantiation().isPresent()) {
+				allDependencies.add(mentioned);
+				externalDependencies.add(mentioned);
+			}
+		}
 	}
 
-	private void addDependenciesFromMentions(
-			Collection<InferenceVariable> mentions) {
+	private void addMentions(Collection<InferenceVariable> mentions) {
+		this.relations.addAll(mentions);
+		for (InferenceVariable relation : relations)
+			boundSet.getBoundsOn(relation).relations.addAll(mentions);
+
+		if (allDependencies.isEmpty() || getInstantiation().isPresent())
+			return;
+
 		/*
 		 * Given a bound of one of the following forms, where T is either an
 		 * inference variable β or a type that mentions β:
@@ -197,25 +241,21 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			 * If α appears on the left-hand side of another bound of the form G<...,
 			 * α, ...> = capture(G<...>), then β depends on the resolution of α.
 			 */
-			for (InferenceVariable mention : mentions)
-				boundSet.getBoundsOn(mention).addExternalDependencies(allDependencies);
+			for (InferenceVariable mention : mentions) {
+				if (!boundSet.getBoundsOn(mention).getInstantiation().isPresent())
+					boundSet.getBoundsOn(mention)
+							.addExternalDependencies(allDependencies);
+			}
 		} else {
 			/*
 			 * Otherwise, α depends on the resolution of β.
 			 */
-			for (InferenceVariable mention : mentions)
-				allDependencies.addAll(boundSet.getBoundsOn(mention).getDependencies());
+			for (InferenceVariable mention : mentions) {
+				if (!boundSet.getBoundsOn(mention).getInstantiation().isPresent())
+					allDependencies.addAll(boundSet.getBoundsOn(mention).allDependencies);
+			}
 		}
 	}
-
-	/*-
-	private void removeDependency(InferenceVariable dependency) {
-		if (allDependencies != null) {
-			allDependencies.remove(dependency);
-			externalDependencies.remove(dependency);
-		}
-	}
-	 */
 
 	@Override
 	public InferenceVariable getInferenceVariable() {
@@ -257,15 +297,15 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	}
 
 	@Override
-	public Set<InferenceVariable> getDependencies() {
-		return allDependencies;
-	}
-
-	@Override
 	public Set<InferenceVariable> getRemainingDependencies() {
 		return allDependencies.stream()
 				.filter(b -> !boundSet.getBoundsOn(b).getInstantiation().isPresent())
 				.collect(Collectors.toSet());
+	}
+
+	@Override
+	public Set<InferenceVariable> getRelated() {
+		return Collections.unmodifiableSet(relations);
 	}
 
 	public void addEquality(Type type) {
@@ -280,13 +320,17 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				 * An instantiation has been found.
 				 */
 
-				/*-
-				for (InferenceVariable inferenceVariable : boundSet
-						.getInferenceVariables())
-					boundSet.getBoundsOn(inferenceVariable).removeDependency(a);
-				 */
+				for (InferenceVariable relation : relations) {
+					boundSet.getBoundsOn(relation).allDependencies
+							.removeAll(allDependencies);
+					boundSet.getBoundsOn(relation).externalDependencies
+							.removeAll(allDependencies);
+				}
+
+				allDependencies.clear();
+				externalDependencies.clear();
 			} else {
-				addDependenciesFromMentions(mentions);
+				addMentions(mentions);
 			}
 
 			/*
@@ -343,7 +387,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		if (this.equalities.add(type)) {
 			logBound(a, type, "=");
 
-			addDependenciesFromMentions(Arrays.asList(type));
+			addMentions(Arrays.asList(type));
+			boundSet.getBoundsOn(type).addMentions(Arrays.asList(a));
 
 			/*
 			 * α = S and α = T imply ‹S = T›
@@ -369,8 +414,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		if (this.upperBounds.add(type)) {
 			logBound(a, type, "<:");
 
-			addDependenciesFromMentions(boundSet
-					.getInferenceVariablesMentionedBy(type));
+			addMentions(boundSet.getInferenceVariablesMentionedBy(type));
 
 			/*
 			 * α = U and S <: T imply ‹S[α:=U] <: T[α:=U]›
@@ -423,7 +467,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		if (upperBounds.add(type)) {
 			logBound(a, type, "<:");
 
-			addDependenciesFromMentions(Arrays.asList(type));
+			addMentions(Arrays.asList(type));
+			boundSet.getBoundsOn(type).addMentions(Arrays.asList(a));
 
 			/*
 			 * α = S and α <: T imply ‹S <: T›
@@ -443,8 +488,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		if (lowerBounds.add(type)) {
 			logBound(type, a, "<:");
 
-			addDependenciesFromMentions(boundSet
-					.getInferenceVariablesMentionedBy(type));
+			addMentions(boundSet.getInferenceVariablesMentionedBy(type));
 
 			/*
 			 * α = U and S <: T imply ‹S[α:=U] <: T[α:=U]›
@@ -484,7 +528,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		if (lowerBounds.add(type)) {
 			logBound(type, a, "<:");
 
-			addDependenciesFromMentions(Arrays.asList(type));
+			addMentions(Arrays.asList(type));
+			boundSet.getBoundsOn(type).addMentions(Arrays.asList(a));
 
 			/*
 			 * α = S and T <: α imply ‹T <: S›

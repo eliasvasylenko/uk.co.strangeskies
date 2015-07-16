@@ -734,8 +734,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 
 	private Resolver getResolverWithBounds(BoundSet bounds) {
 		Resolver resolver = getResolver();
-		resolver.getBounds()
-				.incorporate(bounds, getInferenceVariableDependencies());
+		resolver.getBounds().incorporate(bounds, getRelatedInferenceVariables());
 		return resolver;
 	}
 
@@ -743,7 +742,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 			Collection<? extends InferenceVariable> inferenceVariables) {
 		Resolver resolver = getResolver();
 		Set<InferenceVariable> withMentioned = new HashSet<>(inferenceVariables);
-		withMentioned.addAll(getInferenceVariableDependencies());
+		withMentioned.addAll(getRelatedInferenceVariables());
 		resolver.getBounds().incorporate(bounds, withMentioned);
 		return resolver;
 	}
@@ -764,7 +763,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 
 	private Resolver getResolverWithBoundsFrom(TypeToken<?> type) {
 		return getResolverWithBoundsFrom(type.getInternalResolver(),
-				type.getInferenceVariableDependencies());
+				type.getRelatedInferenceVariables());
 	}
 
 	@Override
@@ -1619,19 +1618,19 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	}
 
 	/**
-	 * Determine which inference variables are dependencies of those mentioned by
-	 * the type of this {@link TypeToken}.
+	 * Determine which inference variables are dependencies or dependents of those
+	 * mentioned by the type of this {@link TypeToken}.
 	 * 
 	 * @return A set of all the dependencies of the inference variables which are
 	 *         contained within the bound set backing this {@link TypeToken} and
 	 *         which are mentioned by its type.
 	 */
-	public Set<InferenceVariable> getInferenceVariableDependencies() {
+	public Set<InferenceVariable> getRelatedInferenceVariables() {
 		return getInferenceVariablesMentioned()
 				.stream()
 				.flatMap(
-						d -> getInternalResolver().getBounds().getBoundsOn(d)
-								.getDependencies().stream()).collect(Collectors.toSet());
+						d -> getInternalResolver().getBounds().getBoundsOn(d).getRelated()
+								.stream()).collect(Collectors.toSet());
 	}
 
 	/**
