@@ -272,7 +272,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		 * Substitutions of inference variables:
 		 */
 		for (InferenceVariable inferenceVariable : getInferenceVariables())
-			if (!getBoundsOn(inferenceVariable).getInstantiation().isPresent())
+			if (!getBoundsOn(inferenceVariable).isInstantiated())
 				inferenceVariableSubstitutions.put(inferenceVariable,
 						new InferenceVariable(inferenceVariable.getName()));
 
@@ -524,7 +524,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	 */
 	public Set<InferenceVariable> getInstantiatedVariables() {
 		return inferenceVariableBounds.keySet().stream()
-				.filter(i -> getBoundsOn(i).getInstantiation().isPresent())
+				.filter(i -> getBoundsOn(i).isInstantiated())
 				.collect(Collectors.toSet());
 	}
 
@@ -562,45 +562,48 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 			Collection<? extends InferenceVariable> inferenceVariables) {
 		if (!inferenceVariables.isEmpty()
 				&& !boundSet.getInferenceVariables().isEmpty()) {
-			Set<InferenceVariable> inferenceVariableSet = new HashSet<>();
+			Set<InferenceVariable> relatedInferenceVariables = new HashSet<>();
 
 			/*
 			 * Include all related inference variables within the given boundSet.
 			 */
-			for (InferenceVariable inferenceVariable : inferenceVariables)
-				if (boundSet.isInferenceVariable(inferenceVariable)) {
-					inferenceVariableSet.add(inferenceVariable);
-					inferenceVariableSet.addAll(boundSet.getBoundsOn(inferenceVariable)
-							.getRemainingDependencies());
+			for (InferenceVariable inferenceVariable : inferenceVariables) {
+				if (boundSet.isInferenceVariable(inferenceVariable)
+						&& !boundSet.getBoundsOn(inferenceVariable).isInstantiated()) {
+					relatedInferenceVariables.add(inferenceVariable);
+					relatedInferenceVariables.addAll(boundSet.getBoundsOn(
+							inferenceVariable).getRelated());
 				}
+			}
 
 			/*
 			 * Add the inference variables to this bound set.
 			 */
-			for (InferenceVariable inferenceVariable : inferenceVariableSet)
+			for (InferenceVariable inferenceVariable : relatedInferenceVariables) {
 				inferenceVariableBounds.putIfAbsent(inferenceVariable,
 						new InferenceVariableBoundsImpl(this, inferenceVariable));
+			}
 
 			/*
 			 * Incorporate their bounds.
 			 */
-			for (InferenceVariable inferenceVariable : inferenceVariableSet) {
+			for (InferenceVariable inferenceVariable : relatedInferenceVariables) {
 				InferenceVariableBounds bounds = boundSet
 						.getBoundsOn(inferenceVariable);
 
 				for (Type lowerBound : bounds.getLowerBounds())
 					if (boundSet.getInferenceVariablesMentionedBy(lowerBound).stream()
-							.allMatch(inferenceVariableSet::contains))
+							.allMatch(relatedInferenceVariables::contains))
 						incorporate().subtype(lowerBound, inferenceVariable);
 
 				for (Type upperBound : bounds.getUpperBounds())
 					if (boundSet.getInferenceVariablesMentionedBy(upperBound).stream()
-							.allMatch(inferenceVariableSet::contains))
+							.allMatch(relatedInferenceVariables::contains))
 						incorporate().subtype(inferenceVariable, upperBound);
 
 				for (Type equality : bounds.getEqualities())
 					if (boundSet.getInferenceVariablesMentionedBy(equality).stream()
-							.allMatch(inferenceVariableSet::contains))
+							.allMatch(relatedInferenceVariables::contains))
 						incorporate().equality(inferenceVariable, equality);
 
 				CaptureConversion captureConversion = bounds.getCaptureConversion();

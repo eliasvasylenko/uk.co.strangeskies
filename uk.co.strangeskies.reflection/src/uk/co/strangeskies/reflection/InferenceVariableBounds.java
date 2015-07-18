@@ -67,7 +67,12 @@ public interface InferenceVariableBounds {
 	public abstract Set<Type> getProperLowerBounds();
 
 	/**
-	 * @return All instantiations on the described inference variable.
+	 * @return True if the inference variable is instantiated, false otherwise.
+	 */
+	public abstract boolean isInstantiated();
+
+	/**
+	 * @return The instantiation on the described inference variable, if present.
 	 */
 	public abstract Optional<Type> getInstantiation();
 

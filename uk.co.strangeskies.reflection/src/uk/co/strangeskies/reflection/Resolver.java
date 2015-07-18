@@ -35,7 +35,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -712,15 +711,14 @@ public class Resolver implements DeepCopyable<Resolver> {
 			 * variable in this set depends.
 			 */
 			resolveIndependentSet(variables.stream()
-					.filter(v -> !bounds.getBoundsOn(v).getInstantiation().isPresent())
+					.filter(v -> !bounds.getBoundsOn(v).isInstantiated())
 					.map(v -> bounds.getBoundsOn(v).getRemainingDependencies())
 					.flatMap(Set::stream).collect(Collectors.toSet()));
 
 			for (InferenceVariable variable : new HashSet<>(remainingVariables)) {
-				Optional<Type> instantiation = bounds.getBoundsOn(variable)
-						.getInstantiation();
-				if (instantiation.isPresent()) {
-					instantiations.put(variable, instantiation.get());
+				InferenceVariableBounds variableBounds = bounds.getBoundsOn(variable);
+				if (variableBounds.isInstantiated()) {
+					instantiations.put(variable, variableBounds.getInstantiation().get());
 					remainingVariables.remove(variable);
 				}
 			}
