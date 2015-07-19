@@ -173,6 +173,16 @@ public class CaptureConversion {
 		return new CaptureConversion(newType, newCaptures);
 	}
 
+	/**
+	 * Find all inference variables mentioned by this capture conversion.
+	 * 
+	 * @param boundSet
+	 *          The bound set with respect to which instances of
+	 *          {@link InferenceVariable} will be classified as actual inference
+	 *          variables or effectively proper.
+	 * @return A set containing all inference variables mentioned on either side
+	 *         of this capture conversion with respect to the given bound set.
+	 */
 	public Set<InferenceVariable> getAllMentionedInferenceVariables(
 			BoundSet boundSet) {
 		Set<InferenceVariable> allMentioned = new HashSet<>(getInferenceVariables());

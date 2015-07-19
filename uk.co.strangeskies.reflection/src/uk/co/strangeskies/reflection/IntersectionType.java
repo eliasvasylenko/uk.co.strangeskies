@@ -134,6 +134,12 @@ public abstract class IntersectionType implements Type {
 				}
 		}
 
+		if (flattenedTypes.isEmpty())
+			return Object.class;
+
+		if (flattenedTypes.size() == 1)
+			return flattenedTypes.iterator().next();
+
 		try {
 			bounds = bounds.copy();
 			InferenceVariable inferenceVariable = new InferenceVariable();
@@ -198,12 +204,7 @@ public abstract class IntersectionType implements Type {
 			return true;
 
 		if (!(obj instanceof IntersectionType))
-			if (getTypes().length == 0)
-				return obj.equals(Object.class);
-			else if (getTypes().length == 1)
-				return getTypes()[0].equals(obj);
-			else
-				return false;
+			return false;
 
 		IntersectionType that = (IntersectionType) obj;
 		return Arrays.equals(this.getTypes(), that.getTypes());

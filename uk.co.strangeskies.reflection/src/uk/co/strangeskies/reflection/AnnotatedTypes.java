@@ -326,6 +326,15 @@ public final class AnnotatedTypes {
 			return AnnotatedArrayTypes.over((GenericArrayType) type, annotations);
 		} else if (type instanceof Class && ((Class<?>) type).isArray()) {
 			return AnnotatedArrayTypes.over((Class<?>) type, annotations);
+		} else if (type instanceof IntersectionType) {
+			IntersectionType intersectionType = (IntersectionType) type;
+			if (intersectionType.getTypes().length == 0)
+				return new AnnotatedTypeImpl(Object.class, annotations);
+			else if (intersectionType.getTypes().length == 1)
+				return new AnnotatedTypeImpl(intersectionType.getTypes()[0],
+						annotations);
+			else
+				return new AnnotatedTypeImpl(type, annotations);
 		} else {
 			return new AnnotatedTypeImpl(type, annotations);
 		}

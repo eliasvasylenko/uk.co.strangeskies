@@ -48,7 +48,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 
 	private Set<InferenceVariable> allDependencies;
 	private Set<InferenceVariable> externalDependencies;
-	private final Set<InferenceVariable> relations;
+	private Set<InferenceVariable> relations;
 
 	public InferenceVariableBoundsImpl(BoundSet boundSet,
 			InferenceVariable inferenceVariable) {
@@ -80,7 +80,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 
 		copy.relations.addAll(relations);
 
-		if (allDependencies == null) {
+		if (isInstantiated()) {
 			copy.allDependencies = null;
 			copy.externalDependencies = null;
 		} else {
@@ -259,7 +259,12 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	private void removeDependencies(Set<InferenceVariable> allDependencies) {
 		if (!isInstantiated()) {
 			this.allDependencies.removeAll(allDependencies);
-			this.externalDependencies.removeAll(externalDependencies);
+			this.externalDependencies.removeAll(allDependencies);
+
+			if (this.allDependencies.isEmpty()) {
+				this.allDependencies = null;
+				this.externalDependencies = null;
+			}
 		}
 	}
 
@@ -363,28 +368,37 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	}
 
 	public void addEquality(Type type) {
-		Set<Type> equalities = new HashSet<>(this.equalities);
-
 		if (boundSet.isInferenceVariable(type))
 			addEquality((InferenceVariable) type);
 		else if (this.equalities.add(type)) {
 			logBound(inferenceVariable, type, "=");
 
+			Set<Type> equalities = new HashSet<>(this.equalities);
+			Set<Type> upperBounds = new HashSet<>(this.upperBounds);
+			Set<Type> lowerBounds = new HashSet<>(this.lowerBounds);
+
 			Set<InferenceVariable> mentions = boundSet
 					.getInferenceVariablesMentionedBy(type);
 			if (mentions.isEmpty()) {
-				if (capture != null)
-					boundSet.incorporate().falsehood();
-
 				/*
 				 * An instantiation has been found.
 				 */
 
-				for (InferenceVariable relation : relations) {
-					boundSet.getBoundsOn(relation).removeDependencies(allDependencies);
+				if (isInstantiated()) {
+					ConstraintFormula.reduce(Kind.EQUALITY, type, getInstantiation()
+							.get(), boundSet);
+				} else {
+					if (capture != null)
+						boundSet.incorporate().falsehood();
+
+					Set<InferenceVariable> oldDependencies = new HashSet<>(
+							this.allDependencies);
+					allDependencies = null;
+					externalDependencies = null;
+					for (InferenceVariable relation : relations) {
+						boundSet.getBoundsOn(relation).removeDependencies(oldDependencies);
+					}
 				}
-				allDependencies = null;
-				externalDependencies = null;
 			} else {
 				addMentions(mentions);
 			}
@@ -422,13 +436,13 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			/*
 			 * α = S and α <: T imply ‹S <: T›
 			 */
-			for (Type supertype : new HashSet<>(getUpperBounds()))
+			for (Type supertype : upperBounds)
 				incorporateSubtypeSubstitution(type, supertype);
 
 			/*
 			 * α = S and T <: α imply ‹T <: S›
 			 */
-			for (Type subtype : new HashSet<>(getLowerBounds()))
+			for (Type subtype : lowerBounds)
 				incorporateSupertypeSubstitution(type, subtype);
 
 			for (CaptureConversion captureConversion : boundSet
@@ -448,11 +462,15 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 
 			addMentions(Arrays.asList(type));
 
+			InferenceVariableBoundsImpl thoseBounds = boundSet.getBoundsOn(type);
+
 			/*-
 			 * α = S and α = T imply ‹S = T›
 			 */
 			for (Type equality : new HashSet<>(equalities))
 				incorporateTransitiveEquality(type, equality);
+
+			thoseBounds.equalities = equalities;
 
 			/*-
 			 * α = S and α <: T imply ‹S <: T›
@@ -460,11 +478,19 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			for (Type supertype : new HashSet<>(upperBounds))
 				incorporateSubtypeSubstitution(type, supertype);
 
+			thoseBounds.upperBounds = upperBounds;
+
 			/*-
 			 * α = S and T <: α imply ‹T <: S›
 			 */
 			for (Type subtype : new HashSet<>(lowerBounds))
 				incorporateSupertypeSubstitution(type, subtype);
+
+			thoseBounds.lowerBounds = lowerBounds;
+
+			thoseBounds.allDependencies = allDependencies;
+			thoseBounds.externalDependencies = externalDependencies;
+			thoseBounds.relations = relations;
 		}
 	}
 
@@ -475,6 +501,10 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			logBound(inferenceVariable, type, "<:");
 
 			addMentions(boundSet.getInferenceVariablesMentionedBy(type));
+
+			Set<Type> equalities = new HashSet<>(this.equalities);
+			Set<Type> upperBounds = new HashSet<>(this.upperBounds);
+			Set<Type> lowerBounds = new HashSet<>(this.lowerBounds);
 
 			/*
 			 * α = U and S <: T imply ‹S[α:=U] <: T[α:=U]›
@@ -492,13 +522,13 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			/*
 			 * α = S and α <: T imply ‹S <: T›
 			 */
-			for (Type equality : new HashSet<>(equalities))
+			for (Type equality : equalities)
 				incorporateSubtypeSubstitution(equality, type);
 
 			/*
 			 * S <: α and α <: T imply ‹S <: T›
 			 */
-			for (Type lowerBound : new HashSet<>(lowerBounds))
+			for (Type lowerBound : lowerBounds)
 				incorporateTransitiveSubtype(lowerBound, type);
 
 			/*
@@ -508,7 +538,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			 * then for all i (1 ≤ i ≤ n), if Si and Ti are types (not wildcards), the
 			 * constraint formula ‹Si = Ti› is implied.
 			 */
-			for (Type upperBound : new HashSet<>(upperBounds))
+			for (Type upperBound : upperBounds)
 				incorporateSupertypeParameterizationEquality(type, upperBound);
 
 			for (CaptureConversion captureConversion : boundSet
@@ -553,6 +583,9 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			logBound(type, inferenceVariable, "<:");
 
 			addMentions(boundSet.getInferenceVariablesMentionedBy(type));
+
+			Set<Type> equalities = new HashSet<>(this.equalities);
+			Set<Type> upperBounds = new HashSet<>(this.upperBounds);
 
 			/*
 			 * α = U and S <: T imply ‹S[α:=U] <: T[α:=U]›

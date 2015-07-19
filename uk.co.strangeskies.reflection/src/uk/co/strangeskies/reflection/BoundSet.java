@@ -124,8 +124,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 				try {
 					if (inferenceVariableBounds.containsKey(first))
 						inferenceVariableBounds.get(first).addEquality(second);
-
-					if (inferenceVariableBounds.containsKey(second))
+					else if (inferenceVariableBounds.containsKey(second))
 						inferenceVariableBounds.get(second).addEquality(first);
 				} catch (Exception e) {
 					throw new TypeException("Cannot add equality bound between '" + first
@@ -563,7 +562,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		if (!boundSet.getInferenceVariables().isEmpty()
 				&& !inferenceVariables.isEmpty()) {
 			Set<InferenceVariable> relatedInferenceVariables = new HashSet<>(
-					inferenceVariables.size() * 3);
+					inferenceVariables.size() * 2);
 
 			/*
 			 * Include all related inference variables within the given boundSet.

@@ -63,13 +63,37 @@ public class ParameterizedTypes {
 			this.rawType = rawType;
 			this.typeArguments = typeArguments;
 
-			recurringThreads = new HashSet<>();
+			int i = 0;
+			for (Type argument : typeArguments) {
+				if (argument instanceof IntersectionType) {
+					IntersectionType intersectionType = (IntersectionType) argument;
+					if (intersectionType.getTypes().length == 0)
+						typeArguments.set(i, Object.class);
+					else if (intersectionType.getTypes().length == 1)
+						typeArguments.set(i, intersectionType.getTypes()[0]);
+				}
+				i++;
+			}
+
+			recurringThreads = new HashSet<>(2);
 			assumedEqualities = new HashMap<>();
 		}
 
 		ParameterizedTypeImpl(ParameterizedType type) {
-			this(type.getOwnerType(), (Class<?>) type.getRawType(), Arrays
-					.asList(type.getActualTypeArguments()));
+			this(getOwner(type.getOwnerType()), (Class<?>) type.getRawType(),
+					getArguments(type.getActualTypeArguments()));
+		}
+
+		private static Type getOwner(Type ownerType) {
+			return ownerType instanceof ParameterizedType ? new ParameterizedTypeImpl(
+					(ParameterizedType) ownerType) : ownerType;
+		}
+
+		private static List<Type> getArguments(Type[] actualTypeArguments) {
+			List<Type> arguments = new ArrayList<>(actualTypeArguments.length);
+			for (Type argument : actualTypeArguments)
+				arguments.add(argument);
+			return arguments;
 		}
 
 		@Override
@@ -314,7 +338,8 @@ public class ParameterizedTypes {
 
 	static ParameterizedType uncheckedFrom(Type ownerType, Class<?> rawType,
 			List<Type> typeArguments) {
-		return new ParameterizedTypeImpl(ownerType, rawType, typeArguments);
+		return new ParameterizedTypeImpl(ownerType, rawType, new ArrayList<>(
+				typeArguments));
 	}
 
 	static <T> Type uncheckedFrom(Class<T> rawType,

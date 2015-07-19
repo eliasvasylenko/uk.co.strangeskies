@@ -617,6 +617,25 @@ public class ConstraintFormula {
 			 * A constraint formula of the form ‹S = T›, where S and T are types, is
 			 * reduced as follows:
 			 */
+			Type from = this.from;
+			if (from instanceof IntersectionType) {
+				Type[] fromTypes = ((IntersectionType) from).getTypes();
+				if (fromTypes.length == 0)
+					from = Object.class;
+				else if (fromTypes.length == 1) {
+					from = fromTypes[0];
+				}
+			}
+			Type to = this.to;
+			if (to instanceof IntersectionType) {
+				Type[] toTypes = ((IntersectionType) to).getTypes();
+				if (toTypes.length == 0)
+					to = Object.class;
+				else if (toTypes.length == 1) {
+					to = toTypes[0];
+				}
+			}
+
 			if (!from.equals(to)) {
 				/*
 				 * If S and T are proper types, the constraint reduces to true if S is
@@ -651,6 +670,8 @@ public class ConstraintFormula {
 					 * arguments A1, ..., An, the constraint reduces to the following new
 					 * constraints: for all i (1 ≤ i ≤ n), ‹Bi = Ai›.
 					 */
+					Type finalFrom = from;
+					Type finalTo = to;
 					if (from instanceof ParameterizedType)
 						if (to instanceof ParameterizedType)
 							ParameterizedTypes.getAllTypeParameters(Types.getRawType(from))
@@ -658,9 +679,9 @@ public class ConstraintFormula {
 											type -> reduce(
 													Kind.EQUALITY,
 													ParameterizedTypes.getAllTypeArguments(
-															(ParameterizedType) from).get(type),
+															(ParameterizedType) finalFrom).get(type),
 													ParameterizedTypes.getAllTypeArguments(
-															(ParameterizedType) to).get(type), bounds));
+															(ParameterizedType) finalTo).get(type), bounds));
 						else
 							incorporate.falsehood();
 					else if (to instanceof ParameterizedType)
