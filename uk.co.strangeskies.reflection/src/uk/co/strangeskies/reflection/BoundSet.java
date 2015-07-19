@@ -560,55 +560,72 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	 */
 	public void incorporate(BoundSet boundSet,
 			Collection<? extends InferenceVariable> inferenceVariables) {
-		if (!inferenceVariables.isEmpty()
-				&& !boundSet.getInferenceVariables().isEmpty()) {
-			Set<InferenceVariable> relatedInferenceVariables = new HashSet<>();
+		if (!boundSet.getInferenceVariables().isEmpty()
+				&& !inferenceVariables.isEmpty()) {
+			Set<InferenceVariable> relatedInferenceVariables = new HashSet<>(
+					inferenceVariables.size() * 3);
 
 			/*
 			 * Include all related inference variables within the given boundSet.
 			 */
 			for (InferenceVariable inferenceVariable : inferenceVariables) {
-				if (boundSet.isInferenceVariable(inferenceVariable)
-						&& !boundSet.getBoundsOn(inferenceVariable).isInstantiated()) {
+				if (boundSet.isInferenceVariable(inferenceVariable)) {
 					relatedInferenceVariables.add(inferenceVariable);
-					relatedInferenceVariables.addAll(boundSet.getBoundsOn(
-							inferenceVariable).getRelated());
+
+					for (InferenceVariable relatedInferenceVariable : boundSet
+							.getBoundsOn(inferenceVariable).getRelated()) {
+						if (inferenceVariableBounds.containsKey(relatedInferenceVariable)
+								|| !boundSet.getBoundsOn(relatedInferenceVariable)
+										.isInstantiated()) {
+							relatedInferenceVariables.add(relatedInferenceVariable);
+						}
+					}
 				}
 			}
 
-			/*
-			 * Add the inference variables to this bound set.
-			 */
-			for (InferenceVariable inferenceVariable : relatedInferenceVariables) {
-				inferenceVariableBounds.putIfAbsent(inferenceVariable,
-						new InferenceVariableBoundsImpl(this, inferenceVariable));
-			}
+			if (relatedInferenceVariables.stream().allMatch(
+					i -> !inferenceVariableBounds.containsKey(i))) {
+				for (InferenceVariable inferenceVariable : relatedInferenceVariables) {
+					InferenceVariableBoundsImpl filtered = boundSet.getBoundsOn(
+							inferenceVariable).copyInto(this);
+					filtered.filter(i -> !relatedInferenceVariables.contains(i));
+					inferenceVariableBounds.put(inferenceVariable, filtered);
+				}
+			} else {
+				/*
+				 * Add the inference variables to this bound set.
+				 */
+				for (InferenceVariable inferenceVariable : relatedInferenceVariables) {
+					inferenceVariableBounds.putIfAbsent(inferenceVariable,
+							new InferenceVariableBoundsImpl(this, inferenceVariable));
+				}
 
-			/*
-			 * Incorporate their bounds.
-			 */
-			for (InferenceVariable inferenceVariable : relatedInferenceVariables) {
-				InferenceVariableBounds bounds = boundSet
-						.getBoundsOn(inferenceVariable);
+				/*
+				 * Incorporate their bounds.
+				 */
+				for (InferenceVariable inferenceVariable : relatedInferenceVariables) {
+					InferenceVariableBounds bounds = boundSet
+							.getBoundsOn(inferenceVariable);
 
-				for (Type lowerBound : bounds.getLowerBounds())
-					if (boundSet.getInferenceVariablesMentionedBy(lowerBound).stream()
-							.allMatch(relatedInferenceVariables::contains))
-						incorporate().subtype(lowerBound, inferenceVariable);
+					for (Type equality : bounds.getEqualities())
+						if (boundSet.getInferenceVariablesMentionedBy(equality).stream()
+								.allMatch(relatedInferenceVariables::contains))
+							incorporate().equality(inferenceVariable, equality);
 
-				for (Type upperBound : bounds.getUpperBounds())
-					if (boundSet.getInferenceVariablesMentionedBy(upperBound).stream()
-							.allMatch(relatedInferenceVariables::contains))
-						incorporate().subtype(inferenceVariable, upperBound);
+					for (Type lowerBound : bounds.getLowerBounds())
+						if (boundSet.getInferenceVariablesMentionedBy(lowerBound).stream()
+								.allMatch(relatedInferenceVariables::contains))
+							incorporate().subtype(lowerBound, inferenceVariable);
 
-				for (Type equality : bounds.getEqualities())
-					if (boundSet.getInferenceVariablesMentionedBy(equality).stream()
-							.allMatch(relatedInferenceVariables::contains))
-						incorporate().equality(inferenceVariable, equality);
+					for (Type upperBound : bounds.getUpperBounds())
+						if (boundSet.getInferenceVariablesMentionedBy(upperBound).stream()
+								.allMatch(relatedInferenceVariables::contains))
+							incorporate().subtype(inferenceVariable, upperBound);
 
-				CaptureConversion captureConversion = bounds.getCaptureConversion();
-				if (captureConversion != null)
-					incorporate().captureConversion(captureConversion);
+					CaptureConversion captureConversion = bounds.getCaptureConversion();
+					if (captureConversion != null)
+						incorporate().captureConversion(captureConversion);
+				}
 			}
 		}
 	}

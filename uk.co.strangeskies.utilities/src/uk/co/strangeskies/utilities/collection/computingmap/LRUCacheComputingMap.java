@@ -22,8 +22,6 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.function.Function;
 
-import uk.co.strangeskies.utilities.IdentityProperty;
-
 public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 	protected class LinkedEntry extends ReferenceEntry {
 		private LinkedEntry previous;
@@ -41,8 +39,6 @@ public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 			next = bounds.next;
 
 			next.previous = bounds.next = this;
-
-			size.set(size.get() + 1);
 		}
 
 		@Override
@@ -63,12 +59,9 @@ public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 		public void remove() {
 			previous.next = next;
 			next.previous = previous;
-
-			size.set(size.get() - 1);
 		}
 	}
 
-	private final IdentityProperty<Integer> size;
 	private final int maximumSize;
 	private final LinkedEntry bounds;
 
@@ -76,7 +69,6 @@ public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 			boolean softReferences) {
 		super(computation, softReferences);
 
-		size = new IdentityProperty<>(0);
 		this.maximumSize = maximumSize;
 		this.bounds = new LinkedEntry();
 	}
@@ -84,7 +76,6 @@ public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 	protected LRUCacheComputingMap(LRUCacheComputingMap<K, V> other) {
 		super(other);
 
-		size = other.size;
 		maximumSize = other.maximumSize;
 		bounds = other.bounds;
 	}
@@ -107,18 +98,19 @@ public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 	public boolean put(K key) {
 		boolean added = super.put(key);
 
-		if (size.get() > maximumSize)
+		if (size() > maximumSize)
 			remove(bounds.previous.getKey());
 
 		return added;
 	}
 
+	@Override
 	public boolean putAll(Collection<? extends K> keys) {
 		boolean changed = false;
 		for (K key : keys)
 			changed = super.put(key) | changed;
 
-		while (size.get() > maximumSize)
+		while (size() > maximumSize)
 			remove(bounds.previous.getKey());
 
 		return changed;
@@ -128,7 +120,7 @@ public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 	public V putGet(K key) {
 		V value = super.putGet(key);
 
-		if (size.get() > maximumSize)
+		if (size() > maximumSize)
 			remove(bounds.previous.getKey());
 
 		return value;

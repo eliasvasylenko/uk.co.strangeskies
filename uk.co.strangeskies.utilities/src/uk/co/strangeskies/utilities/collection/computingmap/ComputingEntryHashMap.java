@@ -22,9 +22,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.function.Function;
 
 public class ComputingEntryHashMap<K, V> implements ComputingMap<K, V> {
@@ -44,6 +41,7 @@ public class ComputingEntryHashMap<K, V> implements ComputingMap<K, V> {
 			this.key = key;
 		}
 
+		@Override
 		public K getKey() {
 			return key;
 		}
@@ -95,13 +93,23 @@ public class ComputingEntryHashMap<K, V> implements ComputingMap<K, V> {
 		return true;
 	}
 
+	public V putGetImpl(K key) {
+		Entry<K, V> entry = map.get(key);
+
+		if (entry == null) {
+			entry = createEntry(key);
+			map.put(key, entry);
+		}
+
+		return entry.getValue();
+	}
+
 	@Override
 	public V putGet(K key) {
 		V value = get(key);
 
 		if (value == null) {
-			put(key);
-			value = get(key);
+			value = putGetImpl(key);
 		}
 
 		return value;

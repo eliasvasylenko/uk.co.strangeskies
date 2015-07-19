@@ -29,6 +29,7 @@ import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.AnnotatedTypeVariable;
 import java.lang.reflect.AnnotatedWildcardType;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -148,8 +149,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	@Target(ElementType.TYPE_USE)
 	public @interface Capture {}
 
-	private static ComputingMap<AnnotatedType, Pair<Resolver, Type>> RESOLVER_CACHE_2 = new LRUCacheComputingMap<>(
-			(AnnotatedType annotatedType) -> {
+	private static ComputingMap<AnnotatedType, Pair<Resolver, Type>> RESOLVER_CACHE = new LRUCacheComputingMap<>(
+			annotatedType -> {
 				Resolver resolver = new Resolver();
 
 				Type type = substituteAnnotatedWildcards(annotatedType, resolver);
@@ -158,7 +159,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 						.incorporateType(type));
 
 				return new Pair<>(resolver, type);
-			}, 1000, true);
+			}, 64, true);
 
 	private final Resolver resolver;
 
@@ -323,7 +324,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 
 	private Pair<Resolver, Type> resolveAnnotatedWildcards(
 			AnnotatedType annotatedType) {
-		Pair<Resolver, Type> resolvedType = RESOLVER_CACHE_2.putGet(annotatedType);
+		Pair<Resolver, Type> resolvedType = RESOLVER_CACHE.putGet(annotatedType);
 		HashMap<InferenceVariable, InferenceVariable> map = new HashMap<>();
 		return new Pair<>(resolvedType.getLeft().deepCopy(map),
 				new TypeSubstitution(map).resolve(resolvedType.getRight()));
@@ -741,9 +742,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	private Resolver getResolverWithBounds(BoundSet bounds,
 			Collection<? extends InferenceVariable> inferenceVariables) {
 		Resolver resolver = getResolver();
-		Set<InferenceVariable> withMentioned = new HashSet<>(inferenceVariables);
-		withMentioned.addAll(getRelatedInferenceVariables());
-		resolver.getBounds().incorporate(bounds, withMentioned);
+		resolver.getBounds().incorporate(bounds, inferenceVariables);
 		return resolver;
 	}
 
@@ -1127,10 +1126,16 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 *          The class of the supertype parameterization we wish to determine.
 	 * @return A TypeToken over the supertype of the requested class.
 	 */
+	@SuppressWarnings("unchecked")
 	public <U> TypeToken<? extends U> resolveSupertypeParameters(
 			Class<U> superclass) {
 		if (!ParameterizedTypes.isGeneric(superclass))
 			return TypeToken.over(superclass);
+
+		if (superclass.equals(type)
+				|| (type instanceof ParameterizedType && ((ParameterizedType) type)
+						.getRawType().equals(superclass)))
+			return (TypeToken<? extends U>) this;
 
 		Resolver resolver = getInternalResolver();
 
@@ -1146,7 +1151,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 		} else
 			resolver.incorporateTypeHierarchy(getRawType(), superclass);
 
-		return over(resolver, superclass);
+		TypeToken<? extends U> over = over(resolver, superclass);
+
+		return over;
 	}
 
 	/**
@@ -1162,16 +1169,22 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 * @return A TypeToken over the best effort parameterization of the requested
 	 *         class such that it be a subtype.
 	 */
+	@SuppressWarnings("unchecked")
 	public <U> TypeToken<? extends U> resolveSubtypeParameters(Class<U> subclass) {
 		if (!ParameterizedTypes.isGeneric(subclass))
 			return TypeToken.over(subclass);
+
+		if (subclass.equals(type)
+				|| (type instanceof ParameterizedType && ((ParameterizedType) type)
+						.getRawType().equals(subclass)))
+			return (TypeToken<? extends U>) this;
 
 		Resolver resolver = getInternalResolver();
 
 		Type parameterizedType = ParameterizedTypes.uncheckedFrom(subclass,
 				i -> null);
 
-		if (resolver.getBounds().getInferenceVariables().contains(getType())) {
+		if (resolver.getBounds().isInferenceVariable(getType())) {
 			resolver.incorporateTypeParameters(subclass);
 			parameterizedType = resolver.resolveType(parameterizedType);
 
@@ -1359,9 +1372,15 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 * @return A list of all {@link Constructor} objects applicable to this type,
 	 *         wrapped in {@link Invokable} instances.
 	 */
-	@SuppressWarnings("unchecked")
 	public Set<? extends Invokable<T, T>> getConstructors() {
+		return getConstructors(c -> true);
+	}
+
+	@SuppressWarnings("unchecked")
+	private Set<? extends Invokable<T, T>> getConstructors(
+			Predicate<Constructor<T>> filter) {
 		return Arrays.stream(getRawType().getConstructors())
+				.filter(c -> filter.test((Constructor<T>) c))
 				.map(m -> Invokable.over((Constructor<T>) m, this))
 				.collect(Collectors.toSet());
 	}
@@ -1452,13 +1471,15 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 */
 	public Invokable<? super T, ? extends T> resolveConstructorOverload(
 			List<? extends TypeToken<?>> arguments) {
-		Set<? extends Invokable<? super T, ? extends T>> candidates = Invokable
-				.resolveApplicableInvokables(getConstructors(), arguments);
+		Set<? extends Invokable<? super T, ? extends T>> candidates = getConstructors(m -> isArgumentCountValid(
+				m, arguments.size()));
 
 		if (candidates.isEmpty())
 			throw new IllegalArgumentException(
 					"Cannot find any applicable constructor in '" + this
-							+ "' for arguments '" + arguments + "'.");
+							+ "' for arguments '" + arguments + "'");
+
+		candidates = Invokable.resolveApplicableInvokables(candidates, arguments);
 
 		return Invokable.resolveMostSpecificInvokable(candidates);
 	}
@@ -1518,15 +1539,20 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	public Invokable<? super T, ?> resolveMethodOverload(String name,
 			List<? extends TypeToken<?>> arguments) {
 		Set<? extends Invokable<? super T, ? extends Object>> candidates = getMethods(m -> m
-				.getName().equals(name));
+				.getName().equals(name) && isArgumentCountValid(m, arguments.size()));
 
 		if (candidates.isEmpty())
 			throw new IllegalArgumentException("Cannot find any method '" + name
-					+ "' in '" + this + "' for arguments '" + arguments + "'.");
+					+ "' in '" + this + "' for arguments '" + arguments + "'");
 
 		candidates = Invokable.resolveApplicableInvokables(candidates, arguments);
 
 		return Invokable.resolveMostSpecificInvokable(candidates);
+	}
+
+	private boolean isArgumentCountValid(Executable method, int arguments) {
+		return (method.isVarArgs() ? method.getParameterCount() <= arguments + 1
+				: method.getParameterCount() == arguments);
 	}
 
 	/**
@@ -1567,11 +1593,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	public TypeToken<T> infer() {
 		Resolver resolver = getResolver();
 
-		Type type = resolveType();
-
-		resolver.infer(resolver.getBounds().getInferenceVariablesMentionedBy(type));
-
-		return new TypeToken<>(resolver, resolver.resolveType(type));
+		return new TypeToken<>(resolver, resolver.infer(type));
 	}
 
 	private Type resolveType() {
@@ -1642,6 +1664,21 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	}
 
 	/**
+	 * Incorporate all inference variables mentioned by this type into the given
+	 * bound set.
+	 * 
+	 * @param bounds
+	 *          The bound set into which we wish to incorporate information about
+	 *          this type token.
+	 */
+	public void incorporateInto(BoundSet bounds) {
+		Type type = resolveType();
+
+		bounds.incorporate(getInternalResolver().getBounds(), getInternalResolver()
+				.getBounds().getInferenceVariablesMentionedBy(type));
+	}
+
+	/**
 	 * Incorporate all inference variables and wildcard captures mentioned by this
 	 * type into the given resolver.
 	 * 
@@ -1650,10 +1687,13 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 *          information about this type token.
 	 */
 	public void incorporateInto(Resolver resolver) {
+		Type type = resolveType();
+
 		resolver.getBounds().incorporate(
 				getInternalResolver().getBounds(),
 				getInternalResolver().getBounds()
 						.getInferenceVariablesMentionedBy(type));
+
 		resolver.incorporateWildcardCaptures(getInternalResolver()
 				.getWildcardCaptures());
 		resolver.incorporateType(type);
@@ -1663,6 +1703,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 * Resubstitute any type variable captures mentioned in the given type for the
 	 * wildcards which they originally captured, if they were captured through
 	 * incorporation of wildcard types into this {@link Resolver} instance.
+	 * <p>
+	 * This should be used with care, as in many instances the bounds on the
+	 * wildcard will not be specific enough to satisfy every bound on the capture.
 	 * 
 	 * @return A derived type token with mentions of captures of {@link Preserve}d
 	 *         wildcards substituted for those wildcards.

@@ -28,4 +28,8 @@ public interface ReadOnlyMap<K, V> {
 	default boolean isEmpty() {
 		return keySet().isEmpty();
 	}
+
+	default int size() {
+		return keySet().size();
+	}
 }

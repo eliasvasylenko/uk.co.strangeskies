@@ -152,7 +152,7 @@ public class ConstraintFormula {
 			from = new Resolver(bounds).resolveType(from);
 
 		if (from instanceof ParameterizedType)
-			if (bounds.getInferenceVariablesMentionedBy(from).isEmpty())
+			if (bounds.isProperType(from))
 				from = TypeVariableCapture
 						.captureWildcardArguments((ParameterizedType) from);
 			else {

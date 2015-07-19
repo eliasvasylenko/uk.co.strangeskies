@@ -258,13 +258,10 @@ public class Resolver implements DeepCopyable<Resolver> {
 		for (TypeVariable<?> typeVariable : captures.keySet()) {
 			InferenceVariable inferenceVariable = captures.get(typeVariable);
 
-			boolean anyProper = false;
 			for (Type bound : bounds.getBoundsOn(inferenceVariable).getUpperBounds()) {
-				anyProper = anyProper || bounds.isProperType(bound);
 				bounds.incorporate().subtype(inferenceVariable, bound);
 			}
-			if (!anyProper)
-				bounds.incorporate().subtype(inferenceVariable, Object.class);
+			bounds.incorporate().subtype(inferenceVariable, Object.class);
 		}
 
 		return captures;
@@ -672,8 +669,29 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 *         instantiations for each {@link InferenceVariable} mentioned.
 	 */
 	public Type infer(Type type) {
-		return new TypeSubstitution(infer(getBounds()
-				.getInferenceVariablesMentionedBy(type))).resolve(type);
+		return new TypeSubstitution(
+				t -> getBounds().isInferenceVariable(t) ? infer((InferenceVariable) t)
+						: null).resolve(type);
+	}
+
+	/**
+	 * Infer a proper instantiations for a single given {@link InferenceVariable}.
+	 * 
+	 * @param inferenceVariable
+	 *          The type whose proper form we wish to infer.
+	 * @return A new instantiation for the given {@link InferenceVariable}.
+	 */
+	public Type infer(InferenceVariable inferenceVariable) {
+		if (getBounds().isInferenceVariable(inferenceVariable)) {
+			if (!getBounds().getBoundsOn(inferenceVariable).isInstantiated()) {
+				Set<InferenceVariable> set = new HashSet<>(1);
+				set.add(inferenceVariable);
+				infer(set);
+			}
+			return resolveInferenceVariable(inferenceVariable);
+		} else {
+			return inferenceVariable;
+		}
 	}
 
 	/**

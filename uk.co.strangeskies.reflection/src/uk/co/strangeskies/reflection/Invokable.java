@@ -22,6 +22,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
@@ -112,8 +113,11 @@ public class Invokable<T, R> {
 			this.receiverType = (TypeToken<T>) TypeToken.over(receiverType
 					.getRawType());
 		else {
-			receiverType.resolveSupertypeParameters(executable.getDeclaringClass())
-					.incorporateInto(resolver);
+			if (!((receiverType.getType() instanceof ParameterizedType && receiverType
+					.getRawType().equals(executable.getDeclaringClass())) || executable
+					.getDeclaringClass().equals(receiverType.getType())))
+				receiverType.resolveSupertypeParameters(executable.getDeclaringClass())
+						.incorporateInto(resolver);
 
 			receiverType = receiverType.withBoundsFrom(resolver).resolve();
 			this.receiverType = receiverType;
@@ -124,8 +128,9 @@ public class Invokable<T, R> {
 			returnType = (TypeToken<R>) TypeToken.over(
 					resolver.resolveType(method, method.getGenericReturnType()))
 					.withBoundsFrom(resolver);
-		} else
+		} else {
 			returnType = (TypeToken<R>) receiverType;
+		}
 
 		/*
 		 * Determine parameter types:
@@ -755,8 +760,7 @@ public class Invokable<T, R> {
 		Resolver resolver = getResolver();
 
 		for (Type parameter : parameters)
-			resolver.infer(resolver.getBounds().getInferenceVariablesMentionedBy(
-					parameter));
+			resolver.infer(parameter);
 
 		return new Invokable<>(resolver, receiverType, executable,
 				invocationFunction, parameters);
@@ -869,14 +873,14 @@ public class Invokable<T, R> {
 		if (variableArity) {
 			if (!executable.isVarArgs())
 				throw new IllegalArgumentException("Invokable '" + this
-						+ "' cannot be invoked in variable arity invocation context.");
+						+ "' cannot be invoked in variable arity invocation context");
 
 			if (parameters.size() > arguments.size())
 				return null;
 		} else if (parameters.size() != arguments.size())
 			throw new TypeException(
 					"Cannot resolve generic type parameters for invocation of '" + this
-							+ "' with arguments '" + arguments + "'.");
+							+ "' with arguments '" + arguments + "'");
 
 		Resolver resolver = getResolver();
 

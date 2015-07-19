@@ -22,6 +22,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -170,5 +171,15 @@ public class CaptureConversion {
 								}));
 
 		return new CaptureConversion(newType, newCaptures);
+	}
+
+	public Set<InferenceVariable> getAllMentionedInferenceVariables(
+			BoundSet boundSet) {
+		Set<InferenceVariable> allMentioned = new HashSet<>(getInferenceVariables());
+		for (Type captured : ParameterizedTypes.getAllTypeArguments(
+				getOriginalType()).values())
+			allMentioned.addAll(boundSet.getInferenceVariablesMentionedBy(captured));
+
+		return allMentioned;
 	}
 }
