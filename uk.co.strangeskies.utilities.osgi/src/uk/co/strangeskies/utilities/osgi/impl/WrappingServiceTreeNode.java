@@ -78,8 +78,7 @@ class WrappingServiceTreeNode {
 			Object wrappingService = wrapService(getService(), serviceWrapper,
 					classes);
 
-			if (serviceWrapper.getHideServices() == HideServices.WHEN_WRAPPED
-					|| serviceWrapper.getHideServices() == HideServices.SILENTLY)
+			if (serviceWrapper.getHideServices() == HideServices.WHEN_WRAPPED)
 				visible = false;
 
 			WrappingServiceTreeNode compoundWrappedService = new WrappingServiceTreeNode(

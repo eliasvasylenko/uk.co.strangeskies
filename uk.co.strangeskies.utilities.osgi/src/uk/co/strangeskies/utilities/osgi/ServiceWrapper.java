@@ -91,7 +91,6 @@ public interface ServiceWrapper<T> {
 	 * service through {@link ServiceWrapper#wrapService(Object)}, and then once
 	 * again each time any of the properties of the wrapped service change.
 	 * 
-	 * 
 	 * <p>
 	 * The map passed as an argument will contain the properties of the service to
 	 * be wrapped. Any changes made to this map will be reflected in the
@@ -100,19 +99,16 @@ public interface ServiceWrapper<T> {
 	 * increase the {@link Constants#SERVICE_RANKING} so the wrapping service
 	 * takes precedence over the original.
 	 * 
-	 * 
 	 * <p>
 	 * Values for the {@link Constants#OBJECTCLASS} and
 	 * {@link Constants#SERVICE_ID} keys can not be changed. These values are set
 	 * by the Framework when the service is registered in the OSGi environment.
-	 * 
 	 * 
 	 * <p>
 	 * {@link ServiceWrapper#wrapService(Object)} will only ever be called to wrap
 	 * a service if this method returns 'true' for the properties of that service.
 	 * This can act as a filter for the service wrapper, such that it is only
 	 * applied when certain conditions are met.
-	 * 
 	 * 
 	 * @param serviceProperties
 	 *          The properties of the service to be wrapped.
@@ -149,6 +145,9 @@ public interface ServiceWrapper<T> {
 	 * Enumeration of possible values for the {@link ServiceWrapper#HIDE_SERVICES}
 	 * property of any {@link ServiceWrapper} services.
 	 * 
+	 * <p>
+	 * The default value when none is provided is
+	 * {@link HideServices#WHEN_WRAPPED}.
 	 * 
 	 * @author Elias N Vasylenko
 	 * 
@@ -157,18 +156,14 @@ public interface ServiceWrapper<T> {
 		/**
 		 * <p>
 		 * Always remove services applicable by class from the service registry, so
-		 * only the wrapping service will be visible. Be careful, as this will act
-		 * as a filter, only registering wrapping services for those which are
-		 * successfully wrapped, simply removing them otherwise. If no services are
-		 * matched by {@link ServiceWrapper#wrapServiceProperties(Map)} then none
-		 * will be available to any bundles, no matter what service ranking the
-		 * wrapper has.
-		 * 
+		 * only the wrapping service will be visible.
 		 * 
 		 * <p>
-		 * The default value when none is provided is
-		 * {@link HideServices#WHEN_WRAPPED}.
-		 * 
+		 * Implementers should be careful to note that this will act as a filter,
+		 * only registering wrapping services for those which are successfully
+		 * wrapped, and simply removing them otherwise. If no services are matched
+		 * by {@link ServiceWrapper#wrapServiceProperties(Map)} then none will be
+		 * available to any bundles, no matter what service ranking the wrapper has.
 		 */
 		ALWAYS,
 		/**
@@ -181,13 +176,7 @@ public interface ServiceWrapper<T> {
 		 * valid wrap will be provided instead, which is often safer than
 		 * {@link HideServices#ALWAYS}.
 		 */
-		WHEN_WRAPPED,
-		/**
-		 * This option behaves in the same way as {@link HideServices#WHEN_WRAPPED},
-		 * with the added stipulation that wrapping and unwrapping will be invisible
-		 * to bundles which are already using the services being wrapped.
-		 */
-		SILENTLY;
+		WHEN_WRAPPED;
 	}
 
 	/**
@@ -195,26 +184,16 @@ public interface ServiceWrapper<T> {
 	 * If a property with this key is present on a {@link ServiceWrapper} service
 	 * then the value should be of the type {@link Boolean}. This value then
 	 * determines whether a wrapper be applied retroactively to services which
-	 * already exist, and therefore may already be in use by other bundles.
-	 * 
-	 * If the {@link HideServices} property is set to {@link HideServices#NEVER},
-	 * this value is ignored.
-	 * 
-	 * 
-	 * <p>
-	 * Wrappers which maintain state should normally not set this value to
-	 * {@link Boolean#TRUE}, as they won't generally have any way to determine the
-	 * state they should adopt at the point at which they are added, since they
-	 * may be added and removed multiple times, through multiple calls to
-	 * {@link ServiceWrapper#wrapService(Object)}.
-	 * 
+	 * already exist. This means a service may be wrapped when it is already in
+	 * use by other bundles, in which case the view of the service held by those
+	 * bundles will not change, only new instances of the service will be
+	 * effectively wrapped.
 	 * 
 	 * <p>
 	 * If this property is set to {@link Boolean#FALSE} then existing services
 	 * will not be wrapped, so the wrapper can be sure that
 	 * {@link ServiceWrapper#wrapService(Object)} is only ever called once for any
-	 * service, at the point when that services is registered.
-	 * 
+	 * service, at the point when that services is initially registered.
 	 * 
 	 * <p>
 	 * If this property is set to {@link Boolean#TRUE} then wrappers may be
@@ -222,20 +201,6 @@ public interface ServiceWrapper<T> {
 	 * Otherwise, wrapping services will ignore reorderings unless their raking
 	 * drops below that of the service they are wrapping, in which case they will
 	 * be unregistered.
-	 * 
-	 * 
-	 * <p>
-	 * Implementations of {@link ServiceWrapperManager} may choose to not accept
-	 * or to ignore wrappers with this property set to true, as it may be
-	 * necessary to incur a slight overhead over the entire service-framework in
-	 * order to support this feature (all services may need to be proxied
-	 * preemptively). Managers which are registered as a service themselves should
-	 * advertise whether they support this feature with the
-	 * {@link ServiceWrapperManager#SUPPORTS_WRAP_EXISTING_SERVICES} property. It
-	 * should also be noted that an implementation of
-	 * {@link ServiceWrapperManager} may only be able to wrap services which were
-	 * registered after the manager was registered or created itself.
-	 * 
 	 */
 	public static final String WRAP_EXISTING_SERVICES = "wrap.existing.services";
 }

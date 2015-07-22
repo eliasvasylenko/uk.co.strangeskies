@@ -397,10 +397,9 @@ public interface Parser<T> {
 	 * along with the result of applying the receiving parser, allowing the text
 	 * to inform mutation of the parse result's state.
 	 * 
-	 * @param parser
 	 * @param <U>
 	 *          The type of the parse result of the appended parser
-	 * @param pattern
+	 * @param parser
 	 *          A parser matching the text immediately following from the text
 	 *          matched by this parser
 	 * @param incorporate

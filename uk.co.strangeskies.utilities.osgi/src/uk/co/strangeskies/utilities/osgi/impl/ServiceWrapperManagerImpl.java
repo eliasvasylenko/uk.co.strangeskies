@@ -68,8 +68,7 @@ public class ServiceWrapperManagerImpl implements ServiceWrapperManager {
 	}
 
 	@Override
-	@Reference(cardinality = ReferenceCardinality.MULTIPLE, policy = ReferencePolicy.DYNAMIC, target = "("
-			+ ServiceWrapper.WRAP_EXISTING_SERVICES + "=false)")
+	@Reference(cardinality = ReferenceCardinality.MULTIPLE, policy = ReferencePolicy.DYNAMIC)
 	public void addServiceWrapper(ServiceWrapper<?> serviceWrapper,
 			Map<String, Object> serviceProperties) {
 		addManagedServiceWrapper(serviceWrapper, serviceProperties);
@@ -105,15 +104,6 @@ public class ServiceWrapperManagerImpl implements ServiceWrapperManager {
 
 	private void updateManagedServiceWrapper(ServiceWrapper<?> serviceWrapper,
 			Map<String, Object> serviceProperties) {
-		try {
-			if ((Boolean) serviceProperties
-					.get(ServiceWrapper.WRAP_EXISTING_SERVICES) == true) {
-				throw new IllegalArgumentException(
-						ServiceWrapper.WRAP_EXISTING_SERVICES + " = true @ "
-								+ serviceWrapper);
-			}
-		} catch (ClassCastException e) {}
-
 		int serviceRanking;
 		try {
 			serviceRanking = (Integer) serviceProperties
