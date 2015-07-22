@@ -38,10 +38,12 @@ import java.util.Map;
  */
 public class Enumeration<S extends Enumeration<S>> implements Self<S> {
 	private static class EnumerationType<T extends Enumeration<T>> {
+		private final Class<T> type;
 		private final List<T> instances;
 		private boolean initialised;
 
-		public EnumerationType() {
+		public EnumerationType(Class<T> type) {
+			this.type = type;
 			instances = new ArrayList<>();
 			initialised = false;
 		}
@@ -52,7 +54,9 @@ public class Enumeration<S extends Enumeration<S>> implements Self<S> {
 
 		public int addInstance(T instance) {
 			if (initialised)
-				throw new IllegalStateException();
+				throw new IllegalStateException(
+						"Cannot instantiate instance of enumeration class '" + type
+								+ "' as the class has already been initialised");
 
 			int ordinal = instances.size();
 
@@ -132,7 +136,7 @@ public class Enumeration<S extends Enumeration<S>> implements Self<S> {
 		@SuppressWarnings("unchecked")
 		EnumerationType<T> enumType = (EnumerationType<T>) ENUM_TYPES.get(type);
 		if (enumType == null)
-			ENUM_TYPES.put(type, enumType = new EnumerationType<>());
+			ENUM_TYPES.put(type, enumType = new EnumerationType<>(type));
 
 		if (!enumType.isInitialised() && !withinStaticInitialiser(type)) {
 			forceInitialisation(type);

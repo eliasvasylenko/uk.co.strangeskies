@@ -28,7 +28,8 @@ import java.util.function.Supplier;
 import uk.co.strangeskies.utilities.IdentityProperty;
 
 /**
- * A composable, type safe text parser.
+ * A simple, composable, type-safe text parser. This class is intended for
+ * fairly simple use-cases.
  * <p>
  * Usage should be intuitive enough for users familiar with context free
  * grammars, where a {@link Parser} instance represents a single symbol, and all
@@ -103,31 +104,181 @@ public interface Parser<T> {
 		return listParser.get();
 	}
 
+	/**
+	 * Create a trivial parser matching a piece of text to a regular expression
+	 * and then returning that text unmodified.
+	 * 
+	 * @param regex
+	 *          The regular expression matcher
+	 * @return A new {@link Parser} instance to match the regular expression
+	 */
 	public static Parser<String> matching(String regex) {
 		return new RegexParser<>(regex, Function.identity());
 	}
 
+	/**
+	 * Create a trivial parser matching an empty piece of text and returning a
+	 * supplied object.
+	 * 
+	 * @param <T>
+	 *          The type of the object to supply
+	 * @param supplier
+	 *          The object to supply when matching an empty piece of text
+	 * @return A new {@link Parser} instance to supply the given object
+	 */
 	public static <T> Parser<T> from(Supplier<T> supplier) {
 		return new RegexParser<>("", s -> supplier.get());
 	}
 
+	/**
+	 * Create a proxy of a parser supplied at a future time.
+	 * <p>
+	 * The supplier will only be invoked at the time of parsing, meaning this
+	 * method can be used to build self-mentioning parsers. At this time, the
+	 * parser returned by this method will behave in an identical manner to the
+	 * supplier parser.
+	 * 
+	 * @param <T>
+	 *          The type of the object to supply
+	 * @param parser
+	 *          The supplier of a parser
+	 * @return A new {@link Parser} instance to proxy the supplied parser
+	 */
 	public static <T> Parser<T> proxy(Supplier<Parser<T>> parser) {
 		return new ParserProxy<>(parser, Function.identity());
 	}
 
+	/**
+	 * Derive a new {@link Parser} instance from the receiving instance.
+	 * <p>
+	 * The new parser will match the same text as the given parser, but the object
+	 * parsed will be transformed by the given {@link Function}.
+	 * 
+	 * @param <U>
+	 *          The type of the object of the new parser, post-transformation
+	 * @param transform
+	 *          The transformation to apply to the object given by application of
+	 *          this parser
+	 * @return A new {@link Parser} instance which applies the given
+	 *         transformation
+	 */
 	<U> Parser<U> transform(Function<? super T, ? extends U> transform);
 
+	/**
+	 * Derive a new {@link Parser} instance from the receiving instance.
+	 * <p>
+	 * The new parser will attempt to match a piece of text in the same manner as
+	 * the receiving parser. If the attempt fails, the text matched, or partially
+	 * matched, by the original attempt will remain unconsumed, and the parser
+	 * will instead return the given value.
+	 * 
+	 * @param onFailure
+	 *          The object the new parser should return if application of the
+	 *          original parser fails
+	 * @return A new {@link Parser} instance which includes the given failure
+	 *         guard
+	 */
+	default Parser<T> orElse(T onFailure) {
+		return orElse(() -> onFailure);
+	}
+
+	/**
+	 * Derive a new {@link Parser} instance from the receiving instance.
+	 * <p>
+	 * The new parser will attempt to match a piece of text in the same manner as
+	 * the receiving parser. If the attempt fails, the text matched, or partially
+	 * matched, by the original attempt will remain unconsumed, and the parser
+	 * will instead return a value from the given supplier.
+	 * 
+	 * @param onFailure
+	 *          The supplier for the object the new parser should return if
+	 *          application of the original parser fails
+	 * @return A new {@link Parser} instance which includes the given failure
+	 *         guard
+	 */
 	Parser<T> orElse(Supplier<? extends T> onFailure);
 
+	/**
+	 * Derive a new {@link Parser} instance from the receiving instance.
+	 * <p>
+	 * The new parser will attempt to match a piece of text in the same manner as
+	 * the receiving parser. If the attempt fails, the text matched, or partially
+	 * matched, by the original attempt will remain unconsumed, then an attempt
+	 * will be made to instead apply the given parser.
+	 * 
+	 * @param onFailure
+	 *          The parser which should be applied if and when application of the
+	 *          original parser fails
+	 * @return A new {@link Parser} instance which includes the given failure
+	 *         guard
+	 */
 	Parser<T> orElse(Parser<? extends T> onFailure);
 
+	/**
+	 * Derive a new {@link Parser} instance from the receiving instance.
+	 * <p>
+	 * The new parser will first match the start of the text according to the
+	 * receiving parser, then match the start of any subsequent text according to
+	 * the given pattern.
+	 * <p>
+	 * The appended pattern contains no parsable data, and will not change the
+	 * parsed object upon matching.
+	 * 
+	 * @param pattern
+	 *          A pattern matching the text which should immediately follow from
+	 *          the text matched by this parser
+	 * @return A new {@link Parser} instance which also matches against the
+	 *         appended text pattern
+	 */
 	default Parser<T> append(String pattern) {
 		return append(pattern, (t, s) -> {});
 	}
 
+	/**
+	 * Derive a new {@link Parser} instance from the receiving instance.
+	 * <p>
+	 * The new parser will first match the start of the text according to the
+	 * receiving parser, then match the start of any subsequent text according to
+	 * the given pattern.
+	 * <p>
+	 * Upon success, the text matched by the appended pattern will be transformed,
+	 * along with the result of applying the receiving parser, into a new result
+	 * according to the given function.
+	 * 
+	 * @param <U>
+	 *          The type of the new parse result
+	 * @param pattern
+	 *          A pattern matching the text which should immediately follow from
+	 *          the text matched by this parser
+	 * @param incorporate
+	 *          A function taking the result of parsing the receiving parser and
+	 *          the appended text, and transforming them into a new parse result
+	 * @return A new {@link Parser} instance which also matches against the
+	 *         appended text pattern
+	 */
 	<U> Parser<U> appendTransform(String pattern,
 			BiFunction<T, String, ? extends U> incorporate);
 
+	/**
+	 * Derive a new {@link Parser} instance from the receiving instance.
+	 * <p>
+	 * The new parser will first match the start of the text according to the
+	 * receiving parser, then match the start of any subsequent text according to
+	 * the given pattern.
+	 * <p>
+	 * Upon success, the text matched by the appended pattern will be consumed,
+	 * along with the result of applying the receiving parser, allowing the text
+	 * to inform mutation of the parse result's state.
+	 * 
+	 * @param pattern
+	 *          A pattern matching the text which should immediately follow from
+	 *          the text matched by this parser
+	 * @param incorporate
+	 *          A function taking the result of parsing the receiving parser and
+	 *          the appended text, and transforming them into a new parse result
+	 * @return A new {@link Parser} instance which also matches against the
+	 *         appended text pattern
+	 */
 	default Parser<T> append(String pattern, BiConsumer<T, String> incorporate) {
 		return appendTransform(pattern, (t, s) -> {
 			incorporate.accept(t, s);
@@ -135,13 +286,71 @@ public interface Parser<T> {
 		});
 	}
 
+	/**
+	 * Derive a new {@link Parser} instance from the receiving instance.
+	 * <p>
+	 * The new parser will first match the start of the text according to the
+	 * given pattern, then match the start of any subsequent text according to the
+	 * receiving parser.
+	 * <p>
+	 * The appended pattern contains no parsable data, and will not change the
+	 * parsed object upon matching.
+	 * 
+	 * @param pattern
+	 *          A pattern matching the text which should immediately follow from
+	 *          the text matched by this parser
+	 * @return A new {@link Parser} instance which also matches against the
+	 *         appended text pattern
+	 */
 	default Parser<T> prepend(String pattern) {
 		return prepend(pattern, (s, t) -> {});
 	}
 
+	/**
+	 * Derive a new {@link Parser} instance from the receiving instance.
+	 * <p>
+	 * The new parser will first match the start of the text according to the
+	 * given pattern, then match the start of any subsequent text according to the
+	 * receiving parser.
+	 * <p>
+	 * Upon success, the text matched by the appended pattern will be transformed,
+	 * along with the result of applying the receiving parser, into a new result
+	 * according to the given function.
+	 * 
+	 * @param <U>
+	 *          The type of the new parse result
+	 * @param pattern
+	 *          A pattern matching the text which should immediately precede the
+	 *          text matched by this parser
+	 * @param incorporate
+	 *          A function taking the result of parsing the receiving parser and
+	 *          the prepending text, and transforming them into a new parse result
+	 * @return A new {@link Parser} instance which also matches against the
+	 *         prepended text pattern
+	 */
 	<U> Parser<U> prependTransform(String pattern,
 			BiFunction<T, String, ? extends U> incorporate);
 
+	/**
+	 * Derive a new {@link Parser} instance from the receiving instance.
+	 * <p>
+	 * The new parser will first match the start of the text according to the
+	 * given pattern, then match the start of any subsequent text according to the
+	 * receiving parser.
+	 * <p>
+	 * Upon success, the text matched by the prepended pattern will be consumed,
+	 * along with the result of applying the receiving parser, allowing the text
+	 * to inform mutation of the parse result's state.
+	 * 
+	 * @param pattern
+	 *          A pattern matching the text which should immediately precede the
+	 *          text matched by this parser
+	 * @param incorporate
+	 *          A function taking the result of parsing the receiving parser and
+	 *          the prepended text, and transforming them into a new parse result
+	 * @return A new {@link Parser} instance which also matches against the
+	 *         prepended text pattern
+	 */
 	default Parser<T> prepend(String pattern, BiConsumer<T, String> incorporate) {
 		return prependTransform(pattern, (t, s) -> {
 			incorporate.accept(t, s);
@@ -149,9 +358,58 @@ public interface Parser<T> {
 		});
 	}
 
+	/**
+	 * Derive a new {@link Parser} instance from the receiving instance.
+	 * <p>
+	 * The new parser will first match the start of the text according to the
+	 * receiving parser, then match the start of any subsequent text according to
+	 * the given parser.
+	 * <p>
+	 * Upon success, the result of applying the appended parser will be
+	 * transformed, along with the result of applying the receiving parser, into a
+	 * new result according to the given function.
+	 * 
+	 * @param <U>
+	 *          The type of the parse result of the appended parser
+	 * @param <V>
+	 *          The type of the new parse result
+	 * @param parser
+	 *          A parser matching the text immediately following from the text
+	 *          matched by this parser
+	 * @param incorporate
+	 *          A function taking the result of parsing the receiving parser and
+	 *          the result of parsing the appended parser, and transforming them
+	 *          into a new parse result
+	 * @return A new {@link Parser} instance which also matches against the
+	 *         appended parser
+	 */
 	<U, V> Parser<V> appendTransform(Parser<U> parser,
 			BiFunction<T, U, ? extends V> incorporate);
 
+	/**
+	 * Derive a new {@link Parser} instance from the receiving instance.
+	 * <p>
+	 * The new parser will first match the start of the text according to the
+	 * receiving parser, then match the start of any subsequent text according to
+	 * the given parser.
+	 * <p>
+	 * Upon success, the result of applying the appended parser will be consumed,
+	 * along with the result of applying the receiving parser, allowing the text
+	 * to inform mutation of the parse result's state.
+	 * 
+	 * @param parser
+	 * @param <U>
+	 *          The type of the parse result of the appended parser
+	 * @param pattern
+	 *          A parser matching the text immediately following from the text
+	 *          matched by this parser
+	 * @param incorporate
+	 *          A function taking the result of parsing the receiving parser and
+	 *          the result of parsing the appended parser, and transforming them
+	 *          into a new parse result
+	 * @return A new {@link Parser} instance which also matches against the
+	 *         appended parser
+	 */
 	default <U> Parser<T> append(Parser<U> parser, BiConsumer<T, U> incorporate) {
 		return appendTransform(parser, (BiFunction<T, U, T>) (t, u) -> {
 			incorporate.accept(t, u);
@@ -159,6 +417,31 @@ public interface Parser<T> {
 		});
 	}
 
+	/**
+	 * Derive a new {@link Parser} instance from the receiving instance.
+	 * <p>
+	 * The new parser will first match the start of the text according to the
+	 * receiving parser, then attempt to match the start of any subsequent text
+	 * according to the given parser. If the second step - of matching the
+	 * remaining text with the given parser - fails, then the result of applying
+	 * the receiving parser alone will be returned.
+	 * <p>
+	 * If application of the appended parser also succeeds, the result of applying
+	 * the appended parser will be transformed, along with the result of applying
+	 * the receiving parser, into a new result according to the given function.
+	 * 
+	 * @param <U>
+	 *          The type of the parse result of the appended parser
+	 * @param parser
+	 *          A parser matching the text immediately following from the text
+	 *          matched by this parser
+	 * @param incorporate
+	 *          A function taking the result of parsing the receiving parser and
+	 *          the result of parsing the appended parser, and transforming them
+	 *          into a new parse result
+	 * @return A new {@link Parser} instance which also matches against the
+	 *         appended parser
+	 */
 	<U> Parser<T> tryAppendTransform(Parser<U> parser,
 			BiFunction<T, U, ? extends T> incorporate);
 

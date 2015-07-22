@@ -36,7 +36,7 @@ public class IdentityProperty<T> implements Property<T, T> {
 	public IdentityProperty() {}
 
 	/**
-	 * Create an identity with an initial value.
+	 * Create an identity with the given initial value.
 	 * 
 	 * @param value
 	 *          The initial value for this property.

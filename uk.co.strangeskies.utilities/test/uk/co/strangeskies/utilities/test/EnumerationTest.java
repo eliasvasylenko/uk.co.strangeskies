@@ -18,21 +18,35 @@
  */
 package uk.co.strangeskies.utilities.test;
 
+import java.util.Objects;
+
 import org.junit.Assert;
 import org.junit.Test;
 
 import uk.co.strangeskies.utilities.Enumeration;
 
 /**
- * It is very difficult or impossible to test this class properly, as the
- * important aspects of its behaviour either only occur in extremely rare
- * circumstances, or change slightly with implementation details of the VM, or
- * both.
+ * Careful design is necessary here, as in some cases we are testing what
+ * happens during class initialisation, so extra thought must be put into test
+ * isolation
  * 
  * @author Elias N Vasylenko
  *
  */
 public class EnumerationTest {
+	/**
+	 * Confirm that {@link Enumeration}s are properly initialised when accessed
+	 * first by literal, rather than via {@link Enumeration#getConstants(Class)}.
+	 * This is significant because of the odd initialisation logic to enforce
+	 * instantiation only inside static initialisers.
+	 */
+	@Test
+	public void testEnumLiteralAccess() {
+		Assert.assertEquals("first", NamedEnum.FIRST.name());
+		Assert.assertEquals("second", NamedEnum.SECOND.name());
+		Assert.assertEquals("third", NamedEnum.THIRD.name());
+	}
+
 	/**
 	 * Confirm that an {@link Enumeration} works as an inner class (implementation
 	 * may perform stack trace examination).
@@ -49,7 +63,7 @@ public class EnumerationTest {
 	@Test
 	public void testEnumMemberCount() {
 		Assert
-				.assertEquals(3, Enumeration.getConstants(PopulatedEnum.class).size());
+				.assertEquals(4, Enumeration.getConstants(PopulatedEnum.class).size());
 	}
 
 	/**
@@ -58,9 +72,9 @@ public class EnumerationTest {
 	 */
 	@Test
 	public void testEnumMemberOrder() {
-		for (int i = 0; i < 3; i++) {
-			Assert.assertEquals(i,
-					Enumeration.getConstants(PopulatedEnum.class).get(i).getInstance());
+		for (int i = 0; i < Enumeration.getConstants(NumberedEnum.class).size(); i++) {
+			Assert.assertEquals(i, Enumeration.getConstants(NumberedEnum.class)
+					.get(i).getInstance());
 		}
 	}
 
@@ -70,6 +84,12 @@ public class EnumerationTest {
 	 */
 	@Test(expected = IllegalStateException.class)
 	public void testPostStaticInitialiserFailure() {
+		class EmptyEnum extends Enumeration<EmptyEnum> {
+			public EmptyEnum() {
+				super("");
+			}
+		}
+
 		new EmptyEnum();
 	}
 
@@ -80,13 +100,28 @@ public class EnumerationTest {
 	 */
 	@Test
 	public void testPostStaticInitialiserImmutability() {
+		class EmptyEnum extends Enumeration<EmptyEnum> {
+			public EmptyEnum() {
+				super("");
+			}
+		}
+
 		try {
 			new EmptyEnum();
 		} catch (IllegalStateException e) {}
 		Assert.assertEquals(0, Enumeration.getConstants(EmptyEnum.class).size());
 	}
 
-	static class InnerEnum extends Enumeration<EmptyEnum> {
+	/**
+	 * Confirm that attempts to instantiate multiple instances of an Enumeration
+	 * with the same name will fail.
+	 */
+	@Test(expected = ExceptionInInitializerError.class)
+	public void testUniqueNames() {
+		Enumeration.getConstants(UniqueEnum.class);
+	}
+
+	static class InnerEnum extends Enumeration<InnerEnum> {
 		public static final InnerEnum ELEMENT = new InnerEnum("test");
 
 		public InnerEnum(String name) {
@@ -95,9 +130,12 @@ public class EnumerationTest {
 	}
 }
 
-class EmptyEnum extends Enumeration<EmptyEnum> {
-	public EmptyEnum() {
-		super("");
+class UniqueEnum extends Enumeration<UniqueEnum> {
+	public static final UniqueEnum FIRST = new UniqueEnum();
+	public static final UniqueEnum SECOND = new UniqueEnum();
+
+	public UniqueEnum() {
+		super("Unique");
 	}
 }
 
@@ -107,16 +145,39 @@ class PopulatedEnum extends Enumeration<PopulatedEnum> {
 	public static final PopulatedEnum INSTANCE0 = new PopulatedEnum();
 	public static final PopulatedEnum INSTANCE1 = new PopulatedEnum();
 	public static final PopulatedEnum INSTANCE2 = new PopulatedEnum();
+	public static final PopulatedEnum INSTANCE3 = new PopulatedEnum();
+
+	private PopulatedEnum() {
+		super("Instance" + counter++);
+	}
+}
+
+class NumberedEnum extends Enumeration<NumberedEnum> {
+	private static int counter = 0;
+
+	public static final NumberedEnum INSTANCE0 = new NumberedEnum();
+	public static final NumberedEnum INSTANCE1 = new NumberedEnum();
+	public static final NumberedEnum INSTANCE2 = new NumberedEnum();
 
 	private final int instance;
 
-	private PopulatedEnum() {
-		super("Instance" + counter);
+	private NumberedEnum() {
+		super(Objects.toString(counter));
 
 		this.instance = counter++;
 	}
 
 	public int getInstance() {
 		return instance;
+	}
+}
+
+class NamedEnum extends Enumeration<NamedEnum> {
+	public static final NamedEnum FIRST = new NamedEnum("first");
+	public static final NamedEnum SECOND = new NamedEnum("second");
+	public static final NamedEnum THIRD = new NamedEnum("third");
+
+	private NamedEnum(String name) {
+		super(name);
 	}
 }

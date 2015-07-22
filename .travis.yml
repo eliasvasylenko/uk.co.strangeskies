@@ -7,5 +7,5 @@ env:
   global:
     secure: aHymzi4IVCeX5lZA9j3ovJXZ9UW3YHczVZQuYahkqXiycOanCF8ZxHwWgYjt/tQnhxgabll4Lz/ZkBFf4z7WyxfA1I7UQ3BIIj0RmONzK1XZGLagLHovBb0f6sMOVYHqjHoZ9GgwomIyDYJoDIsV2cd040vBctSHPe8SpIxcefo=
 install: "./gradlew --version"
-script: ./gradlew --continue build aggregateJavadoc publishGhPages -PgithubUser="${GITHUB_TOKEN}"
+script: ./gradlew --continue build test aggregateJavadoc publishGhPages -PgithubUser="${GITHUB_TOKEN}"
   -PgithubPassword=""

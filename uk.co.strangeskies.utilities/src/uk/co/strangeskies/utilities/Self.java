@@ -18,6 +18,7 @@
  */
 package uk.co.strangeskies.utilities;
 
+
 /**
  * For classes which follow the self-bounding pattern. The self-bounding pattern
  * is the use of the final derived class as a type parameter.
