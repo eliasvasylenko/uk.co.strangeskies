@@ -18,8 +18,11 @@
  */
 package uk.co.strangeskies.utilities.test;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.hamcrest.CoreMatchers.not;
+
+import org.hamcrest.comparator.ComparatorMatcherBuilder;
+import org.junit.Assert;
+import org.junit.Test;
 
 import uk.co.strangeskies.utilities.IdentityComparator;
 
@@ -29,7 +32,7 @@ import uk.co.strangeskies.utilities.IdentityComparator;
  * circumstances, or change slightly with implementation details of the VM, or
  * both.
  * 
- * @author tofuser
+ * @author Elias N Vasylenko
  *
  */
 public class IdentityComparatorTest {
@@ -38,10 +41,9 @@ public class IdentityComparatorTest {
 	 */
 	@Test
 	public void compareIdenticalReferences() {
-		IdentityComparator<Object> identityComparator = new IdentityComparator<>();
-
 		Object reference = new Object();
-		Assert.assertEquals(identityComparator.compare(reference, reference), 0);
+		Assert.assertThat("Identical objects should pass identity equality test",
+				reference, comparator().comparesEqualTo(reference));
 	}
 
 	/**
@@ -49,8 +51,12 @@ public class IdentityComparatorTest {
 	 */
 	@Test
 	public void compareDifferentReferences() {
-		IdentityComparator<Object> identityComparator = new IdentityComparator<>();
-		Assert.assertNotEquals(
-				identityComparator.compare(new Object(), new Object()), 0);
+		Assert.assertThat(
+				"Equal but distinct objects should fail identity equality test",
+				new Object(), not(comparator().comparesEqualTo(new Object())));
+	}
+
+	private ComparatorMatcherBuilder<Object> comparator() {
+		return ComparatorMatcherBuilder.comparedBy(new IdentityComparator<>());
 	}
 }

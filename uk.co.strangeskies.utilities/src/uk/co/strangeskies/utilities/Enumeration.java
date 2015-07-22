@@ -204,7 +204,7 @@ public class Enumeration<S extends Enumeration<S>> implements Self<S> {
 
 	private static boolean withinStaticInitialiser(Class<?> initialisingClass) {
 		for (StackTraceElement element : Thread.currentThread().getStackTrace())
-			if (element.getClassName().equals(initialisingClass.getCanonicalName())
+			if (element.getClassName().equals(initialisingClass.getName())
 					&& element.getMethodName().equals("<clinit>"))
 				return true;
 
