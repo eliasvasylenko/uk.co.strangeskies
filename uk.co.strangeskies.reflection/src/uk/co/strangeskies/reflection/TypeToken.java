@@ -735,7 +735,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 
 	private Resolver getResolverWithBounds(BoundSet bounds) {
 		Resolver resolver = getResolver();
-		resolver.getBounds().incorporate(bounds, getRelatedInferenceVariables());
+		resolver.getBounds().incorporate(bounds);
 		return resolver;
 	}
 

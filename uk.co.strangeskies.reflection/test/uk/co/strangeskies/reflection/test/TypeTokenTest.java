@@ -37,6 +37,9 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 
+import org.junit.Assert;
+import org.junit.Test;
+
 import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.AnnotatedWildcardTypes;
 import uk.co.strangeskies.reflection.Annotations;
@@ -53,12 +56,11 @@ import uk.co.strangeskies.reflection.TypeToken.Wildcards;
 import uk.co.strangeskies.utilities.Self;
 
 /**
- * Informal series of tests...
+ * Tests for {@link TypeToken} class.
  * 
- * @author eli
- *
+ * @author Elias N Vasylenko
  */
-public class TestTypeLiteral {
+public class TypeTokenTest {
 	static class A<T> {
 		public class B {}
 	}
@@ -107,18 +109,15 @@ public class TestTypeLiteral {
 		}
 	}
 
-	@SuppressWarnings("javadoc")
-	public static void main(String... args) {
-		test1();
-		test2();
+	@Test
+	public void supertypeParameterTest() {
+		Assert.assertEquals("uk.co.strangeskies.reflection.test.SchemaNode<?, ?>",
+				new TypeToken<SchemaNode.Effective<?, ?>>() {}
+						.resolveSupertypeParameters(SchemaNode.class)
+						.resubstituteCapturedWildcards().toString());
 	}
 
 	static void test1() {
-		System.out.println(new TypeToken<SchemaNode.Effective<?, ?>>() {}
-				.resolveSupertypeParameters(SchemaNode.class));
-		System.out.println();
-		System.out.println();
-
 		System.out.println(new TypeToken<HashSet<String>>() {}
 				.resolveSupertypeParameters(Set.class));
 		System.out.println();
@@ -555,7 +554,7 @@ public class TestTypeLiteral {
 				Preserve.class, Test2.class, List.class, Type.class);
 		String annotationString = AnnotatedTypes
 				.toString(
-						new TypeToken<@Test(thisIsTest = "yeah!", wat = 2.5f) List<@Test2(idk = "helo", wat = 2) ? extends @Preserve Number> @Capture [] @Infer []>() {}
+						new TypeToken<@Test3(thisIsTest = "yeah!", wat = 2.5f) List<@Test2(idk = "helo", wat = 2) ? extends @Preserve Number> @Capture [] @Infer []>() {}
 								.getAnnotatedDeclaration(), imports);
 		System.out.println(annotationString);
 		System.out.println();
@@ -567,7 +566,7 @@ public class TestTypeLiteral {
 		System.out.println(AnnotatedTypes.fromString("Type", imports));
 		System.out.println();
 
-		imports = imports.withImport(Test.class);
+		imports = imports.withImport(Test3.class);
 
 		System.out.println(Annotations.getParser(imports).getProperty()
 				.parse("thisIsTest = \"yeah!\""));
@@ -699,7 +698,7 @@ public class TestTypeLiteral {
 
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target(ElementType.TYPE_USE)
-	@interface Test {
+	@interface Test3 {
 		String thisIsTest();
 
 		float wat();
