@@ -224,7 +224,7 @@ public class StringEscaper {
 		for (int i = 0; i < chars.length; i++) {
 			char character = chars[i];
 
-			StringBuilder sequenceSoFar = new StringBuilder(character);
+			StringBuilder sequenceSoFar = new StringBuilder().append(character);
 			Character escapedCharacter = sequenceEscapingCharacter.get(sequenceSoFar
 					.toString());
 			if (escapedCharacter == null) {
@@ -235,9 +235,9 @@ public class StringEscaper {
 						.toString();
 				SortedMap<String, Character> matches = sequenceEscapingCharacter
 						.subMap(sequenceSoFar.toString(), afterSequenceSoFar);
-				int j = i;
-				while (!matches.isEmpty()) {
-					char nextLetter = chars[++j];
+				int j = i + 1;
+				while (!matches.isEmpty() && j < chars.length) {
+					char nextLetter = chars[j++];
 
 					afterSequenceSoFar = new StringBuilder(sequenceSoFar).append(
 							(char) (nextLetter + 1)).toString();
