@@ -16,7 +16,8 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with uk.co.strangeskies.utilities.  If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.utilities.parser;
+package uk.co.strangeskies.utilities.text.parser;
+
 
 public class ParseException extends RuntimeException {
 	private final String message;

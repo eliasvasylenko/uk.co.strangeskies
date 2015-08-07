@@ -25,6 +25,12 @@ import java.lang.annotation.Target;
 
 @Retention(value = RetentionPolicy.RUNTIME)
 @Target(value = ElementType.TYPE_USE)
-public @interface ClassProperty {
-	Class<?> property();
+public @interface EnumProperty {
+	enum Enum {
+		FIRST,
+		SECOND,
+		THIRD
+	}
+
+	Enum property();
 }

@@ -19,6 +19,8 @@
 package uk.co.strangeskies.reflection.test;
 
 import java.lang.annotation.Annotation;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import org.hamcrest.Matchers;
 import org.junit.Assert;
@@ -30,7 +32,9 @@ import org.junit.runner.RunWith;
 
 import uk.co.strangeskies.reflection.Annotations;
 import uk.co.strangeskies.reflection.Imports;
+import uk.co.strangeskies.reflection.test.annotations.ClassProperty;
 import uk.co.strangeskies.reflection.test.annotations.Plain;
+import uk.co.strangeskies.reflection.test.annotations.StringProperty;
 import uk.co.strangeskies.reflection.test.utilities.AnnotationToken;
 
 /**
@@ -46,7 +50,30 @@ public class AnnotationsTest {
 
 	@DataPoint
 	public static AnnotationToken PLAIN_IMPORTED = new @Plain AnnotationToken(
-			"@Plain", "uk.co.strangeskies.reflection.test.annotations") {};
+			"@Plain", Plain.class) {};
+
+	@DataPoint
+	public static AnnotationToken CLASS_PROPERTY = new @ClassProperty(property = Object.class) AnnotationToken(
+			"@uk.co.strangeskies.reflection.test.annotations.ClassProperty(property = java.lang.Object.class)") {};
+
+	@DataPoint
+	public static AnnotationToken CLASS_PROPERTY_IMPORTED = new @ClassProperty(property = Object.class) AnnotationToken(
+			"@ClassProperty(property = Object.class)", ClassProperty.class,
+			Object.class) {};
+
+	@DataPoint
+	public static AnnotationToken STRING_PROPERTY = new @StringProperty(property = "string") AnnotationToken(
+			"@uk.co.strangeskies.reflection.test.annotations.StringProperty(property = \"string\")") {};
+
+	@DataPoint
+	public static AnnotationToken STRING_PROPERTY_IMPORTED = new @StringProperty(property = "string") AnnotationToken(
+			"@StringProperty(property = \"string\")", StringProperty.class,
+			Object.class) {};
+
+	@DataPoint
+	public static AnnotationToken STRING_PROPERTY_SYMBOLS = new @StringProperty(property = "\"<>()[]{}\"") AnnotationToken(
+			"@StringProperty(property = \"\\\"<>()[]{}\\\"\")", StringProperty.class,
+			Object.class) {};
 
 	@Theory
 	public void toStringWithoutPackageImport(AnnotationToken token) {
@@ -60,6 +87,14 @@ public class AnnotationsTest {
 
 	@Theory
 	public void toStringWithPackageImport(AnnotationToken token) {
+		System.out.println(token.getStringRepresentation());
+		System.out.println(Arrays
+				.stream(token.getAnnotations())
+				.map(
+						a -> Annotations.toString(a,
+								Imports.empty().withPackageImports(token.getPackages())))
+				.collect(Collectors.joining(" ")));
+
 		Assume.assumeFalse("Assuming package imports", token.getPackages()
 				.isEmpty());
 		Annotation annotation = assumeSingleAnnotation(token);

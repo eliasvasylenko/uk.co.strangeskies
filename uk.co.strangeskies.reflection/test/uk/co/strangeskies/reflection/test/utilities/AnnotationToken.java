@@ -27,19 +27,19 @@ public class AnnotationToken {
 	private Set<Package> packages;
 
 	protected AnnotationToken(String stringRepresentation) {
-		this(stringRepresentation, new String[0]);
+		this(stringRepresentation, new Class<?>[0]);
 	}
 
 	protected AnnotationToken(String stringRepresentation,
-			String... importedPackages) {
+			Class<?>... importedClassPackages) {
 		this.stringRepresentation = stringRepresentation;
 
 		// Make sure current classloader is aware of all annotation packages
 		getAnnotations();
 
 		packages = new HashSet<>();
-		for (String importedPackage : importedPackages)
-			packages.add(Package.getPackage(importedPackage));
+		for (Class<?> importedPackage : importedClassPackages)
+			packages.add(importedPackage.getPackage());
 	}
 
 	public String getStringRepresentation() {

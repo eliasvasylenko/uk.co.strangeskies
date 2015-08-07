@@ -16,50 +16,51 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with uk.co.strangeskies.utilities.  If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.utilities.parser;
+package uk.co.strangeskies.utilities.text.parser;
 
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.BiFunction;
 
-public class ChoiceParser<U, T> extends ParserProxy<U, T> {
-	private final Parser<T> onFailure;
+public class PrependingParser<T, U> implements AbstractParser<T> {
+	private final Parser<T> main;
+	private final Parser<U> prepend;
 
-	public ChoiceParser(Supplier<Parser<U>> component,
-			Parser<? extends U> onFailure, Function<? super U, ? extends T> transform) {
-		super(component, transform);
+	private final BiFunction<T, U, ? extends T> combinor;
 
-		this.onFailure = onFailure.transform(transform);
-	}
+	public PrependingParser(Parser<T> main, Parser<U> prepend,
+			BiFunction<T, U, ? extends T> combinor) {
+		this.main = main;
+		this.prepend = prepend;
 
-	@SuppressWarnings("unchecked")
-	public ChoiceParser(Supplier<Parser<U>> component,
-			Function<? super U, ? extends T> transform, Parser<? extends T> onFailure) {
-		super(component, transform);
-
-		this.onFailure = (Parser<T>) onFailure;
+		this.combinor = combinor;
 	}
 
 	@Override
 	public ParseResult<T> parseSubstringImpl(ParseState state) {
-		ParseResult<T> value;
+		ParseResult<U> prependValue;
+		ParseResult<T> mainValue;
+
 		try {
-			value = super.parseSubstringImpl(state);
+			prependValue = prepend.parseSubstring(state.toEnd(false));
 		} catch (ParseException e) {
 			try {
-				value = onFailure.parseSubstring(state)
-						.mapState(s -> s.addException(e));
+				return main.parseSubstring(state).mapState(s -> s.addException(e));
 			} catch (ParseException e2) {
 				throw ParseException.getHigher(e, e2);
+			} catch (Exception e2) {
+				throw e;
 			}
 		} catch (Exception e) {
-			value = onFailure.parseSubstring(state);
+			return main.parseSubstring(state);
 		}
-		return value;
+
+		mainValue = main.parseSubstring(prependValue.state().toEnd(state.toEnd()));
+
+		return mainValue.mapState(s -> s.addException(prependValue.state()))
+				.mapResult(m -> combinor.apply(m, prependValue.result()));
 	}
 
 	@Override
-	public <V> Parser<V> transform(Function<? super T, ? extends V> transform) {
-		return new ChoiceParser<>(getComponent(),
-				getTransform().andThen(transform), onFailure.transform(transform));
+	public String toString() {
+		return "Prepending Parser [" + prepend + " > " + main + "]";
 	}
 }

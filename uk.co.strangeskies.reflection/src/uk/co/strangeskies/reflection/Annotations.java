@@ -33,7 +33,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.Types.TypeParser;
-import uk.co.strangeskies.utilities.parser.Parser;
+import uk.co.strangeskies.utilities.text.StringEscaper;
+import uk.co.strangeskies.utilities.text.parser.Parser;
 import uk.co.strangeskies.utilities.tuples.Pair;
 
 /**
@@ -95,7 +96,7 @@ public final class Annotations {
 				Object defaultValue = propertyMethod.getDefaultValue();
 
 				/*
-				 * For each method declared on the annotation type:
+				 * For each method declared on the annotation type...
 				 */
 				boolean equal;
 				if (propertyMethod.getReturnType().isArray()) {
@@ -104,6 +105,9 @@ public final class Annotations {
 					equal = Objects.equals(value, defaultValue);
 				}
 
+				/*
+				 * If value is not equal to default, output:
+				 */
 				if (!equal) {
 					annotationProperties.add(new StringBuilder()
 							.append(propertyMethod.getName()).append(" = ")
@@ -136,18 +140,31 @@ public final class Annotations {
 									.map(Annotations::toPropertyString)
 									.collect(Collectors.joining(", "))).append(" }");
 		} else {
-			String objectString = object.toString();
-			StringBuilder builder = new StringBuilder(objectString);
+			StringBuilder builder = new StringBuilder();
 
 			if (String.class.isInstance(object)) {
-				builder.append('"').insert(0, '"');
+				builder.append('"')
+						.append(StringEscaper.java().escape(object.toString())).append('"');
+
 			} else if (Double.class.isInstance(object)) {
+				String objectString = object.toString();
+				builder.append(objectString);
 				if (!objectString.contains("."))
 					builder.append("d");
+
 			} else if (Float.class.isInstance(object)) {
-				builder.append("f");
+				builder.append(object.toString()).append("f");
+
 			} else if (Long.class.isInstance(object)) {
+				builder.append(object.toString());
+				// if (((Long) object).longValue() > Integer.MAX_VALUE)
 				builder.append("l");
+			} else if (Class.class.isInstance(object)) {
+				builder.append(Types.toString((Class<?>) object, imports)).append(
+						".class");
+
+			} else {
+				builder.append(object.toString());
 			}
 
 			return builder;
