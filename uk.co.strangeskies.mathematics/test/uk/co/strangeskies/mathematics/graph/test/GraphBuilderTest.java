@@ -20,7 +20,9 @@ package uk.co.strangeskies.mathematics.graph.test;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import org.testng.Assert;
@@ -49,36 +51,32 @@ public class GraphBuilderTest {
 	}
 
 	@Test
-	public Graph<Object, Object> buildTest() {
-		return graph().create();
+	public void buildTest() {
+		graph().create();
 	}
 
 	@Test
-	public Graph<String, Object> buildVerticesTest() {
+	public void buildVerticesTest() {
 		List<String> vertices = Arrays.asList("one", "two", "three");
 
 		Graph<String, Object> graph = graph().vertices(vertices).create();
 
 		Assert.assertEquals(vertices, graph.vertices());
 		Assert.assertEquals(Collections.emptySet(), graph.edges().keySet());
-
-		return graph;
 	}
 
 	@Test
-	public Graph<String, Object> buildVerticesExclusionTest() {
+	public void buildVerticesExclusionTest() {
 		List<String> vertices = Arrays.asList("one", "two", "three", "three");
 
 		Graph<String, Object> graph = graph().vertices(vertices).create();
 
 		Assert.assertEquals(vertices, graph.vertices());
 		Assert.assertEquals(Collections.emptySet(), graph.edges().keySet());
-
-		return graph;
 	}
 
 	@Test
-	public Graph<String, Object> buildEdgesTest() {
+	public void buildEdgesTest() {
 		List<String> vertices = Arrays.asList("one", "two", "three");
 		List<EdgeVertices<String>> edges = Arrays.asList(
 				EdgeVertices.between("one", "two"),
@@ -89,27 +87,23 @@ public class GraphBuilderTest {
 
 		Assert.assertEquals(vertices, graph.vertices());
 		Assert.assertEquals(edges, graph.edges().values());
-
-		return graph;
 	}
 
 	@Test
-	public Graph<String, Object> buildAutoEdgesTest() {
-		List<String> vertices = Arrays.asList("one", "two", "three");
-		List<EdgeVertices<String>> edges = Arrays.asList(EdgeVertices.between(
-				"one", "two"));
+	public void buildAutoEdgesTest() {
+		Set<String> vertices = new HashSet<>(Arrays.asList("one", "two", "three"));
+		Set<EdgeVertices<String>> edges = new HashSet<>(Arrays.asList(EdgeVertices
+				.between("one", "two")));
 
 		Graph<String, Object> graph = graph().vertices("one", "two", "three")
 				.edgeRule((s1, s2) -> s1.length() == s2.length()).create();
 
-		Assert.assertEquals(vertices, graph.vertices());
-		Assert.assertEquals(edges, graph.edges().values());
-
-		return graph;
+		Assert.assertEquals(graph.vertices(), vertices);
+		Assert.assertEquals(graph.edges().values(), edges);
 	}
 
 	@Test
-	public Graph<String, Object> buildUnmodifiableTest() {
+	public void buildUnmodifiableTest() {
 		List<String> vertices = Arrays.asList("one", "two", "three");
 		List<EdgeVertices<String>> edges = Arrays.asList(
 				EdgeVertices.between("one", "two"),
@@ -120,12 +114,10 @@ public class GraphBuilderTest {
 
 		Assert.assertEquals(vertices, graph.vertices());
 		Assert.assertEquals(edges, graph.edges().values());
-
-		return graph;
 	}
 
 	@Test
-	public Graph<String, Object> buildDirectedTest() {
+	public void buildDirectedTest() {
 		List<String> vertices = Arrays.asList("one", "two", "three");
 
 		Graph<String, Object> graph = graph().vertices(vertices)
@@ -147,12 +139,10 @@ public class GraphBuilderTest {
 				graph.vertices().outgoingFrom("three"));
 		Assert.assertEquals(Arrays.asList("one", "two"), graph.vertices()
 				.incomingTo("three"));
-
-		return graph;
 	}
 
 	@Test
-	public Graph<String, Object> buildWithComparatorTest() {
+	public void buildWithComparatorTest() {
 		String one = "one";
 		String two = "two";
 		String three = new String(one);
@@ -168,12 +158,10 @@ public class GraphBuilderTest {
 						Arrays.asList(EdgeVertices.between(one, two),
 								EdgeVertices.between(two, three),
 								EdgeVertices.between(three, one)), graph.edges().values());
-
-		return graph;
 	}
 
 	@Test
-	public Graph<String, Object> buildDirectedWithComparatorTest() {
+	public void buildDirectedWithComparatorTest() {
 		String one = "one";
 		String two = "two";
 		String three = new String(one);
@@ -198,12 +186,10 @@ public class GraphBuilderTest {
 				graph.vertices().outgoingFrom(three));
 		Assert.assertEquals(Arrays.asList(one, two),
 				graph.vertices().incomingTo(three));
-
-		return graph;
 	}
 
 	@Test
-	public Graph<String, String> buildWithEdgeFactoryTest() {
+	public void buildWithEdgeFactoryTest() {
 		List<String> vertices = Arrays.asList("one", "two", "three");
 
 		Graph<String, String> graph = graph().vertices(vertices)
@@ -213,8 +199,6 @@ public class GraphBuilderTest {
 
 		Assert.assertEquals(Arrays.asList("one -> two", "three -> two",
 				"one -> three"), graph.edges().keySet());
-
-		return graph;
 	}
 
 	// TODO edge vertices from edge object
