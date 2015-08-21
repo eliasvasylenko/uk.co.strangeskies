@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with uk.co.strangeskies.reflection.  If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection.test.utilities;
+package uk.co.strangeskies.reflection.test;
 
 import java.lang.annotation.Annotation;
 import java.util.HashSet;

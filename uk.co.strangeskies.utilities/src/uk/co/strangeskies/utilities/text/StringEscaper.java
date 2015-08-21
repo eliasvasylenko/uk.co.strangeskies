@@ -18,13 +18,11 @@
  */
 package uk.co.strangeskies.utilities.text;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 /**
  * Allow the escape of special characters in a character sequence by prefixture
@@ -34,76 +32,48 @@ import java.util.stream.Collectors;
  */
 public class StringEscaper {
 	@SuppressWarnings("serial")
-	private final static StringEscaper JAVA = new StringEscaper("\"'",
-			new HashMap<Character, String>() {
+	private final static StringEscaper JAVA = new StringEscaper('\\', "\"\'",
+			new HashMap<String, String>() {
 				{
-					put('t', "\t");
-					put('b', "\b");
-					put('n', "\n");
-					put('r', "\r");
-					put('f', "\f");
+					put("t", "\t");
+					put("b", "\b");
+					put("n", "\n");
+					put("r", "\r");
+					put("f", "\f");
 				}
 			});
 
-	private final char escapeCharacter;
-	private final Map<Character, String> escapedSequences;
-	private final SortedMap<String, Character> sequenceEscapingCharacter;
-
 	/**
-	 * Create a new escaper with the escape character '\' and the escapable
-	 * characters described by the given string.
-	 * 
-	 * @param escapingCharacters
-	 *          The characters which should be escaped with the given escape
-	 *          character
+	 * @return A string escaper for java string literals.
 	 */
-	public StringEscaper(String escapingCharacters) {
-		this('\\', escapingCharacters);
+	public static StringEscaper java() {
+		return JAVA;
 	}
 
-	/**
-	 * Create a new escaper with the escape character '\' and the given escapable
-	 * characters.
-	 * 
-	 * @param escapingCharacters
-	 *          The characters which should be escaped with the given escape
-	 *          character
-	 */
-	public StringEscaper(Collection<Character> escapingCharacters) {
-		this('\\', escapingCharacters);
-	}
+	@SuppressWarnings("serial")
+	private final static StringEscaper XML = new StringEscaper(
+			new HashMap<String, String>() {
+				{
+					put("&gt;", ">");
+					put("&lt;", "<");
+					put("&quot;", "\"");
+					put("&amp;", "&");
+					put("&apos;", "'");
+				}
+			});
 
 	/**
-	 * Create a new escaper with the escape character '\' and the escapable
-	 * characters described by the given string.
-	 * 
-	 * @param escapingCharacters
-	 *          The characters which should be escaped with the given escape
-	 *          character
-	 * @param escapingTransforms
-	 *          Characters which should be escaped with the given escape
-	 *          character, mapped to the strings they represent.
+	 * @return A string escaper for java string literals.
 	 */
-	public StringEscaper(String escapingCharacters,
-			Map<Character, String> escapingTransforms) {
-		this('\\', escapingCharacters, escapingTransforms);
+	public static StringEscaper xml() {
+		return XML;
 	}
 
-	/**
-	 * Create a new escaper with the escape character '\' and the given escapable
-	 * characters.
+	/*
 	 * 
-	 * @param escapingCharacters
-	 *          The characters which should be escaped with the given escape
-	 *          character
-	 * @param escapingTransforms
-	 *          Characters which should be escaped with the given escape
-	 *          character, mapped to the strings they represent.
 	 */
-	public StringEscaper(Collection<Character> escapingCharacters,
-			Map<Character, String> escapingTransforms) {
-		this('\\', escapingCharacters, escapingTransforms);
-	}
+	private final SortedMap<String, String> escapeToSequence;
+	private final SortedMap<String, String> sequenceToEscape;
 
 	/**
 	 * Create a new escaper with the given escape character and the escapable
@@ -120,21 +90,6 @@ public class StringEscaper {
 	}
 
 	/**
-	 * Create a new escaper with the given escape character and the given
-	 * escapable characters.
-	 * 
-	 * @param escapeCharacer
-	 *          The character with which to escape the given escaping characters
-	 * @param escapingCharacters
-	 *          The characters which should be escaped with the given escape
-	 *          character
-	 */
-	public StringEscaper(char escapeCharacer,
-			Collection<Character> escapingCharacters) {
-		this(escapeCharacer, escapingCharacters, new HashMap<>());
-	}
-
-	/**
 	 * Create a new escaper with the given escape character and the escapable
 	 * characters described by the given string.
 	 * 
@@ -143,73 +98,83 @@ public class StringEscaper {
 	 * @param escapingCharacters
 	 *          The characters which should be escaped with the given escape
 	 *          character
-	 * @param escapingTransforms
-	 *          Characters which should be escaped with the given escape
-	 *          character, mapped to the strings they represent.
+	 * @param escapeTransforms
+	 *          Strings which should be escaped with the given escape character,
+	 *          mapped to the strings they represent.
 	 */
 	public StringEscaper(char escapeCharacer, String escapingCharacters,
-			Map<Character, String> escapingTransforms) {
-		this(escapeCharacer,
-				escapingCharacters.chars().mapToObj(i -> Character.valueOf((char) i))
-						.collect(Collectors.toSet()), escapingTransforms);
+			Map<String, String> escapeTransforms) {
+		this(composeEscapingTransforms(escapeCharacer, escapingCharacters,
+				escapeTransforms));
+	}
+
+	private static SortedMap<String, String> composeEscapingTransforms(
+			char escapeCharacer, String escapingCharacters,
+			Map<String, String> escapeTransforms) {
+		String escapeCharacterString = ((Character) escapeCharacer).toString();
+
+		SortedMap<String, String> escapedCharacters = new TreeMap<>();
+
+		for (Map.Entry<String, String> escapeTransform : escapeTransforms
+				.entrySet())
+			escapedCharacters.put(escapeCharacterString + escapeTransform.getKey(),
+					escapeTransform.getValue());
+
+		for (Character escapingCharacter : escapingCharacters.toCharArray())
+			escapedCharacters.put(escapeCharacterString + escapingCharacter,
+					escapingCharacter.toString());
+
+		escapedCharacters.put(escapeCharacterString, escapeCharacterString
+				+ escapeCharacterString);
+
+		return escapedCharacters;
 	}
 
 	/**
 	 * Create a new escaper with the given escape character and the given
 	 * escapable characters.
 	 * 
-	 * @param escapeCharacer
-	 *          The character with which to escape the given escaping characters
-	 * @param escapingCharacterSet
-	 *          The characters which should be escaped with the given escape
-	 *          character
-	 * @param escapingTransforms
-	 *          Characters which should be escaped with the given escape
-	 *          character, mapped to the strings they represent.
+	 * @param escapeTransforms
+	 *          Strings which should be escaped with the given escape character,
+	 *          mapped to the strings they represent.
 	 */
-	public StringEscaper(char escapeCharacer,
-			Collection<Character> escapingCharacterSet,
-			Map<Character, String> escapingTransforms) {
-		this.escapeCharacter = escapeCharacer;
-
-		Map<Character, String> escapingCharacters = new HashMap<>(
-				escapingTransforms);
-		for (Character character : escapingCharacterSet)
-			escapingCharacters.put(character, character.toString());
-		escapingCharacters.put(escapeCharacer, Character.valueOf(escapeCharacer)
-				.toString());
-
-		SortedMap<String, Character> escapedCharacters = new TreeMap<>();
-		for (Map.Entry<Character, String> escapingCharacter : escapingCharacters
-				.entrySet())
-			escapedCharacters.put(escapingCharacter.getValue(),
-					escapingCharacter.getKey());
-
-		this.escapedSequences = Collections.unmodifiableMap(escapingCharacters);
-		this.sequenceEscapingCharacter = Collections
-				.unmodifiableSortedMap(escapedCharacters);
+	public StringEscaper(Map<String, String> escapeTransforms) {
+		this(new TreeMap<>(escapeTransforms));
 	}
 
 	/**
-	 * @return The escape character
+	 * Create a new escaper with the given escape character and the given
+	 * escapable characters.
+	 * 
+	 * @param escapeTransforms
+	 *          Strings which should be escaped with the given escape character,
+	 *          mapped to the strings they represent.
 	 */
-	public char getEscapeCharacer() {
-		return escapeCharacter;
+	private StringEscaper(SortedMap<String, String> escapeTransforms) {
+		SortedMap<String, String> inverseTransforms = new TreeMap<>();
+		for (Map.Entry<String, String> escapingCharacter : escapeTransforms
+				.entrySet())
+			inverseTransforms.put(escapingCharacter.getValue(),
+					escapingCharacter.getKey());
+
+		this.escapeToSequence = Collections.unmodifiableSortedMap(escapeTransforms);
+		this.sequenceToEscape = Collections
+				.unmodifiableSortedMap(inverseTransforms);
 	}
 
 	/**
 	 * @return A mapping of escape characters to the character sequences they
 	 *         escape.
 	 */
-	public Map<Character, String> getEscapingCharacters() {
-		return escapedSequences;
+	public SortedMap<String, String> getEscapingCharacters() {
+		return escapeToSequence;
 	}
 
 	/**
 	 * @return A mapping of character sequences to their escaped characters.
 	 */
-	public SortedMap<String, Character> getEscapedCharacters() {
-		return sequenceEscapingCharacter;
+	public SortedMap<String, String> getEscapedCharacters() {
+		return sequenceToEscape;
 	}
 
 	/**
@@ -218,51 +183,7 @@ public class StringEscaper {
 	 * @return The escaped form of the given string.
 	 */
 	public String escape(String string) {
-		StringBuilder builder = new StringBuilder();
-
-		char[] chars = string.toCharArray();
-		for (int i = 0; i < chars.length; i++) {
-			char character = chars[i];
-
-			StringBuilder sequenceSoFar = new StringBuilder().append(character);
-			Character escapedCharacter = sequenceEscapingCharacter.get(sequenceSoFar
-					.toString());
-			if (escapedCharacter == null) {
-				/*
-				 * No escapable sequence found for a single character, so look further
-				 */
-				String afterSequenceSoFar = Character.valueOf((char) (character + 1))
-						.toString();
-				SortedMap<String, Character> matches = sequenceEscapingCharacter
-						.subMap(sequenceSoFar.toString(), afterSequenceSoFar);
-				int j = i + 1;
-				while (!matches.isEmpty() && j < chars.length) {
-					char nextLetter = chars[j++];
-
-					afterSequenceSoFar = new StringBuilder(sequenceSoFar).append(
-							(char) (nextLetter + 1)).toString();
-					sequenceSoFar.append(nextLetter);
-
-					escapedCharacter = sequenceEscapingCharacter.get(sequenceSoFar
-							.toString());
-					if (escapedCharacter != null)
-						break;
-
-					matches = matches
-							.subMap(sequenceSoFar.toString(), afterSequenceSoFar);
-
-					escapedCharacter = sequenceEscapingCharacter.get(Character.valueOf(
-							character).toString());
-				}
-			}
-
-			if (escapedCharacter != null)
-				builder.append('\\').append(escapedCharacter);
-			else
-				builder.append(character);
-		}
-
-		return builder.toString();
+		return mapString(string, sequenceToEscape);
 	}
 
 	/**
@@ -271,33 +192,54 @@ public class StringEscaper {
 	 * @return The escaped form of the given string.
 	 */
 	public String unescape(String string) {
+		return mapString(string, escapeToSequence);
+	}
+
+	private String mapString(String string, SortedMap<String, String> mapping) {
 		StringBuilder builder = new StringBuilder();
 
 		char[] chars = string.toCharArray();
 		for (int i = 0; i < chars.length; i++) {
+			/*
+			 * For each character in the string
+			 */
 			char character = chars[i];
 
-			if (character == '\\') {
-				character = chars[++i];
+			StringBuilder sequenceSoFar = new StringBuilder().append(character);
+			String escapedString = mapping.get(sequenceSoFar.toString());
+			if (escapedString == null) {
+				/*
+				 * No escapable sequence found for a single character, so look further
+				 */
+				String afterSequenceSoFar = ((Character) (char) (character + 1))
+						.toString();
+				SortedMap<String, String> matches = mapping.subMap(
+						sequenceSoFar.toString(), afterSequenceSoFar);
+				int j = i + 1;
+				while (!matches.isEmpty() && j < chars.length) {
+					char nextLetter = chars[j++];
 
-				String escapedSequence = escapedSequences.get(character);
-				if (escapedSequence != null)
-					builder.append(escapedSequence);
-				else
-					throw new IllegalArgumentException("String '" + string
-							+ "' contains illegal escape character '" + character
-							+ "' at index '" + i + "'");
-			} else
-				builder.append(character);
+					afterSequenceSoFar = new StringBuilder(sequenceSoFar).append(
+							(char) (nextLetter + 1)).toString();
+					sequenceSoFar.append(nextLetter);
+
+					escapedString = mapping.get(sequenceSoFar.toString());
+					if (escapedString != null) {
+						i = j;
+						break;
+					}
+
+					matches = matches
+							.subMap(sequenceSoFar.toString(), afterSequenceSoFar);
+				}
+			}
+
+			if (escapedString != null)
+				builder.append(escapedString);
+			else
+				builder.append(chars[i]);
 		}
 
 		return builder.toString();
-	}
-
-	/**
-	 * @return A string escaper for java string literals.
-	 */
-	public static StringEscaper java() {
-		return JAVA;
 	}
 }

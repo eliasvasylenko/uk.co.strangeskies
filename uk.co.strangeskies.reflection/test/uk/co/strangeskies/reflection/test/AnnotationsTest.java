@@ -19,8 +19,6 @@
 package uk.co.strangeskies.reflection.test;
 
 import java.lang.annotation.Annotation;
-import java.util.Arrays;
-import java.util.stream.Collectors;
 
 import org.hamcrest.Matchers;
 import org.junit.Assert;
@@ -35,7 +33,6 @@ import uk.co.strangeskies.reflection.Imports;
 import uk.co.strangeskies.reflection.test.annotations.ClassProperty;
 import uk.co.strangeskies.reflection.test.annotations.Plain;
 import uk.co.strangeskies.reflection.test.annotations.StringProperty;
-import uk.co.strangeskies.reflection.test.utilities.AnnotationToken;
 
 /**
  * Tests for {@link Annotations} class.
@@ -71,7 +68,11 @@ public class AnnotationsTest {
 			Object.class) {};
 
 	@DataPoint
-	public static AnnotationToken STRING_PROPERTY_SYMBOLS = new @StringProperty(property = "\"<>()[]{}\"") AnnotationToken(
+	public static AnnotationToken STRING_PROPERTY_SYMBOLS1 = new @StringProperty(property = "\n") AnnotationToken(
+			"@StringProperty(property = \"\\n\")", StringProperty.class, Object.class) {};
+
+	@DataPoint
+	public static AnnotationToken STRING_PROPERTY_SYMBOLS2 = new @StringProperty(property = "\"<>()[]{}\"") AnnotationToken(
 			"@StringProperty(property = \"\\\"<>()[]{}\\\"\")", StringProperty.class,
 			Object.class) {};
 
@@ -87,24 +88,14 @@ public class AnnotationsTest {
 
 	@Theory
 	public void toStringWithPackageImport(AnnotationToken token) {
-		System.out.println(token.getStringRepresentation());
-		System.out.println(Arrays
-				.stream(token.getAnnotations())
-				.map(
-						a -> Annotations.toString(a,
-								Imports.empty().withPackageImports(token.getPackages())))
-				.collect(Collectors.joining(" ")));
-
 		Assume.assumeFalse("Assuming package imports", token.getPackages()
 				.isEmpty());
 		Annotation annotation = assumeSingleAnnotation(token);
 
-		Imports imports = Imports.empty();
-		for (Package packageImport : token.getPackages())
-			imports = imports.withPackageImport(packageImport);
-
-		Assert.assertEquals(token.getStringRepresentation(),
-				Annotations.toString(annotation, imports));
+		Assert.assertEquals(
+				token.getStringRepresentation(),
+				Annotations.toString(annotation,
+						Imports.empty().withPackageImports(token.getPackages())));
 	}
 
 	private Annotation assumeSingleAnnotation(AnnotationToken token) {
