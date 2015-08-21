@@ -159,6 +159,7 @@ public final class Annotations {
 				builder.append(object.toString());
 				// if (((Long) object).longValue() > Integer.MAX_VALUE)
 				builder.append("l");
+
 			} else if (Class.class.isInstance(object)) {
 				builder.append(Types.toString((Class<?>) object, imports)).append(
 						".class");
