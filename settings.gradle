@@ -10,6 +10,12 @@ import aQute.bnd.build.Workspace
 buildscript {
   repositories {
     jcenter()
+    ivy {
+      url 'https://bndtools.ci.cloudbees.com/job/bnd.master/lastSuccessfulBuild/artifact/dist/bundles'
+      layout 'pattern', {
+            artifact '[module]/[artifact]-[revision].[ext]' /* OSGi repo pattern */
+      }
+    }
   }
   dependencies {
     classpath bnd_plugin
