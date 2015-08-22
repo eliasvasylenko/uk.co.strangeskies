@@ -1,0 +1,1003 @@
+<?xml version="1.0" encoding="utf-8"?>
+<repository increment="1440274586589" name="Release" xmlns="http://www.osgi.org/xmlns/repository/v1.0.0">
+  <resource>
+    <capability namespace="osgi.identity">
+      <attribute name="osgi.identity" value="uk.co.strangeskies.expressions"/>
+      <attribute name="type" value="osgi.bundle"/>
+      <attribute name="version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.content">
+      <attribute name="osgi.content" value="6ce7f10f6882abd3674ddad557c621f959af13fa4a6e731841a1d59e9eb6540e"/>
+      <attribute name="url" value="uk.co.strangeskies.expressions/uk.co.strangeskies.expressions-0.0.0.jar"/>
+      <attribute name="size" type="Long" value="67307"/>
+      <attribute name="mime" value="application/vnd.osgi.bundle"/>
+    </capability>
+    <capability namespace="osgi.wiring.bundle">
+      <attribute name="osgi.wiring.bundle" value="uk.co.strangeskies.expressions"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.wiring.host">
+      <attribute name="osgi.wiring.host" value="uk.co.strangeskies.expressions"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.mathematics.expression"/>
+      <attribute name="version" type="Version" value="0.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.expressions"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+      <directive name="uses" value="uk.co.strangeskies.mathematics.expression.collection,uk.co.strangeskies.utilities,uk.co.strangeskies.utilities.function"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.mathematics.expression.buffer"/>
+      <attribute name="version" type="Version" value="0.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.expressions"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+      <directive name="uses" value="uk.co.strangeskies.mathematics.expression"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.mathematics.expression.collection"/>
+      <attribute name="version" type="Version" value="0.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.expressions"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+      <directive name="uses" value="uk.co.strangeskies.mathematics.expression,uk.co.strangeskies.utilities"/>
+    </capability>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=uk.co.strangeskies.mathematics.expression)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=uk.co.strangeskies.mathematics.expression.collection)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities.function)(version&gt;=2.0.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.ee">
+      <directive name="filter" value="(&amp;(osgi.ee=JavaSE)(version=1.8))"/>
+    </requirement>
+  </resource>
+  <resource>
+    <capability namespace="osgi.identity">
+      <attribute name="osgi.identity" value="uk.co.strangeskies.mathematics.geometry"/>
+      <attribute name="type" value="osgi.bundle"/>
+      <attribute name="version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.content">
+      <attribute name="osgi.content" value="0468945fac61f9a329d6398b6a04618dc563795afd05a107dfa1a1c7642cb25e"/>
+      <attribute name="url" value="uk.co.strangeskies.mathematics.geometry/uk.co.strangeskies.mathematics.geometry-0.0.0.jar"/>
+      <attribute name="size" type="Long" value="246078"/>
+      <attribute name="mime" value="application/vnd.osgi.bundle"/>
+    </capability>
+    <capability namespace="osgi.wiring.bundle">
+      <attribute name="osgi.wiring.bundle" value="uk.co.strangeskies.mathematics.geometry"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.wiring.host">
+      <attribute name="osgi.wiring.host" value="uk.co.strangeskies.mathematics.geometry"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.mathematics.geometry"/>
+      <attribute name="version" type="Version" value="0.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.mathematics.geometry"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+      <directive name="uses" value="uk.co.strangeskies.mathematics,uk.co.strangeskies.mathematics.expression,uk.co.strangeskies.mathematics.geometry.matrix,uk.co.strangeskies.mathematics.geometry.matrix.vector,uk.co.strangeskies.mathematics.values,uk.co.strangeskies.utilities,uk.co.strangeskies.utilities.factory"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.mathematics.geometry.matrix"/>
+      <attribute name="version" type="Version" value="0.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.mathematics.geometry"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+      <directive name="uses" value="uk.co.strangeskies.mathematics.expression,uk.co.strangeskies.mathematics.geometry,uk.co.strangeskies.mathematics.geometry.matrix.vector,uk.co.strangeskies.mathematics.operation,uk.co.strangeskies.mathematics.values,uk.co.strangeskies.utilities,uk.co.strangeskies.utilities.function"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.mathematics.geometry.matrix.building"/>
+      <attribute name="version" type="Version" value="0.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.mathematics.geometry"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+      <directive name="uses" value="uk.co.strangeskies.mathematics.geometry.matrix,uk.co.strangeskies.mathematics.geometry.matrix.vector,uk.co.strangeskies.mathematics.values,uk.co.strangeskies.utilities.factory"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.mathematics.geometry.matrix.vector"/>
+      <attribute name="version" type="Version" value="0.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.mathematics.geometry"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+      <directive name="uses" value="uk.co.strangeskies.mathematics.geometry,uk.co.strangeskies.mathematics.geometry.matrix,uk.co.strangeskies.mathematics.operation,uk.co.strangeskies.mathematics.values,uk.co.strangeskies.utilities"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.mathematics.geometry.shape"/>
+      <attribute name="version" type="Version" value="0.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.mathematics.geometry"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+      <directive name="uses" value="uk.co.strangeskies.mathematics.expression,uk.co.strangeskies.mathematics.geometry,uk.co.strangeskies.mathematics.geometry.matrix.vector,uk.co.strangeskies.mathematics.logic,uk.co.strangeskies.mathematics.values,uk.co.strangeskies.utilities,uk.co.strangeskies.utilities.factory"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.mathematics.geometry.shape.mesh"/>
+      <attribute name="version" type="Version" value="0.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.mathematics.geometry"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.mathematics.geometry.shape.tessellation"/>
+      <attribute name="version" type="Version" value="0.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.mathematics.geometry"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+      <directive name="uses" value="uk.co.strangeskies.mathematics.expression,uk.co.strangeskies.mathematics.geometry.matrix.vector,uk.co.strangeskies.mathematics.geometry.shape,uk.co.strangeskies.mathematics.geometry.shape.mesh,uk.co.strangeskies.mathematics.values"/>
+    </capability>
+    <capability namespace="osgi.service">
+      <attribute name="objectClass" type="List&lt;String&gt;" value="uk.co.strangeskies.mathematics.geometry.matrix.building.MatrixBuilder"/>
+    </capability>
+    <capability namespace="osgi.service">
+      <attribute name="objectClass" type="List&lt;String&gt;" value="uk.co.strangeskies.mathematics.geometry.matrix.building.MatrixBuilder"/>
+      <directive name="uses" value="uk.co.strangeskies.mathematics.geometry.matrix.building"/>
+    </capability>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.mathematics)(version&gt;=0.0.0)(!(version&gt;=1.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.mathematics.expression)(version&gt;=0.0.0)(!(version&gt;=1.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.mathematics.expression.collection)(version&gt;=0.0.0)(!(version&gt;=1.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=uk.co.strangeskies.mathematics.geometry)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=uk.co.strangeskies.mathematics.geometry.matrix)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=uk.co.strangeskies.mathematics.geometry.matrix.building)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=uk.co.strangeskies.mathematics.geometry.matrix.vector)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=uk.co.strangeskies.mathematics.geometry.shape)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=uk.co.strangeskies.mathematics.geometry.shape.mesh)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=uk.co.strangeskies.mathematics.geometry.shape.tessellation)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.mathematics.logic)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.mathematics.operation)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.mathematics.values)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities.collection)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities.factory)(version&gt;=2.0.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities.function)(version&gt;=2.0.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities.function.collection)(version&gt;=2.0.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.ee">
+      <directive name="filter" value="(&amp;(osgi.ee=JavaSE)(version=1.8))"/>
+    </requirement>
+    <requirement namespace="osgi.extender">
+      <directive name="filter" value="(&amp;(osgi.extender=osgi.component)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))"/>
+      <directive name="effective" value="active"/>
+    </requirement>
+  </resource>
+  <resource>
+    <capability namespace="osgi.identity">
+      <attribute name="osgi.identity" value="uk.co.strangeskies.mathematics"/>
+      <attribute name="type" value="osgi.bundle"/>
+      <attribute name="version" type="Version" value="1.0.0.201508221848"/>
+    </capability>
+    <capability namespace="osgi.content">
+      <attribute name="osgi.content" value="9098f95005b731978c8636a319ef5960854fce56e68cecac6ae982c309b06bbe"/>
+      <attribute name="url" value="uk.co.strangeskies.mathematics/uk.co.strangeskies.mathematics-1.0.0.jar"/>
+      <attribute name="size" type="Long" value="277967"/>
+      <attribute name="mime" value="application/vnd.osgi.bundle"/>
+    </capability>
+    <capability namespace="osgi.wiring.bundle">
+      <attribute name="osgi.wiring.bundle" value="uk.co.strangeskies.mathematics"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+    </capability>
+    <capability namespace="osgi.wiring.host">
+      <attribute name="osgi.wiring.host" value="uk.co.strangeskies.mathematics"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.mathematics"/>
+      <attribute name="version" type="Version" value="0.0.1"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.mathematics"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+      <directive name="uses" value="uk.co.strangeskies.mathematics.operation,uk.co.strangeskies.utilities"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.mathematics.expression"/>
+      <attribute name="version" type="Version" value="0.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.mathematics"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+      <directive name="uses" value="uk.co.strangeskies.mathematics.expression.collection,uk.co.strangeskies.utilities,uk.co.strangeskies.utilities.function"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.mathematics.expression.buffer"/>
+      <attribute name="version" type="Version" value="0.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.mathematics"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+      <directive name="uses" value="uk.co.strangeskies.mathematics.expression"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.mathematics.expression.collection"/>
+      <attribute name="version" type="Version" value="0.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.mathematics"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+      <directive name="uses" value="uk.co.strangeskies.mathematics.expression,uk.co.strangeskies.utilities"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.mathematics.graph"/>
+      <attribute name="version" type="Version" value="0.0.1"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.mathematics"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+      <directive name="uses" value="uk.co.strangeskies.utilities,uk.co.strangeskies.utilities.factory"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.mathematics.graph.building"/>
+      <attribute name="version" type="Version" value="0.0.1"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.mathematics"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+      <directive name="uses" value="uk.co.strangeskies.mathematics.graph,uk.co.strangeskies.utilities.factory"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.mathematics.graph.processing"/>
+      <attribute name="version" type="Version" value="0.0.1"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.mathematics"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+      <directive name="uses" value="uk.co.strangeskies.mathematics.graph"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.mathematics.logic"/>
+      <attribute name="version" type="Version" value="1.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.mathematics"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+      <directive name="uses" value="uk.co.strangeskies.mathematics.expression,uk.co.strangeskies.utilities"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.mathematics.operation"/>
+      <attribute name="version" type="Version" value="1.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.mathematics"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+      <directive name="uses" value="uk.co.strangeskies.mathematics.expression,uk.co.strangeskies.mathematics.values,uk.co.strangeskies.utilities,uk.co.strangeskies.utilities.function"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.mathematics.values"/>
+      <attribute name="version" type="Version" value="1.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.mathematics"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+      <directive name="uses" value="uk.co.strangeskies.mathematics.expression,uk.co.strangeskies.mathematics.operation,uk.co.strangeskies.utilities,uk.co.strangeskies.utilities.factory"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.mathematics.values.quantities"/>
+      <attribute name="version" type="Version" value="1.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.mathematics"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+      <directive name="uses" value="uk.co.strangeskies.mathematics.operation,uk.co.strangeskies.mathematics.values,uk.co.strangeskies.utilities,uk.co.strangeskies.utilities.factory"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.mathematics.expressions.test"/>
+      <attribute name="version" type="Version" value="1.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.mathematics"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+    </capability>
+    <capability namespace="osgi.service">
+      <attribute name="objectClass" type="List&lt;String&gt;" value="uk.co.strangeskies.mathematics.graph.building.GraphBuilder"/>
+    </capability>
+    <capability namespace="osgi.service">
+      <attribute name="objectClass" type="List&lt;String&gt;" value="uk.co.strangeskies.mathematics.graph.building.GraphBuilder"/>
+      <directive name="uses" value="uk.co.strangeskies.mathematics.graph.building"/>
+    </capability>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.mathematics.expression)(version&gt;=0.0.0)(!(version&gt;=1.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.mathematics.expression.collection)(version&gt;=0.0.0)(!(version&gt;=1.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.mathematics.graph)(version&gt;=0.0.0)(!(version&gt;=1.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.mathematics.graph.building)(version&gt;=0.0.0)(!(version&gt;=1.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.mathematics.operation)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.mathematics.values)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities.collection.decorator)(version&gt;=2.0.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities.collection.multimap)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities.factory)(version&gt;=2.0.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities.function)(version&gt;=2.0.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities.function.collection)(version&gt;=2.0.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.ee">
+      <directive name="filter" value="(&amp;(osgi.ee=JavaSE)(version=1.8))"/>
+    </requirement>
+    <requirement namespace="osgi.extender">
+      <directive name="filter" value="(&amp;(osgi.extender=osgi.component)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))"/>
+      <directive name="effective" value="active"/>
+    </requirement>
+  </resource>
+  <resource>
+    <capability namespace="osgi.identity">
+      <attribute name="osgi.identity" value="uk.co.strangeskies.reflection"/>
+      <attribute name="type" value="osgi.bundle"/>
+      <attribute name="version" type="Version" value="3.0.1.201508221849"/>
+    </capability>
+    <capability namespace="osgi.content">
+      <attribute name="osgi.content" value="5fd96cc8f011237322a2d7ba3356677e1846938b9bfe84f3cdb4f3f9a2b21379"/>
+      <attribute name="url" value="uk.co.strangeskies.reflection/uk.co.strangeskies.reflection-3.0.1.jar"/>
+      <attribute name="size" type="Long" value="268655"/>
+      <attribute name="mime" value="application/vnd.osgi.bundle"/>
+    </capability>
+    <capability namespace="osgi.wiring.bundle">
+      <attribute name="osgi.wiring.bundle" value="uk.co.strangeskies.reflection"/>
+      <attribute name="bundle-version" type="Version" value="3.0.1.201508221849"/>
+    </capability>
+    <capability namespace="osgi.wiring.host">
+      <attribute name="osgi.wiring.host" value="uk.co.strangeskies.reflection"/>
+      <attribute name="bundle-version" type="Version" value="3.0.1.201508221849"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.reflection"/>
+      <attribute name="version" type="Version" value="1.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.reflection"/>
+      <attribute name="bundle-version" type="Version" value="3.0.1.201508221849"/>
+      <directive name="uses" value="uk.co.strangeskies.utilities,uk.co.strangeskies.utilities.factory,uk.co.strangeskies.utilities.text.parser,uk.co.strangeskies.utilities.tuples"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.reflection.proxy"/>
+      <attribute name="version" type="Version" value="3.0.1"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.reflection"/>
+      <attribute name="bundle-version" type="Version" value="3.0.1.201508221849"/>
+    </capability>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities.collection.computingmap)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities.collection.multimap)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities.factory)(version&gt;=2.0.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities.text)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities.text.parser)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities.tuples)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.ee">
+      <directive name="filter" value="(&amp;(osgi.ee=JavaSE)(version=1.8))"/>
+    </requirement>
+  </resource>
+  <resource>
+    <capability namespace="osgi.identity">
+      <attribute name="osgi.identity" value="uk.co.strangeskies.scripting.languages.clojure"/>
+      <attribute name="type" value="osgi.bundle"/>
+      <attribute name="version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.content">
+      <attribute name="osgi.content" value="9287dac4606021559c8b1ed55c992b8b68cd3d78a5b2d2c001beb635c3bdc0d8"/>
+      <attribute name="url" value="uk.co.strangeskies.scripting.languages.clojure/uk.co.strangeskies.scripting.languages.clojure-0.0.0.jar"/>
+      <attribute name="size" type="Long" value="1294605"/>
+      <attribute name="mime" value="application/vnd.osgi.bundle"/>
+    </capability>
+    <capability namespace="osgi.wiring.bundle">
+      <attribute name="osgi.wiring.bundle" value="uk.co.strangeskies.scripting.languages.clojure"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.wiring.host">
+      <attribute name="osgi.wiring.host" value="uk.co.strangeskies.scripting.languages.clojure"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+    </capability>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=clojure)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=javax.script)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=javax.swing)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=javax.swing.event)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=javax.swing.table)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=javax.swing.text)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=javax.swing.text.html)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=javax.swing.tree)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=org.xml.sax)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=org.xml.sax.helpers)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=sun.misc)"/>
+    </requirement>
+    <requirement namespace="osgi.ee">
+      <directive name="filter" value="(&amp;(osgi.ee=JavaSE)(version=1.6))"/>
+    </requirement>
+  </resource>
+  <resource>
+    <capability namespace="osgi.identity">
+      <attribute name="osgi.identity" value="uk.co.strangeskies.scripting.languages.frege"/>
+      <attribute name="type" value="osgi.bundle"/>
+      <attribute name="version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.content">
+      <attribute name="osgi.content" value="4487860afa98297f18844a486eef0ad1379c28430808c067978b4950fc51dfe4"/>
+      <attribute name="url" value="uk.co.strangeskies.scripting.languages.frege/uk.co.strangeskies.scripting.languages.frege-0.0.0.jar"/>
+      <attribute name="size" type="Long" value="411"/>
+      <attribute name="mime" value="application/vnd.osgi.bundle"/>
+    </capability>
+    <capability namespace="osgi.wiring.bundle">
+      <attribute name="osgi.wiring.bundle" value="uk.co.strangeskies.scripting.languages.frege"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.wiring.host">
+      <attribute name="osgi.wiring.host" value="uk.co.strangeskies.scripting.languages.frege"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+    </capability>
+  </resource>
+  <resource>
+    <capability namespace="osgi.identity">
+      <attribute name="osgi.identity" value="uk.co.strangeskies.scripting.languages.groovy"/>
+      <attribute name="type" value="osgi.bundle"/>
+      <attribute name="version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.content">
+      <attribute name="osgi.content" value="e2eabadc396266c0f39a7ae4740695598780d19e4f8b19aaa37f2f8a39f84e1f"/>
+      <attribute name="url" value="uk.co.strangeskies.scripting.languages.groovy/uk.co.strangeskies.scripting.languages.groovy-0.0.0.jar"/>
+      <attribute name="size" type="Long" value="1043529"/>
+      <attribute name="mime" value="application/vnd.osgi.bundle"/>
+    </capability>
+    <capability namespace="osgi.wiring.bundle">
+      <attribute name="osgi.wiring.bundle" value="uk.co.strangeskies.scripting.languages.groovy"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.wiring.host">
+      <attribute name="osgi.wiring.host" value="uk.co.strangeskies.scripting.languages.groovy"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+    </capability>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=groovyjarjarantlr.ASdebug)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=groovyjarjarantlr.actions.cpp)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=groovyjarjarantlr.actions.csharp)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=groovyjarjarantlr.actions.java)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=groovyjarjarantlr.actions.python)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=groovyjarjarantlr.collections)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=groovyjarjarantlr.collections.impl)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=groovyjarjarantlr.debug)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=groovyjarjarantlr.preprocessor)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=javax.script)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=javax.xml.parsers)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=org.apache.commons.cli)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=org.apache.ivy)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=org.apache.ivy.core.cache)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=org.apache.ivy.core.event)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=org.apache.ivy.core.event.download)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=org.apache.ivy.core.event.resolve)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=org.apache.ivy.core.module.descriptor)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=org.apache.ivy.core.module.id)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=org.apache.ivy.core.report)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=org.apache.ivy.core.resolve)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=org.apache.ivy.core.settings)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=org.apache.ivy.plugins.matcher)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=org.apache.ivy.plugins.resolver)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=org.apache.ivy.util)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.ast)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.ast.expr)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.ast.stmt)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.ast.tools)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.classgen)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.classgen.asm)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=org.codehaus.groovy.cli)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.control)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.control.customizers)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.control.io)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.control.messages)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.plugin)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.reflection)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.reflection.android)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.reflection.stdclasses)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.runtime)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.runtime.callsite)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.runtime.memoize)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.runtime.metaclass)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.runtime.typehandling)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.runtime.wrappers)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.syntax)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.tools)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.tools.gse)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.transform)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.transform.trait)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.codehaus.groovy.util)(version&gt;=2.4.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.ee">
+      <directive name="filter" value="(&amp;(osgi.ee=JavaSE)(version=1.6))"/>
+    </requirement>
+  </resource>
+  <resource>
+    <capability namespace="osgi.identity">
+      <attribute name="osgi.identity" value="uk.co.strangeskies.scripting.languages.javascript"/>
+      <attribute name="type" value="osgi.bundle"/>
+      <attribute name="version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.content">
+      <attribute name="osgi.content" value="480ab561a3ca8577a90133f34d6cdf4148f41ec1e71275518a47608eef40807f"/>
+      <attribute name="url" value="uk.co.strangeskies.scripting.languages.javascript/uk.co.strangeskies.scripting.languages.javascript-0.0.0.jar"/>
+      <attribute name="size" type="Long" value="416"/>
+      <attribute name="mime" value="application/vnd.osgi.bundle"/>
+    </capability>
+    <capability namespace="osgi.wiring.bundle">
+      <attribute name="osgi.wiring.bundle" value="uk.co.strangeskies.scripting.languages.javascript"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.wiring.host">
+      <attribute name="osgi.wiring.host" value="uk.co.strangeskies.scripting.languages.javascript"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+    </capability>
+  </resource>
+  <resource>
+    <capability namespace="osgi.identity">
+      <attribute name="osgi.identity" value="uk.co.strangeskies.scripting.languages.lua"/>
+      <attribute name="type" value="osgi.bundle"/>
+      <attribute name="version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.content">
+      <attribute name="osgi.content" value="f3d70975bcdfbb0420448969ebfac8fc5a7405f2f99734f17903299e55d0f7d3"/>
+      <attribute name="url" value="uk.co.strangeskies.scripting.languages.lua/uk.co.strangeskies.scripting.languages.lua-0.0.0.jar"/>
+      <attribute name="size" type="Long" value="350936"/>
+      <attribute name="mime" value="application/vnd.osgi.bundle"/>
+    </capability>
+    <capability namespace="osgi.wiring.bundle">
+      <attribute name="osgi.wiring.bundle" value="uk.co.strangeskies.scripting.languages.lua"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.wiring.host">
+      <attribute name="osgi.wiring.host" value="uk.co.strangeskies.scripting.languages.lua"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+    </capability>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=javax.script)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=org.apache.bcel.classfile)"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=org.apache.bcel.generic)"/>
+    </requirement>
+    <requirement namespace="osgi.ee">
+      <directive name="filter" value="(&amp;(osgi.ee=JavaSE)(version=1.5))"/>
+    </requirement>
+  </resource>
+  <resource>
+    <capability namespace="osgi.identity">
+      <attribute name="osgi.identity" value="uk.co.strangeskies.scripting.languages.python"/>
+      <attribute name="type" value="osgi.bundle"/>
+      <attribute name="version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.content">
+      <attribute name="osgi.content" value="31d1d0b242747ee5dbf392f2c9b9ce9493e9a0fc8ad8e0c53026602699b72f53"/>
+      <attribute name="url" value="uk.co.strangeskies.scripting.languages.python/uk.co.strangeskies.scripting.languages.python-0.0.0.jar"/>
+      <attribute name="size" type="Long" value="416"/>
+      <attribute name="mime" value="application/vnd.osgi.bundle"/>
+    </capability>
+    <capability namespace="osgi.wiring.bundle">
+      <attribute name="osgi.wiring.bundle" value="uk.co.strangeskies.scripting.languages.python"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.wiring.host">
+      <attribute name="osgi.wiring.host" value="uk.co.strangeskies.scripting.languages.python"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+    </capability>
+  </resource>
+  <resource>
+    <capability namespace="osgi.identity">
+      <attribute name="osgi.identity" value="uk.co.strangeskies.scripting.languages.ruby"/>
+      <attribute name="type" value="osgi.bundle"/>
+      <attribute name="version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.content">
+      <attribute name="osgi.content" value="cc80f1a773d3d01aedfc3a8bcd9d634491411daefb91be47024438ff40d2ac55"/>
+      <attribute name="url" value="uk.co.strangeskies.scripting.languages.ruby/uk.co.strangeskies.scripting.languages.ruby-0.0.0.jar"/>
+      <attribute name="size" type="Long" value="414"/>
+      <attribute name="mime" value="application/vnd.osgi.bundle"/>
+    </capability>
+    <capability namespace="osgi.wiring.bundle">
+      <attribute name="osgi.wiring.bundle" value="uk.co.strangeskies.scripting.languages.ruby"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.wiring.host">
+      <attribute name="osgi.wiring.host" value="uk.co.strangeskies.scripting.languages.ruby"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+    </capability>
+  </resource>
+  <resource>
+    <capability namespace="osgi.identity">
+      <attribute name="osgi.identity" value="uk.co.strangeskies.scripting.management"/>
+      <attribute name="type" value="osgi.bundle"/>
+      <attribute name="version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.content">
+      <attribute name="osgi.content" value="34a7eb601da80c39fa3f7344457913d3062c3965b997629e415b03ce1983c9e9"/>
+      <attribute name="url" value="uk.co.strangeskies.scripting.management/uk.co.strangeskies.scripting.management-0.0.0.jar"/>
+      <attribute name="size" type="Long" value="6392"/>
+      <attribute name="mime" value="application/vnd.osgi.bundle"/>
+    </capability>
+    <capability namespace="osgi.wiring.bundle">
+      <attribute name="osgi.wiring.bundle" value="uk.co.strangeskies.scripting.management"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.wiring.host">
+      <attribute name="osgi.wiring.host" value="uk.co.strangeskies.scripting.management"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.service">
+      <attribute name="objectClass" type="List&lt;String&gt;" value="javax.script.ScriptEngineManager"/>
+    </capability>
+    <capability namespace="osgi.service">
+      <attribute name="objectClass" type="List&lt;String&gt;" value="javax.script.ScriptEngineManager"/>
+      <directive name="uses" value="javax.script"/>
+    </capability>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=javax.script)"/>
+    </requirement>
+    <requirement namespace="osgi.service">
+      <directive name="filter" value="(objectClass=javax.script.ScriptEngineFactory)"/>
+      <directive name="effective" value="active"/>
+      <directive name="resolution" value="optional"/>
+      <directive name="cardinality" value="multiple"/>
+    </requirement>
+    <requirement namespace="osgi.ee">
+      <directive name="filter" value="(&amp;(osgi.ee=JavaSE)(version=1.8))"/>
+    </requirement>
+    <requirement namespace="osgi.service">
+      <directive name="filter" value="(objectClass=javax.script.ScriptEngineFactory)"/>
+      <directive name="resolution" value="optional"/>
+      <directive name="cardinality" value="multiple"/>
+      <directive name="effective" value="active"/>
+    </requirement>
+    <requirement namespace="osgi.extender">
+      <directive name="filter" value="(&amp;(osgi.extender=osgi.component)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))"/>
+      <directive name="effective" value="active"/>
+    </requirement>
+  </resource>
+  <resource>
+    <capability namespace="osgi.identity">
+      <attribute name="osgi.identity" value="uk.co.strangeskies.utilities.osgi"/>
+      <attribute name="type" value="osgi.bundle"/>
+      <attribute name="version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.content">
+      <attribute name="osgi.content" value="d1712b1b6402675296d7dbc113b2494869ac7afa2c2a33a0656b5c3d9baa1771"/>
+      <attribute name="url" value="uk.co.strangeskies.utilities.osgi/uk.co.strangeskies.utilities.osgi-0.0.0.jar"/>
+      <attribute name="size" type="Long" value="28695"/>
+      <attribute name="mime" value="application/vnd.osgi.bundle"/>
+    </capability>
+    <capability namespace="osgi.wiring.bundle">
+      <attribute name="osgi.wiring.bundle" value="uk.co.strangeskies.utilities.osgi"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.wiring.host">
+      <attribute name="osgi.wiring.host" value="uk.co.strangeskies.utilities.osgi"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.utilities.osgi"/>
+      <attribute name="version" type="Version" value="0.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.utilities.osgi"/>
+      <attribute name="bundle-version" type="Version" value="0.0.0"/>
+      <directive name="uses" value="org.osgi.framework.hooks.service"/>
+    </capability>
+    <capability namespace="osgi.service">
+      <attribute name="objectClass" type="List&lt;String&gt;" value="org.osgi.framework.hooks.service.EventListenerHook,org.osgi.framework.hooks.service.FindHook"/>
+    </capability>
+    <capability namespace="osgi.service">
+      <attribute name="objectClass" type="List&lt;String&gt;" value="org.osgi.framework.hooks.service.EventListenerHook,org.osgi.framework.hooks.service.FindHook"/>
+      <directive name="uses" value="org.osgi.framework.hooks.service,org.osgi.framework.hooks.service"/>
+    </capability>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.osgi.framework)(version&gt;=1.8.0)(!(version&gt;=2.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.osgi.framework.hooks.service)(version&gt;=1.1.0)(!(version&gt;=2.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities.collection.multimap)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities.factory)(version&gt;=2.0.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(osgi.wiring.package=uk.co.strangeskies.utilities.osgi)"/>
+    </requirement>
+    <requirement namespace="osgi.service">
+      <directive name="filter" value="(objectClass=uk.co.strangeskies.utilities.osgi.ServiceWrapper)"/>
+      <directive name="effective" value="active"/>
+      <directive name="resolution" value="optional"/>
+      <directive name="cardinality" value="multiple"/>
+    </requirement>
+    <requirement namespace="osgi.ee">
+      <directive name="filter" value="(&amp;(osgi.ee=JavaSE)(version=1.8))"/>
+    </requirement>
+    <requirement namespace="osgi.service">
+      <directive name="filter" value="(objectClass=uk.co.strangeskies.utilities.osgi.ServiceWrapper)"/>
+      <directive name="resolution" value="optional"/>
+      <directive name="cardinality" value="multiple"/>
+      <directive name="effective" value="active"/>
+    </requirement>
+    <requirement namespace="osgi.extender">
+      <directive name="filter" value="(&amp;(osgi.extender=osgi.component)(version&gt;=1.1.0)(!(version&gt;=2.0.0)))"/>
+      <directive name="effective" value="active"/>
+    </requirement>
+  </resource>
+  <resource>
+    <capability namespace="osgi.identity">
+      <attribute name="osgi.identity" value="uk.co.strangeskies.utilities"/>
+      <attribute name="type" value="osgi.bundle"/>
+      <attribute name="version" type="Version" value="1.0.0.201508221848"/>
+    </capability>
+    <capability namespace="osgi.content">
+      <attribute name="osgi.content" value="7557fc74b15f3bea64560b5b66712798391628ab0784e55bb0976346ea64740a"/>
+      <attribute name="url" value="uk.co.strangeskies.utilities/uk.co.strangeskies.utilities-1.0.0.jar"/>
+      <attribute name="size" type="Long" value="215741"/>
+      <attribute name="mime" value="application/vnd.osgi.bundle"/>
+    </capability>
+    <capability namespace="osgi.wiring.bundle">
+      <attribute name="osgi.wiring.bundle" value="uk.co.strangeskies.utilities"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+    </capability>
+    <capability namespace="osgi.wiring.host">
+      <attribute name="osgi.wiring.host" value="uk.co.strangeskies.utilities"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.utilities"/>
+      <attribute name="version" type="Version" value="1.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.utilities"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.utilities.collection"/>
+      <attribute name="version" type="Version" value="1.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.utilities"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.utilities.collection.computingmap"/>
+      <attribute name="version" type="Version" value="1.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.utilities"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.utilities.collection.decorator"/>
+      <attribute name="version" type="Version" value="2.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.utilities"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+      <directive name="uses" value="uk.co.strangeskies.utilities"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.utilities.collection.multimap"/>
+      <attribute name="version" type="Version" value="1.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.utilities"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+      <directive name="uses" value="uk.co.strangeskies.utilities.factory"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.utilities.factory"/>
+      <attribute name="version" type="Version" value="2.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.utilities"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.utilities.flowcontrol"/>
+      <attribute name="version" type="Version" value="2.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.utilities"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+      <directive name="uses" value="uk.co.strangeskies.utilities,uk.co.strangeskies.utilities.collection.multimap"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.utilities.function"/>
+      <attribute name="version" type="Version" value="2.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.utilities"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.utilities.function.collection"/>
+      <attribute name="version" type="Version" value="2.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.utilities"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+      <directive name="uses" value="uk.co.strangeskies.utilities.function"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.utilities.tuples"/>
+      <attribute name="version" type="Version" value="1.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.utilities"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.utilities.text.parser"/>
+      <attribute name="version" type="Version" value="1.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.utilities"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.utilities.text"/>
+      <attribute name="version" type="Version" value="1.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.utilities"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="osgi.wiring.package" value="uk.co.strangeskies.utilities.test"/>
+      <attribute name="version" type="Version" value="1.0.0"/>
+      <attribute name="bundle-symbolic-name" value="uk.co.strangeskies.utilities"/>
+      <attribute name="bundle-version" type="Version" value="1.0.0.201508221848"/>
+    </capability>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities.collection.multimap)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities.factory)(version&gt;=2.0.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=uk.co.strangeskies.utilities.function)(version&gt;=2.0.0)(!(version&gt;=3.0.0)))"/>
+    </requirement>
+    <requirement namespace="osgi.ee">
+      <directive name="filter" value="(&amp;(osgi.ee=JavaSE)(version=1.8))"/>
+    </requirement>
+  </resource>
+</repository>

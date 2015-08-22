@@ -1,5 +1,3 @@
--dsannotations:  \
-	*
 Bundle-Name: Strange Skies Scripting - Frege
 #Private-Package:\
 #	frege.**

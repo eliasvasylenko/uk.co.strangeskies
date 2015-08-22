@@ -1,7 +1,11 @@
--dsannotations:  \
-	*
 Bundle-Name: Strange Skies Scripting - Groovy
-#Private-Package:\
-#	groovy.**
-#Include-Resource:\
-#	@groovy-${groovy.version}.jar!/META-INF/services/*
+Private-Package:\
+	groovy.**, \
+	groovyjarjarantlr, \
+	groovyjarjarasm.asm, \
+	groovyjarjarcommonscli, \
+	org.codehaus.groovy, \
+	org.codehaus.groovy.jsr223
+Include-Resource:\
+	@${exporters;groovy.lang}.jar!/META-INF/**, \
+	@${exporters;org.codehaus.groovy.jsr223}.jar!/META-INF/**

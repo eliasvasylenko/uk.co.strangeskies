@@ -1,7 +1,5 @@
--dsannotations:  \
-	*
-Bundle-Name: Strange Skies Scripting - Clojure
-#Private-Package:  \
-#	org.luaj.**
-#Include-Resource:\
-#	@luaj-jse-${luaj.version}.jar!/META-INF/services/*
+Bundle-Name: Strange Skies Scripting - Lua
+Private-Package:  \
+	org.luaj.**
+Include-Resource:\
+	@${exporters;org.luaj}.jar!/META-INF/services/*

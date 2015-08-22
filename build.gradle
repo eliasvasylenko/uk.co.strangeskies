@@ -9,14 +9,8 @@ import aQute.bnd.build.Workspace
 
 /* Add bnd gradle plugin as a script dependency */
 buildscript {
-  repositories {
-    jcenter()
-  }
-
   dependencies {
-    classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
     classpath bndPlugin
-    classpath 'org.ajoberstar:gradle-git:1.1.0'
   }
 }
 
@@ -28,66 +22,10 @@ if (bndWorkspace == null) {
 
 ext.cnf = rootProject.project(bnd_cnf)
 
-/* Configure Subprojects */
+/* Configure the subprojects */
 subprojects {
   def bndProject = bndWorkspace.getProject(name)
   if (bndProject != null) {
     plugins.apply 'biz.aQute.bnd'
   }
-}
-
-/* Configure Java Projects */
-def javaProjects() {
-  return subprojects.findAll { new File(it.projectDir, "src").exists() }
-}
-
-configure(javaProjects()) {
-  /* Source License Generation */
-  apply plugin: 'license'
-
-  license {
-    header rootProject.file('LICENSE')
-
-    ext.year = Calendar.getInstance().get(Calendar.YEAR)
-    ext.name = 'Elias N Vasylenko'
-    ext.email = 'eliasvasylenko@gmail.com'
-    ext.software = project.name
-
-    mapping {
-      java = 'SLASHSTAR_STYLE'
-    }
-  }
-}
-
-apply plugin: 'license'
-apply plugin: 'java'
-
-/* Javadoc Generation */
-task aggregateJavadoc(type: Javadoc) {
-  options.charSet = 'UTF-8'
-  options.encoding = 'UTF-8'
-  source subprojects.collect {project -> project.sourceSets.main.allJava }
-  destinationDir = new File(buildDir, 'javadoc')
-  classpath = files(subprojects.collect {project -> project.sourceSets.main.compileClasspath})
-}
-
-/* Javadoc Publish to GH Pages */
-apply plugin: 'org.ajoberstar.github-pages'
-
-githubPages {
-  repoUri = 'https://github.com/StrangeSkies/uk.co.strangeskies.git'
-  if (project.hasProperty('githubUser') && project.hasProperty('githubPassword')) {
-    credentials.setUsername githubUser
-    credentials.setPassword githubPassword
-  }
-
-  pages {
-    from aggregateJavadoc
-  }
-}
-
-/* Wrapper */
-task wrapper(type: Wrapper) {
-  jarFile = rootProject.file('.gradle-wrapper/gradle-wrapper.jar')
-  gradleVersion = '2.4'
 }
