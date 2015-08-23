@@ -9,4 +9,4 @@ Private-Package:\
 Include-Resource:\
 	@${exporters;groovy.lang}.jar!/META-INF/**, \
 	@${exporters;org.codehaus.groovy.jsr223}.jar!/META-INF/**
-Bundle-Version: 1.0.0.${tstamp}
+Bundle-Version: ${scripting-version}

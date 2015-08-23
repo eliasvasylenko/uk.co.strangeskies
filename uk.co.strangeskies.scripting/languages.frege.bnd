@@ -3,4 +3,4 @@ Bundle-Name: Strange Skies Scripting - Frege
 #	frege.**
 #Include-Resource:\
 #	META-INF/services/javax.script.ScriptEngineFactory=res/frege/javax.script.ScriptEngineFactory
-Bundle-Version: 1.0.0.${tstamp}
+Bundle-Version: ${scripting-version}

@@ -3,4 +3,4 @@ Private-Package:  \
 	clojure.**
 Include-Resource:\
 	@${exporters;clojure.contrib.jsr223}.jar!/META-INF/services/*
-Bundle-Version: 1.0.0.${tstamp}
+Bundle-Version: ${scripting-version}
