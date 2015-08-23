@@ -2,3 +2,4 @@
 /generated/
 /cache/
 /releaserepo/
+!/localrepo/**/*.jar
