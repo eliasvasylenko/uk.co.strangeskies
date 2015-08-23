@@ -6,3 +6,4 @@ Bundle-Name: Strange Skies Scripting - Groovy
 #	jdk.internal.dynalink.**
 #Include-Resource:\
 #	@nashorn.jar!/META-INF/services/*
+Bundle-Version: 1.0.0.${tstamp}

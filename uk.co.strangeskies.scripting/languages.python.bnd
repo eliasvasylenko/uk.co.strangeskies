@@ -3,3 +3,4 @@ Bundle-Name: Strange Skies Scripting - Groovy
 #	org.python.**
 #Include-Resource:\
 #	@${exporters;org.luaj}.jar!/META-INF/services/*
+Bundle-Version: 1.0.0.${tstamp}

@@ -3,3 +3,4 @@ Private-Package:  \
 -dsannotations:  \
 	*
 Bundle-Name: Strange Skies Scripting
+Bundle-Version: 1.0.0.${tstamp}

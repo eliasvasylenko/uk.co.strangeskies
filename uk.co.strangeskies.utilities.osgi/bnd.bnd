@@ -9,4 +9,4 @@ Bundle-Name: Strange Skies OSGi Utilities
 -buildpath: \
 	osgi.enroute.base.api;version=latest,\
 	uk.co.strangeskies.utilities;version=latest
-Bundle-Version: 1.0.0.${tstamp}
+Bundle-Version: 1.0.1.${tstamp}
