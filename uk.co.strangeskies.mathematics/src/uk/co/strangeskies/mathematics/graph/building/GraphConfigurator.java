@@ -108,7 +108,6 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * This method wraps and forwards it's parameters to
 	 * {@link #edges(Collection)}.
 	 *
-	 * @param edges
 	 * @return
 	 */
 	public default GraphConfigurator<V, E> edge(V from, V to) {
@@ -237,7 +236,6 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * listeners are triggered <em>during</em> an atomic operation as each change
 	 * occurs, and so any exceptions they throw may propagate down in this manner.
 	 * 
-	 * @param validate
 	 * @return
 	 */
 	public GraphConfigurator<V, E> internalListeners(

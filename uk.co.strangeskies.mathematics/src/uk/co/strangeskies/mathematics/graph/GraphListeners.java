@@ -71,7 +71,6 @@ public interface GraphListeners<V, E> {
 	 * mutations made to the graph by the listener will be discarded upon the
 	 * failure of that operation.
 	 * 
-	 * @param validate
 	 * @return
 	 */
 	Set<EdgeListener<V, E>> edgeRemoved();
@@ -87,7 +86,6 @@ public interface GraphListeners<V, E> {
 	 * mutations made to the graph by the listener will be discarded upon the
 	 * failure of that operation.
 	 * 
-	 * @param validate
 	 * @return
 	 */
 	Set<VertexListener<V, E>> vertexAdded();
@@ -103,7 +101,6 @@ public interface GraphListeners<V, E> {
 	 * mutations made to the graph by the listener will be discarded upon the
 	 * failure of that operation.
 	 * 
-	 * @param validate
 	 * @return
 	 */
 	Set<VertexListener<V, E>> vertexRemoved();
