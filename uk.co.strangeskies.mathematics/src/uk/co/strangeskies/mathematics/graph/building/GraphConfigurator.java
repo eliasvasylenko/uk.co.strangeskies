@@ -106,7 +106,6 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * This method wraps and forwards it's parameters to
 	 * {@link #edges(Collection)}.
 	 *
-	 * @param edges
 	 * @return
 	 */
 	public default GraphConfigurator<V, E> edge(V from, V to) {
