@@ -23,9 +23,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiPredicate;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 import uk.co.strangeskies.mathematics.graph.EdgeVertices;
 import uk.co.strangeskies.mathematics.graph.Graph;
@@ -120,157 +118,12 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	public GraphConfigurator<V, E> addEdge(E edge, V from, V to);
 
 	/**
-	 * The provided mapping, from a vertex to a set of vertices, will be applied
-	 * to each new vertex which is added to the graph. Edges will then be
-	 * generated between the new vertex and each vertex in this set.
+	 * The graph will be directed, and the direction of an edge will be determined
+	 * by the order in which the vertices for that edge are given when an edge is
+	 * added.
 	 * 
-	 * <p>
-	 * If the an edge is generated to a vertex which is not in the graph, the edge
-	 * may either be ignored, or the missing vertex may be added to the graph
-	 * before the edge is generated, thus potentially triggering further edge
-	 * generation for the newly generated vertex in a cascading fashion.
-	 * 
-	 * <p>
-	 * Note that the mapping will not be reapplied to vertices already in the
-	 * graph when new vertices are added, so unless mapped vertices are generated
-	 * as described above, the mapping should be bidirectional in most use-cases.
-	 * In cases where we need to check a new vertex against each existing vertex
-	 * individually, {@link #edgeGenerationRule(BiPredicate)} should be used.
-	 * 
-	 * <p>
-	 * If the graph is directed, edges will be generated in both directions. To
-	 * generate edges in only one direction,
-	 * {@link #generateEdgesFrom(Function, boolean)} or
-	 * {@link #generateEdgesTo(Function, boolean)} should be used.
-	 *
-	 * @param betweenNeighbours
-	 *          A function describing a mapping from a vertex to a set of
-	 *          vertices, such that an edge may be generated between that vertex
-	 *          and each vertex in the mapped set
-	 * @param generateVertices
-	 *          If true, mapped vertices which are not a member of the graph will
-	 *          be added to the graph before an edge is created, otherwise an edge
-	 *          will not be created to that vertex
-	 * @return The receiving configurator
+	 * @return
 	 */
-	public GraphConfigurator<V, E> generateEdgesBetween(
-			Function<? super V, ? extends Collection<? extends V>> betweenNeighbours,
-			boolean generateVertices);
-
-	/**
-	 * The provided mapping, from a vertex to a set of vertices, will be applied
-	 * to each new vertex which is added to the graph. Edges will then be
-	 * generated <em>to</em> the new vertex <em>from</em> each vertex in this set.
-	 * The graph will be directional.
-	 * 
-	 * <p>
-	 * If the an edge is generated from a vertex which is not in the graph, the
-	 * edge may either be ignored, or the missing vertex may be added to the graph
-	 * before the edge is generated, thus potentially triggering further edge
-	 * generation for the newly generated vertex in a cascading fashion.
-	 * 
-	 * <p>
-	 * Note that the mapping will not be reapplied to vertices already in the
-	 * graph when new vertices are added, so unless mapped vertices are generated
-	 * as described above, the mapping should form a bidirectional relationship
-	 * with a mapping provided to {@link #generateEdgesTo(Function, boolean)} in
-	 * most use-cases. In cases where we need to check a new vertex against each
-	 * existing vertex individually, {@link #edgeGenerationRule(BiPredicate)}
-	 * should be used.
-	 *
-	 * @param fromNeighbours
-	 *          A function describing a mapping from a vertex to a set of
-	 *          vertices, such that an edge may be generated from that vertex to
-	 *          each vertex in the mapped set
-	 * @param generateVertices
-	 *          If true, mapped vertices which are not a member of the graph will
-	 *          be added to the graph before an edge is created, otherwise an edge
-	 *          will not be created to that vertex
-	 * @return The receiving configurator
-	 */
-	public GraphConfigurator<V, E> generateEdgesFrom(
-			Function<? super V, ? extends Collection<? extends V>> fromNeighbours,
-			boolean generateVertices);
-
-	/**
-	 * The provided mapping, from a vertex to a set of vertices, will be applied
-	 * to each new vertex which is added to the graph. Edges will then be
-	 * generated <em>from</em> the new vertex <em>to</em> each vertex in this set.
-	 * The graph will be directional.
-	 * 
-	 * <p>
-	 * If the an edge is generated to a vertex which is not in the graph, the edge
-	 * may either be ignored, or the missing vertex may be added to the graph
-	 * before the edge is generated, thus potentially triggering further edge
-	 * generation for the newly generated vertex in a cascading fashion.
-	 * 
-	 * <p>
-	 * Note that the mapping will not be reapplied to vertices already in the
-	 * graph when new vertices are added, so unless mapped vertices are generated
-	 * as described above, the mapping should form a bidirectional relationship
-	 * with a mapping provided to {@link #generateEdgesTo(Function, boolean)} in
-	 * most use-cases. In cases where we need to check a new vertex against each
-	 * existing vertex individually, {@link #edgeGenerationRule(BiPredicate)}
-	 * should be used.
-	 *
-	 * @param toNeighbours
-	 *          A function describing a mapping from a vertex to a set of
-	 *          vertices, such that an edge may be generated from that vertex to
-	 *          each vertex in the mapped set
-	 * @param generateVertices
-	 *          If true, mapped vertices which are not a member of the graph will
-	 *          be added to the graph before an edge is created, otherwise an edge
-	 *          will not be created to that vertex
-	 * @return The receiving configurator
-	 */
-	public GraphConfigurator<V, E> generateEdgesTo(
-			Function<? super V, ? extends Collection<? extends V>> toNeighbours,
-			boolean generateVertices);
-
-	/**
-	 * Provide a rule to determine whether edges can be legally created between
-	 * two vertices. If an attempt to add an edge which is illegal by this
-	 * standard, the edge will fail to add, and an exception will optionally be
-	 * thrown.
-	 * 
-	 * <p>
-	 * If the graph is directed, the vertex the edge comes from and the vertex it
-	 * goes to are passed as the first and second arguments respectively.
-	 * Otherwise, the operation defined by the given predicate is assumed to be
-	 * commutative.
-	 * 
-	 * @param validateBetweenVertices
-	 * @param throwOnFailure
-	 *          True if an exception should be thrown if an attempt to add an edge
-	 *          fails to validate, false otherwise.
-	 * @return The receiving configurator
-	 */
-	public GraphConfigurator<V, E> edgeValidationRule(
-			BiPredicate<? super V, ? super V> validateBetweenVertices,
-			boolean throwOnFailure);
-
-	/**
-	 * Provide a condition over two vertices such that upon fulfilment an edge is
-	 * to be automatically generated between those vertices.
-	 * 
-	 * <p>
-	 * If the graph is directed, the vertex the edge comes from and the vertex it
-	 * goes to are passed as the first and second arguments respectively.
-	 * Otherwise, the operation defined by the given predicate is assumed to be
-	 * commutative.
-	 * 
-	 * <p>
-	 * Be aware that this behaviour is relatively computationally expensive, as
-	 * every possible vertex pair must be checked. Adding vertices will be
-	 * quadratic with the number of vertices added, or if only one vertex is
-	 * added, linear with the current number of vertices.
-	 *
-	 * @param generateBetweenVertices
-	 * @return The receiving configurator
-	 */
-	public GraphConfigurator<V, E> edgeGenerationRule(
-			BiPredicate<? super V, ? super V> generateBetweenVertices);
-
 	public default GraphConfigurator<V, E> directed() {
 		return direction((a, b) -> 1);
 	}
@@ -364,8 +217,6 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * @return
 	 */
 	public GraphConfigurator<V, E> edgeWeight(Function<E, Double> weight);
-
-	public GraphConfigurator<V, E> constrain(Predicate<Graph<V, E>> constraint);
 
 	public GraphConfigurator<V, E> vertexComparator(
 			Comparator<? super V> comparator);

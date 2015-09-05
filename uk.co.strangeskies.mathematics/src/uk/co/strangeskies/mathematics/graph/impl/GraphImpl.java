@@ -143,7 +143,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 	}
 
 	private class EdgesImpl extends MapDecorator<E, EdgeVertices<V>> implements
-			Edges<E, V> {
+			Edges<V, E> {
 		public EdgesImpl(Comparator<? super E> edgeComparator) {
 			super(edgeComparator != null ? new TreeMap<E, EdgeVertices<V>>(
 					edgeComparator) : new HashMap<>());
@@ -233,7 +233,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 	private final Comparator<? super V> vertexComparator;
 	private final Comparator<? super E> edgeComparator;
 
-	private final Edges<E, V> edges;
+	private final Edges<V, E> edges;
 	private final Function<EdgeVertices<V>, E> addEdge;
 
 	private final Map<V, MultiMap<V, E, Set<E>>> adjacencyMatrix;
@@ -258,8 +258,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 		edges = new EdgesImpl(configurator.getEdgeComparator());
 
 		// Edge addition function
-		this.addEdge = addEdgeFunction(configurator.getEdgeFactory(),
-				true);
+		this.addEdge = addEdgeFunction(configurator.getEdgeFactory(), true);
 
 		// Vertex addition function
 		this.addVertex = addVertexPredicate(configurator.getVertexComparator(),
@@ -390,7 +389,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 	}
 
 	@Override
-	public Edges<E, V> edges() {
+	public Edges<V, E> edges() {
 		return edges;
 	}
 

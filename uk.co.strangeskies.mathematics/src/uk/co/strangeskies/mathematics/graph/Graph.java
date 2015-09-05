@@ -42,7 +42,7 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 		Comparator<? super V> comparator();
 	}
 
-	public interface Edges<E, V> extends Map<E, EdgeVertices<V>> {
+	public interface Edges<V, E> extends Map<E, EdgeVertices<V>> {
 		Set<E> adjacentTo(V vertex);
 
 		Set<E> outgoingFrom(V vertex);
@@ -105,7 +105,7 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 	 *
 	 * @return
 	 */
-	Edges<E, V> edges();
+	Edges<V, E> edges();
 
 	boolean isDirected();
 

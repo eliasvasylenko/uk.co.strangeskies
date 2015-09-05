@@ -118,52 +118,6 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 	}
 
 	@Override
-	public GraphConfigurator<V, E> generateEdgesBetween(
-			Function<? super V, ? extends Collection<? extends V>> neighbours,
-			boolean generateVertices) {
-		assertConfigurable(this.edgeGenerator);
-		edgeGenerator = neighbours;
-		return readOnlyEdges();
-	}
-
-	@Override
-	public GraphConfigurator<V, E> generateEdgesFrom(
-			Function<? super V, ? extends Collection<? extends V>> fromNeighbours,
-			boolean generateVertices) {
-		assertConfigurable(this.incomingEdgeGenerator);
-		incomingEdgeGenerator = fromNeighbours;
-		directed = true;
-		return readOnlyEdges();
-	}
-
-	@Override
-	public GraphConfigurator<V, E> generateEdgesTo(
-			Function<? super V, ? extends Collection<? extends V>> toNeighbours,
-			boolean generateVertices) {
-		assertConfigurable(this.outgoingEdgeGenerator);
-		outgoingEdgeGenerator = toNeighbours;
-		directed = true;
-		return readOnlyEdges();
-	}
-
-	@Override
-	public GraphConfigurator<V, E> edgeValidationRule(
-			BiPredicate<? super V, ? super V> validateBetweenVertices,
-			boolean throwOnFailure) {
-		assertConfigurable(this.edgeValidationRule);
-		validateBetweenVertices = validateBetweenVertices;
-		return readOnlyEdges();
-	}
-
-	@Override
-	public GraphConfigurator<V, E> edgeGenerationRule(
-			BiPredicate<? super V, ? super V> generateBetweenVertices) {
-		assertConfigurable(this.edgeGenerationRule);
-		edgeGenerationRule = generateBetweenVertices;
-		return readOnlyEdges();
-	}
-
-	@Override
 	public GraphConfigurator<V, E> acyclic() {
 		acyclic = true;
 		return this;
@@ -206,13 +160,6 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 		assertConfigurable(getEdgeWeight());
 		edgeWeight = weight;
 
-		return this;
-	}
-
-	@Override
-	public GraphConfigurator<V, E> constrain(Predicate<Graph<V, E>> constraint) {
-		assertConfigurable(this.constraint);
-		this.constraint = constraint;
 		return this;
 	}
 
