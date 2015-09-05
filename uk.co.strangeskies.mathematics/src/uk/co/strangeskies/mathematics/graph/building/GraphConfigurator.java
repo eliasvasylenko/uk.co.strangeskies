@@ -23,11 +23,13 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import uk.co.strangeskies.mathematics.graph.EdgeVertices;
 import uk.co.strangeskies.mathematics.graph.Graph;
 import uk.co.strangeskies.mathematics.graph.Graph.Edges;
+import uk.co.strangeskies.mathematics.graph.GraphListeners;
 import uk.co.strangeskies.utilities.factory.Factory;
 
 /**
@@ -106,6 +108,7 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * This method wraps and forwards it's parameters to
 	 * {@link #edges(Collection)}.
 	 *
+	 * @param edges
 	 * @return
 	 */
 	public default GraphConfigurator<V, E> edge(V from, V to) {
@@ -221,4 +224,22 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 			Comparator<? super V> comparator);
 
 	public GraphConfigurator<V, E> edgeComparator(Comparator<? super E> comparator);
+
+	/**
+	 * Graph operations are atomic. Only one atomic operation at a time can hold a
+	 * write lock in order to execute, though an atomic operation can invoke other
+	 * such operations internally, and they will be considered a part of the same
+	 * atomic transaction which began at some 'root' operation invocation.
+	 * 
+	 * <p>
+	 * If an exception is caught at the root invocation of an atomic operation,
+	 * the operation will be cancelled and all pending changes discarded. Internal
+	 * listeners are triggered <em>during</em> an atomic operation as each change
+	 * occurs, and so any exceptions they throw may propagate down in this manner.
+	 * 
+	 * @param validate
+	 * @return
+	 */
+	public GraphConfigurator<V, E> internalListeners(
+			Consumer<GraphListeners<V, E>> internalListeners);
 }

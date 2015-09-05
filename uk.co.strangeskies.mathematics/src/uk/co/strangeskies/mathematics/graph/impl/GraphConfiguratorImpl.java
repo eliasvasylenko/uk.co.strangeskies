@@ -23,11 +23,13 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
 import uk.co.strangeskies.mathematics.graph.EdgeVertices;
 import uk.co.strangeskies.mathematics.graph.Graph;
+import uk.co.strangeskies.mathematics.graph.GraphListeners;
 import uk.co.strangeskies.mathematics.graph.building.GraphConfigurator;
 import uk.co.strangeskies.utilities.factory.Configurator;
 
@@ -228,6 +230,13 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 
 	@Override
 	public GraphConfigurator<V, E> addEdge(E edge, V from, V to) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public GraphConfigurator<V, E> internalListeners(
+			Consumer<GraphListeners<V, E>> internalListeners) {
 		// TODO Auto-generated method stub
 		return null;
 	}

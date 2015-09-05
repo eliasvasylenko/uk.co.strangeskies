@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import uk.co.strangeskies.utilities.Copyable;
 
@@ -114,4 +115,12 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 	boolean isSimple();
 
 	GraphTransformer<V, E> transform();
+
+	GraphListeners<V, E> listeners();
+
+	/**
+	 * 
+	 * @param action
+	 */
+	void atomic(Consumer<Graph<V, E>> action);
 }

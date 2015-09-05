@@ -29,12 +29,14 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.mathematics.graph.EdgeVertices;
 import uk.co.strangeskies.mathematics.graph.Graph;
+import uk.co.strangeskies.mathematics.graph.GraphListeners;
 import uk.co.strangeskies.mathematics.graph.GraphTransformer;
 import uk.co.strangeskies.utilities.collection.decorator.MapDecorator;
 import uk.co.strangeskies.utilities.collection.decorator.SetDecorator;
@@ -411,5 +413,17 @@ class GraphImpl<V, E> implements Graph<V, E> {
 	@Override
 	public GraphTransformer<V, E> transform() {
 		return new GraphTransformerImpl<>(this);
+	}
+
+	@Override
+	public GraphListeners<V, E> listeners() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void atomic(Consumer<Graph<V, E>> action) {
+		// TODO Auto-generated method stub
+		
 	}
 }
