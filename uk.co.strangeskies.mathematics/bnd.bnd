@@ -19,7 +19,8 @@ Bundle-Name: Strange Skies Mathematics
 -runee: JavaSE-1.8
 -runfw: org.eclipse.osgi;version='[3.10.1.v20140909-1633,3.10.1.v20140909-1633]'
 -buildpath:  \
-	org.testng;version=latest,\
+	osgi.enroute.junit.wrapper, \
+	osgi.enroute.hamcrest.wrapper, \
 	uk.co.strangeskies.utilities;version=latest,\
 	uk.co.strangeskies.expressions;version=latest,  \
 	osgi.enroute.base.api;  \

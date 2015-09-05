@@ -1,3 +1,5 @@
+utilities-version = 0.0.1.${tstamp}
+
 Export-Package: \
 	uk.co.strangeskies.utilities,\
 	uk.co.strangeskies.utilities.collection,\
@@ -20,15 +22,12 @@ Bundle-Name: Strange Skies Utilities
 -buildpath:  \
 	osgi.enroute.base.api;  \
 		version = latest,  \
-	junit__junit;  \
-		version = latest,  \
-	org.hamcrest__java-hamcrest;  \
-		version = latest,  \
-	org.hamcrest__hamcrest-junit;  \
-		version = latest
+	osgi.enroute.junit.wrapper, \
+	osgi.enroute.hamcrest.wrapper, \
+	org.hamcrest__java-hamcrest
 #,  \
 #	edu.washington.cs.types.checker:checker-annotated-jdk8;  \
 #		version = 1.7.5,  \
 #	edu.washington.cs.types.checker:checker-framework;  \
 #		version = 1.7.5
-Bundle-Version: 1.0.1.${tstamp}
+Bundle-Version: ${utilities-version}
