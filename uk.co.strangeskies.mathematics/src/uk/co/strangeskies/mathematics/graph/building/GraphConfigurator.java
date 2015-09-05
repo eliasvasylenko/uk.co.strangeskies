@@ -26,6 +26,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 import uk.co.strangeskies.mathematics.graph.EdgeVertices;
 import uk.co.strangeskies.mathematics.graph.Graph;
 import uk.co.strangeskies.mathematics.graph.Graph.Edges;
@@ -38,6 +40,7 @@ import uk.co.strangeskies.utilities.factory.Factory;
  * @param <V>
  * @param <E>
  */
+@ProviderType
 public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	/**
 	 * Calling this method has the same effect as calling both

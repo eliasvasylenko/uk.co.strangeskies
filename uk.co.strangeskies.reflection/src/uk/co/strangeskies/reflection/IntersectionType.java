@@ -25,6 +25,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 
 /**
@@ -34,6 +36,7 @@ import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
  * 
  * @author Elias N Vasylenko
  */
+@ProviderType
 public abstract class IntersectionType implements Type {
 	IntersectionType() {}
 

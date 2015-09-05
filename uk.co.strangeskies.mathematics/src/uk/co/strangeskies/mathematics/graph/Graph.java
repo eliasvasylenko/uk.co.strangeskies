@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 import uk.co.strangeskies.utilities.Copyable;
 
 /**
@@ -32,7 +34,9 @@ import uk.co.strangeskies.utilities.Copyable;
  * @param <V>
  * @param <E>
  */
+@ProviderType
 public interface Graph<V, E> extends Copyable<Graph<V, E>> {
+	@ProviderType
 	public interface Vertices<V> extends Set<V> {
 		Set<V> adjacentTo(V vertex);
 
@@ -43,6 +47,7 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 		Comparator<? super V> comparator();
 	}
 
+	@ProviderType
 	public interface Edges<V, E> extends Map<E, EdgeVertices<V>> {
 		Set<E> adjacentTo(V vertex);
 

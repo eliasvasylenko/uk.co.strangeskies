@@ -18,6 +18,9 @@
  */
 package uk.co.strangeskies.mathematics.graph;
 
+import org.osgi.annotation.versioning.ProviderType;
+
+@ProviderType
 public interface EdgeVertices<V> {
 	V getFrom();
 

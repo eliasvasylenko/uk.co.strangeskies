@@ -20,7 +20,12 @@ package uk.co.strangeskies.mathematics.graph;
 
 import java.util.Set;
 
+import org.osgi.annotation.versioning.ConsumerType;
+import org.osgi.annotation.versioning.ProviderType;
+
+@ProviderType
 public interface GraphListeners<V, E> {
+	@ProviderType
 	interface ChangeSet<V, E> {
 		Set<V> verticesAdded();
 
@@ -33,25 +38,31 @@ public interface GraphListeners<V, E> {
 		Set<E> edgesMoved();
 	}
 
+	@ConsumerType
+	@FunctionalInterface
 	interface ChangeListener<V, E> {
 		void change(Graph<V, E> graph, ChangeSet<V, E> changeSet);
 	}
 
+	@ConsumerType
 	@FunctionalInterface
 	interface EdgeListener<V, E> {
 		void edge(Graph<V, E> graph, E edge);
 	}
 
+	@ConsumerType
 	@FunctionalInterface
 	interface EdgesListener<V, E> {
 		void edges(Graph<V, E> graph, Set<E> edges);
 	}
 
+	@ConsumerType
 	@FunctionalInterface
 	interface VertexListener<V, E> {
 		void vertex(Graph<V, E> graph, V vertex);
 	}
 
+	@ConsumerType
 	@FunctionalInterface
 	interface VerticesListener<V, E> {
 		void vertices(Graph<V, E> graph, Set<V> vertex);
