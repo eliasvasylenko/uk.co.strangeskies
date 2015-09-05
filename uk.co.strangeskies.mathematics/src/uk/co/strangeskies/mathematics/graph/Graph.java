@@ -26,6 +26,11 @@ import java.util.Set;
 
 import uk.co.strangeskies.utilities.Copyable;
 
+/**
+ * @author Elias N Vasylenko
+ * @param <V>
+ * @param <E>
+ */
 public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 	public interface Vertices<V> extends Set<V> {
 		Set<V> adjacentTo(V vertex);
@@ -52,7 +57,9 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 
 		/**
 		 * If there is exactly one edge between the provided vertices, this edge is
-		 * returned, otherwise null is returned.
+		 * returned. If there is no edge between the provided vertices, null is
+		 * returned. If there are multiple edges between them, an exception is
+		 * thrown.
 		 *
 		 * @param from
 		 * @param to
