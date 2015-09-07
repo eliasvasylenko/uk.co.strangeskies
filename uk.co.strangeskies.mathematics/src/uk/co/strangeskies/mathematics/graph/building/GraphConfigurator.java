@@ -31,7 +31,6 @@ import org.osgi.annotation.versioning.ProviderType;
 
 import uk.co.strangeskies.mathematics.graph.EdgeVertices;
 import uk.co.strangeskies.mathematics.graph.Graph;
-import uk.co.strangeskies.mathematics.graph.Graph.Edges;
 import uk.co.strangeskies.mathematics.graph.GraphListeners;
 import uk.co.strangeskies.utilities.factory.Factory;
 
@@ -173,9 +172,9 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * If no edge factory is provided, by way of either this method or
 	 * {@link #edgeMultiFactory(Function)}, edge objects must be explicitly
 	 * provided when adding an edge between vertices, by way of e.g.
-	 * {@link Edges#put(Object, Object)} or {@link #addEdges(Map)}. Conversely, if
-	 * an edge factory <em>is</em> provided, it will not be possible to add edges
-	 * in that manner.
+	 * {@link #addEdge(Object, Object, Object)} or {@link #addEdges(Map)}.
+	 * Conversely, if an edge factory <em>is</em> provided, it will not be
+	 * possible to add edges in that manner.
 	 */
 	<F extends E> GraphConfigurator<V, F> edgeFactory(
 			Function<EdgeVertices<V>, F> factory);
@@ -192,9 +191,9 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * If no edge factory is provided, by way of either this method or
 	 * {@link #edgeMultiFactory(Function)}, edge objects must be explicitly
 	 * provided when adding an edge between vertices, by way of e.g.
-	 * {@link Edges#put(Object, Object)} or {@link #addEdges(Map)}. Conversely, if
-	 * an edge factory <em>is</em> provided, it will not be possible to add edges
-	 * in that manner.
+	 * {@link #addEdge(Object, Object, Object)} or {@link #addEdges(Map)}.
+	 * Conversely, if an edge factory <em>is</em> provided, it will not be
+	 * possible to add edges in that manner.
 	 */
 	<F extends E> GraphConfigurator<V, F> edgeMultiFactory(
 			Function<EdgeVertices<V>, Set<F>> factory);
