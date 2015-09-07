@@ -54,7 +54,7 @@ public class MatrixHNImpl<V extends Value<V>> extends
 	public final Vector<?, V> getMajorVector(int index) {
 		List<V> majorElements = getData2().get(index);
 
-		if (getOrder() == Order.ColumnMajor) {
+		if (getOrder() == Order.COLUMN_MAJOR) {
 			majorElements = majorElements.subList(0, getProjectedDimensions());
 
 			Type newType;
@@ -64,10 +64,10 @@ public class MatrixHNImpl<V extends Value<V>> extends
 				newType = Type.Relative;
 			}
 
-			return new VectorHNImpl<V>(newType, Order.ColumnMajor,
-					Orientation.Column, majorElements);
+			return new VectorHNImpl<V>(newType, Order.COLUMN_MAJOR,
+					Orientation.COLUMN, majorElements);
 		} else {
-			return new VectorNImpl<V>(Order.RowMajor, Orientation.Row, getData2()
+			return new VectorNImpl<V>(Order.ROW_MAJOR, Orientation.ROW, getData2()
 					.get(index));
 		}
 	}
@@ -79,7 +79,7 @@ public class MatrixHNImpl<V extends Value<V>> extends
 			minorElements.add(elements.get(index));
 		}
 
-		if (getOrder() == Order.RowMajor) {
+		if (getOrder() == Order.ROW_MAJOR) {
 			minorElements = minorElements.subList(0, getProjectedDimensions());
 
 			Type newType;
@@ -89,10 +89,10 @@ public class MatrixHNImpl<V extends Value<V>> extends
 				newType = Type.Relative;
 			}
 
-			return new VectorHNImpl<V>(newType, Order.RowMajor, Orientation.Column,
+			return new VectorHNImpl<V>(newType, Order.ROW_MAJOR, Orientation.COLUMN,
 					minorElements);
 		} else {
-			return new VectorNImpl<V>(Order.ColumnMajor, Orientation.Row, getData2()
+			return new VectorNImpl<V>(Order.COLUMN_MAJOR, Orientation.ROW, getData2()
 					.get(index));
 		}
 	}

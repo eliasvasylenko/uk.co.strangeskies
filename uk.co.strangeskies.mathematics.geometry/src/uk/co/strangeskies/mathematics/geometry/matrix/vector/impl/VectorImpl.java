@@ -282,10 +282,10 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 
 	@Override
 	public Vector2<IntValue> getDimensions2() {
-		Vector2<IntValue> dimensions = new Vector2Impl<IntValue>(Order.ColumnMajor,
-				Orientation.Column, IntValue.factory());
+		Vector2<IntValue> dimensions = new Vector2Impl<IntValue>(Order.COLUMN_MAJOR,
+				Orientation.COLUMN, IntValue.factory());
 
-		if (getOrientation() == Orientation.Column) {
+		if (getOrientation() == Orientation.COLUMN) {
 			return dimensions.setData(1, getDimensions());
 		} else {
 			return dimensions.setData(getDimensions(), 1);

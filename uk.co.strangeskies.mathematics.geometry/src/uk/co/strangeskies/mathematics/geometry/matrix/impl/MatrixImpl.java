@@ -78,7 +78,7 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 
 		int major;
 		int minor;
-		if (order == Order.RowMajor) {
+		if (order == Order.ROW_MAJOR) {
 			major = columns;
 			minor = rows;
 		} else {
@@ -178,12 +178,12 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 	}
 
 	public Vector2<IntValue> getDimensions2() {
-		return new Vector2Impl<IntValue>(Order.ColumnMajor, Orientation.Column,
+		return new Vector2Impl<IntValue>(Order.COLUMN_MAJOR, Orientation.COLUMN,
 				IntValue.factory()).setData(getRowSize(), getColumnSize());
 	}
 
 	protected List<V> getRowVectorData(int row) {
-		if (getOrder() == Order.RowMajor) {
+		if (getOrder() == Order.ROW_MAJOR) {
 			return getMajorVectorData(row);
 		} else {
 			return getMinorVectorData(row);
@@ -191,7 +191,7 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 	}
 
 	protected List<V> getColumnVectorData(int column) {
-		if (getOrder() == Order.ColumnMajor) {
+		if (getOrder() == Order.COLUMN_MAJOR) {
 			return getMajorVectorData(column);
 		} else {
 			return getMinorVectorData(column);

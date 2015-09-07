@@ -45,27 +45,27 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 		Subtractable<S, Matrix<?, ?>>, Negatable<S, S>,
 		NonCommutativelyMultipliable<S, Matrix<?, ?>>, Property<S, Matrix<?, ?>> {
 	public static enum Order {
-		RowMajor {
+		ROW_MAJOR {
 			@Override
 			public Orientation getAssociatedOrientation() {
-				return Orientation.Row;
+				return Orientation.ROW;
 			}
 
 			@Override
 			public Order getOther() {
-				return ColumnMajor;
+				return COLUMN_MAJOR;
 			}
 		},
 
-		ColumnMajor {
+		COLUMN_MAJOR {
 			@Override
 			public Orientation getAssociatedOrientation() {
-				return Orientation.Column;
+				return Orientation.COLUMN;
 			}
 
 			@Override
 			public Order getOther() {
-				return RowMajor;
+				return ROW_MAJOR;
 			}
 		};
 
@@ -213,11 +213,11 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 	public V getElement(int major, int minor);
 
 	public default int getRowSize() {
-		return getOrder() == Order.RowMajor ? getMajorSize() : getMinorSize();
+		return getOrder() == Order.ROW_MAJOR ? getMajorSize() : getMinorSize();
 	}
 
 	public default int getColumnSize() {
-		return getOrder() == Order.ColumnMajor ? getMajorSize() : getMinorSize();
+		return getOrder() == Order.COLUMN_MAJOR ? getMajorSize() : getMinorSize();
 	}
 
 	public default boolean isSquare() {
@@ -252,7 +252,7 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 	}
 
 	public default List<? extends Vector<?, V>> getRowVectors() {
-		if (getOrder() == Order.RowMajor) {
+		if (getOrder() == Order.ROW_MAJOR) {
 			return getMajorVectors();
 		} else {
 			return getMinorVectors();
@@ -260,7 +260,7 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 	}
 
 	public default List<? extends Vector<?, V>> getColumnVectors() {
-		if (getOrder() == Order.ColumnMajor) {
+		if (getOrder() == Order.COLUMN_MAJOR) {
 			return getMajorVectors();
 		} else {
 			return getMinorVectors();
@@ -268,7 +268,7 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 	}
 
 	public default Vector<?, V> getRowVector(int row) {
-		if (getOrder() == Order.RowMajor) {
+		if (getOrder() == Order.ROW_MAJOR) {
 			return getMajorVector(row);
 		} else {
 			return getMinorVector(row);
@@ -276,7 +276,7 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 	}
 
 	public default Vector<?, V> getColumnVector(int column) {
-		if (getOrder() == Order.ColumnMajor) {
+		if (getOrder() == Order.COLUMN_MAJOR) {
 			return getMajorVector(column);
 		} else {
 			return getMinorVector(column);

@@ -24,40 +24,41 @@ import uk.co.strangeskies.mathematics.values.DoubleValue;
 import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.Self;
 
-public interface Vector<S extends Vector<S, V>, V extends Value<V>> extends
-		Self<S>, Matrix<S, V>, Translatable<S> {
+public interface Vector<S extends Vector<S, V>, V extends Value<V>>
+	extends Self<S>, Matrix<S, V>, Translatable<S> {
 	public enum Orientation {
-		Row {
-			@Override
-			public Order getAssociatedOrder() {
-				return Order.RowMajor;
-			}
+	ROW {
+		@Override
+		public Order getAssociatedOrder() {
+		return Order.ROW_MAJOR;
+		}
 
-			@Override
-			public Orientation getOther() {
-				return Column;
-			}
-		},
-		Column {
-			@Override
-			public Order getAssociatedOrder() {
-				return Order.RowMajor;
-			}
+		@Override
+		public Orientation getOther() {
+		return COLUMN;
+		}
+	},
+	COLUMN {
+		@Override
+		public Order getAssociatedOrder() {
+		return Order.COLUMN_MAJOR;
+		}
 
-			@Override
-			public Orientation getOther() {
-				return Row;
-			}
-		};
+		@Override
+		public Orientation getOther() {
+		return ROW;
+		}
+	};
 
-		public abstract Order getAssociatedOrder();
+	public abstract Order getAssociatedOrder();
 
-		public abstract Orientation getOther();
+	public abstract Orientation getOther();
 	}
 
+	@Override
 	public default S transpose() {
-		Matrix.assertIsSquare(this);
-		return null;
+	Matrix.assertIsSquare(this);
+	return null;
 	}
 
 	public int getDimensions();

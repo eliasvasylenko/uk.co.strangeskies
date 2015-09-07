@@ -57,7 +57,7 @@ public abstract class MatrixHImpl<S extends MatrixH<S, V>, V extends Value<V>>
 		List<List<V>> newData = new ArrayList<>();
 		List<V> newElements = null;
 
-		if (order == Order.ColumnMajor) {
+		if (order == Order.COLUMN_MAJOR) {
 			for (List<? extends V> elements : data) {
 				newElements = new ArrayList<>(elements);
 				newData.add(newElements);
@@ -95,7 +95,7 @@ public abstract class MatrixHImpl<S extends MatrixH<S, V>, V extends Value<V>>
 	public MatrixNN<V> getMutableMatrix() {
 		List<List<V>> dataView;
 
-		if (getOrder() == Order.ColumnMajor) {
+		if (getOrder() == Order.COLUMN_MAJOR) {
 			dataView = new ListTransformOnceView<List<V>, List<V>>(getData2(),
 					l -> l.subList(0, getProjectedDimensions()));
 		} else {
@@ -146,7 +146,7 @@ public abstract class MatrixHImpl<S extends MatrixH<S, V>, V extends Value<V>>
 	@Override
 	public VectorH<?, V> getColumnVector(int column) {
 		return new VectorHNImpl<V>(column == getDimensions() - 1 ? Type.Absolute
-				: Type.Relative, getOrder(), Orientation.Column, getColumnVectorData(
+				: Type.Relative, getOrder(), Orientation.COLUMN, getColumnVectorData(
 				column).subList(0, getProjectedDimensions()));
 	}
 

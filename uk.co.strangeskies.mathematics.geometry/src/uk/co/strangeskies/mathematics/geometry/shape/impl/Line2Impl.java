@@ -40,8 +40,8 @@ public class Line2Impl<V extends Value<V>> extends
 	private final Vector2<V> b;
 
 	public Line2Impl(Factory<V> valueFactory) {
-		a = new Vector2Impl<>(Order.ColumnMajor, Orientation.Column, valueFactory);
-		b = new Vector2Impl<>(Order.ColumnMajor, Orientation.Column, valueFactory);
+		a = new Vector2Impl<>(Order.COLUMN_MAJOR, Orientation.COLUMN, valueFactory);
+		b = new Vector2Impl<>(Order.COLUMN_MAJOR, Orientation.COLUMN, valueFactory);
 	}
 
 	public Line2Impl(Vector2<V> a, Vector2<V> b) {

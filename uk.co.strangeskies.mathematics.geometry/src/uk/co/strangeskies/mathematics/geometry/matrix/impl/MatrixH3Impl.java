@@ -70,14 +70,14 @@ public class MatrixH3Impl<V extends Value<V>> extends
 
 	@Override
 	public final Vector4<V> getRowVector(int row) {
-		return new Vector4Impl<V>(getOrder(), Orientation.Row,
+		return new Vector4Impl<V>(getOrder(), Orientation.ROW,
 				getRowVectorData(row));
 	}
 
 	@Override
 	public final VectorH3<V> getColumnVector(int column) {
 		return new VectorH3Impl<V>(column == getDimensions() - 1 ? Type.Absolute
-				: Type.Relative, getOrder(), Orientation.Column, getColumnVectorData(
+				: Type.Relative, getOrder(), Orientation.COLUMN, getColumnVectorData(
 				getProjectedDimensions()).subList(0, getProjectedDimensions()));
 	}
 
@@ -85,7 +85,7 @@ public class MatrixH3Impl<V extends Value<V>> extends
 	public final Vector<?, V> getMajorVector(int index) {
 		List<V> majorElements = getData2().get(index);
 
-		if (getOrder() == Order.ColumnMajor) {
+		if (getOrder() == Order.COLUMN_MAJOR) {
 			majorElements = majorElements.subList(0, getProjectedDimensions());
 
 			Type newType;
@@ -95,10 +95,10 @@ public class MatrixH3Impl<V extends Value<V>> extends
 				newType = Type.Relative;
 			}
 
-			return new VectorH3Impl<V>(newType, Order.ColumnMajor,
-					Orientation.Column, majorElements);
+			return new VectorH3Impl<V>(newType, Order.COLUMN_MAJOR,
+					Orientation.COLUMN, majorElements);
 		} else {
-			return new Vector4Impl<V>(Order.RowMajor, Orientation.Row, getData2()
+			return new Vector4Impl<V>(Order.ROW_MAJOR, Orientation.ROW, getData2()
 					.get(index));
 		}
 	}
@@ -110,7 +110,7 @@ public class MatrixH3Impl<V extends Value<V>> extends
 			minorElements.add(elements.get(index));
 		}
 
-		if (getOrder() == Order.RowMajor) {
+		if (getOrder() == Order.ROW_MAJOR) {
 			minorElements = minorElements.subList(0, getProjectedDimensions());
 
 			Type newType;
@@ -120,10 +120,10 @@ public class MatrixH3Impl<V extends Value<V>> extends
 				newType = Type.Relative;
 			}
 
-			return new VectorH3Impl<V>(newType, Order.RowMajor, Orientation.Column,
+			return new VectorH3Impl<V>(newType, Order.ROW_MAJOR, Orientation.COLUMN,
 					minorElements);
 		} else {
-			return new Vector4Impl<V>(Order.ColumnMajor, Orientation.Row, getData2()
+			return new Vector4Impl<V>(Order.COLUMN_MAJOR, Orientation.ROW, getData2()
 					.get(index));
 		}
 	}

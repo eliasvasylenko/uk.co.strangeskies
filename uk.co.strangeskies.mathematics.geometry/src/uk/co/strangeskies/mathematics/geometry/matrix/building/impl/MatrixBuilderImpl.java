@@ -33,8 +33,8 @@ import uk.co.strangeskies.utilities.factory.Factory;
 
 @Component
 public class MatrixBuilderImpl implements MatrixBuilder {
-	private Order defaultOrder = Order.ColumnMajor;
-	private Orientation defaultOrientation = Orientation.Column;
+	private Order defaultOrder = Order.COLUMN_MAJOR;
+	private Orientation defaultOrientation = Orientation.COLUMN;
 
 	@Override
 	public ValueMatrixBuilder<IntValue> ints() {
