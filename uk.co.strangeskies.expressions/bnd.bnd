@@ -7,4 +7,4 @@ Bundle-Name: Strange Skies Expressions
 	*
 -buildpath:  \
 	uk.co.strangeskies.utilities;version=latest
-Bundle-Version: 1.0.5.${tstamp}
+Bundle-Version: 0.0.5.${tstamp}

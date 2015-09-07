@@ -27,8 +27,9 @@ package uk.co.strangeskies.utilities;
  * @param <T>
  *          The type of the property.
  */
+/* @I */
 public class IdentityProperty<T> implements Property<T, T> {
-	private T value;
+	private/* @I */T value;
 
 	/**
 	 * Create an IndentityProperty with null as the initial value.
@@ -46,13 +47,13 @@ public class IdentityProperty<T> implements Property<T, T> {
 	}
 
 	@Override
-	public T set(IdentityProperty<T> this, T to) {
+	public T set(/* @Mutable IdentityProperty<T> this, */T to) {
 		value = to;
 		return value;
 	}
 
 	@Override
-	public T get() {
+	public/* @I */T get() {
 		return value;
 	}
 }

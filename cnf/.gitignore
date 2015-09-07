@@ -1,5 +1,5 @@
 /bin/
 /generated/
 /cache/
-/releaserepo/
-!/localrepo/**/*.jar
+/release/
+!/local/**/*.jar

@@ -24,11 +24,14 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
+
+import org.osgi.annotation.versioning.ProviderType;
 
 import uk.co.strangeskies.mathematics.graph.EdgeVertices;
 import uk.co.strangeskies.mathematics.graph.Graph;
+import uk.co.strangeskies.mathematics.graph.GraphListeners;
 import uk.co.strangeskies.utilities.factory.Factory;
 
 /**
@@ -37,14 +40,15 @@ import uk.co.strangeskies.utilities.factory.Factory;
  * @param <V>
  * @param <E>
  */
+@ProviderType
 public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	/**
 	 * Calling this method has the same effect as calling both
-	 * {@link #unmodifiableVertices()} and {@link #unmodifiableEdges()}.
+	 * {@link #readOnlyVertices()} and {@link #readOnlyEdges()}.
 	 *
 	 * @return
 	 */
-	public GraphConfigurator<V, E> unmodifiable();
+	GraphConfigurator<V, E> readOnly();
 
 	/**
 	 * Calling this method has the effect of making the resulting graph
@@ -52,7 +56,7 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 *
 	 * @return
 	 */
-	public GraphConfigurator<V, E> unmodifiableVertices();
+	GraphConfigurator<V, E> readOnlyVertices();
 
 	/**
 	 * Calling this method has the effect of making the resulting graph
@@ -60,7 +64,7 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 *
 	 * @return
 	 */
-	public GraphConfigurator<V, E> unmodifiableEdges();
+	GraphConfigurator<V, E> readOnlyEdges();
 
 	/**
 	 * Accepts a collection of vertices to be contained in the resulting graph.
@@ -68,18 +72,18 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * @param vertices
 	 * @return
 	 */
-	public <W extends V> GraphConfigurator<W, E> vertices(Collection<W> vertices);
+	<W extends V> GraphConfigurator<W, E> addVertices(Collection<W> vertices);
 
 	/**
 	 * This method wraps and forwards it's parameters to
-	 * {@link #vertices(Collection)}.
+	 * {@link #addVertices(Collection)}.
 	 *
 	 * @param vertices
 	 * @return
 	 */
-	public default <W extends V> GraphConfigurator<W, E> vertices(
+	default <W extends V> GraphConfigurator<W, E> addVertices(
 			@SuppressWarnings("unchecked") W... vertices) {
-		return vertices(Arrays.asList(vertices));
+		return addVertices(Arrays.asList(vertices));
 	}
 
 	/**
@@ -88,64 +92,48 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * @param edges
 	 * @return
 	 */
-	public GraphConfigurator<V, E> edgeVertices(
-			Collection<? extends EdgeVertices<V>> edges);
+	GraphConfigurator<V, E> addEdges(Collection<? extends EdgeVertices<V>> edges);
 
 	/**
 	 * This method wraps and forwards it's parameters to
-	 * {@link #edges(Collection)}.
+	 * {@link #addEdges(Collection)}.
 	 *
 	 * @param edges
 	 * @return
 	 */
-	public default GraphConfigurator<V, E> edgeVertices(
+	default GraphConfigurator<V, E> addEdges(
 			@SuppressWarnings("unchecked") EdgeVertices<V>... edges) {
-		return edgeVertices(Arrays.asList(edges));
+		return addEdges(Arrays.asList(edges));
 	}
 
-	public GraphConfigurator<V, E> edges(Map<E, EdgeVertices<V>> edges);
-
-	public <F extends E> GraphConfigurator<V, F> edges(
-			Collection<? extends F> edges);
-
-	public default <F extends E> GraphConfigurator<V, F> edges(
-			@SuppressWarnings("unchecked") F... edges) {
-		return edges(Arrays.asList(edges));
-	}
+	<F extends E> GraphConfigurator<V, F> edgeType();
 
 	/**
-	 * This method sets a rule to determine whether edges should be generated
-	 * between vertices.
+	 * This method wraps and forwards it's parameters to
+	 * {@link #addEdges(Collection)}.
 	 *
-	 * @param betweenNeighbours
 	 * @return
 	 */
-	public GraphConfigurator<V, E> edgesBetween(
-			Function<? super V, ? extends Collection<? extends V>> betweenNeighbours);
+	GraphConfigurator<V, E> addEdge(V from, V to);
 
-	public GraphConfigurator<V, E> edgesFrom(
-			Function<? super V, ? extends Collection<? extends V>> fromNeighbours);
+	<F extends E> GraphConfigurator<V, F> addEdges(Map<F, EdgeVertices<V>> edges);
 
-	public GraphConfigurator<V, E> edgesTo(
-			Function<? super V, ? extends Collection<? extends V>> toNeighbours);
+	GraphConfigurator<V, E> addEdge(E edge, V from, V to);
 
 	/**
-	 * This method creates a rule to determine whether edges should be generated
-	 * between vertices.
-	 *
-	 * @param betweenNeighbours
+	 * The graph will be directed, and the direction of an edge will be determined
+	 * by the order in which the vertices for that edge are given when an edge is
+	 * added.
+	 * 
 	 * @return
 	 */
-	public GraphConfigurator<V, E> edgeRule(
-			BiPredicate<? super V, ? super V> betweenNeighbours);
-
-	public default GraphConfigurator<V, E> directed() {
+	default GraphConfigurator<V, E> directed() {
 		return direction((a, b) -> 1);
 	}
 
-	public GraphConfigurator<V, E> acyclic();
+	GraphConfigurator<V, E> acyclic();
 
-	public GraphConfigurator<V, E> multigraph();
+	GraphConfigurator<V, E> multigraph();
 
 	/**
 	 * This method sets a comparator to determine the direction of an edge between
@@ -156,9 +144,7 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * @param lowToHigh
 	 * @return
 	 */
-	public default GraphConfigurator<V, E> direction(Comparator<V> lowToHigh) {
-		return direction((e) -> lowToHigh);
-	}
+	GraphConfigurator<V, E> direction(Comparator<V> lowToHigh);
 
 	/**
 	 * This method accepts a function to create a comparator from an edge, over
@@ -171,40 +157,45 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * @param lowToHigh
 	 * @return
 	 */
-	public GraphConfigurator<V, E> direction(Function<E, Comparator<V>> lowToHigh);
+	GraphConfigurator<V, E> direction(Function<E, Comparator<V>> lowToHigh);
 
 	/**
-	 * This method accepts a function over a pair of vertices resulting in an edge
-	 * object. This function will be called every time an edge is added to the
-	 * graph between a pair of vertices, with the result then being associated
-	 * with that pair of vertices as an edge.
-	 *
-	 * @param factory
-	 * @return
+	 * For simple <em>or</em> multigraphs, specify the mechanism by which edge
+	 * objects will be generated between two vertices when an edge is added
+	 * between them.
+	 * 
+	 * <p>
+	 * The provided function will be invoked when an edge is added between two
+	 * vertices without an edge object being explicitly provided.
+	 * 
+	 * <p>
+	 * If no edge factory is provided, by way of either this method or
+	 * {@link #edgeMultiFactory(Function)}, edge objects must be explicitly
+	 * provided when adding an edge between vertices, by way of e.g.
+	 * {@link #addEdge(Object, Object, Object)} or {@link #addEdges(Map)}.
+	 * Conversely, if an edge factory <em>is</em> provided, it will not be
+	 * possible to add edges in that manner.
 	 */
-	public <F extends E> GraphConfigurator<V, F> edgeFactory(
+	<F extends E> GraphConfigurator<V, F> edgeFactory(
 			Function<EdgeVertices<V>, F> factory);
 
 	/**
-	 * This method accepts a function over a pair of vertices resulting in an edge
-	 * object. This function will be called every time an edge is added to the
-	 * graph between a pair of vertices, with the result then being associated
-	 * with that pair of vertices as an edge.
-	 *
-	 * @param factory
-	 * @return
+	 * For multigraphs, specify the mechanism by which edge objects will be
+	 * generated between two vertices when an edge is added between them.
+	 * 
+	 * <p>
+	 * The provided function will be invoked when an edge is added between two
+	 * vertices without an edge object being explicitly provided.
+	 * 
+	 * <p>
+	 * If no edge factory is provided, by way of either this method or
+	 * {@link #edgeMultiFactory(Function)}, edge objects must be explicitly
+	 * provided when adding an edge between vertices, by way of e.g.
+	 * {@link #addEdge(Object, Object, Object)} or {@link #addEdges(Map)}.
+	 * Conversely, if an edge factory <em>is</em> provided, it will not be
+	 * possible to add edges in that manner.
 	 */
-	public GraphConfigurator<V, E> edgeVerticesFunction(
-			Function<E, EdgeVertices<V>> factory);
-
-	/**
-	 * This method behaves as {@link #edgeFactory(Function)}, except that it can
-	 * return a set, making the graph a multigraph.
-	 *
-	 * @param factory
-	 * @return
-	 */
-	public <F extends E> GraphConfigurator<V, F> edgeMultiFactory(
+	<F extends E> GraphConfigurator<V, F> edgeMultiFactory(
 			Function<EdgeVertices<V>, Set<F>> factory);
 
 	/**
@@ -214,33 +205,39 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * @param factory
 	 * @return
 	 */
-	public default <F extends E> GraphConfigurator<V, F> edgeFactory(
-			Factory<F> factory) {
+	default <F extends E> GraphConfigurator<V, F> edgeFactory(Factory<F> factory) {
 		return edgeFactory(v -> factory.create());
 	}
 
 	/**
-	 * This method accepts a metric over edge objects to describe their weight.
+	 * This method accepts a mapping from an edge to a weight for that edge. If no
+	 * mapping is provided, the graph will be considered unweighted.
 	 *
 	 * @param weight
 	 * @return
 	 */
-	public GraphConfigurator<V, E> edgeWeight(Function<E, Double> weight);
+	GraphConfigurator<V, E> edgeWeight(Function<E, Double> weight);
+
+	GraphConfigurator<V, E> vertexEquality(
+			BiPredicate<? super V, ? super V> comparator);
+
+	GraphConfigurator<V, E> edgeEquality(
+			BiPredicate<? super E, ? super E> comparator);
 
 	/**
-	 * If this method is invoked, then for the graph created by this configurator
-	 * any added edges, or partially satisfied triggered edge rules, will
-	 * automatically trigger the addition of any missing vertices of that edge to
-	 * the graph.
-	 *
+	 * Graph operations are atomic. Only one atomic operation at a time can hold a
+	 * write lock in order to execute, though an atomic operation can invoke other
+	 * such operations internally, and they will be considered a part of the same
+	 * atomic transaction which began at some 'root' operation invocation.
+	 * 
+	 * <p>
+	 * If an exception is caught at the root invocation of an atomic operation,
+	 * the operation will be cancelled and all pending changes discarded. Internal
+	 * listeners are triggered <em>during</em> an atomic operation as each change
+	 * occurs, and so any exceptions they throw may propagate down in this manner.
+	 * 
 	 * @return
 	 */
-	public GraphConfigurator<V, E> generateNeighbours();
-
-	public GraphConfigurator<V, E> constrain(Predicate<Graph<V, E>> constraint);
-
-	public GraphConfigurator<V, E> vertexComparator(
-			Comparator<? super V> comparator);
-
-	public GraphConfigurator<V, E> edgeComparator(Comparator<? super E> comparator);
+	GraphConfigurator<V, E> internalListeners(
+			Consumer<GraphListeners<V, E>> internalListeners);
 }

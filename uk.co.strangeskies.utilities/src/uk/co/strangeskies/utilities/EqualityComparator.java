@@ -26,36 +26,51 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.BiPredicate;
 
 /**
- * Defines an arbitrary total ordering over references' identities. Guaranteed
- * to be a consistent ordering for a particular IdentityComparator, but not
- * necessarily between different instances of IdentityComparator.
+ * Derives an arbitrary total ordering over a type of object from an equality
+ * relation. Guaranteed to be a consistent ordering for a particular
+ * IdentityComparator, but not necessarily between different instances of
+ * IdentityComparator.
  *
  * @author Elias N Vasylenko
  *
  * @param <T>
  *          The type of object to compare.
  */
-public class IdentityComparator<T> implements Comparator<T> {
-	private final Map<Integer, List<IDReference<T>>> collisionMap;
+public class EqualityComparator<T> implements Comparator<T> {
+	private final BiPredicate<? super T, ? super T> equality;
+
+	private final Map<Integer, List<IDReference>> collisionMap;
 
 	private final ReferenceQueue<Object> referenceQueue;
 
 	/**
 	 * Create a fresh identity comparator.
 	 */
-	public IdentityComparator() {
-		collisionMap = new HashMap<Integer, List<IDReference<T>>>();
+	public EqualityComparator(BiPredicate<? super T, ? super T> equality) {
+		this.equality = equality;
+
+		collisionMap = new HashMap<Integer, List<IDReference>>();
 
 		referenceQueue = new ReferenceQueue<>();
 	}
 
+	public static <T> EqualityComparator<T> identityComparator() {
+		return new EqualityComparator<>((a, b) -> a == b);
+	}
+
+	public static <T> EqualityComparator<T> naturalComparator() {
+		return new EqualityComparator<>(Objects::equals);
+	}
+
 	@Override
-	public int compare(IdentityComparator<T> this, T first, T second) {
+	public int compare(EqualityComparator<T> this, T first, T second) {
 		clean();
 
-		if (first == second) {
+		if (equality.test(first, second)) {
 			return 0;
 		}
 
@@ -66,14 +81,14 @@ public class IdentityComparator<T> implements Comparator<T> {
 			return secondHash - firstHash;
 		}
 
-		IDReference<T> firstReference = new IDReference<T>(first, firstHash,
+		IDReference firstReference = new IDReference(first, firstHash,
 				referenceQueue);
-		IDReference<T> secondReference = new IDReference<T>(second, secondHash,
+		IDReference secondReference = new IDReference(second, secondHash,
 				referenceQueue);
 
-		List<IDReference<T>> collisions = collisionMap.get(firstHash);
+		List<IDReference> collisions = collisionMap.get(firstHash);
 		if (collisions == null) {
-			collisions = new ArrayList<IDReference<T>>();
+			collisions = new ArrayList<IDReference>();
 
 			collisions.add(firstReference);
 			collisions.add(secondReference);
@@ -103,10 +118,11 @@ public class IdentityComparator<T> implements Comparator<T> {
 	 * This method can be called to prune stale references from the hash-collision
 	 * map. It is also called automatically
 	 */
-	public void clean(IdentityComparator<T> this) {
-		IDReference<?> oldReference;
-		while ((oldReference = (IDReference<?>) referenceQueue.poll()) != null) {
-			List<IDReference<T>> collisions = collisionMap.get(oldReference.getId());
+	@SuppressWarnings("unchecked")
+	public void clean(EqualityComparator<T> this) {
+		IDReference oldReference;
+		while ((oldReference = (IDReference) referenceQueue.poll()) != null) {
+			List<IDReference> collisions = collisionMap.get(oldReference.getId());
 
 			if (collisions.size() > 1) {
 				collisions.remove(oldReference);
@@ -116,10 +132,10 @@ public class IdentityComparator<T> implements Comparator<T> {
 		}
 	}
 
-	protected class IDReference<R> extends WeakReference<R> {
+	protected class IDReference extends WeakReference<T> {
 		private final int id;
 
-		public IDReference(R referent, int id, ReferenceQueue<? super R> q) {
+		public IDReference(T referent, int id, ReferenceQueue<? super T> q) {
 			super(referent, q);
 
 			this.id = id;
@@ -129,13 +145,18 @@ public class IdentityComparator<T> implements Comparator<T> {
 			return id;
 		}
 
+		@SuppressWarnings("unchecked")
 		@Override
 		public boolean equals(Object obj) {
 			if (!(obj instanceof Reference<?>)) {
 				return false;
 			}
 
-			return ((Reference<?>) obj).get() == get();
+			try {
+				return equality.test((T) ((Reference<?>) obj).get(), get());
+			} catch (Exception e) {
+				return false;
+			}
 		}
 
 		@Override

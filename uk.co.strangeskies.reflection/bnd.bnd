@@ -8,14 +8,10 @@ Bundle-Name: Strange Skies Reflection
 -runee: JavaSE-1.8
 -runfw: org.eclipse.osgi;version='[3.10.1.v20140909-1633,3.10.1.v20140909-1633]'
 -buildpath: \
-	junit__junit; \
-		version = latest, \
-	org.hamcrest__java-hamcrest; \
-		version = latest, \
-	org.hamcrest__hamcrest-junit; \
-		version = latest, \
+	osgi.enroute.junit.wrapper, \
+	osgi.enroute.hamcrest.wrapper, \
 	uk.co.strangeskies.utilities; \
 		version = latest, \
 	osgi.enroute.base.api; \
 		version = latest
-Bundle-Version: 3.0.2.${tstamp}
+Bundle-Version: 0.0.2.${tstamp}

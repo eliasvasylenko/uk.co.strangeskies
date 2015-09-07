@@ -21,8 +21,11 @@ package uk.co.strangeskies.mathematics.graph;
 import java.util.Comparator;
 import java.util.function.Function;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 import uk.co.strangeskies.utilities.factory.Factory;
 
+@ProviderType
 public interface GraphTransformer<V, E> extends Factory<Graph<V, E>> {
 	public <W> GraphTransformer<W, E> vertices(Function<V, W> transformation);
 

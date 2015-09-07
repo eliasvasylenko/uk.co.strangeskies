@@ -1,4 +1,4 @@
-scripting-version = 1.0.0.${tstamp}
+scripting-version = 0.0.1.${tstamp}
 
 -sub: \
 	*.bnd

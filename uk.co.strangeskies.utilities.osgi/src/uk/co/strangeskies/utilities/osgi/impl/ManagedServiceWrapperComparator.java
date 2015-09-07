@@ -18,10 +18,14 @@
  */
 package uk.co.strangeskies.utilities.osgi.impl;
 
-import uk.co.strangeskies.utilities.IdentityComparator;
+import uk.co.strangeskies.utilities.EqualityComparator;
 
 class ManagedServiceWrapperComparator extends
-		IdentityComparator<ManagedServiceWrapper<?>> {
+		EqualityComparator<ManagedServiceWrapper<?>> {
+	public ManagedServiceWrapperComparator() {
+		super((a, b) -> a == b);
+	}
+
 	@SuppressWarnings("incomplete-switch")
 	@Override
 	public int compare(ManagedServiceWrapper<?> first,

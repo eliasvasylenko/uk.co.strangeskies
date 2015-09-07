@@ -16,22 +16,36 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with uk.co.strangeskies.utilities.  If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.utilities.tuples;
+package uk.co.strangeskies.utilities.tuple;
+
 
 /**
- * A one tuple.
+ * The null tuple entry, used for terminating a tuple.
  * 
  * @author Elias N Vasylenko
  *
- * @param <H>
- *          The type of the first and only item.
  */
-public class Unit<H> extends Tuple<H, EmptyTuple> {
+public final class EmptyTuple extends Tuple<Void, Tuple<?, ?>> {
+	private static EmptyTuple NULL_TUPLE = new EmptyTuple();
+
+	private EmptyTuple() {
+		super(null, null);
+	}
+
 	/**
-	 * @param head
-	 *          The the first and only item.
+	 * @return Return an instance of the empty tuple.
 	 */
-	public Unit(H head) {
-		super(head, EmptyTuple.get());
+	public static EmptyTuple get() {
+		return NULL_TUPLE;
+	}
+
+	@Override
+	public boolean hasTail() {
+		return false;
+	}
+
+	@Override
+	public int getSize() {
+		return 0;
 	}
 }

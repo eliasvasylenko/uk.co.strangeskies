@@ -24,7 +24,7 @@ import java.util.Set;
 
 import uk.co.strangeskies.mathematics.expression.collection.ExpressionTreeSet;
 import uk.co.strangeskies.mathematics.expression.collection.SortedExpressionSet;
-import uk.co.strangeskies.utilities.IdentityComparator;
+import uk.co.strangeskies.utilities.EqualityComparator;
 
 /**
  * TODO
@@ -59,7 +59,8 @@ public abstract class DependentExpression<T> extends MutableExpressionImpl<T> {
 	}
 
 	public DependentExpression(boolean parallel) {
-		dependencies = new ExpressionTreeSet<>(new IdentityComparator<>());
+		dependencies = new ExpressionTreeSet<>(
+				EqualityComparator.identityComparator());
 		dependencies.addObserver(m -> postUpdate());
 
 		this.parallel = parallel;

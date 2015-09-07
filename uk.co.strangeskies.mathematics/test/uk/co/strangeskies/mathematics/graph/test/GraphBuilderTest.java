@@ -23,31 +23,46 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.Assert;
+import org.junit.Test;
 
 import uk.co.strangeskies.mathematics.graph.EdgeVertices;
 import uk.co.strangeskies.mathematics.graph.Graph;
 import uk.co.strangeskies.mathematics.graph.building.GraphBuilder;
 import uk.co.strangeskies.mathematics.graph.building.GraphConfigurator;
 import uk.co.strangeskies.mathematics.graph.impl.GraphBuilderImpl;
-import uk.co.strangeskies.utilities.IdentityComparator;
+import uk.co.strangeskies.utilities.EqualityComparator;
 
 public class GraphBuilderTest {
 	private final Supplier<GraphBuilder> graphBuilderSupplier;
 
 	public GraphBuilderTest() {
-		this(() -> new GraphBuilderImpl());
+		graphBuilderSupplier = GraphBuilderImpl::new;
 	}
 
-	public GraphBuilderTest(Supplier<GraphBuilder> graphBuilderSupplier) {
-		this.graphBuilderSupplier = graphBuilderSupplier;
-	}
+	/*
+	 * public GraphBuilderTest(Supplier<GraphBuilder> graphBuilderSupplier) {
+	 * this.graphBuilderSupplier = graphBuilderSupplier; }
+	 */
 
 	protected GraphConfigurator<Object, Object> graph() {
 		return graphBuilderSupplier.get().configure();
+	}
+
+	@SafeVarargs
+	protected final <T> Set<T> set(T... items) {
+		return new HashSet<>(Arrays.asList(items));
+	}
+
+	protected <T> Set<T> set(BiPredicate<? super T, ? super T> equality,
+			@SuppressWarnings("unchecked") T... items) {
+		Set<T> set = new TreeSet<>(new EqualityComparator<T>(equality));
+		set.addAll(Arrays.asList(items));
+		return set;
 	}
 
 	@Test
@@ -57,88 +72,92 @@ public class GraphBuilderTest {
 
 	@Test
 	public void buildVerticesTest() {
-		List<String> vertices = Arrays.asList("one", "two", "three");
+		Set<String> vertices = set("one", "two", "three");
 
-		Graph<String, Object> graph = graph().vertices(vertices).create();
+		Graph<String, Object> graph = graph().addVertices(vertices).create();
 
 		Assert.assertEquals(vertices, graph.vertices());
-		Assert.assertEquals(Collections.emptySet(), graph.edges().keySet());
+		Assert.assertEquals(Collections.emptySet(), graph.edges());
 	}
 
 	@Test
 	public void buildVerticesExclusionTest() {
 		List<String> vertices = Arrays.asList("one", "two", "three", "three");
 
-		Graph<String, Object> graph = graph().vertices(vertices).create();
+		Graph<String, Object> graph = graph().addVertices(vertices).create();
 
-		Assert.assertEquals(vertices, graph.vertices());
-		Assert.assertEquals(Collections.emptySet(), graph.edges().keySet());
+		Assert.assertEquals(new HashSet<>(vertices), graph.vertices());
+		Assert.assertEquals(Collections.emptySet(), graph.edges());
 	}
 
 	@Test
 	public void buildEdgesTest() {
-		List<String> vertices = Arrays.asList("one", "two", "three");
-		List<EdgeVertices<String>> edges = Arrays.asList(
-				EdgeVertices.between("one", "two"),
+		Set<String> vertices = set("one", "two", "three");
+		Set<EdgeVertices<String>> edges = set(EdgeVertices.between("one", "two"),
 				EdgeVertices.between("two", "three"));
 
-		Graph<String, Object> graph = graph().vertices(vertices)
-				.edgeVertices(edges).create();
+		Graph<String, Object> graph = graph().addVertices(vertices)
+				.edgeFactory(Object::new).addEdges(edges).create();
 
 		Assert.assertEquals(vertices, graph.vertices());
-		Assert.assertEquals(edges, graph.edges().values());
+		Assert.assertEquals(edges, graph.edges().edgeVertices());
 	}
 
 	@Test
 	public void buildAutoEdgesTest() {
-		Set<String> vertices = new HashSet<>(Arrays.asList("one", "two", "three"));
-		Set<EdgeVertices<String>> edges = new HashSet<>(Arrays.asList(EdgeVertices
-				.between("one", "two")));
+		Set<String> vertices = set("one", "two", "three");
+		Set<EdgeVertices<String>> edges = set(EdgeVertices.between("one", "two"));
 
-		Graph<String, Object> graph = graph().vertices("one", "two", "three")
-				.edgeRule((s1, s2) -> s1.length() == s2.length()).create();
+		Graph<String, Object> graph = graph().addVertices(vertices).addEdges(edges)
+				.edgeFactory(Object::new)
+				.internalListeners(l -> l.vertexAdded().add((g, v) -> {
+					for (String vertex : g.vertices())
+						if (vertex != v && vertex.length() == v.length())
+							g.edges().add(vertex, v);
+				})).create();
 
-		Assert.assertEquals(graph.vertices(), vertices);
-		Assert.assertEquals(graph.edges().values(), edges);
+		Assert.assertEquals(vertices, graph.vertices());
+		Assert.assertEquals(edges, graph.edges().edgeVertices());
 	}
 
 	@Test
 	public void buildUnmodifiableTest() {
-		List<String> vertices = Arrays.asList("one", "two", "three");
-		List<EdgeVertices<String>> edges = Arrays.asList(
-				EdgeVertices.between("one", "two"),
+		Set<String> vertices = set("one", "two", "three");
+		Set<EdgeVertices<String>> edges = set(EdgeVertices.between("one", "two"),
 				EdgeVertices.between("two", "three"));
 
-		Graph<String, Object> graph = graph().vertices(vertices)
-				.edgeVertices(edges).unmodifiable().create();
+		Graph<String, Object> graph = graph().addVertices(vertices).addEdges(edges)
+				.edgeFactory(Object::new).readOnly().create();
 
 		Assert.assertEquals(vertices, graph.vertices());
-		Assert.assertEquals(edges, graph.edges().values());
+		Assert.assertEquals(edges, graph.edges().edgeVertices());
 	}
 
 	@Test
 	public void buildDirectedTest() {
-		List<String> vertices = Arrays.asList("one", "two", "three");
+		Set<String> vertices = set("one", "two", "three");
 
-		Graph<String, Object> graph = graph().vertices(vertices)
-				.edgeRule((a, b) -> true).direction(String::compareTo).create();
+		Graph<String, Object> graph = graph().addVertices(vertices)
+				.internalListeners(l -> l.vertexAdded().add((g, v) -> {
+					for (String vertex : g.vertices())
+						if (vertex != v)
+							g.edges().add(vertex, v);
+				})).edgeFactory(Object::new).direction(String::compareTo).create();
 
 		Assert.assertEquals(vertices, graph.vertices());
 
-		Assert.assertEquals(Arrays.asList("two", "three"), graph.vertices()
-				.outgoingFrom("one"));
-		Assert.assertEquals(Collections.emptySet(),
-				graph.vertices().incomingTo("one"));
+		Assert.assertEquals(set("two", "three"),
+				graph.vertices().successorsOf("one"));
+		Assert.assertEquals(Collections.emptySet(), graph.vertices()
+				.predecessorsOf("one"));
 
-		Assert.assertEquals(Arrays.asList("two"),
-				graph.vertices().outgoingFrom("three"));
-		Assert.assertEquals(Arrays.asList("one"),
-				graph.vertices().incomingTo("three"));
+		Assert.assertEquals(set("two"), graph.vertices().successorsOf("three"));
+		Assert.assertEquals(set("one"), graph.vertices().predecessorsOf("three"));
 
 		Assert.assertEquals(Collections.emptySet(),
-				graph.vertices().outgoingFrom("three"));
-		Assert.assertEquals(Arrays.asList("one", "two"), graph.vertices()
-				.incomingTo("three"));
+				graph.vertices().successorsOf("two"));
+		Assert.assertEquals(set("one", "three"),
+				graph.vertices().predecessorsOf("two"));
 	}
 
 	@Test
@@ -146,59 +165,43 @@ public class GraphBuilderTest {
 		String one = "one";
 		String two = "two";
 		String three = new String(one);
-		List<String> vertices = Arrays.asList(one, two, three);
+		Set<String> vertices = new TreeSet<>(
+				EqualityComparator.identityComparator());
+		vertices.add(one);
+		vertices.add(two);
+		vertices.add(three);
 
-		Graph<String, Object> graph = graph().vertices(vertices)
-				.vertexComparator(new IdentityComparator<>()).edgeRule((a, b) -> true)
-				.create();
-
-		Assert.assertEquals(vertices, graph.vertices());
-		Assert
-				.assertEquals(
-						Arrays.asList(EdgeVertices.between(one, two),
-								EdgeVertices.between(two, three),
-								EdgeVertices.between(three, one)), graph.edges().values());
-	}
-
-	@Test
-	public void buildDirectedWithComparatorTest() {
-		String one = "one";
-		String two = "two";
-		String three = new String(one);
-		List<String> vertices = Arrays.asList(one, two, three);
-
-		Graph<String, Object> graph = graph().vertices(vertices)
-				.vertexComparator(new IdentityComparator<>()).edgeRule((a, b) -> true)
-				.create();
+		Graph<String, Object> graph = graph().addVertices(vertices)
+				.vertexEquality((a, b) -> a == b)
+				.internalListeners(l -> l.vertexAdded().add((g, v) -> {
+					for (String vertex : g.vertices()) {
+						if (vertex != v)
+							g.edges().add(v, vertex);
+					}
+				})).edgeFactory(Object::new).create();
 
 		Assert.assertEquals(vertices, graph.vertices());
-
-		Assert.assertEquals(Arrays.asList(two, three), graph.vertices()
-				.outgoingFrom(one));
-		Assert.assertEquals(Collections.emptySet(), graph.vertices()
-				.incomingTo(one));
-
-		Assert.assertEquals(Arrays.asList(two), graph.vertices()
-				.outgoingFrom(three));
-		Assert.assertEquals(Arrays.asList(one), graph.vertices().incomingTo(three));
-
-		Assert.assertEquals(Collections.emptySet(),
-				graph.vertices().outgoingFrom(three));
-		Assert.assertEquals(Arrays.asList(one, two),
-				graph.vertices().incomingTo(three));
+		Assert.assertEquals(
+				set(EdgeVertices.between(one, two), EdgeVertices.between(two, three),
+						EdgeVertices.between(three, one)), graph.edges().edgeVertices());
 	}
 
 	@Test
 	public void buildWithEdgeFactoryTest() {
-		List<String> vertices = Arrays.asList("one", "two", "three");
+		Set<String> vertices = set("one", "two", "three");
 
-		Graph<String, String> graph = graph().vertices(vertices)
-				.vertexComparator(new IdentityComparator<>()).edgeRule((a, b) -> true)
-				.direction(String::compareTo)
+		Graph<String, String> graph = graph().addVertices(vertices)
+				.vertexEquality((a, b) -> a == b)
+				.internalListeners(l -> l.vertexAdded().add((g, v) -> {
+					for (String vertex : g.vertices())
+						if (v != vertex)
+							g.edges().add(v, vertex);
+				})).direction(String::compareTo)
 				.edgeFactory(v -> v.getFrom() + " -> " + v.getTo()).create();
 
-		Assert.assertEquals(Arrays.asList("one -> two", "three -> two",
-				"one -> three"), graph.edges().keySet());
+		Assert.assertEquals(set("one -> two", "three -> two", "one -> three"),
+				graph.edges());
+
 	}
 
 	// TODO edge vertices from edge object

@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 import uk.co.strangeskies.reflection.Types.TypeParser;
 import uk.co.strangeskies.utilities.text.StringEscaper;
 import uk.co.strangeskies.utilities.text.parser.Parser;
-import uk.co.strangeskies.utilities.tuples.Pair;
+import uk.co.strangeskies.utilities.tuple.Pair;
 
 /**
  * A collection of general utility methods relating to annotated types within

@@ -11,14 +11,7 @@ import aQute.bnd.build.Workspace
 buildscript {
   repositories {
     jcenter()
-    ivy {
-      url 'https://bndtools.ci.cloudbees.com/job/bnd.master/lastSuccessfulBuild/artifact/dist/bundles'
-      layout 'pattern', {
-            artifact '[module]/[artifact]-[revision].[ext]' /* OSGi repo pattern */
-      }
-    }
   }
-
   dependencies {
     classpath bndPlugin
     classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
@@ -29,6 +22,11 @@ buildscript {
   }
 }
 
+task wrapper(type: Wrapper) {
+  jarFile = rootProject.file('.gradle-wrapper/gradle-wrapper.jar')
+  gradleVersion = '2.6'
+}
+
 /* Initialize the bnd workspace */
 ext.bndWorkspace = Workspace.getWorkspace(rootDir, bnd_cnf)
 if (bndWorkspace == null) {
@@ -37,7 +35,7 @@ if (bndWorkspace == null) {
 
 ext.cnf = rootProject.project(bnd_cnf)
 
-/* Configure Subprojects */
+/* Configure the subprojects */
 subprojects {
   def bndProject = bndWorkspace.getProject(name)
   if (bndProject != null) {
@@ -93,11 +91,5 @@ githubPages {
   pages {
     from aggregateJavadoc
   }
-}
-
-/* Wrapper */
-task wrapper(type: Wrapper) {
-  jarFile = rootProject.file('.gradle-wrapper/gradle-wrapper.jar')
-  gradleVersion = '2.6'
 }
 

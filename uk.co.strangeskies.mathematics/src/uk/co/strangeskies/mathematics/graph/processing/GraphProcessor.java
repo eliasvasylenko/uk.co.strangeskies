@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -40,19 +39,15 @@ public class GraphProcessor {
 			this.graph = graph;
 			this.process = process;
 
-			processed = new TreeSet<>(graph.vertices().comparator());
+			processed = graph.createVertexSet();
 
-			ready = graph
-					.vertices()
-					.stream()
-					.filter(v -> graph.vertices().incomingTo(v).isEmpty())
-					.collect(
-							Collectors.toCollection(() -> new TreeSet<>(graph.vertices()
-									.comparator())));
+			ready = graph.vertices().stream()
+					.filter(v -> graph.vertices().predecessorsOf(v).isEmpty())
+					.collect(Collectors.toCollection(graph::createVertexSet));
 		}
 
 		public Set<V> processedVertices() {
-			Set<V> processedCopy = new TreeSet<>(graph.vertices().comparator());
+			Set<V> processedCopy = graph.createVertexSet();
 
 			synchronized (processed) {
 				processedCopy.addAll(processed);
@@ -62,7 +57,7 @@ public class GraphProcessor {
 		}
 
 		public Set<V> preparedVertices() {
-			Set<V> readyCopy = new TreeSet<>(graph.vertices().comparator());
+			Set<V> readyCopy = graph.createVertexSet();
 
 			synchronized (processed) {
 				readyCopy.addAll(ready);
@@ -79,10 +74,10 @@ public class GraphProcessor {
 
 			process.accept(nextVertex);
 
-			Set<V> readied = new TreeSet<>(graph.vertices().comparator());
+			Set<V> readied = graph.createVertexSet();
 			synchronized (processed) {
 				processed.add(nextVertex);
-				readied.addAll(graph.vertices().outgoingFrom(nextVertex));
+				readied.addAll(graph.vertices().successorsOf(nextVertex));
 				readied.removeAll(ready);
 				ready.addAll(readied);
 			}
@@ -128,8 +123,7 @@ public class GraphProcessor {
 	}
 
 	public <V, E> Process<V> begin(Graph<V, E> graph) {
-		return begin(graph, c -> {
-		});
+		return begin(graph, c -> {});
 	}
 
 	public <V, E> Process<V> begin(Graph<V, E> graph, Consumer<V> process) {

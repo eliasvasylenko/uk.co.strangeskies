@@ -36,7 +36,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.utilities.IdentityComparator;
+import uk.co.strangeskies.utilities.EqualityComparator;
 import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
 import uk.co.strangeskies.utilities.collection.multimap.MultiTreeMap;
 
@@ -177,10 +177,11 @@ public class ParameterizedTypes {
 			MultiMap<ParameterizedType, ParameterizedType, Set<ParameterizedType>> equalitiesForThread = assumedEqualities
 					.get(currentThread);
 			if (equalitiesForThread == null) {
-				assumedEqualities.put(currentThread,
-						equalitiesForThread = new MultiTreeMap<>(
-								new IdentityComparator<>(), () -> new TreeSet<>(
-										new IdentityComparator<>())));
+				assumedEqualities.put(
+						currentThread,
+						equalitiesForThread = new MultiTreeMap<>(EqualityComparator
+								.identityComparator(), () -> new TreeSet<>(EqualityComparator
+								.identityComparator())));
 				newThread = true;
 			}
 

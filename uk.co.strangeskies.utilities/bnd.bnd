@@ -9,7 +9,7 @@ Export-Package: \
 	uk.co.strangeskies.utilities.function,\
 	uk.co.strangeskies.utilities.function.collection,\
 	uk.co.strangeskies.utilities.test,\
-	uk.co.strangeskies.utilities.tuples,\
+	uk.co.strangeskies.utilities.tuple,\
 	uk.co.strangeskies.utilities.text.parser,\
 	uk.co.strangeskies.utilities.text
 Bundle-Name: Strange Skies Utilities
@@ -17,18 +17,12 @@ Bundle-Name: Strange Skies Utilities
 	*
 -runee: JavaSE-1.8
 -runfw: org.eclipse.osgi;version='[3.10.1.v20140909-1633,3.10.1.v20140909-1633]'
--buildpath:  \
-	osgi.enroute.base.api;  \
-		version = latest,  \
-	junit__junit;  \
-		version = latest,  \
-	org.hamcrest__java-hamcrest;  \
-		version = latest,  \
-	org.hamcrest__hamcrest-junit;  \
-		version = latest
-#,  \
-#	edu.washington.cs.types.checker:checker-annotated-jdk8;  \
-#		version = 1.7.5,  \
-#	edu.washington.cs.types.checker:checker-framework;  \
-#		version = 1.7.5
-Bundle-Version: 1.0.1.${tstamp}
+-buildpath: \
+	osgi.enroute.base.api;version=latest,\
+	osgi.enroute.junit.wrapper,\
+	osgi.enroute.hamcrest.wrapper,\
+	org.hamcrest__java-hamcrest
+#,\
+#	org.checkerframework__checker-qual,\
+#	org.checkerframework__jdk8
+Bundle-Version: 0.0.1.${tstamp}
