@@ -93,3 +93,37 @@ githubPages {
   }
 }
 
+/* Artifactory Publication */
+artifactory {
+  contextUrl = 'https://oss.jfrog.org'
+
+  publish {
+    repository {
+      repoKey = 'oss-snapshot-local'
+      maven = true
+
+      if (project.hasProperty('jfrogUser') && project.hasProperty('jfrogPassword')) {
+        username = 'publisher'
+        password = '********'
+      }
+    }
+
+    defaults {
+      publications ('mavenJava')
+    }
+  }
+}
+
+artifactoryPublish { 
+  dependsOn jar
+}
+
+apply plugin: 'maven-publish'
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+}
