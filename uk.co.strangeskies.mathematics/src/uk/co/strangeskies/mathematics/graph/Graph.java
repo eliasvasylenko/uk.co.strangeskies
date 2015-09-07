@@ -20,9 +20,9 @@ package uk.co.strangeskies.mathematics.graph;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 
 import org.osgi.annotation.versioning.ProviderType;
@@ -37,23 +37,33 @@ import uk.co.strangeskies.utilities.Copyable;
 @ProviderType
 public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 	@ProviderType
-	public interface Vertices<V> extends Set<V> {
+	public interface Vertices<V, E> extends Set<V> {
+		BiPredicate<? super V, ? super V> equality();
+
 		Set<V> adjacentTo(V vertex);
 
-		Set<V> outgoingFrom(V vertex);
+		EdgeVertices<V> incidentTo(E edge);
 
-		Set<V> incomingTo(V vertex);
+		V incidentToHead(E edge);
 
-		Comparator<? super V> comparator();
+		V incidentToTail(E edge);
+
+		Set<V> successorsOf(V vertex);
+
+		Set<V> predecessorsOf(V vertex);
 	}
 
 	@ProviderType
-	public interface Edges<V, E> extends Map<E, EdgeVertices<V>> {
-		Set<E> adjacentTo(V vertex);
+	public interface Edges<V, E> extends Set<E> {
+		BiPredicate<? super E, ? super E> equality();
 
-		Set<E> outgoingFrom(V vertex);
+		double weight(E edge);
 
-		Set<E> incomingTo(V vertex);
+		Set<E> incidentTo(V vertex);
+
+		Set<E> incidentToHead(V vertex);
+
+		Set<E> incidentToTail(V vertex);
 
 		default Set<E> between(V from, V to) {
 			return between(EdgeVertices.between(from, to));
@@ -94,9 +104,7 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 			return changed;
 		}
 
-		double weight(E edge);
-
-		Comparator<? super E> comparator();
+		Set<EdgeVertices<V>> edgeVertices();
 	}
 
 	/**
@@ -104,7 +112,7 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 	 *
 	 * @return
 	 */
-	Vertices<V> vertices();
+	Vertices<V, E> vertices();
 
 	/**
 	 * Returns an unmodifiable set of the edges in this graph.
@@ -127,5 +135,21 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 	 * 
 	 * @param action
 	 */
-	void atomic(Consumer<Graph<V, E>> action);
+	void atomic(Consumer<? super Graph<V, E>> action);
+
+	Set<V> createVertexSet();
+
+	Set<V> createVertexSet(Collection<? extends V> vertices);
+
+	Set<E> createEdgeSet();
+
+	Set<E> createEdgeSet(Collection<? extends E> edges);
+
+	<T> Map<V, T> createVertexMap();
+
+	<T> Map<V, T> createVertexMap(Map<? extends V, ? extends T> edges);
+
+	<T> Map<E, T> createEdgeMap();
+
+	<T> Map<E, T> createEdgeMap(Map<? extends E, ? extends T> edges);
 }

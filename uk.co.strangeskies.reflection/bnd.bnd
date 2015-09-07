@@ -14,4 +14,4 @@ Bundle-Name: Strange Skies Reflection
 		version = latest, \
 	osgi.enroute.base.api; \
 		version = latest
-Bundle-Version: 3.0.2.${tstamp}
+Bundle-Version: 0.0.2.${tstamp}

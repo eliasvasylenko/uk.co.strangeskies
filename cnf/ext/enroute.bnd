@@ -23,8 +23,8 @@ test-cases: 			${classes;NAMED;*Test}
 -plugin.4.Central:  \
 \
         aQute.bnd.deployer.repository.wrapper.Plugin; \
-            location            =	"${build}/cache/wrapper"; \
-            reindex				=	true, \
+            location            =		"${build}/cache/wrapper"; \
+            reindex				=		true, \
 \
         aQute.bnd.jpm.Repository; \
 	        includeStaged   	=       true; \
@@ -32,9 +32,9 @@ test-cases: 			${classes;NAMED;*Test}
 	        location            =       ~/.bnd/shacache; \
 	        index               =       ${build}/central.json, \
 \
-	aQute.bnd.deployer.repository.aether.AetherRepository; \
-		name = Clojars; \
-		url = http://clojars.org/repo/
+		aQute.bnd.deployer.repository.aether.AetherRepository; \
+			name				=		Clojars; \
+			url					=		http://clojars.org/repo/
 	        
 -plugin.6.Local: \
         aQute.bnd.deployer.repository.LocalIndexedRepo; \

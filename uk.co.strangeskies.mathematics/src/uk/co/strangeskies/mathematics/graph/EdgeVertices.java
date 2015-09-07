@@ -18,6 +18,8 @@
  */
 package uk.co.strangeskies.mathematics.graph;
 
+import java.util.Comparator;
+
 import org.osgi.annotation.versioning.ProviderType;
 
 @ProviderType
@@ -40,7 +42,7 @@ public interface EdgeVertices<V> {
 
 			@Override
 			public int hashCode() {
-				return from.hashCode() ^ to.hashCode() * 7;
+				return from.hashCode() ^ to.hashCode();
 			}
 
 			@Override
@@ -48,8 +50,58 @@ public interface EdgeVertices<V> {
 				if (!(object instanceof EdgeVertices))
 					return false;
 				EdgeVertices<?> edge = (EdgeVertices<?>) object;
-				return (from.equals(edge.getFrom()) && to.equals(edge.getTo()))
-						|| (from.equals(edge.getTo()) && to.equals(edge.getFrom()));
+				return (from == edge.getFrom() && to == edge.getTo())
+						|| (from == edge.getTo() && to == edge.getFrom());
+			}
+
+			@Override
+			public String toString() {
+				return getFrom() + " - " + getTo();
+			}
+		};
+	}
+
+	static <V> EdgeVertices<V> between(V from, V to, Comparator<V> direction) {
+		int edgeDirection = direction.compare(from, to);
+
+		if (edgeDirection > 0) {
+			V temp = from;
+			from = to;
+			to = temp;
+		} else if (edgeDirection == 0) {
+			return between(from, to);
+		}
+
+		V fromFinal = from;
+		V toFinal = to;
+
+		return new EdgeVertices<V>() {
+			@Override
+			public V getFrom() {
+				return fromFinal;
+			}
+
+			@Override
+			public V getTo() {
+				return toFinal;
+			}
+
+			@Override
+			public int hashCode() {
+				return fromFinal.hashCode() ^ toFinal.hashCode() * 7;
+			}
+
+			@Override
+			public boolean equals(Object object) {
+				if (!(object instanceof EdgeVertices))
+					return false;
+				EdgeVertices<?> edge = (EdgeVertices<?>) object;
+				return fromFinal == edge.getFrom() && toFinal == edge.getTo();
+			}
+
+			@Override
+			public String toString() {
+				return getFrom() + " -> " + getTo();
 			}
 		};
 	}

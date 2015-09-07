@@ -11,6 +11,15 @@ javac.target: 1.8
 
 bnd-release = https://bndtools.ci.cloudbees.com/job/bnd.master/lastSuccessfulBuild/artifact/dist/bundles
 
+copyright.year = ${tstamp;yyyy}
+copyright = Copyright (c) Strange Skies (2014, ${copyright.year}). All Rights Reserved.
+
+groupid: uk.co.strangeskies
+
+Bundle-Vendor: Skies http://strangeskies.co.uk/
+Bundle-Copyright: ${copyright}
+Bundle-License: LGPL <http://www.gnu.org/licenses/>
+
 ## Properties from ext/*.bnd can be referenced in order to extend them. For
 ## example, to add one additional plugin to the list defined in
 ## ext/repositories.bnd:

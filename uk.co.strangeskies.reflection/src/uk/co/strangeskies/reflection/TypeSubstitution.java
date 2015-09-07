@@ -32,7 +32,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import uk.co.strangeskies.utilities.IdentityComparator;
+import uk.co.strangeskies.utilities.EqualityComparator;
 import uk.co.strangeskies.utilities.IdentityProperty;
 
 /**
@@ -133,8 +133,8 @@ public class TypeSubstitution {
 		if (empty.get())
 			return type;
 		else
-			return resolve(type, new TreeMap<>(
-					new IdentityComparator<ParameterizedType>()));
+			return resolve(type,
+					new TreeMap<>(EqualityComparator.identityComparator()));
 	}
 
 	private Type resolve(Type type,

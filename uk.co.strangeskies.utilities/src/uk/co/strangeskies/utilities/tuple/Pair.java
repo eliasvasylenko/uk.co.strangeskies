@@ -16,53 +16,63 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with uk.co.strangeskies.utilities.  If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.utilities.tuples;
+package uk.co.strangeskies.utilities.tuple;
+
+import java.util.function.Function;
 
 /**
- * A three tuple.
+ * A two tuple.
  * 
  * @author Elias N Vasylenko
  *
- * @param <A>
- *          The type of the first item.
- * @param <B>
- *          The type of the second item.
- * @param <C>
- *          The type of the third, and last, item.
+ * @param <L>
+ *          The type of the first, left, item.
+ * @param <R>
+ *          The type of the second, right, item.
  */
-public class Triple<A, B, C> extends Tuple<A, Pair<B, C>> {
+public class Pair<L, R> extends Tuple<L, Unit<R>> {
 	/**
-	 * Initialise a triple with the given three values.
+	 * Initialise a pair with the given two values.
 	 * 
-	 * @param a
-	 *          The first item.
-	 * @param b
-	 *          The second item.
-	 * @param c
-	 *          The third, and last, item.
+	 * @param left
+	 *          The first, left, item.
+	 * @param right
+	 *          The second, right, item.
 	 */
-	public Triple(A a, B b, C c) {
-		super(a, new Pair<>(b, c));
+	public Pair(L left, R right) {
+		super(left, new Unit<>(right));
 	}
 
 	/**
 	 * @return The head value.
 	 */
-	public A get0() {
+	public L get0() {
 		return getHead();
 	}
 
 	/**
-	 * @return The second value.
+	 * @return The head value.
 	 */
-	public B get1() {
+	public L getLeft() {
+		return getHead();
+	}
+
+	/**
+	 * @return The tail value.
+	 */
+	public R get1() {
 		return getTail().getHead();
 	}
 
 	/**
-	 * @return The third value.
+	 * @return The tail value.
 	 */
-	public C get2() {
-		return getTail().getTail().getHead();
+	public R getRight() {
+		return getTail().getHead();
+	}
+
+	@Override
+	public <I> Pair<I, R> mapHead(Function<? super L, ? extends I> headMap) {
+		return new Pair<>(headMap.apply(getLeft()), getRight());
 	}
 }

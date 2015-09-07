@@ -34,7 +34,7 @@ import uk.co.strangeskies.mathematics.operation.Negatable;
 import uk.co.strangeskies.mathematics.operation.Scalable;
 import uk.co.strangeskies.mathematics.operation.Subtractable;
 import uk.co.strangeskies.utilities.Copyable;
-import uk.co.strangeskies.utilities.IdentityComparator;
+import uk.co.strangeskies.utilities.EqualityComparator;
 import uk.co.strangeskies.utilities.Observer;
 import uk.co.strangeskies.utilities.Property;
 import uk.co.strangeskies.utilities.Self;
@@ -55,7 +55,7 @@ public abstract class Value<S extends Value<S>> extends Number implements
 
 	public Value(Number value) {
 		observers = new TreeSet<Observer<? super Expression<S>>>(
-				new IdentityComparator<>());
+				EqualityComparator.identityComparator());
 		lock = new ReentrantReadWriteLock();
 
 		setValue(value);

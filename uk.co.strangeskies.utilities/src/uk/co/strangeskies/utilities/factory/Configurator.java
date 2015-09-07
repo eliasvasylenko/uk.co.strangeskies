@@ -76,6 +76,14 @@ public abstract class Configurator<T> implements Factory<T> {
 
 		for (Object object : objects)
 			if (object != null)
-				throw new InvalidBuildStateException(this);
+				throw new InvalidBuildStateException(this, "Object '" + object
+						+ "' is already configured");
+	}
+
+	protected void assertConfigured(Object... objects) {
+		for (Object object : objects)
+			if (object == null)
+				throw new InvalidBuildStateException(this,
+						"A dependency object is not yet configured");
 	}
 }

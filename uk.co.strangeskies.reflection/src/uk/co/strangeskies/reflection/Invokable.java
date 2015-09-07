@@ -42,7 +42,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
-import uk.co.strangeskies.utilities.tuples.Pair;
+import uk.co.strangeskies.utilities.tuple.Pair;
 
 /**
  * <p>

@@ -18,103 +18,99 @@
  */
 package uk.co.strangeskies.mathematics.graph;
 
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.osgi.annotation.versioning.ConsumerType;
 import org.osgi.annotation.versioning.ProviderType;
 
 @ProviderType
-public interface GraphListeners<V, E> {
+public class GraphListeners<V, E> {
 	@ProviderType
-	interface ChangeSet<V, E> {
+	public interface ChangeSet<V, E> {
 		Set<V> verticesAdded();
 
 		Set<V> verticesRemoved();
 
-		Set<E> edgesAdded();
+		Map<E, EdgeVertices<V>> edgesAdded();
 
-		Set<E> edgesRemoved();
-
-		Set<E> edgesMoved();
+		Map<E, EdgeVertices<V>> edgesRemoved();
 	}
 
 	@ConsumerType
 	@FunctionalInterface
-	interface ChangeListener<V, E> {
+	public interface ChangeListener<V, E> {
 		void change(Graph<V, E> graph, ChangeSet<V, E> changeSet);
 	}
 
 	@ConsumerType
 	@FunctionalInterface
-	interface EdgeListener<V, E> {
-		void edge(Graph<V, E> graph, E edge);
+	public interface EdgeListener<V, E> {
+		void edge(Graph<V, E> graph, E edge, EdgeVertices<V> vertices);
 	}
 
 	@ConsumerType
 	@FunctionalInterface
-	interface EdgesListener<V, E> {
-		void edges(Graph<V, E> graph, Set<E> edges);
+	public interface EdgesListener<V, E> {
+		void edges(Graph<V, E> graph, Map<E, EdgeVertices<V>> edges);
 	}
 
 	@ConsumerType
 	@FunctionalInterface
-	interface VertexListener<V, E> {
+	public interface VertexListener<V, E> {
 		void vertex(Graph<V, E> graph, V vertex);
 	}
 
 	@ConsumerType
 	@FunctionalInterface
-	interface VerticesListener<V, E> {
+	public interface VerticesListener<V, E> {
 		void vertices(Graph<V, E> graph, Set<V> vertex);
 	}
 
-	Set<ChangeListener<V, E>> change();
+	private final Set<ChangeListener<V, E>> change = new HashSet<>();
+	private final Set<EdgeListener<V, E>> edgeAdded = new HashSet<>();
+	private final Set<EdgesListener<V, E>> edgesAdded = new HashSet<>();
+	private final Set<EdgeListener<V, E>> edgeRemoved = new HashSet<>();
+	private final Set<EdgesListener<V, E>> edgesRemoved = new HashSet<>();
+	private final Set<VertexListener<V, E>> vertexAdded = new HashSet<>();
+	private final Set<VerticesListener<V, E>> verticesAdded = new HashSet<>();
+	private final Set<VertexListener<V, E>> vertexRemoved = new HashSet<>();
+	private final Set<VerticesListener<V, E>> verticesRemoved = new HashSet<>();
 
-	Set<EdgeListener<V, E>> edgeAdded();
+	public Set<ChangeListener<V, E>> change() {
+		return change;
+	}
 
-	Set<EdgesListener<V, E>> edgesAdded();
+	public Set<EdgeListener<V, E>> edgeAdded() {
+		return edgeAdded;
+	}
 
-	/**
-	 * 
-	 * <p>
-	 * Internal listeners which are triggered during an atomic operation are
-	 * considered a part of that operation. This means that any secondary
-	 * mutations made to the graph by the listener will be discarded upon the
-	 * failure of that operation.
-	 * 
-	 * @return
-	 */
-	Set<EdgeListener<V, E>> edgeRemoved();
+	public Set<EdgesListener<V, E>> edgesAdded() {
+		return edgesAdded;
+	}
 
-	Set<EdgesListener<V, E>> edgesRemoved();
+	public Set<EdgeListener<V, E>> edgeRemoved() {
+		return edgeRemoved;
+	}
 
-	/**
-	 * 
-	 * 
-	 * <p>
-	 * Internal listeners which are triggered during an atomic operation are
-	 * considered a part of that operation. This means that any secondary
-	 * mutations made to the graph by the listener will be discarded upon the
-	 * failure of that operation.
-	 * 
-	 * @return
-	 */
-	Set<VertexListener<V, E>> vertexAdded();
+	public Set<EdgesListener<V, E>> edgesRemoved() {
+		return edgesRemoved;
+	}
 
-	Set<VerticesListener<V, E>> verticesAdded();
+	public Set<VertexListener<V, E>> vertexAdded() {
+		return vertexAdded;
+	}
 
-	/**
-	 * 
-	 * 
-	 * <p>
-	 * Internal listeners which are triggered during an atomic operation are
-	 * considered a part of that operation. This means that any secondary
-	 * mutations made to the graph by the listener will be discarded upon the
-	 * failure of that operation.
-	 * 
-	 * @return
-	 */
-	Set<VertexListener<V, E>> vertexRemoved();
+	public Set<VerticesListener<V, E>> verticesAdded() {
+		return verticesAdded;
+	}
 
-	Set<VerticesListener<V, E>> verticesRemoved();
+	public Set<VertexListener<V, E>> vertexRemoved() {
+		return vertexRemoved;
+	}
+
+	public Set<VerticesListener<V, E>> verticesRemoved() {
+		return verticesRemoved;
+	}
 }

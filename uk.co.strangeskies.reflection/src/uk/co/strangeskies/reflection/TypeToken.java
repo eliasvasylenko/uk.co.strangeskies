@@ -51,7 +51,7 @@ import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.utilities.DeepCopyable;
 import uk.co.strangeskies.utilities.collection.computingmap.ComputingMap;
 import uk.co.strangeskies.utilities.collection.computingmap.LRUCacheComputingMap;
-import uk.co.strangeskies.utilities.tuples.Pair;
+import uk.co.strangeskies.utilities.tuple.Pair;
 
 /**
  * <p>

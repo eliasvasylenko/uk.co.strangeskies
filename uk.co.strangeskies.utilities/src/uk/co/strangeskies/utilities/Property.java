@@ -29,6 +29,7 @@ package uk.co.strangeskies.utilities;
  *          The supertype of the property type with which we can set a property.
  *          Commonly this is the same as {@code T}.
  */
+/* @I */
 public interface Property<T extends R, R> {
 	/**
 	 * Set the value of this property to the given value.
@@ -37,12 +38,12 @@ public interface Property<T extends R, R> {
 	 *          The new value to set for this property.
 	 * @return The previous value of this property.
 	 */
-	public T set(Property<T, R> this, R to);
+	public T set(/* @Mutable Property<T, R> this, */R to);
 
 	/**
 	 * Get the current value of the property.
 	 * 
 	 * @return The current value.
 	 */
-	public T get();
+	public/* @I */T get();
 }

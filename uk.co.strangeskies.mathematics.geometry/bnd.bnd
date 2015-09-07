@@ -22,4 +22,4 @@ Bundle-Name: Strange Skies Mathematics - Geometry
 		version = latest,  \
 	osgi.enroute.base.api;  \
 		version = latest
-Bundle-Version: 1.0.4.${tstamp}
+Bundle-Version: 0.0.4.${tstamp}

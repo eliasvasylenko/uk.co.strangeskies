@@ -24,7 +24,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
-import uk.co.strangeskies.utilities.IdentityComparator;
+import uk.co.strangeskies.utilities.EqualityComparator;
 import uk.co.strangeskies.utilities.Observer;
 
 /**
@@ -46,7 +46,7 @@ public abstract class MutableExpressionImpl<T> implements MutableExpression<T> {
 	 */
 	public MutableExpressionImpl() {
 		observers = new TreeSet<Observer<? super Expression<T>>>(
-				new IdentityComparator<>());
+				EqualityComparator.identityComparator());
 		lock = new ReentrantReadWriteLock();
 	}
 

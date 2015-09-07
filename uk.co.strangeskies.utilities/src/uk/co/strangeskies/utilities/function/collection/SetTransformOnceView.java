@@ -27,7 +27,7 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.utilities.IdentityComparator;
+import uk.co.strangeskies.utilities.EqualityComparator;
 import uk.co.strangeskies.utilities.function.InvertibleFunction;
 
 /**
@@ -83,7 +83,7 @@ public class SetTransformOnceView<F, T> extends AbstractSet<T> {
 	 */
 	public SetTransformOnceView(Collection<F> backingCollection,
 			final InvertibleFunction<F, T> function) {
-		transformations = new TreeMap<>(new IdentityComparator<>());
+		transformations = new TreeMap<>(EqualityComparator.identityComparator());
 
 		this.backingCollection = backingCollection;
 		this.function = function;

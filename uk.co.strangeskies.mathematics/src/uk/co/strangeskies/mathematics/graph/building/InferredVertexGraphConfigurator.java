@@ -23,7 +23,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -42,14 +41,14 @@ import uk.co.strangeskies.utilities.factory.Factory;
  * @param <E>
  */
 @ProviderType
-public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
+public interface InferredVertexGraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	/**
 	 * Calling this method has the same effect as calling both
 	 * {@link #readOnlyVertices()} and {@link #readOnlyEdges()}.
 	 *
 	 * @return
 	 */
-	GraphConfigurator<V, E> readOnly();
+	public InferredVertexGraphConfigurator<V, E> readOnly();
 
 	/**
 	 * Calling this method has the effect of making the resulting graph
@@ -57,7 +56,7 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 *
 	 * @return
 	 */
-	GraphConfigurator<V, E> readOnlyVertices();
+	public InferredVertexGraphConfigurator<V, E> readOnlyVertices();
 
 	/**
 	 * Calling this method has the effect of making the resulting graph
@@ -65,7 +64,7 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 *
 	 * @return
 	 */
-	GraphConfigurator<V, E> readOnlyEdges();
+	public InferredVertexGraphConfigurator<V, E> readOnlyEdges();
 
 	/**
 	 * Accepts a collection of vertices to be contained in the resulting graph.
@@ -73,18 +72,18 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * @param vertices
 	 * @return
 	 */
-	<W extends V> GraphConfigurator<W, E> addVertices(Collection<W> vertices);
+	public <W extends V> InferredVertexGraphConfigurator<W, E> vertices(Collection<W> vertices);
 
 	/**
 	 * This method wraps and forwards it's parameters to
-	 * {@link #addVertices(Collection)}.
+	 * {@link #vertices(Collection)}.
 	 *
 	 * @param vertices
 	 * @return
 	 */
-	default <W extends V> GraphConfigurator<W, E> addVertices(
+	public default <W extends V> InferredVertexGraphConfigurator<W, E> vertices(
 			@SuppressWarnings("unchecked") W... vertices) {
-		return addVertices(Arrays.asList(vertices));
+		return vertices(Arrays.asList(vertices));
 	}
 
 	/**
@@ -93,33 +92,34 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * @param edges
 	 * @return
 	 */
-	GraphConfigurator<V, E> addEdges(Collection<? extends EdgeVertices<V>> edges);
+	public InferredVertexGraphConfigurator<V, E> edges(
+			Collection<? extends EdgeVertices<V>> edges);
 
 	/**
 	 * This method wraps and forwards it's parameters to
-	 * {@link #addEdges(Collection)}.
+	 * {@link #edges(Collection)}.
 	 *
 	 * @param edges
 	 * @return
 	 */
-	default GraphConfigurator<V, E> addEdges(
+	public default InferredVertexGraphConfigurator<V, E> edges(
 			@SuppressWarnings("unchecked") EdgeVertices<V>... edges) {
-		return addEdges(Arrays.asList(edges));
+		return edges(Arrays.asList(edges));
 	}
-
-	<F extends E> GraphConfigurator<V, F> edgeType();
 
 	/**
 	 * This method wraps and forwards it's parameters to
-	 * {@link #addEdges(Collection)}.
+	 * {@link #edges(Collection)}.
 	 *
 	 * @return
 	 */
-	GraphConfigurator<V, E> addEdge(V from, V to);
+	public default InferredVertexGraphConfigurator<V, E> edge(V from, V to) {
+		return edges(EdgeVertices.between(from, to));
+	}
 
-	<F extends E> GraphConfigurator<V, F> addEdges(Map<F, EdgeVertices<V>> edges);
+	public InferredVertexGraphConfigurator<V, E> edges(Map<E, EdgeVertices<V>> edges);
 
-	GraphConfigurator<V, E> addEdge(E edge, V from, V to);
+	public InferredVertexGraphConfigurator<V, E> addEdge(E edge, V from, V to);
 
 	/**
 	 * The graph will be directed, and the direction of an edge will be determined
@@ -128,13 +128,13 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * 
 	 * @return
 	 */
-	default GraphConfigurator<V, E> directed() {
+	public default InferredVertexGraphConfigurator<V, E> directed() {
 		return direction((a, b) -> 1);
 	}
 
-	GraphConfigurator<V, E> acyclic();
+	public InferredVertexGraphConfigurator<V, E> acyclic();
 
-	GraphConfigurator<V, E> multigraph();
+	public InferredVertexGraphConfigurator<V, E> multigraph();
 
 	/**
 	 * This method sets a comparator to determine the direction of an edge between
@@ -145,7 +145,9 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * @param lowToHigh
 	 * @return
 	 */
-	GraphConfigurator<V, E> direction(Comparator<V> lowToHigh);
+	public default InferredVertexGraphConfigurator<V, E> direction(Comparator<V> lowToHigh) {
+		return direction((e) -> lowToHigh);
+	}
 
 	/**
 	 * This method accepts a function to create a comparator from an edge, over
@@ -158,7 +160,7 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * @param lowToHigh
 	 * @return
 	 */
-	GraphConfigurator<V, E> direction(Function<E, Comparator<V>> lowToHigh);
+	public InferredVertexGraphConfigurator<V, E> direction(Function<E, Comparator<V>> lowToHigh);
 
 	/**
 	 * For simple <em>or</em> multigraphs, specify the mechanism by which edge
@@ -173,11 +175,11 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * If no edge factory is provided, by way of either this method or
 	 * {@link #edgeMultiFactory(Function)}, edge objects must be explicitly
 	 * provided when adding an edge between vertices, by way of e.g.
-	 * {@link Edges#put(Object, Object)} or {@link #addEdges(Map)}. Conversely, if
-	 * an edge factory <em>is</em> provided, it will not be possible to add edges
-	 * in that manner.
+	 * {@link Edges#put(Object, Object)} or {@link #edges(Map)}. Conversely, if an
+	 * edge factory <em>is</em> provided, it will not be possible to add edges in
+	 * that manner.
 	 */
-	<F extends E> GraphConfigurator<V, F> edgeFactory(
+	public <F extends E> InferredVertexGraphConfigurator<V, F> edgeFactory(
 			Function<EdgeVertices<V>, F> factory);
 
 	/**
@@ -192,11 +194,11 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * If no edge factory is provided, by way of either this method or
 	 * {@link #edgeMultiFactory(Function)}, edge objects must be explicitly
 	 * provided when adding an edge between vertices, by way of e.g.
-	 * {@link Edges#put(Object, Object)} or {@link #addEdges(Map)}. Conversely, if
-	 * an edge factory <em>is</em> provided, it will not be possible to add edges
-	 * in that manner.
+	 * {@link Edges#put(Object, Object)} or {@link #edges(Map)}. Conversely, if an
+	 * edge factory <em>is</em> provided, it will not be possible to add edges in
+	 * that manner.
 	 */
-	<F extends E> GraphConfigurator<V, F> edgeMultiFactory(
+	public <F extends E> InferredVertexGraphConfigurator<V, F> edgeMultiFactory(
 			Function<EdgeVertices<V>, Set<F>> factory);
 
 	/**
@@ -206,7 +208,8 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * @param factory
 	 * @return
 	 */
-	default <F extends E> GraphConfigurator<V, F> edgeFactory(Factory<F> factory) {
+	public default <F extends E> InferredVertexGraphConfigurator<V, F> edgeFactory(
+			Factory<F> factory) {
 		return edgeFactory(v -> factory.create());
 	}
 
@@ -217,13 +220,12 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * @param weight
 	 * @return
 	 */
-	GraphConfigurator<V, E> edgeWeight(Function<E, Double> weight);
+	public InferredVertexGraphConfigurator<V, E> edgeWeight(Function<E, Double> weight);
 
-	GraphConfigurator<V, E> vertexEquality(
-			BiPredicate<? super V, ? super V> comparator);
+	public InferredVertexGraphConfigurator<V, E> vertexComparator(
+			Comparator<? super V> comparator);
 
-	GraphConfigurator<V, E> edgeEquality(
-			BiPredicate<? super E, ? super E> comparator);
+	public InferredVertexGraphConfigurator<V, E> edgeComparator(Comparator<? super E> comparator);
 
 	/**
 	 * Graph operations are atomic. Only one atomic operation at a time can hold a
@@ -239,6 +241,6 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * 
 	 * @return
 	 */
-	GraphConfigurator<V, E> internalListeners(
+	public InferredVertexGraphConfigurator<V, E> internalListeners(
 			Consumer<GraphListeners<V, E>> internalListeners);
 }

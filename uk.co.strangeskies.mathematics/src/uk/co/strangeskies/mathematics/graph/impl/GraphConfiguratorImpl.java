@@ -18,50 +18,50 @@
  */
 package uk.co.strangeskies.mathematics.graph.impl;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 import uk.co.strangeskies.mathematics.graph.EdgeVertices;
 import uk.co.strangeskies.mathematics.graph.Graph;
 import uk.co.strangeskies.mathematics.graph.GraphListeners;
 import uk.co.strangeskies.mathematics.graph.building.GraphConfigurator;
+import uk.co.strangeskies.utilities.EqualityComparator;
 import uk.co.strangeskies.utilities.factory.Configurator;
 
 public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 		implements GraphConfigurator<V, E> {
-	private Collection<V> vertices;
+	private List<V> vertices;
 	private boolean unmodifiableVertices;
-	private Comparator<? super V> vertexComparator;
+	private BiPredicate<? super V, ? super V> vertexEquality;
 
-	private Collection<EdgeVertices<V>> edgeVertices;
-	private Collection<? extends E> edges;
-	private Map<E, EdgeVertices<V>> edgeMap;
+	private List<EdgeVertices<V>> edgeVertices;
+	private TreeMap<E, EdgeVertices<V>> edgeMap;
 	private boolean unmodifiableEdges;
-	private Comparator<? super E> edgeComparator;
+	private BiPredicate<? super E, ? super E> edgeEquality;
 
-	private boolean directed;
 	private boolean acyclic;
 	private boolean multigraph;
 
-	private Function<E, Comparator<V>> lowToHighDirection;
+	private Comparator<V> lowToHighDirection;
+	private Function<E, Comparator<V>> lowToHighDirectionFunction;
+
 	private Function<EdgeVertices<V>, E> edgeFactory;
 	private Function<EdgeVertices<V>, ? extends Set<? extends E>> edgeMultiFactory;
 	private Function<E, Double> edgeWeight;
+	private final GraphListeners<V, E> internalListeners;
 
-	private Function<? super V, ? extends Collection<? extends V>> incomingEdgeGenerator;
-	private Function<? super V, ? extends Collection<? extends V>> outgoingEdgeGenerator;
-	private Function<? super V, ? extends Collection<? extends V>> edgeGenerator;
-	private BiPredicate<? super V, ? super V> edgeGenerationRule;
-
-	private BiPredicate<? super V, ? super V> edgeValidationRule;
-
-	private Predicate<Graph<V, E>> constraint;
+	public GraphConfiguratorImpl() {
+		internalListeners = new GraphListeners<V, E>();
+	}
 
 	protected static GraphConfigurator<Object, Object> configure() {
 		return new GraphConfiguratorImpl<>();
@@ -91,31 +91,59 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <W extends V> GraphConfigurator<W, E> vertices(Collection<W> vertices) {
-		assertConfigurable(this.vertices);
-		this.vertices = (Collection<V>) vertices;
+	public <W extends V> GraphConfigurator<W, E> addVertices(
+			Collection<W> vertices) {
+		if (this.vertices == null)
+			this.vertices = new ArrayList<>(vertices);
+		else
+			this.vertices.addAll(vertices);
+
 		return (GraphConfigurator<W, E>) this;
+	}
+
+	@Override
+	public GraphConfigurator<V, E> addEdges(
+			Collection<? extends EdgeVertices<V>> edges) {
+		assertConfigurable(edgeMap);
+
+		if (edgeVertices == null)
+			edgeVertices = new ArrayList<>(edges);
+		else
+			edgeVertices.addAll(edges);
+
+		return this;
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public GraphConfigurator<V, E> edges(
-			Collection<? extends EdgeVertices<V>> edges) {
+	public <F extends E> GraphConfigurator<V, F> addEdges(
+			Map<F, EdgeVertices<V>> edges) {
 		assertConfigurable(edgeVertices);
-		assertConfigurable(this.edges);
-		assertConfigurable(edgeMap);
 
-		this.edgeVertices = (Collection<EdgeVertices<V>>) edges;
+		if (edgeMap == null)
+			edgeMap = new TreeMap<>(EqualityComparator.identityComparator());
+
+		edgeMap.putAll(edges);
+
+		return (GraphConfigurator<V, F>) this;
+	}
+
+	@Override
+	public <F extends E> GraphConfigurator<V, F> edgeType() {
+		return addEdges(Collections.emptyMap());
+	}
+
+	@Override
+	public GraphConfigurator<V, E> addEdge(V from, V to) {
+		if (edgeVertices == null)
+			addEdges(Collections.emptySet());
+		edgeVertices.add(EdgeVertices.between(from, to));
 		return this;
 	}
 
 	@Override
-	public GraphConfigurator<V, E> edges(Map<E, EdgeVertices<V>> edges) {
-		assertConfigurable(edgeVertices);
-		assertConfigurable(this.edges);
-		assertConfigurable(edgeMap);
-
-		this.edgeMap = edges;
+	public GraphConfigurator<V, E> addEdge(E edge, V from, V to) {
+		edgeMap.put(edge, EdgeVertices.between(from, to));
 		return this;
 	}
 
@@ -132,10 +160,22 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 	}
 
 	@Override
+	public GraphConfigurator<V, E> direction(Comparator<V> lowToHigh) {
+		assertConfigurable(this.lowToHighDirection);
+		assertConfigurable(this.lowToHighDirectionFunction);
+
+		lowToHighDirection = lowToHigh;
+
+		return this;
+	}
+
+	@Override
 	public GraphConfigurator<V, E> direction(Function<E, Comparator<V>> lowToHigh) {
 		assertConfigurable(this.lowToHighDirection);
-		lowToHighDirection = lowToHigh;
-		directed = true;
+		assertConfigurable(this.lowToHighDirectionFunction);
+
+		lowToHighDirectionFunction = lowToHigh;
+
 		return this;
 	}
 
@@ -166,78 +206,69 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 	}
 
 	@Override
-	public GraphConfigurator<V, E> vertexComparator(
-			Comparator<? super V> comparator) {
-		assertConfigurable(vertexComparator);
-		this.vertexComparator = comparator;
+	public GraphConfigurator<V, E> vertexEquality(
+			BiPredicate<? super V, ? super V> equality) {
+		assertConfigurable(vertexEquality);
+		this.vertexEquality = equality;
 		return this;
 	}
 
 	@Override
-	public GraphConfigurator<V, E> edgeComparator(Comparator<? super E> comparator) {
-		assertConfigurable(this.edgeComparator);
-		this.edgeComparator = comparator;
+	public GraphConfigurator<V, E> edgeEquality(
+			BiPredicate<? super E, ? super E> equality) {
+		assertConfigurable(this.edgeEquality);
+		this.edgeEquality = equality;
 		return this;
 	}
 
-	boolean isDirected() {
-		return directed;
+	@Override
+	public GraphConfigurator<V, E> internalListeners(
+			Consumer<GraphListeners<V, E>> internalListeners) {
+		internalListeners.accept(this.internalListeners);
+		return this;
 	}
 
 	boolean isMultigraph() {
 		return multigraph;
 	}
 
+	Comparator<V> getLowToHighDirection() {
+		return lowToHighDirection;
+	}
+
+	Function<E, Comparator<V>> getLowToHighDirectionFunction() {
+		return lowToHighDirectionFunction;
+	}
+
 	Function<E, Double> getEdgeWeight() {
 		return edgeWeight;
 	}
 
-	Comparator<? super V> getVertexComparator() {
-		return vertexComparator;
+	BiPredicate<? super V, ? super V> getVertexEquality() {
+		return vertexEquality;
 	}
 
-	Comparator<? super E> getEdgeComparator() {
-		return edgeComparator;
+	BiPredicate<? super E, ? super E> getEdgeEquality() {
+		return edgeEquality;
 	}
 
 	Function<EdgeVertices<V>, E> getEdgeFactory() {
 		return edgeFactory;
 	}
 
-	Function<? super V, ? extends Collection<? extends V>> getEdgeGenerator() {
-		return edgeGenerator;
-	}
-
-	Function<? super V, ? extends Collection<? extends V>> getOutgoingEdgeGenerator() {
-		return outgoingEdgeGenerator;
-	}
-
-	Function<? super V, ? extends Collection<? extends V>> getIncomingEdgeGenerator() {
-		return incomingEdgeGenerator;
-	}
-
-	BiPredicate<? super V, ? super V> getEdgeRule() {
-		return edgeGenerationRule;
-	}
-
 	Collection<V> getVertices() {
 		return vertices;
+	}
+
+	Map<E, EdgeVertices<V>> getEdgeMap() {
+		return edgeMap;
 	}
 
 	Collection<EdgeVertices<V>> getEdgeVertices() {
 		return edgeVertices;
 	}
 
-	@Override
-	public GraphConfigurator<V, E> addEdge(E edge, V from, V to) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public GraphConfigurator<V, E> internalListeners(
-			Consumer<GraphListeners<V, E>> internalListeners) {
-		// TODO Auto-generated method stub
-		return null;
+	GraphListeners<V, E> getInternalListeners() {
+		return internalListeners;
 	}
 }

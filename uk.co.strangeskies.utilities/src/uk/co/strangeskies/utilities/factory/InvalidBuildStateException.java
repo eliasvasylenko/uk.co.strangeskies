@@ -29,12 +29,22 @@ package uk.co.strangeskies.utilities.factory;
 public class InvalidBuildStateException extends BuilderStateException {
 	private static final long serialVersionUID = -84782003263925409L;
 
+	private static final String MESSAGE = "Build state is invalid";
+
 	/**
 	 * @param configurator
 	 *          The configurator with which the problem occurred.
 	 */
 	public InvalidBuildStateException(Factory<?> configurator) {
-		super(configurator, "Build state is invalid.");
+		super(configurator, MESSAGE);
+	}
+
+	/**
+	 * @param configurator
+	 *          The configurator with which the problem occurred.
+	 */
+	public InvalidBuildStateException(Factory<?> configurator, String message) {
+		super(configurator, MESSAGE + ": " + message);
 	}
 
 	/**
@@ -44,6 +54,11 @@ public class InvalidBuildStateException extends BuilderStateException {
 	 *          The cause of the problem.
 	 */
 	public InvalidBuildStateException(Factory<?> configurator, Throwable cause) {
-		super(configurator, "Build state is invalid.", cause);
+		super(configurator, MESSAGE, cause);
+	}
+
+	public InvalidBuildStateException(Factory<?> configurator, String message,
+			Throwable cause) {
+		super(configurator, MESSAGE + ": " + message, cause);
 	}
 }

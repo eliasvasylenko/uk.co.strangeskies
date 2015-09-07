@@ -30,7 +30,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
 import uk.co.strangeskies.mathematics.expression.Expression;
-import uk.co.strangeskies.utilities.IdentityComparator;
+import uk.co.strangeskies.utilities.EqualityComparator;
 import uk.co.strangeskies.utilities.Observer;
 
 public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
@@ -51,7 +51,7 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 
 		dependencyObserver = message -> update();
 
-		observers = new TreeSet<>(new IdentityComparator<>());
+		observers = new TreeSet<>(EqualityComparator.identityComparator());
 
 		lock = new ReentrantReadWriteLock();
 	}
