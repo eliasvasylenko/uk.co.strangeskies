@@ -164,7 +164,9 @@ configure(bndProjects()) {
       }
 
       defaults {
-        publications ("mavenJava.${project.name}")
+        bnd.project.getBuildFiles(true).each {
+          file -> publications("mavenJava_${file.name}.jar")
+        }
       }
     }
   }
@@ -176,9 +178,9 @@ configure(bndProjects()) {
 
   publishing {
     publications {
-      [0].each {
-        "mavenJava.${project.name}"(MavenPublication) {
-          artifact jar
+      bnd.project.getBuildFiles(true).each {
+        file -> "mavenJava_${file.name}"(MavenPublication) {
+          artifact "${file}"
         }
       }
     }
