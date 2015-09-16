@@ -47,9 +47,7 @@ configure(bndProjects()) {
   plugins.apply 'biz.aQute.bnd'
 }
 
-plugins.apply 'java'
 configure(bndProjects()) {
-  plugins.apply 'java'
   plugins.apply 'biz.aQute.bnd'
 }
 
@@ -165,7 +163,7 @@ configure(bndProjects()) {
 
       defaults {
         bnd.project.getBuildFiles(true).each {
-          file -> publications("mavenJava_${file.name}.jar")
+          file -> publications("mavenJava_${file.name}")
         }
       }
     }
@@ -179,9 +177,12 @@ configure(bndProjects()) {
   publishing {
     publications {
       bnd.project.getBuildFiles(true).each {
-        file -> "mavenJava_${file.name}"(MavenPublication) {
-          artifact "${file}"
-        }
+        file ->
+          "mavenJava_${file.name}"(MavenPublication) {
+            artifact file
+            artifactId file.name.replaceAll('\\.jar$', '')
+            version = project.version
+          }
       }
     }
   }
