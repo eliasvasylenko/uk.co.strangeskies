@@ -47,10 +47,6 @@ configure(bndProjects()) {
   plugins.apply 'biz.aQute.bnd'
 }
 
-configure(bndProjects()) {
-  plugins.apply 'biz.aQute.bnd'
-}
-
 /* Source License Generation */
 apply plugin: 'license'
 configure(bndProjects()) {
@@ -162,7 +158,7 @@ configure(bndProjects()) {
       }
 
       defaults {
-        bnd.project.getBuildFiles(true).each {
+        project.bnd.project.getBuildFiles(true).each {
           file -> publications("mavenJava_${file.name}")
         }
       }
@@ -176,13 +172,15 @@ configure(bndProjects()) {
 
   publishing {
     publications {
-      bnd.project.getBuildFiles(true).each {
-        file ->
-          "mavenJava_${file.name}"(MavenPublication) {
-            artifact file
-            artifactId file.name.replaceAll('\\.jar$', '')
-            version = project.version
-          }
+      project.bnd.project.getBuildFiles(true).each {
+        file -> "mavenJava_${file.name}"(MavenPublication) {
+          artifact file
+
+          def manifest = new java.util.jar.JarFile(file).manifest.mainAttributes
+
+          artifactId = manifest.getValue('Bundle-SymbolicName')
+          version = manifest.getValue('Bundle-Version')
+        }
       }
     }
   }
