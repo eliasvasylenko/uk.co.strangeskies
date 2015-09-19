@@ -39,7 +39,7 @@ ext.cnf = rootProject.project(bnd_cnf)
 /* Configure the subprojects */
 def bndProjects() {
   return subprojects.findAll {
-    project -> bndWorkspace.getProject(project.name) != null
+    bndWorkspace.getProject(it.name) != null && new File(it.projectDir, "src").exists()
   }
 }
 
@@ -158,8 +158,8 @@ configure(bndProjects()) {
       }
 
       defaults {
-        project.bnd.project.getBuildFiles(true).each {
-          file -> publications("mavenJava_${file.name}")
+        project.bnd.project.getSubBuilders().each {
+          publications("maven_${it.getBsn()}")
         }
       }
     }
@@ -172,14 +172,12 @@ configure(bndProjects()) {
 
   publishing {
     publications {
-      project.bnd.project.getBuildFiles(true).each {
-        file -> "mavenJava_${file.name}"(MavenPublication) {
-          artifact file
+      bnd.project.getSubBuilders().each {
+        builder -> "maven_${builder.getBsn()}"(MavenPublication) {
+          artifactId = builder.getBsn()
+          version = builder.getProperty('Bundle-Version')
 
-          def manifest = new java.util.jar.JarFile(file).manifest.mainAttributes
-
-          artifactId = manifest.getValue('Bundle-SymbolicName')
-          version = manifest.getValue('Bundle-Version')
+          artifact new File("${buildDir}/${artifactId}.jar")
         }
       }
     }
