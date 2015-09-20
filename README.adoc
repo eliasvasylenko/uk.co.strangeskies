@@ -5,9 +5,9 @@ image:https://img.shields.io/github/license/StrangeSkies/uk.co.strangeskies.svg[
 
 == Binaries
 
-* https://bintray.com/strangeskies/uk.co.strangeskies[*Releases* _@ Bintray_]
+https://oss.jfrog.org/webapp/#/artifacts/browse/tree/General/oss-snapshot-local/uk/co/strangeskies[*Snapshots* _@ OJO_]
 
-* https://oss.jfrog.org/webapp/#/artifacts/browse/tree/General/oss-snapshot-local/uk/co/strangeskies[*Snapshots* _@ OJO_]
+https://bintray.com/strangeskies/uk.co.strangeskies[*Releases* _@ Bintray_]
 
 * image:https://img.shields.io/bintray/v/strangeskies/uk.co.strangeskies/uk.co.strangeskies.utilities.svg[uk.co.strangeskies.utilities, link="https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.utilities"] https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.utilities[_.utilities_]
 
