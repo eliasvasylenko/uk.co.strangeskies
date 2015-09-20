@@ -175,7 +175,7 @@ configure(bndProjects()) {
       bnd.project.getSubBuilders().each {
         builder -> "maven_${builder.getBsn()}"(MavenPublication) {
           artifactId = builder.getBsn()
-          version = builder.getProperty('Bundle-Version')
+          version = builder.getProperty('Bundle-Version').replaceAll('.[^.]+$', '-SNAPSHOT')
 
           artifact new File("${buildDir}/${artifactId}.jar")
         }
