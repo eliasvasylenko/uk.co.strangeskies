@@ -72,18 +72,18 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * @param vertices
 	 * @return
 	 */
-	<W extends V> GraphConfigurator<W, E> addVertices(Collection<W> vertices);
+	<W extends V> GraphConfigurator<W, E> vertices(Collection<W> vertices);
 
 	/**
 	 * This method wraps and forwards it's parameters to
-	 * {@link #addVertices(Collection)}.
+	 * {@link #vertices(Collection)}.
 	 *
 	 * @param vertices
 	 * @return
 	 */
-	default <W extends V> GraphConfigurator<W, E> addVertices(
+	default <W extends V> GraphConfigurator<W, E> vertices(
 			@SuppressWarnings("unchecked") W... vertices) {
-		return addVertices(Arrays.asList(vertices));
+		return vertices(Arrays.asList(vertices));
 	}
 
 	/**
@@ -92,33 +92,33 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * @param edges
 	 * @return
 	 */
-	GraphConfigurator<V, E> addEdges(Collection<? extends EdgeVertices<V>> edges);
+	GraphConfigurator<V, E> edges(Collection<? extends EdgeVertices<V>> edges);
 
 	/**
 	 * This method wraps and forwards it's parameters to
-	 * {@link #addEdges(Collection)}.
+	 * {@link #edges(Collection)}.
 	 *
 	 * @param edges
 	 * @return
 	 */
-	default GraphConfigurator<V, E> addEdges(
+	default GraphConfigurator<V, E> edges(
 			@SuppressWarnings("unchecked") EdgeVertices<V>... edges) {
-		return addEdges(Arrays.asList(edges));
+		return edges(Arrays.asList(edges));
 	}
 
 	<F extends E> GraphConfigurator<V, F> edgeType();
 
 	/**
 	 * This method wraps and forwards it's parameters to
-	 * {@link #addEdges(Collection)}.
+	 * {@link #edges(Collection)}.
 	 *
 	 * @return
 	 */
-	GraphConfigurator<V, E> addEdge(V from, V to);
+	GraphConfigurator<V, E> edge(V from, V to);
 
-	<F extends E> GraphConfigurator<V, F> addEdges(Map<F, EdgeVertices<V>> edges);
+	<F extends E> GraphConfigurator<V, F> edges(Map<F, EdgeVertices<V>> edges);
 
-	GraphConfigurator<V, E> addEdge(E edge, V from, V to);
+	GraphConfigurator<V, E> edge(E edge, V from, V to);
 
 	/**
 	 * The graph will be directed, and the direction of an edge will be determined
@@ -172,9 +172,9 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * If no edge factory is provided, by way of either this method or
 	 * {@link #edgeMultiFactory(Function)}, edge objects must be explicitly
 	 * provided when adding an edge between vertices, by way of e.g.
-	 * {@link #addEdge(Object, Object, Object)} or {@link #addEdges(Map)}.
-	 * Conversely, if an edge factory <em>is</em> provided, it will not be
-	 * possible to add edges in that manner.
+	 * {@link #edge(Object, Object, Object)} or {@link #edges(Map)}. Conversely,
+	 * if an edge factory <em>is</em> provided, it will not be possible to add
+	 * edges in that manner.
 	 */
 	<F extends E> GraphConfigurator<V, F> edgeFactory(
 			Function<EdgeVertices<V>, F> factory);
@@ -191,9 +191,9 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * If no edge factory is provided, by way of either this method or
 	 * {@link #edgeMultiFactory(Function)}, edge objects must be explicitly
 	 * provided when adding an edge between vertices, by way of e.g.
-	 * {@link #addEdge(Object, Object, Object)} or {@link #addEdges(Map)}.
-	 * Conversely, if an edge factory <em>is</em> provided, it will not be
-	 * possible to add edges in that manner.
+	 * {@link #edge(Object, Object, Object)} or {@link #edges(Map)}. Conversely,
+	 * if an edge factory <em>is</em> provided, it will not be possible to add
+	 * edges in that manner.
 	 */
 	<F extends E> GraphConfigurator<V, F> edgeMultiFactory(
 			Function<EdgeVertices<V>, Set<F>> factory);

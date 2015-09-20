@@ -74,7 +74,7 @@ public class GraphBuilderTest {
 	public void buildVerticesTest() {
 		Set<String> vertices = set("one", "two", "three");
 
-		Graph<String, Object> graph = graph().addVertices(vertices).create();
+		Graph<String, Object> graph = graph().vertices(vertices).create();
 
 		Assert.assertEquals(vertices, graph.vertices());
 		Assert.assertEquals(Collections.emptySet(), graph.edges());
@@ -84,7 +84,7 @@ public class GraphBuilderTest {
 	public void buildVerticesExclusionTest() {
 		List<String> vertices = Arrays.asList("one", "two", "three", "three");
 
-		Graph<String, Object> graph = graph().addVertices(vertices).create();
+		Graph<String, Object> graph = graph().vertices(vertices).create();
 
 		Assert.assertEquals(new HashSet<>(vertices), graph.vertices());
 		Assert.assertEquals(Collections.emptySet(), graph.edges());
@@ -96,8 +96,8 @@ public class GraphBuilderTest {
 		Set<EdgeVertices<String>> edges = set(EdgeVertices.between("one", "two"),
 				EdgeVertices.between("two", "three"));
 
-		Graph<String, Object> graph = graph().addVertices(vertices)
-				.edgeFactory(Object::new).addEdges(edges).create();
+		Graph<String, Object> graph = graph().vertices(vertices)
+				.edgeFactory(Object::new).edges(edges).create();
 
 		Assert.assertEquals(vertices, graph.vertices());
 		Assert.assertEquals(edges, graph.edges().edgeVertices());
@@ -108,7 +108,7 @@ public class GraphBuilderTest {
 		Set<String> vertices = set("one", "two", "three");
 		Set<EdgeVertices<String>> edges = set(EdgeVertices.between("one", "two"));
 
-		Graph<String, Object> graph = graph().addVertices(vertices).addEdges(edges)
+		Graph<String, Object> graph = graph().vertices(vertices).edges(edges)
 				.edgeFactory(Object::new)
 				.internalListeners(l -> l.vertexAdded().add((g, v) -> {
 					for (String vertex : g.vertices())
@@ -126,7 +126,7 @@ public class GraphBuilderTest {
 		Set<EdgeVertices<String>> edges = set(EdgeVertices.between("one", "two"),
 				EdgeVertices.between("two", "three"));
 
-		Graph<String, Object> graph = graph().addVertices(vertices).addEdges(edges)
+		Graph<String, Object> graph = graph().vertices(vertices).edges(edges)
 				.edgeFactory(Object::new).readOnly().create();
 
 		Assert.assertEquals(vertices, graph.vertices());
@@ -137,7 +137,7 @@ public class GraphBuilderTest {
 	public void buildDirectedTest() {
 		Set<String> vertices = set("one", "two", "three");
 
-		Graph<String, Object> graph = graph().addVertices(vertices)
+		Graph<String, Object> graph = graph().vertices(vertices)
 				.internalListeners(l -> l.vertexAdded().add((g, v) -> {
 					for (String vertex : g.vertices())
 						if (vertex != v)
@@ -171,7 +171,7 @@ public class GraphBuilderTest {
 		vertices.add(two);
 		vertices.add(three);
 
-		Graph<String, Object> graph = graph().addVertices(vertices)
+		Graph<String, Object> graph = graph().vertices(vertices)
 				.vertexEquality((a, b) -> a == b)
 				.internalListeners(l -> l.vertexAdded().add((g, v) -> {
 					for (String vertex : g.vertices()) {
@@ -190,7 +190,7 @@ public class GraphBuilderTest {
 	public void buildWithEdgeFactoryTest() {
 		Set<String> vertices = set("one", "two", "three");
 
-		Graph<String, String> graph = graph().addVertices(vertices)
+		Graph<String, String> graph = graph().vertices(vertices)
 				.vertexEquality((a, b) -> a == b)
 				.internalListeners(l -> l.vertexAdded().add((g, v) -> {
 					for (String vertex : g.vertices())
