@@ -5,7 +5,7 @@ image:https://img.shields.io/github/license/StrangeSkies/uk.co.strangeskies.svg[
 
 == Binaries
 
-https://oss.jfrog.org/webapp/#/artifacts/browse/tree/General/oss-snapshot-local/uk/co/strangeskies[*Snapshots* _@ OJO_]
+https://oss.jfrog.org/artifactory/simple/libs-snapshot/uk/co/strangeskies/[*Snapshots* _@ OJO_]
 
 https://bintray.com/strangeskies/uk.co.strangeskies[*Releases* _@ Bintray_]
 
