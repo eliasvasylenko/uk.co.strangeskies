@@ -5,23 +5,23 @@ image:https://img.shields.io/github/license/StrangeSkies/uk.co.strangeskies.svg[
 
 == Binaries
 
-https://bintray.com/strangeskies/uk.co.strangeskies[Releases @ Bintray]
+* https://bintray.com/strangeskies/uk.co.strangeskies[*Releases* _@ Bintray_]
 
-https://oss.jfrog.org/webapp/#/artifacts/browse/tree/General/oss-snapshot-local/uk/co/strangeskies[Snapshots @ OJO]
+* https://oss.jfrog.org/webapp/#/artifacts/browse/tree/General/oss-snapshot-local/uk/co/strangeskies[*Snapshots* _@ OJO_]
 
-image:https://img.shields.io/bintray/v/strangeskies/uk.co.strangeskies/uk.co.strangeskies.utilities.svg[uk.co.strangeskies.utilities, link="https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.utilities"] https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.utilities[utilities]
+* image:https://img.shields.io/bintray/v/strangeskies/uk.co.strangeskies/uk.co.strangeskies.utilities.svg[uk.co.strangeskies.utilities, link="https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.utilities"] https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.utilities[_.utilities_]
 
-image:https://img.shields.io/bintray/v/strangeskies/uk.co.strangeskies/uk.co.strangeskies.utilities.osgi.svg[uk.co.strangeskies.utilities.osgi, link="https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.utilities.osgi"] https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.utilities.osgi[utilities.osgi]
+* image:https://img.shields.io/bintray/v/strangeskies/uk.co.strangeskies/uk.co.strangeskies.utilities.osgi.svg[uk.co.strangeskies.utilities.osgi, link="https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.utilities.osgi"] https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.utilities.osgi[_.utilities.osgi_]
 
-image:https://img.shields.io/bintray/v/strangeskies/uk.co.strangeskies/uk.co.strangeskies.mathematics.svg[uk.co.strangeskies.mathematics, link="https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.mathematics"] https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.mathematics[mathematics]
+* image:https://img.shields.io/bintray/v/strangeskies/uk.co.strangeskies/uk.co.strangeskies.mathematics.svg[uk.co.strangeskies.mathematics, link="https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.mathematics"] https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.mathematics[_.mathematics_]
 
-image:https://img.shields.io/bintray/v/strangeskies/uk.co.strangeskies/uk.co.strangeskies.mathematics.geometry.svg[uk.co.strangeskies.mathematics.geometry, link="https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.mathematics.geometry"] https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.mathematics.geometry[mathematics.geometry]
+* image:https://img.shields.io/bintray/v/strangeskies/uk.co.strangeskies/uk.co.strangeskies.mathematics.geometry.svg[uk.co.strangeskies.mathematics.geometry, link="https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.mathematics.geometry"] https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.mathematics.geometry[_.mathematics.geometry_]
 
-image:https://img.shields.io/bintray/v/strangeskies/uk.co.strangeskies/uk.co.strangeskies.reflection.svg[uk.co.strangeskies.reflection, link="https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.reflection"] https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.reflection[reflection]
+* image:https://img.shields.io/bintray/v/strangeskies/uk.co.strangeskies/uk.co.strangeskies.reflection.svg[uk.co.strangeskies.reflection, link="https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.reflection"] https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.reflection[_.reflection_]
 
-image:https://img.shields.io/bintray/v/strangeskies/uk.co.strangeskies/uk.co.strangeskies.expressions.svg[uk.co.strangeskies.expressions, link="https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.expressions"] https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.expressions[expressions]
+* image:https://img.shields.io/bintray/v/strangeskies/uk.co.strangeskies/uk.co.strangeskies.expressions.svg[uk.co.strangeskies.expressions, link="https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.expressions"] https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.expressions[_.expressions_]
 
-image:https://img.shields.io/bintray/v/strangeskies/uk.co.strangeskies/uk.co.strangeskies.scripting.svg[uk.co.strangeskies.scripting, link="https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.scripting"] https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.scripting[scripting]
+* image:https://img.shields.io/bintray/v/strangeskies/uk.co.strangeskies/uk.co.strangeskies.scripting.svg[uk.co.strangeskies.scripting, link="https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.scripting"] https://bintray.com/strangeskies/uk.co.strangeskies/uk.co.strangeskies.scripting[_.scripting_]
 
 == Features
 
