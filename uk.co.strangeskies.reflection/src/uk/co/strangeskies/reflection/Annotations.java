@@ -444,16 +444,4 @@ public final class Annotations {
 			return annotationList;
 		}
 	}
-
-	public static void main(String... args) {
-		TypeToken<?> result = new TypeToken<Arrays>() {}
-				.resolveConstructorOverload(
-						new TypeToken<List<? extends Integer>>() {},
-						new TypeToken<List<? extends Double>>() {}).getReturnType().infer();
-
-		System.out.println(result);
-
-		Arrays
-				.asList((List<? extends Integer>) null, (List<? extends Double>) null);
-	}
 }
