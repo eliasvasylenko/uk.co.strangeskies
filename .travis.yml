@@ -5,12 +5,14 @@ sudo: false
 addons:
   apt:
     packages:
-      - oracle-java8-installer
+    - oracle-java8-installer
 env:
   matrix:
-    - TERM=dumb
+  - TERM=dumb
   global:
-    secure: aHymzi4IVCeX5lZA9j3ovJXZ9UW3YHczVZQuYahkqXiycOanCF8ZxHwWgYjt/tQnhxgabll4Lz/ZkBFf4z7WyxfA1I7UQ3BIIj0RmONzK1XZGLagLHovBb0f6sMOVYHqjHoZ9GgwomIyDYJoDIsV2cd040vBctSHPe8SpIxcefo=
+  - secure: Irtg0m2UESxQ6ay6gDryh4JM1c5Z9OT882V3iaLAbRmecfOlcVFPlgjmQGnqBWlCNesj5bp30zQJhBuS38k6cDRXd7Y0HPFCqt8IFrKrIhV6JNCQSDST7dU2kHtX+CnhgShyFLHV3CrOdaY/5rcvMU7XGN3ytX024+147x0BvFw=
+  - secure: NGNsvBLaE0R40chmarx1ryDqoHv1wiycw96EvOUrFafQpjUDeEw5q0W2572IIzY5NmyUw57WQx0tETyniJaJB7d5t//skUNAa1wIDms7RwqsQUllZaPlZPJak7JXV6UnSfGqISXaaGd6OxxQFMioFl/bhOyivtL3n98Osyqm6pQ=
+  - secure: DkJhDrFVkgQi33cRBuBS5LHpzEEMqAPVm4HiE6jQ2Ts1nFZHvkVsrrPIOgqNEXtiAak1zEy34tBB3nddq7YyJALHO/bbT7E9pIBi3A7A18UchQzl/60lhJ/NKD9+wh2UKHgZFvHyiLPXLBFI9WHp+xPEm4kIVlqmiRqYXFKbtJk=
 install: "./gradlew --version"
-script: ./gradlew --continue build test aggregateJavadoc publishGhPages -PgithubUser="${GITHUB_TOKEN}"
-  -PgithubPassword=""
+script: ./gradlew --continue build test aggregateJavadoc publishGhPages artifactoryPublish -PgithubUser="${GITHUB_TOKEN}" -PgithubPassword="" -PjfrogUser="${JFROG_USER}" -PjfrogPassword="${JFROG_PASSWORD}" --stacktrace
+

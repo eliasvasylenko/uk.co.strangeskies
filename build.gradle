@@ -20,7 +20,7 @@ buildscript {
       exclude group: 'org.apache.maven'
     }
     classpath ('org.ajoberstar:gradle-git:1.2.0') {
-      /* Resolve dependency conflict with bndplugin: */
+      /* Resolve dependency conflict with bndtools: */
       exclude group: 'org.apache.httpcomponents'
     }
   }
@@ -42,17 +42,11 @@ ext.cnf = rootProject.project(bnd_cnf)
 /* Configure the subprojects */
 def bndProjects() {
   return subprojects.findAll {
-    project -> bndWorkspace.getProject(project.name) != null
+    bndWorkspace.getProject(it.name) != null && new File(it.projectDir, "src").exists()
   }
 }
 
 configure(bndProjects()) {
-  plugins.apply 'biz.aQute.bnd'
-}
-
-plugins.apply 'java'
-configure(bndProjects()) {
-  plugins.apply 'java'
   plugins.apply 'biz.aQute.bnd'
 }
 
@@ -167,8 +161,8 @@ configure(bndProjects()) {
       }
 
       defaults {
-        bnd.project.getBuildFiles(true).each {
-          file -> publications("mavenJava_${file.name}.jar")
+        project.bnd.project.getSubBuilders().each {
+          publications("maven_${it.getBsn()}")
         }
       }
     }
@@ -181,9 +175,12 @@ configure(bndProjects()) {
 
   publishing {
     publications {
-      bnd.project.getBuildFiles(true).each {
-        file -> "mavenJava_${file.name}"(MavenPublication) {
-          artifact "${file}"
+      bnd.project.getSubBuilders().each {
+        builder -> "maven_${builder.getBsn()}"(MavenPublication) {
+          artifactId = builder.getBsn()
+          version = builder.getProperty('Bundle-Version').replaceAll('.[^.]+$', '-SNAPSHOT')
+
+          artifact new File("${buildDir}/${artifactId}.jar")
         }
       }
     }
