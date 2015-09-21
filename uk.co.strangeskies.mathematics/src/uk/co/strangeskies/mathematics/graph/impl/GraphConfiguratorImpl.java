@@ -91,7 +91,7 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <W extends V> GraphConfigurator<W, E> addVertices(
+	public <W extends V> GraphConfigurator<W, E> vertices(
 			Collection<W> vertices) {
 		if (this.vertices == null)
 			this.vertices = new ArrayList<>(vertices);
@@ -102,7 +102,7 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 	}
 
 	@Override
-	public GraphConfigurator<V, E> addEdges(
+	public GraphConfigurator<V, E> edges(
 			Collection<? extends EdgeVertices<V>> edges) {
 		assertConfigurable(edgeMap);
 
@@ -116,7 +116,7 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <F extends E> GraphConfigurator<V, F> addEdges(
+	public <F extends E> GraphConfigurator<V, F> edges(
 			Map<F, EdgeVertices<V>> edges) {
 		assertConfigurable(edgeVertices);
 
@@ -130,19 +130,19 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 
 	@Override
 	public <F extends E> GraphConfigurator<V, F> edgeType() {
-		return addEdges(Collections.emptyMap());
+		return edges(Collections.emptyMap());
 	}
 
 	@Override
-	public GraphConfigurator<V, E> addEdge(V from, V to) {
+	public GraphConfigurator<V, E> edge(V from, V to) {
 		if (edgeVertices == null)
-			addEdges(Collections.emptySet());
+			edges(Collections.emptySet());
 		edgeVertices.add(EdgeVertices.between(from, to));
 		return this;
 	}
 
 	@Override
-	public GraphConfigurator<V, E> addEdge(E edge, V from, V to) {
+	public GraphConfigurator<V, E> edge(E edge, V from, V to) {
 		edgeMap.put(edge, EdgeVertices.between(from, to));
 		return this;
 	}

@@ -1,18 +1,34 @@
 language: java
 jdk:
+<<<<<<< HEAD
 - oraclejdk8
 sudo: false
 addons:
   apt:
     packages:
     - oracle-java8-installer
+=======
+  - oraclejdk8
+>>>>>>> branch 'master' of https://github.com/StrangeSkies/uk.co.strangeskies.git
 env:
   matrix:
   - TERM=dumb
   global:
+<<<<<<< HEAD
   - secure: Irtg0m2UESxQ6ay6gDryh4JM1c5Z9OT882V3iaLAbRmecfOlcVFPlgjmQGnqBWlCNesj5bp30zQJhBuS38k6cDRXd7Y0HPFCqt8IFrKrIhV6JNCQSDST7dU2kHtX+CnhgShyFLHV3CrOdaY/5rcvMU7XGN3ytX024+147x0BvFw=
   - secure: NGNsvBLaE0R40chmarx1ryDqoHv1wiycw96EvOUrFafQpjUDeEw5q0W2572IIzY5NmyUw57WQx0tETyniJaJB7d5t//skUNAa1wIDms7RwqsQUllZaPlZPJak7JXV6UnSfGqISXaaGd6OxxQFMioFl/bhOyivtL3n98Osyqm6pQ=
   - secure: DkJhDrFVkgQi33cRBuBS5LHpzEEMqAPVm4HiE6jQ2Ts1nFZHvkVsrrPIOgqNEXtiAak1zEy34tBB3nddq7YyJALHO/bbT7E9pIBi3A7A18UchQzl/60lhJ/NKD9+wh2UKHgZFvHyiLPXLBFI9WHp+xPEm4kIVlqmiRqYXFKbtJk=
+=======
+  - secure: aHymzi4IVCeX5lZA9j3ovJXZ9UW3YHczVZQuYahkqXiycOanCF8ZxHwWgYjt/tQnhxgabll4Lz/ZkBFf4z7WyxfA1I7UQ3BIIj0RmONzK1XZGLagLHovBb0f6sMOVYHqjHoZ9GgwomIyDYJoDIsV2cd040vBctSHPe8SpIxcefo=
+  - secure: FqGggOGREA4csW+xPNtC1zwX543FJ0oGz78fHVxD2eRAKqDTwfAmEg60633laXBxn79/oN/MTm5f4+iad9hntNqgILqy4YN9OX79t22FqXRy7yEOu+0WBNszjYR4zMRed1nGX226RlTAYZ2g8UUR3b+a62B4BWX/ci6X7EsNUoc=
+  - secure: ObS+5VJqk+K/3Ln3j47XVEt/KHTv+a44B3gUD2tl7PsLfptF7ExikcCRQ4Gpv40dNuy+4cJydbxmXxfxv5WI6JmhDcIT5YDh9Mmkxl0+lL5KmJSNnIQY40gUjSrwKtCPy97Lc9brTkL9RtcPQwyUJTkpXfOfF2cEjEfqb74fVPA=
+
+>>>>>>> branch 'master' of https://github.com/StrangeSkies/uk.co.strangeskies.git
 install: "./gradlew --version"
+<<<<<<< HEAD
 script: ./gradlew --continue build test aggregateJavadoc publishGhPages artifactoryPublish -PgithubUser="${GITHUB_TOKEN}" -PgithubPassword="" -PjfrogUser="${JFROG_USER}" -PjfrogPassword="${JFROG_PASSWORD}" --stacktrace
+=======
+
+script: ./gradlew build test aggregateJavadoc publishGhPages artifactoryPublish -PgithubUser="${GITHUB_TOKEN}" -PgithubPassword="" -PjfrogUser="${jfrogUser}" -PjfrogPassword="${jfrogPassword}" --stacktrace
+>>>>>>> branch 'master' of https://github.com/StrangeSkies/uk.co.strangeskies.git
 

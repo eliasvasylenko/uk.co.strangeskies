@@ -20,11 +20,4 @@
 		<nature>org.eclipse.jdt.core.javanature</nature>
 		<nature>bndtools.core.bndnature</nature>
 	</natures>
-	<linkedResources>
-		<link>
-			<name>src/uk/co/strangeskies/utilities/Comparator.class</name>
-			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Downloads/Comparator.class</locationURI>
-		</link>
-	</linkedResources>
 </projectDescription>

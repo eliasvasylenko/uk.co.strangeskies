@@ -18,8 +18,13 @@ buildscript {
     jcenter()
   }
   dependencies {
+<<<<<<< HEAD
     classpath 'biz.aQute.bnd:biz.aQute.bnd.gradle:latest'
     classpath 'biz.aQute.bnd:biz.aQute.bnd:latest'
+=======
+    classpath 'biz.aQute.bnd:biz.aQute.bnd.gradle:3.1.0'
+    classpath 'biz.aQute.bnd:biz.aQute.bnd:3.1.0'
+>>>>>>> branch 'master' of https://github.com/StrangeSkies/uk.co.strangeskies.git
   }
   /* Pass bnd gradle plugin classpath to rootProject once created */
   def bndPlugin = files(configurations.classpath.files)

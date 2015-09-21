@@ -25,6 +25,17 @@ Bundle-License: LGPL <http://www.gnu.org/licenses/>
 ## ext/repositories.bnd:
 # -plugin: ${ext.repositories.-plugin}, org.example.MyPlugin
 
+-releaserepo: Release
+
+-pluginpath:\
+	${build}/cache/biz.aQute.repository.aether.jar; \
+		url = ${bnd-release}/biz.aQute.repository.aether/biz.aQute.repository.aether-latest.jar
+
+-plugin.8.Clojars: \
+\
+		aQute.bnd.deployer.repository.aether.AetherRepository; \
+			name				=		Clojars; \
+			url					=		http://clojars.org/repo/
 
 ## To enable baselining, uncomment the following lines:
 # -baseline: *
@@ -38,7 +49,6 @@ Git-SHA: ${system-allow-fail;git rev-list -1 HEAD}
 # Run requirement groups:
 runreq.base=\
 	osgi.identity;filter:='(osgi.identity=osgi.enroute.logger.simple.provider)'
-	
 
 runreq.felix.shell=\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.gogo.command)',\
