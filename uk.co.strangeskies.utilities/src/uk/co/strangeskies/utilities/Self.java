@@ -18,11 +18,13 @@
  */
 package uk.co.strangeskies.utilities;
 
-
 /**
  * For classes which follow the self-bounding pattern. The self-bounding pattern
  * is the use of the final derived class as a type parameter.
- *
+ * <p>
+ * Generally only the most specific <em>useful</em> type will be considered for
+ * parameterization, and more specific type information will be discarded.
+ * 
  * @author Elias N Vasylenko
  *
  * @param <S>
@@ -34,7 +36,7 @@ public interface Self<S extends Self<S>> extends Copyable<S> {
 	 *         parameterization of Self.
 	 */
 	@SuppressWarnings("unchecked")
-	public default S getThis(Self<S> this) {
+	public default S getThis(Self<S>this) {
 		return (S) this;
 	}
 }

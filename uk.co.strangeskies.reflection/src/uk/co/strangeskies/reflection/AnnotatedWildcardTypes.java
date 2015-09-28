@@ -22,10 +22,12 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.AnnotatedWildcardType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes.AnnotatedTypeImpl;
@@ -41,23 +43,22 @@ public final class AnnotatedWildcardTypes {
 		private final AnnotatedTypeImpl[] annotatedUpperBounds;
 		private final AnnotatedTypeImpl[] annotatedLowerBounds;
 
-		public AnnotatedWildcardTypeImpl(AnnotatedWildcardType annotatedWildcardType) {
+		public AnnotatedWildcardTypeImpl(Set<TypeVariable<?>> wrapped,
+				AnnotatedWildcardType annotatedWildcardType) {
 			super(annotatedWildcardType);
 
-			annotatedUpperBounds = AnnotatedTypes.wrapImpl(annotatedWildcardType
-					.getAnnotatedUpperBounds());
-			annotatedLowerBounds = AnnotatedTypes.wrapImpl(annotatedWildcardType
-					.getAnnotatedLowerBounds());
+			annotatedUpperBounds = AnnotatedTypes.wrapImpl(wrapped,
+					annotatedWildcardType.getAnnotatedUpperBounds());
+			annotatedLowerBounds = AnnotatedTypes.wrapImpl(wrapped,
+					annotatedWildcardType.getAnnotatedLowerBounds());
 		}
 
 		public AnnotatedWildcardTypeImpl(WildcardType type,
 				Collection<Annotation> annotations) {
 			super(type, annotations);
 
-			annotatedUpperBounds = AnnotatedTypes.wrapImpl(AnnotatedTypes.over(type
-					.getUpperBounds()));
-			annotatedLowerBounds = AnnotatedTypes.wrapImpl(AnnotatedTypes.over(type
-					.getLowerBounds()));
+			annotatedUpperBounds = AnnotatedTypes.overImpl(type.getUpperBounds());
+			annotatedLowerBounds = AnnotatedTypes.overImpl(type.getLowerBounds());
 		}
 
 		public AnnotatedWildcardTypeImpl(
@@ -66,10 +67,10 @@ public final class AnnotatedWildcardTypes {
 				Collection<Annotation> annotations) {
 			super(wildcardFrom(upperBounds, lowerBounds), annotations);
 
-			annotatedUpperBounds = AnnotatedTypes.wrapImpl(upperBounds
-					.toArray(new AnnotatedType[upperBounds.size()]));
-			annotatedLowerBounds = AnnotatedTypes.wrapImpl(lowerBounds
-					.toArray(new AnnotatedType[lowerBounds.size()]));
+			annotatedUpperBounds = AnnotatedTypes
+					.wrapImpl(upperBounds.toArray(new AnnotatedType[upperBounds.size()]));
+			annotatedLowerBounds = AnnotatedTypes
+					.wrapImpl(lowerBounds.toArray(new AnnotatedType[lowerBounds.size()]));
 		}
 
 		private static Type wildcardFrom(
@@ -102,13 +103,12 @@ public final class AnnotatedWildcardTypes {
 
 		@Override
 		public String toString(Imports imports) {
-			StringBuilder builder = new StringBuilder(annotationString(imports,
-					getAnnotations()));
+			StringBuilder builder = new StringBuilder(
+					annotationString(imports, getAnnotations()));
 
 			AnnotatedType[] bounds;
-			if ((bounds = getAnnotatedUpperBounds()).length > 1
-					|| (bounds.length == 1 && !bounds[0].equals(AnnotatedTypes
-							.over(Object.class)))) {
+			if ((bounds = getAnnotatedUpperBounds()).length > 1 || (bounds.length == 1
+					&& !bounds[0].equals(AnnotatedTypes.over(Object.class)))) {
 				builder.append("? extends ");
 			} else if ((bounds = getAnnotatedLowerBounds()).length > 0) {
 				builder.append("? super ");
@@ -121,8 +121,7 @@ public final class AnnotatedWildcardTypes {
 		}
 
 		private String annotatedBounds(AnnotatedType[] bounds, Imports imports) {
-			return Arrays.stream(bounds)
-					.map(t -> AnnotatedTypes.toString(t, imports))
+			return Arrays.stream(bounds).map(t -> AnnotatedTypes.toString(t, imports))
 					.collect(Collectors.joining(" & "));
 		}
 
@@ -304,11 +303,17 @@ public final class AnnotatedWildcardTypes {
 		return upperBounded(Collections.emptySet(), bounds);
 	}
 
-	protected static AnnotatedWildcardTypeImpl wrapImpl(AnnotatedWildcardType type) {
+	protected static AnnotatedWildcardTypeImpl wrapImpl(
+			AnnotatedWildcardType type) {
+		return wrapImpl(AnnotatedTypes.wrappingVisitedSet(), type);
+	}
+
+	protected static AnnotatedWildcardTypeImpl wrapImpl(
+			Set<TypeVariable<?>> wrapped, AnnotatedWildcardType type) {
 		if (type instanceof AnnotatedWildcardTypeImpl) {
 			return (AnnotatedWildcardTypeImpl) type;
 		} else
-			return new AnnotatedWildcardTypeImpl(type);
+			return new AnnotatedWildcardTypeImpl(wrapped, type);
 	}
 
 	/**

@@ -46,8 +46,8 @@ import uk.co.strangeskies.utilities.collection.multimap.MultiTreeMap;
  * @author Elias N Vasylenko
  */
 public class ParameterizedTypes {
-	private static final class ParameterizedTypeImpl implements
-			ParameterizedType, Serializable {
+	private static final class ParameterizedTypeImpl
+			implements ParameterizedType, Serializable {
 		private static final long serialVersionUID = 1L;
 
 		private final Type ownerType;
@@ -85,8 +85,9 @@ public class ParameterizedTypes {
 		}
 
 		private static Type getOwner(Type ownerType) {
-			return ownerType instanceof ParameterizedType ? new ParameterizedTypeImpl(
-					(ParameterizedType) ownerType) : ownerType;
+			return ownerType instanceof ParameterizedType
+					? new ParameterizedTypeImpl((ParameterizedType) ownerType)
+					: ownerType;
 		}
 
 		private static List<Type> getArguments(Type[] actualTypeArguments) {
@@ -139,9 +140,9 @@ public class ParameterizedTypes {
 
 			Thread currentThread = Thread.currentThread();
 			if (recurringThreads.add(currentThread)) {
-				builder.append(typeArguments.stream()
-						.map(t -> Types.toString(t, imports))
-						.collect(Collectors.joining(", ")));
+				builder
+						.append(typeArguments.stream().map(t -> Types.toString(t, imports))
+								.collect(Collectors.joining(", ")));
 				recurringThreads.remove(currentThread);
 			} else {
 				builder.append("...");
@@ -177,11 +178,10 @@ public class ParameterizedTypes {
 			MultiMap<ParameterizedType, ParameterizedType, Set<ParameterizedType>> equalitiesForThread = assumedEqualities
 					.get(currentThread);
 			if (equalitiesForThread == null) {
-				assumedEqualities.put(
-						currentThread,
-						equalitiesForThread = new MultiTreeMap<>(EqualityComparator
-								.identityComparator(), () -> new TreeSet<>(EqualityComparator
-								.identityComparator())));
+				assumedEqualities.put(currentThread,
+						equalitiesForThread = new MultiTreeMap<>(
+								EqualityComparator.identityComparator(),
+								() -> new TreeSet<>(EqualityComparator.identityComparator())));
 				newThread = true;
 			}
 
@@ -317,9 +317,17 @@ public class ParameterizedTypes {
 				typeArguments.put(typeParameter, typeArgument);
 			}
 
-			type = type.getOwnerType() instanceof ParameterizedType ? (ParameterizedType) type
-					.getOwnerType() : null;
+			type = type.getOwnerType() instanceof ParameterizedType
+					? (ParameterizedType) type.getOwnerType() : null;
 			rawType = Types.isStatic(rawType) ? null : rawType.getEnclosingClass();
+
+			if (rawType != null && type == null) {
+				do {
+					for (TypeVariable<?> variable : rawType.getTypeParameters())
+						typeArguments.put(variable, variable);
+				} while ((rawType = Types.isStatic(rawType) ? null
+						: rawType.getEnclosingClass()) != null);
+			}
 		} while (type != null && rawType != null);
 
 		return typeArguments;
@@ -339,8 +347,8 @@ public class ParameterizedTypes {
 
 	static ParameterizedType uncheckedFrom(Type ownerType, Class<?> rawType,
 			List<Type> typeArguments) {
-		return new ParameterizedTypeImpl(ownerType, rawType, new ArrayList<>(
-				typeArguments));
+		return new ParameterizedTypeImpl(ownerType, rawType,
+				new ArrayList<>(typeArguments));
 	}
 
 	static <T> Type uncheckedFrom(Class<T> rawType,
@@ -356,8 +364,8 @@ public class ParameterizedTypes {
 				&& rawType.getTypeParameters().length == 0)
 			return rawType;
 
-		return new ParameterizedTypeImpl(ownerType, rawType, argumentsForClass(
-				rawType, typeArguments));
+		return new ParameterizedTypeImpl(ownerType, rawType,
+				argumentsForClass(rawType, typeArguments));
 	}
 
 	/**
@@ -396,8 +404,8 @@ public class ParameterizedTypes {
 	@SuppressWarnings("unchecked")
 	public static <T> TypeToken<? extends T> from(Class<T> rawType,
 			Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
-		return (TypeToken<? extends T>) TypeToken.over(uncheckedFrom(rawType,
-				typeArguments));
+		return (TypeToken<? extends T>) TypeToken
+				.over(uncheckedFrom(rawType, typeArguments));
 	}
 
 	/**
@@ -450,8 +458,8 @@ public class ParameterizedTypes {
 				&& isGeneric(rawType.getEnclosingClass()))
 			throw new IllegalArgumentException();
 
-		return (TypeToken<? extends T>) TypeToken.over(uncheckedFrom(null, rawType,
-				typeArguments));
+		return (TypeToken<? extends T>) TypeToken
+				.over(uncheckedFrom(null, rawType, typeArguments));
 	}
 
 	private static List<Type> argumentsForClass(Class<?> rawType,
@@ -459,8 +467,8 @@ public class ParameterizedTypes {
 		List<Type> arguments = new ArrayList<>();
 		for (int i = 0; i < rawType.getTypeParameters().length; i++) {
 			Type argument = typeArguments.apply(rawType.getTypeParameters()[i]);
-			arguments.add((argument != null) ? argument
-					: rawType.getTypeParameters()[i]);
+			arguments
+					.add((argument != null) ? argument : rawType.getTypeParameters()[i]);
 		}
 		return arguments;
 	}
@@ -491,7 +499,8 @@ public class ParameterizedTypes {
 	 *          The class of the supertype parameterization we wish to determine.
 	 * @return A TypeToken over the supertype of the requested class.
 	 */
-	public static Type resolveSupertypeParameters(Type type, Class<?> superclass) {
+	public static Type resolveSupertypeParameters(Type type,
+			Class<?> superclass) {
 		if (!isGeneric(superclass))
 			return superclass;
 
@@ -501,12 +510,12 @@ public class ParameterizedTypes {
 			return type;
 
 		if (!(type instanceof ParameterizedType) && !(type instanceof Class))
-			throw new IllegalArgumentException("Unexpected class '" + type.getClass()
-					+ "' of type '" + type + "'.");
+			throw new IllegalArgumentException(
+					"Unexpected class '" + type.getClass() + "' of type '" + type + "'.");
 
 		do {
-			Set<Type> lesserSubtypes = new HashSet<>(Arrays.asList(subclass
-					.getGenericInterfaces()));
+			Set<Type> lesserSubtypes = new HashSet<>(
+					Arrays.asList(subclass.getGenericInterfaces()));
 			if (subclass.getSuperclass() != null)
 				lesserSubtypes.addAll(Arrays.asList(subclass.getGenericSuperclass()));
 			if (lesserSubtypes.isEmpty())
@@ -552,15 +561,16 @@ public class ParameterizedTypes {
 			return type;
 
 		if (!(type instanceof ParameterizedType) && !(type instanceof Class))
-			throw new IllegalArgumentException("Unexpected class '" + type.getClass()
-					+ "' of type '" + type + "'.");
+			throw new IllegalArgumentException(
+					"Unexpected class '" + type.getClass() + "' of type '" + type + "'.");
 
 		Map<TypeVariable<?>, InferenceVariable> parameterSubstitutes = new HashMap<>();
 		Map<InferenceVariable, Type> substitutedArguments = new HashMap<>();
 
 		int index = 0;
 		if (type instanceof ParameterizedType) {
-			Map<TypeVariable<?>, Type> arguments = getAllTypeArguments((ParameterizedType) type);
+			Map<TypeVariable<?>, Type> arguments = getAllTypeArguments(
+					(ParameterizedType) type);
 			for (TypeVariable<?> parameter : getAllTypeParameters(rawType)) {
 				InferenceVariable substituteArgument = getSubstitutionArgument(index++);
 				parameterSubstitutes.put(parameter, substituteArgument);
@@ -568,9 +578,9 @@ public class ParameterizedTypes {
 			}
 		}
 
-		Type supertype = new TypeSubstitution(substitutedArguments).resolve(from(
-				rawType, parameterSubstitutes::get).resolveSubtypeParameters(subclass)
-				.getType());
+		Type supertype = new TypeSubstitution(substitutedArguments)
+				.resolve(from(rawType, parameterSubstitutes::get)
+						.resolveSubtypeParameters(subclass).getType());
 
 		return supertype;
 	}

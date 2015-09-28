@@ -22,8 +22,10 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedArrayType;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Set;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes.AnnotatedTypeImpl;
 
@@ -37,27 +39,28 @@ public final class AnnotatedArrayTypes {
 			implements AnnotatedArrayType {
 		private final AnnotatedTypeImpl annotatedComponentType;
 
-		public AnnotatedArrayTypeImpl(AnnotatedArrayType annotatedArrayType) {
+		public AnnotatedArrayTypeImpl(Set<TypeVariable<?>> wrapped,
+				AnnotatedArrayType annotatedArrayType) {
 			super(annotatedArrayType);
 
-			annotatedComponentType = (AnnotatedTypeImpl) AnnotatedTypes
-					.wrap(annotatedArrayType.getAnnotatedGenericComponentType());
+			annotatedComponentType = AnnotatedTypes.wrapImpl(wrapped,
+					annotatedArrayType.getAnnotatedGenericComponentType());
 		}
 
 		public AnnotatedArrayTypeImpl(GenericArrayType type,
 				Collection<Annotation> annotations) {
 			super(type, annotations);
 
-			annotatedComponentType = (AnnotatedTypeImpl) AnnotatedTypes.over(type
-					.getGenericComponentType());
+			annotatedComponentType = (AnnotatedTypeImpl) AnnotatedTypes
+					.over(type.getGenericComponentType());
 		}
 
 		public AnnotatedArrayTypeImpl(Class<?> type,
 				Collection<Annotation> annotations) {
 			super(type, annotations);
 
-			annotatedComponentType = (AnnotatedTypeImpl) AnnotatedTypes.over(type
-					.getComponentType());
+			annotatedComponentType = (AnnotatedTypeImpl) AnnotatedTypes
+					.over(type.getComponentType());
 		}
 
 		public AnnotatedArrayTypeImpl(AnnotatedType type,
@@ -79,8 +82,8 @@ public final class AnnotatedArrayTypes {
 			AnnotatedType type = this;
 			do {
 				if (type.getAnnotations().length > 0) {
-					builder.append(" ").append(
-							annotationString(imports, type.getAnnotations()));
+					builder.append(" ")
+							.append(annotationString(imports, type.getAnnotations()));
 				}
 
 				builder.append("[]");
@@ -193,10 +196,15 @@ public final class AnnotatedArrayTypes {
 	}
 
 	protected static AnnotatedArrayTypeImpl wrapImpl(AnnotatedArrayType type) {
+		return wrapImpl(AnnotatedTypes.wrappingVisitedSet(), type);
+	}
+
+	protected static AnnotatedArrayTypeImpl wrapImpl(Set<TypeVariable<?>> wrapped,
+			AnnotatedArrayType type) {
 		if (type instanceof AnnotatedArrayTypeImpl) {
 			return (AnnotatedArrayTypeImpl) type;
 		} else
-			return new AnnotatedArrayTypeImpl(type);
+			return new AnnotatedArrayTypeImpl(wrapped, type);
 	}
 
 	/**

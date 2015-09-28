@@ -71,7 +71,8 @@ import uk.co.strangeskies.utilities.tuple.Pair;
  * @param <T>
  *          This is the type which the TypeToken object references.
  */
-public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
+public class TypeToken<T>
+		implements DeepCopyable<TypeToken<T>>, Reified<TypeToken<T>> {
 	/**
 	 * Treatment of wildcards for {@link TypeToken}s created over parameterized
 	 * types.
@@ -84,18 +85,18 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 		 * incorporation into backing {@link Resolver}, as wildcards alone do not
 		 * always fully specify valid bounds.
 		 */
-		PRESERVE(Preserve.class),
-		/**
-		 * Wildcards should be substituted with inference variables, with
-		 * appropriate bounds incorporated based on both type variable bounds and
-		 * wildcard bounds.
-		 */
-		INFER(Infer.class),
-		/**
-		 * Wildcards should be substituted with fresh {@link TypeVariableCapture}
-		 * instances, as per
-		 * {@link TypeVariableCapture#captureWildcardArguments(ParameterizedType)} .
-		 */
+		PRESERVE(Preserve.class), /**
+															 * Wildcards should be substituted with inference
+															 * variables, with appropriate bounds incorporated
+															 * based on both type variable bounds and wildcard
+															 * bounds.
+															 */
+		INFER(Infer.class), /**
+												 * Wildcards should be substituted with fresh
+												 * {@link TypeVariableCapture} instances, as per
+												 * {@link TypeVariableCapture#captureWildcardArguments(ParameterizedType)}
+												 * .
+												 */
 		CAPTURE(Capture.class);
 
 		private final Annotation annotation;
@@ -155,11 +156,11 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 
 				Type type = substituteAnnotatedWildcards(annotatedType, resolver);
 
-				type = resolver.resubstituteCapturedWildcards(resolver
-						.incorporateType(type));
+				type = resolver
+						.resubstituteCapturedWildcards(resolver.incorporateType(type));
 
 				return new Pair<>(resolver, type);
-			}, 64, true);
+			} , 64, true);
 
 	private final Resolver resolver;
 
@@ -167,6 +168,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	private final AnnotatedType declaration;
 
 	protected TypeToken() {
+		System.out
+				.println(AnnotatedTypes.toString(getClass().getAnnotatedSuperclass()));
 		declaration = resolveAnnotatedSuperclassParameter();
 
 		Pair<Resolver, Type> resolvedType = resolveAnnotatedWildcards(declaration);
@@ -213,9 +216,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	@SuppressWarnings("unchecked")
 	private TypeToken(Resolver resolver, Class<?> type) {
 		declaration = annotateWildcards(type, wildcards);
-
+	
 		this.resolver = resolver;
-
+	
 		if (type instanceof Class && resolver != null)
 			resolver.incorporateTypeParameters((Class<?>) type);
 		else
@@ -232,6 +235,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 
 		do {
 			AnnotatedType annotatedType = subclass.getAnnotatedSuperclass();
+			annotatedType = AnnotatedTypes.wrap(annotatedType);
 
 			if (annotatedType instanceof AnnotatedParameterizedType) {
 				if (!resolvedParameters.isEmpty())
@@ -267,17 +271,15 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 					.getAllTypeArguments((AnnotatedParameterizedType) annotatedType);
 
 			for (TypeVariable<?> parameter : allArguments.keySet())
-				allArguments.put(
-						parameter,
-						substituteAnnotatedTypeVariables(allArguments.get(parameter),
-								resolvedParameters));
+				allArguments.put(parameter, substituteAnnotatedTypeVariables(
+						allArguments.get(parameter), resolvedParameters));
 
 			/*
 			 * Deal with annotations on types mentioned by parameters, preserving any
 			 * parameters which are wildcards themselves.
 			 */
-			return AnnotatedParameterizedTypes.from(
-					Types.getRawType(annotatedType.getType()), allArguments::get,
+			Class<?> rawType = Types.getRawType(annotatedType.getType());
+			return AnnotatedParameterizedTypes.from(rawType, allArguments::get,
 					annotatedType.getAnnotations());
 		} else if (annotatedType instanceof AnnotatedTypeVariable) {
 			return resolvedParameters.getOrDefault(annotatedType.getType(),
@@ -332,10 +334,11 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 
 	private static Type substituteAnnotatedWildcards(AnnotatedType annotatedType,
 			Resolver resolver) {
-		Wildcards behaviour = annotatedType.isAnnotationPresent(Preserve.class) ? Wildcards.PRESERVE
+		Wildcards behaviour = annotatedType.isAnnotationPresent(Preserve.class)
+				? Wildcards.PRESERVE
 				: annotatedType.isAnnotationPresent(Infer.class) ? Wildcards.INFER
-						: annotatedType.isAnnotationPresent(Capture.class) ? Wildcards.CAPTURE
-								: null;
+						: annotatedType.isAnnotationPresent(Capture.class)
+								? Wildcards.CAPTURE : null;
 
 		if (annotatedType instanceof AnnotatedParameterizedType) {
 			/*
@@ -393,10 +396,29 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 				wildcardType = WildcardTypes.unbounded();
 			}
 
-			return wildcardType;
+			Type type;
+			if (behaviour != null) {
+				switch (behaviour) {
+				case PRESERVE:
+					type = wildcardType;
+					break;
+				case INFER:
+					type = resolver.inferOverWildcardType(wildcardType);
+					break;
+				case CAPTURE:
+					type = TypeVariableCapture.captureWildcard(wildcardType);
+					break;
+				default:
+					throw new AssertionError();
+				}
+			} else {
+				type = wildcardType;
+			}
+
+			return type;
 		} else if (annotatedType instanceof AnnotatedArrayType) {
-			return ArrayTypes.fromComponentType(substituteAnnotatedWildcards(
-					((AnnotatedArrayType) annotatedType)
+			return ArrayTypes.fromComponentType(
+					substituteAnnotatedWildcards(((AnnotatedArrayType) annotatedType)
 							.getAnnotatedGenericComponentType(), resolver));
 		} else {
 			return annotatedType.getType();
@@ -491,6 +513,18 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	}
 
 	@Override
+	public TypeToken<T> getThis() {
+		// TODO Auto-generated method stub
+		return Reified.super.getThis();
+	}
+
+	@Override
+	public TypeToken<TypeToken<T>> getThisType() {
+		return new TypeToken<TypeToken<T>>() {}
+				.withTypeArgument(new TypeParameter<T>() {}, this);
+	}
+
+	@Override
 	public TypeToken<T> copy() {
 		return this;
 	}
@@ -499,11 +533,11 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	public TypeToken<T> deepCopy() {
 		Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions = new HashMap<>();
 
-		Resolver resolver = getInternalResolver().deepCopy(
-				inferenceVariableSubstitutions);
+		Resolver resolver = getInternalResolver()
+				.deepCopy(inferenceVariableSubstitutions);
 
-		return new TypeToken<T>(resolver, declaration, new TypeSubstitution(
-				inferenceVariableSubstitutions).resolve(type));
+		return new TypeToken<T>(resolver, declaration,
+				new TypeSubstitution(inferenceVariableSubstitutions).resolve(type));
 	}
 
 	/**
@@ -580,8 +614,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 */
 	public TypeToken<T> withBoundsFrom(Resolver bounds,
 			Collection<? extends InferenceVariable> inferenceVariables) {
-		return new TypeToken<T>(getResolverWithBoundsFrom(bounds,
-				inferenceVariables), getType());
+		return new TypeToken<T>(
+				getResolverWithBoundsFrom(bounds, inferenceVariables), getType());
 	}
 
 	/**
@@ -611,6 +645,22 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 */
 	public static TypeToken<?> fromString(String typeString) {
 		return over(AnnotatedTypes.fromString(typeString));
+	}
+
+	/**
+	 * Equivalent to the application of {@link TypeToken#over(Type)} to the result
+	 * of {@link AnnotatedTypes#fromString(String, Imports)}, with the given
+	 * imports.
+	 * 
+	 * @param typeString
+	 *          The String to parse.
+	 * @param imports
+	 *          Classes and packages for which full package qualification may be
+	 *          omitted from input.
+	 * @return A TypeToken representing the type described by the String.
+	 */
+	public static TypeToken<?> fromString(String typeString, Imports imports) {
+		return over(AnnotatedTypes.fromString(typeString, imports));
 	}
 
 	protected void validate() {
@@ -650,8 +700,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	public TypeToken<? extends T> getExtending(Wildcards wildcards) {
 		if (wildcards == Wildcards.INFER) {
 			Resolver resolver = getResolver();
-			return (TypeToken<? extends T>) new TypeToken<>(resolver,
-					resolver.inferOverWildcardType(WildcardTypes.upperBounded(getType())));
+			return (TypeToken<? extends T>) new TypeToken<>(resolver, resolver
+					.inferOverWildcardType(WildcardTypes.upperBounded(getType())));
 		} else {
 			return (TypeToken<? extends T>) over(
 					WildcardTypes.upperBounded(getType()), wildcards);
@@ -691,8 +741,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	public TypeToken<? super T> getSuper(Wildcards wildcards) {
 		if (wildcards == Wildcards.INFER) {
 			Resolver resolver = getResolver();
-			return new TypeToken<>(resolver,
-					resolver.inferOverWildcardType(WildcardTypes.lowerBounded(getType())));
+			return new TypeToken<>(resolver, resolver
+					.inferOverWildcardType(WildcardTypes.lowerBounded(getType())));
 		} else {
 			return (TypeToken<? super T>) over(WildcardTypes.lowerBounded(getType()),
 					wildcards);
@@ -1132,9 +1182,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 		if (!ParameterizedTypes.isGeneric(superclass))
 			return TypeToken.over(superclass);
 
-		if (superclass.equals(type)
-				|| (type instanceof ParameterizedType && ((ParameterizedType) type)
-						.getRawType().equals(superclass)))
+		if (superclass.equals(type) || (type instanceof ParameterizedType
+				&& ((ParameterizedType) type).getRawType().equals(superclass)))
 			return (TypeToken<? extends U>) this;
 
 		Resolver resolver = getInternalResolver();
@@ -1170,13 +1219,13 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 *         class such that it be a subtype.
 	 */
 	@SuppressWarnings("unchecked")
-	public <U> TypeToken<? extends U> resolveSubtypeParameters(Class<U> subclass) {
+	public <U> TypeToken<? extends U> resolveSubtypeParameters(
+			Class<U> subclass) {
 		if (!ParameterizedTypes.isGeneric(subclass))
 			return TypeToken.over(subclass);
 
-		if (subclass.equals(type)
-				|| (type instanceof ParameterizedType && ((ParameterizedType) type)
-						.getRawType().equals(subclass)))
+		if (subclass.equals(type) || (type instanceof ParameterizedType
+				&& ((ParameterizedType) type).getRawType().equals(subclass)))
 			return (TypeToken<? extends U>) this;
 
 		Resolver resolver = getInternalResolver();
@@ -1271,13 +1320,11 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 *         appropriate argument parameterizations according to this type.
 	 */
 	public Map<TypeVariable<?>, Type> getAllTypeArguments() {
-		return getRawTypes()
-				.stream()
-				.flatMap(
-						t -> ParameterizedTypes
-								.getAllTypeArguments(
-										(ParameterizedType) resolveSupertypeParameters(t).getType())
-								.entrySet().stream())
+		return getRawTypes().stream()
+				.flatMap(t -> ParameterizedTypes
+						.getAllTypeArguments(
+								(ParameterizedType) resolveSupertypeParameters(t).getType())
+						.entrySet().stream())
 				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 	}
 
@@ -1339,8 +1386,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	@SuppressWarnings("unchecked")
 	public <V> TypeToken<T> withTypeArgument(TypeParameter<V> parameter,
 			TypeToken<V> argument) {
-		return (TypeToken<T>) withBoundsFrom(argument).withTypeArgument(
-				parameter.getType(), argument.getType());
+		return (TypeToken<T>) withBoundsFrom(argument)
+				.withTypeArgument(parameter.getType(), argument.getType());
 	}
 
 	/**
@@ -1361,7 +1408,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 		return (TypeToken<T>) withTypeArgument(parameter.getType(), argument);
 	}
 
-	private TypeToken<?> withTypeArgument(TypeVariable<?> parameter, Type argument) {
+	private TypeToken<?> withTypeArgument(TypeVariable<?> parameter,
+			Type argument) {
 		return new TypeToken<>(new Resolver(getInternalResolver().getBounds()),
 				new TypeSubstitution().where(parameter, argument).resolve(getType()));
 	}
@@ -1398,8 +1446,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 
 	private Set<? extends Invokable<? super T, ?>> getMethods(
 			Predicate<Method> filter) {
-		Stream<Method> methodStream = getRawTypes().stream().flatMap(
-				t -> Arrays.stream(t.getMethods()));
+		Stream<Method> methodStream = getRawTypes().stream()
+				.flatMap(t -> Arrays.stream(t.getMethods()));
 
 		if (getRawTypes().stream().allMatch(Types::isInterface))
 			methodStream = Stream.concat(methodStream,
@@ -1471,8 +1519,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 */
 	public Invokable<? super T, ? extends T> resolveConstructorOverload(
 			List<? extends TypeToken<?>> arguments) {
-		Set<? extends Invokable<? super T, ? extends T>> candidates = getConstructors(m -> isArgumentCountValid(
-				m, arguments.size()));
+		Set<? extends Invokable<? super T, ? extends T>> candidates = getConstructors(
+				m -> isArgumentCountValid(m, arguments.size()));
 
 		if (candidates.isEmpty())
 			throw new IllegalArgumentException(
@@ -1500,8 +1548,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 */
 	public Invokable<? super T, ?> resolveMethodOverload(String name,
 			Type argument, Type... arguments) {
-		return resolveMethodOverload(
-				name,
+		return resolveMethodOverload(name,
 				Stream
 						.concat(Arrays.asList(argument).stream(), Arrays.stream(arguments))
 						.map(TypeToken::over).collect(Collectors.toList()));
@@ -1538,8 +1585,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 */
 	public Invokable<? super T, ?> resolveMethodOverload(String name,
 			List<? extends TypeToken<?>> arguments) {
-		Set<? extends Invokable<? super T, ? extends Object>> candidates = getMethods(m -> m
-				.getName().equals(name) && isArgumentCountValid(m, arguments.size()));
+		Set<? extends Invokable<? super T, ? extends Object>> candidates = getMethods(
+				m -> m.getName().equals(name)
+						&& isArgumentCountValid(m, arguments.size()));
 
 		if (candidates.isEmpty())
 			throw new IllegalArgumentException("Cannot find any method '" + name
@@ -1618,8 +1666,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 *         its type.
 	 */
 	public Set<InferenceVariable> getInferenceVariablesMentioned() {
-		return getInternalResolver().getBounds().getInferenceVariablesMentionedBy(
-				type);
+		return getInternalResolver().getBounds()
+				.getInferenceVariablesMentionedBy(type);
 	}
 
 	/**
@@ -1631,11 +1679,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 *         which are mentioned by its type.
 	 */
 	public Set<InferenceVariable> getRemainingInferenceVariableDependencies() {
-		return getInferenceVariablesMentioned()
-				.stream()
-				.flatMap(
-						d -> getInternalResolver().getBounds().getBoundsOn(d)
-								.getRemainingDependencies().stream())
+		return getInferenceVariablesMentioned().stream()
+				.flatMap(d -> getInternalResolver().getBounds().getBoundsOn(d)
+						.getRemainingDependencies().stream())
 				.collect(Collectors.toSet());
 	}
 
@@ -1648,11 +1694,10 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 *         which are mentioned by its type.
 	 */
 	public Set<InferenceVariable> getRelatedInferenceVariables() {
-		return getInferenceVariablesMentioned()
-				.stream()
-				.flatMap(
-						d -> getInternalResolver().getBounds().getBoundsOn(d).getRelated()
-								.stream()).collect(Collectors.toSet());
+		return getInferenceVariablesMentioned().stream()
+				.flatMap(d -> getInternalResolver().getBounds().getBoundsOn(d)
+						.getRelated().stream())
+				.collect(Collectors.toSet());
 	}
 
 	/**
@@ -1689,13 +1734,12 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	public void incorporateInto(Resolver resolver) {
 		Type type = resolveType();
 
-		resolver.getBounds().incorporate(
-				getInternalResolver().getBounds(),
+		resolver.getBounds().incorporate(getInternalResolver().getBounds(),
 				getInternalResolver().getBounds()
 						.getInferenceVariablesMentionedBy(type));
 
-		resolver.incorporateWildcardCaptures(getInternalResolver()
-				.getWildcardCaptures());
+		resolver.incorporateWildcardCaptures(
+				getInternalResolver().getWildcardCaptures());
 		resolver.incorporateType(type);
 	}
 
@@ -1711,7 +1755,19 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>> {
 	 *         wildcards substituted for those wildcards.
 	 */
 	public TypeToken<?> resubstituteCapturedWildcards() {
-		return new TypeToken<T>(getResolver(), getInternalResolver()
-				.resubstituteCapturedWildcards(type));
+		return new TypeToken<T>(getResolver(),
+				getInternalResolver().resubstituteCapturedWildcards(type));
+	}
+
+	/**
+	 * Convenience method to return a {@link TypedObject} wrapper around an object
+	 * instance of this type.
+	 * 
+	 * @param object
+	 *          The object to wrap with a typed container
+	 * @return A typed container for the given object
+	 */
+	public TypedObject<T> typedObject(T object) {
+		return new TypedObject<>(this, object);
 	}
 }

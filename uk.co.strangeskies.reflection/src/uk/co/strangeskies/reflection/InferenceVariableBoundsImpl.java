@@ -69,8 +69,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	}
 
 	public InferenceVariableBoundsImpl copyInto(BoundSet boundSet) {
-		InferenceVariableBoundsImpl copy = new InferenceVariableBoundsImpl(
-				boundSet, inferenceVariable);
+		InferenceVariableBoundsImpl copy = new InferenceVariableBoundsImpl(boundSet,
+				inferenceVariable);
 
 		copy.upperBounds.addAll(upperBounds);
 		copy.lowerBounds.addAll(lowerBounds);
@@ -111,9 +111,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 					.stream().anyMatch(ignoring::test))
 				boundIterator.remove();
 
-		if (capture != null
-				&& !capture.getAllMentionedInferenceVariables(boundSet).stream()
-						.anyMatch(ignoring::test))
+		if (capture != null && !capture.getAllMentionedInferenceVariables(boundSet)
+				.stream().anyMatch(ignoring::test))
 			capture = null;
 
 		Iterator<InferenceVariable> variableIterator = relations.iterator();
@@ -141,12 +140,12 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		if (aSubstitution == null)
 			aSubstitution = inferenceVariable;
 
-		InferenceVariableBoundsImpl copy = new InferenceVariableBoundsImpl(
-				boundSet, aSubstitution);
+		InferenceVariableBoundsImpl copy = new InferenceVariableBoundsImpl(boundSet,
+				aSubstitution);
 
 		copy.allDependencies.clear();
-		copy.addBoundsWithTypeSubstitution(this, new TypeSubstitution(
-				inferenceVariableSubstitutions));
+		copy.addBoundsWithTypeSubstitution(this,
+				new TypeSubstitution(inferenceVariableSubstitutions));
 
 		return copy;
 	}
@@ -166,10 +165,13 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		inferenceVariableBounds.relations.stream().map(where::resolve)
 				.map(InferenceVariable.class::cast).forEach(relations::add);
 
-		inferenceVariableBounds.allDependencies.stream().map(where::resolve)
-				.map(InferenceVariable.class::cast).forEach(allDependencies::add);
-		inferenceVariableBounds.externalDependencies.stream().map(where::resolve)
-				.map(InferenceVariable.class::cast).forEach(externalDependencies::add);
+		if (inferenceVariableBounds.allDependencies != null) {
+			inferenceVariableBounds.allDependencies.stream().map(where::resolve)
+					.map(InferenceVariable.class::cast).forEach(allDependencies::add);
+			inferenceVariableBounds.externalDependencies.stream().map(where::resolve)
+					.map(InferenceVariable.class::cast)
+					.forEach(externalDependencies::add);
+		}
 	}
 
 	@Override
@@ -218,8 +220,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				/*
 				 * Otherwise, α depends on the resolution of β.
 				 */
-				mentions.map(mention -> mention.allDependencies).forEach(
-						dependencies -> allDependencies.addAll(dependencies));
+				mentions.map(mention -> mention.allDependencies)
+						.forEach(dependencies -> allDependencies.addAll(dependencies));
 			}
 
 			/*
@@ -230,8 +232,10 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			 */
 			for (InferenceVariable inferenceVariable : capture
 					.getAllMentionedInferenceVariables(boundSet)) {
-				allDependencies
-						.addAll(boundSet.getBoundsOn(inferenceVariable).allDependencies);
+				Set<InferenceVariable> dependencies = boundSet
+						.getBoundsOn(inferenceVariable).allDependencies;
+				if (dependencies != null)
+					allDependencies.addAll(dependencies);
 			}
 		}
 	}
@@ -294,8 +298,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				 */
 				for (InferenceVariable mention : mentions) {
 					if (!boundSet.getBoundsOn(mention).isInstantiated())
-						boundSet.getBoundsOn(mention).addExternalDependencies(
-								allDependencies);
+						boundSet.getBoundsOn(mention)
+								.addExternalDependencies(allDependencies);
 				}
 			} else {
 				/*
@@ -385,8 +389,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				 */
 
 				if (isInstantiated()) {
-					ConstraintFormula.reduce(Kind.EQUALITY, type, getInstantiation()
-							.get(), boundSet);
+					ConstraintFormula.reduce(Kind.EQUALITY, type,
+							getInstantiation().get(), boundSet);
 				} else {
 					if (capture != null)
 						boundSet.incorporate().falsehood();
@@ -645,7 +649,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	}
 
 	private void logBound(Type from, Type to, String boundString) {
-		// System.out.println(System.identityHashCode(boundSet) + "  " + from + " "
+		// System.out.println(System.identityHashCode(boundSet) + " " + from + " "
 		// + boundString + " " + to);
 	}
 
@@ -689,8 +693,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	/*
 	 * α = U and S = T imply ‹S[α:=U] = T[α:=U]›
 	 */
-	public void incorporateProperEqualitySubstitution(InferenceVariable a,
-			Type U, InferenceVariable S, Type T) {
+	public void incorporateProperEqualitySubstitution(InferenceVariable a, Type U,
+			InferenceVariable S, Type T) {
 		incorporateProperEqualitySubstitutionImpl(a, U, S, T);
 		incorporateProperEqualitySubstitutionImpl(S, T, a, U);
 	}
@@ -714,8 +718,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			Type T) {
 		if (boundSet.isProperType(U)
 				&& !Types.getAllMentionedBy(T, inferenceVariable::equals).isEmpty()) {
-			TypeSubstitution resolver = new TypeSubstitution().where(
-					inferenceVariable, U);
+			TypeSubstitution resolver = new TypeSubstitution()
+					.where(inferenceVariable, U);
 
 			T = resolver.resolve(T);
 
@@ -727,8 +731,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			InferenceVariable T) {
 		if (boundSet.isProperType(U)
 				&& !Types.getAllMentionedBy(S, inferenceVariable::equals).isEmpty()) {
-			TypeSubstitution resolver = new TypeSubstitution().where(
-					inferenceVariable, U);
+			TypeSubstitution resolver = new TypeSubstitution()
+					.where(inferenceVariable, U);
 
 			S = resolver.resolve(S);
 
@@ -765,10 +769,12 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 
 						for (TypeVariable<?> parameter : ParameterizedTypes
 								.getAllTypeParameters(type)) {
-							Type argumentS = ParameterizedTypes.getAllTypeArguments(
-									(ParameterizedType) supertypeS).get(parameter);
-							Type argumentT = ParameterizedTypes.getAllTypeArguments(
-									(ParameterizedType) supertypeT).get(parameter);
+							Type argumentS = ParameterizedTypes
+									.getAllTypeArguments((ParameterizedType) supertypeS)
+									.get(parameter);
+							Type argumentT = ParameterizedTypes
+									.getAllTypeArguments((ParameterizedType) supertypeT)
+									.get(parameter);
 
 							if (!(argumentS instanceof WildcardType)
 									&& !(argumentT instanceof WildcardType))

@@ -90,9 +90,9 @@ public class Imports {
 	private void importClasses(Collection<? extends Class<?>> classes) {
 		for (Class<?> clazz : classes) {
 			if (namedClasses.putIfAbsent(clazz.getSimpleName(), clazz) != null) {
-				throw new TypeException("Cannot import both '"
-						+ namedClasses.get(clazz.getSimpleName()) + "' and '" + clazz
-						+ "' with the same name.");
+				throw new TypeException(
+						"Cannot import both '" + namedClasses.get(clazz.getSimpleName())
+								+ "' and '" + clazz + "' with the same name.");
 			}
 		}
 	}
@@ -135,8 +135,8 @@ public class Imports {
 				}
 
 				if (namedClass == null)
-					throw new IllegalArgumentException(
-							"Cannot load class '" + name + "'", e);
+					throw new IllegalArgumentException("Cannot load class '" + name + "'",
+							e);
 			}
 		}
 
@@ -155,8 +155,10 @@ public class Imports {
 		if (namedClasses.containsValue(clazz)
 				|| packages.contains(clazz.getPackage()))
 			return clazz.getSimpleName();
-		else
+		else if (clazz.getCanonicalName() != null)
 			return clazz.getCanonicalName();
+		else
+			return clazz.getName();
 	}
 
 	/**

@@ -22,10 +22,12 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedArrayType;
 import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.AnnotatedType;
+import java.lang.reflect.AnnotatedTypeVariable;
 import java.lang.reflect.AnnotatedWildcardType;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,6 +38,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.Annotations.AnnotationParser;
@@ -59,8 +62,8 @@ public final class AnnotatedTypes {
 		private final Map<Class<? extends Annotation>, Annotation> annotations;
 
 		public AnnotatedTypeImpl(AnnotatedType annotatedType) {
-			this(annotatedType.getType(), Arrays.asList(annotatedType
-					.getAnnotations()));
+			this(annotatedType.getType(),
+					Arrays.asList(annotatedType.getAnnotations()));
 		}
 
 		public AnnotatedTypeImpl(Type type,
@@ -73,7 +76,8 @@ public final class AnnotatedTypes {
 
 		@SuppressWarnings("unchecked")
 		@Override
-		public final <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
+		public final <T extends Annotation> T getAnnotation(
+				Class<T> annotationClass) {
 			return (T) annotations.get(annotationClass);
 		}
 
@@ -217,12 +221,12 @@ public final class AnnotatedTypes {
 						.getAnnotatedUpperBounds();
 
 				if (firstUpperBounds.length == 0)
-					firstUpperBounds = new AnnotatedType[] { AnnotatedTypes
-							.over(Object.class) };
+					firstUpperBounds = new AnnotatedType[] {
+							AnnotatedTypes.over(Object.class) };
 
 				if (secondUpperBounds.length == 0)
-					secondUpperBounds = new AnnotatedType[] { AnnotatedTypes
-							.over(Object.class) };
+					secondUpperBounds = new AnnotatedType[] {
+							AnnotatedTypes.over(Object.class) };
 
 				return annotationEquals(
 						((AnnotatedWildcardType) first).getAnnotatedLowerBounds(),
@@ -258,8 +262,21 @@ public final class AnnotatedTypes {
 	 * @return A new array of unannotated {@link AnnotatedType} instances.
 	 */
 	public static AnnotatedType[] over(Type... types) {
+		return overImpl(types);
+	}
+
+	/**
+	 * Transform an array of {@link Type}s into a new array of
+	 * {@link AnnotatedType}s, according to the behaviour of {@link #over(Type)}
+	 * applied to element of the array.
+	 * 
+	 * @param types
+	 *          The array of types to transform.
+	 * @return A new array of unannotated {@link AnnotatedType} instances.
+	 */
+	public static AnnotatedTypeImpl[] overImpl(Type... types) {
 		return Arrays.stream(types).map(AnnotatedTypes::over)
-				.toArray(AnnotatedType[]::new);
+				.toArray(AnnotatedTypeImpl[]::new);
 	}
 
 	/**
@@ -316,7 +333,8 @@ public final class AnnotatedTypes {
 	 * @return An {@link AnnotatedType} instance of the appropriate class over the
 	 *         given type containing the given annotations.
 	 */
-	public static AnnotatedType over(Type type, Collection<Annotation> annotations) {
+	public static AnnotatedType over(Type type,
+			Collection<Annotation> annotations) {
 		if (type instanceof ParameterizedType) {
 			return AnnotatedParameterizedTypes.over((ParameterizedType) type,
 					annotations);
@@ -340,21 +358,39 @@ public final class AnnotatedTypes {
 		}
 	}
 
+	protected static Set<TypeVariable<?>> wrappingVisitedSet() {
+		return new HashSet<>();
+	}
+
 	protected static AnnotatedTypeImpl[] wrapImpl(AnnotatedType... type) {
-		return Arrays.stream(type).map(AnnotatedTypes::wrapImpl)
+		return wrapImpl(wrappingVisitedSet(), type);
+	}
+
+	protected static AnnotatedTypeImpl[] wrapImpl(Set<TypeVariable<?>> wrapped,
+			AnnotatedType... type) {
+		return Arrays.stream(type).map(t -> wrapImpl(wrapped, t))
 				.toArray(AnnotatedTypeImpl[]::new);
 	}
 
 	protected static AnnotatedTypeImpl wrapImpl(AnnotatedType type) {
+		return wrapImpl(wrappingVisitedSet(), type);
+	}
+
+	protected static AnnotatedTypeImpl wrapImpl(Set<TypeVariable<?>> wrapped,
+			AnnotatedType type) {
 		if (type instanceof AnnotatedTypeImpl) {
 			return (AnnotatedTypeImpl) type;
 		} else if (type instanceof AnnotatedParameterizedType) {
-			return AnnotatedParameterizedTypes
-					.wrapImpl((AnnotatedParameterizedType) type);
+			return AnnotatedParameterizedTypes.wrapImpl(wrapped,
+					(AnnotatedParameterizedType) type);
 		} else if (type instanceof AnnotatedWildcardType) {
-			return AnnotatedWildcardTypes.wrapImpl((AnnotatedWildcardType) type);
+			return AnnotatedWildcardTypes.wrapImpl(wrapped,
+					(AnnotatedWildcardType) type);
 		} else if (type instanceof AnnotatedArrayType) {
-			return AnnotatedArrayTypes.wrapImpl((AnnotatedArrayType) type);
+			return AnnotatedArrayTypes.wrapImpl(wrapped, (AnnotatedArrayType) type);
+		} else if (type instanceof AnnotatedTypeVariable) {
+			return AnnotatedTypeVariables.wrapImpl(wrapped,
+					(AnnotatedTypeVariable) type);
 		} else {
 			return new AnnotatedTypeImpl(type);
 		}
@@ -429,7 +465,7 @@ public final class AnnotatedTypes {
 	 * @return The type described by the String.
 	 */
 	public static AnnotatedType fromString(String typeString, Imports imports) {
-		return new AnnotatedTypeParser(imports).getClassType().parse(typeString);
+		return new AnnotatedTypeParser(imports).getType().parse(typeString);
 	}
 
 	/**
@@ -471,40 +507,36 @@ public final class AnnotatedTypes {
 			AnnotationParser annotationParser = Annotations.getParser(imports);
 			TypeParser typeParser = Types.getParser(imports);
 
-			rawType = typeParser.getRawType().prependTransform(
-					annotationParser.getAnnotationList().append("\\s*")
-							.orElse(ArrayList::new), AnnotatedTypes::over);
+			rawType = typeParser.getRawType().prependTransform(annotationParser
+					.getAnnotationList().append("\\s*").orElse(ArrayList::new),
+					AnnotatedTypes::over);
 
-			classOrArrayType = rawType.tryAppendTransform(
-					Parser.list(Parser.proxy(this::getTypeParameter), "\\s*,\\s*")
-							.prepend("\\s*<\\s*").append("\\s*>\\s*"),
-					AnnotatedParameterizedTypes::from).appendTransform(
-					Parser.list(
+			classOrArrayType = rawType
+					.tryAppendTransform(
+							Parser.list(Parser.proxy(this::getType), "\\s*,\\s*")
+									.prepend("\\s*<\\s*").append("\\s*>\\s*"),
+							AnnotatedParameterizedTypes::from)
+					.appendTransform(Parser.list(
 							annotationParser.getAnnotationList().append("\\s*\\[\\s*\\]"),
 							"\\s*").prepend("\\s*"), (t, l) -> {
-						for (List<Annotation> annotationList : l)
-							t = AnnotatedArrayTypes.fromComponent(t, annotationList);
-						return t;
-					});
+								for (List<Annotation> annotationList : l)
+									t = AnnotatedArrayTypes.fromComponent(t, annotationList);
+								return t;
+							});
 
-			wildcardType = annotationParser
-					.getAnnotationList()
+			wildcardType = annotationParser.getAnnotationList()
 					.append("\\s*\\?\\s*extends(?![_a-zA-Z0-9])\\s*")
 					.appendTransform(Parser.list(classOrArrayType, "\\s*\\&\\s*"),
 							AnnotatedWildcardTypes::upperBounded)
-					.orElse(
-							annotationParser
-									.getAnnotationList()
-									.append("\\s*\\?\\s*super(?![_a-zA-Z0-9])\\s*")
-									.appendTransform(
-											Parser.list(classOrArrayType, "\\s*\\&\\s*"),
-											AnnotatedWildcardTypes::lowerBounded))
-					.orElse(
-							annotationParser.getAnnotationList().append("\\s*\\?")
-									.transform(AnnotatedWildcardTypes::unbounded));
+					.orElse(annotationParser.getAnnotationList()
+							.append("\\s*\\?\\s*super(?![_a-zA-Z0-9])\\s*")
+							.appendTransform(Parser.list(classOrArrayType, "\\s*\\&\\s*"),
+									AnnotatedWildcardTypes::lowerBounded))
+					.orElse(annotationParser.getAnnotationList().append("\\s*\\?")
+							.transform(AnnotatedWildcardTypes::unbounded));
 
-			typeParameter = classOrArrayType.orElse(wildcardType
-					.transform(AnnotatedType.class::cast));
+			typeParameter = classOrArrayType
+					.orElse(wildcardType.transform(AnnotatedType.class::cast));
 
 			typeList = Parser.list(rawType, "\\s*,\\s*");
 		}
@@ -552,7 +584,7 @@ public final class AnnotatedTypes {
 		 * 
 		 * @return The annotated type of the expressed type
 		 */
-		public Parser<AnnotatedType> getTypeParameter() {
+		public Parser<AnnotatedType> getType() {
 			return typeParameter;
 		}
 	}
