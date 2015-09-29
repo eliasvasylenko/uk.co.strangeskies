@@ -143,7 +143,12 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		InferenceVariableBoundsImpl copy = new InferenceVariableBoundsImpl(boundSet,
 				aSubstitution);
 
-		copy.allDependencies.clear();
+		if (isInstantiated()) {
+			copy.allDependencies = null;
+			copy.externalDependencies = null;
+		} else {
+			copy.allDependencies.clear();
+		}
 		copy.addBoundsWithTypeSubstitution(this,
 				new TypeSubstitution(inferenceVariableSubstitutions));
 
@@ -171,6 +176,9 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			inferenceVariableBounds.externalDependencies.stream().map(where::resolve)
 					.map(InferenceVariable.class::cast)
 					.forEach(externalDependencies::add);
+		} else {
+			inferenceVariableBounds.allDependencies = null;
+			inferenceVariableBounds.externalDependencies = null;
 		}
 	}
 

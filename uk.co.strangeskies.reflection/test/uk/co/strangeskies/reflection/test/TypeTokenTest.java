@@ -392,12 +392,10 @@ public class TypeTokenTest {
 				.getResolver().getBounds());
 		System.out.println();
 
-		System.out.println(new TypeToken<@Infer List<? extends Number>>() {}
-				.getAnnotatedDeclaration());
 		System.out.println(new TypeToken<@Infer List<? extends Number>>() {});
-		System.out.println(new TypeToken<@Infer List<? extends Number>>() {});
-		System.out.println(new TypeToken<@Infer List<? extends Number>>() {});
-		System.out.println(new TypeToken<@Infer List<? extends Number>>() {});
+		System.out.println(
+				AnnotatedTypes.wrap(new TypeToken<@Infer List<? extends Number>>() {}
+						.getClass().getAnnotatedSuperclass()));
 		System.out
 				.println(new TypeToken<@Infer List<@Infer ? extends Number>>() {});
 		System.out
@@ -699,13 +697,14 @@ public class TypeTokenTest {
 		System.out.println(TypeToken.fromString("@Infer ?", imports2));
 		System.out.println(TypeToken.fromString("@Infer ?", imports2));
 		System.out.println(TypeToken.fromString("@Infer ?", imports2));
-		/*- TODO
-		System.out.println(TypeToken.fromString("Map<@Infer ?, ?>", imports2));
 		System.out.println(TypeToken.fromString("Map<?, @Capture ?>", imports2));
 		System.out
 				.println(TypeToken.fromString("Map<@Infer ?, @Capture ?>", imports2));
+		System.out
+				.println(TypeToken.fromString("@Capture Map<@Infer ?, ?>", imports2));
+		System.out
+				.println(TypeToken.fromString("@Capture Map<@Infer ?, ?>", imports2));
 		System.out.println();
-		*/
 
 		/*- TODO Current open question on compiler-dev
 		System.out.println(new TypeToken<C1<? extends C2<String>>>() {});

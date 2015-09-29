@@ -25,6 +25,8 @@ Bundle-License: LGPL <http://www.gnu.org/licenses/>
 ## ext/repositories.bnd:
 # -plugin: ${ext.repositories.-plugin}, org.example.MyPlugin
 
+## To enable baselining, uncomment the following lines:
+# -baseline: *
 -releaserepo: Release
 
 -pluginpath:\
@@ -36,10 +38,6 @@ Bundle-License: LGPL <http://www.gnu.org/licenses/>
 		aQute.bnd.deployer.repository.aether.AetherRepository; \
 			name				=		Clojars; \
 			url					=		http://clojars.org/repo/
-
-## To enable baselining, uncomment the following lines:
-# -baseline: *
-
 
 ## If you use git, you might want to uncomment the following lines:
 Git-Descriptor: ${system-allow-fail;git describe --dirty --always}

@@ -85,18 +85,18 @@ public class TypeToken<T>
 		 * incorporation into backing {@link Resolver}, as wildcards alone do not
 		 * always fully specify valid bounds.
 		 */
-		PRESERVE(Preserve.class), /**
-															 * Wildcards should be substituted with inference
-															 * variables, with appropriate bounds incorporated
-															 * based on both type variable bounds and wildcard
-															 * bounds.
-															 */
-		INFER(Infer.class), /**
-												 * Wildcards should be substituted with fresh
-												 * {@link TypeVariableCapture} instances, as per
-												 * {@link TypeVariableCapture#captureWildcardArguments(ParameterizedType)}
-												 * .
-												 */
+		PRESERVE(Preserve.class),
+		/**
+		 * Wildcards should be substituted with inference variables, with
+		 * appropriate bounds incorporated based on both type variable bounds and
+		 * wildcard bounds.
+		 */
+		INFER(Infer.class),
+		/**
+		 * Wildcards should be substituted with fresh {@link TypeVariableCapture}
+		 * instances, as per
+		 * {@link TypeVariableCapture#captureWildcardArguments(ParameterizedType)} .
+		 */
 		CAPTURE(Capture.class);
 
 		private final Annotation annotation;
@@ -168,8 +168,6 @@ public class TypeToken<T>
 	private final AnnotatedType declaration;
 
 	protected TypeToken() {
-		System.out
-				.println(AnnotatedTypes.toString(getClass().getAnnotatedSuperclass()));
 		declaration = resolveAnnotatedSuperclassParameter();
 
 		Pair<Resolver, Type> resolvedType = resolveAnnotatedWildcards(declaration);
@@ -183,6 +181,7 @@ public class TypeToken<T>
 		declaration = AnnotatedTypes.wrap(annotatedType);
 
 		Pair<Resolver, Type> resolvedType = resolveAnnotatedWildcards(declaration);
+
 		this.type = resolvedType.getRight();
 		this.resolver = resolvedType.getLeft();
 	}
@@ -327,6 +326,7 @@ public class TypeToken<T>
 	private Pair<Resolver, Type> resolveAnnotatedWildcards(
 			AnnotatedType annotatedType) {
 		Pair<Resolver, Type> resolvedType = RESOLVER_CACHE.putGet(annotatedType);
+
 		HashMap<InferenceVariable, InferenceVariable> map = new HashMap<>();
 		return new Pair<>(resolvedType.getLeft().deepCopy(map),
 				new TypeSubstitution(map).resolve(resolvedType.getRight()));

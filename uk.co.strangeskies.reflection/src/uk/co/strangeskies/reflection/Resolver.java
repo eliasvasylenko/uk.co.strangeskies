@@ -155,9 +155,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 */
 	public Resolver withInferenceVariableSubstitution(
 			Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions) {
-		return withNewBoundsSubstitution(inferenceVariableSubstitutions,
-				bounds
-						.withInferenceVariableSubstitution(inferenceVariableSubstitutions));
+		return withNewBoundsSubstitution(inferenceVariableSubstitutions, bounds
+				.withInferenceVariableSubstitution(inferenceVariableSubstitutions));
 	}
 
 	private Resolver withNewBoundsSubstitution(
@@ -171,8 +170,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 			copy.capturedTypeVariables.putAll(capturedTypeVariables);
 		} else {
 			for (GenericDeclaration declaration : capturedTypeVariables.keySet())
-				copy.capturedTypeVariables.put(
-						declaration,
+				copy.capturedTypeVariables.put(declaration,
 						capturedTypeVariables.get(declaration).entrySet().stream()
 								.collect(Collectors.toMap(Entry::getKey, i -> {
 									return inferenceVariableSubstitutions.get(i.getValue());
@@ -218,9 +216,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 
 			if (declaration instanceof Executable
 					&& !Modifier.isStatic(((Executable) declaration).getModifiers()))
-				declarationCaptures
-						.putAll(incorporateTypeParameters(((Executable) declaration)
-								.getDeclaringClass()));
+				declarationCaptures.putAll(incorporateTypeParameters(
+						((Executable) declaration).getDeclaringClass()));
 
 			capture(getBounds(), declaration, declarationCaptures);
 
@@ -240,9 +237,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 			declarationVariables = Arrays.asList(declaration.getTypeParameters());
 
 		Map<TypeVariable<?>, InferenceVariable> captures = declarationVariables
-				.stream().collect(
-						Collectors.toMap(Function.identity(),
-								t -> new InferenceVariable(t.getName())));
+				.stream().collect(Collectors.toMap(Function.identity(),
+						t -> new InferenceVariable(t.getName())));
 		existingCaptures.putAll(captures);
 
 		for (InferenceVariable variable : captures.values())
@@ -250,15 +246,14 @@ public class Resolver implements DeepCopyable<Resolver> {
 
 		TypeSubstitution substitution = new TypeSubstitution(existingCaptures);
 		for (TypeVariable<?> variable : captures.keySet())
-			bounds.incorporate().subtype(
-					captures.get(variable),
-					substitution.resolve(IntersectionType.uncheckedFrom(variable
-							.getBounds())));
+			bounds.incorporate().subtype(captures.get(variable), substitution
+					.resolve(IntersectionType.uncheckedFrom(variable.getBounds())));
 
 		for (TypeVariable<?> typeVariable : captures.keySet()) {
 			InferenceVariable inferenceVariable = captures.get(typeVariable);
 
-			for (Type bound : bounds.getBoundsOn(inferenceVariable).getUpperBounds()) {
+			for (Type bound : bounds.getBoundsOn(inferenceVariable)
+					.getUpperBounds()) {
 				bounds.incorporate().subtype(inferenceVariable, bound);
 			}
 			bounds.incorporate().subtype(inferenceVariable, Object.class);
@@ -366,7 +361,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 		if (innerComponent instanceof ParameterizedType) {
 			Class<?> rawType = Types.getRawType(type);
 
-			Map<TypeVariable<?>, InferenceVariable> inferenceVariables = incorporateTypeParameters(rawType);
+			Map<TypeVariable<?>, InferenceVariable> inferenceVariables = incorporateTypeParameters(
+					rawType);
 			Map<TypeVariable<?>, Type> arguments = ParameterizedTypes
 					.getAllTypeArguments((ParameterizedType) innerComponent);
 
@@ -375,9 +371,9 @@ public class Resolver implements DeepCopyable<Resolver> {
 						inferenceVariables.get(typeVariable), arguments.get(typeVariable),
 						getBounds());
 
-			return (GenericArrayType) ArrayTypes.fromComponentType(
-					resolveType(ParameterizedTypes.uncheckedFrom(rawType,
-							inferenceVariables::get)), Types.getArrayDimensions(type));
+			return (GenericArrayType) ArrayTypes.fromComponentType(resolveType(
+					ParameterizedTypes.uncheckedFrom(rawType, inferenceVariables::get)),
+					Types.getArrayDimensions(type));
 		} else
 			return type;
 	}
@@ -396,7 +392,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 	public ParameterizedType inferOverTypeArguments(ParameterizedType type) {
 		Class<?> rawType = Types.getRawType(type);
 
-		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = incorporateTypeParameters(rawType);
+		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = incorporateTypeParameters(
+				rawType);
 		Map<TypeVariable<?>, Type> arguments = ParameterizedTypes
 				.getAllTypeArguments(type);
 
@@ -405,8 +402,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 					inferenceVariables.get(typeVariable), arguments.get(typeVariable),
 					getBounds());
 
-		return (ParameterizedType) resolveType(ParameterizedTypes.uncheckedFrom(
-				rawType, inferenceVariables::get));
+		return (ParameterizedType) resolveType(
+				ParameterizedTypes.uncheckedFrom(rawType, inferenceVariables::get));
 	}
 
 	/**
@@ -427,8 +424,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 			if (getBounds().isInferenceVariable(upperBound)) {
 				upperBounds.remove(upperBound);
 
-				InferenceVariableBounds bounds = getBounds().getBoundsOn(
-						(InferenceVariable) upperBound);
+				InferenceVariableBounds bounds = getBounds()
+						.getBoundsOn((InferenceVariable) upperBound);
 				Stream
 						.concat(bounds.getUpperBounds().stream(),
 								bounds.getEqualities().stream())
@@ -461,8 +458,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 			if (getBounds().isInferenceVariable(lowerBound)) {
 				lowerBounds.remove(lowerBound);
 
-				InferenceVariableBounds bounds = getBounds().getBoundsOn(
-						(InferenceVariable) lowerBound);
+				InferenceVariableBounds bounds = getBounds()
+						.getBoundsOn((InferenceVariable) lowerBound);
 				Stream
 						.concat(bounds.getLowerBounds().stream(),
 								bounds.getEqualities().stream())
@@ -501,8 +498,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 	public Class<?> getRawType(Type type) {
 		type = resolveType(type);
 
-		return Types.getRawType(getProperUpperBounds(type).stream().findFirst()
-				.orElse(Object.class));
+		return Types.getRawType(
+				getProperUpperBounds(type).stream().findFirst().orElse(Object.class));
 	}
 
 	/**
@@ -530,16 +527,16 @@ public class Resolver implements DeepCopyable<Resolver> {
 
 		for (TypeVariable<?> parameter : originalArguments.keySet()) {
 			if (originalArguments.get(parameter) instanceof WildcardType) {
-				wildcardCaptures.add((TypeVariableCapture) capturedArguments
-						.get(parameter));
+				wildcardCaptures
+						.add((TypeVariableCapture) capturedArguments.get(parameter));
 			}
 		}
 
 		for (Map.Entry<TypeVariable<?>, Type> typeArgument : ParameterizedTypes
 				.getAllTypeArguments(type).entrySet())
-			ConstraintFormula.reduce(Kind.EQUALITY, capturedTypeVariables
-					.get(rawType).get(typeArgument.getKey()), typeArgument.getValue(),
-					bounds);
+			ConstraintFormula.reduce(Kind.EQUALITY,
+					capturedTypeVariables.get(rawType).get(typeArgument.getKey()),
+					typeArgument.getValue(), bounds);
 
 		return type;
 	}
@@ -616,12 +613,9 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 */
 	public Map<InferenceVariable, Type> infer() {
 		infer(getInferenceVariables());
-		return bounds
-				.getInstantiatedVariables()
-				.stream()
-				.collect(
-						Collectors.toMap(Function.identity(), i -> bounds.getBoundsOn(i)
-								.getInstantiation().get()));
+		return bounds.getInstantiatedVariables().stream()
+				.collect(Collectors.toMap(Function.identity(),
+						i -> bounds.getBoundsOn(i).getInstantiation().get()));
 	}
 
 	/**
@@ -635,15 +629,12 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 *         generic declaration, to their newly inferred instantiations.
 	 */
 	public Map<TypeVariable<?>, Type> infer(GenericDeclaration context) {
-		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getInferenceVariables(context);
-		Map<InferenceVariable, Type> instantiations = infer(inferenceVariables
-				.values());
-		return inferenceVariables
-				.entrySet()
-				.stream()
-				.collect(
-						Collectors.toMap(Entry::getKey,
-								e -> instantiations.get(e.getValue())));
+		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getInferenceVariables(
+				context);
+		Map<InferenceVariable, Type> instantiations = infer(
+				inferenceVariables.values());
+		return inferenceVariables.entrySet().stream().collect(
+				Collectors.toMap(Entry::getKey, e -> instantiations.get(e.getValue())));
 	}
 
 	/**
@@ -669,9 +660,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 *         instantiations for each {@link InferenceVariable} mentioned.
 	 */
 	public Type infer(Type type) {
-		return new TypeSubstitution(
-				t -> getBounds().isInferenceVariable(t) ? infer((InferenceVariable) t)
-						: null).resolve(type);
+		return new TypeSubstitution(t -> getBounds().isInferenceVariable(t)
+				? infer((InferenceVariable) t) : null).resolve(type);
 	}
 
 	/**
@@ -763,8 +753,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 			Set<InferenceVariable> minimalSet = new HashSet<>(variables);
 			int minimalSetSize = variables.size();
 			for (InferenceVariable variable : variables) {
-				Set<InferenceVariable> remainingOnVariable = bounds.getBoundsOn(
-						variable).getRemainingDependencies();
+				Set<InferenceVariable> remainingOnVariable = bounds
+						.getBoundsOn(variable).getRemainingDependencies();
 				if (remainingOnVariable.size() < minimalSetSize)
 					minimalSetSize = (minimalSet = remainingOnVariable).size();
 			}
@@ -812,8 +802,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 				return null;
 		};
 		while (!subclass.equals(superclass)) {
-			Set<Type> lesserSubtypes = new HashSet<>(Arrays.asList(subclass
-					.getGenericInterfaces()));
+			Set<Type> lesserSubtypes = new HashSet<>(
+					Arrays.asList(subclass.getGenericInterfaces()));
 			if (subclass.getSuperclass() != null)
 				lesserSubtypes.addAll(Arrays.asList(subclass.getGenericSuperclass()));
 			if (lesserSubtypes.isEmpty())
@@ -837,7 +827,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 		}
 	}
 
-	private void resolveMinimalIndepdendentSet(Set<InferenceVariable> minimalSet) {
+	private void resolveMinimalIndepdendentSet(
+			Set<InferenceVariable> minimalSet) {
 		Set<CaptureConversion> relatedCaptureConversions = new HashSet<>();
 		bounds.getCaptureConversions().forEach(c -> {
 			if (c.getInferenceVariables().stream().anyMatch(minimalSet::contains))
@@ -864,9 +855,9 @@ public class Resolver implements DeepCopyable<Resolver> {
 						 * If αi has one or more proper lower bounds, L1, ..., Lk, then Ti =
 						 * lub(L1, ..., Lk) (§4.10.4).
 						 */
-						instantiationCandidate = IntersectionType.from(Types
-								.leastUpperBound(bounds.getBoundsOn(variable)
-										.getProperLowerBounds()));
+						instantiationCandidate = IntersectionType
+								.from(Types.leastUpperBound(
+										bounds.getBoundsOn(variable).getProperLowerBounds()));
 					} else if (hasThrowableBounds.get()) {
 						/*
 						 * Otherwise, if the bound set contains throws αi, and the proper
@@ -879,8 +870,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 						 * Otherwise, where αi has proper upper bounds U1, ..., Uk, Ti =
 						 * glb(U1, ..., Uk) (§5.1.10).
 						 */
-						instantiationCandidate = Types.greatestLowerBound(bounds
-								.getBoundsOn(variable).getProperUpperBounds());
+						instantiationCandidate = Types.greatestLowerBound(
+								bounds.getBoundsOn(variable).getProperUpperBounds());
 					}
 
 					instantiationCandidates.put(variable, instantiationCandidate);
@@ -1109,8 +1100,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 		if (!capturedTypeVariables.containsKey(declaration))
 			return typeVariable;
 
-		InferenceVariable inferenceVariable = capturedTypeVariables
-				.get(declaration).get(typeVariable);
+		InferenceVariable inferenceVariable = capturedTypeVariables.get(declaration)
+				.get(typeVariable);
 		return inferenceVariable == null ? typeVariable
 				: resolveInferenceVariable(inferenceVariable);
 	}
