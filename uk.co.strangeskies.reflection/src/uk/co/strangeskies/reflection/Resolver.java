@@ -263,8 +263,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 	}
 
 	/**
-	 * The given type is incorporated into the resolver, in a fashion dictated by
-	 * the class of that type, as follows:
+	 * The given type is captured into the resolver, in a fashion dictated by the
+	 * class of that type, as follows:
 	 * 
 	 * <ul>
 	 * <li>{@link Class} as per
@@ -305,6 +305,68 @@ public class Resolver implements DeepCopyable<Resolver> {
 			@Override
 			protected void visitGenericArrayType(GenericArrayType type) {
 				visit(type.getGenericComponentType());
+			}
+
+			@Override
+			protected void visitIntersectionType(IntersectionType type) {
+				visit(type.getTypes());
+			}
+
+			@Override
+			protected void visitTypeVariable(TypeVariable<?> type) {}
+
+			@Override
+			protected void visitWildcardType(WildcardType type) {
+				inferOverWildcardType(type);
+			}
+		}.visit(type);
+
+		return result.get();
+	}
+
+	/**
+	 * The given type is incorporated into the resolver, in a fashion dictated by
+	 * the class of that type, as follows:
+	 * 
+	 * <ul>
+	 * <li>{@link Class} as per
+	 * {@link #incorporateTypeParameters(GenericDeclaration)}.</li>
+	 * 
+	 * <li>{@link ParameterizedType} as per
+	 * {@link #captureTypeArguments(ParameterizedType)}.</li>
+	 * 
+	 * <li>{@link GenericArrayType} as per {@link #incorporateType(Type)} invoked
+	 * for it's component type.</li>
+	 * 
+	 * <li>{@link IntersectionType} as per {@link #incorporateType(Type)} invoked
+	 * for each member.</li>
+	 * 
+	 * <li>{@link WildcardType} as per
+	 * {@link #inferOverWildcardType(WildcardType)}.</li>
+	 * </ul>
+	 * 
+	 * @param type
+	 *          The type we wish to incorporate.
+	 * @return The new internal representation of the given type, which may
+	 *         substitute type variable captures in place of wildcards.
+	 */
+	public Type inferOverType(Type type) {
+		IdentityProperty<Type> result = new IdentityProperty<>(type);
+
+		new TypeVisitor() {
+			@Override
+			protected void visitClass(Class<?> t) {
+				incorporateTypeParameters(t);
+			}
+
+			@Override
+			protected void visitParameterizedType(ParameterizedType type) {
+				result.set(inferOverTypeArguments(type));
+			}
+
+			@Override
+			protected void visitGenericArrayType(GenericArrayType type) {
+				result.set(inferOverTypeArguments(type));
 			}
 
 			@Override

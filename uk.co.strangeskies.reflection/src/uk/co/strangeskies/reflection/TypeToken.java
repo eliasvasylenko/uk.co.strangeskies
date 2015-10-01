@@ -150,11 +150,14 @@ public class TypeToken<T>
 	@Target(ElementType.TYPE_USE)
 	public @interface Capture {}
 
-	private static ComputingMap<AnnotatedType, Pair<Resolver, Type>> RESOLVER_CACHE = new LRUCacheComputingMap<>(
+	private static ComputingMap<Pair<Resolver, AnnotatedType>, Pair<Resolver, Type>> RESOLVER_CACHE = new LRUCacheComputingMap<>(
 			annotatedType -> {
-				Resolver resolver = new Resolver();
+				Resolver resolver = annotatedType.getLeft();
+				if (resolver == null)
+					resolver = new Resolver();
 
-				Type type = substituteAnnotatedWildcards(annotatedType, resolver);
+				Type type = substituteAnnotatedWildcards(annotatedType.getRight(),
+						resolver);
 
 				type = resolver
 						.resubstituteCapturedWildcards(resolver.incorporateType(type));
@@ -170,17 +173,23 @@ public class TypeToken<T>
 	protected TypeToken() {
 		declaration = resolveAnnotatedSuperclassParameter();
 
-		Pair<Resolver, Type> resolvedType = resolveAnnotatedWildcards(declaration);
+		Pair<Resolver, Type> resolvedType = resolveAnnotatedWildcards(declaration,
+				null);
 		this.type = resolvedType.getRight();
 		this.resolver = resolvedType.getLeft();
 	}
 
 	private TypeToken(AnnotatedType annotatedType) {
+		this(annotatedType, null);
+	}
+
+	private TypeToken(AnnotatedType annotatedType, Resolver resolver) {
 		Objects.requireNonNull(annotatedType);
 
 		declaration = AnnotatedTypes.wrap(annotatedType);
 
-		Pair<Resolver, Type> resolvedType = resolveAnnotatedWildcards(declaration);
+		Pair<Resolver, Type> resolvedType = resolveAnnotatedWildcards(declaration,
+				resolver);
 
 		this.type = resolvedType.getRight();
 		this.resolver = resolvedType.getLeft();
@@ -192,6 +201,10 @@ public class TypeToken<T>
 
 	TypeToken(Type type, Wildcards wildcards) {
 		this(AnnotatedTypes.over(type, wildcards.getAnnotation()));
+	}
+
+	TypeToken(Resolver resolver, Type type, Wildcards wildcards) {
+		this(AnnotatedTypes.over(type, wildcards.getAnnotation()), resolver);
 	}
 
 	private TypeToken(Resolver resolver, Type type) {
@@ -324,8 +337,9 @@ public class TypeToken<T>
 	}
 
 	private Pair<Resolver, Type> resolveAnnotatedWildcards(
-			AnnotatedType annotatedType) {
-		Pair<Resolver, Type> resolvedType = RESOLVER_CACHE.putGet(annotatedType);
+			AnnotatedType annotatedType, Resolver resolver) {
+		Pair<Resolver, Type> resolvedType = RESOLVER_CACHE
+				.putGet(new Pair<>(resolver, annotatedType));
 
 		HashMap<InferenceVariable, InferenceVariable> map = new HashMap<>();
 		return new Pair<>(resolvedType.getLeft().deepCopy(map),
@@ -456,6 +470,23 @@ public class TypeToken<T>
 	 */
 	public static TypeToken<?> over(Type type) {
 		return new TypeToken<>(type);
+	}
+
+	/**
+	 * Create a TypeToken for an arbitrary type, preserving wildcards where
+	 * possible.
+	 * 
+	 * @param resolver
+	 *          The resolution context for the type.
+	 * @param type
+	 *          The requested type.
+	 * @param wildcards
+	 *          How to deal with wildcard parameters on the given type.
+	 * @return A TypeToken over the requested type.
+	 */
+	public static TypeToken<?> over(Resolver resolver, Type type,
+			Wildcards wildcards) {
+		return new TypeToken<>(resolver.copy(), type, wildcards);
 	}
 
 	/**

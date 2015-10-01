@@ -337,7 +337,12 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	 * @return A container representing the state of the given inference variable
 	 *         with respect to its bounds.
 	 */
-	public InferenceVariableBoundsImpl getBoundsOn(
+	public InferenceVariableBounds getBoundsOn(
+			InferenceVariable inferenceVariable) {
+		return getBoundsOnImpl(inferenceVariable);
+	}
+
+	InferenceVariableBoundsImpl getBoundsOnImpl(
 			InferenceVariable inferenceVariable) {
 		return inferenceVariableBounds.get(inferenceVariable);
 	}
@@ -579,7 +584,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 					.allMatch(i -> !inferenceVariableBounds.containsKey(i))) {
 				for (InferenceVariable inferenceVariable : relatedInferenceVariables) {
 					InferenceVariableBoundsImpl filtered = boundSet
-							.getBoundsOn(inferenceVariable).copyInto(this);
+							.getBoundsOnImpl(inferenceVariable).copyInto(this);
 					filtered.filter(i -> !relatedInferenceVariables.contains(i));
 					inferenceVariableBounds.put(inferenceVariable, filtered);
 				}
@@ -700,7 +705,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		for (CaptureConversion captureConversion : captureConversions)
 			for (InferenceVariable inferenceVariable : captureConversion
 					.getInferenceVariables())
-				getBoundsOn(inferenceVariable).removeCaptureConversion();
+				getBoundsOnImpl(inferenceVariable).removeCaptureConversion();
 	}
 
 	/**

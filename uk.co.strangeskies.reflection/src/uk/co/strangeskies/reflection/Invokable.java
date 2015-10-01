@@ -42,6 +42,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
+import uk.co.strangeskies.reflection.TypeToken.Wildcards;
 import uk.co.strangeskies.utilities.tuple.Pair;
 
 /**
@@ -110,12 +111,12 @@ public class Invokable<T, R> {
 		 * Resolve types within context of given Resolver:
 		 */
 		if (isStatic())
-			this.receiverType = (TypeToken<T>) TypeToken.over(receiverType
-					.getRawType());
+			this.receiverType = (TypeToken<T>) TypeToken
+					.over(receiverType.getRawType());
 		else {
-			if (!((receiverType.getType() instanceof ParameterizedType && receiverType
-					.getRawType().equals(executable.getDeclaringClass())) || executable
-					.getDeclaringClass().equals(receiverType.getType())))
+			if (!((receiverType.getType() instanceof ParameterizedType
+					&& receiverType.getRawType().equals(executable.getDeclaringClass()))
+					|| executable.getDeclaringClass().equals(receiverType.getType())))
 				receiverType.resolveSupertypeParameters(executable.getDeclaringClass())
 						.incorporateInto(resolver);
 
@@ -125,9 +126,14 @@ public class Invokable<T, R> {
 
 		if (executable instanceof Method) {
 			Method method = (Method) executable;
-			returnType = (TypeToken<R>) TypeToken.over(
-					resolver.resolveType(method, method.getGenericReturnType()))
-					.withBoundsFrom(resolver);
+			returnType = (TypeToken<R>) TypeToken.over(resolver,
+					resolver.resolveType(method, method.getGenericReturnType()),
+					Wildcards.PRESERVE);
+			/*-
+			returnType = (TypeToken<R>) TypeToken
+				.over(resolver.resolveType(method, method.getGenericReturnType()))
+				.withBoundsFrom(resolver);
+			*/
 		} else {
 			returnType = (TypeToken<R>) receiverType;
 		}
@@ -148,8 +154,8 @@ public class Invokable<T, R> {
 					throw new IllegalArgumentException("Given argument '" + givenArgument
 							+ "' is incompatible with generic parameter type '"
 							+ genericParameters[i] + "' for parameter '" + i
-							+ "' of executable '"
-							+ toString(Arrays.asList(genericParameters)) + "'.");
+							+ "' of executable '" + toString(Arrays.asList(genericParameters))
+							+ "'.");
 			}
 		}
 		this.parameters = Arrays.asList(genericParameters);
@@ -185,11 +191,9 @@ public class Invokable<T, R> {
 			builder.append("final ");
 
 		if (isGeneric()) {
-			builder
-					.append("<")
-					.append(
-							getTypeParameters().stream().map(getTypeArguments()::get)
-									.map(Objects::toString).collect(Collectors.joining(", ")))
+			builder.append("<")
+					.append(getTypeParameters().stream().map(getTypeArguments()::get)
+							.map(Objects::toString).collect(Collectors.joining(", ")))
 					.append("> ");
 		}
 
@@ -198,11 +202,8 @@ public class Invokable<T, R> {
 			builder.append(" ").append(receiverType).append(".")
 					.append(executable.getName());
 
-		return builder
-				.append("(")
-				.append(
-						parameters.stream().map(Objects::toString)
-								.collect(Collectors.joining(", "))).append(")").toString();
+		return builder.append("(").append(parameters.stream().map(Objects::toString)
+				.collect(Collectors.joining(", "))).append(")").toString();
 	}
 
 	/**
@@ -524,8 +525,8 @@ public class Invokable<T, R> {
 	@SuppressWarnings("unchecked")
 	public <U extends T> Invokable<U, ? extends R> withReceiverType(
 			TypeToken<U> type) {
-		return (Invokable<U, ? extends R>) withBoundsFrom(type).withReceiverType(
-				type.getType());
+		return (Invokable<U, ? extends R>) withBoundsFrom(type)
+				.withReceiverType(type.getType());
 	}
 
 	/**
@@ -568,9 +569,10 @@ public class Invokable<T, R> {
 				if (mostSpecificOverridingClass.isAssignableFrom(candidate))
 					mostSpecificOverridingClass = candidate;
 
-			Executable override = mostSpecificOverridingClass.equals(executable
-					.getDeclaringClass()) ? executable : mostSpecificOverridingClass
-					.getMethod(executable.getName(), executable.getParameterTypes());
+			Executable override = mostSpecificOverridingClass
+					.equals(executable.getDeclaringClass()) ? executable
+							: mostSpecificOverridingClass.getMethod(executable.getName(),
+									executable.getParameterTypes());
 
 			return new Invokable<>(resolver, (TypeToken<T>) TypeToken.over(type),
 					override, invocationFunction, parameters);
@@ -640,8 +642,8 @@ public class Invokable<T, R> {
 		if (target == null)
 			return (Invokable<T, S>) this;
 
-		return (Invokable<T, S>) withBoundsFrom(target).withTargetType(
-				target.getType());
+		return (Invokable<T, S>) withBoundsFrom(target)
+				.withTargetType(target.getType());
 	}
 
 	/**
@@ -898,6 +900,7 @@ public class Invokable<T, R> {
 						nextParameter = null;
 					}
 				}
+
 				resolver.getBounds().incorporate(argument.getResolver().getBounds(),
 						argument.getInferenceVariablesMentioned());
 
@@ -1171,9 +1174,11 @@ public class Invokable<T, R> {
 		}
 
 		if (compatibleCandidates.isEmpty())
-			throw new TypeException("Parameters '" + parameters
-					+ "' are not applicable to invokable candidates '" + candidates
-					+ "'.", failures.get(failures.keySet().stream().findFirst().get()));
+			throw new TypeException(
+					"Parameters '" + parameters
+							+ "' are not applicable to invokable candidates '" + candidates
+							+ "'.",
+					failures.get(failures.keySet().stream().findFirst().get()));
 
 		return compatibleCandidates;
 	}
@@ -1213,7 +1218,8 @@ public class Invokable<T, R> {
 		if (candidates.size() == 1)
 			return candidates.iterator().next();
 
-		Set<Invokable<? super T, ? extends R>> mostSpecificSoFar = resolveMostSpecificCandidateSet(candidates);
+		Set<Invokable<? super T, ? extends R>> mostSpecificSoFar = resolveMostSpecificCandidateSet(
+				candidates);
 
 		/*
 		 * Find which of the remaining candidates, which should all have identical
@@ -1233,8 +1239,8 @@ public class Invokable<T, R> {
 								+ candidate + "' and '" + mostSpecific + "'.");
 
 			mostSpecific = candidate.getExecutable().getDeclaringClass()
-					.isAssignableFrom(mostSpecific.getExecutable().getDeclaringClass()) ? candidate
-					: mostSpecific;
+					.isAssignableFrom(mostSpecific.getExecutable().getDeclaringClass())
+							? candidate : mostSpecific;
 		}
 
 		return mostSpecific;
@@ -1255,7 +1261,8 @@ public class Invokable<T, R> {
 			/*
 			 * Compare with each other remaining candidate...
 			 */
-			for (int second = first + 1; second < remainingCandidates.size(); second++) {
+			for (int second = first + 1; second < remainingCandidates
+					.size(); second++) {
 				Invokable<? super T, ? extends R> secondCandidate = remainingCandidates
 						.get(second);
 
@@ -1339,8 +1346,8 @@ public class Invokable<T, R> {
 		return new Pair<Boolean, Boolean>(firstMoreSpecific, secondMoreSpecific);
 	}
 
-	private static boolean compareGenericCandidate(
-			Invokable<?, ?> firstCandidate, Invokable<?, ?> genericCandidate) {
+	private static boolean compareGenericCandidate(Invokable<?, ?> firstCandidate,
+			Invokable<?, ?> genericCandidate) {
 		Resolver resolver = genericCandidate.getResolver();
 
 		try {
@@ -1348,15 +1355,16 @@ public class Invokable<T, R> {
 			if (firstCandidate.isVariableArity()) {
 				parameters--;
 
-				ConstraintFormula.reduce(Kind.SUBTYPE, firstCandidate.getParameters()
-						.get(parameters), genericCandidate.getParameters().get(parameters),
+				ConstraintFormula.reduce(Kind.SUBTYPE,
+						firstCandidate.getParameters().get(parameters),
+						genericCandidate.getParameters().get(parameters),
 						resolver.getBounds());
 			}
 
 			for (int i = 0; i < parameters; i++) {
-				ConstraintFormula.reduce(Kind.SUBTYPE, firstCandidate.getParameters()
-						.get(i), genericCandidate.getParameters().get(i), resolver
-						.getBounds());
+				ConstraintFormula.reduce(Kind.SUBTYPE,
+						firstCandidate.getParameters().get(i),
+						genericCandidate.getParameters().get(i), resolver.getBounds());
 			}
 
 			resolver.infer();

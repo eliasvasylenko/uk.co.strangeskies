@@ -214,7 +214,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			 * T <: α
 			 */
 			Stream<InferenceVariableBoundsImpl> mentions = getRelated().stream()
-					.map(mention -> boundSet.getBoundsOn(mention))
+					.map(mention -> boundSet.getBoundsOnImpl(mention))
 					.filter(mention -> !mention.isInstantiated() && !(mention == this));
 			if (capture != null) {
 				/*
@@ -241,7 +241,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			for (InferenceVariable inferenceVariable : capture
 					.getAllMentionedInferenceVariables(boundSet)) {
 				Set<InferenceVariable> dependencies = boundSet
-						.getBoundsOn(inferenceVariable).allDependencies;
+						.getBoundsOnImpl(inferenceVariable).allDependencies;
 				if (dependencies != null)
 					allDependencies.addAll(dependencies);
 			}
@@ -283,7 +283,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	private void addMentions(Collection<InferenceVariable> mentions) {
 		this.relations.addAll(mentions);
 		for (InferenceVariable relation : relations)
-			boundSet.getBoundsOn(relation).relations.addAll(mentions);
+			boundSet.getBoundsOnImpl(relation).relations.addAll(mentions);
 
 		if (!isInstantiated()) {
 			/*
@@ -306,7 +306,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				 */
 				for (InferenceVariable mention : mentions) {
 					if (!boundSet.getBoundsOn(mention).isInstantiated())
-						boundSet.getBoundsOn(mention)
+						boundSet.getBoundsOnImpl(mention)
 								.addExternalDependencies(allDependencies);
 				}
 			} else {
@@ -316,7 +316,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				for (InferenceVariable mention : mentions) {
 					if (!boundSet.getBoundsOn(mention).isInstantiated())
 						allDependencies
-								.addAll(boundSet.getBoundsOn(mention).allDependencies);
+								.addAll(boundSet.getBoundsOnImpl(mention).allDependencies);
 				}
 			}
 		}
@@ -408,7 +408,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 					allDependencies = null;
 					externalDependencies = null;
 					for (InferenceVariable relation : relations) {
-						boundSet.getBoundsOn(relation).removeDependencies(oldDependencies);
+						boundSet.getBoundsOnImpl(relation).removeDependencies(oldDependencies);
 					}
 				}
 			} else {
@@ -422,7 +422,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				incorporateTransitiveEquality(type, equality);
 
 			for (InferenceVariable other : boundSet.getInferenceVariables()) {
-				InferenceVariableBoundsImpl otherBounds = boundSet.getBoundsOn(other);
+				InferenceVariableBoundsImpl otherBounds = boundSet.getBoundsOnImpl(other);
 
 				/*
 				 * α = U and S = T imply ‹S[α:=U] = T[α:=U]›
@@ -474,7 +474,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 
 			addMentions(Arrays.asList(type));
 
-			InferenceVariableBoundsImpl thoseBounds = boundSet.getBoundsOn(type);
+			InferenceVariableBoundsImpl thoseBounds = boundSet.getBoundsOnImpl(type);
 
 			/*-
 			 * α = S and α = T imply ‹S = T›
@@ -522,11 +522,11 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			 * α = U and S <: T imply ‹S[α:=U] <: T[α:=U]›
 			 */
 			for (InferenceVariable other : boundSet.getInferenceVariables()) {
-				InferenceVariableBoundsImpl otherBounds = boundSet.getBoundsOn(other);
+				InferenceVariableBoundsImpl otherBounds = boundSet.getBoundsOnImpl(other);
 
 				for (Type equality : new HashSet<>(otherBounds.equalities))
 					if (equality != type)
-						boundSet.getBoundsOn(otherBounds.inferenceVariable)
+						boundSet.getBoundsOnImpl(otherBounds.inferenceVariable)
 								.incorporateProperSubtypeSubstitution(equality,
 										inferenceVariable, type);
 			}
@@ -572,7 +572,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			logBound(inferenceVariable, type, "<:");
 
 			addMentions(Arrays.asList(type));
-			boundSet.getBoundsOn(type).addMentions(Arrays.asList(inferenceVariable));
+			boundSet.getBoundsOnImpl(type).addMentions(Arrays.asList(inferenceVariable));
 
 			/*
 			 * α = S and α <: T imply ‹S <: T›
@@ -603,11 +603,11 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			 * α = U and S <: T imply ‹S[α:=U] <: T[α:=U]›
 			 */
 			for (InferenceVariable other : boundSet.getInferenceVariables()) {
-				InferenceVariableBoundsImpl otherBounds = boundSet.getBoundsOn(other);
+				InferenceVariableBoundsImpl otherBounds = boundSet.getBoundsOnImpl(other);
 
 				for (Type equality : new HashSet<>(otherBounds.equalities))
 					if (equality != type)
-						boundSet.getBoundsOn(otherBounds.inferenceVariable)
+						boundSet.getBoundsOnImpl(otherBounds.inferenceVariable)
 								.incorporateProperSupertypeSubstitution(equality, type,
 										inferenceVariable);
 			}
@@ -640,7 +640,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			logBound(type, inferenceVariable, "<:");
 
 			addMentions(Arrays.asList(type));
-			boundSet.getBoundsOn(type).addMentions(Arrays.asList(inferenceVariable));
+			boundSet.getBoundsOnImpl(type).addMentions(Arrays.asList(inferenceVariable));
 
 			/*
 			 * α = S and T <: α imply ‹T <: S›
