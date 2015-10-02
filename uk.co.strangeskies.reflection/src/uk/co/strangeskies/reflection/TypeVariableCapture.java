@@ -26,9 +26,11 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -72,8 +74,8 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 				&& !Types.isAssignable(IntersectionType.uncheckedFrom(lowerBounds),
 						IntersectionType.uncheckedFrom(upperBounds)))
 			throw new TypeException("Bounds on capture '" + this + "' are invalid. ("
-					+ Arrays.toString(lowerBounds) + " <: "
-					+ Arrays.toString(upperBounds) + ")");
+					+ Arrays.toString(lowerBounds) + " <: " + Arrays.toString(upperBounds)
+					+ ")");
 	}
 
 	@Override
@@ -95,13 +97,13 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 
 		if (upperBounds.length > 0
 				&& !(upperBounds.length == 1 && upperBounds[0] == null))
-			builder.append(" extends ").append(
-					IntersectionType.uncheckedFrom(upperBounds));
+			builder.append(" extends ")
+					.append(IntersectionType.uncheckedFrom(upperBounds));
 
 		if (lowerBounds.length > 0
 				&& !(lowerBounds.length == 1 && lowerBounds[0] == null))
-			builder.append(" super ").append(
-					IntersectionType.uncheckedFrom(lowerBounds));
+			builder.append(" super ")
+					.append(IntersectionType.uncheckedFrom(lowerBounds));
 
 		return builder.toString();
 	}
@@ -145,6 +147,11 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 
 				for (int i = 0; i < capture.upperBounds.length; i++)
 					capture.upperBounds[i] = substitution.resolve(capture.upperBounds[i]);
+
+				// TODO is this check necessary?
+				if (!InferenceVariable.isProperType(capture))
+					throw new IllegalStateException("Err, this should be proper...");
+
 				Type upperBound = Types.greatestLowerBound(capture.upperBounds);
 				if (upperBound instanceof IntersectionType)
 					capture.upperBounds = ((IntersectionType) upperBound).getTypes();
@@ -168,14 +175,15 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	 * @return A new parameterized type of the same class as the passed type,
 	 *         parameterized with the captures of the original arguments.
 	 */
-	public static GenericArrayType captureWildcardArguments(GenericArrayType type) {
+	public static GenericArrayType captureWildcardArguments(
+			GenericArrayType type) {
 		Type component = Types.getInnerComponentType(type);
 
 		if (component instanceof ParameterizedType)
 			component = captureWildcardArguments((GenericArrayType) component);
 
-		component = type = (GenericArrayType) ArrayTypes.fromComponentType(
-				component, Types.getArrayDimensions(type));
+		component = type = (GenericArrayType) ArrayTypes
+				.fromComponentType(component, Types.getArrayDimensions(type));
 
 		return type;
 	}
@@ -313,7 +321,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 			upperBounds = ((IntersectionType) upperBound).getTypes();
 		else
 			upperBounds = new Type[] { upperBound };
-		
+
 		TypeVariableCapture capture = new TypeVariableCapture(upperBounds,
 				type.getLowerBounds(), type, declaration);
 
@@ -365,8 +373,8 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 					lowerBounds = new Type[0];
 				else {
 					Type lub = Types.leastUpperBound(lowerBoundSet);
-					lowerBounds = (lub instanceof IntersectionType) ? ((IntersectionType) lub)
-							.getTypes() : new Type[] { lub };
+					lowerBounds = (lub instanceof IntersectionType)
+							? ((IntersectionType) lub).getTypes() : new Type[] { lub };
 				}
 
 				/*
@@ -374,13 +382,78 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 				 * upper bound of Yi be glb(U1 θ, ..., Uk θ), where θ is the
 				 * substitution [α1:=Y1, ..., αn:=Yn].
 				 */
-				Set<Type> upperBoundSet = bounds.getBoundsOn(inferenceVariable)
-						.getUpperBounds().stream().map(new Resolver(bounds)::resolveType)
-						.collect(Collectors.toSet());
 
-				Type glb = IntersectionType.from(upperBoundSet, bounds);
-				Type[] upperBounds = (glb instanceof IntersectionType) ? ((IntersectionType) glb)
-						.getTypes() : new Type[] { glb };
+				System.out.println();
+				System.out.println();
+				System.out.println();
+				System.out.println(" £");
+				System.out.println(types);
+				System.out.println();
+				Set<Type> upperBoundSet = bounds.getBoundsOn(inferenceVariable)
+						.getUpperBounds().stream().map(new TypeSubstitution()
+								.where(InferenceVariable.class::isInstance, i -> {
+									/*
+									 * The intent of this substitution is to replace all instances
+									 * of inference variables with proper forms where possible.
+									 * 
+									 * Otherwise, if the inference variable is not contained
+									 * within the set to be captured we search for a non-proper
+									 * equality which only mentions inference variables which
+									 * *are* in the set to be captured.
+									 * 
+									 * The wider purpose of this is to try to ensure that
+									 * inference variables in the upper bound may be substituted
+									 * with captures wherever possible, such that the bound is
+									 * ultimately proper.
+									 * 
+									 * TODO remember all choices here! try different ones in an
+									 * attempt to get the intersection type work...
+									 * 
+									 * TODO may need to rethink approach to cases like the recent
+									 * compiler-dev issue
+									 * 
+									 * TODO double check dependency logic in
+									 * InferenceVariableBoundsImpl
+									 */
+									if (bounds.getBoundsOn((InferenceVariable) i)
+											.isInstantiated()) {
+										i = bounds.getBoundsOn((InferenceVariable) i)
+												.getInstantiation().get();
+									} else if (!types.contains(i)) {
+										List<Type> equalities = new ArrayList<>(bounds
+												.getBoundsOn((InferenceVariable) i).getEqualities());
+
+										i = null;
+										for (Type equality : equalities) {
+											if (types.contains(equality)) {
+												i = equality;
+												break;
+											}
+										}
+
+										if (i == null) {
+											for (Type equality : equalities) {
+												Set<InferenceVariable> mentioned = InferenceVariable
+														.getMentionedBy(equality);
+												mentioned.removeAll(types);
+												if (mentioned.isEmpty()) {
+													i = equality;
+													break;
+												}
+											}
+										}
+										System.out.println();
+										System.out.println(equalities);
+									}
+
+									return i;
+								})::resolve)
+						.collect(Collectors.toSet());
+				System.out.println(" +++++");
+
+				Type glb = IntersectionType.uncheckedFrom(upperBoundSet);
+				Type[] upperBounds = (glb instanceof IntersectionType)
+						? ((IntersectionType) glb).getTypes() : new Type[] { glb };
 
 				/*
 				 * If the type variables Y1, ..., Yn do not have well-formed bounds

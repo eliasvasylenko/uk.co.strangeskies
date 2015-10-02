@@ -137,6 +137,8 @@ public abstract class IntersectionType implements Type {
 				}
 		}
 
+		flattenedTypes.remove(Object.class);
+
 		if (flattenedTypes.isEmpty())
 			return Object.class;
 

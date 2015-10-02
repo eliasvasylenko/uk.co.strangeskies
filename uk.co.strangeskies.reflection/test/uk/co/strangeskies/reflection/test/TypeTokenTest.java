@@ -44,9 +44,7 @@ import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.AnnotatedWildcardTypes;
 import uk.co.strangeskies.reflection.Annotations;
 import uk.co.strangeskies.reflection.Imports;
-import uk.co.strangeskies.reflection.InferenceVariable;
 import uk.co.strangeskies.reflection.Invokable;
-import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.TypeParameter;
 import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.TypeToken.Capture;
@@ -281,11 +279,6 @@ public class TypeTokenTest {
 
 		System.out.println(new TypeParameter<H>() {});
 		System.out.println(new TypeToken<List<String>>() {});
-		System.out.println();
-
-		System.out.println(ParameterizedTypes
-				.from(HashSet.class, Arrays.asList(new InferenceVariable()))
-				.resolveSupertypeParameters(Collection.class));
 		System.out.println();
 
 		System.out.println(TypeToken.over(B.class).resolveMethodOverload("bothways",
@@ -548,7 +541,12 @@ public class TypeTokenTest {
 		TypeToken<?> eqselente = new TypeToken<@Infer SchemaNode<?, ?>>() {};
 		System.out.println(eqselente);
 		System.out.println(eqselente.getResolver().getBounds());
-		eqselente = eqselente.withUpperBound(eqselente.deepCopy());
+
+		TypeToken<?> dc = eqselente.deepCopy();
+		System.out.println(dc);
+		System.out.println(dc.getResolver().getBounds());
+
+		eqselente = eqselente.withUpperBound(dc);
 		System.out.println(eqselente.getResolver().getBounds());
 		System.out.println(eqselente.infer());
 		System.out.println();

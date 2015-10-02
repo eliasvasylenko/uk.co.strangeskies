@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -134,9 +135,11 @@ public class Invokable<T, R> {
 			Type genericReturnType = resolver.resolveType(method,
 					method.getGenericReturnType());
 
+			// TODO should this always be PRESERVE?
 			returnType = (TypeToken<R>) TypeToken.over(
 					new Resolver(resolver.getBounds()), genericReturnType,
-					Wildcards.PRESERVE);
+					InferenceVariable.isProperType(genericReturnType) ? Wildcards.PRESERVE
+							: Wildcards.INFER);
 			returnType.incorporateInto(resolver.getBounds());
 		} else {
 			returnType = (TypeToken<R>) receiverType;
@@ -152,7 +155,21 @@ public class Invokable<T, R> {
 			if (parameters != null) {
 				Type givenArgument = resolver.resolveType(parameters.get(i));
 
-				if (Types.isAssignable(givenArgument, genericParameters[i]))
+				BoundSet bounds = new BoundSet();
+				Map<InferenceVariable, TypeVariableCapture> captures = new HashMap<>();
+				for (InferenceVariable inferenceVariable : resolver.getBounds()
+						.getInferenceVariables()) {
+					bounds.addInferenceVariable(inferenceVariable);
+					captures.putAll(TypeVariableCapture.captureInferenceVariables(
+							Arrays.asList(inferenceVariable), bounds));
+				}
+				TypeSubstitution substitution = new TypeSubstitution(captures);
+
+				Type givenArgumentCaptured = substitution.resolve(givenArgument);
+				Type genericParameterCaptured = substitution
+						.resolve(genericParameters[i]);
+
+				if (Types.isAssignable(givenArgumentCaptured, genericParameterCaptured))
 					genericParameters[i] = givenArgument;
 				else if (!Types.isAssignable(genericParameters[i], givenArgument))
 					throw new IllegalArgumentException("Given argument '" + givenArgument

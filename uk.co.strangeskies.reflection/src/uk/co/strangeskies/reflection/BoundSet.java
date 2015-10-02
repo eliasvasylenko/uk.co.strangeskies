@@ -263,7 +263,6 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		 * Substitutions of inference variables:
 		 */
 		for (InferenceVariable inferenceVariable : getInferenceVariables())
-			// if (!getBoundsOn(inferenceVariable).isInstantiated())
 			inferenceVariableSubstitutions.put(inferenceVariable,
 					new InferenceVariable(inferenceVariable.getName()));
 
@@ -452,34 +451,8 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 				}
 			}
 
-			// TODO
-			// TODO
-			// TODO
-			// TODO
-			// TODO
-			// TODO
-			// TODO
-			// TODO
-			// TODO
-			// TODO
-			// TODO
-			// TODO
-			// TODO
-			// TODO
-			// TODO
-			// TODO
-			// TODO
-			// TODO
-			// TODO
-			// TODO
-			// TODO
-			// TODO
-			// TODO
-			// TODO
-			// TODO
-			// TODO
 			if (relatedInferenceVariables.stream()
-					.allMatch(i -> !inferenceVariableBounds.containsKey(i)) && 2 == 3) {
+					.allMatch(i -> !inferenceVariableBounds.containsKey(i))) {
 				for (InferenceVariable inferenceVariable : relatedInferenceVariables) {
 					InferenceVariableBoundsImpl filtered = boundSet
 							.getBoundsOnImpl(inferenceVariable).copyIntoFiltered(this,
