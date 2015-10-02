@@ -102,10 +102,14 @@ public class Invokable<T, R> {
 		this.executable = executable;
 		this.invocationFunction = invocationFunction;
 
+		resolver.getBounds().assertConsistent();
+
 		/*
 		 * Incorporate relevant type parameters:
 		 */
 		resolver.incorporateTypeParameters(getExecutable());
+
+		resolver.getBounds().assertConsistent();
 
 		/*
 		 * Resolve types within context of given Resolver:
@@ -120,20 +124,20 @@ public class Invokable<T, R> {
 				receiverType.resolveSupertypeParameters(executable.getDeclaringClass())
 						.incorporateInto(resolver);
 
+			resolver.getBounds().assertConsistent();
 			receiverType = receiverType.withBoundsFrom(resolver).resolve();
 			this.receiverType = receiverType;
 		}
 
 		if (executable instanceof Method) {
 			Method method = (Method) executable;
-			returnType = (TypeToken<R>) TypeToken.over(resolver,
-					resolver.resolveType(method, method.getGenericReturnType()),
+			Type genericReturnType = resolver.resolveType(method,
+					method.getGenericReturnType());
+
+			returnType = (TypeToken<R>) TypeToken.over(
+					new Resolver(resolver.getBounds()), genericReturnType,
 					Wildcards.PRESERVE);
-			/*-
-			returnType = (TypeToken<R>) TypeToken
-				.over(resolver.resolveType(method, method.getGenericReturnType()))
-				.withBoundsFrom(resolver);
-			*/
+			returnType.incorporateInto(resolver.getBounds());
 		} else {
 			returnType = (TypeToken<R>) receiverType;
 		}
@@ -475,6 +479,9 @@ public class Invokable<T, R> {
 			Collection<? extends InferenceVariable> inferenceVariables) {
 		Resolver resolver = getResolver();
 		resolver.getBounds().incorporate(bounds, inferenceVariables);
+
+		resolver.getBounds().assertConsistent();
+
 		return new Invokable<>(resolver, receiverType, executable,
 				invocationFunction, parameters);
 	}

@@ -86,12 +86,14 @@ public class TypeToken<T>
 		 * always fully specify valid bounds.
 		 */
 		PRESERVE(Preserve.class),
+
 		/**
 		 * Wildcards should be substituted with inference variables, with
 		 * appropriate bounds incorporated based on both type variable bounds and
 		 * wildcard bounds.
 		 */
 		INFER(Infer.class),
+
 		/**
 		 * Wildcards should be substituted with fresh {@link TypeVariableCapture}
 		 * instances, as per
@@ -195,15 +197,15 @@ public class TypeToken<T>
 		this.resolver = resolvedType.getLeft();
 	}
 
-	TypeToken(Type type) {
+	protected TypeToken(Type type) {
 		this(type, Wildcards.PRESERVE);
 	}
 
-	TypeToken(Type type, Wildcards wildcards) {
+	private TypeToken(Type type, Wildcards wildcards) {
 		this(AnnotatedTypes.over(type, wildcards.getAnnotation()));
 	}
 
-	TypeToken(Resolver resolver, Type type, Wildcards wildcards) {
+	private TypeToken(Resolver resolver, Type type, Wildcards wildcards) {
 		this(AnnotatedTypes.over(type, wildcards.getAnnotation()), resolver);
 	}
 
@@ -421,6 +423,7 @@ public class TypeToken<T>
 					break;
 				case CAPTURE:
 					type = TypeVariableCapture.captureWildcard(wildcardType);
+					resolver.incorporateWildcardCaptures((TypeVariableCapture) type);
 					break;
 				default:
 					throw new AssertionError();
@@ -1264,7 +1267,7 @@ public class TypeToken<T>
 		Type parameterizedType = ParameterizedTypes.uncheckedFrom(subclass,
 				i -> null);
 
-		if (resolver.getBounds().isInferenceVariable(getType())) {
+		if (resolver.getBounds().containsInferenceVariable(getType())) {
 			resolver.incorporateTypeParameters(subclass);
 			parameterizedType = resolver.resolveType(parameterizedType);
 
@@ -1654,8 +1657,8 @@ public class TypeToken<T>
 	public TypeToken<T> captureInferenceVariables() {
 		Resolver resolver = getResolver();
 
-		TypeVariableCapture.captureInferenceVariables(resolver.getBounds()
-				.getInferenceVariablesMentionedBy(resolver.resolveType(getType())),
+		TypeVariableCapture.captureInferenceVariables(
+				InferenceVariable.getMentionedBy(resolver.resolveType(getType())),
 				resolver.getBounds());
 
 		return withBounds(resolver.getBounds());
@@ -1685,7 +1688,7 @@ public class TypeToken<T>
 	 * @return True if the type is proper, false otherwise.
 	 */
 	public boolean isProper() {
-		return getInternalResolver().getBounds().isProperType(type);
+		return InferenceVariable.isProperType(type);
 	}
 
 	/**
@@ -1697,8 +1700,7 @@ public class TypeToken<T>
 	 *         its type.
 	 */
 	public Set<InferenceVariable> getInferenceVariablesMentioned() {
-		return getInternalResolver().getBounds()
-				.getInferenceVariablesMentionedBy(type);
+		return InferenceVariable.getMentionedBy(type);
 	}
 
 	/**
@@ -1748,10 +1750,8 @@ public class TypeToken<T>
 	 *          this type token.
 	 */
 	public void incorporateInto(BoundSet bounds) {
-		Type type = resolveType();
-
-		bounds.incorporate(getInternalResolver().getBounds(), getInternalResolver()
-				.getBounds().getInferenceVariablesMentionedBy(type));
+		bounds.incorporate(getInternalResolver().getBounds(),
+				InferenceVariable.getMentionedBy(type));
 	}
 
 	/**
@@ -1766,8 +1766,7 @@ public class TypeToken<T>
 		Type type = resolveType();
 
 		resolver.getBounds().incorporate(getInternalResolver().getBounds(),
-				getInternalResolver().getBounds()
-						.getInferenceVariablesMentionedBy(type));
+				InferenceVariable.getMentionedBy(type));
 
 		resolver.incorporateWildcardCaptures(
 				getInternalResolver().getWildcardCaptures());

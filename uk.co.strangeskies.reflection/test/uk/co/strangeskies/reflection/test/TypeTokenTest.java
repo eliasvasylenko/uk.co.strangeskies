@@ -109,6 +109,9 @@ public class TypeTokenTest {
 		}
 	}
 
+	/**
+	 * 
+	 */
 	@Test
 	public void supertypeParameterTest() {
 		Assert.assertEquals("uk.co.strangeskies.reflection.test.SchemaNode<?, ?>",
@@ -117,6 +120,9 @@ public class TypeTokenTest {
 						.resubstituteCapturedWildcards().toString());
 	}
 
+	/**
+	 * 
+	 */
 	@Test
 	public void hugeTest1() {
 		System.out.println(new TypeToken<HashSet<String>>() {}
@@ -256,6 +262,10 @@ public class TypeTokenTest {
 		System.out.println();
 	}
 
+	/**
+	 * @param <H>
+	 *          Parameter for reflection testing
+	 */
 	@Test
 	public <H extends C2<H>> void huge2Test() {
 		System.out.println(

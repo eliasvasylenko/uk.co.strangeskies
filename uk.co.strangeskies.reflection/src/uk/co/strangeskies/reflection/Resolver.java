@@ -317,7 +317,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 
 			@Override
 			protected void visitWildcardType(WildcardType type) {
-				inferOverWildcardType(type);
+				incorporateWildcardCaptures(TypeVariableCapture.captureWildcard(type));
 			}
 		}.visit(type);
 
@@ -483,7 +483,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 		Set<Type> upperBounds = Types.getUpperBounds(type);
 
 		for (Type upperBound : new HashSet<>(upperBounds))
-			if (getBounds().isInferenceVariable(upperBound)) {
+			if (getBounds().containsInferenceVariable(upperBound)) {
 				upperBounds.remove(upperBound);
 
 				InferenceVariableBounds bounds = getBounds()
@@ -491,7 +491,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 				Stream
 						.concat(bounds.getUpperBounds().stream(),
 								bounds.getEqualities().stream())
-						.filter(t -> !getBounds().isInferenceVariable(t))
+						.filter(t -> !getBounds().containsInferenceVariable(t))
 						.forEach(upperBounds::add);
 			}
 
@@ -517,7 +517,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 		Set<Type> lowerBounds = Types.getLowerBounds(type);
 
 		for (Type lowerBound : new HashSet<>(lowerBounds))
-			if (getBounds().isInferenceVariable(lowerBound)) {
+			if (getBounds().containsInferenceVariable(lowerBound)) {
 				lowerBounds.remove(lowerBound);
 
 				InferenceVariableBounds bounds = getBounds()
@@ -525,7 +525,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 				Stream
 						.concat(bounds.getLowerBounds().stream(),
 								bounds.getEqualities().stream())
-						.filter(t -> !getBounds().isInferenceVariable(t))
+						.filter(t -> !getBounds().containsInferenceVariable(t))
 						.forEach(lowerBounds::add);
 			}
 
@@ -638,6 +638,19 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 *          The new type varible captures.
 	 */
 	public void incorporateWildcardCaptures(
+			TypeVariableCapture... wildcardCaptures) {
+		incorporateWildcardCaptures(Arrays.asList(wildcardCaptures));
+	}
+
+	/**
+	 * Add to the set of type variable captures which are considered to have been
+	 * captured from plain wildcards, such that those wildcards might be
+	 * resubstituted for them.
+	 * 
+	 * @param wildcardCaptures
+	 *          The new type varible captures.
+	 */
+	public void incorporateWildcardCaptures(
 			Collection<? extends TypeVariableCapture> wildcardCaptures) {
 		this.wildcardCaptures.addAll(wildcardCaptures);
 	}
@@ -656,7 +669,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 */
 	public void incorporateInstantiation(TypeVariable<?> variable,
 			Type instantiation) {
-		if (!getBounds().isProperType(instantiation))
+		if (!InferenceVariable.isProperType(instantiation))
 			throw new IllegalArgumentException("The given type, '" + instantiation
 					+ "', is not proper, and so is not a valid instantiation for '"
 					+ variable + "'.");
@@ -722,7 +735,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 *         instantiations for each {@link InferenceVariable} mentioned.
 	 */
 	public Type infer(Type type) {
-		return new TypeSubstitution(t -> getBounds().isInferenceVariable(t)
+		return new TypeSubstitution(t -> getBounds().containsInferenceVariable(t)
 				? infer((InferenceVariable) t) : null).resolve(type);
 	}
 
@@ -734,7 +747,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 * @return A new instantiation for the given {@link InferenceVariable}.
 	 */
 	public Type infer(InferenceVariable inferenceVariable) {
-		if (getBounds().isInferenceVariable(inferenceVariable)) {
+		if (getBounds().containsInferenceVariable(inferenceVariable)) {
 			if (!getBounds().getBoundsOn(inferenceVariable).isInstantiated()) {
 				Set<InferenceVariable> set = new HashSet<>(1);
 				set.add(inferenceVariable);
@@ -768,7 +781,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 */
 	public Map<InferenceVariable, Type> infer(
 			Collection<? extends InferenceVariable> variables) {
-		variables = variables.stream().filter(getBounds()::isInferenceVariable)
+		variables = variables.stream()
+				.filter(getBounds()::containsInferenceVariable)
 				.map(InferenceVariable.class::cast).collect(Collectors.toSet());
 
 		Map<InferenceVariable, Type> instantiations = new HashMap<>();

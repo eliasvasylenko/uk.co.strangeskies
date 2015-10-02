@@ -18,8 +18,6 @@
  */
 package uk.co.strangeskies.reflection;
 
-import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
@@ -27,14 +25,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.utilities.DeepCopyable;
-import uk.co.strangeskies.utilities.IdentityProperty;
 
 /**
  * <p>
@@ -355,139 +351,12 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	}
 
 	/**
-	 * Determine which inference variables are mentioned by a given type.
-	 * 
-	 * @param type
-	 *          The type for which to find all mentioned inference variables.
-	 * @return A set of all the inference variables which are contained within
-	 *         this bound set and which are mentioned by the given type.
-	 */
-	public Set<InferenceVariable> getInferenceVariablesMentionedBy(Type type) {
-		if (inferenceVariableBounds.isEmpty())
-			return Collections.emptySet();
-
-		Set<InferenceVariable> inferenceVariables = new HashSet<>();
-
-		new TypeVisitor() {
-			@Override
-			protected void visitParameterizedType(ParameterizedType type) {
-				visit(type.getActualTypeArguments());
-				visit(type.getOwnerType());
-			}
-
-			@Override
-			protected void visitGenericArrayType(GenericArrayType type) {
-				visit(type.getGenericComponentType());
-
-			}
-
-			@Override
-			protected void visitWildcardType(WildcardType type) {
-				visit(type.getUpperBounds());
-				visit(type.getLowerBounds());
-			}
-
-			@Override
-			protected void visitTypeVariableCapture(TypeVariableCapture type) {
-				visit(type.getUpperBounds());
-				visit(type.getLowerBounds());
-			}
-
-			@Override
-			protected void visitTypeVariable(TypeVariable<?> type) {
-				visit(type.getBounds());
-			}
-
-			@Override
-			protected void visitInferenceVariable(InferenceVariable type) {
-				if (inferenceVariableBounds.containsKey(type))
-					inferenceVariables.add(type);
-			}
-
-			@Override
-			protected void visitIntersectionType(IntersectionType type) {
-				visit(type.getTypes());
-			}
-		}.visit(type);
-
-		return inferenceVariables;
-	}
-
-	/**
-	 * Determine whether a given type is proper.
-	 * 
-	 * @param type
-	 *          The type for which to determine properness.
-	 * @return True if the given type is proper, false otherwise.
-	 */
-	public boolean isProperType(Type type) {
-		if (inferenceVariableBounds.isEmpty())
-			return true;
-
-		IdentityProperty<Boolean> proper = new IdentityProperty<>(true);
-
-		new TypeVisitor() {
-			@Override
-			public synchronized final void visit(Collection<? extends Type> types) {
-				if (proper.get()) {
-					Iterator<? extends Type> typeIterator = types.iterator();
-					while (typeIterator.hasNext() && proper.get()) {
-						visit(typeIterator.next());
-					}
-				}
-			}
-
-			@Override
-			protected void visitParameterizedType(ParameterizedType type) {
-				visit(type.getActualTypeArguments());
-				visit(type.getOwnerType());
-			}
-
-			@Override
-			protected void visitGenericArrayType(GenericArrayType type) {
-				visit(type.getGenericComponentType());
-
-			}
-
-			@Override
-			protected void visitWildcardType(WildcardType type) {
-				visit(type.getUpperBounds());
-				visit(type.getLowerBounds());
-			}
-
-			@Override
-			protected void visitTypeVariableCapture(TypeVariableCapture type) {
-				visit(type.getUpperBounds());
-				visit(type.getLowerBounds());
-			}
-
-			@Override
-			protected void visitTypeVariable(TypeVariable<?> type) {
-				visit(type.getBounds());
-			}
-
-			@Override
-			protected void visitInferenceVariable(InferenceVariable type) {
-				if (inferenceVariableBounds.containsKey(type))
-					proper.set(false);
-			}
-
-			@Override
-			protected void visitIntersectionType(IntersectionType type) {
-				visit(type.getTypes());
-			}
-		}.visit(type);
-
-		return proper.get();
-	}
-
-	/**
 	 * @param type
 	 *          The type we wish to classify.
 	 * @return True if the given type an inference variable within the context of
 	 *         this bound set, false otherwise.
 	 */
-	public boolean isInferenceVariable(Type type) {
+	public boolean containsInferenceVariable(Type type) {
 		return inferenceVariableBounds.containsKey(type);
 	}
 
@@ -557,6 +426,9 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	 */
 	public void incorporate(BoundSet boundSet,
 			Collection<? extends InferenceVariable> inferenceVariables) {
+		boundSet.assertConsistent();
+		assertConsistent();
+
 		if (!boundSet.getInferenceVariables().isEmpty()
 				&& !inferenceVariables.isEmpty()) {
 			Set<InferenceVariable> relatedInferenceVariables = new HashSet<>(
@@ -566,7 +438,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 			 * Include all related inference variables within the given boundSet.
 			 */
 			for (InferenceVariable inferenceVariable : inferenceVariables) {
-				if (boundSet.isInferenceVariable(inferenceVariable)) {
+				if (boundSet.containsInferenceVariable(inferenceVariable)) {
 					relatedInferenceVariables.add(inferenceVariable);
 
 					for (InferenceVariable relatedInferenceVariable : boundSet
@@ -580,12 +452,38 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 				}
 			}
 
+			// TODO
+			// TODO
+			// TODO
+			// TODO
+			// TODO
+			// TODO
+			// TODO
+			// TODO
+			// TODO
+			// TODO
+			// TODO
+			// TODO
+			// TODO
+			// TODO
+			// TODO
+			// TODO
+			// TODO
+			// TODO
+			// TODO
+			// TODO
+			// TODO
+			// TODO
+			// TODO
+			// TODO
+			// TODO
+			// TODO
 			if (relatedInferenceVariables.stream()
-					.allMatch(i -> !inferenceVariableBounds.containsKey(i))) {
+					.allMatch(i -> !inferenceVariableBounds.containsKey(i)) && 2 == 3) {
 				for (InferenceVariable inferenceVariable : relatedInferenceVariables) {
 					InferenceVariableBoundsImpl filtered = boundSet
-							.getBoundsOnImpl(inferenceVariable).copyInto(this);
-					filtered.filter(i -> !relatedInferenceVariables.contains(i));
+							.getBoundsOnImpl(inferenceVariable).copyIntoFiltered(this,
+									i -> !relatedInferenceVariables.contains(i));
 					inferenceVariableBounds.put(inferenceVariable, filtered);
 				}
 			} else {
@@ -605,17 +503,17 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 							.getBoundsOn(inferenceVariable);
 
 					for (Type equality : bounds.getEqualities())
-						if (boundSet.getInferenceVariablesMentionedBy(equality).stream()
+						if (InferenceVariable.getMentionedBy(equality).stream()
 								.allMatch(relatedInferenceVariables::contains))
 							incorporate().equality(inferenceVariable, equality);
 
 					for (Type lowerBound : bounds.getLowerBounds())
-						if (boundSet.getInferenceVariablesMentionedBy(lowerBound).stream()
+						if (InferenceVariable.getMentionedBy(lowerBound).stream()
 								.allMatch(relatedInferenceVariables::contains))
 							incorporate().subtype(lowerBound, inferenceVariable);
 
 					for (Type upperBound : bounds.getUpperBounds())
-						if (boundSet.getInferenceVariablesMentionedBy(upperBound).stream()
+						if (InferenceVariable.getMentionedBy(upperBound).stream()
 								.allMatch(relatedInferenceVariables::contains))
 							incorporate().subtype(inferenceVariable, upperBound);
 
@@ -625,6 +523,8 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 				}
 			}
 		}
+
+		assertConsistent();
 	}
 
 	void addCaptureConversion(CaptureConversion captureConversion) {
@@ -719,5 +619,27 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		if (!inferenceVariableBounds.containsKey(inferenceVariable))
 			inferenceVariableBounds.put(inferenceVariable,
 					new InferenceVariableBoundsImpl(this, inferenceVariable));
+	}
+
+	public void assertConsistent() {
+		for (InferenceVariable inf : getInferenceVariables()) {
+			InferenceVariableBounds bounds2 = getBoundsOn(inf);
+
+			for (Type type : bounds2.getUpperBounds()) {
+				if (type instanceof InferenceVariable
+						&& !containsInferenceVariable(type))
+					throw new Error("INCONSISTENT ub " + type);
+			}
+			for (Type type : bounds2.getLowerBounds()) {
+				if (type instanceof InferenceVariable
+						&& !containsInferenceVariable(type))
+					throw new Error("INCONSISTENT lb " + type);
+			}
+			for (Type type : bounds2.getEqualities()) {
+				if (type instanceof InferenceVariable
+						&& !containsInferenceVariable(type))
+					throw new Error("INCONSISTENT eq " + type);
+			}
+		}
 	}
 }

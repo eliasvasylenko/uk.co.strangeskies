@@ -51,8 +51,8 @@ public class CaptureConversion {
 			Map<TypeVariable<?>, InferenceVariable> parameterCaptures) {
 		this.originalType = originalType;
 
-		captureType = (ParameterizedType) ParameterizedTypes.from(
-				Types.getRawType(originalType), parameterCaptures::get).getType();
+		captureType = (ParameterizedType) ParameterizedTypes
+				.from(Types.getRawType(originalType), parameterCaptures::get).getType();
 
 		Map<TypeVariable<?>, Type> parameterArguments = ParameterizedTypes
 				.getAllTypeArguments(originalType);
@@ -77,12 +77,9 @@ public class CaptureConversion {
 	 */
 	public CaptureConversion(ParameterizedType originalType) {
 		this(originalType,
-				ParameterizedTypes
-						.getAllTypeParameters(Types.getRawType(originalType))
-						.stream()
-						.collect(
-								Collectors.toMap(Function.identity(),
-										t -> new InferenceVariable())));
+				ParameterizedTypes.getAllTypeParameters(Types.getRawType(originalType))
+						.stream().collect(Collectors.toMap(Function.identity(),
+								t -> new InferenceVariable())));
 	}
 
 	@Override
@@ -156,19 +153,14 @@ public class CaptureConversion {
 				inferenceVariableSubstitutions).resolve(getOriginalType());
 
 		Map<TypeVariable<?>, InferenceVariable> newCaptures = ParameterizedTypes
-				.getAllTypeArguments(getCaptureType())
-				.entrySet()
-				.stream()
-				.collect(
-						Collectors.toMap(
-								Entry::getKey,
-								e -> {
-									InferenceVariable substitution = inferenceVariableSubstitutions
-											.get(e.getValue());
-									if (substitution == null)
-										substitution = (InferenceVariable) e.getValue();
-									return substitution;
-								}));
+				.getAllTypeArguments(getCaptureType()).entrySet().stream()
+				.collect(Collectors.toMap(Entry::getKey, e -> {
+					InferenceVariable substitution = inferenceVariableSubstitutions
+							.get(e.getValue());
+					if (substitution == null)
+						substitution = (InferenceVariable) e.getValue();
+					return substitution;
+				}));
 
 		return new CaptureConversion(newType, newCaptures);
 	}
@@ -176,19 +168,15 @@ public class CaptureConversion {
 	/**
 	 * Find all inference variables mentioned by this capture conversion.
 	 * 
-	 * @param boundSet
-	 *          The bound set with respect to which instances of
-	 *          {@link InferenceVariable} will be classified as actual inference
-	 *          variables or effectively proper.
 	 * @return A set containing all inference variables mentioned on either side
 	 *         of this capture conversion with respect to the given bound set.
 	 */
-	public Set<InferenceVariable> getAllMentionedInferenceVariables(
-			BoundSet boundSet) {
-		Set<InferenceVariable> allMentioned = new HashSet<>(getInferenceVariables());
-		for (Type captured : ParameterizedTypes.getAllTypeArguments(
-				getOriginalType()).values())
-			allMentioned.addAll(boundSet.getInferenceVariablesMentionedBy(captured));
+	public Set<InferenceVariable> getInferenceVariablesMentioned() {
+		Set<InferenceVariable> allMentioned = new HashSet<>(
+				getInferenceVariables());
+		for (Type captured : ParameterizedTypes
+				.getAllTypeArguments(getOriginalType()).values())
+			allMentioned.addAll(InferenceVariable.getMentionedBy(captured));
 
 		return allMentioned;
 	}

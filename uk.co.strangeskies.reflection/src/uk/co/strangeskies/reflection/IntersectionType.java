@@ -84,8 +84,8 @@ public abstract class IntersectionType implements Type {
 		for (Type type : new ArrayList<>(flattenedTypes)) {
 			if (type instanceof IntersectionType) {
 				flattenedTypes.remove(type);
-				flattenedTypes.addAll(Arrays.asList(((IntersectionType) type)
-						.getTypes()));
+				flattenedTypes
+						.addAll(Arrays.asList(((IntersectionType) type).getTypes()));
 			}
 		}
 
@@ -98,7 +98,7 @@ public abstract class IntersectionType implements Type {
 		Type mostSpecificType = null;
 
 		for (Type type : new ArrayList<>(flattenedTypes)) {
-			if (bounds.isProperType(type)) {
+			if (InferenceVariable.isProperType(type)) {
 				Class<?> rawType = Types.getRawType(type);
 
 				if (!rawType.isInterface()) {
@@ -108,10 +108,10 @@ public abstract class IntersectionType implements Type {
 							|| Types.isAssignable(type, mostSpecificType)) {
 						mostSpecificType = type;
 					} else if (!Types.isAssignable(mostSpecificType, type)) {
-						throw new TypeException("Illegal intersection type '"
-								+ flattenedTypes
-								+ "', cannot contain both of the non-interface classes '"
-								+ mostSpecificType + "' and '" + type + "'.");
+						throw new TypeException(
+								"Illegal intersection type '" + flattenedTypes
+										+ "', cannot contain both of the non-interface classes '"
+										+ mostSpecificType + "' and '" + type + "'.");
 					}
 				}
 			}
@@ -123,11 +123,11 @@ public abstract class IntersectionType implements Type {
 		for (int i = 0; i < flattenedTypes.size(); i++) {
 			Type iType = flattenedTypes.get(i);
 
-			if (bounds.isProperType(iType))
+			if (InferenceVariable.isProperType(iType))
 				for (int j = i + 1; j < flattenedTypes.size(); j++) {
 					Type jType = flattenedTypes.get(j);
 
-					if (bounds.isProperType(jType))
+					if (InferenceVariable.isProperType(jType))
 						if (Types.isAssignable(iType, jType))
 							flattenedTypes.remove(j--);
 						else if (Types.isAssignable(jType, iType)) {
@@ -151,8 +151,8 @@ public abstract class IntersectionType implements Type {
 			for (Type type : flattenedTypes)
 				ConstraintFormula.reduce(Kind.SUBTYPE, inferenceVariable, type, bounds);
 		} catch (Exception e) {
-			throw new TypeException("Illegal intersection type '" + flattenedTypes
-					+ "'.", e);
+			throw new TypeException(
+					"Illegal intersection type '" + flattenedTypes + "'.", e);
 		}
 
 		return uncheckedFrom(flattenedTypes);
@@ -189,16 +189,13 @@ public abstract class IntersectionType implements Type {
 	 * @return A canonical string representation of the given type.
 	 */
 	public String toString(Imports imports) {
-		return Arrays
-				.stream(getTypes())
-				.map(
-						t -> {
-							String typeName = Types.toString(t, imports);
-							if (t instanceof TypeVariableCapture)
-								typeName = new StringBuilder().append("[ ").append(typeName)
-										.append(" ]").toString();
-							return typeName;
-						}).collect(Collectors.joining(" & "));
+		return Arrays.stream(getTypes()).map(t -> {
+			String typeName = Types.toString(t, imports);
+			if (t instanceof TypeVariableCapture)
+				typeName = new StringBuilder().append("[ ").append(typeName)
+						.append(" ]").toString();
+			return typeName;
+		}).collect(Collectors.joining(" & "));
 	}
 
 	@Override
