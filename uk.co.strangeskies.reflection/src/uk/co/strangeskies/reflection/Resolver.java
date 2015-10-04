@@ -58,7 +58,7 @@ import uk.co.strangeskies.utilities.IdentityProperty;
  * so described by a {@link GenericDeclaration}, at most only one
  * {@link InferenceVariable} may by created for any given {@link TypeVariable}.
  * A {@link Resolver} always creates {@link InferenceVariable} according to the
- * behaviour of {@link Resolver#captureTypeParameters(GenericDeclaration)}.
+ * behaviour of {@link Resolver#inferOverTypeParameters(GenericDeclaration)}.
  * 
  * <p>
  * A {@link Resolver} is a flexible and powerful tool, but for typical use-cases
@@ -208,7 +208,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 * @return A mapping from the {@link InferenceVariable}s on the given
 	 *         declaration, to their new capturing {@link InferenceVariable}s.
 	 */
-	public Map<TypeVariable<?>, InferenceVariable> captureTypeParameters(
+	public Map<TypeVariable<?>, InferenceVariable> inferOverTypeParameters(
 			GenericDeclaration declaration) {
 		if (!capturedTypeVariables.containsKey(declaration)) {
 			Map<TypeVariable<?>, InferenceVariable> declarationCaptures = new HashMap<>();
@@ -216,7 +216,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 
 			if (declaration instanceof Executable
 					&& !Modifier.isStatic(((Executable) declaration).getModifiers()))
-				declarationCaptures.putAll(captureTypeParameters(
+				declarationCaptures.putAll(inferOverTypeParameters(
 						((Executable) declaration).getDeclaringClass()));
 
 			capture(getBounds(), declaration, declarationCaptures);
@@ -267,8 +267,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 * class of that type, as follows:
 	 * 
 	 * <ul>
-	 * <li>{@link Class} as per {@link #captureTypeParameters(GenericDeclaration)}
-	 * .</li>
+	 * <li>{@link Class} as per
+	 * {@link #inferOverTypeParameters(GenericDeclaration)} .</li>
 	 * 
 	 * <li>{@link ParameterizedType} as per
 	 * {@link #captureTypeArguments(ParameterizedType)}.</li>
@@ -294,7 +294,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 		new TypeVisitor() {
 			@Override
 			protected void visitClass(Class<?> t) {
-				captureTypeParameters(t);
+				inferOverTypeParameters(t);
 			}
 
 			@Override
@@ -329,8 +329,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 * the class of that type, as follows:
 	 * 
 	 * <ul>
-	 * <li>{@link Class} as per {@link #captureTypeParameters(GenericDeclaration)}
-	 * .</li>
+	 * <li>{@link Class} as per
+	 * {@link #inferOverTypeParameters(GenericDeclaration)} .</li>
 	 * 
 	 * <li>{@link ParameterizedType} as per
 	 * {@link #captureTypeArguments(ParameterizedType)}.</li>
@@ -356,7 +356,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 		new TypeVisitor() {
 			@Override
 			protected void visitClass(Class<?> t) {
-				captureTypeParameters(t);
+				inferOverTypeParameters(t);
 			}
 
 			@Override
@@ -423,7 +423,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 		if (innerComponent instanceof ParameterizedType) {
 			Class<?> rawType = Types.getRawType(type);
 
-			Map<TypeVariable<?>, InferenceVariable> inferenceVariables = captureTypeParameters(
+			Map<TypeVariable<?>, InferenceVariable> inferenceVariables = inferOverTypeParameters(
 					rawType);
 			Map<TypeVariable<?>, Type> arguments = ParameterizedTypes
 					.getAllTypeArguments((ParameterizedType) innerComponent);
@@ -454,7 +454,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	public ParameterizedType inferOverTypeArguments(ParameterizedType type) {
 		Class<?> rawType = Types.getRawType(type);
 
-		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = captureTypeParameters(
+		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = inferOverTypeParameters(
 				rawType);
 		Map<TypeVariable<?>, Type> arguments = ParameterizedTypes
 				.getAllTypeArguments(type);
@@ -577,7 +577,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 */
 	public ParameterizedType captureTypeArguments(ParameterizedType type) {
 		Class<?> rawType = Types.getRawType(type);
-		captureTypeParameters(rawType);
+		inferOverTypeParameters(rawType);
 
 		Map<TypeVariable<?>, Type> originalArguments = ParameterizedTypes
 				.getAllTypeArguments(type);
@@ -674,7 +674,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 					+ "', is not proper, and so is not a valid instantiation for '"
 					+ variable + "'.");
 
-		captureTypeParameters(variable.getGenericDeclaration());
+		inferOverTypeParameters(variable.getGenericDeclaration());
 		ConstraintFormula.reduce(Kind.EQUALITY, getInferenceVariable(variable),
 				instantiation, bounds);
 	}
@@ -864,7 +864,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 */
 	public void incorporateTypeHierarchy(Class<?> subclass, Class<?> superclass) {
 		Type subtype = ParameterizedTypes.uncheckedFrom(subclass, i -> null);
-		captureTypeParameters(subclass);
+		inferOverTypeParameters(subclass);
 
 		if (!superclass.isAssignableFrom(subclass))
 			throw new IllegalArgumentException("Type '" + subtype
@@ -1119,7 +1119,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 */
 	public Type resolveTypeParametersWithResubstitutedWildcardCaptures(
 			Class<?> type) {
-		captureTypeParameters(type);
+		inferOverTypeParameters(type);
 		return resolveTypeWithResubstitutedWildcardCaptures(ParameterizedTypes
 				.uncheckedFrom(type, getInferenceVariables(type)::get));
 	}
@@ -1137,7 +1137,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 *         the given type if it is not generic.
 	 */
 	public Type resolveTypeParameters(Class<?> type) {
-		captureTypeParameters(type);
+		inferOverTypeParameters(type);
 		return resolveType(ParameterizedTypes.uncheckedFrom(type,
 				getInferenceVariables(type)::get));
 	}

@@ -209,7 +209,7 @@ public class TypeToken<T>
 		this(AnnotatedTypes.over(type, wildcards.getAnnotation()), resolver);
 	}
 
-	private TypeToken(Resolver resolver, Type type) {
+	TypeToken(Resolver resolver, Type type) {
 		declaration = AnnotatedTypes.over(type);
 
 		this.resolver = resolver;
@@ -531,7 +531,7 @@ public class TypeToken<T>
 	 */
 	public static <T> TypeToken<? extends T> over(Resolver resolver,
 			Class<T> rawType) {
-		resolver.captureTypeParameters(rawType);
+		resolver.inferOverTypeParameters(rawType);
 		return new TypeToken<>(resolver.copy(),
 				resolver.resolveTypeParameters(rawType));
 	}
@@ -1226,7 +1226,7 @@ public class TypeToken<T>
 				i -> null);
 
 		if (resolver.getBounds().getInferenceVariables().contains(getType())) {
-			resolver.captureTypeParameters(superclass);
+			resolver.inferOverTypeParameters(superclass);
 			parameterizedType = resolver.resolveType(parameterizedType);
 
 			ConstraintFormula.reduce(Kind.SUBTYPE, getType(), parameterizedType,
@@ -1268,7 +1268,7 @@ public class TypeToken<T>
 				i -> null);
 
 		if (resolver.getBounds().containsInferenceVariable(getType())) {
-			resolver.captureTypeParameters(subclass);
+			resolver.inferOverTypeParameters(subclass);
 			parameterizedType = resolver.resolveType(parameterizedType);
 
 			ConstraintFormula.reduce(Kind.SUBTYPE, parameterizedType, getType(),

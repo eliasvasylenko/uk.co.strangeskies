@@ -425,9 +425,6 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	 */
 	public void incorporate(BoundSet boundSet,
 			Collection<? extends InferenceVariable> inferenceVariables) {
-		boundSet.assertConsistent();
-		assertConsistent();
-
 		if (!boundSet.getInferenceVariables().isEmpty()
 				&& !inferenceVariables.isEmpty()) {
 			Set<InferenceVariable> relatedInferenceVariables = new HashSet<>(
@@ -496,8 +493,6 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 				}
 			}
 		}
-
-		assertConsistent();
 	}
 
 	void addCaptureConversion(CaptureConversion captureConversion) {
@@ -594,7 +589,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 					new InferenceVariableBoundsImpl(this, inferenceVariable));
 	}
 
-	public void assertConsistent() {
+	void assertConsistent() {
 		for (InferenceVariable inf : getInferenceVariables()) {
 			InferenceVariableBounds bounds2 = getBoundsOn(inf);
 

@@ -102,14 +102,10 @@ public class Invokable<T, R> {
 		this.executable = executable;
 		this.invocationFunction = invocationFunction;
 
-		resolver.getBounds().assertConsistent();
-
 		/*
 		 * Incorporate relevant type parameters:
 		 */
-		resolver.captureTypeParameters(getExecutable());
-
-		resolver.getBounds().assertConsistent();
+		resolver.inferOverTypeParameters(getExecutable());
 
 		/*
 		 * Resolve types within context of given Resolver:
@@ -124,7 +120,6 @@ public class Invokable<T, R> {
 				receiverType.resolveSupertypeParameters(executable.getDeclaringClass())
 						.incorporateInto(resolver);
 
-			resolver.getBounds().assertConsistent();
 			receiverType = receiverType.withBoundsFrom(resolver).resolve();
 			this.receiverType = receiverType;
 		}
@@ -134,12 +129,17 @@ public class Invokable<T, R> {
 			Type genericReturnType = resolver.resolveType(method,
 					method.getGenericReturnType());
 
+			System.out.println();
+			System.out.println(genericReturnType);
+
 			// TODO should this always be PRESERVE?
 			returnType = (TypeToken<R>) TypeToken.over(
 					new Resolver(resolver.getBounds()), genericReturnType,
 					InferenceVariable.isProperType(genericReturnType) ? Wildcards.PRESERVE
 							: Wildcards.INFER);
 			returnType.incorporateInto(resolver.getBounds());
+
+			System.out.println(returnType);
 		} else {
 			returnType = (TypeToken<R>) receiverType;
 		}
@@ -502,8 +502,6 @@ public class Invokable<T, R> {
 		Resolver resolver = getResolver();
 		resolver.getBounds().incorporate(bounds, inferenceVariables);
 
-		resolver.getBounds().assertConsistent();
-
 		return new Invokable<>(resolver, receiverType, executable,
 				invocationFunction, parameters);
 	}
@@ -709,6 +707,7 @@ public class Invokable<T, R> {
 
 		Resolver resolver = getResolver();
 
+		System.out.println(returnType + " -> " + target);
 		ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, returnType.getType(),
 				target, resolver.getBounds());
 
