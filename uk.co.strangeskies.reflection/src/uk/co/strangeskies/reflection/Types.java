@@ -587,6 +587,11 @@ public final class Types {
 
 			assignable = isAssignable(IntersectionType.uncheckedFrom(upperBounds), to,
 					assignsEncountered);
+
+			if (!assignable && to instanceof TypeVariableCapture) {
+				assignable = Arrays.asList(((TypeVariableCapture) to).getLowerBounds())
+						.contains(from);
+			}
 		} else if (to instanceof TypeVariableCapture) {
 			/*
 			 * We assign to a type variable capture if we can assign to its lower
@@ -676,29 +681,29 @@ public final class Types {
 
 	private static boolean isContainedBy(Type from, Type to,
 			HashSet<Assignment> assignsEncountered) {
-		if (to.equals(from))
-			return true;
+		boolean contained;
 
-		if (to instanceof Class || to instanceof ParameterizedType
+		if (to.equals(from)) {
+			contained = true;
+		} else if (to instanceof Class || to instanceof ParameterizedType
 				|| to instanceof IntersectionType) {
-			return isAssignable(from, to, assignsEncountered)
+			contained = isAssignable(from, to, assignsEncountered)
 					&& isAssignable(to, from, assignsEncountered);
 		} else if (to instanceof WildcardType) {
 			WildcardType toWildcard = (WildcardType) to;
 
-			boolean contained = (toWildcard.getUpperBounds().length == 0
-					|| isAssignable(from,
-							IntersectionType.uncheckedFrom(toWildcard.getUpperBounds()),
-							assignsEncountered));
+			contained = (toWildcard.getUpperBounds().length == 0 || isAssignable(from,
+					IntersectionType.uncheckedFrom(toWildcard.getUpperBounds()),
+					assignsEncountered));
 
 			contained = contained
 					&& (toWildcard.getLowerBounds().length == 0 || isAssignable(
 							IntersectionType.uncheckedFrom(toWildcard.getLowerBounds()), from,
 							assignsEncountered));
-
-			return contained;
 		} else
-			return false;
+			contained = false;
+
+		return contained;
 	}
 
 	/**
@@ -1198,6 +1203,9 @@ public final class Types {
 	 * 
 	 * @param typeString
 	 *          The String to parse.
+	 * @param imports
+	 *          Classes and packages for which full package qualification may be
+	 *          omitted from input.
 	 * @return The type described by the String.
 	 */
 	private static Type fromString(String typeString, Imports imports) {

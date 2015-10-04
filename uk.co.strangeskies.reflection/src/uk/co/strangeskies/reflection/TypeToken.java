@@ -162,7 +162,7 @@ public class TypeToken<T>
 						resolver);
 
 				type = resolver
-						.resubstituteCapturedWildcards(resolver.incorporateType(type));
+						.resubstituteCapturedWildcards(resolver.captureType(type));
 
 				return new Pair<>(resolver, type);
 			} , 64, true);
@@ -531,7 +531,7 @@ public class TypeToken<T>
 	 */
 	public static <T> TypeToken<? extends T> over(Resolver resolver,
 			Class<T> rawType) {
-		resolver.incorporateTypeParameters(rawType);
+		resolver.captureTypeParameters(rawType);
 		return new TypeToken<>(resolver.copy(),
 				resolver.resolveTypeParameters(rawType));
 	}
@@ -1226,7 +1226,7 @@ public class TypeToken<T>
 				i -> null);
 
 		if (resolver.getBounds().getInferenceVariables().contains(getType())) {
-			resolver.incorporateTypeParameters(superclass);
+			resolver.captureTypeParameters(superclass);
 			parameterizedType = resolver.resolveType(parameterizedType);
 
 			ConstraintFormula.reduce(Kind.SUBTYPE, getType(), parameterizedType,
@@ -1268,7 +1268,7 @@ public class TypeToken<T>
 				i -> null);
 
 		if (resolver.getBounds().containsInferenceVariable(getType())) {
-			resolver.incorporateTypeParameters(subclass);
+			resolver.captureTypeParameters(subclass);
 			parameterizedType = resolver.resolveType(parameterizedType);
 
 			ConstraintFormula.reduce(Kind.SUBTYPE, parameterizedType, getType(),
@@ -1770,7 +1770,7 @@ public class TypeToken<T>
 
 		resolver.incorporateWildcardCaptures(
 				getInternalResolver().getWildcardCaptures());
-		resolver.incorporateType(type);
+		resolver.captureType(type);
 	}
 
 	/**

@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -108,7 +107,7 @@ public class Invokable<T, R> {
 		/*
 		 * Incorporate relevant type parameters:
 		 */
-		resolver.incorporateTypeParameters(getExecutable());
+		resolver.captureTypeParameters(getExecutable());
 
 		resolver.getBounds().assertConsistent();
 
@@ -148,7 +147,6 @@ public class Invokable<T, R> {
 		/*
 		 * Determine parameter types:
 		 */
-		System.out.println(parameters);
 
 		Type[] genericParameters = executable.getGenericParameterTypes();
 		for (int i = 0; i < genericParameters.length; i++) {
@@ -171,6 +169,10 @@ public class Invokable<T, R> {
 						.resolve(genericParameters[i]);
 
 				if (Types.isAssignable(givenArgumentCaptured, genericParameterCaptured))
+					genericParameters[i] = givenArgument;
+				else if (givenArgumentCaptured instanceof Class<?>
+						&& Types.isAssignable(givenArgumentCaptured, IntersectionType
+								.from(Types.getRawTypes(genericParameterCaptured))))
 					genericParameters[i] = givenArgument;
 				else if (!Types.isAssignable(genericParameterCaptured,
 						givenArgumentCaptured))
@@ -928,8 +930,7 @@ public class Invokable<T, R> {
 					}
 				}
 
-				resolver.getBounds().incorporate(argument.getResolver().getBounds(),
-						argument.getInferenceVariablesMentioned());
+				argument.incorporateInto(resolver.getBounds());
 
 				ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, argument.getType(),
 						parameter, resolver.getBounds());

@@ -149,12 +149,6 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 					capture.upperBounds[i] = substitution.resolve(capture.upperBounds[i]);
 				}
 
-				Type upperBound = Types.greatestLowerBound(capture.upperBounds);
-				if (upperBound instanceof IntersectionType)
-					capture.upperBounds = ((IntersectionType) upperBound).getTypes();
-				else
-					capture.upperBounds = new Type[] { upperBound };
-
 				for (int i = 0; i < capture.lowerBounds.length; i++)
 					capture.lowerBounds[i] = substitution.resolve(capture.lowerBounds[i]);
 
@@ -165,14 +159,15 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 		for (Type type : captures.keySet()) {
 			if (captures.get(type) instanceof TypeVariableCapture) {
 				TypeVariableCapture capture = (TypeVariableCapture) captures.get(type);
-				// TODO is this check necessary?
 				if (!InferenceVariable.isProperType(capture)) {
-					System.out.println("       =-= " + capture);
-					System.out.println("         * " + substitution.resolve(capture));
-					System.out.println(captures);
-
 					throw new TypeException("This type should be proper: " + capture);
 				}
+
+				Type upperBound = Types.greatestLowerBound(capture.upperBounds);
+				if (upperBound instanceof IntersectionType)
+					capture.upperBounds = ((IntersectionType) upperBound).getTypes();
+				else
+					capture.upperBounds = new Type[] { upperBound };
 			}
 		}
 	}

@@ -46,11 +46,15 @@ import uk.co.strangeskies.reflection.Annotations;
 import uk.co.strangeskies.reflection.Imports;
 import uk.co.strangeskies.reflection.Invokable;
 import uk.co.strangeskies.reflection.TypeParameter;
+import uk.co.strangeskies.reflection.TypeSubstitution;
 import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.TypeToken.Capture;
 import uk.co.strangeskies.reflection.TypeToken.Infer;
 import uk.co.strangeskies.reflection.TypeToken.Preserve;
 import uk.co.strangeskies.reflection.TypeToken.Wildcards;
+import uk.co.strangeskies.reflection.TypeVariableCapture;
+import uk.co.strangeskies.reflection.Types;
+import uk.co.strangeskies.reflection.WildcardTypes;
 import uk.co.strangeskies.utilities.Self;
 
 /**
@@ -110,7 +114,7 @@ public class TypeTokenTest {
 	/**
 	 * 
 	 */
-	//@Test
+	// @Test
 	public void supertypeParameterTest() {
 		Assert.assertEquals("uk.co.strangeskies.reflection.test.SchemaNode<?, ?>",
 				new TypeToken<SchemaNode.Effective<?, ?>>() {}
@@ -121,7 +125,7 @@ public class TypeTokenTest {
 	/**
 	 * 
 	 */
-	//@Test
+	// @Test
 	public void hugeTest1() {
 		System.out.println(new TypeToken<HashSet<String>>() {}
 				.resolveSupertypeParameters(Set.class));
@@ -721,6 +725,14 @@ public class TypeTokenTest {
 		System.out.println(new TypeToken<C1<? extends C2<?>>>() {});
 		System.out.println();
 		 */
+
+		Type type = new TypeSubstitution()
+				.where(String.class,
+						TypeVariableCapture.captureWildcard(WildcardTypes.unbounded()))
+				.resolve(
+						new TypeToken<java.util.List<? extends Model<? super String>>>() {}
+								.getType());
+		System.out.println(Types.isAssignable(type, type));
 	}
 
 	@Retention(RetentionPolicy.RUNTIME)
@@ -744,7 +756,7 @@ public class TypeTokenTest {
 	@interface Tester {
 		String thisIsTest();
 
-		double[]wat();
+		double[] wat();
 	};
 
 	@Tester(thisIsTest = "yes", wat = { 2, 3 })
