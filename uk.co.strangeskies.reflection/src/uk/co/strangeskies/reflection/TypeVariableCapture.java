@@ -145,12 +145,9 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 			if (captures.get(type) instanceof TypeVariableCapture) {
 				TypeVariableCapture capture = (TypeVariableCapture) captures.get(type);
 
-				for (int i = 0; i < capture.upperBounds.length; i++)
+				for (int i = 0; i < capture.upperBounds.length; i++) {
 					capture.upperBounds[i] = substitution.resolve(capture.upperBounds[i]);
-
-				// TODO is this check necessary?
-				if (!InferenceVariable.isProperType(capture))
-					throw new IllegalStateException("Err, this should be proper...");
+				}
 
 				Type upperBound = Types.greatestLowerBound(capture.upperBounds);
 				if (upperBound instanceof IntersectionType)
@@ -162,6 +159,20 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 					capture.lowerBounds[i] = substitution.resolve(capture.lowerBounds[i]);
 
 				capture.validate();
+			}
+		}
+
+		for (Type type : captures.keySet()) {
+			if (captures.get(type) instanceof TypeVariableCapture) {
+				TypeVariableCapture capture = (TypeVariableCapture) captures.get(type);
+				// TODO is this check necessary?
+				if (!InferenceVariable.isProperType(capture)) {
+					System.out.println("       =-= " + capture);
+					System.out.println("         * " + substitution.resolve(capture));
+					System.out.println(captures);
+
+					throw new TypeException("This type should be proper: " + capture);
+				}
 			}
 		}
 	}
@@ -383,12 +394,6 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 				 * substitution [α1:=Y1, ..., αn:=Yn].
 				 */
 
-				System.out.println();
-				System.out.println();
-				System.out.println();
-				System.out.println(" £");
-				System.out.println(types);
-				System.out.println();
 				Set<Type> upperBoundSet = bounds.getBoundsOn(inferenceVariable)
 						.getUpperBounds().stream().map(new TypeSubstitution()
 								.where(InferenceVariable.class::isInstance, i -> {
@@ -442,14 +447,11 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 												}
 											}
 										}
-										System.out.println();
-										System.out.println(equalities);
 									}
 
 									return i;
 								})::resolve)
 						.collect(Collectors.toSet());
-				System.out.println(" +++++");
 
 				Type glb = IntersectionType.uncheckedFrom(upperBoundSet);
 				Type[] upperBounds = (glb instanceof IntersectionType)

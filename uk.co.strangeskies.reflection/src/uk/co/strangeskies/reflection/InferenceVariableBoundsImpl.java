@@ -72,21 +72,45 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		InferenceVariableBoundsImpl copy = new InferenceVariableBoundsImpl(boundSet,
 				inferenceVariable);
 
-		copy.upperBounds.addAll(upperBounds);
-		copy.lowerBounds.addAll(lowerBounds);
-		copy.equalities.addAll(equalities);
-
 		copy.capture = capture;
 
-		copy.relations.addAll(relations);
+		boolean copied = false;
 
-		if (isInstantiated()) {
-			copy.allDependencies = null;
-			copy.externalDependencies = null;
-		} else {
-			copy.allDependencies.clear();
-			copy.allDependencies.addAll(allDependencies);
-			copy.externalDependencies.addAll(externalDependencies);
+		for (Type equality : equalities) {
+			if (!equality.equals(inferenceVariable)
+					&& boundSet.containsInferenceVariable(equality)) {
+				InferenceVariableBoundsImpl bounds = boundSet
+						.getBoundsOnImpl((InferenceVariable) equality);
+
+				copy.equalities = bounds.equalities;
+				copy.upperBounds = bounds.upperBounds;
+				copy.lowerBounds = bounds.lowerBounds;
+
+				copy.relations = bounds.relations;
+				copy.allDependencies = bounds.allDependencies;
+				copy.externalDependencies = bounds.externalDependencies;
+
+				copied = true;
+
+				break;
+			}
+		}
+
+		if (!copied) {
+			copy.upperBounds.addAll(upperBounds);
+			copy.lowerBounds.addAll(lowerBounds);
+			copy.equalities.addAll(equalities);
+
+			copy.relations.addAll(relations);
+
+			if (isInstantiated()) {
+				copy.allDependencies = null;
+				copy.externalDependencies = null;
+			} else {
+				copy.allDependencies.clear();
+				copy.allDependencies.addAll(allDependencies);
+				copy.externalDependencies.addAll(externalDependencies);
+			}
 		}
 
 		return copy;
@@ -374,7 +398,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 
 	@Override
 	public Optional<Type> getInstantiation() {
-		return getEqualities().stream().filter(InferenceVariable::isProperType).findAny();
+		return getEqualities().stream().filter(InferenceVariable::isProperType)
+				.findAny();
 	}
 
 	@Override

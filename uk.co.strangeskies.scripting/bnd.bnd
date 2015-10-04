@@ -13,7 +13,7 @@ scripting-version = 0.0.1.${tstamp}
 	org.luaj__luaj-jse, \
 	org.jruby__jruby-core, \
 	frege, \
-	org.clojure__clojure;
+	org.clojure__clojure
 #	org.ow2.asm:asm-util; \
 #		version = ${asm-util.version}; \
 #		strategy = exact, \

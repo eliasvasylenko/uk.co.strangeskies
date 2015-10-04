@@ -148,6 +148,8 @@ public class Invokable<T, R> {
 		/*
 		 * Determine parameter types:
 		 */
+		System.out.println(parameters);
+
 		Type[] genericParameters = executable.getGenericParameterTypes();
 		for (int i = 0; i < genericParameters.length; i++) {
 			genericParameters[i] = resolver.resolveType(genericParameters[i]);
@@ -156,13 +158,12 @@ public class Invokable<T, R> {
 				Type givenArgument = resolver.resolveType(parameters.get(i));
 
 				BoundSet bounds = new BoundSet();
-				Map<InferenceVariable, TypeVariableCapture> captures = new HashMap<>();
-				for (InferenceVariable inferenceVariable : resolver.getBounds()
-						.getInferenceVariables()) {
-					bounds.addInferenceVariable(inferenceVariable);
-					captures.putAll(TypeVariableCapture.captureInferenceVariables(
-							Arrays.asList(inferenceVariable), bounds));
-				}
+				resolver.getBounds().getInferenceVariables()
+						.forEach(bounds::addInferenceVariable);
+
+				Map<InferenceVariable, TypeVariableCapture> captures = TypeVariableCapture
+						.captureInferenceVariables(bounds.getInferenceVariables(), bounds);
+
 				TypeSubstitution substitution = new TypeSubstitution(captures);
 
 				Type givenArgumentCaptured = substitution.resolve(givenArgument);
@@ -171,12 +172,14 @@ public class Invokable<T, R> {
 
 				if (Types.isAssignable(givenArgumentCaptured, genericParameterCaptured))
 					genericParameters[i] = givenArgument;
-				else if (!Types.isAssignable(genericParameters[i], givenArgument))
-					throw new IllegalArgumentException("Given argument '" + givenArgument
-							+ "' is incompatible with generic parameter type '"
-							+ genericParameters[i] + "' for parameter '" + i
-							+ "' of executable '" + toString(Arrays.asList(genericParameters))
-							+ "'.");
+				else if (!Types.isAssignable(genericParameterCaptured,
+						givenArgumentCaptured))
+					throw new IllegalArgumentException(
+							"Given argument '" + givenArgumentCaptured
+									+ "' is incompatible with generic parameter type '"
+									+ genericParameterCaptured + "' for parameter '" + i
+									+ "' of executable '"
+									+ toString(Arrays.asList(genericParameters)) + "'.");
 			}
 		}
 		this.parameters = Arrays.asList(genericParameters);

@@ -110,7 +110,7 @@ public class TypeTokenTest {
 	/**
 	 * 
 	 */
-	@Test
+	//@Test
 	public void supertypeParameterTest() {
 		Assert.assertEquals("uk.co.strangeskies.reflection.test.SchemaNode<?, ?>",
 				new TypeToken<SchemaNode.Effective<?, ?>>() {}
@@ -121,7 +121,7 @@ public class TypeTokenTest {
 	/**
 	 * 
 	 */
-	@Test
+	//@Test
 	public void hugeTest1() {
 		System.out.println(new TypeToken<HashSet<String>>() {}
 				.resolveSupertypeParameters(Set.class));
@@ -572,7 +572,7 @@ public class TypeTokenTest {
 				.resubstituteCapturedWildcards().getType());
 		System.out.println();
 
-		System.out.println(new TypeToken<List<? extends @Infer Set<?>>>() {});
+		System.out.println(new TypeToken<List<? extends @Capture Set<?>>>() {});
 		System.out.println();
 
 		System.out.println(new TypeToken<C1<C2<String>>>() {}
@@ -687,7 +687,7 @@ public class TypeTokenTest {
 
 		System.out.println(TypeToken
 				.fromString(
-						"uk.co.strangeskies.reflection.test.SchemaNode<?, @uk.co.strangeskies.reflection.TypeToken.Infer ?>")
+						"java.util.Map<?, @uk.co.strangeskies.reflection.TypeToken.Infer ?>")
 				.deepCopy().getAnnotatedDeclaration());
 		System.out.println();
 
