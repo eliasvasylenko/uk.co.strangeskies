@@ -32,6 +32,7 @@ import org.junit.Test;
 
 import uk.co.strangeskies.mathematics.graph.EdgeVertices;
 import uk.co.strangeskies.mathematics.graph.Graph;
+import uk.co.strangeskies.mathematics.graph.GraphListeners;
 import uk.co.strangeskies.mathematics.graph.building.GraphBuilder;
 import uk.co.strangeskies.mathematics.graph.building.GraphConfigurator;
 import uk.co.strangeskies.mathematics.graph.impl.GraphBuilderImpl;
@@ -148,8 +149,8 @@ public class GraphBuilderTest {
 
 		Assert.assertEquals(set("two", "three"),
 				graph.vertices().successorsOf("one"));
-		Assert.assertEquals(Collections.emptySet(), graph.vertices()
-				.predecessorsOf("one"));
+		Assert.assertEquals(Collections.emptySet(),
+				graph.vertices().predecessorsOf("one"));
 
 		Assert.assertEquals(set("two"), graph.vertices().successorsOf("three"));
 		Assert.assertEquals(set("one"), graph.vertices().predecessorsOf("three"));
@@ -173,17 +174,17 @@ public class GraphBuilderTest {
 
 		Graph<String, Object> graph = graph().vertices(vertices)
 				.vertexEquality((a, b) -> a == b)
-				.internalListeners(l -> l.vertexAdded().add((g, v) -> {
+				.addInternalListener(GraphListeners::vertexAdded, (g, v) -> {
 					for (String vertex : g.vertices()) {
 						if (vertex != v)
 							g.edges().add(v, vertex);
 					}
-				})).edgeFactory(Object::new).create();
+				}).edgeFactory(Object::new).create();
 
 		Assert.assertEquals(vertices, graph.vertices());
-		Assert.assertEquals(
-				set(EdgeVertices.between(one, two), EdgeVertices.between(two, three),
-						EdgeVertices.between(three, one)), graph.edges().edgeVertices());
+		Assert.assertEquals(set(EdgeVertices.between(one, two),
+				EdgeVertices.between(two, three), EdgeVertices.between(three, one)),
+				graph.edges().edgeVertices());
 	}
 
 	@Test
@@ -192,11 +193,11 @@ public class GraphBuilderTest {
 
 		Graph<String, String> graph = graph().vertices(vertices)
 				.vertexEquality((a, b) -> a == b)
-				.internalListeners(l -> l.vertexAdded().add((g, v) -> {
+				.addInternalListener(GraphListeners::vertexAdded, (g, v) -> {
 					for (String vertex : g.vertices())
 						if (v != vertex)
 							g.edges().add(v, vertex);
-				})).direction(String::compareTo)
+				}).direction(String::compareTo)
 				.edgeFactory(v -> v.getFrom() + " -> " + v.getTo()).create();
 
 		Assert.assertEquals(set("one -> two", "three -> two", "one -> three"),

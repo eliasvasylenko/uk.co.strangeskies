@@ -46,15 +46,11 @@ import uk.co.strangeskies.reflection.Annotations;
 import uk.co.strangeskies.reflection.Imports;
 import uk.co.strangeskies.reflection.Invokable;
 import uk.co.strangeskies.reflection.TypeParameter;
-import uk.co.strangeskies.reflection.TypeSubstitution;
 import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.TypeToken.Capture;
 import uk.co.strangeskies.reflection.TypeToken.Infer;
 import uk.co.strangeskies.reflection.TypeToken.Preserve;
 import uk.co.strangeskies.reflection.TypeToken.Wildcards;
-import uk.co.strangeskies.reflection.TypeVariableCapture;
-import uk.co.strangeskies.reflection.Types;
-import uk.co.strangeskies.reflection.WildcardTypes;
 import uk.co.strangeskies.utilities.Self;
 
 /**
@@ -704,16 +700,10 @@ public class TypeTokenTest {
 				Set.class, Map.class);
 
 		System.out.println(TypeToken.fromString("@Infer Set<?>", imports2));
-		System.out.println(TypeToken.fromString("@Infer Set<?>", imports2));
-		System.out.println(TypeToken.fromString("@Infer Set<?>", imports2));
-		System.out.println(TypeToken.fromString("@Infer ?", imports2));
-		System.out.println(TypeToken.fromString("@Infer ?", imports2));
 		System.out.println(TypeToken.fromString("@Infer ?", imports2));
 		System.out.println(TypeToken.fromString("Map<?, @Capture ?>", imports2));
 		System.out
 				.println(TypeToken.fromString("Map<@Infer ?, @Capture ?>", imports2));
-		System.out
-				.println(TypeToken.fromString("@Capture Map<@Infer ?, ?>", imports2));
 		System.out
 				.println(TypeToken.fromString("@Capture Map<@Infer ?, ?>", imports2));
 		System.out.println();
@@ -725,14 +715,6 @@ public class TypeTokenTest {
 		System.out.println(new TypeToken<C1<? extends C2<?>>>() {});
 		System.out.println();
 		 */
-
-		Type type = new TypeSubstitution()
-				.where(String.class,
-						TypeVariableCapture.captureWildcard(WildcardTypes.unbounded()))
-				.resolve(
-						new TypeToken<java.util.List<? extends Model<? super String>>>() {}
-								.getType());
-		System.out.println(Types.isAssignable(type, type));
 	}
 
 	@Retention(RetentionPolicy.RUNTIME)

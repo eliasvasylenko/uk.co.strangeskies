@@ -205,7 +205,8 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * @param factory
 	 * @return
 	 */
-	default <F extends E> GraphConfigurator<V, F> edgeFactory(Factory<F> factory) {
+	default <F extends E> GraphConfigurator<V, F> edgeFactory(
+			Factory<F> factory) {
 		return edgeFactory(v -> factory.create());
 	}
 
@@ -240,4 +241,9 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 */
 	GraphConfigurator<V, E> internalListeners(
 			Consumer<GraphListeners<V, E>> internalListeners);
+
+	default <L> GraphConfigurator<V, E> addInternalListener(
+			Function<GraphListeners<V, E>, Set<L>> listenerSet, L listener) {
+		return internalListeners(l -> listenerSet.apply(l).add(listener));
+	}
 }
