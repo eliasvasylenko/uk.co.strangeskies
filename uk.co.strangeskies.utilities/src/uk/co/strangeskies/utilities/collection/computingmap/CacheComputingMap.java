@@ -23,6 +23,7 @@ import java.lang.ref.SoftReference;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class CacheComputingMap<K, V> extends ComputingEntryHashMap<K, V> {
@@ -115,10 +116,10 @@ public class CacheComputingMap<K, V> extends ComputingEntryHashMap<K, V> {
 	}
 
 	@Override
-	public V putGet(K key) {
+	public V putGet(K key, Consumer<V> wasPresent, Consumer<V> wasMissing) {
 		clean();
 
-		return super.putGet(key);
+		return super.putGet(key, wasPresent, wasMissing);
 	}
 
 	@Override

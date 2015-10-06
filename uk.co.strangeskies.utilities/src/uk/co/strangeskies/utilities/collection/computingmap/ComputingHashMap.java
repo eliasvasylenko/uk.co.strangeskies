@@ -21,6 +21,7 @@ package uk.co.strangeskies.utilities.collection.computingmap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class ComputingHashMap<K, V> implements ComputingMap<K, V> {
@@ -45,10 +46,16 @@ public class ComputingHashMap<K, V> implements ComputingMap<K, V> {
 	}
 
 	@Override
-	public V putGet(K key) {
-		V value = computation.apply(key);
-		if (value != null)
-			map.put(key, value);
+	public V putGet(K key, Consumer<V> wasPresent, Consumer<V> wasMissing) {
+		V value = map.get(key);
+
+		if (value == null) {
+			map.put(key, computation.apply(key));
+			wasMissing.accept(value);
+		} else {
+			wasPresent.accept(value);
+		}
+
 		return value;
 	}
 

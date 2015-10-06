@@ -57,19 +57,21 @@ public class ConstraintFormula {
 		 * within a loose invocation context, as described by
 		 * {@link Types#isLooseInvocationContextCompatible(Type, Type)}.
 		 */
-		LOOSE_COMPATIBILILTY, /**
-													 * A subtype constraint between two types implies that
-													 * the first be assignable to the second.
-													 */
-		SUBTYPE, /**
-							 * A containment constraint between two types implies that one
-							 * contains the other, as described by
-							 * {@link Types#isContainedBy(Type, Type)}.
-							 */
-		CONTAINMENT, /**
-									 * An equality constraint between two types implies that they
-									 * are exactly identical.
-									 */
+		LOOSE_COMPATIBILILTY,
+		/**
+		 * A subtype constraint between two types implies that the first be
+		 * assignable to the second.
+		 */
+		SUBTYPE,
+		/**
+		 * A containment constraint between two types implies that one contains the
+		 * other, as described by {@link Types#isContainedBy(Type, Type)}.
+		 */
+		CONTAINMENT,
+		/**
+		 * An equality constraint between two types implies that they are exactly
+		 * identical.
+		 */
 		EQUALITY
 	}
 
@@ -146,8 +148,6 @@ public class ConstraintFormula {
 		IncorporationTarget incorporate = bounds.incorporate();
 
 		Type from = this.from;
-		if (bounds.containsInferenceVariable(from))
-			from = new Resolver(bounds).resolveType(from);
 
 		if (from instanceof ParameterizedType)
 			if (InferenceVariable.isProperType(from))
@@ -242,25 +242,23 @@ public class ConstraintFormula {
 			 * Otherwise, if S is the null type, the constraint reduces to true.
 			 */
 			return;
-		else
-			if (to == null)
-				/*
-				 * Otherwise, if T is the null type, the constraint reduces to false.
-				 */
-				incorporate.falsehood();
-		else if (bounds.getInferenceVariables().contains(from))
+		else if (to == null)
+			/*
+			 * Otherwise, if T is the null type, the constraint reduces to false.
+			 */
+			incorporate.falsehood();
+		else if (from instanceof InferenceVariable)
 			/*
 			 * Otherwise, if S is an inference variable, α, the constraint reduces to
 			 * the bound α <: T.
 			 */
 			incorporate.subtype(from, to);
-		else
-			if (bounds.getInferenceVariables().contains(to))
-				/*
-				 * Otherwise, if T is an inference variable, α, the constraint reduces
-				 * to the bound S <: α.
-				 */
-				incorporate.subtype(from, to);
+		else if (to instanceof InferenceVariable)
+			/*
+			 * Otherwise, if T is an inference variable, α, the constraint reduces to
+			 * the bound S <: α.
+			 */
+			incorporate.subtype(from, to);
 		else {
 			/*
 			 * Otherwise, the constraint is reduced according to the form of T:
@@ -324,7 +322,7 @@ public class ConstraintFormula {
 				 * otherwise.
 				 */
 				Type from = this.from;
-				if (bounds.getInferenceVariables().contains(from))
+				if (from instanceof InferenceVariable)
 					from = IntersectionType.from(
 							bounds.getBoundsOn((InferenceVariable) from).getUpperBounds());
 				if (!Types.isAssignable(from, to))
@@ -636,13 +634,13 @@ public class ConstraintFormula {
 				if (InferenceVariable.isProperType(from)
 						&& InferenceVariable.isProperType(to)) {
 					incorporate.falsehood();
-				} else if (bounds.getInferenceVariables().contains(from)) {
+				} else if (from instanceof InferenceVariable) {
 					/*
 					 * Otherwise, if S is an inference variable, α, the constraint reduces
 					 * to the bound α = T.
 					 */
 					incorporate.equality(from, to);
-				} else if (bounds.getInferenceVariables().contains(to)) {
+				} else if (to instanceof InferenceVariable) {
 					/*
 					 * Otherwise, if T is an inference variable, α, the constraint reduces
 					 * to the bound S = α.

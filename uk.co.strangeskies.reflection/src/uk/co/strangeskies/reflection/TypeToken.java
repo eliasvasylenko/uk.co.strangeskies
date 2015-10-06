@@ -152,20 +152,9 @@ public class TypeToken<T>
 	@Target(ElementType.TYPE_USE)
 	public @interface Capture {}
 
-	private static ComputingMap<Pair<Resolver, AnnotatedType>, Pair<Resolver, Type>> RESOLVER_CACHE = new LRUCacheComputingMap<>(
-			annotatedType -> {
-				Resolver resolver = annotatedType.getLeft();
-				if (resolver == null)
-					resolver = new Resolver();
-
-				Type type = substituteAnnotatedWildcards(annotatedType.getRight(),
-						resolver);
-
-				type = resolver
-						.resubstituteCapturedWildcards(resolver.captureType(type));
-
-				return new Pair<>(resolver, type);
-			} , 64, true);
+	private static ComputingMap<AnnotatedType, Pair<Resolver, Type>> RESOLVER_CACHE = new LRUCacheComputingMap<>(
+			annotatedType -> incorporateAnnotatedType(new Resolver(), annotatedType),
+			64, true);
 
 	private final Resolver resolver;
 
@@ -175,8 +164,7 @@ public class TypeToken<T>
 	protected TypeToken() {
 		declaration = resolveAnnotatedSuperclassParameter();
 
-		Pair<Resolver, Type> resolvedType = resolveAnnotatedWildcards(declaration,
-				null);
+		Pair<Resolver, Type> resolvedType = incorporateAnnotatedType(declaration);
 		this.type = resolvedType.getRight();
 		this.resolver = resolvedType.getLeft();
 	}
@@ -190,8 +178,11 @@ public class TypeToken<T>
 
 		declaration = AnnotatedTypes.wrap(annotatedType);
 
-		Pair<Resolver, Type> resolvedType = resolveAnnotatedWildcards(declaration,
-				resolver);
+		Pair<Resolver, Type> resolvedType;
+		if (resolver == null)
+			resolvedType = incorporateAnnotatedType(annotatedType);
+		else
+			resolvedType = incorporateAnnotatedType(resolver, declaration);
 
 		this.type = resolvedType.getRight();
 		this.resolver = resolvedType.getLeft();
@@ -209,7 +200,7 @@ public class TypeToken<T>
 		this(AnnotatedTypes.over(type, wildcards.getAnnotation()), resolver);
 	}
 
-	TypeToken(Resolver resolver, Type type) {
+	private TypeToken(Resolver resolver, Type type) {
 		declaration = AnnotatedTypes.over(type);
 
 		this.resolver = resolver;
@@ -338,10 +329,22 @@ public class TypeToken<T>
 		return types;
 	}
 
-	private Pair<Resolver, Type> resolveAnnotatedWildcards(
-			AnnotatedType annotatedType, Resolver resolver) {
-		Pair<Resolver, Type> resolvedType = RESOLVER_CACHE
-				.putGet(new Pair<>(resolver, annotatedType));
+	private static Pair<Resolver, Type> incorporateAnnotatedType(
+			Resolver resolver, AnnotatedType annotatedType) {
+		if (resolver == null)
+			resolver = new Resolver();
+
+		Type type = substituteAnnotatedWildcards(annotatedType, resolver);
+
+		type = resolver.captureType(type);
+		type = resolver.resubstituteCapturedWildcards(type);
+
+		return new Pair<>(resolver, type);
+	}
+
+	private static Pair<Resolver, Type> incorporateAnnotatedType(
+			AnnotatedType annotatedType) {
+		Pair<Resolver, Type> resolvedType = RESOLVER_CACHE.putGet(annotatedType);
 
 		HashMap<InferenceVariable, InferenceVariable> map = new HashMap<>();
 		return new Pair<>(resolvedType.getLeft().deepCopy(map),
@@ -354,7 +357,7 @@ public class TypeToken<T>
 				? Wildcards.PRESERVE
 				: annotatedType.isAnnotationPresent(Infer.class) ? Wildcards.INFER
 						: annotatedType.isAnnotationPresent(Capture.class)
-								? Wildcards.CAPTURE : null;
+								? Wildcards.CAPTURE : Wildcards.PRESERVE;
 
 		if (annotatedType instanceof AnnotatedParameterizedType) {
 			/*
@@ -379,8 +382,6 @@ public class TypeToken<T>
 
 			/*
 			 * New parameterized type
-			 * 
-			 * TODO override "behaviour" with annotations on each parameter.
 			 */
 			ParameterizedType parameterizedType = (ParameterizedType) ParameterizedTypes
 					.uncheckedFrom(Types.getRawType(annotatedType.getType()),
@@ -391,8 +392,10 @@ public class TypeToken<T>
 					parameterizedType = TypeVariableCapture
 							.captureWildcardArguments(parameterizedType);
 				} else if (behaviour == Wildcards.INFER) {
-					parameterizedType = resolver
+					Resolver inferenceResolver = new Resolver(resolver.getBounds());
+					parameterizedType = inferenceResolver
 							.inferOverTypeArguments(parameterizedType);
+					resolver.getBounds().incorporate(inferenceResolver.getBounds());
 				}
 			}
 			return parameterizedType;
@@ -1478,7 +1481,16 @@ public class TypeToken<T>
 		return getMethods(m -> true);
 	}
 
-	private Set<? extends Invokable<? super T, ?>> getMethods(
+	/**
+	 * Find which methods can be invoked on this type, whether statically or on
+	 * instances, which pass a filter.
+	 * 
+	 * @param filter
+	 *          Determine which methods may participate.
+	 * @return A list of all {@link Method} objects applicable to this type,
+	 *         wrapped in {@link Invokable} instances.
+	 */
+	public Set<? extends Invokable<? super T, ?>> getMethods(
 			Predicate<Method> filter) {
 		Stream<Method> methodStream = getRawTypes().stream()
 				.flatMap(t -> Arrays.stream(t.getMethods()));
@@ -1751,7 +1763,7 @@ public class TypeToken<T>
 	 */
 	public void incorporateInto(BoundSet bounds) {
 		bounds.incorporate(getInternalResolver().getBounds(),
-				InferenceVariable.getMentionedBy(type));
+				getInferenceVariablesMentioned());
 	}
 
 	/**

@@ -20,6 +20,7 @@ package uk.co.strangeskies.utilities.collection.computingmap;
 
 import java.util.Collection;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
@@ -117,8 +118,8 @@ public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 	}
 
 	@Override
-	public V putGet(K key) {
-		V value = super.putGet(key);
+	public V putGet(K key, Consumer<V> wasPresent, Consumer<V> wasMissing) {
+		V value = super.putGet(key, wasPresent, wasMissing);
 
 		if (size() > maximumSize)
 			remove(bounds.previous.getKey());

@@ -129,17 +129,12 @@ public class Invokable<T, R> {
 			Type genericReturnType = resolver.resolveType(method,
 					method.getGenericReturnType());
 
-			System.out.println();
-			System.out.println(genericReturnType);
-
 			// TODO should this always be PRESERVE?
 			returnType = (TypeToken<R>) TypeToken.over(
 					new Resolver(resolver.getBounds()), genericReturnType,
 					InferenceVariable.isProperType(genericReturnType) ? Wildcards.PRESERVE
 							: Wildcards.INFER);
 			returnType.incorporateInto(resolver.getBounds());
-
-			System.out.println(returnType);
 		} else {
 			returnType = (TypeToken<R>) receiverType;
 		}
@@ -707,7 +702,6 @@ public class Invokable<T, R> {
 
 		Resolver resolver = getResolver();
 
-		System.out.println(returnType + " -> " + target);
 		ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, returnType.getType(),
 				target, resolver.getBounds());
 

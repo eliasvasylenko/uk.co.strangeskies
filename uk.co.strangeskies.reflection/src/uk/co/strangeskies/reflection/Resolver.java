@@ -464,8 +464,9 @@ public class Resolver implements DeepCopyable<Resolver> {
 					inferenceVariables.get(typeVariable), arguments.get(typeVariable),
 					getBounds());
 
-		return (ParameterizedType) resolveType(
+		type = (ParameterizedType) resolveType(
 				ParameterizedTypes.uncheckedFrom(rawType, inferenceVariables::get));
+		return type;
 	}
 
 	/**
@@ -577,7 +578,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 */
 	public ParameterizedType captureTypeArguments(ParameterizedType type) {
 		Class<?> rawType = Types.getRawType(type);
-		inferOverTypeParameters(rawType);
+		inferOverTypeArguments(type);
 
 		Map<TypeVariable<?>, Type> originalArguments = ParameterizedTypes
 				.getAllTypeArguments(type);
@@ -594,8 +595,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 			}
 		}
 
-		for (Map.Entry<TypeVariable<?>, Type> typeArgument : ParameterizedTypes
-				.getAllTypeArguments(type).entrySet())
+		for (Map.Entry<TypeVariable<?>, Type> typeArgument : capturedArguments
+				.entrySet())
 			ConstraintFormula.reduce(Kind.EQUALITY,
 					capturedTypeVariables.get(rawType).get(typeArgument.getKey()),
 					typeArgument.getValue(), bounds);

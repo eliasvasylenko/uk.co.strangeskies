@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class ComputingEntryHashMap<K, V> implements ComputingMap<K, V> {
@@ -105,11 +106,14 @@ public class ComputingEntryHashMap<K, V> implements ComputingMap<K, V> {
 	}
 
 	@Override
-	public V putGet(K key) {
+	public V putGet(K key, Consumer<V> wasPresent, Consumer<V> wasMissing) {
 		V value = get(key);
 
 		if (value == null) {
 			value = putGetImpl(key);
+			wasMissing.accept(value);
+		} else {
+			wasPresent.accept(value);
 		}
 
 		return value;

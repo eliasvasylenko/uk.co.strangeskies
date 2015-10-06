@@ -58,6 +58,7 @@ public class FutureMap<K, V> implements ComputingMap<K, V> {
 		mapping = values::get;
 	}
 
+	@Override
 	public boolean put(final K key) {
 		synchronized (preparationThreads) {
 			if (preparationThreads.containsKey(key))
@@ -71,6 +72,7 @@ public class FutureMap<K, V> implements ComputingMap<K, V> {
 		}
 	}
 
+	@Override
 	public V get(K key) {
 		synchronized (preparationThreads) {
 			if (!preparationThreads.containsKey(key))
@@ -86,7 +88,8 @@ public class FutureMap<K, V> implements ComputingMap<K, V> {
 		}
 	}
 
-	public V putGet(K key) {
+	@Override
+	public V putGet(K key, Consumer<V> wasPresent, Consumer<V> wasMissing) {
 		V value = get(key);
 		while (value == null) {
 			put(key);
@@ -116,6 +119,7 @@ public class FutureMap<K, V> implements ComputingMap<K, V> {
 						return last = baseIterator.next();
 					}
 
+					@Override
 					public void remove() {
 						FutureMap.this.wait(last);
 						baseIterator.remove();
@@ -155,11 +159,11 @@ public class FutureMap<K, V> implements ComputingMap<K, V> {
 			try {
 				thread.join();
 				return true;
-			} catch (InterruptedException e) {
-			}
+			} catch (InterruptedException e) {}
 		}
 	}
 
+	@Override
 	public boolean clear() {
 		synchronized (preparationThreads) {
 			if (preparationThreads.isEmpty())

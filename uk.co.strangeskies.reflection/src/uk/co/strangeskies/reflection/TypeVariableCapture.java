@@ -36,6 +36,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import uk.co.strangeskies.utilities.IdentityProperty;
 
@@ -389,8 +390,16 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 				 * substitution [α1:=Y1, ..., αn:=Yn].
 				 */
 
-				Set<Type> upperBoundSet = bounds.getBoundsOn(inferenceVariable)
-						.getUpperBounds().stream().map(new TypeSubstitution()
+				System.out.println(inferenceVariable);
+				System.out.println(bounds);
+				System.out.println("    ub attempt "
+						+ bounds.getBoundsOn(inferenceVariable).getUpperBounds());
+
+				Set<Type> upperBoundSet = Stream
+						.concat(
+								bounds.getBoundsOn(inferenceVariable).getEqualities().stream(),
+								bounds.getBoundsOn(inferenceVariable).getUpperBounds().stream())
+						.filter(inferenceVariable::equals).map(new TypeSubstitution()
 								.where(InferenceVariable.class::isInstance, i -> {
 									/*
 									 * The intent of this substitution is to replace all instances
@@ -423,30 +432,38 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 										List<Type> equalities = new ArrayList<>(bounds
 												.getBoundsOn((InferenceVariable) i).getEqualities());
 
-										i = null;
+										Type replacement = null;
 										for (Type equality : equalities) {
 											if (types.contains(equality)) {
-												i = equality;
+												replacement = equality;
 												break;
 											}
 										}
 
-										if (i == null) {
+										if (replacement == null) {
 											for (Type equality : equalities) {
 												Set<InferenceVariable> mentioned = InferenceVariable
 														.getMentionedBy(equality);
 												mentioned.removeAll(types);
 												if (mentioned.isEmpty()) {
-													i = equality;
+													replacement = equality;
 													break;
 												}
 											}
+										}
+
+										if (replacement == null) {
+											throw new TypeException("Type variable '" + i
+													+ "' cannot be captured, as has improper upper bounds in '"
+													+ bounds + "'");
 										}
 									}
 
 									return i;
 								})::resolve)
 						.collect(Collectors.toSet());
+
+				System.out.println("    ub after " + upperBoundSet);
 
 				Type glb = IntersectionType.uncheckedFrom(upperBoundSet);
 				Type[] upperBounds = (glb instanceof IntersectionType)
@@ -466,12 +483,22 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 			}
 		}
 
+		bounds.assertConsistent();
+
 		substituteBounds(typeVariableCaptures);
 
 		for (Map.Entry<InferenceVariable, TypeVariableCapture> inferenceVariable : typeVariableCaptures
-				.entrySet())
-			bounds.incorporate().equality(inferenceVariable.getKey(),
-					inferenceVariable.getValue());
+				.entrySet()) {
+			try {
+				bounds.incorporate().equality(inferenceVariable.getKey(),
+						inferenceVariable.getValue());
+			} catch (TypeException e) {
+				throw new TypeException("Cannot instantiate inference variable '"
+						+ inferenceVariable.getKey() + "' with capture '"
+						+ inferenceVariable.getValue() + "' in bound set '" + bounds + "'",
+						e);
+			}
+		}
 
 		return typeVariableCaptures;
 	}

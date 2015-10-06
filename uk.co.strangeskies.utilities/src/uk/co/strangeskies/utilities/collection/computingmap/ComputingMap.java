@@ -20,6 +20,7 @@ package uk.co.strangeskies.utilities.collection.computingmap;
 
 import java.util.Collection;
 import java.util.Set;
+import java.util.function.Consumer;
 
 /**
  * Conceptually, this map behaves much like an ordinary map other than the
@@ -88,7 +89,11 @@ public interface ComputingMap<K, V> extends ReadOnlyMap<K, V> {
 	 * @param key
 	 * @return
 	 */
-	V putGet(K key);
+	default V putGet(K key) {
+		return putGet(key, v -> {} , v -> {});
+	}
+
+	V putGet(K key, Consumer<V> wasPresent, Consumer<V> wasMissing);
 
 	@Override
 	Set<K> keySet();

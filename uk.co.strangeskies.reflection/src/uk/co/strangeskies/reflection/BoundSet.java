@@ -461,8 +461,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 				 * Add the inference variables to this bound set.
 				 */
 				for (InferenceVariable inferenceVariable : relatedInferenceVariables) {
-					inferenceVariableBounds.putIfAbsent(inferenceVariable,
-							new InferenceVariableBoundsImpl(this, inferenceVariable));
+					addInferenceVariableImpl(inferenceVariable);
 				}
 
 				/*
@@ -582,31 +581,62 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	 * 
 	 * @param inferenceVariable
 	 *          The inference variable to add to the bound set.
+	 * @return The newly added bounds, or the existing bounds
 	 */
-	public void addInferenceVariable(InferenceVariable inferenceVariable) {
-		if (!inferenceVariableBounds.containsKey(inferenceVariable))
-			inferenceVariableBounds.put(inferenceVariable,
-					new InferenceVariableBoundsImpl(this, inferenceVariable));
+	public InferenceVariableBounds addInferenceVariable(
+			InferenceVariable inferenceVariable) {
+		return addInferenceVariableImpl(inferenceVariable);
+	}
+
+	protected InferenceVariableBoundsImpl addInferenceVariableImpl(
+			InferenceVariable inferenceVariable) {
+		InferenceVariableBoundsImpl bounds;
+
+		if (!inferenceVariableBounds.containsKey(inferenceVariable)) {
+			bounds = new InferenceVariableBoundsImpl(this, inferenceVariable);
+			inferenceVariableBounds.put(inferenceVariable, bounds);
+		} else {
+			bounds = inferenceVariableBounds.get(inferenceVariable);
+		}
+
+		return bounds;
 	}
 
 	void assertConsistent() {
 		for (InferenceVariable inf : getInferenceVariables()) {
-			InferenceVariableBounds bounds2 = getBoundsOn(inf);
+			InferenceVariableBounds bounds = getBoundsOn(inf);
 
-			for (Type type : bounds2.getUpperBounds()) {
+			Function<Type, IllegalStateException> unincorporated = type -> new IllegalStateException(
+					"Unincorporated inference variable '" + type
+							+ "' mentioned in bound set '" + this + "'");
+
+			for (Type type : bounds.getUpperBounds()) {
 				if (type instanceof InferenceVariable
 						&& !containsInferenceVariable(type))
-					throw new Error("INCONSISTENT ub " + type);
+					throw unincorporated.apply(type);
 			}
-			for (Type type : bounds2.getLowerBounds()) {
+			for (Type type : bounds.getLowerBounds()) {
 				if (type instanceof InferenceVariable
 						&& !containsInferenceVariable(type))
-					throw new Error("INCONSISTENT lb " + type);
+					throw unincorporated.apply(type);
 			}
-			for (Type type : bounds2.getEqualities()) {
+			for (Type type : bounds.getEqualities()) {
 				if (type instanceof InferenceVariable
 						&& !containsInferenceVariable(type))
-					throw new Error("INCONSISTENT eq " + type);
+					throw unincorporated.apply(type);
+			}
+			if (!bounds.isInstantiated()) {
+				if (bounds.getInstantiation().isPresent()) {
+					throw new IllegalStateException(
+							"Inference variable '" + inf + "' has unexpected instantiation '"
+									+ bounds.getInstantiation().get() + "' in bound set '" + this
+									+ "'");
+				}
+			} else {
+				if (!bounds.getInstantiation().isPresent()) {
+					throw new IllegalStateException("Inference variable '" + inf
+							+ "' is expected to be instantiated in bound set '" + this + "'");
+				}
 			}
 		}
 	}
