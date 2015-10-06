@@ -219,15 +219,15 @@ public class Resolver implements DeepCopyable<Resolver> {
 				declarationCaptures.putAll(inferOverTypeParameters(
 						((Executable) declaration).getDeclaringClass()));
 
-			capture(getBounds(), declaration, declarationCaptures);
+			infer(getBounds(), declaration, declarationCaptures);
 
 			return declarationCaptures;
 		}
 		return getInferenceVariables(declaration);
 	}
 
-	private static Map<TypeVariable<?>, InferenceVariable> capture(
-			BoundSet bounds, GenericDeclaration declaration,
+	private static Map<TypeVariable<?>, InferenceVariable> infer(BoundSet bounds,
+			GenericDeclaration declaration,
 			Map<TypeVariable<?>, InferenceVariable> existingCaptures) {
 		List<TypeVariable<?>> declarationVariables;
 		if (declaration instanceof Class)
@@ -237,8 +237,11 @@ public class Resolver implements DeepCopyable<Resolver> {
 			declarationVariables = Arrays.asList(declaration.getTypeParameters());
 
 		Map<TypeVariable<?>, InferenceVariable> captures = declarationVariables
-				.stream().collect(Collectors.toMap(Function.identity(),
-						t -> new InferenceVariable(t.getName())));
+				.stream().collect(Collectors.toMap(Function.identity(), t -> {
+					if (existingCaptures.containsKey(t))
+						return existingCaptures.get(t);
+					return new InferenceVariable(t.getName());
+				}));
 		existingCaptures.putAll(captures);
 
 		for (InferenceVariable variable : captures.values())
@@ -421,20 +424,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 	public GenericArrayType inferOverTypeArguments(GenericArrayType type) {
 		Type innerComponent = Types.getInnerComponentType(type);
 		if (innerComponent instanceof ParameterizedType) {
-			Class<?> rawType = Types.getRawType(type);
-
-			Map<TypeVariable<?>, InferenceVariable> inferenceVariables = inferOverTypeParameters(
-					rawType);
-			Map<TypeVariable<?>, Type> arguments = ParameterizedTypes
-					.getAllTypeArguments((ParameterizedType) innerComponent);
-
-			for (TypeVariable<?> typeVariable : inferenceVariables.keySet())
-				ConstraintFormula.reduce(Kind.CONTAINMENT,
-						inferenceVariables.get(typeVariable), arguments.get(typeVariable),
-						getBounds());
-
-			return (GenericArrayType) ArrayTypes.fromComponentType(resolveType(
-					ParameterizedTypes.uncheckedFrom(rawType, inferenceVariables::get)),
+			return ArrayTypes.fromComponentType(
+					inferOverTypeArguments((GenericArrayType) innerComponent),
 					Types.getArrayDimensions(type));
 		} else
 			return type;
@@ -454,18 +445,33 @@ public class Resolver implements DeepCopyable<Resolver> {
 	public ParameterizedType inferOverTypeArguments(ParameterizedType type) {
 		Class<?> rawType = Types.getRawType(type);
 
-		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = inferOverTypeParameters(
-				rawType);
 		Map<TypeVariable<?>, Type> arguments = ParameterizedTypes
 				.getAllTypeArguments(type);
+		Map<TypeVariable<?>, InferenceVariable> declarationCaptures;
 
-		for (TypeVariable<?> typeVariable : inferenceVariables.keySet())
+		if (!capturedTypeVariables.containsKey(rawType)) {
+			declarationCaptures = new HashMap<>();
+			capturedTypeVariables.put(rawType, declarationCaptures);
+
+			for (TypeVariable<?> typeVariable : arguments.keySet()) {
+				Type argument = arguments.get(typeVariable);
+				if (argument instanceof InferenceVariable) {
+					declarationCaptures.put(typeVariable, (InferenceVariable) argument);
+				}
+			}
+
+			infer(getBounds(), rawType, declarationCaptures);
+		} else {
+			declarationCaptures = capturedTypeVariables.get(rawType);
+		}
+
+		for (TypeVariable<?> typeVariable : arguments.keySet())
 			ConstraintFormula.reduce(Kind.CONTAINMENT,
-					inferenceVariables.get(typeVariable), arguments.get(typeVariable),
+					declarationCaptures.get(typeVariable), arguments.get(typeVariable),
 					getBounds());
 
 		type = (ParameterizedType) resolveType(
-				ParameterizedTypes.uncheckedFrom(rawType, inferenceVariables::get));
+				ParameterizedTypes.uncheckedFrom(rawType, declarationCaptures::get));
 		return type;
 	}
 
