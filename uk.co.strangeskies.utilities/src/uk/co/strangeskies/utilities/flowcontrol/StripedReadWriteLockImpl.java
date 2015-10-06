@@ -37,7 +37,8 @@ public class StripedReadWriteLockImpl<K> implements StripedReadWriteLock<K> {
 		this(new MultiHashMap<>(HashSet::new));
 	}
 
-	public StripedReadWriteLockImpl(MultiMap<K, Thread, HashSet<Thread>> multiMap) {
+	public StripedReadWriteLockImpl(
+			MultiMap<K, Thread, HashSet<Thread>> multiMap) {
 		locks = new HashMap<>();
 		readLockingThreads = multiMap;
 	}
@@ -45,8 +46,7 @@ public class StripedReadWriteLockImpl<K> implements StripedReadWriteLock<K> {
 	@Override
 	public Set<K> readLocksHeldByCurrentThread() {
 		synchronized (locks) {
-			return locks.keySet().stream()
-					.filter(this::isReadLockHeldByCurrentThread)
+			return locks.keySet().stream().filter(this::isReadLockHeldByCurrentThread)
 					.collect(Collectors.toSet());
 		}
 	}
@@ -141,7 +141,6 @@ public class StripedReadWriteLockImpl<K> implements StripedReadWriteLock<K> {
 				for (K writekey : writeKeys) {
 					if (!tryToObtainWriteLock(writekey)) {
 						allLocksAvailable = false;
-						System.out.println("not obtained 2");
 						break;
 					}
 
@@ -152,7 +151,6 @@ public class StripedReadWriteLockImpl<K> implements StripedReadWriteLock<K> {
 					for (K readkey : readKeys) {
 						if (!tryToObtainReadLock(readkey)) {
 							allLocksAvailable = false;
-							System.out.println("not obtained 1");
 							break;
 						}
 

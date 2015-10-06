@@ -154,7 +154,7 @@ public class Invokable<T, R> {
 				resolver.getBounds().getInferenceVariables()
 						.forEach(bounds::addInferenceVariable);
 
-				Map<InferenceVariable, TypeVariableCapture> captures = TypeVariableCapture
+				Map<InferenceVariable, Type> captures = TypeVariableCapture
 						.captureInferenceVariables(bounds.getInferenceVariables(), bounds);
 
 				TypeSubstitution substitution = new TypeSubstitution(captures);
