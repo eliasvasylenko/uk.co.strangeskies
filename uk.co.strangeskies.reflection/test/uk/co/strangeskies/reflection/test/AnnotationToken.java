@@ -22,6 +22,12 @@ import java.lang.annotation.Annotation;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * A helper class to help reflect over type annotations. Instances should
+ * describe annotations present on them as a string.
+ * 
+ * @author Elias N Vasylenko
+ */
 public class AnnotationToken {
 	private String stringRepresentation;
 	private Set<Package> packages;

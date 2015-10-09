@@ -372,13 +372,22 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 				typeVariableCaptures.put(inferenceVariable,
 						typeVariableCaptures.get(existingMatch.get()));
 			} else {
+
 				TypeSubstitution properTypeSubstitutuion = properTypeSubstitution(types,
 						bounds);
 
 				Set<Type> equalitySet = bounds.getBoundsOn(inferenceVariable)
 						.getEqualities().stream()
-						.filter(t -> !(t instanceof InferenceVariable))
-						.map(properTypeSubstitutuion::resolve).collect(Collectors.toSet());
+						.filter(t -> !(t instanceof InferenceVariable)).map(t -> {
+							try {
+								return properTypeSubstitutuion.resolve(t);
+							} catch (TypeException e) {
+								throw new TypeException(
+										"Equality '" + t + "' on type '" + inferenceVariable
+												+ "' cannot be made proper in '" + bounds + "'",
+										e);
+							}
+						}).collect(Collectors.toSet());
 
 				if (!equalitySet.isEmpty()) {
 					typeVariableCaptures.put(inferenceVariable,
@@ -408,8 +417,16 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 					 */
 
 					Set<Type> upperBoundSet = bounds.getBoundsOn(inferenceVariable)
-							.getUpperBounds().stream().map(properTypeSubstitutuion::resolve)
-							.collect(Collectors.toSet());
+							.getUpperBounds().stream().map(t -> {
+								try {
+									return properTypeSubstitutuion.resolve(t);
+								} catch (TypeException e) {
+									throw new TypeException(
+											"Upper bound '" + t + "' on type '" + inferenceVariable
+													+ "' cannot be made proper in '" + bounds + "'",
+											e);
+								}
+							}).collect(Collectors.toSet());
 
 					Type glb = IntersectionType.uncheckedFrom(upperBoundSet);
 					Type[] upperBounds = (glb instanceof IntersectionType)
@@ -466,13 +483,8 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 					 * variables in the upper bound may be substituted with captures
 					 * wherever possible, such that the bound is ultimately proper.
 					 * 
-					 * TODO remember all choices here! try different ones in an attempt to
-					 * get the intersection type work...
-					 * 
 					 * TODO may need to rethink approach to cases like the recent
 					 * compiler-dev issue
-					 * 
-					 * TODO double check dependency logic in InferenceVariableBoundsImpl
 					 */
 					if (bounds.getBoundsOn((InferenceVariable) i).isInstantiated()) {
 						i = bounds.getBoundsOn((InferenceVariable) i).getInstantiation()
@@ -502,9 +514,8 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 						}
 
 						if (replacement == null) {
-							throw new TypeException("Type variable '" + i
-									+ "' cannot be captured, as has improper upper bounds in '"
-									+ bounds + "'");
+							throw new TypeException(
+									"Could not find appropriate substitution for '" + i + "'");
 						}
 					}
 

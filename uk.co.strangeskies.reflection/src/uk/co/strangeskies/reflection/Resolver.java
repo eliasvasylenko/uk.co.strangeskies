@@ -842,11 +842,23 @@ public class Resolver implements DeepCopyable<Resolver> {
 					minimalSetSize = (minimalSet = remainingOnVariable).size();
 			}
 
+			System.out.println();
+			System.out.println();
+			System.out.println("   %%%% Resolving minimal set:");
+			System.out.println(minimalSet);
+			System.out.println("   As part of independent set:");
+			System.out.println(variables);
 			resolveMinimalIndepdendentSet(minimalSet);
 
-			variables.removeAll(bounds.getInstantiatedVariables());
 			if (!variables.isEmpty()) {
 				variables.removeAll(bounds.getInstantiatedVariables());
+			}
+			System.out.println("   remaining variables: ");
+			System.out.println(variables);
+
+			for (InferenceVariable i : minimalSet) {
+				System.out.println("      ?" + hashCode() + " " + i + " = "
+						+ bounds.getBoundsOn(i).getInstantiation());
 			}
 		}
 	}
@@ -968,8 +980,9 @@ public class Resolver implements DeepCopyable<Resolver> {
 				this.bounds = bounds;
 
 				for (Map.Entry<InferenceVariable, Type> instantiation : instantiationCandidates
-						.entrySet())
+						.entrySet()) {
 					instantiate(instantiation.getKey(), instantiation.getValue());
+				}
 
 				return;
 			}

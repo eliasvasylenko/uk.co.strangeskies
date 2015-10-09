@@ -131,6 +131,14 @@ public class InferenceVariable implements Type {
 			return type;
 	}
 
+	/**
+	 * Find all inference variables mentioned by a type, whether in any bounds,
+	 * parameters, array types, etc. recursively.
+	 * 
+	 * @param type
+	 *          The type in which to find inference variable mentions.
+	 * @return The inference variables mentioned by the given type.
+	 */
 	public static Set<InferenceVariable> getMentionedBy(Type type) {
 		Set<InferenceVariable> inferenceVariables = new HashSet<>();
 
@@ -144,7 +152,6 @@ public class InferenceVariable implements Type {
 			@Override
 			protected void visitGenericArrayType(GenericArrayType type) {
 				visit(type.getGenericComponentType());
-
 			}
 
 			@Override

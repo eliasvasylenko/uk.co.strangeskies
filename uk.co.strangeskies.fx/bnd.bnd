@@ -1,0 +1,28 @@
+Export-Package: \
+	uk.co.strangeskies.utilities,\
+	uk.co.strangeskies.utilities.collection,\
+	uk.co.strangeskies.utilities.collection.computingmap,\
+	uk.co.strangeskies.utilities.collection.decorator,\
+	uk.co.strangeskies.utilities.collection.multimap,\
+	uk.co.strangeskies.utilities.factory,\
+	uk.co.strangeskies.utilities.flowcontrol,\
+	uk.co.strangeskies.utilities.function,\
+	uk.co.strangeskies.utilities.function.collection,\
+	uk.co.strangeskies.fx,\
+	uk.co.strangeskies.utilities.tuple,\
+	uk.co.strangeskies.utilities.text.parser,\
+	uk.co.strangeskies.utilities.text
+Bundle-Name: Strange Skies Utilities
+-dsannotations:  \
+	*
+-runee: JavaSE-1.8
+-runfw: org.eclipse.osgi;version='[3.10.1.v20140909-1633,3.10.1.v20140909-1633]'
+-buildpath: \
+	osgi.enroute.base.api;version=latest,\
+	osgi.enroute.junit.wrapper,\
+	osgi.enroute.hamcrest.wrapper,\
+	org.hamcrest__java-hamcrest
+#,\
+#	org.checkerframework__checker-qual,\
+#	org.checkerframework__jdk8
+Bundle-Version: 0.0.1.${tstamp}

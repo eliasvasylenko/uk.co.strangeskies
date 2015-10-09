@@ -116,16 +116,28 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		 *          The second of two types whose equality we wish to assert.
 		 */
 		public void equality(Type first, Type second) {
-			if (!first.equals(second))
+			if (!first.equals(second)) {
 				try {
-					if (inferenceVariableBounds.containsKey(first))
+					if (first instanceof InferenceVariable) {
 						inferenceVariableBounds.get(first).addEquality(second);
-					else if (inferenceVariableBounds.containsKey(second))
+
+						if (InferenceVariable.isProperType(second)
+								&& !inferenceVariableBounds.get(first).getInstantiation()
+										.isPresent())
+							throw new Error(":( " + first + " != " + second);
+					} else if (second instanceof InferenceVariable) {
 						inferenceVariableBounds.get(second).addEquality(first);
+
+						if (InferenceVariable.isProperType(first)
+								&& !inferenceVariableBounds.get(second).getInstantiation()
+										.isPresent())
+							throw new Error(":(" + first + " != " + second);
+					}
 				} catch (Exception e) {
 					throw new TypeException("Cannot add equality bound between '" + first
 							+ "' and '" + second + "' to bound set '" + BoundSet.this, e);
 				}
+			}
 		}
 
 		/**
@@ -142,10 +154,10 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		public void subtype(Type subtype, Type supertype) {
 			if (!subtype.equals(supertype))
 				try {
-					if (inferenceVariableBounds.containsKey(subtype))
+					if (subtype instanceof InferenceVariable)
 						inferenceVariableBounds.get(subtype).addUpperBound(supertype);
 
-					if (inferenceVariableBounds.containsKey(supertype))
+					if (supertype instanceof InferenceVariable)
 						inferenceVariableBounds.get(supertype).addLowerBound(subtype);
 				} catch (Exception e) {
 					throw new TypeException("Cannot add subtype bound between '" + subtype
@@ -461,7 +473,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 				 * Add the inference variables to this bound set.
 				 */
 				for (InferenceVariable inferenceVariable : relatedInferenceVariables) {
-					addInferenceVariableImpl(inferenceVariable);
+					addInferenceVariable(inferenceVariable);
 				}
 
 				/*
