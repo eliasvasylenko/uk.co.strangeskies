@@ -1391,8 +1391,11 @@ public class TypeToken<T>
 	 */
 	@SuppressWarnings("unchecked")
 	public <U> TypeToken<U> resolveTypeArgument(TypeParameter<U> typeParameter) {
-		return (TypeToken<U>) resolveType(getInternalResolver()
-				.resolveTypeVariable(getRawType(), typeParameter.getType()));
+		Type typeArgument = resolveTypeArgument(typeParameter.getType());
+
+		return (TypeToken<U>) over(getResolver(), typeArgument,
+				InferenceVariable.isProperType(typeArgument) ? Wildcards.PRESERVE
+						: Wildcards.INFER).resolve();
 	}
 
 	/**
