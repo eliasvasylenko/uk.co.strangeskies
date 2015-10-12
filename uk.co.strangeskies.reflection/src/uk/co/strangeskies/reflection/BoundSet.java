@@ -231,9 +231,9 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		BoundSet copy = new BoundSet();
 
 		copy.captureConversions.addAll(captureConversions);
-		copy.inferenceVariableBounds.putAll(inferenceVariableBounds.keySet()
-				.stream().collect(Collectors.toMap(Function.identity(),
-						i -> inferenceVariableBounds.get(i).copyInto(copy))));
+		for (InferenceVariable inferenceVariable : inferenceVariableBounds.keySet())
+			copy.addInferenceVariableBounds(inferenceVariable,
+					inferenceVariableBounds.get(inferenceVariable).copyInto(copy));
 
 		return copy;
 	}
@@ -312,7 +312,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		captureConversions.stream().forEach(copy.captureConversions::add);
 		for (InferenceVariable inferenceVariable : inferenceVariableBounds
 				.keySet()) {
-			copy.inferenceVariableBounds.put(
+			copy.addInferenceVariableBounds(
 					inferenceVariableSubstitutions.get(inferenceVariable),
 					inferenceVariableBounds.get(inferenceVariable).copyInto(copy)
 							.withInferenceVariableSubstitution(
@@ -401,7 +401,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	 */
 	public Set<InferenceVariable> getInstantiatedVariables() {
 		return inferenceVariableBounds.keySet().stream()
-				.filter(i -> getBoundsOn(i).isInstantiated())
+				.filter(i -> getBoundsOn(i).getInstantiation().isPresent())
 				.collect(Collectors.toSet());
 	}
 
@@ -453,7 +453,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 							.getBoundsOn(inferenceVariable).getRelated()) {
 						if (inferenceVariableBounds.containsKey(relatedInferenceVariable)
 								|| !boundSet.getBoundsOn(relatedInferenceVariable)
-										.isInstantiated()) {
+										.getInstantiation().isPresent()) {
 							relatedInferenceVariables.add(relatedInferenceVariable);
 						}
 					}
@@ -466,7 +466,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 					InferenceVariableBoundsImpl filtered = boundSet
 							.getBoundsOnImpl(inferenceVariable).copyIntoFiltered(this,
 									i -> !relatedInferenceVariables.contains(i));
-					inferenceVariableBounds.put(inferenceVariable, filtered);
+					addInferenceVariableBounds(inferenceVariable, filtered);
 				}
 			} else {
 				/*
@@ -532,7 +532,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 			if (bounds == null) {
 				bounds = new InferenceVariableBoundsImpl(BoundSet.this,
 						inferenceVariable);
-				inferenceVariableBounds.put(inferenceVariable, bounds);
+				addInferenceVariableBounds(inferenceVariable, bounds);
 			}
 
 			/*
@@ -606,9 +606,24 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 
 		if (!inferenceVariableBounds.containsKey(inferenceVariable)) {
 			bounds = new InferenceVariableBoundsImpl(this, inferenceVariable);
-			inferenceVariableBounds.put(inferenceVariable, bounds);
+			addInferenceVariableBounds(inferenceVariable, bounds);
 		} else {
 			bounds = inferenceVariableBounds.get(inferenceVariable);
+		}
+
+		return bounds;
+	}
+
+	protected InferenceVariableBoundsImpl addInferenceVariableBounds(
+			InferenceVariable inferenceVariable, InferenceVariableBoundsImpl bounds) {
+		if (bounds.getBoundSet() != this) {
+			throw new TypeException(
+					"Cannot add bounds '" + bounds + "' to bound set '" + this + "'");
+		} else if (inferenceVariableBounds.containsKey(inferenceVariable)) {
+			throw new TypeException("Cannot override existing bounds for '"
+					+ inferenceVariable + "' in '" + bounds + "'");
+		} else {
+			inferenceVariableBounds.put(inferenceVariable, bounds);
 		}
 
 		return bounds;
@@ -637,7 +652,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 						&& !containsInferenceVariable(type))
 					throw unincorporated.apply(type);
 			}
-			if (!bounds.isInstantiated()) {
+			if (!bounds.getInstantiation().isPresent()) {
 				if (bounds.getInstantiation().isPresent()) {
 					throw new IllegalStateException(
 							"Inference variable '" + inf + "' has unexpected instantiation '"
