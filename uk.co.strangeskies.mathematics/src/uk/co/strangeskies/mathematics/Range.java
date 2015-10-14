@@ -18,6 +18,7 @@
  */
 package uk.co.strangeskies.mathematics;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Objects;
 
@@ -43,13 +44,28 @@ public class Range<T> implements Self<Range<T>> {
 		this.comparator = comparator;
 	}
 
-	public static <T> Range<T> create(T from, T to,
+	public static <T> Range<T> between(T from, T to,
 			Comparator<? super T> comparator) {
 		return new Range<T>(from, to, comparator);
 	}
 
-	public static <T extends Comparable<? super T>> Range<T> create(T from, T to) {
-		return new Range<T>(from, to, Comparable::compareTo);
+	public static <T extends Comparable<? super T>> Range<T> between(T from,
+			T to) {
+		return between(from, to, Comparable::compareTo);
+	}
+
+	public static <T> Range<T> over(Collection<? extends T> over,
+			Comparator<? super T> comparator) {
+		if (over.isEmpty())
+			throw new IllegalArgumentException("No elements given to range over");
+
+		return new Range<T>(over.stream().min(comparator).get(),
+				over.stream().max(comparator).get(), comparator);
+	}
+
+	public static <T extends Comparable<? super T>> Range<T> over(
+			Collection<? extends T> over) {
+		return over(over, Comparable::compareTo);
 	}
 
 	public static Range<Integer> parse(String range) {
@@ -57,11 +73,11 @@ public class Range<T> implements Self<Range<T>> {
 		if (splitRange.length != 2)
 			throw new IllegalArgumentException();
 		try {
-			Integer from = splitRange[0].equals("") ? null : Integer
-					.parseInt(splitRange[0]);
-			Integer to = splitRange[1].equals("") ? null : Integer
-					.parseInt(splitRange[1]);
-			return create(from, to);
+			Integer from = splitRange[0].equals("") ? null
+					: Integer.parseInt(splitRange[0]);
+			Integer to = splitRange[1].equals("") ? null
+					: Integer.parseInt(splitRange[1]);
+			return between(from, to);
 		} catch (Exception e) {
 			throw new IllegalArgumentException(e);
 		}
@@ -69,11 +85,12 @@ public class Range<T> implements Self<Range<T>> {
 
 	public static String compose(Range<Integer> range) {
 		String from = range.getFrom() == null ? ""
-				: (range.isFromInclusive() ? range.getFrom().toString() : Integer
-						.toString(range.getFrom() + 1));
+				: (range.isFromInclusive() ? range.getFrom().toString()
+						: Integer.toString(range.getFrom() + 1));
 
-		String to = range.getTo() == null ? "" : (range.isToInclusive() ? range
-				.getTo().toString() : Integer.toString(range.getTo() - 1));
+		String to = range.getTo() == null ? ""
+				: (range.isToInclusive() ? range.getTo().toString()
+						: Integer.toString(range.getTo() - 1));
 
 		return from + ".." + to;
 	}
@@ -334,6 +351,45 @@ public class Range<T> implements Self<Range<T>> {
 		}
 
 		return getThis();
+	}
+
+	public Range<T> getIntersectedWith(Range<? extends T> other) {
+		try {
+			return copy().intersectWith(other);
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	public Range<T> intersectWith(Range<? extends T> other) {
+		T newFrom = getFrom();
+		boolean newFromInclusive = isFromInclusive();
+
+		int compareFrom = comparator.compare(other.getFrom(), getFrom());
+		if (compareFrom == 0) {
+			setFromInclusive(isFromInclusive() && other.isFromInclusive());
+		} else if (compareFrom > 0) {
+			newFrom = other.getFrom();
+			newFromInclusive = other.isFromInclusive();
+		}
+
+		T newTo = getTo();
+		boolean newToInclusive = isToInclusive();
+
+		int compareTo = comparator.compare(other.getTo(), getTo());
+		if (compareTo == 0) {
+			setToInclusive(isToInclusive() || other.isToInclusive());
+		} else if (compareTo > 0) {
+			newTo = other.getTo();
+			newToInclusive = other.isToInclusive();
+		}
+
+		if (comparator.compare(newFrom, newTo) > 0)
+			throw new IllegalArgumentException(
+					"Ranges '" + this + "' and '" + other + "' do not intersect");
+
+		return getThis().setFrom(newFrom).setTo(newTo)
+				.setFromInclusive(newFromInclusive).setToInclusive(newToInclusive);
 	}
 
 	@Override

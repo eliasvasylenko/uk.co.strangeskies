@@ -44,7 +44,7 @@ public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>>
 
 		ranges = new ArrayList<Range<V>>();
 		for (int i = 0; i < dimensions; i++) {
-			ranges.add(Range.create(valueFactory.create(), valueFactory.create()));
+			ranges.add(Range.between(valueFactory.create(), valueFactory.create()));
 		}
 	}
 
@@ -54,8 +54,8 @@ public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>>
 
 	public Bounds(Vector<?, V> from, Vector<?, V> to, int dimensions) {
 		try {
-			DimensionalityException
-					.checkEquivalence(from.getDimensions(), dimensions);
+			DimensionalityException.checkEquivalence(from.getDimensions(),
+					dimensions);
 			DimensionalityException.checkEquivalence(to.getDimensions(), dimensions);
 		} catch (DimensionalityException e) {
 			throw new IllegalArgumentException(e);
@@ -65,7 +65,7 @@ public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>>
 		Iterator<? extends V> fromIterator = from.getData().iterator();
 		Iterator<? extends V> toIterator = to.getData().iterator();
 		while (fromIterator.hasNext()) {
-			ranges.add(Range.create(fromIterator.next(), toIterator.next()));
+			ranges.add(Range.between(fromIterator.next(), toIterator.next()));
 		}
 	}
 
@@ -96,7 +96,7 @@ public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>>
 		Iterator<? extends Vector<?, V>> pointIterator = points.iterator();
 		Vector<?, V> firstPoint = pointIterator.next();
 		for (V value : firstPoint.getData()) {
-			ranges.add(Range.create(value, value));
+			ranges.add(Range.between(value, value));
 		}
 		while (pointIterator.hasNext()) {
 			Iterator<Range<V>> rangeIterator = ranges.iterator();
@@ -115,8 +115,8 @@ public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>>
 
 	public Bounds(Bounds<?, V> other, int dimensions) {
 		try {
-			DimensionalityException
-					.checkEquivalence(other.getDimension(), dimensions);
+			DimensionalityException.checkEquivalence(other.getDimension(),
+					dimensions);
 		} catch (DimensionalityException e) {
 			throw new IllegalArgumentException(e);
 		}
