@@ -379,7 +379,7 @@ public class Range<T> implements Self<Range<T>> {
 		int compareTo = comparator.compare(other.getTo(), getTo());
 		if (compareTo == 0) {
 			setToInclusive(isToInclusive() || other.isToInclusive());
-		} else if (compareTo > 0) {
+		} else if (compareTo < 0) {
 			newTo = other.getTo();
 			newToInclusive = other.isToInclusive();
 		}
