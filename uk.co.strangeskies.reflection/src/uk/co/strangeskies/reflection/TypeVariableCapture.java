@@ -486,7 +486,8 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 					 * TODO may need to rethink approach to cases like the recent
 					 * compiler-dev issue
 					 */
-					if (bounds.getBoundsOn((InferenceVariable) i).isInstantiated()) {
+					if (bounds.getBoundsOn((InferenceVariable) i).getInstantiation()
+							.isPresent()) {
 						i = bounds.getBoundsOn((InferenceVariable) i).getInstantiation()
 								.get();
 					} else if (!types.contains(i)) {

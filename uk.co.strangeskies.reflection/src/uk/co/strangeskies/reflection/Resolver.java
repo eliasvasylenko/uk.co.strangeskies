@@ -755,7 +755,8 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 */
 	public Type infer(InferenceVariable inferenceVariable) {
 		if (getBounds().containsInferenceVariable(inferenceVariable)) {
-			if (!getBounds().getBoundsOn(inferenceVariable).isInstantiated()) {
+			if (!getBounds().getBoundsOn(inferenceVariable).getInstantiation()
+					.isPresent()) {
 				Set<InferenceVariable> set = new HashSet<>(1);
 				set.add(inferenceVariable);
 				infer(set);
@@ -793,27 +794,27 @@ public class Resolver implements DeepCopyable<Resolver> {
 				.map(InferenceVariable.class::cast).collect(Collectors.toSet());
 
 		Map<InferenceVariable, Type> instantiations = new HashMap<>();
+		/*
+		 * Given a set of inference variables to resolve, let V be the union of this
+		 * set and all variables upon which the resolution of at least one variable
+		 * in this set depends.
+		 */
+		Set<InferenceVariable> independentSet = variables.stream()
+				.filter(v -> !bounds.getBoundsOn(v).getInstantiation().isPresent())
+				.map(v -> bounds.getBoundsOn(v).getRemainingDependencies())
+				.flatMap(Set::stream).collect(Collectors.toSet());
 
-		Set<InferenceVariable> remainingVariables = new HashSet<>(variables);
-		do {
-			/*
-			 * Given a set of inference variables to resolve, let V be the union of
-			 * this set and all variables upon which the resolution of at least one
-			 * variable in this set depends.
-			 */
-			resolveIndependentSet(variables.stream()
-					.filter(v -> !bounds.getBoundsOn(v).isInstantiated())
-					.map(v -> bounds.getBoundsOn(v).getRemainingDependencies())
-					.flatMap(Set::stream).collect(Collectors.toSet()));
+		resolveIndependentSet(independentSet);
 
-			for (InferenceVariable variable : new HashSet<>(remainingVariables)) {
-				InferenceVariableBounds variableBounds = bounds.getBoundsOn(variable);
-				if (variableBounds.isInstantiated()) {
-					instantiations.put(variable, variableBounds.getInstantiation().get());
-					remainingVariables.remove(variable);
-				}
+		for (InferenceVariable variable : variables) {
+			InferenceVariableBounds variableBounds = bounds.getBoundsOn(variable);
+			if (variableBounds.getInstantiation().isPresent()) {
+				instantiations.put(variable, variableBounds.getInstantiation().get());
+			} else {
+				throw new TypeException(
+						"Inference variable '" + variable + "' has failed to instantiate");
 			}
-		} while (!remainingVariables.isEmpty());
+		}
 
 		return instantiations;
 	}
@@ -834,31 +835,19 @@ public class Resolver implements DeepCopyable<Resolver> {
 			 * in the bound set:
 			 */
 			Set<InferenceVariable> minimalSet = new HashSet<>(variables);
-			int minimalSetSize = variables.size();
 			for (InferenceVariable variable : variables) {
 				Set<InferenceVariable> remainingOnVariable = bounds
 						.getBoundsOn(variable).getRemainingDependencies();
-				if (remainingOnVariable.size() < minimalSetSize)
-					minimalSetSize = (minimalSet = remainingOnVariable).size();
+
+				if (remainingOnVariable.size() < minimalSet.size()) {
+					minimalSet = remainingOnVariable;
+				}
 			}
 
-			System.out.println();
-			System.out.println();
-			System.out.println("   %%%% Resolving minimal set:");
-			System.out.println(minimalSet);
-			System.out.println("   As part of independent set:");
-			System.out.println(variables);
 			resolveMinimalIndepdendentSet(minimalSet);
 
 			if (!variables.isEmpty()) {
 				variables.removeAll(bounds.getInstantiatedVariables());
-			}
-			System.out.println("   remaining variables: ");
-			System.out.println(variables);
-
-			for (InferenceVariable i : minimalSet) {
-				System.out.println("      ?" + hashCode() + " " + i + " = "
-						+ bounds.getBoundsOn(i).getInstantiation());
 			}
 		}
 	}

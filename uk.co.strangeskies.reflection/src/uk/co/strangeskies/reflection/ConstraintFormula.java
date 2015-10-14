@@ -150,10 +150,10 @@ public class ConstraintFormula {
 		Type from = this.from;
 
 		if (from instanceof ParameterizedType)
-			if (InferenceVariable.isProperType(from))
+			if (InferenceVariable.isProperType(from)) {
 				from = TypeVariableCapture
 						.captureWildcardArguments((ParameterizedType) from);
-			else {
+			} else {
 				from = InferenceVariable.captureConversion((ParameterizedType) from,
 						bounds);
 			}
