@@ -129,6 +129,14 @@ public class Range<T> implements Self<Range<T>> {
 		return toInclusive;
 	}
 
+	public boolean isFromUnbounded() {
+		return from == null;
+	}
+
+	public boolean isToUnbounded() {
+		return to == null;
+	}
+
 	public Range<T> setFromInclusive(boolean fromInclusive) {
 		this.fromInclusive = fromInclusive;
 
