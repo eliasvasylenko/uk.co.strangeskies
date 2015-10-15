@@ -198,7 +198,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		else
 			capture = captureConversion;
 
-		remainingDependencies = null;
+		invalidateDependencies();
 
 		Set<InferenceVariable> mentions = captureConversion
 				.getInferenceVariablesMentioned();
@@ -229,7 +229,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	}
 
 	private void addMentions(Collection<InferenceVariable> mentions) {
-		remainingDependencies = null;
+		invalidateDependencies();
 
 		for (InferenceVariable mention : mentions)
 			this.relations.addAll(boundSet.getBoundsOnImpl(mention).relations);
@@ -275,6 +275,14 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	@Override
 	public Optional<Type> getInstantiation() {
 		return Optional.ofNullable(instantiation);
+	}
+
+	private void invalidateDependencies() {
+		boundSet.getInferenceVariables().stream().map(boundSet::getBoundsOnImpl)
+				.filter(b -> b.remainingDependencies != null
+						&& b.remainingDependencies.contains(inferenceVariable))
+				.forEach(b -> b.remainingDependencies = null);
+		remainingDependencies = null;
 	}
 
 	@Override

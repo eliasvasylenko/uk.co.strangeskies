@@ -353,7 +353,7 @@ public class Range<T> implements Self<Range<T>> {
 		return getThis();
 	}
 
-	public Range<T> getIntersectedWith(Range<? extends T> other) {
+	public Range<T> getIntersectionWith(Range<? extends T> other) {
 		try {
 			return copy().intersectWith(other);
 		} catch (Exception e) {
