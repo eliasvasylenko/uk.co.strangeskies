@@ -36,17 +36,30 @@ public class Imports {
 	private final Map<String, Class<?>> namedClasses = new HashMap<>();
 	private final Set<Package> packages = new HashSet<>();
 
-	private Imports() {}
+	private final ClassLoader classLoader;
+
+	private Imports() {
+		classLoader = null;
+	}
 
 	private Imports(Imports imports) {
+		this();
+
 		namedClasses.putAll(imports.namedClasses);
 		packages.addAll(imports.packages);
 	}
 
 	private Imports(Collection<? extends Class<?>> classes,
 			Collection<? extends Package> packages) {
+		this(classes, packages, null);
+	}
+
+	private Imports(Collection<? extends Class<?>> classes,
+			Collection<? extends Package> packages, ClassLoader classLoader) {
 		importClasses(classes);
 		importPackages(packages);
+
+		this.classLoader = classLoader;
 	}
 
 	/**
@@ -116,19 +129,55 @@ public class Imports {
 	 *         imports.
 	 */
 	public Class<?> getNamedClass(String name) {
+		if (classLoader != null) {
+			try {
+				return getNamedClass(name, classLoader);
+			} catch (IllegalArgumentException e) {}
+		}
+
+		try {
+			return getNamedClass(name, null);
+		} catch (IllegalArgumentException e) {}
+
+		return getNamedClass(name, Thread.currentThread().getContextClassLoader());
+	}
+
+	/**
+	 * Resolve the class object of the given name, allowing full package
+	 * qualification to be omitted for included classes.
+	 * 
+	 * @param name
+	 *          The name for which we wish to find the class object.
+	 * @param classLoader
+	 *          The class loader with which to attempt to load the class of the
+	 *          given name. If null, the class loader of the calling class will be
+	 *          used.
+	 * @return A class object satisfying the given name according to this set of
+	 *         imports.
+	 */
+	public Class<?> getNamedClass(String name, ClassLoader classLoader) {
 		Class<?> namedClass = namedClasses.get(name);
 
 		if (namedClass == null) {
 			try {
-				namedClass = Class.forName(name);
+				if (classLoader == null) {
+					namedClass = Class.forName(name);
+				} else {
+					namedClass = Class.forName(name, true, classLoader);
+				}
 			} catch (ClassNotFoundException e) {
 				int lastDot;
-				while ((lastDot = name.lastIndexOf('.')) >= 0) {
-					name = new StringBuilder(name).replace(lastDot, lastDot + 1, "$")
-							.toString();
+				String transformedName = name;
+				while ((lastDot = transformedName.lastIndexOf('.')) >= 0) {
+					transformedName = new StringBuilder(transformedName)
+							.replace(lastDot, lastDot + 1, "$").toString();
 
 					try {
-						namedClass = Class.forName(name);
+						if (classLoader == null) {
+							namedClass = Class.forName(transformedName);
+						} else {
+							namedClass = Class.forName(transformedName, true, classLoader);
+						}
 
 						return namedClass;
 					} catch (ClassNotFoundException f) {}
