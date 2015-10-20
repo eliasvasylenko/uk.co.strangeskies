@@ -16,12 +16,12 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with uk.co.strangeskies.utilities.osgi.  If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.utilities.osgi.impl;
+package uk.co.strangeskies.utilities.osgi.servicewrapper.impl;
 
 import java.util.Map;
 
-import uk.co.strangeskies.utilities.osgi.ServiceWrapper;
-import uk.co.strangeskies.utilities.osgi.ServiceWrapper.HideServices;
+import uk.co.strangeskies.utilities.osgi.servicewrapper.ServiceWrapper;
+import uk.co.strangeskies.utilities.osgi.servicewrapper.ServiceWrapper.HideServices;
 
 class ManagedServiceWrapper<T> {
 	private final ServiceWrapper<T> serviceWrapper;

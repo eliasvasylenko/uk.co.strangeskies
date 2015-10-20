@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with uk.co.strangeskies.utilities.osgi.  If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.utilities.osgi.impl;
+package uk.co.strangeskies.utilities.osgi.servicewrapper.impl;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -30,7 +30,7 @@ import java.util.Set;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 
-import uk.co.strangeskies.utilities.osgi.ServiceWrapper.HideServices;
+import uk.co.strangeskies.utilities.osgi.servicewrapper.ServiceWrapper.HideServices;
 
 class WrappingServiceTreeNode {
 	private final Object service;

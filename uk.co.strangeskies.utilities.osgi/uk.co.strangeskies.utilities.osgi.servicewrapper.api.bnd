@@ -1,0 +1,2 @@
+Export-Package: uk.co.strangeskies.utilities.osgi.servicewrapper
+Bundle-Name: Strange Skies :: Service Wrapper :: API

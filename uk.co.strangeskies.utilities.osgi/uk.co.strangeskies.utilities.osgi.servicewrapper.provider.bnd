@@ -1,0 +1,2 @@
+Private-Package: uk.co.strangeskies.utilities.osgi.servicewrapper.impl
+Bundle-Name: Strange Skies :: Service Wrapper :: Provider

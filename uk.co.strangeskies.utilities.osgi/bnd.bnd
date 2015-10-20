@@ -1,12 +1,8 @@
 -dsannotations:  \
 	*
-Private-Package:  \
-	uk.co.strangeskies.utilities.osgi.impl
-Export-Package:  \
-	uk.co.strangeskies.utilities.osgi
-Bundle-Name: Strange Skies OSGi Utilities
 -runee: JavaSE-1.8
 -buildpath: \
 	osgi.enroute.base.api;version=latest,\
 	uk.co.strangeskies.utilities;version=latest
 Bundle-Version: 0.0.1.${tstamp}
+-sub: *.bnd
