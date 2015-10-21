@@ -38,7 +38,6 @@ import java.util.TreeSet;
 import java.util.stream.Stream;
 
 import org.junit.Assert;
-import org.junit.Test;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.AnnotatedWildcardTypes;
@@ -264,7 +263,7 @@ public class TypeTokenTest {
 	 * @param <H>
 	 *          Parameter for reflection testing
 	 */
-	@Test
+	//@Test
 	public <H extends C2<H>> void huge2Test() {
 		System.out.println(
 				"<T extends Number, U extends List<? super T>> U method4(Collection<? extends T> a, U b)");
