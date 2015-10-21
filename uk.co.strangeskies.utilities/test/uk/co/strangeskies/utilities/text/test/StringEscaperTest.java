@@ -31,6 +31,7 @@ import uk.co.strangeskies.utilities.Enumeration;
  * @author Elias N Vasylenko
  *
  */
+@SuppressWarnings("javadoc")
 public class StringEscaperTest {
 	@DataPoint
 	public static String SENTENCE = "The small brown dog.";

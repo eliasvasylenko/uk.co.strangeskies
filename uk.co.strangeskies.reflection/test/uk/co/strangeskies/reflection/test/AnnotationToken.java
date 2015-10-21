@@ -28,6 +28,7 @@ import java.util.Set;
  * 
  * @author Elias N Vasylenko
  */
+@SuppressWarnings("javadoc")
 public class AnnotationToken {
 	private String stringRepresentation;
 	private Set<Package> packages;

@@ -23,6 +23,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+@SuppressWarnings("javadoc")
 @Retention(value = RetentionPolicy.RUNTIME)
 @Target(value = ElementType.TYPE_USE)
 public @interface Plain {}

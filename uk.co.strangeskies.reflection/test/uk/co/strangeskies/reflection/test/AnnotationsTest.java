@@ -34,11 +34,7 @@ import uk.co.strangeskies.reflection.test.annotations.ClassProperty;
 import uk.co.strangeskies.reflection.test.annotations.Plain;
 import uk.co.strangeskies.reflection.test.annotations.StringProperty;
 
-/**
- * Tests for {@link Annotations} class.
- * 
- * @author Elias N Vasylenko
- */
+@SuppressWarnings("javadoc")
 @RunWith(Theories.class)
 public class AnnotationsTest {
 	@DataPoint
@@ -69,7 +65,8 @@ public class AnnotationsTest {
 
 	@DataPoint
 	public static AnnotationToken STRING_PROPERTY_SYMBOLS1 = new @StringProperty(property = "\n") AnnotationToken(
-			"@StringProperty(property = \"\\n\")", StringProperty.class, Object.class) {};
+			"@StringProperty(property = \"\\n\")", StringProperty.class,
+			Object.class) {};
 
 	@DataPoint
 	public static AnnotationToken STRING_PROPERTY_SYMBOLS2 = new @StringProperty(property = "\"<>()[]{}\"") AnnotationToken(
@@ -78,8 +75,8 @@ public class AnnotationsTest {
 
 	@Theory
 	public void toStringWithoutPackageImport(AnnotationToken token) {
-		Assume.assumeTrue("Assuming no package imports", token.getPackages()
-				.isEmpty());
+		Assume.assumeTrue("Assuming no package imports",
+				token.getPackages().isEmpty());
 		Annotation annotation = assumeSingleAnnotation(token);
 
 		Assert.assertEquals(token.getStringRepresentation(),
@@ -88,14 +85,12 @@ public class AnnotationsTest {
 
 	@Theory
 	public void toStringWithPackageImport(AnnotationToken token) {
-		Assume.assumeFalse("Assuming package imports", token.getPackages()
-				.isEmpty());
+		Assume.assumeFalse("Assuming package imports",
+				token.getPackages().isEmpty());
 		Annotation annotation = assumeSingleAnnotation(token);
 
-		Assert.assertEquals(
-				token.getStringRepresentation(),
-				Annotations.toString(annotation,
-						Imports.empty().withPackageImports(token.getPackages())));
+		Assert.assertEquals(token.getStringRepresentation(), Annotations.toString(
+				annotation, Imports.empty().withPackageImports(token.getPackages())));
 	}
 
 	private Annotation assumeSingleAnnotation(AnnotationToken token) {
