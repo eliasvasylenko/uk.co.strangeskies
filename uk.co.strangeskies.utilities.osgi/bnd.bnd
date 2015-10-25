@@ -1,9 +1,3 @@
-Bundle-Name: Strange Skies :: Utilities :: OSGi
-Bundle-Description: \
-	A collection of Java OSGi utilities - currently limited to a \
-	service API, and reference implementation, for a generic \
-	service interceptor and wrapper/decorator.
-
 -runee: JavaSE-1.8
 
 -buildpath: \

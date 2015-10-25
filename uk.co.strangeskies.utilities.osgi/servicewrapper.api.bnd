@@ -1,2 +1,5 @@
 Export-Package: uk.co.strangeskies.utilities.osgi.servicewrapper
-Bundle-Name: Strange Skies :: Service Wrapper :: API
+Bundle-Name: Strange Skies :: OSGi Utilities :: Service Wrapper :: API
+Bundle-Description: \
+	The API specification for a generic service interceptor \
+	and wrapper/decorator.
