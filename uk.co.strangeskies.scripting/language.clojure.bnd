@@ -1,6 +1,5 @@
-Bundle-Name: Strange Skies Scripting - Clojure
+language: Clojure
 Private-Package:  \
 	clojure.**
 Include-Resource:\
 	@${exporters;clojure.contrib.jsr223}.jar!/META-INF/services/*
-Bundle-Version: ${scripting-version}

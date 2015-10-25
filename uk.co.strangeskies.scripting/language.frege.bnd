@@ -1,6 +1,5 @@
-Bundle-Name: Strange Skies Scripting - Frege
+language: Frege
 #Private-Package:\
 #	frege.**
 #Include-Resource:\
 #	META-INF/services/javax.script.ScriptEngineFactory=res/frege/javax.script.ScriptEngineFactory
-Bundle-Version: ${scripting-version}

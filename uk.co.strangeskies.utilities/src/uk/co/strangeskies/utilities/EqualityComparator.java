@@ -30,7 +30,7 @@ import java.util.Objects;
 import java.util.function.BiPredicate;
 
 /**
- * Derives an arbitrary total ordering over a type of object from an equality
+ * Provides an arbitrary total ordering over a type of object from an equality
  * relation. Guaranteed to be a consistent ordering for a particular
  * IdentityComparator, but not necessarily between different instances of
  * IdentityComparator.
@@ -49,6 +49,10 @@ public class EqualityComparator<T> implements Comparator<T> {
 
 	/**
 	 * Create a fresh identity comparator.
+	 * 
+	 * @param equality
+	 *          The equality predicate with respect to which we wish to create a
+	 *          consistent ordering.
 	 */
 	public EqualityComparator(BiPredicate<? super T, ? super T> equality) {
 		this.equality = equality;
@@ -58,16 +62,31 @@ public class EqualityComparator<T> implements Comparator<T> {
 		referenceQueue = new ReferenceQueue<>();
 	}
 
+	/**
+	 * Create a new {@link EqualityComparator} over the identity operation.
+	 * 
+	 * @param <T>
+	 *          The type of the items to compare
+	 * @return The new equality comparator instance.
+	 */
 	public static <T> EqualityComparator<T> identityComparator() {
 		return new EqualityComparator<>((a, b) -> a == b);
 	}
 
+	/**
+	 * Create a new {@link EqualityComparator} over the {@link Object#equals}
+	 * equality operation.
+	 * 
+	 * @param <T>
+	 *          The type of the items to compare
+	 * @return The new equality comparator instance.
+	 */
 	public static <T> EqualityComparator<T> naturalComparator() {
 		return new EqualityComparator<>(Objects::equals);
 	}
 
 	@Override
-	public int compare(EqualityComparator<T> this, T first, T second) {
+	public int compare(EqualityComparator<T>this,T first, T second) {
 		clean();
 
 		if (equality.test(first, second)) {
@@ -119,7 +138,7 @@ public class EqualityComparator<T> implements Comparator<T> {
 	 * map. It is also called automatically
 	 */
 	@SuppressWarnings("unchecked")
-	public void clean(EqualityComparator<T> this) {
+	public void clean(EqualityComparator<T>this) {
 		IDReference oldReference;
 		while ((oldReference = (IDReference) referenceQueue.poll()) != null) {
 			List<IDReference> collisions = collisionMap.get(oldReference.getId());

@@ -1,7 +1,6 @@
-Bundle-Name: Strange Skies Scripting - Groovy
+language: Ruby
 #Private-Package: \
 #	jruby.**,\
 #	org.jruby.**
 #Include-Resource:\
 #	@jruby-core-${jruby.version}.jar!/META-INF/services/*
-Bundle-Version: ${scripting-version}

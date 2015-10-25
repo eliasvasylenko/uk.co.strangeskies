@@ -2,9 +2,13 @@ Export-Package:  \
 	uk.co.strangeskies.mathematics.expression,\
 	uk.co.strangeskies.mathematics.expression.buffer,\
 	uk.co.strangeskies.mathematics.expression.collection
-Bundle-Name: Strange Skies Expressions
--dsannotations:  \
-	*
+Bundle-Name: Strange Skies :: Expressions
+Bundle-Description: \
+	A set of reactive programming utilities for Java, built around the concept \
+	of mutable (and immutable) 'expressions', which may be self contained, or \
+	lazily-evaluated over a number of dependency expressions. The design attempts \
+	to prioritise performance and thread safety.
+
 -buildpath:  \
-	uk.co.strangeskies.utilities;version=latest
-Bundle-Version: 0.0.5.${tstamp}
+	${buildpath.base},\
+	${ss;utilities}

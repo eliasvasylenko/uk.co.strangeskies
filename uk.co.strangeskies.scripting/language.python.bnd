@@ -1,6 +1,5 @@
-Bundle-Name: Strange Skies Scripting - Groovy
+language: Python
 #Private-Package:\
 #	org.python.**
 #Include-Resource:\
 #	@${exporters;org.luaj}.jar!/META-INF/services/*
-Bundle-Version: ${scripting-version}

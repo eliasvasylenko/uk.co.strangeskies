@@ -1,6 +1,5 @@
-Bundle-Name: Strange Skies Scripting - Lua
+language: Lua
 Private-Package:  \
 	org.luaj.**
 Include-Resource:\
 	@${exporters;org.luaj}.jar!/META-INF/services/*
-Bundle-Version: ${scripting-version}

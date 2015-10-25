@@ -1,17 +1,18 @@
-Export-Package: \
+Bundle-Name: Strange Skies :: Reflection
+Bundle-Description: \
+	A number of powerful reflective utilities over the Java 8 \
+	type system, including an implementation of the JLS type \
+	inference algorithm. Rich and type safe reflection over \
+	generic types is also provided, up to and including generic \
+	method/constructor overload resolution and invocation type \
+	inference.
+	
+	Export-Package: \
 	uk.co.strangeskies.reflection, \
 	uk.co.strangeskies.reflection.proxy
-Bundle-Name: Strange Skies Reflection
-
--dsannotations: \
-	*
+	
 -runee: JavaSE-1.8
 -runfw: org.eclipse.osgi;version='[3.10.1.v20140909-1633,3.10.1.v20140909-1633]'
 -buildpath: \
-	osgi.enroute.junit.wrapper, \
-	osgi.enroute.hamcrest.wrapper, \
-	uk.co.strangeskies.utilities; \
-		version = latest, \
-	osgi.enroute.base.api; \
-		version = latest
-Bundle-Version: 0.0.3.${tstamp}
+	${buildpath.base},\
+	${ss;utilities}

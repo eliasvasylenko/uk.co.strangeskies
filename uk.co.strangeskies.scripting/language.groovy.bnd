@@ -1,4 +1,4 @@
-Bundle-Name: Strange Skies Scripting - Groovy
+language: Groovy
 Private-Package:\
 	groovy.**, \
 	groovyjarjarantlr, \
@@ -9,4 +9,3 @@ Private-Package:\
 Include-Resource:\
 	@${exporters;groovy.lang}.jar!/META-INF/**, \
 	@${exporters;org.codehaus.groovy.jsr223}.jar!/META-INF/**
-Bundle-Version: ${scripting-version}

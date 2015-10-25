@@ -707,6 +707,14 @@ public class TypeTokenTest {
 				.println(TypeToken.fromString("@Capture Map<@Infer ?, ?>", imports2));
 		System.out.println();
 
+		System.out
+				.println(
+						new TypeToken<DataBindingType<Object>>() {}
+								.resolveMethodOverload("baseModel",
+										new TypeToken<Model<?>>() {})
+								.infer().getResolver().getBounds());
+		System.out.println();
+
 		/*- TODO Current open question on compiler-dev
 		System.out.println(new TypeToken<C1<? extends C2<String>>>() {});
 		System.out.println();
@@ -860,6 +868,8 @@ interface DataBindingType<T>
 			BindingNode.Effective<T, DataBindingType<T>, Effective<T>> {}
 
 	List<? extends Model<? super T>> baseModel();
+
+	<V extends T> DataBindingType<V> baseModel(Model<? super V> baseModel);
 }
 
 interface BindingNode<T, S extends BindingNode<T, S, E>, E extends BindingNode.Effective<T, S, E>>

@@ -154,7 +154,7 @@ public class TypeToken<T>
 
 	private static ComputingMap<AnnotatedType, Pair<Resolver, Type>> RESOLVER_CACHE = new LRUCacheComputingMap<>(
 			annotatedType -> incorporateAnnotatedType(new Resolver(), annotatedType),
-			64, true);
+			128, true);
 
 	private final Resolver resolver;
 

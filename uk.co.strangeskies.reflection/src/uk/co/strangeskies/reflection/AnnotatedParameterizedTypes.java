@@ -200,6 +200,22 @@ public final class AnnotatedParameterizedTypes {
 	 *         type arguments, and the given annotations.
 	 */
 	public static AnnotatedType from(AnnotatedType rawType,
+			AnnotatedType... arguments) {
+		return from(rawType, Arrays.asList(arguments));
+	}
+
+	/**
+	 * Parameterize a generic class with the given annotated type arguments.
+	 * 
+	 * @param rawType
+	 *          The annotated generic class we wish to parameterize.
+	 * @param arguments
+	 *          A mapping from the type variables on the generic class to their
+	 *          annotated arguments.
+	 * @return A new {@link AnnotatedParameterizedType} instance with the given
+	 *         type arguments, and the given annotations.
+	 */
+	public static AnnotatedType from(AnnotatedType rawType,
 			List<AnnotatedType> arguments) {
 		Map<TypeVariable<?>, AnnotatedType> annotatedTypes = new HashMap<>();
 		TypeVariable<?>[] typeVariables = ((Class<?>) rawType.getType())

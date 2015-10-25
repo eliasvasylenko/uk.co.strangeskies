@@ -13,16 +13,14 @@ Export-Package:  \
 	uk.co.strangeskies.mathematics.operation,\
 	uk.co.strangeskies.mathematics.values,\
 	uk.co.strangeskies.mathematics.values.quantities
-Bundle-Name: Strange Skies Mathematics
--dsannotations:  \
-	*
+Bundle-Name: Strange Skies :: Mathematics
+Bundle-Description: \
+	A collection of mathematical utilities for Java. Included is a flexible \
+	and performant graph API, and a rich set of composable logic and value \
+	expressions, built on the uk.co.strangeskies.expressions library.
 -runee: JavaSE-1.8
 -runfw: org.eclipse.osgi;version='[3.10.1.v20140909-1633,3.10.1.v20140909-1633]'
 -buildpath:  \
-	osgi.enroute.junit.wrapper, \
-	osgi.enroute.hamcrest.wrapper, \
-	uk.co.strangeskies.utilities;version=latest,\
-	uk.co.strangeskies.expressions;version=latest,  \
-	osgi.enroute.base.api;  \
-		version = latest
-Bundle-Version: 0.0.4.${tstamp}
+	${buildpath.base},\
+	${ss;utilities},\
+	${ss;expressions}

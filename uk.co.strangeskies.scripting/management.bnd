@@ -1,6 +1,8 @@
 Private-Package:  \
 	uk.co.strangeskies.scripting.impl
--dsannotations:  \
-	*
-Bundle-Name: Strange Skies Scripting
-Bundle-Version: ${scripting-version}
+Bundle-Name: Strange Skies :: Scripting
+Bundle-Description: \
+	Java JSR-223 utilities, including an OSGi ready ScriptEngineManager \
+	implementation, for language discoverability through the service \
+	registry. Wrapper bundles providing a number of useful scripting \
+	engines through this mechanism are also available.

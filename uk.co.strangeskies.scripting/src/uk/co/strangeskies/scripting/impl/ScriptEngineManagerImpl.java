@@ -52,7 +52,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager {
 	private final Map<String, ScriptEngineFactory> mimeTypeAssociations;
 
 	/**
-	 * Default contructor.
+	 * Default constructor.
 	 */
 	public ScriptEngineManagerImpl() {
 		scriptEngineFactories = new HashSet<>();

@@ -12,14 +12,16 @@ Export-Package:  \
 	uk.co.strangeskies.mathematics.geometry.shape,\
 	uk.co.strangeskies.mathematics.geometry.shape.mesh,\
 	uk.co.strangeskies.mathematics.geometry.shape.tessellation
-Bundle-Name: Strange Skies Mathematics - Geometry
--dsannotations:  \
-	*
+Bundle-Name: Strange Skies :: Mathematics :: Geometry
+Bundle-Description: \
+	Mathematical utilities for geometry in Java. This includes \
+	classes for dealing with Matrices and Vectors, in both immutable \
+	form, and as mutable and composable expressions built upon the \
+	uk.co.strangeskies.expressions library. Also provided are \
+	classes for dealing with shapes, including tessellation of \
+	arbitrary polygons, pathfinding, and boolean CSG operations.
 -buildpath:  \
-	uk.co.strangeskies.mathematics;  \
-		version = latest,  \
-	uk.co.strangeskies.utilities;  \
-		version = latest,  \
-	osgi.enroute.base.api;  \
-		version = latest
-Bundle-Version: 0.0.4.${tstamp}
+	${buildpath.base},\
+	${ss;mathematics},\
+	${ss;expressions},\
+	${ss;utilities}
