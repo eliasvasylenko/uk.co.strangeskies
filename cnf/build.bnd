@@ -16,14 +16,13 @@ copyright = Copyright (c) Strange Skies (2014, ${copyright.year}). All Rights Re
 
 groupid: uk.co.strangeskies
 
-strangeskies-version: 1.0.0
+strangeskies-version: 1.0.12
 strangeskies-version-ceiling: 2.0.0
 
 Bundle-Vendor: Strange Skies http://strangeskies.co.uk/
 Bundle-Copyright: ${copyright}
 Bundle-License: LGPL <http://www.gnu.org/licenses/>
 Bundle-Version: ${strangeskies-version}.${tstamp}
-Bundle-ActivationPolicy: lazy
 
 -dsannotations: *
 
@@ -69,13 +68,15 @@ runreq.felix.web=\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.webconsole.plugins.scriptconsole)',\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.webconsole.plugins.useradmin)'
 
-runreq.eclipselink.jpa=\,\
-	osgi.identity;filter:='(osgi.identity=org.apache.aries.jpa.eclipselink.adapter)'
+runreq.eclipselink.jpa=\
+	osgi.identity;filter:='(osgi.identity=org.apache.aries.jpa.eclipselink.adapter)',\
 	osgi.identity;filter:='(osgi.identity=javax.persistence)'
 
 # Build path groups:
-buildpath.base=\
+-buildpath.base=\
+	osgi.enroute.base.api
+
+-testpath.base=\
 	osgi.enroute.junit.wrapper,\
 	osgi.enroute.hamcrest.wrapper,\
-	org.hamcrest__java-hamcrest,\
-	osgi.enroute.base.api
+	org.hamcrest__java-hamcrest

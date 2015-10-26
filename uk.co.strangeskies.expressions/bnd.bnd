@@ -10,5 +10,4 @@ Bundle-Description: \
 	to prioritise performance and thread safety.
 
 -buildpath:  \
-	${buildpath.base},\
 	${ss;utilities}

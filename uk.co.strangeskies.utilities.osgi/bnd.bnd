@@ -1,7 +1,6 @@
 -runee: JavaSE-1.8
 
 -buildpath: \
-	${buildpath.base},\
 	${ss;utilities}
 
 -sub: *.bnd
