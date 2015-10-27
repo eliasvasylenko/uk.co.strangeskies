@@ -16,7 +16,7 @@ copyright = Copyright (c) Strange Skies (2014, ${copyright.year}). All Rights Re
 
 groupid: uk.co.strangeskies
 
-strangeskies-version: 1.0.12
+strangeskies-version: 1.0.13
 strangeskies-version-ceiling: 2.0.0
 
 Bundle-Vendor: Strange Skies http://strangeskies.co.uk/

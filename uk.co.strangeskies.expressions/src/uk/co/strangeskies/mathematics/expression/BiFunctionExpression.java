@@ -45,8 +45,7 @@ public class BiFunctionExpression<O1, O2, R> extends DependentExpression<R> {
 	 *          A expression providing a function transforming the operands into a
 	 *          value of this expression's type.
 	 */
-	public BiFunctionExpression(
-			Expression<? extends O1> firstOperand,
+	public BiFunctionExpression(Expression<? extends O1> firstOperand,
 			Expression<? extends O2> secondOperand,
 			Expression<? extends BiFunction<? super O1, ? super O2, ? extends R>> operation) {
 		super(firstOperand, secondOperand);

@@ -9,5 +9,5 @@ Bundle-Description: \
 	lazily-evaluated over a number of dependency expressions. The design attempts \
 	to prioritise performance and thread safety.
 
--buildpath:  \
+-buildpath: \
 	${ss;utilities}
