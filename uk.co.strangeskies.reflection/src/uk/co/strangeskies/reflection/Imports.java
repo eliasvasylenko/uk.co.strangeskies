@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -156,6 +157,11 @@ public class Imports {
 	 *         imports.
 	 */
 	public Class<?> getNamedClass(String name, ClassLoader classLoader) {
+		Optional<Class<?>> primitive = Types.getPrimitives().stream()
+				.filter(p -> p.getName().equals(name)).findAny();
+		if (primitive.isPresent())
+			return primitive.get();
+
 		Class<?> namedClass = namedClasses.get(name);
 
 		if (namedClass == null) {

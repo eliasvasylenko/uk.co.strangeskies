@@ -195,6 +195,10 @@ public final class Types {
 		return new LinkedHashSet<>(Arrays.asList(types));
 	}
 
+	public static Set<Class<?>> getPrimitives() {
+		return WRAPPED_PRIMITIVES.keySet();
+	}
+
 	/**
 	 * Is the given type a primitive type as per the Java type system.
 	 * 

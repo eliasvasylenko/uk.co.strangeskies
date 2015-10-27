@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with uk.co.strangeskies.utilities.osgi.  If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.utilities.osgi.consolelog;
+package uk.co.strangeskies.utilities.osgi.logging;
 
 import java.util.function.Function;
 
@@ -56,6 +56,7 @@ public class ConsoleLog implements LogListener {
 
 		System.out.println(
 				"[" + time + level + bundle + service + "] " + entry.getMessage());
+		entry.getException().printStackTrace();
 	}
 
 	private String formatTime(long time) {
