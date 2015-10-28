@@ -45,10 +45,10 @@ import uk.co.strangeskies.mathematics.graph.GraphListeners.VerticesListener;
 import uk.co.strangeskies.mathematics.graph.GraphTransformer;
 import uk.co.strangeskies.utilities.EqualityComparator;
 import uk.co.strangeskies.utilities.IdentityProperty;
-import uk.co.strangeskies.utilities.collection.decorator.SetDecorator;
-import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
-import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
-import uk.co.strangeskies.utilities.collection.multimap.MultiTreeMap;
+import uk.co.strangeskies.utilities.collection.MultiHashMap;
+import uk.co.strangeskies.utilities.collection.MultiMap;
+import uk.co.strangeskies.utilities.collection.MultiTreeMap;
+import uk.co.strangeskies.utilities.collection.SetDecorator;
 
 class GraphImpl<V, E> implements Graph<V, E> {
 	private class VerticesImpl extends SetDecorator<V> implements Vertices<V, E> {

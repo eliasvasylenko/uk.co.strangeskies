@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import uk.co.strangeskies.mathematics.values.Fraction;
-import uk.co.strangeskies.utilities.function.collection.ListTransformOnceView;
+import uk.co.strangeskies.utilities.function.ListTransformOnceView;
 
 public class QuantityType {
 	private final String name;

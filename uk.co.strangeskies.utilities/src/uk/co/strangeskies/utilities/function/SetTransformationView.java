@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with uk.co.strangeskies.utilities.  If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.utilities.function.collection;
+package uk.co.strangeskies.utilities.function;
 
 import java.util.AbstractSet;
 import java.util.Collection;
@@ -24,8 +24,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.function.Function;
 import java.util.stream.Stream;
-
-import uk.co.strangeskies.utilities.function.InvertibleFunction;
 
 /**
  * A view of a set which will be automatically updated along with the original,

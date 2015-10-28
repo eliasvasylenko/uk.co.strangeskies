@@ -16,33 +16,33 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with uk.co.strangeskies.utilities.  If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.utilities.collection.decorator;
+package uk.co.strangeskies.utilities.collection;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 import java.util.function.Supplier;
 
-public class FilteredSetDecorator<E> extends SetDecorator<E> {
+public class FilteredListDecorator<E> extends ListDecorator<E> {
 	public interface Filter<E> {
 		public boolean filter(E element);
 	}
 
 	private final Filter<E> filter;
 
-	public FilteredSetDecorator(Filter<E> filter) {
-		super(new HashSet<E>());
+	public FilteredListDecorator(Filter<E> filter) {
+		super(new ArrayList<E>());
 
 		this.filter = filter;
 	}
 
-	public FilteredSetDecorator(Set<E> component, Filter<E> filter) {
+	public FilteredListDecorator(List<E> component, Filter<E> filter) {
 		super(component);
 
 		this.filter = filter;
 	}
 
-	public FilteredSetDecorator(Supplier<Set<E>> component, Filter<E> filter) {
+	public FilteredListDecorator(Supplier<List<E>> component, Filter<E> filter) {
 		super(component);
 
 		this.filter = filter;
@@ -54,6 +54,12 @@ public class FilteredSetDecorator<E> extends SetDecorator<E> {
 	}
 
 	@Override
+	public void add(int index, E element) {
+		if (filter.filter(element))
+			super.add(index, element);
+	}
+
+	@Override
 	public boolean addAll(Collection<? extends E> c) {
 		boolean changed = false;
 
@@ -61,5 +67,13 @@ public class FilteredSetDecorator<E> extends SetDecorator<E> {
 			changed = add(e) || changed;
 
 		return changed;
+	}
+
+	@Override
+	public boolean addAll(int index, Collection<? extends E> c) {
+		for (E e : c)
+			add(index++, e);
+
+		return true;
 	}
 }

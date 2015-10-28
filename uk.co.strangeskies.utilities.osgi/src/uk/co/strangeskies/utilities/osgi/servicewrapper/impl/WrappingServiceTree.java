@@ -27,7 +27,7 @@ import java.util.TreeSet;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 
-import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
+import uk.co.strangeskies.utilities.collection.MultiMap;
 
 
 class WrappingServiceTree {

@@ -16,32 +16,50 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with uk.co.strangeskies.utilities.  If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.utilities.collection.multimap;
+package uk.co.strangeskies.utilities.collection;
 
 import java.util.Collection;
-import java.util.Comparator;
-import java.util.TreeMap;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.function.Supplier;
 
-import uk.co.strangeskies.utilities.factory.Factory;
-
-public class MultiTreeMap<K, V, C extends Collection<V>> extends TreeMap<K, C>
-		implements MultiMap<K, V, C> {
-	private static final long serialVersionUID = 1L;
-
-	private final Factory<C> collectionFactory;
-
-	public MultiTreeMap(Factory<C> collectionFactory) {
-		this.collectionFactory = collectionFactory;
+public class FilteredSetDecorator<E> extends SetDecorator<E> {
+	public interface Filter<E> {
+		public boolean filter(E element);
 	}
 
-	public MultiTreeMap(Comparator<? super K> comparator,
-			Factory<C> collectionFactory) {
-		super(comparator);
-		this.collectionFactory = collectionFactory;
+	private final Filter<E> filter;
+
+	public FilteredSetDecorator(Filter<E> filter) {
+		super(new HashSet<E>());
+
+		this.filter = filter;
+	}
+
+	public FilteredSetDecorator(Set<E> component, Filter<E> filter) {
+		super(component);
+
+		this.filter = filter;
+	}
+
+	public FilteredSetDecorator(Supplier<Set<E>> component, Filter<E> filter) {
+		super(component);
+
+		this.filter = filter;
 	}
 
 	@Override
-	public C createCollection() {
-		return collectionFactory.create();
+	public boolean add(E e) {
+		return filter.filter(e) && super.add(e);
+	}
+
+	@Override
+	public boolean addAll(Collection<? extends E> c) {
+		boolean changed = false;
+
+		for (E e : c)
+			changed = add(e) || changed;
+
+		return changed;
 	}
 }

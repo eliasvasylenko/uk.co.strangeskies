@@ -43,8 +43,8 @@ import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.Self;
 import uk.co.strangeskies.utilities.collection.NullPointerInCollectionException;
 import uk.co.strangeskies.utilities.factory.Factory;
+import uk.co.strangeskies.utilities.function.ListTransformOnceView;
 import uk.co.strangeskies.utilities.function.TriFunction;
-import uk.co.strangeskies.utilities.function.collection.ListTransformOnceView;
 
 /**
  *

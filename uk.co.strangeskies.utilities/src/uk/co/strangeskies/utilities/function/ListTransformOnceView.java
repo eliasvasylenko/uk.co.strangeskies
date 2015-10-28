@@ -16,22 +16,23 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with uk.co.strangeskies.utilities.  If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.utilities.function.collection;
+package uk.co.strangeskies.utilities.function;
 
 import java.util.AbstractList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.utilities.function.InvertibleFunction;
+import uk.co.strangeskies.utilities.EqualityComparator;
 
 /**
- * A view of a list which will be automatically updated along with the original,
- * but who's elements will be a transformation of the original associated
- * elements by way of the function passed to the constructor. The implementation
- * employs lazy evaluation, so try to use get() as little as possible by reusing
- * the result.
+ * A view of a {@link List} which will be automatically updated along with the
+ * original, but whose elements will be a transformation of the original
+ * associated elements by way of the function passed to the constructor. The
+ * implementation employs lazy evaluation, and only evaluates a transformation
+ * once for each element of the collection, as distinguished by identity.
  * 
  * <p>
  * Unlike the {@link Stream#map(Function)} function, which can provide similar
@@ -50,9 +51,11 @@ import uk.co.strangeskies.utilities.function.InvertibleFunction;
  * @param <F>
  *          The type of the elements of the backing list.
  */
-public class ListTransformationView<F, T> extends AbstractList<T> {
+public class ListTransformOnceView<F, T> extends AbstractList<T> {
 	private final List<F> backingCollection;
 	private final InvertibleFunction<F, T> function;
+
+	private final Map<F, T> transformations;
 
 	/**
 	 * @param backingCollection
@@ -61,13 +64,36 @@ public class ListTransformationView<F, T> extends AbstractList<T> {
 	 *          The function which transforms elements into the form in which they
 	 *          are represented in by this view.
 	 */
-	public ListTransformationView(List<F> backingCollection,
+	public ListTransformOnceView(List<F> backingCollection,
 			final Function<? super F, ? extends T> function) {
 		this(backingCollection, InvertibleFunction.over(function, i -> {
 			throw new UnsupportedOperationException();
 		}));
 	}
 
+	@Override
+	public T set(int index, T element) {
+		T previous = get(index);
+		F next = function.getInverse().apply(element);
+		backingCollection.set(index, next);
+		transformations.put(next, element);
+		return previous;
+	}
+
+	@Override
+	public void add(int index, T element) {
+		F next = function.getInverse().apply(element);
+		backingCollection.add(index, next);
+		transformations.put(next, element);
+	}
+
+	@Override
+	public T remove(int index) {
+		T removed = get(index);
+		transformations.remove(backingCollection.remove(index));
+		return removed;
+	}
+
 	/**
 	 * @param backingCollection
 	 *          The backing collection this class presents a view over.
@@ -75,50 +101,42 @@ public class ListTransformationView<F, T> extends AbstractList<T> {
 	 *          The function which transforms elements into the form in which they
 	 *          are represented in by this view.
 	 */
-	public ListTransformationView(List<F> backingCollection,
+	public ListTransformOnceView(List<F> backingCollection,
 			final InvertibleFunction<F, T> function) {
+		transformations = new TreeMap<>(EqualityComparator.identityComparator());
+
 		this.backingCollection = backingCollection;
 		this.function = function;
 	}
 
 	@Override
-	public T set(int index, T element) {
-		return function.apply(backingCollection.set(index, function.getInverse()
-				.apply(element)));
-	}
-
-	@Override
-	public void add(int index, T element) {
-		backingCollection.add(index, function.getInverse().apply(element));
-	}
-
-	@Override
-	public T remove(int index) {
-		return function.apply(backingCollection.remove(index));
-	}
-
-	@Override
 	public final T get(int index) {
-		return function.apply(backingCollection.get(index));
+		F backingElement = backingCollection.get(index);
+		T transformation = transformations.get(backingElement);
+		if (transformation == null) {
+			transformation = function.apply(backingElement);
+			transformations.put(backingElement, transformation);
+
+			if (transformations.keySet().size() > backingCollection.size() * 1.5) {
+				transformations.keySet().retainAll(backingCollection);
+			}
+		}
+		return transformation;
+	}
+
+	/**
+	 * @return The backing collection this class presents a view over.
+	 */
+	public final List<F> getBackingList() {
+		return backingCollection;
 	}
 
 	/**
 	 * @return The function which transforms elements into the form in which they
 	 *         are represented in by this view.
 	 */
-	public final InvertibleFunction<F, T> getFunction() {
+	public final Function<F, T> getFunction() {
 		return function;
-	}
-
-	/**
-	 * @return The backing collection this class presents a view over.
-	 */
-	public final List<F> getBackingCollection() {
-		return Collections.unmodifiableList(backingCollection);
-	}
-
-	protected final List<F> getModifiablebackingCollection() {
-		return backingCollection;
 	}
 
 	@Override

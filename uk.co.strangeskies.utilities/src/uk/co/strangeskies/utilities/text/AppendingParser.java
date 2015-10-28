@@ -16,51 +16,45 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with uk.co.strangeskies.utilities.  If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.utilities.text.parser;
+package uk.co.strangeskies.utilities.text;
 
 import java.util.function.BiFunction;
 
-public class PrependingParser<T, U> implements AbstractParser<T> {
+public class AppendingParser<T, U> implements AbstractParser<T> {
 	private final Parser<T> main;
-	private final Parser<U> prepend;
+	private final Parser<U> append;
 
 	private final BiFunction<T, U, ? extends T> combinor;
 
-	public PrependingParser(Parser<T> main, Parser<U> prepend,
+	public AppendingParser(Parser<T> main, Parser<U> append,
 			BiFunction<T, U, ? extends T> combinor) {
 		this.main = main;
-		this.prepend = prepend;
+		this.append = append;
 
 		this.combinor = combinor;
 	}
 
 	@Override
 	public ParseResult<T> parseSubstringImpl(ParseState state) {
-		ParseResult<U> prependValue;
-		ParseResult<T> mainValue;
+		ParseResult<T> mainValue = main.parseSubstring(state.toEnd(false));
+		ParseResult<U> appendValue;
 
 		try {
-			prependValue = prepend.parseSubstring(state.toEnd(false));
+			appendValue = append.parseSubstring(mainValue.state()
+					.toEnd(state.toEnd()));
 		} catch (ParseException e) {
-			try {
-				return main.parseSubstring(state).mapState(s -> s.addException(e));
-			} catch (ParseException e2) {
-				throw ParseException.getHigher(e, e2);
-			} catch (Exception e2) {
-				throw e;
-			}
+			return mainValue.mapState(s -> s.addException(e)).mapState(
+					s -> s.toEnd(state.toEnd()));
 		} catch (Exception e) {
-			return main.parseSubstring(state);
+			return mainValue.mapState(s -> s.toEnd(state.toEnd()));
 		}
 
-		mainValue = main.parseSubstring(prependValue.state().toEnd(state.toEnd()));
-
-		return mainValue.mapState(s -> s.addException(prependValue.state()))
-				.mapResult(m -> combinor.apply(m, prependValue.result()));
+		return appendValue.mapState(s -> s.addException(mainValue.state()))
+				.mapResult(a -> combinor.apply(mainValue.result(), a));
 	}
 
 	@Override
 	public String toString() {
-		return "Prepending Parser [" + prepend + " > " + main + "]";
+		return "Appending Parser [" + main + " > " + append + "]";
 	}
 }

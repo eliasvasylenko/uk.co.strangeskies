@@ -42,10 +42,10 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.utilities.IdentityProperty;
+import uk.co.strangeskies.utilities.collection.MultiHashMap;
+import uk.co.strangeskies.utilities.collection.MultiMap;
 import uk.co.strangeskies.utilities.collection.computingmap.CacheComputingMap;
-import uk.co.strangeskies.utilities.collection.multimap.MultiHashMap;
-import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
-import uk.co.strangeskies.utilities.text.parser.Parser;
+import uk.co.strangeskies.utilities.text.Parser;
 
 /**
  * A collection of general utility methods relating to the Java type system.

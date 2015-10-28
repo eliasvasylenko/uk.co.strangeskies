@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with uk.co.strangeskies.utilities.  If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.utilities.text.parser;
+package uk.co.strangeskies.utilities.text;
 
 import java.util.function.Function;
 import java.util.regex.Matcher;

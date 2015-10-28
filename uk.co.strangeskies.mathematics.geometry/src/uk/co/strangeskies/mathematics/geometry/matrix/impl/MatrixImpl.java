@@ -40,8 +40,8 @@ import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.collection.MergeIndicesListView;
 import uk.co.strangeskies.utilities.collection.NullPointerInCollectionException;
 import uk.co.strangeskies.utilities.factory.Factory;
+import uk.co.strangeskies.utilities.function.ListTransformationView;
 import uk.co.strangeskies.utilities.function.TriFunction;
-import uk.co.strangeskies.utilities.function.collection.ListTransformationView;
 
 public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 		extends DependentExpression<S> implements Matrix<S, V>,

@@ -37,8 +37,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.utilities.EqualityComparator;
-import uk.co.strangeskies.utilities.collection.multimap.MultiMap;
-import uk.co.strangeskies.utilities.collection.multimap.MultiTreeMap;
+import uk.co.strangeskies.utilities.collection.MultiMap;
+import uk.co.strangeskies.utilities.collection.MultiTreeMap;
 
 /**
  * A collection of utility methods relating to parameterised types.

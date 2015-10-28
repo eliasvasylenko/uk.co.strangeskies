@@ -37,8 +37,8 @@ import uk.co.strangeskies.mathematics.operation.Subtractable;
 import uk.co.strangeskies.mathematics.values.IntValue;
 import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.Property;
+import uk.co.strangeskies.utilities.function.ListTransformationView;
 import uk.co.strangeskies.utilities.function.TriFunction;
-import uk.co.strangeskies.utilities.function.collection.ListTransformationView;
 
 public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 		Comparable<Matrix<?, ?>>, Variable<S>, Scalable<S>,

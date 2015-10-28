@@ -64,6 +64,42 @@ public class Imports {
 	}
 
 	/**
+	 * Derive a new set of imports, including that described by the given import
+	 * string.
+	 * 
+	 * @param stringImport
+	 *          An import string, with the formatting and semantics of the java
+	 *          import statement.
+	 * @return A new set of imports including all those on the receiver, along
+	 *         with the given class import.
+	 */
+	public Imports withImport(String stringImport) {
+		return withImports(stringImport);
+	}
+
+	/**
+	 * Derive a new set of imports, including that described by the given import
+	 * string.
+	 * 
+	 * @param stringImports
+	 *          A list of import strings, with the formatting and semantics of the
+	 *          java import statement.
+	 * @return A new set of imports including all those on the receiver, along
+	 *         with the given class import.
+	 */
+	public Imports withImports(String... stringImports) {
+		Imports imports = this;
+
+		for (String stringImport : stringImports) {
+			if (stringImport.endsWith(".*")) {
+				imports = imports.withPackageImport(Package.getPackage(stringImport));
+			}
+		}
+
+		return this;
+	}
+
+	/**
 	 * Derive a new set of imports, including the given class import.
 	 * 
 	 * @param classImport
