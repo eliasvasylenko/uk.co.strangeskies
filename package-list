@@ -20,12 +20,8 @@ uk.co.strangeskies.reflection
 uk.co.strangeskies.utilities
 uk.co.strangeskies.utilities.collection
 uk.co.strangeskies.utilities.collection.computingmap
-uk.co.strangeskies.utilities.collection.decorator
-uk.co.strangeskies.utilities.collection.multimap
 uk.co.strangeskies.utilities.factory
 uk.co.strangeskies.utilities.flowcontrol
 uk.co.strangeskies.utilities.function
-uk.co.strangeskies.utilities.function.collection
 uk.co.strangeskies.utilities.text
-uk.co.strangeskies.utilities.text.parser
 uk.co.strangeskies.utilities.tuple
