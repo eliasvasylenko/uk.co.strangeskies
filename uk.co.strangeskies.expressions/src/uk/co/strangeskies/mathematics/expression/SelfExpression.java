@@ -31,5 +31,5 @@ import uk.co.strangeskies.utilities.Self;
  *          See {@link Self} for more information. This must be self-bounding as
  *          the value of the expression is the variable itself.
  */
-public interface Variable<S extends Variable<S>> extends Expression<S>, Self<S> {
-}
+public interface SelfExpression<S extends SelfExpression<S>>
+		extends Expression<S>, Self<S> {}

@@ -23,11 +23,10 @@ public final class FloatValue extends ContinuousValue<FloatValue> {
 
 	private float value;
 
-	public FloatValue() {
-	}
+	public FloatValue() {}
 
 	public FloatValue(Value<?> value) {
-		super((Number) value);
+		super(value);
 	}
 
 	public FloatValue(Number value) {
@@ -36,93 +35,72 @@ public final class FloatValue extends ContinuousValue<FloatValue> {
 
 	@Override
 	public final FloatValue reciprocate() {
-		value = 1 / value;
-
-		return this;
+		return update(() -> value = 1 / value);
 	}
 
 	@Override
 	public final FloatValue add(Value<?> value) {
-		this.value += value.doubleValue();
-		update();
-		return this;
-	}
-
-	@Override
-	public final FloatValue subtract(Value<?> value) {
-		this.value -= value.doubleValue();
-		update();
-		return this;
+		return update(() -> this.value += value.floatValue());
 	}
 
 	@Override
 	public final FloatValue negate() {
-		value = -value;
-		update();
-		return this;
+		return update(() -> value = -value);
 	}
 
 	@Override
 	public final FloatValue multiply(int value) {
-		this.value *= value;
-		update();
-		return this;
+		return update(() -> this.value *= value);
 	}
 
 	@Override
 	public final FloatValue multiply(long value) {
-		this.value *= value;
-		update();
-		return this;
+		return update(() -> this.value *= value);
 	}
 
 	@Override
 	public final FloatValue multiply(float value) {
-		this.value *= value;
-		update();
-		return this;
+		return update(() -> this.value *= value);
 	}
 
 	@Override
-	public final FloatValue multiply(double scalar) {
-		this.value *= scalar;
-		update();
-		return this;
+	public final FloatValue multiply(double value) {
+		return update(() -> this.value *= value);
+	}
+
+	@Override
+	public final FloatValue multiply(Value<?> value) {
+		return update(() -> this.value = value.getMultipliedPrimitive(this.value));
 	}
 
 	@Override
 	public final FloatValue divide(int value) {
-		this.value /= value;
-		update();
-		return this;
+		return update(() -> this.value /= value);
 	}
 
 	@Override
 	public final FloatValue divide(long value) {
-		this.value /= value;
-		update();
-		return this;
+		return update(() -> this.value /= value);
 	}
 
 	@Override
 	public final FloatValue divide(float value) {
-		this.value /= value;
-		update();
-		return this;
+		return update(() -> this.value /= value);
 	}
 
 	@Override
 	public final FloatValue divide(double value) {
-		this.value /= value;
-		update();
-		return this;
+		return update(() -> this.value /= value);
 	}
 
 	@Override
 	public final FloatValue divide(Value<?> value) {
-		this.value = value.getDividedPrimitive(this.value);
-		update();
-		return this;
+		return update(() -> this.value = value.getDividedPrimitive(this.value));
+	}
+
+	@Override
+	public final FloatValue subtract(Value<?> value) {
+		return update(() -> this.value -= value.floatValue());
 	}
 
 	@Override
@@ -147,28 +125,17 @@ public final class FloatValue extends ContinuousValue<FloatValue> {
 
 	@Override
 	public final String toString() {
-		return new Double(value).toString();
+		return new Float(value).toString();
 	}
 
 	@Override
 	public final FloatValue set(Value<?> value) {
-		this.value = value.floatValue();
-		update();
-		return this;
+		return update(() -> this.value = value.floatValue());
 	}
 
 	@Override
 	public final FloatValue setValue(Number value) {
-		this.value = value.floatValue();
-		update();
-		return this;
-	}
-
-	@Override
-	public final FloatValue multiply(Value<?> value) {
-		this.value = value.getMultipliedPrimitive(this.value);
-		update();
-		return this;
+		return update(() -> this.value = value.floatValue());
 	}
 
 	@Override
@@ -222,16 +189,12 @@ public final class FloatValue extends ContinuousValue<FloatValue> {
 
 	@Override
 	public final FloatValue increment() {
-		value++;
-		update();
-		return this;
+		return update(() -> value++);
 	}
 
 	@Override
 	public final FloatValue decrement() {
-		value--;
-		update();
-		return this;
+		return update(() -> value--);
 	}
 
 	@Override
@@ -241,42 +204,12 @@ public final class FloatValue extends ContinuousValue<FloatValue> {
 
 	@Override
 	public final FloatValue unitInTheLastPlaceAbove() {
-		if (Double.isNaN(value) || Double.isInfinite(value)) {
-			return this;
-		}
-		double absoluteValue = Math.abs(value);
-
-		long nextValueLong = Double.doubleToLongBits(absoluteValue) + 1;
-		double nextValue = Double.longBitsToDouble(nextValueLong);
-
-		// if ended on bad number go down instead
-		if (Double.isNaN(nextValue) || Double.isInfinite(nextValue)) {
-			nextValueLong = nextValueLong - 2;
-			nextValue = absoluteValue;
-			absoluteValue = Double.longBitsToDouble(nextValueLong);
-		}
-
-		return new FloatValue(Math.abs(nextValue - absoluteValue));
+		return new FloatValue(1);
 	}
 
 	@Override
 	public final FloatValue unitInTheLastPlaceBelow() {
-		if (Double.isNaN(value) || Double.isInfinite(value)) {
-			return this;
-		}
-		double absoluteValue = Math.abs(value);
-
-		long nextValueLong = Double.doubleToLongBits(absoluteValue) - 1;
-		double nextValue = Double.longBitsToDouble(nextValueLong);
-
-		// if ended on bad number go up instead
-		if (Double.isNaN(nextValue) || Double.isInfinite(nextValue)) {
-			nextValueLong = nextValueLong + 2;
-			nextValue = absoluteValue;
-			absoluteValue = Double.longBitsToDouble(nextValueLong);
-		}
-
-		return new FloatValue(Math.abs(nextValue - absoluteValue));
+		return new FloatValue(1);
 	}
 
 	@Override
@@ -319,41 +252,29 @@ public final class FloatValue extends ContinuousValue<FloatValue> {
 		return this.value * value;
 	}
 
-	public static FloatValueFactory factory() {
-		return FloatValueFactory.instance();
-	}
-
 	@Override
 	public FloatValue square() {
-		value *= value;
-		update();
-		return this;
+		return update(() -> value *= value);
 	}
 
 	@Override
 	public FloatValue squareRoot() {
-		value = (int) Math.sqrt(value);
-		update();
-		return this;
+		return update(() -> value = (int) Math.sqrt(value));
 	}
 
 	@Override
 	public FloatValue exponentiate(Value<?> exponential) {
-		value = (int) Math.pow(value, exponential.doubleValue());
-		update();
-		return this;
+		return update(
+				() -> value = (int) Math.pow(value, exponential.doubleValue()));
 	}
 
 	@Override
 	public FloatValue root(Value<?> root) {
-		value = (int) Math.pow(value, root.reciprocate().doubleValue());
-		update();
-		return this;
+		return exponentiate(root.getReciprocal());
 	}
 
 	@Override
 	public FloatValue modulus() {
-		value = Math.abs(value);
-		return this;
+		return update(() -> value = Math.abs(value));
 	}
 }

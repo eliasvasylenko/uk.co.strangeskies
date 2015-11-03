@@ -23,11 +23,14 @@ import java.util.TreeSet;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
+import java.util.function.IntSupplier;
+import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
 import uk.co.strangeskies.mathematics.expression.Expression;
-import uk.co.strangeskies.mathematics.expression.Variable;
+import uk.co.strangeskies.mathematics.expression.SelfExpression;
 import uk.co.strangeskies.mathematics.operation.Incrementable;
 import uk.co.strangeskies.mathematics.operation.Multipliable;
 import uk.co.strangeskies.mathematics.operation.Negatable;
@@ -39,10 +42,11 @@ import uk.co.strangeskies.utilities.Observer;
 import uk.co.strangeskies.utilities.Property;
 import uk.co.strangeskies.utilities.Self;
 
-public abstract class Value<S extends Value<S>> extends Number implements
-		Multipliable<S, Value<?>>, Subtractable<S, Value<?>>, Negatable<S, S>,
-		Scalable<S>, Property<S, Value<?>>, Incrementable<S>, Self<S>, Variable<S>,
-		Copyable<S>, Comparable<Value<?>>, CopyDecouplingExpression<S> {
+public abstract class Value<S extends Value<S>> extends Number
+		implements Multipliable<S, Value<?>>, Subtractable<S, Value<?>>,
+		Negatable<S, S>, Scalable<S>, Property<S, Value<?>>, Incrementable<S>,
+		Self<S>, SelfExpression<S>, Copyable<S>, Comparable<Value<?>>,
+		CopyDecouplingExpression<S> {
 	private static final long serialVersionUID = -979949605176385397L;
 
 	private final Set<Observer<? super Expression<S>>> observers;
@@ -193,12 +197,45 @@ public abstract class Value<S extends Value<S>> extends Number implements
 		}
 	}
 
+	/*
+	 * Most implementations shouldn't need to bother with this so long as they
+	 * ensure write-locked operations always update state atomically.
+	 */
 	protected final <T> T read(Supplier<T> supplier) {
 		try {
 			getReadLock().lock();
-			T result = supplier.get();
 
-			return result;
+			return supplier.get();
+		} finally {
+			getReadLock().unlock();
+		}
+	}
+
+	protected final int read(IntSupplier supplier) {
+		try {
+			getReadLock().lock();
+
+			return supplier.getAsInt();
+		} finally {
+			getReadLock().unlock();
+		}
+	}
+
+	protected final long read(LongSupplier supplier) {
+		try {
+			getReadLock().lock();
+
+			return supplier.getAsLong();
+		} finally {
+			getReadLock().unlock();
+		}
+	}
+
+	protected final double read(DoubleSupplier supplier) {
+		try {
+			getReadLock().lock();
+
+			return supplier.getAsDouble();
 		} finally {
 			getReadLock().unlock();
 		}
@@ -215,7 +252,8 @@ public abstract class Value<S extends Value<S>> extends Number implements
 	}
 
 	@Override
-	public final boolean removeObserver(Observer<? super Expression<S>> observer) {
+	public final boolean removeObserver(
+			Observer<? super Expression<S>> observer) {
 		return observers.remove(observer);
 	}
 
@@ -238,8 +276,7 @@ public abstract class Value<S extends Value<S>> extends Number implements
 
 	public abstract boolean equals(long value);
 
-	public abstract int compareToAtSupportedPrecision(
-	/*  */Value<?> other);
+	public abstract int compareToAtSupportedPrecision(/*  */Value<?> other);
 
 	public abstract int getMultipliedPrimitive(int value);
 

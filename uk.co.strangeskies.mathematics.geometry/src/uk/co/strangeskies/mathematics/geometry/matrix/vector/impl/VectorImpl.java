@@ -56,8 +56,8 @@ import uk.co.strangeskies.utilities.function.TriFunction;
  *          The type of {@link Value} this Vector operates on.
  */
 public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
-		extends DependentExpression<S> implements Vector<S, V>,
-		CopyDecouplingExpression<S> {
+		extends DependentExpression<S>
+		implements Vector<S, V>, CopyDecouplingExpression<S> {
 	private final List<V> data;
 	private final Order order;
 
@@ -157,7 +157,8 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 		return 0;
 	}
 
-	public static <T extends Vector<?, ?>> T assertDimensions(T matrix, int size) {
+	public static <T extends Vector<?, ?>> T assertDimensions(T matrix,
+			int size) {
 		try {
 			DimensionalityException.checkEquivalence(matrix.getDimensions(), size);
 		} catch (DimensionalityException e) {
@@ -283,7 +284,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 	@Override
 	public Vector2<IntValue> getDimensions2() {
 		Vector2<IntValue> dimensions = new Vector2Impl<IntValue>(Order.COLUMN_MAJOR,
-				Orientation.COLUMN, IntValue.factory());
+				Orientation.COLUMN, IntValue::new);
 
 		if (getOrientation() == Orientation.COLUMN) {
 			return dimensions.setData(1, getDimensions());

@@ -22,11 +22,11 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import uk.co.strangeskies.mathematics.expression.Expression;
-import uk.co.strangeskies.mathematics.expression.Variable;
+import uk.co.strangeskies.mathematics.expression.SelfExpression;
 import uk.co.strangeskies.utilities.Self;
 
 public interface ExpressionCollection<S extends ExpressionCollection<S, E>, E extends Expression<?>>
-		extends Collection<E>, Self<S>, Variable<S> {
+		extends Collection<E>, Self<S>, SelfExpression<S> {
 	@Override
 	public boolean contains(Object o);
 

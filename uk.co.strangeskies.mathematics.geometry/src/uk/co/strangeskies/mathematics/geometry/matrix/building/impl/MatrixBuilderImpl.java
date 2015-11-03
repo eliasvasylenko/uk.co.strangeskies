@@ -38,22 +38,22 @@ public class MatrixBuilderImpl implements MatrixBuilder {
 
 	@Override
 	public ValueMatrixBuilder<IntValue> ints() {
-		return values(IntValue.factory());
+		return values(IntValue::new);
 	}
 
 	@Override
 	public ValueMatrixBuilder<LongValue> longs() {
-		return values(LongValue.factory());
+		return values(LongValue::new);
 	}
 
 	@Override
 	public ValueMatrixBuilder<FloatValue> floats() {
-		return values(FloatValue.factory());
+		return values(FloatValue::new);
 	}
 
 	@Override
 	public ValueMatrixBuilder<DoubleValue> doubles() {
-		return values(DoubleValue.factory());
+		return values(DoubleValue::new);
 	}
 
 	@Override

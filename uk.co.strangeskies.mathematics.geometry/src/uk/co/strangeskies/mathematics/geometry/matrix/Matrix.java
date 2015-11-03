@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import uk.co.strangeskies.mathematics.expression.Variable;
+import uk.co.strangeskies.mathematics.expression.SelfExpression;
 import uk.co.strangeskies.mathematics.geometry.DimensionalityException;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector.Orientation;
@@ -41,7 +41,7 @@ import uk.co.strangeskies.utilities.function.ListTransformationView;
 import uk.co.strangeskies.utilities.function.TriFunction;
 
 public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
-		Comparable<Matrix<?, ?>>, Variable<S>, Scalable<S>,
+		Comparable<Matrix<?, ?>>, SelfExpression<S>, Scalable<S>,
 		Subtractable<S, Matrix<?, ?>>, Negatable<S, S>,
 		NonCommutativelyMultipliable<S, Matrix<?, ?>>, Property<S, Matrix<?, ?>> {
 	public static enum Order {

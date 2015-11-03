@@ -18,7 +18,7 @@
  */
 package uk.co.strangeskies.mathematics.geometry.shape;
 
-import uk.co.strangeskies.mathematics.expression.Variable;
+import uk.co.strangeskies.mathematics.expression.SelfExpression;
 import uk.co.strangeskies.mathematics.geometry.Bounds2;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.geometry.shape.mesh.Mesh;
@@ -49,7 +49,7 @@ import uk.co.strangeskies.utilities.Self;
  * @param <S>
  */
 public interface Shape<S extends Shape<S>> extends Self<S>, Copyable<S>,
-		Property<S, S>, Variable<S> {
+		Property<S, S>, SelfExpression<S> {
 	Value<?> getArea(/*  this */);
 
 	Value<?> getPerimeter(/*  this */);
