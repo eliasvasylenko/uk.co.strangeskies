@@ -195,6 +195,11 @@ public final class Types {
 		return new LinkedHashSet<>(Arrays.asList(types));
 	}
 
+	/**
+	 * Get all primitive type classes
+	 * 
+	 * @return A set containing all primitive types.
+	 */
 	public static Set<Class<?>> getPrimitives() {
 		return WRAPPED_PRIMITIVES.keySet();
 	}
@@ -1247,18 +1252,38 @@ public final class Types {
 	public static class TypeParser {
 		private final Parser<Class<?>> rawType;
 
-		private final Parser<Type> classType;
+		private final Parser<Type> classOrArrayType;
 		private final Parser<WildcardType> wildcardType;
-		private final Parser<List<Type>> classTypeList;
+		private final Parser<Type> typeParameter;
 
 		private TypeParser(Imports imports) {
 			rawType = Parser
 					.matching("[_a-zA-Z][_a-zA-Z0-9]*(\\.[_a-zA-Z][_a-zA-Z0-9]*)*")
 					.transform(imports::getNamedClass);
 
-			classType = null;
-			wildcardType = null;
-			classTypeList = null;
+			classOrArrayType = rawType.transform(Type.class::cast)
+					.tryAppendTransform(
+							Parser.list(Parser.proxy(this::getType), "\\s*,\\s*")
+									.prepend("\\s*<\\s*").append("\\s*>\\s*"),
+							(t, p) -> ParameterizedTypes.from((Class<?>) t, p).getType())
+					.appendTransform(Parser
+							.list(Parser.matching("\\s*\\[\\s*\\]"), "\\s*").prepend("\\s*"),
+							(t, l) -> {
+								t = ArrayTypes.fromComponentType(t, l.size());
+								return t;
+							});
+
+			wildcardType = Parser.matching("\\s*\\?\\s*extends(?![_a-zA-Z0-9])\\s*")
+					.appendTransform(Parser.list(classOrArrayType, "\\s*\\&\\s*"),
+							(s, t) -> WildcardTypes.upperBounded(t))
+					.orElse(Parser.matching("\\s*\\?\\s*super(?![_a-zA-Z0-9])\\s*")
+							.appendTransform(Parser.list(classOrArrayType, "\\s*\\&\\s*"),
+									(s, t) -> WildcardTypes.lowerBounded(t)))
+					.orElse(Parser.matching("\\s*\\?")
+							.transform(s -> WildcardTypes.unbounded()));
+
+			typeParameter = classOrArrayType
+					.orElse(wildcardType.transform(Type.class::cast));
 		}
 
 		/**
@@ -1277,7 +1302,7 @@ public final class Types {
 		 *         where appropriate
 		 */
 		public Parser<Type> getClassType() {
-			return classType;
+			return classOrArrayType;
 		}
 
 		/**
@@ -1290,12 +1315,12 @@ public final class Types {
 		}
 
 		/**
-		 * A parser for a comma delimited list of Java language types.
+		 * A parser for a class type or wildcard type.
 		 * 
-		 * @return A list of {@link Type} objects parsed from a given string
+		 * @return The annotated type of the expressed type
 		 */
-		public Parser<List<Type>> getClassTypeList() {
-			return classTypeList;
+		public Parser<Type> getType() {
+			return typeParameter;
 		}
 	}
 }

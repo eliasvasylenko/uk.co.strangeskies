@@ -498,10 +498,10 @@ public final class AnnotatedTypes {
 	 */
 	public static class AnnotatedTypeParser {
 		private final Parser<AnnotatedType> rawType;
+
 		private final Parser<AnnotatedType> classOrArrayType;
 		private final Parser<AnnotatedWildcardType> wildcardType;
 		private final Parser<AnnotatedType> typeParameter;
-		private final Parser<List<AnnotatedType>> typeList;
 
 		private AnnotatedTypeParser(Imports imports) {
 			AnnotationParser annotationParser = Annotations.getParser(imports);
@@ -537,8 +537,6 @@ public final class AnnotatedTypes {
 
 			typeParameter = classOrArrayType
 					.orElse(wildcardType.transform(AnnotatedType.class::cast));
-
-			typeList = Parser.list(rawType, "\\s*,\\s*");
 		}
 
 		/**
@@ -567,16 +565,6 @@ public final class AnnotatedTypes {
 		 */
 		public Parser<AnnotatedWildcardType> getWildcardType() {
 			return wildcardType;
-		}
-
-		/**
-		 * A parser for a comma delimited list of annotated Java language types.
-		 * 
-		 * @return A list of {@link AnnotatedType} objects parsed from a given
-		 *         string
-		 */
-		public Parser<List<AnnotatedType>> getTypeList() {
-			return typeList;
 		}
 
 		/**

@@ -93,13 +93,13 @@ public interface Parser<T> {
 			int minimum) {
 		IdentityProperty<Parser<List<T>>> listParser = new IdentityProperty<>();
 
-		listParser.set(Parser.proxy(listParser::get).prepend(delimiter)
-				.orElse(ArrayList::new).prepend(element, (l, e) -> l.add(0, e))
-				.orElse(ArrayList::new));
+		listParser.set(
+				Parser.proxy(listParser::get).prepend(delimiter).orElse(ArrayList::new)
+						.prepend(element, (l, e) -> l.add(0, e)).orElse(ArrayList::new));
 
 		for (int i = 0; i < minimum; i++)
-			listParser.set(listParser.get().prepend(delimiter)
-					.prepend(element, List::add));
+			listParser
+					.set(listParser.get().prepend(delimiter).prepend(element, List::add));
 
 		return listParser.get();
 	}
@@ -444,7 +444,8 @@ public interface Parser<T> {
 	<U> Parser<T> tryAppendTransform(Parser<U> parser,
 			BiFunction<T, U, ? extends T> incorporate);
 
-	default <U> Parser<T> tryAppend(Parser<U> parser, BiConsumer<T, U> incorporate) {
+	default <U> Parser<T> tryAppend(Parser<U> parser,
+			BiConsumer<T, U> incorporate) {
 		return tryAppendTransform(parser, (t, u) -> {
 			incorporate.accept(t, u);
 			return t;
@@ -454,7 +455,8 @@ public interface Parser<T> {
 	<U, V> Parser<V> prependTransform(Parser<U> parser,
 			BiFunction<T, U, ? extends V> incorporate);
 
-	default <U> Parser<T> prepend(Parser<U> parser, BiConsumer<T, U> incorporate) {
+	default <U> Parser<T> prepend(Parser<U> parser,
+			BiConsumer<T, U> incorporate) {
 		return prependTransform(parser, (BiFunction<T, U, T>) (t, u) -> {
 			incorporate.accept(t, u);
 			return t;

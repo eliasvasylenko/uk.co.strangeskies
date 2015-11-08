@@ -28,7 +28,7 @@ package uk.co.strangeskies.reflection;
  * @param <T>
  *          The type of the object instance to track.
  */
-public class TypedObject<T> {
+public class TypedObject<T> implements Reified<TypedObject<T>> {
 	private final TypeToken<T> type;
 	private final T object;
 
@@ -55,5 +55,21 @@ public class TypedObject<T> {
 	 */
 	public T getObject() {
 		return object;
+	}
+
+	@Override
+	public String toString() {
+		return object + ": " + type;
+	}
+
+	@Override
+	public TypedObject<T> copy() {
+		return this;
+	}
+
+	@Override
+	public TypeToken<TypedObject<T>> getThisType() {
+		return new TypeToken<TypedObject<T>>() {}
+				.withTypeArgument(new TypeParameter<T>(), type);
 	}
 }

@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -61,6 +62,27 @@ public class Imports {
 		importPackages(packages);
 
 		this.classLoader = classLoader;
+	}
+
+	@Override
+	public boolean equals(Object that) {
+		if (this == that)
+			return true;
+		if (that == null)
+			return false;
+		if (!Imports.class.isAssignableFrom(that.getClass()))
+			return false;
+		Imports thatImports = (Imports) that;
+
+		return Objects.equals(namedClasses, thatImports.namedClasses)
+				&& Objects.equals(packages, thatImports.packages);
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		return prime + Objects.hashCode(namedClasses)
+				+ prime * Objects.hashCode(packages);
 	}
 
 	/**
