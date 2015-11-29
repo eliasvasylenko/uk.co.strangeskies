@@ -319,10 +319,6 @@ public final class DoubleValue extends ContinuousValue<DoubleValue> {
 		return this.value * value;
 	}
 
-	public static DoubleValueFactory factory() {
-		return DoubleValueFactory.instance();
-	}
-
 	@Override
 	public DoubleValue square() {
 		value *= value;

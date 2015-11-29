@@ -24,8 +24,7 @@ public class LongValue extends IntegralValue<LongValue> {
 
 	private long value;
 
-	public LongValue() {
-	}
+	public LongValue() {}
 
 	public LongValue(Value<?> value) {
 		super((Number) value);
@@ -107,12 +106,12 @@ public class LongValue extends IntegralValue<LongValue> {
 
 	@Override
 	public final double doubleValue() {
-		return read(() -> (double) value);
+		return read(() -> value);
 	}
 
 	@Override
 	public final float floatValue() {
-		return read(() -> (float) value);
+		return read(() -> value);
 	}
 
 	@Override
@@ -127,7 +126,7 @@ public class LongValue extends IntegralValue<LongValue> {
 
 	@Override
 	public final String toString() {
-		return read(() -> value).toString();
+		return Long.toString(read(() -> value));
 	}
 
 	@Override
@@ -142,7 +141,7 @@ public class LongValue extends IntegralValue<LongValue> {
 
 	@Override
 	public final int compareToAtSupportedPrecision(Value<?> other) {
-		return read(() -> this.value).compareTo(new Long(other.longValue()));
+		return Long.compare(read(() -> this.value), new Long(other.longValue()));
 	}
 
 	@Override
@@ -228,7 +227,7 @@ public class LongValue extends IntegralValue<LongValue> {
 
 	@Override
 	public final float getMultipliedPrimitive(float value) {
-		return read(() -> this.value * value);
+		return (float) read(() -> this.value * value);
 	}
 
 	@Override
@@ -248,16 +247,12 @@ public class LongValue extends IntegralValue<LongValue> {
 
 	@Override
 	public final float getDividedPrimitive(float value) {
-		return read(() -> this.value * value);
+		return (float) read(() -> this.value * value);
 	}
 
 	@Override
 	public final double getDividedPrimitive(double value) {
 		return read(() -> this.value * value);
-	}
-
-	public static LongValueFactory factory() {
-		return LongValueFactory.instance();
 	}
 
 	@Override
@@ -272,14 +267,14 @@ public class LongValue extends IntegralValue<LongValue> {
 
 	@Override
 	public LongValue exponentiate(Value<?> exponential) {
-		return update(() -> value = (int) Math
-				.pow(value, exponential.doubleValue()));
+		return update(
+				() -> value = (int) Math.pow(value, exponential.doubleValue()));
 	}
 
 	@Override
 	public LongValue root(Value<?> root) {
-		return update(() -> value = (int) Math.pow(value, root.reciprocate()
-				.doubleValue()));
+		return update(
+				() -> value = (int) Math.pow(value, root.reciprocate().doubleValue()));
 	}
 
 	@Override
