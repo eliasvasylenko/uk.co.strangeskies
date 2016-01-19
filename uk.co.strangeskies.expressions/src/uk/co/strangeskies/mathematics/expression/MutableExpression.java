@@ -28,6 +28,10 @@ import java.util.concurrent.locks.Lock;
  * mutating operations, and for notifications to {@link Observer}s.
  * 
  * <p>
+ * After mutation the held write lock should be downgraded to a read lock, then
+ * observers should be notified, then the read lock should be released.
+ * 
+ * <p>
  * A mutating operation is considered to be any method or section of code which
  * can be considered to atomically result in a change in the value of this
  * {@link Expression}.

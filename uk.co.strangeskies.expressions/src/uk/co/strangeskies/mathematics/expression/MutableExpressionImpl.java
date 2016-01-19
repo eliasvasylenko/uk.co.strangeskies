@@ -18,6 +18,7 @@
  */
 package uk.co.strangeskies.mathematics.expression;
 
+import java.util.ArrayList;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -67,16 +68,20 @@ public abstract class MutableExpressionImpl<T> implements MutableExpression<T> {
 	}
 
 	protected final void postUpdate() {
-		getWriteLock().lock();
-
 		try {
+			getWriteLock().lock();
+			getReadLock().lock();
+			unlockWriteLock();
+
 			if (!dirty) {
 				dirty = true;
-				for (Consumer<? super Expression<T>> observer : observers)
+				for (Consumer<? super Expression<T>> observer : new ArrayList<>(
+						observers))
 					observer.accept(null);
 			}
 		} finally {
 			unlockWriteLock();
+			getReadLock().unlock();
 		}
 	}
 
