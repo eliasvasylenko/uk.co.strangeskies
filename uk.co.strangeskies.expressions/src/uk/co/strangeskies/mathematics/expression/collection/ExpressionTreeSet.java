@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Elias N Vasylenko <eliasvasylenko@gmail.com>
+ * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
  *
  * This file is part of uk.co.strangeskies.expressions.
  *
@@ -27,11 +27,11 @@ import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
+import java.util.function.Consumer;
 
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
 import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.utilities.EqualityComparator;
-import uk.co.strangeskies.utilities.Observer;
 
 public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 		implements SortedExpressionSet<ExpressionTreeSet<E>, E>,
@@ -40,9 +40,9 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 
 	private boolean evaluated = true;
 
-	private Observer<Expression<?>> dependencyObserver;
+	private Consumer<Expression<?>> dependencyObserver;
 
-	private Set<Observer<? super Expression<ExpressionTreeSet<E>>>> observers;
+	private Set<Consumer<? super Expression<ExpressionTreeSet<E>>>> observers;
 
 	private ReentrantReadWriteLock lock;
 
@@ -88,8 +88,8 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 	}
 
 	protected final void postUpdate() {
-		for (Observer<? super Expression<ExpressionTreeSet<E>>> observer : observers) {
-			observer.notify(null);
+		for (Consumer<? super Expression<ExpressionTreeSet<E>>> observer : observers) {
+			observer.accept(null);
 		}
 	}
 
@@ -265,13 +265,13 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 
 	@Override
 	public boolean addObserver(
-			Observer<? super Expression<ExpressionTreeSet<E>>> observer) {
+			Consumer<? super Expression<ExpressionTreeSet<E>>> observer) {
 		return observers.add(observer);
 	}
 
 	@Override
 	public boolean removeObserver(
-			Observer<? super Expression<ExpressionTreeSet<E>>> observer) {
+			Consumer<? super Expression<ExpressionTreeSet<E>>> observer) {
 		return observers.remove(observer);
 	}
 

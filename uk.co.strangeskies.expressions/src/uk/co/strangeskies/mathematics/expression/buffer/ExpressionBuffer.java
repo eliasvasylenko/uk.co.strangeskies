@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Elias N Vasylenko <eliasvasylenko@gmail.com>
+ * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
  *
  * This file is part of uk.co.strangeskies.expressions.
  *
@@ -19,14 +19,14 @@
 package uk.co.strangeskies.mathematics.expression.buffer;
 
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import uk.co.strangeskies.mathematics.expression.Expression;
-import uk.co.strangeskies.utilities.Observer;
 
-public class ExpressionBuffer<F extends Expression<?>, T> extends
-		FunctionBuffer<F, T> {
-	private Observer<Expression<?>> backObserver;
+public class ExpressionBuffer<F extends Expression<?>, T>
+		extends FunctionBuffer<F, T> {
+	private Consumer<Expression<?>> backObserver;
 
 	public ExpressionBuffer(T front, F back,
 			BiFunction<? super T, ? super F, ? extends T> operation) {
@@ -59,11 +59,11 @@ public class ExpressionBuffer<F extends Expression<?>, T> extends
 		return super.setBack(next);
 	}
 
-	private Observer<Expression<?>> nextBackObserver() {
+	private Consumer<Expression<?>> nextBackObserver() {
 		return backObserver = m -> invalidateBack();
 	}
 
-	private Observer<Expression<?>> getBackObserver() {
+	private Consumer<Expression<?>> getBackObserver() {
 		return backObserver;
 	}
 }

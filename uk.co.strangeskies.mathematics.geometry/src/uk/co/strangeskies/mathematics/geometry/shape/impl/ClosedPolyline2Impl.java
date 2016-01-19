@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Elias N Vasylenko <eliasvasylenko@gmail.com>
+ * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
  *
  * This file is part of uk.co.strangeskies.mathematics.geometry.
  *
@@ -20,6 +20,7 @@ package uk.co.strangeskies.mathematics.geometry.shape.impl;
 
 import java.util.List;
 import java.util.concurrent.locks.Lock;
+import java.util.function.Consumer;
 
 import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.mathematics.geometry.Bounds2;
@@ -28,7 +29,6 @@ import uk.co.strangeskies.mathematics.geometry.shape.ClosedPolyline2;
 import uk.co.strangeskies.mathematics.geometry.shape.Line2;
 import uk.co.strangeskies.mathematics.geometry.shape.Shape;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.Observer;
 
 public class ClosedPolyline2Impl<V extends Value<V>> implements
 		ClosedPolyline2<V> {
@@ -82,14 +82,14 @@ public class ClosedPolyline2Impl<V extends Value<V>> implements
 
 	@Override
 	public boolean addObserver(
-			Observer<? super Expression<ClosedPolyline2<V>>> observer) {
+			Consumer<? super Expression<ClosedPolyline2<V>>> observer) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public boolean removeObserver(
-			Observer<? super Expression<ClosedPolyline2<V>>> observer) {
+			Consumer<? super Expression<ClosedPolyline2<V>>> observer) {
 		// TODO Auto-generated method stub
 		return false;
 	}

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Elias N Vasylenko <eliasvasylenko@gmail.com>
+ * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
  *
  * This file is part of uk.co.strangeskies.expressions.
  *
@@ -26,10 +26,10 @@ import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
+import java.util.function.Consumer;
 
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
 import uk.co.strangeskies.mathematics.expression.Expression;
-import uk.co.strangeskies.utilities.Observer;
 
 public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 		implements ExpressionList<ExpressionArrayList<E>, E>,
@@ -38,9 +38,9 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 
 	private boolean evaluated = true;
 
-	private final Observer<Expression<?>> dependencyObserver;
+	private final Consumer<Expression<?>> dependencyObserver;
 
-	private final Set<Observer<? super Expression<ExpressionArrayList<E>>>> observers;
+	private final Set<Consumer<? super Expression<ExpressionArrayList<E>>>> observers;
 
 	private ReentrantReadWriteLock lock;
 
@@ -73,8 +73,8 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 	}
 
 	protected final void postUpdate() {
-		for (Observer<?> observer : observers)
-			observer.notify(null);
+		for (Consumer<?> observer : observers)
+			observer.accept(null);
 	}
 
 	@Override
@@ -232,13 +232,13 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 
 	@Override
 	public final boolean addObserver(
-			Observer<? super Expression<ExpressionArrayList<E>>> observer) {
+			Consumer<? super Expression<ExpressionArrayList<E>>> observer) {
 		return observers.add(observer);
 	}
 
 	@Override
 	public final boolean removeObserver(
-			Observer<? super Expression<ExpressionArrayList<E>>> observer) {
+			Consumer<? super Expression<ExpressionArrayList<E>>> observer) {
 		return observers.remove(observer);
 	}
 

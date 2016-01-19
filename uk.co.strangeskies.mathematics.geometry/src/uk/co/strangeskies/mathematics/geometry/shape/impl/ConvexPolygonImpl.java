@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Elias N Vasylenko <eliasvasylenko@gmail.com>
+ * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
  *
  * This file is part of uk.co.strangeskies.mathematics.geometry.
  *
@@ -33,23 +33,17 @@ import uk.co.strangeskies.mathematics.geometry.shape.ConvexPolygon;
 import uk.co.strangeskies.mathematics.geometry.shape.Shape;
 import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.Observable;
-import uk.co.strangeskies.utilities.Observer;
 
 //convex only polygon
-public class ConvexPolygonImpl<V extends Value<V>> extends
-		DependentExpression<ConvexPolygonImpl<V>> implements
-		ConvexPolygon<ConvexPolygonImpl<V>, V> {
+public class ConvexPolygonImpl<V extends Value<V>>
+		extends DependentExpression<ConvexPolygonImpl<V>>
+		implements ConvexPolygon<ConvexPolygonImpl<V>, V> {
 	public class ConvexHull<T> extends AbstractSet<Vector2<V>> {
 		private final ArrayList<Vector2<V>> backingList;
 
 		private ConvexHull(Observable<?> hullVertexSet) {
 			backingList = new ArrayList<>();
-			hullVertexSet.addObserver(new Observer<Object>() {
-				@Override
-				public void notify(Object message) {
-					invalidate();
-				}
-			});
+			hullVertexSet.addObserver(message -> invalidate());
 		}
 
 		public void invalidate() {
@@ -86,7 +80,7 @@ public class ConvexPolygonImpl<V extends Value<V>> extends
 			// was the point on the right of the last edge
 			/*-
 			boolean right = false;
-
+			
 			for (int i = begin; i < end; i++) {
 				// is the point on the right of the edge from this vertex to the next
 				if (new Matrix2Impl<V>(i - (i + 1), i - point).Det() > 0.01) {
@@ -109,10 +103,10 @@ public class ConvexPolygonImpl<V extends Value<V>> extends
 			}
 			if (last == begin - 1)
 				last = begin;
-
+			
 			// construct new convex polygon
 			List<Vector2Impl<V>> newVertices;
-
+			
 			if (first < last) {
 				for (i = first; i <= last; i++)
 					newVertices.push_back(i);
@@ -124,7 +118,7 @@ public class ConvexPolygonImpl<V extends Value<V>> extends
 					newVertices.push_back(i);
 				newVertices.push_back(point);
 			}
-
+			
 			vertices = newVertices;
 			 */
 

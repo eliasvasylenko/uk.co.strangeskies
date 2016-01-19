@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Elias N Vasylenko <eliasvasylenko@gmail.com>
+ * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
  *
  * This file is part of uk.co.strangeskies.mathematics.
  *
@@ -23,6 +23,7 @@ import java.util.TreeSet;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.IntSupplier;
 import java.util.function.LongSupplier;
@@ -38,7 +39,6 @@ import uk.co.strangeskies.mathematics.operation.Scalable;
 import uk.co.strangeskies.mathematics.operation.Subtractable;
 import uk.co.strangeskies.utilities.Copyable;
 import uk.co.strangeskies.utilities.EqualityComparator;
-import uk.co.strangeskies.utilities.Observer;
 import uk.co.strangeskies.utilities.Property;
 import uk.co.strangeskies.utilities.Self;
 
@@ -49,7 +49,7 @@ public abstract class Value<S extends Value<S>> extends Number
 		CopyDecouplingExpression<S> {
 	private static final long serialVersionUID = -979949605176385397L;
 
-	private final Set<Observer<? super Expression<S>>> observers;
+	private final Set<Consumer<? super Expression<S>>> observers;
 	private boolean evaluated = true;
 	private final ReentrantReadWriteLock lock;
 
@@ -58,7 +58,7 @@ public abstract class Value<S extends Value<S>> extends Number
 	}
 
 	public Value(Number value) {
-		observers = new TreeSet<Observer<? super Expression<S>>>(
+		observers = new TreeSet<Consumer<? super Expression<S>>>(
 				EqualityComparator.identityComparator());
 		lock = new ReentrantReadWriteLock();
 
@@ -242,18 +242,18 @@ public abstract class Value<S extends Value<S>> extends Number
 	}
 
 	protected final void postUpdate() {
-		for (Observer<? super Expression<S>> observer : observers)
-			observer.notify(null);
+		for (Consumer<? super Expression<S>> observer : observers)
+			observer.accept(null);
 	}
 
 	@Override
-	public final boolean addObserver(Observer<? super Expression<S>> observer) {
+	public final boolean addObserver(Consumer<? super Expression<S>> observer) {
 		return observers.add(observer);
 	}
 
 	@Override
 	public final boolean removeObserver(
-			Observer<? super Expression<S>> observer) {
+			Consumer<? super Expression<S>> observer) {
 		return observers.remove(observer);
 	}
 

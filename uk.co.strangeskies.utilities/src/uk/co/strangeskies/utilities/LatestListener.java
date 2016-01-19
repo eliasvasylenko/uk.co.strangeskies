@@ -16,44 +16,43 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with uk.co.strangeskies.utilities.  If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.utilities.collection;
+package uk.co.strangeskies.utilities;
 
-import java.util.AbstractList;
-import java.util.List;
+/**
+ * An implementation of {@link ForwardingListener} which pipes the latest
+ * available event objects to listeners as quickly as they can keep up with
+ * production.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <T>
+ *          The type of event to listen for
+ */
+public class LatestListener<T> extends ForwardingListener<T, T> {
+	/**
+	 * Initialise a buffering listener with an empty queue and an empty set of
+	 * listeners.
+	 */
+	public LatestListener() {
+		super(new Buffer<T, T>() {
+			private T latest;
 
-public class MergeIndicesListView<T> extends AbstractList<T> {
-  private final List<? extends List<? extends T>> backingList;
+			@Override
+			public boolean isReady() {
+				return latest != null;
+			}
 
-  public MergeIndicesListView(List<? extends List<? extends T>> backingList) {
-    this.backingList = backingList;
-  }
+			@Override
+			public T get() {
+				T latest = this.latest;
+				this.latest = null;
+				return latest;
+			}
 
-  @Override
-  public final T get(int index) {
-    int size = 0;
-    int previousSize = 0;
-
-    for (List<? extends T> major : backingList) {
-      size += major.size();
-
-      if (size > index) {
-        return major.get(index - previousSize);
-      }
-
-      previousSize = size;
-    }
-
-    throw new ArrayIndexOutOfBoundsException();
-  }
-
-  @Override
-  public final int size() {
-    int size = 0;
-
-    for (List<?> major : backingList) {
-      size += major.size();
-    }
-
-    return size;
-  }
+			@Override
+			public void put(T item) {
+				latest = item;
+			}
+		});
+	}
 }

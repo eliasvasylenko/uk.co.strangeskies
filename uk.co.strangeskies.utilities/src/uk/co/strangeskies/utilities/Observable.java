@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Elias N Vasylenko <eliasvasylenko@gmail.com>
+ * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
  *
  * This file is part of uk.co.strangeskies.utilities.
  *
@@ -18,17 +18,60 @@
  */
 package uk.co.strangeskies.utilities;
 
+import java.lang.ref.WeakReference;
+import java.util.function.Consumer;
+
 /**
  * Simple interface for an observable object, with methods to add and remove
  * observers expecting the applicable type of message.
  * 
  * @author Elias N Vasylenko
- *
  * @param <M>
  *          The message type. This may be {@link Void} if no message need be
  *          sent.
  */
 public interface Observable<M> {
+	/**
+	 * A weak observer is one which automatically removes itself from an
+	 * observable once it is otherwise available for garbage collection.
+	 * 
+	 * @author Elias N Vasylenko
+	 * @param <T>
+	 */
+	class WeakObserver<T> implements Consumer<T> {
+		private final Observable<? extends T> observable;
+		private final WeakReference<Consumer<T>> consumer;
+
+		private WeakObserver(Observable<? extends T> observable,
+				Consumer<T> consumer) {
+			this.observable = observable;
+			this.consumer = new WeakReference<>(consumer);
+		}
+
+		@Override
+		public void accept(T t) {
+			Consumer<T> component = consumer.get();
+			if (component == null) {
+				new Thread(() -> observable.removeObserver(this)).start();
+			} else {
+				component.accept(t);
+			}
+		}
+	}
+
+	/**
+	 * Observers added will receive messages from this Observable. A weak observer
+	 * will be removed automatically once it is otherwise available for garbage
+	 * collection.
+	 * 
+	 * @param observer
+	 *          An observer to add.
+	 * @return True if the observer was successfully added, false otherwise.
+	 */
+	default boolean addWeakObserver(Consumer<? super M> observer) {
+		return addObserver(new WeakObserver<>(this, observer));
+	}
+
 	/**
 	 * Observers added will receive messages from this Observable.
 	 * 
@@ -36,7 +79,7 @@ public interface Observable<M> {
 	 *          An observer to add.
 	 * @return True if the observer was successfully added, false otherwise.
 	 */
-	public boolean addObserver(Observer<? super M> observer);
+	boolean addObserver(Consumer<? super M> observer);
 
 	/**
 	 * Observers removed will no longer receive messages from this Observable.
@@ -45,10 +88,10 @@ public interface Observable<M> {
 	 *          An observer to remove.
 	 * @return True if the observer was successfully removed, false otherwise.
 	 */
-	public boolean removeObserver(Observer<? super M> observer);
+	boolean removeObserver(Consumer<? super M> observer);
 
 	/**
 	 * Remove all observers from this Observable.
 	 */
-	public void clearObservers();
+	void clearObservers();
 }

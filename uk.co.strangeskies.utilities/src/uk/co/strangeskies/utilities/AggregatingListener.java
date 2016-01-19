@@ -18,15 +18,44 @@
  */
 package uk.co.strangeskies.utilities;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * An interface to provides a canonical name for an object.
+ * An implementation of {@link ForwardingListener} which aggregates consumed
+ * data into a list, then provides it to listeners in chunks of all remaining
+ * data.
  * 
  * @author Elias N Vasylenko
  *
+ * @param <T>
+ *          The type of event to listen for
  */
-public interface Named {
+public class AggregatingListener<T> extends ForwardingListener<T, List<T>> {
 	/**
-	 * @return The canonical name of this instance.
+	 * Initialise a buffering listener with an empty queue and an empty set of
+	 * listeners.
 	 */
-	public String getName();
+	public AggregatingListener() {
+		super(new Buffer<T, List<T>>() {
+			private final List<T> list = new ArrayList<>();
+
+			@Override
+			public boolean isReady() {
+				return !list.isEmpty();
+			}
+
+			@Override
+			public List<T> get() {
+				List<T> aggregate = new ArrayList<>(list);
+				list.clear();
+				return aggregate;
+			}
+
+			@Override
+			public void put(T item) {
+				list.add(item);
+			}
+		});
+	}
 }

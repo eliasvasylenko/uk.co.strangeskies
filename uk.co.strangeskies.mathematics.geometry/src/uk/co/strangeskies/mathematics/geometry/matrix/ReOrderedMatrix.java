@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Elias N Vasylenko <eliasvasylenko@gmail.com>
+ * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
  *
  * This file is part of uk.co.strangeskies.mathematics.geometry.
  *
@@ -21,6 +21,7 @@ package uk.co.strangeskies.mathematics.geometry.matrix;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import uk.co.strangeskies.mathematics.expression.Expression;
@@ -29,7 +30,6 @@ import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.values.IntValue;
 import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.Decorator;
-import uk.co.strangeskies.utilities.Observer;
 import uk.co.strangeskies.utilities.function.TriFunction;
 
 public class ReOrderedMatrix<V extends Value<V>> extends
@@ -61,14 +61,14 @@ public class ReOrderedMatrix<V extends Value<V>> extends
 
 	@Override
 	public boolean addObserver(
-			Observer<? super Expression<ReOrderedMatrix<V>>> observer) {
+			Consumer<? super Expression<ReOrderedMatrix<V>>> observer) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public boolean removeObserver(
-			Observer<? super Expression<ReOrderedMatrix<V>>> observer) {
+			Consumer<? super Expression<ReOrderedMatrix<V>>> observer) {
 		// TODO Auto-generated method stub
 		return false;
 	}

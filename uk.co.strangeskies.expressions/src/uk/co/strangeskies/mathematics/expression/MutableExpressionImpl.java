@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Elias N Vasylenko <eliasvasylenko@gmail.com>
+ * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
  *
  * This file is part of uk.co.strangeskies.expressions.
  *
@@ -23,9 +23,9 @@ import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
+import java.util.function.Consumer;
 
 import uk.co.strangeskies.utilities.EqualityComparator;
-import uk.co.strangeskies.utilities.Observer;
 
 /**
  * An abstract class to help designing mutable expression, implementing a simple
@@ -36,7 +36,7 @@ import uk.co.strangeskies.utilities.Observer;
  *          The type of the expression.
  */
 public abstract class MutableExpressionImpl<T> implements MutableExpression<T> {
-	private final Set<Observer<? super Expression<T>>> observers;
+	private final Set<Consumer<? super Expression<T>>> observers;
 	private final ReentrantReadWriteLock lock;
 
 	private boolean dirty;
@@ -45,18 +45,19 @@ public abstract class MutableExpressionImpl<T> implements MutableExpression<T> {
 	 * Default constructor.
 	 */
 	public MutableExpressionImpl() {
-		observers = new TreeSet<Observer<? super Expression<T>>>(
+		observers = new TreeSet<Consumer<? super Expression<T>>>(
 				EqualityComparator.identityComparator());
 		lock = new ReentrantReadWriteLock();
 	}
 
 	@Override
-	public final boolean addObserver(Observer<? super Expression<T>> observer) {
+	public final boolean addObserver(Consumer<? super Expression<T>> observer) {
 		return observers.add(observer);
 	}
 
 	@Override
-	public final boolean removeObserver(Observer<? super Expression<T>> observer) {
+	public final boolean removeObserver(
+			Consumer<? super Expression<T>> observer) {
 		return observers.remove(observer);
 	}
 
@@ -71,8 +72,8 @@ public abstract class MutableExpressionImpl<T> implements MutableExpression<T> {
 		try {
 			if (!dirty) {
 				dirty = true;
-				for (Observer<? super Expression<T>> observer : observers)
-					observer.notify(null);
+				for (Consumer<? super Expression<T>> observer : observers)
+					observer.accept(null);
 			}
 		} finally {
 			unlockWriteLock();

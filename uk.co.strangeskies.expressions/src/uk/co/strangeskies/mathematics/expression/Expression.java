@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Elias N Vasylenko <eliasvasylenko@gmail.com>
+ * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
  *
  * This file is part of uk.co.strangeskies.expressions.
  *
@@ -18,10 +18,11 @@
  */
 package uk.co.strangeskies.mathematics.expression;
 
+import java.util.Observer;
 import java.util.concurrent.locks.Lock;
+import java.util.function.Consumer;
 
 import uk.co.strangeskies.utilities.Observable;
-import uk.co.strangeskies.utilities.Observer;
 
 /**
  * <p>
@@ -106,13 +107,14 @@ public interface Expression<T> extends Observable<Expression<T>> {
 			}
 
 			@Override
-			public final boolean addObserver(Observer<? super Expression<T>> observer) {
+			public final boolean addObserver(
+					Consumer<? super Expression<T>> observer) {
 				return true;
 			}
 
 			@Override
 			public final boolean removeObserver(
-					Observer<? super Expression<T>> observer) {
+					Consumer<? super Expression<T>> observer) {
 				return true;
 			}
 
@@ -124,7 +126,8 @@ public interface Expression<T> extends Observable<Expression<T>> {
 	}
 
 	/**
-	 * @return <p>
+	 * @return
+	 * 				<p>
 	 *         A read lock on the current value of this {@link Expression}.
 	 *         Implementing classes are responsible for making sure attempts to
 	 *         resolve the value of this expression obtain a read lock, and for

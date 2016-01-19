@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Elias N Vasylenko <eliasvasylenko@gmail.com>
+ * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
  *
  * This file is part of uk.co.strangeskies.utilities.
  *
@@ -18,22 +18,41 @@
  */
 package uk.co.strangeskies.utilities;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+
 /**
- * A simple observer interface, with a single method to receive messages of a
- * given type.
+ * An implementation of {@link ForwardingListener} which simply pipes event
+ * objects to chained listeners asynchronously with the original event thread.
  * 
  * @author Elias N Vasylenko
  *
- * @param <M>
- *          The message type. This may be {@link Void} if no message need be
- *          received.
+ * @param <T>
+ *          The type of event to listen for
  */
-public interface Observer<M> {
+public class BufferingListener<T> extends ForwardingListener<T, T> {
 	/**
-	 * Notification method to be invoked by {@link Observable} instances.
-	 * 
-	 * @param message
-	 *          The message received from an Observable.
+	 * Initialise a buffering listener with an empty queue and an empty set of
+	 * listeners.
 	 */
-	public void notify(M message);
+	public BufferingListener() {
+		super(new Buffer<T, T>() {
+			private final Deque<T> queue = new ArrayDeque<>();
+
+			@Override
+			public boolean isReady() {
+				return !queue.isEmpty();
+			}
+
+			@Override
+			public T get() {
+				return queue.remove();
+			}
+
+			@Override
+			public void put(T item) {
+				queue.add(item);
+			}
+		});
+	}
 }
