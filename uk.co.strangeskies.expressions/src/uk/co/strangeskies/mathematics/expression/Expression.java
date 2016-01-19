@@ -20,7 +20,6 @@ package uk.co.strangeskies.mathematics.expression;
 
 import java.util.Observer;
 import java.util.concurrent.locks.Lock;
-import java.util.function.Consumer;
 
 import uk.co.strangeskies.utilities.Observable;
 
@@ -97,30 +96,10 @@ public interface Expression<T> extends Observable<Expression<T>> {
 	 *         given, and upon which read locks are always available.
 	 */
 	public static <T> Expression<T> immutable(final T value) {
-		return new Expression<T>() {
-			@Override
-			public final void clearObservers() {}
-
+		return new ImmutableExpressionImpl<T>() {
 			@Override
 			public final T getValue() {
 				return value;
-			}
-
-			@Override
-			public final boolean addObserver(
-					Consumer<? super Expression<T>> observer) {
-				return true;
-			}
-
-			@Override
-			public final boolean removeObserver(
-					Consumer<? super Expression<T>> observer) {
-				return true;
-			}
-
-			@Override
-			public Lock getReadLock() {
-				return new ImmutableReadLock();
 			}
 		};
 	}

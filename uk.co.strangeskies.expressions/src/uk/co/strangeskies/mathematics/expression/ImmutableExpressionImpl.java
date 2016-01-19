@@ -18,19 +18,34 @@
  */
 package uk.co.strangeskies.mathematics.expression;
 
-import uk.co.strangeskies.utilities.Self;
+import java.util.concurrent.locks.Lock;
+import java.util.function.Consumer;
 
 /**
- * A variable for use in reactive programming. A Variable in this sense is a
- * first class expression, that is to say it is an expression whose value is
- * itself.
- *
+ * An abstract class to help designing mutable expression, implementing a simple
+ * observer list, locking mechanism, and update mechanism.
+ * 
  * @author Elias N Vasylenko
- *
- * @param <S>
- *          See {@link Self} for more information. This must be self-bounding as
- *          the value of the expression is the variable itself.
+ * @param <T>
+ *          The type of the expression.
  */
-public interface SelfExpression<S extends SelfExpression<S>>
-		extends Expression<S>, Self<S> {
+public abstract class ImmutableExpressionImpl<T> implements Expression<T> {
+	@Override
+	public final void clearObservers() {}
+
+	@Override
+	public final boolean addObserver(Consumer<? super Expression<T>> observer) {
+		return true;
+	}
+
+	@Override
+	public final boolean removeObserver(
+			Consumer<? super Expression<T>> observer) {
+		return true;
+	}
+
+	@Override
+	public Lock getReadLock() {
+		return new ImmutableReadLock();
+	}
 }
