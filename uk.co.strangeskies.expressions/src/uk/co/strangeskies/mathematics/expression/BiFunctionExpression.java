@@ -105,11 +105,9 @@ public class BiFunctionExpression<O1, O2, R> extends DependentExpression<R> {
 
 				getDependencies().add(this.firstOperand);
 				getDependencies().add(this.secondOperand);
-
-				postUpdate();
 			}
 		} finally {
-			unlockWriteLock();
+			postUpdate();
 		}
 	}
 
@@ -127,10 +125,9 @@ public class BiFunctionExpression<O1, O2, R> extends DependentExpression<R> {
 
 				firstOperand = operand;
 				getDependencies().add(firstOperand);
-				postUpdate();
 			}
 		} finally {
-			unlockWriteLock();
+			postUpdate();
 		}
 	}
 
@@ -148,11 +145,9 @@ public class BiFunctionExpression<O1, O2, R> extends DependentExpression<R> {
 
 				secondOperand = operand;
 				getDependencies().add(secondOperand);
-
-				postUpdate();
 			}
 		} finally {
-			unlockWriteLock();
+			postUpdate();
 		}
 	}
 

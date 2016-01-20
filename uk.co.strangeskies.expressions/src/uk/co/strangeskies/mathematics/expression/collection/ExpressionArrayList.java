@@ -21,6 +21,7 @@ package uk.co.strangeskies.mathematics.expression.collection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -47,7 +48,7 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 	public ExpressionArrayList() {
 		dependencyObserver = message -> update();
 
-		observers = new TreeSet<>();
+		observers = new LinkedHashSet<>();
 
 		lock = new ReentrantReadWriteLock();
 	}
@@ -240,11 +241,6 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 	public final boolean removeObserver(
 			Consumer<? super Expression<ExpressionArrayList<E>>> observer) {
 		return observers.remove(observer);
-	}
-
-	@Override
-	public final void clearObservers() {
-		observers.clear();
 	}
 
 	@Override

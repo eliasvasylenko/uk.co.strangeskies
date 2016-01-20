@@ -19,14 +19,13 @@
 package uk.co.strangeskies.utilities;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.function.Consumer;
 
 /**
  * A buffer to decouple the delivery of events with their sequential
  * consumption, such that the event firing threads are not blocked by listeners.
- * <p>
- * Listeners are invoked in the order they are added.
  * <p>
  * Consumed events are translated to produced events by way of an implementation
  * of {@link Buffer}, the implemented methods of which are guaranteed to be
@@ -70,7 +69,7 @@ public abstract class ForwardingListener<T, U>
 	}
 
 	private final Buffer<T, U> buffer;
-	private final List<Consumer<? super U>> listeners;
+	private final Set<Consumer<? super U>> listeners;
 	private boolean disposed;
 
 	/**
@@ -83,7 +82,7 @@ public abstract class ForwardingListener<T, U>
 	public ForwardingListener(Buffer<T, U> buffer) {
 		this.buffer = buffer;
 
-		listeners = new ArrayList<>();
+		listeners = new LinkedHashSet<>();
 		disposed = false;
 
 		Thread forwardThread = new Thread(() -> {
@@ -146,32 +145,19 @@ public abstract class ForwardingListener<T, U>
 		}
 	}
 
-	/**
-	 * Add the given listener to the set.
-	 * 
-	 * @param listener
-	 *          A listener to receive forwarded events
-	 */
 	@Override
 	public synchronized boolean addObserver(Consumer<? super U> listener) {
 		return listeners.add(listener);
 	}
 
-	/**
-	 * Remove the given listener from the set.
-	 * 
-	 * @param listener
-	 *          A listener to receive forwarded events
-	 */
 	@Override
 	public synchronized boolean removeObserver(Consumer<? super U> listener) {
 		return listeners.remove(listener);
 	}
 
 	/**
-	 * Clear all chained listeners.
+	 * Remove all observers from forwarding.
 	 */
-	@Override
 	public synchronized void clearObservers() {
 		listeners.clear();
 	}

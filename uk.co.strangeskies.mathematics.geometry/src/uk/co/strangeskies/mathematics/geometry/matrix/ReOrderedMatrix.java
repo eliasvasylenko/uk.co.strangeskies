@@ -74,12 +74,6 @@ public class ReOrderedMatrix<V extends Value<V>> extends
 	}
 
 	@Override
-	public void clearObservers() {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
 	public Order getOrder() {
 		return getComponent().getOrder().getOther();
 	}

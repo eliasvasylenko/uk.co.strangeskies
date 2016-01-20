@@ -30,8 +30,8 @@ import uk.co.strangeskies.mathematics.geometry.shape.Line2;
 import uk.co.strangeskies.mathematics.geometry.shape.Shape;
 import uk.co.strangeskies.mathematics.values.Value;
 
-public class ClosedPolyline2Impl<V extends Value<V>> implements
-		ClosedPolyline2<V> {
+public class ClosedPolyline2Impl<V extends Value<V>>
+		implements ClosedPolyline2<V> {
 	@Override
 	public boolean intersects(Shape<?> shape) {
 		// TODO Auto-generated method stub
@@ -92,12 +92,6 @@ public class ClosedPolyline2Impl<V extends Value<V>> implements
 			Consumer<? super Expression<ClosedPolyline2<V>>> observer) {
 		// TODO Auto-generated method stub
 		return false;
-	}
-
-	@Override
-	public void clearObservers() {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override

@@ -19,14 +19,12 @@
 package uk.co.strangeskies.mathematics.expression;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.util.function.Consumer;
-
-import uk.co.strangeskies.utilities.EqualityComparator;
 
 /**
  * An abstract class to help designing mutable expression, implementing a simple
@@ -46,8 +44,7 @@ public abstract class MutableExpressionImpl<T> implements MutableExpression<T> {
 	 * Default constructor.
 	 */
 	public MutableExpressionImpl() {
-		observers = new TreeSet<Consumer<? super Expression<T>>>(
-				EqualityComparator.identityComparator());
+		observers = new LinkedHashSet<>();
 		lock = new ReentrantReadWriteLock();
 	}
 
@@ -62,11 +59,6 @@ public abstract class MutableExpressionImpl<T> implements MutableExpression<T> {
 		return observers.remove(observer);
 	}
 
-	@Override
-	public final void clearObservers() {
-		observers.clear();
-	}
-
 	protected final void postUpdate() {
 		try {
 			getWriteLock().lock();
@@ -77,7 +69,7 @@ public abstract class MutableExpressionImpl<T> implements MutableExpression<T> {
 				dirty = true;
 				for (Consumer<? super Expression<T>> observer : new ArrayList<>(
 						observers))
-					observer.accept(null);
+					observer.accept(this);
 			}
 		} finally {
 			unlockWriteLock();
@@ -90,19 +82,18 @@ public abstract class MutableExpressionImpl<T> implements MutableExpression<T> {
 		try {
 			getReadLock().lock();
 
-			boolean dirty = this.dirty;
-			if (this.dirty)
-				this.dirty = false;
-			T value = getValueImpl(dirty);
+			T value;
+			synchronized (lock) {
+				boolean dirty = this.dirty;
+				if (this.dirty)
+					this.dirty = false;
+				value = getValueImpl(dirty);
+			}
 
 			return value;
 		} finally {
 			getReadLock().unlock();
 		}
-	}
-
-	protected boolean isDirty() {
-		return dirty;
 	}
 
 	/**

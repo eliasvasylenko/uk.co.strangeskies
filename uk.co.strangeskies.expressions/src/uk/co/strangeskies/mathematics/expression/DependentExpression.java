@@ -20,7 +20,6 @@ package uk.co.strangeskies.mathematics.expression;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Set;
 
 import uk.co.strangeskies.mathematics.expression.collection.ExpressionTreeSet;
 import uk.co.strangeskies.mathematics.expression.collection.SortedExpressionSet;
@@ -70,8 +69,6 @@ public abstract class DependentExpression<T> extends MutableExpressionImpl<T> {
 	public final T getValueImpl(boolean dirty) {
 		if (dirty) {
 			try {
-				Set<Expression<?>> dependencies = getDependencies();
-
 				for (Expression<?> dependency : dependencies) {
 					dependency.getReadLock().lock();
 					if (parallel)

@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -31,7 +32,6 @@ import java.util.function.Consumer;
 
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
 import uk.co.strangeskies.mathematics.expression.Expression;
-import uk.co.strangeskies.utilities.EqualityComparator;
 
 public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 		implements SortedExpressionSet<ExpressionTreeSet<E>, E>,
@@ -51,7 +51,7 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 
 		dependencyObserver = message -> update();
 
-		observers = new TreeSet<>(EqualityComparator.identityComparator());
+		observers = new LinkedHashSet<>();
 
 		lock = new ReentrantReadWriteLock();
 	}
@@ -244,11 +244,6 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 		}
 
 		return this;
-	}
-
-	@Override
-	public final void clearObservers() {
-		observers.clear();
 	}
 
 	@Override

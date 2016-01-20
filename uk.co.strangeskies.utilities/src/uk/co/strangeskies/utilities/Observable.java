@@ -19,11 +19,20 @@
 package uk.co.strangeskies.utilities;
 
 import java.lang.ref.WeakReference;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Simple interface for an observable object, with methods to add and remove
  * observers expecting the applicable type of message.
+ * <p>
+ * Unless otherwise specified, implementations should conceptually maintain the
+ * collection of observers according to the semantics of {@link Set} by object
+ * equality. Implementers should note that methods for weak observers must be
+ * reimplemented if anything other than default equality is used to denote
+ * membership.
  * 
  * @author Elias N Vasylenko
  * @param <M>
@@ -36,26 +45,49 @@ public interface Observable<M> {
 	 * observable once it is otherwise available for garbage collection.
 	 * 
 	 * @author Elias N Vasylenko
-	 * @param <T>
+	 * @param <M>
+	 *          The message type
+	 * @param <O>
+	 *          The owner type
 	 */
-	class WeakObserver<T> implements Consumer<T> {
-		private final Observable<? extends T> observable;
-		private final WeakReference<Consumer<T>> consumer;
+	class WeakObserver<M, O> implements Consumer<M> {
+		private final Observable<? extends M> observable;
+		private final Function<? super O, Consumer<? super M>> consumer;
+		private final WeakReference<O> owner;
 
-		private WeakObserver(Observable<? extends T> observable,
-				Consumer<T> consumer) {
+		private WeakObserver(Observable<? extends M> observable,
+				Function<? super O, Consumer<? super M>> consumer, O owner) {
 			this.observable = observable;
-			this.consumer = new WeakReference<>(consumer);
+
+			this.consumer = consumer;
+			this.owner = new WeakReference<>(owner);
 		}
 
 		@Override
-		public void accept(T t) {
-			Consumer<T> component = consumer.get();
-			if (component == null) {
+		public void accept(M t) {
+			O owner = this.owner.get();
+			if (owner == null) {
 				new Thread(() -> observable.removeObserver(this)).start();
 			} else {
-				component.accept(t);
+				consumer.apply(owner).accept(t);
 			}
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj) {
+				return true;
+			} else if (!(obj instanceof WeakObserver)) {
+				return false;
+			}
+
+			return Objects.equals(owner.get(),
+					((WeakObserver<?, ?>) obj).owner.get());
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hashCode(owner.get());
 		}
 	}
 
@@ -65,19 +97,58 @@ public interface Observable<M> {
 	 * collection.
 	 * 
 	 * @param observer
-	 *          An observer to add.
+	 *          An observer to add
 	 * @return True if the observer was successfully added, false otherwise.
 	 */
 	default boolean addWeakObserver(Consumer<? super M> observer) {
-		return addObserver(new WeakObserver<>(this, observer));
+		return addObserver(new WeakObserver<>(this, o -> o, observer));
+	}
+
+	/**
+	 * Observers added will receive messages from this Observable. A weak observer
+	 * will be removed automatically once the given owner is available for garbage
+	 * collection.
+	 * <p>
+	 * Only one weak observer can be registered for any given owner.
+	 * <p>
+	 * The observer itself must be given in the form of a function applicable to
+	 * the owner to ensure it does not create a reference to the owner and prevent
+	 * garbage collection.
+	 * 
+	 * @param <O>
+	 *          The type of the owner
+	 * @param observer
+	 *          An observer to add
+	 * @param owner
+	 *          The owner of the observer
+	 * @return True if the observer was successfully added, false otherwise.
+	 */
+	default <O> boolean addWeakObserver(O owner,
+			Function<? super O, Consumer<? super M>> observer) {
+		return addObserver(new WeakObserver<>(this, observer, owner));
+	}
+
+	/**
+	 * Remove any observer from this Observable which has the given owner.
+	 * Observers added without an explicitly given owner are considered to be
+	 * owned by themselves.
+	 * <p>
+	 * Only one weak observer can be registered for any given owner.
+	 * 
+	 * @param owner
+	 *          An observer to remove, or an owner whose observer is to be removed
+	 * @return True if the observer was successfully removed, false otherwise
+	 */
+	default boolean removeWeakObserver(Object owner) {
+		return removeObserver(new WeakObserver<>(this, null, owner));
 	}
 
 	/**
 	 * Observers added will receive messages from this Observable.
 	 * 
 	 * @param observer
-	 *          An observer to add.
-	 * @return True if the observer was successfully added, false otherwise.
+	 *          An observer to add
+	 * @return True if the observer was successfully added, false otherwise
 	 */
 	boolean addObserver(Consumer<? super M> observer);
 
@@ -85,13 +156,8 @@ public interface Observable<M> {
 	 * Observers removed will no longer receive messages from this Observable.
 	 * 
 	 * @param observer
-	 *          An observer to remove.
-	 * @return True if the observer was successfully removed, false otherwise.
+	 *          An observer to remove
+	 * @return True if the observer was successfully removed, false otherwise
 	 */
 	boolean removeObserver(Consumer<? super M> observer);
-
-	/**
-	 * Remove all observers from this Observable.
-	 */
-	void clearObservers();
 }

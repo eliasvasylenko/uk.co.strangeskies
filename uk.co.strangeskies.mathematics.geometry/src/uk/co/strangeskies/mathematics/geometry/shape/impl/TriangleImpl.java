@@ -155,7 +155,8 @@ public class TriangleImpl<V extends Value<V>> implements Triangle<V> {
 	}
 
 	@Override
-	public boolean addObserver(Consumer<? super Expression<Triangle<V>>> observer) {
+	public boolean addObserver(
+			Consumer<? super Expression<Triangle<V>>> observer) {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -165,11 +166,5 @@ public class TriangleImpl<V extends Value<V>> implements Triangle<V> {
 			Consumer<? super Expression<Triangle<V>>> observer) {
 		// TODO Auto-generated method stub
 		return false;
-	}
-
-	@Override
-	public void clearObservers() {
-		// TODO Auto-generated method stub
-
 	}
 }

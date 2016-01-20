@@ -18,8 +18,8 @@
  */
 package uk.co.strangeskies.mathematics.values;
 
+import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BooleanSupplier;
@@ -38,7 +38,6 @@ import uk.co.strangeskies.mathematics.operation.Negatable;
 import uk.co.strangeskies.mathematics.operation.Scalable;
 import uk.co.strangeskies.mathematics.operation.Subtractable;
 import uk.co.strangeskies.utilities.Copyable;
-import uk.co.strangeskies.utilities.EqualityComparator;
 import uk.co.strangeskies.utilities.Property;
 import uk.co.strangeskies.utilities.Self;
 
@@ -58,8 +57,7 @@ public abstract class Value<S extends Value<S>> extends Number
 	}
 
 	public Value(Number value) {
-		observers = new TreeSet<Consumer<? super Expression<S>>>(
-				EqualityComparator.identityComparator());
+		observers = new LinkedHashSet<>();
 		lock = new ReentrantReadWriteLock();
 
 		setValue(value);
@@ -255,11 +253,6 @@ public abstract class Value<S extends Value<S>> extends Number
 	public final boolean removeObserver(
 			Consumer<? super Expression<S>> observer) {
 		return observers.remove(observer);
-	}
-
-	@Override
-	public final void clearObservers() {
-		observers.clear();
 	}
 
 	@Override

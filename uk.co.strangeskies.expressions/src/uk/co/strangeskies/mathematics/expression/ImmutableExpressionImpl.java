@@ -31,9 +31,6 @@ import java.util.function.Consumer;
  */
 public abstract class ImmutableExpressionImpl<T> implements Expression<T> {
 	@Override
-	public final void clearObservers() {}
-
-	@Override
 	public final boolean addObserver(Consumer<? super Expression<T>> observer) {
 		return true;
 	}

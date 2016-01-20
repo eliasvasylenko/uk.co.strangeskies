@@ -75,6 +75,10 @@ public class FunctionExpression<O, R> extends DependentExpression<R> {
 		return operand;
 	}
 
+	public Expression<? extends Function<? super O, ? extends R>> getOperation() {
+		return operation;
+	}
+
 	/**
 	 * @param operand
 	 *          A new operand.
@@ -87,11 +91,9 @@ public class FunctionExpression<O, R> extends DependentExpression<R> {
 
 				this.operand = operand;
 				getDependencies().add(this.operand);
-
-				postUpdate();
 			}
 		} finally {
-			unlockWriteLock();
+			postUpdate();
 		}
 	}
 
