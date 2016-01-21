@@ -137,6 +137,15 @@ public class Range<T> implements Self<Range<T>> {
 		return to == null;
 	}
 
+	public Range<T> set(Range<? extends T> other) {
+		setFrom(other.getFrom());
+		setFromInclusive(other.isFromInclusive());
+		setTo(other.getTo());
+		setToInclusive(other.isToInclusive());
+
+		return this;
+	}
+
 	public Range<T> setFromInclusive(boolean fromInclusive) {
 		this.fromInclusive = fromInclusive;
 
