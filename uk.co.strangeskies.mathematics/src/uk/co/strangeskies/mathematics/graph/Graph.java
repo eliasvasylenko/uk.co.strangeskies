@@ -32,7 +32,9 @@ import uk.co.strangeskies.utilities.Copyable;
 /**
  * @author Elias N Vasylenko
  * @param <V>
+ *            The type of vertices in the graph
  * @param <E>
+ *            The type of edges in the graph
  */
 @ProviderType
 public interface Graph<V, E> extends Copyable<Graph<V, E>> {
@@ -72,14 +74,17 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 		Set<E> between(EdgeVertices<V> vertices);
 
 		/**
-		 * If there is exactly one edge between the provided vertices, this edge is
-		 * returned. If there is no edge between the provided vertices, null is
-		 * returned. If there are multiple edges between them, an exception is
-		 * thrown.
+		 * If there is exactly one edge between the provided vertices, this edge
+		 * is returned. If there is no edge between the provided vertices, null
+		 * is returned. If there are multiple edges between them, an exception
+		 * is thrown.
 		 *
 		 * @param from
+		 *            The tail vertex of the edge
 		 * @param to
-		 * @return
+		 *            The head vertex of the edge
+		 * @return The edge between the given head and tail, or null if no such
+		 *         edge exists.
 		 */
 		default E betweenUnique(V from, V to) {
 			return betweenUnique(EdgeVertices.between(from, to));
@@ -108,16 +113,12 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 	}
 
 	/**
-	 * Returns an unmodifiable set of the vertices in this graph.
-	 *
-	 * @return
+	 * @return An unmodifiable set of the vertices in this graph.
 	 */
 	Vertices<V, E> vertices();
 
 	/**
-	 * Returns an unmodifiable set of the edges in this graph.
-	 *
-	 * @return
+	 * @return An unmodifiable set of the edges in this graph.
 	 */
 	Edges<V, E> edges();
 
@@ -132,8 +133,10 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 	GraphListeners<V, E> listeners();
 
 	/**
+	 * Perform an operation on the receiving graph atomically.
 	 * 
 	 * @param action
+	 *            The action to perform
 	 */
 	void atomic(Consumer<? super Graph<V, E>> action);
 

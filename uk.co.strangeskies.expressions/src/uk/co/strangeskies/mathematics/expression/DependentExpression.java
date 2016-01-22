@@ -30,6 +30,7 @@ import uk.co.strangeskies.utilities.EqualityComparator;
  * 
  * @author Elias N Vasylenko
  * @param <T>
+ *          The type of the expression.
  */
 public abstract class DependentExpression<T> extends MutableExpressionImpl<T> {
 	private final SortedExpressionSet<?, Expression<? extends Object>> dependencies;

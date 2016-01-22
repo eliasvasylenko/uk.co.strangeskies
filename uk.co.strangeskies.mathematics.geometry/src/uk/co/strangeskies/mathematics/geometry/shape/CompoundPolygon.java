@@ -30,12 +30,12 @@ import uk.co.strangeskies.mathematics.values.Value;
 /**
  * Complex polygons, self intersecting with holes and multiple parts.
  *
- * @author eli
+ * @author Elias N Vasylenko
  *
  * @param <V>
+ *            The type of value for the coordinate system of the polygon
  */
-public interface CompoundPolygon<S extends CompoundPolygon<S, V>, V extends Value<V>>
-		extends Shape<S>,
+public interface CompoundPolygon<S extends CompoundPolygon<S, V>, V extends Value<V>> extends Shape<S>,
 		/*  */
 		BooleanCombinationBehaviour<CompoundPolygon<?, V>, CompoundPolygon<?, V>> {
 	enum WindingRule {
@@ -45,21 +45,18 @@ public interface CompoundPolygon<S extends CompoundPolygon<S, V>, V extends Valu
 	WindingRule windingRule();
 
 	/**
-	 * Return set of component polygons. These polygons may be self intersecting
-	 * and may intersect each other. There are no
-	 *
-	 * @return
+	 * @return The set of component polygons. These polygons may be self
+	 *         intersecting and may intersect each other. There are no TODO
 	 */
 	Set<ClosedPolyline2<V>> boundaryComponents();
 
 	default Bounds2<?> getBounds() {
-		return new Bounds2<V>(boundaryComponents().stream()
-				.flatMap(p -> p.vertices().stream()).collect(Collectors.toSet()));
+		return new Bounds2<V>(
+				boundaryComponents().stream().flatMap(p -> p.vertices().stream()).collect(Collectors.toSet()));
 	}
 
 	default Value<?> getPerimeter() {
-		return boundaryComponents().stream().collect(DoubleValue::new,
-				(v, p) -> v.add(p.getPerimeter()), Value::add);
+		return boundaryComponents().stream().collect(DoubleValue::new, (v, p) -> v.add(p.getPerimeter()), Value::add);
 	}
 
 	@Override

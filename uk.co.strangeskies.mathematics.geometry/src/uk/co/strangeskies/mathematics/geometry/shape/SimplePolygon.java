@@ -28,21 +28,20 @@ import uk.co.strangeskies.mathematics.values.Value;
  * A potentially self-touching, but non-self-crossing, and otherwise
  * traditionally 'simple', polygon.
  *
- * @author eli
+ * @author Elias N Vasylenko
  *
  * @param <S>
+ *            The type of the polygon
  * @param <V>
+ *            The type of value for the coordinate system of the polygon
  */
-public interface SimplePolygon<S extends SimplePolygon<S, V>, V extends Value<V>>
-		extends /*  */ComplexPolygon<S, V> {
+public interface SimplePolygon<S extends SimplePolygon<S, V>, V extends Value<V>> extends /*  */ComplexPolygon<S, V> {
 	public enum WindingDirection {
 		CLOCKWISE, COUNTER_CLOCKWISE;
 	}
 
 	/**
-	 * Returns the direction which the vertices of this polygon are wound in.
-	 * 
-	 * @return
+	 * @return The direction in which the vertices of this polygon are wound
 	 */
 	WindingDirection getWindingDirection();
 
@@ -63,8 +62,7 @@ public interface SimplePolygon<S extends SimplePolygon<S, V>, V extends Value<V>
 
 		Vector2<V> previousVertex = vertices.get(vertices.size() - 1);
 		for (Vector2<V> vertex : vertices) {
-			area += (vertex.getY().doubleValue() - previousVertex.getY()
-					.doubleValue())
+			area += (vertex.getY().doubleValue() - previousVertex.getY().doubleValue())
 					* (vertex.getX().doubleValue() + vertex.getX().doubleValue()) * 0.5;
 
 			previousVertex = vertex;

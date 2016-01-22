@@ -18,15 +18,15 @@
  */
 package uk.co.strangeskies.utilities.text;
 
-
 public class ParseException extends RuntimeException {
+	private static final long serialVersionUID = -1506209486799438577L;
+
 	private final String message;
 	private final String literal;
 	private final int fromIndex;
 	private final int toIndex;
 
-	public ParseException(String message, String literal, int fromIndex,
-			int toIndex, Throwable cause) {
+	public ParseException(String message, String literal, int fromIndex, int toIndex, Throwable cause) {
 		super(composeMessage(message, literal, fromIndex, toIndex), cause);
 		this.message = message;
 		this.literal = literal;
@@ -34,8 +34,7 @@ public class ParseException extends RuntimeException {
 		this.toIndex = toIndex;
 	}
 
-	public ParseException(String message, String literal, int fromIndex,
-			int toIndex) {
+	public ParseException(String message, String literal, int fromIndex, int toIndex) {
 		super(composeMessage(message, literal, fromIndex, toIndex));
 		this.message = message;
 		this.literal = literal;
@@ -43,10 +42,8 @@ public class ParseException extends RuntimeException {
 		this.toIndex = toIndex;
 	}
 
-	private static String composeMessage(String message, String literal,
-			int fromIndex, int toIndex) {
-		StringBuilder builder = new StringBuilder(message)
-				.append(System.lineSeparator()).append(literal)
+	private static String composeMessage(String message, String literal, int fromIndex, int toIndex) {
+		StringBuilder builder = new StringBuilder(message).append(System.lineSeparator()).append(literal)
 				.append(System.lineSeparator());
 
 		for (int i = 0; i < fromIndex; i++)
@@ -76,8 +73,7 @@ public class ParseException extends RuntimeException {
 		return message;
 	}
 
-	public static ParseException getHigher(ParseException first,
-			ParseException second) {
+	public static ParseException getHigher(ParseException first, ParseException second) {
 		if (first.getIndexReached() > second.getIndexReached())
 			return first;
 		else

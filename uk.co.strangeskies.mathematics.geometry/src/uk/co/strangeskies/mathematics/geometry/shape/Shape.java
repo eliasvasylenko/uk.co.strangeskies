@@ -44,27 +44,25 @@ import uk.co.strangeskies.utilities.Self;
  * space a consistent part of the API at this level. Classes related to
  * {@link Mesh}, on the other hand, do deal with homogeneous coordinate space.
  * 
- * @author eli
+ * @author Elias N Vasylenko
  *
  * @param <S>
+ *            The type of shape
  */
-public interface Shape<S extends Shape<S>> extends Self<S>, Copyable<S>,
-		Property<S, S>, SelfExpression<S> {
-	Value<?> getArea(/*  this */);
+public interface Shape<S extends Shape<S>> extends Self<S>, Copyable<S>, Property<S, S>, SelfExpression<S> {
+	Value<?> getArea(/* this */);
 
-	Value<?> getPerimeter(/*  this */);
+	Value<?> getPerimeter(/* this */);
 
-	boolean contains(
-	/*  this, *//*  */Vector2<?> point);
+	boolean contains(/* this, *//*  */Vector2<?> point);
 
-	boolean touches(/*  this, *//*  */Vector2<?> point);
+	boolean touches(/* this, *//*  */Vector2<?> point);
 
-	boolean intersects(
-	/*  this, *//*  */Shape<?> shape);
+	boolean intersects(/* this, *//*  */Shape<?> shape);
 
-	boolean touches(/*  this, *//*  */Shape<?> shape);
+	boolean touches(/* this, *//*  */Shape<?> shape);
 
-	Bounds2<?> getBounds(/*  this */);
+	Bounds2<?> getBounds(/* this */);
 
 	@Override
 	default S get() {

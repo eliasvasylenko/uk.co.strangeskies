@@ -40,10 +40,9 @@ import uk.co.strangeskies.utilities.Property;
 import uk.co.strangeskies.utilities.function.ListTransformationView;
 import uk.co.strangeskies.utilities.function.TriFunction;
 
-public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
-		Comparable<Matrix<?, ?>>, SelfExpression<S>, Scalable<S>,
-		Subtractable<S, Matrix<?, ?>>, Negatable<S, S>,
-		NonCommutativelyMultipliable<S, Matrix<?, ?>>, Property<S, Matrix<?, ?>> {
+public interface Matrix<S extends Matrix<S, V>, V extends Value<V>>
+		extends Comparable<Matrix<?, ?>>, SelfExpression<S>, Scalable<S>, Subtractable<S, Matrix<?, ?>>,
+		Negatable<S, S>, NonCommutativelyMultipliable<S, Matrix<?, ?>>, Property<S, Matrix<?, ?>> {
 	public static enum Order {
 		ROW_MAJOR {
 			@Override
@@ -87,10 +86,8 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 	public Order getOrder();
 
 	/**
-	 * Creates a view of this matrix with the requested order. Changes to the view
-	 * affect this matrix and vice versa.
-	 *
-	 * @return
+	 * @return A view of this matrix with the requested order. Changes to the
+	 *         view affect this matrix and vice versa.
 	 */
 	public Matrix<?, V> withOrder(Order order);
 
@@ -146,38 +143,34 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 
 	@Override
 	public default S add(Matrix<?, ?> other) {
-		return operateOnData2(other.withOrder(getOrder()).getData2(), (
-				firstOperand, secondOperand) -> firstOperand.add(secondOperand));
+		return operateOnData2(other.withOrder(getOrder()).getData2(),
+				(firstOperand, secondOperand) -> firstOperand.add(secondOperand));
 	}
 
 	@Override
 	public default S subtract(Matrix<?, ?> other) {
-		return operateOnData2(other.withOrder(getOrder()).getData2(), (
-				firstOperand, secondOperand) -> firstOperand.subtract(secondOperand));
+		return operateOnData2(other.withOrder(getOrder()).getData2(),
+				(firstOperand, secondOperand) -> firstOperand.subtract(secondOperand));
 	}
 
 	@Override
 	public default S multiply(Matrix<?, ?> other) {
-		return setData2(multiplyData(getData2(), other.withOrder(getOrder())
-				.getData2()));
+		return setData2(multiplyData(getData2(), other.withOrder(getOrder()).getData2()));
 	}
 
 	@Override
 	public default S preMultiply(Matrix<?, ?> other) {
-		return setData2(preMultiplyData(getData2(), other.withOrder(getOrder())
-				.getData2()));
+		return setData2(preMultiplyData(getData2(), other.withOrder(getOrder()).getData2()));
 	}
 
-	public static <V extends Value<?>> List<List<V>> multiplyData(
-			List<? extends List<? extends Value<?>>> data,
+	public static <V extends Value<?>> List<List<V>> multiplyData(List<? extends List<? extends Value<?>>> data,
 			List<? extends List<? extends Value<?>>> otherData) {
 		// TODO implement multiplication! include isResiseable() in parameter
 		// dimensions check...
 		return null;
 	}
 
-	public static <V extends Value<?>> List<List<V>> preMultiplyData(
-			List<? extends List<? extends Value<?>>> data,
+	public static <V extends Value<?>> List<List<V>> preMultiplyData(List<? extends List<? extends Value<?>>> data,
 			List<? extends List<? extends Value<?>>> otherData) {
 		return null;
 	}
@@ -186,8 +179,7 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 
 	public Matrix<?, V> getTransposed();
 
-	public static <V extends Value<V>> List<List<V>> transposeData(
-			List<List<V>> data) {
+	public static <V extends Value<V>> List<List<V>> transposeData(List<List<V>> data) {
 		int majorSize = data.get(0).size();
 		int minorSize = data.size();
 
@@ -226,8 +218,7 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 
 	public static <T extends Matrix<?, ?>> T assertIsSquare(T matrix) {
 		try {
-			DimensionalityException.checkEquivalence(matrix.getMajorSize(),
-					matrix.getMinorSize());
+			DimensionalityException.checkEquivalence(matrix.getMajorSize(), matrix.getMinorSize());
 		} catch (DimensionalityException e) {
 			throw new IllegalArgumentException(e);
 		}
@@ -235,8 +226,7 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 		return matrix;
 	}
 
-	public static <T extends Matrix<?, ?>> T assertDimensions(T matrix, int rows,
-			int columns) {
+	public static <T extends Matrix<?, ?>> T assertDimensions(T matrix, int rows, int columns) {
 		try {
 			DimensionalityException.checkEquivalence(matrix.getRowSize(), rows);
 			DimensionalityException.checkEquivalence(matrix.getColumnSize(), columns);
@@ -411,41 +401,30 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 
 	public S operateOnData(BiFunction<? super V, Integer, ? extends V> operator);
 
-	public S operateOnData2(
-			TriFunction<? super V, Integer, Integer, ? extends V> operator);
+	public S operateOnData2(TriFunction<? super V, Integer, Integer, ? extends V> operator);
 
 	public default <I> S operateOnData(List<? extends I> itemList,
 			BiFunction<? super V, ? super I, ? extends V> operator) {
-		return operateOnData((value, index) -> operator.apply(value,
-				itemList.get(index)));
+		return operateOnData((value, index) -> operator.apply(value, itemList.get(index)));
 	}
 
-	public default <I> S operateOnData2(
-			List<? extends List<? extends I>> itemList,
+	public default <I> S operateOnData2(List<? extends List<? extends I>> itemList,
 			BiFunction<? super V, ? super I, ? extends V> operator) {
-		return operateOnData2((value, i, j) -> operator.apply(value, itemList
-				.get(i).get(j)));
+		return operateOnData2((value, i, j) -> operator.apply(value, itemList.get(i).get(j)));
 	}
 
-	public default S setData2(boolean setByReference,
-			List<? extends List<? extends V>> to) {
+	public default S setData2(boolean setByReference, List<? extends List<? extends V>> to) {
 		if (setByReference)
-			return operateOnData2(to,
-					(V firstOperand, V secondOperand) -> secondOperand);
+			return operateOnData2(to, (V firstOperand, V secondOperand) -> secondOperand);
 		else
-			return operateOnData2(to,
-					(V firstOperand, V secondOperand) -> firstOperand
-							.setValue(secondOperand));
+			return operateOnData2(to, (V firstOperand, V secondOperand) -> firstOperand.setValue(secondOperand));
 	}
 
 	public default S setData(boolean setByReference, List<? extends V> to) {
 		if (setByReference)
-			return operateOnData(to,
-					(V firstOperand, V secondOperand) -> secondOperand);
+			return operateOnData(to, (V firstOperand, V secondOperand) -> secondOperand);
 		else
-			return operateOnData(to,
-					(V firstOperand, V secondOperand) -> firstOperand
-							.setValue(secondOperand));
+			return operateOnData(to, (V firstOperand, V secondOperand) -> firstOperand.setValue(secondOperand));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -454,8 +433,7 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 	}
 
 	public default S setData(Number... values) {
-		return operateOnData(Arrays.asList(values),
-				(assignee, assignment) -> assignee.setValue(assignment));
+		return operateOnData(Arrays.asList(values), (assignee, assignment) -> assignee.setValue(assignment));
 	}
 
 	public default S setData(Value<?>... to) {
@@ -496,18 +474,15 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>> extends
 
 	@SuppressWarnings("unchecked")
 	public default S setData2(boolean copyByReference, Vector<?, V>... to) {
-		return setData2(copyByReference,
-				new ListTransformationView<>(Arrays.asList(to), i -> i.getData()));
+		return setData2(copyByReference, new ListTransformationView<>(Arrays.asList(to), i -> i.getData()));
 	}
 
 	public default S setData2(Vector<?, ?>... values) {
-		return setData2(new ListTransformationView<>(Arrays.asList(values),
-				i -> i.getData()));
+		return setData2(new ListTransformationView<>(Arrays.asList(values), i -> i.getData()));
 	}
 
 	public default S setData2(List<? extends List<? extends Value<?>>> to) {
-		return operateOnData2(to,
-				(assignee, assignment) -> assignee.set(assignment));
+		return operateOnData2(to, (assignee, assignment) -> assignee.set(assignment));
 	}
 
 	public default S setData(List<? extends Value<?>> to) {

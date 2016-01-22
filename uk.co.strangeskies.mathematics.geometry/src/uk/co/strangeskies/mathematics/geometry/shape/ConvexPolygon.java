@@ -25,12 +25,12 @@ import uk.co.strangeskies.mathematics.values.Value;
 
 /**
  * 
- * @author eli
+ * @author Elias N Vasylenko
  * 
  * @param <V>
+ *            The type of value for the coordinate system of the polygon
  */
-public interface ConvexPolygon<S extends ConvexPolygon<S, V>, V extends Value<V>>
-		extends SimplePolygon<S, V> {
+public interface ConvexPolygon<S extends ConvexPolygon<S, V>, V extends Value<V>> extends SimplePolygon<S, V> {
 	/**
 	 * This method returns a modifiable set containing all vertices which
 	 * currently effectively make a contribution to the convex Hull of this
@@ -42,23 +42,23 @@ public interface ConvexPolygon<S extends ConvexPolygon<S, V>, V extends Value<V>
 	 * previously returned will reflect this change.
 	 * 
 	 * Adding vertices to the set will succeed if they are not already present,
-	 * and fall outside the current perimeter of the shape, and the shape will be
-	 * updated to reflect the addition. If the vertices being added lie within the
-	 * perimeter the addition to the set will fail and the underlying model will
-	 * not be changed. If more than one vertex is added at the same time, only
-	 * those which remain a part of this set after they have all been added will
-	 * remain a part of the underlying model.
+	 * and fall outside the current perimeter of the shape, and the shape will
+	 * be updated to reflect the addition. If the vertices being added lie
+	 * within the perimeter the addition to the set will fail and the underlying
+	 * model will not be changed. If more than one vertex is added at the same
+	 * time, only those which remain a part of this set after they have all been
+	 * added will remain a part of the underlying model.
 	 * 
-	 * @return
+	 * @return The vertices describing the convex hull of the polygon
 	 */
 	public Set<Vector2<V>> hullVertexSet();
 
 	/**
-	 * This method returns a modifiable set representing the underlying collection
-	 * of vertices from which the convex hull represented by this polygon is
-	 * generated. This set may contain vertices which lie within the convex hull,
-	 * such that on removal of other vertices, or movement of vertices, they may
-	 * become a part of the convex hull.
+	 * This method returns a modifiable set representing the underlying
+	 * collection of vertices from which the convex hull represented by this
+	 * polygon is generated. This set may contain vertices which lie within the
+	 * convex hull, such that on removal of other vertices, or movement of
+	 * vertices, they may become a part of the convex hull.
 	 * 
 	 * The Set is backed by the shape and changes will be reflected in it. If
 	 * vertices are added or removed from the shape, they will be added to or
@@ -67,7 +67,7 @@ public interface ConvexPolygon<S extends ConvexPolygon<S, V>, V extends Value<V>
 	 * Adding vertices to the set will always succeed if they are not already
 	 * present.
 	 * 
-	 * @return
+	 * @return The vertices contained within this polygon
 	 */
 	public Set<Vector2<V>> vertexSet();
 

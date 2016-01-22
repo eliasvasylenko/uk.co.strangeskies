@@ -32,22 +32,24 @@ import uk.co.strangeskies.mathematics.values.ValueFactory;
 /**
  * Complex polygons, self intersecting with holes and multiple parts.
  *
- * @author eli
+ * @author Elias N Vasylenko
  *
  * @param <V>
+ *            The type of value for the coordinate system of the polygon
  */
-public class CompoundPolygonImpl<V extends Value<V>> extends
-		DependentExpression<CompoundPolygonImpl<V>> implements
-		CompoundPolygon<CompoundPolygonImpl<V>, V> {
-	public CompoundPolygonImpl(CompoundPolygon<?, ?> polygon,
-			ValueFactory<? extends V> valueFactory) {}
+public class CompoundPolygonImpl<V extends Value<V>> extends DependentExpression<CompoundPolygonImpl<V>>
+		implements CompoundPolygon<CompoundPolygonImpl<V>, V> {
+	public CompoundPolygonImpl(CompoundPolygon<?, ?> polygon, ValueFactory<? extends V> valueFactory) {
+	}
 
-	public CompoundPolygonImpl(CompoundPolygon<?, ? extends V> polygon) {}
+	public CompoundPolygonImpl(CompoundPolygon<?, ? extends V> polygon) {
+	}
 
-	public CompoundPolygonImpl(List<? extends Vector2<?>> polygon,
-			ValueFactory<? extends V> valueFactory) {}
+	public CompoundPolygonImpl(List<? extends Vector2<?>> polygon, ValueFactory<? extends V> valueFactory) {
+	}
 
-	public CompoundPolygonImpl(List<? extends Vector2<V>> polygon) {}
+	public CompoundPolygonImpl(List<? extends Vector2<V>> polygon) {
+	}
 
 	@Override
 	public Value<?> getArea() {
