@@ -1,0 +1,84 @@
+/*
+ * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
+ *
+ * This file is part of uk.co.strangeskies.osgi.
+ *
+ * uk.co.strangeskies.osgi is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * uk.co.strangeskies.osgi is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with uk.co.strangeskies.osgi.  If not, see <http://www.gnu.org/licenses/>.
+ */
+package uk.co.strangeskies.utilities.osgi.logging;
+
+import org.osgi.framework.Bundle;
+import org.osgi.framework.ServiceReference;
+import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.ServiceScope;
+import org.osgi.service.log.LogListener;
+import org.osgi.service.log.LogService;
+
+import uk.co.strangeskies.utilities.Log;
+
+/**
+ * {@link LogListener} implementation dumping all logs to console
+ * 
+ * @author Elias N Vasylenko
+ */
+@Component(scope = ServiceScope.PROTOTYPE)
+public class LogProvider implements Log {
+	private Bundle usingBundle;
+
+	private ServiceReference<LogService> logServiceReference;
+	private LogService logService;
+
+	@Activate
+	public void activate(ComponentContext context) {
+		usingBundle = context.getUsingBundle();
+		logServiceReference = usingBundle.getBundleContext()
+				.getServiceReference(LogService.class);
+		logService = usingBundle.getBundleContext().getService(logServiceReference);
+	}
+
+	@Deactivate
+	public void deactivate() {
+		usingBundle.getBundleContext().ungetService(logServiceReference);
+	}
+
+	private int getLogServiceLevel(Level level) {
+		switch (level) {
+		case TRACE:
+			return LogService.LOG_DEBUG;
+		case DEBUG:
+			return LogService.LOG_DEBUG;
+		case INFO:
+			return LogService.LOG_INFO;
+		case WARN:
+			return LogService.LOG_WARNING;
+		case ERROR:
+			return LogService.LOG_ERROR;
+		default:
+			throw new AssertionError();
+		}
+	}
+
+	@Override
+	public void log(Level level, String message) {
+		logService.log(getLogServiceLevel(level), message);
+	}
+
+	@Override
+	public void log(Level level, String message, Throwable exception) {
+		logService.log(getLogServiceLevel(level), message, exception);
+	}
+}
