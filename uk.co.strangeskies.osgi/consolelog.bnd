@@ -1,4 +1,4 @@
-Private-Package: uk.co.strangeskies.utilities.osgi.logging
+Private-Package: uk.co.strangeskies.osgi.logging
 Bundle-Name: Strange Skies :: OSGi Utilities :: Console Log
 Bundle-Description: \
 	A console log provider for OSGi environments.

@@ -17,4 +17,4 @@
  * along with uk.co.strangeskies.osgi.  If not, see <http://www.gnu.org/licenses/>.
  */
 @org.osgi.annotation.versioning.Version("1.0.0")
-package uk.co.strangeskies.utilities.osgi.servicewrapper;
+package uk.co.strangeskies.osgi.servicewrapper;

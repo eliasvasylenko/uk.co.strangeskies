@@ -1,17 +1,4 @@
-Export-Package: \
-	uk.co.strangeskies.eclipse,\
-	uk.co.strangeskies.utilities.collection,\
-	uk.co.strangeskies.utilities.collection.computingmap,\
-	uk.co.strangeskies.utilities.collection.decorator,\
-	uk.co.strangeskies.utilities.collection.multimap,\
-	uk.co.strangeskies.utilities.factory,\
-	uk.co.strangeskies.utilities.flowcontrol,\
-	uk.co.strangeskies.utilities.function,\
-	uk.co.strangeskies.utilities.function.collection,\
-	uk.co.strangeskies.utilities.eclipse.test,\
-	uk.co.strangeskies.utilities.tuple,\
-	uk.co.strangeskies.utilities.text.parser,\
-	uk.co.strangeskies.utilities.text
+Export-Package: uk.co.strangeskies.eclipse
 Bundle-Name: Strange Skies :: Utilities :: Eclipse
 
 -buildpath: \

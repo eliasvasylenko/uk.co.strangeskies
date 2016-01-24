@@ -45,11 +45,11 @@ Bundle-Version: ${strangeskies-version}.${tstamp}
 			name				=		Clojars; \
 			url					=		http://clojars.org/repo/
 
--plugin.8.EclipsePlatform: \
+-plugin.11.EclipsePlatform: \
 \
 		aQute.bnd.deployer.repository.FixedIndexedRepo; \
-			name				=		"Eclipse Platform"; \
-			locations			=		https://dl.bintray.com/sai/uk.co.saiman/org.eclipse.platform/4.5.1/index.xml
+			name				=		"Eclipse Platform 4.5.1"; \
+			locations			=		https://dl.bintray.com/strangeskies/org.eclipse/org.eclipse.platform/4.5.1/index.xml
 
 -plugin.9.EclipseFX: \
 \

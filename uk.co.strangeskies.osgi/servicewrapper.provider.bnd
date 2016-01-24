@@ -1,4 +1,4 @@
-Private-Package: uk.co.strangeskies.utilities.osgi.servicewrapper.impl
+Private-Package: uk.co.strangeskies.osgi.servicewrapper.impl
 Bundle-Name: Strange Skies :: OSGi Utilities :: Service Wrapper :: Provider
 Bundle-Description: \
 	The reference implementation for a generic service \
