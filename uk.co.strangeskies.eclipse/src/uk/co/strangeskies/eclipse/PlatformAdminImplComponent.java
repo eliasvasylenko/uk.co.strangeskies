@@ -47,7 +47,7 @@ public class PlatformAdminImplComponent extends PlatformAdminImpl {
 	@SuppressWarnings("javadoc")
 	@Activate
 	public void activate(BundleContext context) throws Exception {
-		Method start = getClass().getMethod("start");
+		Method start = getClass().getMethod("start", BundleContext.class);
 		start.setAccessible(true);
 		start.invoke(this, context);
 	}
@@ -64,7 +64,7 @@ public class PlatformAdminImplComponent extends PlatformAdminImpl {
 	@SuppressWarnings("javadoc")
 	@Deactivate
 	public void deactivate(BundleContext context) throws Exception {
-		Method stop = getClass().getMethod("stop");
+		Method stop = getClass().getMethod("stop", BundleContext.class);
 		stop.setAccessible(true);
 		stop.invoke(this, context);
 	}
