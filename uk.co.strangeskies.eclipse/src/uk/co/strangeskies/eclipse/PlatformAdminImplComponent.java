@@ -39,12 +39,11 @@ public class PlatformAdminImplComponent extends PlatformAdminImpl {
 	 * Activate the {@link PlatformAdmin} instance.
 	 * 
 	 * @param context
-	 *          {@link BundleContext} instance from the framework
+	 *            {@link BundleContext} instance from the framework
 	 * @throws Exception
-	 *           Exception from {@link #start(BundleContext)} invocation by
-	 *           reflection
+	 *             Exception from reflective {@code start(BundleContext)}
+	 *             invocation
 	 */
-	@SuppressWarnings("javadoc")
 	@Activate
 	public void activate(BundleContext context) throws Exception {
 		Method start = getClass().getMethod("start", BundleContext.class);
@@ -56,12 +55,11 @@ public class PlatformAdminImplComponent extends PlatformAdminImpl {
 	 * Deactivate the {@link PlatformAdmin} instance.
 	 * 
 	 * @param context
-	 *          {@link BundleContext} instance from the framework
+	 *            {@link BundleContext} instance from the framework
 	 * @throws Exception
-	 *           Exception from {@link #stop(BundleContext)} invocation by
-	 *           reflection
+	 *             Exception from reflective {@code start(BundleContext)}
+	 *             invocation
 	 */
-	@SuppressWarnings("javadoc")
 	@Deactivate
 	public void deactivate(BundleContext context) throws Exception {
 		Method stop = getClass().getMethod("stop", BundleContext.class);
