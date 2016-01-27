@@ -62,4 +62,8 @@ public class ContextClassLoaderRunner {
 			Thread.currentThread().setContextClassLoader(originalClassLoader);
 		}
 	}
+
+	public void runLater(Runnable runnable) {
+		new Thread(() -> run(runnable)).start();
+	}
 }

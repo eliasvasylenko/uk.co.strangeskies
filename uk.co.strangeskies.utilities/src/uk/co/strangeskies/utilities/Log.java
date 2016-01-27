@@ -18,7 +18,17 @@
  */
 package uk.co.strangeskies.utilities;
 
+/**
+ * A log interface for clients to write events to.
+ * 
+ * @author Elias N Vasylenko
+ */
 public interface Log {
+	/**
+	 * The level of importance of a log entry.
+	 *
+	 * @author Elias N Vasylenko
+	 */
 	public enum Level {
 		/**
 		 * Trace level – Huge output
@@ -42,8 +52,27 @@ public interface Log {
 		ERROR
 	}
 
+	/**
+	 * Log a message.
+	 * 
+	 * @param level
+	 *          The importance level of the given message
+	 * @param message
+	 *          The message to log
+	 */
 	void log(Level level, String message);
 
+	/**
+	 * Log a message and an associated throwable.
+	 * 
+	 * @param level
+	 *          The importance level of the given message
+	 * @param message
+	 *          The message to log
+	 * @param exception
+	 *          The exception associated with the message
+	 * 
+	 */
 	default void log(Level level, String message, Throwable exception) {
 		log(level, message + ": " + exception.getLocalizedMessage());
 	}
