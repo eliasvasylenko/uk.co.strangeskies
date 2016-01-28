@@ -1,0 +1,4 @@
+Private-Package: uk.co.strangeskies.osgi.utilities
+Bundle-Name: Strange Skies :: OSGi Utilities
+Bundle-Description: \
+	General utilities for OSGi environments.

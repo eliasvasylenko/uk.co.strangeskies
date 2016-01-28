@@ -18,9 +18,6 @@
  */
 package uk.co.strangeskies.utilities;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -34,9 +31,9 @@ import java.util.function.Consumer;
  * @author Elias N Vasylenko
  *
  * @param <T>
- *          The type of event to consume
+ *          The type of event message to consume
  * @param <U>
- *          The type of event to produce
+ *          The type of event message to produce
  */
 public abstract class ForwardingListener<T, U>
 		implements Consumer<T>, Observable<U> {
@@ -69,7 +66,7 @@ public abstract class ForwardingListener<T, U>
 	}
 
 	private final Buffer<T, U> buffer;
-	private final Set<Consumer<? super U>> listeners;
+	private final ObservableImpl<U> listeners;
 	private boolean disposed;
 
 	/**
@@ -82,7 +79,7 @@ public abstract class ForwardingListener<T, U>
 	public ForwardingListener(Buffer<T, U> buffer) {
 		this.buffer = buffer;
 
-		listeners = new LinkedHashSet<>();
+		listeners = new ObservableImpl<>();
 		disposed = false;
 
 		Thread forwardThread = new Thread(() -> {
@@ -103,9 +100,7 @@ public abstract class ForwardingListener<T, U>
 					item = buffer.get();
 				}
 
-				for (Consumer<? super U> listener : new ArrayList<>(listeners)) {
-					listener.accept(item);
-				}
+				listeners.fire(item);
 			} while (!finished);
 		});
 		forwardThread.setDaemon(true);
@@ -147,18 +142,18 @@ public abstract class ForwardingListener<T, U>
 
 	@Override
 	public synchronized boolean addObserver(Consumer<? super U> listener) {
-		return listeners.add(listener);
+		return listeners.addObserver(listener);
 	}
 
 	@Override
 	public synchronized boolean removeObserver(Consumer<? super U> listener) {
-		return listeners.remove(listener);
+		return listeners.removeObserver(listener);
 	}
 
 	/**
 	 * Remove all observers from forwarding.
 	 */
 	public synchronized void clearObservers() {
-		listeners.clear();
+		listeners.clearObservers();
 	}
 }
