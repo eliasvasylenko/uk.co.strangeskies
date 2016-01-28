@@ -24,11 +24,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import aQute.bnd.annotation.headers.ProvideCapability;
-import osgi.enroute.capabilities.AngularUIWebResource;
-import osgi.enroute.capabilities.AngularWebResource;
-import osgi.enroute.capabilities.ComponentExtender;
-import osgi.enroute.capabilities.ConfigurerExtender;
-import osgi.enroute.capabilities.WebServerExtender;
 
 /**
  * Provide an OSGi extender capability of the given name and version.
