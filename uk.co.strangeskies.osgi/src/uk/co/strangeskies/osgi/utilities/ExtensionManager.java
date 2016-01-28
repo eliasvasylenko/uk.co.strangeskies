@@ -1,13 +1,23 @@
 package uk.co.strangeskies.osgi.utilities;
 
-import java.rmi.registry.Registry;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleEvent;
+import org.osgi.framework.BundleListener;
+import org.osgi.framework.wiring.BundleCapability;
+import org.osgi.framework.wiring.BundleWiring;
+import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 
 import uk.co.strangeskies.utilities.Log;
 
-public class ExtensionManager implements BundleListener {
+public abstract class ExtensionManager implements BundleListener {
 	private BundleContext context;
 	private BundleCapability capability;
-	private final Registry registry = new Registry();
+	private Log log;
 
 	@Activate
 	protected void activate(ComponentContext cc) {
@@ -20,7 +30,7 @@ public class ExtensionManager implements BundleListener {
 		for (Bundle bundle : context.getBundles()) {
 			if ((bundle.getState() & (Bundle.STARTING | Bundle.ACTIVE)) != 0
 					&& isRegisterable(bundle)) {
-				registry.register(bundle);
+				register(bundle);
 			}
 		}
 	}
@@ -28,7 +38,6 @@ public class ExtensionManager implements BundleListener {
 	@Deactivate
 	protected void deactivate(ComponentContext context) throws Exception {
 		this.context.removeBundleListener(this);
-		registry.close();
 	}
 
 	@Override
@@ -36,11 +45,11 @@ public class ExtensionManager implements BundleListener {
 		if (isRegisterable(event.getBundle())) {
 			switch (event.getType()) {
 			case BundleEvent.STARTED:
-				registry.register(event.getBundle());
+				register(event.getBundle());
 				break;
 
 			case BundleEvent.STOPPED:
-				registry.unregister(event.getBundle());
+				unregister(event.getBundle());
 				break;
 			}
 		}
@@ -56,6 +65,14 @@ public class ExtensionManager implements BundleListener {
 
 	@Reference(cardinality = ReferenceCardinality.OPTIONAL)
 	public void setLog(Log log) {
-		registry.setLog(log);
+		this.log = log;
 	}
+
+	protected Log getLog() {
+		return log;
+	}
+
+	protected abstract void register(Bundle bundle);
+
+	protected abstract void unregister(Bundle bundle);
 }
