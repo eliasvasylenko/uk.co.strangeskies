@@ -1,4 +1,5 @@
-Export-Package: uk.co.strangeskies.osgi.utilities
 Bundle-Name: Strange Skies :: OSGi Utilities
 Bundle-Description: \
 	General utilities for OSGi environments.
+
+Export-Package: uk.co.strangeskies.osgi
