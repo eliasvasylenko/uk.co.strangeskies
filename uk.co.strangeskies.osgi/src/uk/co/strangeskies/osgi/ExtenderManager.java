@@ -35,9 +35,9 @@ import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
 
 import uk.co.strangeskies.utilities.Log;
-import uk.co.strangeskies.utilities.Log.Level;
 
 /**
  * An abstract class intended to facilitate implementation of OSGi extenders.
@@ -49,7 +49,7 @@ import uk.co.strangeskies.utilities.Log.Level;
  * 
  * @author Elias N Vasylenko
  */
-public abstract class ExtenderManager implements BundleListener {
+public abstract class ExtenderManager implements BundleListener, Log {
 	/**
 	 * The OSGi capability namespace for an extender.
 	 */
@@ -65,11 +65,12 @@ public abstract class ExtenderManager implements BundleListener {
 		this.context = cc.getBundleContext();
 		context.addBundleListener(this);
 
-		List<BundleCapability> extenderCapabilities = context.getBundle().adapt(BundleWiring.class)
-				.getCapabilities(OSGI_EXTENDER);
+		List<BundleCapability> extenderCapabilities = context.getBundle()
+				.adapt(BundleWiring.class).getCapabilities(OSGI_EXTENDER);
 
 		if (extenderCapabilities.isEmpty()) {
-			throw new IllegalStateException("Cannot initiate extender, no capability is present on the implementing bundle");
+			throw new IllegalStateException(
+					"Cannot initiate extender, no capability is present on the implementing bundle");
 		}
 		if (extenderCapabilities.size() > 1) {
 			throw new IllegalStateException(
@@ -84,6 +85,20 @@ public abstract class ExtenderManager implements BundleListener {
 				tryRegister(bundle);
 			}
 		}
+	}
+
+	@Override
+	public void log(Level level, String message) {
+		Log log = this.log;
+		if (log != null)
+			log.log(level, message);
+	}
+
+	@Override
+	public void log(Level level, String message, Throwable exception) {
+		Log log = this.log;
+		if (log != null)
+			log.log(level, message, exception);
 	}
 
 	@Deactivate
@@ -116,7 +131,8 @@ public abstract class ExtenderManager implements BundleListener {
 		}
 
 		try {
-			boolean registerable = bundle.adapt(BundleWiring.class).getRequirements(OSGI_EXTENDER).stream()
+			boolean registerable = bundle.adapt(BundleWiring.class)
+					.getRequirements(OSGI_EXTENDER).stream()
 					.anyMatch(r -> r.matches(capability));
 
 			if (!registerable || !register(bundle)) {
@@ -128,10 +144,8 @@ public abstract class ExtenderManager implements BundleListener {
 			synchronized (added) {
 				added.remove(bundle);
 			}
-			if (getLog() != null) {
-				getLog().log(Level.ERROR,
-						"Cannot register bundle '" + bundle.getSymbolicName() + "' with extension manager '" + this + "'", e);
-			}
+			log(Level.ERROR, "Cannot register bundle '" + bundle.getSymbolicName()
+					+ "' with extension manager '" + this + "'", e);
 		} finally {
 			lock.unlock();
 		}
@@ -159,13 +173,14 @@ public abstract class ExtenderManager implements BundleListener {
 		}
 	}
 
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL)
+	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
 	protected void setLog(Log log) {
 		this.log = log;
 	}
 
-	protected Log getLog() {
-		return log;
+	protected void unsetLog(Log log) {
+		if (this.log == log)
+			this.log = null;
 	}
 
 	protected abstract boolean register(Bundle bundle);
