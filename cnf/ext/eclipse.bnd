@@ -139,7 +139,9 @@ runreq.eclipse.p2:\
 	${req;org.eclipse.equinox.p2.jarprocessor},\
 	${req;org.eclipse.equinox.p2.metadata},\
 	${req;org.eclipse.equinox.p2.metadata.repository},\
+	${req;org.eclipse.equinox.p2.artifact.repository},\
 	${req;org.eclipse.equinox.p2.repository},\
+	${req;org.eclipse.equinox.p2.transport.ecf},\
 	${req;org.eclipse.fx.core.p2}
 
 ## Run properties groups:

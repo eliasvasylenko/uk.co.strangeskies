@@ -35,7 +35,7 @@ import aQute.bnd.annotation.headers.ProvideCapability;
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.CLASS)
-@ProvideCapability(ns = ExtenderManager.OSGI_EXTENDER, version = "${property;version}", name = "${property;name}")
+@ProvideCapability(ns = ExtenderManager.OSGI_EXTENDER)
 public @interface ProvideExtender {
 	/**
 	 * @return The name of the extender provision
