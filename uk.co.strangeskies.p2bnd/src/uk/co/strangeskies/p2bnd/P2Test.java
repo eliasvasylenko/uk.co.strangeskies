@@ -3,9 +3,9 @@ package uk.co.strangeskies.p2bnd;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.equinox.p2.core.IProvisioningAgent;
 import org.eclipse.equinox.p2.core.IProvisioningAgentProvider;
-import org.eclipse.equinox.p2.core.ProvisionException;
 import org.eclipse.equinox.p2.metadata.IInstallableUnit;
 import org.eclipse.equinox.p2.query.IQuery;
 import org.eclipse.equinox.p2.query.IQueryResult;
@@ -62,13 +62,17 @@ public class P2Test {
 			 * Load remote repository
 			 */
 			try {
-				metadataManager.loadRepository(remote, null);
-				artifactManager.loadRepository(remote, null);
+				IProgressMonitor progressMonitor = new ProgressMonitorImpl();
 
+				System.out.println("loading remote . . .");
+				metadataManager.loadRepository(remote, progressMonitor);
+				artifactManager.loadRepository(remote, progressMonitor);
+
+				System.out.println("querying repository . . .");
 				IQuery<IInstallableUnit> query = QueryUtil.createMatchQuery("id == $0", "org.eclipse.equinox.event");
-				IQueryResult<IInstallableUnit> result = metadataManager.query(query, null);
-				System.out.println(result);
-			} catch (ProvisionException pe) {
+				IQueryResult<IInstallableUnit> result = metadataManager.query(query, progressMonitor);
+				System.out.println(result.toUnmodifiableSet());
+			} catch (Exception pe) {
 				throw new InvocationTargetException(pe);
 			}
 		} catch (Exception e) {
@@ -78,4 +82,38 @@ public class P2Test {
 			context.getBundle(0).stop();
 		}
 	}
+}
+
+class ProgressMonitorImpl implements IProgressMonitor {
+	private boolean cancelled = false;
+
+	@Override
+	public void beginTask(String name, int totalWork) {}
+
+	@Override
+	public void done() {}
+
+	@Override
+	public void internalWorked(double work) {}
+
+	@Override
+	public boolean isCanceled() {
+		return cancelled;
+	}
+
+	@Override
+	public void setCanceled(boolean value) {
+		cancelled = value;
+	}
+
+	@Override
+	public void setTaskName(String name) {}
+
+	@Override
+	public void subTask(String name) {
+		System.out.println("  " + name);
+	}
+
+	@Override
+	public void worked(int work) {}
 }
