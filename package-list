@@ -19,9 +19,10 @@ uk.co.strangeskies.mathematics.operation
 uk.co.strangeskies.mathematics.values
 uk.co.strangeskies.mathematics.values.quantities
 uk.co.strangeskies.osgi
-uk.co.strangeskies.p2bnd
+uk.co.strangeskies.p2
 uk.co.strangeskies.reflection
 uk.co.strangeskies.utilities
+uk.co.strangeskies.utilities.classloader
 uk.co.strangeskies.utilities.collection
 uk.co.strangeskies.utilities.collection.computingmap
 uk.co.strangeskies.utilities.factory
