@@ -56,7 +56,10 @@ public class ConsoleLog implements LogListener {
 
 		System.out.println(
 				"[" + time + level + bundle + service + "] " + entry.getMessage());
-		entry.getException().printStackTrace();
+
+		if (entry.getException() != null) {
+			entry.getException().printStackTrace();
+		}
 	}
 
 	private String formatTime(long time) {

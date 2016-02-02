@@ -22,3 +22,12 @@ Private-Package: \
 	org.eclipse.osgi.internal.module,\
 	org.eclipse.osgi.internal.resolver,\
 	org.eclipse.osgi.internal.util
+
+
+p2-plugin: ${build}/release/uk.co.strangeskies.p2bnd/uk.co.strangeskies.p2bnd-${strangeskies-version}.jar
+
+#-pluginpath.test: \
+#	${p2-plugin}
+
+#-plugin: \
+#	uk.co.strangeskies.p2.bnd.P2BndRepository

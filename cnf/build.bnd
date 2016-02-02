@@ -38,7 +38,7 @@ Bundle-Version: ${strangeskies-version}.${tstamp}
 -pluginpath.base:\
 	${pluginpath.aether}
 
--plugin.8.Clojars: \
+-plugin.8.Clojars:\
 \
 		aQute.bnd.deployer.repository.aether.AetherRepository; \
 			name				=		Clojars; \
@@ -57,7 +57,8 @@ Git-SHA: ${system-allow-fail;git rev-list -1 HEAD}
 
 # Run requirement groups:
 runreq.base=\
-	${req;osgi.enroute.logger.simple.provider}
+	${req;osgi.enroute.logger.simple.provider},\
+	${req;uk.co.strangeskies.osgi.consolelog}
 
 ## Build path groups:
 -buildpath.base=\

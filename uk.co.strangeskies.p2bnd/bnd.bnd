@@ -1,120 +1,126 @@
+Private-Package: \
+	uk.co.strangeskies.p2.bnd,\
+	uk.co.strangeskies.p2
+
 -runee: JavaSE-1.8
 
--buildpath: \
-	${ss;utilities},\
+-testpath: \
+	org.eclipse.osgi
+
+-dependson: uk.co.strangeskies.p2
+
+#
+# These external bundles are installed into the framework
+# created internally by the bnd plugin
+# 
+buildpath.package: \
 	biz.aQute.bndlib,\
-	org.eclipse.equinox.p2.ui,\
-	org.eclipse.equinox.p2.repository,\
-	org.eclipse.equinox.p2.operations,\
-	org.eclipse.equinox.p2.metadata,\
-	org.eclipse.equinox.p2.engine,\
-	org.eclipse.equinox.p2.core,\
+	com.ibm.icu,\
+	org.eclipse.core.contenttype,\
+	org.eclipse.core.databinding,\
+	org.eclipse.core.databinding.beans,\
+	org.eclipse.core.databinding.observable,\
+	org.eclipse.core.databinding.property,\
+	org.eclipse.core.expressions,\
+	org.eclipse.core.filesystem,\
+	org.eclipse.core.filesystem.win32.x86_64,\
+	org.eclipse.core.jobs,\
+	org.eclipse.core.resources,\
+	org.eclipse.core.resources.win32.x86_64,\
 	org.eclipse.core.runtime,\
-	org.eclipse.equinox.common
+	org.eclipse.ecf,\
+	org.eclipse.ecf.filetransfer,\
+	org.eclipse.ecf.identity,\
+	org.eclipse.ecf.provider.filetransfer,\
+	org.eclipse.emf.common,\
+	org.eclipse.emf.databinding,\
+	org.eclipse.emf.ecore,\
+	org.eclipse.equinox.app,\
+	org.eclipse.equinox.common,\
+	org.eclipse.equinox.concurrent,\
+	org.eclipse.equinox.console,\
+	org.eclipse.equinox.event,\
+	org.eclipse.equinox.launcher,\
+	org.eclipse.equinox.launcher.win32.win32.x86_64,\
+	org.eclipse.equinox.metatype,\
+	org.eclipse.equinox.p2.artifact.repository,\
+	org.eclipse.equinox.p2.core,\
+	org.eclipse.equinox.p2.engine,\
+	org.eclipse.equinox.p2.jarprocessor,\
+	org.eclipse.equinox.p2.metadata,\
+	org.eclipse.equinox.p2.metadata.repository,\
+	org.eclipse.equinox.p2.repository,\
+	org.eclipse.equinox.p2.transport.ecf,\
+	org.eclipse.equinox.preferences,\
+	org.eclipse.equinox.registry,\
+	org.eclipse.equinox.security,\
+	org.eclipse.equinox.security.win32.x86_64,\
+	org.osgi.service.event,\
+	org.osgi.service.metatype,\
+	org.tukaani.xz
 
-Private-Package: uk.co.strangeskies.p2bnd
+#
+# These project bundles are installed into the framework
+# created internally by the bnd plugin
+# 
+buildpath.workspace: \
+	uk.co.strangeskies.osgi.consolelog,\
+	uk.co.strangeskies.p2,\
+	uk.co.strangeskies.utilities
 
--runfw: org.eclipse.osgi
+#
+# The buildpath includes all internal framework bundles. It
+# may later need to include extra, but currently everything
+# in the private packages of this bundle have any other
+# dependencies.
+#
+-buildpath: \
+	${buildpath.package},\
+	${buildpath.workspace}
+
+#
+# The pluginpath includes all jars which need to be on the
+# classpath during bnd plugin execution.
+#
+pluginpath.bnd: \
+	uk.co.strangeskies.utilities,\
+	org.eclipse.osgi
+
+#
+# These macros describe how jars are included as resources
+# in the bundle artifact created by this project.
+#
+jarsource: ${repo;${1};latest}
+jardestination: jar/${1}.jar
+jarunrolled: @${repo;${1};latest}
+
+includebsn: ${jardestination;${1}}=${jarsource;${1}}
+
+-includeresource: \
+	${map;includebsn;${buildpath.package},${buildpath.workspace}},\
+	${map;jarunrolled;${pluginpath.bnd}}
+
+#
+# A helper header so the bundle knows all jars in its classpath
+#
+FrameworkJars: ${map;jardestination;${buildpath.package},${buildpath.workspace}}
 
 -runrequires: \
-	${req;uk.co.strangeskies.p2bnd},\
 	${runreq.felix.shell},\
-	${runreq.eclipse.p2},\
-	${runreq.eclipse.linux64}
+	${runreq.base},\
+	${req;uk.co.strangeskies.p2bnd}
 
 -runbundles: \
 	biz.aQute.bndlib;version='[3.0.0,3.0.1)',\
-	bndtools.runtime.eclipse.applaunch;version='[0.1.0,0.1.1)',\
-	com.google.guava;version='[15.0.0,15.0.1)',\
-	com.ibm.icu;version='[54.1.1,54.1.2)',\
-	javax.annotation.jre;version='[1.2.0,1.2.1)',\
-	javax.inject;version='[1.0.0,1.0.1)',\
-	javax.xml;version='[1.3.4,1.3.5)',\
-	org.apache.commons.jxpath;version='[1.3.0,1.3.1)',\
-	org.apache.commons.lang;version='[2.6.0,2.6.1)',\
+	org.apache.felix.configadmin;version='[1.8.6,1.8.7)',\
 	org.apache.felix.gogo.command;version='[0.14.0,0.14.1)',\
 	org.apache.felix.gogo.runtime;version='[0.16.2,0.16.3)',\
 	org.apache.felix.gogo.shell;version='[0.10.0,0.10.1)',\
 	org.apache.felix.log;version='[1.0.1,1.0.2)',\
 	org.apache.felix.scr;version='[2.0.0,2.0.1)',\
-	org.eclipse.core.commands;version='[3.7.0,3.7.1)',\
-	org.eclipse.core.contenttype;version='[3.5.0,3.5.1)',\
-	org.eclipse.core.databinding;version='[1.5.0,1.5.1)',\
-	org.eclipse.core.databinding.beans;version='[1.3.0,1.3.1)',\
-	org.eclipse.core.databinding.observable;version='[1.5.0,1.5.1)',\
-	org.eclipse.core.databinding.property;version='[1.5.0,1.5.1)',\
-	org.eclipse.core.expressions;version='[3.5.0,3.5.1)',\
-	org.eclipse.core.filesystem;version='[1.5.0,1.5.1)',\
-	org.eclipse.core.filesystem.linux.x86_64;version='[1.2.200,1.2.201)',\
-	org.eclipse.core.jobs;version='[3.7.0,3.7.1)',\
-	org.eclipse.core.net;version='[1.2.300,1.2.301)',\
-	org.eclipse.core.net.linux.x86_64;version='[1.1.100,1.1.101)',\
-	org.eclipse.core.runtime;version='[3.11.1,3.11.2)',\
-	org.eclipse.e4.core.commands;version='[0.11.0,0.11.1)',\
-	org.eclipse.e4.core.contexts;version='[1.4.0,1.4.1)',\
-	org.eclipse.e4.core.di;version='[1.5.0,1.5.1)',\
-	org.eclipse.e4.core.di.annotations;version='[1.4.0,1.4.1)',\
-	org.eclipse.e4.core.di.extensions;version='[0.13.0,0.13.1)',\
-	org.eclipse.e4.core.services;version='[2.0.0,2.0.1)',\
-	org.eclipse.e4.emf.xpath;version='[0.1.100,0.1.101)',\
-	org.eclipse.e4.ui.di;version='[1.1.0,1.1.1)',\
-	org.eclipse.e4.ui.model.workbench;version='[1.1.100,1.1.101)',\
-	org.eclipse.e4.ui.services;version='[1.2.0,1.2.1)',\
-	org.eclipse.e4.ui.workbench;version='[1.3.0,1.3.1)',\
-	org.eclipse.ecf;version='[3.5.0,3.5.1)',\
-	org.eclipse.ecf.filetransfer;version='[5.0.0,5.0.1)',\
-	org.eclipse.ecf.identity;version='[3.6.0,3.6.1)',\
-	org.eclipse.ecf.provider.filetransfer;version='[3.2.200,3.2.201)',\
-	org.eclipse.emf.common;version='[2.11.0,2.11.1)',\
-	org.eclipse.emf.databinding;version='[1.3.0,1.3.1)',\
-	org.eclipse.emf.ecore;version='[2.11.1,2.11.2)',\
-	org.eclipse.emf.ecore.change;version='[2.11.0,2.11.1)',\
-	org.eclipse.emf.ecore.xmi;version='[2.11.1,2.11.2)',\
-	org.eclipse.equinox.app;version='[1.3.300,1.3.301)',\
-	org.eclipse.equinox.common;version='[3.7.0,3.7.1)',\
-	org.eclipse.equinox.concurrent;version='[1.1.0,1.1.1)',\
-	org.eclipse.equinox.console;version='[1.1.100,1.1.101)',\
-	org.eclipse.equinox.event;version='[1.3.100,1.3.101)',\
-	org.eclipse.equinox.launcher;version='[1.3.100,1.3.101)',\
-	org.eclipse.equinox.launcher.gtk.linux.x86_64;version='[1.1.300,1.1.301)',\
 	org.eclipse.equinox.metatype;version='[1.4.100,1.4.101)',\
-	org.eclipse.equinox.p2.artifact.repository;version='[1.1.400,1.1.401)',\
-	org.eclipse.equinox.p2.core;version='[2.4.0,2.4.1)',\
-	org.eclipse.equinox.p2.director;version='[2.3.200,2.3.201)',\
-	org.eclipse.equinox.p2.engine;version='[2.4.0,2.4.1)',\
-	org.eclipse.equinox.p2.jarprocessor;version='[1.0.400,1.0.401)',\
-	org.eclipse.equinox.p2.metadata;version='[2.3.0,2.3.1)',\
-	org.eclipse.equinox.p2.metadata.repository;version='[1.2.200,1.2.201)',\
-	org.eclipse.equinox.p2.operations;version='[2.4.100,2.4.101)',\
-	org.eclipse.equinox.p2.repository;version='[2.3.100,2.3.101)',\
-	org.eclipse.equinox.p2.transport.ecf;version='[1.1.100,1.1.101)',\
-	org.eclipse.equinox.preferences;version='[3.5.300,3.5.301)',\
-	org.eclipse.equinox.registry;version='[3.6.0,3.6.1)',\
-	org.eclipse.equinox.security;version='[1.2.100,1.2.101)',\
-	org.eclipse.equinox.simpleconfigurator;version='[1.1.100,1.1.101)',\
-	org.eclipse.fx.core;version='[2.2.0,2.2.1)',\
-	org.eclipse.fx.core.databinding;version='[2.2.0,2.2.1)',\
-	org.eclipse.fx.core.di;version='[2.2.0,2.2.1)',\
-	org.eclipse.fx.core.di.context;version='[2.2.0,2.2.1)',\
-	org.eclipse.fx.core.fxml;version='[2.2.0,2.2.1)',\
-	org.eclipse.fx.core.p2;version='[2.2.0,2.2.1)',\
-	org.eclipse.fx.osgi.util;version='[2.2.0,2.2.1)',\
-	org.eclipse.fx.ui.controls;version='[2.2.0,2.2.1)',\
-	org.eclipse.fx.ui.databinding;version='[2.2.0,2.2.1)',\
-	org.eclipse.fx.ui.di;version='[2.2.0,2.2.1)',\
-	org.eclipse.fx.ui.di.interopt;version='[2.2.0,2.2.1)',\
-	org.eclipse.fx.ui.dialogs;version='[2.2.0,2.2.1)',\
-	org.eclipse.fx.ui.keybindings;version='[2.2.0,2.2.1)',\
-	org.eclipse.fx.ui.keybindings.e4;version='[2.2.0,2.2.1)',\
-	org.eclipse.fx.ui.panes;version='[2.2.0,2.2.1)',\
-	org.eclipse.fx.ui.services;version='[2.2.0,2.2.1)',\
-	org.eclipse.fx.ui.workbench.base;version='[2.2.0,2.2.1)',\
-	org.eclipse.fx.ui.workbench.fx;version='[2.2.0,2.2.1)',\
-	org.eclipse.fx.ui.workbench.renderers.base;version='[2.2.0,2.2.1)',\
-	org.eclipse.fx.ui.workbench.renderers.fx;version='[2.2.0,2.2.1)',\
-	org.eclipse.fx.ui.workbench.services;version='[2.2.0,2.2.1)',\
-	org.eclipse.osgi.services;version='[3.5.0,3.5.1)',\
-	org.sat4j.core;version='[2.3.5,2.3.6)',\
-	org.sat4j.pb;version='[2.3.5,2.3.6)',\
-	org.tukaani.xz;version='[1.3.0,1.3.1)',\
-	uk.co.strangeskies.p2bnd;version=snapshot
+	org.osgi.service.metatype;version='[1.3.0,1.3.1)',\
+	osgi.enroute.logger.simple.provider;version='[1.2.1,1.2.2)',\
+	uk.co.strangeskies.osgi.consolelog;version=snapshot,\
+	uk.co.strangeskies.p2bnd;version=snapshot,\
+	uk.co.strangeskies.utilities;version=snapshot

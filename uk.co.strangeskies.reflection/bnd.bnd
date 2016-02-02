@@ -6,8 +6,8 @@ Bundle-Description: \
 	generic types is also provided, up to and including generic \
 	method/constructor overload resolution and invocation type \
 	inference.
-	
-	Export-Package: \
+
+Export-Package: \
 	uk.co.strangeskies.reflection, \
 	uk.co.strangeskies.reflection.proxy
 	

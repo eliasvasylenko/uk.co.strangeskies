@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with uk.co.strangeskies.p2bnd.  If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.p2bnd;
+package uk.co.strangeskies.p2.impl;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
@@ -32,17 +32,16 @@ import org.eclipse.equinox.p2.repository.artifact.IArtifactRepositoryManager;
 import org.eclipse.equinox.p2.repository.metadata.IMetadataRepositoryManager;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;
-import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
-@Component(immediate = true)
+//@Component(immediate = true)
 public class P2Test {
 	private static final String MARS_UPDATE_SITE = "http://download.eclipse.org/releases/mars/";
 	private static final String PROFILE_NAME = "test";
 
 	@Reference
 	private IProvisioningAgentProvider agentProvider;
-
+	
 	@Activate
 	protected void activate(BundleContext context) throws Exception {
 		System.out.println("Hey there . . .");
@@ -64,7 +63,8 @@ public class P2Test {
 			IMetadataRepositoryManager metadataManager = (IMetadataRepositoryManager) provisioningAgent
 					.getService(IMetadataRepositoryManager.SERVICE_NAME);
 			if (metadataManager == null) {
-				throw new IllegalStateException("Couldn't load metadata repository manager");
+				throw new IllegalStateException(
+						"Couldn't load metadata repository manager");
 			}
 
 			/*
@@ -73,7 +73,8 @@ public class P2Test {
 			IArtifactRepositoryManager artifactManager = (IArtifactRepositoryManager) provisioningAgent
 					.getService(IArtifactRepositoryManager.SERVICE_NAME);
 			if (artifactManager == null) {
-				throw new IllegalStateException("Couldn't load artifact repository manager");
+				throw new IllegalStateException(
+						"Couldn't load artifact repository manager");
 			}
 
 			/*
@@ -87,8 +88,10 @@ public class P2Test {
 				artifactManager.loadRepository(remote, progressMonitor);
 
 				System.out.println("querying repository . . .");
-				IQuery<IInstallableUnit> query = QueryUtil.createMatchQuery("id == $0", "org.eclipse.equinox.event");
-				IQueryResult<IInstallableUnit> result = metadataManager.query(query, progressMonitor);
+				IQuery<IInstallableUnit> query = QueryUtil.createMatchQuery("id == $0",
+						"org.eclipse.equinox.event");
+				IQueryResult<IInstallableUnit> result = metadataManager.query(query,
+						progressMonitor);
 				System.out.println(result.toUnmodifiableSet());
 			} catch (Exception pe) {
 				throw new InvocationTargetException(pe);
