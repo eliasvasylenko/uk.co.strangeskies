@@ -9,6 +9,6 @@ public class P2BndPluginTest {
 	public void initialisationTest() {
 		P2BndRepository plugin = new P2BndRepository();
 
-		plugin.close();
+		plugin.stop();
 	}
 }

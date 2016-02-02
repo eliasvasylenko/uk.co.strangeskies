@@ -35,9 +35,6 @@ import java.util.jar.Manifest;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
-import org.osgi.framework.ServiceEvent;
-import org.osgi.framework.ServiceListener;
-import org.osgi.framework.ServiceReference;
 import org.osgi.framework.launch.Framework;
 import org.osgi.framework.launch.FrameworkFactory;
 import org.osgi.resource.Capability;
@@ -51,18 +48,16 @@ import aQute.bnd.service.ResourceHandle;
 import aQute.bnd.service.Strategy;
 import aQute.bnd.version.Version;
 import aQute.service.reporter.Reporter;
-import uk.co.strangeskies.p2.P2Repository;
 import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Log.Level;
 import uk.co.strangeskies.utilities.Property;
 
 @Component(immediate = true)
-public class P2BndRepository
-		implements RemoteRepositoryPlugin, Repository, Plugin {
+public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plugin {
 	private static final String FRAMEWORK_JARS = "FrameworkJars";
 
-	private final Framework framework;
+	private Framework framework;
 
 	private Log log = (l, s) -> {};
 
@@ -71,76 +66,81 @@ public class P2BndRepository
 	public static Manifest getManifest(Class<?> clz) {
 		String resource = "/" + clz.getName().replace(".", "/") + ".class";
 		String fullPath = clz.getResource(resource).toString();
-		String archivePath = fullPath.substring(0,
-				fullPath.length() - resource.length());
+		String archivePath = fullPath.substring(0, fullPath.length() - resource.length());
 
 		/*
 		 * Deal with Wars
 		 */
-		if (archivePath.endsWith("\\WEB-INF\\classes")
-				|| archivePath.endsWith("/WEB-INF/classes")) {
-			archivePath = archivePath.substring(0,
-					archivePath.length() - "/WEB-INF/classes".length());
+		if (archivePath.endsWith("\\WEB-INF\\classes") || archivePath.endsWith("/WEB-INF/classes")) {
+			archivePath = archivePath.substring(0, archivePath.length() - "/WEB-INF/classes".length());
 		}
 
-		try (InputStream input = new URL(archivePath + "/META-INF/MANIFEST.MF")
-				.openStream()) {
+		try (InputStream input = new URL(archivePath + "/META-INF/MANIFEST.MF").openStream()) {
 			return new Manifest(input);
 		} catch (Exception e) {
-			throw new RuntimeException(
-					"Loading MANIFEST for class " + clz + " failed!", e);
+			throw new RuntimeException("Loading MANIFEST for class " + clz + " failed!", e);
 		}
 	}
 
+	public static void main(String... args) {
+		new P2BndRepository();
+	}
+	
 	public P2BndRepository() {
+		/*-
+		URL frameworkURL;
+		try {
+			frameworkURL = new URL(null, "jar:jarjar:file:/C:/mylibs/Outer.jar^/Inner.jar!/", new NestedJarUrlStreamHandler());
+		} catch (MalformedURLException e) {
+			log.log(Level.ERROR, "Unable to find nested framework jar", e);
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
+		new ContextClassLoaderRunner(frameworkURL).run(this::start);
+		*/
+		try {
+			start();
+		} finally {
+			stop();
+		}
+	}
+
+	private void start() {
 		try {
 			Property<P2Repository, P2Repository> repository = new IdentityProperty<>();
 
-			FrameworkFactory frameworkFactory = ServiceLoader
-					.load(FrameworkFactory.class).iterator().next();
+			FrameworkFactory frameworkFactory = ServiceLoader.load(FrameworkFactory.class).iterator().next();
 			framework = frameworkFactory.newFramework(new HashMap<>());
 			framework.start();
 
 			BundleContext frameworkContext = framework.getBundleContext();
 
-			ServiceListener frameworkListener = event -> {
-				switch (event.getType()) {
-				case ServiceEvent.REGISTERED:
-					ServiceReference<?> reference = event.getServiceReference();
-					synchronized (repository) {
-						repository
-								.set((P2Repository) frameworkContext.getService(reference));
-					}
-				default:
-				}
-			};
-			frameworkContext.addServiceListener(frameworkListener,
-					"(objectclass=" + P2Repository.class.getName() + ")");
-			frameworkContext.registerService(Log.class, (l, s) -> log.log(l, s),
-					new Hashtable<>());
+			frameworkContext.addServiceListener(event -> {
+				System.out.println("    service event ! (" + event.getType() + ") " + event);
+			});
+			frameworkContext.registerService(Log.class, (l, s) -> log.log(l, s), new Hashtable<>());
 
 			Manifest manifest = getManifest(getClass());
-			String frameworkJars = manifest.getMainAttributes()
-					.getValue(FRAMEWORK_JARS);
+			String frameworkJars = manifest.getMainAttributes().getValue(FRAMEWORK_JARS);
 
 			List<Bundle> bundles = new ArrayList<>();
 			Arrays.stream(frameworkJars.split(",")).map(s -> "/" + s).forEach(s -> {
 				try {
-					bundles.add(frameworkContext.installBundle("classpath:" + s,
-							getClass().getResourceAsStream(s)));
+					bundles.add(frameworkContext.installBundle("classpath:" + s, getClass().getResourceAsStream(s)));
 				} catch (RuntimeException e) {
-					log.log(Level.ERROR, "Unable to add jar to internal framework " + s,
-							e);
+					log.log(Level.ERROR, "Unable to add jar to internal framework " + s, e);
 					throw e;
 				} catch (Exception e) {
-					log.log(Level.ERROR, "Unable to add jar to internal framework " + s,
-							e);
+					log.log(Level.ERROR, "Unable to add jar to internal framework " + s, e);
 					throw new RuntimeException(e);
 				}
 			});
 			for (Bundle bundle : bundles) {
 				try {
-					bundle.start();
+					if (bundle.getHeaders().get("Fragment-Host") == null) {
+						bundle.start();
+					}
+					System.out.println("  started bundle - " + bundle.getSymbolicName());
 				} catch (RuntimeException e) {
 					log.log(Level.ERROR, "Unable to start bundle " + bundle, e);
 					throw e;
@@ -152,13 +152,12 @@ public class P2BndRepository
 
 			synchronized (repository) {
 				if (repository.get() == null) {
-					frameworkListener.wait(2000);
+					repository.wait(4000);
 					this.repository = repository.get();
 
 					if (this.repository == null) {
 						log.log(Level.ERROR, "Timed out waiting for P2 repository service");
-						throw new IllegalStateException(
-								"Unable to obtain repository service");
+						throw new IllegalStateException("Unable to obtain repository service");
 					} else {
 						log.log(Level.ERROR, "Successfully wrapped P2Repository service");
 					}
@@ -173,10 +172,12 @@ public class P2BndRepository
 		}
 	}
 
-	public void close() {
+	public void stop() {
 		try {
-			framework.stop();
-			framework.waitForStop(0);
+			if (framework != null) {
+				framework.stop();
+				framework.waitForStop(0);
+			}
 		} catch (BundleException | InterruptedException e) {
 			log.log(Level.ERROR, "Unable to stop framework", e);
 			throw new RuntimeException(e);
@@ -185,19 +186,18 @@ public class P2BndRepository
 
 	@Override
 	protected void finalize() throws Throwable {
-		close();
+		stop();
 		super.finalize();
 	}
 
 	@Override
-	public PutResult put(InputStream stream, PutOptions options)
-			throws Exception {
+	public PutResult put(InputStream stream, PutOptions options) throws Exception {
 		return repository.put(stream, options);
 	}
 
 	@Override
-	public File get(String bsn, Version version, Map<String, String> properties,
-			DownloadListener... listeners) throws Exception {
+	public File get(String bsn, Version version, Map<String, String> properties, DownloadListener... listeners)
+			throws Exception {
 		return repository.get(bsn, version, properties, listeners);
 	}
 
@@ -237,14 +237,13 @@ public class P2BndRepository
 	}
 
 	@Override
-	public Map<Requirement, Collection<Capability>> findProviders(
-			Collection<? extends Requirement> requirements) {
+	public Map<Requirement, Collection<Capability>> findProviders(Collection<? extends Requirement> requirements) {
 		return repository.findProviders(requirements);
 	}
 
 	@Override
-	public ResourceHandle getHandle(String bsn, String version, Strategy strategy,
-			Map<String, String> properties) throws Exception {
+	public ResourceHandle getHandle(String bsn, String version, Strategy strategy, Map<String, String> properties)
+			throws Exception {
 		return repository.getHandle(bsn, version, strategy, properties);
 	}
 

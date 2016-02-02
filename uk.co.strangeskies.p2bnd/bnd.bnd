@@ -1,13 +1,10 @@
 Private-Package: \
-	uk.co.strangeskies.p2.bnd,\
-	uk.co.strangeskies.p2
+	uk.co.strangeskies.p2.bnd
 
 -runee: JavaSE-1.8
 
 -testpath: \
 	org.eclipse.osgi
-
--dependson: uk.co.strangeskies.p2
 
 #
 # These external bundles are installed into the framework
@@ -16,6 +13,10 @@ Private-Package: \
 buildpath.package: \
 	biz.aQute.bndlib,\
 	com.ibm.icu,\
+	org.apache.felix.configadmin,\
+	org.apache.felix.gogo.runtime,\
+	org.apache.felix.log,\
+	org.apache.felix.scr,\
 	org.eclipse.core.contenttype,\
 	org.eclipse.core.databinding,\
 	org.eclipse.core.databinding.beans,\
@@ -23,10 +24,11 @@ buildpath.package: \
 	org.eclipse.core.databinding.property,\
 	org.eclipse.core.expressions,\
 	org.eclipse.core.filesystem,\
-	org.eclipse.core.filesystem.win32.x86_64,\
+	org.eclipse.core.filesystem.linux.x86_64,\
 	org.eclipse.core.jobs,\
+	org.eclipse.core.net,\
+	org.eclipse.core.net.linux.x86_64,\
 	org.eclipse.core.resources,\
-	org.eclipse.core.resources.win32.x86_64,\
 	org.eclipse.core.runtime,\
 	org.eclipse.ecf,\
 	org.eclipse.ecf.filetransfer,\
@@ -41,7 +43,7 @@ buildpath.package: \
 	org.eclipse.equinox.console,\
 	org.eclipse.equinox.event,\
 	org.eclipse.equinox.launcher,\
-	org.eclipse.equinox.launcher.win32.win32.x86_64,\
+	org.eclipse.equinox.launcher.gtk.linux.x86_64,\
 	org.eclipse.equinox.metatype,\
 	org.eclipse.equinox.p2.artifact.repository,\
 	org.eclipse.equinox.p2.core,\
@@ -54,7 +56,6 @@ buildpath.package: \
 	org.eclipse.equinox.preferences,\
 	org.eclipse.equinox.registry,\
 	org.eclipse.equinox.security,\
-	org.eclipse.equinox.security.win32.x86_64,\
 	org.osgi.service.event,\
 	org.osgi.service.metatype,\
 	org.tukaani.xz
@@ -64,7 +65,6 @@ buildpath.package: \
 # created internally by the bnd plugin
 # 
 buildpath.workspace: \
-	uk.co.strangeskies.osgi.consolelog,\
 	uk.co.strangeskies.p2,\
 	uk.co.strangeskies.utilities
 
@@ -83,8 +83,7 @@ buildpath.workspace: \
 # classpath during bnd plugin execution.
 #
 pluginpath.bnd: \
-	uk.co.strangeskies.utilities,\
-	org.eclipse.osgi
+	uk.co.strangeskies.utilities
 
 #
 # These macros describe how jars are included as resources
@@ -98,7 +97,8 @@ includebsn: ${jardestination;${1}}=${jarsource;${1}}
 
 -includeresource: \
 	${map;includebsn;${buildpath.package},${buildpath.workspace}},\
-	${map;jarunrolled;${pluginpath.bnd}}
+	${map;jarunrolled;${pluginpath.bnd}},\
+	jar/framework/org.eclipse.osgi.jar=${repo;org.eclipse.osgi;latest}
 
 #
 # A helper header so the bundle knows all jars in its classpath
@@ -108,7 +108,8 @@ FrameworkJars: ${map;jardestination;${buildpath.package},${buildpath.workspace}}
 -runrequires: \
 	${runreq.felix.shell},\
 	${runreq.base},\
-	${req;uk.co.strangeskies.p2bnd}
+	${req;uk.co.strangeskies.p2bnd},\
+	${req;uk.co.strangeskies.osgi.consolelog}
 
 -runbundles: \
 	biz.aQute.bndlib;version='[3.0.0,3.0.1)',\
@@ -124,3 +125,11 @@ FrameworkJars: ${map;jardestination;${buildpath.package},${buildpath.workspace}}
 	uk.co.strangeskies.osgi.consolelog;version=snapshot,\
 	uk.co.strangeskies.p2bnd;version=snapshot,\
 	uk.co.strangeskies.utilities;version=snapshot
+
+#
+# Extract ./generated/uk.co.whatever...
+#
+# Run on command line:
+#
+# java -cp ./uk.co.strangeskies.p2bnd.jar:./uk.co.strangeskies.p2bnd/jar/biz.aQute.bndlib.jar:./uk.co.strangeskies.p2bnd/jar/framework/org.eclipse.osgi.jar uk.co.strangeskies.p2.bnd.P2BndRepository
+#

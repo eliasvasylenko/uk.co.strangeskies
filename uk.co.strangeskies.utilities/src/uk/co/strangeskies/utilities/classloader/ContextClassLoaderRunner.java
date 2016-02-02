@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with uk.co.strangeskies.utilities.  If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.utilities;
+package uk.co.strangeskies.utilities.classloader;
 
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -29,6 +29,8 @@ import java.util.Collection;
  * @author Elias N Vasylenko
  */
 public class ContextClassLoaderRunner {
+	private static final String PROTOCOL_HANDLER = "java.protocol.handler.pkgs";
+
 	private final ClassLoader classLoader;
 
 	public ContextClassLoaderRunner(ClassLoader classLoader) {
@@ -36,8 +38,7 @@ public class ContextClassLoaderRunner {
 	}
 
 	public ContextClassLoaderRunner(URL... jars) {
-		this(new URLClassLoader(jars,
-				Thread.currentThread().getContextClassLoader()));
+		this(new URLClassLoader(jars, Thread.currentThread().getContextClassLoader()));
 	}
 
 	public ContextClassLoaderRunner(Collection<URL> jars) {
@@ -52,8 +53,7 @@ public class ContextClassLoaderRunner {
 	 *          The runnable to be invoked under the given classloader
 	 */
 	public void run(Runnable runnable) {
-		ClassLoader originalClassLoader = Thread.currentThread()
-				.getContextClassLoader();
+		ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
 		Thread.currentThread().setContextClassLoader(classLoader);
 
 		try {

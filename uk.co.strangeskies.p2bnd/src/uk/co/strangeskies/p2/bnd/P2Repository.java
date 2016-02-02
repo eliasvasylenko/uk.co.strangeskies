@@ -1,4 +1,4 @@
-package uk.co.strangeskies.p2;
+package uk.co.strangeskies.p2.bnd;
 
 import org.osgi.service.repository.Repository;
 
