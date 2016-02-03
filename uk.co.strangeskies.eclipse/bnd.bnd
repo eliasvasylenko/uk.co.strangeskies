@@ -24,10 +24,12 @@ Private-Package: \
 	org.eclipse.osgi.internal.util
 
 
-p2-plugin: ${build}/release/uk.co.strangeskies.p2bnd/uk.co.strangeskies.p2bnd-${strangeskies-version}.jar
+pluginpath.p2: ${build}/release/uk.co.strangeskies.p2bnd/uk.co.strangeskies.p2bnd-${strangeskies-version}.jar
+pluginpath.framework: C:/Users/tofuser/git/uk.co.strangeskies/uk.co.strangeskies.p2bnd/generated/uk.co.strangeskies.p2bnd/jar/framework/org.eclipse.osgi.jar
 
 #-pluginpath.test: \
-#	${p2-plugin}
+#	${pluginpath.p2},\
+#	${pluginpath.framework}
 
 #-plugin: \
 #	uk.co.strangeskies.p2.bnd.P2BndRepository

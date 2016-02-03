@@ -20,6 +20,9 @@ package uk.co.strangeskies.p2.bnd;
 
 import java.io.File;
 import java.io.InputStream;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,7 +37,8 @@ import java.util.jar.Manifest;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.BundleException;
+import org.osgi.framework.ServiceEvent;
+import org.osgi.framework.ServiceReference;
 import org.osgi.framework.launch.Framework;
 import org.osgi.framework.launch.FrameworkFactory;
 import org.osgi.resource.Capability;
@@ -53,6 +57,19 @@ import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Log.Level;
 import uk.co.strangeskies.utilities.Property;
 
+/**
+ * This class is not primarily intended to be used within OSGi environments. For
+ * an OSGi enabled implementation of {@link RemoteRepositoryPlugin} and
+ * {@link Repository} which provides p2 repository support, the
+ * {@code uk.co.strangeskies.p2.P2RepositoryImpl} class in the
+ * {@code uk.co.strangeskies.p2} project should be used instead. This class is
+ * simply a wrapper for that implementation for use in non OSGi environments,
+ * and creates a framework internally to host the necessary Eclipse Project
+ * bundles.
+ * <p>
+ *
+ * @author Elias N Vasylenko
+ */
 @Component(immediate = true)
 public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plugin {
 	private static final String FRAMEWORK_JARS = "FrameworkJars";
@@ -61,7 +78,9 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 
 	private Log log = (l, s) -> {};
 
-	private P2Repository repository;
+	private Plugin plugin;
+	private RemoteRepositoryPlugin remoteRepositoryPlugin;
+	private Repository repository;
 
 	public static Manifest getManifest(Class<?> clz) {
 		String resource = "/" + clz.getName().replace(".", "/") + ".class";
@@ -85,40 +104,36 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 	public static void main(String... args) {
 		new P2BndRepository();
 	}
-	
+
 	public P2BndRepository() {
-		/*-
-		URL frameworkURL;
-		try {
-			frameworkURL = new URL(null, "jar:jarjar:file:/C:/mylibs/Outer.jar^/Inner.jar!/", new NestedJarUrlStreamHandler());
-		} catch (MalformedURLException e) {
-			log.log(Level.ERROR, "Unable to find nested framework jar", e);
-			e.printStackTrace();
-			throw new RuntimeException(e);
-		}
-		new ContextClassLoaderRunner(frameworkURL).run(this::start);
-		*/
-		try {
-			start();
-		} finally {
-			stop();
-		}
+		start();
+
+		System.out.println(getName());
 	}
 
 	private void start() {
 		try {
-			Property<P2Repository, P2Repository> repository = new IdentityProperty<>();
+			Property<Object, Object> repositoryService = new IdentityProperty<>();
 
 			FrameworkFactory frameworkFactory = ServiceLoader.load(FrameworkFactory.class).iterator().next();
-			framework = frameworkFactory.newFramework(new HashMap<>());
+			framework = frameworkFactory.newFramework(getFrameworkProperties());
 			framework.start();
 
 			BundleContext frameworkContext = framework.getBundleContext();
-
-			frameworkContext.addServiceListener(event -> {
-				System.out.println("    service event ! (" + event.getType() + ") " + event);
-			});
+			frameworkContext.addServiceListener(System.out::println);
 			frameworkContext.registerService(Log.class, (l, s) -> log.log(l, s), new Hashtable<>());
+			frameworkContext.addServiceListener(event -> {
+				switch (event.getType()) {
+				case ServiceEvent.REGISTERED:
+					ServiceReference<?> reference = event.getServiceReference();
+
+					synchronized (repositoryService) {
+						repositoryService.set(frameworkContext.getService(reference));
+						repositoryService.notifyAll();
+					}
+				default:
+				}
+			} , "(component.name=P2RepositoryImpl)");
 
 			Manifest manifest = getManifest(getClass());
 			String frameworkJars = manifest.getMainAttributes().getValue(FRAMEWORK_JARS);
@@ -150,19 +165,31 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 				}
 			}
 
-			synchronized (repository) {
-				if (repository.get() == null) {
-					repository.wait(4000);
-					this.repository = repository.get();
+			synchronized (repositoryService) {
+				if (repositoryService.get() == null) {
+					repositoryService.wait(2000);
 
-					if (this.repository == null) {
-						log.log(Level.ERROR, "Timed out waiting for P2 repository service");
+					if (repositoryService.get() == null) {
+						log.log(Level.ERROR, "Timed out waiting for P2 service as " + RemoteRepositoryPlugin.class.getName());
 						throw new IllegalStateException("Unable to obtain repository service");
-					} else {
-						log.log(Level.ERROR, "Successfully wrapped P2Repository service");
 					}
 				}
 			}
+
+			Object repositoryServiceInstance = repositoryService.get();
+			Object wrappedService = Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),
+					new Class<?>[] { RemoteRepositoryPlugin.class, Plugin.class, Repository.class }, new InvocationHandler() {
+						@Override
+						public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+							return repositoryServiceInstance.getClass().getMethod(method.getName(), method.getParameterTypes())
+									.invoke(repositoryServiceInstance, args);
+						}
+					});
+			this.remoteRepositoryPlugin = (RemoteRepositoryPlugin) wrappedService;
+			this.repository = (Repository) wrappedService;
+			this.plugin = (Plugin) wrappedService;
+
+			log.log(Level.ERROR, "Successfully wrapped P2Repository service " + repositoryService.get());
 		} catch (RuntimeException e) {
 			log.log(Level.ERROR, "Unable to start framework", e);
 			throw e;
@@ -172,13 +199,25 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 		}
 	}
 
+	private Map<String, String> getFrameworkProperties() {
+		Map<String, String> properties = new HashMap<>();
+
+		properties.put("osgi.clean", "true");
+		properties.put("clearPersistedState", "true");
+
+		return properties;
+	}
+
 	public void stop() {
 		try {
-			if (framework != null) {
-				framework.stop();
-				framework.waitForStop(0);
+			synchronized (this) {
+				if (framework != null) {
+					framework.stop();
+					framework.waitForStop(0);
+					framework = null;
+				}
 			}
-		} catch (BundleException | InterruptedException e) {
+		} catch (Exception e) {
 			log.log(Level.ERROR, "Unable to stop framework", e);
 			throw new RuntimeException(e);
 		}
@@ -192,33 +231,33 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 
 	@Override
 	public PutResult put(InputStream stream, PutOptions options) throws Exception {
-		return repository.put(stream, options);
+		return remoteRepositoryPlugin.put(stream, options);
 	}
 
 	@Override
 	public File get(String bsn, Version version, Map<String, String> properties, DownloadListener... listeners)
 			throws Exception {
-		return repository.get(bsn, version, properties, listeners);
+		return remoteRepositoryPlugin.get(bsn, version, properties, listeners);
 	}
 
 	@Override
 	public boolean canWrite() {
-		return repository.canWrite();
+		return remoteRepositoryPlugin.canWrite();
 	}
 
 	@Override
 	public List<String> list(String pattern) throws Exception {
-		return repository.list(pattern);
+		return remoteRepositoryPlugin.list(pattern);
 	}
 
 	@Override
 	public SortedSet<Version> versions(String bsn) throws Exception {
-		return repository.versions(bsn);
+		return remoteRepositoryPlugin.versions(bsn);
 	}
 
 	@Override
 	public String getName() {
-		return repository.getName();
+		return remoteRepositoryPlugin.getName();
 	}
 
 	@Override
@@ -228,12 +267,13 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 
 	@Override
 	public void setProperties(Map<String, String> map) throws Exception {
-		repository.setProperties(map);
+		plugin.setProperties(map);
 	}
 
 	@Override
 	public void setReporter(Reporter processor) {
 		log = new ReporterLog(processor);
+		plugin.setReporter(processor);
 	}
 
 	@Override
@@ -244,11 +284,11 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 	@Override
 	public ResourceHandle getHandle(String bsn, String version, Strategy strategy, Map<String, String> properties)
 			throws Exception {
-		return repository.getHandle(bsn, version, strategy, properties);
+		return remoteRepositoryPlugin.getHandle(bsn, version, strategy, properties);
 	}
 
 	@Override
 	public File getCacheDirectory() {
-		return repository.getCacheDirectory();
+		return remoteRepositoryPlugin.getCacheDirectory();
 	}
 }

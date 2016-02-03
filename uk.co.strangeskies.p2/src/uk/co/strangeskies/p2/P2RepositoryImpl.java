@@ -1,22 +1,22 @@
 /*
  * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
  *
- * This file is part of uk.co.strangeskies.p2bnd.
+ * This file is part of uk.co.strangeskies.p2.
  *
- * uk.co.strangeskies.p2bnd is free software: you can redistribute it and/or modify
+ * uk.co.strangeskies.p2 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * uk.co.strangeskies.p2bnd is distributed in the hope that it will be useful,
+ * uk.co.strangeskies.p2 is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with uk.co.strangeskies.p2bnd.  If not, see <http://www.gnu.org/licenses/>.
+ * along with uk.co.strangeskies.p2.  If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.p2.impl;
+package uk.co.strangeskies.p2;
 
 import java.io.File;
 import java.io.InputStream;
@@ -39,24 +39,72 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.osgi.service.repository.Repository;
 
+import aQute.bnd.service.RemoteRepositoryPlugin;
 import aQute.bnd.service.ResourceHandle;
 import aQute.bnd.service.Strategy;
 import aQute.bnd.version.Version;
-import uk.co.strangeskies.p2.P2Repository;
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Log.Level;
 
-@Component(service = { P2Repository.class, Repository.class }, immediate = true)
-public class P2RepositoryImpl implements P2Repository {
-	private static final String DEFAULT_CACHE_DIR = ".bnd" + File.separator
-			+ "cache" + File.separator + "p2";
-
+/**
+ * A wrapper for an Eclipse p2 repository implementing the
+ * {@link RemoteRepositoryPlugin} and {@link Repository} interfaces.
+ * 
+ * @author Elias N Vasylenko
+ */
+@Component(service = { RemoteRepositoryPlugin.class, Repository.class }, immediate = true, name = "P2RepositoryImpl")
+public class P2RepositoryImpl implements RemoteRepositoryPlugin, Repository {
+	/**
+	 * Property key for repository name.
+	 */
 	public static final String PROP_NAME = "name";
+
+	/**
+	 * Property key for repository location. Setting this property to a value is
+	 * equivalent to setting both the {@link #PROP_METADATA_LOCATION} and
+	 * {@link #PROP_ARTIFACT_LOCATION} to that value. This property should
+	 * therefore not be used in conjunction with those properties.
+	 */
 	public static final String PROP_LOCATION = "location";
+
+	/**
+	 * Property for repository metadata location, to be used alongside the
+	 * {@link #PROP_ARTIFACT_LOCATION} property. Typically, this may be the same
+	 * as the artifact location, and so {@link #PROP_LOCATION} may be used
+	 * instead.
+	 */
 	public static final String PROP_METADATA_LOCATION = "metadata";
+
+	/**
+	 * Property for repository artifact location, to be used alongside the
+	 * {@link #PROP_METADATA_LOCATION} property. Typically, this may be the same
+	 * as the metadata location, and so {@link #PROP_LOCATION} may be used
+	 * instead.
+	 */
 	public static final String PROP_ARTIFACT_LOCATION = "artifact";
-	public static final String PROP_CACHE = "cache";
+
+	/**
+	 * Property for cache location, with a default given by
+	 * {@value #DEFAULT_CACHE_DIR} in the user's home directory.
+	 */
+	public static final String PROP_CACHE_DIR = "cache";
+
+	/**
+	 * Default location for offline caching of repository artifacts.
+	 */
+	public static final String DEFAULT_CACHE_DIR = ".bnd" + File.separator + "cache" + File.separator + "p2";
+
+	/**
+	 * The length of time in seconds that cached artifact downloads will be
+	 * retained and remain valid. Defaults to
+	 * {@value #DEFAULT_CACHE_TIMEOUT_SECONDS} seconds.
+	 */
 	public static final String PROP_CACHE_TIMEOUT_SECONDS = "timeout";
+
+	/**
+	 * Default cache timeout in seconds.
+	 */
+	public static final int DEFAULT_CACHE_TIMEOUT_SECONDS = 30;
 
 	private String name;
 	private File cacheDir;
@@ -68,9 +116,12 @@ public class P2RepositoryImpl implements P2Repository {
 
 	private boolean initialised;
 
+	/**
+	 * Create a new unconfigured repository with sensible defaults where
+	 * appropriate.
+	 */
 	public P2RepositoryImpl() {
-		cacheDir = new File(
-				System.getProperty("user.home") + File.separator + DEFAULT_CACHE_DIR);
+		cacheDir = new File(System.getProperty("user.home") + File.separator + DEFAULT_CACHE_DIR);
 	}
 
 	private synchronized void initialise() {
@@ -98,19 +149,17 @@ public class P2RepositoryImpl implements P2Repository {
 
 	protected void parseCacheProperties(Map<String, String> map) {
 		cacheDir = null;
-		if (map.containsKey(PROP_CACHE)) {
-			cacheDir = new File(map.get(PROP_CACHE));
+		if (map.containsKey(PROP_CACHE_DIR)) {
+			cacheDir = new File(map.get(PROP_CACHE_DIR));
 			if (!cacheDir.exists() || !cacheDir.isDirectory()) {
 				log.log(Level.ERROR, "Bad cache directory setting: " + cacheDir);
 			}
 
 			if (map.containsKey(PROP_CACHE_TIMEOUT_SECONDS)) {
 				try {
-					cacheTimeoutSeconds = Integer
-							.parseInt(map.get(PROP_CACHE_TIMEOUT_SECONDS));
+					cacheTimeoutSeconds = Integer.parseInt(map.get(PROP_CACHE_TIMEOUT_SECONDS));
 				} catch (NumberFormatException e) {
-					log.log(Level.ERROR, "Bad timeout setting: " + cacheTimeoutSeconds,
-							e);
+					log.log(Level.ERROR, "Bad timeout setting: " + cacheTimeoutSeconds, e);
 				}
 			}
 		}
@@ -123,8 +172,7 @@ public class P2RepositoryImpl implements P2Repository {
 
 		if (location != null) {
 			if (metadataLocation != null || artifactLocation != null) {
-				log.log(Level.WARN,
-						"Location setting is ambiguous with artifact or metadata settings");
+				log.log(Level.WARN, "Location setting is ambiguous with artifact or metadata settings");
 			}
 			metadataLocation = artifactLocation = location;
 		}
@@ -158,14 +206,13 @@ public class P2RepositoryImpl implements P2Repository {
 	 */
 
 	@Override
-	public PutResult put(InputStream stream, PutOptions options)
-			throws Exception {
+	public PutResult put(InputStream stream, PutOptions options) throws Exception {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public File get(String bsn, Version version, Map<String, String> properties,
-			DownloadListener... listeners) throws Exception {
+	public File get(String bsn, Version version, Map<String, String> properties, DownloadListener... listeners)
+			throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -194,8 +241,7 @@ public class P2RepositoryImpl implements P2Repository {
 
 	@Override
 	public String getLocation() {
-		return "{metadata: " + metadataLocation + ", artifact: " + artifactLocation
-				+ "}";
+		return "{metadata: " + metadataLocation + ", artifact: " + artifactLocation + "}";
 	}
 
 	/*
@@ -203,8 +249,8 @@ public class P2RepositoryImpl implements P2Repository {
 	 */
 
 	@Override
-	public ResourceHandle getHandle(String bsn, String version, Strategy strategy,
-			Map<String, String> properties) throws Exception {
+	public ResourceHandle getHandle(String bsn, String version, Strategy strategy, Map<String, String> properties)
+			throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -219,8 +265,7 @@ public class P2RepositoryImpl implements P2Repository {
 	 */
 
 	@Override
-	public Map<Requirement, Collection<Capability>> findProviders(
-			Collection<? extends Requirement> requirements) {
+	public Map<Requirement, Collection<Capability>> findProviders(Collection<? extends Requirement> requirements) {
 		initialise();
 
 		Map<Requirement, Collection<Capability>> result = new HashMap<Requirement, Collection<Capability>>();

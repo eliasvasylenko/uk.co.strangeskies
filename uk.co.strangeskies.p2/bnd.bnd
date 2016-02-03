@@ -1,5 +1,5 @@
 Private-Package: \
-	uk.co.strangeskies.p2.impl,\
+	uk.co.strangeskies.p2,\
 	uk.co.strangeskies.p2
 
 -runee: JavaSE-1.8

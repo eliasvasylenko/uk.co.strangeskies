@@ -15,6 +15,7 @@ buildpath.package: \
 	com.ibm.icu,\
 	org.apache.felix.configadmin,\
 	org.apache.felix.gogo.runtime,\
+	org.apache.felix.gogo.shell,\
 	org.apache.felix.log,\
 	org.apache.felix.scr,\
 	org.eclipse.core.contenttype,\
