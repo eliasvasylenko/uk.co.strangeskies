@@ -21,8 +21,14 @@ package uk.co.strangeskies.eclipse;
 import java.lang.reflect.Method;
 
 import org.eclipse.osgi.compatibility.state.PlatformAdminImpl;
+import org.eclipse.osgi.service.resolver.DisabledInfo;
 import org.eclipse.osgi.service.resolver.PlatformAdmin;
+import org.eclipse.osgi.service.resolver.Resolver;
+import org.eclipse.osgi.service.resolver.State;
+import org.eclipse.osgi.service.resolver.StateHelper;
+import org.eclipse.osgi.service.resolver.StateObjectFactory;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleException;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
@@ -34,36 +40,82 @@ import org.osgi.service.component.annotations.Deactivate;
  */
 @SuppressWarnings("restriction")
 @Component(service = PlatformAdmin.class)
-public class PlatformAdminImplComponent extends PlatformAdminImpl {
+public class PlatformAdminImplComponent implements PlatformAdmin {
+	PlatformAdminImpl platformAdmin = new PlatformAdminImpl();
+
 	/**
 	 * Activate the {@link PlatformAdmin} instance.
 	 * 
 	 * @param context
-	 *            {@link BundleContext} instance from the framework
+	 *          {@link BundleContext} instance from the framework
 	 * @throws Exception
-	 *             Exception from reflective {@code start(BundleContext)}
-	 *             invocation
+	 *           Exception from reflective {@code start(BundleContext)} invocation
 	 */
 	@Activate
 	public void activate(BundleContext context) throws Exception {
-		Method start = getClass().getMethod("start", BundleContext.class);
+		Method start = platformAdmin.getClass().getMethod("start", BundleContext.class);
 		start.setAccessible(true);
-		start.invoke(this, context);
+		start.invoke(platformAdmin, context);
 	}
 
 	/**
 	 * Deactivate the {@link PlatformAdmin} instance.
 	 * 
 	 * @param context
-	 *            {@link BundleContext} instance from the framework
+	 *          {@link BundleContext} instance from the framework
 	 * @throws Exception
-	 *             Exception from reflective {@code start(BundleContext)}
-	 *             invocation
+	 *           Exception from reflective {@code start(BundleContext)} invocation
 	 */
 	@Deactivate
 	public void deactivate(BundleContext context) throws Exception {
-		Method stop = getClass().getMethod("stop", BundleContext.class);
+		Method stop = platformAdmin.getClass().getMethod("stop", BundleContext.class);
 		stop.setAccessible(true);
-		stop.invoke(this, context);
+		stop.invoke(platformAdmin, context);
+	}
+
+	@Override
+	public void addDisabledInfo(DisabledInfo disabledInfo) {
+		platformAdmin.addDisabledInfo(disabledInfo);
+	}
+
+	@Override
+	public void commit(State state) throws BundleException {
+		platformAdmin.commit(state);
+	}
+
+	@Override
+	public Resolver createResolver() {
+		return platformAdmin.createResolver();
+	}
+
+	@Override
+	public StateObjectFactory getFactory() {
+		return platformAdmin.getFactory();
+	}
+
+	@Override
+	@Deprecated
+	public Resolver getResolver() {
+		return platformAdmin.getResolver();
+	}
+
+	@Override
+	public State getState() {
+		return platformAdmin.getState();
+	}
+
+	@Override
+	public State getState(boolean mutable) {
+		return platformAdmin.getState(mutable);
+	}
+
+	@Override
+	public StateHelper getStateHelper() {
+		return platformAdmin.getStateHelper();
+	}
+
+	@Override
+	public void removeDisabledInfo(DisabledInfo disabledInfo) {
+		platformAdmin.removeDisabledInfo(disabledInfo);
 	}
 }

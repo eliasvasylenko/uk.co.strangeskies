@@ -1,4 +1,3 @@
-Export-Package: uk.co.strangeskies.eclipse
 Bundle-Name: Strange Skies :: Utilities :: Eclipse
 
 -buildpath: \
@@ -8,13 +7,18 @@ Bundle-Name: Strange Skies :: Utilities :: Eclipse
 	${ss;reflection},\
 	org.eclipse.osgi.compatibility.state,\
 	org.eclipse.osgi
-	
+
 Bundle-Description: \
 	Common Java utilities for Strange Skies projects, including generic \
 	pseudo-enums, fast, in-memory caches, tuples, functional helpers, \
 	and more.
+
 -runee: JavaSE-1.8
+
 -runfw: org.eclipse.osgi;version='[3.10.1.v20140909-1633,3.10.1.v20140909-1633]'
+
+Export-Package: \
+	uk.co.strangeskies.eclipse
 
 Private-Package: \
 	org.eclipse.osgi.compatibility.state,\
@@ -22,14 +26,3 @@ Private-Package: \
 	org.eclipse.osgi.internal.module,\
 	org.eclipse.osgi.internal.resolver,\
 	org.eclipse.osgi.internal.util
-
-
-pluginpath.p2: ${build}/release/uk.co.strangeskies.p2bnd/uk.co.strangeskies.p2bnd-${strangeskies-version}.jar
-pluginpath.framework: C:/Users/tofuser/git/uk.co.strangeskies/uk.co.strangeskies.p2bnd/generated/uk.co.strangeskies.p2bnd/jar/framework/org.eclipse.osgi.jar
-
-#-pluginpath.test: \
-#	${pluginpath.p2},\
-#	${pluginpath.framework}
-
-#-plugin: \
-#	uk.co.strangeskies.p2.bnd.P2BndRepository

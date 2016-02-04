@@ -48,7 +48,7 @@ Bundle-Version: ${strangeskies-version}.${tstamp}
 	${plugin.eclipse.platform},\
 	${plugin.eclipse.fx}
 
-ss: uk.co.strangeskies.${1};version=project
+ss: uk.co.strangeskies.${1};version=snapshot
 
 ## If you use git, you might want to uncomment the following lines:
 Git-Descriptor: ${system-allow-fail;git describe --dirty --always}

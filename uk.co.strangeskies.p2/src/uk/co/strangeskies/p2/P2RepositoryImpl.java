@@ -20,7 +20,9 @@ package uk.co.strangeskies.p2;
 
 import java.io.File;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
@@ -31,18 +33,31 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.equinox.p2.core.IProvisioningAgent;
+import org.eclipse.equinox.p2.core.IProvisioningAgentProvider;
+import org.eclipse.equinox.p2.metadata.IInstallableUnit;
+import org.eclipse.equinox.p2.query.IQuery;
+import org.eclipse.equinox.p2.query.IQueryResult;
+import org.eclipse.equinox.p2.query.QueryUtil;
+import org.eclipse.equinox.p2.repository.artifact.IArtifactRepositoryManager;
+import org.eclipse.equinox.p2.repository.metadata.IMetadataRepositoryManager;
+import org.osgi.framework.BundleContext;
 import org.osgi.resource.Capability;
 import org.osgi.resource.Requirement;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.osgi.service.repository.Repository;
 
+import aQute.bnd.service.Plugin;
 import aQute.bnd.service.RemoteRepositoryPlugin;
 import aQute.bnd.service.ResourceHandle;
 import aQute.bnd.service.Strategy;
 import aQute.bnd.version.Version;
+import aQute.service.reporter.Reporter;
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Log.Level;
 
@@ -53,7 +68,9 @@ import uk.co.strangeskies.utilities.Log.Level;
  * @author Elias N Vasylenko
  */
 @Component(service = { RemoteRepositoryPlugin.class, Repository.class }, immediate = true, name = "P2RepositoryImpl")
-public class P2RepositoryImpl implements RemoteRepositoryPlugin, Repository {
+public class P2RepositoryImpl implements RemoteRepositoryPlugin, Repository, Plugin {
+	private static final String MARS_UPDATE_SITE = "http://download.eclipse.org/releases/mars/";
+
 	/**
 	 * Property key for repository name.
 	 */
@@ -85,7 +102,7 @@ public class P2RepositoryImpl implements RemoteRepositoryPlugin, Repository {
 
 	/**
 	 * Property for cache location, with a default given by
-	 * {@value #DEFAULT_CACHE_DIR} in the user's home directory.
+	 * {@link #DEFAULT_CACHE_DIR} in the user's home directory.
 	 */
 	public static final String PROP_CACHE_DIR = "cache";
 
@@ -114,7 +131,12 @@ public class P2RepositoryImpl implements RemoteRepositoryPlugin, Repository {
 	private URL metadataLocation;
 	private URL artifactLocation;
 
-	private boolean initialised;
+	private boolean initialised = false;
+
+	@Reference
+	private IProvisioningAgentProvider agentProvider;
+
+	private BundleContext bundleContext;
 
 	/**
 	 * Create a new unconfigured repository with sensible defaults where
@@ -122,24 +144,80 @@ public class P2RepositoryImpl implements RemoteRepositoryPlugin, Repository {
 	 */
 	public P2RepositoryImpl() {
 		cacheDir = new File(System.getProperty("user.home") + File.separator + DEFAULT_CACHE_DIR);
+
+		System.out.println("started");
+	}
+
+	@Activate
+	public void activate(BundleContext context) {
+		this.bundleContext = context;
 	}
 
 	private synchronized void initialise() {
-		if (!initialised) {
+		try {
+			String localString = bundleContext.getBundle().getLocation();
+			localString = localString.substring(localString.indexOf(':') + 1);
+			localString = localString.substring(0, localString.lastIndexOf('/'));
+			localString = localString + "/p2/";
+			System.out.println(localString);
+			URI local = new URI(localString);
+			URI remote = new URI(MARS_UPDATE_SITE);
 
-			initialised = true;
+			IProvisioningAgent provisioningAgent = agentProvider.createAgent(local);
+
+			/*
+			 * Load repository manager
+			 */
+			IMetadataRepositoryManager metadataManager = (IMetadataRepositoryManager) provisioningAgent
+					.getService(IMetadataRepositoryManager.SERVICE_NAME);
+			if (metadataManager == null) {
+				throw new IllegalStateException("Couldn't load metadata repository manager");
+			}
+
+			/*
+			 * Load artifact manager
+			 */
+			IArtifactRepositoryManager artifactManager = (IArtifactRepositoryManager) provisioningAgent
+					.getService(IArtifactRepositoryManager.SERVICE_NAME);
+			if (artifactManager == null) {
+				throw new IllegalStateException("Couldn't load artifact repository manager");
+			}
+
+			/*
+			 * Load remote repository
+			 */
+			try {
+				IProgressMonitor progressMonitor = new ProgressMonitorImpl();
+
+				System.out.println("loading remote . . .");
+				metadataManager.loadRepository(remote, progressMonitor);
+				artifactManager.loadRepository(remote, progressMonitor);
+
+				System.out.println("querying repository . . .");
+				IQuery<IInstallableUnit> query = QueryUtil.createMatchQuery("id == $0", "org.eclipse.equinox.event");
+				IQueryResult<IInstallableUnit> result = metadataManager.query(query, progressMonitor);
+				System.out.println(result.toUnmodifiableSet());
+			} catch (Exception pe) {
+				throw new InvocationTargetException(pe);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException(e);
 		}
 	}
 
-	private synchronized void refresh() {
-		initialised = false;
-		initialise();
+	private synchronized void ensureInitialised() {
+		if (!initialised) {
+			initialise();
+			initialised = true;
+		}
 	}
 
 	/*
 	 * Plugin overrides
 	 */
 
+	@Override
 	public void setProperties(Map<String, String> map) throws Exception {
 		name = map.get(PROP_NAME);
 
@@ -190,6 +268,11 @@ public class P2RepositoryImpl implements RemoteRepositoryPlugin, Repository {
 		} catch (MalformedURLException e) {
 			log.log(Level.ERROR, "Location URL is malformed", e);
 		}
+	}
+	
+	@Override
+	public void setReporter(Reporter processor) {
+		// TODO Auto-generated method stub
 	}
 
 	@Reference(policy = ReferencePolicy.DYNAMIC, cardinality = ReferenceCardinality.OPTIONAL)
@@ -266,7 +349,7 @@ public class P2RepositoryImpl implements RemoteRepositoryPlugin, Repository {
 
 	@Override
 	public Map<Requirement, Collection<Capability>> findProviders(Collection<? extends Requirement> requirements) {
-		initialise();
+		ensureInitialised();
 
 		Map<Requirement, Collection<Capability>> result = new HashMap<Requirement, Collection<Capability>>();
 		for (Requirement requirement : requirements) {

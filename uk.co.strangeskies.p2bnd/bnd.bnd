@@ -6,45 +6,21 @@ Private-Package: \
 -testpath: \
 	org.eclipse.osgi
 
-#
-# These external bundles are installed into the framework
-# created internally by the bnd plugin
-# 
-buildpath.package: \
+-buildpath: \
 	biz.aQute.bndlib,\
-	com.ibm.icu,\
+	${ss;utilities}
+
+embedded.bundles: \
 	org.apache.felix.configadmin,\
-	org.apache.felix.gogo.runtime,\
-	org.apache.felix.gogo.shell,\
 	org.apache.felix.log,\
 	org.apache.felix.scr,\
-	org.eclipse.core.contenttype,\
-	org.eclipse.core.databinding,\
-	org.eclipse.core.databinding.beans,\
-	org.eclipse.core.databinding.observable,\
-	org.eclipse.core.databinding.property,\
-	org.eclipse.core.expressions,\
-	org.eclipse.core.filesystem,\
-	org.eclipse.core.filesystem.linux.x86_64,\
 	org.eclipse.core.jobs,\
 	org.eclipse.core.net,\
-	org.eclipse.core.net.linux.x86_64,\
-	org.eclipse.core.resources,\
-	org.eclipse.core.runtime,\
 	org.eclipse.ecf,\
 	org.eclipse.ecf.filetransfer,\
 	org.eclipse.ecf.identity,\
 	org.eclipse.ecf.provider.filetransfer,\
-	org.eclipse.emf.common,\
-	org.eclipse.emf.databinding,\
-	org.eclipse.emf.ecore,\
-	org.eclipse.equinox.app,\
 	org.eclipse.equinox.common,\
-	org.eclipse.equinox.concurrent,\
-	org.eclipse.equinox.console,\
-	org.eclipse.equinox.event,\
-	org.eclipse.equinox.launcher,\
-	org.eclipse.equinox.launcher.gtk.linux.x86_64,\
 	org.eclipse.equinox.metatype,\
 	org.eclipse.equinox.p2.artifact.repository,\
 	org.eclipse.equinox.p2.core,\
@@ -57,54 +33,21 @@ buildpath.package: \
 	org.eclipse.equinox.preferences,\
 	org.eclipse.equinox.registry,\
 	org.eclipse.equinox.security,\
-	org.osgi.service.event,\
 	org.osgi.service.metatype,\
 	org.tukaani.xz
 
-#
-# These project bundles are installed into the framework
-# created internally by the bnd plugin
-# 
-buildpath.workspace: \
+embedded.projects: \
 	uk.co.strangeskies.p2,\
 	uk.co.strangeskies.utilities
 
-#
-# The buildpath includes all internal framework bundles. It
-# may later need to include extra, but currently everything
-# in the private packages of this bundle have any other
-# dependencies.
-#
--buildpath: \
-	${buildpath.package},\
-	${buildpath.workspace}
-
-#
-# The pluginpath includes all jars which need to be on the
-# classpath during bnd plugin execution.
-#
-pluginpath.bnd: \
+shaded.projects: \
 	uk.co.strangeskies.utilities
 
-#
-# These macros describe how jars are included as resources
-# in the bundle artifact created by this project.
-#
-jarsource: ${repo;${1};latest}
-jardestination: jar/${1}.jar
-jarunrolled: @${repo;${1};latest}
-
-includebsn: ${jardestination;${1}}=${jarsource;${1}}
+-dependson: \
+	uk.co.strangeskies.p2
 
 -includeresource: \
-	${map;includebsn;${buildpath.package},${buildpath.workspace}},\
-	${map;jarunrolled;${pluginpath.bnd}},\
 	jar/framework/org.eclipse.osgi.jar=${repo;org.eclipse.osgi;latest}
-
-#
-# A helper header so the bundle knows all jars in its classpath
-#
-FrameworkJars: ${map;jardestination;${buildpath.package},${buildpath.workspace}}
 
 -runrequires: \
 	${runreq.felix.shell},\

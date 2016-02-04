@@ -72,7 +72,7 @@ import uk.co.strangeskies.utilities.Property;
  */
 @Component(immediate = true)
 public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plugin {
-	private static final String FRAMEWORK_JARS = "FrameworkJars";
+	private static final String EMBEDDED_RUNPATH = "Embedded-Runpath";
 
 	private Framework framework;
 
@@ -81,6 +81,11 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 	private Plugin plugin;
 	private RemoteRepositoryPlugin remoteRepositoryPlugin;
 	private Repository repository;
+
+	private boolean initialised = false;
+
+	private Map<String, String> properties;
+	private Reporter reporter;
 
 	public static Manifest getManifest(Class<?> clz) {
 		String resource = "/" + clz.getName().replace(".", "/") + ".class";
@@ -102,16 +107,32 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 	}
 
 	public static void main(String... args) {
-		new P2BndRepository();
+		P2BndRepository repo = new P2BndRepository();
+		repo.initialise();
+		System.out.println(repo.getName());
 	}
 
 	public P2BndRepository() {
-		start();
-
-		System.out.println(getName());
+		initialise();
 	}
 
-	private void start() {
+	private Map<String, String> getFrameworkProperties() {
+		Map<String, String> properties = new HashMap<>();
+
+		properties.put("osgi.clean", "true");
+		properties.put("clearPersistedState", "true");
+		properties.put("osgi.ee", "JavaSE;version=1.8");
+		properties.put("org.osgi.framework.system.packages",
+				"aQute.bnd.service;version=\"4.1.0\"," + "aQute.bnd.version;version=\"1.3.0\","
+						+ "aQute.service.reporter;version=\"1.0.0\"," + "org.osgi.service.repository;version=\"1.0.0\","
+						+ "javax.crypto," + "javax.crypto.spec," + "javax.security.auth," + "javax.security.auth.callback,"
+						+ "javax.security.auth.login," + "javax.security.auth.spi," + "javax.xml.parsers," + "org.xml.sax,"
+						+ "org.xml.sax.helpers," + "org.w3c.dom");
+
+		return properties;
+	}
+
+	private synchronized void startService() {
 		try {
 			Property<Object, Object> repositoryService = new IdentityProperty<>();
 
@@ -120,7 +141,6 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 			framework.start();
 
 			BundleContext frameworkContext = framework.getBundleContext();
-			frameworkContext.addServiceListener(System.out::println);
 			frameworkContext.registerService(Log.class, (l, s) -> log.log(l, s), new Hashtable<>());
 			frameworkContext.addServiceListener(event -> {
 				switch (event.getType()) {
@@ -133,10 +153,10 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 					}
 				default:
 				}
-			} , "(component.name=P2RepositoryImpl)");
+			}, "(component.name=P2RepositoryImpl)");
 
 			Manifest manifest = getManifest(getClass());
-			String frameworkJars = manifest.getMainAttributes().getValue(FRAMEWORK_JARS);
+			String frameworkJars = manifest.getMainAttributes().getValue(EMBEDDED_RUNPATH);
 
 			List<Bundle> bundles = new ArrayList<>();
 			Arrays.stream(frameworkJars.split(",")).map(s -> "/" + s).forEach(s -> {
@@ -155,7 +175,6 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 					if (bundle.getHeaders().get("Fragment-Host") == null) {
 						bundle.start();
 					}
-					System.out.println("  started bundle - " + bundle.getSymbolicName());
 				} catch (RuntimeException e) {
 					log.log(Level.ERROR, "Unable to start bundle " + bundle, e);
 					throw e;
@@ -177,14 +196,17 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 			}
 
 			Object repositoryServiceInstance = repositoryService.get();
+			/*-
 			Object wrappedService = Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),
-					new Class<?>[] { RemoteRepositoryPlugin.class, Plugin.class, Repository.class }, new InvocationHandler() {
+					new Class<?>[] { RemoteRepositoryPlugin.class, Repository.class, Plugin.class }, new InvocationHandler() {
 						@Override
 						public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 							return repositoryServiceInstance.getClass().getMethod(method.getName(), method.getParameterTypes())
 									.invoke(repositoryServiceInstance, args);
 						}
 					});
+			 */
+			Object wrappedService = repositoryServiceInstance;
 			this.remoteRepositoryPlugin = (RemoteRepositoryPlugin) wrappedService;
 			this.repository = (Repository) wrappedService;
 			this.plugin = (Plugin) wrappedService;
@@ -199,96 +221,126 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 		}
 	}
 
-	private Map<String, String> getFrameworkProperties() {
-		Map<String, String> properties = new HashMap<>();
-
-		properties.put("osgi.clean", "true");
-		properties.put("clearPersistedState", "true");
-
-		return properties;
-	}
-
-	public void stop() {
+	public synchronized void stopService() {
 		try {
-			synchronized (this) {
-				if (framework != null) {
-					framework.stop();
-					framework.waitForStop(0);
-					framework = null;
-				}
+			if (initialised && framework != null) {
+				framework.stop();
+				framework.waitForStop(0);
 			}
 		} catch (Exception e) {
 			log.log(Level.ERROR, "Unable to stop framework", e);
 			throw new RuntimeException(e);
+		} finally {
+			initialised = false;
+			framework = null;
+
+			repository = null;
+			plugin = null;
+			remoteRepositoryPlugin = null;
 		}
 	}
 
 	@Override
 	protected void finalize() throws Throwable {
-		stop();
+		stopService();
 		super.finalize();
 	}
 
 	@Override
 	public PutResult put(InputStream stream, PutOptions options) throws Exception {
+		initialise();
 		return remoteRepositoryPlugin.put(stream, options);
 	}
 
 	@Override
 	public File get(String bsn, Version version, Map<String, String> properties, DownloadListener... listeners)
 			throws Exception {
+		initialise();
 		return remoteRepositoryPlugin.get(bsn, version, properties, listeners);
 	}
 
 	@Override
 	public boolean canWrite() {
+		initialise();
 		return remoteRepositoryPlugin.canWrite();
 	}
 
 	@Override
 	public List<String> list(String pattern) throws Exception {
+		initialise();
 		return remoteRepositoryPlugin.list(pattern);
 	}
 
 	@Override
 	public SortedSet<Version> versions(String bsn) throws Exception {
+		initialise();
 		return remoteRepositoryPlugin.versions(bsn);
 	}
 
 	@Override
 	public String getName() {
+		initialise();
 		return remoteRepositoryPlugin.getName();
 	}
 
 	@Override
 	public String getLocation() {
-		return getLocation();
+		initialise();
+		return remoteRepositoryPlugin.getLocation();
 	}
 
 	@Override
-	public void setProperties(Map<String, String> map) throws Exception {
-		plugin.setProperties(map);
+	public synchronized void setProperties(Map<String, String> map) throws Exception {
+		properties = map;
+		if (initialised) {
+			plugin.setProperties(properties);
+		}
 	}
 
 	@Override
-	public void setReporter(Reporter processor) {
-		log = new ReporterLog(processor);
-		plugin.setReporter(processor);
+	public synchronized void setReporter(Reporter processor) {
+		reporter = processor;
+
+		log = new ReporterLog(reporter);
+		if (initialised) {
+			plugin.setReporter(reporter);
+		}
 	}
 
 	@Override
 	public Map<Requirement, Collection<Capability>> findProviders(Collection<? extends Requirement> requirements) {
+		initialise();
 		return repository.findProviders(requirements);
 	}
 
 	@Override
 	public ResourceHandle getHandle(String bsn, String version, Strategy strategy, Map<String, String> properties)
 			throws Exception {
+		initialise();
 		return remoteRepositoryPlugin.getHandle(bsn, version, strategy, properties);
+	}
+
+	private synchronized void initialise() {
+		if (!initialised) {
+			initialised = true;
+			try {
+				startService();
+
+				if (properties != null)
+					plugin.setProperties(properties);
+				if (reporter != null)
+					plugin.setReporter(reporter);
+			} catch (Exception e) {
+				e.printStackTrace();
+				stopService();
+				throw new RuntimeException(e);
+			}
+		}
 	}
 
 	@Override
 	public File getCacheDirectory() {
+		initialise();
 		return remoteRepositoryPlugin.getCacheDirectory();
 	}
 }
