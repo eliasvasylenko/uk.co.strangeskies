@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with uk.co.strangeskies.p2.  If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.p2;
+package uk.co.strangeskies.p2.impl;
 
 import java.io.File;
 import java.io.InputStream;
@@ -269,7 +269,7 @@ public class P2RepositoryImpl implements RemoteRepositoryPlugin, Repository, Plu
 			log.log(Level.ERROR, "Location URL is malformed", e);
 		}
 	}
-	
+
 	@Override
 	public void setReporter(Reporter processor) {
 		// TODO Auto-generated method stub

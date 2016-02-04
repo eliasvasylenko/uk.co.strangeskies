@@ -34,13 +34,14 @@ public class NestedJarUrlStreamHandler extends URLStreamHandler {
 		super();
 	}
 
-	public static String PROTOCOL = "deepjar";
+	public static final String PROTOCOL = "jarjar";
 
-	protected static int PROTOCOL_LENGTH = PROTOCOL.length() + 3;
+	public static final int PROTOCOL_LENGTH = PROTOCOL.length() + 3;
 
 	/**
 	 * @see java.net.URLStreamHandler#openConnection(java.net.URL)
 	 */
+	@Override
 	protected URLConnection openConnection(URL url) throws IOException {
 		final String resource = url.toString().substring(PROTOCOL_LENGTH);
 

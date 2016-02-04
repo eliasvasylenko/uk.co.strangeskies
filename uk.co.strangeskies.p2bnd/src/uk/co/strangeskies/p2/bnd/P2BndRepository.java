@@ -20,9 +20,6 @@ package uk.co.strangeskies.p2.bnd;
 
 import java.io.File;
 import java.io.InputStream;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,9 +38,12 @@ import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.launch.Framework;
 import org.osgi.framework.launch.FrameworkFactory;
+import org.osgi.framework.wiring.BundleWiring;
 import org.osgi.resource.Capability;
 import org.osgi.resource.Requirement;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.repository.Repository;
 
 import aQute.bnd.service.Plugin;
@@ -106,13 +106,8 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 		}
 	}
 
-	public static void main(String... args) {
-		P2BndRepository repo = new P2BndRepository();
-		repo.initialise();
-		System.out.println(repo.getName());
-	}
-
-	public P2BndRepository() {
+	@Activate
+	public void activate() {
 		initialise();
 	}
 
@@ -121,27 +116,25 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 
 		properties.put("osgi.clean", "true");
 		properties.put("clearPersistedState", "true");
-		properties.put("osgi.ee", "JavaSE;version=1.8");
-		properties.put("org.osgi.framework.system.packages",
-				"aQute.bnd.service;version=\"4.1.0\"," + "aQute.bnd.version;version=\"1.3.0\","
-						+ "aQute.service.reporter;version=\"1.0.0\"," + "org.osgi.service.repository;version=\"1.0.0\","
-						+ "javax.crypto," + "javax.crypto.spec," + "javax.security.auth," + "javax.security.auth.callback,"
-						+ "javax.security.auth.login," + "javax.security.auth.spi," + "javax.xml.parsers," + "org.xml.sax,"
-						+ "org.xml.sax.helpers," + "org.w3c.dom");
+		properties.put("org.osgi.framework.system.packages.extra",
+				"uk.co.strangeskies.utilities;version=\"1.0.0\"," + "aQute.bnd.service;version=\"4.1.0\","
+						+ "aQute.bnd.version;version=\"1.3.0\"," + "aQute.service.reporter;version=\"1.0.0\","
+						+ "org.osgi.service.repository;version=\"1.0.0\"");
 
 		return properties;
 	}
 
-	private synchronized void startService() {
+	private synchronized void startService() throws Exception {
 		try {
 			Property<Object, Object> repositoryService = new IdentityProperty<>();
 
+			Thread.currentThread().getContextClassLoader().loadClass("org.osgi.framework.launch.FrameworkFactory");
 			FrameworkFactory frameworkFactory = ServiceLoader.load(FrameworkFactory.class).iterator().next();
 			framework = frameworkFactory.newFramework(getFrameworkProperties());
 			framework.start();
 
 			BundleContext frameworkContext = framework.getBundleContext();
-			frameworkContext.registerService(Log.class, (l, s) -> log.log(l, s), new Hashtable<>());
+			frameworkContext.registerService(Log.class, (l, s) -> getLog().log(l, s), new Hashtable<>());
 			frameworkContext.addServiceListener(event -> {
 				switch (event.getType()) {
 				case ServiceEvent.REGISTERED:
@@ -153,7 +146,7 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 					}
 				default:
 				}
-			}, "(component.name=P2RepositoryImpl)");
+			} , "(component.name=P2RepositoryImpl)");
 
 			Manifest manifest = getManifest(getClass());
 			String frameworkJars = manifest.getMainAttributes().getValue(EMBEDDED_RUNPATH);
@@ -162,11 +155,8 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 			Arrays.stream(frameworkJars.split(",")).map(s -> "/" + s).forEach(s -> {
 				try {
 					bundles.add(frameworkContext.installBundle("classpath:" + s, getClass().getResourceAsStream(s)));
-				} catch (RuntimeException e) {
-					log.log(Level.ERROR, "Unable to add jar to internal framework " + s, e);
-					throw e;
 				} catch (Exception e) {
-					log.log(Level.ERROR, "Unable to add jar to internal framework " + s, e);
+					getLog().log(Level.ERROR, "Unable to add jar to internal framework " + s, e);
 					throw new RuntimeException(e);
 				}
 			});
@@ -175,12 +165,21 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 					if (bundle.getHeaders().get("Fragment-Host") == null) {
 						bundle.start();
 					}
-				} catch (RuntimeException e) {
-					log.log(Level.ERROR, "Unable to start bundle " + bundle, e);
-					throw e;
+					if (bundle.getSymbolicName().equals("uk.co.strangeskies.p2.provider")) {
+						System.out.println("found!");
+						System.out.println("found!");
+						System.out.println("found!");
+						System.out.println("found!");
+						System.out.println("found!");
+						System.out.println("found!");
+						System.out.println("found!");
+						bundle.adapt(BundleWiring.class).getClassLoader().loadClass("aQute.bnd.service.RemoteRepositoryPlugin");
+						bundle.adapt(BundleWiring.class).getClassLoader().loadClass("uk.co.strangeskies.p2.impl.P2RepositoryImpl")
+								.newInstance();
+					}
 				} catch (Exception e) {
-					log.log(Level.ERROR, "Unable to start bundle " + bundle, e);
-					throw new RuntimeException(e);
+					getLog().log(Level.ERROR, "Unable to start bundle " + bundle, e);
+					throw e;
 				}
 			}
 
@@ -189,7 +188,7 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 					repositoryService.wait(2000);
 
 					if (repositoryService.get() == null) {
-						log.log(Level.ERROR, "Timed out waiting for P2 service as " + RemoteRepositoryPlugin.class.getName());
+						getLog().log(Level.ERROR, "Timed out waiting for P2 service as " + RemoteRepositoryPlugin.class.getName());
 						throw new IllegalStateException("Unable to obtain repository service");
 					}
 				}
@@ -211,24 +210,22 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 			this.repository = (Repository) wrappedService;
 			this.plugin = (Plugin) wrappedService;
 
-			log.log(Level.ERROR, "Successfully wrapped P2Repository service " + repositoryService.get());
-		} catch (RuntimeException e) {
-			log.log(Level.ERROR, "Unable to start framework", e);
-			throw e;
+			getLog().log(Level.ERROR, "Successfully wrapped P2Repository service " + repositoryService.get());
 		} catch (Exception e) {
-			log.log(Level.ERROR, "Unable to start framework", e);
-			throw new RuntimeException(e);
+			getLog().log(Level.ERROR, "Unable to start framework", e);
+			e.printStackTrace();
+			throw e;
 		}
 	}
 
-	public synchronized void stopService() {
+	private synchronized void stopService() {
 		try {
 			if (initialised && framework != null) {
 				framework.stop();
 				framework.waitForStop(0);
 			}
 		} catch (Exception e) {
-			log.log(Level.ERROR, "Unable to stop framework", e);
+			getLog().log(Level.ERROR, "Unable to stop framework", e);
 			throw new RuntimeException(e);
 		} finally {
 			initialised = false;
@@ -301,10 +298,19 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 	public synchronized void setReporter(Reporter processor) {
 		reporter = processor;
 
-		log = new ReporterLog(reporter);
+		setLog(new ReporterLog(reporter));
 		if (initialised) {
 			plugin.setReporter(reporter);
 		}
+	}
+
+	@Reference
+	private void setLog(Log log) {
+		this.log = log;
+	}
+
+	private Log getLog() {
+		return log;
 	}
 
 	@Override
@@ -324,6 +330,8 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 		if (!initialised) {
 			initialised = true;
 			try {
+				Thread.currentThread().getContextClassLoader().loadClass("org.osgi.framework.launch.FrameworkFactory");
+
 				startService();
 
 				if (properties != null)

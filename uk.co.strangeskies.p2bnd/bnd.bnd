@@ -37,8 +37,7 @@ embedded.bundles: \
 	org.tukaani.xz
 
 embedded.projects: \
-	uk.co.strangeskies.p2,\
-	uk.co.strangeskies.utilities
+	uk.co.strangeskies.p2.provider
 
 shaded.projects: \
 	uk.co.strangeskies.utilities
