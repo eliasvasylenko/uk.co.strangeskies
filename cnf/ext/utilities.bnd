@@ -40,8 +40,8 @@ shade.project: @${jarsource.project;${1}}
 
 Embedded-Runpath: ${map;jardestination;${join;${embedded.bundles};${embedded.projects}}}
 
-#pluginpath.p2: ${build}/release/uk.co.strangeskies.p2bnd/uk.co.strangeskies.p2bnd-${strangeskies-version}.jar
-#pluginpath.framework: ~/git/uk.co.strangeskies/uk.co.strangeskies.p2bnd/generated/uk.co.strangeskies.p2bnd/jar/framework/org.eclipse.osgi.jar
+pluginpath.p2: ${build}/release/uk.co.strangeskies.p2bnd/uk.co.strangeskies.p2bnd-${strangeskies-version}.jar
+pluginpath.framework: ~/git/uk.co.strangeskies/uk.co.strangeskies.p2bnd/generated/uk.co.strangeskies.p2bnd/jar/framework/org.eclipse.osgi.jar
 
 #-pluginpath.test: \
 #	${pluginpath.p2},\

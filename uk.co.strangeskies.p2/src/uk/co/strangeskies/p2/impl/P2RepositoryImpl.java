@@ -24,14 +24,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
-import java.util.TreeSet;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.equinox.p2.core.IProvisioningAgent;
@@ -58,6 +57,7 @@ import aQute.bnd.service.ResourceHandle;
 import aQute.bnd.service.Strategy;
 import aQute.bnd.version.Version;
 import aQute.service.reporter.Reporter;
+import uk.co.strangeskies.p2.P2Repository;
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Log.Level;
 
@@ -67,8 +67,9 @@ import uk.co.strangeskies.utilities.Log.Level;
  * 
  * @author Elias N Vasylenko
  */
-@Component(service = { RemoteRepositoryPlugin.class, Repository.class }, immediate = true, name = "P2RepositoryImpl")
-public class P2RepositoryImpl implements RemoteRepositoryPlugin, Repository, Plugin {
+@Component(service = { P2Repository.class, RemoteRepositoryPlugin.class, Repository.class,
+		Plugin.class }, immediate = true)
+public class P2RepositoryImpl implements P2Repository {
 	private static final String MARS_UPDATE_SITE = "http://download.eclipse.org/releases/mars/";
 
 	/**
@@ -144,8 +145,6 @@ public class P2RepositoryImpl implements RemoteRepositoryPlugin, Repository, Plu
 	 */
 	public P2RepositoryImpl() {
 		cacheDir = new File(System.getProperty("user.home") + File.separator + DEFAULT_CACHE_DIR);
-
-		System.out.println("started");
 	}
 
 	@Activate
@@ -206,13 +205,6 @@ public class P2RepositoryImpl implements RemoteRepositoryPlugin, Repository, Plu
 		}
 	}
 
-	private synchronized void ensureInitialised() {
-		if (!initialised) {
-			initialise();
-			initialised = true;
-		}
-	}
-
 	/*
 	 * Plugin overrides
 	 */
@@ -255,7 +247,7 @@ public class P2RepositoryImpl implements RemoteRepositoryPlugin, Repository, Plu
 			metadataLocation = artifactLocation = location;
 		}
 		try {
-			if (metadataLocation != null) {
+			if (metadataLocation == null) {
 				log.log(Level.ERROR, "Metadata location unspecified");
 			} else {
 				this.metadataLocation = new URL(metadataLocation);
@@ -307,14 +299,12 @@ public class P2RepositoryImpl implements RemoteRepositoryPlugin, Repository, Plu
 
 	@Override
 	public List<String> list(String pattern) throws Exception {
-		return Arrays.asList("test1", "test2");
+		return Collections.emptyList();
 	}
 
 	@Override
 	public SortedSet<Version> versions(String bsn) throws Exception {
-		SortedSet<Version> versions = new TreeSet<>();
-		versions.add(new Version(1, 2, 3));
-		return versions;
+		return Collections.emptySortedSet();
 	}
 
 	@Override
@@ -334,7 +324,6 @@ public class P2RepositoryImpl implements RemoteRepositoryPlugin, Repository, Plu
 	@Override
 	public ResourceHandle getHandle(String bsn, String version, Strategy strategy, Map<String, String> properties)
 			throws Exception {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -349,8 +338,6 @@ public class P2RepositoryImpl implements RemoteRepositoryPlugin, Repository, Plu
 
 	@Override
 	public Map<Requirement, Collection<Capability>> findProviders(Collection<? extends Requirement> requirements) {
-		ensureInitialised();
-
 		Map<Requirement, Collection<Capability>> result = new HashMap<Requirement, Collection<Capability>>();
 		for (Requirement requirement : requirements) {
 			List<Capability> matches = new LinkedList<Capability>();

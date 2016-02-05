@@ -8,7 +8,8 @@ Private-Package: \
 
 -buildpath: \
 	biz.aQute.bndlib,\
-	${ss;utilities}
+	${ss;utilities},\
+	${ss;p2.api}
 
 embedded.bundles: \
 	org.apache.felix.configadmin,\
@@ -39,7 +40,11 @@ embedded.bundles: \
 embedded.projects: \
 	uk.co.strangeskies.p2.provider
 
+shaded.bundles: \
+	org.eclipse.osgi
+
 shaded.projects: \
+	uk.co.strangeskies.p2.api,\
 	uk.co.strangeskies.utilities
 
 -dependson: \

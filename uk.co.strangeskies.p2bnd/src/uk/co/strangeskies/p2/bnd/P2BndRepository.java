@@ -20,6 +20,7 @@ package uk.co.strangeskies.p2.bnd;
 
 import java.io.File;
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,22 +29,17 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.SortedSet;
 import java.util.jar.Manifest;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceEvent;
+import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.launch.Framework;
-import org.osgi.framework.launch.FrameworkFactory;
-import org.osgi.framework.wiring.BundleWiring;
 import org.osgi.resource.Capability;
 import org.osgi.resource.Requirement;
-import org.osgi.service.component.annotations.Activate;
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.repository.Repository;
 
 import aQute.bnd.service.Plugin;
@@ -52,6 +48,7 @@ import aQute.bnd.service.ResourceHandle;
 import aQute.bnd.service.Strategy;
 import aQute.bnd.version.Version;
 import aQute.service.reporter.Reporter;
+import uk.co.strangeskies.p2.P2Repository;
 import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Log.Level;
@@ -70,24 +67,56 @@ import uk.co.strangeskies.utilities.Property;
  *
  * @author Elias N Vasylenko
  */
-@Component(immediate = true)
 public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plugin {
+	static final int FRAMEWORK_TIMEOUT_SECONDS = 2;
+
+	private static final String OSGI_CLEAN = "osgi.clean";
+	private static final String OSGI_CLEAR_PERSISTED_STATE = "clearPersistedState";
+	private static final String OSGI_SYSTEM_PACKAGES_EXTRA = "org.osgi.framework.system.packages.extra";
+
+	static final Map<String, String> FRAMEWORK_PROPERTIES = new HashMap<String, String>() {
+		private static final long serialVersionUID = 1L;
+
+		{
+			put(OSGI_CLEAN, Boolean.toString(true));
+			put(OSGI_CLEAR_PERSISTED_STATE, Boolean.toString(true));
+			put(OSGI_SYSTEM_PACKAGES_EXTRA,
+					"org.osgi.framework;version=\"1.7.0\"," + "org.osgi.service.metatype;version=\"1.1.0\","
+							+ "uk.co.strangeskies.utilities;version=\"1.0.0\"," + "uk.co.strangeskies.p2;version=\"1.0.0\","
+							+ "aQute.bnd.service;version=\"4.1.0\"," + "aQute.bnd.version;version=\"1.3.0\","
+							+ "aQute.service.reporter;version=\"1.0.0\"," + "org.osgi.service.repository;version=\"1.0.0\"");
+		}
+	};
+
 	private static final String EMBEDDED_RUNPATH = "Embedded-Runpath";
 
-	private Framework framework;
+	private final FrameworkLifecycleManager frameworkLifecycle;
 
 	private Log log = (l, s) -> {};
 
-	private Plugin plugin;
-	private RemoteRepositoryPlugin remoteRepositoryPlugin;
-	private Repository repository;
-
-	private boolean initialised = false;
+	private P2Repository repositoryService;
 
 	private Map<String, String> properties;
 	private Reporter reporter;
 
-	public static Manifest getManifest(Class<?> clz) {
+	public P2BndRepository() {
+		Manifest manifest = getManifest(getClass());
+		String frameworkJars = manifest.getMainAttributes().getValue("Export-Package");
+		System.out.println(frameworkJars);
+		System.out.println(frameworkJars);
+		System.out.println(frameworkJars);
+
+		frameworkLifecycle = new FrameworkLifecycleManager(f -> {
+			startService(f);
+
+			if (properties != null)
+				repositoryService.setProperties(properties);
+			if (reporter != null)
+				repositoryService.setReporter(reporter);
+		} , FRAMEWORK_TIMEOUT_SECONDS, FRAMEWORK_PROPERTIES, getLog());
+	}
+
+	private static Manifest getManifest(Class<?> clz) {
 		String resource = "/" + clz.getName().replace(".", "/") + ".class";
 		String fullPath = clz.getResource(resource).toString();
 		String archivePath = fullPath.substring(0, fullPath.length() - resource.length());
@@ -106,249 +135,172 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 		}
 	}
 
-	@Activate
-	public void activate() {
-		initialise();
+	public static void main(String[] args) {
+		P2BndRepository repo = new P2BndRepository();
+		System.out.println("name: " + repo.getName());
+		System.out.println("name: " + repo.getName());
+		System.out.println("name: " + repo.getName());
+
+		System.out.println("great!");
 	}
 
-	private Map<String, String> getFrameworkProperties() {
-		Map<String, String> properties = new HashMap<>();
+	private void startService(Framework framework) throws Exception {
+		BundleContext frameworkContext = framework.getBundleContext();
+		frameworkContext.registerService(Log.class, getLog(), new Hashtable<>());
 
-		properties.put("osgi.clean", "true");
-		properties.put("clearPersistedState", "true");
-		properties.put("org.osgi.framework.system.packages.extra",
-				"uk.co.strangeskies.utilities;version=\"1.0.0\"," + "aQute.bnd.service;version=\"4.1.0\","
-						+ "aQute.bnd.version;version=\"1.3.0\"," + "aQute.service.reporter;version=\"1.0.0\","
-						+ "org.osgi.service.repository;version=\"1.0.0\"");
+		Property<Object, Object> repositoryService = new IdentityProperty<>();
+		ServiceListener p2RepoServiceListener = event -> {
+			switch (event.getType()) {
+			case ServiceEvent.REGISTERED:
+				ServiceReference<?> reference = event.getServiceReference();
 
-		return properties;
-	}
-
-	private synchronized void startService() throws Exception {
-		try {
-			Property<Object, Object> repositoryService = new IdentityProperty<>();
-
-			Thread.currentThread().getContextClassLoader().loadClass("org.osgi.framework.launch.FrameworkFactory");
-			FrameworkFactory frameworkFactory = ServiceLoader.load(FrameworkFactory.class).iterator().next();
-			framework = frameworkFactory.newFramework(getFrameworkProperties());
-			framework.start();
-
-			BundleContext frameworkContext = framework.getBundleContext();
-			frameworkContext.registerService(Log.class, (l, s) -> getLog().log(l, s), new Hashtable<>());
-			frameworkContext.addServiceListener(event -> {
-				switch (event.getType()) {
-				case ServiceEvent.REGISTERED:
-					ServiceReference<?> reference = event.getServiceReference();
-
-					synchronized (repositoryService) {
-						repositoryService.set(frameworkContext.getService(reference));
-						repositoryService.notifyAll();
-					}
-				default:
+				synchronized (repositoryService) {
+					repositoryService.set(frameworkContext.getService(reference));
+					repositoryService.notifyAll();
 				}
-			} , "(component.name=P2RepositoryImpl)");
-
-			Manifest manifest = getManifest(getClass());
-			String frameworkJars = manifest.getMainAttributes().getValue(EMBEDDED_RUNPATH);
-
-			List<Bundle> bundles = new ArrayList<>();
-			Arrays.stream(frameworkJars.split(",")).map(s -> "/" + s).forEach(s -> {
-				try {
-					bundles.add(frameworkContext.installBundle("classpath:" + s, getClass().getResourceAsStream(s)));
-				} catch (Exception e) {
-					getLog().log(Level.ERROR, "Unable to add jar to internal framework " + s, e);
-					throw new RuntimeException(e);
-				}
-			});
-			for (Bundle bundle : bundles) {
-				try {
-					if (bundle.getHeaders().get("Fragment-Host") == null) {
-						bundle.start();
-					}
-					if (bundle.getSymbolicName().equals("uk.co.strangeskies.p2.provider")) {
-						System.out.println("found!");
-						System.out.println("found!");
-						System.out.println("found!");
-						System.out.println("found!");
-						System.out.println("found!");
-						System.out.println("found!");
-						System.out.println("found!");
-						bundle.adapt(BundleWiring.class).getClassLoader().loadClass("aQute.bnd.service.RemoteRepositoryPlugin");
-						bundle.adapt(BundleWiring.class).getClassLoader().loadClass("uk.co.strangeskies.p2.impl.P2RepositoryImpl")
-								.newInstance();
-					}
-				} catch (Exception e) {
-					getLog().log(Level.ERROR, "Unable to start bundle " + bundle, e);
-					throw e;
-				}
+			default:
 			}
+		};
+		frameworkContext.addServiceListener(p2RepoServiceListener, "(objectclass=" + P2Repository.class.getName() + ")");
 
-			synchronized (repositoryService) {
+		Manifest manifest = getManifest(getClass());
+		String frameworkJars = manifest.getMainAttributes().getValue(EMBEDDED_RUNPATH);
+
+		List<Bundle> bundles = new ArrayList<>();
+		Arrays.stream(frameworkJars.split(",")).map(s -> "/" + s).forEach(s -> {
+			try {
+				bundles.add(frameworkContext.installBundle("classpath:" + s, getClass().getResourceAsStream(s)));
+			} catch (Exception e) {
+				getLog().log(Level.ERROR, "Unable to add jar to internal framework " + s, e);
+				throw new RuntimeException(e);
+			}
+		});
+		for (Bundle bundle : bundles) {
+			try {
+				if (bundle.getHeaders().get("Fragment-Host") == null) {
+					bundle.start();
+				}
+			} catch (Exception e) {
+				getLog().log(Level.ERROR, "Unable to start bundle " + bundle, e);
+				throw e;
+			}
+		}
+
+		synchronized (repositoryService) {
+			if (repositoryService.get() == null) {
+				repositoryService.wait(2000);
+
 				if (repositoryService.get() == null) {
-					repositoryService.wait(2000);
-
-					if (repositoryService.get() == null) {
-						getLog().log(Level.ERROR, "Timed out waiting for P2 service as " + RemoteRepositoryPlugin.class.getName());
-						throw new IllegalStateException("Unable to obtain repository service");
-					}
+					getLog().log(Level.ERROR, "Timed out waiting for P2 service");
+					throw new IllegalStateException("Unable to obtain repository service");
 				}
 			}
-
-			Object repositoryServiceInstance = repositoryService.get();
-			/*-
-			Object wrappedService = Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),
-					new Class<?>[] { RemoteRepositoryPlugin.class, Repository.class, Plugin.class }, new InvocationHandler() {
-						@Override
-						public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-							return repositoryServiceInstance.getClass().getMethod(method.getName(), method.getParameterTypes())
-									.invoke(repositoryServiceInstance, args);
-						}
-					});
-			 */
-			Object wrappedService = repositoryServiceInstance;
-			this.remoteRepositoryPlugin = (RemoteRepositoryPlugin) wrappedService;
-			this.repository = (Repository) wrappedService;
-			this.plugin = (Plugin) wrappedService;
-
-			getLog().log(Level.ERROR, "Successfully wrapped P2Repository service " + repositoryService.get());
-		} catch (Exception e) {
-			getLog().log(Level.ERROR, "Unable to start framework", e);
-			e.printStackTrace();
-			throw e;
 		}
-	}
 
-	private synchronized void stopService() {
-		try {
-			if (initialised && framework != null) {
-				framework.stop();
-				framework.waitForStop(0);
-			}
-		} catch (Exception e) {
-			getLog().log(Level.ERROR, "Unable to stop framework", e);
-			throw new RuntimeException(e);
-		} finally {
-			initialised = false;
-			framework = null;
+		this.repositoryService = (P2Repository) repositoryService.get();
 
-			repository = null;
-			plugin = null;
-			remoteRepositoryPlugin = null;
-		}
+		getLog().log(Level.ERROR, "Successfully wrapped P2Repository service " + repositoryService.get());
 	}
 
 	@Override
 	protected void finalize() throws Throwable {
-		stopService();
+		frameworkLifecycle.stopFramework();
 		super.finalize();
 	}
 
 	@Override
-	public PutResult put(InputStream stream, PutOptions options) throws Exception {
-		initialise();
-		return remoteRepositoryPlugin.put(stream, options);
+	public synchronized PutResult put(InputStream stream, PutOptions options) throws Exception {
+		return frameworkLifecycle.withFramework(() -> repositoryService.put(stream, options));
 	}
 
 	@Override
-	public File get(String bsn, Version version, Map<String, String> properties, DownloadListener... listeners)
-			throws Exception {
-		initialise();
-		return remoteRepositoryPlugin.get(bsn, version, properties, listeners);
+	public synchronized File get(String bsn, Version version, Map<String, String> properties,
+			DownloadListener... listeners) throws Exception {
+		return frameworkLifecycle.withFramework(() -> repositoryService.get(bsn, version, properties, listeners));
 	}
 
 	@Override
 	public boolean canWrite() {
-		initialise();
-		return remoteRepositoryPlugin.canWrite();
+		return frameworkLifecycle.withFramework(() -> repositoryService.canWrite());
 	}
 
 	@Override
 	public List<String> list(String pattern) throws Exception {
-		initialise();
-		return remoteRepositoryPlugin.list(pattern);
+		return frameworkLifecycle.withFramework(() -> repositoryService.list(pattern));
 	}
 
 	@Override
 	public SortedSet<Version> versions(String bsn) throws Exception {
-		initialise();
-		return remoteRepositoryPlugin.versions(bsn);
+		return frameworkLifecycle.withFramework(() -> repositoryService.versions(bsn));
 	}
 
 	@Override
 	public String getName() {
-		initialise();
-		return remoteRepositoryPlugin.getName();
+		return frameworkLifecycle.withFramework(() -> repositoryService.getName());
 	}
 
 	@Override
 	public String getLocation() {
-		initialise();
-		return remoteRepositoryPlugin.getLocation();
+		return frameworkLifecycle.withFramework(() -> repositoryService.getLocation());
 	}
 
 	@Override
-	public synchronized void setProperties(Map<String, String> map) throws Exception {
-		properties = map;
-		if (initialised) {
-			plugin.setProperties(properties);
+	public void setProperties(Map<String, String> map) throws Exception {
+		synchronized (frameworkLifecycle) {
+			properties = map;
+			if (frameworkLifecycle.isStarted()) {
+				repositoryService.setProperties(properties);
+			}
 		}
 	}
 
 	@Override
-	public synchronized void setReporter(Reporter processor) {
-		reporter = processor;
+	public void setReporter(Reporter processor) {
+		synchronized (frameworkLifecycle) {
+			reporter = processor;
 
-		setLog(new ReporterLog(reporter));
-		if (initialised) {
-			plugin.setReporter(reporter);
+			log = new ReporterLog(reporter);
+			if (frameworkLifecycle.isStarted()) {
+				repositoryService.setReporter(reporter);
+			}
 		}
-	}
-
-	@Reference
-	private void setLog(Log log) {
-		this.log = log;
 	}
 
 	private Log getLog() {
-		return log;
+		WeakReference<P2BndRepository> logSource = new WeakReference<>(this);
+
+		return new Log() {
+			@Override
+			public void log(Level level, String message) {
+				P2BndRepository repository = logSource.get();
+				if (repository != null) {
+					repository.log.log(level, message);
+				}
+			}
+
+			@Override
+			public void log(Level level, String message, Throwable exception) {
+				P2BndRepository repository = logSource.get();
+				if (repository != null) {
+					repository.log.log(level, message);
+				}
+			}
+		};
 	}
 
 	@Override
 	public Map<Requirement, Collection<Capability>> findProviders(Collection<? extends Requirement> requirements) {
-		initialise();
-		return repository.findProviders(requirements);
+		return frameworkLifecycle.withFramework(() -> repositoryService.findProviders(requirements));
 	}
 
 	@Override
 	public ResourceHandle getHandle(String bsn, String version, Strategy strategy, Map<String, String> properties)
 			throws Exception {
-		initialise();
-		return remoteRepositoryPlugin.getHandle(bsn, version, strategy, properties);
-	}
-
-	private synchronized void initialise() {
-		if (!initialised) {
-			initialised = true;
-			try {
-				Thread.currentThread().getContextClassLoader().loadClass("org.osgi.framework.launch.FrameworkFactory");
-
-				startService();
-
-				if (properties != null)
-					plugin.setProperties(properties);
-				if (reporter != null)
-					plugin.setReporter(reporter);
-			} catch (Exception e) {
-				e.printStackTrace();
-				stopService();
-				throw new RuntimeException(e);
-			}
-		}
+		return frameworkLifecycle.withFramework(() -> repositoryService.getHandle(bsn, version, strategy, properties));
 	}
 
 	@Override
-	public File getCacheDirectory() {
-		initialise();
-		return remoteRepositoryPlugin.getCacheDirectory();
+	public synchronized File getCacheDirectory() {
+		return frameworkLifecycle.withFramework(() -> repositoryService.getCacheDirectory());
 	}
 }

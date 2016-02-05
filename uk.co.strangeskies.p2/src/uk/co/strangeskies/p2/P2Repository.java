@@ -24,12 +24,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 
+import org.osgi.service.repository.Repository;
+
+import aQute.bnd.service.Plugin;
+import aQute.bnd.service.RemoteRepositoryPlugin;
+import aQute.bnd.service.ResourceHandle;
+import aQute.bnd.service.Strategy;
+import aQute.bnd.version.Version;
+
 /**
  * A wrapper for an Eclipse p2 repository.
  * 
  * @author Elias N Vasylenko
  */
-public interface P2Repository {
+public interface P2Repository extends RemoteRepositoryPlugin, Repository, Plugin {
 	/**
 	 * Property key for repository name.
 	 */
@@ -86,31 +94,42 @@ public interface P2Repository {
 	 * Plugin overrides
 	 */
 
-	public void setProperties(Map<String, String> map);
+	@Override
+	public void setProperties(Map<String, String> map) throws Exception;
 
 	/*
 	 * RepositoryPlugin overrides:
 	 */
 
-	public PutResult put(InputStream stream, PutOptions options);
+	@Override
+	public PutResult put(InputStream stream, PutOptions options) throws Exception;
 
-	public File get(String bsn, Version version, Map<String, String> properties, DownloadListener... listeners);
+	@Override
+	public File get(String bsn, Version version, Map<String, String> properties, DownloadListener... listeners) throws Exception;
 
+	@Override
 	public boolean canWrite();
 
-	public List<String> list(String pattern);
+	@Override
+	public List<String> list(String pattern) throws Exception;
 
-	public SortedSet<Version> versions(String bsn);
+	@Override
+	public SortedSet<Version> versions(String bsn) throws Exception;
 
+	@Override
 	public String getName();
 
+	@Override
 	public String getLocation();
 
 	/*
 	 * RemoteRepositoryPlugin overrides:
 	 */
 
-	public ResourceHandle getHandle(String bsn, String version, Strategy strategy, Map<String, String> properties);
+	@Override
+	public ResourceHandle getHandle(String bsn, String version, Strategy strategy, Map<String, String> properties)
+			throws Exception;
 
+	@Override
 	public File getCacheDirectory();
 }
