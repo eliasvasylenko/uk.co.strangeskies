@@ -21,6 +21,7 @@ package uk.co.strangeskies.utilities.classloader;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collection;
+import java.util.function.Supplier;
 
 /**
  * Utilities for safely running code under a different thread context class
@@ -52,15 +53,22 @@ public class ContextClassLoaderRunner {
 	 * @param runnable
 	 *          The runnable to be invoked under the given classloader
 	 */
-	public void run(Runnable runnable) {
+	public <T> T run(Supplier<T> runnable) {
 		ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
 		Thread.currentThread().setContextClassLoader(classLoader);
 
 		try {
-			runnable.run();
+			return runnable.get();
 		} finally {
 			Thread.currentThread().setContextClassLoader(originalClassLoader);
 		}
+	}
+
+	public void run(Runnable runnable) {
+		run(() -> {
+			runnable.run();
+			return null;
+		});
 	}
 
 	public void runLater(Runnable runnable) {

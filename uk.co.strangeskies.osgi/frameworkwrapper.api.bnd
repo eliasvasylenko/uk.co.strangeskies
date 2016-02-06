@@ -1,0 +1,6 @@
+Bundle-Name: Strange Skies :: OSGi Utilities :: Framework Wrapper
+Bundle-Description: \
+	Utilities to isolate OSGi implementation details inside \
+	an internal framework instance, allowing services in that \
+	framework to be accessed from the host classpath.
+Export-Package: uk.co.strangeskies.osgi.frameworkwrapper
