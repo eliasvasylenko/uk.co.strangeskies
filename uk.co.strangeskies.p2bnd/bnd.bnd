@@ -72,11 +72,3 @@ shaded.projects: \
 	uk.co.strangeskies.osgi.consolelog;version=snapshot,\
 	uk.co.strangeskies.p2bnd;version=snapshot,\
 	uk.co.strangeskies.utilities;version=snapshot
-
-#
-# Extract ./generated/uk.co.whatever...
-#
-# Run on command line:
-#
-# java -cp ./uk.co.strangeskies.p2bnd.jar:./uk.co.strangeskies.p2bnd/jar/biz.aQute.bndlib.jar:./uk.co.strangeskies.p2bnd/jar/framework/org.eclipse.osgi.jar uk.co.strangeskies.p2.bnd.P2BndRepository
-#

@@ -132,8 +132,6 @@ public class P2RepositoryImpl implements P2Repository {
 	private URL metadataLocation;
 	private URL artifactLocation;
 
-	private boolean initialised = false;
-
 	@Reference
 	private IProvisioningAgentProvider agentProvider;
 

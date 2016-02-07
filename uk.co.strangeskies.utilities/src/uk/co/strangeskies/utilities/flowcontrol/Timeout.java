@@ -23,8 +23,7 @@ public class Timeout {
 	private int timeoutMilliseconds;
 	private final Object lock;
 
-	private boolean frameworkStarted = false;
-	private boolean frameworkStopping = false;
+	private boolean stopping = false;
 	private Thread thread;
 
 	public Timeout(Runnable action, int timeoutSeconds) {
@@ -44,8 +43,8 @@ public class Timeout {
 	public boolean reset() {
 		synchronized (lock) {
 			if (thread != null) {
-				frameworkStopping = false;
-				notifyAll();
+				stopping = false;
+				lock.notifyAll();
 
 				return true;
 			} else {
@@ -59,14 +58,12 @@ public class Timeout {
 			if (!reset()) {
 				thread = new Thread(() -> {
 					synchronized (lock) {
-						do {
+						while (!stopping) {
 							try {
-								if (frameworkStarted) {
-									frameworkStopping = true;
-									wait(timeoutMilliseconds);
-								}
+								stopping = true;
+								lock.wait(timeoutMilliseconds);
 							} catch (InterruptedException e) {}
-						} while (!frameworkStopping);
+						}
 
 						thread = null;
 						action.run();

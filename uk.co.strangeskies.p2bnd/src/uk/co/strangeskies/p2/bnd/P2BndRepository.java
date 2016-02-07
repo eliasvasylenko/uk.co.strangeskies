@@ -51,7 +51,8 @@ import aQute.service.reporter.Reporter;
 import uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper;
 import uk.co.strangeskies.p2.P2Repository;
 import uk.co.strangeskies.utilities.Log;
-import uk.co.strangeskies.utilities.classloader.ContextClassLoaderRunner;
+import uk.co.strangeskies.utilities.classpath.Classpath;
+import uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner;
 
 /**
  * This class is not primarily intended to be used within OSGi environments. For
@@ -74,15 +75,13 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 	private static final String OSGI_CLEAR_PERSISTED_STATE = "clearPersistedState";
 	private static final String OSGI_SYSTEM_PACKAGES_EXTRA = "org.osgi.framework.system.packages.extra";
 
+	@SuppressWarnings("serial")
 	static final Map<String, String> FRAMEWORK_PROPERTIES = new HashMap<String, String>() {
-		private static final long serialVersionUID = 1L;
-
 		{
 			put(OSGI_CLEAN, Boolean.toString(true));
 			put(OSGI_CLEAR_PERSISTED_STATE, Boolean.toString(true));
 			put(OSGI_SYSTEM_PACKAGES_EXTRA,
-					"org.osgi.framework;version=\"1.7.0\"," + "org.osgi.service.metatype;version=\"1.1.0\","
-							+ "uk.co.strangeskies.utilities;version=\"1.0.0\"," + "uk.co.strangeskies.p2;version=\"1.0.0\","
+					"uk.co.strangeskies.utilities;version=\"1.0.0\"," + "uk.co.strangeskies.p2;version=\"1.0.0\","
 							+ "aQute.bnd.service;version=\"4.1.0\"," + "aQute.bnd.version;version=\"1.3.0\","
 							+ "aQute.service.reporter;version=\"1.0.0\"," + "org.osgi.service.repository;version=\"1.0.0\"");
 		}
@@ -100,7 +99,7 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 	private Reporter reporter;
 
 	public P2BndRepository() {
-		Manifest manifest = getManifest(getClass());
+		Manifest manifest = Classpath.getManifest(getClass());
 
 		Set<URL> frameworkUrls = new HashSet<>();
 		try {
@@ -125,7 +124,7 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 		frameworkWrapper.setLaunchProperties(FRAMEWORK_PROPERTIES);
 
 		String frameworkJars = manifest.getMainAttributes().getValue(FrameworkWrapper.EMBEDDED_RUNPATH);
-		frameworkWrapper.setBundles(Arrays.stream(frameworkJars.split(",")).map(s -> "/" + s)
+		frameworkWrapper.setBundles(Arrays.stream(frameworkJars.split(",")).map(s -> "/" + s.trim())
 				.collect(Collectors.toMap(s -> "classpath:" + s, s -> getClass().getResourceAsStream(s))));
 
 		frameworkWrapper.setInitialisationAction(() -> {
@@ -137,25 +136,6 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 					repositoryService.setReporter(reporter);
 			}, SERVICE_TIMEOUT_MILLISECONDS);
 		});
-	}
-
-	private static Manifest getManifest(Class<?> clz) {
-		String resource = "/" + clz.getName().replace(".", "/") + ".class";
-		String fullPath = clz.getResource(resource).toString();
-		String archivePath = fullPath.substring(0, fullPath.length() - resource.length());
-
-		/*
-		 * Deal with Wars
-		 */
-		if (archivePath.endsWith("\\WEB-INF\\classes") || archivePath.endsWith("/WEB-INF/classes")) {
-			archivePath = archivePath.substring(0, archivePath.length() - "/WEB-INF/classes".length());
-		}
-
-		try (InputStream input = new URL(archivePath + "/META-INF/MANIFEST.MF").openStream()) {
-			return new Manifest(input);
-		} catch (Exception e) {
-			throw new RuntimeException("Loading MANIFEST for class " + clz + " failed!", e);
-		}
 	}
 
 	public static void main(String[] args) {

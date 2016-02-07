@@ -31,6 +31,8 @@ import java.util.jar.Manifest;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.Constants;
+import org.osgi.framework.Filter;
 import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
@@ -188,7 +190,9 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 			if (frameworkStarted) {
 				framework.stop();
 				framework.waitForStop(0);
-				shutdownAction.run();
+				if (shutdownAction != null) {
+					shutdownAction.run();
+				}
 			}
 		} catch (Exception e) {
 			log.log(Level.ERROR, "Unable to stop framework", e);
@@ -274,19 +278,30 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 
 		Property<Object, Object> service = new IdentityProperty<>();
 
-		ServiceListener p2RepoServiceListener = event -> {
+		String filter = "(" + Constants.OBJECTCLASS + "=" + serviceClass.getName() + ")";
+		ServiceListener serviceListener = event -> {
 			switch (event.getType()) {
 			case ServiceEvent.REGISTERED:
 				ServiceReference<?> reference = event.getServiceReference();
 
 				synchronized (service) {
-					service.set(frameworkContext.getService(reference));
+					if (service.get() == null) {
+						service.set(frameworkContext.getService(reference));
+					}
 					service.notifyAll();
 				}
 			default:
 			}
 		};
-		frameworkContext.addServiceListener(p2RepoServiceListener, "(objectclass=" + serviceClass.getName() + ")");
+		frameworkContext.addServiceListener(serviceListener, filter);
+
+		ServiceReference<T> reference = frameworkContext.getServiceReference(serviceClass);
+		synchronized (service) {
+			if (service.get() == null && reference != null) {
+				service.set(frameworkContext.getService(reference));
+			}
+			service.notifyAll();
+		}
 
 		synchronized (service) {
 			if (service.get() == null) {
