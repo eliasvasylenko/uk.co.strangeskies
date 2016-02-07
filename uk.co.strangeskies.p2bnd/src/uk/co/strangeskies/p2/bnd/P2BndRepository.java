@@ -106,7 +106,7 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 			frameworkUrls.add(new URL(
 					"file:/home/eli/workspaces/uk.co.strangeskies/uk.co.strangeskies.p2bnd/generated/uk.co.strangeskies.p2bnd/jar/framework/org.eclipse.osgi.jar"));
 			frameworkUrls.add(new URL(
-					"file:/home/eli/workspaces/uk.co.strangeskies/uk.co.strangeskies.osgi/generated/uk.co.strangeskies.osgi.frameworkwrapper.provider.jar"));
+					"file:/home/eli/workspaces/uk.co.strangeskies/cnf/release/uk.co.strangeskies.osgi.frameworkwrapper.provider/uk.co.strangeskies.osgi.frameworkwrapper.provider-1.0.13.jar"));
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
 		}
@@ -138,13 +138,11 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 		});
 	}
 
-	public static void main(String[] args) {
-		P2BndRepository repo = new P2BndRepository();
-		System.out.println("name: " + repo.getName());
-		System.out.println("name: " + repo.getName());
-		System.out.println("name: " + repo.getName());
-
-		System.out.println("great!");
+	public static void main(String... args) {
+		P2BndRepository repository = new P2BndRepository();
+		System.out.println(repository.getName());
+		System.out.println(repository.getName());
+		System.out.println(repository.getName());
 	}
 
 	@Override
