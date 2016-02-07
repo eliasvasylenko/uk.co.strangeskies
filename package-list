@@ -22,7 +22,7 @@ uk.co.strangeskies.osgi
 uk.co.strangeskies.p2
 uk.co.strangeskies.reflection
 uk.co.strangeskies.utilities
-uk.co.strangeskies.utilities.classloader
+uk.co.strangeskies.utilities.classpath
 uk.co.strangeskies.utilities.collection
 uk.co.strangeskies.utilities.collection.computingmap
 uk.co.strangeskies.utilities.factory
