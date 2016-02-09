@@ -13,6 +13,7 @@ Export-Package: \
 	uk.co.strangeskies.utilities.text.parser,\
 	uk.co.strangeskies.utilities.text,\
 	uk.co.strangeskies.utilities.classpath
+
 Bundle-Name: Strange Skies :: Utilities
 Bundle-Description: \
 	Common Java utilities for Strange Skies projects, including generic \

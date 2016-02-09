@@ -21,10 +21,8 @@ package uk.co.strangeskies.p2.bnd;
 import java.io.File;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -36,8 +34,8 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
-import org.osgi.framework.Bundle;
 import org.osgi.resource.Capability;
 import org.osgi.resource.Requirement;
 import org.osgi.service.repository.Repository;
@@ -48,6 +46,7 @@ import aQute.bnd.service.ResourceHandle;
 import aQute.bnd.service.Strategy;
 import aQute.bnd.version.Version;
 import aQute.service.reporter.Reporter;
+import uk.co.strangeskies.bnd.ReporterLog;
 import uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper;
 import uk.co.strangeskies.p2.P2Repository;
 import uk.co.strangeskies.utilities.Log;
@@ -104,9 +103,9 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 		Set<URL> frameworkUrls = new HashSet<>();
 		try {
 			frameworkUrls.add(new URL(
-					"file:/home/eli/workspaces/uk.co.strangeskies/uk.co.strangeskies.p2bnd/generated/uk.co.strangeskies.p2bnd/jar/framework/org.eclipse.osgi.jar"));
+					"file:///C:/Users/tofuser/git/uk.co.strangeskies/uk.co.strangeskies.p2bnd/generated/uk.co.strangeskies.p2bnd/jar/framework/org.eclipse.osgi.jar"));
 			frameworkUrls.add(new URL(
-					"file:/home/eli/workspaces/uk.co.strangeskies/cnf/release/uk.co.strangeskies.osgi.frameworkwrapper.provider/uk.co.strangeskies.osgi.frameworkwrapper.provider-1.0.13.jar"));
+					"file:///C:/Users/tofuser/git/uk.co.strangeskies/cnf/release/uk.co.strangeskies.osgi.frameworkwrapper.provider/uk.co.strangeskies.osgi.frameworkwrapper.provider-1.0.13.jar"));
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
 		}
@@ -114,7 +113,10 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 		frameworkWrapper = new ContextClassLoaderRunner(frameworkUrls).run(() -> {
 			ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
-			return ServiceLoader.load(FrameworkWrapper.class, classLoader).iterator().next();
+			ServiceLoader<FrameworkWrapper> serviceLoader = ServiceLoader.load(FrameworkWrapper.class, classLoader);
+
+			return StreamSupport.stream(serviceLoader.spliterator(), false).findAny().orElseThrow(
+					() -> new RuntimeException("Cannot find service implementing " + FrameworkWrapper.class.getName()));
 		});
 
 		frameworkWrapper.setTimeoutMilliseconds(FRAMEWORK_TIMEOUT_MILLISECONDS);
@@ -134,7 +136,7 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 					repositoryService.setProperties(properties);
 				if (reporter != null)
 					repositoryService.setReporter(reporter);
-			}, SERVICE_TIMEOUT_MILLISECONDS);
+			} , SERVICE_TIMEOUT_MILLISECONDS);
 		});
 	}
 

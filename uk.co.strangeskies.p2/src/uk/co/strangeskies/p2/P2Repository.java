@@ -41,49 +41,49 @@ public interface P2Repository extends RemoteRepositoryPlugin, Repository, Plugin
 	/**
 	 * Property key for repository name.
 	 */
-	public static final String PROP_NAME = "name";
+	public static final String NAME_PROPERTY = "name";
 
 	/**
 	 * Property key for repository location. Setting this property to a value is
-	 * equivalent to setting both the {@link #PROP_METADATA_LOCATION} and
-	 * {@link #PROP_ARTIFACT_LOCATION} to that value. This property should
+	 * equivalent to setting both the {@link #METADATA_LOCATION_PROPERTY} and
+	 * {@link #ARTIFACT_LOCATION_PROPERTY} to that value. This property should
 	 * therefore not be used in conjunction with those properties.
 	 */
-	public static final String PROP_LOCATION = "location";
+	public static final String LOCATION_PROPERTY = "location";
 
 	/**
 	 * Property for repository metadata location, to be used alongside the
-	 * {@link #PROP_ARTIFACT_LOCATION} property. Typically, this may be the same
-	 * as the artifact location, and so {@link #PROP_LOCATION} may be used
+	 * {@link #ARTIFACT_LOCATION_PROPERTY} property. Typically, this may be the same
+	 * as the artifact location, and so {@link #LOCATION_PROPERTY} may be used
 	 * instead.
 	 */
-	public static final String PROP_METADATA_LOCATION = "metadata";
+	public static final String METADATA_LOCATION_PROPERTY = "metadata";
 
 	/**
 	 * Property for repository artifact location, to be used alongside the
-	 * {@link #PROP_METADATA_LOCATION} property. Typically, this may be the same
-	 * as the metadata location, and so {@link #PROP_LOCATION} may be used
+	 * {@link #METADATA_LOCATION_PROPERTY} property. Typically, this may be the same
+	 * as the metadata location, and so {@link #LOCATION_PROPERTY} may be used
 	 * instead.
 	 */
-	public static final String PROP_ARTIFACT_LOCATION = "artifact";
+	public static final String ARTIFACT_LOCATION_PROPERTY = "artifact";
 
 	/**
 	 * Property for cache location, with a default given by
-	 * {@link #DEFAULT_CACHE_DIR} in the user's home directory.
+	 * {@link #DEFAULT_CACHE_DIRECTORY} in the user's home directory.
 	 */
-	public static final String PROP_CACHE_DIR = "cache";
+	public static final String CACHE_DIRECTORY_PROPERTY = "cache";
 
 	/**
 	 * Default location for offline caching of repository artifacts.
 	 */
-	public static final String DEFAULT_CACHE_DIR = ".bnd" + File.separator + "cache" + File.separator + "p2";
+	public static final String DEFAULT_CACHE_DIRECTORY = ".bnd" + File.separator + "cache" + File.separator + "p2";
 
 	/**
 	 * The length of time in seconds that cached artifact downloads will be
 	 * retained and remain valid. Defaults to
 	 * {@value #DEFAULT_CACHE_TIMEOUT_SECONDS} seconds.
 	 */
-	public static final String PROP_CACHE_TIMEOUT_SECONDS = "timeout";
+	public static final String CACHE_TIMEOUT_SECONDS_PROPERTY = "timeout";
 
 	/**
 	 * Default cache timeout in seconds.

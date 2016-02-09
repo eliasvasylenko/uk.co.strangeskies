@@ -9,6 +9,7 @@ Private-Package: \
 -buildpath: \
 	biz.aQute.bndlib,\
 	${ss;utilities},\
+	${ss;bnd},\
 	${ss;osgi.frameworkwrapper.api},\
 	${ss;p2.api}
 
@@ -42,6 +43,7 @@ embedded.projects: \
 	uk.co.strangeskies.p2.provider
 
 shaded.projects: \
+	uk.co.strangeskies.bnd,\
 	uk.co.strangeskies.p2.api,\
 	uk.co.strangeskies.utilities,\
 	uk.co.strangeskies.osgi.frameworkwrapper.api

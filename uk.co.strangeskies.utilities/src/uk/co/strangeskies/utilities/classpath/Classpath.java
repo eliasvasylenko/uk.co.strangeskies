@@ -20,6 +20,8 @@ package uk.co.strangeskies.utilities.classpath;
 
 import java.io.InputStream;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.jar.Manifest;
 
 public class Classpath {
@@ -42,5 +44,44 @@ public class Classpath {
 		} catch (Exception e) {
 			throw new RuntimeException("Loading MANIFEST for class " + clz + " failed!", e);
 		}
+	}
+
+	public static Map<String, Map<String, String>> parseManifestEntry(String entry) {
+		Map<String, Map<String, String>> items = new HashMap<>();
+
+		for (String item : entry.split(",")) {
+			int separatorIndex = item.indexOf(";");
+			if (separatorIndex >= 0) {
+				String itemName = item.substring(0, separatorIndex).trim();
+
+				if (itemName.contains(":")) {
+					itemName = itemName.substring(0, itemName.indexOf(":")).trim();
+				}
+
+				Map<String, String> properties = new HashMap<>();
+
+				String propertiesString = item.substring(separatorIndex + 1).trim();
+
+				for (String property : propertiesString.split(";")) {
+					int equalsIndex = property.indexOf("=");
+					if (equalsIndex >= 0) {
+						String propertyName = property.substring(0, equalsIndex).trim();
+						String propertyString = property.substring(equalsIndex + 1).trim();
+
+						if (propertyString.startsWith("\"") && propertyString.endsWith("\"")) {
+							propertyString = propertyString.substring(1, propertyString.length() - 1);
+						}
+
+						properties.put(propertyName, propertyString);
+					}
+				}
+
+				items.put(itemName, properties);
+			} else {
+				items.put(item.trim(), new HashMap<>());
+			}
+		}
+
+		return items;
 	}
 }

@@ -28,11 +28,11 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import java.util.jar.Manifest;
+import java.util.stream.StreamSupport;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
-import org.osgi.framework.Filter;
 import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
@@ -111,6 +111,7 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 		shutdownAction = action;
 	}
 
+	@Override
 	public synchronized void setBundles(Map<String, InputStream> bundleSources) {
 		this.bundleSources.clear();
 		this.bundleSources.putAll(bundleSources);
@@ -120,7 +121,12 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 	public synchronized void startFramework() {
 		if (!frameworkStarted) {
 			try {
-				FrameworkFactory frameworkFactory = ServiceLoader.load(FrameworkFactory.class, classLoader).iterator().next();
+				ServiceLoader<FrameworkFactory> serviceLoader = ServiceLoader.load(FrameworkFactory.class, classLoader);
+
+				FrameworkFactory frameworkFactory = StreamSupport.stream(serviceLoader.spliterator(), false).findAny()
+						.orElseThrow(
+								() -> new RuntimeException("Cannot find service implementing " + FrameworkFactory.class.getName()));
+
 				framework = frameworkFactory.newFramework(launchProperties);
 				framework.start();
 				frameworkStarted = true;
@@ -129,13 +135,17 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 
 				initialisationAction.run();
 			} catch (Exception e) {
-				log.log(Level.ERROR, "Unable to start framework", e);
-				e.printStackTrace();
-				throw new RuntimeException(e);
+				throw runtimeException("Unable to start framework", e);
 			}
 		}
 
 		timeout.set();
+	}
+
+	private RuntimeException runtimeException(String message, Exception e) {
+		log.log(Level.ERROR, message, e);
+		e.printStackTrace();
+		return new RuntimeException(message, e);
 	}
 
 	private void registerBundles() throws Exception {
@@ -147,8 +157,7 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 			try {
 				bundles.add(frameworkContext.installBundle(b.getKey(), b.getValue()));
 			} catch (Exception e) {
-				log.log(Level.ERROR, "Unable to add jar to internal framework " + b.getKey(), e);
-				throw new RuntimeException(e);
+				runtimeException("Unable to add jar to internal framework " + b.getKey(), e);
 			}
 		});
 		for (Bundle bundle : bundles) {
@@ -165,7 +174,7 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 		log.log(Level.INFO, "Successfully started bundles");
 	}
 
-	private static Manifest getManifest(Class<?> clz) {
+	private Manifest getManifest(Class<?> clz) {
 		String resource = "/" + clz.getName().replace(".", "/") + ".class";
 		String fullPath = clz.getResource(resource).toString();
 		String archivePath = fullPath.substring(0, fullPath.length() - resource.length());
@@ -180,7 +189,7 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 		try (InputStream input = new URL(archivePath + "/META-INF/MANIFEST.MF").openStream()) {
 			return new Manifest(input);
 		} catch (Exception e) {
-			throw new RuntimeException("Loading MANIFEST for class " + clz + " failed!", e);
+			throw runtimeException("Loading MANIFEST for class " + clz + " failed!", e);
 		}
 	}
 
@@ -195,8 +204,7 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 				}
 			}
 		} catch (Exception e) {
-			log.log(Level.ERROR, "Unable to stop framework", e);
-			throw new RuntimeException(e);
+			throw runtimeException("Unable to stop framework", e);
 		} finally {
 			frameworkStarted = false;
 			framework = null;

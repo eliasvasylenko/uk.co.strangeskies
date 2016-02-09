@@ -1,0 +1,11 @@
+Export-Package: \
+	uk.co.strangeskies.bnd
+
+-runee: JavaSE-1.8
+
+-testpath: \
+	org.eclipse.osgi
+
+-buildpath: \
+	biz.aQute.bndlib,\
+	${ss;utilities}

@@ -23,6 +23,9 @@ import java.net.URLClassLoader;
 import java.util.Collection;
 import java.util.function.Supplier;
 
+import uk.co.strangeskies.utilities.function.ThrowingRunnable;
+import uk.co.strangeskies.utilities.function.ThrowingSupplier;
+
 /**
  * Utilities for safely running code under a different thread context class
  * loader.
@@ -53,7 +56,7 @@ public class ContextClassLoaderRunner {
 	 * @param runnable
 	 *          The runnable to be invoked under the given classloader
 	 */
-	public <T> T run(Supplier<T> runnable) {
+	public <T, E extends Exception> T runThrowing(ThrowingSupplier<T, E> runnable) throws E {
 		ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
 		Thread.currentThread().setContextClassLoader(classLoader);
 
@@ -64,8 +67,23 @@ public class ContextClassLoaderRunner {
 		}
 	}
 
+	/**
+	 * Invoke a {@link Runnable} under this runners classloader, making sure the
+	 * current context class loader is reinstated upon termination.
+	 * 
+	 * @param runnable
+	 *          The runnable to be invoked under the given classloader
+	 */
+	public <T> T run(Supplier<T> runnable) {
+		return runThrowing(runnable::get);
+	}
+
 	public void run(Runnable runnable) {
-		run(() -> {
+		runThrowing(runnable::run);
+	}
+
+	public <E extends Exception> void runThrowing(ThrowingRunnable<E> runnable) throws E {
+		runThrowing(() -> {
 			runnable.run();
 			return null;
 		});
