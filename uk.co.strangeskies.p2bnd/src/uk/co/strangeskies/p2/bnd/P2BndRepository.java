@@ -115,7 +115,7 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 
 			ServiceLoader<FrameworkWrapper> serviceLoader = ServiceLoader.load(FrameworkWrapper.class, classLoader);
 
-			return StreamSupport.stream(serviceLoader.spliterator(), false).findAny().orElseThrow(
+			return StreamSupport.stream(serviceLoader.spliterator(), false).findAny().<RuntimeException> orElseThrow(
 					() -> new RuntimeException("Cannot find service implementing " + FrameworkWrapper.class.getName()));
 		});
 
