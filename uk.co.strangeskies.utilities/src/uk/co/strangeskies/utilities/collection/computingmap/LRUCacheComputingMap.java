@@ -66,8 +66,7 @@ public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 	private final int maximumSize;
 	private final LinkedEntry bounds;
 
-	public LRUCacheComputingMap(Function<K, V> computation, int maximumSize,
-			boolean softReferences) {
+	public LRUCacheComputingMap(Function<K, V> computation, int maximumSize, boolean softReferences) {
 		super(computation, softReferences);
 
 		this.maximumSize = maximumSize;
@@ -128,9 +127,10 @@ public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 	}
 
 	@Override
-	public boolean remove(K key) {
-		super.get(key);
-		return super.remove(key);
+	public V removeGet(K key) {
+		V value = super.get(key);
+		super.remove(key);
+		return value;
 	}
 
 	public boolean removeAll(Set<K> keys) {

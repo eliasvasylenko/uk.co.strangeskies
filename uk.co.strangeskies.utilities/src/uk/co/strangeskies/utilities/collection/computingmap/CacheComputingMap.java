@@ -123,9 +123,9 @@ public class CacheComputingMap<K, V> extends ComputingEntryHashMap<K, V> {
 	}
 
 	@Override
-	public boolean remove(K key) {
+	public V removeGet(K key) {
 		clean();
 
-		return super.remove(key);
+		return super.removeGet(key);
 	}
 }

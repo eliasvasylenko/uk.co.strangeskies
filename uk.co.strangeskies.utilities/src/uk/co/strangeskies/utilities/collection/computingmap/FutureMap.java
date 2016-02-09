@@ -18,94 +18,162 @@
  */
 package uk.co.strangeskies.utilities.collection.computingmap;
 
+import java.util.AbstractCollection;
 import java.util.AbstractSet;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
+
+import uk.co.strangeskies.utilities.EqualityComparator;
 
 public class FutureMap<K, V> implements ComputingMap<K, V> {
-	private final HashMap<K, Thread> preparationThreads;
-	private final Consumer<K> prepare;
+	public class PreparationThread extends Thread {
+		private final K key;
+		private V value;
+		private boolean cancellable = true;
+		private RuntimeException exception;
+
+		public PreparationThread(K key) {
+			synchronized (FutureMap.this) {
+				this.key = key;
+				preparationThreads.put(key, this);
+				start();
+			}
+		}
+
+		public void run() {
+			try {
+				value = mapping.apply(key);
+			} catch (RuntimeException e) {
+				exception = e;
+			} finally {
+				synchronized (FutureMap.this) {
+					if (preparationThreads.containsKey(key)) {
+						if (value != null) {
+							values.put(key, value);
+						}
+						preparationThreads.remove(key);
+						preparationThreads.notifyAll();
+					}
+				}
+			}
+		}
+
+		public void setUncancellable() {
+			synchronized (FutureMap.this) {
+				cancellable = false;
+			}
+		}
+
+		public void cancel() {
+			synchronized (FutureMap.this) {
+				if (cancellable && preparationThreads.containsKey(key)) {
+					preparationThreads.remove(key);
+					preparationThreads.notifyAll();
+					interrupt();
+				}
+			}
+		}
+
+		public V waitForValue() {
+			synchronized (FutureMap.this) {
+				while (preparationThreads.containsKey(key)) {
+					try {
+						preparationThreads.wait();
+					} catch (InterruptedException e) {}
+				}
+				return getValue();
+			}
+		}
+
+		public V getValue() {
+			if (exception != null) {
+				throw exception;
+			}
+			return value;
+		}
+	}
+
+	private final Map<K, PreparationThread> preparationThreads;
+	private final Map<K, V> values;
 	private final Function<K, V> mapping;
 
-	public FutureMap(Consumer<K> prepare, Function<K, V> mapping) {
-		preparationThreads = new HashMap<>();
-		this.prepare = prepare;
-		this.mapping = mapping;
-	}
-
 	public FutureMap(Function<K, V> function) {
-		this(function, HashMap::new);
+		this(function, EqualityComparator.identityComparator());
 	}
 
-	public FutureMap(Function<K, V> function, Supplier<Map<K, V>> valueMap) {
-		preparationThreads = new HashMap<>();
-
-		Map<K, V> values = valueMap.get();
-		prepare = key -> {
-			V value = function.apply(key);
-
-			synchronized (preparationThreads) {
-				if (preparationThreads.containsKey(key))
-					values.put(key, value);
-			}
-		};
+	public FutureMap(Function<K, V> function, Comparator<K> comparator) {
+		preparationThreads = new TreeMap<>(comparator);
+		values = new TreeMap<>(comparator);
 		mapping = values::get;
+	}
+
+	private boolean isPending(K key) {
+		synchronized (this) {
+			return preparationThreads.containsKey(key) || values.containsKey(key);
+		}
 	}
 
 	@Override
 	public boolean put(final K key) {
-		synchronized (preparationThreads) {
-			if (preparationThreads.containsKey(key))
+		synchronized (this) {
+			if (isPending(key)) {
 				return false;
-
-			Thread thread = new Thread(() -> prepare.accept(key));
-			thread.start();
-			preparationThreads.put(key, thread);
-
-			return true;
+			} else {
+				new PreparationThread(key);
+				return true;
+			}
 		}
 	}
 
 	@Override
 	public V get(K key) {
-		synchronized (preparationThreads) {
-			if (!preparationThreads.containsKey(key))
-				return null;
-		}
+		return get(key, true);
+	}
 
-		wait(key);
-
-		synchronized (preparationThreads) {
-			if (!preparationThreads.containsKey(key))
+	public V get(K key, boolean cancellable) {
+		synchronized (this) {
+			if (preparationThreads.containsKey(key)) {
+				if (!cancellable) {
+					preparationThreads.get(key).setUncancellable();
+				}
+				return preparationThreads.get(key).waitForValue();
+			} else if (values.containsKey(key)) {
+				return values.get(key);
+			} else {
 				return null;
-			return mapping.apply(key);
+			}
 		}
 	}
 
 	@Override
 	public V putGet(K key, Consumer<V> wasPresent, Consumer<V> wasMissing) {
-		V value = get(key);
-		while (value == null) {
-			put(key);
-			value = get(key);
+		synchronized (this) {
+			boolean added = put(key);
+			V value = get(key, false);
+
+			if (added) {
+				wasMissing.accept(value);
+			} else {
+				wasPresent.accept(value);
+			}
+
+			return value;
 		}
-		return value;
 	}
 
 	@Override
 	public Set<K> keySet() {
 		return new AbstractSet<K>() {
-			Set<K> baseSet = preparationThreads.keySet();
-
 			@Override
 			public Iterator<K> iterator() {
-				Iterator<K> baseIterator = baseSet.iterator();
+				Iterator<K> baseIterator = preparationThreads.keySet().iterator();
+
 				return new Iterator<K>() {
 					private K last;
 
@@ -121,8 +189,43 @@ public class FutureMap<K, V> implements ComputingMap<K, V> {
 
 					@Override
 					public void remove() {
-						FutureMap.this.wait(last);
-						baseIterator.remove();
+						FutureMap.this.remove(last);
+					}
+				};
+			}
+
+			@Override
+			public int size() {
+				return preparationThreads.keySet().size();
+			}
+		};
+	}
+
+	@Override
+	public Collection<V> values() {
+		return new AbstractCollection<V>() {
+			Set<K> baseSet = keySet();
+
+			@Override
+			public Iterator<V> iterator() {
+				Iterator<K> baseIterator = baseSet.iterator();
+
+				return new Iterator<V>() {
+					private K last;
+
+					@Override
+					public boolean hasNext() {
+						return baseIterator.hasNext();
+					}
+
+					@Override
+					public V next() {
+						return get(last = baseIterator.next());
+					}
+
+					@Override
+					public void remove() {
+						FutureMap.this.remove(last);
 					}
 				};
 			}
@@ -136,66 +239,68 @@ public class FutureMap<K, V> implements ComputingMap<K, V> {
 
 	@Override
 	public boolean remove(K key) {
-		synchronized (preparationThreads) {
-			if (!preparationThreads.containsKey(key))
+		synchronized (this) {
+			if (preparationThreads.containsKey(key)) {
+				preparationThreads.get(key).cancel();
+				preparationThreads.remove(key);
+				preparationThreads.notifyAll();
+				return true;
+			} else if (values.containsKey(key)) {
+				values.remove(key);
+				return true;
+			} else {
 				return false;
-
-			preparationThreads.remove(key).interrupt();
-
-			return true;
+			}
 		}
 	}
 
-	private boolean wait(K key) {
-		Thread thread;
-		synchronized (preparationThreads) {
-			thread = preparationThreads.get(key);
-		}
+	@Override
+	public V removeGet(K key) {
+		return removeGet(key, true);
+	}
 
-		if (thread == null)
-			return false;
-
-		while (true) {
-			try {
-				thread.join();
-				return true;
-			} catch (InterruptedException e) {}
+	public V removeGet(K key, boolean cancellable) {
+		synchronized (this) {
+			if (preparationThreads.containsKey(key)) {
+				if (!cancellable) {
+					preparationThreads.get(key).setUncancellable();
+					V value = preparationThreads.remove(key).waitForValue();
+					preparationThreads.notifyAll();
+					return value;
+				} else {
+					preparationThreads.get(key).cancel();
+					return null;
+				}
+			} else if (values.containsKey(key)) {
+				return values.remove(key);
+			} else {
+				return null;
+			}
 		}
 	}
 
 	@Override
 	public boolean clear() {
-		synchronized (preparationThreads) {
-			if (preparationThreads.isEmpty())
-				return false;
+		boolean changed = false;
+
+		synchronized (this) {
+			for (K key : preparationThreads.keySet()) {
+				changed = remove(key) || changed;
+			}
+			for (K key : values.keySet()) {
+				changed = remove(key) || changed;
+			}
 		}
 
-		waitForAll();
-
-		synchronized (preparationThreads) {
-			preparationThreads.clear();
-			return true;
-		}
+		return changed;
 	}
 
 	public void waitForAll() {
-		Set<K> done = new HashSet<>();
-		Set<K> remaining;
-
-		boolean finished;
-		do {
-			synchronized (preparationThreads) {
-				remaining = new HashSet<>(preparationThreads.keySet());
+		synchronized (this) {
+			while (!preparationThreads.isEmpty()) {
+				preparationThreads.values().stream().findAny().get().waitForValue();
 			}
-
-			for (K key : remaining)
-				if (done.add(key))
-					wait(key);
-
-			synchronized (preparationThreads) {
-				finished = done.containsAll(preparationThreads.keySet());
-			}
-		} while (!finished);
+		}
 	}
 
 	public synchronized Set<K> getKeys() {

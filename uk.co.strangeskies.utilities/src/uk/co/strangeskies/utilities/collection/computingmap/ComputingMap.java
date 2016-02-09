@@ -35,9 +35,9 @@ import java.util.function.Consumer;
  * @author Elias N Vasylenko
  *
  * @param <V>
- *            The type of values
+ *          The type of values
  * @param <K>
- *            The type of keys
+ *          The type of keys
  */
 public interface ComputingMap<K, V> extends ReadOnlyMap<K, V> {
 	/**
@@ -46,14 +46,14 @@ public interface ComputingMap<K, V> extends ReadOnlyMap<K, V> {
 	 *
 	 * This interface, by contract, provides no guarantees that the value for a
 	 * previously entered key will still be contained within the map. Despite
-	 * this, for keys which have not yet been entered into the map, an
-	 * invocation of this method should simply return null, rather than
-	 * attempting to compute the given value and then return it.
+	 * this, for keys which have not yet been entered into the map, an invocation
+	 * of this method should simply return null, rather than attempting to compute
+	 * the given value and then return it.
 	 *
 	 * Implementations are, of course, free to provide this guarantee.
 	 *
 	 * @param key
-	 *            The key object for which to return the mapped computed value
+	 *          The key object for which to return the mapped computed value
 	 * @return The computed value associated with a given key
 	 */
 	@Override
@@ -61,20 +61,19 @@ public interface ComputingMap<K, V> extends ReadOnlyMap<K, V> {
 
 	/**
 	 * Enters the key into the map such that a value of type {@code V} will at
-	 * some point be computed which will be then returned by any subsequent
-	 * calls to {@link ComputingMap#get}.
+	 * some point be computed which will be then returned by any subsequent calls
+	 * to {@link ComputingMap#get}.
 	 *
-	 * Generally keys should be immutable, and the computation associated with
-	 * the map will be expected to produce identical results each time, so in
-	 * the case that the key has already been added to the map most
-	 * implementations should just return instantly and do no work. Because of
-	 * this it also makes little sense to return the previous value for a key
-	 * entered more than once.
+	 * Generally keys should be immutable, and the computation associated with the
+	 * map will be expected to produce identical results each time, so in the case
+	 * that the key has already been added to the map most implementations should
+	 * just return instantly and do no work. Because of this it also makes little
+	 * sense to return the previous value for a key entered more than once.
 	 *
 	 * @param key
-	 *            The key object to be mapped to a new value
-	 * @return True if the associated value was not already contained in the
-	 *         map, false otherwise
+	 *          The key object to be mapped to a new value
+	 * @return True if the associated value was not already contained in the map,
+	 *         false otherwise
 	 */
 	boolean put(K key);
 
@@ -86,17 +85,15 @@ public interface ComputingMap<K, V> extends ReadOnlyMap<K, V> {
 	}
 
 	/**
-	 * This method simply makes sure the value for the given key has been
-	 * computed and added to the map, then returns it.
+	 * This method simply makes sure the value for the given key has been computed
+	 * and added to the map, then returns it.
 	 *
 	 * @param key
-	 *            The key object to be mapped to a new value
+	 *          The key object to be mapped to a new value
 	 * @return The computed value associated with a given key.
 	 */
 	default V putGet(K key) {
-		return putGet(key, v -> {
-		}, v -> {
-		});
+		return putGet(key, v -> {}, v -> {});
 	}
 
 	V putGet(K key, Consumer<V> wasPresent, Consumer<V> wasMissing);
@@ -104,14 +101,31 @@ public interface ComputingMap<K, V> extends ReadOnlyMap<K, V> {
 	@Override
 	Set<K> keySet();
 
+	Collection<V> values();
+
+	/**
+	 * Remove the given key and it's associated computed value from the map.
+	 * <p>
+	 * Use of this method may result in worse performance that
+	 * {@link #remove(Object)}, as some implementations may cancel value
+	 * computation for keys removed by the latter.
+	 *
+	 * @param key
+	 *          The key to remove.
+	 * @return The value removed.
+	 */
+	V removeGet(K key);
+
 	/**
 	 * Remove the given key and it's associated computed value from the map.
 	 *
 	 * @param key
-	 *            The key to remove.
+	 *          The key to remove.
 	 * @return True if the key was in the map, false otherwise.
 	 */
-	boolean remove(K key);
+	default boolean remove(K key) {
+		return removeGet(key) != null;
+	}
 
 	default boolean removeAll(Collection<? extends K> keys) {
 		boolean changed = false;

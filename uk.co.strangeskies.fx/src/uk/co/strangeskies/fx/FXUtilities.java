@@ -22,10 +22,20 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ListChangeListener.Change;
+import javafx.collections.ObservableList;
+import javafx.collections.ObservableSet;
+import javafx.collections.SetChangeListener;
+import javafx.collections.transformation.TransformationList;
 import javafx.fxml.FXMLLoader;
+import uk.co.strangeskies.utilities.collection.computingmap.ComputingHashMap;
+import uk.co.strangeskies.utilities.collection.computingmap.ComputingMap;
 
 /**
  * A collection of general utility methods for working with JavaFX and
@@ -252,5 +262,98 @@ public class FXUtilities {
 				throw new IllegalArgumentException(e);
 			}
 		}
+	}
+
+	public static <T, U> ObservableList<T> map(ObservableList<U> component, Function<U, T> mapper) {
+		return new TransformationList<T, U>(component) {
+			@Override
+			protected void sourceChanged(Change<? extends U> c) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public int getSourceIndex(int index) {
+				// TODO Auto-generated method stub
+				return 0;
+			}
+
+			@Override
+			public T get(int index) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public int size() {
+				// TODO Auto-generated method stub
+				return 0;
+			}
+		};
+	}
+
+	public static <T, U> ObservableSet<T> map(ObservableSet<U> component, Function<U, T> mapper) {
+		@SuppressWarnings("unchecked")
+		ObservableSet<T> set = FXCollections.observableSet();
+
+		ComputingMap<U, T> map = new ComputingHashMap<>(mapper);
+
+		component.addListener((SetChangeListener<U>) event -> {
+			if (event.wasAdded()) {
+				set.add(map.putGet(event.getElementAdded()));
+			}
+
+			if (event.wasRemoved()) {
+				T removed = map.removeGet(event.getElementRemoved());
+				if (!map.values().contains(removed)) {
+					set.remove(event.getElementRemoved());
+				}
+			}
+		});
+
+		return FXCollections.unmodifiableObservableSet(set);
+	}
+
+	public static <T> ObservableList<T> asList(ObservableSet<T> component) {
+		ObservableList<T> list = FXCollections.observableArrayList();
+
+		component.addListener((SetChangeListener<T>) event -> {
+			if (event.wasAdded()) {
+				list.add(event.getElementAdded());
+			}
+
+			if (event.wasRemoved()) {
+				list.remove(event.getElementRemoved());
+			}
+		});
+
+		return FXCollections.unmodifiableObservableList(list);
+	}
+
+	public static <T> ObservableSet<T> asSet(ObservableList<T> component) {
+		@SuppressWarnings("unchecked")
+		ObservableSet<T> set = FXCollections.observableSet();
+
+		component.addListener((ListChangeListener<T>) event -> {
+			boolean removed = false;
+
+			while (event.next()) {
+				if (event.wasAdded()) {
+					set.addAll(event.getAddedSubList());
+				} else if (event.wasRemoved()) {
+					/*
+					 * We can't simply remove everything, as the list may still contain
+					 * duplicates of those removed duplicates
+					 */
+					removed = true;
+				}
+			}
+
+			if (removed) {
+				set.retainAll(component);
+			}
+		});
+
+		return FXCollections.unmodifiableObservableSet(set);
 	}
 }

@@ -18,8 +18,11 @@
  */
 package uk.co.strangeskies.utilities.collection.computingmap;
 
-import java.util.Collections;
+import java.util.AbstractCollection;
+import java.util.AbstractSet;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -129,12 +132,74 @@ public class ComputingEntryHashMap<K, V> implements ComputingMap<K, V> {
 
 	@Override
 	public Set<K> keySet() {
-		return Collections.unmodifiableSet(map.keySet());
+		return new AbstractSet<K>() {
+			@Override
+			public Iterator<K> iterator() {
+				Iterator<K> iterator = map.keySet().iterator();
+
+				return new Iterator<K>() {
+					private K last;
+
+					@Override
+					public boolean hasNext() {
+						return iterator.hasNext();
+					}
+
+					@Override
+					public K next() {
+						return last = iterator.next();
+					}
+
+					@Override
+					public void remove() {
+						ComputingEntryHashMap.this.remove(last);
+					}
+				};
+			}
+
+			@Override
+			public int size() {
+				return map.values().size();
+			}
+		};
+	}
+
+	public Collection<V> values() {
+		return new AbstractCollection<V>() {
+			@Override
+			public Iterator<V> iterator() {
+				Iterator<Entry<K, V>> iterator = map.values().iterator();
+
+				return new Iterator<V>() {
+					private Entry<K, V> last;
+
+					@Override
+					public boolean hasNext() {
+						return iterator.hasNext();
+					}
+
+					@Override
+					public V next() {
+						return (last = iterator.next()).getValue();
+					}
+
+					@Override
+					public void remove() {
+						ComputingEntryHashMap.this.remove(last.getKey());
+					}
+				};
+			}
+
+			@Override
+			public int size() {
+				return map.values().size();
+			}
+		};
 	}
 
 	@Override
-	public boolean remove(K key) {
-		return map.remove(key) != null;
+	public V removeGet(K key) {
+		return map.remove(key).getValue();
 	}
 
 	@Override

@@ -43,7 +43,7 @@ public class NestedJarUrlStreamHandler extends URLStreamHandler {
 	 */
 	@Override
 	protected URLConnection openConnection(URL url) throws IOException {
-		final String resource = url.toString().substring(PROTOCOL_LENGTH);
+		// final String resource = url.toString().substring(PROTOCOL_LENGTH);
 
 		return new NestedJarUrlConnection(url);
 	}

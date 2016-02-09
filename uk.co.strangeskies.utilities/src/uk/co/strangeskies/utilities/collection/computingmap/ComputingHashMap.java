@@ -18,6 +18,7 @@
  */
 package uk.co.strangeskies.utilities.collection.computingmap;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -65,8 +66,13 @@ public class ComputingHashMap<K, V> implements ComputingMap<K, V> {
 	}
 
 	@Override
-	public boolean remove(K key) {
-		return map.remove(key) != null;
+	public Collection<V> values() {
+		return map.values();
+	}
+
+	@Override
+	public V removeGet(K key) {
+		return map.remove(key);
 	}
 
 	@Override

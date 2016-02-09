@@ -33,8 +33,6 @@ import uk.co.strangeskies.utilities.function.ThrowingSupplier;
  * @author Elias N Vasylenko
  */
 public class ContextClassLoaderRunner {
-	private static final String PROTOCOL_HANDLER = "java.protocol.handler.pkgs";
-
 	private final ClassLoader classLoader;
 
 	public ContextClassLoaderRunner(ClassLoader classLoader) {
