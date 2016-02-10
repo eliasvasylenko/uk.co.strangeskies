@@ -32,16 +32,15 @@ import java.util.TreeMap;
  */
 public class StringEscaper {
 	@SuppressWarnings("serial")
-	private final static StringEscaper JAVA = new StringEscaper('\\', "\"\'",
-			new HashMap<String, String>() {
-				{
-					put("t", "\t");
-					put("b", "\b");
-					put("n", "\n");
-					put("r", "\r");
-					put("f", "\f");
-				}
-			});
+	private final static StringEscaper JAVA = new StringEscaper('\\', "\"\'", new HashMap<String, String>() {
+		{
+			put("t", "\t");
+			put("b", "\b");
+			put("n", "\n");
+			put("r", "\r");
+			put("f", "\f");
+		}
+	});
 
 	/**
 	 * @return A string escaper for java string literals.
@@ -51,16 +50,15 @@ public class StringEscaper {
 	}
 
 	@SuppressWarnings("serial")
-	private final static StringEscaper XML = new StringEscaper(
-			new HashMap<String, String>() {
-				{
-					put("&gt;", ">");
-					put("&lt;", "<");
-					put("&quot;", "\"");
-					put("&amp;", "&");
-					put("&apos;", "'");
-				}
-			});
+	private final static StringEscaper XML = new StringEscaper(new HashMap<String, String>() {
+		{
+			put("&gt;", ">");
+			put("&lt;", "<");
+			put("&quot;", "\"");
+			put("&amp;", "&");
+			put("&apos;", "'");
+		}
+	});
 
 	/**
 	 * @return A string escaper for java string literals.
@@ -102,30 +100,23 @@ public class StringEscaper {
 	 *          Strings which should be escaped with the given escape character,
 	 *          mapped to the strings they represent.
 	 */
-	public StringEscaper(char escapeCharacer, String escapingCharacters,
-			Map<String, String> escapeTransforms) {
-		this(composeEscapingTransforms(escapeCharacer, escapingCharacters,
-				escapeTransforms));
+	public StringEscaper(char escapeCharacer, String escapingCharacters, Map<String, String> escapeTransforms) {
+		this(composeEscapingTransforms(escapeCharacer, escapingCharacters, escapeTransforms));
 	}
 
-	private static SortedMap<String, String> composeEscapingTransforms(
-			char escapeCharacer, String escapingCharacters,
+	private static SortedMap<String, String> composeEscapingTransforms(char escapeCharacer, String escapingCharacters,
 			Map<String, String> escapeTransforms) {
 		String escapeCharacterString = ((Character) escapeCharacer).toString();
 
 		SortedMap<String, String> escapedCharacters = new TreeMap<>();
 
-		for (Map.Entry<String, String> escapeTransform : escapeTransforms
-				.entrySet())
-			escapedCharacters.put(escapeCharacterString + escapeTransform.getKey(),
-					escapeTransform.getValue());
+		for (Map.Entry<String, String> escapeTransform : escapeTransforms.entrySet())
+			escapedCharacters.put(escapeCharacterString + escapeTransform.getKey(), escapeTransform.getValue());
 
 		for (Character escapingCharacter : escapingCharacters.toCharArray())
-			escapedCharacters.put(escapeCharacterString + escapingCharacter,
-					escapingCharacter.toString());
+			escapedCharacters.put(escapeCharacterString + escapingCharacter, escapingCharacter.toString());
 
-		escapedCharacters.put(escapeCharacterString, escapeCharacterString
-				+ escapeCharacterString);
+		escapedCharacters.put(escapeCharacterString + escapeCharacterString, escapeCharacterString);
 
 		return escapedCharacters;
 	}
@@ -152,14 +143,11 @@ public class StringEscaper {
 	 */
 	private StringEscaper(SortedMap<String, String> escapeTransforms) {
 		SortedMap<String, String> inverseTransforms = new TreeMap<>();
-		for (Map.Entry<String, String> escapingCharacter : escapeTransforms
-				.entrySet())
-			inverseTransforms.put(escapingCharacter.getValue(),
-					escapingCharacter.getKey());
+		for (Map.Entry<String, String> escapingCharacter : escapeTransforms.entrySet())
+			inverseTransforms.put(escapingCharacter.getValue(), escapingCharacter.getKey());
 
 		this.escapeToSequence = Collections.unmodifiableSortedMap(escapeTransforms);
-		this.sequenceToEscape = Collections
-				.unmodifiableSortedMap(inverseTransforms);
+		this.sequenceToEscape = Collections.unmodifiableSortedMap(inverseTransforms);
 	}
 
 	/**
@@ -211,26 +199,22 @@ public class StringEscaper {
 				/*
 				 * No escapable sequence found for a single character, so look further
 				 */
-				String afterSequenceSoFar = ((Character) (char) (character + 1))
-						.toString();
-				SortedMap<String, String> matches = mapping.subMap(
-						sequenceSoFar.toString(), afterSequenceSoFar);
+				String afterSequenceSoFar = ((Character) (char) (character + 1)).toString();
+				SortedMap<String, String> matches = mapping.subMap(sequenceSoFar.toString(), afterSequenceSoFar);
 				int j = i + 1;
 				while (!matches.isEmpty() && j < chars.length) {
 					char nextLetter = chars[j++];
 
-					afterSequenceSoFar = new StringBuilder(sequenceSoFar).append(
-							(char) (nextLetter + 1)).toString();
+					afterSequenceSoFar = new StringBuilder(sequenceSoFar).append((char) (nextLetter + 1)).toString();
 					sequenceSoFar.append(nextLetter);
 
 					escapedString = mapping.get(sequenceSoFar.toString());
 					if (escapedString != null) {
-						i = j;
+						i = j - 1;
 						break;
 					}
 
-					matches = matches
-							.subMap(sequenceSoFar.toString(), afterSequenceSoFar);
+					matches = matches.subMap(sequenceSoFar.toString(), afterSequenceSoFar);
 				}
 			}
 

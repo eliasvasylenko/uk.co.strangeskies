@@ -3,6 +3,7 @@ Bundle-Name: Strange Skies :: Utilities :: Eclipse
 -buildpath: \
 	${buildpath.eclipse},\
 	${ss;utilities},\
+	${ss;fx},\
 	${ss;mathematics},\
 	${ss;reflection},\
 	org.eclipse.osgi.compatibility.state,\

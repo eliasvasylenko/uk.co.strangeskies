@@ -34,7 +34,7 @@ import uk.co.strangeskies.utilities.Enumeration;
 @SuppressWarnings("javadoc")
 public class StringEscaperTest {
 	@DataPoint
-	public static String SENTENCE = "The small brown dog.";
+	public static final String SENTENCE = "The small brown dog.";
 
 	/**
 	 * Confirm that {@link Enumeration}s are properly initialised when accessed

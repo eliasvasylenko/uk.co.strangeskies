@@ -20,6 +20,8 @@ package uk.co.strangeskies.fx;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.function.Function;
@@ -53,6 +55,8 @@ public class FXUtilities {
 	 * controller. The location of the document is found by convention, according
 	 * to {@link #getResource(Class)}.
 	 * 
+	 * @param <T>
+	 *          The type of the root node
 	 * @param loader
 	 *          The FXML loader to use
 	 * @param controller
@@ -70,6 +74,8 @@ public class FXUtilities {
 	 * controller. The location of the document is found by convention, according
 	 * to {@link #getResource(Class, String)}.
 	 * 
+	 * @param <T>
+	 *          The type of the root node
 	 * @param loader
 	 *          The FXML loader to use
 	 * @param controller
@@ -89,6 +95,8 @@ public class FXUtilities {
 	 * instance. The location of the document is found by convention, according to
 	 * {@link #getResource(Class)}.
 	 * 
+	 * @param <T>
+	 *          The type of the root node
 	 * @param loader
 	 *          The FXML loader to use
 	 * @param controllerClass
@@ -106,6 +114,8 @@ public class FXUtilities {
 	 * instance. The location of the document is found by convention, according to
 	 * {@link #getResource(Class, String)}.
 	 * 
+	 * @param <T>
+	 *          The type of the root node
 	 * @param loader
 	 *          The FXML loader to use
 	 * @param controllerClass
@@ -125,6 +135,8 @@ public class FXUtilities {
 	 * instance. The location of the document is found by convention, according to
 	 * {@link #getResource(Class)}.
 	 * 
+	 * @param <T>
+	 *          The type of the controller
 	 * @param loader
 	 *          The FXML loader to use
 	 * @param controllerClass
@@ -142,6 +154,8 @@ public class FXUtilities {
 	 * instance. The location of the document is found by convention, according to
 	 * {@link #getResource(Class, String)}.
 	 * 
+	 * @param <T>
+	 *          The type of the controller
 	 * @param loader
 	 *          The FXML loader to use
 	 * @param controllerClass
@@ -190,8 +204,9 @@ public class FXUtilities {
 	/**
 	 * Find the {@code .fxml} resource associated with a given controller class by
 	 * location and naming conventions. The location of the file is assumed to be
-	 * the same package as the controller class. The name of the file is determind
-	 * according to the convention described by {@link #getResourceName(Class)}.
+	 * the same package as the controller class. The name of the file is
+	 * determined according to the convention described by
+	 * {@link #getResourceName(Class)}.
 	 * 
 	 * @param controllerClass
 	 *          The controller class whose resource we wish to locate
@@ -243,6 +258,14 @@ public class FXUtilities {
 		return controllerClass.getResource(resourceLocation);
 	}
 
+	/**
+	 * Perform the given action on the JavaFX event thread as soon as possible,
+	 * returning upon completion. This method is safe whether or not the invoking
+	 * thread is the event thread.
+	 * 
+	 * @param runnable
+	 *          The action to execute
+	 */
 	public static void runNow(Runnable runnable) {
 		runNow(() -> {
 			runnable.run();
@@ -250,6 +273,17 @@ public class FXUtilities {
 		});
 	}
 
+	/**
+	 * Perform the given action on the JavaFX event thread as soon as possible,
+	 * returning the result upon completion. This method is safe whether or not
+	 * the invoking thread is the event thread.
+	 * 
+	 * @param <T>
+	 *          The type of value to result from the action
+	 * @param runnable
+	 *          The action to execute
+	 * @return The result of invoking the given supplier
+	 */
 	public static <T> T runNow(Supplier<T> runnable) {
 		if (Platform.isFxApplicationThread()) {
 			return runnable.get();
@@ -267,27 +301,87 @@ public class FXUtilities {
 	public static <T, U> ObservableList<T> map(ObservableList<U> component, Function<U, T> mapper) {
 		return new TransformationList<T, U>(component) {
 			@Override
-			protected void sourceChanged(Change<? extends U> c) {
-				// TODO Auto-generated method stub
-
-			}
-
-			@Override
-			public int getSourceIndex(int index) {
-				// TODO Auto-generated method stub
-				return 0;
-			}
-
-			@Override
 			public T get(int index) {
-				// TODO Auto-generated method stub
-				return null;
+				return mapper.apply(getSource().get(index));
 			}
 
 			@Override
 			public int size() {
-				// TODO Auto-generated method stub
-				return 0;
+				return getSource().size();
+			}
+
+			@Override
+			public int getSourceIndex(int index) {
+				return index;
+			}
+
+			@Override
+			protected void sourceChanged(Change<? extends U> change) {
+				fireChange(new Change<T>(this) {
+					@Override
+					public boolean wasAdded() {
+						return change.wasAdded();
+					}
+
+					@Override
+					public boolean wasRemoved() {
+						return change.wasRemoved();
+					}
+
+					@Override
+					public boolean wasReplaced() {
+						return change.wasReplaced();
+					}
+
+					@Override
+					public boolean wasUpdated() {
+						return change.wasUpdated();
+					}
+
+					@Override
+					public boolean wasPermutated() {
+						return change.wasPermutated();
+					}
+
+					@Override
+					public int getPermutation(int i) {
+						return change.getPermutation(i);
+					}
+
+					@Override
+					protected int[] getPermutation() {
+						throw new AssertionError();
+					}
+
+					@Override
+					public List<T> getRemoved() {
+						List<T> removed = new ArrayList<>(change.getRemovedSize());
+						for (U element : change.getRemoved()) {
+							removed.add(mapper.apply(element));
+						}
+						return removed;
+					}
+
+					@Override
+					public int getFrom() {
+						return change.getFrom();
+					}
+
+					@Override
+					public int getTo() {
+						return change.getTo();
+					}
+
+					@Override
+					public boolean next() {
+						return change.next();
+					}
+
+					@Override
+					public void reset() {
+						change.reset();
+					}
+				});
 			}
 		};
 	}

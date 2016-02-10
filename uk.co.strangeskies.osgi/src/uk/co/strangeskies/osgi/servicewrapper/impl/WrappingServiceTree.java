@@ -25,27 +25,24 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 
 import uk.co.strangeskies.utilities.collection.MultiMap;
-
 
 class WrappingServiceTree {
 	private final ServiceReference<?> serviceReference;
 	private final WrappingServiceTreeNode root;
 
-	WrappingServiceTree(
-			ServiceReference<?> serviceReference,
+	WrappingServiceTree(ServiceReference<?> serviceReference,
 			MultiMap<Class<?>, ManagedServiceWrapper<?>, ? extends Set<ManagedServiceWrapper<?>>> wrappedServiceClasses) {
 		this.serviceReference = serviceReference;
-		root = new WrappingServiceTreeNode(serviceReference.getBundle()
-				.getBundleContext().getService(serviceReference),
+		root = new WrappingServiceTreeNode(serviceReference.getBundle().getBundleContext().getService(serviceReference),
 				getProperties(serviceReference));
 
 		Set<Class<?>> classes = getClasses(serviceReference);
 
-		SortedSet<ManagedServiceWrapper<?>> orderedServiceWrappers = new TreeSet<>(
-				new ManagedServiceWrapperComparator());
+		SortedSet<ManagedServiceWrapper<?>> orderedServiceWrappers = new TreeSet<>(new ManagedServiceWrapperComparator());
 		orderedServiceWrappers.addAll(wrappedServiceClasses.getAll(classes));
 
 		Set<WrappingServiceTreeNode> workingSet = new HashSet<>();
@@ -54,8 +51,7 @@ class WrappingServiceTree {
 		WrappingServiceTreeNode wrappingService;
 		for (ManagedServiceWrapper<?> serviceWrapper : orderedServiceWrappers)
 			for (WrappingServiceTreeNode service : new HashSet<>(workingSet))
-				if (service.isVisible()
-						&& (wrappingService = service.wrap(serviceWrapper, classes)) != null)
+				if (service.isVisible() && (wrappingService = service.wrap(serviceWrapper, classes)) != null)
 					workingSet.add(wrappingService);
 	}
 
@@ -75,8 +71,7 @@ class WrappingServiceTree {
 
 	}
 
-	private static Hashtable<String, Object> getProperties(
-			ServiceReference<?> serviceReference) {
+	private static Hashtable<String, Object> getProperties(ServiceReference<?> serviceReference) {
 		Hashtable<String, Object> properties = new Hashtable<>();
 		for (String propertyKey : serviceReference.getPropertyKeys()) {
 			properties.put(propertyKey, serviceReference.getProperty(propertyKey));
@@ -100,6 +95,6 @@ class WrappingServiceTree {
 	}
 
 	private static String[] getClassNames(ServiceReference<?> serviceReference) {
-		return (String[]) serviceReference.getProperty("objectClass");
+		return (String[]) serviceReference.getProperty(Constants.OBJECTCLASS);
 	}
 }
