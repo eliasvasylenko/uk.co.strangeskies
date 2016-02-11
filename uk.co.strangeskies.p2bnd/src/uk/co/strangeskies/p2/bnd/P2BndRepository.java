@@ -50,7 +50,7 @@ import uk.co.strangeskies.bnd.ReporterLog;
 import uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper;
 import uk.co.strangeskies.p2.P2Repository;
 import uk.co.strangeskies.utilities.Log;
-import uk.co.strangeskies.utilities.classpath.Classpath;
+import uk.co.strangeskies.utilities.classpath.ManifestUtilities;
 import uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner;
 
 /**
@@ -98,7 +98,7 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 	private Reporter reporter;
 
 	public P2BndRepository() {
-		Manifest manifest = Classpath.getManifest(getClass());
+		Manifest manifest = ManifestUtilities.getManifest(getClass());
 
 		Set<URL> frameworkUrls = new HashSet<>();
 		try {

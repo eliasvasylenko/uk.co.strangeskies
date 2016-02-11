@@ -24,64 +24,56 @@ import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
+import uk.co.strangeskies.utilities.classpath.Attribute;
+import uk.co.strangeskies.utilities.classpath.AttributeProperty;
 import uk.co.strangeskies.utilities.classpath.ManifestUtilities;
+import uk.co.strangeskies.utilities.classpath.PropertyType;
 
 /**
  * @author Elias N Vasylenko
  */
 @SuppressWarnings("javadoc")
 @RunWith(Theories.class)
-public class ValueParsingTest {
-	public static class ValueTheory {
-		private final String value;
+public class AttributeParsingTest {
+	public static class AttributeParsingTheory extends Attribute {
 		private final String parses;
 
-		private String parsed;
+		private Attribute parsed;
 
-		public ValueTheory(String parses, String value) {
-			this.value = value;
+		public AttributeParsingTheory(String parses, String name, AttributeProperty<?>... attributeProperties) {
+			super(name, attributeProperties);
 
 			this.parses = parses;
 		}
 
-		public String value() {
-			return value;
-		}
-
-		public String parse() {
+		public Attribute parse() {
 			if (parsed == null) {
-				parsed = ManifestUtilities.parseValueString(parses);
+				parsed = ManifestUtilities.parseAttribute(parses);
 			}
 			return parsed;
 		}
 	}
 
-	private static ValueTheory newTheory(String parses, String value) {
-		return new ValueTheory(parses, value);
+	private static AttributeParsingTheory newTheory(String parses, String name,
+			AttributeProperty<?>... attributeProperties) {
+		return new AttributeParsingTheory(parses, name, attributeProperties);
 	}
 
 	@DataPoint
-	public static final ValueTheory simpleString = newTheory("simpleString", "simpleString");
+	public static final AttributeParsingTheory simpleString = newTheory("simpleString", "simpleString");
 
 	@DataPoint
-	public static final ValueTheory doubleQuotedString = newTheory("\"quotedString\"", "quotedString");
-
-	@DataPoint
-	public static final ValueTheory singleQuotedString = newTheory("'quotedString'", "quotedString");
-
-	@DataPoint
-	public static final ValueTheory doubleQuotedEscapedString = newTheory("\"quoted\\\"String\"", "quoted\"String");
-
-	@DataPoint
-	public static final ValueTheory singleQuotedEscapedString = newTheory("'quoted\\'String'", "quoted'String");
+	public static final AttributeParsingTheory typedString = newTheory("att;typedString:String=test", "att",
+			new AttributeProperty<>("typedString", PropertyType.STRING, "test"));
 
 	@Theory
-	public void testValueParserValid(ValueTheory theory) {
+	public void testManifestEntryAttributeParserValid(AttributeParsingTheory theory) {
 		Assert.assertNotNull(theory.parse());
 	}
 
 	@Theory
-	public void testValueParser(ValueTheory theory) {
-		Assert.assertEquals(theory.value(), theory.parse());
+	public void testManifestEntryAttributeNameParser(AttributeParsingTheory theory) {
+		Assert.assertNotNull(theory.parse().name());
+		Assert.assertEquals(theory.name(), theory.parse().name());
 	}
 }

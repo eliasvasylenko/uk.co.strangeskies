@@ -126,13 +126,6 @@ public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 		return value;
 	}
 
-	@Override
-	public V removeGet(K key) {
-		V value = super.get(key);
-		super.remove(key);
-		return value;
-	}
-
 	public boolean removeAll(Set<K> keys) {
 		boolean changed = false;
 		for (K key : keys)
