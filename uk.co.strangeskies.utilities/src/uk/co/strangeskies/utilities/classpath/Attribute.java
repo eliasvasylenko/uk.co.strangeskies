@@ -27,8 +27,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
-import uk.co.strangeskies.utilities.text.StringEscaper;
-
 public class Attribute {
 	private final String name;
 	private final Map<String, AttributeProperty<?>> properties;
@@ -72,19 +70,7 @@ public class Attribute {
 		StringBuilder builder = new StringBuilder(name);
 
 		for (AttributeProperty<?> property : properties.values()) {
-			String valueText;
-
-			if (property.value() != null) {
-				String value = property.composeString();
-				String escapedValue = StringEscaper.java().escape(value);
-				if (!escapedValue.equals(value)) {
-					value = "\"" + escapedValue + "\"";
-				}
-				valueText = "=" + value;
-			} else {
-				valueText = "";
-			}
-			builder.append(";" + property.name() + valueText);
+			builder.append(";").append(property);
 		}
 
 		return builder.toString();

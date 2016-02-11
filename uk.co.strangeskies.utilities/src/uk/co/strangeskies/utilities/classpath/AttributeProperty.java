@@ -18,6 +18,8 @@
  */
 package uk.co.strangeskies.utilities.classpath;
 
+import java.util.Objects;
+
 public class AttributeProperty<T> {
 	private final String name;
 	private final PropertyType<T> type;
@@ -29,8 +31,23 @@ public class AttributeProperty<T> {
 		this.value = value;
 	}
 
-	public static <T> AttributeProperty<T> parseString(String name, PropertyType<T> type, String valueString) {
+	public static <T> AttributeProperty<T> parseValueString(String name, PropertyType<T> type, String valueString) {
 		return new AttributeProperty<>(name, type, type.parseString(valueString));
+	}
+
+	public static AttributeProperty<?> untyped(String name, Object value) {
+		return new AttributeProperty<>(name, null, value);
+	}
+
+	public String composeValueString() {
+		String valueString;
+		if (type != null) {
+			valueString = type.composeString(value);
+		} else {
+			valueString = value.toString();
+		}
+
+		return valueString;
 	}
 
 	public String name() {
@@ -45,7 +62,40 @@ public class AttributeProperty<T> {
 		return value;
 	}
 
-	public String composeString() {
-		return type.composeString(value);
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder(name);
+
+		if (type != null) {
+			builder.append(":").append(type.name());
+		}
+		if (value != null) {
+			String valueString = composeValueString();
+
+			if (!valueString.matches(ManifestAttributeParser.SIMPLE_VALUE)) {
+				valueString = "\"" + ManifestAttributeParser.QUOTE_ESCAPER.escape(valueString) + "\"";
+			}
+
+			builder.append("=").append(valueString);
+		}
+
+		return builder.toString();
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hashCode(name) ^ Objects.hashCode(type) ^ Objects.hashCode(value);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof Attribute)) {
+			return false;
+		}
+
+		AttributeProperty<?> otherProperty = (AttributeProperty<?>) obj;
+
+		return Objects.equals(name, otherProperty.name()) && Objects.equals(type, otherProperty.type())
+				&& Objects.equals(value, otherProperty.value());
 	}
 }

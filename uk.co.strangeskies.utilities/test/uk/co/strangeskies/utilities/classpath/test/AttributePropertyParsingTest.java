@@ -60,7 +60,27 @@ public class AttributePropertyParsingTest {
 
 	@DataPoint
 	public static final AttributePropertyParsingTheory<String> simpleString = newTheory("simpleString=test",
-			"simpleString", PropertyType.STRING, "test");
+			"simpleString", null, "test");
+
+	@DataPoint
+	public static final AttributePropertyParsingTheory<String[]> singleStringArray = newTheory(
+			"singleStringArray:List<String>=\"test\"", "singleStringArray", PropertyType.STRINGS, new String[] { "test" });
+
+	@DataPoint
+	public static final AttributePropertyParsingTheory<String[]> stringArray = newTheory(
+			"stringArray:List<String>=\"test,test2\"", "stringArray", PropertyType.STRINGS, new String[] { "test", "test2" });
+
+	public static final AttributePropertyParsingTheory<String[]> emptyStringArray = newTheory(
+			"emptyStringArray:List<String>=\"\"", "emptyStringArray", PropertyType.STRINGS, new String[0]);
+
+	@DataPoint
+	public static final AttributePropertyParsingTheory<String[]> stringArrayWithCommas = newTheory(
+			"stringArrayWithCommas:List<String>=\"test,te\\\\,st2,te\\\\\\\\,st3\"", "stringArrayWithCommas", PropertyType.STRINGS,
+			new String[] { "test", "te,st2" , "te\\,st3" });
+
+	@DataPoint
+	public static final AttributePropertyParsingTheory<String> emptyType = newTheory("emptyType:=test", "emptyType",
+			PropertyType.DIRECTIVE, "test");
 
 	@DataPoint
 	public static final AttributePropertyParsingTheory<String> typedString = newTheory("typedString:String=test",
@@ -87,13 +107,16 @@ public class AttributePropertyParsingTest {
 
 	@Theory
 	public void testManifestEntryAttributeTypeParser(AttributePropertyParsingTheory<?> theory) {
-		Assert.assertNotNull(theory.parse().type());
 		Assert.assertEquals(theory.type(), theory.parse().type());
 	}
 
 	@Theory
 	public void testManifestEntryAttributeValueParser(AttributePropertyParsingTheory<?> theory) {
 		Assert.assertNotNull(theory.parse().value());
-		Assert.assertEquals(theory.value(), theory.parse().value());
+		if (theory.value().getClass().isArray()) {
+			Assert.assertArrayEquals((Object[]) theory.value(), (Object[]) theory.parse().value());
+		} else {
+			Assert.assertEquals(theory.value(), theory.parse().value());
+		}
 	}
 }

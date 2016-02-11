@@ -67,13 +67,7 @@ public class ValueParsingTest {
 	public static final ValueTheory doubleQuotedString = newTheory("\"quotedString\"", "quotedString");
 
 	@DataPoint
-	public static final ValueTheory singleQuotedString = newTheory("'quotedString'", "quotedString");
-
-	@DataPoint
 	public static final ValueTheory doubleQuotedEscapedString = newTheory("\"quoted\\\"String\"", "quoted\"String");
-
-	@DataPoint
-	public static final ValueTheory singleQuotedEscapedString = newTheory("'quoted\\'String'", "quoted'String");
 
 	@Theory
 	public void testValueParserValid(ValueTheory theory) {

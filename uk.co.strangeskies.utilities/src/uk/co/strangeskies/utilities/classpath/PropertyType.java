@@ -27,9 +27,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class PropertyType<T> {
 	private static final List<PropertyType<?>> DEFAULT_TYPES = new ArrayList<>();
+
+	public static final PropertyType<String> DIRECTIVE = reg(
+			new PropertyType<>("", String.class, Function.identity(), Function.identity()));
 
 	public static final PropertyType<String> STRING = reg(new PropertyType<>(String.class, Function.identity()));
 
@@ -71,7 +75,25 @@ public class PropertyType<T> {
 		@SuppressWarnings("unchecked")
 		Class<T[]> arrayType = (Class<T[]>) Array.newInstance(type(), 0).getClass();
 
-		return new PropertyType<>("List<" + name() + ">", arrayType, null, null);
+		@SuppressWarnings("unchecked")
+		Function<String, T[]> parseToArray = s -> {
+			String[] split = s.split("(?<!\\\\),", Integer.MIN_VALUE);
+
+			List<T> items = new ArrayList<>();
+			for (String substring : split) {
+				substring = substring.replaceAll("\\\\,", ",").trim();
+
+				items.add(parser.apply(substring));
+			}
+
+			return items.toArray((T[]) Array.newInstance(type, split.length));
+		};
+
+		Function<T[], String> composeFromArray = a -> {
+			return Arrays.stream(a).map(composer::apply).map(s -> s.replaceAll(",", "\\,")).collect(Collectors.joining(","));
+		};
+
+		return new PropertyType<>("List<" + name() + ">", arrayType, parseToArray, composeFromArray);
 	}
 
 	public String name() {

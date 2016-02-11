@@ -31,6 +31,13 @@ import uk.co.strangeskies.utilities.text.StringEscaper;
 import uk.co.strangeskies.utilities.tuple.Pair;
 
 public class ManifestAttributeParser {
+	static final StringEscaper QUOTE_ESCAPER = new StringEscaper('\\', "\"");
+
+	static final String ALPHANUMERIC = "a-zA-Z0-9";
+	static final String KEY = "[\\-\\._" + ALPHANUMERIC + "]+";
+	static final String SIMPLE_VALUE = "[^;,]*";
+	static final String WHITESPACE = "\\s*";
+
 	private final Parser<? extends List<? extends Attribute>> attributes;
 	private final Parser<? extends Attribute> attribute;
 	private final Parser<? extends AttributeProperty<?>> attributeProperty;
@@ -43,26 +50,22 @@ public class ManifestAttributeParser {
 	public ManifestAttributeParser(Collection<? extends PropertyType<?>> knownPropertyTypes) {
 		List<PropertyType<?>> finalKnownPropertyTypes = new ArrayList<>(knownPropertyTypes);
 
-		Parser<PropertyType<?>> type = matching("[_a-zA-Z0-9<>]*")
-				.transform(s -> PropertyType.fromName(s, finalKnownPropertyTypes));
+		Parser<PropertyType<?>> type = matching(
+				"([" + ALPHANUMERIC + "]+(<[" + ALPHANUMERIC + "]+>)?)|[" + ALPHANUMERIC + "]*")
+						.transform(s -> PropertyType.fromName(s, finalKnownPropertyTypes));
 
-		Parser<String> singleQuotedString = matching("([^\\'\\\\]*(\\\\.[^\'\\\\]*)*)")
-				.transform(StringEscaper.java()::unescape).append("\\'").prepend("\\'");
+		Parser<String> doubleQuotedString = matching("([^\"\\\\]*(\\\\.[^\"\\\\]*)*)").prepend("\"").append("\"")
+				.transform(QUOTE_ESCAPER::unescape);
 
-		Parser<String> doubleQuotedString = matching("([^\"\\\\]*(\\\\.[^\"\\\\]*)*)")
-				.transform(StringEscaper.java()::unescape).append("\"").prepend("\"");
+		valueString = doubleQuotedString.orElse(matching(SIMPLE_VALUE));
 
-		valueString = singleQuotedString.orElse(doubleQuotedString).orElse(matching("[_a-zA-Z0-9\\.]*"));
-
-		attributeProperty = matching("[_a-zA-Z0-9\\.]*")
-				.appendTransform(type.prepend(":").orElse(PropertyType.STRING), this::newPair).append("=")
+		attributeProperty = matching(KEY).appendTransform(type.prepend(":").orElse(() -> null), this::newPair).append("=")
 				.appendTransform(valueString, this::newAttributeProperty);
 
-		attribute = matching("[_a-zA-Z0-9\\.]*").appendTransform(
-				Parser.list(attributeProperty, "\\s*;\\s*", 0).prepend("\\s*;\\s*").orElse(Collections.emptyList()),
-				Attribute::new);
+		attribute = matching(KEY).appendTransform(Parser.list(attributeProperty, WHITESPACE + ";" + WHITESPACE, 0)
+				.prepend(WHITESPACE + ";" + WHITESPACE).orElse(Collections.emptyList()), Attribute::new);
 
-		attributes = Parser.list(attribute, "\\s*,\\s*");
+		attributes = Parser.list(attribute, WHITESPACE + "," + WHITESPACE);
 	}
 
 	private Pair<String, PropertyType<?>> newPair(String name, PropertyType<?> type) {
@@ -70,7 +73,14 @@ public class ManifestAttributeParser {
 	}
 
 	private AttributeProperty<?> newAttributeProperty(Pair<String, PropertyType<?>> nameAndType, String valueString) {
-		return AttributeProperty.parseString(nameAndType.getLeft(), nameAndType.getRight(), valueString);
+		String name = nameAndType.getLeft();
+		PropertyType<?> type = nameAndType.getRight();
+
+		if (type == null) {
+			return AttributeProperty.untyped(name, valueString);
+		} else {
+			return AttributeProperty.parseValueString(nameAndType.getLeft(), nameAndType.getRight(), valueString);
+		}
 	}
 
 	public String parseValueString(String valueString) {
