@@ -1,13 +1,21 @@
-/*******************************************************************************
- * Copyright (c) 2014 BestSolution.at and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*
+ * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
  *
- * Contributors:
- *     Tom Schindl <tom.schindl@bestsolution.at> - initial API and implementation
- *******************************************************************************/
+ * This file is part of uk.co.strangeskies.eclipse.
+ *
+ * uk.co.strangeskies.eclipse is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * uk.co.strangeskies.eclipse is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with uk.co.strangeskies.eclipse.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package uk.co.strangeskies.eclipse;
 
 import java.lang.reflect.ParameterizedType;
