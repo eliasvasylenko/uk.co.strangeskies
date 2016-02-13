@@ -31,11 +31,12 @@ import uk.co.strangeskies.utilities.text.StringEscaper;
 import uk.co.strangeskies.utilities.tuple.Pair;
 
 public class ManifestAttributeParser {
-	static final StringEscaper QUOTE_ESCAPER = new StringEscaper('\\', "\"");
+	static final StringEscaper DOUBLE_QUOTE_ESCAPER = new StringEscaper('\\', "\"");
+	static final StringEscaper SINGLE_QUOTE_ESCAPER = new StringEscaper('\\', "'");
 
 	static final String ALPHANUMERIC = "a-zA-Z0-9";
 	static final String KEY = "[\\-\\._" + ALPHANUMERIC + "]+";
-	static final String SIMPLE_VALUE = "[^;,]*";
+	static final String SIMPLE_VALUE = "[^;,=]*";
 	static final String WHITESPACE = "\\s*";
 
 	private final Parser<? extends List<? extends Attribute>> attributes;
@@ -55,9 +56,11 @@ public class ManifestAttributeParser {
 						.transform(s -> PropertyType.fromName(s, finalKnownPropertyTypes));
 
 		Parser<String> doubleQuotedString = matching("([^\"\\\\]*(\\\\.[^\"\\\\]*)*)").prepend("\"").append("\"")
-				.transform(QUOTE_ESCAPER::unescape);
+				.transform(DOUBLE_QUOTE_ESCAPER::unescape);
+		Parser<String> singleQuotedString = matching("([^'\\\\]*(\\\\.[^\'\\\\]*)*)").prepend("'").append("'")
+				.transform(SINGLE_QUOTE_ESCAPER::unescape);
 
-		valueString = doubleQuotedString.orElse(matching(SIMPLE_VALUE));
+		valueString = doubleQuotedString.orElse(singleQuotedString).orElse(matching(SIMPLE_VALUE));
 
 		attributeProperty = matching(KEY).appendTransform(type.prepend(":").orElse(() -> null), this::newPair).append("=")
 				.appendTransform(valueString, this::newAttributeProperty);

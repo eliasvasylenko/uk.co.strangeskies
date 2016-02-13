@@ -36,30 +36,33 @@ public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 		public LinkedEntry(K key) {
 			super(key);
 
-			previous = bounds;
-			next = bounds.next;
-
-			next.previous = bounds.next = this;
+			insert();
 		}
 
 		@Override
 		public V getValue() {
-			previous.next = next;
-			next.previous = previous;
-
-			next = bounds.next;
-			previous = bounds;
-
-			previous.next = this;
-			next.previous = this;
+			uninsert();
+			insert();
 
 			return super.getValue();
 		}
 
-		@Override
-		public void remove() {
+		private void insert() {
+			previous = bounds;
+			next = bounds.next;
+
+			next.previous = previous.next = this;
+		}
+
+		private void uninsert() {
 			previous.next = next;
 			next.previous = previous;
+		}
+
+		@Override
+		public void remove() {
+			uninsert();
+			super.remove();
 		}
 	}
 
@@ -81,21 +84,21 @@ public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 	}
 
 	@Override
-	protected Entry<K, V> createEntry(K key) {
+	protected synchronized Entry<K, V> createEntry(K key) {
 		return new LinkedEntry(key);
 	}
 
-	public int cacheSize() {
+	public synchronized int cacheSize() {
 		return maximumSize;
 	}
 
 	@Override
-	public V get(K key) {
+	public synchronized V get(K key) {
 		return super.get(key);
 	}
 
 	@Override
-	public boolean put(K key) {
+	public synchronized boolean put(K key) {
 		boolean added = super.put(key);
 
 		if (size() > maximumSize)
@@ -105,7 +108,7 @@ public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 	}
 
 	@Override
-	public boolean putAll(Collection<? extends K> keys) {
+	public synchronized boolean putAll(Collection<? extends K> keys) {
 		boolean changed = false;
 		for (K key : keys)
 			changed = super.put(key) | changed;
@@ -117,7 +120,7 @@ public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 	}
 
 	@Override
-	public V putGet(K key, Consumer<V> wasPresent, Consumer<V> wasMissing) {
+	public synchronized V putGet(K key, Consumer<V> wasPresent, Consumer<V> wasMissing) {
 		V value = super.putGet(key, wasPresent, wasMissing);
 
 		if (size() > maximumSize)
@@ -126,7 +129,7 @@ public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 		return value;
 	}
 
-	public boolean removeAll(Set<K> keys) {
+	public synchronized boolean removeAll(Set<K> keys) {
 		boolean changed = false;
 		for (K key : keys)
 			changed = remove(key) | changed;
@@ -134,13 +137,13 @@ public class LRUCacheComputingMap<K, V> extends CacheComputingMap<K, V> {
 	}
 
 	@Override
-	public boolean clear() {
+	public synchronized boolean clear() {
 		bounds.previous = bounds.next = bounds;
 		return super.clear();
 	}
 
 	@Override
-	public boolean isEmpty() {
+	public synchronized boolean isEmpty() {
 		return bounds.previous == bounds;
 	}
 }

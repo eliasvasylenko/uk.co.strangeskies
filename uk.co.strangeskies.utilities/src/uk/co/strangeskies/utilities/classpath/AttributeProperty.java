@@ -73,7 +73,7 @@ public class AttributeProperty<T> {
 			String valueString = composeValueString();
 
 			if (!valueString.matches(ManifestAttributeParser.SIMPLE_VALUE)) {
-				valueString = "\"" + ManifestAttributeParser.QUOTE_ESCAPER.escape(valueString) + "\"";
+				valueString = "\"" + ManifestAttributeParser.DOUBLE_QUOTE_ESCAPER.escape(valueString) + "\"";
 			}
 
 			builder.append("=").append(valueString);

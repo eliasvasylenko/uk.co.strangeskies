@@ -60,14 +60,14 @@ public class AttributeParsingTest {
 	}
 
 	@DataPoint
-	public static final AttributeParsingTheory simpleString = newTheory("simpleString", "simpleString");
+	public static final AttributeParsingTheory SIMPLE_STRING = newTheory("simpleString", "simpleString");
 
 	@DataPoint
-	public static final AttributeParsingTheory typedProperty = newTheory("typedProperty;property1:String=test",
+	public static final AttributeParsingTheory TYPED_PROPERTY = newTheory("typedProperty;property1:String=test",
 			"typedProperty", new AttributeProperty<>("property1", PropertyType.STRING, "test"));
 
 	@DataPoint
-	public static final AttributeParsingTheory twoTypedProperties = newTheory(
+	public static final AttributeParsingTheory TWO_TYPED_PROPERTIES = newTheory(
 			"twoTypedProperties;typedString:String=test;typedString2:String=\"test2\"", "twoTypedProperties",
 			new AttributeProperty<>("typedString", PropertyType.STRING, "test"),
 			new AttributeProperty<>("typedString2", PropertyType.STRING, "test2"));

@@ -75,7 +75,7 @@ public class ComputingEntryHashMap<K, V> implements ComputingMap<K, V> {
 	}
 
 	protected ComputingEntryHashMap(ComputingEntryHashMap<K, V> other) {
-		map = other.map;
+		map = new HashMap<>(other.map);
 		computation = other.computation;
 	}
 
@@ -199,7 +199,10 @@ public class ComputingEntryHashMap<K, V> implements ComputingMap<K, V> {
 
 	@Override
 	public V removeGet(K key) {
-		return map.remove(key).getValue();
+		Entry<K, V> entry = map.remove(key);
+		V value = entry.getValue();
+		entry.remove();
+		return value;
 	}
 
 	@Override
