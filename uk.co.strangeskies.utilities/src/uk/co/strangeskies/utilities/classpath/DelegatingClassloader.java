@@ -47,18 +47,13 @@ public class DelegatingClassloader extends ClassLoader {
 
 	@Override
 	protected Class<?> findClass(String name) throws ClassNotFoundException {
-		String path = name.replace('.', '/') + ".class";
-		URL url = findResource(path);
-		if (url == null) {
-			throw new ClassNotFoundException(name);
+		for (ClassLoader loader : delegateClassLoaders) {
+			try {
+				return loader.loadClass(name);
+			} catch (ClassNotFoundException e) {}
 		}
-		ByteBuffer byteCode;
-		try {
-			byteCode = loadResource(url);
-		} catch (IOException e) {
-			throw new ClassNotFoundException(name, e);
-		}
-		return defineClass(name, byteCode, null);
+		throw new ClassNotFoundException(
+				"Class '" + name + "' not found in any classloader '" + getParent() + "' or '" + delegateClassLoaders + "'");
 	}
 
 	private ByteBuffer loadResource(URL url) throws IOException {
