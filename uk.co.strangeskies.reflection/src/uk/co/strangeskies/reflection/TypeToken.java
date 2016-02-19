@@ -39,6 +39,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -71,8 +72,7 @@ import uk.co.strangeskies.utilities.tuple.Pair;
  * @param <T>
  *          This is the type which the TypeToken object references.
  */
-public class TypeToken<T>
-		implements DeepCopyable<TypeToken<T>>, Reified<TypeToken<T>> {
+public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeToken<T>> {
 	/**
 	 * Treatment of wildcards for {@link TypeToken}s created over parameterized
 	 * types.
@@ -153,8 +153,7 @@ public class TypeToken<T>
 	public @interface Capture {}
 
 	private static ComputingMap<AnnotatedType, Pair<Resolver, Type>> RESOLVER_CACHE = new LRUCacheComputingMap<>(
-			annotatedType -> incorporateAnnotatedType(new Resolver(), annotatedType),
-			128, true);
+			annotatedType -> incorporateAnnotatedType(new Resolver(), annotatedType), 128, true);
 
 	private final Resolver resolver;
 
@@ -244,13 +243,25 @@ public class TypeToken<T>
 
 			if (annotatedType instanceof AnnotatedParameterizedType) {
 				if (!resolvedParameters.isEmpty())
-					type = substituteAnnotatedTypeVariables(annotatedType,
-							resolvedParameters);
+					type = substituteAnnotatedTypeVariables(annotatedType, resolvedParameters);
 				else
 					type = annotatedType;
 
-				resolvedParameters = AnnotatedParameterizedTypes
-						.getAllTypeArguments((AnnotatedParameterizedType) type);
+				resolvedParameters = AnnotatedParameterizedTypes.getAllTypeArguments((AnnotatedParameterizedType) type);
+
+				Annotation defaultAnnotation = getWildcardsAnnotation(annotatedType);
+				if (defaultAnnotation != null) {
+					Iterator<Map.Entry<TypeVariable<?>, AnnotatedType>> parameterIterator = resolvedParameters.entrySet()
+							.iterator();
+					while (parameterIterator.hasNext()) {
+						Map.Entry<TypeVariable<?>, AnnotatedType> parameter = parameterIterator.next();
+
+						Annotation givenAnnotation = getWildcardsAnnotation(parameter.getValue());
+						if (givenAnnotation == null) {
+							parameter.setValue(AnnotatedTypes.over(parameter.getValue().getType(), defaultAnnotation));
+						}
+					}
+				}
 			} else {
 				type = annotatedType;
 
@@ -260,12 +271,20 @@ public class TypeToken<T>
 			subclass = subclass.getSuperclass();
 		} while (!subclass.equals(TypeToken.class));
 
-		return AnnotatedTypes.wrap(((AnnotatedParameterizedType) type)
-				.getAnnotatedActualTypeArguments()[0]);
+		return resolvedParameters.values().iterator().next();
 	}
 
-	private AnnotatedType substituteAnnotatedTypeVariables(
-			AnnotatedType annotatedType,
+	private Annotation getWildcardsAnnotation(AnnotatedType type) {
+		Annotation annotation = type.getAnnotation(Preserve.class);
+		if (annotation == null)
+			annotation = type.getAnnotation(Capture.class);
+		if (annotation == null)
+			annotation = type.getAnnotation(Infer.class);
+
+		return annotation;
+	}
+
+	private AnnotatedType substituteAnnotatedTypeVariables(AnnotatedType annotatedType,
 			Map<TypeVariable<?>, AnnotatedType> resolvedParameters) {
 		if (annotatedType instanceof AnnotatedParameterizedType) {
 			/*
@@ -276,61 +295,49 @@ public class TypeToken<T>
 					.getAllTypeArguments((AnnotatedParameterizedType) annotatedType);
 
 			for (TypeVariable<?> parameter : allArguments.keySet())
-				allArguments.put(parameter, substituteAnnotatedTypeVariables(
-						allArguments.get(parameter), resolvedParameters));
+				allArguments.put(parameter, substituteAnnotatedTypeVariables(allArguments.get(parameter), resolvedParameters));
 
 			/*
 			 * Deal with annotations on types mentioned by parameters, preserving any
 			 * parameters which are wildcards themselves.
 			 */
 			Class<?> rawType = Types.getRawType(annotatedType.getType());
-			return AnnotatedParameterizedTypes.from(rawType, allArguments::get,
-					annotatedType.getAnnotations());
+			return AnnotatedParameterizedTypes.from(rawType, allArguments::get, annotatedType.getAnnotations());
 		} else if (annotatedType instanceof AnnotatedTypeVariable) {
-			return resolvedParameters.getOrDefault(annotatedType.getType(),
-					annotatedType);
+			return resolvedParameters.getOrDefault(annotatedType.getType(), annotatedType);
 		} else if (annotatedType instanceof AnnotatedWildcardType) {
 			AnnotatedWildcardType annotatedWildcardType = (AnnotatedWildcardType) annotatedType;
 
 			if (annotatedWildcardType.getAnnotatedLowerBounds().length > 0) {
-				annotatedWildcardType = AnnotatedWildcardTypes.lowerBounded(
-						Arrays.asList(annotatedType.getAnnotations()),
-						substituteAnnotatedTypeVariables(
-								annotatedWildcardType.getAnnotatedLowerBounds(),
-								resolvedParameters));
+				annotatedWildcardType = AnnotatedWildcardTypes.lowerBounded(Arrays.asList(annotatedType.getAnnotations()),
+						substituteAnnotatedTypeVariables(annotatedWildcardType.getAnnotatedLowerBounds(), resolvedParameters));
 
 			} else if (annotatedWildcardType.getAnnotatedUpperBounds().length > 0) {
-				annotatedWildcardType = AnnotatedWildcardTypes.upperBounded(
-						Arrays.asList(annotatedType.getAnnotations()),
-						substituteAnnotatedTypeVariables(
-								annotatedWildcardType.getAnnotatedUpperBounds(),
-								resolvedParameters));
+				annotatedWildcardType = AnnotatedWildcardTypes.upperBounded(Arrays.asList(annotatedType.getAnnotations()),
+						substituteAnnotatedTypeVariables(annotatedWildcardType.getAnnotatedUpperBounds(), resolvedParameters));
 
 			}
 
 			return annotatedWildcardType;
 		} else if (annotatedType instanceof AnnotatedArrayType) {
 			return AnnotatedArrayTypes.fromComponent(
-					substituteAnnotatedTypeVariables(((AnnotatedArrayType) annotatedType)
-							.getAnnotatedGenericComponentType(), resolvedParameters),
+					substituteAnnotatedTypeVariables(((AnnotatedArrayType) annotatedType).getAnnotatedGenericComponentType(),
+							resolvedParameters),
 					annotatedType.getAnnotations());
 		} else {
 			return annotatedType;
 		}
 	}
 
-	private AnnotatedType[] substituteAnnotatedTypeVariables(
-			AnnotatedType[] annotatedTypes,
+	private AnnotatedType[] substituteAnnotatedTypeVariables(AnnotatedType[] annotatedTypes,
 			Map<TypeVariable<?>, AnnotatedType> resolvedParameters) {
 		AnnotatedType[] types = new AnnotatedType[annotatedTypes.length];
 		for (int i = 0; i < types.length; i++)
-			types[i] = substituteAnnotatedTypeVariables(annotatedTypes[i],
-					resolvedParameters);
+			types[i] = substituteAnnotatedTypeVariables(annotatedTypes[i], resolvedParameters);
 		return types;
 	}
 
-	private static Pair<Resolver, Type> incorporateAnnotatedType(
-			Resolver resolver, AnnotatedType annotatedType) {
+	private static Pair<Resolver, Type> incorporateAnnotatedType(Resolver resolver, AnnotatedType annotatedType) {
 		if (resolver == null)
 			resolver = new Resolver();
 
@@ -342,22 +349,17 @@ public class TypeToken<T>
 		return new Pair<>(resolver, type);
 	}
 
-	private static Pair<Resolver, Type> incorporateAnnotatedType(
-			AnnotatedType annotatedType) {
+	private static Pair<Resolver, Type> incorporateAnnotatedType(AnnotatedType annotatedType) {
 		Pair<Resolver, Type> resolvedType = RESOLVER_CACHE.putGet(annotatedType);
 
 		HashMap<InferenceVariable, InferenceVariable> map = new HashMap<>();
-		return new Pair<>(resolvedType.getLeft().deepCopy(map),
-				new TypeSubstitution(map).resolve(resolvedType.getRight()));
+		return new Pair<>(resolvedType.getLeft().deepCopy(map), new TypeSubstitution(map).resolve(resolvedType.getRight()));
 	}
 
-	private static Type substituteAnnotatedWildcards(AnnotatedType annotatedType,
-			Resolver resolver) {
-		Wildcards behaviour = annotatedType.isAnnotationPresent(Preserve.class)
-				? Wildcards.PRESERVE
+	private static Type substituteAnnotatedWildcards(AnnotatedType annotatedType, Resolver resolver) {
+		Wildcards behaviour = annotatedType.isAnnotationPresent(Preserve.class) ? Wildcards.PRESERVE
 				: annotatedType.isAnnotationPresent(Infer.class) ? Wildcards.INFER
-						: annotatedType.isAnnotationPresent(Capture.class)
-								? Wildcards.CAPTURE : Wildcards.PRESERVE;
+						: annotatedType.isAnnotationPresent(Capture.class) ? Wildcards.CAPTURE : Wildcards.PRESERVE;
 
 		if (annotatedType instanceof AnnotatedParameterizedType) {
 			/*
@@ -365,9 +367,7 @@ public class TypeToken<T>
 			 * parameters which are wildcards themselves.
 			 */
 			Type[] arguments = substituteAnnotatedWildcards(
-					((AnnotatedParameterizedType) annotatedType)
-							.getAnnotatedActualTypeArguments(),
-					resolver);
+					((AnnotatedParameterizedType) annotatedType).getAnnotatedActualTypeArguments(), resolver);
 
 			/*
 			 * Collect all arguments into a mapping from type variables, including on
@@ -375,8 +375,7 @@ public class TypeToken<T>
 			 */
 			Map<TypeVariable<?>, Type> allArguments = ParameterizedTypes
 					.getAllTypeArguments((ParameterizedType) annotatedType.getType());
-			TypeVariable<?>[] parameters = Types.getRawType(annotatedType.getType())
-					.getTypeParameters();
+			TypeVariable<?>[] parameters = Types.getRawType(annotatedType.getType()).getTypeParameters();
 			for (int i = 0; i < arguments.length; i++)
 				allArguments.put(parameters[i], arguments[i]);
 
@@ -384,17 +383,13 @@ public class TypeToken<T>
 			 * New parameterized type
 			 */
 			ParameterizedType parameterizedType = (ParameterizedType) ParameterizedTypes
-					.uncheckedFrom(Types.getRawType(annotatedType.getType()),
-							allArguments::get);
-			if (allArguments.values().stream()
-					.anyMatch(WildcardType.class::isInstance)) {
+					.uncheckedFrom(Types.getRawType(annotatedType.getType()), allArguments::get);
+			if (allArguments.values().stream().anyMatch(WildcardType.class::isInstance)) {
 				if (behaviour == Wildcards.CAPTURE) {
-					parameterizedType = TypeVariableCapture
-							.captureWildcardArguments(parameterizedType);
+					parameterizedType = TypeVariableCapture.captureWildcardArguments(parameterizedType);
 				} else if (behaviour == Wildcards.INFER) {
 					Resolver inferenceResolver = new Resolver(resolver.getBounds());
-					parameterizedType = inferenceResolver
-							.inferOverTypeArguments(parameterizedType);
+					parameterizedType = inferenceResolver.inferOverTypeArguments(parameterizedType);
 					resolver.getBounds().incorporate(inferenceResolver.getBounds());
 				}
 			}
@@ -404,12 +399,12 @@ public class TypeToken<T>
 			WildcardType wildcardType;
 
 			if (annotatedWildcardType.getAnnotatedLowerBounds().length > 0) {
-				wildcardType = WildcardTypes.lowerBounded(substituteAnnotatedWildcards(
-						annotatedWildcardType.getAnnotatedLowerBounds(), resolver));
+				wildcardType = WildcardTypes
+						.lowerBounded(substituteAnnotatedWildcards(annotatedWildcardType.getAnnotatedLowerBounds(), resolver));
 
 			} else if (annotatedWildcardType.getAnnotatedUpperBounds().length > 0) {
-				wildcardType = WildcardTypes.upperBounded(substituteAnnotatedWildcards(
-						annotatedWildcardType.getAnnotatedUpperBounds(), resolver));
+				wildcardType = WildcardTypes
+						.upperBounded(substituteAnnotatedWildcards(annotatedWildcardType.getAnnotatedUpperBounds(), resolver));
 
 			} else {
 				wildcardType = WildcardTypes.unbounded();
@@ -437,16 +432,14 @@ public class TypeToken<T>
 
 			return type;
 		} else if (annotatedType instanceof AnnotatedArrayType) {
-			return ArrayTypes.fromComponentType(
-					substituteAnnotatedWildcards(((AnnotatedArrayType) annotatedType)
-							.getAnnotatedGenericComponentType(), resolver));
+			return ArrayTypes.fromComponentType(substituteAnnotatedWildcards(
+					((AnnotatedArrayType) annotatedType).getAnnotatedGenericComponentType(), resolver));
 		} else {
 			return annotatedType.getType();
 		}
 	}
 
-	private static Type[] substituteAnnotatedWildcards(
-			AnnotatedType[] annotatedTypes, Resolver resolver) {
+	private static Type[] substituteAnnotatedWildcards(AnnotatedType[] annotatedTypes, Resolver resolver) {
 		Type[] types = new Type[annotatedTypes.length];
 		for (int i = 0; i < types.length; i++)
 			types[i] = substituteAnnotatedWildcards(annotatedTypes[i], resolver);
@@ -490,8 +483,7 @@ public class TypeToken<T>
 	 *          How to deal with wildcard parameters on the given type.
 	 * @return A TypeToken over the requested type.
 	 */
-	public static TypeToken<?> over(Resolver resolver, Type type,
-			Wildcards wildcards) {
+	public static TypeToken<?> over(Resolver resolver, Type type, Wildcards wildcards) {
 		return new TypeToken<>(resolver.copy(), type, wildcards);
 	}
 
@@ -532,11 +524,9 @@ public class TypeToken<T>
 	 *          The requested type.
 	 * @return A TypeToken over the requested type.
 	 */
-	public static <T> TypeToken<? extends T> over(Resolver resolver,
-			Class<T> rawType) {
+	public static <T> TypeToken<? extends T> over(Resolver resolver, Class<T> rawType) {
 		resolver.inferOverTypeParameters(rawType);
-		return new TypeToken<>(resolver.copy(),
-				resolver.resolveTypeParameters(rawType));
+		return new TypeToken<>(resolver.copy(), resolver.resolveTypeParameters(rawType));
 	}
 
 	@Override
@@ -551,14 +541,12 @@ public class TypeToken<T>
 
 	@Override
 	public TypeToken<T> getThis() {
-		// TODO Auto-generated method stub
 		return Reified.super.getThis();
 	}
 
 	@Override
 	public TypeToken<TypeToken<T>> getThisType() {
-		return new TypeToken<TypeToken<T>>() {}
-				.withTypeArgument(new TypeParameter<T>() {}, this);
+		return new TypeToken<TypeToken<T>>() {}.withTypeArgument(new TypeParameter<T>() {}, this);
 	}
 
 	@Override
@@ -570,11 +558,9 @@ public class TypeToken<T>
 	public TypeToken<T> deepCopy() {
 		Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions = new HashMap<>();
 
-		Resolver resolver = getInternalResolver()
-				.deepCopy(inferenceVariableSubstitutions);
+		Resolver resolver = getInternalResolver().deepCopy(inferenceVariableSubstitutions);
 
-		return new TypeToken<T>(resolver, declaration,
-				new TypeSubstitution(inferenceVariableSubstitutions).resolve(type));
+		return new TypeToken<T>(resolver, declaration, new TypeSubstitution(inferenceVariableSubstitutions).resolve(type));
 	}
 
 	/**
@@ -610,10 +596,8 @@ public class TypeToken<T>
 	 *          The inference variables whose bounds are to be incorporated.
 	 * @return The newly derived {@link TypeToken}.
 	 */
-	public TypeToken<T> withBounds(BoundSet bounds,
-			Collection<? extends InferenceVariable> inferenceVariables) {
-		return new TypeToken<T>(getResolverWithBounds(bounds, inferenceVariables),
-				getType());
+	public TypeToken<T> withBounds(BoundSet bounds, Collection<? extends InferenceVariable> inferenceVariables) {
+		return new TypeToken<T>(getResolverWithBounds(bounds, inferenceVariables), getType());
 	}
 
 	/**
@@ -649,10 +633,8 @@ public class TypeToken<T>
 	 *          The inference variables whose bounds are to be incorporated.
 	 * @return The newly derived {@link TypeToken}.
 	 */
-	public TypeToken<T> withBoundsFrom(Resolver bounds,
-			Collection<? extends InferenceVariable> inferenceVariables) {
-		return new TypeToken<T>(
-				getResolverWithBoundsFrom(bounds, inferenceVariables), getType());
+	public TypeToken<T> withBoundsFrom(Resolver bounds, Collection<? extends InferenceVariable> inferenceVariables) {
+		return new TypeToken<T>(getResolverWithBoundsFrom(bounds, inferenceVariables), getType());
 	}
 
 	/**
@@ -737,11 +719,10 @@ public class TypeToken<T>
 	public TypeToken<? extends T> getExtending(Wildcards wildcards) {
 		if (wildcards == Wildcards.INFER) {
 			Resolver resolver = getResolver();
-			return (TypeToken<? extends T>) new TypeToken<>(resolver, resolver
-					.inferOverWildcardType(WildcardTypes.upperBounded(getType())));
+			return (TypeToken<? extends T>) new TypeToken<>(resolver,
+					resolver.inferOverWildcardType(WildcardTypes.upperBounded(getType())));
 		} else {
-			return (TypeToken<? extends T>) over(
-					WildcardTypes.upperBounded(getType()), wildcards);
+			return (TypeToken<? extends T>) over(WildcardTypes.upperBounded(getType()), wildcards);
 		}
 	}
 
@@ -778,11 +759,9 @@ public class TypeToken<T>
 	public TypeToken<? super T> getSuper(Wildcards wildcards) {
 		if (wildcards == Wildcards.INFER) {
 			Resolver resolver = getResolver();
-			return new TypeToken<>(resolver, resolver
-					.inferOverWildcardType(WildcardTypes.lowerBounded(getType())));
+			return new TypeToken<>(resolver, resolver.inferOverWildcardType(WildcardTypes.lowerBounded(getType())));
 		} else {
-			return (TypeToken<? super T>) over(WildcardTypes.lowerBounded(getType()),
-					wildcards);
+			return (TypeToken<? super T>) over(WildcardTypes.lowerBounded(getType()), wildcards);
 		}
 	}
 
@@ -826,8 +805,7 @@ public class TypeToken<T>
 		return resolver;
 	}
 
-	private Resolver getResolverWithBounds(BoundSet bounds,
-			Collection<? extends InferenceVariable> inferenceVariables) {
+	private Resolver getResolverWithBounds(BoundSet bounds, Collection<? extends InferenceVariable> inferenceVariables) {
 		Resolver resolver = getResolver();
 		resolver.getBounds().incorporate(bounds, inferenceVariables);
 		return resolver;
@@ -841,15 +819,13 @@ public class TypeToken<T>
 
 	private Resolver getResolverWithBoundsFrom(Resolver bounds,
 			Collection<? extends InferenceVariable> inferenceVariables) {
-		Resolver resolver = getResolverWithBounds(bounds.getBounds(),
-				inferenceVariables);
+		Resolver resolver = getResolverWithBounds(bounds.getBounds(), inferenceVariables);
 		resolver.incorporateWildcardCaptures(bounds.getWildcardCaptures());
 		return resolver;
 	}
 
 	private Resolver getResolverWithBoundsFrom(TypeToken<?> type) {
-		return getResolverWithBoundsFrom(type.getInternalResolver(),
-				type.getRelatedInferenceVariables());
+		return getResolverWithBoundsFrom(type.getInternalResolver(), type.getRelatedInferenceVariables());
 	}
 
 	@Override
@@ -927,8 +903,7 @@ public class TypeToken<T>
 	public boolean isAssignableTo(TypeToken<?> type) {
 		try {
 			Resolver resolver = getResolverWithBoundsFrom(type);
-			ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, getType(),
-					type.getType(), resolver.getBounds());
+			ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, getType(), type.getType(), resolver.getBounds());
 			return true;
 		} catch (Exception e) {
 			return false;
@@ -986,8 +961,7 @@ public class TypeToken<T>
 	public boolean isContainedBy(TypeToken<?> type) {
 		try {
 			Resolver resolver = getResolverWithBoundsFrom(type);
-			ConstraintFormula.reduce(Kind.CONTAINMENT, getType(), type.getType(),
-					resolver.getBounds());
+			ConstraintFormula.reduce(Kind.CONTAINMENT, getType(), type.getType(), resolver.getBounds());
 			return true;
 		} catch (Exception e) {
 			return false;
@@ -1061,8 +1035,7 @@ public class TypeToken<T>
 	 */
 	public TypeToken<T> withEquality(Type type) {
 		Resolver resolver = getResolver();
-		ConstraintFormula.reduce(Kind.EQUALITY, type, getType(),
-				resolver.getBounds());
+		ConstraintFormula.reduce(Kind.EQUALITY, type, getType(), resolver.getBounds());
 
 		return new TypeToken<>(resolver, getType());
 	}
@@ -1081,8 +1054,7 @@ public class TypeToken<T>
 	 */
 	public TypeToken<T> withEquality(TypeToken<?> type) {
 		Resolver resolver = getResolverWithBoundsFrom(type);
-		ConstraintFormula.reduce(Kind.EQUALITY, type.getType(), getType(),
-				resolver.getBounds());
+		ConstraintFormula.reduce(Kind.EQUALITY, type.getType(), getType(), resolver.getBounds());
 
 		return new TypeToken<>(resolver, resolveType());
 	}
@@ -1101,8 +1073,7 @@ public class TypeToken<T>
 	 */
 	public TypeToken<T> withLowerBound(Type type) {
 		Resolver resolver = getResolver();
-		ConstraintFormula.reduce(Kind.SUBTYPE, type, getType(),
-				resolver.getBounds());
+		ConstraintFormula.reduce(Kind.SUBTYPE, type, getType(), resolver.getBounds());
 
 		return new TypeToken<>(resolver, getType());
 	}
@@ -1121,8 +1092,7 @@ public class TypeToken<T>
 	 */
 	public TypeToken<T> withLowerBound(TypeToken<?> type) {
 		Resolver resolver = getResolverWithBoundsFrom(type);
-		ConstraintFormula.reduce(Kind.SUBTYPE, type.getType(), getType(),
-				resolver.getBounds());
+		ConstraintFormula.reduce(Kind.SUBTYPE, type.getType(), getType(), resolver.getBounds());
 
 		return new TypeToken<>(resolver, resolveType());
 	}
@@ -1140,8 +1110,7 @@ public class TypeToken<T>
 	 */
 	public TypeToken<T> withUpperBound(Type type) {
 		Resolver resolver = getResolver();
-		ConstraintFormula.reduce(Kind.SUBTYPE, getType(), type,
-				resolver.getBounds());
+		ConstraintFormula.reduce(Kind.SUBTYPE, getType(), type, resolver.getBounds());
 
 		return new TypeToken<>(resolver, getType());
 	}
@@ -1159,8 +1128,7 @@ public class TypeToken<T>
 	 */
 	public TypeToken<T> withUpperBound(TypeToken<?> type) {
 		Resolver resolver = getResolverWithBoundsFrom(type);
-		ConstraintFormula.reduce(Kind.SUBTYPE, getType(), type.getType(),
-				resolver.getBounds());
+		ConstraintFormula.reduce(Kind.SUBTYPE, getType(), type.getType(), resolver.getBounds());
 
 		return new TypeToken<>(resolver, resolveType());
 	}
@@ -1178,8 +1146,7 @@ public class TypeToken<T>
 	 */
 	public TypeToken<T> withLooseCompatibility(Type type) {
 		Resolver resolver = getResolver();
-		ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, getType(), type,
-				resolver.getBounds());
+		ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, getType(), type, resolver.getBounds());
 
 		return new TypeToken<>(resolver, getType());
 	}
@@ -1197,8 +1164,7 @@ public class TypeToken<T>
 	 */
 	public TypeToken<T> withLooseCompatibility(TypeToken<?> type) {
 		Resolver resolver = getResolverWithBoundsFrom(type);
-		ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, getType(),
-				type.getType(), resolver.getBounds());
+		ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, getType(), type.getType(), resolver.getBounds());
 
 		return new TypeToken<>(resolver, resolveType());
 	}
@@ -1214,26 +1180,23 @@ public class TypeToken<T>
 	 * @return A TypeToken over the supertype of the requested class.
 	 */
 	@SuppressWarnings("unchecked")
-	public <U> TypeToken<? extends U> resolveSupertypeParameters(
-			Class<U> superclass) {
+	public <U> TypeToken<? extends U> resolveSupertypeParameters(Class<U> superclass) {
 		if (!ParameterizedTypes.isGeneric(superclass))
 			return TypeToken.over(superclass);
 
-		if (superclass.equals(type) || (type instanceof ParameterizedType
-				&& ((ParameterizedType) type).getRawType().equals(superclass)))
+		if (superclass.equals(type)
+				|| (type instanceof ParameterizedType && ((ParameterizedType) type).getRawType().equals(superclass)))
 			return (TypeToken<? extends U>) this;
 
 		Resolver resolver = getInternalResolver();
 
-		Type parameterizedType = ParameterizedTypes.uncheckedFrom(superclass,
-				i -> null);
+		Type parameterizedType = ParameterizedTypes.uncheckedFrom(superclass, i -> null);
 
 		if (resolver.getBounds().getInferenceVariables().contains(getType())) {
 			resolver.inferOverTypeParameters(superclass);
 			parameterizedType = resolver.resolveType(parameterizedType);
 
-			ConstraintFormula.reduce(Kind.SUBTYPE, getType(), parameterizedType,
-					resolver.getBounds());
+			ConstraintFormula.reduce(Kind.SUBTYPE, getType(), parameterizedType, resolver.getBounds());
 		} else
 			resolver.incorporateTypeHierarchy(getRawType(), superclass);
 
@@ -1256,26 +1219,23 @@ public class TypeToken<T>
 	 *         class such that it be a subtype.
 	 */
 	@SuppressWarnings("unchecked")
-	public <U> TypeToken<? extends U> resolveSubtypeParameters(
-			Class<U> subclass) {
+	public <U> TypeToken<? extends U> resolveSubtypeParameters(Class<U> subclass) {
 		if (!ParameterizedTypes.isGeneric(subclass))
 			return TypeToken.over(subclass);
 
-		if (subclass.equals(type) || (type instanceof ParameterizedType
-				&& ((ParameterizedType) type).getRawType().equals(subclass)))
+		if (subclass.equals(type)
+				|| (type instanceof ParameterizedType && ((ParameterizedType) type).getRawType().equals(subclass)))
 			return (TypeToken<? extends U>) this;
 
 		Resolver resolver = getInternalResolver();
 
-		Type parameterizedType = ParameterizedTypes.uncheckedFrom(subclass,
-				i -> null);
+		Type parameterizedType = ParameterizedTypes.uncheckedFrom(subclass, i -> null);
 
 		if (resolver.getBounds().containsInferenceVariable(getType())) {
 			resolver.inferOverTypeParameters(subclass);
 			parameterizedType = resolver.resolveType(parameterizedType);
 
-			ConstraintFormula.reduce(Kind.SUBTYPE, parameterizedType, getType(),
-					resolver.getBounds());
+			ConstraintFormula.reduce(Kind.SUBTYPE, parameterizedType, getType(), resolver.getBounds());
 		} else
 			resolver.incorporateTypeHierarchy(subclass, getRawType());
 
@@ -1337,8 +1297,8 @@ public class TypeToken<T>
 	 * @return A list of all type parameters present on all raw types.
 	 */
 	public List<TypeVariable<?>> getAllTypeParameters() {
-		return getRawTypes().stream().map(ParameterizedTypes::getAllTypeParameters)
-				.flatMap(Collection::stream).collect(Collectors.toList());
+		return getRawTypes().stream().map(ParameterizedTypes::getAllTypeParameters).flatMap(Collection::stream)
+				.collect(Collectors.toList());
 	}
 
 	/**
@@ -1359,9 +1319,7 @@ public class TypeToken<T>
 	public Map<TypeVariable<?>, Type> getAllTypeArguments() {
 		return getRawTypes().stream()
 				.flatMap(t -> ParameterizedTypes
-						.getAllTypeArguments(
-								(ParameterizedType) resolveSupertypeParameters(t).getType())
-						.entrySet().stream())
+						.getAllTypeArguments((ParameterizedType) resolveSupertypeParameters(t).getType()).entrySet().stream())
 				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 	}
 
@@ -1394,8 +1352,7 @@ public class TypeToken<T>
 		Type typeArgument = resolveTypeArgument(typeParameter.getType());
 
 		return (TypeToken<U>) over(getResolver(), typeArgument,
-				InferenceVariable.isProperType(typeArgument) ? Wildcards.PRESERVE
-						: Wildcards.INFER).resolve();
+				InferenceVariable.isProperType(typeArgument) ? Wildcards.PRESERVE : Wildcards.INFER).resolve();
 	}
 
 	/**
@@ -1424,10 +1381,8 @@ public class TypeToken<T>
 	 *         substitution.
 	 */
 	@SuppressWarnings("unchecked")
-	public <V> TypeToken<T> withTypeArgument(TypeParameter<V> parameter,
-			TypeToken<V> argument) {
-		return (TypeToken<T>) withBoundsFrom(argument)
-				.withTypeArgument(parameter.getType(), argument.getType());
+	public <V> TypeToken<T> withTypeArgument(TypeParameter<V> parameter, TypeToken<V> argument) {
+		return (TypeToken<T>) withBoundsFrom(argument).withTypeArgument(parameter.getType(), argument.getType());
 	}
 
 	/**
@@ -1443,13 +1398,11 @@ public class TypeToken<T>
 	 *         substitution.
 	 */
 	@SuppressWarnings("unchecked")
-	public <V> TypeToken<T> withTypeArgument(TypeParameter<V> parameter,
-			Class<V> argument) {
+	public <V> TypeToken<T> withTypeArgument(TypeParameter<V> parameter, Class<V> argument) {
 		return (TypeToken<T>) withTypeArgument(parameter.getType(), argument);
 	}
 
-	private TypeToken<?> withTypeArgument(TypeVariable<?> parameter,
-			Type argument) {
+	private TypeToken<?> withTypeArgument(TypeVariable<?> parameter, Type argument) {
 		return new TypeToken<>(new Resolver(getInternalResolver().getBounds()),
 				new TypeSubstitution().where(parameter, argument).resolve(getType()));
 	}
@@ -1465,12 +1418,9 @@ public class TypeToken<T>
 	}
 
 	@SuppressWarnings("unchecked")
-	private Set<? extends Invokable<T, T>> getConstructors(
-			Predicate<Constructor<T>> filter) {
-		return Arrays.stream(getRawType().getConstructors())
-				.filter(c -> filter.test((Constructor<T>) c))
-				.map(m -> Invokable.over((Constructor<T>) m, this))
-				.collect(Collectors.toSet());
+	private Set<? extends Invokable<T, T>> getConstructors(Predicate<Constructor<T>> filter) {
+		return Arrays.stream(getRawType().getConstructors()).filter(c -> filter.test((Constructor<T>) c))
+				.map(m -> Invokable.over((Constructor<T>) m, this)).collect(Collectors.toSet());
 	}
 
 	/**
@@ -1493,14 +1443,11 @@ public class TypeToken<T>
 	 * @return A list of all {@link Method} objects applicable to this type,
 	 *         wrapped in {@link Invokable} instances.
 	 */
-	public Set<? extends Invokable<? super T, ?>> getMethods(
-			Predicate<Method> filter) {
-		Stream<Method> methodStream = getRawTypes().stream()
-				.flatMap(t -> Arrays.stream(t.getMethods()));
+	public Set<? extends Invokable<? super T, ?>> getMethods(Predicate<Method> filter) {
+		Stream<Method> methodStream = getRawTypes().stream().flatMap(t -> Arrays.stream(t.getMethods()));
 
 		if (getRawTypes().stream().allMatch(Types::isInterface))
-			methodStream = Stream.concat(methodStream,
-					Arrays.stream(Object.class.getMethods()));
+			methodStream = Stream.concat(methodStream, Arrays.stream(Object.class.getMethods()));
 
 		return methodStream.filter(filter).map(m -> {
 			Invokable<T, ?> invokable = Invokable.over(m, this);
@@ -1534,10 +1481,8 @@ public class TypeToken<T>
 	 *         with bounds on any generic type parameters derived from the
 	 *         argument types.
 	 */
-	public Invokable<? super T, ? extends T> resolveConstructorOverload(
-			Type argument, Type... arguments) {
-		return resolveConstructorOverload(Stream
-				.concat(Arrays.asList(argument).stream(), Arrays.stream(arguments))
+	public Invokable<? super T, ? extends T> resolveConstructorOverload(Type argument, Type... arguments) {
+		return resolveConstructorOverload(Stream.concat(Arrays.asList(argument).stream(), Arrays.stream(arguments))
 				.map(TypeToken::over).collect(Collectors.toList()));
 	}
 
@@ -1551,8 +1496,7 @@ public class TypeToken<T>
 	 *         with bounds on any generic type parameters derived from the
 	 *         argument types.
 	 */
-	public Invokable<? super T, ? extends T> resolveConstructorOverload(
-			TypeToken<?>... arguments) {
+	public Invokable<? super T, ? extends T> resolveConstructorOverload(TypeToken<?>... arguments) {
 		return resolveConstructorOverload(Arrays.asList(arguments));
 	}
 
@@ -1566,15 +1510,13 @@ public class TypeToken<T>
 	 *         with bounds on any generic type parameters derived from the
 	 *         argument types.
 	 */
-	public Invokable<? super T, ? extends T> resolveConstructorOverload(
-			List<? extends TypeToken<?>> arguments) {
+	public Invokable<? super T, ? extends T> resolveConstructorOverload(List<? extends TypeToken<?>> arguments) {
 		Set<? extends Invokable<? super T, ? extends T>> candidates = getConstructors(
 				m -> isArgumentCountValid(m, arguments.size()));
 
 		if (candidates.isEmpty())
 			throw new IllegalArgumentException(
-					"Cannot find any applicable constructor in '" + this
-							+ "' for arguments '" + arguments + "'");
+					"Cannot find any applicable constructor in '" + this + "' for arguments '" + arguments + "'");
 
 		candidates = Invokable.resolveApplicableInvokables(candidates, arguments);
 
@@ -1595,12 +1537,9 @@ public class TypeToken<T>
 	 *         with bounds on any generic type parameters derived from the
 	 *         argument types.
 	 */
-	public Invokable<? super T, ?> resolveMethodOverload(String name,
-			Type argument, Type... arguments) {
-		return resolveMethodOverload(name,
-				Stream
-						.concat(Arrays.asList(argument).stream(), Arrays.stream(arguments))
-						.map(TypeToken::over).collect(Collectors.toList()));
+	public Invokable<? super T, ?> resolveMethodOverload(String name, Type argument, Type... arguments) {
+		return resolveMethodOverload(name, Stream.concat(Arrays.asList(argument).stream(), Arrays.stream(arguments))
+				.map(TypeToken::over).collect(Collectors.toList()));
 	}
 
 	/**
@@ -1615,8 +1554,7 @@ public class TypeToken<T>
 	 *         with bounds on any generic type parameters derived from the
 	 *         argument types.
 	 */
-	public Invokable<? super T, ?> resolveMethodOverload(String name,
-			TypeToken<?>... arguments) {
+	public Invokable<? super T, ?> resolveMethodOverload(String name, TypeToken<?>... arguments) {
 		return resolveMethodOverload(name, Arrays.asList(arguments));
 	}
 
@@ -1632,15 +1570,13 @@ public class TypeToken<T>
 	 *         with bounds on any generic type parameters derived from the
 	 *         argument types.
 	 */
-	public Invokable<? super T, ?> resolveMethodOverload(String name,
-			List<? extends TypeToken<?>> arguments) {
+	public Invokable<? super T, ?> resolveMethodOverload(String name, List<? extends TypeToken<?>> arguments) {
 		Set<? extends Invokable<? super T, ? extends Object>> candidates = getMethods(
-				m -> m.getName().equals(name)
-						&& isArgumentCountValid(m, arguments.size()));
+				m -> m.getName().equals(name) && isArgumentCountValid(m, arguments.size()));
 
 		if (candidates.isEmpty())
-			throw new IllegalArgumentException("Cannot find any method '" + name
-					+ "' in '" + this + "' for arguments '" + arguments + "'");
+			throw new IllegalArgumentException(
+					"Cannot find any method '" + name + "' in '" + this + "' for arguments '" + arguments + "'");
 
 		candidates = Invokable.resolveApplicableInvokables(candidates, arguments);
 
@@ -1648,8 +1584,7 @@ public class TypeToken<T>
 	}
 
 	private boolean isArgumentCountValid(Executable method, int arguments) {
-		return (method.isVarArgs() ? method.getParameterCount() <= arguments + 1
-				: method.getParameterCount() == arguments);
+		return (method.isVarArgs() ? method.getParameterCount() <= arguments + 1 : method.getParameterCount() == arguments);
 	}
 
 	/**
@@ -1672,8 +1607,7 @@ public class TypeToken<T>
 	public TypeToken<T> captureInferenceVariables() {
 		Resolver resolver = getResolver();
 
-		TypeVariableCapture.captureInferenceVariables(
-				InferenceVariable.getMentionedBy(resolver.resolveType(getType())),
+		TypeVariableCapture.captureInferenceVariables(InferenceVariable.getMentionedBy(resolver.resolveType(getType())),
 				resolver.getBounds());
 
 		return withBounds(resolver.getBounds());
@@ -1728,8 +1662,7 @@ public class TypeToken<T>
 	 */
 	public Set<InferenceVariable> getRemainingInferenceVariableDependencies() {
 		return getInferenceVariablesMentioned().stream()
-				.flatMap(d -> getInternalResolver().getBounds().getBoundsOn(d)
-						.getRemainingDependencies().stream())
+				.flatMap(d -> getInternalResolver().getBounds().getBoundsOn(d).getRemainingDependencies().stream())
 				.collect(Collectors.toSet());
 	}
 
@@ -1743,8 +1676,7 @@ public class TypeToken<T>
 	 */
 	public Set<InferenceVariable> getRelatedInferenceVariables() {
 		return getInferenceVariablesMentioned().stream()
-				.flatMap(d -> getInternalResolver().getBounds().getBoundsOn(d)
-						.getRelated().stream())
+				.flatMap(d -> getInternalResolver().getBounds().getBoundsOn(d).getRelated().stream())
 				.collect(Collectors.toSet());
 	}
 
@@ -1765,8 +1697,7 @@ public class TypeToken<T>
 	 *          this type token.
 	 */
 	public void incorporateInto(BoundSet bounds) {
-		bounds.incorporate(getInternalResolver().getBounds(),
-				getInferenceVariablesMentioned());
+		bounds.incorporate(getInternalResolver().getBounds(), getInferenceVariablesMentioned());
 	}
 
 	/**
@@ -1780,11 +1711,9 @@ public class TypeToken<T>
 	public void incorporateInto(Resolver resolver) {
 		Type type = resolveType();
 
-		resolver.getBounds().incorporate(getInternalResolver().getBounds(),
-				InferenceVariable.getMentionedBy(type));
+		resolver.getBounds().incorporate(getInternalResolver().getBounds(), InferenceVariable.getMentionedBy(type));
 
-		resolver.incorporateWildcardCaptures(
-				getInternalResolver().getWildcardCaptures());
+		resolver.incorporateWildcardCaptures(getInternalResolver().getWildcardCaptures());
 		resolver.captureType(type);
 	}
 
@@ -1800,8 +1729,7 @@ public class TypeToken<T>
 	 *         wildcards substituted for those wildcards.
 	 */
 	public TypeToken<?> resubstituteCapturedWildcards() {
-		return new TypeToken<T>(getResolver(),
-				getInternalResolver().resubstituteCapturedWildcards(type));
+		return new TypeToken<T>(getResolver(), getInternalResolver().resubstituteCapturedWildcards(type));
 	}
 
 	/**

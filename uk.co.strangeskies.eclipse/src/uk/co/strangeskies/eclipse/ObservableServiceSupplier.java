@@ -65,13 +65,12 @@ public class ObservableServiceSupplier extends ExtendedObjectSupplier {
 					? (Class<T>) ((ParameterizedType) elementType).getRawType() : (Class<T>) elementType;
 
 			context.addServiceListener(this, "(" + Constants.OBJECTCLASS + "=" + this.elementType.getName() + ")");
+
+			serviceChanged(null);
 		}
 
 		@Override
 		public void serviceChanged(ServiceEvent event) {
-			System.out.println("ev: " + event);
-			System.out.println("ev: " + event);
-			System.out.println("ev: " + event);
 			try {
 				List<ServiceReference<T>> newReferences = new ArrayList<>(context.getServiceReferences(elementType, null));
 				Collections.sort(newReferences);
