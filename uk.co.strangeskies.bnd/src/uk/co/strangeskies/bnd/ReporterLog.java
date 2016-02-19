@@ -18,9 +18,6 @@
  */
 package uk.co.strangeskies.bnd;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
 import aQute.service.reporter.Reporter;
 import uk.co.strangeskies.utilities.Log;
 
@@ -46,13 +43,5 @@ public class ReporterLog implements Log {
 			reporter.error("%s", message);
 			break;
 		}
-	}
-
-	@Override
-	public void log(Level level, String message, Throwable exception) {
-		StringWriter writer = new StringWriter();
-		exception.printStackTrace(new PrintWriter(writer));
-
-		log(level, message + " " + writer.toString());
 	}
 }
