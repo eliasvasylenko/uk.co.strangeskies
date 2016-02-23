@@ -73,6 +73,14 @@ public final class AnnotatedTypes {
 			for (Annotation annotation : annotations)
 				this.annotations.put(annotation.annotationType(), annotation);
 		}
+		
+		/**
+		 * TODO for Java 9...
+		 * @return
+		 */
+		public AnnotatedType getAnnotatedOwnerType() {
+			throw new UnsupportedOperationException();
+		}
 
 		@SuppressWarnings("unchecked")
 		@Override

@@ -42,10 +42,5 @@ Embedded-Runpath: ${map;jardestination;${join;${embedded.bundles};${embedded.pro
 
 pluginpath.p2: ${build}/release/uk.co.strangeskies.p2bnd/uk.co.strangeskies.p2bnd-${strangeskies-version}.jar
 
-#-pluginpath.test: \
-#	${pluginpath.p2}
-
-#-plugin.ahoyhoy: \
-#		uk.co.strangeskies.p2.bnd.P2BndRepository;\
-#			name			=		"Ahoy there matey2";\
-#			location		=		"http://download.eclipse.org/releases/mars/"
+#-pluginpath.test: ${pluginpath.p2}
+#-plugin.ahoyhoy: uk.co.strangeskies.p2.bnd.P2BndRepository;name="Ahoy there matey2";location="http://download.eclipse.org/releases/mars/"

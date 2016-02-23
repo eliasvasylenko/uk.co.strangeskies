@@ -19,7 +19,6 @@
 package uk.co.strangeskies.osgi.frameworkwrapper.impl;
 
 import java.io.InputStream;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -27,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.function.Consumer;
-import java.util.jar.Manifest;
 import java.util.stream.StreamSupport;
 
 import org.osgi.framework.Bundle;
@@ -177,25 +175,6 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 		}
 
 		log.log(Level.WARN, "Successfully started bundles");
-	}
-
-	private Manifest getManifest(Class<?> clz) {
-		String resource = "/" + clz.getName().replace(".", "/") + ".class";
-		String fullPath = clz.getResource(resource).toString();
-		String archivePath = fullPath.substring(0, fullPath.length() - resource.length());
-
-		/*
-		 * Deal with Wars
-		 */
-		if (archivePath.endsWith("\\WEB-INF\\classes") || archivePath.endsWith("/WEB-INF/classes")) {
-			archivePath = archivePath.substring(0, archivePath.length() - "/WEB-INF/classes".length());
-		}
-
-		try (InputStream input = new URL(archivePath + "/META-INF/MANIFEST.MF").openStream()) {
-			return new Manifest(input);
-		} catch (Exception e) {
-			throw runtimeException("Loading MANIFEST for class " + clz + " failed!", e);
-		}
 	}
 
 	@Override

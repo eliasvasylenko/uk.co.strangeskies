@@ -40,7 +40,8 @@ embedded.bundles: \
 	org.tukaani.xz
 
 embedded.projects: \
-	uk.co.strangeskies.p2.provider
+	uk.co.strangeskies.p2.provider,\
+	uk.co.strangeskies.osgi.logging
 
 shaded.bundles: \
 	biz.aQute.bndlib

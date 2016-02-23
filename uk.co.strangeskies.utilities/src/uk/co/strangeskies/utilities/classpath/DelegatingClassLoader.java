@@ -27,16 +27,14 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Vector;
 
-public class DelegatingClassloader extends ClassLoader {
-	private static final int CHUNK_SIZE = 2048;
-
+public class DelegatingClassLoader extends ClassLoader {
 	private List<ClassLoader> delegateClassLoaders;
 
-	public DelegatingClassloader(ClassLoader parent, ClassLoader... delegateClassLoaders) {
+	public DelegatingClassLoader(ClassLoader parent, ClassLoader... delegateClassLoaders) {
 		this(parent, Arrays.asList(delegateClassLoaders));
 	}
 
-	public DelegatingClassloader(ClassLoader parent, Collection<? extends ClassLoader> delegateClassLoaders) {
+	public DelegatingClassLoader(ClassLoader parent, Collection<? extends ClassLoader> delegateClassLoaders) {
 		super(parent);
 		this.delegateClassLoaders = new ArrayList<>(delegateClassLoaders);
 	}
@@ -64,13 +62,15 @@ public class DelegatingClassloader extends ClassLoader {
 
 	@Override
 	protected Enumeration<URL> findResources(String name) throws IOException {
-		Vector<URL> vector = new Vector<URL>();
+		Vector<URL> vector = new Vector<>();
+
 		for (ClassLoader delegate : delegateClassLoaders) {
 			Enumeration<URL> enumeration = delegate.getResources(name);
 			while (enumeration.hasMoreElements()) {
 				vector.add(enumeration.nextElement());
 			}
 		}
+
 		return vector.elements();
 	}
 }

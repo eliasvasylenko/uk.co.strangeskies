@@ -52,8 +52,6 @@ import uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper;
 import uk.co.strangeskies.p2.P2Repository;
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Log.Level;
-import uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner;
-import uk.co.strangeskies.utilities.classpath.DelegatingClassloader;
 import uk.co.strangeskies.utilities.classpath.ManifestUtilities;
 
 /**
@@ -100,10 +98,16 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 	private Map<String, String> properties;
 	private Reporter reporter;
 
-	public static void main(String... args) {
+	public static void main(String... args) throws Exception {
+		Map<String, String> map = new HashMap<>();
+		map.put("name", "TestName");
+		map.put("location", "http://download.eclipse.org/releases/mars/");
+
 		P2BndRepository repo = new P2BndRepository();
 		repo.initialise();
 		repo.log = (l, s) -> System.out.println(l + ": " + s);
+		repo.setProperties(map);
+
 		System.out.println(repo.getName());
 	}
 
@@ -111,41 +115,38 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 	 * Create an unconfigured P2 repository accessible through Bnd.
 	 */
 	public P2BndRepository() {
-		log.log(Level.WARN, "Creating P2BndRepository");
+		log.log(Level.INFO, "Creating P2BndRepository");
 	}
 
 	private void initialise() {
 		try {
 			Manifest manifest = ManifestUtilities.getManifest(getClass());
 
-			log.log(Level.WARN, "Setting framework URLS");
+			log.log(Level.INFO, "Setting framework URLS");
 			Set<URL> frameworkUrls = new HashSet<>();
 			try {
 				frameworkUrls.add(new URL(
-						"file:///C:/Users/tofuser/git/uk.co.strangeskies/uk.co.strangeskies.p2bnd/generated/uk.co.strangeskies.p2bnd/jar/framework/org.eclipse.osgi.jar"));
+						"file:///home/eli/workspaces/uk.co.strangeskies/uk.co.strangeskies.p2bnd/org.eclipse.osgi.jar"));
 				frameworkUrls.add(new URL(
-						"file:///C:/Users/tofuser/git/uk.co.strangeskies/cnf/release/uk.co.strangeskies.osgi.frameworkwrapper.provider/uk.co.strangeskies.osgi.frameworkwrapper.provider-1.0.13.jar"));
+						"file:///home/eli/workspaces/uk.co.strangeskies/cnf/release/uk.co.strangeskies.osgi.frameworkwrapper.provider/uk.co.strangeskies.osgi.frameworkwrapper.provider-1.0.13.jar"));
 			} catch (MalformedURLException e) {
 				e.printStackTrace();
 				throw new RuntimeException(e);
 			}
 
-			log.log(Level.WARN, "Creating delegating classloader");
-			ClassLoader delegatingClassLoader = new URLClassLoader(frameworkUrls.toArray(new URL[frameworkUrls.size()]));
-			delegatingClassLoader = new DelegatingClassloader(FrameworkWrapper.class.getClassLoader(), delegatingClassLoader);
+			log.log(Level.INFO, "Creating delegating classloader");
+			ClassLoader classLoader = new URLClassLoader(frameworkUrls.toArray(new URL[frameworkUrls.size()]),
+					FrameworkWrapper.class.getClassLoader());
 
-			frameworkWrapper = new ContextClassLoaderRunner(delegatingClassLoader).run(() -> {
-				ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+			log.log(Level.INFO, "Fetching framework wrapper service loader");
+			ServiceLoader<FrameworkWrapper> serviceLoader = ServiceLoader.load(FrameworkWrapper.class, classLoader);
 
-				log.log(Level.WARN, "Fetching framework wrapper service loader");
-				ServiceLoader<FrameworkWrapper> serviceLoader = ServiceLoader.load(FrameworkWrapper.class, classLoader);
+			log.log(Level.INFO, "Loading framework wrapper service");
+			frameworkWrapper = StreamSupport.stream(serviceLoader.spliterator(), false).findAny()
+					.<RuntimeException>orElseThrow(
+							() -> new RuntimeException("Cannot find service implementing " + FrameworkWrapper.class.getName()));
 
-				log.log(Level.WARN, "Loading framework wrapper service");
-				return StreamSupport.stream(serviceLoader.spliterator(), false).findAny().<RuntimeException> orElseThrow(
-						() -> new RuntimeException("Cannot find service implementing " + FrameworkWrapper.class.getName()));
-			});
-
-			log.log(Level.WARN, "Initialise framework wrapper properties");
+			log.log(Level.INFO, "Initialise framework wrapper properties");
 			frameworkWrapper.setLog(getLog());
 
 			frameworkWrapper.setTimeoutMilliseconds(FRAMEWORK_TIMEOUT_MILLISECONDS);
@@ -163,7 +164,7 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 						repositoryService.setProperties(properties);
 					if (reporter != null)
 						repositoryService.setReporter(reporter);
-				} , SERVICE_TIMEOUT_MILLISECONDS);
+				}, SERVICE_TIMEOUT_MILLISECONDS);
 			});
 		} catch (Throwable e) {
 			log.log(Level.ERROR, "Could not initialise P2BndRepository", e);
