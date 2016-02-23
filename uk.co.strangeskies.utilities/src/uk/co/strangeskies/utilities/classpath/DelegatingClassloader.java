@@ -18,12 +18,8 @@
  */
 package uk.co.strangeskies.utilities.classpath;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
-import java.net.URLConnection;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -54,34 +50,6 @@ public class DelegatingClassloader extends ClassLoader {
 		}
 		throw new ClassNotFoundException(
 				"Class '" + name + "' not found in any classloader '" + getParent() + "' or '" + delegateClassLoaders + "'");
-	}
-
-	private ByteBuffer loadResource(URL url) throws IOException {
-		URLConnection connection = url.openConnection();
-		InputStream in = connection.getInputStream();
-		int contentLength = connection.getContentLength();
-
-		ByteArrayOutputStream tmpOut;
-		if (contentLength != -1) {
-			tmpOut = new ByteArrayOutputStream(contentLength);
-		} else {
-			tmpOut = new ByteArrayOutputStream(CHUNK_SIZE);
-		}
-
-		byte[] buf = new byte[CHUNK_SIZE];
-		while (true) {
-			int len = in.read(buf);
-			if (len == -1) {
-				break;
-			}
-			tmpOut.write(buf, 0, len);
-		}
-		in.close();
-		tmpOut.close();
-
-		byte[] array = tmpOut.toByteArray();
-
-		return ByteBuffer.wrap(array);
 	}
 
 	@Override

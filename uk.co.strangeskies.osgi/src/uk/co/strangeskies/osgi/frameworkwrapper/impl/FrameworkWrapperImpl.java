@@ -121,16 +121,21 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 	public synchronized void startFramework() {
 		if (!frameworkStarted) {
 			try {
+				log.log(Level.WARN, "Fetching framework service loader");
 				ServiceLoader<FrameworkFactory> serviceLoader = ServiceLoader.load(FrameworkFactory.class, classLoader);
 
+				log.log(Level.WARN, "Loading framework service");
 				FrameworkFactory frameworkFactory = StreamSupport.stream(serviceLoader.spliterator(), false).findAny()
 						.orElseThrow(
 								() -> new RuntimeException("Cannot find service implementing " + FrameworkFactory.class.getName()));
 
+				log.log(Level.WARN, "Loading framework");
 				framework = frameworkFactory.newFramework(launchProperties);
+				log.log(Level.WARN, "Starting framework");
 				framework.start();
 				frameworkStarted = true;
 
+				log.log(Level.WARN, "Registering bundles");
 				registerBundles();
 
 				initialisationAction.run();
@@ -171,7 +176,7 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 			}
 		}
 
-		log.log(Level.INFO, "Successfully started bundles");
+		log.log(Level.WARN, "Successfully started bundles");
 	}
 
 	private Manifest getManifest(Class<?> clz) {
@@ -270,9 +275,11 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 	}
 
 	@Override
-	public synchronized <T> void withService(Class<T> serviceClass, Consumer<T> action) {
+	public synchronized <T> void withService(Class<T> serviceClass, Consumer<T> action, int timeoutMilliseconds) {
 		try {
-			withService(serviceClass, action);
+			withServiceThrowing(serviceClass, t -> action.accept(t), timeoutMilliseconds);
+		} catch (RuntimeException e) {
+			throw e;
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -282,46 +289,51 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 	@SuppressWarnings("unchecked")
 	public synchronized <T> void withServiceThrowing(Class<T> serviceClass, ThrowingConsumer<T, ?> action,
 			int timeoutMilliseconds) throws Exception {
-		BundleContext frameworkContext = framework.getBundleContext();
+		try {
+			BundleContext frameworkContext = framework.getBundleContext();
 
-		Property<Object, Object> service = new IdentityProperty<>();
+			Property<Object, Object> service = new IdentityProperty<>();
 
-		String filter = "(" + Constants.OBJECTCLASS + "=" + serviceClass.getName() + ")";
-		ServiceListener serviceListener = event -> {
-			switch (event.getType()) {
-			case ServiceEvent.REGISTERED:
-				ServiceReference<?> reference = event.getServiceReference();
+			String filter = "(" + Constants.OBJECTCLASS + "=" + serviceClass.getName() + ")";
+			ServiceListener serviceListener = event -> {
+				switch (event.getType()) {
+				case ServiceEvent.REGISTERED:
+					ServiceReference<?> reference = event.getServiceReference();
 
-				synchronized (service) {
-					if (service.get() == null) {
-						service.set(frameworkContext.getService(reference));
+					synchronized (service) {
+						if (service.get() == null) {
+							service.set(frameworkContext.getService(reference));
+						}
+						service.notifyAll();
 					}
-					service.notifyAll();
+				default:
 				}
-			default:
+			};
+			frameworkContext.addServiceListener(serviceListener, filter);
+
+			ServiceReference<T> reference = frameworkContext.getServiceReference(serviceClass);
+			synchronized (service) {
+				if (service.get() == null && reference != null) {
+					service.set(frameworkContext.getService(reference));
+				}
+				service.notifyAll();
 			}
-		};
-		frameworkContext.addServiceListener(serviceListener, filter);
 
-		ServiceReference<T> reference = frameworkContext.getServiceReference(serviceClass);
-		synchronized (service) {
-			if (service.get() == null && reference != null) {
-				service.set(frameworkContext.getService(reference));
-			}
-			service.notifyAll();
-		}
-
-		synchronized (service) {
-			if (service.get() == null) {
-				service.wait(timeoutMilliseconds);
-
+			synchronized (service) {
 				if (service.get() == null) {
-					log.log(Level.ERROR, "Timed out waiting for service " + serviceClass.getName());
-					throw new IllegalStateException("Unable to obtain service " + serviceClass.getName());
+					service.wait(timeoutMilliseconds);
+
+					if (service.get() == null) {
+						log.log(Level.ERROR, "Timed out waiting for service " + serviceClass.getName());
+						throw new IllegalStateException("Unable to obtain service " + serviceClass.getName());
+					}
 				}
 			}
-		}
 
-		action.accept((T) service.get());
+			action.accept((T) service.get());
+		} catch (Throwable e) {
+			log.log(Level.ERROR, "Unable to perform action with service " + serviceClass, e);
+			throw e;
+		}
 	}
 }

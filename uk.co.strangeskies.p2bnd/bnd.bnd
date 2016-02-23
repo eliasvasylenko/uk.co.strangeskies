@@ -42,6 +42,9 @@ embedded.bundles: \
 embedded.projects: \
 	uk.co.strangeskies.p2.provider
 
+shaded.bundles: \
+	biz.aQute.bndlib
+
 shaded.projects: \
 	uk.co.strangeskies.bnd,\
 	uk.co.strangeskies.p2.api,\

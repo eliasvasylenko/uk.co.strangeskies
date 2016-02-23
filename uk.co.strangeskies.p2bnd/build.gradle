@@ -1,0 +1,41 @@
+/*
+ * P2 Bnd plugin Gradle build script
+ */
+def p2PluginProjects() {
+  return rootProject.subprojects.findAll {
+    it.hasProperty('bnd') && it.bnd.project.getDependson().contains(owner.bnd.project)
+  }
+}
+
+/* After building, we need to refresh the bnd Projects to pickup the bnd plugins built. */
+task('refresh') {
+  onlyIf {
+    compileJava.didWork || processResources.didWork
+  }
+  doLast {
+    logger.info "Refresh bnd Projects after building bnd plugins in ${project.name}"
+
+    bndWorkspace.clear()
+    bndWorkspace.refresh()
+
+    configure(p2PluginProjects()) {
+      logger.info "Refreshing: ${project.bnd.project.name}"
+
+      project.bnd.project.clear()
+      project.bnd.project.refresh()
+    }
+  }
+}
+build.finalizedBy(refresh)
+
+/* Bnd plugins influence bundle contents, so add generated output to jar inputs. */
+def bndProject = project
+def generated = project.file("generated")
+configure(p2PluginProjects()) {
+  jar {
+    logger.info "Add output: ${generated} to ${project}"
+
+    inputs.files generated
+    dependsOn ":${bndProject.name}:build"
+  }
+}

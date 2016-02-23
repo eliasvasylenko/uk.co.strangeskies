@@ -47,5 +47,5 @@ pluginpath.p2: ${build}/release/uk.co.strangeskies.p2bnd/uk.co.strangeskies.p2bn
 
 #-plugin.ahoyhoy: \
 #		uk.co.strangeskies.p2.bnd.P2BndRepository;\
-#			name			=		"Ahoy there matey";\
+#			name			=		"Ahoy there matey2";\
 #			location		=		"http://download.eclipse.org/releases/mars/"

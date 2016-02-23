@@ -58,7 +58,7 @@ public interface FrameworkWrapper {
 
 	<T, E extends Exception> T withFrameworkThrowing(ThrowingSupplier<T, E> action) throws E;
 
-	<T> void withService(Class<T> serviceClass, Consumer<T> action);
+	<T> void withService(Class<T> serviceClass, Consumer<T> action, int timeoutMilliseconds);
 
 	<T> void withServiceThrowing(Class<T> serviceClass, ThrowingConsumer<T, ?> action, int timeoutMilliseconds)
 			throws Exception;
