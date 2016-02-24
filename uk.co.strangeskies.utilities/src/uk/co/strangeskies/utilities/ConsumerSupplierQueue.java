@@ -23,6 +23,15 @@ import java.util.Deque;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+/**
+ * A buffer to decouple the delivery of events with their sequential
+ * consumption, such that events consumed will be queued for later supply.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <T>
+ *          The type of event message to consume
+ */
 public class ConsumerSupplierQueue<T> implements Consumer<T>, Supplier<T> {
 	private final Deque<T> queue = new ArrayDeque<>();
 
