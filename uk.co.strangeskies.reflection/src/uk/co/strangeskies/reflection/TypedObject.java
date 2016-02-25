@@ -44,6 +44,22 @@ public class TypedObject<T> implements Reified<TypedObject<T>> {
 	}
 
 	/**
+	 * Cast an untyped object into a typed object.
+	 * 
+	 * @param <T>
+	 *          The target type of the cast
+	 * @param type
+	 *          A type token over the type of the cast
+	 * @param object
+	 *          The object to cast
+	 * @return A typed object over the given type and object
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> TypedObject<T> castInto(TypeToken<T> type, Object object) {
+		return new TypedObject<T>(type, (T) object);
+	}
+
+	/**
 	 * @return The type of the reference.
 	 */
 	public TypeToken<T> getType() {
@@ -69,7 +85,6 @@ public class TypedObject<T> implements Reified<TypedObject<T>> {
 
 	@Override
 	public TypeToken<TypedObject<T>> getThisType() {
-		return new TypeToken<TypedObject<T>>() {}
-				.withTypeArgument(new TypeParameter<T>(), type);
+		return new TypeToken<TypedObject<T>>() {}.withTypeArgument(new TypeParameter<T>(), type);
 	}
 }
