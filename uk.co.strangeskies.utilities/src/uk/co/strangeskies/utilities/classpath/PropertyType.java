@@ -125,6 +125,6 @@ public class PropertyType<T> {
 		allKnownTypes.addAll(DEFAULT_TYPES);
 
 		return allKnownTypes.stream().filter(p -> p.name().equals(name)).findAny()
-				.orElseThrow(() -> new RuntimeException("Cannot find property type " + name));
+				.orElse(new PropertyType<>(name, String.class, Function.identity(), Function.identity()));
 	}
 }

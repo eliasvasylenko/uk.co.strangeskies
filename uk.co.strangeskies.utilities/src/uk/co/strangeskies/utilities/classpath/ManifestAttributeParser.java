@@ -49,11 +49,9 @@ public class ManifestAttributeParser {
 	}
 
 	public ManifestAttributeParser(Collection<? extends PropertyType<?>> knownPropertyTypes) {
-		List<PropertyType<?>> finalKnownPropertyTypes = new ArrayList<>(knownPropertyTypes);
-
 		Parser<PropertyType<?>> type = matching(
-				"([" + ALPHANUMERIC + "]+(<[" + ALPHANUMERIC + "]+>)?)|[" + ALPHANUMERIC + "]*")
-						.transform(s -> PropertyType.fromName(s, finalKnownPropertyTypes));
+				"([" + ALPHANUMERIC + "]+(<[" + ALPHANUMERIC + "]+>)?)|")
+						.transform(s -> PropertyType.fromName(s, knownPropertyTypes));
 
 		Parser<String> doubleQuotedString = matching("([^\"\\\\]*(\\\\.[^\"\\\\]*)*)").prepend("\"").append("\"")
 				.transform(DOUBLE_QUOTE_ESCAPER::unescape);

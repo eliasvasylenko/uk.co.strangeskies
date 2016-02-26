@@ -20,8 +20,11 @@ package uk.co.strangeskies.utilities;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * A buffer to decouple the delivery of events with their sequential
@@ -32,7 +35,7 @@ import java.util.function.Supplier;
  * @param <T>
  *          The type of event message to consume
  */
-public class ConsumerSupplierQueue<T> implements Consumer<T>, Supplier<T> {
+public class ConsumerSupplierQueue<T> implements Consumer<T>, Supplier<T>, Iterable<T> {
 	private final Deque<T> queue = new ArrayDeque<>();
 
 	@Override
@@ -55,5 +58,27 @@ public class ConsumerSupplierQueue<T> implements Consumer<T>, Supplier<T> {
 				throw new RuntimeException(e);
 			}
 		}
+	}
+
+	@Override
+	public Iterator<T> iterator() {
+		return new Iterator<T>() {
+			@Override
+			public boolean hasNext() {
+				return true;
+			}
+
+			@Override
+			public T next() {
+				return get();
+			}
+		};
+	}
+
+	/**
+	 * @return A never-ending, blocking stream of events
+	 */
+	public Stream<T> stream() {
+		return StreamSupport.stream(spliterator(), false);
 	}
 }
