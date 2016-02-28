@@ -18,6 +18,8 @@
  */
 package uk.co.strangeskies.reflection;
 
+import java.util.Objects;
+
 /**
  * @author Elias N Vasylenko
  * 
@@ -39,6 +41,9 @@ public class TypedObject<T> implements Reified<TypedObject<T>> {
 	 *          An object reference of the given type.
 	 */
 	public TypedObject(TypeToken<T> type, T object) {
+		Objects.requireNonNull(type);
+		Objects.requireNonNull(object);
+
 		this.type = type;
 		this.object = object;
 	}
@@ -56,7 +61,7 @@ public class TypedObject<T> implements Reified<TypedObject<T>> {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T> TypedObject<T> castInto(TypeToken<T> type, Object object) {
-		return new TypedObject<T>(type, (T) object);
+		return new TypedObject<>(type, (T) object);
 	}
 
 	/**
