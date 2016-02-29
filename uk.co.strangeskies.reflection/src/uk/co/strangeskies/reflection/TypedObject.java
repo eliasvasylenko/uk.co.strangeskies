@@ -42,7 +42,6 @@ public class TypedObject<T> implements Reified<TypedObject<T>> {
 	 */
 	public TypedObject(TypeToken<T> type, T object) {
 		Objects.requireNonNull(type);
-		Objects.requireNonNull(object);
 
 		this.type = type;
 		this.object = object;
