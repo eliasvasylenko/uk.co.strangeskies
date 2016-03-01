@@ -30,9 +30,9 @@ import java.util.function.Function;
  * <p>
  * Unless otherwise specified, implementations should conceptually maintain the
  * collection of observers according to the semantics of {@link Set} by object
- * equality. Implementers should note that methods for weak observers must be
- * reimplemented if anything other than default equality is used to denote
- * membership.
+ * equality. Implementers should note that methods for weak observers and
+ * terminating observers must be reimplemented if anything other than default
+ * equality is used to determine membership.
  * 
  * @author Elias N Vasylenko
  * @param <M>
@@ -55,8 +55,8 @@ public interface Observable<M> {
 		private final Function<? super O, Consumer<? super M>> consumer;
 		private final WeakReference<O> owner;
 
-		private WeakObserver(Observable<? extends M> observable,
-				Function<? super O, Consumer<? super M>> consumer, O owner) {
+		private WeakObserver(Observable<? extends M> observable, Function<? super O, Consumer<? super M>> consumer,
+				O owner) {
 			this.observable = observable;
 
 			this.consumer = consumer;
@@ -81,13 +81,55 @@ public interface Observable<M> {
 				return false;
 			}
 
-			return Objects.equals(owner.get(),
-					((WeakObserver<?, ?>) obj).owner.get());
+			return Objects.equals(owner.get(), ((WeakObserver<?, ?>) obj).owner.get());
 		}
 
 		@Override
 		public int hashCode() {
 			return Objects.hashCode(owner.get());
+		}
+	}
+
+	/**
+	 * A terminating observer is one which may easily conditionally remove itself
+	 * from an observable upon receipt of an event.
+	 * 
+	 * @author Elias N Vasylenko
+	 * @param <M>
+	 *          The message type
+	 * @param <O>
+	 *          The owner type
+	 */
+	class TerminatingObserver<M> implements Consumer<M> {
+		private final Observable<? extends M> observable;
+		private final Function<? super M, Boolean> observer;
+
+		private TerminatingObserver(Observable<? extends M> observable, Function<? super M, Boolean> observer) {
+			this.observable = observable;
+			this.observer = observer;
+		}
+
+		@Override
+		public void accept(M event) {
+			if (!observer.apply(event)) {
+				observable.removeObserver(this);
+			}
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj) {
+				return true;
+			} else if (!(obj instanceof TerminatingObserver)) {
+				return false;
+			}
+
+			return Objects.equals(observer, ((TerminatingObserver<?>) obj).observer);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hashCode(observer);
 		}
 	}
 
@@ -123,8 +165,7 @@ public interface Observable<M> {
 	 *          The owner of the observer
 	 * @return True if the observer was successfully added, false otherwise.
 	 */
-	default <O> boolean addWeakObserver(O owner,
-			Function<? super O, Consumer<? super M>> observer) {
+	default <O> boolean addWeakObserver(O owner, Function<? super O, Consumer<? super M>> observer) {
 		return addObserver(new WeakObserver<>(this, observer, owner));
 	}
 
@@ -160,4 +201,29 @@ public interface Observable<M> {
 	 * @return True if the observer was successfully removed, false otherwise
 	 */
 	boolean removeObserver(Consumer<? super M> observer);
+
+	/**
+	 * Observers added will receive messages from this Observable. Terminating
+	 * observers may conditionally remove themselves from the observable upon
+	 * receipt of events by returning from the observer function.
+	 * 
+	 * @param observer
+	 *          An observer to add, a function from event type to a boolean, a
+	 *          false value of which will remove the observer
+	 * @return True if the observer was successfully added, false otherwise
+	 */
+	default boolean addTerminatingObserver(Function<? super M, Boolean> observer) {
+		return addObserver(new TerminatingObserver<>(this, observer));
+	}
+
+	/**
+	 * Observers removed will no longer receive messages from this Observable.
+	 * 
+	 * @param observer
+	 *          An observer to remove
+	 * @return True if the observer was successfully removed, false otherwise
+	 */
+	default boolean removeTerminatingObserver(Function<? super M, Boolean> observer) {
+		return removeObserver(new TerminatingObserver<>(this, observer));
+	}
 }
