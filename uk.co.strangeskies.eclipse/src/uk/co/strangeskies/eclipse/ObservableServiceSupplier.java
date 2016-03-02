@@ -58,19 +58,26 @@ public class ObservableServiceSupplier extends ExtendedObjectSupplier {
 		private final ObservableList<ServiceReference<T>> references;
 		private final Class<T> elementType;
 
+		@SuppressWarnings("unchecked")
 		public ServiceUpdateListener(BundleContext context, Type elementType) throws InvalidSyntaxException {
 			this.context = context;
 			this.references = FXCollections.observableArrayList();
 			this.elementType = elementType instanceof ParameterizedType
 					? (Class<T>) ((ParameterizedType) elementType).getRawType() : (Class<T>) elementType;
 
-			context.addServiceListener(this, "(" + Constants.OBJECTCLASS + "=" + this.elementType.getName() + ")");
+			synchronized (this) {
+				context.addServiceListener(this, "(" + Constants.OBJECTCLASS + "=" + this.elementType.getName() + ")");
 
-			serviceChanged(null);
+				refreshServices();
+			}
 		}
 
 		@Override
 		public void serviceChanged(ServiceEvent event) {
+			refreshServices();
+		}
+
+		private synchronized void refreshServices() {
 			try {
 				List<ServiceReference<T>> newReferences = new ArrayList<>(context.getServiceReferences(elementType, null));
 				Collections.sort(newReferences);
