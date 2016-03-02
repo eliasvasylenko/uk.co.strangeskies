@@ -97,8 +97,6 @@ public interface Observable<M> {
 	 * @author Elias N Vasylenko
 	 * @param <M>
 	 *          The message type
-	 * @param <O>
-	 *          The owner type
 	 */
 	class TerminatingObserver<M> implements Consumer<M> {
 		private final Observable<? extends M> observable;
