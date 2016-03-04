@@ -183,24 +183,6 @@ public interface Observable<M> {
 	}
 
 	/**
-	 * Observers added will receive messages from this Observable.
-	 * 
-	 * @param observer
-	 *          An observer to add
-	 * @return True if the observer was successfully added, false otherwise
-	 */
-	boolean addObserver(Consumer<? super M> observer);
-
-	/**
-	 * Observers removed will no longer receive messages from this Observable.
-	 * 
-	 * @param observer
-	 *          An observer to remove
-	 * @return True if the observer was successfully removed, false otherwise
-	 */
-	boolean removeObserver(Consumer<? super M> observer);
-
-	/**
 	 * Observers added will receive messages from this Observable. Terminating
 	 * observers may conditionally remove themselves from the observable upon
 	 * receipt of events by returning from the observer function.
@@ -224,4 +206,22 @@ public interface Observable<M> {
 	default boolean removeTerminatingObserver(Function<? super M, Boolean> observer) {
 		return removeObserver(new TerminatingObserver<>(this, observer));
 	}
+
+	/**
+	 * Observers added will receive messages from this Observable.
+	 * 
+	 * @param observer
+	 *          An observer to add
+	 * @return True if the observer was successfully added, false otherwise
+	 */
+	boolean addObserver(Consumer<? super M> observer);
+
+	/**
+	 * Observers removed will no longer receive messages from this Observable.
+	 * 
+	 * @param observer
+	 *          An observer to remove
+	 * @return True if the observer was successfully removed, false otherwise
+	 */
+	boolean removeObserver(Consumer<? super M> observer);
 }

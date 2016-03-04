@@ -25,6 +25,7 @@ Bundle-License: LGPL <http://www.gnu.org/licenses/>
 Bundle-Version: ${strangeskies-version}.${tstamp}
 
 -dsannotations: *
+-dsannotations-options: inherit
 
 ## Properties from ext/*.bnd can be referenced in order to extend them. For
 ## example, to add one additional plugin to the list defined in

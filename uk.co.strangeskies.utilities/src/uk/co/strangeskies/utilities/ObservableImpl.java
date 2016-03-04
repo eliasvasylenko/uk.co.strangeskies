@@ -26,6 +26,9 @@ import java.util.function.Consumer;
 /**
  * A simple implementation of {@link Observable} which maintains a list of
  * listeners to receive events fired with {@link #fire(Object)}.
+ * <p>
+ * Addition and removal of observers, as well as the firing of events, are
+ * synchronized on the implementation object.
  * 
  * @author Elias N Vasylenko
  * @param <M>
@@ -52,7 +55,7 @@ public class ObservableImpl<M> implements Observable<M> {
 		listeners.clear();
 	}
 
-	public void fire(M item) {
+	public synchronized void fire(M item) {
 		for (Consumer<? super M> listener : new ArrayList<>(listeners)) {
 			listener.accept(item);
 		}
