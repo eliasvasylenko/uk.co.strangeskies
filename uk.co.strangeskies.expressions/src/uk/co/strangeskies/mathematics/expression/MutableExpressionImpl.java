@@ -34,8 +34,9 @@ import java.util.function.Consumer;
  * @param <T>
  *          The type of the expression.
  */
-public abstract class MutableExpressionImpl<T> implements MutableExpression<T> {
-	private final Set<Consumer<? super Expression<T>>> observers;
+public abstract class MutableExpressionImpl<S extends Expression<S, T>, T>
+		implements MutableExpression<S, T> {
+	private final Set<Consumer<? super S>> observers;
 	private final ReentrantReadWriteLock lock;
 
 	private boolean dirty;
@@ -49,13 +50,12 @@ public abstract class MutableExpressionImpl<T> implements MutableExpression<T> {
 	}
 
 	@Override
-	public final boolean addObserver(Consumer<? super Expression<T>> observer) {
+	public final boolean addObserver(Consumer<? super S> observer) {
 		return observers.add(observer);
 	}
 
 	@Override
-	public final boolean removeObserver(
-			Consumer<? super Expression<T>> observer) {
+	public final boolean removeObserver(Consumer<? super S> observer) {
 		return observers.remove(observer);
 	}
 
@@ -67,9 +67,8 @@ public abstract class MutableExpressionImpl<T> implements MutableExpression<T> {
 
 			if (!dirty) {
 				dirty = true;
-				for (Consumer<? super Expression<T>> observer : new ArrayList<>(
-						observers))
-					observer.accept(this);
+				for (Consumer<? super S> observer : new ArrayList<>(observers))
+					observer.accept(getThis());
 			}
 		} finally {
 			unlockWriteLock();

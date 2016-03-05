@@ -21,7 +21,7 @@ package uk.co.strangeskies.mathematics.expression;
 import java.util.function.BiFunction;
 
 /**
- * As {@link FunctionExpression}, but with two operands.
+ * As {@link UnaryExpression}, but with two operands.
  *
  * @author Elias N Vasylenko
  * @param <O1>
@@ -31,10 +31,11 @@ import java.util.function.BiFunction;
  * @param <R>
  *          The type of the result.
  */
-public class BiFunctionExpression<O1, O2, R> extends DependentExpression<R> {
-	private Expression<? extends O1> firstOperand;
-	private Expression<? extends O2> secondOperand;
-	private Expression<? extends BiFunction<? super O1, ? super O2, ? extends R>> operation;
+public abstract class BinaryExpression<S extends BinaryExpression<S, O1, O2, R>, O1, O2, R>
+		extends DependentExpression<S, R> {
+	private Expression<?, ? extends O1> firstOperand;
+	private Expression<?, ? extends O2> secondOperand;
+	private Expression<?, ? extends BiFunction<? super O1, ? super O2, ? extends R>> operation;
 
 	/**
 	 * @param firstOperand
@@ -45,9 +46,8 @@ public class BiFunctionExpression<O1, O2, R> extends DependentExpression<R> {
 	 *          A expression providing a function transforming the operands into a
 	 *          value of this expression's type.
 	 */
-	public BiFunctionExpression(Expression<? extends O1> firstOperand,
-			Expression<? extends O2> secondOperand,
-			Expression<? extends BiFunction<? super O1, ? super O2, ? extends R>> operation) {
+	public BinaryExpression(Expression<?, ? extends O1> firstOperand, Expression<?, ? extends O2> secondOperand,
+			Expression<?, ? extends BiFunction<? super O1, ? super O2, ? extends R>> operation) {
 		super(firstOperand, secondOperand);
 
 		this.firstOperand = firstOperand;
@@ -65,8 +65,7 @@ public class BiFunctionExpression<O1, O2, R> extends DependentExpression<R> {
 	 *          A function transforming the operands into a value of this
 	 *          expression's type.
 	 */
-	public BiFunctionExpression(Expression<? extends O1> firstOperand,
-			Expression<? extends O2> secondOperand,
+	public BinaryExpression(Expression<?, ? extends O1> firstOperand, Expression<?, ? extends O2> secondOperand,
 			BiFunction<? super O1, ? super O2, ? extends R> operation) {
 		this(firstOperand, secondOperand, Expression.immutable(operation));
 	}
@@ -74,14 +73,14 @@ public class BiFunctionExpression<O1, O2, R> extends DependentExpression<R> {
 	/**
 	 * @return The first operand expression.
 	 */
-	public Expression<? extends O1> getFirstOperand() {
+	public Expression<?, ? extends O1> getFirstOperand() {
 		return firstOperand;
 	}
 
 	/**
 	 * @return The second operand expression.
 	 */
-	public Expression<? extends O2> getSecondOperand() {
+	public Expression<?, ? extends O2> getSecondOperand() {
 		return secondOperand;
 	}
 
@@ -91,12 +90,10 @@ public class BiFunctionExpression<O1, O2, R> extends DependentExpression<R> {
 	 * @param secondOperand
 	 *          A new second operand.
 	 */
-	public void setOperands(Expression<? extends O1> firstOperand,
-			Expression<? extends O2> secondOperand) {
+	public void setOperands(Expression<?, ? extends O1> firstOperand, Expression<?, ? extends O2> secondOperand) {
 		try {
 			getWriteLock().lock();
-			if (this.firstOperand != firstOperand
-					|| this.secondOperand != secondOperand) {
+			if (this.firstOperand != firstOperand || this.secondOperand != secondOperand) {
 				getDependencies().remove(this.firstOperand);
 				getDependencies().remove(this.secondOperand);
 
@@ -115,7 +112,7 @@ public class BiFunctionExpression<O1, O2, R> extends DependentExpression<R> {
 	 * @param operand
 	 *          A new first operand.
 	 */
-	public void setFirstOperand(Expression<? extends O1> operand) {
+	public void setFirstOperand(Expression<?, ? extends O1> operand) {
 		try {
 			getWriteLock().lock();
 			if (firstOperand != operand) {
@@ -135,7 +132,7 @@ public class BiFunctionExpression<O1, O2, R> extends DependentExpression<R> {
 	 * @param operand
 	 *          A new second operand.
 	 */
-	public void setSecondOperand(Expression<? extends O2> operand) {
+	public void setSecondOperand(Expression<?, ? extends O2> operand) {
 		try {
 			getWriteLock().lock();
 			if (secondOperand != operand) {
@@ -153,7 +150,6 @@ public class BiFunctionExpression<O1, O2, R> extends DependentExpression<R> {
 
 	@Override
 	protected R evaluate() {
-		return operation.getValue().apply(firstOperand.getValue(),
-				secondOperand.getValue());
+		return operation.getValue().apply(firstOperand.getValue(), secondOperand.getValue());
 	}
 }

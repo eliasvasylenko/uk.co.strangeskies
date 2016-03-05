@@ -24,7 +24,6 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.values.IntValue;
@@ -32,8 +31,8 @@ import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.Decorator;
 import uk.co.strangeskies.utilities.function.TriFunction;
 
-public class ReOrderedMatrix<V extends Value<V>> extends
-		Decorator<Matrix<?, V>> implements Matrix<ReOrderedMatrix<V>, V> {
+public class ReOrderedMatrix<V extends Value<V>> extends Decorator<Matrix<?, V>>
+		implements Matrix<ReOrderedMatrix<V>, V> {
 	public ReOrderedMatrix(Matrix<?, V> source) {
 		super(source);
 	}
@@ -60,15 +59,13 @@ public class ReOrderedMatrix<V extends Value<V>> extends
 	}
 
 	@Override
-	public boolean addObserver(
-			Consumer<? super Expression<ReOrderedMatrix<V>>> observer) {
+	public boolean addObserver(Consumer<? super ReOrderedMatrix<V>> observer) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
-	public boolean removeObserver(
-			Consumer<? super Expression<ReOrderedMatrix<V>>> observer) {
+	public boolean removeObserver(Consumer<? super ReOrderedMatrix<V>> observer) {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -115,22 +112,19 @@ public class ReOrderedMatrix<V extends Value<V>> extends
 	}
 
 	@Override
-	public ReOrderedMatrix<V> operateOnData(
-			Function<? super V, ? extends V> operator) {
+	public ReOrderedMatrix<V> operateOnData(Function<? super V, ? extends V> operator) {
 		getComponent().operateOnData(operator);
 		return this;
 	}
 
 	@Override
-	public ReOrderedMatrix<V> operateOnData(
-			BiFunction<? super V, Integer, ? extends V> operator) {
+	public ReOrderedMatrix<V> operateOnData(BiFunction<? super V, Integer, ? extends V> operator) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public ReOrderedMatrix<V> operateOnData2(
-			TriFunction<? super V, Integer, Integer, ? extends V> operator) {
+	public ReOrderedMatrix<V> operateOnData2(TriFunction<? super V, Integer, Integer, ? extends V> operator) {
 		getComponent().operateOnData2((v, i, j) -> operator.apply(v, j, i));
 		return this;
 	}

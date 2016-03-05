@@ -39,12 +39,11 @@ import uk.co.strangeskies.mathematics.expression.Expression;
  *          The type of the elements of the backing list.
  */
 public class ListExpressionTransformationView<F, T> extends AbstractList<T> {
-	private final Expression<? extends List<? extends F>> backingList;
-	private final Expression<? extends Function<? super F, ? extends T>> function;
+	private final Expression<?, ? extends List<? extends F>> backingList;
+	private final Expression<?, ? extends Function<? super F, ? extends T>> function;
 
-	public ListExpressionTransformationView(
-			Expression<? extends List<? extends F>> backingList,
-			Expression<? extends Function<? super F, ? extends T>> function) {
+	public ListExpressionTransformationView(Expression<?, ? extends List<? extends F>> backingList,
+			Expression<?, ? extends Function<? super F, ? extends T>> function) {
 		this.backingList = backingList;
 		this.function = function;
 	}
@@ -58,7 +57,7 @@ public class ListExpressionTransformationView<F, T> extends AbstractList<T> {
 		return new ListExpressionView<F>(backingList);
 	}
 
-	public final Expression<? extends Function<? super F, ? extends T>> getFunction() {
+	public final Expression<?, ? extends Function<? super F, ? extends T>> getFunction() {
 		return function;
 	}
 

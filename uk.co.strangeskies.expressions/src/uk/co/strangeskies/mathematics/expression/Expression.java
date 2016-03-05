@@ -22,6 +22,7 @@ import java.util.Observer;
 import java.util.concurrent.locks.Lock;
 
 import uk.co.strangeskies.utilities.Observable;
+import uk.co.strangeskies.utilities.Self;
 
 /**
  * <p>
@@ -42,7 +43,7 @@ import uk.co.strangeskies.utilities.Observable;
  * @param <T>
  *          The type of the value of this expression.
  */
-public interface Expression<T> extends Observable<Expression<T>> {
+public interface Expression<S extends Expression<S, T>, T> extends Observable<S>, Self<S> {
 	/**
 	 * This should always return the correct current value for this Expression. Be
 	 * careful to remember that the reference returned should not be able to
@@ -74,13 +75,27 @@ public interface Expression<T> extends Observable<Expression<T>> {
 	public T getValue();
 
 	/**
-	 * @return A value which is equal to the result of {@link #getValue()} at time
+	 * @return a value which is equal to the result of {@link #getValue()} at time
 	 *         of invocation, with the added guarantee that it will not be further
-	 *         mutated by this {@link Expression}.
+	 *         mutated by this {@link Expression}
 	 */
 	public default T decoupleValue() {
 		return getValue();
 	}
+
+	/**
+	 * Get a read lock on the current value of this {@link Expression}.
+	 * Implementing classes are responsible for making sure attempts to resolve
+	 * the value of this expression obtain a read lock, and for providing access
+	 * to write locks if and where appropriate.
+	 * 
+	 * <p>
+	 * {@link MutableExpression} provides a simple interface over write locking
+	 * behaviour.
+	 * 
+	 * @return a read lock on this expression
+	 */
+	public Lock getReadLock();
 
 	/**
 	 * Create an immutable {@link Expression} instance whose value is always that
@@ -89,32 +104,31 @@ public interface Expression<T> extends Observable<Expression<T>> {
 	 * attempting to add or remove them will always return {@code true}.
 	 * 
 	 * @param <T>
-	 *          The type of the expression.
+	 *          the type of the expression
 	 * @param value
-	 *          The value of the new immutable {@link Expression}.
-	 * @return An immutable {@link Expression} instance whose value is always that
-	 *         given, and upon which read locks are always available.
+	 *          the value of the new immutable {@link Expression}
+	 * @return an immutable {@link Expression} instance whose value is always that
+	 *         given, and upon which read locks are always available
 	 */
-	public static <T> Expression<T> immutable(final T value) {
-		return new ImmutableExpressionImpl<T>() {
-			@Override
-			public final T getValue() {
-				return value;
-			}
-		};
+	public static <T> Expression<?, T> immutable(T value) {
+		return new ImmutableExpressionImpl<>(value);
+	}
+}
+
+class ImmutableExpressionImpl<T> extends ImmutableExpression<ImmutableExpressionImpl<T>, T> {
+	private final T value;
+
+	ImmutableExpressionImpl(T value) {
+		this.value = value;
 	}
 
-	/**
-	 * @return
-	 * 				<p>
-	 *         A read lock on the current value of this {@link Expression}.
-	 *         Implementing classes are responsible for making sure attempts to
-	 *         resolve the value of this expression obtain a read lock, and for
-	 *         providing access to write locks if and where appropriate.
-	 * 
-	 *         <p>
-	 *         {@link MutableExpression} provides a simple interface over write
-	 *         locking behaviour.
-	 */
-	public Lock getReadLock();
+	@Override
+	public T getValue() {
+		return value;
+	}
+
+	@Override
+	public ImmutableExpressionImpl<T> copy() {
+		return this;
+	}
 }

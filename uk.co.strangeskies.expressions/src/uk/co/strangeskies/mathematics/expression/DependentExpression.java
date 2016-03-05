@@ -32,35 +32,33 @@ import uk.co.strangeskies.utilities.EqualityComparator;
  * @param <T>
  *          The type of the expression.
  */
-public abstract class DependentExpression<T> extends MutableExpressionImpl<T> {
-	private final SortedExpressionSet<?, Expression<? extends Object>> dependencies;
+public abstract class DependentExpression<S extends Expression<S, T>, T> extends MutableExpressionImpl<S, T> {
+	private final SortedExpressionSet<?, Expression<?, ?>> dependencies;
 
 	private T value;
 
 	private final boolean parallel;
 
-	public DependentExpression(Collection<? extends Expression<?>> dependencies) {
+	public DependentExpression(Collection<? extends Expression<?, ?>> dependencies) {
 		this();
 
 		this.dependencies.addAll(dependencies);
 	}
 
-	public DependentExpression(Collection<? extends Expression<?>> dependencies,
-			boolean parallel) {
+	public DependentExpression(Collection<? extends Expression<?, ?>> dependencies, boolean parallel) {
 		this(parallel);
 
 		this.dependencies.addAll(dependencies);
 	}
 
-	public DependentExpression(Expression<?>... dependencies) {
+	public DependentExpression(Expression<?, ?>... dependencies) {
 		this(true);
 
 		this.dependencies.addAll(Arrays.asList(dependencies));
 	}
 
 	public DependentExpression(boolean parallel) {
-		dependencies = new ExpressionTreeSet<>(
-				EqualityComparator.identityComparator());
+		dependencies = new ExpressionTreeSet<>(EqualityComparator.identityComparator());
 		dependencies.addObserver(m -> postUpdate());
 
 		this.parallel = parallel;
@@ -70,7 +68,7 @@ public abstract class DependentExpression<T> extends MutableExpressionImpl<T> {
 	public final T getValueImpl(boolean dirty) {
 		if (dirty) {
 			try {
-				for (Expression<?> dependency : dependencies) {
+				for (Expression<?, ?> dependency : dependencies) {
 					dependency.getReadLock().lock();
 					if (parallel)
 						new Thread(() -> dependency.getValue()).run();
@@ -80,7 +78,7 @@ public abstract class DependentExpression<T> extends MutableExpressionImpl<T> {
 
 				value = evaluate();
 			} finally {
-				for (Expression<?> dependency : dependencies)
+				for (Expression<?, ?> dependency : dependencies)
 					dependency.getReadLock().unlock();
 			}
 		}
@@ -98,7 +96,7 @@ public abstract class DependentExpression<T> extends MutableExpressionImpl<T> {
 	 */
 	protected abstract T evaluate();
 
-	protected SortedExpressionSet<?, Expression<?>> getDependencies() {
+	protected SortedExpressionSet<?, Expression<?, ?>> getDependencies() {
 		return dependencies;
 	}
 }

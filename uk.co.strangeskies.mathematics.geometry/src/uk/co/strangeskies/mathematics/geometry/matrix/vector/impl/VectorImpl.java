@@ -55,9 +55,8 @@ import uk.co.strangeskies.utilities.function.TriFunction;
  * @param <V>
  *          The type of {@link Value} this Vector operates on.
  */
-public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
-		extends DependentExpression<S>
-		implements Vector<S, V>, CopyDecouplingExpression<S> {
+public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>> extends DependentExpression<S, S>
+		implements Vector<S, V>, CopyDecouplingExpression<S, S> {
 	private final List<V> data;
 	private final Order order;
 
@@ -79,8 +78,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 		this.orientation = orientation;
 	}
 
-	public VectorImpl(int size, Order order, Orientation orientation,
-			Factory<V> valueFactory) {
+	public VectorImpl(int size, Order order, Orientation orientation, Factory<V> valueFactory) {
 		this(order, orientation);
 
 		try {
@@ -100,8 +98,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 		getDependencies().addAll(getData());
 	}
 
-	public VectorImpl(Order order, Orientation orientation,
-			List<? extends V> values) {
+	public VectorImpl(Order order, Orientation orientation, List<? extends V> values) {
 		this(order, orientation);
 
 		try {
@@ -124,9 +121,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 
 	@Override
 	public final String toString() {
-		return "["
-				+ data.stream().map(Object::toString).collect(Collectors.joining(", "))
-				+ "]";
+		return "[" + data.stream().map(Object::toString).collect(Collectors.joining(", ")) + "]";
 	}
 
 	@Override
@@ -157,8 +152,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 		return 0;
 	}
 
-	public static <T extends Vector<?, ?>> T assertDimensions(T matrix,
-			int size) {
+	public static <T extends Vector<?, ?>> T assertDimensions(T matrix, int size) {
 		try {
 			DimensionalityException.checkEquivalence(matrix.getDimensions(), size);
 		} catch (DimensionalityException e) {
@@ -223,8 +217,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 	}
 
 	@Override
-	public final S operateOnData(
-			BiFunction<? super V, Integer, ? extends V> operator) {
+	public final S operateOnData(BiFunction<? super V, Integer, ? extends V> operator) {
 		getWriteLock().lock();
 
 		int i = 0;
@@ -239,8 +232,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 	}
 
 	@Override
-	public final S operateOnData2(
-			TriFunction<? super V, Integer, Integer, ? extends V> operator) {
+	public final S operateOnData2(TriFunction<? super V, Integer, Integer, ? extends V> operator) {
 		try {
 			getWriteLock().lock();
 
@@ -283,8 +275,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 
 	@Override
 	public Vector2<IntValue> getDimensions2() {
-		Vector2<IntValue> dimensions = new Vector2Impl<IntValue>(Order.COLUMN_MAJOR,
-				Orientation.COLUMN, IntValue::new);
+		Vector2<IntValue> dimensions = new Vector2Impl<IntValue>(Order.COLUMN_MAJOR, Orientation.COLUMN, IntValue::new);
 
 		if (getOrientation() == Orientation.COLUMN) {
 			return dimensions.setData(1, getDimensions());
@@ -337,8 +328,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 
 	@Override
 	public final VectorN<V> getMinorVector(int index) {
-		return new VectorNImpl<V>(getOrder(), getOrientation().getOther(),
-				Arrays.asList(data.get(index)));
+		return new VectorNImpl<V>(getOrder(), getOrientation().getOther(), Arrays.asList(data.get(index)));
 	}
 
 	@Override
@@ -362,21 +352,20 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
 					}
 				};
 			else
-				data2 = new ListTransformOnceView<>(data,
-						input -> new AbstractList<V>() {
-							@Override
-							public V get(int index) {
-								if (index != 0) {
-									throw new ArrayIndexOutOfBoundsException();
-								}
-								return input;
-							}
+				data2 = new ListTransformOnceView<>(data, input -> new AbstractList<V>() {
+					@Override
+					public V get(int index) {
+						if (index != 0) {
+							throw new ArrayIndexOutOfBoundsException();
+						}
+						return input;
+					}
 
-							@Override
-							public int size() {
-								return 1;
-							}
-						});
+					@Override
+					public int size() {
+						return 1;
+					}
+				});
 
 			data2Reference = new WeakReference<>(data2);
 		}

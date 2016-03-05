@@ -19,15 +19,10 @@
 package uk.co.strangeskies.utilities.collection;
 
 import java.util.Set;
-import java.util.function.Supplier;
 
 public class SetDecorator<T> extends CollectionDecorator<Set<T>, T> implements
 		Set<T> {
 	public SetDecorator(Set<T> component) {
-		super(component);
-	}
-
-	public SetDecorator(Supplier<Set<T>> component) {
 		super(component);
 	}
 }

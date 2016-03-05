@@ -32,8 +32,7 @@ import uk.co.strangeskies.utilities.Property;
  * @param <T>
  *          The type of the expression.
  */
-public class IdentityExpression<T> extends MutableExpressionImpl<T> implements
-		Property<T, T> {
+public class IdentityExpression<T> extends MutableExpressionImpl<IdentityExpression<T>, T> implements Property<T, T> {
 	private T value;
 
 	/**
@@ -71,5 +70,10 @@ public class IdentityExpression<T> extends MutableExpressionImpl<T> implements
 	@Override
 	public final T get() {
 		return getValue();
+	}
+
+	@Override
+	public IdentityExpression<T> copy() {
+		return this;
 	}
 }

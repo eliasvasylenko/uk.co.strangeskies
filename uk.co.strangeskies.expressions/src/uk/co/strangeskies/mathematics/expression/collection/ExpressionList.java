@@ -18,10 +18,8 @@
  */
 package uk.co.strangeskies.mathematics.expression.collection;
 
-import java.util.List;
-
 import uk.co.strangeskies.mathematics.expression.Expression;
+import uk.co.strangeskies.utilities.collection.ObservableList;
 
-public interface ExpressionList<S extends ExpressionList<S, E>, E extends Expression<?>>
-		extends List<E>, ExpressionCollection<S, E> {
-}
+public interface ExpressionList<S extends ExpressionList<S, E>, E extends Expression<?, ?>>
+		extends ObservableList<S, E>, ExpressionCollection<S, E, ObservableList.Change<E>> {}

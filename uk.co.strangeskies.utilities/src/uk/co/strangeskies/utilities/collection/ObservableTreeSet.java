@@ -19,40 +19,23 @@
 package uk.co.strangeskies.utilities.collection;
 
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Comparator;
+import java.util.SortedSet;
 
-public class FilteredSetDecorator<E> extends SetDecorator<E> {
-	public interface Filter<E> {
-		public boolean filter(E element);
+public class ObservableTreeSet<E> extends AbstractObservableTreeSet<ObservableTreeSet<E>, E> {
+	private static final long serialVersionUID = 1L;
+
+	public ObservableTreeSet() {}
+
+	public ObservableTreeSet(Comparator<? super E> comparator) {
+		super(comparator);
 	}
 
-	private final Filter<E> filter;
-
-	public FilteredSetDecorator(Filter<E> filter) {
-		super(new HashSet<E>());
-
-		this.filter = filter;
+	public ObservableTreeSet(Collection<? extends E> c) {
+		super(c);
 	}
 
-	public FilteredSetDecorator(Set<E> component, Filter<E> filter) {
-		super(component);
-
-		this.filter = filter;
-	}
-
-	@Override
-	public boolean add(E e) {
-		return filter.filter(e) && super.add(e);
-	}
-
-	@Override
-	public boolean addAll(Collection<? extends E> c) {
-		boolean changed = false;
-
-		for (E e : c)
-			changed = add(e) || changed;
-
-		return changed;
+	public ObservableTreeSet(SortedSet<E> s) {
+		super(s);
 	}
 }

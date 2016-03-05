@@ -32,17 +32,18 @@ import java.util.function.Consumer;
 
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
 import uk.co.strangeskies.mathematics.expression.Expression;
+import uk.co.strangeskies.utilities.collection.AbstractObservableTreeSet;
 
-public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
+public class ExpressionTreeSet<E extends Expression<?, ?>> extends AbstractObservableTreeSet<ExpressionTreeSet<E>, E>
 		implements SortedExpressionSet<ExpressionTreeSet<E>, E>,
-		CopyDecouplingExpression<ExpressionTreeSet<E>> {
+		CopyDecouplingExpression<ExpressionTreeSet<E>, ExpressionTreeSet<E>> {
 	private static final long serialVersionUID = 1L;
 
 	private boolean evaluated = true;
 
-	private Consumer<Expression<?>> dependencyObserver;
+	private Consumer<Expression<?, ?>> dependencyObserver;
 
-	private Set<Consumer<? super Expression<ExpressionTreeSet<E>>>> observers;
+	private Set<Consumer<? super ExpressionTreeSet<E>>> observers;
 
 	private ReentrantReadWriteLock lock;
 
@@ -88,7 +89,7 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 	}
 
 	protected final void postUpdate() {
-		for (Consumer<? super Expression<ExpressionTreeSet<E>>> observer : observers) {
+		for (Consumer<? super ExpressionTreeSet<E>> observer : observers) {
 			observer.accept(null);
 		}
 	}
@@ -259,14 +260,12 @@ public class ExpressionTreeSet<E extends Expression<?>> extends TreeSet<E>
 	}
 
 	@Override
-	public boolean addObserver(
-			Consumer<? super Expression<ExpressionTreeSet<E>>> observer) {
+	public boolean addObserver(Consumer<? super ExpressionTreeSet<E>> observer) {
 		return observers.add(observer);
 	}
 
 	@Override
-	public boolean removeObserver(
-			Consumer<? super Expression<ExpressionTreeSet<E>>> observer) {
+	public boolean removeObserver(Consumer<? super ExpressionTreeSet<E>> observer) {
 		return observers.remove(observer);
 	}
 

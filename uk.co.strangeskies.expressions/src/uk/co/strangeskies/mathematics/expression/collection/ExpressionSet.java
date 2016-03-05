@@ -18,10 +18,8 @@
  */
 package uk.co.strangeskies.mathematics.expression.collection;
 
-import java.util.Set;
-
 import uk.co.strangeskies.mathematics.expression.Expression;
+import uk.co.strangeskies.utilities.collection.ObservableSet;
 
-public interface ExpressionSet<S extends ExpressionSet<S, E>, E extends Expression<?>>
-		extends Set<E>, ExpressionCollection<S, E> {
-}
+public interface ExpressionSet<S extends ExpressionSet<S, E>, E extends Expression<?, ?>>
+		extends ObservableSet<S, E>, ExpressionCollection<S, E, ObservableSet.Change<E>> {}

@@ -18,12 +18,10 @@
  */
 package uk.co.strangeskies.mathematics.expression.collection;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
@@ -31,17 +29,18 @@ import java.util.function.Consumer;
 
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
 import uk.co.strangeskies.mathematics.expression.Expression;
+import uk.co.strangeskies.utilities.collection.AbstractObservableArrayList;
 
-public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
-		implements ExpressionList<ExpressionArrayList<E>, E>,
-		CopyDecouplingExpression<ExpressionArrayList<E>> {
+public class ExpressionArrayList<E extends Expression<?, ?>>
+		extends AbstractObservableArrayList<ExpressionArrayList<E>, E> implements ExpressionList<ExpressionArrayList<E>, E>,
+		CopyDecouplingExpression<ExpressionArrayList<E>, ExpressionArrayList<E>> {
 	private static final long serialVersionUID = 1L;
 
 	private boolean evaluated = true;
 
-	private final Consumer<Expression<?>> dependencyObserver;
+	private final Consumer<Expression<?, ?>> dependencyObserver;
 
-	private final Set<Consumer<? super Expression<ExpressionArrayList<E>>>> observers;
+	private final Set<Consumer<? super ExpressionArrayList<E>>> observers;
 
 	private ReentrantReadWriteLock lock;
 
@@ -83,14 +82,12 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 		try {
 			getWriteLock().lock();
 
-			boolean added = super.add(expression);
-			if (added) {
-				expression.addObserver(dependencyObserver);
+			super.add(expression);
+			expression.addObserver(dependencyObserver);
 
-				update();
-			}
+			update();
 
-			return added;
+			return true;
 		} finally {
 			unlockWriteLock();
 		}
@@ -160,24 +157,19 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 
 	@Override
 	public final void clear() {
-		clear(true);
-	}
-
-	protected final void clear(boolean update) {
-		if (!isEmpty()) {
-			try {
-				getWriteLock().lock();
+		try {
+			getWriteLock().lock();
+			if (!isEmpty()) {
 
 				for (E expression : this)
 					expression.removeObserver(dependencyObserver);
 
 				super.clear();
 
-				if (update)
-					update();
-			} finally {
-				unlockWriteLock();
+				update();
 			}
+		} finally {
+			unlockWriteLock();
 		}
 	}
 
@@ -186,13 +178,14 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 		try {
 			getWriteLock().lock();
 
-			clear(false);
+			for (E expression : this)
+				expression.removeObserver(dependencyObserver);
 
-			for (E expression : expressions)
-				if (super.add(expression))
-					expression.addObserver(dependencyObserver);
+			super.clear();
 
-			update();
+			if (!addAll(expressions)) {
+				update();
+			}
 		} finally {
 			unlockWriteLock();
 		}
@@ -203,12 +196,17 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 		try {
 			getWriteLock().lock();
 
-			TreeSet<E> toRemove = new TreeSet<>();
+			for (E expression : this)
+				if (!c.contains(expression))
+					expression.removeObserver(dependencyObserver);
 
-			toRemove.addAll(this);
-			toRemove.removeAll(c);
+			boolean changed = super.retainAll(c);
 
-			return removeAll(toRemove);
+			if (changed) {
+				update();
+			}
+
+			return changed;
 		} finally {
 			unlockWriteLock();
 		}
@@ -232,14 +230,12 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 	}
 
 	@Override
-	public final boolean addObserver(
-			Consumer<? super Expression<ExpressionArrayList<E>>> observer) {
+	public final boolean addObserver(Consumer<? super ExpressionArrayList<E>> observer) {
 		return observers.add(observer);
 	}
 
 	@Override
-	public final boolean removeObserver(
-			Consumer<? super Expression<ExpressionArrayList<E>>> observer) {
+	public final boolean removeObserver(Consumer<? super ExpressionArrayList<E>> observer) {
 		return observers.remove(observer);
 	}
 
@@ -263,7 +259,6 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 			expression.addObserver(dependencyObserver);
 
 			update();
-
 		} finally {
 			unlockWriteLock();
 		}
@@ -275,10 +270,11 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 			getWriteLock().lock();
 
 			for (E expression : expressions) {
-				add(index++, expression);
 				expression.addObserver(dependencyObserver);
 			}
-
+			if (super.addAll(index, expressions)) {
+				update();
+			}
 		} finally {
 			unlockWriteLock();
 		}
@@ -295,6 +291,8 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 
 			removed.removeObserver(dependencyObserver);
 
+			update();
+
 			return removed;
 		} finally {
 			unlockWriteLock();
@@ -306,13 +304,14 @@ public class ExpressionArrayList<E extends Expression<?>> extends ArrayList<E>
 		try {
 			getWriteLock().lock();
 
-			E removed = super.remove(index);
-			super.add(index, expression);
+			E previous = super.set(index, expression);
 
-			removed.removeObserver(dependencyObserver);
+			previous.removeObserver(dependencyObserver);
 			expression.addObserver(dependencyObserver);
 
-			return removed;
+			update();
+
+			return previous;
 		} finally {
 			unlockWriteLock();
 		}

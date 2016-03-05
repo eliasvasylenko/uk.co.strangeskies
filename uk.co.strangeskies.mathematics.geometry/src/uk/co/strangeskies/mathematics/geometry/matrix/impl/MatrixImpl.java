@@ -43,9 +43,8 @@ import uk.co.strangeskies.utilities.factory.Factory;
 import uk.co.strangeskies.utilities.function.ListTransformationView;
 import uk.co.strangeskies.utilities.function.TriFunction;
 
-public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
-		extends DependentExpression<S> implements Matrix<S, V>,
-		CopyDecouplingExpression<S> {
+public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>> extends DependentExpression<S, S>
+		implements Matrix<S, V>, CopyDecouplingExpression<S, S> {
 	private final List<List<V>> data;
 	private final Order order;
 
@@ -117,8 +116,7 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 
 			while (majorIterator.hasNext()) {
 				List<? extends V> major = majorIterator.next();
-				DimensionalityException.checkEquivalence(firstMajor.size(),
-						major.size());
+				DimensionalityException.checkEquivalence(firstMajor.size(), major.size());
 
 				NullPointerInCollectionException.checkList(major);
 			}
@@ -180,8 +178,8 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 
 	@Override
 	public Vector2<IntValue> getDimensions2() {
-		return new Vector2Impl<IntValue>(Order.COLUMN_MAJOR, Orientation.COLUMN,
-				IntValue::new).setData(getRowSize(), getColumnSize());
+		return new Vector2Impl<IntValue>(Order.COLUMN_MAJOR, Orientation.COLUMN, IntValue::new).setData(getRowSize(),
+				getColumnSize());
 	}
 
 	protected List<V> getRowVectorData(int row) {
@@ -202,8 +200,7 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 
 	@Override
 	public Vector<?, V> getMajorVector(int index) {
-		return new VectorNImpl<>(getOrder(), getOrder().getAssociatedOrientation(),
-				getMajorVectorData(index));
+		return new VectorNImpl<>(getOrder(), getOrder().getAssociatedOrientation(), getMajorVectorData(index));
 	}
 
 	protected List<V> getMajorVectorData(int index) {
@@ -212,8 +209,7 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 
 	@Override
 	public Vector<?, V> getMinorVector(int index) {
-		return new VectorNImpl<>(getOrder(), getOrder().getOther()
-				.getAssociatedOrientation(), getMinorVectorData(index));
+		return new VectorNImpl<>(getOrder(), getOrder().getOther().getAssociatedOrientation(), getMinorVectorData(index));
 	}
 
 	protected List<V> getMinorVectorData(int index) {
@@ -226,8 +222,7 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 
 	@Override
 	public final List<List<V>> getData2() {
-		return new ListTransformationView<>(data,
-				l -> Collections.unmodifiableList(l));
+		return new ListTransformationView<>(data, l -> Collections.unmodifiableList(l));
 	}
 
 	@Override
@@ -281,8 +276,7 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 		if (!getOrder().equals(thatMatrix.getOrder()))
 			return withOrder(thatMatrix.getOrder()).equals(thatMatrix);
 
-		List<? extends List<? extends Value<?>>> thoseElements = thatMatrix
-				.getData2();
+		List<? extends List<? extends Value<?>>> thoseElements = thatMatrix.getData2();
 		int i = 0;
 		for (List<V> elements : data) {
 			int j = 0;
@@ -301,8 +295,7 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 
 	@Override
 	public final int hashCode() {
-		return getRowSize() + getColumnSize() + getOrder().hashCode()
-				+ data.hashCode();
+		return getRowSize() + getColumnSize() + getOrder().hashCode() + data.hashCode();
 	}
 
 	@Override
@@ -356,8 +349,7 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 	}
 
 	@Override
-	public final S operateOnData(
-			BiFunction<? super V, Integer, ? extends V> operator) {
+	public final S operateOnData(BiFunction<? super V, Integer, ? extends V> operator) {
 		int i = 0;
 		for (List<V> elements : data)
 			for (V element : elements)
@@ -369,8 +361,7 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
 	}
 
 	@Override
-	public final S operateOnData2(
-			TriFunction<? super V, Integer, Integer, ? extends V> operator) {
+	public final S operateOnData2(TriFunction<? super V, Integer, Integer, ? extends V> operator) {
 		int i = 0;
 		int j = 0;
 		for (List<V> major : data) {

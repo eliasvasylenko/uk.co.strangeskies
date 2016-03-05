@@ -28,15 +28,15 @@ import java.lang.reflect.InvocationTargetException;
  * @param <T>
  *          The type of the expression.
  */
-public interface CloneDecouplingExpression<T extends Cloneable> extends
-		Expression<T> {
+public interface CloneDecouplingExpression<S extends CloneDecouplingExpression<S, T>, T extends Cloneable>
+		extends Expression<S, T> {
 	@Override
 	@SuppressWarnings("unchecked")
 	public default T decoupleValue() {
 		try {
 			return (T) Object.class.getMethod("clone").invoke(getValue());
-		} catch (IllegalAccessException | IllegalArgumentException
-				| InvocationTargetException | NoSuchMethodException | SecurityException e) {
+		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException
+				| SecurityException e) {
 			throw new UnsupportedOperationException();
 		}
 	}

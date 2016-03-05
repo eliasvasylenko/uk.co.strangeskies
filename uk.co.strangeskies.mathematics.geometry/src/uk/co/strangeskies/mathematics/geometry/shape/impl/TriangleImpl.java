@@ -22,7 +22,6 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Consumer;
 
-import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.geometry.shape.ClosedPolyline2;
 import uk.co.strangeskies.mathematics.geometry.shape.Shape;
@@ -54,8 +53,7 @@ public class TriangleImpl<V extends Value<V>> implements Triangle<V> {
 	}
 
 	@Override
-	public Triangle<V> set(Number ax, Number ay, Number bx, Number by, Number cx,
-			Number cy) {
+	public Triangle<V> set(Number ax, Number ay, Number bx, Number by, Number cx, Number cy) {
 		a.setData(ax, ay);
 		b.setData(bx, by);
 		c.setData(cx, cy);
@@ -155,15 +153,13 @@ public class TriangleImpl<V extends Value<V>> implements Triangle<V> {
 	}
 
 	@Override
-	public boolean addObserver(
-			Consumer<? super Expression<Triangle<V>>> observer) {
+	public boolean addObserver(Consumer<? super Triangle<V>> observer) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
-	public boolean removeObserver(
-			Consumer<? super Expression<Triangle<V>>> observer) {
+	public boolean removeObserver(Consumer<? super Triangle<V>> observer) {
 		// TODO Auto-generated method stub
 		return false;
 	}

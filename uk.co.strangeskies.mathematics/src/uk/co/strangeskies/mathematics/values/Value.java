@@ -30,7 +30,6 @@ import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
-import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.mathematics.expression.SelfExpression;
 import uk.co.strangeskies.mathematics.operation.Incrementable;
 import uk.co.strangeskies.mathematics.operation.Multipliable;
@@ -41,14 +40,12 @@ import uk.co.strangeskies.utilities.Copyable;
 import uk.co.strangeskies.utilities.Property;
 import uk.co.strangeskies.utilities.Self;
 
-public abstract class Value<S extends Value<S>> extends Number
-		implements Multipliable<S, Value<?>>, Subtractable<S, Value<?>>,
-		Negatable<S, S>, Scalable<S>, Property<S, Value<?>>, Incrementable<S>,
-		Self<S>, SelfExpression<S>, Copyable<S>, Comparable<Value<?>>,
-		CopyDecouplingExpression<S> {
+public abstract class Value<S extends Value<S>> extends Number implements Multipliable<S, Value<?>>,
+		Subtractable<S, Value<?>>, Negatable<S, S>, Scalable<S>, Property<S, Value<?>>, Incrementable<S>, Self<S>,
+		SelfExpression<S>, Copyable<S>, Comparable<Value<?>>, CopyDecouplingExpression<S, S> {
 	private static final long serialVersionUID = -979949605176385397L;
 
-	private final Set<Consumer<? super Expression<S>>> observers;
+	private final Set<Consumer<? super S>> observers;
 	private boolean evaluated = true;
 	private final ReentrantReadWriteLock lock;
 
@@ -240,18 +237,17 @@ public abstract class Value<S extends Value<S>> extends Number
 	}
 
 	protected final void postUpdate() {
-		for (Consumer<? super Expression<S>> observer : observers)
+		for (Consumer<? super S> observer : observers)
 			observer.accept(null);
 	}
 
 	@Override
-	public final boolean addObserver(Consumer<? super Expression<S>> observer) {
+	public final boolean addObserver(Consumer<? super S> observer) {
 		return observers.add(observer);
 	}
 
 	@Override
-	public final boolean removeObserver(
-			Consumer<? super Expression<S>> observer) {
+	public final boolean removeObserver(Consumer<? super S> observer) {
 		return observers.remove(observer);
 	}
 

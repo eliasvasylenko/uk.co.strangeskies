@@ -21,7 +21,7 @@ package uk.co.strangeskies.mathematics.expression;
 import uk.co.strangeskies.utilities.function.TriFunction;
 
 /**
- * As {@link FunctionExpression}, but with three operands.
+ * As {@link UnaryExpression}, but with three operands.
  *
  * @author Elias N Vasylenko
  * @param <O1>
@@ -33,12 +33,12 @@ import uk.co.strangeskies.utilities.function.TriFunction;
  * @param <R>
  *          The type of the result.
  */
-public abstract class TriFunctionExpression<O1, O2, O3, R> extends
-		DependentExpression<R> {
-	private Expression<? extends O1> firstOperand;
-	private Expression<? extends O2> secondOperand;
-	private Expression<? extends O3> thirdOperand;
-	private Expression<? extends TriFunction<? super O1, ? super O2, ? super O3, ? extends R>> operation;
+public abstract class TrinaryExpression<S extends TrinaryExpression<S, O1, O2, O3, R>, O1, O2, O3, R>
+		extends DependentExpression<S, R> {
+	private Expression<?, ? extends O1> firstOperand;
+	private Expression<?, ? extends O2> secondOperand;
+	private Expression<?, ? extends O3> thirdOperand;
+	private Expression<?, ? extends TriFunction<? super O1, ? super O2, ? super O3, ? extends R>> operation;
 
 	/**
 	 * @param firstOperand
@@ -51,11 +51,9 @@ public abstract class TriFunctionExpression<O1, O2, O3, R> extends
 	 *          A expression providing a function transforming the operands into a
 	 *          value of this expression's type.
 	 */
-	public TriFunctionExpression(
-			Expression<? extends O1> firstOperand,
-			Expression<? extends O2> secondOperand,
-			Expression<? extends O3> thirdOperand,
-			Expression<? extends TriFunction<? super O1, ? super O2, ? super O3, ? extends R>> operation) {
+	public TrinaryExpression(Expression<?, ? extends O1> firstOperand, Expression<?, ? extends O2> secondOperand,
+			Expression<?, ? extends O3> thirdOperand,
+			Expression<?, ? extends TriFunction<? super O1, ? super O2, ? super O3, ? extends R>> operation) {
 		super(firstOperand, secondOperand, thirdOperand);
 
 		this.firstOperand = firstOperand;
@@ -76,33 +74,38 @@ public abstract class TriFunctionExpression<O1, O2, O3, R> extends
 	 *          A function transforming the operands into a value of this
 	 *          expression's type.
 	 */
-	public TriFunctionExpression(Expression<? extends O1> firstOperand,
-			Expression<? extends O2> secondOperand,
-			Expression<? extends O3> thirdOperand,
+	public TrinaryExpression(Expression<?, ? extends O1> firstOperand, Expression<?, ? extends O2> secondOperand,
+			Expression<?, ? extends O3> thirdOperand,
 			TriFunction<? super O1, ? super O2, ? super O3, ? extends R> operation) {
-		this(firstOperand, secondOperand, thirdOperand, Expression
-				.immutable(operation));
+		this(firstOperand, secondOperand, thirdOperand, Expression.immutable(operation));
 	}
 
 	/**
 	 * @return The first operand expression.
 	 */
-	public Expression<? extends O1> getFirstOperand() {
+	public Expression<?, ? extends O1> getFirstOperand() {
 		return firstOperand;
 	}
 
 	/**
 	 * @return The second operand expression.
 	 */
-	public Expression<? extends O2> getSecondOperand() {
+	public Expression<?, ? extends O2> getSecondOperand() {
 		return secondOperand;
 	}
 
 	/**
 	 * @return The third operand expression.
 	 */
-	public Expression<? extends O3> getThirdOperand() {
+	public Expression<?, ? extends O3> getThirdOperand() {
 		return thirdOperand;
+	}
+
+	/**
+	 * @return the operation
+	 */
+	public Expression<?, ? extends TriFunction<? super O1, ? super O2, ? super O3, ? extends R>> getOperation() {
+		return operation;
 	}
 
 	/**
@@ -113,13 +116,11 @@ public abstract class TriFunctionExpression<O1, O2, O3, R> extends
 	 * @param thirdOperand
 	 *          A new third operand.
 	 */
-	public void setOperands(Expression<? extends O1> firstOperand,
-			Expression<? extends O2> secondOperand,
-			Expression<? extends O3> thirdOperand) {
+	public void setOperands(Expression<?, ? extends O1> firstOperand, Expression<?, ? extends O2> secondOperand,
+			Expression<?, ? extends O3> thirdOperand) {
 		try {
 			getWriteLock().lock();
-			if (this.firstOperand != firstOperand
-					|| this.secondOperand != secondOperand
+			if (this.firstOperand != firstOperand || this.secondOperand != secondOperand
 					|| this.thirdOperand != thirdOperand) {
 				getDependencies().remove(this.firstOperand);
 				getDependencies().remove(this.secondOperand);
@@ -144,7 +145,7 @@ public abstract class TriFunctionExpression<O1, O2, O3, R> extends
 	 * @param operand
 	 *          A new first operand.
 	 */
-	public void setFirstOperand(Expression<? extends O1> operand) {
+	public void setFirstOperand(Expression<?, ? extends O1> operand) {
 		try {
 			getWriteLock().lock();
 			if (firstOperand != operand) {
@@ -166,7 +167,7 @@ public abstract class TriFunctionExpression<O1, O2, O3, R> extends
 	 * @param operand
 	 *          A new second operand.
 	 */
-	public void setSecondOperand(Expression<? extends O2> operand) {
+	public void setSecondOperand(Expression<?, ? extends O2> operand) {
 		try {
 			getWriteLock().lock();
 			if (secondOperand != operand) {
@@ -188,7 +189,7 @@ public abstract class TriFunctionExpression<O1, O2, O3, R> extends
 	 * @param operand
 	 *          A new third operand.
 	 */
-	public void setThirdOperand(Expression<? extends O3> operand) {
+	public void setThirdOperand(Expression<?, ? extends O3> operand) {
 		try {
 			getWriteLock().lock();
 			if (thirdOperand != operand) {
@@ -208,7 +209,6 @@ public abstract class TriFunctionExpression<O1, O2, O3, R> extends
 
 	@Override
 	protected R evaluate() {
-		return operation.getValue().apply(firstOperand.getValue(),
-				secondOperand.getValue(), thirdOperand.getValue());
+		return operation.getValue().apply(firstOperand.getValue(), secondOperand.getValue(), thirdOperand.getValue());
 	}
 }

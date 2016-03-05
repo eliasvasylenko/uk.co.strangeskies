@@ -32,9 +32,9 @@ import java.util.function.Function;
  * @param <R>
  *          The type of the result.
  */
-public class FunctionExpression<O, R> extends DependentExpression<R> {
-	private Expression<? extends O> operand;
-	private final Expression<? extends Function<? super O, ? extends R>> operation;
+public abstract class UnaryExpression<S extends UnaryExpression<S, O, R>, O, R> extends DependentExpression<S, R> {
+	private Expression<?, ? extends O> operand;
+	private final Expression<?, ? extends Function<? super O, ? extends R>> operation;
 
 	/**
 	 * @param operand
@@ -43,8 +43,8 @@ public class FunctionExpression<O, R> extends DependentExpression<R> {
 	 *          A expression providing a function transforming an operand into a
 	 *          value of this expression's type.
 	 */
-	public FunctionExpression(Expression<? extends O> operand,
-			Expression<? extends Function<? super O, ? extends R>> operation) {
+	public UnaryExpression(Expression<?, ? extends O> operand,
+			Expression<?, ? extends Function<? super O, ? extends R>> operation) {
 		super(operand, operation);
 
 		this.operand = operand;
@@ -59,8 +59,7 @@ public class FunctionExpression<O, R> extends DependentExpression<R> {
 	 *          A function transforming an operand into a value of this
 	 *          expression's type.
 	 */
-	public FunctionExpression(Expression<? extends O> operand,
-			Function<? super O, ? extends R> operation) {
+	public UnaryExpression(Expression<?, ? extends O> operand, Function<? super O, ? extends R> operation) {
 		super(operand);
 
 		this.operand = operand;
@@ -71,11 +70,11 @@ public class FunctionExpression<O, R> extends DependentExpression<R> {
 	/**
 	 * @return The operand expression.
 	 */
-	public Expression<? extends O> getOperand() {
+	public Expression<?, ? extends O> getOperand() {
 		return operand;
 	}
 
-	public Expression<? extends Function<? super O, ? extends R>> getOperation() {
+	public Expression<?, ? extends Function<? super O, ? extends R>> getOperation() {
 		return operation;
 	}
 
@@ -83,7 +82,7 @@ public class FunctionExpression<O, R> extends DependentExpression<R> {
 	 * @param operand
 	 *          A new operand.
 	 */
-	public void setOperand(Expression<? extends O> operand) {
+	public void setOperand(Expression<?, ? extends O> operand) {
 		try {
 			getWriteLock().lock();
 			if (this.operand != operand) {

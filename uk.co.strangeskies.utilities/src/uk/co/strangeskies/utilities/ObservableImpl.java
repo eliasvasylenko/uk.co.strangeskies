@@ -34,18 +34,21 @@ import java.util.function.Consumer;
  * @param <M>
  *          The type of event message to produce
  */
-@SuppressWarnings("javadoc")
 public class ObservableImpl<M> implements Observable<M> {
 	private final Set<Consumer<? super M>> listeners = new LinkedHashSet<>();
 
 	@Override
-	public synchronized boolean addObserver(Consumer<? super M> listener) {
-		return listeners.add(listener);
+	public synchronized boolean addObserver(Consumer<? super M> observer) {
+		return listeners.add(observer);
 	}
 
 	@Override
-	public synchronized boolean removeObserver(Consumer<? super M> listener) {
-		return listeners.remove(listener);
+	public synchronized boolean removeObserver(Consumer<? super M> observer) {
+		return listeners.remove(observer);
+	}
+
+	public int getObserverCount() {
+		return listeners.size();
 	}
 
 	/**

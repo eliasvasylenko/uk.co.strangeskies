@@ -40,7 +40,7 @@ import java.util.concurrent.locks.Lock;
  * @param <T>
  *          The type of the value of this expression.
  */
-public interface MutableExpression<T> extends Expression<T> {
+public interface MutableExpression<S extends Expression<S, T>, T> extends Expression<S, T> {
 	/**
 	 * @return A write lock which must be obtained before attempting to mutate
 	 *         this {@link Expression}.

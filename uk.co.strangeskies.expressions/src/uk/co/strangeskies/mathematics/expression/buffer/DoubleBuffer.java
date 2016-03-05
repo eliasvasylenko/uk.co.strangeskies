@@ -20,7 +20,7 @@ package uk.co.strangeskies.mathematics.expression.buffer;
 
 import uk.co.strangeskies.mathematics.expression.Expression;
 
-public interface DoubleBuffer<B, F> extends Expression<F> {
+public interface DoubleBuffer<S extends DoubleBuffer<S, B, F>, B, F> extends Expression<S, F> {
 	public abstract F setFront(F front);
 
 	public abstract B setBack(B back);
@@ -30,7 +30,7 @@ public interface DoubleBuffer<B, F> extends Expression<F> {
 		push();
 	}
 
-	public default void set(DoubleBuffer<? extends B, ? extends F> value) {
+	public default void set(DoubleBuffer<?, ? extends B, ? extends F> value) {
 		setFront(value.getFront());
 		setBack(value.getBack());
 	}
@@ -39,7 +39,7 @@ public interface DoubleBuffer<B, F> extends Expression<F> {
 
 	public abstract B getBack();
 
-	public abstract Expression<B> getBackExpression();
+	public abstract Expression<?, B> getBackExpression();
 
 	public abstract void push();
 

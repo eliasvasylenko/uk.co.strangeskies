@@ -35,9 +35,8 @@ import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.Observable;
 
 //convex only polygon
-public class ConvexPolygonImpl<V extends Value<V>>
-		extends DependentExpression<ConvexPolygonImpl<V>>
-		implements ConvexPolygon<ConvexPolygonImpl<V>, V> {
+public class ConvexPolygonImpl<V extends Value<V>> extends
+		DependentExpression<ConvexPolygonImpl<V>, ConvexPolygonImpl<V>> implements ConvexPolygon<ConvexPolygonImpl<V>, V> {
 	public class ConvexHull<T> extends AbstractSet<Vector2<V>> {
 		private final ArrayList<Vector2<V>> backingList;
 

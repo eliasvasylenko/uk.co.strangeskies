@@ -36,9 +36,9 @@ import uk.co.strangeskies.mathematics.expression.Expression;
  *          The type of the elements of this list.
  */
 public class ListExpressionView<T> extends AbstractList<T> {
-	private final Expression<? extends List<? extends T>> backingList;
+	private final Expression<?, ? extends List<? extends T>> backingList;
 
-	public ListExpressionView(Expression<? extends List<? extends T>> backingList) {
+	public ListExpressionView(Expression<?, ? extends List<? extends T>> backingList) {
 		this.backingList = backingList;
 	}
 
