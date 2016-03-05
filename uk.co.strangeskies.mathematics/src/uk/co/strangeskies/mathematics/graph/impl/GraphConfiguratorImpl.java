@@ -32,13 +32,11 @@ import java.util.function.Function;
 
 import uk.co.strangeskies.mathematics.graph.EdgeVertices;
 import uk.co.strangeskies.mathematics.graph.Graph;
-import uk.co.strangeskies.mathematics.graph.GraphListeners;
 import uk.co.strangeskies.mathematics.graph.building.GraphConfigurator;
 import uk.co.strangeskies.utilities.EqualityComparator;
 import uk.co.strangeskies.utilities.factory.Configurator;
 
-public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
-		implements GraphConfigurator<V, E> {
+public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>> implements GraphConfigurator<V, E> {
 	private List<V> vertices;
 	private boolean unmodifiableVertices;
 	private BiPredicate<? super V, ? super V> vertexEquality;
@@ -57,10 +55,10 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 	private Function<EdgeVertices<V>, E> edgeFactory;
 	private Function<EdgeVertices<V>, ? extends Set<? extends E>> edgeMultiFactory;
 	private Function<E, Double> edgeWeight;
-	private final GraphListeners<V, E> internalListeners;
+	private final GraphListenersImpl<V, E> internalListeners;
 
 	public GraphConfiguratorImpl() {
-		internalListeners = new GraphListeners<V, E>();
+		internalListeners = new GraphListenersImpl<V, E>();
 	}
 
 	protected static GraphConfigurator<Object, Object> configure() {
@@ -91,8 +89,7 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <W extends V> GraphConfigurator<W, E> vertices(
-			Collection<W> vertices) {
+	public <W extends V> GraphConfigurator<W, E> vertices(Collection<W> vertices) {
 		if (this.vertices == null)
 			this.vertices = new ArrayList<>(vertices);
 		else
@@ -102,8 +99,7 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 	}
 
 	@Override
-	public GraphConfigurator<V, E> edges(
-			Collection<? extends EdgeVertices<V>> edges) {
+	public GraphConfigurator<V, E> edges(Collection<? extends EdgeVertices<V>> edges) {
 		assertConfigurable(edgeMap);
 
 		if (edgeVertices == null)
@@ -116,8 +112,7 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <F extends E> GraphConfigurator<V, F> edges(
-			Map<F, EdgeVertices<V>> edges) {
+	public <F extends E> GraphConfigurator<V, F> edges(Map<F, EdgeVertices<V>> edges) {
 		assertConfigurable(edgeVertices);
 
 		if (edgeMap == null)
@@ -181,8 +176,7 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <F extends E> GraphConfigurator<V, F> edgeFactory(
-			Function<EdgeVertices<V>, F> factory) {
+	public <F extends E> GraphConfigurator<V, F> edgeFactory(Function<EdgeVertices<V>, F> factory) {
 		assertConfigurable(edgeFactory, edgeMultiFactory);
 		edgeFactory = (Function<EdgeVertices<V>, E>) factory;
 		return (GraphConfigurator<V, F>) this;
@@ -190,8 +184,7 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <F extends E> GraphConfigurator<V, F> edgeMultiFactory(
-			Function<EdgeVertices<V>, Set<F>> factory) {
+	public <F extends E> GraphConfigurator<V, F> edgeMultiFactory(Function<EdgeVertices<V>, Set<F>> factory) {
 		assertConfigurable(edgeFactory, edgeMultiFactory);
 		edgeMultiFactory = (Function<EdgeVertices<V>, Set<E>>) (Object) factory;
 		return (GraphConfigurator<V, F>) multigraph();
@@ -206,24 +199,21 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 	}
 
 	@Override
-	public GraphConfigurator<V, E> vertexEquality(
-			BiPredicate<? super V, ? super V> equality) {
+	public GraphConfigurator<V, E> vertexEquality(BiPredicate<? super V, ? super V> equality) {
 		assertConfigurable(vertexEquality);
 		this.vertexEquality = equality;
 		return this;
 	}
 
 	@Override
-	public GraphConfigurator<V, E> edgeEquality(
-			BiPredicate<? super E, ? super E> equality) {
+	public GraphConfigurator<V, E> edgeEquality(BiPredicate<? super E, ? super E> equality) {
 		assertConfigurable(this.edgeEquality);
 		this.edgeEquality = equality;
 		return this;
 	}
 
 	@Override
-	public GraphConfigurator<V, E> internalListeners(
-			Consumer<GraphListeners<V, E>> internalListeners) {
+	public GraphConfigurator<V, E> internalListeners(Consumer<GraphListenersImpl<V, E>> internalListeners) {
 		internalListeners.accept(this.internalListeners);
 		return this;
 	}
@@ -268,7 +258,7 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>>
 		return edgeVertices;
 	}
 
-	GraphListeners<V, E> getInternalListeners() {
+	GraphListenersImpl<V, E> getInternalListeners() {
 		return internalListeners;
 	}
 }

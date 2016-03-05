@@ -38,10 +38,11 @@ import java.util.stream.Stream;
 import uk.co.strangeskies.mathematics.graph.EdgeVertices;
 import uk.co.strangeskies.mathematics.graph.Graph;
 import uk.co.strangeskies.mathematics.graph.GraphListeners;
-import uk.co.strangeskies.mathematics.graph.GraphListeners.EdgeListener;
-import uk.co.strangeskies.mathematics.graph.GraphListeners.EdgesListener;
-import uk.co.strangeskies.mathematics.graph.GraphListeners.VertexListener;
-import uk.co.strangeskies.mathematics.graph.GraphListeners.VerticesListener;
+import uk.co.strangeskies.mathematics.graph.GraphListeners.ChangeEvent;
+import uk.co.strangeskies.mathematics.graph.GraphListeners.EdgeEvent;
+import uk.co.strangeskies.mathematics.graph.GraphListeners.EdgesEvent;
+import uk.co.strangeskies.mathematics.graph.GraphListeners.VertexEvent;
+import uk.co.strangeskies.mathematics.graph.GraphListeners.VerticesEvent;
 import uk.co.strangeskies.mathematics.graph.GraphTransformer;
 import uk.co.strangeskies.utilities.EqualityComparator;
 import uk.co.strangeskies.utilities.IdentityProperty;
@@ -78,9 +79,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 
 				added.set(vertices.addAllImpl(vertexSet));
 
-				for (VerticesListener<V, E> listener : internalListeners
-						.verticesAdded())
-					listener.vertices(GraphImpl.this, vertexSet);
+				internalListeners.verticesAdded().fire(VerticesEvent.over(GraphImpl.this, vertexSet));
 			});
 			return added.get();
 		}
@@ -92,8 +91,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 
 			if (removed) {
 				atomicInternal(() -> {
-					adjacencyMatrix.remove(vertex).values()
-							.forEach(s -> s.forEach(e -> edges.remove(e)));
+					adjacencyMatrix.remove(vertex).values().forEach(s -> s.forEach(e -> edges.remove(e)));
 
 					adjacencyMatrix.values().forEach(toMap -> {
 						for (E edge : toMap.remove(vertex))
@@ -103,9 +101,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 					changeSet.verticesRemoved().add((V) vertex);
 					changeSet.verticesAdded().remove(vertex);
 
-					for (VertexListener<V, E> listener : internalListeners
-							.vertexRemoved())
-						listener.vertex(GraphImpl.this, (V) vertex);
+					internalListeners.vertexRemoved().fire(VertexEvent.over(GraphImpl.this, (V) vertex));
 				});
 			}
 
@@ -129,9 +125,8 @@ class GraphImpl<V, E> implements Graph<V, E> {
 
 				removed.set(vertices.removeAllImpl(vertexSet));
 
-				for (VerticesListener<V, E> listener : internalListeners
-						.verticesRemoved())
-					listener.vertices(GraphImpl.this, vertexSet);
+				internalListeners.verticesRemoved().fire(VerticesEvent.over(GraphImpl.this, vertexSet));
+
 			});
 			return removed.get();
 		}
@@ -174,21 +169,11 @@ class GraphImpl<V, E> implements Graph<V, E> {
 				return adjacentTo(vertex);
 		}
 
-		private Set<V> adjacentToDirectional(V vertex,
-				Function<EdgeVertices<V>, V> edgeToMatch) {
-			return adjacencyMatrix
-					.get(vertex)
-					.entrySet()
-					.stream()
-					.filter(
-							a -> a
-									.getValue()
-									.stream()
-									.filter(
-											e -> vertices().equality().test(
-													edgeToMatch.apply(incidentTo(e)), vertex)).findAny()
-									.isPresent()).map(Map.Entry::getKey)
-					.collect(Collectors.toCollection(GraphImpl.this::createVertexSet));
+		private Set<V> adjacentToDirectional(V vertex, Function<EdgeVertices<V>, V> edgeToMatch) {
+			return adjacencyMatrix.get(vertex).entrySet().stream()
+					.filter(a -> a.getValue().stream()
+							.filter(e -> vertices().equality().test(edgeToMatch.apply(incidentTo(e)), vertex)).findAny().isPresent())
+					.map(Map.Entry::getKey).collect(Collectors.toCollection(GraphImpl.this::createVertexSet));
 		}
 
 		@Override
@@ -221,8 +206,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 		private final Map<E, EdgeVertices<V>> edgeVertices;
 
 		public EdgesImpl(BiPredicate<? super E, ? super E> edgeComparator) {
-			this(edgeComparator != null ? new TreeMap<>(new EqualityComparator<E>(
-					edgeComparator)) : new HashMap<>());
+			this(edgeComparator != null ? new TreeMap<>(new EqualityComparator<E>(edgeComparator)) : new HashMap<>());
 		}
 
 		private EdgesImpl(Map<E, EdgeVertices<V>> edgeVertices) {
@@ -240,15 +224,13 @@ class GraphImpl<V, E> implements Graph<V, E> {
 				atomicInternal(() -> {
 					EdgeVertices<V> vertices = edges.edgeVertices.get(edge);
 
-					adjacencyMatrix.get(vertices.getFrom()).get(vertices.getTo())
-							.remove(edge);
+					adjacencyMatrix.get(vertices.getFrom()).get(vertices.getTo()).remove(edge);
 
 					if (!changeSet.edgesRemoved().containsKey(edge))
 						changeSet.edgesRemoved().put((E) edge, vertices);
 					changeSet.edgesAdded().remove(edge);
 
-					for (EdgeListener<V, E> listener : internalListeners.edgeAdded())
-						listener.edge(GraphImpl.this, (E) edge, vertices);
+					internalListeners.edgeRemoved().fire(EdgeEvent.over(GraphImpl.this, (E) edge, vertices));
 				});
 			}
 
@@ -279,11 +261,10 @@ class GraphImpl<V, E> implements Graph<V, E> {
 
 				added.set(edges.addAllImpl(edgeSet));
 
-				for (EdgesListener<V, E> listener : internalListeners.edgesAdded())
-					listener.edges(
-							GraphImpl.this,
-							edgeSet.stream().collect(
-									Collectors.toMap(Function.identity(), vertices::incidentTo)));
+				Map<E, EdgeVertices<V>> edges = edgeSet.stream()
+						.collect(Collectors.toMap(Function.identity(), vertices::incidentTo));
+
+				internalListeners.edgesAdded().fire(EdgesEvent.over(GraphImpl.this, edges));
 			});
 			return added.get();
 		}
@@ -307,11 +288,10 @@ class GraphImpl<V, E> implements Graph<V, E> {
 
 				removed.set(edges.removeAllImpl(edgeSet));
 
-				for (EdgesListener<V, E> listener : internalListeners.edgesRemoved())
-					listener.edges(
-							GraphImpl.this,
-							edgeSet.stream().collect(
-									Collectors.toMap(Function.identity(), vertices::incidentTo)));
+				Map<E, EdgeVertices<V>> edges = edgeSet.stream()
+						.collect(Collectors.toMap(Function.identity(), vertices::incidentTo));
+
+				internalListeners.edgesRemoved().fire(EdgesEvent.over(GraphImpl.this, edges));
 			});
 			return removed.get();
 		}
@@ -338,36 +318,24 @@ class GraphImpl<V, E> implements Graph<V, E> {
 				return incidentTo(vertex);
 		}
 
-		private Set<E> adjacentToDirectional(V vertex,
-				Function<EdgeVertices<V>, V> edgeToMatch) {
-			return adjacencyMatrix
-					.get(vertex)
-					.entrySet()
-					.stream()
-					.filter(
-							a -> a
-									.getValue()
-									.stream()
-									.filter(
-											e -> edgeToMatch.apply(vertices.incidentTo(e)) == vertex)
-									.findAny().isPresent()).map(Map.Entry::getValue)
-					.flatMap(Set::stream)
+		private Set<E> adjacentToDirectional(V vertex, Function<EdgeVertices<V>, V> edgeToMatch) {
+			return adjacencyMatrix.get(vertex).entrySet().stream()
+					.filter(a -> a.getValue().stream().filter(e -> edgeToMatch.apply(vertices.incidentTo(e)) == vertex).findAny()
+							.isPresent())
+					.map(Map.Entry::getValue).flatMap(Set::stream)
 					.collect(Collectors.toCollection(GraphImpl.this::createEdgeSet));
 		}
 
 		@Override
 		public Set<E> between(EdgeVertices<V> vertices) {
-			MultiMap<V, E, Set<E>> adjacencyMap = adjacencyMatrix.get(vertices
-					.getFrom());
+			MultiMap<V, E, Set<E>> adjacencyMap = adjacencyMatrix.get(vertices.getFrom());
 			return adjacencyMap == null ? null : adjacencyMap.get(vertices.getTo());
 		}
 
 		@Override
 		public E betweenUnique(EdgeVertices<V> vertices) {
-			MultiMap<V, E, Set<E>> adjacencyMap = adjacencyMatrix.get(vertices
-					.getFrom());
-			return adjacencyMap == null ? null : adjacencyMap.get(vertices.getTo())
-					.iterator().next();
+			MultiMap<V, E, Set<E>> adjacencyMap = adjacencyMatrix.get(vertices.getFrom());
+			return adjacencyMap == null ? null : adjacencyMap.get(vertices.getTo()).iterator().next();
 		}
 
 		@Override
@@ -408,13 +376,13 @@ class GraphImpl<V, E> implements Graph<V, E> {
 	private final boolean weighted;
 	private final Function<E, Double> edgeWeight;
 
-	private final GraphListeners<V, E> internalListeners;
-	private final GraphListeners<V, E> listeners;
+	private final GraphListenersImpl<V, E> internalListeners;
+	private final GraphListenersImpl<V, E> listeners;
 
 	private ChangeSetImpl<V, E> changeSet;
 
 	public GraphImpl(GraphConfiguratorImpl<V, E> configurator) {
-		listeners = new GraphListeners<>();
+		listeners = new GraphListenersImpl<>();
 		internalListeners = configurator.getInternalListeners();
 
 		lowToHighDirection = configurator.getLowToHighDirection();
@@ -432,17 +400,14 @@ class GraphImpl<V, E> implements Graph<V, E> {
 
 		// Edge addition function
 		this.addEdge = addEdgeConsumer();
-		this.addInferredEdge = addInferredEdgeFunction(
-				configurator.getEdgeFactory(), this.addEdge);
+		this.addInferredEdge = addInferredEdgeFunction(configurator.getEdgeFactory(), this.addEdge);
 
 		// Vertex addition function
-		this.addVertex = addVertexPredicate(configurator.getVertexEquality(),
-				addInferredEdge);
+		this.addVertex = addVertexPredicate(configurator.getVertexEquality(), addInferredEdge);
 
-		Function<EdgeVertices<V>, E> addEdgeConstructor = addInferredEdgeFunction(
-				configurator.getEdgeFactory(), addEdgeConsumer());
-		Predicate<V> addVertexConstructor = addVertexPredicate(
-				configurator.getVertexEquality(), addEdgeConstructor);
+		Function<EdgeVertices<V>, E> addEdgeConstructor = addInferredEdgeFunction(configurator.getEdgeFactory(),
+				addEdgeConsumer());
+		Predicate<V> addVertexConstructor = addVertexPredicate(configurator.getVertexEquality(), addEdgeConstructor);
 
 		// Add initial vertices and edges
 		if (configurator.getVertices() != null)
@@ -454,13 +419,11 @@ class GraphImpl<V, E> implements Graph<V, E> {
 				addEdgeConstructor.apply(edge);
 
 		if (configurator.getEdgeMap() != null)
-			for (Map.Entry<E, EdgeVertices<V>> edge : configurator.getEdgeMap()
-					.entrySet())
+			for (Map.Entry<E, EdgeVertices<V>> edge : configurator.getEdgeMap().entrySet())
 				addEdge.accept(edge.getKey(), edge.getValue());
 	}
 
-	private Function<EdgeVertices<V>, E> addInferredEdgeFunction(
-			Function<EdgeVertices<V>, E> edgeFactory,
+	private Function<EdgeVertices<V>, E> addInferredEdgeFunction(Function<EdgeVertices<V>, E> edgeFactory,
 			BiConsumer<E, EdgeVertices<V>> addEdgeConsumer) {
 		if (edgeFactory != null) {
 			return v -> {
@@ -480,8 +443,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 			};
 		} else {
 			return v -> {
-				throw new UnsupportedOperationException(
-						"Edge instance cannot be inferred, and must be explicitly provided");
+				throw new UnsupportedOperationException("Edge instance cannot be inferred, and must be explicitly provided");
 			};
 		}
 	}
@@ -492,45 +454,39 @@ class GraphImpl<V, E> implements Graph<V, E> {
 					&& adjacencyMatrix.get(v.getFrom()).containsKey(v.getTo())) {
 				return;
 			} else if (!adjacencyMatrix.containsKey(v.getFrom())) {
-				throw new IllegalArgumentException("Cannot create edge from vertex '"
-						+ v.getFrom() + "' as it is not a member of the graph '"
-						+ adjacencyMatrix.keySet() + "'");
+				throw new IllegalArgumentException("Cannot create edge from vertex '" + v.getFrom()
+						+ "' as it is not a member of the graph '" + adjacencyMatrix.keySet() + "'");
 			} else if (!adjacencyMatrix.containsKey(v.getTo())) {
-				throw new IllegalArgumentException("Cannot create edge to vertex '"
-						+ v.getTo() + "' as it is not a member of the graph '"
-						+ adjacencyMatrix.keySet() + "'");
+				throw new IllegalArgumentException("Cannot create edge to vertex '" + v.getTo()
+						+ "' as it is not a member of the graph '" + adjacencyMatrix.keySet() + "'");
 			}
 
-			EdgeVertices<V> vertex;
+			EdgeVertices<V> vertices;
 			if (lowToHighDirectionFunction != null)
-				vertex = EdgeVertices.between(v.getFrom(), v.getTo(),
-						lowToHighDirectionFunction.apply(e));
+				vertices = EdgeVertices.between(v.getFrom(), v.getTo(), lowToHighDirectionFunction.apply(e));
 			else
-				vertex = v;
+				vertices = v;
 
 			atomicInternal(() -> {
-				adjacencyMatrix.get(vertex.getFrom()).add(vertex.getTo(), e);
-				adjacencyMatrix.get(vertex.getTo()).add(vertex.getFrom(), e);
-				edges.put(e, vertex);
+				adjacencyMatrix.get(vertices.getFrom()).add(vertices.getTo(), e);
+				adjacencyMatrix.get(vertices.getTo()).add(vertices.getFrom(), e);
+				edges.put(e, vertices);
 
-				changeSet.edgesRemoved().remove(e, vertex);
-				changeSet.edgesAdded().put(e, vertex);
+				changeSet.edgesRemoved().remove(e, vertices);
+				changeSet.edgesAdded().put(e, vertices);
 
-				for (EdgeListener<V, E> listener : internalListeners.edgeAdded())
-					listener.edge(GraphImpl.this, e, vertex);
+				internalListeners.edgeAdded().fire(EdgeEvent.over(GraphImpl.this, e, vertices));
 			});
 		};
 	}
 
-	private Predicate<V> addVertexPredicate(
-			BiPredicate<? super V, ? super V> vertexComparator,
+	private Predicate<V> addVertexPredicate(BiPredicate<? super V, ? super V> vertexComparator,
 			Function<EdgeVertices<V>, E> addEdge) {
 		Predicate<V> addVertex = vertex -> {
 			if (!adjacencyMatrix.containsKey(vertex)) {
 				MultiMap<V, E, Set<E>> map;
 				if (vertexComparator != null) {
-					map = new MultiTreeMap<>(new EqualityComparator<V>(vertexComparator),
-							this::createEdgeSet);
+					map = new MultiTreeMap<>(new EqualityComparator<V>(vertexComparator), this::createEdgeSet);
 				} else {
 					map = new MultiHashMap<>(this::createEdgeSet);
 				}
@@ -541,8 +497,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 					changeSet.verticesRemoved().remove(vertex);
 					changeSet.verticesAdded().add(vertex);
 
-					for (VertexListener<V, E> listener : internalListeners.vertexAdded())
-						listener.vertex(GraphImpl.this, vertex);
+					internalListeners.vertexAdded().fire(VertexEvent.over(GraphImpl.this, vertex));
 				});
 
 				return true;
@@ -555,9 +510,8 @@ class GraphImpl<V, E> implements Graph<V, E> {
 
 	@Override
 	public Graph<V, E> copy() {
-		return new GraphBuilderImpl().configure().readOnly().vertices(vertices)
-				.edges(edges.edgeVertices).edgeFactory(v -> edges.betweenUnique(v))
-				.create();
+		return new GraphBuilderImpl().configure().readOnly().vertices(vertices).edges(edges.edgeVertices)
+				.edgeFactory(v -> edges.betweenUnique(v)).create();
 	}
 
 	@Override
@@ -608,7 +562,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 			try {
 				action.run();
 
-				listeners.change().forEach(c -> c.change(this, changeSet.copy()));
+				listeners.change().fire(ChangeEvent.over(GraphImpl.this, changeSet.copy()));
 			} catch (Exception e) {
 				/*
 				 * TODO discard change set
@@ -629,15 +583,13 @@ class GraphImpl<V, E> implements Graph<V, E> {
 
 	@Override
 	public Set<V> createVertexSet() {
-		return vertexComparator != null ? new TreeSet<>(new EqualityComparator<V>(
-				vertexComparator)) : new HashSet<>();
+		return vertexComparator != null ? new TreeSet<>(new EqualityComparator<V>(vertexComparator)) : new HashSet<>();
 	}
 
 	@Override
 	public Set<V> createVertexSet(Collection<? extends V> vertices) {
 		if (vertexComparator != null) {
-			Set<V> vertexSet = new TreeSet<>(new EqualityComparator<V>(
-					vertexComparator));
+			Set<V> vertexSet = new TreeSet<>(new EqualityComparator<V>(vertexComparator));
 			vertexSet.addAll(vertices);
 			return vertexSet;
 		} else
@@ -646,15 +598,13 @@ class GraphImpl<V, E> implements Graph<V, E> {
 
 	@Override
 	public <T> Map<V, T> createVertexMap() {
-		return vertexComparator != null ? new TreeMap<>(new EqualityComparator<V>(
-				vertexComparator)) : new HashMap<>();
+		return vertexComparator != null ? new TreeMap<>(new EqualityComparator<V>(vertexComparator)) : new HashMap<>();
 	}
 
 	@Override
 	public <T> Map<V, T> createVertexMap(Map<? extends V, ? extends T> edges) {
 		if (vertexComparator != null) {
-			Map<V, T> edgeMap = new TreeMap<>(new EqualityComparator<V>(
-					vertexComparator));
+			Map<V, T> edgeMap = new TreeMap<>(new EqualityComparator<V>(vertexComparator));
 			edgeMap.putAll(edges);
 			return edgeMap;
 		} else
@@ -663,8 +613,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 
 	@Override
 	public Set<E> createEdgeSet() {
-		return edgeComparator != null ? new TreeSet<>(new EqualityComparator<E>(
-				edgeComparator)) : new HashSet<>();
+		return edgeComparator != null ? new TreeSet<>(new EqualityComparator<E>(edgeComparator)) : new HashSet<>();
 	}
 
 	@Override
@@ -679,15 +628,13 @@ class GraphImpl<V, E> implements Graph<V, E> {
 
 	@Override
 	public <T> Map<E, T> createEdgeMap() {
-		return edgeComparator != null ? new TreeMap<>(new EqualityComparator<E>(
-				edgeComparator)) : new HashMap<>();
+		return edgeComparator != null ? new TreeMap<>(new EqualityComparator<E>(edgeComparator)) : new HashMap<>();
 	}
 
 	@Override
 	public <T> Map<E, T> createEdgeMap(Map<? extends E, ? extends T> edges) {
 		if (edgeComparator != null) {
-			Map<E, T> edgeMap = new TreeMap<>(new EqualityComparator<E>(
-					edgeComparator));
+			Map<E, T> edgeMap = new TreeMap<>(new EqualityComparator<E>(edgeComparator));
 			edgeMap.putAll(edges);
 			return edgeMap;
 		} else

@@ -31,16 +31,17 @@ import org.osgi.annotation.versioning.ProviderType;
 
 import uk.co.strangeskies.mathematics.graph.EdgeVertices;
 import uk.co.strangeskies.mathematics.graph.Graph;
-import uk.co.strangeskies.mathematics.graph.GraphListeners;
+import uk.co.strangeskies.mathematics.graph.impl.GraphListenersImpl;
+import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.factory.Factory;
 
 /**
  *
  * @author Elias N Vasylenko
  * @param <V>
- *            The type of vertices in the graph
+ *          The type of vertices in the graph
  * @param <E>
- *            The type of edges in the graph
+ *          The type of edges in the graph
  */
 @ProviderType
 public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
@@ -72,7 +73,7 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * Accepts a collection of vertices to be contained in the resulting graph.
 	 *
 	 * @param vertices
-	 *            Vertex objects to include in the graph
+	 *          Vertex objects to include in the graph
 	 * @return A derived configurator with the requested configuration
 	 */
 	<W extends V> GraphConfigurator<W, E> vertices(Collection<W> vertices);
@@ -82,7 +83,7 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * {@link #vertices(Collection)}.
 	 *
 	 * @param vertices
-	 *            Vertex objects to include in the graph
+	 *          Vertex objects to include in the graph
 	 * @return A derived configurator with the requested configuration
 	 */
 	default <W extends V> GraphConfigurator<W, E> vertices(@SuppressWarnings("unchecked") W... vertices) {
@@ -93,7 +94,7 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * Accepts a collection of vertex pairs for edges to be defined between.
 	 *
 	 * @param edges
-	 *            Edges to include in the graph
+	 *          Edges to include in the graph
 	 * @return A derived configurator with the requested configuration
 	 */
 	GraphConfigurator<V, E> edges(Collection<? extends EdgeVertices<V>> edges);
@@ -103,7 +104,7 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * {@link #edges(Collection)}.
 	 *
 	 * @param edges
-	 *            Edges to include in the graph
+	 *          Edges to include in the graph
 	 * @return A derived configurator with the requested configuration
 	 */
 	default GraphConfigurator<V, E> edges(@SuppressWarnings("unchecked") EdgeVertices<V>... edges) {
@@ -125,9 +126,9 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	GraphConfigurator<V, E> edge(E edge, V from, V to);
 
 	/**
-	 * The graph will be directed, and the direction of an edge will be
-	 * determined by the order in which the vertices for that edge are given
-	 * when an edge is added.
+	 * The graph will be directed, and the direction of an edge will be determined
+	 * by the order in which the vertices for that edge are given when an edge is
+	 * added.
 	 * 
 	 * @return A derived configurator with the requested configuration
 	 */
@@ -140,14 +141,13 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	GraphConfigurator<V, E> multigraph();
 
 	/**
-	 * This method sets a comparator to determine the direction of an edge
-	 * between two vertices. Vertices are passed to the comparator in the order
-	 * they were given when defining the edge. The default behaviour, if no
-	 * comparator is specified is as if a comparator has been specified which
-	 * always returns 1.
+	 * This method sets a comparator to determine the direction of an edge between
+	 * two vertices. Vertices are passed to the comparator in the order they were
+	 * given when defining the edge. The default behaviour, if no comparator is
+	 * specified is as if a comparator has been specified which always returns 1.
 	 *
 	 * @param lowToHigh
-	 *            A vertex comparator defining a direction between vertices
+	 *          A vertex comparator defining a direction between vertices
 	 * @return A derived configurator with the requested configuration
 	 */
 	GraphConfigurator<V, E> direction(Comparator<V> lowToHigh);
@@ -155,15 +155,14 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	/**
 	 * This method accepts a function to create a comparator from an edge, over
 	 * the vertices associated with that edge. The result of the application of
-	 * this comparator will be used to determine the direction of that edge,
-	 * with the semantics described by the {@link #direction(Comparator)}
-	 * method.
+	 * this comparator will be used to determine the direction of that edge, with
+	 * the semantics described by the {@link #direction(Comparator)} method.
 	 * 
 	 * The function is only applied at most once per creation of an edge.
 	 *
 	 * @param lowToHigh
-	 *            A function from an edge between two vertices to a vertex
-	 *            comparator defining a direction between those vertices
+	 *          A function from an edge between two vertices to a vertex
+	 *          comparator defining a direction between those vertices
 	 * @return A derived configurator with the requested configuration
 	 */
 	GraphConfigurator<V, E> direction(Function<E, Comparator<V>> lowToHigh);
@@ -210,7 +209,7 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * creation of edge objects is independent of the associated vertex objects.
 	 *
 	 * @param factory
-	 *            The factory with which to create edge objects
+	 *          The factory with which to create edge objects
 	 * @return A derived configurator with the requested configuration
 	 */
 	default <F extends E> GraphConfigurator<V, F> edgeFactory(Factory<F> factory) {
@@ -218,11 +217,11 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	}
 
 	/**
-	 * This method accepts a mapping from an edge to a weight for that edge. If
-	 * no mapping is provided, the graph will be considered unweighted.
+	 * This method accepts a mapping from an edge to a weight for that edge. If no
+	 * mapping is provided, the graph will be considered unweighted.
 	 *
 	 * @param weight
-	 *            A function from an edge object to its weight
+	 *          A function from an edge object to its weight
 	 * @return A derived configurator with the requested configuration
 	 */
 	GraphConfigurator<V, E> edgeWeight(Function<E, Double> weight);
@@ -232,25 +231,23 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	GraphConfigurator<V, E> edgeEquality(BiPredicate<? super E, ? super E> comparator);
 
 	/**
-	 * Graph operations are atomic. Only one atomic operation at a time can hold
-	 * a write lock in order to execute, though an atomic operation can invoke
-	 * other such operations internally, and they will be considered a part of
-	 * the same atomic transaction which began at some 'root' operation
-	 * invocation.
+	 * Graph operations are atomic. Only one atomic operation at a time can hold a
+	 * write lock in order to execute, though an atomic operation can invoke other
+	 * such operations internally, and they will be considered a part of the same
+	 * atomic transaction which began at some 'root' operation invocation.
 	 * 
 	 * <p>
 	 * If an exception is caught at the root invocation of an atomic operation,
-	 * the operation will be cancelled and all pending changes discarded.
-	 * Internal listeners are triggered <em>during</em> an atomic operation as
-	 * each change occurs, and so any exceptions they throw may propagate down
-	 * in this manner.
+	 * the operation will be cancelled and all pending changes discarded. Internal
+	 * listeners are triggered <em>during</em> an atomic operation as each change
+	 * occurs, and so any exceptions they throw may propagate down in this manner.
 	 * 
 	 * @return A derived configurator with the requested configuration
 	 */
-	GraphConfigurator<V, E> internalListeners(Consumer<GraphListeners<V, E>> internalListeners);
+	GraphConfigurator<V, E> internalListeners(Consumer<GraphListenersImpl<V, E>> internalListeners);
 
-	default <L> GraphConfigurator<V, E> addInternalListener(Function<GraphListeners<V, E>, Set<L>> listenerSet,
-			L listener) {
-		return internalListeners(l -> listenerSet.apply(l).add(listener));
+	default <L> GraphConfigurator<V, E> addInternalListener(Function<GraphListenersImpl<V, E>, Observable<L>> listenerSet,
+			Consumer<L> listener) {
+		return internalListeners(l -> listenerSet.apply(l).addObserver(listener));
 	}
 }

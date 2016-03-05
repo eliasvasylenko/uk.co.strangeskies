@@ -1,34 +1,15 @@
-/*
- * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
- *
- * This file is part of uk.co.strangeskies.mathematics.
- *
- * uk.co.strangeskies.mathematics is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * uk.co.strangeskies.mathematics is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with uk.co.strangeskies.mathematics.  If not, see <http://www.gnu.org/licenses/>.
- */
 package uk.co.strangeskies.mathematics.graph;
 
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.osgi.annotation.versioning.ConsumerType;
 import org.osgi.annotation.versioning.ProviderType;
 
-@ProviderType
-public class GraphListeners<V, E> {
+import uk.co.strangeskies.utilities.Observable;
+
+public interface GraphListeners<V, E> {
 	@ProviderType
-	public interface ChangeSet<V, E> {
+	interface ChangeSet<V, E> {
 		Set<V> verticesAdded();
 
 		Set<V> verticesRemoved();
@@ -38,79 +19,128 @@ public class GraphListeners<V, E> {
 		Map<E, EdgeVertices<V>> edgesRemoved();
 	}
 
-	@ConsumerType
-	@FunctionalInterface
-	public interface ChangeListener<V, E> {
-		void change(Graph<V, E> graph, ChangeSet<V, E> changeSet);
+	@ProviderType
+	interface GraphEvent<V, E> {
+		Graph<V, E> graph();
 	}
 
-	@ConsumerType
-	@FunctionalInterface
-	public interface EdgeListener<V, E> {
-		void edge(Graph<V, E> graph, E edge, EdgeVertices<V> vertices);
+	@ProviderType
+	interface ChangeEvent<V, E> extends GraphEvent<V, E> {
+		ChangeSet<V, E> changes();
+
+		static <V, E> ChangeEvent<V, E> over(Graph<V, E> graph, ChangeSet<V, E> changes) {
+			return new ChangeEvent<V, E>() {
+				@Override
+				public Graph<V, E> graph() {
+					return graph;
+				}
+
+				@Override
+				public ChangeSet<V, E> changes() {
+					return changes;
+				}
+			};
+		}
 	}
 
-	@ConsumerType
-	@FunctionalInterface
-	public interface EdgesListener<V, E> {
-		void edges(Graph<V, E> graph, Map<E, EdgeVertices<V>> edges);
+	@ProviderType
+	interface EdgeEvent<V, E> extends GraphEvent<V, E> {
+		E edge();
+
+		EdgeVertices<V> vertices();
+
+		static <V, E> EdgeEvent<V, E> over(Graph<V, E> graph, E edge, EdgeVertices<V> vertices) {
+			return new EdgeEvent<V, E>() {
+				@Override
+				public Graph<V, E> graph() {
+					return graph;
+				}
+
+				@Override
+				public E edge() {
+					return edge;
+				}
+
+				@Override
+				public EdgeVertices<V> vertices() {
+					return vertices;
+				}
+			};
+		}
 	}
 
-	@ConsumerType
-	@FunctionalInterface
-	public interface VertexListener<V, E> {
-		void vertex(Graph<V, E> graph, V vertex);
+	@ProviderType
+	interface EdgesEvent<V, E> extends GraphEvent<V, E> {
+		Map<E, EdgeVertices<V>> edges();
+
+		static <V, E> EdgesEvent<V, E> over(Graph<V, E> graph, Map<E, EdgeVertices<V>> edges) {
+			return new EdgesEvent<V, E>() {
+				@Override
+				public Graph<V, E> graph() {
+					return graph;
+				}
+
+				@Override
+				public Map<E, EdgeVertices<V>> edges() {
+					return edges;
+				}
+			};
+		}
 	}
 
-	@ConsumerType
-	@FunctionalInterface
-	public interface VerticesListener<V, E> {
-		void vertices(Graph<V, E> graph, Set<V> vertex);
+	@ProviderType
+	interface VertexEvent<V, E> extends GraphEvent<V, E> {
+		V vertex();
+
+		static <V, E> VertexEvent<V, E> over(Graph<V, E> graph, V vertex) {
+			return new VertexEvent<V, E>() {
+				@Override
+				public Graph<V, E> graph() {
+					return graph;
+				}
+
+				@Override
+				public V vertex() {
+					return vertex;
+				}
+			};
+		}
 	}
 
-	private final Set<ChangeListener<V, E>> change = new HashSet<>();
-	private final Set<EdgeListener<V, E>> edgeAdded = new HashSet<>();
-	private final Set<EdgesListener<V, E>> edgesAdded = new HashSet<>();
-	private final Set<EdgeListener<V, E>> edgeRemoved = new HashSet<>();
-	private final Set<EdgesListener<V, E>> edgesRemoved = new HashSet<>();
-	private final Set<VertexListener<V, E>> vertexAdded = new HashSet<>();
-	private final Set<VerticesListener<V, E>> verticesAdded = new HashSet<>();
-	private final Set<VertexListener<V, E>> vertexRemoved = new HashSet<>();
-	private final Set<VerticesListener<V, E>> verticesRemoved = new HashSet<>();
+	@ProviderType
+	interface VerticesEvent<V, E> extends GraphEvent<V, E> {
+		Set<V> vertices();
 
-	public Set<ChangeListener<V, E>> change() {
-		return change;
+		static <V, E> VerticesEvent<V, E> over(Graph<V, E> graph, Set<V> vertices) {
+			return new VerticesEvent<V, E>() {
+				@Override
+				public Graph<V, E> graph() {
+					return graph;
+				}
+
+				@Override
+				public Set<V> vertices() {
+					return vertices;
+				}
+			};
+		}
 	}
 
-	public Set<EdgeListener<V, E>> edgeAdded() {
-		return edgeAdded;
-	}
+	Observable<ChangeEvent<V, E>> change();
 
-	public Set<EdgesListener<V, E>> edgesAdded() {
-		return edgesAdded;
-	}
+	Observable<EdgeEvent<V, E>> edgeAdded();
 
-	public Set<EdgeListener<V, E>> edgeRemoved() {
-		return edgeRemoved;
-	}
+	Observable<EdgesEvent<V, E>> edgesAdded();
 
-	public Set<EdgesListener<V, E>> edgesRemoved() {
-		return edgesRemoved;
-	}
+	Observable<EdgeEvent<V, E>> edgeRemoved();
 
-	public Set<VertexListener<V, E>> vertexAdded() {
-		return vertexAdded;
-	}
+	Observable<EdgesEvent<V, E>> edgesRemoved();
 
-	public Set<VerticesListener<V, E>> verticesAdded() {
-		return verticesAdded;
-	}
+	Observable<VertexEvent<V, E>> vertexAdded();
 
-	public Set<VertexListener<V, E>> vertexRemoved() {
-		return vertexRemoved;
-	}
+	Observable<VerticesEvent<V, E>> verticesAdded();
 
-	public Set<VerticesListener<V, E>> verticesRemoved() {
-		return verticesRemoved;
-	}
+	Observable<VertexEvent<V, E>> vertexRemoved();
+
+	Observable<VerticesEvent<V, E>> verticesRemoved();
 }
