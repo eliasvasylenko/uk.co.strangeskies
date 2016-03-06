@@ -38,4 +38,9 @@ public class ObservableTreeSet<E> extends AbstractObservableTreeSet<ObservableTr
 	public ObservableTreeSet(SortedSet<E> s) {
 		super(s);
 	}
+
+	@Override
+	public ObservableTreeSet<E> copy() {
+		return new ObservableTreeSet<>(this);
+	}
 }

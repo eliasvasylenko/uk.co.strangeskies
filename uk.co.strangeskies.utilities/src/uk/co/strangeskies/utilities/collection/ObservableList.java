@@ -112,5 +112,10 @@ public interface ObservableList<S extends ObservableList<S, E>, E>
 				}
 			};
 		}
+
+		@Override
+		public UnmodifiableObservableList<E> copy() {
+			return new UnmodifiableObservableList<>(this.copy());
+		}
 	}
 }

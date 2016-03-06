@@ -26,7 +26,7 @@ import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableImpl;
 
 public abstract class AbstractObservableHashSet<S extends AbstractObservableHashSet<S, E>, E> extends HashSet<E>
-		implements ObservableSet<AbstractObservableHashSet<S, E>, E> {
+		implements ObservableSet<S, E> {
 	private static final long serialVersionUID = 1L;
 
 	private final ObservableImpl<Change<E>> changeObservable = new ObservableImpl<>();
@@ -50,6 +50,7 @@ public abstract class AbstractObservableHashSet<S extends AbstractObservableHash
 	public boolean add(E e) {
 		synchronized (changeObservable) {
 			if (super.add(e)) {
+				stateObservable.fire(getThis());
 				changeObservable.fire(new Change<E>() {
 					@Override
 					public Type type() {
@@ -72,6 +73,7 @@ public abstract class AbstractObservableHashSet<S extends AbstractObservableHash
 	public boolean remove(Object o) {
 		synchronized (changeObservable) {
 			if (super.remove(o)) {
+				stateObservable.fire(getThis());
 				changeObservable.fire(new Change<E>() {
 					@Override
 					public Type type() {
@@ -118,14 +120,14 @@ public abstract class AbstractObservableHashSet<S extends AbstractObservableHash
 	}
 
 	@Override
-	public boolean addObserver(Consumer<? super AbstractObservableHashSet<S, E>> observer) {
+	public boolean addObserver(Consumer<? super S> observer) {
 		synchronized (changeObservable) {
 			return stateObservable.addObserver(observer);
 		}
 	}
 
 	@Override
-	public boolean removeObserver(Consumer<? super AbstractObservableHashSet<S, E>> observer) {
+	public boolean removeObserver(Consumer<? super S> observer) {
 		synchronized (changeObservable) {
 			return stateObservable.removeObserver(observer);
 		}

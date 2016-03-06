@@ -36,4 +36,9 @@ public class ObservableHashSet<E> extends AbstractObservableHashSet<ObservableHa
 	public ObservableHashSet(int initialCapacity) {
 		super(initialCapacity);
 	}
+
+	@Override
+	public ObservableHashSet<E> copy() {
+		return new ObservableHashSet<>(this);
+	}
 }

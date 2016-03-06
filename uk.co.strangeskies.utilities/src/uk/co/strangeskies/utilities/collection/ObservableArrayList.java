@@ -18,10 +18,10 @@
  */
 package uk.co.strangeskies.utilities.collection;
 
-import java.util.ArrayList;
 import java.util.Collection;
 
-public abstract class ObservableArrayList<E> extends ArrayList<E> implements ObservableList<ObservableArrayList<E>, E> {
+public class ObservableArrayList<E> extends AbstractObservableArrayList<ObservableArrayList<E>, E>
+		implements ObservableList<ObservableArrayList<E>, E> {
 	private static final long serialVersionUID = 1L;
 
 	public ObservableArrayList(int initialCapacity) {
@@ -32,5 +32,10 @@ public abstract class ObservableArrayList<E> extends ArrayList<E> implements Obs
 
 	public ObservableArrayList(Collection<? extends E> c) {
 		super(c);
+	}
+
+	@Override
+	public ObservableArrayList<E> copy() {
+		return new ObservableArrayList<>(this);
 	}
 }

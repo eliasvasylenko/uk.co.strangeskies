@@ -109,5 +109,10 @@ public interface ObservableSet<S extends ObservableSet<S, E>, E>
 				}
 			};
 		}
+
+		@Override
+		public UnmodifiableObservableSet<E> copy() {
+			return new UnmodifiableObservableSet<>(this.copy());
+		}
 	}
 }

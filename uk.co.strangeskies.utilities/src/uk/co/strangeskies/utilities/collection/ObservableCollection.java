@@ -21,8 +21,9 @@ package uk.co.strangeskies.utilities.collection;
 import java.util.Collection;
 
 import uk.co.strangeskies.utilities.Observable;
+import uk.co.strangeskies.utilities.Self;
 
 public interface ObservableCollection<S extends ObservableCollection<S, E, C>, E, C>
-		extends Collection<E>, Observable<S> {
+		extends Collection<E>, Observable<S>, Self<S> {
 	Observable<C> changes();
 }

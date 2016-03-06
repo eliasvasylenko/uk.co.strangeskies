@@ -80,52 +80,81 @@ public abstract class AbstractObservableArrayList<S extends AbstractObservableAr
 		super(c);
 	}
 
-	protected void beginChange() {
+	protected boolean beginChange() {
 		synchronized (changeObservable) {
 			if (changeDepth++ == 0) {
 				if (changeObservable.getObserverCount() > 0) {
-					change = new ChangeImpl();
+					if (change == null) {
+						change = new ChangeImpl();
+					}
 				} else {
 					change = null;
 				}
+
+				return true;
+			} else {
+				return false;
 			}
 		}
 	}
 
-	protected void endChange() {
+	protected boolean endChange() {
 		synchronized (changeObservable) {
-			if (--changeDepth == 0) {
-				changeObservable.fire(change);
+			if (--changeDepth == 0 && change.size > 0) {
+				if (fireChange(change)) {
+					change = null;
+				}
+
+				return true;
+			} else {
+				return false;
 			}
 		}
 	}
 
-	protected void endAllChanges() {
-		synchronized (changeObservable) {
-			changeDepth = 0;
-			changeObservable.fire(change);
-		}
+	protected boolean fireChange(Change<E> change) {
+		fireEvent();
+		changeObservable.fire(change);
+
+		return true;
+	}
+
+	protected void fireEvent() {
+		stateObservable.fire(getThis());
 	}
 
 	@Override
 	public boolean add(E e) {
 		synchronized (changeObservable) {
-			super.add(e);
+			try {
+				beginChange();
 
-			if (change != null) {
-				// TODO do change
+				super.add(e);
+
+				if (change != null) {
+					// TODO do change
+				}
+
+				return true;
+			} finally {
+				endChange();
 			}
-			return true;
 		}
 	}
 
 	@Override
 	public void add(int index, E element) {
 		synchronized (changeObservable) {
-			super.add(index, element);
+			try {
+				beginChange();
 
-			if (change != null) {
-				// TODO do change
+				super.add(index, element);
+
+				if (change != null) {
+					// TODO do change
+				}
+			} finally {
+				endChange();
 			}
 		}
 	}
@@ -133,11 +162,18 @@ public abstract class AbstractObservableArrayList<S extends AbstractObservableAr
 	@Override
 	public boolean remove(Object o) {
 		synchronized (changeObservable) {
-			if (super.remove(o) && change != null) {
-				// TODO do change
-				return true;
-			} else {
-				return false;
+			try {
+				beginChange();
+
+				boolean changed = super.remove(o);
+
+				if (changed && change != null) {
+					// TODO do change
+				}
+
+				return changed;
+			} finally {
+				endChange();
 			}
 		}
 	}
@@ -145,37 +181,56 @@ public abstract class AbstractObservableArrayList<S extends AbstractObservableAr
 	@Override
 	public E remove(int index) {
 		synchronized (changeObservable) {
-			E previous = super.remove(index);
+			try {
+				beginChange();
 
-			if (change != null) {
-				// TODO do change
+				E previous = super.remove(index);
+
+				if (change != null) {
+					// TODO do change
+				}
+
+				return previous;
+			} finally {
+				endChange();
 			}
-
-			return previous;
 		}
 	}
 
 	@Override
 	public E set(int index, E element) {
 		synchronized (changeObservable) {
-			E previous = super.set(index, element);
+			try {
+				beginChange();
 
-			if (change != null) {
-				// TODO do change
+				E previous = super.set(index, element);
+
+				if (change != null) {
+					// TODO do change
+				}
+
+				return previous;
+			} finally {
+				endChange();
 			}
-
-			return previous;
 		}
 	}
 
 	@Override
 	public boolean addAll(Collection<? extends E> c) {
 		synchronized (changeObservable) {
-			if (super.addAll(c) && change != null) {
-				// TODO do change
-				return true;
-			} else {
-				return false;
+			try {
+				beginChange();
+
+				boolean changed = super.addAll(c);
+
+				if (changed && change != null) {
+					// TODO do change
+				}
+
+				return changed;
+			} finally {
+				endChange();
 			}
 		}
 	}
@@ -183,11 +238,18 @@ public abstract class AbstractObservableArrayList<S extends AbstractObservableAr
 	@Override
 	public boolean addAll(int index, Collection<? extends E> c) {
 		synchronized (changeObservable) {
-			if (super.addAll(index, c) && change != null) {
-				// TODO do change
-				return true;
-			} else {
-				return false;
+			try {
+				beginChange();
+
+				boolean changed = super.addAll(index, c);
+
+				if (changed && change != null) {
+					// TODO do change
+				}
+
+				return changed;
+			} finally {
+				endChange();
 			}
 		}
 	}
@@ -195,11 +257,18 @@ public abstract class AbstractObservableArrayList<S extends AbstractObservableAr
 	@Override
 	public boolean removeAll(Collection<?> c) {
 		synchronized (changeObservable) {
-			if (super.removeAll(c) && change != null) {
-				// TODO do change
-				return true;
-			} else {
-				return false;
+			try {
+				beginChange();
+
+				boolean changed = super.removeAll(c);
+
+				if (changed && change != null) {
+					// TODO do change
+				}
+
+				return changed;
+			} finally {
+				endChange();
 			}
 		}
 	}
@@ -207,11 +276,18 @@ public abstract class AbstractObservableArrayList<S extends AbstractObservableAr
 	@Override
 	public boolean retainAll(Collection<?> c) {
 		synchronized (changeObservable) {
-			if (super.retainAll(c) && change != null) {
-				// TODO do change
-				return true;
-			} else {
-				return false;
+			try {
+				beginChange();
+
+				boolean changed = super.retainAll(c);
+
+				if (changed && change != null) {
+					// TODO do change
+				}
+
+				return changed;
+			} finally {
+				endChange();
 			}
 		}
 	}
@@ -224,6 +300,7 @@ public abstract class AbstractObservableArrayList<S extends AbstractObservableAr
 	@Override
 	public boolean addObserver(Consumer<? super S> observer) {
 		synchronized (changeObservable) {
+			// TODO not catch partial changes
 			return stateObservable.addObserver(observer);
 		}
 	}
