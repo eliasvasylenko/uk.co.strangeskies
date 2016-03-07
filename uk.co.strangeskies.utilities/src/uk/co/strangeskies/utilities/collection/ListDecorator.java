@@ -21,15 +21,10 @@ package uk.co.strangeskies.utilities.collection;
 import java.util.Collection;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.function.Supplier;
 
 public class ListDecorator<E> extends CollectionDecorator<List<E>, E> implements
 		List<E> {
 	public ListDecorator(List<E> component) {
-		super(component);
-	}
-
-	public ListDecorator(Supplier<List<E>> component) {
 		super(component);
 	}
 

@@ -34,73 +34,87 @@ public final class IntValue extends IntegralValue<IntValue> {
 	}
 
 	@Override
-	public final IntValue reciprocate() {
-		return update(() -> value = 1 / value);
+	public synchronized final IntValue reciprocate() {
+		value = 1 / value;
+		return this;
 	}
 
 	@Override
-	public final IntValue add(Value<?> value) {
-		return update(() -> this.value += value.intValue());
+	public synchronized final IntValue add(Value<?> value) {
+		this.value += value.intValue();
+		return this;
 	}
 
 	@Override
-	public final IntValue negate() {
-		return update(() -> value = -value);
+	public synchronized final IntValue negate() {
+		value = -value;
+		return this;
 	}
 
 	@Override
-	public final IntValue multiply(int value) {
-		return update(() -> this.value *= value);
+	public synchronized final IntValue multiply(int value) {
+		this.value *= value;
+		return this;
 	}
 
 	@Override
-	public final IntValue multiply(long value) {
-		return update(() -> this.value *= value);
+	public synchronized final IntValue multiply(long value) {
+		this.value *= value;
+		return this;
 	}
 
 	@Override
-	public final IntValue multiply(float value) {
-		return update(() -> this.value *= value);
+	public synchronized final IntValue multiply(float value) {
+		this.value *= value;
+		return this;
 	}
 
 	@Override
-	public final IntValue multiply(double value) {
-		return update(() -> this.value *= value);
+	public synchronized final IntValue multiply(double value) {
+		this.value *= value;
+		return this;
 	}
 
 	@Override
-	public final IntValue multiply(Value<?> value) {
-		return update(() -> this.value = value.getMultipliedPrimitive(this.value));
+	public synchronized final IntValue multiply(Value<?> value) {
+		this.value = value.getMultipliedPrimitive(this.value);
+		return this;
 	}
 
 	@Override
-	public final IntValue divide(int value) {
-		return update(() -> this.value /= value);
+	public synchronized final IntValue divide(int value) {
+		this.value /= value;
+		return this;
 	}
 
 	@Override
-	public final IntValue divide(long value) {
-		return update(() -> this.value /= value);
+	public synchronized final IntValue divide(long value) {
+		this.value /= value;
+		return this;
 	}
 
 	@Override
-	public final IntValue divide(float value) {
-		return update(() -> this.value /= value);
+	public synchronized final IntValue divide(float value) {
+		this.value /= value;
+		return this;
 	}
 
 	@Override
-	public final IntValue divide(double value) {
-		return update(() -> this.value /= value);
+	public synchronized final IntValue divide(double value) {
+		this.value /= value;
+		return this;
 	}
 
 	@Override
-	public final IntValue divide(Value<?> value) {
-		return update(() -> this.value = value.getDividedPrimitive(this.value));
+	public synchronized final IntValue divide(Value<?> value) {
+		this.value = value.getDividedPrimitive(this.value);
+		return this;
 	}
 
 	@Override
-	public final IntValue subtract(Value<?> value) {
-		return update(() -> this.value -= value.intValue());
+	public synchronized final IntValue subtract(Value<?> value) {
+		this.value -= value.intValue();
+		return this;
 	}
 
 	@Override
@@ -129,13 +143,15 @@ public final class IntValue extends IntegralValue<IntValue> {
 	}
 
 	@Override
-	public final IntValue set(Value<?> value) {
-		return update(() -> this.value = value.intValue());
+	public synchronized final IntValue set(Value<?> value) {
+		this.value = value.intValue();
+		return this;
 	}
 
 	@Override
-	public final IntValue setValue(Number value) {
-		return update(() -> this.value = value.intValue());
+	public synchronized final IntValue setValue(Number value) {
+		this.value = value.intValue();
+		return this;
 	}
 
 	@Override
@@ -188,13 +204,15 @@ public final class IntValue extends IntegralValue<IntValue> {
 	}
 
 	@Override
-	public final IntValue increment() {
-		return update(() -> value++);
+	public synchronized final IntValue increment() {
+		value++;
+		return this;
 	}
 
 	@Override
-	public final IntValue decrement() {
-		return update(() -> value--);
+	public synchronized final IntValue decrement() {
+		value--;
+		return this;
 	}
 
 	@Override
@@ -253,19 +271,21 @@ public final class IntValue extends IntegralValue<IntValue> {
 	}
 
 	@Override
-	public IntValue square() {
-		return update(() -> value *= value);
+	public synchronized IntValue square() {
+		value *= value;
+		return this;
 	}
 
 	@Override
-	public IntValue squareRoot() {
-		return update(() -> value = (int) Math.sqrt(value));
+	public synchronized IntValue squareRoot() {
+		value = (int) Math.sqrt(value);
+		return this;
 	}
 
 	@Override
-	public IntValue exponentiate(Value<?> exponential) {
-		return update(
-				() -> value = (int) Math.pow(value, exponential.doubleValue()));
+	public synchronized IntValue exponentiate(Value<?> exponential) {
+		value = (int) Math.pow(value, exponential.doubleValue());
+		return this;
 	}
 
 	@Override
@@ -274,7 +294,8 @@ public final class IntValue extends IntegralValue<IntValue> {
 	}
 
 	@Override
-	public IntValue modulus() {
-		return update(() -> value = Math.abs(value));
+	public synchronized IntValue modulus() {
+		value = Math.abs(value);
+		return this;
 	}
 }

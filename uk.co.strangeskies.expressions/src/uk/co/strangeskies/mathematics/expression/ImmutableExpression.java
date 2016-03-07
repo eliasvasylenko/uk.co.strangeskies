@@ -18,7 +18,6 @@
  */
 package uk.co.strangeskies.mathematics.expression;
 
-import java.util.concurrent.locks.Lock;
 import java.util.function.Consumer;
 
 /**
@@ -38,10 +37,5 @@ public abstract class ImmutableExpression<S extends ImmutableExpression<S, T>, T
 	@Override
 	public final boolean removeObserver(Consumer<? super S> observer) {
 		return true;
-	}
-
-	@Override
-	public Lock getReadLock() {
-		return new ImmutableReadLock();
 	}
 }

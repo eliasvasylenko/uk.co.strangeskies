@@ -20,14 +20,7 @@ package uk.co.strangeskies.mathematics.values;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.function.DoubleSupplier;
-import java.util.function.IntSupplier;
-import java.util.function.LongSupplier;
-import java.util.function.Supplier;
 
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
 import uk.co.strangeskies.mathematics.expression.SelfExpression;
@@ -47,7 +40,6 @@ public abstract class Value<S extends Value<S>> extends Number implements Multip
 
 	private final Set<Consumer<? super S>> observers;
 	private boolean evaluated = true;
-	private final ReentrantReadWriteLock lock;
 
 	public Value() {
 		this(0);
@@ -55,27 +47,12 @@ public abstract class Value<S extends Value<S>> extends Number implements Multip
 
 	public Value(Number value) {
 		observers = new LinkedHashSet<>();
-		lock = new ReentrantReadWriteLock();
 
 		setValue(value);
 	}
 
 	public Value(Value<?> value) {
 		this((Number) value);
-	}
-
-	@Override
-	public Lock getReadLock() {
-		return lock.readLock();
-	}
-
-	public Lock getWriteLock() {
-		return lock.writeLock();
-	}
-
-	protected void unlockWriteLock() {
-		while (lock.writeLock().isHeldByCurrentThread())
-			getWriteLock().unlock();
 	}
 
 	@Override
@@ -150,89 +127,16 @@ public abstract class Value<S extends Value<S>> extends Number implements Multip
 	}
 
 	@Override
-	public final S getValue() {
-		try {
-			getReadLock().lock();
-			evaluated = true;
-			S result = getThis();
-			return result;
-		} finally {
-			getReadLock().unlock();
-		}
+	public synchronized final S getValue() {
+		evaluated = true;
+		S result = getThis();
+		return result;
 	}
 
 	protected final void update() {
 		if (evaluated) {
 			evaluated = false;
 			postUpdate();
-		}
-	}
-
-	protected final S update(BooleanSupplier runnable) {
-		try {
-			getWriteLock().lock();
-			if (runnable.getAsBoolean())
-				update();
-
-			return getThis();
-		} finally {
-			unlockWriteLock();
-		}
-	}
-
-	protected final S update(Runnable runnable) {
-		try {
-			getWriteLock().lock();
-			runnable.run();
-			update();
-
-			return getThis();
-		} finally {
-			unlockWriteLock();
-		}
-	}
-
-	/*
-	 * Most implementations shouldn't need to bother with this so long as they
-	 * ensure write-locked operations always update state atomically.
-	 */
-	protected final <T> T read(Supplier<T> supplier) {
-		try {
-			getReadLock().lock();
-
-			return supplier.get();
-		} finally {
-			getReadLock().unlock();
-		}
-	}
-
-	protected final int read(IntSupplier supplier) {
-		try {
-			getReadLock().lock();
-
-			return supplier.getAsInt();
-		} finally {
-			getReadLock().unlock();
-		}
-	}
-
-	protected final long read(LongSupplier supplier) {
-		try {
-			getReadLock().lock();
-
-			return supplier.getAsLong();
-		} finally {
-			getReadLock().unlock();
-		}
-	}
-
-	protected final double read(DoubleSupplier supplier) {
-		try {
-			getReadLock().lock();
-
-			return supplier.getAsDouble();
-		} finally {
-			getReadLock().unlock();
 		}
 	}
 

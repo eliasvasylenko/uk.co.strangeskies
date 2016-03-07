@@ -65,7 +65,7 @@ public class ConditionalExpression<O> extends DependentExpression<ConditionalExp
 				getDependencies().add(expressionWhenUnfulfilled);
 			}
 		} finally {
-			unlockWriteLock();
+			getWriteLock().unlock();
 		}
 	}
 

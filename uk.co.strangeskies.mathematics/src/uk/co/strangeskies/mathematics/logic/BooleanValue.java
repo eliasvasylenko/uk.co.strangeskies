@@ -18,10 +18,10 @@
  */
 package uk.co.strangeskies.mathematics.logic;
 
-import uk.co.strangeskies.mathematics.expression.MutableExpressionImpl;
+import uk.co.strangeskies.mathematics.expression.LockingExpressionImpl;
 import uk.co.strangeskies.utilities.Self;
 
-public class BooleanValue extends MutableExpressionImpl<BooleanValue, BooleanValue> implements
+public class BooleanValue extends LockingExpressionImpl<BooleanValue, BooleanValue> implements
 		BooleanCombinationBehaviour<BooleanValue, BooleanValue>, NOTable<BooleanValue, BooleanValue>, Self<BooleanValue> {
 	private boolean value;
 

@@ -31,11 +31,13 @@ import java.util.function.Consumer;
  * observer list, locking mechanism, and update mechanism.
  * 
  * @author Elias N Vasylenko
+ * @param <S>
+ *          the self-bound of the expression, i.e. the type of the expression
+ *          object itself
  * @param <T>
- *          The type of the expression.
+ *          The type of the value of this expression
  */
-public abstract class MutableExpressionImpl<S extends Expression<S, T>, T>
-		implements MutableExpression<S, T> {
+public abstract class LockingExpressionImpl<S extends Expression<S, T>, T> implements LockingExpression<S, T> {
 	private final Set<Consumer<? super S>> observers;
 	private final ReentrantReadWriteLock lock;
 
@@ -44,7 +46,7 @@ public abstract class MutableExpressionImpl<S extends Expression<S, T>, T>
 	/**
 	 * Default constructor.
 	 */
-	public MutableExpressionImpl() {
+	public LockingExpressionImpl() {
 		observers = new LinkedHashSet<>();
 		lock = new ReentrantReadWriteLock();
 	}
@@ -63,7 +65,7 @@ public abstract class MutableExpressionImpl<S extends Expression<S, T>, T>
 		try {
 			getWriteLock().lock();
 			getReadLock().lock();
-			unlockWriteLock();
+			getWriteLock().unlock();
 
 			if (!dirty) {
 				dirty = true;
@@ -71,7 +73,7 @@ public abstract class MutableExpressionImpl<S extends Expression<S, T>, T>
 					observer.accept(getThis());
 			}
 		} finally {
-			unlockWriteLock();
+			getWriteLock().unlock();
 			getReadLock().unlock();
 		}
 	}
@@ -115,10 +117,5 @@ public abstract class MutableExpressionImpl<S extends Expression<S, T>, T>
 	@Override
 	public WriteLock getWriteLock() {
 		return lock.writeLock();
-	}
-
-	protected void unlockWriteLock() {
-		while (getWriteLock().isHeldByCurrentThread())
-			getWriteLock().unlock();
 	}
 }

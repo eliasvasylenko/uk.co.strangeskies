@@ -34,73 +34,88 @@ public final class FloatValue extends ContinuousValue<FloatValue> {
 	}
 
 	@Override
-	public final FloatValue reciprocate() {
-		return update(() -> value = 1 / value);
+	public synchronized final FloatValue reciprocate() {
+		value = 1 / value;
+
+		return this;
 	}
 
 	@Override
-	public final FloatValue add(Value<?> value) {
-		return update(() -> this.value += value.floatValue());
+	public synchronized final FloatValue add(Value<?> value) {
+		this.value += value.floatValue();
+		return this;
 	}
 
 	@Override
-	public final FloatValue negate() {
-		return update(() -> value = -value);
+	public synchronized final FloatValue negate() {
+		value = -value;
+		return this;
 	}
 
 	@Override
-	public final FloatValue multiply(int value) {
-		return update(() -> this.value *= value);
+	public synchronized final FloatValue multiply(int value) {
+		this.value *= value;
+		return this;
 	}
 
 	@Override
-	public final FloatValue multiply(long value) {
-		return update(() -> this.value *= value);
+	public synchronized final FloatValue multiply(long value) {
+		this.value *= value;
+		return this;
 	}
 
 	@Override
-	public final FloatValue multiply(float value) {
-		return update(() -> this.value *= value);
+	public synchronized final FloatValue multiply(float value) {
+		this.value *= value;
+		return this;
 	}
 
 	@Override
-	public final FloatValue multiply(double value) {
-		return update(() -> this.value *= value);
+	public synchronized final FloatValue multiply(double value) {
+		this.value *= value;
+		return this;
 	}
 
 	@Override
-	public final FloatValue multiply(Value<?> value) {
-		return update(() -> this.value = value.getMultipliedPrimitive(this.value));
+	public synchronized final FloatValue multiply(Value<?> value) {
+		this.value = value.getMultipliedPrimitive(this.value);
+		return this;
 	}
 
 	@Override
-	public final FloatValue divide(int value) {
-		return update(() -> this.value /= value);
+	public synchronized final FloatValue divide(int value) {
+		this.value /= value;
+		return this;
 	}
 
 	@Override
-	public final FloatValue divide(long value) {
-		return update(() -> this.value /= value);
+	public synchronized final FloatValue divide(long value) {
+		this.value /= value;
+		return this;
 	}
 
 	@Override
-	public final FloatValue divide(float value) {
-		return update(() -> this.value /= value);
+	public synchronized final FloatValue divide(float value) {
+		this.value /= value;
+		return this;
 	}
 
 	@Override
-	public final FloatValue divide(double value) {
-		return update(() -> this.value /= value);
+	public synchronized final FloatValue divide(double value) {
+		this.value /= value;
+		return this;
 	}
 
 	@Override
-	public final FloatValue divide(Value<?> value) {
-		return update(() -> this.value = value.getDividedPrimitive(this.value));
+	public synchronized final FloatValue divide(Value<?> value) {
+		this.value = value.getDividedPrimitive(this.value);
+		return this;
 	}
 
 	@Override
-	public final FloatValue subtract(Value<?> value) {
-		return update(() -> this.value -= value.floatValue());
+	public synchronized final FloatValue subtract(Value<?> value) {
+		this.value -= value.floatValue();
+		return this;
 	}
 
 	@Override
@@ -130,12 +145,14 @@ public final class FloatValue extends ContinuousValue<FloatValue> {
 
 	@Override
 	public final FloatValue set(Value<?> value) {
-		return update(() -> this.value = value.floatValue());
+		this.value = value.floatValue();
+		return this;
 	}
 
 	@Override
-	public final FloatValue setValue(Number value) {
-		return update(() -> this.value = value.floatValue());
+	public synchronized final FloatValue setValue(Number value) {
+		this.value = value.floatValue();
+		return this;
 	}
 
 	@Override
@@ -188,13 +205,15 @@ public final class FloatValue extends ContinuousValue<FloatValue> {
 	}
 
 	@Override
-	public final FloatValue increment() {
-		return update(() -> value++);
+	public synchronized final FloatValue increment() {
+		value++;
+		return this;
 	}
 
 	@Override
-	public final FloatValue decrement() {
-		return update(() -> value--);
+	public synchronized final FloatValue decrement() {
+		value--;
+		return this;
 	}
 
 	@Override
@@ -253,19 +272,21 @@ public final class FloatValue extends ContinuousValue<FloatValue> {
 	}
 
 	@Override
-	public FloatValue square() {
-		return update(() -> value *= value);
+	public synchronized FloatValue square() {
+		value *= value;
+		return this;
 	}
 
 	@Override
-	public FloatValue squareRoot() {
-		return update(() -> value = (int) Math.sqrt(value));
+	public synchronized FloatValue squareRoot() {
+		value = (int) Math.sqrt(value);
+		return this;
 	}
 
 	@Override
-	public FloatValue exponentiate(Value<?> exponential) {
-		return update(
-				() -> value = (int) Math.pow(value, exponential.doubleValue()));
+	public synchronized FloatValue exponentiate(Value<?> exponential) {
+		value = (int) Math.pow(value, exponential.doubleValue());
+		return this;
 	}
 
 	@Override
@@ -274,7 +295,8 @@ public final class FloatValue extends ContinuousValue<FloatValue> {
 	}
 
 	@Override
-	public FloatValue modulus() {
-		return update(() -> value = Math.abs(value));
+	public synchronized FloatValue modulus() {
+		value = Math.abs(value);
+		return this;
 	}
 }

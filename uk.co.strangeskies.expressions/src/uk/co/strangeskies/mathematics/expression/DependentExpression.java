@@ -32,7 +32,7 @@ import uk.co.strangeskies.utilities.EqualityComparator;
  * @param <T>
  *          The type of the expression.
  */
-public abstract class DependentExpression<S extends Expression<S, T>, T> extends MutableExpressionImpl<S, T> {
+public abstract class DependentExpression<S extends Expression<S, T>, T> extends LockingExpressionImpl<S, T> {
 	private final SortedExpressionSet<?, Expression<?, ?>> dependencies;
 
 	private T value;
@@ -67,20 +67,14 @@ public abstract class DependentExpression<S extends Expression<S, T>, T> extends
 	@Override
 	public final T getValueImpl(boolean dirty) {
 		if (dirty) {
-			try {
-				for (Expression<?, ?> dependency : dependencies) {
-					dependency.getReadLock().lock();
-					if (parallel)
-						new Thread(() -> dependency.getValue()).run();
-					else
-						dependency.getValue();
-				}
-
-				value = evaluate();
-			} finally {
-				for (Expression<?, ?> dependency : dependencies)
-					dependency.getReadLock().unlock();
+			for (Expression<?, ?> dependency : dependencies) {
+				if (parallel)
+					new Thread(() -> dependency.getValue()).run();
+				else
+					dependency.getValue();
 			}
+
+			value = evaluate();
 		}
 
 		return value;

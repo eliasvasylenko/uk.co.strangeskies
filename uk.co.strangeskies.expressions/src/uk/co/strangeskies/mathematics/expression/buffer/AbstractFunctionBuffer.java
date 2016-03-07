@@ -24,10 +24,10 @@ import java.util.function.Function;
 
 import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.mathematics.expression.IdentityExpression;
-import uk.co.strangeskies.mathematics.expression.MutableExpressionImpl;
+import uk.co.strangeskies.mathematics.expression.LockingExpressionImpl;
 
 public abstract class AbstractFunctionBuffer<S extends AbstractFunctionBuffer<S, B, F>, B, F>
-		extends MutableExpressionImpl<S, F> implements DoubleBuffer<S, B, F> {
+		extends LockingExpressionImpl<S, F> implements DoubleBuffer<S, B, F> {
 	private F frontValue;
 	private IdentityExpression<B> back;
 

@@ -133,11 +133,9 @@ public abstract class TrinaryExpression<S extends TrinaryExpression<S, O1, O2, O
 				getDependencies().add(this.firstOperand);
 				getDependencies().add(this.secondOperand);
 				getDependencies().add(this.thirdOperand);
-
-				postUpdate();
 			}
 		} finally {
-			unlockWriteLock();
+			postUpdate();
 		}
 	}
 
@@ -155,11 +153,9 @@ public abstract class TrinaryExpression<S extends TrinaryExpression<S, O1, O2, O
 
 				firstOperand = operand;
 				getDependencies().add(firstOperand);
-
-				postUpdate();
 			}
 		} finally {
-			unlockWriteLock();
+			postUpdate();
 		}
 	}
 
@@ -177,11 +173,9 @@ public abstract class TrinaryExpression<S extends TrinaryExpression<S, O1, O2, O
 
 				secondOperand = operand;
 				getDependencies().add(secondOperand);
-
-				postUpdate();
 			}
 		} finally {
-			unlockWriteLock();
+			postUpdate();
 		}
 	}
 
@@ -199,11 +193,9 @@ public abstract class TrinaryExpression<S extends TrinaryExpression<S, O1, O2, O
 
 				thirdOperand = operand;
 				getDependencies().add(secondOperand);
-
-				postUpdate();
 			}
 		} finally {
-			unlockWriteLock();
+			postUpdate();
 		}
 	}
 

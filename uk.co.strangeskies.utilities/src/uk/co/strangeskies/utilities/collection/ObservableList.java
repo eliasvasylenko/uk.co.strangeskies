@@ -18,13 +18,7 @@
  */
 package uk.co.strangeskies.utilities.collection;
 
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
-import java.util.function.Consumer;
-
-import uk.co.strangeskies.utilities.Observable;
-import uk.co.strangeskies.utilities.ObservableImpl;
 
 public interface ObservableList<S extends ObservableList<S, E>, E>
 		extends List<E>, ObservableCollection<S, E, ObservableList.Change<E>> {
@@ -40,82 +34,15 @@ public interface ObservableList<S extends ObservableList<S, E>, E>
 		List<E> getAdded();
 	}
 
-	static <E> UnmodifiableObservableList<E> unmodifiable(ObservableList<?, ? extends E> set) {
-		return new UnmodifiableObservableList<>(set);
+	default UnmodifiableObservableList<E> unmodifiableView() {
+		return new UnmodifiableObservableList<>(this);
 	}
 
-	class UnmodifiableObservableList<E> extends ListDecorator<E>
-			implements ObservableList<UnmodifiableObservableList<E>, E> {
-		private ObservableImpl<UnmodifiableObservableList<E>> observable;
+	static <E> UnmodifiableObservableList<E> unmodifiableViewOf(ObservableList<?, ? extends E> list) {
+		return new UnmodifiableObservableList<>(list);
+	}
 
-		@SuppressWarnings("unchecked")
-		private UnmodifiableObservableList(ObservableList<?, ? extends E> component) {
-			super((List<E>) component);
-
-			observable = new ObservableImpl<>();
-			component.addObserver(s -> observable.fire(this));
-		}
-
-		@SuppressWarnings("unchecked")
-		@Override
-		public Observable<Change<E>> changes() {
-			return ((ObservableList<?, E>) getComponent()).changes();
-		}
-
-		@Override
-		public boolean addObserver(Consumer<? super UnmodifiableObservableList<E>> observer) {
-			return observable.addObserver(observer);
-		}
-
-		@Override
-		public boolean removeObserver(Consumer<? super UnmodifiableObservableList<E>> observer) {
-			return observable.addObserver(observer);
-		}
-
-		@Override
-		public boolean add(E e) {
-			throw new UnsupportedOperationException();
-		}
-
-		@Override
-		public boolean addAll(Collection<? extends E> c) {
-			throw new UnsupportedOperationException();
-		}
-
-		@Override
-		public boolean remove(Object o) {
-			throw new UnsupportedOperationException();
-		}
-
-		@Override
-		public boolean removeAll(Collection<?> c) {
-			throw new UnsupportedOperationException();
-		}
-
-		@Override
-		public boolean retainAll(Collection<?> c) {
-			throw new UnsupportedOperationException();
-		}
-
-		@Override
-		public Iterator<E> iterator() {
-			Iterator<E> base = super.iterator();
-			return new Iterator<E>() {
-				@Override
-				public boolean hasNext() {
-					return base.hasNext();
-				}
-
-				@Override
-				public E next() {
-					return base.next();
-				}
-			};
-		}
-
-		@Override
-		public UnmodifiableObservableList<E> copy() {
-			return new UnmodifiableObservableList<>(this.copy());
-		}
+	default SynchronizedObservableList<E> synchronizedView() {
+		return new SynchronizedObservableList<>(this);
 	}
 }

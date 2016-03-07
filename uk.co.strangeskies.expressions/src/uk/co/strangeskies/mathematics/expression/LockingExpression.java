@@ -20,6 +20,7 @@ package uk.co.strangeskies.mathematics.expression;
 
 import java.util.Observer;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 
 /**
  * <p>
@@ -37,13 +38,21 @@ import java.util.concurrent.locks.Lock;
  * {@link Expression}.
  * 
  * @author Elias N Vasylenko
+ * @param <S>
+ *          the self-bound of the expression, i.e. the type of the expression
+ *          object itself
  * @param <T>
- *          The type of the value of this expression.
+ *          The type of the value of this expression
  */
-public interface MutableExpression<S extends Expression<S, T>, T> extends Expression<S, T> {
+public interface LockingExpression<S extends Expression<S, T>, T> extends Expression<S, T> {
+	/**
+	 * @return A read lock to protect from mutation of this {@link Expression}
+	 */
+	ReadLock getReadLock();
+
 	/**
 	 * @return A write lock which must be obtained before attempting to mutate
-	 *         this {@link Expression}.
+	 *         this {@link Expression}
 	 */
-	public Lock getWriteLock();
+	Lock getWriteLock();
 }

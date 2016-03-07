@@ -19,7 +19,6 @@
 package uk.co.strangeskies.mathematics.expression;
 
 import java.util.Observer;
-import java.util.concurrent.locks.Lock;
 
 import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.Self;
@@ -38,10 +37,16 @@ import uk.co.strangeskies.utilities.Self;
  * {@link #getValue()} or {@link #decoupleValue()} becomes different from the
  * previous value resolved through either of those methods.
  * 
+ * <p>
+ * Any mechanism of synchronisation, though a consistent concern, is left
+ * entirely to the discretion of implementations.
+ * 
  * @author Elias N Vasylenko
- *
+ * @param <S>
+ *          the self-bound of the expression, i.e. the type of the expression
+ *          object itself
  * @param <T>
- *          The type of the value of this expression.
+ *          the type of the value of this expression
  */
 public interface Expression<S extends Expression<S, T>, T> extends Observable<S>, Self<S> {
 	/**
@@ -82,20 +87,6 @@ public interface Expression<S extends Expression<S, T>, T> extends Observable<S>
 	public default T decoupleValue() {
 		return getValue();
 	}
-
-	/**
-	 * Get a read lock on the current value of this {@link Expression}.
-	 * Implementing classes are responsible for making sure attempts to resolve
-	 * the value of this expression obtain a read lock, and for providing access
-	 * to write locks if and where appropriate.
-	 * 
-	 * <p>
-	 * {@link MutableExpression} provides a simple interface over write locking
-	 * behaviour.
-	 * 
-	 * @return a read lock on this expression
-	 */
-	public Lock getReadLock();
 
 	/**
 	 * Create an immutable {@link Expression} instance whose value is always that

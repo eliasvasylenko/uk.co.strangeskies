@@ -21,7 +21,6 @@ package uk.co.strangeskies.utilities.collection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Supplier;
 
 public class FilteredListDecorator<E> extends ListDecorator<E> {
 	public interface Filter<E> {
@@ -37,12 +36,6 @@ public class FilteredListDecorator<E> extends ListDecorator<E> {
 	}
 
 	public FilteredListDecorator(List<E> component, Filter<E> filter) {
-		super(component);
-
-		this.filter = filter;
-	}
-
-	public FilteredListDecorator(Supplier<List<E>> component, Filter<E> filter) {
 		super(component);
 
 		this.filter = filter;

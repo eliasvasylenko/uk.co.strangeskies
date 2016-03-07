@@ -22,12 +22,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.util.function.Consumer;
 
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
@@ -41,37 +37,23 @@ public class ExpressionTreeSet<E extends Expression<?, ?>> extends AbstractObser
 
 	private boolean evaluated = true;
 
-	private Consumer<Expression<?, ?>> dependencyObserver;
-
-	private Set<Consumer<? super ExpressionTreeSet<E>>> observers;
-
-	private ReentrantReadWriteLock lock;
+	public ExpressionTreeSet() {}
 
 	public ExpressionTreeSet(Comparator<? super E> comparator) {
 		super(comparator);
-
-		dependencyObserver = message -> update();
-
-		observers = new LinkedHashSet<>();
-
-		lock = new ReentrantReadWriteLock();
 	}
 
-	public ExpressionTreeSet() {
-		this((Comparator<E>) null);
+	public ExpressionTreeSet(Collection<? extends E> c) {
+		super(c);
 	}
 
 	@SafeVarargs
-	public ExpressionTreeSet(E... expressions) {
-		this();
-
-		addAll(Arrays.asList(expressions));
+	public ExpressionTreeSet(E... c) {
+		super(Arrays.asList(c));
 	}
 
-	public ExpressionTreeSet(Collection<E> expressions) {
-		this();
-
-		addAll(expressions);
+	public ExpressionTreeSet(SortedSet<E> s) {
+		super(s);
 	}
 
 	protected final void update() {
@@ -249,37 +231,6 @@ public class ExpressionTreeSet<E extends Expression<?, ?>> extends AbstractObser
 
 	@Override
 	public final ExpressionTreeSet<E> copy() {
-		try {
-			getReadLock().lock();
-			ExpressionTreeSet<E> copy = new ExpressionTreeSet<>(this);
-
-			return copy;
-		} finally {
-			getReadLock().unlock();
-		}
-	}
-
-	@Override
-	public boolean addObserver(Consumer<? super ExpressionTreeSet<E>> observer) {
-		return observers.add(observer);
-	}
-
-	@Override
-	public boolean removeObserver(Consumer<? super ExpressionTreeSet<E>> observer) {
-		return observers.remove(observer);
-	}
-
-	@Override
-	public ReadLock getReadLock() {
-		return lock.readLock();
-	}
-
-	public WriteLock getWriteLock() {
-		return lock.writeLock();
-	}
-
-	protected void unlockWriteLock() {
-		while (getWriteLock().isHeldByCurrentThread())
-			getWriteLock().unlock();
+		return new ExpressionTreeSet<>(this);
 	}
 }
