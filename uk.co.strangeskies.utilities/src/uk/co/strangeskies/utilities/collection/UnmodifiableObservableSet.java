@@ -8,12 +8,11 @@ import java.util.function.Consumer;
 import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableImpl;
 
-public abstract class UnmodifiableObservableSet<S extends UnmodifiableObservableSet<S, E>, E> extends SetDecorator<E>
-		implements ObservableSet<S, E> {
-	static class UnmodifiableObservableSetImpl<E> extends SynchronizedObservableSet<UnmodifiableObservableSetImpl<E>, E> {
-		@SuppressWarnings("unchecked")
+public abstract class UnmodifiableObservableSet<S extends UnmodifiableObservableSet<S, E>, E>
+		implements SetDecorator<E>, ObservableSet<S, E> {
+	static class UnmodifiableObservableSetImpl<E> extends UnmodifiableObservableSet<UnmodifiableObservableSetImpl<E>, E> {
 		UnmodifiableObservableSetImpl(ObservableSet<?, ? extends E> component) {
-			super((ObservableSet<?, E>) component);
+			super(component);
 		}
 
 		@SuppressWarnings("unchecked")
@@ -23,14 +22,16 @@ public abstract class UnmodifiableObservableSet<S extends UnmodifiableObservable
 		}
 	}
 
+	private final ObservableSet<?, ? extends E> component;
+
 	private final ObservableImpl<S> observable;
 	private final Consumer<ObservableSet<?, ? extends E>> observer;
 	private final ObservableImpl<Change<E>> changes;
 	private final Consumer<? super Change<? extends E>> changeObserver;
 
 	@SuppressWarnings("unchecked")
-	UnmodifiableObservableSet(ObservableSet<?, ? extends E> component) {
-		super((Set<E>) component);
+	protected UnmodifiableObservableSet(ObservableSet<?, ? extends E> component) {
+		this.component = component;
 
 		observable = new ObservableImpl<>();
 		observer = l -> observable.fire(getThis());
@@ -39,6 +40,12 @@ public abstract class UnmodifiableObservableSet<S extends UnmodifiableObservable
 		changes = new ObservableImpl<>();
 		changeObserver = c -> changes.fire((Change<E>) c);
 		component.changes().addWeakObserver(changeObserver);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public Set<E> getComponent() {
+		return (Set<E>) component;
 	}
 
 	@Override
@@ -83,7 +90,7 @@ public abstract class UnmodifiableObservableSet<S extends UnmodifiableObservable
 
 	@Override
 	public Iterator<E> iterator() {
-		Iterator<E> base = super.iterator();
+		Iterator<E> base = SetDecorator.super.iterator();
 		return new Iterator<E>() {
 			@Override
 			public boolean hasNext() {

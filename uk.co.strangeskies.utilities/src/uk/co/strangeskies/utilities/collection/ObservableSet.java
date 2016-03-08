@@ -92,6 +92,7 @@ public interface ObservableSet<S extends ObservableSet<S, E>, E>
 		return set;
 	}
 
+	@SafeVarargs
 	public static <E> ObservableSet<?, E> ofElements(E... elements) {
 		return ofElements(Arrays.asList(elements));
 	}

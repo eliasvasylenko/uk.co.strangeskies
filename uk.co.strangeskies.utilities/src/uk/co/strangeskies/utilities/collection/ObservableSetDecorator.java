@@ -11,11 +11,11 @@ import java.util.function.Function;
 import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableImpl;
 
-public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S, E>, E> extends SetDecorator<E>
-		implements ObservableSet<S, E> {
+public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S, E>, E>
+		implements SetDecorator<E>, ObservableSet<S, E> {
 	static class ObservableSetDecoratorImpl<C extends Set<E>, E>
 			extends ObservableSetDecorator<ObservableSetDecoratorImpl<C, E>, E> {
-		Function<? super C, ? extends C> copy;
+		private Function<? super C, ? extends C> copy;
 
 		ObservableSetDecoratorImpl(C set, Function<? super C, ? extends C> copy) {
 			super(set);
@@ -44,6 +44,8 @@ public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S,
 		}
 	}
 
+	private final Set<E> component;
+
 	private final ObservableImpl<Change<E>> changeObservable = new ObservableImpl<>();
 	private final ObservableImpl<S> stateObservable = new ObservableImpl<>();
 
@@ -54,7 +56,12 @@ public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S,
 	private int changeDepth = 0;
 
 	protected ObservableSetDecorator(Set<E> component) {
-		super(component);
+		this.component = component;
+	}
+
+	@Override
+	public Set<E> getComponent() {
+		return component;
 	}
 
 	protected boolean beginChange() {
@@ -96,7 +103,7 @@ public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S,
 		try {
 			beginChange();
 
-			boolean changed = super.add(e);
+			boolean changed = SetDecorator.super.add(e);
 
 			if (changed && !removing.remove(e)) {
 				adding.add(e);
@@ -136,7 +143,7 @@ public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S,
 				}
 			}
 
-			super.clear();
+			SetDecorator.super.clear();
 		} finally {
 			endChange();
 		}
@@ -148,7 +155,7 @@ public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S,
 		try {
 			beginChange();
 
-			boolean changed = super.remove(o);
+			boolean changed = SetDecorator.super.remove(o);
 
 			if (changed && !adding.remove(o)) {
 				removing.add((E) o);

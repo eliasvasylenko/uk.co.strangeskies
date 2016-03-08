@@ -23,30 +23,33 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Predicate;
 
-public class FilteredListDecorator<E> extends ListDecorator<E> {
+public class FilteredListDecorator<E> implements ListDecorator<E> {
+	private final List<E> component;
 	private final Predicate<E> filter;
 
 	public FilteredListDecorator(Predicate<E> filter) {
-		super(new ArrayList<E>());
-
-		this.filter = filter;
+		this(new ArrayList<>(), filter);
 	}
 
 	public FilteredListDecorator(List<E> component, Predicate<E> filter) {
-		super(component);
-
+		this.component = component;
 		this.filter = filter;
 	}
 
 	@Override
+	public List<E> getComponent() {
+		return component;
+	}
+
+	@Override
 	public boolean add(E e) {
-		return filter.test(e) && super.add(e);
+		return filter.test(e) && ListDecorator.super.add(e);
 	}
 
 	@Override
 	public void add(int index, E element) {
 		if (filter.test(element))
-			super.add(index, element);
+			ListDecorator.super.add(index, element);
 	}
 
 	@Override

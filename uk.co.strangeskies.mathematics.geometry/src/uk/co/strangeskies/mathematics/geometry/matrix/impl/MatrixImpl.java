@@ -148,8 +148,6 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>> ext
 		data.clear();
 		data.addAll(transposedData);
 
-		fireChange();
-
 		return getThis();
 	}
 

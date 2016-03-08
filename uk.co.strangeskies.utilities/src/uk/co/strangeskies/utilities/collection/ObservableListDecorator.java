@@ -22,12 +22,29 @@ import java.util.AbstractList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableImpl;
 
 public abstract class ObservableListDecorator<S extends ObservableListDecorator<S, E>, E>
-		extends ListDecorator<E> implements ObservableList<S, E> {
+		implements ListDecorator<E>, ObservableList<S, E> {
+	static class ObservableListDecoratorImpl<C extends List<E>, E>
+			extends ObservableListDecorator<ObservableListDecoratorImpl<C, E>, E> {
+		private Function<? super C, ? extends C> copy;
+
+		ObservableListDecoratorImpl(C list, Function<? super C, ? extends C> copy) {
+			super(list);
+			this.copy = copy;
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public ObservableListDecoratorImpl<C, E> copy() {
+			return new ObservableListDecoratorImpl<>(copy.apply((C) getComponent()), copy);
+		}
+	}
+
 	final class ChangeImpl implements Change<E> {
 		@Override
 		public int[] removedIndices() {
@@ -60,6 +77,8 @@ public abstract class ObservableListDecorator<S extends ObservableListDecorator<
 		}
 	}
 
+	private final List<E> component;
+
 	private final ObservableImpl<Change<E>> changeObservable = new ObservableImpl<>();
 	private final ObservableImpl<S> stateObservable = new ObservableImpl<>();
 
@@ -72,7 +91,12 @@ public abstract class ObservableListDecorator<S extends ObservableListDecorator<
 	private int changeDepth = 0;
 
 	public ObservableListDecorator(List<E> component) {
-		super(component);
+		this.component = component;
+	}
+
+	@Override
+	public List<E> getComponent() {
+		return component;
 	}
 
 	protected boolean beginChange() {
@@ -113,7 +137,7 @@ public abstract class ObservableListDecorator<S extends ObservableListDecorator<
 		try {
 			beginChange();
 
-			super.add(e);
+			ListDecorator.super.add(e);
 
 			if (change != null) {
 				// TODO do change
@@ -130,7 +154,7 @@ public abstract class ObservableListDecorator<S extends ObservableListDecorator<
 		try {
 			beginChange();
 
-			super.add(index, element);
+			ListDecorator.super.add(index, element);
 
 			if (change != null) {
 				// TODO do change
@@ -146,7 +170,7 @@ public abstract class ObservableListDecorator<S extends ObservableListDecorator<
 			beginChange();
 
 			// int index = indexOf(o);
-			boolean changed = super.remove(o);
+			boolean changed = ListDecorator.super.remove(o);
 
 			if (changed && change != null) {
 				// TODO do change
@@ -163,7 +187,7 @@ public abstract class ObservableListDecorator<S extends ObservableListDecorator<
 		try {
 			beginChange();
 
-			E previous = super.remove(index);
+			E previous = ListDecorator.super.remove(index);
 
 			if (change != null) {
 				// TODO do change
@@ -180,7 +204,7 @@ public abstract class ObservableListDecorator<S extends ObservableListDecorator<
 		try {
 			beginChange();
 
-			E previous = super.set(index, element);
+			E previous = ListDecorator.super.set(index, element);
 
 			if (change != null) {
 				// TODO do change
@@ -197,7 +221,7 @@ public abstract class ObservableListDecorator<S extends ObservableListDecorator<
 		try {
 			beginChange();
 
-			boolean changed = super.addAll(c);
+			boolean changed = ListDecorator.super.addAll(c);
 
 			if (changed && change != null) {
 				// TODO do change
@@ -214,7 +238,7 @@ public abstract class ObservableListDecorator<S extends ObservableListDecorator<
 		try {
 			beginChange();
 
-			boolean changed = super.addAll(index, c);
+			boolean changed = ListDecorator.super.addAll(index, c);
 
 			if (changed && change != null) {
 				// TODO do change
@@ -231,7 +255,7 @@ public abstract class ObservableListDecorator<S extends ObservableListDecorator<
 		try {
 			beginChange();
 
-			boolean changed = super.removeAll(c);
+			boolean changed = ListDecorator.super.removeAll(c);
 
 			if (changed && change != null) {
 				// TODO do change
@@ -248,7 +272,7 @@ public abstract class ObservableListDecorator<S extends ObservableListDecorator<
 		try {
 			beginChange();
 
-			boolean changed = super.retainAll(c);
+			boolean changed = ListDecorator.super.retainAll(c);
 
 			if (changed && change != null) {
 				// TODO do change

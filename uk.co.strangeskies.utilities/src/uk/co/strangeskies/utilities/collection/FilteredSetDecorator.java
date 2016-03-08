@@ -23,7 +23,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Predicate;
 
-public class FilteredSetDecorator<E> extends SetDecorator<E> {
+public class FilteredSetDecorator<E> implements SetDecorator<E> {
+	private final Set<E> component;
 	private final Predicate<E> filter;
 
 	public FilteredSetDecorator(Predicate<E> filter) {
@@ -31,14 +32,18 @@ public class FilteredSetDecorator<E> extends SetDecorator<E> {
 	}
 
 	public FilteredSetDecorator(Set<E> component, Predicate<E> filter) {
-		super(component);
-
+		this.component = component;
 		this.filter = filter;
 	}
 
 	@Override
+	public Set<E> getComponent() {
+		return component;
+	}
+
+	@Override
 	public boolean add(E e) {
-		return filter.test(e) && super.add(e);
+		return filter.test(e) && SetDecorator.super.add(e);
 	}
 
 	@Override

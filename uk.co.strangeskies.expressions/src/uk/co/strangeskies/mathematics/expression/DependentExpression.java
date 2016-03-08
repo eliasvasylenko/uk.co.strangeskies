@@ -18,12 +18,14 @@
  */
 package uk.co.strangeskies.mathematics.expression;
 
+import static uk.co.strangeskies.utilities.EqualityComparator.identityComparator;
+
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.TreeSet;
 
-import uk.co.strangeskies.mathematics.expression.collection.ExpressionSetImpl;
+import uk.co.strangeskies.mathematics.expression.collection.ExpressionSetDecorator;
 import uk.co.strangeskies.mathematics.expression.collection.SortedExpressionSet;
-import uk.co.strangeskies.utilities.EqualityComparator;
 
 /**
  * TODO
@@ -61,7 +63,7 @@ public abstract class DependentExpression<S extends Expression<S, T>, T> extends
 	}
 
 	public DependentExpression(boolean parallel) {
-		dependencies = new ExpressionSetImpl<>(EqualityComparator.identityComparator());
+		dependencies = new ExpressionSetDecorator<>(new TreeSet<>(identityComparator()));
 		dependencies.addObserver(m -> fireChange());
 
 		this.parallel = parallel;

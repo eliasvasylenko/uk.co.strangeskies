@@ -2,13 +2,14 @@ package uk.co.strangeskies.utilities.collection;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableImpl;
 
-public abstract class SynchronizedObservableSet<S extends SynchronizedObservableSet<S, E>, E> extends SetDecorator<E>
-		implements ObservableSet<S, E> {
+public abstract class SynchronizedObservableSet<S extends SynchronizedObservableSet<S, E>, E>
+		implements SetDecorator<E>, ObservableSet<S, E> {
 	static class SynchronizedObservableSetImpl<E> extends SynchronizedObservableSet<SynchronizedObservableSetImpl<E>, E> {
 		SynchronizedObservableSetImpl(ObservableSet<?, E> component) {
 			super(component);
@@ -21,13 +22,15 @@ public abstract class SynchronizedObservableSet<S extends SynchronizedObservable
 		}
 	}
 
+	private final Set<E> component;
+
 	private final ObservableImpl<S> observable;
 	private final Consumer<ObservableSet<?, ? extends E>> observer;
 	private final ObservableImpl<Change<E>> changes;
 	private final Consumer<Change<E>> changeObserver;
 
-	SynchronizedObservableSet(ObservableSet<?, E> component) {
-		super(component);
+	protected SynchronizedObservableSet(ObservableSet<?, E> component) {
+		this.component = component;
 
 		observable = new ObservableImpl<>();
 		observer = l -> observable.fire(getThis());
@@ -50,6 +53,11 @@ public abstract class SynchronizedObservableSet<S extends SynchronizedObservable
 		};
 		changeObserver = changes::fire;
 		component.changes().addWeakObserver(changeObserver);
+	}
+
+	@Override
+	public Set<E> getComponent() {
+		return component;
 	}
 
 	@Override
@@ -94,7 +102,7 @@ public abstract class SynchronizedObservableSet<S extends SynchronizedObservable
 
 	@Override
 	public synchronized Iterator<E> iterator() {
-		Iterator<E> base = super.iterator();
+		Iterator<E> base = SetDecorator.super.iterator();
 		return new Iterator<E>() {
 			@Override
 			public boolean hasNext() {

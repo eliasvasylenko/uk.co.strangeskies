@@ -27,13 +27,17 @@ import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.values.IntValue;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.Decorator;
 import uk.co.strangeskies.utilities.function.TriFunction;
 
-public class ReOrderedMatrix<V extends Value<V>> extends Decorator<Matrix<?, V>>
-		implements Matrix<ReOrderedMatrix<V>, V> {
+public class ReOrderedMatrix<V extends Value<V>> implements Matrix<ReOrderedMatrix<V>, V> {
+	private final Matrix<?, V> component;
+
 	public ReOrderedMatrix(Matrix<?, V> source) {
-		super(source);
+		this.component = source;
+	}
+
+	protected Matrix<?, V> getComponent() {
+		return component;
 	}
 
 	@Override

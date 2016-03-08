@@ -19,23 +19,27 @@
 package uk.co.strangeskies.mathematics.expression.collection;
 
 import java.util.Collection;
-import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
 import uk.co.strangeskies.mathematics.expression.Expression;
-import uk.co.strangeskies.utilities.collection.ObservableSetDecorator;
+import uk.co.strangeskies.utilities.collection.ObservableSortedSetDecorator;
 
-public class ExpressionSetImpl<E extends Expression<?, ?>> extends ObservableSetDecorator<ExpressionSetImpl<E>, E>
-		implements SortedExpressionSet<ExpressionSetImpl<E>, E>,
-		CopyDecouplingExpression<ExpressionSetImpl<E>, ExpressionSetImpl<E>> {
-	private static final long serialVersionUID = 1L;
-
+public class ExpressionSetDecorator<E extends Expression<?, ?>>
+		extends ObservableSortedSetDecorator<ExpressionSetDecorator<E>, E>
+		implements SortedExpressionSet<ExpressionSetDecorator<E>, E>,
+		CopyDecouplingExpression<ExpressionSetDecorator<E>, ExpressionSetDecorator<E>> {
 	private boolean evaluated = true;
 
 	private Consumer<Expression<?, ?>> dependencyObserver = e -> fireEvent();
 
-	public ExpressionSetImpl(Set<E> component) {
+	public ExpressionSetDecorator() {
+		this(new TreeSet<>());
+	}
+
+	public ExpressionSetDecorator(SortedSet<E> component) {
 		super(component);
 	}
 
@@ -106,14 +110,14 @@ public class ExpressionSetImpl<E extends Expression<?, ?>> extends ObservableSet
 	}
 
 	@Override
-	public final ExpressionSetImpl<E> getValue() {
+	public final ExpressionSetDecorator<E> getValue() {
 		evaluated = true;
 
 		return this;
 	}
 
 	@Override
-	public final ExpressionSetImpl<E> copy() {
-		return new ExpressionSetImpl<>(this);
+	public final ExpressionSetDecorator<E> copy() {
+		return new ExpressionSetDecorator<>(this);
 	}
 }

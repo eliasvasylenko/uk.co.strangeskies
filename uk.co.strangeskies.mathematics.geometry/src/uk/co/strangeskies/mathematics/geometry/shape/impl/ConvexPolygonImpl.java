@@ -26,13 +26,11 @@ import java.util.Set;
 
 import uk.co.strangeskies.mathematics.expression.DependentExpression;
 import uk.co.strangeskies.mathematics.expression.collection.ExpressionSet;
-import uk.co.strangeskies.mathematics.expression.collection.ExpressionSetImpl;
+import uk.co.strangeskies.mathematics.expression.collection.ExpressionSetDecorator;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.geometry.shape.ClosedPolyline2;
 import uk.co.strangeskies.mathematics.geometry.shape.ConvexPolygon;
 import uk.co.strangeskies.mathematics.geometry.shape.Shape;
-import uk.co.strangeskies.mathematics.geometry.shape.SimplePolygon.WindingDirection;
-import uk.co.strangeskies.mathematics.geometry.shape.impl.ConvexPolygonImpl.ConvexHull;
 import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.Observable;
 
@@ -143,7 +141,7 @@ public class ConvexPolygonImpl<V extends Value<V>> extends
 	private WindingDirection windingDirection;
 
 	public ConvexPolygonImpl() {
-		vertexSet = new ExpressionSetImpl<Vector2<V>>();
+		vertexSet = new ExpressionSetDecorator<Vector2<V>>();
 		convexHull = new ConvexHull<V>(vertexSet);
 		getDependencies().add(vertexSet);
 
@@ -152,8 +150,6 @@ public class ConvexPolygonImpl<V extends Value<V>> extends
 
 	public void setWindingDirection(WindingDirection windingDirection) {
 		this.windingDirection = windingDirection;
-
-		fireChange();
 	}
 
 	@Override

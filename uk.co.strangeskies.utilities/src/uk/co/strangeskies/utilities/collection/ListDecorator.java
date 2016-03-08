@@ -4,76 +4,141 @@
  * This file is part of uk.co.strangeskies.utilities.
  *
  * uk.co.strangeskies.utilities is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU Lesser General default License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * uk.co.strangeskies.utilities is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU Lesser General default License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU Lesser General default License
  * along with uk.co.strangeskies.utilities.  If not, see <http://www.gnu.org/licenses/>.
  */
 package uk.co.strangeskies.utilities.collection;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
-public class ListDecorator<E> extends CollectionDecorator<List<E>, E> implements List<E> {
-	public ListDecorator(List<E> component) {
-		super(component);
-	}
+public interface ListDecorator<E> extends CollectionDecorator<List<E>, E>, List<E> {
+	@Override
+	List<E> getComponent();
 
 	@Override
-	public void add(int index, E element) {
+	default void add(int index, E element) {
 		getComponent().add(index, element);
 	}
 
 	@Override
-	public boolean addAll(int index, Collection<? extends E> c) {
+	default boolean addAll(int index, Collection<? extends E> c) {
 		return getComponent().addAll(index, c);
 	}
 
 	@Override
-	public E get(int index) {
+	default E get(int index) {
 		return getComponent().get(index);
 	}
 
 	@Override
-	public int indexOf(Object o) {
+	default int indexOf(Object o) {
 		return getComponent().indexOf(o);
 	}
 
 	@Override
-	public int lastIndexOf(Object o) {
+	default int lastIndexOf(Object o) {
 		return getComponent().lastIndexOf(o);
 	}
 
 	@Override
-	public ListIterator<E> listIterator() {
+	default ListIterator<E> listIterator() {
 		return getComponent().listIterator();
 	}
 
 	@Override
-	public ListIterator<E> listIterator(int index) {
+	default ListIterator<E> listIterator(int index) {
 		return getComponent().listIterator(index);
 	}
 
 	@Override
-	public E remove(int index) {
+	default E remove(int index) {
 		return getComponent().remove(index);
 	}
 
 	@Override
-	public E set(int index, E element) {
+	default E set(int index, E element) {
 		return getComponent().set(index, element);
 	}
 
 	@Override
-	public List<E> subList(int fromIndex, int toIndex) {
+	default List<E> subList(int fromIndex, int toIndex) {
 		return getComponent().subList(fromIndex, toIndex);
+	}
+
+	@Override
+	default boolean add(E e) {
+		return CollectionDecorator.super.add(e);
+	}
+
+	@Override
+	default boolean addAll(Collection<? extends E> c) {
+		return CollectionDecorator.super.addAll(c);
+	}
+
+	@Override
+	default void clear() {
+		CollectionDecorator.super.clear();
+	}
+
+	@Override
+	default boolean contains(Object o) {
+		return CollectionDecorator.super.contains(o);
+	}
+
+	@Override
+	default boolean containsAll(Collection<?> c) {
+		return CollectionDecorator.super.containsAll(c);
+	}
+
+	@Override
+	default boolean isEmpty() {
+		return CollectionDecorator.super.isEmpty();
+	}
+
+	@Override
+	default Iterator<E> iterator() {
+		return CollectionDecorator.super.iterator();
+	}
+
+	@Override
+	default boolean remove(Object o) {
+		return CollectionDecorator.super.remove(o);
+	}
+
+	@Override
+	default boolean removeAll(Collection<?> c) {
+		return CollectionDecorator.super.removeAll(c);
+	}
+
+	@Override
+	default boolean retainAll(Collection<?> c) {
+		return CollectionDecorator.super.retainAll(c);
+	}
+
+	@Override
+	default int size() {
+		return CollectionDecorator.super.size();
+	}
+
+	@Override
+	default Object[] toArray() {
+		return CollectionDecorator.super.toArray();
+	}
+
+	@Override
+	default <A> A[] toArray(A[] a) {
+		return CollectionDecorator.super.toArray(a);
 	}
 }

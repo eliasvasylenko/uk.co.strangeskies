@@ -24,6 +24,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 
+import uk.co.strangeskies.utilities.collection.ObservableListDecorator.ObservableListDecoratorImpl;
+import uk.co.strangeskies.utilities.collection.SynchronizedObservableList.SynchronizedObservableListImpl;
+import uk.co.strangeskies.utilities.collection.UnmodifiableObservableList.UnmodifiableObservableListImpl;
+
 public interface ObservableList<S extends ObservableList<S, E>, E>
 		extends List<E>, ObservableCollection<S, E, ObservableList.Change<E>> {
 	/**
@@ -65,44 +69,30 @@ public interface ObservableList<S extends ObservableList<S, E>, E>
 
 	@Override
 	default ObservableList<?, E> unmodifiableView() {
-		return new UnmodifiableObservableList<>(this);
+		return new UnmodifiableObservableListImpl<>(this);
 	}
 
 	static <E> ObservableList<?, E> unmodifiableViewOf(ObservableList<?, ? extends E> list) {
-		return new UnmodifiableObservableList<>(list);
+		return new UnmodifiableObservableListImpl<>(list);
 	}
 
 	@Override
 	default ObservableList<?, E> synchronizedView() {
-		return new SynchronizedObservableList<>(this);
+		return new SynchronizedObservableListImpl<>(this);
 	}
 
 	public static <C extends List<E>, E> ObservableList<?, E> over(C list, Function<? super C, ? extends C> copy) {
-		return new ObservableListImpl<C, E>(list, copy);
+		return new ObservableListDecoratorImpl<C, E>(list, copy);
 	}
 
 	public static <E> ObservableList<?, E> ofElements(Collection<? extends E> elements) {
-		ObservableList<?, E> set = new ObservableListImpl<>(new ArrayList<>(), s -> new ArrayList<>(s));
+		ObservableList<?, E> set = new ObservableListDecoratorImpl<>(new ArrayList<>(), s -> new ArrayList<>(s));
 		set.addAll(elements);
 		return set;
 	}
 
+	@SafeVarargs
 	public static <E> ObservableList<?, E> ofElements(E... elements) {
 		return ofElements(Arrays.asList(elements));
-	}
-
-	class ObservableListImpl<C extends List<E>, E> extends ObservableListDecorator<ObservableListImpl<C, E>, E> {
-		Function<? super C, ? extends C> copy;
-
-		ObservableListImpl(C list, Function<? super C, ? extends C> copy) {
-			super(list);
-			this.copy = copy;
-		}
-
-		@SuppressWarnings("unchecked")
-		@Override
-		public ObservableListImpl<C, E> copy() {
-			return new ObservableListImpl<>(copy.apply((C) getComponent()), copy);
-		}
 	}
 }

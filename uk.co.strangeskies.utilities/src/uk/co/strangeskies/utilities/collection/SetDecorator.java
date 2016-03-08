@@ -18,15 +18,76 @@
  */
 package uk.co.strangeskies.utilities.collection;
 
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.Set;
 
-public class SetDecorator<T> extends CollectionDecorator<Set<T>, T> implements Set<T> {
-	public SetDecorator(Set<T> component) {
-		super(component);
+public interface SetDecorator<E> extends CollectionDecorator<Set<E>, E>, Set<E> {
+	@Override
+	Set<E> getComponent();
+
+	@Override
+	default boolean add(E e) {
+		return CollectionDecorator.super.add(e);
 	}
 
-	protected SetDecorator() {
-		super(new HashSet<>());
+	@Override
+	default boolean addAll(Collection<? extends E> c) {
+		return CollectionDecorator.super.addAll(c);
+	}
+
+	@Override
+	default void clear() {
+		CollectionDecorator.super.clear();
+	}
+
+	@Override
+	default boolean contains(Object o) {
+		return CollectionDecorator.super.contains(o);
+	}
+
+	@Override
+	default boolean containsAll(Collection<?> c) {
+		return CollectionDecorator.super.containsAll(c);
+	}
+
+	@Override
+	default boolean isEmpty() {
+		return CollectionDecorator.super.isEmpty();
+	}
+
+	@Override
+	default Iterator<E> iterator() {
+		return CollectionDecorator.super.iterator();
+	}
+
+	@Override
+	default boolean remove(Object o) {
+		return CollectionDecorator.super.remove(o);
+	}
+
+	@Override
+	default boolean removeAll(Collection<?> c) {
+		return CollectionDecorator.super.removeAll(c);
+	}
+
+	@Override
+	default boolean retainAll(Collection<?> c) {
+		return CollectionDecorator.super.retainAll(c);
+	}
+
+	@Override
+	default int size() {
+		return CollectionDecorator.super.size();
+	}
+
+	@Override
+	default Object[] toArray() {
+		return CollectionDecorator.super.toArray();
+	}
+
+	@Override
+	default <A> A[] toArray(A[] a) {
+		return CollectionDecorator.super.toArray(a);
 	}
 }

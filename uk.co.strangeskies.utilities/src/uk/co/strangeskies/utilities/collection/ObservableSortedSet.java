@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
+* Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
  *
  * This file is part of uk.co.strangeskies.utilities.
  *
@@ -20,13 +20,14 @@ package uk.co.strangeskies.utilities.collection;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.function.Function;
 
 import uk.co.strangeskies.utilities.Self;
+import uk.co.strangeskies.utilities.collection.ObservableSortedSetDecorator.ObservableSortedSetDecoratorImpl;
 import uk.co.strangeskies.utilities.collection.SynchronizedObservableSortedSet.SynchronizedObservableSortedSetImpl;
+import uk.co.strangeskies.utilities.collection.UnmodifiableObservableSortedSet.UnmodifiableObservableSortedSetImpl;
 
 /**
  * A set which can be observed for changes, as per the contract of
@@ -39,7 +40,6 @@ import uk.co.strangeskies.utilities.collection.SynchronizedObservableSortedSet.S
  *          the element type, as per {@link Collection}
  */
 public interface ObservableSortedSet<S extends ObservableSortedSet<S, E>, E> extends SortedSet<E>, ObservableSet<S, E> {
-
 	@Override
 	default ObservableSet<?, E> unmodifiableView() {
 		return new UnmodifiableObservableSortedSetImpl<>(this);
@@ -55,7 +55,7 @@ public interface ObservableSortedSet<S extends ObservableSortedSet<S, E>, E> ext
 	 *          the list over which we want a view
 	 * @return an unmodifiable view over the given list
 	 */
-	static <E> ObservableSet<?, E> unmodifiableViewOf(ObservableSet<?, ? extends E> set) {
+	static <E> ObservableSet<?, E> unmodifiableViewOf(ObservableSortedSet<?, ? extends E> set) {
 		return new UnmodifiableObservableSortedSetImpl<>(set);
 	}
 
@@ -64,16 +64,18 @@ public interface ObservableSortedSet<S extends ObservableSortedSet<S, E>, E> ext
 		return new SynchronizedObservableSortedSetImpl<>(this);
 	}
 
-	public static <C extends Set<E>, E> ObservableSet<?, E> over(C set, Function<? super C, ? extends C> copy) {
+	public static <C extends SortedSet<E>, E> ObservableSortedSet<?, E> over(C set,
+			Function<? super C, ? extends C> copy) {
 		return new ObservableSortedSetDecoratorImpl<C, E>(set, copy);
 	}
 
-	public static <E> ObservableSet<?, E> ofElements(Collection<? extends E> elements) {
-		ObservableSet<?, E> set = new ObservableSortedSetDecoratorImpl<>(new HashSet<>(), s -> new HashSet<>(s));
+	public static <E> ObservableSortedSet<?, E> ofElements(Collection<? extends E> elements) {
+		ObservableSortedSet<?, E> set = new ObservableSortedSetDecoratorImpl<>(new TreeSet<>(), s -> new TreeSet<>(s));
 		set.addAll(elements);
 		return set;
 	}
 
+	@SafeVarargs
 	public static <E> ObservableSet<?, E> ofElements(E... elements) {
 		return ofElements(Arrays.asList(elements));
 	}

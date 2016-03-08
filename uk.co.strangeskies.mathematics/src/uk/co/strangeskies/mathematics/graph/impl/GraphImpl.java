@@ -52,9 +52,10 @@ import uk.co.strangeskies.utilities.collection.MultiTreeMap;
 import uk.co.strangeskies.utilities.collection.SetDecorator;
 
 class GraphImpl<V, E> implements Graph<V, E> {
-	private class VerticesImpl extends SetDecorator<V> implements Vertices<V, E> {
-		public VerticesImpl() {
-			super(adjacencyMatrix.keySet());
+	private class VerticesImpl implements SetDecorator<V>, Vertices<V, E> {
+		@Override
+		public Set<V> getComponent() {
+			return adjacencyMatrix.keySet();
 		}
 
 		@Override
@@ -142,7 +143,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 
 		@Override
 		public void clear() {
-			super.clear();
+			SetDecorator.super.clear();
 			edges.clear();
 		}
 
@@ -183,7 +184,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 
 		@Override
 		public Stream<V> stream() {
-			return super.stream();
+			return SetDecorator.super.stream();
 		}
 
 		@Override
@@ -202,7 +203,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 		}
 	}
 
-	private class EdgesImpl extends SetDecorator<E> implements Edges<V, E> {
+	private class EdgesImpl implements SetDecorator<E>, Edges<V, E> {
 		private final Map<E, EdgeVertices<V>> edgeVertices;
 
 		public EdgesImpl(BiPredicate<? super E, ? super E> edgeComparator) {
@@ -210,15 +211,18 @@ class GraphImpl<V, E> implements Graph<V, E> {
 		}
 
 		private EdgesImpl(Map<E, EdgeVertices<V>> edgeVertices) {
-			super(edgeVertices.keySet());
-
 			this.edgeVertices = edgeVertices;
+		}
+
+		@Override
+		public Set<E> getComponent() {
+			return edgeVertices.keySet();
 		}
 
 		@SuppressWarnings("unchecked")
 		@Override
 		public boolean remove(Object edge) {
-			boolean removed = super.remove(edge);
+			boolean removed = SetDecorator.super.remove(edge);
 
 			if (removed) {
 				atomicInternal(() -> {

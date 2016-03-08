@@ -23,23 +23,24 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import uk.co.strangeskies.utilities.Decorator;
+public class LimitedReadWriteLockReleaseWrapper<L> implements StripedReadWriteLockRelease<L> {
+	private final StripedReadWriteLock<L> component;
 
-public class LimitedReadWriteLockReleaseWrapper<L> extends
-		Decorator<StripedReadWriteLock<L>> implements
-		StripedReadWriteLockRelease<L> {
 	private final Set<L> readDependencies;
 	private final Set<L> writeDependencies;
 
-	public LimitedReadWriteLockReleaseWrapper(StripedReadWriteLock<L> locks,
-			Collection<? extends L> readDependencies,
+	public LimitedReadWriteLockReleaseWrapper(StripedReadWriteLock<L> locks, Collection<? extends L> readDependencies,
 			Collection<? extends L> writeDependencies) throws InterruptedException {
-		super(locks);
+		component = locks;
 
 		this.readDependencies = new HashSet<>(readDependencies);
 		this.writeDependencies = new HashSet<>(writeDependencies);
 
 		getComponent().obtainLocks(this.readDependencies, this.writeDependencies);
+	}
+
+	public StripedReadWriteLock<L> getComponent() {
+		return component;
 	}
 
 	@Override
@@ -59,8 +60,7 @@ public class LimitedReadWriteLockReleaseWrapper<L> extends
 	public void release() throws InterruptedException {
 		synchronized (readDependencies) {
 			synchronized (writeDependencies) {
-				releaseLocks(new ArrayList<>(readDependencies), new ArrayList<>(
-						writeDependencies));
+				releaseLocks(new ArrayList<>(readDependencies), new ArrayList<>(writeDependencies));
 			}
 		}
 	}
@@ -86,8 +86,7 @@ public class LimitedReadWriteLockReleaseWrapper<L> extends
 	}
 
 	@Override
-	public boolean releaseLocks(Collection<? extends L> readKeys,
-			Collection<? extends L> writeKeys) {
+	public boolean releaseLocks(Collection<? extends L> readKeys, Collection<? extends L> writeKeys) {
 		synchronized (readDependencies) {
 			synchronized (writeDependencies) {
 				for (L key : readKeys)
@@ -145,8 +144,7 @@ public class LimitedReadWriteLockReleaseWrapper<L> extends
 	public boolean isLockHeldByCurrentThread(L key) {
 		synchronized (readDependencies) {
 			synchronized (writeDependencies) {
-				return isReadLockHeldByCurrentThread(key)
-						|| isWriteLockHeldByCurrentThread(key);
+				return isReadLockHeldByCurrentThread(key) || isWriteLockHeldByCurrentThread(key);
 			}
 		}
 	}

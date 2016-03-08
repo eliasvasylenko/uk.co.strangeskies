@@ -4,98 +4,88 @@
  * This file is part of uk.co.strangeskies.utilities.
  *
  * uk.co.strangeskies.utilities is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU Lesser General default License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * uk.co.strangeskies.utilities is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU Lesser General default License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU Lesser General default License
  * along with uk.co.strangeskies.utilities.  If not, see <http://www.gnu.org/licenses/>.
  */
 package uk.co.strangeskies.utilities.collection;
 
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.function.Supplier;
 
-import uk.co.strangeskies.utilities.Decorator;
-
-public abstract class CollectionDecorator<T extends Collection<E>, E> extends
-		Decorator<T> implements Collection<E> {
-	public CollectionDecorator(T component) {
-		super(component);
-	}
-
-	public CollectionDecorator(Supplier<T> component) {
-		super(component);
-	}
+public interface CollectionDecorator<T extends Collection<E>, E> extends Collection<E> {
+	Collection<E> getComponent();
 
 	@Override
-	public boolean add(E e) {
+	default boolean add(E e) {
 		return getComponent().add(e);
 	}
 
 	@Override
-	public boolean addAll(Collection<? extends E> c) {
+	default boolean addAll(Collection<? extends E> c) {
 		return getComponent().addAll(c);
 	}
 
 	@Override
-	public void clear() {
+	default void clear() {
 		getComponent().clear();
 	}
 
 	@Override
-	public boolean contains(Object o) {
+	default boolean contains(Object o) {
 		return getComponent().contains(o);
 	}
 
 	@Override
-	public boolean containsAll(Collection<?> c) {
+	default boolean containsAll(Collection<?> c) {
 		return getComponent().containsAll(c);
 	}
 
 	@Override
-	public boolean isEmpty() {
+	default boolean isEmpty() {
 		return getComponent().isEmpty();
 	}
 
 	@Override
-	public Iterator<E> iterator() {
+	default Iterator<E> iterator() {
 		return getComponent().iterator();
 	}
 
 	@Override
-	public boolean remove(Object o) {
+	default boolean remove(Object o) {
 		return getComponent().remove(o);
 	}
 
 	@Override
-	public boolean removeAll(Collection<?> c) {
+	default boolean removeAll(Collection<?> c) {
 		return getComponent().removeAll(c);
 	}
 
 	@Override
-	public boolean retainAll(Collection<?> c) {
+	default boolean retainAll(Collection<?> c) {
 		return getComponent().retainAll(c);
 	}
 
 	@Override
-	public int size() {
+	default int size() {
 		return getComponent().size();
 	}
 
 	@Override
-	public Object[] toArray() {
+	default Object[] toArray() {
 		return getComponent().toArray();
 	}
 
 	@Override
-	public <A> A[] toArray(A[] a) {
+	default <A> A[] toArray(A[] a) {
 		return getComponent().toArray(a);
 	}
 }

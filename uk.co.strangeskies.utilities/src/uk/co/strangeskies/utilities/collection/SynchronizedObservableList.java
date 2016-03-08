@@ -2,23 +2,39 @@ package uk.co.strangeskies.utilities.collection;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.function.Consumer;
 
 import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableImpl;
 
-public class SynchronizedObservableList<E> extends ListDecorator<E>
-		implements ObservableList<SynchronizedObservableList<E>, E> {
-	private final ObservableImpl<SynchronizedObservableList<E>> observable;
+public abstract class SynchronizedObservableList<S extends SynchronizedObservableList<S, E>, E>
+		implements ListDecorator<E>, ObservableList<S, E> {
+	static class SynchronizedObservableListImpl<E>
+			extends SynchronizedObservableList<SynchronizedObservableListImpl<E>, E> {
+		SynchronizedObservableListImpl(ObservableList<?, E> component) {
+			super(component);
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public SynchronizedObservableListImpl<E> copy() {
+			return new SynchronizedObservableListImpl<>(((ObservableList<?, E>) getComponent()).copy());
+		}
+	}
+
+	private final List<E> component;
+
+	private final ObservableImpl<S> observable;
 	private final Consumer<ObservableList<?, ? extends E>> observer;
 	private final ObservableImpl<Change<E>> changes;
 	private final Consumer<Change<E>> changeObserver;
 
-	SynchronizedObservableList(ObservableList<?, E> component) {
-		super(component);
+	protected SynchronizedObservableList(ObservableList<?, E> component) {
+		this.component = component;
 
 		observable = new ObservableImpl<>();
-		observer = l -> observable.fire(this);
+		observer = l -> observable.fire(getThis());
 		component.addWeakObserver(observer);
 
 		changes = new ObservableImpl<Change<E>>() {
@@ -41,17 +57,22 @@ public class SynchronizedObservableList<E> extends ListDecorator<E>
 	}
 
 	@Override
+	public List<E> getComponent() {
+		return component;
+	}
+
+	@Override
 	public Observable<Change<E>> changes() {
 		return changes;
 	}
 
 	@Override
-	public synchronized boolean addObserver(Consumer<? super SynchronizedObservableList<E>> observer) {
+	public synchronized boolean addObserver(Consumer<? super S> observer) {
 		return observable.addObserver(observer);
 	}
 
 	@Override
-	public synchronized boolean removeObserver(Consumer<? super SynchronizedObservableList<E>> observer) {
+	public synchronized boolean removeObserver(Consumer<? super S> observer) {
 		return observable.addObserver(observer);
 	}
 
@@ -97,7 +118,7 @@ public class SynchronizedObservableList<E> extends ListDecorator<E>
 
 	@Override
 	public synchronized Iterator<E> iterator() {
-		Iterator<E> base = super.iterator();
+		Iterator<E> base = ListDecorator.super.iterator();
 		return new Iterator<E>() {
 			@Override
 			public boolean hasNext() {
@@ -109,11 +130,5 @@ public class SynchronizedObservableList<E> extends ListDecorator<E>
 				return base.next();
 			}
 		};
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public SynchronizedObservableList<E> copy() {
-		return new SynchronizedObservableList<>(((ObservableList<?, E>) getComponent()).copy());
 	}
 }
