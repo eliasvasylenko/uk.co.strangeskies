@@ -18,10 +18,34 @@
  */
 package uk.co.strangeskies.utilities.collection;
 
+import java.util.Collection;
 import java.util.Set;
 
+import uk.co.strangeskies.utilities.Self;
+
+/**
+ * A set which can be observed for changes, as per the contract of
+ * {@link ObservableCollection}.
+ * 
+ * @author Elias N Vasylenko
+ * @param <S>
+ *          the self-bound, as per {@link Self}
+ * @param <E>
+ *          the element type, as per {@link Collection}
+ */
 public interface ObservableSet<S extends ObservableSet<S, E>, E>
 		extends Set<E>, ObservableCollection<S, E, ObservableSet.Change<E>> {
+	/**
+	 * A change event for {@link ObservableSet}. All elements {@link #added()} or
+	 * {@link #removed()} during the operation of a single change may be
+	 * inspected. These events are aggregated without any ordering, and with
+	 * multiple overlapping events, or events which cancel each other out, being
+	 * ignored.
+	 *
+	 * @author Elias N Vasylenko
+	 * @param <E>
+	 *          the element type
+	 */
 	interface Change<E> {
 		Set<E> added();
 
@@ -33,6 +57,16 @@ public interface ObservableSet<S extends ObservableSet<S, E>, E>
 		return new UnmodifiableObservableSet<>(this);
 	}
 
+	/**
+	 * As {@link #unmodifiableView()}, but a little more lenient with target type,
+	 * taking advantage of the variance properties of a read-only collection.
+	 * 
+	 * @param <E>
+	 *          the target element type
+	 * @param list
+	 *          the list over which we want a view
+	 * @return an unmodifiable view over the given list
+	 */
 	static <E> ObservableSet<?, E> unmodifiableViewOf(ObservableSet<?, ? extends E> list) {
 		return new UnmodifiableObservableSet<>(list);
 	}

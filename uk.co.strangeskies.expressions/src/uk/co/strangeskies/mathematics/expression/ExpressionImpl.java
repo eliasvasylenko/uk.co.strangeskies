@@ -18,9 +18,7 @@
  */
 package uk.co.strangeskies.mathematics.expression;
 
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
+import uk.co.strangeskies.utilities.ObservableImpl;
 
 /**
  * An abstract class to help designing mutable expression, implementing a simple
@@ -33,45 +31,60 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
  * @param <T>
  *          The type of the value of this expression
  */
-public abstract class LockingExpressionImpl<S extends Expression<S, T>, T> extends ExpressionImpl<S, T>
-		implements LockingExpression<S, T> {
-	private final ReentrantReadWriteLock lock;
+public abstract class ExpressionImpl<S extends Expression<S, T>, T> extends ObservableImpl<S>
+		implements Expression<S, T> {
+	private boolean dirty;
 
-	/**
-	 * Default constructor.
-	 */
-	public LockingExpressionImpl() {
-		lock = new ReentrantReadWriteLock();
+	private boolean changing;
+	private int changeDepth = 0;
+
+	protected void cancelChange() {
+		changing = false;
 	}
 
-	@Override
-	protected final boolean fireChange() {
-		try {
-			getWriteLock().lock();
-			getReadLock().lock();
-			getWriteLock().unlock();
+	protected boolean isChanging() {
+		return changing;
+	}
 
-			return super.fireChange();
-		} finally {
-			getWriteLock().unlock();
-			getReadLock().unlock();
+	protected boolean beginChange() {
+		if (changeDepth++ == 0) {
+			changing = getObservers().size() > 0;
+
+			return true;
+		} else {
+			return false;
 		}
 	}
 
-	@Override
-	public final T getValue() {
-		try {
-			getReadLock().lock();
-
-			T value;
-			synchronized (lock) {
-				value = super.getValue();
+	protected boolean endChange() {
+		if (--changeDepth == 0) {
+			if (changing) {
+				fireChange();
 			}
 
-			return value;
-		} finally {
-			getReadLock().unlock();
+			return true;
+		} else {
+			return false;
 		}
+	}
+
+	protected boolean fireChange() {
+		if (!dirty) {
+			dirty = true;
+			fire(getThis());
+
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	@Override
+	public T getValue() {
+		boolean dirty = this.dirty;
+		if (this.dirty)
+			this.dirty = false;
+		return getValueImpl(dirty);
 	}
 
 	/**
@@ -84,16 +97,5 @@ public abstract class LockingExpressionImpl<S extends Expression<S, T>, T> exten
 	 *          invoked.
 	 * @return The value of this {@link Expression}.
 	 */
-	@Override
 	protected abstract T getValueImpl(boolean dirty);
-
-	@Override
-	public ReadLock getReadLock() {
-		return lock.readLock();
-	}
-
-	@Override
-	public WriteLock getWriteLock() {
-		return lock.writeLock();
-	}
 }

@@ -35,32 +35,32 @@ import java.util.function.Consumer;
  *          The type of event message to produce
  */
 public class ObservableImpl<M> implements Observable<M> {
-	private final Set<Consumer<? super M>> listeners = new LinkedHashSet<>();
+	private final Set<Consumer<? super M>> observers = new LinkedHashSet<>();
 
 	@Override
 	public synchronized boolean addObserver(Consumer<? super M> observer) {
-		return listeners.add(observer);
+		return observers.add(observer);
 	}
 
 	@Override
 	public synchronized boolean removeObserver(Consumer<? super M> observer) {
-		return listeners.remove(observer);
-	}
-
-	public int getObserverCount() {
-		return listeners.size();
+		return observers.remove(observer);
 	}
 
 	/**
 	 * Remove all observers from forwarding.
 	 */
 	public synchronized void clearObservers() {
-		listeners.clear();
+		observers.clear();
 	}
 
 	public synchronized void fire(M item) {
-		for (Consumer<? super M> listener : new ArrayList<>(listeners)) {
+		for (Consumer<? super M> listener : new ArrayList<>(observers)) {
 			listener.accept(item);
 		}
+	}
+
+	public Set<Consumer<? super M>> getObservers() {
+		return observers;
 	}
 }

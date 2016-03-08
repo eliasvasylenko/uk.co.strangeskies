@@ -81,7 +81,7 @@ public abstract class AbstractObservableTreeSet<S extends AbstractObservableTree
 
 	protected boolean beginChange() {
 		if (changeDepth++ == 0) {
-			firing = changeObservable.getObserverCount() > 0;
+			firing = changeObservable.getObservers().size() > 0;
 
 			return true;
 		} else {

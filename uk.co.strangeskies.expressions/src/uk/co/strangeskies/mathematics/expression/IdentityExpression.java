@@ -58,7 +58,7 @@ public class IdentityExpression<T> extends LockingExpressionImpl<IdentityExpress
 			this.value = value;
 			return previous;
 		} finally {
-			postUpdate();
+			fireChange();
 		}
 	}
 

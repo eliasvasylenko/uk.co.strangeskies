@@ -29,10 +29,13 @@ import uk.co.strangeskies.utilities.EqualityComparator;
  * TODO
  * 
  * @author Elias N Vasylenko
+ * @param <S>
+ *          the self-bound of the expression, i.e. the type of the expression
+ *          object itself
  * @param <T>
  *          The type of the expression.
  */
-public abstract class DependentExpression<S extends Expression<S, T>, T> extends LockingExpressionImpl<S, T> {
+public abstract class DependentExpression<S extends Expression<S, T>, T> extends ExpressionImpl<S, T> {
 	private final SortedExpressionSet<?, Expression<?, ?>> dependencies;
 
 	private T value;
@@ -59,7 +62,7 @@ public abstract class DependentExpression<S extends Expression<S, T>, T> extends
 
 	public DependentExpression(boolean parallel) {
 		dependencies = new ExpressionTreeSet<>(EqualityComparator.identityComparator());
-		dependencies.addObserver(m -> postUpdate());
+		dependencies.addObserver(m -> fireChange());
 
 		this.parallel = parallel;
 	}

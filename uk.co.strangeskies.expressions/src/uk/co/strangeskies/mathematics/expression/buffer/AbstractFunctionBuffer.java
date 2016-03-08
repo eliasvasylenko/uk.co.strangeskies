@@ -78,7 +78,7 @@ public abstract class AbstractFunctionBuffer<S extends AbstractFunctionBuffer<S,
 			this.frontValue = front;
 			return previous;
 		} finally {
-			postUpdate();
+			fireChange();
 		}
 	}
 

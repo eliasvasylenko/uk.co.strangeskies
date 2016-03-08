@@ -72,7 +72,7 @@ public abstract class AbstractObservableHashSet<S extends AbstractObservableHash
 
 	protected boolean beginChange() {
 		if (changeDepth++ == 0) {
-			firing = changeObservable.getObserverCount() > 0;
+			firing = changeObservable.getObservers().size() > 0;
 
 			return true;
 		} else {

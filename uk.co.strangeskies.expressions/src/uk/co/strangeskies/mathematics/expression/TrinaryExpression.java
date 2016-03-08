@@ -119,7 +119,8 @@ public abstract class TrinaryExpression<S extends TrinaryExpression<S, O1, O2, O
 	public void setOperands(Expression<?, ? extends O1> firstOperand, Expression<?, ? extends O2> secondOperand,
 			Expression<?, ? extends O3> thirdOperand) {
 		try {
-			getWriteLock().lock();
+			beginChange();
+
 			if (this.firstOperand != firstOperand || this.secondOperand != secondOperand
 					|| this.thirdOperand != thirdOperand) {
 				getDependencies().remove(this.firstOperand);
@@ -135,7 +136,7 @@ public abstract class TrinaryExpression<S extends TrinaryExpression<S, O1, O2, O
 				getDependencies().add(this.thirdOperand);
 			}
 		} finally {
-			postUpdate();
+			endChange();
 		}
 	}
 
@@ -145,7 +146,8 @@ public abstract class TrinaryExpression<S extends TrinaryExpression<S, O1, O2, O
 	 */
 	public void setFirstOperand(Expression<?, ? extends O1> operand) {
 		try {
-			getWriteLock().lock();
+			beginChange();
+
 			if (firstOperand != operand) {
 				if (firstOperand != secondOperand && firstOperand != thirdOperand) {
 					getDependencies().remove(firstOperand);
@@ -155,7 +157,7 @@ public abstract class TrinaryExpression<S extends TrinaryExpression<S, O1, O2, O
 				getDependencies().add(firstOperand);
 			}
 		} finally {
-			postUpdate();
+			endChange();
 		}
 	}
 
@@ -165,7 +167,8 @@ public abstract class TrinaryExpression<S extends TrinaryExpression<S, O1, O2, O
 	 */
 	public void setSecondOperand(Expression<?, ? extends O2> operand) {
 		try {
-			getWriteLock().lock();
+			beginChange();
+
 			if (secondOperand != operand) {
 				if (firstOperand != secondOperand && secondOperand != thirdOperand) {
 					getDependencies().remove(secondOperand);
@@ -175,7 +178,7 @@ public abstract class TrinaryExpression<S extends TrinaryExpression<S, O1, O2, O
 				getDependencies().add(secondOperand);
 			}
 		} finally {
-			postUpdate();
+			endChange();
 		}
 	}
 
@@ -185,7 +188,8 @@ public abstract class TrinaryExpression<S extends TrinaryExpression<S, O1, O2, O
 	 */
 	public void setThirdOperand(Expression<?, ? extends O3> operand) {
 		try {
-			getWriteLock().lock();
+			beginChange();
+
 			if (thirdOperand != operand) {
 				if (firstOperand != thirdOperand && secondOperand != thirdOperand) {
 					getDependencies().remove(secondOperand);
@@ -195,7 +199,7 @@ public abstract class TrinaryExpression<S extends TrinaryExpression<S, O1, O2, O
 				getDependencies().add(secondOperand);
 			}
 		} finally {
-			postUpdate();
+			endChange();
 		}
 	}
 

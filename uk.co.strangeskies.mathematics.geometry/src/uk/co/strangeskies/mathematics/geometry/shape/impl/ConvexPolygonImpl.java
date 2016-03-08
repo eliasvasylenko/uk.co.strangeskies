@@ -149,10 +149,9 @@ public class ConvexPolygonImpl<V extends Value<V>> extends
 	}
 
 	public void setWindingDirection(WindingDirection windingDirection) {
-		getWriteLock().lock();
 		this.windingDirection = windingDirection;
 
-		postUpdate();
+		fireChange();
 	}
 
 	@Override

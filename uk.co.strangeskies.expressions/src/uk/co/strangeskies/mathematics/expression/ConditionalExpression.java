@@ -56,16 +56,11 @@ public class ConditionalExpression<O> extends DependentExpression<ConditionalExp
 		this.expressionWhenFulfilled = expressionWhenFulfilled;
 		this.expressionWhenUnfulfilled = expressionWhenUnfulfilled;
 
-		try {
-			getWriteLock().lock();
-			getDependencies().add(condition);
-			if (condition.getValue()) {
-				getDependencies().add(expressionWhenFulfilled);
-			} else {
-				getDependencies().add(expressionWhenUnfulfilled);
-			}
-		} finally {
-			getWriteLock().unlock();
+		getDependencies().add(condition);
+		if (condition.getValue()) {
+			getDependencies().add(expressionWhenFulfilled);
+		} else {
+			getDependencies().add(expressionWhenUnfulfilled);
 		}
 	}
 

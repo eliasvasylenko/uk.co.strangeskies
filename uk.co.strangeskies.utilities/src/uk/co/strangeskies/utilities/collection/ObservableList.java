@@ -22,24 +22,41 @@ import java.util.List;
 
 public interface ObservableList<S extends ObservableList<S, E>, E>
 		extends List<E>, ObservableCollection<S, E, ObservableList.Change<E>> {
+	/**
+	 * A change event for {@link ObservableList}. All elements added or removed
+	 * during a change operation may be inspected, along with their indices before
+	 * or after removal or addition respectively.
+	 * 
+	 * <p>
+	 * The original order of sub-events before aggregation is lost. The effective
+	 * ordering of the aggregated change operation is removal, then addition.
+	 * 
+	 * <p>
+	 * Events
+	 *
+	 * @author Elias N Vasylenko
+	 * @param <E>
+	 */
 	interface Change<E> {
 		int[] removedIndices();
 
 		List<E> removedItems();
 
+		/*- TODO modification
+		int[] modifiedIndices();
+		
+		List<E> modifiedFromItems();
+		 */
+
+		/*- TODO permutation
+		int[] permutedFromIndices();
+		
+		int[] permutedToIndices();
+		 */
+
 		int[] addedIndices();
 
 		List<E> addedItems();
-
-		int[] permutedIndices();
-
-		List<E> permutedItems();
-
-		int[] modifiedIndices();
-
-		List<E> modifiedFromItems();
-
-		List<E> modifiedToItems();
 	}
 
 	@Override

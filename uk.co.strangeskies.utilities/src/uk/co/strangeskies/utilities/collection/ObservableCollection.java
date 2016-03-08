@@ -19,15 +19,51 @@
 package uk.co.strangeskies.utilities.collection;
 
 import java.util.Collection;
+import java.util.function.Consumer;
 
 import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.Self;
 
+/**
+ * A collections which can be observed for changes. The collection is
+ * {@link Observable} over itself, i.e. events will be triggered with the event
+ * object being the collection itself. There is also an observable interface
+ * {@link #changes()} over a type {@code C} which is parameterisable by
+ * subtypes, and which may contain further information about the nature of the
+ * change.
+ * <p>
+ * Observable events should be triggered each time the collection is changed.
+ * Many small internal sub-changes may be grouped into a single conceptual
+ * change, and so only trigger once upon completion. The ordering of sub-changes
+ * is generally considered an implementation detail in this case, and may not be
+ * made available via the change event message type {@code C}.
+ * <p>
+ * Event messages may only be valid during the invocation of the
+ * {@link Consumer#accept(Object)} method on observers, so references should
+ * typically not be held beyond this point.
+ *
+ * @author Elias N Vasylenko
+ * @param <S>
+ *          the self-bound, as per {@link Self}
+ * @param <E>
+ *          the element type, as per {@link Collection}
+ * @param <C>
+ *          the change event message type
+ */
 public interface ObservableCollection<S extends ObservableCollection<S, E, C>, E, C>
 		extends Collection<E>, Observable<S>, Self<S> {
+	/**
+	 * @return a view of the collections which does not allow modification
+	 */
 	ObservableCollection<?, E, ?> unmodifiableView();
 
+	/**
+	 * @return a view of the collections which is safe in concurrent contexts
+	 */
 	ObservableCollection<?, E, ?> synchronizedView();
 
+	/**
+	 * @return an observable instance over changes
+	 */
 	Observable<C> changes();
 }

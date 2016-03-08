@@ -92,7 +92,8 @@ public abstract class BinaryExpression<S extends BinaryExpression<S, O1, O2, R>,
 	 */
 	public void setOperands(Expression<?, ? extends O1> firstOperand, Expression<?, ? extends O2> secondOperand) {
 		try {
-			getWriteLock().lock();
+			beginChange();
+
 			if (this.firstOperand != firstOperand || this.secondOperand != secondOperand) {
 				getDependencies().remove(this.firstOperand);
 				getDependencies().remove(this.secondOperand);
@@ -104,7 +105,7 @@ public abstract class BinaryExpression<S extends BinaryExpression<S, O1, O2, R>,
 				getDependencies().add(this.secondOperand);
 			}
 		} finally {
-			postUpdate();
+			endChange();
 		}
 	}
 
@@ -114,7 +115,8 @@ public abstract class BinaryExpression<S extends BinaryExpression<S, O1, O2, R>,
 	 */
 	public void setFirstOperand(Expression<?, ? extends O1> operand) {
 		try {
-			getWriteLock().lock();
+			beginChange();
+
 			if (firstOperand != operand) {
 				if (firstOperand != secondOperand) {
 					getDependencies().remove(firstOperand);
@@ -124,7 +126,7 @@ public abstract class BinaryExpression<S extends BinaryExpression<S, O1, O2, R>,
 				getDependencies().add(firstOperand);
 			}
 		} finally {
-			postUpdate();
+			endChange();
 		}
 	}
 
@@ -134,7 +136,8 @@ public abstract class BinaryExpression<S extends BinaryExpression<S, O1, O2, R>,
 	 */
 	public void setSecondOperand(Expression<?, ? extends O2> operand) {
 		try {
-			getWriteLock().lock();
+			beginChange();
+
 			if (secondOperand != operand) {
 				if (firstOperand != secondOperand) {
 					getDependencies().remove(secondOperand);
@@ -144,7 +147,7 @@ public abstract class BinaryExpression<S extends BinaryExpression<S, O1, O2, R>,
 				getDependencies().add(secondOperand);
 			}
 		} finally {
-			postUpdate();
+			endChange();
 		}
 	}
 
