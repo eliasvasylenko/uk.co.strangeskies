@@ -23,24 +23,22 @@ import java.util.Set;
 public interface ObservableSet<S extends ObservableSet<S, E>, E>
 		extends Set<E>, ObservableCollection<S, E, ObservableSet.Change<E>> {
 	interface Change<E> {
-		enum Type {
-			ADDED, REMOVED
-		}
+		Set<E> added();
 
-		Type type();
-
-		E element();
+		Set<E> removed();
 	}
 
-	default UnmodifiableObservableSet<E> unmodifiableView() {
+	@Override
+	default ObservableSet<?, E> unmodifiableView() {
 		return new UnmodifiableObservableSet<>(this);
 	}
 
-	static <E> UnmodifiableObservableSet<E> unmodifiableViewOf(ObservableSet<?, ? extends E> list) {
+	static <E> ObservableSet<?, E> unmodifiableViewOf(ObservableSet<?, ? extends E> list) {
 		return new UnmodifiableObservableSet<>(list);
 	}
 
-	default SynchronizedObservableSet<E> synchronizedView() {
+	@Override
+	default ObservableSet<?, E> synchronizedView() {
 		return new SynchronizedObservableSet<>(this);
 	}
 }

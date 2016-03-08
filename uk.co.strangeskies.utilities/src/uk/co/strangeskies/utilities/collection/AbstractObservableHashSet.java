@@ -19,8 +19,10 @@
 package uk.co.strangeskies.utilities.collection;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import uk.co.strangeskies.utilities.Observable;
@@ -28,10 +30,31 @@ import uk.co.strangeskies.utilities.ObservableImpl;
 
 public abstract class AbstractObservableHashSet<S extends AbstractObservableHashSet<S, E>, E> extends HashSet<E>
 		implements ObservableSet<S, E> {
+	class ChangeImpl implements Change<E> {
+		private final Set<E> added = Collections.unmodifiableSet(adding);
+		private final Set<E> removed = Collections.unmodifiableSet(removing);
+
+		@Override
+		public Set<E> added() {
+			return added;
+		}
+
+		@Override
+		public Set<E> removed() {
+			return removed;
+		}
+	}
+
 	private static final long serialVersionUID = 1L;
 
 	private final ObservableImpl<Change<E>> changeObservable = new ObservableImpl<>();
 	private final ObservableImpl<S> stateObservable = new ObservableImpl<>();
+
+	private final ChangeImpl change = new ChangeImpl();
+	private boolean firing;
+	private final Set<E> adding = new HashSet<>();
+	private final Set<E> removing = new HashSet<>();
+	private int changeDepth = 0;
 
 	public AbstractObservableHashSet() {}
 
@@ -47,176 +70,129 @@ public abstract class AbstractObservableHashSet<S extends AbstractObservableHash
 		super(initialCapacity);
 	}
 
-	@Override
-	public boolean add(E e) {
-		if (super.add(e)) {
-			stateObservable.fire(getThis());
-			changeObservable.fire(new Change<E>() {
-				@Override
-				public Type type() {
-					return Type.ADDED;
-				}
+	protected boolean beginChange() {
+		if (changeDepth++ == 0) {
+			firing = changeObservable.getObserverCount() > 0;
 
-				@Override
-				public E element() {
-					return e;
-				}
-			});
 			return true;
 		} else {
 			return false;
+		}
+	}
+
+	protected boolean endChange() {
+		if (--changeDepth == 0) {
+			if (firing && fireChange(change)) {
+				adding.clear();
+				removing.clear();
+			}
+
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	protected boolean fireChange(Change<E> change) {
+		changeObservable.fire(change);
+		fireEvent();
+
+		return true;
+	}
+
+	protected void fireEvent() {
+		stateObservable.fire(getThis());
+	}
+
+	@Override
+	public boolean add(E e) {
+		try {
+			beginChange();
+
+			boolean changed = super.add(e);
+
+			if (firing && changed && !removing.remove(e)) {
+				adding.add(e);
+			}
+
+			return changed;
+		} finally {
+			endChange();
 		}
 	}
 
 	@Override
 	public boolean addAll(Collection<? extends E> c) {
-		Iterator<? extends E> i = c.iterator();
-		boolean changed = i.hasNext() && addRecursion(i);
+		try {
+			beginChange();
 
-		if (changed) {
-			stateObservable.fire(getThis());
+			boolean changed = false;
+
+			for (E e : c) {
+				changed = add(e) || changed;
+			}
+
+			return changed;
+		} finally {
+			endChange();
 		}
-
-		return changed;
 	}
 
-	/*
-	 * Ensure observers are notified only after all items are added, without
-	 * having to assign heap memory to determine which adds were successful
-	 */
-	private boolean addRecursion(Iterator<? extends E> i) {
-		E e = i.next();
-
-		boolean changed = super.add(e);
-
-		if (i.hasNext()) {
-			addRecursion(i);
-		}
-
-		if (changed) {
-			changeObservable.fire(new Change<E>() {
-				@Override
-				public Type type() {
-					return Type.ADDED;
-				}
-
-				@Override
-				public E element() {
-					return e;
-				}
-			});
-		}
-
-		return changed;
-	}
-
+	@SuppressWarnings("unchecked")
 	@Override
 	public boolean remove(Object o) {
-		if (super.remove(o)) {
-			stateObservable.fire(getThis());
-			changeObservable.fire(new Change<E>() {
-				@Override
-				public Type type() {
-					return Type.REMOVED;
-				}
+		try {
+			beginChange();
 
-				@SuppressWarnings("unchecked")
-				@Override
-				public E element() {
-					return (E) o;
-				}
-			});
-			return true;
-		} else {
-			return false;
+			boolean changed = super.remove(o);
+
+			if (firing && changed && !adding.remove(o)) {
+				removing.add((E) o);
+			}
+
+			return changed;
+		} finally {
+			endChange();
 		}
 	}
 
 	@Override
 	public boolean removeAll(Collection<?> c) {
-		Iterator<? extends Object> i = c.iterator();
-		boolean changed = i.hasNext() && removeRecursion(i);
+		try {
+			beginChange();
 
-		if (changed) {
-			stateObservable.fire(getThis());
+			boolean changed = false;
+
+			for (Object o : c) {
+				changed = remove(o) || changed;
+			}
+
+			return changed;
+		} finally {
+			endChange();
 		}
-
-		return changed;
-	}
-
-	/*
-	 * Ensure observers are notified only after all items are removed, without
-	 * having to assign heap memory to determine which removes were successful
-	 */
-	private boolean removeRecursion(Iterator<? extends Object> i) {
-		Object e = i.next();
-
-		boolean changed = super.remove(e);
-
-		if (i.hasNext()) {
-			removeRecursion(i);
-		}
-
-		if (changed) {
-			changeObservable.fire(new Change<E>() {
-				@Override
-				public Type type() {
-					return Type.REMOVED;
-				}
-
-				@SuppressWarnings("unchecked")
-				@Override
-				public E element() {
-					return (E) e;
-				}
-			});
-		}
-
-		return changed;
 	}
 
 	@Override
 	public boolean retainAll(Collection<?> c) {
-		Iterator<? extends Object> i = c.iterator();
-		boolean changed = i.hasNext() && retainRecursion(i, c);
+		try {
+			beginChange();
 
-		if (changed) {
-			stateObservable.fire(getThis());
-		}
+			boolean changed = false;
 
-		return changed;
-	}
+			Iterator<E> i = iterator();
+			while (i.hasNext()) {
+				E e = i.next();
 
-	/*
-	 * Ensure observers are notified only after all items are removed, without
-	 * having to assign heap memory to determine which removes were successful
-	 */
-	private boolean retainRecursion(Iterator<? extends Object> i, Collection<?> c) {
-		Object e = i.next();
-
-		boolean changed = !c.contains(e);
-
-		if (i.hasNext()) {
-			retainRecursion(i, c);
-		}
-
-		if (changed) {
-			super.remove(e);
-			changeObservable.fire(new Change<E>() {
-				@Override
-				public Type type() {
-					return Type.REMOVED;
+				if (!c.contains(e)) {
+					changed = remove(e) || changed;
 				}
+			}
 
-				@SuppressWarnings("unchecked")
-				@Override
-				public E element() {
-					return (E) e;
-				}
-			});
+			return changed;
+		} finally {
+			endChange();
 		}
-
-		return changed;
 	}
 
 	@Override
@@ -233,4 +209,5 @@ public abstract class AbstractObservableHashSet<S extends AbstractObservableHash
 	public boolean removeObserver(Consumer<? super S> observer) {
 		return stateObservable.removeObserver(observer);
 	}
+
 }

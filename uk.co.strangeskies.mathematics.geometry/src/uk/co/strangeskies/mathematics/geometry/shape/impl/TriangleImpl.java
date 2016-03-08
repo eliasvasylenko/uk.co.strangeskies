@@ -19,7 +19,6 @@
 package uk.co.strangeskies.mathematics.geometry.shape.impl;
 
 import java.util.Set;
-import java.util.concurrent.locks.Lock;
 import java.util.function.Consumer;
 
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
@@ -142,12 +141,6 @@ public class TriangleImpl<V extends Value<V>> implements Triangle<V> {
 
 	@Override
 	public Triangle<V> getValue() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Lock getReadLock() {
 		// TODO Auto-generated method stub
 		return null;
 	}

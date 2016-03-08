@@ -18,8 +18,19 @@
  */
 package uk.co.strangeskies.mathematics.expression.collection;
 
+import java.util.Collection;
+
 import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.utilities.collection.ObservableSet;
 
 public interface ExpressionSet<S extends ExpressionSet<S, E>, E extends Expression<?, ?>>
-		extends ObservableSet<S, E>, ExpressionCollection<S, E, ObservableSet.Change<E>> {}
+		extends ObservableSet<S, E>, ExpressionCollection<S, E, ObservableSet.Change<E>> {
+	@Override
+	ExpressionSet<?, E> unmodifiableView();
+
+	@Override
+	ExpressionSet<?, E> synchronizedView();
+
+	@Override
+	void set(Collection<? extends E> expressions);
+}

@@ -27,7 +27,11 @@ import uk.co.strangeskies.utilities.collection.ObservableCollection;
 
 public interface ExpressionCollection<S extends ExpressionCollection<S, E, C>, E extends Expression<?, ?>, C>
 		extends ObservableCollection<S, E, C>, Self<S>, SelfExpression<S> {
-	Collection<E> getUnmodifiableView();
+	@Override
+	ExpressionCollection<?, E, ?> unmodifiableView();
+
+	@Override
+	ExpressionCollection<?, E, ?> synchronizedView();
 
 	void set(Collection<? extends E> expressions);
 }

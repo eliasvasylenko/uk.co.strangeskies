@@ -20,7 +20,6 @@ package uk.co.strangeskies.utilities.collection;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -30,35 +29,59 @@ import uk.co.strangeskies.utilities.ObservableImpl;
 public abstract class AbstractObservableArrayList<S extends AbstractObservableArrayList<S, E>, E> extends ArrayList<E>
 		implements ObservableList<S, E> {
 	class ChangeImpl implements Change<E> {
-		int[] changeIndex;
-		List<E>[] changeData;
-		boolean[] isAdded;
-		int index = -1;
-		int size;
+		private int[] removedIndices;
+		private List<E> removedItems;
 
 		@Override
-		public boolean next() {
-			return index++ < size;
+		public int[] removedIndices() {
+			return removedIndices;
 		}
 
 		@Override
-		public void reset() {
-			index = -1;
+		public List<E> removedItems() {
+			return removedItems;
 		}
 
 		@Override
-		public int index() {
-			return index;
+		public int[] addedIndices() {
+			// TODO Auto-generated method stub
+			return null;
 		}
 
 		@Override
-		public List<E> getRemoved() {
-			return isAdded[index] ? Collections.emptyList() : changeData[index];
+		public List<E> addedItems() {
+			// TODO Auto-generated method stub
+			return null;
 		}
 
 		@Override
-		public List<E> getAdded() {
-			return isAdded[index] ? changeData[index] : Collections.emptyList();
+		public int[] permutedIndices() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public List<E> permutedItems() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public int[] modifiedIndices() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public List<E> modifiedFromItems() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public List<E> modifiedToItems() {
+			// TODO Auto-generated method stub
+			return null;
 		}
 	}
 
@@ -67,7 +90,7 @@ public abstract class AbstractObservableArrayList<S extends AbstractObservableAr
 	private final ObservableImpl<Change<E>> changeObservable = new ObservableImpl<>();
 	private final ObservableImpl<S> stateObservable = new ObservableImpl<>();
 
-	private ChangeImpl change;
+	private ChangeImpl change = new ChangeImpl();
 	private int changeDepth = 0;
 
 	public AbstractObservableArrayList(int initialCapacity) {
@@ -84,7 +107,8 @@ public abstract class AbstractObservableArrayList<S extends AbstractObservableAr
 		if (changeDepth++ == 0) {
 			if (changeObservable.getObserverCount() > 0) {
 				if (change == null) {
-					change = new ChangeImpl();
+					change.removedIndices = null;
+					change.removedItems = null;
 				}
 			} else {
 				change = null;
@@ -97,8 +121,8 @@ public abstract class AbstractObservableArrayList<S extends AbstractObservableAr
 	}
 
 	protected boolean endChange() {
-		if (--changeDepth == 0 && change.size > 0) {
-			if (fireChange(change)) {
+		if (--changeDepth == 0 && change != null && !change.isEmpty()) {
+			if (fireChange()) {
 				change = null;
 			}
 
@@ -108,9 +132,9 @@ public abstract class AbstractObservableArrayList<S extends AbstractObservableAr
 		}
 	}
 
-	protected boolean fireChange(Change<E> change) {
-		fireEvent();
+	protected boolean fireChange() {
 		changeObservable.fire(change);
+		fireEvent();
 
 		return true;
 	}
@@ -127,7 +151,7 @@ public abstract class AbstractObservableArrayList<S extends AbstractObservableAr
 			super.add(e);
 
 			if (change != null) {
-				// TODO do change
+				change.add(new SingleChangeItemImpl(Type.ADDED, e, true, size()));
 			}
 
 			return true;
@@ -144,22 +168,24 @@ public abstract class AbstractObservableArrayList<S extends AbstractObservableAr
 			super.add(index, element);
 
 			if (change != null) {
-				// TODO do change
+				change.add(new SingleChangeItemImpl(Type.ADDED, element, true, index));
 			}
 		} finally {
 			endChange();
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public boolean remove(Object o) {
 		try {
 			beginChange();
 
+			int index = indexOf(o);
 			boolean changed = super.remove(o);
 
 			if (changed && change != null) {
-				// TODO do change
+				change.add(new SingleChangeItemImpl(Type.REMOVED, (E) o, true, index));
 			}
 
 			return changed;
@@ -176,7 +202,7 @@ public abstract class AbstractObservableArrayList<S extends AbstractObservableAr
 			E previous = super.remove(index);
 
 			if (change != null) {
-				// TODO do change
+				change.add(new SingleChangeItemImpl(Type.REMOVED, previous, false, index));
 			}
 
 			return previous;
@@ -193,7 +219,7 @@ public abstract class AbstractObservableArrayList<S extends AbstractObservableAr
 			E previous = super.set(index, element);
 
 			if (change != null) {
-				// TODO do change
+				change.add(new SingleChangeItemImpl(Type.CHANGED, element, false, index));
 			}
 
 			return previous;
@@ -210,7 +236,7 @@ public abstract class AbstractObservableArrayList<S extends AbstractObservableAr
 			boolean changed = super.addAll(c);
 
 			if (changed && change != null) {
-				// TODO do change
+				change.add(new SingleChangeItemImpl(Type.ADDED, previous, false, index));
 			}
 
 			return changed;

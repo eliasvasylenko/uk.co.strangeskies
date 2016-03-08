@@ -25,5 +25,9 @@ import uk.co.strangeskies.utilities.Self;
 
 public interface ObservableCollection<S extends ObservableCollection<S, E, C>, E, C>
 		extends Collection<E>, Observable<S>, Self<S> {
+	ObservableCollection<?, E, ?> unmodifiableView();
+
+	ObservableCollection<?, E, ?> synchronizedView();
+
 	Observable<C> changes();
 }

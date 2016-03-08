@@ -23,25 +23,29 @@ import java.util.function.Consumer;
 
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
 import uk.co.strangeskies.mathematics.expression.Expression;
-import uk.co.strangeskies.utilities.collection.AbstractObservableArrayList;
+import uk.co.strangeskies.utilities.collection.AbstractObservableHashSet;
 
-public class ExpressionArrayList<E extends Expression<?, ?>>
-		extends AbstractObservableArrayList<ExpressionArrayList<E>, E> implements ExpressionList<ExpressionArrayList<E>, E>,
-		CopyDecouplingExpression<ExpressionArrayList<E>, ExpressionArrayList<E>> {
+public class ExpressionHashSet<E extends Expression<?, ?>> extends AbstractObservableHashSet<ExpressionHashSet<E>, E>
+		implements ExpressionSet<ExpressionHashSet<E>, E>,
+		CopyDecouplingExpression<ExpressionHashSet<E>, ExpressionHashSet<E>> {
 	private static final long serialVersionUID = 1L;
 
-	private boolean evaluated;
+	private boolean evaluated = true;
 
-	private final Consumer<Expression<?, ?>> dependencyObserver;
+	private Consumer<Expression<?, ?>> dependencyObserver = e -> fireEvent();
 
-	public ExpressionArrayList() {
-		dependencyObserver = message -> fireEvent();
+	public ExpressionHashSet() {}
+
+	public ExpressionHashSet(Collection<? extends E> c) {
+		super(c);
 	}
 
-	public ExpressionArrayList(Collection<E> expressions) {
-		this();
+	public ExpressionHashSet(int initialCapacity, float loadFactor) {
+		super(initialCapacity, loadFactor);
+	}
 
-		addAll(expressions);
+	public ExpressionHashSet(int initialCapacity) {
+		super(initialCapacity);
 	}
 
 	@Override
@@ -114,26 +118,26 @@ public class ExpressionArrayList<E extends Expression<?, ?>>
 	}
 
 	@Override
-	public ExpressionList<?, E> synchronizedView() {
+	public ExpressionSet<?, E> synchronizedView() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public final ExpressionList<?, E> unmodifiableView() {
+	public final ExpressionSet<?, E> unmodifiableView() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public final ExpressionArrayList<E> getValue() {
+	public final ExpressionHashSet<E> getValue() {
 		evaluated = true;
 
 		return this;
 	}
 
 	@Override
-	public final ExpressionArrayList<E> copy() {
-		return new ExpressionArrayList<>(this);
+	public final ExpressionHashSet<E> copy() {
+		return new ExpressionHashSet<>(this);
 	}
 }

@@ -84,8 +84,9 @@ public class UnmodifiableObservableSet<E> extends SetDecorator<E>
 		};
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public UnmodifiableObservableSet<E> copy() {
-		return new UnmodifiableObservableSet<>(this.copy());
+		return new UnmodifiableObservableSet<>(((ObservableSet<?, ? extends E>) getComponent()).copy());
 	}
 }

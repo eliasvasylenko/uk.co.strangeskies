@@ -19,7 +19,6 @@
 package uk.co.strangeskies.mathematics.geometry.shape.impl;
 
 import java.util.List;
-import java.util.concurrent.locks.Lock;
 import java.util.function.Consumer;
 
 import uk.co.strangeskies.mathematics.geometry.Bounds2;
@@ -68,12 +67,6 @@ public class ClosedPolyline2Impl<V extends Value<V>> implements ClosedPolyline2<
 
 	@Override
 	public ClosedPolyline2<V> getValue() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Lock getReadLock() {
 		// TODO Auto-generated method stub
 		return null;
 	}

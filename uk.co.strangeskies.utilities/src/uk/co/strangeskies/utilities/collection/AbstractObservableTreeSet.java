@@ -20,6 +20,7 @@ package uk.co.strangeskies.utilities.collection;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -30,19 +31,33 @@ import java.util.function.Consumer;
 
 import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableImpl;
-import uk.co.strangeskies.utilities.collection.AbstractObservableArrayList.ChangeImpl;
 
 public abstract class AbstractObservableTreeSet<S extends AbstractObservableTreeSet<S, E>, E> extends TreeSet<E>
 		implements ObservableSet<S, E> {
+	class ChangeImpl implements Change<E> {
+		Set<E> added = Collections.unmodifiableSet(adding);
+		Set<E> removed = Collections.unmodifiableSet(removing);
+
+		@Override
+		public Set<E> added() {
+			return added;
+		}
+
+		@Override
+		public Set<E> removed() {
+			return removed;
+		}
+	}
+
 	private static final long serialVersionUID = 1L;
 
 	private final ObservableImpl<Change<E>> changeObservable = new ObservableImpl<>();
 	private final ObservableImpl<S> stateObservable = new ObservableImpl<>();
 
-	private E adding;
-	private Set<E> addingAll = new HashSet<>();
-	private E removing;
-	private Set<E> removingAll = new HashSet<>();
+	private final ChangeImpl change = new ChangeImpl();
+	private boolean firing;
+	private final Set<E> adding = new HashSet<>();
+	private final Set<E> removing = new HashSet<>();
 	private int changeDepth = 0;
 
 	public AbstractObservableTreeSet() {}
@@ -66,13 +81,7 @@ public abstract class AbstractObservableTreeSet<S extends AbstractObservableTree
 
 	protected boolean beginChange() {
 		if (changeDepth++ == 0) {
-			if (changeObservable.getObserverCount() > 0) {
-				if (change == null) {
-					change = new ChangeImpl();
-				}
-			} else {
-				change = null;
-			}
+			firing = changeObservable.getObserverCount() > 0;
 
 			return true;
 		} else {
@@ -81,9 +90,10 @@ public abstract class AbstractObservableTreeSet<S extends AbstractObservableTree
 	}
 
 	protected boolean endChange() {
-		if (--changeDepth == 0 && change.size > 0) {
-			if (fireChange(change)) {
-				change = null;
+		if (--changeDepth == 0) {
+			if (firing && fireChange(change)) {
+				adding.clear();
+				removing.clear();
 			}
 
 			return true;
@@ -91,176 +101,124 @@ public abstract class AbstractObservableTreeSet<S extends AbstractObservableTree
 			return false;
 		}
 	}
+
+	protected boolean fireChange(Change<E> change) {
+		changeObservable.fire(change);
+		fireEvent();
+
+		return true;
+	}
+
+	protected void fireEvent() {
+		stateObservable.fire(getThis());
+	}
+
 	@Override
 	public boolean add(E e) {
-		if (super.add(e)) {
-			stateObservable.fire(getThis());
-			changeObservable.fire(new Change<E>() {
-				@Override
-				public Type type() {
-					return Type.ADDED;
-				}
+		try {
+			beginChange();
 
-				@Override
-				public E element() {
-					return e;
-				}
-			});
-			return true;
-		} else {
-			return false;
+			boolean changed = super.add(e);
+
+			if (changed && !removing.remove(e)) {
+				adding.add(e);
+			}
+
+			return changed;
+		} finally {
+			endChange();
 		}
 	}
 
 	@Override
 	public boolean addAll(Collection<? extends E> c) {
-		Iterator<? extends E> i = c.iterator();
-		boolean changed = i.hasNext() && addRecursion(i);
+		try {
+			beginChange();
 
-		if (changed) {
-			stateObservable.fire(getThis());
+			boolean changed = false;
+
+			for (E e : c) {
+				changed = add(e) || changed;
+			}
+
+			return changed;
+		} finally {
+			endChange();
 		}
-
-		return changed;
-	}
-
-	/*
-	 * Ensure observers are notified only after all items are added, without
-	 * having to assign heap memory to determine which adds were successful
-	 */
-	private boolean addRecursion(Iterator<? extends E> i) {
-		E e = i.next();
-
-		boolean changed = super.add(e);
-
-		if (i.hasNext()) {
-			addRecursion(i);
-		}
-
-		if (changed) {
-			changeObservable.fire(new Change<E>() {
-				@Override
-				public Type type() {
-					return Type.ADDED;
-				}
-
-				@Override
-				public E element() {
-					return e;
-				}
-			});
-		}
-
-		return changed;
 	}
 
 	@Override
-	public boolean remove(Object o) {
-		if (super.remove(o)) {
-			stateObservable.fire(getThis());
-			changeObservable.fire(new Change<E>() {
-				@Override
-				public Type type() {
-					return Type.REMOVED;
-				}
+	public void clear() {
+		try {
+			beginChange();
 
-				@SuppressWarnings("unchecked")
-				@Override
-				public E element() {
-					return (E) o;
+			for (E e : this) {
+				if (!adding.remove(e)) {
+					removing.add(e);
 				}
-			});
-			return true;
-		} else {
-			return false;
+			}
+
+			super.clear();
+		} finally {
+			endChange();
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public boolean remove(Object o) {
+		try {
+			beginChange();
+
+			boolean changed = super.remove(o);
+
+			if (changed && !adding.remove(o)) {
+				removing.add((E) o);
+			}
+
+			return changed;
+		} finally {
+			endChange();
 		}
 	}
 
 	@Override
 	public boolean removeAll(Collection<?> c) {
-		Iterator<? extends Object> i = c.iterator();
-		boolean changed = i.hasNext() && removeRecursion(i);
+		try {
+			beginChange();
 
-		if (changed) {
-			stateObservable.fire(getThis());
+			boolean changed = false;
+
+			for (Object o : c) {
+				changed = remove(o) || changed;
+			}
+
+			return changed;
+		} finally {
+			endChange();
 		}
-
-		return changed;
-	}
-
-	/*
-	 * Ensure observers are notified only after all items are removed, without
-	 * having to assign heap memory to determine which removes were successful
-	 */
-	private boolean removeRecursion(Iterator<? extends Object> i) {
-		Object e = i.next();
-
-		boolean changed = super.remove(e);
-
-		if (i.hasNext()) {
-			removeRecursion(i);
-		}
-
-		if (changed) {
-			changeObservable.fire(new Change<E>() {
-				@Override
-				public Type type() {
-					return Type.REMOVED;
-				}
-
-				@SuppressWarnings("unchecked")
-				@Override
-				public E element() {
-					return (E) e;
-				}
-			});
-		}
-
-		return changed;
 	}
 
 	@Override
 	public boolean retainAll(Collection<?> c) {
-		Iterator<? extends Object> i = c.iterator();
-		boolean changed = i.hasNext() && retainRecursion(i, c);
+		try {
+			beginChange();
 
-		if (changed) {
-			stateObservable.fire(getThis());
-		}
+			boolean changed = false;
 
-		return changed;
-	}
+			Iterator<E> i = iterator();
+			while (i.hasNext()) {
+				E e = i.next();
 
-	/*
-	 * Ensure observers are notified only after all items are removed, without
-	 * having to assign heap memory to determine which removes were successful
-	 */
-	private boolean retainRecursion(Iterator<? extends Object> i, Collection<?> c) {
-		Object e = i.next();
-
-		boolean changed = !c.contains(e);
-
-		if (i.hasNext()) {
-			retainRecursion(i, c);
-		}
-
-		if (changed) {
-			super.remove(e);
-			changeObservable.fire(new Change<E>() {
-				@Override
-				public Type type() {
-					return Type.REMOVED;
+				if (!c.contains(e)) {
+					changed = remove(e) || changed;
 				}
+			}
 
-				@SuppressWarnings("unchecked")
-				@Override
-				public E element() {
-					return (E) e;
-				}
-			});
+			return changed;
+		} finally {
+			endChange();
 		}
-
-		return changed;
 	}
 
 	@Override

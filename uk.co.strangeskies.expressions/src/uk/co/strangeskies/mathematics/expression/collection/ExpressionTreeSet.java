@@ -20,10 +20,8 @@ package uk.co.strangeskies.mathematics.expression.collection;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.function.Consumer;
 
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
@@ -36,6 +34,8 @@ public class ExpressionTreeSet<E extends Expression<?, ?>> extends AbstractObser
 	private static final long serialVersionUID = 1L;
 
 	private boolean evaluated = true;
+
+	private Consumer<Expression<?, ?>> dependencyObserver = e -> fireEvent();
 
 	public ExpressionTreeSet() {}
 
@@ -56,175 +56,75 @@ public class ExpressionTreeSet<E extends Expression<?, ?>> extends AbstractObser
 		super(s);
 	}
 
-	protected final void update() {
-		try {
-			getWriteLock().lock();
-
-			if (evaluated) {
-				evaluated = false;
-				postUpdate();
-			}
-
-		} finally {
-			unlockWriteLock();
-		}
-	}
-
-	protected final void postUpdate() {
-		for (Consumer<? super ExpressionTreeSet<E>> observer : observers) {
-			observer.accept(null);
+	@Override
+	protected void fireEvent() {
+		if (evaluated) {
+			evaluated = false;
+			super.fireEvent();
 		}
 	}
 
 	@Override
 	public final boolean add(E expression) {
 		try {
-			getWriteLock().lock();
+			beginChange();
 
 			boolean added = super.add(expression);
 
 			if (added) {
-				expression.addObserver(dependencyObserver);
-
-				update();
+				expression.addWeakObserver(dependencyObserver);
 			}
 
 			return added;
 		} finally {
-			unlockWriteLock();
+			endChange();
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public final boolean remove(Object expression) {
 		try {
-			getWriteLock().lock();
+			beginChange();
 
-			boolean removed = super.remove(expression);
+			boolean added = super.remove(expression);
 
-			if (removed) {
-				((E) expression).removeObserver(dependencyObserver);
-
-				update();
+			if (added) {
+				((Expression<?, ?>) expression).removeWeakObserver(dependencyObserver);
 			}
 
-			return removed;
+			return added;
 		} finally {
-			unlockWriteLock();
-		}
-	}
-
-	@Override
-	public final boolean addAll(Collection<? extends E> expressions) {
-		try {
-			getWriteLock().lock();
-
-			boolean changed = false;
-
-			for (E expression : expressions)
-				if (super.add(expression)) {
-					expression.addObserver(dependencyObserver);
-					changed = true;
-				}
-
-			if (changed)
-				update();
-
-			return changed;
-		} finally {
-			unlockWriteLock();
-		}
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public final boolean removeAll(Collection<?> expressions) {
-		try {
-			getWriteLock().lock();
-
-			boolean changed = false;
-
-			for (Object expression : expressions)
-				if (super.remove(expression)) {
-					((E) expression).removeObserver(dependencyObserver);
-					changed = true;
-				}
-
-			if (changed)
-				update();
-
-			return changed;
-		} finally {
-			unlockWriteLock();
-		}
-	}
-
-	@Override
-	public final void clear() {
-		clear(true);
-	}
-
-	protected final void clear(boolean update) {
-		try {
-			getWriteLock().lock();
-			if (!isEmpty()) {
-				for (E expression : this)
-					expression.removeObserver(dependencyObserver);
-
-				super.clear();
-
-				if (update)
-					update();
-			}
-		} finally {
-			unlockWriteLock();
+			endChange();
 		}
 	}
 
 	@Override
 	public final void set(Collection<? extends E> expressions) {
 		try {
-			getWriteLock().lock();
+			beginChange();
+
 			retainAll(expressions);
 			addAll(expressions);
 		} finally {
-			unlockWriteLock();
+			endChange();
 		}
 	}
 
 	@Override
-	public final boolean retainAll(Collection<?> expressions) {
-		try {
-			getWriteLock().lock();
-
-			TreeSet<E> toRemove = new TreeSet<>();
-
-			for (E expression : this)
-				if (!expressions.contains(expression))
-					toRemove.add(expression);
-
-			boolean changed = removeAll(toRemove);
-
-			return changed;
-		} finally {
-			unlockWriteLock();
-		}
+	public ExpressionSet<?, E> synchronizedView() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	@Override
-	public final Collection<E> getUnmodifiableView() {
-		return Collections.unmodifiableSet(this);
+	public final ExpressionSet<?, E> unmodifiableView() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	@Override
 	public final ExpressionTreeSet<E> getValue() {
-		try {
-			getWriteLock().lock();
-			evaluated = true;
-		} finally {
-			unlockWriteLock();
-		}
+		evaluated = true;
 
 		return this;
 	}

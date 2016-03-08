@@ -23,26 +23,36 @@ import java.util.List;
 public interface ObservableList<S extends ObservableList<S, E>, E>
 		extends List<E>, ObservableCollection<S, E, ObservableList.Change<E>> {
 	interface Change<E> {
-		boolean next();
+		int[] removedIndices();
 
-		void reset();
+		List<E> removedItems();
 
-		int index();
+		int[] addedIndices();
 
-		List<E> getRemoved();
+		List<E> addedItems();
 
-		List<E> getAdded();
+		int[] permutedIndices();
+
+		List<E> permutedItems();
+
+		int[] modifiedIndices();
+
+		List<E> modifiedFromItems();
+
+		List<E> modifiedToItems();
 	}
 
-	default UnmodifiableObservableList<E> unmodifiableView() {
+	@Override
+	default ObservableList<?, E> unmodifiableView() {
 		return new UnmodifiableObservableList<>(this);
 	}
 
-	static <E> UnmodifiableObservableList<E> unmodifiableViewOf(ObservableList<?, ? extends E> list) {
+	static <E> ObservableList<?, E> unmodifiableViewOf(ObservableList<?, ? extends E> list) {
 		return new UnmodifiableObservableList<>(list);
 	}
 
-	default SynchronizedObservableList<E> synchronizedView() {
+	@Override
+	default ObservableList<?, E> synchronizedView() {
 		return new SynchronizedObservableList<>(this);
 	}
 }
