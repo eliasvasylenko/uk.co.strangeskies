@@ -67,11 +67,11 @@ public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S,
 	private final ObservableImpl<Change<E>> changeObservable = new ObservableImpl<>();
 	private final ObservableImpl<S> stateObservable = new ObservableImpl<>();
 
-	private final ChangeImpl change = new ChangeImpl();
 	private boolean firing;
 	private final Set<E> adding = new HashSet<>();
 	private final Set<E> removing = new HashSet<>();
 	private int changeDepth = 0;
+	private final ChangeImpl change = new ChangeImpl();
 
 	protected ObservableSetDecorator(Set<E> component) {
 		this.component = component;

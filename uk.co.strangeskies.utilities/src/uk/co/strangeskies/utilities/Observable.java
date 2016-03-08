@@ -55,7 +55,7 @@ public interface Observable<M> {
 		private final Function<? super O, Consumer<? super M>> consumer;
 		private final WeakReference<O> owner;
 
-		private WeakObserver(Observable<? extends M> observable, Function<? super O, Consumer<? super M>> consumer,
+		protected WeakObserver(Observable<? extends M> observable, Function<? super O, Consumer<? super M>> consumer,
 				O owner) {
 			this.observable = observable;
 
@@ -102,7 +102,7 @@ public interface Observable<M> {
 		private final Observable<? extends M> observable;
 		private final Function<? super M, Boolean> observer;
 
-		private TerminatingObserver(Observable<? extends M> observable, Function<? super M, Boolean> observer) {
+		protected TerminatingObserver(Observable<? extends M> observable, Function<? super M, Boolean> observer) {
 			this.observable = observable;
 			this.observer = observer;
 		}

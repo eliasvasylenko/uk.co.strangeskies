@@ -82,13 +82,12 @@ public abstract class ObservableListDecorator<S extends ObservableListDecorator<
 	private final ObservableImpl<Change<E>> changeObservable = new ObservableImpl<>();
 	private final ObservableImpl<S> stateObservable = new ObservableImpl<>();
 
-	private ChangeImpl change = new ChangeImpl();
 	boolean firing;
 	private int[] addedIndices;
 	private int[] removedIndices;
 	private List<E> removedItems;
-
 	private int changeDepth = 0;
+	private final ChangeImpl change = new ChangeImpl();
 
 	public ObservableListDecorator(List<E> component) {
 		this.component = component;
