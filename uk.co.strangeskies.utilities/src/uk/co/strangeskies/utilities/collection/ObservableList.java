@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 
+import uk.co.strangeskies.utilities.Copyable;
 import uk.co.strangeskies.utilities.collection.ObservableListDecorator.ObservableListDecoratorImpl;
 import uk.co.strangeskies.utilities.collection.SynchronizedObservableList.SynchronizedObservableListImpl;
 import uk.co.strangeskies.utilities.collection.UnmodifiableObservableList.UnmodifiableObservableListImpl;
@@ -83,6 +84,16 @@ public interface ObservableList<S extends ObservableList<S, E>, E>
 
 	public static <C extends List<E>, E> ObservableList<?, E> over(C list, Function<? super C, ? extends C> copy) {
 		return new ObservableListDecoratorImpl<C, E>(list, copy);
+	}
+
+	public static <C extends Copyable<? extends C> & List<E>, E> ObservableList<?, E> over(C set) {
+		return new ObservableListDecoratorImpl<C, E>(set, Copyable::copy);
+	}
+
+	public static <C extends List<E>, E> ObservableList<?, E> over(C set) {
+		return over(set, s -> {
+			throw new UnsupportedOperationException();
+		});
 	}
 
 	public static <E> ObservableList<?, E> ofElements(Collection<? extends E> elements) {

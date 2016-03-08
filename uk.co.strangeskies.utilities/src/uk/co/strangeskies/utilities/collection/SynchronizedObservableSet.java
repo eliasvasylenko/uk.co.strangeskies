@@ -26,7 +26,7 @@ import java.util.function.Consumer;
 import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableImpl;
 
-public abstract class SynchronizedObservableSet<S extends SynchronizedObservableSet<S, E>, E>
+public abstract class SynchronizedObservableSet<S extends SynchronizedObservableSet<S, E>, E> extends ObservableImpl<S>
 		implements SetDecorator<E>, ObservableSet<S, E> {
 	static class SynchronizedObservableSetImpl<E> extends SynchronizedObservableSet<SynchronizedObservableSetImpl<E>, E> {
 		SynchronizedObservableSetImpl(ObservableSet<?, E> component) {
@@ -42,7 +42,6 @@ public abstract class SynchronizedObservableSet<S extends SynchronizedObservable
 
 	private final Set<E> component;
 
-	private final ObservableImpl<S> observable;
 	private final Consumer<ObservableSet<?, ? extends E>> observer;
 	private final ObservableImpl<Change<E>> changes;
 	private final Consumer<Change<E>> changeObserver;
@@ -50,8 +49,7 @@ public abstract class SynchronizedObservableSet<S extends SynchronizedObservable
 	protected SynchronizedObservableSet(ObservableSet<?, E> component) {
 		this.component = component;
 
-		observable = new ObservableImpl<>();
-		observer = l -> observable.fire(getThis());
+		observer = l -> fire(getThis());
 		component.addWeakObserver(observer);
 
 		changes = new ObservableImpl<Change<E>>() {
@@ -81,16 +79,6 @@ public abstract class SynchronizedObservableSet<S extends SynchronizedObservable
 	@Override
 	public Observable<Change<E>> changes() {
 		return changes;
-	}
-
-	@Override
-	public synchronized boolean addObserver(Consumer<? super S> observer) {
-		return observable.addObserver(observer);
-	}
-
-	@Override
-	public synchronized boolean removeObserver(Consumer<? super S> observer) {
-		return observable.addObserver(observer);
 	}
 
 	@Override
@@ -132,5 +120,20 @@ public abstract class SynchronizedObservableSet<S extends SynchronizedObservable
 				return base.next();
 			}
 		};
+	}
+
+	@Override
+	public String toString() {
+		return getComponent().toString();
+	}
+
+	@Override
+	public int hashCode() {
+		return getComponent().hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return getComponent().equals(obj);
 	}
 }

@@ -27,7 +27,7 @@ import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableImpl;
 
 public abstract class UnmodifiableObservableList<S extends UnmodifiableObservableList<S, E>, E>
-		implements ListDecorator<E>, ObservableList<S, E> {
+		extends ObservableImpl<S> implements ListDecorator<E>, ObservableList<S, E> {
 	static class UnmodifiableObservableListImpl<E>
 			extends UnmodifiableObservableList<UnmodifiableObservableListImpl<E>, E> {
 		UnmodifiableObservableListImpl(ObservableList<?, ? extends E> component) {
@@ -43,7 +43,6 @@ public abstract class UnmodifiableObservableList<S extends UnmodifiableObservabl
 
 	private final ObservableList<?, ? extends E> component;
 
-	private final ObservableImpl<S> observable;
 	private final Consumer<ObservableList<?, ? extends E>> observer;
 	private final ObservableImpl<Change<E>> changes;
 	private final Consumer<? super Change<? extends E>> changeObserver;
@@ -52,8 +51,7 @@ public abstract class UnmodifiableObservableList<S extends UnmodifiableObservabl
 	protected UnmodifiableObservableList(ObservableList<?, ? extends E> component) {
 		this.component = component;
 
-		observable = new ObservableImpl<>();
-		observer = l -> observable.fire(getThis());
+		observer = l -> fire(getThis());
 		component.addWeakObserver(observer);
 
 		changes = new ObservableImpl<>();
@@ -70,16 +68,6 @@ public abstract class UnmodifiableObservableList<S extends UnmodifiableObservabl
 	@Override
 	public Observable<Change<E>> changes() {
 		return changes;
-	}
-
-	@Override
-	public boolean addObserver(Consumer<? super S> observer) {
-		return observable.addObserver(observer);
-	}
-
-	@Override
-	public boolean removeObserver(Consumer<? super S> observer) {
-		return observable.addObserver(observer);
 	}
 
 	@Override
@@ -136,5 +124,20 @@ public abstract class UnmodifiableObservableList<S extends UnmodifiableObservabl
 				return base.next();
 			}
 		};
+	}
+
+	@Override
+	public String toString() {
+		return getComponent().toString();
+	}
+
+	@Override
+	public int hashCode() {
+		return getComponent().hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return getComponent().equals(obj);
 	}
 }

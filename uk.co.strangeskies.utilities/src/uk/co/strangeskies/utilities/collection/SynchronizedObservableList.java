@@ -27,7 +27,7 @@ import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableImpl;
 
 public abstract class SynchronizedObservableList<S extends SynchronizedObservableList<S, E>, E>
-		implements ListDecorator<E>, ObservableList<S, E> {
+		extends ObservableImpl<S> implements ListDecorator<E>, ObservableList<S, E> {
 	static class SynchronizedObservableListImpl<E>
 			extends SynchronizedObservableList<SynchronizedObservableListImpl<E>, E> {
 		SynchronizedObservableListImpl(ObservableList<?, E> component) {
@@ -43,7 +43,6 @@ public abstract class SynchronizedObservableList<S extends SynchronizedObservabl
 
 	private final List<E> component;
 
-	private final ObservableImpl<S> observable;
 	private final Consumer<ObservableList<?, ? extends E>> observer;
 	private final ObservableImpl<Change<E>> changes;
 	private final Consumer<Change<E>> changeObserver;
@@ -51,8 +50,7 @@ public abstract class SynchronizedObservableList<S extends SynchronizedObservabl
 	protected SynchronizedObservableList(ObservableList<?, E> component) {
 		this.component = component;
 
-		observable = new ObservableImpl<>();
-		observer = l -> observable.fire(getThis());
+		observer = l -> fire(getThis());
 		component.addWeakObserver(observer);
 
 		changes = new ObservableImpl<Change<E>>() {
@@ -82,16 +80,6 @@ public abstract class SynchronizedObservableList<S extends SynchronizedObservabl
 	@Override
 	public Observable<Change<E>> changes() {
 		return changes;
-	}
-
-	@Override
-	public synchronized boolean addObserver(Consumer<? super S> observer) {
-		return observable.addObserver(observer);
-	}
-
-	@Override
-	public synchronized boolean removeObserver(Consumer<? super S> observer) {
-		return observable.addObserver(observer);
 	}
 
 	@Override
@@ -148,5 +136,20 @@ public abstract class SynchronizedObservableList<S extends SynchronizedObservabl
 				return base.next();
 			}
 		};
+	}
+
+	@Override
+	public String toString() {
+		return getComponent().toString();
+	}
+
+	@Override
+	public int hashCode() {
+		return getComponent().hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return getComponent().equals(obj);
 	}
 }

@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Function;
 
+import uk.co.strangeskies.utilities.Copyable;
 import uk.co.strangeskies.utilities.Self;
 import uk.co.strangeskies.utilities.collection.ObservableSetDecorator.ObservableSetDecoratorImpl;
 import uk.co.strangeskies.utilities.collection.SynchronizedObservableSet.SynchronizedObservableSetImpl;
@@ -84,6 +85,16 @@ public interface ObservableSet<S extends ObservableSet<S, E>, E>
 
 	public static <C extends Set<E>, E> ObservableSet<?, E> over(C set, Function<? super C, ? extends C> copy) {
 		return new ObservableSetDecoratorImpl<C, E>(set, copy);
+	}
+
+	public static <C extends Copyable<? extends C> & Set<E>, E> ObservableSet<?, E> over(C set) {
+		return new ObservableSetDecoratorImpl<C, E>(set, Copyable::copy);
+	}
+
+	public static <C extends Set<E>, E> ObservableSet<?, E> over(C set) {
+		return over(set, s -> {
+			throw new UnsupportedOperationException();
+		});
 	}
 
 	public static <E> ObservableSet<?, E> ofElements(Collection<? extends E> elements) {
