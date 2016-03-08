@@ -238,4 +238,19 @@ public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S,
 	public boolean removeObserver(Consumer<? super S> observer) {
 		return stateObservable.removeObserver(observer);
 	}
+
+	@Override
+	public String toString() {
+		return getComponent().toString();
+	}
+
+	@Override
+	public int hashCode() {
+		return getComponent().hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return getComponent().equals(obj);
+	}
 }
