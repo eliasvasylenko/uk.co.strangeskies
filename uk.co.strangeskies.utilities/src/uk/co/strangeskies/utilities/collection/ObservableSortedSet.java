@@ -51,7 +51,7 @@ public interface ObservableSortedSet<S extends ObservableSortedSet<S, E>, E> ext
 	 * 
 	 * @param <E>
 	 *          the target element type
-	 * @param list
+	 * @param set
 	 *          the list over which we want a view
 	 * @return an unmodifiable view over the given list
 	 */

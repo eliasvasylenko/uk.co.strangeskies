@@ -69,7 +69,7 @@ public interface ObservableSet<S extends ObservableSet<S, E>, E>
 	 * 
 	 * @param <E>
 	 *          the target element type
-	 * @param list
+	 * @param set
 	 *          the list over which we want a view
 	 * @return an unmodifiable view over the given list
 	 */
