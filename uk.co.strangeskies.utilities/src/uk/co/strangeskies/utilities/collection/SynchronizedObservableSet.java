@@ -7,9 +7,21 @@ import java.util.function.Consumer;
 import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableImpl;
 
-public class SynchronizedObservableSet<E> extends SetDecorator<E>
-		implements ObservableSet<SynchronizedObservableSet<E>, E> {
-	private final ObservableImpl<SynchronizedObservableSet<E>> observable;
+public abstract class SynchronizedObservableSet<S extends SynchronizedObservableSet<S, E>, E> extends SetDecorator<E>
+		implements ObservableSet<S, E> {
+	static class SynchronizedObservableSetImpl<E> extends SynchronizedObservableSet<SynchronizedObservableSetImpl<E>, E> {
+		SynchronizedObservableSetImpl(ObservableSet<?, E> component) {
+			super(component);
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public SynchronizedObservableSetImpl<E> copy() {
+			return new SynchronizedObservableSetImpl<>(((ObservableSet<?, E>) getComponent()).copy());
+		}
+	}
+
+	private final ObservableImpl<S> observable;
 	private final Consumer<ObservableSet<?, ? extends E>> observer;
 	private final ObservableImpl<Change<E>> changes;
 	private final Consumer<Change<E>> changeObserver;
@@ -18,7 +30,7 @@ public class SynchronizedObservableSet<E> extends SetDecorator<E>
 		super(component);
 
 		observable = new ObservableImpl<>();
-		observer = l -> observable.fire(this);
+		observer = l -> observable.fire(getThis());
 		component.addWeakObserver(observer);
 
 		changes = new ObservableImpl<Change<E>>() {
@@ -46,12 +58,12 @@ public class SynchronizedObservableSet<E> extends SetDecorator<E>
 	}
 
 	@Override
-	public synchronized boolean addObserver(Consumer<? super SynchronizedObservableSet<E>> observer) {
+	public synchronized boolean addObserver(Consumer<? super S> observer) {
 		return observable.addObserver(observer);
 	}
 
 	@Override
-	public synchronized boolean removeObserver(Consumer<? super SynchronizedObservableSet<E>> observer) {
+	public synchronized boolean removeObserver(Consumer<? super S> observer) {
 		return observable.addObserver(observer);
 	}
 
@@ -94,11 +106,5 @@ public class SynchronizedObservableSet<E> extends SetDecorator<E>
 				return base.next();
 			}
 		};
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public SynchronizedObservableSet<E> copy() {
-		return new SynchronizedObservableSet<>(((ObservableSet<?, E>) getComponent()).copy());
 	}
 }

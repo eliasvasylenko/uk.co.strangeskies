@@ -19,7 +19,6 @@
 package uk.co.strangeskies.utilities.collection;
 
 import java.util.AbstractList;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
@@ -27,8 +26,8 @@ import java.util.function.Consumer;
 import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableImpl;
 
-public abstract class AbstractObservableArrayList<S extends AbstractObservableArrayList<S, E>, E> extends ArrayList<E>
-		implements ObservableList<S, E> {
+public abstract class ObservableListDecorator<S extends ObservableListDecorator<S, E>, E>
+		extends ListDecorator<E> implements ObservableList<S, E> {
 	final class ChangeImpl implements Change<E> {
 		@Override
 		public int[] removedIndices() {
@@ -50,18 +49,16 @@ public abstract class AbstractObservableArrayList<S extends AbstractObservableAr
 			return new AbstractList<E>() {
 				@Override
 				public E get(int index) {
-					return AbstractObservableArrayList.this.get(addedIndices[index]);
+					return ObservableListDecorator.this.get(addedIndices[index]);
 				}
 
 				@Override
 				public int size() {
-					return AbstractObservableArrayList.this.size();
+					return ObservableListDecorator.this.size();
 				}
 			};
 		}
 	}
-
-	private static final long serialVersionUID = 1L;
 
 	private final ObservableImpl<Change<E>> changeObservable = new ObservableImpl<>();
 	private final ObservableImpl<S> stateObservable = new ObservableImpl<>();
@@ -74,14 +71,8 @@ public abstract class AbstractObservableArrayList<S extends AbstractObservableAr
 
 	private int changeDepth = 0;
 
-	public AbstractObservableArrayList(int initialCapacity) {
-		super(initialCapacity);
-	}
-
-	public AbstractObservableArrayList() {}
-
-	public AbstractObservableArrayList(Collection<? extends E> c) {
-		super(c);
+	public ObservableListDecorator(List<E> component) {
+		super(component);
 	}
 
 	protected boolean beginChange() {
@@ -149,13 +140,12 @@ public abstract class AbstractObservableArrayList<S extends AbstractObservableAr
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public boolean remove(Object o) {
 		try {
 			beginChange();
 
-			int index = indexOf(o);
+			// int index = indexOf(o);
 			boolean changed = super.remove(o);
 
 			if (changed && change != null) {

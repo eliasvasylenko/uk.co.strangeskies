@@ -21,21 +21,18 @@ package uk.co.strangeskies.utilities.collection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Predicate;
 
 public class FilteredListDecorator<E> extends ListDecorator<E> {
-	public interface Filter<E> {
-		public boolean filter(E element);
-	}
+	private final Predicate<E> filter;
 
-	private final Filter<E> filter;
-
-	public FilteredListDecorator(Filter<E> filter) {
+	public FilteredListDecorator(Predicate<E> filter) {
 		super(new ArrayList<E>());
 
 		this.filter = filter;
 	}
 
-	public FilteredListDecorator(List<E> component, Filter<E> filter) {
+	public FilteredListDecorator(List<E> component, Predicate<E> filter) {
 		super(component);
 
 		this.filter = filter;
@@ -43,12 +40,12 @@ public class FilteredListDecorator<E> extends ListDecorator<E> {
 
 	@Override
 	public boolean add(E e) {
-		return filter.filter(e) && super.add(e);
+		return filter.test(e) && super.add(e);
 	}
 
 	@Override
 	public void add(int index, E element) {
-		if (filter.filter(element))
+		if (filter.test(element))
 			super.add(index, element);
 	}
 

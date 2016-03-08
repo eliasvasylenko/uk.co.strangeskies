@@ -22,8 +22,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.ListIterator;
 
-public class ListDecorator<E> extends CollectionDecorator<List<E>, E> implements
-		List<E> {
+public class ListDecorator<E> extends CollectionDecorator<List<E>, E> implements List<E> {
 	public ListDecorator(List<E> component) {
 		super(component);
 	}

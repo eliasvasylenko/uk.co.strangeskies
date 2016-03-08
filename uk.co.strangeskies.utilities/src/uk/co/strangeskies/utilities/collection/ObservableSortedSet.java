@@ -22,12 +22,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.function.Function;
 
 import uk.co.strangeskies.utilities.Self;
-import uk.co.strangeskies.utilities.collection.ObservableSetDecorator.ObservableSetDecoratorImpl;
-import uk.co.strangeskies.utilities.collection.SynchronizedObservableSet.SynchronizedObservableSetImpl;
-import uk.co.strangeskies.utilities.collection.UnmodifiableObservableSet.UnmodifiableObservableSetImpl;
+import uk.co.strangeskies.utilities.collection.SynchronizedObservableSortedSet.SynchronizedObservableSortedSetImpl;
 
 /**
  * A set which can be observed for changes, as per the contract of
@@ -39,28 +38,11 @@ import uk.co.strangeskies.utilities.collection.UnmodifiableObservableSet.Unmodif
  * @param <E>
  *          the element type, as per {@link Collection}
  */
-public interface ObservableSet<S extends ObservableSet<S, E>, E>
-		extends Set<E>, ObservableCollection<S, E, ObservableSet.Change<E>> {
-	/**
-	 * A change event for {@link ObservableSet}. All elements {@link #added()} or
-	 * {@link #removed()} during the operation of a single change may be
-	 * inspected. These events are aggregated without any ordering, and with
-	 * multiple overlapping events, or events which cancel each other out, being
-	 * ignored.
-	 *
-	 * @author Elias N Vasylenko
-	 * @param <E>
-	 *          the element type
-	 */
-	interface Change<E> {
-		Set<E> added();
-
-		Set<E> removed();
-	}
+public interface ObservableSortedSet<S extends ObservableSortedSet<S, E>, E> extends SortedSet<E>, ObservableSet<S, E> {
 
 	@Override
 	default ObservableSet<?, E> unmodifiableView() {
-		return new UnmodifiableObservableSetImpl<>(this);
+		return new UnmodifiableObservableSortedSetImpl<>(this);
 	}
 
 	/**
@@ -74,20 +56,20 @@ public interface ObservableSet<S extends ObservableSet<S, E>, E>
 	 * @return an unmodifiable view over the given list
 	 */
 	static <E> ObservableSet<?, E> unmodifiableViewOf(ObservableSet<?, ? extends E> set) {
-		return new UnmodifiableObservableSetImpl<>(set);
+		return new UnmodifiableObservableSortedSetImpl<>(set);
 	}
 
 	@Override
 	default ObservableSet<?, E> synchronizedView() {
-		return new SynchronizedObservableSetImpl<>(this);
+		return new SynchronizedObservableSortedSetImpl<>(this);
 	}
 
 	public static <C extends Set<E>, E> ObservableSet<?, E> over(C set, Function<? super C, ? extends C> copy) {
-		return new ObservableSetDecoratorImpl<C, E>(set, copy);
+		return new ObservableSortedSetDecoratorImpl<C, E>(set, copy);
 	}
 
 	public static <E> ObservableSet<?, E> ofElements(Collection<? extends E> elements) {
-		ObservableSet<?, E> set = new ObservableSetDecoratorImpl<>(new HashSet<>(), s -> new HashSet<>(s));
+		ObservableSet<?, E> set = new ObservableSortedSetDecoratorImpl<>(new HashSet<>(), s -> new HashSet<>(s));
 		set.addAll(elements);
 		return set;
 	}

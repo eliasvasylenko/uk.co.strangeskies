@@ -18,11 +18,15 @@
  */
 package uk.co.strangeskies.utilities.collection;
 
+import java.util.HashSet;
 import java.util.Set;
 
-public class SetDecorator<T> extends CollectionDecorator<Set<T>, T> implements
-		Set<T> {
+public class SetDecorator<T> extends CollectionDecorator<Set<T>, T> implements Set<T> {
 	public SetDecorator(Set<T> component) {
 		super(component);
+	}
+
+	protected SetDecorator() {
+		super(new HashSet<>());
 	}
 }

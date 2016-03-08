@@ -21,21 +21,16 @@ package uk.co.strangeskies.utilities.collection;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Predicate;
 
 public class FilteredSetDecorator<E> extends SetDecorator<E> {
-	public interface Filter<E> {
-		public boolean filter(E element);
+	private final Predicate<E> filter;
+
+	public FilteredSetDecorator(Predicate<E> filter) {
+		this(new HashSet<>(), filter);
 	}
 
-	private final Filter<E> filter;
-
-	public FilteredSetDecorator(Filter<E> filter) {
-		super(new HashSet<E>());
-
-		this.filter = filter;
-	}
-
-	public FilteredSetDecorator(Set<E> component, Filter<E> filter) {
+	public FilteredSetDecorator(Set<E> component, Predicate<E> filter) {
 		super(component);
 
 		this.filter = filter;
@@ -43,7 +38,7 @@ public class FilteredSetDecorator<E> extends SetDecorator<E> {
 
 	@Override
 	public boolean add(E e) {
-		return filter.filter(e) && super.add(e);
+		return filter.test(e) && super.add(e);
 	}
 
 	@Override

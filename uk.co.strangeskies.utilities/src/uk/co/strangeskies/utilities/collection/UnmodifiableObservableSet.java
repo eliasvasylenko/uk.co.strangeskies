@@ -8,9 +8,22 @@ import java.util.function.Consumer;
 import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableImpl;
 
-public class UnmodifiableObservableSet<E> extends SetDecorator<E>
-		implements ObservableSet<UnmodifiableObservableSet<E>, E> {
-	private final ObservableImpl<UnmodifiableObservableSet<E>> observable;
+public abstract class UnmodifiableObservableSet<S extends UnmodifiableObservableSet<S, E>, E> extends SetDecorator<E>
+		implements ObservableSet<S, E> {
+	static class UnmodifiableObservableSetImpl<E> extends SynchronizedObservableSet<UnmodifiableObservableSetImpl<E>, E> {
+		@SuppressWarnings("unchecked")
+		UnmodifiableObservableSetImpl(ObservableSet<?, ? extends E> component) {
+			super((ObservableSet<?, E>) component);
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public UnmodifiableObservableSetImpl<E> copy() {
+			return new UnmodifiableObservableSetImpl<>(((ObservableSet<?, E>) getComponent()).copy());
+		}
+	}
+
+	private final ObservableImpl<S> observable;
 	private final Consumer<ObservableSet<?, ? extends E>> observer;
 	private final ObservableImpl<Change<E>> changes;
 	private final Consumer<? super Change<? extends E>> changeObserver;
@@ -20,7 +33,7 @@ public class UnmodifiableObservableSet<E> extends SetDecorator<E>
 		super((Set<E>) component);
 
 		observable = new ObservableImpl<>();
-		observer = l -> observable.fire(this);
+		observer = l -> observable.fire(getThis());
 		component.addWeakObserver(observer);
 
 		changes = new ObservableImpl<>();
@@ -34,12 +47,12 @@ public class UnmodifiableObservableSet<E> extends SetDecorator<E>
 	}
 
 	@Override
-	public boolean addObserver(Consumer<? super UnmodifiableObservableSet<E>> observer) {
+	public boolean addObserver(Consumer<? super S> observer) {
 		return observable.addObserver(observer);
 	}
 
 	@Override
-	public boolean removeObserver(Consumer<? super UnmodifiableObservableSet<E>> observer) {
+	public boolean removeObserver(Consumer<? super S> observer) {
 		return observable.addObserver(observer);
 	}
 
@@ -82,11 +95,5 @@ public class UnmodifiableObservableSet<E> extends SetDecorator<E>
 				return base.next();
 			}
 		};
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public UnmodifiableObservableSet<E> copy() {
-		return new UnmodifiableObservableSet<>(((ObservableSet<?, ? extends E>) getComponent()).copy());
 	}
 }

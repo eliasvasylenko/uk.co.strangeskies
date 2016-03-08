@@ -8,9 +8,9 @@ import java.util.function.Consumer;
 import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableImpl;
 
-public class UnmodifiableObservableList<E> extends ListDecorator<E>
-		implements ObservableList<UnmodifiableObservableList<E>, E> {
-	private final ObservableImpl<UnmodifiableObservableList<E>> observable;
+public abstract class UnmodifiableObservableList<S extends UnmodifiableObservableList<S, E>, E> extends ListDecorator<E>
+		implements ObservableList<S, E> {
+	private final ObservableImpl<S> observable;
 	private final Consumer<ObservableList<?, ? extends E>> observer;
 	private final ObservableImpl<Change<E>> changes;
 	private final Consumer<? super Change<? extends E>> changeObserver;
@@ -20,7 +20,7 @@ public class UnmodifiableObservableList<E> extends ListDecorator<E>
 		super((List<E>) component);
 
 		observable = new ObservableImpl<>();
-		observer = l -> observable.fire(this);
+		observer = l -> observable.fire(getThis());
 		component.addWeakObserver(observer);
 
 		changes = new ObservableImpl<>();
@@ -34,12 +34,12 @@ public class UnmodifiableObservableList<E> extends ListDecorator<E>
 	}
 
 	@Override
-	public boolean addObserver(Consumer<? super UnmodifiableObservableList<E>> observer) {
+	public boolean addObserver(Consumer<? super S> observer) {
 		return observable.addObserver(observer);
 	}
 
 	@Override
-	public boolean removeObserver(Consumer<? super UnmodifiableObservableList<E>> observer) {
+	public boolean removeObserver(Consumer<? super S> observer) {
 		return observable.addObserver(observer);
 	}
 
@@ -97,11 +97,5 @@ public class UnmodifiableObservableList<E> extends ListDecorator<E>
 				return base.next();
 			}
 		};
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public UnmodifiableObservableList<E> copy() {
-		return new UnmodifiableObservableList<>(((ObservableList<?, E>) getComponent()).copy());
 	}
 }

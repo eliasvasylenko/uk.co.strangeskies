@@ -19,29 +19,24 @@
 package uk.co.strangeskies.mathematics.expression.collection;
 
 import java.util.Collection;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
 import uk.co.strangeskies.mathematics.expression.Expression;
-import uk.co.strangeskies.utilities.collection.AbstractObservableArrayList;
+import uk.co.strangeskies.utilities.collection.ObservableSetDecorator;
 
-public class ExpressionArrayList<E extends Expression<?, ?>>
-		extends AbstractObservableArrayList<ExpressionArrayList<E>, E> implements ExpressionList<ExpressionArrayList<E>, E>,
-		CopyDecouplingExpression<ExpressionArrayList<E>, ExpressionArrayList<E>> {
+public class ExpressionSetImpl<E extends Expression<?, ?>> extends ObservableSetDecorator<ExpressionSetImpl<E>, E>
+		implements SortedExpressionSet<ExpressionSetImpl<E>, E>,
+		CopyDecouplingExpression<ExpressionSetImpl<E>, ExpressionSetImpl<E>> {
 	private static final long serialVersionUID = 1L;
 
-	private boolean evaluated;
+	private boolean evaluated = true;
 
-	private final Consumer<Expression<?, ?>> dependencyObserver;
+	private Consumer<Expression<?, ?>> dependencyObserver = e -> fireEvent();
 
-	public ExpressionArrayList() {
-		dependencyObserver = message -> fireEvent();
-	}
-
-	public ExpressionArrayList(Collection<E> expressions) {
-		this();
-
-		addAll(expressions);
+	public ExpressionSetImpl(Set<E> component) {
+		super(component);
 	}
 
 	@Override
@@ -99,41 +94,26 @@ public class ExpressionArrayList<E extends Expression<?, ?>>
 	}
 
 	@Override
-	public void clear() {
-		try {
-			beginChange();
-
-			for (E e : this) {
-				e.removeWeakObserver(dependencyObserver);
-			}
-
-			super.clear();
-		} finally {
-			endChange();
-		}
-	}
-
-	@Override
-	public ExpressionList<?, E> synchronizedView() {
+	public ExpressionSet<?, E> synchronizedView() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public final ExpressionList<?, E> unmodifiableView() {
+	public final ExpressionSet<?, E> unmodifiableView() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public final ExpressionArrayList<E> getValue() {
+	public final ExpressionSetImpl<E> getValue() {
 		evaluated = true;
 
 		return this;
 	}
 
 	@Override
-	public final ExpressionArrayList<E> copy() {
-		return new ExpressionArrayList<>(this);
+	public final ExpressionSetImpl<E> copy() {
+		return new ExpressionSetImpl<>(this);
 	}
 }

@@ -19,33 +19,24 @@
 package uk.co.strangeskies.mathematics.expression.collection;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.function.Consumer;
 
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
 import uk.co.strangeskies.mathematics.expression.Expression;
-import uk.co.strangeskies.utilities.collection.AbstractObservableHashSet;
+import uk.co.strangeskies.utilities.collection.ObservableListDecorator;
 
-public class ExpressionHashSet<E extends Expression<?, ?>> extends AbstractObservableHashSet<ExpressionHashSet<E>, E>
-		implements ExpressionSet<ExpressionHashSet<E>, E>,
-		CopyDecouplingExpression<ExpressionHashSet<E>, ExpressionHashSet<E>> {
-	private static final long serialVersionUID = 1L;
+public abstract class ExpressionListDecorator<E extends Expression<?, ?>> extends
+		ObservableListDecorator<ExpressionListDecorator<E>, E> implements ExpressionList<ExpressionListDecorator<E>, E>,
+		CopyDecouplingExpression<ExpressionListDecorator<E>, ExpressionListDecorator<E>> {
+	private boolean evaluated;
 
-	private boolean evaluated = true;
+	private final Consumer<Expression<?, ?>> dependencyObserver;
 
-	private Consumer<Expression<?, ?>> dependencyObserver = e -> fireEvent();
+	public ExpressionListDecorator(List<E> component) {
+		super(component);
 
-	public ExpressionHashSet() {}
-
-	public ExpressionHashSet(Collection<? extends E> c) {
-		super(c);
-	}
-
-	public ExpressionHashSet(int initialCapacity, float loadFactor) {
-		super(initialCapacity, loadFactor);
-	}
-
-	public ExpressionHashSet(int initialCapacity) {
-		super(initialCapacity);
+		dependencyObserver = message -> fireEvent();
 	}
 
 	@Override
@@ -118,26 +109,21 @@ public class ExpressionHashSet<E extends Expression<?, ?>> extends AbstractObser
 	}
 
 	@Override
-	public ExpressionSet<?, E> synchronizedView() {
+	public ExpressionList<?, E> synchronizedView() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public final ExpressionSet<?, E> unmodifiableView() {
+	public final ExpressionList<?, E> unmodifiableView() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public final ExpressionHashSet<E> getValue() {
+	public final ExpressionListDecorator<E> getValue() {
 		evaluated = true;
 
 		return this;
-	}
-
-	@Override
-	public final ExpressionHashSet<E> copy() {
-		return new ExpressionHashSet<>(this);
 	}
 }
