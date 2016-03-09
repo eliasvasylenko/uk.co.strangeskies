@@ -20,7 +20,6 @@ package uk.co.strangeskies.mathematics.expression;
 
 import java.util.Observer;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 
 /**
  * <p>
@@ -48,7 +47,7 @@ public interface LockingExpression<S extends Expression<S, T>, T> extends Expres
 	/**
 	 * @return A read lock to protect from mutation of this {@link Expression}
 	 */
-	ReadLock getReadLock();
+	Lock getReadLock();
 
 	/**
 	 * @return A write lock which must be obtained before attempting to mutate

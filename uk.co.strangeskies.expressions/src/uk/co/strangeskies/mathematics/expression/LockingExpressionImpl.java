@@ -45,9 +45,21 @@ public abstract class LockingExpressionImpl<S extends Expression<S, T>, T> exten
 	}
 
 	@Override
+	protected boolean beginChange() {
+		getWriteLock().lock();
+		return super.beginChange();
+	}
+
+	@Override
+	protected boolean endChange() {
+		boolean ended = super.endChange();
+		getWriteLock().unlock();
+		return ended;
+	}
+
+	@Override
 	protected final boolean fireChange() {
 		try {
-			getWriteLock().lock();
 			getReadLock().lock();
 			getWriteLock().unlock();
 
@@ -63,12 +75,7 @@ public abstract class LockingExpressionImpl<S extends Expression<S, T>, T> exten
 		try {
 			getReadLock().lock();
 
-			T value;
-			synchronized (lock) {
-				value = super.getValue();
-			}
-
-			return value;
+			return super.getValue();
 		} finally {
 			getReadLock().unlock();
 		}
