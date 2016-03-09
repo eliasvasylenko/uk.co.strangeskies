@@ -82,7 +82,7 @@ public abstract class ObservableListDecorator<S extends ObservableListDecorator<
 	private final ObservableImpl<Change<E>> changeObservable = new ObservableImpl<>();
 	private final ObservableImpl<S> stateObservable = new ObservableImpl<>();
 
-	boolean firing;
+	private boolean firing;
 	private int[] addedIndices;
 	private int[] removedIndices;
 	private List<E> removedItems;
@@ -110,9 +110,9 @@ public abstract class ObservableListDecorator<S extends ObservableListDecorator<
 
 	protected boolean endChange() {
 		if (--changeDepth == 0) {
-			if (firing && fireChange(change)) {
-				// TODO make change empty
-			}
+			fireChange(change);
+
+			// TODO make change empty
 
 			return true;
 		} else {
@@ -120,11 +120,9 @@ public abstract class ObservableListDecorator<S extends ObservableListDecorator<
 		}
 	}
 
-	protected boolean fireChange(Change<E> change) {
+	protected void fireChange(Change<E> change) {
 		changeObservable.fire(change);
 		fireEvent();
-
-		return true;
 	}
 
 	protected void fireEvent() {

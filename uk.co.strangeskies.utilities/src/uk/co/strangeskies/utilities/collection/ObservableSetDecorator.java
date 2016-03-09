@@ -94,10 +94,10 @@ public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S,
 
 	protected boolean endChange() {
 		if (--changeDepth == 0) {
-			if (firing && fireChange(change)) {
-				adding.clear();
-				removing.clear();
-			}
+			fireChange(change);
+
+			adding.clear();
+			removing.clear();
 
 			return true;
 		} else {
@@ -105,11 +105,9 @@ public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S,
 		}
 	}
 
-	protected boolean fireChange(Change<E> change) {
+	protected void fireChange(Change<E> change) {
 		changeObservable.fire(change);
 		fireEvent();
-
-		return true;
 	}
 
 	protected void fireEvent() {
