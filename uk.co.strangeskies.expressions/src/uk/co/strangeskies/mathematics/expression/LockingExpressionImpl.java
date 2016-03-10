@@ -81,19 +81,6 @@ public abstract class LockingExpressionImpl<S extends Expression<S, T>, T> exten
 		}
 	}
 
-	/**
-	 * Implementing classes should compute the value of the {@link Expression}
-	 * here. Read lock is guaranteed to be obtained. This method should never be
-	 * invoked manually.
-	 * 
-	 * @param dirty
-	 *          Whether the expression has been mutated since this method was last
-	 *          invoked.
-	 * @return The value of this {@link Expression}.
-	 */
-	@Override
-	protected abstract T getValueImpl(boolean dirty);
-
 	@Override
 	public ReadLock getReadLock() {
 		return lock.readLock();

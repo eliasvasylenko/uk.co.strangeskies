@@ -53,7 +53,7 @@ import uk.co.strangeskies.fx.FXUtilities;
  */
 @Component(service = ExtendedObjectSupplier.class, property = "dependency.injection.annotation:String=uk.co.strangeskies.eclipse.ObservableService")
 public class ObservableServiceSupplier extends ExtendedObjectSupplier {
-	public class ServiceUpdateListener<T> implements ServiceListener {
+	private class ServiceUpdateListener<T> implements ServiceListener {
 		private final BundleContext context;
 		private final ObservableList<ServiceReference<T>> references;
 		private final Class<T> elementType;
