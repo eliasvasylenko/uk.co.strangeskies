@@ -18,14 +18,14 @@
  */
 package uk.co.strangeskies.mathematics.expression;
 
-import java.util.Observer;
-import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
+import java.util.function.Supplier;
 
 /**
- * <p>
- * A basic interface for mutable {@link Expression} implementations.
- * Implementing classes are responsible for making sure write locks are held for
- * mutating operations, and for notifications to {@link Observer}s.
+ * An abstract class to help designing mutable expression, implementing a simple
+ * observer list, locking mechanism, and update mechanism.
  * 
  * <p>
  * After mutation the held write lock should be downgraded to a read lock, then
@@ -43,15 +43,61 @@ import java.util.concurrent.locks.Lock;
  * @param <T>
  *          The type of the value of this expression
  */
-public interface LockingExpression<S extends Expression<S, T>, T> extends Expression<S, T> {
-	/**
-	 * @return A read lock to protect from mutation of this {@link Expression}
-	 */
-	Lock getReadLock();
+public abstract class LockingExpression<S extends Expression<S, T>, T> extends ExpressionImpl<S, T>
+		implements Expression<S, T> {
+	private final ReentrantReadWriteLock lock;
 
 	/**
-	 * @return A write lock which must be obtained before attempting to mutate
-	 *         this {@link Expression}
+	 * Default constructor.
 	 */
-	Lock getWriteLock();
+	public LockingExpression() {
+		lock = new ReentrantReadWriteLock();
+	}
+
+	protected <U> U read(Supplier<U> read) {
+		getReadLock().lock();
+
+		try {
+			return read.get();
+		} finally {
+			getReadLock().unlock();
+		}
+	}
+
+	@Override
+	protected boolean beginWrite() {
+		getWriteLock().lock();
+		return super.beginWrite();
+	}
+
+	@Override
+	protected boolean endWrite() {
+		getReadLock().lock();
+		getWriteLock().unlock();
+
+		try {
+			return super.endWrite();
+		} finally {
+			getReadLock().unlock();
+		}
+	}
+
+	@Override
+	public final T getValue() {
+		getReadLock().lock();
+
+		try {
+			return super.getValue();
+		} finally {
+			getReadLock().unlock();
+		}
+	}
+
+	public ReadLock getReadLock() {
+		return lock.readLock();
+	}
+
+	protected WriteLock getWriteLock() {
+		return lock.writeLock();
+	}
 }

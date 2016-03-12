@@ -46,44 +46,55 @@ public abstract class ExpressionImpl<S extends Expression<S, T>, T> extends Obse
 		return changing;
 	}
 
-	protected boolean beginChange() {
-		if (changeDepth++ == 0) {
+	protected void write(Runnable runnable) {
+		beginWrite();
+
+		try {
+			runnable.run();
+		} finally {
+			endWrite();
+		}
+	}
+
+	protected boolean beginWrite() {
+		boolean begun = changeDepth++ == 0;
+
+		if (begun) {
 			changing = getObservers().size() > 0;
-
-			return true;
-		} else {
-			return false;
 		}
+
+		return begun;
 	}
 
-	protected boolean endChange() {
-		if (--changeDepth == 0) {
-			if (changing) {
-				fireChange();
-			}
+	protected boolean endWrite() {
+		boolean ended = --changeDepth == 0;
 
-			return true;
-		} else {
-			return false;
+		if (ended && changing) {
+			fireChange();
 		}
+
+		return ended;
 	}
 
-	protected boolean fireChange() {
-		if (!dirty) {
+	private boolean fireChange() {
+		boolean fired = !dirty;
+
+		if (fired) {
 			dirty = true;
 			fire(getThis());
-
-			return true;
-		} else {
-			return false;
 		}
+
+		return fired;
 	}
 
 	@Override
 	public T getValue() {
 		boolean dirty = this.dirty;
-		if (this.dirty)
+
+		if (this.dirty) {
 			this.dirty = false;
+		}
+
 		return getValueImpl(dirty);
 	}
 

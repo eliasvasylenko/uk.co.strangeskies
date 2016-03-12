@@ -25,14 +25,14 @@ import uk.co.strangeskies.utilities.Property;
 
 /**
  * An {@link Expression} based on the behaviour of the {@link IdentityProperty}
- * class, with the lazy updating behaviour of {@link LockingExpressionImpl} for
+ * class, with the lazy updating behaviour of {@link LockingExpression} for
  * {@link Observer}s.
  * 
  * @author Elias N Vasylenko
  * @param <T>
  *          The type of the expression.
  */
-public class IdentityExpression<T> extends LockingExpressionImpl<IdentityExpression<T>, T> implements Property<T, T> {
+public class IdentityExpression<T> extends LockingExpression<IdentityExpression<T>, T> implements Property<T, T> {
 	private T value;
 
 	/**
@@ -52,13 +52,14 @@ public class IdentityExpression<T> extends LockingExpressionImpl<IdentityExpress
 
 	@Override
 	public T set(T value) {
+		beginWrite();
+
 		try {
-			getWriteLock().lock();
 			T previous = this.value;
 			this.value = value;
 			return previous;
 		} finally {
-			fireChange();
+			endWrite();
 		}
 	}
 

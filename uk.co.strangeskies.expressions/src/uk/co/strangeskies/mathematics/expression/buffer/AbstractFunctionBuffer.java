@@ -24,10 +24,10 @@ import java.util.function.Function;
 
 import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.mathematics.expression.IdentityExpression;
-import uk.co.strangeskies.mathematics.expression.LockingExpressionImpl;
+import uk.co.strangeskies.mathematics.expression.LockingExpression;
 
 public abstract class AbstractFunctionBuffer<S extends AbstractFunctionBuffer<S, B, F>, B, F>
-		extends LockingExpressionImpl<S, F> implements DoubleBuffer<S, B, F> {
+		extends LockingExpression<S, F> implements DoubleBuffer<S, B, F> {
 	private F frontValue;
 	private IdentityExpression<B> back;
 
@@ -72,13 +72,14 @@ public abstract class AbstractFunctionBuffer<S extends AbstractFunctionBuffer<S,
 	public F setFront(F front) {
 		isFlat = false;
 
+		beginWrite();
+
 		try {
-			getWriteLock().lock();
 			F previous = this.frontValue;
 			this.frontValue = front;
 			return previous;
 		} finally {
-			fireChange();
+			endWrite();
 		}
 	}
 

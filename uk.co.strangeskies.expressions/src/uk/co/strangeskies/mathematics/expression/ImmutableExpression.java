@@ -28,7 +28,7 @@ import java.util.function.Consumer;
  * @param <T>
  *          The type of the expression.
  */
-public abstract class ImmutableExpression<S extends ImmutableExpression<S, T>, T> implements Expression<S, T> {
+public abstract class ImmutableExpression<S extends Expression<S, T>, T> implements Expression<S, T> {
 	@Override
 	public final boolean addObserver(Consumer<? super S> observer) {
 		return true;

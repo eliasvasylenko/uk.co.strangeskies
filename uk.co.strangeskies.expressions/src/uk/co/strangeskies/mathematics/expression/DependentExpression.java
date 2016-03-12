@@ -64,7 +64,10 @@ public abstract class DependentExpression<S extends Expression<S, T>, T> extends
 
 	public DependentExpression(boolean parallel) {
 		dependencies = new ExpressionSetDecorator<>(new TreeSet<>(identityComparator()));
-		dependencies.addObserver(m -> fireChange());
+		dependencies.addObserver(m -> {
+			beginWrite();
+			endWrite();
+		});
 
 		this.parallel = parallel;
 	}

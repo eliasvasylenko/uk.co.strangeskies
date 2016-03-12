@@ -84,7 +84,7 @@ public abstract class UnaryExpression<S extends UnaryExpression<S, O, R>, O, R> 
 	 */
 	public void setOperand(Expression<?, ? extends O> operand) {
 		try {
-			beginChange();
+			beginWrite();
 
 			if (this.operand != operand) {
 				getDependencies().remove(this.operand);
@@ -93,7 +93,7 @@ public abstract class UnaryExpression<S extends UnaryExpression<S, O, R>, O, R> 
 				getDependencies().add(this.operand);
 			}
 		} finally {
-			endChange();
+			endWrite();
 		}
 	}
 

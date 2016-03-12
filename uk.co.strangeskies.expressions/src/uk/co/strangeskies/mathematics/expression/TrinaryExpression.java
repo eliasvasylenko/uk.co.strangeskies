@@ -119,7 +119,7 @@ public abstract class TrinaryExpression<S extends TrinaryExpression<S, O1, O2, O
 	public void setOperands(Expression<?, ? extends O1> firstOperand, Expression<?, ? extends O2> secondOperand,
 			Expression<?, ? extends O3> thirdOperand) {
 		try {
-			beginChange();
+			beginWrite();
 
 			if (this.firstOperand != firstOperand || this.secondOperand != secondOperand
 					|| this.thirdOperand != thirdOperand) {
@@ -136,7 +136,7 @@ public abstract class TrinaryExpression<S extends TrinaryExpression<S, O1, O2, O
 				getDependencies().add(this.thirdOperand);
 			}
 		} finally {
-			endChange();
+			endWrite();
 		}
 	}
 
@@ -146,7 +146,7 @@ public abstract class TrinaryExpression<S extends TrinaryExpression<S, O1, O2, O
 	 */
 	public void setFirstOperand(Expression<?, ? extends O1> operand) {
 		try {
-			beginChange();
+			beginWrite();
 
 			if (firstOperand != operand) {
 				if (firstOperand != secondOperand && firstOperand != thirdOperand) {
@@ -157,7 +157,7 @@ public abstract class TrinaryExpression<S extends TrinaryExpression<S, O1, O2, O
 				getDependencies().add(firstOperand);
 			}
 		} finally {
-			endChange();
+			endWrite();
 		}
 	}
 
@@ -167,7 +167,7 @@ public abstract class TrinaryExpression<S extends TrinaryExpression<S, O1, O2, O
 	 */
 	public void setSecondOperand(Expression<?, ? extends O2> operand) {
 		try {
-			beginChange();
+			beginWrite();
 
 			if (secondOperand != operand) {
 				if (firstOperand != secondOperand && secondOperand != thirdOperand) {
@@ -178,7 +178,7 @@ public abstract class TrinaryExpression<S extends TrinaryExpression<S, O1, O2, O
 				getDependencies().add(secondOperand);
 			}
 		} finally {
-			endChange();
+			endWrite();
 		}
 	}
 
@@ -188,7 +188,7 @@ public abstract class TrinaryExpression<S extends TrinaryExpression<S, O1, O2, O
 	 */
 	public void setThirdOperand(Expression<?, ? extends O3> operand) {
 		try {
-			beginChange();
+			beginWrite();
 
 			if (thirdOperand != operand) {
 				if (firstOperand != thirdOperand && secondOperand != thirdOperand) {
@@ -199,7 +199,7 @@ public abstract class TrinaryExpression<S extends TrinaryExpression<S, O1, O2, O
 				getDependencies().add(secondOperand);
 			}
 		} finally {
-			endChange();
+			endWrite();
 		}
 	}
 
