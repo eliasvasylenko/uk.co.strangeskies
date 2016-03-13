@@ -46,6 +46,7 @@ public class FutureMap<K, V> implements ComputingMap<K, V> {
 			}
 		}
 
+		@Override
 		public void run() {
 			try {
 				value = mapping.apply(key);
@@ -58,7 +59,7 @@ public class FutureMap<K, V> implements ComputingMap<K, V> {
 							values.put(key, value);
 						}
 						preparationThreads.remove(key);
-						preparationThreads.notifyAll();
+						FutureMap.this.notifyAll();
 					}
 				}
 			}
@@ -74,7 +75,7 @@ public class FutureMap<K, V> implements ComputingMap<K, V> {
 			synchronized (FutureMap.this) {
 				if (cancellable && preparationThreads.containsKey(key)) {
 					preparationThreads.remove(key);
-					preparationThreads.notifyAll();
+					FutureMap.this.notifyAll();
 					interrupt();
 				}
 			}
@@ -243,7 +244,7 @@ public class FutureMap<K, V> implements ComputingMap<K, V> {
 			if (preparationThreads.containsKey(key)) {
 				preparationThreads.get(key).cancel();
 				preparationThreads.remove(key);
-				preparationThreads.notifyAll();
+				notifyAll();
 				return true;
 			} else if (values.containsKey(key)) {
 				values.remove(key);
@@ -265,7 +266,7 @@ public class FutureMap<K, V> implements ComputingMap<K, V> {
 				if (!cancellable) {
 					preparationThreads.get(key).setUncancellable();
 					V value = preparationThreads.remove(key).waitForValue();
-					preparationThreads.notifyAll();
+					notifyAll();
 					return value;
 				} else {
 					preparationThreads.get(key).cancel();

@@ -23,6 +23,15 @@ import java.util.Iterator;
 import java.util.Set;
 
 public interface SetDecorator<E> extends CollectionDecorator<Set<E>, E>, Set<E> {
+	public static <E> Set<E> over(Set<E> component) {
+		return new SetDecorator<E>() {
+			@Override
+			public Set<E> getComponent() {
+				return component;
+			}
+		};
+	}
+
 	@Override
 	Set<E> getComponent();
 

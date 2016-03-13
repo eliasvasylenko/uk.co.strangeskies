@@ -22,6 +22,15 @@ import java.util.Comparator;
 import java.util.SortedSet;
 
 public interface SortedSetDecorator<E> extends SetDecorator<E>, SortedSet<E> {
+	public static <E> SortedSet<E> over(SortedSet<E> component) {
+		return new SortedSetDecorator<E>() {
+			@Override
+			public SortedSet<E> getComponent() {
+				return component;
+			}
+		};
+	}
+
 	@Override
 	SortedSet<E> getComponent();
 

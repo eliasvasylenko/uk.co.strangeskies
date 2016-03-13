@@ -24,6 +24,15 @@ import java.util.List;
 import java.util.ListIterator;
 
 public interface ListDecorator<E> extends CollectionDecorator<List<E>, E>, List<E> {
+	public static <E> List<E> over(List<E> component) {
+		return new ListDecorator<E>() {
+			@Override
+			public List<E> getComponent() {
+				return component;
+			}
+		};
+	}
+
 	@Override
 	List<E> getComponent();
 
