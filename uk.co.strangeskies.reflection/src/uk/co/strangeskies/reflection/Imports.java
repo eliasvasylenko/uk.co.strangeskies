@@ -20,6 +20,7 @@ package uk.co.strangeskies.reflection;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -51,13 +52,12 @@ public class Imports {
 		packages.addAll(imports.packages);
 	}
 
-	private Imports(Collection<? extends Class<?>> classes,
-			Collection<? extends Package> packages) {
+	private Imports(Collection<? extends Class<?>> classes, Collection<? extends Package> packages) {
 		this(classes, packages, null);
 	}
 
-	private Imports(Collection<? extends Class<?>> classes,
-			Collection<? extends Package> packages, ClassLoader classLoader) {
+	private Imports(Collection<? extends Class<?>> classes, Collection<? extends Package> packages,
+			ClassLoader classLoader) {
 		importClasses(classes);
 		importPackages(packages);
 
@@ -74,15 +74,13 @@ public class Imports {
 			return false;
 		Imports thatImports = (Imports) that;
 
-		return Objects.equals(namedClasses, thatImports.namedClasses)
-				&& Objects.equals(packages, thatImports.packages);
+		return Objects.equals(namedClasses, thatImports.namedClasses) && Objects.equals(packages, thatImports.packages);
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
-		return prime + Objects.hashCode(namedClasses)
-				+ prime * Objects.hashCode(packages);
+		return prime + Objects.hashCode(namedClasses) + prime * Objects.hashCode(packages);
 	}
 
 	/**
@@ -126,9 +124,8 @@ public class Imports {
 	private void importClasses(Collection<? extends Class<?>> classes) {
 		for (Class<?> clazz : classes) {
 			if (namedClasses.putIfAbsent(clazz.getSimpleName(), clazz) != null) {
-				throw new TypeException(
-						"Cannot import both '" + namedClasses.get(clazz.getSimpleName())
-								+ "' and '" + clazz + "' with the same name.");
+				throw new TypeException("Cannot import both '" + namedClasses.get(clazz.getSimpleName()) + "' and '" + clazz
+						+ "' with the same name.");
 			}
 		}
 	}
@@ -179,8 +176,7 @@ public class Imports {
 	 *         imports.
 	 */
 	public Class<?> getNamedClass(String name, ClassLoader classLoader) {
-		Optional<Class<?>> primitive = Types.getPrimitives().stream()
-				.filter(p -> p.getName().equals(name)).findAny();
+		Optional<Class<?>> primitive = Types.getPrimitives().stream().filter(p -> p.getName().equals(name)).findAny();
 		if (primitive.isPresent())
 			return primitive.get();
 
@@ -197,8 +193,7 @@ public class Imports {
 				int lastDot;
 				String transformedName = name;
 				while ((lastDot = transformedName.lastIndexOf('.')) >= 0) {
-					transformedName = new StringBuilder(transformedName)
-							.replace(lastDot, lastDot + 1, "$").toString();
+					transformedName = new StringBuilder(transformedName).replace(lastDot, lastDot + 1, "$").toString();
 
 					try {
 						if (classLoader == null) {
@@ -212,8 +207,7 @@ public class Imports {
 				}
 
 				if (namedClass == null)
-					throw new IllegalArgumentException("Cannot load class '" + name + "'",
-							e);
+					throw new IllegalArgumentException("Cannot load class '" + name + "'", e);
 			}
 		}
 
@@ -229,8 +223,7 @@ public class Imports {
 	 * @return A name for the given class object according to this set of imports.
 	 */
 	public String getClassName(Class<?> clazz) {
-		if (namedClasses.containsValue(clazz)
-				|| packages.contains(clazz.getPackage()))
+		if (namedClasses.containsValue(clazz) || packages.contains(clazz.getPackage()))
 			return clazz.getSimpleName();
 		else if (clazz.getCanonicalName() != null)
 			return clazz.getCanonicalName();
@@ -299,6 +292,13 @@ public class Imports {
 	}
 
 	/**
+	 * @return An empty {@link Imports} instance.
+	 */
+	public static Imports empty(ClassLoader classLoader) {
+		return new Imports(Collections.emptySet(), Collections.emptySet(), classLoader);
+	}
+
+	/**
 	 * Determine whether a class is imported by this {@link Imports} instance.
 	 * 
 	 * @param clazz
@@ -308,7 +308,6 @@ public class Imports {
 	 *         otherwise.
 	 */
 	public boolean isImported(Class<?> clazz) {
-		return packages.contains(clazz.getPackage())
-				|| namedClasses.containsValue(clazz);
+		return packages.contains(clazz.getPackage()) || namedClasses.containsValue(clazz);
 	}
 }

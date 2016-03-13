@@ -456,7 +456,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 	 * @return A TypeToken over the requested class.
 	 */
 	public static <T> TypeToken<T> over(Class<T> type) {
-		return new TypeToken<T>(type);
+		return new TypeToken<>(type);
 	}
 
 	/**
@@ -560,7 +560,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 
 		Resolver resolver = getInternalResolver().deepCopy(inferenceVariableSubstitutions);
 
-		return new TypeToken<T>(resolver, declaration, new TypeSubstitution(inferenceVariableSubstitutions).resolve(type));
+		return new TypeToken<>(resolver, declaration, new TypeSubstitution(inferenceVariableSubstitutions).resolve(type));
 	}
 
 	/**
@@ -577,7 +577,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 	 * @return The newly derived {@link TypeToken}.
 	 */
 	public TypeToken<T> withBounds(BoundSet bounds) {
-		return new TypeToken<T>(getResolverWithBounds(bounds), getType());
+		return new TypeToken<>(getResolverWithBounds(bounds), getType());
 	}
 
 	/**
@@ -597,7 +597,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 	 * @return The newly derived {@link TypeToken}.
 	 */
 	public TypeToken<T> withBounds(BoundSet bounds, Collection<? extends InferenceVariable> inferenceVariables) {
-		return new TypeToken<T>(getResolverWithBounds(bounds, inferenceVariables), getType());
+		return new TypeToken<>(getResolverWithBounds(bounds, inferenceVariables), getType());
 	}
 
 	/**
@@ -614,7 +614,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 	 * @return The newly derived {@link TypeToken}.
 	 */
 	public TypeToken<T> withBoundsFrom(Resolver bounds) {
-		return new TypeToken<T>(getResolverWithBoundsFrom(bounds), getType());
+		return new TypeToken<>(getResolverWithBoundsFrom(bounds), getType());
 	}
 
 	/**
@@ -634,7 +634,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 	 * @return The newly derived {@link TypeToken}.
 	 */
 	public TypeToken<T> withBoundsFrom(Resolver bounds, Collection<? extends InferenceVariable> inferenceVariables) {
-		return new TypeToken<T>(getResolverWithBoundsFrom(bounds, inferenceVariables), getType());
+		return new TypeToken<>(getResolverWithBoundsFrom(bounds, inferenceVariables), getType());
 	}
 
 	/**
@@ -651,7 +651,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 	 * @return The newly derived {@link TypeToken}.
 	 */
 	public TypeToken<T> withBoundsFrom(TypeToken<?> type) {
-		return new TypeToken<T>(getResolverWithBoundsFrom(type), getType());
+		return new TypeToken<>(getResolverWithBoundsFrom(type), getType());
 	}
 
 	/**
@@ -676,10 +676,24 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 	 * @param imports
 	 *          Classes and packages for which full package qualification may be
 	 *          omitted from input.
-	 * @return A TypeToken representing the type described by the String.
+	 * @return A TypeToken representing the type described by the string.
 	 */
 	public static TypeToken<?> fromString(String typeString, Imports imports) {
 		return over(AnnotatedTypes.fromString(typeString, imports));
+	}
+
+	/**
+	 * Equivalent to the application of
+	 * {@link AnnotatedTypes#toString(AnnotatedType, Imports)} to
+	 * {@link #getAnnotatedDeclaration()}, with the given imports.
+	 * 
+	 * @param imports
+	 *          Classes and packages for which full package qualification may be
+	 *          omitted from output.
+	 * @return A string representing the type described by this type token.
+	 */
+	public String toString(Imports imports) {
+		return AnnotatedTypes.toString(declaration, imports);
 	}
 
 	protected void validate() {
