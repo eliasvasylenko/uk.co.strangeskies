@@ -62,4 +62,20 @@ public class ManifestUtilities {
 	public static List<Attribute> parseAttributes(String entry) {
 		return MANIFEST_ENTRY_PARSER.parseAttributes(entry);
 	}
+
+	public static String getResourceExtension(String name) {
+		int lastSlash = name.lastIndexOf('/');
+		if (lastSlash > 0) {
+			name = name.substring(lastSlash);
+		}
+
+		int lastDot = name.lastIndexOf('.');
+		if (lastDot > 0) {
+			name = name.substring(lastDot + 1);
+		} else {
+			name = null;
+		}
+
+		return name;
+	}
 }
