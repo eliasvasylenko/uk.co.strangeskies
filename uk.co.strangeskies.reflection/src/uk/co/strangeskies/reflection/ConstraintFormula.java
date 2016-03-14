@@ -103,14 +103,12 @@ public class ConstraintFormula {
 	 *          The bound set to reduce the created constraint formula into.
 	 * @return The constraint formula created.
 	 */
-	public static ConstraintFormula reduce(Kind kind, Type from, Type to,
-			BoundSet bounds) {
+	public static ConstraintFormula reduce(Kind kind, Type from, Type to, BoundSet bounds) {
 		ConstraintFormula constraintFormula = new ConstraintFormula(kind, from, to);
 		try {
 			constraintFormula.reduceInto(bounds);
 		} catch (Exception e) {
-			throw new TypeException("Cannot reduce constraint " + constraintFormula
-					+ " into bound set '" + bounds + "'.", e);
+			throw new TypeException("Cannot reduce constraint " + constraintFormula + " into bound set '" + bounds + "'.", e);
 		}
 		return constraintFormula;
 	}
@@ -136,8 +134,7 @@ public class ConstraintFormula {
 		}
 	}
 
-	private void logConstraint(ConstraintFormula constraintFormula,
-			BoundSet boundSet) {
+	private void logConstraint(ConstraintFormula constraintFormula, BoundSet boundSet) {
 		// System.out.println(constraintFormula + " into '" + boundSet + "'.");
 	}
 
@@ -151,26 +148,23 @@ public class ConstraintFormula {
 
 		if (from instanceof ParameterizedType)
 			if (InferenceVariable.isProperType(from)) {
-				from = TypeVariableCapture
-						.captureWildcardArguments((ParameterizedType) from);
+				from = TypeVariableCapture.captureWildcardArguments((ParameterizedType) from);
 			} else {
-				from = InferenceVariable.captureConversion((ParameterizedType) from,
-						bounds);
+				from = InferenceVariable.captureConversion((ParameterizedType) from, bounds);
 			}
 
 		/*
 		 * TODO why do we do the following capture conversion?:
 		 */
 
-		if (InferenceVariable.isProperType(from)
-				&& InferenceVariable.isProperType(to)) {
+		if (InferenceVariable.isProperType(from) && InferenceVariable.isProperType(to)) {
 			/*
 			 * If S and T are proper types, the constraint reduces to true if S is
 			 * compatible in a loose invocation context with T (§5.3), and false
 			 * otherwise.
 			 */
 			if (!Types.isLooseInvocationContextCompatible(from, to)) {
-				incorporate.falsehood();
+				incorporate.falsehood("Incompatible proper types: " + this);
 			}
 		} else if (from != null && Types.isPrimitive(from)) {
 			/*
@@ -212,12 +206,11 @@ public class ConstraintFormula {
 		Class<?> fromRaw = Types.getRawType(from);
 
 		if (to instanceof ParameterizedType) {
-			return (toRaw.getTypeParameters().length > 0)
-					&& (toRaw.isAssignableFrom(fromRaw)) && (ParameterizedTypes
-							.resolveSupertypeParameters(from, toRaw) instanceof Class);
+			return (toRaw.getTypeParameters().length > 0) && (toRaw.isAssignableFrom(fromRaw))
+					&& (ParameterizedTypes.resolveSupertypeParameters(from, toRaw) instanceof Class);
 		} else
-			return toRaw.isArray() && fromRaw.isArray() && isUncheckedCompatibleOnly(
-					Types.getComponentType(from), Types.getComponentType(to));
+			return toRaw.isArray() && fromRaw.isArray()
+					&& isUncheckedCompatibleOnly(Types.getComponentType(from), Types.getComponentType(to));
 	}
 
 	/*
@@ -226,15 +219,13 @@ public class ConstraintFormula {
 	private void reduceSubtypeConstraint(BoundSet bounds) {
 		IncorporationTarget incorporate = bounds.incorporate();
 
-		if (InferenceVariable.isProperType(from)
-				&& InferenceVariable.isProperType(to)) {
+		if (InferenceVariable.isProperType(from) && InferenceVariable.isProperType(to)) {
 			/*
 			 * If S and T are proper types, the constraint reduces to true if S is a
 			 * subtype of T (§4.10), and false otherwise.
 			 */
-			if (!Types.isAssignable(from, to) && !(from instanceof InferenceVariable)
-					&& !(to instanceof InferenceVariable)) {
-				incorporate.falsehood();
+			if (!Types.isAssignable(from, to) && !(from instanceof InferenceVariable) && !(to instanceof InferenceVariable)) {
+				incorporate.falsehood("Incompatible proper types: " + this);
 			} else
 				return;
 		} else if (from == null)
@@ -246,7 +237,7 @@ public class ConstraintFormula {
 			/*
 			 * Otherwise, if T is the null type, the constraint reduces to false.
 			 */
-			incorporate.falsehood();
+			incorporate.falsehood("Cannot subtype null type: " + this);
 		else if (from instanceof InferenceVariable)
 			/*
 			 * Otherwise, if S is an inference variable, α, the constraint reduces to
@@ -272,16 +263,15 @@ public class ConstraintFormula {
 				 * identified, with type arguments B1, ..., Bn.
 				 */
 				Class<?> rawType = Types.getRawType(to);
-				if (!Types.getRawTypes(from).stream()
-						.anyMatch(t -> rawType.isAssignableFrom(t))) {
+				if (!Types.getRawTypes(from).stream().anyMatch(t -> rawType.isAssignableFrom(t))) {
 					/*
 					 * If no such type exists, the constraint reduces to false.
 					 */
 					if (!(from instanceof InferenceVariable))
-						incorporate.falsehood();
+						incorporate.falsehood("Raw types '" + Types.getRawTypes(from) + "' cannot be assigned from '"
+								+ Types.getRawType(to) + "': " + this);
 				} else {
-					Map<TypeVariable<?>, Type> toArguments = ParameterizedTypes
-							.getAllTypeArguments((ParameterizedType) to);
+					Map<TypeVariable<?>, Type> toArguments = ParameterizedTypes.getAllTypeArguments((ParameterizedType) to);
 
 					List<Type> fromSet;
 					if (this.from instanceof WildcardType)
@@ -292,8 +282,7 @@ public class ConstraintFormula {
 						fromSet = Arrays.asList(from);
 
 					for (Type from : fromSet) {
-						if (rawType.isAssignableFrom(Types.getRawType(from))
-								&& from instanceof ParameterizedType) {
+						if (rawType.isAssignableFrom(Types.getRawType(from)) && from instanceof ParameterizedType) {
 
 							ParameterizedType fromParameterization = (ParameterizedType) ParameterizedTypes
 									.resolveSupertypeParameters(from, rawType);
@@ -301,17 +290,15 @@ public class ConstraintFormula {
 								/*
 								 * If no such type exists, the constraint reduces to false.
 								 */
-								incorporate.falsehood();
+								incorporate.falsehood("Cannot find parameterized supertype for which to verify containment: " + this);
 
 							/*
 							 * Otherwise, the constraint reduces to the following new
 							 * constraints: for all i (1 ≤ i ≤ n), ‹Bi <= Ai›.
 							 */
-							ParameterizedTypes.getAllTypeArguments(fromParameterization)
-									.entrySet().forEach(e -> {
-										reduce(Kind.CONTAINMENT, e.getValue(),
-												toArguments.get(e.getKey()), bounds);
-									});
+							ParameterizedTypes.getAllTypeArguments(fromParameterization).entrySet().forEach(e -> {
+								reduce(Kind.CONTAINMENT, e.getValue(), toArguments.get(e.getKey()), bounds);
+							});
 						}
 					}
 				}
@@ -323,12 +310,10 @@ public class ConstraintFormula {
 				 */
 				Type from = this.from;
 				if (from instanceof InferenceVariable)
-					from = IntersectionType.from(
-							bounds.getBoundsOn((InferenceVariable) from).getUpperBounds());
+					from = IntersectionType.from(bounds.getBoundsOn((InferenceVariable) from).getUpperBounds());
 				if (!Types.isAssignable(from, to))
-					incorporate.falsehood();
-			} else if (!(to instanceof IntersectionType)
-					&& Types.getRawType(to).isArray()) {
+					incorporate.falsehood("Class types do not form subtype relation: " + this);
+			} else if (!(to instanceof IntersectionType) && Types.getRawType(to).isArray()) {
 				/*
 				 * If T is an array type, T'[], then among the supertypes of S that are
 				 * array types, a most specific type is identified, S'[] (this may be S
@@ -339,7 +324,7 @@ public class ConstraintFormula {
 					/*
 					 * If no such array type exists, the constraint reduces to false.
 					 */
-					incorporate.falsehood();
+					incorporate.falsehood("Cannot find compatible array type supertype: " + this);
 				} else {
 					/*
 					 * Otherwise:
@@ -350,16 +335,15 @@ public class ConstraintFormula {
 						 * - If neither S' nor T' is a primitive type, the constraint
 						 * reduces to ‹S' <: T'›.
 						 */
-						reduce(Kind.SUBTYPE, fromComponent.getType(), toComponent.getType(),
-								bounds);
+						reduce(Kind.SUBTYPE, fromComponent.getType(), toComponent.getType(), bounds);
 					} else {
 						/*
 						 * - Otherwise, the constraint reduces to true if S' and T' are the
 						 * same primitive type, and false otherwise.
 						 */
-						if (!fromComponent.isPrimitive()
-								|| !fromComponent.equals(toComponent))
-							incorporate.falsehood();
+						if ((!fromComponent.isPrimitive() || !fromComponent.equals(toComponent))
+								&& !fromComponent.getType().equals(toComponent.getType()))
+							incorporate.falsehood("Primitive array component type is not equal: " + this);
 					}
 				}
 			} else if (to instanceof TypeVariableCapture) {
@@ -367,8 +351,7 @@ public class ConstraintFormula {
 				 * If T is a type variable, there are three cases:
 				 */
 				if (from instanceof IntersectionType
-						&& Arrays.stream(((IntersectionType) from).getTypes())
-								.anyMatch(f -> f.equals(to))) {
+						&& Arrays.stream(((IntersectionType) from).getTypes()).anyMatch(f -> f.equals(to))) {
 					/*
 					 * - If S is an intersection type of which T is an element, the
 					 * constraint reduces to true.
@@ -378,13 +361,12 @@ public class ConstraintFormula {
 					 * - Otherwise, if T has a lower bound, B, the constraint reduces to
 					 * ‹S <: B›.
 					 */
-					reduce(Kind.SUBTYPE, from, IntersectionType
-							.from(((TypeVariableCapture) to).getLowerBounds()), bounds);
+					reduce(Kind.SUBTYPE, from, IntersectionType.from(((TypeVariableCapture) to).getLowerBounds()), bounds);
 				} else {
 					/*
 					 * - Otherwise, the constraint reduces to false.
 					 */
-					incorporate.falsehood();
+					incorporate.falsehood("Type variable cannot be supertype of type: " + this);
 				}
 			} else if (to instanceof IntersectionType) {
 				/*
@@ -395,8 +377,7 @@ public class ConstraintFormula {
 					reduce(Kind.SUBTYPE, from, typeComponent, bounds);
 			} else {
 				throw new TypeException("Type '" + to + "' of class '" + to.getClass()
-						+ "' should not be encountered for T in constraint '" + this
-						+ "'.");
+						+ "' should not be encountered for T in constraint '" + this + "'.");
 			}
 		}
 	}
@@ -413,21 +394,16 @@ public class ConstraintFormula {
 		}
 
 		if (from instanceof IntersectionType) {
-			List<Type> candidates = Arrays
-					.asList(((IntersectionType) from).getTypes());
+			List<Type> candidates = Arrays.asList(((IntersectionType) from).getTypes());
 
 			// attempt to find most specific from candidates
-			Type mostSpecific = candidates.stream()
-					.filter(t -> Types.getRawType(t).isArray())
-					.reduce((a, b) -> (Types.isAssignable(Types.getComponentType(b),
-							Types.getComponentType(a))) ? a : b)
+			Type mostSpecific = candidates.stream().filter(t -> Types.getRawType(t).isArray())
+					.reduce((a, b) -> (Types.isAssignable(Types.getComponentType(b), Types.getComponentType(a))) ? a : b)
 					.orElse(null);
 
 			// verify we really have the most specific
 			if (candidates.stream().filter(t -> Types.getRawType(t).isArray())
-					.anyMatch(
-							t -> !Types.isAssignable(Types.getComponentType(mostSpecific),
-									Types.getComponentType(t))))
+					.anyMatch(t -> !Types.isAssignable(Types.getComponentType(mostSpecific), Types.getComponentType(t))))
 				return TypeToken.over(mostSpecific);
 		}
 
@@ -454,15 +430,14 @@ public class ConstraintFormula {
 				/*
 				 * If S is a wildcard, the constraint reduces to false.
 				 */
-				incorporate.falsehood();
+				incorporate.falsehood("Wildcard cannot be contained by type: " + this);
 			}
 		} else {
 			WildcardType toWildcard = (WildcardType) to;
 
 			if (toWildcard.getLowerBounds().length == 0) {
 				if (toWildcard.getUpperBounds().length == 0
-						|| (toWildcard.getUpperBounds().length == 1
-								&& toWildcard.getUpperBounds()[0].equals(Object.class))) {
+						|| (toWildcard.getUpperBounds().length == 1 && toWildcard.getUpperBounds()[0].equals(Object.class))) {
 					/*
 					 * If T is a wildcard of the form ?, the constraint reduces to true.
 					 */
@@ -471,8 +446,7 @@ public class ConstraintFormula {
 					/*
 					 * If T is a wildcard of the form ? extends T':
 					 */
-					Type intersectionT = IntersectionType
-							.from(toWildcard.getUpperBounds());
+					Type intersectionT = IntersectionType.from(toWildcard.getUpperBounds());
 
 					if (!(from instanceof WildcardType)) {
 						/*
@@ -494,9 +468,7 @@ public class ConstraintFormula {
 								 * If S is a wildcard of the form ? extends S', the constraint
 								 * reduces to ‹S' <: T'›.
 								 */
-								reduce(Kind.SUBTYPE,
-										IntersectionType.uncheckedFrom(from.getUpperBounds()),
-										intersectionT, bounds);
+								reduce(Kind.SUBTYPE, IntersectionType.uncheckedFrom(from.getUpperBounds()), intersectionT, bounds);
 							}
 						} else {
 							/*
@@ -526,13 +498,12 @@ public class ConstraintFormula {
 						 * If S is a wildcard of the form ? super S', the constraint reduces
 						 * to ‹T' <: S'›.
 						 */
-						reduce(Kind.SUBTYPE, intersectionT,
-								IntersectionType.from(from.getLowerBounds()), bounds);
+						reduce(Kind.SUBTYPE, intersectionT, IntersectionType.from(from.getLowerBounds()), bounds);
 					} else {
 						/*
 						 * Otherwise, the constraint reduces to false.
 						 */
-						incorporate.falsehood();
+						incorporate.falsehood("Wildcard cannot be contained by wildcard: " + this);
 					}
 				}
 			}
@@ -552,12 +523,10 @@ public class ConstraintFormula {
 
 			if (from.getLowerBounds().length == 0) {
 				if (from.getUpperBounds().length == 0
-						|| (from.getUpperBounds().length == 1
-								&& from.getUpperBounds()[0].equals(Object.class))) {
+						|| (from.getUpperBounds().length == 1 && from.getUpperBounds()[0].equals(Object.class))) {
 					if (to.getLowerBounds().length == 0) {
 						if (to.getUpperBounds().length == 0
-								|| (to.getUpperBounds().length == 1
-										&& to.getUpperBounds()[0].equals(Object.class))) {
+								|| (to.getUpperBounds().length == 1 && to.getUpperBounds()[0].equals(Object.class))) {
 							/*
 							 * If S has the form ? and T has the form ?, the constraint
 							 * reduces to true.
@@ -568,8 +537,7 @@ public class ConstraintFormula {
 							 * If S has the form ? and T has the form ? extends T', the
 							 * constraint reduces to ‹Object = T'›.
 							 */
-							reduce(Kind.EQUALITY, Object.class,
-									IntersectionType.from(to.getUpperBounds()), bounds);
+							reduce(Kind.EQUALITY, Object.class, IntersectionType.from(to.getUpperBounds()), bounds);
 						}
 					}
 				} else if (to.getLowerBounds().length == 0) {
@@ -578,8 +546,7 @@ public class ConstraintFormula {
 						 * If S has the form ? extends S' and T has the form ?, the
 						 * constraint reduces to ‹S' = Object›.
 						 */
-						reduce(Kind.EQUALITY, IntersectionType.from(from.getUpperBounds()),
-								Object.class, bounds);
+						reduce(Kind.EQUALITY, IntersectionType.from(from.getUpperBounds()), Object.class, bounds);
 					} else {
 						/*
 						 * If S has the form ? extends S' and T has the form ? extends T',
@@ -594,13 +561,13 @@ public class ConstraintFormula {
 				 * If S has the form ? super S' and T has the form ? super T', the
 				 * constraint reduces to ‹S' = T'›.
 				 */
-				reduce(Kind.EQUALITY, IntersectionType.from(from.getLowerBounds()),
-						IntersectionType.from(to.getLowerBounds()), bounds);
+				reduce(Kind.EQUALITY, IntersectionType.from(from.getLowerBounds()), IntersectionType.from(to.getLowerBounds()),
+						bounds);
 			} else {
 				/*
 				 * Otherwise, the constraint reduces to false.
 				 */
-				incorporate.falsehood();
+				incorporate.falsehood("Wildcards cannot be equal in this form: " + this);
 			}
 		} else {
 			/*
@@ -631,9 +598,8 @@ public class ConstraintFormula {
 				 * If S and T are proper types, the constraint reduces to true if S is
 				 * the same as T (§4.3.4), and false otherwise.
 				 */
-				if (InferenceVariable.isProperType(from)
-						&& InferenceVariable.isProperType(to)) {
-					incorporate.falsehood();
+				if (InferenceVariable.isProperType(from) && InferenceVariable.isProperType(to)) {
+					incorporate.falsehood("Proper types are not equal: " + this);
 				} else if (from instanceof InferenceVariable) {
 					/*
 					 * Otherwise, if S is an inference variable, α, the constraint reduces
@@ -646,14 +612,12 @@ public class ConstraintFormula {
 					 * to the bound S = α.
 					 */
 					incorporate.equality(from, to);
-				} else if (Types.getRawType(from).isArray()
-						&& Types.getRawType(to).isArray()) {
+				} else if (Types.getRawType(from).isArray() && Types.getRawType(to).isArray()) {
 					/*
 					 * Otherwise, if S and T are array types, S'[] and T'[], the
 					 * constraint reduces to ‹S' = T'›.
 					 */
-					reduce(Kind.EQUALITY, Types.getComponentType(from),
-							Types.getComponentType(to), bounds);
+					reduce(Kind.EQUALITY, Types.getComponentType(from), Types.getComponentType(to), bounds);
 				} else if (Types.getRawType(from).equals(Types.getRawType(to))) {
 					/*
 					 * Otherwise, if S and T are class or interface types with the same
@@ -666,22 +630,18 @@ public class ConstraintFormula {
 					if (from instanceof ParameterizedType)
 						if (to instanceof ParameterizedType)
 							ParameterizedTypes.getAllTypeParameters(Types.getRawType(from))
-									.forEach(
-											type -> reduce(Kind.EQUALITY,
-													ParameterizedTypes.getAllTypeArguments(
-															(ParameterizedType) finalFrom).get(type),
-											ParameterizedTypes
-													.getAllTypeArguments((ParameterizedType) finalTo)
-													.get(type), bounds));
+									.forEach(type -> reduce(Kind.EQUALITY,
+											ParameterizedTypes.getAllTypeArguments((ParameterizedType) finalFrom).get(type),
+											ParameterizedTypes.getAllTypeArguments((ParameterizedType) finalTo).get(type), bounds));
 						else
-							incorporate.falsehood();
+							incorporate.falsehood("Wildcards cannot be equal in this form: " + this);
 					else if (to instanceof ParameterizedType)
-						incorporate.falsehood();
+						incorporate.falsehood("Types are not erasure-equal: " + this);
 				} else {
 					/*
 					 * Otherwise, the constraint reduces to false.
 					 */
-					incorporate.falsehood();
+					incorporate.falsehood("Types of these types cannot be equal: " + this);
 				}
 			}
 		}

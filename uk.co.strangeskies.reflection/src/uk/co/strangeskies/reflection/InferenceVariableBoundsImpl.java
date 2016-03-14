@@ -435,7 +435,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				 * equal to it.
 				 */
 				if (capture != null)
-					boundSet.incorporate().falsehood();
+					boundSet.incorporate().falsehood("Cannot add instantiation with capture conversion present: " + this);
 
 				instantiation = type;
 
@@ -851,7 +851,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		 * αi = R implies the bound false
 		 */
 		if (inferenceVariable.equals(R))
-			boundSet.incorporate().falsehood();
+			boundSet.incorporate().falsehood("Cannot incorporate equality: " + this);
 	}
 
 	public void incorporateCapturedSubtype(CaptureConversion c, WildcardType A,
@@ -923,7 +923,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			 * 
 			 * R <: αi implies the bound false
 			 */
-			boundSet.incorporate().falsehood();
+			boundSet.incorporate().falsehood("Cannot incorporate supertype: " + this);
 		}
 	}
 }
