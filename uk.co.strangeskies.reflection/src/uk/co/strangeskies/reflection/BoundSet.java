@@ -189,7 +189,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		 */
 		public void falsehood(String message) {
 			valid = false;
-			throw new TypeException("Addition of falsehood into bounds set '" + BoundSet.this + "': " + message);
+			throw new TypeException("Addition of falsehood into bounds set; " + message + "; " + this);
 		}
 	}
 
