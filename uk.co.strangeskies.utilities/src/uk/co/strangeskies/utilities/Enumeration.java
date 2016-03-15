@@ -18,7 +18,11 @@
  */
 package uk.co.strangeskies.utilities;
 
+import static java.lang.Character.toUpperCase;
+import static java.util.stream.Collectors.joining;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -54,9 +58,8 @@ public class Enumeration<S extends Enumeration<S>> implements Self<S> {
 
 		public int addInstance(T instance) {
 			if (initialised)
-				throw new IllegalStateException(
-						"Cannot instantiate instance of enumeration class '" + type
-								+ "' as the class has already been initialised");
+				throw new IllegalStateException("Cannot instantiate instance of enumeration class '" + type
+						+ "' as the class has already been initialised");
 
 			int ordinal = instances.size();
 
@@ -120,19 +123,16 @@ public class Enumeration<S extends Enumeration<S>> implements Self<S> {
 
 	@SuppressWarnings("unchecked")
 	private static <T extends Enumeration<T>> int addInstance(T instance) {
-		EnumerationType<T> enumerationType = getEnumerationType(((Class<T>) instance
-				.getClass()));
+		EnumerationType<T> enumerationType = getEnumerationType(((Class<T>) instance.getClass()));
 		List<T> enumerationConstants = enumerationType.getInstances();
 
-		if (enumerationConstants.stream().anyMatch(
-				e -> e.name().equals(instance.name())))
+		if (enumerationConstants.stream().anyMatch(e -> e.name().equals(instance.name())))
 			throw new IllegalArgumentException();
 
 		return enumerationType.addInstance(instance);
 	}
 
-	private static <T extends Enumeration<T>> EnumerationType<T> getEnumerationType(
-			Class<T> type) {
+	private static <T extends Enumeration<T>> EnumerationType<T> getEnumerationType(Class<T> type) {
 		@SuppressWarnings("unchecked")
 		EnumerationType<T> enumType = (EnumerationType<T>) ENUM_TYPES.get(type);
 		if (enumType == null)
@@ -155,10 +155,8 @@ public class Enumeration<S extends Enumeration<S>> implements Self<S> {
 	 *         the order they were declared.
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static <T extends Enumeration> List<T> getConstants(
-			Class<T> enumerationClass) {
-		return Collections.unmodifiableList(getEnumerationType(enumerationClass)
-				.getInstances());
+	public static <T extends Enumeration> List<T> getConstants(Class<T> enumerationClass) {
+		return Collections.unmodifiableList(getEnumerationType(enumerationClass).getInstances());
 	}
 
 	/**
@@ -173,10 +171,8 @@ public class Enumeration<S extends Enumeration<S>> implements Self<S> {
 	 *          The name of the instance to retrieve.
 	 * @return The instance value with the given name.
 	 */
-	public static <T extends Enumeration<?>> T valueOf(Class<T> enumerationClass,
-			String name) {
-		return getConstants(enumerationClass).stream()
-				.filter(e -> e.name().equals(name)).findAny().get();
+	public static <T extends Enumeration<?>> T valueOf(Class<T> enumerationClass, String name) {
+		return getConstants(enumerationClass).stream().filter(e -> e.name().equals(name)).findAny().get();
 	}
 
 	/**
@@ -192,15 +188,13 @@ public class Enumeration<S extends Enumeration<S>> implements Self<S> {
 	 * @return The instance value with the given name.
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static <T extends Enum<?>> T valueOfEnum(Class<T> enumerationClass,
-			String name) {
+	public static <T extends Enum<?>> T valueOfEnum(Class<T> enumerationClass, String name) {
 		return (T) Enum.valueOf((Class) enumerationClass, name);
 	}
 
 	private static void forceInitialisation(Class<?> initialiseClass) {
 		try {
-			Class.forName(initialiseClass.getName(), true,
-					initialiseClass.getClassLoader());
+			Class.forName(initialiseClass.getName(), true, initialiseClass.getClassLoader());
 		} catch (ClassNotFoundException e) {
 			throw new AssertionError(e);
 		}
@@ -208,10 +202,37 @@ public class Enumeration<S extends Enumeration<S>> implements Self<S> {
 
 	private static boolean withinStaticInitialiser(Class<?> initialisingClass) {
 		for (StackTraceElement element : Thread.currentThread().getStackTrace())
-			if (element.getClassName().equals(initialisingClass.getName())
-					&& element.getMethodName().equals("<clinit>"))
+			if (element.getClassName().equals(initialisingClass.getName()) && element.getMethodName().equals("<clinit>"))
 				return true;
 
 		return false;
+	}
+
+	/**
+	 * @param name
+	 *          a name to make readable, by substituting underscores with spaces,
+	 *          and properly capitalising
+	 * @return a readable version of the given name
+	 */
+	public static String readableName(String name) {
+		return Arrays.stream(name.split("\\s|_")).map(s -> toUpperCase(s.charAt(0)) + s.substring(1).toLowerCase())
+				.collect(joining(" "));
+	}
+
+	/**
+	 * @return a readable version of the enumeration item's name
+	 */
+	public String readableName() {
+		return readableName(name());
+	}
+
+	/**
+	 * @param enumItem
+	 *          an enumeration item to make readable, by substituting underscores
+	 *          with spaces, and properly capitalising
+	 * @return a readable version of the given enum item's name
+	 */
+	public static String readableName(Enum<?> enumItem) {
+		return readableName(enumItem.name());
 	}
 }
