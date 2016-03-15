@@ -235,4 +235,28 @@ public class Enumeration<S extends Enumeration<S>> implements Self<S> {
 	public static String readableName(Enum<?> enumItem) {
 		return readableName(enumItem.name());
 	}
+
+	/**
+	 * @return the next enumeration item in the sequence
+	 */
+	public S next() {
+		int ordinal = ordinal() + 1;
+		@SuppressWarnings("unchecked")
+		List<S> items = (List<S>) getConstants(getClass());
+		return items.size() == ordinal ? items.get(0) : items.get(ordinal);
+	}
+
+	/**
+	 * @param <E>
+	 *          the type of the given enum item
+	 * @param item
+	 *          the enum item we wish to find the next in the sequence from
+	 * @return the next enumeration item in the sequence
+	 */
+	@SuppressWarnings("unchecked")
+	public static <E extends Enum<?>> E next(E item) {
+		int ordinal = item.ordinal() + 1;
+		Enum<?>[] items = item.getDeclaringClass().getEnumConstants();
+		return items.length == ordinal ? (E) items[0] : (E) items[ordinal];
+	}
 }
