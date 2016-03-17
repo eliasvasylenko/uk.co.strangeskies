@@ -33,7 +33,7 @@ import uk.co.strangeskies.utilities.ObservableImpl;
  */
 public abstract class ExpressionImpl<S extends Expression<S, T>, T> extends ObservableImpl<S>
 		implements Expression<S, T> {
-	private boolean dirty;
+	private boolean dirty = true;
 
 	private boolean changing;
 	private int changeDepth = 0;

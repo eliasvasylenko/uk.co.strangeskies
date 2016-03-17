@@ -36,7 +36,7 @@ public class BooleanValue extends LockingExpression<BooleanValue, BooleanValue> 
 	}
 
 	@Override
-	public final BooleanValue getValueImpl(boolean dirty) {
+	public final BooleanValue evaluate() {
 		return this;
 	}
 

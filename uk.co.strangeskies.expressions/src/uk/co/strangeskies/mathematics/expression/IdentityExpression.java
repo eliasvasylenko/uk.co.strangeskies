@@ -64,7 +64,7 @@ public class IdentityExpression<T> extends LockingExpression<IdentityExpression<
 	}
 
 	@Override
-	protected final T getValueImpl(boolean dirty) {
+	protected final T evaluate() {
 		return value;
 	}
 

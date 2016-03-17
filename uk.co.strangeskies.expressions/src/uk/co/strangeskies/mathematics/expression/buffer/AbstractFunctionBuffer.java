@@ -55,7 +55,7 @@ public abstract class AbstractFunctionBuffer<S extends AbstractFunctionBuffer<S,
 	}
 
 	@Override
-	protected final F getValueImpl(boolean dirty) {
+	protected final F evaluate() {
 		return frontValue;
 	}
 

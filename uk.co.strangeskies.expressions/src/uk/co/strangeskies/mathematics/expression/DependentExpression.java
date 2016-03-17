@@ -22,6 +22,7 @@ import static uk.co.strangeskies.utilities.EqualityComparator.identityComparator
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.TreeSet;
 
 import uk.co.strangeskies.mathematics.expression.collection.ExpressionSetDecorator;
@@ -45,31 +46,27 @@ public abstract class DependentExpression<S extends Expression<S, T>, T> extends
 	private final boolean parallel;
 
 	public DependentExpression(Collection<? extends Expression<?, ?>> dependencies) {
-		this();
-
-		this.dependencies.addAll(dependencies);
+		this(dependencies, false);
 	}
 
 	public DependentExpression(Collection<? extends Expression<?, ?>> dependencies, boolean parallel) {
-		this(parallel);
-
-		this.dependencies.addAll(dependencies);
-	}
-
-	public DependentExpression(Expression<?, ?>... dependencies) {
-		this(true);
-
-		this.dependencies.addAll(Arrays.asList(dependencies));
-	}
-
-	public DependentExpression(boolean parallel) {
-		dependencies = new ExpressionSetDecorator<>(new TreeSet<>(identityComparator()));
-		dependencies.addObserver(m -> {
+		TreeSet<Expression<?, ?>> dependenciesComponent = new TreeSet<>(identityComparator());
+		dependenciesComponent.addAll(dependencies);
+		this.dependencies = new ExpressionSetDecorator<>(dependenciesComponent);
+		this.dependencies.addObserver(m -> {
 			beginWrite();
 			endWrite();
 		});
 
 		this.parallel = parallel;
+	}
+
+	public DependentExpression(Expression<?, ?>... dependencies) {
+		this(Arrays.asList(dependencies));
+	}
+
+	public DependentExpression(boolean parallel) {
+		this(Collections.emptySet(), parallel);
 	}
 
 	@Override

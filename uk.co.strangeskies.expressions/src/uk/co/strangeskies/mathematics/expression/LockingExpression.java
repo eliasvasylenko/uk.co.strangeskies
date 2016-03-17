@@ -43,16 +43,9 @@ import java.util.function.Supplier;
  * @param <T>
  *          The type of the value of this expression
  */
-public abstract class LockingExpression<S extends Expression<S, T>, T> extends ExpressionImpl<S, T>
+public abstract class LockingExpression<S extends Expression<S, T>, T> extends DependentExpression<S, T>
 		implements Expression<S, T> {
-	private final ReentrantReadWriteLock lock;
-
-	/**
-	 * Default constructor.
-	 */
-	public LockingExpression() {
-		lock = new ReentrantReadWriteLock();
-	}
+	private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
 	protected <U> U read(Supplier<U> read) {
 		getReadLock().lock();
