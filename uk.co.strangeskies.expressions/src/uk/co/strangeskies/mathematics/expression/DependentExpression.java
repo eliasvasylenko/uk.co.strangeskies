@@ -18,11 +18,11 @@
  */
 package uk.co.strangeskies.mathematics.expression;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptySet;
 import static uk.co.strangeskies.utilities.EqualityComparator.identityComparator;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.TreeSet;
 
 import uk.co.strangeskies.mathematics.expression.collection.ExpressionSetDecorator;
@@ -62,11 +62,11 @@ public abstract class DependentExpression<S extends Expression<S, T>, T> extends
 	}
 
 	public DependentExpression(Expression<?, ?>... dependencies) {
-		this(Arrays.asList(dependencies));
+		this(asList(dependencies));
 	}
 
 	public DependentExpression(boolean parallel) {
-		this(Collections.emptySet(), parallel);
+		this(emptySet(), parallel);
 	}
 
 	@Override
