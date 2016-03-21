@@ -6,3 +6,15 @@ Bundle-Description: \
 	implementation, for language discoverability through the service \
 	registry. Wrapper bundles providing a number of useful scripting \
 	engines through this mechanism are also available.
+
+Provide-Capability:
+Require-Capability: \
+	osgi.extender; filter:="(osgi.extender=osgi.serviceloader.processor)"
+
+-includeresource: \
+	@${java.home}/lib/rt.jar!/javax/script/**
+
+Export-Package: \
+	javax.script
+
+Import-Package:

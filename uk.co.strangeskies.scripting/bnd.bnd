@@ -24,3 +24,6 @@
 Bundle-Name: Strange Skies :: Scripting :: ${language}
 Bundle-Description: \
 	${language} provider for the uk.co.strangeskies.scripting project
+
+Provide-Capability: ${if;${language};osgi.serviceloader\\; osgi.serviceloader=javax.script.ScriptEngineFactory;}
+Require-Capability: ${if;${language};osgi.extender\\; filter:="(osgi.extender=osgi.serviceloader.registrar)";}

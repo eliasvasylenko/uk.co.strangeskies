@@ -31,5 +31,9 @@ public interface Copyable<S extends Copyable<S>> {
 	/**
 	 * @return A copy of the receiving instance.
 	 */
-	public S copy();
+	S copy();
+
+	default S deepCopy(Isomorphism context) {
+		return context.getCopy(this);
+	}
 }
