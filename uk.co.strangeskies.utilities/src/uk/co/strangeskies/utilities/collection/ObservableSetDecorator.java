@@ -48,8 +48,11 @@ public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S,
 	}
 
 	class ChangeImpl implements Change<E> {
-		Set<E> added = Collections.unmodifiableSet(adding);
-		Set<E> removed = Collections.unmodifiableSet(removing);
+		Set<E> adding = new HashSet<>();
+		Set<E> removing = new HashSet<>();
+
+		private final Set<E> added = Collections.unmodifiableSet(adding);
+		private final Set<E> removed = Collections.unmodifiableSet(removing);
 
 		@Override
 		public Set<E> added() {
@@ -67,11 +70,11 @@ public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S,
 	private final ObservableImpl<Change<E>> changeObservable = new ObservableImpl<>();
 	private final ObservableImpl<S> stateObservable = new ObservableImpl<>();
 
-	private boolean firing;
-	private final Set<E> adding = new HashSet<>();
-	private final Set<E> removing = new HashSet<>();
+	private int firingDepth = 0;
+	private boolean doChange;
+
 	private int changeDepth = 0;
-	private final ChangeImpl change = new ChangeImpl();
+	private ChangeImpl change;
 
 	protected ObservableSetDecorator(Set<E> component) {
 		this.component = component;
@@ -84,7 +87,15 @@ public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S,
 
 	protected boolean beginChange() {
 		if (changeDepth++ == 0) {
-			firing = changeObservable.getObservers().size() > 0;
+			doChange = changeObservable.getObservers().size() > 0;
+
+			if (doChange) {
+				if (change == null || firingDepth > 0) {
+					change = new ChangeImpl();
+				}
+			} else {
+				change = null;
+			}
 
 			return true;
 		} else {
@@ -94,10 +105,12 @@ public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S,
 
 	protected boolean endChange() {
 		if (--changeDepth == 0) {
-			fireChange(change);
+			if (change != null) {
+				fireChange(change);
 
-			adding.clear();
-			removing.clear();
+				change.adding.clear();
+				change.removing.clear();
+			}
 
 			return true;
 		} else {
@@ -106,7 +119,9 @@ public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S,
 	}
 
 	protected void fireChange(Change<E> change) {
+		firingDepth++;
 		changeObservable.fire(change);
+		firingDepth--;
 		fireEvent();
 	}
 
@@ -121,8 +136,8 @@ public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S,
 
 			boolean changed = SetDecorator.super.add(e);
 
-			if (changed && !removing.remove(e)) {
-				adding.add(e);
+			if (doChange && changed && !change.removing.remove(e)) {
+				change.adding.add(e);
 			}
 
 			return changed;
@@ -154,8 +169,8 @@ public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S,
 			beginChange();
 
 			for (E e : this) {
-				if (!adding.remove(e)) {
-					removing.add(e);
+				if (doChange && !change.adding.remove(e)) {
+					change.removing.add(e);
 				}
 			}
 
@@ -173,8 +188,8 @@ public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S,
 
 			boolean changed = SetDecorator.super.remove(o);
 
-			if (changed && !adding.remove(o)) {
-				removing.add((E) o);
+			if (doChange && changed && !change.adding.remove(o)) {
+				change.removing.add((E) o);
 			}
 
 			return changed;
