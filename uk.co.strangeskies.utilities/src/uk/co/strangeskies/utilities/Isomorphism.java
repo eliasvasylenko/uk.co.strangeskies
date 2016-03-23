@@ -31,6 +31,8 @@ public class Isomorphism {
 
 	@SuppressWarnings("unchecked")
 	public <S, C> S getCopy(C node, Function<C, S> copyFunction) {
-		return ((Map<C, S>) copiedNodes).computeIfAbsent(node, copyFunction::apply);
+		S copy = ((Map<C, S>) copiedNodes).computeIfAbsent(node, copyFunction::apply);
+		((Map<S, S>) copiedNodes).put(copy, copy);
+		return copy;
 	}
 }
