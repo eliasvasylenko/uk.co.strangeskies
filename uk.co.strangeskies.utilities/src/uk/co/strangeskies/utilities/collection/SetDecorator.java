@@ -99,4 +99,33 @@ public interface SetDecorator<E> extends CollectionDecorator<Set<E>, E>, Set<E> 
 	default <A> A[] toArray(A[] a) {
 		return CollectionDecorator.super.toArray(a);
 	}
+
+	static <T> Set<T> accumulatingSet(Set<T> component) {
+		return new SetDecorator<T>() {
+			@Override
+			public Set<T> getComponent() {
+				return component;
+			}
+
+			@Override
+			public boolean remove(Object o) {
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public boolean removeAll(Collection<?> c) {
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public boolean retainAll(Collection<?> c) {
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			protected Object clone() throws CloneNotSupportedException {
+				throw new UnsupportedOperationException();
+			}
+		};
+	}
 }
