@@ -123,7 +123,7 @@ public interface SetDecorator<E> extends CollectionDecorator<Set<E>, E>, Set<E> 
 			}
 
 			@Override
-			protected Object clone() throws CloneNotSupportedException {
+			public void clear() {
 				throw new UnsupportedOperationException();
 			}
 		};
