@@ -48,6 +48,19 @@ public class TypedObject<T> implements Reified<TypedObject<T>> {
 	}
 
 	/**
+	 * @param type
+	 *          The exact type of an object to keep track of.
+	 * @param object
+	 *          An object reference of the given type.
+	 */
+	public TypedObject(Class<T> type, T object) {
+		Objects.requireNonNull(type);
+
+		this.type = TypeToken.over(type);
+		this.object = object;
+	}
+
+	/**
 	 * Cast an untyped object into a typed object.
 	 * 
 	 * @param <T>
