@@ -12,7 +12,7 @@ import java.util.Optional;
  *
  * @param <T>
  */
-public interface Scoped<T extends Scoped<T>> extends Self<T> {
+public interface Scoped<T extends Self<T>> extends Self<T> {
 	/**
 	 * @return the parent scope if one exists, otherwise null
 	 */

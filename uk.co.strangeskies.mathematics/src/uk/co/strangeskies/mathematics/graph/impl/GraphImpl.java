@@ -201,6 +201,21 @@ class GraphImpl<V, E> implements Graph<V, E> {
 		public V incidentToTail(E vertex) {
 			return edges.edgeVertices.get(vertex).getFrom();
 		}
+
+		@Override
+		public String toString() {
+			return getComponent().toString();
+		}
+
+		@Override
+		public int hashCode() {
+			return getComponent().hashCode();
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			return getComponent().equals(obj);
+		}
 	}
 
 	private class EdgesImpl implements SetDecorator<E>, Edges<V, E> {
@@ -359,6 +374,21 @@ class GraphImpl<V, E> implements Graph<V, E> {
 		@Override
 		public Set<EdgeVertices<V>> edgeVertices() {
 			return stream().map(vertices()::incidentTo).collect(Collectors.toSet());
+		}
+
+		@Override
+		public String toString() {
+			return getComponent().toString();
+		}
+
+		@Override
+		public int hashCode() {
+			return getComponent().hashCode();
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			return getComponent().equals(obj);
 		}
 	}
 

@@ -72,4 +72,19 @@ public abstract class UnmodifiableObservableSet<S extends ObservableSet<S, E>, E
 	public Set<E> silent() {
 		return silentComponent;
 	}
+
+	@Override
+	public String toString() {
+		return getComponent().toString();
+	}
+
+	@Override
+	public int hashCode() {
+		return getComponent().hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return getComponent().equals(obj);
+	}
 }

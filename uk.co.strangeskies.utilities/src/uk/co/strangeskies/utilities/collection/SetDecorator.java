@@ -29,6 +29,21 @@ public interface SetDecorator<E> extends CollectionDecorator<Set<E>, E>, Set<E> 
 			public Set<E> getComponent() {
 				return component;
 			}
+
+			@Override
+			public String toString() {
+				return getComponent().toString();
+			}
+
+			@Override
+			public int hashCode() {
+				return getComponent().hashCode();
+			}
+
+			@Override
+			public boolean equals(Object obj) {
+				return getComponent().equals(obj);
+			}
 		};
 	}
 
@@ -125,6 +140,21 @@ public interface SetDecorator<E> extends CollectionDecorator<Set<E>, E>, Set<E> 
 			@Override
 			public void clear() {
 				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public String toString() {
+				return getComponent().toString();
+			}
+
+			@Override
+			public int hashCode() {
+				return getComponent().hashCode();
+			}
+
+			@Override
+			public boolean equals(Object obj) {
+				return getComponent().equals(obj);
 			}
 		};
 	}

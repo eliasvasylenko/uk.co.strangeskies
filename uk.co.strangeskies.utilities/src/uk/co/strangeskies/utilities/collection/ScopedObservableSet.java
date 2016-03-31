@@ -15,32 +15,13 @@ import uk.co.strangeskies.utilities.factory.Factory;
 /**
  * TODO
  * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * make sure all setdecorators implement hashcode and equals....
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * TODO
- * 
  * @author Elias N Vasylenko
  * @param <S>
  *          the self-bound, as per {@link Self}
  * @param <E>
  *          the element type, as per {@link Collection}
  */
-public abstract class ScopedObservableSet<S extends ScopedObservableSet<S, T>, T> extends ObservableSetDecorator<S, T>
+public abstract class ScopedObservableSet<S extends ObservableSet<S, T>, T> extends ObservableSetDecorator<S, T>
 		implements Scoped<S> {
 	static class ScopedObservableSetImpl<T> extends ScopedObservableSet<ScopedObservableSetImpl<T>, T> {
 		private final Factory<Set<T>> componentFactory;
@@ -126,8 +107,8 @@ public abstract class ScopedObservableSet<S extends ScopedObservableSet<S, T>, T
 				/*
 				 * Forward change events
 				 */
-				parent.changes().fire(effectiveChange);
-				parent.fire(getThis());
+				changes().fire(effectiveChange);
+				fire(getThis());
 			});
 		}
 	}

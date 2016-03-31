@@ -110,4 +110,19 @@ public abstract class ScopedSet<S extends ScopedSet<S, T>, T> implements SetDeco
 		getParentScope().get().addAll(this);
 		clear();
 	}
+
+	@Override
+	public String toString() {
+		return getComponent().toString();
+	}
+
+	@Override
+	public int hashCode() {
+		return getComponent().hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return getComponent().equals(obj);
+	}
 }
