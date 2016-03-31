@@ -26,7 +26,7 @@ public class Isomorphism {
 	private final Map<?, ?> copiedNodes = new IdentityHashMap<>();
 
 	public <S> S getCopy(Copyable<? extends S> node) {
-		return getCopy(node, Copyable::copy);
+		return getCopy(node, n -> n.deepCopy(this));
 	}
 
 	@SuppressWarnings("unchecked")
