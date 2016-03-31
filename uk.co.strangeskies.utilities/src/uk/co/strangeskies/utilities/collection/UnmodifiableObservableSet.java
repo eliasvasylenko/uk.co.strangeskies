@@ -18,12 +18,10 @@
  */
 package uk.co.strangeskies.utilities.collection;
 
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.Collections;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableImpl;
 
 public abstract class UnmodifiableObservableSet<S extends UnmodifiableObservableSet<S, E>, E> extends ObservableImpl<S>
@@ -40,7 +38,8 @@ public abstract class UnmodifiableObservableSet<S extends UnmodifiableObservable
 		}
 	}
 
-	private final ObservableSet<?, ? extends E> component;
+	private final Set<E> component;
+	private final Set<E> silentComponent;
 
 	private final Consumer<ObservableSet<?, ? extends E>> observer;
 	private final ObservableImpl<Change<E>> changes;
@@ -48,7 +47,8 @@ public abstract class UnmodifiableObservableSet<S extends UnmodifiableObservable
 
 	@SuppressWarnings("unchecked")
 	protected UnmodifiableObservableSet(ObservableSet<?, ? extends E> component) {
-		this.component = component;
+		this.component = Collections.unmodifiableSet(component);
+		silentComponent = Collections.unmodifiableSet(component.silent());
 
 		observer = l -> fire(getThis());
 		component.addWeakObserver(observer);
@@ -58,70 +58,18 @@ public abstract class UnmodifiableObservableSet<S extends UnmodifiableObservable
 		component.changes().addWeakObserver(changeObserver);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public Set<E> getComponent() {
 		return (Set<E>) component;
 	}
 
 	@Override
-	public Observable<Change<E>> changes() {
+	public ObservableImpl<Change<E>> changes() {
 		return changes;
 	}
 
 	@Override
-	public boolean add(E e) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public boolean addAll(Collection<? extends E> c) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public boolean remove(Object o) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public boolean removeAll(Collection<?> c) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public boolean retainAll(Collection<?> c) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public Iterator<E> iterator() {
-		Iterator<E> base = SetDecorator.super.iterator();
-		return new Iterator<E>() {
-			@Override
-			public boolean hasNext() {
-				return base.hasNext();
-			}
-
-			@Override
-			public E next() {
-				return base.next();
-			}
-		};
-	}
-
-	@Override
-	public String toString() {
-		return getComponent().toString();
-	}
-
-	@Override
-	public int hashCode() {
-		return getComponent().hashCode();
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		return getComponent().equals(obj);
+	public Set<E> silent() {
+		return silentComponent;
 	}
 }

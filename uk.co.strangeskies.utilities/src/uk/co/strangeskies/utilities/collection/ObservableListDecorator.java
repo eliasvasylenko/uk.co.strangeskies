@@ -21,13 +21,11 @@ package uk.co.strangeskies.utilities.collection;
 import java.util.AbstractList;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
-import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableImpl;
 
-public abstract class ObservableListDecorator<S extends ObservableListDecorator<S, E>, E>
+public abstract class ObservableListDecorator<S extends ObservableListDecorator<S, E>, E> extends ObservableImpl<S>
 		implements ListDecorator<E>, ObservableList<S, E> {
 	static class ObservableListDecoratorImpl<C extends List<E>, E>
 			extends ObservableListDecorator<ObservableListDecoratorImpl<C, E>, E> {
@@ -80,7 +78,6 @@ public abstract class ObservableListDecorator<S extends ObservableListDecorator<
 	private final List<E> component;
 
 	private final ObservableImpl<Change<E>> changeObservable = new ObservableImpl<>();
-	private final ObservableImpl<S> stateObservable = new ObservableImpl<>();
 
 	private boolean firing;
 	private int[] addedIndices;
@@ -126,7 +123,7 @@ public abstract class ObservableListDecorator<S extends ObservableListDecorator<
 	}
 
 	protected void fireEvent() {
-		stateObservable.fire(getThis());
+		fire(getThis());
 	}
 
 	@Override
@@ -282,18 +279,8 @@ public abstract class ObservableListDecorator<S extends ObservableListDecorator<
 	}
 
 	@Override
-	public Observable<Change<E>> changes() {
+	public ObservableImpl<Change<E>> changes() {
 		return changeObservable;
-	}
-
-	@Override
-	public boolean addObserver(Consumer<? super S> observer) {
-		return stateObservable.addObserver(observer);
-	}
-
-	@Override
-	public boolean removeObserver(Consumer<? super S> observer) {
-		return stateObservable.removeObserver(observer);
 	}
 
 	@Override
@@ -309,5 +296,10 @@ public abstract class ObservableListDecorator<S extends ObservableListDecorator<
 	@Override
 	public boolean equals(Object obj) {
 		return getComponent().equals(obj);
+	}
+
+	@Override
+	public List<E> silent() {
+		return component;
 	}
 }

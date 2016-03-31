@@ -66,4 +66,13 @@ public interface ObservableCollection<S extends ObservableCollection<S, E, C>, E
 	 * @return an observable instance over changes
 	 */
 	Observable<C> changes();
+
+	/**
+	 * Get a view of the collection which can be mutated without triggering
+	 * events. Operations performed on the returned list may need to be
+	 * synchronized manually with the backing list.
+	 * 
+	 * @return a view transparent to listeners
+	 */
+	Collection<E> silent();
 }

@@ -107,4 +107,7 @@ public interface ObservableSet<S extends ObservableSet<S, E>, E>
 	public static <E> ObservableSet<?, E> ofElements(E... elements) {
 		return ofElements(Arrays.asList(elements));
 	}
+
+	@Override
+	Set<E> silent();
 }

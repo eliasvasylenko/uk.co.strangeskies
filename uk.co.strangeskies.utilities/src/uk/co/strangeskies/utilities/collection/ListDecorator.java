@@ -83,7 +83,7 @@ public interface ListDecorator<E> extends CollectionDecorator<List<E>, E>, List<
 
 	@Override
 	default List<E> subList(int fromIndex, int toIndex) {
-		return getComponent().subList(fromIndex, toIndex);
+		return new SubList<>(this, fromIndex, toIndex);
 	}
 
 	@Override

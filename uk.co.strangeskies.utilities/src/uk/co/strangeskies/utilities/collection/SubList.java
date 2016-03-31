@@ -19,31 +19,67 @@
 package uk.co.strangeskies.utilities.collection;
 
 import java.util.AbstractList;
+import java.util.Iterator;
 import java.util.List;
 
 public class SubList<T> extends AbstractList<T> {
-  private final List<T> backingList;
+	private final List<T> backingList;
 
-  private int startPosition = 0;
-  private int endPosition = 0;
+	private int startPosition = 0;
+	private int endPosition = 0;
 
-  public SubList(List<T> backingList, int startPosition, int endPosition) {
-    this.backingList = backingList;
+	public SubList(List<T> backingList, int startPosition, int endPosition) {
+		this.backingList = backingList;
 
-    this.startPosition = startPosition;
-    this.endPosition = endPosition;
-  }
+		this.startPosition = startPosition;
+		this.endPosition = endPosition;
+	}
 
-  @Override
-  public int size() {
-    return endPosition - startPosition;
-  }
+	@Override
+	public int size() {
+		return endPosition - startPosition;
+	}
 
-  @Override
-  public T get(int index) {
-    if (index + startPosition >= endPosition) {
-      throw new ArrayIndexOutOfBoundsException(index);
-    }
-    return backingList.get(index + startPosition);
-  }
+	@Override
+	public T get(int index) {
+		if (index + startPosition >= endPosition) {
+			throw new ArrayIndexOutOfBoundsException(index);
+		}
+		return backingList.get(index + startPosition);
+	}
+
+	@Override
+	public List<T> subList(int fromIndex, int toIndex) {
+		return backingList.subList(this.startPosition + fromIndex, this.startPosition + toIndex);
+	}
+
+	@Override
+	public Iterator<T> iterator() {
+		return new Iterator<T>() {
+			Iterator<T> iterator = backingList.iterator();
+			int i = 0;
+
+			{
+				consumeStart();
+			}
+
+			@Override
+			public boolean hasNext() {
+				return i < endPosition;
+			}
+
+			@Override
+			public T next() {
+				i++;
+				return iterator.next();
+			}
+
+			private void consumeStart() {
+				while (i < startPosition) {
+					iterator.next();
+					i++;
+				}
+			}
+		};
+	}
 }

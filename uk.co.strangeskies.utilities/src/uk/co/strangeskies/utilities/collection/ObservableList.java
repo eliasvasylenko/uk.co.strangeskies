@@ -106,4 +106,7 @@ public interface ObservableList<S extends ObservableList<S, E>, E>
 	public static <E> ObservableList<?, E> ofElements(E... elements) {
 		return ofElements(Arrays.asList(elements));
 	}
+
+	@Override
+	List<E> silent();
 }

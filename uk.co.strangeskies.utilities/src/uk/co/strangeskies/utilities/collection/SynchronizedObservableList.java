@@ -18,8 +18,7 @@
  */
 package uk.co.strangeskies.utilities.collection;
 
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -42,13 +41,15 @@ public abstract class SynchronizedObservableList<S extends SynchronizedObservabl
 	}
 
 	private final List<E> component;
+	private final List<E> silentComponent;
 
 	private final Consumer<ObservableList<?, ? extends E>> observer;
 	private final ObservableImpl<Change<E>> changes;
 	private final Consumer<Change<E>> changeObserver;
 
 	protected SynchronizedObservableList(ObservableList<?, E> component) {
-		this.component = component;
+		this.component = Collections.synchronizedList(component);
+		silentComponent = component.silent();
 
 		observer = l -> fire(getThis());
 		component.addWeakObserver(observer);
@@ -83,73 +84,7 @@ public abstract class SynchronizedObservableList<S extends SynchronizedObservabl
 	}
 
 	@Override
-	public synchronized boolean add(E e) {
-		return getComponent().add(e);
-	}
-
-	@Override
-	public synchronized boolean addAll(Collection<? extends E> c) {
-		return getComponent().addAll(c);
-	}
-
-	@Override
-	public synchronized void add(int index, E element) {
-		getComponent().add(index, element);
-	}
-
-	@Override
-	public synchronized boolean addAll(int index, Collection<? extends E> c) {
-		return getComponent().addAll(index, c);
-	}
-
-	@Override
-	public synchronized boolean remove(Object o) {
-		return getComponent().remove(o);
-	}
-
-	@Override
-	public synchronized E remove(int index) {
-		return getComponent().remove(index);
-	}
-
-	@Override
-	public synchronized boolean removeAll(Collection<?> c) {
-		return getComponent().removeAll(c);
-	}
-
-	@Override
-	public synchronized boolean retainAll(Collection<?> c) {
-		return getComponent().retainAll(c);
-	}
-
-	@Override
-	public synchronized Iterator<E> iterator() {
-		Iterator<E> base = ListDecorator.super.iterator();
-		return new Iterator<E>() {
-			@Override
-			public boolean hasNext() {
-				return base.hasNext();
-			}
-
-			@Override
-			public E next() {
-				return base.next();
-			}
-		};
-	}
-
-	@Override
-	public String toString() {
-		return getComponent().toString();
-	}
-
-	@Override
-	public int hashCode() {
-		return getComponent().hashCode();
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		return getComponent().equals(obj);
+	public List<E> silent() {
+		return silentComponent;
 	}
 }

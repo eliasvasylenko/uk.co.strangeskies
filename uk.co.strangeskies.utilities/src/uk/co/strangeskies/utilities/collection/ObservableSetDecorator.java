@@ -23,13 +23,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
-import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableImpl;
 
-public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S, E>, E>
+public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S, E>, E> extends ObservableImpl<S>
 		implements SetDecorator<E>, ObservableSet<S, E> {
 	static class ObservableSetDecoratorImpl<C extends Set<E>, E>
 			extends ObservableSetDecorator<ObservableSetDecoratorImpl<C, E>, E> {
@@ -68,7 +66,6 @@ public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S,
 	private final Set<E> component;
 
 	private final ObservableImpl<Change<E>> changeObservable = new ObservableImpl<>();
-	private final ObservableImpl<S> stateObservable = new ObservableImpl<>();
 
 	private int firingDepth = 0;
 	private boolean doChange;
@@ -126,7 +123,7 @@ public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S,
 	}
 
 	protected void fireEvent() {
-		stateObservable.fire(getThis());
+		fire(getThis());
 	}
 
 	@Override
@@ -238,18 +235,8 @@ public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S,
 	}
 
 	@Override
-	public Observable<Change<E>> changes() {
+	public ObservableImpl<Change<E>> changes() {
 		return changeObservable;
-	}
-
-	@Override
-	public boolean addObserver(Consumer<? super S> observer) {
-		return stateObservable.addObserver(observer);
-	}
-
-	@Override
-	public boolean removeObserver(Consumer<? super S> observer) {
-		return stateObservable.removeObserver(observer);
 	}
 
 	@Override
@@ -265,5 +252,10 @@ public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S,
 	@Override
 	public boolean equals(Object obj) {
 		return getComponent().equals(obj);
+	}
+
+	@Override
+	public Set<E> silent() {
+		return component;
 	}
 }
