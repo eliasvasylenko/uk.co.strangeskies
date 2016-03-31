@@ -24,7 +24,7 @@ import java.util.function.Consumer;
 
 import uk.co.strangeskies.utilities.ObservableImpl;
 
-public abstract class UnmodifiableObservableSet<S extends UnmodifiableObservableSet<S, E>, E> extends ObservableImpl<S>
+public abstract class UnmodifiableObservableSet<S extends ObservableSet<S, E>, E> extends ObservableImpl<S>
 		implements SetDecorator<E>, ObservableSet<S, E> {
 	static class UnmodifiableObservableSetImpl<E> extends UnmodifiableObservableSet<UnmodifiableObservableSetImpl<E>, E> {
 		UnmodifiableObservableSetImpl(ObservableSet<?, ? extends E> component) {
@@ -60,7 +60,7 @@ public abstract class UnmodifiableObservableSet<S extends UnmodifiableObservable
 
 	@Override
 	public Set<E> getComponent() {
-		return (Set<E>) component;
+		return component;
 	}
 
 	@Override

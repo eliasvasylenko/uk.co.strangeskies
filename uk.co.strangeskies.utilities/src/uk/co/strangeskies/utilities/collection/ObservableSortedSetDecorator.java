@@ -21,7 +21,7 @@ package uk.co.strangeskies.utilities.collection;
 import java.util.SortedSet;
 import java.util.function.Function;
 
-public abstract class ObservableSortedSetDecorator<S extends ObservableSortedSetDecorator<S, E>, E>
+public abstract class ObservableSortedSetDecorator<S extends ObservableSortedSet<S, E>, E>
 		extends ObservableSetDecorator<S, E> implements SortedSetDecorator<E>, ObservableSortedSet<S, E> {
 	static class ObservableSortedSetDecoratorImpl<C extends SortedSet<E>, E>
 			extends ObservableSortedSetDecorator<ObservableSortedSetDecoratorImpl<C, E>, E> {

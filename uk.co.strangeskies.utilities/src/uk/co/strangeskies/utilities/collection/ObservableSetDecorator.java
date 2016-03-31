@@ -27,7 +27,7 @@ import java.util.function.Function;
 
 import uk.co.strangeskies.utilities.ObservableImpl;
 
-public abstract class ObservableSetDecorator<S extends ObservableSetDecorator<S, E>, E> extends ObservableImpl<S>
+public abstract class ObservableSetDecorator<S extends ObservableSet<S, E>, E> extends ObservableImpl<S>
 		implements SetDecorator<E>, ObservableSet<S, E> {
 	static class ObservableSetDecoratorImpl<C extends Set<E>, E>
 			extends ObservableSetDecorator<ObservableSetDecoratorImpl<C, E>, E> {

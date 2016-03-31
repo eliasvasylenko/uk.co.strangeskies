@@ -25,7 +25,7 @@ import java.util.function.Function;
 
 import uk.co.strangeskies.utilities.ObservableImpl;
 
-public abstract class ObservableListDecorator<S extends ObservableListDecorator<S, E>, E> extends ObservableImpl<S>
+public abstract class ObservableListDecorator<S extends ObservableList<S, E>, E> extends ObservableImpl<S>
 		implements ListDecorator<E>, ObservableList<S, E> {
 	static class ObservableListDecoratorImpl<C extends List<E>, E>
 			extends ObservableListDecorator<ObservableListDecoratorImpl<C, E>, E> {

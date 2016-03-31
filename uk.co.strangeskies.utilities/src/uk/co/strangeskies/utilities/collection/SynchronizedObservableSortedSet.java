@@ -20,7 +20,7 @@ package uk.co.strangeskies.utilities.collection;
 
 import java.util.SortedSet;
 
-public abstract class SynchronizedObservableSortedSet<S extends SynchronizedObservableSortedSet<S, E>, E>
+public abstract class SynchronizedObservableSortedSet<S extends ObservableSortedSet<S, E>, E>
 		extends SynchronizedObservableSet<S, E> implements SortedSetDecorator<E>, ObservableSortedSet<S, E> {
 	static class SynchronizedObservableSortedSetImpl<E>
 			extends SynchronizedObservableSet<SynchronizedObservableSortedSetImpl<E>, E> {

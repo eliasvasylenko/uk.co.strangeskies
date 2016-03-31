@@ -24,8 +24,8 @@ import java.util.function.Consumer;
 
 import uk.co.strangeskies.utilities.ObservableImpl;
 
-public abstract class UnmodifiableObservableList<S extends UnmodifiableObservableList<S, E>, E>
-		extends ObservableImpl<S> implements ListDecorator<E>, ObservableList<S, E> {
+public abstract class UnmodifiableObservableList<S extends ObservableList<S, E>, E> extends ObservableImpl<S>
+		implements ListDecorator<E>, ObservableList<S, E> {
 	static class UnmodifiableObservableListImpl<E>
 			extends UnmodifiableObservableList<UnmodifiableObservableListImpl<E>, E> {
 		UnmodifiableObservableListImpl(ObservableList<?, ? extends E> component) {

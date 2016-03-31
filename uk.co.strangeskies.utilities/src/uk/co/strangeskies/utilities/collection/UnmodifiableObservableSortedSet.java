@@ -20,7 +20,7 @@ package uk.co.strangeskies.utilities.collection;
 
 import java.util.SortedSet;
 
-public abstract class UnmodifiableObservableSortedSet<S extends UnmodifiableObservableSortedSet<S, E>, E>
+public abstract class UnmodifiableObservableSortedSet<S extends ObservableSortedSet<S, E>, E>
 		extends UnmodifiableObservableSet<S, E> implements SortedSetDecorator<E>, ObservableSortedSet<S, E> {
 	static class UnmodifiableObservableSortedSetImpl<E>
 			extends UnmodifiableObservableSortedSet<UnmodifiableObservableSortedSetImpl<E>, E> {

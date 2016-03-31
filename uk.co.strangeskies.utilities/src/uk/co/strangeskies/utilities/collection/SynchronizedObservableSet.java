@@ -24,7 +24,7 @@ import java.util.function.Consumer;
 
 import uk.co.strangeskies.utilities.ObservableImpl;
 
-public abstract class SynchronizedObservableSet<S extends SynchronizedObservableSet<S, E>, E> extends ObservableImpl<S>
+public abstract class SynchronizedObservableSet<S extends ObservableSet<S, E>, E> extends ObservableImpl<S>
 		implements SetDecorator<E>, ObservableSet<S, E> {
 	static class SynchronizedObservableSetImpl<E> extends SynchronizedObservableSet<SynchronizedObservableSetImpl<E>, E> {
 		SynchronizedObservableSetImpl(ObservableSet<?, E> component) {

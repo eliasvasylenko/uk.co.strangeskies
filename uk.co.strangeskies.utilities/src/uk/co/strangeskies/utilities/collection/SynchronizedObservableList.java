@@ -25,8 +25,8 @@ import java.util.function.Consumer;
 import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableImpl;
 
-public abstract class SynchronizedObservableList<S extends SynchronizedObservableList<S, E>, E>
-		extends ObservableImpl<S> implements ListDecorator<E>, ObservableList<S, E> {
+public abstract class SynchronizedObservableList<S extends ObservableList<S, E>, E> extends ObservableImpl<S>
+		implements ListDecorator<E>, ObservableList<S, E> {
 	static class SynchronizedObservableListImpl<E>
 			extends SynchronizedObservableList<SynchronizedObservableListImpl<E>, E> {
 		SynchronizedObservableListImpl(ObservableList<?, E> component) {
