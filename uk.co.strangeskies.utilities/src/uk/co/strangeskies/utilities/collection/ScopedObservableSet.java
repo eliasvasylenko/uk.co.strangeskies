@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
+ *
+ * This file is part of uk.co.strangeskies.utilities.
+ *
+ * uk.co.strangeskies.utilities is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * uk.co.strangeskies.utilities is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with uk.co.strangeskies.utilities.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package uk.co.strangeskies.utilities.collection;
 
 import static java.util.Collections.emptyListIterator;
@@ -21,30 +39,36 @@ import uk.co.strangeskies.utilities.factory.Factory;
  * @param <E>
  *          the element type, as per {@link Collection}
  */
-public abstract class ScopedObservableSet<S extends ObservableSet<S, T>, T> extends ObservableSetDecorator<S, T>
+public abstract class ScopedObservableSet<S extends ObservableSet<S, E>, E> extends ObservableSetDecorator<S, E>
 		implements Scoped<S> {
-	static class ScopedObservableSetImpl<T> extends ScopedObservableSet<ScopedObservableSetImpl<T>, T> {
-		private final Factory<Set<T>> componentFactory;
+	/**
+	 * @author Elias N Vasylenko
+	 *
+	 * @param <E>
+	 *          the element type, as per {@link Collection}
+	 */
+	public static class ScopedObservableSetImpl<E> extends ScopedObservableSet<ScopedObservableSetImpl<E>, E> {
+		private final Factory<Set<E>> componentFactory;
 
-		ScopedObservableSetImpl(Factory<Set<T>> componentFactory) {
+		ScopedObservableSetImpl(Factory<Set<E>> componentFactory) {
 			super(componentFactory.create());
 			this.componentFactory = componentFactory;
 		}
 
-		private ScopedObservableSetImpl(ScopedObservableSetImpl<T> parent, Factory<Set<T>> componentFactory) {
+		private ScopedObservableSetImpl(ScopedObservableSetImpl<E> parent, Factory<Set<E>> componentFactory) {
 			super(parent, componentFactory.create());
 
 			this.componentFactory = componentFactory;
 		}
 
 		@Override
-		public ScopedObservableSetImpl<T> nestChildScope() {
+		public ScopedObservableSetImpl<E> nestChildScope() {
 			return new ScopedObservableSetImpl<>(this, componentFactory);
 		}
 
 		@Override
-		public ScopedObservableSetImpl<T> copy() {
-			ScopedObservableSetImpl<T> copy = new ScopedObservableSetImpl<>(componentFactory);
+		public ScopedObservableSetImpl<E> copy() {
+			ScopedObservableSetImpl<E> copy = new ScopedObservableSetImpl<>(componentFactory);
 			copy.addAll(this);
 			return copy;
 		}
@@ -52,11 +76,11 @@ public abstract class ScopedObservableSet<S extends ObservableSet<S, T>, T> exte
 
 	private final S parent;
 
-	public ScopedObservableSet(Set<T> component) {
+	public ScopedObservableSet(Set<E> component) {
 		this(null, component);
 	}
 
-	protected ScopedObservableSet(S parent, Set<T> component) {
+	protected ScopedObservableSet(S parent, Set<E> component) {
 		super(component);
 
 		this.parent = parent;
@@ -64,14 +88,14 @@ public abstract class ScopedObservableSet<S extends ObservableSet<S, T>, T> exte
 		forwardEvents();
 	}
 
-	public static <T> ScopedObservableSet<?, T> over(Factory<Set<T>> componentFactory) {
+	public static <T> ScopedObservableSetImpl<T> over(Factory<Set<T>> componentFactory) {
 		return new ScopedObservableSetImpl<>(componentFactory);
 	}
 
 	private void forwardEvents() {
 		if (getParentScope().isPresent()) {
 			S parent = getParentScope().get();
-			Set<T> silent = silent();
+			Set<E> silent = silent();
 
 			parent.changes().addObserver(change -> {
 				/*
@@ -79,8 +103,8 @@ public abstract class ScopedObservableSet<S extends ObservableSet<S, T>, T> exte
 				 * must silently remove them, and modify the change event so that those
 				 * additions are not seen from the child scope when we forward it...
 				 */
-				Set<T> effectivelyAdded = null;
-				for (T item : change.added()) {
+				Set<E> effectivelyAdded = null;
+				for (E item : change.added()) {
 					if (silent.remove(item)) {
 						if (effectivelyAdded == null) {
 							effectivelyAdded = new HashSet<>(change.added());
@@ -89,7 +113,7 @@ public abstract class ScopedObservableSet<S extends ObservableSet<S, T>, T> exte
 					}
 				}
 
-				Change<T> effectiveChange;
+				Change<E> effectiveChange;
 				if (effectivelyAdded == null) {
 					effectiveChange = change;
 				} else {
@@ -128,7 +152,7 @@ public abstract class ScopedObservableSet<S extends ObservableSet<S, T>, T> exte
 	}
 
 	@Override
-	public boolean add(T e) {
+	public boolean add(E e) {
 		if (getParentScope().map(p -> p.contains(e)).orElse(false))
 			return false;
 
@@ -136,32 +160,44 @@ public abstract class ScopedObservableSet<S extends ObservableSet<S, T>, T> exte
 	}
 
 	@Override
-	public boolean addAll(Collection<? extends T> c) {
+	public boolean addAll(Collection<? extends E> c) {
 		boolean changed = false;
 
-		for (T e : c) {
+		for (E e : c) {
 			changed = add(e) || changed;
 		}
 
 		return changed;
 	}
 
-	@Override
-	public Iterator<T> iterator() {
-		Iterator<T> iterator = ScopedObservableSet.super.iterator();
-		Iterator<T> parentIterator = getParentScope().map(Collection::iterator).orElse(emptyListIterator());
+	/**
+	 * @return an iterator over only those items which are local to this scope
+	 */
+	public Iterator<E> localIterator() {
+		return super.iterator();
+	}
 
-		return new Iterator<T>() {
+	@Override
+	public Iterator<E> iterator() {
+		Iterator<E> iterator = localIterator();
+		Iterator<E> parentIterator = getParentScope().map(Collection::iterator).orElse(emptyListIterator());
+
+		return new Iterator<E>() {
 			@Override
 			public boolean hasNext() {
 				return iterator.hasNext() || parentIterator.hasNext();
 			}
 
 			@Override
-			public T next() {
+			public E next() {
 				return iterator.hasNext() ? iterator.next() : parentIterator.next();
 			}
 		};
+	}
+
+	@Override
+	public int size() {
+		return super.size() + getParentScope().map(Set::size).orElse(0);
 	}
 
 	@Override

@@ -28,7 +28,7 @@ package uk.co.strangeskies.utilities;
  * @author Elias N Vasylenko
  *
  * @param <S>
- *          The final implementing class.
+ *          the final implementing class
  */
 public interface Self<S extends Self<S>> extends Copyable<S> {
 	/**
