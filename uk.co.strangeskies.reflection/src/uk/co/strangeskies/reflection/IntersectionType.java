@@ -22,7 +22,10 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.osgi.annotation.versioning.ProviderType;
@@ -38,12 +41,37 @@ import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
  */
 @ProviderType
 public abstract class IntersectionType implements Type {
+	private static class IntersectionTypeProxy extends IntersectionType {
+		private final Supplier<IntersectionType> source;
+
+		public IntersectionTypeProxy(Supplier<IntersectionType> source) {
+			this.source = source;
+		}
+
+		@Override
+		public Type[] getTypes() {
+			return source.get().getTypes();
+		}
+	}
+
 	IntersectionType() {}
 
 	/**
 	 * @return Each type which is a member of this intersection.
 	 */
 	public abstract Type[] getTypes();
+
+	/**
+	 * @param source
+	 *          A supplier of the intersection type we wish to proxy.
+	 * @return A proxy for an intersection type, forwarding to the instance
+	 *         provided by the given supplier at the moment of each invocation.
+	 *         This is generally useful for algorithms which deal with infinite
+	 *         types.
+	 */
+	public static IntersectionType proxy(Supplier<IntersectionType> source) {
+		return new IntersectionTypeProxy(source);
+	}
 
 	/**
 	 * @param types
@@ -65,6 +93,97 @@ public abstract class IntersectionType implements Type {
 		return from(types, new BoundSet());
 	}
 
+	/*
+	 * Ensure no member is itself an intersection type.
+	 */
+	private static List<Type> flatten(Collection<? extends Type> types) {
+		List<Type> flattenedTypes = new ArrayList<>(types);
+
+		for (int i = 0; i < flattenedTypes.size(); i++) {
+			Type type = flattenedTypes.get(i);
+
+			if (Object.class.equals(type)) {
+				flattenedTypes.remove(i);
+			} else if (type instanceof IntersectionType) {
+				flattenedTypes.remove(i);
+				flattenedTypes.addAll(Arrays.asList(((IntersectionType) type).getTypes()));
+			} else {
+				i++;
+			}
+		}
+
+		return flattenedTypes;
+	}
+
+	/*
+	 * remove redundancies and order so that the remaining class is at the front,
+	 * if one exists.
+	 */
+	private static void orderAndMinimise(final List<Type> flattenedTypes) {
+		Map<Type, Boolean> properType = new IdentityHashMap<>();
+		for (Type type : flattenedTypes) {
+			properType.put(type, InferenceVariable.isProperType(type));
+		}
+
+		/*
+		 * Loop through each pair of types, removing those which are redundant due
+		 * to subtype relation.
+		 * 
+		 * At same time, search for the most specific class type.
+		 */
+		int mostSpecificIndex = -1;
+		for (int i = 0; i < flattenedTypes.size(); i++) {
+			Type iType = flattenedTypes.get(i);
+			if (properType.get(iType)) {
+				/*
+				 * For each proper type i
+				 */
+
+				boolean iInterface = Types.getRawType(iType).isInterface();
+
+				if (mostSpecificIndex == -1 && !iInterface) {
+					mostSpecificIndex = i;
+				}
+
+				for (int j = i + 1; j < flattenedTypes.size(); j++) {
+					Type jType = flattenedTypes.get(j);
+					if (properType.get(jType)) {
+						/*
+						 * For each proper type j, coming after i
+						 */
+
+						if (Types.isAssignable(iType, jType)) {
+							flattenedTypes.remove(j--);
+
+							if (mostSpecificIndex > j) {
+								mostSpecificIndex--;
+							}
+						} else if (Types.isAssignable(jType, iType)) {
+							if (i == mostSpecificIndex) {
+								mostSpecificIndex = j;
+							}
+
+							flattenedTypes.remove(i--);
+
+							if (mostSpecificIndex >= i) {
+								mostSpecificIndex--;
+							}
+							break;
+						} else if (!iInterface && !Types.getRawType(jType).isInterface()) {
+							throw new TypeException("Illegal intersection type '" + flattenedTypes
+									+ "', cannot contain both of the non-interface classes '" + iType + "' and '" + jType + "'.");
+						}
+					}
+				}
+			}
+		}
+
+		if (mostSpecificIndex >= 0) {
+			Type mostSpecificType = flattenedTypes.remove(mostSpecificIndex);
+			flattenedTypes.add(0, mostSpecificType);
+		}
+	}
+
 	/**
 	 * Create an intersection type from the given types, with leniency towards
 	 * validation of intersections between types which may contain inference
@@ -79,15 +198,7 @@ public abstract class IntersectionType implements Type {
 	 *         single type, if they can all be represented as such.
 	 */
 	public static Type from(Collection<? extends Type> types, BoundSet bounds) {
-		List<Type> flattenedTypes = new ArrayList<>(types);
-
-		for (Type type : new ArrayList<>(flattenedTypes)) {
-			if (type instanceof IntersectionType) {
-				flattenedTypes.remove(type);
-				flattenedTypes
-						.addAll(Arrays.asList(((IntersectionType) type).getTypes()));
-			}
-		}
+		List<Type> flattenedTypes = flatten(types);
 
 		if (flattenedTypes.isEmpty())
 			return Object.class;
@@ -95,49 +206,7 @@ public abstract class IntersectionType implements Type {
 		if (flattenedTypes.size() == 1)
 			return flattenedTypes.iterator().next();
 
-		Type mostSpecificType = null;
-
-		for (Type type : new ArrayList<>(flattenedTypes)) {
-			if (InferenceVariable.isProperType(type)) {
-				Class<?> rawType = Types.getRawType(type);
-
-				if (!rawType.isInterface()) {
-					flattenedTypes.remove(type);
-
-					if (mostSpecificType == null
-							|| Types.isAssignable(type, mostSpecificType)) {
-						mostSpecificType = type;
-					} else if (!Types.isAssignable(mostSpecificType, type)) {
-						throw new TypeException(
-								"Illegal intersection type '" + flattenedTypes
-										+ "', cannot contain both of the non-interface classes '"
-										+ mostSpecificType + "' and '" + type + "'.");
-					}
-				}
-			}
-		}
-
-		if (mostSpecificType != null)
-			flattenedTypes.add(0, mostSpecificType);
-
-		for (int i = 0; i < flattenedTypes.size(); i++) {
-			Type iType = flattenedTypes.get(i);
-
-			if (InferenceVariable.isProperType(iType))
-				for (int j = i + 1; j < flattenedTypes.size(); j++) {
-					Type jType = flattenedTypes.get(j);
-
-					if (InferenceVariable.isProperType(jType))
-						if (Types.isAssignable(iType, jType))
-							flattenedTypes.remove(j--);
-						else if (Types.isAssignable(jType, iType)) {
-							flattenedTypes.remove(i--);
-							break;
-						}
-				}
-		}
-
-		flattenedTypes.remove(Object.class);
+		orderAndMinimise(flattenedTypes);
 
 		if (flattenedTypes.isEmpty())
 			return Object.class;
@@ -153,11 +222,10 @@ public abstract class IntersectionType implements Type {
 			for (Type type : flattenedTypes)
 				ConstraintFormula.reduce(Kind.SUBTYPE, inferenceVariable, type, bounds);
 		} catch (Exception e) {
-			throw new TypeException(
-					"Illegal intersection type '" + flattenedTypes + "'.", e);
+			throw new TypeException("Illegal intersection type '" + flattenedTypes + "'.", e);
 		}
 
-		return uncheckedFrom(flattenedTypes);
+		return fromImpl(flattenedTypes);
 	}
 
 	static IntersectionType uncheckedFrom(Type... types) {
@@ -165,6 +233,19 @@ public abstract class IntersectionType implements Type {
 	}
 
 	static IntersectionType uncheckedFrom(Collection<? extends Type> types) {
+		List<Type> flattenedTypes = flatten(types);
+
+		/*-
+		Set<Type> uniqueTypes = new TreeSet<>(new EqualityComparator<>((a, b) -> Types.equals(a, b)));
+		uniqueTypes.addAll(flattenedTypes);
+		flattenedTypes.clear();
+		flattenedTypes.addAll(uniqueTypes);
+		 */
+
+		return fromImpl(flattenedTypes);
+	}
+
+	static IntersectionType fromImpl(Collection<? extends Type> types) {
 		return new IntersectionType() {
 			Type[] typeArray = types.toArray(new Type[types.size()]);
 
@@ -194,8 +275,7 @@ public abstract class IntersectionType implements Type {
 		return Arrays.stream(getTypes()).map(t -> {
 			String typeName = Types.toString(t, imports);
 			if (t instanceof TypeVariableCapture)
-				typeName = new StringBuilder().append("[ ").append(typeName)
-						.append(" ]").toString();
+				typeName = new StringBuilder().append("[ ").append(typeName).append(" ]").toString();
 			return typeName;
 		}).collect(Collectors.joining(" & "));
 	}

@@ -35,12 +35,12 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import uk.co.strangeskies.reflection.ParameterizedTypes.ParameterizedTypeImpl;
 import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.collection.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.MultiMap;
@@ -101,8 +101,7 @@ public final class Types {
 	 * @return The raw types of the type represented by this TypeToken.
 	 */
 	public static Set<Class<?>> getRawTypes(Type type) {
-		return getUpperBounds(type).stream().map(Types::getRawType)
-				.collect(Collectors.toCollection(LinkedHashSet::new));
+		return getUpperBounds(type).stream().map(Types::getRawType).collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 
 	/**
@@ -137,17 +136,14 @@ public final class Types {
 		} else if (type instanceof Class) {
 			return (Class<?>) type;
 		} else if (type instanceof GenericArrayType) {
-			return Array.newInstance(
-					getRawType(((GenericArrayType) type).getGenericComponentType()), 0)
-					.getClass();
+			return Array.newInstance(getRawType(((GenericArrayType) type).getGenericComponentType()), 0).getClass();
 		} else if (type instanceof IntersectionType) {
 			if (((IntersectionType) type).getTypes().length == 0)
 				return Object.class;
 			else
 				return getRawType(((IntersectionType) type).getTypes()[0]);
 		}
-		throw new IllegalArgumentException(
-				"Type of type '" + type + "' is unsupported.");
+		throw new IllegalArgumentException("Type of type '" + type + "' is unsupported.");
 	}
 
 	/**
@@ -377,9 +373,7 @@ public final class Types {
 			while ((type = ((Class<?>) type).getComponentType()) != null)
 				component = type;
 		else
-			while (type instanceof GenericArrayType
-					&& (type = ((GenericArrayType) type)
-							.getGenericComponentType()) != null)
+			while (type instanceof GenericArrayType && (type = ((GenericArrayType) type).getGenericComponentType()) != null)
 				component = type;
 
 		return component;
@@ -400,9 +394,7 @@ public final class Types {
 			while ((type = ((Class<?>) type).getComponentType()) != null)
 				count++;
 		else
-			while (type instanceof GenericArrayType
-					&& (type = ((GenericArrayType) type)
-							.getGenericComponentType()) != null)
+			while (type instanceof GenericArrayType && (type = ((GenericArrayType) type).getGenericComponentType()) != null)
 				count++;
 
 		return count;
@@ -456,11 +448,99 @@ public final class Types {
 				}
 			}
 		} else {
-			throw new TypeException("Cannot assign '" + object + "' of type '"
-					+ object.getClass() + "' to type '" + type + "'.");
+			throw new TypeException(
+					"Cannot assign '" + object + "' of type '" + object.getClass() + "' to type '" + type + "'.");
 		}
 
 		return object;
+	}
+
+	public static boolean equals(Type a, Type b) {
+		return equals(a, b, new HashSet<>());
+	}
+
+	private static class Equality {
+		private Type a, b;
+
+		public Equality(Type a, Type b) {
+			this.a = a;
+			this.b = b;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (!(obj instanceof Equality))
+				return false;
+
+			Equality that = (Equality) obj;
+			return (a == that.a && b == that.b) || (a == that.b && b == that.a);
+		}
+
+		@Override
+		public int hashCode() {
+			return System.identityHashCode(a) ^ (System.identityHashCode(b) * 7);
+		}
+	}
+
+	private static boolean equals(Type a, Type b, HashSet<Equality> equalitiesEncountered) {
+		if (a instanceof IntersectionType && ((IntersectionType) a).getTypes().length == 1)
+			a = ((IntersectionType) a).getTypes()[0];
+		if (b instanceof IntersectionType && ((IntersectionType) b).getTypes().length == 1)
+			b = ((IntersectionType) b).getTypes()[0];
+
+		if (!equalitiesEncountered.add(new Equality(a, b)))
+			return true;
+
+		boolean equal;
+
+		if (a == b) {
+			equal = true;
+
+		} else if (a instanceof ParameterizedTypeImpl && b instanceof ParameterizedTypeImpl) {
+			equal = a.hashCode() == b.hashCode() && parameterizedTypeEquals((ParameterizedType) a, (ParameterizedType) b);
+
+		} else if (a instanceof ParameterizedType && b instanceof ParameterizedType) {
+			equal = parameterizedTypeEquals((ParameterizedType) a, (ParameterizedType) b);
+
+		} else if (a instanceof IntersectionType && b instanceof IntersectionType) {
+			IntersectionType aIntersectionType = (IntersectionType) a;
+			IntersectionType bIntersectionType = (IntersectionType) b;
+
+			if (aIntersectionType.getTypes().length != bIntersectionType.getTypes().length) {
+				equal = false;
+			} else {
+				equal = true;
+
+				for (Type aType : ((IntersectionType) a).getTypes()) {
+					boolean contains = false;
+
+					for (Type bType : ((IntersectionType) b).getTypes()) {
+						if (Types.equals(aType, bType)) {
+							contains = true;
+							break;
+						}
+					}
+
+					if (!contains) {
+						equal = false;
+						break;
+					}
+				}
+			}
+
+		} else if (a instanceof Class && b instanceof Class) {
+			equal = a.equals(b);
+
+		} else {
+			equal = false;
+		}
+
+		return equal;
+	}
+
+	private static boolean parameterizedTypeEquals(ParameterizedType a, ParameterizedType b) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 	/**
@@ -511,27 +591,22 @@ public final class Types {
 				return false;
 
 			Assignment that = (Assignment) obj;
-			return Objects.equals(from, that.from) && Objects.equals(to, that.to);
+			return from == that.from && to == that.to;
 		}
 
 		@Override
 		public int hashCode() {
-			return Objects.hashCode(from) ^ (Objects.hashCode(to) * 7);
+			return System.identityHashCode(from) ^ (System.identityHashCode(to) * 7);
 		}
 	}
 
-	private static boolean isAssignable(Type from, Type to,
-			HashSet<Assignment> assignsEncountered) {
-		Assignment assignment = new Assignment(from, to);
-
-		if (from instanceof IntersectionType
-				&& ((IntersectionType) from).getTypes().length == 1)
+	private static boolean isAssignable(Type from, Type to, HashSet<Assignment> assignsEncountered) {
+		if (from instanceof IntersectionType && ((IntersectionType) from).getTypes().length == 1)
 			from = ((IntersectionType) from).getTypes()[0];
-		if (to instanceof IntersectionType
-				&& ((IntersectionType) to).getTypes().length == 1)
+		if (to instanceof IntersectionType && ((IntersectionType) to).getTypes().length == 1)
 			to = ((IntersectionType) to).getTypes()[0];
 
-		if (!assignsEncountered.add(assignment))
+		if (!assignsEncountered.add(new Assignment(from, to)))
 			return true;
 
 		boolean assignable;
@@ -549,8 +624,7 @@ public final class Types {
 			Type[] types = ((IntersectionType) to).getTypes();
 
 			Type fromFinal = from; // shouldn't be necessary, eclipse.
-			assignable = Arrays.stream(types)
-					.allMatch(t -> isAssignable(fromFinal, t, assignsEncountered));
+			assignable = Arrays.stream(types).allMatch(t -> isAssignable(fromFinal, t, assignsEncountered));
 		} else if (from instanceof IntersectionType) {
 			/*
 			 * We must be able to assign from at least one member of the intersection
@@ -559,8 +633,8 @@ public final class Types {
 			Type[] types = ((IntersectionType) from).getTypes();
 
 			Type toFinal = to;
-			assignable = types.length == 0 || Arrays.stream(types)
-					.anyMatch(f -> isAssignable(f, toFinal, assignsEncountered));
+			assignable = types.length == 0
+					|| Arrays.stream(types).anyMatch(f -> isAssignable(f, toFinal, assignsEncountered));
 		} else if (from instanceof WildcardType) {
 			/*
 			 * We must be able to assign from at least one of the upper bounds,
@@ -570,8 +644,7 @@ public final class Types {
 			if (upperBounds.length == 0)
 				upperBounds = new Type[] { Object.class };
 
-			assignable = isAssignable(IntersectionType.uncheckedFrom(upperBounds), to,
-					assignsEncountered);
+			assignable = isAssignable(IntersectionType.uncheckedFrom(upperBounds), to, assignsEncountered);
 		} else if (to instanceof WildcardType) {
 			/*
 			 * If there are no lower bounds the target may be arbitrarily specific, so
@@ -583,8 +656,7 @@ public final class Types {
 			if (lowerBounds.length == 0)
 				assignable = false;
 			else
-				assignable = isAssignable(from,
-						IntersectionType.uncheckedFrom(lowerBounds), assignsEncountered);
+				assignable = isAssignable(from, IntersectionType.uncheckedFrom(lowerBounds), assignsEncountered);
 		} else if (from instanceof TypeVariable) {
 			/*
 			 * We must be able to assign from at least one of the upper bound,
@@ -594,12 +666,10 @@ public final class Types {
 			if (upperBounds.length == 0)
 				upperBounds = new Type[] { Object.class };
 
-			assignable = isAssignable(IntersectionType.uncheckedFrom(upperBounds), to,
-					assignsEncountered);
+			assignable = isAssignable(IntersectionType.uncheckedFrom(upperBounds), to, assignsEncountered);
 
 			if (!assignable && to instanceof TypeVariableCapture) {
-				assignable = Arrays.asList(((TypeVariableCapture) to).getLowerBounds())
-						.contains(from);
+				assignable = Arrays.asList(((TypeVariableCapture) to).getLowerBounds()).contains(from);
 			}
 		} else if (to instanceof TypeVariableCapture) {
 			/*
@@ -607,11 +677,8 @@ public final class Types {
 			 * bounds, or if it is from the exact same type, or explicitly mentioned
 			 * in an upper bound or intersection type.
 			 */
-			assignable = ((TypeVariableCapture) to).getLowerBounds().length > 0
-					&& isAssignable(from,
-							IntersectionType
-									.uncheckedFrom(((TypeVariableCapture) to).getLowerBounds()),
-							assignsEncountered);
+			assignable = ((TypeVariableCapture) to).getLowerBounds().length > 0 && isAssignable(from,
+					IntersectionType.uncheckedFrom(((TypeVariableCapture) to).getLowerBounds()), assignsEncountered);
 		} else if (to instanceof TypeVariable) {
 			/*
 			 * We can only assign to a type variable if it is from the exact same
@@ -625,13 +692,12 @@ public final class Types {
 				Class<?> toClass = (Class<?>) to;
 
 				assignable = toClass.isArray()
-						&& isAssignable(fromArray.getGenericComponentType(),
-								toClass.getComponentType(), assignsEncountered);
+						&& isAssignable(fromArray.getGenericComponentType(), toClass.getComponentType(), assignsEncountered);
 			} else if (to instanceof GenericArrayType) {
 				GenericArrayType toArray = (GenericArrayType) to;
 
-				assignable = isAssignable(fromArray.getGenericComponentType(),
-						toArray.getGenericComponentType(), assignsEncountered);
+				assignable = isAssignable(fromArray.getGenericComponentType(), toArray.getGenericComponentType(),
+						assignsEncountered);
 			} else
 				assignable = false;
 		} else if (to instanceof GenericArrayType) {
@@ -639,8 +705,7 @@ public final class Types {
 			if (from instanceof Class) {
 				Class<?> fromClass = (Class<?>) from;
 				assignable = fromClass.isArray()
-						&& isAssignable(fromClass.getComponentType(),
-								toArray.getGenericComponentType(), assignsEncountered);
+						&& isAssignable(fromClass.getComponentType(), toArray.getGenericComponentType(), assignsEncountered);
 			} else
 				assignable = false;
 		} else if (to instanceof Class) {
@@ -648,67 +713,53 @@ public final class Types {
 		} else if (to instanceof ParameterizedType) {
 			Class<?> matchedClass = getRawType(to);
 
-			if (from instanceof Class
-					&& matchedClass.isAssignableFrom((Class<?>) from)) {
+			if (from instanceof Class && matchedClass.isAssignableFrom((Class<?>) from)) {
 				assignable = true;
 			} else if (!matchedClass.isAssignableFrom(getRawType(from))) {
 				assignable = false;
 			} else {
-				Type fromParameterization = ParameterizedTypes
-						.resolveSupertypeParameters(TypeVariableCapture
-								.captureWildcardArguments((ParameterizedType) from),
-								matchedClass);
+				Type fromParameterization = ParameterizedTypes.resolveSupertypeParameters(
+						TypeVariableCapture.captureWildcardArguments((ParameterizedType) from), matchedClass);
 				if (!(fromParameterization instanceof ParameterizedType))
 					assignable = false;
 				else {
-					List<TypeVariable<?>> typeParameters = ParameterizedTypes
-							.getAllTypeParameters(matchedClass);
-					Map<TypeVariable<?>, Type> toTypeArguments = ParameterizedTypes
-							.getAllTypeArguments((ParameterizedType) to);
+					List<TypeVariable<?>> typeParameters = ParameterizedTypes.getAllTypeParameters(matchedClass);
+					Map<TypeVariable<?>, Type> toTypeArguments = ParameterizedTypes.getAllTypeArguments((ParameterizedType) to);
 					Map<TypeVariable<?>, Type> fromTypeArguments = ParameterizedTypes
 							.getAllTypeArguments((ParameterizedType) fromParameterization);
 
 					assignable = true;
 					for (TypeVariable<?> parameter : typeParameters) {
-						if (!isContainedBy(fromTypeArguments.get(parameter),
-								toTypeArguments.get(parameter), assignsEncountered))
+						if (!isContainedBy(fromTypeArguments.get(parameter), toTypeArguments.get(parameter), assignsEncountered))
 							assignable = false;
 					}
 
-					assignable = assignable
-							&& isAssignable(((ParameterizedType) from).getOwnerType(),
-									((ParameterizedType) to).getOwnerType(), assignsEncountered);
+					assignable = assignable && isAssignable(((ParameterizedType) from).getOwnerType(),
+							((ParameterizedType) to).getOwnerType(), assignsEncountered);
 				}
 			}
-		} else
+		} else {
 			assignable = false;
-
-		assignsEncountered.remove(assignment);
+		}
 
 		return assignable;
 	}
 
-	private static boolean isContainedBy(Type from, Type to,
-			HashSet<Assignment> assignsEncountered) {
+	private static boolean isContainedBy(Type from, Type to, HashSet<Assignment> assignsEncountered) {
 		boolean contained;
 
 		if (to.equals(from)) {
 			contained = true;
-		} else if (to instanceof Class || to instanceof ParameterizedType
-				|| to instanceof IntersectionType) {
-			contained = isAssignable(from, to, assignsEncountered)
-					&& isAssignable(to, from, assignsEncountered);
+		} else if (to instanceof Class || to instanceof ParameterizedType || to instanceof IntersectionType) {
+			contained = isAssignable(from, to, assignsEncountered) && isAssignable(to, from, assignsEncountered);
 		} else if (to instanceof WildcardType) {
 			WildcardType toWildcard = (WildcardType) to;
 
-			contained = (toWildcard.getUpperBounds().length == 0 || isAssignable(from,
-					IntersectionType.uncheckedFrom(toWildcard.getUpperBounds()),
-					assignsEncountered));
+			contained = (toWildcard.getUpperBounds().length == 0
+					|| isAssignable(from, IntersectionType.uncheckedFrom(toWildcard.getUpperBounds()), assignsEncountered));
 
-			contained = contained
-					&& (toWildcard.getLowerBounds().length == 0 || isAssignable(
-							IntersectionType.uncheckedFrom(toWildcard.getLowerBounds()), from,
-							assignsEncountered));
+			contained = contained && (toWildcard.getLowerBounds().length == 0
+					|| isAssignable(IntersectionType.uncheckedFrom(toWildcard.getLowerBounds()), from, assignsEncountered));
 		} else
 			contained = false;
 
@@ -738,8 +789,7 @@ public final class Types {
 	 * @return True if the type {@code from} is compatible with the type
 	 *         {@code to}, false otherwise.
 	 */
-	public static boolean isStrictInvocationContextCompatible(Type from,
-			Type to) {
+	public static boolean isStrictInvocationContextCompatible(Type from, Type to) {
 		if (isPrimitive(from)) {
 			if (isPrimitive(to)) {
 				if (to.equals(from) || to.equals(double.class)) {
@@ -749,8 +799,7 @@ public final class Types {
 				} else if (to.equals(long.class)) {
 					return !from.equals(double.class) && !from.equals(float.class);
 				} else if (to.equals(int.class)) {
-					return from.equals(byte.class) || from.equals(short.class)
-							|| from.equals(char.class);
+					return from.equals(byte.class) || from.equals(short.class) || from.equals(char.class);
 				} else if (to.equals(short.class)) {
 					return from.equals(byte.class);
 				} else {
@@ -802,19 +851,10 @@ public final class Types {
 		return isAssignable(from, to);
 	}
 
-	/**
-	 * Determine whether a given type is well formed with respect to the
-	 * satisfaction of any bounds on any parameterizations in all mentioned types.
-	 * 
-	 * @param type
-	 *          The type of which we wish to determine validity.
-	 */
 	public static void validate(Type type) {
-		RecursiveTypeVisitor.build().visitBounds().visitEnclosedTypes()
-				.visitEnclosingTypes().visitParameters().visitSupertypes()
-				.parameterizedTypeVisitor(TypeToken::over)
-				.intersectionTypeVisitor(i -> IntersectionType.from(i)).create()
-				.visit(type);
+		RecursiveTypeVisitor.build().visitBounds().visitEnclosedTypes().visitEnclosingTypes().visitParameters()
+				.visitSupertypes().parameterizedTypeVisitor(TypeToken::over)
+				.intersectionTypeVisitor(i -> IntersectionType.from(i.getTypes())).create().visit(type);
 	}
 
 	/**
@@ -828,8 +868,7 @@ public final class Types {
 	 *          The condition to classify matching types.
 	 * @return A set of all mentioned types matching the condition.
 	 */
-	public static Set<Type> getAllMentionedBy(Type type,
-			Predicate<Type> condition) {
+	public static Set<Type> getAllMentionedBy(Type type, Predicate<Type> condition) {
 		Set<Type> types = new HashSet<>();
 
 		Consumer<Type> conditionalAdd = t -> {
@@ -837,13 +876,10 @@ public final class Types {
 				types.add(t);
 		};
 
-		RecursiveTypeVisitor.build().visitEnclosingTypes().visitParameters()
-				.visitBounds().classVisitor(conditionalAdd::accept)
-				.genericArrayVisitor(conditionalAdd::accept)
-				.intersectionTypeVisitor(conditionalAdd::accept)
-				.inferenceVariableVisitor(conditionalAdd::accept)
-				.parameterizedTypeVisitor(conditionalAdd::accept)
-				.wildcardVisitor(conditionalAdd::accept)
+		RecursiveTypeVisitor.build().visitEnclosingTypes().visitParameters().visitBounds()
+				.classVisitor(conditionalAdd::accept).genericArrayVisitor(conditionalAdd::accept)
+				.intersectionTypeVisitor(conditionalAdd::accept).inferenceVariableVisitor(conditionalAdd::accept)
+				.parameterizedTypeVisitor(conditionalAdd::accept).wildcardVisitor(conditionalAdd::accept)
 				.typeVariableVisitor(conditionalAdd::accept).create().visit(type);
 
 		return types;
@@ -900,23 +936,17 @@ public final class Types {
 
 			while (lowerBoundsIterator.hasNext()) {
 				Type t = lowerBoundsIterator.next();
-				Map<Class<?>, ParameterizedType> erasedSupertypes = getErasedSupertypes(
-						t);
+				Map<Class<?>, ParameterizedType> erasedSupertypes = getErasedSupertypes(t);
 				erasedCandidates.keySet().retainAll(erasedSupertypes.keySet());
-				for (Map.Entry<Class<?>, ParameterizedType> erasedSupertype : erasedSupertypes
-						.entrySet())
-					if (erasedCandidates.containsKey(erasedSupertype.getKey())
-							&& erasedSupertype.getValue() != null)
-						erasedCandidates.add(erasedSupertype.getKey(),
-								erasedSupertype.getValue());
+				for (Map.Entry<Class<?>, ParameterizedType> erasedSupertype : erasedSupertypes.entrySet())
+					if (erasedCandidates.containsKey(erasedSupertype.getKey()) && erasedSupertype.getValue() != null)
+						erasedCandidates.add(erasedSupertype.getKey(), erasedSupertype.getValue());
 			}
 
 			minimiseCandidates(erasedCandidates);
 
 			List<Type> bestTypes = erasedCandidates.entrySet().stream()
-					.map(e -> best(e.getKey(),
-							new ArrayList<ParameterizedType>(e.getValue())))
-					.collect(Collectors.toList());
+					.map(e -> best(e.getKey(), new ArrayList<>(e.getValue()))).collect(Collectors.toList());
 
 			return IntersectionType.uncheckedFrom(bestTypes);
 		}
@@ -924,25 +954,21 @@ public final class Types {
 
 	private static void minimiseCandidates(
 			MultiMap<Class<?>, ParameterizedType, ? extends Set<ParameterizedType>> erasedCandidates) {
-		List<Class<?>> minimalCandidates = new ArrayList<>(
-				erasedCandidates.keySet());
+		List<Class<?>> minimalCandidates = new ArrayList<>(erasedCandidates.keySet());
 		if (minimalCandidates.size() > 1)
 			for (int i = 0; i < minimalCandidates.size(); i++)
 				for (int j = i + 1; j < minimalCandidates.size(); j++) {
-					if (minimalCandidates.get(i)
-							.isAssignableFrom(minimalCandidates.get(j))) {
+					if (minimalCandidates.get(i).isAssignableFrom(minimalCandidates.get(j))) {
 						minimalCandidates.remove(i);
 						j = i;
-					} else if (minimalCandidates.get(j)
-							.isAssignableFrom(minimalCandidates.get(i))) {
+					} else if (minimalCandidates.get(j).isAssignableFrom(minimalCandidates.get(i))) {
 						minimalCandidates.remove(j--);
 					}
 				}
 		erasedCandidates.keySet().retainAll(minimalCandidates);
 	}
 
-	private static Type best(Class<?> rawClass,
-			List<ParameterizedType> parameterizations) {
+	private static Type best(Class<?> rawClass, List<ParameterizedType> parameterizations) {
 		if (parameterizations.isEmpty())
 			return rawClass;
 		else if (parameterizations.size() == 1) {
@@ -955,20 +981,16 @@ public final class Types {
 		 */
 		IdentityProperty<ParameterizedType> bestResult;
 		synchronized (BEST_PARAMETERIZATIONS) {
-			if (BEST_PARAMETERIZATIONS.keySet()
-					.contains(new HashSet<>(parameterizations)))
-				return BEST_PARAMETERIZATIONS.get(new HashSet<>(parameterizations))
-						.get();
+			if (BEST_PARAMETERIZATIONS.keySet().contains(new HashSet<>(parameterizations)))
+				return BEST_PARAMETERIZATIONS.get(new HashSet<>(parameterizations)).get();
 
 			bestResult = new IdentityProperty<>();
-			BEST_PARAMETERIZATIONS.putGet(new HashSet<>(parameterizations))
-					.set(ParameterizedTypes.proxy(bestResult::get));
+			BEST_PARAMETERIZATIONS.putGet(new HashSet<>(parameterizations)).set(ParameterizedTypes.proxy(bestResult::get));
 		}
 
 		Map<TypeVariable<?>, Type> leastContainingParameterization = new HashMap<>();
 
-		List<TypeVariable<?>> typeParameters = ParameterizedTypes
-				.getAllTypeParameters(rawClass);
+		List<TypeVariable<?>> typeParameters = ParameterizedTypes.getAllTypeParameters(rawClass);
 		for (int i = 0; i < parameterizations.size(); i++) {
 			ParameterizedType parameterization = parameterizations.get(i);
 			for (int j = 0; j < typeParameters.size(); j++) {
@@ -980,17 +1002,15 @@ public final class Types {
 					if (argumentV == null)
 						leastContainingParameterization.put(variable, argumentU);
 					else {
-						leastContainingParameterization.put(variable,
-								leastContainingArgument(argumentU, argumentV));
+						leastContainingParameterization.put(variable, leastContainingArgument(argumentU, argumentV));
 					}
 				}
 			}
-			parameterizations.set(i,
-					(ParameterizedType) parameterization.getOwnerType());
+			parameterizations.set(i, (ParameterizedType) parameterization.getOwnerType());
 		}
 
-		ParameterizedType best = (ParameterizedType) ParameterizedTypes
-				.uncheckedFrom(rawClass, leastContainingParameterization::get);
+		ParameterizedType best = (ParameterizedType) ParameterizedTypes.uncheckedFrom(rawClass,
+				leastContainingParameterization::get);
 
 		bestResult.set(best);
 
@@ -999,8 +1019,7 @@ public final class Types {
 
 	private static Type leastContainingArgument(Type argumentU, Type argumentV) {
 		if (argumentU instanceof WildcardType
-				&& (!(argumentV instanceof WildcardType)
-						|| ((WildcardType) argumentV).getUpperBounds().length > 0)) {
+				&& (!(argumentV instanceof WildcardType) || ((WildcardType) argumentV).getUpperBounds().length > 0)) {
 			Type swap = argumentU;
 			argumentU = argumentV;
 			argumentV = swap;
@@ -1012,52 +1031,44 @@ public final class Types {
 					/*
 					 * lcta(? extends U, ? extends V) = ? extends lub(U, V)
 					 */
-					return WildcardTypes.upperBounded(leastUpperBoundImpl(Arrays.asList(
-							IntersectionType
-									.uncheckedFrom(((WildcardType) argumentU).getUpperBounds()),
-							IntersectionType.uncheckedFrom(
-									((WildcardType) argumentV).getUpperBounds()))));
+					return WildcardTypes.upperBounded(leastUpperBoundImpl(
+							Arrays.asList(IntersectionType.uncheckedFrom(((WildcardType) argumentU).getUpperBounds()),
+									IntersectionType.uncheckedFrom(((WildcardType) argumentV).getUpperBounds()))));
 				} else {
 					/*
 					 * lcta(? extends U, ? super V) = U if U = V, otherwise ?
 					 */
-					return argumentU.equals(argumentV) ? argumentU
-							: WildcardTypes.unbounded();
+					return argumentU.equals(argumentV) ? argumentU : WildcardTypes.unbounded();
 				}
 			} else {
 				/*
 				 * lcta(? super U, ? super V) = ? super glb(U, V)
 				 */
-				return WildcardTypes.lowerBounded(greatestLowerBound(
-						IntersectionType
-								.uncheckedFrom(((WildcardType) argumentU).getLowerBounds()),
-						IntersectionType
-								.uncheckedFrom(((WildcardType) argumentV).getLowerBounds())));
+				return WildcardTypes.lowerBounded(
+						greatestLowerBound(IntersectionType.uncheckedFrom(((WildcardType) argumentU).getLowerBounds()),
+								IntersectionType.uncheckedFrom(((WildcardType) argumentV).getLowerBounds())));
 			}
 		} else if (argumentV instanceof WildcardType) {
 			if (((WildcardType) argumentV).getUpperBounds().length > 0) {
 				/*
 				 * lcta(U, ? extends V) = ? extends lub(U, V)
 				 */
-				List<Type> bounds = new ArrayList<>(
-						Arrays.asList(((WildcardType) argumentV).getUpperBounds()));
+				List<Type> bounds = new ArrayList<>(Arrays.asList(((WildcardType) argumentV).getUpperBounds()));
 				bounds.add(argumentU);
 				return WildcardTypes.upperBounded(leastUpperBoundImpl(bounds));
 			} else {
 				/*
 				 * lcta(U, ? super V) = ? super glb(U, V)
 				 */
-				return WildcardTypes
-						.lowerBounded(greatestLowerBound(argumentU, IntersectionType
-								.uncheckedFrom(((WildcardType) argumentV).getLowerBounds())));
+				return WildcardTypes.lowerBounded(
+						greatestLowerBound(argumentU, IntersectionType.uncheckedFrom(((WildcardType) argumentV).getLowerBounds())));
 			}
 		} else {
 			/*
 			 * lcta(U, V) = U if U = V, otherwise ? extends lub(U, V)
 			 */
 			return argumentU.equals(argumentV) ? argumentU
-					: WildcardTypes.upperBounded(
-							leastUpperBoundImpl(Arrays.asList(argumentU, argumentV)));
+					: WildcardTypes.upperBounded(leastUpperBoundImpl(Arrays.asList(argumentU, argumentV)));
 		}
 	}
 
@@ -1065,12 +1076,9 @@ public final class Types {
 		Map<Class<?>, ParameterizedType> supertypes = new HashMap<>();
 
 		RecursiveTypeVisitor.build().visitSupertypes().classVisitor(type -> {
-			Type parameterized = ParameterizedTypes.resolveSupertypeParameters(of,
-					type);
-			supertypes.put(type, (parameterized instanceof ParameterizedType)
-					? (ParameterizedType) parameterized : null);
-		}).parameterizedTypeVisitor(type -> supertypes.put(getRawType(type), type))
-				.create().visit(of);
+			Type parameterized = ParameterizedTypes.resolveSupertypeParameters(of, type);
+			supertypes.put(type, (parameterized instanceof ParameterizedType) ? (ParameterizedType) parameterized : null);
+		}).parameterizedTypeVisitor(type -> supertypes.put(getRawType(type), type)).create().visit(of);
 
 		return supertypes;
 	}
@@ -1096,8 +1104,7 @@ public final class Types {
 	 * @return The most specific single type which, as a lower bound, will also
 	 *         satisfy each lower bound in the given set.
 	 */
-	public static Type greatestLowerBound(
-			Collection<? extends Type> lowerBounds) {
+	public static Type greatestLowerBound(Collection<? extends Type> lowerBounds) {
 		return IntersectionType.from(lowerBounds);
 	}
 
@@ -1131,31 +1138,26 @@ public final class Types {
 	public static String toString(Type type, Imports imports) {
 		if (type instanceof Class) {
 			if (((Class<?>) type).isArray())
-				return new StringBuilder(
-						toString(((Class<?>) type).getComponentType(), imports))
-								.append("[]").toString();
+				return new StringBuilder(toString(((Class<?>) type).getComponentType(), imports)).append("[]").toString();
 			else
 				return imports.getClassName((Class<?>) type);
 		} else if (type instanceof ParameterizedType) {
 			return ParameterizedTypes.toString((ParameterizedType) type, imports);
 		} else if (type instanceof GenericArrayType) {
-			return new StringBuilder(toString(
-					((GenericArrayType) type).getGenericComponentType(), imports))
-							.append("[]").toString();
+			return new StringBuilder(toString(((GenericArrayType) type).getGenericComponentType(), imports)).append("[]")
+					.toString();
 		} else if (type instanceof WildcardType) {
 			WildcardType wildcardType = (WildcardType) type;
 			StringBuilder builder = new StringBuilder("?");
 
-			appendBounds(builder, wildcardType.getUpperBounds(),
-					wildcardType.getLowerBounds(), imports);
+			appendBounds(builder, wildcardType.getUpperBounds(), wildcardType.getLowerBounds(), imports);
 
 			return builder.toString();
 		} else if (type instanceof TypeVariableCapture) {
 			TypeVariableCapture typeVariableCapture = (TypeVariableCapture) type;
 			StringBuilder builder = new StringBuilder(typeVariableCapture.getName());
 
-			appendBounds(builder, typeVariableCapture.getUpperBounds(),
-					typeVariableCapture.getLowerBounds(), imports);
+			appendBounds(builder, typeVariableCapture.getUpperBounds(), typeVariableCapture.getLowerBounds(), imports);
 
 			return builder.toString();
 		} else if (type instanceof IntersectionType) {
@@ -1165,18 +1167,15 @@ public final class Types {
 	}
 
 	static String toString(Type[] types, String delimiter, Imports imports) {
-		return Arrays.stream(types).map(t -> toString(t, imports))
-				.collect(Collectors.joining(delimiter));
+		return Arrays.stream(types).map(t -> toString(t, imports)).collect(Collectors.joining(delimiter));
 	}
 
-	private static void appendBounds(StringBuilder builder, Type[] upperBounds,
-			Type[] lowerBounds, Imports imports) {
-		if (upperBounds.length > 0 && (upperBounds.length != 1
-				|| (upperBounds[0] != null && !upperBounds[0].equals(Object.class))))
+	private static void appendBounds(StringBuilder builder, Type[] upperBounds, Type[] lowerBounds, Imports imports) {
+		if (upperBounds.length > 0
+				&& (upperBounds.length != 1 || (upperBounds[0] != null && !upperBounds[0].equals(Object.class))))
 			builder.append(" extends ").append(toString(upperBounds, " & ", imports));
 
-		if (lowerBounds.length > 0
-				&& !(lowerBounds.length == 1 && lowerBounds[0] == null))
+		if (lowerBounds.length > 0 && !(lowerBounds.length == 1 && lowerBounds[0] == null))
 			builder.append(" super ").append(toString(lowerBounds, " & ", imports));
 	}
 
@@ -1257,33 +1256,24 @@ public final class Types {
 		private final Parser<Type> typeParameter;
 
 		private TypeParser(Imports imports) {
-			rawType = Parser
-					.matching("[_a-zA-Z][_a-zA-Z0-9]*(\\.[_a-zA-Z][_a-zA-Z0-9]*)*")
-					.transform(imports::getNamedClass);
+			rawType = Parser.matching("[_a-zA-Z][_a-zA-Z0-9]*(\\.[_a-zA-Z][_a-zA-Z0-9]*)*").transform(imports::getNamedClass);
 
 			classOrArrayType = rawType.transform(Type.class::cast)
 					.tryAppendTransform(
-							Parser.list(Parser.proxy(this::getType), "\\s*,\\s*")
-									.prepend("\\s*<\\s*").append("\\s*>\\s*"),
+							Parser.list(Parser.proxy(this::getType), "\\s*,\\s*").prepend("\\s*<\\s*").append("\\s*>\\s*"),
 							(t, p) -> ParameterizedTypes.from((Class<?>) t, p).getType())
-					.appendTransform(Parser
-							.list(Parser.matching("\\s*\\[\\s*\\]"), "\\s*").prepend("\\s*"),
-							(t, l) -> {
-								t = ArrayTypes.fromComponentType(t, l.size());
-								return t;
-							});
+					.appendTransform(Parser.list(Parser.matching("\\s*\\[\\s*\\]"), "\\s*").prepend("\\s*"), (t, l) -> {
+						t = ArrayTypes.fromComponentType(t, l.size());
+						return t;
+					});
 
 			wildcardType = Parser.matching("\\s*\\?\\s*extends(?![_a-zA-Z0-9])\\s*")
-					.appendTransform(Parser.list(classOrArrayType, "\\s*\\&\\s*"),
-							(s, t) -> WildcardTypes.upperBounded(t))
+					.appendTransform(Parser.list(classOrArrayType, "\\s*\\&\\s*"), (s, t) -> WildcardTypes.upperBounded(t))
 					.orElse(Parser.matching("\\s*\\?\\s*super(?![_a-zA-Z0-9])\\s*")
-							.appendTransform(Parser.list(classOrArrayType, "\\s*\\&\\s*"),
-									(s, t) -> WildcardTypes.lowerBounded(t)))
-					.orElse(Parser.matching("\\s*\\?")
-							.transform(s -> WildcardTypes.unbounded()));
+							.appendTransform(Parser.list(classOrArrayType, "\\s*\\&\\s*"), (s, t) -> WildcardTypes.lowerBounded(t)))
+					.orElse(Parser.matching("\\s*\\?").transform(s -> WildcardTypes.unbounded()));
 
-			typeParameter = classOrArrayType
-					.orElse(wildcardType.transform(Type.class::cast));
+			typeParameter = classOrArrayType.orElse(wildcardType.transform(Type.class::cast));
 		}
 
 		/**

@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -46,19 +47,20 @@ import uk.co.strangeskies.utilities.collection.MultiTreeMap;
  * @author Elias N Vasylenko
  */
 public class ParameterizedTypes {
-	private static final class ParameterizedTypeImpl
-			implements ParameterizedType, Serializable {
+	static final class ParameterizedTypeImpl implements ParameterizedType, Serializable {
 		private static final long serialVersionUID = 1L;
 
 		private final Type ownerType;
 		private final List<Type> typeArguments;
 		private final Class<?> rawType;
 
-		private final Set<Thread> recurringThreads;
 		private final Map<Thread, MultiMap<ParameterizedType, ParameterizedType, Set<ParameterizedType>>> assumedEqualities;
 
-		ParameterizedTypeImpl(Type ownerType, Class<?> rawType,
-				List<Type> typeArguments) {
+		// caches
+		private String string;
+		private Integer hashCode;
+
+		ParameterizedTypeImpl(Type ownerType, Class<?> rawType, List<Type> typeArguments) {
 			this.ownerType = ownerType;
 			this.rawType = rawType;
 			this.typeArguments = typeArguments;
@@ -75,18 +77,15 @@ public class ParameterizedTypes {
 				i++;
 			}
 
-			recurringThreads = new HashSet<>(2);
-			assumedEqualities = new HashMap<>();
+			assumedEqualities = new IdentityHashMap<>();
 		}
 
 		ParameterizedTypeImpl(ParameterizedType type) {
-			this(getOwner(type.getOwnerType()), (Class<?>) type.getRawType(),
-					getArguments(type.getActualTypeArguments()));
+			this(getOwner(type.getOwnerType()), (Class<?>) type.getRawType(), getArguments(type.getActualTypeArguments()));
 		}
 
 		private static Type getOwner(Type ownerType) {
-			return ownerType instanceof ParameterizedType
-					? new ParameterizedTypeImpl((ParameterizedType) ownerType)
+			return ownerType instanceof ParameterizedType ? new ParameterizedTypeImpl((ParameterizedType) ownerType)
 					: ownerType;
 		}
 
@@ -117,74 +116,71 @@ public class ParameterizedTypes {
 			return toString(Imports.empty());
 		}
 
-		public String toString(Imports imports) {
-			StringBuilder builder = new StringBuilder();
-			if (ownerType == null) {
-				builder.append(Types.toString(rawType, imports));
-			} else {
-				builder.append(Types.toString(ownerType, imports)).append(".");
+		public synchronized String toString(Imports imports) {
+			if (string == null) {
+				/*
+				 * This way the string will return "..." if we encounter it again in the
+				 * parameters, rather than recurring infinitely:
+				 * 
+				 * (this is not a problem for other threads as toString is synchronized)
+				 */
+				string = "...";
 
-				if (ownerType instanceof ParameterizedType) {
-					String rawTypeName = rawType.getName();
-					int index = rawTypeName.indexOf('$');
-					if (index > 0) {
-						rawTypeName = rawTypeName.substring(index + 1);
-					}
-					builder.append(rawTypeName);
-				} else {
+				/*
+				 * Calculate the string properly, now we're guarded against recursion:
+				 */
+				StringBuilder builder = new StringBuilder();
+				if (ownerType == null) {
 					builder.append(Types.toString(rawType, imports));
+				} else {
+					builder.append(Types.toString(ownerType, imports)).append(".");
+
+					if (ownerType instanceof ParameterizedType) {
+						String rawTypeName = rawType.getName();
+						int index = rawTypeName.indexOf('$');
+						if (index > 0) {
+							rawTypeName = rawTypeName.substring(index + 1);
+						}
+						builder.append(rawTypeName);
+					} else {
+						builder.append(Types.toString(rawType, imports));
+					}
 				}
+
+				builder.append('<');
+
+				builder.append(typeArguments.stream().map(t -> Types.toString(t, imports)).collect(Collectors.joining(", ")));
+
+				string = builder.append(">").toString();
 			}
 
-			builder.append('<');
-
-			Thread currentThread = Thread.currentThread();
-			if (recurringThreads.add(currentThread)) {
-				builder
-						.append(typeArguments.stream().map(t -> Types.toString(t, imports))
-								.collect(Collectors.joining(", ")));
-				recurringThreads.remove(currentThread);
-			} else {
-				builder.append("...");
-			}
-
-			return builder.append(">").toString();
+			return string;
 		}
 
 		@Override
-		public int hashCode() {
-			Thread currentThread = Thread.currentThread();
-			if (recurringThreads.add(currentThread)) {
+		public synchronized int hashCode() {
+			if (hashCode == null) {
 				/*
-				 * If we have not encountered this type so far in calculating this hash
-				 * code:
+				 * This way the hash code will return 0 if we encounter it again in the
+				 * parameters, rather than recurring infinitely:
+				 * 
+				 * (this is not a problem for other threads as hashCode is synchronized)
 				 */
-				int hashCode = (ownerType == null ? 0 : ownerType.hashCode())
-						^ (rawType == null ? 0 : rawType.hashCode())
+				hashCode = 0;
+
+				/*
+				 * Calculate the hash code properly, now we're guarded against
+				 * recursion:
+				 */
+				this.hashCode = (ownerType == null ? 0 : ownerType.hashCode()) ^ (rawType == null ? 0 : rawType.hashCode())
 						^ typeArguments.hashCode();
+			}
 
-				recurringThreads.remove(currentThread);
-
-				return hashCode;
-			} else
-				return 0;
+			return hashCode;
 		}
 
 		@Override
 		public boolean equals(Object other) {
-			Thread currentThread = Thread.currentThread();
-			boolean newThread = false;
-
-			MultiMap<ParameterizedType, ParameterizedType, Set<ParameterizedType>> equalitiesForThread = assumedEqualities
-					.get(currentThread);
-			if (equalitiesForThread == null) {
-				assumedEqualities.put(currentThread,
-						equalitiesForThread = new MultiTreeMap<>(
-								EqualityComparator.identityComparator(),
-								() -> new TreeSet<>(EqualityComparator.identityComparator())));
-				newThread = true;
-			}
-
 			boolean equals;
 
 			if (other == this)
@@ -193,29 +189,48 @@ public class ParameterizedTypes {
 				equals = other.equals(this);
 			else if (other == null || !(other instanceof ParameterizedType))
 				equals = false;
+			else if (other instanceof ParameterizedTypeImpl && other.hashCode() != hashCode())
+				equals = false;
 			else {
+				Thread currentThread = Thread.currentThread();
+				boolean newThread = false;
+
+				MultiMap<ParameterizedType, ParameterizedType, Set<ParameterizedType>> equalitiesForThread = assumedEqualities
+						.get(currentThread);
+				if (equalitiesForThread == null) {
+					assumedEqualities.put(currentThread,
+							equalitiesForThread = new MultiTreeMap<>(EqualityComparator.identityComparator(),
+									() -> new TreeSet<>(EqualityComparator.identityComparator())));
+					newThread = true;
+				}
+
 				ParameterizedType that = (ParameterizedType) other;
 
-				if (equalitiesForThread.contains(this, that))
+				if (equalitiesForThread.contains(this, that) || equalitiesForThread.contains(that, this))
 					equals = true;
 				else {
 					equalitiesForThread.add(this, that);
 					equalitiesForThread.add(that, this);
 
-					equals = getRawType().equals(that.getRawType())
-							&& Objects.equals(getOwnerType(), that.getOwnerType())
-							&& Arrays.equals(getActualTypeArguments(),
-									that.getActualTypeArguments());
+					equals = getRawType().equals(that.getRawType()) && Objects.equals(getOwnerType(), that.getOwnerType())
+							&& Arrays.equals(getActualTypeArguments(), that.getActualTypeArguments());
 
 					equalitiesForThread.remove(this, that);
 					equalitiesForThread.remove(that, this);
 				}
+
+				if (newThread)
+					assumedEqualities.remove(currentThread);
 			}
 
-			if (newThread)
-				assumedEqualities.remove(currentThread);
-
 			return equals;
+		}
+
+		public boolean equals2(Object other) {
+			if (!(other instanceof Type))
+				return false;
+			else
+				return Types.equals(this, (Type) other);
 		}
 	}
 
@@ -287,10 +302,8 @@ public class ParameterizedTypes {
 	public static List<TypeVariable<?>> getAllTypeParameters(Class<?> rawType) {
 		Stream<TypeVariable<?>> typeParameters = Stream.empty();
 		do {
-			typeParameters = Stream.concat(typeParameters,
-					Arrays.stream(rawType.getTypeParameters()));
-		} while (!Types.isStatic(rawType)
-				&& (rawType = rawType.getEnclosingClass()) != null);
+			typeParameters = Stream.concat(typeParameters, Arrays.stream(rawType.getTypeParameters()));
+		} while (!Types.isStatic(rawType) && (rawType = rawType.getEnclosingClass()) != null);
 		return typeParameters.collect(Collectors.toList());
 	}
 
@@ -304,8 +317,7 @@ public class ParameterizedTypes {
 	 * @return A mapping of all type variables to their arguments in the context
 	 *         of the given type.
 	 */
-	public static Map<TypeVariable<?>, Type> getAllTypeArguments(
-			ParameterizedType type) {
+	public static Map<TypeVariable<?>, Type> getAllTypeArguments(ParameterizedType type) {
 		Map<TypeVariable<?>, Type> typeArguments = new HashMap<>();
 
 		Class<?> rawType = Types.getRawType(type);
@@ -317,16 +329,14 @@ public class ParameterizedTypes {
 				typeArguments.put(typeParameter, typeArgument);
 			}
 
-			type = type.getOwnerType() instanceof ParameterizedType
-					? (ParameterizedType) type.getOwnerType() : null;
+			type = type.getOwnerType() instanceof ParameterizedType ? (ParameterizedType) type.getOwnerType() : null;
 			rawType = Types.isStatic(rawType) ? null : rawType.getEnclosingClass();
 
 			if (rawType != null && type == null) {
 				do {
 					for (TypeVariable<?> variable : rawType.getTypeParameters())
 						typeArguments.put(variable, variable);
-				} while ((rawType = Types.isStatic(rawType) ? null
-						: rawType.getEnclosingClass()) != null);
+				} while ((rawType = Types.isStatic(rawType) ? null : rawType.getEnclosingClass()) != null);
 			}
 		} while (type != null && rawType != null);
 
@@ -345,14 +355,11 @@ public class ParameterizedTypes {
 		return new ParameterizedTypeProxy(source);
 	}
 
-	static ParameterizedType uncheckedFrom(Type ownerType, Class<?> rawType,
-			List<Type> typeArguments) {
-		return new ParameterizedTypeImpl(ownerType, rawType,
-				new ArrayList<>(typeArguments));
+	static ParameterizedType uncheckedFrom(Type ownerType, Class<?> rawType, List<Type> typeArguments) {
+		return new ParameterizedTypeImpl(ownerType, rawType, new ArrayList<>(typeArguments));
 	}
 
-	static <T> Type uncheckedFrom(Class<T> rawType,
-			Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
+	static <T> Type uncheckedFrom(Class<T> rawType, Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
 		Class<?> enclosing = rawType.getEnclosingClass();
 		Type ownerType;
 		if (enclosing == null || Types.isStatic(rawType))
@@ -360,12 +367,10 @@ public class ParameterizedTypes {
 		else
 			ownerType = uncheckedFrom(enclosing, typeArguments);
 
-		if ((ownerType == null || ownerType instanceof Class)
-				&& rawType.getTypeParameters().length == 0)
+		if ((ownerType == null || ownerType instanceof Class) && rawType.getTypeParameters().length == 0)
 			return rawType;
 
-		return new ParameterizedTypeImpl(ownerType, rawType,
-				argumentsForClass(rawType, typeArguments));
+		return new ParameterizedTypeImpl(ownerType, rawType, argumentsForClass(rawType, typeArguments));
 	}
 
 	/**
@@ -404,8 +409,7 @@ public class ParameterizedTypes {
 	@SuppressWarnings("unchecked")
 	public static <T> TypeToken<? extends T> from(Class<T> rawType,
 			Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
-		return (TypeToken<? extends T>) TypeToken
-				.over(uncheckedFrom(rawType, typeArguments));
+		return (TypeToken<? extends T>) TypeToken.over(uncheckedFrom(rawType, typeArguments));
 	}
 
 	/**
@@ -427,8 +431,7 @@ public class ParameterizedTypes {
 	 * @return A {@link ParameterizedType} instance over the given class,
 	 *         parameterized with the given type arguments, in order
 	 */
-	public static <T> TypeToken<? extends T> from(Class<T> rawType,
-			Type... typeArguments) {
+	public static <T> TypeToken<? extends T> from(Class<T> rawType, Type... typeArguments) {
 		return from(rawType, Arrays.asList(typeArguments));
 	}
 
@@ -452,14 +455,11 @@ public class ParameterizedTypes {
 	 *         parameterized with the given type arguments, in order
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> TypeToken<? extends T> from(Class<T> rawType,
-			List<Type> typeArguments) {
-		if (!Types.isStatic(rawType) && rawType.getEnclosingClass() != null
-				&& isGeneric(rawType.getEnclosingClass()))
+	public static <T> TypeToken<? extends T> from(Class<T> rawType, List<Type> typeArguments) {
+		if (!Types.isStatic(rawType) && rawType.getEnclosingClass() != null && isGeneric(rawType.getEnclosingClass()))
 			throw new IllegalArgumentException();
 
-		return (TypeToken<? extends T>) TypeToken
-				.over(uncheckedFrom(null, rawType, typeArguments));
+		return (TypeToken<? extends T>) TypeToken.over(uncheckedFrom(null, rawType, typeArguments));
 	}
 
 	private static List<Type> argumentsForClass(Class<?> rawType,
@@ -467,8 +467,7 @@ public class ParameterizedTypes {
 		List<Type> arguments = new ArrayList<>();
 		for (int i = 0; i < rawType.getTypeParameters().length; i++) {
 			Type argument = typeArguments.apply(rawType.getTypeParameters()[i]);
-			arguments
-					.add((argument != null) ? argument : rawType.getTypeParameters()[i]);
+			arguments.add((argument != null) ? argument : rawType.getTypeParameters()[i]);
 		}
 		return arguments;
 	}
@@ -499,8 +498,7 @@ public class ParameterizedTypes {
 	 *          The class of the supertype parameterization we wish to determine.
 	 * @return A TypeToken over the supertype of the requested class.
 	 */
-	public static Type resolveSupertypeParameters(Type type,
-			Class<?> superclass) {
+	public static Type resolveSupertypeParameters(Type type, Class<?> superclass) {
 		if (!isGeneric(superclass))
 			return superclass;
 
@@ -510,24 +508,20 @@ public class ParameterizedTypes {
 			return type;
 
 		if (!(type instanceof ParameterizedType) && !(type instanceof Class))
-			throw new IllegalArgumentException(
-					"Unexpected class '" + type.getClass() + "' of type '" + type + "'.");
+			throw new IllegalArgumentException("Unexpected class '" + type.getClass() + "' of type '" + type + "'.");
 
 		do {
-			Set<Type> lesserSubtypes = new HashSet<>(
-					Arrays.asList(subclass.getGenericInterfaces()));
+			Set<Type> lesserSubtypes = new HashSet<>(Arrays.asList(subclass.getGenericInterfaces()));
 			if (subclass.getSuperclass() != null)
 				lesserSubtypes.addAll(Arrays.asList(subclass.getGenericSuperclass()));
 			if (lesserSubtypes.isEmpty())
 				lesserSubtypes.add(Object.class);
 
-			Type subtype = lesserSubtypes.stream()
-					.filter(t -> Types.isAssignable(Types.getRawType(t), superclass))
-					.findAny().get();
+			Type subtype = lesserSubtypes.stream().filter(t -> Types.isAssignable(Types.getRawType(t), superclass)).findAny()
+					.get();
 
 			if (type instanceof ParameterizedType)
-				type = new TypeSubstitution(
-						getAllTypeArguments((ParameterizedType) type)).resolve(subtype);
+				type = new TypeSubstitution(getAllTypeArguments((ParameterizedType) type)).resolve(subtype);
 			else
 				type = subtype;
 
@@ -561,16 +555,14 @@ public class ParameterizedTypes {
 			return type;
 
 		if (!(type instanceof ParameterizedType) && !(type instanceof Class))
-			throw new IllegalArgumentException(
-					"Unexpected class '" + type.getClass() + "' of type '" + type + "'.");
+			throw new IllegalArgumentException("Unexpected class '" + type.getClass() + "' of type '" + type + "'.");
 
 		Map<TypeVariable<?>, InferenceVariable> parameterSubstitutes = new HashMap<>();
 		Map<InferenceVariable, Type> substitutedArguments = new HashMap<>();
 
 		int index = 0;
 		if (type instanceof ParameterizedType) {
-			Map<TypeVariable<?>, Type> arguments = getAllTypeArguments(
-					(ParameterizedType) type);
+			Map<TypeVariable<?>, Type> arguments = getAllTypeArguments((ParameterizedType) type);
 			for (TypeVariable<?> parameter : getAllTypeParameters(rawType)) {
 				InferenceVariable substituteArgument = getSubstitutionArgument(index++);
 				parameterSubstitutes.put(parameter, substituteArgument);
@@ -579,8 +571,7 @@ public class ParameterizedTypes {
 		}
 
 		Type supertype = new TypeSubstitution(substitutedArguments)
-				.resolve(from(rawType, parameterSubstitutes::get)
-						.resolveSubtypeParameters(subclass).getType());
+				.resolve(from(rawType, parameterSubstitutes::get).resolveSubtypeParameters(subclass).getType());
 
 		return supertype;
 	}

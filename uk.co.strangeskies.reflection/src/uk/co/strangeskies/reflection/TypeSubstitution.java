@@ -24,15 +24,14 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import uk.co.strangeskies.utilities.EqualityComparator;
 import uk.co.strangeskies.utilities.IdentityProperty;
 
 /**
@@ -99,8 +98,7 @@ public class TypeSubstitution {
 	 * @return A new TypeSubstitution object with the rule added.
 	 */
 	public TypeSubstitution where(Type from, Type to) {
-		return new TypeSubstitution(t -> Objects.equals(from, t) ? to
-				: mapping.apply(t));
+		return new TypeSubstitution(t -> Objects.equals(from, t) ? to : mapping.apply(t));
 	}
 
 	/**
@@ -117,8 +115,7 @@ public class TypeSubstitution {
 	 * @return A new TypeSubstitution object with the rule added.
 	 */
 	public TypeSubstitution where(Predicate<Type> from, Function<Type, Type> to) {
-		return new TypeSubstitution(t -> from.test(t) ? to.apply(t)
-				: mapping.apply(t));
+		return new TypeSubstitution(t -> from.test(t) ? to.apply(t) : mapping.apply(t));
 	}
 
 	/**
@@ -133,67 +130,78 @@ public class TypeSubstitution {
 		if (empty.get())
 			return type;
 		else
-			return resolve(type,
-					new TreeMap<>(EqualityComparator.identityComparator()));
+			return resolve(type, new IdentityHashMap<>());
 	}
 
-	private Type resolve(Type type,
-			Map<ParameterizedType, ParameterizedType> visited) {
+	private Type resolve(Type type, Map<Type, Type> visited) {
 		Type mapping = this.mapping.apply(type);
-		if (mapping != null)
+		if (mapping != null) {
 			return mapping;
-		else if (type == null)
+
+		} else if (type == null) {
 			return null;
-		else if (type instanceof Class)
-			return type;
-		else if (type instanceof TypeVariable)
-			return type;
-		else if (type instanceof InferenceVariable)
-			return type;
-		else if (type instanceof IntersectionType)
-			return IntersectionType.uncheckedFrom(Arrays
-					.stream(((IntersectionType) type).getTypes())
-					.map(t -> resolve(t, visited)).collect(Collectors.toList()));
-		else if (type instanceof WildcardType) {
-			WildcardType wildcardType = (WildcardType) type;
 
-			if (wildcardType.getLowerBounds().length > 0) {
-				return WildcardTypes.lowerBounded(resolve(
-						IntersectionType.uncheckedFrom(wildcardType.getLowerBounds()),
-						visited));
+		} else if (type instanceof Class) {
+			return type;
 
-			} else if (wildcardType.getUpperBounds().length > 0) {
-				return WildcardTypes.upperBounded(resolve(
-						IntersectionType.from(wildcardType.getUpperBounds()), visited));
+		} else if (type instanceof TypeVariable) {
+			return type;
 
-			} else
-				return WildcardTypes.unbounded();
-		} else if (type instanceof GenericArrayType)
-			return ArrayTypes.fromComponentType(resolve(
-					((GenericArrayType) type).getGenericComponentType(), visited));
-		else if (type instanceof ParameterizedType)
+		} else if (type instanceof InferenceVariable) {
+			return type;
+
+		} else if (type instanceof IntersectionType) {
+			return resolveIntersectionType((IntersectionType) type, visited);
+
+		} else if (type instanceof WildcardType) {
+			return resolveWildcardType((WildcardType) type, visited);
+
+		} else if (type instanceof GenericArrayType) {
+			return ArrayTypes.fromComponentType(resolve(((GenericArrayType) type).getGenericComponentType(), visited));
+
+		} else if (type instanceof ParameterizedType) {
 			return resolveParameterizedType((ParameterizedType) type, visited);
+		}
 
-		throw new IllegalArgumentException("Cannot resolve unrecognised type '"
-				+ type + "' of class'" + type.getClass() + "'.");
+		throw new IllegalArgumentException(
+				"Cannot resolve unrecognised type '" + type + "' of class'" + type.getClass() + "'.");
 	}
 
-	private Type resolveParameterizedType(ParameterizedType type,
-			Map<ParameterizedType, ParameterizedType> visited) {
+	private Type resolveWildcardType(WildcardType wildcardType, Map<Type, Type> visited) {
+		if (wildcardType.getLowerBounds().length > 0) {
+			return WildcardTypes
+					.lowerBounded(resolve(IntersectionType.uncheckedFrom(wildcardType.getLowerBounds()), visited));
+
+		} else if (wildcardType.getUpperBounds().length > 0) {
+			return WildcardTypes
+					.upperBounded(resolve(IntersectionType.uncheckedFrom(wildcardType.getUpperBounds()), visited));
+
+		} else
+			return WildcardTypes.unbounded();
+	}
+
+	private Type resolveIntersectionType(IntersectionType type, Map<Type, Type> visited) {
+		IntersectionType result = IntersectionType
+				.uncheckedFrom(Arrays.stream(type.getTypes()).map(t -> resolve(t, visited)).collect(Collectors.toList()));
+
+		return result;
+	}
+
+	private Type resolveParameterizedType(ParameterizedType type, Map<Type, Type> visited) {
 		/*
 		 * Here we deal with recursion in infinite types.
 		 */
 		if (visited.containsKey(type))
 			return visited.get(type);
 
-		IdentityProperty<ParameterizedType> result = new IdentityProperty<>();
-		visited.put(type, ParameterizedTypes.proxy(result::get));
+		IdentityProperty<ParameterizedType> resultProperty = new IdentityProperty<>();
+		visited.put(type, ParameterizedTypes.proxy(resultProperty::get));
 
-		result.set(ParameterizedTypes.uncheckedFrom(
-				resolve(type.getOwnerType(), visited), Types.getRawType(type), Arrays
-						.stream(type.getActualTypeArguments())
-						.map(t -> resolve(t, visited)).collect(Collectors.toList())));
+		ParameterizedType result = ParameterizedTypes.uncheckedFrom(resolve(type.getOwnerType(), visited),
+				Types.getRawType(type),
+				Arrays.stream(type.getActualTypeArguments()).map(t -> resolve(t, visited)).collect(Collectors.toList()));
 
-		return result.get();
+		resultProperty.set(result);
+		return result;
 	}
 }
