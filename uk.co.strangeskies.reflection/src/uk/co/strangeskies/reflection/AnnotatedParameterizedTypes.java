@@ -27,14 +27,13 @@ import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes.AnnotatedTypeImpl;
+import uk.co.strangeskies.utilities.Isomorphism;
 
 /**
  * A collection of utility methods relating to annotated parameterised types.
@@ -45,16 +44,16 @@ public final class AnnotatedParameterizedTypes {
 	private static class AnnotatedParameterizedTypeImpl extends AnnotatedTypeImpl implements AnnotatedParameterizedType {
 		private final AnnotatedTypeImpl[] annotatedTypeArguments;
 
-		public AnnotatedParameterizedTypeImpl(Set<TypeVariable<?>> wrapped,
+		public AnnotatedParameterizedTypeImpl(Isomorphism isomorphism,
 				AnnotatedParameterizedType annotatedParameterizedType) {
 			super(annotatedParameterizedType);
 
-			annotatedTypeArguments = AnnotatedTypes.wrapImpl(wrapped,
+			annotatedTypeArguments = AnnotatedTypes.wrapImpl(isomorphism,
 					annotatedParameterizedType.getAnnotatedActualTypeArguments());
 		}
 
 		public AnnotatedParameterizedTypeImpl(ParameterizedType type, Collection<? extends Annotation> annotations,
-				Map<Type, AnnotatedType> annotatedTypes) {
+				Isomorphism isomorphism) {
 			super(type, annotations);
 
 			annotatedTypeArguments = AnnotatedTypes.overImpl(type.getActualTypeArguments());
@@ -139,18 +138,16 @@ public final class AnnotatedParameterizedTypes {
 	 *         parameterized type, with the given annotations.
 	 */
 	public static AnnotatedParameterizedType over(ParameterizedType type, Collection<Annotation> annotations) {
-		return over(type, annotations, new IdentityHashMap<>());
+		return over(type, annotations, new Isomorphism());
 	}
 
 	private static AnnotatedParameterizedType over(ParameterizedType type, Collection<Annotation> annotations,
-			Map<Type, AnnotatedType> annotatedTypes) {
-		if (annotations.isEmpty() && annotatedTypes.containsKey(type)) {
-			return (AnnotatedParameterizedType) annotatedTypes.get(type);
+			Isomorphism isomorphism) {
+		if (annotations.isEmpty()) {
+			return isomorphism.byIdentity().getProxiedMapping(type, AnnotatedParameterizedType.class,
+					t -> new AnnotatedParameterizedTypeImpl(type, annotations, isomorphism));
 		} else {
-			AnnotatedParameterizedType annotatedType = new AnnotatedParameterizedTypeImpl(type, annotations, annotatedTypes);
-			if (annotations.isEmpty())
-				annotatedTypes.put(type, annotatedType);
-			return annotatedType;
+			return new AnnotatedParameterizedTypeImpl(type, annotations, isomorphism);
 		}
 	}
 
@@ -257,15 +254,14 @@ public final class AnnotatedParameterizedTypes {
 	}
 
 	protected static AnnotatedParameterizedTypeImpl wrapImpl(AnnotatedParameterizedType type) {
-		return wrapImpl(AnnotatedTypes.wrappingVisitedSet(), type);
+		return wrapImpl(new Isomorphism(), type);
 	}
 
-	protected static AnnotatedParameterizedTypeImpl wrapImpl(Set<TypeVariable<?>> wrapped,
-			AnnotatedParameterizedType type) {
+	protected static AnnotatedParameterizedTypeImpl wrapImpl(Isomorphism isomorphism, AnnotatedParameterizedType type) {
 		if (type instanceof AnnotatedParameterizedTypeImpl) {
 			return (AnnotatedParameterizedTypeImpl) type;
 		} else
-			return new AnnotatedParameterizedTypeImpl(wrapped, type);
+			return new AnnotatedParameterizedTypeImpl(isomorphism, type);
 	}
 
 	/**

@@ -33,11 +33,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.utilities.EqualityComparator;
+import uk.co.strangeskies.utilities.Isomorphism;
 import uk.co.strangeskies.utilities.collection.MultiMap;
 import uk.co.strangeskies.utilities.collection.MultiTreeMap;
 
@@ -56,8 +56,6 @@ public class ParameterizedTypes {
 
 		private final Map<Thread, MultiMap<ParameterizedType, ParameterizedType, Set<ParameterizedType>>> assumedEqualities;
 
-		// caches
-		private String string;
 		private Integer hashCode;
 
 		ParameterizedTypeImpl(Type ownerType, Class<?> rawType, List<Type> typeArguments) {
@@ -117,44 +115,7 @@ public class ParameterizedTypes {
 		}
 
 		public synchronized String toString(Imports imports) {
-			if (string == null) {
-				/*
-				 * This way the string will return "..." if we encounter it again in the
-				 * parameters, rather than recurring infinitely:
-				 * 
-				 * (this is not a problem for other threads as toString is synchronized)
-				 */
-				string = "...";
-
-				/*
-				 * Calculate the string properly, now we're guarded against recursion:
-				 */
-				StringBuilder builder = new StringBuilder();
-				if (ownerType == null) {
-					builder.append(Types.toString(rawType, imports));
-				} else {
-					builder.append(Types.toString(ownerType, imports)).append(".");
-
-					if (ownerType instanceof ParameterizedType) {
-						String rawTypeName = rawType.getName();
-						int index = rawTypeName.indexOf('$');
-						if (index > 0) {
-							rawTypeName = rawTypeName.substring(index + 1);
-						}
-						builder.append(rawTypeName);
-					} else {
-						builder.append(Types.toString(rawType, imports));
-					}
-				}
-
-				builder.append('<');
-
-				builder.append(typeArguments.stream().map(t -> Types.toString(t, imports)).collect(Collectors.joining(", ")));
-
-				string = builder.append(">").toString();
-			}
-
-			return string;
+			return ParameterizedTypes.toString(this, imports);
 		}
 
 		@Override
@@ -234,49 +195,53 @@ public class ParameterizedTypes {
 		}
 	}
 
-	private static class ParameterizedTypeProxy implements ParameterizedType {
-		private final Supplier<ParameterizedType> source;
+	private ParameterizedTypes() {}
 
-		public ParameterizedTypeProxy(Supplier<ParameterizedType> source) {
-			this.source = source;
-		}
-
-		@Override
-		public Type getRawType() {
-			return source.get().getRawType();
-		}
-
-		@Override
-		public Type getOwnerType() {
-			return source.get().getOwnerType();
-		}
-
-		@Override
-		public Type[] getActualTypeArguments() {
-			return source.get().getActualTypeArguments();
-		}
-
-		@Override
-		public String toString() {
-			return source.get().toString();
-		}
-
-		@Override
-		public boolean equals(Object arg0) {
-			return source.get().equals(arg0);
-		}
-
-		@Override
-		public int hashCode() {
-			return source.get().hashCode();
-		}
-
-		public ParameterizedType getSource() {
-			return source.get();
-		}
+	public static String toString(ParameterizedType parameterizedType, Imports imports) {
+		return toString(parameterizedType, imports, new Isomorphism());
 	}
 
-	private ParameterizedTypes() {}
+	public static String toString(ParameterizedType parameterizedType, Imports imports, Isomorphism isomorphism) {
+		return isomorphism.byIdentity().getPartialMapping(parameterizedType, (p, partial) -> {
+			/*
+			 * This way the string will return "..." if we encounter it again in the
+			 * parameters, rather than recurring infinitely:
+			 */
+			partial.accept("...");
+
+			Type ownerType = p.getOwnerType();
+			Type rawType = p.getRawType();
+			Type[] typeArguments = p.getActualTypeArguments();
+
+			/*
+			 * Calculate the string properly, now we're guarded against recursion:
+			 */
+			StringBuilder builder = new StringBuilder();
+			if (ownerType == null) {
+				builder.append(Types.toString(rawType, imports, isomorphism));
+			} else {
+				builder.append(Types.toString(ownerType, imports, isomorphism)).append(".");
+
+				if (ownerType instanceof ParameterizedType) {
+					String rawTypeName = rawType.getTypeName();
+					int index = rawTypeName.indexOf('$');
+					if (index > 0) {
+						rawTypeName = rawTypeName.substring(index + 1);
+					}
+					builder.append(rawTypeName);
+				} else {
+					builder.append(Types.toString(rawType, imports, isomorphism));
+				}
+			}
+
+			builder.append('<');
+
+			builder.append(Arrays.stream(typeArguments).map(t -> Types.toString(t, imports, isomorphism))
+					.collect(Collectors.joining(", ")));
+
+			return builder.append(">").toString();
+		});
+	}
 
 	/**
 	 * Determine whether a {@link Class} represents a generic type.
@@ -341,18 +306,6 @@ public class ParameterizedTypes {
 		} while (type != null && rawType != null);
 
 		return typeArguments;
-	}
-
-	/**
-	 * @param source
-	 *          A supplier of the parameterized class we wish to proxy.
-	 * @return A proxy for a parameterized type, forwarding to the instance
-	 *         provided by the given supplier at the moment of each invocation.
-	 *         This is generally useful for algorithms which deal with infinite
-	 *         types.
-	 */
-	public static ParameterizedType proxy(Supplier<ParameterizedType> source) {
-		return new ParameterizedTypeProxy(source);
 	}
 
 	static ParameterizedType uncheckedFrom(Type ownerType, Class<?> rawType, List<Type> typeArguments) {
@@ -574,28 +527,5 @@ public class ParameterizedTypes {
 				.resolve(from(rawType, parameterSubstitutes::get).resolveSubtypeParameters(subclass).getType());
 
 		return supertype;
-	}
-
-	/**
-	 * Give a canonical String representation of a parameterized type which
-	 * supports infinite types. Provided class and package imports allow the names
-	 * of some classes to be output without full package qualification.
-	 * 
-	 * @param type
-	 *          The type for which we wish to determine a string representation.
-	 * @param imports
-	 *          Classes and packages for which full package qualification may be
-	 *          omitted from output.
-	 * @return A canonical string representation of the given type.
-	 */
-	public static String toString(ParameterizedType type, Imports imports) {
-		while (type instanceof ParameterizedTypeProxy)
-			type = ((ParameterizedTypeProxy) type).getSource();
-
-		if (type instanceof ParameterizedTypeImpl)
-			return ((ParameterizedTypeImpl) type).toString(imports);
-		else {
-			return new ParameterizedTypeImpl(type).toString(imports);
-		}
 	}
 }

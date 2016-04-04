@@ -40,6 +40,6 @@ public interface Copyable<S extends Copyable<S>> {
 	 *         {@link Isomorphism}
 	 */
 	default S deepCopy(Isomorphism context) {
-		return context.getDeepCopy(this);
+		return context.byIdentity().getDeepCopy(this);
 	}
 }

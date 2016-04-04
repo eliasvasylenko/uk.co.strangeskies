@@ -41,10 +41,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.ParameterizedTypes.ParameterizedTypeImpl;
-import uk.co.strangeskies.utilities.IdentityProperty;
+import uk.co.strangeskies.utilities.Isomorphism;
 import uk.co.strangeskies.utilities.collection.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.MultiMap;
-import uk.co.strangeskies.utilities.collection.computingmap.CacheComputingMap;
 import uk.co.strangeskies.utilities.text.Parser;
 
 /**
@@ -83,9 +82,6 @@ public final class Types {
 						put(WRAPPED_PRIMITIVES.get(primitive), primitive);
 				}
 			});
-
-	private static final CacheComputingMap<Set<ParameterizedType>, IdentityProperty<ParameterizedType>> BEST_PARAMETERIZATIONS = new CacheComputingMap<>(
-			c -> new IdentityProperty<>(), true);
 
 	private Types() {}
 
@@ -947,7 +943,7 @@ public final class Types {
 	 *         satisfy each upper bound in the given set.
 	 */
 	public static Type leastUpperBound(Collection<Type> upperBounds) {
-		Type upperBound = leastUpperBoundImpl(upperBounds);
+		Type upperBound = leastUpperBoundImpl(upperBounds, new Isomorphism());
 
 		/*
 		 * Not sure if this is necessary! But it's cheap enough to check. Can't
@@ -959,7 +955,7 @@ public final class Types {
 		return upperBound;
 	}
 
-	private static Type leastUpperBoundImpl(Collection<Type> upperBounds) {
+	private static Type leastUpperBoundImpl(Collection<Type> upperBounds, Isomorphism isomorphism) {
 		if (upperBounds.size() == 1)
 			/*
 			 * If k = 1, then the lub is the type itself: lub(U) = U.
@@ -986,7 +982,7 @@ public final class Types {
 			minimiseCandidates(erasedCandidates);
 
 			List<Type> bestTypes = erasedCandidates.entrySet().stream()
-					.map(e -> best(e.getKey(), new ArrayList<>(e.getValue()))).collect(Collectors.toList());
+					.map(e -> best(e.getKey(), new ArrayList<>(e.getValue()), isomorphism)).collect(Collectors.toList());
 
 			return IntersectionType.uncheckedFrom(bestTypes);
 		}
@@ -1008,7 +1004,7 @@ public final class Types {
 		erasedCandidates.keySet().retainAll(minimalCandidates);
 	}
 
-	private static Type best(Class<?> rawClass, List<ParameterizedType> parameterizations) {
+	private static Type best(Class<?> rawClass, List<ParameterizedType> parameterizations, Isomorphism isomorphism) {
 		if (parameterizations.isEmpty())
 			return rawClass;
 		else if (parameterizations.size() == 1) {
@@ -1019,45 +1015,36 @@ public final class Types {
 		/*
 		 * Proxy guard against recursive generation of infinite types
 		 */
-		IdentityProperty<ParameterizedType> bestResult;
-		synchronized (BEST_PARAMETERIZATIONS) {
-			if (BEST_PARAMETERIZATIONS.keySet().contains(new HashSet<>(parameterizations)))
-				return BEST_PARAMETERIZATIONS.get(new HashSet<>(parameterizations)).get();
+		return isomorphism.byEquality().getProxiedMapping(new HashSet<>(parameterizations), ParameterizedType.class, p -> {
+			Map<TypeVariable<?>, Type> leastContainingParameterization = new HashMap<>();
 
-			bestResult = new IdentityProperty<>();
-			BEST_PARAMETERIZATIONS.putGet(new HashSet<>(parameterizations)).set(ParameterizedTypes.proxy(bestResult::get));
-		}
+			List<TypeVariable<?>> typeParameters = ParameterizedTypes.getAllTypeParameters(rawClass);
+			for (int i = 0; i < parameterizations.size(); i++) {
+				ParameterizedType parameterization = parameterizations.get(i);
+				for (int j = 0; j < typeParameters.size(); j++) {
+					TypeVariable<?> variable = typeParameters.get(j);
+					if (parameterization != null) {
+						Type argumentU = parameterization.getActualTypeArguments()[j];
+						Type argumentV = leastContainingParameterization.get(variable);
 
-		Map<TypeVariable<?>, Type> leastContainingParameterization = new HashMap<>();
-
-		List<TypeVariable<?>> typeParameters = ParameterizedTypes.getAllTypeParameters(rawClass);
-		for (int i = 0; i < parameterizations.size(); i++) {
-			ParameterizedType parameterization = parameterizations.get(i);
-			for (int j = 0; j < typeParameters.size(); j++) {
-				TypeVariable<?> variable = typeParameters.get(j);
-				if (parameterization != null) {
-					Type argumentU = parameterization.getActualTypeArguments()[j];
-					Type argumentV = leastContainingParameterization.get(variable);
-
-					if (argumentV == null)
-						leastContainingParameterization.put(variable, argumentU);
-					else {
-						leastContainingParameterization.put(variable, leastContainingArgument(argumentU, argumentV));
+						if (argumentV == null)
+							leastContainingParameterization.put(variable, argumentU);
+						else {
+							leastContainingParameterization.put(variable, leastContainingArgument(argumentU, argumentV, isomorphism));
+						}
 					}
 				}
+				parameterizations.set(i, (ParameterizedType) parameterization.getOwnerType());
 			}
-			parameterizations.set(i, (ParameterizedType) parameterization.getOwnerType());
-		}
 
-		ParameterizedType best = (ParameterizedType) ParameterizedTypes.uncheckedFrom(rawClass,
-				leastContainingParameterization::get);
+			ParameterizedType best = (ParameterizedType) ParameterizedTypes.uncheckedFrom(rawClass,
+					leastContainingParameterization::get);
 
-		bestResult.set(best);
-
-		return best;
+			return best;
+		});
 	}
 
-	private static Type leastContainingArgument(Type argumentU, Type argumentV) {
+	private static Type leastContainingArgument(Type argumentU, Type argumentV, Isomorphism isomorphism) {
 		if (argumentU instanceof WildcardType
 				&& (!(argumentV instanceof WildcardType) || ((WildcardType) argumentV).getUpperBounds().length > 0)) {
 			Type swap = argumentU;
@@ -1081,7 +1068,8 @@ public final class Types {
 					/*
 					 * lcta(? extends U, ? extends V) = ? extends lub(U, V)
 					 */
-					return WildcardTypes.upperBounded(leastUpperBoundImpl(Arrays.asList(IntersectionType.from(aggregated))));
+					return WildcardTypes
+							.upperBounded(leastUpperBoundImpl(Arrays.asList(IntersectionType.from(aggregated)), isomorphism));
 				} else {
 					/*
 					 * lcta(? extends U, ? super V) = U if U = V, otherwise ?
@@ -1103,7 +1091,7 @@ public final class Types {
 				 */
 				List<Type> bounds = new ArrayList<>(Arrays.asList(((WildcardType) argumentV).getUpperBounds()));
 				bounds.add(argumentU);
-				return WildcardTypes.upperBounded(leastUpperBoundImpl(bounds));
+				return WildcardTypes.upperBounded(leastUpperBoundImpl(bounds, isomorphism));
 			} else {
 				/*
 				 * lcta(U, ? super V) = ? super glb(U, V)
@@ -1116,7 +1104,7 @@ public final class Types {
 			 * lcta(U, V) = U if U = V, otherwise ? extends lub(U, V)
 			 */
 			return argumentU.equals(argumentV) ? argumentU
-					: WildcardTypes.upperBounded(leastUpperBoundImpl(Arrays.asList(argumentU, argumentV)));
+					: WildcardTypes.upperBounded(leastUpperBoundImpl(Arrays.asList(argumentU, argumentV), isomorphism));
 		}
 	}
 
@@ -1184,13 +1172,17 @@ public final class Types {
 	 * @return A canonical string representation of the given type.
 	 */
 	public static String toString(Type type, Imports imports) {
+		return toString(type, imports, new Isomorphism());
+	}
+
+	public static String toString(Type type, Imports imports, Isomorphism isomorphism) {
 		if (type instanceof Class) {
 			if (((Class<?>) type).isArray())
 				return new StringBuilder(toString(((Class<?>) type).getComponentType(), imports)).append("[]").toString();
 			else
 				return imports.getClassName((Class<?>) type);
 		} else if (type instanceof ParameterizedType) {
-			return ParameterizedTypes.toString((ParameterizedType) type, imports);
+			return ParameterizedTypes.toString((ParameterizedType) type, imports, isomorphism);
 		} else if (type instanceof GenericArrayType) {
 			return new StringBuilder(toString(((GenericArrayType) type).getGenericComponentType(), imports)).append("[]")
 					.toString();

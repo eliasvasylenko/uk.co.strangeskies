@@ -18,8 +18,14 @@
  */
 package uk.co.strangeskies.utilities;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -41,54 +47,183 @@ import java.util.function.Function;
  * @author Elias N Vasylenko
  */
 public class Isomorphism {
-	private final Map<?, ?> copiedNodes = new IdentityHashMap<>();
+	private final Mapping identity = new Mapping(new IdentityHashMap<>());
+	private final Mapping equality = new Mapping(new HashMap<>());
 
-	/**
-	 * Make a shallow copy of the given {@link Copyable}, or fetch an existing
-	 * mapping if one has been made via this {@link Isomorphism}.
-	 * 
-	 * @param <S>
-	 *          the type of the result
-	 * @param node
-	 *          the graph node to copy
-	 * @return a copy of the given node
-	 */
-	public <S> S getCopy(Copyable<? extends S> node) {
-		return getCopy(node, Copyable::copy);
+	public Mapping byIdentity() {
+		return identity;
 	}
 
-	/**
-	 * Make a deep copy of the given {@link Copyable}, or fetch an existing
-	 * mapping if one has been made via this {@link Isomorphism}.
-	 * 
-	 * @param <S>
-	 *          the type of the result
-	 * @param node
-	 *          the graph node to copy
-	 * @return a copy of the given node
-	 */
-	public <S> S getDeepCopy(Copyable<? extends S> node) {
-		return getCopy(node, n -> n.deepCopy(this));
+	public Mapping byEquality() {
+		return equality;
 	}
 
-	/**
-	 * Make a mapping of the given node, or fetch an existing mapping if one has
-	 * been made via this {@link Isomorphism}.
-	 * 
-	 * @param <S>
-	 *          the type of the node
-	 * @param <C>
-	 *          the type of the result
-	 * @param node
-	 *          the graph node to map
-	 * @param mapping
-	 *          the mapping function to apply
-	 * @return a mapping of the given node
-	 */
-	@SuppressWarnings("unchecked")
-	public <S, C> S getCopy(C node, Function<C, S> mapping) {
-		S copy = ((Map<C, S>) copiedNodes).computeIfAbsent(node, mapping::apply);
-		((Map<S, S>) copiedNodes).put(copy, copy);
-		return copy;
+	public class Mapping {
+		private final Map<?, ?> copiedNodes;
+
+		public Mapping(Map<Object, Object> backingMap) {
+			copiedNodes = backingMap;
+		}
+
+		public Mapping() {
+			this(new IdentityHashMap<>());
+		}
+
+		/**
+		 * Make a shallow copy of the given {@link Copyable}, or fetch an existing
+		 * mapping if one has been made via this {@link Isomorphism}.
+		 * 
+		 * @param <S>
+		 *          the type of the result
+		 * @param node
+		 *          the graph node to copy
+		 * @return a copy of the given node
+		 */
+		public <S> S getCopy(Copyable<? extends S> node) {
+			return getMapping(node, Copyable::copy);
+		}
+
+		/**
+		 * Make a deep copy of the given {@link Copyable}, or fetch an existing
+		 * mapping if one has been made via this {@link Isomorphism}.
+		 * 
+		 * @param <S>
+		 *          the type of the result
+		 * @param node
+		 *          the graph node to copy
+		 * @return a copy of the given node
+		 */
+		public <S> S getDeepCopy(Copyable<? extends S> node) {
+			return getMapping(node, n -> n.deepCopy(Isomorphism.this));
+		}
+
+		/**
+		 * Make a mapping of the given node, or fetch an existing mapping if one has
+		 * been made via this {@link Isomorphism}.
+		 * 
+		 * @param <S>
+		 *          the type of the node
+		 * @param <C>
+		 *          the type of the result
+		 * @param node
+		 *          the graph node to map
+		 * @param mapping
+		 *          the mapping function to apply
+		 * @return a mapping of the given node
+		 */
+		@SuppressWarnings("unchecked")
+		public <S, C> S getMapping(C node, Function<C, S> mapping) {
+			S copy = ((Map<C, S>) copiedNodes).computeIfAbsent(node, mapping::apply);
+			return copy;
+		}
+
+		/**
+		 * Make a mapping of the given node, or fetch an existing mapping if one has
+		 * been made via this {@link Isomorphism}.
+		 * <p>
+		 * In the case of recursive graph structures we sometimes may need access to
+		 * a partially constructed mapping, as we may revisit a node during the
+		 * construction of its own mapping.
+		 * <p>
+		 * Once the mapping is calculated, the partial result will be removed from
+		 * the isomorphism, and future attempts to map the node will return the
+		 * complete result, though often the two references will be identity equal.
+		 * 
+		 * @param <S>
+		 *          the type of the node
+		 * @param <C>
+		 *          the type of the result
+		 * @param node
+		 *          the graph node to map
+		 * @param mapping
+		 *          the mapping function to apply, also accepting a consumer which
+		 *          can be called back with a partial result
+		 * @return a mapping of the given node
+		 */
+		@SuppressWarnings("unchecked")
+		public <S, C> S getPartialMapping(C node, BiFunction<C, Consumer<S>, S> mapping) {
+			S copy = ((Map<C, S>) copiedNodes).get(node);
+
+			if (copy == null) {
+				copy = mapping.apply(node, partial -> ((Map<C, S>) copiedNodes).put(node, partial));
+				((Map<C, S>) copiedNodes).put(node, copy);
+			}
+
+			return copy;
+		}
+
+		/**
+		 * Make a mapping of the given node, or fetch an existing mapping if one has
+		 * been made via this {@link Isomorphism}.
+		 * <p>
+		 * In the case of recursive graph structures we sometimes may need access to
+		 * a proxied mapping, as we may revisit a node during the construction of
+		 * its own mapping.
+		 * <p>
+		 * Once the mapping is calculated, the proxied result will be removed from
+		 * the isomorphism, and future attempts to map the node will return the
+		 * complete result.
+		 * 
+		 * @param <S>
+		 *          the type of the node
+		 * @param <C>
+		 *          the type of the result
+		 * @param node
+		 *          the graph node to map
+		 * @param proxyClass
+		 *          the class of the result to proxy
+		 * @param mapping
+		 *          the mapping function to apply
+		 * @return a mapping of the given node
+		 */
+		public <S, C> S getProxiedMapping(C node, Class<S> proxyClass, Function<C, S> mapping) {
+			return getProxiedMapping(node, proxyClass.getClassLoader(), proxyClass, mapping);
+		}
+
+		/**
+		 * Make a mapping of the given node, or fetch an existing mapping if one has
+		 * been made via this {@link Isomorphism}.
+		 * <p>
+		 * In the case of recursive graph structures we sometimes may need access to
+		 * a proxied mapping, as we may revisit a node during the construction of
+		 * its own mapping.
+		 * <p>
+		 * Once the mapping is calculated, the proxied result will be removed from
+		 * the isomorphism, and future attempts to map the node will return the
+		 * complete result.
+		 * 
+		 * @param <S>
+		 *          the type of the node
+		 * @param <C>
+		 *          the type of the result
+		 * @param node
+		 *          the graph node to map
+		 * @param classLoader
+		 *          the class loader to use for the proxy
+		 * @param proxyClass
+		 *          the class of the result to proxy
+		 * @param mapping
+		 *          the mapping function to apply
+		 * @return a mapping of the given node
+		 */
+		@SuppressWarnings("unchecked")
+		public <S, C> S getProxiedMapping(C node, ClassLoader classLoader, Class<S> proxyClass, Function<C, S> mapping) {
+			return getPartialMapping(node, (C n, Consumer<S> partial) -> {
+				IdentityProperty<S> property = new IdentityProperty<>();
+
+				S proxy = (S) Proxy.newProxyInstance(classLoader, new Class[] { proxyClass }, new InvocationHandler() {
+					@Override
+					public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+						return method.invoke(property.get(), args);
+					}
+				});
+				partial.accept(proxy);
+
+				S result = mapping.apply(n);
+
+				property.set(result);
+				return result;
+			});
+		}
 	}
 }

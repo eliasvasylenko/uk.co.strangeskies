@@ -22,12 +22,11 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedArrayType;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Set;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes.AnnotatedTypeImpl;
+import uk.co.strangeskies.utilities.Isomorphism;
 
 /**
  * A collection of utility methods relating to annotated array types.
@@ -35,36 +34,29 @@ import uk.co.strangeskies.reflection.AnnotatedTypes.AnnotatedTypeImpl;
  * @author Elias N Vasylenko
  */
 public final class AnnotatedArrayTypes {
-	private static class AnnotatedArrayTypeImpl extends AnnotatedTypeImpl
-			implements AnnotatedArrayType {
+	private static class AnnotatedArrayTypeImpl extends AnnotatedTypeImpl implements AnnotatedArrayType {
 		private final AnnotatedTypeImpl annotatedComponentType;
 
-		public AnnotatedArrayTypeImpl(Set<TypeVariable<?>> wrapped,
-				AnnotatedArrayType annotatedArrayType) {
+		public AnnotatedArrayTypeImpl(Isomorphism isomorphism, AnnotatedArrayType annotatedArrayType) {
 			super(annotatedArrayType);
 
-			annotatedComponentType = AnnotatedTypes.wrapImpl(wrapped,
+			annotatedComponentType = AnnotatedTypes.wrapImpl(isomorphism,
 					annotatedArrayType.getAnnotatedGenericComponentType());
 		}
 
-		public AnnotatedArrayTypeImpl(GenericArrayType type,
-				Collection<Annotation> annotations) {
+		public AnnotatedArrayTypeImpl(GenericArrayType type, Collection<Annotation> annotations) {
 			super(type, annotations);
 
-			annotatedComponentType = (AnnotatedTypeImpl) AnnotatedTypes
-					.over(type.getGenericComponentType());
+			annotatedComponentType = (AnnotatedTypeImpl) AnnotatedTypes.over(type.getGenericComponentType());
 		}
 
-		public AnnotatedArrayTypeImpl(Class<?> type,
-				Collection<Annotation> annotations) {
+		public AnnotatedArrayTypeImpl(Class<?> type, Collection<Annotation> annotations) {
 			super(type, annotations);
 
-			annotatedComponentType = (AnnotatedTypeImpl) AnnotatedTypes
-					.over(type.getComponentType());
+			annotatedComponentType = (AnnotatedTypeImpl) AnnotatedTypes.over(type.getComponentType());
 		}
 
-		public AnnotatedArrayTypeImpl(AnnotatedType type,
-				Collection<Annotation> annotations) {
+		public AnnotatedArrayTypeImpl(AnnotatedType type, Collection<Annotation> annotations) {
 			super(ArrayTypes.fromComponentType(type.getType()), annotations);
 
 			annotatedComponentType = (AnnotatedTypeImpl) AnnotatedTypes.wrap(type);
@@ -82,8 +74,7 @@ public final class AnnotatedArrayTypes {
 			AnnotatedType type = this;
 			do {
 				if (type.getAnnotations().length > 0) {
-					builder.append(" ")
-							.append(annotationString(imports, type.getAnnotations()));
+					builder.append(" ").append(annotationString(imports, type.getAnnotations()));
 				}
 
 				builder.append("[]");
@@ -91,8 +82,7 @@ public final class AnnotatedArrayTypes {
 				type = ((AnnotatedArrayType) type).getAnnotatedGenericComponentType();
 			} while (type instanceof AnnotatedArrayType);
 
-			return builder.insert(0, AnnotatedTypes.wrapImpl(type).toString(imports))
-					.toString();
+			return builder.insert(0, AnnotatedTypes.wrapImpl(type).toString(imports)).toString();
 		}
 
 		@Override
@@ -114,8 +104,7 @@ public final class AnnotatedArrayTypes {
 	 * @return A new annotated array type with the given component and given
 	 *         annotations.
 	 */
-	public static AnnotatedArrayType fromComponent(AnnotatedType component,
-			Annotation... annotations) {
+	public static AnnotatedArrayType fromComponent(AnnotatedType component, Annotation... annotations) {
 		return fromComponent(component, Arrays.asList(annotations));
 	}
 
@@ -130,8 +119,7 @@ public final class AnnotatedArrayTypes {
 	 * @return A new annotated array type with the given component and given
 	 *         annotations.
 	 */
-	public static AnnotatedArrayType fromComponent(AnnotatedType component,
-			Collection<Annotation> annotations) {
+	public static AnnotatedArrayType fromComponent(AnnotatedType component, Collection<Annotation> annotations) {
 		return new AnnotatedArrayTypeImpl(component, annotations);
 	}
 
@@ -145,8 +133,7 @@ public final class AnnotatedArrayTypes {
 	 * @return A new annotated array type over the given array type and with the
 	 *         given annotations.
 	 */
-	public static AnnotatedArrayType over(GenericArrayType arrayType,
-			Annotation... annotations) {
+	public static AnnotatedArrayType over(GenericArrayType arrayType, Annotation... annotations) {
 		return over(arrayType, Arrays.asList(annotations));
 	}
 
@@ -160,8 +147,7 @@ public final class AnnotatedArrayTypes {
 	 * @return A new annotated array type over the given array type and with the
 	 *         given annotations.
 	 */
-	public static AnnotatedArrayType over(GenericArrayType arrayType,
-			Collection<Annotation> annotations) {
+	public static AnnotatedArrayType over(GenericArrayType arrayType, Collection<Annotation> annotations) {
 		return new AnnotatedArrayTypeImpl(arrayType, annotations);
 	}
 
@@ -175,8 +161,7 @@ public final class AnnotatedArrayTypes {
 	 * @return A new annotated array type over the given array type and with the
 	 *         given annotations.
 	 */
-	public static AnnotatedArrayType over(Class<?> arrayType,
-			Annotation... annotations) {
+	public static AnnotatedArrayType over(Class<?> arrayType, Annotation... annotations) {
 		return over(arrayType, Arrays.asList(annotations));
 	}
 
@@ -190,21 +175,19 @@ public final class AnnotatedArrayTypes {
 	 * @return A new annotated array type over the given array type and with the
 	 *         given annotations.
 	 */
-	public static AnnotatedArrayType over(Class<?> arrayType,
-			Collection<Annotation> annotations) {
+	public static AnnotatedArrayType over(Class<?> arrayType, Collection<Annotation> annotations) {
 		return new AnnotatedArrayTypeImpl(arrayType, annotations);
 	}
 
 	protected static AnnotatedArrayTypeImpl wrapImpl(AnnotatedArrayType type) {
-		return wrapImpl(AnnotatedTypes.wrappingVisitedSet(), type);
+		return wrapImpl(new Isomorphism(), type);
 	}
 
-	protected static AnnotatedArrayTypeImpl wrapImpl(Set<TypeVariable<?>> wrapped,
-			AnnotatedArrayType type) {
+	protected static AnnotatedArrayTypeImpl wrapImpl(Isomorphism isomorphism, AnnotatedArrayType type) {
 		if (type instanceof AnnotatedArrayTypeImpl) {
 			return (AnnotatedArrayTypeImpl) type;
 		} else
-			return new AnnotatedArrayTypeImpl(wrapped, type);
+			return new AnnotatedArrayTypeImpl(isomorphism, type);
 	}
 
 	/**

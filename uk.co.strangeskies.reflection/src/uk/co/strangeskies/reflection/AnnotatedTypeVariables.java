@@ -24,9 +24,9 @@ import java.lang.reflect.AnnotatedTypeVariable;
 import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Set;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes.AnnotatedTypeImpl;
+import uk.co.strangeskies.utilities.Isomorphism;
 
 /**
  * A collection of utility methods relating to annotated type variables.
@@ -37,14 +37,14 @@ public final class AnnotatedTypeVariables {
 	private static class AnnotatedTypeVariableImpl extends AnnotatedTypeImpl implements AnnotatedTypeVariable {
 		private final AnnotatedTypeImpl[] annotatedBounds;
 
-		public AnnotatedTypeVariableImpl(Set<TypeVariable<?>> wrapped, AnnotatedTypeVariable annotatedTypeVariable) {
+		public AnnotatedTypeVariableImpl(Isomorphism isomorphism, AnnotatedTypeVariable annotatedTypeVariable) {
 			super(annotatedTypeVariable);
 
 			if (wrapped.contains(getType())) {
 				annotatedBounds = AnnotatedTypes.overImpl(getType().getBounds());
 			} else {
 				wrapped.add(getType());
-				annotatedBounds = AnnotatedTypes.wrapImpl(wrapped, annotatedTypeVariable.getAnnotatedBounds());
+				annotatedBounds = AnnotatedTypes.wrapImpl(isomorphism, annotatedTypeVariable.getAnnotatedBounds());
 				wrapped.remove(getType());
 			}
 		}
@@ -102,14 +102,14 @@ public final class AnnotatedTypeVariables {
 	}
 
 	protected static AnnotatedTypeVariableImpl wrapImpl(AnnotatedTypeVariable type) {
-		return wrapImpl(AnnotatedTypes.wrappingVisitedSet(), type);
+		return wrapImpl(new Isomorphism(), type);
 	}
 
-	protected static AnnotatedTypeVariableImpl wrapImpl(Set<TypeVariable<?>> wrapped, AnnotatedTypeVariable type) {
+	protected static AnnotatedTypeVariableImpl wrapImpl(Isomorphism isomorphism, AnnotatedTypeVariable type) {
 		if (type instanceof AnnotatedTypeVariableImpl) {
 			return (AnnotatedTypeVariableImpl) type;
 		} else {
-			return new AnnotatedTypeVariableImpl(wrapped, type);
+			return new AnnotatedTypeVariableImpl(isomorphism, type);
 		}
 	}
 

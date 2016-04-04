@@ -24,7 +24,6 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
-import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -33,6 +32,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.utilities.IdentityProperty;
+import uk.co.strangeskies.utilities.Isomorphism;
 
 /**
  * A TypeSubstitution object is a function mapping Type to Type, which
@@ -130,10 +130,10 @@ public class TypeSubstitution {
 		if (empty.get())
 			return type;
 		else
-			return resolve(type, new IdentityHashMap<>());
+			return resolve(type, new Isomorphism());
 	}
 
-	private Type resolve(Type type, Map<Type, Type> visited) {
+	private Type resolve(Type type, Isomorphism isomorphism) {
 		Type mapping = this.mapping.apply(type);
 		if (mapping != null) {
 			return mapping;
@@ -151,67 +151,57 @@ public class TypeSubstitution {
 			return type;
 
 		} else if (type instanceof IntersectionType) {
-			return resolveIntersectionType((IntersectionType) type, visited);
+			return resolveIntersectionType((IntersectionType) type, isomorphism);
 
 		} else if (type instanceof WildcardType) {
-			return resolveWildcardType((WildcardType) type, visited);
+			return resolveWildcardType((WildcardType) type, isomorphism);
 
 		} else if (type instanceof GenericArrayType) {
-			return ArrayTypes.fromComponentType(resolve(((GenericArrayType) type).getGenericComponentType(), visited));
+			return ArrayTypes.fromComponentType(resolve(((GenericArrayType) type).getGenericComponentType(), isomorphism));
 
 		} else if (type instanceof ParameterizedType) {
-			return resolveParameterizedType((ParameterizedType) type, visited);
+			return resolveParameterizedType((ParameterizedType) type, isomorphism);
 		}
 
 		throw new IllegalArgumentException(
 				"Cannot resolve unrecognised type '" + type + "' of class'" + type.getClass() + "'.");
 	}
 
-	private Type resolveWildcardType(WildcardType wildcardType, Map<Type, Type> visited) {
-		if (wildcardType.getLowerBounds().length > 0) {
-			return WildcardTypes
-					.lowerBounded(resolve(IntersectionType.uncheckedFrom(wildcardType.getLowerBounds()), visited));
+	private Type resolveWildcardType(WildcardType type, Isomorphism isomorphism) {
+		return isomorphism.byIdentity().getProxiedMapping(type, WildcardType.class, i -> {
 
-		} else if (wildcardType.getUpperBounds().length > 0) {
-			return WildcardTypes
-					.upperBounded(resolve(IntersectionType.uncheckedFrom(wildcardType.getUpperBounds()), visited));
+			if (type.getLowerBounds().length > 0) {
+				return WildcardTypes.lowerBounded(resolve(IntersectionType.uncheckedFrom(type.getLowerBounds()), isomorphism));
 
-		} else
-			return WildcardTypes.unbounded();
+			} else if (type.getUpperBounds().length > 0) {
+				return WildcardTypes.upperBounded(resolve(IntersectionType.uncheckedFrom(type.getUpperBounds()), isomorphism));
+
+			} else
+				return WildcardTypes.unbounded();
+		});
 	}
 
-	private Type resolveIntersectionType(IntersectionType type, Map<Type, Type> visited) {
-		/*
-		 * Here we deal with recursion in infinite types.
-		 */
-		if (visited.containsKey(type))
-			return visited.get(type);
+	private Type resolveIntersectionType(IntersectionType type, Isomorphism isomorphism) {
+		return isomorphism.byIdentity().getPartialMapping(type, (i, partial) -> {
 
-		IdentityProperty<IntersectionType> resultProperty = new IdentityProperty<>();
-		visited.put(type, IntersectionType.proxy(resultProperty::get));
+			IdentityProperty<IntersectionType> property = new IdentityProperty<>();
+			Type proxy = IntersectionType.proxy(property::get);
+			partial.accept(proxy);
 
-		IntersectionType result = IntersectionType
-				.uncheckedFrom(Arrays.stream(type.getTypes()).map(t -> resolve(t, visited)).collect(Collectors.toList()));
+			IntersectionType result = IntersectionType
+					.uncheckedFrom(Arrays.stream(type.getTypes()).map(t -> resolve(t, isomorphism)).collect(Collectors.toList()));
 
-		resultProperty.set(result);
-		return result;
+			property.set(result);
+
+			return result;
+		});
 	}
 
-	private Type resolveParameterizedType(ParameterizedType type, Map<Type, Type> visited) {
-		/*
-		 * Here we deal with recursion in infinite types.
-		 */
-		if (visited.containsKey(type))
-			return visited.get(type);
+	private Type resolveParameterizedType(ParameterizedType type, Isomorphism isomorphism) {
+		return isomorphism.byIdentity().getProxiedMapping(type, ParameterizedType.class, i -> {
 
-		IdentityProperty<ParameterizedType> resultProperty = new IdentityProperty<>();
-		visited.put(type, ParameterizedTypes.proxy(resultProperty::get));
-
-		ParameterizedType result = ParameterizedTypes.uncheckedFrom(resolve(type.getOwnerType(), visited),
-				Types.getRawType(type),
-				Arrays.stream(type.getActualTypeArguments()).map(t -> resolve(t, visited)).collect(Collectors.toList()));
-
-		resultProperty.set(result);
-		return result;
+			return ParameterizedTypes.uncheckedFrom(resolve(type.getOwnerType(), isomorphism), Types.getRawType(type),
+					Arrays.stream(type.getActualTypeArguments()).map(t -> resolve(t, isomorphism)).collect(Collectors.toList()));
+		});
 	}
 }
