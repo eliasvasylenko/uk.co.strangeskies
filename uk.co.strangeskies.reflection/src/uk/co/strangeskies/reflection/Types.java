@@ -560,6 +560,38 @@ public final class Types {
 	}
 
 	/**
+	 * Determine if a given intersection type, {@code toIntersection}, is
+	 * assignable from another given type, {@code from}. Or in other words, if
+	 * {@code toIntersection} is a supertype of {@code from}. Types are considered
+	 * assignable if they involve unchecked generic casts.
+	 * 
+	 * @param from
+	 *          The type from which we wish to determine assignability.
+	 * @param toIntersection
+	 *          The intersection type to which we wish to determine assignability.
+	 * @return True if the types are assignable, false otherwise.
+	 */
+	public static boolean isAssignable(Type from, Type[] toIntersection) {
+		return isAssignable(from, toIntersection, new HashSet<>());
+	}
+
+	/**
+	 * Determine if a given type, {@code to}, is assignable from a given
+	 * intersection type, {@code fromIntersection}. Or in other words, if
+	 * {@code to} is a supertype of {@code fromIntersection}. Types are considered
+	 * assignable if they involve unchecked generic casts.
+	 * 
+	 * @param fromIntersection
+	 *          The type from which we wish to determine assignability.
+	 * @param to
+	 *          The type to which we wish to determine assignability.
+	 * @return True if the types are assignable, false otherwise.
+	 */
+	public static boolean isAssignable(Type[] fromIntersection, Type to) {
+		return isAssignable(fromIntersection, to, new HashSet<>());
+	}
+
+	/**
 	 * Determine if the given type, {@code from}, contains the given type,
 	 * {@code to}. In other words, if either of the given types are wildcards,
 	 * determine if every possible instantiation of {@code to} is also a valid
@@ -598,6 +630,14 @@ public final class Types {
 		public int hashCode() {
 			return System.identityHashCode(from) ^ (System.identityHashCode(to) * 7);
 		}
+	}
+
+	private static boolean isAssignable(Type from, Type[] toAll, HashSet<Assignment> assignsEncountered) {
+		return Arrays.stream(toAll).allMatch(t -> isAssignable(from, t, assignsEncountered));
+	}
+
+	private static boolean isAssignable(Type[] fromAll, Type to, HashSet<Assignment> assignsEncountered) {
+		return fromAll.length == 0 || Arrays.stream(fromAll).anyMatch(f -> isAssignable(f, to, assignsEncountered));
 	}
 
 	private static boolean isAssignable(Type from, Type to, HashSet<Assignment> assignsEncountered) {
@@ -644,7 +684,7 @@ public final class Types {
 			if (upperBounds.length == 0)
 				upperBounds = new Type[] { Object.class };
 
-			assignable = isAssignable(IntersectionType.uncheckedFrom(upperBounds), to, assignsEncountered);
+			assignable = isAssignable(upperBounds, to, assignsEncountered);
 		} else if (to instanceof WildcardType) {
 			/*
 			 * If there are no lower bounds the target may be arbitrarily specific, so
@@ -656,7 +696,7 @@ public final class Types {
 			if (lowerBounds.length == 0)
 				assignable = false;
 			else
-				assignable = isAssignable(from, IntersectionType.uncheckedFrom(lowerBounds), assignsEncountered);
+				assignable = isAssignable(from, lowerBounds, assignsEncountered);
 		} else if (from instanceof TypeVariable) {
 			/*
 			 * We must be able to assign from at least one of the upper bound,
@@ -666,7 +706,7 @@ public final class Types {
 			if (upperBounds.length == 0)
 				upperBounds = new Type[] { Object.class };
 
-			assignable = isAssignable(IntersectionType.uncheckedFrom(upperBounds), to, assignsEncountered);
+			assignable = isAssignable(upperBounds, to, assignsEncountered);
 
 			if (!assignable && to instanceof TypeVariableCapture) {
 				assignable = Arrays.asList(((TypeVariableCapture) to).getLowerBounds()).contains(from);
@@ -677,8 +717,8 @@ public final class Types {
 			 * bounds, or if it is from the exact same type, or explicitly mentioned
 			 * in an upper bound or intersection type.
 			 */
-			assignable = ((TypeVariableCapture) to).getLowerBounds().length > 0 && isAssignable(from,
-					IntersectionType.uncheckedFrom(((TypeVariableCapture) to).getLowerBounds()), assignsEncountered);
+			assignable = ((TypeVariableCapture) to).getLowerBounds().length > 0
+					&& isAssignable(from, ((TypeVariableCapture) to).getLowerBounds(), assignsEncountered);
 		} else if (to instanceof TypeVariable) {
 			/*
 			 * We can only assign to a type variable if it is from the exact same
@@ -756,10 +796,10 @@ public final class Types {
 			WildcardType toWildcard = (WildcardType) to;
 
 			contained = (toWildcard.getUpperBounds().length == 0
-					|| isAssignable(from, IntersectionType.uncheckedFrom(toWildcard.getUpperBounds()), assignsEncountered));
+					|| isAssignable(from, toWildcard.getUpperBounds(), assignsEncountered));
 
 			contained = contained && (toWildcard.getLowerBounds().length == 0
-					|| isAssignable(IntersectionType.uncheckedFrom(toWildcard.getLowerBounds()), from, assignsEncountered));
+					|| isAssignable(toWildcard.getLowerBounds(), from, assignsEncountered));
 		} else
 			contained = false;
 
@@ -1026,14 +1066,22 @@ public final class Types {
 		}
 
 		if (argumentU instanceof WildcardType) {
-			if (((WildcardType) argumentU).getUpperBounds().length > 0) {
-				if (((WildcardType) argumentV).getUpperBounds().length > 0) {
+			WildcardType wildcardU = (WildcardType) argumentU;
+			WildcardType wildcardV = (WildcardType) argumentV;
+
+			if (wildcardU.getUpperBounds().length > 0) {
+				if (wildcardV.getUpperBounds().length > 0) {
+					List<Type> aggregated = new ArrayList<>(
+							wildcardU.getUpperBounds().length + wildcardV.getUpperBounds().length);
+					for (Type bound : wildcardU.getUpperBounds())
+						aggregated.add(bound);
+					for (Type bound : wildcardV.getUpperBounds())
+						aggregated.add(bound);
+
 					/*
 					 * lcta(? extends U, ? extends V) = ? extends lub(U, V)
 					 */
-					return WildcardTypes.upperBounded(leastUpperBoundImpl(
-							Arrays.asList(IntersectionType.uncheckedFrom(((WildcardType) argumentU).getUpperBounds()),
-									IntersectionType.uncheckedFrom(((WildcardType) argumentV).getUpperBounds()))));
+					return WildcardTypes.upperBounded(leastUpperBoundImpl(Arrays.asList(IntersectionType.from(aggregated))));
 				} else {
 					/*
 					 * lcta(? extends U, ? super V) = U if U = V, otherwise ?

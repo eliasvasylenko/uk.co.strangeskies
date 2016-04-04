@@ -56,16 +56,13 @@ public class WildcardTypes {
 
 			WildcardType wildcard = (WildcardType) that;
 
-			return wildcard.getLowerBounds().length == 0
-					&& (wildcard.getUpperBounds().length == 0 || (wildcard
-							.getUpperBounds().length == 1 && wildcard.getUpperBounds()[0]
-							.equals(Object.class)));
+			return wildcard.getLowerBounds().length == 0 && (wildcard.getUpperBounds().length == 0
+					|| (wildcard.getUpperBounds().length == 1 && wildcard.getUpperBounds()[0].equals(Object.class)));
 		}
 
 		@Override
 		public int hashCode() {
-			return Arrays.hashCode(getLowerBounds())
-					^ Arrays.hashCode(getUpperBounds());
+			return Arrays.hashCode(getLowerBounds()) ^ Arrays.hashCode(getUpperBounds());
 		}
 	};
 
@@ -118,6 +115,8 @@ public class WildcardTypes {
 			types = () -> new Type[] { type };
 
 		return new WildcardType() {
+			private Integer hashCode;
+
 			@Override
 			public Type[] getUpperBounds() {
 				return new Type[0];
@@ -130,9 +129,7 @@ public class WildcardTypes {
 
 			@Override
 			public String toString() {
-				return "? super "
-						+ Arrays.stream(types.get()).map(Types::toString)
-								.collect(Collectors.joining(" & "));
+				return "? super " + Arrays.stream(types.get()).map(Types::toString).collect(Collectors.joining(" & "));
 			}
 
 			@Override
@@ -153,9 +150,25 @@ public class WildcardTypes {
 			}
 
 			@Override
-			public int hashCode() {
-				return Arrays.hashCode(getLowerBounds())
-						^ Arrays.hashCode(getUpperBounds());
+			public synchronized int hashCode() {
+				if (hashCode == null) {
+					/*
+					 * This way the hash code will return 0 if we encounter it again in
+					 * the parameters, rather than recurring infinitely:
+					 * 
+					 * (this is not a problem for other threads as hashCode is
+					 * synchronized)
+					 */
+					hashCode = 0;
+
+					/*
+					 * Calculate the hash code properly, now we're guarded against
+					 * recursion:
+					 */
+					this.hashCode = Arrays.hashCode(getLowerBounds()) ^ Arrays.hashCode(getUpperBounds());
+				}
+
+				return hashCode;
 			}
 		};
 	}
@@ -182,27 +195,26 @@ public class WildcardTypes {
 	 */
 	public static WildcardType upperBounded(Collection<? extends Type> bounds) {
 		return new WildcardType() {
+			private Integer hashCode;
 			private Type[] types;
-			private final Supplier<Type[]> typeSupplier = () -> {
+			private final Runnable typeInitialiser = () -> {
 				if (bounds.isEmpty()) {
-					return new Type[] { Object.class };
-				} else if (bounds.size() == 1) {
-					return new Type[] { bounds.iterator().next() };
+					types = new Type[] { Object.class };
 				} else {
+					types = bounds.toArray(new Type[bounds.size()]);
 					Type type = IntersectionType.from(bounds);
 
 					if (type instanceof WildcardType) {
 						WildcardType wildcardType = ((WildcardType) type);
 						if (wildcardType.getLowerBounds().length == 0) {
-							throw new TypeException(
-									"Cannot have define an upper bounding on a wildcard with no lower bounds.");
+							throw new TypeException("Cannot have define an upper bounding on a wildcard with no lower bounds.");
 						} else {
-							return wildcardType.getLowerBounds();
+							types = wildcardType.getLowerBounds();
 						}
 					} else if (type instanceof IntersectionType) {
-						return ((IntersectionType) type).getTypes();
+						types = ((IntersectionType) type).getTypes();
 					} else {
-						return new Type[] { type };
+						types = new Type[] { type };
 					}
 				}
 			};
@@ -210,7 +222,7 @@ public class WildcardTypes {
 			@Override
 			public Type[] getUpperBounds() {
 				if (types == null)
-					types = typeSupplier.get();
+					typeInitialiser.run();
 				return types;
 			}
 
@@ -222,13 +234,10 @@ public class WildcardTypes {
 			@Override
 			public String toString() {
 				Type[] bounds = getUpperBounds();
-				if (bounds.length == 0
-						|| (bounds.length == 1 && bounds[0].equals(Object.class)))
+				if (bounds.length == 0 || (bounds.length == 1 && bounds[0].equals(Object.class)))
 					return "?";
 				else
-					return "? extends "
-							+ Arrays.stream(bounds).map(Types::toString)
-									.collect(Collectors.joining(" & "));
+					return "? extends " + Arrays.stream(bounds).map(Types::toString).collect(Collectors.joining(" & "));
 			}
 
 			@Override
@@ -240,23 +249,36 @@ public class WildcardTypes {
 				WildcardType wildcard = (WildcardType) that;
 
 				Type[] thisUpperBounds = getUpperBounds();
-				if (thisUpperBounds.length == 1
-						&& thisUpperBounds[0].equals(Object.class))
+				if (thisUpperBounds.length == 1 && thisUpperBounds[0].equals(Object.class))
 					thisUpperBounds = new Type[0];
 
 				Type[] thatUpperBounds = wildcard.getUpperBounds();
-				if (thatUpperBounds.length == 1
-						&& thatUpperBounds[0].equals(Object.class))
+				if (thatUpperBounds.length == 1 && thatUpperBounds[0].equals(Object.class))
 					thatUpperBounds = new Type[0];
 
-				return wildcard.getLowerBounds().length == 0
-						&& Arrays.equals(thisUpperBounds, thatUpperBounds);
+				return wildcard.getLowerBounds().length == 0 && Arrays.equals(thisUpperBounds, thatUpperBounds);
 			}
 
 			@Override
-			public int hashCode() {
-				return Arrays.hashCode(getLowerBounds())
-						^ Arrays.hashCode(getUpperBounds());
+			public synchronized int hashCode() {
+				if (hashCode == null) {
+					/*
+					 * This way the hash code will return 0 if we encounter it again in
+					 * the parameters, rather than recurring infinitely:
+					 * 
+					 * (this is not a problem for other threads as hashCode is
+					 * synchronized)
+					 */
+					hashCode = 0;
+
+					/*
+					 * Calculate the hash code properly, now we're guarded against
+					 * recursion:
+					 */
+					this.hashCode = Arrays.hashCode(getLowerBounds()) ^ Arrays.hashCode(getUpperBounds());
+				}
+
+				return hashCode;
 			}
 		};
 	}

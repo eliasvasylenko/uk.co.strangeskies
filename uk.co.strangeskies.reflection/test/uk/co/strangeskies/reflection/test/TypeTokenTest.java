@@ -288,7 +288,7 @@ public class TypeTokenTest {
 		System.out.println();
 
 		System.out.println(TypeToken.over(Arrays.class).resolveMethodOverload("asList", int.class, double.class)
-				.withTargetType(new TypeToken<@Infer List<? super Comparable<? extends Number>>>() {}).infer());
+				.withTargetType(new @Infer TypeToken<List<? super Comparable<? extends Number>>>() {}).infer());
 		System.out.println();
 
 		System.out.println(TypeToken.over(B.class).resolveMethodOverload("method", new TypeToken<List<Integer>>() {},

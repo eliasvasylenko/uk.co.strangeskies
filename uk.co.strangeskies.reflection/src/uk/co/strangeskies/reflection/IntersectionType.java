@@ -233,16 +233,7 @@ public abstract class IntersectionType implements Type {
 	}
 
 	static IntersectionType uncheckedFrom(Collection<? extends Type> types) {
-		List<Type> flattenedTypes = flatten(types);
-
-		/*-
-		Set<Type> uniqueTypes = new TreeSet<>(new EqualityComparator<>((a, b) -> Types.equals(a, b)));
-		uniqueTypes.addAll(flattenedTypes);
-		flattenedTypes.clear();
-		flattenedTypes.addAll(uniqueTypes);
-		 */
-
-		return fromImpl(flattenedTypes);
+		return fromImpl(types);
 	}
 
 	static IntersectionType fromImpl(Collection<? extends Type> types) {

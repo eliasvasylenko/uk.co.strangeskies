@@ -26,10 +26,12 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -110,7 +112,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	 * @return True if the instantiation is valid, false otherwise.
 	 */
 	public boolean isPossibleInstantiation(Type type) {
-		return Types.isAssignable(type, IntersectionType.uncheckedFrom(getUpperBounds()))
+		return Types.isAssignable(type, getUpperBounds())
 				&& (getLowerBounds().length == 0 || Types.isAssignable(IntersectionType.uncheckedFrom(getLowerBounds()), type));
 	}
 
@@ -301,12 +303,17 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	private static TypeVariableCapture captureWildcard(GenericDeclaration declaration, TypeVariable<?> typeVariable,
 			WildcardType type, boolean validate) {
 		Type upperBound;
+
+		List<Type> aggregation = new ArrayList<>(typeVariable.getBounds().length + type.getUpperBounds().length);
+		for (int i = 0; i < typeVariable.getBounds().length; i++)
+			aggregation.add(typeVariable.getBounds()[i]);
+		for (int i = 0; i < type.getUpperBounds().length; i++)
+			aggregation.add(type.getUpperBounds()[i]);
+
 		if (validate)
-			upperBound = IntersectionType.from(IntersectionType.uncheckedFrom(typeVariable.getBounds()),
-					IntersectionType.uncheckedFrom(type.getUpperBounds()));
+			upperBound = IntersectionType.from(aggregation);
 		else
-			upperBound = IntersectionType.uncheckedFrom(IntersectionType.uncheckedFrom(typeVariable.getBounds()),
-					IntersectionType.uncheckedFrom(type.getUpperBounds()));
+			upperBound = IntersectionType.uncheckedFrom(aggregation);
 
 		Type[] upperBounds;
 		if (upperBound instanceof IntersectionType)

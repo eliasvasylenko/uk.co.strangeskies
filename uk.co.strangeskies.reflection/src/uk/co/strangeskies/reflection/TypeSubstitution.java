@@ -181,9 +181,19 @@ public class TypeSubstitution {
 	}
 
 	private Type resolveIntersectionType(IntersectionType type, Map<Type, Type> visited) {
+		/*
+		 * Here we deal with recursion in infinite types.
+		 */
+		if (visited.containsKey(type))
+			return visited.get(type);
+
+		IdentityProperty<IntersectionType> resultProperty = new IdentityProperty<>();
+		visited.put(type, IntersectionType.proxy(resultProperty::get));
+
 		IntersectionType result = IntersectionType
 				.uncheckedFrom(Arrays.stream(type.getTypes()).map(t -> resolve(t, visited)).collect(Collectors.toList()));
 
+		resultProperty.set(result);
 		return result;
 	}
 

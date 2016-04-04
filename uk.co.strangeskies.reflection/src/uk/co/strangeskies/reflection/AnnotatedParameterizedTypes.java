@@ -27,6 +27,7 @@ import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -41,8 +42,7 @@ import uk.co.strangeskies.reflection.AnnotatedTypes.AnnotatedTypeImpl;
  * @author Elias N Vasylenko
  */
 public final class AnnotatedParameterizedTypes {
-	private static class AnnotatedParameterizedTypeImpl extends AnnotatedTypeImpl
-			implements AnnotatedParameterizedType {
+	private static class AnnotatedParameterizedTypeImpl extends AnnotatedTypeImpl implements AnnotatedParameterizedType {
 		private final AnnotatedTypeImpl[] annotatedTypeArguments;
 
 		public AnnotatedParameterizedTypeImpl(Set<TypeVariable<?>> wrapped,
@@ -53,28 +53,25 @@ public final class AnnotatedParameterizedTypes {
 					annotatedParameterizedType.getAnnotatedActualTypeArguments());
 		}
 
-		public AnnotatedParameterizedTypeImpl(ParameterizedType type,
-				Collection<? extends Annotation> annotations) {
+		public AnnotatedParameterizedTypeImpl(ParameterizedType type, Collection<? extends Annotation> annotations,
+				Map<Type, AnnotatedType> annotatedTypes) {
 			super(type, annotations);
 
-			annotatedTypeArguments = AnnotatedTypes
-					.overImpl(type.getActualTypeArguments());
+			annotatedTypeArguments = AnnotatedTypes.overImpl(type.getActualTypeArguments());
 		}
 
 		public AnnotatedParameterizedTypeImpl(Class<?> rawType,
 				Function<? super TypeVariable<?>, ? extends AnnotatedType> annotatedTypes,
 				Collection<? extends Annotation> annotations) {
-			super(ParameterizedTypes.uncheckedFrom(rawType,
-					unannotatedTypes(annotatedTypes)), annotations);
+			super(ParameterizedTypes.uncheckedFrom(rawType, unannotatedTypes(annotatedTypes)), annotations);
 
-			annotatedTypeArguments = AnnotatedTypes
-					.wrapImpl(Arrays.stream(rawType.getTypeParameters()).map(p -> {
-						AnnotatedType type = annotatedTypes.apply(p);
-						if (type == null)
-							return AnnotatedTypes.over(p);
-						else
-							return type;
-					}).toArray(AnnotatedType[]::new));
+			annotatedTypeArguments = AnnotatedTypes.wrapImpl(Arrays.stream(rawType.getTypeParameters()).map(p -> {
+				AnnotatedType type = annotatedTypes.apply(p);
+				if (type == null)
+					return AnnotatedTypes.over(p);
+				else
+					return type;
+			}).toArray(AnnotatedType[]::new));
 		}
 
 		/*
@@ -98,13 +95,10 @@ public final class AnnotatedParameterizedTypes {
 
 		@Override
 		public String toString(Imports imports) {
-			StringBuilder builder = new StringBuilder(
-					annotationString(imports, getAnnotations()))
-							.append(Types.toString(getType().getRawType(), imports))
-							.append("<");
+			StringBuilder builder = new StringBuilder(annotationString(imports, getAnnotations()))
+					.append(Types.toString(getType().getRawType(), imports)).append("<");
 
-			builder.append(Arrays.stream(getAnnotatedActualTypeArguments())
-					.map(t -> AnnotatedTypes.toString(t, imports))
+			builder.append(Arrays.stream(getAnnotatedActualTypeArguments()).map(t -> AnnotatedTypes.toString(t, imports))
 					.collect(Collectors.joining(", ")));
 
 			return builder.append(">").toString();
@@ -129,8 +123,7 @@ public final class AnnotatedParameterizedTypes {
 	 * @return A new {@link AnnotatedParameterizedType} instance over the given
 	 *         parameterized type, with the given annotations.
 	 */
-	public static AnnotatedParameterizedType over(ParameterizedType type,
-			Annotation... annotations) {
+	public static AnnotatedParameterizedType over(ParameterizedType type, Annotation... annotations) {
 		return over(type, Arrays.asList(annotations));
 	}
 
@@ -145,9 +138,20 @@ public final class AnnotatedParameterizedTypes {
 	 * @return A new {@link AnnotatedParameterizedType} instance over the given
 	 *         parameterized type, with the given annotations.
 	 */
-	public static AnnotatedParameterizedType over(ParameterizedType type,
-			Collection<Annotation> annotations) {
-		return new AnnotatedParameterizedTypeImpl(type, annotations);
+	public static AnnotatedParameterizedType over(ParameterizedType type, Collection<Annotation> annotations) {
+		return over(type, annotations, new IdentityHashMap<>());
+	}
+
+	private static AnnotatedParameterizedType over(ParameterizedType type, Collection<Annotation> annotations,
+			Map<Type, AnnotatedType> annotatedTypes) {
+		if (annotations.isEmpty() && annotatedTypes.containsKey(type)) {
+			return (AnnotatedParameterizedType) annotatedTypes.get(type);
+		} else {
+			AnnotatedParameterizedType annotatedType = new AnnotatedParameterizedTypeImpl(type, annotations, annotatedTypes);
+			if (annotations.isEmpty())
+				annotatedTypes.put(type, annotatedType);
+			return annotatedType;
+		}
 	}
 
 	/**
@@ -163,8 +167,7 @@ public final class AnnotatedParameterizedTypes {
 	 */
 	public static AnnotatedParameterizedType from(AnnotatedType rawType,
 			Function<? super TypeVariable<?>, ? extends AnnotatedType> arguments) {
-		return from((Class<?>) rawType.getType(), arguments,
-				rawType.getAnnotations());
+		return from((Class<?>) rawType.getType(), arguments, rawType.getAnnotations());
 	}
 
 	/**
@@ -182,10 +185,8 @@ public final class AnnotatedParameterizedTypes {
 	 *         type arguments, and the given annotations.
 	 */
 	public static AnnotatedParameterizedType from(Class<?> rawType,
-			Function<? super TypeVariable<?>, ? extends AnnotatedType> arguments,
-			Annotation... annotations) {
-		return new AnnotatedParameterizedTypeImpl(rawType, arguments,
-				Arrays.asList(annotations));
+			Function<? super TypeVariable<?>, ? extends AnnotatedType> arguments, Annotation... annotations) {
+		return new AnnotatedParameterizedTypeImpl(rawType, arguments, Arrays.asList(annotations));
 	}
 
 	/**
@@ -199,8 +200,7 @@ public final class AnnotatedParameterizedTypes {
 	 * @return A new {@link AnnotatedParameterizedType} instance with the given
 	 *         type arguments, and the given annotations.
 	 */
-	public static AnnotatedType from(AnnotatedType rawType,
-			AnnotatedType... arguments) {
+	public static AnnotatedType from(AnnotatedType rawType, AnnotatedType... arguments) {
 		return from(rawType, Arrays.asList(arguments));
 	}
 
@@ -215,11 +215,9 @@ public final class AnnotatedParameterizedTypes {
 	 * @return A new {@link AnnotatedParameterizedType} instance with the given
 	 *         type arguments, and the given annotations.
 	 */
-	public static AnnotatedType from(AnnotatedType rawType,
-			List<AnnotatedType> arguments) {
+	public static AnnotatedType from(AnnotatedType rawType, List<AnnotatedType> arguments) {
 		Map<TypeVariable<?>, AnnotatedType> annotatedTypes = new HashMap<>();
-		TypeVariable<?>[] typeVariables = ((Class<?>) rawType.getType())
-				.getTypeParameters();
+		TypeVariable<?>[] typeVariables = ((Class<?>) rawType.getType()).getTypeParameters();
 
 		if (typeVariables.length != arguments.size())
 			throw new IllegalArgumentException();
@@ -227,8 +225,8 @@ public final class AnnotatedParameterizedTypes {
 		for (int i = 0; i < arguments.size(); i++)
 			annotatedTypes.put(typeVariables[i], arguments.get(i));
 
-		return AnnotatedParameterizedTypes.from((Class<?>) rawType.getType(),
-				annotatedTypes::get, rawType.getAnnotations());
+		return AnnotatedParameterizedTypes.from((Class<?>) rawType.getType(), annotatedTypes::get,
+				rawType.getAnnotations());
 	}
 
 	/**
@@ -243,31 +241,27 @@ public final class AnnotatedParameterizedTypes {
 	 * @return A mapping of all type variables to their arguments in the context
 	 *         of the given type.
 	 */
-	public static Map<TypeVariable<?>, AnnotatedType> getAllTypeArguments(
-			AnnotatedParameterizedType type) {
+	public static Map<TypeVariable<?>, AnnotatedType> getAllTypeArguments(AnnotatedParameterizedType type) {
 		AnnotatedType[] arguments = type.getAnnotatedActualTypeArguments();
 
 		Map<TypeVariable<?>, AnnotatedType> allArguments = new HashMap<>();
-		TypeVariable<?>[] parameters = Types.getRawType(type.getType())
-				.getTypeParameters();
+		TypeVariable<?>[] parameters = Types.getRawType(type.getType()).getTypeParameters();
 		for (int i = 0; i < arguments.length; i++)
 			allArguments.put(parameters[i], arguments[i]);
 
 		for (Map.Entry<TypeVariable<?>, Type> entry : ParameterizedTypes
 				.getAllTypeArguments((ParameterizedType) type.getType()).entrySet())
-			allArguments.putIfAbsent(entry.getKey(),
-					AnnotatedTypes.over(entry.getValue()));
+			allArguments.putIfAbsent(entry.getKey(), AnnotatedTypes.over(entry.getValue()));
 
 		return allArguments;
 	}
 
-	protected static AnnotatedParameterizedTypeImpl wrapImpl(
-			AnnotatedParameterizedType type) {
+	protected static AnnotatedParameterizedTypeImpl wrapImpl(AnnotatedParameterizedType type) {
 		return wrapImpl(AnnotatedTypes.wrappingVisitedSet(), type);
 	}
 
-	protected static AnnotatedParameterizedTypeImpl wrapImpl(
-			Set<TypeVariable<?>> wrapped, AnnotatedParameterizedType type) {
+	protected static AnnotatedParameterizedTypeImpl wrapImpl(Set<TypeVariable<?>> wrapped,
+			AnnotatedParameterizedType type) {
 		if (type instanceof AnnotatedParameterizedTypeImpl) {
 			return (AnnotatedParameterizedTypeImpl) type;
 		} else
@@ -282,8 +276,7 @@ public final class AnnotatedParameterizedTypes {
 	 * @return A new instance of {@link AnnotatedParameterizedType} which is equal
 	 *         to the given type.
 	 */
-	public static AnnotatedParameterizedType wrap(
-			AnnotatedParameterizedType type) {
+	public static AnnotatedParameterizedType wrap(AnnotatedParameterizedType type) {
 		return wrapImpl(type);
 	}
 }

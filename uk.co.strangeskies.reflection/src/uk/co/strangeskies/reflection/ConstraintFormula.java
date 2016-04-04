@@ -468,7 +468,7 @@ public class ConstraintFormula {
 								 * If S is a wildcard of the form ? extends S', the constraint
 								 * reduces to ‹S' <: T'›.
 								 */
-								reduce(Kind.SUBTYPE, IntersectionType.uncheckedFrom(from.getUpperBounds()), intersectionT, bounds);
+								reduce(Kind.SUBTYPE, IntersectionType.from(from.getUpperBounds()), intersectionT, bounds);
 							}
 						} else {
 							/*

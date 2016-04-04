@@ -422,58 +422,28 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		for (Type equality : equalities)
 			incorporateTransitiveEquality(type, equality);
 
-		for (InferenceVariable other : boundSet.getInferenceVariables()) {
-			InferenceVariableBoundsImpl otherBounds = boundSet.getBoundsOnImpl(other);
+		if (mentions.isEmpty()) {
+			for (InferenceVariable other : boundSet.getInferenceVariables()) {
+				InferenceVariableBoundsImpl otherBounds = boundSet.getBoundsOnImpl(other);
 
-			/*
-			 * α = U and S = T imply ‹S[α:=U] = T[α:=U]›
-			 */
-			for (Type equality : new HashSet<>(otherBounds.getEqualities()))
-				if (equality != type)
-					/*
-					 * TODO
-					 * 
-					 * 
-					 * 
-					 * 
-					 * 
-					 * 
-					 * 
-					 * 
-					 * 
-					 * 
-					 * 
-					 * 
-					 * 
-					 * 
-					 * 
-					 * do we really need all this faff here? can't we just resolve α:=U in
-					 * all T?
-					 * 
-					 * 
-					 * 
-					 * 
-					 * 
-					 * 
-					 * 
-					 * 
-					 * 
-					 * 
-					 * 
-					 * TODO
-					 * 
-					 */
-					incorporateProperEqualitySubstitution(type, otherBounds.inferenceVariable, equality);
+				/*
+				 * α = U and S = T imply ‹S[α:=U] = T[α:=U]›
+				 */
+				for (Type equality : new HashSet<>(otherBounds.getEqualities()))
+					if (equality != type)
+						incorporateProperEqualitySubstitution(type, otherBounds.inferenceVariable, equality);
 
-			/*
-			 * α = U and S <: T imply ‹S[α:=U] <: T[α:=U]›
-			 */
-			for (Type supertype : new HashSet<>(otherBounds.getUpperBounds()))
-				if (supertype != type)
-					incorporateProperSubtypeSubstitution(type, otherBounds.inferenceVariable, supertype);
-			for (Type subtype : new HashSet<>(otherBounds.getLowerBounds()))
-				if (subtype != type)
-					incorporateProperSupertypeSubstitution(type, subtype, otherBounds.inferenceVariable);
+				/*
+				 * α = U and S <: T imply ‹S[α:=U] <: T[α:=U]›
+				 */
+				for (Type supertype : new HashSet<>(otherBounds.getUpperBounds()))
+					if (supertype != type)
+						incorporateProperSubtypeSubstitution(type, otherBounds.inferenceVariable, supertype);
+
+				for (Type subtype : new HashSet<>(otherBounds.getLowerBounds()))
+					if (subtype != type)
+						incorporateProperSupertypeSubstitution(type, subtype, otherBounds.inferenceVariable);
+			}
 		}
 
 		/*
@@ -604,7 +574,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 					InferenceVariableBoundsImpl otherBounds = boundSet.getBoundsOnImpl(other);
 
 					for (Type equality : new HashSet<>(otherBounds.equalities))
-						if (equality != type)
+						if (equality != type && InferenceVariable.isProperType(equality))
 							boundSet.getBoundsOnImpl(otherBounds.inferenceVariable).incorporateProperSubtypeSubstitution(equality,
 									inferenceVariable, type);
 				}
@@ -663,7 +633,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 					InferenceVariableBoundsImpl otherBounds = boundSet.getBoundsOnImpl(other);
 
 					for (Type equality : new HashSet<>(otherBounds.equalities))
-						if (equality != type)
+						if (equality != type && InferenceVariable.isProperType(equality))
 							boundSet.getBoundsOnImpl(otherBounds.inferenceVariable).incorporateProperSupertypeSubstitution(equality,
 									type, inferenceVariable);
 				}
@@ -717,7 +687,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	 * α = U and S = T imply ‹S[α:=U] = T[α:=U]›
 	 */
 	public void incorporateProperEqualitySubstitution(Type U, InferenceVariable S, Type T) {
-		if (InferenceVariable.isProperType(U) && !Types.getAllMentionedBy(T, inferenceVariable::equals).isEmpty()) {
+		if (!Types.getAllMentionedBy(T, inferenceVariable::equals).isEmpty()) {
 			TypeSubstitution resolver = new TypeSubstitution().where(inferenceVariable, U);
 
 			T = resolver.resolve(T);
@@ -730,15 +700,17 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	 * α = U and S <: T imply ‹S[α:=U] <: T[α:=U]›
 	 */
 	public void incorporateProperSubtypeSubstitution(Type U, InferenceVariable S, Type T) {
+		if (!Types.getAllMentionedBy(T, inferenceVariable::equals).isEmpty()) {
 			TypeSubstitution resolver = new TypeSubstitution().where(inferenceVariable, U);
 
 			T = resolver.resolve(T);
 
 			ConstraintFormula.reduce(Kind.SUBTYPE, S, T, boundSet);
+		}
 	}
 
 	public void incorporateProperSupertypeSubstitution(Type U, Type S, InferenceVariable T) {
-		if (InferenceVariable.isProperType(U) && !Types.getAllMentionedBy(S, inferenceVariable::equals).isEmpty()) {
+		if (!Types.getAllMentionedBy(S, inferenceVariable::equals).isEmpty()) {
 			TypeSubstitution resolver = new TypeSubstitution().where(inferenceVariable, U);
 
 			S = resolver.resolve(S);
@@ -868,7 +840,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			 * 
 			 * R <: αi implies the constraint formula ‹R <: T›
 			 */
-			ConstraintFormula.reduce(Kind.SUBTYPE, R, IntersectionType.uncheckedFrom(A.getLowerBounds()), boundSet);
+			ConstraintFormula.reduce(Kind.SUBTYPE, R, IntersectionType.from(A.getLowerBounds()), boundSet);
 		} else if (A.getUpperBounds().length > 0) {
 			/*
 			 * If Ai is a wildcard of the form ? extends T:

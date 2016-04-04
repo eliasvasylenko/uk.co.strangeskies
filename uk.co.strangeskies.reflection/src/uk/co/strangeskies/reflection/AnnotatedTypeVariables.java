@@ -34,26 +34,22 @@ import uk.co.strangeskies.reflection.AnnotatedTypes.AnnotatedTypeImpl;
  * @author Elias N Vasylenko
  */
 public final class AnnotatedTypeVariables {
-	private static class AnnotatedTypeVariableImpl extends AnnotatedTypeImpl
-			implements AnnotatedTypeVariable {
+	private static class AnnotatedTypeVariableImpl extends AnnotatedTypeImpl implements AnnotatedTypeVariable {
 		private final AnnotatedTypeImpl[] annotatedBounds;
 
-		public AnnotatedTypeVariableImpl(Set<TypeVariable<?>> wrapped,
-				AnnotatedTypeVariable annotatedTypeVariable) {
+		public AnnotatedTypeVariableImpl(Set<TypeVariable<?>> wrapped, AnnotatedTypeVariable annotatedTypeVariable) {
 			super(annotatedTypeVariable);
 
 			if (wrapped.contains(getType())) {
 				annotatedBounds = AnnotatedTypes.overImpl(getType().getBounds());
 			} else {
 				wrapped.add(getType());
-				annotatedBounds = AnnotatedTypes.wrapImpl(wrapped,
-						annotatedTypeVariable.getAnnotatedBounds());
+				annotatedBounds = AnnotatedTypes.wrapImpl(wrapped, annotatedTypeVariable.getAnnotatedBounds());
 				wrapped.remove(getType());
 			}
 		}
 
-		public AnnotatedTypeVariableImpl(TypeVariable<?> type,
-				Collection<Annotation> annotations) {
+		public AnnotatedTypeVariableImpl(TypeVariable<?> type, Collection<Annotation> annotations) {
 			super(type, annotations);
 
 			annotatedBounds = AnnotatedTypes.overImpl(type.getBounds());
@@ -87,8 +83,7 @@ public final class AnnotatedTypeVariables {
 	 * @return A new annotated type variable over the given type variable and with
 	 *         the given annotations.
 	 */
-	public static AnnotatedTypeVariable over(TypeVariable<?> typeVariable,
-			Annotation... annotations) {
+	public static AnnotatedTypeVariable over(TypeVariable<?> typeVariable, Annotation... annotations) {
 		return over(typeVariable, Arrays.asList(annotations));
 	}
 
@@ -102,22 +97,20 @@ public final class AnnotatedTypeVariables {
 	 * @return A new annotated type variable over the given type variable and with
 	 *         the given annotations.
 	 */
-	public static AnnotatedTypeVariable over(TypeVariable<?> typeVariable,
-			Collection<Annotation> annotations) {
+	public static AnnotatedTypeVariable over(TypeVariable<?> typeVariable, Collection<Annotation> annotations) {
 		return new AnnotatedTypeVariableImpl(typeVariable, annotations);
 	}
 
-	protected static AnnotatedTypeVariableImpl wrapImpl(
-			AnnotatedTypeVariable type) {
+	protected static AnnotatedTypeVariableImpl wrapImpl(AnnotatedTypeVariable type) {
 		return wrapImpl(AnnotatedTypes.wrappingVisitedSet(), type);
 	}
 
-	protected static AnnotatedTypeVariableImpl wrapImpl(
-			Set<TypeVariable<?>> wrapped, AnnotatedTypeVariable type) {
+	protected static AnnotatedTypeVariableImpl wrapImpl(Set<TypeVariable<?>> wrapped, AnnotatedTypeVariable type) {
 		if (type instanceof AnnotatedTypeVariableImpl) {
 			return (AnnotatedTypeVariableImpl) type;
-		} else
+		} else {
 			return new AnnotatedTypeVariableImpl(wrapped, type);
+		}
 	}
 
 	/**
