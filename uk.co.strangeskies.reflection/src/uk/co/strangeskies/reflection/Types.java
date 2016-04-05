@@ -1025,33 +1025,36 @@ public final class Types {
 		/*
 		 * Proxy guard against recursive generation of infinite types
 		 */
-		return isomorphism.byEquality().getProxiedMapping(new HashSet<>(parameterizations), ParameterizedType.class, p -> {
-			Map<TypeVariable<?>, Type> leastContainingParameterization = new HashMap<>();
+		return isomorphism.byEquality().getProxiedMapping(new HashSet<>(parameterizations), ParameterizedType.class,
+				p -> bestImpl(rawClass, parameterizations, isomorphism));
+	}
 
-			List<TypeVariable<?>> typeParameters = ParameterizedTypes.getAllTypeParameters(rawClass);
+	public static ParameterizedType bestImpl(Class<?> rawClass, List<ParameterizedType> parameterizations,
+			Isomorphism isomorphism) {
+		Map<TypeVariable<?>, Type> leastContainingParameterization = new HashMap<>();
+
+		List<TypeVariable<?>> typeParameters = ParameterizedTypes.getAllTypeParameters(rawClass);
+		for (int j = 0; j < typeParameters.size(); j++) {
+			TypeVariable<?> variable = typeParameters.get(j);
 			for (int i = 0; i < parameterizations.size(); i++) {
 				ParameterizedType parameterization = parameterizations.get(i);
-				for (int j = 0; j < typeParameters.size(); j++) {
-					TypeVariable<?> variable = typeParameters.get(j);
-					if (parameterization != null) {
-						Type argumentU = parameterization.getActualTypeArguments()[j];
-						Type argumentV = leastContainingParameterization.get(variable);
+				if (parameterization != null) {
+					Type argumentU = parameterization.getActualTypeArguments()[j];
+					Type argumentV = leastContainingParameterization.get(variable);
 
-						if (argumentV == null)
-							leastContainingParameterization.put(variable, argumentU);
-						else {
-							leastContainingParameterization.put(variable, leastContainingArgument(argumentU, argumentV, isomorphism));
-						}
+					if (argumentV == null)
+						leastContainingParameterization.put(variable, argumentU);
+					else {
+						leastContainingParameterization.put(variable, leastContainingArgument(argumentU, argumentV, isomorphism));
 					}
 				}
-				parameterizations.set(i, (ParameterizedType) parameterization.getOwnerType());
 			}
+		}
 
-			ParameterizedType best = (ParameterizedType) ParameterizedTypes.uncheckedFrom(rawClass,
-					leastContainingParameterization::get);
+		ParameterizedType best = (ParameterizedType) ParameterizedTypes.uncheckedFrom(rawClass,
+				leastContainingParameterization::get);
 
-			return best;
-		});
+		return best;
 	}
 
 	private static Type leastContainingArgument(Type argumentU, Type argumentV, Isomorphism isomorphism) {
