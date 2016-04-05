@@ -223,11 +223,13 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 			captures.put(parameter, capture);
 		}
 
-		if (containsWildcards)
+		ParameterizedType capture;
+		if (containsWildcards) {
 			substituteBounds(captures);
-
-		ParameterizedType capture = (ParameterizedType) ParameterizedTypes.uncheckedFrom(Types.getRawType(type),
-				captures::get);
+			capture = (ParameterizedType) ParameterizedTypes.uncheckedFrom(Types.getRawType(type), captures::get);
+		} else {
+			capture = type;
+		}
 
 		return capture;
 	}

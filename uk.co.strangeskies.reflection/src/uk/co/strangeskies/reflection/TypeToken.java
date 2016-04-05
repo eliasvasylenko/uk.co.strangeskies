@@ -50,6 +50,7 @@ import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.utilities.DeepCopyable;
+import uk.co.strangeskies.utilities.Isomorphism;
 import uk.co.strangeskies.utilities.collection.computingmap.ComputingMap;
 import uk.co.strangeskies.utilities.collection.computingmap.LRUCacheComputingMap;
 import uk.co.strangeskies.utilities.tuple.Pair;
@@ -341,7 +342,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 		if (resolver == null)
 			resolver = new Resolver();
 
-		Type type = substituteAnnotatedWildcards(annotatedType, resolver);
+		Type type = substituteAnnotatedWildcards(new Isomorphism(), annotatedType, resolver);
 
 		type = resolver.captureType(type);
 		type = resolver.resubstituteCapturedWildcards(type);
@@ -356,17 +357,34 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 		return new Pair<>(resolvedType.getLeft().deepCopy(map), new TypeSubstitution(map).resolve(resolvedType.getRight()));
 	}
 
-	private static Type substituteAnnotatedWildcards(AnnotatedType annotatedType, Resolver resolver) {
+	private static Type substituteAnnotatedWildcards(Isomorphism isomorphism, AnnotatedType annotatedType,
+			Resolver resolver) {
 		Wildcards behaviour = annotatedType.isAnnotationPresent(Preserve.class) ? Wildcards.PRESERVE
 				: annotatedType.isAnnotationPresent(Infer.class) ? Wildcards.INFER
 						: annotatedType.isAnnotationPresent(Capture.class) ? Wildcards.CAPTURE : Wildcards.PRESERVE;
 
 		if (annotatedType instanceof AnnotatedParameterizedType) {
+			return substituteAnnotatedWildcardsForParameterizedType(isomorphism, behaviour,
+					(AnnotatedParameterizedType) annotatedType, resolver);
+		} else if (annotatedType instanceof AnnotatedWildcardType) {
+			return substituteAnnotatedWildcardsForWildcardType(isomorphism, behaviour, (AnnotatedWildcardType) annotatedType,
+					resolver);
+		} else if (annotatedType instanceof AnnotatedArrayType) {
+			return ArrayTypes.fromComponentType(substituteAnnotatedWildcards(isomorphism,
+					((AnnotatedArrayType) annotatedType).getAnnotatedGenericComponentType(), resolver));
+		} else {
+			return annotatedType.getType();
+		}
+	}
+
+	private static ParameterizedType substituteAnnotatedWildcardsForParameterizedType(Isomorphism isomorphism,
+			Wildcards behaviour, AnnotatedParameterizedType annotatedType, Resolver resolver) {
+		return isomorphism.byIdentity().getProxiedMapping(annotatedType, ParameterizedType.class, t -> {
 			/*
 			 * Deal with annotations on types mentioned by parameters, preserving any
 			 * parameters which are wildcards themselves.
 			 */
-			Type[] arguments = substituteAnnotatedWildcards(
+			Type[] arguments = substituteAnnotatedWildcardsForEach(isomorphism,
 					((AnnotatedParameterizedType) annotatedType).getAnnotatedActualTypeArguments(), resolver);
 
 			/*
@@ -394,55 +412,54 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 				}
 			}
 			return parameterizedType;
-		} else if (annotatedType instanceof AnnotatedWildcardType) {
-			AnnotatedWildcardType annotatedWildcardType = (AnnotatedWildcardType) annotatedType;
-			WildcardType wildcardType;
-
-			if (annotatedWildcardType.getAnnotatedLowerBounds().length > 0) {
-				wildcardType = WildcardTypes
-						.lowerBounded(substituteAnnotatedWildcards(annotatedWildcardType.getAnnotatedLowerBounds(), resolver));
-
-			} else if (annotatedWildcardType.getAnnotatedUpperBounds().length > 0) {
-				wildcardType = WildcardTypes
-						.upperBounded(substituteAnnotatedWildcards(annotatedWildcardType.getAnnotatedUpperBounds(), resolver));
-
-			} else {
-				wildcardType = WildcardTypes.unbounded();
-			}
-
-			Type type;
-			if (behaviour != null) {
-				switch (behaviour) {
-				case PRESERVE:
-					type = wildcardType;
-					break;
-				case INFER:
-					type = resolver.inferOverWildcardType(wildcardType);
-					break;
-				case CAPTURE:
-					type = TypeVariableCapture.captureWildcard(wildcardType);
-					resolver.incorporateWildcardCaptures((TypeVariableCapture) type);
-					break;
-				default:
-					throw new AssertionError();
-				}
-			} else {
-				type = wildcardType;
-			}
-
-			return type;
-		} else if (annotatedType instanceof AnnotatedArrayType) {
-			return ArrayTypes.fromComponentType(substituteAnnotatedWildcards(
-					((AnnotatedArrayType) annotatedType).getAnnotatedGenericComponentType(), resolver));
-		} else {
-			return annotatedType.getType();
-		}
+		});
 	}
 
-	private static Type[] substituteAnnotatedWildcards(AnnotatedType[] annotatedTypes, Resolver resolver) {
+	private static Type substituteAnnotatedWildcardsForWildcardType(Isomorphism isomorphism, Wildcards behaviour,
+			AnnotatedWildcardType annotatedType, Resolver resolver) {
+		AnnotatedWildcardType annotatedWildcardType = (AnnotatedWildcardType) annotatedType;
+		WildcardType wildcardType;
+
+		if (annotatedWildcardType.getAnnotatedLowerBounds().length > 0) {
+			wildcardType = WildcardTypes.lowerBounded(
+					substituteAnnotatedWildcardsForEach(isomorphism, annotatedWildcardType.getAnnotatedLowerBounds(), resolver));
+
+		} else if (annotatedWildcardType.getAnnotatedUpperBounds().length > 0) {
+			wildcardType = WildcardTypes.upperBounded(
+					substituteAnnotatedWildcardsForEach(isomorphism, annotatedWildcardType.getAnnotatedUpperBounds(), resolver));
+
+		} else {
+			wildcardType = WildcardTypes.unbounded();
+		}
+
+		Type type;
+		if (behaviour != null) {
+			switch (behaviour) {
+			case PRESERVE:
+				type = wildcardType;
+				break;
+			case INFER:
+				type = resolver.inferOverWildcardType(wildcardType);
+				break;
+			case CAPTURE:
+				type = TypeVariableCapture.captureWildcard(wildcardType);
+				resolver.incorporateWildcardCaptures((TypeVariableCapture) type);
+				break;
+			default:
+				throw new AssertionError();
+			}
+		} else {
+			type = wildcardType;
+		}
+
+		return type;
+	}
+
+	private static Type[] substituteAnnotatedWildcardsForEach(Isomorphism isomorphism, AnnotatedType[] annotatedTypes,
+			Resolver resolver) {
 		Type[] types = new Type[annotatedTypes.length];
 		for (int i = 0; i < types.length; i++)
-			types[i] = substituteAnnotatedWildcards(annotatedTypes[i], resolver);
+			types[i] = substituteAnnotatedWildcards(isomorphism, annotatedTypes[i], resolver);
 		return types;
 	}
 

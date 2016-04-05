@@ -820,6 +820,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 				.filter(v -> !bounds.getBoundsOn(v).getInstantiation().isPresent())
 				.map(v -> bounds.getBoundsOn(v).getRemainingDependencies()).flatMap(Set::stream).collect(Collectors.toSet());
 
+		System.out.println(independentSet);
 		resolveIndependentSet(independentSet);
 
 		for (InferenceVariable variable : variables) {

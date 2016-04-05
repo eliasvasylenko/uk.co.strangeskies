@@ -27,6 +27,9 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
+
+import uk.co.strangeskies.utilities.classpath.DelegatingClassLoader;
 
 /**
  * An isomorphic mapping from one object graph to another, typically maintained
@@ -50,18 +53,26 @@ public class Isomorphism {
 	private final Mapping identity = new Mapping(new IdentityHashMap<>());
 	private final Mapping equality = new Mapping(new HashMap<>());
 
+	/**
+	 * @return a {@link Mapping mapping} interface for nodes whose uniqueness is
+	 *         determined by reference identity.
+	 */
 	public Mapping byIdentity() {
 		return identity;
 	}
 
+	/**
+	 * @return a {@link Mapping mapping} interface for nodes whose uniqueness is
+	 *         determined by {@link Object#equals(Object) equality}.
+	 */
 	public Mapping byEquality() {
 		return equality;
 	}
 
 	public class Mapping {
-		private final Map<?, ?> copiedNodes;
+		private final Map<?, ? extends Supplier<?>> copiedNodes;
 
-		public Mapping(Map<Object, Object> backingMap) {
+		public Mapping(Map<Object, Supplier<Object>> backingMap) {
 			copiedNodes = backingMap;
 		}
 
@@ -141,12 +152,17 @@ public class Isomorphism {
 		 * @return a mapping of the given node
 		 */
 		@SuppressWarnings("unchecked")
-		public <S, C> S getPartialMapping(C node, BiFunction<C, Consumer<S>, S> mapping) {
-			S copy = ((Map<C, S>) copiedNodes).get(node);
+		public <S, C> S getPartialMapping(C node, BiFunction<C, Consumer<Supplier<S>>, S> mapping) {
+			Supplier<S> copySource = ((Map<C, Supplier<S>>) copiedNodes).get(node);
 
-			if (copy == null) {
-				copy = mapping.apply(node, partial -> ((Map<C, S>) copiedNodes).put(node, partial));
-				((Map<C, S>) copiedNodes).put(node, copy);
+			S copy;
+
+			if (copySource == null) {
+				copy = mapping.apply(node, partial -> ((Map<C, Supplier<S>>) copiedNodes).put(node, partial));
+				S finalCopy = copy;
+				((Map<C, Supplier<S>>) copiedNodes).put(node, () -> finalCopy);
+			} else {
+				copy = copySource.get();
 			}
 
 			return copy;
@@ -208,16 +224,29 @@ public class Isomorphism {
 		 */
 		@SuppressWarnings("unchecked")
 		public <S, C> S getProxiedMapping(C node, ClassLoader classLoader, Class<S> proxyClass, Function<C, S> mapping) {
-			return getPartialMapping(node, (C n, Consumer<S> partial) -> {
+			while (node instanceof IsomorphismProxy) {
+				C proxiedNode = (C) ((IsomorphismProxy) node).getProxiedObjectFromIsomorphism();
+				if (proxiedNode != null) {
+					node = proxiedNode;
+				} else {
+					break;
+				}
+			}
+
+			return getPartialMapping(node, (C n, Consumer<Supplier<S>> partial) -> {
 				IdentityProperty<S> property = new IdentityProperty<>();
 
-				S proxy = (S) Proxy.newProxyInstance(classLoader, new Class[] { proxyClass }, new InvocationHandler() {
-					@Override
-					public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-						return method.invoke(property.get(), args);
-					}
-				});
-				partial.accept(proxy);
+				partial.accept(() -> (S) Proxy.newProxyInstance(
+						new DelegatingClassLoader(classLoader, IsomorphismProxy.class.getClassLoader()),
+						new Class[] { proxyClass, IsomorphismProxy.class }, new InvocationHandler() {
+							@Override
+							public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+								if (method.getDeclaringClass().equals(IsomorphismProxy.class)) {
+									return property.get();
+								}
+								return method.invoke(property.get(), args);
+							}
+						}));
 
 				S result = mapping.apply(n);
 
@@ -225,5 +254,18 @@ public class Isomorphism {
 				return result;
 			});
 		}
+	}
+
+	/**
+	 * Marker interface for proxies created by {@link Isomorphism}. Only public to
+	 * avoid bothering to fix access errors.
+	 * 
+	 * @author Elias N Vasylenko
+	 */
+	public static interface IsomorphismProxy {
+		/**
+		 * @return the original proxied object if available, otherwise null
+		 */
+		Object getProxiedObjectFromIsomorphism();
 	}
 }

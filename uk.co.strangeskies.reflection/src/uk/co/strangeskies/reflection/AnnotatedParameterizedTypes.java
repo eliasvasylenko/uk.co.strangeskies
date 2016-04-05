@@ -33,6 +33,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes.AnnotatedTypeImpl;
+import uk.co.strangeskies.reflection.AnnotatedTypes.AnnotatedTypeInternal;
 import uk.co.strangeskies.utilities.Isomorphism;
 
 /**
@@ -41,8 +42,14 @@ import uk.co.strangeskies.utilities.Isomorphism;
  * @author Elias N Vasylenko
  */
 public final class AnnotatedParameterizedTypes {
-	private static class AnnotatedParameterizedTypeImpl extends AnnotatedTypeImpl implements AnnotatedParameterizedType {
-		private final AnnotatedTypeImpl[] annotatedTypeArguments;
+	@SuppressWarnings("javadoc")
+	public static interface AnnotatedParameterizedTypeInternal
+			extends AnnotatedParameterizedType, AnnotatedTypeInternal {}
+
+	private static class AnnotatedParameterizedTypeImpl extends AnnotatedTypeImpl
+			implements AnnotatedParameterizedTypeInternal {
+		private String string;
+		private final AnnotatedTypeInternal[] annotatedTypeArguments;
 
 		public AnnotatedParameterizedTypeImpl(Isomorphism isomorphism,
 				AnnotatedParameterizedType annotatedParameterizedType) {
@@ -52,25 +59,26 @@ public final class AnnotatedParameterizedTypes {
 					annotatedParameterizedType.getAnnotatedActualTypeArguments());
 		}
 
-		public AnnotatedParameterizedTypeImpl(ParameterizedType type, Collection<? extends Annotation> annotations,
-				Isomorphism isomorphism) {
+		public AnnotatedParameterizedTypeImpl(Isomorphism isomorphism, ParameterizedType type,
+				Collection<? extends Annotation> annotations) {
 			super(type, annotations);
 
-			annotatedTypeArguments = AnnotatedTypes.overImpl(type.getActualTypeArguments());
+			annotatedTypeArguments = AnnotatedTypes.overImpl(isomorphism, type.getActualTypeArguments());
 		}
 
-		public AnnotatedParameterizedTypeImpl(Class<?> rawType,
+		public AnnotatedParameterizedTypeImpl(Isomorphism isomorphism, Class<?> rawType,
 				Function<? super TypeVariable<?>, ? extends AnnotatedType> annotatedTypes,
 				Collection<? extends Annotation> annotations) {
 			super(ParameterizedTypes.uncheckedFrom(rawType, unannotatedTypes(annotatedTypes)), annotations);
 
-			annotatedTypeArguments = AnnotatedTypes.wrapImpl(Arrays.stream(rawType.getTypeParameters()).map(p -> {
-				AnnotatedType type = annotatedTypes.apply(p);
-				if (type == null)
-					return AnnotatedTypes.over(p);
-				else
-					return type;
-			}).toArray(AnnotatedType[]::new));
+			annotatedTypeArguments = AnnotatedTypes.wrapImpl(isomorphism,
+					Arrays.stream(rawType.getTypeParameters()).map(p -> {
+						AnnotatedType type = annotatedTypes.apply(p);
+						if (type == null)
+							return AnnotatedTypes.overImpl(isomorphism, p);
+						else
+							return type;
+					}).toArray(AnnotatedType[]::new));
 		}
 
 		/*
@@ -93,19 +101,25 @@ public final class AnnotatedParameterizedTypes {
 		}
 
 		@Override
-		public String toString(Imports imports) {
-			StringBuilder builder = new StringBuilder(annotationString(imports, getAnnotations()))
-					.append(Types.toString(getType().getRawType(), imports)).append("<");
+		public synchronized String toString(Imports imports) {
+			if (string == null) {
+				string = "...";
 
-			builder.append(Arrays.stream(getAnnotatedActualTypeArguments()).map(t -> AnnotatedTypes.toString(t, imports))
-					.collect(Collectors.joining(", ")));
+				StringBuilder builder = new StringBuilder(annotationString(imports, getAnnotations()))
+						.append(Types.toString(getType().getRawType(), imports)).append("<");
 
-			return builder.append(">").toString();
+				builder.append(Arrays.stream(getAnnotatedActualTypeArguments()).map(t -> AnnotatedTypes.toString(t, imports))
+						.collect(Collectors.joining(", ")));
+
+				string = builder.append(">").toString();
+			}
+
+			return string;
 		}
 
 		@Override
-		public int annotationHash() {
-			return super.annotationHash() ^ annotationHash(annotatedTypeArguments);
+		public int annotationHashImpl() {
+			return super.annotationHashImpl() ^ annotationHash(annotatedTypeArguments);
 		}
 	}
 
@@ -138,16 +152,16 @@ public final class AnnotatedParameterizedTypes {
 	 *         parameterized type, with the given annotations.
 	 */
 	public static AnnotatedParameterizedType over(ParameterizedType type, Collection<Annotation> annotations) {
-		return over(type, annotations, new Isomorphism());
+		return overImpl(new Isomorphism(), type, annotations);
 	}
 
-	private static AnnotatedParameterizedType over(ParameterizedType type, Collection<Annotation> annotations,
-			Isomorphism isomorphism) {
+	static AnnotatedParameterizedTypeInternal overImpl(Isomorphism isomorphism, ParameterizedType type,
+			Collection<Annotation> annotations) {
 		if (annotations.isEmpty()) {
-			return isomorphism.byIdentity().getProxiedMapping(type, AnnotatedParameterizedType.class,
-					t -> new AnnotatedParameterizedTypeImpl(type, annotations, isomorphism));
+			return isomorphism.byIdentity().getProxiedMapping(type, AnnotatedParameterizedTypeInternal.class,
+					t -> new AnnotatedParameterizedTypeImpl(isomorphism, type, annotations));
 		} else {
-			return new AnnotatedParameterizedTypeImpl(type, annotations, isomorphism);
+			return new AnnotatedParameterizedTypeImpl(isomorphism, type, annotations);
 		}
 	}
 
@@ -183,7 +197,7 @@ public final class AnnotatedParameterizedTypes {
 	 */
 	public static AnnotatedParameterizedType from(Class<?> rawType,
 			Function<? super TypeVariable<?>, ? extends AnnotatedType> arguments, Annotation... annotations) {
-		return new AnnotatedParameterizedTypeImpl(rawType, arguments, Arrays.asList(annotations));
+		return new AnnotatedParameterizedTypeImpl(new Isomorphism(), rawType, arguments, Arrays.asList(annotations));
 	}
 
 	/**
@@ -253,15 +267,18 @@ public final class AnnotatedParameterizedTypes {
 		return allArguments;
 	}
 
-	protected static AnnotatedParameterizedTypeImpl wrapImpl(AnnotatedParameterizedType type) {
+	protected static AnnotatedParameterizedTypeInternal wrapImpl(AnnotatedParameterizedType type) {
 		return wrapImpl(new Isomorphism(), type);
 	}
 
-	protected static AnnotatedParameterizedTypeImpl wrapImpl(Isomorphism isomorphism, AnnotatedParameterizedType type) {
-		if (type instanceof AnnotatedParameterizedTypeImpl) {
-			return (AnnotatedParameterizedTypeImpl) type;
-		} else
-			return new AnnotatedParameterizedTypeImpl(isomorphism, type);
+	protected static AnnotatedParameterizedTypeInternal wrapImpl(Isomorphism isomorphism,
+			AnnotatedParameterizedType type) {
+		if (type instanceof AnnotatedParameterizedTypeInternal) {
+			return (AnnotatedParameterizedTypeInternal) type;
+		} else {
+			return isomorphism.byIdentity().getProxiedMapping(type, AnnotatedParameterizedTypeInternal.class,
+					t -> new AnnotatedParameterizedTypeImpl(isomorphism, t));
+		}
 	}
 
 	/**

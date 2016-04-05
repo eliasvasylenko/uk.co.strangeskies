@@ -186,7 +186,7 @@ public class TypeSubstitution {
 
 			IdentityProperty<IntersectionType> property = new IdentityProperty<>();
 			Type proxy = IntersectionType.proxy(property::get);
-			partial.accept(proxy);
+			partial.accept(() -> proxy);
 
 			IntersectionType result = IntersectionType
 					.uncheckedFrom(Arrays.stream(type.getTypes()).map(t -> resolve(t, isomorphism)).collect(Collectors.toList()));

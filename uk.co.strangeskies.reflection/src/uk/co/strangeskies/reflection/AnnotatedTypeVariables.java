@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes.AnnotatedTypeImpl;
+import uk.co.strangeskies.reflection.AnnotatedTypes.AnnotatedTypeInternal;
 import uk.co.strangeskies.utilities.Isomorphism;
 
 /**
@@ -34,25 +35,23 @@ import uk.co.strangeskies.utilities.Isomorphism;
  * @author Elias N Vasylenko
  */
 public final class AnnotatedTypeVariables {
-	private static class AnnotatedTypeVariableImpl extends AnnotatedTypeImpl implements AnnotatedTypeVariable {
-		private final AnnotatedTypeImpl[] annotatedBounds;
+	@SuppressWarnings("javadoc")
+	public static interface AnnotatedTypeVariableInternal extends AnnotatedTypeVariable, AnnotatedTypeInternal {}
+
+	private static class AnnotatedTypeVariableImpl extends AnnotatedTypeImpl implements AnnotatedTypeVariableInternal {
+		private final AnnotatedTypeInternal[] annotatedBounds;
 
 		public AnnotatedTypeVariableImpl(Isomorphism isomorphism, AnnotatedTypeVariable annotatedTypeVariable) {
 			super(annotatedTypeVariable);
 
-			if (wrapped.contains(getType())) {
-				annotatedBounds = AnnotatedTypes.overImpl(getType().getBounds());
-			} else {
-				wrapped.add(getType());
-				annotatedBounds = AnnotatedTypes.wrapImpl(isomorphism, annotatedTypeVariable.getAnnotatedBounds());
-				wrapped.remove(getType());
-			}
+			annotatedBounds = AnnotatedTypes.wrapImpl(isomorphism, annotatedTypeVariable.getAnnotatedBounds());
 		}
 
-		public AnnotatedTypeVariableImpl(TypeVariable<?> type, Collection<Annotation> annotations) {
+		public AnnotatedTypeVariableImpl(Isomorphism isomorphism, TypeVariable<?> type,
+				Collection<Annotation> annotations) {
 			super(type, annotations);
 
-			annotatedBounds = AnnotatedTypes.overImpl(type.getBounds());
+			annotatedBounds = AnnotatedTypes.overImpl(isomorphism, type.getBounds());
 		}
 
 		@Override
@@ -61,8 +60,8 @@ public final class AnnotatedTypeVariables {
 		}
 
 		@Override
-		public int annotationHash() {
-			return super.annotationHash() ^ annotationHash(annotatedBounds);
+		public int annotationHashImpl() {
+			return super.annotationHashImpl() ^ annotationHash(annotatedBounds);
 		}
 
 		@Override
@@ -98,18 +97,29 @@ public final class AnnotatedTypeVariables {
 	 *         the given annotations.
 	 */
 	public static AnnotatedTypeVariable over(TypeVariable<?> typeVariable, Collection<Annotation> annotations) {
-		return new AnnotatedTypeVariableImpl(typeVariable, annotations);
+		return overImpl(new Isomorphism(), typeVariable, annotations);
 	}
 
-	protected static AnnotatedTypeVariableImpl wrapImpl(AnnotatedTypeVariable type) {
+	static AnnotatedTypeVariableInternal overImpl(Isomorphism isomorphism, TypeVariable<?> type,
+			Collection<Annotation> annotations) {
+		if (annotations.isEmpty()) {
+			return isomorphism.byIdentity().getProxiedMapping(type, AnnotatedTypeVariableInternal.class,
+					t -> new AnnotatedTypeVariableImpl(isomorphism, t, annotations));
+		} else {
+			return new AnnotatedTypeVariableImpl(isomorphism, type, annotations);
+		}
+	}
+
+	protected static AnnotatedTypeVariableInternal wrapImpl(AnnotatedTypeVariable type) {
 		return wrapImpl(new Isomorphism(), type);
 	}
 
-	protected static AnnotatedTypeVariableImpl wrapImpl(Isomorphism isomorphism, AnnotatedTypeVariable type) {
-		if (type instanceof AnnotatedTypeVariableImpl) {
-			return (AnnotatedTypeVariableImpl) type;
+	protected static AnnotatedTypeVariableInternal wrapImpl(Isomorphism isomorphism, AnnotatedTypeVariable type) {
+		if (type instanceof AnnotatedTypeVariableInternal) {
+			return (AnnotatedTypeVariableInternal) type;
 		} else {
-			return new AnnotatedTypeVariableImpl(isomorphism, type);
+			return isomorphism.byIdentity().getProxiedMapping(type.getType(), AnnotatedTypeVariableInternal.class,
+					t -> new AnnotatedTypeVariableImpl(isomorphism, type));
 		}
 	}
 

@@ -207,7 +207,7 @@ public class ParameterizedTypes {
 			 * This way the string will return "..." if we encounter it again in the
 			 * parameters, rather than recurring infinitely:
 			 */
-			partial.accept("...");
+			partial.accept(() -> "...");
 
 			Type ownerType = p.getOwnerType();
 			Type rawType = p.getRawType();
@@ -479,7 +479,7 @@ public class ParameterizedTypes {
 				type = subtype;
 
 			subclass = Types.getRawType(type);
-		} while (subclass != superclass);
+		} while (!subclass.equals(superclass));
 
 		return type;
 	}

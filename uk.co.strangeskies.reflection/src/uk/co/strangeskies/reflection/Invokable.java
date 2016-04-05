@@ -768,8 +768,8 @@ public class Invokable<T, R> {
 	public Invokable<T, R> infer() {
 		Resolver resolver = getResolver();
 
-		resolver.infer(executable);
-		resolver.infer(getReceiverType().getType());
+		System.out.println("!");
+		resolver.infer();
 
 		return new Invokable<>(resolver, receiverType, executable,
 				invocationFunction, parameters);

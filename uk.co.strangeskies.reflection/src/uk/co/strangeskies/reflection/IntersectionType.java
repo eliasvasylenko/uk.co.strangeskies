@@ -52,6 +52,11 @@ public abstract class IntersectionType implements Type {
 		public Type[] getTypes() {
 			return source.get().getTypes();
 		}
+
+		@Override
+		public String toString(Imports imports) {
+			return source.get().toString(imports);
+		}
 	}
 
 	IntersectionType() {}
@@ -238,11 +243,28 @@ public abstract class IntersectionType implements Type {
 
 	static IntersectionType fromImpl(Collection<? extends Type> types) {
 		return new IntersectionType() {
-			Type[] typeArray = types.toArray(new Type[types.size()]);
+			String string;
+			final Type[] typeArray = types.toArray(new Type[types.size()]);
 
 			@Override
 			public Type[] getTypes() {
 				return typeArray;
+			}
+
+			@Override
+			public String toString(Imports imports) {
+				if (string == null) {
+					string = "...";
+
+					string = Arrays.stream(getTypes()).map(t -> {
+						String typeName = Types.toString(t, imports);
+						if (t instanceof TypeVariableCapture)
+							typeName = new StringBuilder().append("[ ").append(typeName).append(" ]").toString();
+						return typeName;
+					}).collect(Collectors.joining(" & "));
+				}
+
+				return string;
 			}
 		};
 	}
@@ -262,14 +284,7 @@ public abstract class IntersectionType implements Type {
 	 *          omitted from output.
 	 * @return A canonical string representation of the given type.
 	 */
-	public String toString(Imports imports) {
-		return Arrays.stream(getTypes()).map(t -> {
-			String typeName = Types.toString(t, imports);
-			if (t instanceof TypeVariableCapture)
-				typeName = new StringBuilder().append("[ ").append(typeName).append(" ]").toString();
-			return typeName;
-		}).collect(Collectors.joining(" & "));
-	}
+	public abstract String toString(Imports imports);
 
 	@Override
 	public boolean equals(Object obj) {

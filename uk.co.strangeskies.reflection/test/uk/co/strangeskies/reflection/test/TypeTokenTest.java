@@ -105,8 +105,10 @@ public class TypeTokenTest {
 	public static void main(String[] args) {
 		TypeTokenTest test = new TypeTokenTest();
 
-		test.huge2Test();
-		test.hugeTest1();
+		for (int i = 0; i < 60; i++) {
+			test.hugeTest1();
+			test.huge2Test();
+		}
 	}
 
 	/**
@@ -288,6 +290,10 @@ public class TypeTokenTest {
 		System.out.println();
 
 		System.out.println(TypeToken.over(Arrays.class).resolveMethodOverload("asList", int.class, double.class)
+				.getResolver().getBounds());
+		System.out.println();
+
+		System.out.println(TypeToken.over(Arrays.class).resolveMethodOverload("asList", int.class, double.class)
 				.withTargetType(new @Infer TypeToken<List<? super Comparable<? extends Number>>>() {}).infer());
 		System.out.println();
 
@@ -388,8 +394,9 @@ public class TypeTokenTest {
 				.resolveConstructorOverload().withTargetType(new TypeToken<@Infer Map<?, ?>>() {}).infer());
 		System.out.println();
 
+		System.out.println(new @Infer TypeToken<List<?>>() {}.getAnnotatedDeclaration());
 		System.out.println(new TypeToken<Set<String>>() {}
-				.resolveMethodOverload("addAll", new TypeToken<@Infer List<?>>() {}).inferParameterTypes());
+				.resolveMethodOverload("addAll", new @Infer TypeToken<@Infer List<@Infer ?>>() {}).inferParameterTypes());
 		System.out.println();
 
 		System.out.println(new TypeToken<@Infer Set<?>>() {}

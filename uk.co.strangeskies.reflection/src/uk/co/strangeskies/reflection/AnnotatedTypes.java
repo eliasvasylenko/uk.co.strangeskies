@@ -38,7 +38,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.Annotations.AnnotationParser;
@@ -57,7 +56,29 @@ import uk.co.strangeskies.utilities.text.Parser;
 public final class AnnotatedTypes {
 	private static final AnnotatedTypeParser ANNOTATED_TYPE_PARSER = new AnnotatedTypeParser(Imports.empty());
 
-	static class AnnotatedTypeImpl implements AnnotatedType {
+	/**
+	 * An internal interface to add some extra functionality onto annotated types.
+	 * 
+	 * @author Elias N Vasylenko
+	 */
+	public static interface AnnotatedTypeInternal extends AnnotatedType {
+		/**
+		 * As {@link #toString()}, but according to a given {@link Imports}.
+		 * 
+		 * @param imports
+		 * @return the string representation of the type
+		 */
+		String toString(Imports imports);
+
+		/**
+		 * @return a hash code over the annotations of the annotated type
+		 */
+		int annotationHash();
+	}
+
+	static class AnnotatedTypeImpl implements AnnotatedTypeInternal {
+		private Integer annotationHash;
+
 		private final Type type;
 		private final Map<Class<? extends Annotation>, Annotation> annotations;
 
@@ -115,15 +136,27 @@ public final class AnnotatedTypes {
 			return (getType() == null ? 0 : getType().hashCode()) ^ annotationHash();
 		}
 
-		public int annotationHash() {
+		@Override
+		public synchronized int annotationHash() {
+			if (annotationHash == null) {
+				annotationHash = 0;
+
+				annotationHash = annotationHashImpl();
+			}
+
+			return annotationHash;
+		}
+
+		protected int annotationHashImpl() {
 			int hash = 0;
 			for (Annotation annotation : getAnnotations())
 				if (annotation != null)
 					hash += annotation.hashCode();
+
 			return hash;
 		}
 
-		protected static int annotationHash(AnnotatedTypeImpl... annotatedTypes) {
+		protected static int annotationHash(AnnotatedTypeInternal... annotatedTypes) {
 			int hash = annotatedTypes.length;
 			for (int i = 0; i < annotatedTypes.length; i++)
 				hash ^= annotatedTypes[i].annotationHash();
@@ -135,6 +168,7 @@ public final class AnnotatedTypes {
 			return toString(Imports.empty());
 		}
 
+		@Override
 		public String toString(Imports imports) {
 			return new StringBuilder().append(annotationString(imports, annotations.values()))
 					.append(Types.toString(type, imports)).toString();
@@ -190,53 +224,80 @@ public final class AnnotatedTypes {
 		else if (!first.getType().equals(second.getType()))
 			return false;
 		else {
-			return annotationEquals(first, second);
+			return annotationEquals(new Isomorphism(), first, second);
 		}
 	}
 
-	private static boolean annotationEquals(AnnotatedType first, AnnotatedType second) {
-		if (!new HashSet<>(Arrays.asList(first.getAnnotations()))
-				.equals(new HashSet<>(Arrays.asList(second.getAnnotations()))))
-			return false;
+	private static class AnnotatedTypeEquality {
+		private AnnotatedType a, b;
 
-		if (first instanceof AnnotatedParameterizedType) {
-			if (second instanceof AnnotatedParameterizedType) {
-				return annotationEquals(((AnnotatedParameterizedType) first).getAnnotatedActualTypeArguments(),
-						((AnnotatedParameterizedType) second).getAnnotatedActualTypeArguments());
-			} else
+		public AnnotatedTypeEquality(AnnotatedType a, AnnotatedType b) {
+			this.a = a;
+			this.b = b;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (!(obj instanceof AnnotatedTypeEquality))
 				return false;
-		} else if (first instanceof AnnotatedArrayType) {
-			if (second instanceof AnnotatedArrayType) {
-				return annotationEquals(((AnnotatedArrayType) first).getAnnotatedGenericComponentType(),
-						((AnnotatedArrayType) second).getAnnotatedGenericComponentType());
-			} else
-				return false;
-		} else if (first instanceof AnnotatedWildcardType) {
-			if (second instanceof AnnotatedWildcardType) {
-				AnnotatedType[] firstUpperBounds = ((AnnotatedWildcardType) first).getAnnotatedUpperBounds();
-				AnnotatedType[] secondUpperBounds = ((AnnotatedWildcardType) second).getAnnotatedUpperBounds();
 
-				if (firstUpperBounds.length == 0)
-					firstUpperBounds = new AnnotatedType[] { AnnotatedTypes.over(Object.class) };
+			AnnotatedTypeEquality that = (AnnotatedTypeEquality) obj;
+			return (a == that.a && b == that.b) || (a == that.b && b == that.a);
+		}
 
-				if (secondUpperBounds.length == 0)
-					secondUpperBounds = new AnnotatedType[] { AnnotatedTypes.over(Object.class) };
-
-				return annotationEquals(((AnnotatedWildcardType) first).getAnnotatedLowerBounds(),
-						((AnnotatedWildcardType) second).getAnnotatedLowerBounds())
-						&& annotationEquals(firstUpperBounds, secondUpperBounds);
-			} else
-				return false;
-		} else
-			return true;
+		@Override
+		public int hashCode() {
+			return System.identityHashCode(a) ^ (System.identityHashCode(b) * 7);
+		}
 	}
 
-	private static boolean annotationEquals(AnnotatedType[] first, AnnotatedType[] second) {
+	private static boolean annotationEquals(Isomorphism isomorphism, AnnotatedType first, AnnotatedType second) {
+		return isomorphism.byEquality().getPartialMapping(new AnnotatedTypeEquality(first, second), (e, partial) -> {
+			partial.accept(() -> true);
+
+			if (!new HashSet<>(Arrays.asList(first.getAnnotations()))
+					.equals(new HashSet<>(Arrays.asList(second.getAnnotations()))))
+				return false;
+
+			if (first instanceof AnnotatedParameterizedType) {
+				if (second instanceof AnnotatedParameterizedType) {
+					return annotationEquals(isomorphism, ((AnnotatedParameterizedType) first).getAnnotatedActualTypeArguments(),
+							((AnnotatedParameterizedType) second).getAnnotatedActualTypeArguments());
+				} else
+					return false;
+			} else if (first instanceof AnnotatedArrayType) {
+				if (second instanceof AnnotatedArrayType) {
+					return annotationEquals(isomorphism, ((AnnotatedArrayType) first).getAnnotatedGenericComponentType(),
+							((AnnotatedArrayType) second).getAnnotatedGenericComponentType());
+				} else
+					return false;
+			} else if (first instanceof AnnotatedWildcardType) {
+				if (second instanceof AnnotatedWildcardType) {
+					AnnotatedType[] firstUpperBounds = ((AnnotatedWildcardType) first).getAnnotatedUpperBounds();
+					AnnotatedType[] secondUpperBounds = ((AnnotatedWildcardType) second).getAnnotatedUpperBounds();
+
+					if (firstUpperBounds.length == 0)
+						firstUpperBounds = new AnnotatedType[] { AnnotatedTypes.over(Object.class) };
+
+					if (secondUpperBounds.length == 0)
+						secondUpperBounds = new AnnotatedType[] { AnnotatedTypes.over(Object.class) };
+
+					return annotationEquals(isomorphism, ((AnnotatedWildcardType) first).getAnnotatedLowerBounds(),
+							((AnnotatedWildcardType) second).getAnnotatedLowerBounds())
+							&& annotationEquals(isomorphism, firstUpperBounds, secondUpperBounds);
+				} else
+					return false;
+			} else
+				return true;
+		});
+	}
+
+	private static boolean annotationEquals(Isomorphism isomorphism, AnnotatedType[] first, AnnotatedType[] second) {
 		if (first.length != second.length)
 			return false;
 
 		for (int i = 0; i < first.length; i++)
-			if (!annotationEquals(first[i], second[i]))
+			if (!annotationEquals(isomorphism, first[i], second[i]))
 				return false;
 
 		return true;
@@ -254,20 +315,7 @@ public final class AnnotatedTypes {
 	 * @return A new array of unannotated {@link AnnotatedType} instances.
 	 */
 	public static AnnotatedType[] over(Type... types) {
-		return overImpl(types);
-	}
-
-	/**
-	 * Transform an array of {@link Type}s into a new array of
-	 * {@link AnnotatedType}s, according to the behaviour of {@link #over(Type)}
-	 * applied to element of the array.
-	 * 
-	 * @param types
-	 *          The array of types to transform.
-	 * @return A new array of unannotated {@link AnnotatedType} instances.
-	 */
-	public static AnnotatedTypeImpl[] overImpl(Type... types) {
-		return Arrays.stream(types).map(AnnotatedTypes::over).toArray(AnnotatedTypeImpl[]::new);
+		return overImpl(new Isomorphism(), types);
 	}
 
 	/**
@@ -324,43 +372,68 @@ public final class AnnotatedTypes {
 	 *         given type containing the given annotations.
 	 */
 	public static AnnotatedType over(Type type, Collection<Annotation> annotations) {
+		return overImpl(new Isomorphism(), type, annotations);
+	}
+
+	protected static AnnotatedTypeInternal[] overImpl(Isomorphism isomorphism, Type... types) {
+		return Arrays.stream(types).map(a -> overImpl(isomorphism, a, Collections.emptySet()))
+				.toArray(AnnotatedTypeInternal[]::new);
+	}
+
+	protected static AnnotatedTypeInternal overImpl(Isomorphism isomorphism, Type type) {
+		return overImpl(isomorphism, type, Collections.emptySet());
+	}
+
+	protected static AnnotatedTypeInternal overImpl(Isomorphism isomorphism, Type type,
+			Collection<Annotation> annotations) {
 		if (type instanceof ParameterizedType) {
-			return AnnotatedParameterizedTypes.over((ParameterizedType) type, annotations);
+			return AnnotatedParameterizedTypes.overImpl(isomorphism, (ParameterizedType) type, annotations);
 		} else if (type instanceof WildcardType) {
-			return AnnotatedWildcardTypes.over((WildcardType) type, annotations);
+			return AnnotatedWildcardTypes.overImpl(isomorphism, (WildcardType) type, annotations);
 		} else if (type instanceof GenericArrayType) {
-			return AnnotatedArrayTypes.over((GenericArrayType) type, annotations);
+			return AnnotatedArrayTypes.overImpl(isomorphism, (GenericArrayType) type, annotations);
 		} else if (type instanceof Class && ((Class<?>) type).isArray()) {
-			return AnnotatedArrayTypes.over((Class<?>) type, annotations);
+			return AnnotatedArrayTypes.overImpl(isomorphism, (Class<?>) type, annotations);
+		} else if (type instanceof AnnotatedTypeVariable) {
+			return AnnotatedTypeVariables.overImpl(isomorphism, (TypeVariable<?>) type, annotations);
 		} else if (type instanceof IntersectionType) {
-			IntersectionType intersectionType = (IntersectionType) type;
-			if (intersectionType.getTypes().length == 0)
-				return new AnnotatedTypeImpl(Object.class, annotations);
-			else if (intersectionType.getTypes().length == 1)
-				return new AnnotatedTypeImpl(intersectionType.getTypes()[0], annotations);
-			else
-				return new AnnotatedTypeImpl(type, annotations);
+			return overIntersection(isomorphism, (IntersectionType) type, annotations);
 		} else {
 			return new AnnotatedTypeImpl(type, annotations);
 		}
 	}
 
-	protected static AnnotatedTypeImpl[] wrapImpl(Isomorphism isomorphism, AnnotatedType... type) {
-		return wrapImpl(isomorphism, type);
+	private static AnnotatedTypeInternal overIntersection(Isomorphism isomorphism, IntersectionType intersectionType,
+			Collection<Annotation> annotations) {
+		if (annotations.isEmpty()) {
+			return isomorphism.byIdentity().getMapping(intersectionType,
+					type -> overIntersectionImpl(isomorphism, type, annotations));
+		} else {
+			return overIntersectionImpl(isomorphism, intersectionType, annotations);
+		}
 	}
 
-	protected static AnnotatedTypeImpl[] wrapImpl(Isomorphism isomorphism, Set<TypeVariable<?>> wrapped,
-			AnnotatedType... type) {
-		return Arrays.stream(type).map(t -> wrapImpl(isomorphism, wrapped, t)).toArray(AnnotatedTypeImpl[]::new);
+	private static AnnotatedTypeInternal overIntersectionImpl(Isomorphism isomorphism, IntersectionType type,
+			Collection<Annotation> annotations) {
+		if (type.getTypes().length == 0)
+			return new AnnotatedTypeImpl(Object.class, annotations);
+		else if (type.getTypes().length == 1)
+			return overImpl(isomorphism, type.getTypes()[0], annotations);
+		else
+			return new AnnotatedTypeImpl(type, annotations);
 	}
 
-	protected static AnnotatedTypeImpl wrapImpl(AnnotatedType type) {
+	protected static AnnotatedTypeInternal[] wrapImpl(Isomorphism isomorphism, AnnotatedType... type) {
+		return Arrays.stream(type).map(t -> wrapImpl(isomorphism, t)).toArray(AnnotatedTypeInternal[]::new);
+	}
+
+	protected static AnnotatedTypeInternal wrapImpl(AnnotatedType type) {
 		return wrapImpl(new Isomorphism(), type);
 	}
 
-	protected static AnnotatedTypeImpl wrapImpl(Isomorphism isomorphism, AnnotatedType type) {
-		if (type instanceof AnnotatedTypeImpl) {
-			return (AnnotatedTypeImpl) type;
+	protected static AnnotatedTypeInternal wrapImpl(Isomorphism isomorphism, AnnotatedType type) {
+		if (type instanceof AnnotatedTypeInternal) {
+			return (AnnotatedTypeInternal) type;
 		} else if (type instanceof AnnotatedParameterizedType) {
 			return AnnotatedParameterizedTypes.wrapImpl(isomorphism, (AnnotatedParameterizedType) type);
 		} else if (type instanceof AnnotatedWildcardType) {
@@ -370,7 +443,7 @@ public final class AnnotatedTypes {
 		} else if (type instanceof AnnotatedTypeVariable) {
 			return AnnotatedTypeVariables.wrapImpl(isomorphism, (AnnotatedTypeVariable) type);
 		} else {
-			return new AnnotatedTypeImpl(type);
+			return isomorphism.byIdentity().getMapping(type, AnnotatedTypeImpl::new);
 		}
 	}
 
