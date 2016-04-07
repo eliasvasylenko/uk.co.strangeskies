@@ -434,7 +434,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	public ParameterizedType inferOverTypeArguments(ParameterizedType type) {
 		Class<?> rawType = Types.getRawType(type);
 
-		Map<TypeVariable<?>, Type> arguments = ParameterizedTypes.getAllTypeArguments(type);
+		Map<TypeVariable<?>, Type> arguments = ParameterizedTypes.getAllTypeArgumentsMap(type);
 		Map<TypeVariable<?>, InferenceVariable> declarationCaptures;
 
 		if (!capturedTypeVariables.containsKey(rawType)) {
@@ -563,11 +563,11 @@ public class Resolver implements DeepCopyable<Resolver> {
 		Class<?> rawType = Types.getRawType(type);
 		inferOverTypeArguments(type);
 
-		Map<TypeVariable<?>, Type> originalArguments = ParameterizedTypes.getAllTypeArguments(type);
+		Map<TypeVariable<?>, Type> originalArguments = ParameterizedTypes.getAllTypeArgumentsMap(type);
 
 		type = TypeVariableCapture.captureWildcardArguments(type);
 
-		Map<TypeVariable<?>, Type> capturedArguments = ParameterizedTypes.getAllTypeArguments(type);
+		Map<TypeVariable<?>, Type> capturedArguments = ParameterizedTypes.getAllTypeArgumentsMap(type);
 
 		for (TypeVariable<?> parameter : originalArguments.keySet()) {
 			if (originalArguments.get(parameter) instanceof WildcardType) {
@@ -820,7 +820,6 @@ public class Resolver implements DeepCopyable<Resolver> {
 				.filter(v -> !bounds.getBoundsOn(v).getInstantiation().isPresent())
 				.map(v -> bounds.getBoundsOn(v).getRemainingDependencies()).flatMap(Set::stream).collect(Collectors.toSet());
 
-		System.out.println(independentSet);
 		resolveIndependentSet(independentSet);
 
 		for (InferenceVariable variable : variables) {

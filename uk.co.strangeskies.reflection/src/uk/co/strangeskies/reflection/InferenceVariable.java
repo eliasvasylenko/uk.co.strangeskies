@@ -114,7 +114,7 @@ public class InferenceVariable implements Type {
 	 */
 	public static ParameterizedType captureConversion(ParameterizedType type,
 			BoundSet bounds) {
-		if (ParameterizedTypes.getAllTypeArguments(type).values().stream()
+		if (ParameterizedTypes.getAllTypeArgumentsMap(type).values().stream()
 				.anyMatch(WildcardType.class::isInstance)) {
 			/*
 			 * There exists a capture conversion from a parameterized type

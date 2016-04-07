@@ -745,8 +745,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 						Type supertypeT = ParameterizedTypes.resolveSupertypeParameters(T, type);
 
 						for (TypeVariable<?> parameter : ParameterizedTypes.getAllTypeParameters(type)) {
-							Type argumentS = ParameterizedTypes.getAllTypeArguments((ParameterizedType) supertypeS).get(parameter);
-							Type argumentT = ParameterizedTypes.getAllTypeArguments((ParameterizedType) supertypeT).get(parameter);
+							Type argumentS = ParameterizedTypes.getAllTypeArgumentsMap((ParameterizedType) supertypeS).get(parameter);
+							Type argumentT = ParameterizedTypes.getAllTypeArgumentsMap((ParameterizedType) supertypeT).get(parameter);
 
 							if (!(argumentS instanceof WildcardType) && !(argumentT instanceof WildcardType))
 								ConstraintFormula.reduce(Kind.EQUALITY, argumentS, argumentT, boundSet);

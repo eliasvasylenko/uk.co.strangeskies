@@ -261,7 +261,7 @@ public final class AnnotatedParameterizedTypes {
 			allArguments.put(parameters[i], arguments[i]);
 
 		for (Map.Entry<TypeVariable<?>, Type> entry : ParameterizedTypes
-				.getAllTypeArguments((ParameterizedType) type.getType()).entrySet())
+				.getAllTypeArgumentsMap((ParameterizedType) type.getType()).entrySet())
 			allArguments.putIfAbsent(entry.getKey(), AnnotatedTypes.over(entry.getValue()));
 
 		return allArguments;

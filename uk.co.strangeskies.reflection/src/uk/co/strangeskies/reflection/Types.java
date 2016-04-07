@@ -770,9 +770,9 @@ public final class Types {
 					assignable = false;
 				else {
 					List<TypeVariable<?>> typeParameters = ParameterizedTypes.getAllTypeParameters(matchedClass);
-					Map<TypeVariable<?>, Type> toTypeArguments = ParameterizedTypes.getAllTypeArguments((ParameterizedType) to);
+					Map<TypeVariable<?>, Type> toTypeArguments = ParameterizedTypes.getAllTypeArgumentsMap((ParameterizedType) to);
 					Map<TypeVariable<?>, Type> fromTypeArguments = ParameterizedTypes
-							.getAllTypeArguments((ParameterizedType) fromParameterization);
+							.getAllTypeArgumentsMap((ParameterizedType) fromParameterization);
 
 					assignable = true;
 					for (TypeVariable<?> parameter : typeParameters) {
@@ -1014,7 +1014,11 @@ public final class Types {
 		erasedCandidates.keySet().retainAll(minimalCandidates);
 	}
 
-	private static Type best(Class<?> rawClass, List<ParameterizedType> parameterizations, Isomorphism isomorphism) {
+	public static Type best(Class<?> rawClass, List<ParameterizedType> parameterizations) {
+		return best(rawClass, parameterizations, new Isomorphism());
+	}
+
+	public static Type best(Class<?> rawClass, List<ParameterizedType> parameterizations, Isomorphism isomorphism) {
 		if (parameterizations.isEmpty())
 			return rawClass;
 		else if (parameterizations.size() == 1) {
@@ -1029,7 +1033,7 @@ public final class Types {
 				p -> bestImpl(rawClass, parameterizations, isomorphism));
 	}
 
-	public static ParameterizedType bestImpl(Class<?> rawClass, List<ParameterizedType> parameterizations,
+	private static ParameterizedType bestImpl(Class<?> rawClass, List<ParameterizedType> parameterizations,
 			Isomorphism isomorphism) {
 		Map<TypeVariable<?>, Type> leastContainingParameterization = new HashMap<>();
 
@@ -1057,7 +1061,11 @@ public final class Types {
 		return best;
 	}
 
-	private static Type leastContainingArgument(Type argumentU, Type argumentV, Isomorphism isomorphism) {
+	public static Type leastContainingArgument(Type argumentU, Type argumentV) {
+		return leastContainingArgument(argumentU, argumentV, new Isomorphism());
+	}
+
+	public static Type leastContainingArgument(Type argumentU, Type argumentV, Isomorphism isomorphism) {
 		if (argumentU instanceof WildcardType
 				&& (!(argumentV instanceof WildcardType) || ((WildcardType) argumentV).getUpperBounds().length > 0)) {
 			Type swap = argumentU;
@@ -1071,18 +1079,12 @@ public final class Types {
 
 			if (wildcardU.getUpperBounds().length > 0) {
 				if (wildcardV.getUpperBounds().length > 0) {
-					List<Type> aggregated = new ArrayList<>(
-							wildcardU.getUpperBounds().length + wildcardV.getUpperBounds().length);
-					for (Type bound : wildcardU.getUpperBounds())
-						aggregated.add(bound);
-					for (Type bound : wildcardV.getUpperBounds())
-						aggregated.add(bound);
-
 					/*
 					 * lcta(? extends U, ? extends V) = ? extends lub(U, V)
 					 */
-					return WildcardTypes
-							.upperBounded(leastUpperBoundImpl(Arrays.asList(IntersectionType.from(aggregated)), isomorphism));
+					List<Type> aggregation = Arrays.asList(IntersectionType.from(wildcardU.getUpperBounds()),
+							IntersectionType.from(wildcardV.getUpperBounds()));
+					return WildcardTypes.upperBounded(leastUpperBoundImpl(aggregation, isomorphism));
 				} else {
 					/*
 					 * lcta(? extends U, ? super V) = U if U = V, otherwise ?
@@ -1178,16 +1180,32 @@ public final class Types {
 	 * output without full package qualification.
 	 * 
 	 * @param imports
-	 *          Classes and packages for which full package qualification may be
-	 *          omitted from output.
+	 *          classes and packages for which full package qualification may be
+	 *          omitted from output
 	 * @param type
-	 *          The type for which we wish to determine a string representation.
+	 *          the type for which we wish to determine a string representation
 	 * @return A canonical string representation of the given type.
 	 */
 	public static String toString(Type type, Imports imports) {
 		return toString(type, imports, new Isomorphism());
 	}
 
+	/**
+	 * Give a canonical String representation of a given type, which is intended
+	 * to be more easily human-readable than implementations of
+	 * {@link Object#toString()} for certain implementations of {@link Type}.
+	 * Provided class and package imports allow the names of some classes to be
+	 * output without full package qualification.
+	 * 
+	 * @param imports
+	 *          classes and packages for which full package qualification may be
+	 *          omitted from output
+	 * @param type
+	 *          the type for which we wish to determine a string representation
+	 * @param isomorphism
+	 *          an type to string isomorphic mapping to deal with recursion
+	 * @return A canonical string representation of the given type.
+	 */
 	public static String toString(Type type, Imports imports, Isomorphism isomorphism) {
 		if (type instanceof Class) {
 			if (((Class<?>) type).isArray())

@@ -200,7 +200,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	 *         parameterized with the captures of the original arguments.
 	 */
 	public static ParameterizedType captureWildcardArguments(ParameterizedType type) {
-		Map<TypeVariable<?>, Type> arguments = ParameterizedTypes.getAllTypeArguments(type);
+		Map<TypeVariable<?>, Type> arguments = ParameterizedTypes.getAllTypeArgumentsMap(type);
 		Map<TypeVariable<?>, Type> captures = new HashMap<>();
 
 		TypeVariable<?>[] parameters = new TypeVariable<?>[arguments.size()];

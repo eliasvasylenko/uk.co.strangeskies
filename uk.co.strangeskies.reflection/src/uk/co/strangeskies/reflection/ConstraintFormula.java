@@ -271,7 +271,7 @@ public class ConstraintFormula {
 						incorporate.falsehood("Raw types '" + Types.getRawTypes(from) + "' cannot be assigned from '"
 								+ Types.getRawType(to) + "': " + this);
 				} else {
-					Map<TypeVariable<?>, Type> toArguments = ParameterizedTypes.getAllTypeArguments((ParameterizedType) to);
+					Map<TypeVariable<?>, Type> toArguments = ParameterizedTypes.getAllTypeArgumentsMap((ParameterizedType) to);
 
 					List<Type> fromSet;
 					if (this.from instanceof WildcardType)
@@ -296,7 +296,7 @@ public class ConstraintFormula {
 							 * Otherwise, the constraint reduces to the following new
 							 * constraints: for all i (1 ≤ i ≤ n), ‹Bi <= Ai›.
 							 */
-							ParameterizedTypes.getAllTypeArguments(fromParameterization).entrySet().forEach(e -> {
+							ParameterizedTypes.getAllTypeArgumentsMap(fromParameterization).entrySet().forEach(e -> {
 								reduce(Kind.CONTAINMENT, e.getValue(), toArguments.get(e.getKey()), bounds);
 							});
 						}
@@ -631,8 +631,8 @@ public class ConstraintFormula {
 						if (to instanceof ParameterizedType)
 							ParameterizedTypes.getAllTypeParameters(Types.getRawType(from))
 									.forEach(type -> reduce(Kind.EQUALITY,
-											ParameterizedTypes.getAllTypeArguments((ParameterizedType) finalFrom).get(type),
-											ParameterizedTypes.getAllTypeArguments((ParameterizedType) finalTo).get(type), bounds));
+											ParameterizedTypes.getAllTypeArgumentsMap((ParameterizedType) finalFrom).get(type),
+											ParameterizedTypes.getAllTypeArgumentsMap((ParameterizedType) finalTo).get(type), bounds));
 						else
 							incorporate.falsehood("Wildcards cannot be equal in this form: " + this);
 					else if (to instanceof ParameterizedType)

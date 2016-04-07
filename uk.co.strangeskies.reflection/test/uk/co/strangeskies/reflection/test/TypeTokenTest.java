@@ -52,7 +52,6 @@ import uk.co.strangeskies.reflection.TypeToken.Infer;
 import uk.co.strangeskies.reflection.TypeToken.Preserve;
 import uk.co.strangeskies.reflection.TypeToken.Wildcards;
 import uk.co.strangeskies.reflection.Types;
-import uk.co.strangeskies.utilities.Isomorphism;
 import uk.co.strangeskies.utilities.Self;
 
 /**
@@ -106,22 +105,14 @@ public class TypeTokenTest {
 	}
 
 	public static void main(String[] args) {
-		System.out.println(new TypeToken<Comparable<? extends Number>>() {}.getWildcardSuper());
+		TypeTokenTest test = new TypeTokenTest();
 
-		/*-
-		 * TODO lub is broken!! these should all just be:
-		 
-		  
-		  Comparable<? extends Number>
-		  
-		  
-		 * since we can't assign from this to:
-		 
-		 
-		  Comparable<? extends Comparable<? ...>>
-		  
-		  
-		 */
+		test.makeTestsFromThese();
+		test.hugeTest1();
+		test.huge2Test();
+	}
+
+	public void makeTestsFromThese() {
 		System.out.println("#" + Types.leastUpperBound(Integer.class, Double.class,
 				new TypeToken<Comparable<? extends Number>>() {}.getType()));
 
@@ -132,24 +123,24 @@ public class TypeTokenTest {
 				(ParameterizedType) new TypeToken<Comparable<? extends Number>>() {}.getType(),
 				(ParameterizedType) new TypeToken<Comparable<Double>>() {}.getType(),
 				(ParameterizedType) new TypeToken<Comparable<Integer>>() {}.getType());
-		System.out.println("!" + Types.bestImpl(Comparable.class, bestTypes, new Isomorphism()));
+		Type bestType = ((ParameterizedType) Types.best(Comparable.class, bestTypes)).getActualTypeArguments()[0];
+		System.out.println("!  " + bestType);
 
 		List<ParameterizedType> bestTypes2 = Arrays.asList(
 				(ParameterizedType) new TypeToken<Comparable<Double>>() {}.getType(),
 				(ParameterizedType) new TypeToken<Comparable<Integer>>() {}.getType(),
 				(ParameterizedType) new TypeToken<Comparable<? extends Number>>() {}.getType());
-		System.out.println("?" + Types.bestImpl(Comparable.class, bestTypes2, new Isomorphism()));
+		Type bestType2 = ((ParameterizedType) Types.best(Comparable.class, bestTypes2)).getActualTypeArguments()[0];
+		System.out.println("!  " + bestType2);
 
-		/*-
-		 * TODO remember to make bestImpl private again
-		 * 
-		TypeTokenTest test = new TypeTokenTest();
-		
-		for (int i = 0; i < 60; i++) {
-			test.hugeTest1();
-			test.huge2Test();
-		}
-		 */
+		List<ParameterizedType> bestTypes3 = Arrays.asList(
+				(ParameterizedType) new TypeToken<Comparable<Double>>() {}.getType(),
+				(ParameterizedType) new TypeToken<Comparable<Integer>>() {}.getType());
+		Type bestType3 = ((ParameterizedType) Types.best(Comparable.class, bestTypes3)).getActualTypeArguments()[0];
+		System.out.println("!  " + bestType3);
+
+		System.out.println();
+		System.out.println(Types.leastContainingArgument(bestType, bestType3));
 	}
 
 	/**

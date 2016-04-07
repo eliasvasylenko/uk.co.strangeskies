@@ -51,8 +51,6 @@ import java.util.stream.Stream;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.utilities.DeepCopyable;
 import uk.co.strangeskies.utilities.Isomorphism;
-import uk.co.strangeskies.utilities.collection.computingmap.ComputingMap;
-import uk.co.strangeskies.utilities.collection.computingmap.LRUCacheComputingMap;
 import uk.co.strangeskies.utilities.tuple.Pair;
 
 /**
@@ -153,8 +151,10 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 	@Target(ElementType.TYPE_USE)
 	public @interface Capture {}
 
-	private static ComputingMap<AnnotatedType, Pair<Resolver, Type>> RESOLVER_CACHE = new LRUCacheComputingMap<>(
-			annotatedType -> incorporateAnnotatedType(new Resolver(), annotatedType), 128, true);
+	// private static final ComputingMap<AnnotatedType, Pair<Resolver, Type>>
+	// RESOLVER_CACHE = new LRUCacheComputingMap<>(
+	// annotatedType -> incorporateAnnotatedType(new Resolver(), annotatedType),
+	// 128, true);
 
 	private final Resolver resolver;
 
@@ -351,7 +351,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 	}
 
 	private static Pair<Resolver, Type> incorporateAnnotatedType(AnnotatedType annotatedType) {
-		Pair<Resolver, Type> resolvedType = RESOLVER_CACHE.putGet(annotatedType);
+		Pair<Resolver, Type> resolvedType = incorporateAnnotatedType(new Resolver(), annotatedType); // RESOLVER_CACHE.putGet(annotatedType);
 
 		HashMap<InferenceVariable, InferenceVariable> map = new HashMap<>();
 		return new Pair<>(resolvedType.getLeft().deepCopy(map), new TypeSubstitution(map).resolve(resolvedType.getRight()));
@@ -392,7 +392,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 			 * enclosing types.
 			 */
 			Map<TypeVariable<?>, Type> allArguments = ParameterizedTypes
-					.getAllTypeArguments((ParameterizedType) annotatedType.getType());
+					.getAllTypeArgumentsMap((ParameterizedType) annotatedType.getType());
 			TypeVariable<?>[] parameters = Types.getRawType(annotatedType.getType()).getTypeParameters();
 			for (int i = 0; i < arguments.length; i++)
 				allArguments.put(parameters[i], arguments[i]);
@@ -1335,23 +1335,45 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 	/**
 	 * <p>
 	 * A mapping of type variables to type argument instantiations for this class,
-	 * for each type variable returned by {@link #getAllTypeParameters()} . Type
+	 * for each type variable returned by {@link #getAllTypeParameters()}. Type
 	 * arguments are as those given by {@link #resolveSupertypeParameters(Class)}
 	 * invoked on each of {@link #getRawTypes()}.
 	 * <p>
 	 * For type tokens over a single parameterized type, this method will return
 	 * the equivalent of an invocation of
-	 * {@link ParameterizedTypes#getAllTypeArguments(ParameterizedType)} on that
-	 * type.
+	 * {@link ParameterizedTypes#getAllTypeArgumentsMap(ParameterizedType)} on
+	 * that type.
 	 * 
 	 * @return A mapping of all type parameters present on all raw types, to their
 	 *         appropriate argument parameterizations according to this type.
 	 */
-	public Map<TypeVariable<?>, Type> getAllTypeArguments() {
+	public Map<TypeVariable<?>, Type> getAllTypeArgumentsMap() {
 		return getRawTypes().stream()
 				.flatMap(t -> ParameterizedTypes
-						.getAllTypeArguments((ParameterizedType) resolveSupertypeParameters(t).getType()).entrySet().stream())
+						.getAllTypeArgumentsMap((ParameterizedType) resolveSupertypeParameters(t).getType()).entrySet().stream())
 				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+	}
+
+	/**
+	 * <p>
+	 * A list type argument instantiations for each type variable returned by
+	 * {@link #getAllTypeParameters()}. Type arguments are as those given by
+	 * {@link #resolveSupertypeParameters(Class)} invoked on each of
+	 * {@link #getRawTypes()}.
+	 * <p>
+	 * For type tokens over a single parameterized type, this method will return
+	 * the equivalent of an invocation of
+	 * {@link ParameterizedTypes#getAllTypeArgumentsList(ParameterizedType)} on
+	 * that type.
+	 * 
+	 * @return A mapping of all type parameters present on all raw types, to their
+	 *         appropriate argument parameterizations according to this type.
+	 */
+	public List<Type> getAllTypeArgumentsList() {
+		return getRawTypes().stream()
+				.flatMap(t -> ParameterizedTypes
+						.getAllTypeArgumentsList((ParameterizedType) resolveSupertypeParameters(t).getType()).stream())
+				.collect(Collectors.toList());
 	}
 
 	/**

@@ -266,9 +266,11 @@ public class ParameterizedTypes {
 	 */
 	public static List<TypeVariable<?>> getAllTypeParameters(Class<?> rawType) {
 		Stream<TypeVariable<?>> typeParameters = Stream.empty();
+
 		do {
 			typeParameters = Stream.concat(typeParameters, Arrays.stream(rawType.getTypeParameters()));
 		} while (!Types.isStatic(rawType) && (rawType = rawType.getEnclosingClass()) != null);
+
 		return typeParameters.collect(Collectors.toList());
 	}
 
@@ -282,10 +284,10 @@ public class ParameterizedTypes {
 	 * @return A mapping of all type variables to their arguments in the context
 	 *         of the given type.
 	 */
-	public static Map<TypeVariable<?>, Type> getAllTypeArguments(ParameterizedType type) {
+	public static Map<TypeVariable<?>, Type> getAllTypeArgumentsMap(ParameterizedType type) {
 		Map<TypeVariable<?>, Type> typeArguments = new HashMap<>();
 
-		Class<?> rawType = Types.getRawType(type);
+		Class<?> rawType = (Class<?>) type.getRawType();
 		do {
 			for (int i = 0; i < rawType.getTypeParameters().length; i++) {
 				TypeVariable<?> typeParameter = rawType.getTypeParameters()[i];
@@ -301,6 +303,41 @@ public class ParameterizedTypes {
 				do {
 					for (TypeVariable<?> variable : rawType.getTypeParameters())
 						typeArguments.put(variable, variable);
+				} while ((rawType = Types.isStatic(rawType) ? null : rawType.getEnclosingClass()) != null);
+			}
+		} while (type != null && rawType != null);
+
+		return typeArguments;
+	}
+
+	/**
+	 * For a given parameterized type, we retrieve a list of all its type
+	 * arguments arguments in the order the respective parameters are given by
+	 * {@link #getAllTypeParameters(Class)}.
+	 *
+	 * @param type
+	 *          The type whose generic type arguments we wish to determine.
+	 * @return A mapping of all type variables to their arguments in the context
+	 *         of the given type.
+	 */
+	public static List<Type> getAllTypeArgumentsList(ParameterizedType type) {
+		List<Type> typeArguments = new ArrayList<>();
+
+		Class<?> rawType = (Class<?>) type.getRawType();
+		do {
+			for (int i = 0; i < rawType.getTypeParameters().length; i++) {
+				Type typeArgument = type.getActualTypeArguments()[i];
+
+				typeArguments.add(typeArgument);
+			}
+
+			type = type.getOwnerType() instanceof ParameterizedType ? (ParameterizedType) type.getOwnerType() : null;
+			rawType = Types.isStatic(rawType) ? null : rawType.getEnclosingClass();
+
+			if (rawType != null && type == null) {
+				do {
+					for (TypeVariable<?> variable : rawType.getTypeParameters())
+						typeArguments.add(variable);
 				} while ((rawType = Types.isStatic(rawType) ? null : rawType.getEnclosingClass()) != null);
 			}
 		} while (type != null && rawType != null);
@@ -474,7 +511,7 @@ public class ParameterizedTypes {
 					.get();
 
 			if (type instanceof ParameterizedType)
-				type = new TypeSubstitution(getAllTypeArguments((ParameterizedType) type)).resolve(subtype);
+				type = new TypeSubstitution(getAllTypeArgumentsMap((ParameterizedType) type)).resolve(subtype);
 			else
 				type = subtype;
 
@@ -515,7 +552,7 @@ public class ParameterizedTypes {
 
 		int index = 0;
 		if (type instanceof ParameterizedType) {
-			Map<TypeVariable<?>, Type> arguments = getAllTypeArguments((ParameterizedType) type);
+			Map<TypeVariable<?>, Type> arguments = getAllTypeArgumentsMap((ParameterizedType) type);
 			for (TypeVariable<?> parameter : getAllTypeParameters(rawType)) {
 				InferenceVariable substituteArgument = getSubstitutionArgument(index++);
 				parameterSubstitutes.put(parameter, substituteArgument);

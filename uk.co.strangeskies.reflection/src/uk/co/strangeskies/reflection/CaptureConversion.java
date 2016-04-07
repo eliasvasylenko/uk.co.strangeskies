@@ -55,7 +55,7 @@ public class CaptureConversion {
 				.from(Types.getRawType(originalType), parameterCaptures::get).getType();
 
 		Map<TypeVariable<?>, Type> parameterArguments = ParameterizedTypes
-				.getAllTypeArguments(originalType);
+				.getAllTypeArgumentsMap(originalType);
 
 		for (TypeVariable<?> parameter : parameterCaptures.keySet()) {
 			Type argument = parameterArguments.get(parameter);
@@ -153,7 +153,7 @@ public class CaptureConversion {
 				inferenceVariableSubstitutions).resolve(getOriginalType());
 
 		Map<TypeVariable<?>, InferenceVariable> newCaptures = ParameterizedTypes
-				.getAllTypeArguments(getCaptureType()).entrySet().stream()
+				.getAllTypeArgumentsMap(getCaptureType()).entrySet().stream()
 				.collect(Collectors.toMap(Entry::getKey, e -> {
 					InferenceVariable substitution = inferenceVariableSubstitutions
 							.get(e.getValue());
@@ -175,7 +175,7 @@ public class CaptureConversion {
 		Set<InferenceVariable> allMentioned = new HashSet<>(
 				getInferenceVariables());
 		for (Type captured : ParameterizedTypes
-				.getAllTypeArguments(getOriginalType()).values())
+				.getAllTypeArgumentsMap(getOriginalType()).values())
 			allMentioned.addAll(InferenceVariable.getMentionedBy(captured));
 
 		return allMentioned;
