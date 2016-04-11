@@ -38,23 +38,23 @@ public class ObservableImpl<M> implements Observable<M> {
 	private final Set<Consumer<? super M>> observers = new LinkedHashSet<>();
 
 	@Override
-	public synchronized boolean addObserver(Consumer<? super M> observer) {
+	public boolean addObserver(Consumer<? super M> observer) {
 		return observers.add(observer);
 	}
 
 	@Override
-	public synchronized boolean removeObserver(Consumer<? super M> observer) {
+	public boolean removeObserver(Consumer<? super M> observer) {
 		return observers.remove(observer);
 	}
 
 	/**
 	 * Remove all observers from forwarding.
 	 */
-	public synchronized void clearObservers() {
+	public void clearObservers() {
 		observers.clear();
 	}
 
-	public synchronized void fire(M item) {
+	public void fire(M item) {
 		for (Consumer<? super M> listener : new ArrayList<>(observers)) {
 			listener.accept(item);
 		}

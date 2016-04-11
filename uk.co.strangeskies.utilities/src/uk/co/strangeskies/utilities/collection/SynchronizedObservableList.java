@@ -57,20 +57,42 @@ public abstract class SynchronizedObservableList<S extends ObservableList<S, E>,
 		changes = new ObservableImpl<Change<E>>() {
 			@Override
 			public boolean addObserver(Consumer<? super Change<E>> observer) {
-				synchronized (SynchronizedObservableList.this) {
+				synchronized (getMutex()) {
 					return super.addObserver(observer);
 				}
 			}
 
 			@Override
 			public boolean removeObserver(Consumer<? super Change<E>> observer) {
-				synchronized (SynchronizedObservableList.this) {
+				synchronized (getMutex()) {
 					return super.removeObserver(observer);
+				}
+			}
+
+			@Override
+			public void clearObservers() {
+				synchronized (getMutex()) {
+					super.clearObservers();
+				}
+			}
+
+			@Override
+			public void fire(Change<E> item) {
+				synchronized (getMutex()) {
+					super.fire(item);
 				}
 			}
 		};
 		changeObserver = changes::fire;
 		component.changes().addWeakObserver(changeObserver);
+	}
+
+	public static <E> SynchronizedObservableListImpl<E> over(ObservableList<?, E> component) {
+		return new SynchronizedObservableListImpl<>(component);
+	}
+
+	public Object getMutex() {
+		return component;
 	}
 
 	@Override
@@ -101,5 +123,33 @@ public abstract class SynchronizedObservableList<S extends ObservableList<S, E>,
 	@Override
 	public boolean equals(Object obj) {
 		return getComponent().equals(obj);
+	}
+
+	@Override
+	public boolean addObserver(Consumer<? super S> observer) {
+		synchronized (getMutex()) {
+			return super.addObserver(observer);
+		}
+	}
+
+	@Override
+	public boolean removeObserver(Consumer<? super S> observer) {
+		synchronized (getMutex()) {
+			return super.removeObserver(observer);
+		}
+	}
+
+	@Override
+	public void clearObservers() {
+		synchronized (getMutex()) {
+			super.clearObservers();
+		}
+	}
+
+	@Override
+	public void fire(S item) {
+		synchronized (getMutex()) {
+			super.fire(item);
+		}
 	}
 }

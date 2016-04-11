@@ -21,6 +21,7 @@ package uk.co.strangeskies.mathematics.expression;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -92,5 +93,49 @@ public abstract class LockingExpression<S extends Expression<S, T>, T> extends D
 
 	protected WriteLock getWriteLock() {
 		return lock.writeLock();
+	}
+
+	@Override
+	public boolean addObserver(Consumer<? super S> observer) {
+		getReadLock().lock();
+
+		try {
+			return super.addObserver(observer);
+		} finally {
+			getReadLock().unlock();
+		}
+	}
+
+	@Override
+	public boolean removeObserver(Consumer<? super S> observer) {
+		getReadLock().lock();
+
+		try {
+			return super.removeObserver(observer);
+		} finally {
+			getReadLock().unlock();
+		}
+	}
+
+	@Override
+	public void clearObservers() {
+		getReadLock().lock();
+
+		try {
+			super.clearObservers();
+		} finally {
+			getReadLock().unlock();
+		}
+	}
+
+	@Override
+	public void fire(S item) {
+		getReadLock().lock();
+
+		try {
+			super.fire(item);
+		} finally {
+			getReadLock().unlock();
+		}
 	}
 }

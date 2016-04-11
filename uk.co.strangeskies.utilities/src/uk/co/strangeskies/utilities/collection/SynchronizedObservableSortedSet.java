@@ -35,6 +35,10 @@ public abstract class SynchronizedObservableSortedSet<S extends ObservableSorted
 		}
 	}
 
+	public static <E> SynchronizedObservableSortedSetImpl<E> over(ObservableSortedSet<?, E> component) {
+		return new SynchronizedObservableSortedSetImpl<>(component);
+	}
+
 	protected SynchronizedObservableSortedSet(ObservableSet<?, E> component) {
 		super(component);
 	}
