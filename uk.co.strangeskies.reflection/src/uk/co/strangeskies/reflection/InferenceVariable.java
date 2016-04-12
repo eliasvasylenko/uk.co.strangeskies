@@ -24,6 +24,7 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -112,10 +113,8 @@ public class InferenceVariable implements Type {
 	 * Let G name a generic type declaration (§8.1.2, §9.1.2) with n type
 	 * parameters A1,...,An with corresponding bounds U1,...,Un.
 	 */
-	public static ParameterizedType captureConversion(ParameterizedType type,
-			BoundSet bounds) {
-		if (ParameterizedTypes.getAllTypeArgumentsMap(type).values().stream()
-				.anyMatch(WildcardType.class::isInstance)) {
+	public static ParameterizedType captureConversion(ParameterizedType type, BoundSet bounds) {
+		if (ParameterizedTypes.getAllTypeArgumentsMap(type).values().stream().anyMatch(WildcardType.class::isInstance)) {
 			/*
 			 * There exists a capture conversion from a parameterized type
 			 * G<T1,...,Tn> (§4.5) to a parameterized type G<S1,...,Sn>, where, for 1
@@ -140,6 +139,10 @@ public class InferenceVariable implements Type {
 	 * @return The inference variables mentioned by the given type.
 	 */
 	public static Set<InferenceVariable> getMentionedBy(Type type) {
+		if (type instanceof Class<?>) {
+			return Collections.emptySet();
+		}
+
 		Set<InferenceVariable> inferenceVariables = new HashSet<>();
 
 		new TypeVisitor() {
@@ -193,6 +196,10 @@ public class InferenceVariable implements Type {
 	 * @return True if the given type is proper, false otherwise.
 	 */
 	public static boolean isProperType(Type type) {
+		if (type instanceof Class<?>) {
+			return true;
+		}
+
 		IdentityProperty<Boolean> proper = new IdentityProperty<>(true);
 
 		new TypeVisitor() {
