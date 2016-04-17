@@ -385,7 +385,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 			 * parameters which are wildcards themselves.
 			 */
 			Type[] arguments = substituteAnnotatedWildcardsForEach(isomorphism,
-					((AnnotatedParameterizedType) annotatedType).getAnnotatedActualTypeArguments(), resolver);
+					annotatedType.getAnnotatedActualTypeArguments(), resolver);
 
 			/*
 			 * Collect all arguments into a mapping from type variables, including on
@@ -417,7 +417,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 
 	private static Type substituteAnnotatedWildcardsForWildcardType(Isomorphism isomorphism, Wildcards behaviour,
 			AnnotatedWildcardType annotatedType, Resolver resolver) {
-		AnnotatedWildcardType annotatedWildcardType = (AnnotatedWildcardType) annotatedType;
+		AnnotatedWildcardType annotatedWildcardType = annotatedType;
 		WildcardType wildcardType;
 
 		if (annotatedWildcardType.getAnnotatedLowerBounds().length > 0) {
@@ -1165,9 +1165,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 	}
 
 	/**
-	 * Derive a new type from this one, with a loose compatibility on this type to
-	 * a given type. The invocation will fail if the loose compatibility cannot be
-	 * satisfied. For types which mention inference variables, this loose
+	 * Derive a new type from this one, with a loose compatibility from this type
+	 * to a given type. The invocation will fail if the loose compatibility cannot
+	 * be satisfied. For types which mention inference variables, this loose
 	 * compatibility may have an effect on the bounds of those inference variables
 	 * within the resulting type.
 	 * 
@@ -1175,7 +1175,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 	 *          The upper bound.
 	 * @return A new type token which satisfies the bounding.
 	 */
-	public TypeToken<T> withLooseCompatibility(Type type) {
+	public TypeToken<T> withLooseCompatibilityTo(Type type) {
 		Resolver resolver = getResolver();
 		ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, getType(), type, resolver.getBounds());
 
@@ -1183,9 +1183,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 	}
 
 	/**
-	 * Derive a new type from this one, with a loose compatibility on this type to
-	 * a given type. The invocation will fail if the loose compatibility cannot be
-	 * satisfied. For types which mention inference variables, this loose
+	 * Derive a new type from this one, with a loose compatibility from this type
+	 * to a given type. The invocation will fail if the loose compatibility cannot
+	 * be satisfied. For types which mention inference variables, this loose
 	 * compatibility may have an effect on the bounds of those inference variables
 	 * within the resulting type.
 	 * 
@@ -1193,9 +1193,45 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 	 *          The upper bound.
 	 * @return A new type token which satisfies the bounding.
 	 */
-	public TypeToken<T> withLooseCompatibility(TypeToken<?> type) {
+	public TypeToken<T> withLooseCompatibilityTo(TypeToken<?> type) {
 		Resolver resolver = getResolverWithBoundsFrom(type);
 		ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, getType(), type.getType(), resolver.getBounds());
+
+		return new TypeToken<>(resolver, resolveType());
+	}
+
+	/**
+	 * Derive a new type from this one, with a loose compatibility to this type
+	 * from a given type. The invocation will fail if the loose compatibility
+	 * cannot be satisfied. For types which mention inference variables, this
+	 * loose compatibility may have an effect on the bounds of those inference
+	 * variables within the resulting type.
+	 * 
+	 * @param type
+	 *          The upper bound.
+	 * @return A new type token which satisfies the bounding.
+	 */
+	public TypeToken<T> withLooseCompatibilityFrom(Type type) {
+		Resolver resolver = getResolver();
+		ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, type, getType(), resolver.getBounds());
+
+		return new TypeToken<>(resolver, getType());
+	}
+
+	/**
+	 * Derive a new type from this one, with a loose compatibility to this type
+	 * from a given type. The invocation will fail if the loose compatibility
+	 * cannot be satisfied. For types which mention inference variables, this
+	 * loose compatibility may have an effect on the bounds of those inference
+	 * variables within the resulting type.
+	 * 
+	 * @param type
+	 *          The upper bound.
+	 * @return A new type token which satisfies the bounding.
+	 */
+	public TypeToken<T> withLooseCompatibilityFrom(TypeToken<?> type) {
+		Resolver resolver = getResolverWithBoundsFrom(type);
+		ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, type.getType(), getType(), resolver.getBounds());
 
 		return new TypeToken<>(resolver, resolveType());
 	}
