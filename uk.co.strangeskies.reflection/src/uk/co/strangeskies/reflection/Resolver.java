@@ -312,6 +312,11 @@ public class Resolver implements DeepCopyable<Resolver> {
 			protected void visitWildcardType(WildcardType type) {
 				incorporateWildcardCaptures(TypeVariableCapture.captureWildcard(type));
 			}
+
+			@Override
+			protected void visitInferenceVariable(InferenceVariable type) {
+				bounds.addInferenceVariable(type);
+			}
 		}.visit(type);
 
 		return result.get();
@@ -374,6 +379,11 @@ public class Resolver implements DeepCopyable<Resolver> {
 			protected void visitWildcardType(WildcardType type) {
 				inferOverWildcardType(type);
 			}
+
+			@Override
+			protected void visitInferenceVariable(InferenceVariable type) {
+				bounds.addInferenceVariable(type);
+			}
 		}.visit(type);
 
 		return result.get();
@@ -414,7 +424,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	public GenericArrayType inferOverTypeArguments(GenericArrayType type) {
 		Type innerComponent = Types.getInnerComponentType(type);
 		if (innerComponent instanceof ParameterizedType) {
-			return ArrayTypes.fromComponentType(inferOverTypeArguments((GenericArrayType) innerComponent),
+			return ArrayTypes.fromComponentType(inferOverTypeArguments((ParameterizedType) innerComponent),
 					Types.getArrayDimensions(type));
 		} else
 			return type;
