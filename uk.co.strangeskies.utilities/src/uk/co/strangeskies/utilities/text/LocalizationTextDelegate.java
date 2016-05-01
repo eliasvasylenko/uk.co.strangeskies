@@ -4,19 +4,17 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Locale;
 import java.util.Map;
 import java.util.MissingResourceException;
-import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 import uk.co.strangeskies.utilities.ObservableImpl;
-import uk.co.strangeskies.utilities.text.Localizer.Localizable;
 import uk.co.strangeskies.utilities.text.Localizer.MethodSignature;
 
 /*
  * Delegate implementation object for proxy instances of LocalizationText classes
  */
-public class LocalizationTextDelegate<T extends LocalizationText<T>> extends ObservableImpl<T>
-		implements LocalizationText<T> {
+public class LocalizationTextDelegate<T extends LocalizedText<T>> extends ObservableImpl<T>
+		implements LocalizedText<T> {
 	/*
 	 * Implementation of localised string
 	 */
@@ -81,20 +79,19 @@ public class LocalizationTextDelegate<T extends LocalizationText<T>> extends Obs
 	}
 
 	private Locale locale;
-	private ResourceBundle bundle;
+	private LocalizedResourceBundle bundle;
 
 	private final Map<MethodSignature, String> translations;
 
 	private final T proxy;
-	private final Localizable<T> localizable;
 	private final LocalizerText text;
 
 	private final Consumer<Locale> observer;
 
-	public LocalizationTextDelegate(Localizer localizer, T proxy, Localizable<T> localizable, LocalizerText text) {
+	public LocalizationTextDelegate(Localizer localizer, T proxy, LocalizedResourceBundle bundle, LocalizerText text) {
 		locale = localizer.getLocale();
 		this.proxy = proxy;
-		this.localizable = localizable;
+		this.bundle = bundle;
 		this.text = text;
 
 		translations = new ConcurrentHashMap<>();
@@ -110,20 +107,13 @@ public class LocalizationTextDelegate<T extends LocalizationText<T>> extends Obs
 
 	public void setLocale(Locale locale) {
 		this.locale = locale;
-		try {
-			bundle = ResourceBundle.getBundle(Localizer.removeTestPostfix(localizable.accessor.getName()), locale,
-					localizable.classLoader);
-		} catch (MissingResourceException e) {
-			bundle = null;
-		}
+		bundle = bundle.withLocale(locale);
 	}
 
 	private String loadTranslation(String key) {
-		if (bundle != null) {
-			try {
-				return bundle.getString(key);
-			} catch (MissingResourceException e) {}
-		}
+		try {
+			return bundle.getString(key);
+		} catch (MissingResourceException e) {}
 
 		return null;
 	}

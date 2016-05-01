@@ -4,17 +4,27 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.Set;
 
 import uk.co.strangeskies.utilities.IdentityProperty;
+import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableImpl;
 import uk.co.strangeskies.utilities.collection.computingmap.CacheComputingMap;
 import uk.co.strangeskies.utilities.collection.computingmap.ComputingMap;
 
+/**
+ * This class represents a simple but powerful system for internationalisation.
+ * Instances of this class provide automatic implementations of sub-interfaces
+ * of {@link LocalizedText} according to a {@link Locale} setting, which
+ * delegate method invocations to be fetched from {@link ResourceBundle resource
+ * bundles}.
+ * 
+ * @author Elias N Vasylenko
+ */
 public class Localizer {
 	static class MethodSignature {
 		private final Method method;
@@ -57,15 +67,13 @@ public class Localizer {
 		}
 	}
 
-	static class Localizable<T extends LocalizationText<T>> {
+	static class Localizable<T extends LocalizedText<T>> {
 		public final Class<T> accessor;
-		public final ClassLoader classLoader;
-		public final URL[] locations;
+		public final LocalizedResourceBundle bundle;
 
-		public Localizable(Class<T> accessor, ClassLoader classLoader, URL... locations) {
+		public Localizable(Class<T> accessor, LocalizedResourceBundle bundle) {
 			this.accessor = accessor;
-			this.classLoader = classLoader;
-			this.locations = locations;
+			this.bundle = bundle;
 		}
 
 		@Override
@@ -79,20 +87,19 @@ public class Localizer {
 
 			Localizable<?> other = (Localizable<?>) obj;
 
-			return accessor.equals(other.accessor) && classLoader.equals(other.classLoader)
-					&& Arrays.equals(locations, other.locations);
+			return accessor.equals(other.accessor) && bundle.equals(other.bundle);
 		}
 
 		@Override
 		public int hashCode() {
-			return accessor.hashCode() ^ classLoader.hashCode() ^ Arrays.hashCode(locations);
+			return accessor.hashCode() ^ bundle.hashCode();
 		}
 	}
 
 	static final String TEXT_POSTFIX = "Text";
 	static final Set<MethodSignature> LOCALIZATION_HELPER_METHODS = new HashSet<>();
 	{
-		for (Method method : LocalizationText.class.getMethods()) {
+		for (Method method : LocalizedText.class.getMethods()) {
 			LOCALIZATION_HELPER_METHODS.add(new MethodSignature(method));
 		}
 		for (Method method : Object.class.getMethods()) {
@@ -100,18 +107,27 @@ public class Localizer {
 		}
 	}
 
-	private final ComputingMap<Localizable<?>, LocalizationText<?>> LOCALIZATION_CACHE;
+	private final ComputingMap<Localizable<?>, LocalizedText<?>> LOCALIZATION_CACHE;
 	private final Constructor<MethodHandles.Lookup> methodHandleConstructor;
 
 	Locale locale;
 	final ObservableImpl<Locale> localeChanges;
 	private final LocalizerText text;
 
+	/**
+	 * Create a new {@link Localizer} instance for the JVM default locale.
+	 */
 	public Localizer() {
 		this(Locale.getDefault());
 	}
 
-	public Localizer(Locale defaultLocale) {
+	/**
+	 * Create a new {@link Localizer} instance for the given initial locale.
+	 * 
+	 * @param locale
+	 *          the initial locale
+	 */
+	public Localizer(Locale locale) {
 		try {
 			methodHandleConstructor = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class, int.class);
 		} catch (NoSuchMethodException | SecurityException e) {
@@ -121,18 +137,27 @@ public class Localizer {
 			methodHandleConstructor.setAccessible(true);
 		}
 
-		LOCALIZATION_CACHE = new CacheComputingMap<Localizable<?>, LocalizationText<?>>(this::localize, true);
+		LOCALIZATION_CACHE = new CacheComputingMap<Localizable<?>, LocalizedText<?>>(this::localize, true);
 
 		localeChanges = new ObservableImpl<>();
-		setLocale(defaultLocale);
+		setLocale(locale);
 
 		text = getLocalization(LocalizerText.class);
 	}
 
+	/**
+	 * @return the current locale of all localised texts implemented by this
+	 *         {@link Localizer}
+	 */
 	public Locale getLocale() {
 		return locale;
 	}
 
+	/**
+	 * @param locale
+	 *          the new locale, to be applied to all existing and future localised
+	 *          texts implemented by this {@link Localizer}
+	 */
 	public void setLocale(Locale locale) {
 		if (this.locale != locale) {
 			this.locale = locale;
@@ -140,8 +165,15 @@ public class Localizer {
 		}
 	}
 
+	/**
+	 * @return an observable over changes to the locale
+	 */
+	public Observable<Locale> locale() {
+		return localeChanges;
+	}
+
 	@SuppressWarnings("unchecked")
-	protected <T extends LocalizationText<T>> T localize(Localizable<T> localizable) {
+	protected <T extends LocalizedText<T>> T localize(Localizable<T> localizable) {
 		LocalizerText text;
 		if (this.text == null) {
 			text = new DefaultLocalizerText();
@@ -168,7 +200,7 @@ public class Localizer {
 
 		IdentityProperty<LocalizationTextDelegate<T>> helper = new IdentityProperty<>();
 
-		T proxy = (T) Proxy.newProxyInstance(localizable.classLoader, new Class<?>[] { localizable.accessor },
+		T proxy = (T) Proxy.newProxyInstance(localizable.accessor.getClassLoader(), new Class<?>[] { localizable.accessor },
 				(Object p, Method method, Object[] args) -> {
 					MethodSignature signature = new MethodSignature(method);
 
@@ -184,30 +216,50 @@ public class Localizer {
 					return helper.get().getTranslation(signature, args);
 				});
 
-		helper.set(new LocalizationTextDelegate<>(this, proxy, localizable, text));
+		helper.set(new LocalizationTextDelegate<>(this, proxy, localizable.bundle, text));
 
 		return proxy;
 	}
 
-	public static String removeTestPostfix(String string) {
+	private static String removeTextPostfix(String string) {
 		if (string.endsWith(TEXT_POSTFIX) && !string.equals(TEXT_POSTFIX)) {
 			string = string.substring(0, string.length() - TEXT_POSTFIX.length());
 		}
 		return string;
 	}
 
+	/**
+	 * The default translation scheme to generate resource keys from methods.
+	 * <p>
+	 * The class name and method name are split into words according to camel-case
+	 * rules and put into lower-case, then the word {@code "text"} is removed from
+	 * the end of the class name if present, then each word from the class and
+	 * each word from the method are joined in order about the {@code "."}
+	 * character.
+	 * <p>
+	 * For example the method
+	 * {@link LocalizerText#illegalReturnType(Class, java.lang.reflect.Method)}
+	 * would generate the key {@code "localizer.illegal.return.type"}. The key
+	 * generation rules can be overridden for a given method by annotating with
+	 * {@link LocalizationKey}.
+	 * 
+	 * @param method
+	 *          the method for which we wish to determine an associated resource
+	 *          key
+	 * @return the default resource key for the given method
+	 */
 	public static String getKey(Method method) {
 		LocalizationKey keyAnnotation = method.getAnnotation(LocalizationKey.class);
 		if (keyAnnotation != null) {
 			return keyAnnotation.value();
 		}
 
-		String className = removeTestPostfix(method.getDeclaringClass().getSimpleName());
+		String className = removeTextPostfix(method.getDeclaringClass().getSimpleName());
 
 		return getKeyText(className) + '.' + getKeyText(method.getName());
 	}
 
-	public static String getKeyText(String string) {
+	private static String getKeyText(String string) {
 		StringBuilder builder = new StringBuilder();
 
 		int copiedToIndex = 0;
@@ -243,34 +295,76 @@ public class Localizer {
 		return builder.toString().toLowerCase();
 	}
 
-	public URL getDefaultLocation(Class<?> accessor) {
-		return getDefaultLocation(accessor, accessor.getClassLoader());
-	}
-
-	public URL getDefaultLocation(Class<?> accessor, ClassLoader classLoader) {
-		return classLoader.getResource(
-				accessor.getPackage().getName().replaceAll(".", "/") + "/" + removeTestPostfix(accessor.getSimpleName()));
-	}
-
 	@SuppressWarnings("unchecked")
-	private <T extends LocalizationText<T>> T getLocalization(Localizable<T> localizable) {
+	private <T extends LocalizedText<T>> T getLocalization(Localizable<T> localizable) {
 		return (T) LOCALIZATION_CACHE.putGet(localizable);
 	}
 
-	public <T extends LocalizationText<T>> T getLocalization(Class<T> accessor, ClassLoader classLoader,
-			URL... location) {
-		return getLocalization(new Localizable<>(accessor, classLoader, location));
+	/**
+	 * Generate an implementing instance of the given accessor interface class,
+	 * according to the rules described by {@link LocalizedText}, and with
+	 * resource values taken from the given resource bundle.
+	 * 
+	 * @param accessor
+	 *          the sub-interface of {@link LocalizedText} we wish to implement
+	 * @param bundle
+	 *          the resource bundle with which to load resources
+	 * @return an implementation of the accessor interface
+	 */
+	public <T extends LocalizedText<T>> T getLocalization(Class<T> accessor, LocalizedResourceBundle bundle) {
+		return getLocalization(new Localizable<>(accessor, bundle));
 	}
 
-	public <T extends LocalizationText<T>> T getLocalization(Class<T> accessor, ClassLoader classLoader) {
-		return getLocalization(accessor, classLoader, getDefaultLocation(accessor));
+	/**
+	 * Generate an implementing instance of the given accessor interface class,
+	 * according to the rules described by {@link LocalizedText}. Resources are
+	 * loading according to the {@link LocalizedResourceBundle} returned from
+	 * {@link LocalizedResourceBundle#getBundle(ClassLoader, Locale, String[])}
+	 * invoked with the given class loader and locations, and the current locale.
+	 * 
+	 * @param accessor
+	 *          the sub-interface of {@link LocalizedText} we wish to implement
+	 * @param classLoader
+	 *          the class loader to fetch resource bundles from
+	 * @param locations
+	 *          the base names of all backing resource bundles
+	 * @return an implementation of the accessor interface
+	 */
+	public <T extends LocalizedText<T>> T getLocalization(Class<T> accessor, ClassLoader classLoader,
+			String... locations) {
+		return getLocalization(accessor, LocalizedResourceBundle.getBundle(classLoader, locale, locations));
 	}
 
-	public <T extends LocalizationText<T>> T getLocalization(Class<T> accessor, URL... location) {
-		return getLocalization(accessor, accessor.getClassLoader(), location);
+	/**
+	 * Generate an implementing instance of the given accessor interface class,
+	 * according to the rules described by {@link LocalizedText}. Resources are
+	 * loading according to the {@link LocalizedResourceBundle} returned from
+	 * {@link LocalizedResourceBundle#getBundle(ClassLoader, Locale, String[])}
+	 * invoked with the class loader of the given class, and the given locations.
+	 * 
+	 * @param accessor
+	 *          the sub-interface of {@link LocalizedText} we wish to implement
+	 * @param locations
+	 *          the base names of all backing resource bundles
+	 * @return an implementation of the accessor interface
+	 */
+	public <T extends LocalizedText<T>> T getLocalization(Class<T> accessor, String... locations) {
+		return getLocalization(accessor, accessor.getClassLoader(), locations);
 	}
 
-	public <T extends LocalizationText<T>> T getLocalization(Class<T> accessor) {
-		return getLocalization(accessor, accessor.getClassLoader());
+	/**
+	 * Generate an implementing instance of the given accessor interface class,
+	 * according to the rules described by {@link LocalizedText}. Resources are
+	 * loading according to the {@link LocalizedResourceBundle} returned from
+	 * {@link LocalizedResourceBundle#getBundle(ClassLoader, Locale, String[])}
+	 * invoked with the class loader of the given class, and the location derived
+	 * from the given class via {@link #removeTextPostfix(String)}.
+	 * 
+	 * @param accessor
+	 *          the sub-interface of {@link LocalizedText} we wish to implement
+	 * @return an implementation of the accessor interface
+	 */
+	public <T extends LocalizedText<T>> T getLocalization(Class<T> accessor) {
+		return getLocalization(accessor, removeTextPostfix(accessor.getName()));
 	}
 }

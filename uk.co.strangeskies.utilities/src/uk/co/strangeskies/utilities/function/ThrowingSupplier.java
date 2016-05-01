@@ -18,6 +18,24 @@
  */
 package uk.co.strangeskies.utilities.function;
 
+import java.util.function.Supplier;
+
+/**
+ * As {@link Supplier} but parameterized over an exception type which is allowed
+ * to be thrown by {@link #get()}.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <T>
+ *          the type of the item to get
+ * @param <E>
+ *          the type of exception which may be thrown
+ */
 public interface ThrowingSupplier<T, E extends Exception> {
+	/**
+	 * @return an instance of the expected type
+	 * @throws E
+	 *           an exception thrown by the implementor
+	 */
 	T get() throws E;
 }

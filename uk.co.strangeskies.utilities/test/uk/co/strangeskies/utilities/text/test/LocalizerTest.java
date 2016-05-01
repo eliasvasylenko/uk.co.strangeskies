@@ -20,6 +20,7 @@ package uk.co.strangeskies.utilities.text.test;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static uk.co.strangeskies.utilities.text.Localizer.getKey;
 
 import java.util.Collection;
 import java.util.Locale;
@@ -34,6 +35,26 @@ import uk.co.strangeskies.utilities.text.Localizer;
 
 @SuppressWarnings("javadoc")
 public class LocalizerTest {
+	private static final String KEY_TRANSLATION_METHODS = "key.translation.methods";
+
+	private interface KeyTranslationMethods {
+		void singleword();
+
+		void twoWords();
+
+		void CapitalStart();
+
+		void MULTIPLECapitalStart();
+
+		void multipleCAPITALSMiddle();
+
+		void capitalAtEND();
+
+		void capitalNearEndIs();
+
+		void singleCapitalEndI();
+	}
+
 	private static class KeyTranslation {
 		public KeyTranslation(String string, String key) {
 			this.string = string;
@@ -66,9 +87,10 @@ public class LocalizerTest {
 	}
 
 	@Test
-	public void keyTranslationTest() {
+	public void keyTranslationTest() throws NoSuchMethodException, SecurityException {
 		for (KeyTranslation translation : KEY_TRANSLATIONS) {
-			assertEquals(translation.key, Localizer.getKeyText(translation.string));
+			assertEquals(KEY_TRANSLATION_METHODS + "." + translation.key,
+					getKey(KeyTranslationMethods.class.getMethod(translation.string)));
 		}
 	}
 

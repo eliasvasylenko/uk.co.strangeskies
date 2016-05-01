@@ -69,14 +69,20 @@ public class Isomorphism {
 		return equality;
 	}
 
+	/**
+	 * The main API surface for interacting with the {@link Isomorphism},
+	 * represents a mapping according to a given key equality.
+	 * 
+	 * @author Elias N Vasylenko
+	 */
 	public class Mapping {
 		private final Map<?, ? extends Supplier<?>> copiedNodes;
 
-		public Mapping(Map<Object, Supplier<Object>> backingMap) {
+		Mapping(Map<Object, Supplier<Object>> backingMap) {
 			copiedNodes = backingMap;
 		}
 
-		public Mapping() {
+		Mapping() {
 			this(new IdentityHashMap<>());
 		}
 

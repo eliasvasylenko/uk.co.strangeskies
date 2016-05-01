@@ -36,7 +36,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.utilities.EqualityComparator;
+import uk.co.strangeskies.utilities.EquivalenceComparator;
 import uk.co.strangeskies.utilities.Isomorphism;
 import uk.co.strangeskies.utilities.collection.MultiMap;
 import uk.co.strangeskies.utilities.collection.MultiTreeMap;
@@ -160,8 +160,8 @@ public class ParameterizedTypes {
 						.get(currentThread);
 				if (equalitiesForThread == null) {
 					assumedEqualities.put(currentThread,
-							equalitiesForThread = new MultiTreeMap<>(EqualityComparator.identityComparator(),
-									() -> new TreeSet<>(EqualityComparator.identityComparator())));
+							equalitiesForThread = new MultiTreeMap<>(EquivalenceComparator.identityComparator(),
+									() -> new TreeSet<>(EquivalenceComparator.identityComparator())));
 					newThread = true;
 				}
 
@@ -197,10 +197,33 @@ public class ParameterizedTypes {
 
 	private ParameterizedTypes() {}
 
+	/**
+	 * Format a string describing a given parameterized type, assuming the given
+	 * {@link Imports imports}.
+	 * 
+	 * @param parameterizedType
+	 *          the type we wish to express as a string
+	 * @param imports
+	 *          the imports with which to inform qualification omission
+	 * @return a string representation of the given parameterized type
+	 */
 	public static String toString(ParameterizedType parameterizedType, Imports imports) {
 		return toString(parameterizedType, imports, new Isomorphism());
 	}
 
+	/**
+	 * Format a string describing a given parameterized type, assuming the given
+	 * {@link Imports imports} and using the given {@link Isomorphism} to skip
+	 * recurring types.
+	 * 
+	 * @param parameterizedType
+	 *          the type we wish to express as a string
+	 * @param imports
+	 *          the imports with which to inform qualification omission
+	 * @param isomorphism
+	 *          the isomorphism with which to skip repeated types
+	 * @return a string representation of the given parameterized type
+	 */
 	public static String toString(ParameterizedType parameterizedType, Imports imports, Isomorphism isomorphism) {
 		return isomorphism.byIdentity().getPartialMapping(parameterizedType, (p, partial) -> {
 			/*

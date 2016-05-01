@@ -45,6 +45,7 @@ public interface ObservableList<S extends ObservableList<S, E>, E>
 	 *
 	 * @author Elias N Vasylenko
 	 * @param <E>
+	 *          the element type, as per {@link Collection}
 	 */
 	interface Change<E> {
 		int[] removedIndices();
@@ -83,11 +84,11 @@ public interface ObservableList<S extends ObservableList<S, E>, E>
 	}
 
 	public static <C extends List<E>, E> ObservableList<?, E> over(C list, Function<? super C, ? extends C> copy) {
-		return new ObservableListDecoratorImpl<C, E>(list, copy);
+		return new ObservableListDecoratorImpl<>(list, copy);
 	}
 
 	public static <C extends Copyable<? extends C> & List<E>, E> ObservableList<?, E> over(C set) {
-		return new ObservableListDecoratorImpl<C, E>(set, Copyable::copy);
+		return new ObservableListDecoratorImpl<>(set, Copyable::copy);
 	}
 
 	public static <C extends List<E>, E> ObservableList<?, E> over(C set) {

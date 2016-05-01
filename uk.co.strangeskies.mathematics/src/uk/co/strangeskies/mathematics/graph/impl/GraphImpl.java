@@ -44,7 +44,7 @@ import uk.co.strangeskies.mathematics.graph.GraphListeners.EdgesEvent;
 import uk.co.strangeskies.mathematics.graph.GraphListeners.VertexEvent;
 import uk.co.strangeskies.mathematics.graph.GraphListeners.VerticesEvent;
 import uk.co.strangeskies.mathematics.graph.GraphTransformer;
-import uk.co.strangeskies.utilities.EqualityComparator;
+import uk.co.strangeskies.utilities.EquivalenceComparator;
 import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.collection.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.MultiMap;
@@ -222,7 +222,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 		private final Map<E, EdgeVertices<V>> edgeVertices;
 
 		public EdgesImpl(BiPredicate<? super E, ? super E> edgeComparator) {
-			this(edgeComparator != null ? new TreeMap<>(new EqualityComparator<E>(edgeComparator)) : new HashMap<>());
+			this(edgeComparator != null ? new TreeMap<>(new EquivalenceComparator<E>(edgeComparator)) : new HashMap<>());
 		}
 
 		private EdgesImpl(Map<E, EdgeVertices<V>> edgeVertices) {
@@ -520,7 +520,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 			if (!adjacencyMatrix.containsKey(vertex)) {
 				MultiMap<V, E, Set<E>> map;
 				if (vertexComparator != null) {
-					map = new MultiTreeMap<>(new EqualityComparator<V>(vertexComparator), this::createEdgeSet);
+					map = new MultiTreeMap<>(new EquivalenceComparator<V>(vertexComparator), this::createEdgeSet);
 				} else {
 					map = new MultiHashMap<>(this::createEdgeSet);
 				}
@@ -617,13 +617,13 @@ class GraphImpl<V, E> implements Graph<V, E> {
 
 	@Override
 	public Set<V> createVertexSet() {
-		return vertexComparator != null ? new TreeSet<>(new EqualityComparator<V>(vertexComparator)) : new HashSet<>();
+		return vertexComparator != null ? new TreeSet<>(new EquivalenceComparator<V>(vertexComparator)) : new HashSet<>();
 	}
 
 	@Override
 	public Set<V> createVertexSet(Collection<? extends V> vertices) {
 		if (vertexComparator != null) {
-			Set<V> vertexSet = new TreeSet<>(new EqualityComparator<V>(vertexComparator));
+			Set<V> vertexSet = new TreeSet<>(new EquivalenceComparator<V>(vertexComparator));
 			vertexSet.addAll(vertices);
 			return vertexSet;
 		} else
@@ -632,13 +632,13 @@ class GraphImpl<V, E> implements Graph<V, E> {
 
 	@Override
 	public <T> Map<V, T> createVertexMap() {
-		return vertexComparator != null ? new TreeMap<>(new EqualityComparator<V>(vertexComparator)) : new HashMap<>();
+		return vertexComparator != null ? new TreeMap<>(new EquivalenceComparator<V>(vertexComparator)) : new HashMap<>();
 	}
 
 	@Override
 	public <T> Map<V, T> createVertexMap(Map<? extends V, ? extends T> edges) {
 		if (vertexComparator != null) {
-			Map<V, T> edgeMap = new TreeMap<>(new EqualityComparator<V>(vertexComparator));
+			Map<V, T> edgeMap = new TreeMap<>(new EquivalenceComparator<V>(vertexComparator));
 			edgeMap.putAll(edges);
 			return edgeMap;
 		} else
@@ -647,13 +647,13 @@ class GraphImpl<V, E> implements Graph<V, E> {
 
 	@Override
 	public Set<E> createEdgeSet() {
-		return edgeComparator != null ? new TreeSet<>(new EqualityComparator<E>(edgeComparator)) : new HashSet<>();
+		return edgeComparator != null ? new TreeSet<>(new EquivalenceComparator<E>(edgeComparator)) : new HashSet<>();
 	}
 
 	@Override
 	public Set<E> createEdgeSet(Collection<? extends E> edges) {
 		if (edgeComparator != null) {
-			Set<E> edgeSet = new TreeSet<>(new EqualityComparator<E>(edgeComparator));
+			Set<E> edgeSet = new TreeSet<>(new EquivalenceComparator<E>(edgeComparator));
 			edgeSet.addAll(edges);
 			return edgeSet;
 		} else
@@ -662,13 +662,13 @@ class GraphImpl<V, E> implements Graph<V, E> {
 
 	@Override
 	public <T> Map<E, T> createEdgeMap() {
-		return edgeComparator != null ? new TreeMap<>(new EqualityComparator<E>(edgeComparator)) : new HashMap<>();
+		return edgeComparator != null ? new TreeMap<>(new EquivalenceComparator<E>(edgeComparator)) : new HashMap<>();
 	}
 
 	@Override
 	public <T> Map<E, T> createEdgeMap(Map<? extends E, ? extends T> edges) {
 		if (edgeComparator != null) {
-			Map<E, T> edgeMap = new TreeMap<>(new EqualityComparator<E>(edgeComparator));
+			Map<E, T> edgeMap = new TreeMap<>(new EquivalenceComparator<E>(edgeComparator));
 			edgeMap.putAll(edges);
 			return edgeMap;
 		} else

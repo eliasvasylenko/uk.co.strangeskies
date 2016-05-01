@@ -59,6 +59,7 @@ import uk.co.strangeskies.utilities.Self;
  * 
  * @author Elias N Vasylenko
  */
+@SuppressWarnings("javadoc")
 public class TypeTokenTest {
 	static class A<T> {
 		public class B {}
@@ -143,9 +144,6 @@ public class TypeTokenTest {
 		System.out.println(Types.leastContainingArgument(bestType, bestType3));
 	}
 
-	/**
-	 * 
-	 */
 	// @Test
 	public void supertypeParameterTest() {
 		Assert.assertEquals("uk.co.strangeskies.reflection.test.SchemaNode<?, ?>",
@@ -153,9 +151,6 @@ public class TypeTokenTest {
 						.resubstituteCapturedWildcards().toString());
 	}
 
-	/**
-	 * 
-	 */
 	// @Test
 	public void hugeTest1() {
 		System.out.println(new TypeToken<HashSet<String>>() {}.resolveSupertypeParameters(Set.class));
@@ -276,10 +271,6 @@ public class TypeTokenTest {
 		System.out.println();
 	}
 
-	/**
-	 * @param <H>
-	 *          Parameter for reflection testing
-	 */
 	// @Test
 	public <H extends C2<H>> void huge2Test() {
 		System.out.println("<T extends Number, U extends List<? super T>> U method4(Collection<? extends T> a, U b)");

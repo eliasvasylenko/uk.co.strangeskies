@@ -1,9 +1,10 @@
 package uk.co.strangeskies.utilities.text.test;
 
-import uk.co.strangeskies.utilities.text.LocalizationText;
 import uk.co.strangeskies.utilities.text.LocalizedString;
+import uk.co.strangeskies.utilities.text.LocalizedText;
 
-public interface LocalizerTestText extends LocalizationText<LocalizerTestText> {
+@SuppressWarnings("javadoc")
+public interface LocalizerTestText extends LocalizedText<LocalizerTestText> {
 	LocalizedString missingMethod();
 
 	LocalizedString simple();

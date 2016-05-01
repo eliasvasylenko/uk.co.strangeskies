@@ -18,10 +18,10 @@
  */
 package uk.co.strangeskies.osgi.servicewrapper.impl;
 
-import uk.co.strangeskies.utilities.EqualityComparator;
+import uk.co.strangeskies.utilities.EquivalenceComparator;
 
 class ManagedServiceWrapperComparator extends
-		EqualityComparator<ManagedServiceWrapper<?>> {
+		EquivalenceComparator<ManagedServiceWrapper<?>> {
 	public ManagedServiceWrapperComparator() {
 		super((a, b) -> a == b);
 	}

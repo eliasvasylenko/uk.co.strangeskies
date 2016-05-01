@@ -32,15 +32,15 @@ import java.util.function.BiPredicate;
 /**
  * Provides an arbitrary total ordering over a type of object from an equality
  * relation. Guaranteed to be a consistent ordering for a particular
- * IdentityComparator, but not necessarily between different instances of
- * IdentityComparator.
+ * {@link EquivalenceComparator}, but not necessarily between different
+ * instances of {@link EquivalenceComparator}.
  *
  * @author Elias N Vasylenko
  *
  * @param <T>
  *          The type of object to compare.
  */
-public class EqualityComparator<T> implements Comparator<T> {
+public class EquivalenceComparator<T> implements Comparator<T> {
 	private final BiPredicate<? super T, ? super T> equality;
 
 	private final Map<Integer, List<IDReference>> collisionMap;
@@ -54,39 +54,39 @@ public class EqualityComparator<T> implements Comparator<T> {
 	 *          The equality predicate with respect to which we wish to create a
 	 *          consistent ordering.
 	 */
-	public EqualityComparator(BiPredicate<? super T, ? super T> equality) {
+	public EquivalenceComparator(BiPredicate<? super T, ? super T> equality) {
 		this.equality = equality;
 
-		collisionMap = new HashMap<Integer, List<IDReference>>();
+		collisionMap = new HashMap<>();
 
 		referenceQueue = new ReferenceQueue<>();
 	}
 
 	/**
-	 * Create a new {@link EqualityComparator} over the identity operation.
+	 * Create a new {@link EquivalenceComparator} over the identity operation.
 	 * 
 	 * @param <T>
 	 *          The type of the items to compare
 	 * @return The new equality comparator instance.
 	 */
-	public static <T> EqualityComparator<T> identityComparator() {
-		return new EqualityComparator<>((a, b) -> a == b);
+	public static <T> EquivalenceComparator<T> identityComparator() {
+		return new EquivalenceComparator<>((a, b) -> a == b);
 	}
 
 	/**
-	 * Create a new {@link EqualityComparator} over the {@link Object#equals}
+	 * Create a new {@link EquivalenceComparator} over the {@link Object#equals}
 	 * equality operation.
 	 * 
 	 * @param <T>
 	 *          The type of the items to compare
 	 * @return The new equality comparator instance.
 	 */
-	public static <T> EqualityComparator<T> naturalComparator() {
-		return new EqualityComparator<>(Objects::equals);
+	public static <T> EquivalenceComparator<T> naturalComparator() {
+		return new EquivalenceComparator<>(Objects::equals);
 	}
 
 	@Override
-	public int compare(EqualityComparator<T>this,T first, T second) {
+	public int compare(EquivalenceComparator<T>this,T first, T second) {
 		clean();
 
 		if (equality.test(first, second)) {
@@ -100,14 +100,12 @@ public class EqualityComparator<T> implements Comparator<T> {
 			return secondHash - firstHash;
 		}
 
-		IDReference firstReference = new IDReference(first, firstHash,
-				referenceQueue);
-		IDReference secondReference = new IDReference(second, secondHash,
-				referenceQueue);
+		IDReference firstReference = new IDReference(first, firstHash, referenceQueue);
+		IDReference secondReference = new IDReference(second, secondHash, referenceQueue);
 
 		List<IDReference> collisions = collisionMap.get(firstHash);
 		if (collisions == null) {
-			collisions = new ArrayList<IDReference>();
+			collisions = new ArrayList<>();
 
 			collisions.add(firstReference);
 			collisions.add(secondReference);
@@ -138,7 +136,7 @@ public class EqualityComparator<T> implements Comparator<T> {
 	 * map. It is also called automatically
 	 */
 	@SuppressWarnings("unchecked")
-	public void clean(EqualityComparator<T>this) {
+	public void clean(EquivalenceComparator<T>this) {
 		IDReference oldReference;
 		while ((oldReference = (IDReference) referenceQueue.poll()) != null) {
 			List<IDReference> collisions = collisionMap.get(oldReference.getId());

@@ -24,7 +24,7 @@ import org.hamcrest.comparator.ComparatorMatcherBuilder;
 import org.junit.Assert;
 import org.junit.Test;
 
-import uk.co.strangeskies.utilities.EqualityComparator;
+import uk.co.strangeskies.utilities.EquivalenceComparator;
 
 /**
  * It is very difficult or impossible to test this class properly, as the
@@ -57,7 +57,7 @@ public class IdentityComparatorTest {
 	}
 
 	private ComparatorMatcherBuilder<Object> comparator() {
-		return ComparatorMatcherBuilder.comparedBy(EqualityComparator
+		return ComparatorMatcherBuilder.comparedBy(EquivalenceComparator
 				.identityComparator());
 	}
 }

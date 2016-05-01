@@ -25,7 +25,7 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.utilities.EqualityComparator;
+import uk.co.strangeskies.utilities.EquivalenceComparator;
 
 /**
  * A view of a {@link List} which will be automatically updated along with the
@@ -103,7 +103,7 @@ public class ListTransformOnceView<F, T> extends AbstractList<T> {
 	 */
 	public ListTransformOnceView(List<F> backingCollection,
 			final InvertibleFunction<F, T> function) {
-		transformations = new TreeMap<>(EqualityComparator.identityComparator());
+		transformations = new TreeMap<>(EquivalenceComparator.identityComparator());
 
 		this.backingCollection = backingCollection;
 		this.function = function;

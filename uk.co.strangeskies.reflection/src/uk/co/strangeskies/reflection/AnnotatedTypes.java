@@ -66,6 +66,7 @@ public final class AnnotatedTypes {
 		 * As {@link #toString()}, but according to a given {@link Imports}.
 		 * 
 		 * @param imports
+		 *          the imports with which to inform qualification omission
 		 * @return the string representation of the type
 		 */
 		String toString(Imports imports);
@@ -93,10 +94,8 @@ public final class AnnotatedTypes {
 				this.annotations.put(annotation.annotationType(), annotation);
 		}
 
-		/**
+		/*
 		 * TODO for Java 9...
-		 * 
-		 * @return
 		 */
 		public AnnotatedType getAnnotatedOwnerType() {
 			throw new UnsupportedOperationException();

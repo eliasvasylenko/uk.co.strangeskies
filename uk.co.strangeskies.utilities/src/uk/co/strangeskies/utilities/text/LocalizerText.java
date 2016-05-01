@@ -2,7 +2,14 @@ package uk.co.strangeskies.utilities.text;
 
 import java.lang.reflect.Method;
 
-public interface LocalizerText extends LocalizationText<LocalizerText> {
+/**
+ * A {@link LocalizedText} interface to provide localized texts for use by the
+ * {@link Localizer} class itself, such as for reporting errors for improperly
+ * structured localisation classes, etc.
+ * 
+ * @author Elias N Vasylenko
+ */
+public interface LocalizerText extends LocalizedText<LocalizerText> {
 	LocalizedString mustBeInterface(Class<?> accessor);
 
 	LocalizedString illegalReturnType(Class<?> accessor, Method method, Class<LocalizedString> stringClass);

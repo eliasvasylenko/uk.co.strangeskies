@@ -292,6 +292,8 @@ public class Imports {
 	}
 
 	/**
+	 * @param classLoader
+	 *          the class loader to find classes with
 	 * @return An empty {@link Imports} instance.
 	 */
 	public static Imports empty(ClassLoader classLoader) {
