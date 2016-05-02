@@ -10,7 +10,7 @@ Private-Package: \
 	biz.aQute.bndlib,\
 	${ss;utilities},\
 	${ss;bnd},\
-	${ss;osgi.frameworkwrapper.api},\
+	${ss;osgi.api},\
 	${ss;p2.api}
 
 embedded.bundles: \
@@ -41,7 +41,7 @@ embedded.bundles: \
 
 embedded.projects: \
 	uk.co.strangeskies.p2.provider,\
-	uk.co.strangeskies.osgi.logging
+	uk.co.strangeskies.osgi.provider
 
 shaded.bundles: \
 	biz.aQute.bndlib
@@ -50,7 +50,7 @@ shaded.projects: \
 	uk.co.strangeskies.bnd,\
 	uk.co.strangeskies.p2.api,\
 	uk.co.strangeskies.utilities,\
-	uk.co.strangeskies.osgi.frameworkwrapper.api
+	uk.co.strangeskies.osgi.api
 
 -dependson: \
 	uk.co.strangeskies.p2
@@ -62,7 +62,7 @@ shaded.projects: \
 	${runreq.felix.shell},\
 	${runreq.base},\
 	${req;uk.co.strangeskies.p2bnd},\
-	${req;uk.co.strangeskies.osgi.consolelog}
+	${req;uk.co.strangeskies.osgi.provider}
 
 -runbundles: \
 	biz.aQute.bndlib;version='[3.0.0,3.0.1)',\

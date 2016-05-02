@@ -10,11 +10,6 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Set;
 
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferenceCardinality;
-import org.osgi.service.component.annotations.ReferencePolicy;
-
 import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Log.Level;
@@ -32,7 +27,6 @@ import uk.co.strangeskies.utilities.collection.computingmap.ComputingMap;
  * 
  * @author Elias N Vasylenko
  */
-@Component
 public class Localizer {
 	static class MethodSignature {
 		private final Method method;
@@ -180,15 +174,8 @@ public class Localizer {
 	 * @param log
 	 *          the log for localisation
 	 */
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
 	public void setLog(Log log) {
 		this.log = log;
-	}
-
-	void unsetLog(Log log) {
-		if (this.log == log) {
-			this.log = null;
-		}
 	}
 
 	void log(Level level, String message) {

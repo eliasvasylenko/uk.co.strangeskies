@@ -36,6 +36,7 @@ import uk.co.strangeskies.utilities.Log;
  * @author Elias N Vasylenko
  */
 @Component(scope = ServiceScope.PROTOTYPE)
+@SuppressWarnings("javadoc")
 public class LogProvider implements Log {
 	private Bundle usingBundle;
 

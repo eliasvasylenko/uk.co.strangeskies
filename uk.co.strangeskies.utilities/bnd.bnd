@@ -12,7 +12,8 @@ Export-Package: \
 	uk.co.strangeskies.utilities.tuple,\
 	uk.co.strangeskies.utilities.text.parser,\
 	uk.co.strangeskies.utilities.text,\
-	uk.co.strangeskies.utilities.classpath
+	uk.co.strangeskies.utilities.classpath,\
+	uk.co.strangeskies.utilities.logging
 
 Bundle-Name: Strange Skies :: Utilities
 Bundle-Description: \

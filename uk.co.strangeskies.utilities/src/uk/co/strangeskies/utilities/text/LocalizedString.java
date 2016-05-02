@@ -23,6 +23,13 @@ public interface LocalizedString extends Observable<String>, CharSequence {
 	@Override
 	String toString();
 
+	/**
+	 * @param locale
+	 *          the locale to translate to
+	 * @return the localised string value according to the given locale
+	 */
+	String toString(Locale locale);
+
 	@Override
 	default int length() {
 		return toString().length();

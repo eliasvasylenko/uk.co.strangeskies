@@ -86,6 +86,12 @@ public class LocalizationTextDelegate<T extends LocalizedText<T>> extends Observ
 		}
 
 		@Override
+		public String toString(Locale locale) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
 		public void accept(T t) {
 			updateText();
 		}

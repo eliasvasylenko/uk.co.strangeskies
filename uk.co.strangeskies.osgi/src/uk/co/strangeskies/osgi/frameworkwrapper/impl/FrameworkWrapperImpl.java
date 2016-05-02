@@ -36,6 +36,7 @@ import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.launch.Framework;
 import org.osgi.framework.launch.FrameworkFactory;
+import org.osgi.service.component.annotations.Component;
 
 import uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper;
 import uk.co.strangeskies.utilities.IdentityProperty;
@@ -47,6 +48,8 @@ import uk.co.strangeskies.utilities.function.ThrowingConsumer;
 import uk.co.strangeskies.utilities.function.ThrowingRunnable;
 import uk.co.strangeskies.utilities.function.ThrowingSupplier;
 
+@Component
+@SuppressWarnings("javadoc")
 public class FrameworkWrapperImpl implements FrameworkWrapper {
 	private static final String FRAGMENT_HOST_HEADER = "Fragment-Host";
 

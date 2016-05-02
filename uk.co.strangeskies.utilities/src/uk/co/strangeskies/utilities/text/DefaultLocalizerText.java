@@ -50,6 +50,11 @@ final class DefaultLocalizerText implements LocalizerText {
 			public Locale locale() {
 				return Locale.ENGLISH;
 			}
+
+			@Override
+			public String toString(Locale locale) {
+				return toString();
+			}
 		};
 	}
 
