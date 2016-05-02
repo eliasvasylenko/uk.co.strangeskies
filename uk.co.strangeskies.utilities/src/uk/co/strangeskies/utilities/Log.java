@@ -71,9 +71,20 @@ public interface Log {
 	 *          The message to log
 	 * @param exception
 	 *          The exception associated with the message
-	 * 
 	 */
 	default void log(Level level, String message, Throwable exception) {
 		log(level, message + ": " + exception.getLocalizedMessage());
+	}
+
+	/**
+	 * Log a message and an associated throwable.
+	 * 
+	 * @param level
+	 *          The importance level of the given message
+	 * @param exception
+	 *          The exception associated with the message
+	 */
+	default void log(Level level, Throwable exception) {
+		log(level, exception.getMessage(), exception);
 	}
 }

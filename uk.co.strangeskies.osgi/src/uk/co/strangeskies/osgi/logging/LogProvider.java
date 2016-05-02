@@ -45,8 +45,7 @@ public class LogProvider implements Log {
 	@Activate
 	public void activate(ComponentContext context) {
 		usingBundle = context.getUsingBundle();
-		logServiceReference = usingBundle.getBundleContext()
-				.getServiceReference(LogService.class);
+		logServiceReference = usingBundle.getBundleContext().getServiceReference(LogService.class);
 		logService = usingBundle.getBundleContext().getService(logServiceReference);
 	}
 

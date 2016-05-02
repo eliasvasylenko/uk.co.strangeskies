@@ -10,7 +10,14 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Set;
 
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
+
 import uk.co.strangeskies.utilities.IdentityProperty;
+import uk.co.strangeskies.utilities.Log;
+import uk.co.strangeskies.utilities.Log.Level;
 import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableImpl;
 import uk.co.strangeskies.utilities.collection.computingmap.CacheComputingMap;
@@ -25,6 +32,7 @@ import uk.co.strangeskies.utilities.collection.computingmap.ComputingMap;
  * 
  * @author Elias N Vasylenko
  */
+@Component
 public class Localizer {
 	static class MethodSignature {
 		private final Method method;
@@ -96,8 +104,10 @@ public class Localizer {
 		}
 	}
 
-	static final String TEXT_POSTFIX = "Text";
-	static final Set<MethodSignature> LOCALIZATION_HELPER_METHODS = new HashSet<>();
+	private static final String TEXT_POSTFIX = "Text";
+	private static final Set<MethodSignature> LOCALIZATION_HELPER_METHODS = new HashSet<>();
+	private static final String CANNOT_INITIALISE = "Cannot initialise Localizer instance";
+
 	{
 		for (Method method : LocalizedText.class.getMethods()) {
 			LOCALIZATION_HELPER_METHODS.add(new MethodSignature(method));
@@ -110,15 +120,16 @@ public class Localizer {
 	private final ComputingMap<Localizable<?>, LocalizedText<?>> LOCALIZATION_CACHE;
 	private final Constructor<MethodHandles.Lookup> methodHandleConstructor;
 
-	Locale locale;
-	final ObservableImpl<Locale> localeChanges;
+	private Log log;
+	private Locale locale;
+	private final ObservableImpl<Locale> localeChanges;
 	private final LocalizerText text;
 
 	/**
 	 * Create a new {@link Localizer} instance for the JVM default locale.
 	 */
 	public Localizer() {
-		this(Locale.getDefault());
+		this(Locale.getDefault(), null);
 	}
 
 	/**
@@ -128,10 +139,22 @@ public class Localizer {
 	 *          the initial locale
 	 */
 	public Localizer(Locale locale) {
+		this(locale, null);
+	}
+
+	/**
+	 * Create a new {@link Localizer} instance for the given initial locale.
+	 * 
+	 * @param locale
+	 *          the initial locale
+	 * @param log
+	 *          the log for localisation
+	 */
+	public Localizer(Locale locale, Log log) {
 		try {
 			methodHandleConstructor = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class, int.class);
 		} catch (NoSuchMethodException | SecurityException e) {
-			throw new RuntimeException(e);
+			throw log(Level.ERROR, CANNOT_INITIALISE, new RuntimeException(e));
 		}
 		if (!methodHandleConstructor.isAccessible()) {
 			methodHandleConstructor.setAccessible(true);
@@ -141,8 +164,51 @@ public class Localizer {
 
 		localeChanges = new ObservableImpl<>();
 		setLocale(locale);
+		this.log = log;
 
 		text = getLocalization(LocalizerText.class);
+	}
+
+	/**
+	 * @return the current log
+	 */
+	public Log getLog() {
+		return log;
+	}
+
+	/**
+	 * @param log
+	 *          the log for localisation
+	 */
+	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
+	public void setLog(Log log) {
+		this.log = log;
+	}
+
+	void unsetLog(Log log) {
+		if (this.log == log) {
+			this.log = null;
+		}
+	}
+
+	void log(Level level, String message) {
+		if (log != null) {
+			log.log(level, message);
+		}
+	}
+
+	<E extends Throwable> E log(Level level, E exception) {
+		if (log != null) {
+			log.log(level, exception);
+		}
+		return exception;
+	}
+
+	<E extends Throwable> E log(Level level, String message, E exception) {
+		if (log != null) {
+			log.log(level, message, exception);
+		}
+		return exception;
 	}
 
 	/**
@@ -182,7 +248,7 @@ public class Localizer {
 		}
 
 		if (!localizable.accessor.isInterface()) {
-			throw new IllegalArgumentException(text.mustBeInterface(localizable.accessor).toString());
+			throw log(Level.ERROR, new IllegalArgumentException(text.mustBeInterface(localizable.accessor).toString()));
 		}
 
 		for (Method method : localizable.accessor.getMethods()) {
@@ -193,7 +259,8 @@ public class Localizer {
 				 * ensure return type of method is String
 				 */
 				if (!method.getReturnType().equals(LocalizedString.class)) {
-					throw new IllegalArgumentException(text.illegalReturnType(localizable.accessor, method).toString());
+					throw log(Level.ERROR,
+							new IllegalArgumentException(text.illegalReturnType(localizable.accessor, method).toString()));
 				}
 			}
 		}
