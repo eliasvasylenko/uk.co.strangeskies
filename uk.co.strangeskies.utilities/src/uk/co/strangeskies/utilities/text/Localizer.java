@@ -377,6 +377,8 @@ public class Localizer {
 	 * according to the rules described by {@link LocalizedText}, and with
 	 * resource values taken from the given resource bundle.
 	 * 
+	 * @param <T>
+	 *          the type of the localisation text accessor interface
 	 * @param accessor
 	 *          the sub-interface of {@link LocalizedText} we wish to implement
 	 * @param bundle
@@ -394,6 +396,8 @@ public class Localizer {
 	 * {@link LocalizedResourceBundle#getBundle(ClassLoader, Locale, String[])}
 	 * invoked with the given class loader and locations, and the current locale.
 	 * 
+	 * @param <T>
+	 *          the type of the localisation text accessor interface
 	 * @param accessor
 	 *          the sub-interface of {@link LocalizedText} we wish to implement
 	 * @param classLoader
@@ -414,6 +418,8 @@ public class Localizer {
 	 * {@link LocalizedResourceBundle#getBundle(ClassLoader, Locale, String[])}
 	 * invoked with the class loader of the given class, and the given locations.
 	 * 
+	 * @param <T>
+	 *          the type of the localisation text accessor interface
 	 * @param accessor
 	 *          the sub-interface of {@link LocalizedText} we wish to implement
 	 * @param locations
@@ -430,8 +436,11 @@ public class Localizer {
 	 * loading according to the {@link LocalizedResourceBundle} returned from
 	 * {@link LocalizedResourceBundle#getBundle(ClassLoader, Locale, String[])}
 	 * invoked with the class loader of the given class, and the location derived
-	 * from the given class via {@link #removeTextPostfix(String)}.
+	 * by taking the given class name, and removing {@code Text} from the end if
+	 * it is present.
 	 * 
+	 * @param <T>
+	 *          the type of the localisation text accessor interface
 	 * @param accessor
 	 *          the sub-interface of {@link LocalizedText} we wish to implement
 	 * @return an implementation of the accessor interface

@@ -27,3 +27,6 @@ Private-Package: \
 	org.eclipse.osgi.internal.module,\
 	org.eclipse.osgi.internal.resolver,\
 	org.eclipse.osgi.internal.util
+
+Include-Resource: \
+	OSGI-INF/l10n = l10n
