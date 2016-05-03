@@ -57,7 +57,9 @@ public abstract class LocalizedResourceBundle extends ResourceBundle {
 			}
 
 			if (bundles.isEmpty()) {
-				throw new MissingResourceException("Cannot find resources for " + locale, Arrays.toString(locations), "");
+				String locationsString = Arrays.toString(locations);
+				throw new MissingResourceException("Cannot find resources for " + locale + " in any of " + locationsString,
+						locationsString, "");
 			}
 		}
 
@@ -132,8 +134,8 @@ public abstract class LocalizedResourceBundle extends ResourceBundle {
 	/**
 	 * Create a {@link LocalizedResourceBundle localising resource bundle} over
 	 * the given class loader and base names. The created resource bundle will
-	 * behave as a delegate to a series of {@link ResourceBundle resource
-	 * bundles}, which in turn will behave according to
+	 * behave as a delegate to a series of {@link ResourceBundle resource bundles}
+	 * , which in turn will behave according to
 	 * {@link ResourceBundle#getBundle(String, Locale, ClassLoader)} with the
 	 * given class loader, using the given locations as base names, and using the
 	 * current locale of the {@link LocalizedResourceBundle}. This locale may
