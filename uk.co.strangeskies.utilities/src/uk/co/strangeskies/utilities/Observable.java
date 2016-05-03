@@ -109,7 +109,7 @@ public interface Observable<M> {
 
 		@Override
 		public void accept(M event) {
-			if (!observer.apply(event)) {
+			if (observer.apply(event)) {
 				observable.removeObserver(this);
 			}
 		}
@@ -189,7 +189,7 @@ public interface Observable<M> {
 	 * 
 	 * @param observer
 	 *          An observer to add, a function from event type to a boolean, a
-	 *          false value of which will remove the observer
+	 *          true value of which will remove the observer
 	 * @return True if the observer was successfully added, false otherwise
 	 */
 	default boolean addTerminatingObserver(Function<? super M, Boolean> observer) {

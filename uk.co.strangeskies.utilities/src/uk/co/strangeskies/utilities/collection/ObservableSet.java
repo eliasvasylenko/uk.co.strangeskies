@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import uk.co.strangeskies.utilities.Copyable;
+import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.Self;
 import uk.co.strangeskies.utilities.collection.ObservableSetDecorator.ObservableSetDecoratorImpl;
 import uk.co.strangeskies.utilities.collection.SynchronizedObservableSet.SynchronizedObservableSetImpl;
@@ -110,4 +111,61 @@ public interface ObservableSet<S extends ObservableSet<S, E>, E>
 
 	@Override
 	Set<E> silent();
+
+	default void waitFor(E element) throws InterruptedException {
+		waitFor(element, () -> {});
+	}
+
+	default void waitFor(E element, Runnable onPresent) throws InterruptedException {
+		waitFor(element, onPresent, -1);
+	}
+
+	default void waitFor(E element, int timeoutMilliseconds) throws InterruptedException {
+		waitFor(element, () -> {}, timeoutMilliseconds);
+	}
+
+	default void waitFor(E element, Runnable onPresent, int timeoutMilliseconds) throws InterruptedException {
+		IdentityProperty<Boolean> complete = new IdentityProperty<>(false);
+
+		synchronized (complete) {
+			changes().addTerminatingObserver(c -> {
+				synchronized (complete) {
+					if (complete.get()) {
+						return true;
+					}
+
+					if (c.added().contains(element)) {
+						onPresent.run();
+
+						complete.set(true);
+						complete.notifyAll();
+
+						return true;
+					}
+				}
+
+				return false;
+			});
+
+			if (contains(element)) {
+				complete.set(true);
+				onPresent.run();
+			} else {
+				try {
+					if (timeoutMilliseconds < 0) {
+						complete.wait();
+					} else {
+						complete.wait(timeoutMilliseconds);
+					}
+				} catch (InterruptedException e) {
+					synchronized (complete) {
+						if (!complete.get()) {
+							complete.set(true);
+							throw e;
+						}
+					}
+				}
+			}
+		}
+	}
 }
