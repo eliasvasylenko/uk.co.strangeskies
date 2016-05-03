@@ -54,12 +54,21 @@ public class ObservableImpl<M> implements Observable<M> {
 		observers.clear();
 	}
 
+	/**
+	 * Fire the given message to all observers.
+	 * 
+	 * @param item
+	 *          the message event to send
+	 */
 	public void fire(M item) {
 		for (Consumer<? super M> listener : new ArrayList<>(observers)) {
 			listener.accept(item);
 		}
 	}
 
+	/**
+	 * @return a list of all observers attached to this observable
+	 */
 	public Set<Consumer<? super M>> getObservers() {
 		return observers;
 	}

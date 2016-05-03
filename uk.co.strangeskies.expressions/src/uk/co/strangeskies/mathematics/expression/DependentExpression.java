@@ -20,7 +20,7 @@ package uk.co.strangeskies.mathematics.expression;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
-import static uk.co.strangeskies.utilities.EqualityComparator.identityComparator;
+import static uk.co.strangeskies.utilities.EquivalenceComparator.identityComparator;
 
 import java.util.Collection;
 import java.util.TreeSet;

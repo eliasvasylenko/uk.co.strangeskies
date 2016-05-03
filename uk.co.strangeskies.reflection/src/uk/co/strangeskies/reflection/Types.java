@@ -451,6 +451,15 @@ public final class Types {
 		return object;
 	}
 
+	/**
+	 * Test whether two types are equal to one another.
+	 * 
+	 * @param a
+	 *          the first type
+	 * @param b
+	 *          the second type
+	 * @return true if the two given types are equal, false otherwise
+	 */
 	public static boolean equals(Type a, Type b) {
 		return equals(a, b, new HashSet<>());
 	}
@@ -770,7 +779,8 @@ public final class Types {
 					assignable = false;
 				else {
 					List<TypeVariable<?>> typeParameters = ParameterizedTypes.getAllTypeParameters(matchedClass);
-					Map<TypeVariable<?>, Type> toTypeArguments = ParameterizedTypes.getAllTypeArgumentsMap((ParameterizedType) to);
+					Map<TypeVariable<?>, Type> toTypeArguments = ParameterizedTypes
+							.getAllTypeArgumentsMap((ParameterizedType) to);
 					Map<TypeVariable<?>, Type> fromTypeArguments = ParameterizedTypes
 							.getAllTypeArgumentsMap((ParameterizedType) fromParameterization);
 
@@ -897,6 +907,13 @@ public final class Types {
 		return isAssignable(from, to);
 	}
 
+	/**
+	 * Ensure all intersection types and parameterized types mentioned by the
+	 * given type are sound. An exception is thrown if the type is not valid.
+	 * 
+	 * @param type
+	 *          the type to be validated
+	 */
 	public static void validate(Type type) {
 		RecursiveTypeVisitor.build().visitBounds().visitEnclosedTypes().visitEnclosingTypes().visitParameters()
 				.visitSupertypes().parameterizedTypeVisitor(TypeToken::over)
@@ -1014,10 +1031,36 @@ public final class Types {
 		erasedCandidates.keySet().retainAll(minimalCandidates);
 	}
 
+	/**
+	 * Given a number of candidate parameterizations of a given class, derive the
+	 * most specific possible parameterization which is a supertype of all
+	 * candidates according to the Java 8 language specification regarding type
+	 * inference.
+	 * 
+	 * @param rawClass
+	 *          the class to be parameterized
+	 * @param parameterizations
+	 *          the candidate parameterizations
+	 * @return the parameterized type which minimally contains all the given types
+	 */
 	public static Type best(Class<?> rawClass, List<ParameterizedType> parameterizations) {
 		return best(rawClass, parameterizations, new Isomorphism());
 	}
 
+	/**
+	 * Given a number of candidate parameterizations of a given class, derive the
+	 * most specific possible parameterization which is a supertype of all
+	 * candidates according to the Java 8 language specification regarding type
+	 * inference.
+	 * 
+	 * @param rawClass
+	 *          the class to be parameterized
+	 * @param parameterizations
+	 *          the candidate parameterizations
+	 * @param isomorphism
+	 *          an isomorphism to avoid unnecessary repeat calculations
+	 * @return the parameterized type which minimally contains all the given types
+	 */
 	public static Type best(Class<?> rawClass, List<ParameterizedType> parameterizations, Isomorphism isomorphism) {
 		if (parameterizations.isEmpty())
 			return rawClass;
@@ -1061,10 +1104,34 @@ public final class Types {
 		return best;
 	}
 
+	/**
+	 * Fetch the least containing argument of type type arguments according to the
+	 * Java 8 language specification.
+	 * 
+	 * @param argumentU
+	 *          the first argument
+	 * @param argumentV
+	 *          the second argument
+	 * @return the type argument which minimally contains both the given type
+	 *         arguments
+	 */
 	public static Type leastContainingArgument(Type argumentU, Type argumentV) {
 		return leastContainingArgument(argumentU, argumentV, new Isomorphism());
 	}
 
+	/**
+	 * Fetch the least containing argument of type type arguments according to the
+	 * Java 8 language specification.
+	 * 
+	 * @param argumentU
+	 *          the first argument
+	 * @param argumentV
+	 *          the second argument
+	 * @param isomorphism
+	 *          an isomorphism to avoid unnecessary repeat calculations
+	 * @return the type argument which minimally contains both the given type
+	 *         arguments
+	 */
 	public static Type leastContainingArgument(Type argumentU, Type argumentV, Isomorphism isomorphism) {
 		if (argumentU instanceof WildcardType
 				&& (!(argumentV instanceof WildcardType) || ((WildcardType) argumentV).getUpperBounds().length > 0)) {

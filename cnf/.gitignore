@@ -3,3 +3,4 @@
 /cache/
 /release/
 !/local/**/*.jar
+/build.bnd

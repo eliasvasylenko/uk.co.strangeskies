@@ -18,6 +18,19 @@
  */
 package uk.co.strangeskies.utilities.function;
 
+/**
+ * As {@link Runnable} but parameterized over an exception type which is allowed
+ * to be thrown by {@link #run()}.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <E>
+ *          the type of exception which may be thrown
+ */
 public interface ThrowingRunnable<E extends Exception> {
+	/**
+	 * @throws E
+	 *           an exception thrown by the implementor
+	 */
 	void run() throws E;
 }

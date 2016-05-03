@@ -65,12 +65,11 @@ public abstract class ExtenderManager implements BundleListener, Log {
 		this.context = cc.getBundleContext();
 		context.addBundleListener(this);
 
-		List<BundleCapability> extenderCapabilities = context.getBundle()
-				.adapt(BundleWiring.class).getCapabilities(OSGI_EXTENDER);
+		List<BundleCapability> extenderCapabilities = context.getBundle().adapt(BundleWiring.class)
+				.getCapabilities(OSGI_EXTENDER);
 
 		if (extenderCapabilities.isEmpty()) {
-			throw new IllegalStateException(
-					"Cannot initiate extender, no capability is present on the implementing bundle");
+			throw new IllegalStateException("Cannot initiate extender, no capability is present on the implementing bundle");
 		}
 		if (extenderCapabilities.size() > 1) {
 			throw new IllegalStateException(
@@ -131,8 +130,7 @@ public abstract class ExtenderManager implements BundleListener, Log {
 		}
 
 		try {
-			boolean registerable = bundle.adapt(BundleWiring.class)
-					.getRequirements(OSGI_EXTENDER).stream()
+			boolean registerable = bundle.adapt(BundleWiring.class).getRequirements(OSGI_EXTENDER).stream()
 					.anyMatch(r -> r.matches(capability));
 
 			if (!registerable || !register(bundle)) {
@@ -144,8 +142,8 @@ public abstract class ExtenderManager implements BundleListener, Log {
 			synchronized (added) {
 				added.remove(bundle);
 			}
-			log(Level.ERROR, "Cannot register bundle '" + bundle.getSymbolicName()
-					+ "' with extension manager '" + this + "'", e);
+			log(Level.ERROR,
+					"Cannot register bundle '" + bundle.getSymbolicName() + "' with extension manager '" + this + "'", e);
 		} finally {
 			lock.unlock();
 		}

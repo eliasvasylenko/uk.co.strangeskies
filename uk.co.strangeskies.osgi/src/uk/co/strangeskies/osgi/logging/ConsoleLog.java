@@ -16,11 +16,14 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with uk.co.strangeskies.osgi.  If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.osgi.logging.consolelog;
+package uk.co.strangeskies.osgi.logging;
 
+import java.util.Map;
 import java.util.function.Function;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
+import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
@@ -34,8 +37,19 @@ import org.osgi.service.log.LogService;
  * 
  * @author Elias N Vasylenko
  */
-@Component(immediate = true)
+@Component(configurationPid = ConsoleLog.CONFIGURATION_PID, configurationPolicy = ConfigurationPolicy.REQUIRE, immediate = true)
 public class ConsoleLog implements LogListener {
+	/**
+	 * Configuration pid for OSGi configuration
+	 */
+	public static final String CONFIGURATION_PID = "uk.co.strangeskies.log.console";
+	/**
+	 * Key for boolean enabling configuration
+	 */
+	public static final String ENABLED_KEY = "enabled";
+
+	private boolean enabled;
+
 	@Reference(cardinality = ReferenceCardinality.MULTIPLE, policy = ReferencePolicy.DYNAMIC)
 	@SuppressWarnings("javadoc")
 	public void addLogReader(LogReaderService service) {
@@ -47,18 +61,24 @@ public class ConsoleLog implements LogListener {
 		service.removeLogListener(this);
 	}
 
+	@Modified
+	void updated(Map<String, String> configuration) {
+		enabled = Boolean.parseBoolean(configuration.get(ENABLED_KEY));
+	}
+
 	@Override
 	public void logged(LogEntry entry) {
-		String time = formatTime(entry.getTime());
-		String level = formatLevel(entry.getLevel());
-		String bundle = formatIfPresent(entry.getBundle());
-		String service = formatIfPresent(entry.getServiceReference());
+		if (enabled) {
+			String time = formatTime(entry.getTime());
+			String level = formatLevel(entry.getLevel());
+			String bundle = formatIfPresent(entry.getBundle());
+			String service = formatIfPresent(entry.getServiceReference());
 
-		System.out.println(
-				"[" + time + level + bundle + service + "] " + entry.getMessage());
+			System.out.println("[" + time + level + bundle + service + "] " + entry.getMessage());
 
-		if (entry.getException() != null) {
-			entry.getException().printStackTrace();
+			if (entry.getException() != null) {
+				entry.getException().printStackTrace();
+			}
 		}
 	}
 
@@ -93,8 +113,7 @@ public class ConsoleLog implements LogListener {
 		return formatIfPresent(object, Object::toString);
 	}
 
-	private String formatIfPresent(Object object,
-			Function<Object, String> format) {
+	private String formatIfPresent(Object object, Function<Object, String> format) {
 		return object != null ? "; " + format.apply(object) : "";
 	}
 }

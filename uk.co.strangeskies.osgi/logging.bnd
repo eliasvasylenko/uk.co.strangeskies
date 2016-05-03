@@ -1,4 +1,0 @@
-Private-Package: uk.co.strangeskies.osgi.logging
-Bundle-Name: Strange Skies :: OSGi Utilities :: Logging
-Bundle-Description: \
-	A log provider for OSGi environments.

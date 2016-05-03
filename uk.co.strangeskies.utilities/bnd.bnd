@@ -12,7 +12,8 @@ Export-Package: \
 	uk.co.strangeskies.utilities.tuple,\
 	uk.co.strangeskies.utilities.text.parser,\
 	uk.co.strangeskies.utilities.text,\
-	uk.co.strangeskies.utilities.classpath
+	uk.co.strangeskies.utilities.classpath,\
+	uk.co.strangeskies.utilities.logging
 
 Bundle-Name: Strange Skies :: Utilities
 Bundle-Description: \
@@ -21,3 +22,6 @@ Bundle-Description: \
 	and more.
 -runee: JavaSE-1.8
 -runfw: org.eclipse.osgi;version='[3.10.1.v20140909-1633,3.10.1.v20140909-1633]'
+
+-includeresource: \
+	res

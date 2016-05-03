@@ -63,8 +63,14 @@ public class CacheComputingMap<K, V> extends ComputingEntryHashMap<K, V> {
 		public V getValue() {
 			try {
 				return value.get().get();
-			} catch (InterruptedException | ExecutionException e) {
-				throw new IllegalArgumentException(e);
+			} catch (InterruptedException e) {
+				throw new RuntimeException(e);
+			} catch (ExecutionException e) {
+				if (e.getCause() instanceof Error) {
+					throw (Error) e.getCause();
+				} else {
+					throw (RuntimeException) e.getCause();
+				}
 			}
 		}
 

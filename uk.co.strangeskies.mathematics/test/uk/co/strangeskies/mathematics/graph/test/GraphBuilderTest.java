@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
+' * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
  *
  * This file is part of uk.co.strangeskies.mathematics.
  *
@@ -36,7 +36,7 @@ import uk.co.strangeskies.mathematics.graph.building.GraphBuilder;
 import uk.co.strangeskies.mathematics.graph.building.GraphConfigurator;
 import uk.co.strangeskies.mathematics.graph.impl.GraphBuilderImpl;
 import uk.co.strangeskies.mathematics.graph.impl.GraphListenersImpl;
-import uk.co.strangeskies.utilities.EqualityComparator;
+import uk.co.strangeskies.utilities.EquivalenceComparator;
 
 public class GraphBuilderTest {
 	private final Supplier<GraphBuilder> graphBuilderSupplier;
@@ -60,7 +60,7 @@ public class GraphBuilderTest {
 	}
 
 	protected <T> Set<T> set(BiPredicate<? super T, ? super T> equality, @SuppressWarnings("unchecked") T... items) {
-		Set<T> set = new TreeSet<>(new EqualityComparator<T>(equality));
+		Set<T> set = new TreeSet<>(new EquivalenceComparator<T>(equality));
 		set.addAll(Arrays.asList(items));
 		return set;
 	}
@@ -155,7 +155,7 @@ public class GraphBuilderTest {
 		String one = "one";
 		String two = "two";
 		String three = new String(one);
-		Set<String> vertices = new TreeSet<>(EqualityComparator.identityComparator());
+		Set<String> vertices = new TreeSet<>(EquivalenceComparator.identityComparator());
 		vertices.add(one);
 		vertices.add(two);
 		vertices.add(three);

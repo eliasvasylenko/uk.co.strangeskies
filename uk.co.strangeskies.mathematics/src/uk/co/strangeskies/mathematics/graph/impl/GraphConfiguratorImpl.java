@@ -33,7 +33,7 @@ import java.util.function.Function;
 import uk.co.strangeskies.mathematics.graph.EdgeVertices;
 import uk.co.strangeskies.mathematics.graph.Graph;
 import uk.co.strangeskies.mathematics.graph.building.GraphConfigurator;
-import uk.co.strangeskies.utilities.EqualityComparator;
+import uk.co.strangeskies.utilities.EquivalenceComparator;
 import uk.co.strangeskies.utilities.factory.Configurator;
 
 public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>> implements GraphConfigurator<V, E> {
@@ -58,7 +58,7 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>> imple
 	private final GraphListenersImpl<V, E> internalListeners;
 
 	public GraphConfiguratorImpl() {
-		internalListeners = new GraphListenersImpl<V, E>();
+		internalListeners = new GraphListenersImpl<>();
 	}
 
 	protected static GraphConfigurator<Object, Object> configure() {
@@ -67,7 +67,7 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>> imple
 
 	@Override
 	public Graph<V, E> tryCreate() {
-		return new GraphImpl<V, E>(this);
+		return new GraphImpl<>(this);
 	}
 
 	@Override
@@ -116,7 +116,7 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>> imple
 		assertConfigurable(edgeVertices);
 
 		if (edgeMap == null)
-			edgeMap = new TreeMap<>(EqualityComparator.identityComparator());
+			edgeMap = new TreeMap<>(EquivalenceComparator.identityComparator());
 
 		edgeMap.putAll(edges);
 

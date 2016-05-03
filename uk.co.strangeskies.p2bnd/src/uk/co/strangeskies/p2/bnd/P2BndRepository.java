@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
+] * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
  *
  * This file is part of uk.co.strangeskies.p2bnd.
  *
@@ -98,6 +98,7 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 	private Map<String, String> properties;
 	private Reporter reporter;
 
+	@SuppressWarnings("javadoc")
 	public static void main(String... args) throws Exception {
 		Map<String, String> map = new HashMap<>();
 		map.put("name", "TestName");
@@ -125,8 +126,8 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 			log.log(Level.INFO, "Setting framework URLS");
 			Set<URL> frameworkUrls = new HashSet<>();
 			try {
-				frameworkUrls.add(new URL(
-						"file:///home/eli/workspaces/uk.co.strangeskies/uk.co.strangeskies.p2bnd/org.eclipse.osgi.jar"));
+				frameworkUrls.add(
+						new URL("file:///home/eli/workspaces/uk.co.strangeskies/uk.co.strangeskies.p2bnd/org.eclipse.osgi.jar"));
 				frameworkUrls.add(new URL(
 						"file:///home/eli/workspaces/uk.co.strangeskies/cnf/release/uk.co.strangeskies.osgi.frameworkwrapper.provider/uk.co.strangeskies.osgi.frameworkwrapper.provider-1.0.13.jar"));
 			} catch (MalformedURLException e) {

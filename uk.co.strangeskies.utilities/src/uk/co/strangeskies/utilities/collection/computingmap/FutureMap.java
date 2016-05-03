@@ -29,7 +29,7 @@ import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import uk.co.strangeskies.utilities.EqualityComparator;
+import uk.co.strangeskies.utilities.EquivalenceComparator;
 
 public class FutureMap<K, V> implements ComputingMap<K, V> {
 	public class PreparationThread extends Thread {
@@ -105,7 +105,7 @@ public class FutureMap<K, V> implements ComputingMap<K, V> {
 	private final Function<K, V> mapping;
 
 	public FutureMap(Function<K, V> function) {
-		this(function, EqualityComparator.identityComparator());
+		this(function, EquivalenceComparator.identityComparator());
 	}
 
 	public FutureMap(Function<K, V> function, Comparator<K> comparator) {

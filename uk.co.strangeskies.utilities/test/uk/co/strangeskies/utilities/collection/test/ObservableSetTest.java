@@ -124,11 +124,11 @@ public class ObservableSetTest {
 	@Test
 	public void removeItemTest() {
 		ObservableSet<?, String> strings = ObservableSet.ofElements(STRINGS);
-		List<String> removed = removedList(strings);
+		Set<String> removed = removedSet(strings);
 
 		assertTrue(strings.remove(ONE));
 
-		assertEquals(asList(ONE), removed);
+		assertEquals(new HashSet<>(asList(ONE)), removed);
 	}
 
 	@Test
