@@ -20,22 +20,38 @@ package uk.co.strangeskies.utilities.text.test;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
-import static uk.co.strangeskies.utilities.text.Localizer.getKey;
+import static uk.co.strangeskies.utilities.text.LocaleManager.getManager;
 
 import java.util.Collection;
 import java.util.Locale;
 import java.util.function.Consumer;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import uk.co.strangeskies.utilities.IdentityProperty;
+import uk.co.strangeskies.utilities.text.LocaleManager;
 import uk.co.strangeskies.utilities.text.LocalizedString;
 import uk.co.strangeskies.utilities.text.Localizer;
 
 @SuppressWarnings("javadoc")
 public class LocalizerTest {
 	private static final String KEY_TRANSLATION_METHODS = "key.translation.methods";
+
+	private static Locale SYSTEM_LOCALE;
+
+	@BeforeClass
+	public static void setLocale() {
+		SYSTEM_LOCALE = Locale.getDefault();
+		Locale.setDefault(Locale.ENGLISH);
+	}
+
+	@AfterClass
+	public static void unsetLocale() {
+		Locale.setDefault(SYSTEM_LOCALE);
+	}
 
 	private interface KeyTranslationMethods {
 		void singleword();
@@ -82,67 +98,67 @@ public class LocalizerTest {
 
 			new KeyTranslation("singleCapitalEndI", "single.capital.end.i"));
 
-	public LocalizerTestText text(Localizer localizer) {
-		return localizer.getLocalization(LocalizerTestText.class);
+	public LocalizerTestText text(LocaleManager manager) {
+		return manager.getLocalizer().getLocalization(LocalizerTestText.class);
 	}
 
 	@Test
 	public void keyTranslationTest() throws NoSuchMethodException, SecurityException {
 		for (KeyTranslation translation : KEY_TRANSLATIONS) {
 			assertEquals(KEY_TRANSLATION_METHODS + "." + translation.key,
-					getKey(KeyTranslationMethods.class.getMethod(translation.string)));
+					Localizer.getKey(KeyTranslationMethods.class.getMethod(translation.string)));
 		}
 	}
 
 	@Test
 	public void localizerTest() {
-		new Localizer();
+		getManager();
 	}
 
 	@Test
 	public void localizationTest() {
-		text(new Localizer());
+		text(getManager());
 	}
 
 	@Test
 	public void simpleTextTest() {
-		LocalizerTestText text = text(new Localizer());
+		LocalizerTestText text = text(getManager());
 
 		assertEquals("simple property value", text.simple().toString());
 	}
 
 	@Test
 	public void languageTest() {
-		LocalizerTestText text = text(new Localizer(Locale.FRENCH));
+		LocalizerTestText text = text(getManager(Locale.FRENCH));
 
 		assertEquals("French simple property value", text.simple().toString());
 	}
 
 	@Test
 	public void languageDefaultTest() {
-		LocalizerTestText text = text(new Localizer(Locale.FRENCH));
+		LocalizerTestText text = text(getManager(Locale.FRENCH));
 
 		assertEquals("another simple property value", text.anotherSimple().toString());
 	}
 
 	@Test
 	public void languageChangeTest() {
-		Localizer localizer = new Localizer();
+		LocaleManager manager = getManager();
 
-		LocalizerTestText text = text(localizer);
+		LocalizerTestText text = text(manager);
 
 		assertEquals("simple property value", text.simple().toString());
 
-		localizer.setLocale(Locale.FRENCH);
+		manager.setLocale(Locale.FRENCH);
 
 		assertEquals("French simple property value", text.simple().toString());
 	}
 
 	@Test
 	public void localeChangeEventTest() {
-		Localizer localizer = new Localizer();
+		LocaleManager manager = getManager();
 
-		LocalizerTestText text = text(localizer);
+		LocalizerTestText text = text(manager);
 
 		IdentityProperty<String> result = new IdentityProperty<>();
 		Consumer<LocalizerTestText> observer = t -> {
@@ -150,7 +166,7 @@ public class LocalizerTest {
 		};
 		text.addObserver(observer);
 
-		localizer.setLocale(Locale.FRENCH);
+		manager.setLocale(Locale.FRENCH);
 
 		Assert.assertNotNull(result);
 		assertEquals("French simple property value", result.get());
@@ -158,9 +174,9 @@ public class LocalizerTest {
 
 	@Test
 	public void localeChangeStringEventTest() {
-		Localizer localizer = new Localizer();
+		LocaleManager manager = getManager();
 
-		LocalizedString string = text(localizer).simple();
+		LocalizedString string = text(manager).simple();
 
 		IdentityProperty<String> result = new IdentityProperty<>();
 		Consumer<String> observer = t -> {
@@ -168,7 +184,7 @@ public class LocalizerTest {
 		};
 		string.addObserver(observer);
 
-		localizer.setLocale(Locale.FRENCH);
+		manager.setLocale(Locale.FRENCH);
 
 		Assert.assertNotNull(result);
 		assertEquals("French simple property value", result.get());
@@ -176,9 +192,9 @@ public class LocalizerTest {
 
 	@Test
 	public void localeChangeStringNoEventTest() {
-		Localizer localizer = new Localizer();
+		LocaleManager manager = getManager();
 
-		LocalizedString string = text(localizer).anotherSimple();
+		LocalizedString string = text(manager).anotherSimple();
 
 		IdentityProperty<String> result = new IdentityProperty<>();
 		Consumer<String> observer = t -> {
@@ -186,35 +202,35 @@ public class LocalizerTest {
 		};
 		string.addObserver(observer);
 
-		localizer.setLocale(Locale.FRENCH);
+		manager.setLocale(Locale.FRENCH);
 
 		Assert.assertNull(result.get());
 	}
 
 	@Test
 	public void substitutionTextTest() {
-		LocalizerTestText text = text(new Localizer());
+		LocalizerTestText text = text(getManager());
 
 		assertEquals("value of substitution", text.substitution("substitution").toString());
 	}
 
 	@Test
 	public void missingTextTest() {
-		LocalizerTestText text = text(new Localizer());
+		LocalizerTestText text = text(getManager());
 
 		assertEquals("?localizer.test.missing.method?", text.missingMethod().toString());
 	}
 
 	@Test
 	public void defaultTextTest() {
-		LocalizerTestText text = text(new Localizer());
+		LocalizerTestText text = text(getManager());
 
 		assertEquals("value of default", text.defaultMethod().toString());
 	}
 
 	@Test
 	public void copyTextTest() {
-		LocalizerTestText text = text(new Localizer());
+		LocalizerTestText text = text(getManager());
 
 		assertEquals("simple property value", text.copy().simple().toString());
 	}

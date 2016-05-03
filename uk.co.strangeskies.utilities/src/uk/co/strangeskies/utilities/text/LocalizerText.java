@@ -19,11 +19,12 @@
 package uk.co.strangeskies.utilities.text;
 
 import java.lang.reflect.Method;
+import java.util.Locale;
 
 /**
  * A {@link LocalizedText} interface to provide localized texts for use by the
- * {@link Localizer} class itself, such as for reporting errors for improperly
- * structured localisation classes, etc.
+ * {@link LocalizerImpl} class itself, such as for reporting errors for
+ * improperly structured localisation classes, etc.
  * 
  * @author Elias N Vasylenko
  */
@@ -70,6 +71,15 @@ public interface LocalizerText extends LocalizedText<LocalizerText> {
 	 * @return no translation found for the given method
 	 */
 	default LocalizedString translationNotFound(Method method) {
-		return translationNotFound(Localizer.getKey(method));
+		return translationNotFound(LocalizerImpl.getKey(method));
 	}
+
+	/**
+	 * @param manager
+	 *          manager
+	 * @param locale
+	 *          the new locale
+	 * @return locale has been changed for manager
+	 */
+	LocalizedString localeChanged(LocaleManager manager, Locale locale);
 }

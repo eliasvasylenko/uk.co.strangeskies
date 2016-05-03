@@ -47,8 +47,8 @@ import uk.co.strangeskies.utilities.IdentityProperty;
  * 
  * @author Elias N Vasylenko
  * @param <T>
- *          The type of the object created by successful application of a
- *          {@link Parser} to a piece of text.
+ *          the type of the object created by successful application of the
+ *          {@link Parser} to a piece of text
  */
 public interface Parser<T> {
 	/**

@@ -20,62 +20,57 @@ package uk.co.strangeskies.osgi.text;
 
 import java.util.Arrays;
 import java.util.Locale;
-import java.util.Map;
 
+import org.osgi.framework.wiring.BundleWiring;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferenceCardinality;
-import org.osgi.service.component.annotations.ReferencePolicy;
 import org.osgi.service.component.annotations.ServiceScope;
 
-import uk.co.strangeskies.utilities.Log;
+import uk.co.strangeskies.utilities.Observable;
+import uk.co.strangeskies.utilities.text.LocalizedResourceBundle;
 import uk.co.strangeskies.utilities.text.LocalizedText;
 import uk.co.strangeskies.utilities.text.Localizer;
 
-@Component(service = Localizer.class, scope = ServiceScope.PROTOTYPE)
+@Component(scope = ServiceScope.PROTOTYPE)
 @SuppressWarnings("javadoc")
-public class LocalizerService extends Localizer {
-	private static final String DEFAULT_OSGI_LOCALIZATION_LOCATION = "OSGI-INF/l10n/bundle";
+public class LocalizerService implements Localizer {
+	private static final String DEFAULT_OSGI_LOCALIZATION_LOCATION = "OSGI-INF.l10n.bundle";
 	private static final String OSGI_LOCALIZATION_HEADER = "Bundle-Localization";
+
+	@Reference
+	LocaleManagerServiceImpl manager;
+	private Localizer component;
+
+	private ClassLoader classLoader;
 	private String osgiLocalizationLocation;
 
-	@Override
-	public void setLocale(Locale locale) {
-		if (!locale.equals(getLocale())) {
-			setLocaleImpl(locale);
+	/**
+	 * For automatic instantiation by the OSGi service manager
+	 */
+	public LocalizerService() {}
 
-			// TODO update config admin service
-		}
-	}
-
-	private void setLocaleImpl(Locale locale) {
-		super.setLocale(locale);
-	}
-
-	@Modified
-	public void update(Map<String, String> configuration) {
-		// TODO configure locale
-		// setLocaleImpl(newLocale);
-	}
-
-	@Override
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
-	public void setLog(Log log) {
-		super.setLog(log);
-	}
-
-	void unsetLog(Log log) {
-		setLog(null);
+	/**
+	 * For manual instantiation from a {@link LocaleManagerService} instance.
+	 * 
+	 * @param manager
+	 *          the initialising {@link LocaleManagerService} instance
+	 */
+	public LocalizerService(LocaleManagerService manager) {
+		this.manager = manager.getBackingManager();
+		activate(manager.getComponentContext());
 	}
 
 	@Activate
 	void activate(ComponentContext context) {
+		classLoader = context.getBundleContext().getBundle().adapt(BundleWiring.class).getClassLoader();
+
 		osgiLocalizationLocation = context.getUsingBundle().getHeaders().get(OSGI_LOCALIZATION_HEADER);
 		if (osgiLocalizationLocation == null)
 			osgiLocalizationLocation = DEFAULT_OSGI_LOCALIZATION_LOCATION;
+
+		component = manager.getLocalizer();
 	}
 
 	@Override
@@ -84,6 +79,26 @@ public class LocalizerService extends Localizer {
 		String[] extraLocations = Arrays.copyOf(locations, locations.length + 1);
 		extraLocations[locations.length] = osgiLocalizationLocation;
 
-		return super.getLocalization(accessor, classLoader, extraLocations);
+		return component.getLocalization(accessor, classLoader, extraLocations);
+	}
+
+	@Override
+	public <T extends LocalizedText<T>> T getLocalization(Class<T> accessor, String... locations) {
+		return getLocalization(accessor, classLoader, locations);
+	}
+
+	@Override
+	public Locale getLocale() {
+		return manager.getLocale();
+	}
+
+	@Override
+	public Observable<Locale> locale() {
+		return manager;
+	}
+
+	@Override
+	public <T extends LocalizedText<T>> T getLocalization(Class<T> accessor, LocalizedResourceBundle bundle) {
+		return component.getLocalization(accessor, bundle);
 	}
 }

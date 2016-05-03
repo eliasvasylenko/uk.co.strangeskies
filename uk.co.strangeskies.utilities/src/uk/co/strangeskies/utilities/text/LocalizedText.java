@@ -27,16 +27,16 @@ import uk.co.strangeskies.utilities.Self;
 /**
  * A super-interface for fetching localised text items. Users should not
  * implement this class, instead they should define sub-interfaces, allowing
- * implementations to be automatically provided by the {@link Localizer} class.
+ * implementations to be automatically provided by the {@link LocalizerImpl} class.
  * <p>
  * User provided methods should all return {@link LocalizedString}, which will
- * be provided by the {@link Localizer} and updated when the {@link Locale} is
+ * be provided by the {@link LocalizerImpl} and updated when the {@link Locale} is
  * changed.
  * <p>
  * A key is generated for each method based on the class name and the method
  * name, to look up a property from the {@link ResourceBundle} provided by the
- * {@link Localizer} according to
- * {@link Localizer#getKey(java.lang.reflect.Method)}. The key generation rules
+ * {@link LocalizerImpl} according to
+ * {@link LocalizerImpl#getKey(java.lang.reflect.Method)}. The key generation rules
  * can be overridden for a given method by annotating with
  * {@link LocalizationKey}.
  * <p>
