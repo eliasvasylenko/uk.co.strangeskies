@@ -36,7 +36,9 @@ import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ObservableValue;
@@ -45,6 +47,8 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
 import uk.co.strangeskies.fx.FXUtilities;
+import uk.co.strangeskies.osgi.ServiceWiringException;
+import uk.co.strangeskies.utilities.text.Localizer;
 
 /**
  * Supplier for {@link Service}
@@ -115,6 +119,16 @@ public class ObservableServiceSupplier extends ExtendedObjectSupplier {
 		}
 	}
 
+	@Reference
+	Localizer generalLocalizer;
+	private ObservableServiceSupplierText text;
+
+	@Activate
+	void activate() {
+		text = generalLocalizer.getLocalization(ObservableServiceSupplierText.class);
+		System.out.println(text.illegalInjectionTarget());
+	}
+
 	@Override
 	public Object get(IObjectDescriptor descriptor, IRequestor requestor, boolean track, boolean group) {
 		try {
@@ -138,14 +152,11 @@ public class ObservableServiceSupplier extends ExtendedObjectSupplier {
 				}
 			}
 
-			throw new IllegalArgumentException("The " + ObservableService.class.getSimpleName()
-					+ " annotation should be used with injection targets of parameterized type "
-					+ ObservableList.class.getSimpleName() + ", " + ObservableSet.class.getSimpleName() + " or "
-					+ ObservableValue.class.getSimpleName());
-		} catch (RuntimeException e) {
+			throw new ServiceWiringException(text.illegalInjectionTarget());
+		} catch (ServiceWiringException e) {
 			throw e;
 		} catch (Exception e) {
-			throw new RuntimeException(e);
+			throw new ServiceWiringException(text.unexpectedError(), e);
 		}
 	}
 }

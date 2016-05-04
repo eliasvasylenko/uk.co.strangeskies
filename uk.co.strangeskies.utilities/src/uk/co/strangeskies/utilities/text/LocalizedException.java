@@ -44,7 +44,7 @@ public abstract class LocalizedException extends Exception {
 	 * @param cause
 	 *          the cause
 	 */
-	public LocalizedException(LocalizedString message, Locale developerLocale, Throwable cause) {
+	protected LocalizedException(LocalizedString message, Locale developerLocale, Throwable cause) {
 		super(message.toString(developerLocale), cause);
 		this.message = message;
 	}
@@ -57,7 +57,7 @@ public abstract class LocalizedException extends Exception {
 	 * @param developerLocale
 	 *          the developer's locale
 	 */
-	public LocalizedException(LocalizedString message, Locale developerLocale) {
+	protected LocalizedException(LocalizedString message, Locale developerLocale) {
 		this(message, developerLocale, null);
 	}
 

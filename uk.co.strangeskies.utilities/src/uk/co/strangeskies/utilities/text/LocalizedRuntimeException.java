@@ -21,7 +21,7 @@ package uk.co.strangeskies.utilities.text;
 import java.util.Locale;
 
 /**
- * A localized runtime exception class. Exception messages are more frequently
+ * A localised runtime exception class. Exception messages are more frequently
  * for developers than for users, so the message returned by
  * {@link #getMessage()} should always be in the developer's language, which is
  * assumed to be English by default. Constructor overloads are provided for

@@ -31,6 +31,7 @@ import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Log.Level;
 import uk.co.strangeskies.utilities.Observable;
+import uk.co.strangeskies.utilities.classpath.DelegatingClassLoader;
 import uk.co.strangeskies.utilities.collection.computingmap.CacheComputingMap;
 import uk.co.strangeskies.utilities.collection.computingmap.ComputingMap;
 
@@ -127,7 +128,7 @@ class LocalizerImpl implements Localizer {
 	private final LocalizerText text;
 
 	/**
-	 * Create a new {@link LocalizerImpl} instance for the given initial locale.
+	 * Create a new {@link Localizer} instance for the given initial locale.
 	 * 
 	 * @param locale
 	 *          the initial locale
@@ -196,7 +197,7 @@ class LocalizerImpl implements Localizer {
 		}
 
 		if (!localizable.accessor.isInterface()) {
-			throw log(Level.ERROR, new IllegalArgumentException(text.mustBeInterface(localizable.accessor).toString()));
+			throw log(Level.ERROR, new LocalizationException(text.mustBeInterface(localizable.accessor)));
 		}
 
 		for (Method method : localizable.accessor.getMethods()) {
@@ -207,15 +208,17 @@ class LocalizerImpl implements Localizer {
 				 * ensure return type of method is String
 				 */
 				if (!method.getReturnType().equals(LocalizedString.class)) {
-					throw log(Level.ERROR,
-							new IllegalArgumentException(text.illegalReturnType(localizable.accessor, method).toString()));
+					throw log(Level.ERROR, new LocalizationException(text.illegalReturnType(localizable.accessor, method)));
 				}
 			}
 		}
 
+		ClassLoader classLoader = new DelegatingClassLoader(getClass().getClassLoader(),
+				localizable.accessor.getClassLoader());
+
 		IdentityProperty<LocalizationTextDelegate<T>> helper = new IdentityProperty<>();
 
-		T proxy = (T) Proxy.newProxyInstance(localizable.accessor.getClassLoader(), new Class<?>[] { localizable.accessor },
+		T proxy = (T) Proxy.newProxyInstance(classLoader, new Class<?>[] { localizable.accessor },
 				(Object p, Method method, Object[] args) -> {
 					MethodSignature signature = new MethodSignature(method);
 
@@ -298,21 +301,5 @@ class LocalizerImpl implements Localizer {
 	@Override
 	public <T extends LocalizedText<T>> T getLocalization(Class<T> accessor, LocalizedResourceBundle bundle) {
 		return getLocalization(new Localizable<>(accessor, bundle));
-	}
-
-	@Override
-	public <T extends LocalizedText<T>> T getLocalization(Class<T> accessor, ClassLoader classLoader,
-			String... locations) {
-		return getLocalization(accessor, LocalizedResourceBundle.getBundle(classLoader, locale.getLocale(), locations));
-	}
-
-	@Override
-	public <T extends LocalizedText<T>> T getLocalization(Class<T> accessor, String... locations) {
-		return getLocalization(accessor, accessor.getClassLoader(), locations);
-	}
-
-	@Override
-	public <T extends LocalizedText<T>> T getLocalization(Class<T> accessor) {
-		return getLocalization(accessor, removeTextPostfix(accessor.getName()));
 	}
 }

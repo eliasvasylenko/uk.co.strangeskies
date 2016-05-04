@@ -6,6 +6,7 @@ Bundle-Name: Strange Skies :: Utilities :: Eclipse
 	${ss;fx},\
 	${ss;mathematics},\
 	${ss;reflection},\
+	${ss;osgi.api},\
 	org.eclipse.osgi.compatibility.state,\
 	org.eclipse.osgi
 
@@ -28,5 +29,5 @@ Private-Package: \
 	org.eclipse.osgi.internal.resolver,\
 	org.eclipse.osgi.internal.util
 
-Include-Resource: \
-	OSGI-INF/l10n = l10n
+-includeresource: \
+	OSGI-INF/l10n=l10n

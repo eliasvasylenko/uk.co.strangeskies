@@ -24,29 +24,39 @@ import java.util.List;
 import org.eclipse.e4.core.di.suppliers.ExtendedObjectSupplier;
 import org.eclipse.e4.core.di.suppliers.IObjectDescriptor;
 import org.eclipse.e4.core.di.suppliers.IRequestor;
-import org.eclipse.e4.core.internal.contexts.ContextObjectSupplier;
-import org.eclipse.e4.core.internal.di.Requestor;
-import org.eclipse.fx.core.di.Service;
-import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.Types;
-import uk.co.strangeskies.utilities.text.LocalizedRuntimeException;
+import uk.co.strangeskies.utilities.text.LocalizationException;
 import uk.co.strangeskies.utilities.text.LocalizedText;
 import uk.co.strangeskies.utilities.text.Localizer;
 
 /**
- * Supplier for {@link Service}
+ * Supplier for Eclipse DI contexts, to provide localisation implementations of
+ * a requested type via a {@link Localizer}.
  *
  * @since 1.2
  */
 @Component(service = ExtendedObjectSupplier.class, property = "dependency.injection.annotation:String=uk.co.strangeskies.eclipse.Localize")
 public class LocalizationSupplier extends ExtendedObjectSupplier {
+	@Reference
+	Localizer generalLocalizer;
+	private LocalizationSupplierText text;
+
+	@Activate
+	void activate() {
+		text = generalLocalizer.getLocalization(LocalizationSupplierText.class);
+		System.out.println(text.unexpectedError());
+	}
+
 	@Override
 	public Object get(IObjectDescriptor descriptor, IRequestor requestor, boolean track, boolean group) {
 		try {
@@ -55,25 +65,21 @@ public class LocalizationSupplier extends ExtendedObjectSupplier {
 			if (validateAccessorType(accessor)) {
 				return localizeAccessor(requestor, (Class<?>) accessor);
 			} else {
-				throw new LocalizedRuntimeException(text.invalidTypeForLocalizationSupplier()) {
-					private static final long serialVersionUID = 1L;
-				};
+				throw new LocalizationException(text.illegalInjectionTarget());
 			}
-		} catch (RuntimeException e) {
+		} catch (LocalizationException e) {
 			throw e;
 		} catch (Exception e) {
-			throw new RuntimeException(e);
+			throw new LocalizationException(text.unexpectedError(), e);
 		}
 	}
 
 	@SuppressWarnings("unchecked")
 	private <T extends LocalizedText<T>> Object localizeAccessor(IRequestor requestor, Class<?> accessor) {
-		BundleContext context = getBundleContext(requestor);
+		BundleContext context = FrameworkUtil.getBundle(accessor).getBundleContext();
 
 		ServiceReference<Localizer> localizerServiceRererence = context.getServiceReference(Localizer.class);
 		Localizer localizer = context.getService(localizerServiceRererence);
-
-		EclipseUtilitiesText text = localizer.getLocalization(EclipseUtilitiesText.class);
 
 		T localization = localizer.getLocalization((Class<T>) accessor);
 
@@ -82,20 +88,15 @@ public class LocalizationSupplier extends ExtendedObjectSupplier {
 			public void serviceChanged(ServiceEvent event) {
 				if (event.getType() == ServiceEvent.UNREGISTERING
 						&& event.getServiceReference().equals(localizerServiceRererence)) {
-					requestor.resolveArguments(false);
-					requestor.execute();
-					context.ungetService(localizerServiceRererence);
+					try {
+						requestor.resolveArguments(false);
+						requestor.execute();
+					} catch (Exception e) {}
 				}
 			}
 		});
 
 		return localization;
-	}
-
-	private BundleContext getBundleContext(IRequestor requestor) {
-		Requestor<?> requestorInternal = (Requestor<?>) requestor;
-		ContextObjectSupplier supplierInternal = (ContextObjectSupplier) requestorInternal.getPrimarySupplier();
-		return supplierInternal.getContext().get(Bundle.class).getBundleContext();
 	}
 
 	private boolean validateAccessorType(Type accessor) {

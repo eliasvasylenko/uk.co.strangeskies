@@ -1,5 +1,5 @@
 language: Python
 #Private-Package:\
 #	org.python.**
-#Include-Resource:\
+#-includeresource:\
 #	@${exporters;org.luaj}.jar!/META-INF/services/*

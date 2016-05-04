@@ -29,17 +29,14 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceReference;
-import org.osgi.framework.hooks.service.EventListenerHook;
-import org.osgi.framework.hooks.service.FindHook;
 import org.osgi.framework.hooks.service.ListenerHook.ListenerInfo;
-import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 
 import uk.co.strangeskies.osgi.servicewrapper.ServiceWrapper;
-import uk.co.strangeskies.osgi.servicewrapper.ServiceWrapperManager;
 import uk.co.strangeskies.osgi.servicewrapper.ServiceWrapper.HideServices;
+import uk.co.strangeskies.osgi.servicewrapper.ServiceWrapperManager;
 import uk.co.strangeskies.utilities.collection.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.MultiMap;
 
@@ -50,7 +47,7 @@ import uk.co.strangeskies.utilities.collection.MultiMap;
  * @author Elias N Vasylenko
  * 
  */
-@Component(service = { EventListenerHook.class, FindHook.class })
+//@Component(service = { EventListenerHook.class, FindHook.class })
 public class ServiceWrapperManagerImpl implements ServiceWrapperManager {
 	private final MultiMap<Class<?>, ManagedServiceWrapper<?>, ? extends Set<ManagedServiceWrapper<?>>> wrappedServiceClasses;
 	private final Map<ServiceWrapper<?>, ManagedServiceWrapper<?>> managedServiceWrappers;

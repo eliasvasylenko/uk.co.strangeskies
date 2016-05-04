@@ -18,7 +18,7 @@ import uk.co.strangeskies.utilities.Observable;
 public interface Localizer {
 	/**
 	 * @return the current locale of all localised texts implemented by this
-	 *         {@link LocalizerImpl}
+	 *         {@link Localizer}
 	 */
 	Locale getLocale();
 

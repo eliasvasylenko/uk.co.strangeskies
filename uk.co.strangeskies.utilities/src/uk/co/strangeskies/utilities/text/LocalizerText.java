@@ -23,8 +23,8 @@ import java.util.Locale;
 
 /**
  * A {@link LocalizedText} interface to provide localized texts for use by the
- * {@link LocalizerImpl} class itself, such as for reporting errors for
- * improperly structured localisation classes, etc.
+ * {@link Localizer} class itself, such as for reporting errors for improperly
+ * structured localisation classes, etc.
  * 
  * @author Elias N Vasylenko
  */
@@ -59,19 +59,35 @@ public interface LocalizerText extends LocalizedText<LocalizerText> {
 	}
 
 	/**
-	 * @param method
+	 * @param key
 	 *          the method to find a translation for
-	 * @return no translation found for the given method
+	 * @return substitution when no translation is found for the given method
 	 */
-	LocalizedString translationNotFound(String method);
+	LocalizedString translationNotFoundFor(String key);
 
 	/**
 	 * @param method
 	 *          the method to find a translation for
-	 * @return no translation found for the given method
+	 * @return substitution when no translation is found for the given method
 	 */
-	default LocalizedString translationNotFound(Method method) {
-		return translationNotFound(LocalizerImpl.getKey(method));
+	default LocalizedString translationNotFoundFor(Method method) {
+		return translationNotFoundFor(LocalizerImpl.getKey(method));
+	}
+
+	/**
+	 * @param key
+	 *          the method to find a translation for
+	 * @return no translation for the given method
+	 */
+	LocalizedString translationNotFoundMessage(String key);
+
+	/**
+	 * @param method
+	 *          the method to find a translation for
+	 * @return no translation for the given method
+	 */
+	default LocalizedString translationNotFoundMessage(Method method) {
+		return translationNotFoundMessage(LocalizerImpl.getKey(method));
 	}
 
 	/**

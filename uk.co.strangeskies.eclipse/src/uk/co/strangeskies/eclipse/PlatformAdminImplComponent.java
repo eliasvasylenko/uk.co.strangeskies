@@ -53,7 +53,7 @@ public class PlatformAdminImplComponent implements PlatformAdmin {
 	 */
 	@Activate
 	public void activate(BundleContext context) throws Exception {
-		Method start = platformAdmin.getClass().getMethod("start", BundleContext.class);
+		Method start = platformAdmin.getClass().getDeclaredMethod("start", BundleContext.class);
 		start.setAccessible(true);
 		start.invoke(platformAdmin, context);
 	}
@@ -68,7 +68,7 @@ public class PlatformAdminImplComponent implements PlatformAdmin {
 	 */
 	@Deactivate
 	public void deactivate(BundleContext context) throws Exception {
-		Method stop = platformAdmin.getClass().getMethod("stop", BundleContext.class);
+		Method stop = platformAdmin.getClass().getDeclaredMethod("stop", BundleContext.class);
 		stop.setAccessible(true);
 		stop.invoke(platformAdmin, context);
 	}

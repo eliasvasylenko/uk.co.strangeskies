@@ -1,5 +1,5 @@
 language: Frege
 #Private-Package:\
 #	frege.**
-#Include-Resource:\
+#-includeresource:\
 #	META-INF/services/javax.script.ScriptEngineFactory=res/frege/javax.script.ScriptEngineFactory

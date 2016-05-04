@@ -6,6 +6,6 @@ Private-Package:\
 	groovyjarjarcommonscli, \
 	org.codehaus.groovy, \
 	org.codehaus.groovy.jsr223
-Include-Resource:\
+-includeresource:\
 	@${exporters;groovy.lang}.jar!/META-INF/**, \
 	@${exporters;org.codehaus.groovy.jsr223}.jar!/META-INF/**

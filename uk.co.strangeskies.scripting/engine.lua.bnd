@@ -3,5 +3,5 @@ language: Lua
 Private-Package: \
 	org.luaj.**
 
-Include-Resource: \
+-includeresource: \
 	@${exporters;org.luaj}.jar!/META-INF/services/*

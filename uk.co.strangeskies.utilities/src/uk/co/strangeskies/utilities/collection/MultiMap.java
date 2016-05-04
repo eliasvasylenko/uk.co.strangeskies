@@ -23,6 +23,19 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 
+/**
+ * TODO system for returning proxy collections that automatically add/remove the
+ * entry from the map when they become non-empty/empty.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <K>
+ *          key type
+ * @param <V>
+ *          element value type
+ * @param <C>
+ *          element collection type
+ */
 public interface MultiMap<K, V, C extends Collection<V>> extends Map<K, C> {
 	public C createCollection();
 
@@ -58,16 +71,14 @@ public interface MultiMap<K, V, C extends Collection<V>> extends Map<K, C> {
 	public default boolean addAll(MultiMap<? extends K, ? extends V, ?> values) {
 		boolean added = false;
 
-		for (Map.Entry<? extends K, ? extends Collection<? extends V>> entry : values
-				.entrySet()) {
+		for (Map.Entry<? extends K, ? extends Collection<? extends V>> entry : values.entrySet()) {
 			added = addAll(entry.getKey(), entry.getValue()) || added;
 		}
 
 		return added;
 	}
 
-	public default boolean addAll(K key,
-			@SuppressWarnings("unchecked") V... values) {
+	public default boolean addAll(K key, @SuppressWarnings("unchecked") V... values) {
 		return addAll(key, Arrays.asList(values));
 	}
 
@@ -93,8 +104,7 @@ public interface MultiMap<K, V, C extends Collection<V>> extends Map<K, C> {
 		return added;
 	}
 
-	public default boolean addAllToAll(Collection<? extends K> keys,
-			Collection<? extends V> values) {
+	public default boolean addAllToAll(Collection<? extends K> keys, Collection<? extends V> values) {
 		boolean added = false;
 
 		for (K key : keys) {
@@ -128,8 +138,7 @@ public interface MultiMap<K, V, C extends Collection<V>> extends Map<K, C> {
 		return removed;
 	}
 
-	public default boolean removeAll(K key,
-			@SuppressWarnings("unchecked") V... values) {
+	public default boolean removeAll(K key, @SuppressWarnings("unchecked") V... values) {
 		return addAll(key, Arrays.asList(values));
 	}
 
@@ -161,8 +170,7 @@ public interface MultiMap<K, V, C extends Collection<V>> extends Map<K, C> {
 		return removeAllFromAll(keySet(), values);
 	}
 
-	public default boolean removeAllFromAll(
-			@SuppressWarnings("unchecked") V... values) {
+	public default boolean removeAllFromAll(@SuppressWarnings("unchecked") V... values) {
 		return removeAllFromAll(Arrays.asList(values));
 	}
 
@@ -175,8 +183,7 @@ public interface MultiMap<K, V, C extends Collection<V>> extends Map<K, C> {
 		return removed;
 	}
 
-	public default boolean removeAllFromAll(Collection<? extends K> keys,
-			Collection<? extends V> values) {
+	public default boolean removeAllFromAll(Collection<? extends K> keys, Collection<? extends V> values) {
 		boolean removed = false;
 
 		for (K key : keys) {
@@ -205,7 +212,10 @@ public interface MultiMap<K, V, C extends Collection<V>> extends Map<K, C> {
 		C allValues = createCollection();
 
 		for (K key : keys) {
-			allValues.addAll(get(key));
+			C values = get(key);
+			if (values != null) {
+				allValues.addAll(values);
+			}
 		}
 
 		return allValues;

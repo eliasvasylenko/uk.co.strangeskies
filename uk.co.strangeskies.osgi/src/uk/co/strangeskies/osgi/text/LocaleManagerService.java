@@ -58,14 +58,14 @@ public class LocaleManagerService implements LocaleManager {
 	/**
 	 * @return the {@link LocaleManagerServiceImpl} instance backing this service
 	 */
-	public LocaleManagerServiceImpl getBackingManager() {
+	LocaleManagerServiceImpl getBackingManager() {
 		return manager;
 	}
 
 	/**
 	 * @return the component context this service was initialised with
 	 */
-	public ComponentContext getComponentContext() {
+	ComponentContext getComponentContext() {
 		return context;
 	}
 }

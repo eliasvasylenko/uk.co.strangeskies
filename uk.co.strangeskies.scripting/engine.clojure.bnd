@@ -1,5 +1,5 @@
 language: Clojure
 Private-Package:  \
 	clojure.**
-Include-Resource:\
+-includeresource:\
 	@${exporters;clojure.contrib.jsr223}.jar!/META-INF/services/*

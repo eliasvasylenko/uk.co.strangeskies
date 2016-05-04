@@ -64,7 +64,7 @@ public class LocalizerService implements Localizer {
 
 	@Activate
 	void activate(ComponentContext context) {
-		classLoader = context.getBundleContext().getBundle().adapt(BundleWiring.class).getClassLoader();
+		classLoader = context.getUsingBundle().adapt(BundleWiring.class).getClassLoader();
 
 		osgiLocalizationLocation = context.getUsingBundle().getHeaders().get(OSGI_LOCALIZATION_HEADER);
 		if (osgiLocalizationLocation == null)

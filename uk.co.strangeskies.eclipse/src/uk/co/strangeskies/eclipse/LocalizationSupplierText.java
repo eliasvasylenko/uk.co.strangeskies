@@ -8,13 +8,13 @@ import uk.co.strangeskies.utilities.text.LocalizedText;
  * 
  * @author Elias N Vasylenko
  */
-public interface EclipseUtilitiesText extends LocalizedText<EclipseUtilitiesText> {
+public interface LocalizationSupplierText extends LocalizedText<LocalizationSupplierText> {
 	/**
 	 * @return invalid type was annotated with {@link Localize} for localisation
 	 *         supplier
 	 */
-	default LocalizedString invalidTypeForLocalizationSupplier() {
-		return invalidTypeForLocalizationSupplier(Localize.class, LocalizedText.class);
+	default LocalizedString illegalInjectionTarget() {
+		return illegalInjectionTarget(Localize.class, LocalizedText.class);
 	}
 
 	/**
@@ -25,6 +25,11 @@ public interface EclipseUtilitiesText extends LocalizedText<EclipseUtilitiesText
 	 * @return invalid type was annotated with {@link Localize} for localisation
 	 *         supplier
 	 */
-	LocalizedString invalidTypeForLocalizationSupplier(Class<Localize> localizeClass,
+	LocalizedString illegalInjectionTarget(Class<Localize> localizeClass,
 			@SuppressWarnings("rawtypes") Class<LocalizedText> localizedTextClass);
+
+	/**
+	 * @return an unexpected error occurred
+	 */
+	LocalizedString unexpectedError();
 }

@@ -14,11 +14,19 @@ import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.text.LocaleManager;
 import uk.co.strangeskies.utilities.text.Localizer;
 
+/**
+ * A locale manager configurable via the config admin service.
+ * 
+ * @author Elias N Vasylenko
+ */
 @Component(service = LocaleManagerServiceImpl.class)
-class LocaleManagerServiceImpl implements LocaleManager {
+public class LocaleManagerServiceImpl implements LocaleManager {
 	private final LocaleManager component;
 	private Log log;
 
+	/**
+	 * Create empty manager
+	 */
 	public LocaleManagerServiceImpl() {
 		component = LocaleManager.getManager(Locale.getDefault(), new Log() {
 			@Override

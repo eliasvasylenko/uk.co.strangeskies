@@ -30,7 +30,8 @@ import uk.co.strangeskies.utilities.text.LocalizedText;
 
 /**
  * Marks an {@link Inject} field as requiring an implementation of a
- * {@link LocalizedText localisation text interface}.
+ * {@link LocalizedText localisation text interface}. The injection will
+ * typically be provided by {@link LocalizationSupplier}.
  * 
  * @author Elias N Vasylenko
  */

@@ -23,7 +23,8 @@ import java.util.Locale;
 import java.util.function.Consumer;
 
 final class DefaultLocalizerText implements LocalizerText {
-	private static final String TRANSLATION_NOT_FOUND = "Translation not found for method";
+	private static final String TRANSLATION_NOT_FOUND = "?";
+	private static final String TRANSLATION_NOT_FOUND_MESSAGE = "Translation not found for method";
 	private static final String MUST_BE_INTERFACE = "Localization accessor must be interface";
 	private static final String ILLEGAL_RETURN_TYPE = "Return type must be " + LocalizedString.class.getName();
 	private static final String LOCALE_CHANGED = "Locale changed";
@@ -34,8 +35,13 @@ final class DefaultLocalizerText implements LocalizerText {
 	}
 
 	@Override
-	public LocalizedString translationNotFound(String method) {
-		return englishString(TRANSLATION_NOT_FOUND + ": " + method);
+	public LocalizedString translationNotFoundFor(String key) {
+		return englishString(TRANSLATION_NOT_FOUND + key + TRANSLATION_NOT_FOUND);
+	}
+
+	@Override
+	public LocalizedString translationNotFoundMessage(String key) {
+		return englishString(TRANSLATION_NOT_FOUND_MESSAGE + ": " + key);
 	}
 
 	@Override
