@@ -54,7 +54,7 @@ public class LocalizationSupplier extends ExtendedObjectSupplier {
 	@Activate
 	void activate() {
 		text = generalLocalizer.getLocalization(LocalizationSupplierText.class);
-		System.out.println(text.unexpectedError());
+		System.out.println(text.illegalInjectionTarget());
 	}
 
 	@Override

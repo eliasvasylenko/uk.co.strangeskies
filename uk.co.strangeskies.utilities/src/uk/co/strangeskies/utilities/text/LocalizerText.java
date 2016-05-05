@@ -97,5 +97,5 @@ public interface LocalizerText extends LocalizedText<LocalizerText> {
 	 *          the new locale
 	 * @return locale has been changed for manager
 	 */
-	LocalizedString localeChanged(LocaleManager manager, Locale locale);
+	LocalizedString localeChanged(LocaleProvider manager, Locale locale);
 }

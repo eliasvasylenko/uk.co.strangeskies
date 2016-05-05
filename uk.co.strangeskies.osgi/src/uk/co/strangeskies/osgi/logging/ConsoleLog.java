@@ -32,22 +32,15 @@ import org.osgi.service.log.LogListener;
 import org.osgi.service.log.LogReaderService;
 import org.osgi.service.log.LogService;
 
+import uk.co.strangeskies.osgi.ConsoleLogConstants;
+
 /**
  * {@link LogListener} implementation dumping all logs to console
  * 
  * @author Elias N Vasylenko
  */
-@Component(configurationPid = ConsoleLog.CONFIGURATION_PID, configurationPolicy = ConfigurationPolicy.REQUIRE, immediate = true)
+@Component(configurationPid = ConsoleLogConstants.CONFIGURATION_PID, configurationPolicy = ConfigurationPolicy.REQUIRE, immediate = true)
 public class ConsoleLog implements LogListener {
-	/**
-	 * Configuration pid for OSGi configuration
-	 */
-	public static final String CONFIGURATION_PID = "uk.co.strangeskies.log.console";
-	/**
-	 * Key for boolean enabling configuration
-	 */
-	public static final String ENABLED_KEY = "enabled";
-
 	private boolean enabled;
 
 	@Reference(cardinality = ReferenceCardinality.MULTIPLE, policy = ReferencePolicy.DYNAMIC)
@@ -63,7 +56,9 @@ public class ConsoleLog implements LogListener {
 
 	@Modified
 	void updated(Map<String, String> configuration) {
-		enabled = Boolean.parseBoolean(configuration.get(ENABLED_KEY));
+		if (configuration != null) {
+			enabled = Boolean.parseBoolean(configuration.get(ConsoleLogConstants.ENABLED_KEY));
+		}
 	}
 
 	@Override

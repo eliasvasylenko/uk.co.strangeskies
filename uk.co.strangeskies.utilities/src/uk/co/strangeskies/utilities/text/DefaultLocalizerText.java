@@ -55,7 +55,7 @@ final class DefaultLocalizerText implements LocalizerText {
 	}
 
 	@Override
-	public LocalizedString localeChanged(LocaleManager manager, Locale locale) {
+	public LocalizedString localeChanged(LocaleProvider manager, Locale locale) {
 		return englishString(LOCALE_CHANGED + ": " + locale);
 	}
 

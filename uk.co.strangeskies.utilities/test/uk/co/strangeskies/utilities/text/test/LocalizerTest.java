@@ -99,7 +99,7 @@ public class LocalizerTest {
 			new KeyTranslation("singleCapitalEndI", "single.capital.end.i"));
 
 	public LocalizerTestText text(LocaleManager manager) {
-		return manager.getLocalizer().getLocalization(LocalizerTestText.class);
+		return Localizer.getLocalizer(manager).getLocalization(LocalizerTestText.class);
 	}
 
 	@Test

@@ -4,6 +4,7 @@ import java.lang.reflect.Method;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
+import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Observable;
 
 /**
@@ -124,5 +125,31 @@ public interface Localizer {
 	 */
 	static String getKey(Method method) {
 		return LocalizerImpl.getKey(method);
+	}
+
+	/**
+	 * Get a simple {@link Localizer} implementation over the given locale
+	 * provider.
+	 * 
+	 * @param provider
+	 *          a provider to establish a locale setting
+	 * @return a {@link Localizer} for the given locale
+	 */
+	static Localizer getLocalizer(LocaleProvider provider) {
+		return getLocalizer(provider, null);
+	}
+
+	/**
+	 * Get a simple {@link Localizer} implementation over the given locale
+	 * provider.
+	 * 
+	 * @param provider
+	 *          a provider to establish a locale setting
+	 * @param log
+	 *          a log for localisation information
+	 * @return a {@link Localizer} for the given locale
+	 */
+	static Localizer getLocalizer(LocaleProvider provider, Log log) {
+		return new LocalizerImpl(provider, log);
 	}
 }

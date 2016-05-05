@@ -122,7 +122,7 @@ class LocalizerImpl implements Localizer {
 	private final ComputingMap<Localizable<?>, LocalizedText<?>> LOCALIZATION_CACHE;
 	private final Constructor<MethodHandles.Lookup> methodHandleConstructor;
 
-	private final LocaleManager locale;
+	private final LocaleProvider locale;
 	private Log log;
 
 	private final LocalizerText text;
@@ -135,7 +135,7 @@ class LocalizerImpl implements Localizer {
 	 * @param log
 	 *          the log for localisation
 	 */
-	public LocalizerImpl(LocaleManager locale, Log log) {
+	public LocalizerImpl(LocaleProvider locale, Log log) {
 		try {
 			methodHandleConstructor = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class, int.class);
 		} catch (NoSuchMethodException | SecurityException e) {
@@ -151,6 +151,12 @@ class LocalizerImpl implements Localizer {
 		this.log = log;
 
 		text = getLocalization(LocalizerText.class);
+
+		if (log != null) {
+			locale().addObserver(l -> {
+				log.log(Level.INFO, getText().localeChanged(locale, getLocale()).toString());
+			});
+		}
 	}
 
 	public LocalizerText getText() {

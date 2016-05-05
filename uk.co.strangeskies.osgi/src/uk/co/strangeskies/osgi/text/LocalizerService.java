@@ -26,9 +26,12 @@ import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ServiceScope;
 
+import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Observable;
+import uk.co.strangeskies.utilities.text.LocaleProvider;
 import uk.co.strangeskies.utilities.text.LocalizedResourceBundle;
 import uk.co.strangeskies.utilities.text.LocalizedText;
 import uk.co.strangeskies.utilities.text.Localizer;
@@ -40,7 +43,9 @@ public class LocalizerService implements Localizer {
 	private static final String OSGI_LOCALIZATION_HEADER = "Bundle-Localization";
 
 	@Reference
-	LocaleManagerServiceImpl manager;
+	LocaleProvider provider;
+	@Reference(cardinality = ReferenceCardinality.OPTIONAL)
+	Log log;
 	private Localizer component;
 
 	private ClassLoader classLoader;
@@ -51,17 +56,6 @@ public class LocalizerService implements Localizer {
 	 */
 	public LocalizerService() {}
 
-	/**
-	 * For manual instantiation from a {@link LocaleManagerService} instance.
-	 * 
-	 * @param manager
-	 *          the initialising {@link LocaleManagerService} instance
-	 */
-	public LocalizerService(LocaleManagerService manager) {
-		this.manager = manager.getBackingManager();
-		activate(manager.getComponentContext());
-	}
-
 	@Activate
 	void activate(ComponentContext context) {
 		classLoader = context.getUsingBundle().adapt(BundleWiring.class).getClassLoader();
@@ -70,7 +64,21 @@ public class LocalizerService implements Localizer {
 		if (osgiLocalizationLocation == null)
 			osgiLocalizationLocation = DEFAULT_OSGI_LOCALIZATION_LOCATION;
 
-		component = manager.getLocalizer();
+		component = Localizer.getLocalizer(provider, new Log() {
+			@Override
+			public void log(Level level, String message) {
+				if (log != null) {
+					log.log(level, message);
+				}
+			}
+
+			@Override
+			public void log(Level level, String message, Throwable exception) {
+				if (log != null) {
+					log.log(level, message, exception);
+				}
+			}
+		});
 	}
 
 	@Override
@@ -89,12 +97,12 @@ public class LocalizerService implements Localizer {
 
 	@Override
 	public Locale getLocale() {
-		return manager.getLocale();
+		return provider.getLocale();
 	}
 
 	@Override
 	public Observable<Locale> locale() {
-		return manager;
+		return provider;
 	}
 
 	@Override
