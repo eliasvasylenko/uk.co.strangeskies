@@ -126,7 +126,6 @@ public class ObservableServiceSupplier extends ExtendedObjectSupplier {
 	@Activate
 	void activate() {
 		text = generalLocalizer.getLocalization(ObservableServiceSupplierText.class);
-		System.out.println(text.illegalInjectionTarget());
 	}
 
 	@Override

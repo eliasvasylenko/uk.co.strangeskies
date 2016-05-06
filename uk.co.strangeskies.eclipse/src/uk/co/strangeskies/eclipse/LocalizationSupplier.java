@@ -45,7 +45,7 @@ import uk.co.strangeskies.utilities.text.Localizer;
  *
  * @since 1.2
  */
-@Component(service = ExtendedObjectSupplier.class, property = "dependency.injection.annotation:String=uk.co.strangeskies.eclipse.Localize")
+@Component(service = ExtendedObjectSupplier.class, property = "dependency.injection.annotation:String=uk.co.strangeskies.eclipse.Localize", immediate = true)
 public class LocalizationSupplier extends ExtendedObjectSupplier {
 	@Reference
 	Localizer generalLocalizer;
@@ -54,7 +54,6 @@ public class LocalizationSupplier extends ExtendedObjectSupplier {
 	@Activate
 	void activate() {
 		text = generalLocalizer.getLocalization(LocalizationSupplierText.class);
-		System.out.println(text.illegalInjectionTarget());
 	}
 
 	@Override
@@ -76,6 +75,7 @@ public class LocalizationSupplier extends ExtendedObjectSupplier {
 
 	@SuppressWarnings("unchecked")
 	private <T extends LocalizedText<T>> Object localizeAccessor(IRequestor requestor, Class<?> accessor) {
+		try {
 		BundleContext context = FrameworkUtil.getBundle(accessor).getBundleContext();
 
 		ServiceReference<Localizer> localizerServiceRererence = context.getServiceReference(Localizer.class);
@@ -96,7 +96,7 @@ public class LocalizationSupplier extends ExtendedObjectSupplier {
 			}
 		});
 
-		return localization;
+		return localization;} catch (Exception e) {e.printStackTrace();throw e;}
 	}
 
 	private boolean validateAccessorType(Type accessor) {
