@@ -28,6 +28,9 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import javafx.application.Platform;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ListChangeListener.Change;
@@ -36,6 +39,7 @@ import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener;
 import javafx.collections.transformation.TransformationList;
 import javafx.fxml.FXMLLoader;
+import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.collection.computingmap.ComputingHashMap;
 import uk.co.strangeskies.utilities.collection.computingmap.ComputingMap;
 
@@ -449,5 +453,17 @@ public class FXUtilities {
 		});
 
 		return FXCollections.unmodifiableObservableSet(set);
+	}
+
+	public static <T> ObservableValue<T> wrap(Observable<T> observable, T initial) {
+		ObjectProperty<T> property = new SimpleObjectProperty<>(initial);
+
+		observable.addWeakObserver(property, p -> v -> p.set(v));
+
+		return property;
+	}
+
+	public static <T> ObservableValue<T> wrap(uk.co.strangeskies.utilities.ObservableValue<T> observable) {
+		return wrap(observable, observable.get());
 	}
 }

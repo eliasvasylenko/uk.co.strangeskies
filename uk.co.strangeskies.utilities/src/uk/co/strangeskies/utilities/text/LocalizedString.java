@@ -21,7 +21,7 @@ package uk.co.strangeskies.utilities.text;
 import java.util.Locale;
 import java.util.stream.IntStream;
 
-import uk.co.strangeskies.utilities.Observable;
+import uk.co.strangeskies.utilities.ObservableValue;
 
 /**
  * A localised string interface which is observable over the string data changes
@@ -29,7 +29,7 @@ import uk.co.strangeskies.utilities.Observable;
  * 
  * @author Elias N Vasylenko
  */
-public interface LocalizedString extends Observable<String>, CharSequence {
+public interface LocalizedString extends ObservableValue<String>, CharSequence {
 	/**
 	 * @return the current locale of the string
 	 */
@@ -40,6 +40,11 @@ public interface LocalizedString extends Observable<String>, CharSequence {
 	 */
 	@Override
 	String toString();
+
+	@Override
+	default String get() {
+		return toString();
+	}
 
 	/**
 	 * @param locale

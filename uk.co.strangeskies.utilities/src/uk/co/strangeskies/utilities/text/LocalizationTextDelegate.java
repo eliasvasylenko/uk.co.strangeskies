@@ -20,14 +20,18 @@ package uk.co.strangeskies.utilities.text;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 import java.util.MissingResourceException;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import uk.co.strangeskies.utilities.Log.Level;
 import uk.co.strangeskies.utilities.ObservableImpl;
+import uk.co.strangeskies.utilities.ObservablePropertyImpl;
 import uk.co.strangeskies.utilities.text.LocalizerImpl.MethodSignature;
 
 /**
@@ -45,15 +49,30 @@ public class LocalizationTextDelegate<T extends LocalizedText<T>> extends Observ
 	/*
 	 * Implementation of localised string
 	 */
-	class LocalizedStringImpl extends ObservableImpl<String> implements LocalizedString, Consumer<T> {
+	class LocalizedStringImpl extends ObservablePropertyImpl<String, String> implements LocalizedString, Consumer<T> {
 		private final MethodSignature signature;
-		private final Object[] args;
+		private final String key;
+		private final Object[] arguments;
 
-		private String string;
+		public LocalizedStringImpl(MethodSignature signature, Object[] arguments) {
+			super(Function.identity(), Objects::equals, null);
 
-		public LocalizedStringImpl(MethodSignature signature, Object[] args) {
 			this.signature = signature;
-			this.args = args;
+			this.key = LocalizerImpl.getKey(signature.method(), arguments);
+
+			if (arguments != null) {
+				int argumentCount = 0;
+
+				for (int i = 0; i < arguments.length; i++) {
+					if (signature.method().getParameters()[i].getAnnotation(AppendToLocalizationKey.class) == null) {
+						arguments[argumentCount++] = arguments[i];
+					}
+				}
+
+				this.arguments = Arrays.copyOf(arguments, argumentCount);
+			} else {
+				this.arguments = new Object[0];
+			}
 
 			updateText();
 
@@ -63,7 +82,7 @@ public class LocalizationTextDelegate<T extends LocalizedText<T>> extends Observ
 		private void updateText() {
 			String translationText = translations.get(signature);
 			if (translationText == null) {
-				translationText = loadTranslation(signature.method());
+				translationText = loadTranslation(signature.method(), arguments);
 				if (translationText != null) {
 					translations.put(signature, translationText);
 				}
@@ -72,28 +91,25 @@ public class LocalizationTextDelegate<T extends LocalizedText<T>> extends Observ
 			if (translationText == null) {
 				if (signature.method().getDeclaringClass().equals(LocalizerText.class)) {
 					try {
-						translationText = ((LocalizedString) signature.method().invoke(text, args)).toString();
+						translationText = ((LocalizedString) signature.method().invoke(text, arguments)).toString();
 					} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {}
 				}
 
 				if (translationText == null) {
-					translationText = text.translationNotFoundFor(signature.method()).toString();
+					translationText = text.translationNotFoundFor(key).toString();
 				}
 			}
 
-			translationText = String.format(locale(), translationText, args);
+			translationText = String.format(locale(), translationText, arguments);
 
-			if (!translationText.equals(string)) {
-				string = translationText;
-				fire(string);
-			}
+			set(translationText);
 		}
 
-		private String loadTranslation(Method method) {
+		private String loadTranslation(Method method, Object[] arguments) {
 			try {
-				return bundle.getString(LocalizerImpl.getKey(signature.method()));
+				return bundle.getString(key);
 			} catch (MissingResourceException e) {
-				localizer.log(Level.WARN, new LocalizationException(text.translationNotFoundMessage(method), e));
+				localizer.log(Level.WARN, new LocalizationException(text.translationNotFoundMessage(key), e));
 			}
 
 			return null;
@@ -101,7 +117,7 @@ public class LocalizationTextDelegate<T extends LocalizedText<T>> extends Observ
 
 		@Override
 		public String toString() {
-			return string;
+			return get();
 		}
 
 		@Override

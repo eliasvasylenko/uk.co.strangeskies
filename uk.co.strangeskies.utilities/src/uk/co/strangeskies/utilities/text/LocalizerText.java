@@ -60,19 +60,10 @@ public interface LocalizerText extends LocalizedText<LocalizerText> {
 
 	/**
 	 * @param key
-	 *          the method to find a translation for
-	 * @return substitution when no translation is found for the given method
+	 *          the key to find a translation for
+	 * @return substitution when no translation is found for the given key
 	 */
 	LocalizedString translationNotFoundFor(String key);
-
-	/**
-	 * @param method
-	 *          the method to find a translation for
-	 * @return substitution when no translation is found for the given method
-	 */
-	default LocalizedString translationNotFoundFor(Method method) {
-		return translationNotFoundFor(LocalizerImpl.getKey(method));
-	}
 
 	/**
 	 * @param key
@@ -80,15 +71,6 @@ public interface LocalizerText extends LocalizedText<LocalizerText> {
 	 * @return no translation for the given method
 	 */
 	LocalizedString translationNotFoundMessage(String key);
-
-	/**
-	 * @param method
-	 *          the method to find a translation for
-	 * @return no translation for the given method
-	 */
-	default LocalizedString translationNotFoundMessage(Method method) {
-		return translationNotFoundMessage(LocalizerImpl.getKey(method));
-	}
 
 	/**
 	 * @param manager

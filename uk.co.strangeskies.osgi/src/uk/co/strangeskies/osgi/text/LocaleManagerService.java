@@ -31,6 +31,7 @@ import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
 
 import uk.co.strangeskies.osgi.LocaleManagerServiceConstants;
+import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.text.LocaleManager;
 import uk.co.strangeskies.utilities.text.LocaleProvider;
 
@@ -53,15 +54,15 @@ public class LocaleManagerService implements LocaleManager, LocaleProvider {
 	}
 
 	@Override
-	public Locale getLocale() {
+	public Locale get() {
 		return component.getLocale();
 	}
 
 	@Override
-	public void setLocale(Locale locale) {
-		if (!locale.equals(getLocale())) {
-			setLocaleImpl(locale);
+	public Locale set(Locale locale) {
+		Locale previous = setImpl(locale);
 
+		if (!previous.equals(locale)) {
 			try {
 				Configuration configuration = configurationAdmin
 						.getConfiguration(LocaleManagerServiceConstants.CONFIGURATION_PID);
@@ -73,10 +74,12 @@ public class LocaleManagerService implements LocaleManager, LocaleProvider {
 				throw new RuntimeException(e);
 			}
 		}
+
+		return previous;
 	}
 
-	private void setLocaleImpl(Locale locale) {
-		component.setLocale(locale);
+	private Locale setImpl(Locale locale) {
+		return component.set(locale);
 	}
 
 	@Modified
@@ -84,7 +87,7 @@ public class LocaleManagerService implements LocaleManager, LocaleProvider {
 		if (configuration != null) {
 			String locale = configuration.get(LocaleManagerServiceConstants.LOCALE_KEY);
 			if (locale != null) {
-				setLocaleImpl(Locale.forLanguageTag(locale));
+				setImpl(Locale.forLanguageTag(locale));
 			}
 		}
 	}
@@ -97,5 +100,10 @@ public class LocaleManagerService implements LocaleManager, LocaleProvider {
 	@Override
 	public boolean removeObserver(Consumer<? super Locale> observer) {
 		return component.removeObserver(observer);
+	}
+
+	@Override
+	public Observable<Change<Locale>> changes() {
+		return component.changes();
 	}
 }

@@ -22,6 +22,8 @@ import java.lang.reflect.Method;
 import java.util.Locale;
 import java.util.function.Consumer;
 
+import uk.co.strangeskies.utilities.Observable;
+
 final class DefaultLocalizerText implements LocalizerText {
 	private static final String TRANSLATION_NOT_FOUND = "?";
 	private static final String TRANSLATION_NOT_FOUND_MESSAGE = "Translation not found for method";
@@ -84,6 +86,21 @@ final class DefaultLocalizerText implements LocalizerText {
 			@Override
 			public String toString(Locale locale) {
 				return toString();
+			}
+
+			@Override
+			public Observable<Change<String>> changes() {
+				return new Observable<Change<String>>() {
+					@Override
+					public boolean addObserver(Consumer<? super Change<String>> observer) {
+						return true;
+					}
+
+					@Override
+					public boolean removeObserver(Consumer<? super Change<String>> observer) {
+						return true;
+					}
+				};
 			}
 		};
 	}

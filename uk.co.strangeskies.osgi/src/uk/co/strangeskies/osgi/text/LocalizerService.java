@@ -30,7 +30,7 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ServiceScope;
 
 import uk.co.strangeskies.utilities.Log;
-import uk.co.strangeskies.utilities.Observable;
+import uk.co.strangeskies.utilities.ObservableValue;
 import uk.co.strangeskies.utilities.text.LocaleProvider;
 import uk.co.strangeskies.utilities.text.LocalizedResourceBundle;
 import uk.co.strangeskies.utilities.text.LocalizedText;
@@ -101,7 +101,7 @@ public class LocalizerService implements Localizer {
 	}
 
 	@Override
-	public Observable<Locale> locale() {
+	public ObservableValue<Locale> locale() {
 		return provider;
 	}
 

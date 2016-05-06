@@ -18,23 +18,24 @@
  */
 package uk.co.strangeskies.utilities.text;
 
-import java.util.Locale;
+import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-import uk.co.strangeskies.utilities.ObservableValue;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
 /**
- * Management interface over and associate {@link Localizer localiser instance},
- * allowing the locale of that instance to be changed.
+ * Annotation for parameters of methods in sub-interfaces of
+ * {@link LocalizedText} to specify string to append to property key for
+ * resource delegation.
  * <p>
- * A locale manager is observable over changes to its locale.
+ * Method parameters annotated as such will have the arguments passed to them
+ * converted to strings, then converted to an appropriate format by splitting
+ * camel case, replacing spaces and underscores with dots, and converting to
+ * lower case.
  * 
  * @author Elias N Vasylenko
  */
-public interface LocaleProvider extends ObservableValue<Locale> {
-	/**
-	 * @return the current locale
-	 */
-	default Locale getLocale() {
-		return get();
-	}
-}
+@Target(PARAMETER)
+@Retention(RUNTIME)
+public @interface AppendToLocalizationKey {}

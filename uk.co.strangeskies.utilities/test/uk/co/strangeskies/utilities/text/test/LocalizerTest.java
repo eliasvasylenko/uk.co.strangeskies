@@ -32,7 +32,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import uk.co.strangeskies.utilities.IdentityProperty;
+import uk.co.strangeskies.utilities.text.AppendToLocalizationKey;
 import uk.co.strangeskies.utilities.text.LocaleManager;
+import uk.co.strangeskies.utilities.text.LocalizationKey;
 import uk.co.strangeskies.utilities.text.LocalizedString;
 import uk.co.strangeskies.utilities.text.Localizer;
 
@@ -53,6 +55,10 @@ public class LocalizerTest {
 		Locale.setDefault(SYSTEM_LOCALE);
 	}
 
+	private enum Append {
+		APPEND_ME, APPEND_THIS_TOO
+	}
+
 	private interface KeyTranslationMethods {
 		void singleword();
 
@@ -69,16 +75,38 @@ public class LocalizerTest {
 		void capitalNearEndIs();
 
 		void singleCapitalEndI();
+
+		void with_underscore();
+
+		void with___multipleUnderscores();
+
+		void capitalBEFORE_underscore();
+
+		void capitalA_underscore();
+
+		void withNumber1();
+
+		@LocalizationKey("this.is.the.key")
+		void annotated();
+
+		void withAppend(@AppendToLocalizationKey Append a);
+
+		@LocalizationKey("this.is.the.key")
+		void annotatedWithAppend(@AppendToLocalizationKey Append a);
+
+		void appendMultiple(@AppendToLocalizationKey Append a, @AppendToLocalizationKey Append b);
 	}
 
 	private static class KeyTranslation {
-		public KeyTranslation(String string, String key) {
-			this.string = string;
-			this.key = key;
-		}
-
 		final String string;
 		final String key;
+		final Object[] append;
+
+		public KeyTranslation(String string, String key, Object... append) {
+			this.string = string;
+			this.key = key;
+			this.append = append;
+		}
 	}
 
 	private static final Collection<KeyTranslation> KEY_TRANSLATIONS = asList(
@@ -96,7 +124,24 @@ public class LocalizerTest {
 
 			new KeyTranslation("capitalNearEndIs", "capital.near.end.is"),
 
-			new KeyTranslation("singleCapitalEndI", "single.capital.end.i"));
+			new KeyTranslation("singleCapitalEndI", "single.capital.end.i"),
+
+			new KeyTranslation("with_underscore", "with.underscore"),
+
+			new KeyTranslation("with___multipleUnderscores", "with.multiple.underscores"),
+
+			new KeyTranslation("capitalBEFORE_underscore", "capital.before.underscore"),
+
+			new KeyTranslation("capitalA_underscore", "capital.a.underscore"),
+
+			new KeyTranslation("annotated", "this.is.the.key"),
+
+			new KeyTranslation("withAppend", "with.append.append.me", Append.APPEND_ME),
+
+			new KeyTranslation("annotatedWithAppend", "this.is.the.key.append.me", Append.APPEND_ME),
+
+			new KeyTranslation("appendMultiple", "append.multiple.append.me.append.this.too", Append.APPEND_ME,
+					Append.APPEND_THIS_TOO));
 
 	public LocalizerTestText text(LocaleManager manager) {
 		return Localizer.getLocalizer(manager).getLocalization(LocalizerTestText.class);
@@ -105,8 +150,13 @@ public class LocalizerTest {
 	@Test
 	public void keyTranslationTest() throws NoSuchMethodException, SecurityException {
 		for (KeyTranslation translation : KEY_TRANSLATIONS) {
-			assertEquals(KEY_TRANSLATION_METHODS + "." + translation.key,
-					Localizer.getKey(KeyTranslationMethods.class.getMethod(translation.string)));
+			Class<?>[] parameterTypes = new Class<?>[translation.append.length];
+			for (int i = 0; i < translation.append.length; i++) {
+				parameterTypes[i] = translation.append[i].getClass();
+			}
+
+			assertEquals(KEY_TRANSLATION_METHODS + "." + translation.key, Localizer
+					.getKey(KeyTranslationMethods.class.getMethod(translation.string, parameterTypes), translation.append));
 		}
 	}
 

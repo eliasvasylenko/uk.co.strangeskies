@@ -417,14 +417,14 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>>
 		if (setByReference)
 			return operateOnData2(to, (V firstOperand, V secondOperand) -> secondOperand);
 		else
-			return operateOnData2(to, (V firstOperand, V secondOperand) -> firstOperand.setValue(secondOperand));
+			return operateOnData2(to, (V firstOperand, V secondOperand) -> firstOperand.set(secondOperand));
 	}
 
 	public default S setData(boolean setByReference, List<? extends V> to) {
 		if (setByReference)
 			return operateOnData(to, (V firstOperand, V secondOperand) -> secondOperand);
 		else
-			return operateOnData(to, (V firstOperand, V secondOperand) -> firstOperand.setValue(secondOperand));
+			return operateOnData(to, (V firstOperand, V secondOperand) -> firstOperand.set(secondOperand));
 	}
 
 	@SuppressWarnings("unchecked")

@@ -23,7 +23,7 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 import uk.co.strangeskies.utilities.Log;
-import uk.co.strangeskies.utilities.Observable;
+import uk.co.strangeskies.utilities.ObservableValue;
 
 /**
  * This interface represents a simple but powerful system for
@@ -44,7 +44,7 @@ public interface Localizer {
 	/**
 	 * @return an observable over changes to the locale
 	 */
-	Observable<Locale> locale();
+	ObservableValue<Locale> locale();
 
 	/**
 	 * Generate an implementing instance of the given accessor interface class,
@@ -141,8 +141,8 @@ public interface Localizer {
 	 *          key
 	 * @return the default resource key for the given method
 	 */
-	static String getKey(Method method) {
-		return LocalizerImpl.getKey(method);
+	static String getKey(Method method, Object... arguments) {
+		return LocalizerImpl.getKey(method, arguments);
 	}
 
 	/**

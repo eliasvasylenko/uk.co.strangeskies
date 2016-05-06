@@ -19,8 +19,11 @@
 package uk.co.strangeskies.utilities.text;
 
 import java.util.Locale;
+import java.util.Objects;
+import java.util.function.Function;
 
-import uk.co.strangeskies.utilities.ObservableImpl;
+import uk.co.strangeskies.utilities.ObservableProperty;
+import uk.co.strangeskies.utilities.ObservablePropertyImpl;
 
 /**
  * Management interface over and associate {@link Localizer localiser instance},
@@ -30,12 +33,14 @@ import uk.co.strangeskies.utilities.ObservableImpl;
  * 
  * @author Elias N Vasylenko
  */
-public interface LocaleManager extends LocaleProvider {
+public interface LocaleManager extends LocaleProvider, ObservableProperty<Locale, Locale> {
 	/**
 	 * @param locale
 	 *          the new locale
 	 */
-	void setLocale(Locale locale);
+	default void setLocale(Locale locale) {
+		set(locale);
+	}
 
 	/**
 	 * @return a simple mutable locale manager, with its locale initialised to the
@@ -71,24 +76,19 @@ public interface LocaleManager extends LocaleProvider {
 
 }
 
-class LocaleManagerImpl extends ObservableImpl<Locale> implements LocaleManager {
-	private Locale currentLocale;
-
+class LocaleManagerImpl extends ObservablePropertyImpl<Locale, Locale> implements LocaleManager {
 	public LocaleManagerImpl(Locale locale) {
-		currentLocale = locale;
+		super(Function.identity(), Objects::equals, locale);
 	}
 
 	@Override
 	public synchronized void setLocale(Locale locale) {
-		if (!locale.equals(currentLocale)) {
-			currentLocale = locale;
-			fire(locale);
-		}
+		set(locale);
 	}
 
 	@Override
 	public synchronized Locale getLocale() {
-		return currentLocale;
+		return get();
 	}
 }
 

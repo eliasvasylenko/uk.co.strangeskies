@@ -30,7 +30,7 @@ import java.util.Set;
 import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Log.Level;
-import uk.co.strangeskies.utilities.Observable;
+import uk.co.strangeskies.utilities.ObservableValue;
 import uk.co.strangeskies.utilities.classpath.DelegatingClassLoader;
 import uk.co.strangeskies.utilities.collection.computingmap.CacheComputingMap;
 import uk.co.strangeskies.utilities.collection.computingmap.ComputingMap;
@@ -189,7 +189,7 @@ class LocalizerImpl implements Localizer {
 	}
 
 	@Override
-	public Observable<Locale> locale() {
+	public ObservableValue<Locale> locale() {
 		return locale;
 	}
 
@@ -252,33 +252,61 @@ class LocalizerImpl implements Localizer {
 		return string;
 	}
 
-	public static String getKey(Method method) {
+	public static String getKey(Method method, Object[] arguments) {
+		StringBuilder builder = new StringBuilder();
+
+		/*
+		 * from class name
+		 */
+		String className = removeTextPostfix(method.getDeclaringClass().getSimpleName());
+		builder.append(getKeyText(className)).append('.');
+		
+		/*
+		 * from method name / annotation
+		 */
 		LocalizationKey keyAnnotation = method.getAnnotation(LocalizationKey.class);
 		if (keyAnnotation != null) {
-			return keyAnnotation.value();
+			builder.append(keyAnnotation.value());
+		} else {
+			builder.append(getKeyText(method.getName()));
 		}
 
-		String className = removeTextPostfix(method.getDeclaringClass().getSimpleName());
+		/*
+		 * from annotated arguments
+		 */
+		if (arguments != null) {
+			for (int i = 0; i < arguments.length; i++) {
+				AppendToLocalizationKey appendKeyAnnotation = method.getParameters()[i]
+						.getAnnotation(AppendToLocalizationKey.class);
+				if (appendKeyAnnotation != null) {
+					builder.append('.').append(getKeyText(arguments[i].toString()));
+				}
+			}
+		}
 
-		return getKeyText(className) + '.' + getKeyText(method.getName());
+		return builder.toString();
 	}
 
 	private static String getKeyText(String string) {
 		StringBuilder builder = new StringBuilder();
 
 		int copiedToIndex = 0;
-		boolean isPreviousCharacterUpperCase = false;
+		boolean isPreviousStartOfWord = false;
 
 		for (int i = 0; i < string.length(); i++) {
-			boolean isCharacterUpperCase = Character.isUpperCase(string.charAt(i));
-
+			char character = string.charAt(i);
 			int copyToIndex = copiedToIndex;
 
-			if (isCharacterUpperCase && !isPreviousCharacterUpperCase) {
+			boolean isAlphanumeric = Character.isAlphabetic(character) || Character.isDigit(character);
+			boolean isStartOfWord = isAlphanumeric && Character.isUpperCase(character) || Character.isDigit(character);
+
+			if (!isAlphanumeric || (isStartOfWord && !isPreviousStartOfWord)) {
 				copyToIndex = i;
-			} else if (!isCharacterUpperCase && isPreviousCharacterUpperCase) {
+			} else if (!isStartOfWord && isPreviousStartOfWord) {
 				copyToIndex = i - 1;
 			}
+
+			isPreviousStartOfWord = isStartOfWord;
 
 			if (copyToIndex > copiedToIndex) {
 				if (builder.length() > 0) {
@@ -288,7 +316,9 @@ class LocalizerImpl implements Localizer {
 				copiedToIndex = copyToIndex;
 			}
 
-			isPreviousCharacterUpperCase = isCharacterUpperCase;
+			if (!isAlphanumeric) {
+				copiedToIndex++;
+			}
 		}
 
 		if (builder.length() > 0) {
