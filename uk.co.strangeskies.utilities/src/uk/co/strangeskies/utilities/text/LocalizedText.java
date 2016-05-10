@@ -36,7 +36,7 @@ import uk.co.strangeskies.utilities.Self;
  * A key is generated for each method based on the class name and the method
  * name, to look up a property from the {@link ResourceBundle} provided by the
  * {@link Localizer} according to
- * {@link Localizer#getKey(java.lang.reflect.Method)}. The key generation rules
+ * {@link Localizer#getKey(java.lang.reflect.Method, Object[])}. The key generation rules
  * can be overridden for a given method by annotating with
  * {@link LocalizationKey}.
  * <p>

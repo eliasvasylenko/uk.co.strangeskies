@@ -36,6 +36,11 @@ import uk.co.strangeskies.utilities.ObservableValue;
  */
 public interface Localizer {
 	/**
+	 * As returned by {@link #getDefaultLocalizer()}.
+	 */
+	Localizer DEFAULT_LOCALIZER = getLocalizer(LocaleManager.getDefaultManager());
+
+	/**
 	 * @return the current locale of all localised texts implemented by this
 	 *         {@link Localizer}
 	 */
@@ -139,10 +144,23 @@ public interface Localizer {
 	 * @param method
 	 *          the method for which we wish to determine an associated resource
 	 *          key
+	 * @param arguments
+	 *          the invocation arguments, which may contribute to the key as per
+	 *          {@link AppendToLocalizationKey}
 	 * @return the default resource key for the given method
 	 */
 	static String getKey(Method method, Object... arguments) {
 		return LocalizerImpl.getKey(method, arguments);
+	}
+
+	/**
+	 * Get a simple {@link Localizer} implementation over the
+	 * {@link LocaleManager#getDefaultManager() system locale}.
+	 * 
+	 * @return a {@link Localizer} for the system locale
+	 */
+	static Localizer getDefaultLocalizer() {
+		return DEFAULT_LOCALIZER;
 	}
 
 	/**

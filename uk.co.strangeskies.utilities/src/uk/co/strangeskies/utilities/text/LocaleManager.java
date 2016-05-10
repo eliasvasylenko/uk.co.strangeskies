@@ -35,6 +35,11 @@ import uk.co.strangeskies.utilities.ObservablePropertyImpl;
  */
 public interface LocaleManager extends LocaleProvider, ObservableProperty<Locale, Locale> {
 	/**
+	 * As returned by {@link #getDefaultManager()}.
+	 */
+	LocaleManager DEFAULT_MANAGER = new DefaultLocaleManagerImpl();
+
+	/**
 	 * @param locale
 	 *          the new locale
 	 */
@@ -71,7 +76,7 @@ public interface LocaleManager extends LocaleProvider, ObservableProperty<Locale
 	 * @return a locale manager backed by the system locale
 	 */
 	static LocaleManager getDefaultManager() {
-		return new DefaultLocaleManagerImpl();
+		return DEFAULT_MANAGER;
 	}
 
 }
