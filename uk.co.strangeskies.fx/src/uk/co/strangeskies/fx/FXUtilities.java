@@ -18,6 +18,7 @@
  */
 package uk.co.strangeskies.fx;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -47,6 +48,8 @@ import uk.co.strangeskies.utilities.collection.computingmap.ComputingMap;
  * @author Elias N Vasylenko
  */
 public class FXUtilities {
+	private static final String CONTROLLER_STRING = "Controller";
+
 	private FXUtilities() {}
 
 	/**
@@ -252,5 +255,62 @@ public class FXUtilities {
 
 	public static <T> ObservableValue<T> wrap(uk.co.strangeskies.utilities.ObservableValue<T> observable) {
 		return wrap(observable, observable.get());
+	}
+
+	/**
+	 * Find the {@code .fxml} resource associated with a given controller class by
+	 * location and naming conventions. The location of the file is assumed to be
+	 * the same package as the controller class. The name of the file is
+	 * determined according to the convention described by
+	 * {@link #getResourceName(Class)}.
+	 * 
+	 * @param controllerClass
+	 *          The controller class whose resource we wish to locate
+	 * @return The URL for the resource associated with the given controller
+	 *         class.
+	 */
+	public static URL getResource(Class<?> controllerClass) {
+		return getResource(controllerClass, getResourceName(controllerClass));
+	}
+
+	/**
+	 * Find the name of the {@code .fxml} resource associated with a given
+	 * controller class by convention. The name of the file is assumed to be
+	 * {@code [classname].fxml}, or if {@code [classname]} takes the form
+	 * {@code [classnameprefix]Controller}, the name of the file is assumed to be
+	 * {@code [classnameprefix].fxml}.
+	 * 
+	 * @param controllerClass
+	 *          The controller class whose resource we wish to locate
+	 * @return The URL for the resource associated with the given controller
+	 *         class.
+	 */
+	public static String getResourceName(Class<?> controllerClass) {
+		String resourceName = controllerClass.getSimpleName();
+
+		if (resourceName.endsWith(CONTROLLER_STRING)) {
+			resourceName = resourceName.substring(0, resourceName.length() - CONTROLLER_STRING.length());
+		}
+
+		return resourceName;
+	}
+
+	/**
+	 * Find the {@code .fxml} resource for a given controller class by location
+	 * conventions. The location of the file is assumed to be the same package as
+	 * the controller class.
+	 * 
+	 * @param controllerClass
+	 *          The controller class whose resource we wish to locate
+	 * @param resourceName
+	 *          The name of the resource file
+	 * @return The URL for the resource associated with the given controller
+	 *         class.
+	 */
+	public static URL getResource(Class<?> controllerClass, String resourceName) {
+		String resourceLocation = "/" + controllerClass.getPackage().getName().replace('.', '/') + "/" + resourceName
+				+ ".fxml";
+
+		return controllerClass.getResource(resourceLocation);
 	}
 }

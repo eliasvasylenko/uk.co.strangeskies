@@ -1,18 +1,19 @@
 package uk.co.strangeskies.fx;
 
+import static uk.co.strangeskies.fx.FXUtilities.getResource;
+
 import java.io.IOException;
 import java.net.URL;
 
 import javafx.fxml.FXMLLoader;
 
 public class FXMLLoadBuilder<C> {
-	private static final String CONTROLLER_STRING = "Controller";
-
 	private final FXMLLoader loader;
 
 	private C controller;
 	private Class<? extends C> controllerClass;
 	private Object root;
+	private URL resource;
 	private String resourceName;
 
 	/**
@@ -23,8 +24,12 @@ public class FXMLLoadBuilder<C> {
 		this.loader = loader;
 	}
 
-	public static FXMLLoadBuilder<Object> with(FXMLLoader loader) {
+	public static FXMLLoadBuilder<Object> buildWith(FXMLLoader loader) {
 		return new FXMLLoadBuilder<>(loader);
+	}
+
+	public static FXMLLoadBuilder<Object> build() {
+		return buildWith(new FXMLLoader());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -45,6 +50,14 @@ public class FXMLLoadBuilder<C> {
 
 	public FXMLLoadBuilder<C> resource(String resourceName) {
 		this.resourceName = resourceName;
+		resource = null;
+
+		return this;
+	}
+
+	public FXMLLoadBuilder<C> resource(URL resource) {
+		this.resource = resource;
+		this.resourceName = null;
 
 		return this;
 	}
@@ -73,86 +86,37 @@ public class FXMLLoadBuilder<C> {
 	}
 
 	public void load() {
+		// set controller
 		if (controller != null) {
 			loader.setController(controller);
 		}
 
-		if (resourceName != null) {
-			loader.setLocation(getResource(controllerClass, resourceName));
-		} else {
-			loader.setLocation(getResource(controllerClass));
-		}
-
+		// set root
 		if (root != null) {
 			loader.setRoot(root);
 		}
 
+		// set location
+		if (resource == null) {
+			if (resourceName != null) {
+				resource = getResource(controllerClass, resourceName);
+			} else {
+				resource = getResource(controllerClass);
+			}
+		}
+		loader.setLocation(resource);
+
+		// load
 		try {
 			loader.load();
 			controller = loader.getController();
 			root = loader.getRoot();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		} finally {
 			loader.setRoot(null);
 			loader.setController(null);
 			loader.setLocation(null);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
 		}
-	}
-
-	/**
-	 * Find the {@code .fxml} resource associated with a given controller class by
-	 * location and naming conventions. The location of the file is assumed to be
-	 * the same package as the controller class. The name of the file is
-	 * determined according to the convention described by
-	 * {@link #getResourceName(Class)}.
-	 * 
-	 * @param controllerClass
-	 *          The controller class whose resource we wish to locate
-	 * @return The URL for the resource associated with the given controller
-	 *         class.
-	 */
-	public static URL getResource(Class<?> controllerClass) {
-		return getResource(controllerClass, getResourceName(controllerClass));
-	}
-
-	/**
-	 * Find the name of the {@code .fxml} resource associated with a given
-	 * controller class by convention. The name of the file is assumed to be
-	 * {@code [classname].fxml}, or if {@code [classname]} takes the form
-	 * {@code [classnameprefix]Controller}, the name of the file is assumed to be
-	 * {@code [classnameprefix].fxml}.
-	 * 
-	 * @param controllerClass
-	 *          The controller class whose resource we wish to locate
-	 * @return The URL for the resource associated with the given controller
-	 *         class.
-	 */
-	public static String getResourceName(Class<?> controllerClass) {
-		String resourceName = controllerClass.getSimpleName();
-
-		if (resourceName.endsWith(CONTROLLER_STRING)) {
-			resourceName = resourceName.substring(0, resourceName.length() - CONTROLLER_STRING.length());
-		}
-
-		return resourceName;
-	}
-
-	/**
-	 * Find the {@code .fxml} resource for a given controller class by location
-	 * conventions. The location of the file is assumed to be the same package as
-	 * the controller class.
-	 * 
-	 * @param controllerClass
-	 *          The controller class whose resource we wish to locate
-	 * @param resourceName
-	 *          The name of the resource file
-	 * @return The URL for the resource associated with the given controller
-	 *         class.
-	 */
-	public static URL getResource(Class<?> controllerClass, String resourceName) {
-		String resourceLocation = "/" + controllerClass.getPackage().getName().replace('.', '/') + "/" + resourceName
-				+ ".fxml";
-
-		return controllerClass.getResource(resourceLocation);
 	}
 }
