@@ -1,0 +1,70 @@
+/*
+ * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
+ *
+ * This file is part of uk.co.strangeskies.reflection.
+ *
+ * uk.co.strangeskies.reflection is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * uk.co.strangeskies.reflection is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with uk.co.strangeskies.reflection.  If not, see <http://www.gnu.org/licenses/>.
+ */
+package uk.co.strangeskies.reflection;
+
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
+import uk.co.strangeskies.utilities.IdentityProperty;
+
+/**
+ * A collection of general utility methods relating to methods in the Java type
+ * system.
+ * 
+ * @author Elias N Vasylenko
+ */
+public final class Methods {
+	private Methods() {}
+
+	/**
+	 * Find a method on an interface type without needing to look it up by its
+	 * string name. This method will determine the last method which would be
+	 * invoked on an instance of the given class by the given lambda.
+	 * 
+	 * <p>
+	 * For example to get a {@link Method} instance over the
+	 * {@link Comparable#compareTo(Object)} method, invoke as
+	 * {@code Methods.findMethod(Comparable.class, c -> c.compareTo(null));}. Or
+	 * to get a reference to {@link Supplier#get()}, invoke as
+	 * {@code Methods.findMethod(Supplier.class, Supplier::get);}.
+	 * 
+	 * @param type
+	 *          the type of the class which declares the method
+	 * @param methodLambda
+	 *          a consumer, typically given as a lambda or method reference, which
+	 *          invokes the requested method
+	 * @return the last method which would be invoked by the given
+	 *         {@link Consumer} on an instance of the given type
+	 */
+	public static <N> Method findMethod(Class<N> type, Consumer<? super N> methodLambda) {
+		IdentityProperty<Method> lastCalled = new IdentityProperty<>();
+
+		@SuppressWarnings("unchecked")
+		N instance = (N) Proxy.newProxyInstance(type.getClassLoader(), new Class[] { type }, (proxy, method, args) -> {
+			lastCalled.set(method);
+			return null;
+		});
+
+		methodLambda.accept(instance);
+
+		return lastCalled.get();
+	}
+}
