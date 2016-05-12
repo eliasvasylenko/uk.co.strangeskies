@@ -19,8 +19,12 @@
 package uk.co.strangeskies.mathematics.expression;
 
 import java.util.Observer;
+import java.util.function.Supplier;
 
 import uk.co.strangeskies.utilities.Observable;
+import uk.co.strangeskies.utilities.ObservableImpl;
+import uk.co.strangeskies.utilities.ObservableValue;
+import uk.co.strangeskies.utilities.Property;
 import uk.co.strangeskies.utilities.Self;
 
 /**
@@ -38,8 +42,17 @@ import uk.co.strangeskies.utilities.Self;
  * previous value resolved through either of those methods.
  * 
  * <p>
- * Any mechanism of synchronisation, though a consistent concern, is left
- * entirely to the discretion of implementations.
+ * Any mechanism of synchronisation, though a common concern, is left entirely
+ * to the discretion of implementations.
+ * 
+ * <p>
+ * Note that the concept of an {@link Expression} differs from the concept of a
+ * {@link Property} in that an expression is observable over itself, rather than
+ * being observable of the value it represents. This is because expressions are
+ * more typically intended to be lazily evaluated, and observers directly over
+ * the value would cause eager evaluation. The methods
+ * {@link #over(ObservableValue)} and {@link #over(Observable, Object)} are
+ * provided to bridge the gap from {@link Observable} to {@link Expression}.
  * 
  * @author Elias N Vasylenko
  * @param <S>
@@ -77,14 +90,14 @@ public interface Expression<S extends Expression<S, T>, T> extends Observable<S>
 	 * @return The fully evaluated value of this Expression at the time of method
 	 *         invocation.
 	 */
-	public T getValue();
+	T getValue();
 
 	/**
 	 * @return a value which is equal to the result of {@link #getValue()} at time
 	 *         of invocation, with the added guarantee that it will not be further
 	 *         mutated by this {@link Expression}
 	 */
-	public default T decoupleValue() {
+	default T decoupleValue() {
 		return getValue();
 	}
 
@@ -101,12 +114,80 @@ public interface Expression<S extends Expression<S, T>, T> extends Observable<S>
 	 * @return an immutable {@link Expression} instance whose value is always that
 	 *         given, and upon which read locks are always available
 	 */
-	public static <T> Expression<?, T> immutable(T value) {
+	static <T> AnonymousExpression<T> immutable(T value) {
 		return new ImmutableExpressionImpl<>(value);
+	}
+
+	/**
+	 * Provide an expression view over an observable value.
+	 * 
+	 * @param changes
+	 *          the observable providing the value updates
+	 * @param initialValue
+	 *          the initial expression value
+	 * @return an observable with the given initial value, and whose value changes
+	 *         as per the given observable
+	 */
+	static <T> AnonymousExpression<T> over(Observable<T> changes, T initialValue) {
+		IdentityExpression<T> expression = new IdentityExpression<>(initialValue);
+
+		changes.addWeakObserver(expression, e -> v -> e.set(v));
+
+		return expression.anonymize();
+	}
+
+	/**
+	 * Provide an expression view over an observable value.
+	 * 
+	 * @param value
+	 *          the observable providing the initial value, and the value updates
+	 * @return an observable with the given initial value, and whose value changes
+	 *         as per the given observable
+	 */
+	static <T> AnonymousExpression<T> over(ObservableValue<T> value) {
+		return new AnonymousExpressionImpl<>(value);
+	}
+
+	/**
+	 * @return an anonymous view of the expression
+	 */
+	default AnonymousExpression<T> anonymize() {
+		return new AnonymousExpressionImpl<>(this);
 	}
 }
 
-class ImmutableExpressionImpl<T> extends ImmutableExpression<ImmutableExpressionImpl<T>, T> {
+/*
+ * TODO with Valhalla we can probably make this a value type to just about get
+ * rid of the overhead
+ */
+class AnonymousExpressionImpl<T> extends ObservableImpl<AnonymousExpression<T>> implements AnonymousExpression<T> {
+	private final Supplier<T> base;
+
+	AnonymousExpressionImpl(Expression<?, T> base) {
+		this.base = base::getValue;
+
+		base.addObserver(b -> fire(this));
+	}
+
+	AnonymousExpressionImpl(ObservableValue<T> base) {
+		this.base = base::get;
+
+		base.addObserver(b -> fire(this));
+	}
+
+	@Override
+	public T getValue() {
+		return base.get();
+	}
+
+	@Override
+	public AnonymousExpression<T> copy() {
+		return this;
+	}
+}
+
+class ImmutableExpressionImpl<T> extends ImmutableExpression<AnonymousExpression<T>, T>
+		implements AnonymousExpression<T> {
 	private final T value;
 
 	ImmutableExpressionImpl(T value) {

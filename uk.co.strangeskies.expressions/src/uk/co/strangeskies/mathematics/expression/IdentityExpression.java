@@ -32,7 +32,7 @@ import uk.co.strangeskies.utilities.Property;
  * @param <T>
  *          The type of the expression.
  */
-public class IdentityExpression<T> extends LockingExpression<IdentityExpression<T>, T> implements Property<T, T> {
+public class IdentityExpression<T> extends ExpressionImpl<IdentityExpression<T>, T> implements Property<T, T> {
 	private T value;
 
 	/**
@@ -64,7 +64,7 @@ public class IdentityExpression<T> extends LockingExpression<IdentityExpression<
 	}
 
 	@Override
-	protected final T evaluate() {
+	protected final T getValueImpl(boolean dirty) {
 		return value;
 	}
 
