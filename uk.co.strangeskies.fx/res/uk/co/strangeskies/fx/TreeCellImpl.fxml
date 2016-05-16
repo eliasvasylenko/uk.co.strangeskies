@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+
+<fx:root
+	type="TreeCell"
+	xmlns="http://javafx.com/javafx/8"
+	xmlns:fx="http://javafx.com/fxml">
+
+	<fx:define>
+		<HBox fx:id="graphic" spacing="6">
+			<styleClass>
+				<String fx:value="ExperimentTreeCell" />
+			</styleClass>
+
+			<children>
+				<Label fx:id="name" />
+
+				<Label fx:id="supplemental" />
+			</children>
+		</HBox>
+	</fx:define>
+</fx:root>

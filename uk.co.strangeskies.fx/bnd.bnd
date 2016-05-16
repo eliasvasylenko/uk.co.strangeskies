@@ -7,4 +7,5 @@ Bundle-Name: Strange Skies :: FX
 -runfw: org.eclipse.osgi;version='[3.10.1.v20140909-1633,3.10.1.v20140909-1633]'
 
 -buildpath: \
-	${ss;utilities}
+	${ss;utilities},\
+	${ss;reflection}
