@@ -18,9 +18,12 @@
  */
 package uk.co.strangeskies.osgi.text;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
+import org.osgi.framework.Bundle;
+import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.wiring.BundleWiring;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
@@ -32,6 +35,7 @@ import org.osgi.service.component.annotations.ServiceScope;
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.ObservableValue;
 import uk.co.strangeskies.utilities.text.LocaleProvider;
+import uk.co.strangeskies.utilities.text.LocalizationResource;
 import uk.co.strangeskies.utilities.text.LocalizedResourceBundle;
 import uk.co.strangeskies.utilities.text.LocalizedText;
 import uk.co.strangeskies.utilities.text.Localizer;
@@ -48,8 +52,8 @@ public class LocalizerService implements Localizer {
 	Log log;
 	private Localizer component;
 
-	private ClassLoader classLoader;
-	private String osgiLocalizationLocation;
+	private Bundle usingBundle;
+	private LocalizationResource osgiLocalizationResource;
 
 	/**
 	 * For automatic instantiation by the OSGi service manager
@@ -58,11 +62,8 @@ public class LocalizerService implements Localizer {
 
 	@Activate
 	void activate(ComponentContext context) {
-		classLoader = context.getUsingBundle().adapt(BundleWiring.class).getClassLoader();
-
-		osgiLocalizationLocation = context.getUsingBundle().getHeaders().get(OSGI_LOCALIZATION_HEADER);
-		if (osgiLocalizationLocation == null)
-			osgiLocalizationLocation = DEFAULT_OSGI_LOCALIZATION_LOCATION;
+		usingBundle = context.getUsingBundle();
+		osgiLocalizationResource = getOsgiLocalizationResource(usingBundle);
 
 		component = Localizer.getLocalizer(provider, new Log() {
 			@Override
@@ -81,18 +82,38 @@ public class LocalizerService implements Localizer {
 		});
 	}
 
-	@Override
-	public <T extends LocalizedText<T>> T getLocalization(Class<T> accessor, ClassLoader classLoader,
-			String... locations) {
-		String[] extraLocations = Arrays.copyOf(locations, locations.length + 1);
-		extraLocations[locations.length] = osgiLocalizationLocation;
+	private LocalizationResource getOsgiLocalizationResource(Bundle bundle) {
+		ClassLoader classLoader = bundle.adapt(BundleWiring.class).getClassLoader();
 
-		return component.getLocalization(accessor, classLoader, extraLocations);
+		String location = bundle.getHeaders().get(OSGI_LOCALIZATION_HEADER);
+		if (location == null)
+			location = DEFAULT_OSGI_LOCALIZATION_LOCATION;
+
+		return new LocalizationResource(classLoader, location);
 	}
 
 	@Override
-	public <T extends LocalizedText<T>> T getLocalization(Class<T> accessor, String... locations) {
-		return getLocalization(accessor, classLoader, locations);
+	public <T extends LocalizedText<T>> T getLocalization(Class<T> accessor, LocalizedResourceBundle bundle) {
+		return component.getLocalization(accessor, bundle);
+	}
+
+	@Override
+	public <T extends LocalizedText<T>> T getLocalization(Class<T> accessor) {
+		String location = Localizer.removeTextPostfix(accessor.getName());
+
+		List<LocalizationResource> resources = new ArrayList<>();
+		resources.add(new LocalizationResource(osgiLocalizationResource.getClassLoader(), location));
+		resources.add(osgiLocalizationResource);
+
+		Bundle accessorBundle = FrameworkUtil.getBundle(accessor);
+		if (!accessorBundle.equals(usingBundle)) {
+			LocalizationResource accessorBundleResource = getOsgiLocalizationResource(accessorBundle);
+
+			resources.add(new LocalizationResource(accessorBundleResource.getClassLoader(), location));
+			resources.add(accessorBundleResource);
+		}
+
+		return getLocalization(accessor, resources);
 	}
 
 	@Override
@@ -103,10 +124,5 @@ public class LocalizerService implements Localizer {
 	@Override
 	public ObservableValue<Locale> locale() {
 		return provider;
-	}
-
-	@Override
-	public <T extends LocalizedText<T>> T getLocalization(Class<T> accessor, LocalizedResourceBundle bundle) {
-		return component.getLocalization(accessor, bundle);
 	}
 }

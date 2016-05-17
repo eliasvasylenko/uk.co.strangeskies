@@ -19,7 +19,6 @@
 package uk.co.strangeskies.utilities.text;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.LinkedHashSet;
@@ -36,30 +35,27 @@ import java.util.Set;
  */
 public abstract class LocalizedResourceBundle extends ResourceBundle {
 	static final class LocalizingResourceBundleImpl extends LocalizedResourceBundle {
-		private final ClassLoader classLoader;
-		private final String[] locations;
+		private final List<LocalizationResource> resources;
 
 		private final List<ResourceBundle> bundles;
 
-		public LocalizingResourceBundleImpl(ClassLoader classLoader, Locale locale, String[] locations) {
+		public LocalizingResourceBundleImpl(Locale locale, List<? extends LocalizationResource> resources) {
 			super(locale);
 
-			this.classLoader = classLoader;
-			this.locations = locations;
+			this.resources = new ArrayList<>(resources);
 
 			bundles = new ArrayList<>();
 
-			for (String location : locations) {
+			for (LocalizationResource resource : resources) {
 				try {
-					bundles.add(ResourceBundle.getBundle(location, locale, classLoader));
+					bundles.add(ResourceBundle.getBundle(resource.getLocation(), locale, resource.getClassLoader()));
 					break;
 				} catch (MissingResourceException e) {}
 			}
 
 			if (bundles.isEmpty()) {
-				String locationsString = Arrays.toString(locations);
-				throw new MissingResourceException("Cannot find resources for " + locale + " in any of " + locationsString,
-						locationsString, "");
+				throw new MissingResourceException("Cannot find resources for " + locale + " in any of " + resources,
+						resources.toString(), "");
 			}
 		}
 
@@ -72,7 +68,7 @@ public abstract class LocalizedResourceBundle extends ResourceBundle {
 
 		@Override
 		public LocalizingResourceBundleImpl withLocale(Locale locale) {
-			return new LocalizingResourceBundleImpl(classLoader, locale, locations);
+			return new LocalizingResourceBundleImpl(locale, resources);
 		}
 
 		@Override
@@ -97,12 +93,12 @@ public abstract class LocalizedResourceBundle extends ResourceBundle {
 
 			LocalizingResourceBundleImpl other = (LocalizingResourceBundleImpl) obj;
 
-			return classLoader.equals(other.classLoader) && Arrays.equals(locations, other.locations);
+			return resources.equals(other.resources);
 		}
 
 		@Override
 		public int hashCode() {
-			return classLoader.hashCode() ^ Arrays.hashCode(locations);
+			return resources.hashCode();
 		}
 	}
 
@@ -141,15 +137,14 @@ public abstract class LocalizedResourceBundle extends ResourceBundle {
 	 * current locale of the {@link LocalizedResourceBundle}. This locale may
 	 * change, and the delegate resource bundles will be updated accordingly.
 	 * 
-	 * @param classLoader
-	 *          the class loader to load properties files from
 	 * @param locale
 	 *          the locale for the resource bundle
-	 * @param locations
-	 *          the base names of properties files to load
+	 * @param resources
+	 *          the base names of properties files to load, and the class loaders
+	 *          they exist in
 	 * @return a resource bundle over all resources at each given location
 	 */
-	public static LocalizedResourceBundle getBundle(ClassLoader classLoader, Locale locale, String... locations) {
-		return new LocalizingResourceBundleImpl(classLoader, locale, locations);
+	public static LocalizedResourceBundle getBundle(Locale locale, List<? extends LocalizationResource> resources) {
+		return new LocalizingResourceBundleImpl(locale, resources);
 	}
 }

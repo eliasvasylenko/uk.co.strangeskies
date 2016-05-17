@@ -18,7 +18,11 @@
  */
 package uk.co.strangeskies.utilities.text;
 
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.toList;
+
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -70,8 +74,28 @@ public interface Localizer {
 	 * Generate an implementing instance of the given accessor interface class,
 	 * according to the rules described by {@link LocalizedText}. Resources are
 	 * loading according to the {@link LocalizedResourceBundle} returned from
-	 * {@link LocalizedResourceBundle#getBundle(ClassLoader, Locale, String[])}
-	 * invoked with the given class loader and locations, and the current locale.
+	 * {@link LocalizedResourceBundle#getBundle(Locale, List)} invoked with the
+	 * given class loader and locations, and the current locale.
+	 * 
+	 * @param <T>
+	 *          the type of the localisation text accessor interface
+	 * @param accessor
+	 *          the sub-interface of {@link LocalizedText} we wish to implement
+	 * @param resources
+	 *          the class loaders and base names to fetch resource bundles from
+	 * @return an implementation of the accessor interface
+	 */
+	default <T extends LocalizedText<T>> T getLocalization(Class<T> accessor,
+			List<? extends LocalizationResource> resources) {
+		return getLocalization(accessor, LocalizedResourceBundle.getBundle(getLocale(), resources));
+	}
+
+	/**
+	 * Generate an implementing instance of the given accessor interface class,
+	 * according to the rules described by {@link LocalizedText}. Resources are
+	 * loading according to the {@link LocalizedResourceBundle} returned from
+	 * {@link LocalizedResourceBundle#getBundle(Locale, List)} invoked with the
+	 * given class loader and locations, and the current locale.
 	 * 
 	 * @param <T>
 	 *          the type of the localisation text accessor interface
@@ -85,15 +109,16 @@ public interface Localizer {
 	 */
 	default <T extends LocalizedText<T>> T getLocalization(Class<T> accessor, ClassLoader classLoader,
 			String... locations) {
-		return getLocalization(accessor, LocalizedResourceBundle.getBundle(classLoader, getLocale(), locations));
+		return getLocalization(accessor,
+				stream(locations).map(location -> new LocalizationResource(classLoader, location)).collect(toList()));
 	}
 
 	/**
 	 * Generate an implementing instance of the given accessor interface class,
 	 * according to the rules described by {@link LocalizedText}. Resources are
 	 * loading according to the {@link LocalizedResourceBundle} returned from
-	 * {@link LocalizedResourceBundle#getBundle(ClassLoader, Locale, String[])}
-	 * invoked with the class loader of the given class, and the given locations.
+	 * {@link LocalizedResourceBundle#getBundle(Locale, List)} invoked with the
+	 * class loader of the given class, and the given locations.
 	 * 
 	 * @param <T>
 	 *          the type of the localisation text accessor interface
@@ -111,10 +136,9 @@ public interface Localizer {
 	 * Generate an implementing instance of the given accessor interface class,
 	 * according to the rules described by {@link LocalizedText}. Resources are
 	 * loading according to the {@link LocalizedResourceBundle} returned from
-	 * {@link LocalizedResourceBundle#getBundle(ClassLoader, Locale, String[])}
-	 * invoked with the class loader of the given class, and the location derived
-	 * by taking the given class name, and removing {@code Text} from the end if
-	 * it is present.
+	 * {@link LocalizedResourceBundle#getBundle(Locale, List)} invoked with the
+	 * class loader of the given class, and the location derived by taking the
+	 * given class name, and removing {@code Text} from the end if it is present.
 	 * 
 	 * @param <T>
 	 *          the type of the localisation text accessor interface
@@ -123,34 +147,7 @@ public interface Localizer {
 	 * @return an implementation of the accessor interface
 	 */
 	default <T extends LocalizedText<T>> T getLocalization(Class<T> accessor) {
-		return getLocalization(accessor, LocalizerImpl.removeTextPostfix(accessor.getName()));
-	}
-
-	/**
-	 * The default translation scheme to generate resource keys from methods.
-	 * <p>
-	 * The class name and method name are split into words according to camel-case
-	 * rules and put into lower-case, then the word {@code "text"} is removed from
-	 * the end of the class name if present, then each word from the class and
-	 * each word from the method are joined in order about the {@code "."}
-	 * character.
-	 * <p>
-	 * For example the method
-	 * {@link LocalizerText#illegalReturnType(Class, java.lang.reflect.Method)}
-	 * would generate the key {@code "localizer.illegal.return.type"}. The key
-	 * generation rules can be overridden for a given method by annotating with
-	 * {@link LocalizationKey}.
-	 * 
-	 * @param method
-	 *          the method for which we wish to determine an associated resource
-	 *          key
-	 * @param arguments
-	 *          the invocation arguments, which may contribute to the key as per
-	 *          {@link AppendToLocalizationKey}
-	 * @return the default resource key for the given method
-	 */
-	static String getKey(Method method, Object... arguments) {
-		return LocalizerImpl.getKey(method, arguments);
+		return getLocalization(accessor, removeTextPostfix(accessor.getName()));
 	}
 
 	/**
@@ -187,5 +184,129 @@ public interface Localizer {
 	 */
 	static Localizer getLocalizer(LocaleProvider provider, Log log) {
 		return new LocalizerImpl(provider, log);
+	}
+
+	/**
+	 * @param string
+	 *          the string to modify
+	 * @return the given string, with "Text" removed from the end if present and
+	 *         if the result would not be empty
+	 */
+	static String removeTextPostfix(String string) {
+		String TEXT_POSTFIX = "Text";
+
+		if (string.endsWith(TEXT_POSTFIX) && !string.equals(TEXT_POSTFIX)) {
+			string = string.substring(0, string.length() - TEXT_POSTFIX.length());
+		}
+		return string;
+	}
+
+	/**
+	 * The default translation scheme to generate resource keys from methods.
+	 * <p>
+	 * The string {@code "Text"} is removed from the end of the class name if
+	 * present, then the resulting class name and the method name are transformed
+	 * according to the behaviour of {@link #getKeyText(String)} and joined in
+	 * order about the {@code "."} character.
+	 * <p>
+	 * For example the method
+	 * {@link LocalizerText#illegalReturnType(Class, java.lang.reflect.Method)}
+	 * would generate the key {@code "localizer.illegal.return.type"}. The key
+	 * generation rules can be overridden for a given method by annotating with
+	 * {@link LocalizationKey}.
+	 * 
+	 * @param method
+	 *          the method for which we wish to determine an associated resource
+	 *          key
+	 * @param arguments
+	 *          the invocation arguments, which may contribute to the key as per
+	 *          {@link AppendToLocalizationKey}
+	 * @return the default resource key for the given method
+	 */
+	static String getKey(Method method, Object[] arguments) {
+		StringBuilder builder = new StringBuilder();
+
+		/*
+		 * from class name
+		 */
+		String className = removeTextPostfix(method.getDeclaringClass().getSimpleName());
+		builder.append(getKeyText(className)).append('.');
+
+		/*
+		 * from method name / annotation
+		 */
+		LocalizationKey keyAnnotation = method.getAnnotation(LocalizationKey.class);
+		if (keyAnnotation != null) {
+			builder.append(keyAnnotation.value());
+		} else {
+			builder.append(getKeyText(method.getName()));
+		}
+
+		/*
+		 * from annotated arguments
+		 */
+		if (arguments != null) {
+			for (int i = 0; i < arguments.length; i++) {
+				AppendToLocalizationKey appendKeyAnnotation = method.getParameters()[i]
+						.getAnnotation(AppendToLocalizationKey.class);
+				if (appendKeyAnnotation != null) {
+					builder.append('.').append(getKeyText(arguments[i].toString()));
+				}
+			}
+		}
+
+		return builder.toString();
+	}
+
+	/**
+	 * The given string is split into words according to camel-case rules and put
+	 * into lower-case, then each word is joined in order about the {@code "."}
+	 * character. Non-alphanumeric characters are removed, and where they occur
+	 * within words are replaced with the {@code "."} character.
+	 * 
+	 * @param string
+	 *          the string to convert to key format
+	 * @return the given string in the format of a key
+	 */
+	static String getKeyText(String string) {
+		StringBuilder builder = new StringBuilder();
+
+		int copiedToIndex = 0;
+		boolean isPreviousStartOfWord = false;
+
+		for (int i = 0; i < string.length(); i++) {
+			char character = string.charAt(i);
+			int copyToIndex = copiedToIndex;
+
+			boolean isAlphanumeric = Character.isAlphabetic(character) || Character.isDigit(character);
+			boolean isStartOfWord = isAlphanumeric && Character.isUpperCase(character) || Character.isDigit(character);
+
+			if (!isAlphanumeric || (isStartOfWord && !isPreviousStartOfWord)) {
+				copyToIndex = i;
+			} else if (!isStartOfWord && isPreviousStartOfWord) {
+				copyToIndex = i - 1;
+			}
+
+			isPreviousStartOfWord = isStartOfWord;
+
+			if (copyToIndex > copiedToIndex) {
+				if (builder.length() > 0) {
+					builder.append('.');
+				}
+				builder.append(string.substring(copiedToIndex, copyToIndex));
+				copiedToIndex = copyToIndex;
+			}
+
+			if (!isAlphanumeric) {
+				copiedToIndex++;
+			}
+		}
+
+		if (builder.length() > 0) {
+			builder.append('.');
+		}
+		builder.append(string.substring(copiedToIndex));
+
+		return builder.toString().toLowerCase();
 	}
 }

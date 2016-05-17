@@ -106,7 +106,6 @@ class LocalizerImpl implements Localizer {
 		}
 	}
 
-	private static final String TEXT_POSTFIX = "Text";
 	private static final Set<MethodSignature> LOCALIZATION_HELPER_METHODS = new HashSet<>();
 	private static final String CANNOT_INITIALISE = "Cannot initialise Localizer instance";
 
@@ -243,90 +242,6 @@ class LocalizerImpl implements Localizer {
 		helper.set(new LocalizationTextDelegate<>(this, proxy, localizable.bundle, text));
 
 		return proxy;
-	}
-
-	static String removeTextPostfix(String string) {
-		if (string.endsWith(TEXT_POSTFIX) && !string.equals(TEXT_POSTFIX)) {
-			string = string.substring(0, string.length() - TEXT_POSTFIX.length());
-		}
-		return string;
-	}
-
-	public static String getKey(Method method, Object[] arguments) {
-		StringBuilder builder = new StringBuilder();
-
-		/*
-		 * from class name
-		 */
-		String className = removeTextPostfix(method.getDeclaringClass().getSimpleName());
-		builder.append(getKeyText(className)).append('.');
-		
-		/*
-		 * from method name / annotation
-		 */
-		LocalizationKey keyAnnotation = method.getAnnotation(LocalizationKey.class);
-		if (keyAnnotation != null) {
-			builder.append(keyAnnotation.value());
-		} else {
-			builder.append(getKeyText(method.getName()));
-		}
-
-		/*
-		 * from annotated arguments
-		 */
-		if (arguments != null) {
-			for (int i = 0; i < arguments.length; i++) {
-				AppendToLocalizationKey appendKeyAnnotation = method.getParameters()[i]
-						.getAnnotation(AppendToLocalizationKey.class);
-				if (appendKeyAnnotation != null) {
-					builder.append('.').append(getKeyText(arguments[i].toString()));
-				}
-			}
-		}
-
-		return builder.toString();
-	}
-
-	private static String getKeyText(String string) {
-		StringBuilder builder = new StringBuilder();
-
-		int copiedToIndex = 0;
-		boolean isPreviousStartOfWord = false;
-
-		for (int i = 0; i < string.length(); i++) {
-			char character = string.charAt(i);
-			int copyToIndex = copiedToIndex;
-
-			boolean isAlphanumeric = Character.isAlphabetic(character) || Character.isDigit(character);
-			boolean isStartOfWord = isAlphanumeric && Character.isUpperCase(character) || Character.isDigit(character);
-
-			if (!isAlphanumeric || (isStartOfWord && !isPreviousStartOfWord)) {
-				copyToIndex = i;
-			} else if (!isStartOfWord && isPreviousStartOfWord) {
-				copyToIndex = i - 1;
-			}
-
-			isPreviousStartOfWord = isStartOfWord;
-
-			if (copyToIndex > copiedToIndex) {
-				if (builder.length() > 0) {
-					builder.append('.');
-				}
-				builder.append(string.substring(copiedToIndex, copyToIndex));
-				copiedToIndex = copyToIndex;
-			}
-
-			if (!isAlphanumeric) {
-				copiedToIndex++;
-			}
-		}
-
-		if (builder.length() > 0) {
-			builder.append('.');
-		}
-		builder.append(string.substring(copiedToIndex));
-
-		return builder.toString().toLowerCase();
 	}
 
 	@SuppressWarnings("unchecked")

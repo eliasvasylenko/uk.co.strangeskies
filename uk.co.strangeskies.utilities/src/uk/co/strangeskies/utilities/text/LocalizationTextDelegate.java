@@ -58,7 +58,7 @@ public class LocalizationTextDelegate<T extends LocalizedText<T>> extends Observ
 			super(Function.identity(), Objects::equals, null);
 
 			this.signature = signature;
-			this.key = LocalizerImpl.getKey(signature.method(), arguments);
+			this.key = Localizer.getKey(signature.method(), arguments);
 
 			if (arguments != null) {
 				int argumentCount = 0;
