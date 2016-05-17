@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
+ *
+ * This file is part of uk.co.strangeskies.fx.
+ *
+ * uk.co.strangeskies.fx is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * uk.co.strangeskies.fx is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with uk.co.strangeskies.fx.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package uk.co.strangeskies.fx;
 
 import static uk.co.strangeskies.fx.FXMLLoadBuilder.buildWith;
@@ -12,8 +30,7 @@ import javafx.scene.control.TreeItem;
 
 /**
  * A basic tree cell implementation for {@link TreeItem}. This class may be
- * extended to provide further functionality, e.g. as {@link E4TreeCellImpl}
- * does to streamline use in an Eclipse E4 application.
+ * extended to provide further functionality.
  * 
  * @author Elias N Vasylenko
  */
