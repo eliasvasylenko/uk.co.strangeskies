@@ -19,8 +19,10 @@
 package uk.co.strangeskies.utilities.text;
 
 import java.util.Locale;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
+import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableValue;
 
 /**
@@ -76,5 +78,56 @@ public interface LocalizedString extends ObservableValue<String>, CharSequence {
 	@Override
 	default CharSequence subSequence(int start, int end) {
 		return toString().subSequence(start, end);
+	}
+
+	/**
+	 * @param text
+	 *          the localised text string
+	 * @param locale
+	 *          the locale of the given text
+	 * @return a localised string over the given text and locale
+	 */
+	static LocalizedString forStaticLocale(String text, Locale locale) {
+		return new LocalizedString() {
+			@Override
+			public String toString() {
+				return text;
+			}
+
+			@Override
+			public boolean removeObserver(Consumer<? super String> observer) {
+				return true;
+			}
+
+			@Override
+			public boolean addObserver(Consumer<? super String> observer) {
+				return true;
+			}
+
+			@Override
+			public Locale locale() {
+				return locale;
+			}
+
+			@Override
+			public String toString(Locale locale) {
+				return toString();
+			}
+
+			@Override
+			public Observable<Change<String>> changes() {
+				return new Observable<Change<String>>() {
+					@Override
+					public boolean addObserver(Consumer<? super Change<String>> observer) {
+						return true;
+					}
+
+					@Override
+					public boolean removeObserver(Consumer<? super Change<String>> observer) {
+						return true;
+					}
+				};
+			}
+		};
 	}
 }

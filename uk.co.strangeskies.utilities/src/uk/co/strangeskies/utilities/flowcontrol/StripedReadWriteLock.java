@@ -41,13 +41,13 @@ import java.util.Collection;
  * acquire more.
  * 
  * <p>
- * The three overloads of {@link #obtainLocks(Collection, Collection)} will
- * block until every requested lock is obtained, without allowing deadlocks to
- * occur between multiple blocking threads.
+ * The overloads of {@link #obtainLocks(Collection, Collection)} will block
+ * until every requested lock is obtained, without allowing deadlocks to occur
+ * between multiple blocking threads.
  *
  * @author Elias N Vasylenko
  * @param <K>
- *          The type of the keys by which locks are indexed.
+ *          the type of the keys by which locks are indexed
  */
 public interface StripedReadWriteLock<K> extends StripedReadWriteLockRelease<K> {
 	/**
@@ -62,8 +62,7 @@ public interface StripedReadWriteLock<K> extends StripedReadWriteLockRelease<K> 
 	 *           The obtaining thread was interrupted before the locks could be
 	 *           obtained.
 	 */
-	public void obtainLocks(Collection<K> readKeys, Collection<K> writeKeys)
-			throws InterruptedException;
+	public void obtainLocks(Collection<K> readKeys, Collection<K> writeKeys) throws InterruptedException;
 
 	/**
 	 * Multiple concurrent calls from different threads do not lock. Blocks until
@@ -75,8 +74,7 @@ public interface StripedReadWriteLock<K> extends StripedReadWriteLockRelease<K> 
 	 *           The obtaining thread was interrupted before the locks could be
 	 *           obtained.
 	 */
-	public void obtainReadLocks(Collection<K> readKeys)
-			throws InterruptedException;
+	public void obtainReadLocks(Collection<K> readKeys) throws InterruptedException;
 
 	/**
 	 * Multiple concurrent calls from different threads do not lock. Blocks until
@@ -88,8 +86,7 @@ public interface StripedReadWriteLock<K> extends StripedReadWriteLockRelease<K> 
 	 *           The obtaining thread was interrupted before the locks could be
 	 *           obtained.
 	 */
-	public void obtainWriteLocks(Collection<K> writeKeys)
-			throws InterruptedException;
+	public void obtainWriteLocks(Collection<K> writeKeys) throws InterruptedException;
 
 	/**
 	 * Wait for the given lock to become available.
@@ -128,6 +125,5 @@ public interface StripedReadWriteLock<K> extends StripedReadWriteLockRelease<K> 
 	 *           The waiting thread was interrupted before the lock could be
 	 *           obtained.
 	 */
-	public void wait(K key, long timeoutMilliseconds, int timeoutNanoseconds)
-			throws InterruptedException;
+	public void wait(K key, long timeoutMilliseconds, int timeoutNanoseconds) throws InterruptedException;
 }

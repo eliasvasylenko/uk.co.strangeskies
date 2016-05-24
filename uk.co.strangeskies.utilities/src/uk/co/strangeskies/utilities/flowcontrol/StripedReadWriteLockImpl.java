@@ -29,40 +29,40 @@ import java.util.stream.Collectors;
 import uk.co.strangeskies.utilities.collection.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.MultiMap;
 
+/**
+ * A simple {@link StripedReadWriteLock} implementation.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <K>
+ *          the type of the keys by which locks are indexed
+ */
 public class StripedReadWriteLockImpl<K> implements StripedReadWriteLock<K> {
 	private final Map<K, ReentrantReadWriteLock> locks;
 	private final MultiMap<K, Thread, HashSet<Thread>> readLockingThreads;
 
+	@SuppressWarnings("javadoc")
 	public StripedReadWriteLockImpl() {
-		this(new MultiHashMap<>(HashSet::new));
-	}
-
-	public StripedReadWriteLockImpl(
-			MultiMap<K, Thread, HashSet<Thread>> multiMap) {
 		locks = new HashMap<>();
-		readLockingThreads = multiMap;
+		readLockingThreads = new MultiHashMap<>(HashSet::new);
 	}
 
 	@Override
 	public Set<K> readLocksHeldByCurrentThread() {
 		synchronized (locks) {
-			return locks.keySet().stream().filter(this::isReadLockHeldByCurrentThread)
-					.collect(Collectors.toSet());
+			return locks.keySet().stream().filter(this::isReadLockHeldByCurrentThread).collect(Collectors.toSet());
 		}
 	}
 
 	@Override
 	public Set<K> writeLocksHeldByCurrentThread() {
 		synchronized (locks) {
-			return locks.keySet().stream()
-					.filter(this::isWriteLockHeldByCurrentThread)
-					.collect(Collectors.toSet());
+			return locks.keySet().stream().filter(this::isWriteLockHeldByCurrentThread).collect(Collectors.toSet());
 		}
 	}
 
 	@Override
-	public final void obtainReadLocks(Collection<K> readKeys)
-			throws InterruptedException {
+	public final void obtainReadLocks(Collection<K> readKeys) throws InterruptedException {
 		synchronized (locks) {
 			boolean allLocksAvailable;
 
@@ -93,8 +93,7 @@ public class StripedReadWriteLockImpl<K> implements StripedReadWriteLock<K> {
 	}
 
 	@Override
-	public final void obtainWriteLocks(Collection<K> writeKeys)
-			throws InterruptedException {
+	public final void obtainWriteLocks(Collection<K> writeKeys) throws InterruptedException {
 		synchronized (locks) {
 			boolean allLocksAvailable;
 
@@ -125,8 +124,7 @@ public class StripedReadWriteLockImpl<K> implements StripedReadWriteLock<K> {
 	}
 
 	@Override
-	public final void obtainLocks(Collection<K> readKeys, Collection<K> writeKeys)
-			throws InterruptedException {
+	public final void obtainLocks(Collection<K> readKeys, Collection<K> writeKeys) throws InterruptedException {
 		synchronized (locks) {
 			boolean allLocksAvailable;
 
@@ -212,8 +210,7 @@ public class StripedReadWriteLockImpl<K> implements StripedReadWriteLock<K> {
 	}
 
 	@Override
-	public final boolean releaseLocks(Collection<? extends K> readKeys,
-			Collection<? extends K> writeKeys) {
+	public final boolean releaseLocks(Collection<? extends K> readKeys, Collection<? extends K> writeKeys) {
 		boolean released = false;
 
 		synchronized (locks) {
@@ -371,8 +368,7 @@ public class StripedReadWriteLockImpl<K> implements StripedReadWriteLock<K> {
 
 	@Override
 	public boolean isLockHeldByCurrentThread(K key) {
-		return isReadLockHeldByCurrentThread(key)
-				|| isWriteLockHeldByCurrentThread(key);
+		return isReadLockHeldByCurrentThread(key) || isWriteLockHeldByCurrentThread(key);
 	}
 
 	@Override
@@ -405,8 +401,7 @@ public class StripedReadWriteLockImpl<K> implements StripedReadWriteLock<K> {
 	}
 
 	@Override
-	public void wait(K key, long milliseconds, int nanoseconds)
-			throws InterruptedException {
+	public void wait(K key, long milliseconds, int nanoseconds) throws InterruptedException {
 		ReentrantReadWriteLock lock = locks.get(key);
 
 		if (lock != null) {

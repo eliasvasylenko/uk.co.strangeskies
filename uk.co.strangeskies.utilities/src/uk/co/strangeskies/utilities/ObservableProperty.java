@@ -18,4 +18,15 @@
  */
 package uk.co.strangeskies.utilities;
 
+/**
+ * A {@link Property property} which is observable as per
+ * {@link ObservableValue}, and whose value can also be set.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <T>
+ *          the type of the value
+ * @param <R>
+ *          the type the value can be set to
+ */
 public interface ObservableProperty<T extends R, R> extends ObservableValue<T>, Property<T, R> {}

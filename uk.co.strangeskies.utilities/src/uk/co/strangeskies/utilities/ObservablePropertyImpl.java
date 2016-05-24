@@ -21,9 +21,9 @@ package uk.co.strangeskies.utilities;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 /**
  * A simple implementation of {@link ObservableProperty} which maintains a list
@@ -63,25 +63,43 @@ public class ObservablePropertyImpl<T extends R, R> implements ObservablePropert
 	}
 
 	private T value;
-	private final Function<R, T> assignmentFunction;
+	private final BiFunction<R, T, T> assignmentFunction;
 	private final BiPredicate<T, T> equality;
 	private final Set<Consumer<? super T>> observers = new LinkedHashSet<>();
 	private final ObservableImpl<Change<T>> changeObservable = new ObservableImpl<>();
 	private ChangeImpl currentChange;
 
-	protected ObservablePropertyImpl(Function<R, T> assignmentFunction, BiPredicate<T, T> equality, R initialValue) {
+	protected ObservablePropertyImpl(BiFunction<R, T, T> assignmentFunction, BiPredicate<T, T> equality, T initialValue) {
 		this.assignmentFunction = assignmentFunction;
 		this.equality = equality;
-		value = assignmentFunction.apply(initialValue);
+		value = initialValue;
 	}
 
-	public static <T extends R, R> ObservableProperty<T, R> over(Function<R, T> assignmentFunction,
-			BiPredicate<T, T> equality, R initialValue) {
-		return new ObservablePropertyImpl<T, R>(assignmentFunction, equality, initialValue);
+	/**
+	 * @param assignmentFunction
+	 *          an assignment function, accepting the assigned value and the
+	 *          current value, and returning the new value
+	 * @param equality
+	 *          an equivalence relation over the value space
+	 * @param initialValue
+	 *          the initial value
+	 * @return an observable property with the given behaviour and default value
+	 */
+	public static <T extends R, R> ObservableProperty<T, R> over(BiFunction<R, T, T> assignmentFunction,
+			BiPredicate<T, T> equality, T initialValue) {
+		return new ObservablePropertyImpl<>(assignmentFunction, equality, initialValue);
 	}
 
+	/**
+	 * Instantiate an observable property with identity assignment and identity
+	 * equality.
+	 * 
+	 * @param initialValue
+	 *          the initial value
+	 * @return an observable property with the given default value
+	 */
 	public static <T> ObservableProperty<T, T> over(T initialValue) {
-		return new ObservablePropertyImpl<T, T>(Function.identity(), (a, b) -> a == b, initialValue);
+		return new ObservablePropertyImpl<>((r, t) -> r, (a, b) -> a == b, initialValue);
 	}
 
 	@Override
@@ -115,7 +133,7 @@ public class ObservablePropertyImpl<T extends R, R> implements ObservablePropert
 	@Override
 	public synchronized T set(R value) {
 		T previous = this.value;
-		this.value = assignmentFunction.apply(value);
+		this.value = assignmentFunction.apply(value, this.value);
 
 		if (!equality.test(this.value, previous)) {
 			for (Consumer<? super T> listener : new ArrayList<>(observers)) {

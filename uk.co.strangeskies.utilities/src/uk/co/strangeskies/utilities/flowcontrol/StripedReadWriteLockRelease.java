@@ -35,8 +35,7 @@ public interface StripedReadWriteLockRelease<K> {
 
 	public Set<K> writeLocksHeldByCurrentThread();
 
-	public boolean releaseLocks(Collection<? extends K> readKeys,
-			Collection<? extends K> writeKeys);
+	public boolean releaseLocks(Collection<? extends K> readKeys, Collection<? extends K> writeKeys);
 
 	public boolean releaseLocks(Collection<? extends K> keys);
 

@@ -18,11 +18,11 @@
  */
 package uk.co.strangeskies.utilities.text;
 
+import static uk.co.strangeskies.utilities.text.LocalizedString.forStaticLocale;
+
 import java.lang.reflect.Method;
 import java.util.Locale;
 import java.util.function.Consumer;
-
-import uk.co.strangeskies.utilities.Observable;
 
 final class DefaultLocalizerText implements LocalizerText {
 	private static final String TRANSLATION_NOT_FOUND = "?";
@@ -38,71 +38,27 @@ final class DefaultLocalizerText implements LocalizerText {
 
 	@Override
 	public LocalizedString translationNotFoundFor(String key) {
-		return englishString(TRANSLATION_NOT_FOUND + key + TRANSLATION_NOT_FOUND);
+		return forStaticLocale(TRANSLATION_NOT_FOUND + key + TRANSLATION_NOT_FOUND, Locale.ENGLISH);
 	}
 
 	@Override
 	public LocalizedString translationNotFoundMessage(String key) {
-		return englishString(TRANSLATION_NOT_FOUND_MESSAGE + ": " + key);
+		return forStaticLocale(TRANSLATION_NOT_FOUND_MESSAGE + ": " + key, Locale.ENGLISH);
 	}
 
 	@Override
 	public LocalizedString mustBeInterface(Class<?> accessor) {
-		return englishString(MUST_BE_INTERFACE + ": " + accessor);
+		return forStaticLocale(MUST_BE_INTERFACE + ": " + accessor, Locale.ENGLISH);
 	}
 
 	@Override
 	public LocalizedString illegalReturnType(Class<?> accessor, Method method, Class<LocalizedString> stringClass) {
-		return englishString(ILLEGAL_RETURN_TYPE + ": " + method);
+		return forStaticLocale(ILLEGAL_RETURN_TYPE + ": " + method, Locale.ENGLISH);
 	}
 
 	@Override
 	public LocalizedString localeChanged(LocaleProvider manager, Locale locale) {
-		return englishString(LOCALE_CHANGED + ": " + locale);
-	}
-
-	private LocalizedString englishString(String text) {
-		return new LocalizedString() {
-			@Override
-			public String toString() {
-				return text;
-			}
-
-			@Override
-			public boolean removeObserver(Consumer<? super String> observer) {
-				return true;
-			}
-
-			@Override
-			public boolean addObserver(Consumer<? super String> observer) {
-				return true;
-			}
-
-			@Override
-			public Locale locale() {
-				return Locale.ENGLISH;
-			}
-
-			@Override
-			public String toString(Locale locale) {
-				return toString();
-			}
-
-			@Override
-			public Observable<Change<String>> changes() {
-				return new Observable<Change<String>>() {
-					@Override
-					public boolean addObserver(Consumer<? super Change<String>> observer) {
-						return true;
-					}
-
-					@Override
-					public boolean removeObserver(Consumer<? super Change<String>> observer) {
-						return true;
-					}
-				};
-			}
-		};
+		return forStaticLocale(LOCALE_CHANGED + ": " + locale, Locale.ENGLISH);
 	}
 
 	@Override

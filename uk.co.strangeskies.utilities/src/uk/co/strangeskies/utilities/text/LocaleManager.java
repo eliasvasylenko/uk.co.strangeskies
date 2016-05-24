@@ -20,7 +20,6 @@ package uk.co.strangeskies.utilities.text;
 
 import java.util.Locale;
 import java.util.Objects;
-import java.util.function.Function;
 
 import uk.co.strangeskies.utilities.ObservableProperty;
 import uk.co.strangeskies.utilities.ObservablePropertyImpl;
@@ -83,7 +82,7 @@ public interface LocaleManager extends LocaleProvider, ObservableProperty<Locale
 
 class LocaleManagerImpl extends ObservablePropertyImpl<Locale, Locale> implements LocaleManager {
 	public LocaleManagerImpl(Locale locale) {
-		super(Function.identity(), Objects::equals, locale);
+		super((r, t) -> r, Objects::equals, locale);
 	}
 
 	@Override

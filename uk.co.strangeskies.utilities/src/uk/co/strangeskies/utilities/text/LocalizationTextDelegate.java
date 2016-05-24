@@ -27,7 +27,6 @@ import java.util.MissingResourceException;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import uk.co.strangeskies.utilities.Log.Level;
 import uk.co.strangeskies.utilities.ObservableImpl;
@@ -55,7 +54,7 @@ public class LocalizationTextDelegate<T extends LocalizedText<T>> extends Observ
 		private final Object[] arguments;
 
 		public LocalizedStringImpl(MethodSignature signature, Object[] arguments) {
-			super(Function.identity(), Objects::equals, null);
+			super((r, t) -> r, Objects::equals, null);
 
 			this.signature = signature;
 			this.key = Localizer.getKey(signature.method(), arguments);

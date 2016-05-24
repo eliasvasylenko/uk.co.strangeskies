@@ -18,14 +18,37 @@
  */
 package uk.co.strangeskies.utilities;
 
+/**
+ * A value which can be {@link #get() fetched} and observed for updates and
+ * {@link #changes() changes}.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <T>
+ *          the type of the value
+ */
 public interface ObservableValue<T> extends Observable<T> {
+	/**
+	 * A value change event.
+	 * 
+	 * @author Elias N Vasylenko
+	 *
+	 * @param <T>
+	 *          the type of the value
+	 */
 	interface Change<T> {
 		T newValue();
 
 		T previousValue();
 	}
 
+	/**
+	 * @return the current value
+	 */
 	T get();
 
+	/**
+	 * @return an observable over changes to the value
+	 */
 	Observable<Change<T>> changes();
 }

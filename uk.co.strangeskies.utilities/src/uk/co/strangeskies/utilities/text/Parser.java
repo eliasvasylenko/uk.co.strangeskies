@@ -89,17 +89,14 @@ public interface Parser<T> {
 	 *         representation of a list of items, and parse it into a {@link List}
 	 *         instance containing objects parsed from its elements.
 	 */
-	public static <T> Parser<List<T>> list(Parser<T> element, String delimiter,
-			int minimum) {
+	public static <T> Parser<List<T>> list(Parser<T> element, String delimiter, int minimum) {
 		IdentityProperty<Parser<List<T>>> listParser = new IdentityProperty<>();
 
-		listParser.set(
-				Parser.proxy(listParser::get).prepend(delimiter).orElse(ArrayList::new)
-						.prepend(element, (l, e) -> l.add(0, e)).orElse(ArrayList::new));
+		listParser.set(Parser.proxy(listParser::get).prepend(delimiter).orElse(ArrayList::new)
+				.prepend(element, (l, e) -> l.add(0, e)).orElse(ArrayList::new));
 
 		for (int i = 0; i < minimum; i++)
-			listParser
-					.set(listParser.get().prepend(delimiter).prepend(element, List::add));
+			listParser.set(listParser.get().prepend(delimiter).prepend(element, List::add));
 
 		return listParser.get();
 	}
@@ -256,8 +253,7 @@ public interface Parser<T> {
 	 * @return A new {@link Parser} instance which also matches against the
 	 *         appended text pattern
 	 */
-	<U> Parser<U> appendTransform(String pattern,
-			BiFunction<T, String, ? extends U> incorporate);
+	<U> Parser<U> appendTransform(String pattern, BiFunction<T, String, ? extends U> incorporate);
 
 	/**
 	 * Derive a new {@link Parser} instance from the receiving instance.
@@ -328,8 +324,7 @@ public interface Parser<T> {
 	 * @return A new {@link Parser} instance which also matches against the
 	 *         prepended text pattern
 	 */
-	<U> Parser<U> prependTransform(String pattern,
-			BiFunction<T, String, ? extends U> incorporate);
+	<U> Parser<U> prependTransform(String pattern, BiFunction<T, String, ? extends U> incorporate);
 
 	/**
 	 * Derive a new {@link Parser} instance from the receiving instance.
@@ -383,8 +378,7 @@ public interface Parser<T> {
 	 * @return A new {@link Parser} instance which also matches against the
 	 *         appended parser
 	 */
-	<U, V> Parser<V> appendTransform(Parser<U> parser,
-			BiFunction<T, U, ? extends V> incorporate);
+	<U, V> Parser<V> appendTransform(Parser<U> parser, BiFunction<T, U, ? extends V> incorporate);
 
 	/**
 	 * Derive a new {@link Parser} instance from the receiving instance.
@@ -441,33 +435,153 @@ public interface Parser<T> {
 	 * @return A new {@link Parser} instance which also matches against the
 	 *         appended parser
 	 */
-	<U> Parser<T> tryAppendTransform(Parser<U> parser,
-			BiFunction<T, U, ? extends T> incorporate);
+	<U> Parser<T> tryAppendTransform(Parser<U> parser, BiFunction<T, U, ? extends T> incorporate);
 
-	default <U> Parser<T> tryAppend(Parser<U> parser,
-			BiConsumer<T, U> incorporate) {
+	/**
+	 * Derive a new {@link Parser} instance from the receiving instance.
+	 * <p>
+	 * The new parser will first match the start of the text according to the
+	 * receiving parser, then attempt to match the start of any subsequent text
+	 * according to the given parser. If the second step - of matching the
+	 * remaining text with the given parser - fails, then the result of applying
+	 * the receiving parser alone will be returned.
+	 * <p>
+	 * If application of the appended parser also succeeds, the result of applying
+	 * the appended parser will be incorporated with the result of applying the
+	 * receiving parser, and the result of the receiving parser will then be
+	 * returned.
+	 * 
+	 * @param <U>
+	 *          The type of the parse result of the appended parser
+	 * @param parser
+	 *          A parser matching the text immediately following from the text
+	 *          matched by this parser
+	 * @param incorporate
+	 *          A function taking the result of parsing the receiving parser and
+	 *          the result of parsing the appended parser, and transforming them
+	 *          into a new parse result
+	 * @return A new {@link Parser} instance which also matches against the
+	 *         appended parser
+	 */
+	default <U> Parser<T> tryAppend(Parser<U> parser, BiConsumer<T, U> incorporate) {
 		return tryAppendTransform(parser, (t, u) -> {
 			incorporate.accept(t, u);
 			return t;
 		});
 	}
 
-	<U, V> Parser<V> prependTransform(Parser<U> parser,
-			BiFunction<T, U, ? extends V> incorporate);
+	/**
+	 * Derive a new {@link Parser} instance from the receiving instance.
+	 * <p>
+	 * The new parser will first match the start of the text according to the
+	 * given parser, then match the start of any subsequent text according to the
+	 * receiving parser.
+	 * <p>
+	 * Upon success, the result of applying the prepended parser will be
+	 * transformed, along with the result of applying the receiving parser, into a
+	 * new result according to the given function.
+	 * 
+	 * @param <U>
+	 *          The type of the parse result of the appended parser
+	 * @param <V>
+	 *          The type of the new parse result
+	 * @param parser
+	 *          A parser matching the text immediately preceding the text matched
+	 *          by this parser
+	 * @param incorporate
+	 *          A function taking the result of parsing the receiving parser and
+	 *          the result of parsing the appended parser, and transforming them
+	 *          into a new parse result
+	 * @return A new {@link Parser} instance which also matches against the
+	 *         appended parser
+	 */
+	<U, V> Parser<V> prependTransform(Parser<U> parser, BiFunction<T, U, ? extends V> incorporate);
 
-	default <U> Parser<T> prepend(Parser<U> parser,
-			BiConsumer<T, U> incorporate) {
+	/**
+	 * Derive a new {@link Parser} instance from the receiving instance.
+	 * <p>
+	 * The new parser will first match the start of the text according to the
+	 * given parser, then match the start of any subsequent text according to the
+	 * receiving parser.
+	 * <p>
+	 * Upon success, the result of applying the prepended parser will be consumed,
+	 * along with the result of applying the receiving parser, allowing the text
+	 * to inform mutation of the parse result's state.
+	 * 
+	 * @param <U>
+	 *          The type of the parse result of the appended parser
+	 * @param parser
+	 *          A parser matching the text immediately following from the text
+	 *          matched by this parser
+	 * @param incorporate
+	 *          A function taking the result of parsing the receiving parser and
+	 *          the result of parsing the appended parser, and transforming them
+	 *          into a new parse result
+	 * @return A new {@link Parser} instance which also matches against the
+	 *         appended parser
+	 */
+	default <U> Parser<T> prepend(Parser<U> parser, BiConsumer<T, U> incorporate) {
 		return prependTransform(parser, (BiFunction<T, U, T>) (t, u) -> {
 			incorporate.accept(t, u);
 			return t;
 		});
 	}
 
-	<U> Parser<T> tryPrependTransform(Parser<U> parser,
-			BiFunction<T, U, ? extends T> incorporate);
+	/**
+	 * Derive a new {@link Parser} instance from the receiving instance.
+	 * <p>
+	 * The new parser will first match the start of the text according to the
+	 * given parser, then attempt to match the start of any subsequent text
+	 * according to the receiving parser. If the first step - of matching the
+	 * remaining text with the given parser - fails, then the result of applying
+	 * the receiving parser alone will be returned.
+	 * <p>
+	 * If application of the prepended parser also succeeds, the result of
+	 * applying the prepended parser will be transformed, along with the result of
+	 * applying the receiving parser, into a new result according to the given
+	 * function.
+	 * 
+	 * @param <U>
+	 *          The type of the parse result of the appended parser
+	 * @param parser
+	 *          A parser matching the text immediately following from the text
+	 *          matched by this parser
+	 * @param incorporate
+	 *          A function taking the result of parsing the receiving parser and
+	 *          the result of parsing the appended parser, and transforming them
+	 *          into a new parse result
+	 * @return A new {@link Parser} instance which also matches against the
+	 *         appended parser
+	 */
+	<U> Parser<T> tryPrependTransform(Parser<U> parser, BiFunction<T, U, ? extends T> incorporate);
 
-	default <U> Parser<T> tryPrepend(Parser<U> parser,
-			BiConsumer<T, U> incorporate) {
+	/**
+	 * Derive a new {@link Parser} instance from the receiving instance.
+	 * <p>
+	 * The new parser will first match the start of the text according to the
+	 * given parser, then attempt to match the start of any subsequent text
+	 * according to the receiving parser. If the first step - of matching the
+	 * remaining text with the given parser - fails, then the result of applying
+	 * the receiving parser alone will be returned.
+	 * <p>
+	 * If application of the prepended parser also succeeds, the result of
+	 * applying the prepended parser will be incorporated with the result of
+	 * applying the receiving parser, and the result of the receiving parser will
+	 * then be returned.
+	 * 
+	 * @param <U>
+	 *          The type of the parse result of the appended parser
+	 * @param parser
+	 *          A parser matching the text immediately following from the text
+	 *          matched by this parser
+	 * @param incorporate
+	 *          A function taking the result of parsing the receiving parser and
+	 *          the result of parsing the appended parser, and transforming them
+	 *          into a new parse result
+	 * @return A new {@link Parser} instance which also matches against the
+	 *         appended parser
+	 */
+	default <U> Parser<T> tryPrepend(Parser<U> parser, BiConsumer<T, U> incorporate) {
 		return tryPrependTransform(parser, (t, u) -> {
 			incorporate.accept(t, u);
 			return t;
@@ -482,7 +596,21 @@ public interface Parser<T> {
 	 * beginning of the unmatched region.
 	 */
 
+	/**
+	 * Parse the given literal according to this parser.
+	 * 
+	 * @param literal
+	 *          the string literal to parse
+	 * @return the object result of parsing
+	 */
 	T parse(String literal);
 
+	/**
+	 * Parse the substring at the given parse state according to this parser.
+	 * 
+	 * @param currentState
+	 *          the current parse state over a string literal
+	 * @return the object result of parsing
+	 */
 	ParseResult<T> parseSubstring(ParseState currentState);
 }
