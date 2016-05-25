@@ -81,5 +81,5 @@ public interface FrameworkWrapper {
 	<T> void withServiceThrowing(Class<T> serviceClass, String filter, ThrowingConsumer<T, ?> action,
 			int timeoutMilliseconds) throws Exception;
 
-	void setBundles(Map<String, InputStream> bundleSources);
+	void setBundles(Map<String, ThrowingSupplier<InputStream, ?>> bundleSources);
 }

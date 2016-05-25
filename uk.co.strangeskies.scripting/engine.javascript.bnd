@@ -1,6 +1,6 @@
 language: JavaScript
 
--includeresource: \
+-DONOTincluderesource: \
 	@${java.home}/lib/ext/nashorn.jar!/**,\
 	@${java.home}/lib/rt.jar!/jdk/**,\
 	@${java.home}/lib/rt.jar!/com/**,\

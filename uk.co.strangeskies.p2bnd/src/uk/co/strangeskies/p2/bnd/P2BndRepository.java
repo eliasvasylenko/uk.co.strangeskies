@@ -18,27 +18,16 @@
  */
 package uk.co.strangeskies.p2.bnd;
 
-import static java.util.Arrays.stream;
-import static java.util.stream.Collectors.toMap;
-
+import java.io.Closeable;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.lang.ref.WeakReference;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
-import java.util.Set;
 import java.util.SortedSet;
-import java.util.jar.Manifest;
-import java.util.stream.StreamSupport;
 
 import org.osgi.resource.Capability;
 import org.osgi.resource.Requirement;
@@ -51,14 +40,10 @@ import aQute.bnd.service.Strategy;
 import aQute.bnd.version.Version;
 import aQute.service.reporter.Reporter;
 import uk.co.strangeskies.bnd.ReporterLog;
-import uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper;
 import uk.co.strangeskies.p2.P2Repository;
-import uk.co.strangeskies.p2.P2RepositoryFactory;
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Log.Level;
-import uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner;
-import uk.co.strangeskies.utilities.classpath.ManifestUtilities;
-import uk.co.strangeskies.utilities.function.ThrowingSupplier;
+import uk.co.strangeskies.utilities.function.ThrowingFunction;
 
 /**
  * This class is not primarily intended to be used within OSGi environments. For
@@ -73,9 +58,9 @@ import uk.co.strangeskies.utilities.function.ThrowingSupplier;
  *
  * @author Elias N Vasylenko
  */
-public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plugin
+public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plugin, Closeable
 
-/*-, Refreshable, Actionable, RegistryPlugin, Closeable, SearchableRepository, InfoRepository*/
+/*-, Refreshable, Actionable, RegistryPlugin, SearchableRepository, InfoRepository*/
 
 {
 	private static final int FRAMEWORK_TIMEOUT_MILLISECONDS = 4000;
@@ -97,10 +82,8 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 		}
 	};
 
-	private static FrameworkWrapper FRAMEWORK_WRAPPER;
-	private static P2RepositoryFactory REPOSITORY_SERVICE_FACTORY;
-
-	private P2Repository repositoryService;
+	private static SharedFrameworkWrapper SHARED_FRAMEWORK = new SharedFrameworkWrapper(FRAMEWORK_TIMEOUT_MILLISECONDS,
+			SERVICE_TIMEOUT_MILLISECONDS, FRAMEWORK_PROPERTIES);
 
 	private Log log = (l, s) -> {
 		System.out.println(l + ": " + s);
@@ -111,16 +94,27 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 
 	@SuppressWarnings("javadoc")
 	public static void main(String... args) throws Exception {
+		P2BndRepository first = test("TestName");
+		P2BndRepository second = test("TestName2");
+
+		first.close();
+		second.close();
+
+		System.out.println(first.getName());
+	}
+
+	private static P2BndRepository test(String name) throws Exception {
 		Map<String, String> map = new HashMap<>();
-		map.put("name", "TestName");
+		map.put("name", name);
 		map.put("location", "http://download.eclipse.org/releases/mars/");
 
 		P2BndRepository repo = new P2BndRepository();
 		repo.log = (l, s) -> System.out.println(l + ": " + s);
-		initialise(repo.log);
 		repo.setProperties(map);
 
 		System.out.println(repo.getName());
+
+		return repo;
 	}
 
 	/**
@@ -130,139 +124,78 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 		log.log(Level.INFO, "Creating P2BndRepository");
 	}
 
-	private static void initialise(Log log) {
-		if (FRAMEWORK_WRAPPER == null) {
-			try {
-				Manifest manifest = ManifestUtilities.getManifest(P2BndRepository.class);
-
-				log.log(Level.INFO, "Setting framework URL");
-				String frameworkJars = manifest.getMainAttributes().getValue(FrameworkWrapper.EMBEDDED_FRAMEWORK);
-				Set<URL> frameworkUrls = new HashSet<>();
-				try {
-					for (String frameworkJar : frameworkJars.split(",")) {
-						File frameworkFile = File.createTempFile("framework", ".jar");
-						frameworkFile.deleteOnExit();
-						frameworkUrls.add(frameworkFile.toURI().toURL());
-
-						try (InputStream input = P2BndRepository.class.getClassLoader().getResourceAsStream(frameworkJar);
-								OutputStream output = new FileOutputStream(frameworkFile)) {
-							while (input.available() > 0) {
-								output.write(input.read());
-							}
-						}
-					}
-				} catch (IOException e) {
-					e.printStackTrace();
-					throw new RuntimeException(e);
-				}
-
-				log.log(Level.INFO, "Creating delegating classloader to " + frameworkUrls);
-				ClassLoader classLoader = new URLClassLoader(frameworkUrls.toArray(new URL[frameworkUrls.size()]),
-						P2BndRepository.class.getClassLoader());
-
-				new ContextClassLoaderRunner(classLoader).run(() -> {
-					log.log(Level.INFO, "Fetching framework wrapper service loader");
-					ServiceLoader<FrameworkWrapper> serviceLoader = ServiceLoader.load(FrameworkWrapper.class, classLoader);
-
-					log.log(Level.INFO, "Loading framework wrapper service");
-					FRAMEWORK_WRAPPER = StreamSupport.stream(serviceLoader.spliterator(), false).findAny().orElseThrow(
-							() -> new RuntimeException("Cannot find service implementing " + FrameworkWrapper.class.getName()));
-				});
-
-				log.log(Level.INFO, "Initialise framework wrapper properties");
-				FRAMEWORK_WRAPPER.setLog(log);
-
-				FRAMEWORK_WRAPPER.setTimeoutMilliseconds(FRAMEWORK_TIMEOUT_MILLISECONDS);
-
-				FRAMEWORK_WRAPPER.setLaunchProperties(FRAMEWORK_PROPERTIES);
-
-				String bundleJars = manifest.getMainAttributes().getValue(FrameworkWrapper.EMBEDDED_RUNPATH);
-				FRAMEWORK_WRAPPER.setBundles(stream(bundleJars.split(",")).map(s -> "/" + s.trim())
-						.collect(toMap(s -> "classpath:" + s, s -> P2BndRepository.class.getResourceAsStream(s))));
-
-				FRAMEWORK_WRAPPER.setInitialisationAction(() -> {
-					FRAMEWORK_WRAPPER.withServiceThrowing(P2RepositoryFactory.class, p -> {
-						REPOSITORY_SERVICE_FACTORY = p;
-					}, SERVICE_TIMEOUT_MILLISECONDS);
-				});
-			} catch (Throwable e) {
-				log.log(Level.ERROR, "Could not initialise P2BndRepository", e);
-				throw e;
-			}
-		}
+	@Override
+	public void close() throws IOException {
+		SHARED_FRAMEWORK.closeConnection(this);
 	}
 
 	@Override
 	protected void finalize() throws Throwable {
-		FRAMEWORK_WRAPPER.stopFramework();
+		close();
 		super.finalize();
 	}
 
 	@Override
-	public void setProperties(Map<String, String> map) throws Exception {
-		log.log(Level.WARN, "Setting P2 repository properties: " + map);
-		synchronized (FRAMEWORK_WRAPPER) {
-			properties = map;
-			if (FRAMEWORK_WRAPPER.isStarted()) {
-				repositoryService.setProperties(properties);
-			}
-		}
+	public void setProperties(Map<String, String> properties) throws Exception {
+		log.log(Level.WARN, "Setting P2 repository properties: " + properties);
+
+		this.properties = properties;
 	}
 
 	@Override
 	public void setReporter(Reporter processor) {
+		log.log(Level.WARN, "Setting P2 repository reporter");
+
 		reporter = processor;
 
 		log = new ReporterLog(reporter);
-
-		log.log(Level.WARN, "Setting P2 repository reporter");
-
-		initialise(log);
-	}
-
-	private <T> T withFramework(ThrowingSupplier<T, ?> action) {
-		return FRAMEWORK_WRAPPER.withFramework(() -> {
-			if (repositoryService == null) {
-				repositoryService = REPOSITORY_SERVICE_FACTORY.get(log);
-			}
-			return action.get();
-		});
 	}
 
 	@Override
 	public synchronized PutResult put(InputStream stream, PutOptions options) throws Exception {
-		return withFramework(() -> repositoryService.put(stream, options));
+		return withConnection(repository -> repository.put(stream, options));
 	}
 
 	@Override
 	public synchronized File get(String bsn, Version version, Map<String, String> properties,
 			DownloadListener... listeners) throws Exception {
-		return withFramework(() -> repositoryService.get(bsn, version, properties, listeners));
+		return withConnection(repository -> repository.get(bsn, version, properties, listeners));
+	}
+
+	private <T> T withConnection(ThrowingFunction<P2Repository, T, ?> action) {
+		return SHARED_FRAMEWORK.withConnection(this, getLog(), repository -> {
+			if (properties != null)
+				repository.setProperties(properties);
+			if (reporter != null)
+				repository.setReporter(reporter);
+
+			return action.apply(repository);
+		});
 	}
 
 	@Override
 	public boolean canWrite() {
-		return withFramework(() -> repositoryService.canWrite());
+		return withConnection(repository -> repository.canWrite());
 	}
 
 	@Override
 	public List<String> list(String pattern) throws Exception {
-		return withFramework(() -> repositoryService.list(pattern));
+		return withConnection(repository -> repository.list(pattern));
 	}
 
 	@Override
 	public SortedSet<Version> versions(String bsn) throws Exception {
-		return withFramework(() -> repositoryService.versions(bsn));
+		return withConnection(repository -> repository.versions(bsn));
 	}
 
 	@Override
 	public String getName() {
-		return withFramework(() -> repositoryService.getName());
+		return withConnection(repository -> repository.getName());
 	}
 
 	@Override
 	public String getLocation() {
-		return withFramework(() -> repositoryService.getLocation());
+		return withConnection(repository -> repository.getLocation());
 	}
 
 	private Log getLog() {
@@ -289,17 +222,17 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 
 	@Override
 	public Map<Requirement, Collection<Capability>> findProviders(Collection<? extends Requirement> requirements) {
-		return withFramework(() -> repositoryService.findProviders(requirements));
+		return withConnection(repository -> repository.findProviders(requirements));
 	}
 
 	@Override
 	public ResourceHandle getHandle(String bsn, String version, Strategy strategy, Map<String, String> properties)
 			throws Exception {
-		return withFramework(() -> repositoryService.getHandle(bsn, version, strategy, properties));
+		return withConnection(repository -> repository.getHandle(bsn, version, strategy, properties));
 	}
 
 	@Override
 	public synchronized File getCacheDirectory() {
-		return withFramework(() -> repositoryService.getCacheDirectory());
+		return withConnection(repository -> repository.getCacheDirectory());
 	}
 }

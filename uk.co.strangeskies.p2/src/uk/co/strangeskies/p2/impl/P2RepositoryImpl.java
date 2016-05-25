@@ -19,6 +19,7 @@
 package uk.co.strangeskies.p2.impl;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
@@ -44,14 +45,8 @@ import org.eclipse.equinox.p2.repository.metadata.IMetadataRepositoryManager;
 import org.osgi.framework.BundleContext;
 import org.osgi.resource.Capability;
 import org.osgi.resource.Requirement;
-import org.osgi.service.component.annotations.Activate;
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferenceCardinality;
-import org.osgi.service.component.annotations.ReferencePolicy;
 import org.osgi.service.repository.Repository;
 
-import aQute.bnd.service.Plugin;
 import aQute.bnd.service.RemoteRepositoryPlugin;
 import aQute.bnd.service.ResourceHandle;
 import aQute.bnd.service.Strategy;
@@ -67,35 +62,30 @@ import uk.co.strangeskies.utilities.Log.Level;
  * 
  * @author Elias N Vasylenko
  */
-@Component(service = { P2Repository.class, RemoteRepositoryPlugin.class, Repository.class,
-		Plugin.class }, immediate = true)
 public class P2RepositoryImpl implements P2Repository {
 	private static final String MARS_UPDATE_SITE = "http://download.eclipse.org/releases/mars/";
 
 	private String name;
 	private File cacheDir;
-	private Log log = (l, s) -> {};
 	private int cacheTimeoutSeconds;
 
 	private URL metadataLocation;
 	private URL artifactLocation;
 
-	@Reference
-	private IProvisioningAgentProvider agentProvider;
-
+	private final Log log;
+	private final IProvisioningAgentProvider agentProvider;
 	private BundleContext bundleContext;
 
 	/**
 	 * Create a new unconfigured repository with sensible defaults where
 	 * appropriate.
 	 */
-	public P2RepositoryImpl() {
+	public P2RepositoryImpl(Log log, IProvisioningAgentProvider agentProvider, BundleContext bundleContext) {
 		cacheDir = new File(System.getProperty("user.home") + File.separator + DEFAULT_CACHE_DIRECTORY);
-	}
 
-	@Activate
-	public void activate(BundleContext context) {
-		this.bundleContext = context;
+		this.log = log;
+		this.agentProvider = agentProvider;
+		this.bundleContext = bundleContext;
 	}
 
 	private synchronized void initialise() {
@@ -215,15 +205,6 @@ public class P2RepositoryImpl implements P2Repository {
 		// TODO Auto-generated method stub
 	}
 
-	@Reference(policy = ReferencePolicy.DYNAMIC, cardinality = ReferenceCardinality.OPTIONAL)
-	public void setLog(Log log) {
-		this.log = log;
-	}
-
-	public void unsetLog(Log log) {
-		this.log = log;
-	}
-
 	/*
 	 * RepositoryPlugin overrides:
 	 */
@@ -286,13 +267,24 @@ public class P2RepositoryImpl implements P2Repository {
 
 	@Override
 	public Map<Requirement, Collection<Capability>> findProviders(Collection<? extends Requirement> requirements) {
-		Map<Requirement, Collection<Capability>> result = new HashMap<Requirement, Collection<Capability>>();
+		Map<Requirement, Collection<Capability>> result = new HashMap<>();
 		for (Requirement requirement : requirements) {
-			List<Capability> matches = new LinkedList<Capability>();
+			List<Capability> matches = new LinkedList<>();
 			result.put(requirement, matches);
 
 			// capabilityIndex.appendMatchingCapabilities(requirement, matches);
 		}
 		return result;
+	}
+
+	@Override
+	public void close() throws IOException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public Log getLog() {
+		return log;
 	}
 }

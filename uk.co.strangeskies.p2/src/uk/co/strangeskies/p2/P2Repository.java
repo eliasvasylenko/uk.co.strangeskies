@@ -18,6 +18,7 @@
  */
 package uk.co.strangeskies.p2;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.InputStream;
 import java.util.List;
@@ -31,13 +32,14 @@ import aQute.bnd.service.RemoteRepositoryPlugin;
 import aQute.bnd.service.ResourceHandle;
 import aQute.bnd.service.Strategy;
 import aQute.bnd.version.Version;
+import uk.co.strangeskies.utilities.Log;
 
 /**
  * A wrapper for an Eclipse p2 repository.
  * 
  * @author Elias N Vasylenko
  */
-public interface P2Repository extends RemoteRepositoryPlugin, Repository, Plugin {
+public interface P2Repository extends RemoteRepositoryPlugin, Repository, Plugin, Closeable {
 	/**
 	 * Property key for repository name.
 	 */
@@ -122,6 +124,8 @@ public interface P2Repository extends RemoteRepositoryPlugin, Repository, Plugin
 
 	@Override
 	public String getLocation();
+
+	public Log getLog();
 
 	/*
 	 * RemoteRepositoryPlugin overrides:
