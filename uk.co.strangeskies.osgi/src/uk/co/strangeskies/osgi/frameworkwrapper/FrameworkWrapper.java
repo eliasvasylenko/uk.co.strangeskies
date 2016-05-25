@@ -30,6 +30,7 @@ import uk.co.strangeskies.utilities.function.ThrowingRunnable;
 import uk.co.strangeskies.utilities.function.ThrowingSupplier;
 
 public interface FrameworkWrapper {
+	public static final String EMBEDDED_FRAMEWORK = "Embedded-Framework";
 	public static final String EMBEDDED_RUNPATH = "Embedded-Runpath";
 
 	void setTimeoutMilliseconds(int timeoutMilliseconds);
@@ -58,10 +59,27 @@ public interface FrameworkWrapper {
 
 	<T, E extends Exception> T withFrameworkThrowing(ThrowingSupplier<T, E> action) throws E;
 
-	<T> void withService(Class<T> serviceClass, Consumer<T> action, int timeoutMilliseconds);
+	default <T> void withService(Class<T> serviceClass, Consumer<T> action, int timeoutMilliseconds) {
+		withService(serviceClass, null, action, timeoutMilliseconds);
+	}
 
-	<T> void withServiceThrowing(Class<T> serviceClass, ThrowingConsumer<T, ?> action, int timeoutMilliseconds)
-			throws Exception;
+	default <T> void withServiceThrowing(Class<T> serviceClass, ThrowingConsumer<T, ?> action, int timeoutMilliseconds)
+			throws Exception {
+		withServiceThrowing(serviceClass, null, action, timeoutMilliseconds);
+	}
+
+	default <T> void withService(Class<T> serviceClass, String filter, Consumer<T> action, int timeoutMilliseconds) {
+		try {
+			withServiceThrowing(serviceClass, t -> action.accept(t), timeoutMilliseconds);
+		} catch (RuntimeException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	<T> void withServiceThrowing(Class<T> serviceClass, String filter, ThrowingConsumer<T, ?> action,
+			int timeoutMilliseconds) throws Exception;
 
 	void setBundles(Map<String, InputStream> bundleSources);
 }

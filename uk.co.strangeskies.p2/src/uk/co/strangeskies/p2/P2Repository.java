@@ -53,17 +53,17 @@ public interface P2Repository extends RemoteRepositoryPlugin, Repository, Plugin
 
 	/**
 	 * Property for repository metadata location, to be used alongside the
-	 * {@link #ARTIFACT_LOCATION_PROPERTY} property. Typically, this may be the same
-	 * as the artifact location, and so {@link #LOCATION_PROPERTY} may be used
-	 * instead.
+	 * {@link #ARTIFACT_LOCATION_PROPERTY} property. Typically, this may be the
+	 * same as the artifact location, and so {@link #LOCATION_PROPERTY} may be
+	 * used instead.
 	 */
 	public static final String METADATA_LOCATION_PROPERTY = "metadata";
 
 	/**
 	 * Property for repository artifact location, to be used alongside the
-	 * {@link #METADATA_LOCATION_PROPERTY} property. Typically, this may be the same
-	 * as the metadata location, and so {@link #LOCATION_PROPERTY} may be used
-	 * instead.
+	 * {@link #METADATA_LOCATION_PROPERTY} property. Typically, this may be the
+	 * same as the metadata location, and so {@link #LOCATION_PROPERTY} may be
+	 * used instead.
 	 */
 	public static final String ARTIFACT_LOCATION_PROPERTY = "artifact";
 
@@ -105,7 +105,8 @@ public interface P2Repository extends RemoteRepositoryPlugin, Repository, Plugin
 	public PutResult put(InputStream stream, PutOptions options) throws Exception;
 
 	@Override
-	public File get(String bsn, Version version, Map<String, String> properties, DownloadListener... listeners) throws Exception;
+	public File get(String bsn, Version version, Map<String, String> properties, DownloadListener... listeners)
+			throws Exception;
 
 	@Override
 	public boolean canWrite();

@@ -25,7 +25,6 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.function.Consumer;
 import java.util.stream.StreamSupport;
 
 import org.osgi.framework.Bundle;
@@ -257,26 +256,19 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 	}
 
 	@Override
-	public synchronized <T> void withService(Class<T> serviceClass, Consumer<T> action, int timeoutMilliseconds) {
-		try {
-			withServiceThrowing(serviceClass, t -> action.accept(t), timeoutMilliseconds);
-		} catch (RuntimeException e) {
-			throw e;
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	@Override
 	@SuppressWarnings("unchecked")
-	public synchronized <T> void withServiceThrowing(Class<T> serviceClass, ThrowingConsumer<T, ?> action,
+	public synchronized <T> void withServiceThrowing(Class<T> serviceClass, String filter, ThrowingConsumer<T, ?> action,
 			int timeoutMilliseconds) throws Exception {
 		try {
 			BundleContext frameworkContext = framework.getBundleContext();
 
 			Property<Object, Object> service = new IdentityProperty<>();
 
-			String filter = "(" + Constants.OBJECTCLASS + "=" + serviceClass.getName() + ")";
+			if (filter == null) {
+				filter = "(" + Constants.OBJECTCLASS + "=" + serviceClass.getName() + ")";
+			} else {
+				filter = "(&&" + filter + "(" + Constants.OBJECTCLASS + "=" + serviceClass.getName() + "))";
+			}
 			ServiceListener serviceListener = event -> {
 				switch (event.getType()) {
 				case ServiceEvent.REGISTERED:

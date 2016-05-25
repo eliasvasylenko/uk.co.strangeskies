@@ -8,3 +8,6 @@ Private-Package: \
 	uk.co.strangeskies.osgi.text,\
 	uk.co.strangeskies.osgi.servicewrapper.impl,\
 	uk.co.strangeskies.osgi.frameworkwrapper.impl
+
+-includeresource: \
+	META-INF/services/uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper=FrameworkWrapperService

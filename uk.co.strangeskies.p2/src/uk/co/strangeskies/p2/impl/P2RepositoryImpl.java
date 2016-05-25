@@ -72,58 +72,6 @@ import uk.co.strangeskies.utilities.Log.Level;
 public class P2RepositoryImpl implements P2Repository {
 	private static final String MARS_UPDATE_SITE = "http://download.eclipse.org/releases/mars/";
 
-	/**
-	 * Property key for repository name.
-	 */
-	public static final String PROP_NAME = "name";
-
-	/**
-	 * Property key for repository location. Setting this property to a value is
-	 * equivalent to setting both the {@link #PROP_METADATA_LOCATION} and
-	 * {@link #PROP_ARTIFACT_LOCATION} to that value. This property should
-	 * therefore not be used in conjunction with those properties.
-	 */
-	public static final String PROP_LOCATION = "location";
-
-	/**
-	 * Property for repository metadata location, to be used alongside the
-	 * {@link #PROP_ARTIFACT_LOCATION} property. Typically, this may be the same
-	 * as the artifact location, and so {@link #PROP_LOCATION} may be used
-	 * instead.
-	 */
-	public static final String PROP_METADATA_LOCATION = "metadata";
-
-	/**
-	 * Property for repository artifact location, to be used alongside the
-	 * {@link #PROP_METADATA_LOCATION} property. Typically, this may be the same
-	 * as the metadata location, and so {@link #PROP_LOCATION} may be used
-	 * instead.
-	 */
-	public static final String PROP_ARTIFACT_LOCATION = "artifact";
-
-	/**
-	 * Property for cache location, with a default given by
-	 * {@link #DEFAULT_CACHE_DIR} in the user's home directory.
-	 */
-	public static final String PROP_CACHE_DIR = "cache";
-
-	/**
-	 * Default location for offline caching of repository artifacts.
-	 */
-	public static final String DEFAULT_CACHE_DIR = ".bnd" + File.separator + "cache" + File.separator + "p2";
-
-	/**
-	 * The length of time in seconds that cached artifact downloads will be
-	 * retained and remain valid. Defaults to
-	 * {@value #DEFAULT_CACHE_TIMEOUT_SECONDS} seconds.
-	 */
-	public static final String PROP_CACHE_TIMEOUT_SECONDS = "timeout";
-
-	/**
-	 * Default cache timeout in seconds.
-	 */
-	public static final int DEFAULT_CACHE_TIMEOUT_SECONDS = 30;
-
 	private String name;
 	private File cacheDir;
 	private Log log = (l, s) -> {};
@@ -142,7 +90,7 @@ public class P2RepositoryImpl implements P2Repository {
 	 * appropriate.
 	 */
 	public P2RepositoryImpl() {
-		cacheDir = new File(System.getProperty("user.home") + File.separator + DEFAULT_CACHE_DIR);
+		cacheDir = new File(System.getProperty("user.home") + File.separator + DEFAULT_CACHE_DIRECTORY);
 	}
 
 	@Activate
@@ -209,7 +157,7 @@ public class P2RepositoryImpl implements P2Repository {
 
 	@Override
 	public void setProperties(Map<String, String> map) throws Exception {
-		name = map.get(PROP_NAME);
+		name = map.get(NAME_PROPERTY);
 
 		parseCacheProperties(map);
 		parseLocationProperties(map);
@@ -217,26 +165,28 @@ public class P2RepositoryImpl implements P2Repository {
 
 	protected void parseCacheProperties(Map<String, String> map) {
 		cacheDir = null;
-		if (map.containsKey(PROP_CACHE_DIR)) {
-			cacheDir = new File(map.get(PROP_CACHE_DIR));
+		if (map.containsKey(CACHE_DIRECTORY_PROPERTY)) {
+			cacheDir = new File(map.get(CACHE_DIRECTORY_PROPERTY));
 			if (!cacheDir.exists() || !cacheDir.isDirectory()) {
 				log.log(Level.ERROR, "Bad cache directory setting: " + cacheDir);
 			}
 
-			if (map.containsKey(PROP_CACHE_TIMEOUT_SECONDS)) {
+			if (map.containsKey(CACHE_TIMEOUT_SECONDS_PROPERTY)) {
 				try {
-					cacheTimeoutSeconds = Integer.parseInt(map.get(PROP_CACHE_TIMEOUT_SECONDS));
+					cacheTimeoutSeconds = Integer.parseInt(map.get(CACHE_TIMEOUT_SECONDS_PROPERTY));
 				} catch (NumberFormatException e) {
 					log.log(Level.ERROR, "Bad timeout setting: " + cacheTimeoutSeconds, e);
 				}
+			} else {
+				cacheTimeoutSeconds = DEFAULT_CACHE_TIMEOUT_SECONDS;
 			}
 		}
 	}
 
 	protected void parseLocationProperties(Map<String, String> map) {
-		String location = map.get(PROP_LOCATION);
-		String metadataLocation = map.get(PROP_METADATA_LOCATION);
-		String artifactLocation = map.get(PROP_ARTIFACT_LOCATION);
+		String location = map.get(LOCATION_PROPERTY);
+		String metadataLocation = map.get(METADATA_LOCATION_PROPERTY);
+		String artifactLocation = map.get(ARTIFACT_LOCATION_PROPERTY);
 
 		if (location != null) {
 			if (metadataLocation != null || artifactLocation != null) {
