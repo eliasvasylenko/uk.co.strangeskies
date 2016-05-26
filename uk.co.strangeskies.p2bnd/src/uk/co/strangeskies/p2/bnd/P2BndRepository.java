@@ -18,6 +18,10 @@
  */
 package uk.co.strangeskies.p2.bnd;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableList;
+import static java.util.stream.Collectors.joining;
+
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -28,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
+import java.util.stream.Collectors;
 
 import org.osgi.resource.Capability;
 import org.osgi.resource.Requirement;
@@ -63,27 +68,57 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 /*-, Refreshable, Actionable, RegistryPlugin, SearchableRepository, InfoRepository*/
 
 {
-	private static final int FRAMEWORK_TIMEOUT_MILLISECONDS = 4000;
-	private static final int SERVICE_TIMEOUT_MILLISECONDS = 4000;
+	public static final int FRAMEWORK_TIMEOUT_MILLISECONDS = 4000;
+	public static final int SERVICE_TIMEOUT_MILLISECONDS = 4000;
 
 	private static final String OSGI_CLEAN = "osgi.clean";
 	private static final String OSGI_CLEAR_PERSISTED_STATE = "clearPersistedState";
 	private static final String OSGI_SYSTEM_PACKAGES_EXTRA = "org.osgi.framework.system.packages.extra";
 
+	public static final List<String> FORWARD_VERSIONED_PACKAGES = unmodifiableList(asList(
+			"uk.co.strangeskies.osgi;version=\"1.0.0\"",
+
+			/*
+			 * TODO There are just for in-framework logging?
+			 */
+			"uk.co.strangeskies.osgi.frameworkwrapper;version=\"1.0.0\"",
+			"uk.co.strangeskies.osgi.servicewrapper;version=\"1.0.0\"", "uk.co.strangeskies.utilities.text;version=\"1.0.0\"",
+			"uk.co.strangeskies.utilities.classpath;version=\"1.0.0\"",
+			"uk.co.strangeskies.utilities.collection;version=\"1.0.0\"",
+			"uk.co.strangeskies.utilities.factory;version=\"1.0.0\"",
+			"uk.co.strangeskies.utilities.flowcontrol;version=\"1.0.0\"",
+			"uk.co.strangeskies.utilities.function;version=\"1.0.0\"", "uk.co.strangeskies.utilities.tuple;version=\"1.0.0\"",
+			"uk.co.strangeskies.p2.bnd;version=\"1.0.0\"",
+
+			"uk.co.strangeskies.utilities;version=\"1.0.0\"", "uk.co.strangeskies.p2;version=\"1.0.0\"",
+			"aQute.bnd.service;version=\"4.1.0\"", "aQute.bnd.version;version=\"1.3.0\"",
+			"aQute.service.reporter;version=\"1.0.0\"", "org.osgi.service.repository;version=\"1.0.0\""));
+	public static final List<String> FORWARD_PACKAGES = unmodifiableList(
+			FORWARD_VERSIONED_PACKAGES.stream().map(s -> s.split(";")[0]).collect(Collectors.toList()));
+
 	@SuppressWarnings("serial")
-	static final Map<String, String> FRAMEWORK_PROPERTIES = new HashMap<String, String>() {
+	public static final Map<String, String> FRAMEWORK_PROPERTIES = new HashMap<String, String>() {
 		{
 			put(OSGI_CLEAN, Boolean.toString(true));
 			put(OSGI_CLEAR_PERSISTED_STATE, Boolean.toString(true));
-			put(OSGI_SYSTEM_PACKAGES_EXTRA,
-					"uk.co.strangeskies.utilities;version=\"1.0.0\"," + "uk.co.strangeskies.p2;version=\"1.0.0\","
-							+ "aQute.bnd.service;version=\"4.1.0\"," + "aQute.bnd.version;version=\"1.3.0\","
-							+ "aQute.service.reporter;version=\"1.0.0\"," + "org.osgi.service.repository;version=\"1.0.0\"");
+			put(OSGI_SYSTEM_PACKAGES_EXTRA, FORWARD_VERSIONED_PACKAGES.stream().collect(joining(",")));
 		}
 	};
 
-	private static SharedFrameworkWrapper SHARED_FRAMEWORK = new SharedFrameworkWrapper(FRAMEWORK_TIMEOUT_MILLISECONDS,
-			SERVICE_TIMEOUT_MILLISECONDS, FRAMEWORK_PROPERTIES);
+	private static SharedFrameworkWrapper SHARED_FRAMEWORK;
+
+	public static void setSharedFramework(SharedFrameworkWrapper sharedFrameworkWrapper) {
+		if (SHARED_FRAMEWORK != null)
+			throw new IllegalStateException();
+		SHARED_FRAMEWORK = sharedFrameworkWrapper;
+	}
+
+	public static SharedFrameworkWrapper getSharedFramework() {
+		if (SHARED_FRAMEWORK == null)
+			SHARED_FRAMEWORK = new SharedFrameworkWrapper(FRAMEWORK_TIMEOUT_MILLISECONDS, SERVICE_TIMEOUT_MILLISECONDS,
+					FRAMEWORK_PROPERTIES);
+		return SHARED_FRAMEWORK;
+	}
 
 	private Log log = (l, s) -> {
 		System.out.println(l + ": " + s);
@@ -92,15 +127,12 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 	private Map<String, String> properties;
 	private Reporter reporter;
 
-	@SuppressWarnings("javadoc")
 	public static void main(String... args) throws Exception {
-		P2BndRepository first = test("TestName");
-		P2BndRepository second = test("TestName2");
-
-		first.close();
-		second.close();
+		P2BndRepository first = test("hi");
 
 		System.out.println(first.getName());
+
+		first.close();
 	}
 
 	private static P2BndRepository test(String name) throws Exception {
@@ -109,10 +141,21 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 		map.put("location", "http://download.eclipse.org/releases/mars/");
 
 		P2BndRepository repo = new P2BndRepository();
-		repo.log = (l, s) -> System.out.println(l + ": " + s);
-		repo.setProperties(map);
+		repo.setLog(new Log() {
 
-		System.out.println(repo.getName());
+			@Override
+			public void log(Level level, String message) {
+				System.out.println(level + ": " + message);
+			}
+
+			@Override
+			public void log(Level level, String message, Throwable exception) {
+				Log.super.log(level, message, exception);
+				exception.printStackTrace();
+			}
+		});
+
+		repo.setProperties(map);
 
 		return repo;
 	}
@@ -126,13 +169,39 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 
 	@Override
 	public void close() throws IOException {
-		SHARED_FRAMEWORK.closeConnection(this);
+		getSharedFramework().closeConnection(this);
 	}
 
 	@Override
 	protected void finalize() throws Throwable {
 		close();
 		super.finalize();
+	}
+
+	public void setLog(Log log) {
+		this.log = log;
+	}
+
+	public Log getLog() {
+		WeakReference<P2BndRepository> logSource = new WeakReference<>(this);
+
+		return new Log() {
+			@Override
+			public void log(Level level, String message) {
+				P2BndRepository repository = logSource.get();
+				if (repository != null) {
+					repository.log.log(level, message);
+				}
+			}
+
+			@Override
+			public void log(Level level, String message, Throwable exception) {
+				P2BndRepository repository = logSource.get();
+				if (repository != null) {
+					repository.log.log(level, message, exception);
+				}
+			}
+		};
 	}
 
 	@Override
@@ -163,7 +232,7 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 	}
 
 	private <T> T withConnection(ThrowingFunction<P2Repository, T, ?> action) {
-		return SHARED_FRAMEWORK.withConnection(this, getLog(), repository -> {
+		return getSharedFramework().withConnection(this, getLog(), repository -> {
 			if (properties != null)
 				repository.setProperties(properties);
 			if (reporter != null)
@@ -196,28 +265,6 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 	@Override
 	public String getLocation() {
 		return withConnection(repository -> repository.getLocation());
-	}
-
-	private Log getLog() {
-		WeakReference<P2BndRepository> logSource = new WeakReference<>(this);
-
-		return new Log() {
-			@Override
-			public void log(Level level, String message) {
-				P2BndRepository repository = logSource.get();
-				if (repository != null) {
-					repository.log.log(level, message);
-				}
-			}
-
-			@Override
-			public void log(Level level, String message, Throwable exception) {
-				P2BndRepository repository = logSource.get();
-				if (repository != null) {
-					repository.log.log(level, message);
-				}
-			}
-		};
 	}
 
 	@Override

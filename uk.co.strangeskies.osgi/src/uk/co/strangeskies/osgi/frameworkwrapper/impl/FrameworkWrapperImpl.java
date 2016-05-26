@@ -21,7 +21,6 @@ package uk.co.strangeskies.osgi.frameworkwrapper.impl;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
@@ -87,10 +86,10 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 
 		this.classLoader = classLoader;
 
-		log.log(Level.WARN, "Fetching framework service loader");
+		log.log(Level.INFO, "Fetching framework service loader");
 		ServiceLoader<FrameworkFactory> serviceLoader = ServiceLoader.load(FrameworkFactory.class, classLoader);
 
-		log.log(Level.WARN, "Loading framework service");
+		log.log(Level.INFO, "Loading framework service");
 		frameworkFactory = StreamSupport.stream(serviceLoader.spliterator(), false).findAny().orElseThrow(
 				() -> new RuntimeException("Cannot find service implementing " + FrameworkFactory.class.getName()));
 	}
@@ -130,13 +129,13 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 	public synchronized void startFramework() {
 		if (!frameworkStarted) {
 			try {
-				log.log(Level.WARN, "Loading framework");
+				log.log(Level.INFO, "Loading framework");
 				framework = frameworkFactory.newFramework(launchProperties);
-				log.log(Level.WARN, "Starting framework");
+				log.log(Level.INFO, "Starting framework");
 				framework.start();
 				frameworkStarted = true;
 
-				log.log(Level.WARN, "Registering bundles");
+				log.log(Level.INFO, "Registering bundles");
 				registerBundles();
 
 				initialisationAction.run();
@@ -156,7 +155,7 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 
 	private void registerBundles() throws Exception {
 		BundleContext frameworkContext = framework.getBundleContext();
-		frameworkContext.registerService(Log.class, log, new Hashtable<>());
+		frameworkContext.registerService(Log.class, log, null);
 
 		List<Bundle> bundles = new ArrayList<>();
 		bundleSources.entrySet().stream().forEach(b -> {
@@ -177,7 +176,7 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 			}
 		}
 
-		log.log(Level.WARN, "Successfully started bundles");
+		log.log(Level.INFO, "Successfully started bundles");
 	}
 
 	@Override

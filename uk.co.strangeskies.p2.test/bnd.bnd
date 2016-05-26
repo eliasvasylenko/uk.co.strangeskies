@@ -4,13 +4,8 @@
 
 -buildpath: \
 	${ss;utilities},\
-	biz.aQute.bndlib,\
-	org.eclipse.equinox.common,\
-	org.eclipse.equinox.p2.core,\
-	org.eclipse.equinox.p2.metadata,\
-	org.eclipse.equinox.p2.repository
+	${ss;p2.api}
 
 -testpath: \
 	org.eclipse.osgi
-
--sub: *.bnd
+Private-Package: uk.co.strangeskies.p2.test

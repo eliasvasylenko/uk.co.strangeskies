@@ -1,4 +1,4 @@
-Private-Package: \
+Export-Package: \
 	uk.co.strangeskies.p2.bnd
 
 -runee: JavaSE-1.8
@@ -40,7 +40,8 @@ embedded.bundles: \
 	org.tukaani.xz
 
 embedded.projects: \
-	uk.co.strangeskies.p2.provider
+	uk.co.strangeskies.p2.provider,\
+	uk.co.strangeskies.osgi.provider
 
 shaded.bundles: \
 	biz.aQute.bndlib

@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
+ *
+ * This file is part of uk.co.strangeskies.p2bnd.
+ *
+ * uk.co.strangeskies.p2bnd is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * uk.co.strangeskies.p2bnd is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with uk.co.strangeskies.p2bnd.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package uk.co.strangeskies.p2.bnd;
 
 import static java.util.Arrays.stream;
@@ -10,13 +28,16 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.jar.Manifest;
+import java.util.jar.Attributes;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper;
@@ -25,13 +46,18 @@ import uk.co.strangeskies.p2.P2RepositoryFactory;
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Log.Level;
 import uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner;
+import uk.co.strangeskies.utilities.classpath.FilteringClassLoader;
 import uk.co.strangeskies.utilities.classpath.ManifestUtilities;
 import uk.co.strangeskies.utilities.function.ThrowingFunction;
 
 public class SharedFrameworkWrapper {
+	private static final String STRANGE_SKIES_PACKAGE = "uk.co.strangeskies";
+
 	private final int frameworkTimeoutMilliseconds;
 	private final int serviceTimeoutMilliseconds;
 	private final Map<String, String> frameworkProperties;
+	private final Set<URL> frameworkJars;
+	private final Set<URL> bundleJars;
 
 	private FrameworkWrapper frameworkWrapper;
 	private P2RepositoryFactory repositoryFactory;
@@ -40,10 +66,31 @@ public class SharedFrameworkWrapper {
 	private Map<Object, P2Repository> openConnections = new WeakHashMap<>();
 
 	public SharedFrameworkWrapper(int frameworkTimeoutMilliseconds, int serviceTimeoutMilliseconds,
-			Map<String, String> frameworkProperties) {
+			Map<String, String> frameworkProperties, Set<URL> frameworkJars, Set<URL> bundleJars) {
 		this.frameworkTimeoutMilliseconds = frameworkTimeoutMilliseconds;
 		this.serviceTimeoutMilliseconds = serviceTimeoutMilliseconds;
 		this.frameworkProperties = new HashMap<>(frameworkProperties);
+
+		this.frameworkJars = frameworkJars;
+		this.bundleJars = bundleJars;
+	}
+
+	public SharedFrameworkWrapper(int frameworkTimeoutMilliseconds, int serviceTimeoutMilliseconds,
+			Map<String, String> frameworkProperties) {
+		this(frameworkTimeoutMilliseconds, serviceTimeoutMilliseconds, frameworkProperties,
+				ManifestUtilities.getManifest(P2BndRepository.class).getMainAttributes());
+	}
+
+	private SharedFrameworkWrapper(int frameworkTimeoutMilliseconds, int serviceTimeoutMilliseconds,
+			Map<String, String> frameworkProperties, Attributes attributes) {
+		this(frameworkTimeoutMilliseconds, serviceTimeoutMilliseconds, frameworkProperties,
+				toUrls(attributes.getValue(FrameworkWrapper.EMBEDDED_FRAMEWORK)),
+				toUrls(attributes.getValue(FrameworkWrapper.EMBEDDED_RUNPATH)));
+	}
+
+	private static Set<URL> toUrls(String value) {
+		return stream(value.split(",")).map(String::trim).map(P2BndRepository.class.getClassLoader()::getResource)
+				.collect(Collectors.toSet());
 	}
 
 	public synchronized <T> T withConnection(Object key, Log log, ThrowingFunction<P2Repository, T, ?> action) {
@@ -61,21 +108,36 @@ public class SharedFrameworkWrapper {
 		});
 	}
 
+	private boolean classDelegationFilter(Class<?> clazz) {
+		List<String> packages = new ArrayList<>(P2BndRepository.FORWARD_PACKAGES);
+		packages.add(STRANGE_SKIES_PACKAGE);
+		packages.add("java");
+		packages.add("org.osgi.service.repository");
+		packages.add("org.osgi.resource");
+		packages.add("aQute");
+
+		for (String forwardPackage : packages) {
+			String packageName = clazz.getPackage().getName();
+			if (packageName.startsWith(forwardPackage + ".") || packageName.equals(forwardPackage)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	public synchronized void initialise(Log log) {
 		if (frameworkWrapper == null) {
 			try {
-				Manifest manifest = ManifestUtilities.getManifest(P2BndRepository.class);
-
 				log.log(Level.INFO, "Setting framework URL");
-				String frameworkJars = manifest.getMainAttributes().getValue(FrameworkWrapper.EMBEDDED_FRAMEWORK);
 				Set<URL> frameworkUrls = new HashSet<>();
 				try {
-					for (String frameworkJar : frameworkJars.split(",")) {
+					for (URL frameworkJar : frameworkJars) {
 						File frameworkFile = File.createTempFile("framework", ".jar");
 						frameworkFile.deleteOnExit();
 						frameworkUrls.add(frameworkFile.toURI().toURL());
 
-						try (InputStream input = P2BndRepository.class.getClassLoader().getResourceAsStream(frameworkJar);
+						try (InputStream input = frameworkJar.openStream();
 								OutputStream output = new FileOutputStream(frameworkFile)) {
 							while (input.available() > 0) {
 								output.write(input.read());
@@ -89,7 +151,7 @@ public class SharedFrameworkWrapper {
 
 				log.log(Level.INFO, "Creating delegating classloader to " + frameworkUrls);
 				classLoader = new URLClassLoader(frameworkUrls.toArray(new URL[frameworkUrls.size()]),
-						P2BndRepository.class.getClassLoader());
+						new FilteringClassLoader(P2RepositoryFactory.class.getClassLoader(), this::classDelegationFilter));
 
 				new ContextClassLoaderRunner(classLoader).run(() -> {
 					log.log(Level.INFO, "Fetching framework wrapper service loader");
@@ -107,9 +169,7 @@ public class SharedFrameworkWrapper {
 
 				frameworkWrapper.setLaunchProperties(frameworkProperties);
 
-				String bundleJars = manifest.getMainAttributes().getValue(FrameworkWrapper.EMBEDDED_RUNPATH);
-				frameworkWrapper.setBundles(stream(bundleJars.split(",")).map(s -> "/" + s.trim())
-						.collect(toMap(s -> "classpath:" + s, s -> () -> P2BndRepository.class.getResourceAsStream(s))));
+				frameworkWrapper.setBundles(bundleJars.stream().collect(toMap(Object::toString, s -> () -> s.openStream())));
 
 				frameworkWrapper.setInitialisationAction(() -> {
 					frameworkWrapper.withServiceThrowing(P2RepositoryFactory.class, p -> {
