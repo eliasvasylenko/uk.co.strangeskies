@@ -19,7 +19,6 @@
 package uk.co.strangeskies.p2.bnd;
 
 import static java.util.Arrays.stream;
-import static java.util.stream.Collectors.toMap;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -31,6 +30,7 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
@@ -45,12 +45,15 @@ import uk.co.strangeskies.p2.P2Repository;
 import uk.co.strangeskies.p2.P2RepositoryFactory;
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Log.Level;
-import uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner;
 import uk.co.strangeskies.utilities.classpath.FilteringClassLoader;
 import uk.co.strangeskies.utilities.classpath.ManifestUtilities;
 import uk.co.strangeskies.utilities.function.ThrowingFunction;
+import uk.co.strangeskies.utilities.function.ThrowingSupplier;
 
-public class SharedFrameworkWrapper {
+public class FrameworkWrapperContainer {
+	public static final String EMBEDDED_FRAMEWORK = "Embedded-Framework";
+	public static final String EMBEDDED_RUNPATH = "Embedded-Runpath";
+
 	private static final String STRANGE_SKIES_PACKAGE = "uk.co.strangeskies";
 
 	private final int frameworkTimeoutMilliseconds;
@@ -65,7 +68,7 @@ public class SharedFrameworkWrapper {
 
 	private Map<Object, P2Repository> openConnections = new WeakHashMap<>();
 
-	public SharedFrameworkWrapper(int frameworkTimeoutMilliseconds, int serviceTimeoutMilliseconds,
+	public FrameworkWrapperContainer(int frameworkTimeoutMilliseconds, int serviceTimeoutMilliseconds,
 			Map<String, String> frameworkProperties, Set<URL> frameworkJars, Set<URL> bundleJars) {
 		this.frameworkTimeoutMilliseconds = frameworkTimeoutMilliseconds;
 		this.serviceTimeoutMilliseconds = serviceTimeoutMilliseconds;
@@ -75,17 +78,16 @@ public class SharedFrameworkWrapper {
 		this.bundleJars = bundleJars;
 	}
 
-	public SharedFrameworkWrapper(int frameworkTimeoutMilliseconds, int serviceTimeoutMilliseconds,
+	public FrameworkWrapperContainer(int frameworkTimeoutMilliseconds, int serviceTimeoutMilliseconds,
 			Map<String, String> frameworkProperties) {
 		this(frameworkTimeoutMilliseconds, serviceTimeoutMilliseconds, frameworkProperties,
 				ManifestUtilities.getManifest(P2BndRepository.class).getMainAttributes());
 	}
 
-	private SharedFrameworkWrapper(int frameworkTimeoutMilliseconds, int serviceTimeoutMilliseconds,
+	private FrameworkWrapperContainer(int frameworkTimeoutMilliseconds, int serviceTimeoutMilliseconds,
 			Map<String, String> frameworkProperties, Attributes attributes) {
 		this(frameworkTimeoutMilliseconds, serviceTimeoutMilliseconds, frameworkProperties,
-				toUrls(attributes.getValue(FrameworkWrapper.EMBEDDED_FRAMEWORK)),
-				toUrls(attributes.getValue(FrameworkWrapper.EMBEDDED_RUNPATH)));
+				toUrls(attributes.getValue(EMBEDDED_FRAMEWORK)), toUrls(attributes.getValue(EMBEDDED_RUNPATH)));
 	}
 
 	private static Set<URL> toUrls(String value) {
@@ -110,11 +112,6 @@ public class SharedFrameworkWrapper {
 
 	private boolean classDelegationFilter(Class<?> clazz) {
 		List<String> packages = new ArrayList<>(P2BndRepository.FORWARD_PACKAGES);
-		packages.add(STRANGE_SKIES_PACKAGE);
-		packages.add("java");
-		packages.add("org.osgi.service.repository");
-		packages.add("org.osgi.resource");
-		packages.add("aQute");
 
 		for (String forwardPackage : packages) {
 			String packageName = clazz.getPackage().getName();
@@ -151,16 +148,38 @@ public class SharedFrameworkWrapper {
 
 				log.log(Level.INFO, "Creating delegating classloader to " + frameworkUrls);
 				classLoader = new URLClassLoader(frameworkUrls.toArray(new URL[frameworkUrls.size()]),
-						new FilteringClassLoader(P2RepositoryFactory.class.getClassLoader(), this::classDelegationFilter));
+						new FilteringClassLoader(FrameworkWrapper.class.getClassLoader(), this::classDelegationFilter));
 
-				new ContextClassLoaderRunner(classLoader).run(() -> {
-					log.log(Level.INFO, "Fetching framework wrapper service loader");
-					ServiceLoader<FrameworkWrapper> serviceLoader = ServiceLoader.load(FrameworkWrapper.class, classLoader);
+				/*
+				 * 
+				 * 
+				 * 
+				 * 
+				 * 
+				 * 
+				 * 
+				 * 
+				 * 
+				 * 
+				 * TODO make parent classloader the bundle classloader!
+				 * 
+				 * 
+				 * 
+				 * 
+				 * 
+				 * 
+				 * 
+				 * 
+				 * 
+				 * 
+				 */
 
-					log.log(Level.INFO, "Loading framework wrapper service");
-					frameworkWrapper = StreamSupport.stream(serviceLoader.spliterator(), false).findAny().orElseThrow(
-							() -> new RuntimeException("Cannot find service implementing " + FrameworkWrapper.class.getName()));
-				});
+				log.log(Level.INFO, "Fetching framework wrapper service loader");
+				ServiceLoader<FrameworkWrapper> serviceLoader = ServiceLoader.load(FrameworkWrapper.class, classLoader);
+
+				log.log(Level.INFO, "Loading framework wrapper service");
+				frameworkWrapper = StreamSupport.stream(serviceLoader.spliterator(), false).findAny().orElseThrow(
+						() -> new RuntimeException("Cannot find service implementing " + FrameworkWrapper.class.getName()));
 
 				log.log(Level.INFO, "Initialise framework wrapper properties");
 				frameworkWrapper.setLog(log);
@@ -169,7 +188,11 @@ public class SharedFrameworkWrapper {
 
 				frameworkWrapper.setLaunchProperties(frameworkProperties);
 
-				frameworkWrapper.setBundles(bundleJars.stream().collect(toMap(Object::toString, s -> () -> s.openStream())));
+				Map<String, ThrowingSupplier<InputStream, ?>> bundles = new LinkedHashMap<>();
+				for (URL bundleJar : bundleJars) {
+					bundles.put(bundleJar.toString(), bundleJar::openStream);
+				}
+				frameworkWrapper.setBundles(bundles);
 
 				frameworkWrapper.setInitialisationAction(() -> {
 					frameworkWrapper.withServiceThrowing(P2RepositoryFactory.class, p -> {

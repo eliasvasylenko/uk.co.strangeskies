@@ -21,6 +21,8 @@ package uk.co.strangeskies.p2.bnd;
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.joining;
+import static org.osgi.framework.Constants.FRAMEWORK_BUNDLE_PARENT;
+import static org.osgi.framework.Constants.FRAMEWORK_SYSTEMPACKAGES_EXTRA;
 
 import java.io.Closeable;
 import java.io.File;
@@ -34,6 +36,7 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.stream.Collectors;
 
+import org.osgi.framework.Constants;
 import org.osgi.resource.Capability;
 import org.osgi.resource.Requirement;
 import org.osgi.service.repository.Repository;
@@ -73,7 +76,6 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 
 	private static final String OSGI_CLEAN = "osgi.clean";
 	private static final String OSGI_CLEAR_PERSISTED_STATE = "clearPersistedState";
-	private static final String OSGI_SYSTEM_PACKAGES_EXTRA = "org.osgi.framework.system.packages.extra";
 
 	public static final List<String> FORWARD_VERSIONED_PACKAGES = unmodifiableList(asList(
 			"uk.co.strangeskies.osgi;version=\"1.0.0\"",
@@ -88,11 +90,12 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 			"uk.co.strangeskies.utilities.factory;version=\"1.0.0\"",
 			"uk.co.strangeskies.utilities.flowcontrol;version=\"1.0.0\"",
 			"uk.co.strangeskies.utilities.function;version=\"1.0.0\"", "uk.co.strangeskies.utilities.tuple;version=\"1.0.0\"",
-			"uk.co.strangeskies.p2.bnd;version=\"1.0.0\"",
+			"uk.co.strangeskies.p2;version=\"1.0.0\"", "uk.co.strangeskies.p2.bnd;version=\"1.0.0\"",
+			"org.osgi.service.repository;version=\"1.0.0\"", "org.osgi.resource;version=\"1.0.0\"",
 
 			"uk.co.strangeskies.utilities;version=\"1.0.0\"", "uk.co.strangeskies.p2;version=\"1.0.0\"",
 			"aQute.bnd.service;version=\"4.1.0\"", "aQute.bnd.version;version=\"1.3.0\"",
-			"aQute.service.reporter;version=\"1.0.0\"", "org.osgi.service.repository;version=\"1.0.0\""));
+			"aQute.service.reporter;version=\"1.0.0\""));
 	public static final List<String> FORWARD_PACKAGES = unmodifiableList(
 			FORWARD_VERSIONED_PACKAGES.stream().map(s -> s.split(";")[0]).collect(Collectors.toList()));
 
@@ -101,21 +104,23 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 		{
 			put(OSGI_CLEAN, Boolean.toString(true));
 			put(OSGI_CLEAR_PERSISTED_STATE, Boolean.toString(true));
-			put(OSGI_SYSTEM_PACKAGES_EXTRA, FORWARD_VERSIONED_PACKAGES.stream().collect(joining(",")));
+
+			put(FRAMEWORK_SYSTEMPACKAGES_EXTRA, FORWARD_VERSIONED_PACKAGES.stream().collect(joining(",")));
+			put(FRAMEWORK_BUNDLE_PARENT, Constants.FRAMEWORK_BUNDLE_PARENT_FRAMEWORK);
 		}
 	};
 
-	private static SharedFrameworkWrapper SHARED_FRAMEWORK;
+	private static FrameworkWrapperContainer SHARED_FRAMEWORK;
 
-	public static void setSharedFramework(SharedFrameworkWrapper sharedFrameworkWrapper) {
+	public static void setSharedFramework(FrameworkWrapperContainer sharedFrameworkWrapper) {
 		if (SHARED_FRAMEWORK != null)
 			throw new IllegalStateException();
 		SHARED_FRAMEWORK = sharedFrameworkWrapper;
 	}
 
-	public static SharedFrameworkWrapper getSharedFramework() {
+	public static FrameworkWrapperContainer getSharedFramework() {
 		if (SHARED_FRAMEWORK == null)
-			SHARED_FRAMEWORK = new SharedFrameworkWrapper(FRAMEWORK_TIMEOUT_MILLISECONDS, SERVICE_TIMEOUT_MILLISECONDS,
+			SHARED_FRAMEWORK = new FrameworkWrapperContainer(FRAMEWORK_TIMEOUT_MILLISECONDS, SERVICE_TIMEOUT_MILLISECONDS,
 					FRAMEWORK_PROPERTIES);
 		return SHARED_FRAMEWORK;
 	}

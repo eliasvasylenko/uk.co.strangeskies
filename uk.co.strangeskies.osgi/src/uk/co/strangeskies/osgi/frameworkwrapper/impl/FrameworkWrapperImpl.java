@@ -20,7 +20,7 @@ package uk.co.strangeskies.osgi.frameworkwrapper.impl;
 
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
@@ -34,7 +34,11 @@ import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.launch.Framework;
 import org.osgi.framework.launch.FrameworkFactory;
+import org.osgi.framework.wiring.BundleWiring;
+import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ServiceScope;
 
 import uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper;
 import uk.co.strangeskies.utilities.IdentityProperty;
@@ -47,7 +51,7 @@ import uk.co.strangeskies.utilities.function.ThrowingConsumer;
 import uk.co.strangeskies.utilities.function.ThrowingRunnable;
 import uk.co.strangeskies.utilities.function.ThrowingSupplier;
 
-@Component
+@Component(scope = ServiceScope.BUNDLE)
 @SuppressWarnings("javadoc")
 public class FrameworkWrapperImpl implements FrameworkWrapper {
 	private static final String FRAGMENT_HOST_HEADER = "Fragment-Host";
@@ -62,10 +66,11 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 	private Log log;
 	private boolean frameworkStarted = false;
 
-	private final ClassLoader classLoader;
-	private final FrameworkFactory frameworkFactory;
+	private FrameworkFactory frameworkFactory;
 
-	private Map<String, ThrowingSupplier<InputStream, ?>> bundleSources = new HashMap<>();
+	private Map<String, ThrowingSupplier<InputStream, ?>> bundleSources = new LinkedHashMap<>();
+
+	private ClassLoader classLoader;
 
 	public FrameworkWrapperImpl() {
 		this(0);
@@ -76,7 +81,7 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 	}
 
 	public FrameworkWrapperImpl(int timeoutMilliseconds, Log log) {
-		this(timeoutMilliseconds, log, Thread.currentThread().getContextClassLoader());
+		this(timeoutMilliseconds, log, FrameworkWrapperImpl.class.getClassLoader());
 	}
 
 	public FrameworkWrapperImpl(int timeoutMilliseconds, Log log, ClassLoader classLoader) {
@@ -84,14 +89,19 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 
 		timeout = new Timeout(this::stopFramework, timeoutMilliseconds, this);
 
+		setClassLoader(classLoader);
+	}
+
+	@Activate
+	public void activate(ComponentContext context) {
+		ClassLoader usingBundleClassLoader = context.getUsingBundle().adapt(BundleWiring.class).getClassLoader();
+		setClassLoader(usingBundleClassLoader);
+	}
+
+	@Override
+	public synchronized void setClassLoader(ClassLoader classLoader) {
+		this.frameworkFactory = null;
 		this.classLoader = classLoader;
-
-		log.log(Level.INFO, "Fetching framework service loader");
-		ServiceLoader<FrameworkFactory> serviceLoader = ServiceLoader.load(FrameworkFactory.class, classLoader);
-
-		log.log(Level.INFO, "Loading framework service");
-		frameworkFactory = StreamSupport.stream(serviceLoader.spliterator(), false).findAny().orElseThrow(
-				() -> new RuntimeException("Cannot find service implementing " + FrameworkFactory.class.getName()));
 	}
 
 	@Override
@@ -128,6 +138,8 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 	@Override
 	public synchronized void startFramework() {
 		if (!frameworkStarted) {
+			initialiseFrameworkFactory();
+
 			try {
 				log.log(Level.INFO, "Loading framework");
 				framework = frameworkFactory.newFramework(launchProperties);
@@ -145,6 +157,19 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 		}
 
 		timeout.set();
+	}
+
+	private void initialiseFrameworkFactory() {
+		if (frameworkFactory == null) {
+			frameworkFactory = new ContextClassLoaderRunner(classLoader).run(() -> {
+				log.log(Level.INFO, "Fetching framework service loader");
+				ServiceLoader<FrameworkFactory> serviceLoader = ServiceLoader.load(FrameworkFactory.class, classLoader);
+
+				log.log(Level.INFO, "Loading framework service");
+				return StreamSupport.stream(serviceLoader.spliterator(), false).findAny().orElseThrow(
+						() -> new RuntimeException("Cannot find service implementing " + FrameworkFactory.class.getName()));
+			});
+		}
 	}
 
 	private RuntimeException runtimeException(String message, Exception e) {
@@ -204,11 +229,6 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 	}
 
 	@Override
-	public synchronized Framework getFramework() {
-		return framework;
-	}
-
-	@Override
 	public synchronized void withFramework(ThrowingRunnable<?> action) {
 		try {
 			withFrameworkThrowing(action);
@@ -240,9 +260,7 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 			startFramework();
 
 			Property<T, T> result = new IdentityProperty<>();
-			new ContextClassLoaderRunner(classLoader).runThrowing(() -> {
-				result.set(action.get());
-			});
+			result.set(action.get());
 
 			startFramework();
 			return result.get();

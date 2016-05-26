@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
  *
- * This file is part of uk.co.strangeskies.p2bnd.
+ * This file is part of uk.co.strangeskies.p2bnd.test.
  *
- * uk.co.strangeskies.p2bnd is free software: you can redistribute it and/or modify
+ * uk.co.strangeskies.p2bnd.test is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * uk.co.strangeskies.p2bnd is distributed in the hope that it will be useful,
+ * uk.co.strangeskies.p2bnd.test is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with uk.co.strangeskies.p2bnd.  If not, see <http://www.gnu.org/licenses/>.
+ * along with uk.co.strangeskies.p2bnd.test.  If not, see <http://www.gnu.org/licenses/>.
  */
 package uk.co.strangeskies.p2bnd.test;
 
@@ -28,7 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import uk.co.strangeskies.p2.bnd.P2BndRepository;
-import uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper;
+import uk.co.strangeskies.p2.bnd.FrameworkWrapperContainer;
 
 @SuppressWarnings("javadoc")
 public class P2BndRepositoryTest {
@@ -40,7 +40,7 @@ public class P2BndRepositoryTest {
 	public void configureSharedFramework() {
 		if (!INITIALISED) {
 			P2BndRepository
-					.setSharedFramework(new SharedFrameworkWrapper(1000, SERVICE_TIMEOUT_MILLISECONDS, FRAMEWORK_PROPERTIES));
+					.setSharedFramework(new FrameworkWrapperContainer(1000, SERVICE_TIMEOUT_MILLISECONDS, FRAMEWORK_PROPERTIES));
 			INITIALISED = true;
 		}
 	}
@@ -97,16 +97,6 @@ public class P2BndRepositoryTest {
 		map.put("location", "http://download.eclipse.org/releases/mars/");
 
 		P2BndRepository repo = new P2BndRepository();
-		/*
-		 * repo.setLog(new Log() {
-		 * 
-		 * @Override public void log(Level level, String message) {
-		 * System.out.println(level + ": " + message); }
-		 * 
-		 * @Override public void log(Level level, String message, Throwable
-		 * exception) { Log.super.log(level, message, exception);
-		 * exception.printStackTrace(); } });
-		 */
 		repo.setProperties(map);
 
 		return repo;

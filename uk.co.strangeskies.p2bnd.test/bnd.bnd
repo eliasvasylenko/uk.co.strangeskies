@@ -2,12 +2,14 @@
 
 -runfw: org.eclipse.osgi
 
-Private-Package: uk.co.strangeskies.p2bnd.test
+Private-Package: \
+	uk.co.strangeskies.p2bnd.test
 
 -buildpath: \
 	${ss;utilities},\
 	${ss;p2.api},\
-	${ss;p2bnd}
+	${ss;p2bnd.bundle},\
+	biz.aQute.bndlib
 
 Test-Cases: ${test-cases}
 
@@ -18,7 +20,7 @@ Test-Cases: ${test-cases}
 	${req;biz.aQute.tester},\
 	${req;osgi.enroute.logger.simple.provider},\
 	${req;uk.co.strangeskies.p2.api},\
-	${req;uk.co.strangeskies.p2bnd}
+	${req;uk.co.strangeskies.p2bnd.bundle}
 
 -runbundles: \
 	biz.aQute.bndlib;version='[3.0.0,3.0.1)',\
@@ -31,6 +33,8 @@ Test-Cases: ${test-cases}
 	org.junit;version='[4.12.0,4.12.1)',\
 	org.osgi.service.metatype;version='[1.3.0,1.3.1)',\
 	osgi.enroute.logger.simple.provider;version='[1.2.1,1.2.2)',\
+	uk.co.strangeskies.bnd;version=snapshot,\
+	uk.co.strangeskies.osgi.api;version=snapshot,\
 	uk.co.strangeskies.p2.api;version=snapshot,\
-	uk.co.strangeskies.p2bnd;version=snapshot,\
+	uk.co.strangeskies.p2bnd.bundle;version=snapshot,\
 	uk.co.strangeskies.utilities;version=snapshot

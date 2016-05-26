@@ -1,70 +1,68 @@
 
-<testsuite name='test.uk.co.strangeskies.p2bnd.test' tests='10' time='5.987' failures='0' skipped='0' target='file:/C:/Users/tofuser/git/uk.co.strangeskies/uk.co.strangeskies.p2bnd.test/generated/uk.co.strangeskies.p2bnd.test.jar' timestamp='2016-05-26T15:41:37' hostname='Elias' framework='org.eclipse.osgi_3.10.101.v20150820-1432 [0]' errors='5' framework-version='3.10.101.v20150820-1432'>
+<testsuite name='test.uk.co.strangeskies.p2bnd.test' tests='10' time='4.869' failures='0' skipped='0' target='reference:file:/home/eli/workspaces/uk.co.strangeskies/uk.co.strangeskies.p2bnd.test/generated/uk.co.strangeskies.p2bnd.test.jar' timestamp='2016-05-26T22:07:38' hostname='eli-desktop' framework='org.eclipse.osgi_3.10.101.v20150820-1432 [0]' errors='3' framework-version='3.10.101.v20150820-1432'>
   <properties>
     <property name='java.vendor' value='Oracle Corporation'/>
     <property name='org.osgi.service.http.port' value='8080'/>
     <property name='sun.java.launcher' value='SUN_STANDARD'/>
     <property name='sun.management.compiler' value='HotSpot 64-Bit Tiered Compilers'/>
-    <property name='os.name' value='Windows 7'/>
-    <property name='sun.boot.class.path' value='C:\Program Files\Java\jdk\jre\lib\resources.jar;C:\Program Files\Java\jdk\jre\lib\rt.jar;C:\Program Files\Java\jdk\jre\lib\sunrsasign.jar;C:\Program Files\Java\jdk\jre\lib\jsse.jar;C:\Program Files\Java\jdk\jre\lib\jce.jar;C:\Program Files\Java\jdk\jre\lib\charsets.jar;C:\Program Files\Java\jdk\jre\lib\jfr.jar;C:\Program Files\Java\jdk\jre\classes'/>
-    <property name='sun.desktop' value='windows'/>
+    <property name='os.name' value='Linux'/>
+    <property name='sun.boot.class.path' value='/usr/lib/jvm/java-8-oracle/jre/lib/resources.jar:/usr/lib/jvm/java-8-oracle/jre/lib/rt.jar:/usr/lib/jvm/java-8-oracle/jre/lib/sunrsasign.jar:/usr/lib/jvm/java-8-oracle/jre/lib/jsse.jar:/usr/lib/jvm/java-8-oracle/jre/lib/jce.jar:/usr/lib/jvm/java-8-oracle/jre/lib/charsets.jar:/usr/lib/jvm/java-8-oracle/jre/lib/jfr.jar:/usr/lib/jvm/java-8-oracle/jre/classes'/>
+    <property name='sun.desktop' value='gnome'/>
     <property name='java.vm.specification.vendor' value='Oracle Corporation'/>
-    <property name='java.runtime.version' value='1.8.0_60-b27'/>
+    <property name='java.runtime.version' value='1.8.0_91-b14'/>
     <property name='launch.services' value='true'/>
-    <property name='launch.notificationPort' value='61341'/>
-    <property name='launcher.properties' value='C:\Users\tofuser\git\uk.co.strangeskies\uk.co.strangeskies.p2bnd.test\generated\launch284400629432356906.properties'/>
-    <property name='user.name' value='tofuser'/>
-    <property name='launch.bundles' value='C:\Users\tofuser\.bnd\cache\https%3A%2F%2Fraw.githubusercontent.com%2Fosgi%2Fosgi.enroute%2Fmaster%2Fcnf%2Fdistro%2Fbiz.aQute.bndlib\biz.aQute.bndlib-3.0.0.jar,C:\Users\tofuser\.bnd\cache\https%3A%2F%2Fraw.githubusercontent.com%2Fosgi%2Fosgi.enroute%2Fmaster%2Fcnf%2Fdistro%2Fbiz.aQute.tester\biz.aQute.tester-3.0.0.jar,C:\Users\tofuser\.bnd\cache\https%3A%2F%2Fraw.githubusercontent.com%2Fosgi%2Fosgi.enroute%2Fmaster%2Fcnf%2Fdistro%2Forg.apache.felix.configadmin\org.apache.felix.configadmin-1.8.6.jar,C:\Users\tofuser\.bnd\cache\https%3A%2F%2Fraw.githubusercontent.com%2Fosgi%2Fosgi.enroute%2Fmaster%2Fcnf%2Fdistro%2Forg.apache.felix.log\org.apache.felix.log-1.0.1.jar,C:\Users\tofuser\.bnd\cache\https%3A%2F%2Fraw.githubusercontent.com%2Fosgi%2Fosgi.enroute%2Fmaster%2Fcnf%2Fdistro%2Forg.apache.felix.scr\org.apache.felix.scr-2.0.0.jar,C:\Users\tofuser\.bnd\cache\https%3A%2F%2Fraw.githubusercontent.com%2Fosgi%2Fosgi.enroute%2Fmaster%2Fcnf%2Fdistro%2Forg.eclipse.equinox.metatype\org.eclipse.equinox.metatype-1.4.100.jar,C:\Users\tofuser\.bnd\cache\http%3A%2F%2Fdownload.eclipse.org%2Fefxclipse%2Fruntime-nightly%2Fsite%2Fplugins\org.hamcrest.core_1.3.0.v201303031735.jar,C:\Users\tofuser\.bnd\cache\http%3A%2F%2Fdownload.eclipse.org%2Fefxclipse%2Fruntime-nightly%2Fsite%2Fplugins\org.junit_4.12.0.v201504281640.jar,C:\Users\tofuser\.bnd\cache\https%3A%2F%2Fraw.githubusercontent.com%2Fosgi%2Fosgi.enroute%2Fmaster%2Fcnf%2Fdistro%2Forg.osgi.service.metatype\org.osgi.service.metatype-1.3.0.jar,C:\Users\tofuser\.bnd\cache\https%3A%2F%2Fraw.githubusercontent.com%2Fosgi%2Fosgi.enroute%2Fmaster%2Fcnf%2Fdistro%2Fosgi.enroute.logger.simple.provider\osgi.enroute.logger.simple.provider-1.2.1.jar,C:\Users\tofuser\git\uk.co.strangeskies\uk.co.strangeskies.p2\generated\uk.co.strangeskies.p2.api.jar,C:\Users\tofuser\git\uk.co.strangeskies\uk.co.strangeskies.p2bnd\generated\uk.co.strangeskies.p2bnd.jar,C:\Users\tofuser\git\uk.co.strangeskies\uk.co.strangeskies.utilities\generated\uk.co.strangeskies.utilities.jar,C:\Users\tofuser\git\uk.co.strangeskies\uk.co.strangeskies.p2bnd.test\generated\uk.co.strangeskies.p2bnd.test.jar'/>
+    <property name='launch.notificationPort' value='43021'/>
+    <property name='launcher.properties' value='/home/eli/workspaces/uk.co.strangeskies/uk.co.strangeskies.p2bnd.test/generated/launch1103373175804181943.properties'/>
+    <property name='user.name' value='eli'/>
+    <property name='launch.bundles' value='/home/eli/.bnd/cache/https%3A%2F%2Fraw.githubusercontent.com%2Fosgi%2Fosgi.enroute%2Fmaster%2Fcnf%2Fdistro%2Fbiz.aQute.bndlib/biz.aQute.bndlib-3.0.0.jar,/home/eli/.bnd/cache/https%3A%2F%2Fraw.githubusercontent.com%2Fosgi%2Fosgi.enroute%2Fmaster%2Fcnf%2Fdistro%2Fbiz.aQute.tester/biz.aQute.tester-3.0.0.jar,/home/eli/.bnd/cache/https%3A%2F%2Fraw.githubusercontent.com%2Fosgi%2Fosgi.enroute%2Fmaster%2Fcnf%2Fdistro%2Forg.apache.felix.configadmin/org.apache.felix.configadmin-1.8.6.jar,/home/eli/.bnd/cache/https%3A%2F%2Fraw.githubusercontent.com%2Fosgi%2Fosgi.enroute%2Fmaster%2Fcnf%2Fdistro%2Forg.apache.felix.log/org.apache.felix.log-1.0.1.jar,/home/eli/.bnd/cache/https%3A%2F%2Fraw.githubusercontent.com%2Fosgi%2Fosgi.enroute%2Fmaster%2Fcnf%2Fdistro%2Forg.apache.felix.scr/org.apache.felix.scr-2.0.0.jar,/home/eli/.bnd/cache/https%3A%2F%2Fraw.githubusercontent.com%2Fosgi%2Fosgi.enroute%2Fmaster%2Fcnf%2Fdistro%2Forg.eclipse.equinox.metatype/org.eclipse.equinox.metatype-1.4.100.jar,/home/eli/.bnd/cache/http%3A%2F%2Fdownload.eclipse.org%2Fefxclipse%2Fruntime-nightly%2Fsite%2Fplugins/org.hamcrest.core_1.3.0.v201303031735.jar,/home/eli/.bnd/cache/http%3A%2F%2Fdownload.eclipse.org%2Fefxclipse%2Fruntime-nightly%2Fsite%2Fplugins/org.junit_4.12.0.v201504281640.jar,/home/eli/.bnd/cache/https%3A%2F%2Fraw.githubusercontent.com%2Fosgi%2Fosgi.enroute%2Fmaster%2Fcnf%2Fdistro%2Forg.osgi.service.metatype/org.osgi.service.metatype-1.3.0.jar,/home/eli/.bnd/cache/https%3A%2F%2Fraw.githubusercontent.com%2Fosgi%2Fosgi.enroute%2Fmaster%2Fcnf%2Fdistro%2Fosgi.enroute.logger.simple.provider/osgi.enroute.logger.simple.provider-1.2.1.jar,/home/eli/workspaces/uk.co.strangeskies/uk.co.strangeskies.bnd/generated/uk.co.strangeskies.bnd.jar,/home/eli/workspaces/uk.co.strangeskies/uk.co.strangeskies.osgi/generated/uk.co.strangeskies.osgi.api.jar,/home/eli/workspaces/uk.co.strangeskies/uk.co.strangeskies.p2/generated/uk.co.strangeskies.p2.api.jar,/home/eli/workspaces/uk.co.strangeskies/uk.co.strangeskies.p2bnd/generated/uk.co.strangeskies.p2bnd.bundle.jar,/home/eli/workspaces/uk.co.strangeskies/uk.co.strangeskies.utilities/generated/uk.co.strangeskies.utilities.jar,/home/eli/workspaces/uk.co.strangeskies/uk.co.strangeskies.p2bnd.test/generated/uk.co.strangeskies.p2bnd.test.jar'/>
     <property name='user.language' value='en'/>
     <property name='org.apache.felix.http.whiteboardEnabled' value='true'/>
-    <property name='sun.boot.library.path' value='C:\Program Files\Java\jdk\jre\bin'/>
-    <property name='java.version' value='1.8.0_60'/>
+    <property name='sun.boot.library.path' value='/usr/lib/jvm/java-8-oracle/jre/lib/amd64'/>
+    <property name='java.version' value='1.8.0_91'/>
     <property name='user.timezone' value='Europe/London'/>
     <property name='tester.dir' value='testdir'/>
     <property name='sun.arch.data.model' value='64'/>
-    <property name='java.endorsed.dirs' value='C:\Program Files\Java\jdk\jre\lib\endorsed'/>
-    <property name='sun.cpu.isalist' value='amd64'/>
-    <property name='sun.jnu.encoding' value='Cp1252'/>
+    <property name='java.endorsed.dirs' value='/usr/lib/jvm/java-8-oracle/jre/lib/endorsed'/>
+    <property name='sun.cpu.isalist' value=''/>
+    <property name='sun.jnu.encoding' value='UTF-8'/>
     <property name='file.encoding.pkg' value='sun.io'/>
     <property name='launch.noreferences' value='false'/>
-    <property name='file.separator' value='\'/>
+    <property name='file.separator' value='/'/>
     <property name='java.specification.name' value='Java Platform API Specification'/>
     <property name='java.class.version' value='52.0'/>
     <property name='user.country' value='GB'/>
-    <property name='java.home' value='C:\Program Files\Java\jdk\jre'/>
+    <property name='java.home' value='/usr/lib/jvm/java-8-oracle/jre'/>
     <property name='java.vm.info' value='mixed mode'/>
-    <property name='os.version' value='6.1'/>
-    <property name='path.separator' value=';'/>
-    <property name='java.vm.version' value='25.60-b23'/>
+    <property name='os.version' value='4.4.0-22-generic'/>
+    <property name='path.separator' value=':'/>
+    <property name='java.vm.version' value='25.91-b14'/>
     <property name='osgi.console' value=''/>
-    <property name='user.variant' value=''/>
-    <property name='java.awt.printerjob' value='sun.awt.windows.WPrinterJob'/>
+    <property name='java.awt.printerjob' value='sun.print.PSPrinterJob'/>
     <property name='sun.io.unicode.encoding' value='UnicodeLittle'/>
-    <property name='awt.toolkit' value='sun.awt.windows.WToolkit'/>
-    <property name='user.script' value=''/>
-    <property name='user.home' value='C:\Users\tofuser'/>
+    <property name='awt.toolkit' value='sun.awt.X11.XToolkit'/>
+    <property name='user.home' value='/home/eli'/>
     <property name='java.specification.vendor' value='Oracle Corporation'/>
-    <property name='java.library.path' value='C:\Program Files\Java\jdk\bin;C:\Windows\Sun\Java\bin;C:\Windows\system32;C:\Windows;C:/Program Files/Java/jdk/bin/../jre/bin/server;C:/Program Files/Java/jdk/bin/../jre/bin;C:/Program Files/Java/jdk/bin/../jre/lib/amd64;C:\Program Files\Java\jdk\bin;C:\ProgramData\Oracle\Java\javapath;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Program Files\Microsoft SQL Server\110\Tools\Binn\;C:\Program Files\Microsoft SQL Server\120\Tools\Binn\;C:\Program Files\TortoiseSVN\bin;c:\program files\SAI\msapex\;c:\program files (x86)\SAI\msapex\;C:\Program Files\SlikSvn\bin;C:\Program Files (x86)\Windows Kits\8.1\Windows Performance Toolkit\;C:\Program Files (x86)\Microsoft SDKs\TypeScript\1.0\;C:\Program Files (x86)\Git\cmd;C:\Program Files (x86)\Git\bin;c:\Program Files (x86)\Microsoft SQL Server\90\Tools\binn\;C:\Program Files (x86)\AMD\ATI.ACE\Core-Static;C:\Program Files\OpenVPN\bin;C:\JPM4J\bin;C:\JPM4J\bin;C:\Ruby22-x64\bin;C:\Program Files (x86)\Nmap;C:\Program Files\Eclipse Mars;;.'/>
+    <property name='java.library.path' value='/usr/java/packages/lib/amd64:/usr/lib64:/lib64:/lib:/usr/lib'/>
     <property name='java.vendor.url' value='http://java.oracle.com/'/>
     <property name='java.vm.vendor' value='Oracle Corporation'/>
     <property name='java.runtime.name' value='Java(TM) SE Runtime Environment'/>
     <property name='sun.java.command' value='aQute.launcher.Launcher'/>
-    <property name='java.class.path' value='C:\Users\tofuser\.bnd\cache\https%3A%2F%2Fraw.githubusercontent.com%2Fosgi%2Fosgi.enroute%2Fmaster%2Fcnf%2Fdistro%2Fosgi.enroute.equinox.log.adapter\osgi.enroute.equinox.log.adapter-1.0.1.jar;C:\Users\tofuser\.bnd\cache\https%3A%2F%2Fdl.bintray.com%2Fstrangeskies%2Forg.eclipse%2Forg.eclipse.platform%2F4.5.1%2Forg.eclipse.osgi\org.eclipse.osgi-3.10.101.jar;C:\Users\tofuser\git\uk.co.strangeskies\cnf\cache\3.3.0\biz.aQute.launcher\biz.aQute.launcher-3.3.0.jar'/>
-    <property name='launch.system.capabilities' value='osgi.native;osgi.native.osname:List&lt;String&gt;="Windows7,Windows 7,Win32";osgi.native.osversion:Version="6.1.0";osgi.native.processor:List&lt;String&gt;="x86-64,amd64,em64t,x86_64"'/>
+    <property name='java.class.path' value='/home/eli/.bnd/cache/https%3A%2F%2Fraw.githubusercontent.com%2Fosgi%2Fosgi.enroute%2Fmaster%2Fcnf%2Fdistro%2Fosgi.enroute.equinox.log.adapter/osgi.enroute.equinox.log.adapter-1.0.1.jar:/home/eli/.bnd/cache/https%3A%2F%2Fdl.bintray.com%2Fstrangeskies%2Forg.eclipse%2Forg.eclipse.platform%2F4.5.1%2Forg.eclipse.osgi/org.eclipse.osgi-3.10.101.jar:/home/eli/workspaces/uk.co.strangeskies/cnf/cache/3.2.0/biz.aQute.launcher/biz.aQute.launcher-3.2.0.jar'/>
+    <property name='launch.system.capabilities' value='osgi.native;osgi.native.osname:List&lt;String&gt;=Linux;osgi.native.osversion:Version="4.4.0.-22-generic";osgi.native.processor:List&lt;String&gt;="x86-64,amd64,em64t,x86_64"'/>
     <property name='launch.name' value='uk.co.strangeskies.p2bnd.test'/>
     <property name='launch.timeout' value='0'/>
-    <property name='launch.storage.dir' value='C:\Users\tofuser\git\uk.co.strangeskies\uk.co.strangeskies.p2bnd.test\generated\fw'/>
+    <property name='launch.storage.dir' value='/home/eli/workspaces/uk.co.strangeskies/uk.co.strangeskies.p2bnd.test/generated/fw'/>
     <property name='launch.keep' value='false'/>
     <property name='java.vm.specification.name' value='Java Virtual Machine Specification'/>
     <property name='java.vm.specification.version' value='1.8'/>
     <property name='sun.cpu.endian' value='little'/>
-    <property name='sun.os.patch.level' value='Service Pack 1'/>
-    <property name='java.io.tmpdir' value='C:\Users\tofuser\AppData\Local\Temp\'/>
+    <property name='sun.os.patch.level' value='unknown'/>
+    <property name='java.io.tmpdir' value='/tmp'/>
     <property name='java.vendor.url.bug' value='http://bugreport.sun.com/bugreport/'/>
     <property name='os.arch' value='amd64'/>
-    <property name='java.awt.graphicsenv' value='sun.awt.Win32GraphicsEnvironment'/>
-    <property name='java.ext.dirs' value='C:\Program Files\Java\jdk\jre\lib\ext;C:\Windows\Sun\Java\lib\ext'/>
-    <property name='user.dir' value='C:\Users\tofuser\git\uk.co.strangeskies\uk.co.strangeskies.p2bnd.test'/>
+    <property name='java.awt.graphicsenv' value='sun.awt.X11GraphicsEnvironment'/>
+    <property name='java.ext.dirs' value='/usr/lib/jvm/java-8-oracle/jre/lib/ext:/usr/java/packages/lib/ext'/>
+    <property name='user.dir' value='/home/eli/workspaces/uk.co.strangeskies/uk.co.strangeskies.p2bnd.test'/>
     <property name='launch.trace' value='false'/>
     <property name='line.separator' value='
 '/>
@@ -72,40 +70,88 @@
     <property name='launch.embedded' value='false'/>
     <property name='launch.activators' value='osgi.enroute.equinox.log.adapter.HideEquinoxLog'/>
     <property name='osgi.console.enable.builtin' value='false'/>
-    <property name='file.encoding' value='Cp1252'/>
+    <property name='file.encoding' value='UTF-8'/>
     <property name='org.apache.felix.http.jettyEnabled' value='true'/>
     <property name='launch.system.packages' value='javax.script,org.eclipse.core.runtime.adaptor;x-friends:="org.eclipse.core.runtime",org.eclipse.core.runtime.internal.adaptor;x-internal:=true,org.eclipse.equinox.log;version="1.0",org.eclipse.osgi.container;version="1.0",org.eclipse.osgi.container.builders;version="1.0",org.eclipse.osgi.container.namespaces;version="1.0",org.eclipse.osgi.framework.console;version="1.1",org.eclipse.osgi.framework.eventmgr;version="1.2",org.eclipse.osgi.framework.internal.reliablefile;x-internal:=true,org.eclipse.osgi.framework.log;version="1.1",org.eclipse.osgi.framework.util;x-internal:=true,org.eclipse.osgi.internal.debug;x-internal:=true,org.eclipse.osgi.internal.framework;x-internal:=true,org.eclipse.osgi.internal.hookregistry;x-friends:="org.eclipse.osgi.tests",org.eclipse.osgi.internal.loader;x-internal:=true,org.eclipse.osgi.internal.loader.buddy;x-internal:=true,org.eclipse.osgi.internal.loader.classpath;x-internal:=true,org.eclipse.osgi.internal.loader.sources;x-internal:=true,org.eclipse.osgi.internal.location;x-internal:=true,org.eclipse.osgi.internal.messages;x-internal:=true,org.eclipse.osgi.internal.provisional.service.security;version="1.0.0";x-friends:="org.eclipse.equinox.security.ui",org.eclipse.osgi.internal.provisional.verifier;x-friends:="org.eclipse.update.core,org.eclipse.ui.workbench,org.eclipse.equinox.p2.artifact.repository",org.eclipse.osgi.internal.service.security;x-friends:="org.eclipse.equinox.security.ui",org.eclipse.osgi.internal.serviceregistry;x-internal:=true,org.eclipse.osgi.internal.signedcontent;x-internal:=true,org.eclipse.osgi.internal.url;x-internal:=true,org.eclipse.osgi.launch;version="1.0",org.eclipse.osgi.report.resolution;version="1.0",org.eclipse.osgi.service.datalocation;version="1.3",org.eclipse.osgi.service.debug;version="1.2",org.eclipse.osgi.service.environment;version="1.3",org.eclipse.osgi.service.localization;version="1.1",org.eclipse.osgi.service.pluginconversion;version="1.0",org.eclipse.osgi.service.resolver;version="1.6",org.eclipse.osgi.service.runnable;version="1.1",org.eclipse.osgi.service.security;version="1.0",org.eclipse.osgi.service.urlconversion;version="1.0",org.eclipse.osgi.signedcontent;version="1.0",org.eclipse.osgi.storage;x-friends:="org.eclipse.osgi.tests",org.eclipse.osgi.storage.bundlefile;x-internal:=true,org.eclipse.osgi.storage.url.reference;x-internal:=true,org.eclipse.osgi.storagemanager;version="1.0",org.eclipse.osgi.util;version="1.1",org.osgi.dto;version="1.0",org.osgi.framework;version="1.8",org.osgi.framework.dto;version="1.8",org.osgi.framework.hooks.bundle;version="1.1",org.osgi.framework.hooks.resolver;version="1.0",org.osgi.framework.hooks.service;version="1.1",org.osgi.framework.hooks.weaving;version="1.1",org.osgi.framework.launch;version="1.2",org.osgi.framework.namespace;version="1.1",org.osgi.framework.startlevel;version="1.0",org.osgi.framework.startlevel.dto;version="1.0",org.osgi.framework.wiring;version="1.2",org.osgi.framework.wiring.dto;version="1.2",org.osgi.resource;version="1.0",org.osgi.resource.dto;version="1.0",org.osgi.service.condpermadmin;version="1.1.1",org.osgi.service.log;version="1.3",org.osgi.service.packageadmin;version="1.2",org.osgi.service.permissionadmin;version="1.2",org.osgi.service.resolver;version="1.0.1",org.osgi.service.startlevel;version="1.1",org.osgi.service.url;version="1.0",org.osgi.util.tracker;version="1.5.1"'/>
     <property name='java.specification.version' value='1.8'/>
   </properties>
   <bundles>
-    <bundle version='3.10.101.v20150820-1432' location='System Bundle' bsn='org.eclipse.osgi' modified='2016-05-26T15:41:30' state='32' id='0'/>
-    <bundle version='3.0.0.201508170644' location='file:/C:/Users/tofuser/.bnd/cache/https%253A%252F%252Fraw.githubusercontent.com%252Fosgi%252Fosgi.enroute%252Fmaster%252Fcnf%252Fdistro%252Fbiz.aQute.bndlib/biz.aQute.bndlib-3.0.0.jar' bsn='biz.aQute.bndlib' modified='2016-05-26T15:41:30' state='32' id='1'/>
-    <bundle version='3.0.0.201508170645' location='file:/C:/Users/tofuser/.bnd/cache/https%253A%252F%252Fraw.githubusercontent.com%252Fosgi%252Fosgi.enroute%252Fmaster%252Fcnf%252Fdistro%252Fbiz.aQute.tester/biz.aQute.tester-3.0.0.jar' bsn='biz.aQute.tester' modified='2016-05-26T15:41:30' state='32' id='2'/>
-    <bundle version='1.8.6' location='file:/C:/Users/tofuser/.bnd/cache/https%253A%252F%252Fraw.githubusercontent.com%252Fosgi%252Fosgi.enroute%252Fmaster%252Fcnf%252Fdistro%252Forg.apache.felix.configadmin/org.apache.felix.configadmin-1.8.6.jar' bsn='org.apache.felix.configadmin' modified='2016-05-26T15:41:30' state='32' id='3'/>
-    <bundle version='1.0.1' location='file:/C:/Users/tofuser/.bnd/cache/https%253A%252F%252Fraw.githubusercontent.com%252Fosgi%252Fosgi.enroute%252Fmaster%252Fcnf%252Fdistro%252Forg.apache.felix.log/org.apache.felix.log-1.0.1.jar' bsn='org.apache.felix.log' modified='2016-05-26T15:41:30' state='32' id='4'/>
-    <bundle version='2.0.0' location='file:/C:/Users/tofuser/.bnd/cache/https%253A%252F%252Fraw.githubusercontent.com%252Fosgi%252Fosgi.enroute%252Fmaster%252Fcnf%252Fdistro%252Forg.apache.felix.scr/org.apache.felix.scr-2.0.0.jar' bsn='org.apache.felix.scr' modified='2016-05-26T15:41:30' state='32' id='5'/>
-    <bundle version='1.4.100.v20150408-1437' location='file:/C:/Users/tofuser/.bnd/cache/https%253A%252F%252Fraw.githubusercontent.com%252Fosgi%252Fosgi.enroute%252Fmaster%252Fcnf%252Fdistro%252Forg.eclipse.equinox.metatype/org.eclipse.equinox.metatype-1.4.100.jar' bsn='org.eclipse.equinox.metatype' modified='2016-05-26T15:41:30' state='32' id='6'/>
-    <bundle version='1.3.0.v201303031735' location='file:/C:/Users/tofuser/.bnd/cache/http%253A%252F%252Fdownload.eclipse.org%252Fefxclipse%252Fruntime-nightly%252Fsite%252Fplugins/org.hamcrest.core_1.3.0.v201303031735.jar' bsn='org.hamcrest.core' modified='2016-05-26T15:41:30' state='8' id='7'/>
-    <bundle version='4.12.0.v201504281640' location='file:/C:/Users/tofuser/.bnd/cache/http%253A%252F%252Fdownload.eclipse.org%252Fefxclipse%252Fruntime-nightly%252Fsite%252Fplugins/org.junit_4.12.0.v201504281640.jar' bsn='org.junit' modified='2016-05-26T15:41:30' state='32' id='8'/>
-    <bundle version='1.3.0.201505202024' location='file:/C:/Users/tofuser/.bnd/cache/https%253A%252F%252Fraw.githubusercontent.com%252Fosgi%252Fosgi.enroute%252Fmaster%252Fcnf%252Fdistro%252Forg.osgi.service.metatype/org.osgi.service.metatype-1.3.0.jar' bsn='org.osgi.service.metatype' modified='2016-05-26T15:41:30' state='32' id='9'/>
-    <bundle version='1.2.1.201510121300' location='file:/C:/Users/tofuser/.bnd/cache/https%253A%252F%252Fraw.githubusercontent.com%252Fosgi%252Fosgi.enroute%252Fmaster%252Fcnf%252Fdistro%252Fosgi.enroute.logger.simple.provider/osgi.enroute.logger.simple.provider-1.2.1.jar' bsn='osgi.enroute.logger.simple.provider' modified='2016-05-26T15:41:30' state='32' id='10'/>
-    <bundle version='1.0.13.201605261332' location='file:/C:/Users/tofuser/git/uk.co.strangeskies/uk.co.strangeskies.p2/generated/uk.co.strangeskies.p2.api.jar' bsn='uk.co.strangeskies.p2.api' modified='2016-05-26T15:41:30' state='32' id='11'/>
-    <bundle version='1.0.13.201605261433' location='file:/C:/Users/tofuser/git/uk.co.strangeskies/uk.co.strangeskies.p2bnd/generated/uk.co.strangeskies.p2bnd.jar' bsn='uk.co.strangeskies.p2bnd' modified='2016-05-26T15:41:30' state='32' id='12'/>
-    <bundle version='1.0.13.201605261318' location='file:/C:/Users/tofuser/git/uk.co.strangeskies/uk.co.strangeskies.utilities/generated/uk.co.strangeskies.utilities.jar' bsn='uk.co.strangeskies.utilities' modified='2016-05-26T15:41:30' state='32' id='13'/>
-    <bundle version='1.0.13.201605261441' location='file:/C:/Users/tofuser/git/uk.co.strangeskies/uk.co.strangeskies.p2bnd.test/generated/uk.co.strangeskies.p2bnd.test.jar' bsn='uk.co.strangeskies.p2bnd.test' modified='2016-05-26T15:41:30' state='32' target='true' id='14'/>
+    <bundle version='3.10.101.v20150820-1432' location='System Bundle' bsn='org.eclipse.osgi' modified='2016-05-26T22:07:33' state='32' id='0'/>
+    <bundle version='3.0.0.201508170644' location='reference:file:/home/eli/.bnd/cache/https%253A%252F%252Fraw.githubusercontent.com%252Fosgi%252Fosgi.enroute%252Fmaster%252Fcnf%252Fdistro%252Fbiz.aQute.bndlib/biz.aQute.bndlib-3.0.0.jar' bsn='biz.aQute.bndlib' modified='2016-05-26T22:07:33' state='32' id='1'/>
+    <bundle version='3.0.0.201508170645' location='reference:file:/home/eli/.bnd/cache/https%253A%252F%252Fraw.githubusercontent.com%252Fosgi%252Fosgi.enroute%252Fmaster%252Fcnf%252Fdistro%252Fbiz.aQute.tester/biz.aQute.tester-3.0.0.jar' bsn='biz.aQute.tester' modified='2016-05-26T22:07:33' state='32' id='2'/>
+    <bundle version='1.8.6' location='reference:file:/home/eli/.bnd/cache/https%253A%252F%252Fraw.githubusercontent.com%252Fosgi%252Fosgi.enroute%252Fmaster%252Fcnf%252Fdistro%252Forg.apache.felix.configadmin/org.apache.felix.configadmin-1.8.6.jar' bsn='org.apache.felix.configadmin' modified='2016-05-26T22:07:33' state='32' id='3'/>
+    <bundle version='1.0.1' location='reference:file:/home/eli/.bnd/cache/https%253A%252F%252Fraw.githubusercontent.com%252Fosgi%252Fosgi.enroute%252Fmaster%252Fcnf%252Fdistro%252Forg.apache.felix.log/org.apache.felix.log-1.0.1.jar' bsn='org.apache.felix.log' modified='2016-05-26T22:07:33' state='32' id='4'/>
+    <bundle version='2.0.0' location='reference:file:/home/eli/.bnd/cache/https%253A%252F%252Fraw.githubusercontent.com%252Fosgi%252Fosgi.enroute%252Fmaster%252Fcnf%252Fdistro%252Forg.apache.felix.scr/org.apache.felix.scr-2.0.0.jar' bsn='org.apache.felix.scr' modified='2016-05-26T22:07:33' state='32' id='5'/>
+    <bundle version='1.4.100.v20150408-1437' location='reference:file:/home/eli/.bnd/cache/https%253A%252F%252Fraw.githubusercontent.com%252Fosgi%252Fosgi.enroute%252Fmaster%252Fcnf%252Fdistro%252Forg.eclipse.equinox.metatype/org.eclipse.equinox.metatype-1.4.100.jar' bsn='org.eclipse.equinox.metatype' modified='2016-05-26T22:07:33' state='32' id='6'/>
+    <bundle version='1.3.0.v201303031735' location='reference:file:/home/eli/.bnd/cache/http%253A%252F%252Fdownload.eclipse.org%252Fefxclipse%252Fruntime-nightly%252Fsite%252Fplugins/org.hamcrest.core_1.3.0.v201303031735.jar' bsn='org.hamcrest.core' modified='2016-05-26T22:07:33' state='8' id='7'/>
+    <bundle version='4.12.0.v201504281640' location='reference:file:/home/eli/.bnd/cache/http%253A%252F%252Fdownload.eclipse.org%252Fefxclipse%252Fruntime-nightly%252Fsite%252Fplugins/org.junit_4.12.0.v201504281640.jar' bsn='org.junit' modified='2016-05-26T22:07:33' state='32' id='8'/>
+    <bundle version='1.3.0.201505202024' location='reference:file:/home/eli/.bnd/cache/https%253A%252F%252Fraw.githubusercontent.com%252Fosgi%252Fosgi.enroute%252Fmaster%252Fcnf%252Fdistro%252Forg.osgi.service.metatype/org.osgi.service.metatype-1.3.0.jar' bsn='org.osgi.service.metatype' modified='2016-05-26T22:07:33' state='32' id='9'/>
+    <bundle version='1.2.1.201510121300' location='reference:file:/home/eli/.bnd/cache/https%253A%252F%252Fraw.githubusercontent.com%252Fosgi%252Fosgi.enroute%252Fmaster%252Fcnf%252Fdistro%252Fosgi.enroute.logger.simple.provider/osgi.enroute.logger.simple.provider-1.2.1.jar' bsn='osgi.enroute.logger.simple.provider' modified='2016-05-26T22:07:33' state='32' id='10'/>
+    <bundle version='1.0.13.201605262106' location='reference:file:/home/eli/workspaces/uk.co.strangeskies/uk.co.strangeskies.bnd/generated/uk.co.strangeskies.bnd.jar' bsn='uk.co.strangeskies.bnd' modified='2016-05-26T22:07:33' state='32' id='11'/>
+    <bundle version='1.0.13.201605262106' location='reference:file:/home/eli/workspaces/uk.co.strangeskies/uk.co.strangeskies.osgi/generated/uk.co.strangeskies.osgi.api.jar' bsn='uk.co.strangeskies.osgi.api' modified='2016-05-26T22:07:33' state='32' id='12'/>
+    <bundle version='1.0.13.201605262106' location='reference:file:/home/eli/workspaces/uk.co.strangeskies/uk.co.strangeskies.p2/generated/uk.co.strangeskies.p2.api.jar' bsn='uk.co.strangeskies.p2.api' modified='2016-05-26T22:07:33' state='32' id='13'/>
+    <bundle version='1.0.13.201605262107' location='reference:file:/home/eli/workspaces/uk.co.strangeskies/uk.co.strangeskies.p2bnd/generated/uk.co.strangeskies.p2bnd.bundle.jar' bsn='uk.co.strangeskies.p2bnd.bundle' modified='2016-05-26T22:07:33' state='32' id='14'/>
+    <bundle version='1.0.13.201605262106' location='reference:file:/home/eli/workspaces/uk.co.strangeskies/uk.co.strangeskies.utilities/generated/uk.co.strangeskies.utilities.jar' bsn='uk.co.strangeskies.utilities' modified='2016-05-26T22:07:33' state='32' id='15'/>
+    <bundle version='1.0.13.201605262107' location='reference:file:/home/eli/workspaces/uk.co.strangeskies/uk.co.strangeskies.p2bnd.test/generated/uk.co.strangeskies.p2bnd.test.jar' bsn='uk.co.strangeskies.p2bnd.test' modified='2016-05-26T22:07:33' state='32' target='true' id='16'/>
   </bundles>
-  <testcase name='createTwoRepositoriesTest' time='5.947' classname='uk.co.strangeskies.p2bnd.test.P2BndRepositoryTest'>
-    <error type='java.lang.RuntimeException'><![CDATA[java.lang.RuntimeException: java.lang.RuntimeException: Unable to start framework
- at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.withFramework(FrameworkWrapperImpl.java:226)
- at uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper.withConnection(SharedFrameworkWrapper.java:99)
- at uk.co.strangeskies.p2.bnd.P2BndRepository.withConnection(P2BndRepository.java:219)
- at uk.co.strangeskies.p2.bnd.P2BndRepository.getName(P2BndRepository.java:246)
- at uk.co.strangeskies.p2bnd.test.P2BndRepositoryTest.test(P2BndRepositoryTest.java:112)
- at uk.co.strangeskies.p2bnd.test.P2BndRepositoryTest.createTwoRepositoriesTest(P2BndRepositoryTest.java:57)
+  <testcase name='createTwoRepositoriesTest' time='0.19' classname='uk.co.strangeskies.p2bnd.test.P2BndRepositoryTest'>
+    <system-out>
+      INFO: Creating P2BndRepository
+WARN: Setting P2 repository
+       properties: {name=first, location=http://download.eclipse.org/releases/mars/}
+      
+INFO: Creating P2BndRepository
+WARN: Setting P2 repository
+       properties: {name=second, location=http://download.eclipse.org/releases/mars/}
+    </system-out>
+  </testcase>
+  <testcase name='createRepositoryTest' time='0.0' classname='uk.co.strangeskies.p2bnd.test.P2BndRepositoryTest'>
+    <system-out>
+      INFO: Creating P2BndRepository
+WARN: Setting P2 repository
+       properties: {name=first, location=http://download.eclipse.org/releases/mars/}
+    </system-out>
+  </testcase>
+  <testcase name='getRepositoryNameTest' time='1.111' classname='uk.co.strangeskies.p2bnd.test.P2BndRepositoryTest'>
+    <error type='java.lang.NoClassDefFoundError'><![CDATA[java.lang.NoClassDefFoundError: uk/co/strangeskies/osgi/frameworkwrapper/FrameworkWrapper
+ at java.lang.ClassLoader.defineClass1(Native Method)
+ at java.lang.ClassLoader.defineClass(ClassLoader.java:763)
+ at java.security.SecureClassLoader.defineClass(SecureClassLoader.java:142)
+ at java.net.URLClassLoader.defineClass(URLClassLoader.java:467)
+ at java.net.URLClassLoader.access$100(URLClassLoader.java:73)
+ at java.net.URLClassLoader$1.run(URLClassLoader.java:368)
+ at java.net.URLClassLoader$1.run(URLClassLoader.java:362)
+ at java.security.AccessController.doPrivileged(Native Method)
+ at java.net.URLClassLoader.findClass(URLClassLoader.java:361)
+ at java.lang.ClassLoader.loadClass(ClassLoader.java:424)
+ at java.lang.ClassLoader.loadClass(ClassLoader.java:357)
+ at java.lang.Class.forName0(Native Method)
+ at java.lang.Class.forName(Class.java:348)
+ at java.util.ServiceLoader$LazyIterator.nextService(ServiceLoader.java:370)
+ at java.util.ServiceLoader$LazyIterator.next(ServiceLoader.java:404)
+ at java.util.ServiceLoader$1.next(ServiceLoader.java:480)
+ at java.util.Spliterators$IteratorSpliterator.tryAdvance(Spliterators.java:1812)
+ at java.util.stream.ReferencePipeline.forEachWithCancel(ReferencePipeline.java:126)
+ at java.util.stream.AbstractPipeline.copyIntoWithCancel(AbstractPipeline.java:498)
+ at java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:485)
+ at java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:471)
+ at java.util.stream.FindOps$FindOp.evaluateSequential(FindOps.java:152)
+ at java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+ at java.util.stream.ReferencePipeline.findAny(ReferencePipeline.java:469)
+ at uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper.lambda$1(SharedFrameworkWrapper.java:163)
+ at uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner.lambda$0(ContextClassLoaderRunner.java:85)
+ at uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner.runThrowing(ContextClassLoaderRunner.java:62)
+ at uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner.runThrowing(ContextClassLoaderRunner.java:84)
+ at uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner.run(ContextClassLoaderRunner.java:80)
+ at uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper.initialise(SharedFrameworkWrapper.java:158)
+ at uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper.withConnection(SharedFrameworkWrapper.java:98)
+ at uk.co.strangeskies.p2.bnd.P2BndRepository.withConnection(P2BndRepository.java:240)
+ at uk.co.strangeskies.p2.bnd.P2BndRepository.getName(P2BndRepository.java:267)
+ at uk.co.strangeskies.p2bnd.test.P2BndRepositoryTest.getRepositoryNameTest(P2BndRepositoryTest.java:89)
  at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
  at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
  at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
- at java.lang.reflect.Method.invoke(Method.java:497)
+ at java.lang.reflect.Method.invoke(Method.java:498)
  at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
  at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
  at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)
@@ -130,18 +176,11 @@
  at aQute.launcher.Launcher$5.call(Launcher.java:1211)
  at aQute.launcher.Launcher.run(Launcher.java:315)
  at aQute.launcher.Launcher.main(Launcher.java:132)
-Caused by: java.lang.RuntimeException: Unable to start framework
- at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.runtimeException(FrameworkWrapperImpl.java:154)
- at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.startFramework(FrameworkWrapperImpl.java:144)
- at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.withFrameworkThrowing(FrameworkWrapperImpl.java:241)
- at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.withFramework(FrameworkWrapperImpl.java:224)
- ... 33 more
-Caused by: java.lang.IllegalStateException: Unable to obtain service uk.co.strangeskies.p2.P2RepositoryFactory
- at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.withServiceThrowing(FrameworkWrapperImpl.java:306)
- at uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper.withServiceThrowing(FrameworkWrapper.java:68)
- at uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper.lambda$3(SharedFrameworkWrapper.java:170)
- at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.startFramework(FrameworkWrapperImpl.java:142)
- ... 35 more
+Caused by: java.lang.ClassNotFoundException: uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper
+ at java.net.URLClassLoader.findClass(URLClassLoader.java:381)
+ at java.lang.ClassLoader.loadClass(ClassLoader.java:424)
+ at java.lang.ClassLoader.loadClass(ClassLoader.java:357)
+ ... 62 more
 ]]>
     </error>
     <system-out>
@@ -151,122 +190,57 @@ WARN: Setting P2 repository
       
 INFO: Setting framework URL
 INFO: Creating delegating classloader
-       to [file:/C:/Users/tofuser/AppData/Local/Temp/framework3138838611969840294.jar,
-       file:/C:/Users/tofuser/AppData/Local/Temp/framework6562194574167810868.jar]
+       to [file:/tmp/framework6293193304793793565.jar, file:/tmp/framework909954780742595356.jar]
       
 INFO: Fetching framework wrapper service loader
 INFO: Loading
        framework wrapper service
-INFO: Initialise framework wrapper
-       properties
-INFO: Loading framework
-INFO: Starting framework
+ERROR: Could not initialise P2BndRepository:
+       uk/co/strangeskies/osgi/frameworkwrapper/FrameworkWrapper
       
-INFO: Registering bundles
-INFO: Successfully started bundles
-      
-ERROR: Timed out waiting for service uk.co.strangeskies.p2.P2RepositoryFactory
-      
-ERROR: Unable to perform action with service interface uk.co.strangeskies.p2.P2RepositoryFactory:
-       Unable to obtain service uk.co.strangeskies.p2.P2RepositoryFactory
-      
-ERROR: Unable to start framework: Unable to obtain service
-       uk.co.strangeskies.p2.P2RepositoryFactory
-ERROR: Unable to
-       perform framework action uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper$$Lambda$65/928294079@53de625d:
-       Unable to start framework
+WARN: Unable to stop framework: null
     </system-out>
-    <system-err>
-      java.lang.IllegalStateException: Unable to obtain service uk.co.strangeskies.p2.P2RepositoryFactory
-      
-	at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.withServiceThrowing(FrameworkWrapperImpl.java:306)
-      
-	at uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper.withServiceThrowing(FrameworkWrapper.java:68)
-      
-	at uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper.lambda$3(SharedFrameworkWrapper.java:170)
-      
-	at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.startFramework(FrameworkWrapperImpl.java:142)
-      
-	at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.withFrameworkThrowing(FrameworkWrapperImpl.java:241)
-      
-	at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.withFramework(FrameworkWrapperImpl.java:224)
-      
-	at uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper.withConnection(SharedFrameworkWrapper.java:99)
-      
-	at uk.co.strangeskies.p2.bnd.P2BndRepository.withConnection(P2BndRepository.java:219)
-      
-	at uk.co.strangeskies.p2.bnd.P2BndRepository.getName(P2BndRepository.java:246)
-      
-	at uk.co.strangeskies.p2bnd.test.P2BndRepositoryTest.test(P2BndRepositoryTest.java:112)
-      
-	at uk.co.strangeskies.p2bnd.test.P2BndRepositoryTest.createTwoRepositoriesTest(P2BndRepositoryTest.java:57)
-      
-	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-      
-	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
-      
-	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-      
-	at java.lang.reflect.Method.invoke(Method.java:497)
-	at
-       org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
-      
-	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
-      
-	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)
-      
-	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
-      
-	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
-      
-	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:325)
-      
-	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:78)
-      
-	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:57)
-      
-	at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
-      
-	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
-      
-	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
-      
-	at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
-      
-	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
-      
-	at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
-      
-	at junit.framework.JUnit4TestAdapter.run(JUnit4TestAdapter.java:38)
-      
-	at junit.framework.TestSuite.runTest(TestSuite.java:252)
-      
-	at junit.framework.TestSuite.run(TestSuite.java:247)
-	at
-       aQute.junit.Activator.test(Activator.java:325)
-	at aQute.junit.Activator.automatic(Activator.java:208)
-      
-	at aQute.junit.Activator.run(Activator.java:142)
-	at aQute.launcher.Launcher$5.call(Launcher.java:1213)
-      
-	at aQute.launcher.Launcher$5.call(Launcher.java:1211)
-
-      	at aQute.launcher.Launcher.run(Launcher.java:315)
-	at aQute.launcher.Launcher.main(Launcher.java:132)
-    </system-err>
   </testcase>
-  <testcase name='createRepositoryTest' time='0.4' classname='uk.co.strangeskies.p2bnd.test.P2BndRepositoryTest'>
-    <error type='java.lang.RuntimeException'><![CDATA[java.lang.RuntimeException: java.lang.NullPointerException
- at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.withFramework(FrameworkWrapperImpl.java:226)
- at uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper.withConnection(SharedFrameworkWrapper.java:99)
- at uk.co.strangeskies.p2.bnd.P2BndRepository.withConnection(P2BndRepository.java:219)
- at uk.co.strangeskies.p2.bnd.P2BndRepository.getName(P2BndRepository.java:246)
- at uk.co.strangeskies.p2bnd.test.P2BndRepositoryTest.test(P2BndRepositoryTest.java:112)
- at uk.co.strangeskies.p2bnd.test.P2BndRepositoryTest.createRepositoryTest(P2BndRepositoryTest.java:50)
+  <testcase name='useAfterCloseTest' time='1.113' classname='uk.co.strangeskies.p2bnd.test.P2BndRepositoryTest'>
+    <error type='java.lang.NoClassDefFoundError'><![CDATA[java.lang.NoClassDefFoundError: uk/co/strangeskies/osgi/frameworkwrapper/FrameworkWrapper
+ at java.lang.ClassLoader.defineClass1(Native Method)
+ at java.lang.ClassLoader.defineClass(ClassLoader.java:763)
+ at java.security.SecureClassLoader.defineClass(SecureClassLoader.java:142)
+ at java.net.URLClassLoader.defineClass(URLClassLoader.java:467)
+ at java.net.URLClassLoader.access$100(URLClassLoader.java:73)
+ at java.net.URLClassLoader$1.run(URLClassLoader.java:368)
+ at java.net.URLClassLoader$1.run(URLClassLoader.java:362)
+ at java.security.AccessController.doPrivileged(Native Method)
+ at java.net.URLClassLoader.findClass(URLClassLoader.java:361)
+ at java.lang.ClassLoader.loadClass(ClassLoader.java:424)
+ at java.lang.ClassLoader.loadClass(ClassLoader.java:357)
+ at java.lang.Class.forName0(Native Method)
+ at java.lang.Class.forName(Class.java:348)
+ at java.util.ServiceLoader$LazyIterator.nextService(ServiceLoader.java:370)
+ at java.util.ServiceLoader$LazyIterator.next(ServiceLoader.java:404)
+ at java.util.ServiceLoader$1.next(ServiceLoader.java:480)
+ at java.util.Spliterators$IteratorSpliterator.tryAdvance(Spliterators.java:1812)
+ at java.util.stream.ReferencePipeline.forEachWithCancel(ReferencePipeline.java:126)
+ at java.util.stream.AbstractPipeline.copyIntoWithCancel(AbstractPipeline.java:498)
+ at java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:485)
+ at java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:471)
+ at java.util.stream.FindOps$FindOp.evaluateSequential(FindOps.java:152)
+ at java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+ at java.util.stream.ReferencePipeline.findAny(ReferencePipeline.java:469)
+ at uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper.lambda$1(SharedFrameworkWrapper.java:163)
+ at uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner.lambda$0(ContextClassLoaderRunner.java:85)
+ at uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner.runThrowing(ContextClassLoaderRunner.java:62)
+ at uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner.runThrowing(ContextClassLoaderRunner.java:84)
+ at uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner.run(ContextClassLoaderRunner.java:80)
+ at uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper.initialise(SharedFrameworkWrapper.java:158)
+ at uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper.withConnection(SharedFrameworkWrapper.java:98)
+ at uk.co.strangeskies.p2.bnd.P2BndRepository.withConnection(P2BndRepository.java:240)
+ at uk.co.strangeskies.p2.bnd.P2BndRepository.getName(P2BndRepository.java:267)
+ at uk.co.strangeskies.p2bnd.test.P2BndRepositoryTest.useAfterCloseTest(P2BndRepositoryTest.java:82)
  at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
  at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
  at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
- at java.lang.reflect.Method.invoke(Method.java:497)
+ at java.lang.reflect.Method.invoke(Method.java:498)
  at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
  at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
  at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)
@@ -291,15 +265,11 @@ ERROR: Unable to
  at aQute.launcher.Launcher$5.call(Launcher.java:1211)
  at aQute.launcher.Launcher.run(Launcher.java:315)
  at aQute.launcher.Launcher.main(Launcher.java:132)
-Caused by: java.lang.NullPointerException
- at uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper.lambda$0(SharedFrameworkWrapper.java:103)
- at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.lambda$4(FrameworkWrapperImpl.java:245)
- at uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner.lambda$0(ContextClassLoaderRunner.java:85)
- at uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner.runThrowing(ContextClassLoaderRunner.java:62)
- at uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner.runThrowing(ContextClassLoaderRunner.java:84)
- at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.withFrameworkThrowing(FrameworkWrapperImpl.java:244)
- at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.withFramework(FrameworkWrapperImpl.java:224)
- ... 33 more
+Caused by: java.lang.ClassNotFoundException: uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper
+ at java.net.URLClassLoader.findClass(URLClassLoader.java:381)
+ at java.lang.ClassLoader.loadClass(ClassLoader.java:424)
+ at java.lang.ClassLoader.loadClass(ClassLoader.java:357)
+ ... 62 more
 ]]>
     </error>
     <system-out>
@@ -307,22 +277,59 @@ Caused by: java.lang.NullPointerException
 WARN: Setting P2 repository
        properties: {name=first, location=http://download.eclipse.org/releases/mars/}
       
-ERROR: Unable to perform framework action uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper$$Lambda$65/928294079@2ea6e30c:
-       null
+INFO: Setting framework URL
+INFO: Creating delegating classloader
+       to [file:/tmp/framework8174561444617964450.jar, file:/tmp/framework2889834170139686538.jar]
+      
+INFO: Fetching framework wrapper service loader
+INFO: Loading
+       framework wrapper service
+ERROR: Could not initialise P2BndRepository:
+       uk/co/strangeskies/osgi/frameworkwrapper/FrameworkWrapper
+      
+WARN: Unable to stop framework: null
     </system-out>
   </testcase>
-  <testcase name='getRepositoryNameTest' time='0.2' classname='uk.co.strangeskies.p2bnd.test.P2BndRepositoryTest'>
-    <error type='java.lang.RuntimeException'><![CDATA[java.lang.RuntimeException: java.lang.NullPointerException
- at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.withFramework(FrameworkWrapperImpl.java:226)
- at uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper.withConnection(SharedFrameworkWrapper.java:99)
- at uk.co.strangeskies.p2.bnd.P2BndRepository.withConnection(P2BndRepository.java:219)
- at uk.co.strangeskies.p2.bnd.P2BndRepository.getName(P2BndRepository.java:246)
- at uk.co.strangeskies.p2bnd.test.P2BndRepositoryTest.test(P2BndRepositoryTest.java:112)
- at uk.co.strangeskies.p2bnd.test.P2BndRepositoryTest.getRepositoryNameTest(P2BndRepositoryTest.java:87)
+  <testcase name='createRepositoryWaitReopenTest' time='2.597' classname='uk.co.strangeskies.p2bnd.test.P2BndRepositoryTest'>
+    <error type='java.lang.NoClassDefFoundError'><![CDATA[java.lang.NoClassDefFoundError: uk/co/strangeskies/osgi/frameworkwrapper/FrameworkWrapper
+ at java.lang.ClassLoader.defineClass1(Native Method)
+ at java.lang.ClassLoader.defineClass(ClassLoader.java:763)
+ at java.security.SecureClassLoader.defineClass(SecureClassLoader.java:142)
+ at java.net.URLClassLoader.defineClass(URLClassLoader.java:467)
+ at java.net.URLClassLoader.access$100(URLClassLoader.java:73)
+ at java.net.URLClassLoader$1.run(URLClassLoader.java:368)
+ at java.net.URLClassLoader$1.run(URLClassLoader.java:362)
+ at java.security.AccessController.doPrivileged(Native Method)
+ at java.net.URLClassLoader.findClass(URLClassLoader.java:361)
+ at java.lang.ClassLoader.loadClass(ClassLoader.java:424)
+ at java.lang.ClassLoader.loadClass(ClassLoader.java:357)
+ at java.lang.Class.forName0(Native Method)
+ at java.lang.Class.forName(Class.java:348)
+ at java.util.ServiceLoader$LazyIterator.nextService(ServiceLoader.java:370)
+ at java.util.ServiceLoader$LazyIterator.next(ServiceLoader.java:404)
+ at java.util.ServiceLoader$1.next(ServiceLoader.java:480)
+ at java.util.Spliterators$IteratorSpliterator.tryAdvance(Spliterators.java:1812)
+ at java.util.stream.ReferencePipeline.forEachWithCancel(ReferencePipeline.java:126)
+ at java.util.stream.AbstractPipeline.copyIntoWithCancel(AbstractPipeline.java:498)
+ at java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:485)
+ at java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:471)
+ at java.util.stream.FindOps$FindOp.evaluateSequential(FindOps.java:152)
+ at java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+ at java.util.stream.ReferencePipeline.findAny(ReferencePipeline.java:469)
+ at uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper.lambda$1(SharedFrameworkWrapper.java:163)
+ at uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner.lambda$0(ContextClassLoaderRunner.java:85)
+ at uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner.runThrowing(ContextClassLoaderRunner.java:62)
+ at uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner.runThrowing(ContextClassLoaderRunner.java:84)
+ at uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner.run(ContextClassLoaderRunner.java:80)
+ at uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper.initialise(SharedFrameworkWrapper.java:158)
+ at uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper.withConnection(SharedFrameworkWrapper.java:98)
+ at uk.co.strangeskies.p2.bnd.P2BndRepository.withConnection(P2BndRepository.java:240)
+ at uk.co.strangeskies.p2.bnd.P2BndRepository.getName(P2BndRepository.java:267)
+ at uk.co.strangeskies.p2bnd.test.P2BndRepositoryTest.createRepositoryWaitReopenTest(P2BndRepositoryTest.java:73)
  at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
  at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
  at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
- at java.lang.reflect.Method.invoke(Method.java:497)
+ at java.lang.reflect.Method.invoke(Method.java:498)
  at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
  at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
  at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)
@@ -347,15 +354,11 @@ ERROR: Unable to perform framework action uk.co.strangeskies.p2.bnd.SharedFramew
  at aQute.launcher.Launcher$5.call(Launcher.java:1211)
  at aQute.launcher.Launcher.run(Launcher.java:315)
  at aQute.launcher.Launcher.main(Launcher.java:132)
-Caused by: java.lang.NullPointerException
- at uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper.lambda$0(SharedFrameworkWrapper.java:103)
- at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.lambda$4(FrameworkWrapperImpl.java:245)
- at uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner.lambda$0(ContextClassLoaderRunner.java:85)
- at uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner.runThrowing(ContextClassLoaderRunner.java:62)
- at uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner.runThrowing(ContextClassLoaderRunner.java:84)
- at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.withFrameworkThrowing(FrameworkWrapperImpl.java:244)
- at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.withFramework(FrameworkWrapperImpl.java:224)
- ... 33 more
+Caused by: java.lang.ClassNotFoundException: uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper
+ at java.net.URLClassLoader.findClass(URLClassLoader.java:381)
+ at java.lang.ClassLoader.loadClass(ClassLoader.java:424)
+ at java.lang.ClassLoader.loadClass(ClassLoader.java:357)
+ ... 62 more
 ]]>
     </error>
     <system-out>
@@ -363,120 +366,21 @@ Caused by: java.lang.NullPointerException
 WARN: Setting P2 repository
        properties: {name=first, location=http://download.eclipse.org/releases/mars/}
       
-ERROR: Unable to perform framework action uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper$$Lambda$65/928294079@21a21c64:
-       null
-    </system-out>
-  </testcase>
-  <testcase name='useAfterCloseTest' time='0.2' classname='uk.co.strangeskies.p2bnd.test.P2BndRepositoryTest'>
-    <error type='java.lang.RuntimeException'><![CDATA[java.lang.RuntimeException: java.lang.NullPointerException
- at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.withFramework(FrameworkWrapperImpl.java:226)
- at uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper.withConnection(SharedFrameworkWrapper.java:99)
- at uk.co.strangeskies.p2.bnd.P2BndRepository.withConnection(P2BndRepository.java:219)
- at uk.co.strangeskies.p2.bnd.P2BndRepository.getName(P2BndRepository.java:246)
- at uk.co.strangeskies.p2bnd.test.P2BndRepositoryTest.test(P2BndRepositoryTest.java:112)
- at uk.co.strangeskies.p2bnd.test.P2BndRepositoryTest.useAfterCloseTest(P2BndRepositoryTest.java:78)
- at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
- at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
- at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
- at java.lang.reflect.Method.invoke(Method.java:497)
- at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
- at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
- at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)
- at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
- at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
- at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:325)
- at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:78)
- at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:57)
- at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
- at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
- at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
- at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
- at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
- at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
- at junit.framework.JUnit4TestAdapter.run(JUnit4TestAdapter.java:38)
- at junit.framework.TestSuite.runTest(TestSuite.java:252)
- at junit.framework.TestSuite.run(TestSuite.java:247)
- at aQute.junit.Activator.test(Activator.java:325)
- at aQute.junit.Activator.automatic(Activator.java:208)
- at aQute.junit.Activator.run(Activator.java:142)
- at aQute.launcher.Launcher$5.call(Launcher.java:1213)
- at aQute.launcher.Launcher$5.call(Launcher.java:1211)
- at aQute.launcher.Launcher.run(Launcher.java:315)
- at aQute.launcher.Launcher.main(Launcher.java:132)
-Caused by: java.lang.NullPointerException
- at uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper.lambda$0(SharedFrameworkWrapper.java:103)
- at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.lambda$4(FrameworkWrapperImpl.java:245)
- at uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner.lambda$0(ContextClassLoaderRunner.java:85)
- at uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner.runThrowing(ContextClassLoaderRunner.java:62)
- at uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner.runThrowing(ContextClassLoaderRunner.java:84)
- at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.withFrameworkThrowing(FrameworkWrapperImpl.java:244)
- at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.withFramework(FrameworkWrapperImpl.java:224)
- ... 33 more
-]]>
-    </error>
-    <system-out>
-      INFO: Creating P2BndRepository
+INFO: Creating P2BndRepository
 WARN: Setting P2 repository
-       properties: {name=first, location=http://download.eclipse.org/releases/mars/}
+       properties: {name=second, location=http://download.eclipse.org/releases/mars/}
       
-ERROR: Unable to perform framework action uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper$$Lambda$65/928294079@62ef27a8:
-       null
-    </system-out>
-  </testcase>
-  <testcase name='createRepositoryWaitReopenTest' time='0.2' classname='uk.co.strangeskies.p2bnd.test.P2BndRepositoryTest'>
-    <error type='java.lang.RuntimeException'><![CDATA[java.lang.RuntimeException: java.lang.NullPointerException
- at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.withFramework(FrameworkWrapperImpl.java:226)
- at uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper.withConnection(SharedFrameworkWrapper.java:99)
- at uk.co.strangeskies.p2.bnd.P2BndRepository.withConnection(P2BndRepository.java:219)
- at uk.co.strangeskies.p2.bnd.P2BndRepository.getName(P2BndRepository.java:246)
- at uk.co.strangeskies.p2bnd.test.P2BndRepositoryTest.test(P2BndRepositoryTest.java:112)
- at uk.co.strangeskies.p2bnd.test.P2BndRepositoryTest.createRepositoryWaitReopenTest(P2BndRepositoryTest.java:66)
- at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
- at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
- at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
- at java.lang.reflect.Method.invoke(Method.java:497)
- at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
- at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
- at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)
- at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
- at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
- at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:325)
- at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:78)
- at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:57)
- at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
- at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
- at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
- at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
- at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
- at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
- at junit.framework.JUnit4TestAdapter.run(JUnit4TestAdapter.java:38)
- at junit.framework.TestSuite.runTest(TestSuite.java:252)
- at junit.framework.TestSuite.run(TestSuite.java:247)
- at aQute.junit.Activator.test(Activator.java:325)
- at aQute.junit.Activator.automatic(Activator.java:208)
- at aQute.junit.Activator.run(Activator.java:142)
- at aQute.launcher.Launcher$5.call(Launcher.java:1213)
- at aQute.launcher.Launcher$5.call(Launcher.java:1211)
- at aQute.launcher.Launcher.run(Launcher.java:315)
- at aQute.launcher.Launcher.main(Launcher.java:132)
-Caused by: java.lang.NullPointerException
- at uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper.lambda$0(SharedFrameworkWrapper.java:103)
- at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.lambda$4(FrameworkWrapperImpl.java:245)
- at uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner.lambda$0(ContextClassLoaderRunner.java:85)
- at uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner.runThrowing(ContextClassLoaderRunner.java:62)
- at uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner.runThrowing(ContextClassLoaderRunner.java:84)
- at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.withFrameworkThrowing(FrameworkWrapperImpl.java:244)
- at uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl.withFramework(FrameworkWrapperImpl.java:224)
- ... 33 more
-]]>
-    </error>
-    <system-out>
-      INFO: Creating P2BndRepository
-WARN: Setting P2 repository
-       properties: {name=first, location=http://download.eclipse.org/releases/mars/}
+INFO: Setting framework URL
+INFO: Creating delegating classloader
+       to [file:/tmp/framework7746230257811146834.jar, file:/tmp/framework2245567868510932782.jar]
       
-ERROR: Unable to perform framework action uk.co.strangeskies.p2.bnd.SharedFrameworkWrapper$$Lambda$65/928294079@74f5ce22:
-       null
+INFO: Fetching framework wrapper service loader
+INFO: Loading
+       framework wrapper service
+ERROR: Could not initialise P2BndRepository:
+       uk/co/strangeskies/osgi/frameworkwrapper/FrameworkWrapper
+      
+WARN: Unable to stop framework: null
     </system-out>
   </testcase>
 </testsuite>

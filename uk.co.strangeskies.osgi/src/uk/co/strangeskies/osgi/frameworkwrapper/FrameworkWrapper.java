@@ -22,18 +22,34 @@ import java.io.InputStream;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import org.osgi.framework.launch.Framework;
-
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.function.ThrowingConsumer;
 import uk.co.strangeskies.utilities.function.ThrowingRunnable;
 import uk.co.strangeskies.utilities.function.ThrowingSupplier;
 
+/**
+ * A simple interface intended to provide access to some feature of an OSGi
+ * framework without requiring access to any OSGi classes on the class path.
+ * <p>
+ * The framework is started and stopped as it is needed by the client, and may
+ * optionally time-out after a period of inactivity. Methods are provided to
+ * perform actions which lock on the presence of the framework such that it will
+ * remain available until they are complete.
+ * <p>
+ * The client may access services within the framework, and register services
+ * into the framework.
+ * 
+ * @author Elias N Vasylenko
+ */
 public interface FrameworkWrapper {
-	public static final String EMBEDDED_FRAMEWORK = "Embedded-Framework";
-	public static final String EMBEDDED_RUNPATH = "Embedded-Runpath";
-
+	/**
+	 * @param timeoutMilliseconds
+	 *          the duration of inactivity after which the framework shuts down
+	 *          automatically
+	 */
 	void setTimeoutMilliseconds(int timeoutMilliseconds);
+
+	void setClassLoader(ClassLoader classLoader);
 
 	void setLog(Log log);
 
@@ -48,8 +64,6 @@ public interface FrameworkWrapper {
 	void stopFramework();
 
 	boolean isStarted();
-
-	Framework getFramework();
 
 	void withFramework(ThrowingRunnable<?> action);
 

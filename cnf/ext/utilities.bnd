@@ -40,7 +40,7 @@ shade.project: @${jarsource.project;${1}}
 
 Embedded-Runpath: ${map;jardestination;${join;${embedded.bundles};${embedded.projects}}}
 
-pluginpath.p2: ${build}/release/uk.co.strangeskies.p2bnd/uk.co.strangeskies.p2bnd-${strangeskies-version}.jar
+pluginpath.p2: ${build}/release/uk.co.strangeskies.p2bnd.plugin/uk.co.strangeskies.p2bnd.plugin-${strangeskies-version}.jar
 
 #-pluginpath.test: ${pluginpath.p2}
 #-plugin.ahoyhoy: uk.co.strangeskies.p2.bnd.P2BndRepository;name="Ahoy there matey2";location="http://download.eclipse.org/releases/mars/"
