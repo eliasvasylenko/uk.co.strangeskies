@@ -166,7 +166,7 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 				ServiceLoader<FrameworkFactory> serviceLoader = ServiceLoader.load(FrameworkFactory.class, classLoader);
 
 				log.log(Level.INFO, "Loading framework service");
-				return StreamSupport.stream(serviceLoader.spliterator(), false).findAny().orElseThrow(
+				return StreamSupport.stream(serviceLoader.spliterator(), false).findAny().<RuntimeException>orElseThrow(
 						() -> new RuntimeException("Cannot find service implementing " + FrameworkFactory.class.getName()));
 			});
 		}
