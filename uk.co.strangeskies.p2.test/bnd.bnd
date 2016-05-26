@@ -1,0 +1,16 @@
+-runee: JavaSE-1.8
+
+-runfw: org.eclipse.osgi
+
+-buildpath: \
+	${ss;utilities},\
+	biz.aQute.bndlib,\
+	org.eclipse.equinox.common,\
+	org.eclipse.equinox.p2.core,\
+	org.eclipse.equinox.p2.metadata,\
+	org.eclipse.equinox.p2.repository
+
+-testpath: \
+	org.eclipse.osgi
+
+-sub: *.bnd
