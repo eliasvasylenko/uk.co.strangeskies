@@ -21,6 +21,7 @@ package uk.co.strangeskies.p2bnd.test;
 import static org.osgi.framework.FrameworkUtil.getBundle;
 import static uk.co.strangeskies.p2.bnd.P2BndRepository.FRAMEWORK_PROPERTIES;
 import static uk.co.strangeskies.p2.bnd.P2BndRepository.SERVICE_TIMEOUT_MILLISECONDS;
+import static uk.co.strangeskies.p2.bnd.P2BndRepository.setSharedFramework;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -32,7 +33,7 @@ import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.wiring.BundleWiring;
 import org.osgi.util.tracker.ServiceTracker;
 
-import uk.co.strangeskies.p2.bnd.FrameworkWrapperContainer;
+import uk.co.strangeskies.p2.bnd.FrameworkWrapperFactory;
 import uk.co.strangeskies.p2.bnd.P2BndRepository;
 import uk.co.strangeskies.utilities.classpath.FilteringClassLoader;
 
@@ -49,8 +50,8 @@ public class P2BndRepositoryTest {
 					getBundle(P2BndRepository.class).adapt(BundleWiring.class).getClassLoader(),
 					P2BndRepository::classDelegationFilter);
 
-			P2BndRepository.setSharedFramework(
-					new FrameworkWrapperContainer(1000, SERVICE_TIMEOUT_MILLISECONDS, FRAMEWORK_PROPERTIES, classLoader));
+			setSharedFramework(
+					new FrameworkWrapperFactory(1000, SERVICE_TIMEOUT_MILLISECONDS, FRAMEWORK_PROPERTIES, classLoader));
 			INITIALISED = true;
 		}
 	}

@@ -49,7 +49,9 @@ import aQute.bnd.service.Strategy;
 import aQute.bnd.version.Version;
 import aQute.service.reporter.Reporter;
 import uk.co.strangeskies.bnd.ReporterLog;
+import uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper;
 import uk.co.strangeskies.p2.P2Repository;
+import uk.co.strangeskies.p2.P2RepositoryFactory;
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Log.Level;
 import uk.co.strangeskies.utilities.classpath.FilteringClassLoader;
@@ -112,19 +114,38 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 		}
 	};
 
-	private static FrameworkWrapperContainer SHARED_FRAMEWORK;
+	private static FrameworkWrapperFactory SHARED_FRAMEWORK;
+	private static P2RepositoryFactory REPOSITORY_FACTORY;
 
-	public static void setSharedFramework(FrameworkWrapperContainer sharedFrameworkWrapper) {
+	public static void setSharedFramework(FrameworkWrapperFactory sharedFrameworkWrapper) {
 		if (SHARED_FRAMEWORK != null)
 			throw new IllegalStateException();
 		SHARED_FRAMEWORK = sharedFrameworkWrapper;
 	}
 
-	public static FrameworkWrapperContainer getSharedFramework() {
-		if (SHARED_FRAMEWORK == null)
-			SHARED_FRAMEWORK = new FrameworkWrapperContainer(FRAMEWORK_TIMEOUT_MILLISECONDS, SERVICE_TIMEOUT_MILLISECONDS,
-					FRAMEWORK_PROPERTIES,
+	public static FrameworkWrapperFactory getSharedFramework() {
+		if (SHARED_FRAMEWORK == null) {
+			SHARED_FRAMEWORK = new FrameworkWrapperFactory(
 					new FilteringClassLoader(P2BndRepository.class.getClassLoader(), P2BndRepository::classDelegationFilter));
+
+			SHARED_FRAMEWORK.initialise((l, s) -> {
+				System.out.println(l + ": " + s);
+			});
+
+			FrameworkWrapper frameworkWrapper = SHARED_FRAMEWORK.getFrameworkWrapper();
+
+			frameworkWrapper.setTimeoutMilliseconds(FRAMEWORK_TIMEOUT_MILLISECONDS);
+
+			frameworkWrapper.setLaunchProperties(FRAMEWORK_PROPERTIES);
+
+			frameworkWrapper.onStart().addObserver(f -> {
+				frameworkWrapper.withService(P2RepositoryFactory.class, p -> {
+					REPOSITORY_FACTORY = p;
+				}, SERVICE_TIMEOUT_MILLISECONDS);
+			});
+
+			frameworkWrapper.onStop().addObserver(f -> REPOSITORY_FACTORY = null);
+		}
 		return SHARED_FRAMEWORK;
 	}
 

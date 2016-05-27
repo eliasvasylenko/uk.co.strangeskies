@@ -48,7 +48,6 @@ import uk.co.strangeskies.utilities.Log.Level;
 import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableImpl;
 import uk.co.strangeskies.utilities.Property;
-import uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner;
 import uk.co.strangeskies.utilities.flowcontrol.Timeout;
 import uk.co.strangeskies.utilities.function.ThrowingConsumer;
 import uk.co.strangeskies.utilities.function.ThrowingFunction;
@@ -170,14 +169,13 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 
 	private void initialiseFrameworkFactory() {
 		if (frameworkFactory == null) {
-			frameworkFactory = new ContextClassLoaderRunner(classLoader).run(() -> {
-				log.log(Level.INFO, "Fetching framework service loader");
-				ServiceLoader<FrameworkFactory> serviceLoader = ServiceLoader.load(FrameworkFactory.class, classLoader);
+			log.log(Level.INFO, "Fetching framework service loader");
+			ServiceLoader<FrameworkFactory> serviceLoader = ServiceLoader.load(FrameworkFactory.class, classLoader);
 
-				log.log(Level.INFO, "Loading framework service");
-				return StreamSupport.stream(serviceLoader.spliterator(), false).findAny().<RuntimeException> orElseThrow(
-						() -> new RuntimeException("Cannot find service implementing " + FrameworkFactory.class.getName()));
-			});
+			log.log(Level.INFO, "Loading framework service");
+			frameworkFactory = StreamSupport.stream(serviceLoader.spliterator(), false).findAny()
+					.<RuntimeException> orElseThrow(
+							() -> new RuntimeException("Cannot find service implementing " + FrameworkFactory.class.getName()));
 		}
 	}
 

@@ -1,9 +1,2 @@
 Export-Package: \
 	uk.co.strangeskies.p2
-
--runrequires: \
-	${req;uk.co.strangeskies.osgi.consolelog},\
-	${req;uk.co.strangeskies.p2},\
-	${runreq.eclipse.p2},\
-	${runreq.felix.shell},\
-	${req;org.eclipse.core.net}
