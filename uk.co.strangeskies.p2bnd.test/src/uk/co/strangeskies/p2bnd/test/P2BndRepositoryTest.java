@@ -18,6 +18,7 @@
  */
 package uk.co.strangeskies.p2bnd.test;
 
+import static org.osgi.framework.FrameworkUtil.getBundle;
 import static uk.co.strangeskies.p2.bnd.P2BndRepository.FRAMEWORK_PROPERTIES;
 import static uk.co.strangeskies.p2.bnd.P2BndRepository.SERVICE_TIMEOUT_MILLISECONDS;
 
@@ -26,9 +27,14 @@ import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.wiring.BundleWiring;
+import org.osgi.util.tracker.ServiceTracker;
 
-import uk.co.strangeskies.p2.bnd.P2BndRepository;
 import uk.co.strangeskies.p2.bnd.FrameworkWrapperContainer;
+import uk.co.strangeskies.p2.bnd.P2BndRepository;
+import uk.co.strangeskies.utilities.classpath.FilteringClassLoader;
 
 @SuppressWarnings("javadoc")
 public class P2BndRepositoryTest {
@@ -39,9 +45,30 @@ public class P2BndRepositoryTest {
 	@Before
 	public void configureSharedFramework() {
 		if (!INITIALISED) {
-			P2BndRepository
-					.setSharedFramework(new FrameworkWrapperContainer(1000, SERVICE_TIMEOUT_MILLISECONDS, FRAMEWORK_PROPERTIES));
+			ClassLoader classLoader = new FilteringClassLoader(
+					getBundle(P2BndRepository.class).adapt(BundleWiring.class).getClassLoader(),
+					P2BndRepository::classDelegationFilter);
+
+			P2BndRepository.setSharedFramework(
+					new FrameworkWrapperContainer(1000, SERVICE_TIMEOUT_MILLISECONDS, FRAMEWORK_PROPERTIES, classLoader));
 			INITIALISED = true;
+		}
+	}
+
+	protected <T> T getService(Class<T> clazz) {
+		try {
+			BundleContext context = FrameworkUtil.getBundle(this.getClass()).getBundleContext();
+
+			ServiceTracker<T, T> st = new ServiceTracker<>(context, clazz, null);
+			st.open();
+			try {
+				return st.waitForService(SERVICE_TIMEOUT_MILLISECONDS);
+			} catch (InterruptedException e) {
+				throw new RuntimeException(e);
+			}
+		} catch (Throwable t) {
+			t.printStackTrace();
+			throw t;
 		}
 	}
 

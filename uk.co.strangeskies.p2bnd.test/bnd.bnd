@@ -9,7 +9,8 @@ Private-Package: \
 	${ss;utilities},\
 	${ss;p2.api},\
 	${ss;p2bnd.bundle},\
-	biz.aQute.bndlib
+	biz.aQute.bndlib,\
+	${-testpath.base}
 
 Test-Cases: ${test-cases}
 

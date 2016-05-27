@@ -46,6 +46,8 @@ public final class Methods {
 	 * to get a reference to {@link Supplier#get()}, invoke as
 	 * {@code Methods.findMethod(Supplier.class, Supplier::get);}.
 	 * 
+	 * @param <N>
+	 *          the interface containing the method
 	 * @param type
 	 *          the type of the class which declares the method
 	 * @param methodLambda

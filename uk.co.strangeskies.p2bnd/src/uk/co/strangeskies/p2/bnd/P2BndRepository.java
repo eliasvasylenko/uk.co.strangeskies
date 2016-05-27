@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -51,6 +52,7 @@ import uk.co.strangeskies.bnd.ReporterLog;
 import uk.co.strangeskies.p2.P2Repository;
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Log.Level;
+import uk.co.strangeskies.utilities.classpath.FilteringClassLoader;
 import uk.co.strangeskies.utilities.function.ThrowingFunction;
 
 /**
@@ -121,8 +123,22 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 	public static FrameworkWrapperContainer getSharedFramework() {
 		if (SHARED_FRAMEWORK == null)
 			SHARED_FRAMEWORK = new FrameworkWrapperContainer(FRAMEWORK_TIMEOUT_MILLISECONDS, SERVICE_TIMEOUT_MILLISECONDS,
-					FRAMEWORK_PROPERTIES);
+					FRAMEWORK_PROPERTIES,
+					new FilteringClassLoader(P2BndRepository.class.getClassLoader(), P2BndRepository::classDelegationFilter));
 		return SHARED_FRAMEWORK;
+	}
+
+	public static boolean classDelegationFilter(Class<?> clazz) {
+		List<String> packages = new ArrayList<>(P2BndRepository.FORWARD_PACKAGES);
+
+		for (String forwardPackage : packages) {
+			String packageName = clazz.getPackage().getName();
+			if (packageName.startsWith(forwardPackage + ".") || packageName.equals(forwardPackage)) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	private Log log = (l, s) -> {
@@ -236,8 +252,8 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 		return withConnection(repository -> repository.get(bsn, version, properties, listeners));
 	}
 
-	private <T> T withConnection(ThrowingFunction<P2Repository, T, ?> action) {
-		return getSharedFramework().withConnection(this, getLog(), repository -> {
+	private <T, E extends Exception> T withConnection(ThrowingFunction<P2Repository, T, E> action) throws E {
+		return getSharedFramework().<T, E> withConnection(this, getLog(), repository -> {
 			if (properties != null)
 				repository.setProperties(properties);
 			if (reporter != null)

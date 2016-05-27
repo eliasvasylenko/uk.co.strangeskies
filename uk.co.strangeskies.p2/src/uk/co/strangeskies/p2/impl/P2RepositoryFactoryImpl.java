@@ -28,6 +28,7 @@ import uk.co.strangeskies.p2.P2Repository;
 import uk.co.strangeskies.p2.P2RepositoryFactory;
 import uk.co.strangeskies.utilities.Log;
 
+@SuppressWarnings("javadoc")
 @Component
 public class P2RepositoryFactoryImpl implements P2RepositoryFactory {
 	@Reference

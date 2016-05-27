@@ -27,11 +27,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -45,7 +43,6 @@ import uk.co.strangeskies.p2.P2Repository;
 import uk.co.strangeskies.p2.P2RepositoryFactory;
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Log.Level;
-import uk.co.strangeskies.utilities.classpath.FilteringClassLoader;
 import uk.co.strangeskies.utilities.classpath.ManifestUtilities;
 import uk.co.strangeskies.utilities.function.ThrowingFunction;
 import uk.co.strangeskies.utilities.function.ThrowingSupplier;
@@ -62,31 +59,35 @@ public class FrameworkWrapperContainer {
 	private final Set<URL> frameworkJars;
 	private final Set<URL> bundleJars;
 
+	private final ClassLoader baseClassLoader;
+	private URLClassLoader classLoader;
+
 	private FrameworkWrapper frameworkWrapper;
 	private P2RepositoryFactory repositoryFactory;
-	private URLClassLoader classLoader;
 
 	private Map<Object, P2Repository> openConnections = new WeakHashMap<>();
 
 	public FrameworkWrapperContainer(int frameworkTimeoutMilliseconds, int serviceTimeoutMilliseconds,
-			Map<String, String> frameworkProperties, Set<URL> frameworkJars, Set<URL> bundleJars) {
+			Map<String, String> frameworkProperties, ClassLoader baseClassLoader, Set<URL> frameworkJars,
+			Set<URL> bundleJars) {
 		this.frameworkTimeoutMilliseconds = frameworkTimeoutMilliseconds;
 		this.serviceTimeoutMilliseconds = serviceTimeoutMilliseconds;
 		this.frameworkProperties = new HashMap<>(frameworkProperties);
+		this.baseClassLoader = baseClassLoader;
 
 		this.frameworkJars = frameworkJars;
 		this.bundleJars = bundleJars;
 	}
 
 	public FrameworkWrapperContainer(int frameworkTimeoutMilliseconds, int serviceTimeoutMilliseconds,
-			Map<String, String> frameworkProperties) {
-		this(frameworkTimeoutMilliseconds, serviceTimeoutMilliseconds, frameworkProperties,
+			Map<String, String> frameworkProperties, ClassLoader baseClassLoader) {
+		this(frameworkTimeoutMilliseconds, serviceTimeoutMilliseconds, frameworkProperties, baseClassLoader,
 				ManifestUtilities.getManifest(P2BndRepository.class).getMainAttributes());
 	}
 
 	private FrameworkWrapperContainer(int frameworkTimeoutMilliseconds, int serviceTimeoutMilliseconds,
-			Map<String, String> frameworkProperties, Attributes attributes) {
-		this(frameworkTimeoutMilliseconds, serviceTimeoutMilliseconds, frameworkProperties,
+			Map<String, String> frameworkProperties, ClassLoader baseClassLoader, Attributes attributes) {
+		this(frameworkTimeoutMilliseconds, serviceTimeoutMilliseconds, frameworkProperties, baseClassLoader,
 				toUrls(attributes.getValue(EMBEDDED_FRAMEWORK)), toUrls(attributes.getValue(EMBEDDED_RUNPATH)));
 	}
 
@@ -95,7 +96,8 @@ public class FrameworkWrapperContainer {
 				.collect(Collectors.toSet());
 	}
 
-	public synchronized <T> T withConnection(Object key, Log log, ThrowingFunction<P2Repository, T, ?> action) {
+	public synchronized <T, E extends Exception> T withConnection(Object key, Log log,
+			ThrowingFunction<P2Repository, T, E> action) throws E {
 		initialise(log);
 
 		return frameworkWrapper.withFramework(() -> {
@@ -108,19 +110,6 @@ public class FrameworkWrapperContainer {
 
 			return action.apply(repository);
 		});
-	}
-
-	private boolean classDelegationFilter(Class<?> clazz) {
-		List<String> packages = new ArrayList<>(P2BndRepository.FORWARD_PACKAGES);
-
-		for (String forwardPackage : packages) {
-			String packageName = clazz.getPackage().getName();
-			if (packageName.startsWith(forwardPackage + ".") || packageName.equals(forwardPackage)) {
-				return true;
-			}
-		}
-
-		return false;
 	}
 
 	public synchronized void initialise(Log log) {
@@ -147,32 +136,7 @@ public class FrameworkWrapperContainer {
 				}
 
 				log.log(Level.INFO, "Creating delegating classloader to " + frameworkUrls);
-				classLoader = new URLClassLoader(frameworkUrls.toArray(new URL[frameworkUrls.size()]),
-						new FilteringClassLoader(FrameworkWrapper.class.getClassLoader(), this::classDelegationFilter));
-
-				/*
-				 * 
-				 * 
-				 * 
-				 * 
-				 * 
-				 * 
-				 * 
-				 * 
-				 * 
-				 * 
-				 * TODO make parent classloader the bundle classloader!
-				 * 
-				 * 
-				 * 
-				 * 
-				 * 
-				 * 
-				 * 
-				 * 
-				 * 
-				 * 
-				 */
+				classLoader = new URLClassLoader(frameworkUrls.toArray(new URL[frameworkUrls.size()]), baseClassLoader);
 
 				log.log(Level.INFO, "Fetching framework wrapper service loader");
 				ServiceLoader<FrameworkWrapper> serviceLoader = ServiceLoader.load(FrameworkWrapper.class, classLoader);
@@ -182,7 +146,7 @@ public class FrameworkWrapperContainer {
 						() -> new RuntimeException("Cannot find service implementing " + FrameworkWrapper.class.getName()));
 
 				log.log(Level.INFO, "Initialise framework wrapper properties");
-				frameworkWrapper.setLog(log);
+				frameworkWrapper.setLog(log, false);
 
 				frameworkWrapper.setTimeoutMilliseconds(frameworkTimeoutMilliseconds);
 
@@ -194,13 +158,13 @@ public class FrameworkWrapperContainer {
 				}
 				frameworkWrapper.setBundles(bundles);
 
-				frameworkWrapper.setInitialisationAction(() -> {
-					frameworkWrapper.withServiceThrowing(P2RepositoryFactory.class, p -> {
+				frameworkWrapper.onStart().addObserver(f -> {
+					frameworkWrapper.withService(P2RepositoryFactory.class, p -> {
 						repositoryFactory = p;
 					}, serviceTimeoutMilliseconds);
 				});
 
-				frameworkWrapper.setShutdownAction(() -> {
+				frameworkWrapper.onStop().addObserver(f -> {
 					for (P2Repository repository : openConnections.values()) {
 						cleanConnection(repository);
 					}

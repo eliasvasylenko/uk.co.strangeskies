@@ -97,14 +97,14 @@ public interface P2Repository extends RemoteRepositoryPlugin, Repository, Plugin
 	 */
 
 	@Override
-	public void setProperties(Map<String, String> map) throws Exception;
+	public void setProperties(Map<String, String> map);
 
 	/*
 	 * RepositoryPlugin overrides:
 	 */
 
 	@Override
-	public PutResult put(InputStream stream, PutOptions options) throws Exception;
+	public PutResult put(InputStream stream, PutOptions options);
 
 	@Override
 	public File get(String bsn, Version version, Map<String, String> properties, DownloadListener... listeners)
@@ -114,10 +114,10 @@ public interface P2Repository extends RemoteRepositoryPlugin, Repository, Plugin
 	public boolean canWrite();
 
 	@Override
-	public List<String> list(String pattern) throws Exception;
+	public List<String> list(String pattern);
 
 	@Override
-	public SortedSet<Version> versions(String bsn) throws Exception;
+	public SortedSet<Version> versions(String bsn);
 
 	@Override
 	public String getName();
@@ -125,6 +125,13 @@ public interface P2Repository extends RemoteRepositoryPlugin, Repository, Plugin
 	@Override
 	public String getLocation();
 
+	/**
+	 * Get the log for events relating to the repository, typically provided via
+	 * an implementation of {@link P2RepositoryFactory} by way of the argument to
+	 * {@link P2RepositoryFactory#get(Log)}.
+	 * 
+	 * @return the repository log
+	 */
 	public Log getLog();
 
 	/*

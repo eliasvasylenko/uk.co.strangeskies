@@ -76,10 +76,7 @@ public class P2RepositoryImpl implements P2Repository {
 	private final IProvisioningAgentProvider agentProvider;
 	private BundleContext bundleContext;
 
-	/**
-	 * Create a new unconfigured repository with sensible defaults where
-	 * appropriate.
-	 */
+	@SuppressWarnings("javadoc")
 	public P2RepositoryImpl(Log log, IProvisioningAgentProvider agentProvider, BundleContext bundleContext) {
 		cacheDir = new File(System.getProperty("user.home") + File.separator + DEFAULT_CACHE_DIRECTORY);
 
@@ -88,7 +85,7 @@ public class P2RepositoryImpl implements P2Repository {
 		this.bundleContext = bundleContext;
 	}
 
-	private synchronized void initialise() {
+	protected synchronized void initialise() {
 		try {
 			String localString = bundleContext.getBundle().getLocation();
 			localString = localString.substring(localString.indexOf(':') + 1);
@@ -146,7 +143,7 @@ public class P2RepositoryImpl implements P2Repository {
 	 */
 
 	@Override
-	public void setProperties(Map<String, String> map) throws Exception {
+	public void setProperties(Map<String, String> map) {
 		name = map.get(NAME_PROPERTY);
 
 		parseCacheProperties(map);
@@ -210,7 +207,7 @@ public class P2RepositoryImpl implements P2Repository {
 	 */
 
 	@Override
-	public PutResult put(InputStream stream, PutOptions options) throws Exception {
+	public PutResult put(InputStream stream, PutOptions options) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -227,12 +224,12 @@ public class P2RepositoryImpl implements P2Repository {
 	}
 
 	@Override
-	public List<String> list(String pattern) throws Exception {
+	public List<String> list(String pattern) {
 		return Collections.emptyList();
 	}
 
 	@Override
-	public SortedSet<Version> versions(String bsn) throws Exception {
+	public SortedSet<Version> versions(String bsn) {
 		return Collections.emptySortedSet();
 	}
 

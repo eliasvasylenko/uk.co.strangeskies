@@ -29,6 +29,7 @@ import java.util.stream.StreamSupport;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
+import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
@@ -44,10 +45,13 @@ import uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper;
 import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Log.Level;
+import uk.co.strangeskies.utilities.Observable;
+import uk.co.strangeskies.utilities.ObservableImpl;
 import uk.co.strangeskies.utilities.Property;
 import uk.co.strangeskies.utilities.classpath.ContextClassLoaderRunner;
 import uk.co.strangeskies.utilities.flowcontrol.Timeout;
 import uk.co.strangeskies.utilities.function.ThrowingConsumer;
+import uk.co.strangeskies.utilities.function.ThrowingFunction;
 import uk.co.strangeskies.utilities.function.ThrowingRunnable;
 import uk.co.strangeskies.utilities.function.ThrowingSupplier;
 
@@ -57,13 +61,14 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 	private static final String FRAGMENT_HOST_HEADER = "Fragment-Host";
 
 	private Map<String, String> launchProperties;
-	private ThrowingRunnable<?> initialisationAction;
-	private ThrowingRunnable<?> shutdownAction;
+	private ObservableImpl<FrameworkWrapper> onStart;
+	private ObservableImpl<FrameworkWrapper> onStop;
 
 	private Framework framework;
 
 	private final Timeout timeout;
 	private Log log;
+	private boolean publishLogService = false;
 	private boolean frameworkStarted = false;
 
 	private FrameworkFactory frameworkFactory;
@@ -90,6 +95,9 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 		timeout = new Timeout(this::stopFramework, timeoutMilliseconds, this);
 
 		setClassLoader(classLoader);
+
+		onStart = new ObservableImpl<>();
+		onStop = new ObservableImpl<>();
 	}
 
 	@Activate
@@ -110,8 +118,9 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 	}
 
 	@Override
-	public void setLog(Log log) {
+	public void setLog(Log log, boolean publishService) {
 		this.log = log;
+		this.publishLogService = publishService;
 	}
 
 	@Override
@@ -120,13 +129,13 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 	}
 
 	@Override
-	public synchronized void setInitialisationAction(ThrowingRunnable<?> action) {
-		initialisationAction = action;
+	public synchronized Observable<FrameworkWrapper> onStart() {
+		return onStart;
 	}
 
 	@Override
-	public synchronized void setShutdownAction(ThrowingRunnable<?> action) {
-		shutdownAction = action;
+	public synchronized Observable<FrameworkWrapper> onStop() {
+		return onStop;
 	}
 
 	@Override
@@ -150,7 +159,7 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 				log.log(Level.INFO, "Registering bundles");
 				registerBundles();
 
-				initialisationAction.run();
+				onStart.fire(this);
 			} catch (Exception e) {
 				throw runtimeException("Unable to start framework", e);
 			}
@@ -166,7 +175,7 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 				ServiceLoader<FrameworkFactory> serviceLoader = ServiceLoader.load(FrameworkFactory.class, classLoader);
 
 				log.log(Level.INFO, "Loading framework service");
-				return StreamSupport.stream(serviceLoader.spliterator(), false).findAny().<RuntimeException>orElseThrow(
+				return StreamSupport.stream(serviceLoader.spliterator(), false).findAny().<RuntimeException> orElseThrow(
 						() -> new RuntimeException("Cannot find service implementing " + FrameworkFactory.class.getName()));
 			});
 		}
@@ -180,7 +189,9 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 
 	private void registerBundles() throws Exception {
 		BundleContext frameworkContext = framework.getBundleContext();
-		frameworkContext.registerService(Log.class, log, null);
+		if (publishLogService) {
+			frameworkContext.registerService(Log.class, log, null);
+		}
 
 		List<Bundle> bundles = new ArrayList<>();
 		bundleSources.entrySet().stream().forEach(b -> {
@@ -210,8 +221,8 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 			if (frameworkStarted) {
 				framework.stop();
 				framework.waitForStop(0);
-				if (shutdownAction != null) {
-					shutdownAction.run();
+				if (onStop != null) {
+					onStop.fire(this);
 				}
 			}
 		} catch (Exception e) {
@@ -229,33 +240,15 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 	}
 
 	@Override
-	public synchronized void withFramework(ThrowingRunnable<?> action) {
-		try {
-			withFrameworkThrowing(action);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	@Override
-	public synchronized <T> T withFramework(ThrowingSupplier<T, ?> action) {
-		try {
-			return withFrameworkThrowing(action);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	@Override
-	public synchronized <E extends Exception> void withFrameworkThrowing(ThrowingRunnable<E> action) throws E {
-		withFrameworkThrowing(() -> {
+	public synchronized <E extends Exception> void withFramework(ThrowingRunnable<E> action) throws E {
+		withFramework(() -> {
 			action.run();
 			return null;
 		});
 	}
 
 	@Override
-	public synchronized <T, E extends Exception> T withFrameworkThrowing(ThrowingSupplier<T, E> action) throws E {
+	public synchronized <T, E extends Exception> T withFramework(ThrowingSupplier<? extends T, E> action) throws E {
 		try {
 			startFramework();
 
@@ -277,9 +270,18 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 	}
 
 	@Override
+	public synchronized <T, E extends Exception> void withService(Class<T> serviceClass, String filter,
+			ThrowingConsumer<? super T, E> action, int timeoutMilliseconds) throws E {
+		withService(serviceClass, filter, s -> {
+			action.accept(s);
+			return null;
+		}, timeoutMilliseconds);
+	}
+
+	@Override
 	@SuppressWarnings("unchecked")
-	public synchronized <T> void withServiceThrowing(Class<T> serviceClass, String filter, ThrowingConsumer<T, ?> action,
-			int timeoutMilliseconds) throws Exception {
+	public <T, R, E extends Exception> R withService(Class<T> serviceClass, String filter,
+			ThrowingFunction<? super T, ? extends R, E> action, int timeoutMilliseconds) throws E {
 		try {
 			BundleContext frameworkContext = framework.getBundleContext();
 
@@ -325,8 +327,11 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 				}
 			}
 
-			action.accept((T) service.get());
-		} catch (Throwable e) {
+			return action.apply((T) service.get());
+		} catch (InterruptedException | InvalidSyntaxException e) {
+			log.log(Level.ERROR, "Unexpected error performing action with service " + serviceClass, e);
+			throw new RuntimeException(e);
+		} catch (Exception e) {
 			log.log(Level.ERROR, "Unable to perform action with service " + serviceClass, e);
 			throw e;
 		}
