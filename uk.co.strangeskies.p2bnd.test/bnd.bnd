@@ -31,9 +31,12 @@ Import-Package: \
 	${ss;utilities},\
 	${ss;p2.api},\
 	${ss;p2bnd.bundle},\
-	${ss;osgi.provider},\
+	${ss;osgi.api},\
 	biz.aQute.bndlib,\
 	${-testpath.base}
+	
+-testpath: \
+	${-buildpath}
 
 Test-Cases: ${test-cases}
 
@@ -43,7 +46,6 @@ Test-Cases: ${test-cases}
 -runrequires: \
 	${req;biz.aQute.tester},\
 	${req;osgi.enroute.logger.simple.provider},\
-	${req;uk.co.strangeskies.p2.api},\
 	${req;uk.co.strangeskies.p2bnd.bundle}
 
 -runbundles: \

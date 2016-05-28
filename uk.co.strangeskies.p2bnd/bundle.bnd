@@ -4,6 +4,7 @@ Export-Package: \
 Import-Package: \
 	uk.co.strangeskies.osgi,\
 	uk.co.strangeskies.osgi.frameworkwrapper,\
+	uk.co.strangeskies.osgi.frameworkwrapper.server,\
 	uk.co.strangeskies.osgi.servicewrapper,\
 	uk.co.strangeskies.utilities.text,\
 	uk.co.strangeskies.utilities.classpath,\

@@ -38,15 +38,21 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper;
+import uk.co.strangeskies.osgi.frameworkwrapper.server.FrameworkWrapperServer;
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Log.Level;
 import uk.co.strangeskies.utilities.Observable;
-import uk.co.strangeskies.utilities.classpath.ManifestUtilities;
 import uk.co.strangeskies.utilities.function.ThrowingConsumer;
 import uk.co.strangeskies.utilities.function.ThrowingFunction;
 import uk.co.strangeskies.utilities.function.ThrowingRunnable;
 import uk.co.strangeskies.utilities.function.ThrowingSupplier;
 
+/**
+ * A framework wrapper implementation which delegates internally to a
+ * {@link FrameworkWrapperServer} implementation.
+ * 
+ * @author Elias N Vasylenko
+ */
 public class FrameworkWrapperImpl implements FrameworkWrapper {
 	private Log log;
 	private ClassLoader baseClassLoader;
@@ -54,12 +60,7 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 	private Set<URL> frameworkJars;
 	private Set<URL> bundleJars;
 
-	private boolean needsReset;
 	private FrameworkWrapper component;
-
-	public FrameworkWrapperImpl(Class<?> contextClass) {
-		this(contextClass.getClassLoader(), ManifestUtilities.getManifest(contextClass));
-	}
 
 	/**
 	 * @param classLoader
@@ -90,12 +91,10 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 
 	protected void setFrameworkJars(Set<URL> frameworkJars) {
 		this.frameworkJars = frameworkJars;
-		needsReset = true;
 	}
 
 	protected void setBundleJars(Set<URL> bundleJars) {
 		this.bundleJars = bundleJars;
-		needsReset = true;
 	}
 
 	@Override
@@ -180,20 +179,17 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 					baseClassLoader);
 
 			log.log(Level.INFO, "Fetching framework wrapper service loader");
-			ServiceLoader<FrameworkWrapper> serviceLoader = ServiceLoader.load(FrameworkWrapper.class, classLoader);
+			ServiceLoader<FrameworkWrapperServer> serviceLoader = ServiceLoader.load(FrameworkWrapperServer.class,
+					classLoader);
 
 			log.log(Level.INFO, "Loading framework wrapper service");
 			frameworkWrapper = StreamSupport.stream(serviceLoader.spliterator(), false).findAny().orElseThrow(
-					() -> new RuntimeException("Cannot find service implementing " + FrameworkWrapper.class.getName()));
+					() -> new RuntimeException("Cannot find service implementing " + FrameworkWrapperServer.class.getName()));
 
 			log.log(Level.INFO, "Initialise framework wrapper properties");
 			frameworkWrapper.setLog(log, false);
 
 			frameworkWrapper.onStop().addObserver(f -> {
-				if (needsReset) {
-					component = null;
-				}
-
 				log.log(Level.INFO, "Closing framework");
 				try {
 					classLoader.close();

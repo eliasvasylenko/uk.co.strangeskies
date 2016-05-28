@@ -29,12 +29,14 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.util.tracker.ServiceTracker;
 
+import uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper;
 import uk.co.strangeskies.p2.bnd.P2BndRepository;
 import uk.co.strangeskies.p2.bnd.P2BndRepositoryManager;
 
 @SuppressWarnings("javadoc")
 public class P2BndRepositoryTest {
-	private static final long SERVICE_TIMEOUT_MILLISECONDS = 2000;
+	private static final int FRAMEWORK_TIMEOUT_MILLISECONDS = 1000;
+	private static final int SERVICE_TIMEOUT_MILLISECONDS = 2000;
 
 	private static P2BndRepositoryManager MANAGER;
 
@@ -44,6 +46,8 @@ public class P2BndRepositoryTest {
 	public P2BndRepositoryManager getManager() {
 		if (MANAGER == null) {
 			MANAGER = getService(P2BndRepositoryManager.class);
+			FrameworkWrapper frameworkWrapper = MANAGER.getFramework();
+			frameworkWrapper.setTimeoutMilliseconds(FRAMEWORK_TIMEOUT_MILLISECONDS);
 		}
 
 		return MANAGER;
@@ -89,9 +93,11 @@ public class P2BndRepositoryTest {
 
 		second.close();
 
-		sleep(1500);
+		sleep(FRAMEWORK_TIMEOUT_MILLISECONDS * 2);
 
-		assertEquals(FIRST, first.getName());
+		first.getName();
+
+		first.close();
 	}
 
 	@Test(expected = IllegalStateException.class)
@@ -121,14 +127,13 @@ public class P2BndRepositoryTest {
 		assertEquals(SECOND, second.getName());
 
 		first.close();
+		second.close();
 	}
 
 	private P2BndRepository test(String name) throws Exception {
 		Map<String, String> map = new HashMap<>();
 		map.put("name", name);
 		map.put("location", "http://download.eclipse.org/releases/mars/");
-
-		System.out.println(getService(P2BndRepositoryManager.class));
 
 		P2BndRepository repo = getManager().create();
 		repo.setProperties(map);

@@ -4,7 +4,7 @@ Bundle-Description: \
 	server to be deployed into an internal framework.
 
 Private-Package: \
-	uk.co.strangeskies.osgi.frameworkwrapper.server
+	uk.co.strangeskies.osgi.frameworkwrapper.server.impl
 
 -includeresource: \
-	META-INF/services/uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper=FrameworkWrapperService
+	META-INF/services/uk.co.strangeskies.osgi.frameworkwrapper.server.FrameworkWrapperServer=FrameworkWrapperServer

@@ -16,13 +16,22 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with uk.co.strangeskies.osgi.  If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.osgi.frameworkwrapper.server;
+package uk.co.strangeskies.osgi.frameworkwrapper.impl;
+
+import java.util.jar.Manifest;
 
 import uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper;
+import uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapperFactory;
 
 /**
- * Not for external consumption!
+ * A simple {@link FrameworkWrapperFactory} implementation returning an instance
+ * of {@link FrameworkWrapperImpl}.
  * 
  * @author Elias N Vasylenko
  */
-public interface FrameworkWrapperServer extends FrameworkWrapper {}
+public class FrameworkWrapperFactoryImpl implements FrameworkWrapperFactory {
+	@Override
+	public FrameworkWrapper getFrameworkWrapper(ClassLoader classLoader, Manifest manifest) {
+		return new FrameworkWrapperImpl(classLoader, manifest);
+	}
+}

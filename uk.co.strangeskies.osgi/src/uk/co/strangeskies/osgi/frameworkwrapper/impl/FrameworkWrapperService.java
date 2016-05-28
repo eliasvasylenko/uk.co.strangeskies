@@ -31,10 +31,21 @@ import org.osgi.service.component.annotations.ServiceScope;
 import uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper;
 import uk.co.strangeskies.utilities.Log;
 
+/**
+ * A {@link FrameworkWrapper} implementation for consumption via OSGi.
+ * 
+ * @author Elias N Vasylenko
+ */
 @Component(scope = ServiceScope.BUNDLE, service = FrameworkWrapper.class)
 public class FrameworkWrapperService extends FrameworkWrapperImpl {
 	private Log log;
 
+	/**
+	 * Activate based on the requesting bundle manifest and class loader.
+	 * 
+	 * @param context
+	 *          the requesting component context
+	 */
 	@Activate
 	public void activate(ComponentContext context) {
 		Dictionary<String, String> headers = context.getUsingBundle().getHeaders();
@@ -49,6 +60,7 @@ public class FrameworkWrapperService extends FrameworkWrapperImpl {
 		super.setLog(log, true);
 	}
 
+	@SuppressWarnings("javadoc")
 	@Reference(cardinality = ReferenceCardinality.OPTIONAL)
 	public void setLog(Log log) {
 		this.log = log;

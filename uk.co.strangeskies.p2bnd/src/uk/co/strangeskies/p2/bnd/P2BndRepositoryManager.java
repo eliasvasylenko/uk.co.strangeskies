@@ -55,6 +55,7 @@ public class P2BndRepositoryManager {
 			 * TODO There are just for in-framework logging?
 			 */
 			"uk.co.strangeskies.osgi.frameworkwrapper;version=\"1.0.0\"",
+			"uk.co.strangeskies.osgi.frameworkwrapper.server;version=\"1.0.0\"",
 			"uk.co.strangeskies.osgi.servicewrapper;version=\"1.0.0\"", "uk.co.strangeskies.utilities.text;version=\"1.0.0\"",
 			"uk.co.strangeskies.utilities.classpath;version=\"1.0.0\"",
 			"uk.co.strangeskies.utilities.collection;version=\"1.0.0\"",

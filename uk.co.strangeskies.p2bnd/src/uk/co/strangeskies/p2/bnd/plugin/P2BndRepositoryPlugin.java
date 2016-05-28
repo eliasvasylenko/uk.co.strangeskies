@@ -20,11 +20,15 @@ package uk.co.strangeskies.p2.bnd.plugin;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ServiceLoader;
+import java.util.stream.StreamSupport;
 
 import org.osgi.service.repository.Repository;
 
 import aQute.bnd.service.RemoteRepositoryPlugin;
-import uk.co.strangeskies.osgi.frameworkwrapper.impl.FrameworkWrapperImpl;
+import uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper;
+import uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapperFactory;
+import uk.co.strangeskies.osgi.frameworkwrapper.server.FrameworkWrapperServer;
 import uk.co.strangeskies.p2.bnd.P2BndRepository;
 import uk.co.strangeskies.p2.bnd.P2BndRepositoryManager;
 import uk.co.strangeskies.utilities.Log;
@@ -42,13 +46,22 @@ import uk.co.strangeskies.utilities.Log;
  *
  * @author Elias N Vasylenko
  */
-@SuppressWarnings("restriction")
 public class P2BndRepositoryPlugin extends P2BndRepository {
 	private static P2BndRepositoryManager SHARED_MANAGER;
 
 	private static P2BndRepositoryManager getManager() {
 		if (SHARED_MANAGER == null) {
-			FrameworkWrapperImpl frameworkWrapper = new FrameworkWrapperImpl(P2BndRepositoryManager.class);
+			System.out.println("Fetching framework wrapper service loader");
+			ServiceLoader<FrameworkWrapperFactory> serviceLoader = ServiceLoader.load(FrameworkWrapperFactory.class,
+					P2BndRepositoryPlugin.class.getClassLoader());
+
+			System.out.println("Loading framework wrapper service");
+			FrameworkWrapperFactory frameworkWrapperFactory = StreamSupport.stream(serviceLoader.spliterator(), false)
+					.findAny().orElseThrow(
+							() -> new RuntimeException("Cannot find service implementing " + FrameworkWrapperServer.class.getName()));
+
+			FrameworkWrapper frameworkWrapper = frameworkWrapperFactory.getFrameworkWrapper(P2BndRepositoryPlugin.class);
+
 			frameworkWrapper.setLog((l, s) -> System.out.println(l + ": " + s), true);
 
 			SHARED_MANAGER = new P2BndRepositoryManager(frameworkWrapper);

@@ -1,4 +1,4 @@
-Export-Package: \
+Private-Package: \
 	uk.co.strangeskies.p2.bnd,\
 	uk.co.strangeskies.p2.bnd.plugin
 
