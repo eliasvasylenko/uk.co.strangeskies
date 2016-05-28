@@ -1,5 +1,6 @@
 Export-Package: \
-	uk.co.strangeskies.p2.bnd
+	uk.co.strangeskies.p2.bnd,\
+	uk.co.strangeskies.p2.bnd.plugin
 
 embedded.bundles: ${embedded.bundles.p2}
 embedded.projects: ${embedded.projects.p2}

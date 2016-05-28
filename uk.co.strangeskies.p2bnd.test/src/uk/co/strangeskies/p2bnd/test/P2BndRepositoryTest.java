@@ -18,47 +18,40 @@
  */
 package uk.co.strangeskies.p2bnd.test;
 
-import static org.osgi.framework.FrameworkUtil.getBundle;
-import static uk.co.strangeskies.p2.bnd.P2BndRepository.FRAMEWORK_PROPERTIES;
-import static uk.co.strangeskies.p2.bnd.P2BndRepository.SERVICE_TIMEOUT_MILLISECONDS;
-import static uk.co.strangeskies.p2.bnd.P2BndRepository.setSharedFramework;
+import static java.lang.Thread.sleep;
+import static org.junit.Assert.assertEquals;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
-import org.osgi.framework.wiring.BundleWiring;
 import org.osgi.util.tracker.ServiceTracker;
 
-import uk.co.strangeskies.p2.bnd.FrameworkWrapperFactory;
 import uk.co.strangeskies.p2.bnd.P2BndRepository;
-import uk.co.strangeskies.utilities.classpath.FilteringClassLoader;
+import uk.co.strangeskies.p2.bnd.P2BndRepositoryManager;
 
 @SuppressWarnings("javadoc")
 public class P2BndRepositoryTest {
-	private static boolean INITIALISED = false;
+	private static final long SERVICE_TIMEOUT_MILLISECONDS = 2000;
+
+	private static P2BndRepositoryManager MANAGER;
+
 	private static final String FIRST = "first";
 	private static final String SECOND = "second";
 
-	@Before
-	public void configureSharedFramework() {
-		if (!INITIALISED) {
-			ClassLoader classLoader = new FilteringClassLoader(
-					getBundle(P2BndRepository.class).adapt(BundleWiring.class).getClassLoader(),
-					P2BndRepository::classDelegationFilter);
-
-			setSharedFramework(
-					new FrameworkWrapperFactory(1000, SERVICE_TIMEOUT_MILLISECONDS, FRAMEWORK_PROPERTIES, classLoader));
-			INITIALISED = true;
+	public P2BndRepositoryManager getManager() {
+		if (MANAGER == null) {
+			MANAGER = getService(P2BndRepositoryManager.class);
 		}
+
+		return MANAGER;
 	}
 
-	protected <T> T getService(Class<T> clazz) {
+	protected static <T> T getService(Class<T> clazz) {
 		try {
-			BundleContext context = FrameworkUtil.getBundle(this.getClass()).getBundleContext();
+			BundleContext context = FrameworkUtil.getBundle(P2BndRepositoryTest.class).getBundleContext();
 
 			ServiceTracker<T, T> st = new ServiceTracker<>(context, clazz, null);
 			st.open();
@@ -96,12 +89,12 @@ public class P2BndRepositoryTest {
 
 		second.close();
 
-		Thread.sleep(1500);
+		sleep(1500);
 
-		first.getName();
+		assertEquals(FIRST, first.getName());
 	}
 
-	@Test
+	@Test(expected = IllegalStateException.class)
 	public void useAfterCloseTest() throws Exception {
 		P2BndRepository first = test(FIRST);
 
@@ -114,7 +107,18 @@ public class P2BndRepositoryTest {
 	public void getRepositoryNameTest() throws Exception {
 		P2BndRepository first = test(FIRST);
 
-		first.getName();
+		assertEquals(FIRST, first.getName());
+
+		first.close();
+	}
+
+	@Test
+	public void getTwoRepositoryNamesTest() throws Exception {
+		P2BndRepository first = test(FIRST);
+		P2BndRepository second = test(SECOND);
+
+		assertEquals(FIRST, first.getName());
+		assertEquals(SECOND, second.getName());
 
 		first.close();
 	}
@@ -124,7 +128,9 @@ public class P2BndRepositoryTest {
 		map.put("name", name);
 		map.put("location", "http://download.eclipse.org/releases/mars/");
 
-		P2BndRepository repo = new P2BndRepository();
+		System.out.println(getService(P2BndRepositoryManager.class));
+
+		P2BndRepository repo = getManager().create();
 		repo.setProperties(map);
 
 		return repo;

@@ -18,26 +18,16 @@
  */
 package uk.co.strangeskies.p2.bnd;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableList;
-import static java.util.stream.Collectors.joining;
-import static org.osgi.framework.Constants.FRAMEWORK_BUNDLE_PARENT;
-import static org.osgi.framework.Constants.FRAMEWORK_SYSTEMPACKAGES_EXTRA;
-
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
-import java.util.stream.Collectors;
 
-import org.osgi.framework.Constants;
 import org.osgi.resource.Capability;
 import org.osgi.resource.Requirement;
 import org.osgi.service.repository.Repository;
@@ -49,12 +39,9 @@ import aQute.bnd.service.Strategy;
 import aQute.bnd.version.Version;
 import aQute.service.reporter.Reporter;
 import uk.co.strangeskies.bnd.ReporterLog;
-import uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper;
 import uk.co.strangeskies.p2.P2Repository;
-import uk.co.strangeskies.p2.P2RepositoryFactory;
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Log.Level;
-import uk.co.strangeskies.utilities.classpath.FilteringClassLoader;
 import uk.co.strangeskies.utilities.function.ThrowingFunction;
 
 /**
@@ -75,92 +62,8 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 /*-, Refreshable, Actionable, RegistryPlugin, SearchableRepository, InfoRepository*/
 
 {
-	public static final int FRAMEWORK_TIMEOUT_MILLISECONDS = 4000;
-	public static final int SERVICE_TIMEOUT_MILLISECONDS = 4000;
-
-	private static final String OSGI_CLEAN = "osgi.clean";
-	private static final String OSGI_CLEAR_PERSISTED_STATE = "clearPersistedState";
-
-	public static final List<String> FORWARD_VERSIONED_PACKAGES = unmodifiableList(asList(
-			"uk.co.strangeskies.osgi;version=\"1.0.0\"",
-
-			/*
-			 * TODO There are just for in-framework logging?
-			 */
-			"uk.co.strangeskies.osgi.frameworkwrapper;version=\"1.0.0\"",
-			"uk.co.strangeskies.osgi.servicewrapper;version=\"1.0.0\"", "uk.co.strangeskies.utilities.text;version=\"1.0.0\"",
-			"uk.co.strangeskies.utilities.classpath;version=\"1.0.0\"",
-			"uk.co.strangeskies.utilities.collection;version=\"1.0.0\"",
-			"uk.co.strangeskies.utilities.factory;version=\"1.0.0\"",
-			"uk.co.strangeskies.utilities.flowcontrol;version=\"1.0.0\"",
-			"uk.co.strangeskies.utilities.function;version=\"1.0.0\"", "uk.co.strangeskies.utilities.tuple;version=\"1.0.0\"",
-			"uk.co.strangeskies.p2;version=\"1.0.0\"", "uk.co.strangeskies.p2.bnd;version=\"1.0.0\"",
-			"org.osgi.service.repository;version=\"1.0.0\"", "org.osgi.resource;version=\"1.0.0\"",
-
-			"uk.co.strangeskies.utilities;version=\"1.0.0\"", "uk.co.strangeskies.p2;version=\"1.0.0\"",
-			"aQute.bnd.service;version=\"4.1.0\"", "aQute.bnd.version;version=\"1.3.0\"",
-			"aQute.service.reporter;version=\"1.0.0\""));
-	public static final List<String> FORWARD_PACKAGES = unmodifiableList(
-			FORWARD_VERSIONED_PACKAGES.stream().map(s -> s.split(";")[0]).collect(Collectors.toList()));
-
-	@SuppressWarnings("serial")
-	public static final Map<String, String> FRAMEWORK_PROPERTIES = new HashMap<String, String>() {
-		{
-			put(OSGI_CLEAN, Boolean.toString(true));
-			put(OSGI_CLEAR_PERSISTED_STATE, Boolean.toString(true));
-
-			put(FRAMEWORK_SYSTEMPACKAGES_EXTRA, FORWARD_VERSIONED_PACKAGES.stream().collect(joining(",")));
-			put(FRAMEWORK_BUNDLE_PARENT, Constants.FRAMEWORK_BUNDLE_PARENT_FRAMEWORK);
-		}
-	};
-
-	private static FrameworkWrapperFactory SHARED_FRAMEWORK;
-	private static P2RepositoryFactory REPOSITORY_FACTORY;
-
-	public static void setSharedFramework(FrameworkWrapperFactory sharedFrameworkWrapper) {
-		if (SHARED_FRAMEWORK != null)
-			throw new IllegalStateException();
-		SHARED_FRAMEWORK = sharedFrameworkWrapper;
-	}
-
-	public static FrameworkWrapperFactory getSharedFramework() {
-		if (SHARED_FRAMEWORK == null) {
-			SHARED_FRAMEWORK = new FrameworkWrapperFactory(
-					new FilteringClassLoader(P2BndRepository.class.getClassLoader(), P2BndRepository::classDelegationFilter));
-
-			SHARED_FRAMEWORK.initialise((l, s) -> {
-				System.out.println(l + ": " + s);
-			});
-
-			FrameworkWrapper frameworkWrapper = SHARED_FRAMEWORK.getFrameworkWrapper();
-
-			frameworkWrapper.setTimeoutMilliseconds(FRAMEWORK_TIMEOUT_MILLISECONDS);
-
-			frameworkWrapper.setLaunchProperties(FRAMEWORK_PROPERTIES);
-
-			frameworkWrapper.onStart().addObserver(f -> {
-				frameworkWrapper.withService(P2RepositoryFactory.class, p -> {
-					REPOSITORY_FACTORY = p;
-				}, SERVICE_TIMEOUT_MILLISECONDS);
-			});
-
-			frameworkWrapper.onStop().addObserver(f -> REPOSITORY_FACTORY = null);
-		}
-		return SHARED_FRAMEWORK;
-	}
-
-	public static boolean classDelegationFilter(Class<?> clazz) {
-		List<String> packages = new ArrayList<>(P2BndRepository.FORWARD_PACKAGES);
-
-		for (String forwardPackage : packages) {
-			String packageName = clazz.getPackage().getName();
-			if (packageName.startsWith(forwardPackage + ".") || packageName.equals(forwardPackage)) {
-				return true;
-			}
-		}
-
-		return false;
-	}
+	private final P2BndRepositoryManager manager;
+	private boolean closed;
 
 	private Log log = (l, s) -> {
 		System.out.println(l + ": " + s);
@@ -168,50 +71,17 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 
 	private Map<String, String> properties;
 	private Reporter reporter;
+	private P2Repository repository;
 
-	public static void main(String... args) throws Exception {
-		P2BndRepository first = test("hi");
-
-		System.out.println(first.getName());
-
-		first.close();
-	}
-
-	private static P2BndRepository test(String name) throws Exception {
-		Map<String, String> map = new HashMap<>();
-		map.put("name", name);
-		map.put("location", "http://download.eclipse.org/releases/mars/");
-
-		P2BndRepository repo = new P2BndRepository();
-		repo.setLog(new Log() {
-
-			@Override
-			public void log(Level level, String message) {
-				System.out.println(level + ": " + message);
-			}
-
-			@Override
-			public void log(Level level, String message, Throwable exception) {
-				Log.super.log(level, message, exception);
-				exception.printStackTrace();
-			}
-		});
-
-		repo.setProperties(map);
-
-		return repo;
-	}
-
-	/**
-	 * Create an unconfigured P2 repository accessible through Bnd.
-	 */
-	public P2BndRepository() {
+	protected P2BndRepository(P2BndRepositoryManager manager) {
+		this.manager = manager;
 		log.log(Level.INFO, "Creating P2BndRepository");
 	}
 
 	@Override
 	public void close() throws IOException {
-		getSharedFramework().closeConnection(this);
+		manager.close(this);
+		closed = true;
 	}
 
 	@Override
@@ -274,7 +144,15 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 	}
 
 	private <T, E extends Exception> T withConnection(ThrowingFunction<P2Repository, T, E> action) throws E {
-		return getSharedFramework().<T, E> withConnection(this, getLog(), repository -> {
+		if (closed) {
+			throw new IllegalStateException("Cannot use after close");
+		}
+
+		return manager.getFramework().withFramework(() -> {
+			if (repository == null) {
+				repository = manager.getRepositoryFactory().get(getLog());
+			}
+
 			if (properties != null)
 				repository.setProperties(properties);
 			if (reporter != null)

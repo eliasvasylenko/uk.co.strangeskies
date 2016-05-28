@@ -31,6 +31,7 @@ Import-Package: \
 	${ss;utilities},\
 	${ss;p2.api},\
 	${ss;p2bnd.bundle},\
+	${ss;osgi.provider},\
 	biz.aQute.bndlib,\
 	${-testpath.base}
 
@@ -58,6 +59,7 @@ Test-Cases: ${test-cases}
 	osgi.enroute.logger.simple.provider;version='[1.2.1,1.2.2)',\
 	uk.co.strangeskies.bnd;version=snapshot,\
 	uk.co.strangeskies.osgi.api;version=snapshot,\
+	uk.co.strangeskies.osgi.provider;version=snapshot,\
 	uk.co.strangeskies.p2.api;version=snapshot,\
 	uk.co.strangeskies.p2bnd.bundle;version=snapshot,\
 	uk.co.strangeskies.utilities;version=snapshot

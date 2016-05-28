@@ -29,7 +29,7 @@ public class ManifestUtilities {
 	private ManifestUtilities() {}
 
 	public static Manifest getManifest(Class<?> clz) {
-		String resource = "/" + clz.getName().replace(".", "/") + ".class";
+		String resource = "/" + clz.getName().replace('.', '/') + ".class";
 		String fullPath = clz.getResource(resource).toString();
 		String archivePath = fullPath.substring(0, fullPath.length() - resource.length());
 
@@ -43,7 +43,7 @@ public class ManifestUtilities {
 		try (InputStream input = new URL(archivePath + "/META-INF/MANIFEST.MF").openStream()) {
 			return new Manifest(input);
 		} catch (Exception e) {
-			throw new RuntimeException("Loading MANIFEST for class " + clz + " failed!", e);
+			throw new RuntimeException("Loading MANIFEST for class " + clz + " failed", e);
 		}
 	}
 

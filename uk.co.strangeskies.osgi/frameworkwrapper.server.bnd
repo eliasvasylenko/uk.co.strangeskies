@@ -1,0 +1,10 @@
+Bundle-Name: Strange Skies :: OSGi Utilities :: Framework Wrapper Server
+Bundle-Description: \
+	The reference implementation for a framework wrapper \
+	server to be deployed into an internal framework.
+
+Private-Package: \
+	uk.co.strangeskies.osgi.frameworkwrapper.server
+
+-includeresource: \
+	META-INF/services/uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper=FrameworkWrapperService

@@ -23,7 +23,6 @@ import java.util.Map;
 
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Observable;
-import uk.co.strangeskies.utilities.classpath.FilteringClassLoader;
 import uk.co.strangeskies.utilities.function.ThrowingConsumer;
 import uk.co.strangeskies.utilities.function.ThrowingFunction;
 import uk.co.strangeskies.utilities.function.ThrowingRunnable;
@@ -45,6 +44,18 @@ import uk.co.strangeskies.utilities.function.ThrowingSupplier;
  */
 public interface FrameworkWrapper {
 	/**
+	 * The manifest header for specifying URLs of bundles which must be on the
+	 * framework class path. Typically this will just be a framework bundle and
+	 * the frameworkwrapper.server bundle.
+	 */
+	public static final String EMBEDDED_FRAMEWORK = "Embedded-Framework";
+	/**
+	 * The manifest header for specifying URLs of bundles which must be deployed
+	 * into the framework.
+	 */
+	public static final String EMBEDDED_RUNPATH = "Embedded-Runpath";
+
+	/**
 	 * Set the duration of inactivity after which the framework should
 	 * automatically shut down. This setting will be applied next time the
 	 * framework timeout is reset by activity.
@@ -53,22 +64,6 @@ public interface FrameworkWrapper {
 	 *          the framework shutdown timeout
 	 */
 	void setTimeoutMilliseconds(int timeoutMilliseconds);
-
-	/**
-	 * Set the class loader for the framework, including all framework and OSGi
-	 * classes. This setting will be applied next time the framework is started
-	 * from the stopped state.
-	 * <p>
-	 * Classes which are to be shared between the accessing context and the
-	 * framework should be made available by this class loader, but care should be
-	 * taken to limit which classes are exposed, otherwise class loading problems
-	 * may become unpredictable and difficult to avoid. Typically the
-	 * {@link FilteringClassLoader} is a good way to achieve this.
-	 * 
-	 * @param classLoader
-	 *          the class loader to contain the framework
-	 */
-	void setClassLoader(ClassLoader classLoader);
 
 	/**
 	 * Set the log for {@link FrameworkWrapper} events. The log object may also be

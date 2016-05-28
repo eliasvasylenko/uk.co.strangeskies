@@ -50,7 +50,8 @@ shaded.projects.p2: \
 	uk.co.strangeskies.bnd,\
 	uk.co.strangeskies.p2.api,\
 	uk.co.strangeskies.utilities,\
-	uk.co.strangeskies.osgi.api
+	uk.co.strangeskies.osgi.api,\
+	uk.co.strangeskies.osgi.provider
 
 -dependson: \
 	uk.co.strangeskies.p2
@@ -58,8 +59,8 @@ shaded.projects.p2: \
 embedded.framework.location = jar/framework/
 Embedded-Framework: \
 	${embedded.framework.location}org.eclipse.osgi.jar,\
-	${embedded.framework.location}uk.co.strangeskies.osgi.provider.jar
+	${embedded.framework.location}uk.co.strangeskies.osgi.frameworkwrapper.server.jar
 
 -includeresource: \
 	${embedded.framework.location}org.eclipse.osgi.jar=${repo;org.eclipse.osgi;latest},\
-	${embedded.framework.location}uk.co.strangeskies.osgi.provider.jar=${repo;uk.co.strangeskies.osgi.provider;snapshot}
+	${embedded.framework.location}uk.co.strangeskies.osgi.frameworkwrapper.server.jar=${repo;uk.co.strangeskies.osgi.frameworkwrapper.server;snapshot}
