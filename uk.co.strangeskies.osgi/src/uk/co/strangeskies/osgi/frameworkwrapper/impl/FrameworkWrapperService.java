@@ -52,10 +52,12 @@ public class FrameworkWrapperService extends FrameworkWrapperImpl {
 
 		ClassLoader classLoader = context.getUsingBundle().adapt(BundleWiring.class).getClassLoader();
 
-		setBaseClassLoader(classLoader);
+		headers.get(EMBEDDED_CLASSPATH);
 
 		setFrameworkJars(toUrls(classLoader, headers.get(EMBEDDED_FRAMEWORK)));
 		setBundleJars(toUrls(classLoader, headers.get(EMBEDDED_RUNPATH)));
+
+		setBaseClassLoader(classLoader);
 
 		super.setLog(log, true);
 	}

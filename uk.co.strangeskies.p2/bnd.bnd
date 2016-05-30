@@ -4,6 +4,7 @@
 
 -buildpath: \
 	${ss;utilities},\
+	${ss;bnd},\
 	biz.aQute.bndlib,\
 	org.eclipse.equinox.common,\
 	org.eclipse.equinox.p2.core,\

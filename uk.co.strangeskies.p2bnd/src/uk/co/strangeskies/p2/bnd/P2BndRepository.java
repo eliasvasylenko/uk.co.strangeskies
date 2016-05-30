@@ -65,9 +65,8 @@ import uk.co.strangeskies.utilities.function.ThrowingFunction;
  *
  * @author Elias N Vasylenko
  */
-public class P2BndRepository implements RemoteRepositoryPlugin, Repository,
-		Plugin, Closeable, Refreshable, Actionable, RegistryPlugin,
-		SearchableRepository, InfoRepository {
+public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plugin, Closeable, Refreshable, Actionable,
+		RegistryPlugin, SearchableRepository, InfoRepository {
 	private final P2BndRepositoryManager manager;
 	private boolean closed;
 
@@ -140,28 +139,24 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository,
 	}
 
 	@Override
-	public synchronized PutResult put(InputStream stream, PutOptions options)
-			throws Exception {
+	public synchronized PutResult put(InputStream stream, PutOptions options) throws Exception {
 		return withConnection(repository -> repository.put(stream, options));
 	}
 
 	@Override
-	public synchronized File get(String bsn, Version version,
-			Map<String, String> properties, DownloadListener... listeners)
-					throws Exception {
-		return withConnection(
-				repository -> repository.get(bsn, version, properties, listeners));
+	public synchronized File get(String bsn, Version version, Map<String, String> properties,
+			DownloadListener... listeners) throws Exception {
+		return withConnection(repository -> repository.get(bsn, version, properties, listeners));
 	}
 
-	private <T, E extends Exception> T withConnection(
-			ThrowingFunction<P2Repository, T, E> action) throws E {
+	private <T, E extends Exception> T withConnection(ThrowingFunction<P2Repository, T, E> action) throws E {
 		if (closed) {
 			throw new IllegalStateException("Cannot use after close");
 		}
 
 		return manager.getFramework().withFramework(() -> {
 			if (repository == null) {
-				repository = manager.getRepositoryFactory().get(getLog());
+				repository = manager.getRepositoryFactory().get();
 			}
 
 			if (properties != null)
@@ -199,16 +194,14 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository,
 	}
 
 	@Override
-	public Map<Requirement, Collection<Capability>> findProviders(
-			Collection<? extends Requirement> requirements) {
+	public Map<Requirement, Collection<Capability>> findProviders(Collection<? extends Requirement> requirements) {
 		return withConnection(repository -> repository.findProviders(requirements));
 	}
 
 	@Override
-	public ResourceHandle getHandle(String bsn, String version, Strategy strategy,
-			Map<String, String> properties) throws Exception {
-		return withConnection(
-				repository -> repository.getHandle(bsn, version, strategy, properties));
+	public ResourceHandle getHandle(String bsn, String version, Strategy strategy, Map<String, String> properties)
+			throws Exception {
+		return withConnection(repository -> repository.getHandle(bsn, version, strategy, properties));
 	}
 
 	@Override
@@ -217,15 +210,13 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository,
 	}
 
 	@Override
-	public ResourceDescriptor getDescriptor(String bsn, Version version)
-			throws Exception {
+	public ResourceDescriptor getDescriptor(String bsn, Version version) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Set<ResourceDescriptor> getResources(URI url,
-			boolean includeDependencies) throws Exception {
+	public Set<ResourceDescriptor> getResources(URI url, boolean includeDependencies) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -243,8 +234,7 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository,
 	}
 
 	@Override
-	public Set<ResourceDescriptor> findResources(Requirement requirement,
-			boolean includeDependencies) throws Exception {
+	public Set<ResourceDescriptor> findResources(Requirement requirement, boolean includeDependencies) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}

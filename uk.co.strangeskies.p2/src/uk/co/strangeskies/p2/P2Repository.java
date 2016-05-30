@@ -20,6 +20,7 @@ package uk.co.strangeskies.p2;
 
 import java.io.Closeable;
 import java.io.File;
+import java.util.Map;
 
 import org.osgi.service.repository.Repository;
 
@@ -30,16 +31,14 @@ import aQute.bnd.service.RegistryPlugin;
 import aQute.bnd.service.RemoteRepositoryPlugin;
 import aQute.bnd.service.repository.InfoRepository;
 import aQute.bnd.service.repository.SearchableRepository;
-import uk.co.strangeskies.utilities.Log;
 
 /**
  * A wrapper for an Eclipse p2 repository.
  * 
  * @author Elias N Vasylenko
  */
-public interface P2Repository
-		extends RemoteRepositoryPlugin, Repository, Plugin, Closeable, Refreshable,
-		Actionable, RegistryPlugin, SearchableRepository, InfoRepository {
+public interface P2Repository extends RemoteRepositoryPlugin, Repository, Plugin, Closeable, Refreshable, Actionable,
+		RegistryPlugin, SearchableRepository, InfoRepository {
 	/**
 	 * Property key for repository name.
 	 */
@@ -78,8 +77,7 @@ public interface P2Repository
 	/**
 	 * Default location for offline caching of repository artifacts.
 	 */
-	public static final String DEFAULT_CACHE_DIRECTORY = ".bnd" + File.separator
-			+ "cache" + File.separator + "p2";
+	public static final String DEFAULT_CACHE_DIRECTORY = ".bnd" + File.separator + "cache" + File.separator + "p2";
 
 	/**
 	 * The length of time in seconds that cached artifact downloads will be
@@ -92,18 +90,12 @@ public interface P2Repository
 	 * Default cache timeout in seconds.
 	 */
 	public static final int DEFAULT_CACHE_TIMEOUT_SECONDS = 30;
-	
+
 	/**
 	 * Key for version property for resource
 	 */
 	public static final String VERSION_KEY_PROPERTY = "version";
 
-	/**
-	 * Get the log for events relating to the repository, typically provided via
-	 * an implementation of {@link P2RepositoryFactory} by way of the argument to
-	 * {@link P2RepositoryFactory#get(Log)}.
-	 * 
-	 * @return the repository log
-	 */
-	public Log getLog();
+	@Override
+	void setProperties(Map<String, String> map);
 }

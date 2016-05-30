@@ -18,8 +18,6 @@
  */
 package uk.co.strangeskies.p2;
 
-import uk.co.strangeskies.utilities.Log;
-
 /**
  * A factory for creating any number of P2 repository {@link P2Repository access
  * interfaces}.
@@ -28,9 +26,7 @@ import uk.co.strangeskies.utilities.Log;
  */
 public interface P2RepositoryFactory {
 	/**
-	 * @param log
-	 *          the log to use for the repository implementation
-	 * @return a new {@link P2Repository} implementation with the given log
+	 * @return a new {@link P2Repository} implementation
 	 */
-	P2Repository get(Log log);
+	P2Repository get();
 }

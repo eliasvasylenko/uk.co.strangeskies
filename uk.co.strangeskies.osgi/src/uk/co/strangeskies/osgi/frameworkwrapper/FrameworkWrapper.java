@@ -50,6 +50,11 @@ public interface FrameworkWrapper {
 	 */
 	public static final String EMBEDDED_FRAMEWORK = "Embedded-Framework";
 	/**
+	 * The manifest header for specifying packages which should be made available
+	 * to the embedded framework.
+	 */
+	public static final String EMBEDDED_CLASSPATH = "Embedded-Classpath";
+	/**
 	 * The manifest header for specifying URLs of bundles which must be deployed
 	 * into the framework.
 	 */

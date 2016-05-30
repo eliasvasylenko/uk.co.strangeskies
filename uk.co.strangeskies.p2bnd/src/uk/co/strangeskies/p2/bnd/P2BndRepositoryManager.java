@@ -42,19 +42,19 @@ import uk.co.strangeskies.p2.P2RepositoryFactory;
 
 @Component(service = P2BndRepositoryManager.class, scope = ServiceScope.BUNDLE)
 public class P2BndRepositoryManager {
-	public static final int FRAMEWORK_TIMEOUT_MILLISECONDS = 4000;
-	public static final int SERVICE_TIMEOUT_MILLISECONDS = 4000;
+	private static final int FRAMEWORK_TIMEOUT_MILLISECONDS = 4000;
+	private static final int SERVICE_TIMEOUT_MILLISECONDS = 4000;
 
 	private static final String OSGI_CLEAN = "osgi.clean";
 	private static final String OSGI_CLEAR_PERSISTED_STATE = "clearPersistedState";
 
-	public static final List<String> FORWARD_VERSIONED_PACKAGES = unmodifiableList(asList(
+	private static final List<String> FORWARD_VERSIONED_PACKAGES = unmodifiableList(asList(
 			"uk.co.strangeskies.osgi;version=\"1.0.0\"",
 
 			/*
 			 * TODO There are just for in-framework logging?
 			 */
-			"uk.co.strangeskies.osgi.frameworkwrapper;version=\"1.0.0\"",
+			"uk.co.strangeskies.osgi.frameworkwrapper;version=\"1.0.0\"", "uk.co.strangeskies.bnd;version=\"1.0.0\"",
 			"uk.co.strangeskies.osgi.frameworkwrapper.server;version=\"1.0.0\"",
 			"uk.co.strangeskies.osgi.servicewrapper;version=\"1.0.0\"", "uk.co.strangeskies.utilities.text;version=\"1.0.0\"",
 			"uk.co.strangeskies.utilities.classpath;version=\"1.0.0\"",
@@ -66,14 +66,15 @@ public class P2BndRepositoryManager {
 			"org.osgi.service.repository;version=\"1.0.0\"", "org.osgi.resource;version=\"1.0.0\"",
 
 			"uk.co.strangeskies.utilities;version=\"1.0.0\"", "uk.co.strangeskies.p2;version=\"1.0.0\"",
-			"aQute.bnd.service;version=\"4.1.0\"", "aQute.bnd.version;version=\"1.3.0\"",
+			"aQute.bnd.service;version=\"4.1.0\"", "aQute.bnd.service.repository;version=\"1.3.0\"",
+			"aQute.bnd.version;version=\"1.3.0\"", "aQute.bnd.osgi;version=\"2.4.0\"",
 			"aQute.service.reporter;version=\"1.0.0\""));
 
-	public static final List<String> FORWARD_PACKAGES = unmodifiableList(
+	private static final List<String> FORWARD_PACKAGES = unmodifiableList(
 			FORWARD_VERSIONED_PACKAGES.stream().map(s -> s.split(";")[0]).collect(Collectors.toList()));
 
 	@SuppressWarnings("serial")
-	public static final Map<String, String> FRAMEWORK_PROPERTIES = new HashMap<String, String>() {
+	private static final Map<String, String> FRAMEWORK_PROPERTIES = new HashMap<String, String>() {
 		{
 			put(OSGI_CLEAN, Boolean.toString(true));
 			put(OSGI_CLEAR_PERSISTED_STATE, Boolean.toString(true));

@@ -56,6 +56,7 @@ import aQute.bnd.service.ResourceHandle;
 import aQute.bnd.service.Strategy;
 import aQute.bnd.version.Version;
 import aQute.service.reporter.Reporter;
+import uk.co.strangeskies.bnd.ReporterLog;
 import uk.co.strangeskies.p2.P2Repository;
 import uk.co.strangeskies.utilities.Log;
 
@@ -75,7 +76,7 @@ public class P2RepositoryImpl implements P2Repository, Log {
 	private URL metadataLocation;
 	private URL artifactLocation;
 
-	private final Log log;
+	private Log log;
 	private final IProvisioningAgentProvider agentProvider;
 	private BundleContext bundleContext;
 
@@ -83,12 +84,9 @@ public class P2RepositoryImpl implements P2Repository, Log {
 	private Registry registry;
 
 	@SuppressWarnings("javadoc")
-	public P2RepositoryImpl(Log log, IProvisioningAgentProvider agentProvider,
-			BundleContext bundleContext) {
-		cacheDir = new File(System.getProperty("user.home") + File.separator
-				+ DEFAULT_CACHE_DIRECTORY);
+	public P2RepositoryImpl(IProvisioningAgentProvider agentProvider, BundleContext bundleContext) {
+		cacheDir = new File(System.getProperty("user.home") + File.separator + DEFAULT_CACHE_DIRECTORY);
 
-		this.log = log;
 		this.agentProvider = agentProvider;
 		this.bundleContext = bundleContext;
 	}
@@ -111,8 +109,7 @@ public class P2RepositoryImpl implements P2Repository, Log {
 			IMetadataRepositoryManager metadataManager = (IMetadataRepositoryManager) provisioningAgent
 					.getService(IMetadataRepositoryManager.SERVICE_NAME);
 			if (metadataManager == null) {
-				throw new IllegalStateException(
-						"Couldn't load metadata repository manager");
+				throw new IllegalStateException("Couldn't load metadata repository manager");
 			}
 
 			/*
@@ -121,8 +118,7 @@ public class P2RepositoryImpl implements P2Repository, Log {
 			IArtifactRepositoryManager artifactManager = (IArtifactRepositoryManager) provisioningAgent
 					.getService(IArtifactRepositoryManager.SERVICE_NAME);
 			if (artifactManager == null) {
-				throw new IllegalStateException(
-						"Couldn't load artifact repository manager");
+				throw new IllegalStateException("Couldn't load artifact repository manager");
 			}
 
 			/*
@@ -136,10 +132,8 @@ public class P2RepositoryImpl implements P2Repository, Log {
 				artifactManager.loadRepository(remote, progressMonitor);
 
 				System.out.println("querying repository . . .");
-				IQuery<IInstallableUnit> query = QueryUtil.createMatchQuery("id == $0",
-						"org.eclipse.equinox.event");
-				IQueryResult<IInstallableUnit> result = metadataManager.query(query,
-						progressMonitor);
+				IQuery<IInstallableUnit> query = QueryUtil.createMatchQuery("id == $0", "org.eclipse.equinox.event");
+				IQueryResult<IInstallableUnit> result = metadataManager.query(query, progressMonitor);
 				System.out.println(result.toUnmodifiableSet());
 			} catch (Exception pe) {
 				throw new InvocationTargetException(pe);
@@ -172,11 +166,9 @@ public class P2RepositoryImpl implements P2Repository, Log {
 
 			if (map.containsKey(CACHE_TIMEOUT_SECONDS_PROPERTY)) {
 				try {
-					cacheTimeoutSeconds = Integer
-							.parseInt(map.get(CACHE_TIMEOUT_SECONDS_PROPERTY));
+					cacheTimeoutSeconds = Integer.parseInt(map.get(CACHE_TIMEOUT_SECONDS_PROPERTY));
 				} catch (NumberFormatException e) {
-					log.log(Level.ERROR, "Bad timeout setting: " + cacheTimeoutSeconds,
-							e);
+					log.log(Level.ERROR, "Bad timeout setting: " + cacheTimeoutSeconds, e);
 				}
 			} else {
 				cacheTimeoutSeconds = DEFAULT_CACHE_TIMEOUT_SECONDS;
@@ -191,8 +183,7 @@ public class P2RepositoryImpl implements P2Repository, Log {
 
 		if (location != null) {
 			if (metadataLocation != null || artifactLocation != null) {
-				log.log(Level.WARN,
-						"Location setting is ambiguous with artifact or metadata settings");
+				log.log(Level.WARN, "Location setting is ambiguous with artifact or metadata settings");
 			}
 			metadataLocation = artifactLocation = location;
 		}
@@ -227,12 +218,11 @@ public class P2RepositoryImpl implements P2Repository, Log {
 	}
 
 	@Override
-	public File get(String bsn, Version version, Map<String, String> properties,
-			DownloadListener... listeners) throws Exception {
+	public File get(String bsn, Version version, Map<String, String> properties, DownloadListener... listeners)
+			throws Exception {
 		initialise();
 
-		ResourceHandle handle = getHandle(bsn, version.toString(), Strategy.EXACT,
-				properties);
+		ResourceHandle handle = getHandle(bsn, version.toString(), Strategy.EXACT, properties);
 
 		File file = (handle == null) ? null : handle.request();
 
@@ -271,8 +261,7 @@ public class P2RepositoryImpl implements P2Repository, Log {
 
 	@Override
 	public String getLocation() {
-		return "{metadata: " + metadataLocation + ", artifact: " + artifactLocation
-				+ "}";
+		return "{metadata: " + metadataLocation + ", artifact: " + artifactLocation + "}";
 	}
 
 	/*
@@ -280,13 +269,12 @@ public class P2RepositoryImpl implements P2Repository, Log {
 	 */
 
 	@Override
-	public ResourceHandle getHandle(String bsn, String version, Strategy strategy,
-			Map<String, String> properties) throws Exception {
+	public ResourceHandle getHandle(String bsn, String version, Strategy strategy, Map<String, String> properties)
+			throws Exception {
 		initialise();
 
 		if (bsn == null) {
-			throw new IllegalArgumentException(
-					"Cannot resolve bundle: bundle symbolic name not specified.");
+			throw new IllegalArgumentException("Cannot resolve bundle: bundle symbolic name not specified.");
 		}
 
 		if (version == null) {
@@ -296,8 +284,7 @@ public class P2RepositoryImpl implements P2Repository, Log {
 		return resolveBundle(bsn, version, strategy, properties);
 	}
 
-	private ResourceHandle resolveBundle(String bsn, String version,
-			Strategy strategy, Map<String, String> properties) {
+	private ResourceHandle resolveBundle(String bsn, String version, Strategy strategy, Map<String, String> properties) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -312,8 +299,7 @@ public class P2RepositoryImpl implements P2Repository, Log {
 	 */
 
 	@Override
-	public Map<Requirement, Collection<Capability>> findProviders(
-			Collection<? extends Requirement> requirements) {
+	public Map<Requirement, Collection<Capability>> findProviders(Collection<? extends Requirement> requirements) {
 		Map<Requirement, Collection<Capability>> result = new HashMap<>();
 		for (Requirement requirement : requirements) {
 			List<Capability> matches = new LinkedList<>();
@@ -328,11 +314,6 @@ public class P2RepositoryImpl implements P2Repository, Log {
 	public void close() throws IOException {
 		// TODO Auto-generated method stub
 
-	}
-
-	@Override
-	public Log getLog() {
-		return log;
 	}
 
 	@Override
@@ -373,8 +354,7 @@ public class P2RepositoryImpl implements P2Repository, Log {
 	private void fireBundleAdded(File file) {
 		if (registry == null)
 			return;
-		List<RepositoryListenerPlugin> listeners = registry
-				.getPlugins(RepositoryListenerPlugin.class);
+		List<RepositoryListenerPlugin> listeners = registry.getPlugins(RepositoryListenerPlugin.class);
 		Jar jar = null;
 		for (RepositoryListenerPlugin listener : listeners) {
 			try {
@@ -383,8 +363,7 @@ public class P2RepositoryImpl implements P2Repository, Log {
 				listener.bundleAdded(this, jar, file);
 			} catch (Exception e) {
 				if (reporter != null)
-					reporter.warning(
-							"Repository listener threw an unexpected exception: %s", e);
+					reporter.warning("Repository listener threw an unexpected exception: %s", e);
 			} finally {
 				if (jar != null)
 					jar.close();
@@ -393,8 +372,7 @@ public class P2RepositoryImpl implements P2Repository, Log {
 	}
 
 	@Override
-	public Set<ResourceDescriptor> getResources(URI url,
-			boolean includeDependencies) throws Exception {
+	public Set<ResourceDescriptor> getResources(URI url, boolean includeDependencies) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -412,8 +390,7 @@ public class P2RepositoryImpl implements P2Repository, Log {
 	}
 
 	@Override
-	public Set<ResourceDescriptor> findResources(Requirement requirement,
-			boolean includeDependencies) throws Exception {
+	public Set<ResourceDescriptor> findResources(Requirement requirement, boolean includeDependencies) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -425,8 +402,7 @@ public class P2RepositoryImpl implements P2Repository, Log {
 	}
 
 	@Override
-	public ResourceDescriptor getDescriptor(String bsn, Version version)
-			throws Exception {
+	public ResourceDescriptor getDescriptor(String bsn, Version version) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
