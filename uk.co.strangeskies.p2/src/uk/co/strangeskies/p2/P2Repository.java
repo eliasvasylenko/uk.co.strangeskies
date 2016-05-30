@@ -20,18 +20,16 @@ package uk.co.strangeskies.p2;
 
 import java.io.Closeable;
 import java.io.File;
-import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedSet;
 
 import org.osgi.service.repository.Repository;
 
+import aQute.bnd.service.Actionable;
 import aQute.bnd.service.Plugin;
+import aQute.bnd.service.Refreshable;
+import aQute.bnd.service.RegistryPlugin;
 import aQute.bnd.service.RemoteRepositoryPlugin;
-import aQute.bnd.service.ResourceHandle;
-import aQute.bnd.service.Strategy;
-import aQute.bnd.version.Version;
+import aQute.bnd.service.repository.InfoRepository;
+import aQute.bnd.service.repository.SearchableRepository;
 import uk.co.strangeskies.utilities.Log;
 
 /**
@@ -39,7 +37,9 @@ import uk.co.strangeskies.utilities.Log;
  * 
  * @author Elias N Vasylenko
  */
-public interface P2Repository extends RemoteRepositoryPlugin, Repository, Plugin, Closeable {
+public interface P2Repository
+		extends RemoteRepositoryPlugin, Repository, Plugin, Closeable, Refreshable,
+		Actionable, RegistryPlugin, SearchableRepository, InfoRepository {
 	/**
 	 * Property key for repository name.
 	 */
@@ -78,7 +78,8 @@ public interface P2Repository extends RemoteRepositoryPlugin, Repository, Plugin
 	/**
 	 * Default location for offline caching of repository artifacts.
 	 */
-	public static final String DEFAULT_CACHE_DIRECTORY = ".bnd" + File.separator + "cache" + File.separator + "p2";
+	public static final String DEFAULT_CACHE_DIRECTORY = ".bnd" + File.separator
+			+ "cache" + File.separator + "p2";
 
 	/**
 	 * The length of time in seconds that cached artifact downloads will be
@@ -91,39 +92,11 @@ public interface P2Repository extends RemoteRepositoryPlugin, Repository, Plugin
 	 * Default cache timeout in seconds.
 	 */
 	public static final int DEFAULT_CACHE_TIMEOUT_SECONDS = 30;
-
-	/*
-	 * Plugin overrides
+	
+	/**
+	 * Key for version property for resource
 	 */
-
-	@Override
-	public void setProperties(Map<String, String> map);
-
-	/*
-	 * RepositoryPlugin overrides:
-	 */
-
-	@Override
-	public PutResult put(InputStream stream, PutOptions options);
-
-	@Override
-	public File get(String bsn, Version version, Map<String, String> properties, DownloadListener... listeners)
-			throws Exception;
-
-	@Override
-	public boolean canWrite();
-
-	@Override
-	public List<String> list(String pattern);
-
-	@Override
-	public SortedSet<Version> versions(String bsn);
-
-	@Override
-	public String getName();
-
-	@Override
-	public String getLocation();
+	public static final String VERSION_KEY_PROPERTY = "version";
 
 	/**
 	 * Get the log for events relating to the repository, typically provided via
@@ -133,15 +106,4 @@ public interface P2Repository extends RemoteRepositoryPlugin, Repository, Plugin
 	 * @return the repository log
 	 */
 	public Log getLog();
-
-	/*
-	 * RemoteRepositoryPlugin overrides:
-	 */
-
-	@Override
-	public ResourceHandle getHandle(String bsn, String version, Strategy strategy, Map<String, String> properties)
-			throws Exception;
-
-	@Override
-	public File getCacheDirectory();
 }

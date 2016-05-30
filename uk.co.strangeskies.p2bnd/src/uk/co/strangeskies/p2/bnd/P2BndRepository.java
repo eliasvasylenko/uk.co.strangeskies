@@ -23,19 +23,27 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
+import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 
 import org.osgi.resource.Capability;
 import org.osgi.resource.Requirement;
 import org.osgi.service.repository.Repository;
 
+import aQute.bnd.service.Actionable;
 import aQute.bnd.service.Plugin;
+import aQute.bnd.service.Refreshable;
+import aQute.bnd.service.Registry;
+import aQute.bnd.service.RegistryPlugin;
 import aQute.bnd.service.RemoteRepositoryPlugin;
 import aQute.bnd.service.ResourceHandle;
 import aQute.bnd.service.Strategy;
+import aQute.bnd.service.repository.InfoRepository;
+import aQute.bnd.service.repository.SearchableRepository;
 import aQute.bnd.version.Version;
 import aQute.service.reporter.Reporter;
 import uk.co.strangeskies.bnd.ReporterLog;
@@ -57,11 +65,9 @@ import uk.co.strangeskies.utilities.function.ThrowingFunction;
  *
  * @author Elias N Vasylenko
  */
-public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plugin, Closeable
-
-/*-, Refreshable, Actionable, RegistryPlugin, SearchableRepository, InfoRepository*/
-
-{
+public class P2BndRepository implements RemoteRepositoryPlugin, Repository,
+		Plugin, Closeable, Refreshable, Actionable, RegistryPlugin,
+		SearchableRepository, InfoRepository {
 	private final P2BndRepositoryManager manager;
 	private boolean closed;
 
@@ -134,17 +140,21 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 	}
 
 	@Override
-	public synchronized PutResult put(InputStream stream, PutOptions options) throws Exception {
+	public synchronized PutResult put(InputStream stream, PutOptions options)
+			throws Exception {
 		return withConnection(repository -> repository.put(stream, options));
 	}
 
 	@Override
-	public synchronized File get(String bsn, Version version, Map<String, String> properties,
-			DownloadListener... listeners) throws Exception {
-		return withConnection(repository -> repository.get(bsn, version, properties, listeners));
+	public synchronized File get(String bsn, Version version,
+			Map<String, String> properties, DownloadListener... listeners)
+					throws Exception {
+		return withConnection(
+				repository -> repository.get(bsn, version, properties, listeners));
 	}
 
-	private <T, E extends Exception> T withConnection(ThrowingFunction<P2Repository, T, E> action) throws E {
+	private <T, E extends Exception> T withConnection(
+			ThrowingFunction<P2Repository, T, E> action) throws E {
 		if (closed) {
 			throw new IllegalStateException("Cannot use after close");
 		}
@@ -189,18 +199,95 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 	}
 
 	@Override
-	public Map<Requirement, Collection<Capability>> findProviders(Collection<? extends Requirement> requirements) {
+	public Map<Requirement, Collection<Capability>> findProviders(
+			Collection<? extends Requirement> requirements) {
 		return withConnection(repository -> repository.findProviders(requirements));
 	}
 
 	@Override
-	public ResourceHandle getHandle(String bsn, String version, Strategy strategy, Map<String, String> properties)
-			throws Exception {
-		return withConnection(repository -> repository.getHandle(bsn, version, strategy, properties));
+	public ResourceHandle getHandle(String bsn, String version, Strategy strategy,
+			Map<String, String> properties) throws Exception {
+		return withConnection(
+				repository -> repository.getHandle(bsn, version, strategy, properties));
 	}
 
 	@Override
 	public synchronized File getCacheDirectory() {
 		return withConnection(repository -> repository.getCacheDirectory());
+	}
+
+	@Override
+	public ResourceDescriptor getDescriptor(String bsn, Version version)
+			throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Set<ResourceDescriptor> getResources(URI url,
+			boolean includeDependencies) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Set<ResourceDescriptor> query(String query) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean addResource(ResourceDescriptor resource) throws Exception {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public Set<ResourceDescriptor> findResources(Requirement requirement,
+			boolean includeDependencies) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public URI browse(String searchString) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setRegistry(Registry registry) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public Map<String, Runnable> actions(Object... target) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String tooltip(Object... target) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String title(Object... target) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean refresh() throws Exception {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public File getRoot() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

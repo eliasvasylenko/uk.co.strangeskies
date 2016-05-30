@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -47,14 +48,16 @@ import org.osgi.resource.Capability;
 import org.osgi.resource.Requirement;
 import org.osgi.service.repository.Repository;
 
+import aQute.bnd.osgi.Jar;
+import aQute.bnd.service.Registry;
 import aQute.bnd.service.RemoteRepositoryPlugin;
+import aQute.bnd.service.RepositoryListenerPlugin;
 import aQute.bnd.service.ResourceHandle;
 import aQute.bnd.service.Strategy;
 import aQute.bnd.version.Version;
 import aQute.service.reporter.Reporter;
 import uk.co.strangeskies.p2.P2Repository;
 import uk.co.strangeskies.utilities.Log;
-import uk.co.strangeskies.utilities.Log.Level;
 
 /**
  * A wrapper for an Eclipse p2 repository implementing the
@@ -62,7 +65,7 @@ import uk.co.strangeskies.utilities.Log.Level;
  * 
  * @author Elias N Vasylenko
  */
-public class P2RepositoryImpl implements P2Repository {
+public class P2RepositoryImpl implements P2Repository, Log {
 	private static final String MARS_UPDATE_SITE = "http://download.eclipse.org/releases/mars/";
 
 	private String name;
@@ -76,9 +79,14 @@ public class P2RepositoryImpl implements P2Repository {
 	private final IProvisioningAgentProvider agentProvider;
 	private BundleContext bundleContext;
 
+	private Reporter reporter;
+	private Registry registry;
+
 	@SuppressWarnings("javadoc")
-	public P2RepositoryImpl(Log log, IProvisioningAgentProvider agentProvider, BundleContext bundleContext) {
-		cacheDir = new File(System.getProperty("user.home") + File.separator + DEFAULT_CACHE_DIRECTORY);
+	public P2RepositoryImpl(Log log, IProvisioningAgentProvider agentProvider,
+			BundleContext bundleContext) {
+		cacheDir = new File(System.getProperty("user.home") + File.separator
+				+ DEFAULT_CACHE_DIRECTORY);
 
 		this.log = log;
 		this.agentProvider = agentProvider;
@@ -103,7 +111,8 @@ public class P2RepositoryImpl implements P2Repository {
 			IMetadataRepositoryManager metadataManager = (IMetadataRepositoryManager) provisioningAgent
 					.getService(IMetadataRepositoryManager.SERVICE_NAME);
 			if (metadataManager == null) {
-				throw new IllegalStateException("Couldn't load metadata repository manager");
+				throw new IllegalStateException(
+						"Couldn't load metadata repository manager");
 			}
 
 			/*
@@ -112,7 +121,8 @@ public class P2RepositoryImpl implements P2Repository {
 			IArtifactRepositoryManager artifactManager = (IArtifactRepositoryManager) provisioningAgent
 					.getService(IArtifactRepositoryManager.SERVICE_NAME);
 			if (artifactManager == null) {
-				throw new IllegalStateException("Couldn't load artifact repository manager");
+				throw new IllegalStateException(
+						"Couldn't load artifact repository manager");
 			}
 
 			/*
@@ -126,8 +136,10 @@ public class P2RepositoryImpl implements P2Repository {
 				artifactManager.loadRepository(remote, progressMonitor);
 
 				System.out.println("querying repository . . .");
-				IQuery<IInstallableUnit> query = QueryUtil.createMatchQuery("id == $0", "org.eclipse.equinox.event");
-				IQueryResult<IInstallableUnit> result = metadataManager.query(query, progressMonitor);
+				IQuery<IInstallableUnit> query = QueryUtil.createMatchQuery("id == $0",
+						"org.eclipse.equinox.event");
+				IQueryResult<IInstallableUnit> result = metadataManager.query(query,
+						progressMonitor);
 				System.out.println(result.toUnmodifiableSet());
 			} catch (Exception pe) {
 				throw new InvocationTargetException(pe);
@@ -160,9 +172,11 @@ public class P2RepositoryImpl implements P2Repository {
 
 			if (map.containsKey(CACHE_TIMEOUT_SECONDS_PROPERTY)) {
 				try {
-					cacheTimeoutSeconds = Integer.parseInt(map.get(CACHE_TIMEOUT_SECONDS_PROPERTY));
+					cacheTimeoutSeconds = Integer
+							.parseInt(map.get(CACHE_TIMEOUT_SECONDS_PROPERTY));
 				} catch (NumberFormatException e) {
-					log.log(Level.ERROR, "Bad timeout setting: " + cacheTimeoutSeconds, e);
+					log.log(Level.ERROR, "Bad timeout setting: " + cacheTimeoutSeconds,
+							e);
 				}
 			} else {
 				cacheTimeoutSeconds = DEFAULT_CACHE_TIMEOUT_SECONDS;
@@ -177,7 +191,8 @@ public class P2RepositoryImpl implements P2Repository {
 
 		if (location != null) {
 			if (metadataLocation != null || artifactLocation != null) {
-				log.log(Level.WARN, "Location setting is ambiguous with artifact or metadata settings");
+				log.log(Level.WARN,
+						"Location setting is ambiguous with artifact or metadata settings");
 			}
 			metadataLocation = artifactLocation = location;
 		}
@@ -199,7 +214,7 @@ public class P2RepositoryImpl implements P2Repository {
 
 	@Override
 	public void setReporter(Reporter processor) {
-		// TODO Auto-generated method stub
+		log = new ReporterLog(reporter);
 	}
 
 	/*
@@ -212,10 +227,26 @@ public class P2RepositoryImpl implements P2Repository {
 	}
 
 	@Override
-	public File get(String bsn, Version version, Map<String, String> properties, DownloadListener... listeners)
-			throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+	public File get(String bsn, Version version, Map<String, String> properties,
+			DownloadListener... listeners) throws Exception {
+		initialise();
+
+		ResourceHandle handle = getHandle(bsn, version.toString(), Strategy.EXACT,
+				properties);
+
+		File file = (handle == null) ? null : handle.request();
+
+		if (file != null) {
+			for (DownloadListener listener : listeners) {
+				try {
+					listener.success(file);
+				} catch (Exception e) {
+					log(Level.ERROR, "Download listener failed for " + file, e);
+				}
+			}
+		}
+
+		return file;
 	}
 
 	@Override
@@ -240,7 +271,8 @@ public class P2RepositoryImpl implements P2Repository {
 
 	@Override
 	public String getLocation() {
-		return "{metadata: " + metadataLocation + ", artifact: " + artifactLocation + "}";
+		return "{metadata: " + metadataLocation + ", artifact: " + artifactLocation
+				+ "}";
 	}
 
 	/*
@@ -248,8 +280,25 @@ public class P2RepositoryImpl implements P2Repository {
 	 */
 
 	@Override
-	public ResourceHandle getHandle(String bsn, String version, Strategy strategy, Map<String, String> properties)
-			throws Exception {
+	public ResourceHandle getHandle(String bsn, String version, Strategy strategy,
+			Map<String, String> properties) throws Exception {
+		initialise();
+
+		if (bsn == null) {
+			throw new IllegalArgumentException(
+					"Cannot resolve bundle: bundle symbolic name not specified.");
+		}
+
+		if (version == null) {
+			version = properties.get(VERSION_KEY_PROPERTY);
+		}
+
+		return resolveBundle(bsn, version, strategy, properties);
+	}
+
+	private ResourceHandle resolveBundle(String bsn, String version,
+			Strategy strategy, Map<String, String> properties) {
+		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -263,7 +312,8 @@ public class P2RepositoryImpl implements P2Repository {
 	 */
 
 	@Override
-	public Map<Requirement, Collection<Capability>> findProviders(Collection<? extends Requirement> requirements) {
+	public Map<Requirement, Collection<Capability>> findProviders(
+			Collection<? extends Requirement> requirements) {
 		Map<Requirement, Collection<Capability>> result = new HashMap<>();
 		for (Requirement requirement : requirements) {
 			List<Capability> matches = new LinkedList<>();
@@ -283,5 +333,115 @@ public class P2RepositoryImpl implements P2Repository {
 	@Override
 	public Log getLog() {
 		return log;
+	}
+
+	@Override
+	public boolean refresh() throws Exception {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public File getRoot() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Map<String, Runnable> actions(Object... target) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String tooltip(Object... target) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String title(Object... target) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setRegistry(Registry registry) {
+		this.registry = registry;
+	}
+
+	private void fireBundleAdded(File file) {
+		if (registry == null)
+			return;
+		List<RepositoryListenerPlugin> listeners = registry
+				.getPlugins(RepositoryListenerPlugin.class);
+		Jar jar = null;
+		for (RepositoryListenerPlugin listener : listeners) {
+			try {
+				if (jar == null)
+					jar = new Jar(file);
+				listener.bundleAdded(this, jar, file);
+			} catch (Exception e) {
+				if (reporter != null)
+					reporter.warning(
+							"Repository listener threw an unexpected exception: %s", e);
+			} finally {
+				if (jar != null)
+					jar.close();
+			}
+		}
+	}
+
+	@Override
+	public Set<ResourceDescriptor> getResources(URI url,
+			boolean includeDependencies) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Set<ResourceDescriptor> query(String query) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean addResource(ResourceDescriptor resource) throws Exception {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public Set<ResourceDescriptor> findResources(Requirement requirement,
+			boolean includeDependencies) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public URI browse(String searchString) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ResourceDescriptor getDescriptor(String bsn, Version version)
+			throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void log(Level level, String message) {
+		if (log != null) {
+			log.log(level, message);
+		}
+	}
+
+	@Override
+	public void log(Level level, String message, Throwable exception) {
+		if (log != null) {
+			log.log(level, message, exception);
+		}
 	}
 }
