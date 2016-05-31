@@ -53,6 +53,31 @@ shaded.projects.p2: \
 	uk.co.strangeskies.osgi.api,\
 	uk.co.strangeskies.osgi.provider
 
+Embedded-Classpath: \
+	uk.co.strangeskies.osgi,\
+	uk.co.strangeskies.osgi.frameworkwrapper,\
+	uk.co.strangeskies.bnd,\
+	uk.co.strangeskies.osgi.frameworkwrapper.server,\
+	uk.co.strangeskies.osgi.servicewrapper,\
+	uk.co.strangeskies.utilities.text,\
+	uk.co.strangeskies.utilities.classpath,\
+	uk.co.strangeskies.utilities.collection,\
+	uk.co.strangeskies.utilities.factory,\
+	uk.co.strangeskies.utilities.flowcontrol,\
+	uk.co.strangeskies.utilities.function,\
+	uk.co.strangeskies.utilities.tuple,\
+	uk.co.strangeskies.p2,\
+	uk.co.strangeskies.p2.bnd,\
+	org.osgi.service.repository,\
+	org.osgi.resource,\
+	uk.co.strangeskies.utilities,\
+	uk.co.strangeskies.p2,\
+	aQute.bnd.service,\
+	aQute.bnd.service.repository,\
+	aQute.bnd.version,\
+	aQute.bnd.osgi,\
+	aQute.service.reporter
+
 -dependson: \
 	uk.co.strangeskies.p2
 

@@ -18,8 +18,13 @@
  */
 package uk.co.strangeskies.osgi.frameworkwrapper.impl;
 
-import java.util.Dictionary;
+import static java.util.stream.Collectors.toSet;
 
+import java.util.Dictionary;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.osgi.framework.wiring.BundleWire;
 import org.osgi.framework.wiring.BundleWiring;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
@@ -38,6 +43,7 @@ import uk.co.strangeskies.utilities.Log;
  */
 @Component(scope = ServiceScope.BUNDLE, service = FrameworkWrapper.class)
 public class FrameworkWrapperService extends FrameworkWrapperImpl {
+	private static final String PACKAGE_WIRING = "osgi.wiring.package";
 	private Log log;
 
 	/**
@@ -50,16 +56,25 @@ public class FrameworkWrapperService extends FrameworkWrapperImpl {
 	public void activate(ComponentContext context) {
 		Dictionary<String, String> headers = context.getUsingBundle().getHeaders();
 
-		ClassLoader classLoader = context.getUsingBundle().adapt(BundleWiring.class).getClassLoader();
+		BundleWiring wiring = context.getUsingBundle().adapt(BundleWiring.class);
 
-		headers.get(EMBEDDED_CLASSPATH);
+		setFrameworkJars(toUrls(wiring.getClassLoader(), headers.get(EMBEDDED_FRAMEWORK)));
+		setBundleJars(toUrls(wiring.getClassLoader(), headers.get(EMBEDDED_RUNPATH)));
+		setPackageVersions(getVersionedPackages(wiring, headers.get(EMBEDDED_CLASSPATH)));
 
-		setFrameworkJars(toUrls(classLoader, headers.get(EMBEDDED_FRAMEWORK)));
-		setBundleJars(toUrls(classLoader, headers.get(EMBEDDED_RUNPATH)));
-
-		setBaseClassLoader(classLoader);
+		setBaseClassLoader(wiring.getClassLoader());
 
 		super.setLog(log, true);
+	}
+
+	private Set<VersionedPackage> getVersionedPackages(BundleWiring wiring, String packagesString) {
+		Set<BundleWire> versionedPackages = new HashSet<>();
+		versionedPackages.addAll(wiring.getRequiredWires(PACKAGE_WIRING));
+		versionedPackages.addAll(wiring.getProvidedWires(PACKAGE_WIRING));
+
+		return versionedPackages.stream().map(w -> w.getCapability().getAttributes())
+				.map(a -> new VersionedPackage(a.get(PACKAGE_WIRING).toString(), a.get(VERSION_PROPERTY).toString()))
+				.collect(toSet());
 	}
 
 	@SuppressWarnings("javadoc")

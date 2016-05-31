@@ -18,19 +18,12 @@
  */
 package uk.co.strangeskies.p2.bnd;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableList;
-import static java.util.stream.Collectors.joining;
 import static org.osgi.framework.Constants.FRAMEWORK_BUNDLE_PARENT;
-import static org.osgi.framework.Constants.FRAMEWORK_SYSTEMPACKAGES_EXTRA;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.osgi.framework.Constants;
 import org.osgi.service.component.annotations.Component;
@@ -48,38 +41,12 @@ public class P2BndRepositoryManager {
 	private static final String OSGI_CLEAN = "osgi.clean";
 	private static final String OSGI_CLEAR_PERSISTED_STATE = "clearPersistedState";
 
-	private static final List<String> FORWARD_VERSIONED_PACKAGES = unmodifiableList(asList(
-			"uk.co.strangeskies.osgi;version=\"1.0.0\"",
-
-			/*
-			 * TODO There are just for in-framework logging?
-			 */
-			"uk.co.strangeskies.osgi.frameworkwrapper;version=\"1.0.0\"", "uk.co.strangeskies.bnd;version=\"1.0.0\"",
-			"uk.co.strangeskies.osgi.frameworkwrapper.server;version=\"1.0.0\"",
-			"uk.co.strangeskies.osgi.servicewrapper;version=\"1.0.0\"", "uk.co.strangeskies.utilities.text;version=\"1.0.0\"",
-			"uk.co.strangeskies.utilities.classpath;version=\"1.0.0\"",
-			"uk.co.strangeskies.utilities.collection;version=\"1.0.0\"",
-			"uk.co.strangeskies.utilities.factory;version=\"1.0.0\"",
-			"uk.co.strangeskies.utilities.flowcontrol;version=\"1.0.0\"",
-			"uk.co.strangeskies.utilities.function;version=\"1.0.0\"", "uk.co.strangeskies.utilities.tuple;version=\"1.0.0\"",
-			"uk.co.strangeskies.p2;version=\"1.0.0\"", "uk.co.strangeskies.p2.bnd;version=\"1.0.0\"",
-			"org.osgi.service.repository;version=\"1.0.0\"", "org.osgi.resource;version=\"1.0.0\"",
-
-			"uk.co.strangeskies.utilities;version=\"1.0.0\"", "uk.co.strangeskies.p2;version=\"1.0.0\"",
-			"aQute.bnd.service;version=\"4.1.0\"", "aQute.bnd.service.repository;version=\"1.3.0\"",
-			"aQute.bnd.version;version=\"1.3.0\"", "aQute.bnd.osgi;version=\"2.4.0\"",
-			"aQute.service.reporter;version=\"1.0.0\""));
-
-	private static final List<String> FORWARD_PACKAGES = unmodifiableList(
-			FORWARD_VERSIONED_PACKAGES.stream().map(s -> s.split(";")[0]).collect(Collectors.toList()));
-
 	@SuppressWarnings("serial")
 	private static final Map<String, String> FRAMEWORK_PROPERTIES = new HashMap<String, String>() {
 		{
 			put(OSGI_CLEAN, Boolean.toString(true));
 			put(OSGI_CLEAR_PERSISTED_STATE, Boolean.toString(true));
 
-			put(FRAMEWORK_SYSTEMPACKAGES_EXTRA, FORWARD_VERSIONED_PACKAGES.stream().collect(joining(",")));
 			put(FRAMEWORK_BUNDLE_PARENT, Constants.FRAMEWORK_BUNDLE_PARENT_FRAMEWORK);
 		}
 	};
@@ -117,19 +84,6 @@ public class P2BndRepositoryManager {
 
 	public P2RepositoryFactory getRepositoryFactory() {
 		return repositoryFactory;
-	}
-
-	public static boolean classDelegationFilter(Class<?> clazz) {
-		List<String> packages = new ArrayList<>(P2BndRepositoryManager.FORWARD_PACKAGES);
-
-		for (String forwardPackage : packages) {
-			String packageName = clazz.getPackage().getName();
-			if (packageName.startsWith(forwardPackage + ".") || packageName.equals(forwardPackage)) {
-				return true;
-			}
-		}
-
-		return false;
 	}
 
 	public P2BndRepository create() {

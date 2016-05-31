@@ -19,6 +19,11 @@
 package uk.co.strangeskies.osgi.frameworkwrapper.impl;
 
 import static java.util.Arrays.stream;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toSet;
+import static uk.co.strangeskies.utilities.classpath.ManifestUtilities.parseAttributes;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -27,8 +32,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -42,6 +50,9 @@ import uk.co.strangeskies.osgi.frameworkwrapper.server.FrameworkWrapperServer;
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Log.Level;
 import uk.co.strangeskies.utilities.Observable;
+import uk.co.strangeskies.utilities.classpath.Attribute;
+import uk.co.strangeskies.utilities.classpath.AttributeProperty;
+import uk.co.strangeskies.utilities.classpath.FilteringClassLoader;
 import uk.co.strangeskies.utilities.function.ThrowingConsumer;
 import uk.co.strangeskies.utilities.function.ThrowingFunction;
 import uk.co.strangeskies.utilities.function.ThrowingRunnable;
@@ -54,11 +65,43 @@ import uk.co.strangeskies.utilities.function.ThrowingSupplier;
  * @author Elias N Vasylenko
  */
 public class FrameworkWrapperImpl implements FrameworkWrapper {
+	protected class VersionedPackage {
+		private final String packageName;
+		private final String versionString;
+
+		public VersionedPackage(String packageName, String versionString) {
+			this.packageName = packageName;
+			this.versionString = versionString;
+		}
+
+		public String packageName() {
+			return packageName;
+		}
+
+		public String versionString() {
+			return versionString;
+		}
+
+		@Override
+		public String toString() {
+			return packageName + ';' + VERSION_PROPERTY + "=\"" + versionString + '"';
+		}
+	}
+
+	private static final String IMPORT_PACKAGE = "Import-Package";
+	private static final String EXPORT_PACKAGE = "Export-Package";
+	private static final String PRIVATE_PACKAGE = "Private-Package";
+	private static final String FRAMEWORK_SYSTEMPACKAGES_EXTRA = "org.osgi.framework.system.packages.extra";
+
+	protected static final Object VERSION_PROPERTY = "version";
+	protected static final String DEFAULT_VERSION = "0.0.0";
+
 	private Log log;
 	private ClassLoader baseClassLoader;
 
 	private Set<URL> frameworkJars;
 	private Set<URL> bundleJars;
+	private Set<VersionedPackage> versionedPackages;
 
 	private FrameworkWrapper component;
 
@@ -71,15 +114,50 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 	 *          {@link FrameworkWrapper#EMBEDDED_RUNPATH} attributes
 	 */
 	public FrameworkWrapperImpl(ClassLoader classLoader, Manifest manifest) {
-		setBaseClassLoader(classLoader);
-
 		Attributes attributes = manifest.getMainAttributes();
 
-		frameworkJars = toUrls(baseClassLoader, attributes.getValue(EMBEDDED_FRAMEWORK));
-		bundleJars = toUrls(baseClassLoader, attributes.getValue(EMBEDDED_RUNPATH));
+		setFrameworkJars(toUrls(classLoader, attributes.getValue(EMBEDDED_FRAMEWORK)));
+		setBundleJars(toUrls(classLoader, attributes.getValue(EMBEDDED_RUNPATH)));
+		setPackageVersions(getVersionedPackages(attributes, attributes.getValue(EMBEDDED_CLASSPATH)));
+
+		setBaseClassLoader(new FilteringClassLoader(classLoader,
+				c -> versionedPackages.stream().anyMatch(v -> v.packageName().equals(c.getPackage().getName()))));
 	}
 
 	protected FrameworkWrapperImpl() {}
+
+	private Set<VersionedPackage> getVersionedPackages(Attributes attributes, String packagesString) {
+		Set<String> packageNames = getPackageNames(packagesString);
+		Set<VersionedPackage> versionedPackages = new HashSet<>();
+
+		versionedPackages.addAll(getVersionedPackages(attributes.getValue(PRIVATE_PACKAGE)));
+		versionedPackages.addAll(getVersionedPackages(attributes.getValue(IMPORT_PACKAGE)));
+		versionedPackages.addAll(getVersionedPackages(attributes.getValue(EXPORT_PACKAGE)));
+
+		return versionedPackages.stream().filter(p -> packageNames.contains(p.packageName())).collect(toSet());
+	}
+
+	protected Set<VersionedPackage> getVersionedPackages(String packageVersionsString) {
+		if (packageVersionsString == null)
+			return emptySet();
+
+		List<Attribute> attributes = parseAttributes(packageVersionsString);
+
+		return attributes.stream().map(a -> {
+			AttributeProperty<?> property = a.properties().get(VERSION_PROPERTY);
+			String propertyString = property == null ? DEFAULT_VERSION : property.value().toString();
+
+			return new VersionedPackage(a.name(), propertyString);
+		}).collect(toSet());
+	}
+
+	protected Set<String> getPackageNames(String packagesString) {
+		return stream(packagesString.split(",")).map(String::trim).collect(toSet());
+	}
+
+	private String getVersionedPackagesString() {
+		return versionedPackages.stream().map(Object::toString).collect(joining(","));
+	}
 
 	protected void setBaseClassLoader(ClassLoader baseClassLoader) {
 		this.baseClassLoader = baseClassLoader;
@@ -97,6 +175,10 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 		this.bundleJars = bundleJars;
 	}
 
+	protected void setPackageVersions(Collection<? extends VersionedPackage> packageVersions) {
+		this.versionedPackages = new HashSet<>(packageVersions);
+	}
+
 	@Override
 	public void setTimeoutMilliseconds(int timeoutMilliseconds) {
 		getComponent().setTimeoutMilliseconds(timeoutMilliseconds);
@@ -110,6 +192,12 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 
 	@Override
 	public void setLaunchProperties(Map<String, String> properties) {
+		if (versionedPackages != null && !versionedPackages.isEmpty()) {
+			properties = new HashMap<>(properties);
+
+			properties.computeIfAbsent(FRAMEWORK_SYSTEMPACKAGES_EXTRA, k -> getVersionedPackagesString());
+		}
+
 		getComponent().setLaunchProperties(properties);
 	}
 
@@ -146,6 +234,7 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 	private FrameworkWrapper getComponent() {
 		if (component == null) {
 			component = create();
+			setLaunchProperties(emptyMap());
 		}
 		return component;
 	}

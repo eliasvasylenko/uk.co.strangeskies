@@ -20,6 +20,7 @@ Import-Package: \
 	org.osgi.resource,\
 	uk.co.strangeskies.utilities,\
 	aQute.bnd.service,\
+	aQute.bnd.osgi,\
 	aQute.bnd.version,\
 	aQute.service.reporter,\
 	*

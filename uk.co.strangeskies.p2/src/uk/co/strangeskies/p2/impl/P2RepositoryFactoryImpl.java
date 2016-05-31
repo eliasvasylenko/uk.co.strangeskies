@@ -20,8 +20,6 @@ package uk.co.strangeskies.p2.impl;
 
 import org.eclipse.equinox.p2.core.IProvisioningAgentProvider;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.wiring.BundleWire;
-import org.osgi.framework.wiring.BundleWiring;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -44,15 +42,5 @@ public class P2RepositoryFactoryImpl implements P2RepositoryFactory {
 	@Activate
 	public void activate(BundleContext context) {
 		this.bundleContext = context;
-
-		System.out.println("   ^");
-		System.out.println("   ^");
-		System.out.println("   ^");
-		for (BundleWire wire : context.getBundle().adapt(BundleWiring.class).getRequiredWires("osgi.wiring.package")) {
-			System.out.println(wire.getCapability().getAttributes().get("version"));
-		}
-		System.out.println("   ^");
-		System.out.println("   ^");
-		System.out.println("   ^");
 	}
 }
