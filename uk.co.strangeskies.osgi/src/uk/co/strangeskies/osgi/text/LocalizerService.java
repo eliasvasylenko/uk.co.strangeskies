@@ -19,8 +19,10 @@
 package uk.co.strangeskies.osgi.text;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkUtil;
@@ -99,21 +101,30 @@ public class LocalizerService implements Localizer {
 
 	@Override
 	public <T extends LocalizedText<T>> T getLocalization(Class<T> accessor) {
-		String location = Localizer.removeTextPostfix(accessor.getName());
+		List<String> locations = Localizer.getNestedAccessors(accessor).stream()
+				.map(a -> Localizer.removeTextPostfix(a.getName())).collect(Collectors.toList());
 
 		List<LocalizationResource> resources = new ArrayList<>();
-		resources.add(new LocalizationResource(osgiLocalizationResource.getClassLoader(), location));
-		resources.add(osgiLocalizationResource);
+		resources.addAll(getResources(locations, osgiLocalizationResource));
 
 		Bundle accessorBundle = FrameworkUtil.getBundle(accessor);
 		if (!accessorBundle.equals(usingBundle)) {
-			LocalizationResource accessorBundleResource = getOsgiLocalizationResource(accessorBundle);
-
-			resources.add(new LocalizationResource(accessorBundleResource.getClassLoader(), location));
-			resources.add(accessorBundleResource);
+			resources.addAll(getResources(locations, getOsgiLocalizationResource(accessorBundle)));
 		}
 
 		return getLocalization(accessor, resources);
+	}
+
+	private Collection<? extends LocalizationResource> getResources(List<String> locations,
+			LocalizationResource osgiLocalizationResource) {
+		List<LocalizationResource> resources = new ArrayList<>();
+
+		for (String location : locations) {
+			resources.add(new LocalizationResource(osgiLocalizationResource.getClassLoader(), location));
+		}
+		resources.add(osgiLocalizationResource);
+
+		return resources;
 	}
 
 	@Override

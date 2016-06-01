@@ -22,9 +22,12 @@ import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.ObservableValue;
@@ -147,7 +150,41 @@ public interface Localizer {
 	 * @return an implementation of the accessor interface
 	 */
 	default <T extends LocalizedText<T>> T getLocalization(Class<T> accessor) {
-		return getLocalization(accessor, removeTextPostfix(accessor.getName()));
+		return getLocalization(accessor, getNestedAccessors(accessor).stream()
+				.map(a -> new LocalizationResource(a.getClassLoader(), removeTextPostfix(a.getName()))).collect(toList()));
+	}
+
+	/**
+	 * Return all nested {@link LocalizedText} accessors returned from no-argument
+	 * methods on the given accessor.
+	 * 
+	 * @param accessor
+	 *          the accessor whose nested accessors we wish to find
+	 * @return the accessors nested from the given accessor, in an arbitrary
+	 *         breadth first ordering
+	 */
+	static List<Class<? extends LocalizedText<?>>> getNestedAccessors(Class<? extends LocalizedText<?>> accessor) {
+		Set<Class<?>> added = new HashSet<>();
+		List<Class<? extends LocalizedText<?>>> accessors = new ArrayList<>();
+
+		added.add(accessor);
+		accessors.add(accessor);
+
+		for (int i = 0; i < accessors.size(); i++) {
+			accessor = accessors.get(i);
+
+			for (Method method : accessor.getMethods()) {
+				Class<?> nestedAccessor = method.getReturnType();
+
+				if (added.add(nestedAccessor) && LocalizedText.class.isAssignableFrom(nestedAccessor)) {
+					@SuppressWarnings("unchecked")
+					Class<? extends LocalizedText<?>> castedNestedAccessor = (Class<? extends LocalizedText<?>>) nestedAccessor;
+					accessors.add(castedNestedAccessor);
+				}
+			}
+		}
+
+		return accessors;
 	}
 
 	/**

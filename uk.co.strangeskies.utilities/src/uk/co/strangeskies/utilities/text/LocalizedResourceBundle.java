@@ -43,13 +43,11 @@ public abstract class LocalizedResourceBundle extends ResourceBundle {
 			super(locale);
 
 			this.resources = new ArrayList<>(resources);
-
 			bundles = new ArrayList<>();
 
 			for (LocalizationResource resource : resources) {
 				try {
 					bundles.add(ResourceBundle.getBundle(resource.getLocation(), locale, resource.getClassLoader()));
-					break;
 				} catch (MissingResourceException e) {}
 			}
 

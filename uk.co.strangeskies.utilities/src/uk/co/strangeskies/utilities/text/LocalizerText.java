@@ -63,7 +63,7 @@ public interface LocalizerText extends LocalizedText<LocalizerText> {
 	 *          the key to find a translation for
 	 * @return substitution when no translation is found for the given key
 	 */
-	LocalizedString translationNotFoundFor(String key);
+	LocalizedString translationNotFoundSubstitution(String key);
 
 	/**
 	 * @param key

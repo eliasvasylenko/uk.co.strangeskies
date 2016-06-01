@@ -37,7 +37,7 @@ final class DefaultLocalizerText implements LocalizerText {
 	}
 
 	@Override
-	public LocalizedString translationNotFoundFor(String key) {
+	public LocalizedString translationNotFoundSubstitution(String key) {
 		return forStaticLocale(TRANSLATION_NOT_FOUND + key + TRANSLATION_NOT_FOUND, Locale.ENGLISH);
 	}
 

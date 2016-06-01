@@ -58,4 +58,9 @@ public class LocalizationResource {
 	public int hashCode() {
 		return classLoader.hashCode() ^ location.hashCode();
 	}
+
+	@Override
+	public String toString() {
+		return location;
+	}
 }

@@ -23,8 +23,10 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import uk.co.strangeskies.utilities.IdentityProperty;
@@ -193,6 +195,11 @@ class LocalizerImpl implements Localizer {
 	}
 
 	@SuppressWarnings("unchecked")
+	private <U extends LocalizedText<U>> U unsafeLocalize(Class<?> returnType, LocalizedResourceBundle bundle) {
+		return localize(new Localizable<>((Class<U>) returnType, bundle));
+	}
+
+	@SuppressWarnings("unchecked")
 	protected <T extends LocalizedText<T>> T localize(Localizable<T> localizable) {
 		LocalizerText text;
 		if (this.text == null) {
@@ -205,6 +212,8 @@ class LocalizerImpl implements Localizer {
 			throw log(Level.ERROR, new LocalizationException(text.mustBeInterface(localizable.accessor)));
 		}
 
+		Map<MethodSignature, LocalizedText<?>> nestedMembers = new HashMap<>();
+
 		for (Method method : localizable.accessor.getMethods()) {
 			MethodSignature signature = new MethodSignature(method);
 
@@ -212,7 +221,11 @@ class LocalizerImpl implements Localizer {
 				/*
 				 * ensure return type of method is String
 				 */
-				if (!method.getReturnType().equals(LocalizedString.class)) {
+				Class<?> returnType = method.getReturnType();
+				if (LocalizedText.class.isAssignableFrom(returnType)) {
+					LocalizedText<?> nestedAccessor = unsafeLocalize(returnType, localizable.bundle);
+					nestedMembers.put(signature, nestedAccessor);
+				} else if (!LocalizedString.class.equals(returnType)) {
 					throw log(Level.ERROR, new LocalizationException(text.illegalReturnType(localizable.accessor, method)));
 				}
 			}
@@ -234,6 +247,10 @@ class LocalizerImpl implements Localizer {
 					if (method.isDefault()) {
 						return methodHandleConstructor.newInstance(method.getDeclaringClass(), MethodHandles.Lookup.PRIVATE)
 								.unreflectSpecial(method, method.getDeclaringClass()).bindTo(p).invokeWithArguments(args);
+					}
+
+					if (nestedMembers.containsKey(signature)) {
+						return nestedMembers.get(signature);
 					}
 
 					return helper.get().getTranslation(signature, args);

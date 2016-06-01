@@ -284,4 +284,25 @@ public class LocalizerTest {
 
 		assertEquals("simple property value", text.copy().simple().toString());
 	}
+
+	@Test
+	public void nestedTextTest() {
+		LocalizerTestText text = text(getManager());
+
+		assertEquals("nested text value", text.nested().nestedText().toString());
+	}
+
+	@Test
+	public void deeplyNestedTextTest() {
+		LocalizerTestText text = text(getManager());
+
+		assertEquals("deeply nested text value", text.nested().deeply().deeplyNestedText().toString());
+	}
+
+	@Test
+	public void nestedTextOverrideTest() {
+		LocalizerTestText text = text(getManager());
+
+		assertEquals("deeply nested text overriding value", text.nested().deeply().deeplyNestedOverrideText().toString());
+	}
 }

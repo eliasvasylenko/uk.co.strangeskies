@@ -16,27 +16,15 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with uk.co.strangeskies.utilities.  If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.utilities.text.test;
+package uk.co.strangeskies.utilities.text.test.nested;
 
 import uk.co.strangeskies.utilities.text.LocalizedString;
 import uk.co.strangeskies.utilities.text.LocalizedText;
-import uk.co.strangeskies.utilities.text.test.nested.LocalizerTestNestedText;
+import uk.co.strangeskies.utilities.text.test.nested.deeply.LocalizerTestDeeplyNestedText;
 
 @SuppressWarnings("javadoc")
-public interface LocalizerTestText extends LocalizedText<LocalizerTestText> {
-	LocalizedString missingMethod();
+public interface LocalizerTestNestedText extends LocalizedText<LocalizerTestNestedText> {
+	LocalizedString nestedText();
 
-	LocalizedString simple();
-
-	LocalizedString anotherSimple();
-
-	LocalizedString substitution(String item);
-
-	LocalizedString multipleSubstitution(String first, String second);
-
-	default LocalizedString defaultMethod() {
-		return substitution("default");
-	}
-
-	LocalizerTestNestedText nested();
+	LocalizerTestDeeplyNestedText deeply();
 }

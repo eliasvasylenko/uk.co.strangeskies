@@ -95,7 +95,7 @@ public class LocalizationTextDelegate<T extends LocalizedText<T>> extends Observ
 				}
 
 				if (translationText == null) {
-					translationText = text.translationNotFoundFor(key).toString();
+					translationText = text.translationNotFoundSubstitution(key).toString();
 				}
 			}
 
