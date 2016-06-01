@@ -2,10 +2,72 @@
 
 -runfw: org.eclipse.osgi
 
+Private-Package: uk.co.strangeskies.p2.test
+
 -buildpath: \
 	${ss;utilities},\
-	${ss;p2.api}
+	${ss;p2.api},\
+	biz.aQute.bndlib,\
+	${-testpath.base}
 
 -testpath: \
-	org.eclipse.osgi
-Private-Package: uk.co.strangeskies.p2.test
+	${-buildpath}
+
+Test-Cases: ${test-cases}
+
+-runproperties: \
+	tester.dir=testdir
+
+-runrequires: \
+	${req;biz.aQute.tester},\
+	${req;org.eclipse.core.net},\
+	${req;org.eclipse.ecf},\
+	${req;org.eclipse.ecf.filetransfer},\
+	${req;org.eclipse.ecf.identity},\
+	${req;org.eclipse.ecf.provider.filetransfer},\
+	${req;org.eclipse.equinox.p2.artifact.repository},\
+	${req;org.eclipse.equinox.p2.engine},\
+	${req;org.eclipse.equinox.p2.jarprocessor},\
+	${req;org.eclipse.equinox.p2.metadata},\
+	${req;org.eclipse.equinox.p2.metadata.repository},\
+	${req;org.eclipse.equinox.p2.transport.ecf},\
+	${req;org.osgi.service.metatype},\
+	${req;osgi.enroute.logger.simple.provider},\
+	${req;uk.co.strangeskies.p2.provider},\
+	${req;uk.co.strangeskies.p2.test}
+
+-runbundles: \
+	biz.aQute.bndlib;version='[3.0.0,3.0.1)',\
+	biz.aQute.tester;version='[3.0.0,3.0.1)',\
+	org.apache.felix.configadmin;version='[1.8.6,1.8.7)',\
+	org.apache.felix.log;version='[1.0.1,1.0.2)',\
+	org.apache.felix.scr;version='[2.0.0,2.0.1)',\
+	org.eclipse.core.jobs;version='[3.7.0,3.7.1)',\
+	org.eclipse.core.net;version='[1.2.300,1.2.301)',\
+	org.eclipse.ecf;version='[3.5.0,3.5.1)',\
+	org.eclipse.ecf.filetransfer;version='[5.0.0,5.0.1)',\
+	org.eclipse.ecf.identity;version='[3.6.0,3.6.1)',\
+	org.eclipse.ecf.provider.filetransfer;version='[3.2.200,3.2.201)',\
+	org.eclipse.equinox.common;version='[3.7.0,3.7.1)',\
+	org.eclipse.equinox.metatype;version='[1.4.100,1.4.101)',\
+	org.eclipse.equinox.p2.artifact.repository;version='[1.1.400,1.1.401)',\
+	org.eclipse.equinox.p2.core;version='[2.4.0,2.4.1)',\
+	org.eclipse.equinox.p2.engine;version='[2.4.0,2.4.1)',\
+	org.eclipse.equinox.p2.jarprocessor;version='[1.0.400,1.0.401)',\
+	org.eclipse.equinox.p2.metadata;version='[2.3.0,2.3.1)',\
+	org.eclipse.equinox.p2.metadata.repository;version='[1.2.200,1.2.201)',\
+	org.eclipse.equinox.p2.repository;version='[2.3.100,2.3.101)',\
+	org.eclipse.equinox.p2.transport.ecf;version='[1.1.100,1.1.101)',\
+	org.eclipse.equinox.preferences;version='[3.5.300,3.5.301)',\
+	org.eclipse.equinox.registry;version='[3.6.0,3.6.1)',\
+	org.eclipse.equinox.security;version='[1.2.100,1.2.101)',\
+	org.hamcrest.core;version='[1.3.0,1.3.1)',\
+	org.junit;version='[4.12.0,4.12.1)',\
+	org.osgi.service.metatype;version='[1.3.0,1.3.1)',\
+	org.tukaani.xz;version='[1.3.0,1.3.1)',\
+	osgi.enroute.logger.simple.provider;version='[1.2.1,1.2.2)',\
+	uk.co.strangeskies.bnd;version='[1.0.13,1.0.14)',\
+	uk.co.strangeskies.p2.api;version=snapshot,\
+	uk.co.strangeskies.p2.provider;version=snapshot,\
+	uk.co.strangeskies.p2.test;version=snapshot,\
+	uk.co.strangeskies.utilities;version=snapshot

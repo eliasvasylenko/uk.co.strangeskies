@@ -77,9 +77,13 @@ public class P2BndRepositoryPlugin extends P2BndRepository {
 	public static void main(String... args) throws Exception {
 		P2BndRepository first = test("hi");
 
-		System.out.println(first.getName());
+		try {
+			System.out.println(first.getName());
 
-		first.close();
+			first.list("*eclipse*");
+		} finally {
+			first.close();
+		}
 	}
 
 	private static P2BndRepository test(String name) throws Exception {

@@ -16,8 +16,6 @@ Import-Package: \
 	uk.co.strangeskies.p2,\
 	uk.co.strangeskies.bnd,\
 	uk.co.strangeskies.p2.bnd,\
-	org.osgi.service.repository,\
-	org.osgi.resource,\
 	uk.co.strangeskies.utilities,\
 	aQute.bnd.service,\
 	aQute.bnd.osgi,\

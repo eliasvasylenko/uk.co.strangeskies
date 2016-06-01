@@ -26,6 +26,7 @@ import org.osgi.service.component.annotations.Reference;
 
 import uk.co.strangeskies.p2.P2Repository;
 import uk.co.strangeskies.p2.P2RepositoryFactory;
+import uk.co.strangeskies.utilities.Log;
 
 @SuppressWarnings("javadoc")
 @Component
@@ -35,8 +36,13 @@ public class P2RepositoryFactoryImpl implements P2RepositoryFactory {
 	private BundleContext bundleContext;
 
 	@Override
-	public P2Repository get() {
-		return new P2RepositoryImpl(agentProvider, bundleContext);
+	public P2Repository create() {
+		return new P2RepositoryImpl(agentProvider, bundleContext, null);
+	}
+
+	@Override
+	public P2Repository create(Log log) {
+		return new P2RepositoryImpl(agentProvider, bundleContext, log);
 	}
 
 	@Activate

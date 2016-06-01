@@ -18,10 +18,19 @@
  */
 package uk.co.strangeskies.p2.impl;
 
+import java.util.function.Supplier;
+
 import org.eclipse.core.runtime.IProgressMonitor;
 
-class ProgressMonitorImpl implements IProgressMonitor {
+import uk.co.strangeskies.utilities.Log;
+
+class ProgressMonitorImpl implements IProgressMonitor, Log {
+	private final Supplier<Log> log;
 	private boolean cancelled = false;
+
+	public ProgressMonitorImpl(Supplier<Log> log) {
+		this.log = log;
+	}
 
 	@Override
 	public void beginTask(String name, int totalWork) {}
@@ -47,9 +56,25 @@ class ProgressMonitorImpl implements IProgressMonitor {
 
 	@Override
 	public void subTask(String name) {
-		System.out.println("  " + name);
+		log(Level.INFO, name);
 	}
 
 	@Override
 	public void worked(int work) {}
+
+	@Override
+	public void log(Level level, String message) {
+		Log log = this.log.get();
+		if (log != null) {
+			log.log(level, message);
+		}
+	}
+
+	@Override
+	public void log(Level level, String message, Throwable exception) {
+		Log log = this.log.get();
+		if (log != null) {
+			log.log(level, message, exception);
+		}
+	}
 }

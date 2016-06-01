@@ -68,8 +68,6 @@ Embedded-Classpath: \
 	uk.co.strangeskies.utilities.tuple,\
 	uk.co.strangeskies.p2,\
 	uk.co.strangeskies.p2.bnd,\
-	org.osgi.service.repository,\
-	org.osgi.resource,\
 	uk.co.strangeskies.utilities,\
 	uk.co.strangeskies.p2,\
 	aQute.bnd.service,\

@@ -18,6 +18,9 @@
  */
 package uk.co.strangeskies.p2.impl;
 
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.StreamSupport.stream;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,18 +29,19 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.equinox.p2.core.IProvisioningAgent;
 import org.eclipse.equinox.p2.core.IProvisioningAgentProvider;
 import org.eclipse.equinox.p2.metadata.IInstallableUnit;
+import org.eclipse.equinox.p2.metadata.expression.SimplePattern;
 import org.eclipse.equinox.p2.query.IQuery;
 import org.eclipse.equinox.p2.query.IQueryResult;
 import org.eclipse.equinox.p2.query.QueryUtil;
@@ -76,71 +80,81 @@ public class P2RepositoryImpl implements P2Repository, Log {
 	private URL metadataLocation;
 	private URL artifactLocation;
 
-	private Log log;
-	private final IProvisioningAgentProvider agentProvider;
-	private BundleContext bundleContext;
-
 	private Reporter reporter;
 	private Registry registry;
+	private Log log;
+	private final IProgressMonitor progressMonitor;
+
+	private BundleContext bundleContext;
+
+	private boolean initialised;
+	private final IProvisioningAgentProvider agentProvider;
+	private IMetadataRepositoryManager metadataManager;
+	private IArtifactRepositoryManager artifactManager;
 
 	@SuppressWarnings("javadoc")
-	public P2RepositoryImpl(IProvisioningAgentProvider agentProvider, BundleContext bundleContext) {
-		cacheDir = new File(System.getProperty("user.home") + File.separator + DEFAULT_CACHE_DIRECTORY);
+	public P2RepositoryImpl(IProvisioningAgentProvider agentProvider, BundleContext bundleContext, Log log) {
+		this.log = log;
+
+		cacheDir = defaultCacheDirectory();
 
 		this.agentProvider = agentProvider;
 		this.bundleContext = bundleContext;
+
+		progressMonitor = new ProgressMonitorImpl(this::getLog);
+	}
+
+	private static File defaultCacheDirectory() {
+		return new File(System.getProperty("user.home") + File.separator + DEFAULT_CACHE_DIRECTORY);
+	}
+
+	public Log getLog() {
+		return log != null ? log : (l, m) -> {};
 	}
 
 	protected synchronized void initialise() {
-		try {
-			String localString = bundleContext.getBundle().getLocation();
-			localString = localString.substring(localString.indexOf(':') + 1);
-			localString = localString.substring(0, localString.lastIndexOf('/'));
-			localString = localString + "/p2/";
-			System.out.println(localString);
-			URI local = new URI(localString);
-			URI remote = new URI(MARS_UPDATE_SITE);
-
-			IProvisioningAgent provisioningAgent = agentProvider.createAgent(local);
-
-			/*
-			 * Load repository manager
-			 */
-			IMetadataRepositoryManager metadataManager = (IMetadataRepositoryManager) provisioningAgent
-					.getService(IMetadataRepositoryManager.SERVICE_NAME);
-			if (metadataManager == null) {
-				throw new IllegalStateException("Couldn't load metadata repository manager");
-			}
-
-			/*
-			 * Load artifact manager
-			 */
-			IArtifactRepositoryManager artifactManager = (IArtifactRepositoryManager) provisioningAgent
-					.getService(IArtifactRepositoryManager.SERVICE_NAME);
-			if (artifactManager == null) {
-				throw new IllegalStateException("Couldn't load artifact repository manager");
-			}
-
-			/*
-			 * Load remote repository
-			 */
+		if (!initialised) {
 			try {
-				IProgressMonitor progressMonitor = new ProgressMonitorImpl();
+				getLog().log(Level.INFO, cacheDir.toString());
+				URI local = cacheDir.toURI();
+				URI remote = new URI(MARS_UPDATE_SITE);
 
-				System.out.println("loading remote . . .");
-				metadataManager.loadRepository(remote, progressMonitor);
-				artifactManager.loadRepository(remote, progressMonitor);
+				IProvisioningAgent provisioningAgent = agentProvider.createAgent(local);
 
-				System.out.println("querying repository . . .");
-				IQuery<IInstallableUnit> query = QueryUtil.createMatchQuery("id == $0", "org.eclipse.equinox.event");
-				IQueryResult<IInstallableUnit> result = metadataManager.query(query, progressMonitor);
-				System.out.println(result.toUnmodifiableSet());
-			} catch (Exception pe) {
-				throw new InvocationTargetException(pe);
+				/*
+				 * Load repository manager
+				 */
+				metadataManager = (IMetadataRepositoryManager) provisioningAgent
+						.getService(IMetadataRepositoryManager.SERVICE_NAME);
+				if (metadataManager == null) {
+					throw new IllegalStateException("Couldn't load metadata repository manager");
+				}
+
+				/*
+				 * Load artifact manager
+				 */
+				artifactManager = (IArtifactRepositoryManager) provisioningAgent
+						.getService(IArtifactRepositoryManager.SERVICE_NAME);
+				if (artifactManager == null) {
+					throw new IllegalStateException("Couldn't load artifact repository manager");
+				}
+
+				/*
+				 * Load remote repository
+				 */
+				try {
+					getLog().log(Level.INFO, "loading remote . . .");
+					metadataManager.loadRepository(remote, progressMonitor);
+					artifactManager.loadRepository(remote, progressMonitor);
+				} catch (Exception pe) {
+					throw new InvocationTargetException(pe);
+				}
+
+				initialised = true;
+			} catch (Exception e) {
+				getLog().log(Level.ERROR, e);
+				throw new RuntimeException(e);
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(e);
 		}
 	}
 
@@ -154,25 +168,29 @@ public class P2RepositoryImpl implements P2Repository, Log {
 
 		parseCacheProperties(map);
 		parseLocationProperties(map);
+
+		initialised = false;
 	}
 
 	protected void parseCacheProperties(Map<String, String> map) {
-		cacheDir = null;
 		if (map.containsKey(CACHE_DIRECTORY_PROPERTY)) {
 			cacheDir = new File(map.get(CACHE_DIRECTORY_PROPERTY));
-			if (!cacheDir.exists() || !cacheDir.isDirectory()) {
-				log.log(Level.ERROR, "Bad cache directory setting: " + cacheDir);
-			}
+		} else {
+			cacheDir = defaultCacheDirectory();
+		}
 
-			if (map.containsKey(CACHE_TIMEOUT_SECONDS_PROPERTY)) {
-				try {
-					cacheTimeoutSeconds = Integer.parseInt(map.get(CACHE_TIMEOUT_SECONDS_PROPERTY));
-				} catch (NumberFormatException e) {
-					log.log(Level.ERROR, "Bad timeout setting: " + cacheTimeoutSeconds, e);
-				}
-			} else {
-				cacheTimeoutSeconds = DEFAULT_CACHE_TIMEOUT_SECONDS;
+		if (!cacheDir.exists() || !cacheDir.isDirectory()) {
+			log.log(Level.ERROR, "Bad cache directory setting: " + cacheDir);
+		}
+
+		if (map.containsKey(CACHE_TIMEOUT_SECONDS_PROPERTY)) {
+			try {
+				cacheTimeoutSeconds = Integer.parseInt(map.get(CACHE_TIMEOUT_SECONDS_PROPERTY));
+			} catch (NumberFormatException e) {
+				log.log(Level.ERROR, "Bad timeout setting: " + cacheTimeoutSeconds, e);
 			}
+		} else {
+			cacheTimeoutSeconds = DEFAULT_CACHE_TIMEOUT_SECONDS;
 		}
 	}
 
@@ -246,12 +264,25 @@ public class P2RepositoryImpl implements P2Repository, Log {
 
 	@Override
 	public List<String> list(String pattern) {
-		return Collections.emptyList();
+		initialise();
+
+		getLog().log(Level.INFO, "querying repository for bundles . . .");
+		IQuery<IInstallableUnit> query = QueryUtil.createMatchQuery("id ~= $0", SimplePattern.compile(pattern));
+		IQueryResult<IInstallableUnit> result = metadataManager.query(query, progressMonitor);
+
+		return stream(result.spliterator(), false).map(i -> i.getId()).distinct().collect(toList());
 	}
 
 	@Override
 	public SortedSet<Version> versions(String bsn) {
-		return Collections.emptySortedSet();
+		initialise();
+
+		getLog().log(Level.INFO, "querying repository for versions . . .");
+		IQuery<IInstallableUnit> query = QueryUtil.createMatchQuery("id == $0", bsn);
+		IQueryResult<IInstallableUnit> result = metadataManager.query(query, progressMonitor);
+
+		return new TreeSet<>(
+				stream(result.spliterator(), false).map(i -> new Version(i.getVersion().toString())).collect(toList()));
 	}
 
 	@Override

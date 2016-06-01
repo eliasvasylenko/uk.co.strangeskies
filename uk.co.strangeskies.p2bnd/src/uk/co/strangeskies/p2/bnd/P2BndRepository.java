@@ -156,7 +156,7 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 
 		return manager.getFramework().withFramework(() -> {
 			if (repository == null) {
-				repository = manager.getRepositoryFactory().get();
+				repository = manager.getRepositoryFactory().create();
 			}
 
 			if (properties != null)

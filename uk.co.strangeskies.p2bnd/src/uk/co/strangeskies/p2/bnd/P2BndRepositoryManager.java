@@ -19,13 +19,13 @@
 package uk.co.strangeskies.p2.bnd;
 
 import static org.osgi.framework.Constants.FRAMEWORK_BUNDLE_PARENT;
+import static org.osgi.framework.Constants.FRAMEWORK_BUNDLE_PARENT_FRAMEWORK;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.osgi.framework.Constants;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ServiceScope;
@@ -47,7 +47,7 @@ public class P2BndRepositoryManager {
 			put(OSGI_CLEAN, Boolean.toString(true));
 			put(OSGI_CLEAR_PERSISTED_STATE, Boolean.toString(true));
 
-			put(FRAMEWORK_BUNDLE_PARENT, Constants.FRAMEWORK_BUNDLE_PARENT_FRAMEWORK);
+			put(FRAMEWORK_BUNDLE_PARENT, FRAMEWORK_BUNDLE_PARENT_FRAMEWORK);
 		}
 	};
 
