@@ -18,11 +18,12 @@
  */
 package uk.co.strangeskies.osgi.text;
 
+import static java.util.Arrays.asList;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkUtil;
@@ -101,26 +102,29 @@ public class LocalizerService implements Localizer {
 
 	@Override
 	public <T extends LocalizedText<T>> T getLocalization(Class<T> accessor) {
-		List<String> locations = Localizer.getNestedAccessors(accessor).stream()
-				.map(a -> Localizer.removeTextPostfix(a.getName())).collect(Collectors.toList());
+		List<Class<? extends LocalizedText<?>>> nestedAccessors = Localizer.getNestedAccessors(accessor);
 
 		List<LocalizationResource> resources = new ArrayList<>();
-		resources.addAll(getResources(locations, osgiLocalizationResource));
 
-		Bundle accessorBundle = FrameworkUtil.getBundle(accessor);
-		if (!accessorBundle.equals(usingBundle)) {
-			resources.addAll(getResources(locations, getOsgiLocalizationResource(accessorBundle)));
+		resources.addAll(getResources(nestedAccessors, osgiLocalizationResource));
+
+		for (Class<?> nestedAccessor : nestedAccessors) {
+			Bundle accessorBundle = FrameworkUtil.getBundle(nestedAccessor);
+			if (!accessorBundle.equals(usingBundle)) {
+				resources.addAll(getResources(asList(nestedAccessor), getOsgiLocalizationResource(accessorBundle)));
+			}
 		}
 
 		return getLocalization(accessor, resources);
 	}
 
-	private Collection<? extends LocalizationResource> getResources(List<String> locations,
+	private Collection<? extends LocalizationResource> getResources(List<? extends Class<?>> accessors,
 			LocalizationResource osgiLocalizationResource) {
 		List<LocalizationResource> resources = new ArrayList<>();
 
-		for (String location : locations) {
-			resources.add(new LocalizationResource(osgiLocalizationResource.getClassLoader(), location));
+		for (Class<?> accessor : accessors) {
+			String accessorResource = Localizer.removeTextPostfix(accessor.getName());
+			resources.add(new LocalizationResource(osgiLocalizationResource.getClassLoader(), accessorResource));
 		}
 		resources.add(osgiLocalizationResource);
 
