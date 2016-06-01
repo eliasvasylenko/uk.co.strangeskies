@@ -21,6 +21,7 @@ uk.co.strangeskies.mathematics.values
 uk.co.strangeskies.mathematics.values.quantities
 uk.co.strangeskies.osgi
 uk.co.strangeskies.p2
+uk.co.strangeskies.p2.test
 uk.co.strangeskies.p2bnd.test
 uk.co.strangeskies.reflection
 uk.co.strangeskies.utilities
