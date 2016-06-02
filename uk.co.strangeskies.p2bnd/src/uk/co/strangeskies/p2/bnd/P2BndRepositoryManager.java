@@ -18,8 +18,10 @@
  */
 package uk.co.strangeskies.p2.bnd;
 
-import static org.osgi.framework.Constants.FRAMEWORK_BUNDLE_PARENT;
-import static org.osgi.framework.Constants.FRAMEWORK_BUNDLE_PARENT_FRAMEWORK;
+import static java.lang.Boolean.TRUE;
+import static uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper.OSGI_CLEAN;
+import static uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper.OSGI_CLEAR_PERSISTED_STATE;
+import static uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper.OSGI_CONSOLE;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,16 +40,12 @@ public class P2BndRepositoryManager {
 	private static final int FRAMEWORK_TIMEOUT_MILLISECONDS = 4000;
 	private static final int SERVICE_TIMEOUT_MILLISECONDS = 4000;
 
-	private static final String OSGI_CLEAN = "osgi.clean";
-	private static final String OSGI_CLEAR_PERSISTED_STATE = "clearPersistedState";
-
 	@SuppressWarnings("serial")
 	private static final Map<String, String> FRAMEWORK_PROPERTIES = new HashMap<String, String>() {
 		{
-			put(OSGI_CLEAN, Boolean.toString(true));
-			put(OSGI_CLEAR_PERSISTED_STATE, Boolean.toString(true));
-
-			put(FRAMEWORK_BUNDLE_PARENT, FRAMEWORK_BUNDLE_PARENT_FRAMEWORK);
+			put(OSGI_CLEAN, TRUE.toString());
+			put(OSGI_CLEAR_PERSISTED_STATE, TRUE.toString());
+			put(OSGI_CONSOLE, "");
 		}
 	};
 

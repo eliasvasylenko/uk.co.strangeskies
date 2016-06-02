@@ -71,8 +71,6 @@ import uk.co.strangeskies.utilities.Log;
  * @author Elias N Vasylenko
  */
 public class P2RepositoryImpl implements P2Repository, Log {
-	private static final String MARS_UPDATE_SITE = "http://download.eclipse.org/releases/mars/";
-
 	private String name;
 	private File cacheDir;
 	private int cacheTimeoutSeconds;
@@ -117,7 +115,8 @@ public class P2RepositoryImpl implements P2Repository, Log {
 			try {
 				getLog().log(Level.INFO, cacheDir.toString());
 				URI local = cacheDir.toURI();
-				URI remote = new URI(MARS_UPDATE_SITE);
+				URI metadata = metadataLocation.toURI();
+				URI artifact = artifactLocation.toURI();
 
 				IProvisioningAgent provisioningAgent = agentProvider.createAgent(local);
 
@@ -144,8 +143,8 @@ public class P2RepositoryImpl implements P2Repository, Log {
 				 */
 				try {
 					getLog().log(Level.INFO, "loading remote . . .");
-					metadataManager.loadRepository(remote, progressMonitor);
-					artifactManager.loadRepository(remote, progressMonitor);
+					metadataManager.loadRepository(metadata, progressMonitor);
+					artifactManager.loadRepository(artifact, progressMonitor);
 				} catch (Exception pe) {
 					throw new InvocationTargetException(pe);
 				}
@@ -180,14 +179,14 @@ public class P2RepositoryImpl implements P2Repository, Log {
 		}
 
 		if (!cacheDir.exists() || !cacheDir.isDirectory()) {
-			log.log(Level.ERROR, "Bad cache directory setting: " + cacheDir);
+			log(Level.ERROR, "Bad cache directory setting: " + cacheDir);
 		}
 
 		if (map.containsKey(CACHE_TIMEOUT_SECONDS_PROPERTY)) {
 			try {
 				cacheTimeoutSeconds = Integer.parseInt(map.get(CACHE_TIMEOUT_SECONDS_PROPERTY));
 			} catch (NumberFormatException e) {
-				log.log(Level.ERROR, "Bad timeout setting: " + cacheTimeoutSeconds, e);
+				log(Level.ERROR, "Bad timeout setting: " + cacheTimeoutSeconds, e);
 			}
 		} else {
 			cacheTimeoutSeconds = DEFAULT_CACHE_TIMEOUT_SECONDS;
@@ -201,23 +200,23 @@ public class P2RepositoryImpl implements P2Repository, Log {
 
 		if (location != null) {
 			if (metadataLocation != null || artifactLocation != null) {
-				log.log(Level.WARN, "Location setting is ambiguous with artifact or metadata settings");
+				log(Level.WARN, "Location setting is ambiguous with artifact or metadata settings");
 			}
 			metadataLocation = artifactLocation = location;
 		}
 		try {
 			if (metadataLocation == null) {
-				log.log(Level.ERROR, "Metadata location unspecified");
+				log(Level.ERROR, "Metadata location unspecified");
 			} else {
 				this.metadataLocation = new URL(metadataLocation);
 			}
 			if (artifactLocation == null) {
-				log.log(Level.ERROR, "Artifact location unspecified");
+				log(Level.ERROR, "Artifact location unspecified");
 			} else {
 				this.artifactLocation = new URL(artifactLocation);
 			}
 		} catch (MalformedURLException e) {
-			log.log(Level.ERROR, "Location URL is malformed", e);
+			log(Level.ERROR, "Location URL is malformed", e);
 		}
 	}
 
@@ -440,15 +439,11 @@ public class P2RepositoryImpl implements P2Repository, Log {
 
 	@Override
 	public void log(Level level, String message) {
-		if (log != null) {
-			log.log(level, message);
-		}
+		getLog().log(level, message);
 	}
 
 	@Override
 	public void log(Level level, String message, Throwable exception) {
-		if (log != null) {
-			log.log(level, message, exception);
-		}
+		getLog().log(level, message, exception);
 	}
 }

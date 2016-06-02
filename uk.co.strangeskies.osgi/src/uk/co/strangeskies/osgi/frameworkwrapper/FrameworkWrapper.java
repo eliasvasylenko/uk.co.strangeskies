@@ -61,6 +61,23 @@ public interface FrameworkWrapper {
 	public static final String EMBEDDED_RUNPATH = "Embedded-Runpath";
 
 	/**
+	 * {@value #OSGI_CONSOLE} framework launch property
+	 */
+	public static final String OSGI_CONSOLE = "osgi.console";
+	/**
+	 * {@value #OSGI_CLEAN} framework launch property
+	 */
+	public static final String OSGI_CLEAN = "osgi.clean";
+	/**
+	 * {@value #OSGI_CLEAR_PERSISTED_STATE} framework launch property
+	 */
+	public static final String OSGI_CLEAR_PERSISTED_STATE = "clearPersistedState";
+	/**
+	 * {@value #OSGI_BOOT_DELEGATION} framework launch property
+	 */
+	public static final String OSGI_BOOT_DELEGATION = "org.osgi.framework.bootdelegation";
+
+	/**
 	 * Set the duration of inactivity after which the framework should
 	 * automatically shut down. This setting will be applied next time the
 	 * framework timeout is reset by activity.

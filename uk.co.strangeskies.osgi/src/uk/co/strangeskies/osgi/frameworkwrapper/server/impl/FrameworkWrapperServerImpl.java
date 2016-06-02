@@ -203,7 +203,11 @@ public class FrameworkWrapperServerImpl implements FrameworkWrapperServer {
 		for (Bundle bundle : bundles) {
 			try {
 				if (bundle.getHeaders().get(FRAGMENT_HOST_HEADER) == null) {
+					try {
 					bundle.start();
+					} catch (Exception e) {
+						
+					}
 				}
 			} catch (Exception e) {
 				log.log(Level.ERROR, "Unable to start bundle " + bundle, e);

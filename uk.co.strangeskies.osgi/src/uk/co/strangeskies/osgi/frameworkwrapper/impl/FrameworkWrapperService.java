@@ -21,7 +21,7 @@ package uk.co.strangeskies.osgi.frameworkwrapper.impl;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.Dictionary;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.osgi.framework.wiring.BundleWire;
@@ -68,7 +68,7 @@ public class FrameworkWrapperService extends FrameworkWrapperImpl {
 	}
 
 	private Set<VersionedPackage> getVersionedPackages(BundleWiring wiring, String packagesString) {
-		Set<BundleWire> versionedPackages = new HashSet<>();
+		Set<BundleWire> versionedPackages = new LinkedHashSet<>();
 		versionedPackages.addAll(wiring.getRequiredWires(PACKAGE_WIRING));
 		versionedPackages.addAll(wiring.getProvidedWires(PACKAGE_WIRING));
 

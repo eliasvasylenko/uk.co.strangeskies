@@ -22,6 +22,7 @@ import static java.util.Arrays.stream;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static uk.co.strangeskies.utilities.classpath.ManifestUtilities.parseAttributes;
 
@@ -36,13 +37,13 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper;
@@ -92,6 +93,8 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 	private static final String EXPORT_PACKAGE = "Export-Package";
 	private static final String PRIVATE_PACKAGE = "Private-Package";
 	private static final String FRAMEWORK_SYSTEMPACKAGES_EXTRA = "org.osgi.framework.system.packages.extra";
+	private static final String FRAMEWORK_BUNDLE_PARENT = "org.osgi.framework.bundle.parent";
+	private static final String FRAMEWORK_BUNDLE_PARENT_FRAMEWORK = "framework";
 
 	protected static final Object VERSION_PROPERTY = "version";
 	protected static final String DEFAULT_VERSION = "0.0.0";
@@ -163,16 +166,16 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 		this.baseClassLoader = baseClassLoader;
 	}
 
-	protected Set<URL> toUrls(ClassLoader classLoader, String value) {
-		return stream(value.split(",")).map(String::trim).map(classLoader::getResource).collect(Collectors.toSet());
+	protected List<URL> toUrls(ClassLoader classLoader, String value) {
+		return stream(value.split(",")).map(String::trim).map(classLoader::getResource).collect(toList());
 	}
 
-	protected void setFrameworkJars(Set<URL> frameworkJars) {
-		this.frameworkJars = frameworkJars;
+	protected void setFrameworkJars(List<URL> frameworkJars) {
+		this.frameworkJars = new LinkedHashSet<>(frameworkJars);
 	}
 
-	protected void setBundleJars(Set<URL> bundleJars) {
-		this.bundleJars = bundleJars;
+	protected void setBundleJars(List<URL> bundleJars) {
+		this.bundleJars = new LinkedHashSet<>(bundleJars);
 	}
 
 	protected void setPackageVersions(Collection<? extends VersionedPackage> packageVersions) {
@@ -196,6 +199,8 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 			properties = new HashMap<>(properties);
 
 			properties.computeIfAbsent(FRAMEWORK_SYSTEMPACKAGES_EXTRA, k -> getVersionedPackagesString());
+			properties.computeIfAbsent(FRAMEWORK_BUNDLE_PARENT, k -> FRAMEWORK_BUNDLE_PARENT_FRAMEWORK);
+			properties.computeIfAbsent(OSGI_BOOT_DELEGATION, k -> "*");
 		}
 
 		getComponent().setLaunchProperties(properties);
@@ -248,6 +253,7 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 			try {
 				for (URL frameworkJar : frameworkJars) {
 					File frameworkFile = File.createTempFile("framework", ".jar");
+					frameworkFile.mkdirs();
 					frameworkFile.deleteOnExit();
 					frameworkUrls.add(frameworkFile.toURI().toURL());
 
