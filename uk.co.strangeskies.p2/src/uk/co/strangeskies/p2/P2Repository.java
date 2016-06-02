@@ -26,7 +26,6 @@ import org.osgi.service.repository.Repository;
 
 import aQute.bnd.service.Actionable;
 import aQute.bnd.service.Plugin;
-import aQute.bnd.service.Refreshable;
 import aQute.bnd.service.RegistryPlugin;
 import aQute.bnd.service.RemoteRepositoryPlugin;
 import aQute.bnd.service.repository.InfoRepository;
@@ -37,8 +36,8 @@ import aQute.bnd.service.repository.SearchableRepository;
  * 
  * @author Elias N Vasylenko
  */
-public interface P2Repository extends RemoteRepositoryPlugin, Repository, Plugin, Closeable, Refreshable, Actionable,
-		RegistryPlugin, SearchableRepository, InfoRepository {
+public interface P2Repository extends RemoteRepositoryPlugin, Repository, Plugin, Closeable, Actionable, RegistryPlugin,
+		SearchableRepository, InfoRepository {
 	/**
 	 * Property key for repository name.
 	 */

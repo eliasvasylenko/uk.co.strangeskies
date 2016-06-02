@@ -29,6 +29,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -264,6 +265,10 @@ public class P2RepositoryImpl implements P2Repository, Log {
 	@Override
 	public List<String> list(String pattern) {
 		initialise();
+		
+		if (pattern == null) {
+			pattern = "*";
+		}
 
 		getLog().log(Level.INFO, "querying repository for bundles . . .");
 		IQuery<IInstallableUnit> query = QueryUtil.createMatchQuery("id ~= $0", SimplePattern.compile(pattern));
@@ -316,7 +321,7 @@ public class P2RepositoryImpl implements P2Repository, Log {
 
 	private ResourceHandle resolveBundle(String bsn, String version, Strategy strategy, Map<String, String> properties) {
 		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -347,33 +352,21 @@ public class P2RepositoryImpl implements P2Repository, Log {
 	}
 
 	@Override
-	public boolean refresh() throws Exception {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public File getRoot() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public Map<String, Runnable> actions(Object... target) throws Exception {
 		// TODO Auto-generated method stub
-		return null;
+		return Collections.emptyMap();
 	}
 
 	@Override
 	public String tooltip(Object... target) throws Exception {
 		// TODO Auto-generated method stub
-		return null;
+		return "?tooltip?";
 	}
 
 	@Override
 	public String title(Object... target) throws Exception {
 		// TODO Auto-generated method stub
-		return null;
+		return "?title?";
 	}
 
 	@Override
@@ -404,13 +397,13 @@ public class P2RepositoryImpl implements P2Repository, Log {
 	@Override
 	public Set<ResourceDescriptor> getResources(URI url, boolean includeDependencies) throws Exception {
 		// TODO Auto-generated method stub
-		return null;
+		return Collections.emptySet();
 	}
 
 	@Override
 	public Set<ResourceDescriptor> query(String query) throws Exception {
 		// TODO Auto-generated method stub
-		return null;
+		return Collections.emptySet();
 	}
 
 	@Override
@@ -422,19 +415,18 @@ public class P2RepositoryImpl implements P2Repository, Log {
 	@Override
 	public Set<ResourceDescriptor> findResources(Requirement requirement, boolean includeDependencies) throws Exception {
 		// TODO Auto-generated method stub
-		return null;
+		return Collections.emptySet();
 	}
 
 	@Override
 	public URI browse(String searchString) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		return metadataLocation.toURI();
 	}
 
 	@Override
 	public ResourceDescriptor getDescriptor(String bsn, Version version) throws Exception {
 		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override

@@ -70,7 +70,7 @@ public class P2BndRepositoryPlugin extends P2BndRepository {
 		return SHARED_MANAGER;
 	}
 
-	protected P2BndRepositoryPlugin() {
+	public P2BndRepositoryPlugin() {
 		super(getManager());
 	}
 
@@ -80,7 +80,7 @@ public class P2BndRepositoryPlugin extends P2BndRepository {
 		try {
 			System.out.println(first.getName());
 
-			first.list("*eclipse*");
+			System.out.println(first.list("*eclipse*"));
 		} finally {
 			first.close();
 		}

@@ -34,18 +34,20 @@ public class ReporterLog implements Log {
 
 	@Override
 	public void log(Level level, String message) {
-		switch (level) {
-		case TRACE:
-		case DEBUG:
-		case INFO:
-			reporter.trace("%s", message);
-			break;
-		case WARN:
-			reporter.warning("%s", message);
-			break;
-		case ERROR:
-			reporter.error("%s", message);
-			break;
+		if (reporter != null) {
+			switch (level) {
+			case TRACE:
+			case DEBUG:
+			case INFO:
+				reporter.trace("%s", message);
+				break;
+			case WARN:
+				reporter.warning("%s", message);
+				break;
+			case ERROR:
+				reporter.error("%s", message);
+				break;
+			}
 		}
 	}
 

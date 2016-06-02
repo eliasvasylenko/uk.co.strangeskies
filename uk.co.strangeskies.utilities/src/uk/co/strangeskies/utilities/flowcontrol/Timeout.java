@@ -23,7 +23,7 @@ public class Timeout {
 	private int timeoutMilliseconds;
 	private final Object lock;
 
-	private boolean stopping = false;
+	private boolean ending = false;
 	private Thread thread;
 
 	public Timeout(Runnable action, int timeoutSeconds) {
@@ -43,7 +43,7 @@ public class Timeout {
 	public boolean reset() {
 		synchronized (lock) {
 			if (thread != null) {
-				stopping = false;
+				ending = false;
 				lock.notifyAll();
 
 				return true;
@@ -53,16 +53,26 @@ public class Timeout {
 		}
 	}
 
+	public void stop() {
+		synchronized (lock) {
+			if (thread != null) {
+				thread.interrupt();
+			}
+		}
+	}
+
 	public void set() {
 		synchronized (lock) {
 			if (!reset()) {
 				thread = new Thread(() -> {
 					synchronized (lock) {
-						while (!stopping) {
+						while (!ending) {
 							try {
-								stopping = true;
+								ending = true;
 								lock.wait(timeoutMilliseconds);
-							} catch (InterruptedException e) {}
+							} catch (InterruptedException e) {
+								return;
+							}
 						}
 
 						thread = null;

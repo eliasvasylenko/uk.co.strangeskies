@@ -36,7 +36,6 @@ import org.osgi.service.repository.Repository;
 
 import aQute.bnd.service.Actionable;
 import aQute.bnd.service.Plugin;
-import aQute.bnd.service.Refreshable;
 import aQute.bnd.service.Registry;
 import aQute.bnd.service.RegistryPlugin;
 import aQute.bnd.service.RemoteRepositoryPlugin;
@@ -65,7 +64,7 @@ import uk.co.strangeskies.utilities.function.ThrowingFunction;
  *
  * @author Elias N Vasylenko
  */
-public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plugin, Closeable, Refreshable, Actionable,
+public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plugin, Closeable, Actionable,
 		RegistryPlugin, SearchableRepository, InfoRepository {
 	private final P2BndRepositoryManager manager;
 	private boolean closed;
@@ -211,73 +210,54 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 
 	@Override
 	public ResourceDescriptor getDescriptor(String bsn, Version version) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		return withConnection(repository -> repository.getDescriptor(bsn, version));
 	}
 
 	@Override
 	public Set<ResourceDescriptor> getResources(URI url, boolean includeDependencies) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		return withConnection(repository -> repository.getResources(url, includeDependencies));
 	}
 
 	@Override
 	public Set<ResourceDescriptor> query(String query) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		return withConnection(repository -> repository.query(query));
 	}
 
 	@Override
 	public boolean addResource(ResourceDescriptor resource) throws Exception {
-		// TODO Auto-generated method stub
-		return false;
+		return withConnection(repository -> repository.addResource(resource));
 	}
 
 	@Override
 	public Set<ResourceDescriptor> findResources(Requirement requirement, boolean includeDependencies) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		return withConnection(repository -> repository.findResources(requirement, includeDependencies));
 	}
 
 	@Override
 	public URI browse(String searchString) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		return withConnection(repository -> repository.browse(searchString));
 	}
 
 	@Override
 	public void setRegistry(Registry registry) {
-		// TODO Auto-generated method stub
-
+		withConnection(repository -> {
+			repository.setRegistry(registry);
+			return null;
+		});
 	}
 
 	@Override
 	public Map<String, Runnable> actions(Object... target) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		return withConnection(repository -> repository.actions(target));
 	}
 
 	@Override
 	public String tooltip(Object... target) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		return withConnection(repository -> repository.tooltip(target));
 	}
 
 	@Override
 	public String title(Object... target) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public boolean refresh() throws Exception {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public File getRoot() {
-		// TODO Auto-generated method stub
-		return null;
+		return withConnection(repository -> repository.title(target));
 	}
 }

@@ -20,16 +20,22 @@ package uk.co.strangeskies.p2.test;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySortedSet;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.util.tracker.ServiceTracker;
 
+import aQute.bnd.version.Version;
 import uk.co.strangeskies.p2.P2Repository;
 import uk.co.strangeskies.p2.P2RepositoryFactory;
 
@@ -41,6 +47,27 @@ public class P2RepositoryTest {
 
 	private static final String FIRST = "first";
 	private static final String SECOND = "second";
+
+	private static final String INDIGO_REPOSITORY_LOCATION = "http://download.eclipse.org/releases/indigo/";
+	private static P2Repository INDIGO_REPOSITORY;
+	private static Exception INDIGO_REPOSITORY_EXCEPTION;
+
+	@BeforeClass
+	public static void createRepositories() {
+		try {
+			INDIGO_REPOSITORY = createRepository(FIRST, INDIGO_REPOSITORY_LOCATION);
+		} catch (Exception e) {
+			INDIGO_REPOSITORY_EXCEPTION = e;
+		}
+	}
+
+	public static P2Repository getIndigoRepository() throws Exception {
+		if (INDIGO_REPOSITORY != null) {
+			return INDIGO_REPOSITORY;
+		} else {
+			throw INDIGO_REPOSITORY_EXCEPTION;
+		}
+	}
 
 	protected static <T> T getService(Class<T> clazz) {
 		try {
@@ -61,36 +88,51 @@ public class P2RepositoryTest {
 
 	@Test
 	public void createRepositoryTest() throws Exception {
-		P2Repository test = createRepository(FIRST);
+		P2Repository test = createRepository(FIRST, INDIGO_REPOSITORY_LOCATION);
 
 		assertEquals(FIRST, test.getName());
 	}
 
 	@Test
-	public void findExactBundleTest() throws Exception {
-		P2Repository test = createRepository(FIRST);
+	public void findBundleTest() throws Exception {
+		assertEquals(asList(BUNDLE_EXISTS), getIndigoRepository().list(BUNDLE_EXISTS));
+	}
 
-		assertEquals(asList(BUNDLE_EXISTS), test.list(BUNDLE_EXISTS));
+	@Test
+	public void findBundleVersionsTest() throws Exception {
+		Set<Version> versions = getIndigoRepository().versions(BUNDLE_EXISTS);
+
+		assertTrue(versions.contains(new Version(3, 7, 0, "v20110613")));
+		assertTrue(versions.size() > 1);
+	}
+
+	@Test
+	public void findBundlesTest() throws Exception {
+		List<String> bundles = getIndigoRepository().list("*" + BUNDLE_EXISTS + "*");
+
+		assertTrue(bundles.contains(BUNDLE_EXISTS));
+		assertTrue(bundles.size() > 1);
 	}
 
 	@Test
 	public void missingBundleTest() throws Exception {
-		P2Repository test = createRepository(FIRST);
+		assertEquals(emptyList(), getIndigoRepository().list(BUNDLE_DOES_NOT_EXIST));
+	}
 
-		assertEquals(emptyList(), test.list(BUNDLE_DOES_NOT_EXIST));
+	@Test
+	public void missingBundleVersionsTest() throws Exception {
+		assertEquals(emptySortedSet(), getIndigoRepository().versions(BUNDLE_DOES_NOT_EXIST));
 	}
 
 	@Test
 	public void missingBundlesTest() throws Exception {
-		P2Repository test = createRepository(FIRST);
-
-		assertEquals(emptyList(), test.list("*" + BUNDLE_DOES_NOT_EXIST + "*"));
+		assertEquals(emptyList(), getIndigoRepository().list("*" + BUNDLE_DOES_NOT_EXIST + "*"));
 	}
 
-	private P2Repository createRepository(String name) throws Exception {
+	private static P2Repository createRepository(String name, String location) throws Exception {
 		Map<String, String> map = new HashMap<>();
 		map.put("name", name);
-		map.put("location", "http://download.eclipse.org/releases/mars/");
+		map.put("location", location);
 
 		P2Repository repository = getService(P2RepositoryFactory.class).create((l, m) -> System.out.println(l + ": " + m));
 		repository.setProperties(map);

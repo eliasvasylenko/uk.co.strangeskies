@@ -145,6 +145,14 @@ public class FrameworkWrapperServerImpl implements FrameworkWrapperServer {
 
 	@Override
 	public synchronized void startFramework() {
+		startFrameworkImpl();
+
+		timeout.set();
+	}
+
+	private synchronized void startFrameworkImpl() {
+		timeout.stop();
+
 		if (!frameworkStarted) {
 			initialiseFrameworkFactory();
 
@@ -163,8 +171,6 @@ public class FrameworkWrapperServerImpl implements FrameworkWrapperServer {
 				throw runtimeException("Unable to start framework", e);
 			}
 		}
-
-		timeout.set();
 	}
 
 	private void initialiseFrameworkFactory() {
@@ -204,9 +210,9 @@ public class FrameworkWrapperServerImpl implements FrameworkWrapperServer {
 			try {
 				if (bundle.getHeaders().get(FRAGMENT_HOST_HEADER) == null) {
 					try {
-					bundle.start();
+						bundle.start();
 					} catch (Exception e) {
-						
+
 					}
 				}
 			} catch (Exception e) {
@@ -253,12 +259,12 @@ public class FrameworkWrapperServerImpl implements FrameworkWrapperServer {
 	@Override
 	public synchronized <T, E extends Exception> T withFramework(ThrowingSupplier<? extends T, E> action) throws E {
 		try {
-			startFramework();
+			startFrameworkImpl();
 
 			Property<T, T> result = new IdentityProperty<>();
 			result.set(action.get());
 
-			startFramework();
+			timeout.set();
 			return result.get();
 		} catch (Exception e) {
 			log.log(Level.ERROR, "Unable to perform framework action " + action, e);
