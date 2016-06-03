@@ -102,16 +102,42 @@ public class P2RepositoryTest {
 	public void findBundleVersionsTest() throws Exception {
 		Set<Version> versions = getIndigoRepository().versions(BUNDLE_EXISTS);
 
-		assertTrue(versions.contains(new Version(3, 7, 0, "v20110613")));
+		System.out.println();
+		System.out.println();
+		System.out.println();
+		System.out.println();
+		System.out.println();
+		System.out.println(versions);
+		System.out.println();
+		System.out.println();
+		System.out.println();
+		System.out.println();
+		System.out.println();
+
 		assertTrue(versions.size() > 1);
+		for (Version version : versions) {
+			assertEquals(3, version.getMajor());
+		}
 	}
 
 	@Test
 	public void findBundlesTest() throws Exception {
 		List<String> bundles = getIndigoRepository().list("*" + BUNDLE_EXISTS + "*");
 
-		assertTrue(bundles.contains(BUNDLE_EXISTS));
+		System.out.println();
+		System.out.println();
+		System.out.println();
+		System.out.println();
+		System.out.println();
+		System.out.println(bundles);
+		System.out.println();
+		System.out.println();
+		System.out.println();
+		System.out.println();
+		System.out.println();
+
 		assertTrue(bundles.size() > 1);
+		assertTrue(bundles.contains(BUNDLE_EXISTS));
 	}
 
 	@Test

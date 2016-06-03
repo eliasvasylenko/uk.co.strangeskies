@@ -28,6 +28,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -46,7 +47,9 @@ import org.eclipse.equinox.p2.metadata.expression.SimplePattern;
 import org.eclipse.equinox.p2.query.IQuery;
 import org.eclipse.equinox.p2.query.IQueryResult;
 import org.eclipse.equinox.p2.query.QueryUtil;
+import org.eclipse.equinox.p2.repository.artifact.IArtifactRepository;
 import org.eclipse.equinox.p2.repository.artifact.IArtifactRepositoryManager;
+import org.eclipse.equinox.p2.repository.metadata.IMetadataRepository;
 import org.eclipse.equinox.p2.repository.metadata.IMetadataRepositoryManager;
 import org.osgi.framework.BundleContext;
 import org.osgi.resource.Capability;
@@ -88,8 +91,8 @@ public class P2RepositoryImpl implements P2Repository, Log {
 
 	private boolean initialised;
 	private final IProvisioningAgentProvider agentProvider;
-	private IMetadataRepositoryManager metadataManager;
-	private IArtifactRepositoryManager artifactManager;
+	private IMetadataRepository metadataRepository;
+	private IArtifactRepository artifactRepository;
 
 	@SuppressWarnings("javadoc")
 	public P2RepositoryImpl(IProvisioningAgentProvider agentProvider, BundleContext bundleContext, Log log) {
@@ -124,7 +127,7 @@ public class P2RepositoryImpl implements P2Repository, Log {
 				/*
 				 * Load repository manager
 				 */
-				metadataManager = (IMetadataRepositoryManager) provisioningAgent
+				IMetadataRepositoryManager metadataManager = (IMetadataRepositoryManager) provisioningAgent
 						.getService(IMetadataRepositoryManager.SERVICE_NAME);
 				if (metadataManager == null) {
 					throw new IllegalStateException("Couldn't load metadata repository manager");
@@ -133,7 +136,7 @@ public class P2RepositoryImpl implements P2Repository, Log {
 				/*
 				 * Load artifact manager
 				 */
-				artifactManager = (IArtifactRepositoryManager) provisioningAgent
+				IArtifactRepositoryManager artifactManager = (IArtifactRepositoryManager) provisioningAgent
 						.getService(IArtifactRepositoryManager.SERVICE_NAME);
 				if (artifactManager == null) {
 					throw new IllegalStateException("Couldn't load artifact repository manager");
@@ -144,8 +147,8 @@ public class P2RepositoryImpl implements P2Repository, Log {
 				 */
 				try {
 					getLog().log(Level.INFO, "loading remote . . .");
-					metadataManager.loadRepository(metadata, progressMonitor);
-					artifactManager.loadRepository(artifact, progressMonitor);
+					metadataRepository = metadataManager.loadRepository(metadata, progressMonitor);
+					artifactRepository = artifactManager.loadRepository(artifact, progressMonitor);
 				} catch (Exception pe) {
 					throw new InvocationTargetException(pe);
 				}
@@ -265,14 +268,14 @@ public class P2RepositoryImpl implements P2Repository, Log {
 	@Override
 	public List<String> list(String pattern) {
 		initialise();
-		
+
 		if (pattern == null) {
 			pattern = "*";
 		}
 
 		getLog().log(Level.INFO, "querying repository for bundles . . .");
 		IQuery<IInstallableUnit> query = QueryUtil.createMatchQuery("id ~= $0", SimplePattern.compile(pattern));
-		IQueryResult<IInstallableUnit> result = metadataManager.query(query, progressMonitor);
+		IQueryResult<IInstallableUnit> result = metadataRepository.query(query, progressMonitor);
 
 		return stream(result.spliterator(), false).map(i -> i.getId()).distinct().collect(toList());
 	}
@@ -283,7 +286,7 @@ public class P2RepositoryImpl implements P2Repository, Log {
 
 		getLog().log(Level.INFO, "querying repository for versions . . .");
 		IQuery<IInstallableUnit> query = QueryUtil.createMatchQuery("id == $0", bsn);
-		IQueryResult<IInstallableUnit> result = metadataManager.query(query, progressMonitor);
+		IQueryResult<IInstallableUnit> result = metadataRepository.query(query, progressMonitor);
 
 		return new TreeSet<>(
 				stream(result.spliterator(), false).map(i -> new Version(i.getVersion().toString())).collect(toList()));
@@ -360,13 +363,13 @@ public class P2RepositoryImpl implements P2Repository, Log {
 	@Override
 	public String tooltip(Object... target) throws Exception {
 		// TODO Auto-generated method stub
-		return "?tooltip?";
+		return "?tooltip? " + Arrays.toString(target);
 	}
 
 	@Override
 	public String title(Object... target) throws Exception {
 		// TODO Auto-generated method stub
-		return "?title?";
+		return "?title? " + Arrays.toString(target);
 	}
 
 	@Override
