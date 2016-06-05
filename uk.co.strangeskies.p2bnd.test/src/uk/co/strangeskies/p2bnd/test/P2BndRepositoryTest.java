@@ -20,15 +20,18 @@ package uk.co.strangeskies.p2bnd.test;
 
 import static java.lang.Thread.sleep;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.Test;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.util.tracker.ServiceTracker;
 
+import aQute.bnd.version.Version;
 import uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper;
 import uk.co.strangeskies.p2.bnd.P2BndRepository;
 import uk.co.strangeskies.p2.bnd.P2BndRepositoryManager;
@@ -37,6 +40,8 @@ import uk.co.strangeskies.p2.bnd.P2BndRepositoryManager;
 public class P2BndRepositoryTest {
 	private static final int FRAMEWORK_TIMEOUT_MILLISECONDS = 1000;
 	private static final int SERVICE_TIMEOUT_MILLISECONDS = 2000;
+
+	private static final String BUNDLE_EXISTS = "org.eclipse.osgi";
 
 	private static P2BndRepositoryManager MANAGER;
 
@@ -107,6 +112,21 @@ public class P2BndRepositoryTest {
 		first.close();
 
 		first.getName();
+	}
+
+	@Test
+	public void getVersionsTest() throws Exception {
+		P2BndRepository first = test(FIRST);
+
+		Set<Version> versions = first.versions(BUNDLE_EXISTS);
+
+		assertTrue(versions.size() > 1);
+		for (Version version : versions) {
+			assertEquals(3, version.getMajor());
+			assertEquals(10, version.getMinor());
+		}
+
+		first.close();
 	}
 
 	@Test

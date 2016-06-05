@@ -71,3 +71,4 @@ Test-Cases: ${test-cases}
 	uk.co.strangeskies.p2.provider;version=snapshot,\
 	uk.co.strangeskies.p2.test;version=snapshot,\
 	uk.co.strangeskies.utilities;version=snapshot
+

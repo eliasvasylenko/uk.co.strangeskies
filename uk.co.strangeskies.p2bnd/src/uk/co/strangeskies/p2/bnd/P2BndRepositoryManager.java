@@ -48,7 +48,6 @@ public class P2BndRepositoryManager {
 			put(OSGI_CONSOLE, "");
 			put("osgi.noShutdown", "true");
 			put("eclipse.ignoreApp", "true");
-			put("osgi.bundles.defaultStartLevel", "4");
 		}
 	};
 

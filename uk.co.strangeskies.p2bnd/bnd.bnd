@@ -18,6 +18,7 @@
 #	org.apache.felix.gogo.runtime,\
 
 embedded.bundles.p2: \
+	biz.aQute.bndlib,\
 	org.apache.felix.configadmin,\
 	org.apache.felix.log,\
 	org.apache.felix.scr,\
@@ -41,7 +42,8 @@ embedded.bundles.p2: \
 	org.eclipse.equinox.registry,\
 	org.eclipse.equinox.security,\
 	org.osgi.service.metatype,\
-	org.tukaani.xz
+	org.tukaani.xz,\
+	osgi.enroute.logger.simple.provider
 
 embedded.projects.p2: \
 	uk.co.strangeskies.p2.provider,\

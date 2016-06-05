@@ -209,11 +209,7 @@ public class FrameworkWrapperServerImpl implements FrameworkWrapperServer {
 		for (Bundle bundle : bundles) {
 			try {
 				if (bundle.getHeaders().get(FRAGMENT_HOST_HEADER) == null) {
-					try {
-						bundle.start();
-					} catch (Exception e) {
-
-					}
+					bundle.start();
 				}
 			} catch (Exception e) {
 				log.log(Level.ERROR, "Unable to start bundle " + bundle, e);
@@ -278,12 +274,6 @@ public class FrameworkWrapperServerImpl implements FrameworkWrapperServer {
 
 	@Override
 	protected void finalize() throws Throwable {
-		System.out.println();
-		System.out.println();
-		System.out.println();
-		System.out.println("  finalize!");
-		System.out.println();
-		System.out.println();
 		stopFramework();
 		super.finalize();
 	}

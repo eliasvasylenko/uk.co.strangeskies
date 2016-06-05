@@ -196,13 +196,13 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 
 	@Override
 	public void setLaunchProperties(Map<String, String> properties) {
-		if (versionedPackages != null && !versionedPackages.isEmpty()) {
-			properties = new HashMap<>(properties);
+		properties = new HashMap<>(properties);
 
+		if (versionedPackages != null && !versionedPackages.isEmpty()) {
 			properties.computeIfAbsent(FRAMEWORK_SYSTEMPACKAGES_EXTRA, k -> getVersionedPackagesString());
-			properties.computeIfAbsent(FRAMEWORK_BUNDLE_PARENT, k -> FRAMEWORK_BUNDLE_PARENT_FRAMEWORK);
-			properties.computeIfAbsent(OSGI_BOOT_DELEGATION, k -> "*");
 		}
+		properties.computeIfAbsent(FRAMEWORK_BUNDLE_PARENT, k -> FRAMEWORK_BUNDLE_PARENT_FRAMEWORK);
+		properties.computeIfAbsent(OSGI_BOOT_DELEGATION, k -> "*");
 
 		getComponent().setLaunchProperties(properties);
 	}
@@ -288,7 +288,7 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 				log.log(Level.INFO, "Closing framework");
 			});
 
-			Map<String, ThrowingSupplier<InputStream, ?>> bundles = new LinkedHashMap<>();
+			LinkedHashMap<String, ThrowingSupplier<InputStream, ?>> bundles = new LinkedHashMap<>();
 			for (URL bundleJar : bundleJars) {
 				bundles.put(bundleJar.toString(), bundleJar::openStream);
 			}

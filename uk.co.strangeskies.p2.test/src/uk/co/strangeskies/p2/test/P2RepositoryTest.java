@@ -117,6 +117,7 @@ public class P2RepositoryTest {
 		assertTrue(versions.size() > 1);
 		for (Version version : versions) {
 			assertEquals(3, version.getMajor());
+			assertEquals(7, version.getMinor());
 		}
 	}
 
