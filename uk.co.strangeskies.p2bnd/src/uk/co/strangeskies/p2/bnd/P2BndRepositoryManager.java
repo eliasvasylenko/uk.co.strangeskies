@@ -37,7 +37,7 @@ import uk.co.strangeskies.p2.P2RepositoryFactory;
 
 @Component(service = P2BndRepositoryManager.class, scope = ServiceScope.BUNDLE)
 public class P2BndRepositoryManager {
-	private static final int FRAMEWORK_TIMEOUT_MILLISECONDS = 4000;
+	private static final int FRAMEWORK_TIMEOUT_MILLISECONDS = 60000;
 	private static final int SERVICE_TIMEOUT_MILLISECONDS = 4000;
 
 	@SuppressWarnings("serial")

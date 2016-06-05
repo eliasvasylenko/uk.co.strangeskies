@@ -107,6 +107,7 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 	private Set<VersionedPackage> versionedPackages;
 
 	private FrameworkWrapper component;
+	private URLClassLoader frameworkClassLoader;
 
 	/**
 	 * @param classLoader
@@ -236,7 +237,7 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 		return getComponent().isStarted();
 	}
 
-	private FrameworkWrapper getComponent() {
+	private synchronized FrameworkWrapper getComponent() {
 		if (component == null) {
 			component = create();
 			setLaunchProperties(emptyMap());
@@ -244,7 +245,7 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 		return component;
 	}
 
-	private FrameworkWrapper create() {
+	private synchronized FrameworkWrapper create() {
 		FrameworkWrapper frameworkWrapper = null;
 
 		try {
@@ -270,12 +271,11 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 			}
 
 			log.log(Level.INFO, "Creating delegating classloader to " + frameworkUrls);
-			URLClassLoader classLoader = new URLClassLoader(frameworkUrls.toArray(new URL[frameworkUrls.size()]),
-					baseClassLoader);
+			frameworkClassLoader = new URLClassLoader(frameworkUrls.toArray(new URL[frameworkUrls.size()]), baseClassLoader);
 
 			log.log(Level.INFO, "Fetching framework wrapper service loader");
 			ServiceLoader<FrameworkWrapperServer> serviceLoader = ServiceLoader.load(FrameworkWrapperServer.class,
-					classLoader);
+					frameworkClassLoader);
 
 			log.log(Level.INFO, "Loading framework wrapper service");
 			frameworkWrapper = StreamSupport.stream(serviceLoader.spliterator(), false).findAny().orElseThrow(
@@ -286,11 +286,6 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 
 			frameworkWrapper.onStop().addObserver(f -> {
 				log.log(Level.INFO, "Closing framework");
-				try {
-					classLoader.close();
-				} catch (IOException e) {
-					log.log(Level.WARN, "Unable to close class loader", e);
-				}
 			});
 
 			Map<String, ThrowingSupplier<InputStream, ?>> bundles = new LinkedHashMap<>();
@@ -311,6 +306,19 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 
 			throw e;
 		}
+	}
+
+	@Override
+	protected synchronized void finalize() throws Throwable {
+		try {
+			if (frameworkClassLoader != null) {
+				frameworkClassLoader.close();
+			}
+		} catch (IOException e) {
+			log.log(Level.WARN, "Unable to close class loader", e);
+		}
+
+		super.finalize();
 	}
 
 	@Override

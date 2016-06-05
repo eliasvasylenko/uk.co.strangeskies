@@ -145,14 +145,14 @@ public class FrameworkWrapperServerImpl implements FrameworkWrapperServer {
 
 	@Override
 	public synchronized void startFramework() {
+		timeout.stop();
+
 		startFrameworkImpl();
 
 		timeout.set();
 	}
 
 	private synchronized void startFrameworkImpl() {
-		timeout.stop();
-
 		if (!frameworkStarted) {
 			initialiseFrameworkFactory();
 
@@ -257,15 +257,19 @@ public class FrameworkWrapperServerImpl implements FrameworkWrapperServer {
 	}
 
 	@Override
-	public synchronized <T, E extends Exception> T withFramework(ThrowingSupplier<? extends T, E> action) throws E {
+	public <T, E extends Exception> T withFramework(ThrowingSupplier<? extends T, E> action) throws E {
 		try {
-			startFrameworkImpl();
+			timeout.stop();
 
-			Property<T, T> result = new IdentityProperty<>();
-			result.set(action.get());
+			synchronized (this) {
+				startFrameworkImpl();
 
-			timeout.set();
-			return result.get();
+				Property<T, T> result = new IdentityProperty<>();
+				result.set(action.get());
+
+				timeout.set();
+				return result.get();
+			}
 		} catch (Exception e) {
 			log.log(Level.ERROR, "Unable to perform framework action " + action, e);
 			throw e;
@@ -274,6 +278,12 @@ public class FrameworkWrapperServerImpl implements FrameworkWrapperServer {
 
 	@Override
 	protected void finalize() throws Throwable {
+		System.out.println();
+		System.out.println();
+		System.out.println();
+		System.out.println("  finalize!");
+		System.out.println();
+		System.out.println();
 		stopFramework();
 		super.finalize();
 	}

@@ -81,6 +81,7 @@ public class P2BndRepository implements RemoteRepositoryPlugin, Repository, Plug
 		this.manager = manager;
 		log.log(Level.INFO, "Creating P2BndRepository");
 		manager.open(this);
+		manager.getFramework().onStop().addObserver(f -> repository = null);
 	}
 
 	@Override
