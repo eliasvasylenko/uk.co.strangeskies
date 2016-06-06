@@ -120,6 +120,8 @@ public class P2BndRepositoryTest {
 
 		Set<Version> versions = first.versions(BUNDLE_EXISTS);
 
+		System.out.println(versions);
+
 		assertTrue(versions.size() > 1);
 		for (Version version : versions) {
 			assertEquals(3, version.getMajor());
