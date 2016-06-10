@@ -46,6 +46,7 @@ public class P2BndRepositoryManager {
 			put(OSGI_CLEAN, TRUE.toString());
 			put(OSGI_CLEAR_PERSISTED_STATE, TRUE.toString());
 			put(OSGI_CONSOLE, "");
+			put("osgi.debug", "tracing\\.options");
 		}
 	};
 

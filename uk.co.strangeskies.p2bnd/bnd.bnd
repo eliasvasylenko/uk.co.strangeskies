@@ -14,18 +14,32 @@
 	${ss;p2.api}
 
 embedded.bundles.p2: \
+	javax.annotation,\
+	javax.inject,\
+	org.apache.commons.codec,\
+	org.apache.commons.logging,\
 	org.apache.felix.configadmin,\
 	org.apache.felix.gogo.command,\
 	org.apache.felix.gogo.shell,\
 	org.apache.felix.gogo.runtime,\
 	org.apache.felix.log,\
 	org.apache.felix.scr,\
+	org.apache.httpcomponents.httpcore,\
+	org.apache.httpcomponents.httpclient,\
+	org.eclipse.core.contenttype,\
 	org.eclipse.core.jobs,\
 	org.eclipse.core.net,\
+	org.eclipse.core.runtime,\
+	org.eclipse.core.net.win32.x86_64,\
 	org.eclipse.ecf,\
 	org.eclipse.ecf.filetransfer,\
 	org.eclipse.ecf.identity,\
 	org.eclipse.ecf.provider.filetransfer,\
+	org.eclipse.ecf.provider.filetransfer.httpclient4,\
+	org.eclipse.ecf.provider.filetransfer.httpclient4.ssl,\
+	org.eclipse.ecf.provider.filetransfer.ssl,\
+	org.eclipse.ecf.ssl,\
+	org.eclipse.equinox.app,\
 	org.eclipse.equinox.common,\
 	org.eclipse.equinox.metatype,\
 	org.eclipse.equinox.p2.artifact.repository,\
@@ -39,8 +53,28 @@ embedded.bundles.p2: \
 	org.eclipse.equinox.preferences,\
 	org.eclipse.equinox.registry,\
 	org.eclipse.equinox.security,\
+	org.eclipse.equinox.security.win32.x86_64,\
+	org.osgi.service.event,\
 	org.osgi.service.metatype,\
 	org.tukaani.xz
+
+######### added:
+# org.eclipse.equinox.app
+# javax.annotation
+# javax.inject
+# org.eclipse.core.contenttype
+# org.eclipse.core.runtime
+# org.apache.commons.codec
+# org.apache.commons.logging
+# org.apache.httpcomponents.httpcore
+# org.apache.httpcomponents.httpclient
+# org.eclipse.ecf.provider.filetransfer.ssl
+# org.eclipse.ecf.provider.filetransfer.httpclient4.ssl
+# org.eclipse.ecf.provider.filetransfer.httpclient4.ssl
+# org.eclipse.equinox.security.win32.x86_64
+# org.eclipse.core.net.win32.x86_64
+# org.eclipse.ecf.ssl
+# org.osgi.service.event
 
 embedded.projects.p2: \
 	uk.co.strangeskies.p2.provider,\

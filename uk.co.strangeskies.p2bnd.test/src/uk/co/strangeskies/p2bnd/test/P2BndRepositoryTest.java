@@ -75,14 +75,14 @@ public class P2BndRepositoryTest {
 		}
 	}
 
-	@Test
+	//@Test
 	public void createRepositoryTest() throws Exception {
 		P2BndRepository first = test(FIRST);
 
 		first.close();
 	}
 
-	@Test
+	//@Test
 	public void createTwoRepositoriesTest() throws Exception {
 		P2BndRepository first = test(FIRST);
 		P2BndRepository second = test(SECOND);
@@ -91,7 +91,7 @@ public class P2BndRepositoryTest {
 		second.close();
 	}
 
-	@Test
+	//@Test
 	public void createRepositoryWaitReopenTest() throws Exception {
 		P2BndRepository first = test(FIRST);
 		P2BndRepository second = test(SECOND);
@@ -105,7 +105,7 @@ public class P2BndRepositoryTest {
 		first.close();
 	}
 
-	@Test(expected = IllegalStateException.class)
+	//@Test(expected = IllegalStateException.class)
 	public void useAfterCloseTest() throws Exception {
 		P2BndRepository first = test(FIRST);
 
@@ -131,7 +131,7 @@ public class P2BndRepositoryTest {
 		first.close();
 	}
 
-	@Test
+	//@Test
 	public void getRepositoryNameTest() throws Exception {
 		P2BndRepository first = test(FIRST);
 
@@ -140,7 +140,7 @@ public class P2BndRepositoryTest {
 		first.close();
 	}
 
-	@Test
+	//@Test
 	public void getTwoRepositoryNamesTest() throws Exception {
 		P2BndRepository first = test(FIRST);
 		P2BndRepository second = test(SECOND);
