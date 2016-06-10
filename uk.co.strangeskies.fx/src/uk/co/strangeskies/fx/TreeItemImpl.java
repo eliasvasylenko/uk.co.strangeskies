@@ -21,7 +21,9 @@ package uk.co.strangeskies.fx;
 import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javafx.collections.ObservableList;
 import javafx.scene.control.TreeItem;
@@ -37,6 +39,7 @@ import javafx.scene.control.TreeItem;
  *          the type of data for this tree item
  */
 public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
+	private final Map<TreeItemData<?>, TreeItemImpl<?>> childTreeItems = new HashMap<>();
 	private boolean childrenCalculated;
 
 	TreeItemImpl(TreeItemType<T> type, T data) {
@@ -78,9 +81,29 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 
 	public void rebuildChildren() {
 		if (getItemType().hasChildren(getData())) {
-			List<TreeItemData<?>> children = new ArrayList<>();
-			children.addAll(getItemType().getChildren(getData()));
-			super.getChildren().setAll(children.stream().map(i -> new TreeItemImpl<>(i)).collect(toList()));
+			List<TreeItemData<?>> childrenData = new ArrayList<>();
+			childrenData.addAll(getItemType().getChildren(getData()));
+
+			// remove outdated TreeItemImpl children
+			childTreeItems.keySet().retainAll(childrenData);
+
+			List<TreeItemImpl<?>> childrenItems = childrenData.stream().map(i -> {
+				TreeItemImpl<?> treeItem;
+
+				treeItem = childTreeItems.get(i);
+
+				if (treeItem == null) {
+					treeItem = new TreeItemImpl<>(i);
+					childTreeItems.put(i, treeItem);
+				} else if (isExpanded()) {
+					treeItem.rebuildChildren();
+				}
+
+				return treeItem;
+			}).collect(toList());
+
+			super.getChildren().setAll(childrenItems);
+
 			childrenCalculated = true;
 		}
 	}

@@ -61,4 +61,21 @@ public class TreeItemData<T> {
 
 		return text;
 	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == this)
+			return true;
+		if (!(obj instanceof TreeItemData<?>))
+			return false;
+
+		TreeItemData<?> that = (TreeItemData<?>) obj;
+
+		return this.type.equals(that.type) && this.data.equals(that.data);
+	}
+
+	@Override
+	public int hashCode() {
+		return type.hashCode() ^ data.hashCode();
+	}
 }
