@@ -77,8 +77,7 @@ embedded.bundles.p2: \
 # org.osgi.service.event
 
 embedded.projects.p2: \
-	uk.co.strangeskies.p2.provider,\
-	uk.co.strangeskies.osgi.provider
+	uk.co.strangeskies.p2.provider
 
 shaded.bundles.p2: \
 	biz.aQute.bndlib
