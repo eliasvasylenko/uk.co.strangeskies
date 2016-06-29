@@ -35,23 +35,29 @@ import java.util.function.Consumer;
  *          The type of event message to produce
  */
 public class ObservableImpl<M> implements Observable<M> {
-	private final Set<Consumer<? super M>> observers = new LinkedHashSet<>();
+	private Set<Consumer<? super M>> observers;
 
 	@Override
 	public boolean addObserver(Consumer<? super M> observer) {
-		return observers.add(observer);
+		return getObservers().add(observer);
 	}
 
 	@Override
 	public boolean removeObserver(Consumer<? super M> observer) {
-		return observers.remove(observer);
+		if (observers != null) {
+			return observers.remove(observer);
+		} else {
+			return false;
+		}
 	}
 
 	/**
 	 * Remove all observers from forwarding.
 	 */
 	public void clearObservers() {
-		observers.clear();
+		if (observers != null) {
+			observers.clear();
+		}
 	}
 
 	/**
@@ -61,8 +67,10 @@ public class ObservableImpl<M> implements Observable<M> {
 	 *          the message event to send
 	 */
 	public void fire(M item) {
-		for (Consumer<? super M> listener : new ArrayList<>(observers)) {
-			listener.accept(item);
+		if (observers != null) {
+			for (Consumer<? super M> listener : new ArrayList<>(observers)) {
+				listener.accept(item);
+			}
 		}
 	}
 
@@ -70,6 +78,10 @@ public class ObservableImpl<M> implements Observable<M> {
 	 * @return a list of all observers attached to this observable
 	 */
 	public Set<Consumer<? super M>> getObservers() {
+		if (observers == null) {
+			observers = new LinkedHashSet<>();
+		}
+
 		return observers;
 	}
 }

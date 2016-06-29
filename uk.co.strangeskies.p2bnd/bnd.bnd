@@ -62,8 +62,8 @@ Embedded-Classpath: \
 	uk.co.strangeskies.bnd,\
 	uk.co.strangeskies.osgi.frameworkwrapper.server,\
 	uk.co.strangeskies.osgi.servicewrapper,\
-	uk.co.strangeskies.utilities.text,\
-	uk.co.strangeskies.utilities.classpath,\
+	uk.co.strangeskies.text,\
+	uk.co.strangeskies.utilities.classloading,\
 	uk.co.strangeskies.utilities.collection,\
 	uk.co.strangeskies.utilities.factory,\
 	uk.co.strangeskies.utilities.flowcontrol,\

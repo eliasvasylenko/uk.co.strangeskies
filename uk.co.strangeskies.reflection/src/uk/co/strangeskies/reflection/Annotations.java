@@ -33,8 +33,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.Types.TypeParser;
-import uk.co.strangeskies.utilities.text.Parser;
-import uk.co.strangeskies.utilities.text.StringEscaper;
+import uk.co.strangeskies.text.EscapeFormatter;
+import uk.co.strangeskies.text.parsing.Parser;
 import uk.co.strangeskies.utilities.tuple.Pair;
 
 /**
@@ -81,35 +81,33 @@ public final class Annotations {
 
 		List<String> annotationProperties = new ArrayList<>();
 
-		for (Method propertyMethod : annotationType.getMethods()) {
-			if (propertyMethod.getDeclaringClass().equals(annotationType)) {
-				propertyMethod.setAccessible(true);
+		for (Method propertyMethod : annotationType.getDeclaredMethods()) {
+			propertyMethod.setAccessible(true);
 
-				Object value;
-				try {
-					value = propertyMethod.invoke(annotation);
-				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-					throw new IllegalArgumentException(e);
-				}
-				Object defaultValue = propertyMethod.getDefaultValue();
+			Object value;
+			try {
+				value = propertyMethod.invoke(annotation);
+			} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+				throw new IllegalArgumentException(e);
+			}
+			Object defaultValue = propertyMethod.getDefaultValue();
 
-				/*
-				 * For each method declared on the annotation type...
-				 */
-				boolean equal;
-				if (propertyMethod.getReturnType().isArray()) {
-					equal = Arrays.equals((Object[]) value, (Object[]) defaultValue);
-				} else {
-					equal = Objects.equals(value, defaultValue);
-				}
+			/*
+			 * For each method declared on the annotation type...
+			 */
+			boolean equal;
+			if (propertyMethod.getReturnType().isArray()) {
+				equal = Arrays.equals((Object[]) value, (Object[]) defaultValue);
+			} else {
+				equal = Objects.equals(value, defaultValue);
+			}
 
-				/*
-				 * If value is not equal to default, output:
-				 */
-				if (!equal) {
-					annotationProperties.add(new StringBuilder().append(propertyMethod.getName()).append(" = ")
-							.append(toPropertyString(value, imports)).toString());
-				}
+			/*
+			 * If value is not equal to default, output:
+			 */
+			if (!equal) {
+				annotationProperties.add(new StringBuilder().append(propertyMethod.getName()).append(" = ")
+						.append(toPropertyString(value, imports)).toString());
 			}
 		}
 
@@ -133,7 +131,7 @@ public final class Annotations {
 			StringBuilder builder = new StringBuilder();
 
 			if (String.class.isInstance(object)) {
-				builder.append('"').append(StringEscaper.java().escape(object.toString())).append('"');
+				builder.append('"').append(EscapeFormatter.java().escape(object.toString())).append('"');
 
 			} else if (Double.class.isInstance(object)) {
 				String objectString = object.toString();
@@ -188,26 +186,27 @@ public final class Annotations {
 	}
 
 	static Map<Method, Object> sanitizeProperties(Class<?> annotationClass, Map<String, Object> properties) {
+		properties = new HashMap<>(properties);
 		Map<Method, Object> castProperties = new HashMap<>();
 
-		for (String propertyName : properties.keySet()) {
-			Object propertyValue = properties.get(propertyName);
-			Method propertyMethod;
-			try {
-				propertyMethod = annotationClass.getMethod(propertyName);
-				propertyMethod.setAccessible(true);
-			} catch (NoSuchMethodException | SecurityException e) {
-				throw new TypeException("Annotation property does not exist", e);
-			}
+		for (Method method : annotationClass.getDeclaredMethods()) {
+			Object propertyValue = properties.remove(method.getName());
+			if (propertyValue != null) {
+				try {
+					propertyValue = Types.assign(propertyValue, method.getReturnType());
+				} catch (TypeException e) {
+					throw new TypeException("Annotation property " + method.getName() + " has invalid value " + propertyValue
+							+ " of class " + propertyValue.getClass(), e);
+				}
 
-			try {
-				propertyValue = Types.assign(propertyValue, propertyMethod.getReturnType());
-			} catch (TypeException e) {
-				throw new TypeException("Annotation property " + propertyName + " has invalid value " + propertyValue
-						+ " of class " + propertyValue.getClass(), e);
+				castProperties.put(method, propertyValue);
+			} else {
+				castProperties.put(method, method.getDefaultValue());
 			}
+		}
 
-			castProperties.put(propertyMethod, propertyValue);
+		if (!properties.isEmpty()) {
+			throw new TypeException("Annotation properties do not exist " + properties.keySet());
 		}
 
 		return castProperties;
@@ -247,50 +246,59 @@ public final class Annotations {
 				new InvocationHandler() {
 					@Override
 					public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-						if (method.equals(Annotation.class.getMethod("annotationType"))) {
+						if (method.getName().equals("annotationType") && method.getParameterTypes().length == 0) {
 							return annotationClass;
 						} else if (method.getName().equals("equals")
 								&& Arrays.equals(method.getParameterTypes(), new Class<?>[] { Object.class })) {
 							/*
 							 * Check equality
 							 */
-							for (Method propertyMethod : annotationClass.getMethods()) {
-								if (propertyMethod.getDeclaringClass().equals(annotationClass)) {
-									Object value = propertyMethod.invoke(proxy);
-									Object otherValue = propertyMethod.invoke(args[0]);
+							for (Method propertyMethod : annotationClass.getDeclaredMethods()) {
+								Object value = castProperties.get(proxy);
+								Object otherValue = propertyMethod.invoke(args[0]);
 
-									/*
-									 * For each method declared on the annotation type:
-									 */
-									if (propertyMethod.getReturnType().isArray()) {
-										if (!Arrays.equals((Object[]) value, (Object[]) otherValue)) {
-											/*
-											 * If it is an array, all elements must be equal
-											 */
-											return false;
-										}
-									} else if (!Objects.equals(value, otherValue)) {
+								/*
+								 * For each method declared on the annotation type:
+								 */
+								if (propertyMethod.getReturnType().isArray()) {
+									if (!Arrays.equals((Object[]) value, (Object[]) otherValue)) {
 										/*
-										 * Else the objects must be equal
+										 * If it is an array, all elements must be equal
 										 */
 										return false;
 									}
+								} else if (!Objects.equals(value, otherValue)) {
+									/*
+									 * Else the objects must be equal
+									 */
+									return false;
 								}
 							}
 							return true;
+
 						} else if (method.getName().equals("hashCode") && method.getParameterTypes().length == 0) {
 							/*
 							 * Generate hash code
 							 */
-							return 0;
+							int hashCode = 0;
+							for (Method propertyMethod : annotationClass.getDeclaredMethods()) {
+								Object value = castProperties.get(propertyMethod);
+								int nameHash = propertyMethod.getName().hashCode() * 127;
+
+								if (propertyMethod.getReturnType().isArray()) {
+									hashCode += nameHash ^ Arrays.hashCode((Object[]) value);
+								} else {
+									hashCode += nameHash ^ value.hashCode();
+								}
+							}
+							return hashCode;
+
 						} else if (method.getName().equals("toString") && method.getParameterTypes().length == 0) {
 							return Annotations.toString((Annotation) proxy);
+
 						} else if (method.getDeclaringClass().equals(annotationClass)) {
-							if (castProperties.containsKey(method)) {
-								return castProperties.get(method);
-							} else {
-								return method.getDefaultValue();
-							}
+							return castProperties.get(method);
+
 						} else {
 							return method.invoke(proxy, args);
 						}
@@ -352,7 +360,7 @@ public final class Annotations {
 					.prepend(property, (m, p) -> m.put(p.getLeft(), p.getRight())).orElse(HashMap::new);
 
 			annotation = typeParser.getRawType().prepend("@")
-					.<Class<? extends Annotation>> transform(t -> t.asSubclass(Annotation.class))
+					.<Class<? extends Annotation>>transform(t -> t.asSubclass(Annotation.class))
 					.appendTransform(propertyMap.prepend("\\(\\s*").append("\\s*\\)").orElse(Collections::emptyMap),
 							(a, m) -> Annotations.from(a, m));
 

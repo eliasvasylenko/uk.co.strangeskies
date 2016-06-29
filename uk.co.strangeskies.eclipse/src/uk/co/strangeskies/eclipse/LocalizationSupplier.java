@@ -35,25 +35,25 @@ import org.osgi.service.component.annotations.Reference;
 
 import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.Types;
-import uk.co.strangeskies.utilities.text.LocalizationException;
-import uk.co.strangeskies.utilities.text.LocalizedText;
-import uk.co.strangeskies.utilities.text.Localizer;
+import uk.co.strangeskies.text.properties.Properties;
+import uk.co.strangeskies.text.properties.PropertyLoader;
+import uk.co.strangeskies.text.properties.PropertyLoaderException;
 
 /**
  * Supplier for Eclipse DI contexts, to provide localisation implementations of
- * a requested type via a {@link Localizer}.
+ * a requested type via a {@link PropertyLoader}.
  *
  * @since 1.2
  */
 @Component(service = ExtendedObjectSupplier.class, property = "dependency.injection.annotation:String=uk.co.strangeskies.eclipse.Localize", immediate = true)
 public class LocalizationSupplier extends ExtendedObjectSupplier {
 	@Reference
-	Localizer generalLocalizer;
+	PropertyLoader generalLocalizer;
 	private LocalizationSupplierText text;
 
 	@Activate
 	void activate() {
-		text = generalLocalizer.getLocalization(LocalizationSupplierText.class);
+		text = generalLocalizer.getProperties(LocalizationSupplierText.class);
 	}
 
 	@Override
@@ -64,24 +64,24 @@ public class LocalizationSupplier extends ExtendedObjectSupplier {
 			if (validateAccessorType(accessor)) {
 				return localizeAccessor(requestor, (Class<?>) accessor);
 			} else {
-				throw new LocalizationException(text.illegalInjectionTarget());
+				throw new PropertyLoaderException(text.illegalInjectionTarget());
 			}
-		} catch (LocalizationException e) {
+		} catch (PropertyLoaderException e) {
 			throw e;
 		} catch (Exception e) {
-			throw new LocalizationException(text.unexpectedError(), e);
+			throw new PropertyLoaderException(text.unexpectedError(), e);
 		}
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T extends LocalizedText<T>> Object localizeAccessor(IRequestor requestor, Class<?> accessor) {
+	private <T extends Properties<T>> Object localizeAccessor(IRequestor requestor, Class<?> accessor) {
 		try {
 		BundleContext context = FrameworkUtil.getBundle(accessor).getBundleContext();
 
-		ServiceReference<Localizer> localizerServiceRererence = context.getServiceReference(Localizer.class);
-		Localizer localizer = context.getService(localizerServiceRererence);
+		ServiceReference<PropertyLoader> localizerServiceRererence = context.getServiceReference(PropertyLoader.class);
+		PropertyLoader localizer = context.getService(localizerServiceRererence);
 
-		T localization = localizer.getLocalization((Class<T>) accessor);
+		T localization = localizer.getProperties((Class<T>) accessor);
 
 		context.addServiceListener(new ServiceListener() {
 			@Override
@@ -100,10 +100,10 @@ public class LocalizationSupplier extends ExtendedObjectSupplier {
 	}
 
 	private boolean validateAccessorType(Type accessor) {
-		if (!(accessor instanceof Class) || !LocalizedText.class.isAssignableFrom((Class<?>) accessor))
+		if (!(accessor instanceof Class) || !Properties.class.isAssignableFrom((Class<?>) accessor))
 			return false;
 
-		List<Type> accessorParameters = TypeToken.over(accessor).resolveSupertypeParameters(LocalizedText.class)
+		List<Type> accessorParameters = TypeToken.over(accessor).resolveSupertypeParameters(Properties.class)
 				.getAllTypeArgumentsList();
 
 		if (accessorParameters.size() != 1)

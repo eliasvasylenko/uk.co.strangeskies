@@ -21,20 +21,20 @@ package uk.co.strangeskies.eclipse;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
-import uk.co.strangeskies.utilities.text.LocalizedString;
-import uk.co.strangeskies.utilities.text.LocalizedText;
+import uk.co.strangeskies.text.properties.Localized;
+import uk.co.strangeskies.text.properties.Properties;
 
 /**
  * Text resource accessor for Eclipse OSGi utilities
  * 
  * @author Elias N Vasylenko
  */
-public interface ObservableServiceSupplierText extends LocalizedText<ObservableServiceSupplierText> {
+public interface ObservableServiceSupplierText extends Properties<ObservableServiceSupplierText> {
 	/**
 	 * @return invalid type was annotated with {@link ObservableService} for
 	 *         service collection injection
 	 */
-	default LocalizedString illegalInjectionTarget() {
+	default Localized illegalInjectionTarget() {
 		return illegalInjectionTarget(ObservableService.class, ObservableList.class, ObservableSet.class,
 				ObservableValue.class);
 	}
@@ -53,11 +53,11 @@ public interface ObservableServiceSupplierText extends LocalizedText<ObservableS
 	 *         service collection injection
 	 */
 	@SuppressWarnings("rawtypes")
-	LocalizedString illegalInjectionTarget(Class<ObservableService> observableService, Class<ObservableList> list,
+	Localized illegalInjectionTarget(Class<ObservableService> observableService, Class<ObservableList> list,
 			Class<ObservableSet> set, Class<ObservableValue> value);
 
 	/**
 	 * @return an unexpected error occurred
 	 */
-	LocalizedString unexpectedError();
+	Localized unexpectedError();
 }

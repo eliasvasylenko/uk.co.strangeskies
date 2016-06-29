@@ -29,7 +29,8 @@ import uk.co.strangeskies.mathematics.expression.collection.ExpressionSetDecorat
 import uk.co.strangeskies.mathematics.expression.collection.SortedExpressionSet;
 
 /**
- * TODO
+ * An expression which is dependent upon the evaluation of a number of other
+ * expressions.
  * 
  * @author Elias N Vasylenko
  * @param <S>

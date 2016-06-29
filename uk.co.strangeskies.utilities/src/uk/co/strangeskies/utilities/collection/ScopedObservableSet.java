@@ -31,7 +31,7 @@ import uk.co.strangeskies.utilities.Self;
 import uk.co.strangeskies.utilities.factory.Factory;
 
 /**
- * TODO
+ * 
  * 
  * @author Elias N Vasylenko
  * @param <S>

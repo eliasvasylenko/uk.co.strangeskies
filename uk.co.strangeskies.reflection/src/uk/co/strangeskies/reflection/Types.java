@@ -41,10 +41,10 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.ParameterizedTypes.ParameterizedTypeImpl;
+import uk.co.strangeskies.text.parsing.Parser;
 import uk.co.strangeskies.utilities.Isomorphism;
 import uk.co.strangeskies.utilities.collection.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.MultiMap;
-import uk.co.strangeskies.utilities.text.Parser;
 
 /**
  * A collection of general utility methods relating to the Java type system.

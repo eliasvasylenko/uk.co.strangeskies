@@ -20,8 +20,8 @@ package uk.co.strangeskies.osgi;
 
 import java.util.Locale;
 
-import uk.co.strangeskies.utilities.text.LocalizedRuntimeException;
-import uk.co.strangeskies.utilities.text.LocalizedString;
+import uk.co.strangeskies.text.properties.Localized;
+import uk.co.strangeskies.text.properties.LocalizedRuntimeException;
 
 /**
  * A localised exception class for dealing with general service wiring and
@@ -42,7 +42,7 @@ public class ServiceWiringException extends LocalizedRuntimeException {
 	 * @param cause
 	 *          the cause
 	 */
-	protected ServiceWiringException(LocalizedString message, Locale developerLocale, Throwable cause) {
+	protected ServiceWiringException(Localized message, Locale developerLocale, Throwable cause) {
 		super(message, developerLocale, cause);
 	}
 
@@ -54,7 +54,7 @@ public class ServiceWiringException extends LocalizedRuntimeException {
 	 * @param developerLocale
 	 *          the developer's locale
 	 */
-	protected ServiceWiringException(LocalizedString message, Locale developerLocale) {
+	protected ServiceWiringException(Localized message, Locale developerLocale) {
 		super(message, developerLocale);
 	}
 
@@ -66,7 +66,7 @@ public class ServiceWiringException extends LocalizedRuntimeException {
 	 * @param cause
 	 *          the cause
 	 */
-	public ServiceWiringException(LocalizedString message, Throwable cause) {
+	public ServiceWiringException(Localized message, Throwable cause) {
 		super(message, cause);
 	}
 
@@ -76,7 +76,7 @@ public class ServiceWiringException extends LocalizedRuntimeException {
 	 * @param message
 	 *          the localised message string
 	 */
-	public ServiceWiringException(LocalizedString message) {
+	public ServiceWiringException(Localized message) {
 		super(message);
 	}
 }

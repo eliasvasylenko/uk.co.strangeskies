@@ -24,7 +24,6 @@ import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
-import static uk.co.strangeskies.utilities.classpath.ManifestUtilities.parseAttributes;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -48,12 +47,13 @@ import java.util.stream.StreamSupport;
 
 import uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper;
 import uk.co.strangeskies.osgi.frameworkwrapper.server.FrameworkWrapperServer;
+import uk.co.strangeskies.text.manifest.Attribute;
+import uk.co.strangeskies.text.manifest.AttributeProperty;
+import uk.co.strangeskies.text.manifest.ManifestUtilities;
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Log.Level;
 import uk.co.strangeskies.utilities.Observable;
-import uk.co.strangeskies.utilities.classpath.Attribute;
-import uk.co.strangeskies.utilities.classpath.AttributeProperty;
-import uk.co.strangeskies.utilities.classpath.FilteringClassLoader;
+import uk.co.strangeskies.utilities.classloading.FilteringClassLoader;
 import uk.co.strangeskies.utilities.function.ThrowingConsumer;
 import uk.co.strangeskies.utilities.function.ThrowingFunction;
 import uk.co.strangeskies.utilities.function.ThrowingRunnable;
@@ -145,7 +145,7 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 		if (packageVersionsString == null)
 			return emptySet();
 
-		List<Attribute> attributes = parseAttributes(packageVersionsString);
+		List<Attribute> attributes = ManifestUtilities.parseAttributes(packageVersionsString);
 
 		return attributes.stream().map(a -> {
 			AttributeProperty<?> property = a.properties().get(VERSION_PROPERTY);

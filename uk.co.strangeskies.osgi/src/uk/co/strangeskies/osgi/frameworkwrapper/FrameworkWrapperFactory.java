@@ -20,7 +20,7 @@ package uk.co.strangeskies.osgi.frameworkwrapper;
 
 import java.util.jar.Manifest;
 
-import uk.co.strangeskies.utilities.classpath.ManifestUtilities;
+import uk.co.strangeskies.text.manifest.ManifestUtilities;
 
 /**
  * A simple interface for constructing a framework wrapper from a given manifest

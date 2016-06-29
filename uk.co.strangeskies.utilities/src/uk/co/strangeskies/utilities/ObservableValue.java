@@ -18,6 +18,8 @@
  */
 package uk.co.strangeskies.utilities;
 
+import java.util.function.Consumer;
+
 /**
  * A value which can be {@link #get() fetched} and observed for updates and
  * {@link #changes() changes}.
@@ -51,4 +53,31 @@ public interface ObservableValue<T> extends Observable<T> {
 	 * @return an observable over changes to the value
 	 */
 	Observable<Change<T>> changes();
+
+	/**
+	 * @param value
+	 *          the immutable value to create an observable over
+	 * @return an observable over the given value which never changes or fires
+	 *         events
+	 */
+	static <T> ObservableValue<T> immutable(T value) {
+		return (ImmutableObservableValue<T>) () -> value;
+	}
+}
+
+interface ImmutableObservableValue<T> extends ObservableValue<T> {
+	@Override
+	default boolean addObserver(Consumer<? super T> observer) {
+		return true;
+	}
+
+	@Override
+	default boolean removeObserver(Consumer<? super T> observer) {
+		return true;
+	}
+
+	@Override
+	default Observable<Change<T>> changes() {
+		return Observable.immutable();
+	}
 }

@@ -31,9 +31,9 @@ import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
 
 import uk.co.strangeskies.osgi.LocaleManagerServiceConstants;
+import uk.co.strangeskies.text.properties.LocaleManager;
+import uk.co.strangeskies.text.properties.LocaleProvider;
 import uk.co.strangeskies.utilities.Observable;
-import uk.co.strangeskies.utilities.text.LocaleManager;
-import uk.co.strangeskies.utilities.text.LocaleProvider;
 
 /**
  * A locale manager configurable via the config admin service.

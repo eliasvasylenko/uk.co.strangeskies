@@ -1,0 +1,97 @@
+/*
+ * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@gmail.com>
+ *
+ * This file is part of uk.co.strangeskies.text.
+ *
+ * uk.co.strangeskies.text is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * uk.co.strangeskies.text is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with uk.co.strangeskies.text.  If not, see <http://www.gnu.org/licenses/>.
+ */
+package uk.co.strangeskies.text.properties;
+
+import java.lang.reflect.Type;
+import java.util.Locale;
+
+/**
+ * A {@link Properties} interface to provide localized texts for use by the
+ * {@link PropertyLoader} class itself, such as for reporting errors for
+ * improperly structured localisation classes, etc.
+ * <p>
+ * And implementation of this interface should be generated via
+ * {@link PropertyLoader#getProperties(Class)}.
+ * 
+ * @author Elias N Vasylenko
+ */
+@PropertyConfiguration(resource = "OSGI-INF.l10n.bundle")
+public interface PropertyLoaderProperties extends Properties<PropertyLoaderProperties> {
+	/**
+	 * Load the property with the key {@code property.loader.must.be.interface}.
+	 * 
+	 * @param accessor
+	 *          the accessor to localise
+	 * @return the accessor class must be an interface
+	 */
+	Localized<String> mustBeInterface(Class<?> accessor);
+
+	/**
+	 * Load the property with the key {@code property.loader.illegal.return.type}.
+	 * 
+	 * @param type
+	 *          the type of the property to parse
+	 * @param key
+	 *          the key for the value with the illegal type
+	 * @return the method must return the expected type
+	 */
+	Localized<String> illegalReturnType(Type type, String key);
+
+	/**
+	 * Load the property with the key
+	 * {@code property.loader.translation.not.found.substitution}. This should be
+	 * locale independent.
+	 * 
+	 * @param key
+	 *          the key to find a translation for
+	 * @return substitution when no translation is found for the given key
+	 */
+	String translationNotFoundSubstitution(String key);
+
+	/**
+	 * Load the property with the key
+	 * {@code property.loader.translation.not.found.message}.
+	 * 
+	 * @param key
+	 *          the method to find a translation for
+	 * @return no translation for the given method
+	 */
+	Localized<String> translationNotFoundMessage(String key);
+
+	/**
+	 * Load the property with the key {@code property.loader.locale.changed}.
+	 * 
+	 * @param manager
+	 *          manager
+	 * @param locale
+	 *          the new locale
+	 * @return locale has been changed for manager
+	 */
+	Localized<String> localeChanged(LocaleProvider manager, Locale locale);
+
+	/**
+	 * Load the property with the key
+	 * {@code property.loader.cannot.instantiate.strategy}.
+	 * 
+	 * @param strategy
+	 *          the requested strategy
+	 * @return cannot get an instance of the given resource strategy
+	 */
+	Localized<String> cannotInstantiateStrategy(Class<? extends PropertyResourceStrategy> strategy);
+}
