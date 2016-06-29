@@ -1,0 +1,4 @@
+org.eclipse.osgi/debug=true
+org.eclipse.osgi/debug/loader=true
+org.eclipse.osgi/trace/classLoading=true
+org.eclipse.osgi/monitor/classes=true

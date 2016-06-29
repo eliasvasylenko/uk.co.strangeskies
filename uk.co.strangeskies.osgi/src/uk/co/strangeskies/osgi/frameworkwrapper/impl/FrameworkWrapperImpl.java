@@ -203,6 +203,10 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 		}
 		properties.computeIfAbsent(FRAMEWORK_BUNDLE_PARENT, k -> FRAMEWORK_BUNDLE_PARENT_FRAMEWORK);
 		properties.computeIfAbsent(OSGI_BOOT_DELEGATION, k -> "*");
+		properties.computeIfAbsent("osgi.parentClassloader", k -> "fwk");
+		properties.computeIfAbsent("osgi.contextClassLoaderParent", k -> "fwk");
+		properties.computeIfAbsent("osgi.framework.useSystemProperties", k -> "false");
+		properties.computeIfAbsent("osgi.configuration.cascaded", k -> "false");
 
 		getComponent().setLaunchProperties(properties);
 	}
