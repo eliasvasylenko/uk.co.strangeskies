@@ -23,6 +23,14 @@ import java.util.List;
 import uk.co.strangeskies.reflection.TypeParameter;
 import uk.co.strangeskies.reflection.TypeToken;
 
+/**
+ * A type of {@link TreeItemData} for a {@link ModularTreeView}.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <T>
+ *          the type of the tree item data
+ */
 public interface TreeItemType<T> {
 	default TypeToken<T> getDataType() {
 		return TypeToken.over(getClass()).resolveSupertypeParameters(TreeItemType.class)

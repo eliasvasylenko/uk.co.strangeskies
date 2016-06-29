@@ -21,6 +21,7 @@ package uk.co.strangeskies.fx;
 import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -80,6 +81,8 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 	}
 
 	public void rebuildChildren() {
+		List<TreeItemImpl<?>> childrenItems;
+
 		if (getItemType().hasChildren(getData())) {
 			List<TreeItemData<?>> childrenData = new ArrayList<>();
 			childrenData.addAll(getItemType().getChildren(getData()));
@@ -87,10 +90,8 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 			// remove outdated TreeItemImpl children
 			childTreeItems.keySet().retainAll(childrenData);
 
-			List<TreeItemImpl<?>> childrenItems = childrenData.stream().map(i -> {
-				TreeItemImpl<?> treeItem;
-
-				treeItem = childTreeItems.get(i);
+			childrenItems = childrenData.stream().map(i -> {
+				TreeItemImpl<?> treeItem = childTreeItems.get(i);
 
 				if (treeItem == null) {
 					treeItem = new TreeItemImpl<>(i);
@@ -101,11 +102,15 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 
 				return treeItem;
 			}).collect(toList());
+		} else {
+			childTreeItems.clear();
 
-			super.getChildren().setAll(childrenItems);
-
-			childrenCalculated = true;
+			childrenItems = Collections.emptyList();
 		}
+
+		super.getChildren().setAll(childrenItems);
+
+		childrenCalculated = true;
 	}
 
 	@Override
