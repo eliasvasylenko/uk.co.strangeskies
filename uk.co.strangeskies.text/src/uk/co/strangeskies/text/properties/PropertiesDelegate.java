@@ -21,11 +21,11 @@ package uk.co.strangeskies.text.properties;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableSet;
+import static uk.co.strangeskies.text.properties.PropertyConfiguration.UNSPECIFIED_KEY_SPLIT_STRING;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Proxy;
@@ -38,12 +38,16 @@ import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import uk.co.strangeskies.text.CamelCaseFormatter;
+import uk.co.strangeskies.text.CamelCaseFormatter.UnformattingCase;
 import uk.co.strangeskies.text.parsing.Parser;
+import uk.co.strangeskies.text.properties.PropertyConfiguration.Case;
 import uk.co.strangeskies.text.properties.PropertyLoaderImpl.MethodSignature;
 import uk.co.strangeskies.utilities.Log.Level;
 import uk.co.strangeskies.utilities.ObservableImpl;
@@ -67,14 +71,17 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 	 */
 	class LocalizedPropertyImpl<T> extends ObservablePropertyImpl<T, T> implements Localized<T>, Consumer<A> {
 		private final String key;
+		private final ResourceBundle bundle;
 		private final Class<T> propertyClass;
 		private final MethodSignature signature;
 		private final List<Object> arguments;
 
-		public LocalizedPropertyImpl(String key, Class<T> propertyClass, MethodSignature signature, List<?> arguments) {
+		public LocalizedPropertyImpl(String key, ResourceBundle bundle, Class<T> propertyClass, MethodSignature signature,
+				List<?> arguments) {
 			super((r, t) -> r, Objects::equals, null);
 
-			this.key = "";
+			this.key = key;
+			this.bundle = bundle;
 			this.propertyClass = propertyClass;
 			this.signature = signature;
 			this.arguments = new ArrayList<>(arguments);
@@ -84,33 +91,11 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 			PropertiesDelegate.this.addWeakObserver(this);
 		}
 
-		@SuppressWarnings("unchecked")
 		private synchronized void updateText() {
-			String valueString = loadTranslation(key);
-
-			T value = getClassParser(key, propertyClass).parse(valueString).instantiate(arguments).orElse(null);
-
-			if (value == null) {
-				if (source.getAccessor().equals(PropertyLoaderProperties.class)) {
-					try {
-						value = ((Localized<T>) signature.method().invoke(loader.getText(), arguments)).get();
-					} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-						/*
-						 * 
-						 * 
-						 * TODO proper error message.....
-						 * 
-						 * 
-						 * 
-						 * 
-						 * 
-						 * 
-						 * 
-						 */
-						throw new RuntimeException(e);
-					}
-				}
-			}
+			PropertyProvider<T> provider = getClassProvider(key, propertyClass);
+			PropertyValue<T> propertyValue = loadValue(bundle, key, provider);
+			Optional<T> instantiatedValue = propertyValue.instantiate(arguments);
+			T value = instantiatedValue.orElse(null);
 
 			set(value);
 		}
@@ -169,36 +154,32 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 	}
 
 	private final PropertyLoaderImpl loader;
-	private final PropertyAccessorConfiguration<A> source;
+	private final PropertyResourceConfiguration<A> source;
 	private final A proxy;
 
-	private PropertyResourceBundle bundle;
-
-	private final Map<MethodSignature, PropertyValue<?>> cache = new ConcurrentHashMap<>();
+	private final Map<PropertyResourceConfiguration<?>, PropertyResourceBundle> bundleCache = new ConcurrentHashMap<>();
+	private final Map<MethodSignature, PropertyValue<?>> valueCache = new ConcurrentHashMap<>();
 
 	private final Consumer<Locale> observer;
 
-	PropertiesDelegate(PropertyLoaderImpl localizer, PropertyAccessorConfiguration<A> source) {
+	PropertiesDelegate(PropertyLoaderImpl loader, PropertyResourceConfiguration<A> source) {
 		this.source = source;
 
 		if (!source.getAccessor().isInterface()) {
-			throw localizer.log(Level.ERROR,
-					new PropertyLoaderException(localizer.getText().mustBeInterface(source.getAccessor())));
+			throw loader.log(Level.ERROR,
+					new PropertyLoaderException(loader.getText().mustBeInterface(source.getAccessor())));
 		}
-
-		this.loader = localizer;
-		PropertyResourceStrategy strategy = localizer.getResourceStrategyInstance(source.getConfiguration().strategy());
-		this.bundle = strategy.findLocalizedResourceBundle(getLocale(), source);
+		this.loader = loader;
 
 		proxy = createProxy(source.getAccessor());
 
 		initialize(source.getAccessor());
 
 		observer = l -> {
-			this.bundle = this.bundle.withLocale(l);
+			bundleCache.replaceAll((c, b) -> b.withLocale(l));
 			fire(this.proxy);
 		};
-		localizer.locale().addWeakObserver(observer);
+		loader.locale().addWeakObserver(observer);
 	}
 
 	private void initialize(Class<A> accessor) {
@@ -211,7 +192,14 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 		}
 	}
 
-	Object getValue(MethodSignature signature, Object... arguments) {
+	private ResourceBundle getBundle(PropertyResourceConfiguration<?> configuration) {
+		return bundleCache.computeIfAbsent(configuration, c -> {
+			PropertyResourceStrategy strategy = loader.getResourceStrategyInstance(source.getConfiguration().strategy());
+			return strategy.findLocalizedResourceBundle(getLocale(), source);
+		});
+	}
+
+	private Object getValue(MethodSignature signature, Object... arguments) {
 		List<?> argumentList;
 		if (arguments == null) {
 			argumentList = emptyList();
@@ -219,31 +207,92 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 			argumentList = asList(arguments);
 		}
 
-		PropertyValue<?> value = cache.computeIfAbsent(signature, k -> createValue(k));
+		PropertyValue<?> value = valueCache.computeIfAbsent(signature, k -> createValue(k));
 
-		return value.instantiate(argumentList);
+		return value.instantiate(argumentList).orElse(null);
 	}
 
 	private PropertyValue<?> createValue(MethodSignature signature) {
-		PropertyAccessorConfiguration<A> source = this.source;
+		PropertyResourceConfiguration<A> source;
 		PropertyConfiguration configuration = signature.method().getAnnotation(PropertyConfiguration.class);
 		if (configuration != null) {
-			source = source.derive(configuration);
+			source = this.source.derive(configuration);
+		} else {
+			source = this.source;
 		}
 
-		String key = createKey(source, signature);
-
-		return createValue(source, signature, key);
+		try {
+			return arguments -> (Optional<Object>) createValue(source, signature, arguments);
+		} catch (Exception e) {
+			if (source.getAccessor().equals(PropertyLoaderProperties.class)) {
+				return arguments -> {
+					try {
+						return Optional.of(signature.method().invoke(loader.getText(), arguments.toArray()));
+					} catch (Exception e2) {
+						/*
+						 * TODO handle better
+						 */
+						throw new RuntimeException(e2);
+					}
+				};
+			} else {
+				throw e;
+			}
+		}
 	}
 
-	private String createKey(PropertyAccessorConfiguration<A> source, MethodSignature signature) {
-		return null;
+	private String getKey(PropertyResourceConfiguration<A> source, MethodSignature signature, List<?> arguments) {
+		String key = source.getConfiguration().key();
+		if (key.equals(PropertyConfiguration.UNSPECIFIED_KEY)) {
+			key = PropertyConfiguration.QUALIFIED_SCOPED;
+		}
+
+		Object[] substitution = new Object[arguments.size() + 3];
+		substitution[0] = formatKeyComponent(source, signature.getClass().getPackage().getName());
+		substitution[1] = formatKeyComponent(source, signature.getClass().getSimpleName());
+		substitution[2] = formatKeyComponent(source, signature.method().getName());
+		int i = 3;
+		for (Object argument : arguments) {
+			substitution[i++] = argument;
+		}
+
+		return String.format(key, substitution);
 	}
 
-	private PropertyValue<?> createValue(PropertyAccessorConfiguration<A> source, MethodSignature signature, String key) {
+	private Object formatKeyComponent(PropertyResourceConfiguration<A> source, String name) {
+		String splitString = source.getConfiguration().keySplitString();
+		if (!splitString.equals("") && !splitString.equals(UNSPECIFIED_KEY_SPLIT_STRING)) {
+			new CamelCaseFormatter(splitString, false, UnformattingCase.PRESERVED);
+		}
+
+		Case keyCase = source.getConfiguration().keyCase();
+		if (keyCase == Case.LOWER) {
+			splitString = splitString.toLowerCase();
+		} else if (keyCase == Case.UPPER) {
+			splitString = splitString.toUpperCase();
+		}
+
+		return splitString;
+	}
+
+	private <T> PropertyValue<T> loadValue(ResourceBundle bundle, String key, PropertyProvider<T> provider) {
+		try {
+			return provider.getParser().parse(bundle.getString(key));
+		} catch (MissingResourceException e) {
+			loader.log(Level.WARN, new PropertyLoaderException(loader.getText().translationNotFoundMessage(key), e));
+		}
+
+		return provider.getDefault(key);
+	}
+
+	private Optional<?> createValue(PropertyResourceConfiguration<A> source, MethodSignature signature,
+			List<?> arguments) {
+		String key = getKey(source, signature, arguments);
+
 		Type propertyType = signature.method().getGenericReturnType();
-
 		Class<?> propertyClass = getPropertyClass(key, propertyType);
+
+		ResourceBundle bundle = getBundle(source);
 
 		if (Properties.class.isAssignableFrom(propertyClass)) {
 			/*
@@ -254,32 +303,46 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 					.derive(signature.method().getAnnotatedReturnType().getAnnotation(PropertyConfiguration.class))
 					.getConfiguration();
 
-			return getPropertiesUnsafe(propertyClass, configuration);
-
-		} else if (List.class.equals(propertyClass)) {
-			return getListParser(key, getElementClass(key, propertyType)).parse(loadTranslation(key));
+			return Optional.of(getPropertiesUnsafe(propertyClass, configuration));
 
 		} else if (Localized.class.equals(propertyClass)) {
-			return a -> Optional.of(new LocalizedPropertyImpl<>(key, getElementClass(key, propertyType), signature, a));
+			return Optional
+					.of(new LocalizedPropertyImpl<>(key, bundle, getElementClass(key, propertyType), signature, arguments));
+
+		} else if (List.class.equals(propertyClass)) {
+			try {
+				return getListParser(key, getElementClass(key, propertyType)).parse(bundle.getString(key))
+						.instantiate(arguments);
+			} catch (MissingResourceException e) {
+				loader.log(Level.WARN, new PropertyLoaderException(loader.getText().translationNotFoundMessage(key), e));
+
+				return Optional.of(emptyList());
+			}
 
 		} else {
-			return getClassParser(key, propertyClass).parse(loadTranslation(key));
+			PropertyProvider<?> provider = getClassProvider(key, propertyClass);
+
+			return loadValue(bundle, key, provider).instantiate(arguments);
 		}
 	}
 
 	private Parser<PropertyValue<List<?>>> getListParser(String key, Class<?> propertyClass) {
-		return Parser.list(getClassParser(key, propertyClass), "\\s*,\\s*")
+		return Parser.list(getClassProvider(key, propertyClass).getParser(), "\\s*,\\s*")
 				.transform(list -> arguments -> Optional.of(list.stream().map(element -> element.instantiate(arguments))
 						.filter(Optional::isPresent).map(Optional::get).collect(Collectors.toList())));
 	}
 
-	private <T> Parser<PropertyValue<T>> getClassParser(String key, Class<T> propertyClass) {
+	private <T> PropertyProvider<T> getClassProvider(String key, Class<T> propertyClass) {
 		/*
 		 * get parser for class
 		 */
 		List<PropertyProvider<T>> providers = loader.getProviders(propertyClass);
 
-		return providers.get(0).getParser();
+		/*
+		 * TODO aggregate defaults and parsers into one...
+		 */
+
+		return providers.get(0);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -308,16 +371,6 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 		}
 
 		return elementClass;
-	}
-
-	private String loadTranslation(String key) {
-		try {
-			return bundle.getString(key);
-		} catch (MissingResourceException e) {
-			loader.log(Level.WARN, new PropertyLoaderException(loader.getText().translationNotFoundMessage(key), e));
-		}
-
-		return null;
 	}
 
 	@Override

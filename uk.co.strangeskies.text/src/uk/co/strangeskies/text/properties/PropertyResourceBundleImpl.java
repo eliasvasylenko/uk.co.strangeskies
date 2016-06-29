@@ -2,7 +2,6 @@ package uk.co.strangeskies.text.properties;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.LinkedHashSet;
@@ -18,17 +17,12 @@ public class PropertyResourceBundleImpl extends PropertyResourceBundle {
 	private final List<ResourceBundle> bundles;
 
 	protected PropertyResourceBundleImpl(Locale locale, PropertyResourceStrategy strategy,
-			Collection<? extends PropertyAccessorConfiguration<?>> configurations) {
-		super(locale, strategy, configurations);
+			PropertyResourceConfiguration<?> configuration) {
+		super(locale, strategy, configuration);
 
 		bundles = new ArrayList<>();
 
-		Set<PropertyResource> resources = new LinkedHashSet<>();
-
-		for (PropertyAccessorConfiguration<?> configuration : configurations) {
-			resources.addAll(getResources(configuration));
-		}
-
+		Set<PropertyResource> resources = new LinkedHashSet<>(getResources(configuration));
 		for (PropertyResource resource : resources) {
 			try {
 				bundles.add(ResourceBundle.getBundle(resource.getLocation(), locale, resource.getClassLoader()));
@@ -37,19 +31,18 @@ public class PropertyResourceBundleImpl extends PropertyResourceBundle {
 
 		if (bundles.isEmpty()) {
 			throw new MissingResourceException("Cannot find resources for " + locale + " in any of " + resources,
-					configurations.toString(), "");
+					configuration.toString(), "");
 		}
 	}
 
-	protected List<PropertyResource> getResources(PropertyAccessorConfiguration<?> accessorConfiguration) {
+	protected List<PropertyResource> getResources(PropertyResourceConfiguration<?> accessorConfiguration) {
 		String resource = accessorConfiguration.getConfiguration().resource();
 
 		if (resource.equals(PropertyConfiguration.UNSPECIFIED_RESOURCE)) {
 			resource = getDefaultResource(accessorConfiguration.getAccessor());
 		}
 
-		return Arrays.asList(new PropertyResource(accessorConfiguration.getAccessor().getClassLoader(),
-				accessorConfiguration.getConfiguration().resource()));
+		return Arrays.asList(new PropertyResource(accessorConfiguration.getAccessor().getClassLoader(), resource));
 	}
 
 	protected String getDefaultResource(Class<?> accessor) {

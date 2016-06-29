@@ -18,7 +18,6 @@
  */
 package uk.co.strangeskies.text.properties;
 
-import java.util.List;
 import java.util.Locale;
 
 /**
@@ -35,8 +34,8 @@ public class DefaultPropertyResourceStrategy implements PropertyResourceStrategy
 
 	@Override
 	public PropertyResourceBundle findLocalizedResourceBundle(Locale initialLocale,
-			List<? extends PropertyAccessorConfiguration<?>> resourceDescription) {
-		return new PropertyResourceBundleImpl(initialLocale, this, resourceDescription);
+			PropertyResourceConfiguration<?> resourceConfiguration) {
+		return new PropertyResourceBundleImpl(initialLocale, this, resourceConfiguration);
 	}
 
 	/**

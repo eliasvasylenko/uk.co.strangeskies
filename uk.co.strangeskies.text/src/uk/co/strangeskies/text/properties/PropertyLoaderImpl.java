@@ -27,7 +27,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.text.parsing.Parser;
@@ -79,8 +81,9 @@ class PropertyLoaderImpl implements PropertyLoader {
 		}
 	}
 
+	private final Map<Class<? extends PropertyResourceStrategy>, PropertyResourceStrategy> resourceStrategies;
 	private final Set<PropertyProvider<?>> propertyProviders;
-	private final ComputingMap<PropertyAccessorConfiguration<?>, Properties<?>> localizationCache;
+	private final ComputingMap<PropertyResourceConfiguration<?>, Properties<?>> localizationCache;
 
 	private final LocaleProvider locale;
 	private Log log;
@@ -96,14 +99,16 @@ class PropertyLoaderImpl implements PropertyLoader {
 	 *          the log for localisation
 	 */
 	public PropertyLoaderImpl(LocaleProvider locale, Log log) {
+		resourceStrategies = new ConcurrentHashMap<>();
+		resourceStrategies.put(DefaultPropertyResourceStrategy.class, DefaultPropertyResourceStrategy.getInstance());
 		propertyProviders = synchronizedSet(new HashSet<>());
 
-		localizationCache = new CacheComputingMap<>(this::instantiateProperties, true);
+		localizationCache = new CacheComputingMap<>(c -> instantiateProperties(c), true);
 
 		this.locale = locale;
 		this.log = log;
 
-		text = getProperties(PropertyLoaderProperties.class);
+		text = new GuardedPropertyLoaderProperties(this);
 
 		if (log != null) {
 			locale().addObserver(l -> {
@@ -119,16 +124,6 @@ class PropertyLoaderImpl implements PropertyLoader {
 	}
 
 	public PropertyLoaderProperties getText() {
-		PropertyLoaderProperties text = this.text;
-
-		/*
-		 * This check if for the sticky situation that getText() is invoked during
-		 * construction before this.text is assigned.
-		 */
-		if (text == null) {
-			text = new DefaultPropertyLoaderProperties();
-		}
-
 		return text;
 	}
 
@@ -162,20 +157,20 @@ class PropertyLoaderImpl implements PropertyLoader {
 		return locale;
 	}
 
-	protected <T extends Properties<T>> T instantiateProperties(PropertyAccessorConfiguration<T> source) {
+	protected <T extends Properties<T>> T instantiateProperties(PropertyResourceConfiguration<T> source) {
 		return new PropertiesDelegate<>(this, source).copy();
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
 	public <T extends Properties<T>> T getProperties(Class<T> accessor, PropertyConfiguration defaultConfiguration) {
-		return (T) localizationCache.putGet(new PropertyAccessorConfiguration<>(accessor, defaultConfiguration));
+		return (T) localizationCache.putGet(new PropertyResourceConfiguration<>(accessor, defaultConfiguration));
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T extends Properties<T>> T getProperties(Class<T> accessor) {
-		return (T) localizationCache.putGet(new PropertyAccessorConfiguration<>(accessor));
+		return (T) localizationCache.putGet(new PropertyResourceConfiguration<>(accessor));
 	}
 
 	@Override
@@ -213,6 +208,8 @@ class PropertyLoaderImpl implements PropertyLoader {
 		try {
 			if (strategy.equals(PropertyConfiguration.UnspecifiedPropertyResourceStrategy.class)) {
 				return DefaultPropertyResourceStrategy.getInstance();
+			} else if (resourceStrategies.containsKey(strategy)) {
+				return resourceStrategies.get(strategy);
 			} else {
 				return strategy.newInstance();
 			}

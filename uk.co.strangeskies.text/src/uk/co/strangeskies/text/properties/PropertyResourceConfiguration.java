@@ -25,30 +25,30 @@ import java.util.Objects;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.Case;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.Requirement;
 
-class PropertyAccessorConfiguration<T extends Properties<T>> {
+class PropertyResourceConfiguration<T extends Properties<T>> {
 	@PropertyConfiguration
 	private final class DefaultPropertyConfigurationAnnotation {}
 
 	private final Class<T> accessor;
 	private final PropertyConfiguration configuration;
 
-	protected PropertyAccessorConfiguration(Class<T> accessor) {
+	protected PropertyResourceConfiguration(Class<T> accessor) {
 		this(accessor, accessor.getAnnotation(PropertyConfiguration.class));
 	}
 
-	protected PropertyAccessorConfiguration(Class<T> accessor, PropertyConfiguration configuration) {
+	protected PropertyResourceConfiguration(Class<T> accessor, PropertyConfiguration configuration) {
 		this.accessor = accessor;
 		this.configuration = configuration != null ? configuration
 				: DefaultPropertyConfigurationAnnotation.class.getAnnotation(PropertyConfiguration.class);
 	}
 
-	public <A extends Properties<A>> PropertyAccessorConfiguration<A> derive(Class<A> accessor) {
-		return new PropertyAccessorConfiguration<>(accessor,
+	public <A extends Properties<A>> PropertyResourceConfiguration<A> derive(Class<A> accessor) {
+		return new PropertyResourceConfiguration<>(accessor,
 				deriveConfiguration(accessor.getAnnotation(PropertyConfiguration.class)));
 	}
 
-	public PropertyAccessorConfiguration<T> derive(PropertyConfiguration configuration) {
-		return new PropertyAccessorConfiguration<>(accessor, deriveConfiguration(configuration));
+	public PropertyResourceConfiguration<T> derive(PropertyConfiguration configuration) {
+		return new PropertyResourceConfiguration<>(accessor, deriveConfiguration(configuration));
 	}
 
 	public Class<T> getAccessor() {
@@ -65,10 +65,10 @@ class PropertyAccessorConfiguration<T extends Properties<T>> {
 			return false;
 		if (obj == this)
 			return true;
-		if (!(obj instanceof PropertyAccessorConfiguration))
+		if (!(obj instanceof PropertyResourceConfiguration))
 			return false;
 
-		PropertyAccessorConfiguration<?> other = (PropertyAccessorConfiguration<?>) obj;
+		PropertyResourceConfiguration<?> other = (PropertyResourceConfiguration<?>) obj;
 
 		return accessor.equals(other.accessor) && configuration.equals(other.configuration);
 	}

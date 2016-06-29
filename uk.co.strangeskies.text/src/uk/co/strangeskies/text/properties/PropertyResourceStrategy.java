@@ -18,22 +18,15 @@
  */
 package uk.co.strangeskies.text.properties;
 
-import static java.util.Arrays.asList;
-
-import java.util.List;
 import java.util.Locale;
 
 /**
- * A strategy for providing a {@link PropertyResourceBundle} over a given locale and a
- * list of resource description strings in priority order.
+ * A strategy for providing a {@link PropertyResourceBundle} over a given locale
+ * and a list of resource description strings in priority order.
  * 
  * @author Elias N Vasylenko
  */
 public interface PropertyResourceStrategy {
 	PropertyResourceBundle findLocalizedResourceBundle(Locale initialLocale,
-			List<? extends PropertyAccessorConfiguration<?>> resourceLocations);
-
-	default PropertyResourceBundle findLocalizedResourceBundle(Locale initialLocale, PropertyAccessorConfiguration<?>... resourceLocations) {
-		return findLocalizedResourceBundle(initialLocale, asList(resourceLocations));
-	}
+			PropertyResourceConfiguration<?> resourceConfiguration);
 }

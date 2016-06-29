@@ -33,7 +33,7 @@ import uk.co.strangeskies.text.properties.test.nested.LocalizerTestNestedPropert
 		keySplitString = ".",
 		keyCase = LOWER,
 		strategy = DefaultPropertyResourceStrategy.class,
-		resource = "")
+		resource = PropertyConfiguration.UNSPECIFIED_RESOURCE)
 public interface LocalizerTestProperties extends Properties<LocalizerTestProperties> {
 	Localized<String> missingMethod();
 

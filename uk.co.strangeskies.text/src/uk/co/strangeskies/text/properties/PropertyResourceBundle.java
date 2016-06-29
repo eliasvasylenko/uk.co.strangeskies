@@ -18,9 +18,6 @@
  */
 package uk.co.strangeskies.text.properties;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -32,7 +29,7 @@ import java.util.ResourceBundle;
 public abstract class PropertyResourceBundle extends ResourceBundle {
 	private final Locale locale;
 	private final PropertyResourceStrategy strategy;
-	private final List<PropertyAccessorConfiguration<?>> configurations;
+	private final PropertyResourceConfiguration<?> configuration;
 
 	/**
 	 * Create a resource bundle with the given initial locale.
@@ -41,14 +38,14 @@ public abstract class PropertyResourceBundle extends ResourceBundle {
 	 *          the initial locale
 	 * @param strategy
 	 *          the strategy responsible for initialising this resource
-	 * @param configurations
+	 * @param configuration
 	 *          the resource locations
 	 */
 	public PropertyResourceBundle(Locale locale, PropertyResourceStrategy strategy,
-			Collection<? extends PropertyAccessorConfiguration<?>> configurations) {
+			PropertyResourceConfiguration<?> configuration) {
 		this.locale = locale;
 		this.strategy = strategy;
-		this.configurations = new ArrayList<>(configurations);
+		this.configuration = configuration;
 	}
 
 	@Override
@@ -60,7 +57,7 @@ public abstract class PropertyResourceBundle extends ResourceBundle {
 	 * @return the previous locale
 	 */
 	public PropertyResourceBundle withLocale(Locale locale) {
-		return getStrategy().findLocalizedResourceBundle(locale, getConfigurations());
+		return getStrategy().findLocalizedResourceBundle(locale, getConfiguration());
 	}
 
 	@Override
@@ -78,8 +75,8 @@ public abstract class PropertyResourceBundle extends ResourceBundle {
 	/**
 	 * @return the property resource locations
 	 */
-	public List<PropertyAccessorConfiguration<?>> getConfigurations() {
-		return configurations;
+	public PropertyResourceConfiguration<?> getConfiguration() {
+		return configuration;
 	}
 
 	/**
@@ -94,13 +91,12 @@ public abstract class PropertyResourceBundle extends ResourceBundle {
 	 * 
 	 * @param locale
 	 *          the locale for the resource bundle
-	 * @param resources
+	 * @param resource
 	 *          the base names of properties files to load, and the class loaders
 	 *          they exist in
 	 * @return a resource bundle over all resources at each given location
 	 */
-	public static PropertyResourceBundle getBundle(Locale locale,
-			List<? extends PropertyAccessorConfiguration<?>> resources) {
-		return DefaultPropertyResourceStrategy.getInstance().findLocalizedResourceBundle(locale, resources);
+	public static PropertyResourceBundle getBundle(Locale locale, PropertyResourceConfiguration<?> resource) {
+		return DefaultPropertyResourceStrategy.getInstance().findLocalizedResourceBundle(locale, resource);
 	}
 }
