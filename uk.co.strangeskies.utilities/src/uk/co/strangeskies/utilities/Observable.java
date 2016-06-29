@@ -224,4 +224,31 @@ public interface Observable<M> {
 	 * @return True if the observer was successfully removed, false otherwise
 	 */
 	boolean removeObserver(Consumer<? super M> observer);
+
+	/**
+	 * Get an observable instance which never fires events. As an optimisation,
+	 * attempts to add and remove observers will always succeed regardless of
+	 * whether or not the observer is already added. In cases where this is a
+	 * problem, consider using an instance of {@link ObservableImpl} instead.
+	 * 
+	 * @return an observable instance which never fires events
+	 */
+	@SuppressWarnings("unchecked")
+	static <M> Observable<M> immutable() {
+		return (Observable<M>) ImmutableObservable.IMMUTABLE;
+	}
+}
+
+interface ImmutableObservable<M> extends Observable<M> {
+	static Observable<?> IMMUTABLE = new ImmutableObservable<Object>() {};
+
+	@Override
+	default boolean addObserver(Consumer<? super M> observer) {
+		return true;
+	}
+
+	@Override
+	default boolean removeObserver(Consumer<? super M> observer) {
+		return true;
+	}
 }

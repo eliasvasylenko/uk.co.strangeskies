@@ -29,7 +29,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import uk.co.strangeskies.utilities.classpath.DelegatingClassLoader;
+import uk.co.strangeskies.utilities.classloading.DelegatingClassLoader;
 
 /**
  * An isomorphic mapping from one object graph to another, typically maintained

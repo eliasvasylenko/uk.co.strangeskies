@@ -48,7 +48,7 @@ import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
 import uk.co.strangeskies.fx.FXUtilities;
 import uk.co.strangeskies.osgi.ServiceWiringException;
-import uk.co.strangeskies.utilities.text.Localizer;
+import uk.co.strangeskies.text.properties.PropertyLoader;
 
 /**
  * Supplier for {@link Service}
@@ -120,12 +120,12 @@ public class ObservableServiceSupplier extends ExtendedObjectSupplier {
 	}
 
 	@Reference
-	Localizer generalLocalizer;
+	PropertyLoader generalLocalizer;
 	private ObservableServiceSupplierText text;
 
 	@Activate
 	void activate() {
-		text = generalLocalizer.getLocalization(ObservableServiceSupplierText.class);
+		text = generalLocalizer.getProperties(ObservableServiceSupplierText.class);
 	}
 
 	@Override
