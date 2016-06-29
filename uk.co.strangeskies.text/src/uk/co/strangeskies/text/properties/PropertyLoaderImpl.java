@@ -30,6 +30,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.text.parsing.Parser;
@@ -88,6 +89,8 @@ class PropertyLoaderImpl implements PropertyLoader {
 	private final LocaleProvider locale;
 	private Log log;
 
+	private Function<String, String> translationNotFound;
+	private final DefaultPropertyLoaderProperties defaultText;
 	private final PropertyLoaderProperties text;
 
 	/**
@@ -108,7 +111,8 @@ class PropertyLoaderImpl implements PropertyLoader {
 		this.locale = locale;
 		this.log = log;
 
-		text = new GuardedPropertyLoaderProperties(this);
+		defaultText = new DefaultPropertyLoaderProperties();
+		text = getProperties(PropertyLoaderProperties.class);
 
 		if (log != null) {
 			locale().addObserver(l -> {
@@ -119,8 +123,24 @@ class PropertyLoaderImpl implements PropertyLoader {
 		registerProvider(stringProvider());
 	}
 
+	protected DefaultPropertyLoaderProperties getDefaultText() {
+		return defaultText;
+	}
+
+	private String translationNotFoundSubstitution(String string) {
+		if (translationNotFound == null) {
+			translationNotFound = defaultText::translationNotFoundSubstitution;
+			try {
+				System.out.println("!!!! " + getText().translationNotFoundSubstitution(""));
+				translationNotFound = getText()::translationNotFoundSubstitution;
+			} catch (Exception e) {}
+		}
+		return translationNotFound.apply(string);
+	}
+
 	private PropertyProvider<String> stringProvider() {
-		return over(String.class, Parser.matchingAll(), String::format, text::translationNotFoundSubstitution);
+		return over(String.class, Parser.matchingAll(), (s, a) -> String.format(s, a.toArray()),
+				this::translationNotFoundSubstitution);
 	}
 
 	public PropertyLoaderProperties getText() {

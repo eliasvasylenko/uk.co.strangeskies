@@ -16,14 +16,22 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with uk.co.strangeskies.text.  If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.text.properties;
+package uk.co.strangeskies.text.properties.test;
 
-/**
- * A strategy for providing a {@link PropertyResourceBundle} over a given locale
- * and a list of resource description strings in priority order.
- * 
- * @author Elias N Vasylenko
- */
-public interface PropertyResourceStrategy {
-	PropertyResourceBundle getPropertyResourceBundle(PropertyResourceConfiguration<?> resourceConfiguration);
+import static uk.co.strangeskies.text.properties.PropertyConfiguration.UNQUALIFIED_SLASHED;
+import static uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase.LOWER;
+
+import uk.co.strangeskies.text.properties.Localized;
+import uk.co.strangeskies.text.properties.Properties;
+import uk.co.strangeskies.text.properties.PropertyConfiguration;
+import uk.co.strangeskies.text.properties.PropertyConfiguration.Requirement;
+
+@SuppressWarnings("javadoc")
+@PropertyConfiguration(
+		key = UNQUALIFIED_SLASHED,
+		keySplitString = ".",
+		keyCase = LOWER,
+		requirement = Requirement.IMMEDIATE)
+public interface ImmediateRequirementTestProperties extends Properties<ImmediateRequirementTestProperties> {
+	Localized<String> requiredProperty();
 }

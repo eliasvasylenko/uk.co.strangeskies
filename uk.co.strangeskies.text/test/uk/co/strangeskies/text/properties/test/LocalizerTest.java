@@ -22,7 +22,6 @@ import static org.junit.Assert.assertEquals;
 import static uk.co.strangeskies.text.properties.LocaleManager.getManager;
 
 import java.util.Locale;
-import java.util.function.Consumer;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -104,10 +103,9 @@ public class LocalizerTest {
 		LocalizerTestProperties text = text(manager);
 
 		IdentityProperty<String> result = new IdentityProperty<>();
-		Consumer<LocalizerTestProperties> observer = t -> {
+		text.addObserver(t -> {
 			result.set(t.simple().toString());
-		};
-		text.addObserver(observer);
+		});
 
 		manager.setLocale(Locale.FRENCH);
 
@@ -122,14 +120,14 @@ public class LocalizerTest {
 		Localized<String> string = text(manager).simple();
 
 		IdentityProperty<String> result = new IdentityProperty<>();
-		Consumer<String> observer = t -> {
+		string.addObserver(t -> {
 			result.set(t);
-		};
-		string.addObserver(observer);
+		});
 
 		manager.setLocale(Locale.FRENCH);
 
 		Assert.assertNotNull(result);
+		assertEquals("French simple property value", string.get());
 		assertEquals("French simple property value", result.get());
 	}
 
@@ -140,10 +138,9 @@ public class LocalizerTest {
 		Localized<String> string = text(manager).anotherSimple();
 
 		IdentityProperty<String> result = new IdentityProperty<>();
-		Consumer<String> observer = t -> {
+		string.addObserver(t -> {
 			result.set(t);
-		};
-		string.addObserver(observer);
+		});
 
 		manager.setLocale(Locale.FRENCH);
 
@@ -176,7 +173,7 @@ public class LocalizerTest {
 	public void multipleKeyAppendTextTest() {
 		LocalizerTestProperties text = text(getManager());
 
-		assertEquals("value of multiple append", text.multipleKeyAppend("append one", "append two").toString());
+		assertEquals("value of multiple append", text.multipleKeyAppend("append.one", "append.two").toString());
 	}
 
 	@Test

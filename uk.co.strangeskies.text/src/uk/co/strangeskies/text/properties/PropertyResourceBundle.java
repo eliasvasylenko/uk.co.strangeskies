@@ -20,74 +20,75 @@ package uk.co.strangeskies.text.properties;
 
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 /**
  * A resource bundle with a configurable locale
  * 
  * @author Elias N Vasylenko
  */
-public abstract class PropertyResourceBundle extends ResourceBundle {
-	private final Locale locale;
-	private final PropertyResourceStrategy strategy;
-	private final PropertyResourceConfiguration<?> configuration;
-
+public interface PropertyResourceBundle {
 	/**
-	 * Create a resource bundle with the given initial locale.
-	 * 
-	 * @param locale
-	 *          the initial locale
-	 * @param strategy
-	 *          the strategy responsible for initialising this resource
-	 * @param configuration
-	 *          the resource locations
+	 * @return the set of available keys according to the root locale
 	 */
-	public PropertyResourceBundle(Locale locale, PropertyResourceStrategy strategy,
-			PropertyResourceConfiguration<?> configuration) {
-		this.locale = locale;
-		this.strategy = strategy;
-		this.configuration = configuration;
+	default Set<String> getKeys() {
+		return getKeys(Locale.ROOT);
 	}
-
-	@Override
-	protected abstract String handleGetObject(String key);
 
 	/**
 	 * @param locale
-	 *          the new locale
-	 * @return the previous locale
+	 *          the locale
+	 * @return the set of available keys according to the given locale
 	 */
-	public PropertyResourceBundle withLocale(Locale locale) {
-		return getStrategy().findLocalizedResourceBundle(locale, getConfiguration());
+	Set<String> getKeys(Locale locale);
+
+	/**
+	 * @param key
+	 *          the key of the property
+	 * @return the value of the property of the given key according to the root
+	 *         locale
+	 */
+	default String getValue(String key) {
+		return getValue(key, Locale.ROOT);
 	}
 
-	@Override
-	public Locale getLocale() {
-		return locale;
-	}
+	/**
+	 * @param key
+	 *          the key of the property
+	 * @param locale
+	 *          the locale
+	 * @return the value of the property of the given key according to the given
+	 *         locale
+	 */
+	String getValue(String key, Locale locale);
 
 	/**
 	 * @return the strategy employed to locate the resources backing this bundle
 	 */
-	public PropertyResourceStrategy getStrategy() {
-		return strategy;
-	}
+	PropertyResourceStrategy getStrategy();
 
 	/**
-	 * @return the property resource locations
+	 * @return the property resource configuration
 	 */
-	public PropertyResourceConfiguration<?> getConfiguration() {
-		return configuration;
-	}
+	PropertyResourceConfiguration<?> getConfiguration();
 
 	/**
 	 * Create a {@link PropertyResourceBundle localising resource bundle} over the
-	 * given class loader and base names. The created resource bundle will behave
-	 * as a delegate to a series of {@link ResourceBundle resource bundles} ,
-	 * which in turn will behave according to
-	 * {@link ResourceBundle#getBundle(String, Locale, ClassLoader)} with the
-	 * given class loader, using the given locations as base names, and using the
-	 * current locale of the {@link PropertyResourceBundle}. This locale may
-	 * change, and the delegate resource bundles will be updated accordingly.
+	 * given configuration.
+	 * 
+	 * 
+	 * 
+	 * 
+	 * TODO
+	 * 
+	 * 
+	 * 
+	 * The created resource bundle will behave as a delegate to a series of
+	 * {@link ResourceBundle resource bundles} , which in turn will behave
+	 * according to {@link ResourceBundle#getBundle(String, Locale, ClassLoader)}
+	 * with the given class loader, using the given locations as base names, and
+	 * using the current locale of the {@link PropertyResourceBundle}. This locale
+	 * may change, and the delegate resource bundles will be updated accordingly.
 	 * 
 	 * @param locale
 	 *          the locale for the resource bundle
@@ -97,6 +98,6 @@ public abstract class PropertyResourceBundle extends ResourceBundle {
 	 * @return a resource bundle over all resources at each given location
 	 */
 	public static PropertyResourceBundle getBundle(Locale locale, PropertyResourceConfiguration<?> resource) {
-		return DefaultPropertyResourceStrategy.getInstance().findLocalizedResourceBundle(locale, resource);
+		return DefaultPropertyResourceStrategy.getInstance().getPropertyResourceBundle(resource);
 	}
 }

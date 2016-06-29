@@ -36,6 +36,8 @@ import uk.co.strangeskies.utilities.ObservableValue;
  * @author Elias N Vasylenko
  */
 public interface PropertyLoader {
+	String TEXT_POSTFIX = "Properties";
+
 	/**
 	 * As returned by {@link #getDefaultLocalizer()}.
 	 */
@@ -139,5 +141,13 @@ public interface PropertyLoader {
 	 */
 	static PropertyLoader getPropertyLoader(LocaleProvider provider, Log log) {
 		return new PropertyLoaderImpl(provider, log);
+	}
+
+	static String removePropertiesPostfix(String name) {
+		if (name.endsWith(TEXT_POSTFIX) && !name.equals(TEXT_POSTFIX)) {
+			name = name.substring(0, name.length() - TEXT_POSTFIX.length());
+		}
+
+		return name;
 	}
 }

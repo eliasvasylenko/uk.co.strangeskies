@@ -22,7 +22,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Objects;
 
-import uk.co.strangeskies.text.properties.PropertyConfiguration.Case;
+import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.Requirement;
 
 class PropertyResourceConfiguration<T extends Properties<T>> {
@@ -48,7 +48,11 @@ class PropertyResourceConfiguration<T extends Properties<T>> {
 	}
 
 	public PropertyResourceConfiguration<T> derive(PropertyConfiguration configuration) {
-		return new PropertyResourceConfiguration<>(accessor, deriveConfiguration(configuration));
+		if (configuration != null) {
+			return new PropertyResourceConfiguration<>(accessor, deriveConfiguration(configuration));
+		} else {
+			return this;
+		}
 	}
 
 	public Class<T> getAccessor() {
@@ -83,7 +87,7 @@ class PropertyResourceConfiguration<T extends Properties<T>> {
 		String resource;
 		Requirement requirement;
 		String keySplitString;
-		Case keyCase;
+		KeyCase keyCase;
 		String key;
 
 		boolean merged = false;
@@ -116,7 +120,7 @@ class PropertyResourceConfiguration<T extends Properties<T>> {
 			keySplitString = configuration.keySplitString();
 		}
 
-		if (configuration.keyCase().equals(Case.UNSPECIFIED)) {
+		if (configuration.keyCase().equals(KeyCase.UNSPECIFIED)) {
 			merged = true;
 			keyCase = getConfiguration().keyCase();
 		} else {
@@ -158,7 +162,7 @@ class PropertyResourceConfiguration<T extends Properties<T>> {
 				}
 
 				@Override
-				public Case keyCase() {
+				public KeyCase keyCase() {
 					return keyCase;
 				}
 

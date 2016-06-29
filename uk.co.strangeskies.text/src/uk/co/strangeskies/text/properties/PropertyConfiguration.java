@@ -40,7 +40,7 @@ public @interface PropertyConfiguration {
 	 * 
 	 * @author Elias N Vasylenko
 	 */
-	enum Case {
+	enum KeyCase {
 		/**
 		 * All upper case.
 		 */
@@ -76,29 +76,26 @@ public @interface PropertyConfiguration {
 		IMMEDIATE,
 
 		/**
-		 * Defer failure exception due to missing property value or failure to parse
-		 * until invocation of the property accessor method.
+		 * Verify that a value is available for the property in the root locale upon
+		 * invocation of the accessing method of a {@link Properties} instance, and
+		 * fail the request with an exception if it is not.
 		 */
-		DEFERRED_PARSE,
+		DEFERRED,
 
 		/**
-		 * Defer failure exception due to missing property value until invocation of
-		 * the property accessor method.
-		 */
-		DEFERRED_FETCH,
-
-		/**
-		 * Attempt to allow invocation of a property accessor method to succeed when
-		 * the property value is missing. Exact behaviour is left up to the provider
-		 * for the type of property, but typically an attempt should be made to
-		 * provide a default value. If this is not possible, null may be returned,
-		 * or an exception may be thrown during construction of the
-		 * {@link Properties} instance or invocation of the accessor method, at the
-		 * discretion of the provider.
+		 * Behave as with {@link #DEFERRED}, with the additional stipulation that a
+		 * value may still be considered available if the {@link PropertyProvider
+		 * provider} is able to instantiate a default value.
 		 * <p>
 		 * This is the default behaviour.
 		 */
 		OPTIONAL,
+
+		/**
+		 * Behave as with {@link #OPTIONAL}, except if a value is unavailable, even
+		 * by way of a default, simply return null instead of throwing an exception.
+		 */
+		NULLABLE,
 
 		/**
 		 * Inherit the requirement settings, or {@link #OPTIONAL} by default.
@@ -184,7 +181,7 @@ public @interface PropertyConfiguration {
 	/**
 	 * @return the treatment of character case when generating the key arguments
 	 */
-	Case keyCase() default Case.UNSPECIFIED;
+	KeyCase keyCase() default KeyCase.UNSPECIFIED;
 
 	/**
 	 * @return the level of requirement that property values are available
@@ -198,8 +195,8 @@ public @interface PropertyConfiguration {
 	String resource() default UNSPECIFIED_RESOURCE;
 
 	/**
-	 * The class of the {@link PropertyResourceBundle} which implements or specifies the
-	 * strategy by which to resolve the localisation resources.
+	 * The class of the {@link PropertyResourceBundle} which implements or
+	 * specifies the strategy by which to resolve the localisation resources.
 	 */
 	Class<? extends PropertyResourceStrategy> strategy() default UnspecifiedPropertyResourceStrategy.class;
 }

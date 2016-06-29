@@ -26,11 +26,13 @@ import static uk.co.strangeskies.text.properties.PropertyConfiguration.UNSPECIFI
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -38,7 +40,6 @@ import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
@@ -47,7 +48,7 @@ import java.util.stream.Collectors;
 import uk.co.strangeskies.text.CamelCaseFormatter;
 import uk.co.strangeskies.text.CamelCaseFormatter.UnformattingCase;
 import uk.co.strangeskies.text.parsing.Parser;
-import uk.co.strangeskies.text.properties.PropertyConfiguration.Case;
+import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;
 import uk.co.strangeskies.text.properties.PropertyLoaderImpl.MethodSignature;
 import uk.co.strangeskies.utilities.Log.Level;
 import uk.co.strangeskies.utilities.ObservableImpl;
@@ -70,21 +71,21 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 	 * Implementation of localised property
 	 */
 	class LocalizedPropertyImpl<T> extends ObservablePropertyImpl<T, T> implements Localized<T>, Consumer<A> {
+		private final PropertyResourceConfiguration<A> source;
 		private final String key;
-		private final ResourceBundle bundle;
 		private final Class<T> propertyClass;
-		private final MethodSignature signature;
 		private final List<Object> arguments;
+		private final Map<Locale, T> cache;
 
-		public LocalizedPropertyImpl(String key, ResourceBundle bundle, Class<T> propertyClass, MethodSignature signature,
+		public LocalizedPropertyImpl(PropertyResourceConfiguration<A> source, String key, Class<T> propertyClass,
 				List<?> arguments) {
 			super((r, t) -> r, Objects::equals, null);
 
+			this.source = source;
 			this.key = key;
-			this.bundle = bundle;
 			this.propertyClass = propertyClass;
-			this.signature = signature;
 			this.arguments = new ArrayList<>(arguments);
+			this.cache = new ConcurrentHashMap<>();
 
 			updateText();
 
@@ -92,12 +93,7 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 		}
 
 		private synchronized void updateText() {
-			PropertyProvider<T> provider = getClassProvider(key, propertyClass);
-			PropertyValue<T> propertyValue = loadValue(bundle, key, provider);
-			Optional<T> instantiatedValue = propertyValue.instantiate(arguments);
-			T value = instantiatedValue.orElse(null);
-
-			set(value);
+			set(get(locale().get()));
 		}
 
 		@Override
@@ -107,8 +103,12 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 
 		@Override
 		public T get(Locale locale) {
-			// TODO Auto-generated method stub
-			return null;
+			return cache.computeIfAbsent(locale, l -> {
+				PropertyProvider<T> provider = getClassProvider(key, propertyClass);
+				Optional<T> instantiatedValue = loadValue(source, provider, key, locale).instantiate(arguments);
+
+				return instantiatedValue.orElse(null);
+			});
 		}
 
 		@Override
@@ -160,14 +160,11 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 	private final Map<PropertyResourceConfiguration<?>, PropertyResourceBundle> bundleCache = new ConcurrentHashMap<>();
 	private final Map<MethodSignature, PropertyValue<?>> valueCache = new ConcurrentHashMap<>();
 
-	private final Consumer<Locale> observer;
-
 	PropertiesDelegate(PropertyLoaderImpl loader, PropertyResourceConfiguration<A> source) {
 		this.source = source;
 
 		if (!source.getAccessor().isInterface()) {
-			throw loader.log(Level.ERROR,
-					new PropertyLoaderException(loader.getText().mustBeInterface(source.getAccessor())));
+			throw loader.log(Level.ERROR, new PropertyLoaderException(getText().mustBeInterface(source.getAccessor())));
 		}
 		this.loader = loader;
 
@@ -175,11 +172,17 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 
 		initialize(source.getAccessor());
 
-		observer = l -> {
-			bundleCache.replaceAll((c, b) -> b.withLocale(l));
-			fire(this.proxy);
-		};
-		loader.locale().addWeakObserver(observer);
+		loader.locale().addWeakObserver(this, t -> l -> {
+			t.fire(t.proxy);
+		});
+	}
+
+	private PropertyLoaderProperties getText() {
+		if (source.getAccessor().equals(PropertyLoaderProperties.class)) {
+			return loader.getDefaultText();
+		} else {
+			return loader.getText();
+		}
 	}
 
 	private void initialize(Class<A> accessor) {
@@ -192,10 +195,10 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 		}
 	}
 
-	private ResourceBundle getBundle(PropertyResourceConfiguration<?> configuration) {
+	private PropertyResourceBundle getBundle(PropertyResourceConfiguration<?> configuration) {
 		return bundleCache.computeIfAbsent(configuration, c -> {
 			PropertyResourceStrategy strategy = loader.getResourceStrategyInstance(source.getConfiguration().strategy());
-			return strategy.findLocalizedResourceBundle(getLocale(), source);
+			return strategy.getPropertyResourceBundle(source);
 		});
 	}
 
@@ -207,9 +210,21 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 			argumentList = asList(arguments);
 		}
 
-		PropertyValue<?> value = valueCache.computeIfAbsent(signature, k -> createValue(k));
+		try {
+			PropertyValue<?> value = valueCache.computeIfAbsent(signature, k -> createValue(k));
 
-		return value.instantiate(argumentList).orElse(null);
+			return value.instantiate(argumentList).orElse(null);
+		} catch (Exception e) {
+			if (source.getAccessor().equals(PropertyLoaderProperties.class)) {
+				try {
+					return signature.method().invoke(new DefaultPropertyLoaderProperties(), arguments);
+				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+					throw new RuntimeException(e1);
+				}
+			} else {
+				throw e;
+			}
+		}
 	}
 
 	private PropertyValue<?> createValue(MethodSignature signature) {
@@ -221,24 +236,10 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 			source = this.source;
 		}
 
-		try {
-			return arguments -> (Optional<Object>) createValue(source, signature, arguments);
-		} catch (Exception e) {
-			if (source.getAccessor().equals(PropertyLoaderProperties.class)) {
-				return arguments -> {
-					try {
-						return Optional.of(signature.method().invoke(loader.getText(), arguments.toArray()));
-					} catch (Exception e2) {
-						/*
-						 * TODO handle better
-						 */
-						throw new RuntimeException(e2);
-					}
-				};
-			} else {
-				throw e;
-			}
-		}
+		@SuppressWarnings("unchecked")
+		PropertyValue<?> propertyValue = arguments -> (Optional<Object>) createValue(source, signature, arguments);
+
+		return propertyValue;
 	}
 
 	private String getKey(PropertyResourceConfiguration<A> source, MethodSignature signature, List<?> arguments) {
@@ -248,8 +249,9 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 		}
 
 		Object[] substitution = new Object[arguments.size() + 3];
-		substitution[0] = formatKeyComponent(source, signature.getClass().getPackage().getName());
-		substitution[1] = formatKeyComponent(source, signature.getClass().getSimpleName());
+		substitution[0] = formatKeyComponent(source, source.getAccessor().getPackage().getName());
+		substitution[1] = formatKeyComponent(source,
+				PropertyLoader.removePropertiesPostfix(source.getAccessor().getSimpleName()));
 		substitution[2] = formatKeyComponent(source, signature.method().getName());
 		int i = 3;
 		for (Object argument : arguments) {
@@ -259,27 +261,28 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 		return String.format(key, substitution);
 	}
 
-	private Object formatKeyComponent(PropertyResourceConfiguration<A> source, String name) {
+	private Object formatKeyComponent(PropertyResourceConfiguration<A> source, String component) {
 		String splitString = source.getConfiguration().keySplitString();
 		if (!splitString.equals("") && !splitString.equals(UNSPECIFIED_KEY_SPLIT_STRING)) {
-			new CamelCaseFormatter(splitString, false, UnformattingCase.PRESERVED);
+			component = new CamelCaseFormatter(splitString, false, UnformattingCase.PRESERVED).unformat(component);
 		}
 
-		Case keyCase = source.getConfiguration().keyCase();
-		if (keyCase == Case.LOWER) {
-			splitString = splitString.toLowerCase();
-		} else if (keyCase == Case.UPPER) {
-			splitString = splitString.toUpperCase();
+		KeyCase keyCase = source.getConfiguration().keyCase();
+		if (keyCase == KeyCase.LOWER) {
+			component = component.toLowerCase();
+		} else if (keyCase == KeyCase.UPPER) {
+			component = component.toUpperCase();
 		}
 
-		return splitString;
+		return component;
 	}
 
-	private <T> PropertyValue<T> loadValue(ResourceBundle bundle, String key, PropertyProvider<T> provider) {
+	private <T> PropertyValue<T> loadValue(PropertyResourceConfiguration<A> source, PropertyProvider<T> provider,
+			String key, Locale locale) {
 		try {
-			return provider.getParser().parse(bundle.getString(key));
+			return provider.getParser().parse(getBundle(source).getValue(key, locale));
 		} catch (MissingResourceException e) {
-			loader.log(Level.WARN, new PropertyLoaderException(loader.getText().translationNotFoundMessage(key), e));
+			loader.log(Level.WARN, new PropertyLoaderException(getText().translationNotFoundMessage(key), e));
 		}
 
 		return provider.getDefault(key);
@@ -291,8 +294,6 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 
 		Type propertyType = signature.method().getGenericReturnType();
 		Class<?> propertyClass = getPropertyClass(key, propertyType);
-
-		ResourceBundle bundle = getBundle(source);
 
 		if (Properties.class.isAssignableFrom(propertyClass)) {
 			/*
@@ -306,30 +307,32 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 			return Optional.of(getPropertiesUnsafe(propertyClass, configuration));
 
 		} else if (Localized.class.equals(propertyClass)) {
-			return Optional
-					.of(new LocalizedPropertyImpl<>(key, bundle, getElementClass(key, propertyType), signature, arguments));
+			return Optional.of(new LocalizedPropertyImpl<>(source, key, getElementClass(key, propertyType), arguments));
 
 		} else if (List.class.equals(propertyClass)) {
-			try {
-				return getListParser(key, getElementClass(key, propertyType)).parse(bundle.getString(key))
-						.instantiate(arguments);
-			} catch (MissingResourceException e) {
-				loader.log(Level.WARN, new PropertyLoaderException(loader.getText().translationNotFoundMessage(key), e));
+			PropertyProvider<?> provider = getListProvider(key, getElementClass(key, propertyType));
 
-				return Optional.of(emptyList());
-			}
+			return loadValue(source, provider, key, Locale.ROOT).instantiate(arguments);
 
 		} else {
 			PropertyProvider<?> provider = getClassProvider(key, propertyClass);
 
-			return loadValue(bundle, key, provider).instantiate(arguments);
+			return loadValue(source, provider, key, Locale.ROOT).instantiate(arguments);
 		}
 	}
 
-	private Parser<PropertyValue<List<?>>> getListParser(String key, Class<?> propertyClass) {
-		return Parser.list(getClassProvider(key, propertyClass).getParser(), "\\s*,\\s*")
-				.transform(list -> arguments -> Optional.of(list.stream().map(element -> element.instantiate(arguments))
-						.filter(Optional::isPresent).map(Optional::get).collect(Collectors.toList())));
+	private PropertyProvider<List<?>> getListProvider(String key, Class<?> propertyClass) {
+		@SuppressWarnings("unchecked")
+		Class<List<?>> listClass = (Class<List<?>>) (Class<?>) List.class;
+
+		return PropertyProvider.over(listClass,
+
+				Parser.list(getClassProvider(key, propertyClass).getParser(), "\\s*,\\s*"),
+
+				(list, arguments) -> list.stream().map(element -> element.instantiate(arguments)).filter(Optional::isPresent)
+						.map(Optional::get).collect(Collectors.toList()),
+
+				k -> Collections.emptyList());
 	}
 
 	private <T> PropertyProvider<T> getClassProvider(String key, Class<T> propertyClass) {
@@ -356,7 +359,7 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 		} else if (propertyType instanceof ParameterizedType) {
 			return (Class<?>) ((ParameterizedType) propertyType).getRawType();
 		} else {
-			throw new PropertyLoaderException(loader.getText().illegalReturnType(propertyType, key));
+			throw new PropertyLoaderException(getText().illegalReturnType(propertyType, key));
 		}
 	}
 

@@ -18,8 +18,6 @@
  */
 package uk.co.strangeskies.text.properties;
 
-import java.util.Locale;
-
 /**
  * A default implementation of {@link PropertyResourceStrategy} which creates
  * {@link PropertyResourceBundle} instances over given resource location strings
@@ -33,9 +31,8 @@ public class DefaultPropertyResourceStrategy implements PropertyResourceStrategy
 	private DefaultPropertyResourceStrategy() {}
 
 	@Override
-	public PropertyResourceBundle findLocalizedResourceBundle(Locale initialLocale,
-			PropertyResourceConfiguration<?> resourceConfiguration) {
-		return new PropertyResourceBundleImpl(initialLocale, this, resourceConfiguration);
+	public PropertyResourceBundle getPropertyResourceBundle(PropertyResourceConfiguration<?> resourceConfiguration) {
+		return new PropertyResourceBundleImpl(this, resourceConfiguration);
 	}
 
 	/**

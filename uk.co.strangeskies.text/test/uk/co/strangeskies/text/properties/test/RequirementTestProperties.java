@@ -21,43 +21,20 @@ package uk.co.strangeskies.text.properties.test;
 import static uk.co.strangeskies.text.properties.PropertyConfiguration.UNQUALIFIED_SLASHED;
 import static uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase.LOWER;
 
-import uk.co.strangeskies.text.properties.DefaultPropertyResourceStrategy;
 import uk.co.strangeskies.text.properties.Localized;
 import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
-import uk.co.strangeskies.text.properties.test.nested.LocalizerTestNestedProperties;
+import uk.co.strangeskies.text.properties.PropertyConfiguration.Requirement;
 
 @SuppressWarnings("javadoc")
-@PropertyConfiguration(
-		key = UNQUALIFIED_SLASHED,
-		keySplitString = ".",
-		keyCase = LOWER,
-		strategy = DefaultPropertyResourceStrategy.class,
-		resource = PropertyConfiguration.UNSPECIFIED_RESOURCE)
-public interface LocalizerTestProperties extends Properties<LocalizerTestProperties> {
-	Localized<String> missingMethod();
+@PropertyConfiguration(key = UNQUALIFIED_SLASHED, keySplitString = ".", keyCase = LOWER)
+public interface RequirementTestProperties extends Properties<ImmediateRequirementTestProperties> {
+	@PropertyConfiguration(requirement = Requirement.DEFERRED)
+	Localized<String> deferredRequirementProperty();
 
-	Localized<String> simple();
+	@PropertyConfiguration(requirement = Requirement.OPTIONAL)
+	Localized<String> optionalRequirementProperty();
 
-	Localized<String> anotherSimple();
-
-	Localized<String> substitution(String item);
-
-	Localized<String> multipleSubstitution(String first, String second);
-
-	@PropertyConfiguration(key = UNQUALIFIED_SLASHED + "/%4$s")
-	Localized<String> keyAppend(String first);
-
-	@PropertyConfiguration(key = UNQUALIFIED_SLASHED + "/%4$s/%5$s")
-	Localized<String> multipleKeyAppend(String first, String second);
-
-	default Localized<String> defaultMethod() {
-		return substitution("default");
-	}
-
-	LocalizerTestNestedProperties nested();
-
-	RequirementTestProperties requirements();
-
-	ImmediateRequirementTestProperties immediateRequirements();
+	@PropertyConfiguration(requirement = Requirement.NULLABLE)
+	Localized<String> nullableRequirementProperty();
 }

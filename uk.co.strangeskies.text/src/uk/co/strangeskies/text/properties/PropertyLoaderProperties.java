@@ -21,6 +21,8 @@ package uk.co.strangeskies.text.properties;
 import java.lang.reflect.Type;
 import java.util.Locale;
 
+import uk.co.strangeskies.text.properties.PropertyConfiguration.Requirement;
+
 /**
  * A {@link Properties} interface to provide localized texts for use by the
  * {@link PropertyLoader} class itself, such as for reporting errors for
@@ -31,7 +33,7 @@ import java.util.Locale;
  * 
  * @author Elias N Vasylenko
  */
-@PropertyConfiguration(resource = "OSGI-INF.l10n.bundle")
+@PropertyConfiguration(resource = "OSGI-INF.l10n.bundle", requirement = Requirement.IMMEDIATE)
 public interface PropertyLoaderProperties extends Properties<PropertyLoaderProperties> {
 	/**
 	 * Load the property with the key {@code property.loader.must.be.interface}.
