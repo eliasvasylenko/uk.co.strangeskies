@@ -25,39 +25,11 @@ import uk.co.strangeskies.text.properties.DefaultPropertyResourceStrategy;
 import uk.co.strangeskies.text.properties.Localized;
 import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
-import uk.co.strangeskies.text.properties.test.nested.LocalizerTestNestedProperties;
 
 @SuppressWarnings("javadoc")
-@PropertyConfiguration(
-		key = UNQUALIFIED_SLASHED,
-		keySplitString = ".",
-		keyCase = LOWER,
-		strategy = DefaultPropertyResourceStrategy.class,
-		resource = PropertyConfiguration.UNSPECIFIED_RESOURCE)
+@PropertyConfiguration(key = UNQUALIFIED_SLASHED, keySplitString = ".", keyCase = LOWER, strategy = DefaultPropertyResourceStrategy.class, resource = PropertyConfiguration.UNSPECIFIED_RESOURCE)
 public interface LocalizerTestProperties extends Properties<LocalizerTestProperties> {
-	Localized<String> missingMethod();
+	Localized<String> simpleLocalized();
 
-	Localized<String> simple();
-
-	Localized<String> anotherSimple();
-
-	Localized<String> substitution(String item);
-
-	Localized<String> multipleSubstitution(String first, String second);
-
-	@PropertyConfiguration(key = UNQUALIFIED_SLASHED + "/%4$s")
-	Localized<String> keyAppend(String first);
-
-	@PropertyConfiguration(key = UNQUALIFIED_SLASHED + "/%4$s/%5$s")
-	Localized<String> multipleKeyAppend(String first, String second);
-
-	default Localized<String> defaultMethod() {
-		return substitution("default");
-	}
-
-	LocalizerTestNestedProperties nested();
-
-	RequirementTestProperties requirements();
-
-	ImmediateRequirementTestProperties immediateRequirements();
+	Localized<String> anotherSimpleLocalized();
 }

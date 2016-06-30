@@ -16,14 +16,13 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with uk.co.strangeskies.text.  If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.text.properties.test.nested.deeply;
+package uk.co.strangeskies.text.properties.test;
 
-import uk.co.strangeskies.text.properties.Localized;
 import uk.co.strangeskies.text.properties.Properties;
 
 @SuppressWarnings("javadoc")
-public interface LocalizerTestDeeplyNestedProperties extends Properties<LocalizerTestDeeplyNestedProperties> {
-	Localized<String> deeplyNestedText();
+public interface NestedTestProperties extends Properties<NestedTestProperties> {
+	String nestedText();
 
-	Localized<String> deeplyNestedOverrideText();
+	DeeplyNestedTestProperties deeply();
 }

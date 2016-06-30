@@ -21,7 +21,6 @@ package uk.co.strangeskies.text.properties.test;
 import static uk.co.strangeskies.text.properties.PropertyConfiguration.UNQUALIFIED_SLASHED;
 import static uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase.LOWER;
 
-import uk.co.strangeskies.text.properties.Localized;
 import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.Requirement;
@@ -33,5 +32,5 @@ import uk.co.strangeskies.text.properties.PropertyConfiguration.Requirement;
 		keyCase = LOWER,
 		requirement = Requirement.IMMEDIATE)
 public interface ImmediateRequirementTestProperties extends Properties<ImmediateRequirementTestProperties> {
-	Localized<String> requiredProperty();
+	String requiredProperty();
 }

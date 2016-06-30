@@ -21,19 +21,38 @@ package uk.co.strangeskies.text.properties.test;
 import static uk.co.strangeskies.text.properties.PropertyConfiguration.UNQUALIFIED_SLASHED;
 import static uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase.LOWER;
 
+import uk.co.strangeskies.text.properties.DefaultPropertyResourceStrategy;
 import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
-import uk.co.strangeskies.text.properties.PropertyConfiguration.Requirement;
 
 @SuppressWarnings("javadoc")
-@PropertyConfiguration(key = UNQUALIFIED_SLASHED, keySplitString = ".", keyCase = LOWER)
-public interface RequirementTestProperties extends Properties<ImmediateRequirementTestProperties> {
-	@PropertyConfiguration(requirement = Requirement.DEFERRED)
-	String deferredRequirementProperty();
+@PropertyConfiguration(key = UNQUALIFIED_SLASHED, keySplitString = ".", keyCase = LOWER, strategy = DefaultPropertyResourceStrategy.class, resource = PropertyConfiguration.UNSPECIFIED_RESOURCE)
+public interface TestProperties extends Properties<TestProperties> {
+	String missingMethod();
 
-	@PropertyConfiguration(requirement = Requirement.OPTIONAL)
-	String optionalRequirementProperty();
+	String simple();
 
-	@PropertyConfiguration(requirement = Requirement.NULLABLE)
-	String nullableRequirementProperty();
+	String anotherSimple();
+
+	String substitution(String item);
+
+	String multipleSubstitution(String first, String second);
+
+	@PropertyConfiguration(key = UNQUALIFIED_SLASHED + "/%4$s")
+	String keyAppend(String first);
+
+	@PropertyConfiguration(key = UNQUALIFIED_SLASHED + "/%4$s/%5$s")
+	String multipleKeyAppend(String first, String second);
+
+	default String defaultMethod() {
+		return substitution("default");
+	}
+
+	NestedTestProperties nesting();
+
+	RequirementTestProperties requirements();
+
+	ImmediateRequirementTestProperties immediateRequirements();
+
+	LocalizerTestProperties localization();
 }

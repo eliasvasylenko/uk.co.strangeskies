@@ -34,7 +34,7 @@ import uk.co.strangeskies.text.properties.PropertyLoader;
 import uk.co.strangeskies.utilities.IdentityProperty;
 
 @SuppressWarnings("javadoc")
-public class LocalizerTest {
+public class PropertiesTest {
 	private static Locale SYSTEM_LOCALE;
 
 	@BeforeClass
@@ -48,63 +48,63 @@ public class LocalizerTest {
 		Locale.setDefault(SYSTEM_LOCALE);
 	}
 
-	public LocalizerTestProperties text(LocaleManager manager) {
-		return PropertyLoader.getPropertyLoader(manager).getProperties(LocalizerTestProperties.class);
+	public TestProperties text(LocaleManager manager) {
+		return PropertyLoader.getPropertyLoader(manager).getProperties(TestProperties.class);
 	}
 
 	@Test
-	public void localizerTest() {
+	public void managerTest() {
 		getManager();
 	}
 
 	@Test
-	public void localizationTest() {
+	public void propertiesTest() {
 		text(getManager());
 	}
 
 	@Test
 	public void simpleTextTest() {
-		LocalizerTestProperties text = text(getManager());
+		TestProperties text = text(getManager());
 
 		assertEquals("simple property value", text.simple().toString());
 	}
 
 	@Test
 	public void languageTest() {
-		LocalizerTestProperties text = text(getManager(Locale.FRENCH));
+		LocalizerTestProperties text = text(getManager(Locale.FRENCH)).localization();
 
-		assertEquals("French simple property value", text.simple().toString());
+		assertEquals("French simple property value", text.simpleLocalized().toString());
 	}
 
 	@Test
 	public void languageDefaultTest() {
-		LocalizerTestProperties text = text(getManager(Locale.FRENCH));
+		LocalizerTestProperties text = text(getManager(Locale.FRENCH)).localization();
 
-		assertEquals("another simple property value", text.anotherSimple().toString());
+		assertEquals("another simple property value", text.anotherSimpleLocalized().toString());
 	}
 
 	@Test
 	public void languageChangeTest() {
 		LocaleManager manager = getManager();
 
-		LocalizerTestProperties text = text(manager);
+		LocalizerTestProperties text = text(manager).localization();
 
-		assertEquals("simple property value", text.simple().toString());
+		assertEquals("simple property value", text.simpleLocalized().toString());
 
 		manager.setLocale(Locale.FRENCH);
 
-		assertEquals("French simple property value", text.simple().toString());
+		assertEquals("French simple property value", text.simpleLocalized().toString());
 	}
 
 	@Test
 	public void localeChangeEventTest() {
 		LocaleManager manager = getManager();
 
-		LocalizerTestProperties text = text(manager);
+		LocalizerTestProperties text = text(manager).localization();
 
 		IdentityProperty<String> result = new IdentityProperty<>();
 		text.addObserver(t -> {
-			result.set(t.simple().toString());
+			result.set(t.simpleLocalized().toString());
 		});
 
 		manager.setLocale(Locale.FRENCH);
@@ -117,7 +117,7 @@ public class LocalizerTest {
 	public void localeChangeStringEventTest() {
 		LocaleManager manager = getManager();
 
-		Localized<String> string = text(manager).simple();
+		Localized<String> string = text(manager).localization().simpleLocalized();
 
 		IdentityProperty<String> result = new IdentityProperty<>();
 		string.addObserver(t -> {
@@ -135,7 +135,7 @@ public class LocalizerTest {
 	public void localeChangeStringNoEventTest() {
 		LocaleManager manager = getManager();
 
-		Localized<String> string = text(manager).anotherSimple();
+		Localized<String> string = text(manager).localization().anotherSimpleLocalized();
 
 		IdentityProperty<String> result = new IdentityProperty<>();
 		string.addObserver(t -> {
@@ -149,14 +149,14 @@ public class LocalizerTest {
 
 	@Test
 	public void substitutionTextTest() {
-		LocalizerTestProperties text = text(getManager());
+		TestProperties text = text(getManager());
 
 		assertEquals("value of substitution", text.substitution("substitution").toString());
 	}
 
 	@Test
 	public void multipleSubstitutionTextTest() {
-		LocalizerTestProperties text = text(getManager());
+		TestProperties text = text(getManager());
 
 		assertEquals("values of substitution one and substitution two",
 				text.multipleSubstitution("substitution one", "substitution two").toString());
@@ -164,57 +164,57 @@ public class LocalizerTest {
 
 	@Test
 	public void keyAppendTextTest() {
-		LocalizerTestProperties text = text(getManager());
+		TestProperties text = text(getManager());
 
 		assertEquals("value of append", text.keyAppend("append").toString());
 	}
 
 	@Test
 	public void multipleKeyAppendTextTest() {
-		LocalizerTestProperties text = text(getManager());
+		TestProperties text = text(getManager());
 
 		assertEquals("value of multiple append", text.multipleKeyAppend("append.one", "append.two").toString());
 	}
 
 	@Test
 	public void missingTextTest() {
-		LocalizerTestProperties text = text(getManager());
+		TestProperties text = text(getManager());
 
 		assertEquals("?localizer.test/missing.method?", text.missingMethod().toString());
 	}
 
 	@Test
 	public void defaultTextTest() {
-		LocalizerTestProperties text = text(getManager());
+		TestProperties text = text(getManager());
 
 		assertEquals("value of default", text.defaultMethod().toString());
 	}
 
 	@Test
 	public void copyTextTest() {
-		LocalizerTestProperties text = text(getManager());
+		TestProperties text = text(getManager());
 
 		assertEquals("simple property value", text.copy().simple().toString());
 	}
 
 	@Test
 	public void nestedTextTest() {
-		LocalizerTestProperties text = text(getManager());
+		TestProperties text = text(getManager());
 
-		assertEquals("nested text value", text.nested().nestedText().toString());
+		assertEquals("nested text value", text.nesting().nestedText().toString());
 	}
 
 	@Test
 	public void deeplyNestedTextTest() {
-		LocalizerTestProperties text = text(getManager());
+		TestProperties text = text(getManager());
 
-		assertEquals("deeply nested text value", text.nested().deeply().deeplyNestedText().toString());
+		assertEquals("deeply nested text value", text.nesting().deeply().deeplyNestedText().toString());
 	}
 
 	@Test
 	public void nestedTextOverrideTest() {
-		LocalizerTestProperties text = text(getManager());
+		TestProperties text = text(getManager());
 
-		assertEquals("deeply nested text overriding value", text.nested().deeply().deeplyNestedOverrideText().toString());
+		assertEquals("deeply nested text overriding value", text.nesting().deeply().deeplyNestedOverrideText().toString());
 	}
 }
