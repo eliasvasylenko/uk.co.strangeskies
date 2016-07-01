@@ -67,7 +67,7 @@ public @interface PropertyConfiguration {
 	 * 
 	 * @author Elias N Vasylenko
 	 */
-	enum Requirement {
+	enum Evaluation {
 		/**
 		 * Verify that a value is available for the property in the root locale
 		 * during construction of a {@link Properties} instance, and fail the
@@ -76,29 +76,37 @@ public @interface PropertyConfiguration {
 		IMMEDIATE,
 
 		/**
-		 * Verify that a value is available for the property in the root locale upon
-		 * invocation of the accessing method of a {@link Properties} instance, and
-		 * fail the request with an exception if it is not.
+		 * Verify that a value is available for the property in the requested locale
+		 * upon invocation of the accessing method of a {@link Properties} instance,
+		 * and fail the request with an exception if it is not.
 		 */
 		DEFERRED,
 
 		/**
-		 * Behave as with {@link #DEFERRED}, with the additional stipulation that a
-		 * value may still be considered available if the {@link PropertyProvider
-		 * provider} is able to instantiate a default value.
-		 * <p>
-		 * This is the default behaviour.
+		 * Inherit the requirement settings, or {@link #DEFERRED} by default.
 		 */
-		OPTIONAL,
+		UNSPECIFIED
+	}
+
+	/**
+	 * Property value requirement setting.
+	 * 
+	 * @author Elias N Vasylenko
+	 */
+	enum Defaults {
+		/**
+		 * If a default value is available for a property, it should be provided as
+		 * if it were successfully fetched.
+		 */
+		ALLOW,
 
 		/**
-		 * Behave as with {@link #OPTIONAL}, except if a value is unavailable, even
-		 * by way of a default, simply return null instead of throwing an exception.
+		 * If a default value is available for a property, it should be ignored.
 		 */
-		NULLABLE,
+		IGNORE,
 
 		/**
-		 * Inherit the requirement settings, or {@link #OPTIONAL} by default.
+		 * Inherit the requirement settings, or {@link #ALLOW} by default.
 		 */
 		UNSPECIFIED
 	}
@@ -114,7 +122,7 @@ public @interface PropertyConfiguration {
 	}
 
 	/**
-	 * Inherit the resource settings, or apply the default behaviour of the
+	 * Inherit the resource settings, or apply the default behavior of the
 	 * {@link #strategy()} by default.
 	 */
 	String UNSPECIFIED_RESOURCE = "";
@@ -184,19 +192,26 @@ public @interface PropertyConfiguration {
 	KeyCase keyCase() default KeyCase.UNSPECIFIED;
 
 	/**
-	 * @return the level of requirement that property values are available
+	 * @return the time a properties availability should be evaluated and its
+	 *         requirement fulfilled
 	 */
-	Requirement requirement() default Requirement.UNSPECIFIED;
+	Evaluation evaluation() default Evaluation.UNSPECIFIED;
 
 	/**
-	 * @return the resource locations for a set of localisation strings, in
+	 * @return whether or not default values should be provided if a value cannot
+	 *         otherwise be found
+	 */
+	Defaults defaults() default Defaults.UNSPECIFIED;
+
+	/**
+	 * @return the resource locations for a set of localization strings, in
 	 *         priority order
 	 */
 	String resource() default UNSPECIFIED_RESOURCE;
 
 	/**
 	 * The class of the {@link PropertyResourceBundle} which implements or
-	 * specifies the strategy by which to resolve the localisation resources.
+	 * specifies the strategy by which to resolve the localization resources.
 	 */
 	Class<? extends PropertyResourceStrategy> strategy() default UnspecifiedPropertyResourceStrategy.class;
 }

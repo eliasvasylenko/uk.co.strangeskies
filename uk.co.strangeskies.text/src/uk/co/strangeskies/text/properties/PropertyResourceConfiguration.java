@@ -22,8 +22,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Objects;
 
+import uk.co.strangeskies.text.properties.PropertyConfiguration.Defaults;
+import uk.co.strangeskies.text.properties.PropertyConfiguration.Evaluation;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;
-import uk.co.strangeskies.text.properties.PropertyConfiguration.Requirement;
 
 class PropertyResourceConfiguration<T extends Properties<T>> {
 	@PropertyConfiguration
@@ -85,7 +86,8 @@ class PropertyResourceConfiguration<T extends Properties<T>> {
 	PropertyConfiguration deriveConfiguration(PropertyConfiguration configuration) {
 		Class<? extends PropertyResourceStrategy> strategy;
 		String resource;
-		Requirement requirement;
+		Evaluation evaluate;
+		Defaults defaults;
 		String keySplitString;
 		KeyCase keyCase;
 		String key;
@@ -106,11 +108,18 @@ class PropertyResourceConfiguration<T extends Properties<T>> {
 			resource = configuration.resource();
 		}
 
-		if (configuration.requirement().equals(Requirement.UNSPECIFIED)) {
+		if (configuration.evaluation().equals(Evaluation.UNSPECIFIED)) {
 			merged = true;
-			requirement = getConfiguration().requirement();
+			evaluate = getConfiguration().evaluation();
 		} else {
-			requirement = configuration.requirement();
+			evaluate = configuration.evaluation();
+		}
+
+		if (configuration.defaults().equals(Defaults.UNSPECIFIED)) {
+			merged = true;
+			defaults = getConfiguration().defaults();
+		} else {
+			defaults = configuration.defaults();
 		}
 
 		if (configuration.keySplitString().equals(PropertyConfiguration.UNSPECIFIED_KEY)) {
@@ -152,8 +161,13 @@ class PropertyResourceConfiguration<T extends Properties<T>> {
 				}
 
 				@Override
-				public Requirement requirement() {
-					return requirement;
+				public Evaluation evaluation() {
+					return evaluate;
+				}
+
+				@Override
+				public Defaults defaults() {
+					return defaults;
 				}
 
 				@Override

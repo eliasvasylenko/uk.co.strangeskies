@@ -19,15 +19,21 @@
 package uk.co.strangeskies.text.properties;
 
 import static java.util.Collections.synchronizedSet;
-import static java.util.Collections.unmodifiableSet;
-import static uk.co.strangeskies.text.properties.PropertyProvider.over;
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
 
+import java.lang.reflect.AnnotatedParameterizedType;
+import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -83,7 +89,7 @@ class PropertyLoaderImpl implements PropertyLoader {
 	}
 
 	private final Map<Class<? extends PropertyResourceStrategy>, PropertyResourceStrategy> resourceStrategies;
-	private final Set<PropertyProvider<?>> propertyProviders;
+	private final Set<PropertyValueProviderFactory> propertyProviders;
 	private final ComputingMap<PropertyResourceConfiguration<?>, Properties<?>> localizationCache;
 
 	private final LocaleProvider locale;
@@ -104,7 +110,7 @@ class PropertyLoaderImpl implements PropertyLoader {
 	public PropertyLoaderImpl(LocaleProvider locale, Log log) {
 		resourceStrategies = new ConcurrentHashMap<>();
 		resourceStrategies.put(DefaultPropertyResourceStrategy.class, DefaultPropertyResourceStrategy.getInstance());
-		propertyProviders = synchronizedSet(new HashSet<>());
+		propertyProviders = synchronizedSet(new LinkedHashSet<>());
 
 		localizationCache = new CacheComputingMap<>(c -> instantiateProperties(c), true);
 
@@ -120,6 +126,7 @@ class PropertyLoaderImpl implements PropertyLoader {
 			});
 		}
 
+		registerProvider(listProvider());
 		registerProvider(stringProvider());
 	}
 
@@ -131,16 +138,41 @@ class PropertyLoaderImpl implements PropertyLoader {
 		if (translationNotFound == null) {
 			translationNotFound = defaultText::translationNotFoundSubstitution;
 			try {
-				System.out.println("!!!! " + getText().translationNotFoundSubstitution(""));
 				translationNotFound = getText()::translationNotFoundSubstitution;
 			} catch (Exception e) {}
 		}
 		return translationNotFound.apply(string);
 	}
 
-	private PropertyProvider<String> stringProvider() {
-		return over(String.class, Parser.matchingAll(), (s, a) -> String.format(s, a.toArray()),
-				this::translationNotFoundSubstitution);
+	private PropertyValueProviderFactory stringProvider() {
+		return PropertyValueProviderFactory.over(String.class, Parser.matchingAll(),
+				(s, a) -> String.format(s, a.toArray()), this::translationNotFoundSubstitution);
+	}
+
+	private PropertyValueProviderFactory listProvider() {
+		return new PropertyValueProviderFactory() {
+			@Override
+			public Optional<PropertyValueProvider<?>> getPropertyProvider(AnnotatedType exactType, Aggregate aggregate) {
+
+				if (exactType instanceof AnnotatedParameterizedType
+						&& ((ParameterizedType) exactType.getType()).getRawType().equals(List.class)) {
+
+					AnnotatedType elementType = ((AnnotatedParameterizedType) exactType).getAnnotatedActualTypeArguments()[0];
+
+					return of(PropertyValueProvider.over(Parser.list(
+							aggregate.getPropertyProvider(elementType).orElseThrow(() -> new RuntimeException()).getParser(),
+							"\\s*,\\s*"),
+
+							(list, arguments) -> list.stream().map(element -> element.instantiate(arguments))
+									.collect(Collectors.toList()),
+
+							k -> Collections.emptyList()));
+
+				} else {
+					return empty();
+				}
+			}
+		};
 	}
 
 	public PropertyLoaderProperties getText() {
@@ -194,34 +226,25 @@ class PropertyLoaderImpl implements PropertyLoader {
 	}
 
 	@Override
-	public boolean registerProvider(PropertyProvider<?> propertyProvider) {
+	public boolean registerProvider(PropertyValueProviderFactory propertyProvider) {
 		return propertyProviders.add(propertyProvider);
 	}
 
 	@Override
-	public boolean unregisterProvider(PropertyProvider<?> propertyProvider) {
+	public boolean unregisterProvider(PropertyValueProviderFactory propertyProvider) {
 		return propertyProviders.remove(propertyProvider);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
-	public <T> List<PropertyProvider<T>> getProviders(Class<T> propertyClass) {
-		return propertyProviders.stream()
-				/*
-				 * Filter on assignability to the requested property class ...
-				 */
-				.filter(p -> propertyClass.isAssignableFrom(p.getPropertyClass())).map(p -> (PropertyProvider<T>) p)
-				/*
-				 * Sort with less specific matches first ...
-				 */
-				.sorted((a, b) -> (a.getPropertyClass().isAssignableFrom(b.getPropertyClass()) ? 1 : 0)
-						- (b.getPropertyClass().isAssignableFrom(a.getPropertyClass()) ? 1 : 0))
-				.collect(Collectors.toList());
+	public List<PropertyValueProviderFactory> getProviders() {
+		return new ArrayList<>(propertyProviders);
 	}
 
 	@Override
-	public Set<PropertyProvider<?>> getProviders() {
-		return unmodifiableSet(propertyProviders);
+	public Optional<PropertyValueProvider<?>> getProvider(AnnotatedType type) {
+		PropertyValueProviderFactory aggregateProvider = null; // TODO
+
+		return aggregateProvider.getPropertyProvider(type, this::getProvider);
 	}
 
 	public PropertyResourceStrategy getResourceStrategyInstance(Class<? extends PropertyResourceStrategy> strategy) {

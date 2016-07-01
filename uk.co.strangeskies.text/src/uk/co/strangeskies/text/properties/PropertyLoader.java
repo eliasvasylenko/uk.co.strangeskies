@@ -18,10 +18,11 @@
  */
 package uk.co.strangeskies.text.properties;
 
+import java.lang.reflect.AnnotatedType;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.ResourceBundle;
-import java.util.Set;
 
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.ObservableValue;
@@ -59,7 +60,7 @@ public interface PropertyLoader {
 	 *          a provider for a type of property
 	 * @return true if the provider was registered, false otherwise
 	 */
-	boolean registerProvider(PropertyProvider<?> propertyProvider);
+	boolean registerProvider(PropertyValueProviderFactory propertyProvider);
 
 	/**
 	 * 
@@ -67,19 +68,17 @@ public interface PropertyLoader {
 	 *          a provider for a type of property
 	 * @return true if the provider was unregistered, false otherwise
 	 */
-	boolean unregisterProvider(PropertyProvider<?> propertyProvider);
-
-	/**
-	 * @param propertyClass
-	 *          the class of the property we wish to provide
-	 * @return all providers applicable to the given class in order of precedence
-	 */
-	<T> List<PropertyProvider<T>> getProviders(Class<T> propertyClass);
+	boolean unregisterProvider(PropertyValueProviderFactory propertyProvider);
 
 	/**
 	 * @return all available property providers
 	 */
-	Set<PropertyProvider<?>> getProviders();
+	List<PropertyValueProviderFactory> getProviders();
+
+	/**
+	 * @return all available property providers
+	 */
+	Optional<PropertyValueProvider<?>> getProvider(AnnotatedType type);
 
 	/**
 	 * Generate an implementing instance of the given accessor interface class,

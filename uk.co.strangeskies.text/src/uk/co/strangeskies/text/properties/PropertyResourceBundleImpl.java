@@ -17,7 +17,7 @@ import uk.co.strangeskies.utilities.collection.MultiMap;
 public class PropertyResourceBundleImpl implements PropertyResourceBundle {
 	private final PropertyResourceStrategy strategy;
 	private final PropertyResourceConfiguration<?> configuration;
-	private final Set<PropertyResource> resources;
+	private final Set<ResourceBundleDescriptor> resources;
 	private final MultiMap<Locale, ResourceBundle, List<ResourceBundle>> localizedResourceBundles;
 
 	/**
@@ -85,7 +85,7 @@ public class PropertyResourceBundleImpl implements PropertyResourceBundle {
 		} else {
 			List<ResourceBundle> resourceBundles = localizedResourceBundles.getCollection(locale);
 
-			for (PropertyResource resource : resources) {
+			for (ResourceBundleDescriptor resource : resources) {
 				try {
 					resourceBundles.add(ResourceBundle.getBundle(resource.getLocation(), locale, resource.getClassLoader()));
 				} catch (MissingResourceException e) {}
@@ -95,14 +95,14 @@ public class PropertyResourceBundleImpl implements PropertyResourceBundle {
 		}
 	}
 
-	protected List<PropertyResource> getResources(PropertyResourceConfiguration<?> accessorConfiguration) {
+	protected List<ResourceBundleDescriptor> getResources(PropertyResourceConfiguration<?> accessorConfiguration) {
 		String resource = accessorConfiguration.getConfiguration().resource();
 
 		if (resource.equals(PropertyConfiguration.UNSPECIFIED_RESOURCE)) {
 			resource = getDefaultResource(accessorConfiguration.getAccessor());
 		}
 
-		return Arrays.asList(new PropertyResource(accessorConfiguration.getAccessor().getClassLoader(), resource));
+		return Arrays.asList(new ResourceBundleDescriptor(accessorConfiguration.getAccessor().getClassLoader(), resource));
 	}
 
 	protected String getDefaultResource(Class<?> accessor) {

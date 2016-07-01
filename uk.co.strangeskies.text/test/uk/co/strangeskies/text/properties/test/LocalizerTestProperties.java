@@ -32,4 +32,8 @@ public interface LocalizerTestProperties extends Properties<LocalizerTestPropert
 	Localized<String> simpleLocalized();
 
 	Localized<String> anotherSimpleLocalized();
+
+	String nonLocalized();
+
+	String nonLocalizedMissing();
 }

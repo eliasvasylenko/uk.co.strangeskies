@@ -21,7 +21,8 @@ package uk.co.strangeskies.text.properties;
 import java.lang.reflect.Type;
 import java.util.Locale;
 
-import uk.co.strangeskies.text.properties.PropertyConfiguration.Requirement;
+import uk.co.strangeskies.text.properties.PropertyConfiguration.Defaults;
+import uk.co.strangeskies.text.properties.PropertyConfiguration.Evaluation;
 
 /**
  * A {@link Properties} interface to provide localized texts for use by the
@@ -33,7 +34,7 @@ import uk.co.strangeskies.text.properties.PropertyConfiguration.Requirement;
  * 
  * @author Elias N Vasylenko
  */
-@PropertyConfiguration(resource = "OSGI-INF.l10n.bundle", requirement = Requirement.IMMEDIATE)
+@PropertyConfiguration(resource = "OSGI-INF.l10n.bundle", evaluation = Evaluation.IMMEDIATE)
 public interface PropertyLoaderProperties extends Properties<PropertyLoaderProperties> {
 	/**
 	 * Load the property with the key {@code property.loader.must.be.interface}.
@@ -64,6 +65,7 @@ public interface PropertyLoaderProperties extends Properties<PropertyLoaderPrope
 	 *          the key to find a translation for
 	 * @return substitution when no translation is found for the given key
 	 */
+	@PropertyConfiguration(defaults = Defaults.IGNORE)
 	String translationNotFoundSubstitution(String key);
 
 	/**

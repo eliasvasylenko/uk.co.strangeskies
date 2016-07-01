@@ -23,14 +23,16 @@ import static uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase.L
 
 import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
-import uk.co.strangeskies.text.properties.PropertyConfiguration.Requirement;
+import uk.co.strangeskies.text.properties.PropertyConfiguration.Defaults;
+import uk.co.strangeskies.text.properties.PropertyConfiguration.Evaluation;
 
 @SuppressWarnings("javadoc")
 @PropertyConfiguration(
 		key = UNQUALIFIED_SLASHED,
 		keySplitString = ".",
 		keyCase = LOWER,
-		requirement = Requirement.IMMEDIATE)
+		evaluation = Evaluation.IMMEDIATE,
+		defaults = Defaults.IGNORE)
 public interface ImmediateRequirementTestProperties extends Properties<ImmediateRequirementTestProperties> {
 	String requiredProperty();
 }

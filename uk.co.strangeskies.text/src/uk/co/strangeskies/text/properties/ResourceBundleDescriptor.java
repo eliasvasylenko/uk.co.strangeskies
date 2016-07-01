@@ -1,10 +1,10 @@
 package uk.co.strangeskies.text.properties;
 
-public class PropertyResource {
+public class ResourceBundleDescriptor {
 	private final ClassLoader classLoader;
 	private final String location;
 
-	public PropertyResource(ClassLoader classLoader, String location) {
+	public ResourceBundleDescriptor(ClassLoader classLoader, String location) {
 		this.classLoader = classLoader;
 		this.location = location;
 	}
@@ -21,10 +21,10 @@ public class PropertyResource {
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
-		if (!(obj instanceof PropertyResource))
+		if (!(obj instanceof ResourceBundleDescriptor))
 			return false;
 
-		PropertyResource that = (PropertyResource) obj;
+		ResourceBundleDescriptor that = (ResourceBundleDescriptor) obj;
 
 		return this.classLoader.equals(that.classLoader) && this.location.equals(that.location);
 	}

@@ -28,31 +28,15 @@ import uk.co.strangeskies.text.properties.PropertyConfiguration;
 @SuppressWarnings("javadoc")
 @PropertyConfiguration(key = UNQUALIFIED_SLASHED, keySplitString = ".", keyCase = LOWER, strategy = DefaultPropertyResourceStrategy.class, resource = PropertyConfiguration.UNSPECIFIED_RESOURCE)
 public interface TestProperties extends Properties<TestProperties> {
-	String missingMethod();
-
 	String simple();
-
-	String anotherSimple();
 
 	String substitution(String item);
 
 	String multipleSubstitution(String first, String second);
-
-	@PropertyConfiguration(key = UNQUALIFIED_SLASHED + "/%4$s")
-	String keyAppend(String first);
-
-	@PropertyConfiguration(key = UNQUALIFIED_SLASHED + "/%4$s/%5$s")
-	String multipleKeyAppend(String first, String second);
 
 	default String defaultMethod() {
 		return substitution("default");
 	}
 
 	NestedTestProperties nesting();
-
-	RequirementTestProperties requirements();
-
-	ImmediateRequirementTestProperties immediateRequirements();
-
-	LocalizerTestProperties localization();
 }

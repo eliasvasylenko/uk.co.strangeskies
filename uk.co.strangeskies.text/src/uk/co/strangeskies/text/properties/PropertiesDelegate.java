@@ -25,6 +25,7 @@ import static uk.co.strangeskies.text.properties.PropertyConfiguration.UNSPECIFI
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -32,7 +33,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -43,11 +43,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import uk.co.strangeskies.text.CamelCaseFormatter;
 import uk.co.strangeskies.text.CamelCaseFormatter.UnformattingCase;
-import uk.co.strangeskies.text.parsing.Parser;
+import uk.co.strangeskies.text.properties.PropertyConfiguration.Defaults;
+import uk.co.strangeskies.text.properties.PropertyConfiguration.Evaluation;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;
 import uk.co.strangeskies.text.properties.PropertyLoaderImpl.MethodSignature;
 import uk.co.strangeskies.utilities.Log.Level;
@@ -104,10 +104,9 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 		@Override
 		public T get(Locale locale) {
 			return cache.computeIfAbsent(locale, l -> {
-				PropertyProvider<T> provider = getClassProvider(key, propertyClass);
-				Optional<T> instantiatedValue = loadValue(source, provider, key, locale).instantiate(arguments);
+				PropertyValueProvider<T> provider = getClassProvider(key, propertyClass);
 
-				return instantiatedValue.orElse(null);
+				return loadValue(source, provider, key, locale).instantiate(arguments);
 			});
 		}
 
@@ -190,7 +189,16 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 			MethodSignature signature = new MethodSignature(method);
 
 			if (!LOCALIZATION_HELPER_METHODS.contains(signature) && !method.isDefault()) {
+				PropertyConfiguration methodConfiguration = method.getAnnotation(PropertyConfiguration.class);
 
+				Evaluation evaluate = source.getConfiguration().evaluation();
+				if (methodConfiguration != null && methodConfiguration.evaluation() != Evaluation.UNSPECIFIED) {
+					evaluate = methodConfiguration.evaluation();
+				}
+
+				if (evaluate == Evaluation.IMMEDIATE) {
+					getPropertyValue(signature);
+				}
 			}
 		}
 	}
@@ -202,7 +210,7 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 		});
 	}
 
-	private Object getValue(MethodSignature signature, Object... arguments) {
+	private Object getInstantiatedValue(MethodSignature signature, Object... arguments) {
 		List<?> argumentList;
 		if (arguments == null) {
 			argumentList = emptyList();
@@ -211,9 +219,9 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 		}
 
 		try {
-			PropertyValue<?> value = valueCache.computeIfAbsent(signature, k -> createValue(k));
+			PropertyValue<?> value = getPropertyValue(signature);
 
-			return value.instantiate(argumentList).orElse(null);
+			return value.instantiate(argumentList);
 		} catch (Exception e) {
 			if (source.getAccessor().equals(PropertyLoaderProperties.class)) {
 				try {
@@ -227,36 +235,36 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 		}
 	}
 
-	private PropertyValue<?> createValue(MethodSignature signature) {
-		PropertyResourceConfiguration<A> source;
-		PropertyConfiguration configuration = signature.method().getAnnotation(PropertyConfiguration.class);
-		if (configuration != null) {
-			source = this.source.derive(configuration);
-		} else {
-			source = this.source;
-		}
+	private PropertyValue<?> getPropertyValue(MethodSignature signature) {
+		return valueCache.computeIfAbsent(signature, s -> {
+			PropertyResourceConfiguration<A> source;
+			PropertyConfiguration configuration = signature.method().getAnnotation(PropertyConfiguration.class);
+			if (configuration != null) {
+				source = this.source.derive(configuration);
+			} else {
+				source = this.source;
+			}
 
-		@SuppressWarnings("unchecked")
-		PropertyValue<?> propertyValue = arguments -> (Optional<Object>) createValue(source, signature, arguments);
+			String key = getKey(source, signature);
+			AnnotatedType propertyType = signature.method().getAnnotatedReturnType();
 
-		return propertyValue;
+			PropertyValueProvider<?> provider = loader.getProvider(propertyType);
+
+			return loadValue(source, provider, key, Locale.ROOT);
+		});
 	}
 
-	private String getKey(PropertyResourceConfiguration<A> source, MethodSignature signature, List<?> arguments) {
+	private String getKey(PropertyResourceConfiguration<A> source, MethodSignature signature) {
 		String key = source.getConfiguration().key();
 		if (key.equals(PropertyConfiguration.UNSPECIFIED_KEY)) {
 			key = PropertyConfiguration.QUALIFIED_SCOPED;
 		}
 
-		Object[] substitution = new Object[arguments.size() + 3];
+		Object[] substitution = new Object[3];
 		substitution[0] = formatKeyComponent(source, source.getAccessor().getPackage().getName());
 		substitution[1] = formatKeyComponent(source,
 				PropertyLoader.removePropertiesPostfix(source.getAccessor().getSimpleName()));
 		substitution[2] = formatKeyComponent(source, signature.method().getName());
-		int i = 3;
-		for (Object argument : arguments) {
-			substitution[i++] = argument;
-		}
 
 		return String.format(key, substitution);
 	}
@@ -277,75 +285,21 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 		return component;
 	}
 
-	private <T> PropertyValue<T> loadValue(PropertyResourceConfiguration<A> source, PropertyProvider<T> provider,
+	private <T> PropertyValue<T> loadValue(PropertyResourceConfiguration<A> source, PropertyValueProvider<T> provider,
 			String key, Locale locale) {
 		try {
 			return provider.getParser().parse(getBundle(source).getValue(key, locale));
 		} catch (MissingResourceException e) {
-			loader.log(Level.WARN, new PropertyLoaderException(getText().translationNotFoundMessage(key), e));
+			if (source.getConfiguration().defaults() != Defaults.IGNORE) {
+				Optional<PropertyValue<T>> defaultValue = provider.getDefault(key);
+				if (defaultValue.isPresent()) {
+					return defaultValue.get();
+				}
+			}
+			PropertyLoaderException ple = new PropertyLoaderException(getText().translationNotFoundMessage(key), e);
+			loader.log(Level.WARN, ple);
+			throw ple;
 		}
-
-		return provider.getDefault(key);
-	}
-
-	private Optional<?> createValue(PropertyResourceConfiguration<A> source, MethodSignature signature,
-			List<?> arguments) {
-		String key = getKey(source, signature, arguments);
-
-		Type propertyType = signature.method().getGenericReturnType();
-		Class<?> propertyClass = getPropertyClass(key, propertyType);
-
-		if (Properties.class.isAssignableFrom(propertyClass)) {
-			/*
-			 * TODO return type annotation of @PropertyConfiguration isn't supported
-			 * (yet?), but this is how it might look:
-			 */
-			PropertyConfiguration configuration = source
-					.derive(signature.method().getAnnotatedReturnType().getAnnotation(PropertyConfiguration.class))
-					.getConfiguration();
-
-			return Optional.of(getPropertiesUnsafe(propertyClass, configuration));
-
-		} else if (Localized.class.equals(propertyClass)) {
-			return Optional.of(new LocalizedPropertyImpl<>(source, key, getElementClass(key, propertyType), arguments));
-
-		} else if (List.class.equals(propertyClass)) {
-			PropertyProvider<?> provider = getListProvider(key, getElementClass(key, propertyType));
-
-			return loadValue(source, provider, key, Locale.ROOT).instantiate(arguments);
-
-		} else {
-			PropertyProvider<?> provider = getClassProvider(key, propertyClass);
-
-			return loadValue(source, provider, key, Locale.ROOT).instantiate(arguments);
-		}
-	}
-
-	private PropertyProvider<List<?>> getListProvider(String key, Class<?> propertyClass) {
-		@SuppressWarnings("unchecked")
-		Class<List<?>> listClass = (Class<List<?>>) (Class<?>) List.class;
-
-		return PropertyProvider.over(listClass,
-
-				Parser.list(getClassProvider(key, propertyClass).getParser(), "\\s*,\\s*"),
-
-				(list, arguments) -> list.stream().map(element -> element.instantiate(arguments)).filter(Optional::isPresent)
-						.map(Optional::get).collect(Collectors.toList()),
-
-				k -> Collections.emptyList());
-	}
-
-	private <T> PropertyProvider<T> getClassProvider(String key, Class<T> propertyClass) {
-		/*
-		 * get parser for class
-		 */
-		List<PropertyProvider<T>> providers = loader.getProviders(propertyClass);
-
-		/*
-		 * TODO aggregate defaults and parsers into one...
-		 */
-
-		return providers.get(0);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -403,7 +357,7 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 								.unreflectSpecial(method, method.getDeclaringClass()).bindTo(p).invokeWithArguments(args);
 					}
 
-					return getValue(signature, args);
+					return getInstantiatedValue(signature, args);
 				});
 	}
 }

@@ -19,7 +19,6 @@
 package uk.co.strangeskies.text.properties;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * A {@link PropertyValue} instance represents the value returned from a method
@@ -38,5 +37,5 @@ public interface PropertyValue<T> {
 	 *          the arguments passed to the property accessor method
 	 * @return the instantiation of the value for the given arguments
 	 */
-	Optional<T> instantiate(List<?> arguments);
+	T instantiate(List<?> arguments);
 }
