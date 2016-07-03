@@ -27,7 +27,7 @@ import java.util.Set;
  * 
  * @author Elias N Vasylenko
  */
-public interface PropertyResourceBundle {
+public interface PropertyResource {
 	/**
 	 * @return the set of available keys according to the root locale
 	 */
@@ -65,15 +65,15 @@ public interface PropertyResourceBundle {
 	/**
 	 * @return the strategy employed to locate the resources backing this bundle
 	 */
-	PropertyResourceStrategy getStrategy();
+	PropertyResourceStrategy<?> getStrategy();
 
 	/**
 	 * @return the property resource configuration
 	 */
-	PropertyResourceConfiguration<?> getConfiguration();
+	PropertiesConfiguration<?> getConfiguration();
 
 	/**
-	 * Create a {@link PropertyResourceBundle localising resource bundle} over the
+	 * Create a {@link PropertyResource localising resource bundle} over the
 	 * given configuration.
 	 * 
 	 * 
@@ -87,7 +87,7 @@ public interface PropertyResourceBundle {
 	 * {@link ResourceBundle resource bundles} , which in turn will behave
 	 * according to {@link ResourceBundle#getBundle(String, Locale, ClassLoader)}
 	 * with the given class loader, using the given locations as base names, and
-	 * using the current locale of the {@link PropertyResourceBundle}. This locale
+	 * using the current locale of the {@link PropertyResource}. This locale
 	 * may change, and the delegate resource bundles will be updated accordingly.
 	 * 
 	 * @param locale
@@ -97,7 +97,7 @@ public interface PropertyResourceBundle {
 	 *          they exist in
 	 * @return a resource bundle over all resources at each given location
 	 */
-	public static PropertyResourceBundle getBundle(Locale locale, PropertyResourceConfiguration<?> resource) {
-		return DefaultPropertyResourceStrategy.getInstance().getPropertyResourceBundle(resource);
+	public static PropertyResource getBundle(Locale locale, PropertiesConfiguration<?> resource) {
+		return PropertyResourceBundleStrategy.getInstance().getPropertyResourceBundle(resource);
 	}
 }

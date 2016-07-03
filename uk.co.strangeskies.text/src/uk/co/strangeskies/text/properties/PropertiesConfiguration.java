@@ -26,31 +26,31 @@ import uk.co.strangeskies.text.properties.PropertyConfiguration.Defaults;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.Evaluation;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;
 
-class PropertyResourceConfiguration<T extends Properties<T>> {
+public class PropertiesConfiguration<T extends Properties<T>> {
 	@PropertyConfiguration
 	private final class DefaultPropertyConfigurationAnnotation {}
 
 	private final Class<T> accessor;
 	private final PropertyConfiguration configuration;
 
-	protected PropertyResourceConfiguration(Class<T> accessor) {
+	public PropertiesConfiguration(Class<T> accessor) {
 		this(accessor, accessor.getAnnotation(PropertyConfiguration.class));
 	}
 
-	protected PropertyResourceConfiguration(Class<T> accessor, PropertyConfiguration configuration) {
+	private PropertiesConfiguration(Class<T> accessor, PropertyConfiguration configuration) {
 		this.accessor = accessor;
 		this.configuration = configuration != null ? configuration
 				: DefaultPropertyConfigurationAnnotation.class.getAnnotation(PropertyConfiguration.class);
 	}
 
-	public <A extends Properties<A>> PropertyResourceConfiguration<A> derive(Class<A> accessor) {
-		return new PropertyResourceConfiguration<>(accessor,
+	public <A extends Properties<A>> PropertiesConfiguration<A> derive(Class<A> accessor) {
+		return new PropertiesConfiguration<>(accessor,
 				deriveConfiguration(accessor.getAnnotation(PropertyConfiguration.class)));
 	}
 
-	public PropertyResourceConfiguration<T> derive(PropertyConfiguration configuration) {
+	public PropertiesConfiguration<T> derive(PropertyConfiguration configuration) {
 		if (configuration != null) {
-			return new PropertyResourceConfiguration<>(accessor, deriveConfiguration(configuration));
+			return new PropertiesConfiguration<>(accessor, deriveConfiguration(configuration));
 		} else {
 			return this;
 		}
@@ -70,10 +70,10 @@ class PropertyResourceConfiguration<T extends Properties<T>> {
 			return false;
 		if (obj == this)
 			return true;
-		if (!(obj instanceof PropertyResourceConfiguration))
+		if (!(obj instanceof PropertiesConfiguration))
 			return false;
 
-		PropertyResourceConfiguration<?> other = (PropertyResourceConfiguration<?>) obj;
+		PropertiesConfiguration<?> other = (PropertiesConfiguration<?>) obj;
 
 		return accessor.equals(other.accessor) && configuration.equals(other.configuration);
 	}
@@ -94,7 +94,7 @@ class PropertyResourceConfiguration<T extends Properties<T>> {
 
 		boolean merged = false;
 
-		if (configuration.strategy().equals(PropertyConfiguration.UnspecifiedPropertyResourceStrategy.class)) {
+		if (configuration.strategy().equals(PropertyResourceStrategy.class)) {
 			merged = true;
 			strategy = getConfiguration().strategy();
 		} else {

@@ -20,7 +20,6 @@ package uk.co.strangeskies.text.properties;
 
 import static java.lang.String.format;
 
-import java.lang.reflect.Type;
 import java.util.Locale;
 
 final class DefaultPropertyLoaderProperties extends StaticPropertyAccessor<PropertyLoaderProperties>
@@ -52,8 +51,8 @@ final class DefaultPropertyLoaderProperties extends StaticPropertyAccessor<Prope
 	}
 
 	@Override
-	public Localized<String> illegalReturnType(Type type, String key) {
-		return localize(ILLEGAL_RETURN_TYPE, type, key);
+	public Localized<String> propertyValueTypeNotSupported(String typeName, String key) {
+		return localize(ILLEGAL_RETURN_TYPE, typeName, key);
 	}
 
 	@Override
@@ -62,7 +61,7 @@ final class DefaultPropertyLoaderProperties extends StaticPropertyAccessor<Prope
 	}
 
 	@Override
-	public Localized<String> cannotInstantiateStrategy(Class<? extends PropertyResourceStrategy> strategy) {
+	public Localized<String> cannotInstantiateStrategy(Class<? extends PropertyResourceStrategy<?>> strategy) {
 		return localize(CANNOT_INSTANTIATE_STRATEGY, strategy);
 	}
 }

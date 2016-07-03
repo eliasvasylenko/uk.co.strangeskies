@@ -14,9 +14,9 @@ import java.util.Set;
 import uk.co.strangeskies.utilities.collection.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.MultiMap;
 
-public class PropertyResourceBundleImpl implements PropertyResourceBundle {
+public class PropertyResourceImpl implements PropertyResource {
 	private final PropertyResourceStrategy strategy;
-	private final PropertyResourceConfiguration<?> configuration;
+	private final PropertiesConfiguration<?> configuration;
 	private final Set<ResourceBundleDescriptor> resources;
 	private final MultiMap<Locale, ResourceBundle, List<ResourceBundle>> localizedResourceBundles;
 
@@ -28,8 +28,7 @@ public class PropertyResourceBundleImpl implements PropertyResourceBundle {
 	 * @param configuration
 	 *          the resource locations
 	 */
-	protected PropertyResourceBundleImpl(PropertyResourceStrategy strategy,
-			PropertyResourceConfiguration<?> configuration) {
+	protected PropertyResourceImpl(PropertyResourceStrategy strategy, PropertiesConfiguration<?> configuration) {
 		this.strategy = strategy;
 		this.configuration = configuration;
 		localizedResourceBundles = new MultiHashMap<>(ArrayList::new);
@@ -53,7 +52,7 @@ public class PropertyResourceBundleImpl implements PropertyResourceBundle {
 	}
 
 	@Override
-	public PropertyResourceConfiguration<?> getConfiguration() {
+	public PropertiesConfiguration<?> getConfiguration() {
 		return configuration;
 	}
 
@@ -95,7 +94,7 @@ public class PropertyResourceBundleImpl implements PropertyResourceBundle {
 		}
 	}
 
-	protected List<ResourceBundleDescriptor> getResources(PropertyResourceConfiguration<?> accessorConfiguration) {
+	protected List<ResourceBundleDescriptor> getResources(PropertiesConfiguration<?> accessorConfiguration) {
 		String resource = accessorConfiguration.getConfiguration().resource();
 
 		if (resource.equals(PropertyConfiguration.UNSPECIFIED_RESOURCE)) {
@@ -106,6 +105,6 @@ public class PropertyResourceBundleImpl implements PropertyResourceBundle {
 	}
 
 	protected String getDefaultResource(Class<?> accessor) {
-		return PropertyLoader.removePropertiesPostfix(accessor.getName());
+		return Properties.getDefaultName(accessor.getName());
 	}
 }

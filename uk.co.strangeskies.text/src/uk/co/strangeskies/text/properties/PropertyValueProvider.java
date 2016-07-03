@@ -30,9 +30,6 @@ import uk.co.strangeskies.text.parsing.Parser;
 /**
  * A provider of {@link PropertyValue property values} for properties of a
  * certain class.
- * <p>
- * In most use cases the simplest {@link #over(Class, Parser)} method can be
- * used to generate instances over a given value class and property parser.
  * 
  * @author Elias N Vasylenko
  *

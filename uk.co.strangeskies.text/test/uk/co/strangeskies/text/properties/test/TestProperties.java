@@ -21,12 +21,16 @@ package uk.co.strangeskies.text.properties.test;
 import static uk.co.strangeskies.text.properties.PropertyConfiguration.UNQUALIFIED_SLASHED;
 import static uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase.LOWER;
 
-import uk.co.strangeskies.text.properties.DefaultPropertyResourceStrategy;
+import java.util.List;
+import java.util.Optional;
+
 import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
+import uk.co.strangeskies.text.properties.PropertyConfiguration.Defaults;
+import uk.co.strangeskies.text.properties.PropertyConfiguration.Evaluation;
 
 @SuppressWarnings("javadoc")
-@PropertyConfiguration(key = UNQUALIFIED_SLASHED, keySplitString = ".", keyCase = LOWER, strategy = DefaultPropertyResourceStrategy.class, resource = PropertyConfiguration.UNSPECIFIED_RESOURCE)
+@PropertyConfiguration(key = UNQUALIFIED_SLASHED, keySplitString = ".", keyCase = LOWER)
 public interface TestProperties extends Properties<TestProperties> {
 	String simple();
 
@@ -39,4 +43,18 @@ public interface TestProperties extends Properties<TestProperties> {
 	}
 
 	NestedTestProperties nesting();
+
+	Optional<String> optional();
+
+	Optional<String> optionalMissing();
+
+	List<String> list();
+
+	@PropertyConfiguration(defaults = Defaults.IGNORE)
+	String requiredProperty();
+
+	@PropertyConfiguration(evaluation = Evaluation.IMMEDIATE)
+	String immediateDefaultingProperty();
+
+	ImmediateRequirementTestProperties immediateRequirements();
 }

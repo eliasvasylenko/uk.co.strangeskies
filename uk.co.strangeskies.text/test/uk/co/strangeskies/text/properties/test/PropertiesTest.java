@@ -19,17 +19,26 @@
 package uk.co.strangeskies.text.properties.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static uk.co.strangeskies.text.properties.LocaleManager.getManager;
 
 import org.junit.Test;
 
 import uk.co.strangeskies.text.properties.LocaleManager;
 import uk.co.strangeskies.text.properties.PropertyLoader;
+import uk.co.strangeskies.text.properties.PropertyLoaderException;
 
 @SuppressWarnings("javadoc")
 public class PropertiesTest {
 	public TestProperties text(LocaleManager manager) {
-		return PropertyLoader.getPropertyLoader(manager).getProperties(TestProperties.class);
+		try {
+			return PropertyLoader.getPropertyLoader(manager).getProperties(TestProperties.class);
+		} catch (Throwable t) {
+			t.printStackTrace();
+			throw t;
+		}
 	}
 
 	@Test
@@ -46,14 +55,14 @@ public class PropertiesTest {
 	public void simpleTextTest() {
 		TestProperties text = text(getManager());
 
-		assertEquals("simple property value", text.simple().toString());
+		assertEquals("simple property value", text.simple());
 	}
 
 	@Test
 	public void substitutionTextTest() {
 		TestProperties text = text(getManager());
 
-		assertEquals("value of substitution", text.substitution("substitution").toString());
+		assertEquals("value of substitution", text.substitution("substitution"));
 	}
 
 	@Test
@@ -61,34 +70,74 @@ public class PropertiesTest {
 		TestProperties text = text(getManager());
 
 		assertEquals("values of substitution one and substitution two",
-				text.multipleSubstitution("substitution one", "substitution two").toString());
+				text.multipleSubstitution("substitution one", "substitution two"));
 	}
 
 	@Test
 	public void defaultTextTest() {
 		TestProperties text = text(getManager());
 
-		assertEquals("value of default", text.defaultMethod().toString());
+		assertEquals("value of default", text.defaultMethod());
 	}
 
 	@Test
 	public void copyTextTest() {
 		TestProperties text = text(getManager());
 
-		assertEquals("simple property value", text.copy().simple().toString());
+		assertEquals("simple property value", text.copy().simple());
 	}
 
 	@Test
 	public void nestedTextTest() {
 		TestProperties text = text(getManager());
 
-		assertEquals("nested text value", text.nesting().nestedText().toString());
+		assertEquals("nested text value", text.nesting().nestedText());
 	}
 
 	@Test
 	public void deeplyNestedTextTest() {
 		TestProperties text = text(getManager());
 
-		assertEquals("deeply nested text value", text.nesting().deeply().deeplyNestedText().toString());
+		assertEquals("deeply nested text value", text.nesting().deeply().deeplyNestedText());
+	}
+
+	@Test
+	public void nestedOverrideTextTest() {
+		TestProperties text = text(getManager());
+
+		assertEquals("deeply nested text overriding value", text.nesting().deeply().deeplyNestedOverrideText());
+	}
+
+	@Test
+	public void optionalPresentTextTest() {
+		TestProperties text = text(getManager());
+
+		assertTrue(text.optional().isPresent());
+	}
+
+	@Test
+	public void optionalMissingTextTest() {
+		TestProperties text = text(getManager());
+
+		assertFalse(text.optionalMissing().isPresent());
+	}
+
+	@Test(expected = PropertyLoaderException.class)
+	public void immediateRequirementTest() {
+		text(getManager()).immediateRequirements();
+	}
+
+	@Test(expected = PropertyLoaderException.class)
+	public void requiredPropertyTest() {
+		TestProperties text = text(getManager());
+
+		text.requiredProperty();
+	}
+
+	@Test
+	public void immediateDefaultingPropertyTest() {
+		TestProperties text = text(getManager());
+
+		assertNotNull(text.immediateDefaultingProperty());
 	}
 }

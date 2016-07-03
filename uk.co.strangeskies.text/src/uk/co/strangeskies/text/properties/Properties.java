@@ -50,6 +50,8 @@ import uk.co.strangeskies.utilities.Self;
  *          self bound type
  */
 public interface Properties<S extends Properties<S>> extends Self<S>, Observable<S> {
+	String PROPERTIES_POSTFIX = "Properties";
+
 	/**
 	 * @return the current locale of the text
 	 */
@@ -58,5 +60,13 @@ public interface Properties<S extends Properties<S>> extends Self<S>, Observable
 	@Override
 	default S copy() {
 		return getThis();
+	}
+
+	static String getDefaultName(String name) {
+		if (name.endsWith(PROPERTIES_POSTFIX) && !name.equals(PROPERTIES_POSTFIX)) {
+			name = name.substring(0, name.length() - PROPERTIES_POSTFIX.length());
+		}
+
+		return name;
 	}
 }

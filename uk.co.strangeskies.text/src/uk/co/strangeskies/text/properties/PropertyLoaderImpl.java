@@ -88,15 +88,13 @@ class PropertyLoaderImpl implements PropertyLoader {
 		}
 	}
 
-	private final Map<Class<? extends PropertyResourceStrategy>, PropertyResourceStrategy> resourceStrategies;
+	private final Map<Class<? extends PropertyResourceStrategy<?>>, PropertyResourceStrategy<?>> resourceStrategies;
 	private final Set<PropertyValueProviderFactory> propertyProviders;
-	private final ComputingMap<PropertyResourceConfiguration<?>, Properties<?>> localizationCache;
+	private final ComputingMap<PropertiesConfiguration<?>, Properties<?>> localizationCache;
 
 	private final LocaleProvider locale;
 	private Log log;
 
-	private Function<String, String> translationNotFound;
-	private final DefaultPropertyLoaderProperties defaultText;
 	private final PropertyLoaderProperties text;
 
 	/**
@@ -109,59 +107,56 @@ class PropertyLoaderImpl implements PropertyLoader {
 	 */
 	public PropertyLoaderImpl(LocaleProvider locale, Log log) {
 		resourceStrategies = new ConcurrentHashMap<>();
-		resourceStrategies.put(DefaultPropertyResourceStrategy.class, DefaultPropertyResourceStrategy.getInstance());
+		registerResourceStrategy(PropertyResourceBundleStrategy.getInstance());
+		setDefaultResourceStrategy(PropertyResourceBundleStrategy.getInstance());
+
 		propertyProviders = synchronizedSet(new LinkedHashSet<>());
+		registerValueProvider(stringProvider());
+		registerValueProvider(listProvider());
+		registerValueProvider(optionalProvider());
 
 		localizationCache = new CacheComputingMap<>(c -> instantiateProperties(c), true);
 
 		this.locale = locale;
 		this.log = log;
 
-		defaultText = new DefaultPropertyLoaderProperties();
-		text = getProperties(PropertyLoaderProperties.class);
+		PropertyLoaderProperties text;
+		try {
+			text = getProperties(PropertyLoaderProperties.class);
+		} catch (Exception e) {
+			text = new DefaultPropertyLoaderProperties();
+		}
+		this.text = text;
 
 		if (log != null) {
 			locale().addObserver(l -> {
-				log.log(Level.INFO, getText().localeChanged(locale, getLocale()).toString());
+				log.log(Level.INFO, getProperties().localeChanged(locale, getLocale()).toString());
 			});
 		}
-
-		registerProvider(listProvider());
-		registerProvider(stringProvider());
-	}
-
-	protected DefaultPropertyLoaderProperties getDefaultText() {
-		return defaultText;
-	}
-
-	private String translationNotFoundSubstitution(String string) {
-		if (translationNotFound == null) {
-			translationNotFound = defaultText::translationNotFoundSubstitution;
-			try {
-				translationNotFound = getText()::translationNotFoundSubstitution;
-			} catch (Exception e) {}
-		}
-		return translationNotFound.apply(string);
 	}
 
 	private PropertyValueProviderFactory stringProvider() {
 		return PropertyValueProviderFactory.over(String.class, Parser.matchingAll(),
-				(s, a) -> String.format(s, a.toArray()), this::translationNotFoundSubstitution);
+				(s, a) -> String.format(s, a.toArray()), s -> getProperties().translationNotFoundSubstitution(s));
 	}
 
 	private PropertyValueProviderFactory listProvider() {
 		return new PropertyValueProviderFactory() {
+			@SuppressWarnings("unchecked")
 			@Override
-			public Optional<PropertyValueProvider<?>> getPropertyProvider(AnnotatedType exactType, Aggregate aggregate) {
+			public <T> Optional<PropertyValueProvider<T>> getPropertyProvider(AnnotatedType exactType,
+					PropertyLoader loader) {
 
 				if (exactType instanceof AnnotatedParameterizedType
 						&& ((ParameterizedType) exactType.getType()).getRawType().equals(List.class)) {
 
 					AnnotatedType elementType = ((AnnotatedParameterizedType) exactType).getAnnotatedActualTypeArguments()[0];
 
-					return of(PropertyValueProvider.over(Parser.list(
-							aggregate.getPropertyProvider(elementType).orElseThrow(() -> new RuntimeException()).getParser(),
-							"\\s*,\\s*"),
+					/*
+					 * TODO proper exception
+					 */
+					return of((PropertyValueProvider<T>) PropertyValueProvider.over(Parser.list(
+							loader.getValueProvider(elementType).orElseThrow(() -> new RuntimeException()).getParser(), "\\s*,\\s*"),
 
 							(list, arguments) -> list.stream().map(element -> element.instantiate(arguments))
 									.collect(Collectors.toList()),
@@ -175,28 +170,60 @@ class PropertyLoaderImpl implements PropertyLoader {
 		};
 	}
 
-	public PropertyLoaderProperties getText() {
+	private PropertyValueProviderFactory optionalProvider() {
+		return new PropertyValueProviderFactory() {
+			@SuppressWarnings("unchecked")
+			@Override
+			public <T> Optional<PropertyValueProvider<T>> getPropertyProvider(AnnotatedType exactType,
+					PropertyLoader loader) {
+
+				if (exactType instanceof AnnotatedParameterizedType
+						&& ((ParameterizedType) exactType.getType()).getRawType().equals(Optional.class)) {
+
+					AnnotatedType elementType = ((AnnotatedParameterizedType) exactType).getAnnotatedActualTypeArguments()[0];
+
+					return loader.getValueProvider(elementType)
+							.<PropertyValueProvider<T>>map(p -> new PropertyValueProvider<T>() {
+								@Override
+								public Parser<PropertyValue<T>> getParser() {
+									Parser<PropertyValue<T>> optionalParser = p.getParser()
+											.transform(v -> a -> (T) Optional.ofNullable(v.instantiate(a)));
+
+									return optionalParser.orElse(a -> (T) Optional.empty());
+								}
+
+								@Override
+								public Optional<PropertyValue<T>> getDefault(String keyString) {
+									return Optional.of(arguments -> (T) Optional.empty());
+								};
+							});
+
+				} else {
+					return empty();
+				}
+			}
+		};
+	}
+
+	@Override
+	public PropertyLoaderProperties getProperties() {
 		return text;
 	}
 
-	void log(Level level, String message) {
-		if (log != null) {
-			log.log(level, message);
-		}
-	}
+	public Log getLog() {
+		return new Log() {
+			@Override
+			public void log(Level level, String message) {
+				if (log != null)
+					log.log(level, message);
+			}
 
-	<E extends Throwable> E log(Level level, E exception) {
-		if (log != null) {
-			log.log(level, exception);
-		}
-		return exception;
-	}
-
-	<E extends Throwable> E log(Level level, String message, E exception) {
-		if (log != null) {
-			log.log(level, message, exception);
-		}
-		return exception;
+			@Override
+			public void log(Level level, String message, Throwable exception) {
+				if (log != null)
+					log.log(level, message, exception);
+			}
+		};
 	}
 
 	@Override
@@ -209,55 +236,97 @@ class PropertyLoaderImpl implements PropertyLoader {
 		return locale;
 	}
 
-	protected <T extends Properties<T>> T instantiateProperties(PropertyResourceConfiguration<T> source) {
-		return new PropertiesDelegate<>(this, source).copy();
+	protected <T extends Properties<T>> T instantiateProperties(PropertiesConfiguration<T> source) {
+		return new PropertiesDelegate<>(this, getLog(), source).copy();
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public <T extends Properties<T>> T getProperties(Class<T> accessor, PropertyConfiguration defaultConfiguration) {
-		return (T) localizationCache.putGet(new PropertyResourceConfiguration<>(accessor, defaultConfiguration));
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public <T extends Properties<T>> T getProperties(Class<T> accessor) {
-		return (T) localizationCache.putGet(new PropertyResourceConfiguration<>(accessor));
+	public <T extends Properties<T>> T getProperties(PropertiesConfiguration<T> accessorConfiguration) {
+		return (T) localizationCache.putGet(accessorConfiguration);
 	}
 
 	@Override
-	public boolean registerProvider(PropertyValueProviderFactory propertyProvider) {
+	public boolean registerValueProvider(PropertyValueProviderFactory propertyProvider) {
 		return propertyProviders.add(propertyProvider);
 	}
 
 	@Override
-	public boolean unregisterProvider(PropertyValueProviderFactory propertyProvider) {
+	public boolean unregisterValueProvider(PropertyValueProviderFactory propertyProvider) {
 		return propertyProviders.remove(propertyProvider);
 	}
 
 	@Override
-	public List<PropertyValueProviderFactory> getProviders() {
+	public List<PropertyValueProviderFactory> getValueProviders() {
 		return new ArrayList<>(propertyProviders);
 	}
 
 	@Override
-	public Optional<PropertyValueProvider<?>> getProvider(AnnotatedType type) {
-		PropertyValueProviderFactory aggregateProvider = null; // TODO
+	public Optional<PropertyValueProvider<?>> getValueProvider(AnnotatedType type) {
+		PropertyValueProviderFactory aggregateProvider = new PropertyValueProviderFactory() {
+			@Override
+			public <T> Optional<PropertyValueProvider<T>> getPropertyProvider(AnnotatedType exactType,
+					PropertyLoader loader) {
+				List<PropertyValueProvider<?>> providers = getValueProviders().stream()
+						.map(p -> p.getPropertyProvider(exactType, loader)).filter(Optional::isPresent).map(Optional::get)
+						.collect(Collectors.toList());
 
-		return aggregateProvider.getPropertyProvider(type, this::getProvider);
+				if (!providers.isEmpty()) {
+					return Optional.of(new PropertyValueProvider<T>() {
+						@SuppressWarnings("unchecked")
+						@Override
+						public Parser<PropertyValue<T>> getParser() {
+							return providers.stream().map(PropertyValueProvider::getParser).reduce(Parser::orElse).get()
+									.transform(v -> (PropertyValue<T>) v);
+						}
+
+						@SuppressWarnings("unchecked")
+						@Override
+						public Optional<PropertyValue<T>> getDefault(String keyString) {
+							return providers.stream().map(p -> p.getDefault(keyString)).filter(Optional::isPresent).findFirst()
+									.flatMap(Function.identity()).map(v -> (PropertyValue<T>) v);
+						}
+					});
+				} else {
+					return Optional.empty();
+				}
+			}
+		};
+
+		return aggregateProvider.getPropertyProvider(type, this).map(p -> (PropertyValueProvider<?>) p);
 	}
 
-	public PropertyResourceStrategy getResourceStrategyInstance(Class<? extends PropertyResourceStrategy> strategy) {
-		try {
-			if (strategy.equals(PropertyConfiguration.UnspecifiedPropertyResourceStrategy.class)) {
-				return DefaultPropertyResourceStrategy.getInstance();
-			} else if (resourceStrategies.containsKey(strategy)) {
-				return resourceStrategies.get(strategy);
-			} else {
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T extends PropertyResourceStrategy<T>> void setDefaultResourceStrategy(T strategy) {
+		resourceStrategies.put((Class<PropertyResourceStrategy<?>>) (Class<?>) PropertyResourceStrategy.class, strategy);
+
+	}
+
+	@Override
+	public <T extends PropertyResourceStrategy<T>> boolean registerResourceStrategy(T strategy) {
+		return resourceStrategies.putIfAbsent(strategy.strategyClass(), strategy) == null;
+	}
+
+	@Override
+	public <T extends PropertyResourceStrategy<T>> boolean unregisterResourceStrategy(T strategy) {
+		return resourceStrategies.remove(strategy.strategyClass()) != null;
+	}
+
+	@Override
+	public Set<Class<? extends PropertyResourceStrategy<?>>> getResourceStrategies() {
+		return Collections.unmodifiableSet(resourceStrategies.keySet());
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T extends PropertyResourceStrategy<T>> T getResourceStrategy(Class<T> strategy) {
+		return (T) resourceStrategies.computeIfAbsent(strategy, k -> {
+			try {
 				return strategy.newInstance();
+			} catch (InstantiationException | IllegalAccessException e) {
+				throw new PropertyLoaderException(getProperties().cannotInstantiateStrategy(strategy), e);
 			}
-		} catch (InstantiationException | IllegalAccessException e) {
-			throw new PropertyLoaderException(getText().cannotInstantiateStrategy(strategy), e);
-		}
+		});
 	}
 }

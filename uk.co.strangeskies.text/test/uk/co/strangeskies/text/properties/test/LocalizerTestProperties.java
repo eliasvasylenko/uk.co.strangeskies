@@ -21,13 +21,12 @@ package uk.co.strangeskies.text.properties.test;
 import static uk.co.strangeskies.text.properties.PropertyConfiguration.UNQUALIFIED_SLASHED;
 import static uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase.LOWER;
 
-import uk.co.strangeskies.text.properties.DefaultPropertyResourceStrategy;
 import uk.co.strangeskies.text.properties.Localized;
 import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
 
 @SuppressWarnings("javadoc")
-@PropertyConfiguration(key = UNQUALIFIED_SLASHED, keySplitString = ".", keyCase = LOWER, strategy = DefaultPropertyResourceStrategy.class, resource = PropertyConfiguration.UNSPECIFIED_RESOURCE)
+@PropertyConfiguration(key = UNQUALIFIED_SLASHED, keySplitString = ".", keyCase = LOWER)
 public interface LocalizerTestProperties extends Properties<LocalizerTestProperties> {
 	Localized<String> simpleLocalized();
 

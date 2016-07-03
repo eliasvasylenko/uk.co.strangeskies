@@ -18,7 +18,7 @@
  */
 package uk.co.strangeskies.text.properties;
 
-import java.lang.reflect.Type;
+import java.lang.reflect.AnnotatedType;
 import java.util.Locale;
 
 import uk.co.strangeskies.text.properties.PropertyConfiguration.Defaults;
@@ -54,7 +54,11 @@ public interface PropertyLoaderProperties extends Properties<PropertyLoaderPrope
 	 *          the key for the value with the illegal type
 	 * @return the method must return the expected type
 	 */
-	Localized<String> illegalReturnType(Type type, String key);
+	default Localized<String> propertyValueTypeNotSupported(AnnotatedType type, String key) {
+		return propertyValueTypeNotSupported(type.getType().getTypeName(), key);
+	}
+
+	Localized<String> propertyValueTypeNotSupported(String typeName, String key);
 
 	/**
 	 * Load the property with the key
@@ -97,5 +101,5 @@ public interface PropertyLoaderProperties extends Properties<PropertyLoaderPrope
 	 *          the requested strategy
 	 * @return cannot get an instance of the given resource strategy
 	 */
-	Localized<String> cannotInstantiateStrategy(Class<? extends PropertyResourceStrategy> strategy);
+	Localized<String> cannotInstantiateStrategy(Class<? extends PropertyResourceStrategy<?>> strategy);
 }

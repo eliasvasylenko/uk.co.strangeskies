@@ -11,18 +11,28 @@ import java.util.function.Function;
 import uk.co.strangeskies.text.parsing.Parser;
 
 public interface PropertyValueProviderFactory {
-	interface Aggregate {
-		Optional<PropertyValueProvider<?>> getPropertyProvider(AnnotatedType exactType);
-	}
-
-	Optional<PropertyValueProvider<?>> getPropertyProvider(AnnotatedType exactType, Aggregate aggregate);
+	/**
+	 * The method is generic over the return type to signify that the method is
+	 * inherently unsafe, by forcing implementors to unsafe-cast the result.
+	 * Implementors are responsible for ensuring the type T according to the
+	 * returned object is a subtype of the given annotated type.
+	 * 
+	 * @param exactType
+	 *          the type of the property provider
+	 * @param loader
+	 *          the property loader making the request
+	 * @return a property provider over the given type
+	 */
+	<T> Optional<PropertyValueProvider<T>> getPropertyProvider(AnnotatedType exactType, PropertyLoader loader);
 
 	static <C, T> PropertyValueProviderFactory over(Class<T> propertyClass, PropertyValueProvider<T> provider) {
 		return new PropertyValueProviderFactory() {
+			@SuppressWarnings("unchecked")
 			@Override
-			public Optional<PropertyValueProvider<?>> getPropertyProvider(AnnotatedType exactType, Aggregate aggregate) {
+			public <U> Optional<PropertyValueProvider<U>> getPropertyProvider(AnnotatedType exactType,
+					PropertyLoader loader) {
 				if (exactType.getType() instanceof Class<?> && exactType.getType().equals(propertyClass)) {
-					return Optional.of(provider);
+					return Optional.of((PropertyValueProvider<U>) provider);
 				} else {
 					return empty();
 				}

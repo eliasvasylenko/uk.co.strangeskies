@@ -112,16 +112,6 @@ public @interface PropertyConfiguration {
 	}
 
 	/**
-	 * A marker class to signify no resource strategy is specified and should be
-	 * inherited if possible.
-	 * 
-	 * @author Elias N Vasylenko
-	 */
-	abstract class UnspecifiedPropertyResourceStrategy implements PropertyResourceStrategy {
-		private UnspecifiedPropertyResourceStrategy() {}
-	}
-
-	/**
 	 * Inherit the resource settings, or apply the default behavior of the
 	 * {@link #strategy()} by default.
 	 */
@@ -210,8 +200,8 @@ public @interface PropertyConfiguration {
 	String resource() default UNSPECIFIED_RESOURCE;
 
 	/**
-	 * The class of the {@link PropertyResourceBundle} which implements or
+	 * The class of the {@link PropertyResource} which implements or
 	 * specifies the strategy by which to resolve the localization resources.
 	 */
-	Class<? extends PropertyResourceStrategy> strategy() default UnspecifiedPropertyResourceStrategy.class;
+	Class<? extends PropertyResourceStrategy> strategy() default PropertyResourceStrategy.class;
 }

@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.ObservableValue;
@@ -37,10 +38,8 @@ import uk.co.strangeskies.utilities.ObservableValue;
  * @author Elias N Vasylenko
  */
 public interface PropertyLoader {
-	String TEXT_POSTFIX = "Properties";
-
 	/**
-	 * As returned by {@link #getDefaultLocalizer()}.
+	 * As returned by {@link #getDefaultPropertyLoader()}.
 	 */
 	PropertyLoader DEFAULT_PROPERTY_LOADER = getPropertyLoader(LocaleManager.getDefaultManager());
 
@@ -60,7 +59,7 @@ public interface PropertyLoader {
 	 *          a provider for a type of property
 	 * @return true if the provider was registered, false otherwise
 	 */
-	boolean registerProvider(PropertyValueProviderFactory propertyProvider);
+	boolean registerValueProvider(PropertyValueProviderFactory propertyProvider);
 
 	/**
 	 * 
@@ -68,31 +67,50 @@ public interface PropertyLoader {
 	 *          a provider for a type of property
 	 * @return true if the provider was unregistered, false otherwise
 	 */
-	boolean unregisterProvider(PropertyValueProviderFactory propertyProvider);
+	boolean unregisterValueProvider(PropertyValueProviderFactory propertyProvider);
 
 	/**
 	 * @return all available property providers
 	 */
-	List<PropertyValueProviderFactory> getProviders();
+	List<PropertyValueProviderFactory> getValueProviders();
 
 	/**
-	 * @return all available property providers
+	 * @param type
+	 *          the exact annotated type to provide
+	 * @return a property value provider aggregating all available
+	 *         {@link PropertyValueProviderFactory factories} over the given type
 	 */
-	Optional<PropertyValueProvider<?>> getProvider(AnnotatedType type);
+	Optional<PropertyValueProvider<?>> getValueProvider(AnnotatedType type);
+
+	/**
+	 * @return true if the strategy was registered, false otherwise
+	 */
+	<T extends PropertyResourceStrategy<T>> boolean registerResourceStrategy(T strategy);
+
+	/**
+	 * @return true if the strategy was unregistered, false otherwise
+	 */
+	<T extends PropertyResourceStrategy<T>> boolean unregisterResourceStrategy(T strategy);
+
+	Set<Class<? extends PropertyResourceStrategy<?>>> getResourceStrategies();
+
+	<T extends PropertyResourceStrategy<T>> T getResourceStrategy(Class<T> strategy);
+
+	<T extends PropertyResourceStrategy<T>> void setDefaultResourceStrategy(T strategy);
 
 	/**
 	 * Generate an implementing instance of the given accessor interface class,
 	 * according to the rules described by {@link Properties}.
 	 * 
-	 * @param accessor
-	 *          the sub-interface of {@link Properties} we wish to implement
-	 * @param defaultConfiguration
-	 *          the default property configuration to apply
+	 * @param accessorConfiguration
+	 *          configuration object for the sub-interface of {@link Properties}
+	 *          we wish to implement, and the default property configuration to
+	 *          apply
 	 * @return an implementation of the accessor interface
 	 * @param <T>
 	 *          the type of the localisation text accessor interface
 	 */
-	<T extends Properties<T>> T getProperties(Class<T> accessor, PropertyConfiguration defaultConfiguration);
+	<T extends Properties<T>> T getProperties(PropertiesConfiguration<T> accessorConfiguration);
 
 	/**
 	 * Generate an implementing instance of the given accessor interface class,
@@ -104,7 +122,14 @@ public interface PropertyLoader {
 	 *          the sub-interface of {@link Properties} we wish to implement
 	 * @return an implementation of the accessor interface
 	 */
-	<T extends Properties<T>> T getProperties(Class<T> accessor);
+	default <T extends Properties<T>> T getProperties(Class<T> accessor) {
+		return getProperties(new PropertiesConfiguration<>(accessor));
+	}
+
+	/**
+	 * @return the properties associated directly with the property loader itself
+	 */
+	PropertyLoaderProperties getProperties();
 
 	/**
 	 * Get a simple {@link PropertyLoader} implementation over the
@@ -112,7 +137,7 @@ public interface PropertyLoader {
 	 * 
 	 * @return a {@link PropertyLoader} for the system locale
 	 */
-	static PropertyLoader getDefaultLocalizer() {
+	static PropertyLoader getDefaultPropertyLoader() {
 		return DEFAULT_PROPERTY_LOADER;
 	}
 
@@ -140,13 +165,5 @@ public interface PropertyLoader {
 	 */
 	static PropertyLoader getPropertyLoader(LocaleProvider provider, Log log) {
 		return new PropertyLoaderImpl(provider, log);
-	}
-
-	static String removePropertiesPostfix(String name) {
-		if (name.endsWith(TEXT_POSTFIX) && !name.equals(TEXT_POSTFIX)) {
-			name = name.substring(0, name.length() - TEXT_POSTFIX.length());
-		}
-
-		return name;
 	}
 }
