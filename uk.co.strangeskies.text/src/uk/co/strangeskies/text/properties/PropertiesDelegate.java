@@ -293,8 +293,8 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 		}
 
 		Object[] substitution = new Object[3];
-		substitution[0] = formatKeyComponent(source, source.getAccessor().getPackage().getName());
-		substitution[1] = formatKeyComponent(source, Properties.getDefaultName(source.getAccessor().getSimpleName()));
+		substitution[0] = formatKeyComponent(source, proxy.getAccessorClass().getPackage().getName());
+		substitution[1] = formatKeyComponent(source, proxy.getDefaultName());
 		substitution[2] = formatKeyComponent(source, signature.method().getName());
 
 		return String.format(key, substitution);
@@ -366,5 +366,10 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 
 					return getInstantiatedPropertyValue(signature, args);
 				});
+	}
+
+	@Override
+	public Class<A> getAccessorClass() {
+		return source.getAccessor();
 	}
 }

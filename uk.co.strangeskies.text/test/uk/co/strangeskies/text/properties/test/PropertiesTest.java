@@ -102,13 +102,6 @@ public class PropertiesTest {
 	}
 
 	@Test
-	public void nestedOverrideTextTest() {
-		TestProperties text = text(getManager());
-
-		assertEquals("deeply nested text overriding value", text.nesting().deeply().deeplyNestedOverrideText());
-	}
-
-	@Test
 	public void optionalPresentTextTest() {
 		TestProperties text = text(getManager());
 

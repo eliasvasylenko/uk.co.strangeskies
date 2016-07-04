@@ -35,13 +35,22 @@ import java.util.function.Consumer;
  */
 public abstract class StaticPropertyAccessor<S extends Properties<S>> implements Properties<S> {
 	private final Locale locale;
+	private final Class<S> accessorClass;
 
 	/**
 	 * @param locale
 	 *          the static locale for the text
+	 * @param accessorClass
+	 *          the class of the property accessor
 	 */
-	public StaticPropertyAccessor(Locale locale) {
+	public StaticPropertyAccessor(Locale locale, Class<S> accessorClass) {
 		this.locale = locale;
+		this.accessorClass = accessorClass;
+	}
+
+	@Override
+	public Class<S> getAccessorClass() {
+		return accessorClass;
 	}
 
 	@Override
@@ -59,7 +68,15 @@ public abstract class StaticPropertyAccessor<S extends Properties<S>> implements
 		return locale;
 	}
 
-	protected Localized<String> localize(String string, Object... arguments) {
+	/**
+	 * @param string
+	 *          the string to create a localized view of
+	 * @param arguments
+	 *          the arguments to substitute into the string
+	 * @return a {@link Localized} instance over the given string and the static
+	 *         {@link #getLocale() locale}
+	 */
+	public Localized<String> localize(String string, Object... arguments) {
 		return Localized.forStaticLocale(String.format(string, arguments), locale);
 	}
 }

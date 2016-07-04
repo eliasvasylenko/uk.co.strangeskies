@@ -25,7 +25,7 @@ import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableValue;
 
 /**
- * A localised property interface which is observable over the value changes due
+ * A localized property interface which is observable over the value changes due
  * to updated locale.
  * 
  * @author Elias N Vasylenko
@@ -44,16 +44,20 @@ public interface Localized<T> extends ObservableValue<T> {
 	/**
 	 * @param locale
 	 *          the locale to translate to
-	 * @return the localised string value according to the given locale
+	 * @return the localized string value according to the given locale
 	 */
 	T get(Locale locale);
 
 	/**
+	 * Create a localized view of a value with a static locale.
+	 * 
+	 * @param <T>
+	 *          the type of the localized value
 	 * @param value
-	 *          the localised value
+	 *          the localized value
 	 * @param locale
 	 *          the locale of the given text
-	 * @return a localised string over the given text and locale
+	 * @return a localized string over the given text and locale
 	 */
 	static <T> Localized<T> forStaticLocale(T value, Locale locale) {
 		return new Localized<T>() {

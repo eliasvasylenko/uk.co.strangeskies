@@ -6,8 +6,6 @@ import java.util.List;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.wiring.BundleWiring;
-import org.osgi.service.component.ComponentContext;
-import org.osgi.service.component.annotations.Activate;
 
 import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertiesConfiguration;
@@ -21,9 +19,8 @@ public class OsgiPropertyResourceStrategy implements PropertyResourceStrategy<Os
 
 	private Bundle usingBundle;
 
-	@Activate
-	void activate(ComponentContext context) {
-		usingBundle = context.getUsingBundle();
+	public OsgiPropertyResourceStrategy(Bundle usingBundle) {
+		this.usingBundle = usingBundle;
 	}
 
 	@Override
@@ -52,7 +49,7 @@ public class OsgiPropertyResourceStrategy implements PropertyResourceStrategy<Os
 		List<ResourceBundleDescriptor> resources = new ArrayList<>();
 
 		for (Class<?> accessor : accessors) {
-			String accessorResource = Properties.getDefaultName(accessor.getName());
+			String accessorResource = Properties.removePropertiesPostfix(accessor.getName());
 			resources.add(new ResourceBundleDescriptor(osgiLocalizationResource.getClassLoader(), accessorResource));
 		}
 		resources.add(osgiLocalizationResource);

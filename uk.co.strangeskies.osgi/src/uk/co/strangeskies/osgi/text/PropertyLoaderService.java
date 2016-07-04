@@ -24,13 +24,15 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 
+import org.osgi.framework.ServiceReference;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
-import org.osgi.service.component.annotations.ReferencePolicy;
 import org.osgi.service.component.annotations.ServiceScope;
+import org.osgi.util.tracker.ServiceTracker;
+import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
 import uk.co.strangeskies.text.properties.LocaleProvider;
 import uk.co.strangeskies.text.properties.Properties;
@@ -50,8 +52,6 @@ public class PropertyLoaderService implements PropertyLoader {
 	LocaleProvider provider;
 	@Reference(cardinality = ReferenceCardinality.OPTIONAL)
 	Log log;
-	@Reference
-	OsgiPropertyResourceStrategy osgiPropertyResourceStrategy;
 	private PropertyLoader component;
 
 	/**
@@ -77,8 +77,34 @@ public class PropertyLoaderService implements PropertyLoader {
 			}
 		});
 
+		OsgiPropertyResourceStrategy osgiPropertyResourceStrategy = new OsgiPropertyResourceStrategy(
+				context.getUsingBundle());
+
 		component.setDefaultResourceStrategy(osgiPropertyResourceStrategy);
 		component.registerResourceStrategy(osgiPropertyResourceStrategy);
+
+		ServiceTracker<PropertyValueProviderFactory, Object> valueProviderTracker = new ServiceTracker<>(
+				context.getUsingBundle().getBundleContext(), PropertyValueProviderFactory.class,
+				new ServiceTrackerCustomizer<PropertyValueProviderFactory, Object>() {
+					@Override
+					public Object addingService(ServiceReference<PropertyValueProviderFactory> reference) {
+						// TODO Auto-generated method stub
+						return null;
+					}
+
+					@Override
+					public void modifiedService(ServiceReference<PropertyValueProviderFactory> reference, Object service) {
+						// TODO Auto-generated method stub
+
+					}
+
+					@Override
+					public void removedService(ServiceReference<PropertyValueProviderFactory> reference, Object service) {
+						// TODO Auto-generated method stub
+
+					}
+				});
+		valueProviderTracker.open();
 	}
 
 	@Override
@@ -89,15 +115,6 @@ public class PropertyLoaderService implements PropertyLoader {
 	@Override
 	public ObservableValue<Locale> locale() {
 		return provider;
-	}
-
-	@Reference(cardinality = ReferenceCardinality.MULTIPLE, policy = ReferencePolicy.DYNAMIC)
-	void addValueProvider(PropertyValueProviderFactory propertyProvider) {
-		registerValueProvider(propertyProvider);
-	}
-
-	void removeValueProvider(PropertyValueProviderFactory propertyProvider) {
-		unregisterValueProvider(propertyProvider);
 	}
 
 	@Override
@@ -123,15 +140,6 @@ public class PropertyLoaderService implements PropertyLoader {
 	@Override
 	public <T extends PropertyResourceStrategy<T>> void setDefaultResourceStrategy(T strategy) {
 		component.setDefaultResourceStrategy(strategy);
-	}
-
-	@Reference(cardinality = ReferenceCardinality.MULTIPLE, policy = ReferencePolicy.DYNAMIC)
-	void addResourceStrategy(PropertyResourceStrategy<?> strategy) {
-		registerResourceStrategy(strategy.getThis());
-	}
-
-	void removeResourceStrategy(PropertyResourceStrategy<?> strategy) {
-		unregisterResourceStrategy(strategy.getThis());
 	}
 
 	@Override

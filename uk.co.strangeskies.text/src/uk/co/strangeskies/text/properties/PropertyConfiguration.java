@@ -200,8 +200,8 @@ public @interface PropertyConfiguration {
 	String resource() default UNSPECIFIED_RESOURCE;
 
 	/**
-	 * The class of the {@link PropertyResource} which implements or
-	 * specifies the strategy by which to resolve the localization resources.
+	 * The class of the {@link PropertyResource} which implements or specifies the
+	 * strategy by which to resolve the localization resources.
 	 */
 	Class<? extends PropertyResourceStrategy> strategy() default PropertyResourceStrategy.class;
 }

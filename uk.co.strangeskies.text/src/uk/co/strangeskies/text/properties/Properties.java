@@ -24,25 +24,28 @@ import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.Self;
 
 /**
- * A super-interface for fetching localised text items. Users should not
- * implement this class, instead they should define sub-interfaces, allowing
- * implementations to be automatically provided by the {@link PropertyLoader}
- * class.
+ * A super-interface for fetching static properties and localized text items.
+ * Users should not implement this class, instead they should define
+ * sub-interfaces, allowing implementations to be automatically provided by
+ * {@link PropertyLoader}. Such a sub-interface may be referred to as an
+ * "accessor class".
  * <p>
- * User provided methods should all return {@link Localized}, which will be
- * provided by the {@link PropertyLoader} and updated when the {@link Locale} is
- * changed.
+ * User defined methods may return values of any type, so long as a
+ * {@link PropertyValueProvider} is given to the property loader which supports
+ * that type. Special handling is performed for the {@link Localized} type, and
+ * for methods returning nested accessor classes.
  * <p>
- * A key is generated for each method based on the class name and the method
- * name TODO
+ * A key is generated for each method based on the class and method name. The
+ * key is generated according to the {@link PropertyConfiguration} used to load
+ * the {@link Properties} instance.
  * <p>
- * Default methods will be invoked directly.
+ * Default and static methods will be invoked directly.
  * <p>
  * A {@link Properties} instance is {@link Observable} over changes to its
  * locale, with the instance itself being passed as the message to observers.
  * <p>
- * For an example of how to use this interface, users should take a look at the
- * {@link PropertyLoaderProperties} interface.
+ * For an example of how to use this interface, users may wish to take a look at
+ * the {@link PropertyLoaderProperties} interface.
  * 
  * @author Elias N Vasylenko
  *
@@ -50,6 +53,9 @@ import uk.co.strangeskies.utilities.Self;
  *          self bound type
  */
 public interface Properties<S extends Properties<S>> extends Self<S>, Observable<S> {
+	/**
+	 * The last part of an accessor name, which is removed if present.
+	 */
 	String PROPERTIES_POSTFIX = "Properties";
 
 	/**
@@ -57,16 +63,38 @@ public interface Properties<S extends Properties<S>> extends Self<S>, Observable
 	 */
 	Locale getLocale();
 
+	/**
+	 * @return the interface subtype which is implemented
+	 */
+	Class<S> getAccessorClass();
+
 	@Override
 	default S copy() {
 		return getThis();
 	}
 
-	static String getDefaultName(String name) {
+	/**
+	 * @param name
+	 *          the string to remove the postfix from
+	 * @return the given string, with the string {@code "Properties"} removed from
+	 *         the end if present.
+	 */
+	static String removePropertiesPostfix(String name) {
 		if (name.endsWith(PROPERTIES_POSTFIX) && !name.equals(PROPERTIES_POSTFIX)) {
 			name = name.substring(0, name.length() - PROPERTIES_POSTFIX.length());
 		}
 
 		return name;
+	}
+
+	/**
+	 * The default name of the accessor, as given by the
+	 * {@link #removePropertiesPostfix(String) remove postfix} method invoked on
+	 * the {@link #getAccessorClass() accessor class's} simple name.
+	 * 
+	 * @return the default name
+	 */
+	default String getDefaultName() {
+		return removePropertiesPostfix(getAccessorClass().getSimpleName());
 	}
 }

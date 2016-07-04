@@ -105,6 +105,6 @@ public class PropertyResourceImpl implements PropertyResource {
 	}
 
 	protected String getDefaultResource(Class<?> accessor) {
-		return Properties.getDefaultName(accessor.getName());
+		return Properties.removePropertiesPostfix(accessor.getName());
 	}
 }

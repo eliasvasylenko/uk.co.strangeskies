@@ -26,6 +26,12 @@ import uk.co.strangeskies.text.properties.PropertyConfiguration.Defaults;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.Evaluation;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;
 
+/**
+ * @author Elias N Vasylenko
+ *
+ * @param <T>
+ *          the type of the accessor class
+ */
 public class PropertiesConfiguration<T extends Properties<T>> {
 	@PropertyConfiguration
 	private final class DefaultPropertyConfigurationAnnotation {}
@@ -83,8 +89,9 @@ public class PropertiesConfiguration<T extends Properties<T>> {
 		return accessor.hashCode() ^ configuration.hashCode();
 	}
 
+	@SuppressWarnings("unchecked")
 	PropertyConfiguration deriveConfiguration(PropertyConfiguration configuration) {
-		Class<? extends PropertyResourceStrategy> strategy;
+		Class<? extends PropertyResourceStrategy<?>> strategy;
 		String resource;
 		Evaluation evaluate;
 		Defaults defaults;
@@ -96,9 +103,9 @@ public class PropertiesConfiguration<T extends Properties<T>> {
 
 		if (configuration.strategy().equals(PropertyResourceStrategy.class)) {
 			merged = true;
-			strategy = getConfiguration().strategy();
+			strategy = (Class<? extends PropertyResourceStrategy<?>>) getConfiguration().strategy();
 		} else {
-			strategy = configuration.strategy();
+			strategy = (Class<? extends PropertyResourceStrategy<?>>) configuration.strategy();
 		}
 
 		if (configuration.resource().equals(PropertyConfiguration.UNSPECIFIED_RESOURCE)) {
@@ -151,7 +158,7 @@ public class PropertiesConfiguration<T extends Properties<T>> {
 				}
 
 				@Override
-				public Class<? extends PropertyResourceStrategy> strategy() {
+				public Class<? extends PropertyResourceStrategy<?>> strategy() {
 					return strategy;
 				}
 

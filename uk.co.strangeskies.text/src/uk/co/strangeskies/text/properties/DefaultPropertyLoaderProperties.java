@@ -32,7 +32,7 @@ final class DefaultPropertyLoaderProperties extends StaticPropertyAccessor<Prope
 	private static final String CANNOT_INSTANTIATE_STRATEGY = "Cannot instantiate strategy %s";
 
 	public DefaultPropertyLoaderProperties() {
-		super(Locale.ENGLISH);
+		super(Locale.ENGLISH, PropertyLoaderProperties.class);
 	}
 
 	@Override
