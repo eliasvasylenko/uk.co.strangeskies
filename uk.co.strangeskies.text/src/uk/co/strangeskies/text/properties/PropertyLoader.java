@@ -30,8 +30,8 @@ import uk.co.strangeskies.utilities.ObservableValue;
 
 /**
  * This interface represents a simple but powerful system for
- * internationalisation. Instances of this class provide automatic
- * implementations of sub-interfaces of {@link Properties} according to a
+ * internationalization. Instances of this class provide automatic
+ * implementations of sub-interfaces of {@link PropertyAccessor} according to a
  * {@link Locale} setting, which delegate method invocations to be fetched from
  * {@link ResourceBundle resource bundles}.
  * 
@@ -44,7 +44,7 @@ public interface PropertyLoader {
 	PropertyLoader DEFAULT_PROPERTY_LOADER = getPropertyLoader(LocaleManager.getDefaultManager());
 
 	/**
-	 * @return the current locale of all localised texts implemented by this
+	 * @return the current locale of all localized texts implemented by this
 	 *         {@link PropertyLoader}
 	 */
 	Locale getLocale();
@@ -100,30 +100,30 @@ public interface PropertyLoader {
 
 	/**
 	 * Generate an implementing instance of the given accessor interface class,
-	 * according to the rules described by {@link Properties}.
+	 * according to the rules described by {@link PropertyAccessor}.
 	 * 
 	 * @param accessorConfiguration
-	 *          configuration object for the sub-interface of {@link Properties}
-	 *          we wish to implement, and the default property configuration to
-	 *          apply
+	 *          configuration object for the sub-interface of
+	 *          {@link PropertyAccessor} we wish to implement, and the default
+	 *          property configuration to apply
 	 * @return an implementation of the accessor interface
 	 * @param <T>
-	 *          the type of the localisation text accessor interface
+	 *          the type of the localization text accessor interface
 	 */
-	<T extends Properties<T>> T getProperties(PropertiesConfiguration<T> accessorConfiguration);
+	<T extends PropertyAccessor<T>> T getProperties(PropertyAccessorConfiguration<T> accessorConfiguration);
 
 	/**
 	 * Generate an implementing instance of the given accessor interface class,
-	 * according to the rules described by {@link Properties}.
+	 * according to the rules described by {@link PropertyAccessor}.
 	 * 
 	 * @param <T>
-	 *          the type of the localisation text accessor interface
+	 *          the type of the localization text accessor interface
 	 * @param accessor
-	 *          the sub-interface of {@link Properties} we wish to implement
+	 *          the sub-interface of {@link PropertyAccessor} we wish to implement
 	 * @return an implementation of the accessor interface
 	 */
-	default <T extends Properties<T>> T getProperties(Class<T> accessor) {
-		return getProperties(new PropertiesConfiguration<>(accessor));
+	default <T extends PropertyAccessor<T>> T getProperties(Class<T> accessor) {
+		return getProperties(new PropertyAccessorConfiguration<>(accessor));
 	}
 
 	/**
@@ -160,7 +160,7 @@ public interface PropertyLoader {
 	 * @param provider
 	 *          a provider to establish a locale setting
 	 * @param log
-	 *          a log for localisation information
+	 *          a log for localization information
 	 * @return a {@link PropertyLoader} for the given locale
 	 */
 	static PropertyLoader getPropertyLoader(LocaleProvider provider, Log log) {

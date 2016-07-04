@@ -66,20 +66,21 @@ import uk.co.strangeskies.utilities.classloading.DelegatingClassLoader;
  * @author Elias N Vasylenko
  *
  * @param <A>
- *          the type of the delegating {@link Properties} proxy
+ *          the type of the delegating {@link PropertyAccessor} proxy
  */
-public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<A> implements Properties<A> {
+public class PropertyAccessorDelegate<A extends PropertyAccessor<A>> extends ObservableImpl<A>
+		implements PropertyAccessor<A> {
 	/*
-	 * Implementation of localised property
+	 * Implementation of localized property
 	 */
 	class LocalizedPropertyImpl extends ObservablePropertyImpl<Object, Object> implements Localized<Object>, Consumer<A> {
-		private final PropertiesConfiguration<A> source;
+		private final PropertyAccessorConfiguration<A> source;
 		private final String key;
 		private final AnnotatedType propertyType;
 		private final List<Object> arguments;
 		private final Map<Locale, Object> cache;
 
-		public LocalizedPropertyImpl(PropertiesConfiguration<A> source, String key, AnnotatedType propertyType,
+		public LocalizedPropertyImpl(PropertyAccessorConfiguration<A> source, String key, AnnotatedType propertyType,
 				List<?> arguments) {
 			super((r, t) -> r, Objects::equals, null);
 
@@ -91,7 +92,7 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 
 			updateText();
 
-			PropertiesDelegate.this.addWeakObserver(this);
+			PropertyAccessorDelegate.this.addWeakObserver(this);
 		}
 
 		private AnnotatedType getElementType(AnnotatedType propertyType) {
@@ -131,7 +132,7 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 	private static Set<MethodSignature> getLocalizationHelperMethods() {
 		Set<MethodSignature> signatures = new HashSet<>();
 
-		for (Method method : Properties.class.getMethods()) {
+		for (Method method : PropertyAccessor.class.getMethods()) {
 			signatures.add(new MethodSignature(method));
 		}
 		for (Method method : Object.class.getMethods()) {
@@ -159,18 +160,26 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 
 	private final PropertyLoader loader;
 	private final Log log;
-	private final PropertiesConfiguration<A> source;
+	private final PropertyAccessorConfiguration<A> source;
 	private final A proxy;
 
 	/**
 	 * TODO GC of bundle cache if all properties are loaded & none localized!
 	 */
-	private final Map<PropertiesConfiguration<?>, PropertyResource> bundleCache = new ConcurrentHashMap<>();
+	private final Map<PropertyAccessorConfiguration<?>, PropertyResource> bundleCache = new ConcurrentHashMap<>();
 	private final Map<MethodSignature, PropertyValue<?>> valueCache = new ConcurrentHashMap<>();
 
-	public PropertiesDelegate(PropertyLoader loader, Log log, PropertiesConfiguration<A> source) {
+	/**
+	 * @param loader
+	 *          which created the delegate, to call back to
+	 * @param log
+	 *          the log, or null
+	 * @param source
+	 *          the property accessor class and configuration
+	 */
+	public PropertyAccessorDelegate(PropertyLoader loader, Log log, PropertyAccessorConfiguration<A> source) {
 		this.loader = loader;
-		this.log = log;
+		this.log = log != null ? log : (l, m) -> {};
 		this.source = source;
 
 		if (!source.getAccessor().isInterface()) {
@@ -211,7 +220,8 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 		}
 	}
 
-	private PropertyResource getBundle(PropertiesConfiguration<?> configuration) {
+	@SuppressWarnings("unchecked")
+	private PropertyResource getBundle(PropertyAccessorConfiguration<?> configuration) {
 		return bundleCache.computeIfAbsent(configuration, c -> {
 			return loader.getResourceStrategy(c.getConfiguration().strategy()).getPropertyResourceBundle(c);
 		});
@@ -243,13 +253,14 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 	}
 
 	@SuppressWarnings("unchecked")
-	private <U extends Properties<U>> PropertiesConfiguration<U> getPropertiesConfigurationUnsafe(Class<?> returnType) {
-		return new PropertiesConfiguration<>((Class<U>) returnType);
+	private <U extends PropertyAccessor<U>> PropertyAccessorConfiguration<U> getPropertiesConfigurationUnsafe(
+			Class<?> returnType) {
+		return new PropertyAccessorConfiguration<>((Class<U>) returnType);
 	}
 
 	private PropertyValue<?> getPropertyValue(MethodSignature signature) {
 		return valueCache.computeIfAbsent(signature, s -> {
-			PropertiesConfiguration<A> source;
+			PropertyAccessorConfiguration<A> source;
 			PropertyConfiguration configuration = signature.method().getAnnotation(PropertyConfiguration.class);
 			if (configuration != null) {
 				source = this.source.derive(configuration);
@@ -261,8 +272,8 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 			AnnotatedType propertyType = signature.method().getAnnotatedReturnType();
 			Class<?> propertyClass = getRawType(propertyType.getType());
 
-			if (Properties.class.isAssignableFrom(propertyClass)) {
-				PropertiesConfiguration<?> nestedConfiguration = getPropertiesConfigurationUnsafe(propertyClass)
+			if (PropertyAccessor.class.isAssignableFrom(propertyClass)) {
+				PropertyAccessorConfiguration<?> nestedConfiguration = getPropertiesConfigurationUnsafe(propertyClass)
 						.derive(signature.method().getAnnotation(PropertyConfiguration.class));
 
 				return arguments -> loader.getProperties(nestedConfiguration);
@@ -286,7 +297,7 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 		}
 	}
 
-	private String getKey(PropertiesConfiguration<A> source, MethodSignature signature) {
+	private String getKey(PropertyAccessorConfiguration<A> source, MethodSignature signature) {
 		String key = source.getConfiguration().key();
 		if (key.equals(PropertyConfiguration.UNSPECIFIED_KEY)) {
 			key = PropertyConfiguration.QUALIFIED_SCOPED;
@@ -300,7 +311,7 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 		return String.format(key, substitution);
 	}
 
-	private Object formatKeyComponent(PropertiesConfiguration<A> source, String component) {
+	private Object formatKeyComponent(PropertyAccessorConfiguration<A> source, String component) {
 		String splitString = source.getConfiguration().keySplitString();
 		if (!splitString.equals("") && !splitString.equals(UNSPECIFIED_KEY_SPLIT_STRING)) {
 			component = new CamelCaseFormatter(splitString, false, UnformattingCase.PRESERVED).unformat(component);
@@ -316,7 +327,7 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 		return component;
 	}
 
-	<T> PropertyValue<T> loadValue(PropertiesConfiguration<A> source, AnnotatedType propertyType, String key,
+	<T> PropertyValue<T> loadValue(PropertyAccessorConfiguration<A> source, AnnotatedType propertyType, String key,
 			Locale locale) {
 		@SuppressWarnings("unchecked")
 		PropertyValueProvider<T> provider = (PropertyValueProvider<T>) loader.getValueProvider(propertyType)
@@ -356,7 +367,7 @@ public class PropertiesDelegate<A extends Properties<A>> extends ObservableImpl<
 					MethodSignature signature = new MethodSignature(method);
 
 					if (LOCALIZATION_HELPER_METHODS.contains(signature)) {
-						return method.invoke(PropertiesDelegate.this, args);
+						return method.invoke(PropertyAccessorDelegate.this, args);
 					}
 
 					if (method.isDefault()) {

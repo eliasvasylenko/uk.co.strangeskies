@@ -35,8 +35,8 @@ import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
 import uk.co.strangeskies.text.properties.LocaleProvider;
-import uk.co.strangeskies.text.properties.Properties;
-import uk.co.strangeskies.text.properties.PropertiesConfiguration;
+import uk.co.strangeskies.text.properties.PropertyAccessor;
+import uk.co.strangeskies.text.properties.PropertyAccessorConfiguration;
 import uk.co.strangeskies.text.properties.PropertyLoader;
 import uk.co.strangeskies.text.properties.PropertyLoaderProperties;
 import uk.co.strangeskies.text.properties.PropertyResourceStrategy;
@@ -163,12 +163,12 @@ public class PropertyLoaderService implements PropertyLoader {
 	}
 
 	@Override
-	public <T extends Properties<T>> T getProperties(Class<T> accessor) {
+	public <T extends PropertyAccessor<T>> T getProperties(Class<T> accessor) {
 		return component.getProperties(accessor);
 	}
 
 	@Override
-	public <T extends Properties<T>> T getProperties(PropertiesConfiguration<T> accessorConfiguration) {
+	public <T extends PropertyAccessor<T>> T getProperties(PropertyAccessorConfiguration<T> accessorConfiguration) {
 		return component.getProperties(accessorConfiguration);
 	}
 

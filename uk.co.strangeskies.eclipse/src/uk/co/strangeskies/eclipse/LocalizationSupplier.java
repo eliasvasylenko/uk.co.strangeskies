@@ -35,7 +35,7 @@ import org.osgi.service.component.annotations.Reference;
 
 import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.Types;
-import uk.co.strangeskies.text.properties.Properties;
+import uk.co.strangeskies.text.properties.PropertyAccessor;
 import uk.co.strangeskies.text.properties.PropertyLoader;
 import uk.co.strangeskies.text.properties.PropertyLoaderException;
 
@@ -74,7 +74,7 @@ public class LocalizationSupplier extends ExtendedObjectSupplier {
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T extends Properties<T>> Object localizeAccessor(IRequestor requestor, Class<?> accessor) {
+	private <T extends PropertyAccessor<T>> Object localizeAccessor(IRequestor requestor, Class<?> accessor) {
 		try {
 		BundleContext context = FrameworkUtil.getBundle(accessor).getBundleContext();
 
@@ -100,10 +100,10 @@ public class LocalizationSupplier extends ExtendedObjectSupplier {
 	}
 
 	private boolean validateAccessorType(Type accessor) {
-		if (!(accessor instanceof Class) || !Properties.class.isAssignableFrom((Class<?>) accessor))
+		if (!(accessor instanceof Class) || !PropertyAccessor.class.isAssignableFrom((Class<?>) accessor))
 			return false;
 
-		List<Type> accessorParameters = TypeToken.over(accessor).resolveSupertypeParameters(Properties.class)
+		List<Type> accessorParameters = TypeToken.over(accessor).resolveSupertypeParameters(PropertyAccessor.class)
 				.getAllTypeArgumentsList();
 
 		if (accessorParameters.size() != 1)

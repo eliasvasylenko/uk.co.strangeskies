@@ -70,7 +70,7 @@ public interface PropertyResource {
 	/**
 	 * @return the property resource configuration
 	 */
-	PropertiesConfiguration<?> getConfiguration();
+	PropertyAccessorConfiguration<?> getConfiguration();
 
 	/**
 	 * Create a {@link PropertyResource localising resource bundle} over the
@@ -97,7 +97,7 @@ public interface PropertyResource {
 	 *          they exist in
 	 * @return a resource bundle over all resources at each given location
 	 */
-	public static PropertyResource getBundle(Locale locale, PropertiesConfiguration<?> resource) {
+	public static PropertyResource getBundle(Locale locale, PropertyAccessorConfiguration<?> resource) {
 		return PropertyResourceBundleStrategy.getInstance().getPropertyResourceBundle(resource);
 	}
 }

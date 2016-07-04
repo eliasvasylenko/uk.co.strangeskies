@@ -16,7 +16,7 @@ import uk.co.strangeskies.utilities.collection.MultiMap;
 
 public class PropertyResourceImpl implements PropertyResource {
 	private final PropertyResourceStrategy strategy;
-	private final PropertiesConfiguration<?> configuration;
+	private final PropertyAccessorConfiguration<?> configuration;
 	private final Set<ResourceBundleDescriptor> resources;
 	private final MultiMap<Locale, ResourceBundle, List<ResourceBundle>> localizedResourceBundles;
 
@@ -28,7 +28,7 @@ public class PropertyResourceImpl implements PropertyResource {
 	 * @param configuration
 	 *          the resource locations
 	 */
-	protected PropertyResourceImpl(PropertyResourceStrategy strategy, PropertiesConfiguration<?> configuration) {
+	protected PropertyResourceImpl(PropertyResourceStrategy<?> strategy, PropertyAccessorConfiguration<?> configuration) {
 		this.strategy = strategy;
 		this.configuration = configuration;
 		localizedResourceBundles = new MultiHashMap<>(ArrayList::new);
@@ -47,12 +47,12 @@ public class PropertyResourceImpl implements PropertyResource {
 	}
 
 	@Override
-	public PropertyResourceStrategy getStrategy() {
+	public PropertyResourceStrategy<?> getStrategy() {
 		return strategy;
 	}
 
 	@Override
-	public PropertiesConfiguration<?> getConfiguration() {
+	public PropertyAccessorConfiguration<?> getConfiguration() {
 		return configuration;
 	}
 
@@ -94,7 +94,7 @@ public class PropertyResourceImpl implements PropertyResource {
 		}
 	}
 
-	protected List<ResourceBundleDescriptor> getResources(PropertiesConfiguration<?> accessorConfiguration) {
+	protected List<ResourceBundleDescriptor> getResources(PropertyAccessorConfiguration<?> accessorConfiguration) {
 		String resource = accessorConfiguration.getConfiguration().resource();
 
 		if (resource.equals(PropertyConfiguration.UNSPECIFIED_RESOURCE)) {
@@ -105,6 +105,6 @@ public class PropertyResourceImpl implements PropertyResource {
 	}
 
 	protected String getDefaultResource(Class<?> accessor) {
-		return Properties.removePropertiesPostfix(accessor.getName());
+		return PropertyAccessor.removePropertiesPostfix(accessor.getName());
 	}
 }

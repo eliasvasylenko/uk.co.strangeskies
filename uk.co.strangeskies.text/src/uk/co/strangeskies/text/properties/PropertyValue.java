@@ -22,7 +22,7 @@ import java.util.List;
 
 /**
  * A {@link PropertyValue} instance represents the value returned from a method
- * of an {@link Properties} accessor class. The value may be dependent on the
+ * of an {@link PropertyAccessor} accessor class. The value may be dependent on the
  * arguments passed to this method, so an instantiation can be produced via
  * {@link #instantiate(List)}.
  * 

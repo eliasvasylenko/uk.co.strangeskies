@@ -22,12 +22,12 @@ import static uk.co.strangeskies.text.properties.PropertyConfiguration.UNQUALIFI
 import static uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase.LOWER;
 
 import uk.co.strangeskies.text.properties.Localized;
-import uk.co.strangeskies.text.properties.Properties;
+import uk.co.strangeskies.text.properties.PropertyAccessor;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
 
 @SuppressWarnings("javadoc")
 @PropertyConfiguration(key = UNQUALIFIED_SLASHED, keySplitString = ".", keyCase = LOWER)
-public interface LocalizerTestProperties extends Properties<LocalizerTestProperties> {
+public interface LocalizerTestProperties extends PropertyAccessor<LocalizerTestProperties> {
 	Localized<String> simpleLocalized();
 
 	Localized<String> anotherSimpleLocalized();

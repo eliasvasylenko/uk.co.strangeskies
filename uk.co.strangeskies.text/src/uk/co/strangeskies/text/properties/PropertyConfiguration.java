@@ -26,9 +26,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * Annotation for sub-interfaces of {@link Properties}, and for methods on those
- * interfaces, to specify how property resources should be fetched to back the
- * implementation of the accessor.
+ * Annotation for sub-interfaces of {@link PropertyAccessor}, and for methods on
+ * those interfaces, to specify how property resources should be fetched to back
+ * the implementation of the accessor.
  * 
  * @author Elias N Vasylenko
  */
@@ -70,15 +70,15 @@ public @interface PropertyConfiguration {
 	enum Evaluation {
 		/**
 		 * Verify that a value is available for the property in the root locale
-		 * during construction of a {@link Properties} instance, and fail the
+		 * during construction of a {@link PropertyAccessor} instance, and fail the
 		 * request with an exception if it is not.
 		 */
 		IMMEDIATE,
 
 		/**
 		 * Verify that a value is available for the property in the requested locale
-		 * upon invocation of the accessing method of a {@link Properties} instance,
-		 * and fail the request with an exception if it is not.
+		 * upon invocation of the accessing method of a {@link PropertyAccessor}
+		 * instance, and fail the request with an exception if it is not.
 		 */
 		DEFERRED,
 
@@ -203,5 +203,6 @@ public @interface PropertyConfiguration {
 	 * The class of the {@link PropertyResource} which implements or specifies the
 	 * strategy by which to resolve the localization resources.
 	 */
+	@SuppressWarnings("rawtypes")
 	Class<? extends PropertyResourceStrategy> strategy() default PropertyResourceStrategy.class;
 }

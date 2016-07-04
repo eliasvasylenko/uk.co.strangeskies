@@ -7,8 +7,8 @@ import java.util.List;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.wiring.BundleWiring;
 
-import uk.co.strangeskies.text.properties.Properties;
-import uk.co.strangeskies.text.properties.PropertiesConfiguration;
+import uk.co.strangeskies.text.properties.PropertyAccessor;
+import uk.co.strangeskies.text.properties.PropertyAccessorConfiguration;
 import uk.co.strangeskies.text.properties.PropertyResource;
 import uk.co.strangeskies.text.properties.PropertyResourceStrategy;
 import uk.co.strangeskies.text.properties.ResourceBundleDescriptor;
@@ -29,7 +29,7 @@ public class OsgiPropertyResourceStrategy implements PropertyResourceStrategy<Os
 	}
 
 	@Override
-	public PropertyResource getPropertyResourceBundle(PropertiesConfiguration<?> resourceConfiguration) {
+	public PropertyResource getPropertyResourceBundle(PropertyAccessorConfiguration<?> resourceConfiguration) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -49,7 +49,7 @@ public class OsgiPropertyResourceStrategy implements PropertyResourceStrategy<Os
 		List<ResourceBundleDescriptor> resources = new ArrayList<>();
 
 		for (Class<?> accessor : accessors) {
-			String accessorResource = Properties.removePropertiesPostfix(accessor.getName());
+			String accessorResource = PropertyAccessor.removePropertiesPostfix(accessor.getName());
 			resources.add(new ResourceBundleDescriptor(osgiLocalizationResource.getClassLoader(), accessorResource));
 		}
 		resources.add(osgiLocalizationResource);

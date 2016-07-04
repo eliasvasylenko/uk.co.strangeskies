@@ -25,7 +25,7 @@ import uk.co.strangeskies.text.properties.PropertyConfiguration.Defaults;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.Evaluation;
 
 /**
- * A {@link Properties} interface to provide localized texts for use by the
+ * A {@link PropertyAccessor} interface to provide localized texts for use by the
  * {@link PropertyLoader} class itself, such as for reporting errors for
  * improperly structured localisation classes, etc.
  * <p>
@@ -35,7 +35,7 @@ import uk.co.strangeskies.text.properties.PropertyConfiguration.Evaluation;
  * @author Elias N Vasylenko
  */
 @PropertyConfiguration(resource = "OSGI-INF.l10n.bundle", evaluation = Evaluation.IMMEDIATE)
-public interface PropertyLoaderProperties extends Properties<PropertyLoaderProperties> {
+public interface PropertyLoaderProperties extends PropertyAccessor<PropertyLoaderProperties> {
 	/**
 	 * Load the property with the key {@code property.loader.must.be.interface}.
 	 * 

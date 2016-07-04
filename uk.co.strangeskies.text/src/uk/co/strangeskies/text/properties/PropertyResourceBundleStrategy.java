@@ -11,7 +11,7 @@ public class PropertyResourceBundleStrategy implements PropertyResourceStrategy<
 	}
 
 	@Override
-	public PropertyResource getPropertyResourceBundle(PropertiesConfiguration<?> resourceConfiguration) {
+	public PropertyResource getPropertyResourceBundle(PropertyAccessorConfiguration<?> resourceConfiguration) {
 		return new PropertyResourceImpl(this, resourceConfiguration);
 	}
 
