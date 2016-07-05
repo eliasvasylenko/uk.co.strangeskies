@@ -22,7 +22,7 @@ import java.util.Locale;
 import java.util.function.Consumer;
 
 /**
- * A partial implementation for {@link PropertyAccessor} manually implemented types
+ * A partial implementation for {@link Properties} manually implemented types
  * with static locale.
  * <p>
  * Implementations can use the {@link #localize(String, Object[])} helper method
@@ -33,7 +33,7 @@ import java.util.function.Consumer;
  * @param <S>
  *          self bound type
  */
-public abstract class StaticPropertyAccessor<S extends PropertyAccessor<S>> implements PropertyAccessor<S> {
+public abstract class StaticPropertyAccessor<S extends Properties<S>> implements Properties<S> {
 	private final Locale locale;
 	private final Class<S> accessorClass;
 

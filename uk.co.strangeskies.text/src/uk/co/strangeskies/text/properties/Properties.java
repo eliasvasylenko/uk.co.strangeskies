@@ -38,11 +38,11 @@ import uk.co.strangeskies.utilities.Self;
  * <p>
  * A key is generated for each method based on the class and method name. The
  * key is generated according to the {@link PropertyConfiguration} used to load
- * the {@link PropertyAccessor} instance.
+ * the {@link Properties} instance.
  * <p>
  * Default and static methods will be invoked directly.
  * <p>
- * A {@link PropertyAccessor} instance is {@link Observable} over changes to its
+ * A {@link Properties} instance is {@link Observable} over changes to its
  * locale, with the instance itself being passed as the message to observers.
  * <p>
  * For an example of how to use this interface, users may wish to take a look at
@@ -53,12 +53,7 @@ import uk.co.strangeskies.utilities.Self;
  * @param <S>
  *          self bound type
  */
-public interface PropertyAccessor<S extends PropertyAccessor<S>> extends Self<S>, Observable<S> {
-	/**
-	 * The last part of an accessor name, which is removed if present.
-	 */
-	String PROPERTIES_POSTFIX = "Properties";
-
+public interface Properties<S extends Properties<S>> extends Self<S>, Observable<S> {
 	/**
 	 * @return the current locale of the text
 	 */
@@ -77,12 +72,14 @@ public interface PropertyAccessor<S extends PropertyAccessor<S>> extends Self<S>
 	/**
 	 * @param name
 	 *          the string to remove the postfix from
-	 * @return the given string, with the string {@code "Properties"} removed from
-	 *         the end if present.
+	 * @return the given string, with the simple class name {@link Properties}
+	 *         removed from the end, if present.
 	 */
 	static String removePropertiesPostfix(String name) {
-		if (name.endsWith(PROPERTIES_POSTFIX) && !name.equals(PROPERTIES_POSTFIX)) {
-			name = name.substring(0, name.length() - PROPERTIES_POSTFIX.length());
+		String postfix = Properties.class.getSimpleName();
+
+		if (name.endsWith(postfix) && !name.equals(postfix)) {
+			name = name.substring(0, name.length() - postfix.length());
 		}
 
 		return name;

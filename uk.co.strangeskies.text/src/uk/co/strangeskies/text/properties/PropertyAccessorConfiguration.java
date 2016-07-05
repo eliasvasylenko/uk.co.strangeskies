@@ -27,12 +27,15 @@ import uk.co.strangeskies.text.properties.PropertyConfiguration.Evaluation;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;
 
 /**
+ * A {@link PropertyConfiguration configuration} over a particular
+ * {@link Properties property accessor} interface.
+ * 
  * @author Elias N Vasylenko
  *
  * @param <T>
- *          the type of the accessor class
+ *          the type of the property accessor interface
  */
-public class PropertyAccessorConfiguration<T extends PropertyAccessor<T>> {
+public class PropertyAccessorConfiguration<T extends Properties<T>> {
 	@PropertyConfiguration
 	private final class DefaultPropertyConfigurationAnnotation {}
 
@@ -49,7 +52,7 @@ public class PropertyAccessorConfiguration<T extends PropertyAccessor<T>> {
 				: DefaultPropertyConfigurationAnnotation.class.getAnnotation(PropertyConfiguration.class);
 	}
 
-	public <A extends PropertyAccessor<A>> PropertyAccessorConfiguration<A> derive(Class<A> accessor) {
+	public <A extends Properties<A>> PropertyAccessorConfiguration<A> derive(Class<A> accessor) {
 		return new PropertyAccessorConfiguration<>(accessor,
 				deriveConfiguration(accessor.getAnnotation(PropertyConfiguration.class)));
 	}

@@ -19,32 +19,32 @@
 package uk.co.strangeskies.eclipse;
 
 import uk.co.strangeskies.text.properties.Localized;
-import uk.co.strangeskies.text.properties.PropertyAccessor;
+import uk.co.strangeskies.text.properties.Properties;
 
 /**
  * Text resource accessor for Eclipse OSGi utilities
  * 
  * @author Elias N Vasylenko
  */
-public interface LocalizationSupplierText extends PropertyAccessor<LocalizationSupplierText> {
+public interface LocalizationSupplierText extends Properties<LocalizationSupplierText> {
 	/**
 	 * @return invalid type was annotated with {@link Localize} for localisation
 	 *         supplier
 	 */
 	default Localized illegalInjectionTarget() {
-		return illegalInjectionTarget(Localize.class, PropertyAccessor.class);
+		return illegalInjectionTarget(Localize.class, Properties.class);
 	}
 
 	/**
 	 * @param localizeClass
 	 *          the {@link Localize} class for formatting
 	 * @param localizedTextClass
-	 *          the {@link PropertyAccessor} class for formatting
+	 *          the {@link Properties} class for formatting
 	 * @return invalid type was annotated with {@link Localize} for localisation
 	 *         supplier
 	 */
 	Localized illegalInjectionTarget(Class<Localize> localizeClass,
-			@SuppressWarnings("rawtypes") Class<PropertyAccessor> localizedTextClass);
+			@SuppressWarnings("rawtypes") Class<Properties> localizedTextClass);
 
 	/**
 	 * @return an unexpected error occurred

@@ -90,7 +90,7 @@ class PropertyLoaderImpl implements PropertyLoader {
 
 	private final Map<Class<? extends PropertyResourceStrategy<?>>, PropertyResourceStrategy<?>> resourceStrategies;
 	private final Set<PropertyValueProviderFactory> propertyProviders;
-	private final ComputingMap<PropertyAccessorConfiguration<?>, PropertyAccessor<?>> localizationCache;
+	private final ComputingMap<PropertyAccessorConfiguration<?>, Properties<?>> localizationCache;
 
 	private final LocaleProvider locale;
 	private Log log;
@@ -103,7 +103,7 @@ class PropertyLoaderImpl implements PropertyLoader {
 	 * @param locale
 	 *          the initial locale
 	 * @param log
-	 *          the log for localisation
+	 *          the log for localization
 	 */
 	public PropertyLoaderImpl(LocaleProvider locale, Log log) {
 		resourceStrategies = new ConcurrentHashMap<>();
@@ -236,13 +236,13 @@ class PropertyLoaderImpl implements PropertyLoader {
 		return locale;
 	}
 
-	protected <T extends PropertyAccessor<T>> T instantiateProperties(PropertyAccessorConfiguration<T> source) {
+	protected <T extends Properties<T>> T instantiateProperties(PropertyAccessorConfiguration<T> source) {
 		return new PropertyAccessorDelegate<>(this, getLog(), source).copy();
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public <T extends PropertyAccessor<T>> T getProperties(PropertyAccessorConfiguration<T> accessorConfiguration) {
+	public <T extends Properties<T>> T getProperties(PropertyAccessorConfiguration<T> accessorConfiguration) {
 		return (T) localizationCache.putGet(accessorConfiguration);
 	}
 

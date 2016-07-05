@@ -22,14 +22,14 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
 import uk.co.strangeskies.text.properties.Localized;
-import uk.co.strangeskies.text.properties.PropertyAccessor;
+import uk.co.strangeskies.text.properties.Properties;
 
 /**
  * Text resource accessor for Eclipse OSGi utilities
  * 
  * @author Elias N Vasylenko
  */
-public interface ObservableServiceSupplierText extends PropertyAccessor<ObservableServiceSupplierText> {
+public interface ObservableServiceSupplierText extends Properties<ObservableServiceSupplierText> {
 	/**
 	 * @return invalid type was annotated with {@link ObservableService} for
 	 *         service collection injection

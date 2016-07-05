@@ -24,18 +24,15 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 
-import org.osgi.framework.ServiceReference;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ServiceScope;
-import org.osgi.util.tracker.ServiceTracker;
-import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
 import uk.co.strangeskies.text.properties.LocaleProvider;
-import uk.co.strangeskies.text.properties.PropertyAccessor;
+import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertyAccessorConfiguration;
 import uk.co.strangeskies.text.properties.PropertyLoader;
 import uk.co.strangeskies.text.properties.PropertyLoaderProperties;
@@ -53,11 +50,6 @@ public class PropertyLoaderService implements PropertyLoader {
 	@Reference(cardinality = ReferenceCardinality.OPTIONAL)
 	Log log;
 	private PropertyLoader component;
-
-	/**
-	 * For automatic instantiation by the OSGi service manager
-	 */
-	public PropertyLoaderService() {}
 
 	@Activate
 	void activate(ComponentContext context) {
@@ -82,29 +74,6 @@ public class PropertyLoaderService implements PropertyLoader {
 
 		component.setDefaultResourceStrategy(osgiPropertyResourceStrategy);
 		component.registerResourceStrategy(osgiPropertyResourceStrategy);
-
-		ServiceTracker<PropertyValueProviderFactory, Object> valueProviderTracker = new ServiceTracker<>(
-				context.getUsingBundle().getBundleContext(), PropertyValueProviderFactory.class,
-				new ServiceTrackerCustomizer<PropertyValueProviderFactory, Object>() {
-					@Override
-					public Object addingService(ServiceReference<PropertyValueProviderFactory> reference) {
-						// TODO Auto-generated method stub
-						return null;
-					}
-
-					@Override
-					public void modifiedService(ServiceReference<PropertyValueProviderFactory> reference, Object service) {
-						// TODO Auto-generated method stub
-
-					}
-
-					@Override
-					public void removedService(ServiceReference<PropertyValueProviderFactory> reference, Object service) {
-						// TODO Auto-generated method stub
-
-					}
-				});
-		valueProviderTracker.open();
 	}
 
 	@Override
@@ -163,12 +132,12 @@ public class PropertyLoaderService implements PropertyLoader {
 	}
 
 	@Override
-	public <T extends PropertyAccessor<T>> T getProperties(Class<T> accessor) {
+	public <T extends Properties<T>> T getProperties(Class<T> accessor) {
 		return component.getProperties(accessor);
 	}
 
 	@Override
-	public <T extends PropertyAccessor<T>> T getProperties(PropertyAccessorConfiguration<T> accessorConfiguration) {
+	public <T extends Properties<T>> T getProperties(PropertyAccessorConfiguration<T> accessorConfiguration) {
 		return component.getProperties(accessorConfiguration);
 	}
 

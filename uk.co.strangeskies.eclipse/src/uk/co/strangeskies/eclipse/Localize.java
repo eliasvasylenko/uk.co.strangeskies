@@ -26,11 +26,11 @@ import java.lang.annotation.Target;
 import javax.inject.Inject;
 import javax.inject.Qualifier;
 
-import uk.co.strangeskies.text.properties.PropertyAccessor;
+import uk.co.strangeskies.text.properties.Properties;
 
 /**
  * Marks an {@link Inject} field as requiring an implementation of a
- * {@link PropertyAccessor localisation text interface}. The injection will
+ * {@link Properties localisation text interface}. The injection will
  * typically be provided by {@link LocalizationSupplier}.
  * 
  * @author Elias N Vasylenko
