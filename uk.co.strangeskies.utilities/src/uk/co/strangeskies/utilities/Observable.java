@@ -231,6 +231,9 @@ public interface Observable<M> {
 	 * whether or not the observer is already added. In cases where this is a
 	 * problem, consider using an instance of {@link ObservableImpl} instead.
 	 * 
+	 * @param <M>
+	 *          the message type for the immutable observable
+	 * 
 	 * @return an observable instance which never fires events
 	 */
 	@SuppressWarnings("unchecked")

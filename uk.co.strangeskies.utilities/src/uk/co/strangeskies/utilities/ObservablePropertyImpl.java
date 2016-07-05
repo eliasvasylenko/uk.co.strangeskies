@@ -76,6 +76,10 @@ public class ObservablePropertyImpl<T extends R, R> implements ObservablePropert
 	}
 
 	/**
+	 * @param <T>
+	 *          the type of event message to produce
+	 * @param <R>
+	 *          the type we may assign from
 	 * @param assignmentFunction
 	 *          an assignment function, accepting the assigned value and the
 	 *          current value, and returning the new value
@@ -83,7 +87,7 @@ public class ObservablePropertyImpl<T extends R, R> implements ObservablePropert
 	 *          an equivalence relation over the value space
 	 * @param initialValue
 	 *          the initial value
-	 * @return an observable property with the given behaviour and default value
+	 * @return an observable property with the given behavior and default value
 	 */
 	public static <T extends R, R> ObservableProperty<T, R> over(BiFunction<R, T, T> assignmentFunction,
 			BiPredicate<T, T> equality, T initialValue) {
@@ -94,6 +98,8 @@ public class ObservablePropertyImpl<T extends R, R> implements ObservablePropert
 	 * Instantiate an observable property with identity assignment and identity
 	 * equality.
 	 * 
+	 * @param <T>
+	 *          the type of event message to produce and which we may assign from
 	 * @param initialValue
 	 *          the initial value
 	 * @return an observable property with the given default value

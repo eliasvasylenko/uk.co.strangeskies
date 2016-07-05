@@ -55,6 +55,8 @@ public interface ObservableValue<T> extends Observable<T> {
 	Observable<Change<T>> changes();
 
 	/**
+	 * @param <T>
+	 *          the type of the immutable value
 	 * @param value
 	 *          the immutable value to create an observable over
 	 * @return an observable over the given value which never changes or fires
