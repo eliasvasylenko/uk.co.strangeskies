@@ -61,7 +61,9 @@ Test-Cases: ${test-cases}
 	osgi.enroute.logger.simple.provider;version='[1.2.1,1.2.2)',\
 	uk.co.strangeskies.bnd;version=snapshot,\
 	uk.co.strangeskies.osgi.api;version=snapshot,\
-	uk.co.strangeskies.osgi.provider;version=snapshot,\
 	uk.co.strangeskies.p2.api;version=snapshot,\
-	uk.co.strangeskies.p2bnd.bundle;version=snapshot,\
-	uk.co.strangeskies;version=snapshot
+	uk.co.strangeskies.osgi.provider;version='[1.0.13,1.0.14)',\
+	uk.co.strangeskies.text;version=snapshot,\
+	uk.co.strangeskies.utilities;version='[1.0.13,1.0.14)',\
+	uk.co.strangeskies.utilities;version=snapshot,\
+	uk.co.strangeskies.p2bnd.bundle;version=snapshot

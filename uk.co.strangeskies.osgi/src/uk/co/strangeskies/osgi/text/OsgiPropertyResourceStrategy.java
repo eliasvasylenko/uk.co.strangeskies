@@ -19,15 +19,15 @@
 package uk.co.strangeskies.osgi.text;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.wiring.BundleWiring;
 
-import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertyAccessorConfiguration;
+import uk.co.strangeskies.text.properties.PropertyConfiguration;
 import uk.co.strangeskies.text.properties.PropertyResource;
+import uk.co.strangeskies.text.properties.PropertyResourceImpl;
 import uk.co.strangeskies.text.properties.PropertyResourceStrategy;
 import uk.co.strangeskies.text.properties.ResourceBundleDescriptor;
 
@@ -49,8 +49,19 @@ public class OsgiPropertyResourceStrategy implements PropertyResourceStrategy<Os
 
 	@Override
 	public PropertyResource getPropertyResourceBundle(PropertyAccessorConfiguration<?> resourceConfiguration) {
-		// TODO Auto-generated method stub
-		return null;
+		return new PropertyResourceImpl(this, resourceConfiguration) {
+			@Override
+			protected List<ResourceBundleDescriptor> getResources(PropertyAccessorConfiguration<?> accessorConfiguration) {
+				String resource = accessorConfiguration.getConfiguration().resource();
+				List<ResourceBundleDescriptor> resources = new ArrayList<>(super.getResources(accessorConfiguration));
+
+				if (resource.equals(PropertyConfiguration.UNSPECIFIED_RESOURCE)) {
+					resources.add(getOsgiResourceDescriptor(usingBundle));
+				}
+
+				return resources;
+			}
+		};
 	}
 
 	private ResourceBundleDescriptor getOsgiResourceDescriptor(Bundle bundle) {
@@ -61,18 +72,5 @@ public class OsgiPropertyResourceStrategy implements PropertyResourceStrategy<Os
 			location = DEFAULT_OSGI_LOCALIZATION_LOCATION;
 
 		return new ResourceBundleDescriptor(classLoader, location);
-	}
-
-	private Collection<? extends ResourceBundleDescriptor> getResources(List<? extends Class<?>> accessors,
-			ResourceBundleDescriptor osgiLocalizationResource) {
-		List<ResourceBundleDescriptor> resources = new ArrayList<>();
-
-		for (Class<?> accessor : accessors) {
-			String accessorResource = Properties.removePropertiesPostfix(accessor.getName());
-			resources.add(new ResourceBundleDescriptor(osgiLocalizationResource.getClassLoader(), accessorResource));
-		}
-		resources.add(osgiLocalizationResource);
-
-		return resources;
 	}
 }

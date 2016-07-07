@@ -33,7 +33,7 @@ import uk.co.strangeskies.utilities.collection.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.MultiMap;
 
 public class PropertyResourceImpl implements PropertyResource {
-	private final PropertyResourceStrategy strategy;
+	private final PropertyResourceStrategy<?> strategy;
 	private final PropertyAccessorConfiguration<?> configuration;
 	private final Set<ResourceBundleDescriptor> resources;
 	private final MultiMap<Locale, ResourceBundle, List<ResourceBundle>> localizedResourceBundles;
@@ -42,7 +42,7 @@ public class PropertyResourceImpl implements PropertyResource {
 	 * Create a resource bundle with the given initial locale.
 	 * 
 	 * @param strategy
-	 *          the strategy responsible for initialising this resource
+	 *          the strategy responsible for initializing this resource
 	 * @param configuration
 	 *          the resource locations
 	 */
@@ -116,13 +116,9 @@ public class PropertyResourceImpl implements PropertyResource {
 		String resource = accessorConfiguration.getConfiguration().resource();
 
 		if (resource.equals(PropertyConfiguration.UNSPECIFIED_RESOURCE)) {
-			resource = getDefaultResource(accessorConfiguration.getAccessor());
+			resource = Properties.removePropertiesPostfix(accessorConfiguration.getAccessor().getName());
 		}
 
 		return Arrays.asList(new ResourceBundleDescriptor(accessorConfiguration.getAccessor().getClassLoader(), resource));
-	}
-
-	protected String getDefaultResource(Class<?> accessor) {
-		return Properties.removePropertiesPostfix(accessor.getName());
 	}
 }

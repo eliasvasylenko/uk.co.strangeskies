@@ -24,7 +24,7 @@ import uk.co.strangeskies.text.properties.Localized;
 import uk.co.strangeskies.text.properties.LocalizedRuntimeException;
 
 /**
- * A localised exception class for dealing with general service wiring and
+ * A localized exception class for dealing with general service wiring and
  * provision issues.
  * 
  * @author Elias N Vasylenko
@@ -36,13 +36,13 @@ public class ServiceWiringException extends LocalizedRuntimeException {
 	 * Build with the given developer locale
 	 * 
 	 * @param message
-	 *          the localised message string
+	 *          the localized message string
 	 * @param developerLocale
 	 *          the developer's locale
 	 * @param cause
 	 *          the cause
 	 */
-	protected ServiceWiringException(Localized message, Locale developerLocale, Throwable cause) {
+	protected ServiceWiringException(Localized<String> message, Locale developerLocale, Throwable cause) {
 		super(message, developerLocale, cause);
 	}
 
@@ -50,11 +50,11 @@ public class ServiceWiringException extends LocalizedRuntimeException {
 	 * Build with the given developer locale
 	 * 
 	 * @param message
-	 *          the localised message string
+	 *          the localized message string
 	 * @param developerLocale
 	 *          the developer's locale
 	 */
-	protected ServiceWiringException(Localized message, Locale developerLocale) {
+	protected ServiceWiringException(Localized<String> message, Locale developerLocale) {
 		super(message, developerLocale);
 	}
 
@@ -62,11 +62,11 @@ public class ServiceWiringException extends LocalizedRuntimeException {
 	 * Build with an English developer locale
 	 * 
 	 * @param message
-	 *          the localised message string
+	 *          the localized message string
 	 * @param cause
 	 *          the cause
 	 */
-	public ServiceWiringException(Localized message, Throwable cause) {
+	public ServiceWiringException(Localized<String> message, Throwable cause) {
 		super(message, cause);
 	}
 
@@ -74,9 +74,9 @@ public class ServiceWiringException extends LocalizedRuntimeException {
 	 * Build with an English developer locale
 	 * 
 	 * @param message
-	 *          the localised message string
+	 *          the localized message string
 	 */
-	public ServiceWiringException(Localized message) {
+	public ServiceWiringException(Localized<String> message) {
 		super(message);
 	}
 }
