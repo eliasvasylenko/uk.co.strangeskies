@@ -34,8 +34,8 @@ public class ParseState {
 		this(new LinkedList<>(), literal, 0, true, null);
 	}
 
-	private ParseState(Deque<Parser<?>> parserStack, String literal,
-			int fromIndex, boolean toEnd, ParseException furthestException) {
+	private ParseState(Deque<Parser<?>> parserStack, String literal, int fromIndex, boolean toEnd,
+			ParseException furthestException) {
 		this.parserStack = parserStack;
 		this.literal = literal;
 		this.fromIndex = fromIndex;
@@ -44,8 +44,7 @@ public class ParseState {
 	}
 
 	public ParseState(ParseState state, ParseException furthestException) {
-		this(state.parserStack, state.literal, state.fromIndex, state.toEnd,
-				furthestException);
+		this(state.parserStack, state.literal, state.fromIndex, state.toEnd, furthestException);
 	}
 
 	public String literal() {
@@ -57,8 +56,7 @@ public class ParseState {
 	}
 
 	public ParseState fromIndex(int fromIndex) {
-		return new ParseState(parserStack, literal, fromIndex, toEnd,
-				furthestException);
+		return new ParseState(parserStack, literal, fromIndex, toEnd, furthestException);
 	}
 
 	public boolean toEnd() {
@@ -66,13 +64,11 @@ public class ParseState {
 	}
 
 	public ParseState toEnd(boolean toEnd) {
-		return new ParseState(parserStack, literal, fromIndex, toEnd,
-				furthestException);
+		return new ParseState(parserStack, literal, fromIndex, toEnd, furthestException);
 	}
 
 	public <T> ParseResult<T> parseTo(int toIndex, Function<String, T> transform) {
-		return new ParseResult<>(this, toIndex, literal.substring(fromIndex,
-				toIndex)).mapResult(transform);
+		return new ParseResult<>(this, toIndex, literal.substring(fromIndex, toIndex)).mapResult(transform);
 	}
 
 	public ParseException getException() {
@@ -81,8 +77,7 @@ public class ParseState {
 
 	public ParseState addException(ParseException exception) {
 		if (exception == null
-				|| (furthestException != null && exception.getIndexReached() < furthestException
-						.getIndexReached()))
+				|| (furthestException != null && exception.getIndexReached() < furthestException.getIndexReached()))
 			exception = furthestException;
 
 		return new ParseState(this, exception);
@@ -92,10 +87,8 @@ public class ParseState {
 		return addException(message, indexReached, furthestException);
 	}
 
-	public ParseState addException(String message, int indexReached,
-			Exception cause) {
-		return addException(new ParseException(message, literal, fromIndex,
-				indexReached, cause));
+	public ParseState addException(String message, int indexReached, Exception cause) {
+		return addException(new ParseException(message, literal, fromIndex, indexReached, cause));
 	}
 
 	public ParseState addException(ParseState state) {
@@ -117,8 +110,8 @@ public class ParseState {
 	public ParseState pop(Parser<?> expected) {
 		Deque<Parser<?>> stack = new LinkedList<>(parserStack);
 		if (stack.pop() != expected)
-			throw new ParseException("Illegal parse state exception on completing '"
-					+ expected + "'", literal, fromIndex, fromIndex);
+			throw new ParseException("Illegal parse state exception on completing '" + expected + "'", literal, fromIndex,
+					fromIndex);
 
 		return new ParseState(stack, literal, fromIndex, toEnd, furthestException);
 	}

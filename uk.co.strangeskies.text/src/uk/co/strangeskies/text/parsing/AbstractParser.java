@@ -23,7 +23,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * A partial implementation of {@link Parser} with sensible default behaviour
+ * A partial implementation of {@link Parser} with sensible default behavior
  * provided for a large number of methods.
  * 
  * @author Elias N Vasylenko

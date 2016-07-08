@@ -18,18 +18,15 @@
  */
 package uk.co.strangeskies.text.properties;
 
-import static java.util.Optional.empty;
-
 import java.util.List;
-import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import uk.co.strangeskies.text.parsing.Parser;
 
 /**
- * A provider of {@link PropertyValue property values} for properties of a
- * certain class.
+ * A provider of property values for {@link Properties properties} of a certain
+ * class.
  * 
  * @author Elias N Vasylenko
  *
@@ -37,36 +34,45 @@ import uk.co.strangeskies.text.parsing.Parser;
  *          the type of the property value
  */
 public interface PropertyValueProvider<T> {
-	Parser<PropertyValue<T>> getParser();
+	Parser<T> getParser(List<?> arguments);
 
-	default Optional<PropertyValue<T>> getDefault(String keyString) {
-		return empty();
+	default boolean providesDefault() {
+		return false;
 	}
 
-	static <C, T> PropertyValueProvider<T> over(Parser<C> getValue, BiFunction<C, List<?>, T> instantiate,
-			Function<String, C> defaultValue) {
+	default T getDefault(String keyString, List<?> arguments) {
+		throw new UnsupportedOperationException();
+	}
+
+	static <T> PropertyValueProvider<T> over(Function<List<?>, Parser<T>> getValue,
+			BiFunction<String, List<?>, T> defaultValue) {
 		return new PropertyValueProvider<T>() {
 			@Override
-			public Parser<PropertyValue<T>> getParser() {
-				return getValue.transform(value -> arguments -> instantiate.apply(value, arguments));
+			public Parser<T> getParser(List<?> arguments) {
+				return getValue.apply(arguments);
 			}
 
 			@Override
-			public Optional<PropertyValue<T>> getDefault(String keyString) {
+			public boolean providesDefault() {
+				return defaultValue != null;
+			}
+
+			@Override
+			public T getDefault(String keyString, List<?> arguments) {
 				if (defaultValue != null) {
-					return Optional.of(arguments -> instantiate.apply(defaultValue.apply(keyString), arguments));
+					return defaultValue.apply(keyString, arguments);
 				} else {
-					return empty();
+					return PropertyValueProvider.super.getDefault(keyString, arguments);
 				}
 			}
 		};
 	}
 
-	static <C, T> PropertyValueProvider<T> over(Parser<C> getValue, BiFunction<C, List<?>, T> instantiate) {
-		return over(getValue, instantiate, k -> null);
+	static <T> PropertyValueProvider<T> over(Function<List<?>, Parser<T>> getValue) {
+		return over(getValue, null);
 	}
 
 	static <T> PropertyValueProvider<T> over(Parser<T> getValue) {
-		return over(getValue, (c, p) -> c);
+		return over(arguments -> getValue);
 	}
 }

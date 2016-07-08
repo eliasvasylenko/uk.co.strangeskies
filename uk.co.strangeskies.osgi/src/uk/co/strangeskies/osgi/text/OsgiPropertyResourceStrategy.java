@@ -22,9 +22,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.osgi.framework.Bundle;
+import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.wiring.BundleWiring;
 
-import uk.co.strangeskies.text.properties.PropertyAccessorConfiguration;
+import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
 import uk.co.strangeskies.text.properties.PropertyResource;
 import uk.co.strangeskies.text.properties.PropertyResourceImpl;
@@ -48,29 +49,46 @@ public class OsgiPropertyResourceStrategy implements PropertyResourceStrategy<Os
 	}
 
 	@Override
-	public PropertyResource getPropertyResourceBundle(PropertyAccessorConfiguration<?> resourceConfiguration) {
-		return new PropertyResourceImpl(this, resourceConfiguration) {
-			@Override
-			protected List<ResourceBundleDescriptor> getResources(PropertyAccessorConfiguration<?> accessorConfiguration) {
-				String resource = accessorConfiguration.getConfiguration().resource();
-				List<ResourceBundleDescriptor> resources = new ArrayList<>(super.getResources(accessorConfiguration));
+	public <T extends Properties<T>> PropertyResource getPropertyResourceBundle(Class<T> accessor, String resource) {
+		return new PropertyResourceImpl(this, accessor, resource) {
+			private Bundle usingBundle = OsgiPropertyResourceStrategy.this.usingBundle;
 
-				if (resource.equals(PropertyConfiguration.UNSPECIFIED_RESOURCE)) {
-					resources.add(getOsgiResourceDescriptor(usingBundle));
+			@Override
+			protected <T extends Properties<T>> List<ResourceBundleDescriptor> getResources(Class<T> accessor,
+					String resource) {
+				List<ResourceBundleDescriptor> resources = new ArrayList<>();
+
+				boolean unspecifiedResource = resource.equals(PropertyConfiguration.UNSPECIFIED_RESOURCE);
+
+				if (unspecifiedResource) {
+					resource = Properties.removePropertiesPostfix(accessor.getName());
 				}
+
+				addResources(resources, resource, unspecifiedResource, usingBundle);
+				addResources(resources, resource, unspecifiedResource, FrameworkUtil.getBundle(accessor));
 
 				return resources;
 			}
+
+			private void addResources(List<ResourceBundleDescriptor> resources, String resource, boolean unspecifiedResource,
+					Bundle bundle) {
+				if (bundle != null) {
+					ClassLoader classLoader = bundle.adapt(BundleWiring.class).getClassLoader();
+
+					resources.add(new ResourceBundleDescriptor(classLoader, resource));
+					if (unspecifiedResource) {
+						resources.add(getOsgiResourceDescriptor(bundle, classLoader));
+					}
+				}
+			}
+
+			private ResourceBundleDescriptor getOsgiResourceDescriptor(Bundle bundle, ClassLoader classLoader) {
+				String location = bundle.getHeaders().get(OSGI_LOCALIZATION_HEADER);
+				if (location == null)
+					location = DEFAULT_OSGI_LOCALIZATION_LOCATION;
+
+				return new ResourceBundleDescriptor(classLoader, location);
+			}
 		};
-	}
-
-	private ResourceBundleDescriptor getOsgiResourceDescriptor(Bundle bundle) {
-		ClassLoader classLoader = bundle.adapt(BundleWiring.class).getClassLoader();
-
-		String location = bundle.getHeaders().get(OSGI_LOCALIZATION_HEADER);
-		if (location == null)
-			location = DEFAULT_OSGI_LOCALIZATION_LOCATION;
-
-		return new ResourceBundleDescriptor(classLoader, location);
 	}
 }

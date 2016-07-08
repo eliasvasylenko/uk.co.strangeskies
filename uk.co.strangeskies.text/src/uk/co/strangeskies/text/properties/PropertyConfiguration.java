@@ -26,9 +26,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * Annotation for sub-interfaces of {@link Properties}, and for methods on those
- * interfaces, to specify how property resources should be fetched to back the
- * implementation of the accessor.
+ * Annotation for {@link Properties property accessor interfaces}, and for
+ * methods on those interfaces, to specify how property resources should be
+ * fetched to back the implementation of the accessor.
  * 
  * @author Elias N Vasylenko
  */

@@ -29,7 +29,7 @@ import uk.co.strangeskies.utilities.Self;
 public interface PropertyResourceStrategy<S extends PropertyResourceStrategy<S>> extends Self<S> {
 	Class<S> strategyClass();
 
-	PropertyResource getPropertyResourceBundle(PropertyAccessorConfiguration<?> resourceConfiguration);
+	<T extends Properties<T>> PropertyResource getPropertyResourceBundle(Class<T> accessor, String resource);
 
 	@Override
 	default S copy() {

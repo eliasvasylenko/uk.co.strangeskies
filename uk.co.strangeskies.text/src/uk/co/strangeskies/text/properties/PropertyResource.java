@@ -70,11 +70,11 @@ public interface PropertyResource {
 	/**
 	 * @return the property resource configuration
 	 */
-	PropertyAccessorConfiguration<?> getConfiguration();
+	Class<? extends Properties<?>> getAccessor();
 
 	/**
-	 * Create a {@link PropertyResource localising resource bundle} over the
-	 * given configuration.
+	 * Create a {@link PropertyResource localizing resource bundle} over the given
+	 * configuration.
 	 * 
 	 * 
 	 * 
@@ -87,17 +87,18 @@ public interface PropertyResource {
 	 * {@link ResourceBundle resource bundles} , which in turn will behave
 	 * according to {@link ResourceBundle#getBundle(String, Locale, ClassLoader)}
 	 * with the given class loader, using the given locations as base names, and
-	 * using the current locale of the {@link PropertyResource}. This locale
-	 * may change, and the delegate resource bundles will be updated accordingly.
+	 * using the current locale of the {@link PropertyResource}. This locale may
+	 * change, and the delegate resource bundles will be updated accordingly.
 	 * 
 	 * @param locale
 	 *          the locale for the resource bundle
-	 * @param resource
+	 * @param accessor
 	 *          the base names of properties files to load, and the class loaders
 	 *          they exist in
 	 * @return a resource bundle over all resources at each given location
 	 */
-	public static PropertyResource getBundle(Locale locale, PropertyAccessorConfiguration<?> resource) {
-		return PropertyResourceBundleStrategy.getInstance().getPropertyResourceBundle(resource);
+	public static <T extends Properties<T>> PropertyResource getBundle(Locale locale, Class<T> accessor,
+			String resource) {
+		return PropertyResourceBundleStrategy.getInstance().getPropertyResourceBundle(accessor, resource);
 	}
 }

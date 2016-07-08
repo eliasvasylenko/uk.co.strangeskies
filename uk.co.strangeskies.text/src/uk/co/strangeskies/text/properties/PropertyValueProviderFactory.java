@@ -43,7 +43,7 @@ public interface PropertyValueProviderFactory {
 	 */
 	<T> Optional<PropertyValueProvider<T>> getPropertyProvider(AnnotatedType exactType, PropertyLoader loader);
 
-	static <C, T> PropertyValueProviderFactory over(Class<T> propertyClass, PropertyValueProvider<T> provider) {
+	static <T> PropertyValueProviderFactory over(Class<T> propertyClass, PropertyValueProvider<T> provider) {
 		return new PropertyValueProviderFactory() {
 			@SuppressWarnings("unchecked")
 			@Override
@@ -58,14 +58,13 @@ public interface PropertyValueProviderFactory {
 		};
 	}
 
-	static <C, T> PropertyValueProviderFactory over(Class<T> propertyClass, Parser<C> getValue,
-			BiFunction<C, List<?>, T> instantiate, Function<String, C> defaultValue) {
-		return over(propertyClass, PropertyValueProvider.over(getValue, instantiate, defaultValue));
+	static <T> PropertyValueProviderFactory over(Class<T> propertyClass, Function<List<?>, Parser<T>> getValue,
+			BiFunction<String, List<?>, T> defaultValue) {
+		return over(propertyClass, PropertyValueProvider.over(getValue, defaultValue));
 	}
 
-	static <C, T> PropertyValueProviderFactory over(Class<T> propertyClass, Parser<C> getValue,
-			BiFunction<C, List<?>, T> instantiate) {
-		return over(propertyClass, PropertyValueProvider.over(getValue, instantiate));
+	static <T> PropertyValueProviderFactory over(Class<T> propertyClass, Function<List<?>, Parser<T>> getValue) {
+		return over(propertyClass, PropertyValueProvider.over(getValue));
 	}
 
 	static <T> PropertyValueProviderFactory over(Class<T> propertyClass, Parser<T> getValue) {

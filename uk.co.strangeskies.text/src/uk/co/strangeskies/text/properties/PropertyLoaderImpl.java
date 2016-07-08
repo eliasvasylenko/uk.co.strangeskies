@@ -26,6 +26,7 @@ import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -36,9 +37,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import uk.co.strangeskies.text.parsing.DateTimeParser;
 import uk.co.strangeskies.text.parsing.Parser;
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Log.Level;
@@ -136,8 +137,9 @@ class PropertyLoaderImpl implements PropertyLoader {
 	}
 
 	private PropertyValueProviderFactory stringProvider() {
-		return PropertyValueProviderFactory.over(String.class, Parser.matchingAll(),
-				(s, a) -> String.format(s, a.toArray()), s -> getProperties().translationNotFoundSubstitution(s));
+		return PropertyValueProviderFactory.over(String.class,
+				a -> Parser.matchingAll().transform(s -> String.format(s, a.toArray())),
+				(s, a) -> getProperties().translationNotFoundSubstitution(s));
 	}
 
 	private PropertyValueProviderFactory listProvider() {
@@ -155,13 +157,11 @@ class PropertyLoaderImpl implements PropertyLoader {
 					/*
 					 * TODO proper exception
 					 */
-					return of((PropertyValueProvider<T>) PropertyValueProvider.over(Parser.list(
-							loader.getValueProvider(elementType).orElseThrow(() -> new RuntimeException()).getParser(), "\\s*,\\s*"),
+					return of((PropertyValueProvider<T>) PropertyValueProvider.over(arguments -> Parser.list(
+							loader.getValueProvider(elementType).orElseThrow(() -> new RuntimeException()).getParser(arguments),
+							"\\s*,\\s*"),
 
-							(list, arguments) -> list.stream().map(element -> element.instantiate(arguments))
-									.collect(Collectors.toList()),
-
-							k -> Collections.emptyList()));
+							(k, a) -> Collections.emptyList()));
 
 				} else {
 					return empty();
@@ -183,18 +183,17 @@ class PropertyLoaderImpl implements PropertyLoader {
 					AnnotatedType elementType = ((AnnotatedParameterizedType) exactType).getAnnotatedActualTypeArguments()[0];
 
 					return loader.getValueProvider(elementType)
-							.<PropertyValueProvider<T>>map(p -> new PropertyValueProvider<T>() {
+							.<PropertyValueProvider<T>> map(p -> new PropertyValueProvider<T>() {
 								@Override
-								public Parser<PropertyValue<T>> getParser() {
-									Parser<PropertyValue<T>> optionalParser = p.getParser()
-											.transform(v -> a -> (T) Optional.ofNullable(v.instantiate(a)));
+								public Parser<T> getParser(List<?> arguments) {
+									Parser<T> optionalParser = p.getParser(arguments).transform(v -> (T) Optional.ofNullable(v));
 
-									return optionalParser.orElse(a -> (T) Optional.empty());
+									return optionalParser.orElse((T) Optional.empty());
 								}
 
 								@Override
-								public Optional<PropertyValue<T>> getDefault(String keyString) {
-									return Optional.of(arguments -> (T) Optional.empty());
+								public T getDefault(String keyString, List<?> arguments) {
+									return (T) Optional.empty();
 								};
 							});
 
@@ -203,6 +202,10 @@ class PropertyLoaderImpl implements PropertyLoader {
 				}
 			}
 		};
+	}
+
+	private PropertyValueProviderFactory localDateProvider() {
+		return PropertyValueProviderFactory.over(LocalDate.class, DateTimeParser.overIsoLocalDate());
 	}
 
 	@Override
@@ -275,16 +278,17 @@ class PropertyLoaderImpl implements PropertyLoader {
 					return Optional.of(new PropertyValueProvider<T>() {
 						@SuppressWarnings("unchecked")
 						@Override
-						public Parser<PropertyValue<T>> getParser() {
-							return providers.stream().map(PropertyValueProvider::getParser).reduce(Parser::orElse).get()
-									.transform(v -> (PropertyValue<T>) v);
+						public Parser<T> getParser(List<?> arguments) {
+							return providers.stream().map(p -> p.getParser(arguments)).reduce(Parser::orElse).get()
+									.transform(v -> (T) v);
 						}
 
 						@SuppressWarnings("unchecked")
 						@Override
-						public Optional<PropertyValue<T>> getDefault(String keyString) {
-							return providers.stream().map(p -> p.getDefault(keyString)).filter(Optional::isPresent).findFirst()
-									.flatMap(Function.identity()).map(v -> (PropertyValue<T>) v);
+						public T getDefault(String keyString, List<?> arguments) {
+							return providers.stream().filter(PropertyValueProvider::providesDefault)
+									.map(p -> (T) Optional.of(p.getDefault(keyString, arguments))).findFirst()
+									.orElse(PropertyValueProvider.super.getDefault(keyString, arguments));
 						}
 					});
 				} else {

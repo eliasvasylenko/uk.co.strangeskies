@@ -34,7 +34,7 @@ import uk.co.strangeskies.utilities.collection.MultiMap;
 
 public class PropertyResourceImpl implements PropertyResource {
 	private final PropertyResourceStrategy<?> strategy;
-	private final PropertyAccessorConfiguration<?> configuration;
+	private final Class<? extends Properties<?>> accessor;
 	private final Set<ResourceBundleDescriptor> resources;
 	private final MultiMap<Locale, ResourceBundle, List<ResourceBundle>> localizedResourceBundles;
 
@@ -46,22 +46,18 @@ public class PropertyResourceImpl implements PropertyResource {
 	 * @param configuration
 	 *          the resource locations
 	 */
-	protected PropertyResourceImpl(PropertyResourceStrategy<?> strategy, PropertyAccessorConfiguration<?> configuration) {
+	protected <T extends Properties<T>> PropertyResourceImpl(PropertyResourceStrategy<?> strategy, Class<T> accessor,
+			String resource) {
 		this.strategy = strategy;
-		this.configuration = configuration;
+		this.accessor = accessor;
 		localizedResourceBundles = new MultiHashMap<>(ArrayList::new);
 
-		resources = new LinkedHashSet<>(getResources(configuration));
+		resources = new LinkedHashSet<>(getResources(accessor, resource));
 
-		if (getResourceBundle(Locale.ROOT).isEmpty()) {
-			throw missingResourcesException();
+		if (getResourceBundles(Locale.ROOT).isEmpty()) {
+			throw new MissingResourceException("Cannot find resources for any of " + resources + " for " + accessor,
+					accessor.toString(), "");
 		}
-	}
-
-	private MissingResourceException missingResourcesException() {
-		return new MissingResourceException(
-				"Cannot find resources for any of " + resources + " for " + configuration.getAccessor(),
-				configuration.toString(), "");
 	}
 
 	@Override
@@ -70,15 +66,15 @@ public class PropertyResourceImpl implements PropertyResource {
 	}
 
 	@Override
-	public PropertyAccessorConfiguration<?> getConfiguration() {
-		return configuration;
+	public Class<? extends Properties<?>> getAccessor() {
+		return accessor;
 	}
 
 	@Override
 	public Set<String> getKeys(Locale locale) {
 		Set<String> keys = new LinkedHashSet<>();
 
-		for (ResourceBundle bundle : getResourceBundle(locale)) {
+		for (ResourceBundle bundle : getResourceBundles(locale)) {
 			keys.addAll(list(bundle.getKeys()));
 		}
 
@@ -87,16 +83,17 @@ public class PropertyResourceImpl implements PropertyResource {
 
 	@Override
 	public String getValue(String key, Locale locale) {
-		for (ResourceBundle bundle : getResourceBundle(locale)) {
+		for (ResourceBundle bundle : getResourceBundles(locale)) {
 			try {
 				return bundle.getString(key);
 			} catch (MissingResourceException e) {}
 		}
 
-		throw missingResourcesException();
+		throw new MissingResourceException("Cannot find resources for key " + key + " in locale " + locale + " in any of "
+				+ resources + " for " + accessor, accessor.toString(), "");
 	}
 
-	protected synchronized List<ResourceBundle> getResourceBundle(Locale locale) {
+	protected synchronized List<ResourceBundle> getResourceBundles(Locale locale) {
 		if (localizedResourceBundles.containsKey(locale)) {
 			return localizedResourceBundles.get(locale);
 		} else {
@@ -112,13 +109,11 @@ public class PropertyResourceImpl implements PropertyResource {
 		}
 	}
 
-	protected List<ResourceBundleDescriptor> getResources(PropertyAccessorConfiguration<?> accessorConfiguration) {
-		String resource = accessorConfiguration.getConfiguration().resource();
-
+	protected <T extends Properties<T>> List<ResourceBundleDescriptor> getResources(Class<T> accessor, String resource) {
 		if (resource.equals(PropertyConfiguration.UNSPECIFIED_RESOURCE)) {
-			resource = Properties.removePropertiesPostfix(accessorConfiguration.getAccessor().getName());
+			resource = Properties.removePropertiesPostfix(accessor.getName());
 		}
 
-		return Arrays.asList(new ResourceBundleDescriptor(accessorConfiguration.getAccessor().getClassLoader(), resource));
+		return Arrays.asList(new ResourceBundleDescriptor(accessor.getClassLoader(), resource));
 	}
 }

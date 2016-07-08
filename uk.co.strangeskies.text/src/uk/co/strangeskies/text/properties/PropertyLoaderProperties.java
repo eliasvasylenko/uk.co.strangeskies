@@ -27,7 +27,7 @@ import uk.co.strangeskies.text.properties.PropertyConfiguration.Evaluation;
 /**
  * A {@link Properties} interface to provide localized texts for use by the
  * {@link PropertyLoader} class itself, such as for reporting errors for
- * improperly structured localisation classes, etc.
+ * improperly structured localization classes, etc.
  * <p>
  * And implementation of this interface should be generated via
  * {@link PropertyLoader#getProperties(Class)}.
@@ -40,7 +40,7 @@ public interface PropertyLoaderProperties extends Properties<PropertyLoaderPrope
 	 * Load the property with the key {@code property.loader.must.be.interface}.
 	 * 
 	 * @param accessor
-	 *          the accessor to localise
+	 *          the accessor to localize
 	 * @return the accessor class must be an interface
 	 */
 	Localized<String> mustBeInterface(Class<?> accessor);
