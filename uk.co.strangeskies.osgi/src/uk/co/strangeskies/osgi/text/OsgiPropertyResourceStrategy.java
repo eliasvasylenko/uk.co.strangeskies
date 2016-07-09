@@ -28,7 +28,7 @@ import org.osgi.framework.wiring.BundleWiring;
 import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
 import uk.co.strangeskies.text.properties.PropertyResource;
-import uk.co.strangeskies.text.properties.PropertyResourceImpl;
+import uk.co.strangeskies.text.properties.PropertyResourceBundle;
 import uk.co.strangeskies.text.properties.PropertyResourceStrategy;
 import uk.co.strangeskies.text.properties.ResourceBundleDescriptor;
 
@@ -50,7 +50,7 @@ public class OsgiPropertyResourceStrategy implements PropertyResourceStrategy<Os
 
 	@Override
 	public <T extends Properties<T>> PropertyResource getPropertyResourceBundle(Class<T> accessor, String resource) {
-		return new PropertyResourceImpl(this, accessor, resource) {
+		return new PropertyResourceBundle(this, accessor, resource) {
 			private Bundle usingBundle = OsgiPropertyResourceStrategy.this.usingBundle;
 
 			@Override

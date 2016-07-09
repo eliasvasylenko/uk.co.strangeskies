@@ -30,7 +30,7 @@ public class PropertyResourceBundleStrategy implements PropertyResourceStrategy<
 
 	@Override
 	public <T extends Properties<T>> PropertyResource getPropertyResourceBundle(Class<T> accessor, String resource) {
-		return new PropertyResourceImpl(this, accessor, resource);
+		return new PropertyResourceBundle(this, accessor, resource);
 	}
 
 	/**

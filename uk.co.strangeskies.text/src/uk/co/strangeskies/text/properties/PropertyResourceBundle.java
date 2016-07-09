@@ -32,7 +32,13 @@ import java.util.Set;
 import uk.co.strangeskies.utilities.collection.MultiHashMap;
 import uk.co.strangeskies.utilities.collection.MultiMap;
 
-public class PropertyResourceImpl implements PropertyResource {
+/**
+ * A simple {@link PropertyResource} implementation backed by one or more
+ * {@link ResourceBundle resource bundles}.
+ * 
+ * @author Elias N Vasylenko
+ */
+public class PropertyResourceBundle implements PropertyResource {
 	private final PropertyResourceStrategy<?> strategy;
 	private final Class<? extends Properties<?>> accessor;
 	private final Set<ResourceBundleDescriptor> resources;
@@ -42,11 +48,15 @@ public class PropertyResourceImpl implements PropertyResource {
 	 * Create a resource bundle with the given initial locale.
 	 * 
 	 * @param strategy
-	 *          the strategy responsible for initializing this resource
-	 * @param configuration
-	 *          the resource locations
+	 *          the strategy responsible for initializing this resource from the
+	 *          appropriate {@link PropertyConfiguration}
+	 * @param accessor
+	 *          the accessor class type
+	 * @param resource
+	 *          the resource location setting from the appropriate
+	 *          {@link PropertyConfiguration}
 	 */
-	protected <T extends Properties<T>> PropertyResourceImpl(PropertyResourceStrategy<?> strategy, Class<T> accessor,
+	protected <T extends Properties<T>> PropertyResourceBundle(PropertyResourceStrategy<?> strategy, Class<T> accessor,
 			String resource) {
 		this.strategy = strategy;
 		this.accessor = accessor;

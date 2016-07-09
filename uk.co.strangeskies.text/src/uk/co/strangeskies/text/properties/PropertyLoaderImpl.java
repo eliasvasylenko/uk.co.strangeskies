@@ -183,13 +183,18 @@ class PropertyLoaderImpl implements PropertyLoader {
 					AnnotatedType elementType = ((AnnotatedParameterizedType) exactType).getAnnotatedActualTypeArguments()[0];
 
 					return loader.getValueProvider(elementType)
-							.<PropertyValueProvider<T>> map(p -> new PropertyValueProvider<T>() {
+							.<PropertyValueProvider<T>>map(p -> new PropertyValueProvider<T>() {
 								@Override
 								public Parser<T> getParser(List<?> arguments) {
 									Parser<T> optionalParser = p.getParser(arguments).transform(v -> (T) Optional.ofNullable(v));
 
 									return optionalParser.orElse((T) Optional.empty());
 								}
+
+								@Override
+								public boolean providesDefault() {
+									return true;
+								};
 
 								@Override
 								public T getDefault(String keyString, List<?> arguments) {
@@ -283,12 +288,17 @@ class PropertyLoaderImpl implements PropertyLoader {
 									.transform(v -> (T) v);
 						}
 
+						@Override
+						public boolean providesDefault() {
+							return providers.stream().anyMatch(PropertyValueProvider::providesDefault);
+						};
+
 						@SuppressWarnings("unchecked")
 						@Override
 						public T getDefault(String keyString, List<?> arguments) {
 							return providers.stream().filter(PropertyValueProvider::providesDefault)
-									.map(p -> (T) Optional.of(p.getDefault(keyString, arguments))).findFirst()
-									.orElse(PropertyValueProvider.super.getDefault(keyString, arguments));
+									.map(p -> (T) p.getDefault(keyString, arguments)).findFirst()
+									.orElseGet(() -> PropertyValueProvider.super.getDefault(keyString, arguments));
 						}
 					});
 				} else {

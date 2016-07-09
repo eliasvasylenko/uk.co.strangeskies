@@ -95,7 +95,7 @@ public class PropertyAccessorDelegate<A extends Properties<A>> extends Observabl
 				valueProvider = arguments -> new LocalizedPropertyImpl(source, key, propertyType, arguments);
 
 			} else {
-				valueProvider = arguments -> parseValueString(source, propertyType, key, Locale.ROOT).apply(arguments);
+				valueProvider = parseValueString(source, propertyType, key, Locale.ROOT);
 			}
 		}
 
