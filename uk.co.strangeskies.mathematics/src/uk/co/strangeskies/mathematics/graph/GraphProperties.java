@@ -24,21 +24,21 @@ import uk.co.strangeskies.text.properties.Properties;
 public interface GraphProperties extends Properties<GraphProperties> {
 	Localized<String> alreadyConfigured(Object item);
 
-	Localized<String> edgeMap();
+	String edgeMap();
 
-	Localized<String> edgeVertices();
+	String edgeVertices();
 
-	Localized<String> edgeFactory();
+	String edgeFactory();
 
-	Localized<String> edgeMultiFactory();
+	String edgeMultiFactory();
 
-	Localized<String> edgeWeight();
+	String edgeWeight();
 
-	Localized<String> edgeEquality();
+	String edgeEquality();
 
-	Localized<String> vertexEquality();
+	String vertexEquality();
 
-	Localized<String> direction();
+	String direction();
 
-	Localized<String> directionFunction();
+	String directionFunction();
 }

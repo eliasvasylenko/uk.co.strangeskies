@@ -35,7 +35,6 @@ import uk.co.strangeskies.mathematics.graph.Graph;
 import uk.co.strangeskies.mathematics.graph.GraphException;
 import uk.co.strangeskies.mathematics.graph.GraphProperties;
 import uk.co.strangeskies.mathematics.graph.building.GraphConfigurator;
-import uk.co.strangeskies.text.properties.Localized;
 import uk.co.strangeskies.utilities.EquivalenceComparator;
 
 public class GraphConfiguratorImpl<V, E> implements GraphConfigurator<V, E> {
@@ -63,9 +62,9 @@ public class GraphConfiguratorImpl<V, E> implements GraphConfigurator<V, E> {
 		internalListeners = new GraphListenersImpl<>();
 	}
 
-	private void assertConfigurable(Object reference, Function<GraphProperties, Localized<String>> property) {
+	private void assertConfigurable(Object reference, Function<GraphProperties, Object> property) {
 		if (reference != null)
-			throw new GraphException(t -> t.alreadyConfigured(property.apply(t)));
+			throw new GraphException(t -> t.alreadyConfigured(property));
 	}
 
 	protected static GraphConfigurator<Object, Object> configure() {
@@ -212,7 +211,7 @@ public class GraphConfiguratorImpl<V, E> implements GraphConfigurator<V, E> {
 
 	@Override
 	public GraphConfigurator<V, E> vertexEquality(BiPredicate<? super V, ? super V> equality) {
-		assertConfigurable(vertexEquality, GraphProperties::vertexEquality);
+		assertConfigurable(edgeWeight, GraphProperties::vertexEquality);
 
 		this.vertexEquality = equality;
 		return this;
