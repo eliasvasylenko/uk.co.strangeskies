@@ -24,7 +24,7 @@ import uk.co.strangeskies.mathematics.Range;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.factory.Factory;
+import uk.co.strangeskies.utilities.Factory;
 
 public class Bounds2<V extends Value<V>> extends Bounds<Bounds2<V>, V> {
 	public Bounds2(Bounds<?, V> other) throws DimensionalityException {

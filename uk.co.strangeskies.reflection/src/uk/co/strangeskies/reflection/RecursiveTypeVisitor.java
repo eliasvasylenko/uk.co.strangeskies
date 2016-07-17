@@ -24,7 +24,7 @@ import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.function.Consumer;
 
-import uk.co.strangeskies.utilities.factory.Configurator;
+import uk.co.strangeskies.utilities.Factory;
 
 /**
  * <p>
@@ -47,12 +47,12 @@ import uk.co.strangeskies.utilities.factory.Configurator;
  */
 public class RecursiveTypeVisitor extends TypeVisitor {
 	/**
-	 * A builder for specifying the behaviour of a new
-	 * {@link RecursiveTypeVisitor} instance.
+	 * A builder for specifying the behavior of a new {@link RecursiveTypeVisitor}
+	 * instance.
 	 * 
 	 * @author Elias N Vasylenko
 	 */
-	public static class Builder extends Configurator<RecursiveTypeVisitor> {
+	public static class Builder implements Factory<RecursiveTypeVisitor> {
 		private boolean allowRepeatVisits = false;
 
 		private boolean supertypes = false;
@@ -77,13 +77,10 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 		private Builder() {}
 
 		@Override
-		protected RecursiveTypeVisitor tryCreate() {
-			return new RecursiveTypeVisitor(allowRepeatVisits, supertypes, enclosed,
-					enclosing, parameters, bounds, postOrder, classVisitor,
-					genericArrayVisitor, parameterizedTypeVisitor,
-					typeVariableCaptureVisitor, typeVariableVisitor,
-					inferenceVariableVisitor, wildcardVisitor, intersectionTypeVisitor,
-					boundSet);
+		public RecursiveTypeVisitor create() {
+			return new RecursiveTypeVisitor(allowRepeatVisits, supertypes, enclosed, enclosing, parameters, bounds, postOrder,
+					classVisitor, genericArrayVisitor, parameterizedTypeVisitor, typeVariableCaptureVisitor, typeVariableVisitor,
+					inferenceVariableVisitor, wildcardVisitor, intersectionTypeVisitor, boundSet);
 		}
 
 		/**
@@ -203,8 +200,7 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 		 *          The visitation method for {@link GenericArrayType}s.
 		 * @return The receiving builder instance.
 		 */
-		public Builder genericArrayVisitor(
-				Consumer<GenericArrayType> genericArrayVisitor) {
+		public Builder genericArrayVisitor(Consumer<GenericArrayType> genericArrayVisitor) {
 			this.genericArrayVisitor = genericArrayVisitor;
 			return this;
 		}
@@ -214,8 +210,7 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 		 *          The visitation method for {@link ParameterizedType}s.
 		 * @return The receiving builder instance.
 		 */
-		public Builder parameterizedTypeVisitor(
-				Consumer<ParameterizedType> parameterizedTypeVisitor) {
+		public Builder parameterizedTypeVisitor(Consumer<ParameterizedType> parameterizedTypeVisitor) {
 			this.parameterizedTypeVisitor = parameterizedTypeVisitor;
 			return this;
 		}
@@ -225,8 +220,7 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 		 *          The visitation method for {@link TypeVariableCapture}s.
 		 * @return The receiving builder instance.
 		 */
-		public Builder typeVariableCaptureVisitor(
-				Consumer<TypeVariableCapture> typeVariableCaptureVisitor) {
+		public Builder typeVariableCaptureVisitor(Consumer<TypeVariableCapture> typeVariableCaptureVisitor) {
 			this.typeVariableCaptureVisitor = typeVariableCaptureVisitor;
 			return this;
 		}
@@ -236,8 +230,7 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 		 *          The visitation method for {@link TypeVariable}s.
 		 * @return The receiving builder instance.
 		 */
-		public Builder typeVariableVisitor(
-				Consumer<TypeVariable<?>> typeVariableVisitor) {
+		public Builder typeVariableVisitor(Consumer<TypeVariable<?>> typeVariableVisitor) {
 			this.typeVariableVisitor = typeVariableVisitor;
 			return this;
 		}
@@ -247,8 +240,7 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 		 *          The visitation method for {@link InferenceVariable}s.
 		 * @return The receiving builder instance.
 		 */
-		public Builder inferenceVariableVisitor(
-				Consumer<InferenceVariable> inferenceVariableVisitor) {
+		public Builder inferenceVariableVisitor(Consumer<InferenceVariable> inferenceVariableVisitor) {
 			this.inferenceVariableVisitor = inferenceVariableVisitor;
 			return this;
 		}
@@ -268,8 +260,7 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 		 *          The visitation method for {@link IntersectionType}s.
 		 * @return The receiving builder instance.
 		 */
-		public Builder intersectionTypeVisitor(
-				Consumer<IntersectionType> intersectionTypeVisitor) {
+		public Builder intersectionTypeVisitor(Consumer<IntersectionType> intersectionTypeVisitor) {
 			this.intersectionTypeVisitor = intersectionTypeVisitor;
 			return this;
 		}
@@ -294,15 +285,11 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 	private final Consumer<WildcardType> wildcardVisitor;
 	private final Consumer<IntersectionType> intersectionTypeVisitor;
 
-	private RecursiveTypeVisitor(boolean allowRepeatVisits, boolean supertypes,
-			boolean enclosed, boolean enclosing, boolean parameters, boolean bounds,
-			boolean postOrder, Consumer<Class<?>> classVisitor,
-			Consumer<GenericArrayType> genericArrayVisitor,
-			Consumer<ParameterizedType> parameterizedTypeVisitor,
-			Consumer<TypeVariableCapture> typeVariableCaptureVisitor,
-			Consumer<TypeVariable<?>> typeVariableVisitor,
-			Consumer<InferenceVariable> inferenceVariableVisitor,
-			Consumer<WildcardType> wildcardVisitor,
+	private RecursiveTypeVisitor(boolean allowRepeatVisits, boolean supertypes, boolean enclosed, boolean enclosing,
+			boolean parameters, boolean bounds, boolean postOrder, Consumer<Class<?>> classVisitor,
+			Consumer<GenericArrayType> genericArrayVisitor, Consumer<ParameterizedType> parameterizedTypeVisitor,
+			Consumer<TypeVariableCapture> typeVariableCaptureVisitor, Consumer<TypeVariable<?>> typeVariableVisitor,
+			Consumer<InferenceVariable> inferenceVariableVisitor, Consumer<WildcardType> wildcardVisitor,
 			Consumer<IntersectionType> intersectionTypeVisitor, BoundSet boundSet) {
 		super(allowRepeatVisits);
 

@@ -23,7 +23,7 @@ import java.util.List;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorH2;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.factory.Factory;
+import uk.co.strangeskies.utilities.Factory;
 
 public class VectorH2Impl<V extends Value<V>> extends
 		VectorHImpl<VectorH2<V>, V> implements VectorH2<V> {

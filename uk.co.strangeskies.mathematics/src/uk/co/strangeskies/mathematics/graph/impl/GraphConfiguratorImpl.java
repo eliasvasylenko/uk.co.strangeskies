@@ -32,11 +32,13 @@ import java.util.function.Function;
 
 import uk.co.strangeskies.mathematics.graph.EdgeVertices;
 import uk.co.strangeskies.mathematics.graph.Graph;
+import uk.co.strangeskies.mathematics.graph.GraphException;
+import uk.co.strangeskies.mathematics.graph.GraphProperties;
 import uk.co.strangeskies.mathematics.graph.building.GraphConfigurator;
+import uk.co.strangeskies.text.properties.Localized;
 import uk.co.strangeskies.utilities.EquivalenceComparator;
-import uk.co.strangeskies.utilities.factory.Configurator;
 
-public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>> implements GraphConfigurator<V, E> {
+public class GraphConfiguratorImpl<V, E> implements GraphConfigurator<V, E> {
 	private List<V> vertices;
 	private boolean unmodifiableVertices;
 	private BiPredicate<? super V, ? super V> vertexEquality;
@@ -61,12 +63,17 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>> imple
 		internalListeners = new GraphListenersImpl<>();
 	}
 
+	private void assertConfigurable(Object reference, Function<GraphProperties, Localized<String>> property) {
+		if (reference != null)
+			throw new GraphException(t -> t.alreadyConfigured(property.apply(t)));
+	}
+
 	protected static GraphConfigurator<Object, Object> configure() {
 		return new GraphConfiguratorImpl<>();
 	}
 
 	@Override
-	public Graph<V, E> tryCreate() {
+	public Graph<V, E> create() {
 		return new GraphImpl<>(this);
 	}
 
@@ -100,7 +107,7 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>> imple
 
 	@Override
 	public GraphConfigurator<V, E> edges(Collection<? extends EdgeVertices<V>> edges) {
-		assertConfigurable(edgeMap);
+		assertConfigurable(edgeMap, GraphProperties::edgeMap);
 
 		if (edgeVertices == null)
 			edgeVertices = new ArrayList<>(edges);
@@ -113,7 +120,7 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>> imple
 	@SuppressWarnings("unchecked")
 	@Override
 	public <F extends E> GraphConfigurator<V, F> edges(Map<F, EdgeVertices<V>> edges) {
-		assertConfigurable(edgeVertices);
+		assertConfigurable(edgeVertices, GraphProperties::edgeVertices);
 
 		if (edgeMap == null)
 			edgeMap = new TreeMap<>(EquivalenceComparator.identityComparator());
@@ -156,8 +163,8 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>> imple
 
 	@Override
 	public GraphConfigurator<V, E> direction(Comparator<V> lowToHigh) {
-		assertConfigurable(this.lowToHighDirection);
-		assertConfigurable(this.lowToHighDirectionFunction);
+		assertConfigurable(lowToHighDirection, GraphProperties::direction);
+		assertConfigurable(lowToHighDirectionFunction, GraphProperties::directionFunction);
 
 		lowToHighDirection = lowToHigh;
 
@@ -166,8 +173,8 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>> imple
 
 	@Override
 	public GraphConfigurator<V, E> direction(Function<E, Comparator<V>> lowToHigh) {
-		assertConfigurable(this.lowToHighDirection);
-		assertConfigurable(this.lowToHighDirectionFunction);
+		assertConfigurable(lowToHighDirection, GraphProperties::direction);
+		assertConfigurable(lowToHighDirectionFunction, GraphProperties::directionFunction);
 
 		lowToHighDirectionFunction = lowToHigh;
 
@@ -177,7 +184,9 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>> imple
 	@SuppressWarnings("unchecked")
 	@Override
 	public <F extends E> GraphConfigurator<V, F> edgeFactory(Function<EdgeVertices<V>, F> factory) {
-		assertConfigurable(edgeFactory, edgeMultiFactory);
+		assertConfigurable(edgeFactory, GraphProperties::edgeFactory);
+		assertConfigurable(edgeMultiFactory, GraphProperties::edgeMultiFactory);
+
 		edgeFactory = (Function<EdgeVertices<V>, E>) factory;
 		return (GraphConfigurator<V, F>) this;
 	}
@@ -185,14 +194,17 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>> imple
 	@SuppressWarnings("unchecked")
 	@Override
 	public <F extends E> GraphConfigurator<V, F> edgeMultiFactory(Function<EdgeVertices<V>, Set<F>> factory) {
-		assertConfigurable(edgeFactory, edgeMultiFactory);
+		assertConfigurable(edgeFactory, GraphProperties::edgeFactory);
+		assertConfigurable(edgeMultiFactory, GraphProperties::edgeMultiFactory);
+
 		edgeMultiFactory = (Function<EdgeVertices<V>, Set<E>>) (Object) factory;
 		return (GraphConfigurator<V, F>) multigraph();
 	}
 
 	@Override
 	public GraphConfigurator<V, E> edgeWeight(Function<E, Double> weight) {
-		assertConfigurable(getEdgeWeight());
+		assertConfigurable(edgeWeight, GraphProperties::edgeWeight);
+
 		edgeWeight = weight;
 
 		return this;
@@ -200,14 +212,16 @@ public class GraphConfiguratorImpl<V, E> extends Configurator<Graph<V, E>> imple
 
 	@Override
 	public GraphConfigurator<V, E> vertexEquality(BiPredicate<? super V, ? super V> equality) {
-		assertConfigurable(vertexEquality);
+		assertConfigurable(vertexEquality, GraphProperties::vertexEquality);
+
 		this.vertexEquality = equality;
 		return this;
 	}
 
 	@Override
 	public GraphConfigurator<V, E> edgeEquality(BiPredicate<? super E, ? super E> equality) {
-		assertConfigurable(this.edgeEquality);
+		assertConfigurable(edgeEquality, GraphProperties::edgeEquality);
+
 		this.edgeEquality = equality;
 		return this;
 	}

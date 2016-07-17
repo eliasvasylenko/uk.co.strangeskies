@@ -23,7 +23,7 @@ import java.util.function.Function;
 
 import org.osgi.annotation.versioning.ProviderType;
 
-import uk.co.strangeskies.utilities.factory.Factory;
+import uk.co.strangeskies.utilities.Factory;
 
 @ProviderType
 public interface GraphTransformer<V, E> extends Factory<Graph<V, E>> {

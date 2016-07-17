@@ -31,7 +31,7 @@ import uk.co.strangeskies.mathematics.geometry.shape.Shape;
 import uk.co.strangeskies.mathematics.values.DoubleValue;
 import uk.co.strangeskies.mathematics.values.IntValue;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.factory.Factory;
+import uk.co.strangeskies.utilities.Factory;
 
 public class Line2Impl<V extends Value<V>> extends DependentExpression<Line2<V>, Line2<V>>
 		implements Line2<V>, CopyDecouplingExpression<Line2<V>, Line2<V>> {

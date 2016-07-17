@@ -26,7 +26,7 @@ import uk.co.strangeskies.mathematics.geometry.matrix.Matrix2;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.Vector2Impl;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.factory.Factory;
+import uk.co.strangeskies.utilities.Factory;
 
 public class Matrix2Impl<V extends Value<V>> extends MatrixSImpl<Matrix2<V>, V>
 		implements Matrix2<V> {

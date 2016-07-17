@@ -544,7 +544,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 
 	@Override
 	public Graph<V, E> copy() {
-		return new GraphBuilderImpl().configure().readOnly().vertices(vertices).edges(edges.edgeVertices)
+		return new GraphBuilderImpl().build().readOnly().vertices(vertices).edges(edges.edgeVertices)
 				.edgeFactory(v -> edges.betweenUnique(v)).create();
 	}
 

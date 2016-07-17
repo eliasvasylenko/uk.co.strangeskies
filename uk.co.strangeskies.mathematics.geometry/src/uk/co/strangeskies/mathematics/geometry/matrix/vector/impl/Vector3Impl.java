@@ -22,7 +22,7 @@ import java.util.List;
 
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector3;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.factory.Factory;
+import uk.co.strangeskies.utilities.Factory;
 
 public class Vector3Impl<V extends Value<V>> extends VectorImpl<Vector3<V>, V>
 		implements Vector3<V> {

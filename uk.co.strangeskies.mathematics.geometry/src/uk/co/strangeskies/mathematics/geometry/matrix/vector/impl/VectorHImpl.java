@@ -25,7 +25,7 @@ import uk.co.strangeskies.mathematics.geometry.matrix.Matrix;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorH;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.factory.Factory;
+import uk.co.strangeskies.utilities.Factory;
 
 public abstract class VectorHImpl<S extends VectorH<S, V>, V extends Value<V>>
 		extends /*  */VectorImpl<S, V> implements VectorH<S, V> {

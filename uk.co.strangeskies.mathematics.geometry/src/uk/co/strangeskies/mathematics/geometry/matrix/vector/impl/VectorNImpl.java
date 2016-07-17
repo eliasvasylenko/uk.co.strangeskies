@@ -22,7 +22,7 @@ import java.util.List;
 
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorN;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.factory.Factory;
+import uk.co.strangeskies.utilities.Factory;
 
 public class VectorNImpl<V extends Value<V>> extends VectorImpl<VectorN<V>, V>
 		implements VectorN<V> {

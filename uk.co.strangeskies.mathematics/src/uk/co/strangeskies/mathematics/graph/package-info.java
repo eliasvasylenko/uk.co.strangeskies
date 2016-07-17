@@ -16,8 +16,5 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with uk.co.strangeskies.utilities.  If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.utilities.factory;
-
-public interface Builder<C extends Factory<T>, T> {
-	C configure();
-}
+@org.osgi.annotation.versioning.Version("1.0.0")
+package uk.co.strangeskies.mathematics.graph;

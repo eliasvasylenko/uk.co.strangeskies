@@ -22,7 +22,7 @@ import java.util.Collection;
 
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.factory.Factory;
+import uk.co.strangeskies.utilities.Factory;
 
 public class BoundsN<V extends Value<V>> extends Bounds<BoundsN<V>, V> {
 	public BoundsN(Bounds<?, V> other) {

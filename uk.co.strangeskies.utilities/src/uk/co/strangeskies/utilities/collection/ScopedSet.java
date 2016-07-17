@@ -25,8 +25,8 @@ import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
 
+import uk.co.strangeskies.utilities.Factory;
 import uk.co.strangeskies.utilities.Scoped;
-import uk.co.strangeskies.utilities.factory.Factory;
 
 public abstract class ScopedSet<S extends ScopedSet<S, T>, T> implements SetDecorator<T>, Scoped<S> {
 	static class ScopedSetImpl<T> extends ScopedSet<ScopedSetImpl<T>, T> {

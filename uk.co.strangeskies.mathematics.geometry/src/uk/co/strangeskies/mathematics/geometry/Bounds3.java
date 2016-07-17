@@ -24,7 +24,7 @@ import uk.co.strangeskies.mathematics.Range;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector3;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.factory.Factory;
+import uk.co.strangeskies.utilities.Factory;
 
 public class Bounds3<V extends Value<V>> extends Bounds<Bounds3<V>, V> {
 	public Bounds3(Bounds<?, V> other) {

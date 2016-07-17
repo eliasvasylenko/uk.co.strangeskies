@@ -21,7 +21,7 @@ package uk.co.strangeskies.utilities.collection;
 import java.util.Collection;
 import java.util.HashMap;
 
-import uk.co.strangeskies.utilities.factory.Factory;
+import uk.co.strangeskies.utilities.Factory;
 
 public class MultiHashMap<K, V, C extends Collection<V>> extends HashMap<K, C>
 		implements MultiMap<K, V, C> {

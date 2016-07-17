@@ -32,8 +32,8 @@ import org.osgi.annotation.versioning.ProviderType;
 import uk.co.strangeskies.mathematics.graph.EdgeVertices;
 import uk.co.strangeskies.mathematics.graph.Graph;
 import uk.co.strangeskies.mathematics.graph.impl.GraphListenersImpl;
+import uk.co.strangeskies.utilities.Factory;
 import uk.co.strangeskies.utilities.Observable;
-import uk.co.strangeskies.utilities.factory.Factory;
 
 /**
  *

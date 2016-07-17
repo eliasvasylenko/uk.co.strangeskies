@@ -20,7 +20,7 @@ package uk.co.strangeskies.mathematics.values;
 
 import java.util.function.Function;
 
-import uk.co.strangeskies.utilities.factory.Factory;
+import uk.co.strangeskies.utilities.Factory;
 
 public class NumberToValueFunction<V extends Value<V>> implements
 		Function<Number, V> {

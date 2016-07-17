@@ -53,7 +53,7 @@ import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.VectorH3Impl;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.VectorHNImpl;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.VectorNImpl;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.factory.Factory;
+import uk.co.strangeskies.utilities.Factory;
 
 public class ValueMatrixBuilderImpl<V extends Value<V>> implements
 		ValueMatrixBuilder<V> {

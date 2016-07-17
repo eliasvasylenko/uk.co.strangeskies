@@ -26,7 +26,7 @@ import uk.co.strangeskies.mathematics.graph.building.GraphConfigurator;
 @Component
 public class GraphBuilderImpl implements GraphBuilder {
 	@Override
-	public GraphConfigurator<Object, Object> configure() {
+	public GraphConfigurator<Object, Object> build() {
 		return GraphConfiguratorImpl.configure();
 	}
 }

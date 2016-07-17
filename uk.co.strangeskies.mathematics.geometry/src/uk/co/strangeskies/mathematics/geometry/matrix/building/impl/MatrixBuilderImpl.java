@@ -29,7 +29,7 @@ import uk.co.strangeskies.mathematics.values.FloatValue;
 import uk.co.strangeskies.mathematics.values.IntValue;
 import uk.co.strangeskies.mathematics.values.LongValue;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.factory.Factory;
+import uk.co.strangeskies.utilities.Factory;
 
 @Component
 public class MatrixBuilderImpl implements MatrixBuilder {

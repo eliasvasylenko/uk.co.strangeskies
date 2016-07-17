@@ -26,9 +26,9 @@ import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
 
+import uk.co.strangeskies.utilities.Factory;
 import uk.co.strangeskies.utilities.Scoped;
 import uk.co.strangeskies.utilities.Self;
-import uk.co.strangeskies.utilities.factory.Factory;
 
 /**
  * 

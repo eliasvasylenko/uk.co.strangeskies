@@ -32,7 +32,7 @@ import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorH3;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.Vector4Impl;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.VectorH3Impl;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.factory.Factory;
+import uk.co.strangeskies.utilities.Factory;
 
 public class MatrixH3Impl<V extends Value<V>> extends
 		MatrixHImpl<MatrixH3<V>, V> implements MatrixH3<V> {

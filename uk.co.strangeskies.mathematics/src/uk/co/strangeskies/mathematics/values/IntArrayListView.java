@@ -20,7 +20,7 @@ package uk.co.strangeskies.mathematics.values;
 
 import java.util.AbstractList;
 
-import uk.co.strangeskies.utilities.factory.Factory;
+import uk.co.strangeskies.utilities.Factory;
 
 public class IntArrayListView<V extends Value<V>> extends AbstractList<V> {
 	private final int[] array;

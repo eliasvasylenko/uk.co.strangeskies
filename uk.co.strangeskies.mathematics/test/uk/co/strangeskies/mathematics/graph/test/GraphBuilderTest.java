@@ -51,7 +51,7 @@ public class GraphBuilderTest {
 	 */
 
 	protected GraphConfigurator<Object, Object> graph() {
-		return graphBuilderSupplier.get().configure();
+		return graphBuilderSupplier.get().build();
 	}
 
 	@SafeVarargs

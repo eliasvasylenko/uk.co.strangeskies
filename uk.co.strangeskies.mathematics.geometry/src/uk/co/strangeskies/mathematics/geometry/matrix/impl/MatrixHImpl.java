@@ -32,8 +32,8 @@ import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorH;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorH.Type;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.VectorHNImpl;
 import uk.co.strangeskies.mathematics.values.Value;
+import uk.co.strangeskies.utilities.Factory;
 import uk.co.strangeskies.utilities.collection.SubList;
-import uk.co.strangeskies.utilities.factory.Factory;
 import uk.co.strangeskies.utilities.function.ListTransformOnceView;
 
 public abstract class MatrixHImpl<S extends MatrixH<S, V>, V extends Value<V>>

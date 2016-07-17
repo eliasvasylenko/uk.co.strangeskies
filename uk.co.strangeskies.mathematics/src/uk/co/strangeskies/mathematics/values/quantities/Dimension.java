@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 import uk.co.strangeskies.mathematics.values.Fraction;
-import uk.co.strangeskies.utilities.factory.Factory;
+import uk.co.strangeskies.utilities.Factory;
 
 public class Dimension {
 	private final Map<QuantityType, /**/Fraction> quantityTypepowers;

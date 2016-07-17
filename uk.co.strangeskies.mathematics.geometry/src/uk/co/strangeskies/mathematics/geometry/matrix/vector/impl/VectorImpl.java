@@ -40,9 +40,9 @@ import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorN;
 import uk.co.strangeskies.mathematics.values.DoubleValue;
 import uk.co.strangeskies.mathematics.values.IntValue;
 import uk.co.strangeskies.mathematics.values.Value;
+import uk.co.strangeskies.utilities.Factory;
 import uk.co.strangeskies.utilities.Self;
 import uk.co.strangeskies.utilities.collection.NullPointerInCollectionException;
-import uk.co.strangeskies.utilities.factory.Factory;
 import uk.co.strangeskies.utilities.function.ListTransformOnceView;
 import uk.co.strangeskies.utilities.function.TriFunction;
 

@@ -28,8 +28,8 @@ import java.util.List;
 import uk.co.strangeskies.mathematics.Range;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 import uk.co.strangeskies.mathematics.values.Value;
+import uk.co.strangeskies.utilities.Factory;
 import uk.co.strangeskies.utilities.Self;
-import uk.co.strangeskies.utilities.factory.Factory;
 
 public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>>
 		implements Self<S> {

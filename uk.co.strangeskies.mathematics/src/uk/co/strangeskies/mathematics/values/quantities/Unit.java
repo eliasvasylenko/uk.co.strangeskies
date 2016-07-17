@@ -26,7 +26,7 @@ import java.util.Map;
 
 import uk.co.strangeskies.mathematics.values.Fraction;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.factory.Factory;
+import uk.co.strangeskies.utilities.Factory;
 
 public class Unit {
 	private final String name;

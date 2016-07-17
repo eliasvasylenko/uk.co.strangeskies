@@ -103,9 +103,9 @@ public interface PropertyLoader {
 	 * according to the rules described by {@link Properties}.
 	 * 
 	 * @param accessorConfiguration
-	 *          configuration object for the sub-interface of
-	 *          {@link Properties} we wish to implement, and the default
-	 *          property configuration to apply
+	 *          configuration object for the sub-interface of {@link Properties}
+	 *          we wish to implement, and the default property configuration to
+	 *          apply
 	 * @return an implementation of the accessor interface
 	 * @param <T>
 	 *          the type of the localization text accessor interface
@@ -139,6 +139,36 @@ public interface PropertyLoader {
 	 */
 	static PropertyLoader getDefaultPropertyLoader() {
 		return DEFAULT_PROPERTY_LOADER;
+	}
+
+	/**
+	 * Get a {@link #getProperties() property implementation} from the
+	 * {@link #getDefaultPropertyLoader() default loader}.
+	 * 
+	 * @param accessorConfiguration
+	 *          configuration object for the sub-interface of {@link Properties}
+	 *          we wish to implement, and the default property configuration to
+	 *          apply
+	 * @return an implementation of the accessor interface
+	 * @param <T>
+	 *          the type of the localization text accessor interface
+	 */
+	static <T extends Properties<T>> T getDefaultProperties(PropertyAccessorConfiguration<T> accessorConfiguration) {
+		return getDefaultPropertyLoader().getProperties(accessorConfiguration);
+	}
+
+	/**
+	 * Generate an implementing instance of the given accessor interface class,
+	 * according to the rules described by {@link Properties}.
+	 * 
+	 * @param <T>
+	 *          the type of the localization text accessor interface
+	 * @param accessor
+	 *          the sub-interface of {@link Properties} we wish to implement
+	 * @return an implementation of the accessor interface
+	 */
+	static <T extends Properties<T>> T getDefaultProperties(Class<T> accessor) {
+		return getDefaultPropertyLoader().getProperties(new PropertyAccessorConfiguration<>(accessor));
 	}
 
 	/**
