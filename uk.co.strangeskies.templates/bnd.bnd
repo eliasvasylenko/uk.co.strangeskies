@@ -1,0 +1,38 @@
+Bundle-Name: Strange Skies :: Templates
+Bundle-Description: \
+	Templates for contributions to uk.co.strangeskies projects.
+
+icondata: data:image/gif;base64,${base64;${project}\\icon.gif}
+
+copyright.work.name: {{projectName}}
+
+internal.use.notice: Please note that this template is primarily intended for internal use, and may contain copyright notices which reflect this.
+
+strangeskies.project.template:\
+	org.bndtools.template;\
+		org.bndtools.template=project;\
+		engine=mustache;\
+		name=${2};\
+		category=${copyright.holder.name};\
+		dir=${1}/template;\
+		help=${1}/help.xml;\
+		icon="${icondata}"
+
+Provide-Capability: \
+	${foreach;\
+		strangeskies.project.template;\
+			api			\\;		API Project;\
+			provider	\\;		Implementation Project;\
+			split		\\;		Split Project}
+
+strangeskies.project.resources:\
+	{${1}/=res/${1}},\
+	{${1}/=res/shared},\
+
+-resourceonly: true
+-includeresource: \
+	${foreach;\
+		strangeskies.project.resources;\
+			api,\
+			provider,\
+			split}

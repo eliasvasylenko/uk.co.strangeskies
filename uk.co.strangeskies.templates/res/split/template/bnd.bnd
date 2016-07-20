@@ -1,0 +1,4 @@
+-sub: \
+	*.bnd
+
+-runee: JavaSE-1.8

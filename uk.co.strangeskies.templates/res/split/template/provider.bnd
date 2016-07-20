@@ -1,0 +1,5 @@
+Bundle-Name: Strange Skies :: ? :: Provider
+Bundle-Description: \
+	?
+
+Private-Package: {{basePackageName}}.impl

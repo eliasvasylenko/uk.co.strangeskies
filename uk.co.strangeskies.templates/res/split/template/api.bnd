@@ -1,0 +1,5 @@
+Bundle-Name: Strange Skies :: ? :: API
+Bundle-Description: \
+	?
+
+Export-Package: {{basePackageName}}
