@@ -1,0 +1,6 @@
+eclipse.preferences.version=1
+encoding//res/api/template/{{srcDir}}/{{basePackageDir}}/package-info.java=UTF-8
+encoding//res/provider/help.xml=windows-1252
+encoding//res/provider/template/bnd.bnd=UTF-8
+encoding/bnd.bnd=UTF-8
+encoding/icon.gif=windows-1252

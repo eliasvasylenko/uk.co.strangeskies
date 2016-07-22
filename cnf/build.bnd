@@ -21,7 +21,9 @@ strangeskies-version-ceiling: 2.0.0
 
 Bundle-Vendor: Strange Skies http://strangeskies.co.uk/
 Bundle-Copyright: ${copyright}
-Bundle-License: LGPL <http://www.gnu.org/licenses/>
+Bundle-License:\
+	LGPL;\
+	link = http://www.gnu.org/licenses/
 Bundle-Version: ${strangeskies-version}.${tstamp}
 
 -dsannotations: *
@@ -34,22 +36,41 @@ Bundle-Version: ${strangeskies-version}.${tstamp}
 
 ## To enable baselining, uncomment the following lines:
 # -baseline: *
+-buildrepo: Local
 -releaserepo: Release
+-pom: true,\
+		version = ${versionmask;===;${@version}}-SNAPSHOT
 
--pluginpath.base:\
-	${pluginpath.aether}
-
--plugin.8.Clojars:\
+-plugin.5.Managed: \
 \
-		aQute.bnd.deployer.repository.aether.AetherRepository; \
-			name				=		Clojars; \
-			url					=		http://clojars.org/repo/
+        aQute.bnd.deployer.repository.LocalIndexedRepo; \
+            name                =       Managed ; \
+            pretty              =       true ; \
+            local               =       ${build}/local
 
--plugin.8.Eclipse:\
-	${plugin.eclipse.platform},\
-	${plugin.eclipse.fx}
+-plugin.6.Local: \
+\
+		aQute.bnd.repository.maven.provider.MavenBndRepository; \
+			name				=		Local; \
+			index				=		${.}/local.maven
+
+-plugin.9.Release: \
+\
+		aQute.bnd.repository.maven.provider.MavenBndRepository; \
+			name				=		StrangeSkies; \
+			index				=		${.}/strangeskies.maven; \
+			releaseUrl			=		http://oss.jfrog.org/libs-snapshot/
+
+-plugin.12.Clojars:\
+\
+		aQute.bnd.repository.maven.provider.MavenBndRepository; \
+			name				=		Clojars; \
+			index				=		${.}/clojars.maven; \
+			releaseUrl			=		http://clojars.org/repo/
 
 ss: uk.co.strangeskies.${1};version=snapshot
+
+include.ss: jar:file:///${replace;${repo;uk.co.strangeskies.build;snapshot};%;%25}!/include
 
 ## If you use git, you might want to uncomment the following lines:
 Git-Descriptor: ${system-allow-fail;git describe --dirty --always}
