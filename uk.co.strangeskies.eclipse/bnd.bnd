@@ -1,5 +1,10 @@
 Bundle-Name: Strange Skies :: Utilities :: Eclipse
 
+-include: \
+	${ss.include}/eclipse.bnd
+
+Test: ${cat;${ss.include}}
+
 -buildpath: \
 	${buildpath.eclipse},\
 	${ss;utilities},\
