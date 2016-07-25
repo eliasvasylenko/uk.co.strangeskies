@@ -9,8 +9,10 @@ javac.target: 1.8
 ## Bnd Options
 -sources: true
 
+-include: ${workspace}/copyright.properties
+copyright.work.name = ${project.name}
 copyright.year = ${tstamp;yyyy}
-copyright = Copyright (c) Strange Skies (2014, ${copyright.year}). All Rights Reserved.
+copyright = Copyright (c) ${copyright.holder.name} (2014, ${copyright.year}). All Rights Reserved.
 
 groupid: uk.co.strangeskies
 

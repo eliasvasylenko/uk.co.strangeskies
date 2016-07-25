@@ -2,7 +2,7 @@ Bundle-Name: Strange Skies :: Templates
 Bundle-Description: \
 	Templates for contributions to uk.co.strangeskies projects.
 
-icondata: data:image/gif;base64,${base64;${project}\\icon.gif}
+icondata: data:image/gif;base64,${base64;${project}/icon.gif}
 
 copyright.work.name: {{projectName}}
 

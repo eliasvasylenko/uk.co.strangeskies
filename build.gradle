@@ -51,6 +51,10 @@ configure(bndProjects()) {
 }
 
 /* Source License Generation */
+def copyrightProperties  = new Properties()
+rootProject.file('copyright.properties').withReader { reader ->
+  copyrightProperties.load(reader)
+}
 apply plugin: 'license'
 configure(bndProjects()) {
   apply plugin: 'license'
@@ -58,10 +62,10 @@ configure(bndProjects()) {
   license {
     header rootProject.file('LICENSE')
 
-    ext.year = Calendar.getInstance().get(Calendar.YEAR)
-    ext.name = 'Elias N Vasylenko'
-    ext.email = 'eliasvasylenko@gmail.com'
-    ext.software = project.name
+    ext.'copyright.work.name' = project.name
+    ext.'copyright.year' = Calendar.getInstance().get(Calendar.YEAR)
+    ext.'copyright.holder.name' = copyrightProperties.'copyright.holder.name'
+    ext.'copyright.holder.email' = copyrightProperties.'copyright.holder.email'
 
     mapping {
       java = 'SLASHSTAR_STYLE'
