@@ -9,8 +9,6 @@ javac.target: 1.8
 ## Bnd Options
 -sources: true
 
-bnd-release = https://bndtools.ci.cloudbees.com/job/bnd.master/lastSuccessfulBuild/artifact
-
 copyright.year = ${tstamp;yyyy}
 copyright = Copyright (c) Strange Skies (2014, ${copyright.year}). All Rights Reserved.
 
@@ -91,3 +89,5 @@ runreq.base=\
 	osgi.enroute.hamcrest.wrapper,\
 	org.hamcrest__java-hamcrest
 
+## Fix warnings
+-fixupmessages.res: "Bndtools: Found source folder 'res' that is not on bnd's source path 'src'"

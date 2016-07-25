@@ -4,8 +4,6 @@ Bundle-Name: Strange Skies :: Utilities :: Eclipse
 	${build}/include/eclipse.platform.neon.bnd,\
 	${build}/include/eclipse.fx.2.4.0.bnd
 
-Test: ${cat;${ss.include}}
-
 -buildpath: \
 	${ss;utilities},\
 	${ss;text},\

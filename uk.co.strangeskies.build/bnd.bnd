@@ -2,8 +2,6 @@ Bundle-Name: Strange Skies :: Build
 Bundle-Description: \
 	Scripts and utilities to be available on the build path.
 
-icondata: data:image/gif;base64,${base64;${project}\\icon.gif}
-
 -resourceonly: true
 -includeresource:\
 	ext=${build}/ext,\

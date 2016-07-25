@@ -3,22 +3,23 @@
 	org.eclipse.fx.core,\
 	org.eclipse.fx.core.di,\
 	org.eclipse.fx.ui.di,\
+	org.eclipse.fx.ui.services,\
 	org.eclipse.fx.ui.theme,\
-	org.eclipse.fx.ui.services
+	org.eclipse.fx.ui.workbench.renderers.base
 
 ## Run path groups:
 runpath.eclipse.fx:\
 	org.eclipse.fx.osgi
 
 ## Run requirement groups:
-
-# e4 base
 runreq.eclipse.fx:\
 	${req;org.eclipse.fx.ui.databinding},\
-	${req;org.eclipse.fx.ui.workbench.fx},\
-	${req;org.eclipse.fx.ui.workbench.renderers.fx},\
 	${req;org.eclipse.fx.ui.di},\
 	${req;org.eclipse.fx.ui.di.interopt},\
+	${req;org.eclipse.fx.ui.keybindings.e4},\
+	${req;org.eclipse.fx.ui.keybindings.generic},\
+	${req;org.eclipse.fx.ui.workbench.fx},\
+	${req;org.eclipse.fx.ui.workbench.renderers.fx},\
 	${req;org.eclipse.fx.core},\
 	${req;org.eclipse.fx.core.di},\
 	${req;org.eclipse.fx.core.di.context}
@@ -42,7 +43,9 @@ systempath.eclipse:\
 	javafx.beans.property.adapter,\
 	javafx.beans.value,\
 	javafx.collections,\
+	javafx.collections.transformation,\
 	javafx.concurrent,\
+	javafx.css,\
 	javafx.embed.swing,\
 	javafx.embed.swt,\
 	javafx.event,\
