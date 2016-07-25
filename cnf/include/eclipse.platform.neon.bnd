@@ -3,6 +3,7 @@
 	javax.inject,\
 	org.eclipse.equinox.common,\
 	org.eclipse.core.commands,\
+	org.eclipse.core.contenttype,\
 	org.eclipse.core.expressions,\
 	org.eclipse.core.runtime,\
 	org.eclipse.e4.ui.model.workbench,\
@@ -16,7 +17,8 @@
 	org.eclipse.e4.ui.di,\
 	org.eclipse.e4.core.contexts,\
 	org.eclipse.osgi,\
-	org.eclipse.osgi.services
+	org.eclipse.osgi.services,\
+	org.eclipse.ui.workbench
 
 ## Run path groups:
 runpath.eclipse:\
