@@ -167,6 +167,13 @@ public class Invokable<T, R> {
 		this.parameters = Arrays.asList(genericParameters);
 	}
 
+	/**
+	 * @return the name of the invokable
+	 */
+	public String getName() {
+		return getExecutable().getName();
+	}
+
 	@Override
 	public String toString() {
 		return toString(parameters);
