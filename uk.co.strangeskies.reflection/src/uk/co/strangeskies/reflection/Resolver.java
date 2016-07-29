@@ -63,7 +63,7 @@ import uk.co.strangeskies.utilities.IdentityProperty;
  * <p>
  * A {@link Resolver} is a flexible and powerful tool, but for typical use-cases
  * it may be recommended to use the more limited, but more type safe, facilities
- * provided by the {@link TypeToken} and {@link Invokable} classes.
+ * provided by the {@link TypeToken} and {@link ExecutableMember} classes.
  * 
  * @author Elias N Vasylenko
  */

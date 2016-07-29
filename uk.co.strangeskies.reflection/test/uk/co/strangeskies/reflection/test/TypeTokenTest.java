@@ -44,7 +44,7 @@ import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.AnnotatedWildcardTypes;
 import uk.co.strangeskies.reflection.Annotations;
 import uk.co.strangeskies.reflection.Imports;
-import uk.co.strangeskies.reflection.Invokable;
+import uk.co.strangeskies.reflection.ExecutableMember;
 import uk.co.strangeskies.reflection.TypeParameter;
 import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.TypeToken.Capture;
@@ -90,12 +90,12 @@ public class TypeTokenTest {
 			return null;
 		}
 
-		public <T, R> void accept(Set<Invokable<T, R>> set) {}
+		public <T, R> void accept(Set<ExecutableMember<T, R>> set) {}
 
 		public strictfp <T extends Comparable<? super T>, U extends Collection<? extends Comparable<? super T>>> void bothways(
 				T t, U u) {}
 
-		public <U, R> Invokable<U, ? extends R> okay(Set<? extends Invokable<U, ? extends R>> candidates,
+		public <U, R> ExecutableMember<U, ? extends R> okay(Set<? extends ExecutableMember<U, ? extends R>> candidates,
 				List<? extends Type> parameters) {
 			return null;
 		}
@@ -332,7 +332,7 @@ public class TypeTokenTest {
 				.resolveMethodOverload("method", new TypeToken<Collection<? super Integer>>() {}).infer());
 		System.out.println();
 
-		System.out.println(new TypeToken<B>() {}.resolveMethodOverload("okay", new TypeToken<Set<Invokable<H, ?>>>() {},
+		System.out.println(new TypeToken<B>() {}.resolveMethodOverload("okay", new TypeToken<Set<ExecutableMember<H, ?>>>() {},
 				new TypeToken<List<? extends Type>>() {}));
 		System.out.println();
 
@@ -371,7 +371,7 @@ public class TypeTokenTest {
 		System.out.println();
 
 		System.out.println(new TypeToken<List<? super Number>>() {}.getExtending(Wildcards.INFER)
-				.resolveMethodOverload("add", Integer.class).getReceiverType().infer());
+				.resolveMethodOverload("add", Integer.class).getOwnerType().infer());
 		System.out.println();
 
 		System.out.println(new TypeToken<@Infer List<@Infer ? extends Number>>() {}.getResolver().getBounds());
@@ -386,8 +386,8 @@ public class TypeTokenTest {
 		System.out.println(
 				new TypeToken<@Infer List<? extends Number>>() {}.getExtending(Wildcards.INFER).getResolver().getBounds());
 		System.out.println(new TypeToken<@Infer List<? extends Number>>() {}.getExtending(Wildcards.INFER)
-				.resolveMethodOverload("add", Integer.class).getReceiverType().resolveMethodOverload("add", Double.class)
-				.infer().getReceiverType());
+				.resolveMethodOverload("add", Integer.class).getOwnerType().resolveMethodOverload("add", Double.class)
+				.infer().getOwnerType());
 		System.out.println();
 
 		System.out.println(new TypeToken<@Infer Collection<? extends String>>() {}.getExtending(Wildcards.INFER)
@@ -396,12 +396,12 @@ public class TypeTokenTest {
 		System.out.println();
 
 		System.out.println(new TypeToken<@Infer List<? extends Number>>() {}.getExtending(Wildcards.INFER)
-				.resolveMethodOverload("add", Integer.class).getReceiverType().infer());
+				.resolveMethodOverload("add", Integer.class).getOwnerType().infer());
 		System.out.println();
 
 		System.out.println(new TypeToken<@Infer List<? extends Number>>() {}.getExtending(Wildcards.INFER)
-				.resolveMethodOverload("add", Integer.class).getReceiverType().resolveMethodOverload("add", Double.class)
-				.getReceiverType().infer());
+				.resolveMethodOverload("add", Integer.class).getOwnerType().resolveMethodOverload("add", Double.class)
+				.getOwnerType().infer());
 		System.out.println();
 
 		System.out.println(new TypeToken<@Infer ArrayList<? super Integer>>() {}.getExtending(Wildcards.INFER)
@@ -449,13 +449,13 @@ public class TypeTokenTest {
 		System.out.println(getIteratorExtending(new TypeToken<@Infer List<? extends String>>() {}).infer());
 		System.out.println();
 
-		Invokable<?, ?> blurner = new TypeToken<@Infer Blurn<? extends List<? extends Number>>>() {}
-				.resolveMethodOverload("blurn").withReceiverType(new TypeToken<Gurn<Integer>>() {});
+		ExecutableMember<?, ?> blurner = new TypeToken<@Infer Blurn<? extends List<? extends Number>>>() {}
+				.resolveMethodOverload("blurn").withOwnerType(new TypeToken<Gurn<Integer>>() {});
 		System.out.println(blurner);
 		System.out.println();
 
 		try {
-			System.out.println(Invokable.over(Blurn.class.getMethod("blurn"), new TypeToken<Blurn<Long>>() {}));
+			System.out.println(ExecutableMember.over(Blurn.class.getMethod("blurn"), new TypeToken<Blurn<Long>>() {}));
 		} catch (NoSuchMethodException | SecurityException e) {
 			throw new RuntimeException(e);
 		}
