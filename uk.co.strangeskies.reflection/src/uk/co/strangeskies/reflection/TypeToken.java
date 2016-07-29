@@ -39,6 +39,7 @@ import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -1510,7 +1511,6 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 		return getFields(c -> true);
 	}
 
-	@SuppressWarnings("unchecked")
 	private Set<? extends FieldMember<T, ?>> getFields(Predicate<Field> filter) {
 		return getFieldsImpl(filter, Class::getFields);
 	}
@@ -1525,14 +1525,13 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 		return getDeclaredFields(c -> true);
 	}
 
-	@SuppressWarnings("unchecked")
 	private Set<? extends FieldMember<T, ?>> getDeclaredFields(Predicate<Field> filter) {
 		return getFieldsImpl(filter, Class::getDeclaredFields);
 	}
 
 	private Set<? extends FieldMember<T, ?>> getFieldsImpl(Predicate<Field> filter, Function<Class<?>, Field[]> fields) {
-		return Arrays.stream(fields.apply(getRawType())).filter(filter).map(m -> FieldMember.over(m, this))
-				.collect(Collectors.toCollection(LinkedHashSet::new));
+		return Arrays.stream(fields.apply(getRawType())).filter(filter)
+				.map(m -> (FieldMember<T, ?>) FieldMember.over(m, this)).collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 
 	/**
@@ -1545,7 +1544,6 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 		return getConstructors(c -> true);
 	}
 
-	@SuppressWarnings("unchecked")
 	private Set<? extends ExecutableMember<T, T>> getConstructors(Predicate<Constructor<T>> filter) {
 		return getConstructorsImpl(filter, Class::getConstructors);
 	}
@@ -1626,10 +1624,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 		if (getRawTypes().stream().allMatch(Types::isInterface))
 			methodStream = Stream.concat(methodStream, Arrays.stream(Object.class.getMethods()));
 
-		return methodStream.filter(filter).map(m -> {
-			ExecutableMember<T, ?> invokable = ExecutableMember.over(m, this);
-			return invokable;
-		}).collect(Collectors.toCollection(LinkedHashSet::new));
+		return methodStream.filter(filter).map(m -> (ExecutableMember<? super T, ?>) ExecutableMember.over(m, this))
+				.collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 
 	/**
@@ -1641,10 +1637,10 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 	 *         instances.
 	 */
 	public Set<? extends ExecutableMember<? super T, ?>> getExecutableMembers() {
-		Set<ExecutableMember<? super T, ?>> invokables = new HashSet<>();
-		invokables.addAll(getConstructors());
-		invokables.addAll(getMethods());
-		return invokables;
+		Set<ExecutableMember<? super T, ?>> members = new HashSet<>();
+		members.addAll(getConstructors());
+		members.addAll(getMethods());
+		return members;
 	}
 
 	/**
@@ -1656,10 +1652,10 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 	 *         instances.
 	 */
 	public Set<? extends ExecutableMember<? super T, ?>> getDeclaredExecutableMembers() {
-		Set<ExecutableMember<? super T, ?>> invokables = new HashSet<>();
-		invokables.addAll(getDeclaredConstructors());
-		invokables.addAll(getDeclaredMethods());
-		return invokables;
+		Set<ExecutableMember<? super T, ?>> members = new HashSet<>();
+		members.addAll(getDeclaredConstructors());
+		members.addAll(getDeclaredMethods());
+		return members;
 	}
 
 	/**
@@ -1671,11 +1667,11 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 	 *         instances.
 	 */
 	public Set<? extends TypeMember<? super T>> getMembers() {
-		Set<TypeMember<? super T>> invokables = new HashSet<>();
-		invokables.addAll(getConstructors());
-		invokables.addAll(getMethods());
-		invokables.addAll(getFields());
-		return invokables;
+		Set<TypeMember<? super T>> members = new HashSet<>();
+		members.addAll(getConstructors());
+		members.addAll(getMethods());
+		members.addAll(getFields());
+		return members;
 	}
 
 	/**
@@ -1687,39 +1683,60 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 	 *         instances.
 	 */
 	public Set<? extends TypeMember<? super T>> getDeclaredMembers() {
-		Set<TypeMember<? super T>> invokables = new HashSet<>();
-		invokables.addAll(getDeclaredConstructors());
-		invokables.addAll(getDeclaredMethods());
-		invokables.addAll(getDeclaredFields());
-		return invokables;
+		Set<TypeMember<? super T>> members = new HashSet<>();
+		members.addAll(getDeclaredConstructors());
+		members.addAll(getDeclaredMethods());
+		members.addAll(getDeclaredFields());
+		return members;
 	}
 
 	/**
-	 * Resolve which constructor invocation matches the given name and argument
-	 * list, according to the Java 8 method overload resolution rules.
-	 * 
-	 * @param arguments
-	 *          The list of argument types for this invocation.
-	 * @return An {@link ExecutableMember} object wrapping the resolved
-	 *         {@link Method}, with bounds on any generic type parameters derived
-	 *         from the argument types.
+	 * As {@link #resolveConstructorOverload(List)} for a nullary method.
 	 */
+	@SuppressWarnings("javadoc")
+	public ExecutableMember<? super T, ? extends T> resolveConstructorOverload() {
+		return resolveConstructorOverload(Collections.emptyList());
+	}
+
+	/**
+	 * As {@link #resolveDeclaredConstructorOverload(List)} for a nullary method.
+	 */
+	@SuppressWarnings("javadoc")
+	public ExecutableMember<? super T, ? extends T> resolveDeclaredConstructorOverload() {
+		return resolveDeclaredConstructorOverload(Collections.emptyList());
+	}
+
+	/**
+	 * As {@link #resolveConstructorOverload(List)}.
+	 */
+	@SuppressWarnings("javadoc")
 	public ExecutableMember<? super T, ? extends T> resolveConstructorOverload(Type... arguments) {
 		return resolveConstructorOverload(Arrays.stream(arguments).map(TypeToken::over).collect(Collectors.toList()));
 	}
 
 	/**
-	 * Resolve which constructor invocation matches the given name and argument
-	 * list, according to the Java 8 method overload resolution rules.
-	 * 
-	 * @param arguments
-	 *          The list of argument types for this invocation.
-	 * @return An {@link ExecutableMember} object wrapping the resolved
-	 *         {@link Method}, with bounds on any generic type parameters derived
-	 *         from the argument types.
+	 * As {@link #resolveDeclaredConstructorOverload(List)}.
 	 */
+	@SuppressWarnings("javadoc")
+	public ExecutableMember<? super T, ? extends T> resolveDeclaredConstructorOverload(Type... arguments) {
+		return resolveDeclaredConstructorOverload(
+				Arrays.stream(arguments).map(TypeToken::over).collect(Collectors.toList()));
+	}
+
+	/**
+	 * As {@link #resolveConstructorOverload( List)}.
+	 */
+	@SuppressWarnings("javadoc")
 	public ExecutableMember<? super T, ? extends T> resolveConstructorOverload(TypeToken<?>... arguments) {
 		return resolveConstructorOverload(Arrays.asList(arguments));
+	}
+
+	/**
+	 * As {@link #resolveDeclaredConstructorOverload( List)}.
+	 */
+	@SuppressWarnings("javadoc")
+	public ExecutableMember<? super T, ? extends T> resolveDeclaredConstructorOverload(TypeToken<?>... arguments) {
+		return resolveDeclaredConstructorOverload(Arrays.asList(arguments));
 	}
 
 	/**
@@ -1733,48 +1750,87 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 	 *         from the argument types.
 	 */
 	public ExecutableMember<? super T, ? extends T> resolveConstructorOverload(List<? extends TypeToken<?>> arguments) {
-		Set<? extends ExecutableMember<? super T, ? extends T>> candidates = getConstructors(
-				m -> isArgumentCountValid(m, arguments.size()));
-
-		if (candidates.isEmpty())
-			throw new IllegalArgumentException(
-					"Cannot find any applicable constructor in '" + this + "' for arguments '" + arguments + "'");
-
-		candidates = ExecutableMember.resolveApplicableInvokables(candidates, arguments);
-
-		return ExecutableMember.resolveMostSpecificInvokable(candidates);
+		return resolveConstructorOverloadImpl(arguments, this::getConstructors);
 	}
 
 	/**
-	 * Resolve which method invocation matches the given name and argument list,
-	 * according to the Java 8 method overload resolution rules.
+	 * Resolve which declared constructor invocation matches the given name and
+	 * argument list, according to the Java 8 method overload resolution rules.
 	 * 
-	 * @param name
-	 *          The name of the method.
 	 * @param arguments
 	 *          The list of argument types for this invocation.
 	 * @return An {@link ExecutableMember} object wrapping the resolved
 	 *         {@link Method}, with bounds on any generic type parameters derived
 	 *         from the argument types.
 	 */
+	public ExecutableMember<? super T, ? extends T> resolveDeclaredConstructorOverload(
+			List<? extends TypeToken<?>> arguments) {
+		return resolveConstructorOverloadImpl(arguments, this::getDeclaredConstructors);
+	}
+
+	private ExecutableMember<? super T, ? extends T> resolveConstructorOverloadImpl(
+			List<? extends TypeToken<?>> arguments,
+			Function<Predicate<Constructor<T>>, Set<? extends ExecutableMember<? super T, ? extends T>>> constructors) {
+		Set<? extends ExecutableMember<? super T, ? extends T>> candidates = constructors
+				.apply(m -> isArgumentCountValid(m, arguments.size()));
+
+		if (candidates.isEmpty())
+			throw new IllegalArgumentException(
+					"Cannot find any applicable constructor in '" + this + "' for arguments '" + arguments + "'");
+
+		candidates = ExecutableMember.resolveApplicableExecutableMembers(candidates, arguments);
+
+		return ExecutableMember.resolveMostSpecificExecutableMember(candidates);
+	}
+
+	/**
+	 * As {@link #resolveMethodOverload(String, List)} for a nullary method.
+	 */
+	@SuppressWarnings("javadoc")
+	public ExecutableMember<? super T, ?> resolveMethodOverload(String name) {
+		return resolveMethodOverload(name, Collections.emptyList());
+	}
+
+	/**
+	 * As {@link #resolveDeclaredMethodOverload(String, List)} for a nullary
+	 * method.
+	 */
+	@SuppressWarnings("javadoc")
+	public ExecutableMember<? super T, ?> resolveDeclaredMethodOverload(String name) {
+		return resolveDeclaredMethodOverload(name, Collections.emptyList());
+	}
+
+	/**
+	 * As {@link #resolveMethodOverload(String, List)}.
+	 */
+	@SuppressWarnings("javadoc")
 	public ExecutableMember<? super T, ?> resolveMethodOverload(String name, Type... arguments) {
 		return resolveMethodOverload(name, Arrays.stream(arguments).map(TypeToken::over).collect(Collectors.toList()));
 	}
 
 	/**
-	 * Resolve which method invocation matches the given name and argument list,
-	 * according to the Java 8 method overload resolution rules.
-	 * 
-	 * @param name
-	 *          the name of the method
-	 * @param arguments
-	 *          the list of argument types for this invocation
-	 * @return An {@link ExecutableMember} object wrapping the resolved
-	 *         {@link Method}, with bounds on any generic type parameters derived
-	 *         from the argument types.
+	 * As {@link #resolveDeclaredMethodOverload(String, List)}.
 	 */
+	@SuppressWarnings("javadoc")
+	public ExecutableMember<? super T, ?> resolveDeclaredMethodOverload(String name, Type... arguments) {
+		return resolveDeclaredMethodOverload(name,
+				Arrays.stream(arguments).map(TypeToken::over).collect(Collectors.toList()));
+	}
+
+	/**
+	 * As {@link #resolveMethodOverload(String, List)}.
+	 */
+	@SuppressWarnings("javadoc")
 	public ExecutableMember<? super T, ?> resolveMethodOverload(String name, TypeToken<?>... arguments) {
 		return resolveMethodOverload(name, Arrays.asList(arguments));
+	}
+
+	/**
+	 * As {@link #resolveDeclaredMethodOverload(String, List)}.
+	 */
+	@SuppressWarnings("javadoc")
+	public ExecutableMember<? super T, ?> resolveDeclaredMethodOverload(String name, TypeToken<?>... arguments) {
+		return resolveDeclaredMethodOverload(name, Arrays.asList(arguments));
 	}
 
 	/**
@@ -1790,24 +1846,78 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 	 *         from the argument types.
 	 */
 	public ExecutableMember<? super T, ?> resolveMethodOverload(String name, List<? extends TypeToken<?>> arguments) {
-		Set<? extends ExecutableMember<? super T, ? extends Object>> candidates = getMethods(
-				m -> m.getName().equals(name) && isArgumentCountValid(m, arguments.size()));
+		return resolveMethodOverloadImpl(name, arguments, this::getMethods);
+	}
+
+	/**
+	 * Resolve which declared method invocation matches the given name and
+	 * argument list, according to the Java 8 method overload resolution rules.
+	 * 
+	 * @param name
+	 *          the name of the method
+	 * @param arguments
+	 *          the list of argument types for this invocation
+	 * @return An {@link ExecutableMember} object wrapping the resolved
+	 *         {@link Method}, with bounds on any generic type parameters derived
+	 *         from the argument types.
+	 */
+	public ExecutableMember<? super T, ?> resolveDeclaredMethodOverload(String name,
+			List<? extends TypeToken<?>> arguments) {
+		return resolveMethodOverloadImpl(name, arguments, this::getDeclaredMethods);
+	}
+
+	private ExecutableMember<? super T, ?> resolveMethodOverloadImpl(String name, List<? extends TypeToken<?>> arguments,
+			Function<Predicate<Method>, Set<? extends ExecutableMember<? super T, ?>>> methods) {
+		Set<? extends ExecutableMember<? super T, ? extends Object>> candidates = methods
+				.apply(m -> m.getName().equals(name) && isArgumentCountValid(m, arguments.size()));
 
 		if (candidates.isEmpty())
 			throw new IllegalArgumentException(
 					"Cannot find any method '" + name + "' in '" + this + "' for arguments '" + arguments + "'");
 
-		candidates = ExecutableMember.resolveApplicableInvokables(candidates, arguments);
+		candidates = ExecutableMember.resolveApplicableExecutableMembers(candidates, arguments);
 
-		return ExecutableMember.resolveMostSpecificInvokable(candidates);
+		return ExecutableMember.resolveMostSpecificExecutableMember(candidates);
 	}
 
+	/**
+	 * Resolve the most specific accessible field on this type and its supertypes
+	 * which match the given name.
+	 * 
+	 * @param name
+	 *          the name of the field
+	 * @return a field matching the given name
+	 */
 	public FieldMember<? super T, ?> resolveField(String name) {
-		return resolveFields(name).stream().findFirst().get();
+		return resolveFieldsImpl(name, this::getFields).stream().findFirst().get();
 	}
 
+	/**
+	 * Resolve the declared field on this type which match the given name.
+	 * 
+	 * @param name
+	 *          the name of the field
+	 * @return a field matching the given name
+	 */
+	public FieldMember<? super T, ?> resolveDeclaredField(String name) {
+		return resolveFieldsImpl(name, this::getDeclaredFields).stream().findFirst().get();
+	}
+
+	/**
+	 * Resolve all accessible fields on this type and its supertypes which match
+	 * the given name.
+	 * 
+	 * @param name
+	 *          the name of the field
+	 * @return a field matching the given name
+	 */
 	public List<FieldMember<? super T, ?>> resolveFields(String name) {
-		Set<? extends FieldMember<? super T, ? extends Object>> candidates = getFields(m -> m.getName().equals(name));
+		return resolveFieldsImpl(name, this::getFields);
+	}
+
+	private List<FieldMember<? super T, ?>> resolveFieldsImpl(String name,
+			Function<Predicate<Field>, Set<? extends FieldMember<? super T, ?>>> fields) {
+		Set<? extends FieldMember<? super T, ? extends Object>> candidates = fields.apply(m -> m.getName().equals(name));
 
 		if (candidates.isEmpty())
 			throw new IllegalArgumentException("Cannot find any field '" + name + "' in '" + this + "'");

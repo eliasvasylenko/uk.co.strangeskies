@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@strangeskies.co.uk>
+ *
+ * This file is part of uk.co.strangeskies.reflection.
+ *
+ * uk.co.strangeskies.reflection is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * uk.co.strangeskies.reflection is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package uk.co.strangeskies.reflection;
 
 import static uk.co.strangeskies.reflection.WildcardTypes.unbounded;
@@ -20,7 +38,7 @@ import java.util.List;
  * instances.
  * 
  * <p>
- * {@link ExecutableMember invokables} may be created over types which mention
+ * {@link ExecutableMember executable members} may be created over types which mention
  * inference variables, or even over inference variables themselves.
  * 
  * @author Elias N Vasylenko
@@ -41,14 +59,44 @@ public class FieldMember<O, T> implements TypeMember<O> {
 		this.fieldType = fieldType;
 	}
 
+	/**
+	 * Create a new {@link FieldMember} instance from a reference to a
+	 * {@link Field}.
+	 * 
+	 * @param field
+	 *          the field to wrap
+	 * @return a field member wrapping the given field
+	 */
 	public static FieldMember<?, ?> over(Field field) {
 		return over(field, ParameterizedTypes.from(field.getDeclaringClass(), a -> unbounded()));
 	}
 
+	/**
+	 * Create a new {@link FieldMember} instance from a reference to a
+	 * {@link Field}.
+	 * 
+	 * @param field
+	 *          the field to wrap
+	 * @param ownerType
+	 *          the type to which the field belongs
+	 * @return a field member wrapping the given field
+	 */
 	public static <O> FieldMember<O, ?> over(Field field, TypeToken<O> ownerType) {
 		return over(field, ownerType, TypeToken.over(ownerType.resolveType(field.getGenericType())));
 	}
 
+	/**
+	 * Create a new {@link FieldMember} instance from a reference to a
+	 * {@link Field}.
+	 * 
+	 * @param field
+	 *          the field to wrap
+	 * @param ownerType
+	 *          the type to which the field belongs
+	 * @param fieldType
+	 *          the type of the field
+	 * @return a field member wrapping the given field
+	 */
 	public static <O, T> FieldMember<O, T> over(Field field, TypeToken<O> ownerType, TypeToken<T> fieldType) {
 		return new FieldMember<>(field, ownerType, fieldType);
 	}
