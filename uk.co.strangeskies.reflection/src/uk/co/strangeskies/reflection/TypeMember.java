@@ -23,7 +23,6 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 
 /**
- * <p>
  * A type safe wrapper around {@link Member} instances, with proper handling of
  * members on generic classes.
  * 

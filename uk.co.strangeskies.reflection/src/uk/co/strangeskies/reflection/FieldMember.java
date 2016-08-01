@@ -38,8 +38,8 @@ import java.util.List;
  * instances.
  * 
  * <p>
- * {@link ExecutableMember executable members} may be created over types which mention
- * inference variables, or even over inference variables themselves.
+ * {@link ExecutableMember executable members} may be created over types which
+ * mention inference variables, or even over inference variables themselves.
  * 
  * @author Elias N Vasylenko
  *
@@ -75,6 +75,8 @@ public class FieldMember<O, T> implements TypeMember<O> {
 	 * Create a new {@link FieldMember} instance from a reference to a
 	 * {@link Field}.
 	 * 
+	 * @param <O>
+	 *          the type of the owner
 	 * @param field
 	 *          the field to wrap
 	 * @param ownerType
@@ -89,6 +91,10 @@ public class FieldMember<O, T> implements TypeMember<O> {
 	 * Create a new {@link FieldMember} instance from a reference to a
 	 * {@link Field}.
 	 * 
+	 * @param <O>
+	 *          the type of the owner
+	 * @param <T>
+	 *          the type of the field
 	 * @param field
 	 *          the field to wrap
 	 * @param ownerType
