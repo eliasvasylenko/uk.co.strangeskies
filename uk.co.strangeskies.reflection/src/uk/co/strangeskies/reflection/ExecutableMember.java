@@ -18,6 +18,7 @@
  */
 package uk.co.strangeskies.reflection;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
@@ -77,26 +78,25 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 
 	private final BiFunction<O, List<?>, R> invocationFunction;
 
-	protected ExecutableMember(ExecutableMember<O, R> that) {
-		resolver = that.resolver;
-		ownerType = that.ownerType;
-		returnType = that.returnType;
-		executable = that.executable;
-		parameters = that.parameters;
-		invocationFunction = that.invocationFunction;
-	}
+	private final boolean variableArityInvocation;
 
 	private ExecutableMember(TypeToken<O> receiverType, Executable executable,
 			BiFunction<O, List<?>, R> invocationFunction) {
-		this(receiverType.getResolver(), receiverType, executable, invocationFunction, null);
+		this(receiverType.getResolver(), receiverType, executable, invocationFunction, null, false);
 	}
 
 	@SuppressWarnings("unchecked")
 	private ExecutableMember(Resolver resolver, TypeToken<O> receiverType, Executable executable,
-			BiFunction<O, List<?>, R> invocationFunction, List<? extends Type> parameters) {
+			BiFunction<O, List<?>, R> invocationFunction, List<? extends Type> parameters, boolean variableArityInvocation) {
 		this.resolver = resolver;
 		this.executable = executable;
 		this.invocationFunction = invocationFunction;
+
+		this.variableArityInvocation = variableArityInvocation;
+
+		if (!isVariableArityDefinition() && isVariableArityInvocation()) {
+			throw new TypeException("Invocation of " + toString() + " cannot be variable arity");
+		}
 
 		/*
 		 * Incorporate relevant type parameters:
@@ -247,9 +247,9 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	public static <T> ExecutableMember<T, T> over(Constructor<? super T> constructor, TypeToken<T> receiver) {
 		return new ExecutableMember<>(receiver, constructor, (T r, List<?> a) -> {
 			try {
-				return (T) constructor.newInstance(a);
+				return (T) constructor.newInstance(a.toArray());
 			} catch (Exception e) {
-				throw new TypeException("Cannot invoke constructor '" + constructor + "' with arguments '" + a + "'.");
+				throw new TypeException("Cannot invoke constructor '" + constructor + "' with arguments '" + a + "'", e);
 			}
 		});
 	}
@@ -282,10 +282,10 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	public static <T> ExecutableMember<T, ?> over(Method method, TypeToken<T> receiver) {
 		return new ExecutableMember<>(receiver, method, (T r, List<?> a) -> {
 			try {
-				return method.invoke(r, a);
+				return method.invoke(r, a.toArray());
 			} catch (Exception e) {
 				throw new TypeException(
-						"Cannot invoke method '" + method + "' on receiver '" + r + "' with arguments '" + a + "'.");
+						"Cannot invoke method '" + method + "' on receiver '" + r + "' with arguments '" + a + "'", e);
 			}
 		});
 	}
@@ -397,8 +397,33 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	/**
 	 * @return true if the wrapped executable is variable arity, false otherwise
 	 */
-	public boolean isVariableArity() {
+	public boolean isVariableArityDefinition() {
 		return executable.isVarArgs();
+	}
+
+	/**
+	 * Check whether the executable is flagged to be invoked with varargs. If an
+	 * executable is flagged to be invoked with varargs, then the
+	 * {@link #invoke(Object, List) invocation} will be made by putting trailing
+	 * arguments into an array as per Java variable arity method invocation rules.
+	 * 
+	 * @return true if the executable is flagged to be invoked with varargs, false
+	 *         otherwise
+	 */
+	public boolean isVariableArityInvocation() {
+		return variableArityInvocation;
+	}
+
+	/**
+	 * @return copy of the {@link ExecutableMember} flagged to be invoked with
+	 *         {@link #isVariableArityInvocation() variable arity}
+	 */
+	public ExecutableMember<O, R> asVariableArityInvocation() {
+		if (isVariableArityInvocation()) {
+			return this;
+		} else {
+			return new ExecutableMember<>(resolver, ownerType, executable, invocationFunction, parameters, true);
+		}
 	}
 
 	/**
@@ -462,7 +487,8 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 		Resolver resolver = getResolver();
 		resolver.getBounds().incorporate(bounds, inferenceVariables);
 
-		return new ExecutableMember<>(resolver, ownerType, executable, invocationFunction, parameters);
+		return new ExecutableMember<>(resolver, ownerType, executable, invocationFunction, parameters,
+				variableArityInvocation);
 	}
 
 	/**
@@ -559,7 +585,7 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 					: mostSpecificOverridingClass.getMethod(executable.getName(), executable.getParameterTypes());
 
 			return new ExecutableMember<>(resolver, (TypeToken<O>) TypeToken.over(type), override, invocationFunction,
-					parameters);
+					parameters, variableArityInvocation);
 		} catch (NoSuchMethodException | SecurityException e) {
 			throw new TypeException("Cannot resolve method override.", e);
 		}
@@ -672,7 +698,7 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 		ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, returnType.getType(), target, resolver.getBounds());
 
 		return new ExecutableMember<>(resolver, ownerType, executable, (BiFunction<O, List<?>, S>) invocationFunction,
-				parameters);
+				parameters, variableArityInvocation);
 	}
 
 	/**
@@ -712,7 +738,7 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 		try {
 			executableMember = withLooseApplicability(arguments);
 		} catch (Exception e) {
-			if (isVariableArity())
+			if (isVariableArityDefinition())
 				executableMember = withVariableArityApplicability(arguments);
 			else
 				throw e;
@@ -733,7 +759,8 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 
 		resolver.infer();
 
-		return new ExecutableMember<>(resolver, ownerType, executable, invocationFunction, parameters);
+		return new ExecutableMember<>(resolver, ownerType, executable, invocationFunction, parameters,
+				variableArityInvocation);
 	}
 
 	/**
@@ -747,7 +774,8 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 		for (Type parameter : parameters)
 			resolver.infer(parameter);
 
-		return new ExecutableMember<>(resolver, ownerType, executable, invocationFunction, parameters);
+		return new ExecutableMember<>(resolver, ownerType, executable, invocationFunction, parameters,
+				variableArityInvocation);
 	}
 
 	/**
@@ -868,8 +896,9 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 				throw new IllegalArgumentException(
 						"ExecutableMember '" + this + "' cannot be invoked in variable arity invocation context");
 
-			if (parameters.size() > arguments.size())
-				return null;
+			if (parameters.size() > arguments.size() + 1)
+				throw new TypeException("Cannot resolve generic type parameters for invocation of '" + this
+						+ "' with arguments '" + arguments + "'");
 		} else if (parameters.size() != arguments.size())
 			throw new TypeException(
 					"Cannot resolve generic type parameters for invocation of '" + this + "' with arguments '" + arguments + "'");
@@ -900,7 +929,7 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 			resolver.copy().infer();
 		}
 
-		return new ExecutableMember<>(resolver, ownerType, executable, invocationFunction, parameters);
+		return new ExecutableMember<>(resolver, ownerType, executable, invocationFunction, parameters, variableArity);
 	}
 
 	/**
@@ -1054,7 +1083,26 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	 * @return The result of the invocation.
 	 */
 	public R invoke(O receiver, List<? extends Object> arguments) {
-		return invocationFunction.apply(receiver, arguments);
+		if (variableArityInvocation) {
+			List<Object> actualArguments = new ArrayList<>(parameters.size());
+			Object[] varargs = (Object[]) Array.newInstance(
+					Types.getRawType(parameters.get(parameters.size() - 1)).getComponentType(),
+					arguments.size() - parameters.size() + 1);
+
+			for (int i = 0; i < parameters.size() - 1; i++) {
+				actualArguments.add(arguments.get(0));
+			}
+
+			int j = 0;
+			for (int i = parameters.size() - 1; i < arguments.size(); i++) {
+				varargs[j++] = arguments.get(i);
+			}
+			actualArguments.add(varargs);
+
+			return invocationFunction.apply(receiver, actualArguments);
+		} else {
+			return invocationFunction.apply(receiver, arguments);
+		}
 	}
 
 	/**
@@ -1139,7 +1187,7 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 		if (compatibleCandidates.isEmpty()) {
 			compatibleCandidates = new HashSet<>(candidates);
 			for (ExecutableMember<? super T, ? extends R> candidate : candidates)
-				if (!candidate.isVariableArity())
+				if (!candidate.isVariableArityDefinition())
 					compatibleCandidates.remove(candidate);
 
 			compatibleCandidates = filterOverloadCandidates(compatibleCandidates,
@@ -1206,7 +1254,7 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 		while (overrideCandidateIterator.hasNext()) {
 			ExecutableMember<? super T, ? extends R> candidate = overrideCandidateIterator.next();
 
-			if (!candidate.equals(mostSpecific))
+			if (!candidate.getParameters().equals(mostSpecific.getParameters()))
 				throw new TypeException(
 						"Cannot resolve invocation ambiguity between candidate '" + candidate + "' and '" + mostSpecific + "'.");
 
@@ -1314,7 +1362,7 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 
 		try {
 			int parameters = firstCandidate.getParameters().size();
-			if (firstCandidate.isVariableArity()) {
+			if (firstCandidate.isVariableArityDefinition()) {
 				parameters--;
 
 				ConstraintFormula.reduce(Kind.SUBTYPE, firstCandidate.getParameters().get(parameters),
