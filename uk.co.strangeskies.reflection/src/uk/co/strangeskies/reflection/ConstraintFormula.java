@@ -319,8 +319,8 @@ public class ConstraintFormula {
 				 * array types, a most specific type is identified, S'[] (this may be S
 				 * itself).
 				 */
-				TypeToken<?> fromComponent;
-				if ((fromComponent = findMostSpecificArrayType(from)) == null) {
+				Type fromComponent;
+				if ((fromComponent = findMostSpecificArrayComponentType(from)) == null) {
 					/*
 					 * If no such array type exists, the constraint reduces to false.
 					 */
@@ -329,20 +329,19 @@ public class ConstraintFormula {
 					/*
 					 * Otherwise:
 					 */
-					TypeToken<?> toComponent = TypeToken.over(Types.getComponentType(to));
-					if (!fromComponent.isPrimitive() && !toComponent.isPrimitive()) {
+					Type toComponent = Types.getComponentType(to);
+					if (!Types.isPrimitive(fromComponent) && !Types.isPrimitive(toComponent)) {
 						/*
 						 * - If neither S' nor T' is a primitive type, the constraint
 						 * reduces to ‹S' <: T'›.
 						 */
-						reduce(Kind.SUBTYPE, fromComponent.getType(), toComponent.getType(), bounds);
+						reduce(Kind.SUBTYPE, fromComponent, toComponent, bounds);
 					} else {
 						/*
 						 * - Otherwise, the constraint reduces to true if S' and T' are the
 						 * same primitive type, and false otherwise.
 						 */
-						if ((!fromComponent.isPrimitive() || !fromComponent.equals(toComponent))
-								&& !fromComponent.getType().equals(toComponent.getType()))
+						if ((!Types.isPrimitive(fromComponent) || !Types.equals(fromComponent, toComponent)))
 							incorporate.falsehood("Primitive array component type is not equal: " + this);
 					}
 				}
@@ -382,11 +381,9 @@ public class ConstraintFormula {
 		}
 	}
 
-	private TypeToken<?> findMostSpecificArrayType(Type from) {
-		TypeToken<?> fromToken = TypeToken.over(from);
-
-		if (fromToken.getRawType().isArray()) {
-			return TypeToken.over(Types.getComponentType(from));
+	private Type findMostSpecificArrayComponentType(Type from) {
+		if (Types.getRawType(from).isArray()) {
+			return Types.getComponentType(from);
 		}
 
 		if (from instanceof WildcardType) {
@@ -397,14 +394,9 @@ public class ConstraintFormula {
 			List<Type> candidates = Arrays.asList(((IntersectionType) from).getTypes());
 
 			// attempt to find most specific from candidates
-			Type mostSpecific = candidates.stream().filter(t -> Types.getRawType(t).isArray())
-					.reduce((a, b) -> (Types.isAssignable(Types.getComponentType(b), Types.getComponentType(a))) ? a : b)
+			return candidates.stream().filter(t -> Types.getRawType(t).isArray()).map(Types::getComponentType).reduce((a,
+					b) -> (a == null || b == null) ? null : Types.isAssignable(a, b) ? a : Types.isAssignable(b, a) ? b : null)
 					.orElse(null);
-
-			// verify we really have the most specific
-			if (candidates.stream().filter(t -> Types.getRawType(t).isArray())
-					.anyMatch(t -> !Types.isAssignable(Types.getComponentType(mostSpecific), Types.getComponentType(t))))
-				return TypeToken.over(mostSpecific);
 		}
 
 		return null;
