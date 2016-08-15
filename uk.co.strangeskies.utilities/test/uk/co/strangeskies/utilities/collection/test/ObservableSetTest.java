@@ -150,6 +150,8 @@ public class ObservableSetTest {
 		assertTrue(strings.addAll(STRINGS));
 
 		assertEquals(STRINGS, added);
+
+		assertTrue(stringsChildren.containsAll(STRINGS));
 	}
 
 	@Test

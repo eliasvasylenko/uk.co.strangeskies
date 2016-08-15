@@ -96,6 +96,16 @@ public abstract class ScopedSet<S extends ScopedSet<S, T>, T> implements SetDeco
 	}
 
 	@Override
+	public boolean contains(Object o) {
+		return SetDecorator.super.contains(o) || getParentScope().map(p -> p.contains(o)).orElse(false);
+	}
+
+	@Override
+	public boolean containsAll(Collection<?> c) {
+		return c.stream().allMatch(this::contains);
+	}
+
+	@Override
 	public Iterator<T> iterator() {
 		Iterator<T> iterator = SetDecorator.super.iterator();
 		Iterator<T> parentIterator = getParentScope().map(Collection::iterator).orElse(emptyListIterator());

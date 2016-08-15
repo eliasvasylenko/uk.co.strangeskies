@@ -170,6 +170,16 @@ public abstract class ScopedObservableSet<S extends ObservableSet<S, E>, E> exte
 		return changed;
 	}
 
+	@Override
+	public boolean contains(Object o) {
+		return ScopedObservableSet.super.contains(o) || getParentScope().map(p -> p.contains(o)).orElse(false);
+	}
+
+	@Override
+	public boolean containsAll(Collection<?> c) {
+		return c.stream().allMatch(this::contains);
+	}
+
 	/**
 	 * @return an iterator over only those items which are local to this scope
 	 */
