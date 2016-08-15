@@ -181,6 +181,20 @@ public class Imports {
 			return primitive.get();
 
 		Class<?> namedClass = namedClasses.get(name);
+		String className = name.replace('.', '$');
+		for (Package packageImport : packages) {
+			String qualifiedClassName = packageImport.getName() + '.' + className;
+
+			try {
+				if (classLoader == null) {
+					namedClass = Class.forName(qualifiedClassName);
+					break;
+				} else {
+					namedClass = Class.forName(qualifiedClassName, true, classLoader);
+					break;
+				}
+			} catch (ClassNotFoundException e) {}
+		}
 
 		if (namedClass == null) {
 			try {
@@ -207,7 +221,7 @@ public class Imports {
 				}
 
 				if (namedClass == null)
-					throw new IllegalArgumentException("Cannot load class '" + name + "'", e);
+					throw new IllegalArgumentException("Cannot load class '" + name + "' with imports '" + this + "'", e);
 			}
 		}
 
@@ -311,5 +325,10 @@ public class Imports {
 	 */
 	public boolean isImported(Class<?> clazz) {
 		return packages.contains(clazz.getPackage()) || namedClasses.containsValue(clazz);
+	}
+
+	@Override
+	public String toString() {
+		return "{ \"packages\" = " + packages + ", \"classes\" = " + namedClasses + " }";
 	}
 }
