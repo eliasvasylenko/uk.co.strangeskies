@@ -1254,7 +1254,8 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 		while (overrideCandidateIterator.hasNext()) {
 			ExecutableMember<? super T, ? extends R> candidate = overrideCandidateIterator.next();
 
-			if (!candidate.getParameters().equals(mostSpecific.getParameters()))
+			if (!candidate.getParameters().equals(mostSpecific.getParameters())
+					|| !candidate.getName().equals(mostSpecific.getName()))
 				throw new TypeException(
 						"Cannot resolve invocation ambiguity between candidate '" + candidate + "' and '" + mostSpecific + "'.");
 
