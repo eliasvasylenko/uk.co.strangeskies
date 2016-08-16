@@ -30,7 +30,7 @@ import java.util.Objects;
  * @param <T>
  *          The type of the object instance to track.
  */
-public class TypedObject<T> implements Reified<TypedObject<T>> {
+public class TypedObject<T> implements ReifiedSelf<TypedObject<T>> {
 	private final TypeToken<T> type;
 	private final T object;
 

@@ -76,7 +76,7 @@ import uk.co.strangeskies.utilities.tuple.Pair;
  * @param <T>
  *          This is the type which the TypeToken object references.
  */
-public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeToken<T>> {
+public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<TypeToken<T>> {
 	/**
 	 * Treatment of wildcards for {@link TypeToken}s created over parameterized
 	 * types.
@@ -563,7 +563,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, Reified<TypeTok
 
 	@Override
 	public TypeToken<T> getThis() {
-		return Reified.super.getThis();
+		return ReifiedSelf.super.getThis();
 	}
 
 	@Override

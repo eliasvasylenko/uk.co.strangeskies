@@ -28,15 +28,10 @@ import uk.co.strangeskies.utilities.Self;
  * <em>useful</em> type will be considered.
  * 
  * @author Elias N Vasylenko
+ * @param <S>
+ *          The type of the instance
  */
-public interface Reified {
-	/**
-	 * @return The <em>accurate</em> type of the instance, accounting for
-	 *         generics. It is up to the implementation whether the returned type
-	 *         is also completely <em>precise</em> - in other words, the type may
-	 *         mention wildcards or inference variables if the exact type cannot
-	 *         be determined, and may not reflect the most specific possible
-	 *         class.
-	 */
-	TypeToken<?> getThisType();
+public interface ReifiedSelf<S extends ReifiedSelf<S>> extends Reified, Self<S> {
+	@Override
+	TypeToken<S> getThisType();
 }
