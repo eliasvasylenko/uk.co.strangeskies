@@ -1,9 +1,9 @@
-runreq.felix.shell=\
+-runrequires.felix.shell=\
 	${req;org.apache.felix.gogo.command},\
 	${req;org.apache.felix.gogo.shell},\
 	${req;org.apache.felix.gogo.runtime}
 
-runreq.felix.web=\
+-runrequires.felix.web=\
 	${req;org.apache.felix.http.whiteboard},\
 	${req;aQute.xray.plugin},\
 	${req;org.apache.felix.webconsole.plugins.event},\
@@ -11,6 +11,6 @@ runreq.felix.web=\
 	${req;org.apache.felix.webconsole.plugins.scriptconsole},\
 	${req;org.apache.felix.webconsole.plugins.useradmin}
 
-runreq.eclipselink.jpa=\
+-runrequires.eclipselink.jpa=\
 	${req;org.apache.aries.jpa.eclipselink.adapter},\
 	${req;javax.persistence}
