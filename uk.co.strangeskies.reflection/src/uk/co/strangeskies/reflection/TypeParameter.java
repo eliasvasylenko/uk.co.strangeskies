@@ -32,7 +32,7 @@ import java.lang.reflect.TypeVariable;
 public class TypeParameter<T> extends TypeToken<T> {
 	/**
 	 * Capture the type variable provided as an argument to the type parameter of
-	 * this constructor. This should only ever be parameterised with an
+	 * this constructor. This should only ever be parameterized with an
 	 * uninstantiated type variable.
 	 */
 	protected TypeParameter() {
