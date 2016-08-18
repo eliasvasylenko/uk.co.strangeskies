@@ -2085,4 +2085,20 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	public TypedObject<T> typedObject(T object) {
 		return new TypedObject<>(this, object);
 	}
+
+	public boolean isCastableTo(TypeToken<?> type) {
+		throw new UnsupportedOperationException();
+	}
+
+	public boolean isCastableFrom(TypeToken<?> type) {
+		throw new UnsupportedOperationException();
+	}
+
+	public boolean isCastableTo(Type type) {
+		throw new UnsupportedOperationException();
+	}
+
+	public boolean isCastableFrom(Type type) {
+		throw new UnsupportedOperationException();
+	}
 }

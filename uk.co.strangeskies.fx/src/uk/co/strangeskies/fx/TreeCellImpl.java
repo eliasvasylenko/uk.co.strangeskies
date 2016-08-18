@@ -27,6 +27,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
+import uk.co.strangeskies.reflection.TypedObject;
 
 /**
  * A basic tree cell implementation for {@link TreeItem}. This class may be
@@ -34,7 +35,7 @@ import javafx.scene.control.TreeItem;
  * 
  * @author Elias N Vasylenko
  */
-public class TreeCellImpl extends TreeCell<TreeItemData<?>> {
+public class TreeCellImpl extends TreeCell<TypedObject<?>> {
 	@FXML
 	private Node graphic;
 	@FXML
@@ -51,7 +52,7 @@ public class TreeCellImpl extends TreeCell<TreeItemData<?>> {
 	}
 
 	@Override
-	protected void updateItem(TreeItemData<?> item, boolean empty) {
+	protected void updateItem(TypedObject<?> item, boolean empty) {
 		super.updateItem(item, empty);
 
 		if (empty || item == null) {
@@ -75,8 +76,8 @@ public class TreeCellImpl extends TreeCell<TreeItemData<?>> {
 		return supplemental;
 	}
 
-	protected <T> void updateItem(TreeItemData<T> item) {
+	protected <T> void updateItem(TypedObject<T> item) {
 		setGraphic(graphic);
-		item.getItemType().configureCell(item, this);
+		// item.getContributions().get(0).configureCell(item, this); TODO
 	}
 }

@@ -18,7 +18,10 @@
  */
 package uk.co.strangeskies.fx;
 
+import java.util.List;
+
 import javafx.scene.control.TreeView;
+import uk.co.strangeskies.reflection.TypedObject;
 
 /**
  * An implementation of {@link TreeView} which allows for modular and extensible
@@ -26,8 +29,13 @@ import javafx.scene.control.TreeView;
  * 
  * @author Elias N Vasylenko
  */
-public class ModularTreeView extends TreeView<TreeItemData<?>> {
+public class ModularTreeView extends TreeView<TypedObject<?>> {
 	public final TreeItemImpl<?> getRootImpl() {
 		return (TreeItemImpl<?>) getRoot();
+	}
+
+	public <T> List<TreeItemContribution<T>> getContributions(TypedObject<T> value) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

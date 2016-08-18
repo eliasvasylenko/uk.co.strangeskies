@@ -20,11 +20,10 @@ package uk.co.strangeskies.eclipse;
 
 import org.eclipse.e4.ui.services.EMenuService;
 
+import uk.co.strangeskies.fx.TreeCellContribution;
 import uk.co.strangeskies.fx.TreeCellImpl;
-import uk.co.strangeskies.fx.TreeItemData;
-import uk.co.strangeskies.fx.TreeItemType;
 
-public abstract class E4TreeItemType<T> implements TreeItemType<T> {
+public abstract class E4TreeItemType<T> implements TreeCellContribution<T> {
 	private final EMenuService menuService;
 	private final String menuId;
 
@@ -42,8 +41,8 @@ public abstract class E4TreeItemType<T> implements TreeItemType<T> {
 	}
 
 	@Override
-	public void configureCell(TreeItemData<T> data, TreeCellImpl cell) {
-		TreeItemType.super.configureCell(data, cell);
+	public void configureCell(T data, String text, String supplementalText, TreeCellImpl cell) {
+		TreeCellContribution.super.configureCell(data, text, supplementalText, cell);
 
 		if (getMenuId() != null) {
 			getMenuService().registerContextMenu(cell, getMenuId());

@@ -28,29 +28,30 @@ import java.util.Map;
 
 import javafx.collections.ObservableList;
 import javafx.scene.control.TreeItem;
+import uk.co.strangeskies.reflection.TypedObject;
 
 /**
- * Users should not need to extend this class. Item specific behaviour should be
- * handled by extending {@link TreeItemType} for each type of node which can
- * appear in a tree.
+ * Users should not need to extend this class. Item specific behavior should be
+ * handled by extending {@link TreeItemContribution} for each type of node which
+ * can appear in a tree.
  * 
  * @author Elias N Vasylenko
  *
  * @param <T>
  *          the type of data for this tree item
  */
-public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
-	private final Map<TreeItemData<?>, TreeItemImpl<?>> childTreeItems = new HashMap<>();
+public class TreeItemImpl<T> extends TreeItem<TypedObject<?>> {
+	private final ModularTreeView treeView;
+
+	private final Map<TypedObject<?>, TreeItemImpl<?>> childTreeItems = new HashMap<>();
 	private boolean childrenCalculated;
 
-	TreeItemImpl(TreeItemType<T> type, T data) {
-		this(new TreeItemData<>(type, data));
-	}
-
-	private TreeItemImpl(TreeItemData<T> data) {
+	TreeItemImpl(ModularTreeView treeView, TypedObject<T> data) {
 		super(data);
 
-		if (getItemType().hasChildren(getData())) {
+		this.treeView = treeView;
+
+		if (hasChildren()) {
 			expandedProperty().addListener((property, from, to) -> {
 				if (!to) {
 					childrenCalculated = false;
@@ -61,18 +62,26 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 		}
 	}
 
+	private boolean hasChildren() {
+		return getContributions().stream().anyMatch(c -> c.hasChildren(getData()));
+	}
+
+	public List<TreeItemContribution<T>> getContributions() {
+		return treeView.getContributions(getTypedData());
+	}
+
 	@SuppressWarnings("unchecked")
-	public TreeItemType<T> getItemType() {
-		return (TreeItemType<T>) getValue().getItemType();
+	public TypedObject<T> getTypedData() {
+		return (TypedObject<T>) getValue();
 	}
 
 	@SuppressWarnings("unchecked")
 	public T getData() {
-		return (T) getValue().getData();
+		return (T) getValue().getObject();
 	}
 
 	@Override
-	public ObservableList<TreeItem<TreeItemData<?>>> getChildren() {
+	public ObservableList<TreeItem<TypedObject<?>>> getChildren() {
 		if (!childrenCalculated) {
 			rebuildChildren();
 		}
@@ -83,9 +92,10 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 	public void rebuildChildren() {
 		List<TreeItemImpl<?>> childrenItems;
 
-		if (getItemType().hasChildren(getData())) {
-			List<TreeItemData<?>> childrenData = new ArrayList<>();
-			childrenData.addAll(getItemType().getChildren(getData()));
+		if (hasChildren()) {
+			List<TypedObject<?>> childrenData = new ArrayList<>();
+
+			getContributions().stream().map(c -> c.getChildren(getData())).forEach(childrenData::addAll);
 
 			// remove outdated TreeItemImpl children
 			childTreeItems.keySet().retainAll(childrenData);
@@ -94,7 +104,7 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 				TreeItemImpl<?> treeItem = childTreeItems.get(i);
 
 				if (treeItem == null) {
-					treeItem = new TreeItemImpl<>(i);
+					treeItem = new TreeItemImpl<>(treeView, i);
 					childTreeItems.put(i, treeItem);
 				} else if (isExpanded()) {
 					treeItem.rebuildChildren();

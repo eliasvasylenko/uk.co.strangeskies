@@ -19,6 +19,7 @@
 package uk.co.strangeskies.reflection;
 
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * @author Elias N Vasylenko
@@ -72,8 +73,32 @@ public class TypedObject<T> implements ReifiedSelf<TypedObject<T>> {
 	 * @return A typed object over the given type and object
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> TypedObject<T> castInto(TypeToken<T> type, Object object) {
+	public static <T> TypedObject<T> castUnsafe(TypeToken<T> type, Object object) {
 		return new TypedObject<>(type, (T) object);
+	}
+
+	public <U> Optional<TypedObject<U>> tryCast(TypeToken<U> type) {
+		if (!type.isCastableFrom(this.type) || !type.isCastableFrom(object.getClass()))
+			return Optional.empty();
+		else
+			return Optional.of(castUnsafe(type, object));
+	}
+
+	public <U> TypedObject<U> cast(TypeToken<U> type) {
+		return tryCast(type)
+				.orElseThrow(() -> new TypeException("Cannot cast object '" + this + "' to type '" + type + "'"));
+	}
+
+	public <U> Optional<TypedObject<U>> tryAssign(TypeToken<U> type) {
+		if (!type.isAssignableFrom(this.type) || !type.isCastableFrom(object.getClass()))
+			return Optional.empty();
+		else
+			return Optional.of(castUnsafe(type, object));
+	}
+
+	public <U> TypedObject<U> assign(TypeToken<U> type) {
+		return tryAssign(type)
+				.orElseThrow(() -> new TypeException("Cannot cast object '" + this + "' to type '" + type + "'"));
 	}
 
 	/**
