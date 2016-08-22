@@ -27,17 +27,22 @@ import java.util.function.Consumer;
 
 import org.osgi.annotation.versioning.ProviderType;
 
+import uk.co.strangeskies.mathematics.graph.impl.GraphBuilderImpl;
 import uk.co.strangeskies.utilities.Copyable;
 
 /**
  * @author Elias N Vasylenko
  * @param <V>
- *            The type of vertices in the graph
+ *          The type of vertices in the graph
  * @param <E>
- *            The type of edges in the graph
+ *          The type of edges in the graph
  */
 @ProviderType
 public interface Graph<V, E> extends Copyable<Graph<V, E>> {
+	static GraphConfigurator<Object, Object> build() {
+		return new GraphBuilderImpl().build();
+	}
+
 	@ProviderType
 	public interface Vertices<V, E> extends Set<V> {
 		BiPredicate<? super V, ? super V> equality();
@@ -74,17 +79,17 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 		Set<E> between(EdgeVertices<V> vertices);
 
 		/**
-		 * If there is exactly one edge between the provided vertices, this edge
-		 * is returned. If there is no edge between the provided vertices, null
-		 * is returned. If there are multiple edges between them, an exception
-		 * is thrown.
+		 * If there is exactly one edge between the provided vertices, this edge is
+		 * returned. If there is no edge between the provided vertices, null is
+		 * returned. If there are multiple edges between them, an exception is
+		 * thrown.
 		 *
 		 * @param from
-		 *            The tail vertex of the edge
+		 *          The tail vertex of the edge
 		 * @param to
-		 *            The head vertex of the edge
-		 * @return The edge between the given head and tail, or null if no such
-		 *         edge exists.
+		 *          The head vertex of the edge
+		 * @return The edge between the given head and tail, or null if no such edge
+		 *         exists.
 		 */
 		default E betweenUnique(V from, V to) {
 			return betweenUnique(EdgeVertices.between(from, to));
@@ -136,7 +141,7 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 	 * Perform an operation on the receiving graph atomically.
 	 * 
 	 * @param action
-	 *            The action to perform
+	 *          The action to perform
 	 */
 	void atomic(Consumer<? super Graph<V, E>> action);
 

@@ -50,8 +50,8 @@ import org.junit.Test;
 
 import uk.co.strangeskies.mathematics.graph.EdgeVertices;
 import uk.co.strangeskies.mathematics.graph.Graph;
-import uk.co.strangeskies.mathematics.graph.building.GraphBuilder;
-import uk.co.strangeskies.mathematics.graph.building.GraphConfigurator;
+import uk.co.strangeskies.mathematics.graph.GraphBuilder;
+import uk.co.strangeskies.mathematics.graph.GraphConfigurator;
 import uk.co.strangeskies.mathematics.graph.impl.GraphBuilderImpl;
 import uk.co.strangeskies.mathematics.graph.impl.GraphListenersImpl;
 import uk.co.strangeskies.utilities.EquivalenceComparator;

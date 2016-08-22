@@ -20,8 +20,8 @@ package uk.co.strangeskies.mathematics.graph.impl;
 
 import org.osgi.service.component.annotations.Component;
 
-import uk.co.strangeskies.mathematics.graph.building.GraphBuilder;
-import uk.co.strangeskies.mathematics.graph.building.GraphConfigurator;
+import uk.co.strangeskies.mathematics.graph.GraphBuilder;
+import uk.co.strangeskies.mathematics.graph.GraphConfigurator;
 
 @Component
 public class GraphBuilderImpl implements GraphBuilder {

@@ -16,5 +16,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-@org.osgi.annotation.versioning.Version("1.0.0")
-package uk.co.strangeskies.mathematics.graph.building;
+package uk.co.strangeskies.mathematics.graph;
+
+public interface GraphBuilder {
+	public GraphConfigurator<Object, Object> build();
+}

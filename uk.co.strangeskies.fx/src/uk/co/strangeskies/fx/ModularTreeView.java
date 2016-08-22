@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 
 import javafx.scene.control.TreeView;
 import uk.co.strangeskies.mathematics.graph.Graph;
+import uk.co.strangeskies.mathematics.graph.GraphListeners;
 import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.TypedObject;
 
@@ -34,13 +35,24 @@ import uk.co.strangeskies.reflection.TypedObject;
  * @author Elias N Vasylenko
  */
 public class ModularTreeView extends TreeView<TypedObject<?>> {
-	new GraphB
-	
+	private final Graph<TypeToken<?>, Object> typeGraph;
+
 	private final List<TreeRootContribution> rootContributions;
 	private final List<TreeChildContribution<?>> childContributions;
 	private final List<TreeCellContribution<?>> cellContributions;
 
 	public ModularTreeView() {
+		typeGraph = Graph.build().<TypeToken<?>> vertices().edgeFactory(Object::new).directed()
+				.addInternalListener(GraphListeners::vertexAdded, e -> {
+					for (TypeToken<?> vertex : e.graph().vertices())
+						if (vertex != e.vertex())
+							if (vertex.isAssignableFrom(e.vertex())) {
+								e.graph().edges().add(vertex, e.vertex());
+							} else if (e.vertex().isAssignableFrom(vertex)) {
+								e.graph().edges().add(e.vertex(), vertex);
+							}
+				}).create();
+
 		rootContributions = new ArrayList<>();
 		childContributions = new ArrayList<>();
 		cellContributions = new ArrayList<>();
@@ -115,7 +127,7 @@ public class ModularTreeView extends TreeView<TypedObject<?>> {
 	}
 
 	void configureCell(TypedObject<?> data, TreeCellImpl cell) {
-		
+
 	}
 
 	@Override
