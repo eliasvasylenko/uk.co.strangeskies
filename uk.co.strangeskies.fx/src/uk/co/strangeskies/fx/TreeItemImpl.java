@@ -32,8 +32,8 @@ import uk.co.strangeskies.reflection.TypedObject;
 
 /**
  * Users should not need to extend this class. Item specific behavior should be
- * handled by extending {@link TreeItemContribution} for each type of node which
- * can appear in a tree.
+ * handled by extending {@link TreeChildContribution} for each type of node
+ * which can appear in a tree.
  * 
  * @author Elias N Vasylenko
  *
@@ -66,8 +66,8 @@ public class TreeItemImpl<T> extends TreeItem<TypedObject<?>> {
 		return getContributions().stream().anyMatch(c -> c.hasChildren(getData()));
 	}
 
-	public List<TreeItemContribution<T>> getContributions() {
-		return treeView.getContributions(getTypedData());
+	public List<TreeChildContribution<T>> getContributions() {
+		return treeView.getChildContributions(getTypedData());
 	}
 
 	@SuppressWarnings("unchecked")

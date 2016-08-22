@@ -18,9 +18,13 @@
  */
 package uk.co.strangeskies.fx;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javafx.scene.control.TreeView;
+import uk.co.strangeskies.mathematics.graph.Graph;
+import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.TypedObject;
 
 /**
@@ -30,12 +34,92 @@ import uk.co.strangeskies.reflection.TypedObject;
  * @author Elias N Vasylenko
  */
 public class ModularTreeView extends TreeView<TypedObject<?>> {
-	public final TreeItemImpl<?> getRootImpl() {
+	new GraphB
+	
+	private final List<TreeRootContribution> rootContributions;
+	private final List<TreeChildContribution<?>> childContributions;
+	private final List<TreeCellContribution<?>> cellContributions;
+
+	public ModularTreeView() {
+		rootContributions = new ArrayList<>();
+		childContributions = new ArrayList<>();
+		cellContributions = new ArrayList<>();
+
+		TreeItemImpl<ModularTreeView> root = new TreeItemImpl<ModularTreeView>(this,
+				new TypeToken<ModularTreeView>() {}.typedObject(this)) {
+			@Override
+			public List<TreeChildContribution<ModularTreeView>> getContributions() {
+				return rootContributions.stream()
+						.map(r -> (TreeChildContribution<ModularTreeView>) new TreeChildContribution<ModularTreeView>() {
+							@Override
+							public boolean appliesTo(ModularTreeView data) {
+								return true;
+							}
+
+							@Override
+							public boolean hasChildren(ModularTreeView data) {
+								return r.hasRootItems();
+							}
+
+							@Override
+							public List<TypedObject<?>> getChildren(ModularTreeView data) {
+								return r.getRootItems();
+							}
+						}).collect(Collectors.toList());
+			}
+		};
+		root.setExpanded(true);
+
+		// add root
+		setShowRoot(false);
+		setRoot(root);
+		setCellFactory(v -> provideCell());
+	}
+
+	protected TreeCellImpl provideCell() {
+		return new TreeCellImpl();
+	}
+
+	protected final TreeItemImpl<?> getRootImpl() {
 		return (TreeItemImpl<?>) getRoot();
 	}
 
-	public <T> List<TreeItemContribution<T>> getContributions(TypedObject<T> value) {
-		// TODO Auto-generated method stub
-		return null;
+	public boolean addRootContribution(TreeRootContribution rootContribution) {
+		return rootContributions.add(rootContribution);
+	}
+
+	public boolean removeRootContribution(TreeRootContribution rootContribution) {
+		return rootContributions.remove(rootContribution);
+	}
+
+	public boolean addChildContribution(TreeChildContribution<?> childContribution) {
+		return childContributions.add(childContribution);
+	}
+
+	public boolean removeChildContribution(TreeChildContribution<?> childContribution) {
+		return childContributions.remove(childContribution);
+	}
+
+	public List<TypedObject<?>> getChildren(TypedObject<?> data) {
+		return childContributions.stream().filter(c -> c.getDataType().isAssignableFrom(value.getType()))
+				.map(c -> (TreeChildContribution<T>) c).filter(c -> c.appliesTo(value.getObject()))
+				.collect(Collectors.toList());
+	}
+
+	public boolean addCellContribution(TreeCellContribution<?> cellContribution) {
+		return cellContributions.add(cellContribution);
+	}
+
+	public boolean removeCellContribution(TreeCellContribution<?> cellContribution) {
+		return cellContributions.remove(cellContribution);
+	}
+
+	void configureCell(TypedObject<?> data, TreeCellImpl cell) {
+		
+	}
+
+	@Override
+	public void refresh() {
+		getRootImpl().rebuildChildren();
 	}
 }

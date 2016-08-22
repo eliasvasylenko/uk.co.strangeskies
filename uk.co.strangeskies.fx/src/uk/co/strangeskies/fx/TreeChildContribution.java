@@ -36,9 +36,9 @@ import uk.co.strangeskies.reflection.TypedObject;
  * @param <T>
  *          the type of the tree item data
  */
-public interface TreeItemContribution<T> {
+public interface TreeChildContribution<T> {
 	default TypeToken<T> getDataType() {
-		return TypeToken.over(getClass()).resolveSupertypeParameters(TreeItemContribution.class)
+		return TypeToken.over(getClass()).resolveSupertypeParameters(TreeChildContribution.class)
 				.resolveTypeArgument(new TypeParameter<T>() {}).infer();
 	}
 

@@ -8,4 +8,5 @@ Bundle-Name: Strange Skies :: FX
 
 -buildpath: \
 	${ss;utilities},\
+	${ss;mathematics},\
 	${ss;reflection}
