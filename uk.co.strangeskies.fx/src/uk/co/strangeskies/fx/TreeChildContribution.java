@@ -26,9 +26,6 @@ import uk.co.strangeskies.reflection.TypedObject;
 /**
  * A type of contribution for items in a {@link ModularTreeView}.
  * 
- * Very loosely based on ideas from:
- * {@link "http://help.eclipse.org/neon/index.jsp?topic=%2Forg.eclipse.platform.doc.isv%2Fguide%2Fcnf.htm"}
- * 
  * @author Elias N Vasylenko
  *
  * @param <T>
