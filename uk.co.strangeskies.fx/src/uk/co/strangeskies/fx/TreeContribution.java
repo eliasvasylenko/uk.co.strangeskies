@@ -18,28 +18,28 @@
  */
 package uk.co.strangeskies.fx;
 
-import java.util.Collection;
-import java.util.List;
-
-import uk.co.strangeskies.reflection.TypedObject;
+import uk.co.strangeskies.reflection.TypeParameter;
+import uk.co.strangeskies.reflection.TypeToken;
 
 /**
  * A type of contribution for root items in a {@link ModularTreeView}.
  * 
  * @author Elias N Vasylenko
  */
-public interface TreeRootContribution {
+public interface TreeContribution<T> {
+	default TypeToken<T> getDataType() {
+		return TypeToken.over(getClass()).resolveSupertypeParameters(TreeChildContribution.class)
+				.resolveTypeArgument(new TypeParameter<T>() {}).infer();
+	}
+
 	/**
-	 * Determine whether children should be contributed to the given data item.
-	 * This should given the same result as {@link Collection#isEmpty()} invoked
-	 * on the result of {@link #getChildren(Object)}, but may be more efficient to
-	 * implement.
+	 * Determine whether the contribution should be applied to the given data
+	 * item. This method will only be invoked <em>after</em>
+	 * {@link #getDataType()} has checked against the exact item type.
 	 * 
 	 * @param data
 	 *          a data item in the tree
-	 * @return true if children should be contributed, false otherwise
+	 * @return true if the contribution is applicable, false otherwise
 	 */
-	boolean hasRootItems();
-
-	List<TypedObject<?>> getRootItems();
+	boolean appliesTo(T data);
 }

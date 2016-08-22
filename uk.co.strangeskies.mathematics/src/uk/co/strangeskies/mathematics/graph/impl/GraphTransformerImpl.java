@@ -20,6 +20,7 @@ package uk.co.strangeskies.mathematics.graph.impl;
 
 import java.util.Comparator;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import uk.co.strangeskies.mathematics.graph.Graph;
 import uk.co.strangeskies.mathematics.graph.GraphTransformer;
@@ -58,6 +59,18 @@ public class GraphTransformerImpl<V, E> implements GraphTransformer<V, E> {
 
 	@Override
 	public GraphTransformer<V, E> direction(Comparator<V> lowToHigh) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public <W> GraphTransformer<W, E> filterVertices(Predicate<V> filter) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public <W> GraphTransformer<W, E> filterEdges(Predicate<E> filter) {
 		// TODO Auto-generated method stub
 		return null;
 	}

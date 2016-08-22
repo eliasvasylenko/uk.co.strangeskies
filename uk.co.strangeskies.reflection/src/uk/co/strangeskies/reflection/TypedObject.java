@@ -177,4 +177,21 @@ public class TypedObject<T> implements ReifiedSelf<TypedObject<T>> {
 	public TypeToken<TypedObject<T>> getThisType() {
 		return new TypeToken<TypedObject<T>>() {}.withTypeArgument(new TypeParameter<T>(), type);
 	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!(obj instanceof TypedObject<?>))
+			return false;
+
+		TypedObject<?> that = (TypedObject<?>) obj;
+
+		return Objects.equals(object, that.object);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(object);
+	}
 }

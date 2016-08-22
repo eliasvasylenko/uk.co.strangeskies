@@ -18,9 +18,6 @@
  */
 package uk.co.strangeskies.fx;
 
-import uk.co.strangeskies.reflection.TypeParameter;
-import uk.co.strangeskies.reflection.TypeToken;
-
 /**
  * A type of contribution for items in a {@link ModularTreeView}.
  * 
@@ -32,23 +29,7 @@ import uk.co.strangeskies.reflection.TypeToken;
  * @param <T>
  *          the type of the tree item data
  */
-public interface TreeCellContribution<T> {
-	default TypeToken<T> getDataType() {
-		return TypeToken.over(getClass()).resolveSupertypeParameters(TreeCellContribution.class)
-				.resolveTypeArgument(new TypeParameter<T>() {}).infer();
-	}
-
-	/**
-	 * Determine whether the contribution should be applied to the given data
-	 * item. This method will only be invoked <em>after</em>
-	 * {@link #getDataType()} has checked against the exact item type.
-	 * 
-	 * @param data
-	 *          a data item in the tree
-	 * @return true if the contribution is applicable, false otherwise
-	 */
-	boolean appliesTo(T data);
-
+public interface TreeCellContribution<T> extends TreeContribution<T> {
 	default String getText(T data) {
 		return data.toString();
 	}

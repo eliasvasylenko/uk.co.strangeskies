@@ -681,8 +681,7 @@ public final class Types {
 			 */
 			Type[] types = ((IntersectionType) to).getTypes();
 
-			Type fromFinal = from; // shouldn't be necessary, eclipse.
-			assignable = Arrays.stream(types).allMatch(t -> isAssignable(fromFinal, t, isomorphism));
+			assignable = Arrays.stream(types).allMatch(t -> isAssignable(from, t, isomorphism));
 		} else if (from instanceof IntersectionType) {
 			/*
 			 * We must be able to assign from at least one member of the intersection

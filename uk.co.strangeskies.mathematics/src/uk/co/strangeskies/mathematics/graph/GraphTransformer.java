@@ -20,6 +20,7 @@ package uk.co.strangeskies.mathematics.graph;
 
 import java.util.Comparator;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import org.osgi.annotation.versioning.ProviderType;
 
@@ -29,10 +30,13 @@ import uk.co.strangeskies.utilities.Factory;
 public interface GraphTransformer<V, E> extends Factory<Graph<V, E>> {
 	public <W> GraphTransformer<W, E> vertices(Function<V, W> transformation);
 
+	public <W> GraphTransformer<W, E> filterVertices(Predicate<V> filter);
+
 	public <F> GraphTransformer<V, F> edges(Function<E, F> transformation);
 
-	public GraphTransformer<V, E> edgeWeight(Function<E, Double> weight,
-			boolean mutable);
+	public <W> GraphTransformer<W, E> filterEdges(Predicate<E> filter);
+
+	public GraphTransformer<V, E> edgeWeight(Function<E, Double> weight, boolean mutable);
 
 	public GraphTransformer<V, E> direction(Comparator<V> lowToHigh);
 }

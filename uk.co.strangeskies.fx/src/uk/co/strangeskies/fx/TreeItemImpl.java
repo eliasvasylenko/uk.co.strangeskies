@@ -63,11 +63,12 @@ public class TreeItemImpl<T> extends TreeItem<TypedObject<?>> {
 	}
 
 	private boolean hasChildren() {
-		return getContributions().stream().anyMatch(c -> c.hasChildren(getData()));
+		return getContributions().stream().filter(TreeChildContribution.class::isInstance)
+				.anyMatch(c -> ((TreeChildContribution<T>) c).hasChildren(getData()));
 	}
 
-	public List<TreeChildContribution<T>> getContributions() {
-		return treeView.getChildContributions(getTypedData());
+	public List<TreeContribution<T>> getContributions() {
+		return treeView.getContributions(getTypedData());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -95,7 +96,8 @@ public class TreeItemImpl<T> extends TreeItem<TypedObject<?>> {
 		if (hasChildren()) {
 			List<TypedObject<?>> childrenData = new ArrayList<>();
 
-			getContributions().stream().map(c -> c.getChildren(getData())).forEach(childrenData::addAll);
+			getContributions().stream().filter(TreeChildContribution.class::isInstance)
+					.map(c -> ((TreeChildContribution<T>) c).getChildren(getData())).forEach(childrenData::addAll);
 
 			// remove outdated TreeItemImpl children
 			childTreeItems.keySet().retainAll(childrenData);

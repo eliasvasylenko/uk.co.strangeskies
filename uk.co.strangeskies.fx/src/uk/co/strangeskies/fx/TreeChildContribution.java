@@ -21,8 +21,6 @@ package uk.co.strangeskies.fx;
 import java.util.Collection;
 import java.util.List;
 
-import uk.co.strangeskies.reflection.TypeParameter;
-import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.TypedObject;
 
 /**
@@ -36,23 +34,7 @@ import uk.co.strangeskies.reflection.TypedObject;
  * @param <T>
  *          the type of the tree item data
  */
-public interface TreeChildContribution<T> {
-	default TypeToken<T> getDataType() {
-		return TypeToken.over(getClass()).resolveSupertypeParameters(TreeChildContribution.class)
-				.resolveTypeArgument(new TypeParameter<T>() {}).infer();
-	}
-
-	/**
-	 * Determine whether the contribution should be applied to the given data
-	 * item. This method will only be invoked <em>after</em>
-	 * {@link #getDataType()} has checked against the exact item type.
-	 * 
-	 * @param data
-	 *          a data item in the tree
-	 * @return true if the contribution is applicable, false otherwise
-	 */
-	boolean appliesTo(T data);
-
+public interface TreeChildContribution<T> extends TreeContribution<T> {
 	/**
 	 * Determine whether children should be contributed to the given data item.
 	 * This should given the same result as {@link Collection#isEmpty()} invoked
@@ -65,5 +47,12 @@ public interface TreeChildContribution<T> {
 	 */
 	boolean hasChildren(T data);
 
+	/**
+	 * Determine which children should be contributed to the given data item.
+	 * 
+	 * @param data
+	 *          a data item in the tree
+	 * @return a list of children to be contributed
+	 */
 	List<TypedObject<?>> getChildren(T data);
 }
