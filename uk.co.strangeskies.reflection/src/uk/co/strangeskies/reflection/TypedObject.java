@@ -41,7 +41,7 @@ public class TypedObject<T> implements ReifiedSelf<TypedObject<T>> {
 	 * @param object
 	 *          An object reference of the given type.
 	 */
-	public TypedObject(TypeToken<T> type, T object) {
+	protected TypedObject(TypeToken<T> type, T object) {
 		Objects.requireNonNull(type);
 
 		this.type = type;
@@ -49,20 +49,8 @@ public class TypedObject<T> implements ReifiedSelf<TypedObject<T>> {
 	}
 
 	/**
-	 * @param type
-	 *          The exact type of an object to keep track of.
-	 * @param object
-	 *          An object reference of the given type.
-	 */
-	public TypedObject(Class<T> type, T object) {
-		Objects.requireNonNull(type);
-
-		this.type = TypeToken.over(type);
-		this.object = object;
-	}
-
-	/**
-	 * Cast an untyped object into a typed object.
+	 * Cast an untyped object into a typed object without consideration for
+	 * generic type safety.
 	 * 
 	 * @param <T>
 	 *          The target type of the cast
@@ -74,9 +62,38 @@ public class TypedObject<T> implements ReifiedSelf<TypedObject<T>> {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T> TypedObject<T> castUnsafe(TypeToken<T> type, Object object) {
+		if (!type.getRawTypes().stream().allMatch(r -> r.isAssignableFrom(object.getClass())))
+			throw new TypeException("Cannot cast");
+
 		return new TypedObject<>(type, (T) object);
 	}
 
+	/**
+	 * Cast a typed object into a differently typed object without consideration
+	 * for generic type safety.
+	 * 
+	 * @param <U>
+	 *          The target type of the cast
+	 * @param type
+	 *          A type token over the type of the cast
+	 * @return A typed object over the given type and object
+	 */
+	@SuppressWarnings("unchecked")
+	public <U> TypedObject<U> castUnsafe(TypeToken<U> type) {
+		return castUnsafe(type, (U) object);
+	}
+
+	/**
+	 * Cast a typed object into a differently typed object.
+	 * 
+	 * @param <U>
+	 *          The target type of the cast
+	 * @param type
+	 *          A type token over the type of the cast
+	 * @return If the cast succeeds, an optional containing the typed object over
+	 *         the given type and object is returned, otherwise an empty optional
+	 *         is returned.
+	 */
 	public <U> Optional<TypedObject<U>> tryCast(TypeToken<U> type) {
 		if (!type.isCastableFrom(this.type) || !type.isCastableFrom(object.getClass()))
 			return Optional.empty();
@@ -84,11 +101,32 @@ public class TypedObject<T> implements ReifiedSelf<TypedObject<T>> {
 			return Optional.of(castUnsafe(type, object));
 	}
 
+	/**
+	 * Cast a typed object into a differently typed object.
+	 * 
+	 * @param <U>
+	 *          The target type of the cast
+	 * @param type
+	 *          A type token over the type of the cast
+	 * @return A typed object over the given type and object
+	 */
 	public <U> TypedObject<U> cast(TypeToken<U> type) {
 		return tryCast(type)
 				.orElseThrow(() -> new TypeException("Cannot cast object '" + this + "' to type '" + type + "'"));
 	}
 
+	/**
+	 * Cast a typed object into a differently typed object, succeeding only if the
+	 * types are assignment compatible.
+	 * 
+	 * @param <U>
+	 *          The target type of the cast
+	 * @param type
+	 *          A type token over the type of the cast
+	 * @return If the cast succeeds, an optional containing the typed object over
+	 *         the given type and object is returned, otherwise an empty optional
+	 *         is returned.
+	 */
 	public <U> Optional<TypedObject<U>> tryAssign(TypeToken<U> type) {
 		if (!type.isAssignableFrom(this.type) || !type.isCastableFrom(object.getClass()))
 			return Optional.empty();
@@ -96,6 +134,16 @@ public class TypedObject<T> implements ReifiedSelf<TypedObject<T>> {
 			return Optional.of(castUnsafe(type, object));
 	}
 
+	/**
+	 * Cast a typed object into a differently typed object, succeeding only if the
+	 * types are assignment compatible.
+	 * 
+	 * @param <U>
+	 *          The target type of the cast
+	 * @param type
+	 *          A type token over the type of the cast
+	 * @return A typed object over the given type and object
+	 */
 	public <U> TypedObject<U> assign(TypeToken<U> type) {
 		return tryAssign(type)
 				.orElseThrow(() -> new TypeException("Cannot cast object '" + this + "' to type '" + type + "'"));
