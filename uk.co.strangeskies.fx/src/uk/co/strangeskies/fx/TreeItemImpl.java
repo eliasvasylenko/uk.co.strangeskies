@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javafx.collections.ObservableList;
 import javafx.scene.control.TreeItem;
@@ -46,12 +47,16 @@ public class TreeItemImpl<T> extends TreeItem<TypedObject<?>> {
 	private final Map<TypedObject<?>, TreeItemImpl<?>> childTreeItems = new HashMap<>();
 	private boolean childrenCalculated;
 
+	private final List<TreeContribution<? super T>> contributions;
+
 	TreeItemImpl(ModularTreeView treeView, TypedObject<T> data) {
 		super(data);
 
 		this.treeView = treeView;
 
-		if (hasChildren()) {
+		contributions = new ArrayList<>();
+
+		if (hasChildrenContributions()) {
 			expandedProperty().addListener((property, from, to) -> {
 				if (!to) {
 					childrenCalculated = false;
@@ -62,13 +67,20 @@ public class TreeItemImpl<T> extends TreeItem<TypedObject<?>> {
 		}
 	}
 
-	private boolean hasChildren() {
-		return getContributions().stream().filter(TreeChildContribution.class::isInstance)
-				.anyMatch(c -> ((TreeChildContribution<T>) c).hasChildren(getData()));
+	protected void refreshContributions() {
+		contributions.clear();
+		contributions.addAll(treeView.getContributions(getTypedData()));
 	}
 
-	public List<TreeContribution<T>> getContributions() {
-		return treeView.getContributions(getTypedData());
+	protected boolean hasChildrenContributions() {
+		return contributions.stream().filter(TreeChildContribution.class::isInstance)
+				.anyMatch(c -> ((TreeChildContribution<? super T>) c).hasChildren(getData()));
+	}
+
+	protected List<TypedObject<?>> getChildrenContributions() {
+		return contributions.stream().filter(TreeChildContribution.class::isInstance)
+				.flatMap(c -> ((TreeChildContribution<? super T>) c).getChildren(getData()).stream())
+				.collect(Collectors.toList());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -91,13 +103,11 @@ public class TreeItemImpl<T> extends TreeItem<TypedObject<?>> {
 	}
 
 	public void rebuildChildren() {
+		refreshContributions();
+
 		List<TreeItemImpl<?>> childrenItems;
-
-		if (hasChildren()) {
-			List<TypedObject<?>> childrenData = new ArrayList<>();
-
-			getContributions().stream().filter(TreeChildContribution.class::isInstance)
-					.map(c -> ((TreeChildContribution<T>) c).getChildren(getData())).forEach(childrenData::addAll);
+		if (hasChildrenContributions()) {
+			List<TypedObject<?>> childrenData = getChildrenContributions();
 
 			// remove outdated TreeItemImpl children
 			childTreeItems.keySet().retainAll(childrenData);

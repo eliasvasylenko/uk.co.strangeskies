@@ -18,12 +18,13 @@
  */
 package uk.co.strangeskies.fx;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javafx.scene.control.TreeView;
 import uk.co.strangeskies.mathematics.graph.Graph;
 import uk.co.strangeskies.mathematics.graph.GraphListeners;
+import uk.co.strangeskies.mathematics.graph.processing.GraphProcessor;
 import uk.co.strangeskies.reflection.TypedObject;
 
 /**
@@ -39,52 +40,63 @@ public class ModularTreeView extends TreeView<TypedObject<?>> {
 	 */
 	private final Graph<TreeContribution<?>, Object> contributions;
 
-	public ModularTreeView(TypedObject<?> root) {
-		contributions = Graph.build().<TreeContribution<?>>vertices().edgeFactory(Object::new).directed()
-				.addInternalListener(GraphListeners::vertexAdded, e -> {
-					for (TreeContribution<?> vertex : e.graph().vertices())
-						if (vertex != e.vertex())
-							if (vertex.getDataType().isAssignableFrom(e.vertex().getDataType())) {
-								e.graph().edges().add(vertex, e.vertex());
-							} else if (e.vertex().getDataType().isAssignableFrom(vertex.getDataType())) {
-								e.graph().edges().add(e.vertex(), vertex);
+	public ModularTreeView() {
+		contributions = Graph.build().<TreeContribution<?>> vertices().edgeFactory(Object::new).directed()
+				.addInternalListener(GraphListeners::vertexAdded, added -> {
+					for (TreeContribution<?> existingVertex : added.graph().vertices())
+						if (existingVertex != added.vertex())
+
+							if (existingVertex.getDataType().isAssignableFrom(added.vertex().getDataType())) {
+								added.graph().edges().add(added.vertex(), existingVertex);
+
+							} else if (added.vertex().getDataType().isAssignableFrom(existingVertex.getDataType())) {
+								added.graph().edges().add(existingVertex, added.vertex());
 							}
 				}).create();
 
+		setCellFactory(v -> new TreeCellImpl(this));
+	}
+
+	public void setRootData(TypedObject<?> root) {
 		TreeItemImpl<?> rootItem = new TreeItemImpl<>(this, root);
 		rootItem.setExpanded(true);
+		setShowRoot(false);
 
 		// add root
 		setRoot(rootItem);
-		setCellFactory(v -> provideCell());
-	}
 
-	protected TreeCellImpl provideCell() {
-		return new TreeCellImpl();
+		refresh();
 	}
 
 	protected final TreeItemImpl<?> getRootImpl() {
 		return (TreeItemImpl<?>) getRoot();
 	}
 
-	public boolean addContribution(TreeChildContribution<?> childContribution) {
-		return contributions.vertices().add(childContribution);
+	public boolean addContribution(TreeContribution<?> contribution) {
+		return contributions.vertices().add(contribution);
 	}
 
-	public boolean removeContribution(TreeChildContribution<?> childContribution) {
-		return contributions.vertices().remove(childContribution);
+	public boolean removeContribution(TreeContribution<?> contribution) {
+		return contributions.vertices().remove(contribution);
 	}
 
-	protected <T> List<TreeContribution<T>> getContributions(TypedObject<T> object) {
-		/*-
-		
-		return childContributions.stream().filter(c -> c.getDataType().isAssignableFrom(value.getType()))
-				.map(c -> (TreeChildContribution<T>) c).filter(c -> c.appliesTo(value.getObject()))
+	/**
+	 * Get all the contributions which should be applied to a tree item, in order
+	 * from most to least specific.
+	 * 
+	 * @param <T>
+	 *          the type of the tree item
+	 * @param object
+	 *          a tree item for which to find contributions
+	 * @return the contributions which apply to the given tree item
+	 */
+	@SuppressWarnings("unchecked")
+	public <T> List<TreeContribution<? super T>> getContributions(TypedObject<T> object) {
+		List<TreeContribution<?>> orderedContributions = new GraphProcessor().begin(contributions).processEagerParallel();
+
+		return orderedContributions.stream().filter(c -> c.getDataType().isAssignableFrom(object.getType()))
+				.map(c -> (TreeContribution<? super T>) c).filter(c -> c.appliesTo(object.getObject()))
 				.collect(Collectors.toList());
-		
-		 */
-
-		return Collections.emptyList();
 	}
 
 	@Override

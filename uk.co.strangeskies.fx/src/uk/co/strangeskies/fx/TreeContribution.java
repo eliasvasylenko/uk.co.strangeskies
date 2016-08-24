@@ -28,7 +28,7 @@ import uk.co.strangeskies.reflection.TypeToken;
  */
 public interface TreeContribution<T> {
 	default TypeToken<T> getDataType() {
-		return TypeToken.over(getClass()).resolveSupertypeParameters(TreeChildContribution.class)
+		return TypeToken.over(getClass()).resolveSupertypeParameters(TreeContribution.class)
 				.resolveTypeArgument(new TypeParameter<T>() {}).infer();
 	}
 
@@ -41,5 +41,7 @@ public interface TreeContribution<T> {
 	 *          a data item in the tree
 	 * @return true if the contribution is applicable, false otherwise
 	 */
-	boolean appliesTo(T data);
+	default boolean appliesTo(T data) {
+		return true;
+	}
 }

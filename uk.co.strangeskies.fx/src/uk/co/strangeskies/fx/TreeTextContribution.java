@@ -28,31 +28,14 @@ package uk.co.strangeskies.fx;
  * @param <T>
  *          the type of the tree item data
  */
-public interface TreeCellContribution<T> extends TreeContribution<T> {
-	/**
-	 * Used to change the default cell configuration strategy.
-	 * <p>
-	 * Here is also a good place to mark a cell with a pseudo-class to flag for
-	 * custom css styling.
-	 * 
-	 * @param data
-	 *          the data contents of the cell
-	 * @param text
-	 *          the main text representation of the tree item
-	 * @param supplementalText
-	 *          supplemental text information for the tree item
-	 * @param cell
-	 *          the cell object this item contribution is being applied to
-	 */
-	void configureCell(T data, String text, String supplementalText, TreeCellImpl cell);
+public interface TreeTextContribution<T> extends TreeContribution<T>, TreeCellContribution<T> {
+	String getText(T data);
 
-	/**
-	 * Remove any configuration applied by
-	 * {@link #configureCell(Object, String, String, TreeCellImpl)}, such as
-	 * application of pseudo-classes and registration of context menus.
-	 * 
-	 * @param cell
-	 *          the cell object this item contribution is being applied to
-	 */
-	default void deconfigureCell(TreeCellImpl cell) {}
+	String getSupplementalText(T data);
+
+	@Override
+	default void configureCell(T data, String text, String supplementalText, TreeCellImpl cell) {
+		cell.name().setText(text);
+		cell.supplemental().setText(supplementalText);
+	}
 }

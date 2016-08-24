@@ -9,12 +9,14 @@
 	xmlns="http://javafx.com/javafx/8"
 	xmlns:fx="http://javafx.com/fxml">
 
-	<fx:define>
-		<HBox fx:id="graphic" spacing="6">
-			<styleClass>
-				<String fx:value="ExperimentTreeCell" />
-			</styleClass>
+	<styleClass>
+		<String fx:value="ModularTreeCell" />
+	</styleClass>
 
+	<fx:define>
+		<HBox
+			fx:id="graphic"
+			spacing="6">
 			<children>
 				<Label fx:id="name" />
 

@@ -18,11 +18,14 @@
  */
 package uk.co.strangeskies.fx;
 
-import static uk.co.strangeskies.fx.FXMLLoadBuilder.buildWith;
+import static uk.co.strangeskies.fx.FXMLLoadBuilder.build;
 import static uk.co.strangeskies.fx.FXUtilities.getResource;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.TreeCell;
@@ -36,6 +39,10 @@ import uk.co.strangeskies.reflection.TypedObject;
  * @author Elias N Vasylenko
  */
 public class TreeCellImpl extends TreeCell<TypedObject<?>> {
+	private final ModularTreeView view;
+
+	private List<? extends TreeContribution<?>> contributions;
+
 	@FXML
 	private Node graphic;
 	@FXML
@@ -43,12 +50,10 @@ public class TreeCellImpl extends TreeCell<TypedObject<?>> {
 	@FXML
 	private Label supplemental;
 
-	public TreeCellImpl() {
-		this(new FXMLLoader());
-	}
+	public TreeCellImpl(ModularTreeView view) {
+		this.view = view;
 
-	public TreeCellImpl(FXMLLoader loader) {
-		buildWith(loader).object(this).resource(getResource(TreeCellImpl.class)).load();
+		build().object(this).resource(getResource(TreeCellImpl.class)).load();
 	}
 
 	@Override
@@ -63,9 +68,26 @@ public class TreeCellImpl extends TreeCell<TypedObject<?>> {
 	}
 
 	protected void clearItem() {
+		deconfigure();
+
 		setGraphic(null);
 		name.setText(null);
 		supplemental.setText(null);
+	}
+
+	private void deconfigure() {
+		if (contributions != null) {
+			for (TreeContribution<?> contribution : this.contributions) {
+				if (contribution instanceof TreeCellContribution<?>) {
+					((TreeCellContribution<?>) contribution).deconfigureCell(this);
+				}
+			}
+			contributions = null;
+		}
+	}
+
+	public Node defaultGraphic() {
+		return graphic;
 	}
 
 	public Label name() {
@@ -76,8 +98,28 @@ public class TreeCellImpl extends TreeCell<TypedObject<?>> {
 		return supplemental;
 	}
 
+	@SuppressWarnings("unchecked")
 	protected <T> void updateItem(TypedObject<T> item) {
-		setGraphic(graphic);
-		// item.getContributions().get(0).configureCell(item, this); TODO
+		deconfigure();
+
+		ArrayList<TreeContribution<? super T>> contributions = new ArrayList<>(view.getContributions(item));
+		contributions.add(new DefaultTreeCellTextContribution());
+		Collections.reverse(contributions);
+
+		this.contributions = contributions;
+
+		String text = null;
+		String supplemental = null;
+
+		for (TreeContribution<?> contribution : contributions) {
+			if (contribution instanceof TreeTextContribution<?>) {
+				text = ((TreeTextContribution<? super T>) contribution).getText(item.getObject());
+				supplemental = ((TreeTextContribution<? super T>) contribution).getSupplementalText(item.getObject());
+			}
+
+			if (contribution instanceof TreeCellContribution<?>) {
+				((TreeCellContribution<? super T>) contribution).configureCell(item.getObject(), text, supplemental, this);
+			}
+		}
 	}
 }
