@@ -41,8 +41,7 @@ public class GraphProcessor {
 
 			processed = graph.createVertexSet();
 
-			ready = graph.vertices().stream()
-					.filter(v -> graph.vertices().predecessorsOf(v).isEmpty())
+			ready = graph.vertices().stream().filter(v -> graph.vertices().predecessorsOf(v).isEmpty())
 					.collect(Collectors.toCollection(graph::createVertexSet));
 		}
 
@@ -75,10 +74,14 @@ public class GraphProcessor {
 			process.accept(nextVertex);
 
 			Set<V> readied = graph.createVertexSet();
+
 			synchronized (processed) {
 				processed.add(nextVertex);
-				readied.addAll(graph.vertices().successorsOf(nextVertex));
+
+				graph.vertices().successorsOf(nextVertex).stream()
+						.filter(v -> processed.containsAll(graph.vertices().predecessorsOf(v))).forEach(readied::add);
 				readied.removeAll(ready);
+
 				ready.addAll(readied);
 			}
 
@@ -117,7 +120,7 @@ public class GraphProcessor {
 		}
 
 		public List<V> processEagerParallel() {
-			// TODO actually parallelise this...
+			// TODO actually parallelize this...
 			return processEager();
 		}
 	}

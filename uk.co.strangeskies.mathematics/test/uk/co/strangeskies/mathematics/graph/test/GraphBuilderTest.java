@@ -52,8 +52,8 @@ import uk.co.strangeskies.mathematics.graph.EdgeVertices;
 import uk.co.strangeskies.mathematics.graph.Graph;
 import uk.co.strangeskies.mathematics.graph.GraphBuilder;
 import uk.co.strangeskies.mathematics.graph.GraphConfigurator;
+import uk.co.strangeskies.mathematics.graph.GraphListeners;
 import uk.co.strangeskies.mathematics.graph.impl.GraphBuilderImpl;
-import uk.co.strangeskies.mathematics.graph.impl.GraphListenersImpl;
 import uk.co.strangeskies.utilities.EquivalenceComparator;
 
 public class GraphBuilderTest {
@@ -179,7 +179,7 @@ public class GraphBuilderTest {
 		vertices.add(three);
 
 		Graph<String, Object> graph = graph().vertices(vertices).vertexEquality((a, b) -> a == b)
-				.addInternalListener(GraphListenersImpl::vertexAdded, e -> {
+				.addInternalListener(GraphListeners::vertexAdded, e -> {
 					for (String vertex : e.graph().vertices()) {
 						if (vertex != e.vertex())
 							e.graph().edges().add(e.vertex(), vertex);
@@ -197,7 +197,7 @@ public class GraphBuilderTest {
 		Set<String> vertices = set("one", "two", "three");
 
 		Graph<String, String> graph = graph().vertices(vertices).vertexEquality((a, b) -> a == b)
-				.addInternalListener(GraphListenersImpl::vertexAdded, e -> {
+				.addInternalListener(GraphListeners::vertexAdded, e -> {
 					for (String vertex : e.graph().vertices())
 						if (e.vertex() != vertex)
 							e.graph().edges().add(e.vertex(), vertex);

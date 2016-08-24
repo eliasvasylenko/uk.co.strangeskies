@@ -244,7 +244,7 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 */
 	GraphConfigurator<V, E> internalListeners(Consumer<GraphListenersImpl<V, E>> internalListeners);
 
-	default <L> GraphConfigurator<V, E> addInternalListener(Function<GraphListenersImpl<V, E>, Observable<L>> listenerSet,
+	default <L> GraphConfigurator<V, E> addInternalListener(Function<GraphListeners<V, E>, Observable<L>> listenerSet,
 			Consumer<L> listener) {
 		return internalListeners(l -> listenerSet.apply(l).addObserver(listener));
 	}
