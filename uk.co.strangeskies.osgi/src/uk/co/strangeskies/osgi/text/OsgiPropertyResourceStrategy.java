@@ -20,6 +20,7 @@ package uk.co.strangeskies.osgi.text;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkUtil;
@@ -51,10 +52,8 @@ public class OsgiPropertyResourceStrategy implements PropertyResourceStrategy<Os
 	@Override
 	public <T extends Properties<T>> PropertyResource getPropertyResourceBundle(Class<T> accessor, String resource) {
 		return new PropertyResourceBundle(this, accessor, resource) {
-			private Bundle usingBundle = OsgiPropertyResourceStrategy.this.usingBundle;
-
 			@Override
-			protected <T extends Properties<T>> List<ResourceBundleDescriptor> getResources(Class<T> accessor,
+			protected <U extends Properties<U>> List<ResourceBundleDescriptor> getResources(Class<U> accessor,
 					String resource) {
 				List<ResourceBundleDescriptor> resources = new ArrayList<>();
 
@@ -65,7 +64,10 @@ public class OsgiPropertyResourceStrategy implements PropertyResourceStrategy<Os
 				}
 
 				addResources(resources, resource, unspecifiedResource, usingBundle);
-				addResources(resources, resource, unspecifiedResource, FrameworkUtil.getBundle(accessor));
+
+				Bundle accessorBundle = FrameworkUtil.getBundle(accessor);
+				if (!Objects.equals(accessorBundle, usingBundle))
+					addResources(resources, resource, unspecifiedResource, accessorBundle);
 
 				return resources;
 			}
