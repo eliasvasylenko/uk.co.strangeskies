@@ -39,4 +39,11 @@ public interface Reified {
 	 *         class.
 	 */
 	TypeToken<?> getThisType();
+
+	/**
+	 * @return this object as a {@link TypedObject}
+	 */
+	default TypedObject<?> asTypedObject() {
+		return TypedObject.castUnsafe(getThisType(), this);
+	}
 }

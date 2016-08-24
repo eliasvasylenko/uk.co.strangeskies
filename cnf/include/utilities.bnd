@@ -1,5 +1,5 @@
 ## Requirement shorthand
-req: osgi.identity;filter:='(osgi.identity=${1})'
+req: osgi.identity;filter:='(&(osgi.identity=${1})(version${if;${is;${2};null};>=0;${2}}))'
 
 ######################
 ## Embedded bundles ##

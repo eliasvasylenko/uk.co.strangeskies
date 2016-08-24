@@ -34,4 +34,12 @@ import uk.co.strangeskies.utilities.Self;
 public interface ReifiedSelf<S extends ReifiedSelf<S>> extends Reified, Self<S> {
 	@Override
 	TypeToken<S> getThisType();
+
+	/**
+	 * @return this object as a {@link TypedObject}
+	 */
+	@Override
+	default TypedObject<S> asTypedObject() {
+		return getThisType().typedObject(getThis());
+	}
 }
