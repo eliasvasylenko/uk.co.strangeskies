@@ -131,7 +131,7 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * @return A derived configurator with the requested configuration
 	 */
 	default GraphConfigurator<V, E> directed() {
-		return direction((a, b) -> 1);
+		return direction((a, b) -> -1);
 	}
 
 	GraphConfigurator<V, E> acyclic();

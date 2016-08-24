@@ -37,8 +37,8 @@
 package uk.co.strangeskies.mathematics.graph.test;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -74,7 +74,7 @@ public class GraphBuilderTest {
 
 	@SafeVarargs
 	protected final <T> Set<T> set(T... items) {
-		return new HashSet<>(Arrays.asList(items));
+		return new LinkedHashSet<>(Arrays.asList(items));
 	}
 
 	protected <T> Set<T> set(BiPredicate<? super T, ? super T> equality, @SuppressWarnings("unchecked") T... items) {
@@ -95,7 +95,7 @@ public class GraphBuilderTest {
 		Graph<String, Object> graph = graph().vertices(vertices).create();
 
 		Assert.assertEquals(vertices, graph.vertices());
-		Assert.assertEquals(Collections.emptySet(), graph.edges());
+		Assert.assertEquals(set(), graph.edges());
 	}
 
 	@Test
@@ -105,7 +105,7 @@ public class GraphBuilderTest {
 		Graph<String, Object> graph = graph().vertices(vertices).create();
 
 		Assert.assertEquals(new HashSet<>(vertices), graph.vertices());
-		Assert.assertEquals(Collections.emptySet(), graph.edges());
+		Assert.assertEquals(set(), graph.edges());
 	}
 
 	@Test
@@ -147,7 +147,7 @@ public class GraphBuilderTest {
 	}
 
 	@Test
-	public void buildDirectedTest() {
+	public void buildComparatorDirectedTest() {
 		Set<String> vertices = set("one", "two", "three");
 
 		Graph<String, Object> graph = graph().vertices(vertices).internalListeners(l -> l.vertexAdded().addObserver(e -> {
@@ -159,13 +159,37 @@ public class GraphBuilderTest {
 		Assert.assertEquals(vertices, graph.vertices());
 
 		Assert.assertEquals(set("two", "three"), graph.vertices().successorsOf("one"));
-		Assert.assertEquals(Collections.emptySet(), graph.vertices().predecessorsOf("one"));
+		Assert.assertEquals(set(), graph.vertices().predecessorsOf("one"));
 
 		Assert.assertEquals(set("two"), graph.vertices().successorsOf("three"));
 		Assert.assertEquals(set("one"), graph.vertices().predecessorsOf("three"));
 
-		Assert.assertEquals(Collections.emptySet(), graph.vertices().successorsOf("two"));
+		Assert.assertEquals(set(), graph.vertices().successorsOf("two"));
 		Assert.assertEquals(set("one", "three"), graph.vertices().predecessorsOf("two"));
+	}
+
+	@Test
+	public void buildInsertionDirectedTest() {
+		Set<String> vertices = set("one", "two", "three");
+
+		Graph<String, Object> graph = graph().<String>vertices().internalListeners(l -> l.vertexAdded().addObserver(e -> {
+			for (String vertex : e.graph().vertices())
+				if (vertex != e.vertex())
+					e.graph().edges().add(vertex, e.vertex());
+		})).edgeFactory(Object::new).directed().create();
+
+		vertices.stream().forEach(graph.vertices()::add);
+
+		Assert.assertEquals(vertices, graph.vertices());
+
+		Assert.assertEquals(set("two", "three"), graph.vertices().successorsOf("one"));
+		Assert.assertEquals(set(), graph.vertices().predecessorsOf("one"));
+
+		Assert.assertEquals(set(), graph.vertices().successorsOf("three"));
+		Assert.assertEquals(set("one", "two"), graph.vertices().predecessorsOf("three"));
+
+		Assert.assertEquals(set("three"), graph.vertices().successorsOf("two"));
+		Assert.assertEquals(set("one"), graph.vertices().predecessorsOf("two"));
 	}
 
 	@Test

@@ -157,7 +157,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 		@Override
 		public Set<V> successorsOf(V vertex) {
 			if (isDirected()) {
-				return adjacentToDirectional(vertex, EdgeVertices::getTo);
+				return adjacentToDirectional(vertex, EdgeVertices::getFrom);
 			} else
 				return adjacentTo(vertex);
 		}
@@ -165,7 +165,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 		@Override
 		public Set<V> predecessorsOf(V vertex) {
 			if (isDirected()) {
-				return adjacentToDirectional(vertex, EdgeVertices::getFrom);
+				return adjacentToDirectional(vertex, EdgeVertices::getTo);
 			} else
 				return adjacentTo(vertex);
 		}
@@ -496,10 +496,13 @@ class GraphImpl<V, E> implements Graph<V, E> {
 			}
 
 			EdgeVertices<V> vertices;
-			if (lowToHighDirectionFunction != null)
+			if (lowToHighDirectionFunction != null) {
 				vertices = EdgeVertices.between(v.getFrom(), v.getTo(), lowToHighDirectionFunction.apply(e));
-			else
+			} else if (lowToHighDirection != null) {
+				vertices = EdgeVertices.between(v.getFrom(), v.getTo(), lowToHighDirection);
+			} else {
 				vertices = v;
+			}
 
 			atomicInternal(() -> {
 				adjacencyMatrix.get(vertices.getFrom()).add(vertices.getTo(), e);
