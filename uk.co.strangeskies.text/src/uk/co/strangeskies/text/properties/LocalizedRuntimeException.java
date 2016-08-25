@@ -87,4 +87,12 @@ public abstract class LocalizedRuntimeException extends RuntimeException {
 	public String getLocalizedMessage() {
 		return message.toString();
 	}
+
+	/**
+	 * @return the {@link Localized localized} string representation of the
+	 *         exception message.
+	 */
+	public Localized<String> getLocalizedString() {
+		return message;
+	}
 }

@@ -87,4 +87,12 @@ public abstract class LocalizedException extends Exception {
 	public String getLocalizedMessage() {
 		return message.toString();
 	}
+
+	/**
+	 * @return the {@link Localized localized} string representation of the
+	 *         exception message.
+	 */
+	public Localized<String> getLocalizedString() {
+		return message;
+	}
 }

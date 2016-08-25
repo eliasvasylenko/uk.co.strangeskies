@@ -87,4 +87,12 @@ public abstract class LocalizedError extends Error {
 	public String getLocalizedMessage() {
 		return message.toString();
 	}
+
+	/**
+	 * @return the {@link Localized localized} string representation of the error
+	 *         message.
+	 */
+	public Localized<String> getLocalizedString() {
+		return message;
+	}
 }
