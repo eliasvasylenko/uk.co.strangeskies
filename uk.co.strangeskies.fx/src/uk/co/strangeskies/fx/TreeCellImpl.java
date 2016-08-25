@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import javafx.css.PseudoClass;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
@@ -79,6 +80,8 @@ public class TreeCellImpl extends TreeCell<TypedObject<?>> {
 		if (contributions != null) {
 			for (TreeContribution<?> contribution : this.contributions) {
 				if (contribution instanceof TreeCellContribution<?>) {
+					pseudoClassStateChanged(PseudoClass.getPseudoClass(contribution.getClass().getSimpleName()), false);
+
 					((TreeCellContribution<?>) contribution).deconfigureCell(this);
 				}
 			}
@@ -90,7 +93,7 @@ public class TreeCellImpl extends TreeCell<TypedObject<?>> {
 		return graphic;
 	}
 
-	public Label name() {
+	public Label text() {
 		return name;
 	}
 
@@ -118,6 +121,8 @@ public class TreeCellImpl extends TreeCell<TypedObject<?>> {
 			}
 
 			if (contribution instanceof TreeCellContribution<?>) {
+				pseudoClassStateChanged(PseudoClass.getPseudoClass(contribution.getClass().getSimpleName()), true);
+
 				((TreeCellContribution<? super T>) contribution).configureCell(item.getObject(), text, supplemental, this);
 			}
 		}

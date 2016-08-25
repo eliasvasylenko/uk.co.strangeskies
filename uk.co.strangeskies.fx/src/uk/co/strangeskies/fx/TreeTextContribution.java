@@ -35,7 +35,7 @@ public interface TreeTextContribution<T> extends TreeContribution<T>, TreeCellCo
 
 	@Override
 	default void configureCell(T data, String text, String supplementalText, TreeCellImpl cell) {
-		cell.name().setText(text);
+		cell.text().setText(text);
 		cell.supplemental().setText(supplementalText);
 	}
 }
