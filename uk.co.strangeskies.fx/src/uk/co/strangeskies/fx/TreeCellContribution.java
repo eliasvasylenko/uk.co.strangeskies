@@ -41,10 +41,6 @@ public interface TreeCellContribution<T> extends TreeContribution<T> {
 	 *          the specific type of the tree item
 	 * @param data
 	 *          the data contents of the tree item
-	 * @param text
-	 *          the main text for the tree item
-	 * @param supplementalText
-	 *          the supplemental text for the tree item
 	 * @param content
 	 *          the current cell contents for the tree item
 	 * @return the new cell contents for the tree item
