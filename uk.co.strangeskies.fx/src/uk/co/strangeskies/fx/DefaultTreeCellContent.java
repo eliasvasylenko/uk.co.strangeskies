@@ -24,12 +24,25 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 
+/**
+ * The default UI node provided by {@link DefaultTreeCellContribution}.
+ * 
+ * @author Elias N Vasylenko
+ */
 public class DefaultTreeCellContent extends HBox {
 	@FXML
 	private Label text;
 	@FXML
 	private Label supplementalText;
 
+	/**
+	 * @param text
+	 *          the {@link TreeTextContribution#getText(TreeItemData) main text}
+	 *          for the tree item
+	 * @param supplementalText
+	 *          the {@link TreeTextContribution#getText(TreeItemData) supplemental
+	 *          text} for the tree item
+	 */
 	public DefaultTreeCellContent(String text, String supplementalText) {
 		build().object(this).load();
 

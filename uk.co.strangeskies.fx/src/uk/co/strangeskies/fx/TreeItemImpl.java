@@ -79,8 +79,15 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 				.collect(Collectors.toList());
 	}
 
+	/**
+	 * @return the {@link TreeItemDataImpl tree item data} for this tree node
+	 */
+	public TreeItemData<T> getData() {
+		return getDataImpl();
+	}
+
 	@SuppressWarnings("unchecked")
-	public TreeItemDataImpl<T> getData() {
+	protected TreeItemDataImpl<T> getDataImpl() {
 		return (TreeItemDataImpl<T>) getValue();
 	}
 
@@ -93,8 +100,8 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 		return super.getChildren();
 	}
 
-	public void rebuildChildren() {
-		getData().refreshContributions();
+	protected void rebuildChildren() {
+		getDataImpl().refreshContributions();
 
 		boolean hasChildren = hasChildrenContributions();
 

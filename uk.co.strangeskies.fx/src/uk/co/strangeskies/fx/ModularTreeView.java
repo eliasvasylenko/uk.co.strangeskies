@@ -18,10 +18,15 @@
  */
 package uk.co.strangeskies.fx;
 
+import static java.util.Collections.emptySet;
+
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import javafx.scene.control.TreeView;
+import javafx.util.Pair;
 import uk.co.strangeskies.mathematics.graph.Graph;
 import uk.co.strangeskies.mathematics.graph.GraphListeners;
 import uk.co.strangeskies.mathematics.graph.processing.GraphProcessor;
@@ -38,29 +43,63 @@ public class ModularTreeView extends TreeView<TreeItemData<?>> {
 	 * Graph of subtype relations so we can more easily find which contributions
 	 * are the most specific.
 	 */
-	private final Graph<TreeContribution<?>, Object> contributions;
-	private List<TreeContribution<?>> orderedContributions;
+	private final Graph<Pair<TreeContribution<?>, Integer>, Object> contributions;
+	private final List<TreeContribution<?>> orderedContributions;
 
+	private Comparator<Pair<TreeContribution<?>, Integer>> precedence;
+
+	/**
+	 * Instantiate an empty tree view containing the
+	 * {@link DefaultTreeCellContribution default cell contribution}, over a cell
+	 * factory which instantiates an empty {@link TreeCellImpl}, and according to
+	 * the {@link DefaultTreeContributionPrecedence default precedence}.
+	 */
 	public ModularTreeView() {
-		contributions = Graph.build().<TreeContribution<?>> vertices().edgeFactory(Object::new).directed()
-				.addInternalListener(GraphListeners::vertexAdded, added -> {
-					for (TreeContribution<?> existingVertex : added.graph().vertices())
-						if (existingVertex != added.vertex())
+		contributions = Graph.build().<Pair<TreeContribution<?>, Integer>>vertices(emptySet()).edgeFactory(Object::new)
+				.directed().addInternalListener(GraphListeners::vertexAdded, added -> {
+					for (Pair<TreeContribution<?>, Integer> existingVertex : added.graph().vertices()) {
+						if (existingVertex != added.vertex()) {}
 
-							if (existingVertex.getDataType().isAssignableFrom(added.vertex().getDataType())) {
-								added.graph().edges().add(added.vertex(), existingVertex);
+						int precedence = getPrecedence().compare(existingVertex, added.vertex());
 
-							} else if (added.vertex().getDataType().isAssignableFrom(existingVertex.getDataType())) {
-								added.graph().edges().add(existingVertex, added.vertex());
-							}
+						if (precedence > 0) {
+							added.graph().edges().add(added.vertex(), existingVertex);
+						} else if (precedence < 0) {
+							added.graph().edges().add(existingVertex, added.vertex());
+						}
+					}
+
 				}).create();
-		orderedContributions = Collections.emptyList();
+		orderedContributions = new ArrayList<>();
+
+		setPrecedence(new DefaultTreeContributionPrecedence());
 
 		addContribution(new DefaultTreeCellContribution());
 
 		setCellFactory(v -> new TreeCellImpl());
 	}
 
+	/**
+	 * @param precedence
+	 *          the precedence by which to order tree contributions
+	 */
+	public void setPrecedence(Comparator<Pair<TreeContribution<?>, Integer>> precedence) {
+		this.precedence = precedence;
+
+		refreshContributions();
+	}
+
+	/**
+	 * @return the precedence by which tree contributions are ordered
+	 */
+	public Comparator<Pair<TreeContribution<?>, Integer>> getPrecedence() {
+		return precedence;
+	}
+
+	/**
+	 * @param root
+	 *          the root object supplemented with its exact generic type
+	 */
 	public void setRootData(TypedObject<?> root) {
 		TreeItemImpl<?> rootItem = new TreeItemImpl<>(this, root);
 		rootItem.setExpanded(true);
@@ -76,26 +115,57 @@ public class ModularTreeView extends TreeView<TreeItemData<?>> {
 		return (TreeItemImpl<?>) getRoot();
 	}
 
+	/**
+	 * As per {@link #addContribution(TreeContribution, int)} with a ranking of 0.
+	 * 
+	 * @param contribution
+	 *          the contribution to add to the view
+	 * @return true if the contribution was successfully added, false otherwise
+	 */
 	public boolean addContribution(TreeContribution<?> contribution) {
-		boolean added = contributions.vertices().add(contribution);
+		return addContribution(contribution, 0);
+	}
+
+	/**
+	 * @param contribution
+	 *          the contribution to add to the view
+	 * @param ranking
+	 *          the precedence ranking of the contribution
+	 * @return true if the contribution was successfully added, false otherwise
+	 */
+	public boolean addContribution(TreeContribution<?> contribution, int ranking) {
+		boolean added = contributions.vertices().add(new Pair<>(contribution, ranking));
 
 		if (added) {
-			orderedContributions = new GraphProcessor().begin(contributions).processEager();
+			refreshContributions();
 		}
 
 		return added;
 	}
 
+	/**
+	 * @param contribution
+	 *          the contribution to remove from the view
+	 * @return true if the contribution was successfully removed, false otherwise
+	 */
 	public boolean removeContribution(TreeContribution<?> contribution) {
 		boolean removed = contributions.vertices().remove(contribution);
 
 		if (removed) {
-			orderedContributions = new GraphProcessor().begin(contributions).processEager();
+			refreshContributions();
 		}
 
 		return removed;
 	}
 
+	private void refreshContributions() {
+		orderedContributions.clear();
+		new GraphProcessor().begin(contributions, v -> orderedContributions.add(v.getKey())).processEager();
+	}
+
+	/**
+	 * @return all contributions added to the view in order of precedence
+	 */
 	public List<TreeContribution<?>> getContributions() {
 		return Collections.unmodifiableList(orderedContributions);
 	}

@@ -29,7 +29,19 @@ package uk.co.strangeskies.fx;
  *          the type of the tree item data
  */
 public interface TreeTextContribution<T> extends TreeContribution<T> {
+	/**
+	 * @param data
+	 *          the data item we wish to retrieve the text for
+	 * @return the primary text representation for the given data item, or null if
+	 *         none is provided
+	 */
 	<U extends T> String getText(TreeItemData<U> data);
 
+	/**
+	 * @param data
+	 *          the data item we wish to retrieve the text for
+	 * @return any supplemental text information for the given data item, or null
+	 *         if none is provided
+	 */
 	<U extends T> String getSupplementalText(TreeItemData<U> data);
 }

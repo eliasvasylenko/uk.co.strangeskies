@@ -24,13 +24,24 @@ import java.io.IOException;
 import java.net.URL;
 
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.util.Pair;
 
+/**
+ * A simple utility class for simplifying FXML resource loading. Common
+ * configuration is avoided by providing behavior according to conventions.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <C>
+ *          the controller type
+ */
 public class FXMLLoadBuilder<C> {
 	private final FXMLLoader loader;
 
 	private C controller;
 	private Class<? extends C> controllerClass;
-	private Object root;
+	private Node root;
 	private URL resource;
 	private String resourceName;
 
@@ -38,34 +49,79 @@ public class FXMLLoadBuilder<C> {
 	 * @param loader
 	 *          The FXML loader to use
 	 */
-	public FXMLLoadBuilder(FXMLLoader loader) {
+	protected FXMLLoadBuilder(FXMLLoader loader) {
 		this.loader = loader;
 	}
 
+	/**
+	 * @param loader
+	 *          the {@link FXMLLoader} to back the builder
+	 * @return an {@link FXMLLoadBuilder} over the given backing loader
+	 */
 	public static FXMLLoadBuilder<Object> buildWith(FXMLLoader loader) {
 		return new FXMLLoadBuilder<>(loader);
 	}
 
+	/**
+	 * @return an {@link FXMLLoadBuilder} over the default backing loader
+	 */
 	public static FXMLLoadBuilder<Object> build() {
 		return buildWith(new FXMLLoader());
 	}
 
+	/**
+	 * Configure the builder to load directly into the given controller instance.
+	 * 
+	 * <p>
+	 * Unless an {@link #resource(URL) exact resource} is given, the resource
+	 * location will be derived according to
+	 * {@link FXUtilities#getResource(Class)}, or
+	 * {@link FXUtilities#getResource(Class, String)} if a
+	 * {@link #resource(String) resource name} is specified.
+	 * 
+	 * @param controller
+	 *          the controller object to load into
+	 * @return the receiving instance
+	 */
 	@SuppressWarnings("unchecked")
-	public <D extends C> FXMLLoadBuilder<D> controller(D controller) {
-		this.controller = controller;
+	public <D> FXMLLoadBuilder<D> controller(D controller) {
+		this.controller = (C) controller;
 		controllerClass = (Class<? extends C>) controller.getClass();
 
 		return (FXMLLoadBuilder<D>) this;
 	}
 
+	/**
+	 * Configure the builder to load into a controller of the given class via
+	 * {@link FXMLLoader#setControllerFactory(javafx.util.Callback)}.
+	 * 
+	 * <p>
+	 * Unless an {@link #resource(URL) exact resource} is given, the resource
+	 * location will be derived according to
+	 * {@link FXUtilities#getResource(Class)}, or
+	 * {@link FXUtilities#getResource(Class, String)} if a
+	 * {@link #resource(String) resource name} is specified.
+	 * 
+	 * @param controllerClass
+	 *          the controller class to load into
+	 * @return the receiving instance
+	 */
 	@SuppressWarnings("unchecked")
-	public <D extends C> FXMLLoadBuilder<D> controller(Class<D> controllerClass) {
-		this.controllerClass = controllerClass;
+	public <D> FXMLLoadBuilder<D> controller(Class<D> controllerClass) {
+		this.controllerClass = (Class<? extends C>) controllerClass;
 		controller = null;
 
 		return (FXMLLoadBuilder<D>) this;
 	}
 
+	/**
+	 * The FXML resource name, such that the resource be located according to
+	 * {@link FXUtilities#getResource(Class, String)}.
+	 * 
+	 * @param resourceName
+	 *          the name of the FXML resource
+	 * @return the receiving instance
+	 */
 	public FXMLLoadBuilder<C> resource(String resourceName) {
 		this.resourceName = resourceName;
 		resource = null;
@@ -73,6 +129,11 @@ public class FXMLLoadBuilder<C> {
 		return this;
 	}
 
+	/**
+	 * @param resource
+	 *          the exact FXML resource
+	 * @return the receiving instance
+	 */
 	public FXMLLoadBuilder<C> resource(URL resource) {
 		this.resource = resource;
 		this.resourceName = null;
@@ -80,16 +141,31 @@ public class FXMLLoadBuilder<C> {
 		return this;
 	}
 
-	public FXMLLoadBuilder<C> root(Object root) {
+	/**
+	 * @param root
+	 *          the root node to load the FXML into
+	 * @return the receiving instance
+	 */
+	public FXMLLoadBuilder<C> root(Node root) {
 		this.root = root;
 
 		return this;
 	}
 
-	public <D extends C> FXMLLoadBuilder<D> object(D object) {
+	/**
+	 * @param object
+	 *          the root node <em>and</em> the controller to load the FXML into
+	 * @return the receiving instance
+	 */
+	public <D extends Node> FXMLLoadBuilder<D> object(D object) {
 		return controller(object).root(object);
 	}
 
+	/**
+	 * {@link #load() Load} the FXML item and return the root node.
+	 * 
+	 * @return the resulting root node
+	 */
 	@SuppressWarnings("unchecked")
 	public <T> T loadRoot() {
 		load();
@@ -97,16 +173,38 @@ public class FXMLLoadBuilder<C> {
 		return (T) root;
 	}
 
+	/**
+	 * {@link #load() Load} the FXML item and return the controller.
+	 * 
+	 * @return the resulting controller
+	 */
 	public C loadController() {
 		load();
 
 		return controller;
 	}
 
-	public void load() {
+	/**
+	 * Load the TODO
+	 * 
+	 * @return a pair containing the controller object and the root node object
+	 */
+	public Pair<C, Node> load() {
 		// set controller
 		if (controller != null) {
 			loader.setController(controller);
+		} else if (controllerClass != null) {
+			loader.setControllerFactory(c -> {
+				if (!c.isAssignableFrom(controllerClass)) {
+					throw new ClassCastException();
+				} else {
+					try {
+						return controllerClass.newInstance();
+					} catch (InstantiationException | IllegalAccessException e) {
+						throw new RuntimeException(e);
+					}
+				}
+			});
 		}
 
 		// set root
@@ -136,5 +234,7 @@ public class FXMLLoadBuilder<C> {
 			loader.setController(null);
 			loader.setLocation(null);
 		}
+
+		return new Pair<>(controller, root);
 	}
 }

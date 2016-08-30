@@ -103,7 +103,7 @@ public abstract class ModularTreeController {
 	 * Refresh the tree view.
 	 */
 	public void refresh() {
-		((TreeItemImpl<?>) treeView.getRoot()).rebuildChildren();
+		treeView.refresh();
 	}
 
 	/**
