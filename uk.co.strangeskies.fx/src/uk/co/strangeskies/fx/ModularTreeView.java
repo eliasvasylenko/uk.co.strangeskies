@@ -18,8 +18,8 @@
  */
 package uk.co.strangeskies.fx;
 
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import javafx.scene.control.TreeView;
 import uk.co.strangeskies.mathematics.graph.Graph;
@@ -33,12 +33,13 @@ import uk.co.strangeskies.reflection.TypedObject;
  * 
  * @author Elias N Vasylenko
  */
-public class ModularTreeView extends TreeView<TypedObject<?>> {
+public class ModularTreeView extends TreeView<TreeItemData<?>> {
 	/*
 	 * Graph of subtype relations so we can more easily find which contributions
 	 * are the most specific.
 	 */
 	private final Graph<TreeContribution<?>, Object> contributions;
+	private List<TreeContribution<?>> orderedContributions;
 
 	public ModularTreeView() {
 		contributions = Graph.build().<TreeContribution<?>> vertices().edgeFactory(Object::new).directed()
@@ -53,8 +54,11 @@ public class ModularTreeView extends TreeView<TypedObject<?>> {
 								added.graph().edges().add(existingVertex, added.vertex());
 							}
 				}).create();
+		orderedContributions = Collections.emptyList();
 
-		setCellFactory(v -> new TreeCellImpl(this));
+		addContribution(new DefaultTreeCellContribution());
+
+		setCellFactory(v -> new TreeCellImpl());
 	}
 
 	public void setRootData(TypedObject<?> root) {
@@ -73,30 +77,27 @@ public class ModularTreeView extends TreeView<TypedObject<?>> {
 	}
 
 	public boolean addContribution(TreeContribution<?> contribution) {
-		return contributions.vertices().add(contribution);
+		boolean added = contributions.vertices().add(contribution);
+
+		if (added) {
+			orderedContributions = new GraphProcessor().begin(contributions).processEager();
+		}
+
+		return added;
 	}
 
 	public boolean removeContribution(TreeContribution<?> contribution) {
-		return contributions.vertices().remove(contribution);
+		boolean removed = contributions.vertices().remove(contribution);
+
+		if (removed) {
+			orderedContributions = new GraphProcessor().begin(contributions).processEager();
+		}
+
+		return removed;
 	}
 
-	/**
-	 * Get all the contributions which should be applied to a tree item, in order
-	 * from most to least specific.
-	 * 
-	 * @param <T>
-	 *          the type of the tree item
-	 * @param object
-	 *          a tree item for which to find contributions
-	 * @return the contributions which apply to the given tree item
-	 */
-	@SuppressWarnings("unchecked")
-	public <T> List<TreeContribution<? super T>> getContributions(TypedObject<T> object) {
-		List<TreeContribution<?>> orderedContributions = new GraphProcessor().begin(contributions).processEagerParallel();
-
-		return orderedContributions.stream().filter(c -> c.getDataType().isAssignableFrom(object.getType()))
-				.map(c -> (TreeContribution<? super T>) c).filter(c -> c.appliesTo(object.getObject()))
-				.collect(Collectors.toList());
+	public List<TreeContribution<?>> getContributions() {
+		return Collections.unmodifiableList(orderedContributions);
 	}
 
 	@Override

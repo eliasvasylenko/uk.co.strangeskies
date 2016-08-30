@@ -35,21 +35,25 @@ public interface TreeChildContribution<T> extends TreeContribution<T> {
 	/**
 	 * Determine whether children should be contributed to the given data item.
 	 * This should given the same result as {@link Collection#isEmpty()} invoked
-	 * on the result of {@link #getChildren(Object)}, but may be more efficient to
-	 * implement.
+	 * on the result of {@link #getChildren(TreeItemData)}, but may be more
+	 * efficient to implement.
 	 * 
+	 * @param <U>
+	 *          the specific type of the tree item
 	 * @param data
 	 *          a data item in the tree
 	 * @return true if children should be contributed, false otherwise
 	 */
-	boolean hasChildren(T data);
+	<U extends T> boolean hasChildren(TreeItemData<U> data);
 
 	/**
 	 * Determine which children should be contributed to the given data item.
 	 * 
+	 * @param <U>
+	 *          the specific type of the tree item
 	 * @param data
 	 *          a data item in the tree
 	 * @return a list of children to be contributed
 	 */
-	List<TypedObject<?>> getChildren(T data);
+	<U extends T> List<TypedObject<?>> getChildren(TreeItemData<U> data);
 }

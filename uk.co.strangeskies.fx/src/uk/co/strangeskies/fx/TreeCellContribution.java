@@ -18,6 +18,8 @@
  */
 package uk.co.strangeskies.fx;
 
+import javafx.scene.Node;
+
 /**
  * A type of contribution for items in a {@link ModularTreeView}.
  * 
@@ -35,24 +37,17 @@ public interface TreeCellContribution<T> extends TreeContribution<T> {
 	 * Here is also a good place to mark a cell with a pseudo-class to flag for
 	 * custom css styling.
 	 * 
+	 * @param <U>
+	 *          the specific type of the tree item
 	 * @param data
-	 *          the data contents of the cell
+	 *          the data contents of the tree item
 	 * @param text
-	 *          the main text representation of the tree item
+	 *          the main text for the tree item
 	 * @param supplementalText
-	 *          supplemental text information for the tree item
-	 * @param cell
-	 *          the cell object this item contribution is being applied to
+	 *          the supplemental text for the tree item
+	 * @param content
+	 *          the current cell contents for the tree item
+	 * @return the new cell contents for the tree item
 	 */
-	void configureCell(T data, String text, String supplementalText, TreeCellImpl cell);
-
-	/**
-	 * Remove any configuration applied by
-	 * {@link #configureCell(Object, String, String, TreeCellImpl)}, such as
-	 * application of pseudo-classes and registration of context menus.
-	 * 
-	 * @param cell
-	 *          the cell object this item contribution is being applied to
-	 */
-	default void deconfigureCell(TreeCellImpl cell) {}
+	<U extends T> Node configureCell(TreeItemData<U> data, Node content);
 }

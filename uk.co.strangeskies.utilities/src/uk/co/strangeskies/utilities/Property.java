@@ -18,6 +18,11 @@
  */
 package uk.co.strangeskies.utilities;
 
+import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 /**
  * This interface represents a gettable and settable property of a given type.
  * 
@@ -38,12 +43,39 @@ public interface Property<T extends R, R> {
 	 *          The new value to set for this property.
 	 * @return The previous value of this property.
 	 */
-	public T set(/* @Mutable Property<T, R> this, */R to);
+	T set(/* @Mutable Property<T, R> this, */R to);
 
 	/**
 	 * Get the current value of the property.
 	 * 
 	 * @return The current value.
 	 */
-	public/* @I */T get();
+	/* @I */T get();
+
+	static <T extends R, R> Property<T, R> over(Supplier<T> get, Consumer<R> set) {
+		return over(get, r -> {
+			T previous = get.get();
+			set.accept(r);
+			return previous;
+		});
+	}
+
+	static <T extends R, R> Property<T, R> over(Supplier<T> get, Function<R, T> set) {
+		return new Property<T, R>() {
+			@Override
+			public T set(R to) {
+				return set.apply(to);
+			}
+
+			@Override
+			public T get() {
+				return get.get();
+			}
+
+			@Override
+			public String toString() {
+				return Objects.toString(get());
+			}
+		};
+	}
 }

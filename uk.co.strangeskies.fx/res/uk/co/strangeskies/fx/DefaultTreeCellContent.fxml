@@ -3,13 +3,16 @@
 <?import javafx.scene.control.*?>
 <?import java.lang.*?>
 <?import javafx.scene.layout.*?>
+<?import uk.co.strangeskies.fx.DefaultTreeCellContent?>
 
 <fx:root
-	type="TreeCell"
+	type="DefaultTreeCellContent"
 	xmlns="http://javafx.com/javafx/8"
 	xmlns:fx="http://javafx.com/fxml">
 
-	<styleClass>
-		<String fx:value="ModularTreeCell" />
-	</styleClass>
+	<children>
+		<Label fx:id="text" />
+
+		<Label fx:id="supplementalText" />
+	</children>
 </fx:root>

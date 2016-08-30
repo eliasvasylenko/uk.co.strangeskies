@@ -23,15 +23,12 @@ import static uk.co.strangeskies.fx.FXUtilities.getResource;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
-import javafx.css.PseudoClass;
-import javafx.fxml.FXML;
 import javafx.scene.Node;
-import javafx.scene.control.Label;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
-import uk.co.strangeskies.reflection.TypedObject;
+import javafx.scene.layout.HBox;
+import uk.co.strangeskies.reflection.TypeToken;
 
 /**
  * A basic tree cell implementation for {@link TreeItem}. This class may be
@@ -39,26 +36,13 @@ import uk.co.strangeskies.reflection.TypedObject;
  * 
  * @author Elias N Vasylenko
  */
-public class TreeCellImpl extends TreeCell<TypedObject<?>> {
-	private final ModularTreeView view;
-
-	private List<? extends TreeContribution<?>> contributions;
-
-	@FXML
-	private Node graphic;
-	@FXML
-	private Label name;
-	@FXML
-	private Label supplemental;
-
-	public TreeCellImpl(ModularTreeView view) {
-		this.view = view;
-
+public class TreeCellImpl extends TreeCell<TreeItemData<?>> {
+	public TreeCellImpl() {
 		build().object(this).resource(getResource(TreeCellImpl.class)).load();
 	}
 
 	@Override
-	protected void updateItem(TypedObject<?> item, boolean empty) {
+	protected void updateItem(TreeItemData<?> item, boolean empty) {
 		super.updateItem(item, empty);
 
 		if (empty || item == null) {
@@ -69,62 +53,21 @@ public class TreeCellImpl extends TreeCell<TypedObject<?>> {
 	}
 
 	protected void clearItem() {
-		deconfigure();
-
 		setGraphic(null);
-		name.setText(null);
-		supplemental.setText(null);
 	}
 
-	private void deconfigure() {
-		if (contributions != null) {
-			for (TreeContribution<?> contribution : this.contributions) {
-				if (contribution instanceof TreeCellContribution<?>) {
-					pseudoClassStateChanged(PseudoClass.getPseudoClass(contribution.getClass().getSimpleName()), false);
+	protected <T> void updateItem(TreeItemData<T> item) {
+		ArrayList<TreeCellContribution<? super T>> contributions = new ArrayList<>(
+				item.contributions(new TypeToken<TreeCellContribution<? super T>>() {}));
 
-					((TreeCellContribution<?>) contribution).deconfigureCell(this);
-				}
-			}
-			contributions = null;
-		}
-	}
-
-	public Node defaultGraphic() {
-		return graphic;
-	}
-
-	public Label text() {
-		return name;
-	}
-
-	public Label supplemental() {
-		return supplemental;
-	}
-
-	@SuppressWarnings("unchecked")
-	protected <T> void updateItem(TypedObject<T> item) {
-		deconfigure();
-
-		ArrayList<TreeContribution<? super T>> contributions = new ArrayList<>(view.getContributions(item));
-		contributions.add(new DefaultTreeCellTextContribution());
 		Collections.reverse(contributions);
 
-		this.contributions = contributions;
+		Node content = new HBox();
 
-		String text = null;
-		String supplemental = null;
-
-		for (TreeContribution<?> contribution : contributions) {
-			if (contribution instanceof TreeTextContribution<?>) {
-				text = ((TreeTextContribution<? super T>) contribution).getText(item.getObject());
-				supplemental = ((TreeTextContribution<? super T>) contribution).getSupplementalText(item.getObject());
-			}
-
-			if (contribution instanceof TreeCellContribution<?>) {
-				pseudoClassStateChanged(PseudoClass.getPseudoClass(contribution.getClass().getSimpleName()), true);
-
-				((TreeCellContribution<? super T>) contribution).configureCell(item.getObject(), text, supplemental, this);
-			}
+		for (TreeCellContribution<? super T> contribution : contributions) {
+			content = contribution.configureCell(item, content);
 		}
+
+		setGraphic(content);
 	}
 }

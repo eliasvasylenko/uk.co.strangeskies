@@ -28,14 +28,8 @@ package uk.co.strangeskies.fx;
  * @param <T>
  *          the type of the tree item data
  */
-public interface TreeTextContribution<T> extends TreeContribution<T>, TreeCellContribution<T> {
-	String getText(T data);
+public interface TreeTextContribution<T> extends TreeContribution<T> {
+	<U extends T> String getText(TreeItemData<U> data);
 
-	String getSupplementalText(T data);
-
-	@Override
-	default void configureCell(T data, String text, String supplementalText, TreeCellImpl cell) {
-		cell.text().setText(text);
-		cell.supplemental().setText(supplementalText);
-	}
+	<U extends T> String getSupplementalText(TreeItemData<U> data);
 }

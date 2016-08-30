@@ -187,11 +187,11 @@ public class TypedObject<T> implements ReifiedSelf<TypedObject<T>> {
 
 		TypedObject<?> that = (TypedObject<?>) obj;
 
-		return Objects.equals(object, that.object);
+		return Objects.equals(this.object, that.object) && Objects.equals(this.type, that.type);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(object);
+		return Objects.hash(object, type);
 	}
 }

@@ -22,11 +22,29 @@ import uk.co.strangeskies.reflection.TypeParameter;
 import uk.co.strangeskies.reflection.TypeToken;
 
 /**
- * A type of contribution for root items in a {@link ModularTreeView}.
+ * A type of contribution for items in a {@link ModularTreeView}. Tree
+ * contributions may optionally extend interfaces such as
+ * {@link TreeTextContribution}, {@link TreeCellContribution}, and
+ * {@link TreeChildContribution} to provide behavior and information for the
+ * tree items which the contribution applies to.
+ * 
+ * <p>
+ * Tree items may apply to all items in a tree of the appropriate
+ * {@link #getDataType() type}, and which also satisfy any condition specified
+ * via implementation of {@link #appliesTo(TreeItemData)}.
  * 
  * @author Elias N Vasylenko
+ * @param <T>
+ *          the type of data item to apply to
  */
 public interface TreeContribution<T> {
+	/**
+	 * Get the type of item which the contribution applies to. It is possible to
+	 * include wildcards in the type, and any tree item whose type is assignable
+	 * to this type are suitable for application of this contribution.
+	 * 
+	 * @return the type of data item to apply to
+	 */
 	default TypeToken<T> getDataType() {
 		return TypeToken.over(getClass()).resolveSupertypeParameters(TreeContribution.class)
 				.resolveTypeArgument(new TypeParameter<T>() {}).infer();
@@ -37,11 +55,13 @@ public interface TreeContribution<T> {
 	 * item. This method will only be invoked <em>after</em>
 	 * {@link #getDataType()} has checked against the exact item type.
 	 * 
+	 * @param <U>
+	 *          the specific type of the tree item
 	 * @param data
 	 *          a data item in the tree
 	 * @return true if the contribution is applicable, false otherwise
 	 */
-	default boolean appliesTo(T data) {
+	default <U extends T> boolean appliesTo(TreeItemData<U> data) {
 		return true;
 	}
 }
