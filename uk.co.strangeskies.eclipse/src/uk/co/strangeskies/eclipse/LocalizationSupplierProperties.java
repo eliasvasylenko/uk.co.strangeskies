@@ -26,12 +26,12 @@ import uk.co.strangeskies.text.properties.Properties;
  * 
  * @author Elias N Vasylenko
  */
-public interface LocalizationSupplierText extends Properties<LocalizationSupplierText> {
+public interface LocalizationSupplierProperties extends Properties<LocalizationSupplierProperties> {
 	/**
-	 * @return invalid type was annotated with {@link Localize} for localisation
+	 * @return invalid type was annotated with {@link Localize} for localization
 	 *         supplier
 	 */
-	default Localized illegalInjectionTarget() {
+	default Localized<String> illegalInjectionTarget() {
 		return illegalInjectionTarget(Localize.class, Properties.class);
 	}
 
@@ -40,14 +40,14 @@ public interface LocalizationSupplierText extends Properties<LocalizationSupplie
 	 *          the {@link Localize} class for formatting
 	 * @param localizedTextClass
 	 *          the {@link Properties} class for formatting
-	 * @return invalid type was annotated with {@link Localize} for localisation
+	 * @return invalid type was annotated with {@link Localize} for localization
 	 *         supplier
 	 */
-	Localized illegalInjectionTarget(Class<Localize> localizeClass,
+	Localized<String> illegalInjectionTarget(Class<Localize> localizeClass,
 			@SuppressWarnings("rawtypes") Class<Properties> localizedTextClass);
 
 	/**
 	 * @return an unexpected error occurred
 	 */
-	Localized unexpectedError();
+	Localized<String> unexpectedError();
 }

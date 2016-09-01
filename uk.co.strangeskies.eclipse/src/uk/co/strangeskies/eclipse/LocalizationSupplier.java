@@ -40,7 +40,7 @@ import uk.co.strangeskies.text.properties.PropertyLoader;
 import uk.co.strangeskies.text.properties.PropertyLoaderException;
 
 /**
- * Supplier for Eclipse DI contexts, to provide localisation implementations of
+ * Supplier for Eclipse DI contexts, to provide localization implementations of
  * a requested type via a {@link PropertyLoader}.
  *
  * @since 1.2
@@ -49,11 +49,11 @@ import uk.co.strangeskies.text.properties.PropertyLoaderException;
 public class LocalizationSupplier extends ExtendedObjectSupplier {
 	@Reference
 	PropertyLoader generalLocalizer;
-	private LocalizationSupplierText text;
+	private LocalizationSupplierProperties text;
 
 	@Activate
 	void activate() {
-		text = generalLocalizer.getProperties(LocalizationSupplierText.class);
+		text = generalLocalizer.getProperties(LocalizationSupplierProperties.class);
 	}
 
 	@Override

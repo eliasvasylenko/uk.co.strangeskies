@@ -29,12 +29,12 @@ import uk.co.strangeskies.text.properties.Properties;
  * 
  * @author Elias N Vasylenko
  */
-public interface ObservableServiceSupplierText extends Properties<ObservableServiceSupplierText> {
+public interface ObservableServiceSupplierProperties extends Properties<ObservableServiceSupplierProperties> {
 	/**
 	 * @return invalid type was annotated with {@link ObservableService} for
 	 *         service collection injection
 	 */
-	default Localized illegalInjectionTarget() {
+	default Localized<String> illegalInjectionTarget() {
 		return illegalInjectionTarget(ObservableService.class, ObservableList.class, ObservableSet.class,
 				ObservableValue.class);
 	}
@@ -53,11 +53,11 @@ public interface ObservableServiceSupplierText extends Properties<ObservableServ
 	 *         service collection injection
 	 */
 	@SuppressWarnings("rawtypes")
-	Localized illegalInjectionTarget(Class<ObservableService> observableService, Class<ObservableList> list,
+	Localized<String> illegalInjectionTarget(Class<ObservableService> observableService, Class<ObservableList> list,
 			Class<ObservableSet> set, Class<ObservableValue> value);
 
 	/**
 	 * @return an unexpected error occurred
 	 */
-	Localized unexpectedError();
+	Localized<String> unexpectedError();
 }

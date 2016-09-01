@@ -121,11 +121,11 @@ public class ObservableServiceSupplier extends ExtendedObjectSupplier {
 
 	@Reference
 	PropertyLoader generalLocalizer;
-	private ObservableServiceSupplierText text;
+	private ObservableServiceSupplierProperties text;
 
 	@Activate
 	void activate() {
-		text = generalLocalizer.getProperties(ObservableServiceSupplierText.class);
+		text = generalLocalizer.getProperties(ObservableServiceSupplierProperties.class);
 	}
 
 	@Override
