@@ -141,7 +141,7 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	/**
 	 * This method sets a comparator to determine the direction of an edge between
 	 * two vertices. Vertices are passed to the comparator in the order they were
-	 * given when defining the edge. The default behaviour, if no comparator is
+	 * given when defining the edge. The default behavior, if no comparator is
 	 * specified is as if a comparator has been specified which always returns 1.
 	 *
 	 * @param lowToHigh

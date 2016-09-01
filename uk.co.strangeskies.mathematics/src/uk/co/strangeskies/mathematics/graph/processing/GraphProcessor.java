@@ -19,6 +19,7 @@
 package uk.co.strangeskies.mathematics.graph.processing;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -27,26 +28,30 @@ import java.util.stream.Collectors;
 
 import uk.co.strangeskies.mathematics.graph.Graph;
 
-public class GraphProcessor {
-	public class Process<V> implements Iterable<V> {
-		private final Graph<V, ?> graph;
-		private final Consumer<V> process;
+public class GraphProcessor<V, E> implements Iterable<V> {
+	private final Graph<V, E> graph;
+	private Consumer<? super V> process;
 
+	private Collection<? extends V> initial;
+	private boolean parallel;
+
+	public class Process {
 		private final Set<V> processed;
 		private final Set<V> ready;
 
-		public Process(Graph<V, ?> graph, Consumer<V> process) {
-			this.graph = graph;
-			this.process = process;
+		public Process() {
+			processed = graph.vertices().createSet();
 
-			processed = graph.createVertexSet();
-
-			ready = graph.vertices().stream().filter(v -> graph.vertices().predecessorsOf(v).isEmpty())
-					.collect(Collectors.toCollection(graph::createVertexSet));
+			if (initial == null) {
+				ready = graph.vertices().stream().filter(v -> graph.vertices().predecessorsOf(v).isEmpty())
+						.collect(Collectors.toCollection(graph.vertices()::createSet));
+			} else {
+				ready = graph.vertices().createSet(initial);
+			}
 		}
 
 		public Set<V> processedVertices() {
-			Set<V> processedCopy = graph.createVertexSet();
+			Set<V> processedCopy = graph.vertices().createSet();
 
 			synchronized (processed) {
 				processedCopy.addAll(processed);
@@ -56,7 +61,7 @@ public class GraphProcessor {
 		}
 
 		public Set<V> preparedVertices() {
-			Set<V> readyCopy = graph.createVertexSet();
+			Set<V> readyCopy = graph.vertices().createSet();
 
 			synchronized (processed) {
 				readyCopy.addAll(ready);
@@ -73,7 +78,7 @@ public class GraphProcessor {
 
 			process.accept(nextVertex);
 
-			Set<V> readied = graph.createVertexSet();
+			Set<V> readied = graph.vertices().createSet();
 
 			synchronized (processed) {
 				processed.add(nextVertex);
@@ -88,8 +93,7 @@ public class GraphProcessor {
 			return readied;
 		}
 
-		@Override
-		public Iterator<V> iterator() {
+		protected Iterator<V> iterator() {
 			return new Iterator<V>() {
 				@Override
 				public boolean hasNext() {
@@ -109,27 +113,50 @@ public class GraphProcessor {
 				}
 			};
 		}
-
-		public List<V> processEager() {
-			List<V> processedList = new ArrayList<>();
-
-			for (V processed : this)
-				processedList.add(processed);
-
-			return processedList;
-		}
-
-		public List<V> processEagerParallel() {
-			// TODO actually parallelize this...
-			return processEager();
-		}
 	}
 
-	public <V, E> Process<V> begin(Graph<V, E> graph) {
-		return begin(graph, c -> {});
+	protected GraphProcessor(Graph<V, E> graph) {
+		this.graph = graph;
+		process = v -> {};
+		initial = null;
+		parallel = false;
 	}
 
-	public <V, E> Process<V> begin(Graph<V, E> graph, Consumer<V> process) {
-		return new Process<>(graph, process);
+	public static <V, E> GraphProcessor<V, E> over(Graph<V, E> graph) {
+		return new GraphProcessor<>(graph);
+	}
+
+	public GraphProcessor<V, E> from(Collection<? extends V> initial) {
+		this.initial = initial;
+		return this;
+	}
+
+	public GraphProcessor<V, E> process(Consumer<? super V> process) {
+		this.process = process;
+		return this;
+	}
+
+	public GraphProcessor<V, E> parallel() {
+		this.parallel = true;
+		return this;
+	}
+
+	public List<V> processEager() {
+		List<V> processedList = new ArrayList<>();
+
+		for (V processed : this)
+			processedList.add(processed);
+
+		return processedList;
+	}
+
+	public List<V> processEagerParallel() {
+		// TODO actually parallelize this...
+		return processEager();
+	}
+
+	@Override
+	public Iterator<V> iterator() {
+		return new Process().iterator();
 	}
 }

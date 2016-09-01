@@ -172,7 +172,7 @@ public class GraphBuilderTest {
 	public void buildInsertionDirectedTest() {
 		Set<String> vertices = set("one", "two", "three");
 
-		Graph<String, Object> graph = graph().<String>vertices().internalListeners(l -> l.vertexAdded().addObserver(e -> {
+		Graph<String, Object> graph = graph().<String> vertices().internalListeners(l -> l.vertexAdded().addObserver(e -> {
 			for (String vertex : e.graph().vertices())
 				if (vertex != e.vertex())
 					e.graph().edges().add(vertex, e.vertex());
@@ -220,22 +220,21 @@ public class GraphBuilderTest {
 	public void buildWithEdgeFactoryTest() {
 		Set<String> vertices = set("one", "two", "three");
 
-		Graph<String, String> graph = graph().vertices(vertices).vertexEquality((a, b) -> a == b)
-				.addInternalListener(GraphListeners::vertexAdded, e -> {
-					for (String vertex : e.graph().vertices())
-						if (e.vertex() != vertex)
-							e.graph().edges().add(e.vertex(), vertex);
-				}).direction(String::compareTo).edgeFactory(v -> v.getFrom() + " -> " + v.getTo()).create();
+		Graph<String, String> graph = graph().vertices(vertices).addInternalListener(GraphListeners::vertexAdded, e -> {
+			for (String vertex : e.graph().vertices())
+				if (e.vertex() != vertex)
+					e.graph().edges().add(e.vertex(), vertex);
+		}).direction(String::compareTo).edgeFactory(v -> v.getFrom() + " ->> " + v.getTo()).create();
 
-		Assert.assertEquals(set("one -> two", "three -> two", "one -> three"), graph.edges());
+		Assert.assertEquals(set("one ->> two", "three ->> two", "one ->> three"), graph.edges());
 
 	}
 
 	// TODO edge vertices from edge object
 	// TODO arbitrary edge object and edge vertices combinations
 	// TODO simple graph fail with multiple edges between same point
-	// TODO generate neighbours test
+	// TODO generate neighbors test
 	// TODO incoming/outgoing generation
-	// TODO incoming/outgoing generation with neighbour generation
+	// TODO incoming/outgoing generation with neighbor generation
 	// TODO multigraph variants where appropriate
 }

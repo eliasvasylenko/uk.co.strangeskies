@@ -22,24 +22,28 @@ import java.util.Set;
 
 import uk.co.strangeskies.mathematics.graph.Graph;
 
-public interface GraphWalker {
-	public interface Marker<V, E> {
-		V currentLocation();
+public interface GraphWalker<V, E> {
+	Graph<V, E> graph();
 
-		default boolean isTerminated() {
-			return availableVertices().isEmpty();
-		}
+	V currentLocation();
 
-		Set<V> availableVertices();
-
-		Set<E> availableEdges();
-
-		E moveTo(V nextVertex);
-
-		V moveThrough(E nextEdge);
+	default boolean isTerminated() {
+		return availableVertices().isEmpty();
 	}
 
-	<V, E> Marker<V, E> atEntryPoint(Graph<V, E> graph, V entryPoint);
+	Set<V> availableVertices();
 
-	<V, E> Marker<V, E> atRoot(Graph<V, E> graph);
+	Set<E> availableEdges();
+
+	GraphStep<V, E> stepTo(V nextVertex);
+
+	GraphStep<V, E> stepThrough(E nextEdge);
+
+	GraphStep<V, E> steppedTo(V nextVertex);
+
+	GraphStep<V, E> steppedThrough(E nextEdge);
+
+	void setLocation(V location);
+
+	GraphWalker<V, E> withLocation(V location);
 }

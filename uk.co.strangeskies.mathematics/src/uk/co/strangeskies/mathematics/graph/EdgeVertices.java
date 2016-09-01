@@ -50,8 +50,7 @@ public interface EdgeVertices<V> {
 				if (!(object instanceof EdgeVertices))
 					return false;
 				EdgeVertices<?> edge = (EdgeVertices<?>) object;
-				return (from == edge.getFrom() && to == edge.getTo())
-						|| (from == edge.getTo() && to == edge.getFrom());
+				return (from == edge.getFrom() && to == edge.getTo()) || (from == edge.getTo() && to == edge.getFrom());
 			}
 
 			@Override
@@ -69,7 +68,7 @@ public interface EdgeVertices<V> {
 			from = to;
 			to = temp;
 		} else if (edgeDirection == 0) {
-			return between(from, to);
+			return null;
 		}
 
 		V fromFinal = from;

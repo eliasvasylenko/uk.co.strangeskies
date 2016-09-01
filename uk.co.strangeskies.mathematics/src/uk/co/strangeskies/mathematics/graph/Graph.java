@@ -58,6 +58,14 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 		Set<V> successorsOf(V vertex);
 
 		Set<V> predecessorsOf(V vertex);
+
+		Set<V> createSet();
+
+		Set<V> createSet(Collection<? extends V> vertices);
+
+		<T> Map<V, T> createMap();
+
+		<T> Map<V, T> createMap(Map<? extends V, ? extends T> edges);
 	}
 
 	@ProviderType
@@ -115,6 +123,14 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 		}
 
 		Set<EdgeVertices<V>> edgeVertices();
+
+		Set<E> createSet();
+
+		Set<E> createSet(Collection<? extends E> edges);
+
+		<T> Map<E, T> createMap();
+
+		<T> Map<E, T> createMap(Map<? extends E, ? extends T> edges);
 	}
 
 	/**
@@ -144,20 +160,4 @@ public interface Graph<V, E> extends Copyable<Graph<V, E>> {
 	 *          The action to perform
 	 */
 	void atomic(Consumer<? super Graph<V, E>> action);
-
-	Set<V> createVertexSet();
-
-	Set<V> createVertexSet(Collection<? extends V> vertices);
-
-	Set<E> createEdgeSet();
-
-	Set<E> createEdgeSet(Collection<? extends E> edges);
-
-	<T> Map<V, T> createVertexMap();
-
-	<T> Map<V, T> createVertexMap(Map<? extends V, ? extends T> edges);
-
-	<T> Map<E, T> createEdgeMap();
-
-	<T> Map<E, T> createEdgeMap(Map<? extends E, ? extends T> edges);
 }

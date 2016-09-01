@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.function.BiFunction;
 
 import uk.co.strangeskies.mathematics.graph.Graph;
-import uk.co.strangeskies.mathematics.graph.processing.GraphWalker.Marker;
 
 public interface Pathfinder {
 	public interface Solver<V, E> {
@@ -33,6 +32,5 @@ public interface Pathfinder {
 
 	<V, E> Solver<V, E> over(Graph<V, E> graph);
 
-	<V, E> Marker<V, E> over(Graph<V, E> graph,
-			BiFunction<? super V, ? super V, ? extends Double> heuristic);
+	<V, E> Solver<V, E> over(Graph<V, E> graph, BiFunction<? super V, ? super V, ? extends Double> heuristic);
 }
