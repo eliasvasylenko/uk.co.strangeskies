@@ -21,7 +21,6 @@ package uk.co.strangeskies.eclipse;
 import static java.util.Collections.unmodifiableList;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -88,12 +87,26 @@ public abstract class EclipseTreeContributionImpl implements EclipseTreeContribu
 	}
 
 	/**
+	 * @param contribution
+	 *          the first class to contribute to the tree (to force an invocation
+	 *          with at least one)
 	 * @param contributions
 	 *          the classes of contributions to the tree
 	 */
 	@SafeVarargs
-	public EclipseTreeContributionImpl(Class<? extends TreeContribution<?>>... contributions) {
-		this(Arrays.asList(contributions));
+	public EclipseTreeContributionImpl(Class<? extends TreeContribution<?>> contribution,
+			Class<? extends TreeContribution<?>>... contributions) {
+		this(concatenate(contribution, contributions));
+	}
+
+	private static List<Class<? extends TreeContribution<?>>> concatenate(
+			Class<? extends TreeContribution<?>> contribution, Class<? extends TreeContribution<?>>... contributions) {
+		List<Class<? extends TreeContribution<?>>> concatenated = new ArrayList<>(contributions.length + 1);
+		concatenated.add(contribution);
+		for (Class<? extends TreeContribution<?>> arrayContribution : contributions)
+			concatenated.add(arrayContribution);
+
+		return concatenated;
 	}
 
 	@Override

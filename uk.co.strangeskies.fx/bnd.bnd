@@ -1,5 +1,5 @@
-Export-Package: \
-	uk.co.strangeskies.fx
+Export-Package: uk.co.strangeskies.fx
+
 Bundle-Name: Strange Skies :: FX
 
 -runee: JavaSE-1.8

@@ -39,12 +39,12 @@ import uk.co.strangeskies.fx.TreeItemImpl;
  * 
  * @author Elias N Vasylenko
  */
-public abstract class ModularTreeController {
+public class ModularTreeController {
 	private final String id;
 	private final Predicate<String> filter;
 
 	@FXML
-	private ModularTreeView treeView;
+	private ModularTreeView modularTree;
 
 	@Inject
 	IEclipseContext context;
@@ -53,12 +53,18 @@ public abstract class ModularTreeController {
 	@ObservableService
 	ObservableList<EclipseTreeContribution> contributions;
 
+	public ModularTreeController() {
+		this.id = getClass().getSimpleName();
+		filter = null;
+	}
+
 	/**
 	 * @param id
 	 *          the {@link #getId() ID} of the controller to create
 	 */
 	public ModularTreeController(String id) {
-		this(id, c -> true);
+		this.id = id;
+		this.filter = null;
 	}
 
 	/**
@@ -94,23 +100,23 @@ public abstract class ModularTreeController {
 	}
 
 	protected void contribute(EclipseTreeContribution contributor) {
-		if (filter.test(contributor.getContributionId()))
+		if (filter == null || filter.test(contributor.getContributionId()))
 			for (Class<? extends TreeContribution<?>> contribution : contributor.getContributions(getId()))
-				treeView.addContribution(ContextInjectionFactory.make(contribution, context));
+				modularTree.addContribution(ContextInjectionFactory.make(contribution, context));
 	}
 
 	/**
 	 * @return the modular tree view instance
 	 */
 	public ModularTreeView getTreeView() {
-		return treeView;
+		return modularTree;
 	}
 
 	/**
 	 * @return the currently selected tree item
 	 */
 	public TreeItemImpl<?> getSelection() {
-		return (TreeItemImpl<?>) treeView.getSelectionModel().getSelectedItem();
+		return (TreeItemImpl<?>) modularTree.getSelectionModel().getSelectedItem();
 	}
 
 	/**

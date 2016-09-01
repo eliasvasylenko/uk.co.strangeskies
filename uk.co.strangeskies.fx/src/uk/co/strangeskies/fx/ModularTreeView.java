@@ -19,6 +19,7 @@
 package uk.co.strangeskies.fx;
 
 import static java.util.Collections.emptySet;
+import static uk.co.strangeskies.fx.FXMLLoadBuilder.build;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -57,10 +58,13 @@ public class ModularTreeView extends TreeView<TreeItemData<?>> {
 	 * the {@link DefaultTreeContributionPrecedence default precedence}.
 	 */
 	public ModularTreeView() {
+		build().object(this).load();
+		setCellFactory(v -> new TreeCellImpl());
+
 		contributionRankings = new HashMap<>();
 
 		contributions = Graph.build().<TreeContribution<?>> vertices(emptySet()).edgeFactory(Object::new)
-				.direction(this::compareReverse)
+				.direction(this::compareDescending)
 
 				.addInternalListener(GraphListeners::vertexAdded, added -> {
 
@@ -73,11 +77,9 @@ public class ModularTreeView extends TreeView<TreeItemData<?>> {
 		setPrecedence(new DefaultTreeContributionPrecedence());
 
 		addContribution(new DefaultTreeCellContribution());
-
-		setCellFactory(v -> new TreeCellImpl());
 	}
 
-	private int compareReverse(TreeContribution<?> first, TreeContribution<?> second) {
+	private int compareDescending(TreeContribution<?> first, TreeContribution<?> second) {
 		return -getPrecedence().compare(rankedPair(first), rankedPair(second));
 	}
 

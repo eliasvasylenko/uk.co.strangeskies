@@ -34,4 +34,8 @@ Private-Package: \
 	org.eclipse.osgi.internal.util
 
 -includeresource: \
-	OSGI-INF/l10n=l10n
+	OSGI-INF/l10n=l10n,\
+	res
+
+Import-Package: \
+	*
