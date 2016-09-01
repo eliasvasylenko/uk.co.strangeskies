@@ -79,6 +79,8 @@ public class FXMLLoadBuilder<C> {
 	 * {@link FXUtilities#getResource(Class, String)} if a
 	 * {@link #resource(String) resource name} is specified.
 	 * 
+	 * @param <D>
+	 *          the type of the controller object
 	 * @param controller
 	 *          the controller object to load into
 	 * @return the receiving instance
@@ -102,6 +104,8 @@ public class FXMLLoadBuilder<C> {
 	 * {@link FXUtilities#getResource(Class, String)} if a
 	 * {@link #resource(String) resource name} is specified.
 	 * 
+	 * @param <D>
+	 *          the type of the controller class
 	 * @param controllerClass
 	 *          the controller class to load into
 	 * @return the receiving instance
@@ -153,6 +157,8 @@ public class FXMLLoadBuilder<C> {
 	}
 
 	/**
+	 * @param <D>
+	 *          the type of the controller/root object
 	 * @param object
 	 *          the root node <em>and</em> the controller to load the FXML into
 	 * @return the receiving instance
@@ -163,6 +169,9 @@ public class FXMLLoadBuilder<C> {
 
 	/**
 	 * {@link #load() Load} the FXML item and return the root node.
+	 * 
+	 * @param <T>
+	 *          the expected type of the root node
 	 * 
 	 * @return the resulting root node
 	 */

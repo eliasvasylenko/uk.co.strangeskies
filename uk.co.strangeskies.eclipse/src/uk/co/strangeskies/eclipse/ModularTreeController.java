@@ -100,10 +100,10 @@ public abstract class ModularTreeController {
 	}
 
 	/**
-	 * Refresh the tree view.
+	 * @return the modular tree view instance
 	 */
-	public void refresh() {
-		treeView.refresh();
+	public ModularTreeView getTreeView() {
+		return treeView;
 	}
 
 	/**

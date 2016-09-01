@@ -253,6 +253,16 @@ public class FXUtilities {
 		return property;
 	}
 
+	/**
+	 * Wrap an {@link uk.co.strangeskies.utilities.ObservableValue} with a JavaFX
+	 * equivalent {@link ObservableValue}.
+	 * 
+	 * @param <T>
+	 *          the type of the value
+	 * @param observable
+	 *          the observable value to wrap
+	 * @return a JavaFX observable value backed by the given value
+	 */
 	public static <T> ObservableValue<T> wrap(uk.co.strangeskies.utilities.ObservableValue<T> observable) {
 		return wrap(observable, observable.get());
 	}

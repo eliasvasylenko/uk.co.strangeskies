@@ -37,26 +37,49 @@ import uk.co.strangeskies.fx.TreeContribution;
 public abstract class EclipseTreeContributionImpl implements EclipseTreeContribution {
 	private final List<Class<? extends TreeContribution<?>>> contributions;
 	private final Predicate<String> filter;
+	private final String id;
 	private final int ranking;
 
+	/**
+	 * Create an instance with the given values.
+	 * 
+	 * @param contributions
+	 *          the classes of contributions to the tree
+	 * @param treeIdFilter
+	 *          a predicate to filter which modular trees to contribute to via
+	 *          their IDs
+	 * @param id
+	 *          the ID of the contribution
+	 * @param ranking
+	 *          the ranking of the contribution
+	 */
 	public EclipseTreeContributionImpl(Collection<? extends Class<? extends TreeContribution<?>>> contributions,
-			Predicate<String> filter, int ranking) {
+			Predicate<String> treeIdFilter, String id, int ranking) {
 		this.contributions = unmodifiableList(new ArrayList<>(contributions));
-		this.filter = filter;
+		this.filter = treeIdFilter;
+		this.id = id == null ? getClass().getSimpleName() : id;
 		this.ranking = ranking;
 	}
 
 	/**
+	 * Create an instance with the default id of the simple class name, and the
+	 * default ranking of 0.
+	 * 
 	 * @param contributions
 	 *          the classes of contributions to the tree
-	 * @param filter TODO@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	 * @param treeIdFilter
+	 *          a predicate to filter which modular trees to contribute to via
+	 *          their IDs
 	 */
 	public EclipseTreeContributionImpl(Collection<? extends Class<? extends TreeContribution<?>>> contributions,
-			Predicate<String> filter) {
-		this(contributions, filter, 0);
+			Predicate<String> treeIdFilter) {
+		this(contributions, treeIdFilter, null, 0);
 	}
 
 	/**
+	 * Create an instance with the default id of the simple class name, the
+	 * default ranking of 0, and no filter predicate.
+	 * 
 	 * @param contributions
 	 *          the classes of contributions to the tree
 	 */
@@ -76,5 +99,15 @@ public abstract class EclipseTreeContributionImpl implements EclipseTreeContribu
 	@Override
 	public List<Class<? extends TreeContribution<?>>> getContributions(String treeId) {
 		return filter.test(treeId) ? contributions : Collections.emptyList();
+	}
+
+	@Override
+	public String getContributionId() {
+		return id;
+	}
+
+	@Override
+	public int getContributionRanking() {
+		return ranking;
 	}
 }

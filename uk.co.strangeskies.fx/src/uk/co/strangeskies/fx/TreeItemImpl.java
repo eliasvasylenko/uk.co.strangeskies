@@ -151,18 +151,30 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 		return super.isLeaf();
 	}
 
-	public class TreeItemDataImpl<T> implements TreeItemData<T> {
-		private final TypedObject<T> data;
+	/**
+	 * An implementation of {@link TreeItemData} for {@link TreeItemImpl}.
+	 * 
+	 * @author Elias N Vasylenko
+	 *
+	 * @param <U>
+	 *          the type of the tree item data
+	 */
+	public class TreeItemDataImpl<U> implements TreeItemData<U> {
+		private final TypedObject<U> data;
 
-		private List<TreeContribution<? super T>> itemContributions;
+		private List<TreeContribution<? super U>> itemContributions;
 
-		public TreeItemDataImpl(TypedObject<T> data) {
+		/**
+		 * @param data
+		 *          the typed data for this tree item data object
+		 */
+		public TreeItemDataImpl(TypedObject<U> data) {
 			this.data = data;
 			refreshContributions();
 		}
 
 		@Override
-		public TypedObject<T> typedData() {
+		public TypedObject<U> typedData() {
 			return data;
 		}
 
@@ -174,16 +186,16 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 		@SuppressWarnings("unchecked")
 		protected void refreshContributions() {
 			itemContributions = treeView.getContributions().stream().filter(c -> c.getDataType().isAssignableFrom(type()))
-					.map(c -> (TreeContribution<? super T>) c).filter(c -> c.appliesTo(this)).collect(Collectors.toList());
+					.map(c -> (TreeContribution<? super U>) c).filter(c -> c.appliesTo(this)).collect(Collectors.toList());
 		}
 
 		@Override
-		public List<TreeContribution<? super T>> contributions() {
+		public List<TreeContribution<? super U>> contributions() {
 			return new ArrayList<>(itemContributions);
 		}
 
 		@Override
-		public <U extends TreeContribution<? super T>> List<U> contributions(TypeToken<U> type) {
+		public <V extends TreeContribution<? super U>> List<V> contributions(TypeToken<V> type) {
 			return itemContributions.stream().filter(c -> TypeToken.over(type.getRawType()).isAssignableFrom(c.getClass()))
 					.map(type::cast).collect(Collectors.toList());
 		}

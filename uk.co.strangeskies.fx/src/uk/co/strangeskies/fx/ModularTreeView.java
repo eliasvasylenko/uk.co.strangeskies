@@ -20,10 +20,11 @@ package uk.co.strangeskies.fx;
 
 import static java.util.Collections.emptySet;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javafx.scene.control.TreeView;
 import javafx.util.Pair;
@@ -43,8 +44,9 @@ public class ModularTreeView extends TreeView<TreeItemData<?>> {
 	 * Graph of subtype relations so we can more easily find which contributions
 	 * are the most specific.
 	 */
-	private final Graph<Pair<TreeContribution<?>, Integer>, Object> contributions;
-	private final List<TreeContribution<?>> orderedContributions;
+	private final Graph<TreeContribution<?>, Object> contributions;
+	private final Map<TreeContribution<?>, Integer> contributionRankings;
+	private List<TreeContribution<?>> orderedContributions;
 
 	private Comparator<Pair<TreeContribution<?>, Integer>> precedence;
 
@@ -55,28 +57,32 @@ public class ModularTreeView extends TreeView<TreeItemData<?>> {
 	 * the {@link DefaultTreeContributionPrecedence default precedence}.
 	 */
 	public ModularTreeView() {
-		contributions = Graph.build().<Pair<TreeContribution<?>, Integer>>vertices(emptySet()).edgeFactory(Object::new)
-				.directed().addInternalListener(GraphListeners::vertexAdded, added -> {
-					for (Pair<TreeContribution<?>, Integer> existingVertex : added.graph().vertices()) {
-						if (existingVertex != added.vertex()) {}
+		contributionRankings = new HashMap<>();
 
-						int precedence = getPrecedence().compare(existingVertex, added.vertex());
+		contributions = Graph.build().<TreeContribution<?>> vertices(emptySet()).edgeFactory(Object::new)
+				.direction(this::compareReverse)
 
-						if (precedence > 0) {
+				.addInternalListener(GraphListeners::vertexAdded, added -> {
+
+					for (TreeContribution<?> existingVertex : added.graph().vertices())
+						if (existingVertex != added.vertex())
 							added.graph().edges().add(added.vertex(), existingVertex);
-						} else if (precedence < 0) {
-							added.graph().edges().add(existingVertex, added.vertex());
-						}
-					}
 
 				}).create();
-		orderedContributions = new ArrayList<>();
 
 		setPrecedence(new DefaultTreeContributionPrecedence());
 
 		addContribution(new DefaultTreeCellContribution());
 
 		setCellFactory(v -> new TreeCellImpl());
+	}
+
+	private int compareReverse(TreeContribution<?> first, TreeContribution<?> second) {
+		return -getPrecedence().compare(rankedPair(first), rankedPair(second));
+	}
+
+	private Pair<TreeContribution<?>, Integer> rankedPair(TreeContribution<?> contribution) {
+		return new Pair<>(contribution, contributionRankings.get(contribution));
 	}
 
 	/**
@@ -134,10 +140,18 @@ public class ModularTreeView extends TreeView<TreeItemData<?>> {
 	 * @return true if the contribution was successfully added, false otherwise
 	 */
 	public boolean addContribution(TreeContribution<?> contribution, int ranking) {
-		boolean added = contributions.vertices().add(new Pair<>(contribution, ranking));
+		boolean added;
 
-		if (added) {
-			refreshContributions();
+		if (contributionRankings.putIfAbsent(contribution, ranking) == null) {
+			added = contributions.vertices().add(contribution);
+
+			if (added) {
+				refreshContributions();
+			} else {
+				contributionRankings.remove(contribution);
+			}
+		} else {
+			added = false;
 		}
 
 		return added;
@@ -149,6 +163,7 @@ public class ModularTreeView extends TreeView<TreeItemData<?>> {
 	 * @return true if the contribution was successfully removed, false otherwise
 	 */
 	public boolean removeContribution(TreeContribution<?> contribution) {
+		contributionRankings.remove(contribution);
 		boolean removed = contributions.vertices().remove(contribution);
 
 		if (removed) {
@@ -159,12 +174,12 @@ public class ModularTreeView extends TreeView<TreeItemData<?>> {
 	}
 
 	private void refreshContributions() {
-		orderedContributions.clear();
-		new GraphProcessor().begin(contributions, v -> orderedContributions.add(v.getKey())).processEager();
+		orderedContributions = GraphProcessor.over(contributions).processEager();
 	}
 
 	/**
-	 * @return all contributions added to the view in order of precedence
+	 * @return all contributions added to the view in order of from most to least
+	 *         preferred
 	 */
 	public List<TreeContribution<?>> getContributions() {
 		return Collections.unmodifiableList(orderedContributions);

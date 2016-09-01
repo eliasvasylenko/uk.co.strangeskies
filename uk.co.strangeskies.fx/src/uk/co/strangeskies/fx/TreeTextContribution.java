@@ -30,6 +30,8 @@ package uk.co.strangeskies.fx;
  */
 public interface TreeTextContribution<T> extends TreeContribution<T> {
 	/**
+	 * @param <U>
+	 *          a capture of the exact type of the tree item data
 	 * @param data
 	 *          the data item we wish to retrieve the text for
 	 * @return the primary text representation for the given data item, or null if
@@ -38,6 +40,8 @@ public interface TreeTextContribution<T> extends TreeContribution<T> {
 	<U extends T> String getText(TreeItemData<U> data);
 
 	/**
+	 * @param <U>
+	 *          a capture of the exact type of the tree item data
 	 * @param data
 	 *          the data item we wish to retrieve the text for
 	 * @return any supplemental text information for the given data item, or null

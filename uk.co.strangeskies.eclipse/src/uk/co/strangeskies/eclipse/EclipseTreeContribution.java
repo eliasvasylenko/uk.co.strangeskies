@@ -20,6 +20,7 @@ package uk.co.strangeskies.eclipse;
 
 import java.util.List;
 
+import uk.co.strangeskies.fx.ModularTreeView;
 import uk.co.strangeskies.fx.TreeContribution;
 
 /**
@@ -39,8 +40,17 @@ public interface EclipseTreeContribution {
 	 */
 	List<Class<? extends TreeContribution<?>>> getContributions(String treeId);
 
+	/**
+	 * @return the id of the contribution, available so that any modular tree
+	 *         controller contributed to may filter accepted contributions over it
+	 */
 	String getContributionId();
 
+	/**
+	 * @return the ranking of the contribution, available for any modular tree
+	 *         controller contributed to to determine
+	 *         {@link ModularTreeView#getPrecedence() precedence}
+	 */
 	default int getContributionRanking() {
 		return 0;
 	}

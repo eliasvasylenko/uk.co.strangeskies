@@ -41,19 +41,19 @@ class ChangeSetImpl<V, E> implements GraphListeners.ChangeSet<V, E> {
 	public ChangeSetImpl(Graph<V, E> graph) {
 		this.graph = graph;
 
-		verticesAdded = graph.createVertexSet();
-		verticesRemoved = graph.createVertexSet();
-		edgesAdded = graph.createEdgeMap();
-		edgesRemoved = graph.createEdgeMap();
+		verticesAdded = graph.vertices().createSet();
+		verticesRemoved = graph.vertices().createSet();
+		edgesAdded = graph.edges().createMap();
+		edgesRemoved = graph.edges().createMap();
 	}
 
 	private ChangeSetImpl(ChangeSetImpl<V, E> changeSet) {
 		graph = changeSet.graph;
 
-		verticesAdded = graph.createVertexSet(changeSet.verticesAdded);
-		verticesRemoved = graph.createVertexSet(changeSet.verticesRemoved);
-		edgesAdded = graph.createEdgeMap(changeSet.edgesAdded);
-		edgesRemoved = graph.createEdgeMap(changeSet.edgesRemoved);
+		verticesAdded = graph.vertices().createSet(changeSet.verticesAdded);
+		verticesRemoved = graph.vertices().createSet(changeSet.verticesRemoved);
+		edgesAdded = graph.edges().createMap(changeSet.edgesAdded);
+		edgesRemoved = graph.edges().createMap(changeSet.edgesRemoved);
 	}
 
 	public ChangeSetImpl<V, E> copy() {
@@ -90,9 +90,9 @@ class ChangeSetImpl<V, E> implements GraphListeners.ChangeSet<V, E> {
 		for (V vertex : verticesRemoved())
 			listeners.vertexRemoved().fire(VertexEvent.over(graph, vertex));
 
-		listeners.verticesAdded().fire(VerticesEvent.over(graph, graph.createVertexSet(verticesAdded())));
+		listeners.verticesAdded().fire(VerticesEvent.over(graph, graph.vertices().createSet(verticesAdded())));
 
-		listeners.verticesRemoved().fire(VerticesEvent.over(graph, graph.createVertexSet(verticesRemoved())));
+		listeners.verticesRemoved().fire(VerticesEvent.over(graph, graph.vertices().createSet(verticesRemoved())));
 
 		/*
 		 * Edges added and removed:
@@ -103,9 +103,9 @@ class ChangeSetImpl<V, E> implements GraphListeners.ChangeSet<V, E> {
 		for (E edge : edgesRemoved().keySet())
 			listeners.edgeRemoved().fire(EdgeEvent.over(graph, edge, edgesRemoved().get(edge)));
 
-		listeners.edgesAdded().fire(EdgesEvent.over(graph, graph.createEdgeMap(edgesAdded())));
+		listeners.edgesAdded().fire(EdgesEvent.over(graph, graph.edges().createMap(edgesAdded())));
 
-		listeners.edgesRemoved().fire(EdgesEvent.over(graph, graph.createEdgeMap(edgesRemoved())));
+		listeners.edgesRemoved().fire(EdgesEvent.over(graph, graph.edges().createMap(edgesRemoved())));
 
 		/*
 		 * Change sets:

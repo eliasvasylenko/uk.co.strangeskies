@@ -21,6 +21,16 @@ package uk.co.strangeskies.fx;
 import javafx.css.PseudoClass;
 import javafx.scene.Node;
 
+/**
+ * A partial {@link TreeCellContribution} implementation which provides the
+ * default behavior of setting the state of the pseudo-class named by
+ * {@link #getPseudoClassName()} to true on applicable tree item nodes.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <T>
+ *          the type of the tree cell contribution target
+ */
 public interface PseudoClassTreeCellContribution<T> extends TreeCellContribution<T> {
 	@Override
 	default <U extends T> Node configureCell(TreeItemData<U> data, Node content) {
@@ -28,6 +38,9 @@ public interface PseudoClassTreeCellContribution<T> extends TreeCellContribution
 		return content;
 	}
 
+	/**
+	 * @return the string for the pseudo-class to apply to the node
+	 */
 	default String getPseudoClassName() {
 		return getClass().getSimpleName();
 	}

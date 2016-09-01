@@ -31,7 +31,7 @@ import javafx.util.Pair;
 public class DefaultTreeContributionPrecedence implements Comparator<Pair<TreeContribution<?>, Integer>> {
 	@Override
 	public int compare(Pair<TreeContribution<?>, Integer> first, Pair<TreeContribution<?>, Integer> second) {
-		int precedence = second.getValue() - first.getValue();
+		int precedence = first.getValue() - second.getValue();
 
 		if (precedence == 0) {
 			if (second.getKey().getDataType().isAssignableFrom(first.getKey().getDataType())) {

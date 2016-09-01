@@ -37,6 +37,10 @@ import uk.co.strangeskies.reflection.TypeToken;
  * @author Elias N Vasylenko
  */
 public class TreeCellImpl extends TreeCell<TreeItemData<?>> {
+	/**
+	 * Load a new instance from the FXML located according to
+	 * {@link FXUtilities#getResource(Class)} for this class.
+	 */
 	public TreeCellImpl() {
 		build().object(this).resource(getResource(TreeCellImpl.class)).load();
 	}
