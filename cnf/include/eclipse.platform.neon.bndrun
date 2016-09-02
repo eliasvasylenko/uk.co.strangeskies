@@ -16,9 +16,9 @@ runpath.eclipse.linux64:\
 	${req;bndtools.runtime.eclipse.applaunch},\
 \
 	${def;runrequires.eclipse.${runplatform}},\
-	${if;${runrequires.eclipse.help};${runrequires.eclipse.help.addon}},\
-	${if;${runrequires.eclipse.sdk};${runrequires.eclipse.sdk.addon}},\
-	${if;${runrequires.eclipse.p2};${runrequires.eclipse.p2.addon}},\
+	${if;${runrequires.eclipse.help};${runrequires.eclipse.help.addon},}\
+	${if;${runrequires.eclipse.sdk};${runrequires.eclipse.sdk.addon},}\
+	${if;${runrequires.eclipse.p2};${runrequires.eclipse.p2.addon},}\
 \
 	${req;org.eclipse.core.databinding.beans},\
 	${req;org.eclipse.emf.databinding},\

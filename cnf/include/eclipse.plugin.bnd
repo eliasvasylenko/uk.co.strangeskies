@@ -1,0 +1,23 @@
+-include: ${include.ss}/utilities.bnd
+
+#### Define BSN ####
+
+# We want to match the default behaviour for generating the BSN - the project name then the sub-bundle name.
+# We do this so we can add singleton:=true on the end for silly equinox.
+Bundle-SymbolicName: ${p}${bsn.sub.bundle};singleton:=true
+
+# bnd.bnd files seem to error on ${thisfile}, which is no good
+-fixupmessages.thisfile:\
+	\\\\$\\{thisfile\\} executed on a processor without a properties file,\
+	No translation found for macro: thisfile
+
+# determine if we are in bnd.bnd
+filename.bnd.bnd: ${is;${thisfile};\\${thisfile}}
+
+# sub bundles need to append their filename w/o the extension
+bsn.sub.bundle: ${if;${filename.bnd.bnd};;.${filename.noext;${thisfile}}}
+
+#### Include Plugin Resource ####
+
+-includeresource.eclipse.plugin:\
+	plugin.xml
