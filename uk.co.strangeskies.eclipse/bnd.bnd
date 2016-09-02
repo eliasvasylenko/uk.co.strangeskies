@@ -9,7 +9,7 @@ Bundle-Name: Strange Skies :: Utilities :: Eclipse
 	${ss;text},\
 	${ss;fx},\
 	${ss;mathematics},\
-	${ss;reflection},\
+	${ss;reflection.typesystem},\
 	${ss;osgi.api},\
 	org.eclipse.osgi.compatibility.state,\
 	org.eclipse.osgi

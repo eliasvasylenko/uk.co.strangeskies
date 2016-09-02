@@ -1,18 +1,5 @@
-Bundle-Name: Strange Skies :: Reflection
-Bundle-Description: \
-	A number of powerful reflective utilities over the Java 8 \
-	type system, including an implementation of the JLS type \
-	inference algorithm. Rich and type safe reflection over \
-	generic types is also provided, up to and including generic \
-	method/constructor overload resolution and invocation type \
-	inference.
+-sub: *.bnd
 
-Export-Package: \
-	uk.co.strangeskies.reflection, \
-	uk.co.strangeskies.reflection.proxy
-	
--runee: JavaSE-1.8
--runfw: org.eclipse.osgi;version='[3.10.1.v20140909-1633,3.10.1.v20140909-1633]'
 -buildpath: \
 	${ss;utilities},\
 	${ss;text}

@@ -43,8 +43,8 @@ import org.junit.Assert;
 import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.AnnotatedWildcardTypes;
 import uk.co.strangeskies.reflection.Annotations;
-import uk.co.strangeskies.reflection.Imports;
 import uk.co.strangeskies.reflection.ExecutableMember;
+import uk.co.strangeskies.reflection.Imports;
 import uk.co.strangeskies.reflection.TypeParameter;
 import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.TypeToken.Capture;
@@ -381,7 +381,7 @@ public class TypeTokenTest {
 		System.out.println(
 				AnnotatedTypes.wrap(new TypeToken<@Infer List<? extends Number>>() {}.getClass().getAnnotatedSuperclass()));
 		System.out.println(new TypeToken<@Infer List<@Infer ? extends Number>>() {});
-		System.out.println(new @Infer TypeToken<@Infer List<@Infer ? extends Number>>() {}.getExtending(Wildcards.INFER));
+		System.out.println(new uk.co.strangeskies.reflection.TypeToken<@Infer List<@Infer ? extends Number>>() {}.getExtending(Wildcards.INFER));
 		System.out.println(new TypeToken<@Infer List<? extends Number>>() {}.getExtending(Wildcards.INFER));
 		System.out.println(
 				new TypeToken<@Infer List<? extends Number>>() {}.getExtending(Wildcards.INFER).getResolver().getBounds());
@@ -417,9 +417,9 @@ public class TypeTokenTest {
 				.resolveConstructorOverload().withTargetType(new TypeToken<@Infer Map<?, ?>>() {}).infer());
 		System.out.println();
 
-		System.out.println(new @Infer TypeToken<List<?>>() {}.getAnnotatedDeclaration());
+		System.out.println(new uk.co.strangeskies.reflection.TypeToken<List<?>>() {}.getAnnotatedDeclaration());
 		System.out.println(new TypeToken<Set<String>>() {}
-				.resolveMethodOverload("addAll", new @Infer TypeToken<@Infer List<@Infer ?>>() {}).inferParameterTypes());
+				.resolveMethodOverload("addAll", new uk.co.strangeskies.reflection.TypeToken<@Infer List<@Infer ?>>() {}).inferParameterTypes());
 		System.out.println();
 
 		System.out.println(new TypeToken<@Infer Set<?>>() {}
@@ -581,11 +581,11 @@ public class TypeTokenTest {
 		System.out.println(AnnotatedTypes.fromString("java.util.ArrayList<@Preserve?>", imports));
 		System.out.println();
 
-		System.out.println(Annotations.fromString("@uk.co.strangeskies.reflection.TypeToken.Infer", imports));
+		System.out.println(Annotations.fromString("@uk.co.strangeskies.reflection.type.TypeToken.Infer", imports));
 		System.out.println();
 
 		System.out.println(AnnotatedTypes
-				.fromString("@uk.co.strangeskies.reflection.TypeToken.Infer List<? extends java.lang.String>", imports));
+				.fromString("@uk.co.strangeskies.reflection.type.TypeToken.Infer List<? extends java.lang.String>", imports));
 		System.out.println();
 
 		System.out.println(AnnotatedTypes.fromString(
@@ -598,7 +598,7 @@ public class TypeTokenTest {
 		System.out.println();
 
 		System.out.println(AnnotatedTypes.fromString(
-				"@Test3(thisIsTest = \"yeah!\", wat = 2.5f) List<@Test2(idk = \"helo\", wat = 2) ? extends @Preserve java.lang.Number> @Capture [] @uk.co.strangeskies.reflection.TypeToken.Infer []",
+				"@Test3(thisIsTest = \"yeah!\", wat = 2.5f) List<@Test2(idk = \"helo\", wat = 2) ? extends @Preserve java.lang.Number> @Capture [] @uk.co.strangeskies.reflection.type.TypeToken.Infer []",
 				imports));
 		System.out.println();
 
@@ -617,7 +617,7 @@ public class TypeTokenTest {
 				.println(TypeToken.fromString("uk.co.strangeskies.reflection.test.SchemaNode<?, ?>").getAnnotatedDeclaration());
 		System.out.println();
 
-		System.out.println(TypeToken.fromString("java.util.Map<?, @uk.co.strangeskies.reflection.TypeToken.Infer ?>")
+		System.out.println(TypeToken.fromString("java.util.Map<?, @uk.co.strangeskies.reflection.type.TypeToken.Infer ?>")
 				.deepCopy().getAnnotatedDeclaration());
 		System.out.println();
 

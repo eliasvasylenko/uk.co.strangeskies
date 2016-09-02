@@ -1,0 +1,3 @@
+Bundle-Name: Strange Skies :: Reflection :: Manifest
+
+Export-Package: uk.co.strangeskies.reflection.jar
