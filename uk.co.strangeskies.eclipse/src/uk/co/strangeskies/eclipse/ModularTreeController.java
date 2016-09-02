@@ -25,6 +25,8 @@ import javax.inject.Inject;
 import org.eclipse.e4.core.contexts.ContextInjectionFactory;
 import org.eclipse.e4.core.contexts.IEclipseContext;
 
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -40,7 +42,7 @@ import uk.co.strangeskies.fx.TreeItemImpl;
  * @author Elias N Vasylenko
  */
 public class ModularTreeController {
-	private final String id;
+	private final StringProperty tableId = new SimpleStringProperty();
 	private final Predicate<String> filter;
 
 	@FXML
@@ -53,8 +55,12 @@ public class ModularTreeController {
 	@ObservableService
 	ObservableList<EclipseTreeContribution> contributions;
 
+	/**
+	 * A controller with the default id - the simple name of the class - and no
+	 * contribution filter.
+	 */
 	public ModularTreeController() {
-		this.id = getClass().getSimpleName();
+		tableId.set(getClass().getSimpleName());
 		filter = null;
 	}
 
@@ -63,7 +69,7 @@ public class ModularTreeController {
 	 *          the {@link #getId() ID} of the controller to create
 	 */
 	public ModularTreeController(String id) {
-		this.id = id;
+		tableId.set(id);
 		this.filter = null;
 	}
 
@@ -75,7 +81,7 @@ public class ModularTreeController {
 	 *          contributions} to accept contributions from
 	 */
 	public ModularTreeController(String id, Predicate<String> filter) {
-		this.id = id;
+		tableId.set(id);
 		this.filter = filter;
 	}
 
@@ -91,12 +97,27 @@ public class ModularTreeController {
 	}
 
 	/**
-	 * @return The ID of the controller. This is used to allow
+	 * @return The ID property of the controller. This is used to allow
 	 *         {@link EclipseTreeContribution contributions} to filter which
 	 *         controllers they wish to contribute to.
 	 */
+	public StringProperty getTableIdProperty() {
+		return tableId;
+	}
+
+	/**
+	 * @return the current ID of the controller
+	 */
 	public String getId() {
-		return id;
+		return tableId.get();
+	}
+
+	/**
+	 * @param id
+	 *          the new ID for the controller
+	 */
+	public void setId(String id) {
+		tableId.set(id);
 	}
 
 	protected void contribute(EclipseTreeContribution contributor) {
