@@ -20,8 +20,8 @@ uk.co.strangeskies.mathematics.values
 uk.co.strangeskies.mathematics.values.quantities
 uk.co.strangeskies.osgi
 uk.co.strangeskies.reflection
+uk.co.strangeskies.reflection.jar
 uk.co.strangeskies.text
-uk.co.strangeskies.text.manifest
 uk.co.strangeskies.text.parsing
 uk.co.strangeskies.text.properties
 uk.co.strangeskies.utilities
