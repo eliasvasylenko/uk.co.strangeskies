@@ -27,10 +27,9 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -72,8 +71,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	private final void validate() {
 		if (lowerBounds.length > 0 && !Types.isAssignable(IntersectionType.uncheckedFrom(lowerBounds),
 				IntersectionType.uncheckedFrom(upperBounds)))
-			throw new TypeException("Bounds on capture '" + this + "' are invalid. (" + Arrays.toString(lowerBounds) + " <: "
-					+ Arrays.toString(upperBounds) + ")");
+			throw new TypeException(p -> p.invalidTypeVariableCaptureBounds(this));
 	}
 
 	@Override
@@ -164,7 +162,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 					capture.upperBounds = new Type[] { upperBound };
 
 				if (!InferenceVariable.isProperType(capture)) {
-					throw new TypeException("This type should be proper: " + capture);
+					throw new TypeException(p -> p.improperCaptureType(capture));
 				}
 			}
 		}
@@ -363,19 +361,17 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 				 */
 				typeVariableCaptures.put(inferenceVariable, typeVariableCaptures.get(existingMatch.get()));
 			} else {
-				Set<Type> equalitySet;
-				try {
-					equalitySet = bounds.getBoundsOn(inferenceVariable).getEqualities().stream()
-							.filter(t -> !(t instanceof InferenceVariable)).map(t -> {
-								try {
-									return properTypeSubstitutuion.resolve(t);
-								} catch (TypeException e) {
-									throw new TypeException("Equality '" + t + "' on type '" + inferenceVariable
-											+ "' cannot be made proper in '" + bounds + "'", e);
-								}
-							}).collect(Collectors.toSet());
-				} catch (TypeException e) {
-					equalitySet = Collections.emptySet();
+				Set<Type> equalitySet = new HashSet<>();
+
+				for (Type equality : bounds.getBoundsOn(inferenceVariable).getEqualities()) {
+					if (!(equality instanceof InferenceVariable)) {
+						try {
+							equalitySet.add(properTypeSubstitutuion.resolve(equality));
+						} catch (TypeException e) {
+							equalitySet.clear();
+							break;
+						}
+					}
 				}
 
 				if (!equalitySet.isEmpty()) {
@@ -406,8 +402,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 						try {
 							return properTypeSubstitutuion.resolve(t);
 						} catch (TypeException e) {
-							throw new TypeException("Upper bound '" + t + "' on type '" + inferenceVariable
-									+ "' cannot be made proper in '" + bounds + "'", e);
+							throw new TypeException(p -> p.improperUpperBound(t, inferenceVariable, bounds), e);
 						}
 					}).collect(Collectors.toSet());
 
@@ -441,8 +436,9 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 			try {
 				bounds.incorporate().equality(inferenceVariable.getKey(), inferenceVariable.getValue());
 			} catch (TypeException e) {
-				throw new TypeException("Cannot instantiate inference variable '" + inferenceVariable.getKey()
-						+ "' with capture '" + inferenceVariable.getValue() + "' in bound set '" + bounds + "'", e);
+				throw new TypeException(
+						p -> p.cannotCaptureInferenceVariable(inferenceVariable.getKey(), inferenceVariable.getValue(), bounds),
+						e);
 			}
 		}
 
@@ -492,7 +488,8 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 				}
 
 				if (replacement == null) {
-					throw new TypeException("Could not find appropriate substitution for '" + i + "'");
+					Type finalType = i;
+					throw new TypeException(p -> p.cannotFindSubstitution(finalType));
 				}
 			}
 

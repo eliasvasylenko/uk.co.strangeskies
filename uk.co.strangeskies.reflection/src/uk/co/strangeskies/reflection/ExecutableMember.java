@@ -95,7 +95,7 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 		this.variableArityInvocation = variableArityInvocation;
 
 		if (!isVariableArityDefinition() && isVariableArityInvocation()) {
-			throw new TypeException("Invocation of " + toString() + " cannot be variable arity");
+			throw new TypeException(p -> p.invalidVariableArityInvocation(this));
 		}
 
 		/*
@@ -152,15 +152,16 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 				Type givenArgumentCaptured = substitution.resolve(givenArgument);
 				Type genericParameterCaptured = substitution.resolve(genericParameters[i]);
 
-				if (Types.isAssignable(givenArgumentCaptured, genericParameterCaptured))
+				if (Types.isAssignable(givenArgumentCaptured, genericParameterCaptured)) {
 					genericParameters[i] = givenArgument;
-				else if (givenArgumentCaptured instanceof Class<?> && Types.isAssignable(givenArgumentCaptured,
-						IntersectionType.from(Types.getRawTypes(genericParameterCaptured))))
+				} else if (givenArgumentCaptured instanceof Class<?> && Types.isAssignable(givenArgumentCaptured,
+						IntersectionType.from(Types.getRawTypes(genericParameterCaptured)))) {
 					genericParameters[i] = givenArgument;
-				else if (!Types.isAssignable(genericParameterCaptured, givenArgumentCaptured))
-					throw new IllegalArgumentException("Given argument '" + givenArgumentCaptured
-							+ "' is incompatible with generic parameter type '" + genericParameterCaptured + "' for parameter '" + i
-							+ "' of executable '" + toString(Arrays.asList(genericParameters)) + "'.");
+				} else if (!Types.isAssignable(genericParameterCaptured, givenArgumentCaptured)) {
+					int finalI = i;
+					throw new TypeException(
+							p -> p.incompatibleArgument(givenArgumentCaptured, genericParameterCaptured, finalI, this));
+				}
 			}
 		}
 		this.parameters = Arrays.asList(genericParameters);
@@ -249,7 +250,7 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 			try {
 				return (T) constructor.newInstance(a.toArray());
 			} catch (Exception e) {
-				throw new TypeException("Cannot invoke constructor '" + constructor + "' with arguments '" + a + "'", e);
+				throw new TypeException(p -> p.invalidConstructorArguments(constructor, receiver, a), e);
 			}
 		});
 	}
@@ -284,8 +285,7 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 			try {
 				return method.invoke(r, a.toArray());
 			} catch (Exception e) {
-				throw new TypeException(
-						"Cannot invoke method '" + method + "' on receiver '" + r + "' with arguments '" + a + "'", e);
+				throw new TypeException(p -> p.invalidMethodArguments(method, receiver, a), e);
 			}
 		});
 	}
@@ -587,7 +587,7 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 			return new ExecutableMember<>(resolver, (TypeToken<O>) TypeToken.over(type), override, invocationFunction,
 					parameters, variableArityInvocation);
 		} catch (NoSuchMethodException | SecurityException e) {
-			throw new TypeException("Cannot resolve method override.", e);
+			throw new TypeException(p -> p.cannotResolveOverride(this, type), e);
 		}
 	}
 
@@ -893,15 +893,12 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	private ExecutableMember<O, R> withLooseApplicability(boolean variableArity, List<? extends TypeToken<?>> arguments) {
 		if (variableArity) {
 			if (!executable.isVarArgs())
-				throw new IllegalArgumentException(
-						"ExecutableMember '" + this + "' cannot be invoked in variable arity invocation context");
+				throw new TypeException(p -> p.invalidVariableArityInvocation(this));
 
 			if (parameters.size() > arguments.size() + 1)
-				throw new TypeException("Cannot resolve generic type parameters for invocation of '" + this
-						+ "' with arguments '" + arguments + "'");
+				throw new TypeException(p -> p.cannotResolveInvocationType(this, arguments));
 		} else if (parameters.size() != arguments.size())
-			throw new TypeException(
-					"Cannot resolve generic type parameters for invocation of '" + this + "' with arguments '" + arguments + "'");
+			throw new TypeException(p -> p.cannotResolveInvocationType(this, arguments));
 
 		Resolver resolver = getResolver();
 
@@ -1151,9 +1148,11 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	 */
 	public R invokeSafely(O receiver, List<? extends TypedObject<?>> arguments) {
 		for (int i = 0; i < arguments.size(); i++)
-			if (!arguments.get(i).getType().isAssignableTo(parameters.get(i)))
-				throw new IllegalArgumentException("Argument '" + arguments.get(i) + "' is not assignable to parameter '"
-						+ parameters.get(i) + "' at index '" + i + "'.");
+			if (!arguments.get(i).getType().isAssignableTo(parameters.get(i))) {
+				int finalI = i;
+				throw new TypeException(
+						p -> p.incompatibleArgument(arguments.get(finalI), parameters.get(finalI), finalI, this));
+			}
 		return invoke(receiver, arguments);
 	}
 
@@ -1201,8 +1200,7 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 		}
 
 		if (compatibleCandidates.isEmpty())
-			throw new TypeException(
-					"Parameters '" + parameters + "' are not applicable to executable member candidates '" + candidates + "'.",
+			throw new TypeException(p -> p.cannotResolveApplicable(candidates, parameters),
 					failures.get(failures.keySet().stream().findFirst().get()));
 
 		return compatibleCandidates;
@@ -1255,9 +1253,10 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 			ExecutableMember<? super T, ? extends R> candidate = overrideCandidateIterator.next();
 
 			if (!candidate.getParameters().equals(mostSpecific.getParameters())
-					|| !candidate.getName().equals(mostSpecific.getName()))
-				throw new TypeException(
-						"Cannot resolve invocation ambiguity between candidate '" + candidate + "' and '" + mostSpecific + "'.");
+					|| !candidate.getName().equals(mostSpecific.getName())) {
+				ExecutableMember<?, ?> mostSpecificFinal = mostSpecific;
+				throw new TypeException(p -> p.cannotResolveAmbiguity(candidate, mostSpecificFinal));
+			}
 
 			mostSpecific = candidate.getMember().getDeclaringClass()
 					.isAssignableFrom(mostSpecific.getMember().getDeclaringClass()) ? candidate : mostSpecific;
@@ -1310,8 +1309,7 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 					/*
 					 * Neither first nor second are more specific.
 					 */
-					throw new TypeException("Cannot resolve method invokation ambiguity between candidate '" + firstCandidate
-							+ "' and '" + secondCandidate + "'.");
+					throw new TypeException(p -> p.cannotResolveAmbiguity(firstCandidate, secondCandidate));
 				}
 			}
 		}

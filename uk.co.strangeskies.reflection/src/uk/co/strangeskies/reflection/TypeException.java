@@ -18,7 +18,13 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static uk.co.strangeskies.text.properties.PropertyLoader.getDefaultProperties;
+
 import java.lang.reflect.Type;
+import java.util.function.Function;
+
+import uk.co.strangeskies.text.properties.Localized;
+import uk.co.strangeskies.text.properties.LocalizedRuntimeException;
 
 /**
  * An exception relating to reflective operations over the Java {@link Type}
@@ -26,24 +32,22 @@ import java.lang.reflect.Type;
  * 
  * @author Elias N Vasylenko
  */
-public class TypeException extends RuntimeException {
+public class TypeException extends LocalizedRuntimeException {
 	private static final long serialVersionUID = 1L;
 
-	/**
-	 * @param message
-	 *          A text description of the cause of the problem.
-	 * @param cause
-	 *          Causing exception.
-	 */
-	public TypeException(String message, Throwable cause) {
+	public TypeException(Localized<String> message) {
+		super(message);
+	}
+
+	public TypeException(Localized<String> message, Throwable cause) {
 		super(message, cause);
 	}
 
-	/**
-	 * @param message
-	 *          A text description of the cause of the problem.
-	 */
-	public TypeException(String message) {
-		super(message);
+	public TypeException(Function<TypeProperties, Localized<String>> message) {
+		this(message.apply(getDefaultProperties(TypeProperties.class)));
+	}
+
+	public TypeException(Function<TypeProperties, Localized<String>> message, Throwable cause) {
+		this(message.apply(getDefaultProperties(TypeProperties.class)), cause);
 	}
 }

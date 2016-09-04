@@ -44,6 +44,6 @@ public interface Reified {
 	 * @return this object as a {@link TypedObject}
 	 */
 	default TypedObject<?> asTypedObject() {
-		return TypedObject.castUnsafe(getThisType(), this);
+		return TypedObject.castUnsafe(this, getThisType());
 	}
 }

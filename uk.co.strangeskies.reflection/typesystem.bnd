@@ -9,3 +9,6 @@ Bundle-Description:\
 	inference.
 
 Export-Package: uk.co.strangeskies.reflection
+
+-includeresource:\
+	res

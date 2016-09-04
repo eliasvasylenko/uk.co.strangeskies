@@ -139,7 +139,7 @@ public final class Types {
 			else
 				return getRawType(((IntersectionType) type).getTypes()[0]);
 		}
-		throw new IllegalArgumentException("Type of type '" + type + "' is unsupported.");
+		throw new TypeException(p -> p.unsupportedType(type));
 	}
 
 	/**
@@ -422,7 +422,8 @@ public final class Types {
 	 *          The type to which we wish to assign.
 	 * @return True if the types are assignable, false otherwise.
 	 */
-	public static Object assign(Object object, Class<?> type) {
+	@SuppressWarnings("unchecked")
+	public static <T> T assign(Object object, Class<T> type) {
 		Class<?> currentType = unwrapPrimitive(object.getClass());
 		Class<?> rawTargetType = unwrapPrimitive(getRawType(type));
 
@@ -444,11 +445,11 @@ public final class Types {
 				}
 			}
 		} else {
-			throw new TypeException(
-					"Cannot assign '" + object + "' of type '" + object.getClass() + "' to type '" + type + "'.");
+			Object finalObject = object; // Get your shit together Eclipse ffs.
+			throw new TypeException(p -> p.invalidAssignmentObject(finalObject, type));
 		}
 
-		return object;
+		return (T) object;
 	}
 
 	/**

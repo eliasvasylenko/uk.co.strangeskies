@@ -207,7 +207,7 @@ public class WildcardTypes {
 					if (type instanceof WildcardType) {
 						WildcardType wildcardType = ((WildcardType) type);
 						if (wildcardType.getLowerBounds().length == 0) {
-							throw new TypeException("Cannot have define an upper bounding on a wildcard with no lower bounds.");
+							throw new TypeException(p -> p.invalidUpperBound(wildcardType));
 						} else {
 							types = wildcardType.getLowerBounds();
 						}

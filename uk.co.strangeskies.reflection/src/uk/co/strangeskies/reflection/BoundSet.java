@@ -132,9 +132,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 							throw new Error(":(" + first + " != " + second);
 					}
 				} catch (Exception e) {
-					throw new TypeException(
-							"Cannot add equality bound between '" + first + "' and '" + second + "' to bound set '" + BoundSet.this,
-							e);
+					throw new TypeException(p -> p.invalidEquality(first, second, BoundSet.this), e);
 				}
 			}
 		}
@@ -159,8 +157,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 					if (supertype instanceof InferenceVariable)
 						inferenceVariableBounds.get(supertype).addLowerBound(subtype);
 				} catch (Exception e) {
-					throw new TypeException("Cannot add subtype bound between '" + subtype + "' and '" + supertype
-							+ "' to bound set '" + BoundSet.this, e);
+					throw new TypeException(p -> p.invalidSubtype(subtype, supertype, BoundSet.this), e);
 				}
 		}
 
@@ -175,8 +172,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 			try {
 				addCaptureConversion(captureConversion);
 			} catch (Exception e) {
-				throw new TypeException(
-						"Cannot add capture conversion '" + captureConversion + "' to bound set '" + BoundSet.this, e);
+				throw new TypeException(p -> p.invalidCaptureConversion(captureConversion, BoundSet.this), e);
 			}
 		}
 
@@ -189,7 +185,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		 */
 		public void falsehood(String message) {
 			valid = false;
-			throw new TypeException("Addition of falsehood into bounds set; " + message + "; " + this);
+			throw new TypeException(p -> p.invalidBoundSet(message, BoundSet.this));
 		}
 	}
 
@@ -553,7 +549,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		return addInferenceVariableImpl(inferenceVariable);
 	}
 
-	protected InferenceVariableBoundsImpl addInferenceVariableImpl(InferenceVariable inferenceVariable) {
+	private InferenceVariableBoundsImpl addInferenceVariableImpl(InferenceVariable inferenceVariable) {
 		InferenceVariableBoundsImpl bounds;
 
 		if (!inferenceVariableBounds.containsKey(inferenceVariable)) {
@@ -566,12 +562,13 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		return bounds;
 	}
 
-	protected InferenceVariableBoundsImpl addInferenceVariableBounds(InferenceVariable inferenceVariable,
+	private InferenceVariableBoundsImpl addInferenceVariableBounds(InferenceVariable inferenceVariable,
 			InferenceVariableBoundsImpl bounds) {
-		if (bounds.getBoundSet() != this) {
-			throw new TypeException("Cannot add bounds '" + bounds + "' to bound set '" + this + "'");
-		} else if (inferenceVariableBounds.containsKey(inferenceVariable)) {
-			throw new TypeException("Cannot override existing bounds for '" + inferenceVariable + "' in '" + bounds + "'");
+		if (bounds.getBoundSet() != this || inferenceVariableBounds.containsKey(inferenceVariable)) {
+			/*
+			 * these conditions should be cleared before invocation
+			 */
+			throw new AssertionError();
 		} else {
 			inferenceVariableBounds.put(inferenceVariable, bounds);
 		}

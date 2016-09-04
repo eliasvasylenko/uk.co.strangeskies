@@ -25,7 +25,7 @@ import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
 import uk.co.strangeskies.reflection.jar.AttributeProperty;
-import uk.co.strangeskies.reflection.jar.JarUtilities;
+import uk.co.strangeskies.reflection.jar.ManifestAttributeParser;
 import uk.co.strangeskies.reflection.jar.PropertyType;
 
 /**
@@ -47,7 +47,7 @@ public class AttributePropertyParsingTest {
 
 		public AttributeProperty<?> parse() {
 			if (parsed == null) {
-				parsed = JarUtilities.parseAttributeProperty(parses);
+				parsed = new ManifestAttributeParser().parseAttributeProperty(parses);
 			}
 			return parsed;
 		}

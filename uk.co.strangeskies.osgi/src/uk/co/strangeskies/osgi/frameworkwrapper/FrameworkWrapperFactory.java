@@ -20,7 +20,7 @@ package uk.co.strangeskies.osgi.frameworkwrapper;
 
 import java.util.jar.Manifest;
 
-import uk.co.strangeskies.reflection.jar.JarUtilities;
+import uk.co.strangeskies.reflection.jar.Jar;
 
 /**
  * A simple interface for constructing a framework wrapper from a given manifest
@@ -35,7 +35,8 @@ public interface FrameworkWrapperFactory {
 	 * @return a new {@link FrameworkWrapper} instance
 	 */
 	default FrameworkWrapper getFrameworkWrapper(Class<?> classContext) {
-		return getFrameworkWrapper(classContext.getClassLoader(), JarUtilities.getContainingJarManifest(classContext));
+		return getFrameworkWrapper(classContext.getClassLoader(),
+				Jar.getContainingJar(classContext).getManifest().getBackingManifest());
 	}
 
 	/**

@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.Types.TypeParser;
@@ -185,7 +186,8 @@ public final class Annotations {
 		return new AnnotationParser(imports).getAnnotation().parse(typeString);
 	}
 
-	static Map<Method, Object> sanitizeProperties(Class<?> annotationClass, Map<String, Object> properties) {
+	static Map<Method, Object> sanitizeProperties(Class<? extends Annotation> annotationClass,
+			Map<String, Object> properties) {
 		properties = new HashMap<>(properties);
 		Map<Method, Object> castProperties = new HashMap<>();
 
@@ -195,8 +197,8 @@ public final class Annotations {
 				try {
 					propertyValue = Types.assign(propertyValue, method.getReturnType());
 				} catch (TypeException e) {
-					throw new TypeException("Annotation property " + method.getName() + " has invalid value " + propertyValue
-							+ " of class " + propertyValue.getClass(), e);
+					Object finalValue = propertyValue;
+					throw new TypeException(p -> p.invalidAnnotationValue(annotationClass, method.getName(), finalValue), e);
 				}
 
 				castProperties.put(method, propertyValue);
@@ -206,7 +208,8 @@ public final class Annotations {
 		}
 
 		if (!properties.isEmpty()) {
-			throw new TypeException("Annotation properties do not exist " + properties.keySet());
+			Set<String> finalValues = properties.keySet();
+			throw new TypeException(p -> p.invalidAnnotationProperties(annotationClass, finalValues));
 		}
 
 		return castProperties;

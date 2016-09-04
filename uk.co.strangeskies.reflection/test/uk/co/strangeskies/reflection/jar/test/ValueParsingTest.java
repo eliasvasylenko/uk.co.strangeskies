@@ -24,7 +24,7 @@ import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
-import uk.co.strangeskies.reflection.jar.JarUtilities;
+import uk.co.strangeskies.reflection.jar.ManifestAttributeParser;
 
 /**
  * @author Elias N Vasylenko
@@ -50,7 +50,7 @@ public class ValueParsingTest {
 
 		public String parse() {
 			if (parsed == null) {
-				parsed = JarUtilities.parseValueString(parses);
+				parsed = new ManifestAttributeParser().parseValueString(parses);
 			}
 			return parsed;
 		}

@@ -76,8 +76,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		copy.capture = capture;
 
 		if (boundSet.containsInferenceVariable(inferenceVariable))
-			throw new TypeException("Cannot copy inference variable '" + inferenceVariable
-					+ "' into bound set which already contains it '" + boundSet + "'");
+			throw new TypeException(p -> p.cannotCopyInferenceVariable(inferenceVariable, boundSet));
 
 		for (Type equality : equalities) {
 			if (boundSet.containsInferenceVariable(equality)) {
@@ -131,7 +130,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				boundIterator.remove();
 
 		if (capture != null && capture.getInferenceVariablesMentioned().stream().anyMatch(ignoring::test))
-			throw new TypeException("Cannot filter out capture");
+			throw new TypeException(p -> p.cannotFilterCapture(capture));
 
 		Iterator<InferenceVariable> variableIterator = relations.iterator();
 		while (variableIterator.hasNext())
@@ -176,9 +175,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 
 	public void addCaptureConversion(CaptureConversion captureConversion) {
 		if (capture != null)
-			throw new TypeException(
-					"Inference variable '" + inferenceVariable + "' Cannot be captured by two capture conversions '" + capture
-							+ "' and '" + captureConversion + "' simultaniously.");
+			throw new TypeException(p -> p.cannotCaptureMultipleTimes(inferenceVariable, capture, captureConversion));
 		else
 			capture = captureConversion;
 

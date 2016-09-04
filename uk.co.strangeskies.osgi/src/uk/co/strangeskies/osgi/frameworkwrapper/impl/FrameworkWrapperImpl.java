@@ -49,7 +49,7 @@ import uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper;
 import uk.co.strangeskies.osgi.frameworkwrapper.server.FrameworkWrapperServer;
 import uk.co.strangeskies.reflection.jar.Attribute;
 import uk.co.strangeskies.reflection.jar.AttributeProperty;
-import uk.co.strangeskies.reflection.jar.JarUtilities;
+import uk.co.strangeskies.reflection.jar.ManifestAttributeParser;
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Log.Level;
 import uk.co.strangeskies.utilities.Observable;
@@ -145,7 +145,7 @@ public class FrameworkWrapperImpl implements FrameworkWrapper {
 		if (packageVersionsString == null)
 			return emptySet();
 
-		List<Attribute> attributes = JarUtilities.parseAttributes(packageVersionsString);
+		List<Attribute> attributes = new ManifestAttributeParser().parseAttributes(packageVersionsString);
 
 		return attributes.stream().map(a -> {
 			AttributeProperty<?> property = a.properties().get(VERSION_PROPERTY);

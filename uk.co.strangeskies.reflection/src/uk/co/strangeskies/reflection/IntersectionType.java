@@ -175,8 +175,7 @@ public abstract class IntersectionType implements Type {
 							}
 							break;
 						} else if (!iInterface && !Types.getRawType(jType).isInterface()) {
-							throw new TypeException("Illegal intersection type '" + flattenedTypes
-									+ "', cannot contain both of the non-interface classes '" + iType + "' and '" + jType + "'.");
+							throw new TypeException(p -> p.invalidIntersectionTypes(flattenedTypes, iType, jType));
 						}
 					}
 				}
@@ -227,7 +226,7 @@ public abstract class IntersectionType implements Type {
 			for (Type type : flattenedTypes)
 				ConstraintFormula.reduce(Kind.SUBTYPE, inferenceVariable, type, bounds);
 		} catch (Exception e) {
-			throw new TypeException("Illegal intersection type '" + flattenedTypes + "'.", e);
+			throw new TypeException(p -> p.invalidIntersectionType(flattenedTypes), e);
 		}
 
 		return fromImpl(flattenedTypes);

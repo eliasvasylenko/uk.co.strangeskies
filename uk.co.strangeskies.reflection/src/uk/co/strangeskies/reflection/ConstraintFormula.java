@@ -108,7 +108,7 @@ public class ConstraintFormula {
 		try {
 			constraintFormula.reduceInto(bounds);
 		} catch (Exception e) {
-			throw new TypeException("Cannot reduce constraint " + constraintFormula + " into bound set '" + bounds + "'.", e);
+			throw new TypeException(p -> p.cannotReduceConstraint(constraintFormula, bounds), e);
 		}
 		return constraintFormula;
 	}
@@ -375,8 +375,7 @@ public class ConstraintFormula {
 				for (Type typeComponent : ((IntersectionType) to).getTypes())
 					reduce(Kind.SUBTYPE, from, typeComponent, bounds);
 			} else {
-				throw new TypeException("Type '" + to + "' of class '" + to.getClass()
-						+ "' should not be encountered for T in constraint '" + this + "'.");
+				throw new TypeException(p -> p.unsupportedType(to));
 			}
 		}
 	}

@@ -69,7 +69,7 @@ import uk.co.strangeskies.utilities.classloading.DelegatingClassLoader;
  *          the type of the delegating {@link Properties} proxy
  */
 public class PropertyAccessorDelegate<A extends Properties<A>> extends ObservableImpl<A> implements Properties<A> {
-	public class PropertyValueDelegate {
+	class PropertyValueDelegate {
 		private final Function<List<?>, Object> valueProvider;
 
 		public PropertyValueDelegate(MethodSignature signature) {

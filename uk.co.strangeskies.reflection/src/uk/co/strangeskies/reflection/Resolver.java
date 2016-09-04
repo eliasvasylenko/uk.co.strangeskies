@@ -837,7 +837,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 			if (variableBounds.getInstantiation().isPresent()) {
 				instantiations.put(variable, variableBounds.getInstantiation().get());
 			} else {
-				throw new TypeException("Inference variable '" + variable + "' has failed to instantiate");
+				throw new TypeException(p -> p.cannotInstantiateInferenceVariable(variable, bounds));
 			}
 		}
 
