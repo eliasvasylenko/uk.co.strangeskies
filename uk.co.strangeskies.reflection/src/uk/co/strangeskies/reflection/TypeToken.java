@@ -2091,6 +2091,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 *          an object to cast to this type
 	 * @return the given object cast to a reference of this type
 	 */
+	@SuppressWarnings("unchecked")
 	public T cast(Object object) {
 		/*
 		 * TODO actually test castability

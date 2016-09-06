@@ -36,7 +36,13 @@ public class Jar {
 			if (!jarLocation.toString().startsWith("jar:")) {
 				jarLocation = new URI("jar:" + jarLocation);
 			}
-			fileSystem = FileSystems.newFileSystem(jarLocation, Collections.emptyMap());
+			FileSystem fileSystem;
+			try {
+				fileSystem = FileSystems.getFileSystem(jarLocation);
+			} catch (Exception e) {
+				fileSystem = FileSystems.newFileSystem(jarLocation, Collections.emptyMap());
+			}
+			this.fileSystem = fileSystem;
 		} catch (IOException | URISyntaxException e) {
 			throw new RuntimeException("Creating file system for jar " + jarLocation + " failed", e);
 		}

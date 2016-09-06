@@ -30,6 +30,12 @@ import java.util.Set;
 import uk.co.strangeskies.text.properties.Localized;
 import uk.co.strangeskies.text.properties.Properties;
 
+/**
+ * Properties and localized strings relating to types.
+ * 
+ * @author Elias N Vasylenko
+ */
+@SuppressWarnings("javadoc")
 public interface TypeProperties extends Properties<TypeProperties> {
 	Localized<String> unsupportedType(Type type);
 

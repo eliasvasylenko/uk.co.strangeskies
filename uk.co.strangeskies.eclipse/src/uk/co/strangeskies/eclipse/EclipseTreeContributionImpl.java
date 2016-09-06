@@ -99,6 +99,7 @@ public abstract class EclipseTreeContributionImpl implements EclipseTreeContribu
 		this(concatenate(contribution, contributions));
 	}
 
+	@SafeVarargs
 	private static List<Class<? extends TreeContribution<?>>> concatenate(
 			Class<? extends TreeContribution<?>> contribution, Class<? extends TreeContribution<?>>... contributions) {
 		List<Class<? extends TreeContribution<?>>> concatenated = new ArrayList<>(contributions.length + 1);

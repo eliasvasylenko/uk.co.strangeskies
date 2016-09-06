@@ -18,9 +18,10 @@
  */
 package uk.co.strangeskies.text.properties;
 
+import static java.util.Arrays.stream;
 import static java.util.Collections.synchronizedSet;
 import static java.util.Optional.empty;
-import static java.util.Optional.of;
+import static java.util.stream.Collectors.toList;
 
 import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.AnnotatedType;
@@ -115,6 +116,7 @@ class PropertyLoaderImpl implements PropertyLoader {
 		registerValueProvider(stringProvider());
 		registerValueProvider(listProvider());
 		registerValueProvider(optionalProvider());
+		registerValueProvider(localDateProvider());
 
 		localizationCache = new CacheComputingMap<>(c -> instantiateProperties(c), true);
 
@@ -154,15 +156,23 @@ class PropertyLoaderImpl implements PropertyLoader {
 
 					AnnotatedType elementType = ((AnnotatedParameterizedType) exactType).getAnnotatedActualTypeArguments()[0];
 
-					/*
-					 * TODO proper exception
-					 */
-					return of((PropertyValueProvider<T>) PropertyValueProvider.over(arguments -> Parser.list(
-							loader.getValueProvider(elementType).orElseThrow(() -> new RuntimeException()).getParser(arguments),
-							"\\s*,\\s*"),
+					return loader.getValueProvider(elementType).map(e -> {
+						Delimit delimit = elementType.getAnnotation(Delimit.class);
 
-							(k, a) -> Collections.emptyList()));
+						String delimiter = delimit != null ? delimit.value() : ",";
+						if (delimit == null || delimit.ignoreWhitespace()) {
+							delimiter = "\\s*" + delimiter + "\\s*";
+						}
+						String finalDelimiter = delimiter;
 
+						if (delimit == null || delimit.eager()) {
+							return (PropertyValueProvider<T>) PropertyValueProvider.over(arguments -> Parser.matchingAll().transform(
+									s -> stream(s.split(finalDelimiter)).map(e.getParser(arguments)::parse).collect(toList())));
+						} else {
+							return (PropertyValueProvider<T>) PropertyValueProvider.over(
+									arguments -> Parser.list(e.getParser(arguments), finalDelimiter), (k, a) -> Collections.emptyList());
+						}
+					});
 				} else {
 					return empty();
 				}
@@ -183,7 +193,7 @@ class PropertyLoaderImpl implements PropertyLoader {
 					AnnotatedType elementType = ((AnnotatedParameterizedType) exactType).getAnnotatedActualTypeArguments()[0];
 
 					return loader.getValueProvider(elementType)
-							.<PropertyValueProvider<T>>map(p -> new PropertyValueProvider<T>() {
+							.<PropertyValueProvider<T>> map(p -> new PropertyValueProvider<T>() {
 								@Override
 								public Parser<T> getParser(List<?> arguments) {
 									Parser<T> optionalParser = p.getParser(arguments).transform(v -> (T) Optional.ofNullable(v));
