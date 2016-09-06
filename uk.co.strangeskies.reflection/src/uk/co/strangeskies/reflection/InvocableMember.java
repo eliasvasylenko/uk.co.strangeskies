@@ -57,7 +57,7 @@ import uk.co.strangeskies.utilities.tuple.Pair;
  * instances.
  * 
  * <p>
- * {@link ExecutableMember executable members} may be created over types which
+ * {@link InvocableMember executable members} may be created over types which
  * mention inference variables, or even over inference variables themselves.
  * 
  * @author Elias N Vasylenko
@@ -67,7 +67,7 @@ import uk.co.strangeskies.utilities.tuple.Pair;
  * @param <R>
  *          The return type of the executable.
  */
-public class ExecutableMember<O, R> implements TypeMember<O> {
+public class InvocableMember<O, R> implements TypeMember<O> {
 	private final Resolver resolver;
 
 	private final TypeToken<O> ownerType;
@@ -80,13 +80,13 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 
 	private final boolean variableArityInvocation;
 
-	private ExecutableMember(TypeToken<O> receiverType, Executable executable,
+	private InvocableMember(TypeToken<O> receiverType, Executable executable,
 			BiFunction<O, List<?>, R> invocationFunction) {
 		this(receiverType.getResolver(), receiverType, executable, invocationFunction, null, false);
 	}
 
 	@SuppressWarnings("unchecked")
-	private ExecutableMember(Resolver resolver, TypeToken<O> receiverType, Executable executable,
+	private InvocableMember(Resolver resolver, TypeToken<O> receiverType, Executable executable,
 			BiFunction<O, List<?>, R> invocationFunction, List<? extends Type> parameters, boolean variableArityInvocation) {
 		this.resolver = resolver;
 		this.executable = executable;
@@ -218,7 +218,7 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	}
 
 	/**
-	 * Create a new {@link ExecutableMember} instance from a reference to a
+	 * Create a new {@link InvocableMember} instance from a reference to a
 	 * {@link Constructor}.
 	 * 
 	 * @param <T>
@@ -227,13 +227,13 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	 *          The constructor to wrap.
 	 * @return An executable member wrapping the given constructor.
 	 */
-	public static <T> ExecutableMember<T, T> over(Constructor<T> constructor) {
+	public static <T> InvocableMember<T, T> over(Constructor<T> constructor) {
 		TypeToken<T> type = TypeToken.over(constructor.getDeclaringClass());
 		return over(constructor, type);
 	}
 
 	/**
-	 * Create a new {@link ExecutableMember} instance from a reference to a
+	 * Create a new {@link InvocableMember} instance from a reference to a
 	 * {@link Constructor}.
 	 * 
 	 * @param <T>
@@ -245,8 +245,8 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	 * @return An executable member wrapping the given constructor.
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> ExecutableMember<T, T> over(Constructor<? super T> constructor, TypeToken<T> receiver) {
-		return new ExecutableMember<>(receiver, constructor, (T r, List<?> a) -> {
+	public static <T> InvocableMember<T, T> over(Constructor<? super T> constructor, TypeToken<T> receiver) {
+		return new InvocableMember<>(receiver, constructor, (T r, List<?> a) -> {
 			try {
 				return (T) constructor.newInstance(a.toArray());
 			} catch (Exception e) {
@@ -256,20 +256,20 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	}
 
 	/**
-	 * Create a new {@link ExecutableMember} instance from a reference to a
+	 * Create a new {@link InvocableMember} instance from a reference to a
 	 * {@link Method}.
 	 * 
 	 * @param method
 	 *          The method to wrap.
 	 * @return An executable member wrapping the given method.
 	 */
-	public static ExecutableMember<?, ?> over(Method method) {
+	public static InvocableMember<?, ?> over(Method method) {
 		TypeToken<?> receiver = TypeToken.over(method.getDeclaringClass());
 		return over(method, receiver);
 	}
 
 	/**
-	 * Create a new {@link ExecutableMember} instance from a reference to a
+	 * Create a new {@link InvocableMember} instance from a reference to a
 	 * {@link Constructor}.
 	 * 
 	 * @param <T>
@@ -280,8 +280,8 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	 *          The target type of the given {@link Method}.
 	 * @return An executable member wrapping the given method.
 	 */
-	public static <T> ExecutableMember<T, ?> over(Method method, TypeToken<T> receiver) {
-		return new ExecutableMember<>(receiver, method, (T r, List<?> a) -> {
+	public static <T> InvocableMember<T, ?> over(Method method, TypeToken<T> receiver) {
+		return new InvocableMember<>(receiver, method, (T r, List<?> a) -> {
 			try {
 				return method.invoke(r, a.toArray());
 			} catch (Exception e) {
@@ -298,7 +298,7 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	 *          The executable to wrap.
 	 * @return An executable member wrapping the given Executable.
 	 */
-	public static ExecutableMember<?, ?> over(Executable executable) {
+	public static InvocableMember<?, ?> over(Executable executable) {
 		if (executable instanceof Method)
 			return over((Method) executable);
 		else
@@ -318,7 +318,7 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	 * @return An executable member wrapping the given Executable.
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> ExecutableMember<T, ?> over(Executable executable, TypeToken<T> receiver) {
+	public static <T> InvocableMember<T, ?> over(Executable executable, TypeToken<T> receiver) {
 		if (executable instanceof Method)
 			return over((Method) executable, receiver);
 		else
@@ -415,19 +415,19 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	}
 
 	/**
-	 * @return copy of the {@link ExecutableMember} flagged to be invoked with
+	 * @return copy of the {@link InvocableMember} flagged to be invoked with
 	 *         {@link #isVariableArityInvocation() variable arity}
 	 */
-	public ExecutableMember<O, R> asVariableArityInvocation() {
+	public InvocableMember<O, R> asVariableArityInvocation() {
 		if (isVariableArityInvocation()) {
 			return this;
 		} else {
-			return new ExecutableMember<>(resolver, ownerType, executable, invocationFunction, parameters, true);
+			return new InvocableMember<>(resolver, ownerType, executable, invocationFunction, parameters, true);
 		}
 	}
 
 	/**
-	 * @return The executable represented by this {@link ExecutableMember}.
+	 * @return The executable represented by this {@link InvocableMember}.
 	 */
 	@Override
 	public Executable getMember() {
@@ -456,62 +456,61 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	}
 
 	/**
-	 * Derive a new {@link ExecutableMember} instance, with the given bounds
+	 * Derive a new {@link InvocableMember} instance, with the given bounds
 	 * incorporated into the bounds of the underlying resolver. The original
-	 * {@link ExecutableMember} will remain unmodified.
+	 * {@link InvocableMember} will remain unmodified.
 	 * 
 	 * @param bounds
 	 *          The new bounds to incorporate.
-	 * @return The newly derived {@link ExecutableMember}.
+	 * @return The newly derived {@link InvocableMember}.
 	 */
 	@Override
-	public ExecutableMember<O, R> withBounds(BoundSet bounds) {
+	public InvocableMember<O, R> withBounds(BoundSet bounds) {
 		return withBounds(bounds, bounds.getInferenceVariables());
 	}
 
 	/**
-	 * Derive a new {@link ExecutableMember} instance, with the bounds on the
-	 * given inference variables, with respect to the given bound set,
-	 * incorporated into the bounds of the underlying resolver. The original
-	 * {@link ExecutableMember} will remain unmodified.
+	 * Derive a new {@link InvocableMember} instance, with the bounds on the given
+	 * inference variables, with respect to the given bound set, incorporated into
+	 * the bounds of the underlying resolver. The original {@link InvocableMember}
+	 * will remain unmodified.
 	 * 
 	 * @param bounds
 	 *          The new bounds to incorporate.
 	 * @param inferenceVariables
 	 *          The new inference variables whose bounds are to be incorporated.
-	 * @return The newly derived {@link ExecutableMember}.
+	 * @return The newly derived {@link InvocableMember}.
 	 */
 	@Override
-	public ExecutableMember<O, R> withBounds(BoundSet bounds,
-			Collection<? extends InferenceVariable> inferenceVariables) {
+	public InvocableMember<O, R> withBounds(BoundSet bounds, Collection<? extends InferenceVariable> inferenceVariables) {
 		Resolver resolver = getResolver();
 		resolver.getBounds().incorporate(bounds, inferenceVariables);
 
-		return new ExecutableMember<>(resolver, ownerType, executable, invocationFunction, parameters,
+		return new InvocableMember<>(resolver, ownerType, executable, invocationFunction, parameters,
 				variableArityInvocation);
 	}
 
 	/**
-	 * Derive a new {@link ExecutableMember} instance, with the bounds on the
-	 * given type incorporated into the bounds of the underlying resolver. The
-	 * original {@link ExecutableMember} will remain unmodified.
+	 * Derive a new {@link InvocableMember} instance, with the bounds on the given
+	 * type incorporated into the bounds of the underlying resolver. The original
+	 * {@link InvocableMember} will remain unmodified.
 	 * 
 	 * @param type
 	 *          The type whose bounds are to be incorporated.
-	 * @return The newly derived {@link ExecutableMember}.
+	 * @return The newly derived {@link InvocableMember}.
 	 */
 	@Override
-	public ExecutableMember<O, R> withBoundsFrom(TypeToken<?> type) {
+	public InvocableMember<O, R> withBoundsFrom(TypeToken<?> type) {
 		return withBounds(type.getResolver().getBounds(), type.getInferenceVariablesMentioned());
 	}
 
 	/**
-	 * Derive a new instance of {@link ExecutableMember} with the given receiver
+	 * Derive a new instance of {@link InvocableMember} with the given receiver
 	 * type. This will resolve any overriding {@link Executable} to determine a
 	 * new return type if necessary.
 	 * 
 	 * <p>
-	 * The new {@link ExecutableMember} will always have a receiver type which is
+	 * The new {@link InvocableMember} will always have a receiver type which is
 	 * as or more specific than both the current receiver type <em>and</em> the
 	 * given type. This means that the new receiver will be assignment compatible
 	 * with the given type, but if the given type contains wildcards or inference
@@ -525,7 +524,7 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	 * @param type
 	 *          The new receiver type. The raw type of this type must be a subtype
 	 *          of the raw type of the current receiver type.
-	 * @return A new {@link ExecutableMember} compatible with the given receiver
+	 * @return A new {@link InvocableMember} compatible with the given receiver
 	 *         type.
 	 * 
 	 *         <p>
@@ -537,17 +536,17 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	 */
 	@Override
 	@SuppressWarnings("unchecked")
-	public <U extends O> ExecutableMember<U, ? extends R> withOwnerType(TypeToken<U> type) {
-		return (ExecutableMember<U, ? extends R>) withBoundsFrom(type).withOwnerType(type.getType());
+	public <U extends O> InvocableMember<U, ? extends R> withOwnerType(TypeToken<U> type) {
+		return (InvocableMember<U, ? extends R>) withBoundsFrom(type).withOwnerType(type.getType());
 	}
 
 	/**
-	 * Derive a new instance of {@link ExecutableMember} with the given receiver
+	 * Derive a new instance of {@link InvocableMember} with the given receiver
 	 * type. This will resolve any overriding {@link Executable} to determine a
 	 * new return type if necessary.
 	 * 
 	 * <p>
-	 * The new {@link ExecutableMember} will always have a receiver type which is
+	 * The new {@link InvocableMember} will always have a receiver type which is
 	 * as or more specific than both the current receiver type <em>and</em> the
 	 * given type. This means that the new receiver will be assignment compatible
 	 * with the given type, but if the given type contains wildcards or inference
@@ -558,7 +557,7 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	 * @param type
 	 *          The new receiver type. The raw type of this type must be a subtype
 	 *          of the raw type of the current receiver type.
-	 * @return A new {@link ExecutableMember} compatible with the given receiver
+	 * @return A new {@link InvocableMember} compatible with the given receiver
 	 *         type.
 	 * 
 	 *         <p>
@@ -570,7 +569,7 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	 */
 	@Override
 	@SuppressWarnings("unchecked")
-	public ExecutableMember<? extends O, ? extends R> withOwnerType(Type type) {
+	public InvocableMember<? extends O, ? extends R> withOwnerType(Type type) {
 		try {
 			Resolver resolver = getResolver();
 
@@ -584,7 +583,7 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 			Executable override = mostSpecificOverridingClass.equals(executable.getDeclaringClass()) ? executable
 					: mostSpecificOverridingClass.getMethod(executable.getName(), executable.getParameterTypes());
 
-			return new ExecutableMember<>(resolver, (TypeToken<O>) TypeToken.over(type), override, invocationFunction,
+			return new InvocableMember<>(resolver, (TypeToken<O>) TypeToken.over(type), override, invocationFunction,
 					parameters, variableArityInvocation);
 		} catch (NoSuchMethodException | SecurityException e) {
 			throw new TypeException(p -> p.cannotResolveOverride(this, type), e);
@@ -592,11 +591,11 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	}
 
 	/**
-	 * Derive a new instance of {@link ExecutableMember} with the given target
+	 * Derive a new instance of {@link InvocableMember} with the given target
 	 * type.
 	 * 
 	 * <p>
-	 * The new {@link ExecutableMember} will always have a target type which is as
+	 * The new {@link InvocableMember} will always have a target type which is as
 	 * or more specific than both the current target type <em>and</em> the given
 	 * type. This means that the new target will be assignment compatible with the
 	 * given type, but if the given type contains wildcards or inference variables
@@ -605,12 +604,12 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	 * may be added to them.
 	 * 
 	 * @param <S>
-	 *          The derived {@link ExecutableMember} must be assignment compatible
+	 *          The derived {@link InvocableMember} must be assignment compatible
 	 *          with this type.
 	 * @param target
-	 *          The derived {@link ExecutableMember} must be assignment compatible
+	 *          The derived {@link InvocableMember} must be assignment compatible
 	 *          with this type.
-	 * @return A new {@link ExecutableMember} compatible with the given target
+	 * @return A new {@link InvocableMember} compatible with the given target
 	 *         type.
 	 * 
 	 *         <p>
@@ -619,16 +618,16 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	 *         That is, any type which can be assigned to both the given type and
 	 *         the current target type, will also be assignable to the new type.
 	 */
-	public <S extends R> ExecutableMember<O, S> withTargetType(Class<S> target) {
+	public <S extends R> InvocableMember<O, S> withTargetType(Class<S> target) {
 		return withTargetType(TypeToken.over(target));
 	}
 
 	/**
-	 * Derive a new instance of {@link ExecutableMember} with the given target
+	 * Derive a new instance of {@link InvocableMember} with the given target
 	 * type.
 	 * 
 	 * <p>
-	 * The new {@link ExecutableMember} will always have a target type which is as
+	 * The new {@link InvocableMember} will always have a target type which is as
 	 * or more specific than both the current target type <em>and</em> the given
 	 * type. This means that the new target will be assignment compatible with the
 	 * given type, but if the given type contains wildcards or inference variables
@@ -637,12 +636,12 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	 * may be added to them.
 	 * 
 	 * @param <S>
-	 *          The derived {@link ExecutableMember} must be assignment compatible
+	 *          The derived {@link InvocableMember} must be assignment compatible
 	 *          with this type.
 	 * @param target
-	 *          The derived {@link ExecutableMember} must be assignment compatible
+	 *          The derived {@link InvocableMember} must be assignment compatible
 	 *          with this type.
-	 * @return A new {@link ExecutableMember} compatible with the given target
+	 * @return A new {@link InvocableMember} compatible with the given target
 	 *         type.
 	 * 
 	 *         <p>
@@ -652,19 +651,19 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	 *         the current target type, will also be assignable to the new type.
 	 */
 	@SuppressWarnings("unchecked")
-	public <S> ExecutableMember<O, S> withTargetType(TypeToken<S> target) {
+	public <S> InvocableMember<O, S> withTargetType(TypeToken<S> target) {
 		if (target == null)
-			return (ExecutableMember<O, S>) this;
+			return (InvocableMember<O, S>) this;
 
-		return (ExecutableMember<O, S>) withBoundsFrom(target).withTargetType(target.getType());
+		return (InvocableMember<O, S>) withBoundsFrom(target).withTargetType(target.getType());
 	}
 
 	/**
-	 * Derive a new instance of {@link ExecutableMember} with the given target
+	 * Derive a new instance of {@link InvocableMember} with the given target
 	 * type.
 	 * 
 	 * <p>
-	 * The new {@link ExecutableMember} will always have a target type which is as
+	 * The new {@link InvocableMember} will always have a target type which is as
 	 * or more specific than both the current target type <em>and</em> the given
 	 * type. This means that the new target will be assignment compatible with the
 	 * given type, but if the given type contains wildcards or inference variables
@@ -673,9 +672,9 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	 * may be added to them.
 	 * 
 	 * @param target
-	 *          The derived {@link ExecutableMember} must be assignment compatible
+	 *          The derived {@link InvocableMember} must be assignment compatible
 	 *          with this type.
-	 * @return A new {@link ExecutableMember} compatible with the given target
+	 * @return A new {@link InvocableMember} compatible with the given target
 	 *         type.
 	 * 
 	 *         <p>
@@ -684,25 +683,25 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	 *         That is, any type which can be assigned to both the given type and
 	 *         the current target type, will also be assignable to the new type.
 	 */
-	public ExecutableMember<O, ? extends R> withTargetType(Type target) {
+	public InvocableMember<O, ? extends R> withTargetType(Type target) {
 		return withTargetTypeCapture(target);
 	}
 
 	@SuppressWarnings("unchecked")
-	private <S extends R> ExecutableMember<O, S> withTargetTypeCapture(Type target) {
+	private <S extends R> InvocableMember<O, S> withTargetTypeCapture(Type target) {
 		if (target == null)
-			return (ExecutableMember<O, S>) this;
+			return (InvocableMember<O, S>) this;
 
 		Resolver resolver = getResolver();
 
 		ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, returnType.getType(), target, resolver.getBounds());
 
-		return new ExecutableMember<>(resolver, ownerType, executable, (BiFunction<O, List<?>, S>) invocationFunction,
+		return new InvocableMember<>(resolver, ownerType, executable, (BiFunction<O, List<?>, S>) invocationFunction,
 				parameters, variableArityInvocation);
 	}
 
 	/**
-	 * Derive a new {@link ExecutableMember} fulfilling two conditions.
+	 * Derive a new {@link InvocableMember} fulfilling two conditions.
 	 * 
 	 * <ul>
 	 * <li>Firstly, that the result be assignment compatible with the given target
@@ -719,22 +718,22 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	 * failed to infer a type.
 	 * 
 	 * @param <U>
-	 *          The derived {@link ExecutableMember} must be assignment compatible
+	 *          The derived {@link InvocableMember} must be assignment compatible
 	 *          with this type.
 	 * @param targetType
-	 *          The derived {@link ExecutableMember} must be assignment compatible
+	 *          The derived {@link InvocableMember} must be assignment compatible
 	 *          with this type.
 	 * @param arguments
-	 *          The derived {@link ExecutableMember} must be loose invocation
+	 *          The derived {@link InvocableMember} must be loose invocation
 	 *          compatible, or failing that variable arity compatible, with the
 	 *          given arguments.
-	 * @return A new {@link ExecutableMember} compatible with the given target
-	 *         type and parameters, and which has more specific arguments, type
+	 * @return A new {@link InvocableMember} compatible with the given target type
+	 *         and parameters, and which has more specific arguments, type
 	 *         arguments, and return type than the receiving
-	 *         {@link ExecutableMember}.
+	 *         {@link InvocableMember}.
 	 */
-	public <U> ExecutableMember<O, U> withInferredType(TypeToken<U> targetType, TypeToken<?>... arguments) {
-		ExecutableMember<O, R> executableMember;
+	public <U> InvocableMember<O, U> withInferredType(TypeToken<U> targetType, TypeToken<?>... arguments) {
+		InvocableMember<O, R> executableMember;
 		try {
 			executableMember = withLooseApplicability(arguments);
 		} catch (Exception e) {
@@ -747,150 +746,148 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	}
 
 	/**
-	 * Derived a new {@link ExecutableMember} instance with generic method
+	 * Derived a new {@link InvocableMember} instance with generic method
 	 * parameters inferred, and if this is a member of a generic type, with
 	 * generic type parameters inferred, too.
 	 * 
-	 * @return The derived {@link ExecutableMember} with inferred invocation type.
+	 * @return The derived {@link InvocableMember} with inferred invocation type.
 	 */
 	@Override
-	public ExecutableMember<O, R> infer() {
+	public InvocableMember<O, R> infer() {
 		Resolver resolver = getResolver();
 
 		resolver.infer();
 
-		return new ExecutableMember<>(resolver, ownerType, executable, invocationFunction, parameters,
+		return new InvocableMember<>(resolver, ownerType, executable, invocationFunction, parameters,
 				variableArityInvocation);
 	}
 
 	/**
-	 * @return A new derived {@link ExecutableMember} instance with generic method
+	 * @return A new derived {@link InvocableMember} instance with generic method
 	 *         parameters inferred, and if this is a constructor on a generic
 	 *         type, with generic type parameters inferred, also.
 	 */
-	public ExecutableMember<O, R> inferParameterTypes() {
+	public InvocableMember<O, R> inferParameterTypes() {
 		Resolver resolver = getResolver();
 
 		for (Type parameter : parameters)
 			resolver.infer(parameter);
 
-		return new ExecutableMember<>(resolver, ownerType, executable, invocationFunction, parameters,
+		return new InvocableMember<>(resolver, ownerType, executable, invocationFunction, parameters,
 				variableArityInvocation);
 	}
 
 	/**
-	 * Derive a new {@link ExecutableMember} instance with inferred invocation
-	 * type such that it is compatible with the given arguments in a strict
-	 * invocation context. Where necessary, the derived {@link ExecutableMember}
-	 * may infer new bounds or instantiations on type parameters.
+	 * Derive a new {@link InvocableMember} instance with inferred invocation type
+	 * such that it is compatible with the given arguments in a strict invocation
+	 * context. Where necessary, the derived {@link InvocableMember} may infer new
+	 * bounds or instantiations on type parameters.
 	 * 
 	 * @param arguments
 	 *          The argument types of an invocation of this
-	 *          {@link ExecutableMember}.
+	 *          {@link InvocableMember}.
 	 * @return If the given parameters are not compatible with this executable
 	 *         member in a strict compatibility invocation context, we throw an
 	 *         exception. Otherwise, we return the derived
-	 *         {@link ExecutableMember}.
+	 *         {@link InvocableMember}.
 	 */
-	public ExecutableMember<O, R> withStrictApplicability(TypeToken<?>... arguments) {
+	public InvocableMember<O, R> withStrictApplicability(TypeToken<?>... arguments) {
 		return withStrictApplicability(Arrays.asList(arguments));
 	}
 
 	/**
-	 * Derive a new {@link ExecutableMember} instance with inferred invocation
-	 * type such that it is compatible with the given arguments in a strict
-	 * invocation context. Where necessary, the derived {@link ExecutableMember}
-	 * may infer new bounds or instantiations on type parameters.
+	 * Derive a new {@link InvocableMember} instance with inferred invocation type
+	 * such that it is compatible with the given arguments in a strict invocation
+	 * context. Where necessary, the derived {@link InvocableMember} may infer new
+	 * bounds or instantiations on type parameters.
 	 * 
 	 * @param arguments
 	 *          The argument types of an invocation of this
-	 *          {@link ExecutableMember}.
+	 *          {@link InvocableMember}.
 	 * @return If the given parameters are not compatible with this executable
 	 *         member in a strict compatibility invocation context, we throw an
 	 *         exception. Otherwise, we return the derived
-	 *         {@link ExecutableMember}.
+	 *         {@link InvocableMember}.
 	 */
-	public ExecutableMember<O, R> withStrictApplicability(List<? extends TypeToken<?>> arguments) {
+	public InvocableMember<O, R> withStrictApplicability(List<? extends TypeToken<?>> arguments) {
 		// TODO && make sure no boxing/unboxing occurs!
 
 		return withLooseApplicability(arguments);
 	}
 
 	/**
-	 * Derive a new {@link ExecutableMember} instance with inferred invocation
-	 * type such that it is compatible with the given arguments in a loose
-	 * invocation context. Where necessary, the derived {@link ExecutableMember}
-	 * may infer new bounds or instantiations on type parameters.
+	 * Derive a new {@link InvocableMember} instance with inferred invocation type
+	 * such that it is compatible with the given arguments in a loose invocation
+	 * context. Where necessary, the derived {@link InvocableMember} may infer new
+	 * bounds or instantiations on type parameters.
 	 * 
 	 * @param arguments
 	 *          The argument types of an invocation of this
-	 *          {@link ExecutableMember}.
+	 *          {@link InvocableMember}.
 	 * @return If the given parameters are not compatible with this executable
 	 *         member in a loose compatibility invocation context, we throw an
 	 *         exception. Otherwise, we return the derived
-	 *         {@link ExecutableMember}.
+	 *         {@link InvocableMember}.
 	 */
-	public ExecutableMember<O, R> withLooseApplicability(TypeToken<?>... arguments) {
+	public InvocableMember<O, R> withLooseApplicability(TypeToken<?>... arguments) {
 		return withLooseApplicability(Arrays.asList(arguments));
 	}
 
 	/**
-	 * Derive a new {@link ExecutableMember} instance with inferred invocation
-	 * type such that it is compatible with the given arguments in a loose
-	 * invocation context. Where necessary, the derived {@link ExecutableMember}
-	 * may infer new bounds or instantiations on type parameters.
+	 * Derive a new {@link InvocableMember} instance with inferred invocation type
+	 * such that it is compatible with the given arguments in a loose invocation
+	 * context. Where necessary, the derived {@link InvocableMember} may infer new
+	 * bounds or instantiations on type parameters.
 	 * 
 	 * @param arguments
 	 *          The argument types of an invocation of this
-	 *          {@link ExecutableMember}.
+	 *          {@link InvocableMember}.
 	 * @return If the given parameters are not compatible with this executable
 	 *         member in a loose compatibility invocation context, we throw an
 	 *         exception. Otherwise, we return the derived
-	 *         {@link ExecutableMember}.
+	 *         {@link InvocableMember}.
 	 */
-	public ExecutableMember<O, R> withLooseApplicability(List<? extends TypeToken<?>> arguments) {
+	public InvocableMember<O, R> withLooseApplicability(List<? extends TypeToken<?>> arguments) {
 		return withLooseApplicability(false, arguments);
 	}
 
 	/**
-	 * Derive a new {@link ExecutableMember} instance with inferred invocation
-	 * type such that it is compatible with the given arguments in a variable
-	 * arity invocation context. Where necessary, the derived
-	 * {@link ExecutableMember} may infer new bounds or instantiations on type
-	 * parameters.
+	 * Derive a new {@link InvocableMember} instance with inferred invocation type
+	 * such that it is compatible with the given arguments in a variable arity
+	 * invocation context. Where necessary, the derived {@link InvocableMember}
+	 * may infer new bounds or instantiations on type parameters.
 	 * 
 	 * @param arguments
 	 *          The argument types of an invocation of this
-	 *          {@link ExecutableMember}.
+	 *          {@link InvocableMember}.
 	 * @return If the given parameters are not compatible with this executable
 	 *         member in a variable arity invocation context, we throw an
 	 *         exception. Otherwise, we return the derived
-	 *         {@link ExecutableMember}.
+	 *         {@link InvocableMember}.
 	 */
-	public ExecutableMember<O, R> withVariableArityApplicability(TypeToken<?>... arguments) {
+	public InvocableMember<O, R> withVariableArityApplicability(TypeToken<?>... arguments) {
 		return withVariableArityApplicability(Arrays.asList(arguments));
 	}
 
 	/**
-	 * Derive a new {@link ExecutableMember} instance with inferred invocation
-	 * type such that it is compatible with the given arguments in a variable
-	 * arity invocation context. Where necessary, the derived
-	 * {@link ExecutableMember} may infer new bounds or instantiations on type
-	 * parameters.
+	 * Derive a new {@link InvocableMember} instance with inferred invocation type
+	 * such that it is compatible with the given arguments in a variable arity
+	 * invocation context. Where necessary, the derived {@link InvocableMember}
+	 * may infer new bounds or instantiations on type parameters.
 	 * 
 	 * @param arguments
 	 *          The argument types of an invocation of this
-	 *          {@link ExecutableMember}.
+	 *          {@link InvocableMember}.
 	 * @return If the given parameters are not compatible with this executable
 	 *         member in a variable arity invocation context, we throw an
 	 *         exception. Otherwise, we return the derived
-	 *         {@link ExecutableMember}.
+	 *         {@link InvocableMember}.
 	 */
-	public ExecutableMember<O, R> withVariableArityApplicability(List<? extends TypeToken<?>> arguments) {
+	public InvocableMember<O, R> withVariableArityApplicability(List<? extends TypeToken<?>> arguments) {
 		return withLooseApplicability(true, arguments);
 	}
 
-	private ExecutableMember<O, R> withLooseApplicability(boolean variableArity, List<? extends TypeToken<?>> arguments) {
+	private InvocableMember<O, R> withLooseApplicability(boolean variableArity, List<? extends TypeToken<?>> arguments) {
 		if (variableArity) {
 			if (!executable.isVarArgs())
 				throw new TypeException(p -> p.invalidVariableArityInvocation(this));
@@ -926,7 +923,7 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 			resolver.copy().infer();
 		}
 
-		return new ExecutableMember<>(resolver, ownerType, executable, invocationFunction, parameters, variableArity);
+		return new InvocableMember<>(resolver, ownerType, executable, invocationFunction, parameters, variableArity);
 	}
 
 	/**
@@ -948,7 +945,7 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	}
 
 	/**
-	 * Derive a new {@link ExecutableMember} instance from this, with the given
+	 * Derive a new {@link InvocableMember} instance from this, with the given
 	 * instantiation substituted for the given {@link TypeVariable}.
 	 * 
 	 * <p>
@@ -959,13 +956,13 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	 * 
 	 * @param variable
 	 *          The type variable on the generic declaration which is the
-	 *          {@link Executable} wrapped by this {@link ExecutableMember}.
+	 *          {@link Executable} wrapped by this {@link InvocableMember}.
 	 * @param instantiation
 	 *          The type with which to instantiate the given type variable.
-	 * @return A new derived {@link ExecutableMember} instance with the given
+	 * @return A new derived {@link InvocableMember} instance with the given
 	 *         instantiation substituted for the given type variable.
 	 */
-	public ExecutableMember<O, ? extends R> withTypeArgument(TypeVariable<? extends Executable> variable,
+	public InvocableMember<O, ? extends R> withTypeArgument(TypeVariable<? extends Executable> variable,
 			Type instantiation) {
 		if (Arrays.stream(executable.getTypeParameters()).anyMatch(variable::equals)) {
 			Resolver resolver = this.resolver.copy();
@@ -976,7 +973,7 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	}
 
 	/**
-	 * Derive a new {@link ExecutableMember} instance from this, with the given
+	 * Derive a new {@link InvocableMember} instance from this, with the given
 	 * instantiation substituted for the given {@link TypeVariable}.
 	 * 
 	 * <p>
@@ -987,22 +984,22 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	 * 
 	 * @param <U>
 	 *          The type variable on the generic declaration which is the
-	 *          {@link Executable} wrapped by this {@link ExecutableMember}.
+	 *          {@link Executable} wrapped by this {@link InvocableMember}.
 	 * @param variable
 	 *          The type variable on the generic declaration which is the
-	 *          {@link Executable} wrapped by this {@link ExecutableMember}.
+	 *          {@link Executable} wrapped by this {@link InvocableMember}.
 	 * @param instantiation
 	 *          The type with which to instantiate the given type variable.
-	 * @return A new derived {@link ExecutableMember} instance with the given
+	 * @return A new derived {@link InvocableMember} instance with the given
 	 *         instantiation substituted for the given type variable.
 	 */
 	@SuppressWarnings("unchecked")
-	public <U> ExecutableMember<O, ? extends R> withTypeArgument(TypeParameter<U> variable, TypeToken<U> instantiation) {
+	public <U> InvocableMember<O, ? extends R> withTypeArgument(TypeParameter<U> variable, TypeToken<U> instantiation) {
 		return withTypeArgument((TypeVariable<? extends Executable>) variable.getType(), instantiation.getType());
 	}
 
 	/**
-	 * Derive a new {@link ExecutableMember} instance with the given generic type
+	 * Derive a new {@link InvocableMember} instance with the given generic type
 	 * argument substitutions, as per the behaviour of
 	 * {@link #withTypeArgument(TypeVariable, Type)}, but with every argument
 	 * provided in order.
@@ -1010,16 +1007,16 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	 * @param typeArguments
 	 *          A list of arguments for each generic type parameter of the
 	 *          underlying {@link Executable}.
-	 * @return A new derived {@link ExecutableMember} instance with the given
+	 * @return A new derived {@link InvocableMember} instance with the given
 	 *         instantiations substituted for each generic type parameter, in
 	 *         order.
 	 */
-	public ExecutableMember<O, ? extends R> withTypeArguments(Type... typeArguments) {
+	public InvocableMember<O, ? extends R> withTypeArguments(Type... typeArguments) {
 		return withTypeArguments(Arrays.asList(typeArguments));
 	}
 
 	/**
-	 * Derive a new {@link ExecutableMember} instance with the given generic type
+	 * Derive a new {@link InvocableMember} instance with the given generic type
 	 * argument substitutions, as per the behaviour of
 	 * {@link #withTypeArgument(TypeVariable, Type)}, but with every argument
 	 * provided in order.
@@ -1027,11 +1024,11 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	 * @param typeArguments
 	 *          A list of arguments for each generic type parameter of the
 	 *          underlying {@link Executable}.
-	 * @return A new derived {@link ExecutableMember} instance with the given
+	 * @return A new derived {@link InvocableMember} instance with the given
 	 *         instantiations substituted for each generic type parameter, in
 	 *         order.
 	 */
-	public ExecutableMember<O, ? extends R> withTypeArguments(List<Type> typeArguments) {
+	public InvocableMember<O, ? extends R> withTypeArguments(List<Type> typeArguments) {
 		throw new UnsupportedOperationException(); // TODO
 	}
 
@@ -1175,24 +1172,24 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	 * @return The set of all given overload candidates which are most applicable
 	 *         to invocation with the given parameters.
 	 */
-	public static <T, R> Set<? extends ExecutableMember<? super T, ? extends R>> resolveApplicableExecutableMembers(
-			Set<? extends ExecutableMember<? super T, ? extends R>> candidates, List<? extends TypeToken<?>> parameters) {
-		Map<ExecutableMember<? super T, ? extends R>, RuntimeException> failures = new LinkedHashMap<>();
-		BiConsumer<ExecutableMember<? super T, ? extends R>, RuntimeException> putFailures = failures::put;
+	public static <T, R> Set<? extends InvocableMember<? super T, ? extends R>> resolveApplicableExecutableMembers(
+			Set<? extends InvocableMember<? super T, ? extends R>> candidates, List<? extends TypeToken<?>> parameters) {
+		Map<InvocableMember<? super T, ? extends R>, RuntimeException> failures = new LinkedHashMap<>();
+		BiConsumer<InvocableMember<? super T, ? extends R>, RuntimeException> putFailures = failures::put;
 
-		Set<? extends ExecutableMember<? super T, ? extends R>> compatibleCandidates = filterOverloadCandidates(candidates,
+		Set<? extends InvocableMember<? super T, ? extends R>> compatibleCandidates = filterOverloadCandidates(candidates,
 				i -> i.withLooseApplicability(parameters), putFailures);
 
 		if (compatibleCandidates.isEmpty()) {
 			compatibleCandidates = new HashSet<>(candidates);
-			for (ExecutableMember<? super T, ? extends R> candidate : candidates)
+			for (InvocableMember<? super T, ? extends R> candidate : candidates)
 				if (!candidate.isVariableArityDefinition())
 					compatibleCandidates.remove(candidate);
 
 			compatibleCandidates = filterOverloadCandidates(compatibleCandidates,
 					i -> i.withVariableArityApplicability(parameters), putFailures);
 		} else {
-			Set<? extends ExecutableMember<? super T, ? extends R>> oldCompatibleCandidates = compatibleCandidates;
+			Set<? extends InvocableMember<? super T, ? extends R>> oldCompatibleCandidates = compatibleCandidates;
 			compatibleCandidates = filterOverloadCandidates(compatibleCandidates, i -> i.withStrictApplicability(parameters),
 					putFailures);
 			if (compatibleCandidates.isEmpty())
@@ -1206,10 +1203,10 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 		return compatibleCandidates;
 	}
 
-	private static <T, R> Set<? extends ExecutableMember<? super T, ? extends R>> filterOverloadCandidates(
-			Collection<? extends ExecutableMember<? super T, ? extends R>> candidates,
-			Function<? super ExecutableMember<? super T, ? extends R>, ExecutableMember<? super T, ? extends R>> applicabilityFunction,
-			BiConsumer<ExecutableMember<? super T, ? extends R>, RuntimeException> failures) {
+	private static <T, R> Set<? extends InvocableMember<? super T, ? extends R>> filterOverloadCandidates(
+			Collection<? extends InvocableMember<? super T, ? extends R>> candidates,
+			Function<? super InvocableMember<? super T, ? extends R>, InvocableMember<? super T, ? extends R>> applicabilityFunction,
+			BiConsumer<InvocableMember<? super T, ? extends R>, RuntimeException> failures) {
 		return candidates.stream().map(i -> {
 			try {
 				return applicabilityFunction.apply(i);
@@ -1236,25 +1233,25 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 	 *          The candidates from which to select the most specific.
 	 * @return The most specific of the given candidates.
 	 */
-	public static <T, R> ExecutableMember<? super T, ? extends R> resolveMostSpecificExecutableMember(
-			Collection<? extends ExecutableMember<? super T, ? extends R>> candidates) {
+	public static <T, R> InvocableMember<? super T, ? extends R> resolveMostSpecificExecutableMember(
+			Collection<? extends InvocableMember<? super T, ? extends R>> candidates) {
 		if (candidates.size() == 1)
 			return candidates.iterator().next();
 
-		Set<ExecutableMember<? super T, ? extends R>> mostSpecificSoFar = resolveMostSpecificCandidateSet(candidates);
+		Set<InvocableMember<? super T, ? extends R>> mostSpecificSoFar = resolveMostSpecificCandidateSet(candidates);
 
 		/*
 		 * Find which of the remaining candidates, which should all have identical
 		 * parameter types, is declared in the lowermost class.
 		 */
-		Iterator<ExecutableMember<? super T, ? extends R>> overrideCandidateIterator = mostSpecificSoFar.iterator();
-		ExecutableMember<? super T, ? extends R> mostSpecific = overrideCandidateIterator.next();
+		Iterator<InvocableMember<? super T, ? extends R>> overrideCandidateIterator = mostSpecificSoFar.iterator();
+		InvocableMember<? super T, ? extends R> mostSpecific = overrideCandidateIterator.next();
 		while (overrideCandidateIterator.hasNext()) {
-			ExecutableMember<? super T, ? extends R> candidate = overrideCandidateIterator.next();
+			InvocableMember<? super T, ? extends R> candidate = overrideCandidateIterator.next();
 
 			if (!candidate.getParameters().equals(mostSpecific.getParameters())
 					|| !candidate.getName().equals(mostSpecific.getName())) {
-				ExecutableMember<?, ?> mostSpecificFinal = mostSpecific;
+				InvocableMember<?, ?> mostSpecificFinal = mostSpecific;
 				throw new TypeException(p -> p.cannotResolveAmbiguity(candidate, mostSpecificFinal));
 			}
 
@@ -1265,21 +1262,21 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 		return mostSpecific;
 	}
 
-	private static <T, R> Set<ExecutableMember<? super T, ? extends R>> resolveMostSpecificCandidateSet(
-			Collection<? extends ExecutableMember<? super T, ? extends R>> candidates) {
-		List<ExecutableMember<? super T, ? extends R>> remainingCandidates = new ArrayList<>(candidates);
+	private static <T, R> Set<InvocableMember<? super T, ? extends R>> resolveMostSpecificCandidateSet(
+			Collection<? extends InvocableMember<? super T, ? extends R>> candidates) {
+		List<InvocableMember<? super T, ? extends R>> remainingCandidates = new ArrayList<>(candidates);
 
 		/*
 		 * For each remaining candidate in the list...
 		 */
 		for (int first = 0; first < remainingCandidates.size(); first++) {
-			ExecutableMember<? super T, ? extends R> firstCandidate = remainingCandidates.get(first);
+			InvocableMember<? super T, ? extends R> firstCandidate = remainingCandidates.get(first);
 
 			/*
 			 * Compare with each other remaining candidate...
 			 */
 			for (int second = first + 1; second < remainingCandidates.size(); second++) {
-				ExecutableMember<? super T, ? extends R> secondCandidate = remainingCandidates.get(second);
+				InvocableMember<? super T, ? extends R> secondCandidate = remainingCandidates.get(second);
 
 				/*
 				 * Determine which of the executable members, if either, are more
@@ -1317,8 +1314,8 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 		return new HashSet<>(remainingCandidates);
 	}
 
-	private static Pair<Boolean, Boolean> compareCandidates(ExecutableMember<?, ?> firstCandidate,
-			ExecutableMember<?, ?> secondCandidate) {
+	private static Pair<Boolean, Boolean> compareCandidates(InvocableMember<?, ?> firstCandidate,
+			InvocableMember<?, ?> secondCandidate) {
 		boolean firstMoreSpecific = true;
 		boolean secondMoreSpecific = true;
 
@@ -1355,8 +1352,8 @@ public class ExecutableMember<O, R> implements TypeMember<O> {
 		return new Pair<>(firstMoreSpecific, secondMoreSpecific);
 	}
 
-	private static boolean compareGenericCandidate(ExecutableMember<?, ?> firstCandidate,
-			ExecutableMember<?, ?> genericCandidate) {
+	private static boolean compareGenericCandidate(InvocableMember<?, ?> firstCandidate,
+			InvocableMember<?, ?> genericCandidate) {
 		Resolver resolver = genericCandidate.getResolver();
 
 		try {

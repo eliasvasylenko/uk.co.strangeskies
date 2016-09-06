@@ -1505,7 +1505,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * Find which constructors can be invoked for this type.
 	 * 
 	 * @return A list of all {@link Constructor} objects applicable to this type,
-	 *         wrapped in {@link ExecutableMember} instances.
+	 *         wrapped in {@link InvocableMember} instances.
 	 */
 	public Set<? extends FieldMember<T, ?>> getFields() {
 		return getFields(c -> true);
@@ -1519,7 +1519,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * Find which constructors can be invoked for this type.
 	 * 
 	 * @return A list of all {@link Constructor} objects applicable to this type,
-	 *         wrapped in {@link ExecutableMember} instances.
+	 *         wrapped in {@link InvocableMember} instances.
 	 */
 	public Set<? extends FieldMember<T, ?>> getDeclaredFields() {
 		return getDeclaredFields(c -> true);
@@ -1538,13 +1538,13 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * Find which constructors can be invoked for this type.
 	 * 
 	 * @return A list of all {@link Constructor} objects applicable to this type,
-	 *         wrapped in {@link ExecutableMember} instances.
+	 *         wrapped in {@link InvocableMember} instances.
 	 */
-	public Set<? extends ExecutableMember<T, T>> getConstructors() {
+	public Set<? extends InvocableMember<T, T>> getConstructors() {
 		return getConstructors(c -> true);
 	}
 
-	private Set<? extends ExecutableMember<T, T>> getConstructors(Predicate<Constructor<T>> filter) {
+	private Set<? extends InvocableMember<T, T>> getConstructors(Predicate<Constructor<T>> filter) {
 		return getConstructorsImpl(filter, Class::getConstructors);
 	}
 
@@ -1552,21 +1552,21 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * Find which constructors can be invoked for this type.
 	 * 
 	 * @return A list of all {@link Constructor} objects applicable to this type,
-	 *         wrapped in {@link ExecutableMember} instances.
+	 *         wrapped in {@link InvocableMember} instances.
 	 */
-	public Set<? extends ExecutableMember<T, T>> getDeclaredConstructors() {
+	public Set<? extends InvocableMember<T, T>> getDeclaredConstructors() {
 		return getDeclaredConstructors(c -> true);
 	}
 
-	private Set<? extends ExecutableMember<T, T>> getDeclaredConstructors(Predicate<Constructor<T>> filter) {
+	private Set<? extends InvocableMember<T, T>> getDeclaredConstructors(Predicate<Constructor<T>> filter) {
 		return getConstructorsImpl(filter, Class::getDeclaredConstructors);
 	}
 
 	@SuppressWarnings("unchecked")
-	private Set<? extends ExecutableMember<T, T>> getConstructorsImpl(Predicate<Constructor<T>> filter,
+	private Set<? extends InvocableMember<T, T>> getConstructorsImpl(Predicate<Constructor<T>> filter,
 			Function<Class<?>, Constructor<?>[]> constructors) {
 		return Arrays.stream(constructors.apply(getRawType())).filter(c -> filter.test((Constructor<T>) c))
-				.map(m -> ExecutableMember.over((Constructor<T>) m, this)).collect(Collectors.toCollection(LinkedHashSet::new));
+				.map(m -> InvocableMember.over((Constructor<T>) m, this)).collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 
 	/**
@@ -1574,9 +1574,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * instances.
 	 * 
 	 * @return A list of all {@link Method} objects applicable to this type,
-	 *         wrapped in {@link ExecutableMember} instances.
+	 *         wrapped in {@link InvocableMember} instances.
 	 */
-	public Set<? extends ExecutableMember<? super T, ?>> getMethods() {
+	public Set<? extends InvocableMember<? super T, ?>> getMethods() {
 		return getMethods(m -> true);
 	}
 
@@ -1587,9 +1587,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * @param filter
 	 *          Determine which methods may participate.
 	 * @return A list of all {@link Method} objects applicable to this type,
-	 *         wrapped in {@link ExecutableMember} instances.
+	 *         wrapped in {@link InvocableMember} instances.
 	 */
-	public Set<? extends ExecutableMember<? super T, ?>> getMethods(Predicate<Method> filter) {
+	public Set<? extends InvocableMember<? super T, ?>> getMethods(Predicate<Method> filter) {
 		return getMethodsImpl(filter, Class::getMethods);
 	}
 
@@ -1598,9 +1598,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * instances.
 	 * 
 	 * @return A list of all {@link Method} objects applicable to this type,
-	 *         wrapped in {@link ExecutableMember} instances.
+	 *         wrapped in {@link InvocableMember} instances.
 	 */
-	public Set<? extends ExecutableMember<? super T, ?>> getDeclaredMethods() {
+	public Set<? extends InvocableMember<? super T, ?>> getDeclaredMethods() {
 		return getDeclaredMethods(m -> true);
 	}
 
@@ -1611,20 +1611,20 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * @param filter
 	 *          Determine which methods may participate.
 	 * @return A list of all {@link Method} objects applicable to this type,
-	 *         wrapped in {@link ExecutableMember} instances.
+	 *         wrapped in {@link InvocableMember} instances.
 	 */
-	public Set<? extends ExecutableMember<? super T, ?>> getDeclaredMethods(Predicate<Method> filter) {
+	public Set<? extends InvocableMember<? super T, ?>> getDeclaredMethods(Predicate<Method> filter) {
 		return getMethodsImpl(filter, Class::getDeclaredMethods);
 	}
 
-	private Set<? extends ExecutableMember<? super T, ?>> getMethodsImpl(Predicate<Method> filter,
+	private Set<? extends InvocableMember<? super T, ?>> getMethodsImpl(Predicate<Method> filter,
 			Function<Class<?>, Method[]> methods) {
 		Stream<Method> methodStream = getRawTypes().stream().flatMap(t -> Arrays.stream(methods.apply(t)));
 
 		if (getRawTypes().stream().allMatch(Types::isInterface))
 			methodStream = Stream.concat(methodStream, Arrays.stream(Object.class.getMethods()));
 
-		return methodStream.filter(filter).map(m -> (ExecutableMember<? super T, ?>) ExecutableMember.over(m, this))
+		return methodStream.filter(filter).map(m -> (InvocableMember<? super T, ?>) InvocableMember.over(m, this))
 				.collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 
@@ -1633,11 +1633,11 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * statically or on instances.
 	 * 
 	 * @return A list of all {@link Method} and {@link Constructor} objects
-	 *         applicable to this type, wrapped in {@link ExecutableMember}
+	 *         applicable to this type, wrapped in {@link InvocableMember}
 	 *         instances.
 	 */
-	public Set<? extends ExecutableMember<? super T, ?>> getExecutableMembers() {
-		Set<ExecutableMember<? super T, ?>> members = new HashSet<>();
+	public Set<? extends InvocableMember<? super T, ?>> getExecutableMembers() {
+		Set<InvocableMember<? super T, ?>> members = new HashSet<>();
 		members.addAll(getConstructors());
 		members.addAll(getMethods());
 		return members;
@@ -1648,11 +1648,11 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * statically or on instances.
 	 * 
 	 * @return A list of all {@link Method} and {@link Constructor} objects
-	 *         applicable to this type, wrapped in {@link ExecutableMember}
+	 *         applicable to this type, wrapped in {@link InvocableMember}
 	 *         instances.
 	 */
-	public Set<? extends ExecutableMember<? super T, ?>> getDeclaredExecutableMembers() {
-		Set<ExecutableMember<? super T, ?>> members = new HashSet<>();
+	public Set<? extends InvocableMember<? super T, ?>> getDeclaredExecutableMembers() {
+		Set<InvocableMember<? super T, ?>> members = new HashSet<>();
 		members.addAll(getDeclaredConstructors());
 		members.addAll(getDeclaredMethods());
 		return members;
@@ -1663,7 +1663,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * instances.
 	 * 
 	 * @return A list of all {@link Method} and {@link Constructor} objects
-	 *         applicable to this type, wrapped in {@link ExecutableMember}
+	 *         applicable to this type, wrapped in {@link InvocableMember}
 	 *         instances.
 	 */
 	public Set<? extends TypeMember<? super T>> getMembers() {
@@ -1679,7 +1679,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * instances.
 	 * 
 	 * @return A list of all {@link Method} and {@link Constructor} objects
-	 *         applicable to this type, wrapped in {@link ExecutableMember}
+	 *         applicable to this type, wrapped in {@link InvocableMember}
 	 *         instances.
 	 */
 	public Set<? extends TypeMember<? super T>> getDeclaredMembers() {
@@ -1694,7 +1694,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * As {@link #resolveConstructorOverload(List)} for a nullary method.
 	 */
 	@SuppressWarnings("javadoc")
-	public ExecutableMember<? super T, ? extends T> resolveConstructorOverload() {
+	public InvocableMember<? super T, ? extends T> resolveConstructorOverload() {
 		return resolveConstructorOverload(Collections.emptyList());
 	}
 
@@ -1702,7 +1702,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * As {@link #resolveDeclaredConstructorOverload(List)} for a nullary method.
 	 */
 	@SuppressWarnings("javadoc")
-	public ExecutableMember<? super T, ? extends T> resolveDeclaredConstructorOverload() {
+	public InvocableMember<? super T, ? extends T> resolveDeclaredConstructorOverload() {
 		return resolveDeclaredConstructorOverload(Collections.emptyList());
 	}
 
@@ -1710,7 +1710,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * As {@link #resolveConstructorOverload(List)}.
 	 */
 	@SuppressWarnings("javadoc")
-	public ExecutableMember<? super T, ? extends T> resolveConstructorOverload(Type... arguments) {
+	public InvocableMember<? super T, ? extends T> resolveConstructorOverload(Type... arguments) {
 		return resolveConstructorOverload(Arrays.stream(arguments).map(TypeToken::over).collect(Collectors.toList()));
 	}
 
@@ -1718,7 +1718,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * As {@link #resolveDeclaredConstructorOverload(List)}.
 	 */
 	@SuppressWarnings("javadoc")
-	public ExecutableMember<? super T, ? extends T> resolveDeclaredConstructorOverload(Type... arguments) {
+	public InvocableMember<? super T, ? extends T> resolveDeclaredConstructorOverload(Type... arguments) {
 		return resolveDeclaredConstructorOverload(
 				Arrays.stream(arguments).map(TypeToken::over).collect(Collectors.toList()));
 	}
@@ -1727,7 +1727,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * As {@link #resolveConstructorOverload( List)}.
 	 */
 	@SuppressWarnings("javadoc")
-	public ExecutableMember<? super T, ? extends T> resolveConstructorOverload(TypeToken<?>... arguments) {
+	public InvocableMember<? super T, ? extends T> resolveConstructorOverload(TypeToken<?>... arguments) {
 		return resolveConstructorOverload(Arrays.asList(arguments));
 	}
 
@@ -1735,7 +1735,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * As {@link #resolveDeclaredConstructorOverload( List)}.
 	 */
 	@SuppressWarnings("javadoc")
-	public ExecutableMember<? super T, ? extends T> resolveDeclaredConstructorOverload(TypeToken<?>... arguments) {
+	public InvocableMember<? super T, ? extends T> resolveDeclaredConstructorOverload(TypeToken<?>... arguments) {
 		return resolveDeclaredConstructorOverload(Arrays.asList(arguments));
 	}
 
@@ -1745,11 +1745,11 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * 
 	 * @param arguments
 	 *          The list of argument types for this invocation.
-	 * @return An {@link ExecutableMember} object wrapping the resolved
+	 * @return An {@link InvocableMember} object wrapping the resolved
 	 *         {@link Method}, with bounds on any generic type parameters derived
 	 *         from the argument types.
 	 */
-	public ExecutableMember<? super T, ? extends T> resolveConstructorOverload(List<? extends TypeToken<?>> arguments) {
+	public InvocableMember<? super T, ? extends T> resolveConstructorOverload(List<? extends TypeToken<?>> arguments) {
 		return resolveConstructorOverloadImpl(arguments, this::getConstructors);
 	}
 
@@ -1759,35 +1759,35 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * 
 	 * @param arguments
 	 *          The list of argument types for this invocation.
-	 * @return An {@link ExecutableMember} object wrapping the resolved
+	 * @return An {@link InvocableMember} object wrapping the resolved
 	 *         {@link Method}, with bounds on any generic type parameters derived
 	 *         from the argument types.
 	 */
-	public ExecutableMember<? super T, ? extends T> resolveDeclaredConstructorOverload(
+	public InvocableMember<? super T, ? extends T> resolveDeclaredConstructorOverload(
 			List<? extends TypeToken<?>> arguments) {
 		return resolveConstructorOverloadImpl(arguments, this::getDeclaredConstructors);
 	}
 
-	private ExecutableMember<? super T, ? extends T> resolveConstructorOverloadImpl(
+	private InvocableMember<? super T, ? extends T> resolveConstructorOverloadImpl(
 			List<? extends TypeToken<?>> arguments,
-			Function<Predicate<Constructor<T>>, Set<? extends ExecutableMember<? super T, ? extends T>>> constructors) {
-		Set<? extends ExecutableMember<? super T, ? extends T>> candidates = constructors
+			Function<Predicate<Constructor<T>>, Set<? extends InvocableMember<? super T, ? extends T>>> constructors) {
+		Set<? extends InvocableMember<? super T, ? extends T>> candidates = constructors
 				.apply(m -> isArgumentCountValid(m, arguments.size()));
 
 		if (candidates.isEmpty())
 			throw new IllegalArgumentException(
 					"Cannot find any applicable constructor in '" + this + "' for arguments '" + arguments + "'");
 
-		candidates = ExecutableMember.resolveApplicableExecutableMembers(candidates, arguments);
+		candidates = InvocableMember.resolveApplicableExecutableMembers(candidates, arguments);
 
-		return ExecutableMember.resolveMostSpecificExecutableMember(candidates);
+		return InvocableMember.resolveMostSpecificExecutableMember(candidates);
 	}
 
 	/**
 	 * As {@link #resolveMethodOverload(String, List)} for a nullary method.
 	 */
 	@SuppressWarnings("javadoc")
-	public ExecutableMember<? super T, ?> resolveMethodOverload(String name) {
+	public InvocableMember<? super T, ?> resolveMethodOverload(String name) {
 		return resolveMethodOverload(name, Collections.emptyList());
 	}
 
@@ -1796,7 +1796,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * method.
 	 */
 	@SuppressWarnings("javadoc")
-	public ExecutableMember<? super T, ?> resolveDeclaredMethodOverload(String name) {
+	public InvocableMember<? super T, ?> resolveDeclaredMethodOverload(String name) {
 		return resolveDeclaredMethodOverload(name, Collections.emptyList());
 	}
 
@@ -1804,7 +1804,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * As {@link #resolveMethodOverload(String, List)}.
 	 */
 	@SuppressWarnings("javadoc")
-	public ExecutableMember<? super T, ?> resolveMethodOverload(String name, Type... arguments) {
+	public InvocableMember<? super T, ?> resolveMethodOverload(String name, Type... arguments) {
 		return resolveMethodOverload(name, Arrays.stream(arguments).map(TypeToken::over).collect(Collectors.toList()));
 	}
 
@@ -1812,7 +1812,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * As {@link #resolveDeclaredMethodOverload(String, List)}.
 	 */
 	@SuppressWarnings("javadoc")
-	public ExecutableMember<? super T, ?> resolveDeclaredMethodOverload(String name, Type... arguments) {
+	public InvocableMember<? super T, ?> resolveDeclaredMethodOverload(String name, Type... arguments) {
 		return resolveDeclaredMethodOverload(name,
 				Arrays.stream(arguments).map(TypeToken::over).collect(Collectors.toList()));
 	}
@@ -1821,7 +1821,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * As {@link #resolveMethodOverload(String, List)}.
 	 */
 	@SuppressWarnings("javadoc")
-	public ExecutableMember<? super T, ?> resolveMethodOverload(String name, TypeToken<?>... arguments) {
+	public InvocableMember<? super T, ?> resolveMethodOverload(String name, TypeToken<?>... arguments) {
 		return resolveMethodOverload(name, Arrays.asList(arguments));
 	}
 
@@ -1829,7 +1829,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * As {@link #resolveDeclaredMethodOverload(String, List)}.
 	 */
 	@SuppressWarnings("javadoc")
-	public ExecutableMember<? super T, ?> resolveDeclaredMethodOverload(String name, TypeToken<?>... arguments) {
+	public InvocableMember<? super T, ?> resolveDeclaredMethodOverload(String name, TypeToken<?>... arguments) {
 		return resolveDeclaredMethodOverload(name, Arrays.asList(arguments));
 	}
 
@@ -1841,11 +1841,11 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 *          the name of the method
 	 * @param arguments
 	 *          the list of argument types for this invocation
-	 * @return An {@link ExecutableMember} object wrapping the resolved
+	 * @return An {@link InvocableMember} object wrapping the resolved
 	 *         {@link Method}, with bounds on any generic type parameters derived
 	 *         from the argument types.
 	 */
-	public ExecutableMember<? super T, ?> resolveMethodOverload(String name, List<? extends TypeToken<?>> arguments) {
+	public InvocableMember<? super T, ?> resolveMethodOverload(String name, List<? extends TypeToken<?>> arguments) {
 		return resolveMethodOverloadImpl(name, arguments, this::getMethods);
 	}
 
@@ -1857,27 +1857,27 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 *          the name of the method
 	 * @param arguments
 	 *          the list of argument types for this invocation
-	 * @return An {@link ExecutableMember} object wrapping the resolved
+	 * @return An {@link InvocableMember} object wrapping the resolved
 	 *         {@link Method}, with bounds on any generic type parameters derived
 	 *         from the argument types.
 	 */
-	public ExecutableMember<? super T, ?> resolveDeclaredMethodOverload(String name,
+	public InvocableMember<? super T, ?> resolveDeclaredMethodOverload(String name,
 			List<? extends TypeToken<?>> arguments) {
 		return resolveMethodOverloadImpl(name, arguments, this::getDeclaredMethods);
 	}
 
-	private ExecutableMember<? super T, ?> resolveMethodOverloadImpl(String name, List<? extends TypeToken<?>> arguments,
-			Function<Predicate<Method>, Set<? extends ExecutableMember<? super T, ?>>> methods) {
-		Set<? extends ExecutableMember<? super T, ? extends Object>> candidates = methods
+	private InvocableMember<? super T, ?> resolveMethodOverloadImpl(String name, List<? extends TypeToken<?>> arguments,
+			Function<Predicate<Method>, Set<? extends InvocableMember<? super T, ?>>> methods) {
+		Set<? extends InvocableMember<? super T, ? extends Object>> candidates = methods
 				.apply(m -> m.getName().equals(name) && isArgumentCountValid(m, arguments.size()));
 
 		if (candidates.isEmpty())
 			throw new IllegalArgumentException(
 					"Cannot find any method '" + name + "' in '" + this + "' for arguments '" + arguments + "'");
 
-		candidates = ExecutableMember.resolveApplicableExecutableMembers(candidates, arguments);
+		candidates = InvocableMember.resolveApplicableExecutableMembers(candidates, arguments);
 
-		return ExecutableMember.resolveMostSpecificExecutableMember(candidates);
+		return InvocableMember.resolveMostSpecificExecutableMember(candidates);
 	}
 
 	/**

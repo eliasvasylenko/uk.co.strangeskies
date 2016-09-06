@@ -38,7 +38,7 @@ import java.util.List;
  * instances.
  * 
  * <p>
- * {@link ExecutableMember executable members} may be created over types which
+ * {@link InvocableMember executable members} may be created over types which
  * mention inference variables, or even over inference variables themselves.
  * 
  * @author Elias N Vasylenko
@@ -209,4 +209,21 @@ public class FieldMember<O, T> implements TypeMember<O> {
 	public FieldMember<O, T> infer() {
 		return (FieldMember<O, T>) over(field, ownerType.infer());
 	}
+
+	public T get(O target) {
+		try {
+			return (T) field.get(target);
+		} catch (IllegalArgumentException | IllegalAccessException e) {
+			throw new TypeException(p -> p.cannotGetField(target, this));
+		}
+	}
+
+	public void set(O target, T value) {
+		try {
+			field.set(target, value);
+		} catch (IllegalArgumentException | IllegalAccessException e) {
+			throw new TypeException(p -> p.cannotSetField(target, value, this));
+		}
+	}
+
 }

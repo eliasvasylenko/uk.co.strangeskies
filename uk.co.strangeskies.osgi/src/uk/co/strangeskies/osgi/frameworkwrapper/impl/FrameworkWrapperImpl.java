@@ -47,9 +47,9 @@ import java.util.stream.StreamSupport;
 
 import uk.co.strangeskies.osgi.frameworkwrapper.FrameworkWrapper;
 import uk.co.strangeskies.osgi.frameworkwrapper.server.FrameworkWrapperServer;
-import uk.co.strangeskies.reflection.jar.Attribute;
-import uk.co.strangeskies.reflection.jar.AttributeProperty;
-import uk.co.strangeskies.reflection.jar.ManifestAttributeParser;
+import uk.co.strangeskies.reflection.resource.Attribute;
+import uk.co.strangeskies.reflection.resource.AttributeProperty;
+import uk.co.strangeskies.reflection.resource.ManifestAttributeParser;
 import uk.co.strangeskies.utilities.Log;
 import uk.co.strangeskies.utilities.Log.Level;
 import uk.co.strangeskies.utilities.Observable;

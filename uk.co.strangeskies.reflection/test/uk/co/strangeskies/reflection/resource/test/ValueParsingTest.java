@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection.jar.test;
+package uk.co.strangeskies.reflection.resource.test;
 
 import org.junit.Assert;
 import org.junit.experimental.theories.DataPoint;
@@ -24,7 +24,7 @@ import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
-import uk.co.strangeskies.reflection.jar.ManifestAttributeParser;
+import uk.co.strangeskies.reflection.resource.ManifestAttributeParser;
 
 /**
  * @author Elias N Vasylenko
