@@ -17,6 +17,19 @@ import javafx.scene.input.MouseEvent;
 import uk.co.strangeskies.fx.TreeCellContribution;
 import uk.co.strangeskies.fx.TreeItemData;
 
+/**
+ * A tree cell contribution intended to be supplied via
+ * {@link EclipseModularTreeContributor} so as to be injected according to an
+ * eclipse context.
+ * <p>
+ * This contribution registers an E4 command to the cell, which can be activated
+ * via double click or the enter key.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <T>
+ *          the type of data of applicable nodes
+ */
 public abstract class CommandTreeCellContribution<T> implements TreeCellContribution<T> {
 	@Inject
 	EHandlerService handlerService;
@@ -24,10 +37,15 @@ public abstract class CommandTreeCellContribution<T> implements TreeCellContribu
 	private final String commandId;
 	private ParameterizedCommand command;
 
+	/**
+	 * @param commandId
+	 *          the ID of the command in the E4 model
+	 */
 	public CommandTreeCellContribution(String commandId) {
 		this.commandId = commandId;
 	}
 
+	@SuppressWarnings("javadoc")
 	@PostConstruct
 	public void configureCommand(ECommandService commandService) {
 		command = commandService.createCommand(commandId, emptyMap());

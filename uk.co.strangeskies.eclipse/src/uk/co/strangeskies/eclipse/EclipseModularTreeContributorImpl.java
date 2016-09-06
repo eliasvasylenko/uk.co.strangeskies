@@ -29,11 +29,11 @@ import java.util.function.Predicate;
 import uk.co.strangeskies.fx.TreeContribution;
 
 /**
- * A basic immutable implementation of {@link EclipseTreeContribution}.
+ * A basic immutable implementation of {@link EclipseModularTreeContributor}.
  * 
  * @author Elias N Vasylenko
  */
-public abstract class EclipseTreeContributionImpl implements EclipseTreeContribution {
+public abstract class EclipseModularTreeContributorImpl implements EclipseModularTreeContributor {
 	private final List<Class<? extends TreeContribution<?>>> contributions;
 	private final Predicate<String> filter;
 	private final String id;
@@ -52,7 +52,7 @@ public abstract class EclipseTreeContributionImpl implements EclipseTreeContribu
 	 * @param ranking
 	 *          the ranking of the contribution
 	 */
-	public EclipseTreeContributionImpl(Collection<? extends Class<? extends TreeContribution<?>>> contributions,
+	public EclipseModularTreeContributorImpl(Collection<? extends Class<? extends TreeContribution<?>>> contributions,
 			Predicate<String> treeIdFilter, String id, int ranking) {
 		this.contributions = unmodifiableList(new ArrayList<>(contributions));
 		this.filter = treeIdFilter;
@@ -70,7 +70,7 @@ public abstract class EclipseTreeContributionImpl implements EclipseTreeContribu
 	 *          a predicate to filter which modular trees to contribute to via
 	 *          their IDs
 	 */
-	public EclipseTreeContributionImpl(Collection<? extends Class<? extends TreeContribution<?>>> contributions,
+	public EclipseModularTreeContributorImpl(Collection<? extends Class<? extends TreeContribution<?>>> contributions,
 			Predicate<String> treeIdFilter) {
 		this(contributions, treeIdFilter, null, 0);
 	}
@@ -82,7 +82,7 @@ public abstract class EclipseTreeContributionImpl implements EclipseTreeContribu
 	 * @param contributions
 	 *          the classes of contributions to the tree
 	 */
-	public EclipseTreeContributionImpl(Collection<? extends Class<? extends TreeContribution<?>>> contributions) {
+	public EclipseModularTreeContributorImpl(Collection<? extends Class<? extends TreeContribution<?>>> contributions) {
 		this(contributions, t -> true);
 	}
 
@@ -94,7 +94,7 @@ public abstract class EclipseTreeContributionImpl implements EclipseTreeContribu
 	 *          the classes of contributions to the tree
 	 */
 	@SafeVarargs
-	public EclipseTreeContributionImpl(Class<? extends TreeContribution<?>> contribution,
+	public EclipseModularTreeContributorImpl(Class<? extends TreeContribution<?>> contribution,
 			Class<? extends TreeContribution<?>>... contributions) {
 		this(concatenate(contribution, contributions));
 	}

@@ -36,12 +36,16 @@ import uk.co.strangeskies.fx.TreeItemData;
 import uk.co.strangeskies.fx.TreeItemImpl;
 
 /**
- * An interface part for interacting with the experiment workspace via a modular
- * tree model.
+ * A controller over a {@link ModularTreeView modular tree view} for use within
+ * an Eclipse RCP environment.
+ * <p>
+ * This class allows {@link TreeContribution tree contributions} to be
+ * contributed via {@link EclipseModularTreeContributor contributors} so that
+ * the contributions are instantiated according to an Eclipse injection context.
  * 
  * @author Elias N Vasylenko
  */
-public class ModularTreeController {
+public class EclipseModularTreeController {
 	private final StringProperty tableId = new SimpleStringProperty();
 	private final Predicate<String> filter;
 
@@ -53,13 +57,13 @@ public class ModularTreeController {
 
 	@Inject
 	@ObservableService
-	ObservableList<EclipseTreeContribution> contributions;
+	ObservableList<EclipseModularTreeContributor> contributions;
 
 	/**
-	 * A controller with the default id - the simple name of the class - and no
-	 * contribution filter.
+	 * Instantiate a controller with the default id - the simple name of the class
+	 * - and no contribution filter.
 	 */
-	public ModularTreeController() {
+	public EclipseModularTreeController() {
 		tableId.set(getClass().getSimpleName());
 		filter = null;
 	}
@@ -68,7 +72,7 @@ public class ModularTreeController {
 	 * @param id
 	 *          the {@link #getId() ID} of the controller to create
 	 */
-	public ModularTreeController(String id) {
+	public EclipseModularTreeController(String id) {
 		tableId.set(id);
 		this.filter = null;
 	}
@@ -77,17 +81,18 @@ public class ModularTreeController {
 	 * @param id
 	 *          the {@link #getId() ID} of the controller to create
 	 * @param filter
-	 *          a filter over the IDs of which {@link EclipseTreeContribution
-	 *          contributions} to accept contributions from
+	 *          a filter over the IDs of which
+	 *          {@link EclipseModularTreeContributor contributions} to accept
+	 *          contributions from
 	 */
-	public ModularTreeController(String id, Predicate<String> filter) {
+	public EclipseModularTreeController(String id, Predicate<String> filter) {
 		tableId.set(id);
 		this.filter = filter;
 	}
 
 	@FXML
 	void initialize() {
-		contributions.addListener((ListChangeListener<EclipseTreeContribution>) change -> {
+		contributions.addListener((ListChangeListener<EclipseModularTreeContributor>) change -> {
 			while (change.next())
 				if (change.wasAdded())
 					change.getAddedSubList().forEach(this::contribute);
@@ -98,7 +103,7 @@ public class ModularTreeController {
 
 	/**
 	 * @return The ID property of the controller. This is used to allow
-	 *         {@link EclipseTreeContribution contributions} to filter which
+	 *         {@link EclipseModularTreeContributor contributions} to filter which
 	 *         controllers they wish to contribute to.
 	 */
 	public StringProperty getTableIdProperty() {
@@ -120,7 +125,7 @@ public class ModularTreeController {
 		tableId.set(id);
 	}
 
-	protected void contribute(EclipseTreeContribution contributor) {
+	protected void contribute(EclipseModularTreeContributor contributor) {
 		if (filter == null || filter.test(contributor.getContributionId()))
 			for (Class<? extends TreeContribution<?>> contribution : contributor.getContributions(getId()))
 				modularTree.addContribution(ContextInjectionFactory.make(contribution, context));
