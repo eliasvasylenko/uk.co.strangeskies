@@ -42,8 +42,8 @@ public interface TreeCellContribution<T> extends TreeContribution<T> {
 	 * @param data
 	 *          the data contents of the tree item
 	 * @param content
-	 *          the current cell contents for the tree item
-	 * @return the new cell contents for the tree item
+	 *          the current cell content for the tree item
+	 * @return the new cell content for the tree item
 	 */
 	<U extends T> Node configureCell(TreeItemData<U> data, Node content);
 }

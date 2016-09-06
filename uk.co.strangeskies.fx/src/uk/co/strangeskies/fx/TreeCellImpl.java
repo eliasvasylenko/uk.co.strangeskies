@@ -24,9 +24,14 @@ import static uk.co.strangeskies.fx.FXUtilities.getResource;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
+import javafx.scene.input.ContextMenuEvent;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.PickResult;
 import javafx.scene.layout.HBox;
 import uk.co.strangeskies.reflection.TypeToken;
 
@@ -40,9 +45,32 @@ public class TreeCellImpl extends TreeCell<TreeItemData<?>> {
 	/**
 	 * Load a new instance from the FXML located according to
 	 * {@link FXUtilities#getResource(Class)} for this class.
+	 * 
+	 * @param tree
+	 *          the owning tree view
 	 */
-	public TreeCellImpl() {
+	public TreeCellImpl(ModularTreeView tree) {
 		build().object(this).resource(getResource(TreeCellImpl.class)).load();
+
+		selectedProperty().addListener(change -> {
+			tree.setCellSelected(this, isSelected());
+		});
+
+		addEventHandler(KeyEvent.ANY, event -> {
+			if (event.getCode() == KeyCode.CONTEXT_MENU && getGraphic() != null) {
+				event.consume();
+
+				if (event.getEventType() == KeyEvent.KEY_RELEASED) {
+					Bounds sceneBounds = getGraphic().localToScene(getGraphic().getLayoutBounds());
+					Bounds screenBounds = getGraphic().localToScreen(getGraphic().getLayoutBounds());
+
+					PickResult pickResult = new PickResult(getGraphic(), sceneBounds.getMaxX(), sceneBounds.getMaxY());
+
+					getGraphic().fireEvent(new ContextMenuEvent(ContextMenuEvent.CONTEXT_MENU_REQUESTED, sceneBounds.getMaxX(),
+							sceneBounds.getMaxY(), screenBounds.getMaxX(), screenBounds.getMaxY(), true, pickResult));
+				}
+			}
+		});
 	}
 
 	@Override

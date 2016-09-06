@@ -21,20 +21,44 @@ package uk.co.strangeskies.fx;
 import java.util.List;
 import java.util.Optional;
 
+import javafx.scene.control.TreeItem;
 import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.TypedObject;
 
+/**
+ * This interface defines the type of a {@link TreeItem} for a
+ * {@link ModularTreeView}. It provides access to the actual typed data of each
+ * node, as well as to the contributions which apply to that node, and the
+ * {@link TreeItemData item data} of the parent.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <T>
+ *          the type of the data
+ */
 public interface TreeItemData<T> {
+	/**
+	 * @return the typed data of a tree node
+	 */
 	TypedObject<T> typedData();
 
+	/**
+	 * @return the actual data of a tree node
+	 */
 	default T data() {
 		return typedData().getObject();
 	}
 
+	/**
+	 * @return the type of the actual data of a tree node
+	 */
 	default TypeToken<?> type() {
 		return typedData().getType();
 	}
 
+	/**
+	 * @return a {@link TreeItemData} interface over the parent node
+	 */
 	Optional<TreeItemData<?>> parent();
 
 	/**
@@ -45,5 +69,15 @@ public interface TreeItemData<T> {
 	 */
 	List<TreeContribution<? super T>> contributions();
 
+	/**
+	 * Get all contributions which should be applied to a tree item and which
+	 * match a given type, in order from most to least specific.
+	 * 
+	 * @param <U>
+	 *          the type of contribution
+	 * @param type
+	 *          the type of contribution
+	 * @return the matching contributions which apply to this tree item
+	 */
 	<U extends TreeContribution<? super T>> List<U> contributions(TypeToken<U> type);
 }

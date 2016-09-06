@@ -416,11 +416,13 @@ public final class Types {
 	 * primitive types the extra step is taken to make conversions to which are
 	 * consistent with widening primitive conversions.
 	 * 
+	 * @param <T>
+	 *          the type to which we wish to assign
 	 * @param object
-	 *          The type from which we wish to assign.
+	 *          the type from which we wish to assign
 	 * @param type
-	 *          The type to which we wish to assign.
-	 * @return True if the types are assignable, false otherwise.
+	 *          the type to which we wish to assign
+	 * @return true if the types are assignable, false otherwise
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T> T assign(Object object, Class<T> type) {

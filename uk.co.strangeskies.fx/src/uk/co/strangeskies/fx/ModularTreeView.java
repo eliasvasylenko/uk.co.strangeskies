@@ -27,7 +27,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javafx.scene.Node;
 import javafx.scene.control.TreeView;
+import javafx.scene.input.KeyEvent;
 import javafx.util.Pair;
 import uk.co.strangeskies.mathematics.graph.Graph;
 import uk.co.strangeskies.mathematics.graph.GraphListeners;
@@ -51,6 +53,8 @@ public class ModularTreeView extends TreeView<TreeItemData<?>> {
 
 	private Comparator<Pair<TreeContribution<?>, Integer>> precedence;
 
+	private TreeCellImpl selectedCell;
+
 	/**
 	 * Instantiate an empty tree view containing the
 	 * {@link DefaultTreeCellContribution default cell contribution}, over a cell
@@ -59,7 +63,7 @@ public class ModularTreeView extends TreeView<TreeItemData<?>> {
 	 */
 	public ModularTreeView() {
 		build().object(this).load();
-		setCellFactory(v -> new TreeCellImpl());
+		setCellFactory(v -> new TreeCellImpl(this));
 
 		contributionRankings = new HashMap<>();
 
@@ -77,6 +81,45 @@ public class ModularTreeView extends TreeView<TreeItemData<?>> {
 		setPrecedence(new DefaultTreeContributionPrecedence());
 
 		addContribution(new DefaultTreeCellContribution());
+
+		addEventFilter(KeyEvent.ANY, this::filterCellKeyEvent);
+	}
+
+	protected synchronized void filterCellKeyEvent(KeyEvent event) {
+		if (selectedCell != null) {
+			Node target = selectedCell.getGraphic();
+
+			if (target != null && event.getTarget() != target && !event.isConsumed()) {
+				target.fireEvent(event.copyFor(event.getSource(), target));
+
+				event.consume();
+			}
+		}
+	}
+
+	protected synchronized void fireCellKeyEvent(KeyEvent event) {
+		if (selectedCell != null) {
+			Node target = selectedCell.getGraphic();
+
+			if (target != null) {
+
+				if (event.getTarget() == target) {
+					event.consume();
+
+				} else if (!event.isConsumed()) {
+					event = event.copyFor(event.getSource(), target);
+					target.fireEvent(event);
+				}
+			}
+		}
+	}
+
+	protected synchronized void setCellSelected(TreeCellImpl treeCellImpl, boolean selected) {
+		if (selected) {
+			selectedCell = treeCellImpl;
+		} else if (selectedCell == treeCellImpl) {
+			selectedCell = null;
+		}
 	}
 
 	private int compareDescending(TreeContribution<?> first, TreeContribution<?> second) {

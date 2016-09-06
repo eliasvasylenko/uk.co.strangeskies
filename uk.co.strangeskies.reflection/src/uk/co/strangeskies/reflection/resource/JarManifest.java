@@ -25,6 +25,11 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.jar.Manifest;
 
+/**
+ * This class provides reflective access to a manifest.
+ * 
+ * @author Elias N Vasylenko
+ */
 public class JarManifest {
 	private static final ManifestAttributeParser DEFAULT_PARSER = new ManifestAttributeParser();
 

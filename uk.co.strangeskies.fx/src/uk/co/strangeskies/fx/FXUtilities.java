@@ -92,6 +92,22 @@ public class FXUtilities {
 		}
 	}
 
+	/**
+	 * Create a new observable list as a transformation of a component observable
+	 * list.
+	 * 
+	 * @param <T>
+	 *          the type of the elements of the new list
+	 * @param <U>
+	 *          the type of the elements of the component list
+	 * @param component
+	 *          the component list
+	 * @param mapper
+	 *          a mapping from the type of the elements of the component list to
+	 *          the type of the elements of the new list
+	 * @return a new observable list, backed by the given list, with each element
+	 *         in that list transformed according to the given function
+	 */
 	public static <T, U> ObservableList<T> map(ObservableList<U> component, Function<U, T> mapper) {
 		return new TransformationList<T, U>(component) {
 			@Override
@@ -180,6 +196,22 @@ public class FXUtilities {
 		};
 	}
 
+	/**
+	 * Create a new observable set as a transformation of a component observable
+	 * set.
+	 * 
+	 * @param <T>
+	 *          the type of the elements of the new set
+	 * @param <U>
+	 *          the type of the elements of the component set
+	 * @param component
+	 *          the component set
+	 * @param mapper
+	 *          a mapping from the type of the elements of the component set to
+	 *          the type of the elements of the new set
+	 * @return a new observable set, backed by the given set, with each element in
+	 *         that set transformed according to the given function
+	 */
 	public static <T, U> ObservableSet<T> map(ObservableSet<U> component, Function<U, T> mapper) {
 		@SuppressWarnings("unchecked")
 		ObservableSet<T> set = FXCollections.observableSet();
@@ -202,6 +234,15 @@ public class FXUtilities {
 		return FXCollections.unmodifiableObservableSet(set);
 	}
 
+	/**
+	 * Create an observable list view of an observable set.
+	 * 
+	 * @param <T>
+	 *          the type of the elements of the set
+	 * @param component
+	 *          the set to wrap as a list
+	 * @return a list whose contents are backed by the given set
+	 */
 	public static <T> ObservableList<T> asList(ObservableSet<T> component) {
 		ObservableList<T> list = FXCollections.observableArrayList();
 
@@ -218,6 +259,15 @@ public class FXUtilities {
 		return FXCollections.unmodifiableObservableList(list);
 	}
 
+	/**
+	 * Create an observable set view of an observable list.
+	 * 
+	 * @param <T>
+	 *          the type of the elements of the list
+	 * @param component
+	 *          the list to wrap as a set
+	 * @return a set whose contents are backed by the given list
+	 */
 	public static <T> ObservableSet<T> asSet(ObservableList<T> component) {
 		@SuppressWarnings("unchecked")
 		ObservableSet<T> set = FXCollections.observableSet();
@@ -245,6 +295,18 @@ public class FXUtilities {
 		return FXCollections.unmodifiableObservableSet(set);
 	}
 
+	/**
+	 * Wrap an {@link uk.co.strangeskies.utilities.Observable} with a JavaFX
+	 * equivalent {@link ObservableValue}.
+	 * 
+	 * @param <T>
+	 *          the type of the value
+	 * @param observable
+	 *          the observable value to wrap
+	 * @param initial
+	 *          the initial value of the wrapping observable value
+	 * @return a JavaFX observable value backed by the given observable
+	 */
 	public static <T> ObservableValue<T> wrap(Observable<T> observable, T initial) {
 		ObjectProperty<T> property = new SimpleObjectProperty<>(initial);
 
@@ -261,7 +323,7 @@ public class FXUtilities {
 	 *          the type of the value
 	 * @param observable
 	 *          the observable value to wrap
-	 * @return a JavaFX observable value backed by the given value
+	 * @return a JavaFX observable value backed by the given observable value
 	 */
 	public static <T> ObservableValue<T> wrap(uk.co.strangeskies.utilities.ObservableValue<T> observable) {
 		return wrap(observable, observable.get());
