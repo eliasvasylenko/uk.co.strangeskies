@@ -18,40 +18,9 @@
  */
 package uk.co.strangeskies.reflection;
 
-public class FieldExpression<O, T, I> implements VariableExpression<T, I> {
-	private final ValueExpression<? extends O, ? super I> value;
-	private final FieldMember<O, T> field;
-
-	public FieldExpression(ValueExpression<? extends O, ? super I> value, FieldMember<O, T> field) {
-		this.value = value;
-		this.field = field;
-	}
-
+public interface ValueExpressionDefinition<T, I> extends ExpressionDefinition<I> {
 	@Override
-	public VariableResult<T> evaluate(State state) {
-		O targetObject = value.evaluate(state).get();
+	ValueResult<T> evaluate(State state);
 
-		return new VariableResult<T>() {
-			@Override
-			public T get() {
-				return field.get(targetObject);
-			}
-
-			@Override
-			public void set(T value) {
-				field.set(targetObject, value);
-			}
-		};
-	}
-
-	@Override
-	public TypeToken<T> getType() {
-		return field.getFieldType();
-	}
-
-	@Override
-	public Scope<? extends I> getScope() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+	TypeToken<T> getType();
 }

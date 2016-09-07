@@ -18,9 +18,7 @@
  */
 package uk.co.strangeskies.reflection;
 
-public interface ValueExpression<T, I> extends Expression<I> {
+public interface VariableExpressionDefinition<T, I> extends ValueExpressionDefinition<T, I> {
 	@Override
-	ValueResult<T> evaluate(State state);
-
-	TypeToken<T> getType();
+	VariableResult<T> evaluate(State state);
 }

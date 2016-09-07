@@ -18,34 +18,6 @@
  */
 package uk.co.strangeskies.reflection;
 
-public class AssignmentExpression<T, I> implements ValueExpression<T, I> {
-	private final VariableExpression<T, ? super I> target;
-	private final ValueExpression<? extends T, ? super I> value;
-
-	public AssignmentExpression(VariableExpression<T, ? super I> target, ValueExpression<? extends T, ? super I> value) {
-		this.target = target;
-		this.value = value;
-	}
-
-	@Override
-	public ValueResult<T> evaluate(State state) {
-		VariableResult<T> targetResult = target.evaluate(state);
-
-		T result = value.evaluate(state).get();
-
-		targetResult.set(result);
-
-		return () -> result;
-	}
-
-	@Override
-	public TypeToken<T> getType() {
-		return target.getType();
-	}
-
-	@Override
-	public Scope<? extends I> getScope() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+public interface ExpressionDefinition<I> {
+	Result evaluate(State state);
 }

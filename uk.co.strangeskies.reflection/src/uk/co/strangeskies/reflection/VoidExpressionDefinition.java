@@ -18,8 +18,7 @@
  */
 package uk.co.strangeskies.reflection;
 
-public interface Expression<I> {
-	Scope<? extends I> getScope();
-
-	Result evaluate(State state);
+public interface VoidExpressionDefinition extends ExpressionDefinition<Object> {
+	@Override
+	VoidResult evaluate(State state);
 }

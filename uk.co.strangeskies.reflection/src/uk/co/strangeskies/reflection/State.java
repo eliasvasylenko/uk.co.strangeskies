@@ -24,5 +24,5 @@ package uk.co.strangeskies.reflection;
 public interface State {
 	Scope<?> getScope();
 
-	Object getReceiver();
+	<I> I getEnclosingInstance(Scope<I> parentScope);
 }

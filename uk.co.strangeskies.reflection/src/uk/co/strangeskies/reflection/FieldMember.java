@@ -214,7 +214,7 @@ public class FieldMember<O, T> implements TypeMember<O> {
 		try {
 			return (T) field.get(target);
 		} catch (IllegalArgumentException | IllegalAccessException e) {
-			throw new TypeException(p -> p.cannotGetField(target, this));
+			throw new TypeException(p -> p.cannotGetField(target, this), e);
 		}
 	}
 
@@ -222,8 +222,7 @@ public class FieldMember<O, T> implements TypeMember<O> {
 		try {
 			field.set(target, value);
 		} catch (IllegalArgumentException | IllegalAccessException e) {
-			throw new TypeException(p -> p.cannotSetField(target, value, this));
+			throw new TypeException(p -> p.cannotSetField(target, value, this), e);
 		}
 	}
-
 }

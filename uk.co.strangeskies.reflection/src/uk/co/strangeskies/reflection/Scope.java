@@ -19,21 +19,43 @@
 package uk.co.strangeskies.reflection;
 
 /**
- * Represents a static, compile-time scope for evaluation of {@link Expression
+ * Represents a static, compile-time scope for evaluation of {@link ExpressionDefinition
  * java expressions}. A scope defines which local variables are available, as
  * well as the enclosing type of the expression (i.e. the type of the "this"
  * reference).
  * <p>
- * Available local variables may conceptually include method parameters of the
- * enclosing method,
+ * Available local variables may conceptually include method parameters of any
+ * enclosing methods or lambdas.
  * 
  * @author Elias N Vasylenko
  *
  * @param <I>
  *          the type of the enclosing instance
  */
-public interface Scope<I> {
-	TypeToken<I> getReceiverType();
+public class Scope<I> {
+	private final TypeToken<I> receiverType;
+	private final ValueExpressionDefinition<I, I> receiverExpression;
 
-	ValueExpression<I, I> getThisExpression();
+	public Scope(TypeToken<I> receiverType) {
+		this.receiverType = receiverType;
+		this.receiverExpression = new ValueExpressionDefinition<I, I>() {
+			@Override
+			public ValueResult<I> evaluate(State state) {
+				return () -> state.getEnclosingInstance(Scope.this);
+			}
+
+			@Override
+			public TypeToken<I> getType() {
+				return getReceiverType();
+			}
+		};
+	}
+
+	public TypeToken<I> getReceiverType() {
+		return receiverType;
+	}
+
+	public ValueExpressionDefinition<I, I> receiver() {
+		return receiverExpression;
+	}
 }

@@ -18,32 +18,39 @@
  */
 package uk.co.strangeskies.reflection;
 
-public class MethodExpression<O, T, I> implements ValueExpression<T, I> {
-	private final ValueExpression<? extends O, ? super I> value;
-	private final InvocableMember<O, T> invocable;
+public class FieldExpressionDefinition<O, T, I> implements VariableExpressionDefinition<T, I> {
+	private final ValueExpressionDefinition<? extends O, ? super I> value;
+	private final FieldMember<O, T> field;
 
-	public MethodExpression(ValueExpression<? extends O, ? super I> value, InvocableMember<O, T> invocable) {
+	protected FieldExpressionDefinition(ValueExpressionDefinition<? extends O, ? super I> value, FieldMember<O, T> field) {
 		this.value = value;
-		this.invocable = invocable;
+		this.field = field;
 	}
 
 	@Override
-	public ValueResult<T> evaluate(State state) {
+	public VariableResult<T> evaluate(State state) {
 		O targetObject = value.evaluate(state).get();
 
-		T result = invocable.invoke(targetObject);
+		return new VariableResult<T>() {
+			@Override
+			public T get() {
+				return field.get(targetObject);
+			}
 
-		return () -> result;
+			@Override
+			public void set(T value) {
+				field.set(targetObject, value);
+			}
+		};
 	}
 
 	@Override
 	public TypeToken<T> getType() {
-		return invocable.getReturnType();
+		return field.getFieldType();
 	}
 
-	@Override
-	public Scope<? extends I> getScope() {
-		// TODO Auto-generated method stub
-		return null;
+	public static <O, T, I> FieldExpressionDefinition<O, T, I> field(ValueExpressionDefinition<? extends O, ? super I> value,
+			FieldMember<O, T> field) {
+		return new FieldExpressionDefinition<>(value, field);
 	}
 }
