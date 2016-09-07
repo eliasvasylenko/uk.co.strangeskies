@@ -18,6 +18,11 @@
  */
 package uk.co.strangeskies.reflection;
 
-public interface ValueResult<T> extends Result {
-	T get();
+/**
+ * @author Elias N Vasylenko
+ */
+public interface State {
+	Scope<?> getScope();
+
+	Object getReceiver();
 }

@@ -18,6 +18,22 @@
  */
 package uk.co.strangeskies.reflection;
 
-public interface ValueResult<T> extends Result {
-	T get();
+/**
+ * Represents a static, compile-time scope for evaluation of {@link Expression
+ * java expressions}. A scope defines which local variables are available, as
+ * well as the enclosing type of the expression (i.e. the type of the "this"
+ * reference).
+ * <p>
+ * Available local variables may conceptually include method parameters of the
+ * enclosing method,
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <I>
+ *          the type of the enclosing instance
+ */
+public interface Scope<I> {
+	TypeToken<I> getReceiverType();
+
+	ValueExpression<I, I> getThisExpression();
 }
