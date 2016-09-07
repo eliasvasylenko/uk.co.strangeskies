@@ -80,4 +80,13 @@ public interface TreeItemData<T> {
 	 * @return the matching contributions which apply to this tree item
 	 */
 	<U extends TreeContribution<? super T>> List<U> contributions(TypeToken<U> type);
+
+	/**
+	 * Refresh the tree cell associated with this tree item.
+	 * 
+	 * @param recursive
+	 *          true if the item's children should also be refreshed recursively,
+	 *          false otherwise
+	 */
+	void refresh(boolean recursive);
 }
