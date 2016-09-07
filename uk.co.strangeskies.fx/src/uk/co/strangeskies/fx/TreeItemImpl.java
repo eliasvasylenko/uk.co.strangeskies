@@ -199,5 +199,16 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 			return itemContributions.stream().filter(c -> TypeToken.over(type.getRawType()).isAssignableFrom(c.getClass()))
 					.map(type::cast).collect(Collectors.toList());
 		}
+
+		@Override
+		public void refresh(boolean recursive) {
+			TreeItemData<?> data = getValue();
+			setValue(null);
+			setValue(data);
+
+			if (recursive) {
+				rebuildChildren();
+			}
+		}
 	}
 }
