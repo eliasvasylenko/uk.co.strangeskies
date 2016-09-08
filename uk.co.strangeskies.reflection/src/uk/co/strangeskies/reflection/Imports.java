@@ -124,7 +124,7 @@ public class Imports {
 	private void importClasses(Collection<? extends Class<?>> classes) {
 		for (Class<?> clazz : classes) {
 			if (namedClasses.containsKey(clazz.getSimpleName())) {
-				throw new TypeException(p -> p.incompatibleImports(namedClasses.get(clazz.getSimpleName()), clazz));
+				throw new ReflectionException(p -> p.incompatibleImports(namedClasses.get(clazz.getSimpleName()), clazz));
 			} else {
 				namedClasses.put(clazz.getSimpleName(), clazz);
 			}

@@ -71,7 +71,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	private final void validate() {
 		if (lowerBounds.length > 0 && !Types.isAssignable(IntersectionType.uncheckedFrom(lowerBounds),
 				IntersectionType.uncheckedFrom(upperBounds)))
-			throw new TypeException(p -> p.invalidTypeVariableCaptureBounds(this));
+			throw new ReflectionException(p -> p.invalidTypeVariableCaptureBounds(this));
 	}
 
 	@Override
@@ -162,7 +162,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 					capture.upperBounds = new Type[] { upperBound };
 
 				if (!InferenceVariable.isProperType(capture)) {
-					throw new TypeException(p -> p.improperCaptureType(capture));
+					throw new ReflectionException(p -> p.improperCaptureType(capture));
 				}
 			}
 		}
@@ -367,7 +367,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 					if (!(equality instanceof InferenceVariable)) {
 						try {
 							equalitySet.add(properTypeSubstitutuion.resolve(equality));
-						} catch (TypeException e) {
+						} catch (ReflectionException e) {
 							equalitySet.clear();
 							break;
 						}
@@ -401,8 +401,8 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 					Set<Type> upperBoundSet = bounds.getBoundsOn(inferenceVariable).getUpperBounds().stream().map(t -> {
 						try {
 							return properTypeSubstitutuion.resolve(t);
-						} catch (TypeException e) {
-							throw new TypeException(p -> p.improperUpperBound(t, inferenceVariable, bounds), e);
+						} catch (ReflectionException e) {
+							throw new ReflectionException(p -> p.improperUpperBound(t, inferenceVariable, bounds), e);
 						}
 					}).collect(Collectors.toSet());
 
@@ -435,8 +435,8 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 		for (Map.Entry<InferenceVariable, Type> inferenceVariable : typeVariableCaptures.entrySet()) {
 			try {
 				bounds.incorporate().equality(inferenceVariable.getKey(), inferenceVariable.getValue());
-			} catch (TypeException e) {
-				throw new TypeException(
+			} catch (ReflectionException e) {
+				throw new ReflectionException(
 						p -> p.cannotCaptureInferenceVariable(inferenceVariable.getKey(), inferenceVariable.getValue(), bounds),
 						e);
 			}
@@ -489,7 +489,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 
 				if (replacement == null) {
 					Type finalType = i;
-					throw new TypeException(p -> p.cannotFindSubstitution(finalType));
+					throw new ReflectionException(p -> p.cannotFindSubstitution(finalType));
 				}
 			}
 

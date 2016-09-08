@@ -18,10 +18,10 @@
  */
 package uk.co.strangeskies.reflection.test;
 
-import static uk.co.strangeskies.reflection.AssignmentExpressionDefinition.assign;
-import static uk.co.strangeskies.reflection.FieldExpressionDefinition.field;
-import static uk.co.strangeskies.reflection.LiteralExpressionDefinition.literal;
-import static uk.co.strangeskies.reflection.MethodExpressionDefinition.invoke;
+import static uk.co.strangeskies.reflection.AssignmentExpression.assign;
+import static uk.co.strangeskies.reflection.FieldExpression.field;
+import static uk.co.strangeskies.reflection.LiteralExpression.literal;
+import static uk.co.strangeskies.reflection.MethodExpression.invoke;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -31,7 +31,9 @@ import uk.co.strangeskies.reflection.InvocableMember;
 import uk.co.strangeskies.reflection.Scope;
 import uk.co.strangeskies.reflection.State;
 import uk.co.strangeskies.reflection.TypeToken;
+import uk.co.strangeskies.reflection.VariableExpression;
 
+@SuppressWarnings("javadoc")
 public class ExpressionTest {
 	public class TestClass {
 		public String field;
@@ -60,18 +62,8 @@ public class ExpressionTest {
 	public void thisAssignmentTest() {
 		TestClass testInstance = new TestClass();
 
-		Scope<TestClass> scope = new Scope<>(TEST_CLASS_TYPE);
-		State state = new State() {
-			@Override
-			public Scope<?> getScope() {
-				return scope;
-			}
-
-			@Override
-			public <I> I getEnclosingInstance(Scope<I> parentScope) {
-				return (I) testInstance;
-			}
-		};
+		Scope<TestClass> scope = Scope.overReceiver(TEST_CLASS_TYPE);
+		State state = scope.initializeState(testInstance);
 
 		assign(field(scope.receiver(), TEST_FIELD), literal("value")).evaluate(state);
 
@@ -79,21 +71,35 @@ public class ExpressionTest {
 	}
 
 	@Test
-	public void methodInvocationTest() {
+	public void localAssignmentTest() {
+		Scope<?> scope = Scope.overVoid();
+		VariableExpression<String> local = scope.defineLocal(new TypeToken<String>() {});
+
+		State state = scope.initializeState(null);
+
+		assign(local, literal("value")).evaluate(state);
+
+		Assert.assertEquals("value", local.evaluate(state).get());
+	}
+
+	@Test
+	public void localVariableStatePersistenceTest() {
+		Scope<?> scope = Scope.overVoid();
+		VariableExpression<String> local = scope.defineLocal(new TypeToken<String>() {});
+
+		State state = scope.initializeState(null);
+
+		assign(local, literal("value")).evaluate(state);
+
+		Assert.assertEquals("value", local.evaluate(state).get());
+	}
+
+	@Test
+	public void thisMethodInvocationTest() {
 		TestClass testInstance = new TestClass();
 
-		Scope<TestClass> scope = new Scope<>(TEST_CLASS_TYPE);
-		State state = new State() {
-			@Override
-			public Scope<?> getScope() {
-				return scope;
-			}
-
-			@Override
-			public <I> I getEnclosingInstance(Scope<I> parentScope) {
-				return (I) testInstance;
-			}
-		};
+		Scope<TestClass> scope = Scope.overReceiver(TEST_CLASS_TYPE);
+		State state = scope.initializeState(testInstance);
 
 		invoke(scope.receiver(), TEST_SET_METHOD, literal("value")).evaluate(state);
 

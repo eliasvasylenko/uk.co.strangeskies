@@ -18,13 +18,9 @@
  */
 package uk.co.strangeskies.reflection;
 
-/**
- * @author Elias N Vasylenko
- */
-public interface State {
-	Scope<?> getScope();
+public interface ValueExpression<T> extends Expression {
+	@Override
+	ValueResult<T> evaluate(State state);
 
-	<I> I getEnclosingInstance(Scope<I> parentScope);
-
-	Locals getEnclosingScopeLocals(Scope<?> scope);
+	TypeToken<T> getType();
 }

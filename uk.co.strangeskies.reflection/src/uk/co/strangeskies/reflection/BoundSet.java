@@ -132,7 +132,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 							throw new Error(":(" + first + " != " + second);
 					}
 				} catch (Exception e) {
-					throw new TypeException(p -> p.invalidEquality(first, second, BoundSet.this), e);
+					throw new ReflectionException(p -> p.invalidEquality(first, second, BoundSet.this), e);
 				}
 			}
 		}
@@ -157,7 +157,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 					if (supertype instanceof InferenceVariable)
 						inferenceVariableBounds.get(supertype).addLowerBound(subtype);
 				} catch (Exception e) {
-					throw new TypeException(p -> p.invalidSubtype(subtype, supertype, BoundSet.this), e);
+					throw new ReflectionException(p -> p.invalidSubtype(subtype, supertype, BoundSet.this), e);
 				}
 		}
 
@@ -172,7 +172,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 			try {
 				addCaptureConversion(captureConversion);
 			} catch (Exception e) {
-				throw new TypeException(p -> p.invalidCaptureConversion(captureConversion, BoundSet.this), e);
+				throw new ReflectionException(p -> p.invalidCaptureConversion(captureConversion, BoundSet.this), e);
 			}
 		}
 
@@ -185,7 +185,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		 */
 		public void falsehood(String message) {
 			valid = false;
-			throw new TypeException(p -> p.invalidBoundSet(message, BoundSet.this));
+			throw new ReflectionException(p -> p.invalidBoundSet(message, BoundSet.this));
 		}
 	}
 

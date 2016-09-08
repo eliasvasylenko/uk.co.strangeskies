@@ -175,7 +175,7 @@ public abstract class IntersectionType implements Type {
 							}
 							break;
 						} else if (!iInterface && !Types.getRawType(jType).isInterface()) {
-							throw new TypeException(p -> p.invalidIntersectionTypes(flattenedTypes, iType, jType));
+							throw new ReflectionException(p -> p.invalidIntersectionTypes(flattenedTypes, iType, jType));
 						}
 					}
 				}
@@ -226,7 +226,7 @@ public abstract class IntersectionType implements Type {
 			for (Type type : flattenedTypes)
 				ConstraintFormula.reduce(Kind.SUBTYPE, inferenceVariable, type, bounds);
 		} catch (Exception e) {
-			throw new TypeException(p -> p.invalidIntersectionType(flattenedTypes), e);
+			throw new ReflectionException(p -> p.invalidIntersectionType(flattenedTypes), e);
 		}
 
 		return fromImpl(flattenedTypes);

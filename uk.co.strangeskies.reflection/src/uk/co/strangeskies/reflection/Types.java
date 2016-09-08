@@ -139,7 +139,7 @@ public final class Types {
 			else
 				return getRawType(((IntersectionType) type).getTypes()[0]);
 		}
-		throw new TypeException(p -> p.unsupportedType(type));
+		throw new ReflectionException(p -> p.unsupportedType(type));
 	}
 
 	/**
@@ -448,7 +448,7 @@ public final class Types {
 			}
 		} else {
 			Object finalObject = object; // Get your shit together Eclipse ffs.
-			throw new TypeException(p -> p.invalidAssignmentObject(finalObject, type));
+			throw new ReflectionException(p -> p.invalidAssignmentObject(finalObject, type));
 		}
 
 		return (T) object;

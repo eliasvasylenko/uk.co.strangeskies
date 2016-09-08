@@ -22,13 +22,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class MethodExpressionDefinition<O, T, I> implements ValueExpressionDefinition<T, I> {
-	private final ValueExpressionDefinition<? extends O, ? super I> value;
+public class MethodExpression<O, T> implements ValueExpression<T> {
+	private final ValueExpression<? extends O> value;
 	private final InvocableMember<O, T> invocable;
-	private final List<ValueExpressionDefinition<?, ?>> arguments;
+	private final List<ValueExpression<?>> arguments;
 
-	protected MethodExpressionDefinition(ValueExpressionDefinition<? extends O, ? super I> value,
-			InvocableMember<O, T> invocable, List<ValueExpressionDefinition<?, ?>> arguments) {
+	protected MethodExpression(ValueExpression<? extends O> value, InvocableMember<O, T> invocable,
+			List<ValueExpression<?>> arguments) {
 		this.value = value;
 		this.invocable = invocable;
 		this.arguments = arguments;
@@ -49,15 +49,13 @@ public class MethodExpressionDefinition<O, T, I> implements ValueExpressionDefin
 		return invocable.getReturnType();
 	}
 
-	public static <O, T, I> MethodExpressionDefinition<O, T, I> invoke(
-			ValueExpressionDefinition<? extends O, ? super I> value, InvocableMember<O, T> invocable,
-			ValueExpressionDefinition<?, ?>... arguments) {
+	public static <O, T, I> MethodExpression<O, T> invoke(ValueExpression<? extends O> value,
+			InvocableMember<O, T> invocable, ValueExpression<?>... arguments) {
 		return invokeMethod(value, invocable, Arrays.asList(arguments));
 	}
 
-	public static <O, T, I> MethodExpressionDefinition<O, T, I> invokeMethod(
-			ValueExpressionDefinition<? extends O, ? super I> value, InvocableMember<O, T> invocable,
-			List<ValueExpressionDefinition<?, ?>> arguments) {
-		return new MethodExpressionDefinition<>(value, invocable, arguments);
+	public static <O, T, I> MethodExpression<O, T> invokeMethod(ValueExpression<? extends O> value,
+			InvocableMember<O, T> invocable, List<ValueExpression<?>> arguments) {
+		return new MethodExpression<>(value, invocable, arguments);
 	}
 }

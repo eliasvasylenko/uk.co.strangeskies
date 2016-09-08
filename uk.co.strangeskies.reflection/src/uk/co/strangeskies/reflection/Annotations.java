@@ -196,9 +196,9 @@ public final class Annotations {
 			if (propertyValue != null) {
 				try {
 					propertyValue = Types.assign(propertyValue, method.getReturnType());
-				} catch (TypeException e) {
+				} catch (ReflectionException e) {
 					Object finalValue = propertyValue;
-					throw new TypeException(p -> p.invalidAnnotationValue(annotationClass, method.getName(), finalValue), e);
+					throw new ReflectionException(p -> p.invalidAnnotationValue(annotationClass, method.getName(), finalValue), e);
 				}
 
 				castProperties.put(method, propertyValue);
@@ -209,7 +209,7 @@ public final class Annotations {
 
 		if (!properties.isEmpty()) {
 			Set<String> finalValues = properties.keySet();
-			throw new TypeException(p -> p.invalidAnnotationProperties(annotationClass, finalValues));
+			throw new ReflectionException(p -> p.invalidAnnotationProperties(annotationClass, finalValues));
 		}
 
 		return castProperties;

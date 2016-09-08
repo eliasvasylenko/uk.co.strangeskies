@@ -32,26 +32,26 @@ import uk.co.strangeskies.text.properties.LocalizedRuntimeException;
  * 
  * @author Elias N Vasylenko
  */
-public class TypeException extends LocalizedRuntimeException {
+public class ReflectionException extends LocalizedRuntimeException {
 	private static final long serialVersionUID = 1L;
 
 	/**
 	 * @param message
-	 *          a function from the {@link TypeProperties} to the exception
+	 *          a function from the {@link ReflectionProperties} to the exception
 	 *          message
 	 */
-	public TypeException(Function<TypeProperties, Localized<String>> message) {
-		super(message.apply(getDefaultProperties(TypeProperties.class)));
+	public ReflectionException(Function<ReflectionProperties, Localized<String>> message) {
+		super(message.apply(getDefaultProperties(ReflectionProperties.class)));
 	}
 
 	/**
 	 * @param message
-	 *          a function from the {@link TypeProperties} to the exception
+	 *          a function from the {@link ReflectionProperties} to the exception
 	 *          message
 	 * @param cause
 	 *          the cause of the exception
 	 */
-	public TypeException(Function<TypeProperties, Localized<String>> message, Throwable cause) {
-		super(message.apply(getDefaultProperties(TypeProperties.class)), cause);
+	public ReflectionException(Function<ReflectionProperties, Localized<String>> message, Throwable cause) {
+		super(message.apply(getDefaultProperties(ReflectionProperties.class)), cause);
 	}
 }

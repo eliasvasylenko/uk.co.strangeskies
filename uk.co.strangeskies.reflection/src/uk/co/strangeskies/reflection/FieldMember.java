@@ -210,19 +210,31 @@ public class FieldMember<O, T> implements TypeMember<O> {
 		return (FieldMember<O, T>) over(field, ownerType.infer());
 	}
 
+	/**
+	 * @param target
+	 *          the instance to access the field of
+	 * @return the value of the field
+	 */
+	@SuppressWarnings("unchecked")
 	public T get(O target) {
 		try {
 			return (T) field.get(target);
 		} catch (IllegalArgumentException | IllegalAccessException e) {
-			throw new TypeException(p -> p.cannotGetField(target, this), e);
+			throw new ReflectionException(p -> p.cannotGetField(target, this), e);
 		}
 	}
 
+	/**
+	 * @param target
+	 *          the instance to assign to the field of
+	 * @param value
+	 *          the value to assign
+	 */
 	public void set(O target, T value) {
 		try {
 			field.set(target, value);
 		} catch (IllegalArgumentException | IllegalAccessException e) {
-			throw new TypeException(p -> p.cannotSetField(target, value, this), e);
+			throw new ReflectionException(p -> p.cannotSetField(target, value, this), e);
 		}
 	}
 }

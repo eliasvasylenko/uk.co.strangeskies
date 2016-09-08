@@ -36,7 +36,7 @@ import uk.co.strangeskies.text.properties.Properties;
  * @author Elias N Vasylenko
  */
 @SuppressWarnings("javadoc")
-public interface TypeProperties extends Properties<TypeProperties> {
+public interface ReflectionProperties extends Properties<ReflectionProperties> {
 	Localized<String> unsupportedType(Type type);
 
 	Localized<String> invalidAssignmentObject(Object object, Class<?> type);
@@ -117,4 +117,6 @@ public interface TypeProperties extends Properties<TypeProperties> {
 	<O> Localized<String> cannotGetField(O target, FieldMember<O, ?> fieldMember);
 
 	<O, T> Localized<String> cannotSetField(O target, T value, FieldMember<O, ?> fieldMember);
+
+	Localized<String> noEnclosingInstance(Scope<?> parentScope);
 }

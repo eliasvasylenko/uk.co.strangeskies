@@ -95,7 +95,7 @@ public class InvocableMember<O, R> implements TypeMember<O> {
 		this.variableArityInvocation = variableArityInvocation;
 
 		if (!isVariableArityDefinition() && isVariableArityInvocation()) {
-			throw new TypeException(p -> p.invalidVariableArityInvocation(this));
+			throw new ReflectionException(p -> p.invalidVariableArityInvocation(this));
 		}
 
 		/*
@@ -159,7 +159,7 @@ public class InvocableMember<O, R> implements TypeMember<O> {
 					genericParameters[i] = givenArgument;
 				} else if (!Types.isAssignable(genericParameterCaptured, givenArgumentCaptured)) {
 					int finalI = i;
-					throw new TypeException(
+					throw new ReflectionException(
 							p -> p.incompatibleArgument(givenArgumentCaptured, genericParameterCaptured, finalI, this));
 				}
 			}
@@ -250,7 +250,7 @@ public class InvocableMember<O, R> implements TypeMember<O> {
 			try {
 				return (T) constructor.newInstance(a.toArray());
 			} catch (Exception e) {
-				throw new TypeException(p -> p.invalidConstructorArguments(constructor, receiver, a), e);
+				throw new ReflectionException(p -> p.invalidConstructorArguments(constructor, receiver, a), e);
 			}
 		});
 	}
@@ -285,7 +285,7 @@ public class InvocableMember<O, R> implements TypeMember<O> {
 			try {
 				return method.invoke(r, a.toArray());
 			} catch (Exception e) {
-				throw new TypeException(p -> p.invalidMethodArguments(method, receiver, a), e);
+				throw new ReflectionException(p -> p.invalidMethodArguments(method, receiver, a), e);
 			}
 		});
 	}
@@ -586,7 +586,7 @@ public class InvocableMember<O, R> implements TypeMember<O> {
 			return new InvocableMember<>(resolver, (TypeToken<O>) TypeToken.over(type), override, invocationFunction,
 					parameters, variableArityInvocation);
 		} catch (NoSuchMethodException | SecurityException e) {
-			throw new TypeException(p -> p.cannotResolveOverride(this, type), e);
+			throw new ReflectionException(p -> p.cannotResolveOverride(this, type), e);
 		}
 	}
 
@@ -890,12 +890,12 @@ public class InvocableMember<O, R> implements TypeMember<O> {
 	private InvocableMember<O, R> withLooseApplicability(boolean variableArity, List<? extends TypeToken<?>> arguments) {
 		if (variableArity) {
 			if (!executable.isVarArgs())
-				throw new TypeException(p -> p.invalidVariableArityInvocation(this));
+				throw new ReflectionException(p -> p.invalidVariableArityInvocation(this));
 
 			if (parameters.size() > arguments.size() + 1)
-				throw new TypeException(p -> p.cannotResolveInvocationType(this, arguments));
+				throw new ReflectionException(p -> p.cannotResolveInvocationType(this, arguments));
 		} else if (parameters.size() != arguments.size())
-			throw new TypeException(p -> p.cannotResolveInvocationType(this, arguments));
+			throw new ReflectionException(p -> p.cannotResolveInvocationType(this, arguments));
 
 		Resolver resolver = getResolver();
 
@@ -1147,7 +1147,7 @@ public class InvocableMember<O, R> implements TypeMember<O> {
 		for (int i = 0; i < arguments.size(); i++)
 			if (!arguments.get(i).getType().isAssignableTo(parameters.get(i))) {
 				int finalI = i;
-				throw new TypeException(
+				throw new ReflectionException(
 						p -> p.incompatibleArgument(arguments.get(finalI), parameters.get(finalI), finalI, this));
 			}
 		return invoke(receiver, arguments);
@@ -1197,7 +1197,7 @@ public class InvocableMember<O, R> implements TypeMember<O> {
 		}
 
 		if (compatibleCandidates.isEmpty())
-			throw new TypeException(p -> p.cannotResolveApplicable(candidates, parameters),
+			throw new ReflectionException(p -> p.cannotResolveApplicable(candidates, parameters),
 					failures.get(failures.keySet().stream().findFirst().get()));
 
 		return compatibleCandidates;
@@ -1223,7 +1223,7 @@ public class InvocableMember<O, R> implements TypeMember<O> {
 	 * 
 	 * <p>
 	 * If no single most specific candidate can be found, the method will throw a
-	 * {@link TypeException}.
+	 * {@link ReflectionException}.
 	 * 
 	 * @param <T>
 	 *          The receiving type of the given executable members.
@@ -1252,7 +1252,7 @@ public class InvocableMember<O, R> implements TypeMember<O> {
 			if (!candidate.getParameters().equals(mostSpecific.getParameters())
 					|| !candidate.getName().equals(mostSpecific.getName())) {
 				InvocableMember<?, ?> mostSpecificFinal = mostSpecific;
-				throw new TypeException(p -> p.cannotResolveAmbiguity(candidate, mostSpecificFinal));
+				throw new ReflectionException(p -> p.cannotResolveAmbiguity(candidate, mostSpecificFinal));
 			}
 
 			mostSpecific = candidate.getMember().getDeclaringClass()
@@ -1306,7 +1306,7 @@ public class InvocableMember<O, R> implements TypeMember<O> {
 					/*
 					 * Neither first nor second are more specific.
 					 */
-					throw new TypeException(p -> p.cannotResolveAmbiguity(firstCandidate, secondCandidate));
+					throw new ReflectionException(p -> p.cannotResolveAmbiguity(firstCandidate, secondCandidate));
 				}
 			}
 		}

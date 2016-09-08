@@ -207,7 +207,7 @@ public class WildcardTypes {
 					if (type instanceof WildcardType) {
 						WildcardType wildcardType = ((WildcardType) type);
 						if (wildcardType.getLowerBounds().length == 0) {
-							throw new TypeException(p -> p.invalidUpperBound(wildcardType));
+							throw new ReflectionException(p -> p.invalidUpperBound(wildcardType));
 						} else {
 							types = wildcardType.getLowerBounds();
 						}

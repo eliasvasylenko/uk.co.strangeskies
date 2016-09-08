@@ -89,3 +89,4 @@ runreq.base=\
 
 ## Fix warnings
 -fixupmessages.res: "Bndtools: Found source folder 'res' that is not on bnd's source path 'src'"
+-fixupmessages.sub: "Eclipse: The Bundle Symbolic ${p} is a sub-bundle core.bnd but uses the project name"

@@ -63,7 +63,7 @@ public class TypedObject<T> implements ReifiedSelf<TypedObject<T>> {
 	@SuppressWarnings("unchecked")
 	public static <T> TypedObject<T> castUnsafe(Object object, TypeToken<T> type) {
 		if (!type.getRawTypes().stream().allMatch(r -> r.isAssignableFrom(object.getClass())))
-			throw new TypeException(p -> p.invalidCastObject(object, type));
+			throw new ReflectionException(p -> p.invalidCastObject(object, type));
 
 		return new TypedObject<>(type, (T) object);
 	}
@@ -111,7 +111,7 @@ public class TypedObject<T> implements ReifiedSelf<TypedObject<T>> {
 	 * @return A typed object over the given type and object
 	 */
 	public <U> TypedObject<U> cast(TypeToken<U> type) {
-		return tryCast(type).orElseThrow(() -> new TypeException(p -> p.invalidCastObject(this, type)));
+		return tryCast(type).orElseThrow(() -> new ReflectionException(p -> p.invalidCastObject(this, type)));
 	}
 
 	/**
@@ -144,7 +144,7 @@ public class TypedObject<T> implements ReifiedSelf<TypedObject<T>> {
 	 * @return A typed object over the given type and object
 	 */
 	public <U> TypedObject<U> assign(TypeToken<U> type) {
-		return tryAssign(type).orElseThrow(() -> new TypeException(p -> p.invalidCastObject(this, type)));
+		return tryAssign(type).orElseThrow(() -> new ReflectionException(p -> p.invalidCastObject(this, type)));
 	}
 
 	/**

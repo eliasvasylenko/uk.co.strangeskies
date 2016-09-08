@@ -108,7 +108,7 @@ public class ConstraintFormula {
 		try {
 			constraintFormula.reduceInto(bounds);
 		} catch (Exception e) {
-			throw new TypeException(p -> p.cannotReduceConstraint(constraintFormula, bounds), e);
+			throw new ReflectionException(p -> p.cannotReduceConstraint(constraintFormula, bounds), e);
 		}
 		return constraintFormula;
 	}
@@ -375,7 +375,7 @@ public class ConstraintFormula {
 				for (Type typeComponent : ((IntersectionType) to).getTypes())
 					reduce(Kind.SUBTYPE, from, typeComponent, bounds);
 			} else {
-				throw new TypeException(p -> p.unsupportedType(to));
+				throw new ReflectionException(p -> p.unsupportedType(to));
 			}
 		}
 	}

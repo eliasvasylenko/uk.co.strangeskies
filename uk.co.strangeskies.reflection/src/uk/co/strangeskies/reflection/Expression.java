@@ -18,7 +18,11 @@
  */
 package uk.co.strangeskies.reflection;
 
-public interface VoidExpressionDefinition extends ExpressionDefinition<Object> {
-	@Override
-	VoidResult evaluate(State state);
+/**
+ * An expression for evaluation of 
+ * 
+ * @author Elias N Vasylenko
+ */
+public interface Expression {
+	Result evaluate(State state);
 }

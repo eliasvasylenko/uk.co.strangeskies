@@ -19,7 +19,7 @@
 package uk.co.strangeskies.reflection;
 
 /**
- * Represents a static, compile-time scope for evaluation of {@link ExpressionDefinition
+ * Represents a static, compile-time scope for evaluation of {@link Expression
  * java expressions}. A scope defines which local variables are available, as
  * well as the enclosing type of the expression (i.e. the type of the "this"
  * reference).
@@ -32,30 +32,24 @@ package uk.co.strangeskies.reflection;
  * @param <I>
  *          the type of the enclosing instance
  */
-public class Scope<I> {
-	private final TypeToken<I> receiverType;
-	private final ValueExpressionDefinition<I, I> receiverExpression;
-
-	public Scope(TypeToken<I> receiverType) {
-		this.receiverType = receiverType;
-		this.receiverExpression = new ValueExpressionDefinition<I, I>() {
-			@Override
-			public ValueResult<I> evaluate(State state) {
-				return () -> state.getEnclosingInstance(Scope.this);
-			}
-
-			@Override
-			public TypeToken<I> getType() {
-				return getReceiverType();
-			}
-		};
+public interface Scope<I> {
+	static <I> Scope<I> overReceiver(TypeToken<I> receiverType) {
+		return new ScopeImpl<>(receiverType);
 	}
 
-	public TypeToken<I> getReceiverType() {
-		return receiverType;
+	static <I> Scope<I> overReceiver(Class<I> receiverClass) {
+		return overReceiver(TypeToken.over(receiverClass));
 	}
 
-	public ValueExpressionDefinition<I, I> receiver() {
-		return receiverExpression;
+	static Scope<?> overVoid() {
+		return overReceiver(Void.class);
 	}
+
+	TypeToken<I> getReceiverType();
+
+	ValueExpression<I> receiver();
+
+	<T> VariableExpression<T> defineLocal(TypeToken<T> type);
+
+	State initializeState(I instance);
 }

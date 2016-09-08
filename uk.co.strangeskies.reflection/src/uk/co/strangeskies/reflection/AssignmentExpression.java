@@ -18,39 +18,32 @@
  */
 package uk.co.strangeskies.reflection;
 
-public class FieldExpressionDefinition<O, T, I> implements VariableExpressionDefinition<T, I> {
-	private final ValueExpressionDefinition<? extends O, ? super I> value;
-	private final FieldMember<O, T> field;
+public class AssignmentExpression<T> implements ValueExpression<T> {
+	private final VariableExpression<T> target;
+	private final ValueExpression<? extends T> value;
 
-	protected FieldExpressionDefinition(ValueExpressionDefinition<? extends O, ? super I> value, FieldMember<O, T> field) {
+	protected AssignmentExpression(VariableExpression<T> target, ValueExpression<? extends T> value) {
+		this.target = target;
 		this.value = value;
-		this.field = field;
 	}
 
 	@Override
-	public VariableResult<T> evaluate(State state) {
-		O targetObject = value.evaluate(state).get();
+	public ValueResult<T> evaluate(State state) {
+		VariableResult<T> targetResult = target.evaluate(state);
 
-		return new VariableResult<T>() {
-			@Override
-			public T get() {
-				return field.get(targetObject);
-			}
+		T result = value.evaluate(state).get();
 
-			@Override
-			public void set(T value) {
-				field.set(targetObject, value);
-			}
-		};
+		targetResult.set(result);
+
+		return () -> result;
 	}
 
 	@Override
 	public TypeToken<T> getType() {
-		return field.getFieldType();
+		return target.getType();
 	}
 
-	public static <O, T, I> FieldExpressionDefinition<O, T, I> field(ValueExpressionDefinition<? extends O, ? super I> value,
-			FieldMember<O, T> field) {
-		return new FieldExpressionDefinition<>(value, field);
+	public static <T, I> ValueExpression<T> assign(VariableExpression<T> target, ValueExpression<? extends T> value) {
+		return new AssignmentExpression<>(target, value);
 	}
 }
