@@ -18,9 +18,6 @@
  */
 package uk.co.strangeskies.reflection;
 
-import java.util.HashSet;
-import java.util.Set;
-
 /**
  * Represents a static, compile-time scope for evaluation of {@link Expression
  * java expressions}. A scope defines which local variables are available, as
@@ -31,50 +28,51 @@ import java.util.Set;
  * enclosing methods or lambdas.
  * 
  * @author Elias N Vasylenko
+ *
+ * @param <I>
+ *          the type of the enclosing instance
  */
-public class ScopeImpl implements Scope {
-	public class LocalVariableExpression<T> implements VariableExpression<T> {
-		private final Scope scope;
-		private final TypeToken<T> type;
+public class InstanceScopeImpl<I> extends ScopeImpl implements InstanceScope<I> {
+	private final TypeToken<I> receiverType;
+	private final ValueExpression<I> receiverExpression;
 
-		public LocalVariableExpression(Scope scope, TypeToken<T> type) {
-			this.scope = scope;
-			this.type = type;
-		}
+	public InstanceScopeImpl(TypeToken<I> receiverType) {
+		this.receiverType = receiverType;
+		this.receiverExpression = new ValueExpression<I>() {
+			@Override
+			public ValueResult<I> evaluate(State state) {
+				return () -> state.getEnclosingInstance(InstanceScopeImpl.this);
+			}
 
-		@Override
-		public TypeToken<T> getType() {
-			return type;
-		}
-
-		@Override
-		public VariableResult<T> evaluate(State state) {
-			return new VariableResult<T>() {
-				@Override
-				public T get() {
-					return state.getEnclosingScopeLocals(scope).get(LocalVariableExpression.this);
-				}
-
-				@Override
-				public void set(T value) {
-					state.getEnclosingScopeLocals(scope).set(LocalVariableExpression.this, value);
-				}
-			};
-		}
-	}
-
-	private final Set<VariableExpression<?>> variableExpressions;
-
-	public ScopeImpl() {
-		variableExpressions = new HashSet<>();
+			@Override
+			public TypeToken<I> getType() {
+				return getReceiverType();
+			}
+		};
 	}
 
 	@Override
-	public <T> VariableExpression<T> defineVariable(TypeToken<T> type) {
-		VariableExpression<T> variable = new LocalVariableExpression<>(this, type);
+	public TypeToken<I> getReceiverType() {
+		return receiverType;
+	}
 
-		variableExpressions.add(variable);
+	@Override
+	public ValueExpression<I> receiver() {
+		return receiverExpression;
+	}
 
-		return variable;
+	@Override
+	public State initializeState(I instance) {
+		return new StateImpl(this) {
+			@SuppressWarnings("unchecked")
+			@Override
+			public <J> J getEnclosingInstance(InstanceScope<J> parentScope) {
+				if (parentScope == InstanceScopeImpl.this) {
+					return (J) instance;
+				} else {
+					return super.getEnclosingInstance(parentScope);
+				}
+			}
+		};
 	}
 }

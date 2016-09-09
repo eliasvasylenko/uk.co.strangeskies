@@ -118,5 +118,5 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 
 	<O, T> Localized<String> cannotSetField(O target, T value, FieldMember<O, ?> fieldMember);
 
-	Localized<String> noEnclosingInstance(Scope<?> parentScope);
+	Localized<String> cannotResolveEnclosingScope(Scope parentScope);
 }

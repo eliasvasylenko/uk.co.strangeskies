@@ -22,9 +22,9 @@ package uk.co.strangeskies.reflection;
  * @author Elias N Vasylenko
  */
 public interface State {
-	Scope<?> getScope();
+	Scope getScope();
 
-	<I> I getEnclosingInstance(Scope<I> parentScope);
+	<I> I getEnclosingInstance(InstanceScope<I> parentScope);
 
-	Locals getEnclosingScopeLocals(Scope<?> scope);
+	Locals getEnclosingScopeLocals(Scope scope);
 }

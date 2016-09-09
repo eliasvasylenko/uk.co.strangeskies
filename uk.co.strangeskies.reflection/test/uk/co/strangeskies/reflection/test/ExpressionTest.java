@@ -27,9 +27,10 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import uk.co.strangeskies.reflection.FieldMember;
+import uk.co.strangeskies.reflection.InstanceScope;
 import uk.co.strangeskies.reflection.InvocableMember;
-import uk.co.strangeskies.reflection.Scope;
 import uk.co.strangeskies.reflection.State;
+import uk.co.strangeskies.reflection.StaticScope;
 import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.VariableExpression;
 
@@ -62,7 +63,7 @@ public class ExpressionTest {
 	public void thisAssignmentTest() {
 		TestClass testInstance = new TestClass();
 
-		Scope<TestClass> scope = Scope.overReceiver(TEST_CLASS_TYPE);
+		InstanceScope<TestClass> scope = InstanceScope.over(TEST_CLASS_TYPE);
 		State state = scope.initializeState(testInstance);
 
 		assign(field(scope.receiver(), TEST_FIELD), literal("value")).evaluate(state);
@@ -72,10 +73,10 @@ public class ExpressionTest {
 
 	@Test
 	public void localAssignmentTest() {
-		Scope<?> scope = Scope.overVoid();
-		VariableExpression<String> local = scope.defineLocal(new TypeToken<String>() {});
+		StaticScope scope = StaticScope.create();
+		VariableExpression<String> local = scope.defineVariable(new TypeToken<String>() {});
 
-		State state = scope.initializeState(null);
+		State state = scope.initializeState();
 
 		assign(local, literal("value")).evaluate(state);
 
@@ -84,10 +85,10 @@ public class ExpressionTest {
 
 	@Test
 	public void localVariableStatePersistenceTest() {
-		Scope<?> scope = Scope.overVoid();
-		VariableExpression<String> local = scope.defineLocal(new TypeToken<String>() {});
+		StaticScope scope = StaticScope.create();
+		VariableExpression<String> local = scope.defineVariable(new TypeToken<String>() {});
 
-		State state = scope.initializeState(null);
+		State state = scope.initializeState();
 
 		assign(local, literal("value")).evaluate(state);
 
@@ -98,7 +99,7 @@ public class ExpressionTest {
 	public void thisMethodInvocationTest() {
 		TestClass testInstance = new TestClass();
 
-		Scope<TestClass> scope = Scope.overReceiver(TEST_CLASS_TYPE);
+		InstanceScope<TestClass> scope = InstanceScope.over(TEST_CLASS_TYPE);
 		State state = scope.initializeState(testInstance);
 
 		invoke(scope.receiver(), TEST_SET_METHOD, literal("value")).evaluate(state);
