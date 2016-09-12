@@ -42,8 +42,4 @@ public class AssignmentExpression<T> implements ValueExpression<T> {
 	public TypeToken<T> getType() {
 		return target.getType();
 	}
-
-	public static <T, I> ValueExpression<T> assign(VariableExpression<T> target, ValueExpression<? extends T> value) {
-		return new AssignmentExpression<>(target, value);
-	}
 }

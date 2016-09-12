@@ -18,34 +18,34 @@
  */
 package uk.co.strangeskies.reflection;
 
-public class FieldExpression<O, T> implements VariableExpression<T> {
-	private final ValueExpression<? extends O> value;
-	private final FieldMember<O, T> field;
+import java.util.ArrayList;
+import java.util.List;
 
-	protected FieldExpression(ValueExpression<? extends O> value, FieldMember<O, T> field) {
-		this.value = value;
-		this.field = field;
+public abstract class BlockBuilder<S extends BlockBuilder<S>> {
+	private final StaticScope scope;
+	private final List<Statement> statements;
+
+	public BlockBuilder() {
+		scope = StaticScope.create();
+		statements = new ArrayList<>();
 	}
 
-	@Override
-	public VariableResult<T> evaluate(State state) {
-		O targetObject = value.evaluate(state).get();
-
-		return new VariableResult<T>() {
-			@Override
-			public T get() {
-				return field.get(targetObject);
-			}
-
-			@Override
-			public void set(T value) {
-				field.set(targetObject, value);
-			}
-		};
+	@SuppressWarnings("unchecked")
+	protected S getThis() {
+		return (S) this;
 	}
 
-	@Override
-	public TypeToken<T> getType() {
-		return field.getFieldType();
+	public S addExpression(Expression expression) {
+		addStatement(expression.asStatement());
+
+		return getThis();
+	}
+
+	protected void addStatement(Statement statement) {
+		statements.add(statement);
+	}
+
+	public <T> VariableExpression<T> declareVariable(TypeToken<T> type) {
+		return scope.defineVariable(type);
 	}
 }

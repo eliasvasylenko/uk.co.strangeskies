@@ -19,10 +19,14 @@
 package uk.co.strangeskies.reflection;
 
 /**
- * An expression for evaluation of 
+ * An expression for evaluation of
  * 
  * @author Elias N Vasylenko
  */
 public interface Expression {
 	Result evaluate(State state);
+
+	default Statement asStatement() {
+		return new ExpressionStatement(this);
+	}
 }

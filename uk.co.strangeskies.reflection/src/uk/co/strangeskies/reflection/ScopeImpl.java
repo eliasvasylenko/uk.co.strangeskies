@@ -32,7 +32,7 @@ import java.util.Set;
  * 
  * @author Elias N Vasylenko
  */
-public class ScopeImpl implements Scope {
+public abstract class ScopeImpl implements Scope {
 	public class LocalVariableExpression<T> implements VariableExpression<T> {
 		private final Scope scope;
 		private final TypeToken<T> type;
@@ -63,14 +63,24 @@ public class ScopeImpl implements Scope {
 		}
 	}
 
+	private final Scope enclosingScope;
 	private final Set<VariableExpression<?>> variableExpressions;
 
 	public ScopeImpl() {
-		variableExpressions = new HashSet<>();
+		this(null);
 	}
 
 	@Override
-	public <T> VariableExpression<T> defineVariable(TypeToken<T> type) {
+	public Scope getEnclosingScope() {
+		return enclosingScope;
+	}
+
+	public ScopeImpl(Scope enclosingScope) {
+		this.enclosingScope = enclosingScope;
+		variableExpressions = new HashSet<>();
+	}
+
+	protected <T> VariableExpression<T> defineVariable(TypeToken<T> type) {
 		VariableExpression<T> variable = new LocalVariableExpression<>(this, type);
 
 		variableExpressions.add(variable);

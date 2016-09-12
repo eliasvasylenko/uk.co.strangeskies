@@ -34,4 +34,9 @@ public class StaticScopeImpl extends ScopeImpl implements StaticScope {
 	public State initializeState() {
 		return new StateImpl(this);
 	}
+
+	@Override
+	public <T> VariableExpression<T> defineVariable(TypeToken<T> type) {
+		return super.defineVariable(type);
+	}
 }

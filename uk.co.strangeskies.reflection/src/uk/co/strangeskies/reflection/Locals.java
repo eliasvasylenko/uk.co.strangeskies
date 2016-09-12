@@ -18,8 +18,23 @@
  */
 package uk.co.strangeskies.reflection;
 
-public interface Locals {
-	<T> T get(VariableExpression<T> variableResult);
+import java.util.HashMap;
+import java.util.Map;
 
-	<T> void set(VariableExpression<T> variableResult, T value);
+public class Locals {
+	private final Map<VariableExpression<?>, Object> localValues = new HashMap<>();
+
+	@SuppressWarnings("unchecked")
+	public <T> T get(VariableExpression<T> variableResult) {
+		return (T) localValues.get(variableResult);
+	}
+
+	public <T> void set(VariableExpression<T> variableResult, T value) {
+		localValues.put(variableResult, value);
+	}
+
+	public <T> Locals with(VariableExpression<T> variableResult, T value) {
+		set(variableResult, value);
+		return this;
+	}
 }

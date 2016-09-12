@@ -29,5 +29,19 @@ package uk.co.strangeskies.reflection;
  * @author Elias N Vasylenko
  */
 public interface Scope {
-	<T> VariableExpression<T> defineVariable(TypeToken<T> type);
+	Scope getEnclosingScope();
+
+	default boolean isScopeVisible(Scope scope) {
+		Scope enclosingScope = this;
+
+		do {
+			if (enclosingScope == scope) {
+				return true;
+			} else {
+				enclosingScope = enclosingScope.getEnclosingScope();
+			}
+		} while (enclosingScope != null);
+
+		return false;
+	}
 }

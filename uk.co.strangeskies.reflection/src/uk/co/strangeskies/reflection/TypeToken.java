@@ -112,7 +112,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 		}
 
 		/**
-		 * @return An instance of the annotation which describes this behaviour for
+		 * @return An instance of the annotation which describes this behavior for
 		 *         capture of type literals.
 		 */
 		public Annotation getAnnotation() {
@@ -121,7 +121,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	}
 
 	/**
-	 * Specifies behaviour of wildcards. If the annotated type is a wildcard type,
+	 * Specifies behavior of wildcards. If the annotated type is a wildcard type,
 	 * it will behave according to {@link Wildcards#PRESERVE}, and if it is a
 	 * parameterized type, this rule will apply to its parameters instead.
 	 * Annotations on wildcards directly override annotations on declaring types.
@@ -133,7 +133,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	public @interface Preserve {}
 
 	/**
-	 * Specifies behaviour of wildcards. If the annotated type is a wildcard type,
+	 * Specifies behavior of wildcards. If the annotated type is a wildcard type,
 	 * it will behave according to {@link Wildcards#INFER}, and if it is a
 	 * parameterized type, this rule will apply to its parameters instead.
 	 * Annotations on wildcards directly override annotations on declaring types.
@@ -145,7 +145,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	public @interface Infer {}
 
 	/**
-	 * Specifies behaviour of wildcards. If the annotated type is a wildcard type,
+	 * Specifies behavior of wildcards. If the annotated type is a wildcard type,
 	 * it will behave according to {@link Wildcards#CAPTURE}, and if it is a
 	 * parameterized type, this rule will apply to its parameters instead.
 	 * Annotations on wildcards directly override annotations on declaring types.
@@ -364,15 +364,15 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 
 	private static Type substituteAnnotatedWildcards(Isomorphism isomorphism, AnnotatedType annotatedType,
 			Resolver resolver) {
-		Wildcards behaviour = annotatedType.isAnnotationPresent(Preserve.class) ? Wildcards.PRESERVE
+		Wildcards behavior = annotatedType.isAnnotationPresent(Preserve.class) ? Wildcards.PRESERVE
 				: annotatedType.isAnnotationPresent(Infer.class) ? Wildcards.INFER
 						: annotatedType.isAnnotationPresent(Capture.class) ? Wildcards.CAPTURE : Wildcards.PRESERVE;
 
 		if (annotatedType instanceof AnnotatedParameterizedType) {
-			return substituteAnnotatedWildcardsForParameterizedType(isomorphism, behaviour,
+			return substituteAnnotatedWildcardsForParameterizedType(isomorphism, behavior,
 					(AnnotatedParameterizedType) annotatedType, resolver);
 		} else if (annotatedType instanceof AnnotatedWildcardType) {
-			return substituteAnnotatedWildcardsForWildcardType(isomorphism, behaviour, (AnnotatedWildcardType) annotatedType,
+			return substituteAnnotatedWildcardsForWildcardType(isomorphism, behavior, (AnnotatedWildcardType) annotatedType,
 					resolver);
 		} else if (annotatedType instanceof AnnotatedArrayType) {
 			return ArrayTypes.fromComponentType(substituteAnnotatedWildcards(isomorphism,
@@ -383,7 +383,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	}
 
 	private static ParameterizedType substituteAnnotatedWildcardsForParameterizedType(Isomorphism isomorphism,
-			Wildcards behaviour, AnnotatedParameterizedType annotatedType, Resolver resolver) {
+			Wildcards behavior, AnnotatedParameterizedType annotatedType, Resolver resolver) {
 		return isomorphism.byIdentity().getProxiedMapping(annotatedType, ParameterizedType.class, t -> {
 			/*
 			 * Deal with annotations on types mentioned by parameters, preserving any
@@ -408,9 +408,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 			ParameterizedType parameterizedType = (ParameterizedType) ParameterizedTypes
 					.uncheckedFrom(Types.getRawType(annotatedType.getType()), allArguments::get);
 			if (allArguments.values().stream().anyMatch(WildcardType.class::isInstance)) {
-				if (behaviour == Wildcards.CAPTURE) {
+				if (behavior == Wildcards.CAPTURE) {
 					parameterizedType = TypeVariableCapture.captureWildcardArguments(parameterizedType);
-				} else if (behaviour == Wildcards.INFER) {
+				} else if (behavior == Wildcards.INFER) {
 					Resolver inferenceResolver = new Resolver(resolver.getBounds());
 					parameterizedType = inferenceResolver.inferOverTypeArguments(parameterizedType);
 					resolver.getBounds().incorporate(inferenceResolver.getBounds());
@@ -420,7 +420,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 		});
 	}
 
-	private static Type substituteAnnotatedWildcardsForWildcardType(Isomorphism isomorphism, Wildcards behaviour,
+	private static Type substituteAnnotatedWildcardsForWildcardType(Isomorphism isomorphism, Wildcards behavior,
 			AnnotatedWildcardType annotatedType, Resolver resolver) {
 		AnnotatedWildcardType annotatedWildcardType = annotatedType;
 		WildcardType wildcardType;
@@ -438,8 +438,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 		}
 
 		Type type;
-		if (behaviour != null) {
-			switch (behaviour) {
+		if (behavior != null) {
+			switch (behavior) {
 			case PRESERVE:
 				type = wildcardType;
 				break;

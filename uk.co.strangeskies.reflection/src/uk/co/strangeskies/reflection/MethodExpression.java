@@ -18,7 +18,6 @@
  */
 package uk.co.strangeskies.reflection;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -47,15 +46,5 @@ public class MethodExpression<O, T> implements ValueExpression<T> {
 	@Override
 	public TypeToken<T> getType() {
 		return invocable.getReturnType();
-	}
-
-	public static <O, T, I> MethodExpression<O, T> invoke(ValueExpression<? extends O> value,
-			InvocableMember<O, T> invocable, ValueExpression<?>... arguments) {
-		return invokeMethod(value, invocable, Arrays.asList(arguments));
-	}
-
-	public static <O, T, I> MethodExpression<O, T> invokeMethod(ValueExpression<? extends O> value,
-			InvocableMember<O, T> invocable, List<ValueExpression<?>> arguments) {
-		return new MethodExpression<>(value, invocable, arguments);
 	}
 }

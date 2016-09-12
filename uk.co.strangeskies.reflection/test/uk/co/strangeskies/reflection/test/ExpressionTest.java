@@ -18,10 +18,7 @@
  */
 package uk.co.strangeskies.reflection.test;
 
-import static uk.co.strangeskies.reflection.AssignmentExpression.assign;
-import static uk.co.strangeskies.reflection.FieldExpression.field;
 import static uk.co.strangeskies.reflection.LiteralExpression.literal;
-import static uk.co.strangeskies.reflection.MethodExpression.invoke;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -29,6 +26,8 @@ import org.junit.Test;
 import uk.co.strangeskies.reflection.FieldMember;
 import uk.co.strangeskies.reflection.InstanceScope;
 import uk.co.strangeskies.reflection.InvocableMember;
+import uk.co.strangeskies.reflection.Procedure;
+import uk.co.strangeskies.reflection.ProcedureDefinition;
 import uk.co.strangeskies.reflection.State;
 import uk.co.strangeskies.reflection.StaticScope;
 import uk.co.strangeskies.reflection.TypeToken;
@@ -48,6 +47,8 @@ public class ExpressionTest {
 		}
 	}
 
+	private static final TypeToken<String> STRING_TYPE = new TypeToken<String>() {};
+
 	private static final TypeToken<TestClass> TEST_CLASS_TYPE = new TypeToken<TestClass>() {};
 	private static final String TEST_FIELD_NAME = "field";
 	@SuppressWarnings("unchecked")
@@ -57,7 +58,7 @@ public class ExpressionTest {
 	private static final String TEST_SET_METHOD_NAME = "setMethod";
 	@SuppressWarnings("unchecked")
 	private static final InvocableMember<TestClass, ?> TEST_SET_METHOD = (InvocableMember<TestClass, Void>) TEST_CLASS_TYPE
-			.resolveMethodOverload(TEST_SET_METHOD_NAME, String.class);
+			.resolveMethodOverload(TEST_SET_METHOD_NAME, STRING_TYPE);
 
 	@Test
 	public void thisAssignmentTest() {
@@ -66,7 +67,7 @@ public class ExpressionTest {
 		InstanceScope<TestClass> scope = InstanceScope.over(TEST_CLASS_TYPE);
 		State state = scope.initializeState(testInstance);
 
-		assign(field(scope.receiver(), TEST_FIELD), literal("value")).evaluate(state);
+		scope.receiver().accessField(TEST_FIELD).assign(literal("value")).evaluate(state);
 
 		Assert.assertEquals("value", testInstance.field);
 	}
@@ -78,21 +79,26 @@ public class ExpressionTest {
 
 		State state = scope.initializeState();
 
-		assign(local, literal("value")).evaluate(state);
+		local.assign(literal("value")).evaluate(state);
 
 		Assert.assertEquals("value", local.evaluate(state).get());
 	}
 
-	@Test
+	// @Test
 	public void localVariableStatePersistenceTest() {
-		StaticScope scope = StaticScope.create();
-		VariableExpression<String> local = scope.defineVariable(new TypeToken<String>() {});
+		ProcedureDefinition<String> builder = ProcedureDefinition.build(String.class).declare();
 
-		State state = scope.initializeState();
+		VariableExpression<String> local = builder.declareVariable(new TypeToken<String>() {});
 
-		assign(local, literal("value")).evaluate(state);
+		builder.addExpression(local.assign(literal("value")));
+		builder.addExpression(local.assign(local
+				.invokeMethod(STRING_TYPE.resolveMethodOverload("concat").withTargetType(STRING_TYPE), literal("concat"))));
 
-		Assert.assertEquals("value", local.evaluate(state).get());
+		Procedure<String> procedure = builder.instantiate();
+
+		String result = procedure.execute("concat");
+
+		Assert.assertEquals("valueconcat", result);
 	}
 
 	@Test
@@ -102,7 +108,7 @@ public class ExpressionTest {
 		InstanceScope<TestClass> scope = InstanceScope.over(TEST_CLASS_TYPE);
 		State state = scope.initializeState(testInstance);
 
-		invoke(scope.receiver(), TEST_SET_METHOD, literal("value")).evaluate(state);
+		scope.receiver().invokeMethod(TEST_SET_METHOD, literal("value")).evaluate(state);
 
 		Assert.assertEquals("value", testInstance.field);
 	}

@@ -18,36 +18,28 @@
  */
 package uk.co.strangeskies.reflection;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class StateImpl implements State {
 	private final State enclosingState;
 	private final Scope scope;
 	private final Locals locals;
 
-	public StateImpl(Scope scope) {
+	protected StateImpl(Scope scope) {
 		this(null, scope);
+
+		if (scope.getEnclosingScope() != null) {
+			throw new ReflectionException(p -> p.invalidScopeForState());
+		}
 	}
 
-	public StateImpl(State enclosingState, Scope scope) {
+	protected StateImpl(State enclosingState, Scope scope) {
 		this.enclosingState = enclosingState;
 		this.scope = scope;
 
-		locals = new Locals() {
-			private final Map<VariableExpression<?>, Object> localValues = new HashMap<>();
+		if (enclosingState != null && enclosingState.getScope() != scope.getEnclosingScope()) {
+			throw new ReflectionException(p -> p.invalidScopeForState());
+		}
 
-			@Override
-			public <T> void set(VariableExpression<T> variableResult, T value) {
-				localValues.put(variableResult, value);
-			}
-
-			@SuppressWarnings("unchecked")
-			@Override
-			public <T> T get(VariableExpression<T> variableResult) {
-				return (T) localValues.get(variableResult);
-			}
-		};
+		locals = new Locals();
 	}
 
 	@Override

@@ -18,9 +18,26 @@
  */
 package uk.co.strangeskies.reflection;
 
+import java.util.Arrays;
+import java.util.List;
+
 public interface ValueExpression<T> extends Expression {
 	@Override
 	ValueResult<T> evaluate(State state);
 
 	TypeToken<T> getType();
+
+	default <R> FieldExpression<? super T, R> accessField(FieldMember<? super T, R> field) {
+		return new FieldExpression<>(this, field);
+	}
+
+	default <R> MethodExpression<? super T, R> invokeMethod(InvocableMember<? super T, R> invocable,
+			ValueExpression<?>... arguments) {
+		return invokeMethod(invocable, Arrays.asList(arguments));
+	}
+
+	default <R> MethodExpression<? super T, R> invokeMethod(InvocableMember<? super T, R> invocable,
+			List<ValueExpression<?>> arguments) {
+		return new MethodExpression<>(this, invocable, arguments);
+	}
 }

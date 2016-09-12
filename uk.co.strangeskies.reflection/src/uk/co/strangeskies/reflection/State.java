@@ -22,6 +22,14 @@ package uk.co.strangeskies.reflection;
  * @author Elias N Vasylenko
  */
 public interface State {
+	static State over(Scope scope) {
+		return new StateImpl(scope);
+	}
+
+	default State enclose(Scope scope) {
+		return new StateImpl(this, scope);
+	}
+
 	Scope getScope();
 
 	<I> I getEnclosingInstance(InstanceScope<I> parentScope);

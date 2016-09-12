@@ -18,34 +18,14 @@
  */
 package uk.co.strangeskies.reflection;
 
-public class FieldExpression<O, T> implements VariableExpression<T> {
-	private final ValueExpression<? extends O> value;
-	private final FieldMember<O, T> field;
+import java.util.List;
 
-	protected FieldExpression(ValueExpression<? extends O> value, FieldMember<O, T> field) {
-		this.value = value;
-		this.field = field;
-	}
+public interface Procedure<T> {
+	public List<TypeToken<?>> getTypes();
 
-	@Override
-	public VariableResult<T> evaluate(State state) {
-		O targetObject = value.evaluate(state).get();
+	public T execute(Object... parameters);
 
-		return new VariableResult<T>() {
-			@Override
-			public T get() {
-				return field.get(targetObject);
-			}
+	public T execute(List<?> parameters);
 
-			@Override
-			public void set(T value) {
-				field.set(targetObject, value);
-			}
-		};
-	}
-
-	@Override
-	public TypeToken<T> getType() {
-		return field.getFieldType();
-	}
+	public T executeSafe(List<TypedObject<?>> parameters);
 }

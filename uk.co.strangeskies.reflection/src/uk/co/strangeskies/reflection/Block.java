@@ -18,34 +18,33 @@
  */
 package uk.co.strangeskies.reflection;
 
-public class FieldExpression<O, T> implements VariableExpression<T> {
-	private final ValueExpression<? extends O> value;
-	private final FieldMember<O, T> field;
+import java.util.Collections;
+import java.util.List;
 
-	protected FieldExpression(ValueExpression<? extends O> value, FieldMember<O, T> field) {
-		this.value = value;
-		this.field = field;
+/**
+ * A block is defined by a list of {@link Statement statements} to be evaluated
+ * in series.
+ * 
+ * @author Elias N Vasylenko
+ */
+public abstract class Block {
+	private final Scope scope;
+	private final List<Statement> statements;
+
+	public Block(Scope scope, List<Statement> statements) {
+		this.scope = scope;
+		this.statements = Collections.unmodifiableList(statements);
 	}
 
-	@Override
-	public VariableResult<T> evaluate(State state) {
-		O targetObject = value.evaluate(state).get();
-
-		return new VariableResult<T>() {
-			@Override
-			public T get() {
-				return field.get(targetObject);
-			}
-
-			@Override
-			public void set(T value) {
-				field.set(targetObject, value);
-			}
-		};
+	public List<Statement> getStatements() {
+		return statements;
 	}
 
-	@Override
-	public TypeToken<T> getType() {
-		return field.getFieldType();
+	public void execute(State state) {
+		state = state.enclose(scope);
+
+		for (Statement statement : statements) {
+			statement.execute(state);
+		}
 	}
 }
