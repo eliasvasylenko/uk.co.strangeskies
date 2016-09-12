@@ -232,6 +232,6 @@ public class ModularTreeView extends TreeView<TreeItemData<?>> {
 
 	@Override
 	public void refresh() {
-		getRootImpl().rebuildChildren();
+		getRootImpl().getData().refresh(true);
 	}
 }

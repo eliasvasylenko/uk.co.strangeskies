@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TreeItem;
 import uk.co.strangeskies.reflection.TypeToken;
@@ -100,7 +101,19 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 		return super.getChildren();
 	}
 
+	private void rebuild(boolean recursive) {
+		TreeItemData<?> data = getValue();
+		setValue(null);
+		setValue(data);
+
+		if (recursive) {
+			rebuildChildren();
+		}
+	}
+
 	protected void rebuildChildren() {
+		boolean selected = treeView.getSelectionModel().getSelectedItem() == this;
+
 		getDataImpl().refreshContributions();
 
 		boolean hasChildren = hasChildrenContributions();
@@ -121,7 +134,7 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 						treeItem = new TreeItemImpl<>(treeView, i, this);
 						childTreeItems.put(i, treeItem);
 					} else {
-						treeItem.rebuildChildren();
+						treeItem.rebuild(true);
 					}
 
 					return treeItem;
@@ -137,6 +150,10 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 
 			childrenItems = Collections.emptyList();
 			childrenCalculated = true;
+		}
+
+		if (selected) {
+			treeView.getSelectionModel().select(this);
 		}
 
 		super.getChildren().setAll(childrenItems);
@@ -174,6 +191,11 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 		}
 
 		@Override
+		public ModularTreeView treeView() {
+			return treeView;
+		}
+
+		@Override
 		public TypedObject<U> typedData() {
 			return data;
 		}
@@ -202,13 +224,22 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 
 		@Override
 		public void refresh(boolean recursive) {
-			TreeItemData<?> data = getValue();
-			setValue(null);
-			setValue(data);
+			TreeItem<TreeItemData<?>> selected = treeView.getSelectionModel().getSelectedItem();
 
-			if (recursive) {
-				rebuildChildren();
-			}
+			Platform.runLater(() -> {
+				rebuild(recursive);
+
+				for (int i = 0; i < treeView.getExpandedItemCount(); i++) {
+					TreeItem<?> treeItem = treeView.getTreeItem(i);
+
+					if (selected == treeItem) {
+						treeView.getSelectionModel().clearAndSelect(i);
+						return;
+					}
+				}
+
+				treeView.getSelectionModel().clearSelection();
+			});
 		}
 	}
 }

@@ -62,6 +62,11 @@ public interface TreeItemData<T> {
 	Optional<TreeItemData<?>> parent();
 
 	/**
+	 * @return the tree view which contains this item
+	 */
+	ModularTreeView treeView();
+
+	/**
 	 * Get all the contributions which should be applied to a tree item, in order
 	 * from most to least specific.
 	 * 

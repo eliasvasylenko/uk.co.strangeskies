@@ -76,7 +76,7 @@ public abstract class CommandTreeCellContribution<T> implements TreeCellContribu
 				event.consume();
 
 				if (event.getEventType().equals(MouseEvent.MOUSE_CLICKED)) {
-					executeCommand();
+					executeCommand(data, content);
 				}
 			}
 		});
@@ -86,7 +86,7 @@ public abstract class CommandTreeCellContribution<T> implements TreeCellContribu
 				event.consume();
 
 				if (event.getEventType().equals(KeyEvent.KEY_PRESSED)) {
-					executeCommand();
+					executeCommand(data, content);
 				}
 			}
 		});
@@ -94,7 +94,7 @@ public abstract class CommandTreeCellContribution<T> implements TreeCellContribu
 		return content;
 	}
 
-	private void executeCommand() {
+	private void executeCommand(TreeItemData<?> data, Node node) {
 		handlerService.executeHandler(command);
 	}
 }
