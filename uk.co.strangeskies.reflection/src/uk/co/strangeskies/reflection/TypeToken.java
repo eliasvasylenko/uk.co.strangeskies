@@ -536,7 +536,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 
 	/**
 	 * Create a TypeToken view over a raw type with respect to its
-	 * parameterisations within a given resolver.
+	 * parameterizations within a given resolver.
 	 * 
 	 * @param resolver
 	 *          The resolution context for the type.

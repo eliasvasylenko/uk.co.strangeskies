@@ -24,6 +24,7 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -133,7 +134,17 @@ public class TypeSubstitution {
 			return resolve(type, new Isomorphism());
 	}
 
-	private Type resolve(Type type, Isomorphism isomorphism) {
+	/**
+	 * Resolve the result of this substitution as applied to the given type.
+	 * 
+	 * @param type
+	 *          The type for which we want to make a substitution.
+	 * @param isomorphism
+	 *          the isomorphism for dealing with self bounded and infinite types
+	 * @return The result of application of this substitution. The result is
+	 *         <em>not</em> guaranteed to be well formed with respect to bounds.
+	 */
+	public Type resolve(Type type, Isomorphism isomorphism) {
 		Type mapping = this.mapping.apply(type);
 		if (mapping != null) {
 			return mapping;
@@ -171,7 +182,8 @@ public class TypeSubstitution {
 		return isomorphism.byIdentity().getProxiedMapping(type, TypeVariable.class, i -> {
 
 			if (type.getBounds().length > 0) {
-				return TypeVariables.upperBounded(resolve(IntersectionType.uncheckedFrom(type.getBounds()), isomorphism));
+				return TypeVariables.upperBounded(type.getGenericDeclaration(), type.getName(),
+						AnnotatedTypes.over(resolveTypes(type.getBounds(), isomorphism)));
 
 			} else
 				return type;
@@ -182,10 +194,10 @@ public class TypeSubstitution {
 		return isomorphism.byIdentity().getProxiedMapping(type, WildcardType.class, i -> {
 
 			if (type.getLowerBounds().length > 0) {
-				return WildcardTypes.lowerBounded(resolve(IntersectionType.uncheckedFrom(type.getLowerBounds()), isomorphism));
+				return WildcardTypes.lowerBounded(resolveTypes(type.getLowerBounds(), isomorphism));
 
 			} else if (type.getUpperBounds().length > 0) {
-				return WildcardTypes.upperBounded(resolve(IntersectionType.uncheckedFrom(type.getUpperBounds()), isomorphism));
+				return WildcardTypes.upperBounded(resolveTypes(type.getUpperBounds(), isomorphism));
 
 			} else
 				return type;
@@ -199,8 +211,7 @@ public class TypeSubstitution {
 			Type proxy = IntersectionType.proxy(property::get);
 			partial.accept(() -> proxy);
 
-			IntersectionType result = IntersectionType
-					.uncheckedFrom(Arrays.stream(type.getTypes()).map(t -> resolve(t, isomorphism)).collect(Collectors.toList()));
+			IntersectionType result = IntersectionType.uncheckedFrom(resolveTypes(type.getTypes(), isomorphism));
 
 			property.set(result);
 
@@ -208,11 +219,15 @@ public class TypeSubstitution {
 		});
 	}
 
+	private List<Type> resolveTypes(Type[] types, Isomorphism isomorphism) {
+		return Arrays.stream(types).map(t -> resolve(t, isomorphism)).collect(Collectors.toList());
+	}
+
 	private Type resolveParameterizedType(ParameterizedType type, Isomorphism isomorphism) {
 		return isomorphism.byIdentity().getProxiedMapping(type, ParameterizedType.class, i -> {
 
 			return ParameterizedTypes.uncheckedFrom(resolve(type.getOwnerType(), isomorphism), Types.getRawType(type),
-					Arrays.stream(type.getActualTypeArguments()).map(t -> resolve(t, isomorphism)).collect(Collectors.toList()));
+					resolveTypes(type.getActualTypeArguments(), isomorphism));
 		});
 	}
 }

@@ -2,33 +2,76 @@ package uk.co.strangeskies.reflection;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
+import java.lang.reflect.AnnotatedTypeVariable;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import uk.co.strangeskies.utilities.Isomorphism;
+
 public class GenericSignature {
-	private final List<TypeVariableSignature> typeVariables;
+	private final List<TypeVariableSignature> typeVariableSignatures;
+
+	private Isomorphism isomorphism;
+	private GenericDeclaration declaration;
+
+	private final TypeSubstitution typeSubstitution;
+	private final AnnotatedTypeSubstitution boundSubstitution;
 
 	public GenericSignature() {
-		this.typeVariables = new ArrayList<>();
+		this.typeVariableSignatures = new ArrayList<>();
+
+		isomorphism = new Isomorphism();
+
+		typeSubstitution = new TypeSubstitution().where(t -> t instanceof TypeVariableSignature,
+				t -> substituteTypeVariableSignature((TypeVariableSignature) t));
+
+		boundSubstitution = new AnnotatedTypeSubstitution().where(
+
+				t -> t.getType() instanceof TypeVariableSignature,
+
+				t -> substituteAnnotatedTypeVariableSignature(t));
+	}
+
+	@SuppressWarnings("unchecked")
+	private <T extends GenericDeclaration> TypeVariable<T> substituteTypeVariableSignature(
+			TypeVariableSignature signature) {
+		return TypeVariables.upperBounded((T) declaration, signature.getTypeName(),
+
+				signature.getBounds().stream().map(b -> boundSubstitution.resolve(b.getAnnotatedDeclaration(), isomorphism))
+						.collect(Collectors.toList()));
+	}
+
+	private <T extends GenericDeclaration> AnnotatedTypeVariable substituteAnnotatedTypeVariableSignature(
+			AnnotatedType annotatedSignature) {
+		return AnnotatedTypeVariables.over(
+				(TypeVariable<?>) typeSubstitution.resolve(annotatedSignature.getType(), isomorphism),
+				annotatedSignature.getAnnotations());
 	}
 
 	public TypeVariableSignature addTypeVariable() {
-		TypeVariableSignature typeVariable = new TypeVariableSignature();
-		typeVariables.add(typeVariable);
+		TypeVariableSignature typeVariable = new TypeVariableSignature(typeVariableSignatures.size());
+		typeVariableSignatures.add(typeVariable);
 		return typeVariable;
 	}
 
 	public GenericSignature withTypeVariable(Type... bounds) {
-		return withTypeVariable(Arrays.stream(bounds).map(TypeToken::over).collect(Collectors.toList()));
+		addTypeVariable().withUpperBounds(bounds);
+		return this;
+	}
+
+	public GenericSignature withTypeVariable(AnnotatedType... bounds) {
+		addTypeVariable().withUpperBounds(bounds);
+		return this;
 	}
 
 	public GenericSignature withTypeVariable(TypeToken<?>... bounds) {
-		return withTypeVariable(Arrays.asList(bounds));
+		addTypeVariable().withUpperBounds(bounds);
+		return this;
 	}
 
 	public GenericSignature withTypeVariable(List<TypeToken<?>> bounds) {
@@ -36,49 +79,27 @@ public class GenericSignature {
 		return this;
 	}
 
-	public <T extends GenericDeclaration> List<TypeVariable<T>> getTypeVariables(T declaration) {
-		return typeVariables.stream().<TypeVariable<T>> map(s -> new TypeVariable<T>() {
-			@Override
-			public <U extends Annotation> U getAnnotation(Class<U> annotationClass) {
-				// TODO Auto-generated method stub
-				return null;
-			}
+	public GenericSignature withTypeVariable(Collection<? extends Annotation> annotations,
+			Collection<? extends TypeToken<?>> bounds) {
+		addTypeVariable().withAnnotations(annotations);
+		addTypeVariable().withUpperBounds(bounds);
+		return this;
+	}
 
-			@Override
-			public Annotation[] getAnnotations() {
-				// TODO Auto-generated method stub
-				return null;
-			}
+	@SuppressWarnings("unchecked")
+	public synchronized <T extends GenericDeclaration> List<TypeVariable<T>> getTypeVariables(T declaration) {
+		List<TypeVariable<T>> typeVariables = new ArrayList<>(typeVariableSignatures.size());
 
-			@Override
-			public Annotation[] getDeclaredAnnotations() {
-				// TODO Auto-generated method stub
-				return null;
-			}
+		isomorphism = new Isomorphism();
+		this.declaration = declaration;
 
-			@Override
-			public Type[] getBounds() {
-				// TODO Auto-generated method stub
-				return null;
-			}
+		for (TypeVariableSignature signature : typeVariableSignatures) {
+			typeVariables.add((TypeVariable<T>) typeSubstitution.resolve(signature, isomorphism));
+		}
 
-			@Override
-			public T getGenericDeclaration() {
-				// TODO Auto-generated method stub
-				return null;
-			}
+		isomorphism = null;
+		this.declaration = null;
 
-			@Override
-			public String getName() {
-				// TODO Auto-generated method stub
-				return null;
-			}
-
-			@Override
-			public AnnotatedType[] getAnnotatedBounds() {
-				// TODO Auto-generated method stub
-				return null;
-			}
-		}).collect(Collectors.toList());
+		return typeVariables;
 	}
 }

@@ -206,11 +206,11 @@ public final class AnnotatedWildcardTypes {
 	 * Create a lower bounded annotated wildcard type with the given annotations.
 	 * 
 	 * @param annotations
-	 *          The annotations to be contained by the new annotated type.
+	 *          the annotations to be contained by the new annotated type
 	 * @param bounds
-	 *          The types we wish form the lower bounds for a wildcard.
-	 * @return An instance of {@link AnnotatedWildcardType} representing a
-	 *         wildcard with the given lower bound.
+	 *          the types we wish form the lower bounds for a wildcard
+	 * @return an instance of {@link AnnotatedWildcardType} representing a
+	 *         wildcard with the given lower bound.\
 	 */
 	public static AnnotatedWildcardType lowerBounded(Collection<Annotation> annotations,
 			Collection<? extends AnnotatedType> bounds) {
@@ -221,9 +221,9 @@ public final class AnnotatedWildcardTypes {
 	 * Create a lower bounded annotated wildcard type.
 	 * 
 	 * @param bounds
-	 *          The types we wish form the lower bounds for a wildcard.
-	 * @return An instance of {@link AnnotatedWildcardType} representing a
-	 *         wildcard with the given lower bound.
+	 *          the types we wish form the lower bounds for a wildcard
+	 * @return an instance of {@link AnnotatedWildcardType} representing a
+	 *         wildcard with the given lower bound
 	 */
 	public static AnnotatedWildcardType lowerBounded(AnnotatedType... bounds) {
 		return lowerBounded(Arrays.asList(bounds));
@@ -233,9 +233,9 @@ public final class AnnotatedWildcardTypes {
 	 * Create a lower bounded annotated wildcard type.
 	 * 
 	 * @param bounds
-	 *          The types we wish form the lower bounds for a wildcard.
-	 * @return An instance of {@link AnnotatedWildcardType} representing a
-	 *         wildcard with the given lower bound.
+	 *          the types we wish form the lower bounds for a wildcard
+	 * @return an instance of {@link AnnotatedWildcardType} representing a
+	 *         wildcard with the given lower bound
 	 */
 	public static AnnotatedWildcardType lowerBounded(Collection<? extends AnnotatedType> bounds) {
 		return lowerBounded(Collections.emptySet(), bounds);

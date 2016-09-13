@@ -18,15 +18,14 @@
  */
 package uk.co.strangeskies.reflection;
 
+import java.lang.reflect.AnnotatedArrayType;
 import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.AnnotatedType;
+import java.lang.reflect.AnnotatedTypeVariable;
 import java.lang.reflect.AnnotatedWildcardType;
-import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -34,10 +33,24 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.Isomorphism;
 
 /**
+ * TODO update the javadocs to take about ANNOTATED types...
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
  * A TypeSubstitution object is a function mapping Type to Type, which
  * recursively visits each type mentioned by a given type and applies a
  * substitution to those it encounters which match a given condition.
@@ -130,14 +143,65 @@ public class AnnotatedTypeSubstitution {
 	 * @return The result of application of this substitution. The result is
 	 *         <em>not</em> guaranteed to be well formed with respect to bounds.
 	 */
-	public AnnotatedType resolve(Type type) {
+	public AnnotatedType resolve(AnnotatedType type) {
 		if (empty.get())
 			return type;
 		else
 			return resolve(type, new Isomorphism());
 	}
 
-	private AnnotatedType resolve(AnnotatedType type, Isomorphism isomorphism) {
+	/*
+	 * TODO take change of getType() results for substituted annotated types, and
+	 * apply the substitution to the getType() results of their containing
+	 * annotated types.
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * Perhaps do this by passing each getType() straight through the isomorphism
+	 * by the identity of their containing annotated type, and when we replace an
+	 * annotated type, manually put a copy into the isomorphism based on the new
+	 * getType()
+	 * 
+	 * 
+	 * 
+	 * 
+	 * TODO
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * TODO this will definitely need testing...
+	 * 
+	 * 
+	 * 
+	 */
+
+	/**
+	 * Resolve the result of this substitution as applied to the given type.
+	 * 
+	 * @param type
+	 *          The type for which we want to make a substitution.
+	 * @param isomorphism
+	 *          the isomorphism for dealing with self bounded and infinite types
+	 * @return The result of application of this substitution. The result is
+	 *         <em>not</em> guaranteed to be well formed with respect to bounds.
+	 */
+	public AnnotatedType resolve(AnnotatedType type, Isomorphism isomorphism) {
 		AnnotatedType mapping = this.mapping.apply(type);
 		if (mapping != null) {
 			return mapping;
@@ -148,66 +212,59 @@ public class AnnotatedTypeSubstitution {
 		} else if (type.getType() instanceof Class) {
 			return type;
 
-		} else if (type.getType() instanceof TypeVariable) {
+		} else if (type instanceof AnnotatedTypeVariable) {
 			return type;
 
-		} else if (type.getType() instanceof InferenceVariable) {
-			return type;
+		} else if (type instanceof AnnotatedWildcardType) {
+			return resolveWildcardType((AnnotatedWildcardType) type, isomorphism);
 
-		} else if (type instanceof IntersectionType) {
-			return resolveIntersectionType((IntersectionType) type, isomorphism);
+		} else if (type instanceof AnnotatedArrayType) {
+			return AnnotatedArrayTypes.fromComponent(
+					resolve(((AnnotatedArrayType) type).getAnnotatedGenericComponentType(), isomorphism), type.getAnnotations());
 
-		} else if (type instanceof WildcardType) {
-			return resolveWildcardType((WildcardType) type, isomorphism);
-
-		} else if (type instanceof GenericArrayType) {
-			return ArrayTypes.fromComponentType(resolve(((GenericArrayType) type).getGenericComponentType(), isomorphism));
-
-		} else if (type instanceof ParameterizedType) {
-			return resolveParameterizedType((ParameterizedType) type, isomorphism);
+		} else if (type instanceof AnnotatedParameterizedType) {
+			return resolveParameterizedType((AnnotatedParameterizedType) type, isomorphism);
 		}
 
 		throw new IllegalArgumentException(
 				"Cannot resolve unrecognised type '" + type + "' of class'" + type.getClass() + "'.");
 	}
 
-	private Type resolveWildcardType(AnnotatedWildcardType type, Isomorphism isomorphism) {
-		return isomorphism.byIdentity().getProxiedMapping(type, AnnotatedWildcardType.class, i -> {
+	private AnnotatedType resolveTypeVariable(AnnotatedTypeVariable type, Isomorphism isomorphism) {
+		return isomorphism.byIdentity().getProxiedMapping(type, AnnotatedTypeVariable.class, i -> {
 
-			if (type.getLowerBounds().length > 0) {
-				return AnnotatedWildcardTypes
-						.lowerBounded(resolve(IntersectionType.uncheckedFrom(type.getLowerBounds()), isomorphism));
-
-			} else if (type.getUpperBounds().length > 0) {
-				return AnnotatedWildcardTypes
-						.upperBounded(resolve(IntersectionType.uncheckedFrom(type.getUpperBounds()), isomorphism));
+			if (type.getAnnotatedBounds().length > 0) {
+				return TypeVariables.upperBounded(type.getGenericDeclaration(), ((TypeVariable<?>) type.getType()).getName(),
+						AnnotatedTypes.over(resolveTypes(type.getAnnotatedBounds(), isomorphism)));
 
 			} else
-				return AnnotatedWildcardTypes.unbounded();
+				return type;
 		});
 	}
 
-	private Type resolveIntersectionType(IntersectionType type, Isomorphism isomorphism) {
-		return isomorphism.byIdentity().getPartialMapping(type, (i, partial) -> {
+	private AnnotatedType resolveWildcardType(AnnotatedWildcardType type, Isomorphism isomorphism) {
+		return isomorphism.byIdentity().getProxiedMapping(type, AnnotatedWildcardType.class, i -> {
 
-			IdentityProperty<IntersectionType> property = new IdentityProperty<>();
-			Type proxy = IntersectionType.proxy(property::get);
-			partial.accept(() -> proxy);
+			if (type.getAnnotatedLowerBounds().length > 0) {
+				return AnnotatedWildcardTypes.lowerBounded(resolveTypes(type.getAnnotatedLowerBounds(), isomorphism));
 
-			IntersectionType result = IntersectionType
-					.uncheckedFrom(Arrays.stream(type.getTypes()).map(t -> resolve(t, isomorphism)).collect(Collectors.toList()));
+			} else if (type.getAnnotatedUpperBounds().length > 0) {
+				return AnnotatedWildcardTypes.upperBounded(resolveTypes(type.getAnnotatedUpperBounds(), isomorphism));
 
-			property.set(result);
-
-			return result;
+			} else
+				return type;
 		});
 	}
 
-	private Type resolveParameterizedType(AnnotatedParameterizedType type, Isomorphism isomorphism) {
-		return isomorphism.byIdentity().getProxiedMapping(type, ParameterizedType.class, i -> {
+	private List<AnnotatedType> resolveTypes(AnnotatedType[] types, Isomorphism isomorphism) {
+		return Arrays.stream(types).map(t -> resolve(t, isomorphism)).collect(Collectors.toList());
+	}
+
+	private AnnotatedType resolveParameterizedType(AnnotatedParameterizedType type, Isomorphism isomorphism) {
+		return isomorphism.byIdentity().getProxiedMapping(type, AnnotatedParameterizedType.class, i -> {
 
 			return ParameterizedTypes.uncheckedFrom(resolve(type.getOwnerType(), isomorphism), Types.getRawType(type),
-					Arrays.stream(type.getActualTypeArguments()).map(t -> resolve(t, isomorphism)).collect(Collectors.toList()));
+					resolveTypes(type.getAnnotatedActualTypeArguments(), isomorphism));
 		});
 	}
 }
