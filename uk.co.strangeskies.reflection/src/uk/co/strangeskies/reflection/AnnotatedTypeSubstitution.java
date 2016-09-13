@@ -18,6 +18,9 @@
  */
 package uk.co.strangeskies.reflection;
 
+import java.lang.reflect.AnnotatedParameterizedType;
+import java.lang.reflect.AnnotatedType;
+import java.lang.reflect.AnnotatedWildcardType;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -42,14 +45,14 @@ import uk.co.strangeskies.utilities.Isomorphism;
  * @author Elias N Vasylenko
  *
  */
-public class TypeSubstitution {
-	private final Function<? super Type, ? extends Type> mapping;
+public class AnnotatedTypeSubstitution {
+	private final Function<? super AnnotatedType, ? extends AnnotatedType> mapping;
 	private final Supplier<Boolean> empty;
 
 	/**
 	 * Create a new TypeSubstitution with no initial substitution rules.
 	 */
-	public TypeSubstitution() {
+	public AnnotatedTypeSubstitution() {
 		mapping = t -> null;
 		empty = () -> true;
 	}
@@ -59,28 +62,29 @@ public class TypeSubstitution {
 	 * Typically we do something like create an instance from a {@link Map} of
 	 * Type instances to other Type instances, then pass the method reference of
 	 * {@link Map#get(Object)} for that map to this constructor. For this specific
-	 * example use case though, {@link #TypeSubstitution(Map)} would perform
-	 * slightly better.
+	 * example use case though, {@link #AnnotatedTypeSubstitution(Map)} would
+	 * perform slightly better.
 	 * 
 	 * @param mapping
 	 *          A mapping function for transforming encountered types to their
 	 *          substitution types.
 	 */
-	public TypeSubstitution(Function<? super Type, ? extends Type> mapping) {
+	public AnnotatedTypeSubstitution(Function<? super AnnotatedType, ? extends AnnotatedType> mapping) {
 		this.mapping = mapping;
 		empty = () -> false;
 	}
 
 	/**
 	 * Create a new TypeSubstitution to apply the given mapping. This is more
-	 * efficient than the more general {@link #TypeSubstitution(Function)}
-	 * constructor, as it can skip type traversal for empty maps.
+	 * efficient than the more general
+	 * {@link #AnnotatedTypeSubstitution(Function)} constructor, as it can skip
+	 * type traversal for empty maps.
 	 * 
 	 * @param mapping
 	 *          A mapping function for transforming encountered types to their
 	 *          substitution types.
 	 */
-	public TypeSubstitution(Map<?, ? extends Type> mapping) {
+	public AnnotatedTypeSubstitution(Map<?, ? extends AnnotatedType> mapping) {
 		this.mapping = mapping::get;
 		empty = mapping::isEmpty;
 	}
@@ -97,8 +101,8 @@ public class TypeSubstitution {
 	 *          The type to substitute for types which match the rule.
 	 * @return A new TypeSubstitution object with the rule added.
 	 */
-	public TypeSubstitution where(Type from, Type to) {
-		return new TypeSubstitution(t -> Objects.equals(from, t) ? to : mapping.apply(t));
+	public AnnotatedTypeSubstitution where(AnnotatedType from, AnnotatedType to) {
+		return new AnnotatedTypeSubstitution(t -> Objects.equals(from, t) ? to : mapping.apply(t));
 	}
 
 	/**
@@ -114,8 +118,8 @@ public class TypeSubstitution {
 	 *          given condition.
 	 * @return A new TypeSubstitution object with the rule added.
 	 */
-	public TypeSubstitution where(Predicate<Type> from, Function<Type, Type> to) {
-		return new TypeSubstitution(t -> from.test(t) ? to.apply(t) : mapping.apply(t));
+	public AnnotatedTypeSubstitution where(Predicate<AnnotatedType> from, Function<AnnotatedType, AnnotatedType> to) {
+		return new AnnotatedTypeSubstitution(t -> from.test(t) ? to.apply(t) : mapping.apply(t));
 	}
 
 	/**
@@ -126,28 +130,28 @@ public class TypeSubstitution {
 	 * @return The result of application of this substitution. The result is
 	 *         <em>not</em> guaranteed to be well formed with respect to bounds.
 	 */
-	public Type resolve(Type type) {
+	public AnnotatedType resolve(Type type) {
 		if (empty.get())
 			return type;
 		else
 			return resolve(type, new Isomorphism());
 	}
 
-	private Type resolve(Type type, Isomorphism isomorphism) {
-		Type mapping = this.mapping.apply(type);
+	private AnnotatedType resolve(AnnotatedType type, Isomorphism isomorphism) {
+		AnnotatedType mapping = this.mapping.apply(type);
 		if (mapping != null) {
 			return mapping;
 
 		} else if (type == null) {
 			return null;
 
-		} else if (type instanceof Class) {
+		} else if (type.getType() instanceof Class) {
 			return type;
 
-		} else if (type instanceof TypeVariable<?>) {
-			return resolveTypeVariable((TypeVariable<?>) type, isomorphism);
+		} else if (type.getType() instanceof TypeVariable) {
+			return type;
 
-		} else if (type instanceof InferenceVariable) {
+		} else if (type.getType() instanceof InferenceVariable) {
 			return type;
 
 		} else if (type instanceof IntersectionType) {
@@ -167,28 +171,19 @@ public class TypeSubstitution {
 				"Cannot resolve unrecognised type '" + type + "' of class'" + type.getClass() + "'.");
 	}
 
-	private Type resolveTypeVariable(TypeVariable<?> type, Isomorphism isomorphism) {
-		return isomorphism.byIdentity().getProxiedMapping(type, TypeVariable.class, i -> {
-
-			if (type.getBounds().length > 0) {
-				return TypeVariables.upperBounded(resolve(IntersectionType.uncheckedFrom(type.getBounds()), isomorphism));
-
-			} else
-				return type;
-		});
-	}
-
-	private Type resolveWildcardType(WildcardType type, Isomorphism isomorphism) {
-		return isomorphism.byIdentity().getProxiedMapping(type, WildcardType.class, i -> {
+	private Type resolveWildcardType(AnnotatedWildcardType type, Isomorphism isomorphism) {
+		return isomorphism.byIdentity().getProxiedMapping(type, AnnotatedWildcardType.class, i -> {
 
 			if (type.getLowerBounds().length > 0) {
-				return WildcardTypes.lowerBounded(resolve(IntersectionType.uncheckedFrom(type.getLowerBounds()), isomorphism));
+				return AnnotatedWildcardTypes
+						.lowerBounded(resolve(IntersectionType.uncheckedFrom(type.getLowerBounds()), isomorphism));
 
 			} else if (type.getUpperBounds().length > 0) {
-				return WildcardTypes.upperBounded(resolve(IntersectionType.uncheckedFrom(type.getUpperBounds()), isomorphism));
+				return AnnotatedWildcardTypes
+						.upperBounded(resolve(IntersectionType.uncheckedFrom(type.getUpperBounds()), isomorphism));
 
 			} else
-				return type;
+				return AnnotatedWildcardTypes.unbounded();
 		});
 	}
 
@@ -208,7 +203,7 @@ public class TypeSubstitution {
 		});
 	}
 
-	private Type resolveParameterizedType(ParameterizedType type, Isomorphism isomorphism) {
+	private Type resolveParameterizedType(AnnotatedParameterizedType type, Isomorphism isomorphism) {
 		return isomorphism.byIdentity().getProxiedMapping(type, ParameterizedType.class, i -> {
 
 			return ParameterizedTypes.uncheckedFrom(resolve(type.getOwnerType(), isomorphism), Types.getRawType(type),

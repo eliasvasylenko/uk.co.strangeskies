@@ -86,7 +86,7 @@ public class ExpressionTest {
 
 	// @Test
 	public void localVariableStatePersistenceTest() {
-		ProcedureDefinition<String> builder = ProcedureDefinition.build(String.class).declare();
+		ProcedureDefinition<String> builder = ProcedureDefinition.declare(String.class).define();
 
 		VariableExpression<String> local = builder.declareVariable(new TypeToken<String>() {});
 

@@ -20,10 +20,8 @@ package uk.co.strangeskies.reflection;
 
 import java.util.List;
 
-public class MethodDefinition extends Block {
+public class MethodDefinition<T> extends Block {
 	public MethodDefinition(ClassDefinition classDefinition, List<Statement> statements) {
 		super(null, statements);
-		// TODO Auto-generated constructor stub
 	}
-
 }

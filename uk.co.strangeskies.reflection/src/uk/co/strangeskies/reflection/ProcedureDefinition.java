@@ -18,7 +18,7 @@
  */
 package uk.co.strangeskies.reflection;
 
-import uk.co.strangeskies.reflection.ClassDefinition.ClassDeclarationBuilder;
+import uk.co.strangeskies.reflection.ClassDefinition.ClassSignature;
 
 /**
  * Conceptually a procedure is a stand-alone block of statements outside of the
@@ -38,32 +38,32 @@ public class ProcedureDefinition<T> extends BlockBuilder<ProcedureDefinition<T>>
 	 * 
 	 * @author Elias N Vasylenko
 	 */
-	public static class ProcedureDeclarationBuilder<T> {
-		private final ClassDeclarationBuilder<Procedure<T>> classDeclarationBuilder;
+	public static class ProcedureSignature<T> {
+		private final ClassSignature<Procedure<T>> classDeclarationBuilder;
 
-		public ProcedureDeclarationBuilder(TypeToken<T> resultType) {
+		public ProcedureSignature(TypeToken<T> resultType) {
 			classDeclarationBuilder = ClassDefinition
-					.build(new TypeToken<Procedure<T>>() {}.withTypeArgument(new TypeParameter<T>() {}, resultType));
+					.declare(new TypeToken<Procedure<T>>() {}.withTypeArgument(new TypeParameter<T>() {}, resultType));
 		}
 
-		public ProcedureDefinition<T> declare() {
+		public ProcedureDefinition<T> define() {
 			return new ProcedureDefinition<>(this);
 		}
 	}
 
-	public static <T> ProcedureDeclarationBuilder<T> build(Class<T> resultType) {
-		return build(TypeToken.over(resultType));
+	public static <T> ProcedureSignature<T> declare(Class<T> resultType) {
+		return declare(TypeToken.over(resultType));
 	}
 
-	public static <T> ProcedureDeclarationBuilder<T> build(TypeToken<T> resultType) {
-		return new ProcedureDeclarationBuilder<>(resultType);
+	public static <T> ProcedureSignature<T> declare(TypeToken<T> resultType) {
+		return new ProcedureSignature<>(resultType);
 	}
 
 	private final ClassDefinition<Procedure<T>> classDefinition;
 
-	protected ProcedureDefinition(ProcedureDeclarationBuilder<T> builder) {
-		classDefinition = builder.classDeclarationBuilder.declare();
-		;
+	protected ProcedureDefinition(ProcedureSignature<T> builder) {
+		classDefinition = builder.classDeclarationBuilder.define();
+
 	}
 
 	public Procedure<T> instantiate() {

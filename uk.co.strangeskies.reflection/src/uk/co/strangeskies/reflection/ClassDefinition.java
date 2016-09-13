@@ -18,7 +18,11 @@
  */
 package uk.co.strangeskies.reflection;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Proxy;
+import java.lang.reflect.TypeVariable;
+import java.util.List;
 
 /**
  * A class definition is a description of a class implementation. It may extend
@@ -81,7 +85,7 @@ import java.lang.reflect.Proxy;
  * @param <T>
  *          the intersection of the supertypes of the described class
  */
-public class ClassDefinition<T> {
+public class ClassDefinition<T> implements GenericDeclaration {
 	/**
 	 * Separating the logic for declaring the class into a builder allows us to
 	 * ensure the type of the class is immutable once an actual
@@ -94,34 +98,64 @@ public class ClassDefinition<T> {
 	 * @param <T>
 	 *          the intersection of the supertypes of the described class
 	 */
-	public static class ClassDeclarationBuilder<T> {
+	public static class ClassSignature<T> extends GenericSignature {
 		private final TypeToken<T> superType;
 
-		public ClassDeclarationBuilder(TypeToken<T> superType) {
+		public ClassSignature(TypeToken<T> superType) {
 			this.superType = superType;
 		}
 
-		public ClassDefinition<T> declare() {
+		public ClassDefinition<T> define() {
 			return new ClassDefinition<>(this);
 		}
 	}
 
-	public static ClassDeclarationBuilder<Object> build() {
-		return build(Object.class);
+	public static ClassSignature<Object> declare() {
+		return declare(Object.class);
 	}
 
-	public static <T> ClassDeclarationBuilder<T> build(Class<T> superType) {
-		return build(TypeToken.over(superType));
+	public static <T> ClassSignature<T> declare(Class<T> superType) {
+		return declare(TypeToken.over(superType));
 	}
 
-	public static <T> ClassDeclarationBuilder<T> build(TypeToken<T> superType) {
-		return new ClassDeclarationBuilder<>(superType);
+	public static <T> ClassSignature<T> declare(TypeToken<T> superType) {
+		return new ClassSignature<>(superType);
 	}
 
-	protected ClassDefinition(ClassDeclarationBuilder<T> builder) {}
+	protected ClassDefinition(ClassSignature<T> builder) {
+		superType = builder.superType;
+		typeVariables = builder.getTypeVariables(this);
+	}
 
-	public T instantiate() {
+	private final TypeToken<T> superType;
+	private final List<TypeVariable<ClassDefinition<T>>> typeVariables;
+
+	public T instantiate(Object... arguments) {
 		// TODO may take arguments
+		return null;
+	}
+
+	@Override
+	public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Annotation[] getAnnotations() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Annotation[] getDeclaredAnnotations() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public TypeVariable<?>[] getTypeParameters() {
+		// TODO Auto-generated method stub
 		return null;
 	}
 }

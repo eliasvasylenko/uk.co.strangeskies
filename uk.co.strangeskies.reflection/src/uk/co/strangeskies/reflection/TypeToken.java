@@ -68,7 +68,7 @@ import uk.co.strangeskies.utilities.tuple.Pair;
  * <p>
  * TypeToken is effectively immutable, though may perform shared caching of
  * results transparently to the user. Like Class, A TypeToken will always be
- * parameterised with the type it reflects over when used as intended.
+ * parameterized with the type it reflects over when used as intended.
  * 
  * 
  * @author Elias N Vasylenko
