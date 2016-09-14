@@ -18,16 +18,16 @@
  */
 package uk.co.strangeskies.reflection;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
-import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Proxy;
-import java.lang.reflect.TypeVariable;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * A class definition is a description of a class implementation. It may extend
@@ -90,7 +90,7 @@ import java.util.Map;
  * @param <T>
  *          the intersection of the supertypes of the described class
  */
-public class ClassDefinition<T> implements GenericDeclaration {
+public class ClassDefinition<T> extends GenericDefinition<ClassDefinition<T>> {
 	/**
 	 * Separating the logic for declaring the class into a builder allows us to
 	 * ensure the type of the class is immutable once an actual
@@ -120,17 +120,30 @@ public class ClassDefinition<T> implements GenericDeclaration {
 			return superType;
 		}
 
+		public ClassSignature<?> withSuperType(Type... superType) {
+			return withSuperType(Arrays.stream(superType).map(AnnotatedTypes::over).collect(Collectors.toList()));
+		}
+
+		public ClassSignature<?> withSuperType(AnnotatedType... superType) {
+			return withSuperType(Arrays.asList(superType));
+		}
+
 		public <U extends T> ClassSignature<U> withSuperType(Class<U> superType) {
 			return withSuperType(TypeToken.over(superType));
 		}
 
 		@SuppressWarnings("unchecked")
 		public <U extends T> ClassSignature<U> withSuperType(TypeToken<U> superType) {
-			this.superType = (TypeToken<T>) superType;
-			return (ClassSignature<U>) this;
+			return (ClassSignature<U>) withSuperType(superType.getAnnotatedDeclaration());
 		}
 
-		public ClassDefinition<T> define() {
+		public ClassSignature<?> withSuperType(Collection<? extends AnnotatedType> superType) {
+			this.superType.clear();
+			this.superType.addAll(superType);
+			return this;
+		}
+
+		public ClassDefinition<? extends T> define() {
 			return new ClassDefinition<>(this);
 		}
 	}
@@ -140,22 +153,23 @@ public class ClassDefinition<T> implements GenericDeclaration {
 	}
 
 	private final String typeName;
-	private final TypeToken<T> superType;
-	private final List<TypeVariable<ClassDefinition<T>>> typeVariables;
-	private final Map<Class<? extends Annotation>, Annotation> annotations;
+	private final List<TypeToken<? super T>> superType;
 
-	protected ClassDefinition(ClassSignature<T> builder) {
+	@SuppressWarnings("unchecked")
+	protected ClassDefinition(ClassSignature<? super T> builder) {
+		super(builder);
+
 		typeName = builder.getTypeName();
-		superType = builder.getSuperTypes();
-		typeVariables = builder.getTypeVariables(this);
-		annotations = builder.getAnnotations();
+		superType = Collections
+				.unmodifiableList(builder.getSuperTypes().stream().map(this::substituteTypeVariableSignatures)
+						.map(TypeToken::over).map(t -> (TypeToken<? super T>) t).collect(Collectors.toList()));
 	}
 
 	public String getTypeName() {
 		return typeName;
 	}
 
-	public TypeToken<T> getSuperType() {
+	public List<TypeToken<? super T>> getSuperTypes() {
 		return superType;
 	}
 
@@ -171,7 +185,8 @@ public class ClassDefinition<T> implements GenericDeclaration {
 	public T instantiate(Collection<? extends Object> arguments) {
 		validate();
 
-		for (Class<?> rawType : superType.getRawTypes()) {
+		for (Class<?> rawType : superType.stream().flatMap(t -> t.getRawTypes().stream())
+				.collect(Collectors.toCollection(LinkedHashSet::new))) {
 			if (!rawType.isInterface()) {
 				throw new ReflectionException(p -> p.cannotInstantiateClassDefinition(this, superType));
 			}
@@ -180,24 +195,8 @@ public class ClassDefinition<T> implements GenericDeclaration {
 		return null;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
-	public final <U extends Annotation> U getAnnotation(Class<U> annotationClass) {
-		return (U) annotations.get(annotationClass);
-	}
-
-	@Override
-	public final Annotation[] getAnnotations() {
-		return annotations.values().toArray(new Annotation[annotations.size()]);
-	}
-
-	@Override
-	public final Annotation[] getDeclaredAnnotations() {
-		return getAnnotations();
-	}
-
-	@Override
-	public TypeVariable<?>[] getTypeParameters() {
-		return typeVariables.toArray(new TypeVariable<?>[typeVariables.size()]);
+	public String toString() {
+		return getTypeName();
 	}
 }

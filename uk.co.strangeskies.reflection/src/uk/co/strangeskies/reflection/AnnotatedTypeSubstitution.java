@@ -145,7 +145,8 @@ public class AnnotatedTypeSubstitution {
 	 *          given condition.
 	 * @return A new TypeSubstitution object with the rule added.
 	 */
-	public AnnotatedTypeSubstitution where(Predicate<AnnotatedType> from, Function<AnnotatedType, AnnotatedType> to) {
+	public AnnotatedTypeSubstitution where(Predicate<? super AnnotatedType> from,
+			Function<? super AnnotatedType, ? extends AnnotatedType> to) {
 		return new AnnotatedTypeSubstitution(t -> from.test(t) ? to.apply(t) : mapping.apply(t));
 	}
 

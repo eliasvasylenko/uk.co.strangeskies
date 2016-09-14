@@ -78,7 +78,7 @@ public class ProcedureDefinition<T> extends BlockBuilder<ProcedureDefinition<T>>
 		return new ProcedureSignature<>();
 	}
 
-	private final ClassDefinition<Procedure<T>> classDefinition;
+	private final ClassDefinition<? extends Procedure<T>> classDefinition;
 
 	protected ProcedureDefinition(ProcedureSignature<T> builder) {
 		classDefinition = builder.classDeclarationBuilder.define();

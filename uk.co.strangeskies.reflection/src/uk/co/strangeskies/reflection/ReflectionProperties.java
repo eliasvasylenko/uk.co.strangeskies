@@ -127,5 +127,6 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 
 	Localized<String> invalidScopeForState();
 
-	Localized<String> cannotInstantiateClassDefinition(ClassDefinition<?> classDefinition, TypeToken<?> superType);
+	Localized<String> cannotInstantiateClassDefinition(ClassDefinition<?> classDefinition,
+			List<? extends TypeToken<?>> superType);
 }

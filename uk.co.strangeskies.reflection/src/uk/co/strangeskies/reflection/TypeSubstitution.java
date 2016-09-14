@@ -125,7 +125,7 @@ public class TypeSubstitution {
 	 *          given condition.
 	 * @return A new TypeSubstitution object with the rule added.
 	 */
-	public TypeSubstitution where(Predicate<Type> from, Function<Type, Type> to) {
+	public TypeSubstitution where(Predicate<? super Type> from, Function<? super Type, ? extends Type> to) {
 		return new TypeSubstitution(t -> from.test(t) ? to.apply(t) : mapping.apply(t));
 	}
 
