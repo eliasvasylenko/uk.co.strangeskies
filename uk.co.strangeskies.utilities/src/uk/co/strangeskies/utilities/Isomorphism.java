@@ -198,7 +198,7 @@ public class Isomorphism {
 		 *          the mapping function to apply
 		 * @return a mapping of the given node
 		 */
-		public <S, C> S getProxiedMapping(C node, Class<S> proxyClass, Function<C, S> mapping) {
+		public <S, C> S getProxiedMapping(C node, Class<? extends S> proxyClass, Function<C, S> mapping) {
 			return getProxiedMapping(node, proxyClass.getClassLoader(), proxyClass, mapping);
 		}
 
@@ -229,7 +229,7 @@ public class Isomorphism {
 		 * @return a mapping of the given node
 		 */
 		@SuppressWarnings("unchecked")
-		public <S, C> S getProxiedMapping(C node, ClassLoader classLoader, Class<S> proxyClass, Function<C, S> mapping) {
+		public <S, C> S getProxiedMapping(C node, ClassLoader classLoader, Class<? extends S> proxyClass, Function<C, S> mapping) {
 			while (node instanceof IsomorphismProxy) {
 				C proxiedNode = (C) ((IsomorphismProxy) node).getProxiedObjectFromIsomorphism();
 				if (proxiedNode != null) {

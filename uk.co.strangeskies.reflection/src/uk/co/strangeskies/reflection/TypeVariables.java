@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * A collection of utility methods relating to type variables.
@@ -18,6 +19,9 @@ import java.util.Map;
  * @author Elias N Vasylenko
  */
 public class TypeVariables {
+	private static final Type[] DEFAULT_UPPER_BOUND = new Type[] { Object.class };
+	private static final Type[] EMPTY_BOUND = new Type[] {};
+
 	private TypeVariables() {}
 
 	/**
@@ -39,7 +43,7 @@ public class TypeVariables {
 
 			@Override
 			public Type[] getBounds() {
-				return new Type[] { Object.class };
+				return DEFAULT_UPPER_BOUND;
 			}
 
 			@Override
@@ -49,20 +53,20 @@ public class TypeVariables {
 
 			@Override
 			public boolean equals(Object that) {
-				if (!(that instanceof WildcardType))
+				if (!(that instanceof TypeVariable<?>))
 					return false;
 				if (that == this)
 					return true;
 
-				WildcardType wildcard = (WildcardType) that;
+				TypeVariable<?> typeVariable = (TypeVariable<?>) that;
 
-				return wildcard.getLowerBounds().length == 0 && (wildcard.getUpperBounds().length == 0
-						|| (wildcard.getUpperBounds().length == 1 && wildcard.getUpperBounds()[0].equals(Object.class)));
+				return Objects.equals(getName(), typeVariable.getName())
+						&& Objects.equals(getGenericDeclaration(), typeVariable.getGenericDeclaration());
 			}
 
 			@Override
 			public int hashCode() {
-				return Arrays.hashCode(getBounds());
+				return Arrays.hashCode(getBounds()) ^ Objects.hashCode(getName()) ^ Objects.hashCode(getGenericDeclaration());
 			}
 
 			@Override
@@ -174,12 +178,14 @@ public class TypeVariables {
 	 */
 	public static <T extends GenericDeclaration> TypeVariable<T> upperBounded(T declaration, String name,
 			Collection<Annotation> annotations, Collection<? extends AnnotatedType> bounds) {
+		AnnotatedType[] annotatedBounds = bounds.toArray(new AnnotatedType[bounds.size()]);
+
 		return new TypeVariable<T>() {
 			private final Map<Class<? extends Annotation>, Annotation> annotations = new LinkedHashMap<>();
 
 			@Override
 			public Type[] getBounds() {
-				return new Type[] { Object.class };
+				return Arrays.stream(annotatedBounds).map(AnnotatedType::getType).toArray(Type[]::new);
 			}
 
 			@Override
@@ -189,15 +195,15 @@ public class TypeVariables {
 
 			@Override
 			public boolean equals(Object that) {
-				if (!(that instanceof WildcardType))
+				if (!(that instanceof TypeVariable<?>))
 					return false;
 				if (that == this)
 					return true;
 
-				WildcardType wildcard = (WildcardType) that;
+				TypeVariable<?> typeVariable = (TypeVariable<?>) that;
 
-				return wildcard.getLowerBounds().length == 0 && (wildcard.getUpperBounds().length == 0
-						|| (wildcard.getUpperBounds().length == 1 && wildcard.getUpperBounds()[0].equals(Object.class)));
+				return Objects.equals(getName(), typeVariable.getName())
+						&& Objects.equals(getGenericDeclaration(), typeVariable.getGenericDeclaration());
 			}
 
 			@Override
@@ -233,7 +239,7 @@ public class TypeVariables {
 
 			@Override
 			public AnnotatedType[] getAnnotatedBounds() {
-				return null;
+				return annotatedBounds;
 			}
 		};
 	}

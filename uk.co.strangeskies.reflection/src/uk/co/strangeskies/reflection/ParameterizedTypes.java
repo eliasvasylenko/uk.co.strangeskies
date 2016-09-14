@@ -367,11 +367,20 @@ public class ParameterizedTypes {
 		return typeArguments;
 	}
 
-	static ParameterizedType uncheckedFrom(Type ownerType, Class<?> rawType, List<Type> typeArguments) {
+	public static ParameterizedType uncheckedFrom(Type ownerType, Class<?> rawType, List<Type> typeArguments) {
 		return new ParameterizedTypeImpl(ownerType, rawType, new ArrayList<>(typeArguments));
 	}
 
-	static <T> Type uncheckedFrom(Class<T> rawType, Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
+	public static ParameterizedType uncheckedFrom(Class<?> rawType, List<Type> typeArguments) {
+		return uncheckedFrom(null, rawType, new ArrayList<>(typeArguments));
+	}
+
+	public static ParameterizedType uncheckedFrom(Class<?> rawType, Type... typeArguments) {
+		return uncheckedFrom(rawType, Arrays.asList(typeArguments));
+	}
+
+	public static <T> Type uncheckedFrom(Class<T> rawType,
+			Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
 		Class<?> enclosing = rawType.getEnclosingClass();
 		Type ownerType;
 		if (enclosing == null || Types.isStatic(rawType))

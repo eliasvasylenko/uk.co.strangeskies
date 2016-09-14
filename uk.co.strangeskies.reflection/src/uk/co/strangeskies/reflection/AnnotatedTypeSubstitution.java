@@ -33,6 +33,9 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import uk.co.strangeskies.reflection.AnnotatedParameterizedTypes.AnnotatedParameterizedTypeInternal;
+import uk.co.strangeskies.reflection.AnnotatedTypeVariables.AnnotatedTypeVariableInternal;
+import uk.co.strangeskies.reflection.AnnotatedWildcardTypes.AnnotatedWildcardTypeInternal;
 import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.Isomorphism;
 
@@ -223,7 +226,7 @@ public class AnnotatedTypeSubstitution {
 
 	private AnnotatedType resolveTypeVariable(AnnotatedTypeVariable type, Isomorphism isomorphism,
 			IdentityProperty<Boolean> changed) {
-		return isomorphism.byIdentity().getProxiedMapping(type, AnnotatedTypeVariable.class, i -> {
+		return isomorphism.byIdentity().getProxiedMapping(type, AnnotatedTypeVariableInternal.class, i -> {
 
 			if (type.getAnnotatedBounds().length > 0) {
 				List<AnnotatedType> bounds = resolveTypes(type.getAnnotatedBounds(), isomorphism, changed);
@@ -244,7 +247,7 @@ public class AnnotatedTypeSubstitution {
 
 	private AnnotatedType resolveWildcardType(AnnotatedWildcardType type, Isomorphism isomorphism,
 			IdentityProperty<Boolean> changed) {
-		return isomorphism.byIdentity().getProxiedMapping(type, AnnotatedWildcardType.class, i -> {
+		return isomorphism.byIdentity().getProxiedMapping(type, AnnotatedWildcardTypeInternal.class, i -> {
 
 			if (type.getAnnotatedLowerBounds().length > 0) {
 				List<AnnotatedType> bounds = resolveTypes(type.getAnnotatedLowerBounds(), isomorphism, changed);
@@ -269,7 +272,7 @@ public class AnnotatedTypeSubstitution {
 
 	private AnnotatedType resolveParameterizedType(AnnotatedParameterizedType type, Isomorphism isomorphism,
 			IdentityProperty<Boolean> changed) {
-		return isomorphism.byIdentity().getProxiedMapping(type, AnnotatedParameterizedType.class, i -> {
+		return isomorphism.byIdentity().getProxiedMapping(type, AnnotatedParameterizedTypeInternal.class, i -> {
 
 			List<AnnotatedType> arguments = resolveTypes(type.getAnnotatedActualTypeArguments(), isomorphism, changed);
 

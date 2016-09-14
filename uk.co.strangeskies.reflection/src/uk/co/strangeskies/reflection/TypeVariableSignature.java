@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
  */
 public class TypeVariableSignature implements Type {
 	private final int index;
-	private final List<TypeToken<?>> bounds;
+	private final List<AnnotatedType> bounds;
 	private final List<Annotation> annotations;
 
 	/**
@@ -40,23 +40,28 @@ public class TypeVariableSignature implements Type {
 		return index;
 	}
 
-	public List<TypeToken<?>> getBounds() {
+	@Override
+	public String getTypeName() {
+		return "T" + index;
+	}
+
+	public List<AnnotatedType> getBounds() {
 		return bounds;
 	}
 
+	public TypeVariableSignature withUpperBounds(TypeToken<?>... bounds) {
+		return withUpperBounds(Arrays.stream(bounds).map(TypeToken::getAnnotatedDeclaration).collect(Collectors.toList()));
+	}
+
 	public TypeVariableSignature withUpperBounds(Type... bounds) {
-		return withUpperBounds(Arrays.stream(bounds).map(TypeToken::over).collect(Collectors.toList()));
+		return withUpperBounds(Arrays.stream(bounds).map(AnnotatedTypes::over).collect(Collectors.toList()));
 	}
 
 	public TypeVariableSignature withUpperBounds(AnnotatedType... bounds) {
-		return withUpperBounds(Arrays.stream(bounds).map(TypeToken::over).collect(Collectors.toList()));
-	}
-
-	public TypeVariableSignature withUpperBounds(TypeToken<?>... bounds) {
 		return withUpperBounds(Arrays.asList(bounds));
 	}
 
-	public TypeVariableSignature withUpperBounds(Collection<? extends TypeToken<?>> bounds) {
+	public TypeVariableSignature withUpperBounds(Collection<? extends AnnotatedType> bounds) {
 		this.bounds.addAll(bounds);
 
 		return this;

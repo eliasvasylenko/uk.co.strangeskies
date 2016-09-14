@@ -42,7 +42,7 @@ public class GenericSignature {
 			TypeVariableSignature signature) {
 		return TypeVariables.upperBounded((T) declaration, signature.getTypeName(),
 
-				signature.getBounds().stream().map(b -> boundSubstitution.resolve(b.getAnnotatedDeclaration(), isomorphism))
+				signature.getBounds().stream().map(b -> boundSubstitution.resolve(b, isomorphism))
 						.collect(Collectors.toList()));
 	}
 
@@ -57,6 +57,11 @@ public class GenericSignature {
 		TypeVariableSignature typeVariable = new TypeVariableSignature(typeVariableSignatures.size());
 		typeVariableSignatures.add(typeVariable);
 		return typeVariable;
+	}
+
+	public GenericSignature withTypeVariable() {
+		addTypeVariable().withUpperBounds(new Type[] {});
+		return this;
 	}
 
 	public GenericSignature withTypeVariable(Type... bounds) {
@@ -74,13 +79,13 @@ public class GenericSignature {
 		return this;
 	}
 
-	public GenericSignature withTypeVariable(List<TypeToken<?>> bounds) {
+	public GenericSignature withTypeVariable(List<AnnotatedType> bounds) {
 		addTypeVariable().withUpperBounds(bounds);
 		return this;
 	}
 
 	public GenericSignature withTypeVariable(Collection<? extends Annotation> annotations,
-			Collection<? extends TypeToken<?>> bounds) {
+			Collection<? extends AnnotatedType> bounds) {
 		addTypeVariable().withAnnotations(annotations);
 		addTypeVariable().withUpperBounds(bounds);
 		return this;
