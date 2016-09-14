@@ -33,6 +33,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.Isomorphism;
 
 /**
@@ -61,6 +62,7 @@ import uk.co.strangeskies.utilities.Isomorphism;
 public class AnnotatedTypeSubstitution {
 	private final Function<? super AnnotatedType, ? extends AnnotatedType> mapping;
 	private final Supplier<Boolean> empty;
+	private final boolean includeTypeVariables;
 
 	/**
 	 * Create a new TypeSubstitution with no initial substitution rules.
@@ -68,6 +70,7 @@ public class AnnotatedTypeSubstitution {
 	public AnnotatedTypeSubstitution() {
 		mapping = t -> null;
 		empty = () -> true;
+		includeTypeVariables = false;
 	}
 
 	/**
@@ -85,6 +88,7 @@ public class AnnotatedTypeSubstitution {
 	public AnnotatedTypeSubstitution(Function<? super AnnotatedType, ? extends AnnotatedType> mapping) {
 		this.mapping = mapping;
 		empty = () -> false;
+		includeTypeVariables = false;
 	}
 
 	/**
@@ -100,6 +104,13 @@ public class AnnotatedTypeSubstitution {
 	public AnnotatedTypeSubstitution(Map<?, ? extends AnnotatedType> mapping) {
 		this.mapping = mapping::get;
 		empty = mapping::isEmpty;
+		includeTypeVariables = false;
+	}
+
+	private AnnotatedTypeSubstitution(AnnotatedTypeSubstitution substitution) {
+		mapping = substitution.mapping;
+		empty = substitution.empty;
+		includeTypeVariables = true;
 	}
 
 	/**
@@ -136,6 +147,19 @@ public class AnnotatedTypeSubstitution {
 	}
 
 	/**
+	 * Create a new TypeSubstitution which is the same as the receiver with the
+	 * additional behavior that type variables are also included for bounds
+	 * substitution. Normally it makes sense to exclude type variable bounds for
+	 * substitution, as their type is immutable and baked into their defining
+	 * class definition, but sometimes we may still want this behavior.
+	 * 
+	 * @return A new TypeSubstitution object with the rule added.
+	 */
+	public AnnotatedTypeSubstitution withTypeVariables() {
+		return new AnnotatedTypeSubstitution(this);
+	}
+
+	/**
 	 * Resolve the result of this substitution as applied to the given type.
 	 * 
 	 * @param type
@@ -150,47 +174,6 @@ public class AnnotatedTypeSubstitution {
 			return resolve(type, new Isomorphism());
 	}
 
-	/*
-	 * TODO take change of getType() results for substituted annotated types, and
-	 * apply the substitution to the getType() results of their containing
-	 * annotated types.
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * Perhaps do this by passing each getType() straight through the isomorphism
-	 * by the identity of their containing annotated type, and when we replace an
-	 * annotated type, manually put a copy into the isomorphism based on the new
-	 * getType()
-	 * 
-	 * 
-	 * 
-	 * 
-	 * TODO
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * TODO this will definitely need testing...
-	 * 
-	 * 
-	 * 
-	 */
-
 	/**
 	 * Resolve the result of this substitution as applied to the given type.
 	 * 
@@ -202,8 +185,15 @@ public class AnnotatedTypeSubstitution {
 	 *         <em>not</em> guaranteed to be well formed with respect to bounds.
 	 */
 	public AnnotatedType resolve(AnnotatedType type, Isomorphism isomorphism) {
+		return resolve(type, isomorphism, new IdentityProperty<>(false));
+	}
+
+	protected AnnotatedType resolve(AnnotatedType type, Isomorphism isomorphism, IdentityProperty<Boolean> changed) {
 		AnnotatedType mapping = this.mapping.apply(type);
 		if (mapping != null) {
+			if (mapping != type) {
+				changed.set(true);
+			}
 			return mapping;
 
 		} else if (type == null) {
@@ -213,58 +203,87 @@ public class AnnotatedTypeSubstitution {
 			return type;
 
 		} else if (type instanceof AnnotatedTypeVariable) {
-			return type;
+			return includeTypeVariables ? resolveTypeVariable((AnnotatedTypeVariable) type, isomorphism, changed) : type;
 
 		} else if (type instanceof AnnotatedWildcardType) {
-			return resolveWildcardType((AnnotatedWildcardType) type, isomorphism);
+			return resolveWildcardType((AnnotatedWildcardType) type, isomorphism, changed);
 
 		} else if (type instanceof AnnotatedArrayType) {
 			return AnnotatedArrayTypes.fromComponent(
-					resolve(((AnnotatedArrayType) type).getAnnotatedGenericComponentType(), isomorphism), type.getAnnotations());
+					resolve(((AnnotatedArrayType) type).getAnnotatedGenericComponentType(), isomorphism, changed),
+					type.getAnnotations());
 
 		} else if (type instanceof AnnotatedParameterizedType) {
-			return resolveParameterizedType((AnnotatedParameterizedType) type, isomorphism);
+			return resolveParameterizedType((AnnotatedParameterizedType) type, isomorphism, changed);
 		}
 
 		throw new IllegalArgumentException(
 				"Cannot resolve unrecognised type '" + type + "' of class'" + type.getClass() + "'.");
 	}
 
-	private AnnotatedType resolveTypeVariable(AnnotatedTypeVariable type, Isomorphism isomorphism) {
+	private AnnotatedType resolveTypeVariable(AnnotatedTypeVariable type, Isomorphism isomorphism,
+			IdentityProperty<Boolean> changed) {
 		return isomorphism.byIdentity().getProxiedMapping(type, AnnotatedTypeVariable.class, i -> {
 
 			if (type.getAnnotatedBounds().length > 0) {
-				return TypeVariables.upperBounded(type.getGenericDeclaration(), ((TypeVariable<?>) type.getType()).getName(),
-						AnnotatedTypes.over(resolveTypes(type.getAnnotatedBounds(), isomorphism)));
+				List<AnnotatedType> bounds = resolveTypes(type.getAnnotatedBounds(), isomorphism, changed);
+				if (changed.get()) {
+					TypeVariable<?> typeVariable = (TypeVariable<?>) type.getType();
+
+					return AnnotatedTypeVariables.over(
+							TypeVariables.upperBounded(typeVariable.getGenericDeclaration(), typeVariable.getName(), bounds),
+							type.getAnnotations());
+				} else {
+					return type;
+				}
 
 			} else
 				return type;
 		});
 	}
 
-	private AnnotatedType resolveWildcardType(AnnotatedWildcardType type, Isomorphism isomorphism) {
+	private AnnotatedType resolveWildcardType(AnnotatedWildcardType type, Isomorphism isomorphism,
+			IdentityProperty<Boolean> changed) {
 		return isomorphism.byIdentity().getProxiedMapping(type, AnnotatedWildcardType.class, i -> {
 
 			if (type.getAnnotatedLowerBounds().length > 0) {
-				return AnnotatedWildcardTypes.lowerBounded(resolveTypes(type.getAnnotatedLowerBounds(), isomorphism));
+				List<AnnotatedType> bounds = resolveTypes(type.getAnnotatedLowerBounds(), isomorphism, changed);
+				if (changed.get()) {
+					return AnnotatedWildcardTypes.lowerBounded(Arrays.asList(type.getAnnotations()), bounds);
+				} else {
+					return type;
+				}
 
 			} else if (type.getAnnotatedUpperBounds().length > 0) {
-				return AnnotatedWildcardTypes.upperBounded(resolveTypes(type.getAnnotatedUpperBounds(), isomorphism));
+				List<AnnotatedType> bounds = resolveTypes(type.getAnnotatedUpperBounds(), isomorphism, changed);
+				if (changed.get()) {
+					return AnnotatedWildcardTypes.upperBounded(Arrays.asList(type.getAnnotations()), bounds);
+				} else {
+					return type;
+				}
 
 			} else
 				return type;
 		});
 	}
 
-	private List<AnnotatedType> resolveTypes(AnnotatedType[] types, Isomorphism isomorphism) {
-		return Arrays.stream(types).map(t -> resolve(t, isomorphism)).collect(Collectors.toList());
-	}
-
-	private AnnotatedType resolveParameterizedType(AnnotatedParameterizedType type, Isomorphism isomorphism) {
+	private AnnotatedType resolveParameterizedType(AnnotatedParameterizedType type, Isomorphism isomorphism,
+			IdentityProperty<Boolean> changed) {
 		return isomorphism.byIdentity().getProxiedMapping(type, AnnotatedParameterizedType.class, i -> {
 
-			return ParameterizedTypes.uncheckedFrom(resolve(type.getOwnerType(), isomorphism), Types.getRawType(type),
-					resolveTypes(type.getAnnotatedActualTypeArguments(), isomorphism));
+			List<AnnotatedType> arguments = resolveTypes(type.getAnnotatedActualTypeArguments(), isomorphism, changed);
+
+			if (changed.get()) {
+				return (AnnotatedParameterizedType) AnnotatedParameterizedTypes
+						.from(AnnotatedTypes.over(Types.getRawType(type.getType()), type.getAnnotations()), arguments);
+			} else {
+				return type;
+			}
 		});
+	}
+
+	private List<AnnotatedType> resolveTypes(AnnotatedType[] types, Isomorphism isomorphism,
+			IdentityProperty<Boolean> changed) {
+		return Arrays.stream(types).map(t -> resolve(t, isomorphism, changed)).collect(Collectors.toList());
 	}
 }

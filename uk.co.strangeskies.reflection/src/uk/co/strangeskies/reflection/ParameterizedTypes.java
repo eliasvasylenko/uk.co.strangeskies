@@ -133,8 +133,7 @@ public class ParameterizedTypes {
 				 * Calculate the hash code properly, now we're guarded against
 				 * recursion:
 				 */
-				this.hashCode = (ownerType == null ? 0 : ownerType.hashCode()) ^ (rawType == null ? 0 : rawType.hashCode())
-						^ typeArguments.hashCode();
+				this.hashCode = Objects.hashCode(ownerType) ^ Objects.hashCode(rawType) ^ Objects.hashCode(typeArguments);
 			}
 
 			return hashCode;

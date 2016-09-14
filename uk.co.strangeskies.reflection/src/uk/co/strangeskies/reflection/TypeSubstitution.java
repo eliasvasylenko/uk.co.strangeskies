@@ -46,6 +46,7 @@ import uk.co.strangeskies.utilities.Isomorphism;
 public class TypeSubstitution {
 	private final Function<? super Type, ? extends Type> mapping;
 	private final Supplier<Boolean> empty;
+	private final boolean includeTypeVariables;
 
 	/**
 	 * Create a new TypeSubstitution with no initial substitution rules.
@@ -53,6 +54,7 @@ public class TypeSubstitution {
 	public TypeSubstitution() {
 		mapping = t -> null;
 		empty = () -> true;
+		includeTypeVariables = false;
 	}
 
 	/**
@@ -70,6 +72,7 @@ public class TypeSubstitution {
 	public TypeSubstitution(Function<? super Type, ? extends Type> mapping) {
 		this.mapping = mapping;
 		empty = () -> false;
+		includeTypeVariables = false;
 	}
 
 	/**
@@ -84,6 +87,13 @@ public class TypeSubstitution {
 	public TypeSubstitution(Map<?, ? extends Type> mapping) {
 		this.mapping = mapping::get;
 		empty = mapping::isEmpty;
+		includeTypeVariables = false;
+	}
+
+	private TypeSubstitution(TypeSubstitution substitution) {
+		mapping = substitution.mapping;
+		empty = substitution.empty;
+		includeTypeVariables = true;
 	}
 
 	/**
@@ -120,6 +130,19 @@ public class TypeSubstitution {
 	}
 
 	/**
+	 * Create a new TypeSubstitution which is the same as the receiver with the
+	 * additional behavior that type variables are also included for bounds
+	 * substitution. Normally it makes sense to exclude type variable bounds for
+	 * substitution, as their type is immutable and baked into their defining
+	 * class definition, but sometimes we may still want this behavior.
+	 * 
+	 * @return A new TypeSubstitution object with the rule added.
+	 */
+	public TypeSubstitution withTypeVariables() {
+		return new TypeSubstitution(this);
+	}
+
+	/**
 	 * Resolve the result of this substitution as applied to the given type.
 	 * 
 	 * @param type
@@ -145,73 +168,109 @@ public class TypeSubstitution {
 	 *         <em>not</em> guaranteed to be well formed with respect to bounds.
 	 */
 	public Type resolve(Type type, Isomorphism isomorphism) {
+		return resolve(type, isomorphism, new IdentityProperty<>(false));
+	}
+
+	protected Type resolve(Type type, Isomorphism isomorphism, IdentityProperty<Boolean> changed) {
 		Type mapping = this.mapping.apply(type);
 		if (mapping != null) {
+			if (mapping != type) {
+				changed.set(true);
+			}
 			return mapping;
 
-		} else if (type == null) {
-			return null;
+		} else {
+			if (changed.get()) {
+				changed = new IdentityProperty<>(false);
+			}
 
-		} else if (type instanceof Class) {
-			return type;
+			if (type == null) {
+				return null;
 
-		} else if (type instanceof TypeVariable<?>) {
-			return resolveTypeVariable((TypeVariable<?>) type, isomorphism);
+			} else if (type instanceof Class) {
+				return type;
 
-		} else if (type instanceof InferenceVariable) {
-			return type;
+			} else if (type instanceof TypeVariable<?>) {
+				return includeTypeVariables ? resolveTypeVariable((TypeVariable<?>) type, isomorphism, changed) : type;
 
-		} else if (type instanceof IntersectionType) {
-			return resolveIntersectionType((IntersectionType) type, isomorphism);
+			} else if (type instanceof InferenceVariable) {
+				return type;
 
-		} else if (type instanceof WildcardType) {
-			return resolveWildcardType((WildcardType) type, isomorphism);
+			} else if (type instanceof IntersectionType) {
+				return resolveIntersectionType((IntersectionType) type, isomorphism, changed);
 
-		} else if (type instanceof GenericArrayType) {
-			return ArrayTypes.fromComponentType(resolve(((GenericArrayType) type).getGenericComponentType(), isomorphism));
+			} else if (type instanceof WildcardType) {
+				return resolveWildcardType((WildcardType) type, isomorphism, changed);
 
-		} else if (type instanceof ParameterizedType) {
-			return resolveParameterizedType((ParameterizedType) type, isomorphism);
+			} else if (type instanceof GenericArrayType) {
+				return ArrayTypes
+						.fromComponentType(resolve(((GenericArrayType) type).getGenericComponentType(), isomorphism, changed));
+
+			} else if (type instanceof ParameterizedType) {
+				return resolveParameterizedType((ParameterizedType) type, isomorphism, changed);
+			}
 		}
 
 		throw new IllegalArgumentException(
 				"Cannot resolve unrecognised type '" + type + "' of class'" + type.getClass() + "'.");
 	}
 
-	private Type resolveTypeVariable(TypeVariable<?> type, Isomorphism isomorphism) {
+	private Type resolveTypeVariable(TypeVariable<?> type, Isomorphism isomorphism, IdentityProperty<Boolean> changed) {
 		return isomorphism.byIdentity().getProxiedMapping(type, TypeVariable.class, i -> {
 
 			if (type.getBounds().length > 0) {
-				return TypeVariables.upperBounded(type.getGenericDeclaration(), type.getName(),
-						AnnotatedTypes.over(resolveTypes(type.getBounds(), isomorphism)));
+				List<Type> bounds = resolveTypes(type.getBounds(), isomorphism, changed);
+				if (changed.get()) {
+					return TypeVariables.upperBounded(type.getGenericDeclaration(), type.getName(), AnnotatedTypes.over(bounds));
+				} else {
+					return type;
+				}
 
 			} else
 				return type;
 		});
 	}
 
-	private Type resolveWildcardType(WildcardType type, Isomorphism isomorphism) {
+	private Type resolveWildcardType(WildcardType type, Isomorphism isomorphism, IdentityProperty<Boolean> changed) {
 		return isomorphism.byIdentity().getProxiedMapping(type, WildcardType.class, i -> {
 
 			if (type.getLowerBounds().length > 0) {
-				return WildcardTypes.lowerBounded(resolveTypes(type.getLowerBounds(), isomorphism));
+				List<Type> bounds = resolveTypes(type.getLowerBounds(), isomorphism, changed);
+				if (changed.get()) {
+					return WildcardTypes.lowerBounded(bounds);
+				} else {
+					return type;
+				}
 
 			} else if (type.getUpperBounds().length > 0) {
-				return WildcardTypes.upperBounded(resolveTypes(type.getUpperBounds(), isomorphism));
+				List<Type> bounds = resolveTypes(type.getUpperBounds(), isomorphism, changed);
+				if (changed.get()) {
+					return WildcardTypes.upperBounded(bounds);
+				} else {
+					return type;
+				}
 
 			} else
 				return type;
 		});
 	}
 
-	private Type resolveIntersectionType(IntersectionType type, Isomorphism isomorphism) {
+	private Type resolveIntersectionType(IntersectionType type, Isomorphism isomorphism,
+			IdentityProperty<Boolean> changed) {
 		return isomorphism.byIdentity().getPartialMapping(type, (i, partial) -> {
 
 			IdentityProperty<IntersectionType> property = new IdentityProperty<>();
 			Type proxy = IntersectionType.proxy(property::get);
 			partial.accept(() -> proxy);
 
-			IntersectionType result = IntersectionType.uncheckedFrom(resolveTypes(type.getTypes(), isomorphism));
+			IntersectionType result;
+
+			List<Type> types = resolveTypes(type.getTypes(), isomorphism, changed);
+			if (changed.get()) {
+				result = IntersectionType.uncheckedFrom(types);
+			} else {
+				result = type;
+			}
 
 			property.set(result);
 
@@ -219,15 +278,22 @@ public class TypeSubstitution {
 		});
 	}
 
-	private List<Type> resolveTypes(Type[] types, Isomorphism isomorphism) {
-		return Arrays.stream(types).map(t -> resolve(t, isomorphism)).collect(Collectors.toList());
-	}
-
-	private Type resolveParameterizedType(ParameterizedType type, Isomorphism isomorphism) {
+	private Type resolveParameterizedType(ParameterizedType type, Isomorphism isomorphism,
+			IdentityProperty<Boolean> changed) {
 		return isomorphism.byIdentity().getProxiedMapping(type, ParameterizedType.class, i -> {
 
-			return ParameterizedTypes.uncheckedFrom(resolve(type.getOwnerType(), isomorphism), Types.getRawType(type),
-					resolveTypes(type.getActualTypeArguments(), isomorphism));
+			List<Type> arguments = resolveTypes(type.getActualTypeArguments(), isomorphism, changed);
+
+			if (changed.get()) {
+				return ParameterizedTypes.uncheckedFrom(resolve(type.getOwnerType(), isomorphism), Types.getRawType(type),
+						arguments);
+			} else {
+				return type;
+			}
 		});
+	}
+
+	private List<Type> resolveTypes(Type[] types, Isomorphism isomorphism, IdentityProperty<Boolean> changed) {
+		return Arrays.stream(types).map(t -> resolve(t, isomorphism, changed)).collect(Collectors.toList());
 	}
 }

@@ -31,15 +31,18 @@ import java.util.stream.Collectors;
  * @author Elias N Vasylenko
  */
 public class WildcardTypes {
-	private static WildcardType UNBOUNDED = new WildcardType() {
+	private static final Type[] DEFAULT_UPPER_BOUND = new Type[] { Object.class };
+	private static final Type[] EMPTY_BOUND = new Type[] {};
+
+	private static final WildcardType UNBOUNDED = new WildcardType() {
 		@Override
 		public Type[] getUpperBounds() {
-			return new Type[] { Object.class };
+			return DEFAULT_UPPER_BOUND;
 		}
 
 		@Override
 		public Type[] getLowerBounds() {
-			return new Type[0];
+			return EMPTY_BOUND;
 		}
 
 		@Override
@@ -106,7 +109,7 @@ public class WildcardTypes {
 		if (type instanceof WildcardType) {
 			WildcardType wildcardType = ((WildcardType) type);
 			if (wildcardType.getUpperBounds().length == 0)
-				types = () -> new Type[] { Object.class };
+				types = () -> DEFAULT_UPPER_BOUND;
 			else
 				types = () -> wildcardType.getUpperBounds();
 		} else if (type instanceof IntersectionType)
@@ -119,7 +122,7 @@ public class WildcardTypes {
 
 			@Override
 			public Type[] getUpperBounds() {
-				return new Type[0];
+				return DEFAULT_UPPER_BOUND;
 			}
 
 			@Override
@@ -143,10 +146,10 @@ public class WildcardTypes {
 
 				Type[] thatUpperBounds = wildcard.getUpperBounds();
 				if (thatUpperBounds.length == 0)
-					thatUpperBounds = new Type[] { Object.class };
+					thatUpperBounds = DEFAULT_UPPER_BOUND;
 
 				return Arrays.equals(types.get(), wildcard.getLowerBounds())
-						&& Arrays.equals(thatUpperBounds, new Type[] { Object.class });
+						&& Arrays.equals(thatUpperBounds, DEFAULT_UPPER_BOUND);
 			}
 
 			@Override
@@ -199,7 +202,7 @@ public class WildcardTypes {
 			private Type[] types;
 			private final Runnable typeInitialiser = () -> {
 				if (bounds.isEmpty()) {
-					types = new Type[] { Object.class };
+					types = DEFAULT_UPPER_BOUND;
 				} else {
 					types = bounds.toArray(new Type[bounds.size()]);
 					Type type = IntersectionType.from(bounds);
@@ -228,7 +231,7 @@ public class WildcardTypes {
 
 			@Override
 			public Type[] getLowerBounds() {
-				return new Type[0];
+				return EMPTY_BOUND;
 			}
 
 			@Override
@@ -250,11 +253,11 @@ public class WildcardTypes {
 
 				Type[] thisUpperBounds = getUpperBounds();
 				if (thisUpperBounds.length == 1 && thisUpperBounds[0].equals(Object.class))
-					thisUpperBounds = new Type[0];
+					thisUpperBounds = EMPTY_BOUND;
 
 				Type[] thatUpperBounds = wildcard.getUpperBounds();
 				if (thatUpperBounds.length == 1 && thatUpperBounds[0].equals(Object.class))
-					thatUpperBounds = new Type[0];
+					thatUpperBounds = EMPTY_BOUND;
 
 				return wildcard.getLowerBounds().length == 0 && Arrays.equals(thisUpperBounds, thatUpperBounds);
 			}

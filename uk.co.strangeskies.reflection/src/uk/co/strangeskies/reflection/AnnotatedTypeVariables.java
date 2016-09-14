@@ -51,7 +51,7 @@ public final class AnnotatedTypeVariables {
 				Collection<Annotation> annotations) {
 			super(type, annotations);
 
-			annotatedBounds = AnnotatedTypes.overImpl(isomorphism, type.getBounds());
+			annotatedBounds = AnnotatedTypes.wrapImpl(isomorphism, type.getAnnotatedBounds());
 		}
 
 		@Override

@@ -29,6 +29,8 @@ import java.util.Set;
 
 import uk.co.strangeskies.text.properties.Localized;
 import uk.co.strangeskies.text.properties.Properties;
+import uk.co.strangeskies.text.properties.PropertyConfiguration;
+import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;
 
 /**
  * Properties and localized strings relating to types.
@@ -36,6 +38,7 @@ import uk.co.strangeskies.text.properties.Properties;
  * @author Elias N Vasylenko
  */
 @SuppressWarnings("javadoc")
+@PropertyConfiguration(keyCase = KeyCase.LOWER, keySplitString = ".")
 public interface ReflectionProperties extends Properties<ReflectionProperties> {
 	Localized<String> unsupportedType(Type type);
 
