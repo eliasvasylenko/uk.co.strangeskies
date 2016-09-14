@@ -19,10 +19,15 @@
 package uk.co.strangeskies.reflection;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.TypeVariable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A class definition is a description of a class implementation. It may extend
@@ -99,10 +104,30 @@ public class ClassDefinition<T> implements GenericDeclaration {
 	 *          the intersection of the supertypes of the described class
 	 */
 	public static class ClassSignature<T> extends GenericSignature {
-		private final TypeToken<T> superType;
+		private final String typeName;
+		private final List<AnnotatedType> superType;
 
-		public ClassSignature(TypeToken<T> superType) {
-			this.superType = superType;
+		protected ClassSignature(String typeName) {
+			this.typeName = typeName;
+			superType = new ArrayList<>();
+		}
+
+		protected String getTypeName() {
+			return typeName;
+		}
+
+		protected List<AnnotatedType> getSuperTypes() {
+			return superType;
+		}
+
+		public <U extends T> ClassSignature<U> withSuperType(Class<U> superType) {
+			return withSuperType(TypeToken.over(superType));
+		}
+
+		@SuppressWarnings("unchecked")
+		public <U extends T> ClassSignature<U> withSuperType(TypeToken<U> superType) {
+			this.superType = (TypeToken<T>) superType;
+			return (ClassSignature<U>) this;
 		}
 
 		public ClassDefinition<T> define() {
@@ -110,52 +135,69 @@ public class ClassDefinition<T> implements GenericDeclaration {
 		}
 	}
 
-	public static ClassSignature<Object> declare() {
-		return declare(Object.class);
+	public static ClassSignature<Object> declare(String typeName) {
+		return new ClassSignature<>(typeName);
 	}
 
-	public static <T> ClassSignature<T> declare(Class<T> superType) {
-		return declare(TypeToken.over(superType));
-	}
-
-	public static <T> ClassSignature<T> declare(TypeToken<T> superType) {
-		return new ClassSignature<>(superType);
-	}
-
-	protected ClassDefinition(ClassSignature<T> builder) {
-		superType = builder.superType;
-		typeVariables = builder.getTypeVariables(this);
-	}
-
+	private final String typeName;
 	private final TypeToken<T> superType;
 	private final List<TypeVariable<ClassDefinition<T>>> typeVariables;
+	private final Map<Class<? extends Annotation>, Annotation> annotations;
+
+	protected ClassDefinition(ClassSignature<T> builder) {
+		typeName = builder.getTypeName();
+		superType = builder.getSuperTypes();
+		typeVariables = builder.getTypeVariables(this);
+		annotations = builder.getAnnotations();
+	}
+
+	public String getTypeName() {
+		return typeName;
+	}
+
+	public TypeToken<T> getSuperType() {
+		return superType;
+	}
+
+	public void validate() {
+		// TODO Auto-generated method stub
+
+	}
 
 	public T instantiate(Object... arguments) {
-		// TODO may take arguments
+		return instantiate(Arrays.asList(arguments));
+	}
+
+	public T instantiate(Collection<? extends Object> arguments) {
+		validate();
+
+		for (Class<?> rawType : superType.getRawTypes()) {
+			if (!rawType.isInterface()) {
+				throw new ReflectionException(p -> p.cannotInstantiateClassDefinition(this, superType));
+			}
+		}
+
 		return null;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
-		// TODO Auto-generated method stub
-		return null;
+	public final <U extends Annotation> U getAnnotation(Class<U> annotationClass) {
+		return (U) annotations.get(annotationClass);
 	}
 
 	@Override
-	public Annotation[] getAnnotations() {
-		// TODO Auto-generated method stub
-		return null;
+	public final Annotation[] getAnnotations() {
+		return annotations.values().toArray(new Annotation[annotations.size()]);
 	}
 
 	@Override
-	public Annotation[] getDeclaredAnnotations() {
-		// TODO Auto-generated method stub
-		return null;
+	public final Annotation[] getDeclaredAnnotations() {
+		return getAnnotations();
 	}
 
 	@Override
 	public TypeVariable<?>[] getTypeParameters() {
-		// TODO Auto-generated method stub
-		return null;
+		return typeVariables.toArray(new TypeVariable<?>[typeVariables.size()]);
 	}
 }

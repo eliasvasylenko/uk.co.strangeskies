@@ -48,13 +48,12 @@ public class GenericSignatureTest {
 	}
 
 	@Test
-	public void selfBoundingTest() {
+	public void selfBoundingTypeVariableTest() {
 		GenericDeclaration declaration = Set.class;
 
 		GenericSignature signature = new GenericSignature();
 
 		TypeVariableSignature typeVariableSignature = signature.addTypeVariable();
-
 		typeVariableSignature.withUpperBounds(ParameterizedTypes.uncheckedFrom(Set.class, typeVariableSignature));
 
 		TypeVariable<?> typeVariable = signature.getTypeVariables(declaration).get(0);

@@ -45,6 +45,10 @@ public abstract class BlockBuilder<S extends BlockBuilder<S>> {
 		statements.add(statement);
 	}
 
+	public <T> VariableExpression<T> declareVariable(Class<T> type) {
+		return declareVariable(TypeToken.over(type));
+	}
+
 	public <T> VariableExpression<T> declareVariable(TypeToken<T> type) {
 		return scope.defineVariable(type);
 	}

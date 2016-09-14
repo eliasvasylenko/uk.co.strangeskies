@@ -18,6 +18,8 @@
  */
 package uk.co.strangeskies.reflection;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import uk.co.strangeskies.reflection.ClassDefinition.ClassSignature;
 
 /**
@@ -39,11 +41,32 @@ public class ProcedureDefinition<T> extends BlockBuilder<ProcedureDefinition<T>>
 	 * @author Elias N Vasylenko
 	 */
 	public static class ProcedureSignature<T> {
+		private static final AtomicLong COUNT = new AtomicLong(0);
 		private final ClassSignature<Procedure<T>> classDeclarationBuilder;
+		private TypeToken<T> resultType;
 
-		public ProcedureSignature(TypeToken<T> resultType) {
-			classDeclarationBuilder = ClassDefinition
-					.declare(new TypeToken<Procedure<T>>() {}.withTypeArgument(new TypeParameter<T>() {}, resultType));
+		@SuppressWarnings("unchecked")
+		protected ProcedureSignature() {
+			long count = COUNT.incrementAndGet();
+
+			classDeclarationBuilder = ClassDefinition.declare(ProcedureDefinition.class.getName() + "$" + count)
+					.withSuperType(new TypeToken<Procedure<T>>() {}.withTypeArgument(new TypeParameter<T>() {}, resultType));
+
+			resultType = (TypeToken<T>) TypeToken.over(Object.class);
+		}
+
+		protected TypeToken<T> getResultType() {
+			return resultType;
+		}
+
+		public <U extends T> ProcedureSignature<U> withResultType(Class<U> resultType) {
+			return withResultType(TypeToken.over(resultType));
+		}
+
+		@SuppressWarnings("unchecked")
+		public <U extends T> ProcedureSignature<U> withResultType(TypeToken<U> resultType) {
+			this.resultType = (TypeToken<T>) resultType;
+			return (ProcedureSignature<U>) this;
 		}
 
 		public ProcedureDefinition<T> define() {
@@ -51,12 +74,8 @@ public class ProcedureDefinition<T> extends BlockBuilder<ProcedureDefinition<T>>
 		}
 	}
 
-	public static <T> ProcedureSignature<T> declare(Class<T> resultType) {
-		return declare(TypeToken.over(resultType));
-	}
-
-	public static <T> ProcedureSignature<T> declare(TypeToken<T> resultType) {
-		return new ProcedureSignature<>(resultType);
+	public static ProcedureSignature<Object> declare() {
+		return new ProcedureSignature<>();
 	}
 
 	private final ClassDefinition<Procedure<T>> classDefinition;
