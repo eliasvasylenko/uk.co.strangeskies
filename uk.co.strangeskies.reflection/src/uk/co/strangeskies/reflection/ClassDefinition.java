@@ -19,15 +19,22 @@
 package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.AnnotatedType;
+import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import uk.co.strangeskies.reflection.MethodDefinition.MethodSignature;
+import uk.co.strangeskies.utilities.collection.MultiHashMap;
+import uk.co.strangeskies.utilities.collection.MultiMap;
 
 /**
  * A class definition is a description of a class implementation. It may extend
@@ -120,23 +127,66 @@ public class ClassDefinition<T> extends GenericDefinition<ClassDefinition<T>> {
 			return superType;
 		}
 
+		/**
+		 * @param superType
+		 *          the supertype for the class signature
+		 * @return the receiver
+		 */
 		public ClassSignature<?> withSuperType(Type... superType) {
 			return withSuperType(Arrays.stream(superType).map(AnnotatedTypes::over).collect(Collectors.toList()));
 		}
 
+		/**
+		 * @param superType
+		 *          the supertype for the class signature
+		 * @return the receiver
+		 */
 		public ClassSignature<?> withSuperType(AnnotatedType... superType) {
 			return withSuperType(Arrays.asList(superType));
 		}
 
+		/**
+		 * @param <U>
+		 *          the supertype for the class signature
+		 * @param superType
+		 *          the supertype for the class signature
+		 * @return the receiver
+		 */
 		public <U extends T> ClassSignature<U> withSuperType(Class<U> superType) {
 			return withSuperType(TypeToken.over(superType));
 		}
 
+		/**
+		 * @param <U>
+		 *          the supertype for the class signature
+		 * @param superType
+		 *          the supertype for the class signature
+		 * @return the receiver
+		 */
 		@SuppressWarnings("unchecked")
 		public <U extends T> ClassSignature<U> withSuperType(TypeToken<U> superType) {
 			return (ClassSignature<U>) withSuperType(superType.getAnnotatedDeclaration());
 		}
 
+		/**
+		 * @param <U>
+		 *          the supertype for the class signature
+		 * @param superType
+		 *          the supertype for the class signature
+		 * @return the receiver
+		 */
+		@SafeVarargs
+		@SuppressWarnings("unchecked")
+		public final <U extends T> ClassSignature<U> withSuperType(TypeToken<? extends U>... superType) {
+			return (ClassSignature<U>) withSuperType(
+					Arrays.stream(superType).map(TypeToken::getAnnotatedDeclaration).collect(Collectors.toList()));
+		}
+
+		/**
+		 * @param superType
+		 *          the supertype for the class signature
+		 * @return the receiver
+		 */
 		public ClassSignature<?> withSuperType(Collection<? extends AnnotatedType> superType) {
 			this.superType.clear();
 			this.superType.addAll(superType);
@@ -148,21 +198,28 @@ public class ClassDefinition<T> extends GenericDefinition<ClassDefinition<T>> {
 		}
 	}
 
-	public static ClassSignature<Object> declare(String typeName) {
+	public static ClassSignature<Object> declareClass(String typeName) {
 		return new ClassSignature<>(typeName);
 	}
 
 	private final String typeName;
 	private final List<TypeToken<? super T>> superType;
 
-	@SuppressWarnings("unchecked")
-	protected ClassDefinition(ClassSignature<? super T> builder) {
-		super(builder);
+	private final Set<MethodDefinition<T, ?>> methodDefinitions;
 
-		typeName = builder.getTypeName();
+	@SuppressWarnings("unchecked")
+	protected ClassDefinition(ClassSignature<? super T> signature) {
+		super(signature);
+
+		typeName = signature.getTypeName();
+
 		superType = Collections
-				.unmodifiableList(builder.getSuperTypes().stream().map(this::substituteTypeVariableSignatures)
+				.unmodifiableList(signature.getSuperTypes().stream().map(this::substituteTypeVariableSignatures)
 						.map(TypeToken::over).map(t -> (TypeToken<? super T>) t).collect(Collectors.toList()));
+
+		IntersectionType.from(superType.stream().map(TypeToken::getType).collect(Collectors.toList()));
+
+		methodDefinitions = new HashSet<>();
 	}
 
 	public String getTypeName() {
@@ -185,10 +242,43 @@ public class ClassDefinition<T> extends GenericDefinition<ClassDefinition<T>> {
 	public T instantiate(Collection<? extends Object> arguments) {
 		validate();
 
-		for (Class<?> rawType : superType.stream().flatMap(t -> t.getRawTypes().stream())
-				.collect(Collectors.toCollection(LinkedHashSet::new))) {
+		Set<Class<?>> rawTypes = superType.stream().flatMap(t -> t.getRawTypes().stream())
+				.collect(Collectors.toCollection(LinkedHashSet::new));
+
+		MultiMap<String, Method, Set<Method>> abstractMethods = new MultiHashMap<>(HashSet::new);
+
+		for (Class<?> rawType : rawTypes) {
 			if (!rawType.isInterface()) {
 				throw new ReflectionException(p -> p.cannotInstantiateClassDefinition(this, superType));
+			}
+
+			/*
+			 * 
+			 * 
+			 * 
+			 * 
+			 * 
+			 * 
+			 * TODO end of the day now so leaving this, but the overridden method
+			 * resolution actually needs to go where MethodDefinition is instantiated,
+			 * so we have access to the super methods when we are defining the method
+			 * body.
+			 * 
+			 * 
+			 * 
+			 * 
+			 * 
+			 * 
+			 * 
+			 * 
+			 * 
+			 * 
+			 * 
+			 * 
+			 * 
+			 */
+			for (Method overriddenMethod : rawType.getMethods()) {
+				abstractMethods.add(overriddenMethod.getName(), overriddenMethod);
 			}
 		}
 
@@ -198,5 +288,13 @@ public class ClassDefinition<T> extends GenericDefinition<ClassDefinition<T>> {
 	@Override
 	public String toString() {
 		return getTypeName();
+	}
+
+	public MethodSignature<T, Object> declareMethod(String methodName) {
+		return new MethodSignature<>(this, methodName);
+	}
+
+	protected void addMethod(MethodDefinition<T, ?> methodDefinition) {
+		methodDefinitions.add(methodDefinition);
 	}
 }

@@ -18,38 +18,23 @@
  */
 package uk.co.strangeskies.reflection;
 
-import java.util.ArrayList;
-import java.util.List;
-
-public abstract class BlockBuilder<S extends BlockBuilder<S>> {
-	private final StaticScope scope;
-	private final List<Statement> statements;
-
-	public BlockBuilder() {
-		scope = StaticScope.create();
-		statements = new ArrayList<>();
+public class VoidBlockDefinition extends BlockDefinition<VoidBlockDefinition> {
+	public VoidBlockDefinition() {
+		super();
 	}
 
-	@SuppressWarnings("unchecked")
-	protected S getThis() {
-		return (S) this;
+	public VoidBlockDefinition(StaticScope scope) {
+		super(scope);
 	}
 
-	public S addExpression(Expression expression) {
-		addStatement(expression.asStatement());
+	public VoidBlockDefinition addReturnStatement() {
+		addStatement(new Statement() {
+			@Override
+			public void execute(State state) {
+				state.returnVoid();
+			}
+		});
 
-		return getThis();
-	}
-
-	protected void addStatement(Statement statement) {
-		statements.add(statement);
-	}
-
-	public <T> VariableExpression<T> declareVariable(Class<T> type) {
-		return declareVariable(TypeToken.over(type));
-	}
-
-	public <T> VariableExpression<T> declareVariable(TypeToken<T> type) {
-		return scope.defineVariable(type);
+		return this;
 	}
 }

@@ -18,7 +18,7 @@
  */
 package uk.co.strangeskies.reflection.test;
 
-import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,8 +32,12 @@ import org.junit.Test;
 import uk.co.strangeskies.reflection.GenericDefinition;
 import uk.co.strangeskies.reflection.GenericSignature;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
+import uk.co.strangeskies.reflection.ReflectionException;
+import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.TypeVariableSignature;
+import uk.co.strangeskies.utilities.Self;
 
+@SuppressWarnings("javadoc")
 public class GenericSignatureTest {
 	@Test
 	public void noParametersSignatureTest() {
@@ -64,10 +68,20 @@ public class GenericSignatureTest {
 		GenericSignature signature = new GenericSignature();
 
 		TypeVariableSignature typeVariableSignature = signature.addTypeVariable();
-		typeVariableSignature.withUpperBounds(ParameterizedTypes.uncheckedFrom(Set.class, typeVariableSignature));
+		typeVariableSignature.withUpperBounds(ParameterizedTypes.uncheckedFrom(Self.class, typeVariableSignature));
 
 		TypeVariable<?> typeVariable = new GenericDefinition<>(signature).getTypeParameters()[0];
 
-		Assert.assertEquals(typeVariable, ((ParameterizedType) typeVariable.getBounds()[0]).getActualTypeArguments()[0]);
+		Type[] expectedBounds = new Type[] { ParameterizedTypes.uncheckedFrom(Self.class, typeVariable) };
+		Type[] bounds = typeVariable.getBounds();
+		Assert.assertArrayEquals(expectedBounds, bounds);
+	}
+
+	@Test(expected = ReflectionException.class)
+	public void invalidBoundsTest() {
+		GenericSignature signature = new GenericSignature().withTypeVariable(new TypeToken<Set<String>>() {},
+				new TypeToken<Set<Number>>() {});
+
+		new GenericDefinition<>(signature);
 	}
 }

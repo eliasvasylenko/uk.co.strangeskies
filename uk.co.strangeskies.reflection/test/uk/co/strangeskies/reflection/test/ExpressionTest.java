@@ -75,7 +75,7 @@ public class ExpressionTest {
 	@Test
 	public void localAssignmentTest() {
 		StaticScope scope = StaticScope.create();
-		VariableExpression<String> local = scope.defineVariable(new TypeToken<String>() {});
+		VariableExpression<String> local = scope.defineVariable(STRING_TYPE);
 
 		State state = scope.initializeState();
 
@@ -86,13 +86,15 @@ public class ExpressionTest {
 
 	// @Test
 	public void localVariableStatePersistenceTest() {
-		ProcedureDefinition<String> builder = ProcedureDefinition.declare().withResultType(String.class).define();
+		ProcedureDefinition<String> builder = ProcedureDefinition.define(STRING_TYPE);
 
-		VariableExpression<String> local = builder.declareVariable(String.class);
+		VariableExpression<String> local = builder.body().declareVariable(STRING_TYPE);
 
-		builder.addExpression(local.assign(literal("value")));
-		builder.addExpression(local.assign(local
-				.invokeMethod(STRING_TYPE.resolveMethodOverload("concat").withTargetType(STRING_TYPE), literal("concat"))));
+		builder.body() //
+				.addExpression(local.assign(literal("value"))) //
+				.addExpression(local.assign(local.invokeMethod(
+						STRING_TYPE.resolveMethodOverload("concat", STRING_TYPE).withTargetType(STRING_TYPE), literal("concat")))) //
+				.addReturnStatement(local);
 
 		Procedure<String> procedure = builder.instantiate();
 

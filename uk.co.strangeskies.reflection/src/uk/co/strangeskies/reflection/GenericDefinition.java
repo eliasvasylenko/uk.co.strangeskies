@@ -69,6 +69,13 @@ public class GenericDefinition<S extends GenericDefinition<S>> implements Generi
 		}
 		this.typeVariables = Collections.unmodifiableList(typeVariables);
 
+		/*
+		 * Check consistency of type bounds
+		 */
+		for (TypeVariable<?> typeVariable : typeVariables) {
+			IntersectionType.from(typeVariable.getBounds());
+		}
+
 		this.annotations = unmodifiableMap(
 				signature.getAnnotations().stream().collect(toMap(Annotation::annotationType, identity())));
 	}

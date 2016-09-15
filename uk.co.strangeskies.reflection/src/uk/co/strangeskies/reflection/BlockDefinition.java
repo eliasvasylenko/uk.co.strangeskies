@@ -18,25 +18,38 @@
  */
 package uk.co.strangeskies.reflection;
 
-/**
- * @author Elias N Vasylenko
- */
-public interface State {
-	static State over(Scope scope) {
-		return new StateImpl(scope);
+import java.util.ArrayList;
+import java.util.List;
+
+public abstract class BlockDefinition<S extends BlockDefinition<S>> {
+	private final StaticScope scope;
+	private final List<Statement> statements;
+
+	public BlockDefinition() {
+		this(StaticScope.create());
 	}
 
-	default State enclose(Scope scope) {
-		return new StateImpl(this, scope);
+	public BlockDefinition(StaticScope scope) {
+		this.scope = scope;
+		statements = new ArrayList<>();
 	}
 
-	Scope getScope();
+	public S addExpression(Expression expression) {
+		return addStatement(expression.asStatement());
+	}
 
-	<I> I getEnclosingInstance(InstanceScope<I> parentScope);
+	@SuppressWarnings("unchecked")
+	protected S addStatement(Statement statement) {
+		statements.add(statement);
 
-	Locals getEnclosingScopeLocals(Scope scope);
+		return (S) this;
+	}
 
-	void returnValue(ValueExpression<?> expression);
+	public <T> VariableExpression<T> declareVariable(Class<T> type) {
+		return declareVariable(TypeToken.over(type));
+	}
 
-	void returnVoid();
+	public <T> VariableExpression<T> declareVariable(TypeToken<T> type) {
+		return scope.defineVariable(type);
+	}
 }

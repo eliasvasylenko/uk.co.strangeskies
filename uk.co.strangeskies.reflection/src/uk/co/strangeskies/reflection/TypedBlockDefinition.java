@@ -18,25 +18,23 @@
  */
 package uk.co.strangeskies.reflection;
 
-/**
- * @author Elias N Vasylenko
- */
-public interface State {
-	static State over(Scope scope) {
-		return new StateImpl(scope);
+public class TypedBlockDefinition<T> extends BlockDefinition<TypedBlockDefinition<T>> {
+	public TypedBlockDefinition() {
+		super();
 	}
 
-	default State enclose(Scope scope) {
-		return new StateImpl(this, scope);
+	public TypedBlockDefinition(StaticScope scope) {
+		super(scope);
 	}
 
-	Scope getScope();
+	public TypedBlockDefinition<T> addReturnStatement(ValueExpression<T> expression) {
+		addStatement(new Statement() {
+			@Override
+			public void execute(State state) {
+				state.returnValue(expression);
+			}
+		});
 
-	<I> I getEnclosingInstance(InstanceScope<I> parentScope);
-
-	Locals getEnclosingScopeLocals(Scope scope);
-
-	void returnValue(ValueExpression<?> expression);
-
-	void returnVoid();
+		return this;
+	}
 }

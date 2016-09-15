@@ -66,4 +66,16 @@ public class StateImpl implements State {
 			throw new ReflectionException(p -> p.cannotResolveEnclosingScope(parentScope));
 		}
 	}
+
+	@Override
+	public void returnValue(ValueExpression<?> expression) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void returnVoid() {
+		// TODO Auto-generated method stub
+		
+	}
 }

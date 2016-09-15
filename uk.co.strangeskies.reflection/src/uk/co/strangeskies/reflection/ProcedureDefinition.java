@@ -18,6 +18,8 @@
  */
 package uk.co.strangeskies.reflection;
 
+import java.lang.reflect.AnnotatedType;
+import java.lang.reflect.Type;
 import java.util.concurrent.atomic.AtomicLong;
 
 import uk.co.strangeskies.reflection.ClassDefinition.ClassSignature;
@@ -31,61 +33,44 @@ import uk.co.strangeskies.reflection.ClassDefinition.ClassSignature;
  * @author Elias N Vasylenko
  *
  */
-public class ProcedureDefinition<T> extends BlockBuilder<ProcedureDefinition<T>> {
-	/**
-	 * Separating the logic for declaring input parameters into a builder means
-	 * that we can ensure the argument and return types are immutable once an
-	 * actual {@link ProcedureDefinition} object is instantiated. This means that
-	 * the type
-	 * 
-	 * @author Elias N Vasylenko
-	 */
-	public static class ProcedureSignature<T> {
-		private static final AtomicLong COUNT = new AtomicLong(0);
-		private final ClassSignature<Procedure<T>> classDeclarationBuilder;
-		private TypeToken<T> resultType;
+public class ProcedureDefinition<T> {
+	private static final AtomicLong COUNT = new AtomicLong(0);
 
-		@SuppressWarnings("unchecked")
-		protected ProcedureSignature() {
-			long count = COUNT.incrementAndGet();
-
-			classDeclarationBuilder = ClassDefinition.declare(ProcedureDefinition.class.getName() + "$" + count)
-					.withSuperType(new TypeToken<Procedure<T>>() {}.withTypeArgument(new TypeParameter<T>() {}, resultType));
-
-			resultType = (TypeToken<T>) TypeToken.over(Object.class);
-		}
-
-		protected TypeToken<T> getResultType() {
-			return resultType;
-		}
-
-		public <U extends T> ProcedureSignature<U> withResultType(Class<U> resultType) {
-			return withResultType(TypeToken.over(resultType));
-		}
-
-		@SuppressWarnings("unchecked")
-		public <U extends T> ProcedureSignature<U> withResultType(TypeToken<U> resultType) {
-			this.resultType = (TypeToken<T>) resultType;
-			return (ProcedureSignature<U>) this;
-		}
-
-		public ProcedureDefinition<T> define() {
-			return new ProcedureDefinition<>(this);
-		}
+	public static ProcedureDefinition<?> define(Type resultType) {
+		return define(TypeToken.over(resultType));
 	}
 
-	public static ProcedureSignature<Object> declare() {
-		return new ProcedureSignature<>();
+	public static ProcedureDefinition<?> define(AnnotatedType resultType) {
+		return define(TypeToken.over(resultType));
+	}
+
+	public static <U> ProcedureDefinition<U> define(Class<U> resultType) {
+		return define(TypeToken.over(resultType));
+	}
+
+	public static <U> ProcedureDefinition<U> define(TypeToken<U> resultType) {
+		return new ProcedureDefinition<>(resultType);
 	}
 
 	private final ClassDefinition<? extends Procedure<T>> classDefinition;
+	private final MethodDefinition<? extends Procedure<T>, T> runMethodDefinition;
 
-	protected ProcedureDefinition(ProcedureSignature<T> builder) {
-		classDefinition = builder.classDeclarationBuilder.define();
+	protected ProcedureDefinition(TypeToken<T> resultType) {
+		long count = COUNT.incrementAndGet();
 
+		ClassSignature<Procedure<T>> classSignature = ClassDefinition
+				.declareClass(ProcedureDefinition.class.getName() + "$" + count)
+				.withSuperType(new TypeToken<Procedure<T>>() {}.withTypeArgument(new TypeParameter<T>() {}, resultType));
+
+		classDefinition = classSignature.define();
+		runMethodDefinition = classDefinition.declareMethod("execute").withReturnType(resultType).define();
 	}
 
 	public Procedure<T> instantiate() {
 		return classDefinition.instantiate();
+	}
+
+	public TypedBlockDefinition<T> body() {
+		return runMethodDefinition.body();
 	}
 }

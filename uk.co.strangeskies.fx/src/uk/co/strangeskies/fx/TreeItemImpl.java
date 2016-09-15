@@ -112,8 +112,6 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 	}
 
 	protected void rebuildChildren() {
-		boolean selected = treeView.getSelectionModel().getSelectedItem() == this;
-
 		getDataImpl().refreshContributions();
 
 		boolean hasChildren = hasChildrenContributions();
@@ -150,10 +148,6 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 
 			childrenItems = Collections.emptyList();
 			childrenCalculated = true;
-		}
-
-		if (selected) {
-			treeView.getSelectionModel().select(this);
 		}
 
 		super.getChildren().setAll(childrenItems);
@@ -225,6 +219,10 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 		@Override
 		public void refresh(boolean recursive) {
 			TreeItem<TreeItemData<?>> selected = treeView.getSelectionModel().getSelectedItem();
+			treeView.getSelectionModel().clearSelection();
+
+			TreeItem<TreeItemData<?>> focused = treeView.getFocusModel().getFocusedItem();
+			treeView.getFocusModel().focus(-1);
 
 			Platform.runLater(() -> {
 				rebuild(recursive);
@@ -234,11 +232,12 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 
 					if (selected == treeItem) {
 						treeView.getSelectionModel().clearAndSelect(i);
-						return;
+					}
+
+					if (focused == treeItem) {
+						treeView.getFocusModel().focus(i);
 					}
 				}
-
-				treeView.getSelectionModel().clearSelection();
 			});
 		}
 	}

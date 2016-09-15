@@ -18,35 +18,31 @@
  */
 package uk.co.strangeskies.reflection.test;
 
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.util.Set;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import uk.co.strangeskies.reflection.ClassDefinition;
-import uk.co.strangeskies.reflection.ClassDefinition.ClassSignature;
-import uk.co.strangeskies.reflection.ParameterizedTypes;
-import uk.co.strangeskies.reflection.TypeVariableSignature;
-import uk.co.strangeskies.utilities.Self;
+import uk.co.strangeskies.reflection.MethodDefinition;
+import uk.co.strangeskies.reflection.ReflectionException;
+import uk.co.strangeskies.reflection.TypeToken;
 
+@SuppressWarnings("javadoc")
 public class ClassDefinitionTest {
 	private static final String TEST_CLASS_NAME = ClassDefinitionTest.class.getPackage().getName() + ".SelfSet";
 
 	@Test
-	public void selfBoundingSetTest() {
-		ClassSignature<?> classSignature = ClassDefinition.declare(TEST_CLASS_NAME);
-		TypeVariableSignature typeVariableSignature = classSignature.addTypeVariable();
-		typeVariableSignature.withUpperBounds(ParameterizedTypes.uncheckedFrom(Self.class, typeVariableSignature));
+	public void runnableTest() {
+		ClassDefinition<? extends Runnable> classDefinition = ClassDefinition.declareClass(TEST_CLASS_NAME)
+				.withSuperType(Runnable.class).define();
 
-		ClassDefinition<?> classDefinition = classSignature
-				.withSuperType(ParameterizedTypes.uncheckedFrom(Set.class, typeVariableSignature)).define();
+		MethodDefinition<? extends Runnable, ?> runMethod = classDefinition.declareMethod("run").define();
+	}
 
-		TypeVariable<?> typeVariable = classDefinition.getTypeParameters()[0];
-
-		Type[] expectedBounds = new Type[] { ParameterizedTypes.uncheckedFrom(Self.class, typeVariable) };
-		Type[] bounds = typeVariable.getBounds();
-		Assert.assertArrayEquals(expectedBounds, bounds);
+	@Test(expected = ReflectionException.class)
+	public void invalidSuperTypeTest() {
+		@SuppressWarnings("unused")
+		ClassDefinition<? extends Set<?>> classDefinition = ClassDefinition.declareClass(TEST_CLASS_NAME)
+				.withSuperType(new TypeToken<Set<String>>() {}, new TypeToken<Set<Number>>() {}).define();
 	}
 }

@@ -18,25 +18,28 @@
  */
 package uk.co.strangeskies.reflection;
 
-/**
- * @author Elias N Vasylenko
- */
-public interface State {
-	static State over(Scope scope) {
-		return new StateImpl(scope);
+public class VariableExpressionProxy<T> implements VariableExpression<T> {
+	private VariableExpression<T> component;
+
+	@Override
+	public TypeToken<T> getType() {
+		if (component != null) {
+			return component.getType();
+		} else {
+			throw new ReflectionException(p -> p.cannotAccessPlaceholderExpression(this));
+		}
 	}
 
-	default State enclose(Scope scope) {
-		return new StateImpl(this, scope);
+	@Override
+	public VariableResult<T> evaluate(State state) {
+		if (component != null) {
+			return component.evaluate(state);
+		} else {
+			throw new ReflectionException(p -> p.cannotAccessPlaceholderExpression(this));
+		}
 	}
 
-	Scope getScope();
-
-	<I> I getEnclosingInstance(InstanceScope<I> parentScope);
-
-	Locals getEnclosingScopeLocals(Scope scope);
-
-	void returnValue(ValueExpression<?> expression);
-
-	void returnVoid();
+	public void setComponent(VariableExpression<T> component) {
+		this.component = component;
+	}
 }

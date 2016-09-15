@@ -129,4 +129,6 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 
 	Localized<String> cannotInstantiateClassDefinition(ClassDefinition<?> classDefinition,
 			List<? extends TypeToken<?>> superType);
+
+	Localized<String> cannotAccessPlaceholderExpression(VariableExpressionProxy<?> variableExpressionProxy);
 }
