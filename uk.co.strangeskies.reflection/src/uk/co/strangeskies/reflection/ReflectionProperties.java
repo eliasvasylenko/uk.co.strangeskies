@@ -131,4 +131,6 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 			List<? extends TypeToken<?>> superType);
 
 	Localized<String> cannotAccessPlaceholderExpression(VariableExpressionProxy<?> variableExpressionProxy);
+
+	Localized<String> cannotOverrideMethod(Method overriddenMethod);
 }

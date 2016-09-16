@@ -20,12 +20,14 @@ package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class MethodDefinition<C, T> extends GenericDefinition<MethodDefinition<C, T>> {
 	public static class MethodSignature<C, T> extends GenericSignature {
@@ -113,6 +115,7 @@ public class MethodDefinition<C, T> extends GenericDefinition<MethodDefinition<C
 	private final StaticScope scope;
 
 	private final List<VariableExpression<?>> parameters;
+	private final List<Class<?>> rawParameterTypes;
 	private final AnnotatedType returnType;
 	private final TypedBlockDefinition<T> body;
 
@@ -131,6 +134,14 @@ public class MethodDefinition<C, T> extends GenericDefinition<MethodDefinition<C
 		this.parameters = Collections.unmodifiableList(parameters);
 		this.returnType = signature.returnType;
 		this.body = new TypedBlockDefinition<>(scope);
+
+		rawParameterTypes = parameters.stream().map(v -> v.getType().getRawType()).collect(Collectors.toList());
+
+		for (Method overriddenMethod : overriddenMethods) {
+			if (Modifier.isPrivate(overriddenMethod.getModifiers()) || Modifier.isFinal(overriddenMethod.getModifiers())) {
+				throw new ReflectionException(p -> p.cannotOverrideMethod(overriddenMethod));
+			}
+		}
 
 		classDefinition.addMethod(this);
 	}

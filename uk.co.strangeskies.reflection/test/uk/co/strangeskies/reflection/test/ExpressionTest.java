@@ -84,7 +84,7 @@ public class ExpressionTest {
 		Assert.assertEquals("value", local.evaluate(state).get());
 	}
 
-	// @Test
+	@Test
 	public void localVariableStatePersistenceTest() {
 		ProcedureDefinition<String> builder = ProcedureDefinition.define(STRING_TYPE);
 

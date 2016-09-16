@@ -31,10 +31,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.Stream.Builder;
 
 import uk.co.strangeskies.reflection.MethodDefinition.MethodSignature;
-import uk.co.strangeskies.utilities.collection.MultiHashMap;
-import uk.co.strangeskies.utilities.collection.MultiMap;
 
 /**
  * A class definition is a description of a class implementation. It may extend
@@ -220,6 +220,15 @@ public class ClassDefinition<T> extends GenericDefinition<ClassDefinition<T>> {
 		IntersectionType.from(superType.stream().map(TypeToken::getType).collect(Collectors.toList()));
 
 		methodDefinitions = new HashSet<>();
+
+		/*
+		 * TODO include declared methods (protected/private/etc.)
+		 */
+		Set<Method> overriddenMethods = superType.stream() //
+				.flatMap(t -> t.getRawTypes().stream()).flatMap(t -> Stream.of(t).)
+				.flatMap(t -> Arrays.stream(t.getDeclaredMethods())) //
+				.filter(t -> t.getName().equals(methodName) && Arrays.asList(t.getParameterTypes()).equals(rawParameterTypes))
+				.collect(Collectors.toSet());
 	}
 
 	public String getTypeName() {
@@ -245,40 +254,9 @@ public class ClassDefinition<T> extends GenericDefinition<ClassDefinition<T>> {
 		Set<Class<?>> rawTypes = superType.stream().flatMap(t -> t.getRawTypes().stream())
 				.collect(Collectors.toCollection(LinkedHashSet::new));
 
-		MultiMap<String, Method, Set<Method>> abstractMethods = new MultiHashMap<>(HashSet::new);
-
 		for (Class<?> rawType : rawTypes) {
 			if (!rawType.isInterface()) {
 				throw new ReflectionException(p -> p.cannotInstantiateClassDefinition(this, superType));
-			}
-
-			/*
-			 * 
-			 * 
-			 * 
-			 * 
-			 * 
-			 * 
-			 * TODO end of the day now so leaving this, but the overridden method
-			 * resolution actually needs to go where MethodDefinition is instantiated,
-			 * so we have access to the super methods when we are defining the method
-			 * body.
-			 * 
-			 * 
-			 * 
-			 * 
-			 * 
-			 * 
-			 * 
-			 * 
-			 * 
-			 * 
-			 * 
-			 * 
-			 * 
-			 */
-			for (Method overriddenMethod : rawType.getMethods()) {
-				abstractMethods.add(overriddenMethod.getName(), overriddenMethod);
 			}
 		}
 
