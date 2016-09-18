@@ -18,6 +18,14 @@
  */
 package uk.co.strangeskies.reflection;
 
+/**
+ * An expression denoting assignment to a {@link VariableExpression}.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <T>
+ *          the type of the variable to assign to
+ */
 public class AssignmentExpression<T> implements ValueExpression<T> {
 	private final VariableExpression<T> target;
 	private final ValueExpression<? extends T> value;

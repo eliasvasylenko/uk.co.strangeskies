@@ -25,5 +25,9 @@ public interface StaticScope extends Scope {
 
 	State initializeState();
 
-	<T> VariableExpression<T> defineVariable(TypeToken<T> type);
+	<T> VariableExpression<T> declareVariable(TypeToken<T> type);
+
+	default <T> VariableExpression<T> declareVariable(Class<T> type) {
+		return declareVariable(TypeToken.over(type));
+	}
 }

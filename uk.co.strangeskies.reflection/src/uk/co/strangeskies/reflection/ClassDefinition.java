@@ -18,23 +18,27 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static java.util.Arrays.asList;
+
 import java.lang.reflect.AnnotatedType;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.Stream.Builder;
 
-import uk.co.strangeskies.reflection.MethodDefinition.MethodSignature;
+import uk.co.strangeskies.utilities.IdentityProperty;
+import uk.co.strangeskies.utilities.collection.StreamUtilities;
 
 /**
  * A class definition is a description of a class implementation. It may extend
@@ -97,161 +101,102 @@ import uk.co.strangeskies.reflection.MethodDefinition.MethodSignature;
  * @param <T>
  *          the intersection of the supertypes of the described class
  */
-public class ClassDefinition<T> extends GenericDefinition<ClassDefinition<T>> {
-	/**
-	 * Separating the logic for declaring the class into a builder allows us to
-	 * ensure the type of the class is immutable once an actual
-	 * {@link ProcedureDefinition} object is instantiated. This means that the
-	 * type can be safely reasoned about before any class members are defined or
-	 * any implementation details are specified.
-	 * 
-	 * @author Elias N Vasylenko
-	 * 
-	 * @param <T>
-	 *          the intersection of the supertypes of the described class
-	 */
-	public static class ClassSignature<T> extends GenericSignature {
-		private final String typeName;
-		private final List<AnnotatedType> superType;
-
-		protected ClassSignature(String typeName) {
-			this.typeName = typeName;
-			superType = new ArrayList<>();
-		}
-
-		protected String getTypeName() {
-			return typeName;
-		}
-
-		protected List<AnnotatedType> getSuperTypes() {
-			return superType;
-		}
-
-		/**
-		 * @param superType
-		 *          the supertype for the class signature
-		 * @return the receiver
-		 */
-		public ClassSignature<?> withSuperType(Type... superType) {
-			return withSuperType(Arrays.stream(superType).map(AnnotatedTypes::over).collect(Collectors.toList()));
-		}
-
-		/**
-		 * @param superType
-		 *          the supertype for the class signature
-		 * @return the receiver
-		 */
-		public ClassSignature<?> withSuperType(AnnotatedType... superType) {
-			return withSuperType(Arrays.asList(superType));
-		}
-
-		/**
-		 * @param <U>
-		 *          the supertype for the class signature
-		 * @param superType
-		 *          the supertype for the class signature
-		 * @return the receiver
-		 */
-		public <U extends T> ClassSignature<U> withSuperType(Class<U> superType) {
-			return withSuperType(TypeToken.over(superType));
-		}
-
-		/**
-		 * @param <U>
-		 *          the supertype for the class signature
-		 * @param superType
-		 *          the supertype for the class signature
-		 * @return the receiver
-		 */
-		@SuppressWarnings("unchecked")
-		public <U extends T> ClassSignature<U> withSuperType(TypeToken<U> superType) {
-			return (ClassSignature<U>) withSuperType(superType.getAnnotatedDeclaration());
-		}
-
-		/**
-		 * @param <U>
-		 *          the supertype for the class signature
-		 * @param superType
-		 *          the supertype for the class signature
-		 * @return the receiver
-		 */
-		@SafeVarargs
-		@SuppressWarnings("unchecked")
-		public final <U extends T> ClassSignature<U> withSuperType(TypeToken<? extends U>... superType) {
-			return (ClassSignature<U>) withSuperType(
-					Arrays.stream(superType).map(TypeToken::getAnnotatedDeclaration).collect(Collectors.toList()));
-		}
-
-		/**
-		 * @param superType
-		 *          the supertype for the class signature
-		 * @return the receiver
-		 */
-		public ClassSignature<?> withSuperType(Collection<? extends AnnotatedType> superType) {
-			this.superType.clear();
-			this.superType.addAll(superType);
-			return this;
-		}
-
-		public ClassDefinition<? extends T> define() {
-			return new ClassDefinition<>(this);
-		}
-	}
-
-	public static ClassSignature<Object> declareClass(String typeName) {
-		return new ClassSignature<>(typeName);
-	}
-
+public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<T>> implements Scope {
 	private final String typeName;
-	private final List<TypeToken<? super T>> superType;
+	private final Class<? super T> superClass;
+	private final List<TypeToken<? super T>> superTypes;
+	private final TypeToken<T> superType;
 
-	private final Set<MethodDefinition<T, ?>> methodDefinitions;
+	private final Map<Method, InvocableMember<?, ?>> invocables;
+	private final Map<MethodOverrideSignature, MethodOverride> methods;
+
+	private final ValueExpression<T> receiverExpression;
 
 	@SuppressWarnings("unchecked")
-	protected ClassDefinition(ClassSignature<? super T> signature) {
+	protected ClassDefinition(ClassDeclaration<? super T> signature) {
 		super(signature);
 
 		typeName = signature.getTypeName();
 
-		superType = Collections
+		superTypes = Collections
 				.unmodifiableList(signature.getSuperTypes().stream().map(this::substituteTypeVariableSignatures)
 						.map(TypeToken::over).map(t -> (TypeToken<? super T>) t).collect(Collectors.toList()));
 
-		IntersectionType.from(superType.stream().map(TypeToken::getType).collect(Collectors.toList()));
+		Type superType = IntersectionType.from(superTypes.stream().map(TypeToken::getType).collect(Collectors.toList()));
+		this.superType = (TypeToken<T>) TypeToken.over(superType);
+		Class<?> superClass = Types.getRawType(superType);
+		if (superClass.isInterface()) {
+			this.superClass = null;
+		} else {
+			this.superClass = (Class<? super T>) superClass;
+		}
 
-		methodDefinitions = new HashSet<>();
+		invocables = new HashMap<>();
+		methods = new HashMap<>();
+		getSuperTypes().stream().flatMap(t -> t.getRawTypes().stream()).flatMap(t -> Arrays.stream(t.getMethods()))
+				.forEach(this::inheritMethod);
+		StreamUtilities.<Class<?>>iterate(getSuperClass(), Class::getSuperclass)
+				.flatMap(c -> Arrays.stream(c.getDeclaredMethods())).forEach(this::inheritMethod);
 
-		/*
-		 * TODO include declared methods (protected/private/etc.)
-		 */
-		Set<Method> overriddenMethods = superType.stream() //
-				.flatMap(t -> t.getRawTypes().stream()).flatMap(t -> Stream.of(t).)
-				.flatMap(t -> Arrays.stream(t.getDeclaredMethods())) //
-				.filter(t -> t.getName().equals(methodName) && Arrays.asList(t.getParameterTypes()).equals(rawParameterTypes))
-				.collect(Collectors.toSet());
+		this.receiverExpression = new ValueExpression<T>() {
+			@Override
+			public ValueResult<T> evaluate(State state) {
+				return () -> state.getEnclosingInstance(ClassDefinition.this);
+			}
+
+			@Override
+			public TypeToken<T> getType() {
+				/*
+				 * TODO this needs to be the actual Type
+				 */
+				return (TypeToken<T>) getSuperType();
+			}
+		};
 	}
 
-	public String getTypeName() {
+	public String getName() {
 		return typeName;
 	}
 
 	public List<TypeToken<? super T>> getSuperTypes() {
+		return superTypes;
+	}
+
+	public TypeToken<? super T> getSuperType() {
 		return superType;
 	}
 
-	public void validate() {
-		// TODO Auto-generated method stub
+	public Class<? super T> getSuperClass() {
+		return superClass;
+	}
 
+	public void validate() {
+		/*
+		 * TODO check we have a default super constructor, or a valid constructor
+		 * defined explicitly.
+		 */
+
+		for (MethodOverride override : methods.values()) {
+			override.validate();
+		}
 	}
 
 	public T instantiate(Object... arguments) {
-		return instantiate(Arrays.asList(arguments));
+		return instantiate(getClass().getClassLoader(), arguments);
 	}
 
 	public T instantiate(Collection<? extends Object> arguments) {
+		return instantiate(getClass().getClassLoader(), arguments);
+	}
+
+	public T instantiate(ClassLoader classLoader, Object... arguments) {
+		return instantiate(classLoader, Arrays.asList(arguments));
+	}
+
+	public T instantiate(ClassLoader classLoader, Collection<? extends Object> arguments) {
 		validate();
 
-		Set<Class<?>> rawTypes = superType.stream().flatMap(t -> t.getRawTypes().stream())
+		Set<Class<?>> rawTypes = superTypes.stream().flatMap(t -> t.getRawTypes().stream())
 				.collect(Collectors.toCollection(LinkedHashSet::new));
 
 		for (Class<?> rawType : rawTypes) {
@@ -260,19 +205,105 @@ public class ClassDefinition<T> extends GenericDefinition<ClassDefinition<T>> {
 			}
 		}
 
-		return null;
+		IdentityProperty<State> state = new IdentityProperty<>();
+
+		@SuppressWarnings("unchecked")
+		T instance = (T) Proxy.newProxyInstance(classLoader, rawTypes.toArray(new Class<?>[rawTypes.size()]),
+				(proxy, method, args) -> {
+					MethodOverride override = methods.get(new MethodOverrideSignature(method.getName(),
+							getInvocable(method).getParameters().stream().map(Types::getRawType).toArray(Class<?>[]::new)));
+
+					return override.getOverride().map(o -> o.body().execute(state.get())).orElseGet(() -> {
+						try {
+							return override.getInterfaceMethods().stream().filter(Method::isDefault).findAny().get().invoke(proxy,
+									args);
+						} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+							throw new ReflectionException(p -> p.invalidMethodArguments(method, getSuperType(), asList(args)));
+						}
+					});
+				});
+
+		state.set(initializeState(instance));
+
+		return instance;
+	}
+
+	public ValueExpression<T> receiver() {
+		return receiverExpression;
+	}
+
+	public State initializeState(T instance) {
+		return new StateImpl(this) {
+			@SuppressWarnings("unchecked")
+			@Override
+			public <J> J getEnclosingInstance(ClassDefinition<J> parentScope) {
+				if (parentScope == ClassDefinition.this) {
+					return (J) instance;
+				} else {
+					return super.getEnclosingInstance(parentScope);
+				}
+			}
+		};
 	}
 
 	@Override
 	public String toString() {
-		return getTypeName();
+		return getName();
 	}
 
-	public MethodSignature<T, Object> declareMethod(String methodName) {
-		return new MethodSignature<>(this, methodName);
+	public FieldDeclaration<T, ?> declareField(String fieldName, AnnotatedType type) {
+		return new FieldDeclaration<>(this, fieldName, type);
 	}
 
-	protected void addMethod(MethodDefinition<T, ?> methodDefinition) {
-		methodDefinitions.add(methodDefinition);
+	public FieldDeclaration<T, ?> declareField(String fieldName, Type type) {
+		return declareField(fieldName, AnnotatedTypes.over(type));
+	}
+
+	@SuppressWarnings("unchecked")
+	public <U> FieldDeclaration<T, U> declareField(String fieldName, Class<U> type) {
+		return (FieldDeclaration<T, U>) declareField(fieldName, AnnotatedTypes.over(type));
+	}
+
+	@SuppressWarnings("unchecked")
+	public <U> FieldDeclaration<T, U> declareField(String fieldName, TypeToken<U> type) {
+		return (FieldDeclaration<T, U>) declareField(fieldName, type.getAnnotatedDeclaration());
+	}
+
+	public MethodDeclaration<T, Object> declareMethod(String methodName) {
+		return new MethodDeclaration<>(this, methodName);
+	}
+
+	public MethodDeclaration<T, Object> declareMethodOverride(Method method) {
+		return declareMethod(method.getName())
+				.withParameters(AnnotatedTypes.over(InvocableMember.over(method).getParameters()));
+	}
+
+	protected void overrideMethod(MethodDefinition<T, ?> methodDefinition) {
+		MethodOverride override = methods.computeIfAbsent(methodDefinition.getOverrideSignature(),
+				k -> new MethodOverride(this, methodDefinition.getOverrideSignature()));
+
+		override.override(methodDefinition);
+	}
+
+	protected void inheritMethod(Method method) {
+		if (!Modifier.isStatic(method.getModifiers())) {
+
+			MethodOverrideSignature methodSignature = new MethodOverrideSignature(method.getName(),
+					getInvocable(method).getParameters().stream().map(Types::getRawType).toArray(Class<?>[]::new));
+
+			MethodOverride override = methods.computeIfAbsent(methodSignature,
+					k -> new MethodOverride(this, methodSignature));
+
+			override.inherit(method);
+		}
+	}
+
+	protected InvocableMember<?, ?> getInvocable(Method method) {
+		return invocables.computeIfAbsent(method, m -> InvocableMember.over(method, superType));
+	}
+
+	@Override
+	public Optional<Scope> getEnclosingScope() {
+		return Optional.empty();
 	}
 }

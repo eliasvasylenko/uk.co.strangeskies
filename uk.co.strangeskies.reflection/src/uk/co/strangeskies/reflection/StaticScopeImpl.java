@@ -30,13 +30,19 @@ package uk.co.strangeskies.reflection;
  * @author Elias N Vasylenko
  */
 public class StaticScopeImpl extends ScopeImpl implements StaticScope {
+	public StaticScopeImpl() {}
+
+	public StaticScopeImpl(Scope enclosingScope) {
+		super(enclosingScope);
+	}
+
 	@Override
 	public State initializeState() {
 		return new StateImpl(this);
 	}
 
 	@Override
-	public <T> VariableExpression<T> defineVariable(TypeToken<T> type) {
-		return super.defineVariable(type);
+	public <T> VariableExpression<T> declareVariable(TypeToken<T> type) {
+		return super.declareVariable(type);
 	}
 }

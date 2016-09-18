@@ -24,7 +24,8 @@ import java.util.Set;
 /**
  * An interface exposing part of the functionality of a
  * {@link StripedReadWriteLock}. This interface allows clients to release locks,
- * but not to obtain them or wait for them.
+ * but not to obtain them or wait for them. Isolating the authority to obtain
+ * locks in this way can help protect against deadlock.
  * 
  * @author Elias N Vasylenko
  * @param <K>

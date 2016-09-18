@@ -24,13 +24,12 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import uk.co.strangeskies.reflection.FieldMember;
-import uk.co.strangeskies.reflection.InstanceScope;
 import uk.co.strangeskies.reflection.InvocableMember;
-import uk.co.strangeskies.reflection.Procedure;
-import uk.co.strangeskies.reflection.ProcedureDefinition;
 import uk.co.strangeskies.reflection.State;
 import uk.co.strangeskies.reflection.StaticScope;
 import uk.co.strangeskies.reflection.TypeToken;
+import uk.co.strangeskies.reflection.ValueExpression;
+import uk.co.strangeskies.reflection.ValueResult;
 import uk.co.strangeskies.reflection.VariableExpression;
 
 @SuppressWarnings("javadoc")
@@ -60,22 +59,38 @@ public class ExpressionTest {
 	private static final InvocableMember<TestClass, ?> TEST_SET_METHOD = (InvocableMember<TestClass, Void>) TEST_CLASS_TYPE
 			.resolveMethodOverload(TEST_SET_METHOD_NAME, STRING_TYPE);
 
+	private static ValueExpression<TestClass> valueExpression(TestClass instance) {
+		return new ValueExpression<TestClass>() {
+			@Override
+			public ValueResult<TestClass> evaluate(State state) {
+				return () -> instance;
+			}
+
+			@Override
+			public TypeToken<TestClass> getType() {
+				return TEST_CLASS_TYPE;
+			}
+		};
+	}
+
 	@Test
-	public void thisAssignmentTest() {
-		TestClass testInstance = new TestClass();
+	public void fieldAssignmentTest() {
+		StaticScope scope = StaticScope.create();
+		VariableExpression<TestClass> variable = scope.declareVariable(TestClass.class);
 
-		InstanceScope<TestClass> scope = InstanceScope.over(TEST_CLASS_TYPE);
-		State state = scope.initializeState(testInstance);
+		State state = scope.initializeState();
+		TestClass instance = new TestClass();
 
-		scope.receiver().accessField(TEST_FIELD).assign(literal("value")).evaluate(state);
+		variable.assign(valueExpression(instance)).evaluate(state);
+		variable.accessField(TEST_FIELD).assign(literal("value")).evaluate(state);
 
-		Assert.assertEquals("value", testInstance.field);
+		Assert.assertEquals("value", instance.field);
 	}
 
 	@Test
 	public void localAssignmentTest() {
 		StaticScope scope = StaticScope.create();
-		VariableExpression<String> local = scope.defineVariable(STRING_TYPE);
+		VariableExpression<String> local = scope.declareVariable(STRING_TYPE);
 
 		State state = scope.initializeState();
 
@@ -85,33 +100,16 @@ public class ExpressionTest {
 	}
 
 	@Test
-	public void localVariableStatePersistenceTest() {
-		ProcedureDefinition<String> builder = ProcedureDefinition.define(STRING_TYPE);
+	public void localMethodInvocationTest() {
+		StaticScope scope = StaticScope.create();
+		VariableExpression<TestClass> variable = scope.declareVariable(TestClass.class);
 
-		VariableExpression<String> local = builder.body().declareVariable(STRING_TYPE);
+		State state = scope.initializeState();
+		TestClass instance = new TestClass();
 
-		builder.body() //
-				.addExpression(local.assign(literal("value"))) //
-				.addExpression(local.assign(local.invokeMethod(
-						STRING_TYPE.resolveMethodOverload("concat", STRING_TYPE).withTargetType(STRING_TYPE), literal("concat")))) //
-				.addReturnStatement(local);
+		variable.assign(valueExpression(instance)).evaluate(state);
+		variable.invokeMethod(TEST_SET_METHOD, literal("value")).evaluate(state);
 
-		Procedure<String> procedure = builder.instantiate();
-
-		String result = procedure.execute("concat");
-
-		Assert.assertEquals("valueconcat", result);
-	}
-
-	@Test
-	public void thisMethodInvocationTest() {
-		TestClass testInstance = new TestClass();
-
-		InstanceScope<TestClass> scope = InstanceScope.over(TEST_CLASS_TYPE);
-		State state = scope.initializeState(testInstance);
-
-		scope.receiver().invokeMethod(TEST_SET_METHOD, literal("value")).evaluate(state);
-
-		Assert.assertEquals("value", testInstance.field);
+		Assert.assertEquals("value", instance.field);
 	}
 }

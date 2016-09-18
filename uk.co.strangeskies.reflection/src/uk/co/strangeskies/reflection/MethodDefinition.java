@@ -19,138 +19,66 @@
 package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.AnnotatedType;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
-public class MethodDefinition<C, T> extends GenericDefinition<MethodDefinition<C, T>> {
-	public static class MethodSignature<C, T> extends GenericSignature {
-		private final ClassDefinition<C> classDefinition;
-		private final String methodName;
-
-		private final LinkedHashMap<VariableExpressionProxy<?>, AnnotatedType> parameters;
-		private AnnotatedType returnType;
-
-		protected MethodSignature(ClassDefinition<C> classDefinition, String methodName) {
-			this.classDefinition = classDefinition;
-			this.methodName = methodName;
-
-			parameters = new LinkedHashMap<>();
-		}
-
-		protected String getMethodName() {
-			return methodName;
-		}
-
-		protected AnnotatedType getReturnType() {
-			return returnType;
-		}
-
-		public MethodDefinition<C, T> define() {
-			return new MethodDefinition<>(this);
-		}
-
-		public VariableExpression<?> addParameter(AnnotatedType type) {
-			VariableExpressionProxy<?> proxy = new VariableExpressionProxy<>();
-			parameters.put(proxy, type);
-			return proxy;
-		}
-
-		public VariableExpression<?> addParameter(Type type) {
-			return addParameter(AnnotatedTypes.over(type));
-		}
-
-		@SuppressWarnings("unchecked")
-		public <U> VariableExpression<U> addParameter(Class<U> type) {
-			return (VariableExpression<U>) addParameter(AnnotatedTypes.over(type));
-		}
-
-		@SuppressWarnings("unchecked")
-		public <U> VariableExpression<U> addParameter(TypeToken<U> type) {
-			return (VariableExpression<U>) addParameter(type.getAnnotatedDeclaration());
-		}
-
-		public MethodSignature<C, T> withParameter(AnnotatedType type) {
-			parameters.put(new VariableExpressionProxy<>(), type);
-			return this;
-		}
-
-		public MethodSignature<C, T> withParameter(Type type) {
-			return withParameter(AnnotatedTypes.over(type));
-		}
-
-		public MethodSignature<C, T> withParameter(TypeToken<?> type) {
-			return withParameter(type.getAnnotatedDeclaration());
-		}
-
-		public MethodSignature<C, T> withReturnType(AnnotatedType type) {
-			returnType = type;
-			Method d;
-			return this;
-		}
-
-		public MethodSignature<C, T> withReturnType(Type type) {
-			return withReturnType(AnnotatedTypes.over(type));
-		}
-
-		@SuppressWarnings("unchecked")
-		public <U extends T> MethodSignature<C, U> withReturnType(Class<U> type) {
-			return (MethodSignature<C, U>) withReturnType(AnnotatedTypes.over(type));
-		}
-
-		@SuppressWarnings("unchecked")
-		public <U extends T> MethodSignature<C, U> withReturnType(TypeToken<U> type) {
-			return (MethodSignature<C, U>) withReturnType(type.getAnnotatedDeclaration());
-		}
-	}
-
+public class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefinition<C, T>>
+		implements MemberDefinition<C, T> {
 	private final ClassDefinition<C> classDefinition;
 	private final String methodName;
 	private final StaticScope scope;
 
 	private final List<VariableExpression<?>> parameters;
-	private final List<Class<?>> rawParameterTypes;
-	private final AnnotatedType returnType;
+	private final TypeToken<T> returnType;
 	private final TypedBlockDefinition<T> body;
 
-	public MethodDefinition(MethodSignature<C, T> signature) {
-		super(signature);
+	private final MethodOverrideSignature overrideSignature;
 
-		this.classDefinition = signature.classDefinition;
-		this.methodName = signature.methodName;
-		this.scope = new StaticScopeImpl();
+	@SuppressWarnings("unchecked")
+	public MethodDefinition(MethodDeclaration<C, T> declaration) {
+		super(declaration);
+
+		this.classDefinition = declaration.getClassDefinition();
+		this.methodName = declaration.getName();
+		this.scope = new StaticScopeImpl(classDefinition);
 
 		ArrayList<VariableExpression<?>> parameters = new ArrayList<>();
-		for (Map.Entry<VariableExpressionProxy<?>, AnnotatedType> proxy : signature.parameters.entrySet()) {
-			parameters.add(getParameter(proxy.getKey(), proxy.getValue()));
+		for (VariableExpressionProxy<?> proxy : declaration.getParameters()) {
+			parameters.add(getParameter(proxy, declaration.getParameterType(proxy)));
 		}
 		parameters.trimToSize();
 		this.parameters = Collections.unmodifiableList(parameters);
-		this.returnType = signature.returnType;
+		if (declaration.getReturnType() == null) {
+			this.returnType = (TypeToken<T>) TypeToken.over(void.class);
+		} else {
+			this.returnType = (TypeToken<T>) TypeToken.over(declaration.getReturnType());
+		}
 		this.body = new TypedBlockDefinition<>(scope);
 
-		rawParameterTypes = parameters.stream().map(v -> v.getType().getRawType()).collect(Collectors.toList());
+		overrideSignature = new MethodOverrideSignature(methodName,
+				parameters.stream().map(v -> v.getType().getRawType()).toArray(Class<?>[]::new));
 
-		for (Method overriddenMethod : overriddenMethods) {
-			if (Modifier.isPrivate(overriddenMethod.getModifiers()) || Modifier.isFinal(overriddenMethod.getModifiers())) {
-				throw new ReflectionException(p -> p.cannotOverrideMethod(overriddenMethod));
-			}
-		}
+		classDefinition.overrideMethod(this);
+	}
 
-		classDefinition.addMethod(this);
+	public List<VariableExpression<?>> getParameters() {
+		return parameters;
+	}
+
+	public TypeToken<T> getReturnType() {
+		return returnType;
+	}
+
+	public MethodOverrideSignature getOverrideSignature() {
+		return overrideSignature;
 	}
 
 	private <U> VariableExpression<U> getParameter(VariableExpressionProxy<U> proxy, AnnotatedType type) {
 		TypeToken<?> typeToken = TypeToken.over(substituteTypeVariableSignatures(type));
 
 		@SuppressWarnings("unchecked")
-		VariableExpression<U> variable = (VariableExpression<U>) scope.defineVariable(typeToken);
+		VariableExpression<U> variable = (VariableExpression<U>) scope.declareVariable(typeToken);
 		proxy.setComponent(variable);
 
 		return variable;
@@ -158,5 +86,37 @@ public class MethodDefinition<C, T> extends GenericDefinition<MethodDefinition<C
 
 	public TypedBlockDefinition<T> body() {
 		return body;
+	}
+
+	@Override
+	public Class<?> getDeclaringClass() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public ClassDefinition<C> getDeclaringClassDefinition() {
+		return classDefinition;
+	}
+
+	@Override
+	public String getName() {
+		return methodName;
+	}
+
+	@Override
+	public int getModifiers() {
+		// TODO
+		return 0;
+	}
+
+	@Override
+	public boolean isSynthetic() {
+		return false;
+	}
+
+	public void validate() {
+		/*
+		 * TODO check all expressions in body are in scope
+		 */
 	}
 }

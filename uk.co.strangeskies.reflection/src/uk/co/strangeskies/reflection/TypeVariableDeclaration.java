@@ -30,11 +30,11 @@ import java.util.stream.Collectors;
 /**
  * Take care not to allow instances of this class to leak out into the wider
  * program outside the context of declaration and definition of
- * {@link GenericSignature mutable declarations}.
+ * {@link ParameterizedDeclaration mutable declarations}.
  * 
  * @author Elias N Vasylenko
  */
-public class TypeVariableSignature implements Type {
+public class TypeVariableDeclaration implements Type {
 	private final int index;
 	private final List<AnnotatedType> bounds;
 	private final List<Annotation> annotations;
@@ -44,7 +44,7 @@ public class TypeVariableSignature implements Type {
 	 *          the index of the type variable signature within its generic
 	 *          declaration
 	 */
-	public TypeVariableSignature(int index) {
+	public TypeVariableDeclaration(int index) {
 		this.index = index;
 		bounds = new ArrayList<>();
 		annotations = new ArrayList<>();
@@ -67,29 +67,29 @@ public class TypeVariableSignature implements Type {
 		return bounds;
 	}
 
-	public TypeVariableSignature withUpperBounds(TypeToken<?>... bounds) {
+	public TypeVariableDeclaration withUpperBounds(TypeToken<?>... bounds) {
 		return withUpperBounds(Arrays.stream(bounds).map(TypeToken::getAnnotatedDeclaration).collect(Collectors.toList()));
 	}
 
-	public TypeVariableSignature withUpperBounds(Type... bounds) {
+	public TypeVariableDeclaration withUpperBounds(Type... bounds) {
 		return withUpperBounds(Arrays.stream(bounds).map(AnnotatedTypes::over).collect(Collectors.toList()));
 	}
 
-	public TypeVariableSignature withUpperBounds(AnnotatedType... bounds) {
+	public TypeVariableDeclaration withUpperBounds(AnnotatedType... bounds) {
 		return withUpperBounds(Arrays.asList(bounds));
 	}
 
-	public TypeVariableSignature withUpperBounds(Collection<? extends AnnotatedType> bounds) {
+	public TypeVariableDeclaration withUpperBounds(Collection<? extends AnnotatedType> bounds) {
 		this.bounds.addAll(bounds);
 
 		return this;
 	}
 
-	public TypeVariableSignature withAnnotations(Annotation... annotations) {
+	public TypeVariableDeclaration withAnnotations(Annotation... annotations) {
 		return withAnnotations(Arrays.asList(annotations));
 	}
 
-	public TypeVariableSignature withAnnotations(Collection<? extends Annotation> annotations) {
+	public TypeVariableDeclaration withAnnotations(Collection<? extends Annotation> annotations) {
 		this.annotations.addAll(annotations);
 
 		return this;

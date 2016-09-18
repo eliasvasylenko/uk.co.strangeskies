@@ -27,63 +27,63 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class GenericSignature {
-	private final List<TypeVariableSignature> typeVariableSignatures;
+public class ParameterizedDeclaration {
+	private final List<TypeVariableDeclaration> typeVariableSignatures;
 	private final List<Annotation> annotations;
 
-	public GenericSignature() {
+	public ParameterizedDeclaration() {
 		typeVariableSignatures = new ArrayList<>();
 		annotations = new ArrayList<>();
 
 	}
 
-	public TypeVariableSignature addTypeVariable() {
-		TypeVariableSignature typeVariable = new TypeVariableSignature(typeVariableSignatures.size());
+	public TypeVariableDeclaration addTypeVariable() {
+		TypeVariableDeclaration typeVariable = new TypeVariableDeclaration(typeVariableSignatures.size());
 		typeVariableSignatures.add(typeVariable);
 		return typeVariable;
 	}
 
-	public GenericSignature withTypeVariable() {
+	public ParameterizedDeclaration withTypeVariable() {
 		addTypeVariable().withUpperBounds(new Type[] {});
 		return this;
 	}
 
-	public GenericSignature withTypeVariable(Type... bounds) {
+	public ParameterizedDeclaration withTypeVariable(Type... bounds) {
 		addTypeVariable().withUpperBounds(bounds);
 		return this;
 	}
 
-	public GenericSignature withTypeVariable(AnnotatedType... bounds) {
+	public ParameterizedDeclaration withTypeVariable(AnnotatedType... bounds) {
 		addTypeVariable().withUpperBounds(bounds);
 		return this;
 	}
 
-	public GenericSignature withTypeVariable(TypeToken<?>... bounds) {
+	public ParameterizedDeclaration withTypeVariable(TypeToken<?>... bounds) {
 		addTypeVariable().withUpperBounds(bounds);
 		return this;
 	}
 
-	public GenericSignature withTypeVariable(Collection<? extends AnnotatedType> bounds) {
+	public ParameterizedDeclaration withTypeVariable(Collection<? extends AnnotatedType> bounds) {
 		addTypeVariable().withUpperBounds(bounds);
 		return this;
 	}
 
-	public GenericSignature withTypeVariable(Collection<? extends Annotation> annotations,
+	public ParameterizedDeclaration withTypeVariable(Collection<? extends Annotation> annotations,
 			Collection<? extends AnnotatedType> bounds) {
 		addTypeVariable().withAnnotations(annotations);
 		addTypeVariable().withUpperBounds(bounds);
 		return this;
 	}
 
-	public List<TypeVariableSignature> getTypeVariableSignatures() {
+	public List<TypeVariableDeclaration> getTypeVariableSignatures() {
 		return Collections.unmodifiableList(typeVariableSignatures);
 	}
 
-	public GenericSignature withAnnotations(Annotation... annotations) {
+	public ParameterizedDeclaration withAnnotations(Annotation... annotations) {
 		return withAnnotations(Arrays.asList(annotations));
 	}
 
-	public GenericSignature withAnnotations(Collection<? extends Annotation> annotations) {
+	public ParameterizedDeclaration withAnnotations(Collection<? extends Annotation> annotations) {
 		this.annotations.clear();
 		this.annotations.addAll(annotations);
 

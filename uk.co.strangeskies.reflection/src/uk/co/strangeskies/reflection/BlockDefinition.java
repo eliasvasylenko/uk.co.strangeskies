@@ -50,6 +50,20 @@ public abstract class BlockDefinition<S extends BlockDefinition<S>> {
 	}
 
 	public <T> VariableExpression<T> declareVariable(TypeToken<T> type) {
-		return scope.defineVariable(type);
+		return scope.declareVariable(type);
+	}
+
+	public Object execute(State state) {
+		state = state.enclose(scope);
+
+		for (Statement statement : statements) {
+			statement.execute(state);
+
+			if (state.isReturned()) {
+				return state.getReturnValue();
+			}
+		}
+
+		return null;
 	}
 }

@@ -18,14 +18,23 @@
  */
 package uk.co.strangeskies.reflection;
 
-public interface InstanceScope<I> extends Scope {
-	TypeToken<I> getReceiverType();
+import java.util.HashMap;
+import java.util.Map;
 
-	ValueExpression<I> receiver();
+public class LocalVariableStore {
+	private final Map<LocalVariableExpression<?>, Object> variableValues = new HashMap<>();
 
-	State initializeState(I instance);
+	@SuppressWarnings("unchecked")
+	public <T> T get(LocalVariableExpression<T> variableResult) {
+		return (T) variableValues.get(variableResult);
+	}
 
-	static <I> InstanceScope<I> over(TypeToken<I> receiverType) {
-		return new InstanceScopeImpl<>(receiverType);
+	public <T> void set(LocalVariableExpression<T> variableResult, T value) {
+		variableValues.put(variableResult, value);
+	}
+
+	public <T> LocalVariableStore with(LocalVariableExpression<T> variableResult, T value) {
+		set(variableResult, value);
+		return this;
 	}
 }

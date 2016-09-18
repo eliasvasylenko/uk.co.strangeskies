@@ -30,6 +30,8 @@ import java.util.Set;
 import uk.co.strangeskies.text.properties.Localized;
 import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
+import uk.co.strangeskies.text.properties.PropertyConfiguration.Defaults;
+import uk.co.strangeskies.text.properties.PropertyConfiguration.Evaluation;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;
 
 /**
@@ -38,7 +40,11 @@ import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;
  * @author Elias N Vasylenko
  */
 @SuppressWarnings("javadoc")
-@PropertyConfiguration(keyCase = KeyCase.LOWER, keySplitString = ".")
+@PropertyConfiguration(
+		keyCase = KeyCase.LOWER,
+		keySplitString = ".",
+		evaluation = Evaluation.IMMEDIATE,
+		defaults = Defaults.IGNORE)
 public interface ReflectionProperties extends Properties<ReflectionProperties> {
 	Localized<String> unsupportedType(Type type);
 
@@ -127,10 +133,17 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 
 	Localized<String> invalidScopeForState();
 
-	Localized<String> cannotInstantiateClassDefinition(ClassDefinition<?> classDefinition,
-			List<? extends TypeToken<?>> superType);
+	Localized<String> cannotInstantiateClassDefinition(ClassDefinition<?> classDefinition, TypeToken<?> superType);
 
 	Localized<String> cannotAccessPlaceholderExpression(VariableExpressionProxy<?> variableExpressionProxy);
 
 	Localized<String> cannotOverrideMethod(Method overriddenMethod);
+
+	Localized<String> incompatibleReturnTypes(Type override, Method inherited);
+
+	Localized<String> incompatibleParameterTypes(Type[] parameterTypes, Method inherited);
+
+	Localized<String> duplicateMethodSignature(MethodDefinition<?, ?> override);
+
+	Localized<String> mustOverrideMethods(Collection<Method> classMethod);
 }

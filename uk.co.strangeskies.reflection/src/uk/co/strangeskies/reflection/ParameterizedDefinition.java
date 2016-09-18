@@ -34,15 +34,15 @@ import java.util.stream.Collectors;
 
 import uk.co.strangeskies.utilities.Isomorphism;
 
-public class GenericDefinition<S extends GenericDefinition<S>> implements GenericDeclaration {
+public class ParameterizedDefinition<S extends ParameterizedDefinition<S>> implements GenericDeclaration {
 	private final List<TypeVariable<S>> typeVariables;
 	private final Map<Class<? extends Annotation>, Annotation> annotations;
 
 	private final Isomorphism isomorphism;
 	private final AnnotatedTypeSubstitution boundSubstitution;
 
-	public GenericDefinition(GenericSignature signature) {
-		List<TypeVariableSignature> typeVariableSignatures = signature.getTypeVariableSignatures();
+	public ParameterizedDefinition(ParameterizedDeclaration signature) {
+		List<TypeVariableDeclaration> typeVariableSignatures = signature.getTypeVariableSignatures();
 
 		isomorphism = new Isomorphism();
 		List<TypeVariable<S>> typeVariables = new ArrayList<>(typeVariableSignatures.size());
@@ -53,10 +53,10 @@ public class GenericDefinition<S extends GenericDefinition<S>> implements Generi
 		 */
 		boundSubstitution = new AnnotatedTypeSubstitution().where(
 
-				t -> t.getType() instanceof TypeVariableSignature,
+				t -> t.getType() instanceof TypeVariableDeclaration,
 
 				t -> {
-					TypeVariable<?> typeVariable = substituteTypeVariableSignature((TypeVariableSignature) t.getType());
+					TypeVariable<?> typeVariable = substituteTypeVariableSignature((TypeVariableDeclaration) t.getType());
 
 					return AnnotatedTypeVariables.over(typeVariable, t.getAnnotations());
 				});
@@ -64,7 +64,7 @@ public class GenericDefinition<S extends GenericDefinition<S>> implements Generi
 		/*
 		 * Perform the substitution for each signature
 		 */
-		for (TypeVariableSignature typeVariableSignature : typeVariableSignatures) {
+		for (TypeVariableDeclaration typeVariableSignature : typeVariableSignatures) {
 			typeVariables.add(substituteTypeVariableSignature(typeVariableSignature));
 		}
 		this.typeVariables = Collections.unmodifiableList(typeVariables);
@@ -84,7 +84,7 @@ public class GenericDefinition<S extends GenericDefinition<S>> implements Generi
 		return boundSubstitution.resolve(annotatedType, isomorphism);
 	}
 
-	protected TypeVariable<S> substituteTypeVariableSignature(TypeVariableSignature signature) {
+	protected TypeVariable<S> substituteTypeVariableSignature(TypeVariableDeclaration signature) {
 		List<AnnotatedType> bounds = signature.getBounds().stream().map(b -> boundSubstitution.resolve(b, isomorphism))
 				.collect(Collectors.toList());
 

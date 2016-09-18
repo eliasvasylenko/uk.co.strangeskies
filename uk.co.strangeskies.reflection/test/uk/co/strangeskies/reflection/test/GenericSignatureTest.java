@@ -29,35 +29,35 @@ import java.util.stream.Collectors;
 import org.junit.Assert;
 import org.junit.Test;
 
-import uk.co.strangeskies.reflection.GenericDefinition;
-import uk.co.strangeskies.reflection.GenericSignature;
+import uk.co.strangeskies.reflection.ParameterizedDefinition;
+import uk.co.strangeskies.reflection.ParameterizedDeclaration;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeToken;
-import uk.co.strangeskies.reflection.TypeVariableSignature;
+import uk.co.strangeskies.reflection.TypeVariableDeclaration;
 import uk.co.strangeskies.utilities.Self;
 
 @SuppressWarnings("javadoc")
 public class GenericSignatureTest {
 	@Test
 	public void noParametersSignatureTest() {
-		Assert.assertEquals(Collections.emptyList(), new GenericDefinition<>(new GenericSignature()).getTypeVariables());
+		Assert.assertEquals(Collections.emptyList(), new ParameterizedDefinition<>(new ParameterizedDeclaration()).getTypeVariables());
 	}
 
 	@Test
 	public void unboundedParameterSignatureTest() {
-		GenericSignature signature = new GenericSignature().withTypeVariable();
+		ParameterizedDeclaration signature = new ParameterizedDeclaration().withTypeVariable();
 
-		List<? extends TypeVariable<?>> typeVariables = new GenericDefinition<>(signature).getTypeVariables();
+		List<? extends TypeVariable<?>> typeVariables = new ParameterizedDefinition<>(signature).getTypeVariables();
 
 		Assert.assertEquals(1, typeVariables.size());
 	}
 
 	@Test
 	public void parameterNamesTest() {
-		GenericSignature signature = new GenericSignature().withTypeVariable().withTypeVariable().withTypeVariable();
+		ParameterizedDeclaration signature = new ParameterizedDeclaration().withTypeVariable().withTypeVariable().withTypeVariable();
 
-		List<? extends TypeVariable<?>> typeVariables = new GenericDefinition<>(signature).getTypeVariables();
+		List<? extends TypeVariable<?>> typeVariables = new ParameterizedDefinition<>(signature).getTypeVariables();
 
 		Assert.assertEquals(Arrays.asList("T0", "T1", "T2"),
 				typeVariables.stream().map(t -> t.getName()).collect(Collectors.toList()));
@@ -65,12 +65,12 @@ public class GenericSignatureTest {
 
 	@Test
 	public void selfBoundingTypeVariableTest() {
-		GenericSignature signature = new GenericSignature();
+		ParameterizedDeclaration signature = new ParameterizedDeclaration();
 
-		TypeVariableSignature typeVariableSignature = signature.addTypeVariable();
+		TypeVariableDeclaration typeVariableSignature = signature.addTypeVariable();
 		typeVariableSignature.withUpperBounds(ParameterizedTypes.uncheckedFrom(Self.class, typeVariableSignature));
 
-		TypeVariable<?> typeVariable = new GenericDefinition<>(signature).getTypeParameters()[0];
+		TypeVariable<?> typeVariable = new ParameterizedDefinition<>(signature).getTypeParameters()[0];
 
 		Type[] expectedBounds = new Type[] { ParameterizedTypes.uncheckedFrom(Self.class, typeVariable) };
 		Type[] bounds = typeVariable.getBounds();
@@ -79,9 +79,9 @@ public class GenericSignatureTest {
 
 	@Test(expected = ReflectionException.class)
 	public void invalidBoundsTest() {
-		GenericSignature signature = new GenericSignature().withTypeVariable(new TypeToken<Set<String>>() {},
+		ParameterizedDeclaration signature = new ParameterizedDeclaration().withTypeVariable(new TypeToken<Set<String>>() {},
 				new TypeToken<Set<Number>>() {});
 
-		new GenericDefinition<>(signature);
+		new ParameterizedDefinition<>(signature);
 	}
 }

@@ -1269,8 +1269,11 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 			parameterizedType = resolver.resolveType(parameterizedType);
 
 			ConstraintFormula.reduce(Kind.SUBTYPE, getType(), parameterizedType, resolver.getBounds());
-		} else
-			resolver.incorporateTypeHierarchy(getRawType(), superclass);
+		} else {
+			resolver.incorporateTypeHierarchy(
+					getRawTypes().stream().filter(c -> superclass.isAssignableFrom(c)).findAny().orElse(getRawType()),
+					superclass);
+		}
 
 		TypeToken<? extends U> over = over(resolver, superclass);
 
@@ -1768,8 +1771,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 		return resolveConstructorOverloadImpl(arguments, this::getDeclaredConstructors);
 	}
 
-	private InvocableMember<? super T, ? extends T> resolveConstructorOverloadImpl(
-			List<? extends TypeToken<?>> arguments,
+	private InvocableMember<? super T, ? extends T> resolveConstructorOverloadImpl(List<? extends TypeToken<?>> arguments,
 			Function<Predicate<Constructor<T>>, Set<? extends InvocableMember<? super T, ? extends T>>> constructors) {
 		Set<? extends InvocableMember<? super T, ? extends T>> candidates = constructors
 				.apply(m -> isArgumentCountValid(m, arguments.size()));

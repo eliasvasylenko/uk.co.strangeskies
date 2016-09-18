@@ -32,11 +32,15 @@ public interface State {
 
 	Scope getScope();
 
-	<I> I getEnclosingInstance(InstanceScope<I> parentScope);
+	<I> I getEnclosingInstance(ClassDefinition<I> parentScope);
 
-	Locals getEnclosingScopeLocals(Scope scope);
+	LocalVariableStore getEnclosingScopeVariableStore(Scope scope);
 
-	void returnValue(ValueExpression<?> expression);
+	void returnValue(Object value);
 
 	void returnVoid();
+
+	boolean isReturned();
+
+	Object getReturnValue();
 }

@@ -18,31 +18,96 @@
  */
 package uk.co.strangeskies.reflection.test;
 
-import java.util.Set;
+import static uk.co.strangeskies.reflection.ClassDeclaration.declareClass;
 
+import java.util.Set;
+import java.util.function.Function;
+
+import org.junit.Assert;
 import org.junit.Test;
 
 import uk.co.strangeskies.reflection.ClassDefinition;
+import uk.co.strangeskies.reflection.MethodDeclaration;
 import uk.co.strangeskies.reflection.MethodDefinition;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeToken;
+import uk.co.strangeskies.reflection.VariableExpression;
 
 @SuppressWarnings("javadoc")
 public class ClassDefinitionTest {
 	private static final String TEST_CLASS_NAME = ClassDefinitionTest.class.getPackage().getName() + ".SelfSet";
+	private static final TypeToken<String> STRING_TYPE = new TypeToken<String>() {};
+
+	public interface StringMethod {
+		String method(String parameter);
+
+		String method(Object parameter);
+	}
+
+	public interface NumberMethod<N> {
+		Number method(N parameter);
+	}
+
+	public interface TMethod<T> {
+		T method(String parameter);
+	}
+
+	public interface NumberMethodSubType extends NumberMethod<String> {}
 
 	@Test
-	public void runnableTest() {
-		ClassDefinition<? extends Runnable> classDefinition = ClassDefinition.declareClass(TEST_CLASS_NAME)
-				.withSuperType(Runnable.class).define();
+	public void runnableClassInvocationTest() {
+		ClassDefinition<? extends Runnable> classDefinition = declareClass(TEST_CLASS_NAME).withSuperType(Runnable.class)
+				.define();
 
 		MethodDefinition<? extends Runnable, ?> runMethod = classDefinition.declareMethod("run").define();
+
+		Runnable instance = classDefinition.instantiate();
+
+		instance.run();
+	}
+
+	@Test
+	public void functionClassInvocationTest() {
+		ClassDefinition<? extends Function<String, String>> classDefinition = declareClass(TEST_CLASS_NAME)
+				.withSuperType(new TypeToken<Function<String, String>>() {}).define();
+
+		MethodDeclaration<? extends Function<String, String>, String> applyMethod = classDefinition.declareMethod("apply")
+				.withReturnType(STRING_TYPE);
+		VariableExpression<String> parameter = applyMethod.addParameter(STRING_TYPE);
+		applyMethod.define().body()
+				.addExpression(parameter.assign(parameter.invokeMethod(
+						STRING_TYPE.resolveMethodOverload("concat", STRING_TYPE).withTargetType(STRING_TYPE), parameter)))
+				.addReturnStatement(parameter);
+
+		Function<String, String> instance = classDefinition.instantiate();
+
+		String result = instance.apply("string");
+
+		Assert.assertEquals("stringconcat", result);
 	}
 
 	@Test(expected = ReflectionException.class)
 	public void invalidSuperTypeTest() {
-		@SuppressWarnings("unused")
-		ClassDefinition<? extends Set<?>> classDefinition = ClassDefinition.declareClass(TEST_CLASS_NAME)
+		ClassDefinition<? extends Set<?>> classDefinition = declareClass(TEST_CLASS_NAME)
 				.withSuperType(new TypeToken<Set<String>>() {}, new TypeToken<Set<Number>>() {}).define();
+		classDefinition.validate();
+	}
+
+	@Test(expected = ReflectionException.class)
+	public void inheritedMethodCollisionTest() {
+		declareClass(TEST_CLASS_NAME)
+				.withSuperType(new TypeToken<StringMethod>() {}, new TypeToken<NumberMethod<String>>() {}).define().validate();
+	}
+
+	@Test(expected = ReflectionException.class)
+	public void inheritedMethodCollisionAvoidenceTest() {
+		declareClass(TEST_CLASS_NAME)
+				.withSuperType(new TypeToken<StringMethod>() {}, new TypeToken<NumberMethod<Integer>>() {}).define().validate();
+	}
+
+	@Test(expected = ReflectionException.class)
+	public void indirectlyInheritedMethodCollisionTest() {
+		declareClass(TEST_CLASS_NAME)
+				.withSuperType(new TypeToken<StringMethod>() {}, new TypeToken<NumberMethodSubType>() {}).define().validate();
 	}
 }

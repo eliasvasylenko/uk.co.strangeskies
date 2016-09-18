@@ -18,6 +18,8 @@
  */
 package uk.co.strangeskies.reflection;
 
+import java.util.Optional;
+
 /**
  * Represents a compile-time scope for evaluation of {@link Expression java
  * expressions}. A scope defines which local variables are available, as well as
@@ -29,7 +31,7 @@ package uk.co.strangeskies.reflection;
  * @author Elias N Vasylenko
  */
 public interface Scope {
-	Scope getEnclosingScope();
+	Optional<Scope> getEnclosingScope();
 
 	default boolean isScopeVisible(Scope scope) {
 		Scope enclosingScope = this;
@@ -38,7 +40,7 @@ public interface Scope {
 			if (enclosingScope == scope) {
 				return true;
 			} else {
-				enclosingScope = enclosingScope.getEnclosingScope();
+				enclosingScope = enclosingScope.getEnclosingScope().orElse(null);
 			}
 		} while (enclosingScope != null);
 

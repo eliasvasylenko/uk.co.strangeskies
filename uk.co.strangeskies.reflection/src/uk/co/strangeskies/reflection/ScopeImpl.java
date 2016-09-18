@@ -19,6 +19,7 @@
 package uk.co.strangeskies.reflection;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -33,54 +34,25 @@ import java.util.Set;
  * @author Elias N Vasylenko
  */
 public abstract class ScopeImpl implements Scope {
-	public class LocalVariableExpression<T> implements VariableExpression<T> {
-		private final Scope scope;
-		private final TypeToken<T> type;
-
-		public LocalVariableExpression(Scope scope, TypeToken<T> type) {
-			this.scope = scope;
-			this.type = type;
-		}
-
-		@Override
-		public TypeToken<T> getType() {
-			return type;
-		}
-
-		@Override
-		public VariableResult<T> evaluate(State state) {
-			return new VariableResult<T>() {
-				@Override
-				public T get() {
-					return state.getEnclosingScopeLocals(scope).get(LocalVariableExpression.this);
-				}
-
-				@Override
-				public void set(T value) {
-					state.getEnclosingScopeLocals(scope).set(LocalVariableExpression.this, value);
-				}
-			};
-		}
-	}
-
-	private final Scope enclosingScope;
+	private final Optional<Scope> enclosingScope;
 	private final Set<VariableExpression<?>> variableExpressions;
 
 	public ScopeImpl() {
-		this(null);
-	}
-
-	@Override
-	public Scope getEnclosingScope() {
-		return enclosingScope;
-	}
-
-	public ScopeImpl(Scope enclosingScope) {
-		this.enclosingScope = enclosingScope;
+		this.enclosingScope = Optional.empty();
 		variableExpressions = new HashSet<>();
 	}
 
-	protected <T> VariableExpression<T> defineVariable(TypeToken<T> type) {
+	public ScopeImpl(Scope enclosingScope) {
+		this.enclosingScope = Optional.of(enclosingScope);
+		variableExpressions = new HashSet<>();
+	}
+
+	@Override
+	public Optional<Scope> getEnclosingScope() {
+		return enclosingScope;
+	}
+
+	protected <T> VariableExpression<T> declareVariable(TypeToken<T> type) {
 		VariableExpression<T> variable = new LocalVariableExpression<>(this, type);
 
 		variableExpressions.add(variable);

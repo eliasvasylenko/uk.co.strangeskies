@@ -31,7 +31,7 @@ public class TypedBlockDefinition<T> extends BlockDefinition<TypedBlockDefinitio
 		addStatement(new Statement() {
 			@Override
 			public void execute(State state) {
-				state.returnValue(expression);
+				state.returnValue(expression.evaluate(state).get());
 			}
 		});
 
