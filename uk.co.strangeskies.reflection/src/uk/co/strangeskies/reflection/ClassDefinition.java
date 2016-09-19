@@ -108,7 +108,7 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 	private final TypeToken<T> superType;
 
 	private final Map<Method, InvocableMember<?, ?>> invocables;
-	private final Map<MethodOverrideSignature, MethodOverride> methods;
+	private final Map<MethodSignature, MethodOverride> methods;
 
 	private final ValueExpression<T> receiverExpression;
 
@@ -135,7 +135,7 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 		methods = new HashMap<>();
 		getSuperTypes().stream().flatMap(t -> t.getRawTypes().stream()).flatMap(t -> Arrays.stream(t.getMethods()))
 				.forEach(this::inheritMethod);
-		StreamUtilities.<Class<?>>iterate(getSuperClass(), Class::getSuperclass)
+		StreamUtilities.<Class<?>> iterate(getSuperClass(), Class::getSuperclass)
 				.flatMap(c -> Arrays.stream(c.getDeclaredMethods())).forEach(this::inheritMethod);
 
 		this.receiverExpression = new ValueExpression<T>() {
@@ -154,22 +154,39 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 		};
 	}
 
+	/**
+	 * @return the fully qualified class name
+	 */
 	public String getName() {
 		return typeName;
 	}
 
+	/**
+	 * @return the declared supertypes of the class definition
+	 */
 	public List<TypeToken<? super T>> getSuperTypes() {
 		return superTypes;
 	}
 
+	/**
+	 * @return the intersection of the declared supertypes of the class definition
+	 */
 	public TypeToken<? super T> getSuperType() {
 		return superType;
 	}
 
+	/**
+	 * @return the non-interface superclass of the class definition, which will be
+	 *         {@link Object} if none is explicitly given
+	 */
 	public Class<? super T> getSuperClass() {
 		return superClass;
 	}
 
+	/**
+	 * Verify that the class definition describes a valid and complete class such
+	 * that implementation/compilation or instantiation is possible.
+	 */
 	public void validate() {
 		/*
 		 * TODO check we have a default super constructor, or a valid constructor
@@ -210,22 +227,18 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 		@SuppressWarnings("unchecked")
 		T instance = (T) Proxy.newProxyInstance(classLoader, rawTypes.toArray(new Class<?>[rawTypes.size()]),
 				(proxy, method, args) -> {
-					/*
-					 * TODO Deal with this ridiculous method signature wrangling by
-					 * generating synthetic bridge methods. this problem was already
-					 * solved, Eli!
-					 */
-					MethodOverride override = methods.get(new MethodOverrideSignature(method.getName(),
-							getInvocable(method).getParameters().stream().map(Types::getRawType).toArray(Class<?>[]::new)));
+					MethodOverride override = methods.get(new MethodSignature(method));
 
-					return override.getOverride().map(o -> (Object) o.invoke(state.get(), args)).orElseGet(() -> {
+					if (override.getOverride().isPresent()) {
+						return override.getOverride().get().invoke(state.get(), args);
+					} else {
 						try {
 							return override.getInterfaceMethods().stream().filter(Method::isDefault).findAny().get().invoke(proxy,
 									args);
 						} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 							throw new ReflectionException(p -> p.invalidMethodArguments(method, getSuperType(), asList(args)));
 						}
-					});
+					}
 				});
 
 		state.set(initializeState(instance));
@@ -292,14 +305,19 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 
 	protected void inheritMethod(Method method) {
 		if (!Modifier.isStatic(method.getModifiers())) {
-
-			MethodOverrideSignature methodSignature = new MethodOverrideSignature(method.getName(),
+			MethodSignature overridingSignature = new MethodSignature(method.getName(),
 					getInvocable(method).getParameters().stream().map(Types::getRawType).toArray(Class<?>[]::new));
 
-			MethodOverride override = methods.computeIfAbsent(methodSignature,
-					k -> new MethodOverride(this, methodSignature));
+			MethodOverride override = methods.computeIfAbsent(overridingSignature,
+					k -> new MethodOverride(this, overridingSignature));
 
 			override.inherit(method);
+
+			/*
+			 * The actual erased method signature may be different, in which case it
+			 * would be overridden by a synthetic bridge method.
+			 */
+			methods.put(new MethodSignature(method), override);
 		}
 	}
 

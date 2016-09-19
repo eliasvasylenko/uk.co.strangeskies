@@ -33,7 +33,7 @@ public class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefini
 	private final TypeToken<T> returnType;
 	private final TypedBlockDefinition<T> body;
 
-	private final MethodOverrideSignature overrideSignature;
+	private final MethodSignature overrideSignature;
 
 	@SuppressWarnings("unchecked")
 	public MethodDefinition(MethodDeclaration<C, T> declaration) {
@@ -56,7 +56,7 @@ public class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefini
 		}
 		this.body = new TypedBlockDefinition<>(scope);
 
-		overrideSignature = new MethodOverrideSignature(methodName,
+		overrideSignature = new MethodSignature(methodName,
 				parameters.stream().map(v -> v.getType().getRawType()).toArray(Class<?>[]::new));
 
 		classDefinition.overrideMethod(this);
@@ -70,7 +70,7 @@ public class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefini
 		return returnType;
 	}
 
-	public MethodOverrideSignature getOverrideSignature() {
+	public MethodSignature getOverrideSignature() {
 		return overrideSignature;
 	}
 

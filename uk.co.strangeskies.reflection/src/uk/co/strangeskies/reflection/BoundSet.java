@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -214,8 +215,8 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		BoundSet copy = new BoundSet();
 
 		copy.captureConversions.addAll(captureConversions);
-		for (InferenceVariable inferenceVariable : inferenceVariableBounds.keySet())
-			copy.addInferenceVariableBounds(inferenceVariable, inferenceVariableBounds.get(inferenceVariable).copyInto(copy));
+		for (Entry<InferenceVariable, InferenceVariableBoundsImpl> inferenceVariable : inferenceVariableBounds.entrySet())
+			copy.addInferenceVariableBounds(inferenceVariable.getKey(), inferenceVariable.getValue().copyInto(copy));
 
 		return copy;
 	}
@@ -290,9 +291,9 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 					captureConversion.withInferenceVariableSubstitution(inferenceVariableSubstitutions));
 
 		captureConversions.stream().forEach(copy.captureConversions::add);
-		for (InferenceVariable inferenceVariable : inferenceVariableBounds.keySet()) {
-			copy.addInferenceVariableBounds(inferenceVariableSubstitutions.get(inferenceVariable), inferenceVariableBounds
-					.get(inferenceVariable).copyInto(copy).withInferenceVariableSubstitution(inferenceVariableSubstitutions));
+		for (Entry<InferenceVariable, InferenceVariableBoundsImpl> inferenceVariable : inferenceVariableBounds.entrySet()) {
+			copy.addInferenceVariableBounds(inferenceVariableSubstitutions.get(inferenceVariable.getKey()), inferenceVariable
+					.getValue().copyInto(copy).withInferenceVariableSubstitution(inferenceVariableSubstitutions));
 		}
 
 		copy.valid = valid;
@@ -370,8 +371,8 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	 *         which has a valid instantiation.
 	 */
 	public Set<InferenceVariable> getInstantiatedVariables() {
-		return inferenceVariableBounds.keySet().stream().filter(i -> getBoundsOn(i).getInstantiation().isPresent())
-				.collect(Collectors.toSet());
+		return inferenceVariableBounds.entrySet().stream().filter(i -> i.getValue().getInstantiation().isPresent())
+				.map(Entry::getKey).collect(Collectors.toSet());
 	}
 
 	/**

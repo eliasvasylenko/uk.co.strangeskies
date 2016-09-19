@@ -40,11 +40,7 @@ import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;
  * @author Elias N Vasylenko
  */
 @SuppressWarnings("javadoc")
-@PropertyConfiguration(
-		keyCase = KeyCase.LOWER,
-		keySplitString = ".",
-		evaluation = Evaluation.IMMEDIATE,
-		defaults = Defaults.IGNORE)
+@PropertyConfiguration(keyCase = KeyCase.LOWER, keySplitString = ".", evaluation = Evaluation.IMMEDIATE, defaults = Defaults.IGNORE)
 public interface ReflectionProperties extends Properties<ReflectionProperties> {
 	Localized<String> unsupportedType(Type type);
 
@@ -140,6 +136,8 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 	Localized<String> cannotOverrideMethod(Method overriddenMethod);
 
 	Localized<String> incompatibleReturnTypes(Type override, Method inherited);
+
+	Localized<String> incompatibleOverride(MethodDefinition<?, ?> override);
 
 	Localized<String> incompatibleParameterTypes(Type[] parameterTypes, Method inherited);
 

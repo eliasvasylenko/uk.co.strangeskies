@@ -54,7 +54,7 @@ public class ClassDefinitionTest {
 
 	public interface NumberMethodSubType extends NumberMethod<String> {}
 
-	// @Test TODO
+	@Test
 	public void runnableClassInvocationTest() {
 		ClassDefinition<? extends Runnable> classDefinition = declareClass(TEST_CLASS_NAME).withSuperType(Runnable.class)
 				.define();

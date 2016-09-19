@@ -18,9 +18,6 @@
  */
 package uk.co.strangeskies.reflection;
 
-import static java.lang.reflect.Modifier.isFinal;
-import static java.lang.reflect.Modifier.isPrivate;
-
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
@@ -32,12 +29,12 @@ import java.util.stream.Collectors;
 
 public class MethodOverride {
 	private final ClassDefinition<?> classDefinition;
-	private final MethodOverrideSignature signature;
+	private final MethodSignature signature;
 	private final Set<Method> interfaceMethods;
 	private Method classMethod;
 	private MethodDefinition<?, ?> override;
 
-	public MethodOverride(ClassDefinition<?> classDefinition, MethodOverrideSignature signature) {
+	public MethodOverride(ClassDefinition<?> classDefinition, MethodSignature signature) {
 		this.classDefinition = classDefinition;
 		this.signature = signature;
 		interfaceMethods = new HashSet<>();
@@ -54,16 +51,14 @@ public class MethodOverride {
 	public void validate() {
 		if (override == null) {
 			if (classMethod == null) {
-				if (!interfaceMethods.isEmpty()) {
-					Set<Method> defaultMethods = interfaceMethods.stream().filter(m -> m.isDefault()).collect(Collectors.toSet());
-					if (defaultMethods.size() != 1) {
-						throw new ReflectionException(p -> p.mustOverrideMethods(interfaceMethods));
-					}
-
-					Method defaultMethod = defaultMethods.iterator().next();
-
-					validateOverride(defaultMethod);
+				Set<Method> defaultMethods = interfaceMethods.stream().filter(m -> m.isDefault()).collect(Collectors.toSet());
+				if (defaultMethods.size() != 1) {
+					throw new ReflectionException(p -> p.mustOverrideMethods(interfaceMethods));
 				}
+
+				Method defaultMethod = defaultMethods.iterator().next();
+
+				validateOverride(defaultMethod);
 			} else {
 				if (Modifier.isAbstract(classMethod.getModifiers())) {
 					throw new ReflectionException(p -> p.mustOverrideMethods(Arrays.asList(classMethod)));
@@ -102,7 +97,8 @@ public class MethodOverride {
 			throw new ReflectionException(p -> p.duplicateMethodSignature(override));
 		}
 
-		if (classMethod != null && (isPrivate(classMethod.getModifiers()) || isFinal(classMethod.getModifiers()))) {
+		if (classMethod != null
+				&& (Modifier.isPrivate(classMethod.getModifiers()) || Modifier.isFinal(classMethod.getModifiers()))) {
 			throw new ReflectionException(p -> p.cannotOverrideMethod(classMethod));
 		}
 

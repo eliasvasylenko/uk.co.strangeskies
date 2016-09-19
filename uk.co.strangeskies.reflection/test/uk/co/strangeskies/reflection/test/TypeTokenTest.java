@@ -332,8 +332,8 @@ public class TypeTokenTest {
 				.resolveMethodOverload("method", new TypeToken<Collection<? super Integer>>() {}).infer());
 		System.out.println();
 
-		System.out.println(new TypeToken<B>() {}.resolveMethodOverload("okay", new TypeToken<Set<InvocableMember<H, ?>>>() {},
-				new TypeToken<List<? extends Type>>() {}));
+		System.out.println(new TypeToken<B>() {}.resolveMethodOverload("okay",
+				new TypeToken<Set<InvocableMember<H, ?>>>() {}, new TypeToken<List<? extends Type>>() {}));
 		System.out.println();
 
 		System.out.println(new TypeToken<Collection<H>>() {}.resolveSubtypeParameters(HashSet.class));
@@ -381,13 +381,14 @@ public class TypeTokenTest {
 		System.out.println(
 				AnnotatedTypes.wrap(new TypeToken<@Infer List<? extends Number>>() {}.getClass().getAnnotatedSuperclass()));
 		System.out.println(new TypeToken<@Infer List<@Infer ? extends Number>>() {});
-		System.out.println(new uk.co.strangeskies.reflection.TypeToken<@Infer List<@Infer ? extends Number>>() {}.getExtending(Wildcards.INFER));
+		System.out.println(new uk.co.strangeskies.reflection.TypeToken<@Infer List<@Infer ? extends Number>>() {}
+				.getExtending(Wildcards.INFER));
 		System.out.println(new TypeToken<@Infer List<? extends Number>>() {}.getExtending(Wildcards.INFER));
 		System.out.println(
 				new TypeToken<@Infer List<? extends Number>>() {}.getExtending(Wildcards.INFER).getResolver().getBounds());
 		System.out.println(new TypeToken<@Infer List<? extends Number>>() {}.getExtending(Wildcards.INFER)
-				.resolveMethodOverload("add", Integer.class).getOwnerType().resolveMethodOverload("add", Double.class)
-				.infer().getOwnerType());
+				.resolveMethodOverload("add", Integer.class).getOwnerType().resolveMethodOverload("add", Double.class).infer()
+				.getOwnerType());
 		System.out.println();
 
 		System.out.println(new TypeToken<@Infer Collection<? extends String>>() {}.getExtending(Wildcards.INFER)
@@ -419,7 +420,8 @@ public class TypeTokenTest {
 
 		System.out.println(new uk.co.strangeskies.reflection.TypeToken<List<?>>() {}.getAnnotatedDeclaration());
 		System.out.println(new TypeToken<Set<String>>() {}
-				.resolveMethodOverload("addAll", new uk.co.strangeskies.reflection.TypeToken<@Infer List<@Infer ?>>() {}).inferParameterTypes());
+				.resolveMethodOverload("addAll", new uk.co.strangeskies.reflection.TypeToken<@Infer List<@Infer ?>>() {})
+				.inferParameterTypes());
 		System.out.println();
 
 		System.out.println(new TypeToken<@Infer Set<?>>() {}
@@ -639,6 +641,11 @@ public class TypeTokenTest {
 		System.out.println();
 
 		/*- TODO Current open question on compiler-dev
+		 * 
+		 * creates an intersection type between C1<CAP#1 extends C2<String>> and C2<String> or
+		 * something iirc. So I guess we need to realize that CAP#1 can only be C2<String>
+		 * exactly, by lifting the resolved type for T = C2<String> from the bound on the capture
+		 * 
 		System.out.println(new TypeToken<C1<? extends C2<String>>>() {});
 		System.out.println();
 		
