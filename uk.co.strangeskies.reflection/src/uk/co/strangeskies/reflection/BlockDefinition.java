@@ -54,8 +54,6 @@ public abstract class BlockDefinition<S extends BlockDefinition<S>> {
 	}
 
 	public Object execute(State state) {
-		state = state.enclose(scope);
-
 		for (Statement statement : statements) {
 			statement.execute(state);
 

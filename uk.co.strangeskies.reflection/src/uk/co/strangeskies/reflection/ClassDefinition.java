@@ -210,10 +210,15 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 		@SuppressWarnings("unchecked")
 		T instance = (T) Proxy.newProxyInstance(classLoader, rawTypes.toArray(new Class<?>[rawTypes.size()]),
 				(proxy, method, args) -> {
+					/*
+					 * TODO Deal with this ridiculous method signature wrangling by
+					 * generating synthetic bridge methods. this problem was already
+					 * solved, Eli!
+					 */
 					MethodOverride override = methods.get(new MethodOverrideSignature(method.getName(),
 							getInvocable(method).getParameters().stream().map(Types::getRawType).toArray(Class<?>[]::new)));
 
-					return override.getOverride().map(o -> o.body().execute(state.get())).orElseGet(() -> {
+					return override.getOverride().map(o -> (Object) o.invoke(state.get(), args)).orElseGet(() -> {
 						try {
 							return override.getInterfaceMethods().stream().filter(Method::isDefault).findAny().get().invoke(proxy,
 									args);

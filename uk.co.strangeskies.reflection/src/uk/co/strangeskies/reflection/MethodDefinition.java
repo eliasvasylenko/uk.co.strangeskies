@@ -119,4 +119,21 @@ public class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefini
 		 * TODO check all expressions in body are in scope
 		 */
 	}
+
+	@SuppressWarnings("unchecked")
+	public T invoke(State state, Object[] arguments) {
+		state = state.enclose(scope);
+
+		int i = 0;
+		for (VariableExpression<?> parameter : parameters) {
+			setParameterUnsafe(state, parameter, arguments[i]);
+		}
+
+		return (T) body().execute(state);
+	}
+
+	@SuppressWarnings("unchecked")
+	private <T> void setParameterUnsafe(State state, VariableExpression<T> parameter, Object argument) {
+		parameter.evaluate(state).set((T) argument);
+	}
 }

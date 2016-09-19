@@ -53,7 +53,7 @@ public abstract class ScopeImpl implements Scope {
 	}
 
 	protected <T> VariableExpression<T> declareVariable(TypeToken<T> type) {
-		VariableExpression<T> variable = new LocalVariableExpression<>(this, type);
+		VariableExpression<T> variable = LocalVariableExpression.over(this, type);
 
 		variableExpressions.add(variable);
 

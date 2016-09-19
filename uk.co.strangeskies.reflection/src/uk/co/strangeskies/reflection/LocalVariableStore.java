@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class LocalVariableStore {
-	private final Map<LocalVariableExpression<?>, Object> variableValues = new HashMap<>();
+	private final Map<VariableExpression<?>, Object> variableValues = new HashMap<>();
 
 	@SuppressWarnings("unchecked")
 	public <T> T get(LocalVariableExpression<T> variableResult) {
@@ -30,11 +30,15 @@ public class LocalVariableStore {
 	}
 
 	public <T> void set(LocalVariableExpression<T> variableResult, T value) {
-		variableValues.put(variableResult, value);
+		setUnsafe(variableResult, value);
 	}
 
 	public <T> LocalVariableStore with(LocalVariableExpression<T> variableResult, T value) {
-		set(variableResult, value);
+		setUnsafe(variableResult, value);
 		return this;
+	}
+
+	public void setUnsafe(VariableExpression<?> variableResult, Object value) {
+		variableValues.put(variableResult, value);
 	}
 }
