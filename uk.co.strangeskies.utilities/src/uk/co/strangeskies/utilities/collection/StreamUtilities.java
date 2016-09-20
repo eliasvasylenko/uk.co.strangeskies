@@ -23,12 +23,14 @@ import static java.util.stream.Stream.of;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -41,12 +43,43 @@ public class StreamUtilities {
 	private StreamUtilities() {}
 
 	/**
+	 * @param stream
+	 *          an ordered stream
+	 * @param <T>
+	 *          the type of the stream elements
+	 * @return a new stream over the elements contained in the given stream in
+	 *         reverse order
+	 */
+	public static <T> Stream<T> reverse(Stream<? extends T> stream) {
+		List<T> collection = stream.collect(Collectors.toList());
+
+		Iterator<T> iterator = new Iterator<T>() {
+			private int index = collection.size();
+
+			@Override
+			public boolean hasNext() {
+				return index > 0;
+			}
+
+			@Override
+			public T next() {
+				return collection.get(--index);
+			}
+		};
+
+		return StreamSupport.stream(
+				Spliterators.spliterator(iterator, collection.size(), Spliterator.ORDERED | Spliterator.IMMUTABLE), false);
+	}
+
+	/**
 	 * A bit like {@link Stream#iterate(Object, UnaryOperator)} but not
 	 * <em>completely and utterly useless</em> because it actually supports
 	 * termination.
 	 * 
 	 * TODO should hopefully be made redundant by takeWhile in Java 9
 	 * 
+	 * @param <T>
+	 *          the type of the stream elements
 	 * @param root
 	 *          the root element
 	 * @param mapping
@@ -62,6 +95,8 @@ public class StreamUtilities {
 	 * <em>completely and utterly useless</em> because it actually supports
 	 * termination.
 	 * 
+	 * @param <T>
+	 *          the type of the stream elements
 	 * @param root
 	 *          the root element
 	 * @param mapping
@@ -77,6 +112,8 @@ public class StreamUtilities {
 	 * <em>completely and utterly useless</em> because it actually supports
 	 * termination.
 	 * 
+	 * @param <T>
+	 *          the type of the stream elements
 	 * @param root
 	 *          the root element
 	 * @param mapping
@@ -110,6 +147,8 @@ public class StreamUtilities {
 	 * Generate a stream which recursively traverses depth-first over the elements
 	 * of some nested data structure starting from its root.
 	 * 
+	 * @param <T>
+	 *          the type of the stream elements
 	 * @param root
 	 *          the root element
 	 * @param mapping
@@ -125,6 +164,8 @@ public class StreamUtilities {
 	 * Generate a stream which recursively traverses depth-first over the elements
 	 * of some nested data structure starting from those in a given stream.
 	 * 
+	 * @param <T>
+	 *          the type of the stream elements
 	 * @param stream
 	 *          the stream of initial elements
 	 * @param mapping
@@ -141,6 +182,8 @@ public class StreamUtilities {
 	 * Generate a stream which recursively traverses depth-first over the elements
 	 * of some nested data structure starting from its root.
 	 * 
+	 * @param <T>
+	 *          the type of the stream elements
 	 * @param root
 	 *          the root element
 	 * @param mapping
@@ -159,6 +202,8 @@ public class StreamUtilities {
 	 * <p>
 	 * Repeated elements will be ignored.
 	 * 
+	 * @param <T>
+	 *          the type of the stream elements
 	 * @param stream
 	 *          the stream of initial elements
 	 * @param mapping
