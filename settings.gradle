@@ -5,18 +5,18 @@
  */
 
 import aQute.bnd.build.Workspace
+import aQute.bnd.osgi.Constants
 
 /* Add bnd gradle plugin as a script dependency */
 buildscript {
   repositories {
     maven {
-      url 'https://bndtools.ci.cloudbees.com/job/bnd.master/lastSuccessfulBuild/artifact/dist/bundles'
+      url uri(bnd_repourl)
     }
     jcenter()
   }
   dependencies {
-    classpath 'biz.aQute.bnd:biz.aQute.bnd.gradle:3+'
-    classpath 'biz.aQute.bnd:biz.aQute.bnd:3+'
+    classpath bnd_plugin
   }
   /* Pass bnd gradle plugin classpath to rootProject once created */
   def bndPlugin = files(configurations.classpath.files)
@@ -26,10 +26,9 @@ buildscript {
 }
 
 /* Initialize the bnd workspace */
-def workspace = Workspace.getWorkspace(rootDir, bnd_cnf)
-if (workspace == null) {
-  throw new GradleException("Unable to load workspace ${rootDir}/${bnd_cnf}")
-}
+Workspace.setDriver(Constants.BNDDRIVER_GRADLE)
+Workspace.addGestalt(Constants.GESTALT_BATCH, null)
+def workspace = new Workspace(rootDir, bnd_cnf).setOffline(startParameter.offline)
 
 /* Add cnf project to the graph */
 include bnd_cnf

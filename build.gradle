@@ -6,6 +6,7 @@
  */
 
 import aQute.bnd.build.Workspace
+import aQute.bnd.osgi.Constants
 
 /* Add bnd gradle plugin as a script dependency */
 buildscript {
@@ -28,14 +29,13 @@ buildscript {
 
 task wrapper(type: Wrapper) {
   jarFile = rootProject.file('.gradle-wrapper/gradle-wrapper.jar')
-  gradleVersion = '2.10'
+  gradleVersion = '3.1'
 }
 
 /* Initialize the bnd workspace */
-ext.bndWorkspace = Workspace.getWorkspace(rootDir, bnd_cnf)
-if (bndWorkspace == null) {
-  throw new GradleException("Unable to load workspace ${rootDir}/${bnd_cnf}")
-}
+Workspace.setDriver(Constants.BNDDRIVER_GRADLE)
+Workspace.addGestalt(Constants.GESTALT_BATCH, null)
+ext.bndWorkspace = new Workspace(rootDir, bnd_cnf).setOffline(gradle.startParameter.offline)
 
 ext.cnf = rootProject.project(bnd_cnf)
 
@@ -144,50 +144,3 @@ githubPages {
     from aggregateJavadoc
   }
 }
-
-/* Artifactory Publication */
-configure(bndProjects()) {
-  apply plugin: 'com.jfrog.artifactory'
-  apply plugin: 'maven-publish'
-
-  artifactory {
-    contextUrl = 'https://oss.jfrog.org'
-
-    publish {
-      repository {
-        repoKey = 'oss-snapshot-local'
-        maven = true
-
-        if (project.hasProperty('jfrogUser') && project.hasProperty('jfrogPassword')) {
-          username = jfrogUser
-          password = jfrogPassword
-        }
-      }
-
-      defaults {
-        project.bnd.project.getSubBuilders().each {
-          publications("maven_${it.getBsn()}")
-        }
-      }
-    }
-  }
-
-  artifactoryPublish { 
-    dependsOn jar
-    properties = ['bintray.package': project.name]
-  }
-
-  publishing {
-    publications {
-      bnd.project.getSubBuilders().each {
-        builder -> "maven_${builder.getBsn()}"(MavenPublication) {
-          artifactId = builder.getBsn()
-          version = builder.getProperty('Bundle-Version').replaceAll('.[^.]+$', '-SNAPSHOT')
-
-          artifact new File("${buildDir}/${artifactId}.jar")
-        }
-      }
-    }
-  }
-}
-

@@ -37,31 +37,31 @@ Bundle-Version: ${strangeskies-version}.${tstamp}
 ## To enable baselining, uncomment the following lines:
 # -baseline: *
 -buildrepo: Local
--releaserepo: Release
+-releaserepo: StrangeSkies
 -pom: true,\
 		version = ${versionmask;===;${@version}}-SNAPSHOT
 
--plugin.5.Managed: \
+-plugin.Managed: \
 \
         aQute.bnd.deployer.repository.LocalIndexedRepo; \
             name                =       Managed ; \
             pretty              =       true ; \
             local               =       ${build}/local
 
--plugin.6.Local: \
+-plugin.Local: \
 \
 		aQute.bnd.repository.maven.provider.MavenBndRepository; \
 			name				=		Local; \
 			index				=		${.}/local.maven
 
--plugin.9.Release: \
+-plugin.Release: \
 \
 		aQute.bnd.repository.maven.provider.MavenBndRepository; \
 			name				=		StrangeSkies; \
 			index				=		${.}/strangeskies.maven; \
 			releaseUrl			=		http://oss.jfrog.org/libs-snapshot/
 
--plugin.12.Clojars:\
+-plugin.Clojars:\
 \
 		aQute.bnd.repository.maven.provider.MavenBndRepository; \
 			name				=		Clojars; \
