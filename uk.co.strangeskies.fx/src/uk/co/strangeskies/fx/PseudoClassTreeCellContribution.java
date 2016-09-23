@@ -34,14 +34,18 @@ import javafx.scene.Node;
 public interface PseudoClassTreeCellContribution<T> extends TreeCellContribution<T> {
 	@Override
 	default <U extends T> Node configureCell(TreeItemData<U> data, Node content) {
-		content.pseudoClassStateChanged(PseudoClass.getPseudoClass(getPseudoClassName()), true);
+		content.pseudoClassStateChanged(PseudoClass.getPseudoClass(getPseudoClassName(data)), true);
 		return content;
 	}
 
 	/**
+	 * @param <U>
+	 *          the specific type of the tree item
+	 * @param data
+	 *          the data contents of the tree item
 	 * @return the string for the pseudo-class to apply to the node
 	 */
-	default String getPseudoClassName() {
+	default <U extends T> String getPseudoClassName(TreeItemData<U> data) {
 		return getClass().getSimpleName();
 	}
 }
