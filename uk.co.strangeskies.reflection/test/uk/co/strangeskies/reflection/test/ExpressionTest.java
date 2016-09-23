@@ -26,11 +26,12 @@ import org.junit.Test;
 import uk.co.strangeskies.reflection.FieldMember;
 import uk.co.strangeskies.reflection.InvocableMember;
 import uk.co.strangeskies.reflection.State;
-import uk.co.strangeskies.reflection.StaticScope;
 import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.ValueExpression;
 import uk.co.strangeskies.reflection.ValueResult;
 import uk.co.strangeskies.reflection.VariableExpression;
+import uk.co.strangeskies.reflection.VariableResult;
+import uk.co.strangeskies.reflection.VoidBlockDefinition;
 
 @SuppressWarnings("javadoc")
 public class ExpressionTest {
@@ -73,41 +74,76 @@ public class ExpressionTest {
 		};
 	}
 
+	private static VariableExpression<Object> resultExpression() {
+		return new VariableExpression<Object>() {
+			private Object value;
+
+			@Override
+			public TypeToken<Object> getType() {
+				return new TypeToken<Object>() {};
+			}
+
+			public Object getValue() {
+				return value;
+			}
+
+			public void setValue(Object value) {
+				this.value = value;
+			}
+
+			@Override
+			public VariableResult<Object> evaluate(State state) {
+				return new VariableResult<Object>() {
+					@Override
+					public Object get() {
+						return getValue();
+					}
+
+					@Override
+					public void set(Object value) {
+						setValue(value);
+					}
+				};
+			}
+		};
+	}
+
 	@Test
 	public void fieldAssignmentTest() {
-		VariableExpression<TestClass> variable = scope.declareVariable(TestClass.class);
-
-		State state = scope.initializeState();
 		TestClass instance = new TestClass();
 
-		variable.assign(valueExpression(instance)).evaluate(state);
-		variable.accessField(TEST_FIELD).assign(literal("value")).evaluate(state);
+		VoidBlockDefinition block = new VoidBlockDefinition();
+		VariableExpression<TestClass> variable = block.declareVariable(TestClass.class, valueExpression(instance));
+
+		block.addExpression(variable.accessField(TEST_FIELD).assign(literal("value")));
+		block.execute(State.create());
 
 		Assert.assertEquals("value", instance.field);
 	}
 
 	@Test
 	public void localAssignmentTest() {
-		StaticScope scope = StaticScope.create();
-		VariableExpression<String> local = scope.declareVariable(STRING_TYPE);
+		VoidBlockDefinition block = new VoidBlockDefinition();
+		VariableExpression<String> local = block.declareVariable(STRING_TYPE);
+		VariableExpression<Object> result = resultExpression();
 
-		State state = scope.initializeState();
+		block.addExpression(local.assign(literal("value")));
+		block.addExpression(result.assign(local));
+		block.execute(State.create());
 
-		local.assign(literal("value")).evaluate(state);
-
-		Assert.assertEquals("value", local.evaluate(state).get());
+		Assert.assertEquals("value", result.evaluate(null).get());
 	}
 
 	@Test
 	public void localMethodInvocationTest() {
-		StaticScope scope = StaticScope.create();
-		VariableExpression<TestClass> variable = scope.declareVariable(TestClass.class);
+		VoidBlockDefinition block = new VoidBlockDefinition();
+		VariableExpression<TestClass> variable = block.declareVariable(TestClass.class);
 
-		State state = scope.initializeState();
 		TestClass instance = new TestClass();
 
-		variable.assign(valueExpression(instance)).evaluate(state);
-		variable.invokeMethod(TEST_SET_METHOD, literal("value")).evaluate(state);
+		block.addExpression(variable.assign(valueExpression(instance)));
+		block.addExpression(variable.invokeMethod(TEST_SET_METHOD, literal("value")));
+		block.execute(State.create());
 
 		Assert.assertEquals("value", instance.field);
 	}

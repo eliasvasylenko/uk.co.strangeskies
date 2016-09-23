@@ -22,13 +22,27 @@ package uk.co.strangeskies.reflection;
  * @author Elias N Vasylenko
  */
 public interface State {
+	static State create() {
+		return new StateImpl(null, null);
+	}
+
+	static State createOver(ReflectiveInstance<?> receiver) {
+		return new StateImpl(receiver, null);
+	}
+
 	default State enclose() {
-		return new StateImpl(this);
+		return new StateImpl(null, this);
+	}
+
+	default State encloseOver(ReflectiveInstance<?> receiver) {
+		return new StateImpl(receiver, this);
 	}
 
 	<I> I getEnclosingInstance(ClassDefinition<I> parentScope);
 
-	<T> T getEnclosedLocal(LocalValueExpression<T> value);
+	<T> void declareLocal(LocalValueExpression<T> variable, T initialValue);
+
+	<T> T getEnclosedLocal(LocalValueExpression<T> variable);
 
 	<T> void setEnclosedLocal(LocalVariableExpression<T> variable, T value);
 

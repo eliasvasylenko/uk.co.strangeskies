@@ -12,6 +12,8 @@ package uk.co.strangeskies.reflection;
  *          the actual type of the instance
  */
 interface ReflectiveInstance<T> {
+	ClassDefinition<T> getReflectiveClassDefinition();
+
 	<U> U getReflectiveFieldValue(FieldDefinition<? super T, U> field);
 
 	<U> void setReflectiveFieldValue(FieldDefinition<? super T, U> field, U value);

@@ -23,36 +23,42 @@ import java.util.Map;
 
 public class StateImpl implements State {
 	private final State enclosingState;
+	private final ReflectiveInstance<?> receiver;
 	private final Map<LocalValueExpression<?>, Object> locals;
 
 	private boolean returned;
 	private Object returnValue;
 
-	protected StateImpl() {
-		this(null);
-	}
-
-	protected StateImpl(State enclosingState) {
+	public StateImpl(ReflectiveInstance<?> receiver, State enclosingState) {
+		this.receiver = receiver;
 		this.enclosingState = enclosingState;
 
 		locals = new HashMap<>();
 	}
 
+	@Override
+	public <T> void declareLocal(LocalValueExpression<T> variable, T value) {
+		if (locals.containsKey(variable)) {
+			throw new ReflectionException(p -> p.cannotRedefineVariable(variable));
+		}
+		locals.put(variable, value);
+	}
+
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> T getEnclosedLocal(LocalValueExpression<T> value) {
-		if (locals.containsKey(value)) {
-			return (T) locals.get(value);
+	public <T> T getEnclosedLocal(LocalValueExpression<T> variable) {
+		if (locals.containsKey(variable)) {
+			return (T) locals.get(variable);
 		} else if (enclosingState != null) {
-			return enclosingState.getEnclosedLocal(value);
+			return enclosingState.getEnclosedLocal(variable);
 		} else {
-			throw new ReflectionException(p -> p.undefinedVariable(value));
+			throw new ReflectionException(p -> p.undefinedVariable(variable));
 		}
 	}
 
 	@Override
 	public <T> void setEnclosedLocal(LocalVariableExpression<T> variable, T value) {
-		if (locals.containsKey(value)) {
+		if (locals.containsKey(variable)) {
 			locals.put(variable, value);
 		} else if (enclosingState != null) {
 			enclosingState.setEnclosedLocal(variable, value);
@@ -61,12 +67,15 @@ public class StateImpl implements State {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public <J> J getEnclosingInstance(ClassDefinition<J> parentScope) {
-		if (enclosingState != null) {
-			return enclosingState.getEnclosingInstance(parentScope);
+	public <J> J getEnclosingInstance(ClassDefinition<J> receiverClass) {
+		if (receiver.getReflectiveClassDefinition() == receiverClass) {
+			return (J) receiver;
+		} else if (enclosingState != null) {
+			return enclosingState.getEnclosingInstance(receiverClass);
 		} else {
-			throw new ReflectionException(p -> p.cannotResolveEnclosingScope(parentScope));
+			throw new ReflectionException(p -> p.cannotResolveEnclosingInstance(receiverClass));
 		}
 	}
 

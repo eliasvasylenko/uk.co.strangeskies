@@ -156,6 +156,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	@Target(ElementType.TYPE_USE)
 	public @interface Capture {}
 
+	private static final TypeToken<?> NULL_TYPE_TOKEN = new TypeToken<>(new Resolver(), (AnnotatedType) null,
+			(Type) null);
+
 	// private static final ComputingMap<AnnotatedType, Pair<Resolver, Type>>
 	// RESOLVER_CACHE = new LRUCacheComputingMap<>(
 	// annotatedType -> incorporateAnnotatedType(new Resolver(), annotatedType),
@@ -221,20 +224,6 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 		this.resolver = resolver;
 		this.type = type;
 	}
-
-	/*- TODO
-	@SuppressWarnings("unchecked")
-	private TypeToken(Resolver resolver, Class<?> type) {
-		declaration = annotateWildcards(type, wildcards);
-	
-		this.resolver = resolver;
-	
-		if (type instanceof Class && resolver != null)
-			resolver.incorporateTypeParameters((Class<?>) type);
-		else
-			;
-	}
-	 */
 
 	private AnnotatedType resolveAnnotatedSuperclassParameter() {
 		Class<?> subclass = getClass();
@@ -532,6 +521,18 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 */
 	public static TypeToken<?> over(Type type, Wildcards wildcards) {
 		return new TypeToken<>(type, wildcards);
+	}
+
+	/**
+	 * Create a TypeToken over the null type.
+	 * 
+	 * @param <T>
+	 *          the target type
+	 * @return a TypeToken over the null type
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> TypeToken<T> overNull() {
+		return (TypeToken<T>) NULL_TYPE_TOKEN;
 	}
 
 	/**

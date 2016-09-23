@@ -39,6 +39,7 @@ import java.util.TreeSet;
 import java.util.stream.Stream;
 
 import org.junit.Assert;
+import org.junit.Test;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.AnnotatedWildcardTypes;
@@ -105,14 +106,22 @@ public class TypeTokenTest {
 		}
 	}
 
-	public static void main(String[] args) {
-		TypeTokenTest test = new TypeTokenTest();
+	@Test
+	public void nullTypeTokenTest() {
+		TypeToken<?> nullType = TypeToken.overNull();
+		TypeToken<String> stringType = new TypeToken<String>() {};
 
-		test.makeTestsFromThese();
-		test.hugeTest1();
-		test.huge2Test();
+		Assert.assertTrue(nullType.isAssignableTo(String.class));
+		Assert.assertTrue(nullType.isAssignableFrom(String.class));
+
+		Assert.assertTrue(nullType.isAssignableTo(stringType));
+		Assert.assertTrue(nullType.isAssignableFrom(stringType));
+
+		Assert.assertTrue(stringType.isAssignableTo(nullType));
+		Assert.assertTrue(stringType.isAssignableFrom(nullType));
 	}
 
+	@Test
 	public void makeTestsFromThese() {
 		System.out.println("#" + Types.leastUpperBound(Integer.class, Double.class,
 				new TypeToken<Comparable<? extends Number>>() {}.getType()));
@@ -151,7 +160,7 @@ public class TypeTokenTest {
 						.resubstituteCapturedWildcards().toString());
 	}
 
-	// @Test
+	@Test
 	public void hugeTest1() {
 		System.out.println(new TypeToken<HashSet<String>>() {}.resolveSupertypeParameters(Set.class));
 		System.out.println();
@@ -271,7 +280,7 @@ public class TypeTokenTest {
 		System.out.println();
 	}
 
-	// @Test
+	@Test
 	public <H extends C2<H>> void huge2Test() {
 		System.out.println("<T extends Number, U extends List<? super T>> U method4(Collection<? extends T> a, U b)");
 		System.out.println("((B) null).method4((Collection<? extends Integer>) null, (List<? super Number>) null)");

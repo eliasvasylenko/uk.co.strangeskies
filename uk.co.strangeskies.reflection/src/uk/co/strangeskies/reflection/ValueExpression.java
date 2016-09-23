@@ -22,6 +22,25 @@ import java.util.Arrays;
 import java.util.List;
 
 public interface ValueExpression<T> extends Expression {
+	static <T> ValueExpression<T> nullExpression() {
+		return new ValueExpression<T>() {
+			@Override
+			public ValueResult<T> evaluate(State state) {
+				return new ValueResult<T>() {
+					@Override
+					public T get() {
+						return null;
+					}
+				};
+			}
+
+			@Override
+			public TypeToken<T> getType() {
+				return TypeToken.overNull();
+			}
+		};
+	}
+
 	@Override
 	ValueResult<T> evaluate(State state);
 

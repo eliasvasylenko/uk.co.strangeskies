@@ -104,6 +104,11 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 		private T instance;
 		private final Map<FieldDefinition<?, ?>, Object> fieldValues = new HashMap<>();
 
+		@Override
+		public ClassDefinition<T> getReflectiveClassDefinition() {
+			return ClassDefinition.this;
+		}
+
 		@SuppressWarnings("unchecked")
 		@Override
 		public <U> U getReflectiveFieldValue(FieldDefinition<? super T, U> field) {
@@ -154,7 +159,7 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 		methods = new HashMap<>();
 		getSuperTypes().stream().flatMap(t -> t.getRawTypes().stream()).flatMap(t -> Arrays.stream(t.getMethods()))
 				.forEach(this::inheritMethod);
-		StreamUtilities.<Class<?>>iterate(getSuperClass(), Class::getSuperclass)
+		StreamUtilities.<Class<?>> iterate(getSuperClass(), Class::getSuperclass)
 				.flatMap(c -> Arrays.stream(c.getDeclaredMethods())).forEach(this::inheritMethod);
 
 		this.receiverExpression = new ValueExpression<T>() {
@@ -254,7 +259,7 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 					MethodOverride<T> override = methods.get(new MethodSignature(method));
 
 					if (override.getOverride().isPresent()) {
-						return override.getOverride().get().invoke((ReflectiveInstance<T>) this, args);
+						return override.getOverride().get().invoke((ReflectiveInstance<T>) proxy, args);
 					} else {
 						try {
 							return override.getInterfaceMethods().stream().filter(Method::isDefault).findAny().get().invoke(proxy,

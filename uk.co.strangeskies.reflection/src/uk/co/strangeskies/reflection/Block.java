@@ -39,8 +39,6 @@ public abstract class Block {
 	}
 
 	public void execute(State state) {
-		state = state.enclose();
-
 		for (Statement statement : statements) {
 			statement.execute(state);
 		}

@@ -48,22 +48,40 @@ public abstract class BlockDefinition<S extends BlockDefinition<S>> implements S
 	}
 
 	public <T> VariableExpression<T> declareVariable(Class<T> type) {
-		return declareVariable(TypeToken.over(type));
+		return declareVariable(type, ValueExpression.nullExpression());
 	}
 
 	public <T> VariableExpression<T> declareVariable(TypeToken<T> type) {
-		return new LocalVariableExpression<>(type);
+		return declareVariable(type, ValueExpression.nullExpression());
 	}
 
-	public <T> ValueExpression<T> declareValue(Class<T> type) {
-		return declareValue(TypeToken.over(type));
+	public <T> VariableExpression<T> declareVariable(Class<T> type, ValueExpression<? extends T> value) {
+		return declareVariable(TypeToken.over(type), value);
 	}
 
-	public <T> ValueExpression<T> declareValue(TypeToken<T> type) {
-		return new LocalValueExpression(type);
+	public <T> VariableExpression<T> declareVariable(TypeToken<T> type, ValueExpression<? extends T> value) {
+		LocalVariableExpression<T> variable = new LocalVariableExpression<>(type);
+
+		addStatement(new VariableDeclaration<>(variable, value));
+
+		return variable;
+	}
+
+	public <T> ValueExpression<T> declareValue(Class<T> type, ValueExpression<? extends T> value) {
+		return declareValue(TypeToken.over(type), value);
+	}
+
+	public <T> ValueExpression<T> declareValue(TypeToken<T> type, ValueExpression<? extends T> value) {
+		LocalValueExpression<T> variable = new LocalValueExpression<>(type);
+
+		addStatement(new VariableDeclaration<>(variable, value));
+
+		return variable;
 	}
 
 	public Object execute(State state) {
+		state = state.enclose();
+
 		for (Statement statement : statements) {
 			statement.execute(state);
 
