@@ -46,6 +46,9 @@ public class DefaultTreeCellContent extends HBox {
 	public DefaultTreeCellContent(String text, String supplementalText) {
 		build().object(this).load();
 
+		setMinWidth(0);
+		prefWidth(0);
+
 		this.text.setText(text);
 		this.supplementalText.setText(supplementalText);
 	}

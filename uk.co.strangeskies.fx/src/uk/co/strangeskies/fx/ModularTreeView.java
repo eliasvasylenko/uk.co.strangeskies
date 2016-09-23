@@ -83,6 +83,9 @@ public class ModularTreeView extends TreeView<TreeItemData<?>> {
 		addContribution(new DefaultTreeCellContribution());
 
 		addEventFilter(KeyEvent.ANY, this::filterCellKeyEvent);
+
+		setMinWidth(0);
+		prefWidth(0);
 	}
 
 	protected synchronized void filterCellKeyEvent(KeyEvent event) {

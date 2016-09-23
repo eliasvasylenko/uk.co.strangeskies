@@ -52,6 +52,9 @@ public class TreeCellImpl extends TreeCell<TreeItemData<?>> {
 	public TreeCellImpl(ModularTreeView tree) {
 		build().object(this).resource(getResource(TreeCellImpl.class)).load();
 
+		setMinWidth(0);
+		prefWidth(0);
+
 		selectedProperty().addListener(change -> {
 			tree.setCellSelected(this, isSelected());
 		});
@@ -95,6 +98,7 @@ public class TreeCellImpl extends TreeCell<TreeItemData<?>> {
 		Collections.reverse(contributions);
 
 		Node content = new HBox();
+		content.prefWidth(0);
 
 		for (TreeCellContribution<? super T> contribution : contributions) {
 			content = contribution.configureCell(item, content);
