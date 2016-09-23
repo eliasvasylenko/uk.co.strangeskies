@@ -22,19 +22,15 @@ package uk.co.strangeskies.reflection;
  * @author Elias N Vasylenko
  */
 public interface State {
-	static State over(Scope scope) {
-		return new StateImpl(scope);
+	default State enclose() {
+		return new StateImpl(this);
 	}
-
-	default State enclose(Scope scope) {
-		return new StateImpl(this, scope);
-	}
-
-	Scope getScope();
 
 	<I> I getEnclosingInstance(ClassDefinition<I> parentScope);
 
-	LocalVariableStore getEnclosingScopeVariableStore(Scope scope);
+	<T> T getEnclosedLocal(LocalValueExpression<T> value);
+
+	<T> void setEnclosedLocal(LocalVariableExpression<T> variable, T value);
 
 	void returnValue(Object value);
 

@@ -28,11 +28,9 @@ import java.util.List;
  * @author Elias N Vasylenko
  */
 public abstract class Block {
-	private final Scope scope;
 	private final List<Statement> statements;
 
-	public Block(Scope scope, List<Statement> statements) {
-		this.scope = scope;
+	public Block(List<Statement> statements) {
 		this.statements = Collections.unmodifiableList(statements);
 	}
 
@@ -41,7 +39,7 @@ public abstract class Block {
 	}
 
 	public void execute(State state) {
-		state = state.enclose(scope);
+		state = state.enclose();
 
 		for (Statement statement : statements) {
 			statement.execute(state);

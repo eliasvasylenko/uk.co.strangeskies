@@ -20,7 +20,7 @@ package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.AnnotatedType;
 
-public class FieldDeclaration<C, T> implements MemberDeclaration<C, T> {
+public class FieldDeclaration<C, T> implements MemberDeclaration<C> {
 	private final ClassDefinition<C> classDefinition;
 	private final String fieldName;
 

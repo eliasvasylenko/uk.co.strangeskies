@@ -24,10 +24,9 @@ import java.util.Collections;
 import java.util.List;
 
 public class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefinition<C, T>>
-		implements MemberDefinition<C, T> {
+		implements MemberDefinition<C> {
 	private final ClassDefinition<C> classDefinition;
 	private final String methodName;
-	private final StaticScope scope;
 
 	private final List<VariableExpression<?>> parameters;
 	private final TypeToken<T> returnType;
@@ -41,7 +40,6 @@ public class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefini
 
 		this.classDefinition = declaration.getClassDefinition();
 		this.methodName = declaration.getName();
-		this.scope = new StaticScopeImpl(classDefinition);
 
 		ArrayList<VariableExpression<?>> parameters = new ArrayList<>();
 		for (VariableExpressionProxy<?> proxy : declaration.getParameters()) {
@@ -54,7 +52,7 @@ public class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefini
 		} else {
 			this.returnType = (TypeToken<T>) TypeToken.over(declaration.getReturnType());
 		}
-		this.body = new TypedBlockDefinition<>(scope);
+		this.body = new TypedBlockDefinition<>();
 
 		overrideSignature = new MethodSignature(methodName,
 				parameters.stream().map(v -> v.getType().getRawType()).toArray(Class<?>[]::new));
@@ -78,7 +76,7 @@ public class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefini
 		TypeToken<?> typeToken = TypeToken.over(substituteTypeVariableSignatures(type));
 
 		@SuppressWarnings("unchecked")
-		VariableExpression<U> variable = (VariableExpression<U>) scope.declareVariable(typeToken);
+		VariableExpression<U> variable = (VariableExpression<U>) body.declareVariable(typeToken);
 		proxy.setComponent(variable);
 
 		return variable;
@@ -121,8 +119,8 @@ public class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefini
 	}
 
 	@SuppressWarnings("unchecked")
-	public T invoke(State state, Object[] arguments) {
-		state = state.enclose(scope);
+	public T invoke(ReflectiveInstance<C> receiver, Object[] arguments) {
+		State state = initializeState(receiver);
 
 		int i = 0;
 		for (VariableExpression<?> parameter : parameters) {
@@ -135,5 +133,19 @@ public class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefini
 	@SuppressWarnings("unchecked")
 	private <T> void setParameterUnsafe(State state, VariableExpression<T> parameter, Object argument) {
 		parameter.evaluate(state).set((T) argument);
+	}
+
+	public State initializeState(ReflectiveInstance<C> receiver) {
+		return new StateImpl() {
+			@SuppressWarnings("unchecked")
+			@Override
+			public <J> J getEnclosingInstance(ClassDefinition<J> parentScope) {
+				if (parentScope == receiver) {
+					return (J) receiver;
+				} else {
+					return super.getEnclosingInstance(parentScope);
+				}
+			}
+		};
 	}
 }

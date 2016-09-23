@@ -18,27 +18,25 @@
  */
 package uk.co.strangeskies.reflection;
 
-import java.util.HashMap;
-import java.util.Map;
+public class LocalValueExpression<T> implements ValueExpression<T> {
+	private final TypeToken<T> type;
 
-public class LocalVariableStore {
-	private final Map<VariableExpression<?>, Object> variableValues = new HashMap<>();
-
-	@SuppressWarnings("unchecked")
-	public <T> T get(LocalVariableExpression<T> variableResult) {
-		return (T) variableValues.get(variableResult);
+	LocalValueExpression(TypeToken<T> type) {
+		this.type = type;
 	}
 
-	public <T> void set(LocalVariableExpression<T> variableResult, T value) {
-		setUnsafe(variableResult, value);
+	@Override
+	public ValueResult<T> evaluate(State state) {
+		return new ValueResult<T>() {
+			@Override
+			public T get() {
+				return state.getEnclosedLocal(LocalValueExpression.this);
+			}
+		};
 	}
 
-	public <T> LocalVariableStore with(LocalVariableExpression<T> variableResult, T value) {
-		setUnsafe(variableResult, value);
-		return this;
-	}
-
-	public void setUnsafe(VariableExpression<?> variableResult, Object value) {
-		variableValues.put(variableResult, value);
+	@Override
+	public TypeToken<T> getType() {
+		return type;
 	}
 }

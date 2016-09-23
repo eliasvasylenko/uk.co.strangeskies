@@ -23,7 +23,7 @@ public class TypedBlockDefinition<T> extends BlockDefinition<TypedBlockDefinitio
 		super();
 	}
 
-	public TypedBlockDefinition(StaticScope scope) {
+	public TypedBlockDefinition(TypedBlockDefinition<T> scope) {
 		super(scope);
 	}
 
@@ -36,5 +36,10 @@ public class TypedBlockDefinition<T> extends BlockDefinition<TypedBlockDefinitio
 		});
 
 		return this;
+	}
+
+	@Override
+	public TypedBlockDefinition<T> copy() {
+		return new TypedBlockDefinition<>(this);
 	}
 }

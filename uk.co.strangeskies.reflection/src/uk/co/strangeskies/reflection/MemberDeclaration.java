@@ -18,10 +18,10 @@
  */
 package uk.co.strangeskies.reflection;
 
-public interface MemberDeclaration<C, T> {
+public interface MemberDeclaration<C> {
 	String getName();
 
 	ClassDefinition<C> getClassDefinition();
 
-	MemberDefinition<C, T> define();
+	MemberDefinition<C> define();
 }

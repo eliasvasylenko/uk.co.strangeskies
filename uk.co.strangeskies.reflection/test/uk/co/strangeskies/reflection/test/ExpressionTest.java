@@ -75,7 +75,6 @@ public class ExpressionTest {
 
 	@Test
 	public void fieldAssignmentTest() {
-		StaticScope scope = StaticScope.create();
 		VariableExpression<TestClass> variable = scope.declareVariable(TestClass.class);
 
 		State state = scope.initializeState();

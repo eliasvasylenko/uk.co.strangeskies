@@ -23,8 +23,8 @@ public class VoidBlockDefinition extends BlockDefinition<VoidBlockDefinition> {
 		super();
 	}
 
-	public VoidBlockDefinition(StaticScope scope) {
-		super(scope);
+	public VoidBlockDefinition(VoidBlockDefinition copy) {
+		super(copy);
 	}
 
 	public VoidBlockDefinition addReturnStatement() {
@@ -36,5 +36,10 @@ public class VoidBlockDefinition extends BlockDefinition<VoidBlockDefinition> {
 		});
 
 		return this;
+	}
+
+	@Override
+	public VoidBlockDefinition copy() {
+		return new VoidBlockDefinition(this);
 	}
 }

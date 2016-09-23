@@ -27,14 +27,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class MethodOverride {
-	private final ClassDefinition<?> classDefinition;
+public class MethodOverride<T> {
+	private final ClassDefinition<T> classDefinition;
 	private final MethodSignature signature;
 	private final Set<Method> interfaceMethods;
 	private Method classMethod;
-	private MethodDefinition<?, ?> override;
+	private MethodDefinition<T, ?> override;
 
-	public MethodOverride(ClassDefinition<?> classDefinition, MethodSignature signature) {
+	public MethodOverride(ClassDefinition<T> classDefinition, MethodSignature signature) {
 		this.classDefinition = classDefinition;
 		this.signature = signature;
 		interfaceMethods = new HashSet<>();
@@ -92,7 +92,7 @@ public class MethodOverride {
 		}
 	}
 
-	public void override(MethodDefinition<?, ?> override) {
+	public void override(MethodDefinition<T, ?> override) {
 		if (this.override != null) {
 			throw new ReflectionException(p -> p.duplicateMethodSignature(override));
 		}
@@ -107,7 +107,7 @@ public class MethodOverride {
 				override.getParameters().stream().map(v -> v.getType().getType()).toArray(Type[]::new));
 	}
 
-	public Optional<MethodDefinition<?, ?>> getOverride() {
+	public Optional<MethodDefinition<T, ?>> getOverride() {
 		return Optional.ofNullable(override);
 	}
 

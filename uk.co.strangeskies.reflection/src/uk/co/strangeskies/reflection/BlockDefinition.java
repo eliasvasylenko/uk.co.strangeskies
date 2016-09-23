@@ -21,28 +21,30 @@ package uk.co.strangeskies.reflection;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class BlockDefinition<S extends BlockDefinition<S>> {
-	private final StaticScope scope;
+import uk.co.strangeskies.utilities.Self;
+
+public abstract class BlockDefinition<S extends BlockDefinition<S>> implements Self<S> {
 	private final List<Statement> statements;
 
 	public BlockDefinition() {
-		this(StaticScope.create());
+		statements = new ArrayList<>();
 	}
 
-	public BlockDefinition(StaticScope scope) {
-		this.scope = scope;
-		statements = new ArrayList<>();
+	public BlockDefinition(BlockDefinition<S> copy) {
+		this();
+
+		for (Statement statement : copy.statements)
+			addStatement(statement);
 	}
 
 	public S addExpression(Expression expression) {
 		return addStatement(expression.asStatement());
 	}
 
-	@SuppressWarnings("unchecked")
 	protected S addStatement(Statement statement) {
 		statements.add(statement);
 
-		return (S) this;
+		return getThis();
 	}
 
 	public <T> VariableExpression<T> declareVariable(Class<T> type) {
@@ -50,7 +52,15 @@ public abstract class BlockDefinition<S extends BlockDefinition<S>> {
 	}
 
 	public <T> VariableExpression<T> declareVariable(TypeToken<T> type) {
-		return scope.declareVariable(type);
+		return new LocalVariableExpression<>(type);
+	}
+
+	public <T> ValueExpression<T> declareValue(Class<T> type) {
+		return declareValue(TypeToken.over(type));
+	}
+
+	public <T> ValueExpression<T> declareValue(TypeToken<T> type) {
+		return new LocalValueExpression(type);
 	}
 
 	public Object execute(State state) {

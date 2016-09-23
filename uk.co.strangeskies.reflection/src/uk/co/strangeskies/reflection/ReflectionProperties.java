@@ -121,11 +121,7 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 
 	<O, T> Localized<String> cannotSetField(O target, T value, FieldMember<O, ?> fieldMember);
 
-	Localized<String> cannotResolveEnclosingScope(Scope parentScope);
-
 	Localized<String> invalidExpressionForStatement(Expression expression);
-
-	Localized<String> invalidScopeForState();
 
 	Localized<String> cannotInstantiateClassDefinition(ClassDefinition<?> classDefinition, TypeToken<?> superType);
 
@@ -142,4 +138,6 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 	Localized<String> duplicateMethodSignature(MethodDefinition<?, ?> override);
 
 	Localized<String> mustOverrideMethods(Collection<Method> classMethod);
+
+	Localized<String> undefinedVariable(LocalValueExpression<?> variable);
 }

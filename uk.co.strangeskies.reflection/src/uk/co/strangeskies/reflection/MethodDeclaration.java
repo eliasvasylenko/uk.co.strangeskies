@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class MethodDeclaration<C, T> extends ParameterizedDeclaration implements MemberDeclaration<C, T> {
+public class MethodDeclaration<C, T> extends ParameterizedDeclaration implements MemberDeclaration<C> {
 	private final ClassDefinition<C> classDefinition;
 	private final String methodName;
 

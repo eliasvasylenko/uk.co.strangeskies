@@ -33,11 +33,9 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.collection.StreamUtilities;
 
 /**
@@ -101,14 +99,35 @@ import uk.co.strangeskies.utilities.collection.StreamUtilities;
  * @param <T>
  *          the intersection of the supertypes of the described class
  */
-public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<T>> implements Scope {
+public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<T>> {
+	class ReflectiveInstanceImpl implements ReflectiveInstance<T> {
+		private T instance;
+		private final Map<FieldDefinition<?, ?>, Object> fieldValues = new HashMap<>();
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public <U> U getReflectiveFieldValue(FieldDefinition<? super T, U> field) {
+			return (U) fieldValues.get(field);
+		}
+
+		@Override
+		public <U> void setReflectiveFieldValue(FieldDefinition<? super T, U> field, U value) {
+			fieldValues.put(field, value);
+		}
+
+		@Override
+		public T castReflectiveInstance() {
+			return instance;
+		}
+	}
+
 	private final String typeName;
 	private final Class<? super T> superClass;
 	private final List<TypeToken<? super T>> superTypes;
 	private final TypeToken<T> superType;
 
 	private final Map<Method, InvocableMember<?, ?>> invocables;
-	private final Map<MethodSignature, MethodOverride> methods;
+	private final Map<MethodSignature, MethodOverride<T>> methods;
 
 	private final ValueExpression<T> receiverExpression;
 
@@ -135,7 +154,7 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 		methods = new HashMap<>();
 		getSuperTypes().stream().flatMap(t -> t.getRawTypes().stream()).flatMap(t -> Arrays.stream(t.getMethods()))
 				.forEach(this::inheritMethod);
-		StreamUtilities.<Class<?>> iterate(getSuperClass(), Class::getSuperclass)
+		StreamUtilities.<Class<?>>iterate(getSuperClass(), Class::getSuperclass)
 				.flatMap(c -> Arrays.stream(c.getDeclaredMethods())).forEach(this::inheritMethod);
 
 		this.receiverExpression = new ValueExpression<T>() {
@@ -193,7 +212,7 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 		 * defined explicitly.
 		 */
 
-		for (MethodOverride override : methods.values()) {
+		for (MethodOverride<T> override : methods.values()) {
 			override.validate();
 		}
 	}
@@ -222,15 +241,20 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 			}
 		}
 
-		IdentityProperty<State> state = new IdentityProperty<>();
+		rawTypes.add(ReflectiveInstance.class);
+		ReflectiveInstanceImpl reflectiveInstance = new ReflectiveInstanceImpl();
 
 		@SuppressWarnings("unchecked")
 		T instance = (T) Proxy.newProxyInstance(classLoader, rawTypes.toArray(new Class<?>[rawTypes.size()]),
 				(proxy, method, args) -> {
-					MethodOverride override = methods.get(new MethodSignature(method));
+					if (method.getDeclaringClass().equals(ReflectiveInstance.class)) {
+						return method.invoke(reflectiveInstance, args);
+					}
+
+					MethodOverride<T> override = methods.get(new MethodSignature(method));
 
 					if (override.getOverride().isPresent()) {
-						return override.getOverride().get().invoke(state.get(), args);
+						return override.getOverride().get().invoke((ReflectiveInstance<T>) this, args);
 					} else {
 						try {
 							return override.getInterfaceMethods().stream().filter(Method::isDefault).findAny().get().invoke(proxy,
@@ -240,28 +264,13 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 						}
 					}
 				});
-
-		state.set(initializeState(instance));
+		reflectiveInstance.instance = instance;
 
 		return instance;
 	}
 
 	public ValueExpression<T> receiver() {
 		return receiverExpression;
-	}
-
-	public State initializeState(T instance) {
-		return new StateImpl(this) {
-			@SuppressWarnings("unchecked")
-			@Override
-			public <J> J getEnclosingInstance(ClassDefinition<J> parentScope) {
-				if (parentScope == ClassDefinition.this) {
-					return (J) instance;
-				} else {
-					return super.getEnclosingInstance(parentScope);
-				}
-			}
-		};
 	}
 
 	@Override
@@ -297,8 +306,8 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 	}
 
 	protected void overrideMethod(MethodDefinition<T, ?> methodDefinition) {
-		MethodOverride override = methods.computeIfAbsent(methodDefinition.getOverrideSignature(),
-				k -> new MethodOverride(this, methodDefinition.getOverrideSignature()));
+		MethodOverride<T> override = methods.computeIfAbsent(methodDefinition.getOverrideSignature(),
+				k -> new MethodOverride<>(this, methodDefinition.getOverrideSignature()));
 
 		override.override(methodDefinition);
 	}
@@ -308,8 +317,8 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 			MethodSignature overridingSignature = new MethodSignature(method.getName(),
 					getInvocable(method).getParameters().stream().map(Types::getRawType).toArray(Class<?>[]::new));
 
-			MethodOverride override = methods.computeIfAbsent(overridingSignature,
-					k -> new MethodOverride(this, overridingSignature));
+			MethodOverride<T> override = methods.computeIfAbsent(overridingSignature,
+					k -> new MethodOverride<>(this, overridingSignature));
 
 			override.inherit(method);
 
@@ -323,10 +332,5 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 
 	protected InvocableMember<?, ?> getInvocable(Method method) {
 		return invocables.computeIfAbsent(method, m -> InvocableMember.over(method, superType));
-	}
-
-	@Override
-	public Optional<Scope> getEnclosingScope() {
-		return Optional.empty();
 	}
 }

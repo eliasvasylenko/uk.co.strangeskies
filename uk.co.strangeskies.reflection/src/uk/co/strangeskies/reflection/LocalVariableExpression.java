@@ -18,33 +18,24 @@
  */
 package uk.co.strangeskies.reflection;
 
-public abstract class LocalVariableExpression<T> implements VariableExpression<T> {
-	private final Scope scope;
-
-	public LocalVariableExpression(Scope scope) {
-		this.scope = scope;
-	}
-
-	public static <T> LocalVariableExpression<T> over(Scope scope, TypeToken<T> type) {
-		return new LocalVariableExpression<T>(scope) {
-			@Override
-			public TypeToken<T> getType() {
-				return type;
-			}
-		};
+public class LocalVariableExpression<T> extends LocalValueExpression<T> implements VariableExpression<T> {
+	LocalVariableExpression(TypeToken<T> type) {
+		super(type);
 	}
 
 	@Override
 	public VariableResult<T> evaluate(State state) {
+		ValueResult<T> value = super.evaluate(state);
+
 		return new VariableResult<T>() {
 			@Override
 			public T get() {
-				return state.getEnclosingScopeVariableStore(scope).get(LocalVariableExpression.this);
+				return value.get();
 			}
 
 			@Override
 			public void set(T value) {
-				state.getEnclosingScopeVariableStore(scope).set(LocalVariableExpression.this, value);
+				state.setEnclosedLocal(LocalVariableExpression.this, value);
 			}
 		};
 	}
