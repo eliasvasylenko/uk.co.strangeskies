@@ -29,12 +29,12 @@ package uk.co.strangeskies.reflection;
  * @param <T>
  *          the actual type of the instance
  */
-interface ReflectiveInstance<T> {
+public interface ReflectiveInstance<T> {
 	ClassDefinition<T> getReflectiveClassDefinition();
 
 	<U> U getReflectiveFieldValue(FieldDefinition<? super T, U> field);
 
 	<U> void setReflectiveFieldValue(FieldDefinition<? super T, U> field, U value);
 
-	T castReflectiveInstance();
+	T cast();
 }

@@ -24,7 +24,7 @@ package uk.co.strangeskies.reflection;
  * @author Elias N Vasylenko
  */
 public interface Expression {
-	Result evaluate(State state);
+	Result evaluate(DefinitionVisitor state);
 
 	default Statement asStatement() {
 		return new ExpressionStatement(this);

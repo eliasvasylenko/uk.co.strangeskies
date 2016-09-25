@@ -25,6 +25,7 @@ public class FieldDefinition<C, T> implements MemberDefinition {
 	private final TypeToken<T> type;
 	private final ValueExpression<? extends T> initializer;
 
+	@SuppressWarnings("unchecked")
 	protected FieldDefinition(FieldDeclaration<C, T> declaration) {
 		this.classDefinition = declaration.getClassDefinition();
 		this.fieldName = declaration.getName();

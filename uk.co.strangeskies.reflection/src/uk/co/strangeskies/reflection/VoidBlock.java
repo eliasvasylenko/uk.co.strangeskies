@@ -18,28 +18,28 @@
  */
 package uk.co.strangeskies.reflection;
 
-public class VoidBlockDefinition extends BlockDefinition<VoidBlockDefinition> {
-	public VoidBlockDefinition() {
+public class VoidBlock extends Block<VoidBlock> {
+	public VoidBlock() {
 		super();
 	}
 
-	public VoidBlockDefinition(VoidBlockDefinition copy) {
+	public VoidBlock(VoidBlock copy) {
 		super(copy);
 	}
 
-	public VoidBlockDefinition addReturnStatement() {
-		addStatement(new Statement() {
-			@Override
-			public void execute(State state) {
-				state.returnVoid();
-			}
-		});
+	public VoidBlock addReturnStatement() {
+		addStatement(DefinitionVisitor::visitVoidReturn);
 
 		return this;
 	}
 
 	@Override
-	public VoidBlockDefinition copy() {
-		return new VoidBlockDefinition(this);
+	public VoidBlock copy() {
+		return new VoidBlock(this);
+	}
+
+	@Override
+	public void accept(DefinitionVisitor visitor) {
+		visitor.visitVoidBlock(this);
 	}
 }

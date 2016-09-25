@@ -121,7 +121,7 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 		}
 
 		@Override
-		public T castReflectiveInstance() {
+		public T cast() {
 			return instance;
 		}
 	}
@@ -164,7 +164,7 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 
 		this.receiverExpression = new ValueExpression<T>() {
 			@Override
-			public ValueResult<T> evaluate(State state) {
+			public ValueResult<T> evaluate(DefinitionVisitor state) {
 				return () -> state.getEnclosingInstance(ClassDefinition.this);
 			}
 
@@ -222,19 +222,20 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 		}
 	}
 
-	public T instantiate(Object... arguments) {
+	public ReflectiveInstance<T> instantiate(Object... arguments) {
 		return instantiate(getClass().getClassLoader(), arguments);
 	}
 
-	public T instantiate(Collection<? extends Object> arguments) {
+	public ReflectiveInstance<T> instantiate(Collection<? extends Object> arguments) {
 		return instantiate(getClass().getClassLoader(), arguments);
 	}
 
-	public T instantiate(ClassLoader classLoader, Object... arguments) {
+	public ReflectiveInstance<T> instantiate(ClassLoader classLoader, Object... arguments) {
 		return instantiate(classLoader, Arrays.asList(arguments));
 	}
 
-	public T instantiate(ClassLoader classLoader, Collection<? extends Object> arguments) {
+	@SuppressWarnings("unchecked")
+	public ReflectiveInstance<T> instantiate(ClassLoader classLoader, Collection<? extends Object> arguments) {
 		validate();
 
 		Set<Class<?>> rawTypes = superTypes.stream().flatMap(t -> t.getRawTypes().stream())
@@ -249,8 +250,7 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 		rawTypes.add(ReflectiveInstance.class);
 		ReflectiveInstanceImpl reflectiveInstance = new ReflectiveInstanceImpl();
 
-		@SuppressWarnings("unchecked")
-		T instance = (T) Proxy.newProxyInstance(classLoader, rawTypes.toArray(new Class<?>[rawTypes.size()]),
+		ReflectiveInstance<T> instance = (ReflectiveInstance<T>) Proxy.newProxyInstance(classLoader, rawTypes.toArray(new Class<?>[rawTypes.size()]),
 				(proxy, method, args) -> {
 					if (method.getDeclaringClass().equals(ReflectiveInstance.class)) {
 						return method.invoke(reflectiveInstance, args);
@@ -269,7 +269,7 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 						}
 					}
 				});
-		reflectiveInstance.instance = instance;
+		reflectiveInstance.instance = (T) instance;
 
 		return instance;
 	}

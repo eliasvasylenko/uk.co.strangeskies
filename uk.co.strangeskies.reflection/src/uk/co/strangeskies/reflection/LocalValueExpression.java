@@ -26,7 +26,7 @@ public class LocalValueExpression<T> implements ValueExpression<T> {
 	}
 
 	@Override
-	public ValueResult<T> evaluate(State state) {
+	public ValueResult<T> evaluate(DefinitionVisitor state) {
 		return new ValueResult<T>() {
 			@Override
 			public T get() {

@@ -18,29 +18,64 @@
  */
 package uk.co.strangeskies.reflection;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
-/**
- * A block is defined by a list of {@link Statement statements} to be evaluated
- * in series.
- * 
- * @author Elias N Vasylenko
- */
-public abstract class Block {
+import uk.co.strangeskies.utilities.Self;
+
+public abstract class Block<S extends Block<S>> implements Definition, Self<S> {
 	private final List<Statement> statements;
 
-	public Block(List<Statement> statements) {
-		this.statements = Collections.unmodifiableList(statements);
+	public Block() {
+		statements = new ArrayList<>();
 	}
 
-	public List<Statement> getStatements() {
-		return statements;
+	public Block(Block<S> copy) {
+		this();
+
+		for (Statement statement : copy.statements)
+			addStatement(statement);
 	}
 
-	public void execute(State state) {
-		for (Statement statement : statements) {
-			statement.execute(state);
-		}
+	public S addExpression(Expression expression) {
+		return addStatement(expression.asStatement());
+	}
+
+	protected S addStatement(Statement statement) {
+		statements.add(statement);
+
+		return getThis();
+	}
+
+	public <T> VariableExpression<T> declareVariable(Class<T> type) {
+		return declareVariable(type, ValueExpression.nullExpression());
+	}
+
+	public <T> VariableExpression<T> declareVariable(TypeToken<T> type) {
+		return declareVariable(type, ValueExpression.nullExpression());
+	}
+
+	public <T> VariableExpression<T> declareVariable(Class<T> type, ValueExpression<? extends T> value) {
+		return declareVariable(TypeToken.over(type), value);
+	}
+
+	public <T> VariableExpression<T> declareVariable(TypeToken<T> type, ValueExpression<? extends T> value) {
+		LocalVariableExpression<T> variable = new LocalVariableExpression<>(type);
+
+		addStatement(new VariableDeclaration<>(variable, value));
+
+		return variable;
+	}
+
+	public <T> ValueExpression<T> declareValue(Class<T> type, ValueExpression<? extends T> value) {
+		return declareValue(TypeToken.over(type), value);
+	}
+
+	public <T> ValueExpression<T> declareValue(TypeToken<T> type, ValueExpression<? extends T> value) {
+		LocalValueExpression<T> variable = new LocalValueExpression<>(type);
+
+		addStatement(new VariableDeclaration<>(variable, value));
+
+		return variable;
 	}
 }

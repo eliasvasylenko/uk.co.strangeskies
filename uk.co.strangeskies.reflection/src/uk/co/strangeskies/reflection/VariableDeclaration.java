@@ -28,7 +28,7 @@ public class VariableDeclaration<T> implements Statement {
 	}
 
 	@Override
-	public void execute(State state) {
+	public void execute(DefinitionVisitor state) {
 		state.declareLocal(value, initializer.evaluate(state).get());
 	}
 }

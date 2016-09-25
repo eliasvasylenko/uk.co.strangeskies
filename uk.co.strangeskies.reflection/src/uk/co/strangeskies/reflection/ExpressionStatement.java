@@ -26,7 +26,7 @@ public class ExpressionStatement implements Statement {
 	}
 
 	@Override
-	public void execute(State state) {
+	public void execute(DefinitionVisitor state) {
 		expression.evaluate(state);
 	}
 }

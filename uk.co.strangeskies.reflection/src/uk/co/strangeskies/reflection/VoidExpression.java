@@ -20,5 +20,5 @@ package uk.co.strangeskies.reflection;
 
 public interface VoidExpression extends Expression {
 	@Override
-	VoidResult evaluate(State state);
+	VoidResult evaluate(DefinitionVisitor state);
 }

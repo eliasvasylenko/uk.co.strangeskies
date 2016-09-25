@@ -25,7 +25,7 @@ public interface ValueExpression<T> extends Expression {
 	static <T> ValueExpression<T> nullExpression() {
 		return new ValueExpression<T>() {
 			@Override
-			public ValueResult<T> evaluate(State state) {
+			public ValueResult<T> evaluate(DefinitionVisitor state) {
 				return new ValueResult<T>() {
 					@Override
 					public T get() {
@@ -42,7 +42,7 @@ public interface ValueExpression<T> extends Expression {
 	}
 
 	@Override
-	ValueResult<T> evaluate(State state);
+	ValueResult<T> evaluate(DefinitionVisitor state);
 
 	TypeToken<T> getType();
 

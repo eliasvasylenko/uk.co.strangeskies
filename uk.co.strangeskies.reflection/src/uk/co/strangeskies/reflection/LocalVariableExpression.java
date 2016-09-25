@@ -24,7 +24,7 @@ public class LocalVariableExpression<T> extends LocalValueExpression<T> implemen
 	}
 
 	@Override
-	public VariableResult<T> evaluate(State state) {
+	public VariableResult<T> evaluate(DefinitionVisitor state) {
 		ValueResult<T> value = super.evaluate(state);
 
 		return new VariableResult<T>() {

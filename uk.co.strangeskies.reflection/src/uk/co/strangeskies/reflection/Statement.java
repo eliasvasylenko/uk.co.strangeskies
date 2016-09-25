@@ -18,6 +18,5 @@
  */
 package uk.co.strangeskies.reflection;
 
-public interface Statement {
-	void execute(State state);
+public interface Statement extends Definition {
 }

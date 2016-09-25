@@ -18,7 +18,7 @@
  */
 package uk.co.strangeskies.reflection;
 
-public class TypedBlockDefinition<T> extends BlockDefinition<TypedBlockDefinition<T>> {
+public class TypedBlockDefinition<T> extends Block<TypedBlockDefinition<T>> {
 	public TypedBlockDefinition() {
 		super();
 	}
@@ -27,10 +27,11 @@ public class TypedBlockDefinition<T> extends BlockDefinition<TypedBlockDefinitio
 		super(scope);
 	}
 
-	public TypedBlockDefinition<T> addReturnStatement(ValueExpression<T> expression) {
+	public TypedBlockDefinition<T> addReturnStatement(
+			ValueExpression<T> expression) {
 		addStatement(new Statement() {
 			@Override
-			public void execute(State state) {
+			public void execute(DefinitionVisitor state) {
 				state.returnValue(expression.evaluate(state).get());
 			}
 		});
@@ -41,5 +42,10 @@ public class TypedBlockDefinition<T> extends BlockDefinition<TypedBlockDefinitio
 	@Override
 	public TypedBlockDefinition<T> copy() {
 		return new TypedBlockDefinition<>(this);
+	}
+
+	@Override
+	public void accept(DefinitionVisitor visitor) {
+		visitor.visitTypedBlock(this);
 	}
 }

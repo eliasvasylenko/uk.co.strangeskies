@@ -31,7 +31,7 @@ public class VariableExpressionProxy<T> implements VariableExpression<T> {
 	}
 
 	@Override
-	public VariableResult<T> evaluate(State state) {
+	public VariableResult<T> evaluate(DefinitionVisitor state) {
 		if (component != null) {
 			return component.evaluate(state);
 		} else {

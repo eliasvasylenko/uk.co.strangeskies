@@ -18,39 +18,109 @@
  */
 package uk.co.strangeskies.reflection;
 
-/**
- * @author Elias N Vasylenko
- */
-public interface State {
-	static State create() {
-		return new StateImpl(null, null);
+import java.util.HashMap;
+import java.util.Map;
+
+public class State implements DefinitionVisitor {
+	private final DefinitionVisitor enclosingState;
+	private final ReflectiveInstance<?> receiver;
+	private final Map<LocalValueExpression<?>, Object> locals;
+
+	private boolean returned;
+	private Object returnValue;
+
+	public State(ReflectiveInstance<?> receiver,
+			DefinitionVisitor enclosingState) {
+		this.receiver = receiver;
+		this.enclosingState = enclosingState;
+
+		locals = new HashMap<>();
 	}
 
-	static State createOver(ReflectiveInstance<?> receiver) {
-		return new StateImpl(receiver, null);
+	@Override
+	public <T> void declareLocal(LocalValueExpression<T> variable, T value) {
+		if (locals.containsKey(variable)) {
+			throw new ReflectionException(p -> p.cannotRedefineVariable(variable));
+		}
+		locals.put(variable, value);
 	}
 
-	default State enclose() {
-		return new StateImpl(null, this);
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T> T getEnclosedLocal(LocalValueExpression<T> variable) {
+		if (locals.containsKey(variable)) {
+			return (T) locals.get(variable);
+		} else if (enclosingState != null) {
+			return enclosingState.getEnclosedLocal(variable);
+		} else {
+			throw new ReflectionException(p -> p.undefinedVariable(variable));
+		}
 	}
 
-	default State encloseOver(ReflectiveInstance<?> receiver) {
-		return new StateImpl(receiver, this);
+	@Override
+	public <T> void setEnclosedLocal(LocalVariableExpression<T> variable,
+			T value) {
+		if (locals.containsKey(variable)) {
+			locals.put(variable, value);
+		} else if (enclosingState != null) {
+			enclosingState.setEnclosedLocal(variable, value);
+		} else {
+			throw new ReflectionException(p -> p.undefinedVariable(variable));
+		}
 	}
 
-	<I> I getEnclosingInstance(ClassDefinition<I> parentScope);
+	@SuppressWarnings("unchecked")
+	@Override
+	public <J> J getEnclosingInstance(ClassDefinition<J> receiverClass) {
+		if (receiver.getReflectiveClassDefinition() == receiverClass) {
+			return (J) receiver;
+		} else if (enclosingState != null) {
+			return enclosingState.getEnclosingInstance(receiverClass);
+		} else {
+			throw new ReflectionException(
+					p -> p.cannotResolveEnclosingInstance(receiverClass));
+		}
+	}
 
-	<T> void declareLocal(LocalValueExpression<T> variable, T initialValue);
+	@Override
+	public Object getReturnValue() {
+		return returnValue;
+	}
 
-	<T> T getEnclosedLocal(LocalValueExpression<T> variable);
+	@Override
+	public boolean isReturned() {
+		return returned;
+	}
 
-	<T> void setEnclosedLocal(LocalVariableExpression<T> variable, T value);
+	@Override
+	public void returnValue(Object value) {
+		returned = true;
+		returnValue = value;
+	}
 
-	void returnValue(Object value);
+	@Override
+	public void returnVoid() {
+		returned = true;
+	}
 
-	void returnVoid();
+	@Override
+	public <T> void visitTypedBlock(TypedBlockDefinition<T> typedBlock) {
+		state = state.enclose();
 
-	boolean isReturned();
+		for (Statement statement : typedBlock.statements) {
+			statement.execute(state);
 
-	Object getReturnValue();
+			if (state.isReturned()) {
+				return state.getReturnValue();
+			}
+		}
+
+		return null;
+	}
+
+	@Override
+	public void visitVoidBlock(VoidBlock voidBlock) {
+		// TODO Auto-generated method stub
+
+	}
 }

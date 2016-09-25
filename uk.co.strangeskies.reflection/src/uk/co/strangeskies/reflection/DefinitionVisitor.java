@@ -18,33 +18,23 @@
  */
 package uk.co.strangeskies.reflection;
 
-import java.util.List;
-import java.util.stream.Collectors;
+/**
+ * @author Elias N Vasylenko
+ */
+public interface DefinitionVisitor {
+	<I> I getEnclosingInstance(ClassDefinition<I> parentScope);
 
-public class MethodExpression<O, T> implements ValueExpression<T> {
-	private final ValueExpression<? extends O> value;
-	private final InvocableMember<O, T> invocable;
-	private final List<ValueExpression<?>> arguments;
+	<T> void declareLocal(LocalValueExpression<T> variable, T initialValue);
 
-	protected MethodExpression(ValueExpression<? extends O> value, InvocableMember<O, T> invocable,
-			List<ValueExpression<?>> arguments) {
-		this.value = value;
-		this.invocable = invocable;
-		this.arguments = arguments;
-	}
+	<T> T getEnclosedLocal(LocalValueExpression<T> variable);
 
-	@Override
-	public ValueResult<T> evaluate(DefinitionVisitor state) {
-		O targetObject = value.evaluate(state).get();
+	<T> void setEnclosedLocal(LocalVariableExpression<T> variable, T value);
 
-		T result = invocable.invoke(targetObject,
-				arguments.stream().map(a -> a.evaluate(state).get()).collect(Collectors.toList()));
+	void visitVoidReturn();
 
-		return () -> result;
-	}
+	void visitVoidReturn();
 
-	@Override
-	public TypeToken<T> getType() {
-		return invocable.getReturnType();
-	}
+	void visitVoidBlock(VoidBlock voidBlock);
+
+	<T> void visitTypedBlock(TypedBlockDefinition<T> typedBlock);
 }

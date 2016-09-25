@@ -25,13 +25,13 @@ import org.junit.Test;
 
 import uk.co.strangeskies.reflection.FieldMember;
 import uk.co.strangeskies.reflection.InvocableMember;
-import uk.co.strangeskies.reflection.State;
+import uk.co.strangeskies.reflection.DefinitionVisitor;
 import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.ValueExpression;
 import uk.co.strangeskies.reflection.ValueResult;
 import uk.co.strangeskies.reflection.VariableExpression;
 import uk.co.strangeskies.reflection.VariableResult;
-import uk.co.strangeskies.reflection.VoidBlockDefinition;
+import uk.co.strangeskies.reflection.VoidBlock;
 
 @SuppressWarnings("javadoc")
 public class ExpressionTest {
@@ -63,7 +63,7 @@ public class ExpressionTest {
 	private static ValueExpression<TestClass> valueExpression(TestClass instance) {
 		return new ValueExpression<TestClass>() {
 			@Override
-			public ValueResult<TestClass> evaluate(State state) {
+			public ValueResult<TestClass> evaluate(DefinitionVisitor state) {
 				return () -> instance;
 			}
 
@@ -92,7 +92,7 @@ public class ExpressionTest {
 			}
 
 			@Override
-			public VariableResult<Object> evaluate(State state) {
+			public VariableResult<Object> evaluate(DefinitionVisitor state) {
 				return new VariableResult<Object>() {
 					@Override
 					public Object get() {
@@ -112,38 +112,38 @@ public class ExpressionTest {
 	public void fieldAssignmentTest() {
 		TestClass instance = new TestClass();
 
-		VoidBlockDefinition block = new VoidBlockDefinition();
+		VoidBlock block = new VoidBlock();
 		VariableExpression<TestClass> variable = block.declareVariable(TestClass.class, valueExpression(instance));
 
 		block.addExpression(variable.accessField(TEST_FIELD).assign(literal("value")));
-		block.execute(State.create());
+		block.execute(DefinitionVisitor.create());
 
 		Assert.assertEquals("value", instance.field);
 	}
 
 	@Test
 	public void localAssignmentTest() {
-		VoidBlockDefinition block = new VoidBlockDefinition();
+		VoidBlock block = new VoidBlock();
 		VariableExpression<String> local = block.declareVariable(STRING_TYPE);
 		VariableExpression<Object> result = resultExpression();
 
 		block.addExpression(local.assign(literal("value")));
 		block.addExpression(result.assign(local));
-		block.execute(State.create());
+		block.execute(DefinitionVisitor.create());
 
 		Assert.assertEquals("value", result.evaluate(null).get());
 	}
 
 	@Test
 	public void localMethodInvocationTest() {
-		VoidBlockDefinition block = new VoidBlockDefinition();
+		VoidBlock block = new VoidBlock();
 		VariableExpression<TestClass> variable = block.declareVariable(TestClass.class);
 
 		TestClass instance = new TestClass();
 
 		block.addExpression(variable.assign(valueExpression(instance)));
 		block.addExpression(variable.invokeMethod(TEST_SET_METHOD, literal("value")));
-		block.execute(State.create());
+		block.execute(DefinitionVisitor.create());
 
 		Assert.assertEquals("value", instance.field);
 	}

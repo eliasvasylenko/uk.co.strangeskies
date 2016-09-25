@@ -59,9 +59,9 @@ public class ClassDefinitionTest {
 		ClassDefinition<? extends Runnable> classDefinition = declareClass(TEST_CLASS_NAME).withSuperType(Runnable.class)
 				.define();
 
-		MethodDefinition<? extends Runnable, ?> runMethod = classDefinition.declareMethod("run").define();
+		classDefinition.declareMethod("run").define();
 
-		Runnable instance = classDefinition.instantiate();
+		Runnable instance = classDefinition.instantiate().cast();
 
 		instance.run();
 	}
@@ -79,7 +79,7 @@ public class ClassDefinitionTest {
 						STRING_TYPE.resolveMethodOverload("concat", STRING_TYPE).withTargetType(STRING_TYPE), parameter)))
 				.addReturnStatement(parameter);
 
-		Function<String, String> instance = classDefinition.instantiate();
+		Function<String, String> instance = classDefinition.instantiate().cast();
 
 		String result = instance.apply("string");
 

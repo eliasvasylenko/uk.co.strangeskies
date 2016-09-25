@@ -23,7 +23,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefinition<C, T>>
+public class MethodDefinition<C, T>
+		extends ParameterizedDefinition<MethodDefinition<C, T>>
 		implements MemberDefinition<C> {
 	private final ClassDefinition<C> classDefinition;
 	private final String methodName;
@@ -51,11 +52,12 @@ public class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefini
 		if (declaration.getReturnType() == null) {
 			this.returnType = (TypeToken<T>) TypeToken.over(void.class);
 		} else {
-			this.returnType = (TypeToken<T>) TypeToken.over(declaration.getReturnType());
+			this.returnType = (TypeToken<T>) TypeToken
+					.over(declaration.getReturnType());
 		}
 
-		overrideSignature = new MethodSignature(methodName,
-				parameters.stream().map(v -> v.getType().getRawType()).toArray(Class<?>[]::new));
+		overrideSignature = new MethodSignature(methodName, parameters.stream()
+				.map(v -> v.getType().getRawType()).toArray(Class<?>[]::new));
 
 		classDefinition.overrideMethod(this);
 	}
@@ -73,8 +75,10 @@ public class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefini
 		return overrideSignature;
 	}
 
-	private <U> LocalVariableExpression<U> getParameter(VariableExpressionProxy<U> proxy, AnnotatedType type) {
-		TypeToken<?> typeToken = TypeToken.over(substituteTypeVariableSignatures(type));
+	private <U> LocalVariableExpression<U> getParameter(
+			VariableExpressionProxy<U> proxy, AnnotatedType type) {
+		TypeToken<?> typeToken = TypeToken
+				.over(substituteTypeVariableSignatures(type));
 
 		@SuppressWarnings("unchecked")
 		LocalVariableExpression<U> variable = (LocalVariableExpression<U>) new LocalVariableExpression<>(
@@ -122,18 +126,21 @@ public class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefini
 
 	@SuppressWarnings("unchecked")
 	public T invoke(ReflectiveInstance<C> receiver, Object[] arguments) {
-		State state = State.createOver(receiver);
+		State state = new State(receiver, null);
 
 		int i = 0;
 		for (LocalVariableExpression<?> parameter : parameters) {
 			setParameterUnsafe(state, parameter, arguments[i]);
 		}
 
-		return (T) body().execute(state);
+		body().accept(state);
+
+		return (T) state.getReturnValue();
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T> void setParameterUnsafe(State state, LocalVariableExpression<T> parameter, Object argument) {
+	private static <T> void setParameterUnsafe(DefinitionVisitor state,
+			LocalVariableExpression<T> parameter, Object argument) {
 		state.declareLocal(parameter, (T) argument);
 	}
 }
