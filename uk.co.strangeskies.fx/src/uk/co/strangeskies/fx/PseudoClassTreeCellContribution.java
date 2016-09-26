@@ -24,7 +24,8 @@ import javafx.scene.Node;
 /**
  * A partial {@link TreeCellContribution} implementation which provides the
  * default behavior of setting the state of the pseudo-class named by
- * {@link #getPseudoClassName()} to true on applicable tree item nodes.
+ * {@link #getPseudoClassName(TreeItemData)} to true on applicable tree item
+ * nodes.
  * 
  * @author Elias N Vasylenko
  *

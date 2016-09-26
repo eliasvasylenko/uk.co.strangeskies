@@ -144,4 +144,8 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 	Localized<String> cannotResolveEnclosingInstance(ClassDefinition<?> receiverClass);
 
 	Localized<String> cannotRedeclareVariable(LocalVariable<?> variable);
+
+	Localized<String> incompleteStatementExecution();
+
+	Localized<String> incompleteExpressionEvaluation();
 }

@@ -21,35 +21,79 @@ package uk.co.strangeskies.reflection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Executor implements StatementVisitor {
+public class StatementExecutor {
+	private class StatementVisitorImpl implements StatementVisitor {
+		private boolean complete = false;
+		private Object result;
+
+		@Override
+		public void visitReturn() {
+			complete = true;
+		}
+
+		@Override
+		public <T> void visitReturn(ValueExpression<T> expression) {
+			visitReturn();
+			result = expressionEvaluator.evaluate(expression).get();
+		}
+
+		@Override
+		public void visitExpression(Expression expression) {
+			expressionEvaluator.evaluate(expression);
+		}
+
+		@Override
+		public <T> void visitDeclaration(LocalVariableExpression<T> variable) {
+			declareLocal(variable.getId());
+		}
+
+		@Override
+		public <T> void visitDeclaration(LocalValueExpression<T> variable, ValueExpression<? extends T> initializer) {
+			declareLocal(variable.getId());
+			setEnclosedLocal(variable.getId(), expressionEvaluator.evaluate(initializer).get());
+		}
+
+		private boolean isComplete() {
+			return complete;
+		}
+
+		private Object getResult() {
+			if (!isComplete()) {
+				throw new ReflectionException(p -> p.incompleteStatementExecution());
+			}
+			return result;
+		}
+	}
+
 	private final ReflectiveInstance<?> receiver;
-	private final Executor enclosingState;
+	private final StatementExecutor enclosingState;
 
 	private final Map<LocalVariable<?>, Object> locals;
 
-	private boolean returned;
-	private Object returnValue;
+	private final ExpressionEvaluator expressionEvaluator;
 
-	private Executor(ReflectiveInstance<?> receiver, Executor enclosingState) {
+	private StatementExecutor(ReflectiveInstance<?> receiver, StatementExecutor enclosingState) {
 		this.receiver = receiver;
 		this.enclosingState = enclosingState;
 
 		locals = new HashMap<>();
+
+		expressionEvaluator = new ExpressionEvaluator(this);
 	}
 
-	public Executor(ReflectiveInstance<?> receiver) {
+	public StatementExecutor(ReflectiveInstance<?> receiver) {
 		this(receiver, null);
 	}
 
-	public Executor() {
+	public StatementExecutor() {
 		this(null);
 	}
 
-	public Executor enclose(ReflectiveInstance<?> receiver) {
-		return new Executor(receiver, this);
+	public StatementExecutor enclose(ReflectiveInstance<?> receiver) {
+		return new StatementExecutor(receiver, this);
 	}
 
-	public Executor enclose() {
+	public StatementExecutor enclose() {
 		return enclose(null);
 	}
 
@@ -94,58 +138,21 @@ public class Executor implements StatementVisitor {
 
 	@SuppressWarnings("unchecked")
 	public <T> T executeBlock(TypedBlock<T> block) {
-		return (T) executeBlockImpl(block);
+		return (T) executeBlockImpl(block).getResult();
 	}
 
 	public void executeBlock(VoidBlock block) {
 		executeBlockImpl(block);
 	}
 
-	private Object executeBlockImpl(Block<?> block) {
-		Executor state = enclose();
+	private StatementVisitorImpl executeBlockImpl(Block<?> block) {
+		StatementVisitorImpl statementVisitor = enclose().new StatementVisitorImpl();
 
-		return block.getStatements().map(s -> {
-			s.accept(state);
-			return state.getReturnedValue();
-		}).filter(s -> state.isReturned()).findAny().orElse(null);
-	}
+		block.getStatements().map(s -> {
+			s.accept(statementVisitor);
+			return s;
+		}).filter(s -> statementVisitor.isComplete()).findFirst();
 
-	private boolean isReturned() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	private Object getReturnedValue() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void visitReturn() {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public <T> void visitReturn(ValueExpression<T> expression) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void visitExpression(Expression expression) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public <T> void visitDeclaration(LocalVariableExpression<T> variable) {
-		declareLocal(variable.getId());
-	}
-
-	@Override
-	public <T> void visitDeclaration(LocalValueExpression<T> variable, ValueExpression<? extends T> initializer) {
-		declareLocal(variable.getId());
-		setEnclosedLocal(variable.getId(), null); // TODO get value from initializer
+		return statementVisitor;
 	}
 }

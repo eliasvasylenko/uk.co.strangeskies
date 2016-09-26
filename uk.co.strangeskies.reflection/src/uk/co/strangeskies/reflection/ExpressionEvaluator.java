@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 import uk.co.strangeskies.reflection.ExpressionVisitor.ValueExpressionVisitor;
 import uk.co.strangeskies.reflection.ExpressionVisitor.VariableExpressionVisitor;
 
-public class Evaluator {
+public class ExpressionEvaluator {
 	private class ExpressionVisitorImpl implements ExpressionVisitor {
 		@Override
 		public <U> ValueExpressionVisitor<U> value(TypeToken<U> type) {
@@ -16,38 +16,50 @@ public class Evaluator {
 
 	private class ValueExpressionVisitorImpl<T> implements ValueExpressionVisitor<T> {
 		private final TypeToken<T> type;
+		private boolean complete = false;
+		private ValueResult<T> result;
 
 		public ValueExpressionVisitorImpl(TypeToken<T> type) {
 			this.type = type;
 		}
 
+		private ValueResult<T> getResult() {
+			if (!complete) {
+				throw new ReflectionException(p -> p.incompleteExpressionEvaluation());
+			}
+			return result;
+		}
+
+		private void complete(ValueResult<T> result) {
+			complete = true;
+			this.result = result;
+		}
+
 		@Override
-		public VariableExpressionVisitor<T> variable() {
-			return new VariableExpressionVisitorImpl<>(type);
+		public VariableExpressionVisitorImpl<T> variable() {
+			return new VariableExpressionVisitorImpl<>(this);
 		}
 
 		@Override
 		public void visitAssignment(VariableExpression<T> target, ValueExpression<? extends T> value) {
-			// TODO Auto-generated method stub
-
+			T result = evaluate(value).get();
+			evaluate(target).set(result);
+			complete(() -> result);
 		}
 
 		@Override
 		public void visitLiteral(T value) {
-			// TODO Auto-generated method stub
-
+			complete(() -> value);
 		}
 
 		@Override
 		public void visitNull() {
-			// TODO Auto-generated method stub
-
+			complete(null);
 		}
 
 		@Override
 		public void visitReceiver(ClassDefinition<T> classDefinition) {
-			// TODO Auto-generated method stub
-
+			complete(() -> state.getEnclosingInstance(classDefinition));
 		}
 
 		@Override
@@ -55,33 +67,36 @@ public class Evaluator {
 				List<ValueExpression<?>> arguments) {
 			O targetObject = evaluate(receiver).get();
 
-			T result = invocable.invoke(targetObject,
-					arguments.stream().map(a -> evaluate(a).get()).collect(Collectors.toList()));
+			complete(() -> invocable.invoke(targetObject,
+					arguments.stream().map(a -> evaluate(a).get()).collect(Collectors.toList())));
 		}
 
 		@Override
 		public void visitLocal(LocalVariable<? extends T> local) {
-			new ValueResult<T>() {
-				@Override
-				public T get() {
-					return state.getEnclosedLocal(local);
-				}
-			};
+			complete(() -> state.getEnclosedLocal(local));
 		}
 	}
 
 	private class VariableExpressionVisitorImpl<T> implements VariableExpressionVisitor<T> {
-		private final TypeToken<T> type;
+		private final ValueExpressionVisitorImpl<T> parent;
 
-		public VariableExpressionVisitorImpl(TypeToken<T> type) {
-			this.type = type;
+		public VariableExpressionVisitorImpl(ValueExpressionVisitorImpl<T> parent) {
+			this.parent = parent;
+		}
+
+		private VariableResult<T> getResult() {
+			return (VariableResult<T>) parent.getResult();
+		}
+
+		private void complete(VariableResult<T> result) {
+			parent.complete(result);
 		}
 
 		@Override
 		public <O> void visitField(ValueExpression<? extends O> value, FieldMember<O, T> field) {
 			O targetObject = evaluate(value).get();
 
-			new VariableResult<T>() {
+			complete(new VariableResult<T>() {
 				@Override
 				public T get() {
 					return field.get(targetObject);
@@ -91,12 +106,12 @@ public class Evaluator {
 				public void set(T value) {
 					field.set(targetObject, value);
 				}
-			};
+			});
 		}
 
 		@Override
 		public void visitLocal(LocalVariable<T> local) {
-			new VariableResult<T>() {
+			complete(new VariableResult<T>() {
 				@Override
 				public T get() {
 					return state.getEnclosedLocal(local);
@@ -106,30 +121,34 @@ public class Evaluator {
 				public void set(T value) {
 					state.setEnclosedLocal(local, value);
 				}
-			};
+			});
 		}
 	}
 
 	private final ExpressionVisitorImpl expressionVisitor = new ExpressionVisitorImpl();
-	private final Executor state;
+	private final StatementExecutor state;
 
-	public Evaluator(Executor state) {
+	public ExpressionEvaluator(StatementExecutor state) {
 		this.state = state;
 	}
 
-	public void evaluate(Expression expression) {
+	public synchronized void evaluate(Expression expression) {
 		expression.accept(expressionVisitor);
 	}
 
-	public <T> ValueResult<T> evaluate(ValueExpression<T> expression) {
-		expression.accept(expressionVisitor);
+	public synchronized <T> ValueResult<T> evaluate(ValueExpression<T> expression) {
+		ValueExpressionVisitorImpl<T> visitor = new ValueExpressionVisitorImpl<>(expression.getType());
 
-		return null;
+		expression.accept(visitor);
+
+		return visitor.getResult();
 	}
 
-	public <T> VariableResult<T> evaluate(VariableExpression<T> expression) {
-		expression.accept(expressionVisitor);
+	public synchronized <T> VariableResult<T> evaluate(VariableExpression<T> expression) {
+		VariableExpressionVisitorImpl<T> visitor = new ValueExpressionVisitorImpl<>(expression.getType()).variable();
 
-		return null;
+		expression.accept(visitor);
+
+		return visitor.getResult();
 	}
 }

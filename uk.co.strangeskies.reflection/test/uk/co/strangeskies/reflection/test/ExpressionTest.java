@@ -23,7 +23,7 @@ import static uk.co.strangeskies.reflection.LiteralExpression.literal;
 import org.junit.Assert;
 import org.junit.Test;
 
-import uk.co.strangeskies.reflection.Executor;
+import uk.co.strangeskies.reflection.StatementExecutor;
 import uk.co.strangeskies.reflection.FieldMember;
 import uk.co.strangeskies.reflection.InvocableMember;
 import uk.co.strangeskies.reflection.LocalVariableExpression;
@@ -59,7 +59,7 @@ public class ExpressionTest {
 
 	@Test
 	public void fieldAssignmentTest() {
-		Executor state = new Executor();
+		StatementExecutor state = new StatementExecutor();
 		VoidBlock block = new VoidBlock();
 		TestClass instance = new TestClass();
 
@@ -74,7 +74,7 @@ public class ExpressionTest {
 
 	@Test
 	public void localAssignmentTest() {
-		Executor state = new Executor();
+		StatementExecutor state = new StatementExecutor();
 		VoidBlock block = new VoidBlock();
 
 		LocalVariableExpression<String> local = block.declareVariable(STRING_TYPE);
@@ -89,7 +89,7 @@ public class ExpressionTest {
 
 	@Test
 	public void localMethodInvocationTest() {
-		Executor state = new Executor();
+		StatementExecutor state = new StatementExecutor();
 		VoidBlock block = new VoidBlock();
 		TestClass instance = new TestClass();
 

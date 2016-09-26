@@ -121,7 +121,7 @@ public class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefini
 	}
 
 	public T invoke(ReflectiveInstance<C> receiver, Object[] arguments) {
-		Executor state = new Executor(receiver);
+		StatementExecutor state = new StatementExecutor(receiver);
 
 		int i = 0;
 		for (LocalVariableExpression<?> parameter : parameters) {
@@ -132,7 +132,7 @@ public class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefini
 	}
 
 	@SuppressWarnings("unchecked")
-	private static <T> void setParameterUnsafe(Executor state, LocalVariable<T> parameter, Object argument) {
+	private static <T> void setParameterUnsafe(StatementExecutor state, LocalVariable<T> parameter, Object argument) {
 		state.declareLocal(parameter);
 		state.setEnclosedLocal(parameter, (T) argument);
 	}
