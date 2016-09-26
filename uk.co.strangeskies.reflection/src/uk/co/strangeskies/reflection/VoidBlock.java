@@ -28,7 +28,7 @@ public class VoidBlock extends Block<VoidBlock> {
 	}
 
 	public VoidBlock addReturnStatement() {
-		addStatement(DefinitionVisitor::visitVoidReturn);
+		addStatement(StatementVisitor::visitReturn);
 
 		return this;
 	}
@@ -36,10 +36,5 @@ public class VoidBlock extends Block<VoidBlock> {
 	@Override
 	public VoidBlock copy() {
 		return new VoidBlock(this);
-	}
-
-	@Override
-	public void accept(DefinitionVisitor visitor) {
-		visitor.visitVoidBlock(this);
 	}
 }

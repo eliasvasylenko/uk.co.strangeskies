@@ -18,5 +18,6 @@
  */
 package uk.co.strangeskies.reflection;
 
-public interface Statement extends Definition {
+public interface Statement {
+	void accept(StatementVisitor visitor);
 }

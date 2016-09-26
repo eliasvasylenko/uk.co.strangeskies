@@ -20,10 +20,11 @@ package uk.co.strangeskies.reflection;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import uk.co.strangeskies.utilities.Self;
 
-public abstract class Block<S extends Block<S>> implements Definition, Self<S> {
+public abstract class Block<S extends Block<S>> implements Self<S> {
 	private final List<Statement> statements;
 
 	public Block() {
@@ -37,8 +38,8 @@ public abstract class Block<S extends Block<S>> implements Definition, Self<S> {
 			addStatement(statement);
 	}
 
-	public S addExpression(Expression expression) {
-		return addStatement(expression.asStatement());
+	public Stream<Statement> getStatements() {
+		return statements.stream();
 	}
 
 	protected S addStatement(Statement statement) {
@@ -47,12 +48,20 @@ public abstract class Block<S extends Block<S>> implements Definition, Self<S> {
 		return getThis();
 	}
 
+	public S addExpression(Expression expression) {
+		return addStatement(v -> v.visitExpression(expression));
+	}
+
 	public <T> VariableExpression<T> declareVariable(Class<T> type) {
-		return declareVariable(type, ValueExpression.nullExpression());
+		return declareVariable(TypeToken.over(type));
 	}
 
 	public <T> VariableExpression<T> declareVariable(TypeToken<T> type) {
-		return declareVariable(type, ValueExpression.nullExpression());
+		LocalVariableExpression<T> variable = new LocalVariableExpression<>(type);
+
+		addStatement(s -> s.visitDeclaration(variable));
+
+		return variable;
 	}
 
 	public <T> VariableExpression<T> declareVariable(Class<T> type, ValueExpression<? extends T> value) {
@@ -62,7 +71,7 @@ public abstract class Block<S extends Block<S>> implements Definition, Self<S> {
 	public <T> VariableExpression<T> declareVariable(TypeToken<T> type, ValueExpression<? extends T> value) {
 		LocalVariableExpression<T> variable = new LocalVariableExpression<>(type);
 
-		addStatement(new VariableDeclaration<>(variable, value));
+		addStatement(s -> s.visitDeclaration(variable, value));
 
 		return variable;
 	}
@@ -74,7 +83,7 @@ public abstract class Block<S extends Block<S>> implements Definition, Self<S> {
 	public <T> ValueExpression<T> declareValue(TypeToken<T> type, ValueExpression<? extends T> value) {
 		LocalValueExpression<T> variable = new LocalValueExpression<>(type);
 
-		addStatement(new VariableDeclaration<>(variable, value));
+		addStatement(s -> s.visitDeclaration(variable, value));
 
 		return variable;
 	}

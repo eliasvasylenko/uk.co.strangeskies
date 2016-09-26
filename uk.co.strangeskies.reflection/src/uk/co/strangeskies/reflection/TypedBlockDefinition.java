@@ -27,14 +27,8 @@ public class TypedBlockDefinition<T> extends Block<TypedBlockDefinition<T>> {
 		super(scope);
 	}
 
-	public TypedBlockDefinition<T> addReturnStatement(
-			ValueExpression<T> expression) {
-		addStatement(new Statement() {
-			@Override
-			public void execute(DefinitionVisitor state) {
-				state.returnValue(expression.evaluate(state).get());
-			}
-		});
+	public TypedBlockDefinition<T> addReturnStatement(ValueExpression<T> expression) {
+		addStatement(v -> v.visitReturn(expression));
 
 		return this;
 	}
@@ -42,10 +36,5 @@ public class TypedBlockDefinition<T> extends Block<TypedBlockDefinition<T>> {
 	@Override
 	public TypedBlockDefinition<T> copy() {
 		return new TypedBlockDefinition<>(this);
-	}
-
-	@Override
-	public void accept(DefinitionVisitor visitor) {
-		visitor.visitTypedBlock(this);
 	}
 }

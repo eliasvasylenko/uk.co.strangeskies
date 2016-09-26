@@ -18,6 +18,6 @@
  */
 package uk.co.strangeskies.reflection;
 
-public interface ValueResult<T> extends Result {
+public interface ValueResult<T> {
 	T get();
 }

@@ -28,8 +28,8 @@ public class LiteralExpression<T> implements ValueExpression<T> {
 	}
 
 	@Override
-	public ValueResult<T> evaluate(DefinitionVisitor state) {
-		return () -> value;
+	public <U> U accept(ValueExpressionVisitor<U, ? super T> visitor) {
+		return visitor.visitValue(getType()).visitLiteral(value, type);
 	}
 
 	@Override

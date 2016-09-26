@@ -31,9 +31,9 @@ public class VariableExpressionProxy<T> implements VariableExpression<T> {
 	}
 
 	@Override
-	public VariableResult<T> evaluate(DefinitionVisitor state) {
+	public <U> U accept(VariableExpressionVisitor<U, ? super T> visitor) {
 		if (component != null) {
-			return component.evaluate(state);
+			return component.accept(visitor);
 		} else {
 			throw new ReflectionException(p -> p.cannotAccessPlaceholderExpression(this));
 		}

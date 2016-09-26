@@ -19,28 +19,22 @@
 package uk.co.strangeskies.reflection;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class MethodExpression<O, T> implements ValueExpression<T> {
-	private final ValueExpression<? extends O> value;
+	private final ValueExpression<? extends O> receiver;
 	private final InvocableMember<O, T> invocable;
 	private final List<ValueExpression<?>> arguments;
 
-	protected MethodExpression(ValueExpression<? extends O> value, InvocableMember<O, T> invocable,
+	protected MethodExpression(ValueExpression<? extends O> receiver, InvocableMember<O, T> invocable,
 			List<ValueExpression<?>> arguments) {
-		this.value = value;
+		this.receiver = receiver;
 		this.invocable = invocable;
 		this.arguments = arguments;
 	}
 
 	@Override
-	public ValueResult<T> evaluate(DefinitionVisitor state) {
-		O targetObject = value.evaluate(state).get();
-
-		T result = invocable.invoke(targetObject,
-				arguments.stream().map(a -> a.evaluate(state).get()).collect(Collectors.toList()));
-
-		return () -> result;
+	public <U> U accept(ValueExpressionVisitor<U, ? super T> visitor) {
+		return visitor.visitMethod(receiver, invocable, arguments);
 	}
 
 	@Override

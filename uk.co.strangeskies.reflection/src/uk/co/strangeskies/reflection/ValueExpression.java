@@ -25,13 +25,8 @@ public interface ValueExpression<T> extends Expression {
 	static <T> ValueExpression<T> nullExpression() {
 		return new ValueExpression<T>() {
 			@Override
-			public ValueResult<T> evaluate(DefinitionVisitor state) {
-				return new ValueResult<T>() {
-					@Override
-					public T get() {
-						return null;
-					}
-				};
+			public <U> U accept(ValueExpressionVisitor<U, ? super T> visitor) {
+				return visitor.visitValue(getType()).visitNull();
 			}
 
 			@Override
@@ -41,10 +36,14 @@ public interface ValueExpression<T> extends Expression {
 		};
 	}
 
-	@Override
-	ValueResult<T> evaluate(DefinitionVisitor state);
-
 	TypeToken<T> getType();
+
+	@Override
+	default <U> U accept(ExpressionVisitor<U> visitor) {
+		return accept((ValueExpressionVisitor<U, ? super T>) visitor);
+	}
+
+	<U> U accept(ValueExpressionVisitor<U, ? super T> visitor);
 
 	default <R> FieldExpression<? super T, R> accessField(FieldMember<? super T, R> field) {
 		return new FieldExpression<>(this, field);

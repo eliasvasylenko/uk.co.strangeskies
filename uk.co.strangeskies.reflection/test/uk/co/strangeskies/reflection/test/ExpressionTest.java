@@ -23,9 +23,10 @@ import static uk.co.strangeskies.reflection.LiteralExpression.literal;
 import org.junit.Assert;
 import org.junit.Test;
 
+import uk.co.strangeskies.reflection.DefinitionVisitor;
 import uk.co.strangeskies.reflection.FieldMember;
 import uk.co.strangeskies.reflection.InvocableMember;
-import uk.co.strangeskies.reflection.DefinitionVisitor;
+import uk.co.strangeskies.reflection.State;
 import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.ValueExpression;
 import uk.co.strangeskies.reflection.ValueResult;
@@ -116,7 +117,7 @@ public class ExpressionTest {
 		VariableExpression<TestClass> variable = block.declareVariable(TestClass.class, valueExpression(instance));
 
 		block.addExpression(variable.accessField(TEST_FIELD).assign(literal("value")));
-		block.execute(DefinitionVisitor.create());
+		block.execute(new State());
 
 		Assert.assertEquals("value", instance.field);
 	}
@@ -129,7 +130,7 @@ public class ExpressionTest {
 
 		block.addExpression(local.assign(literal("value")));
 		block.addExpression(result.assign(local));
-		block.execute(DefinitionVisitor.create());
+		block.execute(new State());
 
 		Assert.assertEquals("value", result.evaluate(null).get());
 	}
@@ -143,7 +144,7 @@ public class ExpressionTest {
 
 		block.addExpression(variable.assign(valueExpression(instance)));
 		block.addExpression(variable.invokeMethod(TEST_SET_METHOD, literal("value")));
-		block.execute(DefinitionVisitor.create());
+		block.execute(new State());
 
 		Assert.assertEquals("value", instance.field);
 	}

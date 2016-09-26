@@ -21,32 +21,35 @@ package uk.co.strangeskies.reflection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class State implements DefinitionVisitor {
-	private final DefinitionVisitor enclosingState;
+public class State implements StatementVisitor {
 	private final ReflectiveInstance<?> receiver;
+	private final State enclosingState;
+
 	private final Map<LocalValueExpression<?>, Object> locals;
 
 	private boolean returned;
 	private Object returnValue;
 
-	public State(ReflectiveInstance<?> receiver,
-			DefinitionVisitor enclosingState) {
+	private State(ReflectiveInstance<?> receiver, State enclosingState) {
 		this.receiver = receiver;
 		this.enclosingState = enclosingState;
 
 		locals = new HashMap<>();
 	}
 
-	@Override
-	public <T> void declareLocal(LocalValueExpression<T> variable, T value) {
-		if (locals.containsKey(variable)) {
-			throw new ReflectionException(p -> p.cannotRedefineVariable(variable));
-		}
-		locals.put(variable, value);
+	public State(ReflectiveInstance<?> receiver) {
+		this(receiver, null);
+	}
+
+	public State(State enclosingState) {
+		this(null, enclosingState);
+	}
+
+	public State() {
+		this(null, null);
 	}
 
 	@SuppressWarnings("unchecked")
-	@Override
 	public <T> T getEnclosedLocal(LocalValueExpression<T> variable) {
 		if (locals.containsKey(variable)) {
 			return (T) locals.get(variable);
@@ -57,9 +60,7 @@ public class State implements DefinitionVisitor {
 		}
 	}
 
-	@Override
-	public <T> void setEnclosedLocal(LocalVariableExpression<T> variable,
-			T value) {
+	public <T> void setEnclosedLocal(LocalVariableExpression<T> variable, T value) {
 		if (locals.containsKey(variable)) {
 			locals.put(variable, value);
 		} else if (enclosingState != null) {
@@ -70,57 +71,61 @@ public class State implements DefinitionVisitor {
 	}
 
 	@SuppressWarnings("unchecked")
-	@Override
 	public <J> J getEnclosingInstance(ClassDefinition<J> receiverClass) {
 		if (receiver.getReflectiveClassDefinition() == receiverClass) {
 			return (J) receiver;
 		} else if (enclosingState != null) {
 			return enclosingState.getEnclosingInstance(receiverClass);
 		} else {
-			throw new ReflectionException(
-					p -> p.cannotResolveEnclosingInstance(receiverClass));
+			throw new ReflectionException(p -> p.cannotResolveEnclosingInstance(receiverClass));
 		}
 	}
 
-	@Override
-	public Object getReturnValue() {
-		return returnValue;
-	}
-
-	@Override
-	public boolean isReturned() {
-		return returned;
-	}
-
-	@Override
-	public void returnValue(Object value) {
-		returned = true;
-		returnValue = value;
-	}
-
-	@Override
-	public void returnVoid() {
-		returned = true;
-	}
-
-	@Override
-	public <T> void visitTypedBlock(TypedBlockDefinition<T> typedBlock) {
+	public <T> void visitBlock(Block block) {
 		state = state.enclose();
 
-		for (Statement statement : typedBlock.statements) {
+		block.getStatements().forEach(statement -> {
 			statement.execute(state);
 
 			if (state.isReturned()) {
 				return state.getReturnValue();
 			}
-		}
+		});
 
 		return null;
 	}
 
 	@Override
-	public void visitVoidBlock(VoidBlock voidBlock) {
+	public void visitReturn() {
 		// TODO Auto-generated method stub
 
+	}
+
+	@Override
+	public <T> void visitReturn(ValueExpression<T> expression) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void visitExpression(Expression expression) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public <T> void visitDeclaration(LocalVariableExpression<T> variable) {
+		if (locals.containsKey(variable)) {
+			throw new ReflectionException(p -> p.cannotRedefineVariable(variable));
+		}
+		locals.put(variable, null);
+	}
+
+	@Override
+	public <T> void visitDeclaration(LocalValueExpression<T> value, ValueExpression<? extends T> initializer) {
+		if (locals.containsKey(value)) {
+			throw new ReflectionException(p -> p.cannotRedefineVariable(value));
+		}
+		locals.put(value, null); // TODO get value from initializer
 	}
 }

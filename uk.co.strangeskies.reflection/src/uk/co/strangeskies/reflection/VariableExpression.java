@@ -20,14 +20,13 @@ package uk.co.strangeskies.reflection;
 
 public interface VariableExpression<T> extends ValueExpression<T> {
 	@Override
-	VariableResult<T> evaluate(DefinitionVisitor state);
+	default <U> U accept(ValueExpressionVisitor<U, ? super T> visitor) {
+		return accept((VariableExpressionVisitor<U, ? super T>) visitor);
+	}
+
+	<U> U accept(VariableExpressionVisitor<U, ? super T> visitor);
 
 	default ValueExpression<T> assign(ValueExpression<? extends T> value) {
 		return new AssignmentExpression<>(this, value);
-	}
-
-	@Override
-	default Statement asStatement() {
-		throw new ReflectionException(p -> p.invalidExpressionForStatement(this));
 	}
 }

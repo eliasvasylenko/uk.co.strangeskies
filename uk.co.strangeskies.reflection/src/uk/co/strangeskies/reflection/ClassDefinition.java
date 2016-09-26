@@ -159,14 +159,14 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 		methods = new HashMap<>();
 		getSuperTypes().stream().flatMap(t -> t.getRawTypes().stream()).flatMap(t -> Arrays.stream(t.getMethods()))
 				.forEach(this::inheritMethod);
-		StreamUtilities.<Class<?>> iterate(getSuperClass(), Class::getSuperclass)
+		StreamUtilities.<Class<?>>iterate(getSuperClass(), Class::getSuperclass)
 				.flatMap(c -> Arrays.stream(c.getDeclaredMethods())).forEach(this::inheritMethod);
 
 		this.receiverExpression = new ValueExpression<T>() {
 			@Override
-			public ValueResult<T> evaluate(DefinitionVisitor state) {
-				return () -> state.getEnclosingInstance(ClassDefinition.this);
-			}
+			public <U> U accept(ValueExpressionVisitor<U, ? super T> visitor) {
+				return visitor.visitReceiver(ClassDefinition.this);
+			};
 
 			@Override
 			public TypeToken<T> getType() {
@@ -250,8 +250,8 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 		rawTypes.add(ReflectiveInstance.class);
 		ReflectiveInstanceImpl reflectiveInstance = new ReflectiveInstanceImpl();
 
-		ReflectiveInstance<T> instance = (ReflectiveInstance<T>) Proxy.newProxyInstance(classLoader, rawTypes.toArray(new Class<?>[rawTypes.size()]),
-				(proxy, method, args) -> {
+		ReflectiveInstance<T> instance = (ReflectiveInstance<T>) Proxy.newProxyInstance(classLoader,
+				rawTypes.toArray(new Class<?>[rawTypes.size()]), (proxy, method, args) -> {
 					if (method.getDeclaringClass().equals(ReflectiveInstance.class)) {
 						return method.invoke(reflectiveInstance, args);
 					}

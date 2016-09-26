@@ -28,20 +28,8 @@ public class FieldExpression<O, T> implements VariableExpression<T> {
 	}
 
 	@Override
-	public VariableResult<T> evaluate(DefinitionVisitor state) {
-		O targetObject = value.evaluate(state).get();
-
-		return new VariableResult<T>() {
-			@Override
-			public T get() {
-				return field.get(targetObject);
-			}
-
-			@Override
-			public void set(T value) {
-				field.set(targetObject, value);
-			}
-		};
+	public <U> U accept(VariableExpressionVisitor<U, ? super T> visitor) {
+		return visitor.visitField(value, field);
 	}
 
 	@Override

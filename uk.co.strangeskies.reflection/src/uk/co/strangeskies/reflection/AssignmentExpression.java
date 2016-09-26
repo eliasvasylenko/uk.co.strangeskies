@@ -36,14 +36,8 @@ public class AssignmentExpression<T> implements ValueExpression<T> {
 	}
 
 	@Override
-	public ValueResult<T> evaluate(DefinitionVisitor state) {
-		VariableResult<T> targetResult = target.evaluate(state);
-
-		T result = value.evaluate(state).get();
-
-		targetResult.set(result);
-
-		return () -> result;
+	public <U> U accept(ValueExpressionVisitor<U, ? super T> visitor) {
+		return visitor.visitValue(getType()).visitAssignment(target, value);
 	}
 
 	@Override
