@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import uk.co.strangeskies.reflection.ExpressionVisitor.ValueExpressionVisitor;
 import uk.co.strangeskies.utilities.collection.StreamUtilities;
 
 /**
@@ -159,13 +160,13 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 		methods = new HashMap<>();
 		getSuperTypes().stream().flatMap(t -> t.getRawTypes().stream()).flatMap(t -> Arrays.stream(t.getMethods()))
 				.forEach(this::inheritMethod);
-		StreamUtilities.<Class<?>>iterate(getSuperClass(), Class::getSuperclass)
+		StreamUtilities.<Class<?>> iterate(getSuperClass(), Class::getSuperclass)
 				.flatMap(c -> Arrays.stream(c.getDeclaredMethods())).forEach(this::inheritMethod);
 
 		this.receiverExpression = new ValueExpression<T>() {
 			@Override
-			public <U> U accept(ValueExpressionVisitor<U, ? super T> visitor) {
-				return visitor.visitReceiver(ClassDefinition.this);
+			public void accept(ValueExpressionVisitor<T> visitor) {
+				visitor.visitReceiver(ClassDefinition.this);
 			};
 
 			@Override

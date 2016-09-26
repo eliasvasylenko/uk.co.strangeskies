@@ -24,5 +24,5 @@ package uk.co.strangeskies.reflection;
  * @author Elias N Vasylenko
  */
 public interface Expression {
-	<T> T accept(ExpressionVisitor<T> visitor);
+	void accept(ExpressionVisitor visitor);
 }

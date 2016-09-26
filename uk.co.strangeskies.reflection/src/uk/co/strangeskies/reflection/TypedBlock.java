@@ -18,23 +18,23 @@
  */
 package uk.co.strangeskies.reflection;
 
-public class TypedBlockDefinition<T> extends Block<TypedBlockDefinition<T>> {
-	public TypedBlockDefinition() {
+public class TypedBlock<T> extends Block<TypedBlock<T>> {
+	public TypedBlock() {
 		super();
 	}
 
-	public TypedBlockDefinition(TypedBlockDefinition<T> scope) {
+	public TypedBlock(TypedBlock<T> scope) {
 		super(scope);
 	}
 
-	public TypedBlockDefinition<T> addReturnStatement(ValueExpression<T> expression) {
+	public TypedBlock<T> addReturnStatement(ValueExpression<T> expression) {
 		addStatement(v -> v.visitReturn(expression));
 
 		return this;
 	}
 
 	@Override
-	public TypedBlockDefinition<T> copy() {
-		return new TypedBlockDefinition<>(this);
+	public TypedBlock<T> copy() {
+		return new TypedBlock<>(this);
 	}
 }

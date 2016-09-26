@@ -18,25 +18,22 @@
  */
 package uk.co.strangeskies.reflection;
 
+import uk.co.strangeskies.reflection.ExpressionVisitor.ValueExpressionVisitor;
+import uk.co.strangeskies.reflection.ExpressionVisitor.VariableExpressionVisitor;
+
 public class LocalVariableExpression<T> extends LocalValueExpression<T> implements VariableExpression<T> {
 	LocalVariableExpression(TypeToken<T> type) {
 		super(type);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public VariableResult<T> evaluate(DefinitionVisitor state) {
-		ValueResult<T> value = super.evaluate(state);
+	public void accept(ValueExpressionVisitor<T> visitor) {
+		accept((VariableExpressionVisitor<T>) visitor);
+	}
 
-		return new VariableResult<T>() {
-			@Override
-			public T get() {
-				return value.get();
-			}
-
-			@Override
-			public void set(T value) {
-				state.setEnclosedLocal(LocalVariableExpression.this, value);
-			}
-		};
+	@Override
+	public void accept(VariableExpressionVisitor<T> visitor) {
+		visitor.visitLocal(getId());
 	}
 }

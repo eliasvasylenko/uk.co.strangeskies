@@ -18,6 +18,9 @@
  */
 package uk.co.strangeskies.reflection;
 
+import uk.co.strangeskies.reflection.ExpressionVisitor.ValueExpressionVisitor;
+import uk.co.strangeskies.reflection.ExpressionVisitor.VariableExpressionVisitor;
+
 public class FieldExpression<O, T> implements VariableExpression<T> {
 	private final ValueExpression<? extends O> value;
 	private final FieldMember<O, T> field;
@@ -28,8 +31,13 @@ public class FieldExpression<O, T> implements VariableExpression<T> {
 	}
 
 	@Override
-	public <U> U accept(VariableExpressionVisitor<U, ? super T> visitor) {
-		return visitor.visitField(value, field);
+	public void accept(ValueExpressionVisitor<T> visitor) {
+		accept(visitor.variable());
+	}
+
+	@Override
+	public void accept(VariableExpressionVisitor<T> visitor) {
+		visitor.visitField(value, field);
 	}
 
 	@Override

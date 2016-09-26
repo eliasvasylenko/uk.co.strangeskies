@@ -18,6 +18,8 @@
  */
 package uk.co.strangeskies.reflection;
 
+import uk.co.strangeskies.reflection.ExpressionVisitor.VariableExpressionVisitor;
+
 public class VariableExpressionProxy<T> implements VariableExpression<T> {
 	private VariableExpression<T> component;
 
@@ -31,9 +33,9 @@ public class VariableExpressionProxy<T> implements VariableExpression<T> {
 	}
 
 	@Override
-	public <U> U accept(VariableExpressionVisitor<U, ? super T> visitor) {
+	public void accept(VariableExpressionVisitor<T> visitor) {
 		if (component != null) {
-			return component.accept(visitor);
+			component.accept(visitor);
 		} else {
 			throw new ReflectionException(p -> p.cannotAccessPlaceholderExpression(this));
 		}

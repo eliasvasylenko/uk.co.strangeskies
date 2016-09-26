@@ -18,6 +18,8 @@
  */
 package uk.co.strangeskies.reflection;
 
+import uk.co.strangeskies.reflection.ExpressionVisitor.ValueExpressionVisitor;
+
 /**
  * An expression denoting assignment to a {@link VariableExpression}.
  * 
@@ -36,8 +38,8 @@ public class AssignmentExpression<T> implements ValueExpression<T> {
 	}
 
 	@Override
-	public <U> U accept(ValueExpressionVisitor<U, ? super T> visitor) {
-		return visitor.visitValue(getType()).visitAssignment(target, value);
+	public void accept(ValueExpressionVisitor<T> visitor) {
+		visitor.visitAssignment(target, value);
 	}
 
 	@Override

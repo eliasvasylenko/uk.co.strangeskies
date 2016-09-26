@@ -18,6 +18,8 @@
  */
 package uk.co.strangeskies.reflection;
 
+import uk.co.strangeskies.reflection.ExpressionVisitor.ValueExpressionVisitor;
+
 public class LiteralExpression<T> implements ValueExpression<T> {
 	private final T value;
 	private final TypeToken<T> type;
@@ -28,8 +30,8 @@ public class LiteralExpression<T> implements ValueExpression<T> {
 	}
 
 	@Override
-	public <U> U accept(ValueExpressionVisitor<U, ? super T> visitor) {
-		return visitor.visitValue(getType()).visitLiteral(value, type);
+	public void accept(ValueExpressionVisitor<T> visitor) {
+		visitor.visitLiteral(value);
 	}
 
 	@Override

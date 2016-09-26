@@ -52,11 +52,11 @@ public abstract class Block<S extends Block<S>> implements Self<S> {
 		return addStatement(v -> v.visitExpression(expression));
 	}
 
-	public <T> VariableExpression<T> declareVariable(Class<T> type) {
+	public <T> LocalVariableExpression<T> declareVariable(Class<T> type) {
 		return declareVariable(TypeToken.over(type));
 	}
 
-	public <T> VariableExpression<T> declareVariable(TypeToken<T> type) {
+	public <T> LocalVariableExpression<T> declareVariable(TypeToken<T> type) {
 		LocalVariableExpression<T> variable = new LocalVariableExpression<>(type);
 
 		addStatement(s -> s.visitDeclaration(variable));
@@ -64,11 +64,11 @@ public abstract class Block<S extends Block<S>> implements Self<S> {
 		return variable;
 	}
 
-	public <T> VariableExpression<T> declareVariable(Class<T> type, ValueExpression<? extends T> value) {
+	public <T> LocalVariableExpression<T> declareVariable(Class<T> type, ValueExpression<? extends T> value) {
 		return declareVariable(TypeToken.over(type), value);
 	}
 
-	public <T> VariableExpression<T> declareVariable(TypeToken<T> type, ValueExpression<? extends T> value) {
+	public <T> LocalVariableExpression<T> declareVariable(TypeToken<T> type, ValueExpression<? extends T> value) {
 		LocalVariableExpression<T> variable = new LocalVariableExpression<>(type);
 
 		addStatement(s -> s.visitDeclaration(variable, value));
@@ -76,11 +76,11 @@ public abstract class Block<S extends Block<S>> implements Self<S> {
 		return variable;
 	}
 
-	public <T> ValueExpression<T> declareValue(Class<T> type, ValueExpression<? extends T> value) {
+	public <T> LocalValueExpression<T> declareValue(Class<T> type, ValueExpression<? extends T> value) {
 		return declareValue(TypeToken.over(type), value);
 	}
 
-	public <T> ValueExpression<T> declareValue(TypeToken<T> type, ValueExpression<? extends T> value) {
+	public <T> LocalValueExpression<T> declareValue(TypeToken<T> type, ValueExpression<? extends T> value) {
 		LocalValueExpression<T> variable = new LocalValueExpression<>(type);
 
 		addStatement(s -> s.visitDeclaration(variable, value));

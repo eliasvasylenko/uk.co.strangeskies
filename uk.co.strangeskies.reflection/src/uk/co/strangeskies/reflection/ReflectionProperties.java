@@ -139,9 +139,9 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 
 	Localized<String> mustOverrideMethods(Collection<Method> classMethod);
 
-	Localized<String> undefinedVariable(LocalValueExpression<?> variable);
+	Localized<String> undefinedVariable(LocalVariable<?> variable);
 
 	Localized<String> cannotResolveEnclosingInstance(ClassDefinition<?> receiverClass);
 
-	Localized<String> cannotRedefineVariable(LocalValueExpression<?> variable);
+	Localized<String> cannotRedeclareVariable(LocalVariable<?> variable);
 }

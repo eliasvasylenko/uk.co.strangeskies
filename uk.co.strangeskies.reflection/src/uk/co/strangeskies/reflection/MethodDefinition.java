@@ -23,15 +23,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class MethodDefinition<C, T>
-		extends ParameterizedDefinition<MethodDefinition<C, T>>
+public class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefinition<C, T>>
 		implements MemberDefinition<C> {
 	private final ClassDefinition<C> classDefinition;
 	private final String methodName;
 
 	private final List<LocalVariableExpression<?>> parameters;
 	private final TypeToken<T> returnType;
-	private final TypedBlockDefinition<T> body;
+	private final TypedBlock<T> body;
 
 	private final MethodSignature overrideSignature;
 
@@ -41,7 +40,7 @@ public class MethodDefinition<C, T>
 
 		this.classDefinition = declaration.getClassDefinition();
 		this.methodName = declaration.getName();
-		this.body = new TypedBlockDefinition<>();
+		this.body = new TypedBlock<>();
 
 		ArrayList<LocalVariableExpression<?>> parameters = new ArrayList<>();
 		for (VariableExpressionProxy<?> proxy : declaration.getParameters()) {
@@ -52,12 +51,11 @@ public class MethodDefinition<C, T>
 		if (declaration.getReturnType() == null) {
 			this.returnType = (TypeToken<T>) TypeToken.over(void.class);
 		} else {
-			this.returnType = (TypeToken<T>) TypeToken
-					.over(declaration.getReturnType());
+			this.returnType = (TypeToken<T>) TypeToken.over(declaration.getReturnType());
 		}
 
-		overrideSignature = new MethodSignature(methodName, parameters.stream()
-				.map(v -> v.getType().getRawType()).toArray(Class<?>[]::new));
+		overrideSignature = new MethodSignature(methodName,
+				parameters.stream().map(v -> v.getType().getRawType()).toArray(Class<?>[]::new));
 
 		classDefinition.overrideMethod(this);
 	}
@@ -75,10 +73,8 @@ public class MethodDefinition<C, T>
 		return overrideSignature;
 	}
 
-	private <U> LocalVariableExpression<U> getParameter(
-			VariableExpressionProxy<U> proxy, AnnotatedType type) {
-		TypeToken<?> typeToken = TypeToken
-				.over(substituteTypeVariableSignatures(type));
+	private <U> LocalVariableExpression<U> getParameter(VariableExpressionProxy<U> proxy, AnnotatedType type) {
+		TypeToken<?> typeToken = TypeToken.over(substituteTypeVariableSignatures(type));
 
 		@SuppressWarnings("unchecked")
 		LocalVariableExpression<U> variable = (LocalVariableExpression<U>) new LocalVariableExpression<>(
@@ -88,7 +84,7 @@ public class MethodDefinition<C, T>
 		return variable;
 	}
 
-	public TypedBlockDefinition<T> body() {
+	public TypedBlock<T> body() {
 		return body;
 	}
 
@@ -124,23 +120,20 @@ public class MethodDefinition<C, T>
 		 */
 	}
 
-	@SuppressWarnings("unchecked")
 	public T invoke(ReflectiveInstance<C> receiver, Object[] arguments) {
-		State state = new State(receiver, null);
+		Executor state = new Executor(receiver);
 
 		int i = 0;
 		for (LocalVariableExpression<?> parameter : parameters) {
-			setParameterUnsafe(state, parameter, arguments[i]);
+			setParameterUnsafe(state, parameter.getId(), arguments[i]);
 		}
 
-		body().accept(state);
-
-		return (T) state.getReturnValue();
+		return state.executeBlock(body());
 	}
 
 	@SuppressWarnings("unchecked")
-	private static <T> void setParameterUnsafe(DefinitionVisitor state,
-			LocalVariableExpression<T> parameter, Object argument) {
-		state.declareLocal(parameter, (T) argument);
+	private static <T> void setParameterUnsafe(Executor state, LocalVariable<T> parameter, Object argument) {
+		state.declareLocal(parameter);
+		state.setEnclosedLocal(parameter, (T) argument);
 	}
 }

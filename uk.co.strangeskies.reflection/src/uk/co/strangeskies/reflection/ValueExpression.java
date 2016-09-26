@@ -21,12 +21,14 @@ package uk.co.strangeskies.reflection;
 import java.util.Arrays;
 import java.util.List;
 
+import uk.co.strangeskies.reflection.ExpressionVisitor.ValueExpressionVisitor;
+
 public interface ValueExpression<T> extends Expression {
 	static <T> ValueExpression<T> nullExpression() {
 		return new ValueExpression<T>() {
 			@Override
-			public <U> U accept(ValueExpressionVisitor<U, ? super T> visitor) {
-				return visitor.visitValue(getType()).visitNull();
+			public void accept(ValueExpressionVisitor<T> visitor) {
+				visitor.visitNull();
 			}
 
 			@Override
@@ -36,14 +38,14 @@ public interface ValueExpression<T> extends Expression {
 		};
 	}
 
-	TypeToken<T> getType();
-
 	@Override
-	default <U> U accept(ExpressionVisitor<U> visitor) {
-		return accept((ValueExpressionVisitor<U, ? super T>) visitor);
+	default void accept(ExpressionVisitor visitor) {
+		accept(visitor.value(getType()));
 	}
 
-	<U> U accept(ValueExpressionVisitor<U, ? super T> visitor);
+	void accept(ValueExpressionVisitor<T> visitor);
+
+	TypeToken<T> getType();
 
 	default <R> FieldExpression<? super T, R> accessField(FieldMember<? super T, R> field) {
 		return new FieldExpression<>(this, field);

@@ -21,36 +21,47 @@ package uk.co.strangeskies.reflection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class State implements StatementVisitor {
+public class Executor implements StatementVisitor {
 	private final ReflectiveInstance<?> receiver;
-	private final State enclosingState;
+	private final Executor enclosingState;
 
-	private final Map<LocalValueExpression<?>, Object> locals;
+	private final Map<LocalVariable<?>, Object> locals;
 
 	private boolean returned;
 	private Object returnValue;
 
-	private State(ReflectiveInstance<?> receiver, State enclosingState) {
+	private Executor(ReflectiveInstance<?> receiver, Executor enclosingState) {
 		this.receiver = receiver;
 		this.enclosingState = enclosingState;
 
 		locals = new HashMap<>();
 	}
 
-	public State(ReflectiveInstance<?> receiver) {
+	public Executor(ReflectiveInstance<?> receiver) {
 		this(receiver, null);
 	}
 
-	public State(State enclosingState) {
-		this(null, enclosingState);
+	public Executor() {
+		this(null);
 	}
 
-	public State() {
-		this(null, null);
+	public Executor enclose(ReflectiveInstance<?> receiver) {
+		return new Executor(receiver, this);
+	}
+
+	public Executor enclose() {
+		return enclose(null);
+	}
+
+	public <T> void declareLocal(LocalVariable<T> variable) {
+		if (locals.containsKey(variable)) {
+			throw new ReflectionException(p -> p.cannotRedeclareVariable(variable));
+		}
+		locals.put(variable, null);
 	}
 
 	@SuppressWarnings("unchecked")
-	public <T> T getEnclosedLocal(LocalValueExpression<T> variable) {
+	public <T> T getEnclosedLocal(LocalVariable<T> variable) {
 		if (locals.containsKey(variable)) {
 			return (T) locals.get(variable);
 		} else if (enclosingState != null) {
@@ -60,7 +71,7 @@ public class State implements StatementVisitor {
 		}
 	}
 
-	public <T> void setEnclosedLocal(LocalVariableExpression<T> variable, T value) {
+	public <T> void setEnclosedLocal(LocalVariable<T> variable, T value) {
 		if (locals.containsKey(variable)) {
 			locals.put(variable, value);
 		} else if (enclosingState != null) {
@@ -81,17 +92,31 @@ public class State implements StatementVisitor {
 		}
 	}
 
-	public <T> void visitBlock(Block block) {
-		state = state.enclose();
+	@SuppressWarnings("unchecked")
+	public <T> T executeBlock(TypedBlock<T> block) {
+		return (T) executeBlockImpl(block);
+	}
 
-		block.getStatements().forEach(statement -> {
-			statement.execute(state);
+	public void executeBlock(VoidBlock block) {
+		executeBlockImpl(block);
+	}
 
-			if (state.isReturned()) {
-				return state.getReturnValue();
-			}
-		});
+	private Object executeBlockImpl(Block<?> block) {
+		Executor state = enclose();
 
+		return block.getStatements().map(s -> {
+			s.accept(state);
+			return state.getReturnedValue();
+		}).filter(s -> state.isReturned()).findAny().orElse(null);
+	}
+
+	private boolean isReturned() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private Object getReturnedValue() {
+		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -115,17 +140,12 @@ public class State implements StatementVisitor {
 
 	@Override
 	public <T> void visitDeclaration(LocalVariableExpression<T> variable) {
-		if (locals.containsKey(variable)) {
-			throw new ReflectionException(p -> p.cannotRedefineVariable(variable));
-		}
-		locals.put(variable, null);
+		declareLocal(variable.getId());
 	}
 
 	@Override
-	public <T> void visitDeclaration(LocalValueExpression<T> value, ValueExpression<? extends T> initializer) {
-		if (locals.containsKey(value)) {
-			throw new ReflectionException(p -> p.cannotRedefineVariable(value));
-		}
-		locals.put(value, null); // TODO get value from initializer
+	public <T> void visitDeclaration(LocalValueExpression<T> variable, ValueExpression<? extends T> initializer) {
+		declareLocal(variable.getId());
+		setEnclosedLocal(variable.getId(), null); // TODO get value from initializer
 	}
 }

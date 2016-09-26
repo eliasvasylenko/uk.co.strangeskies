@@ -7,7 +7,7 @@ public interface StatementVisitor {
 
 	void visitExpression(Expression expression);
 
-	<T> void visitDeclaration(LocalVariableExpression<T> value);
+	<T> void visitDeclaration(LocalVariableExpression<T> variable);
 
-	<T> void visitDeclaration(LocalValueExpression<T> value, ValueExpression<? extends T> initializer);
+	<T> void visitDeclaration(LocalValueExpression<T> variable, ValueExpression<? extends T> initializer);
 }

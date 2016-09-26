@@ -18,15 +18,18 @@
  */
 package uk.co.strangeskies.reflection;
 
+import uk.co.strangeskies.reflection.ExpressionVisitor.ValueExpressionVisitor;
+import uk.co.strangeskies.reflection.ExpressionVisitor.VariableExpressionVisitor;
+
 public interface VariableExpression<T> extends ValueExpression<T> {
-	@Override
-	default <U> U accept(ValueExpressionVisitor<U, ? super T> visitor) {
-		return accept((VariableExpressionVisitor<U, ? super T>) visitor);
-	}
-
-	<U> U accept(VariableExpressionVisitor<U, ? super T> visitor);
-
 	default ValueExpression<T> assign(ValueExpression<? extends T> value) {
 		return new AssignmentExpression<>(this, value);
 	}
+
+	@Override
+	default void accept(ValueExpressionVisitor<T> visitor) {
+		accept(visitor.variable());
+	}
+
+	void accept(VariableExpressionVisitor<T> visitor);
 }

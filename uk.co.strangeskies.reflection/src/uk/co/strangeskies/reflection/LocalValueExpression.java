@@ -18,25 +18,26 @@
  */
 package uk.co.strangeskies.reflection;
 
-public class LocalValueExpression<T> implements ValueExpression<T> {
-	private final TypeToken<T> type;
+import uk.co.strangeskies.reflection.ExpressionVisitor.ValueExpressionVisitor;
 
-	LocalValueExpression(TypeToken<T> type) {
-		this.type = type;
+public class LocalValueExpression<T> implements ValueExpression<T> {
+	private final LocalVariable<T> local;
+
+	public LocalValueExpression(TypeToken<T> type) {
+		this.local = new LocalVariable<>(type);
 	}
 
 	@Override
-	public ValueResult<T> evaluate(DefinitionVisitor state) {
-		return new ValueResult<T>() {
-			@Override
-			public T get() {
-				return state.getEnclosedLocal(LocalValueExpression.this);
-			}
-		};
+	public void accept(ValueExpressionVisitor<T> visitor) {
+		visitor.visitLocal(getId());
+	}
+
+	public LocalVariable<T> getId() {
+		return local;
 	}
 
 	@Override
 	public TypeToken<T> getType() {
-		return type;
+		return local.getType();
 	}
 }
