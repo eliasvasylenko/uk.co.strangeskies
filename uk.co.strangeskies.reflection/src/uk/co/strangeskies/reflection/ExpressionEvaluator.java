@@ -67,8 +67,10 @@ public class ExpressionEvaluator {
 				List<ValueExpression<?>> arguments) {
 			O targetObject = evaluate(receiver).get();
 
-			complete(() -> invocable.invoke(targetObject,
-					arguments.stream().map(a -> evaluate(a).get()).collect(Collectors.toList())));
+			T result = invocable.invoke(targetObject,
+					arguments.stream().map(a -> evaluate(a).get()).collect(Collectors.toList()));
+
+			complete(() -> result);
 		}
 
 		@Override

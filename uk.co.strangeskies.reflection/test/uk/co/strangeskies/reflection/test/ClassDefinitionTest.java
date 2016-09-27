@@ -28,7 +28,6 @@ import org.junit.Test;
 
 import uk.co.strangeskies.reflection.ClassDefinition;
 import uk.co.strangeskies.reflection.MethodDeclaration;
-import uk.co.strangeskies.reflection.MethodDefinition;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.VariableExpression;

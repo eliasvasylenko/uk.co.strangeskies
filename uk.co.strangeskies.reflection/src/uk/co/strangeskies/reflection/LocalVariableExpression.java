@@ -22,14 +22,13 @@ import uk.co.strangeskies.reflection.ExpressionVisitor.ValueExpressionVisitor;
 import uk.co.strangeskies.reflection.ExpressionVisitor.VariableExpressionVisitor;
 
 public class LocalVariableExpression<T> extends LocalValueExpression<T> implements VariableExpression<T> {
-	LocalVariableExpression(TypeToken<T> type) {
+	public LocalVariableExpression(TypeToken<T> type) {
 		super(type);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void accept(ValueExpressionVisitor<T> visitor) {
-		accept((VariableExpressionVisitor<T>) visitor);
+		accept(visitor.variable());
 	}
 
 	@Override
