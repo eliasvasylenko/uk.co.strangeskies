@@ -18,4 +18,4 @@ env:
 
 install: "./gradlew --version"
 
-script: ./gradlew --continue build test aggregateJavadoc publishGhPages artifactoryPublish -PgithubUser="${GITHUB_TOKEN}" -PgithubPassword="" -PjfrogUser="${JFROG_USER}" -PjfrogPassword="${JFROG_PASSWORD}" --stacktrace
+script: ./gradlew --continue build test aggregateJavadoc publishGhPages -PgithubUser="${GITHUB_TOKEN}" -PgithubPassword="" -PjfrogUser="${JFROG_USER}" -PjfrogPassword="${JFROG_PASSWORD}" --stacktrace

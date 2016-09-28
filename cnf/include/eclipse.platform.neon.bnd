@@ -3,6 +3,9 @@
 	javax.inject,\
 	org.eclipse.core.commands,\
 	org.eclipse.core.contenttype,\
+	org.eclipse.core.databinding,\
+	org.eclipse.core.databinding.observable,\
+	org.eclipse.core.databinding.property,\
 	org.eclipse.core.expressions,\
 	org.eclipse.core.runtime,\
 	org.eclipse.e4.core.di,\
