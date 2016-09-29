@@ -63,14 +63,25 @@ public class ObservableServiceSupplier extends ExtendedObjectSupplier {
 		private final Class<T> elementType;
 
 		@SuppressWarnings("unchecked")
-		public ServiceUpdateListener(BundleContext context, Type elementType) throws InvalidSyntaxException {
+		public ServiceUpdateListener(BundleContext context, Type elementType, ObservableService annotation)
+				throws InvalidSyntaxException {
 			this.context = context;
 			this.references = FXCollections.observableArrayList();
 			this.elementType = elementType instanceof ParameterizedType
 					? (Class<T>) ((ParameterizedType) elementType).getRawType() : (Class<T>) elementType;
 
 			synchronized (this) {
-				context.addServiceListener(this, "(" + Constants.OBJECTCLASS + "=" + this.elementType.getName() + ")");
+				String filter = "(" + Constants.OBJECTCLASS + "=" + this.elementType.getName() + ")";
+
+				if (!annotation.target().equals("")) {
+					filter = "(&" + annotation.target() + filter + ")";
+				}
+
+				if (annotation.requirePrototypeScope()) {
+					filter = "(&(" + Constants.SERVICE_SCOPE + "=" + Constants.SCOPE_PROTOTYPE + ")" + filter + ")";
+				}
+
+				context.addServiceListener(this, filter);
 
 				refreshServices();
 			}
@@ -138,7 +149,7 @@ public class ObservableServiceSupplier extends ExtendedObjectSupplier {
 				ParameterizedType parameterizedType = (ParameterizedType) collectionType;
 
 				ServiceUpdateListener<?> listener = new ServiceUpdateListener<>(bundle.getBundleContext(),
-						parameterizedType.getActualTypeArguments()[0]);
+						parameterizedType.getActualTypeArguments()[0], descriptor.getQualifier(ObservableService.class));
 
 				if (parameterizedType.getRawType() == ObservableList.class) {
 					return listener.getServiceList();

@@ -40,8 +40,8 @@ import uk.co.strangeskies.fx.TreeItemImpl;
  * an Eclipse RCP environment.
  * <p>
  * This class allows {@link TreeContribution tree contributions} to be
- * contributed via {@link EclipseModularTreeContributor contributors} so that
- * the contributions are instantiated according to an Eclipse injection context.
+ * contributed via {@link EclipseTreeContribution contributors} so that the
+ * contributions are instantiated according to an Eclipse injection context.
  * 
  * @author Elias N Vasylenko
  */
@@ -55,16 +55,20 @@ public class EclipseModularTreeController {
 	@Inject
 	IEclipseContext context;
 
+	/*
+	 * As we are injecting into the contributions from the eclipse context of the
+	 * tree we may only accept prototype scope services.
+	 */
 	@Inject
-	@ObservableService
-	ObservableList<EclipseModularTreeContributor> contributions;
+	@ObservableService(requirePrototypeScope = true)
+	ObservableList<EclipseTreeContribution<?>> contributions;
 
 	/**
 	 * Instantiate a controller with the default id - the simple name of the class
 	 * - and no contribution filter.
 	 */
 	public EclipseModularTreeController() {
-		tableId.set(getClass().getSimpleName());
+		tableId.set(getClass().getName());
 		filter = null;
 	}
 
@@ -81,9 +85,8 @@ public class EclipseModularTreeController {
 	 * @param id
 	 *          the {@link #getId() ID} of the controller to create
 	 * @param filter
-	 *          a filter over the IDs of which
-	 *          {@link EclipseModularTreeContributor contributions} to accept
-	 *          contributions from
+	 *          a filter over the IDs of which {@link EclipseTreeContribution
+	 *          contributions} to accept contributions from
 	 */
 	public EclipseModularTreeController(String id, Predicate<String> filter) {
 		tableId.set(id);
@@ -92,7 +95,7 @@ public class EclipseModularTreeController {
 
 	@FXML
 	void initialize() {
-		contributions.addListener((ListChangeListener<EclipseModularTreeContributor>) change -> {
+		contributions.addListener((ListChangeListener<EclipseTreeContribution<?>>) change -> {
 			while (change.next())
 				if (change.wasAdded())
 					change.getAddedSubList().forEach(this::contribute);
@@ -103,7 +106,7 @@ public class EclipseModularTreeController {
 
 	/**
 	 * @return The ID property of the controller. This is used to allow
-	 *         {@link EclipseModularTreeContributor contributions} to filter which
+	 *         {@link EclipseTreeContribution contributions} to filter which
 	 *         controllers they wish to contribute to.
 	 */
 	public StringProperty getTableIdProperty() {
@@ -125,10 +128,11 @@ public class EclipseModularTreeController {
 		tableId.set(id);
 	}
 
-	protected void contribute(EclipseModularTreeContributor contributor) {
-		if (filter == null || filter.test(contributor.getContributionId()))
-			for (Class<? extends TreeContribution<?>> contribution : contributor.getContributions(getId()))
-				modularTree.addContribution(ContextInjectionFactory.make(contribution, context));
+	protected void contribute(EclipseTreeContribution<?> contribution) {
+		if ((filter == null || filter.test(contribution.getContributionId())) && contribution.appliesToTree(getId())) {
+			ContextInjectionFactory.inject(contribution, context);
+			modularTree.addContribution(contribution);
+		}
 	}
 
 	/**

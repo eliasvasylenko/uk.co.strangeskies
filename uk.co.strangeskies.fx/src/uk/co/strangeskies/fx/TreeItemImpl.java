@@ -153,15 +153,6 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 		super.getChildren().setAll(childrenItems);
 	}
 
-	@Override
-	public boolean isLeaf() {
-		if (!childrenCalculated) {
-			rebuildChildren();
-		}
-
-		return super.isLeaf();
-	}
-
 	/**
 	 * An implementation of {@link TreeItemData} for {@link TreeItemImpl}.
 	 * 
