@@ -75,39 +75,6 @@ public class ObservablePropertyImpl<T extends R, R> implements ObservablePropert
 		value = initialValue;
 	}
 
-	/**
-	 * @param <T>
-	 *          the type of event message to produce
-	 * @param <R>
-	 *          the type we may assign from
-	 * @param assignmentFunction
-	 *          an assignment function, accepting the assigned value and the
-	 *          current value, and returning the new value
-	 * @param equality
-	 *          an equivalence relation over the value space
-	 * @param initialValue
-	 *          the initial value
-	 * @return an observable property with the given behavior and default value
-	 */
-	public static <T extends R, R> ObservableProperty<T, R> over(BiFunction<R, T, T> assignmentFunction,
-			BiPredicate<T, T> equality, T initialValue) {
-		return new ObservablePropertyImpl<>(assignmentFunction, equality, initialValue);
-	}
-
-	/**
-	 * Instantiate an observable property with identity assignment and identity
-	 * equality.
-	 * 
-	 * @param <T>
-	 *          the type of event message to produce and which we may assign from
-	 * @param initialValue
-	 *          the initial value
-	 * @return an observable property with the given default value
-	 */
-	public static <T> ObservableProperty<T, T> over(T initialValue) {
-		return new ObservablePropertyImpl<>((r, t) -> r, (a, b) -> a == b, initialValue);
-	}
-
 	@Override
 	public boolean addObserver(Consumer<? super T> observer) {
 		return observers.add(observer);

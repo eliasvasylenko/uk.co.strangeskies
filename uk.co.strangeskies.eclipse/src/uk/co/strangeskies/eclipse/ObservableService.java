@@ -52,9 +52,4 @@ public @interface ObservableService {
 	 * The target filter for the reference.
 	 */
 	String target() default "";
-
-	/**
-	 * Whether we require prototype scope on satisfying services.
-	 */
-	boolean requirePrototypeScope() default false;
 }

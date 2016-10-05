@@ -183,6 +183,17 @@ public class FXMLLoadBuilder<C> {
 	}
 
 	/**
+	 * @param classLoader
+	 *          the new class loader for the {@link FXMLLoader}.
+	 * @return the receiving instance
+	 */
+	public FXMLLoadBuilder<C> classLoader(ClassLoader classLoader) {
+		loader.setClassLoader(classLoader);
+
+		return this;
+	}
+
+	/**
 	 * @param <D>
 	 *          the type of the controller/root object
 	 * @param object

@@ -82,10 +82,6 @@ public class Isomorphism {
 			copiedNodes = backingMap;
 		}
 
-		Mapping() {
-			this(new IdentityHashMap<>());
-		}
-
 		/**
 		 * Make a shallow copy of the given {@link Copyable}, or fetch an existing
 		 * mapping if one has been made via this {@link Isomorphism}.

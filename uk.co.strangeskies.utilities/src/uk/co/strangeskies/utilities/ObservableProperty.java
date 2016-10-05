@@ -18,6 +18,9 @@
  */
 package uk.co.strangeskies.utilities;
 
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
+
 /**
  * A {@link Property property} which is observable as per
  * {@link ObservableValue}, and whose value can also be set.
@@ -29,4 +32,37 @@ package uk.co.strangeskies.utilities;
  * @param <R>
  *          the type the value can be set to
  */
-public interface ObservableProperty<T extends R, R> extends ObservableValue<T>, Property<T, R> {}
+public interface ObservableProperty<T extends R, R> extends ObservableValue<T>, Property<T, R> {
+	/**
+	 * @param <T>
+	 *          the type of event message to produce
+	 * @param <R>
+	 *          the type we may assign from
+	 * @param assignmentFunction
+	 *          an assignment function, accepting the assigned value and the
+	 *          current value, and returning the new value
+	 * @param equality
+	 *          an equivalence relation over the value space
+	 * @param initialValue
+	 *          the initial value
+	 * @return an observable property with the given behavior and default value
+	 */
+	public static <T extends R, R> ObservableProperty<T, R> over(BiFunction<R, T, T> assignmentFunction,
+			BiPredicate<T, T> equality, T initialValue) {
+		return new ObservablePropertyImpl<>(assignmentFunction, equality, initialValue);
+	}
+
+	/**
+	 * Instantiate an observable property with identity assignment and identity
+	 * equality.
+	 * 
+	 * @param <T>
+	 *          the type of event message to produce and which we may assign from
+	 * @param initialValue
+	 *          the initial value
+	 * @return an observable property with the given default value
+	 */
+	public static <T> ObservableProperty<T, T> over(T initialValue) {
+		return new ObservablePropertyImpl<>((r, t) -> r, (a, b) -> a == b, initialValue);
+	}
+}

@@ -18,6 +18,12 @@
  */
 package uk.co.strangeskies.utilities.test;
 
+import static uk.co.strangeskies.utilities.Enumeration.getConstants;
+import static uk.co.strangeskies.utilities.Enumeration.readableName;
+import static uk.co.strangeskies.utilities.Enumeration.valueOf;
+import static uk.co.strangeskies.utilities.Enumeration.valueOfEnum;
+
+import java.util.NoSuchElementException;
 import java.util.Objects;
 
 import org.junit.Assert;
@@ -27,18 +33,19 @@ import uk.co.strangeskies.utilities.Enumeration;
 
 /**
  * Careful design is necessary here, as in some cases we are testing what
- * happens during class initialisation, so extra thought must be put into test
+ * happens during class initialization, so extra thought must be put into test
  * isolation
  * 
  * @author Elias N Vasylenko
  *
  */
+@SuppressWarnings("javadoc")
 public class EnumerationTest {
 	/**
-	 * Confirm that {@link Enumeration}s are properly initialised when accessed
+	 * Confirm that {@link Enumeration}s are properly initialized when accessed
 	 * first by literal, rather than via {@link Enumeration#getConstants(Class)}.
-	 * This is significant because of the odd initialisation logic to enforce
-	 * instantiation only inside static initialisers.
+	 * This is significant because of the odd initialization logic to enforce
+	 * instantiation only inside static initializers.
 	 */
 	@Test
 	public void testEnumLiteralAccess() {
@@ -62,8 +69,7 @@ public class EnumerationTest {
 	 */
 	@Test
 	public void testEnumMemberCount() {
-		Assert
-				.assertEquals(4, Enumeration.getConstants(PopulatedEnum.class).size());
+		Assert.assertEquals(4, Enumeration.getConstants(PopulatedEnum.class).size());
 	}
 
 	/**
@@ -73,14 +79,13 @@ public class EnumerationTest {
 	@Test
 	public void testEnumMemberOrder() {
 		for (int i = 0; i < Enumeration.getConstants(NumberedEnum.class).size(); i++) {
-			Assert.assertEquals(i, Enumeration.getConstants(NumberedEnum.class)
-					.get(i).getInstance());
+			Assert.assertEquals(i, Enumeration.getConstants(NumberedEnum.class).get(i).getInstance());
 		}
 	}
 
 	/**
 	 * Confirm that attempts to instantiate instances of an Enumeration after the
-	 * static initialiser has completed throw the appropriate exception.
+	 * static initializer has completed throw the appropriate exception.
 	 */
 	@Test(expected = IllegalStateException.class)
 	public void testPostStaticInitialiserFailure() {
@@ -95,7 +100,7 @@ public class EnumerationTest {
 
 	/**
 	 * Confirm that attempts to instantiate instances of an Enumeration after the
-	 * static initialiser has completed do not add a constant in an incomplete
+	 * static initializer has completed do not add a constant in an incomplete
 	 * state.
 	 */
 	@Test
@@ -108,8 +113,101 @@ public class EnumerationTest {
 
 		try {
 			new EmptyEnum();
-		} catch (IllegalStateException e) {}
-		Assert.assertEquals(0, Enumeration.getConstants(EmptyEnum.class).size());
+		} catch (IllegalStateException e) {
+			// we test this failure in #testPostStaticInitialiserFailure
+		}
+		Assert.assertEquals(0, getConstants(EmptyEnum.class).size());
+	}
+
+	@Test
+	public void testEquality() {
+		for (PopulatedEnum first : getConstants(PopulatedEnum.class)) {
+			for (PopulatedEnum second : getConstants(PopulatedEnum.class)) {
+				Assert.assertEquals(first == second, first.equals(second));
+			}
+		}
+	}
+
+	@Test
+	public void testHashCode() {
+		for (PopulatedEnum first : getConstants(PopulatedEnum.class)) {
+			for (PopulatedEnum second : getConstants(PopulatedEnum.class)) {
+				Assert.assertEquals(first == second, first.hashCode() == second.hashCode());
+			}
+		}
+	}
+
+	@Test
+	public void testOrdinal() {
+		Assert.assertEquals(0, PopulatedEnum.INSTANCE0.ordinal());
+		Assert.assertEquals(1, PopulatedEnum.INSTANCE1.ordinal());
+		Assert.assertEquals(2, PopulatedEnum.INSTANCE2.ordinal());
+		Assert.assertEquals(3, PopulatedEnum.INSTANCE3.ordinal());
+	}
+
+	@Test
+	public void testCopy() {
+		for (PopulatedEnum item : getConstants(PopulatedEnum.class)) {
+			Assert.assertTrue(item == item.copy());
+		}
+	}
+
+	@Test
+	public void testToString() {
+		Assert.assertEquals("Instance0", PopulatedEnum.INSTANCE0.toString());
+		Assert.assertEquals("Instance1", PopulatedEnum.INSTANCE1.toString());
+		Assert.assertEquals("Instance2", PopulatedEnum.INSTANCE2.toString());
+		Assert.assertEquals("Instance3", PopulatedEnum.INSTANCE3.toString());
+	}
+
+	@Test
+	public void testValueOf() {
+		Assert.assertEquals(PopulatedEnum.INSTANCE0, valueOf(PopulatedEnum.class, "Instance0"));
+		Assert.assertEquals(PopulatedEnum.INSTANCE1, valueOf(PopulatedEnum.class, "Instance1"));
+		Assert.assertEquals(PopulatedEnum.INSTANCE2, valueOf(PopulatedEnum.class, "Instance2"));
+		Assert.assertEquals(PopulatedEnum.INSTANCE3, valueOf(PopulatedEnum.class, "Instance3"));
+	}
+
+	@Test(expected = NoSuchElementException.class)
+	public void testValueOfMissing() {
+		valueOf(PopulatedEnum.class, "Instance4");
+	}
+
+	@Test
+	public void testValueOfEnum() {
+		Assert.assertEquals(TraditionalEnum.INSTANCE0, valueOfEnum(TraditionalEnum.class, "INSTANCE0"));
+		Assert.assertEquals(TraditionalEnum.INSTANCE1, valueOfEnum(TraditionalEnum.class, "INSTANCE1"));
+		Assert.assertEquals(TraditionalEnum.INSTANCE2, valueOfEnum(TraditionalEnum.class, "INSTANCE2"));
+		Assert.assertEquals(TraditionalEnum.INSTANCE3, valueOfEnum(TraditionalEnum.class, "INSTANCE3"));
+	}
+
+	@Test
+	public void testReadableEnumNames() {
+		Assert.assertEquals("Instance One", readableName(TraditionalEnumNames.INSTANCE_ONE));
+		Assert.assertEquals("A Second Instance", readableName(TraditionalEnumNames.A_SECOND_INSTANCE));
+		Assert.assertEquals("Instance Number 3", readableName(TraditionalEnumNames.INSTANCE_NUMBER_3));
+		Assert.assertEquals("This Instance Too", readableName(TraditionalEnumNames.this_instance_too));
+	}
+
+	@Test
+	public void testNext() {
+		Assert.assertEquals(PopulatedEnum.INSTANCE1, PopulatedEnum.INSTANCE0.next());
+		Assert.assertEquals(PopulatedEnum.INSTANCE2, PopulatedEnum.INSTANCE1.next());
+		Assert.assertEquals(PopulatedEnum.INSTANCE3, PopulatedEnum.INSTANCE2.next());
+		Assert.assertEquals(PopulatedEnum.INSTANCE0, PopulatedEnum.INSTANCE3.next());
+	}
+
+	@Test
+	public void testEnumNext() {
+		Assert.assertEquals(TraditionalEnum.INSTANCE1, Enumeration.next(TraditionalEnum.INSTANCE0));
+		Assert.assertEquals(TraditionalEnum.INSTANCE2, Enumeration.next(TraditionalEnum.INSTANCE1));
+		Assert.assertEquals(TraditionalEnum.INSTANCE3, Enumeration.next(TraditionalEnum.INSTANCE2));
+		Assert.assertEquals(TraditionalEnum.INSTANCE0, Enumeration.next(TraditionalEnum.INSTANCE3));
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testValueOfEnumMissing() {
+		TraditionalEnum.valueOf("INSTANCE4");
 	}
 
 	/**
@@ -118,7 +216,7 @@ public class EnumerationTest {
 	 */
 	@Test(expected = ExceptionInInitializerError.class)
 	public void testUniqueNames() {
-		Enumeration.getConstants(UniqueEnum.class);
+		getConstants(UniqueEnum.class);
 	}
 
 	static class InnerEnum extends Enumeration<InnerEnum> {
@@ -128,6 +226,14 @@ public class EnumerationTest {
 			super(name);
 		}
 	}
+}
+
+enum TraditionalEnumNames {
+	INSTANCE_ONE, A_SECOND_INSTANCE, INSTANCE_NUMBER_3, this_instance_too
+}
+
+enum TraditionalEnum {
+	INSTANCE0, INSTANCE1, INSTANCE2, INSTANCE3
 }
 
 class UniqueEnum extends Enumeration<UniqueEnum> {

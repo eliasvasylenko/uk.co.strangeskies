@@ -24,6 +24,7 @@ import javax.inject.Inject;
 
 import org.eclipse.e4.core.contexts.ContextInjectionFactory;
 import org.eclipse.e4.core.contexts.IEclipseContext;
+import org.osgi.framework.Constants;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -60,7 +61,7 @@ public class EclipseModularTreeController {
 	 * tree we may only accept prototype scope services.
 	 */
 	@Inject
-	@ObservableService(requirePrototypeScope = true)
+	@ObservableService(target = "(" + Constants.SERVICE_SCOPE + "=" + Constants.SCOPE_PROTOTYPE + ")")
 	ObservableList<EclipseTreeContribution<?>> contributions;
 
 	/**
