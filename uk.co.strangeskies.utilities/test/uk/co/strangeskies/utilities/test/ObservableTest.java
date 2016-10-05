@@ -1,16 +1,36 @@
+/*
+ * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@strangeskies.co.uk>
+ *
+ * This file is part of uk.co.strangeskies.utilities.
+ *
+ * uk.co.strangeskies.utilities is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * uk.co.strangeskies.utilities is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package uk.co.strangeskies.utilities.test;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
+import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -21,7 +41,99 @@ import org.junit.Test;
 import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableImpl;
 
+@SuppressWarnings("javadoc")
 public class ObservableTest {
+	@Test
+	public void ownedObserverEqualityTest() {
+		String first = new String("test");
+		String second = new String("test");
+
+		assertEquals(new Observable.OwnedObserverImpl<String>(null, first) {},
+				new Observable.OwnedObserverImpl<String>(null, first) {});
+
+		assertEquals(new Observable.OwnedObserverImpl<String>(null, second) {},
+				new Observable.OwnedObserverImpl<String>(null, second) {});
+
+		assertNotEquals(new Observable.OwnedObserverImpl<String>(null, first) {},
+				new Observable.OwnedObserverImpl<String>(null, second) {});
+
+		assertNotEquals(new Observable.OwnedObserverImpl<String>(null, first) {}, new Object());
+
+		Consumer<String> consumer = new Observable.OwnedObserverImpl<String>(null, first) {};
+		assertEquals(consumer, consumer);
+	}
+
+	@Test(timeout = 5000)
+	public void weakReferenceTest() {
+		WeakReference<?> reference = new WeakReference<>(new Object());
+
+		while (reference.get() != null) {
+			new Object();
+			System.gc();
+			System.runFinalization();
+		}
+
+		assertNull(reference.get());
+	}
+
+	@Test(timeout = 5000)
+	public void holdWeakObserverTest() {
+		ObservableImpl<String> stringObservable = new ObservableImpl<>();
+
+		List<String> list = new ArrayList<>();
+
+		stringObservable.addWeakObserver(list, l -> s -> l.add(s));
+
+		weakReferenceTest();
+
+		stringObservable.fire("test");
+
+		assertThat(list, contains("test"));
+	}
+
+	@Test(timeout = 5000)
+	public void dropWeakObserverTest() {
+		ObservableImpl<String> stringObservable = new ObservableImpl<>();
+
+		List<String> list = new ArrayList<>();
+
+		stringObservable.addWeakObserver(list::add);
+
+		stringObservable.fire("test1");
+
+		weakReferenceTest();
+
+		stringObservable.fire("test2");
+
+		assertThat(list, contains("test1"));
+	}
+
+	@Test(timeout = 5000)
+	public void onlyAllowSingleWeakObserverTest() {
+		ObservableImpl<String> stringObservable = new ObservableImpl<>();
+
+		Consumer<String> observer = new ArrayList<>()::add;
+
+		assertTrue(stringObservable.addWeakObserver(observer));
+		assertFalse(stringObservable.addWeakObserver(observer));
+	}
+
+	@Test
+	public void removeOwnedObservableTest() {
+		ObservableImpl<String> stringObservable = new ObservableImpl<>();
+
+		List<String> list = new ArrayList<>();
+		Consumer<String> listObserver = list::add;
+
+		assertTrue(stringObservable.addObserver(listObserver, listObserver));
+		assertFalse(stringObservable.removeObserver(list::remove));
+		stringObservable.fire("test1");
+		assertTrue(stringObservable.removeObserver(listObserver));
+		stringObservable.fire("test2");
+
+		assertThat(list, contains("test1"));
+	}
+
 	@Test
 	public void immutableObservableTest() {
 		Observable<String> observable = Observable.immutable();
@@ -47,11 +159,11 @@ public class ObservableTest {
 		stringObservable.fire("test1");
 		stringObservable.fire("test2");
 
-		stringObservable.removeObserver(list);
+		stringObservable.removeOwnedObserver(list);
 
 		stringObservable.fire("test3");
 
-		assertEquals(Arrays.asList("test1", "test2"), list);
+		assertThat(list, contains("test1", "test2"));
 	}
 
 	@Test
@@ -67,7 +179,7 @@ public class ObservableTest {
 		stringObservable.fire("test3");
 		stringObservable.fire("test4");
 
-		assertEquals(Arrays.asList("test1", "test2", "test3"), new ArrayList<>(list));
+		assertThat(list, contains("test1", "test2", "test3"));
 	}
 
 	@Test
@@ -79,7 +191,7 @@ public class ObservableTest {
 
 		stringObservable.fire("test");
 
-		assertEquals(Arrays.asList("test"), list);
+		assertThat(list, contains("test"));
 	}
 
 	@Test
@@ -92,7 +204,7 @@ public class ObservableTest {
 		stringObservable.fire("test1");
 		stringObservable.fire("test2");
 
-		assertEquals(Arrays.asList("test1", "test2"), list);
+		assertThat(list, contains("test1", "test2"));
 	}
 
 	@Test
@@ -112,7 +224,7 @@ public class ObservableTest {
 		assertTrue(stringObservable.removeObserver(listObserver));
 		assertFalse(stringObservable.removeObserver(listObserver));
 
-		assertThat(list, is(equalTo(asList("test"))));
+		assertThat(list, contains("test"));
 	}
 
 	@Test
@@ -128,18 +240,18 @@ public class ObservableTest {
 		stringObservable.addObserver(list1, list1::add);
 		stringObservable.fire("test1");
 
-		stringObservable.removeObserver(list1);
+		stringObservable.removeOwnedObserver(list1);
 		stringObservable.addObserver(list2, list2::add);
 		stringObservable.fire("test2");
 
-		stringObservable.removeObserver(list2);
+		stringObservable.removeOwnedObserver(list2);
 		stringObservable.addObserver(list3, list3::add);
 		stringObservable.fire("test3");
 
-		assertThat(list0, is(equalTo(asList("test1", "test2", "test3"))));
-		assertThat(list1, is(equalTo(asList("test1"))));
-		assertThat(list2, is(equalTo(asList("test2"))));
-		assertThat(list3, is(equalTo(asList("test3"))));
+		assertThat(list0, contains("test1", "test2", "test3"));
+		assertThat(list1, contains("test1"));
+		assertThat(list2, contains("test2"));
+		assertThat(list3, contains("test3"));
 	}
 
 	@Test
@@ -160,10 +272,18 @@ public class ObservableTest {
 		stringObservable.clearObservers();
 		stringObservable.fire("test3");
 
+		stringObservable.clearObservers();
+		stringObservable.fire("test4");
+
+		stringObservable.addObserver(list3::add);
+		stringObservable.fire("test5");
+
+		stringObservable.clearObservers();
+
 		assertThat(stringObservable.getObservers(), is(equalTo(emptySet())));
 
-		assertThat(list1, is(equalTo(asList("test1", "test2"))));
-		assertThat(list2, is(equalTo(asList("test2"))));
-		assertThat(list3, is(equalTo(asList())));
+		assertThat(list1, contains("test1", "test2"));
+		assertThat(list2, contains("test2"));
+		assertThat(list3, contains("test5"));
 	}
 }

@@ -25,7 +25,7 @@ import uk.co.strangeskies.utilities.IdentityProperty;
 
 /**
  * It is very difficult or impossible to test this class properly, as the
- * important aspects of its behaviour either only occur in extremely rare
+ * important aspects of its behavior either only occur in extremely rare
  * circumstances, or change slightly with implementation details of the VM, or
  * both.
  * 
@@ -34,7 +34,7 @@ import uk.co.strangeskies.utilities.IdentityProperty;
  */
 public class IdentityPropertyTest {
 	/**
-	 * Confirm default constructor initialises with null value
+	 * Confirm default constructor initializes with null value
 	 */
 	@Test
 	public void testNullInitialisation() {
@@ -42,7 +42,7 @@ public class IdentityPropertyTest {
 	}
 
 	/**
-	 * Confirm value constructor initialises properly
+	 * Confirm value constructor initializes properly
 	 */
 	@Test
 	public void testValueInitialisation() {

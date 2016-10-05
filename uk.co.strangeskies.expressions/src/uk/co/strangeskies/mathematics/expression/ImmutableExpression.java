@@ -35,7 +35,7 @@ public abstract class ImmutableExpression<S extends Expression<S, T>, T> impleme
 	}
 
 	@Override
-	public final boolean removeObserver(Consumer<? super S> observer) {
+	public final boolean removeExactObserver(Consumer<? super S> observer) {
 		return true;
 	}
 }

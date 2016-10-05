@@ -152,7 +152,7 @@ public class TriangleImpl<V extends Value<V>> implements Triangle<V> {
 	}
 
 	@Override
-	public boolean removeObserver(Consumer<? super Triangle<V>> observer) {
+	public boolean removeExactObserver(Consumer<? super Triangle<V>> observer) {
 		// TODO Auto-generated method stub
 		return false;
 	}

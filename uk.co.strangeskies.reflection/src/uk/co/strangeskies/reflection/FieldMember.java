@@ -86,27 +86,7 @@ public class FieldMember<O, T> implements TypeMember<O> {
 	 * @return a field member wrapping the given field
 	 */
 	public static <O> FieldMember<O, ?> over(Field field, TypeToken<O> ownerType) {
-		return over(field, ownerType, TypeToken.over(ownerType.resolveType(field.getGenericType())));
-	}
-
-	/**
-	 * Create a new {@link FieldMember} instance from a reference to a
-	 * {@link Field}.
-	 * 
-	 * @param <O>
-	 *          the type of the owner
-	 * @param <T>
-	 *          the type of the field
-	 * @param field
-	 *          the field to wrap
-	 * @param ownerType
-	 *          the type to which the field belongs
-	 * @param fieldType
-	 *          the type of the field
-	 * @return a field member wrapping the given field
-	 */
-	public static <O, T> FieldMember<O, T> over(Field field, TypeToken<O> ownerType, TypeToken<T> fieldType) {
-		return new FieldMember<>(field, ownerType, fieldType);
+		return new FieldMember<>(field, ownerType, TypeToken.over(ownerType.resolveType(field.getGenericType())));
 	}
 
 	@Override
@@ -202,8 +182,7 @@ public class FieldMember<O, T> implements TypeMember<O> {
 
 	@Override
 	public FieldMember<? extends O, ? extends T> withOwnerType(Type type) {
-		// TODO Auto-generated method stub
-		return null;
+		return new FieldMember<>(field, ownerType, fieldType);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -212,8 +191,8 @@ public class FieldMember<O, T> implements TypeMember<O> {
 	}
 
 	public FieldMember<O, ? extends T> withType(Type type) {
-		// TODO Auto-generated method stub
-		return null;
+		getFieldType().withLooseCompatibilityTo(type);
+		return this;
 	}
 
 	@SuppressWarnings("unchecked")

@@ -401,10 +401,10 @@ public class TypeTokenTest {
 		System.out.println(new TypeToken<@Infer List<? extends Number>>() {}.getExtending(Wildcards.INFER));
 		System.out.println(
 				new TypeToken<@Infer List<? extends Number>>() {}.getExtending(Wildcards.INFER).getResolver().getBounds());
-		System.out.println(resolveMethodOverload(
-				resolveMethodOverload(new TypeToken<@Infer List<? extends Number>>() {}.getExtending(Wildcards.INFER), "add",
-						Integer.class).getOwnerType(),
-				"add", Double.class).infer().getOwnerType());
+
+		InvocableMember<?, ?> addMethod = resolveMethodOverload(
+				new @Infer TypeToken<List<? extends Number>>() {}.getExtending(Wildcards.INFER), "add", Integer.class);
+		System.out.println(resolveMethodOverload(addMethod.getOwnerType(), "add", Double.class).infer().getOwnerType());
 		System.out.println();
 
 		System.out.println(new TypeToken<@Infer Collection<? extends String>>() {}.getExtending(Wildcards.INFER)
@@ -413,7 +413,7 @@ public class TypeTokenTest {
 		System.out.println();
 
 		System.out
-				.println(resolveMethodOverload(new TypeToken<@Infer List<? extends Number>>() {}.getExtending(Wildcards.INFER),
+				.println(resolveMethodOverload(new @Infer TypeToken<List<? extends Number>>() {}.getExtending(Wildcards.INFER),
 						"add", Integer.class).getOwnerType().infer());
 		System.out.println();
 

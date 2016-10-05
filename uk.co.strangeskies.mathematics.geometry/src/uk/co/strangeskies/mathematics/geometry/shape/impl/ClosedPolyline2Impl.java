@@ -78,7 +78,7 @@ public class ClosedPolyline2Impl<V extends Value<V>> implements ClosedPolyline2<
 	}
 
 	@Override
-	public boolean removeObserver(Consumer<? super ClosedPolyline2<V>> observer) {
+	public boolean removeExactObserver(Consumer<? super ClosedPolyline2<V>> observer) {
 		// TODO Auto-generated method stub
 		return false;
 	}

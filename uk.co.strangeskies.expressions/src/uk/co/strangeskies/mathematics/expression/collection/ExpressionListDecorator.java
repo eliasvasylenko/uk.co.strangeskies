@@ -72,7 +72,7 @@ public abstract class ExpressionListDecorator<E extends Expression<?, ?>> extend
 			boolean added = super.remove(expression);
 
 			if (added) {
-				((Expression<?, ?>) expression).removeWeakObserver(dependencyObserver);
+				((Expression<?, ?>) expression).removeObserver(dependencyObserver);
 			}
 
 			return added;
@@ -99,7 +99,7 @@ public abstract class ExpressionListDecorator<E extends Expression<?, ?>> extend
 			beginChange();
 
 			for (E e : this) {
-				e.removeWeakObserver(dependencyObserver);
+				e.removeObserver(dependencyObserver);
 			}
 
 			super.clear();

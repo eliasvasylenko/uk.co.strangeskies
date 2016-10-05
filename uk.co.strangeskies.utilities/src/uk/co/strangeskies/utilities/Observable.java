@@ -40,7 +40,7 @@ import java.util.function.Function;
  */
 public interface Observable<M> {
 	/**
-	 * @see Observable#addObserver(Consumer)
+	 * @see Observable#addObserver(Object, Consumer)
 	 */
 	@SuppressWarnings("javadoc")
 	abstract class OwnedObserver<M> implements Consumer<M> {
@@ -66,7 +66,7 @@ public interface Observable<M> {
 	}
 
 	/**
-	 * @see Observable#addObserver(Consumer)
+	 * @see Observable#addObserver(Object, Consumer)
 	 */
 	@SuppressWarnings("javadoc")
 	class OwnedObserverImpl<M> extends OwnedObserver<M> {
@@ -176,12 +176,14 @@ public interface Observable<M> {
 	 * TODO be careful not to capture the owner in a lambda as this will prevent
 	 * garbage collection (give code example)
 	 * 
+	 * @see #addObserver(Object, Consumer)
+	 * 
 	 * @param <O>
 	 *          the type of the owner
 	 * @param observer
 	 *          an observer to add
 	 * @param owner
-	 *          the owner of the observer @see #addObserver(Object, Consumer)
+	 *          the owner of the observer
 	 * @return true if the observer was successfully added, false otherwise
 	 */
 	default <O> boolean addWeakObserver(O owner, Function<? super O, Consumer<? super M>> observer) {
@@ -207,12 +209,14 @@ public interface Observable<M> {
 	 * observers may conditionally remove themselves from the observable upon
 	 * receipt of events by returning {@code false} from the observer function.
 	 * 
+	 * @see #addObserver(Object, Consumer)
+	 * 
 	 * @param <O>
 	 *          the type of the owner
 	 * @param observer
 	 *          an observer to add
 	 * @param owner
-	 *          the owner of the observer @see #addObserver(Object, Consumer)
+	 *          the owner of the observer
 	 * @return true if the observer was successfully added, false otherwise
 	 */
 	default <O> boolean addTerminatingObserver(Object owner, Function<? super M, Boolean> observer) {
@@ -228,8 +232,8 @@ public interface Observable<M> {
 	 * <li>
 	 * 
 	 * An observer with an owner may only be removed by reference to its owner via
-	 * {@link #removeObserver(Object)}, though the owner may be the observable
-	 * itself.
+	 * {@link #removeOwnedObserver(Object)}, though the owner may be the
+	 * observable itself.
 	 * 
 	 * </li>
 	 * <li>
@@ -280,8 +284,8 @@ public interface Observable<M> {
 	 *          the owner of the observer to remove
 	 * @return true if the observer was successfully removed, false otherwise
 	 */
-	default boolean removeObserver(Object owner) {
-		return removeObserver(new OwnedObserverImpl<>(null, owner));
+	default boolean removeOwnedObserver(Object owner) {
+		return removeExactObserver(new OwnedObserverImpl<>(null, owner));
 	}
 
 	/**
@@ -295,12 +299,25 @@ public interface Observable<M> {
 
 	/**
 	 * Observers removed will no longer receive messages from this Observable.
+	 * <p>
+	 * First attempt to remove the exact observer, otherwise try to remove
 	 * 
 	 * @param observer
 	 *          an observer to remove
 	 * @return true if the observer was successfully removed, false otherwise
 	 */
-	boolean removeObserver(Consumer<? super M> observer);
+	default boolean removeObserver(Consumer<? super M> observer) {
+		return removeExactObserver(observer) || removeOwnedObserver(observer);
+	}
+
+	/**
+	 * Observers removed will no longer receive messages from this Observable.
+	 * 
+	 * @param observer
+	 *          an observer to remove
+	 * @return true if the observer was successfully removed, false otherwise
+	 */
+	boolean removeExactObserver(Consumer<? super M> observer);
 
 	/**
 	 * Get an observable instance which never fires events. As an optimization,
@@ -328,7 +345,7 @@ interface ImmutableObservable<M> extends Observable<M> {
 	}
 
 	@Override
-	default boolean removeObserver(Consumer<? super M> observer) {
+	default boolean removeExactObserver(Consumer<? super M> observer) {
 		return true;
 	}
 }

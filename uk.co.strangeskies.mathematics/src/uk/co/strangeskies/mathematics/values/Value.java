@@ -151,7 +151,7 @@ public abstract class Value<S extends Value<S>> extends Number implements Multip
 	}
 
 	@Override
-	public final boolean removeObserver(Consumer<? super S> observer) {
+	public final boolean removeExactObserver(Consumer<? super S> observer) {
 		return observers.remove(observer);
 	}
 

@@ -19,6 +19,7 @@
 package uk.co.strangeskies.reflection.test;
 
 import static uk.co.strangeskies.reflection.ClassDeclaration.declareClass;
+import static uk.co.strangeskies.reflection.InvocableMember.resolveMethodOverload;
 
 import java.util.Set;
 import java.util.function.Function;
@@ -27,6 +28,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import uk.co.strangeskies.reflection.ClassDefinition;
+import uk.co.strangeskies.reflection.InvocableMember;
 import uk.co.strangeskies.reflection.MethodDeclaration;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeToken;
@@ -67,13 +69,16 @@ public class ClassDefinitionTest {
 
 	@Test
 	public void functionClassInvocationTest() {
+		InvocableMember<? super String, String> concatMethod = resolveMethodOverload(STRING_TYPE, "concat", STRING_TYPE)
+				.withTargetType(STRING_TYPE);
+
 		ClassDefinition<? extends Function<String, String>> classDefinition = declareClass(TEST_CLASS_NAME)
 				.withSuperType(new TypeToken<Function<String, String>>() {}).define();
 
 		MethodDeclaration<? extends Function<String, String>, String> applyMethod = classDefinition.declareMethod("apply")
 				.withReturnType(STRING_TYPE);
 		VariableExpression<String> parameter = applyMethod.addParameter(STRING_TYPE);
-		applyMethod.define().body().addExpression(parameter.assign(parameter.invokeResolvedMethod("concat", parameter)))
+		applyMethod.define().body().addExpression(parameter.assign(parameter.invokeMethod(concatMethod, parameter)))
 				.addReturnStatement(parameter);
 
 		Function<String, String> instance = classDefinition.instantiate().cast();

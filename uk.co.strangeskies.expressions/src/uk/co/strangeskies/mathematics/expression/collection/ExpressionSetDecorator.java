@@ -76,7 +76,7 @@ public class ExpressionSetDecorator<E extends Expression<?, ?>>
 			boolean added = super.remove(expression);
 
 			if (added) {
-				((Expression<?, ?>) expression).removeWeakObserver(dependencyObserver);
+				((Expression<?, ?>) expression).removeObserver(dependencyObserver);
 			}
 
 			return added;

@@ -81,7 +81,7 @@ public class ObservablePropertyImpl<T extends R, R> implements ObservablePropert
 	}
 
 	@Override
-	public boolean removeObserver(Consumer<? super T> observer) {
+	public boolean removeExactObserver(Consumer<? super T> observer) {
 		return observers.remove(observer);
 	}
 

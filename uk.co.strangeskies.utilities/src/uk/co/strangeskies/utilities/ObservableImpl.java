@@ -43,7 +43,7 @@ public class ObservableImpl<M> implements Observable<M> {
 	}
 
 	@Override
-	public boolean removeObserver(Consumer<? super M> observer) {
+	public boolean removeExactObserver(Consumer<? super M> observer) {
 		if (observers != null) {
 			return observers.remove(observer);
 		} else {
@@ -55,9 +55,7 @@ public class ObservableImpl<M> implements Observable<M> {
 	 * Remove all observers from forwarding.
 	 */
 	public void clearObservers() {
-		if (observers != null) {
-			observers.clear();
-		}
+		observers = null;
 	}
 
 	/**

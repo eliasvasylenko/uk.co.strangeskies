@@ -58,9 +58,6 @@ public class StatementExecutor {
 		}
 
 		private Object getResult() {
-			if (!isComplete()) {
-				throw new ReflectionException(p -> p.incompleteStatementExecution());
-			}
 			return result;
 		}
 	}

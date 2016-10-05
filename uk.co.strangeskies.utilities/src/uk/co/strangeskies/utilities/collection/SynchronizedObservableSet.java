@@ -61,7 +61,7 @@ public abstract class SynchronizedObservableSet<S extends ObservableSet<S, E>, E
 			}
 
 			@Override
-			public boolean removeObserver(Consumer<? super Change<E>> observer) {
+			public boolean removeExactObserver(Consumer<? super Change<E>> observer) {
 				synchronized (getMutex()) {
 					return super.removeObserver(observer);
 				}
@@ -131,7 +131,7 @@ public abstract class SynchronizedObservableSet<S extends ObservableSet<S, E>, E
 	}
 
 	@Override
-	public boolean removeObserver(Consumer<? super S> observer) {
+	public boolean removeExactObserver(Consumer<? super S> observer) {
 		synchronized (getMutex()) {
 			return super.removeObserver(observer);
 		}

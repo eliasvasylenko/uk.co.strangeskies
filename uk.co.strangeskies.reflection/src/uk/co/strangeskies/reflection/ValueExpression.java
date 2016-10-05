@@ -77,7 +77,7 @@ public interface ValueExpression<T> extends Expression {
 		/*
 		 * TODO resolve method overload
 		 */
-		return new MethodExpression<>(this, InvocableMember.resolveMethodOverload(getType(), invocableName, arguments),
-				arguments);
+		return null; /*- new MethodExpression<>(this, InvocableMember.resolveMethodOverload(getType(), invocableName, arguments),
+				arguments);*/
 	}
 }
