@@ -88,7 +88,7 @@ public interface Localized<T> extends ObservableValue<T> {
 
 			@Override
 			public ObservableValue<Locale> locale() {
-				return ObservableValue.immutable(locale);
+				return ObservableValue.immutableOver(locale);
 			}
 
 			@Override

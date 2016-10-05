@@ -18,33 +18,35 @@
  */
 package uk.co.strangeskies.eclipse;
 
-import java.util.List;
-
 import uk.co.strangeskies.fx.ModularTreeView;
 import uk.co.strangeskies.fx.TreeContribution;
 
 /**
- * A source of one or more types of {@link TreeContribution contribution} for
- * the {@link EclipseModularTreeController modular tree controller} of the given id.
- * The contribution classes returned from {@link #getContributions(String)}
- * should be instantiable by Eclipse injector.
+ * A {@link TreeContribution contribution} for the
+ * {@link EclipseModularTreeController eclipse modular tree controller}.
  * 
  * @author Elias N Vasylenko
+ * @param <T>
+ *          the type of data item to apply to
  */
-public interface EclipseModularTreeContributor {
+public interface EclipseTreeContribution<T> extends TreeContribution<T> {
 	/**
 	 * @param treeId
 	 *          the id of the tree to fetch appropriate contribution classes for
-	 * @return a collection of contributions to be instantiated by the Eclipse
-	 *         context injector on behalf of the {@link EclipseModularTreeController}.
+	 * @return true if the contribution should apply to a tree of the given ID,
+	 *         false otherwise.
 	 */
-	List<Class<? extends TreeContribution<?>>> getContributions(String treeId);
+	default boolean appliesToTree(String treeId) {
+		return true;
+	}
 
 	/**
 	 * @return the id of the contribution, available so that any modular tree
 	 *         controller contributed to may filter accepted contributions over it
 	 */
-	String getContributionId();
+	default String getContributionId() {
+		return getClass().getName();
+	}
 
 	/**
 	 * @return the ranking of the contribution, available for any modular tree

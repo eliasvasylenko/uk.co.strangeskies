@@ -31,8 +31,8 @@ import java.util.Map;
 /**
  * A reimplementation of Java's Enum class, primarily for the purpose of
  * facilitating enumerations with generics. This class should enforce most of
- * the rules governing Enums, including limiting instance creation to static
- * initialiser blocks. Unfortunately error detection of such problems is
+ * the rules governing enum, including limiting instance creation to static
+ * initializer blocks. Unfortunately error detection of such problems is
  * inevitably shifted to runtime rather than compile time.
  * 
  * @author Elias N Vasylenko
@@ -209,31 +209,14 @@ public class Enumeration<S extends Enumeration<S>> implements Self<S> {
 	}
 
 	/**
-	 * @param name
-	 *          a name to make readable, by substituting underscores with spaces,
-	 *          and properly capitalising
-	 * @return a readable version of the given name
-	 */
-	public static String readableName(String name) {
-		return Arrays.stream(name.split("\\s|_")).map(s -> toUpperCase(s.charAt(0)) + s.substring(1).toLowerCase())
-				.collect(joining(" "));
-	}
-
-	/**
-	 * @return a readable version of the enumeration item's name
-	 */
-	public String readableName() {
-		return readableName(name());
-	}
-
-	/**
 	 * @param enumItem
 	 *          an enumeration item to make readable, by substituting underscores
-	 *          with spaces, and properly capitalising
+	 *          with spaces, and properly capitalizing
 	 * @return a readable version of the given enum item's name
 	 */
 	public static String readableName(Enum<?> enumItem) {
-		return readableName(enumItem.name());
+		return Arrays.stream(enumItem.name().split("\\s|_"))
+				.map(s -> toUpperCase(s.charAt(0)) + s.substring(1).toLowerCase()).collect(joining(" "));
 	}
 
 	/**

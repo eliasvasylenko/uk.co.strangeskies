@@ -19,7 +19,6 @@
 package uk.co.strangeskies.utilities;
 
 import java.lang.ref.WeakReference;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -41,16 +40,60 @@ import java.util.function.Function;
  */
 public interface Observable<M> {
 	/**
-	 * A weak observer is one which automatically removes itself from an
-	 * observable once it is otherwise available for garbage collection.
-	 * 
-	 * @author Elias N Vasylenko
-	 * @param <M>
-	 *          The message type
-	 * @param <O>
-	 *          The owner type
+	 * @see Observable#addObserver(Consumer)
 	 */
-	class WeakObserver<M, O> implements Consumer<M> {
+	@SuppressWarnings("javadoc")
+	abstract class OwnedObserver<M> implements Consumer<M> {
+		abstract Object getOwner();
+
+		protected OwnedObserver() {}
+
+		@Override
+		public final boolean equals(Object obj) {
+			if (this == obj) {
+				return true;
+			} else if (!(obj instanceof OwnedObserver)) {
+				return false;
+			}
+
+			return getOwner() == ((OwnedObserver<?>) obj).getOwner();
+		}
+
+		@Override
+		public final int hashCode() {
+			return System.identityHashCode(getOwner());
+		}
+	}
+
+	/**
+	 * @see Observable#addObserver(Consumer)
+	 */
+	@SuppressWarnings("javadoc")
+	class OwnedObserverImpl<M> extends OwnedObserver<M> {
+		private final Consumer<? super M> observer;
+		private final Object owner;
+
+		protected OwnedObserverImpl(Consumer<? super M> observer, Object owner) {
+			this.observer = observer;
+			this.owner = owner;
+		}
+
+		@Override
+		Object getOwner() {
+			return owner;
+		}
+
+		@Override
+		public void accept(M event) {
+			observer.accept(event);
+		}
+	}
+
+	/**
+	 * @see Observable#addWeakObserver(Consumer)
+	 */
+	@SuppressWarnings("javadoc")
+	class WeakObserver<M, O> extends OwnedObserver<M> {
 		private final Observable<? extends M> observable;
 		private final Function<? super O, Consumer<? super M>> consumer;
 		private final WeakReference<O> owner;
@@ -64,70 +107,47 @@ public interface Observable<M> {
 		}
 
 		@Override
+		O getOwner() {
+			return owner.get();
+		}
+
+		@Override
 		public void accept(M t) {
-			O owner = this.owner.get();
+			O owner = getOwner();
 			if (owner == null) {
 				new Thread(() -> observable.removeObserver(this)).start();
 			} else {
 				consumer.apply(owner).accept(t);
 			}
 		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (this == obj) {
-				return true;
-			} else if (!(obj instanceof WeakObserver)) {
-				return false;
-			}
-
-			return Objects.equals(owner.get(), ((WeakObserver<?, ?>) obj).owner.get());
-		}
-
-		@Override
-		public int hashCode() {
-			return Objects.hashCode(owner.get());
-		}
 	}
 
 	/**
-	 * A terminating observer is one which may easily conditionally remove itself
-	 * from an observable upon receipt of an event.
-	 * 
-	 * @author Elias N Vasylenko
-	 * @param <M>
-	 *          The message type
+	 * @see Observable#addTerminatingObserver(Function)
 	 */
-	class TerminatingObserver<M> implements Consumer<M> {
+	@SuppressWarnings("javadoc")
+	class TerminatingObserver<M> extends OwnedObserver<M> {
 		private final Observable<? extends M> observable;
 		private final Function<? super M, Boolean> observer;
+		private final Object owner;
 
-		protected TerminatingObserver(Observable<? extends M> observable, Function<? super M, Boolean> observer) {
+		protected TerminatingObserver(Observable<? extends M> observable, Function<? super M, Boolean> observer,
+				Object owner) {
 			this.observable = observable;
 			this.observer = observer;
+			this.owner = owner;
+		}
+
+		@Override
+		Object getOwner() {
+			return owner;
 		}
 
 		@Override
 		public void accept(M event) {
-			if (observer.apply(event)) {
+			if (!observer.apply(event)) {
 				observable.removeObserver(this);
 			}
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (this == obj) {
-				return true;
-			} else if (!(obj instanceof TerminatingObserver)) {
-				return false;
-			}
-
-			return Objects.equals(observer, ((TerminatingObserver<?>) obj).observer);
-		}
-
-		@Override
-		public int hashCode() {
-			return Objects.hashCode(observer);
 		}
 	}
 
@@ -137,8 +157,8 @@ public interface Observable<M> {
 	 * collection.
 	 * 
 	 * @param observer
-	 *          An observer to add
-	 * @return True if the observer was successfully added, false otherwise.
+	 *          an observer to add
+	 * @return true if the observer was successfully added, false otherwise
 	 */
 	default boolean addWeakObserver(Consumer<? super M> observer) {
 		return addObserver(new WeakObserver<>(this, o -> o, observer));
@@ -149,37 +169,23 @@ public interface Observable<M> {
 	 * will be removed automatically once the given owner is available for garbage
 	 * collection.
 	 * <p>
-	 * Only one weak observer can be registered for any given owner.
-	 * <p>
 	 * The observer itself must be given in the form of a function applicable to
 	 * the owner to ensure it does not create a reference to the owner and prevent
 	 * garbage collection.
 	 * 
+	 * TODO be careful not to capture the owner in a lambda as this will prevent
+	 * garbage collection (give code example)
+	 * 
 	 * @param <O>
-	 *          The type of the owner
+	 *          the type of the owner
 	 * @param observer
-	 *          An observer to add
+	 *          an observer to add
 	 * @param owner
-	 *          The owner of the observer
-	 * @return True if the observer was successfully added, false otherwise.
+	 *          the owner of the observer @see #addObserver(Object, Consumer)
+	 * @return true if the observer was successfully added, false otherwise
 	 */
 	default <O> boolean addWeakObserver(O owner, Function<? super O, Consumer<? super M>> observer) {
 		return addObserver(new WeakObserver<>(this, observer, owner));
-	}
-
-	/**
-	 * Remove any observer from this Observable which has the given owner.
-	 * Observers added without an explicitly given owner are considered to be
-	 * owned by themselves.
-	 * <p>
-	 * Only one weak observer can be registered for any given owner.
-	 * 
-	 * @param owner
-	 *          An observer to remove, or an owner whose observer is to be removed
-	 * @return True if the observer was successfully removed, false otherwise
-	 */
-	default boolean removeWeakObserver(Object owner) {
-		return removeObserver(new WeakObserver<>(this, null, owner));
 	}
 
 	/**
@@ -188,31 +194,102 @@ public interface Observable<M> {
 	 * receipt of events by returning from the observer function.
 	 * 
 	 * @param observer
-	 *          An observer to add, a function from event type to a boolean, a
+	 *          an observer to add, a function from event type to a boolean, a
 	 *          true value of which will remove the observer
-	 * @return True if the observer was successfully added, false otherwise
+	 * @return true if the observer was successfully added, false otherwise
 	 */
 	default boolean addTerminatingObserver(Function<? super M, Boolean> observer) {
-		return addObserver(new TerminatingObserver<>(this, observer));
+		return addObserver(new TerminatingObserver<>(this, observer, observer));
+	}
+
+	/**
+	 * Observers added will receive messages from this Observable. Terminating
+	 * observers may conditionally remove themselves from the observable upon
+	 * receipt of events by returning {@code false} from the observer function.
+	 * 
+	 * @param <O>
+	 *          the type of the owner
+	 * @param observer
+	 *          an observer to add
+	 * @param owner
+	 *          the owner of the observer @see #addObserver(Object, Consumer)
+	 * @return true if the observer was successfully added, false otherwise
+	 */
+	default <O> boolean addTerminatingObserver(Object owner, Function<? super M, Boolean> observer) {
+		return addObserver(new TerminatingObserver<>(this, observer, owner));
+	}
+
+	/**
+	 * This method adds an observable and marks it as "owned" by a specific object
+	 * instance. Ownership implies the following properties:
+	 * <p>
+	 * 
+	 * <ul>
+	 * <li>
+	 * 
+	 * An observer with an owner may only be removed by reference to its owner via
+	 * {@link #removeObserver(Object)}, though the owner may be the observable
+	 * itself.
+	 * 
+	 * </li>
+	 * <li>
+	 * 
+	 * Only one observable may be added per owner, where owners are compared by
+	 * identity.
+	 * 
+	 * </li>
+	 * </ul>
+	 * <p>
+	 * 
+	 * This allows us, for example, to add an observer as a method reference and
+	 * still be able to manually remove the observer:
+	 * 
+	 * <pre>
+	 * {@code
+	 * Observable<String> observable = ...;
+	 * List<String> list = ...;
+	 * 
+	 * observable.addObserver(list, list:add);
+	 * observable.removeObserver(list);
+	 * }
+	 * </pre>
+	 * 
+	 * Whereas the following more naive attempt may fail to remove the observer:
+	 * 
+	 * <pre>
+	 * {@code
+	 * observable.addObserver(list:add);
+	 * observable.removeObserver(list:add);
+	 * }
+	 * </pre>
+	 * 
+	 * @param owner
+	 *          the owner of the observer
+	 * @param observer
+	 *          an observer to add
+	 * @return true if the observer was successfully added, false otherwise
+	 */
+	default boolean addObserver(Object owner, Consumer<? super M> observer) {
+		return addObserver(new OwnedObserverImpl<>(observer, owner));
 	}
 
 	/**
 	 * Observers removed will no longer receive messages from this Observable.
 	 * 
-	 * @param observer
-	 *          An observer to remove
-	 * @return True if the observer was successfully removed, false otherwise
+	 * @param owner
+	 *          the owner of the observer to remove
+	 * @return true if the observer was successfully removed, false otherwise
 	 */
-	default boolean removeTerminatingObserver(Function<? super M, Boolean> observer) {
-		return removeObserver(new TerminatingObserver<>(this, observer));
+	default boolean removeObserver(Object owner) {
+		return removeObserver(new OwnedObserverImpl<>(null, owner));
 	}
 
 	/**
 	 * Observers added will receive messages from this Observable.
 	 * 
 	 * @param observer
-	 *          An observer to add
-	 * @return True if the observer was successfully added, false otherwise
+	 *          an observer to add
+	 * @return true if the observer was successfully added, false otherwise
 	 */
 	boolean addObserver(Consumer<? super M> observer);
 
@@ -220,13 +297,13 @@ public interface Observable<M> {
 	 * Observers removed will no longer receive messages from this Observable.
 	 * 
 	 * @param observer
-	 *          An observer to remove
-	 * @return True if the observer was successfully removed, false otherwise
+	 *          an observer to remove
+	 * @return true if the observer was successfully removed, false otherwise
 	 */
 	boolean removeObserver(Consumer<? super M> observer);
 
 	/**
-	 * Get an observable instance which never fires events. As an optimisation,
+	 * Get an observable instance which never fires events. As an optimization,
 	 * attempts to add and remove observers will always succeed regardless of
 	 * whether or not the observer is already added. In cases where this is a
 	 * problem, consider using an instance of {@link ObservableImpl} instead.

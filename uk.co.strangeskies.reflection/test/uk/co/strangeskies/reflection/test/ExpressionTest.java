@@ -70,7 +70,7 @@ public class ExpressionTest {
 		block.addExpression(variable.accessField(TEST_FIELD).assign(literal("value")));
 
 		state.executeBlock(block);
-		Assert.assertEquals("value", instance.field);
+		Assert.assertEquals("value", instance.getMethod());
 	}
 
 	@Test

@@ -35,8 +35,8 @@ import uk.co.strangeskies.fx.TreeItemData;
 
 /**
  * A tree cell contribution intended to be supplied via
- * {@link EclipseModularTreeContributor} so as to be injected according to an
- * eclipse context.
+ * {@link EclipseTreeContribution} so as to be injected according to an eclipse
+ * context.
  * <p>
  * This contribution registers an E4 popup menu to the cell, which can be
  * activated via right click or the context menu key.
@@ -46,7 +46,7 @@ import uk.co.strangeskies.fx.TreeItemData;
  * @param <T>
  *          the type of data of applicable nodes
  */
-public abstract class MenuTreeCellContribution<T> implements TreeCellContribution<T> {
+public abstract class MenuTreeCellContribution<T> implements TreeCellContribution<T>, EclipseTreeContribution<T> {
 	@Inject
 	EMenuService menuService;
 

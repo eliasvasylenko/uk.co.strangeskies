@@ -35,7 +35,7 @@ import javafx.collections.ObservableSet;
  * services.
  * <p>
  * Fields annotated as such should be of one of the following types, and will
- * reflect service availability changes with the associated behaviours:
+ * reflect service availability changes with the associated behaviors:
  * <ul>
  * <li>{@link ObservableList} - ordered by service ranking</li>
  * <li>{@link ObservableSet} - unordered</li>
@@ -47,4 +47,9 @@ import javafx.collections.ObservableSet;
 @Qualifier
 @Target({ ElementType.FIELD, ElementType.PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ObservableService {}
+public @interface ObservableService {
+	/**
+	 * The target filter for the reference.
+	 */
+	String target() default "";
+}

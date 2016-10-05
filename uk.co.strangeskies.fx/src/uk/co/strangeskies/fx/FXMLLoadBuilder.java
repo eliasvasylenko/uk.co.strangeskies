@@ -94,6 +94,32 @@ public class FXMLLoadBuilder<C> {
 	}
 
 	/**
+	 * Configure the builder to load directly into the given controller instance.
+	 * 
+	 * <p>
+	 * Unless an {@link #resource(URL) exact resource} is given, the resource
+	 * location will be derived according to
+	 * {@link FXUtilities#getResource(Class)}, or
+	 * {@link FXUtilities#getResource(Class, String)} if a
+	 * {@link #resource(String) resource name} is specified.
+	 * 
+	 * @param <D>
+	 *          the type of the controller object
+	 * @param controllerClass
+	 *          the controller class to load into
+	 * @param controller
+	 *          the controller object to load into
+	 * @return the receiving instance
+	 */
+	@SuppressWarnings("unchecked")
+	public <D> FXMLLoadBuilder<D> controller(Class<D> controllerClass, D controller) {
+		this.controller = (C) controller;
+		this.controllerClass = (Class<? extends C>) controllerClass;
+
+		return (FXMLLoadBuilder<D>) this;
+	}
+
+	/**
 	 * Configure the builder to load into a controller of the given class via
 	 * {@link FXMLLoader#setControllerFactory(javafx.util.Callback)}.
 	 * 
@@ -152,6 +178,17 @@ public class FXMLLoadBuilder<C> {
 	 */
 	public FXMLLoadBuilder<C> root(Node root) {
 		this.root = root;
+
+		return this;
+	}
+
+	/**
+	 * @param classLoader
+	 *          the new class loader for the {@link FXMLLoader}.
+	 * @return the receiving instance
+	 */
+	public FXMLLoadBuilder<C> classLoader(ClassLoader classLoader) {
+		loader.setClassLoader(classLoader);
 
 		return this;
 	}

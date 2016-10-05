@@ -73,7 +73,7 @@ public abstract class DependentExpression<S extends Expression<S, T>, T> extends
 	@Override
 	public final T getValueImpl(boolean dirty) {
 		if (dirty) {
-			for (Expression<?, ?> dependency : dependencies) {
+			for (Expression<?, ?> dependency : dependencies.decoupleValue()) {
 				if (parallel)
 					new Thread(() -> dependency.getValue()).run();
 				else

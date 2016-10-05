@@ -22,7 +22,10 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.eclipse.e4.core.di.suppliers.ExtendedObjectSupplier;
 import org.eclipse.e4.core.di.suppliers.IObjectDescriptor;
@@ -60,17 +63,29 @@ public class ObservableServiceSupplier extends ExtendedObjectSupplier {
 	private class ServiceUpdateListener<T> implements ServiceListener {
 		private final BundleContext context;
 		private final ObservableList<ServiceReference<T>> references;
+		private final Map<ServiceReference<T>, T> serviceObjects;
 		private final Class<T> elementType;
+		private final String filter;
 
 		@SuppressWarnings("unchecked")
-		public ServiceUpdateListener(BundleContext context, Type elementType) throws InvalidSyntaxException {
+		public ServiceUpdateListener(BundleContext context, Type elementType, ObservableService annotation)
+				throws InvalidSyntaxException {
 			this.context = context;
 			this.references = FXCollections.observableArrayList();
 			this.elementType = elementType instanceof ParameterizedType
 					? (Class<T>) ((ParameterizedType) elementType).getRawType() : (Class<T>) elementType;
+			this.serviceObjects = new HashMap<>();
 
 			synchronized (this) {
-				context.addServiceListener(this, "(" + Constants.OBJECTCLASS + "=" + this.elementType.getName() + ")");
+				String filter = "(" + Constants.OBJECTCLASS + "=" + this.elementType.getName() + ")";
+
+				if (!annotation.target().equals("")) {
+					filter = "(&" + annotation.target() + filter + ")";
+				}
+
+				this.filter = filter;
+
+				context.addServiceListener(this, filter);
 
 				refreshServices();
 			}
@@ -83,15 +98,23 @@ public class ObservableServiceSupplier extends ExtendedObjectSupplier {
 
 		private synchronized void refreshServices() {
 			try {
-				List<ServiceReference<T>> newReferences = new ArrayList<>(context.getServiceReferences(elementType, null));
+				List<ServiceReference<T>> newReferences = new ArrayList<>(context.getServiceReferences(elementType, filter));
 				Collections.sort(newReferences);
 
-				references.retainAll(newReferences);
+				for (Iterator<ServiceReference<T>> services = references.iterator(); services.hasNext();) {
+					ServiceReference<T> service = services.next();
+
+					if (!newReferences.contains(service)) {
+						services.remove();
+						context.getServiceObjects(service).ungetService(serviceObjects.remove(service));
+					}
+				}
 
 				int index = 0;
 				for (ServiceReference<T> newReference : newReferences) {
 					if (!references.contains(newReference)) {
 						references.add(index, newReference);
+						serviceObjects.put(newReference, context.getServiceObjects(newReference).getService());
 					}
 					index++;
 				}
@@ -101,7 +124,7 @@ public class ObservableServiceSupplier extends ExtendedObjectSupplier {
 		}
 
 		public ObservableList<T> getServiceList() {
-			return FXUtilities.map(references, context::getService);
+			return FXUtilities.map(references, serviceObjects::get);
 		}
 
 		public ObservableSet<T> getServiceSet() {
@@ -138,7 +161,7 @@ public class ObservableServiceSupplier extends ExtendedObjectSupplier {
 				ParameterizedType parameterizedType = (ParameterizedType) collectionType;
 
 				ServiceUpdateListener<?> listener = new ServiceUpdateListener<>(bundle.getBundleContext(),
-						parameterizedType.getActualTypeArguments()[0]);
+						parameterizedType.getActualTypeArguments()[0], descriptor.getQualifier(ObservableService.class));
 
 				if (parameterizedType.getRawType() == ObservableList.class) {
 					return listener.getServiceList();

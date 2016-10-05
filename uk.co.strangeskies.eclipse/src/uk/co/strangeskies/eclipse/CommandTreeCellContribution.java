@@ -37,8 +37,8 @@ import uk.co.strangeskies.fx.TreeItemData;
 
 /**
  * A tree cell contribution intended to be supplied via
- * {@link EclipseModularTreeContributor} so as to be injected according to an
- * eclipse context.
+ * {@link EclipseTreeContribution} so as to be injected according to an eclipse
+ * context.
  * <p>
  * This contribution registers an E4 command to the cell, which can be activated
  * via double click or the enter key.
@@ -48,7 +48,7 @@ import uk.co.strangeskies.fx.TreeItemData;
  * @param <T>
  *          the type of data of applicable nodes
  */
-public abstract class CommandTreeCellContribution<T> implements TreeCellContribution<T> {
+public abstract class CommandTreeCellContribution<T> implements TreeCellContribution<T>, EclipseTreeContribution<T> {
 	@Inject
 	EHandlerService handlerService;
 
