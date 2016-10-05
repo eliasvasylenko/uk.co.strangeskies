@@ -73,9 +73,7 @@ public class ClassDefinitionTest {
 		MethodDeclaration<? extends Function<String, String>, String> applyMethod = classDefinition.declareMethod("apply")
 				.withReturnType(STRING_TYPE);
 		VariableExpression<String> parameter = applyMethod.addParameter(STRING_TYPE);
-		applyMethod.define().body()
-				.addExpression(parameter.assign(parameter.invokeMethod(
-						STRING_TYPE.resolveMethodOverload("concat", STRING_TYPE).withTargetType(STRING_TYPE), parameter)))
+		applyMethod.define().body().addExpression(parameter.assign(parameter.invokeResolvedMethod("concat", parameter)))
 				.addReturnStatement(parameter);
 
 		Function<String, String> instance = classDefinition.instantiate().cast();

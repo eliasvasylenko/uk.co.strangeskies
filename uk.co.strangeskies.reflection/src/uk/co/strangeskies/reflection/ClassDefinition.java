@@ -34,6 +34,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.ExpressionVisitor.ValueExpressionVisitor;
@@ -160,7 +161,7 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 		methods = new HashMap<>();
 		getSuperTypes().stream().flatMap(t -> t.getRawTypes().stream()).flatMap(t -> Arrays.stream(t.getMethods()))
 				.forEach(this::inheritMethod);
-		StreamUtilities.<Class<?>> iterate(getSuperClass(), Class::getSuperclass)
+		StreamUtilities.<Class<?>>iterate(getSuperClass(), Class::getSuperclass)
 				.flatMap(c -> Arrays.stream(c.getDeclaredMethods())).forEach(this::inheritMethod);
 
 		this.receiverExpression = new ValueExpression<T>() {
@@ -302,16 +303,24 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 		return (FieldDeclaration<T, U>) declareField(fieldName, type.getAnnotatedDeclaration());
 	}
 
-	public MethodDeclaration<T, Object> declareMethod(String methodName) {
-		return new MethodDeclaration<>(this, methodName);
+	public MethodDeclaration<T, Void> declareMethod(String methodName) {
+		return MethodDeclaration.declareMethod(this, methodName);
 	}
 
-	public MethodDeclaration<T, Object> declareMethodOverride(Method method) {
+	public MethodDeclaration<T, Void> declareMethodOverride(Method method) {
 		return declareMethod(method.getName())
 				.withParameters(AnnotatedTypes.over(InvocableMember.over(method).getParameters()));
 	}
 
-	protected void overrideMethod(MethodDefinition<T, ?> methodDefinition) {
+	@SuppressWarnings("unchecked")
+	public MethodDeclaration<T, Void> declareMethodOverride(Consumer<? super T> methodLambda) {
+		InvocableMember<?, ?> overridden = InvocableMember.findInterfaceMethod(getSuperType(),
+				(Consumer<Object>) methodLambda);
+
+		return declareMethod(overridden.getName()).withParameters(AnnotatedTypes.over(overridden.getParameters()));
+	}
+
+	protected void overrideMethod(InstanceMethodDefinition<T, ?> methodDefinition) {
 		MethodOverride<T> override = methods.computeIfAbsent(methodDefinition.getOverrideSignature(),
 				k -> new MethodOverride<>(this, methodDefinition.getOverrideSignature()));
 

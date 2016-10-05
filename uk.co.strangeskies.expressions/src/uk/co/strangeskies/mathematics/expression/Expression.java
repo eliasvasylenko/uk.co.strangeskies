@@ -24,7 +24,6 @@ import java.util.function.Supplier;
 import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableImpl;
 import uk.co.strangeskies.utilities.ObservableValue;
-import uk.co.strangeskies.utilities.Property;
 import uk.co.strangeskies.utilities.Self;
 
 /**
@@ -34,23 +33,21 @@ import uk.co.strangeskies.utilities.Self;
  * {@link #getValue()} or {@link #decoupleValue()}.
  * 
  * <p>
- * This class is intended to be {@link Observable} over a specific behaviour:
- * its {@link Observer}s should be notified any time the value of the expression
- * changes. More precisely, they should be notified at the point that the value
- * which <em>would</em> be returned from a future invocation of
- * {@link #getValue()} or {@link #decoupleValue()} becomes different from the
- * previous value resolved through either of those methods.
+ * This class is intended to be {@link Observable} over a specific behavior: its
+ * {@link Observer}s should be notified any time the value which would be
+ * resolved from the expression becomes different from the previously-resolved,
+ * last-known value.
  * 
  * <p>
- * Any mechanism of synchronisation, though a common concern, is left entirely
+ * Any mechanism of synchronization, though a common concern, is left entirely
  * to the discretion of implementations.
  * 
  * <p>
  * Note that the concept of an {@link Expression} differs from the concept of a
- * {@link Property} in that an expression is observable over itself, rather than
- * being observable of the value it represents. This is because expressions are
- * more typically intended to be lazily evaluated, and observers directly over
- * the value would cause eager evaluation. The methods
+ * {@link ObservableValue} in that an expression is observable over itself,
+ * rather than being observable over the value it represents. This is because
+ * expressions are more typically intended to be lazily evaluated, and observers
+ * directly over the value would cause eager evaluation. The methods
  * {@link #over(ObservableValue)} and {@link #over(Observable, Object)} are
  * provided to bridge the gap from {@link Observable} to {@link Expression}.
  * 

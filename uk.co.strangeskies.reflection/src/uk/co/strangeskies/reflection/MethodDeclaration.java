@@ -34,11 +34,16 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration implements
 	private final Map<VariableExpressionProxy<?>, AnnotatedType> parameters;
 	private AnnotatedType returnType;
 
-	protected MethodDeclaration(ClassDefinition<C> classDefinition, String methodName) {
+	protected MethodDeclaration(ClassDefinition<C> classDefinition, String methodName, TypeToken<T> returnType) {
 		this.classDefinition = classDefinition;
 		this.methodName = methodName;
+		this.returnType = returnType.getAnnotatedDeclaration();
 
 		parameters = new LinkedHashMap<>();
+	}
+
+	protected static <C> MethodDeclaration<C, Void> declareMethod(ClassDefinition<C> classDefinition, String methodName) {
+		return new MethodDeclaration<>(classDefinition, methodName, TypeToken.over(void.class));
 	}
 
 	@Override
@@ -65,7 +70,11 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration implements
 
 	@Override
 	public MethodDefinition<C, T> define() {
-		return new MethodDefinition<>(this);
+		return new InstanceMethodDefinition<>(this);
+	}
+
+	protected MethodDefinition<C, T> defineInstance() {
+		return new InstanceMethodDefinition<>(this);
 	}
 
 	public VariableExpression<?> addParameter(AnnotatedType type) {
@@ -107,22 +116,22 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration implements
 		return withParameters(Arrays.stream(types).map(TypeToken::getAnnotatedDeclaration).collect(Collectors.toList()));
 	}
 
-	public MethodDeclaration<C, T> withReturnType(AnnotatedType type) {
+	public MethodDeclaration<C, ?> withReturnType(AnnotatedType type) {
 		returnType = type;
 		return this;
 	}
 
-	public MethodDeclaration<C, T> withReturnType(Type type) {
+	public MethodDeclaration<C, ?> withReturnType(Type type) {
 		return withReturnType(AnnotatedTypes.over(type));
 	}
 
 	@SuppressWarnings("unchecked")
-	public <U extends T> MethodDeclaration<C, U> withReturnType(Class<U> type) {
+	public <U> MethodDeclaration<C, U> withReturnType(Class<U> type) {
 		return (MethodDeclaration<C, U>) withReturnType(AnnotatedTypes.over(type));
 	}
 
 	@SuppressWarnings("unchecked")
-	public <U extends T> MethodDeclaration<C, U> withReturnType(TypeToken<U> type) {
+	public <U> MethodDeclaration<C, U> withReturnType(TypeToken<U> type) {
 		return (MethodDeclaration<C, U>) withReturnType(type.getAnnotatedDeclaration());
 	}
 }

@@ -47,10 +47,10 @@ public interface TypeMember<O> {
 	Member getMember();
 
 	/**
-	 * @return a copy of the {@link Resolver} instance backing this
+	 * @return a copy of the {@link TypeResolver} instance backing this
 	 *         {@link TypeMember}
 	 */
-	Resolver getResolver();
+	TypeResolver getResolver();
 
 	/**
 	 * @return true if the wrapped member is final, false otherwise

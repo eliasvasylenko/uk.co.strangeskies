@@ -23,12 +23,12 @@ import static uk.co.strangeskies.reflection.LiteralExpression.literal;
 import org.junit.Assert;
 import org.junit.Test;
 
+import uk.co.strangeskies.reflection.Block;
 import uk.co.strangeskies.reflection.FieldMember;
 import uk.co.strangeskies.reflection.InvocableMember;
 import uk.co.strangeskies.reflection.LocalVariableExpression;
 import uk.co.strangeskies.reflection.StatementExecutor;
 import uk.co.strangeskies.reflection.TypeToken;
-import uk.co.strangeskies.reflection.VoidBlock;
 
 @SuppressWarnings("javadoc")
 public class ExpressionTest {
@@ -50,19 +50,17 @@ public class ExpressionTest {
 
 	private static final TypeToken<TestClass> TEST_CLASS_TYPE = new TypeToken<TestClass>() {};
 	private static final String TEST_FIELD_NAME = "field";
-	@SuppressWarnings("unchecked")
-	private static final FieldMember<TestClass, String> TEST_FIELD = (FieldMember<TestClass, String>) TEST_CLASS_TYPE
-			.resolveField(TEST_FIELD_NAME);
+	private static final FieldMember<TestClass, String> TEST_FIELD = FieldMember
+			.resolveField(TEST_CLASS_TYPE, TEST_FIELD_NAME).withType(TypeToken.over(String.class));
 
 	private static final String TEST_SET_METHOD_NAME = "setMethod";
-	@SuppressWarnings("unchecked")
-	private static final InvocableMember<TestClass, ?> TEST_SET_METHOD = (InvocableMember<TestClass, Void>) TEST_CLASS_TYPE
-			.resolveMethodOverload(TEST_SET_METHOD_NAME, STRING_TYPE);
+	private static final InvocableMember<? super TestClass, ?> TEST_SET_METHOD = InvocableMember
+			.resolveMethodOverload(TEST_CLASS_TYPE, TEST_SET_METHOD_NAME, STRING_TYPE);
 
 	@Test
 	public void fieldAssignmentTest() {
 		StatementExecutor state = new StatementExecutor();
-		VoidBlock block = new VoidBlock();
+		Block<Void> block = new Block<>();
 		TestClass instance = new TestClass();
 
 		LocalVariableExpression<TestClass> variable = new LocalVariableExpression<>(TEST_CLASS_TYPE);
@@ -78,7 +76,7 @@ public class ExpressionTest {
 	@Test
 	public void localAssignmentTest() {
 		StatementExecutor state = new StatementExecutor();
-		VoidBlock block = new VoidBlock();
+		Block<Void> block = new Block<>();
 
 		LocalVariableExpression<String> local = new LocalVariableExpression<>(STRING_TYPE);
 		state.declareLocal(local.getId());
@@ -95,7 +93,7 @@ public class ExpressionTest {
 	@Test
 	public void localMethodInvocationTest() {
 		StatementExecutor state = new StatementExecutor();
-		VoidBlock block = new VoidBlock();
+		Block<Void> block = new Block<>();
 		TestClass instance = new TestClass();
 
 		LocalVariableExpression<TestClass> variable = new LocalVariableExpression<>(TEST_CLASS_TYPE);

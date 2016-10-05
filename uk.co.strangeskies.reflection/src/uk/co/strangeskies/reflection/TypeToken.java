@@ -28,30 +28,19 @@ import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.AnnotatedTypeVariable;
 import java.lang.reflect.AnnotatedWildcardType;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Executable;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.utilities.DeepCopyable;
@@ -86,8 +75,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	public enum Wildcards {
 		/**
 		 * Wildcards will be left alone, though capture may be necessary for
-		 * incorporation into backing {@link Resolver}, as wildcards alone do not
-		 * always fully specify valid bounds.
+		 * incorporation into backing {@link TypeResolver}, as wildcards alone do
+		 * not always fully specify valid bounds.
 		 */
 		PRESERVE(Preserve.class),
 
@@ -156,7 +145,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	@Target(ElementType.TYPE_USE)
 	public @interface Capture {}
 
-	private static final TypeToken<?> NULL_TYPE_TOKEN = new TypeToken<>(new Resolver(), (AnnotatedType) null,
+	private static final TypeToken<?> NULL_TYPE_TOKEN = new TypeToken<>(new TypeResolver(), (AnnotatedType) null,
 			(Type) null);
 
 	// private static final ComputingMap<AnnotatedType, Pair<Resolver, Type>>
@@ -164,7 +153,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	// annotatedType -> incorporateAnnotatedType(new Resolver(), annotatedType),
 	// 128, true);
 
-	private final Resolver resolver;
+	private final TypeResolver resolver;
 
 	private final Type type;
 	private final AnnotatedType declaration;
@@ -172,7 +161,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	protected TypeToken() {
 		declaration = resolveAnnotatedSuperclassParameter();
 
-		Pair<Resolver, Type> resolvedType = incorporateAnnotatedType(declaration);
+		Pair<TypeResolver, Type> resolvedType = incorporateAnnotatedType(declaration);
 		this.type = resolvedType.getRight();
 		this.resolver = resolvedType.getLeft();
 	}
@@ -181,12 +170,12 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 		this(annotatedType, null);
 	}
 
-	private TypeToken(AnnotatedType annotatedType, Resolver resolver) {
+	private TypeToken(AnnotatedType annotatedType, TypeResolver resolver) {
 		Objects.requireNonNull(annotatedType);
 
 		declaration = AnnotatedTypes.wrap(annotatedType);
 
-		Pair<Resolver, Type> resolvedType;
+		Pair<TypeResolver, Type> resolvedType;
 		if (resolver == null)
 			resolvedType = incorporateAnnotatedType(annotatedType);
 		else
@@ -204,11 +193,11 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 		this(AnnotatedTypes.over(type, wildcards.getAnnotation()));
 	}
 
-	private TypeToken(Resolver resolver, Type type, Wildcards wildcards) {
+	private TypeToken(TypeResolver resolver, Type type, Wildcards wildcards) {
 		this(AnnotatedTypes.over(type, wildcards.getAnnotation()), resolver);
 	}
 
-	private TypeToken(Resolver resolver, Type type) {
+	private TypeToken(TypeResolver resolver, Type type) {
 		declaration = AnnotatedTypes.over(type);
 
 		this.resolver = resolver;
@@ -219,7 +208,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * Warning: This is a dangerous constructor to use without a thorough
 	 * understanding of the potential consequences.
 	 */
-	private TypeToken(Resolver resolver, AnnotatedType declaration, Type type) {
+	private TypeToken(TypeResolver resolver, AnnotatedType declaration, Type type) {
 		this.declaration = declaration;
 		this.resolver = resolver;
 		this.type = type;
@@ -332,9 +321,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 		return types;
 	}
 
-	private static Pair<Resolver, Type> incorporateAnnotatedType(Resolver resolver, AnnotatedType annotatedType) {
+	private static Pair<TypeResolver, Type> incorporateAnnotatedType(TypeResolver resolver, AnnotatedType annotatedType) {
 		if (resolver == null)
-			resolver = new Resolver();
+			resolver = new TypeResolver();
 
 		Type type = substituteAnnotatedWildcards(new Isomorphism(), annotatedType, resolver);
 
@@ -344,15 +333,15 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 		return new Pair<>(resolver, type);
 	}
 
-	private static Pair<Resolver, Type> incorporateAnnotatedType(AnnotatedType annotatedType) {
-		Pair<Resolver, Type> resolvedType = incorporateAnnotatedType(new Resolver(), annotatedType); // RESOLVER_CACHE.putGet(annotatedType);
+	private static Pair<TypeResolver, Type> incorporateAnnotatedType(AnnotatedType annotatedType) {
+		Pair<TypeResolver, Type> resolvedType = incorporateAnnotatedType(new TypeResolver(), annotatedType); // RESOLVER_CACHE.putGet(annotatedType);
 
 		HashMap<InferenceVariable, InferenceVariable> map = new HashMap<>();
 		return new Pair<>(resolvedType.getLeft().deepCopy(map), new TypeSubstitution(map).resolve(resolvedType.getRight()));
 	}
 
 	private static Type substituteAnnotatedWildcards(Isomorphism isomorphism, AnnotatedType annotatedType,
-			Resolver resolver) {
+			TypeResolver resolver) {
 		Wildcards behavior = annotatedType.isAnnotationPresent(Preserve.class) ? Wildcards.PRESERVE
 				: annotatedType.isAnnotationPresent(Infer.class) ? Wildcards.INFER
 						: annotatedType.isAnnotationPresent(Capture.class) ? Wildcards.CAPTURE : Wildcards.PRESERVE;
@@ -372,7 +361,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	}
 
 	private static ParameterizedType substituteAnnotatedWildcardsForParameterizedType(Isomorphism isomorphism,
-			Wildcards behavior, AnnotatedParameterizedType annotatedType, Resolver resolver) {
+			Wildcards behavior, AnnotatedParameterizedType annotatedType, TypeResolver resolver) {
 		return isomorphism.byIdentity().getProxiedMapping(annotatedType, ParameterizedType.class, t -> {
 			/*
 			 * Deal with annotations on types mentioned by parameters, preserving any
@@ -400,7 +389,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 				if (behavior == Wildcards.CAPTURE) {
 					parameterizedType = TypeVariableCapture.captureWildcardArguments(parameterizedType);
 				} else if (behavior == Wildcards.INFER) {
-					Resolver inferenceResolver = new Resolver(resolver.getBounds());
+					TypeResolver inferenceResolver = new TypeResolver(resolver.getBounds());
 					parameterizedType = inferenceResolver.inferOverTypeArguments(parameterizedType);
 					resolver.getBounds().incorporate(inferenceResolver.getBounds());
 				}
@@ -410,7 +399,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	}
 
 	private static Type substituteAnnotatedWildcardsForWildcardType(Isomorphism isomorphism, Wildcards behavior,
-			AnnotatedWildcardType annotatedType, Resolver resolver) {
+			AnnotatedWildcardType annotatedType, TypeResolver resolver) {
 		AnnotatedWildcardType annotatedWildcardType = annotatedType;
 		WildcardType wildcardType;
 
@@ -450,7 +439,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	}
 
 	private static Type[] substituteAnnotatedWildcardsForEach(Isomorphism isomorphism, AnnotatedType[] annotatedTypes,
-			Resolver resolver) {
+			TypeResolver resolver) {
 		Type[] types = new Type[annotatedTypes.length];
 		for (int i = 0; i < types.length; i++)
 			types[i] = substituteAnnotatedWildcards(isomorphism, annotatedTypes[i], resolver);
@@ -494,7 +483,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 *          How to deal with wildcard parameters on the given type.
 	 * @return A TypeToken over the requested type.
 	 */
-	public static TypeToken<?> over(Resolver resolver, Type type, Wildcards wildcards) {
+	public static TypeToken<?> over(TypeResolver resolver, Type type, Wildcards wildcards) {
 		return new TypeToken<>(resolver.copy(), type, wildcards);
 	}
 
@@ -547,7 +536,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 *          The requested type.
 	 * @return A TypeToken over the requested type.
 	 */
-	public static <T> TypeToken<? extends T> over(Resolver resolver, Class<T> rawType) {
+	public static <T> TypeToken<? extends T> over(TypeResolver resolver, Class<T> rawType) {
 		resolver.inferOverTypeParameters(rawType);
 		return new TypeToken<>(resolver.copy(), resolver.resolveTypeParameters(rawType));
 	}
@@ -581,7 +570,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	public TypeToken<T> deepCopy() {
 		Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions = new HashMap<>();
 
-		Resolver resolver = getInternalResolver().deepCopy(inferenceVariableSubstitutions);
+		TypeResolver resolver = getInternalResolver().deepCopy(inferenceVariableSubstitutions);
 
 		return new TypeToken<>(resolver, declaration, new TypeSubstitution(inferenceVariableSubstitutions).resolve(type));
 	}
@@ -636,7 +625,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 *          The new bounds to incorporate.
 	 * @return The newly derived {@link TypeToken}.
 	 */
-	public TypeToken<T> withBoundsFrom(Resolver bounds) {
+	public TypeToken<T> withBoundsFrom(TypeResolver bounds) {
 		return new TypeToken<>(getResolverWithBoundsFrom(bounds), getType());
 	}
 
@@ -656,7 +645,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 *          The inference variables whose bounds are to be incorporated.
 	 * @return The newly derived {@link TypeToken}.
 	 */
-	public TypeToken<T> withBoundsFrom(Resolver bounds, Collection<? extends InferenceVariable> inferenceVariables) {
+	public TypeToken<T> withBoundsFrom(TypeResolver bounds, Collection<? extends InferenceVariable> inferenceVariables) {
 		return new TypeToken<>(getResolverWithBoundsFrom(bounds, inferenceVariables), getType());
 	}
 
@@ -755,7 +744,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	@SuppressWarnings("unchecked")
 	public TypeToken<? extends T> getExtending(Wildcards wildcards) {
 		if (wildcards == Wildcards.INFER) {
-			Resolver resolver = getResolver();
+			TypeResolver resolver = getResolver();
 			return (TypeToken<? extends T>) new TypeToken<>(resolver,
 					resolver.inferOverWildcardType(WildcardTypes.upperBounded(getType())));
 		} else {
@@ -795,7 +784,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	@SuppressWarnings("unchecked")
 	public TypeToken<? super T> getSuper(Wildcards wildcards) {
 		if (wildcards == Wildcards.INFER) {
-			Resolver resolver = getResolver();
+			TypeResolver resolver = getResolver();
 			return new TypeToken<>(resolver, resolver.inferOverWildcardType(WildcardTypes.lowerBounded(getType())));
 		} else {
 			return (TypeToken<? super T>) over(WildcardTypes.lowerBounded(getType()), wildcards);
@@ -828,40 +817,41 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * @return A new Resolver object containing whichever bounds have been
 	 *         internally derived from the type of this TypeToken.
 	 */
-	public Resolver getResolver() {
+	public TypeResolver getResolver() {
 		return getInternalResolver().copy();
 	}
 
-	private Resolver getInternalResolver() {
+	private TypeResolver getInternalResolver() {
 		return resolver;
 	}
 
-	private Resolver getResolverWithBounds(BoundSet bounds) {
-		Resolver resolver = getResolver();
+	private TypeResolver getResolverWithBounds(BoundSet bounds) {
+		TypeResolver resolver = getResolver();
 		resolver.getBounds().incorporate(bounds);
 		return resolver;
 	}
 
-	private Resolver getResolverWithBounds(BoundSet bounds, Collection<? extends InferenceVariable> inferenceVariables) {
-		Resolver resolver = getResolver();
+	private TypeResolver getResolverWithBounds(BoundSet bounds,
+			Collection<? extends InferenceVariable> inferenceVariables) {
+		TypeResolver resolver = getResolver();
 		resolver.getBounds().incorporate(bounds, inferenceVariables);
 		return resolver;
 	}
 
-	private Resolver getResolverWithBoundsFrom(Resolver bounds) {
-		Resolver resolver = getResolverWithBounds(bounds.getBounds());
+	private TypeResolver getResolverWithBoundsFrom(TypeResolver bounds) {
+		TypeResolver resolver = getResolverWithBounds(bounds.getBounds());
 		resolver.incorporateWildcardCaptures(bounds.getWildcardCaptures());
 		return resolver;
 	}
 
-	private Resolver getResolverWithBoundsFrom(Resolver bounds,
+	private TypeResolver getResolverWithBoundsFrom(TypeResolver bounds,
 			Collection<? extends InferenceVariable> inferenceVariables) {
-		Resolver resolver = getResolverWithBounds(bounds.getBounds(), inferenceVariables);
+		TypeResolver resolver = getResolverWithBounds(bounds.getBounds(), inferenceVariables);
 		resolver.incorporateWildcardCaptures(bounds.getWildcardCaptures());
 		return resolver;
 	}
 
-	private Resolver getResolverWithBoundsFrom(TypeToken<?> type) {
+	private TypeResolver getResolverWithBoundsFrom(TypeToken<?> type) {
 		return getResolverWithBoundsFrom(type.getInternalResolver(), type.getRelatedInferenceVariables());
 	}
 
@@ -939,7 +929,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 */
 	public boolean isAssignableTo(TypeToken<?> type) {
 		try {
-			Resolver resolver = getResolverWithBoundsFrom(type);
+			TypeResolver resolver = getResolverWithBoundsFrom(type);
 			ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, getType(), type.getType(), resolver.getBounds());
 			return true;
 		} catch (Exception e) {
@@ -997,7 +987,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 */
 	public boolean isContainedBy(TypeToken<?> type) {
 		try {
-			Resolver resolver = getResolverWithBoundsFrom(type);
+			TypeResolver resolver = getResolverWithBoundsFrom(type);
 			ConstraintFormula.reduce(Kind.CONTAINMENT, getType(), type.getType(), resolver.getBounds());
 			return true;
 		} catch (Exception e) {
@@ -1071,7 +1061,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * @return A new type token which satisfies the bounding.
 	 */
 	public TypeToken<T> withEquality(Type type) {
-		Resolver resolver = getResolver();
+		TypeResolver resolver = getResolver();
 		ConstraintFormula.reduce(Kind.EQUALITY, type, getType(), resolver.getBounds());
 
 		return new TypeToken<>(resolver, getType());
@@ -1090,7 +1080,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * @return A new type token which satisfies the bounding.
 	 */
 	public TypeToken<T> withEquality(TypeToken<?> type) {
-		Resolver resolver = getResolverWithBoundsFrom(type);
+		TypeResolver resolver = getResolverWithBoundsFrom(type);
 		ConstraintFormula.reduce(Kind.EQUALITY, type.getType(), getType(), resolver.getBounds());
 
 		return new TypeToken<>(resolver, resolveType());
@@ -1109,7 +1099,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * @return A new type token which satisfies the bounding.
 	 */
 	public TypeToken<T> withLowerBound(Type type) {
-		Resolver resolver = getResolver();
+		TypeResolver resolver = getResolver();
 		ConstraintFormula.reduce(Kind.SUBTYPE, type, getType(), resolver.getBounds());
 
 		return new TypeToken<>(resolver, getType());
@@ -1128,7 +1118,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * @return A new type token which satisfies the bounding.
 	 */
 	public TypeToken<T> withLowerBound(TypeToken<?> type) {
-		Resolver resolver = getResolverWithBoundsFrom(type);
+		TypeResolver resolver = getResolverWithBoundsFrom(type);
 		ConstraintFormula.reduce(Kind.SUBTYPE, type.getType(), getType(), resolver.getBounds());
 
 		return new TypeToken<>(resolver, resolveType());
@@ -1146,7 +1136,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * @return A new type token which satisfies the bounding.
 	 */
 	public TypeToken<T> withUpperBound(Type type) {
-		Resolver resolver = getResolver();
+		TypeResolver resolver = getResolver();
 		ConstraintFormula.reduce(Kind.SUBTYPE, getType(), type, resolver.getBounds());
 
 		return new TypeToken<>(resolver, getType());
@@ -1164,7 +1154,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * @return A new type token which satisfies the bounding.
 	 */
 	public TypeToken<T> withUpperBound(TypeToken<?> type) {
-		Resolver resolver = getResolverWithBoundsFrom(type);
+		TypeResolver resolver = getResolverWithBoundsFrom(type);
 		ConstraintFormula.reduce(Kind.SUBTYPE, getType(), type.getType(), resolver.getBounds());
 
 		return new TypeToken<>(resolver, resolveType());
@@ -1182,7 +1172,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * @return A new type token which satisfies the bounding.
 	 */
 	public TypeToken<T> withLooseCompatibilityTo(Type type) {
-		Resolver resolver = getResolver();
+		TypeResolver resolver = getResolver();
 		ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, getType(), type, resolver.getBounds());
 
 		return new TypeToken<>(resolver, getType());
@@ -1200,7 +1190,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * @return A new type token which satisfies the bounding.
 	 */
 	public TypeToken<T> withLooseCompatibilityTo(TypeToken<?> type) {
-		Resolver resolver = getResolverWithBoundsFrom(type);
+		TypeResolver resolver = getResolverWithBoundsFrom(type);
 		ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, getType(), type.getType(), resolver.getBounds());
 
 		return new TypeToken<>(resolver, resolveType());
@@ -1218,7 +1208,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * @return A new type token which satisfies the bounding.
 	 */
 	public TypeToken<T> withLooseCompatibilityFrom(Type type) {
-		Resolver resolver = getResolver();
+		TypeResolver resolver = getResolver();
 		ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, type, getType(), resolver.getBounds());
 
 		return new TypeToken<>(resolver, getType());
@@ -1236,7 +1226,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * @return A new type token which satisfies the bounding.
 	 */
 	public TypeToken<T> withLooseCompatibilityFrom(TypeToken<?> type) {
-		Resolver resolver = getResolverWithBoundsFrom(type);
+		TypeResolver resolver = getResolverWithBoundsFrom(type);
 		ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, type.getType(), getType(), resolver.getBounds());
 
 		return new TypeToken<>(resolver, resolveType());
@@ -1261,7 +1251,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 				|| (type instanceof ParameterizedType && ((ParameterizedType) type).getRawType().equals(superclass)))
 			return (TypeToken<? extends U>) this;
 
-		Resolver resolver = getInternalResolver();
+		TypeResolver resolver = getInternalResolver();
 
 		Type parameterizedType = ParameterizedTypes.uncheckedFrom(superclass, i -> null);
 
@@ -1303,7 +1293,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 				|| (type instanceof ParameterizedType && ((ParameterizedType) type).getRawType().equals(subclass)))
 			return (TypeToken<? extends U>) this;
 
-		Resolver resolver = getInternalResolver();
+		TypeResolver resolver = getInternalResolver();
 
 		Type parameterizedType = ParameterizedTypes.uncheckedFrom(subclass, i -> null);
 
@@ -1501,435 +1491,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	}
 
 	private TypeToken<?> withTypeArgument(TypeVariable<?> parameter, Type argument) {
-		return new TypeToken<>(new Resolver(getInternalResolver().getBounds()),
+		return new TypeToken<>(new TypeResolver(getInternalResolver().getBounds()),
 				new TypeSubstitution().where(parameter, argument).resolve(getType()));
-	}
-
-	/**
-	 * Find which constructors can be invoked for this type.
-	 * 
-	 * @return A list of all {@link Constructor} objects applicable to this type,
-	 *         wrapped in {@link InvocableMember} instances.
-	 */
-	public Set<? extends FieldMember<T, ?>> getFields() {
-		return getFields(c -> true);
-	}
-
-	private Set<? extends FieldMember<T, ?>> getFields(Predicate<Field> filter) {
-		return getFieldsImpl(filter, Class::getFields);
-	}
-
-	/**
-	 * Find which constructors can be invoked for this type.
-	 * 
-	 * @return A list of all {@link Constructor} objects applicable to this type,
-	 *         wrapped in {@link InvocableMember} instances.
-	 */
-	public Set<? extends FieldMember<T, ?>> getDeclaredFields() {
-		return getDeclaredFields(c -> true);
-	}
-
-	private Set<? extends FieldMember<T, ?>> getDeclaredFields(Predicate<Field> filter) {
-		return getFieldsImpl(filter, Class::getDeclaredFields);
-	}
-
-	private Set<? extends FieldMember<T, ?>> getFieldsImpl(Predicate<Field> filter, Function<Class<?>, Field[]> fields) {
-		return Arrays.stream(fields.apply(getRawType())).filter(filter)
-				.map(m -> (FieldMember<T, ?>) FieldMember.over(m, this)).collect(Collectors.toCollection(LinkedHashSet::new));
-	}
-
-	/**
-	 * Find which constructors can be invoked for this type.
-	 * 
-	 * @return A list of all {@link Constructor} objects applicable to this type,
-	 *         wrapped in {@link InvocableMember} instances.
-	 */
-	public Set<? extends InvocableMember<T, T>> getConstructors() {
-		return getConstructors(c -> true);
-	}
-
-	private Set<? extends InvocableMember<T, T>> getConstructors(Predicate<Constructor<T>> filter) {
-		return getConstructorsImpl(filter, Class::getConstructors);
-	}
-
-	/**
-	 * Find which constructors can be invoked for this type.
-	 * 
-	 * @return A list of all {@link Constructor} objects applicable to this type,
-	 *         wrapped in {@link InvocableMember} instances.
-	 */
-	public Set<? extends InvocableMember<T, T>> getDeclaredConstructors() {
-		return getDeclaredConstructors(c -> true);
-	}
-
-	private Set<? extends InvocableMember<T, T>> getDeclaredConstructors(Predicate<Constructor<T>> filter) {
-		return getConstructorsImpl(filter, Class::getDeclaredConstructors);
-	}
-
-	@SuppressWarnings("unchecked")
-	private Set<? extends InvocableMember<T, T>> getConstructorsImpl(Predicate<Constructor<T>> filter,
-			Function<Class<?>, Constructor<?>[]> constructors) {
-		return Arrays.stream(constructors.apply(getRawType())).filter(c -> filter.test((Constructor<T>) c))
-				.map(m -> InvocableMember.over((Constructor<T>) m, this)).collect(Collectors.toCollection(LinkedHashSet::new));
-	}
-
-	/**
-	 * Find which methods can be invoked on this type, whether statically or on
-	 * instances.
-	 * 
-	 * @return A list of all {@link Method} objects applicable to this type,
-	 *         wrapped in {@link InvocableMember} instances.
-	 */
-	public Set<? extends InvocableMember<? super T, ?>> getMethods() {
-		return getMethods(m -> true);
-	}
-
-	/**
-	 * Find which methods can be invoked on this type, whether statically or on
-	 * instances, which pass a filter.
-	 * 
-	 * @param filter
-	 *          Determine which methods may participate.
-	 * @return A list of all {@link Method} objects applicable to this type,
-	 *         wrapped in {@link InvocableMember} instances.
-	 */
-	public Set<? extends InvocableMember<? super T, ?>> getMethods(Predicate<Method> filter) {
-		return getMethodsImpl(filter, Class::getMethods);
-	}
-
-	/**
-	 * Find which methods can be invoked on this type, whether statically or on
-	 * instances.
-	 * 
-	 * @return A list of all {@link Method} objects applicable to this type,
-	 *         wrapped in {@link InvocableMember} instances.
-	 */
-	public Set<? extends InvocableMember<? super T, ?>> getDeclaredMethods() {
-		return getDeclaredMethods(m -> true);
-	}
-
-	/**
-	 * Find which methods can be invoked on this type, whether statically or on
-	 * instances, which pass a filter.
-	 * 
-	 * @param filter
-	 *          Determine which methods may participate.
-	 * @return A list of all {@link Method} objects applicable to this type,
-	 *         wrapped in {@link InvocableMember} instances.
-	 */
-	public Set<? extends InvocableMember<? super T, ?>> getDeclaredMethods(Predicate<Method> filter) {
-		return getMethodsImpl(filter, Class::getDeclaredMethods);
-	}
-
-	private Set<? extends InvocableMember<? super T, ?>> getMethodsImpl(Predicate<Method> filter,
-			Function<Class<?>, Method[]> methods) {
-		Stream<Method> methodStream = getRawTypes().stream().flatMap(t -> Arrays.stream(methods.apply(t)));
-
-		if (getRawTypes().stream().allMatch(Types::isInterface))
-			methodStream = Stream.concat(methodStream, Arrays.stream(Object.class.getMethods()));
-
-		return methodStream.filter(filter).map(m -> (InvocableMember<? super T, ?>) InvocableMember.over(m, this))
-				.collect(Collectors.toCollection(LinkedHashSet::new));
-	}
-
-	/**
-	 * Find which methods and constructors can be invoked on this type, whether
-	 * statically or on instances.
-	 * 
-	 * @return A list of all {@link Method} and {@link Constructor} objects
-	 *         applicable to this type, wrapped in {@link InvocableMember}
-	 *         instances.
-	 */
-	public Set<? extends InvocableMember<? super T, ?>> getExecutableMembers() {
-		Set<InvocableMember<? super T, ?>> members = new HashSet<>();
-		members.addAll(getConstructors());
-		members.addAll(getMethods());
-		return members;
-	}
-
-	/**
-	 * Find which methods and constructors can be invoked on this type, whether
-	 * statically or on instances.
-	 * 
-	 * @return A list of all {@link Method} and {@link Constructor} objects
-	 *         applicable to this type, wrapped in {@link InvocableMember}
-	 *         instances.
-	 */
-	public Set<? extends InvocableMember<? super T, ?>> getDeclaredExecutableMembers() {
-		Set<InvocableMember<? super T, ?>> members = new HashSet<>();
-		members.addAll(getDeclaredConstructors());
-		members.addAll(getDeclaredMethods());
-		return members;
-	}
-
-	/**
-	 * Find which members can be found on this type, whether statically or on
-	 * instances.
-	 * 
-	 * @return A list of all {@link Method} and {@link Constructor} objects
-	 *         applicable to this type, wrapped in {@link InvocableMember}
-	 *         instances.
-	 */
-	public Set<? extends TypeMember<? super T>> getMembers() {
-		Set<TypeMember<? super T>> members = new HashSet<>();
-		members.addAll(getConstructors());
-		members.addAll(getMethods());
-		members.addAll(getFields());
-		return members;
-	}
-
-	/**
-	 * Find which members can be found on this type, whether statically or on
-	 * instances.
-	 * 
-	 * @return A list of all {@link Method} and {@link Constructor} objects
-	 *         applicable to this type, wrapped in {@link InvocableMember}
-	 *         instances.
-	 */
-	public Set<? extends TypeMember<? super T>> getDeclaredMembers() {
-		Set<TypeMember<? super T>> members = new HashSet<>();
-		members.addAll(getDeclaredConstructors());
-		members.addAll(getDeclaredMethods());
-		members.addAll(getDeclaredFields());
-		return members;
-	}
-
-	/**
-	 * As {@link #resolveConstructorOverload(List)} for a nullary method.
-	 */
-	@SuppressWarnings("javadoc")
-	public InvocableMember<? super T, ? extends T> resolveConstructorOverload() {
-		return resolveConstructorOverload(Collections.emptyList());
-	}
-
-	/**
-	 * As {@link #resolveDeclaredConstructorOverload(List)} for a nullary method.
-	 */
-	@SuppressWarnings("javadoc")
-	public InvocableMember<? super T, ? extends T> resolveDeclaredConstructorOverload() {
-		return resolveDeclaredConstructorOverload(Collections.emptyList());
-	}
-
-	/**
-	 * As {@link #resolveConstructorOverload(List)}.
-	 */
-	@SuppressWarnings("javadoc")
-	public InvocableMember<? super T, ? extends T> resolveConstructorOverload(Type... arguments) {
-		return resolveConstructorOverload(Arrays.stream(arguments).map(TypeToken::over).collect(Collectors.toList()));
-	}
-
-	/**
-	 * As {@link #resolveDeclaredConstructorOverload(List)}.
-	 */
-	@SuppressWarnings("javadoc")
-	public InvocableMember<? super T, ? extends T> resolveDeclaredConstructorOverload(Type... arguments) {
-		return resolveDeclaredConstructorOverload(
-				Arrays.stream(arguments).map(TypeToken::over).collect(Collectors.toList()));
-	}
-
-	/**
-	 * As {@link #resolveConstructorOverload( List)}.
-	 */
-	@SuppressWarnings("javadoc")
-	public InvocableMember<? super T, ? extends T> resolveConstructorOverload(TypeToken<?>... arguments) {
-		return resolveConstructorOverload(Arrays.asList(arguments));
-	}
-
-	/**
-	 * As {@link #resolveDeclaredConstructorOverload( List)}.
-	 */
-	@SuppressWarnings("javadoc")
-	public InvocableMember<? super T, ? extends T> resolveDeclaredConstructorOverload(TypeToken<?>... arguments) {
-		return resolveDeclaredConstructorOverload(Arrays.asList(arguments));
-	}
-
-	/**
-	 * Resolve which constructor invocation matches the given name and argument
-	 * list, according to the Java 8 method overload resolution rules.
-	 * 
-	 * @param arguments
-	 *          The list of argument types for this invocation.
-	 * @return An {@link InvocableMember} object wrapping the resolved
-	 *         {@link Method}, with bounds on any generic type parameters derived
-	 *         from the argument types.
-	 */
-	public InvocableMember<? super T, ? extends T> resolveConstructorOverload(List<? extends TypeToken<?>> arguments) {
-		return resolveConstructorOverloadImpl(arguments, this::getConstructors);
-	}
-
-	/**
-	 * Resolve which declared constructor invocation matches the given name and
-	 * argument list, according to the Java 8 method overload resolution rules.
-	 * 
-	 * @param arguments
-	 *          The list of argument types for this invocation.
-	 * @return An {@link InvocableMember} object wrapping the resolved
-	 *         {@link Method}, with bounds on any generic type parameters derived
-	 *         from the argument types.
-	 */
-	public InvocableMember<? super T, ? extends T> resolveDeclaredConstructorOverload(
-			List<? extends TypeToken<?>> arguments) {
-		return resolveConstructorOverloadImpl(arguments, this::getDeclaredConstructors);
-	}
-
-	private InvocableMember<? super T, ? extends T> resolveConstructorOverloadImpl(List<? extends TypeToken<?>> arguments,
-			Function<Predicate<Constructor<T>>, Set<? extends InvocableMember<? super T, ? extends T>>> constructors) {
-		Set<? extends InvocableMember<? super T, ? extends T>> candidates = constructors
-				.apply(m -> isArgumentCountValid(m, arguments.size()));
-
-		if (candidates.isEmpty())
-			throw new IllegalArgumentException(
-					"Cannot find any applicable constructor in '" + this + "' for arguments '" + arguments + "'");
-
-		candidates = InvocableMember.resolveApplicableExecutableMembers(candidates, arguments);
-
-		return InvocableMember.resolveMostSpecificExecutableMember(candidates);
-	}
-
-	/**
-	 * As {@link #resolveMethodOverload(String, List)} for a nullary method.
-	 */
-	@SuppressWarnings("javadoc")
-	public InvocableMember<? super T, ?> resolveMethodOverload(String name) {
-		return resolveMethodOverload(name, Collections.emptyList());
-	}
-
-	/**
-	 * As {@link #resolveDeclaredMethodOverload(String, List)} for a nullary
-	 * method.
-	 */
-	@SuppressWarnings("javadoc")
-	public InvocableMember<? super T, ?> resolveDeclaredMethodOverload(String name) {
-		return resolveDeclaredMethodOverload(name, Collections.emptyList());
-	}
-
-	/**
-	 * As {@link #resolveMethodOverload(String, List)}.
-	 */
-	@SuppressWarnings("javadoc")
-	public InvocableMember<? super T, ?> resolveMethodOverload(String name, Type... arguments) {
-		return resolveMethodOverload(name, Arrays.stream(arguments).map(TypeToken::over).collect(Collectors.toList()));
-	}
-
-	/**
-	 * As {@link #resolveDeclaredMethodOverload(String, List)}.
-	 */
-	@SuppressWarnings("javadoc")
-	public InvocableMember<? super T, ?> resolveDeclaredMethodOverload(String name, Type... arguments) {
-		return resolveDeclaredMethodOverload(name,
-				Arrays.stream(arguments).map(TypeToken::over).collect(Collectors.toList()));
-	}
-
-	/**
-	 * As {@link #resolveMethodOverload(String, List)}.
-	 */
-	@SuppressWarnings("javadoc")
-	public InvocableMember<? super T, ?> resolveMethodOverload(String name, TypeToken<?>... arguments) {
-		return resolveMethodOverload(name, Arrays.asList(arguments));
-	}
-
-	/**
-	 * As {@link #resolveDeclaredMethodOverload(String, List)}.
-	 */
-	@SuppressWarnings("javadoc")
-	public InvocableMember<? super T, ?> resolveDeclaredMethodOverload(String name, TypeToken<?>... arguments) {
-		return resolveDeclaredMethodOverload(name, Arrays.asList(arguments));
-	}
-
-	/**
-	 * Resolve which method invocation matches the given name and argument list,
-	 * according to the Java 8 method overload resolution rules.
-	 * 
-	 * @param name
-	 *          the name of the method
-	 * @param arguments
-	 *          the list of argument types for this invocation
-	 * @return An {@link InvocableMember} object wrapping the resolved
-	 *         {@link Method}, with bounds on any generic type parameters derived
-	 *         from the argument types.
-	 */
-	public InvocableMember<? super T, ?> resolveMethodOverload(String name, List<? extends TypeToken<?>> arguments) {
-		return resolveMethodOverloadImpl(name, arguments, this::getMethods);
-	}
-
-	/**
-	 * Resolve which declared method invocation matches the given name and
-	 * argument list, according to the Java 8 method overload resolution rules.
-	 * 
-	 * @param name
-	 *          the name of the method
-	 * @param arguments
-	 *          the list of argument types for this invocation
-	 * @return An {@link InvocableMember} object wrapping the resolved
-	 *         {@link Method}, with bounds on any generic type parameters derived
-	 *         from the argument types.
-	 */
-	public InvocableMember<? super T, ?> resolveDeclaredMethodOverload(String name,
-			List<? extends TypeToken<?>> arguments) {
-		return resolveMethodOverloadImpl(name, arguments, this::getDeclaredMethods);
-	}
-
-	private InvocableMember<? super T, ?> resolveMethodOverloadImpl(String name, List<? extends TypeToken<?>> arguments,
-			Function<Predicate<Method>, Set<? extends InvocableMember<? super T, ?>>> methods) {
-		Set<? extends InvocableMember<? super T, ? extends Object>> candidates = methods
-				.apply(m -> m.getName().equals(name) && isArgumentCountValid(m, arguments.size()));
-
-		if (candidates.isEmpty())
-			throw new IllegalArgumentException(
-					"Cannot find any method '" + name + "' in '" + this + "' for arguments '" + arguments + "'");
-
-		candidates = InvocableMember.resolveApplicableExecutableMembers(candidates, arguments);
-
-		return InvocableMember.resolveMostSpecificExecutableMember(candidates);
-	}
-
-	/**
-	 * Resolve the most specific accessible field on this type and its supertypes
-	 * which match the given name.
-	 * 
-	 * @param name
-	 *          the name of the field
-	 * @return a field matching the given name
-	 */
-	public FieldMember<? super T, ?> resolveField(String name) {
-		return resolveFieldsImpl(name, this::getFields).stream().findFirst().get();
-	}
-
-	/**
-	 * Resolve the declared field on this type which match the given name.
-	 * 
-	 * @param name
-	 *          the name of the field
-	 * @return a field matching the given name
-	 */
-	public FieldMember<? super T, ?> resolveDeclaredField(String name) {
-		return resolveFieldsImpl(name, this::getDeclaredFields).stream().findFirst().get();
-	}
-
-	/**
-	 * Resolve all accessible fields on this type and its supertypes which match
-	 * the given name.
-	 * 
-	 * @param name
-	 *          the name of the field
-	 * @return a field matching the given name
-	 */
-	public List<FieldMember<? super T, ?>> resolveFields(String name) {
-		return resolveFieldsImpl(name, this::getFields);
-	}
-
-	private List<FieldMember<? super T, ?>> resolveFieldsImpl(String name,
-			Function<Predicate<Field>, Set<? extends FieldMember<? super T, ?>>> fields) {
-		Set<? extends FieldMember<? super T, ? extends Object>> candidates = fields.apply(m -> m.getName().equals(name));
-
-		if (candidates.isEmpty())
-			throw new IllegalArgumentException("Cannot find any field '" + name + "' in '" + this + "'");
-
-		return new ArrayList<>(candidates);
-	}
-
-	private boolean isArgumentCountValid(Executable method, int arguments) {
-		return (method.isVarArgs() ? method.getParameterCount() <= arguments + 1 : method.getParameterCount() == arguments);
 	}
 
 	/**
@@ -1950,7 +1513,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * @return The newly derived {@link TypeToken}
 	 */
 	public TypeToken<T> captureInferenceVariables() {
-		Resolver resolver = getResolver();
+		TypeResolver resolver = getResolver();
 
 		TypeVariableCapture.captureInferenceVariables(InferenceVariable.getMentionedBy(resolver.resolveType(getType())),
 				resolver.getBounds());
@@ -1967,7 +1530,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * @return A TypeToken with the fully inferred type.
 	 */
 	public TypeToken<T> infer() {
-		Resolver resolver = getResolver();
+		TypeResolver resolver = getResolver();
 
 		return new TypeToken<>(resolver, resolver.infer(type));
 	}
@@ -2053,7 +1616,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 *          The resolver instance into which we wish to incorporate
 	 *          information about this type token.
 	 */
-	public void incorporateInto(Resolver resolver) {
+	public void incorporateInto(TypeResolver resolver) {
 		Type type = resolveType();
 
 		resolver.getBounds().incorporate(getInternalResolver().getBounds(), InferenceVariable.getMentionedBy(type));
@@ -2065,7 +1628,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	/**
 	 * Resubstitute any type variable captures mentioned in the given type for the
 	 * wildcards which they originally captured, if they were captured through
-	 * incorporation of wildcard types into this {@link Resolver} instance.
+	 * incorporation of wildcard types into this {@link TypeResolver} instance.
 	 * <p>
 	 * This should be used with care, as in many instances the bounds on the
 	 * wildcard will not be specific enough to satisfy every bound on the capture.

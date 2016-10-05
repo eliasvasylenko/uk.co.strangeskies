@@ -23,14 +23,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefinition<C, T>>
+public abstract class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefinition<C, T>>
 		implements MemberDefinition<C> {
 	private final ClassDefinition<C> classDefinition;
 	private final String methodName;
 
 	private final List<LocalVariableExpression<?>> parameters;
 	private final TypeToken<T> returnType;
-	private final TypedBlock<T> body;
+	private final Block<T> body;
 
 	private final MethodSignature overrideSignature;
 
@@ -40,7 +40,7 @@ public class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefini
 
 		this.classDefinition = declaration.getClassDefinition();
 		this.methodName = declaration.getName();
-		this.body = new TypedBlock<>();
+		this.body = new Block<>();
 
 		ArrayList<LocalVariableExpression<?>> parameters = new ArrayList<>();
 		for (VariableExpressionProxy<?> proxy : declaration.getParameters()) {
@@ -56,8 +56,6 @@ public class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefini
 
 		overrideSignature = new MethodSignature(methodName,
 				parameters.stream().map(v -> v.getType().getRawType()).toArray(Class<?>[]::new));
-
-		classDefinition.overrideMethod(this);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -84,7 +82,7 @@ public class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefini
 		return variable;
 	}
 
-	public TypedBlock<T> body() {
+	public Block<T> body() {
 		return body;
 	}
 
@@ -120,15 +118,13 @@ public class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefini
 		 */
 	}
 
-	public T invoke(ReflectiveInstance<C> receiver, Object[] arguments) {
-		StatementExecutor state = new StatementExecutor(receiver);
-
+	protected T invoke(StatementExecutor state, Object[] arguments) {
 		int i = 0;
 		for (LocalVariableExpression<?> parameter : parameters) {
 			setParameterUnsafe(state, parameter.getId(), arguments[i]);
 		}
 
-		return state.executeBlock(body());
+		return state.executeBlock(body);
 	}
 
 	@SuppressWarnings("unchecked")

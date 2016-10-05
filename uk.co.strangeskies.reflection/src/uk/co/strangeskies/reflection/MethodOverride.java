@@ -32,7 +32,7 @@ public class MethodOverride<T> {
 	private final MethodSignature signature;
 	private final Set<Method> interfaceMethods;
 	private Method classMethod;
-	private MethodDefinition<T, ?> override;
+	private InstanceMethodDefinition<T, ?> override;
 
 	public MethodOverride(ClassDefinition<T> classDefinition, MethodSignature signature) {
 		this.classDefinition = classDefinition;
@@ -92,7 +92,7 @@ public class MethodOverride<T> {
 		}
 	}
 
-	public void override(MethodDefinition<T, ?> override) {
+	public void override(InstanceMethodDefinition<T, ?> override) {
 		if (this.override != null) {
 			throw new ReflectionException(p -> p.duplicateMethodSignature(override));
 		}
@@ -107,7 +107,7 @@ public class MethodOverride<T> {
 				override.getParameters().stream().map(v -> v.getType().getType()).toArray(Type[]::new));
 	}
 
-	public Optional<MethodDefinition<T, ?>> getOverride() {
+	public Optional<InstanceMethodDefinition<T, ?>> getOverride() {
 		return Optional.ofNullable(override);
 	}
 

@@ -137,15 +137,7 @@ public class StatementExecutor {
 	}
 
 	@SuppressWarnings("unchecked")
-	public <T> T executeBlock(TypedBlock<T> block) {
-		return (T) executeBlockImpl(block).getResult();
-	}
-
-	public void executeBlock(VoidBlock block) {
-		executeBlockImpl(block);
-	}
-
-	private StatementVisitorImpl executeBlockImpl(Block<?> block) {
+	public <T> T executeBlock(Block<T> block) {
 		StatementVisitorImpl statementVisitor = enclose().new StatementVisitorImpl();
 
 		block.getStatements().map(s -> {
@@ -153,6 +145,6 @@ public class StatementExecutor {
 			return s;
 		}).filter(s -> statementVisitor.isComplete()).findFirst();
 
-		return statementVisitor;
+		return (T) statementVisitor.getResult();
 	}
 }

@@ -18,6 +18,8 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static uk.co.strangeskies.reflection.FieldMember.resolveField;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -51,6 +53,10 @@ public interface ValueExpression<T> extends Expression {
 		return new FieldExpression<>(this, field);
 	}
 
+	default FieldExpression<? super T, ?> accessResolvedField(String fieldName) {
+		return accessField(resolveField(getType(), fieldName));
+	}
+
 	default <R> MethodExpression<? super T, R> invokeMethod(InvocableMember<? super T, R> invocable,
 			ValueExpression<?>... arguments) {
 		return invokeMethod(invocable, Arrays.asList(arguments));
@@ -59,5 +65,19 @@ public interface ValueExpression<T> extends Expression {
 	default <R> MethodExpression<? super T, R> invokeMethod(InvocableMember<? super T, R> invocable,
 			List<ValueExpression<?>> arguments) {
 		return new MethodExpression<>(this, invocable, arguments);
+	}
+
+	default <R> MethodExpression<? super T, R> invokeResolvedMethod(String invocableName,
+			ValueExpression<?>... arguments) {
+		return invokeResolvedMethod(invocableName, Arrays.asList(arguments));
+	}
+
+	default <R> MethodExpression<? super T, R> invokeResolvedMethod(String invocableName,
+			List<ValueExpression<?>> arguments) {
+		/*
+		 * TODO resolve method overload
+		 */
+		return new MethodExpression<>(this, InvocableMember.resolveMethodOverload(getType(), invocableName, arguments),
+				arguments);
 	}
 }

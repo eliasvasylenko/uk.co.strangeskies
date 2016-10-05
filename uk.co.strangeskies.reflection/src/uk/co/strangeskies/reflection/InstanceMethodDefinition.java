@@ -18,23 +18,14 @@
  */
 package uk.co.strangeskies.reflection;
 
-public class VoidBlock extends Block<VoidBlock> {
-	public VoidBlock() {
-		super();
+public class InstanceMethodDefinition<C, T> extends MethodDefinition<C, T> {
+	public InstanceMethodDefinition(MethodDeclaration<C, T> declaration) {
+		super(declaration);
+
+		getDeclaringClassDefinition().overrideMethod(this);
 	}
 
-	public VoidBlock(VoidBlock copy) {
-		super(copy);
-	}
-
-	public VoidBlock addReturnStatement() {
-		addStatement(StatementVisitor::visitReturn);
-
-		return this;
-	}
-
-	@Override
-	public VoidBlock copy() {
-		return new VoidBlock(this);
+	public T invoke(ReflectiveInstance<? extends C> receiver, Object[] arguments) {
+		return invoke(new StatementExecutor(receiver), arguments);
 	}
 }

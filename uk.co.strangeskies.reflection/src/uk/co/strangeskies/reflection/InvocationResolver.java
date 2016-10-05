@@ -18,23 +18,25 @@
  */
 package uk.co.strangeskies.reflection;
 
-public class TypedBlock<T> extends Block<TypedBlock<T>> {
-	public TypedBlock() {
-		super();
+import java.lang.reflect.Type;
+
+public class InvocationResolver {
+	private static class ImpertinentToApplicability implements Type {
+		private static final Type INSTANCE = new ImpertinentToApplicability();
+
+		private ImpertinentToApplicability() {}
+
+		@Override
+		public String getTypeName() {
+			return getClass().getSimpleName();
+		};
 	}
 
-	public TypedBlock(TypedBlock<T> scope) {
-		super(scope);
-	}
-
-	public TypedBlock<T> addReturnStatement(ValueExpression<T> expression) {
-		addStatement(v -> v.visitReturn(expression));
-
-		return this;
-	}
-
-	@Override
-	public TypedBlock<T> copy() {
-		return new TypedBlock<>(this);
+	/**
+	 * @return a marker class to represent the type of a method invocation
+	 *         argument which is not pertinent to applicability
+	 */
+	public static Type impertinentToApplicability() {
+		return ImpertinentToApplicability.INSTANCE;
 	}
 }

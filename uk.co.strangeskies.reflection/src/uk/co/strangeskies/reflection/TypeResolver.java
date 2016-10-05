@@ -46,28 +46,28 @@ import uk.co.strangeskies.utilities.IdentityProperty;
 
 /**
  * <p>
- * A {@link Resolver} represents a view over an underlying {@link BoundSet}, and
+ * A {@link TypeResolver} represents a view over an underlying {@link BoundSet}, and
  * provides a number of important functionalities for interacting with that
- * {@link BoundSet}. Multiple {@link Resolver}s can provide different views of
+ * {@link BoundSet}. Multiple {@link TypeResolver}s can provide different views of
  * the same {@link BoundSet} instance.
  * 
  * <p>
  * Whenever any {@link InferenceVariable} is created by way of a
- * {@link Resolver} instance, that {@link InferenceVariable} will be associated
+ * {@link TypeResolver} instance, that {@link InferenceVariable} will be associated
  * with a particular {@link GenericDeclaration}. Within this context, which is
  * so described by a {@link GenericDeclaration}, at most only one
  * {@link InferenceVariable} may by created for any given {@link TypeVariable}.
- * A {@link Resolver} always creates {@link InferenceVariable} according to the
- * behaviour of {@link Resolver#inferOverTypeParameters(GenericDeclaration)}.
+ * A {@link TypeResolver} always creates {@link InferenceVariable} according to the
+ * behaviour of {@link TypeResolver#inferOverTypeParameters(GenericDeclaration)}.
  * 
  * <p>
- * A {@link Resolver} is a flexible and powerful tool, but for typical use-cases
+ * A {@link TypeResolver} is a flexible and powerful tool, but for typical use-cases
  * it may be recommended to use the more limited, but more type safe, facilities
  * provided by the {@link TypeToken} and {@link InvocableMember} classes.
  * 
  * @author Elias N Vasylenko
  */
-public class Resolver implements DeepCopyable<Resolver> {
+public class TypeResolver implements DeepCopyable<TypeResolver> {
 	private BoundSet bounds;
 
 	/*
@@ -82,13 +82,13 @@ public class Resolver implements DeepCopyable<Resolver> {
 	private final Set<TypeVariableCapture> wildcardCaptures;
 
 	/**
-	 * Create a new {@link Resolver} over the given {@link BoundSet}.
+	 * Create a new {@link TypeResolver} over the given {@link BoundSet}.
 	 * 
 	 * @param bounds
 	 *          The exact bound set we wish to create a resolver over. Operations
 	 *          on the new resolver may mutate the given bound set.
 	 */
-	public Resolver(BoundSet bounds) {
+	public TypeResolver(BoundSet bounds) {
 		this.bounds = bounds;
 
 		capturedTypeVariables = new HashMap<>();
@@ -98,13 +98,13 @@ public class Resolver implements DeepCopyable<Resolver> {
 	/**
 	 * Create a new resolver over a new bound set.
 	 */
-	public Resolver() {
+	public TypeResolver() {
 		this(new BoundSet());
 	}
 
 	@Override
-	public Resolver copy() {
-		Resolver copy = new Resolver(bounds.copy());
+	public TypeResolver copy() {
+		TypeResolver copy = new TypeResolver(bounds.copy());
 		copy.wildcardCaptures.addAll(wildcardCaptures);
 		copy.capturedTypeVariables.putAll(capturedTypeVariables);
 
@@ -115,7 +115,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 * TODO also deep copy wildcardCaptures!
 	 */
 	@Override
-	public Resolver deepCopy() {
+	public TypeResolver deepCopy() {
 		return deepCopy(new HashMap<>());
 	}
 
@@ -133,7 +133,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 * @return A newly derived resolver, with each instance of an inference
 	 *         variable substituted for new mappings.
 	 */
-	public Resolver deepCopy(Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions) {
+	public TypeResolver deepCopy(Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions) {
 		return withNewBoundsSubstitution(inferenceVariableSubstitutions, bounds.deepCopy(inferenceVariableSubstitutions));
 	}
 
@@ -151,15 +151,15 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 *         variable substituted for its mapping in the given map, where one
 	 *         exists.
 	 */
-	public Resolver withInferenceVariableSubstitution(
+	public TypeResolver withInferenceVariableSubstitution(
 			Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions) {
 		return withNewBoundsSubstitution(inferenceVariableSubstitutions,
 				bounds.withInferenceVariableSubstitution(inferenceVariableSubstitutions));
 	}
 
-	private Resolver withNewBoundsSubstitution(Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions,
+	private TypeResolver withNewBoundsSubstitution(Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions,
 			BoundSet bounds) {
-		Resolver copy = new Resolver(bounds);
+		TypeResolver copy = new TypeResolver(bounds);
 
 		copy.wildcardCaptures.addAll(wildcardCaptures);
 
@@ -187,7 +187,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 * Each type variable within the given {@link GenericDeclaration}, and each
 	 * non-statically enclosing declaration thereof, is incorporated into the
 	 * backing {@link BoundSet}. Each new {@link InferenceVariable} created in
-	 * this process is registered in this {@link Resolver} under the given
+	 * this process is registered in this {@link TypeResolver} under the given
 	 * declaration, including those of enclosing {@link GenericDeclaration}s.
 	 * 
 	 * <p>
@@ -595,7 +595,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	/**
 	 * Resubstitute any type variable captures mentioned in the given type for the
 	 * wildcards which they originally captured, if they were captured through
-	 * incorporation of wildcard types into this {@link Resolver} instance.
+	 * incorporation of wildcard types into this {@link TypeResolver} instance.
 	 * 
 	 * @param type
 	 *          The type for which we wish to make the substitution.
@@ -665,7 +665,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 
 	/**
 	 * Any type parameters of the given subclass and superclass are incorporated
-	 * into the {@link Resolver}, as are the parameters of any classes between,
+	 * into the {@link TypeResolver}, as are the parameters of any classes between,
 	 * i.e. those classes which are a supertype of the given subclass, and a
 	 * subtype of the given superclass. For each subclass in the hierarchy which
 	 * provides a parameterization of a corresponding superclass, these bounds are
@@ -721,7 +721,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 
 	/**
 	 * Infer proper instantiations for each inference variable registered within
-	 * this {@link Resolver} instance.
+	 * this {@link TypeResolver} instance.
 	 * 
 	 * @return A mapping from each inference variable registered under this
 	 *         resolver, to their newly inferred instantiations.
@@ -1083,7 +1083,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 * 
 	 * @param type
 	 *          The type whose parameterization we wish to determine within the
-	 *          context of this {@link Resolver}.
+	 *          context of this {@link TypeResolver}.
 	 * @return A parameterized type over the given type, according to the
 	 *         inference variables and parameters registered in this resolver, or
 	 *         the given type if it is not generic.
@@ -1101,7 +1101,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 * 
 	 * @param type
 	 *          The type whose parameterization we wish to determine within the
-	 *          context of this {@link Resolver}.
+	 *          context of this {@link TypeResolver}.
 	 * @return A parameterized type over the given type, according to the
 	 *         inference variables and parameters registered in this resolver, or
 	 *         the given type if it is not generic.
@@ -1166,11 +1166,11 @@ public class Resolver implements DeepCopyable<Resolver> {
 
 	/**
 	 * Find all the inference variables which have been created through
-	 * interaction with this {@link Resolver}. Note that this set of collections
+	 * interaction with this {@link TypeResolver}. Note that this set of collections
 	 * may only be a subset of those which would be returned by an invocation of
 	 * {@link BoundSet#getInferenceVariables()} on the underlying resolver.
 	 * 
-	 * @return The set of variables incorporated into this {@link Resolver}.
+	 * @return The set of variables incorporated into this {@link TypeResolver}.
 	 */
 	public Set<InferenceVariable> getInferenceVariables() {
 		return capturedTypeVariables.values().stream().map(Map::values).flatMap(Collection::stream)
@@ -1186,7 +1186,7 @@ public class Resolver implements DeepCopyable<Resolver> {
 	 * @param declaration
 	 *          The {@link GenericDeclaration} for which we will resolve inference
 	 *          variables.
-	 * @return The set of variables incorporated into this {@link Resolver} under
+	 * @return The set of variables incorporated into this {@link TypeResolver} under
 	 *         the context provided by the given declaration.
 	 */
 	public Map<TypeVariable<?>, InferenceVariable> getInferenceVariables(GenericDeclaration declaration) {

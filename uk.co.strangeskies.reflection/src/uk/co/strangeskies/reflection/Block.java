@@ -24,67 +24,84 @@ import java.util.stream.Stream;
 
 import uk.co.strangeskies.utilities.Self;
 
-public abstract class Block<S extends Block<S>> implements Self<S> {
+public class Block<T> implements Self<Block<T>> {
 	private final List<Statement> statements;
 
 	public Block() {
 		statements = new ArrayList<>();
 	}
 
-	public Block(Block<S> copy) {
+	public Block(Block<T> copy) {
 		this();
 
 		for (Statement statement : copy.statements)
 			addStatement(statement);
 	}
 
+	@Override
+	public Block<T> copy() {
+		return new Block<>(this);
+	}
+
 	public Stream<Statement> getStatements() {
 		return statements.stream();
 	}
 
-	protected S addStatement(Statement statement) {
+	protected Block<T> addStatement(Statement statement) {
 		statements.add(statement);
 
 		return getThis();
 	}
 
-	public S addExpression(Expression expression) {
+	public Block<T> addExpression(Expression expression) {
 		return addStatement(v -> v.visitExpression(expression));
 	}
 
-	public <T> LocalVariableExpression<T> declareVariable(Class<T> type) {
+	public <U> LocalVariableExpression<U> declareVariable(Class<U> type) {
 		return declareVariable(TypeToken.over(type));
 	}
 
-	public <T> LocalVariableExpression<T> declareVariable(TypeToken<T> type) {
-		LocalVariableExpression<T> variable = new LocalVariableExpression<>(type);
+	public <U> LocalVariableExpression<U> declareVariable(TypeToken<U> type) {
+		LocalVariableExpression<U> variable = new LocalVariableExpression<>(type);
 
 		addStatement(s -> s.visitDeclaration(variable));
 
 		return variable;
 	}
 
-	public <T> LocalVariableExpression<T> declareVariable(Class<T> type, ValueExpression<? extends T> value) {
+	public <U> LocalVariableExpression<U> declareVariable(Class<U> type, ValueExpression<? extends U> value) {
 		return declareVariable(TypeToken.over(type), value);
 	}
 
-	public <T> LocalVariableExpression<T> declareVariable(TypeToken<T> type, ValueExpression<? extends T> value) {
-		LocalVariableExpression<T> variable = new LocalVariableExpression<>(type);
+	public <U> LocalVariableExpression<U> declareVariable(TypeToken<U> type, ValueExpression<? extends U> value) {
+		LocalVariableExpression<U> variable = new LocalVariableExpression<>(type);
 
 		addStatement(s -> s.visitDeclaration(variable, value));
 
 		return variable;
 	}
 
-	public <T> LocalValueExpression<T> declareValue(Class<T> type, ValueExpression<? extends T> value) {
+	public <U> LocalValueExpression<U> declareValue(Class<U> type, ValueExpression<? extends U> value) {
 		return declareValue(TypeToken.over(type), value);
 	}
 
-	public <T> LocalValueExpression<T> declareValue(TypeToken<T> type, ValueExpression<? extends T> value) {
-		LocalValueExpression<T> variable = new LocalValueExpression<>(type);
+	public <U> LocalValueExpression<U> declareValue(TypeToken<U> type, ValueExpression<? extends U> value) {
+		LocalValueExpression<U> variable = new LocalValueExpression<>(type);
 
 		addStatement(s -> s.visitDeclaration(variable, value));
 
 		return variable;
+	}
+
+	public Block<T> addReturnStatement() {
+		addStatement(StatementVisitor::visitReturn);
+
+		return this;
+	}
+
+	public Block<T> addReturnStatement(ValueExpression<T> expression) {
+		addStatement(v -> v.visitReturn(expression));
+
+		return this;
 	}
 }

@@ -67,6 +67,10 @@ public final class Methods {
 
 		methodLambda.accept(instance);
 
+		if (lastCalled.get() == null) {
+			throw new ReflectionException(p -> p.cannotFindMethodOn(type));
+		}
+
 		return lastCalled.get();
 	}
 }

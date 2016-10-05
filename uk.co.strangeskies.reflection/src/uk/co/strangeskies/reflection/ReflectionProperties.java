@@ -148,4 +148,6 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 	Localized<String> incompleteStatementExecution();
 
 	Localized<String> incompleteExpressionEvaluation();
+
+	Localized<String> cannotFindMethodOn(Type type);
 }
