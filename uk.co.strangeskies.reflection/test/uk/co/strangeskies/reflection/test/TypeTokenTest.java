@@ -179,21 +179,22 @@ public class TypeTokenTest {
 		System.out.println();
 		System.out.println();
 
-		new TypeToken<Outer<Serializable>.Inner<String, HashSet<Serializable>, Set<String>>>() {}.getResolver();
+		new TypeToken<Outer1<Serializable>.Inner<String, HashSet<Serializable>, Set<String>>>() {}.getResolver();
 		System.out.println();
 		System.out.println();
 
-		System.out.println(new TypeToken<Outer<Serializable>.Inner<String, HashSet<Serializable>, Set<String>>>() {}
+		System.out.println(new TypeToken<Outer1<Serializable>.Inner<String, HashSet<Serializable>, Set<String>>>() {}
 				.resolveSubtypeParameters(Outer2.Inner3.class));
 		System.out.println();
 		System.out.println();
 
 		System.out.println(new TypeToken<Outer2<Serializable, String>.Inner3<HashSet<Serializable>>>() {}
-				.resolveSupertypeParameters(Outer.Inner.class));
+				.resolveSupertypeParameters(Outer1.Inner.class));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(new TypeToken<Outer<String>.Inner2<Double>>() {}.resolveSupertypeParameters(Outer.Inner.class));
+		System.out
+				.println(new TypeToken<Outer1<String>.Inner2<Double>>() {}.resolveSupertypeParameters(Outer1.Inner.class));
 		System.out.println();
 		System.out.println();
 
@@ -552,9 +553,8 @@ public class TypeTokenTest {
 
 		Imports imports = Imports.empty().withImports(Capture.class, Preserve.class, Test2.class, List.class, Type.class);
 		String annotationString = AnnotatedTypes.toString(
-				new TypeToken<@Test3(thisIsTest = "yeah!", wat = 2.5f) List<@Test2(
-						idk = "helo",
-						wat = 2) ? extends @Preserve Number> @Capture [] @Infer []>() {}.getAnnotatedDeclaration(),
+				new TypeToken<@Test3(thisIsTest = "yeah!", wat = 2.5f) List<@Test2(idk = "helo", wat = 2) ? extends @Preserve Number> @Capture [] @Infer []>() {}
+						.getAnnotatedDeclaration(),
 				imports);
 		System.out.println(annotationString);
 		System.out.println();
@@ -744,16 +744,16 @@ class YY<YT> extends TT<Set<YT>> {}
 
 class G extends YY<List<String>> {}
 
-class Outer<T> {
+class Outer1<T> {
 	public class Inner<N extends T, J extends Collection<? extends T>, P> {}
 
-	public class Inner2<M extends Number & Comparable<?>> extends Outer<Comparable<?>>.Inner<M, List<Integer>, T> {}
+	public class Inner2<M extends Number & Comparable<?>> extends Outer1<Comparable<?>>.Inner<M, List<Integer>, T> {}
 }
 
 class Outer2<F, Z extends F> {
-	public class Inner3<X extends Set<F>> extends Outer<F>.Inner<Z, X, Set<Z>> {
+	public class Inner3<X extends Set<F>> extends Outer1<F>.Inner<Z, X, Set<Z>> {
 		Inner3() {
-			new Outer<F>() {}.super();
+			new Outer1<F>() {}.super();
 		}
 	}
 }

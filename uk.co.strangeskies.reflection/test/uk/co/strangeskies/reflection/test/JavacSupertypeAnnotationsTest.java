@@ -20,22 +20,43 @@ package uk.co.strangeskies.reflection.test;
 
 import static org.junit.Assert.assertNotNull;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.AnnotatedType;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-abstract class SuperType2<T> {}
+import uk.co.strangeskies.reflection.test.Container.InnerExtendsInner;
+import uk.co.strangeskies.reflection.test.Container.InnerExtendsNested;
+import uk.co.strangeskies.reflection.test.Container.InnerExtendsOuter;
+import uk.co.strangeskies.reflection.test.Container.Nested;
+import uk.co.strangeskies.reflection.test.Container.NestedExtendsNested;
+import uk.co.strangeskies.reflection.test.Container.NestedExtendsOuter;
+import uk.co.strangeskies.reflection.test.annotations.Plain;
+
+class Outer<T> {}
+
+class OuterExtendsOuter extends Outer<@Plain Object> {}
+
+class OuterExtendsNested extends Nested<@Plain Object> {}
+
+class Container {
+	public class Inner<T> {}
+
+	public class InnerExtendsOuter extends Outer<@Plain Object> {}
+
+	public class InnerExtendsNested extends Nested<@Plain Object> {}
+
+	public class InnerExtendsInner extends Inner<@Plain Object> {}
+
+	public static class Nested<T> {}
+
+	public static class NestedExtendsOuter extends Outer<@Plain Object> {}
+
+	public static class NestedExtendsNested extends Nested<@Plain Object> {}
+}
 
 /**
  * Test for bug JDK-8146167 in javac.
@@ -45,41 +66,62 @@ abstract class SuperType2<T> {}
 @SuppressWarnings("javadoc")
 @RunWith(Parameterized.class)
 public class JavacSupertypeAnnotationsTest {
-	public static abstract class SuperType<T> {}
 
-	@Target(ElementType.TYPE_USE)
-	@Retention(RetentionPolicy.RUNTIME)
-	public @interface TestAnnotation {}
+	@Parameters(name = "{0}")
+	public static Object[][] testClasses() {
+		class StaticInner<T> {}
 
-	public static class TestClass extends SuperType<@TestAnnotation Object> {}
+		class StaticInnerExtendsStaticInner extends StaticInner<@Plain Object> {}
 
-	@Parameters
-	public static Iterable<?> testClasses() {
-		return Arrays.asList(
+		return new Object[][] {
 
-				TestClass.class,
+				/* extends outer pass: */
 
-				new SuperType<@TestAnnotation Object>() {}.getClass(),
+				{ "outer extends outer", OuterExtendsOuter.class },
 
-				new SuperType<@TestAnnotation List<?>>() {}.getClass(),
+				{ "inner extends outer", InnerExtendsOuter.class },
 
-				new ArrayList<@TestAnnotation Object>() {}.getClass(),
+				{ "nested extends outer", NestedExtendsOuter.class },
 
-				new SuperType2<@TestAnnotation Object>() {}.getClass());
+				{ "anonymous extends outer", new Outer<@Plain Object>() {}.getClass() },
+
+				/* extends nested FAIL: */
+
+				{ "outer extends nested", OuterExtendsNested.class },
+
+				{ "inner extends nested", InnerExtendsNested.class },
+
+				{ "nested extends nested", NestedExtendsNested.class },
+
+				{ "anonymous extends nested", new Nested<@Plain Object>() {}.getClass() },
+
+				/* extends static inner FAIL: */
+
+				{ "static inner extends static inner", StaticInnerExtendsStaticInner.class },
+
+				{ "anonymous extends static inner", new StaticInner<@Plain Object>() {}.getClass() },
+
+				/* extends inner pass: */
+
+				{ "inner extends inner", InnerExtendsInner.class },
+
+				{ "anonymous extends inner", new Container().new Inner<@Plain Object>() {}.getClass() },
+
+		};
 	}
 
 	private final Class<?> testClass;
 
-	public JavacSupertypeAnnotationsTest(Class<?> testClass) {
+	public JavacSupertypeAnnotationsTest(String testName, Class<?> testClass) {
 		this.testClass = testClass;
 	}
 
 	@Test
-	public void testAnnotations() {
+	public void supertypeParameterAnnotationPresenceTest() {
 		AnnotatedParameterizedType superType = (AnnotatedParameterizedType) testClass.getAnnotatedSuperclass();
 
 		AnnotatedType superTypeParameter = superType.getAnnotatedActualTypeArguments()[0];
 
-		assertNotNull(superTypeParameter.getAnnotation(TestAnnotation.class));
+		assertNotNull(superTypeParameter.getAnnotation(Plain.class));
 	}
 }
