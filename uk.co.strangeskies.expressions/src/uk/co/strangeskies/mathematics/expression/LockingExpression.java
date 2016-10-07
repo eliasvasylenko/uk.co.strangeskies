@@ -111,7 +111,7 @@ public abstract class LockingExpression<S extends Expression<S, T>, T> extends D
 		getReadLock().lock();
 
 		try {
-			return super.removeObserver(observer);
+			return super.removeExactObserver(observer);
 		} finally {
 			getReadLock().unlock();
 		}
