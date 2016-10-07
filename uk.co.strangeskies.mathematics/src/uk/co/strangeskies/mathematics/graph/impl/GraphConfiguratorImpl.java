@@ -34,6 +34,7 @@ import uk.co.strangeskies.mathematics.graph.EdgeVertices;
 import uk.co.strangeskies.mathematics.graph.Graph;
 import uk.co.strangeskies.mathematics.graph.GraphConfigurator;
 import uk.co.strangeskies.mathematics.graph.GraphException;
+import uk.co.strangeskies.mathematics.graph.GraphListeners;
 import uk.co.strangeskies.mathematics.graph.GraphProperties;
 import uk.co.strangeskies.utilities.EquivalenceComparator;
 
@@ -226,7 +227,7 @@ public class GraphConfiguratorImpl<V, E> implements GraphConfigurator<V, E> {
 	}
 
 	@Override
-	public GraphConfigurator<V, E> internalListeners(Consumer<GraphListenersImpl<V, E>> internalListeners) {
+	public GraphConfigurator<V, E> internalListeners(Consumer<GraphListeners<V, E>> internalListeners) {
 		internalListeners.accept(this.internalListeners);
 		return this;
 	}

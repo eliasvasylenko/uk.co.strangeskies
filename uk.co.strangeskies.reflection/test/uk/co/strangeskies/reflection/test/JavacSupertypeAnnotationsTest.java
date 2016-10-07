@@ -1,3 +1,5 @@
+package uk.co.strangeskies.reflection.test;
+
 /*
  * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@strangeskies.co.uk>
  *
@@ -16,46 +18,34 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection.test;
 
 import static org.junit.Assert.assertNotNull;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.AnnotatedType;
 
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import uk.co.strangeskies.reflection.test.Container.InnerExtendsInner;
-import uk.co.strangeskies.reflection.test.Container.InnerExtendsNested;
-import uk.co.strangeskies.reflection.test.Container.InnerExtendsOuter;
-import uk.co.strangeskies.reflection.test.Container.Nested;
-import uk.co.strangeskies.reflection.test.Container.NestedExtendsNested;
-import uk.co.strangeskies.reflection.test.Container.NestedExtendsOuter;
-import uk.co.strangeskies.reflection.test.annotations.Plain;
+@Retention(value = RetentionPolicy.RUNTIME)
+@Target(value = ElementType.TYPE_USE)
+@interface TestAnnotation {}
 
-class Outer<T> {}
-
-class OuterExtendsOuter extends Outer<@Plain Object> {}
-
-class OuterExtendsNested extends Nested<@Plain Object> {}
+class OuterExtendsNested extends Container.Nested<@TestAnnotation Object> {}
 
 class Container {
 	public class Inner<T> {}
 
-	public class InnerExtendsOuter extends Outer<@Plain Object> {}
-
-	public class InnerExtendsNested extends Nested<@Plain Object> {}
-
-	public class InnerExtendsInner extends Inner<@Plain Object> {}
+	public class InnerExtendsNested extends Nested<@TestAnnotation Object> {}
 
 	public static class Nested<T> {}
 
-	public static class NestedExtendsOuter extends Outer<@Plain Object> {}
-
-	public static class NestedExtendsNested extends Nested<@Plain Object> {}
+	public static class NestedExtendsNested extends Nested<@TestAnnotation Object> {}
 }
 
 /**
@@ -71,42 +61,32 @@ public class JavacSupertypeAnnotationsTest {
 	public static Object[][] testClasses() {
 		class StaticInner<T> {}
 
-		class StaticInnerExtendsStaticInner extends StaticInner<@Plain Object> {}
+		class StaticInnerExtendsStaticInner extends StaticInner<@TestAnnotation Object> {}
 
 		return new Object[][] {
 
-				/* extends outer pass: */
-
-				{ "outer extends outer", OuterExtendsOuter.class },
-
-				{ "inner extends outer", InnerExtendsOuter.class },
-
-				{ "nested extends outer", NestedExtendsOuter.class },
-
-				{ "anonymous extends outer", new Outer<@Plain Object>() {}.getClass() },
-
-				/* extends nested FAIL: */
-
+				/*-
+				// ecj and javac fail
 				{ "outer extends nested", OuterExtendsNested.class },
-
-				{ "inner extends nested", InnerExtendsNested.class },
-
-				{ "nested extends nested", NestedExtendsNested.class },
-
-				{ "anonymous extends nested", new Nested<@Plain Object>() {}.getClass() },
-
-				/* extends static inner FAIL: */
-
+				
+				// ecj and javac fail
+				{ "inner extends nested", Container.InnerExtendsNested.class },
+				
+				// ecj and javac fail
+				{ "nested extends nested", Container.NestedExtendsNested.class },
+				
+				// ecj and javac fail
+				{ "anonymous extends nested", new Container.Nested<@TestAnnotation Object>() {}.getClass() },
+				
+				// ecj fails
 				{ "static inner extends static inner", StaticInnerExtendsStaticInner.class },
-
-				{ "anonymous extends static inner", new StaticInner<@Plain Object>() {}.getClass() },
-
-				/* extends inner pass: */
-
-				{ "inner extends inner", InnerExtendsInner.class },
-
-				{ "anonymous extends inner", new Container().new Inner<@Plain Object>() {}.getClass() },
-
+				
+				// ecj fails
+				{ "anonymous extends static inner", new StaticInner<@TestAnnotation Object>() {}.getClass() },
+				
+				// !javac compiler errors!
+				{ "anonymous extends inner", new Container().new Inner<@TestAnnotation Object>() {}.getClass() }
+				 */
 		};
 	}
 
@@ -116,12 +96,12 @@ public class JavacSupertypeAnnotationsTest {
 		this.testClass = testClass;
 	}
 
-	@Test
+	// @Test
 	public void supertypeParameterAnnotationPresenceTest() {
 		AnnotatedParameterizedType superType = (AnnotatedParameterizedType) testClass.getAnnotatedSuperclass();
 
 		AnnotatedType superTypeParameter = superType.getAnnotatedActualTypeArguments()[0];
 
-		assertNotNull(superTypeParameter.getAnnotation(Plain.class));
+		assertNotNull(superTypeParameter.getAnnotation(TestAnnotation.class));
 	}
 }

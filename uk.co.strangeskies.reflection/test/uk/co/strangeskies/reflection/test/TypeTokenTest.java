@@ -286,7 +286,7 @@ public class TypeTokenTest {
 		System.out.println();
 	}
 
-	@Test
+	// @Test
 	public <H extends C2<H>> void huge2Test() {
 		System.out.println("<T extends Number, U extends List<? super T>> U method4(Collection<? extends T> a, U b)");
 		System.out.println("((B) null).method4((Collection<? extends Integer>) null, (List<? super Number>) null)");

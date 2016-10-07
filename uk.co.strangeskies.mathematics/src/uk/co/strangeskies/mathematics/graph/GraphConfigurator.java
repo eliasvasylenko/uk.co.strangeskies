@@ -29,7 +29,6 @@ import java.util.function.Function;
 
 import org.osgi.annotation.versioning.ProviderType;
 
-import uk.co.strangeskies.mathematics.graph.impl.GraphListenersImpl;
 import uk.co.strangeskies.utilities.Factory;
 import uk.co.strangeskies.utilities.Observable;
 
@@ -242,7 +241,7 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 * 
 	 * @return A derived configurator with the requested configuration
 	 */
-	GraphConfigurator<V, E> internalListeners(Consumer<GraphListenersImpl<V, E>> internalListeners);
+	GraphConfigurator<V, E> internalListeners(Consumer<GraphListeners<V, E>> internalListeners);
 
 	default <L> GraphConfigurator<V, E> addInternalListener(Function<GraphListeners<V, E>, Observable<L>> listenerSet,
 			Consumer<L> listener) {
