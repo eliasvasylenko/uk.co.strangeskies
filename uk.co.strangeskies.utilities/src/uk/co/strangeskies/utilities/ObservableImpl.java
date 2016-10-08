@@ -43,7 +43,7 @@ public class ObservableImpl<M> implements Observable<M> {
 	}
 
 	@Override
-	public boolean removeExactObserver(Consumer<? super M> observer) {
+	public boolean removeObserver(Consumer<? super M> observer) {
 		if (observers != null) {
 			return observers.remove(observer);
 		} else {

@@ -74,7 +74,7 @@ interface ImmutableObservableValue<T> extends ObservableValue<T> {
 	}
 
 	@Override
-	default boolean removeExactObserver(Consumer<? super T> observer) {
+	default boolean removeObserver(Consumer<? super T> observer) {
 		return true;
 	}
 

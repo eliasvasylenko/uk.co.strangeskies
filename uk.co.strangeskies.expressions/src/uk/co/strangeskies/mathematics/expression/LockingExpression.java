@@ -107,11 +107,11 @@ public abstract class LockingExpression<S extends Expression<S, T>, T> extends D
 	}
 
 	@Override
-	public boolean removeExactObserver(Consumer<? super S> observer) {
+	public boolean removeObserver(Consumer<? super S> observer) {
 		getReadLock().lock();
 
 		try {
-			return super.removeExactObserver(observer);
+			return super.removeObserver(observer);
 		} finally {
 			getReadLock().unlock();
 		}

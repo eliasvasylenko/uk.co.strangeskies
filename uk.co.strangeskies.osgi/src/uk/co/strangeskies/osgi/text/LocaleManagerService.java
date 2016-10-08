@@ -98,7 +98,7 @@ public class LocaleManagerService implements LocaleManager, LocaleProvider {
 	}
 
 	@Override
-	public boolean removeExactObserver(Consumer<? super Locale> observer) {
+	public boolean removeObserver(Consumer<? super Locale> observer) {
 		return component.removeObserver(observer);
 	}
 

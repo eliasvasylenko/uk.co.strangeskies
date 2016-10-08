@@ -59,7 +59,7 @@ public abstract class StaticPropertyAccessor<S extends Properties<S>> implements
 	}
 
 	@Override
-	public boolean removeExactObserver(Consumer<? super S> observer) {
+	public boolean removeObserver(Consumer<? super S> observer) {
 		return true;
 	}
 

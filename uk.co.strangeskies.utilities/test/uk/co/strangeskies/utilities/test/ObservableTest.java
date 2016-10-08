@@ -45,19 +45,22 @@ import uk.co.strangeskies.utilities.ObservableImpl;
 public class ObservableTest {
 	@Test
 	public void ownedObserverEqualityTest() {
+		class StringObservable extends Observable.OwnedObserverImpl<String> {
+			protected StringObservable(Consumer<? super String> observer, Object owner) {
+				super(observer, owner);
+			}
+		}
+
 		String first = new String("test");
 		String second = new String("test");
 
-		assertEquals(new Observable.OwnedObserverImpl<String>(null, first) {},
-				new Observable.OwnedObserverImpl<String>(null, first) {});
+		assertEquals(new StringObservable(null, first), new StringObservable(null, first));
 
-		assertEquals(new Observable.OwnedObserverImpl<String>(null, second) {},
-				new Observable.OwnedObserverImpl<String>(null, second) {});
+		assertEquals(new StringObservable(null, second), new StringObservable(null, second));
 
-		assertNotEquals(new Observable.OwnedObserverImpl<String>(null, first) {},
-				new Observable.OwnedObserverImpl<String>(null, second) {});
+		assertNotEquals(new StringObservable(null, first), new StringObservable(null, second));
 
-		assertNotEquals(new Observable.OwnedObserverImpl<String>(null, first) {}, new Object());
+		assertNotEquals(new StringObservable(null, first), new Object());
 
 		Consumer<String> consumer = new Observable.OwnedObserverImpl<String>(null, first) {};
 		assertEquals(consumer, consumer);
@@ -125,10 +128,10 @@ public class ObservableTest {
 		List<String> list = new ArrayList<>();
 		Consumer<String> listObserver = list::add;
 
-		assertTrue(stringObservable.addObserver(listObserver, listObserver));
+		assertTrue(stringObservable.addOwnedObserver(listObserver, listObserver));
 		assertFalse(stringObservable.removeObserver(list::remove));
 		stringObservable.fire("test1");
-		assertTrue(stringObservable.removeObserver(listObserver));
+		assertTrue(stringObservable.removeOwnedObserver(listObserver));
 		stringObservable.fire("test2");
 
 		assertThat(list, contains("test1"));
@@ -159,7 +162,7 @@ public class ObservableTest {
 		stringObservable.fire("test1");
 		stringObservable.fire("test2");
 
-		stringObservable.removeOwnedObserver(list);
+		stringObservable.removeTerminatingObserver(list);
 
 		stringObservable.fire("test3");
 
@@ -235,17 +238,17 @@ public class ObservableTest {
 		List<String> list3 = new ArrayList<>();
 
 		ObservableImpl<String> stringObservable = new ObservableImpl<>();
-		stringObservable.addObserver(list0, list0::add);
+		stringObservable.addOwnedObserver(list0, list0::add);
 
-		stringObservable.addObserver(list1, list1::add);
+		stringObservable.addOwnedObserver(list1, list1::add);
 		stringObservable.fire("test1");
 
 		stringObservable.removeOwnedObserver(list1);
-		stringObservable.addObserver(list2, list2::add);
+		stringObservable.addOwnedObserver(list2, list2::add);
 		stringObservable.fire("test2");
 
 		stringObservable.removeOwnedObserver(list2);
-		stringObservable.addObserver(list3, list3::add);
+		stringObservable.addOwnedObserver(list3, list3::add);
 		stringObservable.fire("test3");
 
 		assertThat(list0, contains("test1", "test2", "test3"));

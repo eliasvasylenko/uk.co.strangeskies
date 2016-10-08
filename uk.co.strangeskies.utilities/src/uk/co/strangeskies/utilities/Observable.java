@@ -40,7 +40,7 @@ import java.util.function.Function;
  */
 public interface Observable<M> {
 	/**
-	 * @see Observable#addObserver(Object, Consumer)
+	 * @see Observable#addOwnedObserver(Object, Consumer)
 	 */
 	@SuppressWarnings("javadoc")
 	abstract class OwnedObserver<M> implements Consumer<M> {
@@ -52,7 +52,7 @@ public interface Observable<M> {
 		public final boolean equals(Object obj) {
 			if (this == obj) {
 				return true;
-			} else if (!(obj instanceof OwnedObserver)) {
+			} else if (!getClass().equals(obj.getClass())) {
 				return false;
 			}
 
@@ -66,7 +66,7 @@ public interface Observable<M> {
 	}
 
 	/**
-	 * @see Observable#addObserver(Object, Consumer)
+	 * @see Observable#addOwnedObserver(Object, Consumer)
 	 */
 	@SuppressWarnings("javadoc")
 	class OwnedObserverImpl<M> extends OwnedObserver<M> {
@@ -161,7 +161,7 @@ public interface Observable<M> {
 	 * @return true if the observer was successfully added, false otherwise
 	 */
 	default boolean addWeakObserver(Consumer<? super M> observer) {
-		return addObserver(new WeakObserver<>(this, o -> o, observer));
+		return addWeakObserver(observer, o -> o);
 	}
 
 	/**
@@ -176,7 +176,7 @@ public interface Observable<M> {
 	 * TODO be careful not to capture the owner in a lambda as this will prevent
 	 * garbage collection (give code example)
 	 * 
-	 * @see #addObserver(Object, Consumer)
+	 * @see #addOwnedObserver(Object, Consumer)
 	 * 
 	 * @param <O>
 	 *          the type of the owner
@@ -191,6 +191,17 @@ public interface Observable<M> {
 	}
 
 	/**
+	 * Observers removed will no longer receive messages from this Observable.
+	 * 
+	 * @param owner
+	 *          the owner of the observer to remove
+	 * @return true if the observer was successfully removed, false otherwise
+	 */
+	default boolean removeWeakObserver(Object owner) {
+		return removeObserver(new WeakObserver<>(this, null, owner));
+	}
+
+	/**
 	 * Observers added will receive messages from this Observable. Terminating
 	 * observers may conditionally remove themselves from the observable upon
 	 * receipt of events by returning from the observer function.
@@ -201,7 +212,7 @@ public interface Observable<M> {
 	 * @return true if the observer was successfully added, false otherwise
 	 */
 	default boolean addTerminatingObserver(Function<? super M, Boolean> observer) {
-		return addObserver(new TerminatingObserver<>(this, observer, observer));
+		return addTerminatingObserver(observer, observer);
 	}
 
 	/**
@@ -209,7 +220,7 @@ public interface Observable<M> {
 	 * observers may conditionally remove themselves from the observable upon
 	 * receipt of events by returning {@code false} from the observer function.
 	 * 
-	 * @see #addObserver(Object, Consumer)
+	 * @see #addOwnedObserver(Object, Consumer)
 	 * 
 	 * @param <O>
 	 *          the type of the owner
@@ -221,6 +232,17 @@ public interface Observable<M> {
 	 */
 	default <O> boolean addTerminatingObserver(Object owner, Function<? super M, Boolean> observer) {
 		return addObserver(new TerminatingObserver<>(this, observer, owner));
+	}
+
+	/**
+	 * Observers removed will no longer receive messages from this Observable.
+	 * 
+	 * @param owner
+	 *          the owner of the observer to remove
+	 * @return true if the observer was successfully removed, false otherwise
+	 */
+	default boolean removeTerminatingObserver(Object owner) {
+		return removeObserver(new TerminatingObserver<>(this, null, owner));
 	}
 
 	/**
@@ -273,7 +295,7 @@ public interface Observable<M> {
 	 *          an observer to add
 	 * @return true if the observer was successfully added, false otherwise
 	 */
-	default boolean addObserver(Object owner, Consumer<? super M> observer) {
+	default boolean addOwnedObserver(Object owner, Consumer<? super M> observer) {
 		return addObserver(new OwnedObserverImpl<>(observer, owner));
 	}
 
@@ -285,7 +307,7 @@ public interface Observable<M> {
 	 * @return true if the observer was successfully removed, false otherwise
 	 */
 	default boolean removeOwnedObserver(Object owner) {
-		return removeExactObserver(new OwnedObserverImpl<>(null, owner));
+		return removeObserver(new OwnedObserverImpl<>(null, owner));
 	}
 
 	/**
@@ -299,25 +321,12 @@ public interface Observable<M> {
 
 	/**
 	 * Observers removed will no longer receive messages from this Observable.
-	 * <p>
-	 * First attempt to remove the exact observer, otherwise try to remove
 	 * 
 	 * @param observer
 	 *          an observer to remove
 	 * @return true if the observer was successfully removed, false otherwise
 	 */
-	default boolean removeObserver(Consumer<? super M> observer) {
-		return removeExactObserver(observer) || removeOwnedObserver(observer);
-	}
-
-	/**
-	 * Observers removed will no longer receive messages from this Observable.
-	 * 
-	 * @param observer
-	 *          an observer to remove
-	 * @return true if the observer was successfully removed, false otherwise
-	 */
-	boolean removeExactObserver(Consumer<? super M> observer);
+	boolean removeObserver(Consumer<? super M> observer);
 
 	/**
 	 * Get an observable instance which never fires events. As an optimization,
@@ -345,7 +354,7 @@ interface ImmutableObservable<M> extends Observable<M> {
 	}
 
 	@Override
-	default boolean removeExactObserver(Consumer<? super M> observer) {
+	default boolean removeObserver(Consumer<? super M> observer) {
 		return true;
 	}
 }

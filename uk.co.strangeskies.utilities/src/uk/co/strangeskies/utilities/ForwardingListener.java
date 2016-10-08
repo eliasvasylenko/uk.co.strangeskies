@@ -146,7 +146,7 @@ public abstract class ForwardingListener<T, U>
 	}
 
 	@Override
-	public synchronized boolean removeExactObserver(Consumer<? super U> listener) {
+	public synchronized boolean removeObserver(Consumer<? super U> listener) {
 		return listeners.removeObserver(listener);
 	}
 

@@ -63,7 +63,7 @@ public class ReOrderedMatrix<V extends Value<V>> implements Matrix<ReOrderedMatr
 	}
 
 	@Override
-	public boolean removeExactObserver(Consumer<? super ReOrderedMatrix<V>> observer) {
+	public boolean removeObserver(Consumer<? super ReOrderedMatrix<V>> observer) {
 		// TODO Auto-generated method stub
 		return false;
 	}

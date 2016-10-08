@@ -77,7 +77,7 @@ public interface Localized<T> extends ObservableValue<T> {
 			}
 
 			@Override
-			public boolean removeExactObserver(Consumer<? super T> observer) {
+			public boolean removeObserver(Consumer<? super T> observer) {
 				return true;
 			}
 
