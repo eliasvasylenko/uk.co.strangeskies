@@ -1,5 +1,19 @@
 /*
  * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@strangeskies.co.uk>
+ *      __   _______  ____           _       __     _      __       __
+ *    ,`_ `,L__   __||  _ `.        / \     |  \   | |  ,-`__`]  ,-`__`]
+ *   ( (_`-`   | |   | | ) |       / . \    | . \  | | / .`  `  / .`  `
+ *    `._ `.   | |   | |<. L      / / \ \   | |\ \ | || |    _ | '--.
+ *   _   `. \  | |   | |  `-`.   / /   \ \  | | \ \| || |   | || +--J
+ *  \ \__.` /  | |   | |    \ \ / /     \ \ | |  \ ` | \ `._' | \ `.__,-
+ *   `.__.-`   L_|   L_|    L_|/_/       \_\L_|   \__|  `-.__.'  `-.__.]
+ *                   __    _         _      __      __
+ *                 ,`_ `, | |   _   | |  ,-`__`]  ,`_ `,
+ *                ( (_`-` | '-.) |  | | / .`  `  ( (_`-`
+ *                 `._ `. | +-. <   | || '--.     `._ `.
+ *                _   `. \| |  `-`. | || +--J    _   `. \
+ *               \ \__.` /| |    \ \| | \ `.__,-\ \__.` /
+ *                `.__.-` L_|    L_|L_|  `-.__.] `.__.-`
  *
  * This file is part of uk.co.strangeskies.reflection.
  *
@@ -1726,25 +1740,6 @@ public class InvocableMember<O, R> implements TypeMember<O> {
 		}
 
 		return InvocableMember.over(overridden, type);
-	}
-
-	@SuppressWarnings("unchecked")
-	public static <T, U> InvocableMember<T, U> findInterfaceMethod(TypeToken<T> type,
-			Function<? super T, ? extends U> methodLambda) {
-		Method overridden = null;
-
-		for (Class<?> superType : type.getRawTypes()) {
-			if (superType.isInterface()) {
-				try {
-					overridden = Methods.findMethod(superType, (Consumer<Object>) methodLambda);
-				} catch (Exception e) {}
-			}
-		}
-		if (overridden == null) {
-			throw new ReflectionException(p -> p.cannotFindMethodOn(type.getType()));
-		}
-
-		return (InvocableMember<T, U>) InvocableMember.over(overridden, type);
 	}
 
 	private static boolean isArgumentCountValid(TypeToken<?> type, Executable method, int arguments) {

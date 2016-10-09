@@ -1,5 +1,5 @@
 Copyright (C) ${copyright.year} ${copyright.holder.name} <${copyright.holder.email}>
-
+${copyright.holder.logo}
 This file is part of ${copyright.work.name}.
 
 ${copyright.work.name} is free software: you can redistribute it and/or modify

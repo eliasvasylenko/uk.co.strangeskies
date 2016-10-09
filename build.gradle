@@ -66,6 +66,7 @@ configure(bndProjects()) {
     ext.'copyright.year' = Calendar.getInstance().get(Calendar.YEAR)
     ext.'copyright.holder.name' = copyrightProperties.'copyright.holder.name'
     ext.'copyright.holder.email' = copyrightProperties.'copyright.holder.email'
+    ext.'copyright.holder.logo' = copyrightProperties.'copyright.holder.logo'
 
     mapping {
       java = 'SLASHSTAR_STYLE'

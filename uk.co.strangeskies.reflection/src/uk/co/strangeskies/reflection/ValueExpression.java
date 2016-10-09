@@ -1,5 +1,19 @@
 /*
  * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@strangeskies.co.uk>
+ *      __   _______  ____           _       __     _      __       __
+ *    ,`_ `,L__   __||  _ `.        / \     |  \   | |  ,-`__`]  ,-`__`]
+ *   ( (_`-`   | |   | | ) |       / . \    | . \  | | / .`  `  / .`  `
+ *    `._ `.   | |   | |<. L      / / \ \   | |\ \ | || |    _ | '--.
+ *   _   `. \  | |   | |  `-`.   / /   \ \  | | \ \| || |   | || +--J
+ *  \ \__.` /  | |   | |    \ \ / /     \ \ | |  \ ` | \ `._' | \ `.__,-
+ *   `.__.-`   L_|   L_|    L_|/_/       \_\L_|   \__|  `-.__.'  `-.__.]
+ *                   __    _         _      __      __
+ *                 ,`_ `, | |   _   | |  ,-`__`]  ,`_ `,
+ *                ( (_`-` | '-.) |  | | / .`  `  ( (_`-`
+ *                 `._ `. | +-. <   | || '--.     `._ `.
+ *                _   `. \| |  `-`. | || +--J    _   `. \
+ *               \ \__.` /| |    \ \| | \ `.__,-\ \__.` /
+ *                `.__.-` L_|    L_|L_|  `-.__.] `.__.-`
  *
  * This file is part of uk.co.strangeskies.reflection.
  *
@@ -26,20 +40,6 @@ import java.util.List;
 import uk.co.strangeskies.reflection.ExpressionVisitor.ValueExpressionVisitor;
 
 public interface ValueExpression<T> extends Expression {
-	static <T> ValueExpression<T> nullExpression() {
-		return new ValueExpression<T>() {
-			@Override
-			public void accept(ValueExpressionVisitor<T> visitor) {
-				visitor.visitNull();
-			}
-
-			@Override
-			public TypeToken<T> getType() {
-				return TypeToken.overNull();
-			}
-		};
-	}
-
 	@Override
 	default void accept(ExpressionVisitor visitor) {
 		accept(visitor.value(getType()));
@@ -78,6 +78,6 @@ public interface ValueExpression<T> extends Expression {
 		 * TODO resolve method overload
 		 */
 		return null; /*- new MethodExpression<>(this, InvocableMember.resolveMethodOverload(getType(), invocableName, arguments),
-				arguments);*/
+									arguments);*/
 	}
 }
