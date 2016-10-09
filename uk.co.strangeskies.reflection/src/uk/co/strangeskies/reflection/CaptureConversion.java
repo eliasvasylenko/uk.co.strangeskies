@@ -61,23 +61,19 @@ public class CaptureConversion {
 	private final Map<InferenceVariable, TypeVariable<?>> capturedParameters = new HashMap<>();
 	private final Map<InferenceVariable, Type> capturedArguments = new HashMap<>();
 
-	private CaptureConversion(ParameterizedType originalType,
-			Map<TypeVariable<?>, InferenceVariable> parameterCaptures) {
+	private CaptureConversion(ParameterizedType originalType, Map<TypeVariable<?>, InferenceVariable> parameterCaptures) {
 		this.originalType = originalType;
 
-		captureType = (ParameterizedType) ParameterizedTypes
-				.from(Types.getRawType(originalType), parameterCaptures::get).getType();
+		captureType = (ParameterizedType) ParameterizedTypes.from(Types.getRawType(originalType), parameterCaptures::get)
+				.getType();
 
-		Map<TypeVariable<?>, Type> parameterArguments = ParameterizedTypes
-				.getAllTypeArgumentsMap(originalType);
-
-		for (TypeVariable<?> parameter : parameterCaptures.keySet()) {
-			Type argument = parameterArguments.get(parameter);
-			InferenceVariable inferenceVariable = parameterCaptures.get(parameter);
+		ParameterizedTypes.getAllTypeArguments(originalType).forEach(e -> {
+			Type argument = e.getValue();
+			InferenceVariable inferenceVariable = parameterCaptures.get(e.getKey());
 
 			capturedArguments.put(inferenceVariable, argument);
-			capturedParameters.put(inferenceVariable, parameter);
-		}
+			capturedParameters.put(inferenceVariable, e.getKey());
+		});
 	}
 
 	/**
@@ -90,17 +86,14 @@ public class CaptureConversion {
 	 *          The type to capture.
 	 */
 	public CaptureConversion(ParameterizedType originalType) {
-		this(originalType,
-				ParameterizedTypes.getAllTypeParameters(Types.getRawType(originalType))
-						.stream().collect(Collectors.toMap(Function.identity(),
-								t -> new InferenceVariable())));
+		this(originalType, ParameterizedTypes.getAllTypeParameters(Types.getRawType(originalType))
+				.collect(Collectors.toMap(Function.identity(), t -> new InferenceVariable())));
 	}
 
 	@Override
 	public String toString() {
-		return new StringBuilder().append(getCaptureType().getTypeName())
-				.append(" = capture(").append(getOriginalType().getTypeName())
-				.append(")").toString();
+		return new StringBuilder().append(getCaptureType().getTypeName()).append(" = capture(")
+				.append(getOriginalType().getTypeName()).append(")").toString();
 	}
 
 	/**
@@ -163,14 +156,12 @@ public class CaptureConversion {
 	 */
 	public CaptureConversion withInferenceVariableSubstitution(
 			Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions) {
-		ParameterizedType newType = (ParameterizedType) new TypeSubstitution(
-				inferenceVariableSubstitutions).resolve(getOriginalType());
+		ParameterizedType newType = (ParameterizedType) new TypeSubstitution(inferenceVariableSubstitutions)
+				.resolve(getOriginalType());
 
-		Map<TypeVariable<?>, InferenceVariable> newCaptures = ParameterizedTypes
-				.getAllTypeArgumentsMap(getCaptureType()).entrySet().stream()
+		Map<TypeVariable<?>, InferenceVariable> newCaptures = ParameterizedTypes.getAllTypeArguments(getCaptureType())
 				.collect(Collectors.toMap(Entry::getKey, e -> {
-					InferenceVariable substitution = inferenceVariableSubstitutions
-							.get(e.getValue());
+					InferenceVariable substitution = inferenceVariableSubstitutions.get(e.getValue());
 					if (substitution == null)
 						substitution = (InferenceVariable) e.getValue();
 					return substitution;
@@ -186,11 +177,10 @@ public class CaptureConversion {
 	 *         of this capture conversion with respect to the given bound set.
 	 */
 	public Set<InferenceVariable> getInferenceVariablesMentioned() {
-		Set<InferenceVariable> allMentioned = new HashSet<>(
-				getInferenceVariables());
-		for (Type captured : ParameterizedTypes
-				.getAllTypeArgumentsMap(getOriginalType()).values())
-			allMentioned.addAll(InferenceVariable.getMentionedBy(captured));
+		Set<InferenceVariable> allMentioned = new HashSet<>(getInferenceVariables());
+
+		ParameterizedTypes.getAllTypeArguments(getOriginalType()).map(Map.Entry::getValue)
+				.forEach(captured -> allMentioned.addAll(InferenceVariable.getMentionedBy(captured)));
 
 		return allMentioned;
 	}

@@ -32,10 +32,13 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static java.util.stream.Collectors.toMap;
+
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -43,11 +46,13 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.utilities.EquivalenceComparator;
@@ -288,7 +293,7 @@ public class ParameterizedTypes {
 	 *         class is generic, false otherwise.
 	 */
 	public static boolean isGeneric(Class<?> type) {
-		return !getAllTypeParameters(type).isEmpty();
+		return getAllTypeParameters(type).findAny().isPresent();
 	}
 
 	/**
@@ -300,14 +305,14 @@ public class ParameterizedTypes {
 	 *          The class whose generic type parameters we wish to determine.
 	 * @return A list of all relevant type variables.
 	 */
-	public static List<TypeVariable<?>> getAllTypeParameters(Class<?> rawType) {
+	public static Stream<TypeVariable<?>> getAllTypeParameters(Class<?> rawType) {
 		Stream<TypeVariable<?>> typeParameters = Stream.empty();
 
 		do {
 			typeParameters = Stream.concat(typeParameters, Arrays.stream(rawType.getTypeParameters()));
 		} while (!Types.isStatic(rawType) && (rawType = rawType.getEnclosingClass()) != null);
 
-		return typeParameters.collect(Collectors.toList());
+		return typeParameters;
 	}
 
 	/**
@@ -320,60 +325,26 @@ public class ParameterizedTypes {
 	 * @return A mapping of all type variables to their arguments in the context
 	 *         of the given type.
 	 */
-	public static Map<TypeVariable<?>, Type> getAllTypeArgumentsMap(ParameterizedType type) {
-		Map<TypeVariable<?>, Type> typeArguments = new HashMap<>();
+	public static Stream<Map.Entry<TypeVariable<?>, Type>> getAllTypeArguments(ParameterizedType type) {
+		Stream<Entry<TypeVariable<?>, Type>> typeArguments = Stream.empty();
 
 		Class<?> rawType = (Class<?>) type.getRawType();
 		do {
-			for (int i = 0; i < rawType.getTypeParameters().length; i++) {
-				TypeVariable<?> typeParameter = rawType.getTypeParameters()[i];
-				Type typeArgument = type.getActualTypeArguments()[i];
+			Class<?> rawTypeFinal = rawType;
+			ParameterizedType typeFinal = type;
 
-				typeArguments.put(typeParameter, typeArgument);
-			}
+			typeArguments = Stream.concat(typeArguments,
+					IntStream.range(0, rawType.getTypeParameters().length)
+							.mapToObj(i -> new AbstractMap.SimpleEntry<>(rawTypeFinal.getTypeParameters()[i],
+									typeFinal.getActualTypeArguments()[i])));
 
 			type = type.getOwnerType() instanceof ParameterizedType ? (ParameterizedType) type.getOwnerType() : null;
 			rawType = Types.isStatic(rawType) ? null : rawType.getEnclosingClass();
 
 			if (rawType != null && type == null) {
 				do {
-					for (TypeVariable<?> variable : rawType.getTypeParameters())
-						typeArguments.put(variable, variable);
-				} while ((rawType = Types.isStatic(rawType) ? null : rawType.getEnclosingClass()) != null);
-			}
-		} while (type != null && rawType != null);
-
-		return typeArguments;
-	}
-
-	/**
-	 * For a given parameterized type, we retrieve a list of all its type
-	 * arguments arguments in the order the respective parameters are given by
-	 * {@link #getAllTypeParameters(Class)}.
-	 *
-	 * @param type
-	 *          The type whose generic type arguments we wish to determine.
-	 * @return A mapping of all type variables to their arguments in the context
-	 *         of the given type.
-	 */
-	public static List<Type> getAllTypeArgumentsList(ParameterizedType type) {
-		List<Type> typeArguments = new ArrayList<>();
-
-		Class<?> rawType = (Class<?>) type.getRawType();
-		do {
-			for (int i = 0; i < rawType.getTypeParameters().length; i++) {
-				Type typeArgument = type.getActualTypeArguments()[i];
-
-				typeArguments.add(typeArgument);
-			}
-
-			type = type.getOwnerType() instanceof ParameterizedType ? (ParameterizedType) type.getOwnerType() : null;
-			rawType = Types.isStatic(rawType) ? null : rawType.getEnclosingClass();
-
-			if (rawType != null && type == null) {
-				do {
-					for (TypeVariable<?> variable : rawType.getTypeParameters())
-						typeArguments.add(variable);
+					typeArguments = Stream.concat(typeArguments,
+							Arrays.stream(rawType.getTypeParameters()).map(p -> new AbstractMap.SimpleEntry<>(p, p)));
 				} while ((rawType = Types.isStatic(rawType) ? null : rawType.getEnclosingClass()) != null);
 			}
 		} while (type != null && rawType != null);
@@ -556,7 +527,9 @@ public class ParameterizedTypes {
 					.get();
 
 			if (type instanceof ParameterizedType)
-				type = new TypeSubstitution(getAllTypeArgumentsMap((ParameterizedType) type)).resolve(subtype);
+				type = new TypeSubstitution(
+						getAllTypeArguments((ParameterizedType) type).collect(toMap(Entry::getKey, Entry::getValue)))
+								.resolve(subtype);
 			else
 				type = subtype;
 
@@ -595,14 +568,16 @@ public class ParameterizedTypes {
 		Map<TypeVariable<?>, InferenceVariable> parameterSubstitutes = new HashMap<>();
 		Map<InferenceVariable, Type> substitutedArguments = new HashMap<>();
 
-		int index = 0;
 		if (type instanceof ParameterizedType) {
-			Map<TypeVariable<?>, Type> arguments = getAllTypeArgumentsMap((ParameterizedType) type);
-			for (TypeVariable<?> parameter : getAllTypeParameters(rawType)) {
-				InferenceVariable substituteArgument = getSubstitutionArgument(index++);
-				parameterSubstitutes.put(parameter, substituteArgument);
-				substitutedArguments.put(substituteArgument, arguments.get(parameter));
-			}
+			getAllTypeArguments((ParameterizedType) type).forEach(e -> {
+
+				int index = parameterSubstitutes.size();
+
+				InferenceVariable substituteArgument = getSubstitutionArgument(index);
+
+				parameterSubstitutes.put(e.getKey(), substituteArgument);
+				substitutedArguments.put(substituteArgument, e.getValue());
+			});
 		}
 
 		Type supertype = new TypeSubstitution(substitutedArguments)

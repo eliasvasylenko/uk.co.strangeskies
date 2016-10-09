@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static java.util.stream.Collectors.toList;
+
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Modifier;
@@ -478,7 +480,7 @@ public final class Types {
 	 * @return true if the two given types are equal, false otherwise
 	 */
 	public static boolean equals(Type a, Type b) {
-		return equals(a, b, new HashSet<>());
+		return equals(a, b, new Isomorphism());
 	}
 
 	private static class Equality {
@@ -504,60 +506,69 @@ public final class Types {
 		}
 	}
 
-	private static boolean equals(Type a, Type b, HashSet<Equality> equalitiesEncountered) {
-		if (a instanceof IntersectionType && ((IntersectionType) a).getTypes().length == 1)
-			a = ((IntersectionType) a).getTypes()[0];
-		if (b instanceof IntersectionType && ((IntersectionType) b).getTypes().length == 1)
-			b = ((IntersectionType) b).getTypes()[0];
+	private static boolean equals(Type first, Type second, Isomorphism isomorphism) {
+		Type a;
+		Type b;
 
-		if (!equalitiesEncountered.add(new Equality(a, b)))
-			return true;
+		if (first instanceof IntersectionType && ((IntersectionType) first).getTypes().length == 1) {
+			a = ((IntersectionType) first).getTypes()[0];
+		} else {
+			a = first;
+		}
+		if (second instanceof IntersectionType && ((IntersectionType) second).getTypes().length == 1) {
+			b = ((IntersectionType) second).getTypes()[0];
+		} else {
+			b = second;
+		}
 
-		boolean equal;
+		return isomorphism.byEquality().getPartialMapping(new Equality(a, b), () -> true, e -> {
 
-		if (a == b) {
-			equal = true;
+			boolean equal;
 
-		} else if (a instanceof ParameterizedTypeImpl && b instanceof ParameterizedTypeImpl) {
-			equal = a.hashCode() == b.hashCode() && parameterizedTypeEquals((ParameterizedType) a, (ParameterizedType) b);
-
-		} else if (a instanceof ParameterizedType && b instanceof ParameterizedType) {
-			equal = parameterizedTypeEquals((ParameterizedType) a, (ParameterizedType) b);
-
-		} else if (a instanceof IntersectionType && b instanceof IntersectionType) {
-			IntersectionType aIntersectionType = (IntersectionType) a;
-			IntersectionType bIntersectionType = (IntersectionType) b;
-
-			if (aIntersectionType.getTypes().length != bIntersectionType.getTypes().length) {
-				equal = false;
-			} else {
+			if (a == b) {
 				equal = true;
 
-				for (Type aType : ((IntersectionType) a).getTypes()) {
-					boolean contains = false;
+			} else if (a instanceof ParameterizedTypeImpl && b instanceof ParameterizedTypeImpl) {
+				equal = a.hashCode() == b.hashCode() && parameterizedTypeEquals((ParameterizedType) a, (ParameterizedType) b);
 
-					for (Type bType : ((IntersectionType) b).getTypes()) {
-						if (Types.equals(aType, bType)) {
-							contains = true;
+			} else if (a instanceof ParameterizedType && b instanceof ParameterizedType) {
+				equal = parameterizedTypeEquals((ParameterizedType) a, (ParameterizedType) b);
+
+			} else if (a instanceof IntersectionType && b instanceof IntersectionType) {
+				IntersectionType aIntersectionType = (IntersectionType) a;
+				IntersectionType bIntersectionType = (IntersectionType) b;
+
+				if (aIntersectionType.getTypes().length != bIntersectionType.getTypes().length) {
+					equal = false;
+				} else {
+					equal = true;
+
+					for (Type aType : ((IntersectionType) a).getTypes()) {
+						boolean contains = false;
+
+						for (Type bType : ((IntersectionType) b).getTypes()) {
+							if (Types.equals(aType, bType)) {
+								contains = true;
+								break;
+							}
+						}
+
+						if (!contains) {
+							equal = false;
 							break;
 						}
 					}
-
-					if (!contains) {
-						equal = false;
-						break;
-					}
 				}
+
+			} else if (a instanceof Class && b instanceof Class) {
+				equal = a.equals(b);
+
+			} else {
+				equal = false;
 			}
 
-		} else if (a instanceof Class && b instanceof Class) {
-			equal = a.equals(b);
-
-		} else {
-			equal = false;
-		}
-
-		return equal;
+			return equal;
+		});
 	}
 
 	private static boolean parameterizedTypeEquals(ParameterizedType a, ParameterizedType b) {
@@ -794,15 +805,14 @@ public final class Types {
 				if (!(fromParameterization instanceof ParameterizedType))
 					assignable = false;
 				else {
-					List<TypeVariable<?>> typeParameters = ParameterizedTypes.getAllTypeParameters(matchedClass);
-					Map<TypeVariable<?>, Type> toTypeArguments = ParameterizedTypes
-							.getAllTypeArgumentsMap((ParameterizedType) to);
-					Map<TypeVariable<?>, Type> fromTypeArguments = ParameterizedTypes
-							.getAllTypeArgumentsMap((ParameterizedType) fromParameterization);
+					Iterator<Type> toTypeArguments = ParameterizedTypes.getAllTypeArguments((ParameterizedType) to)
+							.map(Map.Entry::getValue).iterator();
+					Iterator<Type> fromTypeArguments = ParameterizedTypes
+							.getAllTypeArguments((ParameterizedType) fromParameterization).map(Map.Entry::getValue).iterator();
 
 					assignable = true;
-					for (TypeVariable<?> parameter : typeParameters) {
-						if (!isContainedBy(fromTypeArguments.get(parameter), toTypeArguments.get(parameter), isomorphism))
+					while (toTypeArguments.hasNext()) {
+						if (!isContainedBy(fromTypeArguments.next(), toTypeArguments.next(), isomorphism))
 							assignable = false;
 					}
 
@@ -1085,18 +1095,18 @@ public final class Types {
 			return parameterization == null ? rawClass : parameterization;
 		}
 
+		List<TypeVariable<?>> typeParameters = ParameterizedTypes.getAllTypeParameters(rawClass).collect(toList());
 		/*
 		 * Proxy guard against recursive generation of infinite types
 		 */
 		return isomorphism.byEquality().getProxiedMapping(new HashSet<>(parameterizations), ParameterizedType.class,
-				p -> bestImpl(rawClass, parameterizations, isomorphism));
+				p -> bestImpl(rawClass, typeParameters, parameterizations, isomorphism));
 	}
 
-	private static ParameterizedType bestImpl(Class<?> rawClass, List<ParameterizedType> parameterizations,
-			Isomorphism isomorphism) {
+	private static ParameterizedType bestImpl(Class<?> rawClass, List<TypeVariable<?>> typeParameters,
+			List<ParameterizedType> parameterizations, Isomorphism isomorphism) {
 		Map<TypeVariable<?>, Type> leastContainingParameterization = new HashMap<>();
 
-		List<TypeVariable<?>> typeParameters = ParameterizedTypes.getAllTypeParameters(rawClass);
 		for (int j = 0; j < typeParameters.size(); j++) {
 			TypeVariable<?> variable = typeParameters.get(j);
 			for (int i = 0; i < parameterizations.size(); i++) {

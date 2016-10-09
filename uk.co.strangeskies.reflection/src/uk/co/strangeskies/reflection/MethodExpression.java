@@ -57,4 +57,8 @@ public class MethodExpression<O, T> implements ValueExpression<T> {
 	public TypeToken<T> getType() {
 		return invocable.getReturnType();
 	}
+
+	public static <T> MethodExpression<Void, T> invokeStatic(InvocableMember<Void, T> definingClass) {
+		return null;
+	}
 }

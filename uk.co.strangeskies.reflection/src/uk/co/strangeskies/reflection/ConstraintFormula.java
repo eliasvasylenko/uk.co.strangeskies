@@ -32,13 +32,18 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static uk.co.strangeskies.reflection.ParameterizedTypes.getAllTypeArguments;
+
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.BoundSet.IncorporationTarget;
 
@@ -285,7 +290,8 @@ public class ConstraintFormula {
 						incorporate.falsehood("Raw types '" + Types.getRawTypes(from) + "' cannot be assigned from '"
 								+ Types.getRawType(to) + "': " + this);
 				} else {
-					Map<TypeVariable<?>, Type> toArguments = ParameterizedTypes.getAllTypeArgumentsMap((ParameterizedType) to);
+					List<Map.Entry<TypeVariable<?>, Type>> toArguments = ParameterizedTypes
+							.getAllTypeArguments((ParameterizedType) to).collect(Collectors.toList());
 
 					List<Type> fromSet;
 					if (this.from instanceof WildcardType)
@@ -310,8 +316,9 @@ public class ConstraintFormula {
 							 * Otherwise, the constraint reduces to the following new
 							 * constraints: for all i (1 ≤ i ≤ n), ‹Bi <= Ai›.
 							 */
-							ParameterizedTypes.getAllTypeArgumentsMap(fromParameterization).entrySet().forEach(e -> {
-								reduce(Kind.CONTAINMENT, e.getValue(), toArguments.get(e.getKey()), bounds);
+							Iterator<Map.Entry<TypeVariable<?>, Type>> toArgumentsIterator = toArguments.iterator();
+							ParameterizedTypes.getAllTypeArguments(fromParameterization).forEach(e -> {
+								reduce(Kind.CONTAINMENT, e.getValue(), toArgumentsIterator.next().getValue(), bounds);
 							});
 						}
 					}
@@ -632,16 +639,19 @@ public class ConstraintFormula {
 					 */
 					Type finalFrom = from;
 					Type finalTo = to;
-					if (from instanceof ParameterizedType)
-						if (to instanceof ParameterizedType)
-							ParameterizedTypes.getAllTypeParameters(Types.getRawType(from))
-									.forEach(type -> reduce(Kind.EQUALITY,
-											ParameterizedTypes.getAllTypeArgumentsMap((ParameterizedType) finalFrom).get(type),
-											ParameterizedTypes.getAllTypeArgumentsMap((ParameterizedType) finalTo).get(type), bounds));
-						else
+					if (from instanceof ParameterizedType) {
+						if (to instanceof ParameterizedType) {
+							Iterator<Type> fromArguments = getAllTypeArguments((ParameterizedType) finalFrom).map(Entry::getValue)
+									.iterator();
+
+							getAllTypeArguments((ParameterizedType) finalTo).map(Entry::getValue)
+									.forEach(toArgument -> reduce(Kind.EQUALITY, fromArguments.next(), toArgument, bounds));
+						} else {
 							incorporate.falsehood("Wildcards cannot be equal in this form: " + this);
-					else if (to instanceof ParameterizedType)
+						}
+					} else if (to instanceof ParameterizedType) {
 						incorporate.falsehood("Types are not erasure-equal: " + this);
+					}
 				} else {
 					/*
 					 * Otherwise, the constraint reduces to false.

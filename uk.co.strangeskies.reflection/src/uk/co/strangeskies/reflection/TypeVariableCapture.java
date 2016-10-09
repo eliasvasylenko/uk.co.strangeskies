@@ -32,6 +32,9 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static uk.co.strangeskies.reflection.ParameterizedTypes.getAllTypeArguments;
+import static uk.co.strangeskies.reflection.Types.getRawType;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.GenericArrayType;
@@ -44,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -212,8 +216,9 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	 *         parameterized with the captures of the original arguments.
 	 */
 	public static ParameterizedType captureWildcardArguments(ParameterizedType type) {
-		Map<TypeVariable<?>, Type> arguments = ParameterizedTypes.getAllTypeArgumentsMap(type);
-		Map<TypeVariable<?>, Type> captures = new HashMap<>();
+		LinkedHashMap<TypeVariable<?>, Type> arguments = new LinkedHashMap<>();
+
+		getAllTypeArguments(type).forEach(e -> arguments.put(e.getKey(), e.getValue()));
 
 		TypeVariable<?>[] parameters = new TypeVariable<?>[arguments.size()];
 		GenericDeclaration declaration = createGenericDeclarationOver(parameters);
@@ -221,24 +226,24 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 		boolean containsWildcards = false;
 
 		int i = 0;
-		for (TypeVariable<?> parameter : arguments.keySet()) {
-			Type argument = arguments.get(parameter);
+		for (Map.Entry<TypeVariable<?>, Type> argument : arguments.entrySet()) {
 			Type capture;
 
-			if (argument instanceof WildcardType) {
+			if (argument.getValue() instanceof WildcardType) {
 				containsWildcards = true;
-				capture = captureWildcard(declaration, parameter, (WildcardType) argument, false);
-			} else
-				capture = argument;
+				capture = captureWildcard(declaration, argument.getKey(), (WildcardType) argument.getValue(), false);
+			} else {
+				capture = argument.getValue();
+			}
 
-			parameters[i++] = parameter;
-			captures.put(parameter, capture);
+			parameters[i++] = argument.getKey();
+			argument.setValue(capture);
 		}
 
 		ParameterizedType capture;
 		if (containsWildcards) {
-			substituteBounds(captures);
-			capture = (ParameterizedType) ParameterizedTypes.uncheckedFrom(Types.getRawType(type), captures::get);
+			substituteBounds(arguments);
+			capture = ParameterizedTypes.uncheckedFrom(getRawType(type), new ArrayList<>(arguments.values()));
 		} else {
 			capture = type;
 		}
@@ -451,8 +456,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 				bounds.incorporate().equality(inferenceVariable.getKey(), inferenceVariable.getValue());
 			} catch (ReflectionException e) {
 				throw new ReflectionException(
-						p -> p.cannotCaptureInferenceVariable(inferenceVariable.getKey(), inferenceVariable.getValue(), bounds),
-						e);
+						p -> p.cannotCaptureInferenceVariable(inferenceVariable.getKey(), inferenceVariable.getValue(), bounds), e);
 			}
 		}
 

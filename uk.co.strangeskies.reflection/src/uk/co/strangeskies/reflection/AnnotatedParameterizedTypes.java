@@ -261,6 +261,33 @@ public final class AnnotatedParameterizedTypes {
 	 * type of this annotated type, to their annotated arguments within the
 	 * context of this type.
 	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 * TODO return stream
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
 	 * @param type
 	 *          The type whose generic type arguments we wish to determine.
 	 * @return A mapping of all type variables to their arguments in the context
@@ -274,9 +301,8 @@ public final class AnnotatedParameterizedTypes {
 		for (int i = 0; i < arguments.length; i++)
 			allArguments.put(parameters[i], arguments[i]);
 
-		for (Map.Entry<TypeVariable<?>, Type> entry : ParameterizedTypes
-				.getAllTypeArgumentsMap((ParameterizedType) type.getType()).entrySet())
-			allArguments.putIfAbsent(entry.getKey(), AnnotatedTypes.over(entry.getValue()));
+		ParameterizedTypes.getAllTypeArguments((ParameterizedType) type.getType())
+				.forEach(entry -> allArguments.putIfAbsent(entry.getKey(), AnnotatedTypes.over(entry.getValue())));
 
 		return allArguments;
 	}

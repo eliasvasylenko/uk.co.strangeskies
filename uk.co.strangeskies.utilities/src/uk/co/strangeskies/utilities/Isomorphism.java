@@ -189,6 +189,46 @@ public class Isomorphism {
 		 * been made via this {@link Isomorphism}.
 		 * <p>
 		 * In the case of recursive graph structures we sometimes may need access to
+		 * a partially constructed mapping, as we may revisit a node during the
+		 * construction of its own mapping.
+		 * <p>
+		 * Once the mapping is calculated, the partial result will be removed from
+		 * the isomorphism, and future attempts to map the node will return the
+		 * complete result, though often the two references will be identity equal.
+		 * 
+		 * @param <S>
+		 *          the type of the node
+		 * @param <C>
+		 *          the type of the result
+		 * @param node
+		 *          the graph node to map
+		 * @param mapping
+		 *          the mapping function to apply, also accepting a consumer which
+		 *          can be called back with a partial result
+		 * @return a mapping of the given node
+		 */
+		@SuppressWarnings("unchecked")
+		public <S, C> S getPartialMapping(C node, Supplier<S> partial, Function<C, S> mapping) {
+			Supplier<S> copySource = ((Map<C, Supplier<S>>) copiedNodes).get(node);
+
+			S copy;
+
+			if (copySource == null) {
+				((Map<C, Supplier<S>>) copiedNodes).put(node, partial);
+				copy = mapping.apply(node);
+				((Map<C, Supplier<S>>) copiedNodes).put(node, () -> copy);
+			} else {
+				copy = copySource.get();
+			}
+
+			return copy;
+		}
+
+		/**
+		 * Make a mapping of the given node, or fetch an existing mapping if one has
+		 * been made via this {@link Isomorphism}.
+		 * <p>
+		 * In the case of recursive graph structures we sometimes may need access to
 		 * a proxied mapping, as we may revisit a node during the construction of
 		 * its own mapping.
 		 * <p>
@@ -239,7 +279,8 @@ public class Isomorphism {
 		 * @return a mapping of the given node
 		 */
 		@SuppressWarnings("unchecked")
-		public <S, C> S getProxiedMapping(C node, ClassLoader classLoader, Class<? extends S> proxyClass, Function<C, S> mapping) {
+		public <S, C> S getProxiedMapping(C node, ClassLoader classLoader, Class<? extends S> proxyClass,
+				Function<C, S> mapping) {
 			while (node instanceof IsomorphismProxy) {
 				C proxiedNode = (C) ((IsomorphismProxy) node).getProxiedObjectFromIsomorphism();
 				if (proxiedNode != null) {

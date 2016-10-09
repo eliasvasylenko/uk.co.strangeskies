@@ -41,6 +41,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -128,7 +129,7 @@ public class InferenceVariable implements Type {
 	 * parameters A1,...,An with corresponding bounds U1,...,Un.
 	 */
 	public static ParameterizedType captureConversion(ParameterizedType type, BoundSet bounds) {
-		if (ParameterizedTypes.getAllTypeArgumentsMap(type).values().stream().anyMatch(WildcardType.class::isInstance)) {
+		if (ParameterizedTypes.getAllTypeArguments(type).map(Entry::getValue).anyMatch(WildcardType.class::isInstance)) {
 			/*
 			 * There exists a capture conversion from a parameterized type
 			 * G<T1,...,Tn> (§4.5) to a parameterized type G<S1,...,Sn>, where, for 1
