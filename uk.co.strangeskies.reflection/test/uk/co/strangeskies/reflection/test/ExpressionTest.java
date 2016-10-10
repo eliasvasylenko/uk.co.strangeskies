@@ -1,19 +1,19 @@
 /*
  * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@strangeskies.co.uk>
  *      __   _______  ____           _       __     _      __       __
- *    ,`_ `,L__   __||  _ `.        / \     |  \   | |  ,-`__`]  ,-`__`]
- *   ( (_`-`   | |   | | ) |       / . \    | . \  | | / .`  `  / .`  `
- *    `._ `.   | |   | |<. L      / / \ \   | |\ \ | || |    _ | '--.
- *   _   `. \  | |   | |  `-`.   / /   \ \  | | \ \| || |   | || +--J
- *  \ \__.` /  | |   | |    \ \ / /     \ \ | |  \ ` | \ `._' | \ `.__,-
- *   `.__.-`   L_|   L_|    L_|/_/       \_\L_|   \__|  `-.__.'  `-.__.]
+ *    ,`_ `,|__   __||  _ `.        / \     |  \   | |  ,-`__`¬  ,-`__`¬
+ *   ( (_`-'   | |   | | ) |       / . \    | . \  | | / .`  `' / .`  `'
+ *    `._ `.   | |   | |<. l      / / \ \   | |\ \ | || |    _ | '--.
+ *   _   `. \  | |   | |  `.`.   / /   \ \  | | \ \| || |   | || +--'
+ *  \ \__.' /  | |   | |    \ \ / /     \ \ | |  \ ` | \ `._' | \ `.__,.
+ *   `.__.-`   |_|   |_|    |_|/_/       \_\|_|   \__|  `-.__.J  `-.__.J
  *                   __    _         _      __      __
- *                 ,`_ `, | |   _   | |  ,-`__`]  ,`_ `,
- *                ( (_`-` | '-.) |  | | / .`  `  ( (_`-`
- *                 `._ `. | +-. <   | || '--.     `._ `.
- *                _   `. \| |  `-`. | || +--J    _   `. \
- *               \ \__.` /| |    \ \| | \ `.__,-\ \__.` /
- *                `.__.-` L_|    L_|L_|  `-.__.] `.__.-`
+ *                 ,`_ `, | |  _    | |  ,-`__`¬  ,`_ `,
+ *                ( (_`-' | | ) |   | | / .`  `' ( (_`-'
+ *                 `._ `. | L-' l   | || '--.     `._ `.
+ *                _   `. \| ,.-^.`. | || +--'    _   `. \
+ *               \ \__.' /| |    \ \| | \ `.__,.\ \__.' /
+ *                `.__.-` |_|    |_||_|  `-.__.J `.__.-`
  *
  * This file is part of uk.co.strangeskies.reflection.
  *
@@ -32,6 +32,7 @@
  */
 package uk.co.strangeskies.reflection.test;
 
+import static uk.co.strangeskies.reflection.InvocableMember.getMethods;
 import static uk.co.strangeskies.reflection.LiteralExpression.literal;
 
 import org.junit.Assert;
@@ -68,8 +69,8 @@ public class ExpressionTest {
 			.resolveField(TEST_CLASS_TYPE, TEST_FIELD_NAME).withType(TypeToken.over(String.class));
 
 	private static final String TEST_SET_METHOD_NAME = "setMethod";
-	private static final InvocableMember<? super TestClass, ?> TEST_SET_METHOD = InvocableMember
-			.resolveMethodOverload(TEST_CLASS_TYPE, TEST_SET_METHOD_NAME, STRING_TYPE);
+	private static final InvocableMember<? super TestClass, ?> TEST_SET_METHOD = getMethods(TEST_CLASS_TYPE,
+			TEST_SET_METHOD_NAME).resolveOverload(STRING_TYPE);
 
 	@Test
 	public void fieldAssignmentTest() {

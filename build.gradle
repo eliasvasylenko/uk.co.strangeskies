@@ -12,24 +12,24 @@ import aQute.bnd.osgi.Constants
 buildscript {
   repositories {
     jcenter()
+    maven {
+      url "https://plugins.gradle.org/m2/"
+    }
   }
   dependencies {
     classpath bndPlugin
-    classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:3.1.1'
-    classpath ('nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0') {
-      /* Resolve dependency conflict with aether: */
-      exclude group: 'org.apache.maven'
-    }
-    classpath ('org.ajoberstar:gradle-git:1.2.0') {
+    classpath "org.jfrog.buildinfo:build-info-extractor-gradle:3.1.1"
+    classpath "gradle.plugin.nl.javadude.gradle.plugins:license-gradle-plugin:0.13.1"
+    classpath ("org.ajoberstar:gradle-git:1.2.0") {
       /* Resolve dependency conflict with bndtools: */
-      exclude group: 'org.apache.httpcomponents'
+      exclude group: "org.apache.httpcomponents"
     }
   }
 }
 
 task wrapper(type: Wrapper) {
-  jarFile = rootProject.file('.gradle-wrapper/gradle-wrapper.jar')
-  gradleVersion = '3.1'
+  jarFile = rootProject.file(".gradle-wrapper/gradle-wrapper.jar")
+  gradleVersion = "3.1"
 }
 
 /* Initialize the bnd workspace */
@@ -47,29 +47,31 @@ def bndProjects() {
 }
 
 configure(bndProjects()) {
-  plugins.apply 'biz.aQute.bnd'
+  plugins.apply "biz.aQute.bnd"
 }
 
 /* Source License Generation */
 def copyrightProperties  = new Properties()
-rootProject.file('copyright.properties').withReader { reader ->
+rootProject.file("copyright.properties").withReader { reader ->
   copyrightProperties.load(reader)
 }
-apply plugin: 'license'
+apply plugin: "license"
 configure(bndProjects()) {
-  apply plugin: 'license'
+  apply plugin: "license"
 
   license {
-    header rootProject.file('LICENSE')
+    header rootProject.file("LICENSE")
 
-    ext.'copyright.work.name' = project.name
-    ext.'copyright.year' = Calendar.getInstance().get(Calendar.YEAR)
-    ext.'copyright.holder.name' = copyrightProperties.'copyright.holder.name'
-    ext.'copyright.holder.email' = copyrightProperties.'copyright.holder.email'
-    ext.'copyright.holder.logo' = copyrightProperties.'copyright.holder.logo'
+    strictCheck true
+
+    ext."copyright.work.name" = project.name
+    ext."copyright.year" = Calendar.getInstance().get(Calendar.YEAR)
+    ext."copyright.holder.name" = copyrightProperties."copyright.holder.name"
+    ext."copyright.holder.email" = copyrightProperties."copyright.holder.email"
+    ext."copyright.holder.logo" = copyrightProperties."copyright.holder.logo"
 
     mapping {
-      java = 'SLASHSTAR_STYLE'
+      java = "SLASHSTAR_STYLE"
     }
   }
 }
@@ -80,23 +82,23 @@ def javadocOptions(options, title) {
     docTitle = title
     windowTitle = title
     memberLevel = JavadocMemberLevel.PROTECTED
-    charSet = 'UTF-8'
-    encoding = 'UTF-8'
-    docEncoding = 'UTF-8'
-    links('http://docs.oracle.com/javase/8/docs/api/')
+    charSet = "UTF-8"
+    encoding = "UTF-8"
+    docEncoding = "UTF-8"
+    links("http://docs.oracle.com/javase/8/docs/api/")
   }
 }
 
 def javadocExports(project) {
-  def javadocSpecs = project.bnd('Export-Package', project.name)
+  def javadocSpecs = project.bnd("Export-Package", project.name)
 
   return javadocSpecs.split(/\s*,\s*/).collect {
-    it.replace('.','/')+"/*.java"
+    it.replace(".","/")+"/*.java"
   }
 }
 
 configure(bndProjects()) {
-  def javadocTitle = bnd('javadoc.title', project.name)
+  def javadocTitle = bnd("javadoc.title", project.name)
 
   javadoc {
     javadocOptions(options, javadocTitle)
@@ -120,7 +122,7 @@ task aggregateJavadoc(type: Javadoc) {
 
   source bndProjects().collect { it.sourceSets.main.allJava }
 
-  destinationDir = new File(buildDir, 'javadoc')
+  destinationDir = new File(buildDir, "javadoc")
 
   classpath = files(bndProjects().collect {project -> project.sourceSets.main.compileClasspath})
 
@@ -132,11 +134,11 @@ task aggregateJavadoc(type: Javadoc) {
 }
 
 /* Javadoc Publish to GH Pages */
-apply plugin: 'org.ajoberstar.github-pages'
+apply plugin: "org.ajoberstar.github-pages"
 
 githubPages {
-  repoUri = 'https://github.com/StrangeSkies/uk.co.strangeskies.git'
-  if (project.hasProperty('githubUser') && project.hasProperty('githubPassword')) {
+  repoUri = "https://github.com/StrangeSkies/uk.co.strangeskies.git"
+  if (project.hasProperty("githubUser") && project.hasProperty("githubPassword")) {
     credentials.setUsername githubUser
     credentials.setPassword githubPassword
   }

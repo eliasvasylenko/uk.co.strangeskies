@@ -1,19 +1,19 @@
 /*
  * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@strangeskies.co.uk>
  *      __   _______  ____           _       __     _      __       __
- *    ,`_ `,L__   __||  _ `.        / \     |  \   | |  ,-`__`]  ,-`__`]
- *   ( (_`-`   | |   | | ) |       / . \    | . \  | | / .`  `  / .`  `
- *    `._ `.   | |   | |<. L      / / \ \   | |\ \ | || |    _ | '--.
- *   _   `. \  | |   | |  `-`.   / /   \ \  | | \ \| || |   | || +--J
- *  \ \__.` /  | |   | |    \ \ / /     \ \ | |  \ ` | \ `._' | \ `.__,-
- *   `.__.-`   L_|   L_|    L_|/_/       \_\L_|   \__|  `-.__.'  `-.__.]
+ *    ,`_ `,|__   __||  _ `.        / \     |  \   | |  ,-`__`¬  ,-`__`¬
+ *   ( (_`-'   | |   | | ) |       / . \    | . \  | | / .`  `' / .`  `'
+ *    `._ `.   | |   | |<. l      / / \ \   | |\ \ | || |    _ | '--.
+ *   _   `. \  | |   | |  `.`.   / /   \ \  | | \ \| || |   | || +--'
+ *  \ \__.' /  | |   | |    \ \ / /     \ \ | |  \ ` | \ `._' | \ `.__,.
+ *   `.__.-`   |_|   |_|    |_|/_/       \_\|_|   \__|  `-.__.J  `-.__.J
  *                   __    _         _      __      __
- *                 ,`_ `, | |   _   | |  ,-`__`]  ,`_ `,
- *                ( (_`-` | '-.) |  | | / .`  `  ( (_`-`
- *                 `._ `. | +-. <   | || '--.     `._ `.
- *                _   `. \| |  `-`. | || +--J    _   `. \
- *               \ \__.` /| |    \ \| | \ `.__,-\ \__.` /
- *                `.__.-` L_|    L_|L_|  `-.__.] `.__.-`
+ *                 ,`_ `, | |  _    | |  ,-`__`¬  ,`_ `,
+ *                ( (_`-' | | ) |   | | / .`  `' ( (_`-'
+ *                 `._ `. | L-' l   | || '--.     `._ `.
+ *                _   `. \| ,.-^.`. | || +--'    _   `. \
+ *               \ \__.' /| |    \ \| | \ `.__,.\ \__.' /
+ *                `.__.-` |_|    |_||_|  `-.__.J `.__.-`
  *
  * This file is part of uk.co.strangeskies.reflection.
  *
@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static java.util.Arrays.stream;
+
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
@@ -44,15 +46,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -62,7 +59,6 @@ import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.reflection.TypeToken.Wildcards;
-import uk.co.strangeskies.utilities.tuple.Pair;
 
 /**
  * <p>
@@ -119,7 +115,7 @@ public class InvocableMember<O, R> implements TypeMember<O> {
 		/*
 		 * Resolve types within context of given Resolver:
 		 */
-		if (isStatic())
+		if (isStatic() || executable instanceof Constructor<?>)
 			this.ownerType = (TypeToken<O>) TypeToken.over(receiverType.getRawType());
 		else {
 			if (!((receiverType.getType() instanceof ParameterizedType
@@ -240,9 +236,8 @@ public class InvocableMember<O, R> implements TypeMember<O> {
 	 *          The constructor to wrap.
 	 * @return An executable member wrapping the given constructor.
 	 */
-	public static <T> InvocableMember<T, T> over(Constructor<T> constructor) {
-		TypeToken<T> type = TypeToken.over(constructor.getDeclaringClass());
-		return over(constructor, type);
+	public static <T> InvocableMember<Void, T> over(Constructor<T> constructor) {
+		return over(constructor, TypeToken.over(constructor.getDeclaringClass()));
 	}
 
 	/**
@@ -258,8 +253,8 @@ public class InvocableMember<O, R> implements TypeMember<O> {
 	 * @return An executable member wrapping the given constructor.
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> InvocableMember<T, T> over(Constructor<? super T> constructor, TypeToken<T> receiver) {
-		return new InvocableMember<>(receiver, constructor, (T r, List<?> a) -> {
+	public static <T> InvocableMember<Void, T> over(Constructor<? super T> constructor, TypeToken<T> receiver) {
+		return new InvocableMember<>(TypeToken.over(void.class), constructor, (Void r, List<?> a) -> {
 			try {
 				return (T) constructor.newInstance(a.toArray());
 			} catch (Exception e) {
@@ -316,26 +311,6 @@ public class InvocableMember<O, R> implements TypeMember<O> {
 			return over((Method) executable);
 		else
 			return over((Constructor<?>) executable);
-	}
-
-	/**
-	 * As invocation of {@link #over(Constructor)} or {@link Method} as
-	 * appropriate.
-	 * 
-	 * @param <T>
-	 *          The target type of the given {@link Executable}.
-	 * @param executable
-	 *          The executable to wrap.
-	 * @param receiver
-	 *          The type of the constructor or method receiver.
-	 * @return An executable member wrapping the given Executable.
-	 */
-	@SuppressWarnings("unchecked")
-	public static <T> InvocableMember<T, ?> over(Executable executable, TypeToken<T> receiver) {
-		if (executable instanceof Method)
-			return over((Method) executable, receiver);
-		else
-			return over((Constructor<? super T>) executable, receiver);
 	}
 
 	@Override
@@ -1167,228 +1142,13 @@ public class InvocableMember<O, R> implements TypeMember<O> {
 	}
 
 	/**
-	 * Find the set of all given overload candidates which are applicable to
-	 * invocation with the given parameters. Strict applicability is considered
-	 * first, then if no candidates are found loose applicability is considered,
-	 * then if still no candidates are found, variable arity applicability is
-	 * considered.
+	 * Find which constructors can be invoked for this type.
 	 * 
-	 * @param <T>
-	 *          The receiving type of the given executable members.
-	 * @param <R>
-	 *          The return type of the given executable members.
-	 * @param candidates
-	 *          The candidates for which we wish to determine applicability.
-	 * @param parameters
-	 *          The parameters representing the invocation for which we wish to
-	 *          determine applicability.
-	 * @return The set of all given overload candidates which are most applicable
-	 *         to invocation with the given parameters.
+	 * @return A list of all {@link Constructor} objects applicable to this type,
+	 *         wrapped in {@link InvocableMember} instances.
 	 */
-	public static <T, R> Set<? extends InvocableMember<? super T, ? extends R>> resolveApplicableExecutableMembers(
-			Set<? extends InvocableMember<? super T, ? extends R>> candidates, List<? extends TypeToken<?>> parameters) {
-		Map<InvocableMember<? super T, ? extends R>, RuntimeException> failures = new LinkedHashMap<>();
-		BiConsumer<InvocableMember<? super T, ? extends R>, RuntimeException> putFailures = failures::put;
-
-		Set<? extends InvocableMember<? super T, ? extends R>> compatibleCandidates = filterOverloadCandidates(candidates,
-				i -> i.withLooseApplicability(parameters), putFailures);
-
-		if (compatibleCandidates.isEmpty()) {
-			compatibleCandidates = new HashSet<>(candidates);
-			for (InvocableMember<? super T, ? extends R> candidate : candidates)
-				if (!candidate.isVariableArityDefinition())
-					compatibleCandidates.remove(candidate);
-
-			compatibleCandidates = filterOverloadCandidates(compatibleCandidates,
-					i -> i.withVariableArityApplicability(parameters), putFailures);
-		} else {
-			Set<? extends InvocableMember<? super T, ? extends R>> oldCompatibleCandidates = compatibleCandidates;
-			compatibleCandidates = filterOverloadCandidates(compatibleCandidates, i -> i.withStrictApplicability(parameters),
-					putFailures);
-			if (compatibleCandidates.isEmpty())
-				compatibleCandidates = oldCompatibleCandidates;
-		}
-
-		if (compatibleCandidates.isEmpty())
-			throw new ReflectionException(p -> p.cannotResolveApplicable(candidates, parameters),
-					failures.get(failures.keySet().stream().findFirst().get()));
-
-		return compatibleCandidates;
-	}
-
-	private static <T, R> Set<? extends InvocableMember<? super T, ? extends R>> filterOverloadCandidates(
-			Collection<? extends InvocableMember<? super T, ? extends R>> candidates,
-			Function<? super InvocableMember<? super T, ? extends R>, InvocableMember<? super T, ? extends R>> applicabilityFunction,
-			BiConsumer<InvocableMember<? super T, ? extends R>, RuntimeException> failures) {
-		return candidates.stream().map(i -> {
-			try {
-				return applicabilityFunction.apply(i);
-			} catch (RuntimeException e) {
-				failures.accept(i, e);
-				return null;
-			}
-		}).filter(o -> o != null).collect(Collectors.toSet());
-	}
-
-	/**
-	 * Find which of the given overload candidates is the most specific according
-	 * to the rules described by the Java 8 language specification.
-	 * 
-	 * <p>
-	 * If no single most specific candidate can be found, the method will throw a
-	 * {@link ReflectionException}.
-	 * 
-	 * @param <T>
-	 *          The receiving type of the given executable members.
-	 * @param <R>
-	 *          The return type of the given executable members.
-	 * @param candidates
-	 *          The candidates from which to select the most specific.
-	 * @return The most specific of the given candidates.
-	 */
-	public static <T, R> InvocableMember<? super T, ? extends R> resolveMostSpecificExecutableMember(
-			Collection<? extends InvocableMember<? super T, ? extends R>> candidates) {
-		if (candidates.size() == 1)
-			return candidates.iterator().next();
-
-		Set<InvocableMember<? super T, ? extends R>> mostSpecificSoFar = resolveMostSpecificCandidateSet(candidates);
-
-		/*
-		 * Find which of the remaining candidates, which should all have identical
-		 * parameter types, is declared in the lowermost class.
-		 */
-		Iterator<InvocableMember<? super T, ? extends R>> overrideCandidateIterator = mostSpecificSoFar.iterator();
-		InvocableMember<? super T, ? extends R> mostSpecific = overrideCandidateIterator.next();
-		while (overrideCandidateIterator.hasNext()) {
-			InvocableMember<? super T, ? extends R> candidate = overrideCandidateIterator.next();
-
-			if (!candidate.getParameters().equals(mostSpecific.getParameters())
-					|| !candidate.getName().equals(mostSpecific.getName())) {
-				InvocableMember<?, ?> mostSpecificFinal = mostSpecific;
-				throw new ReflectionException(p -> p.cannotResolveAmbiguity(candidate, mostSpecificFinal));
-			}
-
-			mostSpecific = candidate.getMember().getDeclaringClass()
-					.isAssignableFrom(mostSpecific.getMember().getDeclaringClass()) ? candidate : mostSpecific;
-		}
-
-		return mostSpecific;
-	}
-
-	private static <T, R> Set<InvocableMember<? super T, ? extends R>> resolveMostSpecificCandidateSet(
-			Collection<? extends InvocableMember<? super T, ? extends R>> candidates) {
-		List<InvocableMember<? super T, ? extends R>> remainingCandidates = new ArrayList<>(candidates);
-
-		/*
-		 * For each remaining candidate in the list...
-		 */
-		for (int first = 0; first < remainingCandidates.size(); first++) {
-			InvocableMember<? super T, ? extends R> firstCandidate = remainingCandidates.get(first);
-
-			/*
-			 * Compare with each other remaining candidate...
-			 */
-			for (int second = first + 1; second < remainingCandidates.size(); second++) {
-				InvocableMember<? super T, ? extends R> secondCandidate = remainingCandidates.get(second);
-
-				/*
-				 * Determine which of the executable members, if either, are more
-				 * specific.
-				 */
-				Pair<Boolean, Boolean> moreSpecific = compareCandidates(firstCandidate, secondCandidate);
-
-				if (moreSpecific.getLeft()) {
-					if (moreSpecific.getRight()) {
-						/*
-						 * First and second are equally specific.
-						 */
-					} else {
-						/*
-						 * First is strictly more specific.
-						 */
-						remainingCandidates.remove(second--);
-					}
-				} else if (moreSpecific.getRight()) {
-					/*
-					 * Second is strictly more specific.
-					 */
-					remainingCandidates.remove(first--);
-
-					break;
-				} else {
-					/*
-					 * Neither first nor second are more specific.
-					 */
-					throw new ReflectionException(p -> p.cannotResolveAmbiguity(firstCandidate, secondCandidate));
-				}
-			}
-		}
-
-		return new HashSet<>(remainingCandidates);
-	}
-
-	private static Pair<Boolean, Boolean> compareCandidates(InvocableMember<?, ?> firstCandidate,
-			InvocableMember<?, ?> secondCandidate) {
-		boolean firstMoreSpecific = true;
-		boolean secondMoreSpecific = true;
-
-		if (firstCandidate.isGeneric())
-			secondMoreSpecific = compareGenericCandidate(secondCandidate, firstCandidate);
-		if (secondCandidate.isGeneric())
-			firstMoreSpecific = compareGenericCandidate(firstCandidate, secondCandidate);
-
-		if (!firstCandidate.isGeneric() || !secondCandidate.isGeneric()) {
-			int i = 0;
-			for (Type firstParameter : firstCandidate.getParameters()) {
-				Type secondParameter = secondCandidate.getParameters().get(i++);
-
-				if (!secondMoreSpecific && !secondCandidate.isGeneric()) {
-					if (!Types.isAssignable(firstParameter, secondParameter)) {
-						firstMoreSpecific = false;
-						break;
-					}
-				} else if (!firstMoreSpecific && !firstCandidate.isGeneric()) {
-					if (!Types.isAssignable(secondParameter, firstParameter)) {
-						secondMoreSpecific = false;
-						break;
-					}
-				} else {
-					secondMoreSpecific = Types.isAssignable(secondParameter, firstParameter);
-					firstMoreSpecific = Types.isAssignable(firstParameter, secondParameter);
-
-					if (!(firstMoreSpecific || secondMoreSpecific))
-						break;
-				}
-			}
-		}
-
-		return new Pair<>(firstMoreSpecific, secondMoreSpecific);
-	}
-
-	private static boolean compareGenericCandidate(InvocableMember<?, ?> firstCandidate,
-			InvocableMember<?, ?> genericCandidate) {
-		TypeResolver resolver = genericCandidate.getResolver();
-
-		try {
-			int parameters = firstCandidate.getParameters().size();
-			if (firstCandidate.isVariableArityDefinition()) {
-				parameters--;
-
-				ConstraintFormula.reduce(Kind.SUBTYPE, firstCandidate.getParameters().get(parameters),
-						genericCandidate.getParameters().get(parameters), resolver.getBounds());
-			}
-
-			for (int i = 0; i < parameters; i++) {
-				ConstraintFormula.reduce(Kind.SUBTYPE, firstCandidate.getParameters().get(i),
-						genericCandidate.getParameters().get(i), resolver.getBounds());
-			}
-
-			resolver.infer();
-		} catch (Exception e) {
-			return false;
-		}
-
-		return true;
+	public static <T> InvocableMemberStream<InvocableMember<Void, T>> getConstructors(TypeToken<T> type) {
+		return getConstructorsImpl(type, Class::getConstructors);
 	}
 
 	/**
@@ -1397,35 +1157,39 @@ public class InvocableMember<O, R> implements TypeMember<O> {
 	 * @return A list of all {@link Constructor} objects applicable to this type,
 	 *         wrapped in {@link InvocableMember} instances.
 	 */
-	public static <T> Set<? extends InvocableMember<T, T>> getConstructors(TypeToken<T> type) {
-		return getConstructors(type, c -> true);
-	}
-
-	private static <T> Set<? extends InvocableMember<T, T>> getConstructors(TypeToken<T> type,
-			Predicate<Constructor<T>> filter) {
-		return getConstructorsImpl(type, filter, Class::getConstructors);
-	}
-
-	/**
-	 * Find which constructors can be invoked for this type.
-	 * 
-	 * @return A list of all {@link Constructor} objects applicable to this type,
-	 *         wrapped in {@link InvocableMember} instances.
-	 */
-	public static <T> Set<? extends InvocableMember<T, T>> getDeclaredConstructors(TypeToken<T> type) {
-		return getDeclaredConstructors(type, c -> true);
-	}
-
-	private static <T> Set<? extends InvocableMember<T, T>> getDeclaredConstructors(TypeToken<T> type,
-			Predicate<Constructor<T>> filter) {
-		return getConstructorsImpl(type, filter, Class::getDeclaredConstructors);
+	public static <T> InvocableMemberStream<InvocableMember<Void, T>> getDeclaredConstructors(TypeToken<T> type) {
+		return getConstructorsImpl(type, Class::getDeclaredConstructors);
 	}
 
 	@SuppressWarnings("unchecked")
-	private static <T> Set<? extends InvocableMember<T, T>> getConstructorsImpl(TypeToken<T> type,
-			Predicate<Constructor<T>> filter, Function<Class<?>, Constructor<?>[]> constructors) {
-		return Arrays.stream(constructors.apply(type.getRawType())).filter(c -> filter.test((Constructor<T>) c))
-				.map(m -> InvocableMember.over((Constructor<T>) m, type)).collect(Collectors.toCollection(LinkedHashSet::new));
+	private static <T> InvocableMemberStream<InvocableMember<Void, T>> getConstructorsImpl(TypeToken<T> type,
+			Function<Class<?>, Constructor<?>[]> constructors) {
+		return new InvocableMemberStream<>(type,
+				stream(constructors.apply(type.getClass())).map(m -> over((Constructor<T>) m, type)));
+	}
+
+	/**
+	 * find which methods can be invoked on this type, whether statically or on
+	 * instances
+	 * 
+	 * @return a list of all {@link Method} objects applicable to this type,
+	 *         wrapped in {@link InvocableMember} instances.
+	 */
+	public static <T> InvocableMemberStream<InvocableMember<? super T, ?>> getMethods(TypeToken<T> type) {
+		return getMethodsImpl(type, m -> true, Class::getMethods);
+	}
+
+	/**
+	 * Find which methods can be invoked on this type, whether statically or on
+	 * instances, which pass a filter.
+	 * 
+	 * @param name
+	 *          determine which methods may participate
+	 * @return a list of all {@link Method} objects applicable to this type,
+	 *         wrapped in {@link InvocableMember} instances
+	 */
+	public static <T> InvocableMemberStream<InvocableMember<? super T, ?>> getMethods(TypeToken<T> type, String name) {
+		return getMethodsImpl(type, m -> m.getName().equals(name), Class::getMethods);
 	}
 
 	/**
@@ -1435,293 +1199,33 @@ public class InvocableMember<O, R> implements TypeMember<O> {
 	 * @return A list of all {@link Method} objects applicable to this type,
 	 *         wrapped in {@link InvocableMember} instances.
 	 */
-	public static <T> Set<? extends InvocableMember<? super T, ?>> getMethods(TypeToken<T> type) {
-		return getMethods(type, m -> true);
+	public static <T> InvocableMemberStream<InvocableMember<? super T, ?>> getDeclaredMethods(TypeToken<T> type) {
+		return getMethodsImpl(type, m -> true, Class::getDeclaredMethods);
 	}
 
 	/**
 	 * Find which methods can be invoked on this type, whether statically or on
 	 * instances, which pass a filter.
 	 * 
-	 * @param filter
-	 *          Determine which methods may participate.
+	 * @param name
+	 *          determine which methods may participate
 	 * @return A list of all {@link Method} objects applicable to this type,
 	 *         wrapped in {@link InvocableMember} instances.
 	 */
-	public static <T> Set<? extends InvocableMember<? super T, ?>> getMethods(TypeToken<T> type,
-			Predicate<Method> filter) {
-		return getMethodsImpl(type, filter, Class::getMethods);
+	public static <T> InvocableMemberStream<InvocableMember<? super T, ?>> getDeclaredMethods(TypeToken<T> type,
+			String name) {
+		return getMethodsImpl(type, m -> m.getName().equals(name), Class::getDeclaredMethods);
 	}
 
-	/**
-	 * Find which methods can be invoked on this type, whether statically or on
-	 * instances.
-	 * 
-	 * @return A list of all {@link Method} objects applicable to this type,
-	 *         wrapped in {@link InvocableMember} instances.
-	 */
-	public static <T> Set<? extends InvocableMember<? super T, ?>> getDeclaredMethods(TypeToken<T> type) {
-		return getDeclaredMethods(type, m -> true);
-	}
-
-	/**
-	 * Find which methods can be invoked on this type, whether statically or on
-	 * instances, which pass a filter.
-	 * 
-	 * @param filter
-	 *          Determine which methods may participate.
-	 * @return A list of all {@link Method} objects applicable to this type,
-	 *         wrapped in {@link InvocableMember} instances.
-	 */
-	public static <T> Set<? extends InvocableMember<? super T, ?>> getDeclaredMethods(TypeToken<T> type,
-			Predicate<Method> filter) {
-		return getMethodsImpl(type, filter, Class::getDeclaredMethods);
-	}
-
-	private static <T> Set<? extends InvocableMember<? super T, ?>> getMethodsImpl(TypeToken<T> type,
+	private static <T> InvocableMemberStream<InvocableMember<? super T, ?>> getMethodsImpl(TypeToken<T> type,
 			Predicate<Method> filter, Function<Class<?>, Method[]> methods) {
 		Stream<Method> methodStream = type.getRawTypes().stream().flatMap(t -> Arrays.stream(methods.apply(t)));
 
 		if (type.getRawTypes().stream().allMatch(Types::isInterface))
 			methodStream = Stream.concat(methodStream, Arrays.stream(Object.class.getMethods()));
 
-		return methodStream.filter(filter).map(m -> (InvocableMember<? super T, ?>) InvocableMember.over(m, type))
-				.collect(Collectors.toCollection(LinkedHashSet::new));
-	}
-
-	/**
-	 * Find which methods and constructors can be invoked on this type, whether
-	 * statically or on instances.
-	 * 
-	 * @return A list of all {@link Method} and {@link Constructor} objects
-	 *         applicable to this type, wrapped in {@link InvocableMember}
-	 *         instances.
-	 */
-	public static <T> Set<? extends InvocableMember<? super T, ?>> getExecutableMembers(TypeToken<T> type) {
-		Set<InvocableMember<? super T, ?>> members = new HashSet<>();
-		members.addAll(getConstructors(type));
-		members.addAll(getMethods(type));
-		return members;
-	}
-
-	/**
-	 * Find which methods and constructors can be invoked on this type, whether
-	 * statically or on instances.
-	 * 
-	 * @return A list of all {@link Method} and {@link Constructor} objects
-	 *         applicable to this type, wrapped in {@link InvocableMember}
-	 *         instances.
-	 */
-	public static <T> Set<? extends InvocableMember<? super T, ?>> getDeclaredExecutableMembers(TypeToken<T> type) {
-		Set<InvocableMember<? super T, ?>> members = new HashSet<>();
-		members.addAll(getDeclaredConstructors(type));
-		members.addAll(getDeclaredMethods(type));
-		return members;
-	}
-
-	/**
-	 * As {@link #resolveConstructorOverload(TypeToken, List)} for a nullary
-	 * method.
-	 */
-	@SuppressWarnings("javadoc")
-	public static <T> InvocableMember<? super T, ? extends T> resolveConstructorOverload(TypeToken<T> type) {
-		return resolveConstructorOverload(type, Collections.emptyList());
-	}
-
-	/**
-	 * As {@link #resolveDeclaredConstructorOverload(TypeToken, List)} for a
-	 * nullary method.
-	 */
-	@SuppressWarnings("javadoc")
-	public static <T> InvocableMember<? super T, ? extends T> resolveDeclaredConstructorOverload(TypeToken<T> type) {
-		return resolveDeclaredConstructorOverload(type, Collections.emptyList());
-	}
-
-	/**
-	 * As {@link #resolveConstructorOverload(TypeToken, List)}.
-	 */
-	@SuppressWarnings("javadoc")
-	public static <T> InvocableMember<? super T, ? extends T> resolveConstructorOverload(TypeToken<T> type,
-			Type... arguments) {
-		return resolveConstructorOverload(type, Arrays.stream(arguments).map(TypeToken::over).collect(Collectors.toList()));
-	}
-
-	/**
-	 * As {@link #resolveDeclaredConstructorOverload(TypeToken, List)}.
-	 */
-	@SuppressWarnings("javadoc")
-	public static <T> InvocableMember<? super T, ? extends T> resolveDeclaredConstructorOverload(TypeToken<T> type,
-			Type... arguments) {
-		return resolveDeclaredConstructorOverload(type,
-				Arrays.stream(arguments).map(TypeToken::over).collect(Collectors.toList()));
-	}
-
-	/**
-	 * As {@link #resolveConstructorOverload(TypeToken, List)}.
-	 */
-	@SuppressWarnings("javadoc")
-	public static <T> InvocableMember<? super T, ? extends T> resolveConstructorOverload(TypeToken<T> type,
-			TypeToken<?>... arguments) {
-		return resolveConstructorOverload(type, Arrays.asList(arguments));
-	}
-
-	/**
-	 * As {@link #resolveDeclaredConstructorOverload(TypeToken, List)}.
-	 */
-	@SuppressWarnings("javadoc")
-	public static <T> InvocableMember<? super T, ? extends T> resolveDeclaredConstructorOverload(TypeToken<T> type,
-			TypeToken<?>... arguments) {
-		return resolveDeclaredConstructorOverload(type, Arrays.asList(arguments));
-	}
-
-	/**
-	 * Resolve which constructor invocation matches the given name and argument
-	 * list, according to the Java 8 method overload resolution rules.
-	 * 
-	 * @param arguments
-	 *          The list of argument types for this invocation.
-	 * @return An {@link InvocableMember} object wrapping the resolved
-	 *         {@link Method}, with bounds on any generic type parameters derived
-	 *         from the argument types.
-	 */
-	public static <T> InvocableMember<? super T, ? extends T> resolveConstructorOverload(TypeToken<T> type,
-			List<? extends TypeToken<?>> arguments) {
-		return resolveConstructorOverloadImpl(type, arguments, p -> getConstructors(type, p));
-	}
-
-	/**
-	 * Resolve which declared constructor invocation matches the given name and
-	 * argument list, according to the Java 8 method overload resolution rules.
-	 * 
-	 * @param arguments
-	 *          The list of argument types for this invocation.
-	 * @return An {@link InvocableMember} object wrapping the resolved
-	 *         {@link Method}, with bounds on any generic type parameters derived
-	 *         from the argument types.
-	 */
-	public static <T> InvocableMember<? super T, ? extends T> resolveDeclaredConstructorOverload(TypeToken<T> type,
-			List<? extends TypeToken<?>> arguments) {
-		return resolveConstructorOverloadImpl(type, arguments, p -> getDeclaredConstructors(type, p));
-	}
-
-	private static <T> InvocableMember<? super T, ? extends T> resolveConstructorOverloadImpl(TypeToken<T> type,
-			List<? extends TypeToken<?>> arguments,
-			Function<Predicate<Constructor<T>>, Set<? extends InvocableMember<? super T, ? extends T>>> constructors) {
-		Set<? extends InvocableMember<? super T, ? extends T>> candidates = constructors
-				.apply(m -> isArgumentCountValid(type, m, arguments.size()));
-
-		if (candidates.isEmpty())
-			throw new IllegalArgumentException(
-					"Cannot find any applicable constructor in '" + type + "' for arguments '" + arguments + "'");
-
-		candidates = InvocableMember.resolveApplicableExecutableMembers(candidates, arguments);
-
-		return InvocableMember.resolveMostSpecificExecutableMember(candidates);
-	}
-
-	/**
-	 * As {@link #resolveMethodOverload(TypeToken, String, List)} for a nullary
-	 * method.
-	 */
-	@SuppressWarnings("javadoc")
-	public static <T> InvocableMember<? super T, ?> resolveMethodOverload(TypeToken<T> type, String name) {
-		return resolveMethodOverload(type, name, Collections.emptyList());
-	}
-
-	/**
-	 * As {@link #resolveDeclaredMethodOverload(TypeToken, String, List)} for a
-	 * nullary method.
-	 */
-	@SuppressWarnings("javadoc")
-	public static <T> InvocableMember<? super T, ?> resolveDeclaredMethodOverload(TypeToken<T> type, String name) {
-		return resolveDeclaredMethodOverload(type, name, Collections.emptyList());
-	}
-
-	/**
-	 * As {@link #resolveMethodOverload(TypeToken, String, List)}.
-	 */
-	@SuppressWarnings("javadoc")
-	public static <T> InvocableMember<? super T, ?> resolveMethodOverload(TypeToken<T> type, String name,
-			Type... arguments) {
-		return resolveMethodOverload(type, name,
-				Arrays.stream(arguments).map(TypeToken::over).collect(Collectors.toList()));
-	}
-
-	/**
-	 * As {@link #resolveDeclaredMethodOverload(TypeToken, String, List)}.
-	 */
-	@SuppressWarnings("javadoc")
-	public static <T> InvocableMember<? super T, ?> resolveDeclaredMethodOverload(TypeToken<T> type, String name,
-			Type... arguments) {
-		return resolveDeclaredMethodOverload(type, name,
-				Arrays.stream(arguments).map(TypeToken::over).collect(Collectors.toList()));
-	}
-
-	/**
-	 * As {@link #resolveMethodOverload(TypeToken, String, List)}.
-	 */
-	@SuppressWarnings("javadoc")
-	public static <T> InvocableMember<? super T, ?> resolveMethodOverload(TypeToken<T> type, String name,
-			TypeToken<?>... arguments) {
-		return resolveMethodOverload(type, name, Arrays.asList(arguments));
-	}
-
-	/**
-	 * As {@link #resolveDeclaredMethodOverload(TypeToken, String, List)}.
-	 */
-	@SuppressWarnings("javadoc")
-	public static <T> InvocableMember<? super T, ?> resolveDeclaredMethodOverload(TypeToken<T> type, String name,
-			TypeToken<?>... arguments) {
-		return resolveDeclaredMethodOverload(type, name, Arrays.asList(arguments));
-	}
-
-	/**
-	 * Resolve which method invocation matches the given name and argument list,
-	 * according to the Java 8 method overload resolution rules.
-	 * 
-	 * @param name
-	 *          the name of the method
-	 * @param arguments
-	 *          the list of argument types for this invocation
-	 * @return An {@link InvocableMember} object wrapping the resolved
-	 *         {@link Method}, with bounds on any generic type parameters derived
-	 *         from the argument types.
-	 */
-	public static <T> InvocableMember<? super T, ?> resolveMethodOverload(TypeToken<T> type, String name,
-			List<? extends TypeToken<?>> arguments) {
-		return resolveMethodOverloadImpl(type, name, arguments, p -> getMethods(type, p));
-	}
-
-	/**
-	 * Resolve which declared method invocation matches the given name and
-	 * argument list, according to the Java 8 method overload resolution rules.
-	 * 
-	 * @param name
-	 *          the name of the method
-	 * @param arguments
-	 *          the list of argument types for this invocation
-	 * @return An {@link InvocableMember} object wrapping the resolved
-	 *         {@link Method}, with bounds on any generic type parameters derived
-	 *         from the argument types.
-	 */
-	public static <T> InvocableMember<? super T, ?> resolveDeclaredMethodOverload(TypeToken<T> type, String name,
-			List<? extends TypeToken<?>> arguments) {
-		return resolveMethodOverloadImpl(type, name, arguments, p -> getDeclaredMethods(type, p));
-	}
-
-	private static <T> InvocableMember<? super T, ?> resolveMethodOverloadImpl(TypeToken<T> type, String name,
-			List<? extends TypeToken<?>> arguments,
-			Function<Predicate<Method>, Set<? extends InvocableMember<? super T, ?>>> methods) {
-		Set<? extends InvocableMember<? super T, ? extends Object>> candidates = methods
-				.apply(m -> m.getName().equals(name) && isArgumentCountValid(type, m, arguments.size()));
-
-		if (candidates.isEmpty())
-			throw new IllegalArgumentException(
-					"Cannot find any method '" + name + "' in '" + type + "' for arguments '" + arguments + "'");
-
-		candidates = InvocableMember.resolveApplicableExecutableMembers(candidates, arguments);
-
-		return InvocableMember.resolveMostSpecificExecutableMember(candidates);
+		return new InvocableMemberStream<>(type,
+				methodStream.filter(filter).map(m -> (InvocableMember<? super T, ?>) InvocableMember.over(m, type)));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -1740,9 +1244,5 @@ public class InvocableMember<O, R> implements TypeMember<O> {
 		}
 
 		return InvocableMember.over(overridden, type);
-	}
-
-	private static boolean isArgumentCountValid(TypeToken<?> type, Executable method, int arguments) {
-		return (method.isVarArgs() ? method.getParameterCount() <= arguments + 1 : method.getParameterCount() == arguments);
 	}
 }

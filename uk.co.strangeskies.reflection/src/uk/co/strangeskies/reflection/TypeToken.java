@@ -1,19 +1,19 @@
 /*
  * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@strangeskies.co.uk>
  *      __   _______  ____           _       __     _      __       __
- *    ,`_ `,L__   __||  _ `.        / \     |  \   | |  ,-`__`]  ,-`__`]
- *   ( (_`-`   | |   | | ) |       / . \    | . \  | | / .`  `  / .`  `
- *    `._ `.   | |   | |<. L      / / \ \   | |\ \ | || |    _ | '--.
- *   _   `. \  | |   | |  `-`.   / /   \ \  | | \ \| || |   | || +--J
- *  \ \__.` /  | |   | |    \ \ / /     \ \ | |  \ ` | \ `._' | \ `.__,-
- *   `.__.-`   L_|   L_|    L_|/_/       \_\L_|   \__|  `-.__.'  `-.__.]
+ *    ,`_ `,|__   __||  _ `.        / \     |  \   | |  ,-`__`¬  ,-`__`¬
+ *   ( (_`-'   | |   | | ) |       / . \    | . \  | | / .`  `' / .`  `'
+ *    `._ `.   | |   | |<. l      / / \ \   | |\ \ | || |    _ | '--.
+ *   _   `. \  | |   | |  `.`.   / /   \ \  | | \ \| || |   | || +--'
+ *  \ \__.' /  | |   | |    \ \ / /     \ \ | |  \ ` | \ `._' | \ `.__,.
+ *   `.__.-`   |_|   |_|    |_|/_/       \_\|_|   \__|  `-.__.J  `-.__.J
  *                   __    _         _      __      __
- *                 ,`_ `, | |   _   | |  ,-`__`]  ,`_ `,
- *                ( (_`-` | '-.) |  | | / .`  `  ( (_`-`
- *                 `._ `. | +-. <   | || '--.     `._ `.
- *                _   `. \| |  `-`. | || +--J    _   `. \
- *               \ \__.` /| |    \ \| | \ `.__,-\ \__.` /
- *                `.__.-` L_|    L_|L_|  `-.__.] `.__.-`
+ *                 ,`_ `, | |  _    | |  ,-`__`¬  ,`_ `,
+ *                ( (_`-' | | ) |   | | / .`  `' ( (_`-'
+ *                 `._ `. | L-' l   | || '--.     `._ `.
+ *                _   `. \| ,.-^.`. | || +--'    _   `. \
+ *               \ \__.' /| |    \ \| | \ `.__,.\ \__.' /
+ *                `.__.-` |_|    |_||_|  `-.__.J `.__.-`
  *
  * This file is part of uk.co.strangeskies.reflection.
  *
@@ -251,7 +251,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 					type = annotatedType;
 
 				resolvedParameters.clear();
-				resolvedParameters.putAll(AnnotatedParameterizedTypes.getAllTypeArguments((AnnotatedParameterizedType) type));
+				AnnotatedParameterizedTypes.getAllTypeArguments((AnnotatedParameterizedType) type)
+						.forEach(e -> resolvedParameters.put(e.getKey(), e.getValue()));
 
 				Annotation defaultAnnotation = getWildcardsAnnotation(annotatedType);
 				if (defaultAnnotation != null) {
@@ -346,8 +347,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 					.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
 			TypeVariable<?>[] parameters = Types.getRawType(annotatedType.getType()).getTypeParameters();
-			for (int i = 0; i < arguments.length; i++)
+			for (int i = 0; i < arguments.length; i++) {
 				allArguments.put(parameters[i], arguments[i]);
+			}
 
 			/*
 			 * New parameterized type

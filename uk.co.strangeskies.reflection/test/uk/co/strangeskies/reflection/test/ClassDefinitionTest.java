@@ -1,19 +1,19 @@
 /*
  * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@strangeskies.co.uk>
  *      __   _______  ____           _       __     _      __       __
- *    ,`_ `,L__   __||  _ `.        / \     |  \   | |  ,-`__`]  ,-`__`]
- *   ( (_`-`   | |   | | ) |       / . \    | . \  | | / .`  `  / .`  `
- *    `._ `.   | |   | |<. L      / / \ \   | |\ \ | || |    _ | '--.
- *   _   `. \  | |   | |  `-`.   / /   \ \  | | \ \| || |   | || +--J
- *  \ \__.` /  | |   | |    \ \ / /     \ \ | |  \ ` | \ `._' | \ `.__,-
- *   `.__.-`   L_|   L_|    L_|/_/       \_\L_|   \__|  `-.__.'  `-.__.]
+ *    ,`_ `,|__   __||  _ `.        / \     |  \   | |  ,-`__`¬  ,-`__`¬
+ *   ( (_`-'   | |   | | ) |       / . \    | . \  | | / .`  `' / .`  `'
+ *    `._ `.   | |   | |<. l      / / \ \   | |\ \ | || |    _ | '--.
+ *   _   `. \  | |   | |  `.`.   / /   \ \  | | \ \| || |   | || +--'
+ *  \ \__.' /  | |   | |    \ \ / /     \ \ | |  \ ` | \ `._' | \ `.__,.
+ *   `.__.-`   |_|   |_|    |_|/_/       \_\|_|   \__|  `-.__.J  `-.__.J
  *                   __    _         _      __      __
- *                 ,`_ `, | |   _   | |  ,-`__`]  ,`_ `,
- *                ( (_`-` | '-.) |  | | / .`  `  ( (_`-`
- *                 `._ `. | +-. <   | || '--.     `._ `.
- *                _   `. \| |  `-`. | || +--J    _   `. \
- *               \ \__.` /| |    \ \| | \ `.__,-\ \__.` /
- *                `.__.-` L_|    L_|L_|  `-.__.] `.__.-`
+ *                 ,`_ `, | |  _    | |  ,-`__`¬  ,`_ `,
+ *                ( (_`-' | | ) |   | | / .`  `' ( (_`-'
+ *                 `._ `. | L-' l   | || '--.     `._ `.
+ *                _   `. \| ,.-^.`. | || +--'    _   `. \
+ *               \ \__.' /| |    \ \| | \ `.__,.\ \__.' /
+ *                `.__.-` |_|    |_||_|  `-.__.J `.__.-`
  *
  * This file is part of uk.co.strangeskies.reflection.
  *
@@ -33,7 +33,7 @@
 package uk.co.strangeskies.reflection.test;
 
 import static uk.co.strangeskies.reflection.ClassDeclaration.declareClass;
-import static uk.co.strangeskies.reflection.InvocableMember.resolveMethodOverload;
+import static uk.co.strangeskies.reflection.InvocableMember.getMethods;
 
 import java.util.Set;
 import java.util.function.Function;
@@ -83,8 +83,8 @@ public class ClassDefinitionTest {
 
 	@Test
 	public void functionClassInvocationTest() {
-		InvocableMember<? super String, String> concatMethod = resolveMethodOverload(STRING_TYPE, "concat", STRING_TYPE)
-				.withTargetType(STRING_TYPE);
+		InvocableMember<? super String, String> concatMethod = getMethods(STRING_TYPE, "concat")
+				.resolveOverload(STRING_TYPE).withTargetType(STRING_TYPE);
 
 		ClassDefinition<? extends Function<String, String>> classDefinition = declareClass(TEST_CLASS_NAME)
 				.withSuperType(new TypeToken<Function<String, String>>() {}).define();

@@ -1,19 +1,19 @@
 /*
  * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@strangeskies.co.uk>
  *      __   _______  ____           _       __     _      __       __
- *    ,`_ `,L__   __||  _ `.        / \     |  \   | |  ,-`__`]  ,-`__`]
- *   ( (_`-`   | |   | | ) |       / . \    | . \  | | / .`  `  / .`  `
- *    `._ `.   | |   | |<. L      / / \ \   | |\ \ | || |    _ | '--.
- *   _   `. \  | |   | |  `-`.   / /   \ \  | | \ \| || |   | || +--J
- *  \ \__.` /  | |   | |    \ \ / /     \ \ | |  \ ` | \ `._' | \ `.__,-
- *   `.__.-`   L_|   L_|    L_|/_/       \_\L_|   \__|  `-.__.'  `-.__.]
+ *    ,`_ `,|__   __||  _ `.        / \     |  \   | |  ,-`__`¬  ,-`__`¬
+ *   ( (_`-'   | |   | | ) |       / . \    | . \  | | / .`  `' / .`  `'
+ *    `._ `.   | |   | |<. l      / / \ \   | |\ \ | || |    _ | '--.
+ *   _   `. \  | |   | |  `.`.   / /   \ \  | | \ \| || |   | || +--'
+ *  \ \__.' /  | |   | |    \ \ / /     \ \ | |  \ ` | \ `._' | \ `.__,.
+ *   `.__.-`   |_|   |_|    |_|/_/       \_\|_|   \__|  `-.__.J  `-.__.J
  *                   __    _         _      __      __
- *                 ,`_ `, | |   _   | |  ,-`__`]  ,`_ `,
- *                ( (_`-` | '-.) |  | | / .`  `  ( (_`-`
- *                 `._ `. | +-. <   | || '--.     `._ `.
- *                _   `. \| |  `-`. | || +--J    _   `. \
- *               \ \__.` /| |    \ \| | \ `.__,-\ \__.` /
- *                `.__.-` L_|    L_|L_|  `-.__.] `.__.-`
+ *                 ,`_ `, | |  _    | |  ,-`__`¬  ,`_ `,
+ *                ( (_`-' | | ) |   | | / .`  `' ( (_`-'
+ *                 `._ `. | L-' l   | || '--.     `._ `.
+ *                _   `. \| ,.-^.`. | || +--'    _   `. \
+ *               \ \__.' /| |    \ \| | \ `.__,.\ \__.' /
+ *                `.__.-` |_|    |_||_|  `-.__.J `.__.-`
  *
  * This file is part of uk.co.strangeskies.reflection.
  *
@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.reflection.test;
 
-import static uk.co.strangeskies.reflection.InvocableMember.resolveMethodOverload;
+import static uk.co.strangeskies.reflection.InvocableMember.getMethods;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -77,21 +77,21 @@ public class ExecutableMemberTest {
 
 	@Test
 	public void emptyVarargsResolutionTest() throws NoSuchMethodException, SecurityException {
-		InvocableMember<?, ?> asList = resolveMethodOverload(new TypeToken<Arrays>() {}, "asList");
+		InvocableMember<?, ?> asList = getMethods(new TypeToken<Arrays>() {}, "asList").resolveOverload();
 
 		Assert.assertTrue(asList.isVariableArityInvocation());
 	}
 
 	@Test
 	public void singleVarargsResolutionTest() throws NoSuchMethodException, SecurityException {
-		InvocableMember<?, ?> asList = resolveMethodOverload(new TypeToken<Arrays>() {}, "asList", String.class);
+		InvocableMember<?, ?> asList = getMethods(new TypeToken<Arrays>() {}, "asList").resolveOverload(String.class);
 
 		Assert.assertTrue(asList.isVariableArityInvocation());
 	}
 
 	@Test
 	public void varargsResolutionTest() throws NoSuchMethodException, SecurityException {
-		InvocableMember<?, ?> asList = resolveMethodOverload(new TypeToken<Arrays>() {}, "asList", String.class,
+		InvocableMember<?, ?> asList = getMethods(new TypeToken<Arrays>() {}, "asList").resolveOverload(String.class,
 				String.class, String.class);
 
 		Assert.assertTrue(asList.isVariableArityInvocation());
@@ -108,8 +108,8 @@ public class ExecutableMemberTest {
 
 	@Test
 	public void varargsDefinitionResolutionTest() throws NoSuchMethodException, SecurityException {
-		InvocableMember<?, ?> asList = resolveMethodOverload(new TypeToken<Arrays>() {}, "asList",
-				new TypeToken<String[]>() {});
+		InvocableMember<?, ?> asList = getMethods(new TypeToken<Arrays>() {}, "asList")
+				.resolveOverload(new TypeToken<String[]>() {});
 
 		Assert.assertFalse(asList.isVariableArityInvocation());
 	}

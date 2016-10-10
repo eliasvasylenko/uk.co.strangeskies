@@ -1,19 +1,19 @@
 /*
  * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@strangeskies.co.uk>
  *      __   _______  ____           _       __     _      __       __
- *    ,`_ `,L__   __||  _ `.        / \     |  \   | |  ,-`__`]  ,-`__`]
- *   ( (_`-`   | |   | | ) |       / . \    | . \  | | / .`  `  / .`  `
- *    `._ `.   | |   | |<. L      / / \ \   | |\ \ | || |    _ | '--.
- *   _   `. \  | |   | |  `-`.   / /   \ \  | | \ \| || |   | || +--J
- *  \ \__.` /  | |   | |    \ \ / /     \ \ | |  \ ` | \ `._' | \ `.__,-
- *   `.__.-`   L_|   L_|    L_|/_/       \_\L_|   \__|  `-.__.'  `-.__.]
+ *    ,`_ `,|__   __||  _ `.        / \     |  \   | |  ,-`__`¬  ,-`__`¬
+ *   ( (_`-'   | |   | | ) |       / . \    | . \  | | / .`  `' / .`  `'
+ *    `._ `.   | |   | |<. l      / / \ \   | |\ \ | || |    _ | '--.
+ *   _   `. \  | |   | |  `.`.   / /   \ \  | | \ \| || |   | || +--'
+ *  \ \__.' /  | |   | |    \ \ / /     \ \ | |  \ ` | \ `._' | \ `.__,.
+ *   `.__.-`   |_|   |_|    |_|/_/       \_\|_|   \__|  `-.__.J  `-.__.J
  *                   __    _         _      __      __
- *                 ,`_ `, | |   _   | |  ,-`__`]  ,`_ `,
- *                ( (_`-` | '-.) |  | | / .`  `  ( (_`-`
- *                 `._ `. | +-. <   | || '--.     `._ `.
- *                _   `. \| |  `-`. | || +--J    _   `. \
- *               \ \__.` /| |    \ \| | \ `.__,-\ \__.` /
- *                `.__.-` L_|    L_|L_|  `-.__.] `.__.-`
+ *                 ,`_ `, | |  _    | |  ,-`__`¬  ,`_ `,
+ *                ( (_`-' | | ) |   | | / .`  `' ( (_`-'
+ *                 `._ `. | L-' l   | || '--.     `._ `.
+ *                _   `. \| ,.-^.`. | || +--'    _   `. \
+ *               \ \__.' /| |    \ \| | \ `.__,.\ \__.' /
+ *                `.__.-` |_|    |_||_|  `-.__.J `.__.-`
  *
  * This file is part of uk.co.strangeskies.eclipse.
  *
@@ -33,7 +33,10 @@
 package uk.co.strangeskies.eclipse;
 
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.eclipse.e4.core.di.suppliers.ExtendedObjectSupplier;
 import org.eclipse.e4.core.di.suppliers.IObjectDescriptor;
@@ -59,7 +62,10 @@ import uk.co.strangeskies.text.properties.PropertyLoaderException;
  *
  * @since 1.2
  */
-@Component(service = ExtendedObjectSupplier.class, property = "dependency.injection.annotation:String=uk.co.strangeskies.eclipse.Localize", immediate = true)
+@Component(
+		service = ExtendedObjectSupplier.class,
+		property = "dependency.injection.annotation:String=uk.co.strangeskies.eclipse.Localize",
+		immediate = true)
 public class LocalizationSupplier extends ExtendedObjectSupplier {
 	@Reference
 	PropertyLoader generalLocalizer;
@@ -90,39 +96,43 @@ public class LocalizationSupplier extends ExtendedObjectSupplier {
 	@SuppressWarnings("unchecked")
 	private <T extends Properties<T>> Object localizeAccessor(IRequestor requestor, Class<?> accessor) {
 		try {
-		BundleContext context = FrameworkUtil.getBundle(accessor).getBundleContext();
+			BundleContext context = FrameworkUtil.getBundle(accessor).getBundleContext();
 
-		ServiceReference<PropertyLoader> localizerServiceRererence = context.getServiceReference(PropertyLoader.class);
-		PropertyLoader localizer = context.getService(localizerServiceRererence);
+			ServiceReference<PropertyLoader> localizerServiceRererence = context.getServiceReference(PropertyLoader.class);
+			PropertyLoader localizer = context.getService(localizerServiceRererence);
 
-		T localization = localizer.getProperties((Class<T>) accessor);
+			T localization = localizer.getProperties((Class<T>) accessor);
 
-		context.addServiceListener(new ServiceListener() {
-			@Override
-			public void serviceChanged(ServiceEvent event) {
-				if (event.getType() == ServiceEvent.UNREGISTERING
-						&& event.getServiceReference().equals(localizerServiceRererence)) {
-					try {
-						requestor.resolveArguments(false);
-						requestor.execute();
-					} catch (Exception e) {}
+			context.addServiceListener(new ServiceListener() {
+				@Override
+				public void serviceChanged(ServiceEvent event) {
+					if (event.getType() == ServiceEvent.UNREGISTERING
+							&& event.getServiceReference().equals(localizerServiceRererence)) {
+						try {
+							requestor.resolveArguments(false);
+							requestor.execute();
+						} catch (Exception e) {}
+					}
 				}
-			}
-		});
+			});
 
-		return localization;} catch (Exception e) {e.printStackTrace();throw e;}
+			return localization;
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		}
 	}
 
 	private boolean validateAccessorType(Type accessor) {
 		if (!(accessor instanceof Class) || !Properties.class.isAssignableFrom((Class<?>) accessor))
 			return false;
 
-		List<Type> accessorParameters = TypeToken.over(accessor).resolveSupertypeParameters(Properties.class)
-				.getAllTypeArgumentsList();
+		List<Map.Entry<TypeVariable<?>, Type>> accessorParameters = TypeToken.over(accessor)
+				.resolveSupertypeParameters(Properties.class).getAllTypeArguments().collect(Collectors.toList());
 
 		if (accessorParameters.size() != 1)
 			return false;
 
-		return Types.equals(accessorParameters.get(0), accessor);
+		return Types.equals(accessorParameters.get(0).getValue(), accessor);
 	}
 }

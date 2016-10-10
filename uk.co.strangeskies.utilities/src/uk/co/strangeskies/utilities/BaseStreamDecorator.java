@@ -1,19 +1,19 @@
 /*
  * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@strangeskies.co.uk>
  *      __   _______  ____           _       __     _      __       __
- *    ,`_ `,L__   __||  _ `.        / \     |  \   | |  ,-`__`]  ,-`__`]
- *   ( (_`-`   | |   | | ) |       / . \    | . \  | | / .`  `  / .`  `
- *    `._ `.   | |   | |<. L      / / \ \   | |\ \ | || |    _ | '--.
- *   _   `. \  | |   | |  `-`.   / /   \ \  | | \ \| || |   | || +--J
- *  \ \__.` /  | |   | |    \ \ / /     \ \ | |  \ ` | \ `._' | \ `.__,-
- *   `.__.-`   L_|   L_|    L_|/_/       \_\L_|   \__|  `-.__.'  `-.__.]
+ *    ,`_ `,|__   __||  _ `.        / \     |  \   | |  ,-`__`¬  ,-`__`¬
+ *   ( (_`-'   | |   | | ) |       / . \    | . \  | | / .`  `' / .`  `'
+ *    `._ `.   | |   | |<. l      / / \ \   | |\ \ | || |    _ | '--.
+ *   _   `. \  | |   | |  `.`.   / /   \ \  | | \ \| || |   | || +--'
+ *  \ \__.' /  | |   | |    \ \ / /     \ \ | |  \ ` | \ `._' | \ `.__,.
+ *   `.__.-`   |_|   |_|    |_|/_/       \_\|_|   \__|  `-.__.J  `-.__.J
  *                   __    _         _      __      __
- *                 ,`_ `, | |   _   | |  ,-`__`]  ,`_ `,
- *                ( (_`-` | '-.) |  | | / .`  `  ( (_`-`
- *                 `._ `. | +-. <   | || '--.     `._ `.
- *                _   `. \| |  `-`. | || +--J    _   `. \
- *               \ \__.` /| |    \ \| | \ `.__,-\ \__.` /
- *                `.__.-` L_|    L_|L_|  `-.__.] `.__.-`
+ *                 ,`_ `, | |  _    | |  ,-`__`¬  ,`_ `,
+ *                ( (_`-' | | ) |   | | / .`  `' ( (_`-'
+ *                 `._ `. | L-' l   | || '--.     `._ `.
+ *                _   `. \| ,.-^.`. | || +--'    _   `. \
+ *               \ \__.' /| |    \ \| | \ `.__,.\ \__.' /
+ *                `.__.-` |_|    |_||_|  `-.__.J `.__.-`
  *
  * This file is part of uk.co.strangeskies.utilities.
  *
@@ -62,7 +62,7 @@ public interface BaseStreamDecorator<T, S extends BaseStream<T, S>> extends Base
 	/**
 	 * @return the component reference
 	 */
-	S component();
+	S getComponent();
 
 	/**
 	 * @param transformation
@@ -115,7 +115,7 @@ public interface BaseStreamDecorator<T, S extends BaseStream<T, S>> extends Base
 	 *         stream
 	 */
 	default <U> U decorateTerminal(Function<? super S, ? extends U> termination) {
-		return termination.apply(component());
+		return termination.apply(getComponent());
 	}
 
 	/**
@@ -123,7 +123,7 @@ public interface BaseStreamDecorator<T, S extends BaseStream<T, S>> extends Base
 	 *          the terminal operation as a function on a stream
 	 */
 	default void decorateVoidTerminal(Consumer<? super S> termination) {
-		termination.accept(component());
+		termination.accept(getComponent());
 	}
 
 	@Override
@@ -158,11 +158,11 @@ public interface BaseStreamDecorator<T, S extends BaseStream<T, S>> extends Base
 
 	@Override
 	default boolean isParallel() {
-		return component().isParallel();
+		return getComponent().isParallel();
 	}
 
 	@Override
 	default void close() {
-		component().close();
+		getComponent().close();
 	}
 }
