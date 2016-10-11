@@ -32,8 +32,6 @@
  */
 package uk.co.strangeskies.reflection;
 
-import static java.util.Arrays.stream;
-
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
@@ -51,11 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.reflection.TypeToken.Wildcards;
@@ -72,9 +66,9 @@ import uk.co.strangeskies.reflection.TypeToken.Wildcards;
  * @author Elias N Vasylenko
  *
  * @param <O>
- *          The receiver type of the executable.
+ *          the receiver type of the executable
  * @param <R>
- *          The return type of the executable.
+ *          the return type of the executable
  */
 public class InvocableMember<O, R> implements TypeMember<O> {
 	private final TypeResolver resolver;
@@ -1139,110 +1133,5 @@ public class InvocableMember<O, R> implements TypeMember<O> {
 						p -> p.incompatibleArgument(arguments.get(finalI), parameters.get(finalI), finalI, this));
 			}
 		return invoke(receiver, arguments);
-	}
-
-	/**
-	 * Find which constructors can be invoked for this type.
-	 * 
-	 * @return A list of all {@link Constructor} objects applicable to this type,
-	 *         wrapped in {@link InvocableMember} instances.
-	 */
-	public static <T> InvocableMemberStream<InvocableMember<Void, T>> getConstructors(TypeToken<T> type) {
-		return getConstructorsImpl(type, Class::getConstructors);
-	}
-
-	/**
-	 * Find which constructors can be invoked for this type.
-	 * 
-	 * @return A list of all {@link Constructor} objects applicable to this type,
-	 *         wrapped in {@link InvocableMember} instances.
-	 */
-	public static <T> InvocableMemberStream<InvocableMember<Void, T>> getDeclaredConstructors(TypeToken<T> type) {
-		return getConstructorsImpl(type, Class::getDeclaredConstructors);
-	}
-
-	@SuppressWarnings("unchecked")
-	private static <T> InvocableMemberStream<InvocableMember<Void, T>> getConstructorsImpl(TypeToken<T> type,
-			Function<Class<?>, Constructor<?>[]> constructors) {
-		return new InvocableMemberStream<>(type,
-				stream(constructors.apply(type.getClass())).map(m -> over((Constructor<T>) m, type)));
-	}
-
-	/**
-	 * find which methods can be invoked on this type, whether statically or on
-	 * instances
-	 * 
-	 * @return a list of all {@link Method} objects applicable to this type,
-	 *         wrapped in {@link InvocableMember} instances.
-	 */
-	public static <T> InvocableMemberStream<InvocableMember<? super T, ?>> getMethods(TypeToken<T> type) {
-		return getMethodsImpl(type, m -> true, Class::getMethods);
-	}
-
-	/**
-	 * Find which methods can be invoked on this type, whether statically or on
-	 * instances, which pass a filter.
-	 * 
-	 * @param name
-	 *          determine which methods may participate
-	 * @return a list of all {@link Method} objects applicable to this type,
-	 *         wrapped in {@link InvocableMember} instances
-	 */
-	public static <T> InvocableMemberStream<InvocableMember<? super T, ?>> getMethods(TypeToken<T> type, String name) {
-		return getMethodsImpl(type, m -> m.getName().equals(name), Class::getMethods);
-	}
-
-	/**
-	 * Find which methods can be invoked on this type, whether statically or on
-	 * instances.
-	 * 
-	 * @return A list of all {@link Method} objects applicable to this type,
-	 *         wrapped in {@link InvocableMember} instances.
-	 */
-	public static <T> InvocableMemberStream<InvocableMember<? super T, ?>> getDeclaredMethods(TypeToken<T> type) {
-		return getMethodsImpl(type, m -> true, Class::getDeclaredMethods);
-	}
-
-	/**
-	 * Find which methods can be invoked on this type, whether statically or on
-	 * instances, which pass a filter.
-	 * 
-	 * @param name
-	 *          determine which methods may participate
-	 * @return A list of all {@link Method} objects applicable to this type,
-	 *         wrapped in {@link InvocableMember} instances.
-	 */
-	public static <T> InvocableMemberStream<InvocableMember<? super T, ?>> getDeclaredMethods(TypeToken<T> type,
-			String name) {
-		return getMethodsImpl(type, m -> m.getName().equals(name), Class::getDeclaredMethods);
-	}
-
-	private static <T> InvocableMemberStream<InvocableMember<? super T, ?>> getMethodsImpl(TypeToken<T> type,
-			Predicate<Method> filter, Function<Class<?>, Method[]> methods) {
-		Stream<Method> methodStream = type.getRawTypes().stream().flatMap(t -> Arrays.stream(methods.apply(t)));
-
-		if (type.getRawTypes().stream().allMatch(Types::isInterface))
-			methodStream = Stream.concat(methodStream, Arrays.stream(Object.class.getMethods()));
-
-		return new InvocableMemberStream<>(type,
-				methodStream.filter(filter).map(m -> (InvocableMember<? super T, ?>) InvocableMember.over(m, type)));
-	}
-
-	@SuppressWarnings("unchecked")
-	public static <T> InvocableMember<T, ?> findInterfaceMethod(TypeToken<T> type, Consumer<? super T> methodLambda) {
-		Method overridden = null;
-
-		for (Class<?> superType : type.getRawTypes()) {
-			if (superType.isInterface()) {
-				try {
-					overridden = Methods.findMethod(superType, (Consumer<Object>) methodLambda);
-				} catch (Exception e) {}
-			}
-		}
-		if (overridden == null) {
-			throw new ReflectionException(p -> p.cannotFindMethodOn(type.getType()));
-		}
-
-		return InvocableMember.over(overridden, type);
 	}
 }

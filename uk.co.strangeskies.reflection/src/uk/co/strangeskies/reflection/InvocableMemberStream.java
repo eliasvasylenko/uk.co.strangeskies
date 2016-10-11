@@ -292,4 +292,8 @@ public class InvocableMemberStream<I extends InvocableMember<?, ?>>
 
 		return true;
 	}
+
+	public InvocableMemberStream<I> named(String name) {
+		return filter(m -> m.getName().equals(name));
+	}
 }

@@ -175,7 +175,7 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 		methods = new HashMap<>();
 		getSuperTypes().stream().flatMap(t -> t.getRawTypes().stream()).flatMap(t -> Arrays.stream(t.getMethods()))
 				.forEach(this::inheritMethod);
-		StreamUtilities.<Class<?>>iterate(getSuperClass(), Class::getSuperclass)
+		StreamUtilities.<Class<?>> iterate(getSuperClass(), Class::getSuperclass)
 				.flatMap(c -> Arrays.stream(c.getDeclaredMethods())).forEach(this::inheritMethod);
 
 		this.receiverExpression = new ValueExpression<T>() {
@@ -328,8 +328,7 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 
 	@SuppressWarnings("unchecked")
 	public MethodDeclaration<T, Void> declareMethodOverride(Consumer<? super T> methodLambda) {
-		InvocableMember<?, ?> overridden = InvocableMember.findInterfaceMethod(getSuperType(),
-				(Consumer<Object>) methodLambda);
+		InvocableMember<?, ?> overridden = getSuperType().findInterfaceMethod((Consumer<Object>) methodLambda);
 
 		return declareMethod(overridden.getName()).withParameters(AnnotatedTypes.over(overridden.getParameters()));
 	}

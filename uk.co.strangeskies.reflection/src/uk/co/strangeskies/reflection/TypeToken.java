@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static java.util.Arrays.stream;
+
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -42,16 +44,20 @@ import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.AnnotatedTypeVariable;
 import java.lang.reflect.AnnotatedWildcardType;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -1607,7 +1613,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	@SuppressWarnings("unchecked")
 	public T cast(Object object) {
 		/*
-		 * TODO actually test castability
+		 * TODO actually test castability ...
 		 */
 		return (T) object;
 	}
@@ -1646,5 +1652,80 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 */
 	public boolean isCastableFrom(Type type) {
 		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * Find which constructors can be invoked for this type.
+	 * 
+	 * @return A list of all {@link Constructor} objects applicable to this type,
+	 *         wrapped in {@link InvocableMember} instances.
+	 */
+	@SuppressWarnings("unchecked")
+	public InvocableMemberStream<InvocableMember<Void, T>> getConstructors() {
+		Stream<Constructor<?>> constructors = stream(getRawType().getConstructors());
+
+		return new InvocableMemberStream<>(this, constructors.map(m -> InvocableMember.over((Constructor<T>) m, this)));
+	}
+
+	/**
+	 * Find which constructors can be invoked for this type.
+	 * 
+	 * @return A list of all {@link Constructor} objects applicable to this type,
+	 *         wrapped in {@link InvocableMember} instances.
+	 */
+	@SuppressWarnings("unchecked")
+	public InvocableMemberStream<InvocableMember<Void, T>> getDeclaredConstructors() {
+		Stream<Constructor<?>> constructors = stream(getRawType().getDeclaredConstructors());
+
+		return new InvocableMemberStream<>(this, constructors.map(m -> InvocableMember.over((Constructor<T>) m, this)));
+	}
+
+	/**
+	 * find which methods can be invoked on this type, whether statically or on
+	 * instances
+	 * 
+	 * @return a list of all {@link Method} objects applicable to this type,
+	 *         wrapped in {@link InvocableMember} instances.
+	 */
+	public InvocableMemberStream<InvocableMember<? super T, ?>> getMethods() {
+		Stream<Method> methodStream = getRawTypes().stream().flatMap(t -> Arrays.stream(t.getMethods()));
+
+		if (getRawTypes().stream().allMatch(Types::isInterface))
+			methodStream = Stream.concat(methodStream, Arrays.stream(Object.class.getMethods()));
+
+		return new InvocableMemberStream<>(this,
+				methodStream.map(m -> (InvocableMember<? super T, ?>) InvocableMember.over(m, this)));
+	}
+
+	/**
+	 * Find which methods can be invoked on this type, whether statically or on
+	 * instances.
+	 * 
+	 * @return A list of all {@link Method} objects applicable to this type,
+	 *         wrapped in {@link InvocableMember} instances.
+	 */
+	public InvocableMemberStream<InvocableMember<? super T, ?>> getDeclaredMethods() {
+		Stream<Method> methodStream = stream(getRawType().getDeclaredMethods());
+
+		return new InvocableMemberStream<>(this,
+				methodStream.map(m -> (InvocableMember<? super T, ?>) InvocableMember.over(m, this)));
+	}
+
+	@SuppressWarnings("unchecked")
+	public InvocableMember<T, ?> findInterfaceMethod(Consumer<? super T> methodLambda) {
+		Method overridden = null;
+
+		for (Class<?> superType : getRawTypes()) {
+			if (superType.isInterface()) {
+				try {
+					overridden = Methods.findMethod(superType, (Consumer<Object>) methodLambda);
+				} catch (Exception e) {}
+			}
+		}
+		if (overridden == null) {
+			throw new ReflectionException(p -> p.cannotFindMethodOn(getType()));
+		}
+
+		return InvocableMember.over(overridden, this);
 	}
 }

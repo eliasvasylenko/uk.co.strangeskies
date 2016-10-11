@@ -32,7 +32,6 @@
  */
 package uk.co.strangeskies.reflection.test;
 
-import static uk.co.strangeskies.reflection.InvocableMember.getMethods;
 import static uk.co.strangeskies.reflection.LiteralExpression.literal;
 
 import org.junit.Assert;
@@ -69,8 +68,8 @@ public class ExpressionTest {
 			.resolveField(TEST_CLASS_TYPE, TEST_FIELD_NAME).withType(TypeToken.over(String.class));
 
 	private static final String TEST_SET_METHOD_NAME = "setMethod";
-	private static final InvocableMember<? super TestClass, ?> TEST_SET_METHOD = getMethods(TEST_CLASS_TYPE,
-			TEST_SET_METHOD_NAME).resolveOverload(STRING_TYPE);
+	private static final InvocableMember<? super TestClass, ?> TEST_SET_METHOD = TEST_CLASS_TYPE.getMethods()
+			.named(TEST_SET_METHOD_NAME).resolveOverload(STRING_TYPE);
 
 	@Test
 	public void fieldAssignmentTest() {

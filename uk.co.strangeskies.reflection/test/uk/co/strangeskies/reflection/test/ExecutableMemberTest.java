@@ -32,8 +32,6 @@
  */
 package uk.co.strangeskies.reflection.test;
 
-import static uk.co.strangeskies.reflection.InvocableMember.getMethods;
-
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -77,21 +75,22 @@ public class ExecutableMemberTest {
 
 	@Test
 	public void emptyVarargsResolutionTest() throws NoSuchMethodException, SecurityException {
-		InvocableMember<?, ?> asList = getMethods(new TypeToken<Arrays>() {}, "asList").resolveOverload();
+		InvocableMember<?, ?> asList = new TypeToken<Arrays>() {}.getMethods().named("asList").resolveOverload();
 
 		Assert.assertTrue(asList.isVariableArityInvocation());
 	}
 
 	@Test
 	public void singleVarargsResolutionTest() throws NoSuchMethodException, SecurityException {
-		InvocableMember<?, ?> asList = getMethods(new TypeToken<Arrays>() {}, "asList").resolveOverload(String.class);
+		InvocableMember<?, ?> asList = new TypeToken<Arrays>() {}.getMethods().named("asList")
+				.resolveOverload(String.class);
 
 		Assert.assertTrue(asList.isVariableArityInvocation());
 	}
 
 	@Test
 	public void varargsResolutionTest() throws NoSuchMethodException, SecurityException {
-		InvocableMember<?, ?> asList = getMethods(new TypeToken<Arrays>() {}, "asList").resolveOverload(String.class,
+		InvocableMember<?, ?> asList = new TypeToken<Arrays>() {}.getMethods().named("asList").resolveOverload(String.class,
 				String.class, String.class);
 
 		Assert.assertTrue(asList.isVariableArityInvocation());
@@ -108,7 +107,7 @@ public class ExecutableMemberTest {
 
 	@Test
 	public void varargsDefinitionResolutionTest() throws NoSuchMethodException, SecurityException {
-		InvocableMember<?, ?> asList = getMethods(new TypeToken<Arrays>() {}, "asList")
+		InvocableMember<?, ?> asList = new TypeToken<Arrays>() {}.getMethods().named("asList")
 				.resolveOverload(new TypeToken<String[]>() {});
 
 		Assert.assertFalse(asList.isVariableArityInvocation());

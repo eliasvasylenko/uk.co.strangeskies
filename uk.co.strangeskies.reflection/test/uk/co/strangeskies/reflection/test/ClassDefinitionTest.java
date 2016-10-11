@@ -33,7 +33,6 @@
 package uk.co.strangeskies.reflection.test;
 
 import static uk.co.strangeskies.reflection.ClassDeclaration.declareClass;
-import static uk.co.strangeskies.reflection.InvocableMember.getMethods;
 
 import java.util.Set;
 import java.util.function.Function;
@@ -83,7 +82,7 @@ public class ClassDefinitionTest {
 
 	@Test
 	public void functionClassInvocationTest() {
-		InvocableMember<? super String, String> concatMethod = getMethods(STRING_TYPE, "concat")
+		InvocableMember<? super String, String> concatMethod = STRING_TYPE.getMethods().named("concat")
 				.resolveOverload(STRING_TYPE).withTargetType(STRING_TYPE);
 
 		ClassDefinition<? extends Function<String, String>> classDefinition = declareClass(TEST_CLASS_NAME)
