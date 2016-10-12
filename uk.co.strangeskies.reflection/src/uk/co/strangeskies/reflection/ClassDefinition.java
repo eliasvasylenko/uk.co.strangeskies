@@ -147,7 +147,7 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 	private final List<TypeToken<? super T>> superTypes;
 	private final TypeToken<T> superType;
 
-	private final Map<Method, InvocableMember<?, ?>> invocables;
+	private final Map<Method, ExecutableToken<?, ?>> invocables;
 	private final Map<MethodSignature, MethodOverride<T>> methods;
 
 	private final ValueExpression<T> receiverExpression;
@@ -323,12 +323,12 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 
 	public MethodDeclaration<T, Void> declareMethodOverride(Method method) {
 		return declareMethod(method.getName())
-				.withParameters(AnnotatedTypes.over(InvocableMember.over(method).getParameters()));
+				.withParameters(AnnotatedTypes.over(ExecutableToken.overMethod(method).getParameters()));
 	}
 
 	@SuppressWarnings("unchecked")
 	public MethodDeclaration<T, Void> declareMethodOverride(Consumer<? super T> methodLambda) {
-		InvocableMember<?, ?> overridden = getSuperType().findInterfaceMethod((Consumer<Object>) methodLambda);
+		ExecutableToken<?, ?> overridden = getSuperType().findInterfaceMethod((Consumer<Object>) methodLambda);
 
 		return declareMethod(overridden.getName()).withParameters(AnnotatedTypes.over(overridden.getParameters()));
 	}
@@ -358,7 +358,7 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 		}
 	}
 
-	protected InvocableMember<?, ?> getInvocable(Method method) {
-		return invocables.computeIfAbsent(method, m -> InvocableMember.over(method, superType));
+	protected ExecutableToken<?, ?> getInvocable(Method method) {
+		return invocables.computeIfAbsent(method, m -> ExecutableToken.overMethod(method, superType));
 	}
 }

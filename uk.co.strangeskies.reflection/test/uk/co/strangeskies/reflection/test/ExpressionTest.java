@@ -38,8 +38,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import uk.co.strangeskies.reflection.Block;
-import uk.co.strangeskies.reflection.FieldMember;
-import uk.co.strangeskies.reflection.InvocableMember;
+import uk.co.strangeskies.reflection.FieldToken;
+import uk.co.strangeskies.reflection.ExecutableToken;
 import uk.co.strangeskies.reflection.LocalVariableExpression;
 import uk.co.strangeskies.reflection.StatementExecutor;
 import uk.co.strangeskies.reflection.TypeToken;
@@ -64,11 +64,11 @@ public class ExpressionTest {
 
 	private static final TypeToken<TestClass> TEST_CLASS_TYPE = new TypeToken<TestClass>() {};
 	private static final String TEST_FIELD_NAME = "field";
-	private static final FieldMember<TestClass, String> TEST_FIELD = FieldMember
+	private static final FieldToken<TestClass, String> TEST_FIELD = FieldToken
 			.resolveField(TEST_CLASS_TYPE, TEST_FIELD_NAME).withType(TypeToken.over(String.class));
 
 	private static final String TEST_SET_METHOD_NAME = "setMethod";
-	private static final InvocableMember<? super TestClass, ?> TEST_SET_METHOD = TEST_CLASS_TYPE.getMethods()
+	private static final ExecutableToken<? super TestClass, ?> TEST_SET_METHOD = TEST_CLASS_TYPE.getMethods()
 			.named(TEST_SET_METHOD_NAME).resolveOverload(STRING_TYPE);
 
 	@Test

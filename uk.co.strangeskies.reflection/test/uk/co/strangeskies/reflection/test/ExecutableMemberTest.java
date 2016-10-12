@@ -38,14 +38,14 @@ import java.util.Collections;
 import org.junit.Assert;
 import org.junit.Test;
 
-import uk.co.strangeskies.reflection.InvocableMember;
+import uk.co.strangeskies.reflection.ExecutableToken;
 import uk.co.strangeskies.reflection.TypeToken;
 
 @SuppressWarnings("javadoc")
 public class ExecutableMemberTest {
 	@Test
 	public void emptyVarargsInvocationTest() throws NoSuchMethodException, SecurityException {
-		InvocableMember<?, ?> asList = InvocableMember.over(Arrays.class.getMethod("asList", Object[].class))
+		ExecutableToken<?, ?> asList = ExecutableToken.overMethod(Arrays.class.getMethod("asList", Object[].class))
 				.asVariableArityInvocation();
 
 		Object list = asList.invoke(null);
@@ -55,7 +55,7 @@ public class ExecutableMemberTest {
 
 	@Test
 	public void singleVarargsInvocationTest() throws NoSuchMethodException, SecurityException {
-		InvocableMember<?, ?> asList = InvocableMember.over(Arrays.class.getMethod("asList", Object[].class))
+		ExecutableToken<?, ?> asList = ExecutableToken.overMethod(Arrays.class.getMethod("asList", Object[].class))
 				.asVariableArityInvocation();
 
 		Object list = asList.invoke(null, "");
@@ -65,7 +65,7 @@ public class ExecutableMemberTest {
 
 	@Test
 	public void varargsInvocationTest() throws NoSuchMethodException, SecurityException {
-		InvocableMember<?, ?> asList = InvocableMember.over(Arrays.class.getMethod("asList", Object[].class))
+		ExecutableToken<?, ?> asList = ExecutableToken.overMethod(Arrays.class.getMethod("asList", Object[].class))
 				.asVariableArityInvocation();
 
 		Object list = asList.invoke(null, "A", "B", "C");
@@ -75,14 +75,14 @@ public class ExecutableMemberTest {
 
 	@Test
 	public void emptyVarargsResolutionTest() throws NoSuchMethodException, SecurityException {
-		InvocableMember<?, ?> asList = new TypeToken<Arrays>() {}.getMethods().named("asList").resolveOverload();
+		ExecutableToken<?, ?> asList = new TypeToken<Arrays>() {}.getMethods().named("asList").resolveOverload();
 
 		Assert.assertTrue(asList.isVariableArityInvocation());
 	}
 
 	@Test
 	public void singleVarargsResolutionTest() throws NoSuchMethodException, SecurityException {
-		InvocableMember<?, ?> asList = new TypeToken<Arrays>() {}.getMethods().named("asList")
+		ExecutableToken<?, ?> asList = new TypeToken<Arrays>() {}.getMethods().named("asList")
 				.resolveOverload(String.class);
 
 		Assert.assertTrue(asList.isVariableArityInvocation());
@@ -90,7 +90,7 @@ public class ExecutableMemberTest {
 
 	@Test
 	public void varargsResolutionTest() throws NoSuchMethodException, SecurityException {
-		InvocableMember<?, ?> asList = new TypeToken<Arrays>() {}.getMethods().named("asList").resolveOverload(String.class,
+		ExecutableToken<?, ?> asList = new TypeToken<Arrays>() {}.getMethods().named("asList").resolveOverload(String.class,
 				String.class, String.class);
 
 		Assert.assertTrue(asList.isVariableArityInvocation());
@@ -98,7 +98,7 @@ public class ExecutableMemberTest {
 
 	@Test
 	public void varargsDefinitionTest() throws NoSuchMethodException, SecurityException {
-		InvocableMember<?, ?> asList = InvocableMember.over(Arrays.class.getMethod("asList", Object[].class));
+		ExecutableToken<?, ?> asList = ExecutableToken.overMethod(Arrays.class.getMethod("asList", Object[].class));
 
 		Object list = asList.invoke(null, new Object[] { new Object[] { "A", "B", "C" } });
 
@@ -107,7 +107,7 @@ public class ExecutableMemberTest {
 
 	@Test
 	public void varargsDefinitionResolutionTest() throws NoSuchMethodException, SecurityException {
-		InvocableMember<?, ?> asList = new TypeToken<Arrays>() {}.getMethods().named("asList")
+		ExecutableToken<?, ?> asList = new TypeToken<Arrays>() {}.getMethods().named("asList")
 				.resolveOverload(new TypeToken<String[]>() {});
 
 		Assert.assertFalse(asList.isVariableArityInvocation());

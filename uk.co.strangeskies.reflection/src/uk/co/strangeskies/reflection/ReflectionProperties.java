@@ -109,31 +109,31 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 	Localized<String> cannotCaptureMultipleTimes(InferenceVariable inferenceVariable, CaptureConversion capture,
 			CaptureConversion captureConversion);
 
-	Localized<String> invalidVariableArityInvocation(InvocableMember<?, ?> executableMember);
+	Localized<String> invalidVariableArityInvocation(ExecutableToken<?, ?> executableMember);
 
 	Localized<String> invalidConstructorArguments(Constructor<?> constructor, TypeToken<?> t, List<?> a);
 
 	Localized<String> invalidMethodArguments(Method method, TypeToken<?> receiver, List<?> a);
 
-	Localized<String> cannotResolveOverride(InvocableMember<?, ?> executableMember, Type type);
+	Localized<String> cannotResolveOverride(ExecutableToken<?, ?> executableMember, Type type);
 
-	Localized<String> cannotResolveAmbiguity(InvocableMember<?, ?> firstCandidate, InvocableMember<?, ?> secondCandidate);
+	Localized<String> cannotResolveAmbiguity(ExecutableToken<?, ?> firstCandidate, ExecutableToken<?, ?> secondCandidate);
 
-	Localized<String> cannotResolveApplicable(Set<? extends InvocableMember<?, ?>> candidates,
+	Localized<String> cannotResolveApplicable(Set<? extends ExecutableToken<?, ?>> candidates,
 			List<? extends TypeToken<?>> parameters);
 
 	Localized<String> incompatibleArgument(Type givenArgumentCaptured, Type genericParameterCaptured, int i,
-			InvocableMember<?, ?> executableMember);
+			ExecutableToken<?, ?> executableMember);
 
 	Localized<String> incompatibleArgument(TypedObject<?> typedObject, Type genericParameterCaptured, int i,
-			InvocableMember<?, ?> executableMember);
+			ExecutableToken<?, ?> executableMember);
 
-	Localized<String> cannotResolveInvocationType(InvocableMember<?, ?> executableMember,
+	Localized<String> cannotResolveInvocationType(ExecutableToken<?, ?> executableMember,
 			List<? extends TypeToken<?>> arguments);
 
-	<O> Localized<String> cannotGetField(O target, FieldMember<O, ?> fieldMember);
+	<O> Localized<String> cannotGetField(O target, FieldToken<O, ?> fieldMember);
 
-	<O, T> Localized<String> cannotSetField(O target, T value, FieldMember<O, ?> fieldMember);
+	<O, T> Localized<String> cannotSetField(O target, T value, FieldToken<O, ?> fieldMember);
 
 	Localized<String> invalidExpressionForStatement(Expression expression);
 

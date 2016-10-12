@@ -48,14 +48,14 @@ public interface ExpressionVisitor {
 
 		void visitReceiver(ClassDefinition<U> classDefinition);
 
-		<O> void visitMethod(ValueExpression<O> receiver, InvocableMember<? super O, U> invocable,
+		<O> void visitMethod(ValueExpression<O> receiver, ExecutableToken<? super O, U> invocable,
 				List<ValueExpression<?>> arguments);
 
 		void visitLocal(LocalVariable<? extends U> local);
 	}
 
 	interface VariableExpressionVisitor<U> {
-		<O> void visitField(ValueExpression<? extends O> value, FieldMember<O, U> field);
+		<O> void visitField(ValueExpression<? extends O> value, FieldToken<O, U> field);
 
 		void visitLocal(LocalVariable<U> local);
 	}

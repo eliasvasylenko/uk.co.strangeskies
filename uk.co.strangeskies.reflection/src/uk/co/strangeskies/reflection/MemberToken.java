@@ -41,7 +41,7 @@ import java.util.Collection;
  * members on generic classes.
  * 
  * <p>
- * {@link TypeMember type members} may be created over types which mention
+ * {@link MemberToken type members} may be created over types which mention
  * inference variables, or even over inference variables themselves.
  * 
  * @author Elias N Vasylenko
@@ -49,20 +49,20 @@ import java.util.Collection;
  * @param <O>
  *          the owner type of the member
  */
-public interface TypeMember<O> {
+public interface MemberToken<O> {
 	/**
 	 * @return the name of the member
 	 */
 	String getName();
 
 	/**
-	 * @return the actual {@link Member} object backing the {@link TypeMember}.
+	 * @return the actual {@link Member} object backing the {@link MemberToken}.
 	 */
 	Member getMember();
 
 	/**
 	 * @return a copy of the {@link TypeResolver} instance backing this
-	 *         {@link TypeMember}
+	 *         {@link MemberToken}
 	 */
 	TypeResolver getResolver();
 
@@ -92,64 +92,68 @@ public interface TypeMember<O> {
 	boolean isStatic();
 
 	/**
-	 * @return The exact owner type of this member. Generic type parameters may
-	 *         include inference variables, and the type may be a subclass of the
-	 *         declaring type.
+	 * @return The exact declaring class of this member.
 	 */
-	TypeToken<O> getOwnerType();
-
-	/**
-	 * @return The type which declares this {@link TypeMember member}. As
-	 *         {@link Member#getDeclaringClass()}, but with any generic type
-	 *         parameters resolved according to the type of
-	 *         {@link #getOwnerType()}.
-	 */
-	@SuppressWarnings("unchecked")
-	default TypeToken<? super O> getDeclaringType() {
-		return (TypeToken<? super O>) getOwnerType().resolveSupertypeParameters(getMember().getDeclaringClass());
+	default Class<?> getDeclaringClass() {
+		return getMember().getDeclaringClass();
 	}
 
 	/**
-	 * Derive a new {@link TypeMember} instance, with the given bounds
+	 * This is the exact instance type of this member, and may be parameterized.
+	 * <p>
+	 * For instance methods, this should be a subtype of the raw
+	 * {@link #getDeclaringClass() declaring class}. For constructors of inner
+	 * classes, or static fields of inner classes, the instance should be a
+	 * subtype of the enclosing class.
+	 * <p>
+	 * Static members and constructors of static classes have no receiver type.
+	 * 
+	 * @return a type token over the receiver type for invocation or field access,
+	 *         or over <code>void.class</code> if the member has no receiver type
+	 */
+	TypeToken<O> getReceiverType();
+
+	/**
+	 * Derive a new {@link MemberToken} instance, with the given bounds
 	 * incorporated into the bounds of the underlying resolver. The original
-	 * {@link TypeMember} will remain unmodified.
+	 * {@link MemberToken} will remain unmodified.
 	 * 
 	 * @param bounds
 	 *          the new bounds to incorporate
-	 * @return the newly derived {@link TypeMember}
+	 * @return the newly derived {@link MemberToken}
 	 */
-	TypeMember<O> withBounds(BoundSet bounds);
+	MemberToken<O> withBounds(BoundSet bounds);
 
 	/**
-	 * Derive a new {@link TypeMember} instance, with the bounds on the given
+	 * Derive a new {@link MemberToken} instance, with the bounds on the given
 	 * inference variables, with respect to the given bound set, incorporated into
-	 * the bounds of the underlying resolver. The original {@link TypeMember} will
-	 * remain unmodified.
+	 * the bounds of the underlying resolver. The original {@link MemberToken}
+	 * will remain unmodified.
 	 * 
 	 * @param bounds
 	 *          The new bounds to incorporate.
 	 * @param inferenceVariables
 	 *          The new inference variables whose bounds are to be incorporated.
-	 * @return The newly derived {@link TypeMember}.
+	 * @return The newly derived {@link MemberToken}.
 	 */
-	TypeMember<O> withBounds(BoundSet bounds, Collection<? extends InferenceVariable> inferenceVariables);
+	MemberToken<O> withBounds(BoundSet bounds, Collection<? extends InferenceVariable> inferenceVariables);
 
 	/**
-	 * Derive a new {@link TypeMember} instance, with the bounds on the given type
-	 * incorporated into the bounds of the underlying resolver. The original
-	 * {@link TypeMember} will remain unmodified.
+	 * Derive a new {@link MemberToken} instance, with the bounds on the given
+	 * type incorporated into the bounds of the underlying resolver. The original
+	 * {@link MemberToken} will remain unmodified.
 	 * 
 	 * @param type
 	 *          The type whose bounds are to be incorporated.
-	 * @return The newly derived {@link TypeMember}.
+	 * @return The newly derived {@link MemberToken}.
 	 */
-	TypeMember<O> withBoundsFrom(TypeToken<?> type);
+	MemberToken<O> withBoundsFrom(TypeToken<?> type);
 
 	/**
-	 * Derive a new instance of {@link TypeMember} with the given owner type.
+	 * Derive a new instance of {@link MemberToken} with the given owner type.
 	 * 
 	 * <p>
-	 * The new {@link TypeMember} will always have a owner type which is as or
+	 * The new {@link MemberToken} will always have a owner type which is as or
 	 * more specific than both the current receiver type <em>and</em> the given
 	 * type. This means that the new owner will be assignment compatible with the
 	 * given type, but if the given type contains wildcards or inference variables
@@ -163,7 +167,7 @@ public interface TypeMember<O> {
 	 * @param type
 	 *          The new owner type. The raw type of this type must be a subtype of
 	 *          the raw type of the current receiver type.
-	 * @return A new {@link TypeMember} compatible with the given owner type.
+	 * @return A new {@link MemberToken} compatible with the given owner type.
 	 * 
 	 *         <p>
 	 *         The new owner type will not be effectively more specific than the
@@ -171,13 +175,13 @@ public interface TypeMember<O> {
 	 *         That is, any type which can be assigned to both the given type and
 	 *         the current owner type, will also be assignable to the new type.
 	 */
-	<U extends O> TypeMember<U> withOwnerType(TypeToken<U> type);
+	<U extends O> MemberToken<U> withOwnerType(TypeToken<U> type);
 
 	/**
-	 * Derive a new instance of {@link TypeMember} with the given owner type.
+	 * Derive a new instance of {@link MemberToken} with the given owner type.
 	 * 
 	 * <p>
-	 * The new {@link TypeMember} will always have a owner type which is as or
+	 * The new {@link MemberToken} will always have a owner type which is as or
 	 * more specific than both the current receiver type <em>and</em> the given
 	 * type. This means that the new owner will be assignment compatible with the
 	 * given type, but if the given type contains wildcards or inference variables
@@ -188,7 +192,7 @@ public interface TypeMember<O> {
 	 * @param type
 	 *          The new owner type. The raw type of this type must be a subtype of
 	 *          the raw type of the current receiver type.
-	 * @return A new {@link TypeMember} compatible with the given owner type.
+	 * @return A new {@link MemberToken} compatible with the given owner type.
 	 * 
 	 *         <p>
 	 *         The new owner type will not be effectively more specific than the
@@ -196,13 +200,13 @@ public interface TypeMember<O> {
 	 *         That is, any type which can be assigned to both the given type and
 	 *         the current owner type, will also be assignable to the new type.
 	 */
-	TypeMember<? extends O> withOwnerType(Type type);
+	MemberToken<? extends O> withOwnerType(Type type);
 
 	/**
-	 * Derived a new {@link TypeMember} instance with all associated generic
+	 * Derived a new {@link MemberToken} instance with all associated generic
 	 * parameters inferred.
 	 * 
-	 * @return the derived {@link TypeMember} with inferred types
+	 * @return the derived {@link MemberToken} with inferred types
 	 */
-	TypeMember<O> infer();
+	MemberToken<O> infer();
 }

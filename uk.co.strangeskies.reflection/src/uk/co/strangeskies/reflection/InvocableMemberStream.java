@@ -23,7 +23,7 @@ import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.utilities.collection.SelfStreamDecorator;
 import uk.co.strangeskies.utilities.tuple.Pair;
 
-public class InvocableMemberStream<I extends InvocableMember<?, ?>>
+public class InvocableMemberStream<I extends ExecutableToken<?, ?>>
 		implements SelfStreamDecorator<I, InvocableMemberStream<I>> {
 	private final TypeToken<?> type;
 	private final Stream<I> members;
@@ -90,7 +90,7 @@ public class InvocableMemberStream<I extends InvocableMember<?, ?>>
 	 *         to invocation with the given parameters.
 	 */
 	@SuppressWarnings("unchecked")
-	public static <I extends InvocableMember<?, ?>> Set<? extends I> resolveApplicableExecutableMembers(
+	public static <I extends ExecutableToken<?, ?>> Set<? extends I> resolveApplicableExecutableMembers(
 			Set<? extends I> candidates, List<? extends TypeToken<?>> parameters) {
 		Map<I, RuntimeException> failures = new LinkedHashMap<>();
 		BiConsumer<I, RuntimeException> putFailures = failures::put;
@@ -121,7 +121,7 @@ public class InvocableMemberStream<I extends InvocableMember<?, ?>>
 		return compatibleCandidates;
 	}
 
-	private static <I extends InvocableMember<?, ?>> Set<? extends I> filterOverloadCandidates(
+	private static <I extends ExecutableToken<?, ?>> Set<? extends I> filterOverloadCandidates(
 			Collection<? extends I> candidates, Function<? super I, I> applicabilityFunction,
 			BiConsumer<I, RuntimeException> failures) {
 		return candidates.stream().map(i -> {
@@ -148,7 +148,7 @@ public class InvocableMemberStream<I extends InvocableMember<?, ?>>
 	 *          The candidates from which to select the most specific.
 	 * @return The most specific of the given candidates.
 	 */
-	public static <I extends InvocableMember<?, ?>> I resolveMostSpecificExecutableMember(
+	public static <I extends ExecutableToken<?, ?>> I resolveMostSpecificExecutableMember(
 			Collection<? extends I> candidates) {
 		if (candidates.size() == 1)
 			return candidates.iterator().next();
@@ -177,7 +177,7 @@ public class InvocableMemberStream<I extends InvocableMember<?, ?>>
 		return mostSpecific;
 	}
 
-	private static <I extends InvocableMember<?, ?>> Set<I> resolveMostSpecificCandidateSet(
+	private static <I extends ExecutableToken<?, ?>> Set<I> resolveMostSpecificCandidateSet(
 			Collection<? extends I> candidates) {
 		List<I> remainingCandidates = new ArrayList<>(candidates);
 
@@ -229,8 +229,8 @@ public class InvocableMemberStream<I extends InvocableMember<?, ?>>
 		return new HashSet<>(remainingCandidates);
 	}
 
-	private static Pair<Boolean, Boolean> compareCandidates(InvocableMember<?, ?> firstCandidate,
-			InvocableMember<?, ?> secondCandidate) {
+	private static Pair<Boolean, Boolean> compareCandidates(ExecutableToken<?, ?> firstCandidate,
+			ExecutableToken<?, ?> secondCandidate) {
 		boolean firstMoreSpecific = true;
 		boolean secondMoreSpecific = true;
 
@@ -267,8 +267,8 @@ public class InvocableMemberStream<I extends InvocableMember<?, ?>>
 		return new Pair<>(firstMoreSpecific, secondMoreSpecific);
 	}
 
-	private static boolean compareGenericCandidate(InvocableMember<?, ?> firstCandidate,
-			InvocableMember<?, ?> genericCandidate) {
+	private static boolean compareGenericCandidate(ExecutableToken<?, ?> firstCandidate,
+			ExecutableToken<?, ?> genericCandidate) {
 		TypeResolver resolver = genericCandidate.getResolver();
 
 		try {

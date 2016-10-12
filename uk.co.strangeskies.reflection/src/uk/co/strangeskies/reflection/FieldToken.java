@@ -54,7 +54,7 @@ import java.util.stream.Collectors;
  * of generic methods, and methods on generic classes.
  * 
  * <p>
- * {@link InvocableMember executable members} may be created over types which
+ * {@link ExecutableToken executable members} may be created over types which
  * mention inference variables, or even over inference variables themselves.
  * 
  * @author Elias N Vasylenko
@@ -64,31 +64,31 @@ import java.util.stream.Collectors;
  * @param <T>
  *          the type of the field
  */
-public class FieldMember<O, T> implements TypeMember<O> {
+public class FieldToken<O, T> implements MemberToken<O> {
 	private final TypeToken<O> ownerType;
 	private final TypeToken<T> fieldType;
 	private final Field field;
 
-	private FieldMember(Field field, TypeToken<O> ownerType, TypeToken<T> fieldType) {
+	private FieldToken(Field field, TypeToken<O> ownerType, TypeToken<T> fieldType) {
 		this.field = field;
 		this.ownerType = ownerType;
 		this.fieldType = fieldType;
 	}
 
 	/**
-	 * Create a new {@link FieldMember} instance from a reference to a
+	 * Create a new {@link FieldToken} instance from a reference to a
 	 * {@link Field}.
 	 * 
 	 * @param field
 	 *          the field to wrap
 	 * @return a field member wrapping the given field
 	 */
-	public static FieldMember<?, ?> over(Field field) {
+	public static FieldToken<?, ?> over(Field field) {
 		return over(field, ParameterizedTypes.from(field.getDeclaringClass(), a -> unbounded()));
 	}
 
 	/**
-	 * Create a new {@link FieldMember} instance from a reference to a
+	 * Create a new {@link FieldToken} instance from a reference to a
 	 * {@link Field}.
 	 * 
 	 * @param <O>
@@ -99,8 +99,8 @@ public class FieldMember<O, T> implements TypeMember<O> {
 	 *          the type to which the field belongs
 	 * @return a field member wrapping the given field
 	 */
-	public static <O> FieldMember<O, ?> over(Field field, TypeToken<O> ownerType) {
-		return new FieldMember<>(field, ownerType, TypeToken.over(ownerType.resolveType(field.getGenericType())));
+	public static <O> FieldToken<O, ?> over(Field field, TypeToken<O> ownerType) {
+		return new FieldToken<>(field, ownerType, TypeToken.over(ownerType.resolveType(field.getGenericType())));
 	}
 
 	@Override
@@ -158,7 +158,7 @@ public class FieldMember<O, T> implements TypeMember<O> {
 	}
 
 	@Override
-	public TypeToken<O> getOwnerType() {
+	public TypeToken<O> getReceiverType() {
 		return ownerType;
 	}
 
@@ -172,47 +172,47 @@ public class FieldMember<O, T> implements TypeMember<O> {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public FieldMember<O, T> withBounds(BoundSet bounds) {
-		return (FieldMember<O, T>) over(field, ownerType.withBounds(bounds));
+	public FieldToken<O, T> withBounds(BoundSet bounds) {
+		return (FieldToken<O, T>) over(field, ownerType.withBounds(bounds));
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public FieldMember<O, T> withBounds(BoundSet bounds, Collection<? extends InferenceVariable> inferenceVariables) {
-		return (FieldMember<O, T>) over(field, ownerType.withBounds(bounds, inferenceVariables));
+	public FieldToken<O, T> withBounds(BoundSet bounds, Collection<? extends InferenceVariable> inferenceVariables) {
+		return (FieldToken<O, T>) over(field, ownerType.withBounds(bounds, inferenceVariables));
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public FieldMember<O, T> withBoundsFrom(TypeToken<?> type) {
-		return (FieldMember<O, T>) over(field, ownerType.withBoundsFrom(type));
+	public FieldToken<O, T> withBoundsFrom(TypeToken<?> type) {
+		return (FieldToken<O, T>) over(field, ownerType.withBoundsFrom(type));
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <U extends O> FieldMember<U, ? extends T> withOwnerType(TypeToken<U> type) {
-		return (FieldMember<U, ? extends T>) withBoundsFrom(type).withOwnerType(type.getType());
+	public <U extends O> FieldToken<U, ? extends T> withOwnerType(TypeToken<U> type) {
+		return (FieldToken<U, ? extends T>) withBoundsFrom(type).withOwnerType(type.getType());
 	}
 
 	@Override
-	public FieldMember<? extends O, ? extends T> withOwnerType(Type type) {
-		return new FieldMember<>(field, ownerType, fieldType);
+	public FieldToken<? extends O, ? extends T> withOwnerType(Type type) {
+		return new FieldToken<>(field, ownerType, fieldType);
 	}
 
 	@SuppressWarnings("unchecked")
-	public <U> FieldMember<O, U> withType(TypeToken<U> type) {
-		return (FieldMember<O, U>) withBoundsFrom(type).withType(type.getType());
+	public <U> FieldToken<O, U> withType(TypeToken<U> type) {
+		return (FieldToken<O, U>) withBoundsFrom(type).withType(type.getType());
 	}
 
-	public FieldMember<O, ? extends T> withType(Type type) {
+	public FieldToken<O, ? extends T> withType(Type type) {
 		getFieldType().withLooseCompatibilityTo(type);
 		return this;
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public FieldMember<O, T> infer() {
-		return (FieldMember<O, T>) over(field, ownerType.infer());
+	public FieldToken<O, T> infer() {
+		return (FieldToken<O, T>) over(field, ownerType.infer());
 	}
 
 	/**
@@ -250,13 +250,13 @@ public class FieldMember<O, T> implements TypeMember<O> {
 	 *          the type for which to retrieve the set of fields
 	 * 
 	 * @return A list of all {@link Field} objects applicable to this type,
-	 *         wrapped in {@link FieldMember} instances.
+	 *         wrapped in {@link FieldToken} instances.
 	 */
-	public static <T> Set<? extends FieldMember<T, ?>> getFields(TypeToken<T> type) {
+	public static <T> Set<? extends FieldToken<T, ?>> getFields(TypeToken<T> type) {
 		return getFields(type, c -> true);
 	}
 
-	static <T> Set<? extends FieldMember<T, ?>> getFields(TypeToken<T> type, Predicate<Field> filter) {
+	static <T> Set<? extends FieldToken<T, ?>> getFields(TypeToken<T> type, Predicate<Field> filter) {
 		return getFieldsImpl(type, filter, Class::getFields);
 	}
 
@@ -267,20 +267,20 @@ public class FieldMember<O, T> implements TypeMember<O> {
 	 *          the type for which to retrieve the set of fields
 	 * 
 	 * @return A list of all {@link Field} objects applicable to this type,
-	 *         wrapped in {@link FieldMember} instances.
+	 *         wrapped in {@link FieldToken} instances.
 	 */
-	public static <T> Set<? extends FieldMember<T, ?>> getDeclaredFields(TypeToken<T> type) {
+	public static <T> Set<? extends FieldToken<T, ?>> getDeclaredFields(TypeToken<T> type) {
 		return getDeclaredFields(type, c -> true);
 	}
 
-	static <T> Set<? extends FieldMember<T, ?>> getDeclaredFields(TypeToken<T> type, Predicate<Field> filter) {
+	static <T> Set<? extends FieldToken<T, ?>> getDeclaredFields(TypeToken<T> type, Predicate<Field> filter) {
 		return getFieldsImpl(type, filter, Class::getDeclaredFields);
 	}
 
-	private static <T> Set<? extends FieldMember<T, ?>> getFieldsImpl(TypeToken<T> type, Predicate<Field> filter,
+	private static <T> Set<? extends FieldToken<T, ?>> getFieldsImpl(TypeToken<T> type, Predicate<Field> filter,
 			Function<Class<?>, Field[]> fields) {
 		return Arrays.stream(fields.apply(type.getRawType())).filter(filter)
-				.map(m -> (FieldMember<T, ?>) FieldMember.over(m, type)).collect(Collectors.toCollection(LinkedHashSet::new));
+				.map(m -> (FieldToken<T, ?>) FieldToken.over(m, type)).collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 
 	/**
@@ -291,7 +291,7 @@ public class FieldMember<O, T> implements TypeMember<O> {
 	 *          the name of the field
 	 * @return a field matching the given name
 	 */
-	public static <T> FieldMember<T, ?> resolveField(TypeToken<T> type, String name) {
+	public static <T> FieldToken<T, ?> resolveField(TypeToken<T> type, String name) {
 		return resolveFieldsImpl(type, name, p -> getFields(type, p)).stream().findFirst().get();
 	}
 
@@ -302,7 +302,7 @@ public class FieldMember<O, T> implements TypeMember<O> {
 	 *          the name of the field
 	 * @return a field matching the given name
 	 */
-	public static <T> FieldMember<T, ?> resolveDeclaredField(TypeToken<T> type, String name) {
+	public static <T> FieldToken<T, ?> resolveDeclaredField(TypeToken<T> type, String name) {
 		return resolveFieldsImpl(type, name, p -> getDeclaredFields(type, p)).stream().findFirst().get();
 	}
 
@@ -314,13 +314,13 @@ public class FieldMember<O, T> implements TypeMember<O> {
 	 *          the name of the field
 	 * @return a field matching the given name
 	 */
-	public static <T> List<FieldMember<T, ?>> resolveFields(TypeToken<T> type, String name) {
+	public static <T> List<FieldToken<T, ?>> resolveFields(TypeToken<T> type, String name) {
 		return resolveFieldsImpl(type, name, p -> getFields(type, p));
 	}
 
-	private static <T> List<FieldMember<T, ?>> resolveFieldsImpl(TypeToken<T> type, String name,
-			Function<Predicate<Field>, Set<? extends FieldMember<T, ?>>> fields) {
-		Set<? extends FieldMember<T, ? extends Object>> candidates = fields.apply(m -> m.getName().equals(name));
+	private static <T> List<FieldToken<T, ?>> resolveFieldsImpl(TypeToken<T> type, String name,
+			Function<Predicate<Field>, Set<? extends FieldToken<T, ?>>> fields) {
+		Set<? extends FieldToken<T, ? extends Object>> candidates = fields.apply(m -> m.getName().equals(name));
 
 		if (candidates.isEmpty())
 			throw new IllegalArgumentException("Cannot find any field '" + name + "' in '" + type + "'");

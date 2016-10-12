@@ -41,7 +41,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import uk.co.strangeskies.reflection.ClassDefinition;
-import uk.co.strangeskies.reflection.InvocableMember;
+import uk.co.strangeskies.reflection.ExecutableToken;
 import uk.co.strangeskies.reflection.MethodDeclaration;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeToken;
@@ -82,7 +82,7 @@ public class ClassDefinitionTest {
 
 	@Test
 	public void functionClassInvocationTest() {
-		InvocableMember<? super String, String> concatMethod = STRING_TYPE.getMethods().named("concat")
+		ExecutableToken<? super String, String> concatMethod = STRING_TYPE.getMethods().named("concat")
 				.resolveOverload(STRING_TYPE).withTargetType(STRING_TYPE);
 
 		ClassDefinition<? extends Function<String, String>> classDefinition = declareClass(TEST_CLASS_NAME)

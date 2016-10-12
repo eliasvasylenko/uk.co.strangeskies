@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.reflection;
 
-import static uk.co.strangeskies.reflection.FieldMember.resolveField;
+import static uk.co.strangeskies.reflection.FieldToken.resolveField;
 
 import java.util.Arrays;
 import java.util.List;
@@ -49,7 +49,7 @@ public interface ValueExpression<T> extends Expression {
 
 	TypeToken<T> getType();
 
-	default <R> FieldExpression<? super T, R> accessField(FieldMember<? super T, R> field) {
+	default <R> FieldExpression<? super T, R> accessField(FieldToken<? super T, R> field) {
 		return new FieldExpression<>(this, field);
 	}
 
@@ -57,12 +57,12 @@ public interface ValueExpression<T> extends Expression {
 		return accessField(resolveField(getType(), fieldName));
 	}
 
-	default <R> MethodExpression<? super T, R> invokeMethod(InvocableMember<? super T, R> invocable,
+	default <R> MethodExpression<? super T, R> invokeMethod(ExecutableToken<? super T, R> invocable,
 			ValueExpression<?>... arguments) {
 		return invokeMethod(invocable, Arrays.asList(arguments));
 	}
 
-	default <R> MethodExpression<? super T, R> invokeMethod(InvocableMember<? super T, R> invocable,
+	default <R> MethodExpression<? super T, R> invokeMethod(ExecutableToken<? super T, R> invocable,
 			List<ValueExpression<?>> arguments) {
 		return new MethodExpression<>(this, invocable, arguments);
 	}

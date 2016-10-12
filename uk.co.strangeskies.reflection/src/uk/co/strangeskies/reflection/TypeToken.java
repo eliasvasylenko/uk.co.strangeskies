@@ -1658,26 +1658,26 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * Find which constructors can be invoked for this type.
 	 * 
 	 * @return A list of all {@link Constructor} objects applicable to this type,
-	 *         wrapped in {@link InvocableMember} instances.
+	 *         wrapped in {@link ExecutableToken} instances.
 	 */
 	@SuppressWarnings("unchecked")
-	public InvocableMemberStream<InvocableMember<Void, T>> getConstructors() {
+	public InvocableMemberStream<ExecutableToken<Void, T>> getConstructors() {
 		Stream<Constructor<?>> constructors = stream(getRawType().getConstructors());
 
-		return new InvocableMemberStream<>(this, constructors.map(m -> InvocableMember.over((Constructor<T>) m, this)));
+		return new InvocableMemberStream<>(this, constructors.map(m -> ExecutableToken.overConstructor((Constructor<T>) m, this)));
 	}
 
 	/**
 	 * Find which constructors can be invoked for this type.
 	 * 
 	 * @return A list of all {@link Constructor} objects applicable to this type,
-	 *         wrapped in {@link InvocableMember} instances.
+	 *         wrapped in {@link ExecutableToken} instances.
 	 */
 	@SuppressWarnings("unchecked")
-	public InvocableMemberStream<InvocableMember<Void, T>> getDeclaredConstructors() {
+	public InvocableMemberStream<ExecutableToken<Void, T>> getDeclaredConstructors() {
 		Stream<Constructor<?>> constructors = stream(getRawType().getDeclaredConstructors());
 
-		return new InvocableMemberStream<>(this, constructors.map(m -> InvocableMember.over((Constructor<T>) m, this)));
+		return new InvocableMemberStream<>(this, constructors.map(m -> ExecutableToken.overConstructor((Constructor<T>) m, this)));
 	}
 
 	/**
@@ -1685,16 +1685,16 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * instances
 	 * 
 	 * @return a list of all {@link Method} objects applicable to this type,
-	 *         wrapped in {@link InvocableMember} instances.
+	 *         wrapped in {@link ExecutableToken} instances.
 	 */
-	public InvocableMemberStream<InvocableMember<? super T, ?>> getMethods() {
+	public InvocableMemberStream<ExecutableToken<? super T, ?>> getMethods() {
 		Stream<Method> methodStream = getRawTypes().stream().flatMap(t -> Arrays.stream(t.getMethods()));
 
 		if (getRawTypes().stream().allMatch(Types::isInterface))
 			methodStream = Stream.concat(methodStream, Arrays.stream(Object.class.getMethods()));
 
 		return new InvocableMemberStream<>(this,
-				methodStream.map(m -> (InvocableMember<? super T, ?>) InvocableMember.over(m, this)));
+				methodStream.map(m -> (ExecutableToken<? super T, ?>) ExecutableToken.overMethod(m, this)));
 	}
 
 	/**
@@ -1702,17 +1702,17 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * instances.
 	 * 
 	 * @return A list of all {@link Method} objects applicable to this type,
-	 *         wrapped in {@link InvocableMember} instances.
+	 *         wrapped in {@link ExecutableToken} instances.
 	 */
-	public InvocableMemberStream<InvocableMember<? super T, ?>> getDeclaredMethods() {
+	public InvocableMemberStream<ExecutableToken<? super T, ?>> getDeclaredMethods() {
 		Stream<Method> methodStream = stream(getRawType().getDeclaredMethods());
 
 		return new InvocableMemberStream<>(this,
-				methodStream.map(m -> (InvocableMember<? super T, ?>) InvocableMember.over(m, this)));
+				methodStream.map(m -> (ExecutableToken<? super T, ?>) ExecutableToken.overMethod(m, this)));
 	}
 
 	@SuppressWarnings("unchecked")
-	public InvocableMember<T, ?> findInterfaceMethod(Consumer<? super T> methodLambda) {
+	public ExecutableToken<T, ?> findInterfaceMethod(Consumer<? super T> methodLambda) {
 		Method overridden = null;
 
 		for (Class<?> superType : getRawTypes()) {
@@ -1726,6 +1726,6 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 			throw new ReflectionException(p -> p.cannotFindMethodOn(getType()));
 		}
 
-		return InvocableMember.over(overridden, this);
+		return ExecutableToken.overMethod(overridden, this);
 	}
 }

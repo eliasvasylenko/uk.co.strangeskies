@@ -95,7 +95,7 @@ public class ExpressionEvaluator {
 		}
 
 		@Override
-		public <O> void visitMethod(ValueExpression<O> receiver, InvocableMember<? super O, T> invocable,
+		public <O> void visitMethod(ValueExpression<O> receiver, ExecutableToken<? super O, T> invocable,
 				List<ValueExpression<?>> arguments) {
 			O targetObject = evaluate(receiver).get();
 
@@ -127,7 +127,7 @@ public class ExpressionEvaluator {
 		}
 
 		@Override
-		public <O> void visitField(ValueExpression<? extends O> value, FieldMember<O, T> field) {
+		public <O> void visitField(ValueExpression<? extends O> value, FieldToken<O, T> field) {
 			O targetObject = evaluate(value).get();
 
 			complete(new VariableResult<T>() {

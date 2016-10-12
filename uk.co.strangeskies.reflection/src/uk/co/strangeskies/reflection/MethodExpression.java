@@ -38,10 +38,10 @@ import uk.co.strangeskies.reflection.ExpressionVisitor.ValueExpressionVisitor;
 
 public class MethodExpression<O, T> implements ValueExpression<T> {
 	private final ValueExpression<? extends O> receiver;
-	private final InvocableMember<O, T> invocable;
+	private final ExecutableToken<O, T> invocable;
 	private final List<ValueExpression<?>> arguments;
 
-	protected MethodExpression(ValueExpression<? extends O> receiver, InvocableMember<O, T> invocable,
+	protected MethodExpression(ValueExpression<? extends O> receiver, ExecutableToken<O, T> invocable,
 			List<ValueExpression<?>> arguments) {
 		this.receiver = receiver;
 		this.invocable = invocable;
@@ -58,7 +58,7 @@ public class MethodExpression<O, T> implements ValueExpression<T> {
 		return invocable.getReturnType();
 	}
 
-	public static <T> MethodExpression<Void, T> invokeStatic(InvocableMember<Void, T> definingClass,
+	public static <T> MethodExpression<Void, T> invokeStatic(ExecutableToken<Void, T> definingClass,
 			ValueExpression<?>... arguments) {
 		return null;
 	}

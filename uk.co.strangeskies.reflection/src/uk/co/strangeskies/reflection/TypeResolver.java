@@ -82,7 +82,7 @@ import uk.co.strangeskies.utilities.IdentityProperty;
  * <p>
  * A {@link TypeResolver} is a flexible and powerful tool, but for typical
  * use-cases it may be recommended to use the more limited, but more type safe,
- * facilities provided by the {@link TypeToken} and {@link InvocableMember}
+ * facilities provided by the {@link TypeToken} and {@link ExecutableToken}
  * classes.
  * 
  * @author Elias N Vasylenko
