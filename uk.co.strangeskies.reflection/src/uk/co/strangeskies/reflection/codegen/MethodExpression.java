@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import static java.util.Arrays.asList;
+
 import java.util.List;
 
 import uk.co.strangeskies.reflection.ExecutableToken;
@@ -60,8 +62,27 @@ public class MethodExpression<O, T> implements ValueExpression<T> {
 		return invocable.getReturnType();
 	}
 
-	public static <T> MethodExpression<Void, T> invokeStatic(ExecutableToken<Void, T> definingClass,
+	/**
+	 * @see #invokeStatic(ExecutableToken, List)
+	 */
+	@SuppressWarnings("javadoc")
+	public static <T> MethodExpression<Void, T> invokeStatic(ExecutableToken<Void, T> executable,
 			ValueExpression<?>... arguments) {
-		return null;
+		return invokeStatic(executable, asList(arguments));
+	}
+
+	/**
+	 * @param <T>
+	 *          the type of the result of the execution
+	 * @param executable
+	 *          the executable to be invoked
+	 * @param arguments
+	 *          the expressions of the arguments of the invocation
+	 * @return an expression describing the invocation of the given static
+	 *         executable with the given argument expressions
+	 */
+	public static <T> MethodExpression<Void, T> invokeStatic(ExecutableToken<Void, T> executable,
+			List<ValueExpression<?>> arguments) {
+		return new MethodExpression<>(null, executable, arguments);
 	}
 }
