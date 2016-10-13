@@ -175,7 +175,7 @@ public interface MemberToken<O> {
 	 *         That is, any type which can be assigned to both the given type and
 	 *         the current owner type, will also be assignable to the new type.
 	 */
-	<U extends O> MemberToken<U> withOwnerType(TypeToken<U> type);
+	<U extends O> MemberToken<U> withReceiverType(TypeToken<U> type);
 
 	/**
 	 * Derive a new instance of {@link MemberToken} with the given owner type.
@@ -200,7 +200,7 @@ public interface MemberToken<O> {
 	 *         That is, any type which can be assigned to both the given type and
 	 *         the current owner type, will also be assignable to the new type.
 	 */
-	MemberToken<? extends O> withOwnerType(Type type);
+	MemberToken<? extends O> withReceiverType(Type type);
 
 	/**
 	 * Derived a new {@link MemberToken} instance with all associated generic

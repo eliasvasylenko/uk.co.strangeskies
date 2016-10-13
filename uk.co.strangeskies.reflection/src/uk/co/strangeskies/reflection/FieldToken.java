@@ -190,12 +190,12 @@ public class FieldToken<O, T> implements MemberToken<O> {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <U extends O> FieldToken<U, ? extends T> withOwnerType(TypeToken<U> type) {
-		return (FieldToken<U, ? extends T>) withBoundsFrom(type).withOwnerType(type.getType());
+	public <U extends O> FieldToken<U, ? extends T> withReceiverType(TypeToken<U> type) {
+		return (FieldToken<U, ? extends T>) withBoundsFrom(type).withReceiverType(type.getType());
 	}
 
 	@Override
-	public FieldToken<? extends O, ? extends T> withOwnerType(Type type) {
+	public FieldToken<? extends O, ? extends T> withReceiverType(Type type) {
 		return new FieldToken<>(field, ownerType, fieldType);
 	}
 

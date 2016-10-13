@@ -60,8 +60,8 @@ import org.junit.Test;
 import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.AnnotatedWildcardTypes;
 import uk.co.strangeskies.reflection.Annotations;
-import uk.co.strangeskies.reflection.Imports;
 import uk.co.strangeskies.reflection.ExecutableToken;
+import uk.co.strangeskies.reflection.Imports;
 import uk.co.strangeskies.reflection.TypeParameter;
 import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.TypeToken.Capture;
@@ -484,7 +484,7 @@ public class TypeTokenTest {
 		System.out.println();
 
 		ExecutableToken<?, ?> blurner = new TypeToken<@Infer Blurn<? extends List<? extends Number>>>() {}.getMethods()
-				.named("blurn").resolveOverload().withOwnerType(new TypeToken<Gurn<Integer>>() {});
+				.named("blurn").resolveOverload().withReceiverType(new TypeToken<Gurn<Integer>>() {});
 		System.out.println(blurner);
 		System.out.println();
 
@@ -496,7 +496,7 @@ public class TypeTokenTest {
 		System.out.println();
 
 		System.out.println(new TypeToken<SchemaNode<?, ?>>() {}.getMethods().named("children").resolveOverload()
-				.withTargetType(getIteratorExtending(new TypeToken<@Infer ChildNode<?, ?>>() {})));
+				.withTargetType(getIteratorExtending(new @Infer TypeToken<ChildNode<?, ?>>() {})));
 		System.out.println();
 
 		System.out.println(new TypeToken<ChoiceNode>() {}.getMethods().named("getName").resolveOverload(new ArrayList<>()));
