@@ -57,7 +57,7 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration implements
 	}
 
 	protected static <C> MethodDeclaration<C, Void> declareMethod(ClassDefinition<C> classDefinition, String methodName) {
-		return new MethodDeclaration<>(classDefinition, methodName, TypeToken.over(void.class));
+		return new MethodDeclaration<>(classDefinition, methodName, TypeToken.overType(void.class));
 	}
 
 	@Override

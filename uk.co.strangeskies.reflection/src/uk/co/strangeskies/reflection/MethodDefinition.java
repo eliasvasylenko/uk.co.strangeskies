@@ -63,9 +63,9 @@ public abstract class MethodDefinition<C, T> extends ParameterizedDefinition<Met
 		parameters.trimToSize();
 		this.parameters = Collections.unmodifiableList(parameters);
 		if (declaration.getReturnType() == null) {
-			this.returnType = (TypeToken<T>) TypeToken.over(void.class);
+			this.returnType = (TypeToken<T>) TypeToken.overType(void.class);
 		} else {
-			this.returnType = (TypeToken<T>) TypeToken.over(declaration.getReturnType());
+			this.returnType = (TypeToken<T>) TypeToken.overAnnotatedType(declaration.getReturnType());
 		}
 
 		overrideSignature = new MethodSignature(methodName,
@@ -86,11 +86,11 @@ public abstract class MethodDefinition<C, T> extends ParameterizedDefinition<Met
 	}
 
 	private <U> LocalVariableExpression<U> getParameter(VariableExpressionProxy<U> proxy, AnnotatedType type) {
-		TypeToken<?> typeToken = TypeToken.over(substituteTypeVariableSignatures(type));
+		TypeToken<?> typeToken = TypeToken.overAnnotatedType(substituteTypeVariableSignatures(type));
 
 		@SuppressWarnings("unchecked")
 		LocalVariableExpression<U> variable = (LocalVariableExpression<U>) new LocalVariableExpression<>(
-				TypeToken.over(type));
+				TypeToken.overAnnotatedType(type));
 		proxy.setComponent(variable);
 
 		return variable;

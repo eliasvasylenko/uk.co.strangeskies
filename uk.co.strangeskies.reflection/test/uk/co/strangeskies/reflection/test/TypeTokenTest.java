@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.reflection.test;
 
-import static uk.co.strangeskies.reflection.TypeToken.over;
+import static uk.co.strangeskies.reflection.TypeToken.overType;
 
 import java.io.Serializable;
 import java.lang.annotation.ElementType;
@@ -220,23 +220,23 @@ public class TypeTokenTest {
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeToken.over(new TypeToken<Nest<?>>() {}.getType()));
+		System.out.println(TypeToken.overType(new TypeToken<Nest<?>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeToken.over(new TypeToken<C2<?>>() {}.getType()));
+		System.out.println(TypeToken.overType(new TypeToken<C2<?>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeToken.over(new TypeToken<C1<?>>() {}.getType()));
+		System.out.println(TypeToken.overType(new TypeToken<C1<?>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeToken.over(new TypeToken<Base<LeftN, RightN>>() {}.getType()));
+		System.out.println(TypeToken.overType(new TypeToken<Base<LeftN, RightN>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeToken.over(new TypeToken<RightN>() {}.resolveSupertypeParameters(Base.class).getType()));
+		System.out.println(TypeToken.overType(new TypeToken<RightN>() {}.resolveSupertypeParameters(Base.class).getType()));
 		System.out.println();
 		System.out.println();
 
@@ -251,7 +251,7 @@ public class TypeTokenTest {
 		System.out.println();
 		System.out.println();
 
-		System.out.println(TypeToken.over(new TypeToken<C1<? extends C1<?>>>() {}.getType()));
+		System.out.println(TypeToken.overType(new TypeToken<C1<? extends C1<?>>>() {}.getType()));
 		System.out.println();
 		System.out.println();
 
@@ -271,19 +271,20 @@ public class TypeTokenTest {
 
 		receiver = new TypeToken<SchemaNodeConfigurator<?, ?>>() {};
 		System.out.println("RESOLVE 2:");
-		System.out.println(TypeToken.over(receiver.getType()).getMethods().named("name").resolveOverload(String.class));
+		System.out.println(TypeToken.overType(receiver.getType()).getMethods().named("name").resolveOverload(String.class));
 		System.out.println();
 		System.out.println();
 
 		receiver = new TypeToken<ChildNodeConfigurator<?, ?>>() {};
 		System.out.println("RESOLVE 3:");
-		System.out.println(TypeToken.over(receiver.getType()).getMethods().named("name").resolveOverload(String.class));
+		System.out.println(TypeToken.overType(receiver.getType()).getMethods().named("name").resolveOverload(String.class));
 		System.out.println();
 		System.out.println();
 
 		receiver = new TypeToken<DataBindingType.Effective<?>>() {};
 		System.out.println("RESOLVE 4:");
-		System.out.println(TypeToken.over(receiver.getType()).getMethods().named("child").resolveOverload(String.class));
+		System.out
+				.println(TypeToken.overType(receiver.getType()).getMethods().named("child").resolveOverload(String.class));
 		System.out.println();
 		System.out.println();
 
@@ -301,7 +302,7 @@ public class TypeTokenTest {
 	public <H extends C2<H>> void huge2Test() {
 		System.out.println("<T extends Number, U extends List<? super T>> U method4(Collection<? extends T> a, U b)");
 		System.out.println("((B) null).method4((Collection<? extends Integer>) null, (List<? super Number>) null)");
-		System.out.println(TypeToken.over(B.class).getMethods().named("method4")
+		System.out.println(TypeToken.overType(B.class).getMethods().named("method4")
 				.resolveOverload(new TypeToken<Collection<? extends Integer>>() {}.getType(),
 						new TypeToken<List<? super Number>>() {}.getType())
 				.infer());
@@ -311,20 +312,20 @@ public class TypeTokenTest {
 		System.out.println(new TypeToken<List<String>>() {});
 		System.out.println();
 
-		System.out.println(TypeToken.over(B.class).getMethods().named("bothways")
+		System.out.println(TypeToken.overType(B.class).getMethods().named("bothways")
 				.resolveOverload(String.class, new TypeToken<List<String>>() {}.getType()).infer());
 		System.out.println();
 
-		System.out
-				.println(TypeToken.over(B.class).getMethods().named("moothod").resolveOverload(Integer.class, Number.class));
+		System.out.println(
+				TypeToken.overType(B.class).getMethods().named("moothod").resolveOverload(Integer.class, Number.class));
+		System.out.println();
+
+		System.out.println(
+				TypeToken.overType(B.class).getMethods().named("moothod").resolveOverload(Number.class, Integer.class));
 		System.out.println();
 
 		System.out
-				.println(TypeToken.over(B.class).getMethods().named("moothod").resolveOverload(Number.class, Integer.class));
-		System.out.println();
-
-		System.out
-				.println(TypeToken.over(B.class).getMethods().named("moothod").resolveOverload(Number.class, Number.class));
+				.println(TypeToken.overType(B.class).getMethods().named("moothod").resolveOverload(Number.class, Number.class));
 		System.out.println();
 
 		/*-
@@ -334,25 +335,25 @@ public class TypeTokenTest {
 		 */
 
 		System.out.println(new TypeToken<List<? extends Number>>() {}.getType());
-		System.out.println(TypeToken.over(Arrays.class).getMethods().named("asList")
+		System.out.println(TypeToken.overType(Arrays.class).getMethods().named("asList")
 				.resolveOverload(int.class, double.class).withTargetType(new TypeToken<List<? extends Number>>() {}).infer());
 		System.out.println();
 
 		System.out
-				.println(TypeToken.over(Arrays.class).getMethods().named("asList").resolveOverload(int.class, double.class)
+				.println(TypeToken.overType(Arrays.class).getMethods().named("asList").resolveOverload(int.class, double.class)
 						.withTargetType(new TypeToken<List<? super Comparable<? extends Number>>>() {}));
 		System.out.println();
 
-		System.out.println(over(Arrays.class).getMethods().named("asList").resolveOverload(int.class, double.class)
+		System.out.println(overType(Arrays.class).getMethods().named("asList").resolveOverload(int.class, double.class)
 				.getResolver().getBounds());
 		System.out.println();
 
 		System.out
-				.println(TypeToken.over(Arrays.class).getMethods().named("asList").resolveOverload(int.class, double.class)
+				.println(TypeToken.overType(Arrays.class).getMethods().named("asList").resolveOverload(int.class, double.class)
 						.withTargetType(new TypeToken<List<? super Comparable<? extends Number>>>() {}).infer());
 		System.out.println();
 
-		System.out.println(TypeToken.over(B.class).getMethods().named("method")
+		System.out.println(TypeToken.overType(B.class).getMethods().named("method")
 				.resolveOverload(new TypeToken<List<Integer>>() {}, new TypeToken<List<Number>>() {}));
 		System.out.println();
 
@@ -360,7 +361,7 @@ public class TypeTokenTest {
 				.resolveOverload(new TypeToken<List<Integer>>() {}, new TypeToken<List<Comparable<Integer>>>() {}));
 		System.out.println();
 
-		System.out.println(TypeToken.over(B.class).getMethods().named("method")
+		System.out.println(TypeToken.overType(B.class).getMethods().named("method")
 				.resolveOverload(new TypeToken<Collection<? super Integer>>() {}).infer());
 		System.out.println();
 

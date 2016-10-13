@@ -72,7 +72,7 @@ public class Block<T> implements Self<Block<T>> {
 	}
 
 	public <U> LocalVariableExpression<U> declareVariable(Class<U> type) {
-		return declareVariable(TypeToken.over(type));
+		return declareVariable(TypeToken.overType(type));
 	}
 
 	public <U> LocalVariableExpression<U> declareVariable(TypeToken<U> type) {
@@ -84,7 +84,7 @@ public class Block<T> implements Self<Block<T>> {
 	}
 
 	public <U> LocalVariableExpression<U> declareVariable(Class<U> type, ValueExpression<? extends U> value) {
-		return declareVariable(TypeToken.over(type), value);
+		return declareVariable(TypeToken.overType(type), value);
 	}
 
 	public <U> LocalVariableExpression<U> declareVariable(TypeToken<U> type, ValueExpression<? extends U> value) {
@@ -96,7 +96,7 @@ public class Block<T> implements Self<Block<T>> {
 	}
 
 	public <U> LocalValueExpression<U> declareValue(Class<U> type, ValueExpression<? extends U> value) {
-		return declareValue(TypeToken.over(type), value);
+		return declareValue(TypeToken.overType(type), value);
 	}
 
 	public <U> LocalValueExpression<U> declareValue(TypeToken<U> type, ValueExpression<? extends U> value) {

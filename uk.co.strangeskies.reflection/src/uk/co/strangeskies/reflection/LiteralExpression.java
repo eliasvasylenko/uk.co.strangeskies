@@ -40,7 +40,7 @@ public class LiteralExpression<T> implements ValueExpression<T> {
 
 	protected LiteralExpression(T value, Class<T> type) {
 		this.value = value;
-		this.type = TypeToken.over(type);
+		this.type = TypeToken.overType(type);
 	}
 
 	@Override

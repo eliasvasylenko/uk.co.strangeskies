@@ -80,7 +80,7 @@ public class InvocableMemberStream<I extends ExecutableToken<?, ?>>
 	}
 
 	public <T> I resolveOverload(Type... arguments) {
-		return resolveOverload(Arrays.stream(arguments).map(TypeToken::over).collect(toList()));
+		return resolveOverload(Arrays.stream(arguments).map(TypeToken::overType).collect(toList()));
 	}
 
 	public <T> I resolveOverload(TypeToken<?>... arguments) {

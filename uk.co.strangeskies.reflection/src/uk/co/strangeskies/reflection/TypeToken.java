@@ -432,7 +432,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 *          The class to create a TypeToken for.
 	 * @return A TypeToken over the requested class.
 	 */
-	public static <T> TypeToken<T> over(Class<T> type) {
+	public static <T> TypeToken<T> overType(Class<T> type) {
 		return new TypeToken<>(type);
 	}
 
@@ -444,7 +444,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 *          The requested type.
 	 * @return A TypeToken over the requested type.
 	 */
-	public static TypeToken<?> over(Type type) {
+	public static TypeToken<?> overType(Type type) {
 		return new TypeToken<>(type);
 	}
 
@@ -460,7 +460,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 *          How to deal with wildcard parameters on the given type.
 	 * @return A TypeToken over the requested type.
 	 */
-	public static TypeToken<?> over(TypeResolver resolver, Type type, Wildcards wildcards) {
+	public static TypeToken<?> overType(TypeResolver resolver, Type type, Wildcards wildcards) {
 		return new TypeToken<>(resolver.copy(), type, wildcards);
 	}
 
@@ -472,7 +472,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 *          The requested type.
 	 * @return A TypeToken over the requested type.
 	 */
-	public static TypeToken<?> over(AnnotatedType type) {
+	public static TypeToken<?> overAnnotatedType(AnnotatedType type) {
 		return new TypeToken<>(type);
 	}
 
@@ -485,7 +485,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 *          How to deal with wildcard parameters on the given type.
 	 * @return A TypeToken over the requested type.
 	 */
-	public static TypeToken<?> over(Type type, Wildcards wildcards) {
+	public static TypeToken<?> overType(Type type, Wildcards wildcards) {
 		return new TypeToken<>(type, wildcards);
 	}
 
@@ -513,7 +513,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 *          The requested type.
 	 * @return A TypeToken over the requested type.
 	 */
-	public static <T> TypeToken<? extends T> over(TypeResolver resolver, Class<T> rawType) {
+	public static <T> TypeToken<? extends T> overType(TypeResolver resolver, Class<T> rawType) {
 		resolver.inferOverTypeParameters(rawType);
 		return new TypeToken<>(resolver.copy(), resolver.resolveTypeParameters(rawType));
 	}
@@ -645,7 +645,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	}
 
 	/**
-	 * Equivalent to the application of {@link TypeToken#over(Type)} to the result
+	 * Equivalent to the application of {@link TypeToken#overType(Type)} to the result
 	 * of {@link Types#fromString(String)}.
 	 * 
 	 * @param typeString
@@ -653,11 +653,11 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * @return A TypeToken representing the type described by the String.
 	 */
 	public static TypeToken<?> fromString(String typeString) {
-		return over(AnnotatedTypes.fromString(typeString));
+		return overAnnotatedType(AnnotatedTypes.fromString(typeString));
 	}
 
 	/**
-	 * Equivalent to the application of {@link TypeToken#over(Type)} to the result
+	 * Equivalent to the application of {@link TypeToken#overType(Type)} to the result
 	 * of {@link AnnotatedTypes#fromString(String, Imports)}, with the given
 	 * imports.
 	 * 
@@ -669,7 +669,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 * @return A TypeToken representing the type described by the string.
 	 */
 	public static TypeToken<?> fromString(String typeString, Imports imports) {
-		return over(AnnotatedTypes.fromString(typeString, imports));
+		return overAnnotatedType(AnnotatedTypes.fromString(typeString, imports));
 	}
 
 	/**
@@ -726,7 +726,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 			return (TypeToken<? extends T>) new TypeToken<>(resolver,
 					resolver.inferOverWildcardType(WildcardTypes.upperBounded(getType())));
 		} else {
-			return (TypeToken<? extends T>) over(WildcardTypes.upperBounded(getType()), wildcards);
+			return (TypeToken<? extends T>) overType(WildcardTypes.upperBounded(getType()), wildcards);
 		}
 	}
 
@@ -765,7 +765,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 			TypeResolver resolver = getResolver();
 			return new TypeToken<>(resolver, resolver.inferOverWildcardType(WildcardTypes.lowerBounded(getType())));
 		} else {
-			return (TypeToken<? super T>) over(WildcardTypes.lowerBounded(getType()), wildcards);
+			return (TypeToken<? super T>) overType(WildcardTypes.lowerBounded(getType()), wildcards);
 		}
 	}
 
@@ -875,7 +875,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	@SuppressWarnings("unchecked")
 	public TypeToken<T> wrapPrimitive() {
 		if (isPrimitive())
-			return (TypeToken<T>) over(Types.wrapPrimitive(getRawType()));
+			return (TypeToken<T>) overType(Types.wrapPrimitive(getRawType()));
 		else
 			return this;
 	}
@@ -890,7 +890,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	@SuppressWarnings("unchecked")
 	public TypeToken<T> unwrapPrimitive() {
 		if (isPrimitiveWrapper())
-			return (TypeToken<T>) over(Types.unwrapPrimitive(getRawType()));
+			return (TypeToken<T>) overType(Types.unwrapPrimitive(getRawType()));
 		else
 			return this;
 	}
@@ -925,7 +925,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 *         otherwise.
 	 */
 	public boolean isAssignableTo(Type type) {
-		return isAssignableTo(over(type));
+		return isAssignableTo(overType(type));
 	}
 
 	/**
@@ -950,7 +950,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 *         otherwise.
 	 */
 	public boolean isAssignableFrom(Type type) {
-		return isAssignableFrom(over(type));
+		return isAssignableFrom(overType(type));
 	}
 
 	/**
@@ -987,7 +987,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 *         TypeToken, false otherwise.
 	 */
 	public boolean isContainedBy(Type type) {
-		return isContainedBy(over(type));
+		return isContainedBy(overType(type));
 	}
 
 	/**
@@ -1023,7 +1023,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 *         this TypeToken, false otherwise.
 	 */
 	public boolean isContainingOf(Type type) {
-		return isContainingOf(over(type));
+		return isContainingOf(overType(type));
 	}
 
 	/**
@@ -1223,7 +1223,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	@SuppressWarnings("unchecked")
 	public <U> TypeToken<? extends U> resolveSupertypeParameters(Class<U> superclass) {
 		if (!ParameterizedTypes.isGeneric(superclass))
-			return TypeToken.over(superclass);
+			return TypeToken.overType(superclass);
 
 		if (superclass.equals(getType())
 				|| (getType() instanceof ParameterizedType && ((ParameterizedType) getType()).getRawType().equals(superclass)))
@@ -1244,7 +1244,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 					superclass);
 		}
 
-		TypeToken<? extends U> over = over(resolver, superclass);
+		TypeToken<? extends U> over = overType(resolver, superclass);
 
 		return over;
 	}
@@ -1265,7 +1265,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	@SuppressWarnings("unchecked")
 	public <U> TypeToken<? extends U> resolveSubtypeParameters(Class<U> subclass) {
 		if (!ParameterizedTypes.isGeneric(subclass))
-			return TypeToken.over(subclass);
+			return TypeToken.overType(subclass);
 
 		if (subclass.equals(getType())
 				|| (getType() instanceof ParameterizedType && ((ParameterizedType) getType()).getRawType().equals(subclass)))
@@ -1283,7 +1283,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 		} else
 			resolver.incorporateTypeHierarchy(subclass, getRawType());
 
-		return over(resolver, subclass);
+		return overType(resolver, subclass);
 	}
 
 	/**
@@ -1392,7 +1392,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	public <U> TypeToken<U> resolveTypeArgument(TypeParameter<U> typeParameter) {
 		Type typeArgument = resolveTypeArgument(typeParameter.getType());
 
-		return (TypeToken<U>) over(getResolver(), typeArgument,
+		return (TypeToken<U>) overType(getResolver(), typeArgument,
 				InferenceVariable.isProperType(typeArgument) ? Wildcards.PRESERVE : Wildcards.INFER).resolve();
 	}
 

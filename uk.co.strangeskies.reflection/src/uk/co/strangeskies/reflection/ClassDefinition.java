@@ -160,10 +160,10 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 
 		superTypes = Collections
 				.unmodifiableList(signature.getSuperTypes().stream().map(this::substituteTypeVariableSignatures)
-						.map(TypeToken::over).map(t -> (TypeToken<? super T>) t).collect(Collectors.toList()));
+						.map(TypeToken::overAnnotatedType).map(t -> (TypeToken<? super T>) t).collect(Collectors.toList()));
 
 		Type superType = IntersectionType.from(superTypes.stream().map(TypeToken::getType).collect(Collectors.toList()));
-		this.superType = (TypeToken<T>) TypeToken.over(superType);
+		this.superType = (TypeToken<T>) TypeToken.overType(superType);
 		Class<?> superClass = Types.getRawType(superType);
 		if (superClass.isInterface()) {
 			this.superClass = null;

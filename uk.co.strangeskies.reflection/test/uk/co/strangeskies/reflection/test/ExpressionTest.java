@@ -65,7 +65,7 @@ public class ExpressionTest {
 	private static final TypeToken<TestClass> TEST_CLASS_TYPE = new TypeToken<TestClass>() {};
 	private static final String TEST_FIELD_NAME = "field";
 	private static final FieldToken<TestClass, String> TEST_FIELD = FieldToken
-			.resolveField(TEST_CLASS_TYPE, TEST_FIELD_NAME).withType(TypeToken.over(String.class));
+			.resolveField(TEST_CLASS_TYPE, TEST_FIELD_NAME).withType(TypeToken.overType(String.class));
 
 	private static final String TEST_SET_METHOD_NAME = "setMethod";
 	private static final ExecutableToken<? super TestClass, ?> TEST_SET_METHOD = TEST_CLASS_TYPE.getMethods()

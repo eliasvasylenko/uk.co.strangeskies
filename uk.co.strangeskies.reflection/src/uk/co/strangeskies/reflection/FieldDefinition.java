@@ -48,7 +48,7 @@ public class FieldDefinition<C, T> implements MemberDefinition {
 		if (declaration.getType() == null) {
 			this.type = (TypeToken<T>) initializer.getType();
 		} else {
-			this.type = (TypeToken<T>) TypeToken.over(declaration.getType());
+			this.type = (TypeToken<T>) TypeToken.overAnnotatedType(declaration.getType());
 		}
 	}
 

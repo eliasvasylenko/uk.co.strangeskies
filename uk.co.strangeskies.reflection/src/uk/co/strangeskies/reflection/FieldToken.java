@@ -100,7 +100,7 @@ public class FieldToken<O, T> implements MemberToken<O> {
 	 * @return a field member wrapping the given field
 	 */
 	public static <O> FieldToken<O, ?> over(Field field, TypeToken<O> ownerType) {
-		return new FieldToken<>(field, ownerType, TypeToken.over(ownerType.resolveType(field.getGenericType())));
+		return new FieldToken<>(field, ownerType, TypeToken.overType(ownerType.resolveType(field.getGenericType())));
 	}
 
 	@Override

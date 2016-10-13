@@ -413,7 +413,7 @@ public class ParameterizedTypes {
 	@SuppressWarnings("unchecked")
 	public static <T> TypeToken<? extends T> from(Class<T> rawType,
 			Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
-		return (TypeToken<? extends T>) TypeToken.over(uncheckedFrom(rawType, typeArguments));
+		return (TypeToken<? extends T>) TypeToken.overType(uncheckedFrom(rawType, typeArguments));
 	}
 
 	/**
@@ -463,7 +463,7 @@ public class ParameterizedTypes {
 		if (!Types.isStatic(rawType) && rawType.getEnclosingClass() != null && isGeneric(rawType.getEnclosingClass()))
 			throw new IllegalArgumentException();
 
-		return (TypeToken<? extends T>) TypeToken.over(uncheckedFrom(null, rawType, typeArguments));
+		return (TypeToken<? extends T>) TypeToken.overType(uncheckedFrom(null, rawType, typeArguments));
 	}
 
 	private static List<Type> argumentsForClass(Class<?> rawType,

@@ -217,7 +217,7 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 
 		@Override
 		public <V extends TreeContribution<? super U>> List<V> contributions(TypeToken<V> type) {
-			return itemContributions.stream().filter(c -> TypeToken.over(type.getRawType()).isAssignableFrom(c.getClass()))
+			return itemContributions.stream().filter(c -> TypeToken.overType(type.getRawType()).isAssignableFrom(c.getClass()))
 					.map(type::cast).collect(Collectors.toList());
 		}
 

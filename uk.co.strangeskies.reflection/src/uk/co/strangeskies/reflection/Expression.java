@@ -63,7 +63,7 @@ public interface Expression {
 
 			@Override
 			public TypeToken<Void> getType() {
-				return TypeToken.over(void.class);
+				return TypeToken.overType(void.class);
 			}
 		};
 	}

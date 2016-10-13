@@ -128,7 +128,7 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 			Type genericReturnType = resolver.resolveType(executable, genericType);
 
 			// TODO should this always be PRESERVE?
-			returnType = (TypeToken<R>) TypeToken.over(new TypeResolver(resolver.getBounds()), genericReturnType,
+			returnType = (TypeToken<R>) TypeToken.overType(new TypeResolver(resolver.getBounds()), genericReturnType,
 					InferenceVariable.isProperType(genericReturnType) ? Wildcards.PRESERVE : Wildcards.INFER);
 			returnType.incorporateInto(resolver.getBounds());
 		}
@@ -186,7 +186,7 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 	 * @return An executable member wrapping the given constructor.
 	 */
 	public static <T> ExecutableToken<Void, T> overConstructor(Constructor<T> constructor) {
-		return overConstructor(constructor, TypeToken.over(constructor.getDeclaringClass()));
+		return overConstructor(constructor, TypeToken.overType(constructor.getDeclaringClass()));
 	}
 
 	/**
@@ -204,7 +204,7 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 	@SuppressWarnings("unchecked")
 	public static <T> ExecutableToken<Void, T> overConstructor(Constructor<? super T> constructor,
 			TypeToken<T> instance) {
-		return new ExecutableToken<>(TypeToken.over(void.class), instance, constructor, (Void r, List<?> a) -> {
+		return new ExecutableToken<>(TypeToken.overType(void.class), instance, constructor, (Void r, List<?> a) -> {
 			try {
 				return (T) constructor.newInstance(a.toArray());
 			} catch (Exception e) {
@@ -254,7 +254,7 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 	 * @return An executable member wrapping the given method.
 	 */
 	public static ExecutableToken<?, ?> overMethod(Method method) {
-		TypeToken<?> receiver = TypeToken.over(method.getDeclaringClass());
+		TypeToken<?> receiver = TypeToken.overType(method.getDeclaringClass());
 		return overMethod(method, receiver);
 	}
 
@@ -589,7 +589,7 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 			Executable override = mostSpecificOverridingClass.equals(executable.getDeclaringClass()) ? executable
 					: mostSpecificOverridingClass.getMethod(executable.getName(), executable.getParameterTypes());
 
-			return new ExecutableToken<>(resolver, (TypeToken<O>) TypeToken.over(type), null, override, invocationFunction,
+			return new ExecutableToken<>(resolver, (TypeToken<O>) TypeToken.overType(type), null, override, invocationFunction,
 					parameters, variableArityInvocation);
 		} catch (NoSuchMethodException | SecurityException e) {
 			throw new ReflectionException(p -> p.cannotResolveOverride(this, type), e);
@@ -625,7 +625,7 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 	 *         the current target type, will also be assignable to the new type.
 	 */
 	public <S extends R> ExecutableToken<O, S> withTargetType(Class<S> target) {
-		return withTargetType(TypeToken.over(target));
+		return withTargetType(TypeToken.overType(target));
 	}
 
 	/**

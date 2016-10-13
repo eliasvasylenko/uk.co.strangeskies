@@ -127,7 +127,7 @@ public class LocalizationSupplier extends ExtendedObjectSupplier {
 		if (!(accessor instanceof Class) || !Properties.class.isAssignableFrom((Class<?>) accessor))
 			return false;
 
-		List<Map.Entry<TypeVariable<?>, Type>> accessorParameters = TypeToken.over(accessor)
+		List<Map.Entry<TypeVariable<?>, Type>> accessorParameters = TypeToken.overType(accessor)
 				.resolveSupertypeParameters(Properties.class).getAllTypeArguments().collect(Collectors.toList());
 
 		if (accessorParameters.size() != 1)

@@ -99,7 +99,7 @@ public class ClassDeclaration<T> extends ParameterizedDeclaration {
 	 * @return the receiver
 	 */
 	public <U extends T> ClassDeclaration<U> withSuperType(Class<U> superType) {
-		return withSuperType(TypeToken.over(superType));
+		return withSuperType(TypeToken.overType(superType));
 	}
 
 	/**

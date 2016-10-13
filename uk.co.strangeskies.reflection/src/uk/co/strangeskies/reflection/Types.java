@@ -942,7 +942,7 @@ public final class Types {
 	 */
 	public static void validate(Type type) {
 		RecursiveTypeVisitor.build().visitBounds().visitEnclosedTypes().visitEnclosingTypes().visitParameters()
-				.visitSupertypes().parameterizedTypeVisitor(TypeToken::over)
+				.visitSupertypes().parameterizedTypeVisitor(TypeToken::overType)
 				.intersectionTypeVisitor(i -> IntersectionType.from(i.getTypes())).create().visit(type);
 	}
 
