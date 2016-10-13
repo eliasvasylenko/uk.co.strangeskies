@@ -52,7 +52,7 @@ configure(bndProjects()) {
 
 /* Source License Generation */
 def copyrightProperties  = new Properties()
-rootProject.file("copyright.properties").withReader { reader ->
+rootProject.file("copyright.properties").withReader("UTF-8") { reader ->
   copyrightProperties.load(reader)
 }
 apply plugin: "license"
@@ -62,7 +62,8 @@ configure(bndProjects()) {
   license {
     header rootProject.file("LICENSE")
 
-    strictCheck true
+    strictCheck = true
+    encoding = "UTF-8"
 
     ext."copyright.work.name" = project.name
     ext."copyright.year" = Calendar.getInstance().get(Calendar.YEAR)
