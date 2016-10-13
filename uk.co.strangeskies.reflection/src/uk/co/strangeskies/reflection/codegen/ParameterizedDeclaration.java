@@ -30,7 +30,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection;
+package uk.co.strangeskies.reflection.codegen;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
@@ -38,76 +38,76 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
-import uk.co.strangeskies.reflection.codegen.ParameterizedDeclaration;
+import uk.co.strangeskies.reflection.TypeToken;
+import uk.co.strangeskies.reflection.TypeVariableDeclaration;
 
-/**
- * Take care not to allow instances of this class to leak out into the wider
- * program outside the context of declaration and definition of
- * {@link ParameterizedDeclaration mutable declarations}.
- * 
- * @author Elias N Vasylenko
- */
-public class TypeVariableDeclaration implements Type {
-	private final int index;
-	private final List<AnnotatedType> bounds;
+public class ParameterizedDeclaration {
+	private final List<TypeVariableDeclaration> typeVariableSignatures;
 	private final List<Annotation> annotations;
 
-	/**
-	 * @param index
-	 *          the index of the type variable signature within its generic
-	 *          declaration
-	 */
-	public TypeVariableDeclaration(int index) {
-		this.index = index;
-		bounds = new ArrayList<>();
+	public ParameterizedDeclaration() {
+		typeVariableSignatures = new ArrayList<>();
 		annotations = new ArrayList<>();
+
 	}
 
-	/**
-	 * @return the index of the type variable signature within its generic
-	 *         declaration
-	 */
-	public int getIndex() {
-		return index;
+	public TypeVariableDeclaration addTypeVariable() {
+		TypeVariableDeclaration typeVariable = new TypeVariableDeclaration(typeVariableSignatures.size());
+		typeVariableSignatures.add(typeVariable);
+		return typeVariable;
 	}
 
-	@Override
-	public String getTypeName() {
-		return "T" + index;
-	}
-
-	public List<AnnotatedType> getBounds() {
-		return bounds;
-	}
-
-	public TypeVariableDeclaration withUpperBounds(TypeToken<?>... bounds) {
-		return withUpperBounds(Arrays.stream(bounds).map(TypeToken::getAnnotatedDeclaration).collect(Collectors.toList()));
-	}
-
-	public TypeVariableDeclaration withUpperBounds(Type... bounds) {
-		return withUpperBounds(Arrays.stream(bounds).map(AnnotatedTypes::over).collect(Collectors.toList()));
-	}
-
-	public TypeVariableDeclaration withUpperBounds(AnnotatedType... bounds) {
-		return withUpperBounds(Arrays.asList(bounds));
-	}
-
-	public TypeVariableDeclaration withUpperBounds(Collection<? extends AnnotatedType> bounds) {
-		this.bounds.addAll(bounds);
-
+	public ParameterizedDeclaration withTypeVariable() {
+		addTypeVariable().withUpperBounds(new Type[] {});
 		return this;
 	}
 
-	public TypeVariableDeclaration withAnnotations(Annotation... annotations) {
+	public ParameterizedDeclaration withTypeVariable(Type... bounds) {
+		addTypeVariable().withUpperBounds(bounds);
+		return this;
+	}
+
+	public ParameterizedDeclaration withTypeVariable(AnnotatedType... bounds) {
+		addTypeVariable().withUpperBounds(bounds);
+		return this;
+	}
+
+	public ParameterizedDeclaration withTypeVariable(TypeToken<?>... bounds) {
+		addTypeVariable().withUpperBounds(bounds);
+		return this;
+	}
+
+	public ParameterizedDeclaration withTypeVariable(Collection<? extends AnnotatedType> bounds) {
+		addTypeVariable().withUpperBounds(bounds);
+		return this;
+	}
+
+	public ParameterizedDeclaration withTypeVariable(Collection<? extends Annotation> annotations,
+			Collection<? extends AnnotatedType> bounds) {
+		addTypeVariable().withAnnotations(annotations);
+		addTypeVariable().withUpperBounds(bounds);
+		return this;
+	}
+
+	public List<TypeVariableDeclaration> getTypeVariableSignatures() {
+		return Collections.unmodifiableList(typeVariableSignatures);
+	}
+
+	public ParameterizedDeclaration withAnnotations(Annotation... annotations) {
 		return withAnnotations(Arrays.asList(annotations));
 	}
 
-	public TypeVariableDeclaration withAnnotations(Collection<? extends Annotation> annotations) {
+	public ParameterizedDeclaration withAnnotations(Collection<? extends Annotation> annotations) {
+		this.annotations.clear();
 		this.annotations.addAll(annotations);
 
 		return this;
+	}
+
+	public List<Annotation> getAnnotations() {
+		return Collections.unmodifiableList(annotations);
 	}
 }

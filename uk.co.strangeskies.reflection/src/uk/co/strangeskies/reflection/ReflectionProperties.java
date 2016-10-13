@@ -41,6 +41,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import uk.co.strangeskies.reflection.codegen.ClassDefinition;
+import uk.co.strangeskies.reflection.codegen.Expression;
+import uk.co.strangeskies.reflection.codegen.LocalVariable;
+import uk.co.strangeskies.reflection.codegen.MethodDefinition;
+import uk.co.strangeskies.reflection.codegen.VariableExpressionProxy;
 import uk.co.strangeskies.text.properties.Localized;
 import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
