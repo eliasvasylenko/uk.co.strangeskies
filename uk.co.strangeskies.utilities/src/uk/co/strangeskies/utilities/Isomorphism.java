@@ -140,7 +140,11 @@ public class Isomorphism {
 		 */
 		@SuppressWarnings("unchecked")
 		public <S, C> S getMapping(C node, Function<C, S> mapping) {
-			S copy = ((Map<C, S>) copiedNodes).computeIfAbsent(node, mapping::apply);
+			S copy = ((Map<C, S>) copiedNodes).get(node);
+			if (copy == null) {
+				copy = mapping.apply(node);
+			}
+			((Map<C, S>) copiedNodes).putIfAbsent(node, copy);
 			return copy;
 		}
 
@@ -202,6 +206,8 @@ public class Isomorphism {
 		 *          the type of the result
 		 * @param node
 		 *          the graph node to map
+		 * @param partial
+		 *          a partial mapping to use until the proper mapping is computed
 		 * @param mapping
 		 *          the mapping function to apply, also accepting a consumer which
 		 *          can be called back with a partial result

@@ -310,7 +310,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	private static Pair<TypeResolver, Type> incorporateAnnotatedType(AnnotatedType annotatedType) {
 		Pair<TypeResolver, Type> resolvedType = incorporateAnnotatedType(new TypeResolver(), annotatedType); // RESOLVER_CACHE.putGet(annotatedType);
 
-		HashMap<InferenceVariable, InferenceVariable> map = new HashMap<>();
+		Map<InferenceVariable, InferenceVariable> map = new HashMap<>();
 		return new Pair<>(resolvedType.getLeft().deepCopy(map), new TypeSubstitution(map).resolve(resolvedType.getRight()));
 	}
 
@@ -645,8 +645,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	}
 
 	/**
-	 * Equivalent to the application of {@link TypeToken#overType(Type)} to the result
-	 * of {@link Types#fromString(String)}.
+	 * Equivalent to the application of {@link TypeToken#overType(Type)} to the
+	 * result of {@link Types#fromString(String)}.
 	 * 
 	 * @param typeString
 	 *          The String to parse.
@@ -657,9 +657,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	}
 
 	/**
-	 * Equivalent to the application of {@link TypeToken#overType(Type)} to the result
-	 * of {@link AnnotatedTypes#fromString(String, Imports)}, with the given
-	 * imports.
+	 * Equivalent to the application of {@link TypeToken#overType(Type)} to the
+	 * result of {@link AnnotatedTypes#fromString(String, Imports)}, with the
+	 * given imports.
 	 * 
 	 * @param typeString
 	 *          The String to parse.
@@ -1474,6 +1474,22 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 		return withBounds(resolver.getBounds());
 	}
 
+	public TypeToken<?> getEnclosingType() {
+		Type enclosingType;
+
+		if (getType() instanceof ParameterizedType) {
+			enclosingType = ((ParameterizedType) getType()).getOwnerType();
+		} else {
+			enclosingType = getRawType().getEnclosingClass();
+		}
+
+		if (enclosingType == null) {
+			return null;
+		}
+
+		return TypeToken.overType(getInternalResolver(), enclosingType, Wildcards.PRESERVE);
+	}
+
 	/**
 	 * This method will attempt to infer the actual type represented by this
 	 * TypeToken, which means the types of any inference variables mentioned will
@@ -1664,7 +1680,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	public InvocableMemberStream<ExecutableToken<Void, T>> getConstructors() {
 		Stream<Constructor<?>> constructors = stream(getRawType().getConstructors());
 
-		return new InvocableMemberStream<>(this, constructors.map(m -> ExecutableToken.overConstructor((Constructor<T>) m, this)));
+		return new InvocableMemberStream<>(this,
+				constructors.map(m -> ExecutableToken.overConstructor((Constructor<T>) m, this)));
 	}
 
 	/**
@@ -1677,7 +1694,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	public InvocableMemberStream<ExecutableToken<Void, T>> getDeclaredConstructors() {
 		Stream<Constructor<?>> constructors = stream(getRawType().getDeclaredConstructors());
 
-		return new InvocableMemberStream<>(this, constructors.map(m -> ExecutableToken.overConstructor((Constructor<T>) m, this)));
+		return new InvocableMemberStream<>(this,
+				constructors.map(m -> ExecutableToken.overConstructor((Constructor<T>) m, this)));
 	}
 
 	/**

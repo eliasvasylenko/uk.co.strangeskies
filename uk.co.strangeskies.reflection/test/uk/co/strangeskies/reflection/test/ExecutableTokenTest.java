@@ -32,6 +32,7 @@
  */
 package uk.co.strangeskies.reflection.test;
 
+import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -39,10 +40,51 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import uk.co.strangeskies.reflection.ExecutableToken;
+import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeToken;
+import uk.co.strangeskies.reflection.TypeToken.Infer;
+import uk.co.strangeskies.reflection.test.ExecutableTokenTest.Outer.Inner;
 
 @SuppressWarnings("javadoc")
 public class ExecutableTokenTest {
+	static class Outer<T> {
+		class Inner<U extends T> {
+			public Inner(U parameter) {}
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void constructorWithEnclosingTypeTest() throws NoSuchMethodException, SecurityException {
+		ExecutableToken.overConstructor((Constructor<Object>) Inner.class.getConstructors()[0],
+				new TypeToken<Outer<Number>>() {}, new TypeToken<Outer<Number>.Inner<Integer>>() {});
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test(expected = ReflectionException.class)
+	public void constructorWithWrongEnclosingTypeTest() throws NoSuchMethodException, SecurityException {
+		ExecutableToken.overConstructor((Constructor<Object>) Inner.class.getConstructors()[0],
+				new TypeToken<Outer<Number>>() {}, new TypeToken<Outer<Integer>.Inner<Integer>>() {});
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void constructorWithRawEnclosingTypeTest() throws NoSuchMethodException, SecurityException {
+		ExecutableToken.overConstructor((Constructor<Object>) Inner.class.getConstructors()[0],
+				new TypeToken<Outer<Number>>() {}, new TypeToken<Outer.Inner>() {});
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void constructorWithUninferredEnclosingTypeTest() throws NoSuchMethodException, SecurityException {
+		TypeToken<Outer<?>.Inner<Integer>> tt = new @Infer TypeToken<@Infer Outer<@Infer ?>.Inner<Integer>>() {};
+		System.out.println(tt);
+		System.out.println(tt.getResolver().getBounds());
+
+		ExecutableToken.overConstructor((Constructor<Object>) Inner.class.getConstructors()[0],
+				new TypeToken<Outer<Number>>() {}, new @Infer TypeToken<@Infer Outer<@Infer ?>.Inner<Integer>>() {});
+	}
+
 	@Test
 	public void emptyVarargsInvocationTest() throws NoSuchMethodException, SecurityException {
 		ExecutableToken<?, ?> asList = ExecutableToken.overMethod(Arrays.class.getMethod("asList", Object[].class))

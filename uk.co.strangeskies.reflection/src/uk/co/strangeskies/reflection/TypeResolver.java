@@ -229,8 +229,19 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 			Map<TypeVariable<?>, InferenceVariable> declarationCaptures = new HashMap<>();
 			capturedTypeVariables.put(declaration, declarationCaptures);
 
-			if (declaration instanceof Executable && !Modifier.isStatic(((Executable) declaration).getModifiers()))
-				declarationCaptures.putAll(inferOverTypeParameters(((Executable) declaration).getDeclaringClass()));
+			GenericDeclaration enclosingDeclaration;
+
+			if (declaration instanceof Executable && !Modifier.isStatic(((Executable) declaration).getModifiers())) {
+				enclosingDeclaration = ((Executable) declaration).getDeclaringClass();
+			} else if (declaration instanceof Class<?> && !Modifier.isStatic(((Class<?>) declaration).getModifiers())) {
+				enclosingDeclaration = ((Class<?>) declaration).getEnclosingClass();
+			} else {
+				enclosingDeclaration = null;
+			}
+
+			if (enclosingDeclaration != null) {
+				declarationCaptures.putAll(inferOverTypeParameters(enclosingDeclaration));
+			}
 
 			infer(getBounds(), declaration, declarationCaptures);
 
@@ -538,7 +549,7 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 
 		Set<Type> lowerBounds = Types.getLowerBounds(type);
 
-		for (Type lowerBound : new HashSet<>(lowerBounds))
+		for (Type lowerBound : new HashSet<>(lowerBounds)) {
 			if (getBounds().containsInferenceVariable(lowerBound)) {
 				lowerBounds.remove(lowerBound);
 
@@ -546,6 +557,7 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 				Stream.concat(bounds.getLowerBounds().stream(), bounds.getEqualities().stream())
 						.filter(t -> !getBounds().containsInferenceVariable(t)).forEach(lowerBounds::add);
 			}
+		}
 
 		return lowerBounds;
 	}
@@ -647,7 +659,7 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 * resubstituted for them.
 	 * 
 	 * @param wildcardCaptures
-	 *          The new type varible captures.
+	 *          The new type variable captures.
 	 */
 	public void incorporateWildcardCaptures(TypeVariableCapture... wildcardCaptures) {
 		incorporateWildcardCaptures(Arrays.asList(wildcardCaptures));
@@ -659,7 +671,7 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 * resubstituted for them.
 	 * 
 	 * @param wildcardCaptures
-	 *          The new type varible captures.
+	 *          The new type variable captures.
 	 */
 	public void incorporateWildcardCaptures(Collection<? extends TypeVariableCapture> wildcardCaptures) {
 		this.wildcardCaptures.addAll(wildcardCaptures);
@@ -708,17 +720,19 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 		Type subtype = ParameterizedTypes.uncheckedFrom(subclass, i -> null);
 		inferOverTypeParameters(subclass);
 
-		if (!superclass.isAssignableFrom(subclass))
+		if (!superclass.isAssignableFrom(subclass)) {
 			throw new IllegalArgumentException("Type '" + subtype + "' is not a valid subtype of '" + superclass + "'.");
+		}
 
-		Class<?> finalSubclass2 = subclass;
-		Function<Type, Type> inferenceVariables = t -> {
-			if (t instanceof TypeVariable)
-				return getInferenceVariable(finalSubclass2, (TypeVariable<?>) t);
-			else
-				return null;
-		};
 		while (!subclass.equals(superclass)) {
+			Class<?> finalSubclass = subclass;
+			Function<Type, Type> inferenceVariables = t -> {
+				if (t instanceof TypeVariable)
+					return getInferenceVariable(finalSubclass, (TypeVariable<?>) t);
+				else
+					return null;
+			};
+
 			Set<Type> lesserSubtypes = new HashSet<>(Arrays.asList(subclass.getGenericInterfaces()));
 			if (subclass.getSuperclass() != null)
 				lesserSubtypes.addAll(Arrays.asList(subclass.getGenericSuperclass()));
@@ -731,14 +745,6 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 
 			captureType(subtype);
 			subclass = Types.getRawType(subtype);
-
-			Class<?> finalSubclass = subclass;
-			inferenceVariables = t -> {
-				if (t instanceof TypeVariable)
-					return getInferenceVariable(finalSubclass, (TypeVariable<?>) t);
-				else
-					return null;
-			};
 		}
 	}
 

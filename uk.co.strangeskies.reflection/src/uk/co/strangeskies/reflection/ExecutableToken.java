@@ -37,7 +37,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
@@ -121,10 +120,17 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 
 	private TypeToken<O> determineReceiverType(TypeToken<O> receiverType) {
 		if (!receiverType.getType().equals(void.class)) {
-			if (!((receiverType.getType() instanceof ParameterizedType
-					&& receiverType.getRawType().equals(executable.getDeclaringClass()))
-					|| executable.getDeclaringClass().equals(receiverType.getType())))
-				receiverType.resolveSupertypeParameters(executable.getDeclaringClass()).incorporateInto(resolver);
+			Class<?> receiverClass;
+
+			if (executable instanceof Method) {
+				receiverClass = executable.getDeclaringClass();
+			} else {
+				receiverClass = executable.getDeclaringClass().getEnclosingClass();
+			}
+
+			if (!receiverType.getRawType().equals(receiverClass)) {
+				receiverType.resolveSupertypeParameters(receiverClass).incorporateInto(resolver);
+			}
 
 			receiverType = receiverType.withBoundsFrom(resolver).resolve();
 		}
@@ -239,6 +245,8 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 	@SuppressWarnings("unchecked")
 	public static <E, T> ExecutableToken<E, T> overConstructor(Constructor<? super T> constructor,
 			TypeToken<E> enclosingInstance, TypeToken<T> instance) {
+		enclosingInstance = (TypeToken<E>) instance.getEnclosingType().withLowerBound(enclosingInstance);
+
 		return new ExecutableToken<>(enclosingInstance, instance, constructor, (E r, List<?> a) -> {
 			try {
 				Object[] arguments = new Object[a.size() + 1];
@@ -249,7 +257,7 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 				}
 				return (T) constructor.newInstance(arguments);
 			} catch (Exception e) {
-				throw new ReflectionException(p -> p.invalidConstructorArguments(constructor, enclosingInstance, a), e);
+				throw new ReflectionException(p -> p.invalidConstructorArguments(constructor, instance, a), e);
 			}
 		});
 	}

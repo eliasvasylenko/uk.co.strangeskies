@@ -58,6 +58,7 @@ import uk.co.strangeskies.utilities.Isomorphism;
  *
  */
 public class TypeSubstitution {
+	private final Isomorphism isomorphism;
 	private final Function<? super Type, ? extends Type> mapping;
 	private final Supplier<Boolean> empty;
 	private final boolean includeTypeVariables;
@@ -66,6 +67,7 @@ public class TypeSubstitution {
 	 * Create a new TypeSubstitution with no initial substitution rules.
 	 */
 	public TypeSubstitution() {
+		isomorphism = new Isomorphism();
 		mapping = t -> null;
 		empty = () -> true;
 		includeTypeVariables = false;
@@ -84,6 +86,7 @@ public class TypeSubstitution {
 	 *          substitution types.
 	 */
 	public TypeSubstitution(Function<? super Type, ? extends Type> mapping) {
+		isomorphism = new Isomorphism();
 		this.mapping = mapping;
 		empty = () -> false;
 		includeTypeVariables = false;
@@ -99,15 +102,24 @@ public class TypeSubstitution {
 	 *          substitution types.
 	 */
 	public TypeSubstitution(Map<?, ? extends Type> mapping) {
+		isomorphism = new Isomorphism();
 		this.mapping = mapping::get;
 		empty = mapping::isEmpty;
 		includeTypeVariables = false;
 	}
 
 	private TypeSubstitution(TypeSubstitution substitution) {
+		isomorphism = substitution.isomorphism;
 		mapping = substitution.mapping;
 		empty = substitution.empty;
 		includeTypeVariables = true;
+	}
+
+	private TypeSubstitution(TypeSubstitution substitution, Isomorphism isomorphism) {
+		this.isomorphism = isomorphism;
+		this.mapping = substitution.mapping;
+		this.empty = substitution.empty;
+		this.includeTypeVariables = substitution.includeTypeVariables;
 	}
 
 	/**
@@ -150,10 +162,23 @@ public class TypeSubstitution {
 	 * substitution, as their type is immutable and baked into their defining
 	 * class definition, but sometimes we may still want this behavior.
 	 * 
-	 * @return A new TypeSubstitution object with the rule added.
+	 * @return a new TypeSubstitution object with the rule added
 	 */
 	public TypeSubstitution withTypeVariables() {
 		return new TypeSubstitution(this);
+	}
+
+	/**
+	 * Create a new TypeSubstitution which is the same as the receiver with the
+	 * additional behavior that it maps types according to the given
+	 * {@link Isomorphism}.
+	 * 
+	 * @param isomorphism
+	 *          an isomorphism
+	 * @return a new TypeSubstitution object over the given isomorphism
+	 */
+	public TypeSubstitution withIsomorphism(Isomorphism isomorphism) {
+		return new TypeSubstitution(this, isomorphism);
 	}
 
 	/**
@@ -168,30 +193,16 @@ public class TypeSubstitution {
 		if (empty.get())
 			return type;
 		else
-			return resolve(type, new Isomorphism());
+			return resolve(type, new IdentityProperty<>(false));
 	}
 
-	/**
-	 * Resolve the result of this substitution as applied to the given type.
-	 * 
-	 * @param type
-	 *          The type for which we want to make a substitution.
-	 * @param isomorphism
-	 *          the isomorphism for dealing with self bounded and infinite types
-	 * @return The result of application of this substitution. The result is
-	 *         <em>not</em> guaranteed to be well formed with respect to bounds.
-	 */
-	public Type resolve(Type type, Isomorphism isomorphism) {
-		return resolve(type, isomorphism, new IdentityProperty<>(false));
-	}
-
-	protected Type resolve(Type type, Isomorphism isomorphism, IdentityProperty<Boolean> changed) {
+	protected Type resolve(Type type, IdentityProperty<Boolean> changed) {
 		Type mapping = this.mapping.apply(type);
 		if (mapping != null) {
 			if (mapping != type) {
 				changed.set(true);
 			}
-			return mapping;
+			return isomorphism.byIdentity().getMapping(type, t -> mapping);
 
 		} else {
 			if (changed.get()) {
@@ -205,23 +216,22 @@ public class TypeSubstitution {
 				return type;
 
 			} else if (type instanceof TypeVariable<?>) {
-				return includeTypeVariables ? resolveTypeVariable((TypeVariable<?>) type, isomorphism, changed) : type;
+				return includeTypeVariables ? resolveTypeVariable((TypeVariable<?>) type, changed) : type;
 
 			} else if (type instanceof InferenceVariable) {
 				return type;
 
 			} else if (type instanceof IntersectionType) {
-				return resolveIntersectionType((IntersectionType) type, isomorphism, changed);
+				return resolveIntersectionType((IntersectionType) type, changed);
 
 			} else if (type instanceof WildcardType) {
-				return resolveWildcardType((WildcardType) type, isomorphism, changed);
+				return resolveWildcardType((WildcardType) type, changed);
 
 			} else if (type instanceof GenericArrayType) {
-				return ArrayTypes
-						.fromComponentType(resolve(((GenericArrayType) type).getGenericComponentType(), isomorphism, changed));
+				return resolveGenericArrayType((GenericArrayType) type, changed);
 
 			} else if (type instanceof ParameterizedType) {
-				return resolveParameterizedType((ParameterizedType) type, isomorphism, changed);
+				return resolveParameterizedType((ParameterizedType) type, changed);
 			}
 		}
 
@@ -229,11 +239,16 @@ public class TypeSubstitution {
 				"Cannot resolve unrecognised type '" + type + "' of class'" + type.getClass() + "'.");
 	}
 
-	private Type resolveTypeVariable(TypeVariable<?> type, Isomorphism isomorphism, IdentityProperty<Boolean> changed) {
+	private Type resolveGenericArrayType(GenericArrayType type, IdentityProperty<Boolean> changedScoped) {
+		return isomorphism.byIdentity().getMapping(type,
+				t -> ArrayTypes.fromComponentType(resolve(t.getGenericComponentType(), changedScoped)));
+	}
+
+	private Type resolveTypeVariable(TypeVariable<?> type, IdentityProperty<Boolean> changed) {
 		return isomorphism.byIdentity().getProxiedMapping(type, TypeVariable.class, i -> {
 
 			if (type.getBounds().length > 0) {
-				List<Type> bounds = resolveTypes(type.getBounds(), isomorphism, changed);
+				List<Type> bounds = resolveTypes(type.getBounds(), changed);
 				if (changed.get()) {
 					return TypeVariables.upperBounded(type.getGenericDeclaration(), type.getName(), AnnotatedTypes.over(bounds));
 				} else {
@@ -245,11 +260,11 @@ public class TypeSubstitution {
 		});
 	}
 
-	private Type resolveWildcardType(WildcardType type, Isomorphism isomorphism, IdentityProperty<Boolean> changed) {
+	private Type resolveWildcardType(WildcardType type, IdentityProperty<Boolean> changed) {
 		return isomorphism.byIdentity().getProxiedMapping(type, WildcardType.class, i -> {
 
 			if (type.getLowerBounds().length > 0) {
-				List<Type> bounds = resolveTypes(type.getLowerBounds(), isomorphism, changed);
+				List<Type> bounds = resolveTypes(type.getLowerBounds(), changed);
 				if (changed.get()) {
 					return WildcardTypes.lowerBounded(bounds);
 				} else {
@@ -257,7 +272,7 @@ public class TypeSubstitution {
 				}
 
 			} else if (type.getUpperBounds().length > 0) {
-				List<Type> bounds = resolveTypes(type.getUpperBounds(), isomorphism, changed);
+				List<Type> bounds = resolveTypes(type.getUpperBounds(), changed);
 				if (changed.get()) {
 					return WildcardTypes.upperBounded(bounds);
 				} else {
@@ -269,8 +284,7 @@ public class TypeSubstitution {
 		});
 	}
 
-	private Type resolveIntersectionType(IntersectionType type, Isomorphism isomorphism,
-			IdentityProperty<Boolean> changed) {
+	private Type resolveIntersectionType(IntersectionType type, IdentityProperty<Boolean> changed) {
 		return isomorphism.byIdentity().getPartialMapping(type, (i, partial) -> {
 
 			IdentityProperty<IntersectionType> property = new IdentityProperty<>();
@@ -279,7 +293,7 @@ public class TypeSubstitution {
 
 			IntersectionType result;
 
-			List<Type> types = resolveTypes(type.getTypes(), isomorphism, changed);
+			List<Type> types = resolveTypes(type.getTypes(), changed);
 			if (changed.get()) {
 				result = IntersectionType.uncheckedFrom(types);
 			} else {
@@ -292,22 +306,20 @@ public class TypeSubstitution {
 		});
 	}
 
-	private Type resolveParameterizedType(ParameterizedType type, Isomorphism isomorphism,
-			IdentityProperty<Boolean> changed) {
+	private Type resolveParameterizedType(ParameterizedType type, IdentityProperty<Boolean> changed) {
 		return isomorphism.byIdentity().getProxiedMapping(type, ParameterizedType.class, i -> {
 
-			List<Type> arguments = resolveTypes(type.getActualTypeArguments(), isomorphism, changed);
+			List<Type> arguments = resolveTypes(type.getActualTypeArguments(), changed);
 
 			if (changed.get()) {
-				return ParameterizedTypes.uncheckedFrom(resolve(type.getOwnerType(), isomorphism), Types.getRawType(type),
-						arguments);
+				return ParameterizedTypes.uncheckedFrom(resolve(type.getOwnerType()), Types.getRawType(type), arguments);
 			} else {
 				return type;
 			}
 		});
 	}
 
-	private List<Type> resolveTypes(Type[] types, Isomorphism isomorphism, IdentityProperty<Boolean> changed) {
-		return Arrays.stream(types).map(t -> resolve(t, isomorphism, changed)).collect(Collectors.toList());
+	private List<Type> resolveTypes(Type[] types, IdentityProperty<Boolean> changed) {
+		return Arrays.stream(types).map(t -> resolve(t, changed)).collect(Collectors.toList());
 	}
 }
