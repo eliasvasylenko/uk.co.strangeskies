@@ -88,7 +88,6 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 		this(receiverType.getResolver(), receiverType, returnType, executable, invocationFunction, null, false);
 	}
 
-	@SuppressWarnings("unchecked")
 	private ExecutableToken(TypeResolver resolver, TypeToken<O> receiverType, TypeToken<R> returnType,
 			Executable executable, BiFunction<O, List<?>, R> invocationFunction, List<? extends Type> parameters,
 			boolean variableArityInvocation) {
@@ -110,6 +109,17 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 		/*
 		 * Resolve types within context of given Resolver:
 		 */
+		this.receiverType = determineReceiverType(receiverType);
+		this.returnType = determineReturnType(returnType);
+
+		/*
+		 * Determine parameter types:
+		 */
+
+		this.parameters = determineParameterTypes();
+	}
+
+	private TypeToken<O> determineReceiverType(TypeToken<O> receiverType) {
 		if (!receiverType.getType().equals(void.class)) {
 			if (!((receiverType.getType() instanceof ParameterizedType
 					&& receiverType.getRawType().equals(executable.getDeclaringClass()))
@@ -118,8 +128,12 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 
 			receiverType = receiverType.withBoundsFrom(resolver).resolve();
 		}
-		this.receiverType = receiverType;
 
+		return receiverType;
+	}
+
+	@SuppressWarnings("unchecked")
+	private TypeToken<R> determineReturnType(TypeToken<R> returnType) {
 		if (returnType != null) {
 			returnType = returnType.withBounds(resolver.getBounds());
 		} else {
@@ -132,13 +146,8 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 					InferenceVariable.isProperType(genericReturnType) ? Wildcards.PRESERVE : Wildcards.INFER);
 			returnType.incorporateInto(resolver.getBounds());
 		}
-		this.returnType = returnType;
 
-		/*
-		 * Determine parameter types:
-		 */
-
-		this.parameters = determineParameterTypes();
+		return returnType;
 	}
 
 	private List<Type> determineParameterTypes() {
@@ -589,8 +598,8 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 			Executable override = mostSpecificOverridingClass.equals(executable.getDeclaringClass()) ? executable
 					: mostSpecificOverridingClass.getMethod(executable.getName(), executable.getParameterTypes());
 
-			return new ExecutableToken<>(resolver, (TypeToken<O>) TypeToken.overType(type), null, override, invocationFunction,
-					parameters, variableArityInvocation);
+			return new ExecutableToken<>(resolver, (TypeToken<O>) TypeToken.overType(type), null, override,
+					invocationFunction, parameters, variableArityInvocation);
 		} catch (NoSuchMethodException | SecurityException e) {
 			throw new ReflectionException(p -> p.cannotResolveOverride(this, type), e);
 		}
