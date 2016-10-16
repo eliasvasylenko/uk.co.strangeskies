@@ -34,18 +34,19 @@ package uk.co.strangeskies.reflection.codegen;
 
 import static java.util.Arrays.asList;
 
+import java.util.Arrays;
 import java.util.List;
 
 import uk.co.strangeskies.reflection.ExecutableToken;
 import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
 
-public class MethodExpression<O, T> implements ValueExpression<T> {
+public class InvocationExpression<O, T> implements ValueExpression<T> {
 	private final ValueExpression<? extends O> receiver;
 	private final ExecutableToken<O, T> invocable;
 	private final List<ValueExpression<?>> arguments;
 
-	protected MethodExpression(ValueExpression<? extends O> receiver, ExecutableToken<O, T> invocable,
+	protected InvocationExpression(ValueExpression<? extends O> receiver, ExecutableToken<O, T> invocable,
 			List<ValueExpression<?>> arguments) {
 		this.receiver = receiver;
 		this.invocable = invocable;
@@ -66,7 +67,7 @@ public class MethodExpression<O, T> implements ValueExpression<T> {
 	 * @see #invokeStatic(ExecutableToken, List)
 	 */
 	@SuppressWarnings("javadoc")
-	public static <T> MethodExpression<Void, T> invokeStatic(ExecutableToken<Void, T> executable,
+	public static <T> InvocationExpression<Void, T> invokeStatic(ExecutableToken<Void, T> executable,
 			ValueExpression<?>... arguments) {
 		return invokeStatic(executable, asList(arguments));
 	}
@@ -81,8 +82,22 @@ public class MethodExpression<O, T> implements ValueExpression<T> {
 	 * @return an expression describing the invocation of the given static
 	 *         executable with the given argument expressions
 	 */
-	public static <T> MethodExpression<Void, T> invokeStatic(ExecutableToken<Void, T> executable,
+	public static <T> InvocationExpression<Void, T> invokeStatic(ExecutableToken<Void, T> executable,
 			List<ValueExpression<?>> arguments) {
-		return new MethodExpression<>(null, executable, arguments);
+		return new InvocationExpression<>(null, executable, arguments);
+	}
+
+	public static <R> InvocationExpression<Void, R> invokeResolvedStatic(Class<?> declaringClass, String invocableName,
+			ValueExpression<?>... arguments) {
+		return invokeResolvedStatic(declaringClass, invocableName, Arrays.asList(arguments));
+	}
+
+	public static <R> InvocationExpression<Void, R> invokeResolvedStatic(Class<?> declaringClass, String invocableName,
+			List<ValueExpression<?>> arguments) {
+		/*
+		 * TODO resolve method overload
+		 */
+		return null; /*- new MethodExpression<>(this, InvocableMember.resolveMethodOverload(getType(), invocableName, arguments),
+									arguments);*/
 	}
 }

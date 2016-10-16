@@ -120,6 +120,8 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 
 	Localized<String> invalidMethodArguments(Method method, TypeToken<?> receiver, List<?> a);
 
+	Localized<String> invalidStaticMethodArguments(Method method, List<?> a);
+
 	Localized<String> cannotResolveOverride(ExecutableToken<?, ?> executableMember, Type type);
 
 	Localized<String> cannotResolveAmbiguity(ExecutableToken<?, ?> firstCandidate, ExecutableToken<?, ?> secondCandidate);

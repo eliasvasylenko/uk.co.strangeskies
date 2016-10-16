@@ -60,22 +60,22 @@ public interface ValueExpression<T> extends Expression {
 		return accessField(resolveField(getType(), fieldName));
 	}
 
-	default <R> MethodExpression<? super T, R> invokeMethod(ExecutableToken<? super T, R> invocable,
+	default <R> InvocationExpression<? super T, R> invokeMethod(ExecutableToken<? super T, R> invocable,
 			ValueExpression<?>... arguments) {
 		return invokeMethod(invocable, Arrays.asList(arguments));
 	}
 
-	default <R> MethodExpression<? super T, R> invokeMethod(ExecutableToken<? super T, R> invocable,
+	default <R> InvocationExpression<? super T, R> invokeMethod(ExecutableToken<? super T, R> invocable,
 			List<ValueExpression<?>> arguments) {
-		return new MethodExpression<>(this, invocable, arguments);
+		return new InvocationExpression<>(this, invocable, arguments);
 	}
 
-	default <R> MethodExpression<? super T, R> invokeResolvedMethod(String invocableName,
+	default <R> InvocationExpression<? super T, R> invokeResolvedMethod(String invocableName,
 			ValueExpression<?>... arguments) {
 		return invokeResolvedMethod(invocableName, Arrays.asList(arguments));
 	}
 
-	default <R> MethodExpression<? super T, R> invokeResolvedMethod(String invocableName,
+	default <R> InvocationExpression<? super T, R> invokeResolvedMethod(String invocableName,
 			List<ValueExpression<?>> arguments) {
 		/*
 		 * TODO resolve method overload

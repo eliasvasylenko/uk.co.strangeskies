@@ -49,6 +49,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.reflection.TypeToken.Wildcards;
@@ -258,6 +259,24 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 				return (T) constructor.newInstance(arguments);
 			} catch (Exception e) {
 				throw new ReflectionException(p -> p.invalidConstructorArguments(constructor, instance, a), e);
+			}
+		});
+	}
+
+	/**
+	 * Create a new {@link ExecutableToken} instance from a reference to a
+	 * {@link Method}.
+	 * 
+	 * @param method
+	 *          The method to wrap.
+	 * @return An executable member wrapping the given method.
+	 */
+	public static ExecutableToken<Void, ?> overStaticMethod(Method method) {
+		return new ExecutableToken<>(TypeToken.overType(void.class), null, method, (Void r, List<?> a) -> {
+			try {
+				return method.invoke(null, a.toArray());
+			} catch (Exception e) {
+				throw new ReflectionException(p -> p.invalidStaticMethodArguments(method, a), e);
 			}
 		});
 	}
@@ -1176,5 +1195,20 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 						p -> p.incompatibleArgument(arguments.get(finalI), parameters.get(finalI), finalI, this));
 			}
 		return invoke(receiver, arguments);
+	}
+
+	/**
+	 * find which methods can be invoked on this type, whether statically or on
+	 * instances
+	 * 
+	 * @return a list of all {@link Method} objects applicable to this type,
+	 *         wrapped in {@link ExecutableToken} instances.
+	 */
+	public static InvocableMemberStream<ExecutableToken<Void, ?>> getStaticMethods(Class<?> declaringClass) {
+		Stream<Method> methodStream = Arrays.stream(declaringClass.getMethods())
+				.filter(m -> Modifier.isStatic(m.getModifiers()));
+
+		return new InvocableMemberStream<>(
+				methodStream.map(m -> (ExecutableToken<Void, ?>) ExecutableToken.overStaticMethod(m)));
 	}
 }

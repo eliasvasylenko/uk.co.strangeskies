@@ -46,6 +46,7 @@ import java.lang.reflect.AnnotatedTypeVariable;
 import java.lang.reflect.AnnotatedWildcardType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -1685,7 +1686,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	public InvocableMemberStream<ExecutableToken<Void, T>> getConstructors() {
 		Stream<Constructor<?>> constructors = stream(getRawType().getConstructors());
 
-		return new InvocableMemberStream<>(this,
+		return new InvocableMemberStream<>(
 				constructors.map(m -> ExecutableToken.overConstructor((Constructor<T>) m, this)));
 	}
 
@@ -1699,7 +1700,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	public InvocableMemberStream<ExecutableToken<Void, T>> getDeclaredConstructors() {
 		Stream<Constructor<?>> constructors = stream(getRawType().getDeclaredConstructors());
 
-		return new InvocableMemberStream<>(this,
+		return new InvocableMemberStream<>(
 				constructors.map(m -> ExecutableToken.overConstructor((Constructor<T>) m, this)));
 	}
 
@@ -1716,7 +1717,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 		if (getRawTypes().stream().allMatch(Types::isInterface))
 			methodStream = Stream.concat(methodStream, Arrays.stream(Object.class.getMethods()));
 
-		return new InvocableMemberStream<>(this,
+		methodStream = methodStream.filter(m -> !Modifier.isStatic(m.getModifiers()));
+
+		return new InvocableMemberStream<>(
 				methodStream.map(m -> (ExecutableToken<? super T, ?>) ExecutableToken.overMethod(m, this)));
 	}
 
@@ -1728,9 +1731,10 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 *         wrapped in {@link ExecutableToken} instances.
 	 */
 	public InvocableMemberStream<ExecutableToken<? super T, ?>> getDeclaredMethods() {
-		Stream<Method> methodStream = stream(getRawType().getDeclaredMethods());
+		Stream<Method> methodStream = stream(getRawType().getDeclaredMethods())
+				.filter(m -> !Modifier.isStatic(m.getModifiers()));
 
-		return new InvocableMemberStream<>(this,
+		return new InvocableMemberStream<>(
 				methodStream.map(m -> (ExecutableToken<? super T, ?>) ExecutableToken.overMethod(m, this)));
 	}
 

@@ -57,11 +57,9 @@ import uk.co.strangeskies.utilities.tuple.Pair;
 
 public class InvocableMemberStream<I extends ExecutableToken<?, ?>>
 		implements SelfStreamDecorator<I, InvocableMemberStream<I>> {
-	private final TypeToken<?> type;
 	private final Stream<I> members;
 
-	public InvocableMemberStream(TypeToken<?> type, Stream<I> members) {
-		this.type = type;
+	public InvocableMemberStream(Stream<I> members) {
 		this.members = members;
 	}
 
@@ -72,7 +70,7 @@ public class InvocableMemberStream<I extends ExecutableToken<?, ?>>
 
 	@Override
 	public InvocableMemberStream<I> decorateIntermediate(Function<? super Stream<I>, Stream<I>> transformation) {
-		return new InvocableMemberStream<>(type, transformation.apply(getComponent()));
+		return new InvocableMemberStream<>(transformation.apply(getComponent()));
 	}
 
 	public <T> I resolveOverload() {
@@ -87,13 +85,11 @@ public class InvocableMemberStream<I extends ExecutableToken<?, ?>>
 		return resolveOverload(Arrays.asList(arguments));
 	}
 
-	@SuppressWarnings("unchecked")
 	public <T> I resolveOverload(List<? extends TypeToken<?>> arguments) {
 		Set<? extends I> candidates = collect(Collectors.toSet());
 
 		if (candidates.isEmpty())
-			throw new IllegalArgumentException(
-					"Cannot find any applicable invocable in '" + type + "' for arguments '" + arguments + "'");
+			throw new IllegalArgumentException("Cannot find any applicable invocable for arguments '" + arguments + "'");
 
 		candidates = resolveApplicableExecutableMembers(candidates, arguments);
 
