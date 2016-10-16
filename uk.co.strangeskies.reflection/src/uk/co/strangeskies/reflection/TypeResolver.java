@@ -33,6 +33,7 @@
 package uk.co.strangeskies.reflection;
 
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.GenericArrayType;
@@ -61,6 +62,7 @@ import java.util.stream.Stream;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.utilities.DeepCopyable;
 import uk.co.strangeskies.utilities.IdentityProperty;
+import uk.co.strangeskies.utilities.Isomorphism;
 
 /**
  * <p>
@@ -136,7 +138,7 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 */
 	@Override
 	public TypeResolver deepCopy() {
-		return deepCopy(new HashMap<>());
+		return deepCopy(new Isomorphism());
 	}
 
 	/**
@@ -146,15 +148,14 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 * bounds. These mappings will be entered into the given map when they are
 	 * made.
 	 * 
-	 * @param inferenceVariableSubstitutions
-	 *          A map which will contain mappings from inference variables which
-	 *          are mentioned in the resolver to the new inference variables they
-	 *          have been substituted with in the derived resolver.
+	 * @param isomorphism
+	 *          an isomorphism for inference variables
 	 * @return A newly derived resolver, with each instance of an inference
 	 *         variable substituted for new mappings.
 	 */
-	public TypeResolver deepCopy(Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions) {
-		return withNewBoundsSubstitution(inferenceVariableSubstitutions, bounds.deepCopy(inferenceVariableSubstitutions));
+	@Override
+	public TypeResolver deepCopy(Isomorphism isomorphism) {
+		return withNewBoundsSubstitution(isomorphism, bounds.deepCopy(isomorphism));
 	}
 
 	/**
@@ -163,34 +164,31 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 * to in the given map in the new resolver, and all the bounds on them will be
 	 * substituted for equivalent bounds.
 	 * 
-	 * @param inferenceVariableSubstitutions
-	 *          A mapping from inference variables which may be mentioned in the
-	 *          resolver to inference variables they should be substituted for in
-	 *          the derived resolver.
+	 * @param isomorphism
+	 *          an isomorphism for inference variables
 	 * @return A newly derived resolver, with each instance of an inference
 	 *         variable substituted for its mapping in the given map, where one
 	 *         exists.
 	 */
-	public TypeResolver withInferenceVariableSubstitution(
-			Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions) {
-		return withNewBoundsSubstitution(inferenceVariableSubstitutions,
-				bounds.withInferenceVariableSubstitution(inferenceVariableSubstitutions));
+	public TypeResolver withInferenceVariableSubstitution(Isomorphism isomorphism) {
+		return withNewBoundsSubstitution(isomorphism, bounds.withInferenceVariableSubstitution(isomorphism));
 	}
 
-	private TypeResolver withNewBoundsSubstitution(
-			Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions, BoundSet bounds) {
+	private TypeResolver withNewBoundsSubstitution(Isomorphism isomorphism, BoundSet bounds) {
 		TypeResolver copy = new TypeResolver(bounds);
 
 		copy.wildcardCaptures.addAll(wildcardCaptures);
 
-		if (inferenceVariableSubstitutions.isEmpty()) {
+		if (isomorphism.byIdentity().isEmpty()) {
 			copy.capturedTypeVariables.putAll(capturedTypeVariables);
 		} else {
 			for (GenericDeclaration declaration : capturedTypeVariables.keySet())
 				copy.capturedTypeVariables.put(declaration,
-						capturedTypeVariables.get(declaration).entrySet().stream().collect(Collectors.toMap(Entry::getKey, i -> {
-							return inferenceVariableSubstitutions.get(i.getValue());
-						})));
+						capturedTypeVariables.get(declaration).entrySet().stream().collect(toMap(
+
+								Entry::getKey,
+
+								i -> (InferenceVariable) isomorphism.byIdentity().getMapping(i.getValue()))));
 		}
 
 		return copy;

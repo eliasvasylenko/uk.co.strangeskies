@@ -32,19 +32,27 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.toList;
+import static uk.co.strangeskies.reflection.AnnotatedTypes.over;
+import static uk.co.strangeskies.reflection.IntersectionType.uncheckedFrom;
+import static uk.co.strangeskies.reflection.ParameterizedTypes.uncheckedFrom;
+import static uk.co.strangeskies.reflection.TypeVariables.upperBounded;
+import static uk.co.strangeskies.reflection.Types.getRawType;
+import static uk.co.strangeskies.reflection.WildcardTypes.lowerBounded;
+import static uk.co.strangeskies.reflection.WildcardTypes.upperBounded;
+
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.Isomorphism;
@@ -118,7 +126,7 @@ public class TypeSubstitution {
 	private TypeSubstitution(TypeSubstitution substitution, Isomorphism isomorphism) {
 		this.isomorphism = isomorphism;
 		this.mapping = substitution.mapping;
-		this.empty = substitution.empty;
+		this.empty = () -> false;
 		this.includeTypeVariables = substitution.includeTypeVariables;
 	}
 
@@ -197,46 +205,59 @@ public class TypeSubstitution {
 	}
 
 	protected Type resolve(Type type, IdentityProperty<Boolean> changed) {
-		Type mapping = this.mapping.apply(type);
-		if (mapping != null) {
+		if (isomorphism.byIdentity().getMappedNodes().contains(type)) {
+			Type mapping = (Type) isomorphism.byIdentity().getMapping(type);
 			if (mapping != type) {
 				changed.set(true);
 			}
-			return isomorphism.byIdentity().getMapping(type, t -> mapping);
+			return mapping;
 
 		} else {
-			if (changed.get()) {
-				changed = new IdentityProperty<>(false);
+			Type mapping = this.mapping.apply(type);
+			if (mapping != null) {
+				if (mapping != type) {
+					changed.set(true);
+				}
+				return mapping;
+
+			} else {
+				if (changed.get()) {
+					changed = new IdentityProperty<>(false);
+				}
+
+				if (type == null) {
+					return null;
+
+				} else if (type instanceof Class) {
+					return resolveType(type);
+
+				} else if (type instanceof TypeVariable<?>) {
+					return includeTypeVariables ? resolveTypeVariable((TypeVariable<?>) type, changed) : type;
+
+				} else if (type instanceof InferenceVariable) {
+					return resolveType(type);
+
+				} else if (type instanceof IntersectionType) {
+					return resolveIntersectionType((IntersectionType) type, changed);
+
+				} else if (type instanceof WildcardType) {
+					return resolveWildcardType((WildcardType) type, changed);
+
+				} else if (type instanceof GenericArrayType) {
+					return resolveGenericArrayType((GenericArrayType) type, changed);
+
+				} else if (type instanceof ParameterizedType) {
+					return resolveParameterizedType((ParameterizedType) type, changed);
+				}
 			}
 
-			if (type == null) {
-				return null;
-
-			} else if (type instanceof Class) {
-				return type;
-
-			} else if (type instanceof TypeVariable<?>) {
-				return includeTypeVariables ? resolveTypeVariable((TypeVariable<?>) type, changed) : type;
-
-			} else if (type instanceof InferenceVariable) {
-				return type;
-
-			} else if (type instanceof IntersectionType) {
-				return resolveIntersectionType((IntersectionType) type, changed);
-
-			} else if (type instanceof WildcardType) {
-				return resolveWildcardType((WildcardType) type, changed);
-
-			} else if (type instanceof GenericArrayType) {
-				return resolveGenericArrayType((GenericArrayType) type, changed);
-
-			} else if (type instanceof ParameterizedType) {
-				return resolveParameterizedType((ParameterizedType) type, changed);
-			}
+			throw new IllegalArgumentException(
+					"Cannot resolve unrecognised type '" + type + "' of class'" + type.getClass() + "'.");
 		}
+	}
 
-		throw new IllegalArgumentException(
-				"Cannot resolve unrecognised type '" + type + "' of class'" + type.getClass() + "'.");
+	private Type resolveType(Type type) {
+		return isomorphism.byIdentity().getMapping(type, Function.identity());
 	}
 
 	private Type resolveGenericArrayType(GenericArrayType type, IdentityProperty<Boolean> changedScoped) {
@@ -250,7 +271,7 @@ public class TypeSubstitution {
 			if (type.getBounds().length > 0) {
 				List<Type> bounds = resolveTypes(type.getBounds(), changed);
 				if (changed.get()) {
-					return TypeVariables.upperBounded(type.getGenericDeclaration(), type.getName(), AnnotatedTypes.over(bounds));
+					return upperBounded(type.getGenericDeclaration(), type.getName(), over(bounds));
 				} else {
 					return type;
 				}
@@ -266,7 +287,7 @@ public class TypeSubstitution {
 			if (type.getLowerBounds().length > 0) {
 				List<Type> bounds = resolveTypes(type.getLowerBounds(), changed);
 				if (changed.get()) {
-					return WildcardTypes.lowerBounded(bounds);
+					return lowerBounded(bounds);
 				} else {
 					return type;
 				}
@@ -274,7 +295,7 @@ public class TypeSubstitution {
 			} else if (type.getUpperBounds().length > 0) {
 				List<Type> bounds = resolveTypes(type.getUpperBounds(), changed);
 				if (changed.get()) {
-					return WildcardTypes.upperBounded(bounds);
+					return upperBounded(bounds);
 				} else {
 					return type;
 				}
@@ -295,7 +316,7 @@ public class TypeSubstitution {
 
 			List<Type> types = resolveTypes(type.getTypes(), changed);
 			if (changed.get()) {
-				result = IntersectionType.uncheckedFrom(types);
+				result = uncheckedFrom(types);
 			} else {
 				result = type;
 			}
@@ -312,7 +333,7 @@ public class TypeSubstitution {
 			List<Type> arguments = resolveTypes(type.getActualTypeArguments(), changed);
 
 			if (changed.get()) {
-				return ParameterizedTypes.uncheckedFrom(resolve(type.getOwnerType()), Types.getRawType(type), arguments);
+				return uncheckedFrom(resolve(type.getOwnerType()), getRawType(type), arguments);
 			} else {
 				return type;
 			}
@@ -320,6 +341,6 @@ public class TypeSubstitution {
 	}
 
 	private List<Type> resolveTypes(Type[] types, IdentityProperty<Boolean> changed) {
-		return Arrays.stream(types).map(t -> resolve(t, changed)).collect(Collectors.toList());
+		return stream(types).map(t -> resolve(t, changed)).collect(toList());
 	}
 }

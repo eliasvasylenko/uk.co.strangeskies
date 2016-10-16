@@ -50,6 +50,7 @@ import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.utilities.IdentityProperty;
+import uk.co.strangeskies.utilities.Isomorphism;
 
 class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	private final BoundSet boundSet;
@@ -152,33 +153,34 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				variableIterator.remove();
 	}
 
-	public InferenceVariableBoundsImpl withInferenceVariableSubstitution(
-			Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions) {
-		InferenceVariable aSubstitution = inferenceVariableSubstitutions.get(inferenceVariable);
-		if (aSubstitution == null)
-			aSubstitution = inferenceVariable;
+	public InferenceVariableBoundsImpl withInferenceVariableSubstitution(Isomorphism isomorphism) {
 
-		InferenceVariableBoundsImpl copy = new InferenceVariableBoundsImpl(boundSet, aSubstitution);
+		InferenceVariable inferenceVariableSubstitution = (InferenceVariable) isomorphism.byIdentity()
+				.getMapping(inferenceVariable);
 
-		copy.addBoundsWithTypeSubstitution(this, new TypeSubstitution(inferenceVariableSubstitutions));
+		InferenceVariableBoundsImpl copy = new InferenceVariableBoundsImpl(boundSet, inferenceVariableSubstitution);
+
+		copy.addBoundsWithTypeSubstitution(this, isomorphism);
 
 		return copy;
 	}
 
 	private void addBoundsWithTypeSubstitution(InferenceVariableBoundsImpl inferenceVariableBounds,
-			TypeSubstitution where) {
-		inferenceVariableBounds.equalities.stream().map(where::resolve).forEach(equality -> {
+			Isomorphism isomorphism) {
+		TypeSubstitution substitution = new TypeSubstitution().withIsomorphism(isomorphism);
+
+		inferenceVariableBounds.equalities.stream().map(substitution::resolve).forEach(equality -> {
 			equalities.add(equality);
 			if (InferenceVariable.getMentionedBy(equality).isEmpty()) {
 				instantiation = equality;
 			}
 		});
-		inferenceVariableBounds.upperBounds.stream().map(where::resolve).forEach(upperBounds::add);
-		inferenceVariableBounds.lowerBounds.stream().map(where::resolve).forEach(lowerBounds::add);
+		inferenceVariableBounds.upperBounds.stream().map(substitution::resolve).forEach(upperBounds::add);
+		inferenceVariableBounds.lowerBounds.stream().map(substitution::resolve).forEach(lowerBounds::add);
 
-		capture = inferenceVariableBounds.capture;
+		capture = (CaptureConversion) isomorphism.byIdentity().getMapping(inferenceVariableBounds.capture);
 
-		inferenceVariableBounds.relations.stream().map(where::resolve).map(InferenceVariable.class::cast)
+		inferenceVariableBounds.relations.stream().map(substitution::resolve).map(InferenceVariable.class::cast)
 				.forEach(relations::add);
 	}
 

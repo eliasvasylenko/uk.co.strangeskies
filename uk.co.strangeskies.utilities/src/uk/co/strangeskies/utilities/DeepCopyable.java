@@ -45,5 +45,10 @@ public interface DeepCopyable<S extends DeepCopyable<S>> extends Copyable<S> {
 	/**
 	 * @return A deep copy of the receiving instance.
 	 */
-	public S deepCopy();
+	default S deepCopy() {
+		return deepCopy(new Isomorphism());
+	}
+
+	@Override
+	S deepCopy(Isomorphism context);
 }

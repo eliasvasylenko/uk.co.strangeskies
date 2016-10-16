@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static java.util.stream.Collectors.toMap;
+
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -42,6 +44,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import uk.co.strangeskies.utilities.Isomorphism;
 
 /**
  * A {@link CaptureConversion} is a special sort of bound which can be contained
@@ -147,25 +151,21 @@ public class CaptureConversion {
 	 * Substitute any mentions of the inference variables present as keys in the
 	 * given map with their associated values in the map.
 	 * 
-	 * @param inferenceVariableSubstitutions
-	 *          A mapping from inference variables which may be present in this
-	 *          capture conversion, to the inference variables they should be
-	 *          substituted with.
+	 * @param isomorphism
+	 *          an isomorphism for inference variables
 	 * @return A new {@link CaptureConversion} instance which is equal to the
 	 *         receiving instance but for the substitutions made.
 	 */
-	public CaptureConversion withInferenceVariableSubstitution(
-			Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions) {
-		ParameterizedType newType = (ParameterizedType) new TypeSubstitution(inferenceVariableSubstitutions)
+	public CaptureConversion withInferenceVariableSubstitution(Isomorphism isomorphism) {
+		ParameterizedType newType = (ParameterizedType) new TypeSubstitution().withIsomorphism(isomorphism)
 				.resolve(getOriginalType());
 
 		Map<TypeVariable<?>, InferenceVariable> newCaptures = ParameterizedTypes.getAllTypeArguments(getCaptureType())
-				.collect(Collectors.toMap(Entry::getKey, e -> {
-					InferenceVariable substitution = inferenceVariableSubstitutions.get(e.getValue());
-					if (substitution == null)
-						substitution = (InferenceVariable) e.getValue();
-					return substitution;
-				}));
+				.collect(toMap(
+
+						Entry::getKey,
+
+						e -> isomorphism.byIdentity().getMapping(e.getValue(), t -> (InferenceVariable) t)));
 
 		return new CaptureConversion(newType, newCaptures);
 	}

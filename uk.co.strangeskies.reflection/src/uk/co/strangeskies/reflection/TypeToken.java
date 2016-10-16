@@ -310,8 +310,15 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	private static Pair<TypeResolver, Type> incorporateAnnotatedType(AnnotatedType annotatedType) {
 		Pair<TypeResolver, Type> resolvedType = incorporateAnnotatedType(new TypeResolver(), annotatedType); // RESOLVER_CACHE.putGet(annotatedType);
 
-		Map<InferenceVariable, InferenceVariable> map = new HashMap<>();
-		return new Pair<>(resolvedType.getLeft().deepCopy(map), new TypeSubstitution(map).resolve(resolvedType.getRight()));
+		/*-
+		Isomorphism isomorphism = new Isomorphism();
+		TypeResolver resolverCopy = resolvedType.getLeft().deepCopy(isomorphism);
+		
+		Type typeCopy = new TypeSubstitution().withIsomorphism(isomorphism).resolve(resolvedType.getRight());
+		
+		return new Pair<>(resolverCopy, typeCopy);
+		*/
+		return resolvedType;
 	}
 
 	private static Type substituteAnnotatedWildcards(Isomorphism isomorphism, AnnotatedType annotatedType,
@@ -544,13 +551,11 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	}
 
 	@Override
-	public TypeToken<T> deepCopy() {
-		Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions = new HashMap<>();
-
-		TypeResolver resolver = getInternalResolver().deepCopy(inferenceVariableSubstitutions);
+	public TypeToken<T> deepCopy(Isomorphism isomorphism) {
+		TypeResolver resolver = getInternalResolver().deepCopy(isomorphism);
 
 		return new TypeToken<>(resolver, declaration,
-				new TypeSubstitution(inferenceVariableSubstitutions).resolve(getType()));
+				new TypeSubstitution().withIsomorphism(isomorphism).resolve(getType()));
 	}
 
 	/**

@@ -46,6 +46,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.utilities.DeepCopyable;
+import uk.co.strangeskies.utilities.Isomorphism;
 
 /**
  * <p>
@@ -239,21 +240,6 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	 * Create a copy of an existing bound set. All the inference variables
 	 * contained within the given bound set will be substituted for new inference
 	 * variables in the new bound set, and all the bounds on them will be
-	 * substituted for equivalent bounds.
-	 * <p>
-	 * Inference variables which already have proper instantiations may not be
-	 * substituted, as this is generally unnecessary in practice and so avoiding
-	 * it can save time.
-	 */
-	@Override
-	public BoundSet deepCopy() {
-		return deepCopy(new HashMap<>());
-	}
-
-	/**
-	 * Create a copy of an existing bound set. All the inference variables
-	 * contained within the given bound set will be substituted for new inference
-	 * variables in the new bound set, and all the bounds on them will be
 	 * substituted for equivalent bounds. Any such inference variable
 	 * substitutions made will be put into the given map.
 	 * <p>
@@ -261,19 +247,19 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	 * substituted, as this is generally unnecessary in practice and so avoiding
 	 * it can save time.
 	 * 
-	 * @param inferenceVariableSubstitutions
-	 *          A map in which the method invocation will put mappings from
-	 *          inference variables to new inference variables which are made.
+	 * @param isomorphism
+	 *          an isomorphism for inference variables
 	 * @return A deep copy of this bound set.
 	 */
-	public BoundSet deepCopy(Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions) {
+	@Override
+	public BoundSet deepCopy(Isomorphism isomorphism) {
 		/*
 		 * Substitutions of inference variables:
 		 */
 		for (InferenceVariable inferenceVariable : getInferenceVariables())
-			inferenceVariableSubstitutions.put(inferenceVariable, new InferenceVariable(inferenceVariable.getName()));
+			isomorphism.byIdentity().getMapping(inferenceVariable, t -> new InferenceVariable(inferenceVariable.getName()));
 
-		return withInferenceVariableSubstitution(inferenceVariableSubstitutions);
+		return withInferenceVariableSubstitution(isomorphism);
 	}
 
 	/**
@@ -282,32 +268,32 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	 * index to in the given map in the new bound set, and all the bounds on them
 	 * will be substituted for equivalent bounds.
 	 * 
-	 * @param inferenceVariableSubstitutions
-	 *          A mapping from inference variables which may be mentioned in the
-	 *          bound set to inference variables they should be substituted for in
-	 *          the derived bound set.
+	 * @param isomorphism
+	 *          an isomorphism for inference variables
 	 * @return A newly derived bound set, with each instance of an inference
 	 *         variable substituted for its mapping in the given map, where one
 	 *         exists.
 	 */
-	public BoundSet withInferenceVariableSubstitution(
-			Map<InferenceVariable, InferenceVariable> inferenceVariableSubstitutions) {
-		if (inferenceVariableSubstitutions.isEmpty())
+	public BoundSet withInferenceVariableSubstitution(Isomorphism isomorphism) {
+		if (isomorphism.byIdentity().isEmpty())
 			return copy();
 
 		BoundSet copy = new BoundSet();
 		/*
 		 * Substitutions of capture conversions:
 		 */
-		Map<CaptureConversion, CaptureConversion> captureConversionSubstitutions = new HashMap<>();
-		for (CaptureConversion captureConversion : captureConversions)
-			captureConversionSubstitutions.put(captureConversion,
-					captureConversion.withInferenceVariableSubstitution(inferenceVariableSubstitutions));
+		for (CaptureConversion captureConversion : captureConversions) {
 
-		captureConversions.stream().forEach(copy.captureConversions::add);
+			captureConversion = isomorphism.byIdentity().getMapping(captureConversion,
+					c -> c.withInferenceVariableSubstitution(isomorphism));
+
+			copy.captureConversions.add(captureConversion);
+		}
+
 		for (Entry<InferenceVariable, InferenceVariableBoundsImpl> inferenceVariable : inferenceVariableBounds.entrySet()) {
-			copy.addInferenceVariableBounds(inferenceVariableSubstitutions.get(inferenceVariable.getKey()), inferenceVariable
-					.getValue().copyInto(copy).withInferenceVariableSubstitution(inferenceVariableSubstitutions));
+			copy.addInferenceVariableBounds(
+					(InferenceVariable) isomorphism.byIdentity().getMapping(inferenceVariable.getKey()),
+					inferenceVariable.getValue().withInferenceVariableSubstitution(isomorphism).copyInto(copy));
 		}
 
 		copy.valid = valid;

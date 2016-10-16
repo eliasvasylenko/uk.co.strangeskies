@@ -38,6 +38,7 @@ import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -135,17 +136,57 @@ public class Isomorphism {
 		 * @param node
 		 *          the graph node to map
 		 * @param mapping
+		 *          the mapping to provide
+		 */
+		@SuppressWarnings("unchecked")
+		public <S, C> void putMapping(C node, S mapping) {
+			((Map<C, S>) copiedNodes).put(node, mapping);
+		}
+
+		public boolean isEmpty() {
+			return getMappedNodes().isEmpty();
+		}
+
+		public Set<?> getMappedNodes() {
+			return copiedNodes.keySet();
+		}
+
+		/**
+		 * Fetch an existing mapping if one has been made via this
+		 * {@link Isomorphism}.
+		 * 
+		 * @param node
+		 *          the graph node to map
+		 * @return a mapping of the given node, or null if none exists
+		 */
+		public Object getMapping(Object node) {
+			Supplier<?> copySupplier = copiedNodes.get(node);
+			return copySupplier == null ? null : copySupplier.get();
+		}
+
+		/**
+		 * Make a mapping of the given node, or fetch an existing mapping if one has
+		 * been made via this {@link Isomorphism}.
+		 * 
+		 * @param <S>
+		 *          the type of the node
+		 * @param <C>
+		 *          the type of the result
+		 * @param node
+		 *          the graph node to map
+		 * @param mapping
 		 *          the mapping function to apply
 		 * @return a mapping of the given node
 		 */
 		@SuppressWarnings("unchecked")
 		public <S, C> S getMapping(C node, Function<C, S> mapping) {
-			S copy = ((Map<C, S>) copiedNodes).get(node);
+			Supplier<S> copy = ((Map<C, Supplier<S>>) copiedNodes).get(node);
 			if (copy == null) {
-				copy = mapping.apply(node);
+				S copyItem = mapping.apply(node);
+				copy = () -> copyItem;
+				((Map<C, Supplier<S>>) copiedNodes).put(node, copy);
 			}
-			((Map<C, S>) copiedNodes).putIfAbsent(node, copy);
-			return copy;
+			return copy.get();
 		}
 
 		/**
