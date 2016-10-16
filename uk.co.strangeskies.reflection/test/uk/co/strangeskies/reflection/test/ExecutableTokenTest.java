@@ -32,11 +32,17 @@
  */
 package uk.co.strangeskies.reflection.test;
 
+import static org.hamcrest.collection.IsEmptyCollection.empty;
+import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.Assert.assertThat;
+import static uk.co.strangeskies.reflection.ExecutableToken.overConstructor;
+
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import uk.co.strangeskies.reflection.ExecutableToken;
@@ -77,12 +83,10 @@ public class ExecutableTokenTest {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void constructorWithUninferredEnclosingTypeTest() throws NoSuchMethodException, SecurityException {
-		TypeToken<Outer<?>.Inner<Integer>> tt = new @Infer TypeToken<@Infer Outer<@Infer ?>.Inner<Integer>>() {};
-		System.out.println(tt);
-		System.out.println(tt.getResolver().getBounds());
+		ExecutableToken<?, ?> constructor = overConstructor((Constructor<Object>) Inner.class.getConstructors()[0],
+				new TypeToken<Outer<Number>>() {}, new @Infer TypeToken<Outer<?>.Inner<Integer>>() {});
 
-		ExecutableToken.overConstructor((Constructor<Object>) Inner.class.getConstructors()[0],
-				new TypeToken<Outer<Number>>() {}, new @Infer TypeToken<@Infer Outer<@Infer ?>.Inner<Integer>>() {});
+		assertThat(constructor.getReturnType().resolve(), equalTo(new TypeToken<Outer<Number>.Inner<Integer>>() {}));
 	}
 
 	@Test
@@ -90,9 +94,9 @@ public class ExecutableTokenTest {
 		ExecutableToken<?, ?> asList = ExecutableToken.overMethod(Arrays.class.getMethod("asList", Object[].class))
 				.asVariableArityInvocation();
 
-		Object list = asList.invoke(null);
+		List<?> list = (List<?>) asList.invoke(null);
 
-		Assert.assertEquals(Collections.emptyList(), list);
+		assertThat(list, empty());
 	}
 
 	@Test
@@ -100,9 +104,9 @@ public class ExecutableTokenTest {
 		ExecutableToken<?, ?> asList = ExecutableToken.overMethod(Arrays.class.getMethod("asList", Object[].class))
 				.asVariableArityInvocation();
 
-		Object list = asList.invoke(null, "");
+		List<?> list = (List<?>) asList.invoke(null, "");
 
-		Assert.assertEquals(Arrays.asList(""), list);
+		assertThat(list, contains(""));
 	}
 
 	@Test
@@ -110,16 +114,16 @@ public class ExecutableTokenTest {
 		ExecutableToken<?, ?> asList = ExecutableToken.overMethod(Arrays.class.getMethod("asList", Object[].class))
 				.asVariableArityInvocation();
 
-		Object list = asList.invoke(null, "A", "B", "C");
+		List<?> list = (List<?>) asList.invoke(null, "A", "B", "C");
 
-		Assert.assertEquals(Arrays.asList("A", "B", "C"), list);
+		assertThat(list, contains("A", "B", "C"));
 	}
 
 	@Test
 	public void emptyVarargsResolutionTest() throws NoSuchMethodException, SecurityException {
 		ExecutableToken<?, ?> asList = new TypeToken<Arrays>() {}.getMethods().named("asList").resolveOverload();
 
-		Assert.assertTrue(asList.isVariableArityInvocation());
+		assertThat(asList.isVariableArityInvocation(), is(true));
 	}
 
 	@Test
@@ -127,7 +131,7 @@ public class ExecutableTokenTest {
 		ExecutableToken<?, ?> asList = new TypeToken<Arrays>() {}.getMethods().named("asList")
 				.resolveOverload(String.class);
 
-		Assert.assertTrue(asList.isVariableArityInvocation());
+		assertThat(asList.isVariableArityInvocation(), is(true));
 	}
 
 	@Test
@@ -135,16 +139,16 @@ public class ExecutableTokenTest {
 		ExecutableToken<?, ?> asList = new TypeToken<Arrays>() {}.getMethods().named("asList").resolveOverload(String.class,
 				String.class, String.class);
 
-		Assert.assertTrue(asList.isVariableArityInvocation());
+		assertThat(asList.isVariableArityInvocation(), is(true));
 	}
 
 	@Test
 	public void varargsDefinitionTest() throws NoSuchMethodException, SecurityException {
 		ExecutableToken<?, ?> asList = ExecutableToken.overMethod(Arrays.class.getMethod("asList", Object[].class));
 
-		Object list = asList.invoke(null, new Object[] { new Object[] { "A", "B", "C" } });
+		List<?> list = (List<?>) asList.invoke(null, new Object[] { new Object[] { "A", "B", "C" } });
 
-		Assert.assertEquals(Arrays.asList("A", "B", "C"), list);
+		assertThat(list, contains("A", "B", "C"));
 	}
 
 	@Test
@@ -152,6 +156,6 @@ public class ExecutableTokenTest {
 		ExecutableToken<?, ?> asList = new TypeToken<Arrays>() {}.getMethods().named("asList")
 				.resolveOverload(new TypeToken<String[]>() {});
 
-		Assert.assertFalse(asList.isVariableArityInvocation());
+		assertThat(asList.isVariableArityInvocation(), is(false));
 	}
 }

@@ -331,9 +331,10 @@ public class TypeSubstitution {
 		return isomorphism.byIdentity().getProxiedMapping(type, ParameterizedType.class, i -> {
 
 			List<Type> arguments = resolveTypes(type.getActualTypeArguments(), changed);
+			Type owner = resolve(type.getOwnerType(), changed);
 
 			if (changed.get()) {
-				return uncheckedFrom(resolve(type.getOwnerType()), getRawType(type), arguments);
+				return uncheckedFrom(owner, getRawType(type), arguments);
 			} else {
 				return type;
 			}
