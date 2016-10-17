@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.reflection.test;
 
-import static uk.co.strangeskies.reflection.TypeToken.overType;
+import static uk.co.strangeskies.reflection.ExecutableToken.getStaticMethods;
 
 import java.io.Serializable;
 import java.lang.annotation.ElementType;
@@ -335,22 +335,20 @@ public class TypeTokenTest {
 		 */
 
 		System.out.println(new TypeToken<List<? extends Number>>() {}.getType());
-		System.out.println(TypeToken.overType(Arrays.class).getMethods().named("asList")
-				.resolveOverload(int.class, double.class).withTargetType(new TypeToken<List<? extends Number>>() {}).infer());
+		System.out.println(getStaticMethods(Arrays.class).named("asList").resolveOverload(int.class, double.class)
+				.withTargetType(new TypeToken<List<? extends Number>>() {}).infer());
 		System.out.println();
 
-		System.out
-				.println(TypeToken.overType(Arrays.class).getMethods().named("asList").resolveOverload(int.class, double.class)
-						.withTargetType(new TypeToken<List<? super Comparable<? extends Number>>>() {}));
+		System.out.println(getStaticMethods(Arrays.class).named("asList").resolveOverload(int.class, double.class)
+				.withTargetType(new TypeToken<List<? super Comparable<? extends Number>>>() {}));
 		System.out.println();
 
-		System.out.println(overType(Arrays.class).getMethods().named("asList").resolveOverload(int.class, double.class)
+		System.out.println(getStaticMethods(Arrays.class).named("asList").resolveOverload(int.class, double.class)
 				.getResolver().getBounds());
 		System.out.println();
 
-		System.out
-				.println(TypeToken.overType(Arrays.class).getMethods().named("asList").resolveOverload(int.class, double.class)
-						.withTargetType(new TypeToken<List<? super Comparable<? extends Number>>>() {}).infer());
+		System.out.println(getStaticMethods(Arrays.class).named("asList").resolveOverload(int.class, double.class)
+				.withTargetType(new TypeToken<List<? super Comparable<? extends Number>>>() {}).infer());
 		System.out.println();
 
 		System.out.println(TypeToken.overType(B.class).getMethods().named("method")
@@ -372,7 +370,7 @@ public class TypeTokenTest {
 		System.out.println(new TypeToken<Collection<H>>() {}.resolveSubtypeParameters(HashSet.class));
 		System.out.println();
 
-		System.out.println(new TypeToken<B>() {}.getMethods().named("testeroonie")
+		System.out.println(getStaticMethods(B.class).named("testeroonie")
 				.resolveOverload(new TypeToken<Class<?>>() {}.getType(), String.class).infer());
 		System.out.println();
 
@@ -567,9 +565,8 @@ public class TypeTokenTest {
 
 		Imports imports = Imports.empty().withImports(Capture.class, Preserve.class, Test2.class, List.class, Type.class);
 		String annotationString = AnnotatedTypes.toString(
-				new TypeToken<@Test3(thisIsTest = "yeah!", wat = 2.5f) List<@Test2(
-						idk = "helo",
-						wat = 2) ? extends @Preserve Number> @Capture [] @Infer []>() {}.getAnnotatedDeclaration(),
+				new TypeToken<@Test3(thisIsTest = "yeah!", wat = 2.5f) List<@Test2(idk = "helo", wat = 2) ? extends @Preserve Number> @Capture [] @Infer []>() {}
+						.getAnnotatedDeclaration(),
 				imports);
 		System.out.println(annotationString);
 		System.out.println();
