@@ -30,50 +30,45 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection;
+package uk.co.strangeskies.reflection.codegen;
 
-import static uk.co.strangeskies.text.properties.PropertyLoader.getDefaultProperties;
-
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.util.function.Function;
+import java.util.Collection;
 
+import uk.co.strangeskies.reflection.ReflectionProperties;
+import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.text.properties.Localized;
-import uk.co.strangeskies.text.properties.LocalizedRuntimeException;
+import uk.co.strangeskies.text.properties.Properties;
 
-/**
- * An exception relating to reflective operations over the Java {@link Type}
- * system.
- * 
- * @author Elias N Vasylenko
- */
-public class ReflectionException extends LocalizedRuntimeException {
-	private static final long serialVersionUID = 1L;
+public interface CodeGenerationProperties extends Properties<CodeGenerationProperties> {
+	ReflectionProperties reflection();
 
-	/**
-	 * @param message
-	 *          a function from the {@link ReflectionProperties} to the exception
-	 *          message
-	 */
-	public ReflectionException(Function<ReflectionProperties, Localized<String>> message) {
-		this(message.apply(getDefaultProperties(ReflectionProperties.class)));
-	}
+	Localized<String> invalidExpressionForStatement(Expression expression);
 
-	/**
-	 * @param message
-	 *          a function from the {@link ReflectionProperties} to the exception
-	 *          message
-	 * @param cause
-	 *          the cause of the exception
-	 */
-	public ReflectionException(Function<ReflectionProperties, Localized<String>> message, Throwable cause) {
-		this(message.apply(getDefaultProperties(ReflectionProperties.class)), cause);
-	}
+	Localized<String> cannotInstantiateClassDefinition(ClassDefinition<?> classDefinition, TypeToken<?> superType);
 
-	protected ReflectionException(Localized<String> message) {
-		super(message);
-	}
+	Localized<String> cannotAccessPlaceholderExpression(VariableExpressionProxy<?> variableExpressionProxy);
 
-	protected ReflectionException(Localized<String> message, Throwable cause) {
-		super(message, cause);
-	}
+	Localized<String> cannotOverrideMethod(Method overriddenMethod);
+
+	Localized<String> incompatibleReturnTypes(Type override, Method inherited);
+
+	Localized<String> incompatibleOverride(MethodDefinition<?, ?> override);
+
+	Localized<String> incompatibleParameterTypes(Type[] parameterTypes, Method inherited);
+
+	Localized<String> duplicateMethodSignature(MethodDefinition<?, ?> override);
+
+	Localized<String> mustOverrideMethods(Collection<Method> classMethod);
+
+	Localized<String> undefinedVariable(LocalVariable<?> variable);
+
+	Localized<String> cannotResolveEnclosingInstance(ClassDefinition<?> receiverClass);
+
+	Localized<String> cannotRedeclareVariable(LocalVariable<?> variable);
+
+	Localized<String> incompleteStatementExecution();
+
+	Localized<String> incompleteExpressionEvaluation();
 }

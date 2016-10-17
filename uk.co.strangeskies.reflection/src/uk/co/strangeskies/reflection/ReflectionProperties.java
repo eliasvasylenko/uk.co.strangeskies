@@ -41,11 +41,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import uk.co.strangeskies.reflection.codegen.ClassDefinition;
-import uk.co.strangeskies.reflection.codegen.Expression;
-import uk.co.strangeskies.reflection.codegen.LocalVariable;
-import uk.co.strangeskies.reflection.codegen.MethodDefinition;
-import uk.co.strangeskies.reflection.codegen.VariableExpressionProxy;
 import uk.co.strangeskies.text.properties.Localized;
 import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
@@ -141,34 +136,6 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 	<O> Localized<String> cannotGetField(O target, FieldToken<O, ?> fieldMember);
 
 	<O, T> Localized<String> cannotSetField(O target, T value, FieldToken<O, ?> fieldMember);
-
-	Localized<String> invalidExpressionForStatement(Expression expression);
-
-	Localized<String> cannotInstantiateClassDefinition(ClassDefinition<?> classDefinition, TypeToken<?> superType);
-
-	Localized<String> cannotAccessPlaceholderExpression(VariableExpressionProxy<?> variableExpressionProxy);
-
-	Localized<String> cannotOverrideMethod(Method overriddenMethod);
-
-	Localized<String> incompatibleReturnTypes(Type override, Method inherited);
-
-	Localized<String> incompatibleOverride(MethodDefinition<?, ?> override);
-
-	Localized<String> incompatibleParameterTypes(Type[] parameterTypes, Method inherited);
-
-	Localized<String> duplicateMethodSignature(MethodDefinition<?, ?> override);
-
-	Localized<String> mustOverrideMethods(Collection<Method> classMethod);
-
-	Localized<String> undefinedVariable(LocalVariable<?> variable);
-
-	Localized<String> cannotResolveEnclosingInstance(ClassDefinition<?> receiverClass);
-
-	Localized<String> cannotRedeclareVariable(LocalVariable<?> variable);
-
-	Localized<String> incompleteStatementExecution();
-
-	Localized<String> incompleteExpressionEvaluation();
 
 	Localized<String> cannotFindMethodOn(Type type);
 }

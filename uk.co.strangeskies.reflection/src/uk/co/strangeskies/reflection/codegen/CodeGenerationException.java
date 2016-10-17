@@ -30,32 +30,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection;
+package uk.co.strangeskies.reflection.codegen;
 
 import static uk.co.strangeskies.text.properties.PropertyLoader.getDefaultProperties;
 
-import java.lang.reflect.Type;
 import java.util.function.Function;
 
+import uk.co.strangeskies.reflection.ReflectionException;
+import uk.co.strangeskies.reflection.ReflectionProperties;
 import uk.co.strangeskies.text.properties.Localized;
-import uk.co.strangeskies.text.properties.LocalizedRuntimeException;
 
-/**
- * An exception relating to reflective operations over the Java {@link Type}
- * system.
- * 
- * @author Elias N Vasylenko
- */
-public class ReflectionException extends LocalizedRuntimeException {
-	private static final long serialVersionUID = 1L;
-
+public class CodeGenerationException extends ReflectionException {
 	/**
 	 * @param message
 	 *          a function from the {@link ReflectionProperties} to the exception
 	 *          message
 	 */
-	public ReflectionException(Function<ReflectionProperties, Localized<String>> message) {
-		this(message.apply(getDefaultProperties(ReflectionProperties.class)));
+	public CodeGenerationException(Function<CodeGenerationProperties, Localized<String>> message) {
+		this(message.apply(getDefaultProperties(CodeGenerationProperties.class)));
 	}
 
 	/**
@@ -65,15 +57,15 @@ public class ReflectionException extends LocalizedRuntimeException {
 	 * @param cause
 	 *          the cause of the exception
 	 */
-	public ReflectionException(Function<ReflectionProperties, Localized<String>> message, Throwable cause) {
-		this(message.apply(getDefaultProperties(ReflectionProperties.class)), cause);
+	public CodeGenerationException(Function<CodeGenerationProperties, Localized<String>> message, Throwable cause) {
+		this(message.apply(getDefaultProperties(CodeGenerationProperties.class)), cause);
 	}
 
-	protected ReflectionException(Localized<String> message) {
+	protected CodeGenerationException(Localized<String> message) {
 		super(message);
 	}
 
-	protected ReflectionException(Localized<String> message, Throwable cause) {
+	protected CodeGenerationException(Localized<String> message, Throwable cause) {
 		super(message, cause);
 	}
 }

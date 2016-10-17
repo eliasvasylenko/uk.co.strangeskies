@@ -266,7 +266,7 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 
 		for (Class<?> rawType : rawTypes) {
 			if (!rawType.isInterface()) {
-				throw new ReflectionException(p -> p.cannotInstantiateClassDefinition(this, superType));
+				throw new CodeGenerationException(p -> p.cannotInstantiateClassDefinition(this, superType));
 			}
 		}
 

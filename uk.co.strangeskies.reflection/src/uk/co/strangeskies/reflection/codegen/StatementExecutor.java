@@ -35,8 +35,6 @@ package uk.co.strangeskies.reflection.codegen;
 import java.util.HashMap;
 import java.util.Map;
 
-import uk.co.strangeskies.reflection.ReflectionException;
-
 public class StatementExecutor {
 	private class StatementVisitorImpl implements StatementVisitor {
 		private boolean complete = false;
@@ -112,7 +110,7 @@ public class StatementExecutor {
 
 	public <T> void declareLocal(LocalVariable<T> variable) {
 		if (locals.containsKey(variable)) {
-			throw new ReflectionException(p -> p.cannotRedeclareVariable(variable));
+			throw new CodeGenerationException(p -> p.cannotRedeclareVariable(variable));
 		}
 		locals.put(variable, null);
 	}
@@ -124,7 +122,7 @@ public class StatementExecutor {
 		} else if (enclosingState != null) {
 			return enclosingState.getEnclosedLocal(variable);
 		} else {
-			throw new ReflectionException(p -> p.undefinedVariable(variable));
+			throw new CodeGenerationException(p -> p.undefinedVariable(variable));
 		}
 	}
 
@@ -134,7 +132,7 @@ public class StatementExecutor {
 		} else if (enclosingState != null) {
 			enclosingState.setEnclosedLocal(variable, value);
 		} else {
-			throw new ReflectionException(p -> p.undefinedVariable(variable));
+			throw new CodeGenerationException(p -> p.undefinedVariable(variable));
 		}
 	}
 
@@ -145,7 +143,7 @@ public class StatementExecutor {
 		} else if (enclosingState != null) {
 			return enclosingState.getEnclosingInstance(receiverClass);
 		} else {
-			throw new ReflectionException(p -> p.cannotResolveEnclosingInstance(receiverClass));
+			throw new CodeGenerationException(p -> p.cannotResolveEnclosingInstance(receiverClass));
 		}
 	}
 

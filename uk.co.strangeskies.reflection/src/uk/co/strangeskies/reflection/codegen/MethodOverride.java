@@ -41,7 +41,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.Types;
 
 public class MethodOverride<T> {
@@ -70,7 +69,7 @@ public class MethodOverride<T> {
 			if (classMethod == null) {
 				Set<Method> defaultMethods = interfaceMethods.stream().filter(m -> m.isDefault()).collect(Collectors.toSet());
 				if (defaultMethods.size() != 1) {
-					throw new ReflectionException(p -> p.mustOverrideMethods(interfaceMethods));
+					throw new CodeGenerationException(p -> p.mustOverrideMethods(interfaceMethods));
 				}
 
 				Method defaultMethod = defaultMethods.iterator().next();
@@ -78,7 +77,7 @@ public class MethodOverride<T> {
 				validateOverride(defaultMethod);
 			} else {
 				if (Modifier.isAbstract(classMethod.getModifiers())) {
-					throw new ReflectionException(p -> p.mustOverrideMethods(Arrays.asList(classMethod)));
+					throw new CodeGenerationException(p -> p.mustOverrideMethods(Arrays.asList(classMethod)));
 				}
 
 				validateOverride(classMethod);
@@ -98,12 +97,12 @@ public class MethodOverride<T> {
 
 			if (!Types.isAssignable(returnType,
 					classDefinition.getInvocable(inherited).getReturnType().resolve().getType())) {
-				throw new ReflectionException(p -> p.incompatibleReturnTypes(returnType, inherited));
+				throw new CodeGenerationException(p -> p.incompatibleReturnTypes(returnType, inherited));
 			}
 
 			for (int i = 0; i < parameterTypes.length; i++) {
 				if (!Types.isAssignable(classDefinition.getInvocable(inherited).getParameters().get(i), parameterTypes[i])) {
-					throw new ReflectionException(p -> p.incompatibleParameterTypes(parameterTypes, inherited));
+					throw new CodeGenerationException(p -> p.incompatibleParameterTypes(parameterTypes, inherited));
 				}
 			}
 		}
@@ -111,12 +110,12 @@ public class MethodOverride<T> {
 
 	public void override(InstanceMethodDefinition<T, ?> override) {
 		if (this.override != null) {
-			throw new ReflectionException(p -> p.duplicateMethodSignature(override));
+			throw new CodeGenerationException(p -> p.duplicateMethodSignature(override));
 		}
 
 		if (classMethod != null
 				&& (Modifier.isPrivate(classMethod.getModifiers()) || Modifier.isFinal(classMethod.getModifiers()))) {
-			throw new ReflectionException(p -> p.cannotOverrideMethod(classMethod));
+			throw new CodeGenerationException(p -> p.cannotOverrideMethod(classMethod));
 		}
 
 		this.override = override;

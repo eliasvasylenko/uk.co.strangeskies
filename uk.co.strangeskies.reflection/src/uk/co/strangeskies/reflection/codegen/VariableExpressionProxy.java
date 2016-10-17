@@ -32,7 +32,6 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.VariableExpressionVisitor;
 
@@ -44,7 +43,7 @@ public class VariableExpressionProxy<T> implements VariableExpression<T> {
 		if (component != null) {
 			return component.getType();
 		} else {
-			throw new ReflectionException(p -> p.cannotAccessPlaceholderExpression(this));
+			throw new CodeGenerationException(p -> p.cannotAccessPlaceholderExpression(this));
 		}
 	}
 
@@ -53,7 +52,7 @@ public class VariableExpressionProxy<T> implements VariableExpression<T> {
 		if (component != null) {
 			component.accept(visitor);
 		} else {
-			throw new ReflectionException(p -> p.cannotAccessPlaceholderExpression(this));
+			throw new CodeGenerationException(p -> p.cannotAccessPlaceholderExpression(this));
 		}
 	}
 

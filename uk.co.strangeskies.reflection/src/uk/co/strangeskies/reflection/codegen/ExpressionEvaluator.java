@@ -37,7 +37,6 @@ import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.ExecutableToken;
 import uk.co.strangeskies.reflection.FieldToken;
-import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.VariableExpressionVisitor;
@@ -61,7 +60,7 @@ public class ExpressionEvaluator {
 
 		private ValueResult<T> getResult() {
 			if (!complete) {
-				throw new ReflectionException(p -> p.incompleteExpressionEvaluation());
+				throw new CodeGenerationException(p -> p.incompleteExpressionEvaluation());
 			}
 			return result;
 		}
