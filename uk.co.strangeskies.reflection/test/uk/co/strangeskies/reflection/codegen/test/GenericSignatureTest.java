@@ -46,9 +46,9 @@ import org.junit.Test;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeToken;
-import uk.co.strangeskies.reflection.TypeVariableDeclaration;
 import uk.co.strangeskies.reflection.codegen.ParameterizedDeclaration;
 import uk.co.strangeskies.reflection.codegen.ParameterizedDefinition;
+import uk.co.strangeskies.reflection.codegen.TypeVariableDeclaration;
 import uk.co.strangeskies.utilities.Self;
 
 @SuppressWarnings("javadoc")

@@ -30,7 +30,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection;
+package uk.co.strangeskies.reflection.codegen;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
@@ -41,7 +41,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import uk.co.strangeskies.reflection.codegen.ParameterizedDeclaration;
+import uk.co.strangeskies.reflection.AnnotatedTypes;
+import uk.co.strangeskies.reflection.TypeToken;
 
 /**
  * Take care not to allow instances of this class to leak out into the wider

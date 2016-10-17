@@ -42,7 +42,6 @@ import java.util.Collections;
 import java.util.List;
 
 import uk.co.strangeskies.reflection.TypeToken;
-import uk.co.strangeskies.reflection.TypeVariableDeclaration;
 
 public class ParameterizedDeclaration {
 	private final List<TypeVariableDeclaration> typeVariableSignatures;

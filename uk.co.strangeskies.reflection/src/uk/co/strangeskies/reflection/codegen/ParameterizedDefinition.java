@@ -49,7 +49,6 @@ import java.util.stream.Collectors;
 import uk.co.strangeskies.reflection.AnnotatedTypeSubstitution;
 import uk.co.strangeskies.reflection.AnnotatedTypeVariables;
 import uk.co.strangeskies.reflection.IntersectionType;
-import uk.co.strangeskies.reflection.TypeVariableDeclaration;
 import uk.co.strangeskies.reflection.TypeVariables;
 import uk.co.strangeskies.utilities.Isomorphism;
 
