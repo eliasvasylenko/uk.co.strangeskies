@@ -34,9 +34,9 @@ package uk.co.strangeskies.utilities.collection;
 
 import java.util.Collections;
 import java.util.Set;
-import java.util.function.Consumer;
 
 import uk.co.strangeskies.utilities.ObservableImpl;
+import uk.co.strangeskies.utilities.Observer;
 
 public abstract class UnmodifiableObservableSet<S extends ObservableSet<S, E>, E> extends ObservableImpl<S>
 		implements SetDecorator<E>, ObservableSet<S, E> {
@@ -55,9 +55,9 @@ public abstract class UnmodifiableObservableSet<S extends ObservableSet<S, E>, E
 	private final Set<E> component;
 	private final Set<E> silentComponent;
 
-	private final Consumer<ObservableSet<?, ? extends E>> observer;
+	private final Observer<ObservableSet<?, ? extends E>> observer;
 	private final ObservableImpl<Change<E>> changes;
-	private final Consumer<? super Change<? extends E>> changeObserver;
+	private final Observer<? super Change<? extends E>> changeObserver;
 
 	@SuppressWarnings("unchecked")
 	protected UnmodifiableObservableSet(ObservableSet<?, ? extends E> component) {

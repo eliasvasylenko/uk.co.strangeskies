@@ -34,9 +34,9 @@ package uk.co.strangeskies.utilities.collection;
 
 import java.util.Collections;
 import java.util.Set;
-import java.util.function.Consumer;
 
 import uk.co.strangeskies.utilities.ObservableImpl;
+import uk.co.strangeskies.utilities.Observer;
 
 public abstract class SynchronizedObservableSet<S extends ObservableSet<S, E>, E> extends ObservableImpl<S>
 		implements SetDecorator<E>, ObservableSet<S, E> {
@@ -55,9 +55,9 @@ public abstract class SynchronizedObservableSet<S extends ObservableSet<S, E>, E
 	private final Set<E> component;
 	private final Set<E> silentComponent;
 
-	private final Consumer<ObservableSet<?, ? extends E>> observer;
+	private final Observer<ObservableSet<?, ? extends E>> observer;
 	private final ObservableImpl<Change<E>> changes;
-	private final Consumer<Change<E>> changeObserver;
+	private final Observer<Change<E>> changeObserver;
 
 	protected SynchronizedObservableSet(ObservableSet<?, E> component) {
 		this.component = Collections.synchronizedSet(component);
@@ -68,14 +68,14 @@ public abstract class SynchronizedObservableSet<S extends ObservableSet<S, E>, E
 
 		changes = new ObservableImpl<Change<E>>() {
 			@Override
-			public boolean addObserver(Consumer<? super Change<E>> observer) {
+			public boolean addObserver(Observer<? super Change<E>> observer) {
 				synchronized (getMutex()) {
 					return super.addObserver(observer);
 				}
 			}
 
 			@Override
-			public boolean removeObserver(Consumer<? super Change<E>> observer) {
+			public boolean removeObserver(Observer<? super Change<E>> observer) {
 				synchronized (getMutex()) {
 					return super.removeObserver(observer);
 				}
@@ -138,14 +138,14 @@ public abstract class SynchronizedObservableSet<S extends ObservableSet<S, E>, E
 	}
 
 	@Override
-	public boolean addObserver(Consumer<? super S> observer) {
+	public boolean addObserver(Observer<? super S> observer) {
 		synchronized (getMutex()) {
 			return super.addObserver(observer);
 		}
 	}
 
 	@Override
-	public boolean removeObserver(Consumer<? super S> observer) {
+	public boolean removeObserver(Observer<? super S> observer) {
 		synchronized (getMutex()) {
 			return super.removeObserver(observer);
 		}

@@ -35,18 +35,13 @@ package uk.co.strangeskies.mathematics.operation;
 import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.mathematics.expression.UnaryExpression;
 
-public class Negation<O> extends UnaryExpression<Negation<O>, Negatable<?, ? extends O>, O> {
-	public Negation(Expression<?, ? extends Negatable<?, ? extends O>> operand) {
+public class Negation<O> extends UnaryExpression<Negatable<?, ? extends O>, O> {
+	public Negation(Expression<? extends Negatable<?, ? extends O>> operand) {
 		super(operand, n -> n.getNegated());
 	}
 
 	@Override
 	public String toString() {
 		return "¬" + getValue();
-	}
-
-	@Override
-	public Negation<O> copy() {
-		return new Negation<>(getOperand());
 	}
 }

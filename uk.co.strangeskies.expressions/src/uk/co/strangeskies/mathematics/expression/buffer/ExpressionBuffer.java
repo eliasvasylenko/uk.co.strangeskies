@@ -33,13 +33,13 @@
 package uk.co.strangeskies.mathematics.expression.buffer;
 
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import uk.co.strangeskies.mathematics.expression.Expression;
+import uk.co.strangeskies.utilities.Observer;
 
 public class ExpressionBuffer<F extends Expression<?>, T> extends AbstractFunctionBuffer<F, T> {
-	private Consumer<Expression<?>> backObserver;
+	private Observer<Expression<?>> backObserver;
 
 	public ExpressionBuffer(T front, F back, BiFunction<? super T, ? super F, ? extends T> operation) {
 		super(front, back, operation);
@@ -70,11 +70,11 @@ public class ExpressionBuffer<F extends Expression<?>, T> extends AbstractFuncti
 		return super.setBack(next);
 	}
 
-	private Consumer<Expression<?>> nextBackObserver() {
+	private Observer<Expression<?>> nextBackObserver() {
 		return backObserver = m -> invalidateBack();
 	}
 
-	private Consumer<Expression<?>> getBackObserver() {
+	private Observer<Expression<?>> getBackObserver() {
 		return backObserver;
 	}
 }

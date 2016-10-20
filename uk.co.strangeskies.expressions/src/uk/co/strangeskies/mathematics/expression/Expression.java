@@ -83,7 +83,7 @@ public interface Expression<T> extends Observable<Expression<T>> {
 	 * to whether the value will be reliable such that it will remain the same
 	 * even if the conceptual value of this expression subsequently changes, or
 	 * whether it will update automatically with the expression. Please only rely
-	 * on either behaviour if it is explicitly documented, otherwise use
+	 * on either behavior if it is explicitly documented, otherwise use
 	 * {@link #decoupleValue()} if you need a persistent reference which is safe
 	 * <em>to</em> mutate and/or safe <em>from</em> external mutation.
 	 * 

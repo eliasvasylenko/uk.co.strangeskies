@@ -1,6 +1,6 @@
 Private-Package:  \
 	uk.co.strangeskies.mathematics.graph.impl
-Export-Package:  \
+Export-Package: \
 	uk.co.strangeskies.mathematics,\
 	uk.co.strangeskies.mathematics.expression,\
 	uk.co.strangeskies.mathematics.expression.buffer,\

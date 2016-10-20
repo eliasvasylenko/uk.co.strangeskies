@@ -35,8 +35,9 @@ package uk.co.strangeskies.mathematics.expression;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
+
+import uk.co.strangeskies.utilities.Observer;
 
 /**
  * An abstract class to help designing mutable expression, implementing a simple
@@ -52,9 +53,6 @@ import java.util.function.Supplier;
  * {@link Expression}.
  * 
  * @author Elias N Vasylenko
- * @param <S>
- *          the self-bound of the expression, i.e. the type of the expression
- *          object itself
  * @param <T>
  *          The type of the value of this expression
  */
@@ -100,6 +98,9 @@ public abstract class LockingExpression<T> extends DependentExpression<T> implem
 		}
 	}
 
+	/**
+	 * @return a read lock over the expression
+	 */
 	public ReadLock getReadLock() {
 		return lock.readLock();
 	}
@@ -109,7 +110,7 @@ public abstract class LockingExpression<T> extends DependentExpression<T> implem
 	}
 
 	@Override
-	public boolean addObserver(Consumer<? super Expression<T>> observer) {
+	public boolean addObserver(Observer<? super Expression<T>> observer) {
 		getReadLock().lock();
 
 		try {
@@ -120,7 +121,7 @@ public abstract class LockingExpression<T> extends DependentExpression<T> implem
 	}
 
 	@Override
-	public boolean removeObserver(Consumer<? super Expression<T>> observer) {
+	public boolean removeObserver(Observer<? super Expression<T>> observer) {
 		getReadLock().lock();
 
 		try {

@@ -37,7 +37,6 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
-import java.util.function.Consumer;
 
 /**
  * A simple implementation of {@link ObservableProperty} which maintains a list
@@ -79,7 +78,7 @@ public class ObservablePropertyImpl<T extends R, R> implements ObservablePropert
 	private T value;
 	private final BiFunction<R, T, T> assignmentFunction;
 	private final BiPredicate<T, T> equality;
-	private final Set<Consumer<? super T>> observers = new LinkedHashSet<>();
+	private final Set<Observer<? super T>> observers = new LinkedHashSet<>();
 	private final ObservableImpl<Change<T>> changeObservable = new ObservableImpl<>();
 	private ChangeImpl currentChange;
 
@@ -90,12 +89,12 @@ public class ObservablePropertyImpl<T extends R, R> implements ObservablePropert
 	}
 
 	@Override
-	public boolean addObserver(Consumer<? super T> observer) {
+	public boolean addObserver(Observer<? super T> observer) {
 		return observers.add(observer);
 	}
 
 	@Override
-	public boolean removeObserver(Consumer<? super T> observer) {
+	public boolean removeObserver(Observer<? super T> observer) {
 		return observers.remove(observer);
 	}
 
@@ -123,8 +122,8 @@ public class ObservablePropertyImpl<T extends R, R> implements ObservablePropert
 		this.value = assignmentFunction.apply(value, this.value);
 
 		if (!equality.test(this.value, previous)) {
-			for (Consumer<? super T> listener : new ArrayList<>(observers)) {
-				listener.accept(this.value);
+			for (Observer<? super T> listener : new ArrayList<>(observers)) {
+				listener.notify(this.value);
 			}
 
 			ChangeImpl currentChange = this.currentChange;
@@ -148,7 +147,7 @@ public class ObservablePropertyImpl<T extends R, R> implements ObservablePropert
 	/**
 	 * @return a list of all observers attached to this observable
 	 */
-	public Set<Consumer<? super T>> getObservers() {
+	public Set<Observer<? super T>> getObservers() {
 		return observers;
 	}
 }

@@ -34,7 +34,6 @@ package uk.co.strangeskies.utilities;
 
 import java.lang.ref.WeakReference;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -54,10 +53,10 @@ import java.util.function.Function;
  */
 public interface Observable<M> {
 	/**
-	 * @see Observable#addOwnedObserver(Object, Consumer)
+	 * @see Observable#addOwnedObserver(Object, Observer)
 	 */
 	@SuppressWarnings("javadoc")
-	abstract class OwnedObserver<M> implements Consumer<M> {
+	abstract class OwnedObserver<M> implements Observer<M> {
 		abstract Object getOwner();
 
 		protected OwnedObserver() {}
@@ -80,14 +79,14 @@ public interface Observable<M> {
 	}
 
 	/**
-	 * @see Observable#addOwnedObserver(Object, Consumer)
+	 * @see Observable#addOwnedObserver(Object, Observer)
 	 */
 	@SuppressWarnings("javadoc")
 	class OwnedObserverImpl<M> extends OwnedObserver<M> {
-		private final Consumer<? super M> observer;
+		private final Observer<? super M> observer;
 		private final Object owner;
 
-		protected OwnedObserverImpl(Consumer<? super M> observer, Object owner) {
+		protected OwnedObserverImpl(Observer<? super M> observer, Object owner) {
 			this.observer = observer;
 			this.owner = owner;
 		}
@@ -98,25 +97,25 @@ public interface Observable<M> {
 		}
 
 		@Override
-		public void accept(M event) {
-			observer.accept(event);
+		public void notify(M event) {
+			observer.notify(event);
 		}
 	}
 
 	/**
-	 * @see Observable#addWeakObserver(Consumer)
+	 * @see Observable#addWeakObserver(Observer)
 	 */
 	@SuppressWarnings("javadoc")
 	class WeakObserver<M, O> extends OwnedObserver<M> {
 		private final Observable<? extends M> observable;
-		private final Function<? super O, Consumer<? super M>> consumer;
+		private final Function<? super O, Observer<? super M>> Observer;
 		private final WeakReference<O> owner;
 
-		protected WeakObserver(Observable<? extends M> observable, Function<? super O, Consumer<? super M>> consumer,
+		protected WeakObserver(Observable<? extends M> observable, Function<? super O, Observer<? super M>> Observer,
 				O owner) {
 			this.observable = observable;
 
-			this.consumer = consumer;
+			this.Observer = Observer;
 			this.owner = new WeakReference<>(owner);
 		}
 
@@ -126,12 +125,12 @@ public interface Observable<M> {
 		}
 
 		@Override
-		public void accept(M t) {
+		public void notify(M t) {
 			O owner = getOwner();
 			if (owner == null) {
 				new Thread(() -> observable.removeObserver(this)).start();
 			} else {
-				consumer.apply(owner).accept(t);
+				Observer.apply(owner).notify(t);
 			}
 		}
 	}
@@ -158,7 +157,7 @@ public interface Observable<M> {
 		}
 
 		@Override
-		public void accept(M event) {
+		public void notify(M event) {
 			if (!observer.apply(event)) {
 				observable.removeObserver(this);
 			}
@@ -174,7 +173,7 @@ public interface Observable<M> {
 	 *          an observer to add
 	 * @return true if the observer was successfully added, false otherwise
 	 */
-	default boolean addWeakObserver(Consumer<? super M> observer) {
+	default boolean addWeakObserver(Observer<? super M> observer) {
 		return addWeakObserver(observer, o -> o);
 	}
 
@@ -190,7 +189,7 @@ public interface Observable<M> {
 	 * TODO be careful not to capture the owner in a lambda as this will prevent
 	 * garbage collection (give code example)
 	 * 
-	 * @see #addOwnedObserver(Object, Consumer)
+	 * @see #addOwnedObserver(Object, Observer)
 	 * 
 	 * @param <O>
 	 *          the type of the owner
@@ -200,7 +199,7 @@ public interface Observable<M> {
 	 *          the owner of the observer
 	 * @return true if the observer was successfully added, false otherwise
 	 */
-	default <O> boolean addWeakObserver(O owner, Function<? super O, Consumer<? super M>> observer) {
+	default <O> boolean addWeakObserver(O owner, Function<? super O, Observer<? super M>> observer) {
 		return addObserver(new WeakObserver<>(this, observer, owner));
 	}
 
@@ -234,7 +233,7 @@ public interface Observable<M> {
 	 * observers may conditionally remove themselves from the observable upon
 	 * receipt of events by returning {@code false} from the observer function.
 	 * 
-	 * @see #addOwnedObserver(Object, Consumer)
+	 * @see #addOwnedObserver(Object, Observer)
 	 * 
 	 * @param <O>
 	 *          the type of the owner
@@ -309,7 +308,7 @@ public interface Observable<M> {
 	 *          an observer to add
 	 * @return true if the observer was successfully added, false otherwise
 	 */
-	default boolean addOwnedObserver(Object owner, Consumer<? super M> observer) {
+	default boolean addOwnedObserver(Object owner, Observer<? super M> observer) {
 		return addObserver(new OwnedObserverImpl<>(observer, owner));
 	}
 
@@ -331,7 +330,7 @@ public interface Observable<M> {
 	 *          an observer to add
 	 * @return true if the observer was successfully added, false otherwise
 	 */
-	boolean addObserver(Consumer<? super M> observer);
+	boolean addObserver(Observer<? super M> observer);
 
 	/**
 	 * Observers removed will no longer receive messages from this Observable.
@@ -340,7 +339,7 @@ public interface Observable<M> {
 	 *          an observer to remove
 	 * @return true if the observer was successfully removed, false otherwise
 	 */
-	boolean removeObserver(Consumer<? super M> observer);
+	boolean removeObserver(Observer<? super M> observer);
 
 	/**
 	 * Get an observable instance which never fires events. As an optimization,
@@ -363,12 +362,12 @@ interface ImmutableObservable<M> extends Observable<M> {
 	static Observable<?> IMMUTABLE = new ImmutableObservable<Object>() {};
 
 	@Override
-	default boolean addObserver(Consumer<? super M> observer) {
+	default boolean addObserver(Observer<? super M> observer) {
 		return true;
 	}
 
 	@Override
-	default boolean removeObserver(Consumer<? super M> observer) {
+	default boolean removeObserver(Observer<? super M> observer) {
 		return true;
 	}
 }

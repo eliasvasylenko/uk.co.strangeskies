@@ -48,19 +48,19 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Consumer;
 
 import org.junit.Test;
 
 import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableImpl;
+import uk.co.strangeskies.utilities.Observer;
 
 @SuppressWarnings("javadoc")
 public class ObservableTest {
 	@Test
 	public void ownedObserverEqualityTest() {
 		class StringObservable extends Observable.OwnedObserverImpl<String> {
-			protected StringObservable(Consumer<? super String> observer, Object owner) {
+			protected StringObservable(Observer<? super String> observer, Object owner) {
 				super(observer, owner);
 			}
 		}
@@ -76,8 +76,8 @@ public class ObservableTest {
 
 		assertNotEquals(new StringObservable(null, first), new Object());
 
-		Consumer<String> consumer = new Observable.OwnedObserverImpl<String>(null, first) {};
-		assertEquals(consumer, consumer);
+		Observer<String> Observer = new Observable.OwnedObserverImpl<String>(null, first) {};
+		assertEquals(Observer, Observer);
 	}
 
 	@Test(timeout = 5000)
@@ -129,7 +129,7 @@ public class ObservableTest {
 	public void onlyAllowSingleWeakObserverTest() {
 		ObservableImpl<String> stringObservable = new ObservableImpl<>();
 
-		Consumer<String> observer = new ArrayList<>()::add;
+		Observer<String> observer = new ArrayList<>()::add;
 
 		assertTrue(stringObservable.addWeakObserver(observer));
 		assertFalse(stringObservable.addWeakObserver(observer));
@@ -140,7 +140,7 @@ public class ObservableTest {
 		ObservableImpl<String> stringObservable = new ObservableImpl<>();
 
 		List<String> list = new ArrayList<>();
-		Consumer<String> listObserver = list::add;
+		Observer<String> listObserver = list::add;
 
 		assertTrue(stringObservable.addOwnedObserver(listObserver, listObserver));
 		assertFalse(stringObservable.removeObserver(list::remove));
@@ -155,7 +155,7 @@ public class ObservableTest {
 	public void immutableObservableTest() {
 		Observable<String> observable = Observable.immutable();
 
-		Consumer<String> listObserver = null;
+		Observer<String> listObserver = null;
 
 		assertTrue(observable.removeObserver(listObserver));
 
@@ -227,7 +227,7 @@ public class ObservableTest {
 	@Test
 	public void addRemoveTest() {
 		List<String> list = new ArrayList<>();
-		Consumer<String> listObserver = list::add;
+		Observer<String> listObserver = list::add;
 
 		ObservableImpl<String> stringObservable = new ObservableImpl<>();
 

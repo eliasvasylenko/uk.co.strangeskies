@@ -35,15 +35,9 @@ package uk.co.strangeskies.mathematics.logic;
 import uk.co.strangeskies.mathematics.expression.BinaryExpression;
 import uk.co.strangeskies.mathematics.expression.Expression;
 
-public class XOR<O extends XORable<?, ? super T>, T>
-		extends BinaryExpression<XOR<O, T>, XORable<? extends O, ? super T>, T, O> {
-	public XOR(Expression<?, ? extends /*  */XORable<? extends O, ? super T>> firstOperand,
-			Expression<?, ? extends /*  */T> secondOperand) {
+public class XOR<O extends XORable<?, ? super T>, T> extends BinaryExpression<XORable<? extends O, ? super T>, T, O> {
+	public XOR(Expression<? extends XORable<? extends O, ? super T>> firstOperand,
+			Expression<? extends T> secondOperand) {
 		super(firstOperand, secondOperand, new XOROperation<O, T>());
-	}
-
-	@Override
-	public XOR<O, T> copy() {
-		return new XOR<>(getFirstOperand(), getSecondOperand());
 	}
 }

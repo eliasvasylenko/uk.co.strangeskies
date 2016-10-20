@@ -38,7 +38,6 @@ import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.geometry.shape.mesh.Mesh;
 import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.Copyable;
-import uk.co.strangeskies.utilities.Property;
 import uk.co.strangeskies.utilities.Self;
 
 /**
@@ -63,7 +62,7 @@ import uk.co.strangeskies.utilities.Self;
  * @param <S>
  *            The type of shape
  */
-public interface Shape<S extends Shape<S>> extends Self<S>, Copyable<S>, Property<S, S>, SelfExpression<S> {
+public interface Shape<S extends Shape<S>> extends Self<S>, Copyable<S>, SelfExpression<S> {
 	Value<?> getArea(/* this */);
 
 	Value<?> getPerimeter(/* this */);
@@ -77,9 +76,4 @@ public interface Shape<S extends Shape<S>> extends Self<S>, Copyable<S>, Propert
 	boolean touches(/* this, *//*  */Shape<?> shape);
 
 	Bounds2<?> getBounds(/* this */);
-
-	@Override
-	default S get() {
-		return getThis();
-	}
 }

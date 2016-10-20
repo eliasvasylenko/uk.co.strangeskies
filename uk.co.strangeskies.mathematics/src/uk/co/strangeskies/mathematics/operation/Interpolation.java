@@ -36,17 +36,9 @@ import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.mathematics.expression.TrinaryExpression;
 import uk.co.strangeskies.mathematics.values.Value;
 
-public class Interpolation<T, I> extends TrinaryExpression<Interpolation<T, I>, T, T, Value<?>, I> {
-	public Interpolation(Expression<?, ? extends T> from, Expression<?, ? extends T> to,
-			Expression<?, ? extends Value<?>> delta, InterpolationFunction<? super T, ? extends I> interpolation) {
+public class Interpolation<T, I> extends TrinaryExpression<T, T, Value<?>, I> {
+	public Interpolation(Expression<? extends T> from, Expression<? extends T> to, Expression<? extends Value<?>> delta,
+			InterpolationFunction<? super T, ? extends I> interpolation) {
 		super(from, to, delta, interpolation);
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public Interpolation<T, I> copy() {
-		getOperation().getValue();
-		return new Interpolation<T, I>(getFirstOperand(), getSecondOperand(), getThirdOperand(),
-				(InterpolationFunction<? super T, ? extends I>) getOperation().getValue());
 	}
 }

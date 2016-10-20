@@ -56,7 +56,6 @@ import java.util.MissingResourceException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import uk.co.strangeskies.text.CamelCaseFormatter;
@@ -70,6 +69,7 @@ import uk.co.strangeskies.utilities.Log.Level;
 import uk.co.strangeskies.utilities.ObservableImpl;
 import uk.co.strangeskies.utilities.ObservablePropertyImpl;
 import uk.co.strangeskies.utilities.ObservableValue;
+import uk.co.strangeskies.utilities.Observer;
 import uk.co.strangeskies.utilities.classloading.DelegatingClassLoader;
 
 /**
@@ -161,7 +161,7 @@ public class PropertyAccessorDelegate<A extends Properties<A>> extends Observabl
 	/*
 	 * Implementation of localized property
 	 */
-	class LocalizedPropertyImpl extends ObservablePropertyImpl<Object, Object> implements Localized<Object>, Consumer<A> {
+	class LocalizedPropertyImpl extends ObservablePropertyImpl<Object, Object> implements Localized<Object>, Observer<A> {
 		private final PropertyAccessorConfiguration<A> source;
 		private final String key;
 		private final AnnotatedType propertyType;
@@ -204,7 +204,7 @@ public class PropertyAccessorDelegate<A extends Properties<A>> extends Observabl
 		}
 
 		@Override
-		public void accept(A t) {
+		public void notify(A t) {
 			updateText();
 		}
 

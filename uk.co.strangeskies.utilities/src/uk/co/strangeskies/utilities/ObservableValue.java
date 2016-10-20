@@ -32,8 +32,6 @@
  */
 package uk.co.strangeskies.utilities;
 
-import java.util.function.Consumer;
-
 /**
  * A value which can be {@link #get() fetched} and observed for updates and
  * {@link #changes() changes}.
@@ -83,12 +81,12 @@ public interface ObservableValue<T> extends Observable<T> {
 
 interface ImmutableObservableValue<T> extends ObservableValue<T> {
 	@Override
-	default boolean addObserver(Consumer<? super T> observer) {
+	default boolean addObserver(Observer<? super T> observer) {
 		return true;
 	}
 
 	@Override
-	default boolean removeObserver(Consumer<? super T> observer) {
+	default boolean removeObserver(Observer<? super T> observer) {
 		return true;
 	}
 

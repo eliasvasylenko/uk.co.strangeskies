@@ -49,8 +49,7 @@ import java.util.function.Consumer;
  * @param <U>
  *          The type of event message to produce
  */
-public abstract class ForwardingListener<T, U>
-		implements Consumer<T>, Observable<U> {
+public abstract class ForwardingListener<T, U> implements Consumer<T>, Observable<U> {
 	/**
 	 * An interface for provision of a buffering strategy.
 	 *
@@ -155,12 +154,12 @@ public abstract class ForwardingListener<T, U>
 	}
 
 	@Override
-	public synchronized boolean addObserver(Consumer<? super U> listener) {
+	public synchronized boolean addObserver(Observer<? super U> listener) {
 		return listeners.addObserver(listener);
 	}
 
 	@Override
-	public synchronized boolean removeObserver(Consumer<? super U> listener) {
+	public synchronized boolean removeObserver(Observer<? super U> listener) {
 		return listeners.removeObserver(listener);
 	}
 

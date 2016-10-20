@@ -36,19 +36,14 @@ import uk.co.strangeskies.mathematics.expression.BinaryExpression;
 import uk.co.strangeskies.mathematics.expression.Expression;
 
 public class Subtraction<O extends Subtractable<?, ? super T>, T>
-		extends BinaryExpression<Subtraction<O, T>, Subtractable<? extends O, ? super T>, T, O> {
-	public Subtraction(Expression<?, ? extends Subtractable<? extends O, ? super T>> firstOperand,
-			Expression<?, ? extends T> secondOperand) {
+		extends BinaryExpression<Subtractable<? extends O, ? super T>, T, O> {
+	public Subtraction(Expression<? extends Subtractable<? extends O, ? super T>> firstOperand,
+			Expression<? extends T> secondOperand) {
 		super(firstOperand, secondOperand, (a, b) -> a.getSubtracted(b));
 	}
 
 	@Override
 	public String toString() {
 		return "(" + getFirstOperand() + " - " + getSecondOperand() + ")";
-	}
-
-	@Override
-	public Subtraction<O, T> copy() {
-		return new Subtraction<>(getFirstOperand(), getSecondOperand());
 	}
 }

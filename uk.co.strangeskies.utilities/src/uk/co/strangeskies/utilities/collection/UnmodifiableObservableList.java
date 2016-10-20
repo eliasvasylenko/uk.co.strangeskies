@@ -34,9 +34,9 @@ package uk.co.strangeskies.utilities.collection;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Consumer;
 
 import uk.co.strangeskies.utilities.ObservableImpl;
+import uk.co.strangeskies.utilities.Observer;
 
 public abstract class UnmodifiableObservableList<S extends ObservableList<S, E>, E> extends ObservableImpl<S>
 		implements ListDecorator<E>, ObservableList<S, E> {
@@ -56,9 +56,9 @@ public abstract class UnmodifiableObservableList<S extends ObservableList<S, E>,
 	private final List<E> component;
 	private final List<E> silentComponent;
 
-	private final Consumer<ObservableList<?, ? extends E>> observer;
+	private final Observer<ObservableList<?, ? extends E>> observer;
 	private final ObservableImpl<Change<E>> changes;
-	private final Consumer<? super Change<? extends E>> changeObserver;
+	private final Observer<? super Change<? extends E>> changeObserver;
 
 	@SuppressWarnings("unchecked")
 	protected UnmodifiableObservableList(ObservableList<?, ? extends E> component) {

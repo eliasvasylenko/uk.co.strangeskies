@@ -44,7 +44,7 @@ package uk.co.strangeskies.utilities;
  */
 public class LatestListener<T> extends ForwardingListener<T, T> {
 	/**
-	 * Initialise a buffering listener with an empty queue and an empty set of
+	 * Initialize a buffering listener with an empty queue and an empty set of
 	 * listeners.
 	 */
 	public LatestListener() {

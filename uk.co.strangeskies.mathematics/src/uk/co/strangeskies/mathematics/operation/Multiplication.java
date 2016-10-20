@@ -36,19 +36,14 @@ import uk.co.strangeskies.mathematics.expression.BinaryExpression;
 import uk.co.strangeskies.mathematics.expression.Expression;
 
 public class Multiplication<O extends Multipliable<?, ? super T>, T>
-		extends BinaryExpression<Multiplication<O, T>, Multipliable<? extends O, ? super T>, T, O> {
-	public Multiplication(Expression<?, ? extends Multipliable<? extends O, ? super T>> firstOperand,
-			Expression<?, ? extends T> secondOperand) {
+		extends BinaryExpression<Multipliable<? extends O, ? super T>, T, O> {
+	public Multiplication(Expression<? extends Multipliable<? extends O, ? super T>> firstOperand,
+			Expression<? extends T> secondOperand) {
 		super(firstOperand, secondOperand, (a, b) -> a.getMultiplied(b));
 	}
 
 	@Override
 	public String toString() {
 		return "(" + getFirstOperand() + " * " + getSecondOperand() + ")";
-	}
-
-	@Override
-	public Multiplication<O, T> copy() {
-		return new Multiplication<>(getFirstOperand(), getSecondOperand());
 	}
 }

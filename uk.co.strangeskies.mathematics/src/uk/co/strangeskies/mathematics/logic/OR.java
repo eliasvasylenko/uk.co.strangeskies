@@ -35,15 +35,8 @@ package uk.co.strangeskies.mathematics.logic;
 import uk.co.strangeskies.mathematics.expression.BinaryExpression;
 import uk.co.strangeskies.mathematics.expression.Expression;
 
-public class OR<O extends ORable<?, ? super T>, T>
-		extends BinaryExpression<OR<O, T>, ORable<? extends O, ? super T>, T, O> {
-	public OR(Expression<?, ? extends ORable<? extends O, ? super T>> firstOperand,
-			Expression<?, ? extends T> secondOperand) {
+public class OR<O extends ORable<?, ? super T>, T> extends BinaryExpression<ORable<? extends O, ? super T>, T, O> {
+	public OR(Expression<? extends ORable<? extends O, ? super T>> firstOperand, Expression<? extends T> secondOperand) {
 		super(firstOperand, secondOperand, new OROperation<O, T>());
-	}
-
-	@Override
-	public OR<O, T> copy() {
-		return new OR<>(getFirstOperand(), getSecondOperand());
 	}
 }

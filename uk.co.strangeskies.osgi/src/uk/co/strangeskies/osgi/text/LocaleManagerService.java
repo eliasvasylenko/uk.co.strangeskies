@@ -36,7 +36,6 @@ import java.io.IOException;
 import java.util.Dictionary;
 import java.util.Locale;
 import java.util.Map;
-import java.util.function.Consumer;
 
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
@@ -48,6 +47,7 @@ import uk.co.strangeskies.osgi.LocaleManagerServiceConstants;
 import uk.co.strangeskies.text.properties.LocaleManager;
 import uk.co.strangeskies.text.properties.LocaleProvider;
 import uk.co.strangeskies.utilities.Observable;
+import uk.co.strangeskies.utilities.Observer;
 
 /**
  * A locale manager configurable via the config admin service.
@@ -107,12 +107,12 @@ public class LocaleManagerService implements LocaleManager, LocaleProvider {
 	}
 
 	@Override
-	public boolean addObserver(Consumer<? super Locale> observer) {
+	public boolean addObserver(Observer<? super Locale> observer) {
 		return component.addObserver(observer);
 	}
 
 	@Override
-	public boolean removeObserver(Consumer<? super Locale> observer) {
+	public boolean removeObserver(Observer<? super Locale> observer) {
 		return component.removeObserver(observer);
 	}
 

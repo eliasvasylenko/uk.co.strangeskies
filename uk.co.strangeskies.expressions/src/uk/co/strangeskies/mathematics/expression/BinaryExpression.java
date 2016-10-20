@@ -108,14 +108,14 @@ public abstract class BinaryExpression<O1, O2, R> extends DependentExpression<R>
 			beginWrite();
 
 			if (this.firstOperand != firstOperand || this.secondOperand != secondOperand) {
-				getDependencies().remove(this.firstOperand);
-				getDependencies().remove(this.secondOperand);
+				removeDependency(this.firstOperand);
+				removeDependency(this.secondOperand);
 
 				this.firstOperand = firstOperand;
 				this.secondOperand = secondOperand;
 
-				getDependencies().add(this.firstOperand);
-				getDependencies().add(this.secondOperand);
+				addDependency(this.firstOperand);
+				addDependency(this.secondOperand);
 			}
 		} finally {
 			endWrite();
@@ -132,11 +132,11 @@ public abstract class BinaryExpression<O1, O2, R> extends DependentExpression<R>
 
 			if (firstOperand != operand) {
 				if (firstOperand != secondOperand) {
-					getDependencies().remove(firstOperand);
+					removeDependency(firstOperand);
 				}
 
 				firstOperand = operand;
-				getDependencies().add(firstOperand);
+				addDependency(firstOperand);
 			}
 		} finally {
 			endWrite();
@@ -153,11 +153,11 @@ public abstract class BinaryExpression<O1, O2, R> extends DependentExpression<R>
 
 			if (secondOperand != operand) {
 				if (firstOperand != secondOperand) {
-					getDependencies().remove(secondOperand);
+					removeDependency(secondOperand);
 				}
 
 				secondOperand = operand;
-				getDependencies().add(secondOperand);
+				addDependency(secondOperand);
 			}
 		} finally {
 			endWrite();

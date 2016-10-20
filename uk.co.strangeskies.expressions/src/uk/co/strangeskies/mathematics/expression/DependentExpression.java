@@ -33,67 +33,48 @@
 package uk.co.strangeskies.mathematics.expression;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptySet;
-import static uk.co.strangeskies.utilities.EquivalenceComparator.identityComparator;
 
 import java.util.Collection;
-import java.util.TreeSet;
 
-import uk.co.strangeskies.mathematics.expression.collection.ExpressionSetDecorator;
-import uk.co.strangeskies.mathematics.expression.collection.SortedExpressionSet;
+import uk.co.strangeskies.utilities.Observer;
 
 /**
  * An expression which is dependent upon the evaluation of a number of other
  * expressions.
  * 
  * @author Elias N Vasylenko
- * @param <S>
- *          the self-bound of the expression, i.e. the type of the expression
- *          object itself
  * @param <T>
  *          The type of the expression.
  */
 public abstract class DependentExpression<T> extends ExpressionImpl<T> {
-	private final SortedExpressionSet<?, Expression<?>> dependencies;
+	private final Observer<Expression<?>> dependencyObserver = d -> {
+		beginWrite();
+		endWrite();
+	};
 
 	private T value;
 
-	private final boolean parallel;
-
 	public DependentExpression(Collection<? extends Expression<?>> dependencies) {
-		this(dependencies, false);
-	}
-
-	public DependentExpression(Collection<? extends Expression<?>> dependencies, boolean parallel) {
-		TreeSet<Expression<?>> dependenciesComponent = new TreeSet<>(identityComparator());
-		dependenciesComponent.addAll(dependencies);
-		this.dependencies = new ExpressionSetDecorator<>(dependenciesComponent);
-		this.dependencies.addObserver(m -> {
-			beginWrite();
-			endWrite();
-		});
-
-		this.parallel = parallel;
+		for (Expression<?> dependency : dependencies) {
+			addDependency(dependency);
+		}
 	}
 
 	public DependentExpression(Expression<?>... dependencies) {
 		this(asList(dependencies));
 	}
 
-	public DependentExpression(boolean parallel) {
-		this(emptySet(), parallel);
+	protected boolean addDependency(Expression<?> dependency) {
+		return dependency.addWeakObserver(this, t -> t.dependencyObserver);
+	}
+
+	protected boolean removeDependency(Expression<?> dependency) {
+		return dependency.removeWeakObserver(this);
 	}
 
 	@Override
 	public final T getValueImpl(boolean dirty) {
 		if (dirty) {
-			for (Expression<?> dependency : dependencies.decoupleValue()) {
-				if (parallel)
-					new Thread(() -> dependency.getValue()).run();
-				else
-					dependency.getValue();
-			}
-
 			value = evaluate();
 		}
 
@@ -101,16 +82,8 @@ public abstract class DependentExpression<T> extends ExpressionImpl<T> {
 	}
 
 	/**
-	 * All dependency {@link Expression}s are guaranteed to be read locked for the
-	 * duration of any internal invocation of this method. It may be useful to
-	 * relinquish read locks before termination of this method where possible.
-	 * 
 	 * @return The value of this {@link Expression} as derived from the dependency
 	 *         {@link Expression}s.
 	 */
 	protected abstract T evaluate();
-
-	protected SortedExpressionSet<?, Expression<?>> getDependencies() {
-		return dependencies;
-	}
 }

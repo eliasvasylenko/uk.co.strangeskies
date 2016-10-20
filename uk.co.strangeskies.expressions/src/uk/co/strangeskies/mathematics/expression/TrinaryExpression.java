@@ -135,17 +135,17 @@ public abstract class TrinaryExpression<O1, O2, O3, R> extends DependentExpressi
 
 			if (this.firstOperand != firstOperand || this.secondOperand != secondOperand
 					|| this.thirdOperand != thirdOperand) {
-				getDependencies().remove(this.firstOperand);
-				getDependencies().remove(this.secondOperand);
-				getDependencies().remove(this.thirdOperand);
+				removeDependency(this.firstOperand);
+				removeDependency(this.secondOperand);
+				removeDependency(this.thirdOperand);
 
 				this.firstOperand = firstOperand;
 				this.secondOperand = secondOperand;
 				this.thirdOperand = thirdOperand;
 
-				getDependencies().add(this.firstOperand);
-				getDependencies().add(this.secondOperand);
-				getDependencies().add(this.thirdOperand);
+				addDependency(this.firstOperand);
+				addDependency(this.secondOperand);
+				addDependency(this.thirdOperand);
 			}
 		} finally {
 			endWrite();
@@ -162,11 +162,11 @@ public abstract class TrinaryExpression<O1, O2, O3, R> extends DependentExpressi
 
 			if (firstOperand != operand) {
 				if (firstOperand != secondOperand && firstOperand != thirdOperand) {
-					getDependencies().remove(firstOperand);
+					removeDependency(firstOperand);
 				}
 
 				firstOperand = operand;
-				getDependencies().add(firstOperand);
+				addDependency(firstOperand);
 			}
 		} finally {
 			endWrite();
@@ -183,11 +183,11 @@ public abstract class TrinaryExpression<O1, O2, O3, R> extends DependentExpressi
 
 			if (secondOperand != operand) {
 				if (firstOperand != secondOperand && secondOperand != thirdOperand) {
-					getDependencies().remove(secondOperand);
+					removeDependency(secondOperand);
 				}
 
 				secondOperand = operand;
-				getDependencies().add(secondOperand);
+				addDependency(secondOperand);
 			}
 		} finally {
 			endWrite();
@@ -204,11 +204,11 @@ public abstract class TrinaryExpression<O1, O2, O3, R> extends DependentExpressi
 
 			if (thirdOperand != operand) {
 				if (firstOperand != thirdOperand && secondOperand != thirdOperand) {
-					getDependencies().remove(secondOperand);
+					removeDependency(secondOperand);
 				}
 
 				thirdOperand = operand;
-				getDependencies().add(secondOperand);
+				addDependency(secondOperand);
 			}
 		} finally {
 			endWrite();

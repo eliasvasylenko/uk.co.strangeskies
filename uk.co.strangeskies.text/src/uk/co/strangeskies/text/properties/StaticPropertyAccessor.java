@@ -33,7 +33,8 @@
 package uk.co.strangeskies.text.properties;
 
 import java.util.Locale;
-import java.util.function.Consumer;
+
+import uk.co.strangeskies.utilities.Observer;
 
 /**
  * A partial implementation for {@link Properties} manually implemented types
@@ -68,12 +69,12 @@ public abstract class StaticPropertyAccessor<S extends Properties<S>> implements
 	}
 
 	@Override
-	public boolean addObserver(Consumer<? super S> observer) {
+	public boolean addObserver(Observer<? super S> observer) {
 		return true;
 	}
 
 	@Override
-	public boolean removeObserver(Consumer<? super S> observer) {
+	public boolean removeObserver(Observer<? super S> observer) {
 		return true;
 	}
 

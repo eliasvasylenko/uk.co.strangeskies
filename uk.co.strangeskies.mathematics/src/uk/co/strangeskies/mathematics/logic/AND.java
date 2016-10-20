@@ -36,14 +36,9 @@ import uk.co.strangeskies.mathematics.expression.BinaryExpression;
 import uk.co.strangeskies.mathematics.expression.Expression;
 
 public class AND<O extends ANDable<?, ? super T>, T>
-		extends BinaryExpression<AND<O, T>, /*  */ANDable<? extends O, ? super T>, T, O> {
-	public AND(Expression<?, ? extends /*  */ANDable<? extends O, ? super T>> firstOperand,
-			Expression<?, ? extends /*  */T> secondOperand) {
+		extends BinaryExpression< /*  */ANDable<? extends O, ? super T>, T, O> {
+	public AND(Expression<? extends /*  */ANDable<? extends O, ? super T>> firstOperand,
+			Expression<? extends /*  */T> secondOperand) {
 		super(firstOperand, secondOperand, new ANDOperation<O, T>());
-	}
-
-	@Override
-	public AND<O, T> copy() {
-		return new AND<>(getFirstOperand(), getSecondOperand());
 	}
 }

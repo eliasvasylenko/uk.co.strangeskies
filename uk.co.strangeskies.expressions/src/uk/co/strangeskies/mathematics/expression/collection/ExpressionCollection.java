@@ -37,15 +37,12 @@ import java.util.Collection;
 import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.mathematics.expression.SelfExpression;
 import uk.co.strangeskies.utilities.Self;
-import uk.co.strangeskies.utilities.collection.ObservableCollection;
 
-public interface ExpressionCollection<S extends ExpressionCollection<S, E, C>, E extends Expression<?>, C>
-		extends ObservableCollection<S, E, C>, Self<S>, SelfExpression<S> {
-	@Override
-	ExpressionCollection<?, E, ?> unmodifiableView();
+public interface ExpressionCollection<S extends ExpressionCollection<S, E>, E extends Expression<?>>
+		extends Self<S>, SelfExpression<S> {
+	ExpressionCollection<?, E> unmodifiableView();
 
-	@Override
-	ExpressionCollection<?, E, ?> synchronizedView();
+	ExpressionCollection<?, E> synchronizedView();
 
 	void set(Collection<? extends E> expressions);
 }

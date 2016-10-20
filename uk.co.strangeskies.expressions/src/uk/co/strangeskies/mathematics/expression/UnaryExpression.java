@@ -88,10 +88,6 @@ public abstract class UnaryExpression<O, R> extends DependentExpression<R> {
 		return operand;
 	}
 
-	public Expression<? extends Function<? super O, ? extends R>> getOperation() {
-		return operation;
-	}
-
 	/**
 	 * @param operand
 	 *          A new operand.
@@ -101,10 +97,10 @@ public abstract class UnaryExpression<O, R> extends DependentExpression<R> {
 			beginWrite();
 
 			if (this.operand != operand) {
-				getDependencies().remove(this.operand);
+				removeDependency(this.operand);
 
 				this.operand = operand;
-				getDependencies().add(this.operand);
+				addDependency(this.operand);
 			}
 		} finally {
 			endWrite();

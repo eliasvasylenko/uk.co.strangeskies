@@ -197,9 +197,9 @@ public interface Matrix<S extends Matrix<S, V>, V extends Value<V>>
 		int majorSize = data.get(0).size();
 		int minorSize = data.size();
 
-		List<List<V>> transposedData = new ArrayList<List<V>>();
+		List<List<V>> transposedData = new ArrayList<>();
 		for (int i = 0; i < majorSize; i++) {
-			List<V> elements = new ArrayList<V>();
+			List<V> elements = new ArrayList<>();
 			transposedData.add(elements);
 			for (int j = 0; j < minorSize; j++) {
 				elements.add(data.get(j).get(i));

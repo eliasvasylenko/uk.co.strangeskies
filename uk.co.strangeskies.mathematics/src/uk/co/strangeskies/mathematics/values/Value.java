@@ -34,9 +34,9 @@ package uk.co.strangeskies.mathematics.values;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.function.Consumer;
 
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
+import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.mathematics.expression.SelfExpression;
 import uk.co.strangeskies.mathematics.operation.Incrementable;
 import uk.co.strangeskies.mathematics.operation.Multipliable;
@@ -44,15 +44,16 @@ import uk.co.strangeskies.mathematics.operation.Negatable;
 import uk.co.strangeskies.mathematics.operation.Scalable;
 import uk.co.strangeskies.mathematics.operation.Subtractable;
 import uk.co.strangeskies.utilities.Copyable;
+import uk.co.strangeskies.utilities.Observer;
 import uk.co.strangeskies.utilities.Property;
 import uk.co.strangeskies.utilities.Self;
 
 public abstract class Value<S extends Value<S>> extends Number implements Multipliable<S, Value<?>>,
 		Subtractable<S, Value<?>>, Negatable<S, S>, Scalable<S>, Property<S, Value<?>>, Incrementable<S>, Self<S>,
-		SelfExpression<S>, Copyable<S>, Comparable<Value<?>>, CopyDecouplingExpression<S, S> {
+		SelfExpression<S>, Copyable<S>, Comparable<Value<?>>, CopyDecouplingExpression<S> {
 	private static final long serialVersionUID = -979949605176385397L;
 
-	private final Set<Consumer<? super S>> observers;
+	private final Set<Observer<? super S>> observers;
 	private boolean evaluated = true;
 
 	public Value() {
@@ -155,17 +156,17 @@ public abstract class Value<S extends Value<S>> extends Number implements Multip
 	}
 
 	protected final void postUpdate() {
-		for (Consumer<? super S> observer : observers)
-			observer.accept(null);
+		for (Observer<? super S> observer : observers)
+			observer.notify(null);
 	}
 
 	@Override
-	public final boolean addObserver(Consumer<? super S> observer) {
+	public final boolean addObserver(Observer<? super Expression<S>> observer) {
 		return observers.add(observer);
 	}
 
 	@Override
-	public final boolean removeObserver(Consumer<? super S> observer) {
+	public final boolean removeObserver(Observer<? super Expression<S>> observer) {
 		return observers.remove(observer);
 	}
 

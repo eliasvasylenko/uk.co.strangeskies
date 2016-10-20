@@ -35,18 +35,13 @@ package uk.co.strangeskies.mathematics.logic;
 import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.mathematics.expression.UnaryExpression;
 
-public class NOT<O> extends UnaryExpression<NOT<O>, NOTable<?, ? extends O>, O> {
-	public NOT(Expression<?, ? extends NOTable<?, ? extends O>> operand) {
+public class NOT<O> extends UnaryExpression<NOTable<?, ? extends O>, O> {
+	public NOT(Expression<? extends NOTable<?, ? extends O>> operand) {
 		super(operand, new NOTOperation<O>());
 	}
 
 	@Override
 	public String toString() {
 		return "¬" + getValue();
-	}
-
-	@Override
-	public NOT<O> copy() {
-		return new NOT<>(getOperand());
 	}
 }

@@ -70,7 +70,7 @@ public abstract class ExpressionImpl<T> extends ObservableImpl<Expression<T>> im
 		boolean begun = changeDepth++ == 0;
 
 		if (begun) {
-			changing = getObservers().size() > 0;
+			changing = !getObservers().isEmpty();
 		}
 
 		return begun;

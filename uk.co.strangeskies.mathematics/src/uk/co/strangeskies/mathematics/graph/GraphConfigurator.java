@@ -45,6 +45,7 @@ import org.osgi.annotation.versioning.ProviderType;
 
 import uk.co.strangeskies.utilities.Factory;
 import uk.co.strangeskies.utilities.Observable;
+import uk.co.strangeskies.utilities.Observer;
 
 /**
  *
@@ -258,7 +259,7 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	GraphConfigurator<V, E> internalListeners(Consumer<GraphListeners<V, E>> internalListeners);
 
 	default <L> GraphConfigurator<V, E> addInternalListener(Function<GraphListeners<V, E>, Observable<L>> listenerSet,
-			Consumer<L> listener) {
+			Observer<L> listener) {
 		return internalListeners(l -> listenerSet.apply(l).addObserver(listener));
 	}
 }

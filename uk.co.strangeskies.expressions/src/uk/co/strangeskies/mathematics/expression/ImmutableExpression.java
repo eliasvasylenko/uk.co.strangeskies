@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.mathematics.expression;
 
-import java.util.function.Consumer;
+import uk.co.strangeskies.utilities.Observer;
 
 /**
  * An abstract class to help designing mutable expression, implementing a simple
@@ -44,12 +44,12 @@ import java.util.function.Consumer;
  */
 public abstract class ImmutableExpression<T> implements Expression<T> {
 	@Override
-	public final boolean addObserver(Consumer<? super Expression<T>> observer) {
+	public final boolean addObserver(Observer<? super Expression<T>> observer) {
 		return true;
 	}
 
 	@Override
-	public final boolean removeObserver(Consumer<? super Expression<T>> observer) {
+	public final boolean removeObserver(Observer<? super Expression<T>> observer) {
 		return true;
 	}
 }

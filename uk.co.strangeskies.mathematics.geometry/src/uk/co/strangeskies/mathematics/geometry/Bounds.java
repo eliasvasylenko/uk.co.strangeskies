@@ -45,8 +45,7 @@ import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.Factory;
 import uk.co.strangeskies.utilities.Self;
 
-public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>>
-		implements Self<S> {
+public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>> implements Self<S> {
 	ArrayList<Range<V>> ranges;
 
 	public Bounds(int dimensions, Factory<V> valueFactory) {
@@ -56,7 +55,7 @@ public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>>
 			throw new IllegalArgumentException(e);
 		}
 
-		ranges = new ArrayList<Range<V>>();
+		ranges = new ArrayList<>();
 		for (int i = 0; i < dimensions; i++) {
 			ranges.add(Range.between(valueFactory.create(), valueFactory.create()));
 		}
@@ -68,13 +67,12 @@ public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>>
 
 	public Bounds(Vector<?, V> from, Vector<?, V> to, int dimensions) {
 		try {
-			DimensionalityException.checkEquivalence(from.getDimensions(),
-					dimensions);
+			DimensionalityException.checkEquivalence(from.getDimensions(), dimensions);
 			DimensionalityException.checkEquivalence(to.getDimensions(), dimensions);
 		} catch (DimensionalityException e) {
 			throw new IllegalArgumentException(e);
 		}
-		ranges = new ArrayList<Range<V>>();
+		ranges = new ArrayList<>();
 
 		Iterator<? extends V> fromIterator = from.getData().iterator();
 		Iterator<? extends V> toIterator = to.getData().iterator();
@@ -87,8 +85,7 @@ public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>>
 		this(Arrays.asList(points));
 	}
 
-	public Bounds(int dimensions,
-			@SuppressWarnings("unchecked") Vector<?, V>... points) {
+	public Bounds(int dimensions, @SuppressWarnings("unchecked") Vector<?, V>... points) {
 		this(dimensions, Arrays.asList(points));
 	}
 
@@ -99,13 +96,12 @@ public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>>
 	public Bounds(int dimensions, Collection<? extends Vector<?, V>> points) {
 		try {
 			for (Vector<?, V> point : points) {
-				DimensionalityException.checkEquivalence(dimensions,
-						point.getDimensions());
+				DimensionalityException.checkEquivalence(dimensions, point.getDimensions());
 			}
 		} catch (DimensionalityException e) {
 			throw new IllegalArgumentException(e);
 		}
-		ranges = new ArrayList<Range<V>>();
+		ranges = new ArrayList<>();
 
 		Iterator<? extends Vector<?, V>> pointIterator = points.iterator();
 		Vector<?, V> firstPoint = pointIterator.next();
@@ -121,7 +117,7 @@ public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>>
 	}
 
 	public Bounds(Bounds<?, V> other) {
-		ranges = new ArrayList<Range<V>>();
+		ranges = new ArrayList<>();
 		for (Range<V> range : other.getData()) {
 			ranges.add(range.copy());
 		}
@@ -129,12 +125,11 @@ public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>>
 
 	public Bounds(Bounds<?, V> other, int dimensions) {
 		try {
-			DimensionalityException.checkEquivalence(other.getDimension(),
-					dimensions);
+			DimensionalityException.checkEquivalence(other.getDimension(), dimensions);
 		} catch (DimensionalityException e) {
 			throw new IllegalArgumentException(e);
 		}
-		ranges = new ArrayList<Range<V>>();
+		ranges = new ArrayList<>();
 		for (Range<V> range : other.getData()) {
 			ranges.add(range.copy());
 		}
@@ -152,8 +147,7 @@ public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>>
 		return ranges.size();
 	}
 
-	public void expandThrough(
-			@SuppressWarnings("unchecked") Vector<?, V>... points) {
+	public void expandThrough(@SuppressWarnings("unchecked") Vector<?, V>... points) {
 		expandThrough(Arrays.asList(points));
 	}
 
@@ -173,8 +167,7 @@ public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>>
 
 	public <M extends Vector<M, X>, X extends Value<X>> M confine(M value) {
 		try {
-			DimensionalityException.checkEquivalence(getDimension(),
-					value.getDimensions());
+			DimensionalityException.checkEquivalence(getDimension(), value.getDimensions());
 		} catch (DimensionalityException e) {
 			throw new IllegalArgumentException(e);
 		}
@@ -191,8 +184,7 @@ public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>>
 
 	public S combineWith(Bounds<?, V> other) {
 		try {
-			DimensionalityException.checkEquivalence(getDimension(),
-					other.getDimension());
+			DimensionalityException.checkEquivalence(getDimension(), other.getDimension());
 		} catch (DimensionalityException e) {
 			throw new IllegalArgumentException(e);
 		}

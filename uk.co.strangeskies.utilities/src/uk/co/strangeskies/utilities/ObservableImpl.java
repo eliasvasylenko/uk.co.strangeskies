@@ -35,7 +35,6 @@ package uk.co.strangeskies.utilities;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.function.Consumer;
 
 /**
  * A simple implementation of {@link Observable} which maintains a list of
@@ -49,15 +48,15 @@ import java.util.function.Consumer;
  *          The type of event message to produce
  */
 public class ObservableImpl<M> implements Observable<M> {
-	private Set<Consumer<? super M>> observers;
+	private Set<Observer<? super M>> observers;
 
 	@Override
-	public boolean addObserver(Consumer<? super M> observer) {
+	public boolean addObserver(Observer<? super M> observer) {
 		return getObservers().add(observer);
 	}
 
 	@Override
-	public boolean removeObserver(Consumer<? super M> observer) {
+	public boolean removeObserver(Observer<? super M> observer) {
 		if (observers != null) {
 			return observers.remove(observer);
 		} else {
@@ -80,8 +79,8 @@ public class ObservableImpl<M> implements Observable<M> {
 	 */
 	public void fire(M item) {
 		if (observers != null) {
-			for (Consumer<? super M> listener : new ArrayList<>(observers)) {
-				listener.accept(item);
+			for (Observer<? super M> listener : new ArrayList<>(observers)) {
+				listener.notify(item);
 			}
 		}
 	}
@@ -89,7 +88,7 @@ public class ObservableImpl<M> implements Observable<M> {
 	/**
 	 * @return a list of all observers attached to this observable
 	 */
-	public Set<Consumer<? super M>> getObservers() {
+	public Set<Observer<? super M>> getObservers() {
 		if (observers == null) {
 			observers = new LinkedHashSet<>();
 		}

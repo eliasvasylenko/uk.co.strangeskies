@@ -33,10 +33,10 @@
 package uk.co.strangeskies.text.properties;
 
 import java.util.Locale;
-import java.util.function.Consumer;
 
 import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableValue;
+import uk.co.strangeskies.utilities.Observer;
 
 /**
  * A localized property interface which is observable over the value changes due
@@ -91,12 +91,12 @@ public interface Localized<T> extends ObservableValue<T> {
 			}
 
 			@Override
-			public boolean removeObserver(Consumer<? super T> observer) {
+			public boolean removeObserver(Observer<? super T> observer) {
 				return true;
 			}
 
 			@Override
-			public boolean addObserver(Consumer<? super T> observer) {
+			public boolean addObserver(Observer<? super T> observer) {
 				return true;
 			}
 
