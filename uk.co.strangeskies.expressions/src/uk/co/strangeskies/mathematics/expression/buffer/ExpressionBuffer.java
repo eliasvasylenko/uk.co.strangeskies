@@ -38,9 +38,8 @@ import java.util.function.Function;
 
 import uk.co.strangeskies.mathematics.expression.Expression;
 
-public class ExpressionBuffer<F extends Expression<?, ?>, T>
-		extends AbstractFunctionBuffer<ExpressionBuffer<F, T>, F, T> {
-	private Consumer<Expression<?, ?>> backObserver;
+public class ExpressionBuffer<F extends Expression<?>, T> extends AbstractFunctionBuffer<F, T> {
+	private Consumer<Expression<?>> backObserver;
 
 	public ExpressionBuffer(T front, F back, BiFunction<? super T, ? super F, ? extends T> operation) {
 		super(front, back, operation);
@@ -54,7 +53,7 @@ public class ExpressionBuffer<F extends Expression<?, ?>, T>
 		super(front, back, function);
 	}
 
-	public ExpressionBuffer(AbstractFunctionBuffer<?, F, T> doubleBuffer) {
+	public ExpressionBuffer(AbstractFunctionBuffer<F, T> doubleBuffer) {
 		super(doubleBuffer);
 	}
 
@@ -71,16 +70,11 @@ public class ExpressionBuffer<F extends Expression<?, ?>, T>
 		return super.setBack(next);
 	}
 
-	private Consumer<Expression<?, ?>> nextBackObserver() {
+	private Consumer<Expression<?>> nextBackObserver() {
 		return backObserver = m -> invalidateBack();
 	}
 
-	private Consumer<Expression<?, ?>> getBackObserver() {
+	private Consumer<Expression<?>> getBackObserver() {
 		return backObserver;
-	}
-
-	@Override
-	public ExpressionBuffer<F, T> copy() {
-		return new ExpressionBuffer<>(this);
 	}
 }

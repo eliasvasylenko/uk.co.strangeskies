@@ -39,7 +39,7 @@ import uk.co.strangeskies.mathematics.expression.SelfExpression;
 import uk.co.strangeskies.utilities.Self;
 import uk.co.strangeskies.utilities.collection.ObservableCollection;
 
-public interface ExpressionCollection<S extends ExpressionCollection<S, E, C>, E extends Expression<?, ?>, C>
+public interface ExpressionCollection<S extends ExpressionCollection<S, E, C>, E extends Expression<?>, C>
 		extends ObservableCollection<S, E, C>, Self<S>, SelfExpression<S> {
 	@Override
 	ExpressionCollection<?, E, ?> unmodifiableView();

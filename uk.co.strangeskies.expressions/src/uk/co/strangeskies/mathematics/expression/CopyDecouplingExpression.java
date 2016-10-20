@@ -43,7 +43,7 @@ import uk.co.strangeskies.utilities.Copyable;
  * @param <T>
  *          The type of the expression.
  */
-public interface CopyDecouplingExpression<S extends Expression<S, T>, T extends Copyable<T>> extends Expression<S, T> {
+public interface CopyDecouplingExpression<T extends Copyable<T>> extends Expression<T> {
 	@Override
 	public default T decoupleValue() {
 		return getValue().copy();

@@ -39,14 +39,10 @@ import uk.co.strangeskies.utilities.ObservableImpl;
  * observer list, locking mechanism, and update mechanism.
  * 
  * @author Elias N Vasylenko
- * @param <S>
- *          the self-bound of the expression, i.e. the type of the expression
- *          object itself
  * @param <T>
  *          The type of the value of this expression
  */
-public abstract class ExpressionImpl<S extends Expression<S, T>, T> extends ObservableImpl<S>
-		implements Expression<S, T> {
+public abstract class ExpressionImpl<T> extends ObservableImpl<Expression<T>> implements Expression<T> {
 	private boolean dirty = true;
 
 	private boolean changing;
@@ -95,7 +91,7 @@ public abstract class ExpressionImpl<S extends Expression<S, T>, T> extends Obse
 
 		if (fired) {
 			dirty = true;
-			fire(getThis());
+			fire(this);
 		}
 
 		return fired;

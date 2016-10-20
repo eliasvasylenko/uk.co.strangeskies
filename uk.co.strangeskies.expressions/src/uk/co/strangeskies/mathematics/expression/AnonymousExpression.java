@@ -44,4 +44,4 @@ package uk.co.strangeskies.mathematics.expression;
  * @param <T>
  *          the type of the value of this expression
  */
-public interface AnonymousExpression<T> extends Expression<AnonymousExpression<T>, T> {}
+public interface AnonymousExpression<T> extends Expression<T> {}

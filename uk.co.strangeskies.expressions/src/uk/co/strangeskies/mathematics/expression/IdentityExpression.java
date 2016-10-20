@@ -38,15 +38,15 @@ import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.Property;
 
 /**
- * An {@link Expression} based on the behaviour of the {@link IdentityProperty}
- * class, with the lazy updating behaviour of {@link LockingExpression} for
+ * An {@link Expression} based on the behavior of the {@link IdentityProperty}
+ * class, with the lazy updating behavior of {@link LockingExpression} for
  * {@link Observer}s.
  * 
  * @author Elias N Vasylenko
  * @param <T>
  *          The type of the expression.
  */
-public class IdentityExpression<T> extends ExpressionImpl<IdentityExpression<T>, T> implements Property<T, T> {
+public class IdentityExpression<T> extends ExpressionImpl<T> implements Property<T, T> {
 	private T value;
 
 	/**
@@ -85,10 +85,5 @@ public class IdentityExpression<T> extends ExpressionImpl<IdentityExpression<T>,
 	@Override
 	public final T get() {
 		return getValue();
-	}
-
-	@Override
-	public IdentityExpression<T> copy() {
-		return this;
 	}
 }

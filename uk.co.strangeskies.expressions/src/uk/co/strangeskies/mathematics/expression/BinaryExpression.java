@@ -45,11 +45,10 @@ import java.util.function.BiFunction;
  * @param <R>
  *          The type of the result.
  */
-public abstract class BinaryExpression<S extends BinaryExpression<S, O1, O2, R>, O1, O2, R>
-		extends DependentExpression<S, R> {
-	private Expression<?, ? extends O1> firstOperand;
-	private Expression<?, ? extends O2> secondOperand;
-	private Expression<?, ? extends BiFunction<? super O1, ? super O2, ? extends R>> operation;
+public abstract class BinaryExpression<O1, O2, R> extends DependentExpression<R> {
+	private Expression<? extends O1> firstOperand;
+	private Expression<? extends O2> secondOperand;
+	private Expression<? extends BiFunction<? super O1, ? super O2, ? extends R>> operation;
 
 	/**
 	 * @param firstOperand
@@ -60,8 +59,8 @@ public abstract class BinaryExpression<S extends BinaryExpression<S, O1, O2, R>,
 	 *          A expression providing a function transforming the operands into a
 	 *          value of this expression's type.
 	 */
-	public BinaryExpression(Expression<?, ? extends O1> firstOperand, Expression<?, ? extends O2> secondOperand,
-			Expression<?, ? extends BiFunction<? super O1, ? super O2, ? extends R>> operation) {
+	public BinaryExpression(Expression<? extends O1> firstOperand, Expression<? extends O2> secondOperand,
+			Expression<? extends BiFunction<? super O1, ? super O2, ? extends R>> operation) {
 		super(firstOperand, secondOperand);
 
 		this.firstOperand = firstOperand;
@@ -79,7 +78,7 @@ public abstract class BinaryExpression<S extends BinaryExpression<S, O1, O2, R>,
 	 *          A function transforming the operands into a value of this
 	 *          expression's type.
 	 */
-	public BinaryExpression(Expression<?, ? extends O1> firstOperand, Expression<?, ? extends O2> secondOperand,
+	public BinaryExpression(Expression<? extends O1> firstOperand, Expression<? extends O2> secondOperand,
 			BiFunction<? super O1, ? super O2, ? extends R> operation) {
 		this(firstOperand, secondOperand, Expression.immutable(operation));
 	}
@@ -87,14 +86,14 @@ public abstract class BinaryExpression<S extends BinaryExpression<S, O1, O2, R>,
 	/**
 	 * @return The first operand expression.
 	 */
-	public Expression<?, ? extends O1> getFirstOperand() {
+	public Expression<? extends O1> getFirstOperand() {
 		return firstOperand;
 	}
 
 	/**
 	 * @return The second operand expression.
 	 */
-	public Expression<?, ? extends O2> getSecondOperand() {
+	public Expression<? extends O2> getSecondOperand() {
 		return secondOperand;
 	}
 
@@ -104,7 +103,7 @@ public abstract class BinaryExpression<S extends BinaryExpression<S, O1, O2, R>,
 	 * @param secondOperand
 	 *          A new second operand.
 	 */
-	public void setOperands(Expression<?, ? extends O1> firstOperand, Expression<?, ? extends O2> secondOperand) {
+	public void setOperands(Expression<? extends O1> firstOperand, Expression<? extends O2> secondOperand) {
 		try {
 			beginWrite();
 
@@ -127,7 +126,7 @@ public abstract class BinaryExpression<S extends BinaryExpression<S, O1, O2, R>,
 	 * @param operand
 	 *          A new first operand.
 	 */
-	public void setFirstOperand(Expression<?, ? extends O1> operand) {
+	public void setFirstOperand(Expression<? extends O1> operand) {
 		try {
 			beginWrite();
 
@@ -148,7 +147,7 @@ public abstract class BinaryExpression<S extends BinaryExpression<S, O1, O2, R>,
 	 * @param operand
 	 *          A new second operand.
 	 */
-	public void setSecondOperand(Expression<?, ? extends O2> operand) {
+	public void setSecondOperand(Expression<? extends O2> operand) {
 		try {
 			beginWrite();
 

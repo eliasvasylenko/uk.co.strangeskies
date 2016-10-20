@@ -35,7 +35,7 @@ package uk.co.strangeskies.mathematics.expression.buffer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public class FunctionBuffer<B, F> extends AbstractFunctionBuffer<FunctionBuffer<B, F>, B, F> {
+public class FunctionBuffer<B, F> extends AbstractFunctionBuffer<B, F> {
 	public FunctionBuffer(F front, B back, BiFunction<? super F, ? super B, ? extends F> operation) {
 		super(front, back, operation);
 	}
@@ -50,10 +50,5 @@ public class FunctionBuffer<B, F> extends AbstractFunctionBuffer<FunctionBuffer<
 
 	public FunctionBuffer(FunctionBuffer<B, F> doubleBuffer) {
 		super(doubleBuffer);
-	}
-
-	@Override
-	public FunctionBuffer<B, F> copy() {
-		return new FunctionBuffer<>(this);
 	}
 }

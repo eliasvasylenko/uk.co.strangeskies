@@ -40,8 +40,7 @@ import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.mathematics.expression.IdentityExpression;
 import uk.co.strangeskies.mathematics.expression.LockingExpression;
 
-public abstract class AbstractFunctionBuffer<S extends AbstractFunctionBuffer<S, B, F>, B, F>
-		extends LockingExpression<S, F> implements DoubleBuffer<S, B, F> {
+public abstract class AbstractFunctionBuffer<B, F> extends LockingExpression<F> implements DoubleBuffer<B, F> {
 	private F frontValue;
 	private IdentityExpression<B> back;
 
@@ -64,7 +63,7 @@ public abstract class AbstractFunctionBuffer<S extends AbstractFunctionBuffer<S,
 		this(function.apply(back), back, function);
 	}
 
-	public AbstractFunctionBuffer(AbstractFunctionBuffer<?, B, F> doubleBuffer) {
+	public AbstractFunctionBuffer(AbstractFunctionBuffer<B, F> doubleBuffer) {
 		this(doubleBuffer.getFront(), doubleBuffer.getBack(), doubleBuffer.getOperation());
 	}
 
@@ -74,7 +73,7 @@ public abstract class AbstractFunctionBuffer<S extends AbstractFunctionBuffer<S,
 	}
 
 	@Override
-	public Expression<?, B> getBackExpression() {
+	public Expression<B> getBackExpression() {
 		return back;
 	}
 
@@ -132,7 +131,7 @@ public abstract class AbstractFunctionBuffer<S extends AbstractFunctionBuffer<S,
 			return false;
 		}
 
-		AbstractFunctionBuffer<?, ?, ?> thatDoubleBuffer = (AbstractFunctionBuffer<?, ?, ?>) that;
+		AbstractFunctionBuffer<?, ?> thatDoubleBuffer = (AbstractFunctionBuffer<?, ?>) that;
 
 		F thisFront = this.getFront();
 		B thisBack = this.getBack();

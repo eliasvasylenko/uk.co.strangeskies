@@ -42,8 +42,7 @@ import java.lang.reflect.InvocationTargetException;
  * @param <T>
  *          The type of the expression.
  */
-public interface CloneDecouplingExpression<S extends CloneDecouplingExpression<S, T>, T extends Cloneable>
-		extends Expression<S, T> {
+public interface CloneDecouplingExpression<T extends Cloneable> extends Expression<T> {
 	@Override
 	@SuppressWarnings("unchecked")
 	public default T decoupleValue() {

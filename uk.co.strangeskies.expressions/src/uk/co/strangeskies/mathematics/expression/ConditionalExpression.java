@@ -43,10 +43,10 @@ import java.util.Arrays;
  * @param <O>
  *          The type of the expression.
  */
-public class ConditionalExpression<O> extends DependentExpression<ConditionalExpression<O>, O> {
-	private final Expression<?, ? extends /*  */Boolean> condition;
-	private final Expression<?, ? extends O> expressionWhenFulfilled;
-	private final Expression<?, ? extends O> expressionWhenUnfulfilled;
+public class ConditionalExpression<O> extends DependentExpression<O> {
+	private final Expression<? extends /*  */Boolean> condition;
+	private final Expression<? extends O> expressionWhenFulfilled;
+	private final Expression<? extends O> expressionWhenUnfulfilled;
 
 	/**
 	 * @param condition
@@ -58,8 +58,8 @@ public class ConditionalExpression<O> extends DependentExpression<ConditionalExp
 	 *          The {@link Expression} to set as primary dependency when the given
 	 *          condition is unfulfilled.
 	 */
-	public ConditionalExpression(Expression<?, ? extends /*  */Boolean> condition,
-			Expression<?, ? extends O> expressionWhenFulfilled, Expression<?, ? extends O> expressionWhenUnfulfilled) {
+	public ConditionalExpression(Expression<? extends /*  */Boolean> condition,
+			Expression<? extends O> expressionWhenFulfilled, Expression<? extends O> expressionWhenUnfulfilled) {
 		super(Arrays.asList(condition), false);
 
 		if (condition == expressionWhenFulfilled || condition == expressionWhenUnfulfilled) {
@@ -94,7 +94,7 @@ public class ConditionalExpression<O> extends DependentExpression<ConditionalExp
 	/**
 	 * @return The condition to switch between primary dependencies.
 	 */
-	public final Expression<?, ? extends /*  */Boolean> getCondition() {
+	public final Expression<? extends /*  */Boolean> getCondition() {
 		return condition;
 	}
 
@@ -102,7 +102,7 @@ public class ConditionalExpression<O> extends DependentExpression<ConditionalExp
 	 * @return The {@link Expression} which behaves as primary dependency when the
 	 *         given condition is fulfilled.
 	 */
-	public final Expression<?, ? extends O> getExpressionWhenFulfilled() {
+	public final Expression<? extends O> getExpressionWhenFulfilled() {
 		return expressionWhenFulfilled;
 	}
 
@@ -110,12 +110,7 @@ public class ConditionalExpression<O> extends DependentExpression<ConditionalExp
 	 * @return The {@link Expression} which behaves as primary dependency when the
 	 *         given condition is unfulfilled.
 	 */
-	public final Expression<?, ? extends O> getExpressionWhenUnfulfilled() {
+	public final Expression<? extends O> getExpressionWhenUnfulfilled() {
 		return expressionWhenUnfulfilled;
-	}
-
-	@Override
-	public ConditionalExpression<O> copy() {
-		return new ConditionalExpression<>(condition, expressionWhenFulfilled, expressionWhenUnfulfilled);
 	}
 }

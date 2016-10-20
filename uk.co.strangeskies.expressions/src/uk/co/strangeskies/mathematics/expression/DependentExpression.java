@@ -53,19 +53,19 @@ import uk.co.strangeskies.mathematics.expression.collection.SortedExpressionSet;
  * @param <T>
  *          The type of the expression.
  */
-public abstract class DependentExpression<S extends Expression<S, T>, T> extends ExpressionImpl<S, T> {
-	private final SortedExpressionSet<?, Expression<?, ?>> dependencies;
+public abstract class DependentExpression<T> extends ExpressionImpl<T> {
+	private final SortedExpressionSet<?, Expression<?>> dependencies;
 
 	private T value;
 
 	private final boolean parallel;
 
-	public DependentExpression(Collection<? extends Expression<?, ?>> dependencies) {
+	public DependentExpression(Collection<? extends Expression<?>> dependencies) {
 		this(dependencies, false);
 	}
 
-	public DependentExpression(Collection<? extends Expression<?, ?>> dependencies, boolean parallel) {
-		TreeSet<Expression<?, ?>> dependenciesComponent = new TreeSet<>(identityComparator());
+	public DependentExpression(Collection<? extends Expression<?>> dependencies, boolean parallel) {
+		TreeSet<Expression<?>> dependenciesComponent = new TreeSet<>(identityComparator());
 		dependenciesComponent.addAll(dependencies);
 		this.dependencies = new ExpressionSetDecorator<>(dependenciesComponent);
 		this.dependencies.addObserver(m -> {
@@ -76,7 +76,7 @@ public abstract class DependentExpression<S extends Expression<S, T>, T> extends
 		this.parallel = parallel;
 	}
 
-	public DependentExpression(Expression<?, ?>... dependencies) {
+	public DependentExpression(Expression<?>... dependencies) {
 		this(asList(dependencies));
 	}
 
@@ -87,7 +87,7 @@ public abstract class DependentExpression<S extends Expression<S, T>, T> extends
 	@Override
 	public final T getValueImpl(boolean dirty) {
 		if (dirty) {
-			for (Expression<?, ?> dependency : dependencies.decoupleValue()) {
+			for (Expression<?> dependency : dependencies.decoupleValue()) {
 				if (parallel)
 					new Thread(() -> dependency.getValue()).run();
 				else
@@ -110,7 +110,7 @@ public abstract class DependentExpression<S extends Expression<S, T>, T> extends
 	 */
 	protected abstract T evaluate();
 
-	protected SortedExpressionSet<?, Expression<?, ?>> getDependencies() {
+	protected SortedExpressionSet<?, Expression<?>> getDependencies() {
 		return dependencies;
 	}
 }

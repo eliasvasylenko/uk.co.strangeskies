@@ -38,7 +38,6 @@ import java.util.function.Supplier;
 import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableImpl;
 import uk.co.strangeskies.utilities.ObservableValue;
-import uk.co.strangeskies.utilities.Self;
 
 /**
  * <p>
@@ -66,13 +65,10 @@ import uk.co.strangeskies.utilities.Self;
  * provided to bridge the gap from {@link Observable} to {@link Expression}.
  * 
  * @author Elias N Vasylenko
- * @param <S>
- *          the self-bound of the expression, i.e. the type of the expression
- *          object itself
  * @param <T>
  *          the type of the value of this expression
  */
-public interface Expression<S extends Expression<S, T>, T> extends Observable<S>, Self<S> {
+public interface Expression<T> extends Observable<Expression<T>> {
 	/**
 	 * This should always return the correct current value for this Expression. Be
 	 * careful to remember that the reference returned should not be able to
@@ -171,10 +167,10 @@ public interface Expression<S extends Expression<S, T>, T> extends Observable<S>
  * TODO with Valhalla we can probably make this a value type to just about get
  * rid of the overhead
  */
-class AnonymousExpressionImpl<T> extends ObservableImpl<AnonymousExpression<T>> implements AnonymousExpression<T> {
+class AnonymousExpressionImpl<T> extends ObservableImpl<Expression<T>> implements AnonymousExpression<T> {
 	private final Supplier<T> base;
 
-	AnonymousExpressionImpl(Expression<?, T> base) {
+	AnonymousExpressionImpl(Expression<T> base) {
 		this.base = base::getValue;
 
 		base.addObserver(b -> fire(this));
@@ -190,15 +186,9 @@ class AnonymousExpressionImpl<T> extends ObservableImpl<AnonymousExpression<T>> 
 	public T getValue() {
 		return base.get();
 	}
-
-	@Override
-	public AnonymousExpression<T> copy() {
-		return this;
-	}
 }
 
-class ImmutableExpressionImpl<T> extends ImmutableExpression<AnonymousExpression<T>, T>
-		implements AnonymousExpression<T> {
+class ImmutableExpressionImpl<T> extends ImmutableExpression<T> implements AnonymousExpression<T> {
 	private final T value;
 
 	ImmutableExpressionImpl(T value) {
@@ -208,10 +198,5 @@ class ImmutableExpressionImpl<T> extends ImmutableExpression<AnonymousExpression
 	@Override
 	public T getValue() {
 		return value;
-	}
-
-	@Override
-	public ImmutableExpressionImpl<T> copy() {
-		return this;
 	}
 }

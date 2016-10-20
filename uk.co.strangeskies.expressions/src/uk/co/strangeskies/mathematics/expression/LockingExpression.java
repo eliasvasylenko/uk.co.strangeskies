@@ -58,8 +58,7 @@ import java.util.function.Supplier;
  * @param <T>
  *          The type of the value of this expression
  */
-public abstract class LockingExpression<S extends Expression<S, T>, T> extends DependentExpression<S, T>
-		implements Expression<S, T> {
+public abstract class LockingExpression<T> extends DependentExpression<T> implements Expression<T> {
 	private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
 	protected <U> U read(Supplier<U> read) {
@@ -110,7 +109,7 @@ public abstract class LockingExpression<S extends Expression<S, T>, T> extends D
 	}
 
 	@Override
-	public boolean addObserver(Consumer<? super S> observer) {
+	public boolean addObserver(Consumer<? super Expression<T>> observer) {
 		getReadLock().lock();
 
 		try {
@@ -121,7 +120,7 @@ public abstract class LockingExpression<S extends Expression<S, T>, T> extends D
 	}
 
 	@Override
-	public boolean removeObserver(Consumer<? super S> observer) {
+	public boolean removeObserver(Consumer<? super Expression<T>> observer) {
 		getReadLock().lock();
 
 		try {
@@ -143,7 +142,7 @@ public abstract class LockingExpression<S extends Expression<S, T>, T> extends D
 	}
 
 	@Override
-	public void fire(S item) {
+	public void fire(Expression<T> item) {
 		getReadLock().lock();
 
 		try {
