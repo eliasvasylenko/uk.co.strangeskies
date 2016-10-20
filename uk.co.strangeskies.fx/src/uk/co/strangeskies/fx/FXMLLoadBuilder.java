@@ -258,11 +258,7 @@ public class FXMLLoadBuilder<C> {
 				if (!c.isAssignableFrom(controllerClass)) {
 					throw new ClassCastException();
 				} else {
-					try {
-						return controllerClass.newInstance();
-					} catch (InstantiationException | IllegalAccessException e) {
-						throw new RuntimeException(e);
-					}
+					return loader.getControllerFactory().call(c);
 				}
 			});
 		}
