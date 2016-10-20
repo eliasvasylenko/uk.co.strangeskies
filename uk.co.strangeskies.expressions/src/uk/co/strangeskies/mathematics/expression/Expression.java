@@ -68,7 +68,7 @@ import uk.co.strangeskies.utilities.ObservableValue;
  * @param <T>
  *          the type of the value of this expression
  */
-public interface Expression<T> extends Observable<Expression<T>> {
+public interface Expression<T> extends Observable<Expression<? extends T>> {
 	/**
 	 * This should always return the correct current value for this Expression. Be
 	 * careful to remember that the reference returned should not be able to
@@ -167,7 +167,7 @@ public interface Expression<T> extends Observable<Expression<T>> {
  * TODO with Valhalla we can probably make this a value type to just about get
  * rid of the overhead
  */
-class AnonymousExpressionImpl<T> extends ObservableImpl<Expression<T>> implements AnonymousExpression<T> {
+class AnonymousExpressionImpl<T> extends ObservableImpl<Expression<? extends T>> implements AnonymousExpression<T> {
 	private final Supplier<T> base;
 
 	AnonymousExpressionImpl(Expression<T> base) {

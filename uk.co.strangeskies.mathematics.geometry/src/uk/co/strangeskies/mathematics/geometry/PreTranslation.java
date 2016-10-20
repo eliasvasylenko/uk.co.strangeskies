@@ -36,20 +36,14 @@ import uk.co.strangeskies.mathematics.expression.BinaryExpression;
 import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 
-public class PreTranslation<O>
-		extends BinaryExpression<PreTranslation<O>, NonCommutativelyTranslatable<? extends O>, Vector<?, ?>, O> {
-	public PreTranslation(Expression<?, ? extends NonCommutativelyTranslatable<? extends O>> firstOperand,
-			Expression<?, ? extends Vector<?, ?>> secondOperand) {
+public class PreTranslation<O> extends BinaryExpression<NonCommutativelyTranslatable<? extends O>, Vector<?, ?>, O> {
+	public PreTranslation(Expression<? extends NonCommutativelyTranslatable<? extends O>> firstOperand,
+			Expression<? extends Vector<?, ?>> secondOperand) {
 		super(firstOperand, secondOperand, (a, b) -> a.getPreTranslated(b));
 	}
 
 	@Override
 	public String toString() {
 		return "(" + getFirstOperand() + " * " + getSecondOperand() + ")";
-	}
-
-	@Override
-	public PreTranslation<O> copy() {
-		return new PreTranslation<>(getFirstOperand(), getSecondOperand());
 	}
 }

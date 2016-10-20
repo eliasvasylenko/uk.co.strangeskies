@@ -161,12 +161,12 @@ public abstract class Value<S extends Value<S>> extends Number implements Multip
 	}
 
 	@Override
-	public final boolean addObserver(Observer<? super Expression<S>> observer) {
+	public final boolean addObserver(Observer<? super Expression<? extends S>> observer) {
 		return observers.add(observer);
 	}
 
 	@Override
-	public final boolean removeObserver(Observer<? super Expression<S>> observer) {
+	public final boolean removeObserver(Observer<? super Expression<? extends S>> observer) {
 		return observers.remove(observer);
 	}
 

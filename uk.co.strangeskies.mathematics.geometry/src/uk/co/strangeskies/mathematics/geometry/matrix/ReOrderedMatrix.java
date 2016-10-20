@@ -34,13 +34,14 @@ package uk.co.strangeskies.mathematics.geometry.matrix;
 
 import java.util.List;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
+import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.values.IntValue;
 import uk.co.strangeskies.mathematics.values.Value;
+import uk.co.strangeskies.utilities.Observer;
 import uk.co.strangeskies.utilities.function.TriFunction;
 
 public class ReOrderedMatrix<V extends Value<V>> implements Matrix<ReOrderedMatrix<V>, V> {
@@ -71,13 +72,13 @@ public class ReOrderedMatrix<V extends Value<V>> implements Matrix<ReOrderedMatr
 	}
 
 	@Override
-	public boolean addObserver(Consumer<? super ReOrderedMatrix<V>> observer) {
+	public boolean addObserver(Observer<? super Expression<? extends ReOrderedMatrix<V>>> observer) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
-	public boolean removeObserver(Consumer<? super ReOrderedMatrix<V>> observer) {
+	public boolean removeObserver(Observer<? super Expression<? extends ReOrderedMatrix<V>>> observer) {
 		// TODO Auto-generated method stub
 		return false;
 	}

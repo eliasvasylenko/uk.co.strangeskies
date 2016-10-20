@@ -42,7 +42,7 @@ import uk.co.strangeskies.utilities.ObservableImpl;
  * @param <T>
  *          The type of the value of this expression
  */
-public abstract class ExpressionImpl<T> extends ObservableImpl<Expression<T>> implements Expression<T> {
+public abstract class ExpressionImpl<T> extends ObservableImpl<Expression<? extends T>> implements Expression<T> {
 	private boolean dirty = true;
 
 	private boolean changing;

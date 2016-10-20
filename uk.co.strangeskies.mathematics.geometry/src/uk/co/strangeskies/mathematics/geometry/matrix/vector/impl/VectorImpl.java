@@ -69,8 +69,8 @@ import uk.co.strangeskies.utilities.function.TriFunction;
  * @param <V>
  *          The type of {@link Value} this Vector operates on.
  */
-public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>> extends DependentExpression<S, S>
-		implements Vector<S, V>, CopyDecouplingExpression<S, S> {
+public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>> extends DependentExpression<S>
+		implements Vector<S, V>, CopyDecouplingExpression<S> {
 	private final List<V> data;
 	private final Order order;
 
@@ -79,14 +79,12 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>> ext
 	private Orientation orientation;
 
 	private VectorImpl(Order order, Orientation orientation) {
-		super(false);
-
 		if (order == null || orientation == null) {
 			throw new IllegalArgumentException(new NullPointerException());
 		}
 
 		data = new ArrayList<>();
-		data2Reference = new WeakReference<List<List<V>>>(null);
+		data2Reference = new WeakReference<>(null);
 
 		this.order = order;
 		this.orientation = orientation;
@@ -109,7 +107,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>> ext
 			data.add(valueFactory.create());
 		}
 
-		getDependencies().addAll(getData());
+		//getDependencies().addAll(getData());
 	}
 
 	public VectorImpl(Order order, Orientation orientation, List<? extends V> values) {
@@ -130,7 +128,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>> ext
 			data.add(value);
 		}
 
-		getDependencies().addAll(getData());
+		//getDependencies().addAll(getData());
 	}
 
 	@Override
@@ -181,7 +179,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>> ext
 		if (order == getOrder())
 			return this;
 		else
-			return new ReOrderedMatrix<V>(this);
+			return new ReOrderedMatrix<>(this);
 	}
 
 	@Override
@@ -222,7 +220,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>> ext
 			for (V element : data)
 				element = operator.apply(element);
 
-			getDependencies().set(getData());
+			//getDependencies().set(getData());
 
 			return getThis();
 		} finally {
@@ -239,7 +237,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>> ext
 			for (V element : data)
 				element = operator.apply(element, i++);
 
-			getDependencies().set(getData());
+			//getDependencies().set(getData());
 
 			return getThis();
 		} finally {
@@ -261,7 +259,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>> ext
 				for (V element : data)
 					element = operator.apply(element, i, j++);
 
-			getDependencies().set(getData());
+			//getDependencies().set(getData());
 
 			return getThis();
 		} finally {
@@ -286,7 +284,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>> ext
 
 	@Override
 	public Vector2<IntValue> getDimensions2() {
-		Vector2<IntValue> dimensions = new Vector2Impl<IntValue>(Order.COLUMN_MAJOR, Orientation.COLUMN, IntValue::new);
+		Vector2<IntValue> dimensions = new Vector2Impl<>(Order.COLUMN_MAJOR, Orientation.COLUMN, IntValue::new);
 
 		if (getOrientation() == Orientation.COLUMN) {
 			return dimensions.setData(1, getDimensions());
@@ -334,12 +332,12 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>> ext
 			throw new ArrayIndexOutOfBoundsException(index);
 		}
 
-		return new VectorNImpl<V>(getOrder(), getOrientation(), data);
+		return new VectorNImpl<>(getOrder(), getOrientation(), data);
 	}
 
 	@Override
 	public final VectorN<V> getMinorVector(int index) {
-		return new VectorNImpl<V>(getOrder(), getOrientation().getOther(), Arrays.asList(data.get(index)));
+		return new VectorNImpl<>(getOrder(), getOrientation().getOther(), Arrays.asList(data.get(index)));
 	}
 
 	@Override

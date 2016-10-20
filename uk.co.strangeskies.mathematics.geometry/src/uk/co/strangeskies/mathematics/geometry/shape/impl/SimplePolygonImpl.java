@@ -38,9 +38,8 @@ import uk.co.strangeskies.mathematics.values.DoubleValue;
 import uk.co.strangeskies.mathematics.values.Value;
 
 //simple and potentially self touching polygons (relatively simple)
-public class SimplePolygonImpl<V extends Value<V>> extends
-		ComplexPolygonImpl<SimplePolygonImpl<V>, V> implements
-		SimplePolygon<SimplePolygonImpl<V>, V> {
+public class SimplePolygonImpl<V extends Value<V>> extends ComplexPolygonImpl<SimplePolygonImpl<V>, V>
+		implements SimplePolygon<SimplePolygonImpl<V>, V> {
 	public void sanitise(int toleranceLevel) {
 		// if (toleranceLevel < 0) {
 		// toleranceLevel = 0;
@@ -148,12 +147,6 @@ public class SimplePolygonImpl<V extends Value<V>> extends
 
 	@Override
 	public SimplePolygonImpl<V> copy() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public SimplePolygonImpl<V> set(SimplePolygonImpl<V> to) {
 		// TODO Auto-generated method stub
 		return null;
 	}

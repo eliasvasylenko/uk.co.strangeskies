@@ -51,8 +51,7 @@ import uk.co.strangeskies.mathematics.values.ValueFactory;
  * @param <V>
  *          The type of value for the coordinate system of the polygon
  */
-public class CompoundPolygonImpl<V extends Value<V>>
-		extends DependentExpression<CompoundPolygonImpl<V>, CompoundPolygonImpl<V>>
+public class CompoundPolygonImpl<V extends Value<V>> extends DependentExpression<CompoundPolygonImpl<V>>
 		implements CompoundPolygon<CompoundPolygonImpl<V>, V> {
 	public CompoundPolygonImpl(CompoundPolygon<?, ?> polygon, ValueFactory<? extends V> valueFactory) {}
 
@@ -83,18 +82,6 @@ public class CompoundPolygonImpl<V extends Value<V>>
 	@Override
 	public CompoundPolygonImpl<V> copy() {
 		return new CompoundPolygonImpl<>(this);
-	}
-
-	@Override
-	public CompoundPolygonImpl<V> set(CompoundPolygonImpl<V> to) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public CompoundPolygonImpl<V> get() {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 	@Override

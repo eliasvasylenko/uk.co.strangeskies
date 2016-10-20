@@ -36,19 +36,14 @@ import uk.co.strangeskies.mathematics.expression.BinaryExpression;
 import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 
-public class Translation<O> extends BinaryExpression<Translation<O>, Translatable<? extends O>, Vector<?, ?>, O> {
-	public Translation(Expression<?, ? extends Translatable<? extends O>> firstOperand,
-			Expression<?, ? extends Vector<?, ?>> secondOperand) {
+public class Translation<O> extends BinaryExpression<Translatable<? extends O>, Vector<?, ?>, O> {
+	public Translation(Expression<? extends Translatable<? extends O>> firstOperand,
+			Expression<? extends Vector<?, ?>> secondOperand) {
 		super(firstOperand, secondOperand, (a, b) -> a.getTranslated(b));
 	}
 
 	@Override
 	public String toString() {
 		return "(" + getFirstOperand() + " * " + getSecondOperand() + ")";
-	}
-
-	@Override
-	public Translation<O> copy() {
-		return new Translation<>(getFirstOperand(), getSecondOperand());
 	}
 }

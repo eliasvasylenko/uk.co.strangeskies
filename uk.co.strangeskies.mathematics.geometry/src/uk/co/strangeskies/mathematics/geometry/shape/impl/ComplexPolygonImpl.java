@@ -43,7 +43,7 @@ import uk.co.strangeskies.mathematics.values.DoubleValue;
 import uk.co.strangeskies.mathematics.values.Value;
 
 public abstract class ComplexPolygonImpl<S extends ComplexPolygonImpl<S, V>, V extends Value<V>>
-		extends DependentExpression<S, S> implements ComplexPolygon<S, V>, CopyDecouplingExpression<S, S> {
+		extends DependentExpression<S> implements ComplexPolygon<S, V>, CopyDecouplingExpression<S> {
 	@Override
 	public Value<?> getPerimeter() {
 		List<Vector2<V>> vertices = boundary().vertices();
@@ -59,11 +59,6 @@ public abstract class ComplexPolygonImpl<S extends ComplexPolygonImpl<S, V>, V e
 		}
 
 		return new DoubleValue(perimeter);
-	}
-
-	@Override
-	public final S get() {
-		return getThis();
 	}
 
 	@Override

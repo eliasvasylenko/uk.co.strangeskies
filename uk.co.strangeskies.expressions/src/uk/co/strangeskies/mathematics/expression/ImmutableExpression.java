@@ -44,12 +44,12 @@ import uk.co.strangeskies.utilities.Observer;
  */
 public abstract class ImmutableExpression<T> implements Expression<T> {
 	@Override
-	public final boolean addObserver(Observer<? super Expression<T>> observer) {
+	public final boolean addObserver(Observer<? super Expression<? extends T>> observer) {
 		return true;
 	}
 
 	@Override
-	public final boolean removeObserver(Observer<? super Expression<T>> observer) {
+	public final boolean removeObserver(Observer<? super Expression<? extends T>> observer) {
 		return true;
 	}
 }

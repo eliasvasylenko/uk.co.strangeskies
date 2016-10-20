@@ -57,15 +57,13 @@ import uk.co.strangeskies.utilities.collection.NullPointerInCollectionException;
 import uk.co.strangeskies.utilities.function.ListTransformationView;
 import uk.co.strangeskies.utilities.function.TriFunction;
 
-public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>> extends DependentExpression<S, S>
-		implements Matrix<S, V>, CopyDecouplingExpression<S, S> {
+public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>> extends DependentExpression<S>
+		implements Matrix<S, V>, CopyDecouplingExpression<S> {
 	private final List<List<V>> data;
 	private final Order order;
 
 	/* All constructors must go through here */
 	private MatrixImpl(Order order) {
-		super(false);
-
 		if (order == null) {
 			throw new IllegalArgumentException(new NullPointerException());
 		}
@@ -100,14 +98,14 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>> ext
 		}
 
 		for (int i = 0; i < major; i++) {
-			List<V> elements = new ArrayList<V>();
+			List<V> elements = new ArrayList<>();
 			data.add(elements);
 			for (int j = 0; j < minor; j++) {
 				elements.add(valueFactory.create());
 			}
 		}
 
-		getDependencies().set(getData());
+		// getDependencies().set(getData());
 	}
 
 	public MatrixImpl(Order order, List<? extends List<? extends V>> values) {
@@ -139,14 +137,14 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>> ext
 		}
 
 		for (List<? extends V> major : values) {
-			List<V> elements = new ArrayList<V>();
+			List<V> elements = new ArrayList<>();
 			data.add(elements);
 			for (V value : major) {
 				elements.add(value);
 			}
 		}
 
-		getDependencies().set(getData());
+		// getDependencies().set(getData());
 	}
 
 	@Override
@@ -170,12 +168,12 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>> ext
 		if (order == getOrder())
 			return this;
 		else
-			return new ReOrderedMatrix<V>(this);
+			return new ReOrderedMatrix<>(this);
 	}
 
 	@Override
 	public Matrix<?, V> getTransposed() {
-		return new MatrixNImpl<V>(getOrder(), Matrix.transposeData(getData2()));
+		return new MatrixNImpl<>(getOrder(), Matrix.transposeData(getData2()));
 	}
 
 	@Override
@@ -190,7 +188,7 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>> ext
 
 	@Override
 	public Vector2<IntValue> getDimensions2() {
-		return new Vector2Impl<IntValue>(Order.COLUMN_MAJOR, Orientation.COLUMN, IntValue::new).setData(getRowSize(),
+		return new Vector2Impl<>(Order.COLUMN_MAJOR, Orientation.COLUMN, IntValue::new).setData(getRowSize(),
 				getColumnSize());
 	}
 
@@ -225,7 +223,7 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>> ext
 	}
 
 	protected List<V> getMinorVectorData(int index) {
-		List<V> minorElements = new ArrayList<V>();
+		List<V> minorElements = new ArrayList<>();
 		for (List<V> elements : data) {
 			minorElements.add(elements.get(index));
 		}
@@ -355,7 +353,7 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>> ext
 			for (V element : major)
 				element = operator.apply(element);
 
-		getDependencies().set(getData());
+		// getDependencies().set(getData());
 
 		return getThis();
 	}
@@ -367,7 +365,7 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>> ext
 			for (V element : elements)
 				element = operator.apply(element, i++);
 
-		getDependencies().set(getData());
+		// getDependencies().set(getData());
 
 		return getThis();
 	}
@@ -384,7 +382,7 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>> ext
 			i++;
 		}
 
-		getDependencies().set(getData());
+		// getDependencies().set(getData());
 
 		return getThis();
 	}

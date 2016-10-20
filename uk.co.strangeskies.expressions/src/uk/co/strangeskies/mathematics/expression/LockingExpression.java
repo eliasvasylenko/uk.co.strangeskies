@@ -110,7 +110,7 @@ public abstract class LockingExpression<T> extends DependentExpression<T> implem
 	}
 
 	@Override
-	public boolean addObserver(Observer<? super Expression<T>> observer) {
+	public boolean addObserver(Observer<? super Expression<? extends T>> observer) {
 		getReadLock().lock();
 
 		try {
@@ -121,7 +121,7 @@ public abstract class LockingExpression<T> extends DependentExpression<T> implem
 	}
 
 	@Override
-	public boolean removeObserver(Observer<? super Expression<T>> observer) {
+	public boolean removeObserver(Observer<? super Expression<? extends T>> observer) {
 		getReadLock().lock();
 
 		try {
@@ -143,7 +143,7 @@ public abstract class LockingExpression<T> extends DependentExpression<T> implem
 	}
 
 	@Override
-	public void fire(Expression<T> item) {
+	public void fire(Expression<? extends T> item) {
 		getReadLock().lock();
 
 		try {

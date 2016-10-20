@@ -36,19 +36,14 @@ import uk.co.strangeskies.mathematics.expression.BinaryExpression;
 import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.mathematics.values.Value;
 
-public class Rotation2<O> extends BinaryExpression<Rotation2<O>, Rotatable2<? extends O>, Value<?>, O> {
-	public Rotation2(Expression<?, ? extends Rotatable2<? extends O>> firstOperand,
-			Expression<?, ? extends Value<?>> secondOperand) {
+public class Rotation2<O> extends BinaryExpression<Rotatable2<? extends O>, Value<?>, O> {
+	public Rotation2(Expression<? extends Rotatable2<? extends O>> firstOperand,
+			Expression<? extends Value<?>> secondOperand) {
 		super(firstOperand, secondOperand, (a, b) -> a.getRotated(b));
 	}
 
 	@Override
 	public String toString() {
 		return "(" + getFirstOperand() + " * " + getSecondOperand() + ")";
-	}
-
-	@Override
-	public Rotation2<O> copy() {
-		return new Rotation2<>(getFirstOperand(), getSecondOperand());
 	}
 }

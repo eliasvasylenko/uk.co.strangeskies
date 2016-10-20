@@ -40,7 +40,6 @@ import java.util.Set;
 
 import uk.co.strangeskies.mathematics.expression.DependentExpression;
 import uk.co.strangeskies.mathematics.expression.collection.ExpressionSet;
-import uk.co.strangeskies.mathematics.expression.collection.ExpressionSetDecorator;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.geometry.shape.ClosedPolyline2;
 import uk.co.strangeskies.mathematics.geometry.shape.ConvexPolygon;
@@ -49,8 +48,8 @@ import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.Observable;
 
 //convex only polygon
-public class ConvexPolygonImpl<V extends Value<V>> extends
-		DependentExpression<ConvexPolygonImpl<V>, ConvexPolygonImpl<V>> implements ConvexPolygon<ConvexPolygonImpl<V>, V> {
+public class ConvexPolygonImpl<V extends Value<V>> extends DependentExpression<ConvexPolygonImpl<V>>
+		implements ConvexPolygon<ConvexPolygonImpl<V>, V> {
 	public class ConvexHull<T> extends AbstractSet<Vector2<V>> {
 		private final ArrayList<Vector2<V>> backingList;
 
@@ -155,9 +154,9 @@ public class ConvexPolygonImpl<V extends Value<V>> extends
 	private WindingDirection windingDirection;
 
 	public ConvexPolygonImpl() {
-		vertexSet = new ExpressionSetDecorator<Vector2<V>>();
-		convexHull = new ConvexHull<V>(vertexSet);
-		getDependencies().add(vertexSet);
+		vertexSet = null; // TODO new ExpressionSetDecorator<Vector2<V>>();
+		convexHull = new ConvexHull<>(vertexSet);
+		// getDependencies().add(vertexSet);
 
 		windingDirection = WindingDirection.CLOCKWISE;
 	}
@@ -221,12 +220,6 @@ public class ConvexPolygonImpl<V extends Value<V>> extends
 	public boolean touches(Shape<?> shape) {
 		// TODO Auto-generated method stub
 		return false;
-	}
-
-	@Override
-	public ConvexPolygonImpl<V> set(ConvexPolygonImpl<V> to) {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 	@Override

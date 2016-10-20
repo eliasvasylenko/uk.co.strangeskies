@@ -47,8 +47,8 @@ import uk.co.strangeskies.mathematics.values.IntValue;
 import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utilities.Factory;
 
-public class Line2Impl<V extends Value<V>> extends DependentExpression<Line2<V>, Line2<V>>
-		implements Line2<V>, CopyDecouplingExpression<Line2<V>, Line2<V>> {
+public class Line2Impl<V extends Value<V>> extends DependentExpression<Line2<V>>
+		implements Line2<V>, CopyDecouplingExpression<Line2<V>> {
 	private final Vector2<V> a;
 	private final Vector2<V> b;
 
@@ -128,12 +128,6 @@ public class Line2Impl<V extends Value<V>> extends DependentExpression<Line2<V>,
 	@Override
 	public Vector2<V> getBA() {
 		return a.getSubtracted(b);
-	}
-
-	@Override
-	public Line2<V> set(Line2<V> to) {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 	@Override
