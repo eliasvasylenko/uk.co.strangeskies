@@ -39,6 +39,7 @@ import java.net.URL;
 
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
+import javafx.util.Callback;
 import javafx.util.Pair;
 
 /**
@@ -254,11 +255,13 @@ public class FXMLLoadBuilder<C> {
 		if (controller != null) {
 			loader.setController(controller);
 		} else if (controllerClass != null) {
+			Callback<Class<?>, Object> originalFactory = loader.getControllerFactory();
+			
 			loader.setControllerFactory(c -> {
 				if (!c.isAssignableFrom(controllerClass)) {
 					throw new ClassCastException();
 				} else {
-					return loader.getControllerFactory().call(c);
+					return originalFactory.call(c);
 				}
 			});
 		}
