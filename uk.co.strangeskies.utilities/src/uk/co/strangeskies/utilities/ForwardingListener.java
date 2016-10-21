@@ -32,8 +32,6 @@
  */
 package uk.co.strangeskies.utilities;
 
-import java.util.function.Consumer;
-
 /**
  * A buffer to decouple the delivery of events with their sequential
  * consumption, such that the event firing threads are not blocked by listeners.
@@ -49,7 +47,7 @@ import java.util.function.Consumer;
  * @param <U>
  *          The type of event message to produce
  */
-public abstract class ForwardingListener<T, U> implements Consumer<T>, Observable<U> {
+public abstract class ForwardingListener<T, U> implements Observer<T>, Observable<U> {
 	/**
 	 * An interface for provision of a buffering strategy.
 	 *
@@ -146,7 +144,7 @@ public abstract class ForwardingListener<T, U> implements Consumer<T>, Observabl
 	 *          The event data
 	 */
 	@Override
-	public void accept(T item) {
+	public void notify(T item) {
 		synchronized (listeners) {
 			buffer.put(item);
 			listeners.notifyAll();
