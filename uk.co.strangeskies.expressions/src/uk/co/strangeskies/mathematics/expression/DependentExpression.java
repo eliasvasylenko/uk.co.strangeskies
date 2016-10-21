@@ -65,11 +65,11 @@ public abstract class DependentExpression<T> extends ExpressionImpl<T> {
 	}
 
 	protected boolean addDependency(Expression<?> dependency) {
-		return dependency.addWeakObserver(this, t -> t.dependencyObserver);
+		return dependency != null && dependency.addWeakObserver(this, t -> t.dependencyObserver);
 	}
 
 	protected boolean removeDependency(Expression<?> dependency) {
-		return dependency.removeWeakObserver(this);
+		return dependency != null && dependency.removeWeakObserver(this);
 	}
 
 	@Override
