@@ -41,7 +41,6 @@ import java.lang.reflect.TypeVariable;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -61,7 +60,7 @@ import uk.co.strangeskies.utilities.collection.MultiMap;
 import uk.co.strangeskies.utilities.collection.MultiTreeMap;
 
 /**
- * A collection of utility methods relating to parameterised types.
+ * A collection of utility methods relating to parameterized types.
  * 
  * @author Elias N Vasylenko
  */
@@ -99,6 +98,10 @@ public class ParameterizedTypes {
 
 		ParameterizedTypeImpl(ParameterizedType type) {
 			this(getOwner(type.getOwnerType()), (Class<?>) type.getRawType(), getArguments(type.getActualTypeArguments()));
+		}
+
+		public void validate() {
+			// TODO validation of ParameterizedTypeImpl parameters
 		}
 
 		private static Type getOwner(Type ownerType) {
@@ -293,7 +296,12 @@ public class ParameterizedTypes {
 	 *         class is generic, false otherwise.
 	 */
 	public static boolean isGeneric(Class<?> type) {
-		return getAllTypeParameters(type).findAny().isPresent();
+		do {
+			if (type.getTypeParameters().length > 0)
+				return true;
+		} while (!Types.isStatic(type) && (type = type.getEnclosingClass()) != null);
+
+		return false;
 	}
 
 	/**
@@ -350,26 +358,31 @@ public class ParameterizedTypes {
 		return typeArguments;
 	}
 
-	public static ParameterizedType uncheckedFrom(Type ownerType, Class<?> rawType, List<Type> typeArguments) {
+	public static ParameterizedType parameterizeUnchecked(Type ownerType, Class<?> rawType, List<Type> typeArguments) {
 		return new ParameterizedTypeImpl(ownerType, rawType, new ArrayList<>(typeArguments));
 	}
 
-	public static ParameterizedType uncheckedFrom(Class<?> rawType, List<Type> typeArguments) {
-		return uncheckedFrom(null, rawType, new ArrayList<>(typeArguments));
+	public static ParameterizedType parameterizeUnchecked(Class<?> rawType, List<Type> typeArguments) {
+		return parameterizeUnchecked(null, rawType, new ArrayList<>(typeArguments));
 	}
 
-	public static ParameterizedType uncheckedFrom(Class<?> rawType, Type... typeArguments) {
-		return uncheckedFrom(rawType, Arrays.asList(typeArguments));
+	public static ParameterizedType parameterizeUnchecked(Class<?> rawType, Type... typeArguments) {
+		return parameterizeUnchecked(rawType, Arrays.asList(typeArguments));
 	}
 
-	public static <T> Type uncheckedFrom(Class<T> rawType,
+	public static <T> ParameterizedType parameterizeUnchecked(Class<T> rawType,
+			Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
+		return (ParameterizedType) uncheckedFromImpl(rawType, typeArguments);
+	}
+
+	private static <T> Type uncheckedFromImpl(Class<T> rawType,
 			Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
 		Class<?> enclosing = rawType.getEnclosingClass();
 		Type ownerType;
 		if (enclosing == null || Types.isStatic(rawType))
 			ownerType = enclosing;
 		else
-			ownerType = uncheckedFrom(enclosing, typeArguments);
+			ownerType = uncheckedFromImpl(enclosing, typeArguments);
 
 		if ((ownerType == null || ownerType instanceof Class) && rawType.getTypeParameters().length == 0)
 			return rawType;
@@ -382,16 +395,13 @@ public class ParameterizedTypes {
 	 * substituting the type parameters of that class as their own argument
 	 * instantiations.
 	 * 
-	 * @param <T>
-	 *          A raw {@link Class} from which we wish to determine a
-	 *          {@link ParameterizedType}.
 	 * @param rawType
 	 *          A raw {@link Class} from which we wish to determine a
 	 *          {@link ParameterizedType}.
 	 * @return A {@link ParameterizedType} instance over the given class.
 	 */
-	public static <T> TypeToken<? extends T> from(Class<T> rawType) {
-		return from(rawType, i -> null);
+	public static ParameterizedType parameterize(Class<?> rawType) {
+		return parameterize(rawType, i -> null);
 	}
 
 	/**
@@ -399,9 +409,6 @@ public class ParameterizedTypes {
 	 * using the given generic type arguments. Type parameters with no provided
 	 * argument will be parameterized with the type variables themselves.
 	 * 
-	 * @param <T>
-	 *          A raw {@link Class} from which we wish to determine a
-	 *          {@link ParameterizedType}.
 	 * @param rawType
 	 *          A raw {@link Class} from which we wish to determine a
 	 *          {@link ParameterizedType}.
@@ -410,20 +417,17 @@ public class ParameterizedTypes {
 	 * @return A {@link ParameterizedType} instance over the given class,
 	 *         parameterized with the given type arguments.
 	 */
-	@SuppressWarnings("unchecked")
-	public static <T> TypeToken<? extends T> from(Class<T> rawType,
+	public static ParameterizedType parameterize(Class<?> rawType,
 			Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
-		return (TypeToken<? extends T>) TypeToken.overType(uncheckedFrom(rawType, typeArguments));
+		ParameterizedTypeImpl type = (ParameterizedTypeImpl) uncheckedFromImpl(rawType, typeArguments);
+		type.validate();
+		return type;
 	}
 
 	/**
 	 * Derive an instance of {@link ParameterizedType} from a raw {@link Class}
 	 * using the given generic type arguments, in the order given.
 	 * 
-	 * @param <T>
-	 *          A raw {@link Class} from which we wish to determine a
-	 *          {@link ParameterizedType}. The raw type must not have a non
-	 *          statically enclosing type which is itself generic.
 	 * @param rawType
 	 *          A raw {@link Class} from which we wish to determine a
 	 *          {@link ParameterizedType}. The raw type must not have a non
@@ -435,18 +439,14 @@ public class ParameterizedTypes {
 	 * @return A {@link ParameterizedType} instance over the given class,
 	 *         parameterized with the given type arguments, in order
 	 */
-	public static <T> TypeToken<? extends T> from(Class<T> rawType, Type... typeArguments) {
-		return from(rawType, Arrays.asList(typeArguments));
+	public static ParameterizedType parameterize(Class<?> rawType, Type... typeArguments) {
+		return parameterize(rawType, Arrays.asList(typeArguments));
 	}
 
 	/**
 	 * Derive an instance of {@link ParameterizedType} from a raw {@link Class}
 	 * using the given generic type arguments, in the order given.
 	 * 
-	 * @param <T>
-	 *          A raw {@link Class} from which we wish to determine a
-	 *          {@link ParameterizedType}. The raw type must not have a non
-	 *          statically enclosing type which is itself generic.
 	 * @param rawType
 	 *          A raw {@link Class} from which we wish to determine a
 	 *          {@link ParameterizedType}. The raw type must not have a non
@@ -458,12 +458,13 @@ public class ParameterizedTypes {
 	 * @return A {@link ParameterizedType} instance over the given class,
 	 *         parameterized with the given type arguments, in order
 	 */
-	@SuppressWarnings("unchecked")
-	public static <T> TypeToken<? extends T> from(Class<T> rawType, List<Type> typeArguments) {
+	public static ParameterizedType parameterize(Class<?> rawType, List<Type> typeArguments) {
 		if (!Types.isStatic(rawType) && rawType.getEnclosingClass() != null && isGeneric(rawType.getEnclosingClass()))
 			throw new IllegalArgumentException();
 
-		return (TypeToken<? extends T>) TypeToken.overType(uncheckedFrom(null, rawType, typeArguments));
+		ParameterizedTypeImpl type = (ParameterizedTypeImpl) parameterizeUnchecked(null, rawType, typeArguments);
+		type.validate();
+		return type;
 	}
 
 	private static List<Type> argumentsForClass(Class<?> rawType,
@@ -500,7 +501,7 @@ public class ParameterizedTypes {
 	 *          arguments of the supertype.
 	 * @param superclass
 	 *          The class of the supertype parameterization we wish to determine.
-	 * @return A TypeToken over the supertype of the requested class.
+	 * @return the supertype of the requested class
 	 */
 	public static Type resolveSupertypeParameters(Type type, Class<?> superclass) {
 		if (!isGeneric(superclass))
@@ -535,52 +536,5 @@ public class ParameterizedTypes {
 		} while (!subclass.equals(superclass));
 
 		return type;
-	}
-
-	/**
-	 * Attempt to determine the type arguments with which a subtype of a given
-	 * class would be parameterized such that it be a valid subtype. This may not
-	 * always be possible, but for certain subtype relations it will, based on the
-	 * reduction and incorporation rules of the Java type inference algorithm.
-	 * 
-	 * @param type
-	 *          The type providing a context within which to determine the
-	 *          arguments of the subtype.
-	 * @param subclass
-	 *          The class of the subtype parameterization we wish to determine.
-	 * @return A TypeToken over the best effort parameterization of the requested
-	 *         class such that it be a subtype.
-	 */
-	public static Type resolveSubtypeParameters(Type type, Class<?> subclass) {
-		if (!isGeneric(subclass))
-			return subclass;
-
-		Class<?> rawType = Types.getRawType(type);
-
-		if (rawType.equals(subclass))
-			return type;
-
-		if (!(type instanceof ParameterizedType) && !(type instanceof Class))
-			throw new IllegalArgumentException("Unexpected class '" + type.getClass() + "' of type '" + type + "'.");
-
-		Map<TypeVariable<?>, InferenceVariable> parameterSubstitutes = new HashMap<>();
-		Map<InferenceVariable, Type> substitutedArguments = new HashMap<>();
-
-		if (type instanceof ParameterizedType) {
-			getAllTypeArguments((ParameterizedType) type).forEach(e -> {
-
-				int index = parameterSubstitutes.size();
-
-				InferenceVariable substituteArgument = getSubstitutionArgument(index);
-
-				parameterSubstitutes.put(e.getKey(), substituteArgument);
-				substitutedArguments.put(substituteArgument, e.getValue());
-			});
-		}
-
-		Type supertype = new TypeSubstitution(substitutedArguments)
-				.resolve(from(rawType, parameterSubstitutes::get).resolveSubtypeParameters(subclass).getType());
-
-		return supertype;
 	}
 }

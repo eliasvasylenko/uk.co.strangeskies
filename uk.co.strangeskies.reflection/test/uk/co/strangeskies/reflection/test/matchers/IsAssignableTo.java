@@ -30,24 +30,37 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection.test;
+package uk.co.strangeskies.reflection.test.matchers;
 
 import java.lang.reflect.Type;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
 
 import uk.co.strangeskies.reflection.Types;
 
-@SuppressWarnings("javadoc")
-public class NullTypeTest {
-	@Test
-	public void assignabilityFromNullTest() {
-		Assert.assertTrue(Types.isAssignable((Type) null, String.class));
+public class IsAssignableTo extends BaseMatcher<Type> {
+	private final Type assignmentTarget;
+
+	private IsAssignableTo(Type assignmentTarget) {
+		this.assignmentTarget = assignmentTarget;
 	}
 
-	@Test
-	public void assignabilityToNullTest() {
-		Assert.assertTrue(Types.isAssignable(String.class, (Type) null));
+	public static Matcher<Type> isAssignableTo(Type target) {
+		return new IsAssignableTo(target);
+	}
+
+	@Override
+	public boolean matches(Object item) {
+		if (!(item instanceof Type))
+			return false;
+
+		return Types.isAssignable((Type) item, assignmentTarget);
+	}
+
+	@Override
+	public void describeTo(Description description) {
+		description.appendText(" assignable to " + Types.toString(assignmentTarget));
 	}
 }

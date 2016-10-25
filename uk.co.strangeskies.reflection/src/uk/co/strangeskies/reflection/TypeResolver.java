@@ -499,7 +499,7 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 					getBounds());
 		}
 
-		type = (ParameterizedType) resolveType(ParameterizedTypes.uncheckedFrom(rawType, declarationCaptures::get));
+		type = (ParameterizedType) resolveType(ParameterizedTypes.parameterizeUnchecked(rawType, declarationCaptures::get));
 		return type;
 	}
 
@@ -715,7 +715,13 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 *          A superclass of the given subclass.
 	 */
 	public void incorporateTypeHierarchy(Class<?> subclass, Class<?> superclass) {
-		Type subtype = ParameterizedTypes.uncheckedFrom(subclass, i -> null);
+		Type subtype;
+		if (ParameterizedTypes.isGeneric(subclass)) {
+			subtype = ParameterizedTypes.parameterizeUnchecked(subclass, i -> null);
+		} else {
+			subtype = subclass;
+		}
+
 		inferOverTypeParameters(subclass);
 
 		if (!superclass.isAssignableFrom(subclass)) {
@@ -902,7 +908,6 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 
 			variables.removeAll(bounds.getInstantiatedVariables());
 		}
-
 	}
 
 	private Set<CaptureConversion> relatedCaptureConversions(Set<InferenceVariable> variables) {
@@ -1118,7 +1123,7 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	public Type resolveTypeParametersWithResubstitutedWildcardCaptures(Class<?> type) {
 		inferOverTypeParameters(type);
 		return resolveTypeWithResubstitutedWildcardCaptures(
-				ParameterizedTypes.uncheckedFrom(type, getInferenceVariables(type)::get));
+				ParameterizedTypes.parameterizeUnchecked(type, getInferenceVariables(type)::get));
 	}
 
 	/**
@@ -1135,7 +1140,7 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 */
 	public Type resolveTypeParameters(Class<?> type) {
 		inferOverTypeParameters(type);
-		return resolveType(ParameterizedTypes.uncheckedFrom(type, getInferenceVariables(type)::get));
+		return resolveType(ParameterizedTypes.parameterizeUnchecked(type, getInferenceVariables(type)::get));
 	}
 
 	/**

@@ -30,24 +30,5 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection.test;
-
-import java.lang.reflect.Type;
-
-import org.junit.Assert;
-import org.junit.Test;
-
-import uk.co.strangeskies.reflection.Types;
-
-@SuppressWarnings("javadoc")
-public class NullTypeTest {
-	@Test
-	public void assignabilityFromNullTest() {
-		Assert.assertTrue(Types.isAssignable((Type) null, String.class));
-	}
-
-	@Test
-	public void assignabilityToNullTest() {
-		Assert.assertTrue(Types.isAssignable(String.class, (Type) null));
-	}
-}
+@org.osgi.annotation.versioning.Version("1.0.0")
+package uk.co.strangeskies.reflection.codegen;

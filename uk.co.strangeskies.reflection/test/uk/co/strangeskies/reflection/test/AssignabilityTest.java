@@ -32,22 +32,52 @@
  */
 package uk.co.strangeskies.reflection.test;
 
-import java.lang.reflect.Type;
+import static org.hamcrest.core.IsNot.not;
+import static org.junit.Assert.assertThat;
+import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterize;
+import static uk.co.strangeskies.reflection.test.matchers.IsAssignableTo.isAssignableTo;
 
-import org.junit.Assert;
+import java.util.Comparator;
+import java.util.Set;
+
 import org.junit.Test;
 
-import uk.co.strangeskies.reflection.Types;
+@SuppressWarnings({ "rawtypes", "javadoc" })
+public class AssignabilityTest {
+	interface StringComparator extends Comparator<String> {}
 
-@SuppressWarnings("javadoc")
-public class NullTypeTest {
+	interface RawComparator extends Comparator {}
+
 	@Test
-	public void assignabilityFromNullTest() {
-		Assert.assertTrue(Types.isAssignable((Type) null, String.class));
+	public void classToClassAssignabilityTest() {
+		assertThat(Object.class, isAssignableTo(Object.class));
+		assertThat(String.class, isAssignableTo(String.class));
+		assertThat(Object.class, not(isAssignableTo(String.class)));
+		assertThat(String.class, isAssignableTo(Object.class));
+
+		assertThat(Integer.class, isAssignableTo(Number.class));
+		assertThat(Double.class, isAssignableTo(Number.class));
+		assertThat(Number.class, not(isAssignableTo(Integer.class)));
+		assertThat(Integer.class, not(isAssignableTo(Double.class)));
 	}
 
 	@Test
-	public void assignabilityToNullTest() {
-		Assert.assertTrue(Types.isAssignable(String.class, (Type) null));
+	public void classWithParameterizedSuperclassToParameterizedAssignabilityTest() {
+		assertThat(StringComparator.class, isAssignableTo(parameterize(Comparator.class, String.class)));
+		assertThat(StringComparator.class, not(isAssignableTo(parameterize(Comparator.class, Number.class))));
+	}
+
+	@Test
+	public void classWithParameterizedSuperclassToRawAssignabilityTest() {
+		assertThat(StringComparator.class, isAssignableTo(Comparator.class));
+	}
+
+	@Test
+	public void rawAndParameterizedContainmentTest() {
+		assertThat(parameterize(Set.class, Set.class),
+				not(isAssignableTo(parameterize(Set.class, parameterize(Set.class, String.class)))));
+
+		assertThat(parameterize(Set.class, parameterize(Set.class, String.class)),
+				not(isAssignableTo(parameterize(Set.class, Set.class))));
 	}
 }

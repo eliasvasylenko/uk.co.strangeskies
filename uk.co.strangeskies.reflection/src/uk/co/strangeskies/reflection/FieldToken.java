@@ -84,7 +84,7 @@ public class FieldToken<O, T> implements MemberToken<O> {
 	 * @return a field member wrapping the given field
 	 */
 	public static FieldToken<?, ?> over(Field field) {
-		return over(field, ParameterizedTypes.from(field.getDeclaringClass(), a -> unbounded()));
+		return over(field, TypeToken.overType(ParameterizedTypes.parameterize(field.getDeclaringClass(), a -> unbounded())));
 	}
 
 	/**

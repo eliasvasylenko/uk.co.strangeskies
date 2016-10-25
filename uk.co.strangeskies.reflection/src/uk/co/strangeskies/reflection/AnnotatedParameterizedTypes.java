@@ -86,7 +86,7 @@ public final class AnnotatedParameterizedTypes {
 		public AnnotatedParameterizedTypeImpl(Isomorphism isomorphism, Class<?> rawType,
 				Function<? super TypeVariable<?>, ? extends AnnotatedType> annotatedTypes,
 				Collection<? extends Annotation> annotations) {
-			super(ParameterizedTypes.uncheckedFrom(rawType, unannotatedTypes(annotatedTypes)), annotations);
+			super(ParameterizedTypes.parameterizeUnchecked(rawType, unannotatedTypes(annotatedTypes)), annotations);
 
 			annotatedTypeArguments = AnnotatedTypes.wrapImpl(isomorphism,
 					Arrays.stream(rawType.getTypeParameters()).map(p -> {

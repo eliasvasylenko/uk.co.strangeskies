@@ -36,7 +36,7 @@ import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.AnnotatedTypes.over;
 import static uk.co.strangeskies.reflection.IntersectionType.uncheckedFrom;
-import static uk.co.strangeskies.reflection.ParameterizedTypes.uncheckedFrom;
+import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterizeUnchecked;
 import static uk.co.strangeskies.reflection.TypeVariables.upperBounded;
 import static uk.co.strangeskies.reflection.Types.getRawType;
 import static uk.co.strangeskies.reflection.WildcardTypes.lowerBounded;
@@ -334,7 +334,7 @@ public class TypeSubstitution {
 			Type owner = resolve(type.getOwnerType(), changed);
 
 			if (changed.get()) {
-				return uncheckedFrom(owner, getRawType(type), arguments);
+				return parameterizeUnchecked(owner, getRawType(type), arguments);
 			} else {
 				return type;
 			}

@@ -369,7 +369,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 			 * New parameterized type
 			 */
 			ParameterizedType parameterizedType = (ParameterizedType) ParameterizedTypes
-					.uncheckedFrom(Types.getRawType(annotatedType.getType()), allArguments::get);
+					.parameterizeUnchecked(Types.getRawType(annotatedType.getType()), allArguments::get);
 			if (allArguments.values().stream().anyMatch(WildcardType.class::isInstance)) {
 				if (behavior == Wildcards.CAPTURE) {
 					parameterizedType = TypeVariableCapture.captureWildcardArguments(parameterizedType);
@@ -1237,7 +1237,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 
 		TypeResolver resolver = getInternalResolver();
 
-		Type parameterizedType = ParameterizedTypes.uncheckedFrom(superclass, i -> null);
+		Type parameterizedType = ParameterizedTypes.parameterizeUnchecked(superclass, i -> null);
 
 		if (resolver.getBounds().getInferenceVariables().contains(getType())) {
 			resolver.inferOverTypeParameters(superclass);
@@ -1279,7 +1279,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 
 		TypeResolver resolver = getInternalResolver();
 
-		Type parameterizedType = ParameterizedTypes.uncheckedFrom(subclass, i -> null);
+		Type parameterizedType = ParameterizedTypes.parameterizeUnchecked(subclass, i -> null);
 
 		if (resolver.getBounds().containsInferenceVariable(getType())) {
 			resolver.inferOverTypeParameters(subclass);

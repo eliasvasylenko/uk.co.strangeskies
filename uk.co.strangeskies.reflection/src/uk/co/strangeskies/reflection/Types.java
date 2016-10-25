@@ -593,38 +593,6 @@ public final class Types {
 	}
 
 	/**
-	 * Determine if a given intersection type, {@code toIntersection}, is
-	 * assignable from another given type, {@code from}. Or in other words, if
-	 * {@code toIntersection} is a supertype of {@code from}. Types are considered
-	 * assignable if they involve unchecked generic casts.
-	 * 
-	 * @param from
-	 *          The type from which we wish to determine assignability.
-	 * @param toIntersection
-	 *          The intersection type to which we wish to determine assignability.
-	 * @return True if the types are assignable, false otherwise.
-	 */
-	public static boolean isAssignable(Type from, Type[] toIntersection) {
-		return isAssignable(from, toIntersection, new Isomorphism());
-	}
-
-	/**
-	 * Determine if a given type, {@code to}, is assignable from a given
-	 * intersection type, {@code fromIntersection}. Or in other words, if
-	 * {@code to} is a supertype of {@code fromIntersection}. Types are considered
-	 * assignable if they involve unchecked generic casts.
-	 * 
-	 * @param fromIntersection
-	 *          The type from which we wish to determine assignability.
-	 * @param to
-	 *          The type to which we wish to determine assignability.
-	 * @return True if the types are assignable, false otherwise.
-	 */
-	public static boolean isAssignable(Type[] fromIntersection, Type to) {
-		return isAssignable(fromIntersection, to, new Isomorphism());
-	}
-
-	/**
 	 * Determine if the given type, {@code from}, contains the given type,
 	 * {@code to}. In other words, if either of the given types are wildcards,
 	 * determine if every possible instantiation of {@code to} is also a valid
@@ -794,6 +762,10 @@ public final class Types {
 			assignable = ((Class<?>) to).isAssignableFrom(getRawType(from));
 		} else if (to instanceof ParameterizedType) {
 			Class<?> matchedClass = getRawType(to);
+
+			System.out.println("#");
+			System.out.println(from);
+			System.out.println(to);
 
 			if (from instanceof Class && matchedClass.isAssignableFrom((Class<?>) from)) {
 				assignable = true;
@@ -1124,7 +1096,7 @@ public final class Types {
 			}
 		}
 
-		ParameterizedType best = (ParameterizedType) ParameterizedTypes.uncheckedFrom(rawClass,
+		ParameterizedType best = ParameterizedTypes.parameterizeUnchecked(rawClass,
 				leastContainingParameterization::get);
 
 		return best;
@@ -1427,7 +1399,7 @@ public final class Types {
 			classOrArrayType = rawType.transform(Type.class::cast)
 					.tryAppendTransform(
 							Parser.list(Parser.proxy(this::getType), "\\s*,\\s*").prepend("\\s*<\\s*").append("\\s*>\\s*"),
-							(t, p) -> ParameterizedTypes.from((Class<?>) t, p).getType())
+							(t, p) -> ParameterizedTypes.parameterize((Class<?>) t, p))
 					.appendTransform(Parser.list(Parser.matching("\\s*\\[\\s*\\]"), "\\s*").prepend("\\s*"), (t, l) -> {
 						t = ArrayTypes.fromComponentType(t, l.size());
 						return t;

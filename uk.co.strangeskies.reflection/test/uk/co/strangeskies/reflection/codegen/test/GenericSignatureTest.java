@@ -82,11 +82,11 @@ public class GenericSignatureTest {
 		ParameterizedDeclaration signature = new ParameterizedDeclaration();
 
 		TypeVariableDeclaration typeVariableSignature = signature.addTypeVariable();
-		typeVariableSignature.withUpperBounds(ParameterizedTypes.uncheckedFrom(Self.class, typeVariableSignature));
+		typeVariableSignature.withUpperBounds(ParameterizedTypes.parameterizeUnchecked(Self.class, typeVariableSignature));
 
 		TypeVariable<?> typeVariable = new ParameterizedDefinition<>(signature).getTypeParameters()[0];
 
-		Type[] expectedBounds = new Type[] { ParameterizedTypes.uncheckedFrom(Self.class, typeVariable) };
+		Type[] expectedBounds = new Type[] { ParameterizedTypes.parameterizeUnchecked(Self.class, typeVariable) };
 		Type[] bounds = typeVariable.getBounds();
 		Assert.assertArrayEquals(expectedBounds, bounds);
 	}

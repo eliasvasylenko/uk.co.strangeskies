@@ -44,6 +44,7 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -128,8 +129,8 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	 * @return True if the instantiation is valid, false otherwise.
 	 */
 	public boolean isPossibleInstantiation(Type type) {
-		return Types.isAssignable(type, getUpperBounds())
-				&& (getLowerBounds().length == 0 || Types.isAssignable(IntersectionType.uncheckedFrom(getLowerBounds()), type));
+		return Arrays.stream(getUpperBounds()).allMatch(b -> Types.isAssignable(type, b))
+				&& Arrays.stream(getLowerBounds()).allMatch(b -> Types.isAssignable(b, type));
 	}
 
 	/**
@@ -243,7 +244,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 		ParameterizedType capture;
 		if (containsWildcards) {
 			substituteBounds(arguments);
-			capture = ParameterizedTypes.uncheckedFrom(getRawType(type), new ArrayList<>(arguments.values()));
+			capture = ParameterizedTypes.parameterizeUnchecked(getRawType(type), new ArrayList<>(arguments.values()));
 		} else {
 			capture = type;
 		}
