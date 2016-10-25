@@ -117,6 +117,49 @@ import uk.co.strangeskies.utilities.collection.StreamUtilities;
  * future, the exact type of such classes may not be determined statically so
  * they will not implement reified by default.
  * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * TODO model the type using existing types so it can participate in inference
+ * etc.
+ * 
+ * each definition holds a secret type variable capture with no bounds
+ * 
+ * For a non-generic type this is simple enough: model as the intersection type
+ * of all the super types of the definition and the secret capture
+ * 
+ * For a generic type, the raw can be modeled as the intersection type of all
+ * the raw types of all the super types of the definition and the secret capture
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
  * @author Elias N Vasylenko
  * 
  * @param <T>
