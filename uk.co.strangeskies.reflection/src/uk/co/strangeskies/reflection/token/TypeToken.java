@@ -362,11 +362,6 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 
 	private static ParameterizedType substituteAnnotatedWildcardsForParameterizedType(Isomorphism isomorphism,
 			Wildcards behavior, AnnotatedParameterizedType annotatedType, TypeResolver resolver) {
-		System.out.println();
-		System.out.println(annotatedType.getClass());
-		System.out.println(annotatedType);
-		System.out.println(Arrays.toString(annotatedType.getAnnotatedActualTypeArguments()));
-		
 		return isomorphism.byIdentity().getProxiedMapping(annotatedType, ParameterizedType.class, t -> {
 			/*
 			 * Deal with annotations on types mentioned by parameters, preserving any

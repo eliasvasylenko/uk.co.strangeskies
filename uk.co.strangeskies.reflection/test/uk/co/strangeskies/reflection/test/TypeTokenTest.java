@@ -422,7 +422,7 @@ public class TypeTokenTest {
 				.resolveSupertypeParameters(Iterable.class));
 		System.out.println();
 
-		System.out.println(new TypeToken<List<? extends Number>>() {}.getExtending(Wildcards.INFER).getMethods()
+		System.out.println(new @Preserve TypeToken<List<? extends Number>>() {}.getExtending(Wildcards.INFER).getMethods()
 				.named("add").resolveOverload(Integer.class).getReceiverType().infer());
 		System.out.println();
 
