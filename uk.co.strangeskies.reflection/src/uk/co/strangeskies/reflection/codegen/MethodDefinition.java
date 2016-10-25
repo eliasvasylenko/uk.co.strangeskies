@@ -37,8 +37,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import uk.co.strangeskies.reflection.ExecutableToken;
-import uk.co.strangeskies.reflection.TypeToken;
+import uk.co.strangeskies.reflection.token.ExecutableToken;
+import uk.co.strangeskies.reflection.token.TypeToken;
 
 public abstract class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefinition<C, T>>
 		implements MemberDefinition<C> {

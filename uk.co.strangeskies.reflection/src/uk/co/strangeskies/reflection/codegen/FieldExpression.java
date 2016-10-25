@@ -32,10 +32,10 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import uk.co.strangeskies.reflection.FieldToken;
-import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.VariableExpressionVisitor;
+import uk.co.strangeskies.reflection.token.FieldToken;
+import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class FieldExpression<O, T> implements VariableExpression<T> {
 	private final ValueExpression<? extends O> value;

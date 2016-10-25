@@ -33,6 +33,7 @@
 package uk.co.strangeskies.reflection;
 
 import static uk.co.strangeskies.reflection.ParameterizedTypes.getAllTypeArguments;
+import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterizeUnchecked;
 import static uk.co.strangeskies.reflection.Types.getRawType;
 
 import java.lang.annotation.Annotation;
@@ -244,7 +245,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 		ParameterizedType capture;
 		if (containsWildcards) {
 			substituteBounds(arguments);
-			capture = ParameterizedTypes.parameterizeUnchecked(getRawType(type), new ArrayList<>(arguments.values()));
+			capture = parameterizeUnchecked(getRawType(type), new ArrayList<>(arguments.values()));
 		} else {
 			capture = type;
 		}

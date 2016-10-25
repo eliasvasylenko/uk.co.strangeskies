@@ -30,8 +30,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection;
+package uk.co.strangeskies.reflection.token;
 
+import uk.co.strangeskies.reflection.Reified;
 import uk.co.strangeskies.utilities.Self;
 
 /**

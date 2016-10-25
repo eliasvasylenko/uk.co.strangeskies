@@ -35,11 +35,11 @@ package uk.co.strangeskies.reflection.codegen;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import uk.co.strangeskies.reflection.ExecutableToken;
-import uk.co.strangeskies.reflection.FieldToken;
-import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.VariableExpressionVisitor;
+import uk.co.strangeskies.reflection.token.ExecutableToken;
+import uk.co.strangeskies.reflection.token.FieldToken;
+import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class ExpressionEvaluator {
 	private class ExpressionVisitorImpl implements ExpressionVisitor {

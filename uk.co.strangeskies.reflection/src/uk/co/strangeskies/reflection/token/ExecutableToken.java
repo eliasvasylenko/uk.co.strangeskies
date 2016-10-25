@@ -30,7 +30,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection;
+package uk.co.strangeskies.reflection.token;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
@@ -51,8 +51,18 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import uk.co.strangeskies.reflection.BoundSet;
+import uk.co.strangeskies.reflection.ConstraintFormula;
+import uk.co.strangeskies.reflection.InferenceVariable;
+import uk.co.strangeskies.reflection.IntersectionType;
+import uk.co.strangeskies.reflection.InvocableMemberStream;
+import uk.co.strangeskies.reflection.ReflectionException;
+import uk.co.strangeskies.reflection.TypeResolver;
+import uk.co.strangeskies.reflection.TypeSubstitution;
+import uk.co.strangeskies.reflection.TypeVariableCapture;
+import uk.co.strangeskies.reflection.Types;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
-import uk.co.strangeskies.reflection.TypeToken.Wildcards;
+import uk.co.strangeskies.reflection.token.TypeToken.Wildcards;
 
 /**
  * <p>

@@ -36,11 +36,16 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import uk.co.strangeskies.reflection.token.ExecutableToken;
+import uk.co.strangeskies.reflection.token.FieldToken;
+import uk.co.strangeskies.reflection.token.TypeToken;
+import uk.co.strangeskies.reflection.token.TypedObject;
 import uk.co.strangeskies.text.properties.Localized;
 import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
@@ -138,4 +143,7 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 	<O, T> Localized<String> cannotSetField(O target, T value, FieldToken<O, ?> fieldMember);
 
 	Localized<String> cannotFindMethodOn(Type type);
+
+	Localized<String> incorrectTypeArgumentCount(Class<?> rawType, List<TypeVariable<?>> typeParameters,
+			List<Type> typeArguments);
 }

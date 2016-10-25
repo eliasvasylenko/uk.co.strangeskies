@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.reflection;
 
+import uk.co.strangeskies.reflection.token.TypeToken;
+import uk.co.strangeskies.reflection.token.TypedObject;
 import uk.co.strangeskies.utilities.Self;
 
 /**

@@ -15,14 +15,14 @@
  *               \ \__.' /| |    \ \| | \ `.__,.\ \__.' /
  *                `.__.-` |_|    |_||_|  `-.__.J `.__.-`
  *
- * This file is part of uk.co.strangeskies.fx.
+ * This file is part of uk.co.strangeskies.reflection.
  *
- * uk.co.strangeskies.fx is free software: you can redistribute it and/or modify
+ * uk.co.strangeskies.reflection is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * uk.co.strangeskies.fx is distributed in the hope that it will be useful,
+ * uk.co.strangeskies.reflection is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -30,41 +30,47 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.fx;
+package uk.co.strangeskies.reflection.token;
 
-import java.util.Objects;
-
-import javafx.scene.Node;
-import uk.co.strangeskies.reflection.token.TypeToken;
+import java.lang.reflect.TypeVariable;
 
 /**
- * The default tree cell contribution. This configures a cell with basic text
- * content derived from any applicable {@link TreeTextContribution text
- * contributions}.
+ * A capture of a type variable, with all of the reflective functionality
+ * provided by {@link TypeToken}.
  * 
  * @author Elias N Vasylenko
+ *
+ * @param <T>
+ *          The type variable we wish to capture.
  */
-public class DefaultTreeCellContribution implements TreeCellContribution<Object> {
+public class TypeParameter<T> extends TypeToken<T> {
+	/**
+	 * Capture the type variable provided as an argument to the type parameter of
+	 * this constructor. This should only ever be parameterized with an
+	 * uninstantiated type variable.
+	 */
+	protected TypeParameter() {
+		if (!(super.getType() instanceof TypeVariable))
+			throw new IllegalArgumentException();
+	}
+
+	private TypeParameter(TypeVariable<?> type) {
+		super(type);
+	}
+
 	@Override
-	public <U> Node configureCell(TreeItemData<U> data, Node ignore) {
-		String text = null;
-		String supplementalText = null;
+	public TypeVariable<?> getType() {
+		return (TypeVariable<?>) super.getType();
+	}
 
-		for (TreeTextContribution<? super U> contribution : data
-				.contributions(new TypeToken<TreeTextContribution<? super U>>() {})) {
-
-			if (text == null) {
-				text = contribution.getText(data);
-			}
-			if (supplementalText == null) {
-				supplementalText = contribution.getSupplementalText(data);
-			}
-		}
-
-		if (text == null) {
-			text = Objects.toString(data.data());
-		}
-
-		return new DefaultTreeCellContent(text, supplementalText);
+	/**
+	 * Capture the given type variable in a TypeToken.
+	 * 
+	 * @param type
+	 *          The type variable to capture.
+	 * @return A type token instance over the given type.
+	 */
+	public static TypeParameter<?> of(TypeVariable<?> type) {
+		return new TypeParameter<>(type);
 	}
 }

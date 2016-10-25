@@ -32,15 +32,15 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import static uk.co.strangeskies.reflection.FieldToken.resolveField;
+import static uk.co.strangeskies.reflection.token.FieldToken.resolveField;
 
 import java.util.Arrays;
 import java.util.List;
 
-import uk.co.strangeskies.reflection.ExecutableToken;
-import uk.co.strangeskies.reflection.FieldToken;
-import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
+import uk.co.strangeskies.reflection.token.ExecutableToken;
+import uk.co.strangeskies.reflection.token.FieldToken;
+import uk.co.strangeskies.reflection.token.TypeToken;
 
 public interface ValueExpression<T> extends Expression {
 	@Override

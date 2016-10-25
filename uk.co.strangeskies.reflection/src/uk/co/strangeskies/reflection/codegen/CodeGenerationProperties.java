@@ -37,7 +37,7 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 
 import uk.co.strangeskies.reflection.ReflectionProperties;
-import uk.co.strangeskies.reflection.TypeToken;
+import uk.co.strangeskies.reflection.token.TypeToken;
 import uk.co.strangeskies.text.properties.Localized;
 import uk.co.strangeskies.text.properties.Properties;
 

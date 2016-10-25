@@ -37,12 +37,12 @@ import static uk.co.strangeskies.reflection.codegen.LiteralExpression.literal;
 import org.junit.Assert;
 import org.junit.Test;
 
-import uk.co.strangeskies.reflection.FieldToken;
-import uk.co.strangeskies.reflection.ExecutableToken;
-import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.codegen.Block;
 import uk.co.strangeskies.reflection.codegen.LocalVariableExpression;
 import uk.co.strangeskies.reflection.codegen.StatementExecutor;
+import uk.co.strangeskies.reflection.token.ExecutableToken;
+import uk.co.strangeskies.reflection.token.FieldToken;
+import uk.co.strangeskies.reflection.token.TypeToken;
 
 @SuppressWarnings("javadoc")
 public class ExpressionTest {

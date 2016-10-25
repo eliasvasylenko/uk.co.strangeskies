@@ -37,7 +37,7 @@ import static uk.co.strangeskies.reflection.codegen.InvocationExpression.invokeS
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import uk.co.strangeskies.reflection.TypeToken;
+import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class Expressions {
 	private Expressions() {}

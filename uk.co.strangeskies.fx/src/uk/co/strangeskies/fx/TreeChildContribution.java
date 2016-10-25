@@ -35,7 +35,7 @@ package uk.co.strangeskies.fx;
 import java.util.Collection;
 import java.util.List;
 
-import uk.co.strangeskies.reflection.TypedObject;
+import uk.co.strangeskies.reflection.token.TypedObject;
 
 /**
  * A type of contribution for items in a {@link ModularTreeView}.

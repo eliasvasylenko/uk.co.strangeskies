@@ -30,7 +30,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection;
+package uk.co.strangeskies.reflection.token;
 
 import static uk.co.strangeskies.reflection.WildcardTypes.unbounded;
 
@@ -47,6 +47,12 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import uk.co.strangeskies.reflection.BoundSet;
+import uk.co.strangeskies.reflection.InferenceVariable;
+import uk.co.strangeskies.reflection.ParameterizedTypes;
+import uk.co.strangeskies.reflection.ReflectionException;
+import uk.co.strangeskies.reflection.TypeResolver;
 
 /**
  * <p>

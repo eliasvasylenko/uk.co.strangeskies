@@ -36,8 +36,8 @@ import java.util.List;
 import java.util.Optional;
 
 import javafx.scene.control.TreeItem;
-import uk.co.strangeskies.reflection.TypeToken;
-import uk.co.strangeskies.reflection.TypedObject;
+import uk.co.strangeskies.reflection.token.TypeToken;
+import uk.co.strangeskies.reflection.token.TypedObject;
 
 /**
  * This interface defines the type of a {@link TreeItem} for a

@@ -317,7 +317,7 @@ public class ParameterizedTypes {
 		Stream<TypeVariable<?>> typeParameters = Stream.empty();
 
 		do {
-			typeParameters = Stream.concat(typeParameters, Arrays.stream(rawType.getTypeParameters()));
+			typeParameters = Stream.concat(Arrays.stream(rawType.getTypeParameters()), typeParameters);
 		} while (!Types.isStatic(rawType) && (rawType = rawType.getEnclosingClass()) != null);
 
 		return typeParameters;
@@ -341,8 +341,8 @@ public class ParameterizedTypes {
 			TypeVariable<?>[] typeParameters = rawType.getTypeParameters();
 			Type[] actualTypeArguments = type.getActualTypeArguments();
 
-			typeArguments = Stream.concat(typeArguments, IntStream.range(0, typeParameters.length)
-					.mapToObj(i -> new AbstractMap.SimpleEntry<>(typeParameters[i], actualTypeArguments[i])));
+			typeArguments = Stream.concat(IntStream.range(0, typeParameters.length)
+					.mapToObj(i -> new AbstractMap.SimpleEntry<>(typeParameters[i], actualTypeArguments[i])), typeArguments);
 
 			type = type.getOwnerType() instanceof ParameterizedType ? (ParameterizedType) type.getOwnerType() : null;
 			rawType = Types.isStatic(rawType) ? null : rawType.getEnclosingClass();
@@ -363,7 +363,30 @@ public class ParameterizedTypes {
 	}
 
 	public static ParameterizedType parameterizeUnchecked(Class<?> rawType, List<Type> typeArguments) {
-		return parameterizeUnchecked(null, rawType, new ArrayList<>(typeArguments));
+		List<TypeVariable<?>> parameters = getAllTypeParameters(rawType).collect(Collectors.toList());
+
+		if (parameters.size() != typeArguments.size()) {
+			List<Type> typeArgumentsFinal = typeArguments;
+			throw new ReflectionException(p -> p.incorrectTypeArgumentCount(rawType, parameters, typeArgumentsFinal));
+		}
+
+		return parameterizeUncheckedImpl(rawType, typeArguments);
+	}
+
+	public static ParameterizedType parameterizeUncheckedImpl(Class<?> rawType, List<Type> typeArguments) {
+		int totalArgumentCount = typeArguments.size();
+		int parametersOnTypeCount = rawType.getTypeParameters().length;
+		int parametersOnOwnerCount = totalArgumentCount - parametersOnTypeCount;
+
+		Type owner = rawType.getEnclosingClass();
+
+		if (totalArgumentCount > parametersOnTypeCount) {
+			owner = parameterizeUncheckedImpl((Class<?>) owner, typeArguments.subList(0, parametersOnOwnerCount));
+
+			typeArguments = typeArguments.subList(parametersOnOwnerCount, totalArgumentCount);
+		}
+
+		return parameterizeUnchecked(owner, rawType, typeArguments);
 	}
 
 	public static ParameterizedType parameterizeUnchecked(Class<?> rawType, Type... typeArguments) {
@@ -459,10 +482,7 @@ public class ParameterizedTypes {
 	 *         parameterized with the given type arguments, in order
 	 */
 	public static ParameterizedType parameterize(Class<?> rawType, List<Type> typeArguments) {
-		if (!Types.isStatic(rawType) && rawType.getEnclosingClass() != null && isGeneric(rawType.getEnclosingClass()))
-			throw new IllegalArgumentException();
-
-		ParameterizedTypeImpl type = (ParameterizedTypeImpl) parameterizeUnchecked(null, rawType, typeArguments);
+		ParameterizedTypeImpl type = (ParameterizedTypeImpl) parameterizeUnchecked(rawType, typeArguments);
 		type.validate();
 		return type;
 	}

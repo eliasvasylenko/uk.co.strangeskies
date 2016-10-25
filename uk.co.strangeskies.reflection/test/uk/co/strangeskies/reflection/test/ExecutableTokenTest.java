@@ -37,8 +37,8 @@ import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
-import static uk.co.strangeskies.reflection.ExecutableToken.getStaticMethods;
-import static uk.co.strangeskies.reflection.ExecutableToken.overConstructor;
+import static uk.co.strangeskies.reflection.token.ExecutableToken.getStaticMethods;
+import static uk.co.strangeskies.reflection.token.ExecutableToken.overConstructor;
 
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
@@ -46,11 +46,11 @@ import java.util.List;
 
 import org.junit.Test;
 
-import uk.co.strangeskies.reflection.ExecutableToken;
 import uk.co.strangeskies.reflection.ReflectionException;
-import uk.co.strangeskies.reflection.TypeToken;
-import uk.co.strangeskies.reflection.TypeToken.Infer;
 import uk.co.strangeskies.reflection.test.ExecutableTokenTest.Outer.Inner;
+import uk.co.strangeskies.reflection.token.ExecutableToken;
+import uk.co.strangeskies.reflection.token.TypeToken;
+import uk.co.strangeskies.reflection.token.TypeToken.Infer;
 
 @SuppressWarnings("javadoc")
 public class ExecutableTokenTest {

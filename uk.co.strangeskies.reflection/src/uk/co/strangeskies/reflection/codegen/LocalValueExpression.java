@@ -32,8 +32,8 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
+import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class LocalValueExpression<T> implements ValueExpression<T> {
 	private final LocalVariable<T> local;

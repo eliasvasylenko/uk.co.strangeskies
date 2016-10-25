@@ -57,6 +57,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.ParameterizedTypes.ParameterizedTypeImpl;
+import uk.co.strangeskies.reflection.token.TypeToken;
 import uk.co.strangeskies.text.parsing.Parser;
 import uk.co.strangeskies.utilities.Isomorphism;
 import uk.co.strangeskies.utilities.collection.MultiHashMap;
@@ -762,10 +763,6 @@ public final class Types {
 			assignable = ((Class<?>) to).isAssignableFrom(getRawType(from));
 		} else if (to instanceof ParameterizedType) {
 			Class<?> matchedClass = getRawType(to);
-
-			System.out.println("#");
-			System.out.println(from);
-			System.out.println(to);
 
 			if (from instanceof Class && matchedClass.isAssignableFrom((Class<?>) from)) {
 				assignable = true;

@@ -30,11 +30,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection;
+package uk.co.strangeskies.reflection.token;
 
 import java.lang.reflect.Member;
 import java.lang.reflect.Type;
 import java.util.Collection;
+
+import uk.co.strangeskies.reflection.BoundSet;
+import uk.co.strangeskies.reflection.InferenceVariable;
+import uk.co.strangeskies.reflection.TypeResolver;
 
 /**
  * A type safe wrapper around {@link Member} instances, with proper handling of

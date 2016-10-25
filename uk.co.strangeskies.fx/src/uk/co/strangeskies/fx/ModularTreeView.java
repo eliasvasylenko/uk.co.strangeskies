@@ -48,7 +48,7 @@ import javafx.util.Pair;
 import uk.co.strangeskies.mathematics.graph.Graph;
 import uk.co.strangeskies.mathematics.graph.GraphListeners;
 import uk.co.strangeskies.mathematics.graph.processing.GraphProcessor;
-import uk.co.strangeskies.reflection.TypedObject;
+import uk.co.strangeskies.reflection.token.TypedObject;
 
 /**
  * An implementation of {@link TreeView} which allows for modular and extensible

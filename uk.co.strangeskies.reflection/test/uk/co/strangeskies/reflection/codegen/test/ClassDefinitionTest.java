@@ -40,12 +40,12 @@ import java.util.function.Function;
 import org.junit.Assert;
 import org.junit.Test;
 
-import uk.co.strangeskies.reflection.ExecutableToken;
 import uk.co.strangeskies.reflection.ReflectionException;
-import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.codegen.ClassDefinition;
 import uk.co.strangeskies.reflection.codegen.MethodDeclaration;
 import uk.co.strangeskies.reflection.codegen.VariableExpression;
+import uk.co.strangeskies.reflection.token.ExecutableToken;
+import uk.co.strangeskies.reflection.token.TypeToken;
 
 @SuppressWarnings("javadoc")
 public class ClassDefinitionTest {

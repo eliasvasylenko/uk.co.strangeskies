@@ -52,13 +52,13 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
-import uk.co.strangeskies.reflection.ExecutableToken;
 import uk.co.strangeskies.reflection.IntersectionType;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.Reified;
-import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.Types;
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
+import uk.co.strangeskies.reflection.token.ExecutableToken;
+import uk.co.strangeskies.reflection.token.TypeToken;
 import uk.co.strangeskies.utilities.collection.StreamUtilities;
 
 /**

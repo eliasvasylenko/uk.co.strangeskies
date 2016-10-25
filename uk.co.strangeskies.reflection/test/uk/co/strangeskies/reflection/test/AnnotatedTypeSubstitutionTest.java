@@ -41,10 +41,10 @@ import org.junit.Test;
 
 import uk.co.strangeskies.reflection.AnnotatedTypeSubstitution;
 import uk.co.strangeskies.reflection.AnnotatedTypes;
-import uk.co.strangeskies.reflection.TypeToken;
-import uk.co.strangeskies.reflection.TypeToken.Capture;
-import uk.co.strangeskies.reflection.TypeToken.Infer;
-import uk.co.strangeskies.reflection.TypeToken.Preserve;
+import uk.co.strangeskies.reflection.token.TypeToken;
+import uk.co.strangeskies.reflection.token.TypeToken.Capture;
+import uk.co.strangeskies.reflection.token.TypeToken.Infer;
+import uk.co.strangeskies.reflection.token.TypeToken.Preserve;
 
 @SuppressWarnings("javadoc")
 public class AnnotatedTypeSubstitutionTest {

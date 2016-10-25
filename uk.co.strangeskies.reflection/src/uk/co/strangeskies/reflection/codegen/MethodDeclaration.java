@@ -42,7 +42,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
-import uk.co.strangeskies.reflection.TypeToken;
+import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class MethodDeclaration<C, T> extends ParameterizedDeclaration implements MemberDeclaration<C> {
 	private final ClassDefinition<C> classDefinition;

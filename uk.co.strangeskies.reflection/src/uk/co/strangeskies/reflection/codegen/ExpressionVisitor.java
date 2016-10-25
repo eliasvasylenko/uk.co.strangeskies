@@ -34,9 +34,9 @@ package uk.co.strangeskies.reflection.codegen;
 
 import java.util.List;
 
-import uk.co.strangeskies.reflection.ExecutableToken;
-import uk.co.strangeskies.reflection.FieldToken;
-import uk.co.strangeskies.reflection.TypeToken;
+import uk.co.strangeskies.reflection.token.ExecutableToken;
+import uk.co.strangeskies.reflection.token.FieldToken;
+import uk.co.strangeskies.reflection.token.TypeToken;
 
 public interface ExpressionVisitor {
 	<U> ValueExpressionVisitor<U> value(TypeToken<U> type);

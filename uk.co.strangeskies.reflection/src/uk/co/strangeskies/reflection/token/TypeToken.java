@@ -30,7 +30,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection;
+package uk.co.strangeskies.reflection.token;
 
 import static java.util.Arrays.stream;
 
@@ -62,7 +62,25 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import uk.co.strangeskies.reflection.AnnotatedParameterizedTypes;
+import uk.co.strangeskies.reflection.AnnotatedTypeSubstitution;
+import uk.co.strangeskies.reflection.AnnotatedTypes;
+import uk.co.strangeskies.reflection.Annotations;
+import uk.co.strangeskies.reflection.ArrayTypes;
+import uk.co.strangeskies.reflection.BoundSet;
+import uk.co.strangeskies.reflection.ConstraintFormula;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
+import uk.co.strangeskies.reflection.Imports;
+import uk.co.strangeskies.reflection.InferenceVariable;
+import uk.co.strangeskies.reflection.InvocableMemberStream;
+import uk.co.strangeskies.reflection.Methods;
+import uk.co.strangeskies.reflection.ParameterizedTypes;
+import uk.co.strangeskies.reflection.ReflectionException;
+import uk.co.strangeskies.reflection.TypeResolver;
+import uk.co.strangeskies.reflection.TypeSubstitution;
+import uk.co.strangeskies.reflection.TypeVariableCapture;
+import uk.co.strangeskies.reflection.Types;
+import uk.co.strangeskies.reflection.WildcardTypes;
 import uk.co.strangeskies.utilities.DeepCopyable;
 import uk.co.strangeskies.utilities.Isomorphism;
 import uk.co.strangeskies.utilities.tuple.Pair;
@@ -344,6 +362,11 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 
 	private static ParameterizedType substituteAnnotatedWildcardsForParameterizedType(Isomorphism isomorphism,
 			Wildcards behavior, AnnotatedParameterizedType annotatedType, TypeResolver resolver) {
+		System.out.println();
+		System.out.println(annotatedType.getClass());
+		System.out.println(annotatedType);
+		System.out.println(Arrays.toString(annotatedType.getAnnotatedActualTypeArguments()));
+		
 		return isomorphism.byIdentity().getProxiedMapping(annotatedType, ParameterizedType.class, t -> {
 			/*
 			 * Deal with annotations on types mentioned by parameters, preserving any
@@ -368,7 +391,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 			/*
 			 * New parameterized type
 			 */
-			ParameterizedType parameterizedType = (ParameterizedType) ParameterizedTypes
+			ParameterizedType parameterizedType = ParameterizedTypes
 					.parameterizeUnchecked(Types.getRawType(annotatedType.getType()), allArguments::get);
 			if (allArguments.values().stream().anyMatch(WildcardType.class::isInstance)) {
 				if (behavior == Wildcards.CAPTURE) {

@@ -50,8 +50,8 @@ import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
-import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.Types;
+import uk.co.strangeskies.reflection.token.TypeToken;
 import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertyLoader;
 import uk.co.strangeskies.text.properties.PropertyLoaderException;

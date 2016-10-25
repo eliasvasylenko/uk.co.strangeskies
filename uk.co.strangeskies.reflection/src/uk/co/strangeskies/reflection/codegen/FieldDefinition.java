@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import uk.co.strangeskies.reflection.TypeToken;
+import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class FieldDefinition<C, T> implements MemberDefinition {
 	private final ClassDefinition<C> classDefinition;

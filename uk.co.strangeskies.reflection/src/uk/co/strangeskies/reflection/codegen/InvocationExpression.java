@@ -37,9 +37,9 @@ import static java.util.Arrays.asList;
 import java.util.Arrays;
 import java.util.List;
 
-import uk.co.strangeskies.reflection.ExecutableToken;
-import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
+import uk.co.strangeskies.reflection.token.ExecutableToken;
+import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class InvocationExpression<O, T> implements ValueExpression<T> {
 	private final ValueExpression<? extends O> receiver;

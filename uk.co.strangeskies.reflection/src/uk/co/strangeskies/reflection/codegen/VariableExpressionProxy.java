@@ -32,8 +32,8 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.VariableExpressionVisitor;
+import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class VariableExpressionProxy<T> implements VariableExpression<T> {
 	private VariableExpression<T> component;

@@ -32,8 +32,8 @@
  */
 package uk.co.strangeskies.fx;
 
-import uk.co.strangeskies.reflection.TypeParameter;
-import uk.co.strangeskies.reflection.TypeToken;
+import uk.co.strangeskies.reflection.token.TypeParameter;
+import uk.co.strangeskies.reflection.token.TypeToken;
 
 /**
  * A type of contribution for items in a {@link ModularTreeView}. Tree

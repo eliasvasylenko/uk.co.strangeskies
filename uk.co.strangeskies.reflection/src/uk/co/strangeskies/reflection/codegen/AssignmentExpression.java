@@ -32,8 +32,8 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
+import uk.co.strangeskies.reflection.token.TypeToken;
 
 /**
  * An expression denoting assignment to a {@link VariableExpression}.
