@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import uk.co.strangeskies.reflection.ExecutableToken;
 import uk.co.strangeskies.reflection.TypeToken;
 
 public abstract class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefinition<C, T>>
@@ -147,5 +148,10 @@ public abstract class MethodDefinition<C, T> extends ParameterizedDefinition<Met
 	private static <T> void setParameterUnsafe(StatementExecutor state, LocalVariable<T> parameter, Object argument) {
 		state.declareLocal(parameter);
 		state.setEnclosedLocal(parameter, (T) argument);
+	}
+
+	public ExecutableToken<C, T> asToken() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

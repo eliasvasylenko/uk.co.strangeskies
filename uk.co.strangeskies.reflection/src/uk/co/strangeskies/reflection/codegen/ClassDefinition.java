@@ -328,6 +328,11 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 		return MethodDeclaration.declareMethod(this, methodName);
 	}
 
+	public MethodDeclaration<Void, T> declareConstructor() {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException();
+	}
+
 	public MethodDeclaration<T, Void> declareMethodOverride(Method method) {
 		return declareMethod(method.getName())
 				.withParameters(AnnotatedTypes.over(ExecutableToken.overMethod(method).getParameters()));

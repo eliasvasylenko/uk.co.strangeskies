@@ -32,6 +32,9 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import static uk.co.strangeskies.reflection.TypeToken.overType;
+
+import uk.co.strangeskies.reflection.TypeParameter;
 import uk.co.strangeskies.reflection.TypeToken;
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
 
@@ -42,6 +45,11 @@ public class LiteralExpression<T> implements ValueExpression<T> {
 	protected LiteralExpression(T value, Class<T> type) {
 		this.value = value;
 		this.type = TypeToken.overType(type);
+	}
+
+	protected LiteralExpression(T value, TypeToken<T> type) {
+		this.value = value;
+		this.type = type;
 	}
 
 	@Override
@@ -80,5 +88,10 @@ public class LiteralExpression<T> implements ValueExpression<T> {
 
 	public static ValueExpression<Character> literal(char value) {
 		return new LiteralExpression<>(value, Character.class);
+	}
+
+	public static <T> ValueExpression<Class<T>> literal(Class<T> value) {
+		return new LiteralExpression<>(value,
+				new TypeToken<Class<T>>() {}.withTypeArgument(new TypeParameter<T>() {}, overType(value)));
 	}
 }
