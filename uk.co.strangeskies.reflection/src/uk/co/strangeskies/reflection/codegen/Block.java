@@ -114,7 +114,7 @@ public class Block<T> implements Self<Block<T>> {
 		return this;
 	}
 
-	public Block<T> addReturnStatement(ValueExpression<T> expression) {
+	public Block<T> addReturnStatement(ValueExpression<? extends T> expression) {
 		addStatement(v -> v.visitReturn(expression));
 
 		return this;
