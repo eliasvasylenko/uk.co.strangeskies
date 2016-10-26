@@ -212,7 +212,8 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 				.unmodifiableList(signature.getSuperTypes().stream().map(this::substituteTypeVariableSignatures)
 						.map(TypeToken::overAnnotatedType).map(t -> (TypeToken<? super T>) t).collect(Collectors.toList()));
 
-		Type superType = IntersectionType.intersectionOf(superTypes.stream().map(TypeToken::getType).collect(Collectors.toList()));
+		Type superType = IntersectionType
+				.intersectionOf(superTypes.stream().map(TypeToken::getType).collect(Collectors.toList()));
 		this.superType = (TypeToken<T>) TypeToken.overType(superType);
 		Class<?> superClass = Types.getRawType(superType);
 		if (superClass.isInterface()) {
@@ -225,7 +226,7 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 		methods = new HashMap<>();
 		getSuperTypes().stream().flatMap(t -> t.getRawTypes().stream()).flatMap(t -> Arrays.stream(t.getMethods()))
 				.forEach(this::inheritMethod);
-		StreamUtilities.<Class<?>> iterate(getSuperClass(), Class::getSuperclass)
+		StreamUtilities.<Class<?>>iterate(getSuperClass(), Class::getSuperclass)
 				.flatMap(c -> Arrays.stream(c.getDeclaredMethods())).forEach(this::inheritMethod);
 
 		this.receiverExpression = new ValueExpression<T>() {
@@ -331,7 +332,8 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 							return override.getInterfaceMethods().stream().filter(Method::isDefault).findAny().get().invoke(proxy,
 									args);
 						} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-							throw new ReflectionException(p -> p.invalidMethodArguments(method, getSuperType(), asList(args)));
+							throw new ReflectionException(
+									p -> p.invalidMethodArguments(method, getSuperType().getType(), asList(args)));
 						}
 					}
 				});

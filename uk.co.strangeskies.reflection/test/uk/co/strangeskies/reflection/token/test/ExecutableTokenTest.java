@@ -30,7 +30,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection.test;
+package uk.co.strangeskies.reflection.token.test;
 
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
@@ -47,10 +47,10 @@ import java.util.List;
 import org.junit.Test;
 
 import uk.co.strangeskies.reflection.ReflectionException;
-import uk.co.strangeskies.reflection.test.ExecutableTokenTest.Outer.Inner;
 import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.TypeToken;
 import uk.co.strangeskies.reflection.token.TypeToken.Infer;
+import uk.co.strangeskies.reflection.token.test.ExecutableTokenTest.Outer.Inner;
 
 @SuppressWarnings("javadoc")
 public class ExecutableTokenTest {

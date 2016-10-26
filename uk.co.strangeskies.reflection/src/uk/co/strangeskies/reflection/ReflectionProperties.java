@@ -34,6 +34,8 @@ package uk.co.strangeskies.reflection;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -42,10 +44,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import uk.co.strangeskies.reflection.token.ExecutableToken;
-import uk.co.strangeskies.reflection.token.FieldToken;
-import uk.co.strangeskies.reflection.token.TypeToken;
-import uk.co.strangeskies.reflection.token.TypedObject;
 import uk.co.strangeskies.text.properties.Localized;
 import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
@@ -62,8 +60,6 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 	Localized<String> unsupportedType(Type type);
 
 	Localized<String> invalidAssignmentObject(Object object, Class<?> type);
-
-	Localized<String> invalidCastObject(Object object, TypeToken<?> type);
 
 	default Localized<String> invalidTypeVariableCaptureBounds(TypeVariableCapture capture) {
 		return invalidTypeVariableCaptureBounds(capture, capture.getLowerBounds(), capture.getUpperBounds());
@@ -114,33 +110,33 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 	Localized<String> cannotCaptureMultipleTimes(InferenceVariable inferenceVariable, CaptureConversion capture,
 			CaptureConversion captureConversion);
 
-	Localized<String> invalidVariableArityInvocation(ExecutableToken<?, ?> executableMember);
-
-	Localized<String> invalidConstructorArguments(Constructor<?> constructor, TypeToken<?> t, List<?> a);
-
-	Localized<String> invalidMethodArguments(Method method, TypeToken<?> receiver, List<?> a);
-
 	Localized<String> invalidStaticMethodArguments(Method method, List<?> a);
 
-	Localized<String> cannotResolveOverride(ExecutableToken<?, ?> executableMember, Type type);
+	Localized<String> invalidCastObject(Object object, Type objectType, Type castType);
 
-	Localized<String> cannotResolveAmbiguity(ExecutableToken<?, ?> firstCandidate, ExecutableToken<?, ?> secondCandidate);
+	Localized<String> invalidVariableArityInvocation(Executable executableMember);
 
-	Localized<String> cannotResolveApplicable(Set<? extends ExecutableToken<?, ?>> candidates,
-			List<? extends TypeToken<?>> parameters);
+	Localized<String> invalidConstructorArguments(Constructor<?> constructor, Type t, List<?> a);
+
+	Localized<String> invalidMethodArguments(Method method, Type receiver, List<?> a);
+
+	Localized<String> cannotResolveOverride(Executable executableMember, Type type);
+
+	Localized<String> cannotResolveAmbiguity(Executable firstCandidate, Executable secondCandidate);
+
+	Localized<String> cannotResolveApplicable(Set<? extends Executable> candidates, List<? extends Type> parameters);
 
 	Localized<String> incompatibleArgument(Type givenArgumentCaptured, Type genericParameterCaptured, int i,
-			ExecutableToken<?, ?> executableMember);
+			Executable executableMember);
 
-	Localized<String> incompatibleArgument(TypedObject<?> typedObject, Type genericParameterCaptured, int i,
-			ExecutableToken<?, ?> executableMember);
+	Localized<String> incompatibleArgument(Object object, Type objectType, Type genericParameterCaptured, int i,
+			Executable executableMember);
 
-	Localized<String> cannotResolveInvocationType(ExecutableToken<?, ?> executableMember,
-			List<? extends TypeToken<?>> arguments);
+	Localized<String> cannotResolveInvocationType(Executable executableMember, List<? extends Type> arguments);
 
-	<O> Localized<String> cannotGetField(O target, FieldToken<O, ?> fieldMember);
+	Localized<String> cannotGetField(Object target, Field fieldMember);
 
-	<O, T> Localized<String> cannotSetField(O target, T value, FieldToken<O, ?> fieldMember);
+	Localized<String> cannotSetField(Object target, Object value, Field fieldMember);
 
 	Localized<String> cannotFindMethodOn(Type type);
 

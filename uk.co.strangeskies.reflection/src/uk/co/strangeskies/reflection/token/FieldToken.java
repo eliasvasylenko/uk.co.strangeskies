@@ -90,7 +90,8 @@ public class FieldToken<O, T> implements MemberToken<O> {
 	 * @return a field member wrapping the given field
 	 */
 	public static FieldToken<?, ?> over(Field field) {
-		return over(field, TypeToken.overType(ParameterizedTypes.parameterize(field.getDeclaringClass(), a -> unboundedWildcard())));
+		return over(field,
+				TypeToken.overType(ParameterizedTypes.parameterize(field.getDeclaringClass(), a -> unboundedWildcard())));
 	}
 
 	/**
@@ -231,7 +232,7 @@ public class FieldToken<O, T> implements MemberToken<O> {
 		try {
 			return (T) field.get(target);
 		} catch (IllegalArgumentException | IllegalAccessException e) {
-			throw new ReflectionException(p -> p.cannotGetField(target, this), e);
+			throw new ReflectionException(p -> p.cannotGetField(target, this.getMember()), e);
 		}
 	}
 
@@ -245,7 +246,7 @@ public class FieldToken<O, T> implements MemberToken<O> {
 		try {
 			field.set(target, value);
 		} catch (IllegalArgumentException | IllegalAccessException e) {
-			throw new ReflectionException(p -> p.cannotSetField(target, value, this), e);
+			throw new ReflectionException(p -> p.cannotSetField(target, value, this.getMember()), e);
 		}
 	}
 

@@ -30,9 +30,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection;
+package uk.co.strangeskies.reflection.token;
 
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Type;
@@ -51,17 +52,19 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import uk.co.strangeskies.reflection.ConstraintFormula;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
-import uk.co.strangeskies.reflection.token.ExecutableToken;
-import uk.co.strangeskies.reflection.token.TypeToken;
+import uk.co.strangeskies.reflection.ReflectionException;
+import uk.co.strangeskies.reflection.TypeResolver;
+import uk.co.strangeskies.reflection.Types;
 import uk.co.strangeskies.utilities.collection.SelfStreamDecorator;
 import uk.co.strangeskies.utilities.tuple.Pair;
 
-public class InvocableMemberStream<I extends ExecutableToken<?, ?>>
-		implements SelfStreamDecorator<I, InvocableMemberStream<I>> {
+public class ExecutableTokenStream<I extends ExecutableToken<?, ?>>
+		implements SelfStreamDecorator<I, ExecutableTokenStream<I>> {
 	private final Stream<I> members;
 
-	public InvocableMemberStream(Stream<I> members) {
+	public ExecutableTokenStream(Stream<I> members) {
 		this.members = members;
 	}
 
@@ -71,8 +74,8 @@ public class InvocableMemberStream<I extends ExecutableToken<?, ?>>
 	}
 
 	@Override
-	public InvocableMemberStream<I> decorateIntermediate(Function<? super Stream<I>, Stream<I>> transformation) {
-		return new InvocableMemberStream<>(transformation.apply(getComponent()));
+	public ExecutableTokenStream<I> decorateIntermediate(Function<? super Stream<I>, Stream<I>> transformation) {
+		return new ExecutableTokenStream<>(transformation.apply(getComponent()));
 	}
 
 	public <T> I resolveOverload() {
@@ -144,9 +147,13 @@ public class InvocableMemberStream<I extends ExecutableToken<?, ?>>
 				compatibleCandidates = oldCompatibleCandidates;
 		}
 
-		if (compatibleCandidates.isEmpty())
-			throw new ReflectionException(p -> p.cannotResolveApplicable(candidates, parameters),
+		if (compatibleCandidates.isEmpty()) {
+			Set<? extends Executable> candidateMembers = candidates.stream().map(ExecutableToken::getMember).collect(toSet());
+			List<? extends Type> candidateParameters = parameters.stream().map(TypeToken::getType).collect(toList());
+
+			throw new ReflectionException(p -> p.cannotResolveApplicable(candidateMembers, candidateParameters),
 					failures.get(failures.keySet().stream().findFirst().get()));
+		}
 
 		return compatibleCandidates;
 	}
@@ -197,7 +204,8 @@ public class InvocableMemberStream<I extends ExecutableToken<?, ?>>
 			if (!candidate.getParameters().equals(mostSpecific.getParameters())
 					|| !candidate.getName().equals(mostSpecific.getName())) {
 				I mostSpecificFinal = mostSpecific;
-				throw new ReflectionException(p -> p.cannotResolveAmbiguity(candidate, mostSpecificFinal));
+				throw new ReflectionException(
+						p -> p.cannotResolveAmbiguity(candidate.getMember(), mostSpecificFinal.getMember()));
 			}
 
 			mostSpecific = candidate.getMember().getDeclaringClass()
@@ -251,7 +259,8 @@ public class InvocableMemberStream<I extends ExecutableToken<?, ?>>
 					/*
 					 * Neither first nor second are more specific.
 					 */
-					throw new ReflectionException(p -> p.cannotResolveAmbiguity(firstCandidate, secondCandidate));
+					throw new ReflectionException(
+							p -> p.cannotResolveAmbiguity(firstCandidate.getMember(), secondCandidate.getMember()));
 				}
 			}
 		}
@@ -323,7 +332,7 @@ public class InvocableMemberStream<I extends ExecutableToken<?, ?>>
 		return true;
 	}
 
-	public InvocableMemberStream<I> named(String name) {
+	public ExecutableTokenStream<I> named(String name) {
 		return filter(m -> m.getName().equals(name));
 	}
 }

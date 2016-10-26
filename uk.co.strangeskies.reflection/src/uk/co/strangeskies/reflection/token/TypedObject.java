@@ -32,6 +32,7 @@
  */
 package uk.co.strangeskies.reflection.token;
 
+import java.lang.reflect.Type;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -79,7 +80,7 @@ public class TypedObject<T> implements ReifiedToken<TypedObject<T>> {
 	@SuppressWarnings("unchecked")
 	public static <T> TypedObject<T> castUnsafe(Object object, TypeToken<T> type) {
 		if (!type.getRawTypes().stream().allMatch(r -> r.isAssignableFrom(object.getClass())))
-			throw new ReflectionException(p -> p.invalidCastObject(object, type));
+			throw new ReflectionException(p -> p.invalidCastObject(object, object.getClass(), type.getType()));
 
 		return new TypedObject<>(type, (T) object);
 	}
@@ -127,7 +128,8 @@ public class TypedObject<T> implements ReifiedToken<TypedObject<T>> {
 	 * @return A typed object over the given type and object
 	 */
 	public <U> TypedObject<U> cast(TypeToken<U> type) {
-		return tryCast(type).orElseThrow(() -> new ReflectionException(p -> p.invalidCastObject(this, type)));
+		return tryCast(type).orElseThrow(
+				() -> new ReflectionException(p -> p.invalidCastObject(this, this.type.getType(), type.getType())));
 	}
 
 	/**
@@ -160,14 +162,22 @@ public class TypedObject<T> implements ReifiedToken<TypedObject<T>> {
 	 * @return A typed object over the given type and object
 	 */
 	public <U> TypedObject<U> assign(TypeToken<U> type) {
-		return tryAssign(type).orElseThrow(() -> new ReflectionException(p -> p.invalidCastObject(this, type)));
+		return tryAssign(type).orElseThrow(
+				() -> new ReflectionException(p -> p.invalidCastObject(this, this.type.getType(), type.getType())));
 	}
 
 	/**
 	 * @return The type of the reference.
 	 */
-	public TypeToken<T> getType() {
+	public TypeToken<T> getTypeToken() {
 		return type;
+	}
+
+	/**
+	 * @return The type of the reference.
+	 */
+	public Type getType() {
+		return getTypeToken().getType();
 	}
 
 	/**

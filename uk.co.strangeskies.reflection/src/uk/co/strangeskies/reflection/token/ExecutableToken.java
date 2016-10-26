@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.reflection.token;
 
+import static java.util.stream.Collectors.toList;
+
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
@@ -53,15 +55,14 @@ import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.BoundSet;
 import uk.co.strangeskies.reflection.ConstraintFormula;
+import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.reflection.InferenceVariable;
 import uk.co.strangeskies.reflection.IntersectionType;
-import uk.co.strangeskies.reflection.InvocableMemberStream;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeResolver;
 import uk.co.strangeskies.reflection.TypeSubstitution;
 import uk.co.strangeskies.reflection.TypeVariableCapture;
 import uk.co.strangeskies.reflection.Types;
-import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.reflection.token.TypeToken.Wildcards;
 
 /**
@@ -108,7 +109,7 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 		this.variableArityInvocation = variableArityInvocation;
 
 		if (!isVariableArityDefinition() && isVariableArityInvocation()) {
-			throw new ReflectionException(p -> p.invalidVariableArityInvocation(this));
+			throw new ReflectionException(p -> p.invalidVariableArityInvocation(getMember()));
 		}
 
 		/*
@@ -194,7 +195,7 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 				} else if (!Types.isAssignable(genericParameterCaptured, givenArgumentCaptured)) {
 					int finalI = i;
 					throw new ReflectionException(
-							p -> p.incompatibleArgument(givenArgumentCaptured, genericParameterCaptured, finalI, this));
+							p -> p.incompatibleArgument(givenArgumentCaptured, genericParameterCaptured, finalI, this.getMember()));
 				}
 			}
 		}
@@ -234,7 +235,7 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 			try {
 				return (T) constructor.newInstance(a.toArray());
 			} catch (Exception e) {
-				throw new ReflectionException(p -> p.invalidConstructorArguments(constructor, instance, a), e);
+				throw new ReflectionException(p -> p.invalidConstructorArguments(constructor, instance.getType(), a), e);
 			}
 		});
 	}
@@ -268,7 +269,7 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 				}
 				return (T) constructor.newInstance(arguments);
 			} catch (Exception e) {
-				throw new ReflectionException(p -> p.invalidConstructorArguments(constructor, instance, a), e);
+				throw new ReflectionException(p -> p.invalidConstructorArguments(constructor, instance.getType(), a), e);
 			}
 		});
 	}
@@ -321,7 +322,7 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 			try {
 				return method.invoke(r, a.toArray());
 			} catch (Exception e) {
-				throw new ReflectionException(p -> p.invalidMethodArguments(method, receiver, a), e);
+				throw new ReflectionException(p -> p.invalidMethodArguments(method, receiver.getType(), a), e);
 			}
 		});
 	}
@@ -638,7 +639,7 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 			return new ExecutableToken<>(resolver, (TypeToken<O>) TypeToken.overType(type), null, override,
 					invocationFunction, parameters, variableArityInvocation);
 		} catch (NoSuchMethodException | SecurityException e) {
-			throw new ReflectionException(p -> p.cannotResolveOverride(this, type), e);
+			throw new ReflectionException(p -> p.cannotResolveOverride(getMember(), type), e);
 		}
 	}
 
@@ -943,12 +944,14 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 	private ExecutableToken<O, R> withLooseApplicability(boolean variableArity, List<? extends TypeToken<?>> arguments) {
 		if (variableArity) {
 			if (!executable.isVarArgs())
-				throw new ReflectionException(p -> p.invalidVariableArityInvocation(this));
+				throw new ReflectionException(p -> p.invalidVariableArityInvocation(getMember()));
 
 			if (parameters.size() > arguments.size() + 1)
-				throw new ReflectionException(p -> p.cannotResolveInvocationType(this, arguments));
+				throw new ReflectionException(p -> p.cannotResolveInvocationType(getMember(),
+						arguments.stream().map(TypeToken::getType).collect(toList())));
 		} else if (parameters.size() != arguments.size())
-			throw new ReflectionException(p -> p.cannotResolveInvocationType(this, arguments));
+			throw new ReflectionException(p -> p.cannotResolveInvocationType(getMember(),
+					arguments.stream().map(TypeToken::getType).collect(toList())));
 
 		TypeResolver resolver = getResolver();
 
@@ -1199,10 +1202,10 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 	 */
 	public R invokeSafely(O receiver, List<? extends TypedObject<?>> arguments) {
 		for (int i = 0; i < arguments.size(); i++)
-			if (!arguments.get(i).getType().isAssignableTo(parameters.get(i))) {
+			if (!arguments.get(i).getTypeToken().isAssignableTo(parameters.get(i))) {
 				int finalI = i;
-				throw new ReflectionException(
-						p -> p.incompatibleArgument(arguments.get(finalI), parameters.get(finalI), finalI, this));
+				throw new ReflectionException(p -> p.incompatibleArgument(arguments.get(finalI).getObject(),
+						arguments.get(finalI).getTypeToken().getType(), parameters.get(finalI), finalI, getMember()));
 			}
 		return invoke(receiver, arguments);
 	}
@@ -1214,11 +1217,11 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 	 * @return a list of all {@link Method} objects applicable to this type,
 	 *         wrapped in {@link ExecutableToken} instances.
 	 */
-	public static InvocableMemberStream<ExecutableToken<Void, ?>> getStaticMethods(Class<?> declaringClass) {
+	public static ExecutableTokenStream<ExecutableToken<Void, ?>> getStaticMethods(Class<?> declaringClass) {
 		Stream<Method> methodStream = Arrays.stream(declaringClass.getMethods())
 				.filter(m -> Modifier.isStatic(m.getModifiers()));
 
-		return new InvocableMemberStream<>(
+		return new ExecutableTokenStream<>(
 				methodStream.map(m -> (ExecutableToken<Void, ?>) ExecutableToken.overStaticMethod(m)));
 	}
 }

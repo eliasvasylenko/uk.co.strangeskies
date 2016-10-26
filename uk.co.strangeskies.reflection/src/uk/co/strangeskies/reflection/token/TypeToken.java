@@ -72,7 +72,6 @@ import uk.co.strangeskies.reflection.ConstraintFormula;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.reflection.Imports;
 import uk.co.strangeskies.reflection.InferenceVariable;
-import uk.co.strangeskies.reflection.InvocableMemberStream;
 import uk.co.strangeskies.reflection.Methods;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.ReflectionException;
@@ -1701,10 +1700,10 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 *         wrapped in {@link ExecutableToken} instances.
 	 */
 	@SuppressWarnings("unchecked")
-	public InvocableMemberStream<ExecutableToken<Void, T>> getConstructors() {
+	public ExecutableTokenStream<ExecutableToken<Void, T>> getConstructors() {
 		Stream<Constructor<?>> constructors = stream(getRawType().getConstructors());
 
-		return new InvocableMemberStream<>(
+		return new ExecutableTokenStream<>(
 				constructors.map(m -> ExecutableToken.overConstructor((Constructor<T>) m, this)));
 	}
 
@@ -1715,10 +1714,10 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 *         wrapped in {@link ExecutableToken} instances.
 	 */
 	@SuppressWarnings("unchecked")
-	public InvocableMemberStream<ExecutableToken<Void, T>> getDeclaredConstructors() {
+	public ExecutableTokenStream<ExecutableToken<Void, T>> getDeclaredConstructors() {
 		Stream<Constructor<?>> constructors = stream(getRawType().getDeclaredConstructors());
 
-		return new InvocableMemberStream<>(
+		return new ExecutableTokenStream<>(
 				constructors.map(m -> ExecutableToken.overConstructor((Constructor<T>) m, this)));
 	}
 
@@ -1729,7 +1728,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * @return a list of all {@link Method} objects applicable to this type,
 	 *         wrapped in {@link ExecutableToken} instances.
 	 */
-	public InvocableMemberStream<ExecutableToken<? super T, ?>> getMethods() {
+	public ExecutableTokenStream<ExecutableToken<? super T, ?>> getMethods() {
 		Stream<Method> methodStream = getRawTypes().stream().flatMap(t -> Arrays.stream(t.getMethods()));
 
 		if (getRawTypes().stream().allMatch(Types::isInterface))
@@ -1737,7 +1736,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 
 		methodStream = methodStream.filter(m -> !Modifier.isStatic(m.getModifiers()));
 
-		return new InvocableMemberStream<>(
+		return new ExecutableTokenStream<>(
 				methodStream.map(m -> (ExecutableToken<? super T, ?>) ExecutableToken.overMethod(m, this)));
 	}
 
@@ -1748,11 +1747,11 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * @return A list of all {@link Method} objects applicable to this type,
 	 *         wrapped in {@link ExecutableToken} instances.
 	 */
-	public InvocableMemberStream<ExecutableToken<? super T, ?>> getDeclaredMethods() {
+	public ExecutableTokenStream<ExecutableToken<? super T, ?>> getDeclaredMethods() {
 		Stream<Method> methodStream = stream(getRawType().getDeclaredMethods())
 				.filter(m -> !Modifier.isStatic(m.getModifiers()));
 
-		return new InvocableMemberStream<>(
+		return new ExecutableTokenStream<>(
 				methodStream.map(m -> (ExecutableToken<? super T, ?>) ExecutableToken.overMethod(m, this)));
 	}
 

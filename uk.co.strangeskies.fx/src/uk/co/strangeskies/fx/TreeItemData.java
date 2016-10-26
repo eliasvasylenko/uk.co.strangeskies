@@ -67,7 +67,7 @@ public interface TreeItemData<T> {
 	 * @return the type of the actual data of a tree node
 	 */
 	default TypeToken<?> type() {
-		return typedData().getType();
+		return typedData().getTypeToken();
 	}
 
 	/**
