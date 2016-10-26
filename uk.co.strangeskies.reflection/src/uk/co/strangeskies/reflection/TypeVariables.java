@@ -52,7 +52,6 @@ import java.util.Objects;
  */
 public class TypeVariables {
 	private static final Type[] DEFAULT_UPPER_BOUND = new Type[] { Object.class };
-	private static final Type[] EMPTY_BOUND = new Type[] {};
 
 	private TypeVariables() {}
 
@@ -69,7 +68,7 @@ public class TypeVariables {
 	 *         wildcard.
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T extends GenericDeclaration> TypeVariable<T> unbounded(T declaration, String name) {
+	public static <T extends GenericDeclaration> TypeVariable<T> unboundedTypeVariable(T declaration, String name) {
 		return new TypeVariable<T>() {
 			private final Map<Class<? extends Annotation>, Annotation> annotations = new LinkedHashMap<>();
 
@@ -147,9 +146,9 @@ public class TypeVariables {
 	 * @return An instance of {@link WildcardType} representing a wildcard with
 	 *         the given upper bound.
 	 */
-	public static <T extends GenericDeclaration> TypeVariable<T> upperBounded(T declaration, String name,
+	public static <T extends GenericDeclaration> TypeVariable<T> upperBoundedTypeVariable(T declaration, String name,
 			AnnotatedType... bounds) {
-		return upperBounded(declaration, name, Arrays.asList(bounds));
+		return upperBoundedTypeVariable(declaration, name, Arrays.asList(bounds));
 	}
 
 	/**
@@ -166,9 +165,9 @@ public class TypeVariables {
 	 * @return An instance of {@link WildcardType} representing a wildcard with
 	 *         the given upper bound.
 	 */
-	public static <T extends GenericDeclaration> TypeVariable<T> upperBounded(T declaration, String name,
+	public static <T extends GenericDeclaration> TypeVariable<T> upperBoundedTypeVariable(T declaration, String name,
 			Collection<? extends AnnotatedType> bounds) {
-		return upperBounded(declaration, name, Collections.emptySet(), bounds);
+		return upperBoundedTypeVariable(declaration, name, Collections.emptySet(), bounds);
 	}
 
 	/**
@@ -187,9 +186,9 @@ public class TypeVariables {
 	 * @return An instance of {@link WildcardType} representing a wildcard with
 	 *         the given upper bound.
 	 */
-	public static <T extends GenericDeclaration> TypeVariable<T> upperBounded(T declaration, String name,
+	public static <T extends GenericDeclaration> TypeVariable<T> upperBoundedTypeVariable(T declaration, String name,
 			Collection<Annotation> annotations, AnnotatedType... bounds) {
-		return upperBounded(declaration, name, annotations, Arrays.asList(bounds));
+		return upperBoundedTypeVariable(declaration, name, annotations, Arrays.asList(bounds));
 	}
 
 	/**
@@ -208,7 +207,7 @@ public class TypeVariables {
 	 * @return An instance of {@link WildcardType} representing a wildcard with
 	 *         the given upper bound.
 	 */
-	public static <T extends GenericDeclaration> TypeVariable<T> upperBounded(T declaration, String name,
+	public static <T extends GenericDeclaration> TypeVariable<T> upperBoundedTypeVariable(T declaration, String name,
 			Collection<Annotation> annotations, Collection<? extends AnnotatedType> bounds) {
 		AnnotatedType[] annotatedBounds = bounds.toArray(new AnnotatedType[bounds.size()]);
 

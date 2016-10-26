@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.reflection.token;
 
-import static uk.co.strangeskies.reflection.WildcardTypes.unbounded;
+import static uk.co.strangeskies.reflection.WildcardTypes.unboundedWildcard;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
@@ -90,7 +90,7 @@ public class FieldToken<O, T> implements MemberToken<O> {
 	 * @return a field member wrapping the given field
 	 */
 	public static FieldToken<?, ?> over(Field field) {
-		return over(field, TypeToken.overType(ParameterizedTypes.parameterize(field.getDeclaringClass(), a -> unbounded())));
+		return over(field, TypeToken.overType(ParameterizedTypes.parameterize(field.getDeclaringClass(), a -> unboundedWildcard())));
 	}
 
 	/**

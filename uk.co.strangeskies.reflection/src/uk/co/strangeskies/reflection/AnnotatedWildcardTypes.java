@@ -87,12 +87,12 @@ public final class AnnotatedWildcardTypes {
 				Collection<? extends AnnotatedType> lowerBounds) {
 			if (!upperBounds.isEmpty())
 				return WildcardTypes
-						.upperBounded(upperBounds.stream().map(AnnotatedType::getType).collect(Collectors.toList()));
+						.wildcardExtending(upperBounds.stream().map(AnnotatedType::getType).collect(Collectors.toList()));
 			else if (!lowerBounds.isEmpty())
 				return WildcardTypes
-						.lowerBounded(lowerBounds.stream().map(AnnotatedType::getType).collect(Collectors.toList()));
+						.wildcardSuper(lowerBounds.stream().map(AnnotatedType::getType).collect(Collectors.toList()));
 			else
-				return WildcardTypes.unbounded();
+				return WildcardTypes.unboundedWildcard();
 		}
 
 		@Override
@@ -199,7 +199,7 @@ public final class AnnotatedWildcardTypes {
 	 *         unbounded wildcard.
 	 */
 	public static AnnotatedWildcardType unbounded(Collection<Annotation> annotations) {
-		return over(WildcardTypes.unbounded(), annotations);
+		return over(WildcardTypes.unboundedWildcard(), annotations);
 	}
 
 	/**

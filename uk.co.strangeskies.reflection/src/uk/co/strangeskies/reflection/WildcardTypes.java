@@ -91,7 +91,7 @@ public class WildcardTypes {
 	 * @return An instance of {@link WildcardType} representing an unbounded
 	 *         wildcard.
 	 */
-	public static WildcardType unbounded() {
+	public static WildcardType unboundedWildcard() {
 		return UNBOUNDED;
 	}
 
@@ -103,8 +103,8 @@ public class WildcardTypes {
 	 * @return An instance of {@link WildcardType} representing a wildcard with
 	 *         the given lower bound.
 	 */
-	public static WildcardType lowerBounded(Type... bounds) {
-		return lowerBounded(Arrays.asList(bounds));
+	public static WildcardType wildcardSuper(Type... bounds) {
+		return wildcardSuper(Arrays.asList(bounds));
 	}
 
 	/**
@@ -115,8 +115,8 @@ public class WildcardTypes {
 	 * @return An instance of {@link WildcardType} representing a wildcard with
 	 *         the given lower bound.
 	 */
-	public static WildcardType lowerBounded(Collection<? extends Type> bounds) {
-		Type type = IntersectionType.from(bounds);
+	public static WildcardType wildcardSuper(Collection<? extends Type> bounds) {
+		Type type = IntersectionType.intersectionOf(bounds);
 
 		Supplier<Type[]> types;
 
@@ -198,8 +198,8 @@ public class WildcardTypes {
 	 * @return An instance of {@link WildcardType} representing a wildcard with
 	 *         the given upper bound.
 	 */
-	public static WildcardType upperBounded(Type... bounds) {
-		return upperBounded(Arrays.asList(bounds));
+	public static WildcardType wildcardExtending(Type... bounds) {
+		return wildcardExtending(Arrays.asList(bounds));
 	}
 
 	/**
@@ -210,7 +210,7 @@ public class WildcardTypes {
 	 * @return An instance of {@link WildcardType} representing a wildcard with
 	 *         the given upper bound.
 	 */
-	public static WildcardType upperBounded(Collection<? extends Type> bounds) {
+	public static WildcardType wildcardExtending(Collection<? extends Type> bounds) {
 		return new WildcardType() {
 			private Integer hashCode;
 			private Type[] types;
@@ -219,7 +219,7 @@ public class WildcardTypes {
 					types = DEFAULT_UPPER_BOUND;
 				} else {
 					types = bounds.toArray(new Type[bounds.size()]);
-					Type type = IntersectionType.from(bounds);
+					Type type = IntersectionType.intersectionOf(bounds);
 
 					if (type instanceof WildcardType) {
 						WildcardType wildcardType = ((WildcardType) type);

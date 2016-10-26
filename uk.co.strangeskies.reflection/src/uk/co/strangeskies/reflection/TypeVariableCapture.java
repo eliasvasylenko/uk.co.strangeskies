@@ -57,15 +57,13 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-import uk.co.strangeskies.utilities.IdentityProperty;
-
 /**
  * A representation of an unknown instantiation of a type variable or inference
  * variable which is known to satisfy a certain set of upper and lower bonds.
  * 
  * @author Elias N Vasylenko
  */
-public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
+public class TypeVariableCapture implements Type {
 	private final static AtomicLong COUNTER = new AtomicLong();
 
 	private final String name;
@@ -75,26 +73,21 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	private Type[] upperBounds;
 	private final Type[] lowerBounds;
 
-	private final GenericDeclaration declaration;
-
-	TypeVariableCapture(Type[] upperBounds, Type[] lowerBounds, Type source, GenericDeclaration declaration) {
+	TypeVariableCapture(Type[] upperBounds, Type[] lowerBounds, Type source) {
 		this.name = "CAP#" + COUNTER.incrementAndGet();
 
 		this.upperBounds = upperBounds.clone();
 		this.lowerBounds = lowerBounds.clone();
 
 		this.source = source;
-
-		this.declaration = declaration;
 	}
 
 	private final void validate() {
-		if (lowerBounds.length > 0 && !Types.isAssignable(IntersectionType.uncheckedFrom(lowerBounds),
-				IntersectionType.uncheckedFrom(upperBounds)))
+		if (lowerBounds.length > 0 && !Types.isAssignable(IntersectionType.uncheckedIntersectionOf(lowerBounds),
+				IntersectionType.uncheckedIntersectionOf(upperBounds)))
 			throw new ReflectionException(p -> p.invalidTypeVariableCaptureBounds(this));
 	}
 
-	@Override
 	public String getName() {
 		return name;
 	}
@@ -112,10 +105,10 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 		StringBuilder builder = new StringBuilder(getName());
 
 		if (upperBounds.length > 0 && !(upperBounds.length == 1 && upperBounds[0] == null))
-			builder.append(" extends ").append(IntersectionType.uncheckedFrom(upperBounds));
+			builder.append(" extends ").append(IntersectionType.uncheckedIntersectionOf(upperBounds));
 
 		if (lowerBounds.length > 0 && !(lowerBounds.length == 1 && lowerBounds[0] == null))
-			builder.append(" super ").append(IntersectionType.uncheckedFrom(lowerBounds));
+			builder.append(" super ").append(IntersectionType.uncheckedIntersectionOf(lowerBounds));
 
 		return builder.toString();
 	}
@@ -131,7 +124,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	 */
 	public boolean isPossibleInstantiation(Type type) {
 		return Arrays.stream(getUpperBounds()).allMatch(b -> Types.isAssignable(type, b))
-				&& Arrays.stream(getLowerBounds()).allMatch(b -> Types.isAssignable(b, type));
+				&& !Arrays.stream(getLowerBounds()).allMatch(b -> !Types.isAssignable(b, type));
 	}
 
 	/**
@@ -166,7 +159,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 			} else {
 				Type capture = substitution.resolve(captures.get(type));
 				if (capture instanceof IntersectionType)
-					capture = IntersectionType.from(capture);
+					capture = IntersectionType.intersectionOf(capture);
 				captures.put(type, capture);
 			}
 		}
@@ -222,23 +215,18 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 
 		getAllTypeArguments(type).forEach(e -> arguments.put(e.getKey(), e.getValue()));
 
-		TypeVariable<?>[] parameters = new TypeVariable<?>[arguments.size()];
-		GenericDeclaration declaration = createGenericDeclarationOver(parameters);
-
 		boolean containsWildcards = false;
 
-		int i = 0;
 		for (Map.Entry<TypeVariable<?>, Type> argument : arguments.entrySet()) {
 			Type capture;
 
 			if (argument.getValue() instanceof WildcardType) {
 				containsWildcards = true;
-				capture = captureWildcard(declaration, argument.getKey(), (WildcardType) argument.getValue(), false);
+				capture = captureWildcard(argument.getKey(), (WildcardType) argument.getValue(), false);
 			} else {
 				capture = argument.getValue();
 			}
 
-			parameters[i++] = argument.getKey();
 			argument.setValue(capture);
 		}
 
@@ -265,7 +253,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	 *         parameterized with the captures of the original arguments.
 	 */
 	public static TypeVariableCapture captureWildcard(TypeVariable<?> typeVariable, WildcardType type) {
-		return captureWildcard(createGenericDeclarationOver(typeVariable), typeVariable, type, true);
+		return captureWildcard(typeVariable, type, true);
 	}
 
 	/**
@@ -277,8 +265,6 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	 *         parameterized with the captures of the original arguments.
 	 */
 	public static TypeVariableCapture captureWildcard(WildcardType type) {
-		IdentityProperty<GenericDeclaration> genericDeclaration = new IdentityProperty<>();
-
 		TypeVariable<GenericDeclaration> typeVariable = new TypeVariable<GenericDeclaration>() {
 			@Override
 			public <T extends Annotation> T getAnnotation(Class<T> arg0) {
@@ -307,7 +293,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 
 			@Override
 			public GenericDeclaration getGenericDeclaration() {
-				return genericDeclaration.get();
+				return null;
 			}
 
 			@Override
@@ -316,13 +302,11 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 			}
 		};
 
-		genericDeclaration.set(createGenericDeclarationOver(typeVariable));
-
-		return captureWildcard(genericDeclaration.get(), typeVariable, type, true);
+		return captureWildcard(typeVariable, type, true);
 	}
 
-	private static TypeVariableCapture captureWildcard(GenericDeclaration declaration, TypeVariable<?> typeVariable,
-			WildcardType type, boolean validate) {
+	private static TypeVariableCapture captureWildcard(TypeVariable<?> typeVariable, WildcardType type,
+			boolean validate) {
 		Type upperBound;
 
 		List<Type> aggregation = new ArrayList<>(typeVariable.getBounds().length + type.getUpperBounds().length);
@@ -332,9 +316,9 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 			aggregation.add(type.getUpperBounds()[i]);
 
 		if (validate)
-			upperBound = IntersectionType.from(aggregation);
+			upperBound = IntersectionType.intersectionOf(aggregation);
 		else
-			upperBound = IntersectionType.uncheckedFrom(aggregation);
+			upperBound = IntersectionType.uncheckedIntersectionOf(aggregation);
 
 		Type[] upperBounds;
 		if (upperBound instanceof IntersectionType)
@@ -342,7 +326,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 		else
 			upperBounds = new Type[] { upperBound };
 
-		TypeVariableCapture capture = new TypeVariableCapture(upperBounds, type.getLowerBounds(), type, declaration);
+		TypeVariableCapture capture = new TypeVariableCapture(upperBounds, type.getLowerBounds(), type);
 
 		if (validate)
 			capture.validate();
@@ -364,12 +348,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 	 */
 	public static Map<InferenceVariable, Type> captureInferenceVariables(Collection<? extends InferenceVariable> types,
 			BoundSet bounds) {
-		TypeVariable<?>[] parameters = new TypeVariable<?>[types.size()];
-		GenericDeclaration declaration = createGenericDeclarationOver(parameters);
-
 		TypeSubstitution properTypeSubstitutuion = properTypeSubstitution(types, bounds);
-
-		int count = 0;
 
 		Map<InferenceVariable, Type> typeVariableCaptures = new HashMap<>();
 		for (InferenceVariable inferenceVariable : types) {
@@ -396,7 +375,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 				}
 
 				if (!equalitySet.isEmpty()) {
-					typeVariableCaptures.put(inferenceVariable, IntersectionType.from(equalitySet));
+					typeVariableCaptures.put(inferenceVariable, IntersectionType.intersectionOf(equalitySet));
 				} else {
 					/*
 					 * For all i (1 ≤ i ≤ n), if αi has one or more proper lower bounds
@@ -431,7 +410,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 					 * no need to be checked properly here, as we do this later in
 					 * #substituteBounds
 					 */
-					IntersectionType glb = IntersectionType.uncheckedFrom(upperBoundSet);
+					IntersectionType glb = IntersectionType.uncheckedIntersectionOf(upperBoundSet);
 					Type[] upperBounds = glb.getTypes();
 
 					/*
@@ -439,10 +418,7 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 					 * (that is, a lower bound is not a subtype of an upper bound, or an
 					 * intersection type is inconsistent), then resolution fails.
 					 */
-					TypeVariableCapture capture = new TypeVariableCapture(upperBounds, lowerBounds, inferenceVariable,
-							declaration);
-
-					parameters[count++] = capture;
+					TypeVariableCapture capture = new TypeVariableCapture(upperBounds, lowerBounds, inferenceVariable);
 
 					typeVariableCaptures.put(inferenceVariable, capture);
 				}
@@ -515,84 +491,5 @@ public class TypeVariableCapture implements TypeVariable<GenericDeclaration> {
 
 			return i;
 		});
-	}
-
-	static GenericDeclaration createGenericDeclarationOver(TypeVariable<?>... captures) {
-		return new GenericDeclaration() {
-			@Override
-			public Annotation[] getDeclaredAnnotations() {
-				return new Annotation[0];
-			}
-
-			@Override
-			public Annotation[] getAnnotations() {
-				return new Annotation[0];
-			}
-
-			@Override
-			public <T extends Annotation> T getAnnotation(Class<T> paramClass) {
-				return null;
-			}
-
-			@Override
-			public TypeVariable<?>[] getTypeParameters() {
-				return captures.clone();
-			}
-		};
-	}
-
-	@Override
-	public <U extends Annotation> U getAnnotation(Class<U> arg0) {
-		return null;
-	}
-
-	@Override
-	public Annotation[] getAnnotations() {
-		return new Annotation[0];
-	}
-
-	@Override
-	public Annotation[] getDeclaredAnnotations() {
-		return new Annotation[0];
-	}
-
-	@Override
-	public Type[] getBounds() {
-		return getUpperBounds();
-	}
-
-	@Override
-	public GenericDeclaration getGenericDeclaration() {
-		return declaration;
-	}
-
-	@Override
-	public AnnotatedType[] getAnnotatedBounds() {
-		AnnotatedType[] annotatedTypes = new AnnotatedType[getBounds().length];
-		for (int i = 0; i < getBounds().length; i++) {
-			Type bound = getBounds()[i];
-			annotatedTypes[i] = new AnnotatedType() {
-				@Override
-				public Annotation[] getDeclaredAnnotations() {
-					return new Annotation[0];
-				}
-
-				@Override
-				public Annotation[] getAnnotations() {
-					return new Annotation[0];
-				}
-
-				@Override
-				public <T extends Annotation> T getAnnotation(Class<T> paramClass) {
-					return null;
-				}
-
-				@Override
-				public Type getType() {
-					return bound;
-				}
-			};
-		}
-		return annotatedTypes;
 	}
 }

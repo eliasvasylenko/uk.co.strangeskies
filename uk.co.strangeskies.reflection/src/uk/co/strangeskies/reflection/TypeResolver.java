@@ -276,7 +276,7 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 		TypeSubstitution substitution = new TypeSubstitution(existingCaptures);
 		for (Map.Entry<? extends TypeVariable<?>, InferenceVariable> capture : captures) {
 			bounds.incorporate().subtype(capture.getValue(),
-					substitution.resolve(IntersectionType.uncheckedFrom(capture.getKey().getBounds())));
+					substitution.resolve(IntersectionType.uncheckedIntersectionOf(capture.getKey().getBounds())));
 		}
 
 		for (Map.Entry<? extends TypeVariable<?>, InferenceVariable> capture : captures) {
@@ -718,7 +718,7 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 */
 	public void incorporateTypeHierarchy(Class<?> subclass, Class<?> superclass) {
 		Type subtype;
-		if (ParameterizedTypes.isGeneric(subclass)) {
+		if (Types.isGeneric(subclass)) {
 			subtype = ParameterizedTypes.parameterizeUnchecked(subclass, i -> null);
 		} else {
 			subtype = subclass;

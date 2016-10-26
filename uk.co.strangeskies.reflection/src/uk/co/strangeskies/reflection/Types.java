@@ -103,6 +103,28 @@ public final class Types {
 	private Types() {}
 
 	/**
+	 * Determine whether a {@link Class} represents a generic class or an array
+	 * with a generic class as a component type.
+	 * 
+	 * @param type
+	 *          The type we wish to classify.
+	 * @return True if the given class is generic or if a non-statically enclosing
+	 *         class is generic, false otherwise.
+	 */
+	public static boolean isGeneric(Class<?> type) {
+		while (type.isArray()) {
+			type = type.getComponentType();
+		}
+
+		do {
+			if (type.getTypeParameters().length > 0)
+				return true;
+		} while (!Types.isStatic(type) && (type = type.getEnclosingClass()) != null);
+
+		return false;
+	}
+
+	/**
 	 * The raw types of the type represented by this TypeToken. In the case of
 	 * most simple TypeTokens, this will be a set with one entry, equal to the
 	 * result of {@link #getRawType(Type type)}. For more complex types, a set of
@@ -130,7 +152,13 @@ public final class Types {
 	public static Class<?> getRawType(Type type) {
 		if (type == null) {
 			return null;
-		} else if (type instanceof TypeVariable) {
+		} else if (type instanceof TypeVariableCapture) {
+			Type[] bounds = ((TypeVariableCapture) type).getUpperBounds();
+			if (bounds.length == 0)
+				return Object.class;
+			else
+				return getRawType(bounds[0]);
+		} else if (type instanceof TypeVariable<?>) {
 			Type[] bounds = ((TypeVariable<?>) type).getBounds();
 			if (bounds.length == 0)
 				return Object.class;
@@ -221,7 +249,7 @@ public final class Types {
 	 * @return True if the type is primitive, false otherwise.
 	 */
 	public static boolean isPrimitive(Type type) {
-		return WRAPPED_PRIMITIVES.keySet().contains(getRawType(type));
+		return WRAPPED_PRIMITIVES.keySet().contains(type);
 	}
 
 	/**
@@ -232,7 +260,7 @@ public final class Types {
 	 * @return True if the type is a primitive wrapper, false otherwise.
 	 */
 	public static boolean isPrimitiveWrapper(Type type) {
-		return UNWRAPPED_PRIMITIVES.keySet().contains(getRawType(type));
+		return UNWRAPPED_PRIMITIVES.keySet().contains(type);
 	}
 
 	/**
@@ -249,7 +277,7 @@ public final class Types {
 	@SuppressWarnings("unchecked")
 	public static <T extends Type> T wrapPrimitive(T type) {
 		if (isPrimitive(type))
-			return (T) WRAPPED_PRIMITIVES.get(getRawType(type));
+			return (T) WRAPPED_PRIMITIVES.get(type);
 		else
 			return type;
 	}
@@ -268,7 +296,7 @@ public final class Types {
 	@SuppressWarnings("unchecked")
 	public static <T extends Type> T unwrapPrimitive(T type) {
 		if (isPrimitiveWrapper(type))
-			return (T) UNWRAPPED_PRIMITIVES.get(getRawType(type));
+			return (T) UNWRAPPED_PRIMITIVES.get(type);
 		else
 			return type;
 	}
@@ -578,53 +606,37 @@ public final class Types {
 	}
 
 	/**
-	 * Determine if a given type, {@code to}, is assignable from another given
-	 * type, {@code from}. Or in other words, if {@code to} is a supertype of
-	 * {@code from}. Types are considered assignable if they involve unchecked
-	 * generic casts.
-	 * 
-	 * @param from
-	 *          The type from which we wish to determine assignability.
-	 * @param to
-	 *          The type to which we wish to determine assignability.
-	 * @return True if the types are assignable, false otherwise.
-	 */
-	public static boolean isAssignable(Type from, Type to) {
-		return isAssignable(from, to, new Isomorphism());
-	}
-
-	/**
 	 * Determine if the given type, {@code from}, contains the given type,
 	 * {@code to}. In other words, if either of the given types are wildcards,
 	 * determine if every possible instantiation of {@code to} is also a valid
 	 * instantiation of {@code from}. Or if neither type is a wildcard, determine
 	 * whether both types are assignable to each other as per
-	 * {@link Types#isAssignable(Type, Type)}.
+	 * {@link Types#isSubtype(Type, Type)}.
 	 * 
 	 * @param from
-	 *          The type within which we are determining containment.
+	 *          the type within which we are determining containment
 	 * @param to
-	 *          The type of which we are determining containment.
-	 * @return True if {@code from} <em>contains</em> {@code to}, false otherwise.
+	 *          the type of which we are determining containment
+	 * @return true if {@code from} <em>contains</em> {@code to}, false otherwise
 	 */
 	public static boolean isContainedBy(Type from, Type to) {
 		return isContainedBy(from, to, new Isomorphism());
 	}
 
-	private static class Assignment {
+	private static class SubtypeRelation {
 		private Type from, to;
 
-		public Assignment(Type from, Type to) {
+		public SubtypeRelation(Type from, Type to) {
 			this.from = from;
 			this.to = to;
 		}
 
 		@Override
 		public boolean equals(Object obj) {
-			if (!(obj instanceof Assignment))
+			if (!(obj instanceof SubtypeRelation))
 				return false;
 
-			Assignment that = (Assignment) obj;
+			SubtypeRelation that = (SubtypeRelation) obj;
 			return from == that.from && to == that.to;
 		}
 
@@ -639,145 +651,167 @@ public final class Types {
 		}
 	}
 
-	private static boolean isAssignable(Type from, Type[] toAll, Isomorphism isomorphism) {
-		return Arrays.stream(toAll).allMatch(t -> isAssignable(from, t, isomorphism));
+	/**
+	 * Determine if a given type, {@code supertype}, is a subtype of another given
+	 * type, {@code subtype}. Or in other words, if {@code supertype} is a
+	 * supertype of {@code subtype}. Types are considered assignable if they
+	 * involve unchecked generic casts.
+	 * 
+	 * @param subtype
+	 *          the type from which we wish to determine assignability
+	 * @param supertype
+	 *          the type to which we wish to determine assignability
+	 * @return true if the types are assignable, false otherwise
+	 */
+	public static boolean isSubtype(Type subtype, Type supertype) {
+		return isSubtype(subtype, supertype, new Isomorphism());
 	}
 
-	private static boolean isAssignable(Type[] fromAll, Type to, Isomorphism isomorphism) {
-		return fromAll.length == 0 || Arrays.stream(fromAll).anyMatch(f -> isAssignable(f, to, isomorphism));
+	private static boolean isSubtype(Type subtype, Type[] supertypes, Isomorphism isomorphism) {
+		return Arrays.stream(supertypes).allMatch(t -> isSubtype(subtype, t, isomorphism));
 	}
 
-	private static boolean isAssignable(Type from, Type to, Isomorphism isomorphism) {
-		if (from instanceof IntersectionType && ((IntersectionType) from).getTypes().length == 1)
-			from = ((IntersectionType) from).getTypes()[0];
-		if (to instanceof IntersectionType && ((IntersectionType) to).getTypes().length == 1)
-			to = ((IntersectionType) to).getTypes()[0];
+	private static boolean isSubtype(Type[] subtypes, Type supertype, Isomorphism isomorphism) {
+		return subtypes.length == 0 || Arrays.stream(subtypes).anyMatch(f -> isSubtype(f, supertype, isomorphism));
+	}
 
-		Type fromFinal = from;
-		Type toFinal = to;
-
-		return isomorphism.byEquality().getPartialMapping(new Assignment(from, to), (a, partial) -> {
+	private static boolean isSubtype(Type subtype, Type supertype, Isomorphism isomorphism) {
+		return isomorphism.byEquality().getPartialMapping(new SubtypeRelation(subtype, supertype), (a, partial) -> {
 			partial.accept(() -> true);
 
-			return isAssignableImpl(fromFinal, toFinal, isomorphism);
+			return isSubtypeImpl(a.from, a.to, isomorphism);
 		});
 	}
 
-	private static Boolean isAssignableImpl(Type from, Type to, Isomorphism isomorphism) {
+	private static Boolean isSubtypeImpl(Type subtype, Type supertype, Isomorphism isomorphism) {
 		boolean assignable;
 
-		if (from == null || to == null || to.equals(Object.class) || from == to) {
+		if (subtype == null || supertype == null || supertype.equals(Object.class) || subtype == supertype) {
 			/*
 			 * We can always assign to or from 'null', and we can always assign to
 			 * Object.
 			 */
 			assignable = true;
-		} else if (to instanceof IntersectionType) {
+		} else if (supertype instanceof IntersectionType) {
 			/*
 			 * We must be able to assign to each member of the intersection type.
 			 */
-			Type[] types = ((IntersectionType) to).getTypes();
+			Type[] types = ((IntersectionType) supertype).getTypes();
 
-			assignable = Arrays.stream(types).allMatch(t -> isAssignable(from, t, isomorphism));
-		} else if (from instanceof IntersectionType) {
+			assignable = Arrays.stream(types).allMatch(t -> isSubtype(subtype, t, isomorphism));
+		} else if (subtype instanceof IntersectionType) {
 			/*
 			 * We must be able to assign from at least one member of the intersection
 			 * type.
 			 */
-			Type[] types = ((IntersectionType) from).getTypes();
+			Type[] types = ((IntersectionType) subtype).getTypes();
 
-			assignable = isAssignable(types, to, isomorphism);
-		} else if (from instanceof WildcardType) {
+			assignable = isSubtype(types, supertype, isomorphism);
+		} else if (subtype instanceof WildcardType) {
 			/*
 			 * We must be able to assign from at least one of the upper bounds,
 			 * including the implied upper bound of Object, to the target type.
 			 */
-			Type[] upperBounds = ((WildcardType) from).getUpperBounds();
+			Type[] upperBounds = ((WildcardType) subtype).getUpperBounds();
 			if (upperBounds.length == 0)
 				upperBounds = new Type[] { Object.class };
 
-			assignable = isAssignable(upperBounds, to, isomorphism);
-		} else if (to instanceof WildcardType) {
+			assignable = isSubtype(upperBounds, supertype, isomorphism);
+		} else if (supertype instanceof WildcardType) {
 			/*
 			 * If there are no lower bounds the target may be arbitrarily specific, so
 			 * we can never assign to it. Otherwise we must be able to assign to each
 			 * lower bound.
 			 */
-			Type[] lowerBounds = ((WildcardType) to).getLowerBounds();
+			Type[] lowerBounds = ((WildcardType) supertype).getLowerBounds();
 
 			if (lowerBounds.length == 0)
 				assignable = false;
 			else
-				assignable = isAssignable(from, lowerBounds, isomorphism);
-		} else if (from instanceof TypeVariable) {
+				assignable = isSubtype(subtype, lowerBounds, isomorphism);
+		} else if (subtype instanceof TypeVariableCapture) {
 			/*
 			 * We must be able to assign from at least one of the upper bound,
 			 * including the implied upper bound of Object, to the target type.
 			 */
-			Type[] upperBounds = ((TypeVariable<?>) from).getBounds();
+			Type[] upperBounds = ((TypeVariableCapture) subtype).getUpperBounds();
 			if (upperBounds.length == 0)
 				upperBounds = new Type[] { Object.class };
 
-			assignable = isAssignable(upperBounds, to, isomorphism);
+			assignable = isSubtype(upperBounds, supertype, isomorphism);
 
-			if (!assignable && to instanceof TypeVariableCapture) {
-				assignable = Arrays.asList(((TypeVariableCapture) to).getLowerBounds()).contains(from);
+			if (!assignable && supertype instanceof TypeVariableCapture) {
+				assignable = Arrays.asList(((TypeVariableCapture) supertype).getLowerBounds()).contains(subtype);
 			}
-		} else if (to instanceof TypeVariableCapture) {
+		} else if (subtype instanceof TypeVariable) {
+			/*
+			 * We must be able to assign from at least one of the upper bound,
+			 * including the implied upper bound of Object, to the target type.
+			 */
+			Type[] upperBounds = ((TypeVariable<?>) subtype).getBounds();
+			if (upperBounds.length == 0)
+				upperBounds = new Type[] { Object.class };
+
+			assignable = isSubtype(upperBounds, supertype, isomorphism);
+
+			if (!assignable && supertype instanceof TypeVariableCapture) {
+				assignable = Arrays.asList(((TypeVariableCapture) supertype).getLowerBounds()).contains(subtype);
+			}
+		} else if (supertype instanceof TypeVariableCapture) {
 			/*
 			 * We assign to a type variable capture if we can assign to its lower
 			 * bounds, or if it is from the exact same type, or explicitly mentioned
 			 * in an upper bound or intersection type.
 			 */
-			assignable = ((TypeVariableCapture) to).getLowerBounds().length > 0
-					&& isAssignable(from, ((TypeVariableCapture) to).getLowerBounds(), isomorphism);
-		} else if (to instanceof TypeVariable) {
+			assignable = ((TypeVariableCapture) supertype).getLowerBounds().length > 0
+					&& isSubtype(subtype, ((TypeVariableCapture) supertype).getLowerBounds(), isomorphism);
+
+		} else if (supertype instanceof TypeVariable) {
 			/*
 			 * We can only assign to a type variable if it is from the exact same
 			 * type, or explicitly mentioned in an upper bound or intersection type.
 			 */
 			assignable = false;
-		} else if (from instanceof GenericArrayType) {
-			GenericArrayType fromArray = (GenericArrayType) from;
 
-			if (to instanceof Class) {
-				Class<?> toClass = (Class<?>) to;
+		} else if (subtype instanceof GenericArrayType) {
+			GenericArrayType fromArray = (GenericArrayType) subtype;
+
+			if (supertype instanceof Class) {
+				Class<?> toClass = (Class<?>) supertype;
 
 				assignable = toClass.isArray()
-						&& isAssignable(fromArray.getGenericComponentType(), toClass.getComponentType(), isomorphism);
-			} else if (to instanceof GenericArrayType) {
-				GenericArrayType toArray = (GenericArrayType) to;
+						&& isSubtype(fromArray.getGenericComponentType(), toClass.getComponentType(), isomorphism);
+			} else if (supertype instanceof GenericArrayType) {
+				GenericArrayType toArray = (GenericArrayType) supertype;
 
-				assignable = isAssignable(fromArray.getGenericComponentType(), toArray.getGenericComponentType(), isomorphism);
+				assignable = isSubtype(fromArray.getGenericComponentType(), toArray.getGenericComponentType(), isomorphism);
 			} else
 				assignable = false;
-		} else if (to instanceof GenericArrayType) {
-			GenericArrayType toArray = (GenericArrayType) to;
-			if (from instanceof Class) {
-				Class<?> fromClass = (Class<?>) from;
+		} else if (supertype instanceof GenericArrayType) {
+			GenericArrayType toArray = (GenericArrayType) supertype;
+			if (subtype instanceof Class) {
+				Class<?> fromClass = (Class<?>) subtype;
 				assignable = fromClass.isArray()
-						&& isAssignable(fromClass.getComponentType(), toArray.getGenericComponentType(), isomorphism);
+						&& isSubtype(fromClass.getComponentType(), toArray.getGenericComponentType(), isomorphism);
 			} else
 				assignable = false;
-		} else if (to instanceof Class) {
-			assignable = ((Class<?>) to).isAssignableFrom(getRawType(from));
-		} else if (to instanceof ParameterizedType) {
-			Class<?> matchedClass = getRawType(to);
+		} else if (supertype instanceof Class) {
+			assignable = ((Class<?>) supertype).isAssignableFrom(getRawType(subtype));
+		} else if (supertype instanceof ParameterizedType) {
+			Class<?> matchedClass = getRawType(supertype);
 
-			if (from instanceof Class && matchedClass.isAssignableFrom((Class<?>) from)) {
-				assignable = true;
-			} else if (!matchedClass.isAssignableFrom(getRawType(from))) {
+			if (!matchedClass.isAssignableFrom(getRawType(subtype))) {
 				assignable = false;
 			} else {
-				Type fromParameterization = ParameterizedTypes.resolveSupertypeParameters(from, matchedClass);
+				Type subtypeParameterization = ParameterizedTypes.resolveSupertypeParameters(subtype, matchedClass);
 
-				if (!(fromParameterization instanceof ParameterizedType))
+				if (!(subtypeParameterization instanceof ParameterizedType))
 					assignable = false;
 				else {
-					Iterator<Type> toTypeArguments = ParameterizedTypes.getAllTypeArguments((ParameterizedType) to)
+					Iterator<Type> toTypeArguments = ParameterizedTypes.getAllTypeArguments((ParameterizedType) supertype)
 							.map(Map.Entry::getValue).iterator();
 					Iterator<Type> fromTypeArguments = ParameterizedTypes
-							.getAllTypeArguments((ParameterizedType) fromParameterization).map(Map.Entry::getValue).iterator();
+							.getAllTypeArguments((ParameterizedType) subtypeParameterization).map(Map.Entry::getValue).iterator();
 
 					assignable = true;
 					while (toTypeArguments.hasNext()) {
@@ -785,8 +819,10 @@ public final class Types {
 							assignable = false;
 					}
 
-					assignable = assignable && isAssignable(((ParameterizedType) from).getOwnerType(),
-							((ParameterizedType) to).getOwnerType(), isomorphism);
+					if (subtype instanceof ParameterizedType) {
+						assignable = assignable && isSubtype(((ParameterizedType) subtype).getOwnerType(),
+								((ParameterizedType) supertype).getOwnerType(), isomorphism);
+					}
 				}
 			}
 		} else {
@@ -802,19 +838,35 @@ public final class Types {
 		if (to.equals(from)) {
 			contained = true;
 		} else if (to instanceof Class || to instanceof ParameterizedType || to instanceof IntersectionType) {
-			contained = isAssignable(from, to, isomorphism) && isAssignable(to, from, isomorphism);
+			contained = isSubtype(from, to, isomorphism) && isSubtype(to, from, isomorphism);
 		} else if (to instanceof WildcardType) {
 			WildcardType toWildcard = (WildcardType) to;
 
 			contained = (toWildcard.getUpperBounds().length == 0
-					|| isAssignable(from, toWildcard.getUpperBounds(), isomorphism));
+					|| isSubtype(from, toWildcard.getUpperBounds(), isomorphism));
 
 			contained = contained
-					&& (toWildcard.getLowerBounds().length == 0 || isAssignable(toWildcard.getLowerBounds(), from, isomorphism));
+					&& (toWildcard.getLowerBounds().length == 0 || isSubtype(toWildcard.getLowerBounds(), from, isomorphism));
 		} else
 			contained = false;
 
 		return contained;
+	}
+
+	/**
+	 * Determine if a given type, {@code to}, is assignable from another given
+	 * type, {@code from}. Or in other words, if {@code to} is a supertype of
+	 * {@code from}. Types are considered assignable if they involve unchecked
+	 * generic casts.
+	 * 
+	 * @param from
+	 *          the type from which we wish to determine assignability
+	 * @param to
+	 *          the type to which we wish to determine assignability
+	 * @return true if the types are assignable, false otherwise
+	 */
+	public static boolean isAssignable(Type from, Type to) {
+		return isLooseInvocationContextCompatible(from, to);
 	}
 
 	/**
@@ -863,7 +915,7 @@ public final class Types {
 			return false;
 		}
 
-		return isAssignable(from, to);
+		return isSubtype(from, to);
 	}
 
 	/**
@@ -894,12 +946,31 @@ public final class Types {
 	 *         {@code to}, false otherwise.
 	 */
 	public static boolean isLooseInvocationContextCompatible(Type from, Type to) {
-		if (isPrimitive(from) && !isPrimitive(to))
-			from = wrapPrimitive(from);
-		else if (!isPrimitive(from) && isPrimitive(to))
-			from = unwrapPrimitive(from);
+		if (from instanceof IntersectionType) {
+			return Arrays.stream(((IntersectionType) from).getTypes())
+					.anyMatch(f -> isLooseInvocationContextCompatible(f, to));
 
-		return isAssignable(from, to);
+		}
+
+		if (to instanceof IntersectionType) {
+			return Arrays.stream(((IntersectionType) to).getTypes())
+					.allMatch(t -> isLooseInvocationContextCompatible(from, t));
+
+		}
+
+		if (from instanceof Class<?> && isGeneric((Class<?>) from)) {
+			return isStrictInvocationContextCompatible(from, getRawType(to));
+		}
+
+		if (isPrimitive(from) && !isPrimitive(to)) {
+			return isStrictInvocationContextCompatible(wrapPrimitive(from), to);
+		}
+
+		if (!isPrimitive(from) && isPrimitive(to)) {
+			return isStrictInvocationContextCompatible(unwrapPrimitive(from), to);
+		}
+
+		return isStrictInvocationContextCompatible(from, to);
 	}
 
 	/**
@@ -912,7 +983,7 @@ public final class Types {
 	public static void validate(Type type) {
 		RecursiveTypeVisitor.build().visitBounds().visitEnclosedTypes().visitEnclosingTypes().visitParameters()
 				.visitSupertypes().parameterizedTypeVisitor(TypeToken::overType)
-				.intersectionTypeVisitor(i -> IntersectionType.from(i.getTypes())).create().visit(type);
+				.intersectionTypeVisitor(i -> IntersectionType.intersectionOf(i.getTypes())).create().visit(type);
 	}
 
 	/**
@@ -1006,7 +1077,7 @@ public final class Types {
 			List<Type> bestTypes = erasedCandidates.entrySet().stream()
 					.map(e -> best(e.getKey(), new ArrayList<>(e.getValue()), isomorphism)).collect(Collectors.toList());
 
-			return IntersectionType.uncheckedFrom(bestTypes);
+			return IntersectionType.uncheckedIntersectionOf(bestTypes);
 		}
 	}
 
@@ -1093,8 +1164,7 @@ public final class Types {
 			}
 		}
 
-		ParameterizedType best = ParameterizedTypes.parameterizeUnchecked(rawClass,
-				leastContainingParameterization::get);
+		ParameterizedType best = ParameterizedTypes.parameterizeUnchecked(rawClass, leastContainingParameterization::get);
 
 		return best;
 	}
@@ -1144,22 +1214,22 @@ public final class Types {
 					/*
 					 * lcta(? extends U, ? extends V) = ? extends lub(U, V)
 					 */
-					List<Type> aggregation = Arrays.asList(IntersectionType.from(wildcardU.getUpperBounds()),
-							IntersectionType.from(wildcardV.getUpperBounds()));
-					return WildcardTypes.upperBounded(leastUpperBoundImpl(aggregation, isomorphism));
+					List<Type> aggregation = Arrays.asList(IntersectionType.intersectionOf(wildcardU.getUpperBounds()),
+							IntersectionType.intersectionOf(wildcardV.getUpperBounds()));
+					return WildcardTypes.wildcardExtending(leastUpperBoundImpl(aggregation, isomorphism));
 				} else {
 					/*
 					 * lcta(? extends U, ? super V) = U if U = V, otherwise ?
 					 */
-					return argumentU.equals(argumentV) ? argumentU : WildcardTypes.unbounded();
+					return argumentU.equals(argumentV) ? argumentU : WildcardTypes.unboundedWildcard();
 				}
 			} else {
 				/*
 				 * lcta(? super U, ? super V) = ? super glb(U, V)
 				 */
-				return WildcardTypes.lowerBounded(
-						greatestLowerBound(IntersectionType.uncheckedFrom(((WildcardType) argumentU).getLowerBounds()),
-								IntersectionType.uncheckedFrom(((WildcardType) argumentV).getLowerBounds())));
+				return WildcardTypes.wildcardSuper(
+						greatestLowerBound(IntersectionType.uncheckedIntersectionOf(((WildcardType) argumentU).getLowerBounds()),
+								IntersectionType.uncheckedIntersectionOf(((WildcardType) argumentV).getLowerBounds())));
 			}
 		} else if (argumentV instanceof WildcardType) {
 			if (((WildcardType) argumentV).getUpperBounds().length > 0) {
@@ -1168,20 +1238,20 @@ public final class Types {
 				 */
 				List<Type> bounds = new ArrayList<>(Arrays.asList(((WildcardType) argumentV).getUpperBounds()));
 				bounds.add(argumentU);
-				return WildcardTypes.upperBounded(leastUpperBoundImpl(bounds, isomorphism));
+				return WildcardTypes.wildcardExtending(leastUpperBoundImpl(bounds, isomorphism));
 			} else {
 				/*
 				 * lcta(U, ? super V) = ? super glb(U, V)
 				 */
-				return WildcardTypes.lowerBounded(
-						greatestLowerBound(argumentU, IntersectionType.uncheckedFrom(((WildcardType) argumentV).getLowerBounds())));
+				return WildcardTypes.wildcardSuper(greatestLowerBound(argumentU,
+						IntersectionType.uncheckedIntersectionOf(((WildcardType) argumentV).getLowerBounds())));
 			}
 		} else {
 			/*
 			 * lcta(U, V) = U if U = V, otherwise ? extends lub(U, V)
 			 */
 			return argumentU.equals(argumentV) ? argumentU
-					: WildcardTypes.upperBounded(leastUpperBoundImpl(Arrays.asList(argumentU, argumentV), isomorphism));
+					: WildcardTypes.wildcardExtending(leastUpperBoundImpl(Arrays.asList(argumentU, argumentV), isomorphism));
 		}
 	}
 
@@ -1218,7 +1288,7 @@ public final class Types {
 	 *         satisfy each lower bound in the given set.
 	 */
 	public static Type greatestLowerBound(Collection<? extends Type> lowerBounds) {
-		return IntersectionType.from(lowerBounds);
+		return IntersectionType.intersectionOf(lowerBounds);
 	}
 
 	/**
@@ -1403,10 +1473,10 @@ public final class Types {
 					});
 
 			wildcardType = Parser.matching("\\s*\\?\\s*extends(?![_a-zA-Z0-9])\\s*")
-					.appendTransform(Parser.list(classOrArrayType, "\\s*\\&\\s*"), (s, t) -> WildcardTypes.upperBounded(t))
+					.appendTransform(Parser.list(classOrArrayType, "\\s*\\&\\s*"), (s, t) -> WildcardTypes.wildcardExtending(t))
 					.orElse(Parser.matching("\\s*\\?\\s*super(?![_a-zA-Z0-9])\\s*")
-							.appendTransform(Parser.list(classOrArrayType, "\\s*\\&\\s*"), (s, t) -> WildcardTypes.lowerBounded(t)))
-					.orElse(Parser.matching("\\s*\\?").transform(s -> WildcardTypes.unbounded()));
+							.appendTransform(Parser.list(classOrArrayType, "\\s*\\&\\s*"), (s, t) -> WildcardTypes.wildcardSuper(t)))
+					.orElse(Parser.matching("\\s*\\?").transform(s -> WildcardTypes.unboundedWildcard()));
 
 			typeParameter = classOrArrayType.orElse(wildcardType.transform(Type.class::cast));
 		}

@@ -826,14 +826,14 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				 * If T is Object, then αi <: R implies the constraint formula ‹Bi θ <:
 				 * R›
 				 */
-				ConstraintFormula.reduce(Kind.SUBTYPE, θ.resolve(IntersectionType.from(B)), R, boundSet);
+				ConstraintFormula.reduce(Kind.SUBTYPE, θ.resolve(IntersectionType.intersectionOf(B)), R, boundSet);
 			}
 
 			if (B.length == 0 || (B.length == 1 && B[0].equals(Object.class))) {
 				/*
 				 * If Bi is Object, then αi <: R implies the constraint formula ‹T <: R›
 				 */
-				ConstraintFormula.reduce(Kind.SUBTYPE, IntersectionType.from(T), R, boundSet);
+				ConstraintFormula.reduce(Kind.SUBTYPE, IntersectionType.intersectionOf(T), R, boundSet);
 			}
 		} else if (A.getLowerBounds().length > 0) {
 			/*
@@ -841,14 +841,14 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			 * 
 			 * αi <: R implies the constraint formula ‹Bi θ <: R›
 			 */
-			ConstraintFormula.reduce(Kind.SUBTYPE, θ.resolve(IntersectionType.from(B)), R, boundSet);
+			ConstraintFormula.reduce(Kind.SUBTYPE, θ.resolve(IntersectionType.intersectionOf(B)), R, boundSet);
 		} else {
 			/*
 			 * If Ai is a wildcard of the form ?:
 			 * 
 			 * αi <: R implies the constraint formula ‹Bi θ <: R›
 			 */
-			ConstraintFormula.reduce(Kind.SUBTYPE, θ.resolve(IntersectionType.from(B)), R, boundSet);
+			ConstraintFormula.reduce(Kind.SUBTYPE, θ.resolve(IntersectionType.intersectionOf(B)), R, boundSet);
 		}
 	}
 
@@ -859,7 +859,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			 * 
 			 * R <: αi implies the constraint formula ‹R <: T›
 			 */
-			ConstraintFormula.reduce(Kind.SUBTYPE, R, IntersectionType.from(A.getLowerBounds()), boundSet);
+			ConstraintFormula.reduce(Kind.SUBTYPE, R, IntersectionType.intersectionOf(A.getLowerBounds()), boundSet);
 		} else if (A.getUpperBounds().length > 0) {
 			/*
 			 * If Ai is a wildcard of the form ? extends T:

@@ -98,8 +98,8 @@ public abstract class IntersectionType implements Type {
 	 * @return An intersection type containing each of the given types, or a
 	 *         single type, if they can all be represented as such.
 	 */
-	public static Type from(Type... types) {
-		return from(Arrays.asList(types));
+	public static Type intersectionOf(Type... types) {
+		return intersectionOf(Arrays.asList(types));
 	}
 
 	/**
@@ -108,8 +108,8 @@ public abstract class IntersectionType implements Type {
 	 * @return An intersection type containing each of the given types, or a
 	 *         single type, if they can all be represented as such.
 	 */
-	public static Type from(Collection<? extends Type> types) {
-		return from(types, new BoundSet());
+	public static Type intersectionOf(Collection<? extends Type> types) {
+		return intersectionOf(types, new BoundSet());
 	}
 
 	/*
@@ -215,7 +215,7 @@ public abstract class IntersectionType implements Type {
 	 * @return An intersection type containing each of the given types, or a
 	 *         single type, if they can all be represented as such.
 	 */
-	public static Type from(Collection<? extends Type> types, BoundSet bounds) {
+	public static Type intersectionOf(Collection<? extends Type> types, BoundSet bounds) {
 		List<Type> flattenedTypes = flatten(types);
 
 		if (flattenedTypes.isEmpty())
@@ -243,18 +243,18 @@ public abstract class IntersectionType implements Type {
 			throw new ReflectionException(p -> p.invalidIntersectionType(flattenedTypes), e);
 		}
 
-		return fromImpl(flattenedTypes);
+		return intersectionOfImpl(flattenedTypes);
 	}
 
-	static IntersectionType uncheckedFrom(Type... types) {
-		return uncheckedFrom(Arrays.asList(types));
+	static IntersectionType uncheckedIntersectionOf(Type... types) {
+		return uncheckedIntersectionOf(Arrays.asList(types));
 	}
 
-	static IntersectionType uncheckedFrom(Collection<? extends Type> types) {
-		return fromImpl(types);
+	static IntersectionType uncheckedIntersectionOf(Collection<? extends Type> types) {
+		return intersectionOfImpl(types);
 	}
 
-	static IntersectionType fromImpl(Collection<? extends Type> types) {
+	static IntersectionType intersectionOfImpl(Collection<? extends Type> types) {
 		return new IntersectionType() {
 			String string;
 			final Type[] typeArray = types.toArray(new Type[types.size()]);

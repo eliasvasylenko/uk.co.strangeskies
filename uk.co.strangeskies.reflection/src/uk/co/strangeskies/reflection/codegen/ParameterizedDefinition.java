@@ -91,7 +91,7 @@ public class ParameterizedDefinition<S extends ParameterizedDefinition<S>> imple
 		 * Check consistency of type bounds
 		 */
 		for (TypeVariable<?> typeVariable : typeVariables) {
-			IntersectionType.from(typeVariable.getBounds());
+			IntersectionType.intersectionOf(typeVariable.getBounds());
 		}
 
 		this.annotations = unmodifiableMap(
@@ -106,7 +106,7 @@ public class ParameterizedDefinition<S extends ParameterizedDefinition<S>> imple
 		List<AnnotatedType> bounds = signature.getBounds().stream().map(b -> boundSubstitution.resolve(b, isomorphism))
 				.collect(Collectors.toList());
 
-		return TypeVariables.upperBounded(getThis(), signature.getTypeName(), bounds);
+		return TypeVariables.upperBoundedTypeVariable(getThis(), signature.getTypeName(), bounds);
 	}
 
 	@SuppressWarnings("unchecked")

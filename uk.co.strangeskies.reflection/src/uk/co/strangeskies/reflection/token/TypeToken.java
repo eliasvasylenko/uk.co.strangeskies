@@ -407,15 +407,15 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 		WildcardType wildcardType;
 
 		if (annotatedWildcardType.getAnnotatedLowerBounds().length > 0) {
-			wildcardType = WildcardTypes.lowerBounded(
+			wildcardType = WildcardTypes.wildcardSuper(
 					substituteAnnotatedWildcardsForEach(isomorphism, annotatedWildcardType.getAnnotatedLowerBounds(), resolver));
 
 		} else if (annotatedWildcardType.getAnnotatedUpperBounds().length > 0) {
-			wildcardType = WildcardTypes.upperBounded(
+			wildcardType = WildcardTypes.wildcardExtending(
 					substituteAnnotatedWildcardsForEach(isomorphism, annotatedWildcardType.getAnnotatedUpperBounds(), resolver));
 
 		} else {
-			wildcardType = WildcardTypes.unbounded();
+			wildcardType = WildcardTypes.unboundedWildcard();
 		}
 
 		Type type;
@@ -748,9 +748,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 		if (wildcards == Wildcards.INFER) {
 			TypeResolver resolver = getResolver();
 			return (TypeToken<? extends T>) new TypeToken<>(resolver,
-					resolver.inferOverWildcardType(WildcardTypes.upperBounded(getType())));
+					resolver.inferOverWildcardType(WildcardTypes.wildcardExtending(getType())));
 		} else {
-			return (TypeToken<? extends T>) overType(WildcardTypes.upperBounded(getType()), wildcards);
+			return (TypeToken<? extends T>) overType(WildcardTypes.wildcardExtending(getType()), wildcards);
 		}
 	}
 
@@ -787,9 +787,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	public TypeToken<? super T> getSuper(Wildcards wildcards) {
 		if (wildcards == Wildcards.INFER) {
 			TypeResolver resolver = getResolver();
-			return new TypeToken<>(resolver, resolver.inferOverWildcardType(WildcardTypes.lowerBounded(getType())));
+			return new TypeToken<>(resolver, resolver.inferOverWildcardType(WildcardTypes.wildcardSuper(getType())));
 		} else {
-			return (TypeToken<? super T>) overType(WildcardTypes.lowerBounded(getType()), wildcards);
+			return (TypeToken<? super T>) overType(WildcardTypes.wildcardSuper(getType()), wildcards);
 		}
 	}
 
@@ -1246,7 +1246,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 */
 	@SuppressWarnings("unchecked")
 	public <U> TypeToken<? extends U> resolveSupertypeParameters(Class<U> superclass) {
-		if (!ParameterizedTypes.isGeneric(superclass))
+		if (!Types.isGeneric(superclass))
 			return TypeToken.overType(superclass);
 
 		if (superclass.equals(getType())
@@ -1288,7 +1288,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedSelf<Typ
 	 */
 	@SuppressWarnings("unchecked")
 	public <U> TypeToken<? extends U> resolveSubtypeParameters(Class<U> subclass) {
-		if (!ParameterizedTypes.isGeneric(subclass))
+		if (!Types.isGeneric(subclass))
 			return TypeToken.overType(subclass);
 
 		if (subclass.equals(getType())

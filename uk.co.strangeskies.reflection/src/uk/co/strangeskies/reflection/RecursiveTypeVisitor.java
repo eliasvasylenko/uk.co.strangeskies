@@ -393,10 +393,10 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 		if (!postOrder)
 			typeVariableCaptureVisitor.accept(type);
 
-		if (bounds)
-			visit(type.getBounds());
-		if (supertypes)
+		if (bounds) {
+			visit(type.getLowerBounds());
 			visit(type.getUpperBounds());
+		}
 
 		if (postOrder)
 			typeVariableCaptureVisitor.accept(type);

@@ -35,18 +35,19 @@ package uk.co.strangeskies.reflection;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.AnnotatedTypes.over;
-import static uk.co.strangeskies.reflection.IntersectionType.uncheckedFrom;
+import static uk.co.strangeskies.reflection.IntersectionType.uncheckedIntersectionOf;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterizeUnchecked;
-import static uk.co.strangeskies.reflection.TypeVariables.upperBounded;
+import static uk.co.strangeskies.reflection.TypeVariables.upperBoundedTypeVariable;
 import static uk.co.strangeskies.reflection.Types.getRawType;
-import static uk.co.strangeskies.reflection.WildcardTypes.lowerBounded;
-import static uk.co.strangeskies.reflection.WildcardTypes.upperBounded;
+import static uk.co.strangeskies.reflection.WildcardTypes.wildcardExtending;
+import static uk.co.strangeskies.reflection.WildcardTypes.wildcardSuper;
 
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -231,6 +232,9 @@ public class TypeSubstitution {
 				} else if (type instanceof Class) {
 					return resolveType(type);
 
+				} else if (type instanceof TypeVariableCapture) {
+					return includeTypeVariables ? resolveTypeVariableCapture((TypeVariableCapture) type, changed) : type;
+
 				} else if (type instanceof TypeVariable<?>) {
 					return includeTypeVariables ? resolveTypeVariable((TypeVariable<?>) type, changed) : type;
 
@@ -265,13 +269,34 @@ public class TypeSubstitution {
 				t -> ArrayTypes.fromComponentType(resolve(t.getGenericComponentType(), changedScoped)));
 	}
 
+	private Type resolveTypeVariableCapture(TypeVariableCapture type, IdentityProperty<Boolean> changed) {
+		return isomorphism.byIdentity().getProxiedMapping(type, TypeVariable.class, i -> {
+
+			List<Type> upperBounds = Collections.emptyList();
+			if (type.getUpperBounds().length > 0) {
+				upperBounds = resolveTypes(type.getUpperBounds(), changed);
+			}
+
+			List<Type> lowerBounds = Collections.emptyList();
+			if (type.getLowerBounds().length > 0) {
+				upperBounds = resolveTypes(type.getLowerBounds(), changed);
+			}
+
+			if (changed.get()) {
+				return new TypeVariableCapture((Type[]) upperBounds.toArray(), (Type[]) lowerBounds.toArray(), type);
+			} else {
+				return type;
+			}
+		});
+	}
+
 	private Type resolveTypeVariable(TypeVariable<?> type, IdentityProperty<Boolean> changed) {
 		return isomorphism.byIdentity().getProxiedMapping(type, TypeVariable.class, i -> {
 
 			if (type.getBounds().length > 0) {
 				List<Type> bounds = resolveTypes(type.getBounds(), changed);
 				if (changed.get()) {
-					return upperBounded(type.getGenericDeclaration(), type.getName(), over(bounds));
+					return upperBoundedTypeVariable(type.getGenericDeclaration(), type.getName(), over(bounds));
 				} else {
 					return type;
 				}
@@ -287,7 +312,7 @@ public class TypeSubstitution {
 			if (type.getLowerBounds().length > 0) {
 				List<Type> bounds = resolveTypes(type.getLowerBounds(), changed);
 				if (changed.get()) {
-					return lowerBounded(bounds);
+					return wildcardSuper(bounds);
 				} else {
 					return type;
 				}
@@ -295,7 +320,7 @@ public class TypeSubstitution {
 			} else if (type.getUpperBounds().length > 0) {
 				List<Type> bounds = resolveTypes(type.getUpperBounds(), changed);
 				if (changed.get()) {
-					return upperBounded(bounds);
+					return wildcardExtending(bounds);
 				} else {
 					return type;
 				}
@@ -316,7 +341,7 @@ public class TypeSubstitution {
 
 			List<Type> types = resolveTypes(type.getTypes(), changed);
 			if (changed.get()) {
-				result = uncheckedFrom(types);
+				result = uncheckedIntersectionOf(types);
 			} else {
 				result = type;
 			}

@@ -288,23 +288,6 @@ public class ParameterizedTypes {
 	}
 
 	/**
-	 * Determine whether a {@link Class} represents a generic type.
-	 * 
-	 * @param type
-	 *          The type we wish to classify.
-	 * @return True if the given class is generic or if a non-statically enclosing
-	 *         class is generic, false otherwise.
-	 */
-	public static boolean isGeneric(Class<?> type) {
-		do {
-			if (type.getTypeParameters().length > 0)
-				return true;
-		} while (!Types.isStatic(type) && (type = type.getEnclosingClass()) != null);
-
-		return false;
-	}
-
-	/**
 	 * This method retrieves a list of all type variables present on the given raw
 	 * type, as well as all type variables on any enclosing types recursively, in
 	 * the order encountered.
@@ -524,7 +507,7 @@ public class ParameterizedTypes {
 	 * @return the supertype of the requested class
 	 */
 	public static Type resolveSupertypeParameters(Type type, Class<?> superclass) {
-		if (!isGeneric(superclass))
+		if (!Types.isGeneric(superclass))
 			return superclass;
 
 		Class<?> subclass = Types.getRawType(type);
@@ -536,6 +519,9 @@ public class ParameterizedTypes {
 			throw new IllegalArgumentException("Unexpected class '" + type.getClass() + "' of type '" + type + "'.");
 
 		do {
+			if (Types.isGeneric(subclass) && type instanceof Class<?>)
+				return superclass;
+
 			Set<Type> lesserSubtypes = new HashSet<>(Arrays.asList(subclass.getGenericInterfaces()));
 			if (subclass.getSuperclass() != null)
 				lesserSubtypes.addAll(Arrays.asList(subclass.getGenericSuperclass()));

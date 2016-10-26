@@ -189,7 +189,7 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 				if (Types.isAssignable(givenArgumentCaptured, genericParameterCaptured)) {
 					genericParameters[i] = givenArgument;
 				} else if (givenArgumentCaptured instanceof Class<?> && Types.isAssignable(givenArgumentCaptured,
-						IntersectionType.from(Types.getRawTypes(genericParameterCaptured)))) {
+						IntersectionType.intersectionOf(Types.getRawTypes(genericParameterCaptured)))) {
 					genericParameters[i] = givenArgument;
 				} else if (!Types.isAssignable(genericParameterCaptured, givenArgumentCaptured)) {
 					int finalI = i;
