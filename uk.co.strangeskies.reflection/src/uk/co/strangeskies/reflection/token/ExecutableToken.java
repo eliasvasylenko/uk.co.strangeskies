@@ -33,6 +33,7 @@
 package uk.co.strangeskies.reflection.token;
 
 import static java.util.stream.Collectors.toList;
+import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
@@ -57,7 +58,6 @@ import uk.co.strangeskies.reflection.BoundSet;
 import uk.co.strangeskies.reflection.ConstraintFormula;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.reflection.InferenceVariable;
-import uk.co.strangeskies.reflection.IntersectionType;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeResolver;
 import uk.co.strangeskies.reflection.TypeSubstitution;
@@ -189,8 +189,8 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 
 				if (Types.isAssignable(givenArgumentCaptured, genericParameterCaptured)) {
 					genericParameters[i] = givenArgument;
-				} else if (givenArgumentCaptured instanceof Class<?> && Types.isAssignable(givenArgumentCaptured,
-						IntersectionType.intersectionOf(Types.getRawTypes(genericParameterCaptured)))) {
+				} else if (givenArgumentCaptured instanceof Class<?>
+						&& Types.isAssignable(givenArgumentCaptured, intersectionOf(Types.getRawTypes(genericParameterCaptured)))) {
 					genericParameters[i] = givenArgument;
 				} else if (!Types.isAssignable(genericParameterCaptured, givenArgumentCaptured)) {
 					int finalI = i;

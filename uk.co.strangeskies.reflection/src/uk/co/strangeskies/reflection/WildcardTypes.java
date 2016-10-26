@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
+
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
@@ -116,7 +118,7 @@ public class WildcardTypes {
 	 *         the given lower bound.
 	 */
 	public static WildcardType wildcardSuper(Collection<? extends Type> bounds) {
-		Type type = IntersectionType.intersectionOf(bounds);
+		Type type = intersectionOf(bounds);
 
 		Supplier<Type[]> types;
 
@@ -219,7 +221,7 @@ public class WildcardTypes {
 					types = DEFAULT_UPPER_BOUND;
 				} else {
 					types = bounds.toArray(new Type[bounds.size()]);
-					Type type = IntersectionType.intersectionOf(bounds);
+					Type type = intersectionOf(bounds);
 
 					if (type instanceof WildcardType) {
 						WildcardType wildcardType = ((WildcardType) type);

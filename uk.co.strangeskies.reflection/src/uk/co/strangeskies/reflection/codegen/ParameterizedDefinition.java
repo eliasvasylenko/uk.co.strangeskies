@@ -35,6 +35,7 @@ package uk.co.strangeskies.reflection.codegen;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
+import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
@@ -48,7 +49,6 @@ import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.AnnotatedTypeSubstitution;
 import uk.co.strangeskies.reflection.AnnotatedTypeVariables;
-import uk.co.strangeskies.reflection.IntersectionType;
 import uk.co.strangeskies.reflection.TypeVariables;
 import uk.co.strangeskies.utilities.Isomorphism;
 
@@ -91,7 +91,7 @@ public class ParameterizedDefinition<S extends ParameterizedDefinition<S>> imple
 		 * Check consistency of type bounds
 		 */
 		for (TypeVariable<?> typeVariable : typeVariables) {
-			IntersectionType.intersectionOf(typeVariable.getBounds());
+			intersectionOf(typeVariable.getBounds());
 		}
 
 		this.annotations = unmodifiableMap(

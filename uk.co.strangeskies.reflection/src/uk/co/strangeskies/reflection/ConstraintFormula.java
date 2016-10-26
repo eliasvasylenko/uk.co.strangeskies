@@ -32,6 +32,7 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.getAllTypeArguments;
 
 import java.lang.reflect.GenericArrayType;
@@ -339,7 +340,7 @@ public class ConstraintFormula {
 				 */
 				Type from = this.from;
 				if (from instanceof InferenceVariable)
-					from = IntersectionType.intersectionOf(bounds.getBoundsOn((InferenceVariable) from).getUpperBounds());
+					from = intersectionOf(bounds.getBoundsOn((InferenceVariable) from).getUpperBounds());
 				if (!Types.isAssignable(from, to))
 					incorporate.falsehood("Class types do not form subtype relation: " + this);
 			} else if (!(to instanceof IntersectionType) && Types.getRawType(to).isArray()) {
@@ -389,7 +390,7 @@ public class ConstraintFormula {
 					 * - Otherwise, if T has a lower bound, B, the constraint reduces to
 					 * ‹S <: B›.
 					 */
-					reduce(Kind.SUBTYPE, from, IntersectionType.intersectionOf(((TypeVariableCapture) to).getLowerBounds()), bounds);
+					reduce(Kind.SUBTYPE, from, intersectionOf(((TypeVariableCapture) to).getLowerBounds()), bounds);
 				} else {
 					/*
 					 * - Otherwise, the constraint reduces to false.
@@ -415,7 +416,7 @@ public class ConstraintFormula {
 		}
 
 		if (from instanceof WildcardType) {
-			from = IntersectionType.intersectionOf(((WildcardType) from).getUpperBounds());
+			from = intersectionOf(((WildcardType) from).getUpperBounds());
 		}
 
 		if (from instanceof IntersectionType) {
@@ -466,7 +467,7 @@ public class ConstraintFormula {
 					/*
 					 * If T is a wildcard of the form ? extends T':
 					 */
-					Type intersectionT = IntersectionType.intersectionOf(toWildcard.getUpperBounds());
+					Type intersectionT = intersectionOf(toWildcard.getUpperBounds());
 
 					if (!(from instanceof WildcardType)) {
 						/*
@@ -488,7 +489,7 @@ public class ConstraintFormula {
 								 * If S is a wildcard of the form ? extends S', the constraint
 								 * reduces to ‹S' <: T'›.
 								 */
-								reduce(Kind.SUBTYPE, IntersectionType.intersectionOf(from.getUpperBounds()), intersectionT, bounds);
+								reduce(Kind.SUBTYPE, intersectionOf(from.getUpperBounds()), intersectionT, bounds);
 							}
 						} else {
 							/*
@@ -503,7 +504,7 @@ public class ConstraintFormula {
 				/*
 				 * If T is a wildcard of the form ? super T':
 				 */
-				Type intersectionT = IntersectionType.intersectionOf(toWildcard.getLowerBounds());
+				Type intersectionT = intersectionOf(toWildcard.getLowerBounds());
 
 				if (!(from instanceof WildcardType)) {
 					/*
@@ -518,7 +519,7 @@ public class ConstraintFormula {
 						 * If S is a wildcard of the form ? super S', the constraint reduces
 						 * to ‹T' <: S'›.
 						 */
-						reduce(Kind.SUBTYPE, intersectionT, IntersectionType.intersectionOf(from.getLowerBounds()), bounds);
+						reduce(Kind.SUBTYPE, intersectionT, intersectionOf(from.getLowerBounds()), bounds);
 					} else {
 						/*
 						 * Otherwise, the constraint reduces to false.
@@ -557,7 +558,7 @@ public class ConstraintFormula {
 							 * If S has the form ? and T has the form ? extends T', the
 							 * constraint reduces to ‹Object = T'›.
 							 */
-							reduce(Kind.EQUALITY, Object.class, IntersectionType.intersectionOf(to.getUpperBounds()), bounds);
+							reduce(Kind.EQUALITY, Object.class, intersectionOf(to.getUpperBounds()), bounds);
 						}
 					}
 				} else if (to.getLowerBounds().length == 0) {
@@ -566,14 +567,13 @@ public class ConstraintFormula {
 						 * If S has the form ? extends S' and T has the form ?, the
 						 * constraint reduces to ‹S' = Object›.
 						 */
-						reduce(Kind.EQUALITY, IntersectionType.intersectionOf(from.getUpperBounds()), Object.class, bounds);
+						reduce(Kind.EQUALITY, intersectionOf(from.getUpperBounds()), Object.class, bounds);
 					} else {
 						/*
 						 * If S has the form ? extends S' and T has the form ? extends T',
 						 * the constraint reduces to ‹S' = T'›.
 						 */
-						reduce(Kind.EQUALITY, IntersectionType.intersectionOf(from.getUpperBounds()),
-								IntersectionType.intersectionOf(to.getUpperBounds()), bounds);
+						reduce(Kind.EQUALITY, intersectionOf(from.getUpperBounds()), intersectionOf(to.getUpperBounds()), bounds);
 					}
 				}
 			} else if (to.getLowerBounds().length > 0) {
@@ -581,8 +581,7 @@ public class ConstraintFormula {
 				 * If S has the form ? super S' and T has the form ? super T', the
 				 * constraint reduces to ‹S' = T'›.
 				 */
-				reduce(Kind.EQUALITY, IntersectionType.intersectionOf(from.getLowerBounds()), IntersectionType.intersectionOf(to.getLowerBounds()),
-						bounds);
+				reduce(Kind.EQUALITY, intersectionOf(from.getLowerBounds()), intersectionOf(to.getLowerBounds()), bounds);
 			} else {
 				/*
 				 * Otherwise, the constraint reduces to false.

@@ -33,6 +33,7 @@
 package uk.co.strangeskies.reflection.codegen;
 
 import static java.util.Arrays.asList;
+import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
 
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.InvocationTargetException;
@@ -52,7 +53,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
-import uk.co.strangeskies.reflection.IntersectionType;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.Reified;
 import uk.co.strangeskies.reflection.Types;
@@ -212,8 +212,7 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 				.unmodifiableList(signature.getSuperTypes().stream().map(this::substituteTypeVariableSignatures)
 						.map(TypeToken::overAnnotatedType).map(t -> (TypeToken<? super T>) t).collect(Collectors.toList()));
 
-		Type superType = IntersectionType
-				.intersectionOf(superTypes.stream().map(TypeToken::getType).collect(Collectors.toList()));
+		Type superType = intersectionOf(superTypes.stream().map(TypeToken::getType).collect(Collectors.toList()));
 		this.superType = (TypeToken<T>) TypeToken.overType(superType);
 		Class<?> superClass = Types.getRawType(superType);
 		if (superClass.isInterface()) {

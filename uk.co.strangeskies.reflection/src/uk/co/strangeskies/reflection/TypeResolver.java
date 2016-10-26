@@ -34,6 +34,7 @@ package uk.co.strangeskies.reflection;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static uk.co.strangeskies.reflection.IntersectionTypes.uncheckedIntersectionOf;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.GenericArrayType;
@@ -276,7 +277,7 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 		TypeSubstitution substitution = new TypeSubstitution(existingCaptures);
 		for (Map.Entry<? extends TypeVariable<?>, InferenceVariable> capture : captures) {
 			bounds.incorporate().subtype(capture.getValue(),
-					substitution.resolve(IntersectionType.uncheckedIntersectionOf(capture.getKey().getBounds())));
+					substitution.resolve(uncheckedIntersectionOf(capture.getKey().getBounds())));
 		}
 
 		for (Map.Entry<? extends TypeVariable<?>, InferenceVariable> capture : captures) {

@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
+import static uk.co.strangeskies.reflection.IntersectionTypes.uncheckedIntersectionOf;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.getAllTypeArguments;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterizeUnchecked;
 import static uk.co.strangeskies.reflection.Types.getRawType;
@@ -83,8 +85,8 @@ public class TypeVariableCapture implements Type {
 	}
 
 	private final void validate() {
-		if (lowerBounds.length > 0 && !Types.isAssignable(IntersectionType.uncheckedIntersectionOf(lowerBounds),
-				IntersectionType.uncheckedIntersectionOf(upperBounds)))
+		if (lowerBounds.length > 0
+				&& !Types.isAssignable(uncheckedIntersectionOf(lowerBounds), uncheckedIntersectionOf(upperBounds)))
 			throw new ReflectionException(p -> p.invalidTypeVariableCaptureBounds(this));
 	}
 
@@ -105,10 +107,10 @@ public class TypeVariableCapture implements Type {
 		StringBuilder builder = new StringBuilder(getName());
 
 		if (upperBounds.length > 0 && !(upperBounds.length == 1 && upperBounds[0] == null))
-			builder.append(" extends ").append(IntersectionType.uncheckedIntersectionOf(upperBounds));
+			builder.append(" extends ").append(uncheckedIntersectionOf(upperBounds));
 
 		if (lowerBounds.length > 0 && !(lowerBounds.length == 1 && lowerBounds[0] == null))
-			builder.append(" super ").append(IntersectionType.uncheckedIntersectionOf(lowerBounds));
+			builder.append(" super ").append(uncheckedIntersectionOf(lowerBounds));
 
 		return builder.toString();
 	}
@@ -159,7 +161,7 @@ public class TypeVariableCapture implements Type {
 			} else {
 				Type capture = substitution.resolve(captures.get(type));
 				if (capture instanceof IntersectionType)
-					capture = IntersectionType.intersectionOf(capture);
+					capture = intersectionOf(capture);
 				captures.put(type, capture);
 			}
 		}
@@ -316,9 +318,9 @@ public class TypeVariableCapture implements Type {
 			aggregation.add(type.getUpperBounds()[i]);
 
 		if (validate)
-			upperBound = IntersectionType.intersectionOf(aggregation);
+			upperBound = intersectionOf(aggregation);
 		else
-			upperBound = IntersectionType.uncheckedIntersectionOf(aggregation);
+			upperBound = uncheckedIntersectionOf(aggregation);
 
 		Type[] upperBounds;
 		if (upperBound instanceof IntersectionType)
@@ -375,7 +377,7 @@ public class TypeVariableCapture implements Type {
 				}
 
 				if (!equalitySet.isEmpty()) {
-					typeVariableCaptures.put(inferenceVariable, IntersectionType.intersectionOf(equalitySet));
+					typeVariableCaptures.put(inferenceVariable, intersectionOf(equalitySet));
 				} else {
 					/*
 					 * For all i (1 ≤ i ≤ n), if αi has one or more proper lower bounds
@@ -410,7 +412,7 @@ public class TypeVariableCapture implements Type {
 					 * no need to be checked properly here, as we do this later in
 					 * #substituteBounds
 					 */
-					IntersectionType glb = IntersectionType.uncheckedIntersectionOf(upperBoundSet);
+					IntersectionType glb = uncheckedIntersectionOf(upperBoundSet);
 					Type[] upperBounds = glb.getTypes();
 
 					/*

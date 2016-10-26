@@ -33,6 +33,8 @@
 package uk.co.strangeskies.reflection;
 
 import static java.util.stream.Collectors.toList;
+import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
+import static uk.co.strangeskies.reflection.IntersectionTypes.uncheckedIntersectionOf;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
@@ -671,7 +673,11 @@ public final class Types {
 	}
 
 	private static boolean isSubtype(Type[] subtypes, Type supertype, Isomorphism isomorphism) {
-		return subtypes.length == 0 || Arrays.stream(subtypes).anyMatch(f -> isSubtype(f, supertype, isomorphism));
+		if (subtypes.length == 0) {
+			return isSubtype(Object.class, supertype, isomorphism);
+		} else {
+			return Arrays.stream(subtypes).anyMatch(f -> isSubtype(f, supertype, isomorphism));
+		}
 	}
 
 	private static boolean isSubtype(Type subtype, Type supertype, Isomorphism isomorphism) {
@@ -712,8 +718,6 @@ public final class Types {
 			 * including the implied upper bound of Object, to the target type.
 			 */
 			Type[] upperBounds = ((WildcardType) subtype).getUpperBounds();
-			if (upperBounds.length == 0)
-				upperBounds = new Type[] { Object.class };
 
 			assignable = isSubtype(upperBounds, supertype, isomorphism);
 		} else if (supertype instanceof WildcardType) {
@@ -734,8 +738,6 @@ public final class Types {
 			 * including the implied upper bound of Object, to the target type.
 			 */
 			Type[] upperBounds = ((TypeVariableCapture) subtype).getUpperBounds();
-			if (upperBounds.length == 0)
-				upperBounds = new Type[] { Object.class };
 
 			assignable = isSubtype(upperBounds, supertype, isomorphism);
 
@@ -748,8 +750,6 @@ public final class Types {
 			 * including the implied upper bound of Object, to the target type.
 			 */
 			Type[] upperBounds = ((TypeVariable<?>) subtype).getBounds();
-			if (upperBounds.length == 0)
-				upperBounds = new Type[] { Object.class };
 
 			assignable = isSubtype(upperBounds, supertype, isomorphism);
 
@@ -982,7 +982,7 @@ public final class Types {
 	public static void validate(Type type) {
 		RecursiveTypeVisitor.build().visitBounds().visitEnclosedTypes().visitEnclosingTypes().visitParameters()
 				.visitSupertypes().parameterizedTypeVisitor(ParameterizedTypes::validate)
-				.intersectionTypeVisitor(i -> IntersectionType.intersectionOf(i.getTypes())).create().visit(type);
+				.intersectionTypeVisitor(i -> intersectionOf(i.getTypes())).create().visit(type);
 	}
 
 	/**
@@ -1076,7 +1076,7 @@ public final class Types {
 			List<Type> bestTypes = erasedCandidates.entrySet().stream()
 					.map(e -> best(e.getKey(), new ArrayList<>(e.getValue()), isomorphism)).collect(Collectors.toList());
 
-			return IntersectionType.uncheckedIntersectionOf(bestTypes);
+			return uncheckedIntersectionOf(bestTypes);
 		}
 	}
 
@@ -1213,8 +1213,8 @@ public final class Types {
 					/*
 					 * lcta(? extends U, ? extends V) = ? extends lub(U, V)
 					 */
-					List<Type> aggregation = Arrays.asList(IntersectionType.intersectionOf(wildcardU.getUpperBounds()),
-							IntersectionType.intersectionOf(wildcardV.getUpperBounds()));
+					List<Type> aggregation = Arrays.asList(intersectionOf(wildcardU.getUpperBounds()),
+							intersectionOf(wildcardV.getUpperBounds()));
 					return WildcardTypes.wildcardExtending(leastUpperBoundImpl(aggregation, isomorphism));
 				} else {
 					/*
@@ -1226,9 +1226,9 @@ public final class Types {
 				/*
 				 * lcta(? super U, ? super V) = ? super glb(U, V)
 				 */
-				return WildcardTypes.wildcardSuper(
-						greatestLowerBound(IntersectionType.uncheckedIntersectionOf(((WildcardType) argumentU).getLowerBounds()),
-								IntersectionType.uncheckedIntersectionOf(((WildcardType) argumentV).getLowerBounds())));
+				return WildcardTypes
+						.wildcardSuper(greatestLowerBound(uncheckedIntersectionOf(((WildcardType) argumentU).getLowerBounds()),
+								uncheckedIntersectionOf(((WildcardType) argumentV).getLowerBounds())));
 			}
 		} else if (argumentV instanceof WildcardType) {
 			if (((WildcardType) argumentV).getUpperBounds().length > 0) {
@@ -1242,8 +1242,8 @@ public final class Types {
 				/*
 				 * lcta(U, ? super V) = ? super glb(U, V)
 				 */
-				return WildcardTypes.wildcardSuper(greatestLowerBound(argumentU,
-						IntersectionType.uncheckedIntersectionOf(((WildcardType) argumentV).getLowerBounds())));
+				return WildcardTypes.wildcardSuper(
+						greatestLowerBound(argumentU, uncheckedIntersectionOf(((WildcardType) argumentV).getLowerBounds())));
 			}
 		} else {
 			/*
@@ -1287,7 +1287,7 @@ public final class Types {
 	 *         satisfy each lower bound in the given set.
 	 */
 	public static Type greatestLowerBound(Collection<? extends Type> lowerBounds) {
-		return IntersectionType.intersectionOf(lowerBounds);
+		return intersectionOf(lowerBounds);
 	}
 
 	/**
@@ -1334,7 +1334,7 @@ public final class Types {
 	 * @param type
 	 *          the type for which we wish to determine a string representation
 	 * @param isomorphism
-	 *          an type to string isomorphic mapping to deal with recursion
+	 *          a type to string isomorphic mapping to deal with recursion
 	 * @return A canonical string representation of the given type.
 	 */
 	public static String toString(Type type, Imports imports, Isomorphism isomorphism) {
@@ -1364,7 +1364,7 @@ public final class Types {
 
 			return builder.toString();
 		} else if (type instanceof IntersectionType) {
-			return ((IntersectionType) type).toString(imports);
+			return IntersectionTypes.toString((IntersectionType) type, imports, isomorphism);
 		} else
 			return type.getTypeName();
 	}

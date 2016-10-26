@@ -35,7 +35,7 @@ package uk.co.strangeskies.reflection;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.AnnotatedTypes.over;
-import static uk.co.strangeskies.reflection.IntersectionType.uncheckedIntersectionOf;
+import static uk.co.strangeskies.reflection.IntersectionTypes.uncheckedIntersectionOf;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterizeUnchecked;
 import static uk.co.strangeskies.reflection.TypeVariables.upperBoundedTypeVariable;
 import static uk.co.strangeskies.reflection.Types.getRawType;
@@ -334,7 +334,7 @@ public class TypeSubstitution {
 		return isomorphism.byIdentity().getPartialMapping(type, (i, partial) -> {
 
 			IdentityProperty<IntersectionType> property = new IdentityProperty<>();
-			Type proxy = IntersectionType.proxy(property::get);
+			Type proxy = IntersectionTypes.proxy(property::get);
 			partial.accept(() -> proxy);
 
 			IntersectionType result;
