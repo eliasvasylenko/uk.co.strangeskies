@@ -32,8 +32,8 @@
  */
 package uk.co.strangeskies.reflection;
 
-import uk.co.strangeskies.reflection.token.TypeToken;
-import uk.co.strangeskies.reflection.token.TypedObject;
+import java.lang.reflect.Type;
+
 import uk.co.strangeskies.utilities.Self;
 
 /**
@@ -54,12 +54,5 @@ public interface Reified {
 	 *         be determined, and may not reflect the most specific possible
 	 *         class.
 	 */
-	TypeToken<?> getThisType();
-
-	/**
-	 * @return this object as a {@link TypedObject}
-	 */
-	default TypedObject<?> asTypedObject() {
-		return TypedObject.castUnsafe(this, getThisType());
-	}
+	Type getThisType();
 }

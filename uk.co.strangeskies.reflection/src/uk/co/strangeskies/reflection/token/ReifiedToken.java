@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.reflection.token;
 
+import java.lang.reflect.Type;
+
 import uk.co.strangeskies.reflection.Reified;
 import uk.co.strangeskies.utilities.Self;
 
@@ -46,15 +48,21 @@ import uk.co.strangeskies.utilities.Self;
  * @param <S>
  *          The type of the instance
  */
-public interface ReifiedSelf<S extends ReifiedSelf<S>> extends Reified, Self<S> {
+public interface ReifiedToken<S extends ReifiedToken<S>> extends Reified, Self<S> {
+	/**
+	 * @return a {@link TypeToken} over the value of {@link #getThisType()}
+	 */
+	TypeToken<S> getThisTypeToken();
+
 	@Override
-	TypeToken<S> getThisType();
+	default Type getThisType() {
+		return getThisTypeToken().getType();
+	}
 
 	/**
 	 * @return this object as a {@link TypedObject}
 	 */
-	@Override
 	default TypedObject<S> asTypedObject() {
-		return getThisType().typedObject(getThis());
+		return getThisTypeToken().typedObject(getThis());
 	}
 }

@@ -46,7 +46,7 @@ public class Expressions {
 
 	public static <T> ValueExpression<? extends TypeToken<T>> typeTokenExpression(TypeToken<T> type) {
 		ClassDefinition<? extends TypeToken<T>> typeTokenClass = declareClass(
-				"TypeTokenExpression$" + TYPE_TOKEN_EXPRESSION_COUNT.incrementAndGet()).withSuperType(type.getThisType())
+				"TypeTokenExpression$" + TYPE_TOKEN_EXPRESSION_COUNT.incrementAndGet()).withSuperType(type.getThisTypeToken())
 						.define();
 
 		return invokeStatic(typeTokenClass.declareConstructor().define().asToken());

@@ -57,7 +57,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.ParameterizedTypes.ParameterizedTypeImpl;
-import uk.co.strangeskies.reflection.token.TypeToken;
 import uk.co.strangeskies.text.parsing.Parser;
 import uk.co.strangeskies.utilities.Isomorphism;
 import uk.co.strangeskies.utilities.collection.MultiHashMap;
@@ -982,7 +981,7 @@ public final class Types {
 	 */
 	public static void validate(Type type) {
 		RecursiveTypeVisitor.build().visitBounds().visitEnclosedTypes().visitEnclosingTypes().visitParameters()
-				.visitSupertypes().parameterizedTypeVisitor(TypeToken::overType)
+				.visitSupertypes().parameterizedTypeVisitor(ParameterizedTypes::validate)
 				.intersectionTypeVisitor(i -> IntersectionType.intersectionOf(i.getTypes())).create().visit(type);
 	}
 

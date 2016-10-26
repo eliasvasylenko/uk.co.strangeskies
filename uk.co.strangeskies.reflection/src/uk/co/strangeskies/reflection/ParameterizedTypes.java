@@ -100,10 +100,6 @@ public class ParameterizedTypes {
 			this(getOwner(type.getOwnerType()), (Class<?>) type.getRawType(), getArguments(type.getActualTypeArguments()));
 		}
 
-		public void validate() {
-			// TODO validation of ParameterizedTypeImpl parameters
-		}
-
 		private static Type getOwner(Type ownerType) {
 			return ownerType instanceof ParameterizedType ? new ParameterizedTypeImpl((ParameterizedType) ownerType)
 					: ownerType;
@@ -378,17 +374,17 @@ public class ParameterizedTypes {
 
 	public static <T> ParameterizedType parameterizeUnchecked(Class<T> rawType,
 			Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
-		return (ParameterizedType) uncheckedFromImpl(rawType, typeArguments);
+		return (ParameterizedType) parameterizeUncheckedImpl(rawType, typeArguments);
 	}
 
-	private static <T> Type uncheckedFromImpl(Class<T> rawType,
+	private static <T> Type parameterizeUncheckedImpl(Class<T> rawType,
 			Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
 		Class<?> enclosing = rawType.getEnclosingClass();
 		Type ownerType;
 		if (enclosing == null || Types.isStatic(rawType))
 			ownerType = enclosing;
 		else
-			ownerType = uncheckedFromImpl(enclosing, typeArguments);
+			ownerType = parameterizeUncheckedImpl(enclosing, typeArguments);
 
 		if ((ownerType == null || ownerType instanceof Class) && rawType.getTypeParameters().length == 0)
 			return rawType;
@@ -425,9 +421,7 @@ public class ParameterizedTypes {
 	 */
 	public static ParameterizedType parameterize(Class<?> rawType,
 			Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
-		ParameterizedTypeImpl type = (ParameterizedTypeImpl) uncheckedFromImpl(rawType, typeArguments);
-		type.validate();
-		return type;
+		return validate(parameterizeUnchecked(rawType, typeArguments));
 	}
 
 	/**
@@ -465,8 +459,11 @@ public class ParameterizedTypes {
 	 *         parameterized with the given type arguments, in order
 	 */
 	public static ParameterizedType parameterize(Class<?> rawType, List<Type> typeArguments) {
-		ParameterizedTypeImpl type = (ParameterizedTypeImpl) parameterizeUnchecked(rawType, typeArguments);
-		type.validate();
+		return validate(parameterizeUnchecked(rawType, typeArguments));
+	}
+
+	public static ParameterizedType validate(ParameterizedType type) {
+		// TODO validation of ParameterizedTypeImpl parameters
 		return type;
 	}
 

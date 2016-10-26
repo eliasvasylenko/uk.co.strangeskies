@@ -10,7 +10,7 @@ Bundle-Description:\
 	method/constructor overload resolution and invocation type \
 	inference.
 
-Export-Package: uk.co.strangeskies.reflection
 
 -includeresource:\
 	res
+Export-Package: uk.co.strangeskies.reflection

@@ -47,7 +47,7 @@ import uk.co.strangeskies.reflection.ReflectionException;
  * @param <T>
  *          The type of the object instance to track.
  */
-public class TypedObject<T> implements ReifiedSelf<TypedObject<T>> {
+public class TypedObject<T> implements ReifiedToken<TypedObject<T>> {
 	private final TypeToken<T> type;
 	private final T object;
 
@@ -188,7 +188,7 @@ public class TypedObject<T> implements ReifiedSelf<TypedObject<T>> {
 	}
 
 	@Override
-	public TypeToken<TypedObject<T>> getThisType() {
+	public TypeToken<TypedObject<T>> getThisTypeToken() {
 		return new TypeToken<TypedObject<T>>() {}.withTypeArgument(new TypeParameter<T>(), type);
 	}
 
