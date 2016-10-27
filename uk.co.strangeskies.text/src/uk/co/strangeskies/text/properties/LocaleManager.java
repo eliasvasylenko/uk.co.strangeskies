@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 ${copyright.holder.name} <eliasvasylenko@strangeskies.co.uk>
+ * Copyright (C) 2016 Elias N Vasylenko <eliasvasylenko@strangeskies.co.uk>
  *      __   _______  ____           _       __     _      __       __
  *    ,`_ `,|__   __||  _ `.        / \     |  \   | |  ,-`__`¬  ,-`__`¬
  *   ( (_`-'   | |   | | ) |       / . \    | . \  | | / .`  `' / .`  `'
@@ -39,7 +39,7 @@ import uk.co.strangeskies.utilities.ObservableProperty;
 import uk.co.strangeskies.utilities.ObservablePropertyImpl;
 
 /**
- * Management interface over and associate {@link PropertyLoader localiser
+ * Management interface over and associate {@link PropertyLoader localizer
  * instance}, allowing the locale of that instance to be changed.
  * <p>
  * A locale manager is observable over changes to its locale.

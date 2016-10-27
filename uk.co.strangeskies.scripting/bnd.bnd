@@ -6,11 +6,11 @@
 	frege, \
 	groovy, \
 	groovy-jsr223, \
-	org.python__jython, \
-	org.luaj__luaj-jse, \
-	org.jruby__jruby-core, \
+	org.python:jython, \
+	org.luaj:luaj-jse, \
+	org.jruby:jruby-core, \
 	frege, \
-	org.clojure__clojure
+	org.clojure:clojure
 #	org.ow2.asm:asm-util; \
 #		version = ${asm-util.version}; \
 #		strategy = exact, \

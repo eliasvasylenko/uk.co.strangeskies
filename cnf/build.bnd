@@ -36,22 +36,22 @@ Bundle-Version: ${strangeskies-version}.${tstamp}
 
 ## To enable baselining, uncomment the following lines:
 # -baseline: *
--buildrepo: Local
+-buildrepo: Build
 -releaserepo: StrangeSkies
 -pom: true,\
 		version = ${versionmask;===;${@version}}-SNAPSHOT
 
--plugin.Managed: \
+-plugin.Local: \
 \
         aQute.bnd.deployer.repository.LocalIndexedRepo; \
-            name                =       Managed ; \
+            name                =       Local ; \
             pretty              =       true ; \
             local               =       ${build}/local
 
--plugin.Local: \
+-plugin.Build: \
 \
 		aQute.bnd.repository.maven.provider.MavenBndRepository; \
-			name				=		Local; \
+			name				=		Build; \
 			index				=		${.}/local.maven
 
 -plugin.Release: \
@@ -60,13 +60,6 @@ Bundle-Version: ${strangeskies-version}.${tstamp}
 			name				=		StrangeSkies; \
 			index				=		${.}/strangeskies.maven; \
 			releaseUrl			=		http://oss.jfrog.org/libs-snapshot/
-
--plugin.Clojars:\
-\
-		aQute.bnd.repository.maven.provider.MavenBndRepository; \
-			name				=		Clojars; \
-			index				=		${.}/clojars.maven; \
-			releaseUrl			=		http://clojars.org/repo/
 
 ## If you use git, you might want to uncomment the following lines:
 Git-Descriptor: ${system-allow-fail;git describe --dirty --always}
@@ -85,8 +78,8 @@ runreq.base=\
 -testpath.base=\
 	osgi.enroute.junit.wrapper,\
 	osgi.enroute.hamcrest.wrapper,\
-	org.hamcrest__java-hamcrest
+	org.hamcrest:java-hamcrest
 
 ## Fix warnings
 -fixupmessages.res: "Bndtools: Found source folder 'res' that is not on bnd's source path 'src'"
--fixupmessages.sub: "Eclipse: The Bundle Symbolic ${p} is a sub-bundle core.bnd but uses the project name"
+-fixupmessages.sub: "Eclipse: The Bundle Symbolic * is a sub-bundle *.bnd but uses the project name"
