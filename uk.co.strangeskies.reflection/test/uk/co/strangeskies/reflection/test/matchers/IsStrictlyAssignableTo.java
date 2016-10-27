@@ -40,24 +40,25 @@ import org.hamcrest.Matcher;
 
 import uk.co.strangeskies.reflection.Types;
 
-public class IsSubtypeOf extends BaseMatcher<Type> {
+public class IsStrictlyAssignableTo extends BaseMatcher<Type> {
 	private final Type assignmentTarget;
 
-	private IsSubtypeOf(Type assignmentTarget) {
+	private IsStrictlyAssignableTo(Type assignmentTarget) {
 		this.assignmentTarget = assignmentTarget;
 	}
 
-	public static Matcher<Type> isSubtypeOf(Type target) {
-		return new IsSubtypeOf(target);
+	public static Matcher<Type> isStrictlyAssignableTo(Type target) {
+		return new IsStrictlyAssignableTo(target);
 	}
 
 	@Override
 	public boolean matches(Object item) {
-		return (item == null || item instanceof Type) && Types.isSubtype((Type) item, assignmentTarget);
+		return (item == null || item instanceof Type)
+				&& Types.isStrictInvocationContextCompatible((Type) item, assignmentTarget);
 	}
 
 	@Override
 	public void describeTo(Description description) {
-		description.appendText(" subtype of " + Types.toString(assignmentTarget));
+		description.appendText(" strictly assignable to " + Types.toString(assignmentTarget));
 	}
 }

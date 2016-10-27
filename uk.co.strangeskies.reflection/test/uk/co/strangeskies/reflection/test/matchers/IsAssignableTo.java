@@ -53,10 +53,7 @@ public class IsAssignableTo extends BaseMatcher<Type> {
 
 	@Override
 	public boolean matches(Object item) {
-		if (!(item instanceof Type))
-			return false;
-
-		return Types.isAssignable((Type) item, assignmentTarget);
+		return (item == null || item instanceof Type) && Types.isAssignable((Type) item, assignmentTarget);
 	}
 
 	@Override

@@ -106,7 +106,7 @@ public class ParameterizedDefinition<S extends ParameterizedDefinition<S>> imple
 		List<AnnotatedType> bounds = signature.getBounds().stream().map(b -> boundSubstitution.resolve(b, isomorphism))
 				.collect(Collectors.toList());
 
-		return TypeVariables.upperBoundedTypeVariable(getThis(), signature.getTypeName(), bounds);
+		return TypeVariables.typeVariableExtending(getThis(), signature.getTypeName(), bounds);
 	}
 
 	@SuppressWarnings("unchecked")

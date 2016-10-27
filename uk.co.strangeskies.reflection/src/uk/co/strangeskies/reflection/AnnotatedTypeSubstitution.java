@@ -249,7 +249,7 @@ public class AnnotatedTypeSubstitution {
 					TypeVariable<?> typeVariable = (TypeVariable<?>) type.getType();
 
 					return AnnotatedTypeVariables.over(
-							TypeVariables.upperBoundedTypeVariable(typeVariable.getGenericDeclaration(), typeVariable.getName(), bounds),
+							TypeVariables.typeVariableExtending(typeVariable.getGenericDeclaration(), typeVariable.getName(), bounds),
 							type.getAnnotations());
 				} else {
 					return type;

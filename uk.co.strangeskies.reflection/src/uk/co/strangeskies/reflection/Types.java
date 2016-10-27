@@ -53,6 +53,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -817,11 +818,6 @@ public final class Types {
 						if (!isContainedBy(fromTypeArguments.next(), toTypeArguments.next(), isomorphism))
 							assignable = false;
 					}
-
-					if (subtype instanceof ParameterizedType) {
-						assignable = assignable && isSubtype(((ParameterizedType) subtype).getOwnerType(),
-								((ParameterizedType) supertype).getOwnerType(), isomorphism);
-					}
 				}
 			}
 		} else {
@@ -1338,7 +1334,9 @@ public final class Types {
 	 * @return A canonical string representation of the given type.
 	 */
 	public static String toString(Type type, Imports imports, Isomorphism isomorphism) {
-		if (type instanceof Class) {
+		if (type == null) {
+			return Objects.toString(null);
+		} else if (type instanceof Class) {
 			if (((Class<?>) type).isArray())
 				return new StringBuilder(toString(((Class<?>) type).getComponentType(), imports)).append("[]").toString();
 			else

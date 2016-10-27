@@ -37,7 +37,7 @@ import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.AnnotatedTypes.over;
 import static uk.co.strangeskies.reflection.IntersectionTypes.uncheckedIntersectionOf;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterizeUnchecked;
-import static uk.co.strangeskies.reflection.TypeVariables.upperBoundedTypeVariable;
+import static uk.co.strangeskies.reflection.TypeVariables.typeVariableExtending;
 import static uk.co.strangeskies.reflection.Types.getRawType;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardExtending;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardSuper;
@@ -296,7 +296,7 @@ public class TypeSubstitution {
 			if (type.getBounds().length > 0) {
 				List<Type> bounds = resolveTypes(type.getBounds(), changed);
 				if (changed.get()) {
-					return upperBoundedTypeVariable(type.getGenericDeclaration(), type.getName(), over(bounds));
+					return typeVariableExtending(type.getGenericDeclaration(), type.getName(), over(bounds));
 				} else {
 					return type;
 				}
