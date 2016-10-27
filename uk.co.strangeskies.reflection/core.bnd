@@ -13,4 +13,6 @@ Bundle-Description:\
 
 -includeresource:\
 	res
-Export-Package: uk.co.strangeskies.reflection
+Export-Package: \
+	uk.co.strangeskies.reflection,\
+	uk.co.strangeskies.reflection.token

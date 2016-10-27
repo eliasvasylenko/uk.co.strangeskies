@@ -30,23 +30,5 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection;
-
-import java.lang.reflect.Type;
-
-import org.osgi.annotation.versioning.ProviderType;
-
-/**
- * An intersection type, as described in the Java 8 language specification.
- * Roughly, such a type generally behaves as a class which extends each of its
- * component types, but is otherwise an empty definition.
- * 
- * @author Elias N Vasylenko
- */
-@ProviderType
-public interface IntersectionType extends Type {
-	/**
-	 * @return Each type which is a member of this intersection.
-	 */
-	Type[] getTypes();
-}
+@org.osgi.annotation.versioning.Version("1.0.0")
+package uk.co.strangeskies.reflection.token;
