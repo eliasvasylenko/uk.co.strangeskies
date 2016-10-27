@@ -84,6 +84,18 @@ public class AssignmentTest {
 	}
 
 	@Test
+	public void classToUnknownAssignment() {
+		assertThat(Object.class, not(isAssignableTo(new Type() {})));
+		assertThat(String.class, not(isAssignableTo(new Type() {})));
+	}
+
+	@Test
+	public void unknownToClassAssignment() {
+		assertThat(new Type() {}, isAssignableTo(Object.class));
+		assertThat(new Type() {}, not(isAssignableTo(String.class)));
+	}
+
+	@Test
 	public void classToNullAssignment() {
 		assertThat(Object.class, isAssignableTo(null));
 		assertThat(String.class, isAssignableTo(null));
@@ -119,18 +131,6 @@ public class AssignmentTest {
 	@Test
 	public void classWithRawSupertypeToRawAssignment() {
 		assertThat(RawComparable.class, isAssignableTo(Comparable.class));
-	}
-
-	@Test
-	public void rawToParameterizedContainment() {
-		assertThat(parameterize(Set.class, Set.class),
-				not(isAssignableTo(parameterize(Set.class, parameterize(Set.class, String.class)))));
-	}
-
-	@Test
-	public void parameterizedToRawContainment() {
-		assertThat(parameterize(Set.class, parameterize(Set.class, String.class)),
-				not(isAssignableTo(parameterize(Set.class, Set.class))));
 	}
 
 	@Test
@@ -469,5 +469,29 @@ public class AssignmentTest {
 		assertThat(parameterize(EnclosingGenericType.EnclosedGenericType.class, String.class, Integer.class),
 				not(isAssignableTo(parameterize(EnclosingGenericType.EnclosedGenericType.class, Double.class,
 						wildcardExtending(Number.class)))));
+	}
+
+	@Test
+	public void rawToParameterizedContainment() {
+		assertThat(parameterize(Set.class, Set.class),
+				not(isAssignableTo(parameterize(Set.class, parameterize(Set.class, String.class)))));
+	}
+
+	@Test
+	public void parameterizedToRawContainment() {
+		assertThat(parameterize(Set.class, parameterize(Set.class, String.class)),
+				not(isAssignableTo(parameterize(Set.class, Set.class))));
+	}
+
+	@Test
+	public void parameterizedToParameterizedContainment() {
+		assertThat(parameterize(Set.class, parameterize(Set.class, Number.class)),
+				isAssignableTo(parameterize(Set.class, parameterize(Set.class, Number.class))));
+
+		assertThat(parameterize(Set.class, parameterize(Set.class, Number.class)),
+				not(isAssignableTo(parameterize(Set.class, wildcardExtending(parameterize(Set.class, Object.class))))));
+
+		assertThat(parameterize(Set.class, parameterize(Set.class, Number.class)), isAssignableTo(
+				parameterize(Set.class, wildcardExtending(parameterize(Set.class, wildcardSuper(Integer.class))))));
 	}
 }

@@ -185,8 +185,9 @@ public final class Types {
 				return Object.class;
 			else
 				return getRawType(((IntersectionType) type).getTypes()[0]);
+		} else {
+			return Object.class;
 		}
-		throw new ReflectionException(p -> p.unsupportedType(type));
 	}
 
 	/**
@@ -776,7 +777,7 @@ public final class Types {
 		} else if (subtype instanceof GenericArrayType) {
 			GenericArrayType fromArray = (GenericArrayType) subtype;
 
-			if (supertype instanceof Class) {
+			if (supertype instanceof Class<?>) {
 				Class<?> toClass = (Class<?>) supertype;
 
 				assignable = toClass.isArray()
@@ -789,13 +790,13 @@ public final class Types {
 				assignable = false;
 		} else if (supertype instanceof GenericArrayType) {
 			GenericArrayType toArray = (GenericArrayType) supertype;
-			if (subtype instanceof Class) {
+			if (subtype instanceof Class<?>) {
 				Class<?> fromClass = (Class<?>) subtype;
 				assignable = fromClass.isArray()
 						&& isSubtype(fromClass.getComponentType(), toArray.getGenericComponentType(), isomorphism);
 			} else
 				assignable = false;
-		} else if (supertype instanceof Class) {
+		} else if (supertype instanceof Class<?>) {
 			assignable = ((Class<?>) supertype).isAssignableFrom(getRawType(subtype));
 		} else if (supertype instanceof ParameterizedType) {
 			Class<?> matchedClass = getRawType(supertype);
@@ -832,8 +833,6 @@ public final class Types {
 
 		if (to.equals(from)) {
 			contained = true;
-		} else if (to instanceof Class || to instanceof ParameterizedType || to instanceof IntersectionType) {
-			contained = isSubtype(from, to, isomorphism) && isSubtype(to, from, isomorphism);
 		} else if (to instanceof WildcardType) {
 			WildcardType toWildcard = (WildcardType) to;
 
@@ -842,8 +841,9 @@ public final class Types {
 
 			contained = contained
 					&& (toWildcard.getLowerBounds().length == 0 || isSubtype(toWildcard.getLowerBounds(), from, isomorphism));
-		} else
-			contained = false;
+		} else {
+			contained = isSubtype(from, to, isomorphism) && isSubtype(to, from, isomorphism);
+		}
 
 		return contained;
 	}
