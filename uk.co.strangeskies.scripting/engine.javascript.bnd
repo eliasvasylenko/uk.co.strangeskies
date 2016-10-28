@@ -1,31 +1,4 @@
 language: JavaScript
 
--DONOTincluderesource: \
-	@${java.home}/lib/ext/nashorn.jar!/**,\
-	@${java.home}/lib/rt.jar!/jdk/**,\
-	@${java.home}/lib/rt.jar!/com/**,\
-	@${java.home}/lib/rt.jar!/sun/**,\
-	@${java.home}/lib/rt.jar!/org/**,\
-	@${java.home}/lib/rt.jar!/javax/accessibility/**,\
-	@${java.home}/lib/rt.jar!/javax/activation/**,\
-	@${java.home}/lib/rt.jar!/javax/annotation/**,\
-	@${java.home}/lib/rt.jar!/javax/imageio/**,\
-	@${java.home}/lib/rt.jar!/javax/jws/**,\
-	@${java.home}/lib/rt.jar!/javax/lang/model/**,\
-	@${java.home}/lib/rt.jar!/javax/management/**,\
-	@${java.home}/lib/rt.jar!/javax/naming/**,\
-	@${java.home}/lib/rt.jar!/javax/net/**,\
-	@${java.home}/lib/rt.jar!/javax/print/**,\
-	@${java.home}/lib/rt.jar!/javax/security/**,\
-	@${java.home}/lib/rt.jar!/javax/rmi/**,\
-	@${java.home}/lib/rt.jar!/javax/smartcardio/**,\
-	@${java.home}/lib/rt.jar!/javax/sound/**,\
-	@${java.home}/lib/rt.jar!/javax/sql/**,\
-	@${java.home}/lib/rt.jar!/javax/swing/**,\
-	@${java.home}/lib/rt.jar!/javax/tools/**,\
-	@${java.home}/lib/rt.jar!/javax/transaction/**,\
-	@${java.home}/lib/rt.jar!/javax/xml/**,\
-	@${java.home}/lib/jce.jar!/**,\
-	@${java.home}/lib/charsets.jar!/sun/nio/cs/ext/**,\
-	@${java.home}/lib/jsse.jar!/sun/security/ssl/**,\
-	@${java.home}/lib/jsse.jar!/com/sun/net/ssl/internal/ssl**
+Import-Package: jdk.nashorn.api.scripting
+Private-Package: 

@@ -1,6 +1,3 @@
 language: Ruby
-#Private-Package: \
-#	jruby.**,\
-#	org.jruby.**
-#-includeresource:\
-#	@jruby-core-${jruby.version}.jar!/META-INF/services/*
+-includeresource:\
+	@${repo;org.jruby:jruby-core}

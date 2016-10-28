@@ -1,25 +1,6 @@
 -sub: \
 	*.bnd
 -runee: JavaSE-1.8
--buildpath: \
-	org.clojars.xafero:clojure-jsr223, \
-	frege, \
-	groovy, \
-	groovy-jsr223, \
-	org.python:jython, \
-	org.luaj:luaj-jse, \
-	org.jruby:jruby-core, \
-	frege, \
-	org.clojure:clojure;version=latest
-#	org.ow2.asm:asm-util; \
-#		version = ${asm-util.version}; \
-#		strategy = exact, \
-#	com.bedatadriven.renjin:renjin-core; \
-#		version = ${renjin-core.version}, \
-#	xerces:xercesImpl; \
-#		version = ${xerces.version}, \
-#	org.apache.httpcomponents:httpclient; \
-#		version = ${apache-httpclient.version}
 
 Bundle-Name: Strange Skies :: Scripting :: ${language}
 Bundle-Description: \

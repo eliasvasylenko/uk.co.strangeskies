@@ -1,11 +1,4 @@
 language: Groovy
-Private-Package:\
-	groovy.**, \
-	groovyjarjarantlr, \
-	groovyjarjarasm.asm, \
-	groovyjarjarcommonscli, \
-	org.codehaus.groovy, \
-	org.codehaus.groovy.jsr223
 -includeresource:\
-	@${exporters;groovy.lang}.jar!/META-INF/**, \
-	@${exporters;org.codehaus.groovy.jsr223}.jar!/META-INF/**
+	@${repo;groovy},\
+	@${repo;groovy-jsr223}

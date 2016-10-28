@@ -1,7 +1,4 @@
 language: Lua
-
-Private-Package: \
-	org.luaj.**
-
+Private-Package: .
 -includeresource: \
-	@${exporters;org.luaj}.jar!/META-INF/services/*
+	@${repo;org.luaj:luaj-jse}
