@@ -12,11 +12,3 @@ Private-Package:  \
 Provide-Capability:
 Require-Capability: \
 	osgi.extender; filter:="(osgi.extender=osgi.serviceloader.processor)"
-
--includeresource: \
-	@${java.home}/lib/rt.jar!/javax/script/**
-
-Export-Package: \
-	javax.script
-
-Import-Package:

@@ -1,0 +1,3 @@
+language: Scala
+-includeresource:\
+	@${repo;org.scala-lang.scala-compiler;latest}

@@ -57,7 +57,7 @@ import org.osgi.service.component.annotations.ReferencePolicy;
  * @author Elias N Vasylenko
  *
  */
-@Component(service = ScriptEngineManager.class)
+@Component(service = ScriptEngineManager.class, immediate = true)
 public class ScriptEngineManagerImpl extends ScriptEngineManager {
 	private final Set<ScriptEngineFactory> scriptEngineFactories;
 
@@ -97,8 +97,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager {
 
 	@Override
 	public ScriptEngine getEngineByExtension(String extension) {
-		ScriptEngineFactory assiciatedFactory = extensionAssociations
-				.get(extension);
+		ScriptEngineFactory assiciatedFactory = extensionAssociations.get(extension);
 		if (assiciatedFactory != null) {
 			ScriptEngine engine = getEngine(assiciatedFactory);
 			if (engine != null)
@@ -162,8 +161,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager {
 	}
 
 	@Override
-	public void registerEngineExtension(String extension,
-			ScriptEngineFactory factory) {
+	public void registerEngineExtension(String extension, ScriptEngineFactory factory) {
 		extensionAssociations.put(extension, factory);
 	}
 
