@@ -494,4 +494,51 @@ public class AssignmentTest {
 		assertThat(parameterize(Set.class, parameterize(Set.class, Number.class)), isAssignableTo(
 				parameterize(Set.class, wildcardExtending(parameterize(Set.class, wildcardSuper(Integer.class))))));
 	}
+
+	@Test
+	public void classToSingularIntersectionContainment() {
+		assertThat(parameterize(Set.class, String.class), isAssignableTo(parameterize(Set.class, new IntersectionType() {
+			@Override
+			public Type[] getTypes() {
+				return new Type[] { String.class };
+			}
+		})));
+	}
+
+	@Test
+	public void singularIntersectionToClassContainment() {
+		assertThat(parameterize(Set.class, new IntersectionType() {
+			@Override
+			public Type[] getTypes() {
+				return new Type[] { String.class };
+			}
+		}), isAssignableTo(parameterize(Set.class, String.class)));
+	}
+
+	@Test
+	public void wildcardToWildcardContainment() {
+		assertThat(parameterize(Set.class, wildcardExtending(Integer.class)),
+				isAssignableTo(parameterize(Set.class, wildcardExtending(Number.class))));
+		assertThat(parameterize(Set.class, wildcardExtending(Number.class)),
+				not(isAssignableTo(parameterize(Set.class, wildcardExtending(Integer.class)))));
+		assertThat(parameterize(Set.class, wildcardExtending(Number.class)),
+				not(isAssignableTo(parameterize(Set.class, wildcardSuper(Integer.class)))));
+
+		assertThat(parameterize(Set.class, wildcardSuper(Integer.class)),
+				not(isAssignableTo(parameterize(Set.class, wildcardExtending(Number.class)))));
+		assertThat(parameterize(Set.class, wildcardSuper(Number.class)),
+				not(isAssignableTo(parameterize(Set.class, wildcardExtending(Integer.class)))));
+		assertThat(parameterize(Set.class, wildcardSuper(Number.class)),
+				isAssignableTo(parameterize(Set.class, wildcardSuper(Integer.class))));
+
+		assertThat(parameterize(Set.class, unboundedWildcard()),
+				not(isAssignableTo(parameterize(Set.class, wildcardExtending(Number.class)))));
+		assertThat(parameterize(Set.class, unboundedWildcard()),
+				not(isAssignableTo(parameterize(Set.class, wildcardSuper(Number.class)))));
+
+		assertThat(parameterize(Set.class, wildcardExtending(Number.class)),
+				isAssignableTo(parameterize(Set.class, unboundedWildcard())));
+		assertThat(parameterize(Set.class, wildcardSuper(Number.class)),
+				isAssignableTo(parameterize(Set.class, unboundedWildcard())));
+	}
 }

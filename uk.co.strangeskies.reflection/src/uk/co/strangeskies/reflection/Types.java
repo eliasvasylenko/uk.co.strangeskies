@@ -836,8 +836,7 @@ public final class Types {
 		} else if (to instanceof WildcardType) {
 			WildcardType toWildcard = (WildcardType) to;
 
-			contained = (toWildcard.getUpperBounds().length == 0
-					|| isSubtype(from, toWildcard.getUpperBounds(), isomorphism));
+			contained = isSubtype(from, toWildcard.getUpperBounds(), isomorphism);
 
 			contained = contained
 					&& (toWildcard.getLowerBounds().length == 0 || isSubtype(toWildcard.getLowerBounds(), from, isomorphism));

@@ -10,7 +10,7 @@
 	org.luaj:luaj-jse, \
 	org.jruby:jruby-core, \
 	frege, \
-	org.clojure:clojure
+	org.clojure:clojure;version=latest
 #	org.ow2.asm:asm-util; \
 #		version = ${asm-util.version}; \
 #		strategy = exact, \
