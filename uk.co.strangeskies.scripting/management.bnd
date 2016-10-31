@@ -11,6 +11,9 @@ Private-Package:\
 Export-Package:\
 	uk.co.strangeskies.scripting
 
-Provide-Capability:
 Require-Capability: \
-	osgi.extender; filter:="(osgi.extender=osgi.serviceloader.processor)"
+		osgi.extender;\
+			filter:="(osgi.extender=osgi.serviceloader.processor)",\
+		osgi.serviceloader;\
+			filter:="(osgi.serviceloader=javax.script.ScriptEngineFactory)";\
+			cardinality:=multiple

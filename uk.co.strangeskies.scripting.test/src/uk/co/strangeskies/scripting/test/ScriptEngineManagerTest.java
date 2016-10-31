@@ -35,18 +35,26 @@ package uk.co.strangeskies.scripting.test;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 
+import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import org.junit.Test;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.wiring.BundleWiring;
 import org.osgi.util.tracker.ServiceTracker;
 
 import aQute.bnd.annotation.headers.RequireCapability;
-import uk.co.strangeskies.scripting.RequireScriptEngine;
+import uk.co.strangeskies.scripting.RequireFrege;
+import uk.co.strangeskies.scripting.RequireKotlin;
+import uk.co.strangeskies.scripting.RequirePython;
+import uk.co.strangeskies.scripting.RequireRuby;
 
-@RequireScriptEngine(language = "python")
+@RequirePython
+@RequireFrege
+@RequireRuby
+@RequireKotlin
 @RequireCapability(ns = "osgi.service", filter = "(" + Constants.OBJECTCLASS + "=javax.script.ScriptEngineManager)")
 public class ScriptEngineManagerTest {
 	private static final int SERVICE_TIMEOUT_MILLISECONDS = 1000;
@@ -91,6 +99,23 @@ public class ScriptEngineManagerTest {
 	public void loadPythonEngineTest() {
 		ScriptEngineManager manager = getService(ScriptEngineManager.class);
 
+		ScriptEngine engine;
+		try {
+			engine = (ScriptEngine) FrameworkUtil.getBundle(org.python.Version.class).getBundleContext().getBundle()
+					.adapt(BundleWiring.class).getClassLoader().loadClass("PyScriptEngineFactory").newInstance();
+
+			System.out.println(engine);
+		} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+
 		assertThat(manager.getEngineByName("python"), notNullValue());
+	}
+
+	@Test(timeout = TEST_TIMEOUT_MILLISECONDS)
+	public void loadRubyEngineTest() {
+		ScriptEngineManager manager = getService(ScriptEngineManager.class);
+
+		assertThat(manager.getEngineByName("ruby"), notNullValue());
 	}
 }

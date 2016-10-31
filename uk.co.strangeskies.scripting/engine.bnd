@@ -4,9 +4,9 @@ Bundle-Description:\
 
 Provide-Capability:\
 		osgi.serviceloader;\
-			osgi.serviceloader = javax.script.ScriptEngineFactory,\
+			osgi.serviceloader=javax.script.ScriptEngineFactory,\
 		javax.script.engine;\
-			language = ${tolower;${language}}
+			javax.script.language:String=${tolower;${language}}
 Require-Capability:\
 		osgi.extender;\
 			filter:="(osgi.extender=osgi.serviceloader.registrar)"

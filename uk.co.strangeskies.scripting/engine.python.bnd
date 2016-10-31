@@ -1,6 +1,15 @@
 -include: engine.bnd
 language: Python
-Private-Package: .
 -includeresource:\
-	@${repo;org.python:jython}
+	@${repo;org.python:jython-standalone}
 
+Bundle-ClassPath:\
+	/Lib,\
+	/Lib/*
+
+Private-Package:\
+	.
+
+DynamicImport-Package: *
+
+Export-Package: org.python, org.python.jsr223
