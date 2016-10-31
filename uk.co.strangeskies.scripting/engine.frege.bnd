@@ -1,3 +1,4 @@
+-include: engine.bnd
 language: Frege
 -includeresource:\
 	META-INF/services/javax.script.ScriptEngineFactory=res/frege/javax.script.ScriptEngineFactory,\

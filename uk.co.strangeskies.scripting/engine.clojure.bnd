@@ -1,3 +1,4 @@
+-include: engine.bnd
 language: Clojure
 -includeresource:\
 	@${repo;org.clojars.xafero:clojure-jsr223},\

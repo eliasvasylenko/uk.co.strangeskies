@@ -44,7 +44,9 @@ import org.osgi.framework.FrameworkUtil;
 import org.osgi.util.tracker.ServiceTracker;
 
 import aQute.bnd.annotation.headers.RequireCapability;
+import uk.co.strangeskies.scripting.RequireScriptEngine;
 
+@RequireScriptEngine(language = "python")
 @RequireCapability(ns = "osgi.service", filter = "(" + Constants.OBJECTCLASS + "=javax.script.ScriptEngineManager)")
 public class ScriptEngineManagerTest {
 	private static final int SERVICE_TIMEOUT_MILLISECONDS = 1000;
@@ -76,5 +78,19 @@ public class ScriptEngineManagerTest {
 		ScriptEngineManager manager = getService(ScriptEngineManager.class);
 
 		assertThat(manager, notNullValue());
+	}
+
+	@Test(timeout = TEST_TIMEOUT_MILLISECONDS)
+	public void loadLuaEngineTest() {
+		ScriptEngineManager manager = getService(ScriptEngineManager.class);
+
+		assertThat(manager.getEngineByName("lua"), notNullValue());
+	}
+
+	@Test(timeout = TEST_TIMEOUT_MILLISECONDS)
+	public void loadPythonEngineTest() {
+		ScriptEngineManager manager = getService(ScriptEngineManager.class);
+
+		assertThat(manager.getEngineByName("python"), notNullValue());
 	}
 }

@@ -5,7 +5,10 @@ Bundle-Description: \
 	Test provider for the uk.co.strangeskies.scripting project
 
 Private-Package: uk.co.strangeskies.scripting.test
-	
+
+-buildpath:\
+	uk.co.strangeskies.scripting
+
 -runrequires:\
 	osgi.identity;filter:='(osgi.identity=uk.co.strangeskies.scripting.test)'
 

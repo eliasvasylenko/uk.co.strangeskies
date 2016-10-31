@@ -1,0 +1,12 @@
+Bundle-Name: Strange Skies :: Scripting :: ${language}
+Bundle-Description:\
+	${language} provider for the uk.co.strangeskies.scripting project
+
+Provide-Capability:\
+		osgi.serviceloader;\
+			osgi.serviceloader = javax.script.ScriptEngineFactory,\
+		javax.script.engine;\
+			language = ${tolower;${language}}
+Require-Capability:\
+		osgi.extender;\
+			filter:="(osgi.extender=osgi.serviceloader.registrar)"
