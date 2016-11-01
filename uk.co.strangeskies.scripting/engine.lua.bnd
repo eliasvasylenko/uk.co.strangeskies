@@ -1,5 +1,0 @@
--include: engine.bnd
-language: Lua
-Private-Package: .
--includeresource: \
-	@${repo;org.luaj:luaj-jse}

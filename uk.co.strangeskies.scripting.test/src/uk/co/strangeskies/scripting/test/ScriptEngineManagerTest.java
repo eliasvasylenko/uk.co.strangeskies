@@ -36,12 +36,10 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 
-import java.io.File;
 import java.net.URISyntaxException;
 
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
-import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
@@ -51,19 +49,20 @@ import org.junit.Test;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.FrameworkUtil;
-import org.osgi.framework.wiring.BundleWiring;
 import org.osgi.util.tracker.ServiceTracker;
 
 import aQute.bnd.annotation.headers.RequireCapability;
-import uk.co.strangeskies.scripting.RequireFrege;
+import uk.co.strangeskies.scripting.RequireKotlin;
+import uk.co.strangeskies.scripting.RequireLua;
+import uk.co.strangeskies.scripting.RequirePython;
 import uk.co.strangeskies.scripting.RequireRuby;
-import uk.co.strangeskies.scripting.engine.kotlin.RequireKotlin;
-import uk.co.strangeskies.scripting.engine.python.RequirePython;
+import uk.co.strangeskies.scripting.RequireScala;
 
 @RequirePython
-@RequireFrege
 @RequireRuby
+@RequireLua
 @RequireKotlin
+@RequireScala
 @RequireCapability(ns = "osgi.service", filter = "(" + Constants.OBJECTCLASS + "=javax.script.ScriptEngineManager)")
 public class ScriptEngineManagerTest {
 	private static final int SERVICE_TIMEOUT_MILLISECONDS = 1000;
@@ -98,6 +97,25 @@ public class ScriptEngineManagerTest {
 	}
 
 	@Test(timeout = TEST_TIMEOUT_MILLISECONDS)
+	public void loadScalaEngineTest() {
+		ScriptEngineManager manager = getService(ScriptEngineManager.class);
+
+		assertThat(manager.getEngineByName("scala"), notNullValue());
+	}
+
+	@Test(timeout = TEST_TIMEOUT_MILLISECONDS)
+	public void executeScalaScriptTest() throws ScriptException {
+		ScriptEngineManager manager = getService(ScriptEngineManager.class);
+		ScriptEngine engine = manager.getEngineByName("scala");
+
+		engine.eval("a = 1");
+		engine.eval("b = 2");
+		engine.eval("c = a + b");
+
+		assertThat(engine.get("c"), equalTo(3));
+	}
+
+	@Test(timeout = TEST_TIMEOUT_MILLISECONDS)
 	public void loadLuaEngineTest() {
 		ScriptEngineManager manager = getService(ScriptEngineManager.class);
 
@@ -105,11 +123,19 @@ public class ScriptEngineManagerTest {
 	}
 
 	@Test(timeout = TEST_TIMEOUT_MILLISECONDS)
+	public void executeLuaScriptTest() throws ScriptException {
+		ScriptEngineManager manager = getService(ScriptEngineManager.class);
+		ScriptEngine engine = manager.getEngineByName("lua");
+
+		engine.eval("a = 1");
+		engine.eval("b = 2");
+		engine.eval("c = a + b");
+
+		assertThat(engine.get("c"), equalTo(3));
+	}
+
+	@Test(timeout = TEST_TIMEOUT_MILLISECONDS)
 	public void loadKotlinEngineTest() throws URISyntaxException {
-		String kotlinJar = new File(RequireKotlin.class.getProtectionDomain().getCodeSource().getLocation().toURI())
-				.toString();
-		System.setProperty("kotlin.compiler.jar", kotlinJar);
-		System.setProperty("kotlin.java.runtime.jar", kotlinJar);
 		ScriptEngineManager manager = getService(ScriptEngineManager.class);
 
 		assertThat(manager.getEngineByName("kotlin"), notNullValue());
@@ -117,12 +143,7 @@ public class ScriptEngineManagerTest {
 
 	@Test(timeout = TEST_TIMEOUT_MILLISECONDS)
 	public void executeKotlinScriptTest() throws URISyntaxException, ScriptException {
-		String kotlinJar = new File(RequireKotlin.class.getProtectionDomain().getCodeSource().getLocation().toURI())
-				.toString();
-		System.setProperty("kotlin.compiler.jar", kotlinJar);
-		System.setProperty("kotlin.java.runtime.jar", kotlinJar);
 		ScriptEngineManager manager = getService(ScriptEngineManager.class);
-
 		ScriptEngine engine = manager.getEngineByName("kotlin");
 
 		engine.eval("val a = 1");
@@ -135,20 +156,18 @@ public class ScriptEngineManagerTest {
 	public void loadPythonEngineTest() {
 		ScriptEngineManager manager = getService(ScriptEngineManager.class);
 
-		ScriptEngineFactory engineFactory;
-		try {
-			System.out.println(RequireKotlin.class.getName());
-			System.out.println(RequirePython.class.getName());
-			engineFactory = (ScriptEngineFactory) FrameworkUtil.getBundle(RequirePython.class).getBundleContext().getBundle()
-					.adapt(BundleWiring.class).getClassLoader().loadClass("org.python.jsr223.PyScriptEngineFactory")
-					.newInstance();
-
-			System.out.println(engineFactory.getScriptEngine());
-		} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-
 		assertThat(manager.getEngineByName("python"), notNullValue());
+	}
+
+	@Test(timeout = TEST_TIMEOUT_MILLISECONDS)
+	public void executePythonScriptTest() throws ScriptException {
+		ScriptEngineManager manager = getService(ScriptEngineManager.class);
+		ScriptEngine engine = manager.getEngineByName("python");
+
+		engine.eval("a = 1");
+		engine.eval("b = 2");
+
+		assertThat(engine.eval("a + b"), equalTo(3));
 	}
 
 	@Test(timeout = TEST_TIMEOUT_MILLISECONDS)

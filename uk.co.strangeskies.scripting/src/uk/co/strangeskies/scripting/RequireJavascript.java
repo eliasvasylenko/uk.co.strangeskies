@@ -6,8 +6,7 @@ import static uk.co.strangeskies.scripting.ScriptEngines.CAPABILITY_NAMESPACE;
 import aQute.bnd.annotation.headers.RequireCapability;
 
 /**
- * Create a requirement on the {@value RequireJavascript#LANGUAGE} scripting
- * engine.
+ * Create a requirement on the {@value RequireJavascript#LANGUAGE} scripting engine.
  * 
  * @author Elias N Vasylenko
  */

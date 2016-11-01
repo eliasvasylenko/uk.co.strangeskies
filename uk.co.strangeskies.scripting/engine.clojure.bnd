@@ -1,5 +1,0 @@
--include: engine.bnd
-language: Clojure
--includeresource:\
-	@${repo;org.clojars.xafero:clojure-jsr223},\
-	@${repo;org.clojure:clojure;latest}

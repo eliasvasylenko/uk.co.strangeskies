@@ -7,14 +7,12 @@ language: Python
 
 -includeresource:\
 \
-	@${repo;org.python:jython-standalone}!/META-INF/*
+	@${repo;org.python:jython-standalone}!/META-INF/*,\
+	res
 
 Import-Package:\
 	uk.co.strangeskies.scripting,\
 	*;resolution:=optional
-
-Export-Package:\
-	uk.co.strangeskies.scripting.engine.python
 
 Private-Package:\
 \
@@ -22,7 +20,8 @@ Private-Package:\
 	!uk.co.strangeskies.scripting,\
 	!uk.co.strangeskies.scripting.impl,\
 \
-	org.python.*;-split-package:=merge-first
+	org.python.*;-split-package:=merge-first,\
+	uk.co.strangeskies.scripting.engine.python
 
 -conditionalpackage:\
 	com.google.*,\

@@ -1,4 +1,0 @@
--include: engine.bnd
-language: Ruby
--includeresource:\
-	@${repo;org.jruby.jruby}

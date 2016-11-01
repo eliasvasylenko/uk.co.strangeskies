@@ -1,0 +1,25 @@
+-include: ${workspace}/uk.co.strangeskies.scripting/engine.bnd
+language: Clojure
+
+-buildpath:\
+	org.clojars.xafero:clojure-jsr223;version=latest,\
+	org.clojure:clojure;version=latest,\
+	uk.co.strangeskies.scripting;version=snapshot
+
+-includeresource:\
+\
+	@${repo;org.clojars.xafero:clojure-jsr223}!/META-INF/*,\
+	@${repo;org.clojure:clojure}!/misc/*,\
+\
+	res
+
+Import-Package:\
+	uk.co.strangeskies.scripting,\
+	*;resolution:=optional
+
+Private-Package: \
+	!uk.co.strangeskies.scripting,\
+	!uk.co.strangeskies.scripting.impl,\
+\
+	uk.co.strangeskies.scripting.engine.clojure
+

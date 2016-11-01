@@ -1,0 +1,20 @@
+-include: ${workspace}/uk.co.strangeskies.scripting/engine.bnd
+language: Scala
+
+-buildpath:\
+	org.scala-lang.scala-compiler;version=latest,\
+	org.scala-lang.scala-library;version=latest,\
+	org.scala-lang.scala-reflect;version=latest,\
+	uk.co.strangeskies.scripting;version=snapshot,\
+	uk.co.strangeskies.utilities;version=snapshot
+
+-includeresource:\
+\
+	res
+
+Import-Package:\
+	uk.co.strangeskies.scripting,\
+	*
+
+Private-Package:\
+	uk.co.strangeskies.scripting.engine.scala

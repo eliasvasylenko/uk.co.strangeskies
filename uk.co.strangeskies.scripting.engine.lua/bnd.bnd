@@ -1,0 +1,23 @@
+-include: ${workspace}/uk.co.strangeskies.scripting/engine.bnd
+language: Lua
+
+-buildpath:\
+	org.luaj:luaj-jse;version=latest,\
+	uk.co.strangeskies.scripting;version=snapshot
+
+-includeresource:\
+\
+	@${repo;org.luaj:luaj-jse;latest}!/META-INF/*,\
+\
+	res
+
+Import-Package:\
+	uk.co.strangeskies.scripting,\
+	*
+
+Private-Package: \
+	!uk.co.strangeskies.scripting,\
+	!uk.co.strangeskies.scripting.impl,\
+\
+	org.luaj.*,\
+	uk.co.strangeskies.scripting.engine.lua

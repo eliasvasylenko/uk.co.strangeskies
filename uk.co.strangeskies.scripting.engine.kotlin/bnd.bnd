@@ -24,9 +24,6 @@ Import-Package:\
 	uk.co.strangeskies.scripting,\
 	*;resolution:=optional
 
-Export-Package:\
-	uk.co.strangeskies.scripting.engine.kotlin
-
 Private-Package:\
 \
 	!javax.*,\
@@ -38,7 +35,7 @@ Private-Package:\
 	net.rubygrapefruit.*,\
 	org.jdom.*,\
 	org.jetbrains.*;-split-package:=merge-first,\
-	uk.co.strangeskies.scripting.engine.kotlin.impl
+	uk.co.strangeskies.scripting.engine.kotlin
 
 -conditionalpackage:\
 	com.google.*,\
