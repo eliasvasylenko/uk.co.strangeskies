@@ -1,4 +1,4 @@
-package uk.co.strangeskies.scripting;
+package uk.co.strangeskies.scripting.engine.python;
 
 import static uk.co.strangeskies.scripting.ScriptEngines.CAPABILITY_LANGUAGE_FILTER;
 import static uk.co.strangeskies.scripting.ScriptEngines.CAPABILITY_NAMESPACE;

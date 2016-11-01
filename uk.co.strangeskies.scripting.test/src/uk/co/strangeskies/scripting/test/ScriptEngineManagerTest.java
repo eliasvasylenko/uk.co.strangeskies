@@ -41,6 +41,7 @@ import java.net.URISyntaxException;
 
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
+import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
@@ -55,9 +56,9 @@ import org.osgi.util.tracker.ServiceTracker;
 
 import aQute.bnd.annotation.headers.RequireCapability;
 import uk.co.strangeskies.scripting.RequireFrege;
-import uk.co.strangeskies.scripting.RequirePython;
 import uk.co.strangeskies.scripting.RequireRuby;
 import uk.co.strangeskies.scripting.engine.kotlin.RequireKotlin;
+import uk.co.strangeskies.scripting.engine.python.RequirePython;
 
 @RequirePython
 @RequireFrege
@@ -66,7 +67,7 @@ import uk.co.strangeskies.scripting.engine.kotlin.RequireKotlin;
 @RequireCapability(ns = "osgi.service", filter = "(" + Constants.OBJECTCLASS + "=javax.script.ScriptEngineManager)")
 public class ScriptEngineManagerTest {
 	private static final int SERVICE_TIMEOUT_MILLISECONDS = 1000;
-	private static final int TEST_TIMEOUT_MILLISECONDS = 2000;
+	private static final int TEST_TIMEOUT_MILLISECONDS = 5000;
 
 	private BundleContext getBundleContext() {
 		return FrameworkUtil.getBundle(this.getClass()).getBundleContext();
@@ -124,10 +125,8 @@ public class ScriptEngineManagerTest {
 
 		ScriptEngine engine = manager.getEngineByName("kotlin");
 
-		ScriptContext context = new SimpleScriptContext();
-		context.setBindings(new SimpleBindings(), SimpleScriptContext.GLOBAL_SCOPE);
-		engine.eval("val a = 1", context);
-		engine.eval("val b = 2", context);
+		engine.eval("val a = 1");
+		engine.eval("val b = 2");
 
 		assertThat(engine.eval("a + b"), equalTo(3l));
 	}
@@ -136,12 +135,15 @@ public class ScriptEngineManagerTest {
 	public void loadPythonEngineTest() {
 		ScriptEngineManager manager = getService(ScriptEngineManager.class);
 
-		ScriptEngine engine;
+		ScriptEngineFactory engineFactory;
 		try {
-			engine = (ScriptEngine) FrameworkUtil.getBundle(org.python.Version.class).getBundleContext().getBundle()
-					.adapt(BundleWiring.class).getClassLoader().loadClass("PyScriptEngineFactory").newInstance();
+			System.out.println(RequireKotlin.class.getName());
+			System.out.println(RequirePython.class.getName());
+			engineFactory = (ScriptEngineFactory) FrameworkUtil.getBundle(RequirePython.class).getBundleContext().getBundle()
+					.adapt(BundleWiring.class).getClassLoader().loadClass("org.python.jsr223.PyScriptEngineFactory")
+					.newInstance();
 
-			System.out.println(engine);
+			System.out.println(engineFactory.getScriptEngine());
 		} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
 			e.printStackTrace();
 		}

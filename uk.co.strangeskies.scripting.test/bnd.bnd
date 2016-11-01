@@ -12,9 +12,9 @@ Private-Package: uk.co.strangeskies.scripting.test
 	sun.nio.cs
 
 -buildpath: \
-	uk.co.strangeskies.scripting,\
-	uk.co.strangeskies.scripting.engine.python,\
-	uk.co.strangeskies.scripting.engine.kotlin;version=latest
+	uk.co.strangeskies.scripting;version=snapshot,\
+	uk.co.strangeskies.scripting.engine.python;version=snapshot,\
+	uk.co.strangeskies.scripting.engine.kotlin;version=snapshot
 
 -runrequires:\
 	osgi.identity;filter:='(osgi.identity=uk.co.strangeskies.scripting.test)',\
@@ -38,7 +38,6 @@ Private-Package: uk.co.strangeskies.scripting.test
 	uk.co.strangeskies.scripting.test;version=snapshot,\
 	osgi.enroute.hamcrest.wrapper;version='[1.3.0,1.3.1)',\
 	osgi.enroute.junit.wrapper;version='[4.12.0,4.12.1)',\
-	uk.co.strangeskies.scripting.engine.python;version=snapshot,\
 	jline;version='[2.12.1,2.12.2)',\
 	org.apache.ant;version='[1.9.6,1.9.7)',\
 	org.apache.bcel;version='[5.2.0,5.2.1)',\
@@ -50,14 +49,12 @@ Private-Package: uk.co.strangeskies.scripting.test
 	org.apache.felix.gogo.runtime;version='[0.16.2,0.16.3)',\
 	org.apache.felix.gogo.shell;version='[0.10.0,0.10.1)',\
 	uk.co.strangeskies.scripting.engine.frege;version=snapshot,\
-	org.apache.commons.cli;version='[1.2.0,1.2.1)',\
-	org.apache.commons.lang;version='[2.6.0,2.6.1)',\
-	org.apache.commons.logging;version='[1.1.1,1.1.2)',\
-	org.apache.ivy;version='[2.2.0,2.2.1)',\
 	org.apache.servicemix.bundles.bsf;version='[2.4.0,2.4.1)',\
-	org.eclipse.jubula.tools;version='[4.0.0,4.0.1)',\
 	org.joda.convert;version='[1.8.1,1.8.2)',\
 	org.objectweb.asm.all.debug;version='[5.0.3,5.0.4)',\
 	org.slf4j.api;version='[1.7.2,1.7.3)',\
 	uk.co.strangeskies.scripting.engine.kotlin;version=snapshot,\
-	uk.co.strangeskies.scripting.engine.ruby;version=snapshot
+	uk.co.strangeskies.scripting.engine.python;version=snapshot,\
+	uk.co.strangeskies.scripting.engine.ruby;version=snapshot,\
+	org.apache.felix.http.servlet-api;version='[1.1.2,1.1.3)',\
+	uk.co.strangeskies.scripting.engine.lua;version=snapshot

@@ -23,7 +23,6 @@ import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
@@ -245,49 +244,10 @@ public class PathManager {
 
 	@Nullable
 	public static String getResourceRoot(@NotNull Class<?> context, String path) {
-		if (context == null) {
-			throw new IllegalArgumentException(String.format("Argument for @NotNull parameter '%s' of %s.%s must not be null",
-					new Object[] { "context", "com/intellij/openapi/application/PathManager", "getResourceRoot" }));
-		}
-		URL url = context.getResource(path);
-		if (url == null) {
-			url = ClassLoader.getSystemResource(path.substring(1));
-		}
-		return url != null ? extractRoot(url, path) : null;
-	}
+		URL root = context.getProtectionDomain().getCodeSource().getLocation();
 
-	@Nullable
-	private static String extractRoot(URL resourceURL, String resourcePath) {
-		if ((!StringUtil.startsWithChar(resourcePath, '/')) && (!StringUtil.startsWithChar(resourcePath, '\\'))) {
-			log("precondition failed: " + resourcePath);
-			return null;
-		}
-		String resultPath = null;
-		String protocol = resourceURL.getProtocol();
-		if ("file".equals(protocol)) {
-			String path = resourceURL.getFile();
-			String testPath = path.replace('\\', '/');
-			String testResourcePath = resourcePath.replace('\\', '/');
-			if (StringUtil.endsWithIgnoreCase(testPath, testResourcePath)) {
-				resultPath = path.substring(0, path.length() - resourcePath.length());
-			}
-		} else if ("jar".equals(protocol)) {
-			Pair<String, String> paths = URLUtil.splitJarUrl(resourceURL.getFile());
-			if (paths != null) {
-				resultPath = paths.first;
-			}
-		} else if ("bundle".equals(protocol) || "bundleresource".equals(protocol)) {
-			resultPath = (new File(
-					(PathManager.class.getProtectionDomain().getCodeSource().getLocation() + "").replace("file:/", "")))
-							.getAbsolutePath().replace('\\', '/');
-		} else {
-			throw new UnsupportedOperationException(
-					"No '" + protocol + "' known! (" + resourceURL + ", " + resourcePath + ")");
-		}
-		if (resultPath == null) {
-			log("cannot extract: " + resourcePath + " from " + resourceURL);
-			return null;
-		}
+		String resultPath = root.getFile();
+		
 		if ((SystemInfo.isWindows) && (resultPath.startsWith("/"))) {
 			resultPath = resultPath.substring(1);
 		}

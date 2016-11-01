@@ -1,0 +1,29 @@
+-include: ${workspace}/uk.co.strangeskies.scripting/engine.bnd
+language: Python
+
+-buildpath:\
+	org.python:jython-standalone,\
+	uk.co.strangeskies.scripting
+
+-includeresource:\
+\
+	@${repo;org.python:jython-standalone}!/META-INF/*
+
+Import-Package:\
+	uk.co.strangeskies.scripting,\
+	*;resolution:=optional
+
+Export-Package:\
+	uk.co.strangeskies.scripting.engine.python
+
+Private-Package:\
+\
+	!javax.*,\
+	!uk.co.strangeskies.scripting,\
+	!uk.co.strangeskies.scripting.impl,\
+\
+	org.python.*;-split-package:=merge-first
+
+-conditionalpackage:\
+	com.google.*,\
+	jnr.*,\
