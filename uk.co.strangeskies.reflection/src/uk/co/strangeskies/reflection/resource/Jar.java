@@ -32,6 +32,7 @@
  */
 package uk.co.strangeskies.reflection.resource;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -47,7 +48,7 @@ public class Jar {
 
 	protected Jar(URI jarLocation) {
 		try {
-			if (!jarLocation.toString().startsWith("jar:")) {
+			if (new File(jarLocation).isFile() && !jarLocation.toString().startsWith("jar:")) {
 				jarLocation = new URI("jar:" + jarLocation);
 			}
 			FileSystem fileSystem;

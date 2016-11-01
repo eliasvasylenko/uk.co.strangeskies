@@ -32,11 +32,19 @@
  */
 package uk.co.strangeskies.scripting.test;
 
+import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 
+import java.io.File;
+import java.net.URISyntaxException;
+
+import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+import javax.script.SimpleBindings;
+import javax.script.SimpleScriptContext;
 
 import org.junit.Test;
 import org.osgi.framework.BundleContext;
@@ -47,9 +55,9 @@ import org.osgi.util.tracker.ServiceTracker;
 
 import aQute.bnd.annotation.headers.RequireCapability;
 import uk.co.strangeskies.scripting.RequireFrege;
-import uk.co.strangeskies.scripting.RequireKotlin;
 import uk.co.strangeskies.scripting.RequirePython;
 import uk.co.strangeskies.scripting.RequireRuby;
+import uk.co.strangeskies.scripting.engine.kotlin.RequireKotlin;
 
 @RequirePython
 @RequireFrege
@@ -96,6 +104,35 @@ public class ScriptEngineManagerTest {
 	}
 
 	@Test(timeout = TEST_TIMEOUT_MILLISECONDS)
+	public void loadKotlinEngineTest() throws URISyntaxException {
+		String kotlinJar = new File(RequireKotlin.class.getProtectionDomain().getCodeSource().getLocation().toURI())
+				.toString();
+		System.setProperty("kotlin.compiler.jar", kotlinJar);
+		System.setProperty("kotlin.java.runtime.jar", kotlinJar);
+		ScriptEngineManager manager = getService(ScriptEngineManager.class);
+
+		assertThat(manager.getEngineByName("kotlin"), notNullValue());
+	}
+
+	@Test(timeout = TEST_TIMEOUT_MILLISECONDS)
+	public void executeKotlinScriptTest() throws URISyntaxException, ScriptException {
+		String kotlinJar = new File(RequireKotlin.class.getProtectionDomain().getCodeSource().getLocation().toURI())
+				.toString();
+		System.setProperty("kotlin.compiler.jar", kotlinJar);
+		System.setProperty("kotlin.java.runtime.jar", kotlinJar);
+		ScriptEngineManager manager = getService(ScriptEngineManager.class);
+
+		ScriptEngine engine = manager.getEngineByName("kotlin");
+
+		ScriptContext context = new SimpleScriptContext();
+		context.setBindings(new SimpleBindings(), SimpleScriptContext.GLOBAL_SCOPE);
+		engine.eval("val a = 1", context);
+		engine.eval("val b = 2", context);
+
+		assertThat(engine.eval("a + b"), equalTo(3l));
+	}
+
+	@Test(timeout = TEST_TIMEOUT_MILLISECONDS)
 	public void loadPythonEngineTest() {
 		ScriptEngineManager manager = getService(ScriptEngineManager.class);
 
@@ -114,8 +151,24 @@ public class ScriptEngineManagerTest {
 
 	@Test(timeout = TEST_TIMEOUT_MILLISECONDS)
 	public void loadRubyEngineTest() {
+		System.setProperty("org.jruby.embed.localvariable.behavior", "persistent");
 		ScriptEngineManager manager = getService(ScriptEngineManager.class);
 
 		assertThat(manager.getEngineByName("ruby"), notNullValue());
+	}
+
+	@Test(timeout = TEST_TIMEOUT_MILLISECONDS)
+	public void executeRubyScriptTest() throws ScriptException {
+		System.setProperty("org.jruby.embed.localvariable.behavior", "persistent");
+		ScriptEngineManager manager = getService(ScriptEngineManager.class);
+
+		ScriptEngine engine = manager.getEngineByName("ruby");
+
+		ScriptContext context = new SimpleScriptContext();
+		context.setBindings(new SimpleBindings(), SimpleScriptContext.GLOBAL_SCOPE);
+		engine.eval("a = 1", context);
+		engine.eval("b = 2", context);
+
+		assertThat(engine.eval("a + b"), equalTo(3l));
 	}
 }

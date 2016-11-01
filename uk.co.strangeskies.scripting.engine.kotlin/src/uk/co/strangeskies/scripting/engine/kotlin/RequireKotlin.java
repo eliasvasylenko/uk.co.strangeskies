@@ -1,4 +1,4 @@
-package uk.co.strangeskies.scripting;
+package uk.co.strangeskies.scripting.engine.kotlin;
 
 import static uk.co.strangeskies.scripting.ScriptEngines.CAPABILITY_LANGUAGE_FILTER;
 import static uk.co.strangeskies.scripting.ScriptEngines.CAPABILITY_NAMESPACE;
@@ -6,14 +6,14 @@ import static uk.co.strangeskies.scripting.ScriptEngines.CAPABILITY_NAMESPACE;
 import aQute.bnd.annotation.headers.RequireCapability;
 
 /**
- * Create a requirement on the {@value RequireScala#LANGUAGE} scripting engine.
+ * Create a requirement on the {@value RequireKotlin#LANGUAGE} scripting engine.
  * 
  * @author Elias N Vasylenko
  */
 @RequireCapability(
 		ns = CAPABILITY_NAMESPACE,
-		filter = "(" + CAPABILITY_LANGUAGE_FILTER + "=" + RequireScala.LANGUAGE + ")")
-public @interface RequireScala {
+		filter = "(" + CAPABILITY_LANGUAGE_FILTER + "=" + RequireKotlin.LANGUAGE + ")")
+public @interface RequireKotlin {
 	@SuppressWarnings("javadoc")
-	public static final String LANGUAGE = "scala";
+	public static final String LANGUAGE = "kotlin";
 }

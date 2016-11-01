@@ -1,6 +1,0 @@
--include: engine.bnd
-language: Kotlin
--includeresource:\
-	META-INF/services/javax.script.ScriptEngineFactory=res/kotlin/javax.script.ScriptEngineFactory
-#	${repo;org.jetbrains.kotlin:kotlin-script-util}
-# TODO wait until release version appears in central rather than faffing around with dev repo

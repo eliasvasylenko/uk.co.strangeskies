@@ -11,9 +11,10 @@ Private-Package: uk.co.strangeskies.scripting.test
 	sun.misc,\
 	sun.nio.cs
 
--buildpath:\
+-buildpath: \
 	uk.co.strangeskies.scripting,\
-	uk.co.strangeskies.scripting.engine.python
+	uk.co.strangeskies.scripting.engine.python,\
+	uk.co.strangeskies.scripting.engine.kotlin;version=latest
 
 -runrequires:\
 	osgi.identity;filter:='(osgi.identity=uk.co.strangeskies.scripting.test)',\
@@ -26,15 +27,6 @@ Private-Package: uk.co.strangeskies.scripting.test
 	osgi.identity;filter:='(osgi.identity=org.hamcrest.core)'
 
 -runbundles: \
-	uk.co.strangeskies.utilities;version=snapshot,\
-	uk.co.strangeskies.reflection.resource;version=snapshot,\
-	uk.co.strangeskies.osgi.api;version=snapshot,\
-	uk.co.strangeskies.text;version=snapshot,\
-	uk.co.strangeskies.osgi.provider;version=snapshot,\
-	log4j;version='[1.2.17,1.2.18)',\
-	org.apache.commons.logging;version='[1.2.0,1.2.1)',\
-	osgi.enroute.equinox.log.adapter;version='[2.0.0,2.0.1)',\
-	osgi.enroute.logger.simple.provider;version='[2.0.0,2.0.1)',\
 	org.apache.aries.spifly.dynamic.bundle;version='[1.0.8,1.0.9)',\
 	org.apache.aries.util;version='[1.0.0,1.0.1)',\
 	org.apache.felix.configadmin;version='[1.8.8,1.8.9)',\

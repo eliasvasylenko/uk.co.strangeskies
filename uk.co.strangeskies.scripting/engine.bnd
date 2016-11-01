@@ -10,3 +10,5 @@ Provide-Capability:\
 Require-Capability:\
 		osgi.extender;\
 			filter:="(osgi.extender=osgi.serviceloader.registrar)"
+
+DynamicImport-Package: *

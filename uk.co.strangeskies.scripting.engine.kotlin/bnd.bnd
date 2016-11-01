@@ -1,0 +1,31 @@
+-include: ${workspace}/uk.co.strangeskies.scripting/engine.bnd
+language: Kotlin
+-buildpath:\
+	uk.co.strangeskies.scripting,\
+	org.jetbrains.kotlin:kotlin-script-util,\
+	org.jetbrains.kotlin.osgi-bundle,\
+	org.jetbrains.kotlin:kotlin-compiler,\
+	org.jetbrains.kotlin:kotlin-daemon-client
+
+-includeresource:\
+	META-INF/services/javax.script.ScriptEngineFactory=res/kotlin/javax.script.ScriptEngineFactory,\
+	@${repo;org.jetbrains.kotlin:kotlin-compiler}!/META-INF/extensions/common.xml
+
+Import-Package:\
+	*;resolution:=optional
+
+Export-Package: uk.co.strangeskies.scripting.engine.kotlin
+
+Private-Package:\
+	!javax.*,\
+	!uk.co.strangeskies.scripting,\
+	!uk.co.strangeskies.scripting.impl,\
+	org.jetbrains.*;-split-package:=merge-first,\
+	com.intellij.*;-split-package:=merge-first,\
+	kotlin.*;-split-package:=merge-first
+
+-conditionalpackage:\
+	com.google.*,\
+	gnu.trove.*,\
+	org.fusesource.*,\
+	org.picocontainer.*

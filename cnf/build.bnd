@@ -68,6 +68,13 @@ Bundle-Version: ${strangeskies-version}.${tstamp}
 		name=Clojars; \
 		location=${build}/cache/clojars.xml
 
+-plugin.Kotlin:  \
+	aQute.bnd.repository.maven.pom.provider.BndPomRepository; \
+		releaseUrls=https://dl.bintray.com/kotlin/kotlin-dev/; \
+		pom=${build}/kotlin.xml; \
+		name=Kotlin; \
+		location=${build}/cache/kotlin.xml
+
 ## If you use git, you might want to uncomment the following lines:
 Git-Descriptor: ${system-allow-fail;git describe --dirty --always}
 Git-SHA: ${system-allow-fail;git rev-list -1 HEAD}

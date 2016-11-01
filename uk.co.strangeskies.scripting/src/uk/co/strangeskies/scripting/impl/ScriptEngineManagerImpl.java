@@ -59,11 +59,6 @@ import org.osgi.service.component.annotations.ReferencePolicy;
  */
 @Component(service = ScriptEngineManager.class, immediate = true)
 public class ScriptEngineManagerImpl extends ScriptEngineManager {
-	@SuppressWarnings("javadoc")
-	public static final String CAPABILITY_NAMESPACE = "javax.script.engine";
-	@SuppressWarnings("javadoc")
-	public static final String CAPABILITY_LANGUAGE_FILTER = "javax.script.language";
-
 	private final Set<ScriptEngineFactory> scriptEngineFactories;
 
 	private final Map<String, ScriptEngineFactory> nameAssociations;
