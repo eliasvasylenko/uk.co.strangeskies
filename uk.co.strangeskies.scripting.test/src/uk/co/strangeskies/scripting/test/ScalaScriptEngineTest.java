@@ -40,10 +40,13 @@ import java.net.URISyntaxException;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 
+import org.junit.Ignore;
+
 import uk.co.strangeskies.scripting.RequireScalaScriptEngine;
 
 @SuppressWarnings("javadoc")
 @RequireScalaScriptEngine
+@Ignore
 public class ScalaScriptEngineTest extends ScriptEngineTestBase {
 	public ScalaScriptEngineTest() {
 		super("scala");

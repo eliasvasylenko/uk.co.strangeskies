@@ -46,7 +46,7 @@ import org.osgi.util.tracker.ServiceTracker;
 @SuppressWarnings("javadoc")
 public abstract class ScriptEngineTestBase {
 	public static final int SERVICE_TIMEOUT_MILLISECONDS = 1000;
-	public static final int DEFAULT_TEST_TIMEOUT_MILLISECONDS = 10000;
+	public static final int DEFAULT_TEST_TIMEOUT_MILLISECONDS = 25000;
 
 	private final String language;
 
