@@ -1,4 +1,3 @@
-uk.co.strangeskies.bnd
 uk.co.strangeskies.eclipse
 uk.co.strangeskies.fx
 uk.co.strangeskies.mathematics
@@ -20,6 +19,16 @@ uk.co.strangeskies.mathematics.values
 uk.co.strangeskies.mathematics.values.quantities
 uk.co.strangeskies.osgi
 uk.co.strangeskies.reflection
+uk.co.strangeskies.scripting
+uk.co.strangeskies.scripting.engine.clojure
+uk.co.strangeskies.scripting.engine.frege
+uk.co.strangeskies.scripting.engine.groovy
+uk.co.strangeskies.scripting.engine.kotlin
+uk.co.strangeskies.scripting.engine.lua
+uk.co.strangeskies.scripting.engine.python
+uk.co.strangeskies.scripting.engine.ruby
+uk.co.strangeskies.scripting.engine.scala
+uk.co.strangeskies.scripting.test
 uk.co.strangeskies.text
 uk.co.strangeskies.text.parsing
 uk.co.strangeskies.text.properties
