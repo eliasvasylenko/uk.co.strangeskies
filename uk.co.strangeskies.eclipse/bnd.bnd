@@ -19,10 +19,6 @@ Bundle-Description: \
 	pseudo-enums, fast, in-memory caches, tuples, functional helpers, \
 	and more.
 
--runee: JavaSE-1.8
-
--runfw: org.eclipse.osgi;version='[3.10.1.v20140909-1633,3.10.1.v20140909-1633]'
-
 Export-Package: \
 	uk.co.strangeskies.eclipse
 

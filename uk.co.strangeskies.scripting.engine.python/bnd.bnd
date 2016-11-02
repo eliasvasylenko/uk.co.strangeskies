@@ -20,4 +20,4 @@ Private-Package:\
 
 -conditionalpackage:\
 	com.google.*,\
-	jnr.*,\
+	jnr.*

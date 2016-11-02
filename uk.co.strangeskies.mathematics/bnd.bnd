@@ -1,5 +1,12 @@
+Bundle-Name: Strange Skies :: Mathematics
+Bundle-Description: \
+	A collection of mathematical utilities for Java. Included is a flexible \
+	and performant graph API, and a rich set of composable logic and value \
+	expressions, built on the uk.co.strangeskies.expressions library.
+
 Private-Package:  \
 	uk.co.strangeskies.mathematics.graph.impl
+
 Export-Package: \
 	uk.co.strangeskies.mathematics,\
 	uk.co.strangeskies.mathematics.expression,\
@@ -13,13 +20,7 @@ Export-Package: \
 	uk.co.strangeskies.mathematics.operation,\
 	uk.co.strangeskies.mathematics.values,\
 	uk.co.strangeskies.mathematics.values.quantities
-Bundle-Name: Strange Skies :: Mathematics
-Bundle-Description: \
-	A collection of mathematical utilities for Java. Included is a flexible \
-	and performant graph API, and a rich set of composable logic and value \
-	expressions, built on the uk.co.strangeskies.expressions library.
--runee: JavaSE-1.8
--runfw: org.eclipse.osgi;version='[3.10.1.v20140909-1633,3.10.1.v20140909-1633]'
+
 -buildpath: \
 	${ss;utilities},\
 	${ss;text},\

@@ -1,4 +1,3 @@
 -sub:\
 	api.bnd,\
 	provider.bnd
--runee: JavaSE-1.8

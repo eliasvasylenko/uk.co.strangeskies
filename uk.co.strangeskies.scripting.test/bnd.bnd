@@ -1,10 +1,9 @@
--runee: JavaSE-1.8
-
 Bundle-Name: Strange Skies :: Scripting :: Test
 Bundle-Description: \
 	Test provider for the uk.co.strangeskies.scripting project
 
 Private-Package: uk.co.strangeskies.scripting.test
+Test-Cases: ${test-cases}
 
 -includeresource:\
 	res
@@ -16,24 +15,19 @@ Private-Package: uk.co.strangeskies.scripting.test
 	jdk.nashorn.api.scripting,\
 	scala.*
 
--buildpath: \
+-buildpath:\
+	${-testpath.base},\
 	uk.co.strangeskies.scripting.api;version=snapshot,\
 	uk.co.strangeskies.scripting.engine.frege;version=snapshot
 
--runrequires: \
+-runrequires:\
 	osgi.identity;filter:='(osgi.identity=uk.co.strangeskies.scripting.test)'
-#	osgi.identity;filter:='(osgi.identity=org.apache.felix.gogo.command)',\
-#	osgi.identity;filter:='(osgi.identity=org.apache.felix.gogo.runtime)',\
-#	osgi.identity;filter:='(osgi.identity=org.apache.felix.gogo.shell)',\
-#	osgi.identity;filter:='(osgi.identity=uk.co.strangeskies.osgi.provider)',\
-#	osgi.identity;filter:='(osgi.identity=org.apache.felix.webconsole)',\
-#	osgi.identity;filter:='(osgi.identity=org.apache.felix.http.jetty)',\
 
 -runblacklist:\
 	osgi.identity;filter:='(osgi.identity=org.hamcrest:hamcrest-core)',\
 	osgi.identity;filter:='(osgi.identity=org.hamcrest.core)'
 
--runbundles: \
+-runbundles:\
 	uk.co.strangeskies.scripting.test;version=snapshot,\
 	org.apache.felix.configadmin;version='[1.8.8,1.8.9)',\
 	org.apache.felix.log;version='[1.0.1,1.0.2)',\

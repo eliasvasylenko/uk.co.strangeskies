@@ -6,9 +6,7 @@ language: Ruby
 	uk.co.strangeskies.scripting.api;version=snapshot
 
 -includeresource:\
-\
 	@${repo;org.jruby.jruby;latest},\
-\
 	res
 
 Import-Package:\
