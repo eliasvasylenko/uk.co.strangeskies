@@ -10,4 +10,4 @@ Bundle-Description: \
 	to prioritise performance and thread safety.
 
 -buildpath: \
-	${ss;utilities}
+	uk.co.strangeskies.utilities;version=snapshot

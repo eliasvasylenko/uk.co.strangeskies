@@ -22,6 +22,6 @@ Export-Package: \
 	uk.co.strangeskies.mathematics.values.quantities
 
 -buildpath: \
-	${ss;utilities},\
-	${ss;text},\
-	${ss;expressions}
+	uk.co.strangeskies.utilities;version=snapshot,\
+	uk.co.strangeskies.text;version=snapshot,\
+	uk.co.strangeskies.expressions;version=snapshot

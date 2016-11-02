@@ -5,12 +5,12 @@ Bundle-Name: Strange Skies :: Utilities :: Eclipse
 	${build}/include/eclipse.fx.2.4.0.bnd
 
 -buildpath: \
-	${ss;utilities},\
-	${ss;text},\
-	${ss;fx},\
-	${ss;mathematics},\
-	${ss;reflection},\
-	${ss;osgi.api},\
+	uk.co.strangeskies.utilities;version=snapshot,\
+	uk.co.strangeskies.text;version=snapshot,\
+	uk.co.strangeskies.fx;version=snapshot,\
+	uk.co.strangeskies.mathematics;version=snapshot,\
+	uk.co.strangeskies.reflection;version=snapshot,\
+	uk.co.strangeskies.osgi.api;version=snapshot,\
 	org.eclipse.osgi.compatibility.state,\
 	org.eclipse.osgi
 

@@ -10,7 +10,7 @@ Bundle-Description: \
 	Common Java utilities for dealing with text.
 
 -buildpath: \
-	${ss;utilities}
+	uk.co.strangeskies.utilities;version=snapshot
 
 -includeresource: \
 	OSGI-INF/l10n=l10n

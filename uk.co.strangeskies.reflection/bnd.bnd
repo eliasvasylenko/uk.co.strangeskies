@@ -1,5 +1,5 @@
 -sub: *.bnd
 
 -buildpath: \
-	${ss;utilities},\
-	${ss;text}
+	uk.co.strangeskies.utilities;version=snapshot,\
+	uk.co.strangeskies.text;version=snapshot

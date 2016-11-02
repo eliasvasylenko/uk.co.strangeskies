@@ -3,6 +3,6 @@ Export-Package: uk.co.strangeskies.fx
 Bundle-Name: Strange Skies :: FX
 
 -buildpath: \
-	${ss;utilities},\
-	${ss;mathematics},\
-	${ss;reflection}
+	uk.co.strangeskies.utilities;version=snapshot,\
+	uk.co.strangeskies.mathematics;version=snapshot,\
+	uk.co.strangeskies.reflection;version=snapshot

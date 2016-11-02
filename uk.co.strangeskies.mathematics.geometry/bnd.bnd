@@ -21,6 +21,6 @@ Bundle-Description: \
 	classes for dealing with shapes, including tessellation of \
 	arbitrary polygons, pathfinding, and boolean CSG operations.
 -buildpath:  \
-	${ss;mathematics},\
-	${ss;expressions},\
-	${ss;utilities}
+	uk.co.strangeskies.mathematics;version=snapshot,\
+	uk.co.strangeskies.expressions;version=snapshot,\
+	uk.co.strangeskies.utilities;version=snapshot

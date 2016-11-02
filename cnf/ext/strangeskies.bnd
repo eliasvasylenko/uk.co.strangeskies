@@ -1,4 +1,1 @@
-ss: uk.co.strangeskies.${1};version=latest
-mdb: uk.co.strangeskies.modabi.${1};version=latest
-
 include.ss: jar:${fileuri;${repo;uk.co.strangeskies.build;latest}}!/include
