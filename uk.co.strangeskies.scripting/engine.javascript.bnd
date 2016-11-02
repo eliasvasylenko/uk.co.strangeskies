@@ -1,5 +1,0 @@
--include: engine.bnd
-language: JavaScript
-
-Import-Package: jdk.nashorn.api.scripting
-Private-Package: 

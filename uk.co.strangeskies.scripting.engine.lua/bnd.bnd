@@ -3,7 +3,7 @@ language: Lua
 
 -buildpath:\
 	org.luaj:luaj-jse;version=latest,\
-	uk.co.strangeskies.scripting;version=snapshot
+	uk.co.strangeskies.scripting.api;version=snapshot
 
 -includeresource:\
 \
@@ -16,8 +16,5 @@ Import-Package:\
 	*
 
 Private-Package: \
-	!uk.co.strangeskies.scripting,\
-	!uk.co.strangeskies.scripting.impl,\
-\
 	org.luaj.*,\
 	uk.co.strangeskies.scripting.engine.lua

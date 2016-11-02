@@ -3,37 +3,18 @@ language: Ruby
 
 -buildpath:\
 	org.jruby.jruby;version=latest,\
-	uk.co.strangeskies.scripting;version=snapshot
+	uk.co.strangeskies.scripting.api;version=snapshot
 
 -includeresource:\
 \
-	@${repo;org.jruby.jruby;latest}!/META-INF/*,\
-	@${repo;org.jruby.jruby;latest}!/jni/*,\
-	@${repo;org.jruby.jruby;latest}!/tables/*,\
-	@${repo;org.jruby.jruby;latest}!/org/joda/time/tz/data/*,\
+	@${repo;org.jruby.jruby;latest},\
 \
 	res
 
 Import-Package:\
 	uk.co.strangeskies.scripting,\
+	org.slf4j;resolution:=optional,\
 	*
 
 Private-Package:\
-\
-	!uk.co.strangeskies.scripting,\
-	!uk.co.strangeskies.scripting.impl,\
-\
-	jruby.*,\
-	org.jruby.*,\
-	jnr.*,\
 	uk.co.strangeskies.scripting.engine.ruby
-
--conditionalpackage:\
-	com.headius.*,\
-	com.jcraft.*,\
-	com.kenai.*,\
-	com.martiansoftware.*,\
-	gnu.trove.*,\
-	org.jcodings.*,\
-	org.joda.*,\
-	org.joni.*

@@ -8,6 +8,7 @@ import org.osgi.framework.wiring.BundleWiring;
 
 import scala.tools.nsc.interpreter.IMain;
 
+@SuppressWarnings("javadoc")
 public class ScalaScriptEngineFactory extends IMain.Factory {
 	private ClassLoader getBundleClassLoader() {
 		return getBundle(getClass()).adapt(BundleWiring.class).getClassLoader();

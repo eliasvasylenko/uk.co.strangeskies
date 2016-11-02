@@ -1,1 +1,1 @@
-uk.co.strangeskies.scripting.engine.javascript.JavascriptScriptEngineFactory
+jdk.nashorn.api.scripting.NashornScriptEngineFactory

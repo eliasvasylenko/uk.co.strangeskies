@@ -1,3 +1,4 @@
 package uk.co.strangeskies.scripting.engine.groovy;
 
-public class GroovyScriptEngineFactory {}
+@SuppressWarnings("javadoc")
+public class GroovyScriptEngineFactory extends org.codehaus.groovy.jsr223.GroovyScriptEngineFactory {}

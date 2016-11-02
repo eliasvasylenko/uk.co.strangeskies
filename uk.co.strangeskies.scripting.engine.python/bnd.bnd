@@ -3,7 +3,7 @@ language: Python
 
 -buildpath:\
 	org.python:jython-standalone,\
-	uk.co.strangeskies.scripting
+	uk.co.strangeskies.scripting.api;version=snapshot
 
 -includeresource:\
 \
@@ -15,11 +15,6 @@ Import-Package:\
 	*;resolution:=optional
 
 Private-Package:\
-\
-	!javax.*,\
-	!uk.co.strangeskies.scripting,\
-	!uk.co.strangeskies.scripting.impl,\
-\
 	org.python.*;-split-package:=merge-first,\
 	uk.co.strangeskies.scripting.engine.python
 

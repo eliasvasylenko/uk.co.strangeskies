@@ -1,0 +1,10 @@
+[{ 
+    "service.pid": "uk.co.strangeskies.console.log",
+    "enabled": true
+},{ 
+    "service.pid": "org.apache.felix.http",
+    "org.apache.felix.http.enable": true, 
+    "org.osgi.service.http.port": 8080
+},{
+	"service.pid": "org.apache.felix.log"
+}]

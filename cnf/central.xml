@@ -29,8 +29,8 @@
 
 		<dependency>
 		    <groupId>org.frege-lang</groupId>
-		    <artifactId>frege</artifactId>
-		    <version>3.24-7.100</version>
+		    <artifactId>frege-interpreter-core</artifactId>
+		    <version>1.2</version>
 		</dependency>
 
 		<dependency>

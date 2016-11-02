@@ -6,7 +6,7 @@ language: Kotlin
 	org.jetbrains.kotlin:kotlin-daemon-client,\
 	org.jetbrains.kotlin:kotlin-script-util,\
 	org.jetbrains.kotlin.osgi-bundle,\
-	uk.co.strangeskies.scripting
+	uk.co.strangeskies.scripting.api;version=snapshot
 
 -includeresource:\
 \
@@ -26,19 +26,24 @@ Import-Package:\
 
 Private-Package:\
 \
-	!javax.*,\
-	!uk.co.strangeskies.scripting,\
-	!uk.co.strangeskies.scripting.impl,\
+	uk.co.strangeskies.scripting.engine.kotlin,\
 \
-	com.intellij.*;-split-package:=merge-first,\
-	kotlin.*;-split-package:=merge-first,\
+	com.intellij.*;\
+		-split-package:=merge-first,\
+	kotlin.*;\
+		-split-package:=merge-first,\
+	org.jetbrains.*;\
+		-split-package:=merge-first,\
+\
 	net.rubygrapefruit.*,\
 	org.jdom.*,\
-	org.jetbrains.*;-split-package:=merge-first,\
-	uk.co.strangeskies.scripting.engine.kotlin
-
--conditionalpackage:\
+	javax.inject.*,\
 	com.google.*,\
+	com.sampullara.*,\
+	com.sun.*,\
 	gnu.trove.*,\
 	org.fusesource.*,\
-	org.picocontainer.*
+	org.picocontainer.*,\
+	org.iq80.*,\
+	org.apache.*,\
+	jline.*

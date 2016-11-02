@@ -1,4 +1,4 @@
 -sub:\
-	management.bnd,\
-	engine.*.bnd
+	api.bnd,\
+	provider.bnd
 -runee: JavaSE-1.8

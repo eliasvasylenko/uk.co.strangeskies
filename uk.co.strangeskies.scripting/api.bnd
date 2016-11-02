@@ -1,0 +1,9 @@
+Bundle-Name: Strange Skies :: Scripting :: API
+Bundle-Description: \
+	Java JSR-223 utilities, including an OSGi ready ScriptEngineManager \
+	implementation, for language discoverability through the service \
+	registry. Wrapper bundles providing a number of useful scripting \
+	engines through this mechanism are also available.
+
+Export-Package:\
+	uk.co.strangeskies.scripting

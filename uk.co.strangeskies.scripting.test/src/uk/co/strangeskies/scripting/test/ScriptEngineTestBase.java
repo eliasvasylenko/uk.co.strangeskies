@@ -35,29 +35,30 @@ package uk.co.strangeskies.scripting.test;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 
+import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import org.junit.Test;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.Constants;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.util.tracker.ServiceTracker;
 
-import aQute.bnd.annotation.headers.RequireCapability;
-import osgi.enroute.configurer.api.RequireConfigurerExtender;
-
 @SuppressWarnings("javadoc")
-@RequireConfigurerExtender
-@RequireCapability(ns = "osgi.service", filter = "(" + Constants.OBJECTCLASS + "=javax.script.ScriptEngineManager)")
-public class ScriptEngineManagerTest {
-	private static final int SERVICE_TIMEOUT_MILLISECONDS = 1000;
-	private static final int TEST_TIMEOUT_MILLISECONDS = 10000;
+public abstract class ScriptEngineTestBase {
+	public static final int SERVICE_TIMEOUT_MILLISECONDS = 1000;
+	public static final int DEFAULT_TEST_TIMEOUT_MILLISECONDS = 10000;
+
+	private final String language;
+
+	public ScriptEngineTestBase(String language) {
+		this.language = language;
+	}
 
 	private BundleContext getBundleContext() {
 		return FrameworkUtil.getBundle(this.getClass()).getBundleContext();
 	}
 
-	private <T> T getService(Class<T> clazz) {
+	protected <T> T getService(Class<T> clazz) {
 		try {
 			BundleContext context = getBundleContext();
 
@@ -74,10 +75,19 @@ public class ScriptEngineManagerTest {
 		}
 	}
 
-	@Test(timeout = TEST_TIMEOUT_MILLISECONDS)
-	public void loadScriptEngineManager() {
-		ScriptEngineManager manager = getService(ScriptEngineManager.class);
-
-		assertThat(manager, notNullValue());
+	protected ScriptEngineManager getScriptEngineManager() {
+		return getService(ScriptEngineManager.class);
 	}
+
+	protected ScriptEngine getScriptEngine() {
+		return getScriptEngineManager().getEngineByName(language);
+	}
+
+	@Test(timeout = DEFAULT_TEST_TIMEOUT_MILLISECONDS)
+	public void loadScriptEngine() {
+		assertThat(getScriptEngine(), notNullValue());
+	}
+
+	@Test(timeout = DEFAULT_TEST_TIMEOUT_MILLISECONDS)
+	public abstract void executeREPL() throws Exception;
 }

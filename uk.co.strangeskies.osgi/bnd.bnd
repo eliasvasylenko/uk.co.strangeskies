@@ -2,7 +2,6 @@
 
 -buildpath: \
 	${ss;utilities},\
-	${ss;reflection.resource},\
 	${ss;text}
 
 -sub: *.bnd

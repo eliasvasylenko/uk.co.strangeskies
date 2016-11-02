@@ -1,5 +1,0 @@
--include: engine.bnd
-language: Groovy
--includeresource:\
-	@${repo;groovy},\
-	@${repo;groovy-jsr223}

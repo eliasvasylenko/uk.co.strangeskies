@@ -5,8 +5,7 @@ language: Scala
 	org.scala-lang.scala-compiler;version=latest,\
 	org.scala-lang.scala-library;version=latest,\
 	org.scala-lang.scala-reflect;version=latest,\
-	uk.co.strangeskies.scripting;version=snapshot,\
-	uk.co.strangeskies.utilities;version=snapshot
+	uk.co.strangeskies.scripting.api;version=snapshot
 
 -includeresource:\
 \

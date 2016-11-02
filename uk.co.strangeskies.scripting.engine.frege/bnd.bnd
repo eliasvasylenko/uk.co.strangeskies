@@ -2,24 +2,21 @@
 language: Frege
 
 -buildpath:\
-	org.jetbrains.kotlin.osgi-bundle,\
-	uk.co.strangeskies.scripting
+	frege,\
+	org.frege-lang:frege-interpreter-core,\
+	org.frege-lang:frege-interpreter-java-support,\
+	uk.co.strangeskies.scripting.api;version=snapshot
 
 -includeresource:\
-\
-	@${repo;org.jetbrains.kotlin.osgi-bundle}!/META-INF/*,\
-\
-	@${repo;org.jetbrains.kotlin:kotlin-compiler}!/misc/*,\
-\
 	res
 
 Import-Package:\
 	uk.co.strangeskies.scripting,\
-	*;resolution:=optional
+	*
 
-Private-Package: \
-	!uk.co.strangeskies.scripting,\
-	!uk.co.strangeskies.scripting.impl,\
-\
+Export-Package:\
 	uk.co.strangeskies.scripting.engine.frege
 
+Private-Package: \
+	frege.interpreter.*,\
+	frege.scriptengine.*

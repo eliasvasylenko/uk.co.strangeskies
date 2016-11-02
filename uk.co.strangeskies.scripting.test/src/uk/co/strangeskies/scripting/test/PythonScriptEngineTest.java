@@ -32,52 +32,30 @@
  */
 package uk.co.strangeskies.scripting.test;
 
-import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
 
-import javax.script.ScriptEngineManager;
+import java.net.URISyntaxException;
 
-import org.junit.Test;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.Constants;
-import org.osgi.framework.FrameworkUtil;
-import org.osgi.util.tracker.ServiceTracker;
+import javax.script.ScriptEngine;
+import javax.script.ScriptException;
 
-import aQute.bnd.annotation.headers.RequireCapability;
-import osgi.enroute.configurer.api.RequireConfigurerExtender;
+import uk.co.strangeskies.scripting.RequirePythonScriptEngine;
 
 @SuppressWarnings("javadoc")
-@RequireConfigurerExtender
-@RequireCapability(ns = "osgi.service", filter = "(" + Constants.OBJECTCLASS + "=javax.script.ScriptEngineManager)")
-public class ScriptEngineManagerTest {
-	private static final int SERVICE_TIMEOUT_MILLISECONDS = 1000;
-	private static final int TEST_TIMEOUT_MILLISECONDS = 10000;
-
-	private BundleContext getBundleContext() {
-		return FrameworkUtil.getBundle(this.getClass()).getBundleContext();
+@RequirePythonScriptEngine
+public class PythonScriptEngineTest extends ScriptEngineTestBase {
+	public PythonScriptEngineTest() {
+		super("python");
 	}
 
-	private <T> T getService(Class<T> clazz) {
-		try {
-			BundleContext context = getBundleContext();
+	@Override
+	public void executeREPL() throws URISyntaxException, ScriptException {
+		ScriptEngine engine = getScriptEngine();
 
-			ServiceTracker<T, T> serviceTracker = new ServiceTracker<>(context, clazz, null);
-			serviceTracker.open();
-			try {
-				return serviceTracker.waitForService(SERVICE_TIMEOUT_MILLISECONDS);
-			} catch (InterruptedException e) {
-				throw new RuntimeException(e);
-			}
-		} catch (Throwable t) {
-			t.printStackTrace();
-			throw t;
-		}
-	}
+		engine.eval("a = 1");
+		engine.eval("b = 2");
 
-	@Test(timeout = TEST_TIMEOUT_MILLISECONDS)
-	public void loadScriptEngineManager() {
-		ScriptEngineManager manager = getService(ScriptEngineManager.class);
-
-		assertThat(manager, notNullValue());
+		assertThat(engine.eval("a + b"), equalTo(3));
 	}
 }

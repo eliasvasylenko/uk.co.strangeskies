@@ -32,9 +32,9 @@
  */
 package uk.co.strangeskies.osgi.logging;
 
-import java.util.Map;
 import java.util.function.Function;
 
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Modified;
@@ -45,17 +45,19 @@ import org.osgi.service.log.LogEntry;
 import org.osgi.service.log.LogListener;
 import org.osgi.service.log.LogReaderService;
 import org.osgi.service.log.LogService;
-
-import uk.co.strangeskies.osgi.ConsoleLogConstants;
+import org.osgi.service.metatype.annotations.Designate;
 
 /**
  * {@link LogListener} implementation dumping all logs to console
  * 
  * @author Elias N Vasylenko
  */
-@Component(configurationPid = ConsoleLogConstants.CONFIGURATION_PID, configurationPolicy = ConfigurationPolicy.REQUIRE, immediate = true)
+@Designate(ocd = ConsoleLogConfiguration.class)
+@Component(name = ConsoleLog.CONFIGURATION_PID, configurationPolicy = ConfigurationPolicy.REQUIRE, immediate = true)
 public class ConsoleLog implements LogListener {
-	private boolean enabled;
+	static final String CONFIGURATION_PID = "uk.co.strangeskies.console.log";
+
+	private boolean enabled = false;
 
 	@Reference(cardinality = ReferenceCardinality.MULTIPLE, policy = ReferencePolicy.DYNAMIC)
 	@SuppressWarnings("javadoc")
@@ -68,31 +70,25 @@ public class ConsoleLog implements LogListener {
 		service.removeLogListener(this);
 	}
 
+	@Activate
 	@Modified
-	void updated(Map<String, String> configuration) {
-		if (configuration != null) {
-			enabled = Boolean.parseBoolean(configuration.get(ConsoleLogConstants.ENABLED_KEY));
-		}
+	void updated(ConsoleLogConfiguration configuration) {
+		enabled = configuration.enabled();
 	}
 
 	@Override
 	public void logged(LogEntry entry) {
 		if (enabled) {
-			String time = formatTime(entry.getTime());
 			String level = formatLevel(entry.getLevel());
 			String bundle = formatIfPresent(entry.getBundle());
 			String service = formatIfPresent(entry.getServiceReference());
 
-			System.out.println("[" + time + level + bundle + service + "] " + entry.getMessage());
+			System.out.println("[" + level + bundle + service + "] " + entry.getMessage());
 
 			if (entry.getException() != null) {
 				entry.getException().printStackTrace();
 			}
 		}
-	}
-
-	private String formatTime(long time) {
-		return Long.toString(time);
 	}
 
 	private String formatLevel(int level) {
@@ -115,7 +111,7 @@ public class ConsoleLog implements LogListener {
 			throw new IllegalArgumentException("Unexpected log level");
 		}
 
-		return "; " + levelString;
+		return levelString;
 	}
 
 	private String formatIfPresent(Object object) {

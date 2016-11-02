@@ -2,25 +2,15 @@
 language: Javascript
 
 -buildpath:\
-	org.jetbrains.kotlin.osgi-bundle,\
-	uk.co.strangeskies.scripting
+	uk.co.strangeskies.scripting.api;version=snapshot
+
+-buildpackages:\
+	jdk.nashorn.api.scripting
 
 -includeresource:\
-\
-	@${repo;org.jetbrains.kotlin.osgi-bundle}!/META-INF/*,\
-\
-	@${repo;org.jetbrains.kotlin:kotlin-compiler}!/misc/*,\
-\
 	res
 
 Import-Package:\
 	uk.co.strangeskies.scripting,\
+	jdk.nashorn.api.scripting,\
 	*
-
-Private-Package:\
-\
-	!uk.co.strangeskies.scripting,\
-	!uk.co.strangeskies.scripting.impl,\
-\
-	uk.co.strangeskies.scripting.engine.javascript
-
