@@ -20,8 +20,7 @@ Test-Cases: ${test-cases}
 
 -buildpath:\
 	${-testpath.base},\
-	uk.co.strangeskies.scripting.api;version=snapshot,\
-	uk.co.strangeskies.scripting.engine.python;version=snapshot
+	uk.co.strangeskies.scripting.api;version=snapshot
 
 -runrequires:\
 	osgi.identity;filter:='(osgi.identity=uk.co.strangeskies.scripting.test)'

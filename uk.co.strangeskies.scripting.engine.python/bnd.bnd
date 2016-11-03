@@ -32,9 +32,7 @@ Import-Package:\
 	*
 
 Private-Package:\
-	org.python.*;-split-package:=merge-first
-
-Export-Package:\
+	org.python.*;-split-package:=merge-first,\
 	uk.co.strangeskies.scripting.engine.python
 
 -conditionalpackage:\
