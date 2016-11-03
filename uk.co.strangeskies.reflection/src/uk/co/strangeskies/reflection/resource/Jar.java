@@ -87,6 +87,10 @@ public class Jar {
 		return fileSystem.getRootDirectories().iterator().next();
 	}
 
+	public Path getPackagePath(Package jarPackage) {
+		return getFileSystem().getPath(jarPackage.getName().replace('.', '/'));
+	}
+
 	public JarManifest getManifest() {
 		return new JarManifest(fileSystem.getPath(MANIFEST_PATH));
 	}
