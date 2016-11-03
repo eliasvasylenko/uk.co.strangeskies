@@ -10,7 +10,6 @@ language: Ruby
 	res
 
 Import-Package:\
-	uk.co.strangeskies.scripting,\
 	org.slf4j;resolution:=optional,\
 	*
 

@@ -6,13 +6,10 @@ language: Lua
 	uk.co.strangeskies.scripting.api;version=snapshot
 
 -includeresource:\
-\
 	@${repo;org.luaj:luaj-jse;latest}!/META-INF/*,\
-\
 	res
 
 Import-Package:\
-	uk.co.strangeskies.scripting,\
 	*
 
 Private-Package: \

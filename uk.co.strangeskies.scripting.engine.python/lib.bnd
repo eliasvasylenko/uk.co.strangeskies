@@ -1,0 +1,12 @@
+-includeresource:\
+	@${repo;org.python:jython-standalone}!/Lib/*
+Bundle-ClassPath:\
+	Lib/*
+
+Require-Capability:\
+	osgi.unresolvable;\
+		filter="(&(must.not.resolve=*)(!(must.not.resolve=*)))"
+
+-fixupmessages.lib:\
+	No sub JAR or directory Lib/\*,\
+	The Bundle-ClassPath does not contain the actual bundle JAR*

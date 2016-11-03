@@ -11,14 +11,17 @@ Test-Cases: ${test-cases}
 -runsystempackages:\
 	sun.management,\
 	sun.misc,\
+	sun.io,\
 	sun.nio.cs,\
+	sun.security.util,\
+	sun.security.x509,\
 	jdk.nashorn.api.scripting,\
 	scala.*
 
 -buildpath:\
 	${-testpath.base},\
 	uk.co.strangeskies.scripting.api;version=snapshot,\
-	uk.co.strangeskies.scripting.engine.frege;version=snapshot
+	uk.co.strangeskies.scripting.engine.python;version=snapshot
 
 -runrequires:\
 	osgi.identity;filter:='(osgi.identity=uk.co.strangeskies.scripting.test)'
@@ -27,7 +30,7 @@ Test-Cases: ${test-cases}
 	osgi.identity;filter:='(osgi.identity=org.hamcrest:hamcrest-core)',\
 	osgi.identity;filter:='(osgi.identity=org.hamcrest.core)'
 
--runbundles:\
+-runbundles: \
 	uk.co.strangeskies.scripting.test;version=snapshot,\
 	org.apache.felix.configadmin;version='[1.8.8,1.8.9)',\
 	org.apache.felix.log;version='[1.0.1,1.0.2)',\
@@ -58,11 +61,14 @@ Test-Cases: ${test-cases}
 	uk.co.strangeskies.scripting.engine.python;version=snapshot,\
 	uk.co.strangeskies.scripting.engine.ruby;version=snapshot,\
 	uk.co.strangeskies.scripting.engine.scala;version=snapshot,\
-	uk.co.strangeskies.scripting.api;version=snapshot,\
 	uk.co.strangeskies.scripting.provider;version=snapshot,\
 	org.eclipse.jdt.core.compiler.batch;version='[3.8.2,3.8.3)',\
 	groovy;version='[2.4.7,2.4.8)',\
 	groovy-jsr223;version='[2.4.7,2.4.8)',\
-	uk.co.strangeskies.scripting.engine.groovy;version=snapshot
+	uk.co.strangeskies.scripting.engine.groovy;version=snapshot,\
+	com.kenai.jffi;version='[1.2.7,1.2.8)',\
+	uk.co.strangeskies.reflection.resource;version=snapshot,\
+	uk.co.strangeskies.text;version=snapshot,\
+	uk.co.strangeskies.utilities;version=snapshot
 
 -runfw: org.eclipse.osgi;version='[3.10.101.v20150820-1432,3.10.101.v20150820-1432]'

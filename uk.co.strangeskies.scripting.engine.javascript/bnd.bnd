@@ -11,6 +11,5 @@ language: Javascript
 	res
 
 Import-Package:\
-	uk.co.strangeskies.scripting,\
 	jdk.nashorn.api.scripting,\
 	*

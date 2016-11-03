@@ -12,7 +12,6 @@ language: Scala
 	res
 
 Import-Package:\
-	uk.co.strangeskies.scripting,\
 	*
 
 Private-Package:\

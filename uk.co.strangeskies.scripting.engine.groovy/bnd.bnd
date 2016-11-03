@@ -12,7 +12,6 @@ language: Groovy
 
 # the groovy.lang package import isn't strictly necessary, it's just so the resolver grabs the 'groovy' bundle
 Import-Package:\
-	uk.co.strangeskies.scripting,\
 	groovy.lang,\
 	*
 
