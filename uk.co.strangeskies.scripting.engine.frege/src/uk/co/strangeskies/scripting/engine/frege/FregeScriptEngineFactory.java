@@ -32,4 +32,40 @@
  */
 package uk.co.strangeskies.scripting.engine.frege;
 
-public class FregeScriptEngineFactory extends frege.scriptengine.FregeScriptEngine.FregeScriptEngineFactory {}
+import javax.script.ScriptEngine;
+import javax.script.ScriptException;
+
+import frege.runtime.Applicable;
+import uk.co.strangeskies.scripting.InvocableScriptEngineDecorator;
+
+public class FregeScriptEngineFactory extends frege.scriptengine.FregeScriptEngine.FregeScriptEngineFactory {
+	@Override
+	public ScriptEngine getScriptEngine() {
+		ScriptEngine engine = super.getScriptEngine();
+
+		return new InvocableScriptEngineDecorator() {
+			@Override
+			public ScriptEngine getComponent() {
+				return engine;
+			}
+
+			@Override
+			public Object invokeMethod(Object thiz, String name, Object... args)
+					throws ScriptException, NoSuchMethodException {
+				// TODO Auto-generated method stub
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public Object invokeFunction(String name, Object... args) throws ScriptException, NoSuchMethodException {
+				Applicable function = (Applicable) engine.get(name);
+				
+				for (Object arg : args) {
+					function.apply(arg);
+				}
+
+				return function.result().call();
+			}
+		};
+	}
+}

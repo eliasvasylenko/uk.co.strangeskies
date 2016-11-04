@@ -30,7 +30,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.scripting.test;
+package uk.co.strangeskies.scripting.test.scala;
 
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
@@ -40,22 +40,27 @@ import java.net.URISyntaxException;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 
-import uk.co.strangeskies.scripting.RequireKotlinScriptEngine;
+import org.junit.Ignore;
+
+import uk.co.strangeskies.scripting.RequireScalaScriptEngine;
+import uk.co.strangeskies.scripting.test.ScriptEngineTestBase;
 
 @SuppressWarnings("javadoc")
-@RequireKotlinScriptEngine
-public class KotlinScriptEngineTest extends ScriptEngineTestBase {
-	public KotlinScriptEngineTest() {
-		super("kotlin");
+@RequireScalaScriptEngine
+@Ignore
+public class ScalaScriptEngineTest extends ScriptEngineTestBase {
+	public ScalaScriptEngineTest() {
+		super("scala");
 	}
 
 	@Override
 	public void executeREPL() throws URISyntaxException, ScriptException {
 		ScriptEngine engine = getScriptEngine();
 
-		engine.eval("val a = 1");
-		engine.eval("val b = 2");
+		engine.eval("a = 1");
+		engine.eval("b = 2");
+		engine.eval("c = a + b");
 
-		assertThat(engine.eval("a + b"), equalTo(3));
+		assertThat(engine.get("c"), equalTo(3));
 	}
 }

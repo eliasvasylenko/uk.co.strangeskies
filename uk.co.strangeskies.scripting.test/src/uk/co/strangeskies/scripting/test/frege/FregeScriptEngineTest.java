@@ -30,23 +30,25 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.scripting.test;
+package uk.co.strangeskies.scripting.test.frege;
 
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
 
 import java.net.URISyntaxException;
 
+import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 
-import uk.co.strangeskies.scripting.RequireGroovyScriptEngine;
+import uk.co.strangeskies.scripting.RequireFregeScriptEngine;
+import uk.co.strangeskies.scripting.test.ScriptEngineTestBase;
 
 @SuppressWarnings("javadoc")
-@RequireGroovyScriptEngine
-public class GroovyScriptEngineTest extends ScriptEngineTestBase {
-	public GroovyScriptEngineTest() {
-		super("groovy");
+@RequireFregeScriptEngine
+public class FregeScriptEngineTest extends ScriptEngineTestBase {
+	public FregeScriptEngineTest() {
+		super("frege");
 	}
 
 	@Override
@@ -57,5 +59,18 @@ public class GroovyScriptEngineTest extends ScriptEngineTestBase {
 		engine.eval("b = 2");
 
 		assertThat(engine.eval("a + b"), equalTo(3));
+	}
+
+	//@Test
+	public void invokeFunction() throws ScriptException, NoSuchMethodException {
+		ScriptEngine engine = getScriptEngine();
+
+		engine.eval("longer :: String -> String -> Bool\nlonger s1 s2 = s1.length > s2.length\n");
+		System.out.println(engine.eval("longer"));
+
+		Object longerResult = ((Invocable) engine).invokeFunction("longer", "first", "second");
+
+		System.out.println(longerResult.getClass());
+		System.out.println(longerResult);
 	}
 }

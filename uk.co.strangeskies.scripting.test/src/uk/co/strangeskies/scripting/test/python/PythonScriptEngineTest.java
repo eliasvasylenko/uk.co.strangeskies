@@ -30,7 +30,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.scripting.test;
+package uk.co.strangeskies.scripting.test.python;
 
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
@@ -40,16 +40,16 @@ import java.net.URISyntaxException;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 
-import org.junit.Ignore;
+import org.junit.Test;
 
-import uk.co.strangeskies.scripting.RequireScalaScriptEngine;
+import uk.co.strangeskies.scripting.RequirePythonScriptEngine;
+import uk.co.strangeskies.scripting.test.ScriptEngineTestBase;
 
 @SuppressWarnings("javadoc")
-@RequireScalaScriptEngine
-@Ignore
-public class ScalaScriptEngineTest extends ScriptEngineTestBase {
-	public ScalaScriptEngineTest() {
-		super("scala");
+@RequirePythonScriptEngine
+public class PythonScriptEngineTest extends ScriptEngineTestBase {
+	public PythonScriptEngineTest() {
+		super("python");
 	}
 
 	@Override
@@ -58,8 +58,17 @@ public class ScalaScriptEngineTest extends ScriptEngineTestBase {
 
 		engine.eval("a = 1");
 		engine.eval("b = 2");
-		engine.eval("c = a + b");
 
-		assertThat(engine.get("c"), equalTo(3));
+		assertThat(engine.eval("a + b"), equalTo(3));
+	}
+
+	@Test
+	public void importRegexLibrary() throws ScriptException {
+		ScriptEngine engine = getScriptEngine();
+
+		engine.eval(getScript("importRegex.py"));
+
+		assertThat(engine.get("passed"), equalTo("555-1212"));
+		assertThat(engine.get("failed"), equalTo("ILL-EGAL"));
 	}
 }

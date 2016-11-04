@@ -30,7 +30,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.scripting.test;
+package uk.co.strangeskies.scripting.test.kotlin;
 
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
@@ -40,22 +40,23 @@ import java.net.URISyntaxException;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 
-import uk.co.strangeskies.scripting.RequireClojureScriptEngine;
+import uk.co.strangeskies.scripting.RequireKotlinScriptEngine;
+import uk.co.strangeskies.scripting.test.ScriptEngineTestBase;
 
 @SuppressWarnings("javadoc")
-@RequireClojureScriptEngine
-public class ClojureScriptEngineTest extends ScriptEngineTestBase {
-	public ClojureScriptEngineTest() {
-		super("clojure");
+@RequireKotlinScriptEngine
+public class KotlinScriptEngineTest extends ScriptEngineTestBase {
+	public KotlinScriptEngineTest() {
+		super("kotlin");
 	}
 
 	@Override
 	public void executeREPL() throws URISyntaxException, ScriptException {
 		ScriptEngine engine = getScriptEngine();
 
-		engine.eval("(def a 1)");
-		engine.eval("(def b 2)");
+		engine.eval("val a = 1");
+		engine.eval("val b = 2");
 
-		assertThat(engine.eval("(+ a b)"), equalTo(3l));
+		assertThat(engine.eval("a + b"), equalTo(3));
 	}
 }

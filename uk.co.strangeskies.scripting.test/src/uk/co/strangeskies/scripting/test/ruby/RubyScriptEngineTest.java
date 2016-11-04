@@ -30,32 +30,38 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.scripting.test;
+package uk.co.strangeskies.scripting.test.ruby;
 
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
 
 import java.net.URISyntaxException;
 
+import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
+import javax.script.SimpleBindings;
+import javax.script.SimpleScriptContext;
 
-import uk.co.strangeskies.scripting.RequireJavascriptScriptEngine;
+import uk.co.strangeskies.scripting.RequireRubyScriptEngine;
+import uk.co.strangeskies.scripting.test.ScriptEngineTestBase;
 
 @SuppressWarnings("javadoc")
-@RequireJavascriptScriptEngine
-public class JavascriptScriptEngineTest extends ScriptEngineTestBase {
-	public JavascriptScriptEngineTest() {
-		super("javascript");
+@RequireRubyScriptEngine
+public class RubyScriptEngineTest extends ScriptEngineTestBase {
+	public RubyScriptEngineTest() {
+		super("ruby");
 	}
 
 	@Override
 	public void executeREPL() throws URISyntaxException, ScriptException {
 		ScriptEngine engine = getScriptEngine();
 
-		engine.eval("a = 1");
-		engine.eval("b = 2");
+		ScriptContext context = new SimpleScriptContext();
+		context.setBindings(new SimpleBindings(), SimpleScriptContext.GLOBAL_SCOPE);
+		engine.eval("a = 1", context);
+		engine.eval("b = 2", context);
 
-		assertThat(engine.eval("a + b"), equalTo(3d));
+		assertThat(engine.eval("a + b"), equalTo(3l));
 	}
 }

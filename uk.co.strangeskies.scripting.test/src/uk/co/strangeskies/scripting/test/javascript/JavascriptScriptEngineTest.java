@@ -30,7 +30,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.scripting.test;
+package uk.co.strangeskies.scripting.test.javascript;
 
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
@@ -40,13 +40,14 @@ import java.net.URISyntaxException;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 
-import uk.co.strangeskies.scripting.RequireLuaScriptEngine;
+import uk.co.strangeskies.scripting.RequireJavascriptScriptEngine;
+import uk.co.strangeskies.scripting.test.ScriptEngineTestBase;
 
 @SuppressWarnings("javadoc")
-@RequireLuaScriptEngine
-public class LuaScriptEngineTest extends ScriptEngineTestBase {
-	public LuaScriptEngineTest() {
-		super("lua");
+@RequireJavascriptScriptEngine
+public class JavascriptScriptEngineTest extends ScriptEngineTestBase {
+	public JavascriptScriptEngineTest() {
+		super("javascript");
 	}
 
 	@Override
@@ -55,8 +56,7 @@ public class LuaScriptEngineTest extends ScriptEngineTestBase {
 
 		engine.eval("a = 1");
 		engine.eval("b = 2");
-		engine.eval("c = a + b");
 
-		assertThat(engine.get("c"), equalTo(3));
+		assertThat(engine.eval("a + b"), equalTo(3d));
 	}
 }

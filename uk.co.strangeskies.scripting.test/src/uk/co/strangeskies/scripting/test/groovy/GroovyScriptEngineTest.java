@@ -30,7 +30,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.scripting.test;
+package uk.co.strangeskies.scripting.test.groovy;
 
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
@@ -40,13 +40,14 @@ import java.net.URISyntaxException;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 
-import uk.co.strangeskies.scripting.RequirePythonScriptEngine;
+import uk.co.strangeskies.scripting.RequireGroovyScriptEngine;
+import uk.co.strangeskies.scripting.test.ScriptEngineTestBase;
 
 @SuppressWarnings("javadoc")
-@RequirePythonScriptEngine
-public class PythonScriptEngineTest extends ScriptEngineTestBase {
-	public PythonScriptEngineTest() {
-		super("python");
+@RequireGroovyScriptEngine
+public class GroovyScriptEngineTest extends ScriptEngineTestBase {
+	public GroovyScriptEngineTest() {
+		super("groovy");
 	}
 
 	@Override
