@@ -28,6 +28,10 @@ public interface InvocableBase extends Invocable {
 	@SuppressWarnings("unchecked")
 	@Override
 	default <T> T getInterface(Object thiz, Class<T> clasz) {
+		if (clasz.isInstance(thiz)) {
+			return (T) thiz;
+		}
+
 		BiFunction<String, Object[], Object> invocation;
 
 		if (thiz == null) {

@@ -1,11 +1,15 @@
 -include: ${workspace}/uk.co.strangeskies.scripting/engine.bnd
 language: Frege
 
+-dsannotations: false
+-metatypeannotations: false
+
 -buildpath:\
-	frege,\
+	org.frege-lang:frege:jar:jdk8,\
 	org.frege-lang:frege-interpreter-core,\
 	org.frege-lang:frege-interpreter-java-support,\
-	uk.co.strangeskies.scripting.api;version=snapshot
+	uk.co.strangeskies.scripting.api;version=snapshot,\
+	uk.co.strangeskies.utilities;version=snapshot
 
 -includeresource:\
 	res
@@ -16,6 +20,5 @@ Import-Package:\
 Export-Package:\
 	uk.co.strangeskies.scripting.engine.frege
 
-Private-Package: \
-	frege.interpreter.*,\
-	frege.scriptengine.*
+Private-Package:\
+	frege.*

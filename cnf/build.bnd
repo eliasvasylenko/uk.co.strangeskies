@@ -61,21 +61,25 @@ Bundle-Version: ${strangeskies-version}.${tstamp}
 			index				=		${.}/strangeskies.maven;\
 			releaseUrl			=		http://oss.jfrog.org/libs-snapshot/
 
--plugin.Clojars:\
+-plugin.Central.Extras:\
 \
 		aQute.bnd.repository.maven.pom.provider.BndPomRepository;\
 			name				=		Clojars;\
 			pom					=		${build}/clojars.xml;\
-			releaseUrls			=		http://clojars.org/repo;\
-			location			=		${build}/cache/clojars.xml
-
--plugin.Kotlin:\
+			location			=		${build}/cache/clojars.xml;\
+			releaseUrls			=		http://clojars.org/repo,\
 \
 		aQute.bnd.repository.maven.pom.provider.BndPomRepository;\
-			releaseUrls			=		https://dl.bintray.com/kotlin/kotlin-dev/;\
-			pom					=		${build}/kotlin.xml;\
 			name				=		Kotlin;\
-			location			=		${build}/cache/kotlin.xml
+			pom					=		${build}/kotlin.xml;\
+			location			=		${build}/cache/kotlin.xml;\
+			releaseUrls			=		https://dl.bintray.com/kotlin/kotlin-dev/,\
+\
+		aQute.bnd.repository.maven.provider.MavenBndRepository;\
+			name				=		Sonatype;\
+			index				=		${.}/sonatype.maven;\
+			releaseUrl			=		https://oss.sonatype.org/content/repositories/releases;\
+			snapshotUrl			=		https://oss.sonatype.org/content/repositories/snapshots
 
 ## If you use git, you might want to uncomment the following lines:
 Git-Descriptor: ${system-allow-fail;git describe --dirty --always}

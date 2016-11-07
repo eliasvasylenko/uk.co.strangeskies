@@ -32,40 +32,47 @@
  */
 package uk.co.strangeskies.scripting.engine.frege;
 
+import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
+import javax.script.ScriptEngineFactory;
 import javax.script.ScriptException;
 
-import frege.runtime.Applicable;
-import uk.co.strangeskies.scripting.InvocableScriptEngineDecorator;
+import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.wiring.BundleWiring;
 
+import frege.scriptengine.FregeScriptEngine.JFregeScriptEngine;
+import uk.co.strangeskies.scripting.InvocableBase;
+import uk.co.strangeskies.utilities.classloading.ContextClassLoaderRunner;
+
+@SuppressWarnings("javadoc")
 public class FregeScriptEngineFactory extends frege.scriptengine.FregeScriptEngine.FregeScriptEngineFactory {
+	private static final class InvocableFregeScriptEngine extends JFregeScriptEngine implements InvocableBase {
+		public InvocableFregeScriptEngine(ScriptEngineFactory factory) {
+			super(factory);
+		}
+
+		@Override
+		public Object invokeMethod(Object thiz, String name, Object... args) throws ScriptException, NoSuchMethodException {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Object invokeFunction(String name, Object... args) throws ScriptException, NoSuchMethodException {
+			StringBuilder expressionBuilder = new StringBuilder(name).append(' ');
+			int i = 0;
+			for (Object argument : args) {
+				String argumentName = "b" + i++;
+				getContext().setAttribute(argumentName, argument, ScriptContext.ENGINE_SCOPE);
+				expressionBuilder.append(argumentName).append(' ');
+			}
+
+			return eval(expressionBuilder.toString());
+		}
+	}
+
 	@Override
 	public ScriptEngine getScriptEngine() {
-		ScriptEngine engine = super.getScriptEngine();
-
-		return new InvocableScriptEngineDecorator() {
-			@Override
-			public ScriptEngine getComponent() {
-				return engine;
-			}
-
-			@Override
-			public Object invokeMethod(Object thiz, String name, Object... args)
-					throws ScriptException, NoSuchMethodException {
-				// TODO Auto-generated method stub
-				throw new UnsupportedOperationException();
-			}
-
-			@Override
-			public Object invokeFunction(String name, Object... args) throws ScriptException, NoSuchMethodException {
-				Applicable function = (Applicable) engine.get(name);
-				
-				for (Object arg : args) {
-					function.apply(arg);
-				}
-
-				return function.result().call();
-			}
-		};
+		return new ContextClassLoaderRunner(FrameworkUtil.getBundle(getClass()).adapt(BundleWiring.class).getClassLoader())
+				.run(() -> new InvocableFregeScriptEngine(this));
 	}
 }
