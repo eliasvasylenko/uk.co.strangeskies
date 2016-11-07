@@ -41,13 +41,14 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
-import uk.co.strangeskies.scripting.RequireFregeScriptEngine;
 import uk.co.strangeskies.scripting.test.ScriptEngineTestBase;
 
 @SuppressWarnings("javadoc")
-@RequireFregeScriptEngine
+// @RequireFregeScriptEngine
+@Ignore
 public class FregeScriptEngineTest extends ScriptEngineTestBase {
 	public FregeScriptEngineTest() {
 		super("frege");
@@ -70,7 +71,7 @@ public class FregeScriptEngineTest extends ScriptEngineTestBase {
 		engine.eval("longer :: String -> String -> Bool\nlonger s1 s2 = s1.length > s2.length");
 		System.out.println(engine.eval("longer \"first\" \"second\""));
 		System.out.println(engine.eval("longer \"second\" \"first\""));
-		
+
 		System.out.println(engine.getContext().getAttribute("longer"));
 
 		Object longerResult = ((Invocable) engine).invokeFunction("longer", "first", "second");

@@ -54,7 +54,6 @@ Private-Package:\
 	osgi.enroute.junit.wrapper;version='[4.12.0,4.12.1)',\
 	uk.co.strangeskies.scripting.api;version=snapshot,\
 	uk.co.strangeskies.scripting.engine.clojure;version=snapshot,\
-	uk.co.strangeskies.scripting.engine.frege;version=snapshot,\
 	uk.co.strangeskies.scripting.engine.javascript;version=snapshot,\
 	uk.co.strangeskies.scripting.engine.kotlin;version=snapshot,\
 	uk.co.strangeskies.scripting.engine.lua;version=snapshot,\

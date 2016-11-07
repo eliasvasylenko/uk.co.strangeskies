@@ -43,15 +43,19 @@ import java.util.Map;
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
+import javax.script.ScriptException;
 
 import org.jetbrains.kotlin.cli.common.repl.KotlinJsr223JvmScriptEngineFactoryBase;
 import org.jetbrains.kotlin.script.jsr223.KotlinJsr223JvmLocalScriptEngine;
 
 import kotlin.script.templates.standard.ScriptTemplateWithBindings;
+import uk.co.strangeskies.scripting.InvocableScriptEngineDecorator;
 
 @SuppressWarnings("javadoc")
 public class KotlinScriptEngineFactory extends KotlinJsr223JvmScriptEngineFactoryBase {
-	private static final URL TEMPLATE_CLASS_PATH = KotlinScriptEngineFactory.class.getProtectionDomain().getCodeSource()
+	private static final URL TEMPLATE_CLASS_PATH = KotlinScriptEngineFactory.class
+			.getProtectionDomain()
+			.getCodeSource()
 			.getLocation();
 	private static final String TEMPLATE_CLASS_NAME = ScriptTemplateWithBindings.class.getName();
 
@@ -64,7 +68,34 @@ public class KotlinScriptEngineFactory extends KotlinJsr223JvmScriptEngineFactor
 			throw new RuntimeException(e);
 		}
 
-		return new KotlinJsr223JvmLocalScriptEngine(newDisposable(), this, asList(templateClassPath), TEMPLATE_CLASS_NAME,
-				ctx -> new Bindings[] { ctx.getBindings(ScriptContext.ENGINE_SCOPE) }, new Class<?>[] { Map.class });
+		ScriptEngine engine = new KotlinJsr223JvmLocalScriptEngine(newDisposable(), this, asList(templateClassPath),
+				TEMPLATE_CLASS_NAME, ctx -> new Bindings[] { ctx.getBindings(ScriptContext.ENGINE_SCOPE) },
+				new Class<?>[] { Map.class });
+
+		return new InvocableScriptEngineDecorator() {
+			@Override
+			public Object invokeMethod(Object thiz, String name, Object... args)
+					throws ScriptException, NoSuchMethodException {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public Object invokeFunction(String name, Object... args) throws ScriptException, NoSuchMethodException {
+				return null;
+			}
+
+			@Override
+			public ScriptEngine getComponent() {
+				return engine;
+			}
+		};
+	}
+
+	public static void main(String[] args) throws ScriptException {
+		ScriptEngine engine = new KotlinScriptEngineFactory().getScriptEngine();
+
+		engine.eval("fun test(arg: String) {println(\"Hello, World!\")}");
+		engine.eval("test(\"hi\")");
 	}
 }

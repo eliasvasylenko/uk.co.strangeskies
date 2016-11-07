@@ -1,3 +1,4 @@
 org.frege-lang:frege:jar:jdk8:3.24.100.1
+org.frege-lang:frege:jar:jdk7:3.24.100.1
 org.frege-lang:frege-interpreter-core:1.3-SNAPSHOT
 org.frege-lang:frege-interpreter-java-support:1.3-SNAPSHOT

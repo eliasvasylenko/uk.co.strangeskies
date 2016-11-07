@@ -32,14 +32,12 @@
  */
 package uk.co.strangeskies.scripting.test;
 
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 
 import java.io.InputStreamReader;
 import java.io.Reader;
 
-import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
@@ -99,9 +97,4 @@ public abstract class ScriptEngineTestBase {
 
 	@Test(timeout = DEFAULT_TEST_TIMEOUT_MILLISECONDS)
 	public abstract void executeREPL() throws Exception;
-
-	@Test(timeout = DEFAULT_TEST_TIMEOUT_MILLISECONDS)
-	public void implementsInvocable() {
-		assertThat(getScriptEngine(), instanceOf(Invocable.class));
-	}
 }
