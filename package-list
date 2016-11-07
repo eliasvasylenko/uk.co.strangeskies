@@ -21,7 +21,6 @@ uk.co.strangeskies.osgi
 uk.co.strangeskies.reflection
 uk.co.strangeskies.scripting
 uk.co.strangeskies.scripting.engine.clojure
-uk.co.strangeskies.scripting.engine.frege
 uk.co.strangeskies.scripting.engine.groovy
 uk.co.strangeskies.scripting.engine.kotlin
 uk.co.strangeskies.scripting.engine.lua
