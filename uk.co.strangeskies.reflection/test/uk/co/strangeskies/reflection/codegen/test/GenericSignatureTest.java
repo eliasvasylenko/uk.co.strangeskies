@@ -55,7 +55,8 @@ import uk.co.strangeskies.utilities.Self;
 public class GenericSignatureTest {
 	@Test
 	public void noParametersSignatureTest() {
-		Assert.assertEquals(Collections.emptyList(), new ParameterizedDefinition<>(new ParameterizedDeclaration()).getTypeVariables());
+		Assert.assertEquals(Collections.emptyList(),
+				new ParameterizedDefinition<>(new ParameterizedDeclaration()).getTypeVariables());
 	}
 
 	@Test
@@ -69,7 +70,10 @@ public class GenericSignatureTest {
 
 	@Test
 	public void parameterNamesTest() {
-		ParameterizedDeclaration signature = new ParameterizedDeclaration().withTypeVariable().withTypeVariable().withTypeVariable();
+		ParameterizedDeclaration signature = new ParameterizedDeclaration()
+				.withTypeVariable()
+				.withTypeVariable()
+				.withTypeVariable();
 
 		List<? extends TypeVariable<?>> typeVariables = new ParameterizedDefinition<>(signature).getTypeVariables();
 
@@ -93,8 +97,8 @@ public class GenericSignatureTest {
 
 	@Test(expected = ReflectionException.class)
 	public void invalidBoundsTest() {
-		ParameterizedDeclaration signature = new ParameterizedDeclaration().withTypeVariable(new TypeToken<Set<String>>() {},
-				new TypeToken<Set<Number>>() {});
+		ParameterizedDeclaration signature = new ParameterizedDeclaration()
+				.withTypeVariable(new TypeToken<Set<String>>() {}, new TypeToken<Set<Number>>() {});
 
 		new ParameterizedDefinition<>(signature);
 	}

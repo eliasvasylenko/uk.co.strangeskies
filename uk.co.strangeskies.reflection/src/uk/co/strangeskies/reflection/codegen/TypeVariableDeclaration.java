@@ -38,7 +38,6 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
@@ -53,8 +52,6 @@ import uk.co.strangeskies.reflection.token.TypeToken;
  */
 public class TypeVariableDeclaration implements Type {
 	private final int index;
-	private final List<AnnotatedType> bounds;
-	private final List<Annotation> annotations;
 
 	/**
 	 * @param index
@@ -78,10 +75,6 @@ public class TypeVariableDeclaration implements Type {
 	@Override
 	public String getTypeName() {
 		return "T" + index;
-	}
-
-	public List<AnnotatedType> getBounds() {
-		return bounds;
 	}
 
 	public TypeVariableDeclaration withUpperBounds(TypeToken<?>... bounds) {

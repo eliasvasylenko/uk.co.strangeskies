@@ -32,42 +32,11 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
-import uk.co.strangeskies.reflection.token.TypeToken;
-
 /**
  * An expression for evaluation of
  * 
  * @author Elias N Vasylenko
  */
 public interface Expression {
-	static <T> ValueExpression<T> nullExpression() {
-		return new ValueExpression<T>() {
-			@Override
-			public void accept(ValueExpressionVisitor<T> visitor) {
-				visitor.visitNull();
-			}
-
-			@Override
-			public TypeToken<T> getType() {
-				return TypeToken.overNull();
-			}
-		};
-	}
-
-	static ValueExpression<Void> voidExpression() {
-		return new ValueExpression<Void>() {
-			@Override
-			public void accept(ValueExpressionVisitor<Void> visitor) {
-				visitor.visitNull();
-			}
-
-			@Override
-			public TypeToken<Void> getType() {
-				return TypeToken.overType(void.class);
-			}
-		};
-	}
-
 	void accept(ExpressionVisitor visitor);
 }
