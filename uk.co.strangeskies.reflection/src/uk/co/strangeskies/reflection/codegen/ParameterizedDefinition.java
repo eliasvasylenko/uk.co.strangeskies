@@ -60,7 +60,7 @@ public class ParameterizedDefinition<S extends ParameterizedDefinition<S>> imple
 	private final AnnotatedTypeSubstitution boundSubstitution;
 
 	public ParameterizedDefinition(ParameterizedDeclaration signature) {
-		List<TypeVariableDeclaration> typeVariableSignatures = signature.getTypeVariableSignatures();
+		List<DeclaredTypeVariable> typeVariableSignatures = signature.getTypeVariableSignatures();
 
 		isomorphism = new Isomorphism();
 		List<TypeVariable<S>> typeVariables = new ArrayList<>(typeVariableSignatures.size());
@@ -71,10 +71,10 @@ public class ParameterizedDefinition<S extends ParameterizedDefinition<S>> imple
 		 */
 		boundSubstitution = new AnnotatedTypeSubstitution().where(
 
-				t -> t.getType() instanceof TypeVariableDeclaration,
+				t -> t.getType() instanceof DeclaredTypeVariable,
 
 				t -> {
-					TypeVariable<?> typeVariable = substituteTypeVariableSignature((TypeVariableDeclaration) t.getType());
+					TypeVariable<?> typeVariable = substituteTypeVariableSignature((DeclaredTypeVariable) t.getType());
 
 					return AnnotatedTypeVariables.over(typeVariable, t.getAnnotations());
 				});
@@ -82,7 +82,7 @@ public class ParameterizedDefinition<S extends ParameterizedDefinition<S>> imple
 		/*
 		 * Perform the substitution for each signature
 		 */
-		for (TypeVariableDeclaration typeVariableSignature : typeVariableSignatures) {
+		for (DeclaredTypeVariable typeVariableSignature : typeVariableSignatures) {
 			typeVariables.add(substituteTypeVariableSignature(typeVariableSignature));
 		}
 		this.typeVariables = Collections.unmodifiableList(typeVariables);
@@ -102,7 +102,7 @@ public class ParameterizedDefinition<S extends ParameterizedDefinition<S>> imple
 		return boundSubstitution.resolve(annotatedType, isomorphism);
 	}
 
-	protected TypeVariable<S> substituteTypeVariableSignature(TypeVariableDeclaration signature) {
+	protected TypeVariable<S> substituteTypeVariableSignature(DeclaredTypeVariable signature) {
 		List<AnnotatedType> bounds = signature.getBounds().stream().map(b -> boundSubstitution.resolve(b, isomorphism))
 				.collect(Collectors.toList());
 

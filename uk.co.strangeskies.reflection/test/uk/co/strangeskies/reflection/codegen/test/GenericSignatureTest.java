@@ -47,7 +47,7 @@ import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.codegen.ParameterizedDeclaration;
 import uk.co.strangeskies.reflection.codegen.ParameterizedDefinition;
-import uk.co.strangeskies.reflection.codegen.TypeVariableDeclaration;
+import uk.co.strangeskies.reflection.codegen.DeclaredTypeVariable;
 import uk.co.strangeskies.reflection.token.TypeToken;
 import uk.co.strangeskies.utilities.Self;
 
@@ -85,7 +85,7 @@ public class GenericSignatureTest {
 	public void selfBoundingTypeVariableTest() {
 		ParameterizedDeclaration signature = new ParameterizedDeclaration();
 
-		TypeVariableDeclaration typeVariableSignature = signature.addTypeVariable();
+		DeclaredTypeVariable typeVariableSignature = signature.addTypeVariable();
 		typeVariableSignature.withUpperBounds(ParameterizedTypes.parameterizeUnchecked(Self.class, typeVariableSignature));
 
 		TypeVariable<?> typeVariable = new ParameterizedDefinition<>(signature).getTypeParameters()[0];

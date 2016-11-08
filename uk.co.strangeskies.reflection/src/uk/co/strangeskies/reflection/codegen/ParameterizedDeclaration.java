@@ -32,10 +32,13 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableList;
+import static java.util.stream.Collectors.toList;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -44,55 +47,53 @@ import java.util.List;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class ParameterizedDeclaration {
-	private final List<TypeVariableDeclaration> typeVariableSignatures;
+	private final List<DeclaredTypeVariable> typeVariables;
 	private final List<Annotation> annotations;
 
-	public ParameterizedDeclaration() {
-		typeVariableSignatures = new ArrayList<>();
-		annotations = new ArrayList<>();
+	protected ParameterizedDeclaration(List<String> typeVariableNames, List<Annotation> annotations) {
+		this.typeVariables = unmodifiableList(typeVariableNames.stream().map(DeclaredTypeVariable::new).collect(toList()));
+		this.annotations = unmodifiableList(annotations);
 
 	}
 
-	public TypeVariableDeclaration addTypeVariable() {
-		TypeVariableDeclaration typeVariable = new TypeVariableDeclaration(typeVariableSignatures.size());
-		typeVariableSignatures.add(typeVariable);
-		return typeVariable;
+	public ParameterizedDeclaration withTypeVariables(String... names) {
+		return withTypeVariables(asList(names));
 	}
 
-	public ParameterizedDeclaration withTypeVariable() {
-		addTypeVariable().withUpperBounds(new Type[] {});
-		return this;
+	public ParameterizedDeclaration withTypeVariables(List<String> names) {
+		return new ParameterizedDeclaration(names, annotations);
 	}
 
-	public ParameterizedDeclaration withTypeVariable(Type... bounds) {
+	public List<DeclaredTypeVariable> getTypeVariables() {
+		return typeVariables;
+	}
+
+	public ParameterizedDeclaration withTypeVariableBounds(String typeVariableName, Type... bounds) {
 		addTypeVariable().withUpperBounds(bounds);
 		return this;
 	}
 
-	public ParameterizedDeclaration withTypeVariable(AnnotatedType... bounds) {
+	public ParameterizedDeclaration withTypeVariable(String typeVariableName, AnnotatedType... bounds) {
 		addTypeVariable().withUpperBounds(bounds);
 		return this;
 	}
 
-	public ParameterizedDeclaration withTypeVariable(TypeToken<?>... bounds) {
+	public ParameterizedDeclaration withTypeVariable(String typeVariableName, TypeToken<?>... bounds) {
 		addTypeVariable().withUpperBounds(bounds);
 		return this;
 	}
 
-	public ParameterizedDeclaration withTypeVariable(Collection<? extends AnnotatedType> bounds) {
-		addTypeVariable().withUpperBounds(bounds);
-		return this;
-	}
-
-	public ParameterizedDeclaration withTypeVariable(Collection<? extends Annotation> annotations,
+	public ParameterizedDeclaration withTypeVariable(String typeVariableName,
 			Collection<? extends AnnotatedType> bounds) {
+		addTypeVariable().withUpperBounds(bounds);
+		return this;
+	}
+
+	public ParameterizedDeclaration withTypeVariable(String typeVariableName,
+			Collection<? extends Annotation> annotations, Collection<? extends AnnotatedType> bounds) {
 		addTypeVariable().withAnnotations(annotations);
 		addTypeVariable().withUpperBounds(bounds);
 		return this;
-	}
-
-	public List<TypeVariableDeclaration> getTypeVariableSignatures() {
-		return Collections.unmodifiableList(typeVariableSignatures);
 	}
 
 	public ParameterizedDeclaration withAnnotations(Annotation... annotations) {
