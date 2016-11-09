@@ -43,25 +43,27 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public abstract class ParameterizedDeclaration<S extends ParameterizedDeclaration<S>> extends AnnotatedDeclaration<S> {
-	private final Collection<? extends TypeVariableDeclaration> typeVariables;
+	protected final Collection<? extends TypeVariableDeclaration> typeVariables;
 
 	public ParameterizedDeclaration() {
 		typeVariables = emptySet();
 	}
 
 	protected ParameterizedDeclaration(
-			Collection<? extends Annotation> annotations,
-			Collection<? extends TypeVariableDeclaration> typeVariables) {
+			Collection<? extends TypeVariableDeclaration> typeVariables,
+			Collection<? extends Annotation> annotations) {
 		super(annotations);
 		this.typeVariables = typeVariables;
 	}
 
-	protected ParameterizedDeclaration(ParameterizedDeclaration<?> base) {
-		super(base);
-		this.typeVariables = base.typeVariables;
+	@Override
+	protected S withAnnotatedDeclarationData(Collection<? extends Annotation> annotations) {
+		return withParameterizedDeclarationData(typeVariables, annotations);
 	}
 
-	protected abstract S withMethodDeclarationData(Collection<? extends TypeVariableDeclaration> typeVariables);
+	protected abstract S withParameterizedDeclarationData(
+			Collection<? extends TypeVariableDeclaration> typeVariables,
+			Collection<? extends Annotation> annotations);
 
 	public S withTypeVariables(String... names) {
 		return withTypeVariables(stream(names).map(TypeVariableDeclaration::declareTypeVariable).collect(toList()));
@@ -72,7 +74,7 @@ public abstract class ParameterizedDeclaration<S extends ParameterizedDeclaratio
 	}
 
 	public S withTypeVariables(List<TypeVariableDeclaration> typeVariables) {
-		return withMethodDeclarationData(typeVariables);
+		return withParameterizedDeclarationData(typeVariables, annotations);
 	}
 
 	public Stream<? extends TypeVariableDeclaration> getTypeVariables() {

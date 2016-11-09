@@ -67,38 +67,25 @@ public class ClassDeclaration<T> extends ParameterizedDeclaration<ClassDeclarati
 
 	protected ClassDeclaration(String typeName) {
 		this.typeName = typeName;
-		superType = emptyList();
+		this.superType = emptyList();
 	}
 
 	protected ClassDeclaration(
 			String typeName,
 			Collection<? extends AnnotatedType> superType,
-			Collection<? extends Annotation> annotations,
-			Collection<? extends TypeVariableDeclaration> typeVariables) {
-		super(annotations, typeVariables);
-
-		this.typeName = typeName;
-		this.superType = superType;
-	}
-
-	protected ClassDeclaration(
-			ClassDeclaration<?> declaration,
-			String typeName,
-			Collection<? extends AnnotatedType> superType) {
-		super(declaration);
+			Collection<? extends TypeVariableDeclaration> typeVariables,
+			Collection<? extends Annotation> annotations) {
+		super(typeVariables, annotations);
 
 		this.typeName = typeName;
 		this.superType = superType;
 	}
 
 	@Override
-	protected TypeVariableDeclaration withAnnotatedDeclarationData(Collection<? extends Annotation> annotations) {
-		return new ClassDeclaration<>(typeName, superType, annotations, typeVariables);
-	}
-
-	@Override
-	protected ClassDeclaration<T> withMethodDeclarationData(Collection<? extends TypeVariableDeclaration> typeVariables) {
-		return new ClassDeclaration<>(typeName, superType, annotations, typeVariables);
+	protected ClassDeclaration<T> withParameterizedDeclarationData(
+			Collection<? extends TypeVariableDeclaration> typeVariables,
+			Collection<? extends Annotation> annotations) {
+		return new ClassDeclaration<>(typeName, superType, typeVariables, annotations);
 	}
 
 	protected String getTypeName() {
@@ -170,7 +157,7 @@ public class ClassDeclaration<T> extends ParameterizedDeclaration<ClassDeclarati
 	 * @return the receiver
 	 */
 	public ClassDeclaration<?> withSuperType(Collection<? extends AnnotatedType> superType) {
-		return new ClassDeclaration<>(this, typeName, superType);
+		return new ClassDeclaration<>(typeName, superType, typeVariables, annotations);
 	}
 
 	public ClassDefinition<? extends T> define() {

@@ -84,7 +84,9 @@ public class TypeVariableDeclaration extends AnnotatedDeclaration<TypeVariableDe
 	 * makes this a little simpler.
 	 * 
 	 * @param name
-	 * @return
+	 *          the name of the type variable declaration to create a placeholder
+	 *          for
+	 * @return a placeholder for a type variable of the given name
 	 */
 	public static Type referenceTypeVariable(String name) {
 		return new Reference(name);
@@ -107,20 +109,10 @@ public class TypeVariableDeclaration extends AnnotatedDeclaration<TypeVariableDe
 	}
 
 	protected TypeVariableDeclaration(
-			Collection<? extends Annotation> annotations,
 			String name,
-			Collection<? extends AnnotatedType> bounds) {
+			Collection<? extends AnnotatedType> bounds,
+			Collection<? extends Annotation> annotations) {
 		super(annotations);
-
-		this.name = name;
-		this.bounds = bounds;
-	}
-
-	protected TypeVariableDeclaration(
-			AnnotatedDeclaration<?> declaration,
-			String name,
-			Collection<? extends AnnotatedType> bounds) {
-		super(declaration);
 
 		this.name = name;
 		this.bounds = bounds;
@@ -128,7 +120,7 @@ public class TypeVariableDeclaration extends AnnotatedDeclaration<TypeVariableDe
 
 	@Override
 	protected TypeVariableDeclaration withAnnotatedDeclarationData(Collection<? extends Annotation> annotations) {
-		return new TypeVariableDeclaration(annotations, name, bounds);
+		return new TypeVariableDeclaration(name, bounds, annotations);
 	}
 
 	public String getName() {
@@ -156,6 +148,6 @@ public class TypeVariableDeclaration extends AnnotatedDeclaration<TypeVariableDe
 	}
 
 	public TypeVariableDeclaration withBounds(Collection<? extends AnnotatedType> bounds) {
-		return new TypeVariableDeclaration(this, name, bounds);
+		return new TypeVariableDeclaration(name, bounds, annotations);
 	}
 }
