@@ -33,81 +33,49 @@
 package uk.co.strangeskies.reflection.codegen;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableList;
+import static java.util.Arrays.stream;
+import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toList;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedType;
-import java.lang.reflect.Type;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
-import uk.co.strangeskies.reflection.token.TypeToken;
+public abstract class ParameterizedDeclaration<S extends ParameterizedDeclaration<S>> extends AnnotatedDeclaration<S> {
+	private final Collection<? extends TypeVariableDeclaration> typeVariables;
 
-public class ParameterizedDeclaration {
-	private final List<DeclaredTypeVariable> typeVariables;
-	private final List<Annotation> annotations;
-
-	protected ParameterizedDeclaration(List<String> typeVariableNames, List<Annotation> annotations) {
-		this.typeVariables = unmodifiableList(typeVariableNames.stream().map(DeclaredTypeVariable::new).collect(toList()));
-		this.annotations = unmodifiableList(annotations);
-
+	public ParameterizedDeclaration() {
+		typeVariables = emptySet();
 	}
 
-	public ParameterizedDeclaration withTypeVariables(String... names) {
-		return withTypeVariables(asList(names));
+	protected ParameterizedDeclaration(
+			Collection<? extends Annotation> annotations,
+			Collection<? extends TypeVariableDeclaration> typeVariables) {
+		super(annotations);
+		this.typeVariables = typeVariables;
 	}
 
-	public ParameterizedDeclaration withTypeVariables(List<String> names) {
-		return new ParameterizedDeclaration(names, annotations);
+	protected ParameterizedDeclaration(ParameterizedDeclaration<?> base) {
+		super(base);
+		this.typeVariables = base.typeVariables;
 	}
 
-	public List<DeclaredTypeVariable> getTypeVariables() {
-		return typeVariables;
+	protected abstract S withMethodDeclarationData(Collection<? extends TypeVariableDeclaration> typeVariables);
+
+	public S withTypeVariables(String... names) {
+		return withTypeVariables(stream(names).map(TypeVariableDeclaration::declareTypeVariable).collect(toList()));
 	}
 
-	public ParameterizedDeclaration withTypeVariableBounds(String typeVariableName, Type... bounds) {
-		addTypeVariable().withUpperBounds(bounds);
-		return this;
+	public S withTypeVariables(TypeVariableDeclaration... typeVariables) {
+		return withTypeVariables(asList(typeVariables));
 	}
 
-	public ParameterizedDeclaration withTypeVariable(String typeVariableName, AnnotatedType... bounds) {
-		addTypeVariable().withUpperBounds(bounds);
-		return this;
+	public S withTypeVariables(List<TypeVariableDeclaration> typeVariables) {
+		return withMethodDeclarationData(typeVariables);
 	}
 
-	public ParameterizedDeclaration withTypeVariable(String typeVariableName, TypeToken<?>... bounds) {
-		addTypeVariable().withUpperBounds(bounds);
-		return this;
-	}
-
-	public ParameterizedDeclaration withTypeVariable(String typeVariableName,
-			Collection<? extends AnnotatedType> bounds) {
-		addTypeVariable().withUpperBounds(bounds);
-		return this;
-	}
-
-	public ParameterizedDeclaration withTypeVariable(String typeVariableName,
-			Collection<? extends Annotation> annotations, Collection<? extends AnnotatedType> bounds) {
-		addTypeVariable().withAnnotations(annotations);
-		addTypeVariable().withUpperBounds(bounds);
-		return this;
-	}
-
-	public ParameterizedDeclaration withAnnotations(Annotation... annotations) {
-		return withAnnotations(Arrays.asList(annotations));
-	}
-
-	public ParameterizedDeclaration withAnnotations(Collection<? extends Annotation> annotations) {
-		this.annotations.clear();
-		this.annotations.addAll(annotations);
-
-		return this;
-	}
-
-	public List<Annotation> getAnnotations() {
-		return Collections.unmodifiableList(annotations);
+	public Stream<? extends TypeVariableDeclaration> getTypeVariables() {
+		return typeVariables.stream();
 	}
 }

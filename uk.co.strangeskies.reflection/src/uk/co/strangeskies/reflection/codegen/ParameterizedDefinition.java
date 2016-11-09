@@ -34,8 +34,10 @@ package uk.co.strangeskies.reflection.codegen;
 
 import static java.util.Collections.unmodifiableMap;
 import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
+import static uk.co.strangeskies.reflection.TypeVariables.typeVariableExtending;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
@@ -45,11 +47,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.AnnotatedTypeSubstitution;
 import uk.co.strangeskies.reflection.AnnotatedTypeVariables;
-import uk.co.strangeskies.reflection.TypeVariables;
 import uk.co.strangeskies.utilities.Isomorphism;
 
 public class ParameterizedDefinition<S extends ParameterizedDefinition<S>> implements GenericDeclaration {
@@ -59,8 +60,8 @@ public class ParameterizedDefinition<S extends ParameterizedDefinition<S>> imple
 	private final Isomorphism isomorphism;
 	private final AnnotatedTypeSubstitution boundSubstitution;
 
-	public ParameterizedDefinition(ParameterizedDeclaration signature) {
-		List<DeclaredTypeVariable> typeVariableSignatures = signature.getTypeVariableSignatures();
+	public ParameterizedDefinition(ParameterizedDeclaration<?> signature) {
+		List<TypeVariableDeclaration> typeVariableSignatures = signature.getTypeVariables().collect(toList());
 
 		isomorphism = new Isomorphism();
 		List<TypeVariable<S>> typeVariables = new ArrayList<>(typeVariableSignatures.size());
@@ -71,10 +72,10 @@ public class ParameterizedDefinition<S extends ParameterizedDefinition<S>> imple
 		 */
 		boundSubstitution = new AnnotatedTypeSubstitution().where(
 
-				t -> t.getType() instanceof DeclaredTypeVariable,
+				t -> t.getType() instanceof TypeVariableDeclaration,
 
 				t -> {
-					TypeVariable<?> typeVariable = substituteTypeVariableSignature((DeclaredTypeVariable) t.getType());
+					TypeVariable<?> typeVariable = substituteTypeVariableSignature((TypeVariableDeclaration) t.getType());
 
 					return AnnotatedTypeVariables.over(typeVariable, t.getAnnotations());
 				});
@@ -82,7 +83,7 @@ public class ParameterizedDefinition<S extends ParameterizedDefinition<S>> imple
 		/*
 		 * Perform the substitution for each signature
 		 */
-		for (DeclaredTypeVariable typeVariableSignature : typeVariableSignatures) {
+		for (TypeVariableDeclaration typeVariableSignature : typeVariableSignatures) {
 			typeVariables.add(substituteTypeVariableSignature(typeVariableSignature));
 		}
 		this.typeVariables = Collections.unmodifiableList(typeVariables);
@@ -95,18 +96,20 @@ public class ParameterizedDefinition<S extends ParameterizedDefinition<S>> imple
 		}
 
 		this.annotations = unmodifiableMap(
-				signature.getAnnotations().stream().collect(toMap(Annotation::annotationType, identity())));
+				signature.getAnnotations().collect(toMap(Annotation::annotationType, identity())));
 	}
 
 	protected AnnotatedType substituteTypeVariableSignatures(AnnotatedType annotatedType) {
 		return boundSubstitution.resolve(annotatedType, isomorphism);
 	}
 
-	protected TypeVariable<S> substituteTypeVariableSignature(DeclaredTypeVariable signature) {
-		List<AnnotatedType> bounds = signature.getBounds().stream().map(b -> boundSubstitution.resolve(b, isomorphism))
-				.collect(Collectors.toList());
+	protected TypeVariable<S> substituteTypeVariableSignature(TypeVariableDeclaration typeVariable) {
+		List<AnnotatedType> bounds = typeVariable
+				.getBounds()
+				.map(b -> boundSubstitution.resolve(b, isomorphism))
+				.collect(toList());
 
-		return TypeVariables.typeVariableExtending(getThis(), signature.getTypeName(), bounds);
+		return typeVariableExtending(getThis(), typeVariable.getName(), bounds);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -135,7 +138,7 @@ public class ParameterizedDefinition<S extends ParameterizedDefinition<S>> imple
 		return typeVariables.toArray(new TypeVariable<?>[typeVariables.size()]);
 	}
 
-	public List<TypeVariable<S>> getTypeVariables() {
-		return typeVariables;
+	public Stream<TypeVariable<S>> getTypeVariables() {
+		return typeVariables.stream();
 	}
 }

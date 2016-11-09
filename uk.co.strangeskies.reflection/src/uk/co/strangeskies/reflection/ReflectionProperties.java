@@ -142,4 +142,6 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 
 	Localized<String> incorrectTypeArgumentCount(Class<?> rawType, List<TypeVariable<?>> typeParameters,
 			List<Type> typeArguments);
+
+	Localized<String> duplicateTypeVariable(String n);
 }

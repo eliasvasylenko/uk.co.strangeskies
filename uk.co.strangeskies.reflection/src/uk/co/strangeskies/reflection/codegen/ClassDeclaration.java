@@ -32,13 +32,15 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import static java.util.Collections.emptyList;
+
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.token.TypeToken;
@@ -55,25 +57,56 @@ import uk.co.strangeskies.reflection.token.TypeToken;
  * @param <T>
  *          the intersection of the supertypes of the described class
  */
-public class ClassDeclaration<T> extends ParameterizedDeclaration {
+public class ClassDeclaration<T> extends ParameterizedDeclaration<ClassDeclaration<T>> {
 	public static ClassDeclaration<Object> declareClass(String typeName) {
 		return new ClassDeclaration<>(typeName);
 	}
 
 	private final String typeName;
-	private final List<AnnotatedType> superType;
+	private final Collection<? extends AnnotatedType> superType;
 
 	protected ClassDeclaration(String typeName) {
 		this.typeName = typeName;
-		superType = new ArrayList<>();
+		superType = emptyList();
+	}
+
+	protected ClassDeclaration(
+			String typeName,
+			Collection<? extends AnnotatedType> superType,
+			Collection<? extends Annotation> annotations,
+			Collection<? extends TypeVariableDeclaration> typeVariables) {
+		super(annotations, typeVariables);
+
+		this.typeName = typeName;
+		this.superType = superType;
+	}
+
+	protected ClassDeclaration(
+			ClassDeclaration<?> declaration,
+			String typeName,
+			Collection<? extends AnnotatedType> superType) {
+		super(declaration);
+
+		this.typeName = typeName;
+		this.superType = superType;
+	}
+
+	@Override
+	protected TypeVariableDeclaration withAnnotatedDeclarationData(Collection<? extends Annotation> annotations) {
+		return new ClassDeclaration<>(typeName, superType, annotations, typeVariables);
+	}
+
+	@Override
+	protected ClassDeclaration<T> withMethodDeclarationData(Collection<? extends TypeVariableDeclaration> typeVariables) {
+		return new ClassDeclaration<>(typeName, superType, annotations, typeVariables);
 	}
 
 	protected String getTypeName() {
 		return typeName;
 	}
 
-	protected List<AnnotatedType> getSuperTypes() {
-		return superType;
+	protected Stream<? extends AnnotatedType> getSuperTypes() {
+		return superType.stream();
 	}
 
 	/**
@@ -137,9 +170,7 @@ public class ClassDeclaration<T> extends ParameterizedDeclaration {
 	 * @return the receiver
 	 */
 	public ClassDeclaration<?> withSuperType(Collection<? extends AnnotatedType> superType) {
-		this.superType.clear();
-		this.superType.addAll(superType);
-		return this;
+		return new ClassDeclaration<>(this, typeName, superType);
 	}
 
 	public ClassDefinition<? extends T> define() {

@@ -33,6 +33,7 @@
 package uk.co.strangeskies.reflection.codegen;
 
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
 
 import java.lang.reflect.AnnotatedType;
@@ -208,9 +209,12 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 
 		typeName = signature.getTypeName();
 
-		superTypes = Collections
-				.unmodifiableList(signature.getSuperTypes().stream().map(this::substituteTypeVariableSignatures)
-						.map(TypeToken::overAnnotatedType).map(t -> (TypeToken<? super T>) t).collect(Collectors.toList()));
+		superTypes = Collections.unmodifiableList(signature
+				.getSuperTypes()
+				.map(this::substituteTypeVariableSignatures)
+				.map(TypeToken::overAnnotatedType)
+				.map(t -> (TypeToken<? super T>) t)
+				.collect(toList()));
 
 		Type superType = intersectionOf(superTypes.stream().map(TypeToken::getType).collect(Collectors.toList()));
 		this.superType = (TypeToken<T>) TypeToken.overType(superType);
@@ -223,10 +227,12 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 
 		invocables = new HashMap<>();
 		methods = new HashMap<>();
-		getSuperTypes().stream().flatMap(t -> t.getRawTypes().stream()).flatMap(t -> Arrays.stream(t.getMethods()))
+		getSuperTypes().stream().flatMap(t -> t.getRawTypes().stream()).flatMap(t -> Arrays.stream(t.getMethods())).forEach(
+				this::inheritMethod);
+		StreamUtilities
+				.<Class<?>> iterate(getSuperClass(), Class::getSuperclass)
+				.flatMap(c -> Arrays.stream(c.getDeclaredMethods()))
 				.forEach(this::inheritMethod);
-		StreamUtilities.<Class<?>>iterate(getSuperClass(), Class::getSuperclass)
-				.flatMap(c -> Arrays.stream(c.getDeclaredMethods())).forEach(this::inheritMethod);
 
 		this.receiverExpression = new ValueExpression<T>() {
 			@Override
@@ -304,7 +310,9 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 	public ReflectiveInstance<T> instantiate(ClassLoader classLoader, Collection<? extends Object> arguments) {
 		validate();
 
-		Set<Class<?>> rawTypes = superTypes.stream().flatMap(t -> t.getRawTypes().stream())
+		Set<Class<?>> rawTypes = superTypes
+				.stream()
+				.flatMap(t -> t.getRawTypes().stream())
 				.collect(Collectors.toCollection(LinkedHashSet::new));
 
 		for (Class<?> rawType : rawTypes) {

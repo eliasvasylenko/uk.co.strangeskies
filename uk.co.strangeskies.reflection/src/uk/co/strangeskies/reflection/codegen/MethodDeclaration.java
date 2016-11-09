@@ -32,35 +32,71 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Type;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
-public class MethodDeclaration<C, T> extends ParameterizedDeclaration implements MemberDeclaration<C> {
+public class MethodDeclaration<C, T> extends ParameterizedDeclaration<MethodDeclaration<C, T>>
+		implements MemberDeclaration<C> {
+	protected static <C> MethodDeclaration<C, Void> declareMethod(ClassDefinition<C> classDefinition, String methodName) {
+		return new MethodDeclaration<>(classDefinition, methodName);
+	}
+
 	private final ClassDefinition<C> classDefinition;
 	private final String methodName;
 
 	private final Map<VariableExpressionProxy<?>, AnnotatedType> parameters;
-	private AnnotatedType returnType;
+	private final AnnotatedType returnType;
 
-	protected MethodDeclaration(ClassDefinition<C> classDefinition, String methodName, TypeToken<T> returnType) {
+	protected MethodDeclaration(ClassDefinition<C> classDefinition, String methodName) {
 		this.classDefinition = classDefinition;
 		this.methodName = methodName;
-		this.returnType = returnType.getAnnotatedDeclaration();
 
 		parameters = new LinkedHashMap<>();
+		this.returnType = AnnotatedTypes.over(void.class);
 	}
 
-	protected static <C> MethodDeclaration<C, Void> declareMethod(ClassDefinition<C> classDefinition, String methodName) {
-		return new MethodDeclaration<>(classDefinition, methodName, TypeToken.overType(void.class));
+	protected MethodDeclaration(
+			ClassDefinition<C> classDefinition,
+			String methodName,
+			Map<VariableExpressionProxy<?>, AnnotatedType> parameters,
+			AnnotatedType returnType,
+			Collection<? extends Annotation> annotations,
+			Collection<? extends TypeVariableDeclaration> typeVariables) {
+		super(annotations, typeVariables);
+
+		this.classDefinition = classDefinition;
+		this.methodName = methodName;
+		this.parameters = parameters;
+		this.returnType = returnType;
+	}
+
+	protected MethodDeclaration(
+			MethodDeclaration<?, ?> declaration,
+			ClassDefinition<C> classDefinition,
+			String methodName,
+			Map<VariableExpressionProxy<?>, AnnotatedType> parameters,
+			AnnotatedType returnType) {
+		super(declaration);
+
+		this.classDefinition = classDefinition;
+		this.methodName = methodName;
+		this.parameters = parameters;
+		this.returnType = returnType;
+	}
+
+	@Override
+	protected MethodDeclaration<C, T> withMethodDeclarationData(
+			Collection<? extends Annotation> annotations,
+			Collection<? extends TypeVariableDeclaration> typeVariables) {
+		return new MethodDeclaration<>(classDefinition, methodName, parameters, returnType, annotations, typeVariables);
 	}
 
 	@Override
@@ -68,8 +104,8 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration implements
 		return classDefinition;
 	}
 
-	public Set<VariableExpressionProxy<?>> getParameters() {
-		return parameters.keySet();
+	public Stream<VariableExpressionProxy<?>> getParameters() {
+		return parameters.keySet().stream();
 	}
 
 	public AnnotatedType getParameterType(VariableExpressionProxy<?> parameter) {
@@ -94,49 +130,23 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration implements
 		return new InstanceMethodDefinition<>(this);
 	}
 
-	public VariableExpression<?> addParameter(AnnotatedType type) {
-		VariableExpressionProxy<?> proxy = new VariableExpressionProxy<>();
-		parameters.put(proxy, type);
-		return proxy;
-	}
+	public MethodDefinition<C, T> withParameter(String parameterName, AnnotatedType type) {}
 
-	public VariableExpression<?> addParameter(Type type) {
-		return addParameter(AnnotatedTypes.over(type));
+	public MethodDefinition<C, T> withParameter(String parameterName, Type type) {
+		return withParameter(parameterName, AnnotatedTypes.over(type));
 	}
 
 	@SuppressWarnings("unchecked")
-	public <U> VariableExpression<U> addParameter(Class<U> type) {
-		return (VariableExpression<U>) addParameter(AnnotatedTypes.over(type));
+	public <U> MethodDefinition<C, T> withParameter(String parameterName, Class<U> type) {
+		return withParameter(parameterName, AnnotatedTypes.over(type));
 	}
 
 	@SuppressWarnings("unchecked")
-	public <U> VariableExpression<U> addParameter(TypeToken<U> type) {
-		return (VariableExpression<U>) addParameter(type.getAnnotatedDeclaration());
+	public <U> MethodDefinition<C, T> withParameter(String parameterName, TypeToken<U> type) {
+		return withParameter(parameterName, type.getAnnotatedDeclaration());
 	}
 
-	public MethodDeclaration<C, T> withParameters(Collection<AnnotatedType> types) {
-		for (AnnotatedType type : types) {
-			addParameter(type);
-		}
-		return this;
-	}
-
-	public MethodDeclaration<C, T> withParameters(AnnotatedType... types) {
-		return withParameters(Arrays.asList(types));
-	}
-
-	public MethodDeclaration<C, T> withParameters(Type... types) {
-		return withParameters(AnnotatedTypes.over(types));
-	}
-
-	public MethodDeclaration<C, T> withParameters(TypeToken<?>... types) {
-		return withParameters(Arrays.stream(types).map(TypeToken::getAnnotatedDeclaration).collect(Collectors.toList()));
-	}
-
-	public MethodDeclaration<C, ?> withReturnType(AnnotatedType type) {
-		returnType = type;
-		return this;
-	}
+	public MethodDeclaration<C, ?> withReturnType(AnnotatedType type) {}
 
 	public MethodDeclaration<C, ?> withReturnType(Type type) {
 		return withReturnType(AnnotatedTypes.over(type));
