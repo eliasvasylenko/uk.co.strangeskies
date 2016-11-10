@@ -32,73 +32,92 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Objects;
+import static java.util.Arrays.asList;
 
-/**
- * The signature of a method according to Java language override rules. In other
- * words, the identity of a method as given by its name and erased parameter
- * types.
- * 
- * @author Elias N Vasylenko
- */
-public class MethodSignature {
-	private final String name;
-	private final Class<?>[] parameterClasses;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedType;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.stream.Stream;
 
-	/**
-	 * @param method
-	 *          the method for which we require the signature
-	 */
-	public MethodSignature(Method method) {
-		this(method.getName(), method.getParameterTypes());
+import uk.co.strangeskies.reflection.AnnotatedTypes;
+import uk.co.strangeskies.reflection.token.TypeToken;
+
+public class MethodSignature<T> extends ParameterizedSignature<MethodSignature<T>>
+		implements MemberSignature<MethodSignature<T>> {
+	private final String methodName;
+
+	private final Collection<? extends VariableSignature<?>> parameters;
+	private final AnnotatedType returnType;
+
+	public MethodSignature(String methodName) {
+		this.methodName = methodName;
+		this.parameters = Collections.emptySet();
+		this.returnType = AnnotatedTypes.over(void.class);
 	}
 
-	/**
-	 * @param name
-	 *          the name of the method signature
-	 * @param parameterClasses
-	 *          the erased type of the method signature
-	 */
-	public MethodSignature(String name, Class<?>[] parameterClasses) {
-		this.name = name;
-		this.parameterClasses = parameterClasses;
+	protected MethodSignature(
+			String methodName,
+			Collection<? extends VariableSignature<?>> parameters,
+			AnnotatedType returnType,
+			Collection<? extends TypeVariableSignature> typeVariables,
+			Collection<? extends Annotation> annotations) {
+		super(typeVariables, annotations);
+
+		this.methodName = methodName;
+		this.parameters = parameters;
+		this.returnType = returnType;
 	}
 
-	/**
-	 * @return the name of the method
-	 */
+	@Override
+	protected MethodSignature<T> withParameterizedDeclarationData(
+			Collection<? extends TypeVariableSignature> typeVariables,
+			Collection<? extends Annotation> annotations) {
+		return new MethodSignature<>(methodName, parameters, returnType, typeVariables, annotations);
+	}
+
+	public Stream<? extends VariableSignature<?>> getParameters() {
+		return parameters.stream();
+	}
+
+	@Override
 	public String getName() {
-		return name;
+		return methodName;
 	}
 
-	/**
-	 * @return the erased parameter types of the method
-	 */
-	public Class<?>[] getParameterClasses() {
-		return parameterClasses;
+	public AnnotatedType getReturnType() {
+		return returnType;
 	}
 
-	@Override
-	public boolean equals(Object obj) {
-		if (obj == this)
-			return true;
-		else if (!(obj instanceof MethodSignature))
-			return false;
-
-		MethodSignature that = (MethodSignature) obj;
-
-		return Arrays.equals(this.parameterClasses, that.parameterClasses) && Objects.equals(this.name, that.name);
+	protected <C> MethodDefinition<C, T> defineInstance(ClassSignature<C> classDeclaration) {
+		return new InstanceMethodDefinition<>(classDeclaration, this);
 	}
 
-	@Override
-	public int hashCode() {
-		return Arrays.hashCode(parameterClasses) ^ name.hashCode();
+	public MethodSignature<T> withParameters(VariableSignature<?>... parameters) {
+		return withParameters(asList(parameters));
 	}
 
-	@Override
-	public String toString() {
-		return name + "(" + Arrays.toString(parameterClasses) + ")";
+	public MethodSignature<T> withParameters(Collection<? extends VariableSignature<?>> parameters) {
+		return new MethodSignature<>(methodName, new ArrayList<>(parameters), returnType, typeVariables, annotations);
+	}
+
+	public MethodSignature<?> withReturnType(AnnotatedType type) {
+		return new MethodSignature<>(methodName, parameters, type, typeVariables, annotations);
+	}
+
+	public MethodSignature<?> withReturnType(Type type) {
+		return withReturnType(AnnotatedTypes.over(type));
+	}
+
+	@SuppressWarnings("unchecked")
+	public <U> MethodSignature<U> withReturnType(Class<U> type) {
+		return (MethodSignature<U>) withReturnType(AnnotatedTypes.over(type));
+	}
+
+	@SuppressWarnings("unchecked")
+	public <U> MethodSignature<U> withReturnType(TypeToken<U> type) {
+		return (MethodSignature<U>) withReturnType(type.getAnnotatedDeclaration());
 	}
 }

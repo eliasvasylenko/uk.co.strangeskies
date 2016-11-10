@@ -34,7 +34,7 @@ package uk.co.strangeskies.reflection.codegen;
 
 import java.lang.reflect.AnnotatedType;
 
-public class FieldDeclaration<C, T> implements MemberDeclaration<C> {
+public class FieldDeclaration<C, T> implements MemberSignature<C> {
 	private final ClassDefinition<C> classDefinition;
 	private final String fieldName;
 

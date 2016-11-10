@@ -32,8 +32,6 @@
  */
 package uk.co.strangeskies.reflection.codegen.test;
 
-import static uk.co.strangeskies.reflection.codegen.ClassDeclaration.declareClass;
-
 import java.util.Set;
 import java.util.function.Function;
 
@@ -42,7 +40,8 @@ import org.junit.Test;
 
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.codegen.ClassDefinition;
-import uk.co.strangeskies.reflection.codegen.MethodDeclaration;
+import uk.co.strangeskies.reflection.codegen.ClassSignature;
+import uk.co.strangeskies.reflection.codegen.MethodSignature;
 import uk.co.strangeskies.reflection.codegen.VariableExpression;
 import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.TypeToken;
@@ -70,10 +69,10 @@ public class ClassDefinitionTest {
 
 	@Test
 	public void runnableClassInvocationTest() {
-		ClassDefinition<? extends Runnable> classDefinition = declareClass(TEST_CLASS_NAME).withSuperType(Runnable.class)
+		ClassDefinition<? extends Runnable> classDefinition = new ClassSignature<>(TEST_CLASS_NAME)
+				.withSuperType(Runnable.class)
+				.declare()
 				.define();
-
-		classDefinition.declareMethod("run").define();
 
 		Runnable instance = classDefinition.instantiate().cast();
 
@@ -82,16 +81,25 @@ public class ClassDefinitionTest {
 
 	@Test
 	public void functionClassInvocationTest() {
-		ExecutableToken<? super String, String> concatMethod = STRING_TYPE.getMethods().named("concat")
-				.resolveOverload(STRING_TYPE).withTargetType(STRING_TYPE);
+		ExecutableToken<? super String, String> concatMethod = STRING_TYPE
+				.getMethods()
+				.named("concat")
+				.resolveOverload(STRING_TYPE)
+				.withTargetType(STRING_TYPE);
 
-		ClassDefinition<? extends Function<String, String>> classDefinition = declareClass(TEST_CLASS_NAME)
-				.withSuperType(new TypeToken<Function<String, String>>() {}).define();
+		ClassDefinition<? extends Function<String, String>> classDefinition = new ClassSignature<>(TEST_CLASS_NAME)
+				.withSuperType(new TypeToken<Function<String, String>>() {})
+				.declare()
+				.define();
 
-		MethodDeclaration<? extends Function<String, String>, String> applyMethod = classDefinition.declareMethod("apply")
+		MethodSignature<? extends Function<String, String>, String> applyMethod = classDefinition
+				.declareMethod("apply")
 				.withReturnType(STRING_TYPE);
 		VariableExpression<String> parameter = applyMethod.addParameter(STRING_TYPE);
-		applyMethod.define().body().addExpression(parameter.assign(parameter.invokeMethod(concatMethod, parameter)))
+		applyMethod
+				.define()
+				.body()
+				.addExpression(parameter.assign(parameter.invokeMethod(concatMethod, parameter)))
 				.addReturnStatement(parameter);
 
 		Function<String, String> instance = classDefinition.instantiate().cast();
@@ -103,26 +111,29 @@ public class ClassDefinitionTest {
 
 	@Test(expected = ReflectionException.class)
 	public void invalidSuperTypeTest() {
-		ClassDefinition<? extends Set<?>> classDefinition = declareClass(TEST_CLASS_NAME)
-				.withSuperType(new TypeToken<Set<String>>() {}, new TypeToken<Set<Number>>() {}).define();
-		classDefinition.validate();
+		new ClassSignature<>(TEST_CLASS_NAME)
+				.withSuperType(new TypeToken<Set<String>>() {}, new TypeToken<Set<Number>>() {})
+				.declare();
 	}
 
 	@Test(expected = ReflectionException.class)
 	public void inheritedMethodCollisionTest() {
-		declareClass(TEST_CLASS_NAME)
-				.withSuperType(new TypeToken<StringMethod>() {}, new TypeToken<NumberMethod<String>>() {}).define().validate();
+		new ClassSignature<>(TEST_CLASS_NAME)
+				.withSuperType(new TypeToken<StringMethod>() {}, new TypeToken<NumberMethod<String>>() {})
+				.declare();
 	}
 
 	@Test(expected = ReflectionException.class)
 	public void inheritedMethodCollisionAvoidenceTest() {
-		declareClass(TEST_CLASS_NAME)
-				.withSuperType(new TypeToken<StringMethod>() {}, new TypeToken<NumberMethod<Integer>>() {}).define().validate();
+		new ClassSignature<>(TEST_CLASS_NAME)
+				.withSuperType(new TypeToken<StringMethod>() {}, new TypeToken<NumberMethod<Integer>>() {})
+				.declare();
 	}
 
 	@Test(expected = ReflectionException.class)
 	public void indirectlyInheritedMethodCollisionTest() {
-		declareClass(TEST_CLASS_NAME)
-				.withSuperType(new TypeToken<StringMethod>() {}, new TypeToken<NumberMethodSubType>() {}).define().validate();
+		new ClassSignature<>(TEST_CLASS_NAME)
+				.withSuperType(new TypeToken<StringMethod>() {}, new TypeToken<NumberMethodSubType>() {})
+				.declare();
 	}
 }

@@ -32,52 +32,113 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import static java.util.Arrays.asList;
-import static java.util.Arrays.stream;
-import static java.util.Collections.emptySet;
+import static java.util.Collections.unmodifiableMap;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
+import static uk.co.strangeskies.reflection.TypeVariables.typeVariableExtending;
 
 import java.lang.annotation.Annotation;
-import java.util.Collection;
+import java.lang.reflect.AnnotatedType;
+import java.lang.reflect.GenericDeclaration;
+import java.lang.reflect.TypeVariable;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
-public abstract class ParameterizedDeclaration<S extends ParameterizedDeclaration<S>> extends AnnotatedDeclaration<S> {
-	protected final Collection<? extends TypeVariableDeclaration> typeVariables;
+import uk.co.strangeskies.reflection.AnnotatedTypeSubstitution;
+import uk.co.strangeskies.reflection.AnnotatedTypeVariables;
+import uk.co.strangeskies.utilities.Isomorphism;
 
-	public ParameterizedDeclaration() {
-		typeVariables = emptySet();
+public class ParameterizedDeclaration<S extends ParameterizedSignature<S>> extends AnnotatedDeclaration<S>
+		implements GenericDeclaration {
+	private final List<TypeVariable<? extends ParameterizedDeclaration<S>>> typeVariables;
+	private final Map<Class<? extends Annotation>, Annotation> annotations;
+
+	private final Isomorphism isomorphism;
+	private final AnnotatedTypeSubstitution boundSubstitution;
+
+	public ParameterizedDeclaration(S signature) {
+		super(signature);
+
+		List<TypeVariableSignature> typeVariableSignatures = signature.getTypeVariables().collect(toList());
+
+		isomorphism = new Isomorphism();
+		List<TypeVariable<? extends ParameterizedDeclaration<S>>> typeVariables = new ArrayList<>(
+				typeVariableSignatures.size());
+
+		/*
+		 * create type substitutions mapping out TypeVariableSignatures to their
+		 * actual TypeVariables.
+		 */
+		boundSubstitution = new AnnotatedTypeSubstitution().where(
+
+				t -> t.getType() instanceof TypeVariableSignature,
+
+				t -> {
+					TypeVariable<?> typeVariable = substituteTypeVariableSignature((TypeVariableSignature) t.getType());
+
+					return AnnotatedTypeVariables.over(typeVariable, t.getAnnotations());
+				});
+
+		/*
+		 * Perform the substitution for each signature
+		 */
+		for (TypeVariableSignature typeVariableSignature : typeVariableSignatures) {
+			typeVariables.add(substituteTypeVariableSignature(typeVariableSignature));
+		}
+		this.typeVariables = Collections.unmodifiableList(typeVariables);
+
+		/*
+		 * Check consistency of type bounds
+		 */
+		for (TypeVariable<?> typeVariable : typeVariables) {
+			intersectionOf(typeVariable.getBounds());
+		}
+
+		this.annotations = unmodifiableMap(
+				signature.getAnnotations().collect(toMap(Annotation::annotationType, identity())));
 	}
 
-	protected ParameterizedDeclaration(
-			Collection<? extends TypeVariableDeclaration> typeVariables,
-			Collection<? extends Annotation> annotations) {
-		super(annotations);
-		this.typeVariables = typeVariables;
+	protected AnnotatedType substituteTypeVariableSignatures(AnnotatedType annotatedType) {
+		return boundSubstitution.resolve(annotatedType, isomorphism);
+	}
+
+	protected TypeVariable<? extends ParameterizedDeclaration<S>> substituteTypeVariableSignature(
+			TypeVariableSignature typeVariable) {
+		List<AnnotatedType> bounds = typeVariable
+				.getBounds()
+				.map(b -> boundSubstitution.resolve(b, isomorphism))
+				.collect(toList());
+
+		return typeVariableExtending(this, typeVariable.getName(), bounds);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public final <U extends Annotation> U getAnnotation(Class<U> annotationClass) {
+		return (U) annotations.get(annotationClass);
 	}
 
 	@Override
-	protected S withAnnotatedDeclarationData(Collection<? extends Annotation> annotations) {
-		return withParameterizedDeclarationData(typeVariables, annotations);
+	public final Annotation[] getAnnotations() {
+		return annotations.values().toArray(new Annotation[annotations.size()]);
 	}
 
-	protected abstract S withParameterizedDeclarationData(
-			Collection<? extends TypeVariableDeclaration> typeVariables,
-			Collection<? extends Annotation> annotations);
-
-	public S withTypeVariables(String... names) {
-		return withTypeVariables(stream(names).map(TypeVariableDeclaration::declareTypeVariable).collect(toList()));
+	@Override
+	public final Annotation[] getDeclaredAnnotations() {
+		return getAnnotations();
 	}
 
-	public S withTypeVariables(TypeVariableDeclaration... typeVariables) {
-		return withTypeVariables(asList(typeVariables));
+	@Override
+	public TypeVariable<?>[] getTypeParameters() {
+		return typeVariables.toArray(new TypeVariable<?>[typeVariables.size()]);
 	}
 
-	public S withTypeVariables(List<TypeVariableDeclaration> typeVariables) {
-		return withParameterizedDeclarationData(typeVariables, annotations);
-	}
-
-	public Stream<? extends TypeVariableDeclaration> getTypeVariables() {
+	public Stream<? extends TypeVariable<? extends ParameterizedDeclaration<S>>> getTypeVariables() {
 		return typeVariables.stream();
 	}
 }

@@ -32,42 +32,52 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import static uk.co.strangeskies.reflection.codegen.ClassSignature.declareClass;
-import static uk.co.strangeskies.reflection.codegen.InvocationExpression.invokeStatic;
+import static java.util.Arrays.asList;
+import static java.util.Arrays.stream;
+import static java.util.Collections.emptySet;
+import static java.util.stream.Collectors.toList;
 
-import java.util.concurrent.atomic.AtomicLong;
+import java.lang.annotation.Annotation;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Stream;
 
-import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
-import uk.co.strangeskies.reflection.token.TypeToken;
+public abstract class ParameterizedSignature<S extends ParameterizedSignature<S>> extends AnnotatedSignature<S> {
+	protected final Collection<? extends TypeVariableSignature> typeVariables;
 
-public class Expressions {
-	private Expressions() {}
-
-	private static final ValueExpression<Object> NULL_EXPRESSION = new ValueExpression<Object>() {
-		@Override
-		public void accept(ValueExpressionVisitor<Object> visitor) {
-			visitor.visitNull();
-		}
-
-		@Override
-		public TypeToken<Object> getType() {
-			return TypeToken.overNull();
-		}
-	};
-
-	private static final AtomicLong TYPE_TOKEN_EXPRESSION_COUNT = new AtomicLong(0);
-
-	public static <T> ValueExpression<? extends TypeToken<T>> typeTokenExpression(TypeToken<T> type) {
-		ClassDefinition<? extends TypeToken<T>> typeTokenClass = declareClass(
-				"TypeTokenExpression$" + TYPE_TOKEN_EXPRESSION_COUNT.incrementAndGet())
-						.withSuperType(type.getThisTypeToken())
-						.define();
-
-		return invokeStatic(typeTokenClass.declareConstructor().define().asToken());
+	public ParameterizedSignature() {
+		typeVariables = emptySet();
 	}
 
-	@SuppressWarnings("unchecked")
-	public static <T> ValueExpression<T> nullExpression() {
-		return (ValueExpression<T>) NULL_EXPRESSION;
+	protected ParameterizedSignature(
+			Collection<? extends TypeVariableSignature> typeVariables,
+			Collection<? extends Annotation> annotations) {
+		super(annotations);
+		this.typeVariables = typeVariables;
+	}
+
+	@Override
+	protected S withAnnotatedDeclarationData(Collection<? extends Annotation> annotations) {
+		return withParameterizedDeclarationData(typeVariables, annotations);
+	}
+
+	protected abstract S withParameterizedDeclarationData(
+			Collection<? extends TypeVariableSignature> typeVariables,
+			Collection<? extends Annotation> annotations);
+
+	public S withTypeVariables(String... names) {
+		return withTypeVariables(stream(names).map(TypeVariableSignature::declareTypeVariable).collect(toList()));
+	}
+
+	public S withTypeVariables(TypeVariableSignature... typeVariables) {
+		return withTypeVariables(asList(typeVariables));
+	}
+
+	public S withTypeVariables(List<TypeVariableSignature> typeVariables) {
+		return withParameterizedDeclarationData(typeVariables, annotations);
+	}
+
+	public Stream<? extends TypeVariableSignature> getTypeVariables() {
+		return typeVariables.stream();
 	}
 }

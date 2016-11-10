@@ -40,7 +40,7 @@ import java.util.List;
 import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
-public abstract class MethodDefinition<C, T> extends ParameterizedDefinition<MethodDefinition<C, T>>
+public abstract class MethodDefinition<C, T> extends ParameterizedDeclaration<MethodDefinition<C, T>>
 		implements MemberDefinition<C> {
 	private final ClassDefinition<C> classDefinition;
 	private final String methodName;
@@ -49,10 +49,10 @@ public abstract class MethodDefinition<C, T> extends ParameterizedDefinition<Met
 	private final TypeToken<T> returnType;
 	private final Block<T> body;
 
-	private final MethodSignature overrideSignature;
+	private final ErasedMethodSignature overrideSignature;
 
 	@SuppressWarnings("unchecked")
-	public MethodDefinition(MethodDeclaration<C, T> declaration) {
+	public MethodDefinition(MethodSignature<C, T> declaration) {
 		super(declaration);
 
 		this.classDefinition = declaration.getClassDefinition();
@@ -71,7 +71,7 @@ public abstract class MethodDefinition<C, T> extends ParameterizedDefinition<Met
 			this.returnType = (TypeToken<T>) TypeToken.overAnnotatedType(declaration.getReturnType());
 		}
 
-		overrideSignature = new MethodSignature(methodName,
+		overrideSignature = new ErasedMethodSignature(methodName,
 				parameters.stream().map(v -> v.getType().getRawType()).toArray(Class<?>[]::new));
 	}
 
@@ -84,7 +84,7 @@ public abstract class MethodDefinition<C, T> extends ParameterizedDefinition<Met
 		return returnType;
 	}
 
-	public MethodSignature getOverrideSignature() {
+	public ErasedMethodSignature getOverrideSignature() {
 		return overrideSignature;
 	}
 

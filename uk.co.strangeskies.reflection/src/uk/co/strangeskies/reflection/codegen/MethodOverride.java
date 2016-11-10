@@ -45,12 +45,12 @@ import uk.co.strangeskies.reflection.Types;
 
 public class MethodOverride<T> {
 	private final ClassDefinition<T> classDefinition;
-	private final MethodSignature signature;
+	private final ErasedMethodSignature signature;
 	private final Set<Method> interfaceMethods;
 	private Method classMethod;
 	private InstanceMethodDefinition<T, ?> override;
 
-	public MethodOverride(ClassDefinition<T> classDefinition, MethodSignature signature) {
+	public MethodOverride(ClassDefinition<T> classDefinition, ErasedMethodSignature signature) {
 		this.classDefinition = classDefinition;
 		this.signature = signature;
 		interfaceMethods = new HashSet<>();

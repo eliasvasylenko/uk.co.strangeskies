@@ -166,7 +166,7 @@ import uk.co.strangeskies.utilities.collection.StreamUtilities;
  * @param <T>
  *          the intersection of the supertypes of the described class
  */
-public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<T>> {
+public class ClassDefinition<T> extends ParameterizedDeclaration<ClassSignature<T>> {
 	class ReflectiveInstanceImpl implements ReflectiveInstance<T> {
 		private T instance;
 		private final Map<FieldDefinition<?, ?>, Object> fieldValues = new HashMap<>();
@@ -199,12 +199,12 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 	private final TypeToken<T> superType;
 
 	private final Map<Method, ExecutableToken<?, ?>> invocables;
-	private final Map<MethodSignature, MethodOverride<T>> methods;
+	private final Map<ErasedMethodSignature, MethodOverride<T>> methods;
 
 	private final ValueExpression<T> receiverExpression;
 
 	@SuppressWarnings("unchecked")
-	protected ClassDefinition(ClassDeclaration<? super T> signature) {
+	protected ClassDefinition(ClassSignature<? super T> signature) {
 		super(signature);
 
 		typeName = signature.getTypeName();
@@ -330,7 +330,7 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 						return method.invoke(reflectiveInstance, args);
 					}
 
-					MethodOverride<T> override = methods.get(new MethodSignature(method));
+					MethodOverride<T> override = methods.get(new ErasedMethodSignature(method));
 
 					if (override.getOverride().isPresent()) {
 						return override.getOverride().get().invoke((ReflectiveInstance<T>) proxy, args);
@@ -376,22 +376,22 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 		return (FieldDeclaration<T, U>) declareField(fieldName, type.getAnnotatedDeclaration());
 	}
 
-	public MethodDeclaration<T, Void> declareMethod(String methodName) {
-		return MethodDeclaration.declareMethod(this, methodName);
+	public MethodSignature<T, Void> declareMethod(String methodName) {
+		return MethodSignature.declareMethod(this, methodName);
 	}
 
-	public MethodDeclaration<Void, T> declareConstructor() {
+	public MethodSignature<Void, T> declareConstructor() {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException();
 	}
 
-	public MethodDeclaration<T, Void> declareMethodOverride(Method method) {
+	public MethodSignature<T, Void> declareMethodOverride(Method method) {
 		return declareMethod(method.getName())
 				.withParameters(AnnotatedTypes.over(ExecutableToken.overMethod(method).getParameters()));
 	}
 
 	@SuppressWarnings("unchecked")
-	public MethodDeclaration<T, Void> declareMethodOverride(Consumer<? super T> methodLambda) {
+	public MethodSignature<T, Void> declareMethodOverride(Consumer<? super T> methodLambda) {
 		ExecutableToken<?, ?> overridden = getSuperType().findInterfaceMethod((Consumer<Object>) methodLambda);
 
 		return declareMethod(overridden.getName()).withParameters(AnnotatedTypes.over(overridden.getParameters()));
@@ -406,7 +406,7 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 
 	protected void inheritMethod(Method method) {
 		if (!Modifier.isStatic(method.getModifiers())) {
-			MethodSignature overridingSignature = new MethodSignature(method.getName(),
+			ErasedMethodSignature overridingSignature = new ErasedMethodSignature(method.getName(),
 					getInvocable(method).getParameters().stream().map(Types::getRawType).toArray(Class<?>[]::new));
 
 			MethodOverride<T> override = methods.computeIfAbsent(overridingSignature,
@@ -418,7 +418,7 @@ public class ClassDefinition<T> extends ParameterizedDefinition<ClassDefinition<
 			 * The actual erased method signature may be different, in which case it
 			 * would be overridden by a synthetic bridge method.
 			 */
-			methods.put(new MethodSignature(method), override);
+			methods.put(new ErasedMethodSignature(method), override);
 		}
 	}
 

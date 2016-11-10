@@ -50,11 +50,11 @@ import uk.co.strangeskies.reflection.token.TypeToken;
 
 /**
  * This type is a placeholder for a {@link TypeVariable} on a
- * {@link GenericDeclaration} produced from a {@link ParameterizedDeclaration}.
+ * {@link GenericDeclaration} produced from a {@link ParameterizedSignature}.
  * 
  * @author Elias N Vasylenko
  */
-public class TypeVariableDeclaration extends AnnotatedDeclaration<TypeVariableDeclaration> {
+public class TypeVariableSignature extends AnnotatedSignature<TypeVariableSignature> {
 	static class Reference implements Type {
 		private final String name;
 
@@ -70,12 +70,12 @@ public class TypeVariableDeclaration extends AnnotatedDeclaration<TypeVariableDe
 
 	/**
 	 * Type variable declarations intended to have bounds on other type variable
-	 * declarations within the same {@link ParameterizedDeclaration parameterized
+	 * declarations within the same {@link ParameterizedSignature parameterized
 	 * declaration} may specify those bounds by reference to the name of the other
 	 * type variable. This method creates a placeholder type for this purpose,
 	 * which will be substituted with the appropriate {@link TypeVariable} when
 	 * the parameterized declaration is actualized into its
-	 * {@link ParameterizedDefinition definition}.
+	 * {@link ParameterizedDeclaration definition}.
 	 * 
 	 * This is also useful as type variable declarations sometimes need to be
 	 * self-referential in their bounds, whether directly or indirectly. Recursive
@@ -92,8 +92,8 @@ public class TypeVariableDeclaration extends AnnotatedDeclaration<TypeVariableDe
 		return new Reference(name);
 	}
 
-	public static TypeVariableDeclaration declareTypeVariable(String ofName) {
-		return new TypeVariableDeclaration(ofName);
+	public static TypeVariableSignature declareTypeVariable(String ofName) {
+		return new TypeVariableSignature(ofName);
 	}
 
 	private final String name;
@@ -103,12 +103,12 @@ public class TypeVariableDeclaration extends AnnotatedDeclaration<TypeVariableDe
 	 * @param name
 	 *          the name of the declared type parameter
 	 */
-	protected TypeVariableDeclaration(String name) {
+	protected TypeVariableSignature(String name) {
 		this.name = name;
 		bounds = emptySet();
 	}
 
-	protected TypeVariableDeclaration(
+	protected TypeVariableSignature(
 			String name,
 			Collection<? extends AnnotatedType> bounds,
 			Collection<? extends Annotation> annotations) {
@@ -119,8 +119,8 @@ public class TypeVariableDeclaration extends AnnotatedDeclaration<TypeVariableDe
 	}
 
 	@Override
-	protected TypeVariableDeclaration withAnnotatedDeclarationData(Collection<? extends Annotation> annotations) {
-		return new TypeVariableDeclaration(name, bounds, annotations);
+	protected TypeVariableSignature withAnnotatedDeclarationData(Collection<? extends Annotation> annotations) {
+		return new TypeVariableSignature(name, bounds, annotations);
 	}
 
 	public String getName() {
@@ -135,19 +135,19 @@ public class TypeVariableDeclaration extends AnnotatedDeclaration<TypeVariableDe
 		return bounds.stream();
 	}
 
-	public TypeVariableDeclaration withBounds(AnnotatedType... bounds) {
+	public TypeVariableSignature withBounds(AnnotatedType... bounds) {
 		return withBounds(asList(bounds));
 	}
 
-	public TypeVariableDeclaration withBounds(Type... bounds) {
+	public TypeVariableSignature withBounds(Type... bounds) {
 		return withBounds(stream(bounds).map(AnnotatedTypes::over).collect(toList()));
 	}
 
-	public TypeVariableDeclaration withBounds(TypeToken<?>... bounds) {
+	public TypeVariableSignature withBounds(TypeToken<?>... bounds) {
 		return withBounds(stream(bounds).map(TypeToken::getAnnotatedDeclaration).collect(toList()));
 	}
 
-	public TypeVariableDeclaration withBounds(Collection<? extends AnnotatedType> bounds) {
-		return new TypeVariableDeclaration(name, bounds, annotations);
+	public TypeVariableSignature withBounds(Collection<? extends AnnotatedType> bounds) {
+		return new TypeVariableSignature(name, bounds, annotations);
 	}
 }

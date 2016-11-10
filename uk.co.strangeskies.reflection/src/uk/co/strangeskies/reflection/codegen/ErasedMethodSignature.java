@@ -32,42 +32,73 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import static uk.co.strangeskies.reflection.codegen.ClassSignature.declareClass;
-import static uk.co.strangeskies.reflection.codegen.InvocationExpression.invokeStatic;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Objects;
 
-import java.util.concurrent.atomic.AtomicLong;
+/**
+ * The signature of a method according to Java language override rules. In other
+ * words, the identity of a method as given by its name and erased parameter
+ * types.
+ * 
+ * @author Elias N Vasylenko
+ */
+public class ErasedMethodSignature {
+	private final String name;
+	private final Class<?>[] parameterClasses;
 
-import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
-import uk.co.strangeskies.reflection.token.TypeToken;
-
-public class Expressions {
-	private Expressions() {}
-
-	private static final ValueExpression<Object> NULL_EXPRESSION = new ValueExpression<Object>() {
-		@Override
-		public void accept(ValueExpressionVisitor<Object> visitor) {
-			visitor.visitNull();
-		}
-
-		@Override
-		public TypeToken<Object> getType() {
-			return TypeToken.overNull();
-		}
-	};
-
-	private static final AtomicLong TYPE_TOKEN_EXPRESSION_COUNT = new AtomicLong(0);
-
-	public static <T> ValueExpression<? extends TypeToken<T>> typeTokenExpression(TypeToken<T> type) {
-		ClassDefinition<? extends TypeToken<T>> typeTokenClass = declareClass(
-				"TypeTokenExpression$" + TYPE_TOKEN_EXPRESSION_COUNT.incrementAndGet())
-						.withSuperType(type.getThisTypeToken())
-						.define();
-
-		return invokeStatic(typeTokenClass.declareConstructor().define().asToken());
+	/**
+	 * @param method
+	 *          the method for which we require the signature
+	 */
+	public ErasedMethodSignature(Method method) {
+		this(method.getName(), method.getParameterTypes());
 	}
 
-	@SuppressWarnings("unchecked")
-	public static <T> ValueExpression<T> nullExpression() {
-		return (ValueExpression<T>) NULL_EXPRESSION;
+	/**
+	 * @param name
+	 *          the name of the method signature
+	 * @param parameterClasses
+	 *          the erased type of the method signature
+	 */
+	public ErasedMethodSignature(String name, Class<?>[] parameterClasses) {
+		this.name = name;
+		this.parameterClasses = parameterClasses;
+	}
+
+	/**
+	 * @return the name of the method
+	 */
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * @return the erased parameter types of the method
+	 */
+	public Class<?>[] getParameterClasses() {
+		return parameterClasses;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == this)
+			return true;
+		else if (!(obj instanceof ErasedMethodSignature))
+			return false;
+
+		ErasedMethodSignature that = (ErasedMethodSignature) obj;
+
+		return Arrays.equals(this.parameterClasses, that.parameterClasses) && Objects.equals(this.name, that.name);
+	}
+
+	@Override
+	public int hashCode() {
+		return Arrays.hashCode(parameterClasses) ^ name.hashCode();
+	}
+
+	@Override
+	public String toString() {
+		return name + "(" + Arrays.toString(parameterClasses) + ")";
 	}
 }
