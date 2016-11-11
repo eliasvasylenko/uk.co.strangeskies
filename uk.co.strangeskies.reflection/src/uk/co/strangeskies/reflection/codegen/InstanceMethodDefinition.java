@@ -34,7 +34,7 @@ package uk.co.strangeskies.reflection.codegen;
 
 public class InstanceMethodDefinition<C, T> extends MethodDefinition<C, T> {
 	public InstanceMethodDefinition(ClassSignature<C> classDeclaration, MethodSignature<T> methodDeclaration) {
-		super(declaration);
+		super(methodDeclaration);
 
 		getDeclaringClassDefinition().overrideMethod(this);
 	}

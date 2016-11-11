@@ -33,8 +33,6 @@
 package uk.co.strangeskies.reflection.codegen;
 
 import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.toList;
-import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
 
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.InvocationTargetException;
@@ -44,10 +42,8 @@ import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -166,7 +162,7 @@ import uk.co.strangeskies.utilities.collection.StreamUtilities;
  * @param <T>
  *          the intersection of the supertypes of the described class
  */
-public class ClassDefinition<T> extends ParameterizedDeclaration<ClassSignature<T>> {
+public class ClassDefinition<T> {
 	class ReflectiveInstanceImpl implements ReflectiveInstance<T> {
 		private T instance;
 		private final Map<FieldDefinition<?, ?>, Object> fieldValues = new HashMap<>();
@@ -194,9 +190,6 @@ public class ClassDefinition<T> extends ParameterizedDeclaration<ClassSignature<
 	}
 
 	private final String typeName;
-	private final Class<? super T> superClass;
-	private final List<TypeToken<? super T>> superTypes;
-	private final TypeToken<T> superType;
 
 	private final Map<Method, ExecutableToken<?, ?>> invocables;
 	private final Map<ErasedMethodSignature, MethodOverride<T>> methods;
@@ -205,33 +198,17 @@ public class ClassDefinition<T> extends ParameterizedDeclaration<ClassSignature<
 
 	@SuppressWarnings("unchecked")
 	protected ClassDefinition(ClassSignature<? super T> signature) {
-		super(signature);
-
 		typeName = signature.getTypeName();
-
-		superTypes = Collections.unmodifiableList(signature
-				.getSuperTypes()
-				.map(this::substituteTypeVariableSignatures)
-				.map(TypeToken::overAnnotatedType)
-				.map(t -> (TypeToken<? super T>) t)
-				.collect(toList()));
-
-		Type superType = intersectionOf(superTypes.stream().map(TypeToken::getType).collect(Collectors.toList()));
-		this.superType = (TypeToken<T>) TypeToken.overType(superType);
-		Class<?> superClass = Types.getRawType(superType);
-		if (superClass.isInterface()) {
-			this.superClass = null;
-		} else {
-			this.superClass = (Class<? super T>) superClass;
-		}
 
 		invocables = new HashMap<>();
 		methods = new HashMap<>();
-		getSuperTypes().stream().flatMap(t -> t.getRawTypes().stream()).flatMap(t -> Arrays.stream(t.getMethods())).forEach(
-				this::inheritMethod);
+		getSuperTypes()
+				.flatMap(t -> t.getRawTypes().stream())
+				.flatMap(t -> stream(t.getMethods()))
+				.forEach(this::inheritMethod);
 		StreamUtilities
 				.<Class<?>> iterate(getSuperClass(), Class::getSuperclass)
-				.flatMap(c -> Arrays.stream(c.getDeclaredMethods()))
+				.flatMap(c -> stream(c.getDeclaredMethods()))
 				.forEach(this::inheritMethod);
 
 		this.receiverExpression = new ValueExpression<T>() {
@@ -255,28 +232,6 @@ public class ClassDefinition<T> extends ParameterizedDeclaration<ClassSignature<
 	 */
 	public String getName() {
 		return typeName;
-	}
-
-	/**
-	 * @return the declared supertypes of the class definition
-	 */
-	public List<TypeToken<? super T>> getSuperTypes() {
-		return superTypes;
-	}
-
-	/**
-	 * @return the intersection of the declared supertypes of the class definition
-	 */
-	public TypeToken<? super T> getSuperType() {
-		return superType;
-	}
-
-	/**
-	 * @return the non-interface superclass of the class definition, which will be
-	 *         {@link Object} if none is explicitly given
-	 */
-	public Class<? super T> getSuperClass() {
-		return superClass;
 	}
 
 	/**
@@ -358,22 +313,22 @@ public class ClassDefinition<T> extends ParameterizedDeclaration<ClassSignature<
 		return getName();
 	}
 
-	public FieldDeclaration<T, ?> declareField(String fieldName, AnnotatedType type) {
-		return new FieldDeclaration<>(this, fieldName, type);
+	public FieldSignature<T, ?> declareField(String fieldName, AnnotatedType type) {
+		return new FieldSignature<>(this, fieldName, type);
 	}
 
-	public FieldDeclaration<T, ?> declareField(String fieldName, Type type) {
+	public FieldSignature<T, ?> declareField(String fieldName, Type type) {
 		return declareField(fieldName, AnnotatedTypes.over(type));
 	}
 
 	@SuppressWarnings("unchecked")
-	public <U> FieldDeclaration<T, U> declareField(String fieldName, Class<U> type) {
-		return (FieldDeclaration<T, U>) declareField(fieldName, AnnotatedTypes.over(type));
+	public <U> FieldSignature<T, U> declareField(String fieldName, Class<U> type) {
+		return (FieldSignature<T, U>) declareField(fieldName, AnnotatedTypes.over(type));
 	}
 
 	@SuppressWarnings("unchecked")
-	public <U> FieldDeclaration<T, U> declareField(String fieldName, TypeToken<U> type) {
-		return (FieldDeclaration<T, U>) declareField(fieldName, type.getAnnotatedDeclaration());
+	public <U> FieldSignature<T, U> declareField(String fieldName, TypeToken<U> type) {
+		return (FieldSignature<T, U>) declareField(fieldName, type.getAnnotatedDeclaration());
 	}
 
 	public MethodSignature<T, Void> declareMethod(String methodName) {

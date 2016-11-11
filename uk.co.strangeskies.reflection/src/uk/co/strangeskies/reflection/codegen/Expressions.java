@@ -32,7 +32,6 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import static uk.co.strangeskies.reflection.codegen.ClassSignature.declareClass;
 import static uk.co.strangeskies.reflection.codegen.InvocationExpression.invokeStatic;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -58,9 +57,10 @@ public class Expressions {
 	private static final AtomicLong TYPE_TOKEN_EXPRESSION_COUNT = new AtomicLong(0);
 
 	public static <T> ValueExpression<? extends TypeToken<T>> typeTokenExpression(TypeToken<T> type) {
-		ClassDefinition<? extends TypeToken<T>> typeTokenClass = declareClass(
+		ClassDefinition<? extends TypeToken<T>> typeTokenClass = new ClassSignature<>(
 				"TypeTokenExpression$" + TYPE_TOKEN_EXPRESSION_COUNT.incrementAndGet())
 						.withSuperType(type.getThisTypeToken())
+						.declare()
 						.define();
 
 		return invokeStatic(typeTokenClass.declareConstructor().define().asToken());

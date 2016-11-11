@@ -34,23 +34,14 @@ package uk.co.strangeskies.reflection.codegen;
 
 import java.lang.reflect.AnnotatedType;
 
-public class FieldDeclaration<C, T> implements MemberSignature<C> {
-	private final ClassDefinition<C> classDefinition;
+public class FieldSignature<T> implements MemberSignature<FieldSignature<T>> {
 	private final String fieldName;
 
-	private AnnotatedType type;
+	private final AnnotatedType type;
 
-	private ValueExpression<? extends T> initializer;
-
-	protected FieldDeclaration(ClassDefinition<C> classDefinition, String fieldName, AnnotatedType type) {
-		this.classDefinition = classDefinition;
+	protected FieldSignature(String fieldName, AnnotatedType type) {
 		this.fieldName = fieldName;
 		this.type = type;
-	}
-
-	@Override
-	public ClassDefinition<C> getClassDefinition() {
-		return classDefinition;
 	}
 
 	@Override
@@ -60,14 +51,5 @@ public class FieldDeclaration<C, T> implements MemberSignature<C> {
 
 	public AnnotatedType getType() {
 		return type;
-	}
-
-	@Override
-	public FieldDefinition<C, T> define() {
-		return new FieldDefinition<>(this);
-	}
-
-	public ValueExpression<? extends T> getInitializer() {
-		return initializer;
 	}
 }

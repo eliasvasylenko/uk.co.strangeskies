@@ -179,7 +179,7 @@ public class ClassSignature<T> extends ParameterizedSignature<ClassSignature<T>>
 		return new ClassSignature<>(typeName, superType, methodSignatures, typeVariables, annotations);
 	}
 
-	public ClassDeclaration<? extends T> declare() {
-		return new ClassDeclaration<>(this);
+	public ClassDeclaration<?, ? extends T> declare() {
+		return new ClassDeclaration<>(null, this);
 	}
 }

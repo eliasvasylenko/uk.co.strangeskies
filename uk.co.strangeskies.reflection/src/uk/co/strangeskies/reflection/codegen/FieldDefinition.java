@@ -42,7 +42,7 @@ public class FieldDefinition<C, T> implements MemberDefinition {
 	private final ValueExpression<? extends T> initializer;
 
 	@SuppressWarnings("unchecked")
-	protected FieldDefinition(FieldDeclaration<C, T> declaration) {
+	protected FieldDefinition(FieldSignature<C, T> declaration) {
 		this.classDefinition = declaration.getClassDefinition();
 		this.fieldName = declaration.getName();
 		this.initializer = declaration.getInitializer();

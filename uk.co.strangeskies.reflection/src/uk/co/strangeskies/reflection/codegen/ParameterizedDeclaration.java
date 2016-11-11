@@ -64,7 +64,9 @@ public class ParameterizedDeclaration<S extends ParameterizedSignature<S>> exten
 	public ParameterizedDeclaration(S signature) {
 		super(signature);
 
-		List<TypeVariableSignature> typeVariableSignatures = signature.getTypeVariables().collect(toList());
+		Map<String, TypeVariableSignature> typeVariableSignatures = signature
+				.getTypeVariables()
+				.collect(toMap(TypeVariableSignature::getName, identity()));
 
 		isomorphism = new Isomorphism();
 		List<TypeVariable<? extends ParameterizedDeclaration<S>>> typeVariables = new ArrayList<>(
@@ -76,10 +78,11 @@ public class ParameterizedDeclaration<S extends ParameterizedSignature<S>> exten
 		 */
 		boundSubstitution = new AnnotatedTypeSubstitution().where(
 
-				t -> t.getType() instanceof TypeVariableSignature,
+				t -> t.getType() instanceof TypeVariableSignature.Reference,
 
 				t -> {
-					TypeVariable<?> typeVariable = substituteTypeVariableSignature((TypeVariableSignature) t.getType());
+					TypeVariable<?> typeVariable = substituteTypeVariableSignature(
+							typeVariableSignatures.get(t.getType().getTypeName()));
 
 					return AnnotatedTypeVariables.over(typeVariable, t.getAnnotations());
 				});
@@ -87,7 +90,7 @@ public class ParameterizedDeclaration<S extends ParameterizedSignature<S>> exten
 		/*
 		 * Perform the substitution for each signature
 		 */
-		for (TypeVariableSignature typeVariableSignature : typeVariableSignatures) {
+		for (TypeVariableSignature typeVariableSignature : typeVariableSignatures.values()) {
 			typeVariables.add(substituteTypeVariableSignature(typeVariableSignature));
 		}
 		this.typeVariables = Collections.unmodifiableList(typeVariables);

@@ -40,7 +40,7 @@ import java.util.List;
 import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
-public abstract class MethodDefinition<C, T> extends ParameterizedDeclaration<MethodDefinition<C, T>>
+public abstract class MethodDefinition<C, T> extends ParameterizedDeclaration<MethodSignature<T>>
 		implements MemberDefinition<C> {
 	private final ClassDefinition<C> classDefinition;
 	private final String methodName;
@@ -52,7 +52,7 @@ public abstract class MethodDefinition<C, T> extends ParameterizedDeclaration<Me
 	private final ErasedMethodSignature overrideSignature;
 
 	@SuppressWarnings("unchecked")
-	public MethodDefinition(MethodSignature<C, T> declaration) {
+	public MethodDefinition(MethodSignature<T> declaration) {
 		super(declaration);
 
 		this.classDefinition = declaration.getClassDefinition();
