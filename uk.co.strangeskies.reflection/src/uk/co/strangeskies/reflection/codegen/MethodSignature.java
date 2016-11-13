@@ -32,29 +32,41 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
+import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
-public class MethodSignature<T> extends ParameterizedSignature<MethodSignature<T>>
-		implements MemberSignature<MethodSignature<T>> {
+public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> {
+	public static MethodSignature<Void> methodSignature(String methodName) {
+		return new MethodSignature<>(methodName);
+	}
+
+	public static <U> MethodSignature<U> methodSignature(ExecutableToken<?, U> executableToken) {
+		return new MethodSignature<>(executableToken.getName())
+				.withTypeVariables(
+						executableToken
+								.getTypeParameters()
+								.stream()
+								.map(TypeVariableSignature::typeVariableSignature)
+								.collect(toList()))
+				.withReturnType(executableToken.getReturnType())
+				.withParameters(
+						executableToken.getParameters().stream().map(VariableSignature::variableSignature).collect(toList()));
+	}
+
 	private final String methodName;
 
-	private final Collection<? extends VariableSignature<?>> parameters;
 	private final AnnotatedType returnType;
 
-	public MethodSignature(String methodName) {
+	protected MethodSignature(String methodName) {
 		this.methodName = methodName;
-		this.parameters = Collections.emptySet();
 		this.returnType = AnnotatedTypes.over(void.class);
 	}
 
@@ -64,43 +76,26 @@ public class MethodSignature<T> extends ParameterizedSignature<MethodSignature<T
 			AnnotatedType returnType,
 			Collection<? extends TypeVariableSignature> typeVariables,
 			Collection<? extends Annotation> annotations) {
-		super(typeVariables, annotations);
+		super(parameters, typeVariables, annotations);
 
 		this.methodName = methodName;
-		this.parameters = parameters;
 		this.returnType = returnType;
 	}
 
 	@Override
-	protected MethodSignature<T> withParameterizedDeclarationData(
+	protected MethodSignature<T> withExecutableSignatureData(
+			Collection<? extends VariableSignature<?>> parameters,
 			Collection<? extends TypeVariableSignature> typeVariables,
 			Collection<? extends Annotation> annotations) {
 		return new MethodSignature<>(methodName, parameters, returnType, typeVariables, annotations);
 	}
 
-	public Stream<? extends VariableSignature<?>> getParameters() {
-		return parameters.stream();
-	}
-
-	@Override
 	public String getName() {
 		return methodName;
 	}
 
 	public AnnotatedType getReturnType() {
 		return returnType;
-	}
-
-	protected <C> MethodDefinition<C, T> defineInstance(ClassSignature<C> classDeclaration) {
-		return new InstanceMethodDefinition<>(classDeclaration, this);
-	}
-
-	public MethodSignature<T> withParameters(VariableSignature<?>... parameters) {
-		return withParameters(asList(parameters));
-	}
-
-	public MethodSignature<T> withParameters(Collection<? extends VariableSignature<?>> parameters) {
-		return new MethodSignature<>(methodName, new ArrayList<>(parameters), returnType, typeVariables, annotations);
 	}
 
 	public MethodSignature<?> withReturnType(AnnotatedType type) {
@@ -119,5 +114,10 @@ public class MethodSignature<T> extends ParameterizedSignature<MethodSignature<T
 	@SuppressWarnings("unchecked")
 	public <U> MethodSignature<U> withReturnType(TypeToken<U> type) {
 		return (MethodSignature<U>) withReturnType(type.getAnnotatedDeclaration());
+	}
+
+	@Override
+	public String toString() {
+		return super.toString();
 	}
 }

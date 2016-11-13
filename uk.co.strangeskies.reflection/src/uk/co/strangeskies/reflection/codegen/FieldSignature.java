@@ -34,7 +34,7 @@ package uk.co.strangeskies.reflection.codegen;
 
 import java.lang.reflect.AnnotatedType;
 
-public class FieldSignature<T> implements MemberSignature<FieldSignature<T>> {
+public class FieldSignature<T> {
 	private final String fieldName;
 
 	private final AnnotatedType type;
@@ -44,7 +44,6 @@ public class FieldSignature<T> implements MemberSignature<FieldSignature<T>> {
 		this.type = type;
 	}
 
-	@Override
 	public String getName() {
 		return fieldName;
 	}

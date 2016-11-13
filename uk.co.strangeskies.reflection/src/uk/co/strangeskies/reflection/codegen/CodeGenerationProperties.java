@@ -46,7 +46,7 @@ public interface CodeGenerationProperties extends Properties<CodeGenerationPrope
 
 	Localized<String> invalidExpressionForStatement(Expression expression);
 
-	Localized<String> cannotInstantiateClassDefinition(ClassDefinition<?> classDefinition, TypeToken<?> superType);
+	Localized<String> cannotInstantiateClassDefinition(ClassDefinition<?, ?> classDefinition, TypeToken<?> superType);
 
 	Localized<String> cannotAccessPlaceholderExpression(VariableExpressionProxy<?> variableExpressionProxy);
 
@@ -58,13 +58,13 @@ public interface CodeGenerationProperties extends Properties<CodeGenerationPrope
 
 	Localized<String> incompatibleParameterTypes(Type[] parameterTypes, Method inherited);
 
-	Localized<String> duplicateMethodSignature(MethodDefinition<?, ?> override);
+	Localized<String> duplicateMethodDeclaration(MethodDeclaration<?, ?> override);
 
 	Localized<String> mustOverrideMethods(Collection<Method> classMethod);
 
 	Localized<String> undefinedVariable(LocalVariable<?> variable);
 
-	Localized<String> cannotResolveEnclosingInstance(ClassDefinition<?> receiverClass);
+	Localized<String> cannotResolveEnclosingInstance(ClassDefinition<?, ?> receiverClass);
 
 	Localized<String> cannotRedeclareVariable(LocalVariable<?> variable);
 

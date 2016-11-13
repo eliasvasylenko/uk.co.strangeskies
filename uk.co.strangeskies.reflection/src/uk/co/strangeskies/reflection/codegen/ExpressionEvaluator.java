@@ -93,17 +93,19 @@ public class ExpressionEvaluator {
 		}
 
 		@Override
-		public void visitReceiver(ClassDefinition<T> classDefinition) {
+		public void visitReceiver(ClassDefinition<?, T> classDefinition) {
 			complete(() -> state.getEnclosingInstance(classDefinition));
 		}
 
 		@Override
-		public <O> void visitMethod(ValueExpression<O> receiver, ExecutableToken<? super O, T> invocable,
+		public <O> void visitMethod(
+				ValueExpression<O> receiver,
+				ExecutableToken<? super O, T> invocable,
 				List<ValueExpression<?>> arguments) {
 			O targetObject = evaluate(receiver).get();
 
-			T result = invocable.invoke(targetObject,
-					arguments.stream().map(a -> evaluate(a).get()).collect(Collectors.toList()));
+			T result = invocable
+					.invoke(targetObject, arguments.stream().map(a -> evaluate(a).get()).collect(Collectors.toList()));
 
 			complete(() -> result);
 		}

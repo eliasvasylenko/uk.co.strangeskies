@@ -176,8 +176,10 @@ public class ParameterizedTypes {
 				MultiMap<ParameterizedType, ParameterizedType, Set<ParameterizedType>> equalitiesForThread = assumedEqualities
 						.get(currentThread);
 				if (equalitiesForThread == null) {
-					assumedEqualities.put(currentThread,
-							equalitiesForThread = new MultiTreeMap<>(EquivalenceComparator.identityComparator(),
+					assumedEqualities.put(
+							currentThread,
+							equalitiesForThread = new MultiTreeMap<>(
+									EquivalenceComparator.identityComparator(),
 									() -> new TreeSet<>(EquivalenceComparator.identityComparator())));
 					newThread = true;
 				}
@@ -276,8 +278,9 @@ public class ParameterizedTypes {
 
 			builder.append('<');
 
-			builder.append(Arrays.stream(typeArguments).map(t -> Types.toString(t, imports, isomorphism))
-					.collect(Collectors.joining(", ")));
+			builder.append(
+					Arrays.stream(typeArguments).map(t -> Types.toString(t, imports, isomorphism)).collect(
+							Collectors.joining(", ")));
 
 			return builder.append(">").toString();
 		});
@@ -320,15 +323,18 @@ public class ParameterizedTypes {
 			TypeVariable<?>[] typeParameters = rawType.getTypeParameters();
 			Type[] actualTypeArguments = type.getActualTypeArguments();
 
-			typeArguments = Stream.concat(IntStream.range(0, typeParameters.length)
-					.mapToObj(i -> new AbstractMap.SimpleEntry<>(typeParameters[i], actualTypeArguments[i])), typeArguments);
+			typeArguments = Stream.concat(
+					IntStream.range(0, typeParameters.length).mapToObj(
+							i -> new AbstractMap.SimpleEntry<>(typeParameters[i], actualTypeArguments[i])),
+					typeArguments);
 
 			type = type.getOwnerType() instanceof ParameterizedType ? (ParameterizedType) type.getOwnerType() : null;
 			rawType = Types.isStatic(rawType) ? null : rawType.getEnclosingClass();
 
 			if (rawType != null && type == null) {
 				do {
-					typeArguments = Stream.concat(typeArguments,
+					typeArguments = Stream.concat(
+							typeArguments,
 							Arrays.stream(rawType.getTypeParameters()).map(p -> new AbstractMap.SimpleEntry<>(p, p)));
 				} while ((rawType = Types.isStatic(rawType) ? null : rawType.getEnclosingClass()) != null);
 			}
@@ -346,7 +352,7 @@ public class ParameterizedTypes {
 
 		if (parameters.size() != typeArguments.size()) {
 			List<Type> typeArgumentsFinal = typeArguments;
-			throw new ReflectionException(p -> p.incorrectTypeArgumentCount(rawType, parameters, typeArgumentsFinal));
+			throw new ReflectionException(p -> p.incorrectTypeArgumentCount(rawType, typeArgumentsFinal));
 		}
 
 		return parameterizeUncheckedImpl(rawType, typeArguments);
@@ -372,12 +378,14 @@ public class ParameterizedTypes {
 		return parameterizeUnchecked(rawType, Arrays.asList(typeArguments));
 	}
 
-	public static <T> ParameterizedType parameterizeUnchecked(Class<T> rawType,
+	public static <T> ParameterizedType parameterizeUnchecked(
+			Class<T> rawType,
 			Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
 		return (ParameterizedType) parameterizeUncheckedImpl(rawType, typeArguments);
 	}
 
-	private static <T> Type parameterizeUncheckedImpl(Class<T> rawType,
+	private static <T> Type parameterizeUncheckedImpl(
+			Class<T> rawType,
 			Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
 		Class<?> enclosing = rawType.getEnclosingClass();
 		Type ownerType;
@@ -419,7 +427,8 @@ public class ParameterizedTypes {
 	 * @return A {@link ParameterizedType} instance over the given class,
 	 *         parameterized with the given type arguments.
 	 */
-	public static ParameterizedType parameterize(Class<?> rawType,
+	public static ParameterizedType parameterize(
+			Class<?> rawType,
 			Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
 		return validate(parameterizeUnchecked(rawType, typeArguments));
 	}
@@ -467,7 +476,8 @@ public class ParameterizedTypes {
 		return type;
 	}
 
-	private static List<Type> argumentsForClass(Class<?> rawType,
+	private static List<Type> argumentsForClass(
+			Class<?> rawType,
 			Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
 		List<Type> arguments = new ArrayList<>();
 		for (int i = 0; i < rawType.getTypeParameters().length; i++) {
@@ -525,7 +535,10 @@ public class ParameterizedTypes {
 			if (lesserSubtypes.isEmpty())
 				lesserSubtypes.add(Object.class);
 
-			Type subtype = lesserSubtypes.stream().filter(t -> Types.isAssignable(Types.getRawType(t), superclass)).findAny()
+			Type subtype = lesserSubtypes
+					.stream()
+					.filter(t -> Types.isAssignable(Types.getRawType(t), superclass))
+					.findAny()
 					.get();
 
 			if (type instanceof ParameterizedType)

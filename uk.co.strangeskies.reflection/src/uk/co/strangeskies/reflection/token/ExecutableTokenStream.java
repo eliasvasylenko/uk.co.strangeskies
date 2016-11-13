@@ -124,12 +124,15 @@ public class ExecutableTokenStream<I extends ExecutableToken<?, ?>>
 	 */
 	@SuppressWarnings("unchecked")
 	public static <I extends ExecutableToken<?, ?>> Set<? extends I> resolveApplicableExecutableMembers(
-			Set<? extends I> candidates, List<? extends TypeToken<?>> parameters) {
+			Set<? extends I> candidates,
+			List<? extends TypeToken<?>> parameters) {
 		Map<I, RuntimeException> failures = new LinkedHashMap<>();
 		BiConsumer<I, RuntimeException> putFailures = failures::put;
 
-		Set<? extends I> compatibleCandidates = filterOverloadCandidates(candidates,
-				i -> (I) i.withLooseApplicability(parameters), putFailures);
+		Set<? extends I> compatibleCandidates = filterOverloadCandidates(
+				candidates,
+				i -> (I) i.withLooseApplicability(parameters),
+				putFailures);
 
 		if (compatibleCandidates.isEmpty()) {
 			compatibleCandidates = new HashSet<>(candidates);
@@ -137,12 +140,16 @@ public class ExecutableTokenStream<I extends ExecutableToken<?, ?>>
 				if (!candidate.isVariableArityDefinition())
 					compatibleCandidates.remove(candidate);
 
-			compatibleCandidates = filterOverloadCandidates(compatibleCandidates,
-					i -> (I) i.withVariableArityApplicability(parameters), putFailures);
+			compatibleCandidates = filterOverloadCandidates(
+					compatibleCandidates,
+					i -> (I) i.withVariableArityApplicability(parameters),
+					putFailures);
 		} else {
 			Set<? extends I> oldCompatibleCandidates = compatibleCandidates;
-			compatibleCandidates = filterOverloadCandidates(compatibleCandidates,
-					i -> (I) i.withStrictApplicability(parameters), putFailures);
+			compatibleCandidates = filterOverloadCandidates(
+					compatibleCandidates,
+					i -> (I) i.withStrictApplicability(parameters),
+					putFailures);
 			if (compatibleCandidates.isEmpty())
 				compatibleCandidates = oldCompatibleCandidates;
 		}
@@ -151,7 +158,8 @@ public class ExecutableTokenStream<I extends ExecutableToken<?, ?>>
 			Set<? extends Executable> candidateMembers = candidates.stream().map(ExecutableToken::getMember).collect(toSet());
 			List<? extends Type> candidateParameters = parameters.stream().map(TypeToken::getType).collect(toList());
 
-			throw new ReflectionException(p -> p.cannotResolveApplicable(candidateMembers, candidateParameters),
+			throw new ReflectionException(
+					p -> p.cannotResolveApplicable(candidateMembers, candidateParameters),
 					failures.get(failures.keySet().stream().findFirst().get()));
 		}
 
@@ -159,7 +167,8 @@ public class ExecutableTokenStream<I extends ExecutableToken<?, ?>>
 	}
 
 	private static <I extends ExecutableToken<?, ?>> Set<? extends I> filterOverloadCandidates(
-			Collection<? extends I> candidates, Function<? super I, I> applicabilityFunction,
+			Collection<? extends I> candidates,
+			Function<? super I, I> applicabilityFunction,
 			BiConsumer<I, RuntimeException> failures) {
 		return candidates.stream().map(i -> {
 			try {
@@ -208,8 +217,8 @@ public class ExecutableTokenStream<I extends ExecutableToken<?, ?>>
 						p -> p.cannotResolveAmbiguity(candidate.getMember(), mostSpecificFinal.getMember()));
 			}
 
-			mostSpecific = candidate.getMember().getDeclaringClass()
-					.isAssignableFrom(mostSpecific.getMember().getDeclaringClass()) ? candidate : mostSpecific;
+			mostSpecific = candidate.getMember().getDeclaringClass().isAssignableFrom(
+					mostSpecific.getMember().getDeclaringClass()) ? candidate : mostSpecific;
 		}
 
 		return mostSpecific;
@@ -268,7 +277,8 @@ public class ExecutableTokenStream<I extends ExecutableToken<?, ?>>
 		return new HashSet<>(remainingCandidates);
 	}
 
-	private static Pair<Boolean, Boolean> compareCandidates(ExecutableToken<?, ?> firstCandidate,
+	private static Pair<Boolean, Boolean> compareCandidates(
+			ExecutableToken<?, ?> firstCandidate,
 			ExecutableToken<?, ?> secondCandidate) {
 		boolean firstMoreSpecific = true;
 		boolean secondMoreSpecific = true;
@@ -280,22 +290,22 @@ public class ExecutableTokenStream<I extends ExecutableToken<?, ?>>
 
 		if (!firstCandidate.isGeneric() || !secondCandidate.isGeneric()) {
 			int i = 0;
-			for (Type firstParameter : firstCandidate.getParameters()) {
-				Type secondParameter = secondCandidate.getParameters().get(i++);
+			for (ExecutableParameter firstParameter : firstCandidate.getParameters()) {
+				ExecutableParameter secondParameter = secondCandidate.getParameters().get(i++);
 
 				if (!secondMoreSpecific && !secondCandidate.isGeneric()) {
-					if (!Types.isAssignable(firstParameter, secondParameter)) {
+					if (!Types.isAssignable(firstParameter.getType(), secondParameter.getType())) {
 						firstMoreSpecific = false;
 						break;
 					}
 				} else if (!firstMoreSpecific && !firstCandidate.isGeneric()) {
-					if (!Types.isAssignable(secondParameter, firstParameter)) {
+					if (!Types.isAssignable(secondParameter.getType(), firstParameter.getType())) {
 						secondMoreSpecific = false;
 						break;
 					}
 				} else {
-					secondMoreSpecific = Types.isAssignable(secondParameter, firstParameter);
-					firstMoreSpecific = Types.isAssignable(firstParameter, secondParameter);
+					secondMoreSpecific = Types.isAssignable(secondParameter.getType(), firstParameter.getType());
+					firstMoreSpecific = Types.isAssignable(firstParameter.getType(), secondParameter.getType());
 
 					if (!(firstMoreSpecific || secondMoreSpecific))
 						break;
@@ -306,7 +316,8 @@ public class ExecutableTokenStream<I extends ExecutableToken<?, ?>>
 		return new Pair<>(firstMoreSpecific, secondMoreSpecific);
 	}
 
-	private static boolean compareGenericCandidate(ExecutableToken<?, ?> firstCandidate,
+	private static boolean compareGenericCandidate(
+			ExecutableToken<?, ?> firstCandidate,
 			ExecutableToken<?, ?> genericCandidate) {
 		TypeResolver resolver = genericCandidate.getResolver();
 
@@ -315,13 +326,19 @@ public class ExecutableTokenStream<I extends ExecutableToken<?, ?>>
 			if (firstCandidate.isVariableArityDefinition()) {
 				parameters--;
 
-				ConstraintFormula.reduce(Kind.SUBTYPE, firstCandidate.getParameters().get(parameters),
-						genericCandidate.getParameters().get(parameters), resolver.getBounds());
+				ConstraintFormula.reduce(
+						Kind.SUBTYPE,
+						firstCandidate.getParameters().get(parameters).getType(),
+						genericCandidate.getParameters().get(parameters).getType(),
+						resolver.getBounds());
 			}
 
 			for (int i = 0; i < parameters; i++) {
-				ConstraintFormula.reduce(Kind.SUBTYPE, firstCandidate.getParameters().get(i),
-						genericCandidate.getParameters().get(i), resolver.getBounds());
+				ConstraintFormula.reduce(
+						Kind.SUBTYPE,
+						firstCandidate.getParameters().get(i).getType(),
+						genericCandidate.getParameters().get(i).getType(),
+						resolver.getBounds());
 			}
 
 			resolver.infer();

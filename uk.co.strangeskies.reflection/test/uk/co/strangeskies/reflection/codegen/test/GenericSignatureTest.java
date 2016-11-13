@@ -32,8 +32,9 @@
  */
 package uk.co.strangeskies.reflection.codegen.test;
 
+import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterizeUnchecked;
-import static uk.co.strangeskies.reflection.codegen.TypeVariableSignature.declareTypeVariable;
+import static uk.co.strangeskies.reflection.codegen.TypeVariableSignature.typeVariableSignature;
 import static uk.co.strangeskies.reflection.codegen.TypeVariableSignature.referenceTypeVariable;
 
 import java.lang.annotation.Annotation;
@@ -69,7 +70,7 @@ public class GenericSignatureTest {
 		}
 
 		@Override
-		protected ParameterizedSignatureImpl withParameterizedDeclarationData(
+		protected ParameterizedSignatureImpl withParameterizedSignatureData(
 				Collection<? extends TypeVariableSignature> typeVariables,
 				Collection<? extends Annotation> annotations) {
 			return new ParameterizedSignatureImpl(typeVariables, annotations);
@@ -78,8 +79,9 @@ public class GenericSignatureTest {
 
 	@Test
 	public void noParametersSignatureTest() {
-		Assert.assertEquals(Collections.emptyList(),
-				new ParameterizedDeclaration<>(new ParameterizedSignatureImpl()).getTypeVariables());
+		Assert.assertEquals(
+				Collections.emptyList(),
+				new ParameterizedDeclaration<>(new ParameterizedSignatureImpl()).getTypeVariables().collect(toList()));
 	}
 
 	@Test
@@ -103,7 +105,7 @@ public class GenericSignatureTest {
 	@Test
 	public void selfBoundingTypeVariableTest() {
 		ParameterizedSignatureImpl signature = new ParameterizedSignatureImpl().withTypeVariables(
-				declareTypeVariable("A").withBounds(parameterizeUnchecked(Self.class, referenceTypeVariable("A"))));
+				typeVariableSignature("A").withBounds(parameterizeUnchecked(Self.class, referenceTypeVariable("A"))));
 
 		TypeVariable<?> typeVariable = new ParameterizedDeclaration<>(signature).getTypeParameters()[0];
 
@@ -115,7 +117,7 @@ public class GenericSignatureTest {
 	@Test(expected = ReflectionException.class)
 	public void invalidBoundsTest() {
 		ParameterizedSignatureImpl signature = new ParameterizedSignatureImpl().withTypeVariables(
-				declareTypeVariable("A").withBounds(new TypeToken<Set<String>>() {}, new TypeToken<Set<Number>>() {}));
+				typeVariableSignature("A").withBounds(new TypeToken<Set<String>>() {}, new TypeToken<Set<Number>>() {}));
 
 		new ParameterizedDeclaration<>(signature);
 	}

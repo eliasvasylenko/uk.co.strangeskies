@@ -32,6 +32,9 @@
  */
 package uk.co.strangeskies.reflection.codegen.test;
 
+import static uk.co.strangeskies.reflection.codegen.MethodSignature.methodSignature;
+import static uk.co.strangeskies.reflection.codegen.VariableSignature.variableSignature;
+
 import java.util.Set;
 import java.util.function.Function;
 
@@ -41,8 +44,7 @@ import org.junit.Test;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.codegen.ClassDefinition;
 import uk.co.strangeskies.reflection.codegen.ClassSignature;
-import uk.co.strangeskies.reflection.codegen.MethodSignature;
-import uk.co.strangeskies.reflection.codegen.VariableExpression;
+import uk.co.strangeskies.reflection.codegen.VariableSignature;
 import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
@@ -69,7 +71,7 @@ public class ClassDefinitionTest {
 
 	@Test
 	public void runnableClassInvocationTest() {
-		ClassDefinition<? extends Runnable> classDefinition = new ClassSignature<>(TEST_CLASS_NAME)
+		ClassDefinition<Void, ? extends Runnable> classDefinition = new ClassSignature<>(TEST_CLASS_NAME)
 				.withSuperType(Runnable.class)
 				.declare()
 				.define();
@@ -87,20 +89,20 @@ public class ClassDefinitionTest {
 				.resolveOverload(STRING_TYPE)
 				.withTargetType(STRING_TYPE);
 
-		ClassDefinition<? extends Function<String, String>> classDefinition = new ClassSignature<>(TEST_CLASS_NAME)
+		VariableSignature<String> parameter = variableSignature("string", STRING_TYPE);
+
+		ClassDefinition<Void, ? extends Function<String, String>> classDefinition = new ClassSignature<>(TEST_CLASS_NAME)
 				.withSuperType(new TypeToken<Function<String, String>>() {})
 				.declare()
-				.define();
-
-		MethodSignature<? extends Function<String, String>, String> applyMethod = classDefinition
-				.declareMethod("apply")
-				.withReturnType(STRING_TYPE);
-		VariableExpression<String> parameter = applyMethod.addParameter(STRING_TYPE);
-		applyMethod
 				.define()
-				.body()
-				.addExpression(parameter.assign(parameter.invokeMethod(concatMethod, parameter)))
-				.addReturnStatement(parameter);
+				.defineMethod(
+						methodSignature("apply").withReturnType(STRING_TYPE).withParameters(parameter),
+						d -> d.withBody(
+								b -> b
+										.withExpression(
+												d.getParameter(parameter).assign(
+														d.getParameter(parameter).invokeMethod(concatMethod, d.getParameter(parameter))))
+										.withReturnStatement(d.getParameter(parameter))));
 
 		Function<String, String> instance = classDefinition.instantiate().cast();
 
@@ -123,7 +125,7 @@ public class ClassDefinitionTest {
 				.declare();
 	}
 
-	@Test(expected = ReflectionException.class)
+	@Test
 	public void inheritedMethodCollisionAvoidenceTest() {
 		new ClassSignature<>(TEST_CLASS_NAME)
 				.withSuperType(new TypeToken<StringMethod>() {}, new TypeToken<NumberMethod<Integer>>() {})

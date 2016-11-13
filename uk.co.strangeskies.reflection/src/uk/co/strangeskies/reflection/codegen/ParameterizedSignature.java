@@ -58,15 +58,15 @@ public abstract class ParameterizedSignature<S extends ParameterizedSignature<S>
 
 	@Override
 	protected S withAnnotatedDeclarationData(Collection<? extends Annotation> annotations) {
-		return withParameterizedDeclarationData(typeVariables, annotations);
+		return withParameterizedSignatureData(typeVariables, annotations);
 	}
 
-	protected abstract S withParameterizedDeclarationData(
+	protected abstract S withParameterizedSignatureData(
 			Collection<? extends TypeVariableSignature> typeVariables,
 			Collection<? extends Annotation> annotations);
 
 	public S withTypeVariables(String... names) {
-		return withTypeVariables(stream(names).map(TypeVariableSignature::declareTypeVariable).collect(toList()));
+		return withTypeVariables(stream(names).map(TypeVariableSignature::typeVariableSignature).collect(toList()));
 	}
 
 	public S withTypeVariables(TypeVariableSignature... typeVariables) {
@@ -74,7 +74,7 @@ public abstract class ParameterizedSignature<S extends ParameterizedSignature<S>
 	}
 
 	public S withTypeVariables(List<TypeVariableSignature> typeVariables) {
-		return withParameterizedDeclarationData(typeVariables, annotations);
+		return withParameterizedSignatureData(typeVariables, annotations);
 	}
 
 	public Stream<? extends TypeVariableSignature> getTypeVariables() {

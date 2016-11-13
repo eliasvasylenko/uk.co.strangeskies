@@ -33,8 +33,8 @@
 package uk.co.strangeskies.reflection.codegen;
 
 public class StaticMethodDefinition<C, T> extends MethodDefinition<C, T> {
-	public StaticMethodDefinition(ClassSignature<C> classDeclaration, MethodSignature<T> methodDeclaration) {
-		super(declaration);
+	public StaticMethodDefinition(ClassDefinition<?, C> classDeclaration, MethodSignature<T> methodDeclaration) {
+		super(classDeclaration, methodDeclaration);
 	}
 
 	public T invoke(Object[] arguments) {

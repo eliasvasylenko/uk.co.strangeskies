@@ -32,6 +32,9 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.joining;
+
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Objects;
@@ -99,6 +102,6 @@ public class ErasedMethodSignature {
 
 	@Override
 	public String toString() {
-		return name + "(" + Arrays.toString(parameterClasses) + ")";
+		return name + "(" + stream(parameterClasses).map(Objects::toString).collect(joining(" ,")) + ")";
 	}
 }

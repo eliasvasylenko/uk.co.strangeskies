@@ -53,7 +53,7 @@ import uk.co.strangeskies.reflection.AnnotatedTypeSubstitution;
 import uk.co.strangeskies.reflection.AnnotatedTypeVariables;
 import uk.co.strangeskies.utilities.Isomorphism;
 
-public class ParameterizedDeclaration<S extends ParameterizedSignature<S>> extends AnnotatedDeclaration<S>
+public class ParameterizedDeclaration<S extends ParameterizedSignature<?>> extends AnnotatedDeclaration<S>
 		implements GenericDeclaration {
 	private final List<TypeVariable<? extends ParameterizedDeclaration<S>>> typeVariables;
 	private final Map<Class<? extends Annotation>, Annotation> annotations;
@@ -77,8 +77,7 @@ public class ParameterizedDeclaration<S extends ParameterizedSignature<S>> exten
 		 * actual TypeVariables.
 		 */
 		boundSubstitution = new AnnotatedTypeSubstitution().where(
-
-				t -> t.getType() instanceof TypeVariableSignature.Reference,
+				t -> t.getType() instanceof TypeVariableSignature.Reference || t.getType() instanceof TypeVariable<?>,
 
 				t -> {
 					TypeVariable<?> typeVariable = substituteTypeVariableSignature(

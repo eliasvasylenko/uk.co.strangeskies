@@ -34,29 +34,22 @@ package uk.co.strangeskies.reflection.codegen;
 
 import static java.util.Arrays.asList;
 
-import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
-import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.Reified;
-import uk.co.strangeskies.reflection.Types;
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
-import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.TypeToken;
-import uk.co.strangeskies.utilities.collection.StreamUtilities;
 
 /**
  * A class definition is a description of a class implementation. It may extend
@@ -162,13 +155,13 @@ import uk.co.strangeskies.utilities.collection.StreamUtilities;
  * @param <T>
  *          the intersection of the supertypes of the described class
  */
-public class ClassDefinition<T> {
-	class ReflectiveInstanceImpl implements ReflectiveInstance<T> {
+public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
+	class ReflectiveInstanceImpl implements ReflectiveInstance<E, T> {
 		private T instance;
 		private final Map<FieldDefinition<?, ?>, Object> fieldValues = new HashMap<>();
 
 		@Override
-		public ClassDefinition<T> getReflectiveClassDefinition() {
+		public ClassDefinition<E, T> getReflectiveClassDefinition() {
 			return ClassDefinition.this;
 		}
 
@@ -191,25 +184,13 @@ public class ClassDefinition<T> {
 
 	private final String typeName;
 
-	private final Map<Method, ExecutableToken<?, ?>> invocables;
-	private final Map<ErasedMethodSignature, MethodOverride<T>> methods;
-
 	private final ValueExpression<T> receiverExpression;
 
 	@SuppressWarnings("unchecked")
-	protected ClassDefinition(ClassSignature<? super T> signature) {
-		typeName = signature.getTypeName();
+	protected ClassDefinition(ClassDeclaration<E, T> declaration) {
+		super(declaration);
 
-		invocables = new HashMap<>();
-		methods = new HashMap<>();
-		getSuperTypes()
-				.flatMap(t -> t.getRawTypes().stream())
-				.flatMap(t -> stream(t.getMethods()))
-				.forEach(this::inheritMethod);
-		StreamUtilities
-				.<Class<?>> iterate(getSuperClass(), Class::getSuperclass)
-				.flatMap(c -> stream(c.getDeclaredMethods()))
-				.forEach(this::inheritMethod);
+		typeName = declaration.getSignature().getTypeName();
 
 		this.receiverExpression = new ValueExpression<T>() {
 			@Override
@@ -222,7 +203,7 @@ public class ClassDefinition<T> {
 				/*
 				 * TODO this needs to be the actual Type
 				 */
-				return (TypeToken<T>) getSuperType();
+				return (TypeToken<T>) declaration.getSuperType();
 			}
 		};
 	}
@@ -249,20 +230,20 @@ public class ClassDefinition<T> {
 		}
 	}
 
-	public ReflectiveInstance<T> instantiate(Object... arguments) {
+	public ReflectiveInstance<E, T> instantiate(Object... arguments) {
 		return instantiate(getClass().getClassLoader(), arguments);
 	}
 
-	public ReflectiveInstance<T> instantiate(Collection<? extends Object> arguments) {
+	public ReflectiveInstance<E, T> instantiate(Collection<? extends Object> arguments) {
 		return instantiate(getClass().getClassLoader(), arguments);
 	}
 
-	public ReflectiveInstance<T> instantiate(ClassLoader classLoader, Object... arguments) {
+	public ReflectiveInstance<E, T> instantiate(ClassLoader classLoader, Object... arguments) {
 		return instantiate(classLoader, Arrays.asList(arguments));
 	}
 
 	@SuppressWarnings("unchecked")
-	public ReflectiveInstance<T> instantiate(ClassLoader classLoader, Collection<? extends Object> arguments) {
+	public ReflectiveInstance<E, T> instantiate(ClassLoader classLoader, Collection<? extends Object> arguments) {
 		validate();
 
 		Set<Class<?>> rawTypes = superTypes
@@ -279,8 +260,8 @@ public class ClassDefinition<T> {
 		rawTypes.add(ReflectiveInstance.class);
 		ReflectiveInstanceImpl reflectiveInstance = new ReflectiveInstanceImpl();
 
-		ReflectiveInstance<T> instance = (ReflectiveInstance<T>) Proxy.newProxyInstance(classLoader,
-				rawTypes.toArray(new Class<?>[rawTypes.size()]), (proxy, method, args) -> {
+		ReflectiveInstance<E, T> instance = (ReflectiveInstance<E, T>) Proxy
+				.newProxyInstance(classLoader, rawTypes.toArray(new Class<?>[rawTypes.size()]), (proxy, method, args) -> {
 					if (method.getDeclaringClass().equals(ReflectiveInstance.class)) {
 						return method.invoke(reflectiveInstance, args);
 					}
@@ -288,11 +269,16 @@ public class ClassDefinition<T> {
 					MethodOverride<T> override = methods.get(new ErasedMethodSignature(method));
 
 					if (override.getOverride().isPresent()) {
-						return override.getOverride().get().invoke((ReflectiveInstance<T>) proxy, args);
+						return override.getOverride().get().invoke((ReflectiveInstance<E, T>) proxy, args);
 					} else {
 						try {
-							return override.getInterfaceMethods().stream().filter(Method::isDefault).findAny().get().invoke(proxy,
-									args);
+							return override
+									.getInterfaceMethods()
+									.stream()
+									.filter(Method::isDefault)
+									.findAny()
+									.get()
+									.invoke(proxy, args);
 						} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 							throw new ReflectionException(
 									p -> p.invalidMethodArguments(method, getSuperType().getType(), asList(args)));
@@ -313,71 +299,26 @@ public class ClassDefinition<T> {
 		return getName();
 	}
 
-	public FieldSignature<T, ?> declareField(String fieldName, AnnotatedType type) {
-		return new FieldSignature<>(this, fieldName, type);
+	public <U> FieldDeclaration<T, U> getFieldDeclaration(FieldSignature<U> signature) {
+
 	}
 
-	public FieldSignature<T, ?> declareField(String fieldName, Type type) {
-		return declareField(fieldName, AnnotatedTypes.over(type));
+	public MethodDeclaration<E, T> getConstructorDeclaration(ConstructorSignature signature) {
+
 	}
 
-	@SuppressWarnings("unchecked")
-	public <U> FieldSignature<T, U> declareField(String fieldName, Class<U> type) {
-		return (FieldSignature<T, U>) declareField(fieldName, AnnotatedTypes.over(type));
+	public <U> MethodDeclaration<E, U> getStaticMethodDeclaration(MethodSignature<U> signature) {
+
 	}
 
-	@SuppressWarnings("unchecked")
-	public <U> FieldSignature<T, U> declareField(String fieldName, TypeToken<U> type) {
-		return (FieldSignature<T, U>) declareField(fieldName, type.getAnnotatedDeclaration());
+	public <U> MethodDeclaration<T, U> getMethodDeclaration(MethodSignature<U> signature) {
+
 	}
 
-	public MethodSignature<T, Void> declareMethod(String methodName) {
-		return MethodSignature.declareMethod(this, methodName);
-	}
-
-	public MethodSignature<Void, T> declareConstructor() {
+	public <U> ClassDefinition<E, T> defineMethod(
+			MethodSignature<U> signature,
+			Function<MethodDefinition<T, U>, MethodDefinition<T, U>> definition) {
 		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException();
-	}
 
-	public MethodSignature<T, Void> declareMethodOverride(Method method) {
-		return declareMethod(method.getName())
-				.withParameters(AnnotatedTypes.over(ExecutableToken.overMethod(method).getParameters()));
-	}
-
-	@SuppressWarnings("unchecked")
-	public MethodSignature<T, Void> declareMethodOverride(Consumer<? super T> methodLambda) {
-		ExecutableToken<?, ?> overridden = getSuperType().findInterfaceMethod((Consumer<Object>) methodLambda);
-
-		return declareMethod(overridden.getName()).withParameters(AnnotatedTypes.over(overridden.getParameters()));
-	}
-
-	protected void overrideMethod(InstanceMethodDefinition<T, ?> methodDefinition) {
-		MethodOverride<T> override = methods.computeIfAbsent(methodDefinition.getOverrideSignature(),
-				k -> new MethodOverride<>(this, methodDefinition.getOverrideSignature()));
-
-		override.override(methodDefinition);
-	}
-
-	protected void inheritMethod(Method method) {
-		if (!Modifier.isStatic(method.getModifiers())) {
-			ErasedMethodSignature overridingSignature = new ErasedMethodSignature(method.getName(),
-					getInvocable(method).getParameters().stream().map(Types::getRawType).toArray(Class<?>[]::new));
-
-			MethodOverride<T> override = methods.computeIfAbsent(overridingSignature,
-					k -> new MethodOverride<>(this, overridingSignature));
-
-			override.inherit(method);
-
-			/*
-			 * The actual erased method signature may be different, in which case it
-			 * would be overridden by a synthetic bridge method.
-			 */
-			methods.put(new ErasedMethodSignature(method), override);
-		}
-	}
-
-	protected ExecutableToken<?, ?> getInvocable(Method method) {
-		return invocables.computeIfAbsent(method, m -> ExecutableToken.overMethod(method, superType));
 	}
 }

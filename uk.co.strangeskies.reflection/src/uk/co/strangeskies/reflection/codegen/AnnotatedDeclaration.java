@@ -1,6 +1,6 @@
 package uk.co.strangeskies.reflection.codegen;
 
-public class AnnotatedDeclaration<S extends AnnotatedSignature<S>> implements Declaration<S> {
+public class AnnotatedDeclaration<S extends AnnotatedSignature<?>> implements Declaration<S> {
 	protected final S signature;
 
 	public AnnotatedDeclaration(S signature) {

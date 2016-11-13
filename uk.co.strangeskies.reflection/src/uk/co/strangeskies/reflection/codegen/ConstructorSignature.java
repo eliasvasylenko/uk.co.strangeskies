@@ -32,6 +32,28 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-public interface MemberSignature<S extends MemberSignature<S>> {
-	String getName();
+import java.lang.annotation.Annotation;
+import java.util.Collection;
+
+public class ConstructorSignature extends ExecutableSignature<ConstructorSignature> {
+	public static ConstructorSignature constructorSignature() {
+		return new ConstructorSignature();
+	}
+
+	protected ConstructorSignature() {}
+
+	protected ConstructorSignature(
+			Collection<? extends VariableSignature<?>> parameters,
+			Collection<? extends TypeVariableSignature> typeVariables,
+			Collection<? extends Annotation> annotations) {
+		super(parameters, typeVariables, annotations);
+	}
+
+	@Override
+	protected ConstructorSignature withExecutableSignatureData(
+			Collection<? extends VariableSignature<?>> parameters,
+			Collection<? extends TypeVariableSignature> typeVariables,
+			Collection<? extends Annotation> annotations) {
+		return new ConstructorSignature(parameters, typeVariables, annotations);
+	}
 }

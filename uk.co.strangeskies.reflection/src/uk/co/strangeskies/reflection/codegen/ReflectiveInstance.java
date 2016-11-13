@@ -43,8 +43,8 @@ package uk.co.strangeskies.reflection.codegen;
  * @param <T>
  *          the actual type of the instance
  */
-public interface ReflectiveInstance<T> {
-	ClassDefinition<T> getReflectiveClassDefinition();
+public interface ReflectiveInstance<E, T> {
+	ClassDefinition<E, T> getReflectiveClassDefinition();
 
 	<U> U getReflectiveFieldValue(FieldDefinition<? super T, U> field);
 

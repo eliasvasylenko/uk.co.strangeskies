@@ -32,47 +32,20 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import java.lang.reflect.AnnotatedType;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 
 import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
-public abstract class MethodDefinition<C, T> extends ParameterizedDeclaration<MethodSignature<T>>
-		implements MemberDefinition<C> {
-	private final ClassDefinition<C> classDefinition;
-	private final String methodName;
-
-	private final List<LocalVariableExpression<?>> parameters;
-	private final TypeToken<T> returnType;
+public abstract class MethodDefinition<C, T> implements MemberDefinition<C> {
+	private final MethodDeclaration<C, T> classDeclaration;
 	private final Block<T> body;
 
-	private final ErasedMethodSignature overrideSignature;
-
 	@SuppressWarnings("unchecked")
-	public MethodDefinition(MethodSignature<T> declaration) {
-		super(declaration);
-
-		this.classDefinition = declaration.getClassDefinition();
-		this.methodName = declaration.getName();
+	public MethodDefinition(MethodDeclaration<C, T> classDeclaration) {
+		this.classDeclaration = classDeclaration;
 		this.body = new Block<>();
-
-		ArrayList<LocalVariableExpression<?>> parameters = new ArrayList<>();
-		for (VariableExpressionProxy<?> proxy : declaration.getParameters()) {
-			parameters.add(getParameter(proxy, declaration.getParameterType(proxy)));
-		}
-		parameters.trimToSize();
-		this.parameters = Collections.unmodifiableList(parameters);
-		if (declaration.getReturnType() == null) {
-			this.returnType = (TypeToken<T>) TypeToken.overType(void.class);
-		} else {
-			this.returnType = (TypeToken<T>) TypeToken.overAnnotatedType(declaration.getReturnType());
-		}
-
-		overrideSignature = new ErasedMethodSignature(methodName,
-				parameters.stream().map(v -> v.getType().getRawType()).toArray(Class<?>[]::new));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -88,34 +61,22 @@ public abstract class MethodDefinition<C, T> extends ParameterizedDeclaration<Me
 		return overrideSignature;
 	}
 
-	private <U> LocalVariableExpression<U> getParameter(VariableExpressionProxy<U> proxy, AnnotatedType type) {
-		TypeToken<?> typeToken = TypeToken.overAnnotatedType(substituteTypeVariableSignatures(type));
-
-		@SuppressWarnings("unchecked")
-		LocalVariableExpression<U> variable = (LocalVariableExpression<U>) new LocalVariableExpression<>(
-				TypeToken.overAnnotatedType(type));
-		proxy.setComponent(variable);
-
-		return variable;
-	}
-
 	public Block<T> body() {
 		return body;
 	}
 
-	@Override
-	public Class<?> getDeclaringClass() {
-		throw new UnsupportedOperationException();
+	public MethodDeclaration<C, T> getDeclaration() {
+
 	}
 
 	@Override
-	public ClassDefinition<C> getDeclaringClassDefinition() {
-		return classDefinition;
+	public ClassDeclaration<?, C> getClassDeclaration() {
+		return classDeclaration;
 	}
 
 	@Override
 	public String getName() {
-		return methodName;
+		return getd;
 	}
 
 	@Override
@@ -152,6 +113,15 @@ public abstract class MethodDefinition<C, T> extends ParameterizedDeclaration<Me
 
 	public ExecutableToken<C, T> asToken() {
 		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public MethodDefinition<C, T> withBody(Function<Block<T>, Block<T>> object) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public <U> LocalVariableExpression<U> getParameter(VariableSignature<U> parameterSignature) {
 		return null;
 	}
 }

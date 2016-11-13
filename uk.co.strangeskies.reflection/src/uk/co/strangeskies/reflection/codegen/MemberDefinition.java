@@ -35,10 +35,5 @@ package uk.co.strangeskies.reflection.codegen;
 import java.lang.reflect.Member;
 
 public interface MemberDefinition<C> extends Member {
-	@Override
-	default Class<?> getDeclaringClass() {
-		throw new UnsupportedOperationException();
-	}
-
-	ClassDefinition<C> getDeclaringClassDefinition();
+	ClassDeclaration<?, C> getClassDeclaration();
 }

@@ -32,26 +32,36 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import static java.lang.reflect.Modifier.isAbstract;
+import static java.util.Arrays.asList;
+import static uk.co.strangeskies.reflection.Types.isAssignable;
+import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.declareMethod;
+import static uk.co.strangeskies.reflection.codegen.MethodSignature.methodSignature;
+
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import uk.co.strangeskies.reflection.Types;
+import uk.co.strangeskies.reflection.token.ExecutableParameter;
+import uk.co.strangeskies.reflection.token.ExecutableToken;
 
 public class MethodOverride<T> {
-	private final ClassDefinition<T> classDefinition;
+	private final MethodOverrides<T> methodOverrides;
+
 	private final ErasedMethodSignature signature;
 	private final Set<Method> interfaceMethods;
 	private Method classMethod;
-	private InstanceMethodDefinition<T, ?> override;
 
-	public MethodOverride(ClassDefinition<T> classDefinition, ErasedMethodSignature signature) {
-		this.classDefinition = classDefinition;
+	private MethodDeclaration<T, ?> override;
+
+	public MethodOverride(MethodOverrides<T> methodOverrides, ErasedMethodSignature signature) {
+		this.methodOverrides = methodOverrides;
 		this.signature = signature;
 		interfaceMethods = new HashSet<>();
 	}
@@ -65,52 +75,56 @@ public class MethodOverride<T> {
 	}
 
 	public void validate() {
-		if (override == null) {
-			if (classMethod == null) {
-				Set<Method> defaultMethods = interfaceMethods.stream().filter(m -> m.isDefault()).collect(Collectors.toSet());
-				if (defaultMethods.size() != 1) {
-					throw new CodeGenerationException(p -> p.mustOverrideMethods(interfaceMethods));
-				}
-
-				Method defaultMethod = defaultMethods.iterator().next();
-
-				validateOverride(defaultMethod);
-			} else {
-				if (Modifier.isAbstract(classMethod.getModifiers())) {
-					throw new CodeGenerationException(p -> p.mustOverrideMethods(Arrays.asList(classMethod)));
-				}
-
-				validateOverride(classMethod);
+		if (classMethod == null) {
+			Set<Method> defaultMethods = interfaceMethods.stream().filter(m -> m.isDefault()).collect(Collectors.toSet());
+			if (defaultMethods.size() != 1) {
+				throw new CodeGenerationException(p -> p.mustOverrideMethods(interfaceMethods));
 			}
+
+			Method defaultMethod = defaultMethods.iterator().next();
+
+			validateOverride(defaultMethod);
 		} else {
-			override.validate();
+			if (isAbstract(classMethod.getModifiers())) {
+				throw new CodeGenerationException(p -> p.mustOverrideMethods(Arrays.asList(classMethod)));
+			}
+
+			validateOverride(classMethod);
 		}
 	}
 
 	private void validateOverride(Method method) {
-		validateOverride(classDefinition.getInvocable(method).getReturnType().getType(),
-				classDefinition.getInvocable(method).getParameters().stream().toArray(Type[]::new));
+		ExecutableToken<?, ?> overriddenToken = methodOverrides
+				.getInvocable(method)
+				.withTypeArguments(method.getTypeParameters());
+
+		validateOverride(
+				overriddenToken.getReturnType().getType(),
+				overriddenToken.getParameters().stream().map(ExecutableParameter::getType).toArray(Type[]::new),
+				method.getTypeParameters());
 	}
 
-	private void validateOverride(Type returnType, Type[] parameterTypes) {
+	private void validateOverride(Type returnType, Type[] parameters, TypeVariable<?>[] typeParameters) {
 		for (Method inherited : getMethods()) {
+			ExecutableToken<?, ?> inheritedToken = methodOverrides
+					.getInvocable(inherited)
+					.withTypeArguments(asList(typeParameters));
 
-			if (!Types.isAssignable(returnType,
-					classDefinition.getInvocable(inherited).getReturnType().resolve().getType())) {
+			if (!isAssignable(returnType, inheritedToken.getReturnType().resolve().getType())) {
 				throw new CodeGenerationException(p -> p.incompatibleReturnTypes(returnType, inherited));
 			}
 
-			for (int i = 0; i < parameterTypes.length; i++) {
-				if (!Types.isAssignable(classDefinition.getInvocable(inherited).getParameters().get(i), parameterTypes[i])) {
-					throw new CodeGenerationException(p -> p.incompatibleParameterTypes(parameterTypes, inherited));
+			for (int i = 0; i < parameters.length; i++) {
+				if (!isAssignable(inheritedToken.getParameters().get(i).getType(), parameters[i])) {
+					throw new CodeGenerationException(p -> p.incompatibleParameterTypes(parameters, inherited));
 				}
 			}
 		}
 	}
 
-	public void override(InstanceMethodDefinition<T, ?> override) {
+	public void override(MethodDeclaration<T, ?> override) {
 		if (this.override != null) {
-			throw new CodeGenerationException(p -> p.duplicateMethodSignature(override));
+			throw new CodeGenerationException(p -> p.duplicateMethodDeclaration(override));
 		}
 
 		if (classMethod != null
@@ -119,11 +133,39 @@ public class MethodOverride<T> {
 		}
 
 		this.override = override;
-		validateOverride(override.getReturnType().getType(),
-				override.getParameters().stream().map(v -> v.getType().getType()).toArray(Type[]::new));
+		validateOverride(
+				override.getReturnType().getType(),
+				override.getParameters().map(v -> v.getType().getType()).toArray(Type[]::new),
+				override.getTypeParameters());
 	}
 
-	public Optional<InstanceMethodDefinition<T, ?>> getOverride() {
+	public void overrideIfNecessary() {
+		System.out.println(signature);
+
+		boolean classMethodMustBeOverridden = classMethod == null || isAbstract(classMethod.getModifiers());
+		boolean interfaceMethodsMustBeOverridden = classMethod == null
+				&& interfaceMethods.stream().allMatch(i -> !i.isDefault());
+
+		if (this.override == null) {
+			if (classMethodMustBeOverridden || interfaceMethodsMustBeOverridden) {
+				Method overrideSignatureMethod = classMethod;
+				if (overrideSignatureMethod == null) {
+					overrideSignatureMethod = interfaceMethods.iterator().next();
+				}
+
+				ExecutableToken<?, ?> executableToken = methodOverrides.getInvocable(overrideSignatureMethod).withTypeArguments(
+						asList(overrideSignatureMethod.getTypeParameters()));
+				MethodSignature<?> signature = methodSignature(executableToken);
+				MethodDeclaration<T, ?> declaration = declareMethod(methodOverrides.getClassDeclaration(), signature);
+
+				override(declaration);
+			} else {
+				validate();
+			}
+		}
+	}
+
+	public Optional<MethodDeclaration<T, ?>> getOverride() {
 		return Optional.ofNullable(override);
 	}
 

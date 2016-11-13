@@ -81,7 +81,7 @@ public class ExpressionTest {
 		state.declareLocal(variable.getId());
 		state.setEnclosedLocal(variable.getId(), instance);
 
-		block.addExpression(variable.accessField(TEST_FIELD).assign(literal("value")));
+		block.withExpression(variable.accessField(TEST_FIELD).assign(literal("value")));
 
 		state.executeBlock(block);
 		Assert.assertEquals("value", instance.getMethod());
@@ -97,8 +97,8 @@ public class ExpressionTest {
 		LocalVariableExpression<Object> result = new LocalVariableExpression<>(OBJECT_TYPE);
 		state.declareLocal(result.getId());
 
-		block.addExpression(local.assign(literal("value")));
-		block.addExpression(result.assign(local));
+		block.withExpression(local.assign(literal("value")));
+		block.withExpression(result.assign(local));
 
 		state.executeBlock(block);
 		Assert.assertEquals("value", state.getEnclosedLocal(result.getId()));
@@ -114,7 +114,7 @@ public class ExpressionTest {
 		state.declareLocal(variable.getId());
 		state.setEnclosedLocal(variable.getId(), instance);
 
-		block.addExpression(variable.invokeMethod(TEST_SET_METHOD, literal("value")));
+		block.withExpression(variable.invokeMethod(TEST_SET_METHOD, literal("value")));
 		state.executeBlock(block);
 
 		Assert.assertEquals(instance, state.getEnclosedLocal(variable.getId()));

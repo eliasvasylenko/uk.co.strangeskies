@@ -46,6 +46,7 @@ import java.util.Collection;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
+import uk.co.strangeskies.reflection.TypeSubstitution;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 /**
@@ -66,6 +67,13 @@ public class TypeVariableSignature extends AnnotatedSignature<TypeVariableSignat
 		public String getTypeName() {
 			return name;
 		}
+	}
+
+	private static final TypeSubstitution REFERENCE_SUBSTITUTION = new TypeSubstitution()
+			.where(TypeVariable.class::isInstance, t -> referenceTypeVariable(t.getTypeName()));
+
+	static Type substituteTypeVariableReferences(Type type) {
+		return REFERENCE_SUBSTITUTION.resolve(type);
 	}
 
 	/**
@@ -92,8 +100,16 @@ public class TypeVariableSignature extends AnnotatedSignature<TypeVariableSignat
 		return new Reference(name);
 	}
 
-	public static TypeVariableSignature declareTypeVariable(String ofName) {
+	public static TypeVariableSignature typeVariableSignature(String ofName) {
 		return new TypeVariableSignature(ofName);
+	}
+
+	public static TypeVariableSignature typeVariableSignature(TypeVariable<?> of) {
+		return new TypeVariableSignature(of.getName()).withBounds(
+				stream(of.getBounds())
+						.map(TypeVariableSignature::substituteTypeVariableReferences)
+						.map(AnnotatedTypes::over)
+						.collect(toList()));
 	}
 
 	private final String name;

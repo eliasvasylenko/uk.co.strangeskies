@@ -159,7 +159,8 @@ public class AnnotatedTypeSubstitution {
 	 *          given condition.
 	 * @return A new TypeSubstitution object with the rule added.
 	 */
-	public AnnotatedTypeSubstitution where(Predicate<? super AnnotatedType> from,
+	public AnnotatedTypeSubstitution where(
+			Predicate<? super AnnotatedType> from,
 			Function<? super AnnotatedType, ? extends AnnotatedType> to) {
 		return new AnnotatedTypeSubstitution(t -> from.test(t) ? to.apply(t) : mapping.apply(t));
 	}
@@ -236,10 +237,13 @@ public class AnnotatedTypeSubstitution {
 		}
 
 		throw new IllegalArgumentException(
-				"Cannot resolve unrecognised type '" + type + "' of class'" + type.getClass() + "'.");
+				"Cannot resolve unrecognised type '" + type + "' of class'" + type.getClass() + "' with type of class '"
+						+ type.getType().getClass() + "'.");
 	}
 
-	private AnnotatedType resolveTypeVariable(AnnotatedTypeVariable type, Isomorphism isomorphism,
+	private AnnotatedType resolveTypeVariable(
+			AnnotatedTypeVariable type,
+			Isomorphism isomorphism,
 			IdentityProperty<Boolean> changed) {
 		return isomorphism.byIdentity().getProxiedMapping(type, AnnotatedTypeVariableInternal.class, i -> {
 
@@ -260,7 +264,9 @@ public class AnnotatedTypeSubstitution {
 		});
 	}
 
-	private AnnotatedType resolveWildcardType(AnnotatedWildcardType type, Isomorphism isomorphism,
+	private AnnotatedType resolveWildcardType(
+			AnnotatedWildcardType type,
+			Isomorphism isomorphism,
 			IdentityProperty<Boolean> changed) {
 		return isomorphism.byIdentity().getProxiedMapping(type, AnnotatedWildcardTypeInternal.class, i -> {
 
@@ -285,7 +291,9 @@ public class AnnotatedTypeSubstitution {
 		});
 	}
 
-	private AnnotatedType resolveParameterizedType(AnnotatedParameterizedType type, Isomorphism isomorphism,
+	private AnnotatedType resolveParameterizedType(
+			AnnotatedParameterizedType type,
+			Isomorphism isomorphism,
 			IdentityProperty<Boolean> changed) {
 		return isomorphism.byIdentity().getProxiedMapping(type, AnnotatedParameterizedTypeInternal.class, i -> {
 
@@ -300,7 +308,9 @@ public class AnnotatedTypeSubstitution {
 		});
 	}
 
-	private List<AnnotatedType> resolveTypes(AnnotatedType[] types, Isomorphism isomorphism,
+	private List<AnnotatedType> resolveTypes(
+			AnnotatedType[] types,
+			Isomorphism isomorphism,
 			IdentityProperty<Boolean> changed) {
 		return Arrays.stream(types).map(t -> resolve(t, isomorphism, changed)).collect(Collectors.toList());
 	}

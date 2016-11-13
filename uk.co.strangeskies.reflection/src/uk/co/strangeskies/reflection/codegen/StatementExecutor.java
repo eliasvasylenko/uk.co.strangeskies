@@ -76,14 +76,14 @@ public class StatementExecutor {
 		}
 	}
 
-	private final ReflectiveInstance<?> receiver;
+	private final ReflectiveInstance<?, ?> receiver;
 	private final StatementExecutor enclosingState;
 
 	private final Map<LocalVariable<?>, Object> locals;
 
 	private final ExpressionEvaluator expressionEvaluator;
 
-	private StatementExecutor(ReflectiveInstance<?> receiver, StatementExecutor enclosingState) {
+	private StatementExecutor(ReflectiveInstance<?, ?> receiver, StatementExecutor enclosingState) {
 		this.receiver = receiver;
 		this.enclosingState = enclosingState;
 
@@ -92,7 +92,7 @@ public class StatementExecutor {
 		expressionEvaluator = new ExpressionEvaluator(this);
 	}
 
-	public StatementExecutor(ReflectiveInstance<?> receiver) {
+	public StatementExecutor(ReflectiveInstance<?, ?> receiver) {
 		this(receiver, null);
 	}
 
@@ -100,7 +100,7 @@ public class StatementExecutor {
 		this(null);
 	}
 
-	public StatementExecutor enclose(ReflectiveInstance<?> receiver) {
+	public StatementExecutor enclose(ReflectiveInstance<?, ?> receiver) {
 		return new StatementExecutor(receiver, this);
 	}
 
@@ -137,7 +137,7 @@ public class StatementExecutor {
 	}
 
 	@SuppressWarnings("unchecked")
-	public <J> J getEnclosingInstance(ClassDefinition<J> receiverClass) {
+	public <J> J getEnclosingInstance(ClassDefinition<?, J> receiverClass) {
 		if (receiver.getReflectiveClassDefinition() == receiverClass) {
 			return (J) receiver;
 		} else if (enclosingState != null) {

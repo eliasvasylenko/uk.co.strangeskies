@@ -32,43 +32,51 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import static uk.co.strangeskies.reflection.codegen.ConstructorSignature.constructorSignature;
-import static uk.co.strangeskies.reflection.codegen.InvocationExpression.invokeStatic;
+import static java.util.Arrays.asList;
 
-import java.util.concurrent.atomic.AtomicLong;
+import java.lang.annotation.Annotation;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.stream.Stream;
 
-import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
-import uk.co.strangeskies.reflection.token.TypeToken;
+public abstract class ExecutableSignature<S extends ExecutableSignature<S>> extends ParameterizedSignature<S> {
+	protected final Collection<? extends VariableSignature<?>> parameters;
 
-public class Expressions {
-	private Expressions() {}
-
-	private static final ValueExpression<Object> NULL_EXPRESSION = new ValueExpression<Object>() {
-		@Override
-		public void accept(ValueExpressionVisitor<Object> visitor) {
-			visitor.visitNull();
-		}
-
-		@Override
-		public TypeToken<Object> getType() {
-			return TypeToken.overNull();
-		}
-	};
-
-	private static final AtomicLong TYPE_TOKEN_EXPRESSION_COUNT = new AtomicLong(0);
-
-	public static <T> ValueExpression<? extends TypeToken<T>> typeTokenExpression(TypeToken<T> type) {
-		ClassDefinition<Void, ? extends TypeToken<T>> typeTokenClass = new ClassSignature<>(
-				"TypeTokenExpression$" + TYPE_TOKEN_EXPRESSION_COUNT.incrementAndGet())
-						.withSuperType(type.getThisTypeToken())
-						.declare()
-						.define();
-
-		return invokeStatic(typeTokenClass.getConstructorDeclaration(constructorSignature()).asToken());
+	public ExecutableSignature() {
+		this.parameters = Collections.emptySet();
 	}
 
-	@SuppressWarnings("unchecked")
-	public static <T> ValueExpression<T> nullExpression() {
-		return (ValueExpression<T>) NULL_EXPRESSION;
+	protected ExecutableSignature(
+			Collection<? extends VariableSignature<?>> parameters,
+			Collection<? extends TypeVariableSignature> typeVariables,
+			Collection<? extends Annotation> annotations) {
+		super(typeVariables, annotations);
+
+		this.parameters = parameters;
+	}
+
+	@Override
+	protected S withParameterizedSignatureData(
+			Collection<? extends TypeVariableSignature> typeVariables,
+			Collection<? extends Annotation> annotations) {
+		return withExecutableSignatureData(parameters, typeVariables, annotations);
+	}
+
+	protected abstract S withExecutableSignatureData(
+			Collection<? extends VariableSignature<?>> parameters2,
+			Collection<? extends TypeVariableSignature> typeVariables,
+			Collection<? extends Annotation> annotations);
+
+	public Stream<? extends VariableSignature<?>> getParameters() {
+		return parameters.stream();
+	}
+
+	public S withParameters(VariableSignature<?>... parameters) {
+		return withParameters(asList(parameters));
+	}
+
+	public S withParameters(Collection<? extends VariableSignature<?>> parameters) {
+		return withExecutableSignatureData(new ArrayList<>(parameters), typeVariables, annotations);
 	}
 }
