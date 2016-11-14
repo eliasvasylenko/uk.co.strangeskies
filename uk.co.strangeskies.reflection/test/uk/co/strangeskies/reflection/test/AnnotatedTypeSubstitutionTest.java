@@ -44,13 +44,13 @@ import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.token.TypeToken;
 import uk.co.strangeskies.reflection.token.TypeToken.Capture;
 import uk.co.strangeskies.reflection.token.TypeToken.Infer;
-import uk.co.strangeskies.reflection.token.TypeToken.Preserve;
+import uk.co.strangeskies.reflection.token.TypeToken.Retain;
 
 @SuppressWarnings("javadoc")
 public class AnnotatedTypeSubstitutionTest {
 	@Test
 	public <T extends Number> void noSubstitutionIdentityTest() {
-		AnnotatedType type = new TypeToken<Map<@Capture ? extends Number[] @Preserve [], Map<? super @Infer Number, @Infer T>>>() {}
+		AnnotatedType type = new TypeToken<Map<@Capture ? extends Number[] @Retain [], Map<? super @Infer Number, @Infer T>>>() {}
 				.getAnnotatedDeclaration();
 
 		AnnotatedType substitution = new AnnotatedTypeSubstitution().where(t -> false, t -> t).resolve(type);
@@ -60,10 +60,10 @@ public class AnnotatedTypeSubstitutionTest {
 
 	@Test
 	public <T extends Number> void doublyNestedWildcardSubstitutionTest() {
-		AnnotatedType type = new TypeToken<Map<@Capture ? extends Comparable<?>[] @Preserve [], Map<? super @Infer Number, @Infer T>>>() {}
+		AnnotatedType type = new TypeToken<Map<@Capture ? extends Comparable<?>[] @Retain [], Map<? super @Infer Number, @Infer T>>>() {}
 				.getAnnotatedDeclaration();
 
-		AnnotatedType expected = new TypeToken<Map<@Capture ? extends Comparable<?>[] @Preserve [], Map<? super Serializable, @Infer T>>>() {}
+		AnnotatedType expected = new TypeToken<Map<@Capture ? extends Comparable<?>[] @Retain [], Map<? super Serializable, @Infer T>>>() {}
 				.getAnnotatedDeclaration();
 
 		AnnotatedType substitution = new AnnotatedTypeSubstitution()

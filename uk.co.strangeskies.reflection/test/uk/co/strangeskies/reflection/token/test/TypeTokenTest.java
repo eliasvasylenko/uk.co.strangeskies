@@ -67,7 +67,7 @@ import uk.co.strangeskies.reflection.token.TypeParameter;
 import uk.co.strangeskies.reflection.token.TypeToken;
 import uk.co.strangeskies.reflection.token.TypeToken.Capture;
 import uk.co.strangeskies.reflection.token.TypeToken.Infer;
-import uk.co.strangeskies.reflection.token.TypeToken.Preserve;
+import uk.co.strangeskies.reflection.token.TypeToken.Retain;
 import uk.co.strangeskies.reflection.token.TypeToken.Wildcards;
 import uk.co.strangeskies.utilities.Self;
 
@@ -422,7 +422,7 @@ public class TypeTokenTest {
 				.resolveSupertypeParameters(Iterable.class));
 		System.out.println();
 
-		System.out.println(new @Preserve TypeToken<List<? extends Number>>() {}.getExtending(Wildcards.INFER).getMethods()
+		System.out.println(new @Retain TypeToken<List<? extends Number>>() {}.getExtending(Wildcards.INFER).getMethods()
 				.named("add").resolveOverload(Integer.class).getReceiverType().infer());
 		System.out.println();
 
@@ -556,11 +556,11 @@ public class TypeTokenTest {
 		System.out.println(new TypeToken<C1<C2<String>>>() {}.isAssignableFrom(new TypeToken<C2<String>>() {}));
 		System.out.println();
 
-		Imports imports = Imports.empty().withImports(Capture.class, Preserve.class, Test2.class, List.class, Type.class);
+		Imports imports = Imports.empty().withImports(Capture.class, Retain.class, Test2.class, List.class, Type.class);
 		String annotationString = AnnotatedTypes.toString(
 				new TypeToken<@Test3(thisIsTest = "yeah!", wat = 2.5f) List<@Test2(
 						idk = "helo",
-						wat = 2) ? extends @Preserve Number> @Capture [] @Infer []>() {}.getAnnotatedDeclaration(),
+						wat = 2) ? extends @Retain Number> @Capture [] @Infer []>() {}.getAnnotatedDeclaration(),
 				imports);
 		System.out.println(annotationString);
 		System.out.println();

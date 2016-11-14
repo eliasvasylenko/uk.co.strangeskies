@@ -175,7 +175,7 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 			returnType = (TypeToken<R>) overType(
 					new TypeResolver(resolver.getBounds()),
 					genericReturnType,
-					Wildcards.PRESERVE);
+					Wildcards.RETAIN);
 			returnType.incorporateInto(resolver.getBounds());
 		}
 
