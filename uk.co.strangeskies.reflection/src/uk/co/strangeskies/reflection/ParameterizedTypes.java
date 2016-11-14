@@ -176,10 +176,8 @@ public class ParameterizedTypes {
 				MultiMap<ParameterizedType, ParameterizedType, Set<ParameterizedType>> equalitiesForThread = assumedEqualities
 						.get(currentThread);
 				if (equalitiesForThread == null) {
-					assumedEqualities.put(
-							currentThread,
-							equalitiesForThread = new MultiTreeMap<>(
-									EquivalenceComparator.identityComparator(),
+					assumedEqualities.put(currentThread,
+							equalitiesForThread = new MultiTreeMap<>(EquivalenceComparator.identityComparator(),
 									() -> new TreeSet<>(EquivalenceComparator.identityComparator())));
 					newThread = true;
 				}
@@ -278,9 +276,10 @@ public class ParameterizedTypes {
 
 			builder.append('<');
 
-			builder.append(
-					Arrays.stream(typeArguments).map(t -> Types.toString(t, imports, isomorphism)).collect(
-							Collectors.joining(", ")));
+			builder.append(Arrays
+					.stream(typeArguments)
+					.map(t -> Types.toString(t, imports, isomorphism))
+					.collect(Collectors.joining(", ")));
 
 			return builder.append(">").toString();
 		});
@@ -323,18 +322,15 @@ public class ParameterizedTypes {
 			TypeVariable<?>[] typeParameters = rawType.getTypeParameters();
 			Type[] actualTypeArguments = type.getActualTypeArguments();
 
-			typeArguments = Stream.concat(
-					IntStream.range(0, typeParameters.length).mapToObj(
-							i -> new AbstractMap.SimpleEntry<>(typeParameters[i], actualTypeArguments[i])),
-					typeArguments);
+			typeArguments = Stream.concat(IntStream.range(0, typeParameters.length).mapToObj(
+					i -> new AbstractMap.SimpleEntry<>(typeParameters[i], actualTypeArguments[i])), typeArguments);
 
 			type = type.getOwnerType() instanceof ParameterizedType ? (ParameterizedType) type.getOwnerType() : null;
 			rawType = Types.isStatic(rawType) ? null : rawType.getEnclosingClass();
 
 			if (rawType != null && type == null) {
 				do {
-					typeArguments = Stream.concat(
-							typeArguments,
+					typeArguments = Stream.concat(typeArguments,
 							Arrays.stream(rawType.getTypeParameters()).map(p -> new AbstractMap.SimpleEntry<>(p, p)));
 				} while ((rawType = Types.isStatic(rawType) ? null : rawType.getEnclosingClass()) != null);
 			}
@@ -485,21 +481,6 @@ public class ParameterizedTypes {
 			arguments.add((argument != null) ? argument : rawType.getTypeParameters()[i]);
 		}
 		return arguments;
-	}
-
-	private static final List<InferenceVariable> SUBSTITUTE_ARGUMENTS = new ArrayList<>();
-
-	private static InferenceVariable getSubstitutionArgument(int index) {
-		while (index >= SUBSTITUTE_ARGUMENTS.size()) {
-			String name = "SUB#" + SUBSTITUTE_ARGUMENTS.size();
-			SUBSTITUTE_ARGUMENTS.add(new InferenceVariable() {
-				@Override
-				public String toString() {
-					return name;
-				}
-			});
-		}
-		return SUBSTITUTE_ARGUMENTS.get(index);
 	}
 
 	/**

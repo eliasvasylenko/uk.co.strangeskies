@@ -136,14 +136,6 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 		return copy;
 	}
 
-	/*
-	 * TODO also deep copy wildcardCaptures!
-	 */
-	@Override
-	public TypeResolver deepCopy() {
-		return deepCopy(new Isomorphism());
-	}
-
 	/**
 	 * Create a copy of an existing resolver. All the inference variables
 	 * contained within the resolver will be substituted for the new inference
@@ -251,7 +243,9 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 		return getInferenceVariables(declaration);
 	}
 
-	private static void infer(BoundSet bounds, GenericDeclaration declaration,
+	private static void infer(
+			BoundSet bounds,
+			GenericDeclaration declaration,
 			Map<TypeVariable<?>, InferenceVariable> existingCaptures) {
 		Stream<TypeVariable<?>> declarationVariables;
 		if (declaration instanceof Class)
@@ -525,8 +519,10 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 				upperBounds.remove(upperBound);
 
 				InferenceVariableBounds bounds = getBounds().getBoundsOn((InferenceVariable) upperBound);
-				Stream.concat(bounds.getUpperBounds().stream(), bounds.getEqualities().stream())
-						.filter(t -> !getBounds().containsInferenceVariable(t)).forEach(upperBounds::add);
+				Stream
+						.concat(bounds.getUpperBounds().stream(), bounds.getEqualities().stream())
+						.filter(t -> !getBounds().containsInferenceVariable(t))
+						.forEach(upperBounds::add);
 			}
 
 		if (upperBounds.isEmpty())
@@ -555,8 +551,10 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 				lowerBounds.remove(lowerBound);
 
 				InferenceVariableBounds bounds = getBounds().getBoundsOn((InferenceVariable) lowerBound);
-				Stream.concat(bounds.getLowerBounds().stream(), bounds.getEqualities().stream())
-						.filter(t -> !getBounds().containsInferenceVariable(t)).forEach(lowerBounds::add);
+				Stream
+						.concat(bounds.getLowerBounds().stream(), bounds.getEqualities().stream())
+						.filter(t -> !getBounds().containsInferenceVariable(t))
+						.forEach(lowerBounds::add);
 			}
 		}
 
@@ -575,7 +573,9 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	public Set<Class<?>> getRawTypes(Type type) {
 		type = resolveType(type);
 
-		return getProperUpperBounds(type).stream().map(Types::getRawType)
+		return getProperUpperBounds(type)
+				.stream()
+				.map(Types::getRawType)
 				.collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 
@@ -609,7 +609,8 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 		Class<?> rawType = Types.getRawType(type);
 		inferOverTypeArguments(type);
 
-		Iterator<Map.Entry<TypeVariable<?>, Type>> originalArguments = ParameterizedTypes.getAllTypeArguments(type)
+		Iterator<Map.Entry<TypeVariable<?>, Type>> originalArguments = ParameterizedTypes
+				.getAllTypeArguments(type)
 				.iterator();
 
 		type = TypeVariableCapture.captureWildcardArguments(type);
@@ -641,7 +642,8 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 		if (wildcardCaptures.isEmpty())
 			return type;
 		else
-			return new TypeSubstitution().where(wildcardCaptures::contains, t -> ((TypeVariableCapture) t).getCapturedType())
+			return new TypeSubstitution()
+					.where(wildcardCaptures::contains, t -> ((TypeVariableCapture) t).getCapturedType())
 					.resolve(type);
 	}
 
@@ -746,7 +748,10 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 			if (lesserSubtypes.isEmpty())
 				lesserSubtypes.add(Object.class);
 
-			subtype = lesserSubtypes.stream().filter(t -> Types.isAssignable(Types.getRawType(t), superclass)).findAny()
+			subtype = lesserSubtypes
+					.stream()
+					.filter(t -> Types.isAssignable(Types.getRawType(t), superclass))
+					.findAny()
 					.get();
 			subtype = new TypeSubstitution(inferenceVariables).resolve(subtype);
 
@@ -764,8 +769,8 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 */
 	public Map<InferenceVariable, Type> infer() {
 		infer(getInferenceVariables());
-		return bounds.getInstantiatedVariables().stream()
-				.collect(Collectors.toMap(Function.identity(), i -> bounds.getBoundsOn(i).getInstantiation().get()));
+		return bounds.getInstantiatedVariables().stream().collect(
+				Collectors.toMap(Function.identity(), i -> bounds.getBoundsOn(i).getInstantiation().get()));
 	}
 
 	/**
@@ -781,7 +786,9 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	public Map<TypeVariable<?>, Type> infer(GenericDeclaration context) {
 		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getInferenceVariables(context);
 		Map<InferenceVariable, Type> instantiations = infer(inferenceVariables.values());
-		return inferenceVariables.entrySet().stream()
+		return inferenceVariables
+				.entrySet()
+				.stream()
 				.collect(Collectors.toMap(Entry::getKey, e -> instantiations.get(e.getValue())));
 	}
 
@@ -853,7 +860,10 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 *         inferred instantiations.
 	 */
 	public Map<InferenceVariable, Type> infer(Collection<? extends InferenceVariable> variables) {
-		variables = variables.stream().filter(getBounds()::containsInferenceVariable).map(InferenceVariable.class::cast)
+		variables = variables
+				.stream()
+				.filter(getBounds()::containsInferenceVariable)
+				.map(InferenceVariable.class::cast)
 				.collect(Collectors.toSet());
 
 		Map<InferenceVariable, Type> instantiations = new HashMap<>();
@@ -862,9 +872,12 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 		 * set and all variables upon which the resolution of at least one variable
 		 * in this set depends.
 		 */
-		Set<InferenceVariable> independentSet = variables.stream()
+		Set<InferenceVariable> independentSet = variables
+				.stream()
 				.filter(v -> !bounds.getBoundsOn(v).getInstantiation().isPresent())
-				.map(v -> bounds.getBoundsOn(v).getRemainingDependencies()).flatMap(Set::stream).collect(Collectors.toSet());
+				.map(v -> bounds.getBoundsOn(v).getRemainingDependencies())
+				.flatMap(Set::stream)
+				.collect(Collectors.toSet());
 
 		resolveIndependentSet(independentSet);
 
@@ -1209,7 +1222,11 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 * @return The set of variables incorporated into this {@link TypeResolver}.
 	 */
 	public Set<InferenceVariable> getInferenceVariables() {
-		return capturedTypeVariables.values().stream().map(Map::values).flatMap(Collection::stream)
+		return capturedTypeVariables
+				.values()
+				.stream()
+				.map(Map::values)
+				.flatMap(Collection::stream)
 				.collect(Collectors.toSet());
 	}
 

@@ -49,6 +49,35 @@ import uk.co.strangeskies.utilities.DeepCopyable;
 import uk.co.strangeskies.utilities.Isomorphism;
 
 /**
+ * 
+ * 
+ * 
+ * 
+ * TODO Make this API immutable? Think about how that interacts with inference
+ * resolution and falling back on failure, etc.
+ * 
+ * 
+ * 
+ * 
+ * TODO get rid of TypeResolver.
+ * 
+ * 
+ * 
+ * 
+ * TODO then when we have no TypeResolver ... redo and simplify all affected
+ * TypeToken and ExecutableToken implementation (which is most of them)
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
  * <p>
  * A bound set as described in chapter 18 of the Java 8 language specification.
  * (Note that some sorts of bounds present in the document are missing from this
@@ -105,7 +134,7 @@ import uk.co.strangeskies.utilities.Isomorphism;
  * 
  * <p>
  * We may also employ these processes towards other ends, such as type checking
- * for data serialisation formats and libraries, injection frameworks, etc.,
+ * for data serialization formats and libraries, injection frameworks, etc.,
  * which may have slightly different rules and requirements to generic method
  * invocation. There are also applications further outside these areas, such as
  * inference of the type arguments of a generic supertype of a given type.
@@ -371,8 +400,12 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	 *         which has a valid instantiation.
 	 */
 	public Set<InferenceVariable> getInstantiatedVariables() {
-		return inferenceVariableBounds.entrySet().stream().filter(i -> i.getValue().getInstantiation().isPresent())
-				.map(Entry::getKey).collect(Collectors.toSet());
+		return inferenceVariableBounds
+				.entrySet()
+				.stream()
+				.filter(i -> i.getValue().getInstantiation().isPresent())
+				.map(Entry::getKey)
+				.collect(Collectors.toSet());
 	}
 
 	/**
@@ -563,7 +596,8 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		return bounds;
 	}
 
-	private InferenceVariableBoundsImpl addInferenceVariableBounds(InferenceVariable inferenceVariable,
+	private InferenceVariableBoundsImpl addInferenceVariableBounds(
+			InferenceVariable inferenceVariable,
 			InferenceVariableBoundsImpl bounds) {
 		if (bounds.getBoundSet() != this || inferenceVariableBounds.containsKey(inferenceVariable)) {
 			/*

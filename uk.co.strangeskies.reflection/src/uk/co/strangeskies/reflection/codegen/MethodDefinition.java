@@ -38,13 +38,13 @@ import java.util.function.Function;
 import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
-public abstract class MethodDefinition<C, T> implements MemberDefinition<C> {
-	private final MethodDeclaration<C, T> classDeclaration;
+public class MethodDefinition<C, T> implements MemberDefinition<C> {
+	private final MethodDeclaration<C, T> methodDeclaration;
 	private final Block<T> body;
 
 	@SuppressWarnings("unchecked")
 	public MethodDefinition(MethodDeclaration<C, T> classDeclaration) {
-		this.classDeclaration = classDeclaration;
+		this.methodDeclaration = classDeclaration;
 		this.body = new Block<>();
 	}
 
@@ -70,8 +70,8 @@ public abstract class MethodDefinition<C, T> implements MemberDefinition<C> {
 	}
 
 	@Override
-	public ClassDeclaration<?, C> getClassDeclaration() {
-		return classDeclaration;
+	public ClassDeclaration<?, C> getOwningClassDeclaration() {
+		return methodDeclaration;
 	}
 
 	@Override
