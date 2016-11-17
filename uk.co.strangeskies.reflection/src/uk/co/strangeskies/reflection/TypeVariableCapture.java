@@ -32,6 +32,7 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
 import static uk.co.strangeskies.reflection.IntersectionTypes.uncheckedIntersectionOf;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.getAllTypeArguments;
@@ -307,7 +308,9 @@ public class TypeVariableCapture implements Type {
 		return captureWildcard(typeVariable, type, true);
 	}
 
-	private static TypeVariableCapture captureWildcard(TypeVariable<?> typeVariable, WildcardType type,
+	private static TypeVariableCapture captureWildcard(
+			TypeVariable<?> typeVariable,
+			WildcardType type,
 			boolean validate) {
 		Type upperBound;
 
@@ -348,14 +351,16 @@ public class TypeVariableCapture implements Type {
 	 * @return A mapping from the inference variables passes to their new
 	 *         captures.
 	 */
-	public static Map<InferenceVariable, Type> captureInferenceVariables(Collection<? extends InferenceVariable> types,
-			BoundSet bounds) {
+	public static BoundSet captureInferenceVariables(Collection<? extends InferenceVariable> types, BoundSet bounds) {
 		TypeSubstitution properTypeSubstitutuion = properTypeSubstitution(types, bounds);
 
 		Map<InferenceVariable, Type> typeVariableCaptures = new HashMap<>();
 		for (InferenceVariable inferenceVariable : types) {
-			Optional<Type> existingMatch = bounds.getBoundsOn(inferenceVariable).getEqualities().stream()
-					.filter(typeVariableCaptures::containsKey).findAny();
+			Optional<Type> existingMatch = bounds
+					.getBoundsOn(inferenceVariable)
+					.getEqualities()
+					.filter(typeVariableCaptures::containsKey)
+					.findAny();
 
 			if (existingMatch.isPresent()) {
 				/*
@@ -384,7 +389,11 @@ public class TypeVariableCapture implements Type {
 					 * L1, ..., Lk, then let the lower bound of Yi be lub(L1, ..., Lk); if
 					 * not, then Yi has no lower bound.
 					 */
-					Set<Type> lowerBoundSet = bounds.getBoundsOn(inferenceVariable).getProperLowerBounds();
+					List<Type> lowerBoundSet = bounds
+							.getBoundsOn(inferenceVariable)
+							.getLowerBounds()
+							.filter(InferenceVariable::isProperType)
+							.collect(toList());
 
 					Type[] lowerBounds;
 					if (lowerBoundSet.isEmpty())
@@ -400,11 +409,12 @@ public class TypeVariableCapture implements Type {
 					 * substitution [α1:=Y1, ..., αn:=Yn].
 					 */
 
-					Set<Type> upperBoundSet = bounds.getBoundsOn(inferenceVariable).getUpperBounds().stream().map(t -> {
+					BoundSet finalBounds = bounds;
+					Set<Type> upperBoundSet = bounds.getBoundsOn(inferenceVariable).getUpperBounds().map(t -> {
 						try {
 							return properTypeSubstitutuion.resolve(t);
 						} catch (ReflectionException e) {
-							throw new ReflectionException(p -> p.improperUpperBound(t, inferenceVariable, bounds), e);
+							throw new ReflectionException(p -> p.improperUpperBound(t, inferenceVariable, finalBounds), e);
 						}
 					}).collect(Collectors.toSet());
 
@@ -427,25 +437,17 @@ public class TypeVariableCapture implements Type {
 			}
 		}
 
-		bounds.assertConsistent();
-
 		substituteBounds(typeVariableCaptures);
 
-		for (Map.Entry<InferenceVariable, Type> inferenceVariable : typeVariableCaptures.entrySet()) {
-			try {
-				bounds.incorporate().equality(inferenceVariable.getKey(), inferenceVariable.getValue());
-			} catch (ReflectionException e) {
-				throw new ReflectionException(
-						p -> p.cannotCaptureInferenceVariable(inferenceVariable.getKey(), inferenceVariable.getValue(), bounds), e);
-			}
-		}
-
-		return typeVariableCaptures;
+		return bounds.withInstantiations(typeVariableCaptures);
 	}
 
-	private static TypeSubstitution properTypeSubstitution(Collection<? extends InferenceVariable> types,
+	private static TypeSubstitution properTypeSubstitution(
+			Collection<? extends InferenceVariable> types,
 			BoundSet bounds) {
 		return new TypeSubstitution().where(InferenceVariable.class::isInstance, i -> {
+			InferenceVariableBounds inferenceVariableBounds = bounds.getBoundsOn((InferenceVariable) i);
+
 			/*
 			 * The intent of this substitution is to replace all instances of
 			 * inference variables with proper forms where possible.
@@ -461,37 +463,21 @@ public class TypeVariableCapture implements Type {
 			 * TODO may need to rethink approach to cases like the recent compiler-dev
 			 * issue
 			 */
-			if (bounds.getBoundsOn((InferenceVariable) i).getInstantiation().isPresent()) {
-				i = bounds.getBoundsOn((InferenceVariable) i).getInstantiation().get();
+			Type replacement;
+			if (inferenceVariableBounds.getInstantiation().isPresent()) {
+				replacement = inferenceVariableBounds.getInstantiation().get();
 			} else if (!types.contains(i)) {
-				Set<Type> equalities = bounds.getBoundsOn((InferenceVariable) i).getEqualities();
-
-				Type replacement = null;
-				for (Type equality : equalities) {
-					if (types.contains(equality)) {
-						replacement = equality;
-						break;
-					}
-				}
-
-				if (replacement == null) {
-					for (Type equality : equalities) {
-						Set<InferenceVariable> mentioned = InferenceVariable.getMentionedBy(equality);
-						mentioned.removeAll(types);
-						if (mentioned.isEmpty()) {
-							replacement = equality;
-							break;
-						}
-					}
-				}
-
-				if (replacement == null) {
-					Type finalType = i;
-					throw new ReflectionException(p -> p.cannotFindSubstitution(finalType));
-				}
+				replacement = inferenceVariableBounds.getEqualities().filter(types::contains).findAny().orElse(
+						inferenceVariableBounds
+								.getEqualities()
+								.filter(equality -> types.containsAll(InferenceVariable.getMentionedBy(equality)))
+								.findAny()
+								.orElseThrow(() -> new ReflectionException(p -> p.cannotFindSubstitution(i))));
+			} else {
+				replacement = i;
 			}
 
-			return i;
+			return replacement;
 		});
 	}
 }

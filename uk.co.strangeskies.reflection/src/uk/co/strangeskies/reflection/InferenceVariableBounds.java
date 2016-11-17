@@ -34,7 +34,7 @@ package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.Type;
 import java.util.Optional;
-import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * This object describes the bounds present on a particular inference variable
@@ -58,27 +58,17 @@ public interface InferenceVariableBounds {
 	/**
 	 * @return All equality bounds on the described inference variable.
 	 */
-	public abstract Set<Type> getEqualities();
+	public abstract Stream<Type> getEqualities();
 
 	/**
 	 * @return All upper bounds on the described inference variable.
 	 */
-	public abstract Set<Type> getUpperBounds();
+	public abstract Stream<Type> getUpperBounds();
 
 	/**
 	 * @return All lower bounds on the described inference variable.
 	 */
-	public abstract Set<Type> getLowerBounds();
-
-	/**
-	 * @return All proper upper bounds on the described inference variable.
-	 */
-	public abstract Set<Type> getProperUpperBounds();
-
-	/**
-	 * @return All proper lower bounds on the described inference variable.
-	 */
-	public abstract Set<Type> getProperLowerBounds();
+	public abstract Stream<Type> getLowerBounds();
 
 	/**
 	 * @return The instantiation on the described inference variable, if present.
@@ -89,12 +79,12 @@ public interface InferenceVariableBounds {
 	 * @return All inference variables related to this one through bounds. This
 	 *         set includes the inference variable itself.
 	 */
-	public abstract Set<InferenceVariable> getRemainingDependencies();
+	public abstract Stream<InferenceVariable> getRemainingDependencies();
 
 	/**
 	 * @return All inference variables related to this one through bounds. This
 	 *         set includes the inference variable itself.
 	 */
-	public abstract Set<InferenceVariable> getRelated();
+	public abstract Stream<InferenceVariable> getRelated();
 
 }

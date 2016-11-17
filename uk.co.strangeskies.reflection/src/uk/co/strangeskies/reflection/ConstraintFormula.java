@@ -32,8 +32,11 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static java.util.stream.Collectors.toList;
+import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.EQUALITY;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.getAllTypeArguments;
+import static uk.co.strangeskies.reflection.Types.wrapPrimitive;
 
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
@@ -99,7 +102,15 @@ public class ConstraintFormula {
 	private final Kind kind;
 	private final Type from, to;
 
-	private ConstraintFormula(Kind kind, Type from, Type to) {
+	/**
+	 * @param kind
+	 *          the kind of the constraint formula to create
+	 * @param from
+	 *          the first type of the constraint formula
+	 * @param to
+	 *          the second type of the constraint formula
+	 */
+	public ConstraintFormula(Kind kind, Type from, Type to) {
 		this.kind = kind;
 		this.from = from;
 		this.to = to;
@@ -114,44 +125,38 @@ public class ConstraintFormula {
 	 * Creates a {@link ConstraintFormula} and reduces it into the given
 	 * {@link BoundSet}.
 	 * 
-	 * @param kind
-	 *          The kind of the constraint formula to create.
-	 * @param from
-	 *          The first type of the constraint formula.
-	 * @param to
-	 *          The second type of the constraint formula.
 	 * @param bounds
-	 *          The bound set to reduce the created constraint formula into.
-	 * @return The constraint formula created.
+	 *          the bound set to reduce the created constraint formula into
+	 * @return the constraint formula created
 	 */
-	public static ConstraintFormula reduce(Kind kind, Type from, Type to, BoundSet bounds) {
-		ConstraintFormula constraintFormula = new ConstraintFormula(kind, from, to);
-		try {
-			constraintFormula.reduceInto(bounds);
-		} catch (Exception e) {
-			throw new ReflectionException(p -> p.cannotReduceConstraint(constraintFormula, bounds), e);
-		}
-		return constraintFormula;
+	public BoundSet reduce(BoundSet bounds) {
+		bounds = bounds.copy();
+		reduceInPlace(bounds);
+		return bounds;
 	}
 
-	void reduceInto(BoundSet bounds) {
-		logConstraint(this, bounds);
+	protected void reduceInPlace(BoundSet bounds) {
+		try {
+			logConstraint(this, bounds);
 
-		switch (kind) {
-		case LOOSE_COMPATIBILILTY:
-			reduceLooseCompatibilityConstraint(bounds);
-			break;
-		case SUBTYPE:
-			reduceSubtypeConstraint(bounds);
-			break;
-		case CONTAINMENT:
-			reduceContainmentConstraint(bounds);
-			break;
-		case EQUALITY:
-			reduceEqualityConstraint(bounds);
-			break;
-		default:
-			throw new AssertionError();
+			switch (kind) {
+			case LOOSE_COMPATIBILILTY:
+				reduceLooseCompatibilityConstraint(bounds);
+				break;
+			case SUBTYPE:
+				reduceSubtypeConstraint(bounds);
+				break;
+			case CONTAINMENT:
+				reduceContainmentConstraint(bounds);
+				break;
+			case EQUALITY:
+				reduceEqualityConstraint(bounds);
+				break;
+			default:
+				throw new AssertionError();
+			}
+		} catch (Exception e) {
+			throw new ReflectionException(p -> p.cannotReduceConstraint(this, bounds), e);
 		}
 	}
 
@@ -163,7 +168,7 @@ public class ConstraintFormula {
 	 * A constraint formula of the form ‹S → T› is reduced as follows:
 	 */
 	private void reduceLooseCompatibilityConstraint(BoundSet bounds) {
-		IncorporationTarget incorporate = bounds.incorporate();
+		IncorporationTarget incorporate = bounds.withIncorporated();
 
 		Type from = this.from;
 
@@ -193,14 +198,14 @@ public class ConstraintFormula {
 			 * boxing conversion (§5.1.7) to S. Then the constraint reduces to ‹S' →
 			 * T›.
 			 */
-			reduce(Kind.LOOSE_COMPATIBILILTY, Types.wrapPrimitive(from), to, bounds);
+			new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, Types.wrapPrimitive(from), to).reduceInPlace(bounds);
 		} else if (to != null && Types.isPrimitive(to)) {
 			/*
 			 * Otherwise, if T is a primitive type, let T' be the result of applying
 			 * boxing conversion (§5.1.7) to T. Then the constraint reduces to ‹S =
 			 * T'›.
 			 */
-			reduce(Kind.EQUALITY, from, Types.wrapPrimitive(to), bounds);
+			new ConstraintFormula(EQUALITY, from, wrapPrimitive(to)).reduceInPlace(bounds);
 		} else if (isUncheckedCompatibleOnly(from, to)) {
 			/*
 			 * Otherwise, if T is a parameterized type of the form G<T1, ..., Tn>, and
@@ -218,7 +223,7 @@ public class ConstraintFormula {
 			/*
 			 * Otherwise, the constraint reduces to ‹S <: T›.
 			 */
-			reduce(Kind.SUBTYPE, from, to, bounds);
+			new ConstraintFormula(Kind.SUBTYPE, from, to).reduceInPlace(bounds);
 		}
 	}
 
@@ -245,7 +250,7 @@ public class ConstraintFormula {
 	 * A constraint formula of the form ‹S <: T› is reduced as follows:
 	 */
 	private void reduceSubtypeConstraint(BoundSet bounds) {
-		IncorporationTarget incorporate = bounds.incorporate();
+		IncorporationTarget incorporate = bounds.withIncorporated();
 
 		if (InferenceVariable.isProperType(from) && InferenceVariable.isProperType(to)) {
 			/*
@@ -296,11 +301,13 @@ public class ConstraintFormula {
 					 * If no such type exists, the constraint reduces to false.
 					 */
 					if (!(from instanceof InferenceVariable))
-						incorporate.falsehood("Raw types '" + Types.getRawTypes(from) + "' cannot be assigned from '"
-								+ Types.getRawType(to) + "': " + this);
+						incorporate.falsehood(
+								"Raw types '" + Types.getRawTypes(from) + "' cannot be assigned from '" + Types.getRawType(to) + "': "
+										+ this);
 				} else {
 					List<Map.Entry<TypeVariable<?>, Type>> toArguments = ParameterizedTypes
-							.getAllTypeArguments((ParameterizedType) to).collect(Collectors.toList());
+							.getAllTypeArguments((ParameterizedType) to)
+							.collect(Collectors.toList());
 
 					List<Type> fromSet;
 					if (this.from instanceof WildcardType)
@@ -326,9 +333,11 @@ public class ConstraintFormula {
 							 * constraints: for all i (1 ≤ i ≤ n), ‹Bi <= Ai›.
 							 */
 							Iterator<Map.Entry<TypeVariable<?>, Type>> toArgumentsIterator = toArguments.iterator();
-							ParameterizedTypes.getAllTypeArguments(fromParameterization).forEach(e -> {
-								reduce(Kind.CONTAINMENT, e.getValue(), toArgumentsIterator.next().getValue(), bounds);
-							});
+							ParameterizedTypes
+									.getAllTypeArguments(fromParameterization)
+									.map(
+											e -> new ConstraintFormula(Kind.CONTAINMENT, e.getValue(), toArgumentsIterator.next().getValue()))
+									.forEach(c -> c.reduceInPlace(bounds));
 						}
 					}
 				}
@@ -340,7 +349,7 @@ public class ConstraintFormula {
 				 */
 				Type from = this.from;
 				if (from instanceof InferenceVariable)
-					from = intersectionOf(bounds.getBoundsOn((InferenceVariable) from).getUpperBounds());
+					from = intersectionOf(bounds.getBoundsOn((InferenceVariable) from).getUpperBounds().collect(toList()));
 				if (!Types.isAssignable(from, to))
 					incorporate.falsehood("Class types do not form subtype relation: " + this);
 			} else if (!(to instanceof IntersectionType) && Types.getRawType(to).isArray()) {
@@ -365,7 +374,7 @@ public class ConstraintFormula {
 						 * - If neither S' nor T' is a primitive type, the constraint
 						 * reduces to ‹S' <: T'›.
 						 */
-						reduce(Kind.SUBTYPE, fromComponent, toComponent, bounds);
+						new ConstraintFormula(Kind.SUBTYPE, fromComponent, toComponent).reduceInPlace(bounds);
 					} else {
 						/*
 						 * - Otherwise, the constraint reduces to true if S' and T' are the
@@ -390,7 +399,8 @@ public class ConstraintFormula {
 					 * - Otherwise, if T has a lower bound, B, the constraint reduces to
 					 * ‹S <: B›.
 					 */
-					reduce(Kind.SUBTYPE, from, intersectionOf(((TypeVariableCapture) to).getLowerBounds()), bounds);
+					new ConstraintFormula(Kind.SUBTYPE, from, intersectionOf(((TypeVariableCapture) to).getLowerBounds()))
+							.reduceInPlace(bounds);
 				} else {
 					/*
 					 * - Otherwise, the constraint reduces to false.
@@ -403,7 +413,7 @@ public class ConstraintFormula {
 				 * to the following new constraints: for all i (1 ≤ i ≤ n), ‹S <: Ii›.
 				 */
 				for (Type typeComponent : ((IntersectionType) to).getTypes())
-					reduce(Kind.SUBTYPE, from, typeComponent, bounds);
+					new ConstraintFormula(Kind.SUBTYPE, from, typeComponent).reduceInPlace(bounds);
 			} else {
 				throw new ReflectionException(p -> p.unsupportedType(to));
 			}
@@ -423,8 +433,13 @@ public class ConstraintFormula {
 			List<Type> candidates = Arrays.asList(((IntersectionType) from).getTypes());
 
 			// attempt to find most specific from candidates
-			return candidates.stream().filter(t -> Types.getRawType(t).isArray()).map(Types::getComponentType).reduce((a,
-					b) -> (a == null || b == null) ? null : Types.isAssignable(a, b) ? a : Types.isAssignable(b, a) ? b : null)
+			return candidates
+					.stream()
+					.filter(t -> Types.getRawType(t).isArray())
+					.map(Types::getComponentType)
+					.reduce(
+							(a, b) -> (a == null || b == null) ? null
+									: Types.isAssignable(a, b) ? a : Types.isAssignable(b, a) ? b : null)
 					.orElse(null);
 		}
 
@@ -436,7 +451,7 @@ public class ConstraintFormula {
 	 * (§4.5.1), is reduced as follows:
 	 */
 	private void reduceContainmentConstraint(BoundSet bounds) {
-		IncorporationTarget incorporate = bounds.incorporate();
+		IncorporationTarget incorporate = bounds.withIncorporated();
 
 		if (!(to instanceof WildcardType)) {
 			/*
@@ -446,7 +461,7 @@ public class ConstraintFormula {
 				/*
 				 * If S is a type, the constraint reduces to ‹S = T›.
 				 */
-				reduce(Kind.EQUALITY, from, to, bounds);
+				new ConstraintFormula(Kind.EQUALITY, from, to).reduceInPlace(bounds);
 			} else {
 				/*
 				 * If S is a wildcard, the constraint reduces to false.
@@ -473,7 +488,7 @@ public class ConstraintFormula {
 						/*
 						 * If S is a type, the constraint reduces to ‹S <: T'›.
 						 */
-						reduce(Kind.SUBTYPE, from, intersectionT, bounds);
+						new ConstraintFormula(Kind.SUBTYPE, from, intersectionT).reduceInPlace(bounds);
 					} else {
 						WildcardType from = (WildcardType) this.from;
 
@@ -483,20 +498,21 @@ public class ConstraintFormula {
 								 * If S is a wildcard of the form ?, the constraint reduces to
 								 * ‹Object <: T'›.
 								 */
-								reduce(Kind.SUBTYPE, Object.class, intersectionT, bounds);
+								new ConstraintFormula(Kind.SUBTYPE, Object.class, intersectionT).reduceInPlace(bounds);
 							} else {
 								/*
 								 * If S is a wildcard of the form ? extends S', the constraint
 								 * reduces to ‹S' <: T'›.
 								 */
-								reduce(Kind.SUBTYPE, intersectionOf(from.getUpperBounds()), intersectionT, bounds);
+								new ConstraintFormula(Kind.SUBTYPE, intersectionOf(from.getUpperBounds()), intersectionT)
+										.reduceInPlace(bounds);
 							}
 						} else {
 							/*
 							 * If S is a wildcard of the form ? super S', the constraint
 							 * reduces to ‹Object = T'›.
 							 */
-							reduce(Kind.EQUALITY, Object.class, intersectionT, bounds);
+							new ConstraintFormula(Kind.EQUALITY, Object.class, intersectionT).reduceInPlace(bounds);
 						}
 					}
 				}
@@ -510,7 +526,7 @@ public class ConstraintFormula {
 					/*
 					 * If S is a type, the constraint reduces to ‹T' <: S›.
 					 */
-					reduce(Kind.SUBTYPE, intersectionT, from, bounds);
+					new ConstraintFormula(Kind.SUBTYPE, intersectionT, from).reduceInPlace(bounds);
 				} else {
 					WildcardType from = (WildcardType) this.from;
 
@@ -519,7 +535,8 @@ public class ConstraintFormula {
 						 * If S is a wildcard of the form ? super S', the constraint reduces
 						 * to ‹T' <: S'›.
 						 */
-						reduce(Kind.SUBTYPE, intersectionT, intersectionOf(from.getLowerBounds()), bounds);
+						new ConstraintFormula(Kind.SUBTYPE, intersectionT, intersectionOf(from.getLowerBounds()))
+								.reduceInPlace(bounds);
 					} else {
 						/*
 						 * Otherwise, the constraint reduces to false.
@@ -532,7 +549,7 @@ public class ConstraintFormula {
 	}
 
 	private void reduceEqualityConstraint(BoundSet bounds) {
-		IncorporationTarget incorporate = bounds.incorporate();
+		IncorporationTarget incorporate = bounds.withIncorporated();
 
 		if (from instanceof WildcardType && to instanceof WildcardType) {
 			/*
@@ -558,7 +575,8 @@ public class ConstraintFormula {
 							 * If S has the form ? and T has the form ? extends T', the
 							 * constraint reduces to ‹Object = T'›.
 							 */
-							reduce(Kind.EQUALITY, Object.class, intersectionOf(to.getUpperBounds()), bounds);
+							new ConstraintFormula(Kind.EQUALITY, Object.class, intersectionOf(to.getUpperBounds()))
+									.reduceInPlace(bounds);
 						}
 					}
 				} else if (to.getLowerBounds().length == 0) {
@@ -567,13 +585,17 @@ public class ConstraintFormula {
 						 * If S has the form ? extends S' and T has the form ?, the
 						 * constraint reduces to ‹S' = Object›.
 						 */
-						reduce(Kind.EQUALITY, intersectionOf(from.getUpperBounds()), Object.class, bounds);
+						new ConstraintFormula(Kind.EQUALITY, intersectionOf(from.getUpperBounds()), Object.class)
+								.reduceInPlace(bounds);
 					} else {
 						/*
 						 * If S has the form ? extends S' and T has the form ? extends T',
 						 * the constraint reduces to ‹S' = T'›.
 						 */
-						reduce(Kind.EQUALITY, intersectionOf(from.getUpperBounds()), intersectionOf(to.getUpperBounds()), bounds);
+						new ConstraintFormula(
+								Kind.EQUALITY,
+								intersectionOf(from.getUpperBounds()),
+								intersectionOf(to.getUpperBounds())).reduceInPlace(bounds);
 					}
 				}
 			} else if (to.getLowerBounds().length > 0) {
@@ -581,7 +603,8 @@ public class ConstraintFormula {
 				 * If S has the form ? super S' and T has the form ? super T', the
 				 * constraint reduces to ‹S' = T'›.
 				 */
-				reduce(Kind.EQUALITY, intersectionOf(from.getLowerBounds()), intersectionOf(to.getLowerBounds()), bounds);
+				new ConstraintFormula(Kind.EQUALITY, intersectionOf(from.getLowerBounds()), intersectionOf(to.getLowerBounds()))
+						.reduceInPlace(bounds);
 			} else {
 				/*
 				 * Otherwise, the constraint reduces to false.
@@ -618,7 +641,8 @@ public class ConstraintFormula {
 					 * Otherwise, if S and T are array types, S'[] and T'[], the
 					 * constraint reduces to ‹S' = T'›.
 					 */
-					reduce(Kind.EQUALITY, Types.getComponentType(from), Types.getComponentType(to), bounds);
+					new ConstraintFormula(Kind.EQUALITY, Types.getComponentType(from), Types.getComponentType(to))
+							.reduceInPlace(bounds);
 				} else if (Types.getRawType(from).equals(Types.getRawType(to))) {
 					/*
 					 * Otherwise, if S and T are class or interface types with the same
@@ -630,11 +654,14 @@ public class ConstraintFormula {
 					Type finalTo = to;
 					if (from instanceof ParameterizedType) {
 						if (to instanceof ParameterizedType) {
-							Iterator<Type> fromArguments = getAllTypeArguments((ParameterizedType) finalFrom).map(Entry::getValue)
+							Iterator<Type> fromArguments = getAllTypeArguments((ParameterizedType) finalFrom)
+									.map(Entry::getValue)
 									.iterator();
 
-							getAllTypeArguments((ParameterizedType) finalTo).map(Entry::getValue)
-									.forEach(toArgument -> reduce(Kind.EQUALITY, fromArguments.next(), toArgument, bounds));
+							getAllTypeArguments((ParameterizedType) finalTo)
+									.map(Entry::getValue)
+									.map(toArgument -> new ConstraintFormula(Kind.EQUALITY, fromArguments.next(), toArgument))
+									.forEach(c -> c.reduceInPlace(bounds));
 						} else {
 							incorporate.falsehood("Wildcards cannot be equal in this form: " + this);
 						}

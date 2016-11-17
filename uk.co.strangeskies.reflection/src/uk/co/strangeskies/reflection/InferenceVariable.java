@@ -138,7 +138,7 @@ public class InferenceVariable implements Type {
 
 			CaptureConversion captureConversion = new CaptureConversion(type);
 
-			bounds.incorporate().captureConversion(captureConversion);
+			bounds.withIncorporated().captureConversion(captureConversion);
 
 			return captureConversion.getCaptureType();
 		} else

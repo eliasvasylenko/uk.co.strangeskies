@@ -542,7 +542,7 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 	@Override
 	public ExecutableToken<O, R> withBounds(BoundSet bounds, Collection<? extends InferenceVariable> inferenceVariables) {
 		TypeResolver resolver = getResolver();
-		resolver.getBounds().incorporate(bounds, inferenceVariables);
+		resolver.getBounds().withIncorporated(bounds, inferenceVariables);
 
 		return new ExecutableToken<>(
 				resolver,
@@ -761,7 +761,7 @@ public class ExecutableToken<O, R> implements MemberToken<O> {
 			return (ExecutableToken<O, S>) this;
 
 		TypeResolver resolver = getResolver();
-		resolver.getBounds().incorporate(returnType.getResolver().getBounds());
+		resolver.getBounds().withIncorporated(returnType.getResolver().getBounds());
 
 		ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, returnType.getType(), target, resolver.getBounds());
 

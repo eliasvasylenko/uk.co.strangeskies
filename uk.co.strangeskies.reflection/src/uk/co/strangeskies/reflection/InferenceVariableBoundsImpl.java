@@ -38,7 +38,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -47,7 +46,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
@@ -130,7 +128,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		return copy;
 	}
 
-	public void filter(BoundSet boundSet, Predicate<InferenceVariable> ignoring) {
+	private void filter(BoundSet boundSet, Predicate<InferenceVariable> ignoring) {
 		Iterator<Type> boundIterator = upperBounds.iterator();
 		while (boundIterator.hasNext())
 			if (InferenceVariable.getMentionedBy(boundIterator.next()).stream().anyMatch(ignoring::test))
@@ -156,8 +154,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	}
 
 	public InferenceVariableBoundsImpl withInferenceVariableSubstitution(Isomorphism isomorphism) {
-
-		InferenceVariable inferenceVariableSubstitution = (InferenceVariable) isomorphism.byIdentity()
+		InferenceVariable inferenceVariableSubstitution = (InferenceVariable) isomorphism
+				.byIdentity()
 				.getMapping(inferenceVariable);
 
 		InferenceVariableBoundsImpl copy = new InferenceVariableBoundsImpl(boundSet, inferenceVariableSubstitution);
@@ -167,7 +165,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		return copy;
 	}
 
-	private void addBoundsWithTypeSubstitution(InferenceVariableBoundsImpl inferenceVariableBounds,
+	private void addBoundsWithTypeSubstitution(
+			InferenceVariableBoundsImpl inferenceVariableBounds,
 			Isomorphism isomorphism) {
 		TypeSubstitution substitution = new TypeSubstitution().withIsomorphism(isomorphism);
 
@@ -182,7 +181,10 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 
 		capture = (CaptureConversion) isomorphism.byIdentity().getMapping(inferenceVariableBounds.capture);
 
-		inferenceVariableBounds.relations.stream().map(substitution::resolve).map(InferenceVariable.class::cast)
+		inferenceVariableBounds.relations
+				.stream()
+				.map(substitution::resolve)
+				.map(InferenceVariable.class::cast)
 				.forEach(relations::add);
 	}
 
@@ -241,30 +243,18 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	}
 
 	@Override
-	public Set<Type> getEqualities() {
-		return Collections.unmodifiableSet(equalities);
+	public Stream<Type> getEqualities() {
+		return equalities.stream();
 	}
 
 	@Override
-	public Set<Type> getUpperBounds() {
-		return Collections.unmodifiableSet(upperBounds);
+	public Stream<Type> getUpperBounds() {
+		return upperBounds.stream();
 	}
 
 	@Override
-	public Set<Type> getLowerBounds() {
-		return Collections.unmodifiableSet(lowerBounds);
-	}
-
-	@Override
-	public Set<Type> getProperUpperBounds() {
-		Set<Type> upperBounds = getUpperBounds().stream().filter(InferenceVariable::isProperType)
-				.collect(Collectors.toSet());
-		return upperBounds.isEmpty() ? new HashSet<>(Arrays.asList(Object.class)) : upperBounds;
-	}
-
-	@Override
-	public Set<Type> getProperLowerBounds() {
-		return getLowerBounds().stream().filter(InferenceVariable::isProperType).collect(Collectors.toSet());
+	public Stream<Type> getLowerBounds() {
+		return lowerBounds.stream();
 	}
 
 	@Override
@@ -273,14 +263,16 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	}
 
 	private void invalidateDependencies() {
-		boundSet.getInferenceVariables().stream().map(boundSet::getBoundsOnImpl)
+		boundSet
+				.getInferenceVariables()
+				.map(boundSet::getBoundsOnImpl)
 				.filter(b -> b.remainingDependencies != null && b.remainingDependencies.contains(inferenceVariable))
 				.forEach(b -> b.remainingDependencies = null);
 		remainingDependencies = null;
 	}
 
 	@Override
-	public Set<InferenceVariable> getRemainingDependencies() {
+	public Stream<InferenceVariable> getRemainingDependencies() {
 		Set<InferenceVariableBoundsImpl> recalculated = new HashSet<>();
 
 		if (remainingDependencies == null) {
@@ -293,10 +285,14 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		 * dependencies on this, so we should recalculate any which are dirty.
 		 */
 		Stream
-				.concat(remainingDependencies.stream(),
-						boundSet.getCaptureConversions().stream().flatMap(c -> c.getInferenceVariables().stream()))
-				.distinct().filter(d -> !d.equals(inferenceVariable)).map(boundSet::getBoundsOnImpl)
-				.filter(b -> b.remainingDependencies == null && !b.getInstantiation().isPresent()).forEach(d -> {
+				.concat(
+						remainingDependencies.stream(),
+						boundSet.getCaptureConversions().flatMap(c -> c.getInferenceVariables().stream()))
+				.distinct()
+				.filter(d -> !d.equals(inferenceVariable))
+				.map(boundSet::getBoundsOnImpl)
+				.filter(b -> b.remainingDependencies == null && !b.getInstantiation().isPresent())
+				.forEach(d -> {
 					d.recalculateRemainingDependencies();
 					recalculated.add(d);
 				});
@@ -318,7 +314,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			}
 		} while (added.get());
 
-		return remainingDependencies;
+		return remainingDependencies.stream();
 	}
 
 	private void recalculateRemainingDependencies() {
@@ -334,7 +330,9 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 
 				Stream<InferenceVariableBoundsImpl> mentions = Stream
 						.concat(Stream.concat(upperBounds.stream(), lowerBounds.stream()), equalities.stream())
-						.map(InferenceVariable::getMentionedBy).flatMap(Set::stream).map(boundSet::getBoundsOnImpl)
+						.map(InferenceVariable::getMentionedBy)
+						.flatMap(Set::stream)
+						.map(boundSet::getBoundsOnImpl)
 						.filter(mention -> !mention.getInstantiation().isPresent());
 
 				if (capture != null) {
@@ -375,11 +373,11 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	}
 
 	@Override
-	public Set<InferenceVariable> getRelated() {
-		return Collections.unmodifiableSet(relations);
+	public Stream<InferenceVariable> getRelated() {
+		return relations.stream();
 	}
 
-	void addEquality(Type type) {
+	protected void addEquality(Type type) {
 		if (this.equalities.add(type)) {
 			logBound(inferenceVariable, type, "=");
 
@@ -412,7 +410,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				 * If we already have an instantiation, make sure the new one is equal
 				 * to it...
 				 */
-				ConstraintFormula.reduce(Kind.EQUALITY, type, getInstantiation().get(), new BoundSet());
+				new ConstraintFormula(Kind.EQUALITY, type, getInstantiation().get()).reduce(new BoundSet());
 			} else {
 				/*
 				 * ...Otherwise, make sure there are no captures present, and remove all
@@ -420,12 +418,16 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				 * equal to it.
 				 */
 				if (capture != null)
-					boundSet.incorporate().falsehood("Cannot add instantiation with capture conversion present: " + this);
+					boundSet.withIncorporated().falsehood("Cannot add instantiation with capture conversion present: " + this);
 
 				instantiation = type;
 
-				equalities.stream().filter(InferenceVariable.class::isInstance).map(InferenceVariable.class::cast)
-						.map(boundSet::getBoundsOnImpl).forEach(equality -> {
+				equalities
+						.stream()
+						.filter(InferenceVariable.class::isInstance)
+						.map(InferenceVariable.class::cast)
+						.map(boundSet::getBoundsOnImpl)
+						.forEach(equality -> {
 							equality.instantiation = type;
 						});
 			}
@@ -526,7 +528,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		thoseBounds.relations = this.relations;
 	}
 
-	void addUpperBound(Type type) {
+	protected void addUpperBound(Type type) {
 		if (this.upperBounds.add(type)) {
 			logBound(inferenceVariable, type, "<:");
 
@@ -590,14 +592,16 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 
 					for (Type equality : new HashSet<>(otherBounds.equalities))
 						if (equality != type && InferenceVariable.isProperType(equality))
-							boundSet.getBoundsOnImpl(otherBounds.inferenceVariable).incorporateProperSubtypeSubstitution(equality,
-									inferenceVariable, type);
+							boundSet.getBoundsOnImpl(otherBounds.inferenceVariable).incorporateProperSubtypeSubstitution(
+									equality,
+									inferenceVariable,
+									type);
 				}
 			}
 		}
 	}
 
-	void addLowerBound(Type type) {
+	protected void addLowerBound(Type type) {
 		if (lowerBounds.add(type)) {
 			logBound(type, inferenceVariable, "<:");
 
@@ -649,8 +653,10 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 
 					for (Type equality : new HashSet<>(otherBounds.equalities))
 						if (equality != type && InferenceVariable.isProperType(equality))
-							boundSet.getBoundsOnImpl(otherBounds.inferenceVariable).incorporateProperSupertypeSubstitution(equality,
-									type, inferenceVariable);
+							boundSet.getBoundsOnImpl(otherBounds.inferenceVariable).incorporateProperSupertypeSubstitution(
+									equality,
+									type,
+									inferenceVariable);
 				}
 			}
 		}
@@ -673,64 +679,64 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	/*
 	 * α = S and α = T imply ‹S = T›
 	 */
-	public void incorporateTransitiveEquality(Type S, Type T) {
-		ConstraintFormula.reduce(Kind.EQUALITY, S, T, boundSet);
+	private void incorporateTransitiveEquality(Type S, Type T) {
+		new ConstraintFormula(Kind.EQUALITY, S, T).reduceInPlace(boundSet);
 	}
 
 	/*
 	 * α = S and α <: T imply ‹S <: T›
 	 */
-	public void incorporateSubtypeSubstitution(Type S, Type T) {
-		ConstraintFormula.reduce(Kind.SUBTYPE, S, T, boundSet);
+	private void incorporateSubtypeSubstitution(Type S, Type T) {
+		new ConstraintFormula(Kind.SUBTYPE, S, T).reduceInPlace(boundSet);
 	}
 
 	/*
 	 * α = S and T <: α imply ‹T <: S›
 	 */
-	public void incorporateSupertypeSubstitution(Type S, Type T) {
-		ConstraintFormula.reduce(Kind.SUBTYPE, T, S, boundSet);
+	private void incorporateSupertypeSubstitution(Type S, Type T) {
+		new ConstraintFormula(Kind.SUBTYPE, T, S).reduceInPlace(boundSet);
 	}
 
 	/*
 	 * S <: α and α <: T imply ‹S <: T›
 	 */
-	public void incorporateTransitiveSubtype(Type S, Type T) {
-		ConstraintFormula.reduce(Kind.SUBTYPE, S, T, boundSet);
+	private void incorporateTransitiveSubtype(Type S, Type T) {
+		new ConstraintFormula(Kind.SUBTYPE, S, T).reduceInPlace(boundSet);
 	}
 
 	/*
 	 * α = U and S = T imply ‹S[α:=U] = T[α:=U]›
 	 */
-	public void incorporateProperEqualitySubstitution(Type U, InferenceVariable S, Type T) {
+	private void incorporateProperEqualitySubstitution(Type U, InferenceVariable S, Type T) {
 		if (!Types.getAllMentionedBy(T, inferenceVariable::equals).isEmpty()) {
 			TypeSubstitution resolver = new TypeSubstitution().where(inferenceVariable, U);
 
 			T = resolver.resolve(T);
 
-			ConstraintFormula.reduce(Kind.EQUALITY, S, T, boundSet);
+			new ConstraintFormula(Kind.EQUALITY, S, T).reduceInPlace(boundSet);
 		}
 	}
 
 	/*
 	 * α = U and S <: T imply ‹S[α:=U] <: T[α:=U]›
 	 */
-	public void incorporateProperSubtypeSubstitution(Type U, InferenceVariable S, Type T) {
+	private void incorporateProperSubtypeSubstitution(Type U, InferenceVariable S, Type T) {
 		if (!Types.getAllMentionedBy(T, inferenceVariable::equals).isEmpty()) {
 			TypeSubstitution resolver = new TypeSubstitution().where(inferenceVariable, U);
 
 			T = resolver.resolve(T);
 
-			ConstraintFormula.reduce(Kind.SUBTYPE, S, T, boundSet);
+			new ConstraintFormula(Kind.SUBTYPE, S, T).reduceInPlace(boundSet);
 		}
 	}
 
-	public void incorporateProperSupertypeSubstitution(Type U, Type S, InferenceVariable T) {
+	private void incorporateProperSupertypeSubstitution(Type U, Type S, InferenceVariable T) {
 		if (!Types.getAllMentionedBy(S, inferenceVariable::equals).isEmpty()) {
 			TypeSubstitution resolver = new TypeSubstitution().where(inferenceVariable, U);
 
 			S = resolver.resolve(S);
 
-			ConstraintFormula.reduce(Kind.SUBTYPE, S, T, boundSet);
+			new ConstraintFormula(Kind.SUBTYPE, S, T).reduceInPlace(boundSet);
 		}
 	}
 
@@ -741,7 +747,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	 * all i (1 ≤ i ≤ n), if Si and Ti are types (not wildcards), the constraint
 	 * formula ‹Si = Ti› is implied.
 	 */
-	public void incorporateSupertypeParameterizationEquality(Type S, Type T) {
+	private void incorporateSupertypeParameterizationEquality(Type S, Type T) {
 		if (S.equals(T) || S.equals(Object.class) || T.equals(Object.class))
 			return;
 
@@ -759,18 +765,22 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 						Type supertypeS = ParameterizedTypes.resolveSupertypeParameters(S, type);
 						Type supertypeT = ParameterizedTypes.resolveSupertypeParameters(T, type);
 
-						Iterator<Type> argumentsS = ParameterizedTypes.getAllTypeArguments((ParameterizedType) supertypeS)
-								.map(Map.Entry::getValue).iterator();
+						Iterator<Type> argumentsS = ParameterizedTypes
+								.getAllTypeArguments((ParameterizedType) supertypeS)
+								.map(Map.Entry::getValue)
+								.iterator();
 
-						Iterator<Type> argumentsT = ParameterizedTypes.getAllTypeArguments((ParameterizedType) supertypeT)
-								.map(Map.Entry::getValue).iterator();
+						Iterator<Type> argumentsT = ParameterizedTypes
+								.getAllTypeArguments((ParameterizedType) supertypeT)
+								.map(Map.Entry::getValue)
+								.iterator();
 
 						while (argumentsS.hasNext()) {
 							Type argumentS = argumentsS.next();
 							Type argumentT = argumentsT.next();
 
 							if (!(argumentS instanceof WildcardType) && !(argumentT instanceof WildcardType))
-								ConstraintFormula.reduce(Kind.EQUALITY, argumentS, argumentT, boundSet);
+								new ConstraintFormula(Kind.EQUALITY, argumentS, argumentT).reduceInPlace(boundSet);
 						}
 					} else {
 						visit(type.getInterfaces());
@@ -806,7 +816,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		 * αi = R implies the bound false
 		 */
 		if (inferenceVariable.equals(R))
-			boundSet.incorporate().falsehood("Cannot incorporate equality: " + this);
+			boundSet.withIncorporated().falsehood("Cannot incorporate equality: " + this);
 	}
 
 	public void incorporateCapturedSubtype(CaptureConversion c, WildcardType A, TypeVariable<?> P, Type R) {
@@ -828,14 +838,14 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				 * If T is Object, then αi <: R implies the constraint formula ‹Bi θ <:
 				 * R›
 				 */
-				ConstraintFormula.reduce(Kind.SUBTYPE, θ.resolve(intersectionOf(B)), R, boundSet);
+				new ConstraintFormula(Kind.SUBTYPE, θ.resolve(intersectionOf(B)), R).reduceInPlace(boundSet);
 			}
 
 			if (B.length == 0 || (B.length == 1 && B[0].equals(Object.class))) {
 				/*
 				 * If Bi is Object, then αi <: R implies the constraint formula ‹T <: R›
 				 */
-				ConstraintFormula.reduce(Kind.SUBTYPE, intersectionOf(T), R, boundSet);
+				new ConstraintFormula(Kind.SUBTYPE, intersectionOf(T), R).reduceInPlace(boundSet);
 			}
 		} else if (A.getLowerBounds().length > 0) {
 			/*
@@ -843,14 +853,14 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			 * 
 			 * αi <: R implies the constraint formula ‹Bi θ <: R›
 			 */
-			ConstraintFormula.reduce(Kind.SUBTYPE, θ.resolve(intersectionOf(B)), R, boundSet);
+			new ConstraintFormula(Kind.SUBTYPE, θ.resolve(intersectionOf(B)), R).reduceInPlace(boundSet);
 		} else {
 			/*
 			 * If Ai is a wildcard of the form ?:
 			 * 
 			 * αi <: R implies the constraint formula ‹Bi θ <: R›
 			 */
-			ConstraintFormula.reduce(Kind.SUBTYPE, θ.resolve(intersectionOf(B)), R, boundSet);
+			new ConstraintFormula(Kind.SUBTYPE, θ.resolve(intersectionOf(B)), R).reduceInPlace(boundSet);
 		}
 	}
 
@@ -861,7 +871,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			 * 
 			 * R <: αi implies the constraint formula ‹R <: T›
 			 */
-			ConstraintFormula.reduce(Kind.SUBTYPE, R, intersectionOf(A.getLowerBounds()), boundSet);
+			new ConstraintFormula(Kind.SUBTYPE, R, intersectionOf(A.getLowerBounds())).reduceInPlace(boundSet);
 		} else if (A.getUpperBounds().length > 0) {
 			/*
 			 * If Ai is a wildcard of the form ? extends T:
@@ -872,7 +882,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			 * 
 			 * R <: αi implies the bound false
 			 */
-			boundSet.incorporate().falsehood("Cannot incorporate supertype: " + this);
+			boundSet.withIncorporated().falsehood("Cannot incorporate supertype: " + this);
 		}
 	}
 }
