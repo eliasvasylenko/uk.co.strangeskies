@@ -37,7 +37,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -101,8 +100,7 @@ public abstract class TypeVisitor {
 			else if (type == null)
 				visitNull();
 			else
-				throw new AssertionError("Unknown type: " + type + " of class "
-						+ type.getClass());
+				throw new AssertionError("Unknown type: " + type + " of class " + type.getClass());
 
 			if (allowRepeatVisits)
 				visited.remove(type);
@@ -117,7 +115,9 @@ public abstract class TypeVisitor {
 	 *          The collection of types to visit.
 	 */
 	public synchronized void visit(Type... types) {
-		visit(Arrays.asList(types));
+		for (Type type : types) {
+			visit(type);
+		}
 	}
 
 	/**

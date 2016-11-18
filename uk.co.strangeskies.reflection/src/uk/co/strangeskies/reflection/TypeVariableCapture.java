@@ -370,7 +370,7 @@ public class TypeVariableCapture implements Type {
 			} else {
 				Set<Type> equalitySet = new HashSet<>();
 
-				for (Type equality : bounds.getBoundsOn(inferenceVariable).getEqualities()) {
+				for (Type equality : bounds.getBoundsOn(inferenceVariable).getEqualities().collect(toList())) {
 					if (!(equality instanceof InferenceVariable)) {
 						try {
 							equalitySet.add(properTypeSubstitutuion.resolve(equality));
@@ -467,8 +467,11 @@ public class TypeVariableCapture implements Type {
 			if (inferenceVariableBounds.getInstantiation().isPresent()) {
 				replacement = inferenceVariableBounds.getInstantiation().get();
 			} else if (!types.contains(i)) {
-				replacement = inferenceVariableBounds.getEqualities().filter(types::contains).findAny().orElse(
-						inferenceVariableBounds
+				replacement = inferenceVariableBounds
+						.getEqualities()
+						.filter(types::contains)
+						.findAny()
+						.orElse(inferenceVariableBounds
 								.getEqualities()
 								.filter(equality -> types.containsAll(InferenceVariable.getMentionedBy(equality)))
 								.findAny()

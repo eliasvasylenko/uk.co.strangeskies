@@ -302,9 +302,8 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		 */
 		for (CaptureConversion captureConversion : captureConversions) {
 
-			captureConversion = isomorphism
-					.byIdentity()
-					.getMapping(captureConversion, c -> c.withInferenceVariableSubstitution(isomorphism));
+			captureConversion = isomorphism.byIdentity().getMapping(captureConversion,
+					c -> c.withInferenceVariableSubstitution(isomorphism));
 
 			copy.captureConversions.add(captureConversion);
 		}
@@ -412,8 +411,8 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 							equality -> bounds.incorporateCapturedEquality(capturedWildcard, equality));
 
 					bounds.getUpperBounds().filter(upperBound -> !inferenceVariableBounds.containsKey(upperBound)).forEach(
-							upperBound -> bounds
-									.incorporateCapturedSubtype(captureConversion, capturedWildcard, capturedParmeter, upperBound));
+							upperBound -> bounds.incorporateCapturedSubtype(captureConversion, capturedWildcard, capturedParmeter,
+									upperBound));
 
 					bounds.getLowerBounds().filter(lowerBound -> !inferenceVariableBounds.containsKey(lowerBound)).forEach(
 							lowerBound -> bounds.incorporateCapturedSupertype(capturedWildcard, lowerBound));
@@ -435,6 +434,13 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	 */
 	public Stream<InferenceVariable> getInferenceVariables() {
 		return inferenceVariableBounds.keySet().stream();
+	}
+
+	/**
+	 * @return A set of all inference variables contained by this bound set.
+	 */
+	public Stream<InferenceVariableBounds> getInferenceVariableBounds() {
+		return inferenceVariableBounds.values().stream().map(InferenceVariableBounds.class::cast);
 	}
 
 	/**
@@ -497,18 +503,6 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	}
 
 	/**
-	 * @return Each member of the set returned by {@link #getInferenceVariables()}
-	 *         which has a valid instantiation.
-	 */
-	public Stream<InferenceVariable> getInstantiatedVariables() {
-		return inferenceVariableBounds
-				.entrySet()
-				.stream()
-				.filter(i -> i.getValue().getInstantiation().isPresent())
-				.map(Entry::getKey);
-	}
-
-	/**
 	 * @return A consumer through which bounds may be added to this bound set.
 	 */
 	public IncorporationTarget withIncorporated() {
@@ -560,18 +554,16 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 					boundSet
 							.getBoundsOn(inferenceVariable)
 							.getRelated()
-							.filter(
-									relatedInferenceVariable -> inferenceVariableBounds.containsKey(relatedInferenceVariable)
-											|| !boundSet.getBoundsOn(relatedInferenceVariable).getInstantiation().isPresent())
+							.filter(relatedInferenceVariable -> inferenceVariableBounds.containsKey(relatedInferenceVariable)
+									|| !boundSet.getBoundsOn(relatedInferenceVariable).getInstantiation().isPresent())
 							.forEach(relatedInferenceVariables::add);
 				}
 			}
 
 			if (relatedInferenceVariables.stream().allMatch(i -> !inferenceVariableBounds.containsKey(i))) {
 				for (InferenceVariable inferenceVariable : relatedInferenceVariables) {
-					InferenceVariableBoundsImpl filtered = boundSet
-							.getBoundsOnImpl(inferenceVariable)
-							.copyIntoFiltered(this, i -> !relatedInferenceVariables.contains(i));
+					InferenceVariableBoundsImpl filtered = boundSet.getBoundsOnImpl(inferenceVariable).copyIntoFiltered(this,
+							i -> !relatedInferenceVariables.contains(i));
 					addInferenceVariableBounds(inferenceVariable, filtered);
 				}
 			} else {
@@ -579,7 +571,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 				 * Add the inference variables to this bound set.
 				 */
 				for (InferenceVariable inferenceVariable : relatedInferenceVariables) {
-					addInferenceVariable(inferenceVariable);
+					addInferenceVariableImpl(inferenceVariable);
 				}
 
 				/*
@@ -590,29 +582,26 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 
 					bounds
 							.getEqualities()
-							.filter(
-									equality -> InferenceVariable
-											.getMentionedBy(equality)
-											.stream()
-											.allMatch(relatedInferenceVariables::contains))
+							.filter(equality -> InferenceVariable
+									.getMentionedBy(equality)
+									.stream()
+									.allMatch(relatedInferenceVariables::contains))
 							.forEach(equality -> incorporateEquality(inferenceVariable, equality));
 
 					bounds
 							.getEqualities()
-							.filter(
-									lowerBound -> InferenceVariable
-											.getMentionedBy(lowerBound)
-											.stream()
-											.allMatch(relatedInferenceVariables::contains))
+							.filter(lowerBound -> InferenceVariable
+									.getMentionedBy(lowerBound)
+									.stream()
+									.allMatch(relatedInferenceVariables::contains))
 							.forEach(lowerBound -> incorporateSubtype(lowerBound, inferenceVariable));
 
 					bounds
 							.getEqualities()
-							.filter(
-									upperBound -> InferenceVariable
-											.getMentionedBy(upperBound)
-											.stream()
-											.allMatch(relatedInferenceVariables::contains))
+							.filter(upperBound -> InferenceVariable
+									.getMentionedBy(upperBound)
+									.stream()
+									.allMatch(relatedInferenceVariables::contains))
 							.forEach(upperBound -> incorporateSubtype(inferenceVariable, upperBound));
 
 					CaptureConversion captureConversion = bounds.getCaptureConversion();
@@ -631,11 +620,13 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	 *          The inference variable to add to the bound set.
 	 * @return The newly added bounds, or the existing bounds
 	 */
-	public InferenceVariableBounds addInferenceVariable(InferenceVariable inferenceVariable) {
-		return addInferenceVariableImpl(inferenceVariable);
+	public BoundSet withInferenceVariable(InferenceVariable inferenceVariable) {
+		BoundSet bounds = new BoundSet();
+		bounds.addInferenceVariableImpl(inferenceVariable);
+		return bounds;
 	}
 
-	private InferenceVariableBoundsImpl addInferenceVariableImpl(InferenceVariable inferenceVariable) {
+	private void addInferenceVariableImpl(InferenceVariable inferenceVariable) {
 		InferenceVariableBoundsImpl bounds;
 
 		if (!inferenceVariableBounds.containsKey(inferenceVariable)) {
@@ -644,8 +635,6 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		} else {
 			bounds = inferenceVariableBounds.get(inferenceVariable);
 		}
-
-		return bounds;
 	}
 
 	private InferenceVariableBoundsImpl addInferenceVariableBounds(
@@ -671,8 +660,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 				copy.incorporateEquality(inferenceVariable.getKey(), inferenceVariable.getValue());
 			} catch (ReflectionException e) {
 				throw new ReflectionException(
-						p -> p.cannotCaptureInferenceVariable(inferenceVariable.getKey(), inferenceVariable.getValue(), copy),
-						e);
+						p -> p.cannotCaptureInferenceVariable(inferenceVariable.getKey(), inferenceVariable.getValue(), copy), e);
 			}
 		}
 

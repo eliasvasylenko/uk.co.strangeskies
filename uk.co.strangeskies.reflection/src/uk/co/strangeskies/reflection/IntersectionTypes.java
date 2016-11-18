@@ -239,9 +239,12 @@ public class IntersectionTypes {
 			return flattenedTypes.iterator().next();
 
 		try {
-			bounds = bounds.copy();
+			/*
+			 * TODO this needs replacing with a more manual and direct implementation
+			 * of the intersection type validity algorithm
+			 */
 			InferenceVariable inferenceVariable = new InferenceVariable();
-			bounds.addInferenceVariable(inferenceVariable);
+			bounds.withInferenceVariable(inferenceVariable);
 
 			for (Type type : flattenedTypes) {
 				bounds = new ConstraintFormula(Kind.SUBTYPE, inferenceVariable, type).reduce(bounds);
@@ -325,8 +328,7 @@ public class IntersectionTypes {
 	 * @return a canonical string representation of the given type
 	 */
 	public static String toString(IntersectionType type, Imports imports, Isomorphism isomorphism) {
-		return isomorphism.byIdentity().getPartialMapping(
-				type,
+		return isomorphism.byIdentity().getPartialMapping(type,
 
 				() -> "...",
 

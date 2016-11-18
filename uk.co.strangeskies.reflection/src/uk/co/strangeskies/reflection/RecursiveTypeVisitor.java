@@ -44,7 +44,7 @@ import uk.co.strangeskies.utilities.Factory;
  * <p>
  * An implementation of TypeVisitor which provides recursion over the related
  * types specified by the arguments passed to constructor. Supertypes of
- * parameterised types are visited without those type arguments passed through.
+ * parameterized types are visited without those type arguments passed through.
  * 
  * 
  * <p>
@@ -299,12 +299,23 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 	private final Consumer<WildcardType> wildcardVisitor;
 	private final Consumer<IntersectionType> intersectionTypeVisitor;
 
-	private RecursiveTypeVisitor(boolean allowRepeatVisits, boolean supertypes, boolean enclosed, boolean enclosing,
-			boolean parameters, boolean bounds, boolean postOrder, Consumer<Class<?>> classVisitor,
-			Consumer<GenericArrayType> genericArrayVisitor, Consumer<ParameterizedType> parameterizedTypeVisitor,
-			Consumer<TypeVariableCapture> typeVariableCaptureVisitor, Consumer<TypeVariable<?>> typeVariableVisitor,
-			Consumer<InferenceVariable> inferenceVariableVisitor, Consumer<WildcardType> wildcardVisitor,
-			Consumer<IntersectionType> intersectionTypeVisitor, BoundSet boundSet) {
+	private RecursiveTypeVisitor(
+			boolean allowRepeatVisits,
+			boolean supertypes,
+			boolean enclosed,
+			boolean enclosing,
+			boolean parameters,
+			boolean bounds,
+			boolean postOrder,
+			Consumer<Class<?>> classVisitor,
+			Consumer<GenericArrayType> genericArrayVisitor,
+			Consumer<ParameterizedType> parameterizedTypeVisitor,
+			Consumer<TypeVariableCapture> typeVariableCaptureVisitor,
+			Consumer<TypeVariable<?>> typeVariableVisitor,
+			Consumer<InferenceVariable> inferenceVariableVisitor,
+			Consumer<WildcardType> wildcardVisitor,
+			Consumer<IntersectionType> intersectionTypeVisitor,
+			BoundSet boundSet) {
 		super(allowRepeatVisits);
 
 		this.supertypes = supertypes;
@@ -445,7 +456,7 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 			inferenceVariableVisitor.accept(type);
 
 		if (bounds && boundSet != null)
-			visit(boundSet.getBoundsOn(type).getUpperBounds());
+			boundSet.getBoundsOn(type).getUpperBounds().forEach(this::visit);
 
 		if (postOrder)
 			inferenceVariableVisitor.accept(type);

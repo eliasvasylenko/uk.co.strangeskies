@@ -34,9 +34,9 @@ package uk.co.strangeskies.reflection;
 
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static uk.co.strangeskies.reflection.IntersectionTypes.uncheckedIntersectionOf;
+import static uk.co.strangeskies.reflection.ParameterizedTypes.getAllTypeArguments;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.GenericArrayType;
@@ -47,18 +47,15 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -97,17 +94,6 @@ import uk.co.strangeskies.utilities.Isomorphism;
 public class TypeResolver implements DeepCopyable<TypeResolver> {
 	private BoundSet bounds;
 
-	/*
-	 * The extra indirection here, rather than just a Map<TypeVariable<?>,
-	 * InferenceVariable> by itself, is because we store TypeVariables for owning
-	 * types of generic declarations, meaning otherwise we may have unexpected
-	 * collisions if we incorporate two types with different parameterizations of
-	 * the same containing type.
-	 */
-	private final Map<GenericDeclaration, Map<TypeVariable<?>, InferenceVariable>> capturedTypeVariables;
-
-	private final Set<TypeVariableCapture> wildcardCaptures;
-
 	/**
 	 * Create a new {@link TypeResolver} over the given {@link BoundSet}.
 	 * 
@@ -117,9 +103,6 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 */
 	public TypeResolver(BoundSet bounds) {
 		this.bounds = bounds;
-
-		capturedTypeVariables = new HashMap<>();
-		wildcardCaptures = new HashSet<>();
 	}
 
 	/**
@@ -132,8 +115,6 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	@Override
 	public TypeResolver copy() {
 		TypeResolver copy = new TypeResolver(bounds.copy());
-		copy.wildcardCaptures.addAll(wildcardCaptures);
-		copy.capturedTypeVariables.putAll(capturedTypeVariables);
 
 		return copy;
 	}
@@ -152,7 +133,7 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 */
 	@Override
 	public TypeResolver deepCopy(Isomorphism isomorphism) {
-		return withNewBoundsSubstitution(isomorphism, bounds.deepCopy(isomorphism));
+		return new TypeResolver(bounds.deepCopy(isomorphism));
 	}
 
 	/**
@@ -168,27 +149,7 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 *         exists.
 	 */
 	public TypeResolver withInferenceVariableSubstitution(Isomorphism isomorphism) {
-		return withNewBoundsSubstitution(isomorphism, bounds.withInferenceVariableSubstitution(isomorphism));
-	}
-
-	private TypeResolver withNewBoundsSubstitution(Isomorphism isomorphism, BoundSet bounds) {
-		TypeResolver copy = new TypeResolver(bounds);
-
-		copy.wildcardCaptures.addAll(wildcardCaptures);
-
-		if (isomorphism.byIdentity().isEmpty()) {
-			copy.capturedTypeVariables.putAll(capturedTypeVariables);
-		} else {
-			for (GenericDeclaration declaration : capturedTypeVariables.keySet())
-				copy.capturedTypeVariables
-						.put(declaration, capturedTypeVariables.get(declaration).entrySet().stream().collect(toMap(
-
-								Entry::getKey,
-
-								i -> (InferenceVariable) isomorphism.byIdentity().getMapping(i.getValue()))));
-		}
-
-		return copy;
+		return new TypeResolver(bounds.withInferenceVariableSubstitution(isomorphism));
 	}
 
 	/**
@@ -272,8 +233,7 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 
 		TypeSubstitution substitution = new TypeSubstitution(existingCaptures);
 		for (Map.Entry<? extends TypeVariable<?>, InferenceVariable> capture : captures) {
-			bounds.withIncorporated().subtype(
-					capture.getValue(),
+			bounds.withIncorporated().subtype(capture.getValue(),
 					substitution.resolve(uncheckedIntersectionOf(capture.getKey().getBounds())));
 		}
 
@@ -284,73 +244,6 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 					bound -> bounds.withIncorporated().subtype(inferenceVariable, bound));
 			bounds.withIncorporated().subtype(inferenceVariable, Object.class);
 		}
-	}
-
-	/**
-	 * The given type is captured into the resolver, in a fashion dictated by the
-	 * class of that type, as follows:
-	 * 
-	 * <ul>
-	 * <li>{@link Class} as per
-	 * {@link #inferOverTypeParameters(GenericDeclaration)} .</li>
-	 * 
-	 * <li>{@link ParameterizedType} as per
-	 * {@link #captureTypeArguments(ParameterizedType)}.</li>
-	 * 
-	 * <li>{@link GenericArrayType} as per {@link #captureType(Type)} invoked for
-	 * it's component type.</li>
-	 * 
-	 * <li>{@link IntersectionType} as per {@link #captureType(Type)} invoked for
-	 * each member.</li>
-	 * 
-	 * <li>{@link WildcardType} as per
-	 * {@link #inferOverWildcardType(WildcardType)}.</li>
-	 * </ul>
-	 * 
-	 * @param type
-	 *          The type we wish to incorporate.
-	 * @return The new internal representation of the given type, which may
-	 *         substitute type variable captures in place of wildcards.
-	 */
-	public Type captureType(Type type) {
-		IdentityProperty<Type> result = new IdentityProperty<>(type);
-
-		new TypeVisitor() {
-			@Override
-			protected void visitClass(Class<?> t) {
-				inferOverTypeParameters(t);
-			}
-
-			@Override
-			protected void visitParameterizedType(ParameterizedType type) {
-				result.set(captureTypeArguments(type));
-			}
-
-			@Override
-			protected void visitGenericArrayType(GenericArrayType type) {
-				visit(type.getGenericComponentType());
-			}
-
-			@Override
-			protected void visitIntersectionType(IntersectionType type) {
-				visit(type.getTypes());
-			}
-
-			@Override
-			protected void visitTypeVariable(TypeVariable<?> type) {}
-
-			@Override
-			protected void visitWildcardType(WildcardType type) {
-				incorporateWildcardCaptures(TypeVariableCapture.captureWildcard(type));
-			}
-
-			@Override
-			protected void visitInferenceVariable(InferenceVariable type) {
-				bounds.addInferenceVariable(type);
-			}
-		}.visit(type);
-
-		return result.get();
 	}
 
 	/**
@@ -413,7 +306,7 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 
 			@Override
 			protected void visitInferenceVariable(InferenceVariable type) {
-				bounds.addInferenceVariable(type);
+				bounds = bounds.withInferenceVariable(type);
 			}
 		}.visit(type);
 
@@ -430,13 +323,15 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 */
 	public InferenceVariable inferOverWildcardType(WildcardType type) {
 		InferenceVariable w = new InferenceVariable();
-		bounds.addInferenceVariable(w);
+		BoundSet bounds = bounds.withInferenceVariable(w);
 
 		for (Type lowerBound : type.getLowerBounds())
 			bounds = new ConstraintFormula(Kind.SUBTYPE, lowerBound, w).reduce(bounds);
 
 		for (Type upperBound : type.getUpperBounds())
 			bounds = new ConstraintFormula(Kind.SUBTYPE, w, upperBound).reduce(bounds);
+
+		this.bounds = bounds;
 
 		return w;
 	}
@@ -455,8 +350,7 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	public GenericArrayType inferOverTypeArguments(GenericArrayType type) {
 		Type innerComponent = Types.getInnerComponentType(type);
 		if (innerComponent instanceof ParameterizedType) {
-			return ArrayTypes.fromComponentType(
-					inferOverTypeArguments((ParameterizedType) innerComponent),
+			return ArrayTypes.fromComponentType(inferOverTypeArguments((ParameterizedType) innerComponent),
 					Types.getArrayDimensions(type));
 		} else
 			return type;
@@ -476,23 +370,15 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	public ParameterizedType inferOverTypeArguments(ParameterizedType type) {
 		Class<?> rawType = Types.getRawType(type);
 
-		List<Map.Entry<TypeVariable<?>, Type>> arguments = ParameterizedTypes.getAllTypeArguments(type).collect(toList());
-		Map<TypeVariable<?>, InferenceVariable> declarationCaptures;
+		getAllTypeArguments(type).map(e -> new SimpleEntry<>(e.getKey(), e.getValue()));
 
-		if (!capturedTypeVariables.containsKey(rawType)) {
-			declarationCaptures = new HashMap<>();
-			capturedTypeVariables.put(rawType, declarationCaptures);
-
-			for (Map.Entry<TypeVariable<?>, Type> argument : arguments) {
-				if (argument instanceof InferenceVariable) {
-					declarationCaptures.put(argument.getKey(), (InferenceVariable) argument.getValue());
-				}
+		for (Map.Entry<TypeVariable<?>, Type> argument : arguments) {
+			if (argument instanceof InferenceVariable) {
+				declarationCaptures.put(argument.getKey(), (InferenceVariable) argument.getValue());
 			}
-
-			infer(getBounds(), rawType, declarationCaptures);
-		} else {
-			declarationCaptures = capturedTypeVariables.get(rawType);
 		}
+
+		infer(getBounds(), rawType, declarationCaptures);
 
 		for (Map.Entry<TypeVariable<?>, Type> argument : arguments) {
 			bounds = new ConstraintFormula(Kind.CONTAINMENT, declarationCaptures.get(argument.getKey()), argument.getValue())
@@ -504,311 +390,14 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	}
 
 	/**
-	 * Find the upper bounds of a given type. Unlike
-	 * {@link Types#getUpperBounds(Type)} this respects bounds on the inference
-	 * variables in this resolver.
-	 * 
-	 * @param type
-	 *          The type whose bounds we wish to discover.
-	 * @return The upper bounds of the given type.
-	 */
-	public Set<Type> getProperUpperBounds(Type type) {
-		type = resolveType(type);
-
-		Set<Type> upperBounds = Types.getUpperBounds(type);
-
-		for (Type upperBound : new HashSet<>(upperBounds))
-			if (getBounds().containsInferenceVariable(upperBound)) {
-				upperBounds.remove(upperBound);
-
-				InferenceVariableBounds bounds = getBounds().getBoundsOn((InferenceVariable) upperBound);
-				Stream
-						.concat(bounds.getUpperBounds(), bounds.getEqualities())
-						.filter(t -> !getBounds().containsInferenceVariable(t))
-						.forEach(upperBounds::add);
-			}
-
-		if (upperBounds.isEmpty())
-			upperBounds.add(Object.class);
-
-		return upperBounds;
-	}
-
-	/**
-	 * Find the lower bounds of a given type. Unlike
-	 * {@link Types#getLowerBounds(Type)} this respects bounds on the inference
-	 * variables in this resolver.
-	 * 
-	 * @param type
-	 *          The type whose bounds we wish to discover.
-	 * @return The lower bounds of the given type, or null if no such bounds
-	 *         exist.
-	 */
-	public Set<Type> getProperLowerBounds(Type type) {
-		type = resolveType(type);
-
-		Set<Type> lowerBounds = Types.getLowerBounds(type);
-
-		for (Type lowerBound : new HashSet<>(lowerBounds)) {
-			if (getBounds().containsInferenceVariable(lowerBound)) {
-				lowerBounds.remove(lowerBound);
-
-				InferenceVariableBounds bounds = getBounds().getBoundsOn((InferenceVariable) lowerBound);
-				Stream
-						.concat(bounds.getLowerBounds(), bounds.getEqualities())
-						.filter(t -> !getBounds().containsInferenceVariable(t))
-						.forEach(lowerBounds::add);
-			}
-		}
-
-		return lowerBounds;
-	}
-
-	/**
-	 * Determine the raw types of a given type, accounting for inference variables
-	 * which may have instantiations or upper bounds within the context of this
-	 * resolver.
-	 * 
-	 * @param type
-	 *          The type of which we wish to determine the raw type.
-	 * @return The raw type of the given type.
-	 */
-	public Set<Class<?>> getRawTypes(Type type) {
-		type = resolveType(type);
-
-		return getProperUpperBounds(type)
-				.stream()
-				.map(Types::getRawType)
-				.collect(Collectors.toCollection(LinkedHashSet::new));
-	}
-
-	/**
-	 * Determine the raw type of a given type, accounting for inference variables
-	 * which may have instantiations or upper bounds within the context of this
-	 * resolver.
-	 * 
-	 * @param type
-	 *          The type of which we wish to determine the raw type.
-	 * @return The raw type of the given type.
-	 */
-	public Class<?> getRawType(Type type) {
-		type = resolveType(type);
-
-		return Types.getRawType(getProperUpperBounds(type).stream().findFirst().orElse(Object.class));
-	}
-
-	/**
-	 * Add inference variables for the type parameters of the given type to the
-	 * resolver, then incorporate equality constraints to new
-	 * {@link TypeVariableCapture}s for those inference variables, based on the
-	 * bounds on the arguments.
-	 * 
-	 * @param type
-	 *          The type whose generic type arguments we wish to capture.
-	 * @return A parameterized type derived from the given type, with type
-	 *         variable captures in place of wildcards where appropriate.
-	 */
-	public ParameterizedType captureTypeArguments(ParameterizedType type) {
-		Class<?> rawType = Types.getRawType(type);
-		inferOverTypeArguments(type);
-
-		Iterator<Map.Entry<TypeVariable<?>, Type>> originalArguments = ParameterizedTypes
-				.getAllTypeArguments(type)
-				.iterator();
-
-		type = TypeVariableCapture.captureWildcardArguments(type);
-
-		ParameterizedTypes.getAllTypeArguments(type).forEach(capturedArgument -> {
-			Type originalArgument = originalArguments.next().getValue();
-
-			if (originalArgument instanceof WildcardType) {
-				wildcardCaptures.add((TypeVariableCapture) capturedArgument.getValue());
-			}
-
-			bounds = new ConstraintFormula(
-					Kind.EQUALITY,
-					capturedTypeVariables.get(rawType).get(capturedArgument.getKey()),
-					capturedArgument.getValue()).reduce(bounds);
-		});
-
-		return type;
-	}
-
-	/**
-	 * Resubstitute any type variable captures mentioned in the given type for the
-	 * wildcards which they originally captured, if they were captured through
-	 * incorporation of wildcard types into this {@link TypeResolver} instance.
-	 * 
-	 * @param type
-	 *          The type for which we wish to make the substitution.
-	 * @return A new type derived from that given by making the substitution.
-	 */
-	public Type resubstituteCapturedWildcards(Type type) {
-		if (wildcardCaptures.isEmpty())
-			return type;
-		else
-			return new TypeSubstitution()
-					.where(wildcardCaptures::contains, t -> ((TypeVariableCapture) t).getCapturedType())
-					.resolve(type);
-	}
-
-	/**
-	 * @return The set of type variable captures which were captured from plain
-	 *         wildcards, such that those wildcards might be resubstituted for
-	 *         them.
-	 */
-	public Set<TypeVariableCapture> getWildcardCaptures() {
-		return wildcardCaptures;
-	}
-
-	/**
-	 * Add to the set of type variable captures which are considered to have been
-	 * captured from plain wildcards, such that those wildcards might be
-	 * resubstituted for them.
-	 * 
-	 * @param wildcardCaptures
-	 *          The new type variable captures.
-	 */
-	public void incorporateWildcardCaptures(TypeVariableCapture... wildcardCaptures) {
-		incorporateWildcardCaptures(Arrays.asList(wildcardCaptures));
-	}
-
-	/**
-	 * Add to the set of type variable captures which are considered to have been
-	 * captured from plain wildcards, such that those wildcards might be
-	 * resubstituted for them.
-	 * 
-	 * @param wildcardCaptures
-	 *          The new type variable captures.
-	 */
-	public void incorporateWildcardCaptures(Collection<? extends TypeVariableCapture> wildcardCaptures) {
-		this.wildcardCaptures.addAll(wildcardCaptures);
-	}
-
-	/**
-	 * Incorporate an instantiation for a type variable. In other words, find the
-	 * {@link InferenceVariable} registered for the given {@link TypeVariable}
-	 * under the {@link GenericDeclaration} it belongs to, and incorporate an
-	 * equality bound on that inference variable to the given type.
-	 * 
-	 * @param variable
-	 *          The type variable whose inference variable we wish to instantiate.
-	 * @param instantiation
-	 *          The type with which to instantiate the given type variable. This
-	 *          should be a proper type.
-	 */
-	public void incorporateInstantiation(TypeVariable<?> variable, Type instantiation) {
-		if (!InferenceVariable.isProperType(instantiation))
-			throw new IllegalArgumentException(
-					"The given type, '" + instantiation + "', is not proper, and so is not a valid instantiation for '" + variable
-							+ "'.");
-
-		inferOverTypeParameters(variable.getGenericDeclaration());
-		bounds = new ConstraintFormula(Kind.EQUALITY, getInferenceVariable(variable), instantiation).reduce(bounds);
-	}
-
-	/**
-	 * Any type parameters of the given subclass and superclass are incorporated
-	 * into the {@link TypeResolver}, as are the parameters of any classes
-	 * between, i.e. those classes which are a supertype of the given subclass,
-	 * and a subtype of the given superclass. For each subclass in the hierarchy
-	 * which provides a parameterization of a corresponding superclass, these
-	 * bounds are created and incorporated.
-	 * 
-	 * <p>
-	 * This has the effect, when either the given subclass or superclass are
-	 * generic, of establishing any relationship the type arguments of that class
-	 * may have with the other class.
-	 * 
-	 * @param subclass
-	 *          A subclass of the given superclass.
-	 * @param superclass
-	 *          A superclass of the given subclass.
-	 */
-	public void incorporateTypeHierarchy(Class<?> subclass, Class<?> superclass) {
-		Type subtype;
-		if (Types.isGeneric(subclass)) {
-			subtype = ParameterizedTypes.parameterizeUnchecked(subclass, i -> null);
-		} else {
-			subtype = subclass;
-		}
-
-		inferOverTypeParameters(subclass);
-
-		if (!superclass.isAssignableFrom(subclass)) {
-			throw new IllegalArgumentException("Type '" + subtype + "' is not a valid subtype of '" + superclass + "'.");
-		}
-
-		while (!subclass.equals(superclass)) {
-			Class<?> finalSubclass = subclass;
-			Function<Type, Type> inferenceVariables = t -> {
-				if (t instanceof TypeVariable)
-					return getInferenceVariable(finalSubclass, (TypeVariable<?>) t);
-				else
-					return null;
-			};
-
-			Set<Type> lesserSubtypes = new HashSet<>(Arrays.asList(subclass.getGenericInterfaces()));
-			if (subclass.getSuperclass() != null)
-				lesserSubtypes.addAll(Arrays.asList(subclass.getGenericSuperclass()));
-			if (lesserSubtypes.isEmpty())
-				lesserSubtypes.add(Object.class);
-
-			subtype = lesserSubtypes
-					.stream()
-					.filter(t -> Types.isAssignable(Types.getRawType(t), superclass))
-					.findAny()
-					.get();
-			subtype = new TypeSubstitution(inferenceVariables).resolve(subtype);
-
-			captureType(subtype);
-			subclass = Types.getRawType(subtype);
-		}
-	}
-
-	/**
 	 * Infer proper instantiations for each inference variable registered within
 	 * this {@link TypeResolver} instance.
 	 * 
 	 * @return A mapping from each inference variable registered under this
 	 *         resolver, to their newly inferred instantiations.
 	 */
-	public Map<InferenceVariable, Type> infer() {
-		infer(getInferenceVariables());
-		return bounds.getInstantiatedVariables().collect(
-				Collectors.toMap(Function.identity(), i -> bounds.getBoundsOn(i).getInstantiation().get()));
-	}
-
-	/**
-	 * Infer proper instantiations for each {@link InferenceVariable} registered
-	 * under the given {@link GenericDeclaration}.
-	 * 
-	 * @param context
-	 *          The generic declaration whose inference variables we wish to infer
-	 *          instantiations for.
-	 * @return A mapping from each inference variable registered under the given
-	 *         generic declaration, to their newly inferred instantiations.
-	 */
-	public Map<TypeVariable<?>, Type> infer(GenericDeclaration context) {
-		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getInferenceVariables(context);
-		Map<InferenceVariable, Type> instantiations = infer(inferenceVariables.values());
-		return inferenceVariables
-				.entrySet()
-				.stream()
-				.collect(Collectors.toMap(Entry::getKey, e -> instantiations.get(e.getValue())));
-	}
-
-	/**
-	 * Infer a proper instantiations for the {@link InferenceVariable} registered
-	 * for the given {@link TypeVariable} under the {@link GenericDeclaration} it
-	 * belongs to.
-	 * 
-	 * @param variable
-	 *          The type variable whose instantiation we wish to infer.
-	 * @return The proper instantiation inferred for the given type variable.
-	 */
-	public Type infer(TypeVariable<?> variable) {
-		return infer(Arrays.asList(getInferenceVariable(variable))).get(variable);
+	public Stream<Entry<InferenceVariable, Type>> infer() {
+		return infer(bounds.getInferenceVariables().collect(toList()));
 	}
 
 	/**
@@ -816,9 +405,9 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 * by the given type.
 	 * 
 	 * @param type
-	 *          The type whose proper form we wish to infer.
-	 * @return A new type derived from the given type by substitution of
-	 *         instantiations for each {@link InferenceVariable} mentioned.
+	 *          the type whose proper form we wish to infer
+	 * @return a new type derived from the given type by substitution of
+	 *         instantiations for each {@link InferenceVariable} mentioned
 	 */
 	public Type infer(Type type) {
 		return new TypeSubstitution(t -> getBounds().containsInferenceVariable(t) ? infer((InferenceVariable) t) : null)
@@ -829,8 +418,8 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 * Infer a proper instantiations for a single given {@link InferenceVariable}.
 	 * 
 	 * @param inferenceVariable
-	 *          The type whose proper form we wish to infer.
-	 * @return A new instantiation for the given {@link InferenceVariable}.
+	 *          the type whose proper form we wish to infer
+	 * @return a new instantiation for the given {@link InferenceVariable}
 	 */
 	public Type infer(InferenceVariable inferenceVariable) {
 		if (getBounds().containsInferenceVariable(inferenceVariable)) {
@@ -849,11 +438,11 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 * Infer proper instantiations for the given {@link InferenceVariable}s.
 	 * 
 	 * @param variables
-	 *          The inference variables for which we wish to infer instantiations.
-	 * @return A mapping from each of the given inference variables to their
-	 *         inferred instantiations.
+	 *          the inference variables for which we wish to infer instantiations
+	 * @return a mapping from each of the given inference variables to their
+	 *         inferred instantiations
 	 */
-	public Map<InferenceVariable, Type> infer(InferenceVariable... variables) {
+	public Stream<Map.Entry<InferenceVariable, Type>> infer(InferenceVariable... variables) {
 		return infer(Arrays.asList(variables));
 	}
 
@@ -865,7 +454,7 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 * @return A mapping from each of the given inference variables to their
 	 *         inferred instantiations.
 	 */
-	public Map<InferenceVariable, Type> infer(Collection<? extends InferenceVariable> variables) {
+	public Stream<Map.Entry<InferenceVariable, Type>> infer(Collection<? extends InferenceVariable> variables) {
 		variables = variables
 				.stream()
 				.filter(getBounds()::containsInferenceVariable)
@@ -887,16 +476,10 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 
 		resolveIndependentSet(independentSet);
 
-		for (InferenceVariable variable : variables) {
-			InferenceVariableBounds variableBounds = bounds.getBoundsOn(variable);
-			if (variableBounds.getInstantiation().isPresent()) {
-				instantiations.put(variable, variableBounds.getInstantiation().get());
-			} else {
-				throw new ReflectionException(p -> p.cannotInstantiateInferenceVariable(variable, bounds));
-			}
-		}
-
-		return instantiations;
+		return variables
+				.stream()
+				.map(i -> new AbstractMap.SimpleEntry<>(i, bounds.getBoundsOn(i).getInstantiation().orElseThrow(
+						() -> new ReflectionException(p -> p.cannotInstantiateInferenceVariable(i, bounds)))));
 	}
 
 	private void resolveIndependentSet(Set<InferenceVariable> variables) {
@@ -931,7 +514,11 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 
 			resolveMinimalIndepdendentSet(minimalSet);
 
-			bounds.getInstantiatedVariables().forEach(variables::remove);
+			bounds
+					.getInferenceVariableBounds()
+					.filter(i -> i.getInstantiation().isPresent())
+					.map(InferenceVariableBounds::getInferenceVariable)
+					.forEach(variables::remove);
 		}
 	}
 
@@ -972,12 +559,11 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 						 * Otherwise, where αi has proper upper bounds U1, ..., Uk, Ti =
 						 * glb(U1, ..., Uk) (§5.1.10).
 						 */
-						instantiationCandidate = Types.greatestLowerBound(
-								bounds
-										.getBoundsOn(variable)
-										.getUpperBounds()
-										.filter(InferenceVariable::isProperType)
-										.collect(toList()));
+						instantiationCandidate = Types.greatestLowerBound(bounds
+								.getBoundsOn(variable)
+								.getUpperBounds()
+								.filter(InferenceVariable::isProperType)
+								.collect(toList()));
 					}
 
 					instantiationCandidates.put(variable, instantiationCandidate);
@@ -1027,172 +613,10 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 *          The type we wish to resolve.
 	 * @return The resolved type.
 	 */
-	public Type resolveTypeWithResubstitutedWildcardCaptures(Type type) {
-		return new TypeSubstitution(t -> {
-			if (t instanceof InferenceVariable)
-				t = resolveInferenceVariable((InferenceVariable) t);
-			else if (t instanceof TypeVariable)
-				t = resolveTypeVariable((TypeVariable<?>) t);
-			else
-				return null;
-
-			if (wildcardCaptures.contains(t))
-				return ((TypeVariableCapture) t).getCapturedType();
-			else
-				return t;
-		}).resolve(type);
-	}
-
-	/**
-	 * Derive a new type from the type given, with any mentioned instances of
-	 * {@link InferenceVariable} and {@link TypeVariable} substituted with their
-	 * proper instantiations where available, as per
-	 * {@link #resolveInferenceVariable(InferenceVariable)} and
-	 * {@link #resolveTypeVariable(GenericDeclaration, TypeVariable)}
-	 * respectively.
-	 * 
-	 * @param declaration
-	 *          The generic declaration whose context will provide
-	 * @param type
-	 *          The type we wish to resolve.
-	 * @return The resolved type.
-	 */
-	public Type resolveTypeWithResubstitutedWildcardCaptures(GenericDeclaration declaration, Type type) {
-		return new TypeSubstitution(t -> {
-			if (t instanceof InferenceVariable)
-				t = resolveInferenceVariable((InferenceVariable) t);
-			else if (t instanceof TypeVariable)
-				t = resolveTypeVariable(declaration, (TypeVariable<?>) t);
-			else
-				return null;
-
-			if (wildcardCaptures.contains(t))
-				return ((TypeVariableCapture) t).getCapturedType();
-			else
-				return t;
-		}).resolve(type);
-	}
-
-	/**
-	 * Derive a new type from the type given, with any mentioned instances of
-	 * {@link InferenceVariable} and {@link TypeVariable} substituted with their
-	 * proper instantiations where available, as per
-	 * {@link #resolveInferenceVariable(InferenceVariable)} and
-	 * {@link #resolveTypeVariable(TypeVariable)} respectively.
-	 * 
-	 * @param type
-	 *          The type we wish to resolve.
-	 * @return The resolved type.
-	 */
 	public Type resolveType(Type type) {
-		return new TypeSubstitution(t -> {
-			if (t instanceof InferenceVariable)
-				return resolveInferenceVariable((InferenceVariable) t);
-			else if (t instanceof TypeVariableCapture)
-				return t;
-			else if (t instanceof TypeVariable)
-				return resolveTypeVariable((TypeVariable<?>) t);
-			else
-				return null;
-		}).resolve(type);
-	}
-
-	/**
-	 * Derive a new type from the type given, with any mentioned instances of
-	 * {@link InferenceVariable} and {@link TypeVariable} substituted with their
-	 * proper instantiations where available, as per
-	 * {@link #resolveInferenceVariable(InferenceVariable)} and
-	 * {@link #resolveTypeVariable(GenericDeclaration, TypeVariable)}
-	 * respectively.
-	 * 
-	 * @param declaration
-	 *          The generic declaration whose context will provide
-	 * @param type
-	 *          The type we wish to resolve.
-	 * @return The resolved type.
-	 */
-	public Type resolveType(GenericDeclaration declaration, Type type) {
-		return new TypeSubstitution(t -> {
-			if (t instanceof InferenceVariable)
-				return resolveInferenceVariable((InferenceVariable) t);
-			else if (t instanceof TypeVariableCapture)
-				return t;
-			else if (t instanceof TypeVariable)
-				return resolveTypeVariable(declaration, (TypeVariable<?>) t);
-			else
-				return null;
-		}).resolve(type);
-	}
-
-	/**
-	 * Resolve the type parameters registered under the given class, and derive a
-	 * parameterized type using these parameters if appropriate. If the given
-	 * class is not generic, it is returned unchanged.
-	 * 
-	 * @param type
-	 *          The type whose parameterization we wish to determine within the
-	 *          context of this {@link TypeResolver}.
-	 * @return A parameterized type over the given type, according to the
-	 *         inference variables and parameters registered in this resolver, or
-	 *         the given type if it is not generic.
-	 */
-	public Type resolveTypeParametersWithResubstitutedWildcardCaptures(Class<?> type) {
-		inferOverTypeParameters(type);
-		return resolveTypeWithResubstitutedWildcardCaptures(
-				ParameterizedTypes.parameterizeUnchecked(type, getInferenceVariables(type)::get));
-	}
-
-	/**
-	 * Resolve the type parameters registered under the given class, and derive a
-	 * parameterized type using these parameters if appropriate. If the given
-	 * class is not generic, it is returned unchanged.
-	 * 
-	 * @param type
-	 *          The type whose parameterization we wish to determine within the
-	 *          context of this {@link TypeResolver}.
-	 * @return A parameterized type over the given type, according to the
-	 *         inference variables and parameters registered in this resolver, or
-	 *         the given type if it is not generic.
-	 */
-	public Type resolveTypeParameters(Class<?> type) {
-		inferOverTypeParameters(type);
-		return resolveType(ParameterizedTypes.parameterizeUnchecked(type, getInferenceVariables(type)::get));
-	}
-
-	/**
-	 * Resolve the proper instantiation of a given {@link TypeVariable} if one
-	 * exists. The type variable will be resolved to an {@link InferenceVariable}
-	 * with respect to the context provided by its declaring class.
-	 * 
-	 * @param typeVariable
-	 *          The type variable whose proper instantiation we wish to determine.
-	 * @return The proper instantiation of the given {@link TypeVariable} if one
-	 *         exists, otherwise the {@link TypeVariable} itself.
-	 */
-	public Type resolveTypeVariable(TypeVariable<?> typeVariable) {
-		return resolveTypeVariable(typeVariable.getGenericDeclaration(), typeVariable);
-	}
-
-	/**
-	 * Resolve the proper instantiation of a given {@link TypeVariable} if one
-	 * exists. The type variable will be resolved to an {@link InferenceVariable}
-	 * with respect to the context provided by the given
-	 * {@link GenericDeclaration}.
-	 * 
-	 * @param declaration
-	 *          The {@link GenericDeclaration} under which we will check
-	 *          registration of the given {@link TypeVariable}.
-	 * @param typeVariable
-	 *          The type variable whose proper instantiation we wish to determine.
-	 * @return The proper instantiation of the given {@link TypeVariable} if one
-	 *         exists, otherwise the {@link TypeVariable} itself.
-	 */
-	public Type resolveTypeVariable(GenericDeclaration declaration, TypeVariable<?> typeVariable) {
-		if (!capturedTypeVariables.containsKey(declaration))
-			return typeVariable;
-
-		InferenceVariable inferenceVariable = capturedTypeVariables.get(declaration).get(typeVariable);
-		return inferenceVariable == null ? typeVariable : resolveInferenceVariable(inferenceVariable);
+		return new TypeSubstitution()
+				.where(InferenceVariable.class::isInstance, t -> resolveInferenceVariable((InferenceVariable) t))
+				.resolve(type);
 	}
 
 	/**
@@ -1210,69 +634,5 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 			return bounds.getBoundsOn(variable).getInstantiation().orElse(variable);
 		else
 			return variable;
-	}
-
-	/**
-	 * Find all the inference variables which have been created through
-	 * interaction with this {@link TypeResolver}. Note that this set of
-	 * collections may only be a subset of those which would be returned by an
-	 * invocation of {@link BoundSet#getInferenceVariables()} on the underlying
-	 * resolver.
-	 * 
-	 * @return The set of variables incorporated into this {@link TypeResolver}.
-	 */
-	public Set<InferenceVariable> getInferenceVariables() {
-		return capturedTypeVariables
-				.values()
-				.stream()
-				.map(Map::values)
-				.flatMap(Collection::stream)
-				.collect(Collectors.toSet());
-	}
-
-	/**
-	 * Find all the inference variables registered within the context of the given
-	 * {@link GenericDeclaration}. Typically this will be one for each of the
-	 * {@link TypeVariable}s in the declaration, and one for each
-	 * {@link TypeVariable} in any non-statically enclosing classes.
-	 * 
-	 * @param declaration
-	 *          The {@link GenericDeclaration} for which we will resolve inference
-	 *          variables.
-	 * @return The set of variables incorporated into this {@link TypeResolver}
-	 *         under the context provided by the given declaration.
-	 */
-	public Map<TypeVariable<?>, InferenceVariable> getInferenceVariables(GenericDeclaration declaration) {
-		return Collections.unmodifiableMap(capturedTypeVariables.get(declaration));
-	}
-
-	/**
-	 * Resolve the proper {@link InferenceVariable} for a given
-	 * {@link TypeVariable} with respect to the context provided by its declaring
-	 * class.
-	 * 
-	 * @param typeVariable
-	 *          The type variable whose proper instantiation we wish to determine.
-	 * @return The proper instantiation of the given {@link TypeVariable} if one
-	 *         exists, otherwise the {@link TypeVariable} itself.
-	 */
-	public InferenceVariable getInferenceVariable(TypeVariable<?> typeVariable) {
-		return getInferenceVariable(typeVariable.getGenericDeclaration(), typeVariable);
-	}
-
-	/**
-	 * Resolve the {@link InferenceVariable} for a given {@link TypeVariable} with
-	 * respect to the context provided by the given {@link GenericDeclaration}.
-	 * 
-	 * @param declaration
-	 *          The {@link GenericDeclaration} under which we will check
-	 *          registration of the given {@link TypeVariable}.
-	 * @param typeVariable
-	 *          The type variable whose proper instantiation we wish to determine.
-	 * @return The proper instantiation of the given {@link TypeVariable} if one
-	 *         exists, otherwise the {@link TypeVariable} itself.
-	 */
-	public InferenceVariable getInferenceVariable(GenericDeclaration declaration, TypeVariable<?> typeVariable) {
-		return capturedTypeVariables.get(declaration).get(typeVariable);
 	}
 }

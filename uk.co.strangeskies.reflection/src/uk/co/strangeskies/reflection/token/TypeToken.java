@@ -54,7 +54,9 @@ import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -72,6 +74,7 @@ import uk.co.strangeskies.reflection.ConstraintFormula;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.reflection.Imports;
 import uk.co.strangeskies.reflection.InferenceVariable;
+import uk.co.strangeskies.reflection.InferenceVariableBounds;
 import uk.co.strangeskies.reflection.Methods;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.ReflectionException;
@@ -829,6 +832,56 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 		return (Class<? super T>) getInternalResolver().getRawType(getType());
 	}
 
+
+	/**
+	 * Find the upper bounds of a given type. Unlike
+	 * {@link Types#getUpperBounds(Type)} this respects bounds on the inference
+	 * variables in this resolver.
+	 * 
+	 * @param type
+	 *          The type whose bounds we wish to discover.
+	 * @return The upper bounds of the given type.
+	 */
+	public Set<Type> getProperUpperBounds(Type type) {
+		type = resolveType(type);
+
+		Set<Type> upperBounds = Types.getUpperBounds(type);
+
+		for (Type upperBound : new HashSet<>(upperBounds))
+			if (getBounds().containsInferenceVariable(upperBound)) {
+				upperBounds.remove(upperBound);
+
+				InferenceVariableBounds bounds = getBounds().getBoundsOn((InferenceVariable) upperBound);
+				Stream
+						.concat(bounds.getUpperBounds(), bounds.getEqualities())
+						.filter(t -> !getBounds().containsInferenceVariable(t))
+						.forEach(upperBounds::add);
+			}
+
+		if (upperBounds.isEmpty())
+			upperBounds.add(Object.class);
+
+		return upperBounds;
+	}
+
+	/**
+	 * Determine the raw types of a given type, accounting for inference variables
+	 * which may have instantiations or upper bounds within the context of this
+	 * resolver.
+	 * 
+	 * @param type
+	 *          The type of which we wish to determine the raw type.
+	 * @return The raw type of the given type.
+	 */
+	public Set<Class<?>> getRawTypes(Type type) {
+		type = resolveType(type);
+
+		return getProperUpperBounds(type)
+				.stream()
+				.map(Types::getRawType)
+				.collect(Collectors.toCollection(LinkedHashSet::new));
+	}
+	
 	/**
 	 * See {@link Types#getRawTypes(Type)}.
 	 * 
