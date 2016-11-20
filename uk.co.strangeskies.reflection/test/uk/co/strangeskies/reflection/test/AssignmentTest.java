@@ -34,13 +34,13 @@ package uk.co.strangeskies.reflection.test;
 
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
-import static uk.co.strangeskies.reflection.ArrayTypes.fromComponentType;
+import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterize;
 import static uk.co.strangeskies.reflection.TypeVariableCapture.captureWildcard;
 import static uk.co.strangeskies.reflection.TypeVariables.typeVariableExtending;
 import static uk.co.strangeskies.reflection.TypeVariables.unboundedTypeVariable;
-import static uk.co.strangeskies.reflection.WildcardTypes.unboundedWildcard;
+import static uk.co.strangeskies.reflection.WildcardTypes.wildcard;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardExtending;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardSuper;
 import static uk.co.strangeskies.reflection.test.matchers.IsAssignableTo.isAssignableTo;
@@ -182,12 +182,12 @@ public class AssignmentTest {
 
 	@Test
 	public void primitiveArrayToBoxedArrayAssignment() {
-		assertThat(fromComponentType(int.class), not(isAssignableTo(fromComponentType(Integer.class))));
+		assertThat(arrayFromComponent(int.class), not(isAssignableTo(arrayFromComponent(Integer.class))));
 	}
 
 	@Test
 	public void boxedArrayToPrimitiveArrayAssignment() {
-		assertThat(fromComponentType(Integer.class), not(isAssignableTo(fromComponentType(int.class))));
+		assertThat(arrayFromComponent(Integer.class), not(isAssignableTo(arrayFromComponent(int.class))));
 	}
 
 	@Test
@@ -204,10 +204,12 @@ public class AssignmentTest {
 	public void classToIntersectionAssignment() {
 		assertThat(Integer.class, isAssignableTo(intersectionOf(Number.class, Comparable.class)));
 
-		assertThat(Integer.class,
-				isAssignableTo(intersectionOf(Number.class, parameterize(Comparable.class, unboundedWildcard()))));
+		assertThat(
+				Integer.class,
+				isAssignableTo(intersectionOf(Number.class, parameterize(Comparable.class, wildcard()))));
 
-		assertThat(Integer.class,
+		assertThat(
+				Integer.class,
 				not(isAssignableTo(intersectionOf(Number.class, parameterize(Comparable.class, Number.class)))));
 	}
 
@@ -218,14 +220,16 @@ public class AssignmentTest {
 
 	@Test
 	public void parameterizedToIntersectionAssignment() {
-		assertThat(parameterize(NumberComparable.class, Integer.class),
-				isAssignableTo(intersectionOf(Serializable.class, parameterize(Comparable.class, unboundedWildcard()))));
+		assertThat(
+				parameterize(NumberComparable.class, Integer.class),
+				isAssignableTo(intersectionOf(Serializable.class, parameterize(Comparable.class, wildcard()))));
 	}
 
 	@Test
 	public void intersectionToParameterizedAssignment() {
-		assertThat(intersectionOf(Comparable.class, Serializable.class),
-				isAssignableTo(parameterize(Comparable.class, unboundedWildcard())));
+		assertThat(
+				intersectionOf(Comparable.class, Serializable.class),
+				isAssignableTo(parameterize(Comparable.class, wildcard())));
 	}
 
 	@Test
@@ -240,8 +244,9 @@ public class AssignmentTest {
 
 	@Test
 	public void intersectionToParameterizedSubtype() {
-		assertThat(intersectionOf(Comparable.class, Serializable.class),
-				not(isSubtypeOf(parameterize(Comparable.class, unboundedWildcard()))));
+		assertThat(
+				intersectionOf(Comparable.class, Serializable.class),
+				not(isSubtypeOf(parameterize(Comparable.class, wildcard()))));
 	}
 
 	@Test
@@ -262,8 +267,8 @@ public class AssignmentTest {
 
 	@Test
 	public void classToUnboundedWildcardAssignment() {
-		assertThat(Object.class, not(isAssignableTo(unboundedWildcard())));
-		assertThat(Integer.class, not(isAssignableTo(unboundedWildcard())));
+		assertThat(Object.class, not(isAssignableTo(wildcard())));
+		assertThat(Integer.class, not(isAssignableTo(wildcard())));
 	}
 
 	@Test
@@ -280,8 +285,8 @@ public class AssignmentTest {
 
 	@Test
 	public void unboundedWildcardToClassAssignment() {
-		assertThat(unboundedWildcard(), isAssignableTo(Object.class));
-		assertThat(unboundedWildcard(), not(isAssignableTo(Integer.class)));
+		assertThat(wildcard(), isAssignableTo(Object.class));
+		assertThat(wildcard(), not(isAssignableTo(Integer.class)));
 	}
 
 	@Test
@@ -304,7 +309,7 @@ public class AssignmentTest {
 
 	@Test
 	public void classToTypeVariableCaptureAssignment() {
-		assertThat(Integer.class, not(isAssignableTo(captureWildcard(unboundedWildcard()))));
+		assertThat(Integer.class, not(isAssignableTo(captureWildcard(wildcard()))));
 
 		assertThat(Integer.class, isAssignableTo(captureWildcard(wildcardSuper(Comparable.class))));
 
@@ -313,7 +318,7 @@ public class AssignmentTest {
 
 	@Test
 	public void typeVariableCaptureToClassAssignment() {
-		assertThat(captureWildcard(unboundedWildcard()), not(isAssignableTo(Integer.class)));
+		assertThat(captureWildcard(wildcard()), not(isAssignableTo(Integer.class)));
 
 		assertThat(captureWildcard(wildcardSuper(Number.class)), isAssignableTo(Object.class));
 		assertThat(captureWildcard(wildcardSuper(Integer.class)), not(isAssignableTo(Number.class)));
@@ -323,7 +328,7 @@ public class AssignmentTest {
 
 	@Test
 	public void typeVariableCaptureToTypeVariableCaptureAssignment() {
-		TypeVariableCapture type = captureWildcard(unboundedWildcard());
+		TypeVariableCapture type = captureWildcard(wildcard());
 		assertThat(type, isAssignableTo(captureWildcard(wildcardSuper(type))));
 		assertThat(captureWildcard(wildcardExtending(type)), isAssignableTo(type));
 		assertThat(captureWildcard(wildcardExtending(type)), isAssignableTo(captureWildcard(wildcardSuper(type))));
@@ -339,17 +344,21 @@ public class AssignmentTest {
 
 	@Test
 	public void boundedTypeVariableToClassAssignment() {
-		assertThat(typeVariableExtending(null, "", AnnotatedTypes.over(wildcardExtending(Number.class))),
+		assertThat(
+				typeVariableExtending(null, "", AnnotatedTypes.annotated(wildcardExtending(Number.class))),
 				isAssignableTo(Object.class));
-		assertThat(typeVariableExtending(null, "", AnnotatedTypes.over(wildcardExtending(Integer.class))),
+		assertThat(
+				typeVariableExtending(null, "", AnnotatedTypes.annotated(wildcardExtending(Integer.class))),
 				isAssignableTo(Number.class));
-		assertThat(typeVariableExtending(null, "", AnnotatedTypes.over(wildcardExtending(Integer.class))),
+		assertThat(
+				typeVariableExtending(null, "", AnnotatedTypes.annotated(wildcardExtending(Integer.class))),
 				isAssignableTo(Comparable.class));
 	}
 
 	@Test
 	public void boundedTypeVariableToParameterizedAssignment() {
-		assertThat(typeVariableExtending(null, "", AnnotatedTypes.over(wildcardExtending(Integer.class))),
+		assertThat(
+				typeVariableExtending(null, "", AnnotatedTypes.annotated(wildcardExtending(Integer.class))),
 				isAssignableTo(parameterize(Comparable.class, Integer.class)));
 	}
 
@@ -358,141 +367,172 @@ public class AssignmentTest {
 		TypeVariable<?> unbounded = unboundedTypeVariable(null, "");
 
 		assertThat(unbounded, isAssignableTo(captureWildcard(wildcardSuper(unbounded))));
-		assertThat(typeVariableExtending(null, "", AnnotatedTypes.over(wildcardExtending(unbounded))),
+		assertThat(
+				typeVariableExtending(null, "", AnnotatedTypes.annotated(wildcardExtending(unbounded))),
 				isAssignableTo(unbounded));
-		assertThat(typeVariableExtending(null, "", AnnotatedTypes.over(wildcardExtending(unbounded))),
+		assertThat(
+				typeVariableExtending(null, "", AnnotatedTypes.annotated(wildcardExtending(unbounded))),
 				isAssignableTo(captureWildcard(wildcardSuper(unbounded))));
 	}
 
 	@Test
 	public void classToArrayAssignment() {
-		assertThat(String.class, not(isAssignableTo(fromComponentType(String.class))));
+		assertThat(String.class, not(isAssignableTo(arrayFromComponent(String.class))));
 	}
 
 	@Test
 	public void arrayToClassAssignment() {
-		assertThat(fromComponentType(String.class), not(isAssignableTo(String.class)));
+		assertThat(arrayFromComponent(String.class), not(isAssignableTo(String.class)));
 	}
 
 	@Test
 	public void parameterizedToGenericArrayAssignment() {
-		assertThat(parameterize(Comparable.class, String.class),
-				not(isAssignableTo(fromComponentType(parameterize(Comparable.class, String.class)))));
+		assertThat(
+				parameterize(Comparable.class, String.class),
+				not(isAssignableTo(arrayFromComponent(parameterize(Comparable.class, String.class)))));
 	}
 
 	@Test
 	public void genericArrayToParameterizedAssignment() {
-		assertThat(fromComponentType(parameterize(Comparable.class, String.class)),
+		assertThat(
+				arrayFromComponent(parameterize(Comparable.class, String.class)),
 				not(isAssignableTo(parameterize(Comparable.class, String.class))));
 	}
 
 	@Test
 	public void genericArrayToClassAssignment() {
-		assertThat(fromComponentType(parameterize(Comparable.class, String.class)), not(isAssignableTo(Comparable.class)));
+		assertThat(arrayFromComponent(parameterize(Comparable.class, String.class)), not(isAssignableTo(Comparable.class)));
 
-		assertThat(fromComponentType(parameterize(Comparable.class, String.class)), isAssignableTo(Object.class));
+		assertThat(arrayFromComponent(parameterize(Comparable.class, String.class)), isAssignableTo(Object.class));
 	}
 
 	@Test
 	public void classToGenericArrayAssignment() {
-		assertThat(String.class, not(isAssignableTo(fromComponentType(parameterize(Comparable.class, String.class)))));
+		assertThat(String.class, not(isAssignableTo(arrayFromComponent(parameterize(Comparable.class, String.class)))));
 
-		assertThat(Object.class, not(isAssignableTo(fromComponentType(parameterize(Comparable.class, String.class)))));
+		assertThat(Object.class, not(isAssignableTo(arrayFromComponent(parameterize(Comparable.class, String.class)))));
 	}
 
 	@Test
 	public void classWithParameterizedSupertypeArrayToGenericArrayAssignment() {
-		assertThat(fromComponentType(StringComparable.class),
-				isAssignableTo(fromComponentType(parameterize(Comparable.class, String.class))));
+		assertThat(
+				arrayFromComponent(StringComparable.class),
+				isAssignableTo(arrayFromComponent(parameterize(Comparable.class, String.class))));
 	}
 
 	@Test
 	public void arrayToGenericArrayAssignment() {
-		assertThat(fromComponentType(Comparable.class),
-				isAssignableTo(fromComponentType(parameterize(Comparable.class, String.class))));
+		assertThat(
+				arrayFromComponent(Comparable.class),
+				isAssignableTo(arrayFromComponent(parameterize(Comparable.class, String.class))));
 
-		assertThat(fromComponentType(String.class),
-				isAssignableTo(fromComponentType(parameterize(Comparable.class, String.class))));
+		assertThat(
+				arrayFromComponent(String.class),
+				isAssignableTo(arrayFromComponent(parameterize(Comparable.class, String.class))));
 
-		assertThat(fromComponentType(Object.class),
-				not(isAssignableTo(fromComponentType(parameterize(Comparable.class, String.class)))));
+		assertThat(
+				arrayFromComponent(Object.class),
+				not(isAssignableTo(arrayFromComponent(parameterize(Comparable.class, String.class)))));
 	}
 
 	@Test
 	public void genericArrayToArrayAssignment() {
-		assertThat(fromComponentType(parameterize(Comparable.class, String.class)),
-				isAssignableTo(fromComponentType(Comparable.class)));
+		assertThat(
+				arrayFromComponent(parameterize(Comparable.class, String.class)),
+				isAssignableTo(arrayFromComponent(Comparable.class)));
 
-		assertThat(fromComponentType(parameterize(Comparable.class, String.class)),
-				not(isAssignableTo(fromComponentType(String.class))));
+		assertThat(
+				arrayFromComponent(parameterize(Comparable.class, String.class)),
+				not(isAssignableTo(arrayFromComponent(String.class))));
 
-		assertThat(fromComponentType(parameterize(Comparable.class, String.class)),
-				isAssignableTo(fromComponentType(Object.class)));
+		assertThat(
+				arrayFromComponent(parameterize(Comparable.class, String.class)),
+				isAssignableTo(arrayFromComponent(Object.class)));
 	}
 
 	@Test
 	public void genericArrayToGenericArrayAssignment() {
-		assertThat(fromComponentType(parameterize(Comparable.class, Number.class)),
-				isAssignableTo(fromComponentType(parameterize(Comparable.class, wildcardSuper(Integer.class)))));
+		assertThat(
+				arrayFromComponent(parameterize(Comparable.class, Number.class)),
+				isAssignableTo(arrayFromComponent(parameterize(Comparable.class, wildcardSuper(Integer.class)))));
 
-		assertThat(fromComponentType(parameterize(Comparable.class, Number.class)),
-				not(isAssignableTo(fromComponentType(parameterize(Comparable.class, Integer.class)))));
+		assertThat(
+				arrayFromComponent(parameterize(Comparable.class, Number.class)),
+				not(isAssignableTo(arrayFromComponent(parameterize(Comparable.class, Integer.class)))));
 	}
 
 	@Test
 	public void enclosingParameterizedToRawAssignment() {
-		assertThat(parameterize(EnclosingGenericType.EnclosedGenericType.class, String.class, Integer.class),
+		assertThat(
+				parameterize(EnclosingGenericType.EnclosedGenericType.class, String.class, Integer.class),
 				isAssignableTo(Comparable.class));
 	}
 
 	@Test
 	public void enclosingParameterizedToParameterizedAssignment() {
-		assertThat(parameterize(EnclosingGenericType.EnclosedGenericType.class, String.class, Integer.class),
+		assertThat(
+				parameterize(EnclosingGenericType.EnclosedGenericType.class, String.class, Integer.class),
 				not(isAssignableTo(parameterize(Comparable.class, Integer.class))));
 
-		assertThat(parameterize(EnclosingGenericType.EnclosedGenericType.class, String.class, Integer.class),
+		assertThat(
+				parameterize(EnclosingGenericType.EnclosedGenericType.class, String.class, Integer.class),
 				isAssignableTo(parameterize(Comparable.class, String.class)));
 	}
 
 	@Test
 	public void enclosingParameterizedToEnclosingParameterizedAssignment() {
-		assertThat(parameterize(EnclosingGenericType.EnclosedGenericType.class, String.class, Integer.class),
+		assertThat(
+				parameterize(EnclosingGenericType.EnclosedGenericType.class, String.class, Integer.class),
 				isAssignableTo(Comparable.class));
 
-		assertThat(parameterize(EnclosingGenericType.EnclosedGenericType.class, String.class, Integer.class),
+		assertThat(
+				parameterize(EnclosingGenericType.EnclosedGenericType.class, String.class, Integer.class),
 				isAssignableTo(parameterize(EnclosingGenericType.EnclosedGenericType.class, String.class, Integer.class)));
 
-		assertThat(parameterize(EnclosingGenericType.EnclosedGenericType.class, String.class, Integer.class),
-				isAssignableTo(parameterize(EnclosingGenericType.EnclosedGenericType.class, String.class,
-						wildcardExtending(Number.class))));
+		assertThat(
+				parameterize(EnclosingGenericType.EnclosedGenericType.class, String.class, Integer.class),
+				isAssignableTo(
+						parameterize(
+								EnclosingGenericType.EnclosedGenericType.class,
+								String.class,
+								wildcardExtending(Number.class))));
 
-		assertThat(parameterize(EnclosingGenericType.EnclosedGenericType.class, String.class, Integer.class),
-				not(isAssignableTo(parameterize(EnclosingGenericType.EnclosedGenericType.class, Double.class,
-						wildcardExtending(Number.class)))));
+		assertThat(parameterize(EnclosingGenericType.EnclosedGenericType.class, String.class, Integer.class), not(
+				isAssignableTo(
+						parameterize(
+								EnclosingGenericType.EnclosedGenericType.class,
+								Double.class,
+								wildcardExtending(Number.class)))));
 	}
 
 	@Test
 	public void rawToParameterizedContainment() {
-		assertThat(parameterize(Set.class, Set.class),
+		assertThat(
+				parameterize(Set.class, Set.class),
 				not(isAssignableTo(parameterize(Set.class, parameterize(Set.class, String.class)))));
 	}
 
 	@Test
 	public void parameterizedToRawContainment() {
-		assertThat(parameterize(Set.class, parameterize(Set.class, String.class)),
+		assertThat(
+				parameterize(Set.class, parameterize(Set.class, String.class)),
 				not(isAssignableTo(parameterize(Set.class, Set.class))));
 	}
 
 	@Test
 	public void parameterizedToParameterizedContainment() {
-		assertThat(parameterize(Set.class, parameterize(Set.class, Number.class)),
+		assertThat(
+				parameterize(Set.class, parameterize(Set.class, Number.class)),
 				isAssignableTo(parameterize(Set.class, parameterize(Set.class, Number.class))));
 
-		assertThat(parameterize(Set.class, parameterize(Set.class, Number.class)),
+		assertThat(
+				parameterize(Set.class, parameterize(Set.class, Number.class)),
 				not(isAssignableTo(parameterize(Set.class, wildcardExtending(parameterize(Set.class, Object.class))))));
 
-		assertThat(parameterize(Set.class, parameterize(Set.class, Number.class)), isAssignableTo(
-				parameterize(Set.class, wildcardExtending(parameterize(Set.class, wildcardSuper(Integer.class))))));
+		assertThat(
+				parameterize(Set.class, parameterize(Set.class, Number.class)),
+				isAssignableTo(
+						parameterize(Set.class, wildcardExtending(parameterize(Set.class, wildcardSuper(Integer.class))))));
 	}
 
 	@Test
@@ -517,28 +557,38 @@ public class AssignmentTest {
 
 	@Test
 	public void wildcardToWildcardContainment() {
-		assertThat(parameterize(Set.class, wildcardExtending(Integer.class)),
+		assertThat(
+				parameterize(Set.class, wildcardExtending(Integer.class)),
 				isAssignableTo(parameterize(Set.class, wildcardExtending(Number.class))));
-		assertThat(parameterize(Set.class, wildcardExtending(Number.class)),
+		assertThat(
+				parameterize(Set.class, wildcardExtending(Number.class)),
 				not(isAssignableTo(parameterize(Set.class, wildcardExtending(Integer.class)))));
-		assertThat(parameterize(Set.class, wildcardExtending(Number.class)),
+		assertThat(
+				parameterize(Set.class, wildcardExtending(Number.class)),
 				not(isAssignableTo(parameterize(Set.class, wildcardSuper(Integer.class)))));
 
-		assertThat(parameterize(Set.class, wildcardSuper(Integer.class)),
+		assertThat(
+				parameterize(Set.class, wildcardSuper(Integer.class)),
 				not(isAssignableTo(parameterize(Set.class, wildcardExtending(Number.class)))));
-		assertThat(parameterize(Set.class, wildcardSuper(Number.class)),
+		assertThat(
+				parameterize(Set.class, wildcardSuper(Number.class)),
 				not(isAssignableTo(parameterize(Set.class, wildcardExtending(Integer.class)))));
-		assertThat(parameterize(Set.class, wildcardSuper(Number.class)),
+		assertThat(
+				parameterize(Set.class, wildcardSuper(Number.class)),
 				isAssignableTo(parameterize(Set.class, wildcardSuper(Integer.class))));
 
-		assertThat(parameterize(Set.class, unboundedWildcard()),
+		assertThat(
+				parameterize(Set.class, wildcard()),
 				not(isAssignableTo(parameterize(Set.class, wildcardExtending(Number.class)))));
-		assertThat(parameterize(Set.class, unboundedWildcard()),
+		assertThat(
+				parameterize(Set.class, wildcard()),
 				not(isAssignableTo(parameterize(Set.class, wildcardSuper(Number.class)))));
 
-		assertThat(parameterize(Set.class, wildcardExtending(Number.class)),
-				isAssignableTo(parameterize(Set.class, unboundedWildcard())));
-		assertThat(parameterize(Set.class, wildcardSuper(Number.class)),
-				isAssignableTo(parameterize(Set.class, unboundedWildcard())));
+		assertThat(
+				parameterize(Set.class, wildcardExtending(Number.class)),
+				isAssignableTo(parameterize(Set.class, wildcard())));
+		assertThat(
+				parameterize(Set.class, wildcardSuper(Number.class)),
+				isAssignableTo(parameterize(Set.class, wildcard())));
 	}
 }

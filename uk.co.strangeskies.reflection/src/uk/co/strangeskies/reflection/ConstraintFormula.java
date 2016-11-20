@@ -50,8 +50,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import uk.co.strangeskies.reflection.BoundSet.IncorporationTarget;
-
 /**
  * <p>
  * A constraint formula, as they are described in chapter 18 of that Java 8
@@ -168,8 +166,6 @@ public class ConstraintFormula {
 	 * A constraint formula of the form ‹S → T› is reduced as follows:
 	 */
 	private void reduceLooseCompatibilityConstraint(BoundSet bounds) {
-		IncorporationTarget incorporate = bounds.withIncorporated();
-
 		Type from = this.from;
 
 		if (from instanceof ParameterizedType)
@@ -190,7 +186,7 @@ public class ConstraintFormula {
 			 * otherwise.
 			 */
 			if (!Types.isLooseInvocationContextCompatible(from, to)) {
-				incorporate.falsehood("Incompatible proper types: " + this);
+				bounds.incorporateFalsehood("Incompatible proper types: " + this);
 			}
 		} else if (from != null && Types.isPrimitive(from)) {
 			/*
@@ -228,9 +224,6 @@ public class ConstraintFormula {
 	}
 
 	private static boolean isUncheckedCompatibleOnly(Type from, Type to) {
-		System.out.println(from.getClass() + "    " + from);
-		System.out.println(to.getClass() + "    " + to);
-
 		Class<?> toRaw = Types.getRawType(to);
 		Class<?> fromRaw = Types.getRawType(from);
 
@@ -250,15 +243,13 @@ public class ConstraintFormula {
 	 * A constraint formula of the form ‹S <: T› is reduced as follows:
 	 */
 	private void reduceSubtypeConstraint(BoundSet bounds) {
-		IncorporationTarget incorporate = bounds.withIncorporated();
-
 		if (InferenceVariable.isProperType(from) && InferenceVariable.isProperType(to)) {
 			/*
 			 * If S and T are proper types, the constraint reduces to true if S is a
 			 * subtype of T (§4.10), and false otherwise.
 			 */
-			if (!Types.isAssignable(from, to) && !(from instanceof InferenceVariable) && !(to instanceof InferenceVariable)) {
-				incorporate.falsehood("Incompatible proper types: " + this);
+			if (!Types.isSubtype(from, to)) {
+				bounds.incorporateFalsehood("Incompatible proper types: " + this);
 			} else
 				return;
 		} else if (from == null)
@@ -270,19 +261,19 @@ public class ConstraintFormula {
 			/*
 			 * Otherwise, if T is the null type, the constraint reduces to false.
 			 */
-			incorporate.falsehood("Cannot subtype null type: " + this);
+			bounds.incorporateFalsehood("Cannot subtype null type: " + this);
 		else if (from instanceof InferenceVariable)
 			/*
 			 * Otherwise, if S is an inference variable, α, the constraint reduces to
 			 * the bound α <: T.
 			 */
-			incorporate.subtype(from, to);
+			bounds.incorporateSubtype(from, to);
 		else if (to instanceof InferenceVariable)
 			/*
 			 * Otherwise, if T is an inference variable, α, the constraint reduces to
 			 * the bound S <: α.
 			 */
-			incorporate.subtype(from, to);
+			bounds.incorporateSubtype(from, to);
 		else {
 			/*
 			 * Otherwise, the constraint is reduced according to the form of T:
@@ -296,12 +287,12 @@ public class ConstraintFormula {
 				 * identified, with type arguments B1, ..., Bn.
 				 */
 				Class<?> rawType = Types.getRawType(to);
-				if (!Types.getRawTypes(from).stream().anyMatch(t -> rawType.isAssignableFrom(t))) {
+				if (!Types.getRawTypes(from).anyMatch(t -> rawType.isAssignableFrom(t))) {
 					/*
 					 * If no such type exists, the constraint reduces to false.
 					 */
 					if (!(from instanceof InferenceVariable))
-						incorporate.falsehood(
+						bounds.incorporateFalsehood(
 								"Raw types '" + Types.getRawTypes(from) + "' cannot be assigned from '" + Types.getRawType(to) + "': "
 										+ this);
 				} else {
@@ -326,7 +317,8 @@ public class ConstraintFormula {
 								/*
 								 * If no such type exists, the constraint reduces to false.
 								 */
-								incorporate.falsehood("Cannot find parameterized supertype for which to verify containment: " + this);
+								bounds.incorporateFalsehood(
+										"Cannot find parameterized supertype for which to verify containment: " + this);
 
 							/*
 							 * Otherwise, the constraint reduces to the following new
@@ -351,7 +343,7 @@ public class ConstraintFormula {
 				if (from instanceof InferenceVariable)
 					from = intersectionOf(bounds.getBoundsOn((InferenceVariable) from).getUpperBounds().collect(toList()));
 				if (!Types.isAssignable(from, to))
-					incorporate.falsehood("Class types do not form subtype relation: " + this);
+					bounds.incorporateFalsehood("Class types do not form subtype relation: " + this);
 			} else if (!(to instanceof IntersectionType) && Types.getRawType(to).isArray()) {
 				/*
 				 * If T is an array type, T'[], then among the supertypes of S that are
@@ -363,7 +355,7 @@ public class ConstraintFormula {
 					/*
 					 * If no such array type exists, the constraint reduces to false.
 					 */
-					incorporate.falsehood("Cannot find compatible array type supertype: " + this);
+					bounds.incorporateFalsehood("Cannot find compatible array type supertype: " + this);
 				} else {
 					/*
 					 * Otherwise:
@@ -381,7 +373,7 @@ public class ConstraintFormula {
 						 * same primitive type, and false otherwise.
 						 */
 						if ((!Types.isPrimitive(fromComponent) || !Types.equals(fromComponent, toComponent)))
-							incorporate.falsehood("Primitive array component type is not equal: " + this);
+							bounds.incorporateFalsehood("Primitive array component type is not equal: " + this);
 					}
 				}
 			} else if (to instanceof TypeVariableCapture) {
@@ -405,7 +397,7 @@ public class ConstraintFormula {
 					/*
 					 * - Otherwise, the constraint reduces to false.
 					 */
-					incorporate.falsehood("Type variable cannot be supertype of type: " + this);
+					bounds.incorporateFalsehood("Type variable cannot be supertype of type: " + this);
 				}
 			} else if (to instanceof IntersectionType) {
 				/*
@@ -451,8 +443,6 @@ public class ConstraintFormula {
 	 * (§4.5.1), is reduced as follows:
 	 */
 	private void reduceContainmentConstraint(BoundSet bounds) {
-		IncorporationTarget incorporate = bounds.withIncorporated();
-
 		if (!(to instanceof WildcardType)) {
 			/*
 			 * If T is a type:
@@ -466,7 +456,7 @@ public class ConstraintFormula {
 				/*
 				 * If S is a wildcard, the constraint reduces to false.
 				 */
-				incorporate.falsehood("Wildcard cannot be contained by type: " + this);
+				bounds.incorporateFalsehood("Wildcard cannot be contained by type: " + this);
 			}
 		} else {
 			WildcardType toWildcard = (WildcardType) to;
@@ -541,7 +531,7 @@ public class ConstraintFormula {
 						/*
 						 * Otherwise, the constraint reduces to false.
 						 */
-						incorporate.falsehood("Wildcard cannot be contained by wildcard: " + this);
+						bounds.incorporateFalsehood("Wildcard cannot be contained by wildcard: " + this);
 					}
 				}
 			}
@@ -549,8 +539,6 @@ public class ConstraintFormula {
 	}
 
 	private void reduceEqualityConstraint(BoundSet bounds) {
-		IncorporationTarget incorporate = bounds.withIncorporated();
-
 		if (from instanceof WildcardType && to instanceof WildcardType) {
 			/*
 			 * A constraint formula of the form ‹S = T›, where S and T are type
@@ -609,7 +597,7 @@ public class ConstraintFormula {
 				/*
 				 * Otherwise, the constraint reduces to false.
 				 */
-				incorporate.falsehood("Wildcards cannot be equal in this form: " + this);
+				bounds.incorporateFalsehood("Wildcards cannot be equal in this form: " + this);
 			}
 		} else {
 			/*
@@ -622,19 +610,19 @@ public class ConstraintFormula {
 				 * the same as T (§4.3.4), and false otherwise.
 				 */
 				if (InferenceVariable.isProperType(from) && InferenceVariable.isProperType(to)) {
-					incorporate.falsehood("Proper types are not equal: " + this);
+					bounds.incorporateFalsehood("Proper types are not equal: " + this);
 				} else if (from instanceof InferenceVariable) {
 					/*
 					 * Otherwise, if S is an inference variable, α, the constraint reduces
 					 * to the bound α = T.
 					 */
-					incorporate.equality(from, to);
+					bounds.incorporateEquality(from, to);
 				} else if (to instanceof InferenceVariable) {
 					/*
 					 * Otherwise, if T is an inference variable, α, the constraint reduces
 					 * to the bound S = α.
 					 */
-					incorporate.equality(from, to);
+					bounds.incorporateEquality(from, to);
 				} else if ((from instanceof Class<?> && ((Class<?>) from).isArray())
 						&& (to instanceof Class<?> && ((Class<?>) to).isArray())) {
 					/*
@@ -663,16 +651,16 @@ public class ConstraintFormula {
 									.map(toArgument -> new ConstraintFormula(Kind.EQUALITY, fromArguments.next(), toArgument))
 									.forEach(c -> c.reduceInPlace(bounds));
 						} else {
-							incorporate.falsehood("Wildcards cannot be equal in this form: " + this);
+							bounds.incorporateFalsehood("Wildcards cannot be equal in this form: " + this);
 						}
 					} else if (to instanceof ParameterizedType) {
-						incorporate.falsehood("Types are not erasure-equal: " + this);
+						bounds.incorporateFalsehood("Types are not erasure-equal: " + this);
 					}
 				} else {
 					/*
 					 * Otherwise, the constraint reduces to false.
 					 */
-					incorporate.falsehood("Types of these types cannot be equal: " + this);
+					bounds.incorporateFalsehood("Types of these types cannot be equal: " + this);
 				}
 			}
 		}

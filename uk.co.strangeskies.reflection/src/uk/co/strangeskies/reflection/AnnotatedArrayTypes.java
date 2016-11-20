@@ -58,26 +58,26 @@ public final class AnnotatedArrayTypes {
 		public AnnotatedArrayTypeImpl(Isomorphism isomorphism, AnnotatedArrayType annotatedArrayType) {
 			super(annotatedArrayType);
 
-			annotatedComponentType = AnnotatedTypes.wrapImpl(isomorphism,
-					annotatedArrayType.getAnnotatedGenericComponentType());
+			annotatedComponentType = AnnotatedTypes
+					.wrapImpl(isomorphism, annotatedArrayType.getAnnotatedGenericComponentType());
 		}
 
 		public AnnotatedArrayTypeImpl(Isomorphism isomorphism, GenericArrayType type, Collection<Annotation> annotations) {
 			super(type, annotations);
 
-			annotatedComponentType = (AnnotatedTypeImpl) AnnotatedTypes.overImpl(isomorphism, type.getGenericComponentType());
+			annotatedComponentType = AnnotatedTypes.annotatedImpl(isomorphism, type.getGenericComponentType());
 		}
 
 		public AnnotatedArrayTypeImpl(Isomorphism isomorphism, Class<?> type, Collection<Annotation> annotations) {
 			super(type, annotations);
 
-			annotatedComponentType = (AnnotatedTypeImpl) AnnotatedTypes.overImpl(isomorphism, type.getComponentType());
+			annotatedComponentType = AnnotatedTypes.annotatedImpl(isomorphism, type.getComponentType());
 		}
 
 		public AnnotatedArrayTypeImpl(Isomorphism isomorphism, AnnotatedType type, Collection<Annotation> annotations) {
-			super(ArrayTypes.fromComponentType(type.getType()), annotations);
+			super(ArrayTypes.arrayFromComponent(type.getType()), annotations);
 
-			annotatedComponentType = (AnnotatedTypeImpl) AnnotatedTypes.wrapImpl(isomorphism, type);
+			annotatedComponentType = AnnotatedTypes.wrapImpl(isomorphism, type);
 		}
 
 		@Override
@@ -122,8 +122,8 @@ public final class AnnotatedArrayTypes {
 	 * @return A new annotated array type with the given component and given
 	 *         annotations.
 	 */
-	public static AnnotatedArrayType fromComponent(AnnotatedType component, Annotation... annotations) {
-		return fromComponent(component, Arrays.asList(annotations));
+	public static AnnotatedArrayType arrayFromComponent(AnnotatedType component, Annotation... annotations) {
+		return arrayFromComponent(component, Arrays.asList(annotations));
 	}
 
 	/**
@@ -137,7 +137,7 @@ public final class AnnotatedArrayTypes {
 	 * @return A new annotated array type with the given component and given
 	 *         annotations.
 	 */
-	public static AnnotatedArrayType fromComponent(AnnotatedType component, Collection<Annotation> annotations) {
+	public static AnnotatedArrayType arrayFromComponent(AnnotatedType component, Collection<Annotation> annotations) {
 		return new AnnotatedArrayTypeImpl(new Isomorphism(), component, annotations);
 	}
 
@@ -169,10 +169,14 @@ public final class AnnotatedArrayTypes {
 		return overImpl(new Isomorphism(), arrayType, annotations);
 	}
 
-	static AnnotatedArrayTypeInternal overImpl(Isomorphism isomorphism, GenericArrayType arrayType,
+	static AnnotatedArrayTypeInternal overImpl(
+			Isomorphism isomorphism,
+			GenericArrayType arrayType,
 			Collection<Annotation> annotations) {
 		if (annotations.isEmpty()) {
-			return isomorphism.byIdentity().getProxiedMapping(arrayType, AnnotatedArrayTypeInternal.class,
+			return isomorphism.byIdentity().getProxiedMapping(
+					arrayType,
+					AnnotatedArrayTypeInternal.class,
 					t -> new AnnotatedArrayTypeImpl(isomorphism, t, annotations));
 		} else {
 			return new AnnotatedArrayTypeImpl(isomorphism, arrayType, annotations);
@@ -207,10 +211,14 @@ public final class AnnotatedArrayTypes {
 		return overImpl(new Isomorphism(), arrayType, annotations);
 	}
 
-	static AnnotatedArrayTypeInternal overImpl(Isomorphism isomorphism, Class<?> arrayType,
+	static AnnotatedArrayTypeInternal overImpl(
+			Isomorphism isomorphism,
+			Class<?> arrayType,
 			Collection<Annotation> annotations) {
 		if (annotations.isEmpty()) {
-			return isomorphism.byIdentity().getProxiedMapping(arrayType, AnnotatedArrayTypeInternal.class,
+			return isomorphism.byIdentity().getProxiedMapping(
+					arrayType,
+					AnnotatedArrayTypeInternal.class,
 					t -> new AnnotatedArrayTypeImpl(isomorphism, t, annotations));
 		} else {
 			return new AnnotatedArrayTypeImpl(isomorphism, arrayType, annotations);
@@ -225,7 +233,9 @@ public final class AnnotatedArrayTypes {
 		if (type instanceof AnnotatedArrayTypeInternal) {
 			return (AnnotatedArrayTypeInternal) type;
 		} else
-			return isomorphism.byIdentity().getProxiedMapping(type, AnnotatedArrayTypeInternal.class,
+			return isomorphism.byIdentity().getProxiedMapping(
+					type,
+					AnnotatedArrayTypeInternal.class,
 					t -> new AnnotatedArrayTypeImpl(isomorphism, t));
 	}
 

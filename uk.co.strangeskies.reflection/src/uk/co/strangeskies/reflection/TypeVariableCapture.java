@@ -33,6 +33,7 @@
 package uk.co.strangeskies.reflection;
 
 import static java.util.stream.Collectors.toList;
+import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
 import static uk.co.strangeskies.reflection.IntersectionTypes.uncheckedIntersectionOf;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.getAllTypeArguments;
@@ -87,8 +88,9 @@ public class TypeVariableCapture implements Type {
 
 	private final void validate() {
 		if (lowerBounds.length > 0
-				&& !Types.isAssignable(uncheckedIntersectionOf(lowerBounds), uncheckedIntersectionOf(upperBounds)))
+				&& !Types.isAssignable(uncheckedIntersectionOf(lowerBounds), uncheckedIntersectionOf(upperBounds))) {
 			throw new ReflectionException(p -> p.invalidTypeVariableCaptureBounds(this));
+		}
 	}
 
 	public String getName() {
@@ -199,7 +201,7 @@ public class TypeVariableCapture implements Type {
 		if (component instanceof ParameterizedType)
 			component = captureWildcardArguments((GenericArrayType) component);
 
-		component = type = (GenericArrayType) ArrayTypes.fromComponentType(component, Types.getArrayDimensions(type));
+		component = type = (GenericArrayType) arrayFromComponent(component, Types.getArrayDimensions(type));
 
 		return type;
 	}
@@ -467,13 +469,10 @@ public class TypeVariableCapture implements Type {
 			if (inferenceVariableBounds.getInstantiation().isPresent()) {
 				replacement = inferenceVariableBounds.getInstantiation().get();
 			} else if (!types.contains(i)) {
-				replacement = inferenceVariableBounds
-						.getEqualities()
-						.filter(types::contains)
-						.findAny()
-						.orElse(inferenceVariableBounds
+				replacement = inferenceVariableBounds.getEqualities().filter(types::contains).findAny().orElse(
+						inferenceVariableBounds
 								.getEqualities()
-								.filter(equality -> types.containsAll(InferenceVariable.getMentionedBy(equality)))
+								.filter(equality -> InferenceVariable.getMentionedBy(equality).allMatch(types::contains))
 								.findAny()
 								.orElseThrow(() -> new ReflectionException(p -> p.cannotFindSubstitution(i))));
 			} else {

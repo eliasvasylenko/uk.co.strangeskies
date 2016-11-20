@@ -70,7 +70,9 @@ public class Imports {
 		this(classes, packages, null);
 	}
 
-	private Imports(Collection<? extends Class<?>> classes, Collection<? extends Package> packages,
+	private Imports(
+			Collection<? extends Class<?>> classes,
+			Collection<? extends Package> packages,
 			ClassLoader classLoader) {
 		importClasses(classes);
 		importPackages(packages);
@@ -191,7 +193,7 @@ public class Imports {
 	 *         imports.
 	 */
 	public Class<?> getNamedClass(String name, ClassLoader classLoader) {
-		Optional<Class<?>> primitive = Types.getPrimitives().stream().filter(p -> p.getName().equals(name)).findAny();
+		Optional<Class<?>> primitive = Types.getPrimitives().filter(p -> p.getName().equals(name)).findAny();
 		if (primitive.isPresent())
 			return primitive.get();
 

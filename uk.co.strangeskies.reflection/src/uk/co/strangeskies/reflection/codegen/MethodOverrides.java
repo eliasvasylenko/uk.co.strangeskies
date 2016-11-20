@@ -37,7 +37,7 @@ public class MethodOverrides<T> {
 	}
 
 	private Stream<Method> interfaceMethods() {
-		return classDeclaration.getSuperTypes().flatMap(t -> t.getRawTypes().stream()).flatMap(t -> stream(t.getMethods()));
+		return classDeclaration.getSuperTypes().flatMap(t -> t.getRawTypes()).flatMap(t -> stream(t.getMethods()));
 	}
 
 	private Stream<Method> classMethods() {

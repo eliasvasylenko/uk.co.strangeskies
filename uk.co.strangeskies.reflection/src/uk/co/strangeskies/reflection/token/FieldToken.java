@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.reflection.token;
 
-import static uk.co.strangeskies.reflection.WildcardTypes.unboundedWildcard;
+import static uk.co.strangeskies.reflection.WildcardTypes.wildcard;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
@@ -52,7 +52,6 @@ import uk.co.strangeskies.reflection.BoundSet;
 import uk.co.strangeskies.reflection.InferenceVariable;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.ReflectionException;
-import uk.co.strangeskies.reflection.TypeResolver;
 
 /**
  * <p>
@@ -90,8 +89,7 @@ public class FieldToken<O, T> implements MemberToken<O> {
 	 * @return a field member wrapping the given field
 	 */
 	public static FieldToken<?, ?> over(Field field) {
-		return over(field,
-				TypeToken.overType(ParameterizedTypes.parameterize(field.getDeclaringClass(), a -> unboundedWildcard())));
+		return over(field, TypeToken.overType(ParameterizedTypes.parameterize(field.getDeclaringClass(), a -> wildcard())));
 	}
 
 	/**
@@ -121,8 +119,8 @@ public class FieldToken<O, T> implements MemberToken<O> {
 	}
 
 	@Override
-	public TypeResolver getResolver() {
-		return ownerType.getResolver();
+	public BoundSet getBounds() {
+		return ownerType.getBounds();
 	}
 
 	@Override
@@ -284,10 +282,15 @@ public class FieldToken<O, T> implements MemberToken<O> {
 		return getFieldsImpl(type, filter, Class::getDeclaredFields);
 	}
 
-	private static <T> Set<? extends FieldToken<T, ?>> getFieldsImpl(TypeToken<T> type, Predicate<Field> filter,
+	private static <T> Set<? extends FieldToken<T, ?>> getFieldsImpl(
+			TypeToken<T> type,
+			Predicate<Field> filter,
 			Function<Class<?>, Field[]> fields) {
-		return Arrays.stream(fields.apply(type.getRawType())).filter(filter)
-				.map(m -> (FieldToken<T, ?>) FieldToken.over(m, type)).collect(Collectors.toCollection(LinkedHashSet::new));
+		return Arrays
+				.stream(fields.apply(type.getRawType()))
+				.filter(filter)
+				.map(m -> (FieldToken<T, ?>) FieldToken.over(m, type))
+				.collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 
 	/**
@@ -325,7 +328,9 @@ public class FieldToken<O, T> implements MemberToken<O> {
 		return resolveFieldsImpl(type, name, p -> getFields(type, p));
 	}
 
-	private static <T> List<FieldToken<T, ?>> resolveFieldsImpl(TypeToken<T> type, String name,
+	private static <T> List<FieldToken<T, ?>> resolveFieldsImpl(
+			TypeToken<T> type,
+			String name,
 			Function<Predicate<Field>, Set<? extends FieldToken<T, ?>>> fields) {
 		Set<? extends FieldToken<T, ? extends Object>> candidates = fields.apply(m -> m.getName().equals(name));
 

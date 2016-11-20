@@ -93,7 +93,7 @@ public class WildcardTypes {
 	 * @return An instance of {@link WildcardType} representing an unbounded
 	 *         wildcard.
 	 */
-	public static WildcardType unboundedWildcard() {
+	public static WildcardType wildcard() {
 		return UNBOUNDED;
 	}
 

@@ -38,12 +38,12 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 
 import uk.co.strangeskies.utilities.IdentityProperty;
 
@@ -153,9 +153,9 @@ public class InferenceVariable implements Type {
 	 *          The type in which to find inference variable mentions.
 	 * @return The inference variables mentioned by the given type.
 	 */
-	public static Set<InferenceVariable> getMentionedBy(Type type) {
+	public static Stream<InferenceVariable> getMentionedBy(Type type) {
 		if (type instanceof Class<?>) {
-			return Collections.emptySet();
+			return Stream.empty();
 		}
 
 		Set<InferenceVariable> inferenceVariables = new HashSet<>();
@@ -200,7 +200,7 @@ public class InferenceVariable implements Type {
 			}
 		}.visit(type);
 
-		return inferenceVariables;
+		return inferenceVariables.stream();
 	}
 
 	/**

@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static java.util.Collections.emptySet;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedArrayType;
 import java.lang.reflect.AnnotatedParameterizedType;
@@ -183,8 +185,10 @@ public final class AnnotatedTypes {
 
 		@Override
 		public String toString(Imports imports) {
-			return new StringBuilder().append(annotationString(imports, annotations.values()))
-					.append(Types.toString(type, imports)).toString();
+			return new StringBuilder()
+					.append(annotationString(imports, annotations.values()))
+					.append(Types.toString(type, imports))
+					.toString();
 		}
 
 		protected static String annotationString(Imports imports, Annotation... annotations) {
@@ -274,13 +278,17 @@ public final class AnnotatedTypes {
 
 			if (first instanceof AnnotatedParameterizedType) {
 				if (second instanceof AnnotatedParameterizedType) {
-					return annotationEquals(isomorphism, ((AnnotatedParameterizedType) first).getAnnotatedActualTypeArguments(),
+					return annotationEquals(
+							isomorphism,
+							((AnnotatedParameterizedType) first).getAnnotatedActualTypeArguments(),
 							((AnnotatedParameterizedType) second).getAnnotatedActualTypeArguments());
 				} else
 					return false;
 			} else if (first instanceof AnnotatedArrayType) {
 				if (second instanceof AnnotatedArrayType) {
-					return annotationEquals(isomorphism, ((AnnotatedArrayType) first).getAnnotatedGenericComponentType(),
+					return annotationEquals(
+							isomorphism,
+							((AnnotatedArrayType) first).getAnnotatedGenericComponentType(),
 							((AnnotatedArrayType) second).getAnnotatedGenericComponentType());
 				} else
 					return false;
@@ -290,12 +298,14 @@ public final class AnnotatedTypes {
 					AnnotatedType[] secondUpperBounds = ((AnnotatedWildcardType) second).getAnnotatedUpperBounds();
 
 					if (firstUpperBounds.length == 0)
-						firstUpperBounds = new AnnotatedType[] { AnnotatedTypes.over(Object.class) };
+						firstUpperBounds = new AnnotatedType[] { AnnotatedTypes.annotated(Object.class) };
 
 					if (secondUpperBounds.length == 0)
-						secondUpperBounds = new AnnotatedType[] { AnnotatedTypes.over(Object.class) };
+						secondUpperBounds = new AnnotatedType[] { AnnotatedTypes.annotated(Object.class) };
 
-					return annotationEquals(isomorphism, ((AnnotatedWildcardType) first).getAnnotatedLowerBounds(),
+					return annotationEquals(
+							isomorphism,
+							((AnnotatedWildcardType) first).getAnnotatedLowerBounds(),
 							((AnnotatedWildcardType) second).getAnnotatedLowerBounds())
 							&& annotationEquals(isomorphism, firstUpperBounds, secondUpperBounds);
 				} else
@@ -320,28 +330,28 @@ public final class AnnotatedTypes {
 
 	/**
 	 * Transform an array of {@link Type}s into a new array of
-	 * {@link AnnotatedType}s, according to the behaviour of {@link #over(Type)}
-	 * applied to element of the array.
+	 * {@link AnnotatedType}s, according to the behaviour of
+	 * {@link #annotated(Type)} applied to element of the array.
 	 * 
 	 * @param types
 	 *          The array of types to transform.
 	 * @return A new array of unannotated {@link AnnotatedType} instances.
 	 */
-	public static AnnotatedType[] over(Type... types) {
-		return overImpl(new Isomorphism(), types);
+	public static AnnotatedType[] annotated(Type... types) {
+		return annotatedImpl(new Isomorphism(), types);
 	}
 
 	/**
 	 * Transform a collection of {@link Type}s into a new list of
-	 * {@link AnnotatedType}s, according to the behaviour of {@link #over(Type)}
-	 * applied to element of the collection.
+	 * {@link AnnotatedType}s, according to the behaviour of
+	 * {@link #annotated(Type)} applied to element of the collection.
 	 * 
 	 * @param types
 	 *          The collection of types to transform.
 	 * @return A new list of unannotated {@link AnnotatedType} instances.
 	 */
-	public static List<AnnotatedType> over(Collection<? extends Type> types) {
-		return types.stream().map(AnnotatedTypes::over).collect(Collectors.toList());
+	public static List<AnnotatedType> annotated(Collection<? extends Type> types) {
+		return types.stream().map(AnnotatedTypes::annotated).collect(Collectors.toList());
 	}
 
 	/**
@@ -353,8 +363,8 @@ public final class AnnotatedTypes {
 	 * @return An {@link AnnotatedType} instance of the appropriate class over the
 	 *         given type containing no annotations.
 	 */
-	public static AnnotatedType over(Type type) {
-		return over(type, Collections.emptySet());
+	public static AnnotatedType annotated(Type type) {
+		return annotated(type, Collections.emptySet());
 	}
 
 	/**
@@ -368,9 +378,9 @@ public final class AnnotatedTypes {
 	 * @return An {@link AnnotatedType} instance of the appropriate class over the
 	 *         given type containing the given annotations.
 	 */
-	public static AnnotatedType over(Type type, Annotation... annotations) {
+	public static AnnotatedType annotated(Type type, Annotation... annotations) {
 		Objects.requireNonNull(type);
-		return over(type, Arrays.asList(annotations));
+		return annotated(type, Arrays.asList(annotations));
 	}
 
 	/**
@@ -384,20 +394,22 @@ public final class AnnotatedTypes {
 	 * @return An {@link AnnotatedType} instance of the appropriate class over the
 	 *         given type containing the given annotations.
 	 */
-	public static AnnotatedType over(Type type, Collection<Annotation> annotations) {
-		return overImpl(new Isomorphism(), type, annotations);
+	public static AnnotatedType annotated(Type type, Collection<Annotation> annotations) {
+		return annotatedImpl(new Isomorphism(), type, annotations);
 	}
 
-	protected static AnnotatedTypeInternal[] overImpl(Isomorphism isomorphism, Type... types) {
-		return Arrays.stream(types).map(a -> overImpl(isomorphism, a, Collections.emptySet()))
-				.toArray(AnnotatedTypeInternal[]::new);
+	protected static AnnotatedTypeInternal[] annotatedImpl(Isomorphism isomorphism, Type... types) {
+		return Arrays.stream(types).map(a -> annotatedImpl(isomorphism, a, Collections.emptySet())).toArray(
+				AnnotatedTypeInternal[]::new);
 	}
 
-	protected static AnnotatedTypeInternal overImpl(Isomorphism isomorphism, Type type) {
-		return overImpl(isomorphism, type, Collections.emptySet());
+	protected static AnnotatedTypeInternal annotatedImpl(Isomorphism isomorphism, Type type) {
+		return annotatedImpl(isomorphism, type, emptySet());
 	}
 
-	protected static AnnotatedTypeInternal overImpl(Isomorphism isomorphism, Type type,
+	protected static AnnotatedTypeInternal annotatedImpl(
+			Isomorphism isomorphism,
+			Type type,
 			Collection<Annotation> annotations) {
 		if (type instanceof ParameterizedType) {
 			return AnnotatedParameterizedTypes.overImpl(isomorphism, (ParameterizedType) type, annotations);
@@ -405,33 +417,38 @@ public final class AnnotatedTypes {
 			return AnnotatedWildcardTypes.overImpl(isomorphism, (WildcardType) type, annotations);
 		} else if (type instanceof GenericArrayType) {
 			return AnnotatedArrayTypes.overImpl(isomorphism, (GenericArrayType) type, annotations);
-		} else if (type instanceof Class && ((Class<?>) type).isArray()) {
+		} else if (type instanceof Class<?> && ((Class<?>) type).isArray()) {
 			return AnnotatedArrayTypes.overImpl(isomorphism, (Class<?>) type, annotations);
-		} else if (type instanceof AnnotatedTypeVariable) {
+		} else if (type instanceof TypeVariable<?>) {
 			return AnnotatedTypeVariables.overImpl(isomorphism, (TypeVariable<?>) type, annotations);
 		} else if (type instanceof IntersectionType) {
-			return overIntersection(isomorphism, (IntersectionType) type, annotations);
+			return annotatedIntersection(isomorphism, (IntersectionType) type, annotations);
 		} else {
 			return new AnnotatedTypeImpl(type, annotations);
 		}
 	}
 
-	private static AnnotatedTypeInternal overIntersection(Isomorphism isomorphism, IntersectionType intersectionType,
+	private static AnnotatedTypeInternal annotatedIntersection(
+			Isomorphism isomorphism,
+			IntersectionType intersectionType,
 			Collection<Annotation> annotations) {
 		if (annotations.isEmpty()) {
-			return isomorphism.byIdentity().getMapping(intersectionType,
-					type -> overIntersectionImpl(isomorphism, type, annotations));
+			return isomorphism
+					.byIdentity()
+					.getMapping(intersectionType, type -> annotatedIntersectionImpl(isomorphism, type, annotations));
 		} else {
-			return overIntersectionImpl(isomorphism, intersectionType, annotations);
+			return annotatedIntersectionImpl(isomorphism, intersectionType, annotations);
 		}
 	}
 
-	private static AnnotatedTypeInternal overIntersectionImpl(Isomorphism isomorphism, IntersectionType type,
+	private static AnnotatedTypeInternal annotatedIntersectionImpl(
+			Isomorphism isomorphism,
+			IntersectionType type,
 			Collection<Annotation> annotations) {
 		if (type.getTypes().length == 0)
 			return new AnnotatedTypeImpl(Object.class, annotations);
 		else if (type.getTypes().length == 1)
-			return overImpl(isomorphism, type.getTypes()[0], annotations);
+			return annotatedImpl(isomorphism, type.getTypes()[0], annotations);
 		else
 			return new AnnotatedTypeImpl(type, annotations);
 	}
@@ -572,23 +589,30 @@ public final class AnnotatedTypes {
 			TypeParser typeParser = Types.getParser(imports);
 
 			rawType = typeParser.getRawType().prependTransform(
-					annotationParser.getAnnotationList().append("\\s*").orElse(ArrayList::new), AnnotatedTypes::over);
+					annotationParser.getAnnotationList().append("\\s*").orElse(ArrayList::new),
+					AnnotatedTypes::annotated);
 
-			classOrArrayType = rawType.tryAppendTransform(
-					Parser.list(Parser.proxy(this::getType), "\\s*,\\s*").prepend("\\s*<\\s*").append("\\s*>\\s*"),
-					AnnotatedParameterizedTypes::from).appendTransform(
+			classOrArrayType = rawType
+					.tryAppendTransform(
+							Parser.list(Parser.proxy(this::getType), "\\s*,\\s*").prepend("\\s*<\\s*").append("\\s*>\\s*"),
+							AnnotatedParameterizedTypes::parameterize)
+					.appendTransform(
 							Parser.list(annotationParser.getAnnotationList().append("\\s*\\[\\s*\\]"), "\\s*").prepend("\\s*"),
 							(t, l) -> {
 								for (List<Annotation> annotationList : l)
-									t = AnnotatedArrayTypes.fromComponent(t, annotationList);
+									t = AnnotatedArrayTypes.arrayFromComponent(t, annotationList);
 								return t;
 							});
 
-			wildcardType = annotationParser.getAnnotationList().append("\\s*\\?\\s*extends(?![_a-zA-Z0-9])\\s*")
-					.appendTransform(Parser.list(classOrArrayType, "\\s*\\&\\s*"), AnnotatedWildcardTypes::upperBounded)
-					.orElse(annotationParser.getAnnotationList().append("\\s*\\?\\s*super(?![_a-zA-Z0-9])\\s*")
-							.appendTransform(Parser.list(classOrArrayType, "\\s*\\&\\s*"), AnnotatedWildcardTypes::lowerBounded))
-					.orElse(annotationParser.getAnnotationList().append("\\s*\\?").transform(AnnotatedWildcardTypes::unbounded));
+			wildcardType = annotationParser
+					.getAnnotationList()
+					.append("\\s*\\?\\s*extends(?![_a-zA-Z0-9])\\s*")
+					.appendTransform(Parser.list(classOrArrayType, "\\s*\\&\\s*"), AnnotatedWildcardTypes::wildcardExtending)
+					.orElse(
+							annotationParser.getAnnotationList().append("\\s*\\?\\s*super(?![_a-zA-Z0-9])\\s*").appendTransform(
+									Parser.list(classOrArrayType, "\\s*\\&\\s*"),
+									AnnotatedWildcardTypes::wildcardSuper))
+					.orElse(annotationParser.getAnnotationList().append("\\s*\\?").transform(AnnotatedWildcardTypes::wildcard));
 
 			typeParameter = classOrArrayType.orElse(wildcardType.transform(AnnotatedType.class::cast));
 		}

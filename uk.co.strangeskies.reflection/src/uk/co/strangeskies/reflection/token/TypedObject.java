@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.reflection.token;
 
+import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.LOOSE_COMPATIBILILTY;
+
 import java.lang.reflect.Type;
 import java.util.Objects;
 import java.util.Optional;
@@ -79,7 +81,7 @@ public class TypedObject<T> implements ReifiedToken<TypedObject<T>> {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T> TypedObject<T> castUnsafe(Object object, TypeToken<T> type) {
-		if (!type.getRawTypes().stream().allMatch(r -> r.isAssignableFrom(object.getClass())))
+		if (!type.getRawTypes().allMatch(r -> r.isAssignableFrom(object.getClass())))
 			throw new ReflectionException(p -> p.invalidCastObject(object, object.getClass(), type.getType()));
 
 		return new TypedObject<>(type, (T) object);
@@ -145,7 +147,7 @@ public class TypedObject<T> implements ReifiedToken<TypedObject<T>> {
 	 *         is returned.
 	 */
 	public <U> Optional<TypedObject<U>> tryAssign(TypeToken<U> type) {
-		if (!type.isAssignableFrom(this.type) || !type.isCastableFrom(object.getClass()))
+		if (!type.satisfiesConstraintFrom(LOOSE_COMPATIBILILTY, this.type) || !type.isCastableFrom(object.getClass()))
 			return Optional.empty();
 		else
 			return Optional.of(castUnsafe(object, type));

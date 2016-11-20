@@ -108,7 +108,7 @@ public class TypeVariableSignature extends AnnotatedSignature<TypeVariableSignat
 		return new TypeVariableSignature(of.getName()).withBounds(
 				stream(of.getBounds())
 						.map(TypeVariableSignature::substituteTypeVariableReferences)
-						.map(AnnotatedTypes::over)
+						.map(AnnotatedTypes::annotated)
 						.collect(toList()));
 	}
 
@@ -156,7 +156,7 @@ public class TypeVariableSignature extends AnnotatedSignature<TypeVariableSignat
 	}
 
 	public TypeVariableSignature withBounds(Type... bounds) {
-		return withBounds(stream(bounds).map(AnnotatedTypes::over).collect(toList()));
+		return withBounds(stream(bounds).map(AnnotatedTypes::annotated).collect(toList()));
 	}
 
 	public TypeVariableSignature withBounds(TypeToken<?>... bounds) {

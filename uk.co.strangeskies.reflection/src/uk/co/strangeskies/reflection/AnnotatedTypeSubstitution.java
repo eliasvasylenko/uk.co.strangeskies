@@ -228,7 +228,7 @@ public class AnnotatedTypeSubstitution {
 			return resolveWildcardType((AnnotatedWildcardType) type, isomorphism, changed);
 
 		} else if (type instanceof AnnotatedArrayType) {
-			return AnnotatedArrayTypes.fromComponent(
+			return AnnotatedArrayTypes.arrayFromComponent(
 					resolve(((AnnotatedArrayType) type).getAnnotatedGenericComponentType(), isomorphism, changed),
 					type.getAnnotations());
 
@@ -273,7 +273,7 @@ public class AnnotatedTypeSubstitution {
 			if (type.getAnnotatedLowerBounds().length > 0) {
 				List<AnnotatedType> bounds = resolveTypes(type.getAnnotatedLowerBounds(), isomorphism, changed);
 				if (changed.get()) {
-					return AnnotatedWildcardTypes.lowerBounded(Arrays.asList(type.getAnnotations()), bounds);
+					return AnnotatedWildcardTypes.wildcardSuper(Arrays.asList(type.getAnnotations()), bounds);
 				} else {
 					return type;
 				}
@@ -281,7 +281,7 @@ public class AnnotatedTypeSubstitution {
 			} else if (type.getAnnotatedUpperBounds().length > 0) {
 				List<AnnotatedType> bounds = resolveTypes(type.getAnnotatedUpperBounds(), isomorphism, changed);
 				if (changed.get()) {
-					return AnnotatedWildcardTypes.upperBounded(Arrays.asList(type.getAnnotations()), bounds);
+					return AnnotatedWildcardTypes.wildcardExtending(Arrays.asList(type.getAnnotations()), bounds);
 				} else {
 					return type;
 				}
@@ -301,7 +301,7 @@ public class AnnotatedTypeSubstitution {
 
 			if (changed.get()) {
 				return (AnnotatedParameterizedType) AnnotatedParameterizedTypes
-						.from(AnnotatedTypes.over(Types.getRawType(type.getType()), type.getAnnotations()), arguments);
+						.parameterize(AnnotatedTypes.annotated(Types.getRawType(type.getType()), type.getAnnotations()), arguments);
 			} else {
 				return type;
 			}

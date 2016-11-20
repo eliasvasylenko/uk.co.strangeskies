@@ -128,7 +128,7 @@ public class LocalizationSupplier extends ExtendedObjectSupplier {
 			return false;
 
 		List<Map.Entry<TypeVariable<?>, Type>> accessorParameters = TypeToken.overType(accessor)
-				.resolveSupertypeParameters(Properties.class).getAllTypeArguments().collect(Collectors.toList());
+				.resolveSupertype(Properties.class).getAllTypeArguments().collect(Collectors.toList());
 
 		if (accessorParameters.size() != 1)
 			return false;

@@ -32,21 +32,34 @@
  */
 package uk.co.strangeskies.reflection.test;
 
+import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
+import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterize;
+import static uk.co.strangeskies.reflection.TypeVariables.typeVariableExtending;
+import static uk.co.strangeskies.reflection.WildcardTypes.wildcardExtending;
+import static uk.co.strangeskies.reflection.WildcardTypes.wildcardSuper;
+
 import java.io.Serializable;
 import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.Test;
 
 import uk.co.strangeskies.reflection.TypeSubstitution;
-import uk.co.strangeskies.reflection.token.TypeToken;
 
 @SuppressWarnings("javadoc")
 public class TypeSubstitutionTest {
+	private Type createTestType(Class<?> clazz) {
+		return parameterize(
+				Map.class,
+				wildcardExtending(arrayFromComponent(arrayFromComponent(Number.class))),
+				parameterize(Map.class, wildcardSuper(clazz), typeVariableExtending(Collection.class, "E")));
+	}
+
 	@Test
 	public <T extends Number> void noSubstitutionIdentityTest() {
-		Type type = new TypeToken<Map<? extends Number[][], Map<? super Number, T>>>() {}.getType();
+		Type type = createTestType(Number.class);
 
 		Type substitution = new TypeSubstitution().where(t -> false, t -> t).resolve(type);
 
@@ -55,9 +68,9 @@ public class TypeSubstitutionTest {
 
 	@Test
 	public <T extends Number> void doublyNestedWildcardSubstitutionTest() {
-		Type type = new TypeToken<Map<? extends Comparable<?>[][], Map<? super Number, T>>>() {}.getType();
+		Type type = createTestType(Number.class);
 
-		Type expected = new TypeToken<Map<? extends Comparable<?>[][], Map<? super Serializable, T>>>() {}.getType();
+		Type expected = createTestType(Serializable.class);
 
 		Type substitution = new TypeSubstitution().where(Number.class, Serializable.class).resolve(type);
 

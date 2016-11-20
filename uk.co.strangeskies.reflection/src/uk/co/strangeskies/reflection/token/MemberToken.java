@@ -38,7 +38,6 @@ import java.util.Collection;
 
 import uk.co.strangeskies.reflection.BoundSet;
 import uk.co.strangeskies.reflection.InferenceVariable;
-import uk.co.strangeskies.reflection.TypeResolver;
 
 /**
  * A type safe wrapper around {@link Member} instances, with proper handling of
@@ -65,10 +64,9 @@ public interface MemberToken<O> {
 	Member getMember();
 
 	/**
-	 * @return a copy of the {@link TypeResolver} instance backing this
-	 *         {@link MemberToken}
+	 * @return the inference bounds involved in this {@link MemberToken}
 	 */
-	TypeResolver getResolver();
+	BoundSet getBounds();
 
 	/**
 	 * @return true if the wrapped member is final, false otherwise

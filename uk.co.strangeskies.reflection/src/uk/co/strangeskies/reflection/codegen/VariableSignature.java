@@ -1,6 +1,6 @@
 package uk.co.strangeskies.reflection.codegen;
 
-import static uk.co.strangeskies.reflection.AnnotatedTypes.over;
+import static uk.co.strangeskies.reflection.AnnotatedTypes.annotated;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
@@ -16,11 +16,11 @@ public class VariableSignature<T> extends AnnotatedSignature<VariableSignature<T
 	}
 
 	public static VariableSignature<?> variableSignature(String variableName, Type type) {
-		return new VariableSignature<>(variableName, over(type));
+		return new VariableSignature<>(variableName, annotated(type));
 	}
 
 	public static <U> VariableSignature<U> variableSignature(String variableName, Class<U> type) {
-		return new VariableSignature<>(variableName, over(type));
+		return new VariableSignature<>(variableName, annotated(type));
 	}
 
 	public static <U> VariableSignature<U> variableSignature(String variableName, TypeToken<U> type) {
@@ -28,7 +28,7 @@ public class VariableSignature<T> extends AnnotatedSignature<VariableSignature<T
 	}
 
 	public static <U> VariableSignature<U> variableSignature(ExecutableParameter parameter) {
-		return new VariableSignature<>(parameter.getName(), over(parameter.getType()));
+		return new VariableSignature<>(parameter.getName(), annotated(parameter.getType()));
 	}
 
 	private final String variableName;

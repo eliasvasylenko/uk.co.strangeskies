@@ -33,6 +33,15 @@
 package uk.co.strangeskies.reflection.token;
 
 import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Stream.empty;
+import static java.util.stream.Stream.of;
+import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
+import static uk.co.strangeskies.reflection.Methods.findMethod;
+import static uk.co.strangeskies.reflection.WildcardTypes.wildcardExtending;
+import static uk.co.strangeskies.reflection.WildcardTypes.wildcardSuper;
+import static uk.co.strangeskies.reflection.token.ExecutableToken.overMethod;
+import static uk.co.strangeskies.reflection.token.ExecutableTokenStream.executableStream;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
@@ -54,12 +63,10 @@ import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -68,14 +75,12 @@ import uk.co.strangeskies.reflection.AnnotatedParameterizedTypes;
 import uk.co.strangeskies.reflection.AnnotatedTypeSubstitution;
 import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.Annotations;
-import uk.co.strangeskies.reflection.ArrayTypes;
 import uk.co.strangeskies.reflection.BoundSet;
 import uk.co.strangeskies.reflection.ConstraintFormula;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.reflection.Imports;
 import uk.co.strangeskies.reflection.InferenceVariable;
 import uk.co.strangeskies.reflection.InferenceVariableBounds;
-import uk.co.strangeskies.reflection.Methods;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeResolver;
@@ -217,7 +222,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 		if (bounds == null)
 			resolvedType = incorporateAnnotatedType(declaration);
 		else
-			resolvedType = incorporateAnnotatedType(bounds, declaration);
+			resolvedType = incorporateAnnotatedType(new TypeResolver(bounds), declaration);
 
 		this.type = resolvedType.getRight();
 		this.bounds = resolvedType.getLeft();
@@ -236,7 +241,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	}
 
 	private TypeToken(BoundSet bounds, Type type, Wildcards wildcards) {
-		this(bounds, AnnotatedTypes.over(type, wildcards.getAnnotation()));
+		this(bounds, AnnotatedTypes.annotated(type, wildcards.getAnnotation()));
 	}
 
 	/*
@@ -254,7 +259,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * understanding of the potential consequences.
 	 */
 	private TypeToken(BoundSet bounds, Type type) {
-		declaration = AnnotatedTypes.over(type);
+		declaration = AnnotatedTypes.annotated(type);
 
 		this.bounds = bounds;
 		this.type = type;
@@ -293,7 +298,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 
 						Annotation givenAnnotation = getWildcardsAnnotation(parameter.getValue());
 						if (givenAnnotation == null) {
-							parameter.setValue(AnnotatedTypes.over(parameter.getValue().getType(), defaultAnnotation));
+							parameter.setValue(AnnotatedTypes.annotated(parameter.getValue().getType(), defaultAnnotation));
 						}
 					}
 				}
@@ -319,20 +324,17 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 		return annotation;
 	}
 
-	private static Pair<BoundSet, Type> incorporateAnnotatedType(BoundSet bounds, AnnotatedType annotatedType) {
-		if (bounds == null)
-			bounds = new BoundSet();
+	private static Pair<BoundSet, Type> incorporateAnnotatedType(TypeResolver resolver, AnnotatedType annotatedType) {
+		if (resolver == null)
+			resolver = new TypeResolver();
 
 		Type type = substituteAnnotatedWildcards(new Isomorphism(), annotatedType, resolver);
 
-		type = resolver.captureType(type);
-		type = resolver.resubstituteCapturedWildcards(type);
-
-		return new Pair<>(resolver, type);
+		return new Pair<>(resolver.getBounds(), type);
 	}
 
 	private static Pair<BoundSet, Type> incorporateAnnotatedType(AnnotatedType annotatedType) {
-		Pair<BoundSet, Type> resolvedType = incorporateAnnotatedType(new BoundSet(), annotatedType); // RESOLVER_CACHE.putGet(annotatedType);
+		Pair<BoundSet, Type> resolvedType = incorporateAnnotatedType(null, annotatedType); // RESOLVER_CACHE.putGet(annotatedType);
 
 		/*-
 		Isomorphism isomorphism = new Isomorphism();
@@ -366,7 +368,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 					(AnnotatedWildcardType) annotatedType,
 					resolver);
 		} else if (annotatedType instanceof AnnotatedArrayType) {
-			return ArrayTypes.fromComponentType(
+			return arrayFromComponent(
 					substituteAnnotatedWildcards(
 							isomorphism,
 							((AnnotatedArrayType) annotatedType).getAnnotatedGenericComponentType(),
@@ -415,7 +417,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 				} else if (behavior == Wildcards.INFER) {
 					TypeResolver inferenceResolver = new TypeResolver(resolver.getBounds());
 					parameterizedType = inferenceResolver.inferOverTypeArguments(parameterizedType);
-					resolver.getBounds().withIncorporated(inferenceResolver.getBounds());
+					resolver.incorporateBounds(inferenceResolver.getBounds());
 				}
 			}
 			return parameterizedType;
@@ -439,7 +441,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 					substituteAnnotatedWildcardsForEach(isomorphism, annotatedWildcardType.getAnnotatedUpperBounds(), resolver));
 
 		} else {
-			wildcardType = WildcardTypes.unboundedWildcard();
+			wildcardType = WildcardTypes.wildcard();
 		}
 
 		Type type;
@@ -453,7 +455,6 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 				break;
 			case CAPTURE:
 				type = TypeVariableCapture.captureWildcard(wildcardType);
-				resolver.incorporateWildcardCaptures((TypeVariableCapture) type);
 				break;
 			default:
 				throw new AssertionError();
@@ -479,10 +480,10 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * Create a TypeToken for a raw class.
 	 * 
 	 * @param <T>
-	 *          The type of the new {@link TypeToken}.
+	 *          the type of the new {@link TypeToken}
 	 * @param type
-	 *          The class to create a TypeToken for.
-	 * @return A TypeToken over the requested class.
+	 *          the class to create a TypeToken for
+	 * @return a TypeToken over the requested class
 	 */
 	public static <T> TypeToken<T> overType(Class<T> type) {
 		return new TypeToken<>(type);
@@ -493,8 +494,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * possible.
 	 * 
 	 * @param type
-	 *          The requested type.
-	 * @return A TypeToken over the requested type.
+	 *          the requested type
+	 * @return a TypeToken over the requested type
 	 */
 	public static TypeToken<?> overType(Type type) {
 		return new TypeToken<>(type);
@@ -504,16 +505,16 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * Create a TypeToken for an arbitrary type, preserving wildcards where
 	 * possible.
 	 * 
-	 * @param resolver
-	 *          The resolution context for the type.
+	 * @param bounds
+	 *          the set of bounds on any inference variables mentioned in the type
 	 * @param type
-	 *          The requested type.
+	 *          the requested type
 	 * @param wildcards
-	 *          How to deal with wildcard parameters on the given type.
-	 * @return A TypeToken over the requested type.
+	 *          how to deal with wildcard parameters on the given type
+	 * @return a TypeToken over the requested type
 	 */
-	public static TypeToken<?> overType(TypeResolver resolver, Type type, Wildcards wildcards) {
-		return new TypeToken<>(resolver.copy(), type, wildcards);
+	public static TypeToken<?> overType(BoundSet bounds, Type type, Wildcards wildcards) {
+		return new TypeToken<>(bounds, type, wildcards);
 	}
 
 	/**
@@ -521,8 +522,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * possible.
 	 * 
 	 * @param type
-	 *          The requested type.
-	 * @return A TypeToken over the requested type.
+	 *          the requested type
+	 * @return a TypeToken over the requested type
 	 */
 	public static TypeToken<?> overAnnotatedType(AnnotatedType type) {
 		return new TypeToken<>(type);
@@ -532,10 +533,10 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * Create a TypeToken for an arbitrary type.
 	 * 
 	 * @param type
-	 *          The requested type.
+	 *          the requested type
 	 * @param wildcards
-	 *          How to deal with wildcard parameters on the given type.
-	 * @return A TypeToken over the requested type.
+	 *          how to deal with wildcard parameters on the given type
+	 * @return a TypeToken over the requested type
 	 */
 	public static TypeToken<?> overType(Type type, Wildcards wildcards) {
 		return new TypeToken<>(type, wildcards);
@@ -551,23 +552,6 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	@SuppressWarnings("unchecked")
 	public static <T> TypeToken<T> overNull() {
 		return (TypeToken<T>) NULL_TYPE_TOKEN;
-	}
-
-	/**
-	 * Create a TypeToken view over a raw type with respect to its
-	 * parameterizations within a given resolver.
-	 * 
-	 * @param resolver
-	 *          The resolution context for the type.
-	 * @param rawType
-	 *          The requested type.
-	 * @param <T>
-	 *          The requested type.
-	 * @return A TypeToken over the requested type.
-	 */
-	public static <T> TypeToken<? extends T> overType(TypeResolver resolver, Class<T> rawType) {
-		resolver.inferOverTypeParameters(rawType);
-		return new TypeToken<>(resolver.copy(), resolver.resolveTypeParameters(rawType));
 	}
 
 	@Override
@@ -597,10 +581,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 
 	@Override
 	public TypeToken<T> deepCopy(Isomorphism isomorphism) {
-		TypeResolver resolver = getInternalResolver().deepCopy(isomorphism);
-
 		return new TypeToken<>(
-				resolver,
+				bounds.deepCopy(isomorphism),
 				declaration,
 				new TypeSubstitution().withIsomorphism(isomorphism).resolve(getType()));
 	}
@@ -615,11 +597,11 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * affect the resolution of inference variables mentioned by this type.
 	 * 
 	 * @param bounds
-	 *          The new bounds to incorporate.
-	 * @return The newly derived {@link TypeToken}.
+	 *          the new bounds to incorporate
+	 * @return the newly derived {@link TypeToken}
 	 */
 	public TypeToken<T> withBounds(BoundSet bounds) {
-		return new TypeToken<>(getResolverWithBounds(bounds), getType());
+		return new TypeToken<>(this.bounds.withIncorporated(bounds), getType());
 	}
 
 	/**
@@ -633,67 +615,13 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * affect the resolution of inference variables mentioned by this type.
 	 * 
 	 * @param bounds
-	 *          The new bounds to incorporate.
+	 *          the new bounds to incorporate
 	 * @param inferenceVariables
-	 *          The inference variables whose bounds are to be incorporated.
-	 * @return The newly derived {@link TypeToken}.
+	 *          the inference variables whose bounds are to be incorporated
+	 * @return the newly derived {@link TypeToken}
 	 */
 	public TypeToken<T> withBounds(BoundSet bounds, Collection<? extends InferenceVariable> inferenceVariables) {
-		return new TypeToken<>(getResolverWithBounds(bounds, inferenceVariables), getType());
-	}
-
-	/**
-	 * Derive a new {@link TypeToken} instance, with the bounds and wildcard
-	 * captures of the given resolver incorporated into the bounds of the
-	 * underlying resolver. The original {@link TypeToken} will remain unmodified.
-	 * 
-	 * <p>
-	 * All bounds are incorporated if and only if they have the potential to
-	 * affect the resolution of inference variables mentioned by this type.
-	 * 
-	 * @param bounds
-	 *          The new bounds to incorporate.
-	 * @return The newly derived {@link TypeToken}.
-	 */
-	public TypeToken<T> withBoundsFrom(TypeResolver bounds) {
-		return new TypeToken<>(getResolverWithBoundsFrom(bounds), getType());
-	}
-
-	/**
-	 * Derive a new {@link TypeToken} instance, with the bounds and wildcard
-	 * captures on the given inference variables, with respect to the given
-	 * resolver, incorporated into the bounds of the underlying resolver. The
-	 * original {@link TypeToken} will remain unmodified.
-	 * 
-	 * <p>
-	 * All bounds are incorporated if and only if they have the potential to
-	 * affect the resolution of inference variables mentioned by this type.
-	 * 
-	 * @param bounds
-	 *          The new bounds to incorporate.
-	 * @param inferenceVariables
-	 *          The inference variables whose bounds are to be incorporated.
-	 * @return The newly derived {@link TypeToken}.
-	 */
-	public TypeToken<T> withBoundsFrom(TypeResolver bounds, Collection<? extends InferenceVariable> inferenceVariables) {
-		return new TypeToken<>(getResolverWithBoundsFrom(bounds, inferenceVariables), getType());
-	}
-
-	/**
-	 * Derive a new {@link TypeToken} instance, with the bounds on the given type
-	 * incorporated into the bounds of the underlying resolver. The original
-	 * {@link TypeToken} will remain unmodified.
-	 * 
-	 * <p>
-	 * All bounds are incorporated if and only if they have the potential to
-	 * affect the resolution of inference variables mentioned by this type.
-	 * 
-	 * @param type
-	 *          The type whose bounds are to be incorporated.
-	 * @return The newly derived {@link TypeToken}.
-	 */
-	public TypeToken<T> withBoundsFrom(TypeToken<?> type) {
-		return new TypeToken<>(getResolverWithBoundsFrom(type), getType());
+		return new TypeToken<>(this.bounds.withIncorporated(bounds, inferenceVariables), getType());
 	}
 
 	/**
@@ -701,8 +629,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * result of {@link Types#fromString(String)}.
 	 * 
 	 * @param typeString
-	 *          The String to parse.
-	 * @return A TypeToken representing the type described by the String.
+	 *          the String to parse
+	 * @return a TypeToken representing the type described by the String
 	 */
 	public static TypeToken<?> fromString(String typeString) {
 		return overAnnotatedType(AnnotatedTypes.fromString(typeString));
@@ -714,11 +642,11 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * given imports.
 	 * 
 	 * @param typeString
-	 *          The String to parse.
+	 *          the String to parse
 	 * @param imports
-	 *          Classes and packages for which full package qualification may be
-	 *          omitted from input.
-	 * @return A TypeToken representing the type described by the string.
+	 *          classes and packages for which full package qualification may be
+	 *          omitted from input
+	 * @return a TypeToken representing the type described by the string
 	 */
 	public static TypeToken<?> fromString(String typeString, Imports imports) {
 		return overAnnotatedType(AnnotatedTypes.fromString(typeString, imports));
@@ -730,16 +658,12 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * {@link #getAnnotatedDeclaration()}, with the given imports.
 	 * 
 	 * @param imports
-	 *          Classes and packages for which full package qualification may be
-	 *          omitted from output.
-	 * @return A string representing the type described by this type token.
+	 *          classes and packages for which full package qualification may be
+	 *          omitted from output
+	 * @return a string representing the type described by this type token
 	 */
 	public String toString(Imports imports) {
 		return AnnotatedTypes.toString(declaration, imports);
-	}
-
-	protected void validate() {
-		getInternalResolver();
 	}
 
 	/**
@@ -749,7 +673,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * For example, invoking this method on a {@code TypeToken<List<?>>} will give
 	 * a {@code TypeToken<? extends List<?>>}.
 	 * 
-	 * @return The TypeToken representing a capture of the wildcard described.
+	 * @return the TypeToken representing a capture of the wildcard described
 	 */
 	public TypeToken<? extends T> getWildcardExtending() {
 		return getExtending(Wildcards.RETAIN);
@@ -768,18 +692,18 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * a {@code TypeToken<? extends List<?>>}.
 	 * 
 	 * @param wildcards
-	 *          How to deal with the wildcard parameter on the new type.
-	 * @return The TypeToken representing a capture of the wildcard described.
+	 *          how to deal with the wildcard parameter on the new type
+	 * @return the TypeToken representing a capture of the wildcard described
 	 */
 	@SuppressWarnings("unchecked")
 	public TypeToken<? extends T> getExtending(Wildcards wildcards) {
 		if (wildcards == Wildcards.INFER) {
-			TypeResolver resolver = getResolver();
-			return (TypeToken<? extends T>) new TypeToken<>(
-					resolver,
-					resolver.inferOverWildcardType(WildcardTypes.wildcardExtending(getType())));
+			TypeResolver resolver = new TypeResolver(this.bounds);
+			InferenceVariable inferenceVariable = resolver.inferOverWildcardType(wildcardExtending(getType()));
+
+			return new TypeToken<>(resolver.getBounds(), inferenceVariable);
 		} else {
-			return (TypeToken<? extends T>) overType(WildcardTypes.wildcardExtending(getType()), wildcards);
+			return (TypeToken<? extends T>) overType(wildcardExtending(getType()), wildcards);
 		}
 	}
 
@@ -790,7 +714,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * For example, invoking this method on a {@code TypeToken<List<?>>} will give
 	 * a {@code TypeToken<? super List<?>>}.
 	 * 
-	 * @return The TypeToken representing a capture of the wildcard described.
+	 * @return the TypeToken representing a capture of the wildcard described
 	 */
 	public TypeToken<? super T> getWildcardSuper() {
 		return getSuper(Wildcards.RETAIN);
@@ -809,14 +733,15 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * a {@code TypeToken<? super List<?>>}.
 	 * 
 	 * @param wildcards
-	 *          How to deal with the wildcard parameter on the new type.
-	 * @return The TypeToken representing a capture of the wildcard described.
+	 *          how to deal with the wildcard parameter on the new type
+	 * @return the TypeToken representing a capture of the wildcard described
 	 */
 	@SuppressWarnings("unchecked")
 	public TypeToken<? super T> getSuper(Wildcards wildcards) {
 		if (wildcards == Wildcards.INFER) {
-			TypeResolver resolver = getResolver();
-			return new TypeToken<>(resolver, resolver.inferOverWildcardType(WildcardTypes.wildcardSuper(getType())));
+			TypeResolver resolver = new TypeResolver(this.bounds);
+			InferenceVariable inferenceVariable = resolver.inferOverWildcardType(wildcardSuper(getType()));
+			return new TypeToken<>(resolver.getBounds(), inferenceVariable);
 		} else {
 			return (TypeToken<? super T>) overType(WildcardTypes.wildcardSuper(getType()), wildcards);
 		}
@@ -825,29 +750,26 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	/**
 	 * See {@link Types#getRawType(Type)}.
 	 * 
-	 * @return The raw type of the type represented by this TypeToken.
+	 * @return the raw type of the type represented by this TypeToken
 	 */
 	@SuppressWarnings("unchecked")
 	public Class<? super T> getRawType() {
-		return (Class<? super T>) getInternalResolver().getRawType(getType());
+		return (Class<? super T>) getRawTypes().findFirst().orElse(Object.class);
 	}
-
 
 	/**
 	 * Find the upper bounds of a given type. Unlike
 	 * {@link Types#getUpperBounds(Type)} this respects bounds on the inference
 	 * variables in this resolver.
 	 * 
-	 * @param type
-	 *          The type whose bounds we wish to discover.
-	 * @return The upper bounds of the given type.
+	 * @return the upper bounds of the type represented by this TypeToken
 	 */
-	public Set<Type> getProperUpperBounds(Type type) {
-		type = resolveType(type);
+	public Stream<Type> getUpperBounds() {
+		List<Type> upperBounds = Types.getUpperBounds(getType()).collect(Collectors.toList());
 
-		Set<Type> upperBounds = Types.getUpperBounds(type);
+		for (int i = 0; i < upperBounds.size(); i++) {
+			Type upperBound = upperBounds.get(i);
 
-		for (Type upperBound : new HashSet<>(upperBounds))
 			if (getBounds().containsInferenceVariable(upperBound)) {
 				upperBounds.remove(upperBound);
 
@@ -857,11 +779,12 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 						.filter(t -> !getBounds().containsInferenceVariable(t))
 						.forEach(upperBounds::add);
 			}
+		}
 
 		if (upperBounds.isEmpty())
 			upperBounds.add(Object.class);
 
-		return upperBounds;
+		return upperBounds.stream();
 	}
 
 	/**
@@ -869,27 +792,10 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * which may have instantiations or upper bounds within the context of this
 	 * resolver.
 	 * 
-	 * @param type
-	 *          The type of which we wish to determine the raw type.
-	 * @return The raw type of the given type.
+	 * @return the raw types of the type represented by this TypeToken
 	 */
-	public Set<Class<?>> getRawTypes(Type type) {
-		type = resolveType(type);
-
-		return getProperUpperBounds(type)
-				.stream()
-				.map(Types::getRawType)
-				.collect(Collectors.toCollection(LinkedHashSet::new));
-	}
-	
-	/**
-	 * See {@link Types#getRawTypes(Type)}.
-	 * 
-	 * @return The raw types of the type represented by this TypeToken.
-	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public Set<Class<? super T>> getRawTypes() {
-		return (Set) getInternalResolver().getRawTypes(getType());
+	public Stream<Class<?>> getRawTypes() {
+		return getUpperBounds().map(Types::getRawType);
 	}
 
 	/**
@@ -898,44 +804,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * @return A new Resolver object containing whichever bounds have been
 	 *         internally derived from the type of this TypeToken.
 	 */
-	public TypeResolver getResolver() {
-		return getInternalResolver().copy();
-	}
-
-	private TypeResolver getInternalResolver() {
-		return resolver;
-	}
-
-	private TypeResolver getResolverWithBounds(BoundSet bounds) {
-		TypeResolver resolver = getResolver();
-		resolver.getBounds().withIncorporated(bounds);
-		return resolver;
-	}
-
-	private TypeResolver getResolverWithBounds(
-			BoundSet bounds,
-			Collection<? extends InferenceVariable> inferenceVariables) {
-		TypeResolver resolver = getResolver();
-		resolver.getBounds().withIncorporated(bounds, inferenceVariables);
-		return resolver;
-	}
-
-	private TypeResolver getResolverWithBoundsFrom(TypeResolver bounds) {
-		TypeResolver resolver = getResolverWithBounds(bounds.getBounds());
-		resolver.incorporateWildcardCaptures(bounds.getWildcardCaptures());
-		return resolver;
-	}
-
-	private TypeResolver getResolverWithBoundsFrom(
-			TypeResolver bounds,
-			Collection<? extends InferenceVariable> inferenceVariables) {
-		TypeResolver resolver = getResolverWithBounds(bounds.getBounds(), inferenceVariables);
-		resolver.incorporateWildcardCaptures(bounds.getWildcardCaptures());
-		return resolver;
-	}
-
-	private TypeResolver getResolverWithBoundsFrom(TypeToken<?> type) {
-		return getResolverWithBoundsFrom(type.getInternalResolver(), type.getRelatedInferenceVariables());
+	public BoundSet getBounds() {
+		return bounds;
 	}
 
 	@Override
@@ -949,7 +819,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * @return The actual Type object described.
 	 */
 	public Type getType() {
-		return getResolver().resolveType(type);
+		return type;
 	}
 
 	/**
@@ -1001,19 +871,99 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	}
 
 	/**
-	 * Determine whether the type described by this {@link TypeToken} can be
-	 * assigned to the type described by the given {@link TypeToken}. If either of
-	 * the types mention unresolved inference variables, any bounds implied
-	 * between the two bound sets will be considered.
+	 * Derive a new type from this one, with a constraint between this type and a
+	 * given type. The invocation will fail if the constraint cannot be satisfied.
+	 * For types which mention inference variables, this constraint may have an
+	 * effect on the bounds of those inference variables within the resulting
+	 * type.
 	 * 
 	 * @param type
-	 *          The type to which we wish to determine assignability.
-	 * @return True if the assignment is possible, false otherwise.
+	 *          the type to constrain against
+	 * @param kind
+	 *          the kind of the constraint formula
+	 * @return a new type token which satisfies the constraint
 	 */
-	public boolean isAssignableTo(TypeToken<?> type) {
+	public TypeToken<T> withConstraintTo(Kind kind, Type type) {
+		BoundSet bounds = new ConstraintFormula(kind, getType(), type).reduce(getBounds());
+
+		return new TypeToken<>(bounds, resolveType());
+	}
+
+	/**
+	 * Derive a new type from this one, with a constraint between this type and a
+	 * given type. The invocation will fail if the constraint cannot be satisfied.
+	 * For types which mention inference variables, this constraint may have an
+	 * effect on the bounds of those inference variables within the resulting
+	 * type.
+	 * 
+	 * @param type
+	 *          the type to constrain against
+	 * @param kind
+	 *          the kind of the constraint formula
+	 * @return a new type token which satisfies the constraint
+	 */
+	public TypeToken<T> withConstraintTo(Kind kind, TypeToken<?> type) {
+		BoundSet bounds = type.incorporateInto(getBounds());
+		bounds = new ConstraintFormula(kind, getType(), type.getType()).reduce(bounds);
+
+		return new TypeToken<>(bounds, resolveType());
+	}
+
+	/**
+	 * Derive a new type from this one, with a constraint between this type and a
+	 * given type. The invocation will fail if the constraint cannot be satisfied.
+	 * For types which mention inference variables, this constraint may have an
+	 * effect on the bounds of those inference variables within the resulting
+	 * type.
+	 * 
+	 * @param type
+	 *          the type to constrain against
+	 * @param kind
+	 *          the kind of the constraint formula
+	 * @return a new type token which satisfies the constraint
+	 */
+	public TypeToken<T> withConstraintFrom(Kind kind, Type type) {
+		BoundSet bounds = new ConstraintFormula(kind, type, getType()).reduce(getBounds());
+
+		return new TypeToken<>(bounds, resolveType());
+	}
+
+	/**
+	 * Derive a new type from this one, with a constraint between this type and a
+	 * given type. The invocation will fail if the constraint cannot be satisfied.
+	 * For types which mention inference variables, this constraint may have an
+	 * effect on the bounds of those inference variables within the resulting
+	 * type.
+	 * 
+	 * @param type
+	 *          the type to constrain against
+	 * @param kind
+	 *          the kind of the constraint formula
+	 * @return a new type token which satisfies the constraint
+	 */
+	public TypeToken<T> withConstraintFrom(Kind kind, TypeToken<?> type) {
+		BoundSet bounds = type.incorporateInto(getBounds());
+		bounds = new ConstraintFormula(kind, type.getType(), getType()).reduce(bounds);
+
+		return new TypeToken<>(bounds, resolveType());
+	}
+
+	/**
+	 * Derive a new type from this one, with a constraint between this type and a
+	 * given type. The invocation will fail if the constraint cannot be satisfied.
+	 * For types which mention inference variables, this constraint may have an
+	 * effect on the bounds of those inference variables within the resulting
+	 * type.
+	 * 
+	 * @param type
+	 *          the type to constrain against
+	 * @param kind
+	 *          the kind of the constraint formula
+	 * @return a new type token which satisfies the constraint
+	 */
+	public boolean satisfiesConstraintTo(Kind kind, Type type) {
 		try {
-			TypeResolver resolver = getResolverWithBoundsFrom(type);
-			ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, getType(), type.getType(), resolver.getBounds());
+			withConstraintTo(kind, type);
 			return true;
 		} catch (Exception e) {
 			return false;
@@ -1021,57 +971,21 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	}
 
 	/**
-	 * Determine if the given type is assignable to this TypeToken, or in other
-	 * words, if it is a subtype of this TypeToken.
+	 * Derive a new type from this one, with a constraint between this type and a
+	 * given type. The invocation will fail if the constraint cannot be satisfied.
+	 * For types which mention inference variables, this constraint may have an
+	 * effect on the bounds of those inference variables within the resulting
+	 * type.
 	 * 
 	 * @param type
-	 *          The type to which we wish to determine assignability.
-	 * @return True if this TypeToken is assignable to the given type, false
-	 *         otherwise.
+	 *          the type to constrain against
+	 * @param kind
+	 *          the kind of the constraint formula
+	 * @return a new type token which satisfies the constraint
 	 */
-	public boolean isAssignableTo(Type type) {
-		return isAssignableTo(overType(type));
-	}
-
-	/**
-	 * See {@link TypeToken#isAssignableFrom(TypeToken)}.
-	 * 
-	 * @param type
-	 *          Forwards to {@code type}.
-	 * @return As referenced method.
-	 */
-	public boolean isAssignableFrom(TypeToken<?> type) {
-		return type.isAssignableTo(this);
-	}
-
-	/**
-	 * Determine if the given type is assignable from this TypeToken, see
-	 * {@link Types#isAssignable(Type, Type)}.
-	 * 
-	 * @param type
-	 *          The type from which we wish to determine assignability, as
-	 *          {@code from} in {@link Types#isAssignable(Type, Type)}.
-	 * @return True if this TypeToken is assignable from the given type, false
-	 *         otherwise.
-	 */
-	public boolean isAssignableFrom(Type type) {
-		return isAssignableFrom(overType(type));
-	}
-
-	/**
-	 * Determine if the given type contains the type described by this TypeToken,
-	 * see {@link Types#isContainedBy(Type, Type)}.
-	 * 
-	 * @param type
-	 *          The type within which we are determining containment, as
-	 *          {@code from} in {@link Types#isContainedBy(Type, Type)}.
-	 * @return True if the type passed as an argument <em>contains</em> this
-	 *         TypeToken, false otherwise.
-	 */
-	public boolean isContainedBy(TypeToken<?> type) {
+	public boolean satisfiesConstraintTo(Kind kind, TypeToken<?> type) {
 		try {
-			TypeResolver resolver = getResolverWithBoundsFrom(type);
-			ConstraintFormula.reduce(Kind.CONTAINMENT, getType(), type.getType(), resolver.getBounds());
+			withConstraintTo(kind, type);
 			return true;
 		} catch (Exception e) {
 			return false;
@@ -1079,240 +993,47 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	}
 
 	/**
-	 * Determine if the given type contains the type described by this TypeToken.
-	 * 
-	 * In other words, if either this type or the given type are wildcards,
-	 * determine if every possible instantiation of this TypeToken is also a valid
-	 * instantiation of the given type. Or, if neither type is a wildcard,
-	 * determine whether both types are assignable to each other.
-	 * 
-	 * @param type
-	 *          The type within which we are determining containment.
-	 * @return True if the type passed as an argument <em>contains</em> this
-	 *         TypeToken, false otherwise.
-	 */
-	public boolean isContainedBy(Type type) {
-		return isContainedBy(overType(type));
-	}
-
-	/**
-	 * Determine if the given type is contained by the type described by this
-	 * TypeToken.
-	 * 
-	 * In other words, if either this type or the given type are wildcards,
-	 * determine if every possible instantiation of the given type is also a valid
-	 * instantiation of this TypeToken. Or, if neither type is a wildcard,
-	 * determine whether both types are assignable to each other.
-	 * 
-	 * @param type
-	 *          The type which we are determining the containment of.
-	 * @return True if the type passed as an argument <em>is contained by</em>
-	 *         this TypeToken, false otherwise.
-	 */
-	public boolean isContainingOf(TypeToken<?> type) {
-		return type.isContainedBy(this);
-	}
-
-	/**
-	 * Determine if the given type is contained by the type described by this
-	 * TypeToken.
-	 * 
-	 * In other words, if either this type or the given type are wildcards,
-	 * determine if every possible instantiation of the given type is also a valid
-	 * instantiation of this TypeToken. Or, if neither type is a wildcard,
-	 * determine whether both types are assignable to each other.
-	 * 
-	 * @param type
-	 *          The type which we are determining the containment of.
-	 * @return True if the type passed as an argument <em>is contained by</em>
-	 *         this TypeToken, false otherwise.
-	 */
-	public boolean isContainingOf(Type type) {
-		return isContainingOf(overType(type));
-	}
-
-	/**
-	 * 
-	 * Derive a new type from this one, with an equality between this type and a
-	 * given type. The invocation will fail if the equality cannot be satisfied.
-	 * For types which mention inference variables, this equality may have an
+	 * Derive a new type from this one, with a constraint between this type and a
+	 * given type. The invocation will fail if the constraint cannot be satisfied.
+	 * For types which mention inference variables, this constraint may have an
 	 * effect on the bounds of those inference variables within the resulting
 	 * type.
 	 * 
 	 * @param type
-	 *          The lower bound.
-	 * @return A new type token which satisfies the bounding.
+	 *          the type to constrain against
+	 * @param kind
+	 *          the kind of the constraint formula
+	 * @return a new type token which satisfies the constraint
 	 */
-	public TypeToken<T> withEquality(Type type) {
-		TypeResolver resolver = getResolver();
-		ConstraintFormula.reduce(Kind.EQUALITY, type, getType(), resolver.getBounds());
-
-		return new TypeToken<>(resolver, getType());
+	public boolean satisfiesConstraintFrom(Kind kind, Type type) {
+		try {
+			withConstraintFrom(kind, type);
+			return true;
+		} catch (Exception e) {
+			return false;
+		}
 	}
 
 	/**
-	 * 
-	 * Derive a new type from this one, with an equality between this type and a
-	 * given type. The invocation will fail if the equality cannot be satisfied.
-	 * For types which mention inference variables, this equality may have an
+	 * Derive a new type from this one, with a constraint between this type and a
+	 * given type. The invocation will fail if the constraint cannot be satisfied.
+	 * For types which mention inference variables, this constraint may have an
 	 * effect on the bounds of those inference variables within the resulting
 	 * type.
 	 * 
 	 * @param type
-	 *          The lower bound.
-	 * @return A new type token which satisfies the bounding.
+	 *          the type to constrain against
+	 * @param kind
+	 *          the kind of the constraint formula
+	 * @return a new type token which satisfies the constraint
 	 */
-	public TypeToken<T> withEquality(TypeToken<?> type) {
-		TypeResolver resolver = getResolverWithBoundsFrom(type);
-		ConstraintFormula.reduce(Kind.EQUALITY, type.getType(), getType(), resolver.getBounds());
-
-		return new TypeToken<>(resolver, resolveType());
-	}
-
-	/**
-	 * 
-	 * Derive a new type from this one, with a lower bounding on this type by a
-	 * given type. The invocation will fail if the lower bound cannot be
-	 * satisfied. For types which mention inference variables, this lower bounding
-	 * may have an effect on the bounds of those inference variables within the
-	 * resulting type.
-	 * 
-	 * @param type
-	 *          The lower bound.
-	 * @return A new type token which satisfies the bounding.
-	 */
-	public TypeToken<T> withLowerBound(Type type) {
-		TypeResolver resolver = getResolver();
-		ConstraintFormula.reduce(Kind.SUBTYPE, type, getType(), resolver.getBounds());
-
-		return new TypeToken<>(resolver, getType());
-	}
-
-	/**
-	 * 
-	 * Derive a new type from this one, with a lower bounding on this type by a
-	 * given type. The invocation will fail if the lower bound cannot be
-	 * satisfied. For types which mention inference variables, this lower bounding
-	 * may have an effect on the bounds of those inference variables within the
-	 * resulting type.
-	 * 
-	 * @param type
-	 *          The lower bound.
-	 * @return A new type token which satisfies the bounding.
-	 */
-	public TypeToken<T> withLowerBound(TypeToken<?> type) {
-		TypeResolver resolver = getResolverWithBoundsFrom(type);
-		ConstraintFormula.reduce(Kind.SUBTYPE, type.getType(), getType(), resolver.getBounds());
-
-		return new TypeToken<>(resolver, resolveType());
-	}
-
-	/**
-	 * Derive a new type from this one, with an upper bounding on this type by a
-	 * given type. The invocation will fail if the lower bound cannot be
-	 * satisfied. For types which mention inference variables, this lower bounding
-	 * may have an effect on the bounds of those inference variables within the
-	 * resulting type.
-	 * 
-	 * @param type
-	 *          The upper bound.
-	 * @return A new type token which satisfies the bounding.
-	 */
-	public TypeToken<T> withUpperBound(Type type) {
-		TypeResolver resolver = getResolver();
-		ConstraintFormula.reduce(Kind.SUBTYPE, getType(), type, resolver.getBounds());
-
-		return new TypeToken<>(resolver, getType());
-	}
-
-	/**
-	 * Derive a new type from this one, with an upper bounding on this type by a
-	 * given type. The invocation will fail if the lower bound cannot be
-	 * satisfied. For types which mention inference variables, this lower bounding
-	 * may have an effect on the bounds of those inference variables within the
-	 * resulting type.
-	 * 
-	 * @param type
-	 *          The upper bound.
-	 * @return A new type token which satisfies the bounding.
-	 */
-	public TypeToken<T> withUpperBound(TypeToken<?> type) {
-		TypeResolver resolver = getResolverWithBoundsFrom(type);
-		ConstraintFormula.reduce(Kind.SUBTYPE, getType(), type.getType(), resolver.getBounds());
-
-		return new TypeToken<>(resolver, resolveType());
-	}
-
-	/**
-	 * Derive a new type from this one, with a loose compatibility from this type
-	 * to a given type. The invocation will fail if the loose compatibility cannot
-	 * be satisfied. For types which mention inference variables, this loose
-	 * compatibility may have an effect on the bounds of those inference variables
-	 * within the resulting type.
-	 * 
-	 * @param type
-	 *          The upper bound.
-	 * @return A new type token which satisfies the bounding.
-	 */
-	public TypeToken<T> withLooseCompatibilityTo(Type type) {
-		TypeResolver resolver = getResolver();
-		ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, getType(), type, resolver.getBounds());
-
-		return new TypeToken<>(resolver, getType());
-	}
-
-	/**
-	 * Derive a new type from this one, with a loose compatibility from this type
-	 * to a given type. The invocation will fail if the loose compatibility cannot
-	 * be satisfied. For types which mention inference variables, this loose
-	 * compatibility may have an effect on the bounds of those inference variables
-	 * within the resulting type.
-	 * 
-	 * @param type
-	 *          The upper bound.
-	 * @return A new type token which satisfies the bounding.
-	 */
-	public TypeToken<T> withLooseCompatibilityTo(TypeToken<?> type) {
-		TypeResolver resolver = getResolverWithBoundsFrom(type);
-		ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, getType(), type.getType(), resolver.getBounds());
-
-		return new TypeToken<>(resolver, resolveType());
-	}
-
-	/**
-	 * Derive a new type from this one, with a loose compatibility to this type
-	 * from a given type. The invocation will fail if the loose compatibility
-	 * cannot be satisfied. For types which mention inference variables, this
-	 * loose compatibility may have an effect on the bounds of those inference
-	 * variables within the resulting type.
-	 * 
-	 * @param type
-	 *          The upper bound.
-	 * @return A new type token which satisfies the bounding.
-	 */
-	public TypeToken<T> withLooseCompatibilityFrom(Type type) {
-		TypeResolver resolver = getResolver();
-		ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, type, getType(), resolver.getBounds());
-
-		return new TypeToken<>(resolver, getType());
-	}
-
-	/**
-	 * Derive a new type from this one, with a loose compatibility to this type
-	 * from a given type. The invocation will fail if the loose compatibility
-	 * cannot be satisfied. For types which mention inference variables, this
-	 * loose compatibility may have an effect on the bounds of those inference
-	 * variables within the resulting type.
-	 * 
-	 * @param type
-	 *          The upper bound.
-	 * @return A new type token which satisfies the bounding.
-	 */
-	public TypeToken<T> withLooseCompatibilityFrom(TypeToken<?> type) {
-		TypeResolver resolver = getResolverWithBoundsFrom(type);
-		ConstraintFormula.reduce(Kind.LOOSE_COMPATIBILILTY, type.getType(), getType(), resolver.getBounds());
-
-		return new TypeToken<>(resolver, resolveType());
+	public boolean satisfiesConstraintFrom(Kind kind, TypeToken<?> type) {
+		try {
+			withConstraintFrom(kind, type);
+			return true;
+		} catch (Exception e) {
+			return false;
+		}
 	}
 
 	/**
@@ -1326,7 +1047,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * @return A TypeToken over the supertype of the requested class.
 	 */
 	@SuppressWarnings("unchecked")
-	public <U> TypeToken<? extends U> resolveSupertypeParameters(Class<U> superclass) {
+	public <U> TypeToken<? extends U> resolveSupertype(Class<U> superclass) {
 		if (!Types.isGeneric(superclass))
 			return TypeToken.overType(superclass);
 
@@ -1334,173 +1055,13 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 				|| (getType() instanceof ParameterizedType && ((ParameterizedType) getType()).getRawType().equals(superclass)))
 			return (TypeToken<? extends U>) this;
 
-		TypeResolver resolver = getInternalResolver();
+		Type superType = getUpperBounds().filter(t -> Types.isAssignable(t, superclass)).findFirst().orElseThrow(
+				() -> new ReflectionException(p -> p.cannotResolveSupertype(getType(), superclass)));
 
-		Type parameterizedType = ParameterizedTypes.parameterizeUnchecked(superclass, i -> null);
-
-		if (resolver.getBounds().getInferenceVariables().contains(getType())) {
-			resolver.inferOverTypeParameters(superclass);
-			parameterizedType = resolver.resolveType(parameterizedType);
-
-			ConstraintFormula.reduce(Kind.SUBTYPE, getType(), parameterizedType, resolver.getBounds());
-		} else {
-			resolver.incorporateTypeHierarchy(
-					getRawTypes().stream().filter(c -> superclass.isAssignableFrom(c)).findAny().orElse(getRawType()),
-					superclass);
-		}
-
-		TypeToken<? extends U> over = overType(resolver, superclass);
-
-		return over;
-	}
-
-	/**
-	 * Attempt to determine the type arguments with which a subtype of a given
-	 * class would be parameterized such that it be a valid subtype. This may not
-	 * always be possible, but for certain subtype relations it will, based on the
-	 * reduction and incorporation rules of the Java type inference algorithm.
-	 * 
-	 * @param <U>
-	 *          The class of the subtype parameterization we wish to determine.
-	 * @param subclass
-	 *          The class of the subtype parameterization we wish to determine.
-	 * @return A TypeToken over the best effort parameterization of the requested
-	 *         class such that it be a subtype.
-	 */
-	@SuppressWarnings("unchecked")
-	public <U> TypeToken<? extends U> resolveSubtypeParameters(Class<U> subclass) {
-		if (!Types.isGeneric(subclass))
-			return TypeToken.overType(subclass);
-
-		if (subclass.equals(getType())
-				|| (getType() instanceof ParameterizedType && ((ParameterizedType) getType()).getRawType().equals(subclass)))
-			return (TypeToken<? extends U>) this;
-
-		TypeResolver resolver = getInternalResolver();
-
-		Type parameterizedType = ParameterizedTypes.parameterizeUnchecked(subclass, i -> null);
-
-		if (resolver.getBounds().containsInferenceVariable(getType())) {
-			resolver.inferOverTypeParameters(subclass);
-			parameterizedType = resolver.resolveType(parameterizedType);
-
-			ConstraintFormula.reduce(Kind.SUBTYPE, parameterizedType, getType(), resolver.getBounds());
-		} else
-			resolver.incorporateTypeHierarchy(subclass, getRawType());
-
-		return overType(resolver, subclass);
-	}
-
-	/**
-	 * Resolve a given type with respect to the type represented by this
-	 * TypeToken. This means that any occurrences of TypeVariable or
-	 * InferenceVariable objects will be substituted by any instantiations thereof
-	 * which may be present as part of this TypeToken's type hierarchy.
-	 * 
-	 * <p>
-	 * Inference variables which are mentioned by the given type will also be
-	 * considered, along with their bounds with respect to both {@link TypeToken}
-	 * instances.
-	 * 
-	 * @param <U>
-	 *          The type we wish to resolve.
-	 * @param type
-	 *          The type we wish to resolve.
-	 * @return A new TypeToken with all type variables and inference variables
-	 *         which have instantiations resolved.
-	 */
-	public <U> TypeToken<U> resolveType(TypeToken<U> type) {
-		return type.withBoundsFrom(this).resolve();
-	}
-
-	/**
-	 * Resolve a given type with respect to the type represented by this
-	 * TypeToken. This means that any occurrences of TypeVariable or
-	 * InferenceVariable objects will be substituted by any instantiations thereof
-	 * which may be present as part of this TypeToken's type hierarchy.
-	 * 
-	 * @param type
-	 *          The type we wish to resolve.
-	 * @return A new TypeToken with all type variables and inference variables
-	 *         which have instantiations resolved.
-	 */
-	public Type resolveType(Type type) {
-		if (getType() instanceof ParameterizedType)
-			type = getInternalResolver().resolveType(getRawType(), type);
-
-		return getInternalResolver().resolveType(type);
-	}
-
-	/**
-	 * <p>
-	 * As {@link ParameterizedTypes#getAllTypeParameters(Class)} called on each of
-	 * {@link #getRawTypes()} merged into a single list.
-	 * 
-	 * 
-	 * <p>
-	 * For type tokens over a single parameterized type, this method will return
-	 * the equivalent of an invocation of
-	 * {@link ParameterizedTypes#getAllTypeParameters(Class)} on that type.
-	 * 
-	 * 
-	 * @return A list of all type parameters present on all raw types.
-	 */
-	public Stream<TypeVariable<?>> getAllTypeParameters() {
-		return getRawTypes().stream().flatMap(ParameterizedTypes::getAllTypeParameters);
-	}
-
-	/**
-	 * <p>
-	 * A mapping of type variables to type argument instantiations for this class,
-	 * for each type variable returned by {@link #getAllTypeParameters()}. Type
-	 * arguments are as those given by {@link #resolveSupertypeParameters(Class)}
-	 * invoked on each of {@link #getRawTypes()}.
-	 * <p>
-	 * For type tokens over a single parameterized type, this method will return
-	 * the equivalent of an invocation of
-	 * {@link ParameterizedTypes#getAllTypeArguments(ParameterizedType)} on that
-	 * type.
-	 * 
-	 * @return A mapping of all type parameters present on all raw types, to their
-	 *         appropriate argument parameterizations according to this type.
-	 */
-	public Stream<Map.Entry<TypeVariable<?>, Type>> getAllTypeArguments() {
-		return getRawTypes().stream().flatMap(
-				t -> ParameterizedTypes.getAllTypeArguments((ParameterizedType) resolveSupertypeParameters(t).getType()));
-	}
-
-	/**
-	 * Try to find an instantiation of the given type variable within the context
-	 * provided by the type hierarchy of the type described by this TypeToken.
-	 * 
-	 * @param type
-	 *          The type variable of which we wish to determine an instantiation.
-	 * @return A TypeToken over the instantiation of the given type parameter, if
-	 *         one exists, otherwise a TypeToken over the given parameter.
-	 */
-	public Type resolveTypeArgument(TypeVariable<?> type) {
-		return getInternalResolver().resolveTypeVariable(getRawType(), type);
-	}
-
-	/**
-	 * Resolve the type argument which instantiates the given
-	 * {@link TypeParameter} in the context of the type of this {@link TypeToken}.
-	 * 
-	 * @param <U>
-	 *          The type parameter whose instantiation we wish to determine.
-	 * @param typeParameter
-	 *          The type parameter whose instantiation we wish to determine.
-	 * @return The proper instantiation of the given parameter, if one exists,
-	 *         otherwise a type token over the {@link TypeVariable} itself.
-	 */
-	@SuppressWarnings("unchecked")
-	public <U> TypeToken<U> resolveTypeArgument(TypeParameter<U> typeParameter) {
-		Type typeArgument = resolveTypeArgument(typeParameter.getType());
-
-		return (TypeToken<U>) overType(
-				getResolver(),
-				typeArgument,
-				InferenceVariable.isProperType(typeArgument) ? Wildcards.RETAIN : Wildcards.INFER).resolve();
+		return (TypeToken<? extends U>) overType(
+				getBounds(),
+				ParameterizedTypes.resolveSupertypeParameters(superType, superclass),
+				Wildcards.RETAIN);
 	}
 
 	/**
@@ -1530,7 +1091,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 */
 	@SuppressWarnings("unchecked")
 	public <V> TypeToken<T> withTypeArgument(TypeParameter<V> parameter, TypeToken<V> argument) {
-		return (TypeToken<T>) withBoundsFrom(argument).withTypeArgument(parameter.getType(), argument.getType());
+		return (TypeToken<T>) withBounds(argument.getBounds()).withTypeArgument(parameter.getType(), argument.getType());
 	}
 
 	/**
@@ -1551,9 +1112,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	}
 
 	private TypeToken<?> withTypeArgument(TypeVariable<?> parameter, Type argument) {
-		return new TypeToken<>(
-				new TypeResolver(getInternalResolver().getBounds()),
-				new TypeSubstitution().where(parameter, argument).resolve(getType()));
+		return new TypeToken<>(getBounds(), new TypeSubstitution().where(parameter, argument).resolve(getType()));
 	}
 
 	/**
@@ -1564,23 +1123,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * @return A TypeToken with the fully inferred type.
 	 */
 	public TypeToken<T> resolve() {
-		return new TypeToken<>(getInternalResolver(), resolveType());
-	}
-
-	/**
-	 * Derive a new {@link TypeToken} by capturing all inference variables
-	 * mentioned by this {@link TypeToken}.
-	 * 
-	 * @return The newly derived {@link TypeToken}
-	 */
-	public TypeToken<T> captureInferenceVariables() {
-		TypeResolver resolver = getResolver();
-
-		TypeVariableCapture.captureInferenceVariables(
-				InferenceVariable.getMentionedBy(resolver.resolveType(getType())),
-				resolver.getBounds());
-
-		return withBounds(resolver.getBounds());
+		return new TypeToken<>(getBounds(), resolveType());
 	}
 
 	public TypeToken<?> getEnclosingType() {
@@ -1596,7 +1139,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 			return null;
 		}
 
-		return TypeToken.overType(getInternalResolver(), enclosingType, Wildcards.RETAIN);
+		return TypeToken.overType(getBounds(), enclosingType, Wildcards.RETAIN);
 	}
 
 	/**
@@ -1608,13 +1151,13 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * @return A TypeToken with the fully inferred type.
 	 */
 	public TypeToken<T> infer() {
-		TypeResolver resolver = getResolver();
+		TypeResolver resolver = new TypeResolver(getBounds());
 
-		return new TypeToken<>(resolver, resolver.infer(getType()));
+		return new TypeToken<>(resolver.getBounds(), resolver.infer(getType()));
 	}
 
 	private Type resolveType() {
-		return getInternalResolver().resolveType(getType());
+		return new TypeResolver(getBounds()).resolveType(getType());
 	}
 
 	/**
@@ -1634,7 +1177,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 *         bound set backing this {@link TypeToken} and which are mentioned by
 	 *         its type.
 	 */
-	public Set<InferenceVariable> getInferenceVariablesMentioned() {
+	public Stream<InferenceVariable> getInferenceVariablesMentioned() {
 		return InferenceVariable.getMentionedBy(getType());
 	}
 
@@ -1646,11 +1189,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 *         contained within the bound set backing this {@link TypeToken} and
 	 *         which are mentioned by its type.
 	 */
-	public Set<InferenceVariable> getRemainingInferenceVariableDependencies() {
-		return getInferenceVariablesMentioned()
-				.stream()
-				.flatMap(d -> getInternalResolver().getBounds().getBoundsOn(d).getRemainingDependencies().stream())
-				.collect(Collectors.toSet());
+	public Stream<InferenceVariable> getRemainingInferenceVariableDependencies() {
+		return getInferenceVariablesMentioned().flatMap(d -> getBounds().getBoundsOn(d).getRemainingDependencies());
 	}
 
 	/**
@@ -1661,11 +1201,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 *         contained within the bound set backing this {@link TypeToken} and
 	 *         which are mentioned by its type.
 	 */
-	public Set<InferenceVariable> getRelatedInferenceVariables() {
-		return getInferenceVariablesMentioned()
-				.stream()
-				.flatMap(d -> getInternalResolver().getBounds().getBoundsOn(d).getRelated().stream())
-				.collect(Collectors.toSet());
+	public Stream<InferenceVariable> getRelatedInferenceVariables() {
+		return getInferenceVariablesMentioned().flatMap(d -> getBounds().getBoundsOn(d).getRelated());
 	}
 
 	/**
@@ -1681,43 +1218,24 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * bound set.
 	 * 
 	 * @param bounds
-	 *          The bound set into which we wish to incorporate information about
-	 *          this type token.
+	 *          the bound set into which we wish to incorporate information about
+	 *          this type token
+	 * @return the derived bound set
 	 */
-	public void incorporateInto(BoundSet bounds) {
-		bounds.withIncorporated(getInternalResolver().getBounds(), getInferenceVariablesMentioned());
+	public BoundSet incorporateInto(BoundSet bounds) {
+		return bounds.withIncorporated(getBounds(), InferenceVariable.getMentionedBy(getType()).collect(toList()));
 	}
 
 	/**
-	 * Incorporate all inference variables and wildcard captures mentioned by this
-	 * type into the given resolver.
+	 * Incorporate all inference variables mentioned by this type into the given
+	 * bound set.
 	 * 
 	 * @param resolver
-	 *          The resolver instance into which we wish to incorporate
-	 *          information about this type token.
+	 *          the bound set into which we wish to incorporate information about
+	 *          this type token
 	 */
 	public void incorporateInto(TypeResolver resolver) {
-		Type type = resolveType();
-
-		resolver.getBounds().withIncorporated(getInternalResolver().getBounds(), InferenceVariable.getMentionedBy(type));
-
-		resolver.incorporateWildcardCaptures(getInternalResolver().getWildcardCaptures());
-		resolver.captureType(type);
-	}
-
-	/**
-	 * Resubstitute any type variable captures mentioned in the given type for the
-	 * wildcards which they originally captured, if they were captured through
-	 * incorporation of wildcard types into this {@link TypeResolver} instance.
-	 * <p>
-	 * This should be used with care, as in many instances the bounds on the
-	 * wildcard will not be specific enough to satisfy every bound on the capture.
-	 * 
-	 * @return A derived type token with mentions of captures of {@link Retain}d
-	 *         wildcards substituted for those wildcards.
-	 */
-	public TypeToken<?> resubstituteCapturedWildcards() {
-		return new TypeToken<T>(getResolver(), getInternalResolver().resubstituteCapturedWildcards(getType()));
+		resolver.incorporateBounds(getBounds(), InferenceVariable.getMentionedBy(getType()).collect(toList()));
 	}
 
 	/**
@@ -1791,8 +1309,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	public ExecutableTokenStream<ExecutableToken<Void, T>> getConstructors() {
 		Stream<Constructor<?>> constructors = stream(getRawType().getConstructors());
 
-		return new ExecutableTokenStream<>(
-				constructors.map(m -> ExecutableToken.overConstructor((Constructor<T>) m, this)));
+		return executableStream(constructors, m -> ExecutableToken.overConstructor((Constructor<T>) m, this));
 	}
 
 	/**
@@ -1805,27 +1322,25 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	public ExecutableTokenStream<ExecutableToken<Void, T>> getDeclaredConstructors() {
 		Stream<Constructor<?>> constructors = stream(getRawType().getDeclaredConstructors());
 
-		return new ExecutableTokenStream<>(
-				constructors.map(m -> ExecutableToken.overConstructor((Constructor<T>) m, this)));
+		return executableStream(constructors, m -> ExecutableToken.overConstructor((Constructor<T>) m, this));
 	}
 
 	/**
-	 * find which methods can be invoked on this type, whether statically or on
-	 * instances
+	 * find which methods of the given name can be invoked on instances of this
+	 * type
 	 * 
 	 * @return a list of all {@link Method} objects applicable to this type,
 	 *         wrapped in {@link ExecutableToken} instances.
 	 */
 	public ExecutableTokenStream<ExecutableToken<? super T, ?>> getMethods() {
-		Stream<Method> methodStream = getRawTypes().stream().flatMap(t -> Arrays.stream(t.getMethods()));
+		Stream<Method> methodStream = getRawTypes().flatMap(t -> Arrays.stream(t.getMethods()));
 
-		if (getRawTypes().stream().allMatch(Types::isInterface))
+		if (getRawTypes().allMatch(Types::isInterface))
 			methodStream = Stream.concat(methodStream, Arrays.stream(Object.class.getMethods()));
 
 		methodStream = methodStream.filter(m -> !Modifier.isStatic(m.getModifiers()));
 
-		return new ExecutableTokenStream<>(
-				methodStream.map(m -> (ExecutableToken<? super T, ?>) ExecutableToken.overMethod(m, this)));
+		return executableStream(methodStream, m -> (ExecutableToken<? super T, ?>) ExecutableToken.overMethod(m, this));
 	}
 
 	/**
@@ -1839,25 +1354,20 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 		Stream<Method> methodStream = stream(getRawType().getDeclaredMethods())
 				.filter(m -> !Modifier.isStatic(m.getModifiers()));
 
-		return new ExecutableTokenStream<>(
-				methodStream.map(m -> (ExecutableToken<? super T, ?>) ExecutableToken.overMethod(m, this)));
+		return executableStream(methodStream, m -> (ExecutableToken<? super T, ?>) ExecutableToken.overMethod(m, this));
 	}
 
 	@SuppressWarnings("unchecked")
 	public ExecutableToken<T, ?> findInterfaceMethod(Consumer<? super T> methodLambda) {
 		Method overridden = null;
 
-		for (Class<?> superType : getRawTypes()) {
-			if (superType.isInterface()) {
-				try {
-					overridden = Methods.findMethod(superType, (Consumer<Object>) methodLambda);
-				} catch (Exception e) {}
+		return getRawTypes().filter(Class::isInterface).flatMap(superType -> {
+			try {
+				return of(findMethod(superType, (Consumer<Object>) methodLambda));
+			} catch (Exception e) {
+				return empty();
 			}
-		}
-		if (overridden == null) {
-			throw new ReflectionException(p -> p.cannotFindMethodOn(getType()));
-		}
-
-		return ExecutableToken.overMethod(overridden, this);
+		}).findAny().map(method -> (ExecutableToken<T, ?>) overMethod(method, this)).orElseThrow(
+				() -> new ReflectionException(p -> p.cannotFindMethodOn(getType())));
 	}
 }

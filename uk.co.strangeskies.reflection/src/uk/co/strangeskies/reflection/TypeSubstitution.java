@@ -34,7 +34,8 @@ package uk.co.strangeskies.reflection;
 
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
-import static uk.co.strangeskies.reflection.AnnotatedTypes.over;
+import static uk.co.strangeskies.reflection.AnnotatedTypes.annotated;
+import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
 import static uk.co.strangeskies.reflection.IntersectionTypes.uncheckedIntersectionOf;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterizeUnchecked;
 import static uk.co.strangeskies.reflection.TypeVariables.typeVariableExtending;
@@ -144,7 +145,7 @@ public class TypeSubstitution {
 	 * @return A new TypeSubstitution object with the rule added.
 	 */
 	public TypeSubstitution where(Type from, Type to) {
-		return new TypeSubstitution(t -> Objects.equals(from, t) ? to : mapping.apply(t));
+		return where(t -> Objects.equals(from, t), t -> to);
 	}
 
 	/**
@@ -161,7 +162,16 @@ public class TypeSubstitution {
 	 * @return A new TypeSubstitution object with the rule added.
 	 */
 	public TypeSubstitution where(Predicate<? super Type> from, Function<? super Type, ? extends Type> to) {
-		return new TypeSubstitution(t -> from.test(t) ? to.apply(t) : mapping.apply(t));
+		return new TypeSubstitution(t -> {
+			Type result = null;
+			if (from.test(t)) {
+				result = to.apply(t);
+			}
+			if (result == null) {
+				result = mapping.apply(t);
+			}
+			return result;
+		});
 	}
 
 	/**
@@ -265,8 +275,9 @@ public class TypeSubstitution {
 	}
 
 	private Type resolveGenericArrayType(GenericArrayType type, IdentityProperty<Boolean> changedScoped) {
-		return isomorphism.byIdentity().getMapping(type,
-				t -> ArrayTypes.fromComponentType(resolve(t.getGenericComponentType(), changedScoped)));
+		return isomorphism
+				.byIdentity()
+				.getMapping(type, t -> arrayFromComponent(resolve(t.getGenericComponentType(), changedScoped)));
 	}
 
 	private Type resolveTypeVariableCapture(TypeVariableCapture type, IdentityProperty<Boolean> changed) {
@@ -296,7 +307,7 @@ public class TypeSubstitution {
 			if (type.getBounds().length > 0) {
 				List<Type> bounds = resolveTypes(type.getBounds(), changed);
 				if (changed.get()) {
-					return typeVariableExtending(type.getGenericDeclaration(), type.getName(), over(bounds));
+					return typeVariableExtending(type.getGenericDeclaration(), type.getName(), annotated(bounds));
 				} else {
 					return type;
 				}

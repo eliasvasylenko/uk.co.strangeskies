@@ -69,8 +69,8 @@ public final class AnnotatedWildcardTypes {
 		public AnnotatedWildcardTypeImpl(Isomorphism isomorphism, WildcardType type, Collection<Annotation> annotations) {
 			super(type, annotations);
 
-			annotatedUpperBounds = AnnotatedTypes.overImpl(isomorphism, type.getUpperBounds());
-			annotatedLowerBounds = AnnotatedTypes.overImpl(isomorphism, type.getLowerBounds());
+			annotatedUpperBounds = AnnotatedTypes.annotatedImpl(isomorphism, type.getUpperBounds());
+			annotatedLowerBounds = AnnotatedTypes.annotatedImpl(isomorphism, type.getLowerBounds());
 		}
 
 		public AnnotatedWildcardTypeImpl(Isomorphism isomorphism, Collection<? extends AnnotatedType> upperBounds,
@@ -92,7 +92,7 @@ public final class AnnotatedWildcardTypes {
 				return WildcardTypes
 						.wildcardSuper(lowerBounds.stream().map(AnnotatedType::getType).collect(Collectors.toList()));
 			else
-				return WildcardTypes.unboundedWildcard();
+				return WildcardTypes.wildcard();
 		}
 
 		@Override
@@ -116,7 +116,7 @@ public final class AnnotatedWildcardTypes {
 
 			AnnotatedType[] bounds;
 			if ((bounds = getAnnotatedUpperBounds()).length > 1
-					|| (bounds.length == 1 && !bounds[0].equals(AnnotatedTypes.over(Object.class)))) {
+					|| (bounds.length == 1 && !bounds[0].equals(AnnotatedTypes.annotated(Object.class)))) {
 				builder.append("? extends ");
 			} else if ((bounds = getAnnotatedLowerBounds()).length > 0) {
 				builder.append("? super ");
@@ -186,8 +186,8 @@ public final class AnnotatedWildcardTypes {
 	 * @return An instance of {@link AnnotatedWildcardType} representing an
 	 *         unbounded wildcard.
 	 */
-	public static AnnotatedWildcardType unbounded(Annotation... annotations) {
-		return unbounded(Arrays.asList(annotations));
+	public static AnnotatedWildcardType wildcard(Annotation... annotations) {
+		return wildcard(Arrays.asList(annotations));
 	}
 
 	/**
@@ -198,8 +198,8 @@ public final class AnnotatedWildcardTypes {
 	 * @return An instance of {@link AnnotatedWildcardType} representing an
 	 *         unbounded wildcard.
 	 */
-	public static AnnotatedWildcardType unbounded(Collection<Annotation> annotations) {
-		return over(WildcardTypes.unboundedWildcard(), annotations);
+	public static AnnotatedWildcardType wildcard(Collection<Annotation> annotations) {
+		return over(WildcardTypes.wildcard(), annotations);
 	}
 
 	/**
@@ -212,8 +212,8 @@ public final class AnnotatedWildcardTypes {
 	 * @return An instance of {@link AnnotatedWildcardType} representing a
 	 *         wildcard with the given lower bound.
 	 */
-	public static AnnotatedWildcardType lowerBounded(Collection<Annotation> annotations, AnnotatedType... bounds) {
-		return lowerBounded(annotations, Arrays.asList(bounds));
+	public static AnnotatedWildcardType wildcardSuper(Collection<Annotation> annotations, AnnotatedType... bounds) {
+		return wildcardSuper(annotations, Arrays.asList(bounds));
 	}
 
 	/**
@@ -226,7 +226,7 @@ public final class AnnotatedWildcardTypes {
 	 * @return an instance of {@link AnnotatedWildcardType} representing a
 	 *         wildcard with the given lower bound.\
 	 */
-	public static AnnotatedWildcardType lowerBounded(Collection<Annotation> annotations,
+	public static AnnotatedWildcardType wildcardSuper(Collection<Annotation> annotations,
 			Collection<? extends AnnotatedType> bounds) {
 		return new AnnotatedWildcardTypeImpl(new Isomorphism(), Collections.emptySet(), bounds, annotations);
 	}
@@ -239,8 +239,8 @@ public final class AnnotatedWildcardTypes {
 	 * @return an instance of {@link AnnotatedWildcardType} representing a
 	 *         wildcard with the given lower bound
 	 */
-	public static AnnotatedWildcardType lowerBounded(AnnotatedType... bounds) {
-		return lowerBounded(Arrays.asList(bounds));
+	public static AnnotatedWildcardType wildcardSuper(AnnotatedType... bounds) {
+		return wildcardSuper(Arrays.asList(bounds));
 	}
 
 	/**
@@ -251,8 +251,8 @@ public final class AnnotatedWildcardTypes {
 	 * @return an instance of {@link AnnotatedWildcardType} representing a
 	 *         wildcard with the given lower bound
 	 */
-	public static AnnotatedWildcardType lowerBounded(Collection<? extends AnnotatedType> bounds) {
-		return lowerBounded(Collections.emptySet(), bounds);
+	public static AnnotatedWildcardType wildcardSuper(Collection<? extends AnnotatedType> bounds) {
+		return wildcardSuper(Collections.emptySet(), bounds);
 	}
 
 	/**
@@ -265,8 +265,8 @@ public final class AnnotatedWildcardTypes {
 	 * @return An instance of {@link AnnotatedWildcardType} representing a
 	 *         wildcard with the given upper bound.
 	 */
-	public static AnnotatedWildcardType upperBounded(Collection<Annotation> annotations, AnnotatedType... bounds) {
-		return upperBounded(annotations, Arrays.asList(bounds));
+	public static AnnotatedWildcardType wildcardExtending(Collection<Annotation> annotations, AnnotatedType... bounds) {
+		return wildcardExtending(annotations, Arrays.asList(bounds));
 	}
 
 	/**
@@ -279,7 +279,7 @@ public final class AnnotatedWildcardTypes {
 	 * @return An instance of {@link AnnotatedWildcardType} representing a
 	 *         wildcard with the given upper bound.
 	 */
-	public static AnnotatedWildcardType upperBounded(Collection<Annotation> annotations,
+	public static AnnotatedWildcardType wildcardExtending(Collection<Annotation> annotations,
 			Collection<? extends AnnotatedType> bounds) {
 		return new AnnotatedWildcardTypeImpl(new Isomorphism(), bounds, Collections.emptySet(), annotations);
 	}
@@ -292,8 +292,8 @@ public final class AnnotatedWildcardTypes {
 	 * @return An instance of {@link AnnotatedWildcardType} representing a
 	 *         wildcard with the given upper bound.
 	 */
-	public static AnnotatedWildcardType upperBounded(AnnotatedType... bounds) {
-		return upperBounded(Arrays.asList(bounds));
+	public static AnnotatedWildcardType wildcardExtending(AnnotatedType... bounds) {
+		return wildcardExtending(Arrays.asList(bounds));
 	}
 
 	/**
@@ -304,8 +304,8 @@ public final class AnnotatedWildcardTypes {
 	 * @return An instance of {@link AnnotatedWildcardType} representing a
 	 *         wildcard with the given upper bound.
 	 */
-	public static AnnotatedWildcardType upperBounded(Collection<? extends AnnotatedType> bounds) {
-		return upperBounded(Collections.emptySet(), bounds);
+	public static AnnotatedWildcardType wildcardExtending(Collection<? extends AnnotatedType> bounds) {
+		return wildcardExtending(Collections.emptySet(), bounds);
 	}
 
 	protected static AnnotatedWildcardTypeInternal wrapImpl(Isomorphism isomorphism, AnnotatedWildcardType type) {

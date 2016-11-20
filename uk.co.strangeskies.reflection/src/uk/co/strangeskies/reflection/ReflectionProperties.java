@@ -166,4 +166,8 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 			List<Type> typeArguments);
 
 	Localized<String> duplicateTypeVariable(String n);
+
+	Localized<String> cannotResolveSupertype(Type type, Class<?> superclass);
+
+	Localized<String> incorrectEnclosingDeclaration(Type rawType, GenericDeclaration declaration);
 }

@@ -49,6 +49,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -62,14 +63,39 @@ import uk.co.strangeskies.utilities.tuple.Pair;
 
 public class ExecutableTokenStream<I extends ExecutableToken<?, ?>>
 		implements SelfStreamDecorator<I, ExecutableTokenStream<I>> {
-	private final Stream<I> members;
+	private final Supplier<Stream<I>> membersSupplier;
+	private Stream<I> members;
 
-	public ExecutableTokenStream(Stream<I> members) {
+	private <E extends Executable> ExecutableTokenStream(Stream<E> members, Function<E, I> mapper) {
+		this.membersSupplier = () -> members.map(mapper);
+		this.members = null;
+	}
+
+	private <E extends Executable> ExecutableTokenStream(Stream<I> members) {
+		this.membersSupplier = null;
 		this.members = members;
+	}
+
+	public static <I extends ExecutableToken<?, ?>, E extends Executable> ExecutableTokenStream<I> executableStream(
+			Stream<E> members,
+			Function<E, I> mapper) {
+		return new ExecutableTokenStream<I>(members, mapper) {
+			@Override
+			public ExecutableTokenStream<I> named(String name) {
+				/*
+				 * optimization to avoid instantiating ExecutableTokens if we filter by
+				 * name early
+				 */
+				return new ExecutableTokenStream<>(members.filter(m -> m.getName().equals(name)), mapper);
+			}
+		};
 	}
 
 	@Override
 	public Stream<I> getComponent() {
+		if (members == null) {
+			members = membersSupplier.get();
+		}
 		return members;
 	}
 
@@ -319,26 +345,26 @@ public class ExecutableTokenStream<I extends ExecutableToken<?, ?>>
 	private static boolean compareGenericCandidate(
 			ExecutableToken<?, ?> firstCandidate,
 			ExecutableToken<?, ?> genericCandidate) {
-		TypeResolver resolver = genericCandidate.getResolver();
+		TypeResolver resolver = new TypeResolver(genericCandidate.getBounds());
 
 		try {
 			int parameters = firstCandidate.getParameters().size();
 			if (firstCandidate.isVariableArityDefinition()) {
 				parameters--;
 
-				ConstraintFormula.reduce(
-						Kind.SUBTYPE,
-						firstCandidate.getParameters().get(parameters).getType(),
-						genericCandidate.getParameters().get(parameters).getType(),
-						resolver.getBounds());
+				resolver.reduce(
+						new ConstraintFormula(
+								Kind.SUBTYPE,
+								firstCandidate.getParameters().get(parameters).getType(),
+								genericCandidate.getParameters().get(parameters).getType()));
 			}
 
 			for (int i = 0; i < parameters; i++) {
-				ConstraintFormula.reduce(
-						Kind.SUBTYPE,
-						firstCandidate.getParameters().get(i).getType(),
-						genericCandidate.getParameters().get(i).getType(),
-						resolver.getBounds());
+				resolver.reduce(
+						new ConstraintFormula(
+								Kind.SUBTYPE,
+								firstCandidate.getParameters().get(i).getType(),
+								genericCandidate.getParameters().get(i).getType()));
 			}
 
 			resolver.infer();

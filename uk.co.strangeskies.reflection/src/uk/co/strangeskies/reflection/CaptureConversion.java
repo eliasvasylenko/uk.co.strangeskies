@@ -44,6 +44,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import uk.co.strangeskies.utilities.Isomorphism;
 
@@ -89,14 +90,20 @@ public class CaptureConversion {
 	 *          The type to capture.
 	 */
 	public CaptureConversion(ParameterizedType originalType) {
-		this(originalType, ParameterizedTypes.getAllTypeParameters(Types.getRawType(originalType))
-				.collect(Collectors.toMap(Function.identity(), t -> new InferenceVariable())));
+		this(
+				originalType,
+				ParameterizedTypes.getAllTypeParameters(Types.getRawType(originalType)).collect(
+						Collectors.toMap(Function.identity(), t -> new InferenceVariable())));
 	}
 
 	@Override
 	public String toString() {
-		return new StringBuilder().append(getCaptureType().getTypeName()).append(" = capture(")
-				.append(getOriginalType().getTypeName()).append(")").toString();
+		return new StringBuilder()
+				.append(getCaptureType().getTypeName())
+				.append(" = capture(")
+				.append(getOriginalType().getTypeName())
+				.append(")")
+				.toString();
 	}
 
 	/**
@@ -156,10 +163,12 @@ public class CaptureConversion {
 	 *         receiving instance but for the substitutions made.
 	 */
 	public CaptureConversion withInferenceVariableSubstitution(Isomorphism isomorphism) {
-		ParameterizedType newType = (ParameterizedType) new TypeSubstitution().withIsomorphism(isomorphism)
+		ParameterizedType newType = (ParameterizedType) new TypeSubstitution()
+				.withIsomorphism(isomorphism)
 				.resolve(getOriginalType());
 
-		Map<TypeVariable<?>, InferenceVariable> newCaptures = ParameterizedTypes.getAllTypeArguments(getCaptureType())
+		Map<TypeVariable<?>, InferenceVariable> newCaptures = ParameterizedTypes
+				.getAllTypeArguments(getCaptureType())
 				.collect(toMap(
 
 						Entry::getKey,
@@ -175,12 +184,12 @@ public class CaptureConversion {
 	 * @return A set containing all inference variables mentioned on either side
 	 *         of this capture conversion with respect to the given bound set.
 	 */
-	public Set<InferenceVariable> getInferenceVariablesMentioned() {
+	public Stream<InferenceVariable> getInferenceVariablesMentioned() {
 		Set<InferenceVariable> allMentioned = new HashSet<>(getInferenceVariables());
 
-		ParameterizedTypes.getAllTypeArguments(getOriginalType()).map(Map.Entry::getValue)
-				.forEach(captured -> allMentioned.addAll(InferenceVariable.getMentionedBy(captured)));
+		ParameterizedTypes.getAllTypeArguments(getOriginalType()).map(Map.Entry::getValue).forEach(
+				captured -> InferenceVariable.getMentionedBy(captured).forEach(allMentioned::add));
 
-		return allMentioned;
+		return allMentioned.stream();
 	}
 }

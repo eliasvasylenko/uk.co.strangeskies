@@ -33,6 +33,7 @@
 package uk.co.strangeskies.reflection;
 
 import static java.util.stream.Collectors.toList;
+import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
 import static uk.co.strangeskies.reflection.IntersectionTypes.uncheckedIntersectionOf;
 
@@ -50,7 +51,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -58,6 +58,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.ParameterizedTypes.ParameterizedTypeImpl;
 import uk.co.strangeskies.text.parsing.Parser;
@@ -137,8 +138,8 @@ public final class Types {
 	 *          The type of which we wish to determine the raw types.
 	 * @return The raw types of the type represented by this TypeToken.
 	 */
-	public static Set<Class<?>> getRawTypes(Type type) {
-		return getUpperBounds(type).stream().map(Types::getRawType).collect(Collectors.toCollection(LinkedHashSet::new));
+	public static Stream<Class<?>> getRawTypes(Type type) {
+		return getUpperBounds(type).map(Types::getRawType);
 	}
 
 	/**
@@ -197,7 +198,7 @@ public final class Types {
 	 *          The type whose bounds we wish to discover.
 	 * @return The upper bounds of the given type.
 	 */
-	public static Set<Type> getUpperBounds(Type type) {
+	public static Stream<Type> getUpperBounds(Type type) {
 		Type[] types;
 
 		if (type instanceof IntersectionType)
@@ -206,10 +207,12 @@ public final class Types {
 			types = ((WildcardType) type).getUpperBounds();
 		else if (type instanceof TypeVariable)
 			types = ((TypeVariable<?>) type).getBounds();
+		else if (type instanceof TypeVariableCapture)
+			types = ((TypeVariableCapture) type).getUpperBounds();
 		else
 			types = new Type[] { type };
 
-		return new LinkedHashSet<>(Arrays.asList(types));
+		return Arrays.stream(types);
 	}
 
 	/**
@@ -220,7 +223,7 @@ public final class Types {
 	 * @return The lower bounds of the given type, or null if no such bounds
 	 *         exist.
 	 */
-	public static Set<Type> getLowerBounds(Type type) {
+	public static Stream<Type> getLowerBounds(Type type) {
 		Type[] types;
 
 		if (type instanceof IntersectionType)
@@ -232,7 +235,7 @@ public final class Types {
 		else
 			types = new Type[] { type };
 
-		return new LinkedHashSet<>(Arrays.asList(types));
+		return Arrays.stream(types);
 	}
 
 	/**
@@ -240,8 +243,8 @@ public final class Types {
 	 * 
 	 * @return A set containing all primitive types.
 	 */
-	public static Set<Class<?>> getPrimitives() {
-		return WRAPPED_PRIMITIVES.keySet();
+	public static Stream<Class<?>> getPrimitives() {
+		return WRAPPED_PRIMITIVES.keySet().stream();
 	}
 
 	/**
@@ -809,10 +812,14 @@ public final class Types {
 				if (!(subtypeParameterization instanceof ParameterizedType))
 					assignable = false;
 				else {
-					Iterator<Type> toTypeArguments = ParameterizedTypes.getAllTypeArguments((ParameterizedType) supertype)
-							.map(Map.Entry::getValue).iterator();
+					Iterator<Type> toTypeArguments = ParameterizedTypes
+							.getAllTypeArguments((ParameterizedType) supertype)
+							.map(Map.Entry::getValue)
+							.iterator();
 					Iterator<Type> fromTypeArguments = ParameterizedTypes
-							.getAllTypeArguments((ParameterizedType) subtypeParameterization).map(Map.Entry::getValue).iterator();
+							.getAllTypeArguments((ParameterizedType) subtypeParameterization)
+							.map(Map.Entry::getValue)
+							.iterator();
 
 					assignable = true;
 					while (toTypeArguments.hasNext()) {
@@ -941,13 +948,15 @@ public final class Types {
 	 */
 	public static boolean isLooseInvocationContextCompatible(Type from, Type to) {
 		if (from instanceof IntersectionType) {
-			return Arrays.stream(((IntersectionType) from).getTypes())
+			return Arrays
+					.stream(((IntersectionType) from).getTypes())
 					.anyMatch(f -> isLooseInvocationContextCompatible(f, to));
 
 		}
 
 		if (to instanceof IntersectionType) {
-			return Arrays.stream(((IntersectionType) to).getTypes())
+			return Arrays
+					.stream(((IntersectionType) to).getTypes())
 					.allMatch(t -> isLooseInvocationContextCompatible(from, t));
 
 		}
@@ -975,9 +984,17 @@ public final class Types {
 	 *          the type to be validated
 	 */
 	public static void validate(Type type) {
-		RecursiveTypeVisitor.build().visitBounds().visitEnclosedTypes().visitEnclosingTypes().visitParameters()
-				.visitSupertypes().parameterizedTypeVisitor(ParameterizedTypes::validate)
-				.intersectionTypeVisitor(i -> intersectionOf(i.getTypes())).create().visit(type);
+		RecursiveTypeVisitor
+				.build()
+				.visitBounds()
+				.visitEnclosedTypes()
+				.visitEnclosingTypes()
+				.visitParameters()
+				.visitSupertypes()
+				.parameterizedTypeVisitor(ParameterizedTypes::validate)
+				.intersectionTypeVisitor(i -> intersectionOf(i.getTypes()))
+				.create()
+				.visit(type);
 	}
 
 	/**
@@ -991,7 +1008,7 @@ public final class Types {
 	 *          The condition to classify matching types.
 	 * @return A set of all mentioned types matching the condition.
 	 */
-	public static Set<Type> getAllMentionedBy(Type type, Predicate<Type> condition) {
+	public static Stream<Type> getAllMentionedBy(Type type, Predicate<Type> condition) {
 		Set<Type> types = new HashSet<>();
 
 		Consumer<Type> conditionalAdd = t -> {
@@ -999,13 +1016,22 @@ public final class Types {
 				types.add(t);
 		};
 
-		RecursiveTypeVisitor.build().visitEnclosingTypes().visitParameters().visitBounds()
-				.classVisitor(conditionalAdd::accept).genericArrayVisitor(conditionalAdd::accept)
-				.intersectionTypeVisitor(conditionalAdd::accept).inferenceVariableVisitor(conditionalAdd::accept)
-				.parameterizedTypeVisitor(conditionalAdd::accept).wildcardVisitor(conditionalAdd::accept)
-				.typeVariableVisitor(conditionalAdd::accept).create().visit(type);
+		RecursiveTypeVisitor
+				.build()
+				.visitEnclosingTypes()
+				.visitParameters()
+				.visitBounds()
+				.classVisitor(conditionalAdd::accept)
+				.genericArrayVisitor(conditionalAdd::accept)
+				.intersectionTypeVisitor(conditionalAdd::accept)
+				.inferenceVariableVisitor(conditionalAdd::accept)
+				.parameterizedTypeVisitor(conditionalAdd::accept)
+				.wildcardVisitor(conditionalAdd::accept)
+				.typeVariableVisitor(conditionalAdd::accept)
+				.create()
+				.visit(type);
 
-		return types;
+		return types.stream();
 	}
 
 	/**
@@ -1068,8 +1094,11 @@ public final class Types {
 
 			minimiseCandidates(erasedCandidates);
 
-			List<Type> bestTypes = erasedCandidates.entrySet().stream()
-					.map(e -> best(e.getKey(), new ArrayList<>(e.getValue()), isomorphism)).collect(Collectors.toList());
+			List<Type> bestTypes = erasedCandidates
+					.entrySet()
+					.stream()
+					.map(e -> best(e.getKey(), new ArrayList<>(e.getValue()), isomorphism))
+					.collect(Collectors.toList());
 
 			return uncheckedIntersectionOf(bestTypes);
 		}
@@ -1133,12 +1162,17 @@ public final class Types {
 		/*
 		 * Proxy guard against recursive generation of infinite types
 		 */
-		return isomorphism.byEquality().getProxiedMapping(new HashSet<>(parameterizations), ParameterizedType.class,
+		return isomorphism.byEquality().getProxiedMapping(
+				new HashSet<>(parameterizations),
+				ParameterizedType.class,
 				p -> bestImpl(rawClass, typeParameters, parameterizations, isomorphism));
 	}
 
-	private static ParameterizedType bestImpl(Class<?> rawClass, List<TypeVariable<?>> typeParameters,
-			List<ParameterizedType> parameterizations, Isomorphism isomorphism) {
+	private static ParameterizedType bestImpl(
+			Class<?> rawClass,
+			List<TypeVariable<?>> typeParameters,
+			List<ParameterizedType> parameterizations,
+			Isomorphism isomorphism) {
 		Map<TypeVariable<?>, Type> leastContainingParameterization = new HashMap<>();
 
 		for (int j = 0; j < typeParameters.size(); j++) {
@@ -1208,21 +1242,22 @@ public final class Types {
 					/*
 					 * lcta(? extends U, ? extends V) = ? extends lub(U, V)
 					 */
-					List<Type> aggregation = Arrays.asList(intersectionOf(wildcardU.getUpperBounds()),
-							intersectionOf(wildcardV.getUpperBounds()));
+					List<Type> aggregation = Arrays
+							.asList(intersectionOf(wildcardU.getUpperBounds()), intersectionOf(wildcardV.getUpperBounds()));
 					return WildcardTypes.wildcardExtending(leastUpperBoundImpl(aggregation, isomorphism));
 				} else {
 					/*
 					 * lcta(? extends U, ? super V) = U if U = V, otherwise ?
 					 */
-					return argumentU.equals(argumentV) ? argumentU : WildcardTypes.unboundedWildcard();
+					return argumentU.equals(argumentV) ? argumentU : WildcardTypes.wildcard();
 				}
 			} else {
 				/*
 				 * lcta(? super U, ? super V) = ? super glb(U, V)
 				 */
-				return WildcardTypes
-						.wildcardSuper(greatestLowerBound(uncheckedIntersectionOf(((WildcardType) argumentU).getLowerBounds()),
+				return WildcardTypes.wildcardSuper(
+						greatestLowerBound(
+								uncheckedIntersectionOf(((WildcardType) argumentU).getLowerBounds()),
 								uncheckedIntersectionOf(((WildcardType) argumentV).getLowerBounds())));
 			}
 		} else if (argumentV instanceof WildcardType) {
@@ -1343,7 +1378,8 @@ public final class Types {
 		} else if (type instanceof ParameterizedType) {
 			return ParameterizedTypes.toString((ParameterizedType) type, imports, isomorphism);
 		} else if (type instanceof GenericArrayType) {
-			return new StringBuilder(toString(((GenericArrayType) type).getGenericComponentType(), imports)).append("[]")
+			return new StringBuilder(toString(((GenericArrayType) type).getGenericComponentType(), imports))
+					.append("[]")
 					.toString();
 		} else if (type instanceof WildcardType) {
 			WildcardType wildcardType = (WildcardType) type;
@@ -1356,7 +1392,11 @@ public final class Types {
 			TypeVariableCapture typeVariableCapture = (TypeVariableCapture) type;
 			StringBuilder builder = new StringBuilder(typeVariableCapture.getName());
 
-			appendBounds(builder, typeVariableCapture.getUpperBounds(), typeVariableCapture.getLowerBounds(), imports,
+			appendBounds(
+					builder,
+					typeVariableCapture.getUpperBounds(),
+					typeVariableCapture.getLowerBounds(),
+					imports,
 					isomorphism);
 
 			return builder.toString();
@@ -1370,7 +1410,11 @@ public final class Types {
 		return Arrays.stream(types).map(t -> toString(t, imports, isomorphism)).collect(Collectors.joining(delimiter));
 	}
 
-	private static void appendBounds(StringBuilder builder, Type[] upperBounds, Type[] lowerBounds, Imports imports,
+	private static void appendBounds(
+			StringBuilder builder,
+			Type[] upperBounds,
+			Type[] lowerBounds,
+			Imports imports,
 			Isomorphism isomorphism) {
 		if (upperBounds.length > 0
 				&& (upperBounds.length != 1 || (upperBounds[0] != null && !upperBounds[0].equals(Object.class))))
@@ -1459,20 +1503,24 @@ public final class Types {
 		private TypeParser(Imports imports) {
 			rawType = Parser.matching("[_a-zA-Z][_a-zA-Z0-9]*(\\.[_a-zA-Z][_a-zA-Z0-9]*)*").transform(imports::getNamedClass);
 
-			classOrArrayType = rawType.transform(Type.class::cast)
+			classOrArrayType = rawType
+					.transform(Type.class::cast)
 					.tryAppendTransform(
 							Parser.list(Parser.proxy(this::getType), "\\s*,\\s*").prepend("\\s*<\\s*").append("\\s*>\\s*"),
 							(t, p) -> ParameterizedTypes.parameterize((Class<?>) t, p))
 					.appendTransform(Parser.list(Parser.matching("\\s*\\[\\s*\\]"), "\\s*").prepend("\\s*"), (t, l) -> {
-						t = ArrayTypes.fromComponentType(t, l.size());
+						t = arrayFromComponent(t, l.size());
 						return t;
 					});
 
-			wildcardType = Parser.matching("\\s*\\?\\s*extends(?![_a-zA-Z0-9])\\s*")
+			wildcardType = Parser
+					.matching("\\s*\\?\\s*extends(?![_a-zA-Z0-9])\\s*")
 					.appendTransform(Parser.list(classOrArrayType, "\\s*\\&\\s*"), (s, t) -> WildcardTypes.wildcardExtending(t))
-					.orElse(Parser.matching("\\s*\\?\\s*super(?![_a-zA-Z0-9])\\s*")
-							.appendTransform(Parser.list(classOrArrayType, "\\s*\\&\\s*"), (s, t) -> WildcardTypes.wildcardSuper(t)))
-					.orElse(Parser.matching("\\s*\\?").transform(s -> WildcardTypes.unboundedWildcard()));
+					.orElse(
+							Parser.matching("\\s*\\?\\s*super(?![_a-zA-Z0-9])\\s*").appendTransform(
+									Parser.list(classOrArrayType, "\\s*\\&\\s*"),
+									(s, t) -> WildcardTypes.wildcardSuper(t)))
+					.orElse(Parser.matching("\\s*\\?").transform(s -> WildcardTypes.wildcard()));
 
 			typeParameter = classOrArrayType.orElse(wildcardType.transform(Type.class::cast));
 		}

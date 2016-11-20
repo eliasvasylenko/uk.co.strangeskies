@@ -140,6 +140,8 @@ public class ExecutableTokenTest {
 
 	@Test
 	public void singleVarargsResolutionTest() throws NoSuchMethodException, SecurityException {
+		System.out.println(getStaticMethods(Arrays.class).named("asList").findAny().get());
+
 		ExecutableToken<?, ?> asList = getStaticMethods(Arrays.class).named("asList").resolveOverload(String.class);
 
 		assertThat(asList.isVariableArityInvocation(), is(true));

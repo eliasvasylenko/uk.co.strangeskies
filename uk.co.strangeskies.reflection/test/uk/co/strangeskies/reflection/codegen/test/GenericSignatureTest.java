@@ -33,9 +33,10 @@
 package uk.co.strangeskies.reflection.codegen.test;
 
 import static java.util.stream.Collectors.toList;
+import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterize;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterizeUnchecked;
-import static uk.co.strangeskies.reflection.codegen.TypeVariableSignature.typeVariableSignature;
 import static uk.co.strangeskies.reflection.codegen.TypeVariableSignature.referenceTypeVariable;
+import static uk.co.strangeskies.reflection.codegen.TypeVariableSignature.typeVariableSignature;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
@@ -55,7 +56,6 @@ import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.codegen.ParameterizedDeclaration;
 import uk.co.strangeskies.reflection.codegen.ParameterizedSignature;
 import uk.co.strangeskies.reflection.codegen.TypeVariableSignature;
-import uk.co.strangeskies.reflection.token.TypeToken;
 import uk.co.strangeskies.utilities.Self;
 
 @SuppressWarnings("javadoc")
@@ -117,7 +117,8 @@ public class GenericSignatureTest {
 	@Test(expected = ReflectionException.class)
 	public void invalidBoundsTest() {
 		ParameterizedSignatureImpl signature = new ParameterizedSignatureImpl().withTypeVariables(
-				typeVariableSignature("A").withBounds(new TypeToken<Set<String>>() {}, new TypeToken<Set<Number>>() {}));
+				typeVariableSignature("A")
+						.withBounds(parameterize(Set.class, String.class), parameterize(Set.class, Number.class)));
 
 		new ParameterizedDeclaration<>(signature);
 	}

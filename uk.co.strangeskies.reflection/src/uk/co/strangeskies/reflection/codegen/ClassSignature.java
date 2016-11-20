@@ -135,7 +135,7 @@ public class ClassSignature<T> extends ParameterizedSignature<ClassSignature<T>>
 	 * @return the receiver
 	 */
 	public ClassSignature<?> withSuperType(Type... superType) {
-		return withSuperType(Arrays.stream(superType).map(AnnotatedTypes::over).collect(Collectors.toList()));
+		return withSuperType(Arrays.stream(superType).map(AnnotatedTypes::annotated).collect(Collectors.toList()));
 	}
 
 	/**

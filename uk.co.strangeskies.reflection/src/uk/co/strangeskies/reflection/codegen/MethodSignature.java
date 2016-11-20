@@ -51,11 +51,7 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 	public static <U> MethodSignature<U> methodSignature(ExecutableToken<?, U> executableToken) {
 		return new MethodSignature<>(executableToken.getName())
 				.withTypeVariables(
-						executableToken
-								.getTypeParameters()
-								.stream()
-								.map(TypeVariableSignature::typeVariableSignature)
-								.collect(toList()))
+						executableToken.getTypeParameters().map(TypeVariableSignature::typeVariableSignature).collect(toList()))
 				.withReturnType(executableToken.getReturnType())
 				.withParameters(
 						executableToken.getParameters().stream().map(VariableSignature::variableSignature).collect(toList()));
@@ -67,7 +63,7 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 
 	protected MethodSignature(String methodName) {
 		this.methodName = methodName;
-		this.returnType = AnnotatedTypes.over(void.class);
+		this.returnType = AnnotatedTypes.annotated(void.class);
 	}
 
 	protected MethodSignature(
@@ -103,12 +99,12 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 	}
 
 	public MethodSignature<?> withReturnType(Type type) {
-		return withReturnType(AnnotatedTypes.over(type));
+		return withReturnType(AnnotatedTypes.annotated(type));
 	}
 
 	@SuppressWarnings("unchecked")
 	public <U> MethodSignature<U> withReturnType(Class<U> type) {
-		return (MethodSignature<U>) withReturnType(AnnotatedTypes.over(type));
+		return (MethodSignature<U>) withReturnType(AnnotatedTypes.annotated(type));
 	}
 
 	@SuppressWarnings("unchecked")

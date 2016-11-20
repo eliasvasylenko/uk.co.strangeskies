@@ -58,8 +58,7 @@ public class ArrayTypes {
 
 		@Override
 		public String toString() {
-			StringBuilder builder = new StringBuilder(
-					Types.toString(getGenericComponentType()));
+			StringBuilder builder = new StringBuilder(Types.toString(getGenericComponentType()));
 			if (getGenericComponentType() instanceof IntersectionType)
 				builder.append(" ");
 			return builder.append("[]").toString();
@@ -93,7 +92,7 @@ public class ArrayTypes {
 	 *          The component type of the generic array type to be created.
 	 * @return A generic array type whose component type is the given type.
 	 */
-	public static GenericArrayType fromComponentType(GenericArrayType component) {
+	public static GenericArrayType arrayFromComponent(GenericArrayType component) {
 		return fromGenericComponentType(component);
 	}
 
@@ -107,12 +106,11 @@ public class ArrayTypes {
 	 *          The number of dimensions to create over the given component.
 	 * @return A generic array type whose component type is the given type.
 	 */
-	public static GenericArrayType fromComponentType(GenericArrayType component,
-			int arrayDimensions) {
+	public static GenericArrayType arrayFromComponent(GenericArrayType component, int arrayDimensions) {
 		GenericArrayType array;
 
 		do {
-			component = array = fromComponentType(component);
+			component = array = arrayFromComponent(component);
 		} while (--arrayDimensions > 0);
 
 		return array;
@@ -126,8 +124,7 @@ public class ArrayTypes {
 	 *          The component type of the generic array type to be created.
 	 * @return A generic array type whose component type is the given type.
 	 */
-	public static GenericArrayType fromComponentType(
-			ParameterizedType component) {
+	public static GenericArrayType arrayFromComponent(ParameterizedType component) {
 		return fromGenericComponentType(component);
 	}
 
@@ -141,12 +138,11 @@ public class ArrayTypes {
 	 *          The number of dimensions to create over the given component.
 	 * @return A generic array type whose component type is the given type.
 	 */
-	public static GenericArrayType fromComponentType(ParameterizedType component,
-			int arrayDimensions) {
-		GenericArrayType array = fromComponentType(component);
+	public static GenericArrayType arrayFromComponent(ParameterizedType component, int arrayDimensions) {
+		GenericArrayType array = arrayFromComponent(component);
 
 		while (--arrayDimensions > 0) {
-			array = fromComponentType(array);
+			array = arrayFromComponent(array);
 		}
 
 		return array;
@@ -160,7 +156,7 @@ public class ArrayTypes {
 	 *          The component type of the generic array type to be created.
 	 * @return A generic array type whose component type is the given type.
 	 */
-	public static GenericArrayType fromComponentType(TypeVariable<?> component) {
+	public static GenericArrayType arrayFromComponent(TypeVariable<?> component) {
 		return fromGenericComponentType(component);
 	}
 
@@ -174,12 +170,11 @@ public class ArrayTypes {
 	 *          The number of dimensions to create over the given component.
 	 * @return A generic array type whose component type is the given type.
 	 */
-	public static GenericArrayType fromComponentType(TypeVariable<?> component,
-			int arrayDimensions) {
-		GenericArrayType array = fromComponentType(component);
+	public static GenericArrayType arrayFromComponent(TypeVariable<?> component, int arrayDimensions) {
+		GenericArrayType array = arrayFromComponent(component);
 
 		while (--arrayDimensions > 0) {
-			array = fromComponentType(array);
+			array = arrayFromComponent(array);
 		}
 
 		return array;
@@ -193,8 +188,7 @@ public class ArrayTypes {
 	 *          The component type of the generic array type to be created.
 	 * @return A generic array type whose component type is the given type.
 	 */
-	public static GenericArrayType fromComponentType(
-			InferenceVariable component) {
+	public static GenericArrayType arrayFromComponent(InferenceVariable component) {
 		return fromGenericComponentType(component);
 	}
 
@@ -208,12 +202,11 @@ public class ArrayTypes {
 	 *          The number of dimensions to create over the given component.
 	 * @return A generic array type whose component type is the given type.
 	 */
-	public static GenericArrayType fromComponentType(InferenceVariable component,
-			int arrayDimensions) {
-		GenericArrayType array = fromComponentType(component);
+	public static GenericArrayType arrayFromComponent(InferenceVariable component, int arrayDimensions) {
+		GenericArrayType array = arrayFromComponent(component);
 
 		while (--arrayDimensions > 0) {
-			array = fromComponentType(array);
+			array = arrayFromComponent(array);
 		}
 
 		return array;
@@ -227,7 +220,7 @@ public class ArrayTypes {
 	 *          The component type of the generic array type to be created.
 	 * @return A generic array type whose component type is the given type.
 	 */
-	public static GenericArrayType fromComponentType(IntersectionType component) {
+	public static GenericArrayType arrayFromComponent(IntersectionType component) {
 		return fromGenericComponentType(component);
 	}
 
@@ -241,12 +234,11 @@ public class ArrayTypes {
 	 *          The number of dimensions to create over the given component.
 	 * @return A generic array type whose component type is the given type.
 	 */
-	public static GenericArrayType fromComponentType(IntersectionType component,
-			int arrayDimensions) {
-		GenericArrayType array = fromComponentType(component);
+	public static GenericArrayType arrayFromComponent(IntersectionType component, int arrayDimensions) {
+		GenericArrayType array = arrayFromComponent(component);
 
 		while (--arrayDimensions > 0) {
-			array = fromComponentType(array);
+			array = arrayFromComponent(array);
 		}
 
 		return array;
@@ -263,7 +255,7 @@ public class ArrayTypes {
 	 * @return A generic array type whose component type is the given type.
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> Class<T[]> fromComponentType(Class<T> component) {
+	public static <T> Class<T[]> arrayFromComponent(Class<T> component) {
 		return (Class<T[]>) Array.newInstance(component, 0).getClass();
 	}
 
@@ -277,12 +269,11 @@ public class ArrayTypes {
 	 *          The number of dimensions to create over the given component.
 	 * @return A generic array type whose component type is the given type.
 	 */
-	public static Class<?> fromComponentType(Class<?> component,
-			int arrayDimensions) {
+	public static Class<?> arrayFromComponent(Class<?> component, int arrayDimensions) {
 		Class<?> array;
 
 		do {
-			component = array = fromComponentType(component);
+			component = array = arrayFromComponent(component);
 		} while (--arrayDimensions > 0);
 
 		return array;
@@ -296,22 +287,21 @@ public class ArrayTypes {
 	 *          The component type of the generic array type to be created.
 	 * @return A generic array type whose component type is the given type.
 	 */
-	public static Type fromComponentType(Type component) {
+	public static Type arrayFromComponent(Type component) {
 		if (component instanceof Class)
-			return fromComponentType((Class<?>) component);
+			return arrayFromComponent((Class<?>) component);
 		else if (component instanceof GenericArrayType)
-			return fromComponentType((GenericArrayType) component);
+			return arrayFromComponent((GenericArrayType) component);
 		else if (component instanceof ParameterizedType)
-			return fromComponentType((ParameterizedType) component);
+			return arrayFromComponent((ParameterizedType) component);
 		else if (component instanceof TypeVariable)
-			return fromComponentType((TypeVariable<?>) component);
+			return arrayFromComponent((TypeVariable<?>) component);
 		else if (component instanceof InferenceVariable)
-			return fromComponentType((InferenceVariable) component);
+			return arrayFromComponent((InferenceVariable) component);
 		else if (component instanceof IntersectionType)
-			return fromComponentType((IntersectionType) component);
+			return arrayFromComponent((IntersectionType) component);
 		else
-			throw new IllegalArgumentException(
-					"Given type '" + component + "' is not a valid array component.");
+			throw new IllegalArgumentException("Given type '" + component + "' is not a valid array component.");
 	}
 
 	/**
@@ -324,9 +314,9 @@ public class ArrayTypes {
 	 *          The number of dimensions to create over the given component.
 	 * @return A generic array type whose component type is the given type.
 	 */
-	public static Type fromComponentType(Type component, int arrayDimensions) {
+	public static Type arrayFromComponent(Type component, int arrayDimensions) {
 		while (arrayDimensions-- > 0) {
-			component = fromComponentType(component);
+			component = arrayFromComponent(component);
 		}
 
 		return component;

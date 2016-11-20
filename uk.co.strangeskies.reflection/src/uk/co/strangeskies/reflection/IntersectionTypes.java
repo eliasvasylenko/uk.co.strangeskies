@@ -244,7 +244,7 @@ public class IntersectionTypes {
 			 * of the intersection type validity algorithm
 			 */
 			InferenceVariable inferenceVariable = new InferenceVariable();
-			bounds.withInferenceVariable(inferenceVariable);
+			bounds = bounds.withInferenceVariables(inferenceVariable);
 
 			for (Type type : flattenedTypes) {
 				bounds = new ConstraintFormula(Kind.SUBTYPE, inferenceVariable, type).reduce(bounds);
@@ -328,7 +328,8 @@ public class IntersectionTypes {
 	 * @return a canonical string representation of the given type
 	 */
 	public static String toString(IntersectionType type, Imports imports, Isomorphism isomorphism) {
-		return isomorphism.byIdentity().getPartialMapping(type,
+		return isomorphism.byIdentity().getPartialMapping(
+				type,
 
 				() -> "...",
 
