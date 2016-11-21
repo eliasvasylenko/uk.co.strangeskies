@@ -98,9 +98,8 @@ public class MethodOverride<T> {
 				.getInvocable(method)
 				.withTypeArguments(method.getTypeParameters());
 
-		validateOverride(
-				overriddenToken.getReturnType().getType(),
-				overriddenToken.getParameters().stream().map(ExecutableParameter::getType).toArray(Type[]::new),
+		validateOverride(overriddenToken.getReturnType().getType(),
+				overriddenToken.getParameters().map(ExecutableParameter::getType).toArray(Type[]::new),
 				method.getTypeParameters());
 	}
 
@@ -115,7 +114,7 @@ public class MethodOverride<T> {
 			}
 
 			for (int i = 0; i < parameters.length; i++) {
-				if (!isAssignable(inheritedToken.getParameters().get(i).getType(), parameters[i])) {
+				if (!isAssignable(inheritedToken.getParameters().skip(i).findFirst().get().getType(), parameters[i])) {
 					throw new CodeGenerationException(p -> p.incompatibleParameterTypes(parameters, inherited));
 				}
 			}
@@ -133,10 +132,8 @@ public class MethodOverride<T> {
 		}
 
 		this.override = override;
-		validateOverride(
-				override.getReturnType().getType(),
-				override.getParameters().map(v -> v.getType().getType()).toArray(Type[]::new),
-				override.getTypeParameters());
+		validateOverride(override.getReturnType().getType(),
+				override.getParameters().map(v -> v.getType().getType()).toArray(Type[]::new), override.getTypeParameters());
 	}
 
 	public void overrideIfNecessary() {

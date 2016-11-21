@@ -38,6 +38,7 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -78,6 +79,17 @@ public class FieldToken<O, T> implements MemberToken<O> {
 		this.field = field;
 		this.ownerType = ownerType;
 		this.fieldType = fieldType;
+
+		if (!ownerType.isProper() || values().stream().anyMatch(WildcardType.class::isInstance)) {
+			/*
+			 * TODO this should actually check if there were any inference variables
+			 * in the type hierarchy between containerType and containerSuperType, as
+			 * it should still pass if the containerType is e.g. an intersection
+			 * containing an inference variables with an upper bound on
+			 * containerSuperClass.
+			 */
+			throw new ReflectionException(p -> p.cannotResolveInvocationOnTypeWithWildcardParameters(containerType));
+		}
 	}
 
 	/**

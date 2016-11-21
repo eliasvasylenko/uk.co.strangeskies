@@ -190,9 +190,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	@Target(ElementType.TYPE_USE)
 	public @interface Capture {}
 
-	private static final TypeToken<?> NULL_TYPE_TOKEN = new TypeToken<>(
-			new BoundSet(),
-			(AnnotatedType) null,
+	private static final TypeToken<?> NULL_TYPE_TOKEN = new TypeToken<>(new BoundSet(), (AnnotatedType) null,
 			(Type) null);
 
 	// private static final ComputingMap<AnnotatedType, Pair<Resolver, Type>>
@@ -356,23 +354,14 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 						: annotatedType.isAnnotationPresent(Capture.class) ? Wildcards.CAPTURE : Wildcards.RETAIN;
 
 		if (annotatedType instanceof AnnotatedParameterizedType) {
-			return substituteAnnotatedWildcardsForParameterizedType(
-					isomorphism,
-					behavior,
-					(AnnotatedParameterizedType) annotatedType,
-					resolver);
+			return substituteAnnotatedWildcardsForParameterizedType(isomorphism, behavior,
+					(AnnotatedParameterizedType) annotatedType, resolver);
 		} else if (annotatedType instanceof AnnotatedWildcardType) {
-			return substituteAnnotatedWildcardsForWildcardType(
-					isomorphism,
-					behavior,
-					(AnnotatedWildcardType) annotatedType,
+			return substituteAnnotatedWildcardsForWildcardType(isomorphism, behavior, (AnnotatedWildcardType) annotatedType,
 					resolver);
 		} else if (annotatedType instanceof AnnotatedArrayType) {
-			return arrayFromComponent(
-					substituteAnnotatedWildcards(
-							isomorphism,
-							((AnnotatedArrayType) annotatedType).getAnnotatedGenericComponentType(),
-							resolver));
+			return arrayFromComponent(substituteAnnotatedWildcards(isomorphism,
+					((AnnotatedArrayType) annotatedType).getAnnotatedGenericComponentType(), resolver));
 		} else {
 			return annotatedType.getType();
 		}
@@ -388,10 +377,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 			 * Deal with annotations on types mentioned by parameters, preserving any
 			 * parameters which are wildcards themselves.
 			 */
-			Type[] arguments = substituteAnnotatedWildcardsForEach(
-					isomorphism,
-					annotatedType.getAnnotatedActualTypeArguments(),
-					resolver);
+			Type[] arguments = substituteAnnotatedWildcardsForEach(isomorphism,
+					annotatedType.getAnnotatedActualTypeArguments(), resolver);
 
 			/*
 			 * Collect all arguments into a mapping from type variables, including on
@@ -581,9 +568,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 
 	@Override
 	public TypeToken<T> deepCopy(Isomorphism isomorphism) {
-		return new TypeToken<>(
-				bounds.deepCopy(isomorphism),
-				declaration,
+		return new TypeToken<>(bounds.deepCopy(isomorphism), declaration,
 				new TypeSubstitution().withIsomorphism(isomorphism).resolve(getType()));
 	}
 
@@ -1058,10 +1043,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 		Type superType = getUpperBounds().filter(t -> Types.isAssignable(t, superclass)).findFirst().orElseThrow(
 				() -> new ReflectionException(p -> p.cannotResolveSupertype(getType(), superclass)));
 
-		return (TypeToken<? extends U>) overType(
-				getBounds(),
-				ParameterizedTypes.resolveSupertypeParameters(superType, superclass),
-				Wildcards.RETAIN);
+		return (TypeToken<? extends U>) overType(getBounds(),
+				ParameterizedTypes.resolveSupertypeParameters(superType, superclass), Wildcards.RETAIN);
 	}
 
 	/**
@@ -1359,8 +1342,6 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 
 	@SuppressWarnings("unchecked")
 	public ExecutableToken<T, ?> findInterfaceMethod(Consumer<? super T> methodLambda) {
-		Method overridden = null;
-
 		return getRawTypes().filter(Class::isInterface).flatMap(superType -> {
 			try {
 				return of(findMethod(superType, (Consumer<Object>) methodLambda));

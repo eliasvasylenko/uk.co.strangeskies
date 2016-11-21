@@ -312,9 +312,8 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		 */
 		for (CaptureConversion captureConversion : captureConversions) {
 
-			captureConversion = isomorphism
-					.byIdentity()
-					.getMapping(captureConversion, c -> c.withInferenceVariableSubstitution(isomorphism));
+			captureConversion = isomorphism.byIdentity().getMapping(captureConversion,
+					c -> c.withInferenceVariableSubstitution(isomorphism));
 
 			copy.captureConversions.add(captureConversion);
 		}
@@ -422,8 +421,8 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 							equality -> bounds.incorporateCapturedEquality(capturedWildcard, equality));
 
 					bounds.getUpperBounds().filter(upperBound -> !inferenceVariableBounds.containsKey(upperBound)).forEach(
-							upperBound -> bounds
-									.incorporateCapturedSubtype(captureConversion, capturedWildcard, capturedParmeter, upperBound));
+							upperBound -> bounds.incorporateCapturedSubtype(captureConversion, capturedWildcard, capturedParmeter,
+									upperBound));
 
 					bounds.getLowerBounds().filter(lowerBound -> !inferenceVariableBounds.containsKey(lowerBound)).forEach(
 							lowerBound -> bounds.incorporateCapturedSupertype(capturedWildcard, lowerBound));
@@ -573,18 +572,16 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 					boundSet
 							.getBoundsOn(inferenceVariable)
 							.getRelated()
-							.filter(
-									relatedInferenceVariable -> inferenceVariableBounds.containsKey(relatedInferenceVariable)
-											|| !boundSet.getBoundsOn(relatedInferenceVariable).getInstantiation().isPresent())
+							.filter(relatedInferenceVariable -> inferenceVariableBounds.containsKey(relatedInferenceVariable)
+									|| !boundSet.getBoundsOn(relatedInferenceVariable).getInstantiation().isPresent())
 							.forEach(relatedInferenceVariables::add);
 				}
 			}
 
 			if (relatedInferenceVariables.stream().allMatch(i -> !inferenceVariableBounds.containsKey(i))) {
 				for (InferenceVariable inferenceVariable : relatedInferenceVariables) {
-					InferenceVariableBoundsImpl filtered = boundSet
-							.getBoundsOnImpl(inferenceVariable)
-							.copyIntoFiltered(this, i -> !relatedInferenceVariables.contains(i));
+					InferenceVariableBoundsImpl filtered = boundSet.getBoundsOnImpl(inferenceVariable).copyIntoFiltered(this,
+							i -> !relatedInferenceVariables.contains(i));
 					addInferenceVariableBounds(inferenceVariable, filtered);
 				}
 			} else {
@@ -609,18 +606,16 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 
 					bounds
 							.getEqualities()
-							.filter(
-									lowerBound -> InferenceVariable
-											.getMentionedBy(lowerBound)
-											.allMatch(relatedInferenceVariables::contains))
+							.filter(lowerBound -> InferenceVariable
+									.getMentionedBy(lowerBound)
+									.allMatch(relatedInferenceVariables::contains))
 							.forEach(lowerBound -> incorporateSubtype(lowerBound, inferenceVariable));
 
 					bounds
 							.getEqualities()
-							.filter(
-									upperBound -> InferenceVariable
-											.getMentionedBy(upperBound)
-											.allMatch(relatedInferenceVariables::contains))
+							.filter(upperBound -> InferenceVariable
+									.getMentionedBy(upperBound)
+									.allMatch(relatedInferenceVariables::contains))
 							.forEach(upperBound -> incorporateSubtype(inferenceVariable, upperBound));
 
 					CaptureConversion captureConversion = bounds.getCaptureConversion();
@@ -693,10 +688,16 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 				copy.incorporateEquality(inferenceVariable.getKey(), inferenceVariable.getValue());
 			} catch (ReflectionException e) {
 				throw new ReflectionException(
-						p -> p.cannotCaptureInferenceVariable(inferenceVariable.getKey(), inferenceVariable.getValue(), copy),
-						e);
+						p -> p.cannotCaptureInferenceVariable(inferenceVariable.getKey(), inferenceVariable.getValue(), copy), e);
 			}
 		}
+
+		/*
+		 * TODO detect when to remove capture conversions automatically (when all
+		 * inference variables they mention are instantiated?). Currently, when
+		 * instantiations are given manually and one at a time the capture
+		 * conversions are left behind.
+		 */
 
 		copy.removeCaptureConversions(getRelatedCaptureConversions(typeVariableCaptures.keySet()).collect(toList()));
 

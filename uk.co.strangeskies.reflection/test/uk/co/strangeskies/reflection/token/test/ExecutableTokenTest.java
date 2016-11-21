@@ -63,37 +63,29 @@ public class ExecutableTokenTest {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void constructorWithEnclosingTypeTest() throws NoSuchMethodException, SecurityException {
-		ExecutableToken.overConstructor(
-				(Constructor<Object>) Inner.class.getConstructors()[0],
-				new TypeToken<Outer<Number>>() {},
-				new TypeToken<Outer<Number>.Inner<Integer>>() {});
+		ExecutableToken.overConstructor((Constructor<Object>) Inner.class.getConstructors()[0],
+				new TypeToken<Outer<Number>>() {}, new TypeToken<Outer<Number>.Inner<Integer>>() {});
 	}
 
 	@SuppressWarnings("unchecked")
 	@Test(expected = ReflectionException.class)
 	public void constructorWithWrongEnclosingTypeTest() throws NoSuchMethodException, SecurityException {
-		ExecutableToken.overConstructor(
-				(Constructor<Object>) Inner.class.getConstructors()[0],
-				new TypeToken<Outer<Number>>() {},
-				new TypeToken<Outer<Integer>.Inner<Integer>>() {});
+		ExecutableToken.overConstructor((Constructor<Object>) Inner.class.getConstructors()[0],
+				new TypeToken<Outer<Number>>() {}, new TypeToken<Outer<Integer>.Inner<Integer>>() {});
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
 	public void constructorWithRawEnclosingTypeTest() throws NoSuchMethodException, SecurityException {
-		ExecutableToken.overConstructor(
-				(Constructor<Object>) Inner.class.getConstructors()[0],
-				new TypeToken<Outer<Number>>() {},
-				new TypeToken<Outer.Inner>() {});
+		ExecutableToken.overConstructor((Constructor<Object>) Inner.class.getConstructors()[0],
+				new TypeToken<Outer<Number>>() {}, new TypeToken<Outer.Inner>() {});
 	}
 
 	@SuppressWarnings("unchecked")
 	@Test
 	public void constructorWithUninferredEnclosingTypeTest() throws NoSuchMethodException, SecurityException {
-		ExecutableToken<?, ?> constructor = overConstructor(
-				(Constructor<Object>) Inner.class.getConstructors()[0],
-				new TypeToken<Outer<Number>>() {},
-				new @Infer TypeToken<Outer<? super Number>.Inner<Integer>>() {});
+		ExecutableToken<?, ?> constructor = overConstructor((Constructor<Object>) Inner.class.getConstructors()[0],
+				new TypeToken<Outer<Number>>() {}, new @Infer TypeToken<Outer<? super Number>.Inner<Integer>>() {});
 
 		assertThat(constructor.getReturnType().resolve(), equalTo(new TypeToken<Outer<Number>.Inner<Integer>>() {}));
 	}
@@ -149,9 +141,8 @@ public class ExecutableTokenTest {
 
 	@Test
 	public void varargsResolutionTest() throws NoSuchMethodException, SecurityException {
-		ExecutableToken<?, ?> asList = getStaticMethods(Arrays.class)
-				.named("asList")
-				.resolveOverload(String.class, String.class, String.class);
+		ExecutableToken<?, ?> asList = getStaticMethods(Arrays.class).named("asList").resolveOverload(String.class,
+				String.class, String.class);
 
 		assertThat(asList.isVariableArityInvocation(), is(true));
 	}

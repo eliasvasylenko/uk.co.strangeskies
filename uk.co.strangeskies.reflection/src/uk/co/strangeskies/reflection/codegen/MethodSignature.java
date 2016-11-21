@@ -51,14 +51,12 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 	public static <U> MethodSignature<U> methodSignature(ExecutableToken<?, U> executableToken) {
 		return new MethodSignature<>(executableToken.getName())
 				.withTypeVariables(
-						executableToken.getTypeParameters().map(TypeVariableSignature::typeVariableSignature).collect(toList()))
+						executableToken.getAllTypeParameters().map(TypeVariableSignature::typeVariableSignature).collect(toList()))
 				.withReturnType(executableToken.getReturnType())
-				.withParameters(
-						executableToken.getParameters().stream().map(VariableSignature::variableSignature).collect(toList()));
+				.withParameters(executableToken.getParameters().map(VariableSignature::variableSignature).collect(toList()));
 	}
 
 	private final String methodName;
-
 	private final AnnotatedType returnType;
 
 	protected MethodSignature(String methodName) {

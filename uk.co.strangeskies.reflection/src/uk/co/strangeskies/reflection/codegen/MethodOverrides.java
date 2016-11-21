@@ -41,13 +41,13 @@ public class MethodOverrides<T> {
 	}
 
 	private Stream<Method> classMethods() {
-		return StreamUtilities.<Class<?>>iterate(classDeclaration.getSuperClass(), Class::getSuperclass).flatMap(
+		return StreamUtilities.<Class<?>> iterate(classDeclaration.getSuperClass(), Class::getSuperclass).flatMap(
 				c -> stream(c.getDeclaredMethods()));
 	}
 
 	protected ExecutableToken<?, ?> getInvocable(Method method) {
-		ExecutableToken<?, ?> token = invocables
-				.computeIfAbsent(method, m -> overMethod(method, classDeclaration.getSuperType()));
+		ExecutableToken<?, ?> token = invocables.computeIfAbsent(method,
+				m -> overMethod(method, classDeclaration.getSuperType()));
 
 		return token;
 	}
@@ -55,20 +55,21 @@ public class MethodOverrides<T> {
 	protected void overrideMethod(MethodSignature<?> methodSignature) {
 		MethodDeclaration<T, ?> methodDeclaration = declareMethod(classDeclaration, methodSignature);
 
-		MethodOverride<T> override = methods
-				.computeIfAbsent(methodDeclaration.getErasedSignature(), k -> new MethodOverride<>(this, k));
+		MethodOverride<T> override = methods.computeIfAbsent(methodDeclaration.getErasedSignature(),
+				k -> new MethodOverride<>(this, k));
 
 		override.override(methodDeclaration);
 	}
 
 	protected void inheritMethod(Method method) {
-		ErasedMethodSignature overridingSignature = new ErasedMethodSignature(
-				method.getName(),
-				getInvocable(method).getParameters().stream().map(ExecutableParameter::getType).map(Types::getRawType).toArray(
-						Class<?>[]::new));
+		ErasedMethodSignature overridingSignature = new ErasedMethodSignature(method.getName(), getInvocable(method)
+				.getParameters()
+				.map(ExecutableParameter::getType)
+				.map(Types::getRawType)
+				.toArray(Class<?>[]::new));
 
-		MethodOverride<T> override = methods
-				.computeIfAbsent(overridingSignature, k -> new MethodOverride<>(this, overridingSignature));
+		MethodOverride<T> override = methods.computeIfAbsent(overridingSignature,
+				k -> new MethodOverride<>(this, overridingSignature));
 
 		override.inherit(method);
 
