@@ -30,41 +30,32 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection.codegen;
+package uk.co.strangeskies.reflection.test;
 
-import java.lang.annotation.Annotation;
-import java.util.Collection;
+import static org.junit.Assert.assertThat;
+import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterize;
 
-public class ConstructorSignature extends ExecutableSignature<ConstructorSignature> {
-	public static ConstructorSignature constructorSignature() {
-		return new ConstructorSignature();
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.HashSet;
+
+import org.hamcrest.core.IsEqual;
+import org.junit.Test;
+
+import uk.co.strangeskies.reflection.ParameterizedTypes;
+
+@SuppressWarnings("javadoc")
+public class SuperTypeParametersTest {
+	static class Outer<T> {
+		class Inner<U> {}
 	}
 
-	protected ConstructorSignature() {}
+	@Test
+	public void indirectParameterizedSupertype() {
+		ParameterizedType parameterizedType = parameterize(HashSet.class, String.class);
 
-	protected ConstructorSignature(
-			Collection<? extends VariableSignature<?>> parameters,
-			Collection<? extends TypeVariableSignature> typeVariables,
-			Collection<? extends Annotation> annotations) {
-		super(parameters, typeVariables, annotations);
-	}
+		Type supertype = ParameterizedTypes.resolveSupertype(parameterizedType, Iterable.class);
 
-	@Override
-	protected ConstructorSignature withExecutableSignatureData(
-			Collection<? extends VariableSignature<?>> parameters,
-			Collection<? extends TypeVariableSignature> typeVariables,
-			Collection<? extends Annotation> annotations) {
-		return new ConstructorSignature(parameters, typeVariables, annotations);
-	}
-
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-
-		appendTypeParameters(builder);
-		builder.append(' ');
-		appendParameters(builder);
-
-		return builder.toString();
+		assertThat(supertype, IsEqual.equalTo(parameterize(Iterable.class, String.class)));
 	}
 }

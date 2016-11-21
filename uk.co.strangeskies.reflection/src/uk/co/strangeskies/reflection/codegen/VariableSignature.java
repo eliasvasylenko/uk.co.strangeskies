@@ -50,7 +50,16 @@ public class VariableSignature<T> extends AnnotatedSignature<VariableSignature<T
 		return new VariableSignature<>(variableName, type, annotations);
 	}
 
+	public String getVariableName() {
+		return variableName;
+	}
+
 	public AnnotatedType getType() {
 		return type;
+	}
+
+	@Override
+	public String toString() {
+		return getType() + " " + getVariableName();
 	}
 }

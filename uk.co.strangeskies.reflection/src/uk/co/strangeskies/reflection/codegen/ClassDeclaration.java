@@ -2,6 +2,7 @@ package uk.co.strangeskies.reflection.codegen;
 
 import static java.util.Collections.unmodifiableList;
 import static java.util.Optional.of;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
 import static uk.co.strangeskies.reflection.Types.getRawType;
@@ -12,6 +13,7 @@ import static uk.co.strangeskies.reflection.token.TypeToken.overType;
 
 import java.lang.reflect.Type;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.token.TypeToken;
@@ -111,5 +113,41 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 	public TypeToken<T> asToken() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+
+		/*-
+		if (isPrivate())
+			builder.append("private ");
+		else if (isProtected())
+			builder.append("protected ");
+		else if (isPublic())
+			builder.append("public ");
+		
+		if (isNative())
+			builder.append("native ");
+		if (isStatic())
+			builder.append("static ");
+		if (isStrict())
+			builder.append("strictfp ");
+		if (isSynchronized())
+			builder.append("synchronized ");
+		
+		if (isAbstract())
+			builder.append("abstract ");
+		else if (isFinal())
+			builder.append("final ");
+		 */
+
+		builder.append(signature.getTypeName());
+
+		if (isParameterized()) {
+			builder.append("<").append(getTypeVariables().map(Objects::toString).collect(joining(", "))).append("> ");
+		}
+
+		return builder.toString();
 	}
 }

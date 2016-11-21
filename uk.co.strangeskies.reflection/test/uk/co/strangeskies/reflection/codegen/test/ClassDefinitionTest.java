@@ -95,13 +95,13 @@ public class ClassDefinitionTest {
 				.declare()
 				.define()
 				.defineMethod(
-						methodSignature("apply")
-								.withReturnType(STRING_TYPE)
-								.withParameters(parameter),
-						d -> d.withBody(b -> b
-								.withExpression(d.getParameter(parameter).assign(
-										d.getParameter(parameter).invokeMethod(concatMethod, d.getParameter(parameter))))
-								.withReturnStatement(d.getParameter(parameter))));
+						methodSignature("apply").withReturnType(STRING_TYPE).withParameters(parameter),
+						d -> d.withBody(
+								b -> b
+										.withExpression(
+												d.getParameter(parameter).assign(
+														d.getParameter(parameter).invokeMethod(concatMethod, d.getParameter(parameter))))
+										.withReturnStatement(d.getParameter(parameter))));
 
 		Function<String, String> instance = classDefinition.instantiate().cast();
 

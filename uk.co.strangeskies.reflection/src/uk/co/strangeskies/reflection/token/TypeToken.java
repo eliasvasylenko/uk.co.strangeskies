@@ -190,7 +190,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	@Target(ElementType.TYPE_USE)
 	public @interface Capture {}
 
-	private static final TypeToken<?> NULL_TYPE_TOKEN = new TypeToken<>(new BoundSet(), (AnnotatedType) null,
+	private static final TypeToken<?> NULL_TYPE_TOKEN = new TypeToken<>(
+			new BoundSet(),
+			(AnnotatedType) null,
 			(Type) null);
 
 	// private static final ComputingMap<AnnotatedType, Pair<Resolver, Type>>
@@ -354,14 +356,23 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 						: annotatedType.isAnnotationPresent(Capture.class) ? Wildcards.CAPTURE : Wildcards.RETAIN;
 
 		if (annotatedType instanceof AnnotatedParameterizedType) {
-			return substituteAnnotatedWildcardsForParameterizedType(isomorphism, behavior,
-					(AnnotatedParameterizedType) annotatedType, resolver);
+			return substituteAnnotatedWildcardsForParameterizedType(
+					isomorphism,
+					behavior,
+					(AnnotatedParameterizedType) annotatedType,
+					resolver);
 		} else if (annotatedType instanceof AnnotatedWildcardType) {
-			return substituteAnnotatedWildcardsForWildcardType(isomorphism, behavior, (AnnotatedWildcardType) annotatedType,
+			return substituteAnnotatedWildcardsForWildcardType(
+					isomorphism,
+					behavior,
+					(AnnotatedWildcardType) annotatedType,
 					resolver);
 		} else if (annotatedType instanceof AnnotatedArrayType) {
-			return arrayFromComponent(substituteAnnotatedWildcards(isomorphism,
-					((AnnotatedArrayType) annotatedType).getAnnotatedGenericComponentType(), resolver));
+			return arrayFromComponent(
+					substituteAnnotatedWildcards(
+							isomorphism,
+							((AnnotatedArrayType) annotatedType).getAnnotatedGenericComponentType(),
+							resolver));
 		} else {
 			return annotatedType.getType();
 		}
@@ -377,8 +388,10 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 			 * Deal with annotations on types mentioned by parameters, preserving any
 			 * parameters which are wildcards themselves.
 			 */
-			Type[] arguments = substituteAnnotatedWildcardsForEach(isomorphism,
-					annotatedType.getAnnotatedActualTypeArguments(), resolver);
+			Type[] arguments = substituteAnnotatedWildcardsForEach(
+					isomorphism,
+					annotatedType.getAnnotatedActualTypeArguments(),
+					resolver);
 
 			/*
 			 * Collect all arguments into a mapping from type variables, including on
@@ -568,7 +581,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 
 	@Override
 	public TypeToken<T> deepCopy(Isomorphism isomorphism) {
-		return new TypeToken<>(bounds.deepCopy(isomorphism), declaration,
+		return new TypeToken<>(
+				bounds.deepCopy(isomorphism),
+				declaration,
 				new TypeSubstitution().withIsomorphism(isomorphism).resolve(getType()));
 	}
 
@@ -750,7 +765,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * @return the upper bounds of the type represented by this TypeToken
 	 */
 	public Stream<Type> getUpperBounds() {
-		List<Type> upperBounds = Types.getUpperBounds(getType()).collect(Collectors.toList());
+		List<Type> upperBounds = Types.getUpperBounds(getType()).collect(toList());
 
 		for (int i = 0; i < upperBounds.size(); i++) {
 			Type upperBound = upperBounds.get(i);
@@ -1022,29 +1037,77 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	}
 
 	/**
-	 * For a given generic superclass of this type, determine the type arguments
-	 * of the exact supertype.
+	 * Determine the super type of this type which is either equal to the given
+	 * superclass or a parameterization thereof.
 	 * 
-	 * @param <U>
-	 *          The class of the supertype parameterization we wish to determine.
 	 * @param superclass
-	 *          The class of the supertype parameterization we wish to determine.
-	 * @return A TypeToken over the supertype of the requested class.
+	 *          the class of the supertype parameterization we wish to determine
+	 * @return the supertype of the requested class
 	 */
 	@SuppressWarnings("unchecked")
 	public <U> TypeToken<? extends U> resolveSupertype(Class<U> superclass) {
-		if (!Types.isGeneric(superclass))
-			return TypeToken.overType(superclass);
-
-		if (superclass.equals(getType())
-				|| (getType() instanceof ParameterizedType && ((ParameterizedType) getType()).getRawType().equals(superclass)))
-			return (TypeToken<? extends U>) this;
-
-		Type superType = getUpperBounds().filter(t -> Types.isAssignable(t, superclass)).findFirst().orElseThrow(
+		Type type = getUpperBounds().filter(t -> Types.isAssignable(t, superclass)).findFirst().orElseThrow(
 				() -> new ReflectionException(p -> p.cannotResolveSupertype(getType(), superclass)));
 
-		return (TypeToken<? extends U>) overType(getBounds(),
-				ParameterizedTypes.resolveSupertypeParameters(superType, superclass), Wildcards.RETAIN);
+		return (TypeToken<? extends U>) overType(
+				getBounds(),
+				ParameterizedTypes.resolveSupertype(type, superclass),
+				Wildcards.RETAIN);
+	}
+
+	/**
+	 * Determine the recursive sequence of direct supertypes of this type which
+	 * lead to either the given superclass or a parameterization thereof.
+	 * 
+	 * @param superclass
+	 *          the class of the supertype parameterization we wish to determine
+	 * @return a stream returning the given type and then each direct supertype
+	 *         recursively until the given superclass, or a parameterization
+	 *         thereof, is reached
+	 */
+	@SuppressWarnings("unchecked")
+	public <U> Stream<TypeToken<? extends U>> resolveSupertypeHierarchy(Class<U> superclass) {
+		/*
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * TODO This first part is not good enough. We need to retain every step in
+		 * the getUpperBounds() calculation, as it may be recursive
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 */
+		Type type = getUpperBounds().filter(t -> Types.isAssignable(t, superclass)).findFirst().orElseThrow(
+				() -> new ReflectionException(p -> p.cannotResolveSupertype(getType(), superclass)));
+
+		Stream<TypeToken<? extends U>> supertypeHierarchy = ParameterizedTypes
+				.resolveSupertypeHierarchy(type, superclass)
+				.map(t -> (TypeToken<? extends U>) overType(getBounds(), t, Wildcards.RETAIN));
+
+		if (type != this.type) {
+			supertypeHierarchy = Stream.concat(Stream.of((TypeToken<? extends U>) this), supertypeHierarchy);
+		}
+
+		return supertypeHierarchy;
 	}
 
 	/**

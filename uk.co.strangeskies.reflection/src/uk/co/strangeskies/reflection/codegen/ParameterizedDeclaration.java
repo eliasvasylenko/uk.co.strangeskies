@@ -143,4 +143,11 @@ public class ParameterizedDeclaration<S extends ParameterizedSignature<?>> exten
 	public Stream<? extends TypeVariable<? extends ParameterizedDeclaration<S>>> getTypeVariables() {
 		return typeVariables.stream();
 	}
+
+	/**
+	 * @return true if the declaration has type parameters, false otherwise
+	 */
+	public boolean isParameterized() {
+		return !typeVariables.isEmpty();
+	}
 }

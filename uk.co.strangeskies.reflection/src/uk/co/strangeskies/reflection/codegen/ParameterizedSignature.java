@@ -35,11 +35,13 @@ package uk.co.strangeskies.reflection.codegen;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Collections.emptySet;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 public abstract class ParameterizedSignature<S extends ParameterizedSignature<S>> extends AnnotatedSignature<S> {
@@ -79,5 +81,9 @@ public abstract class ParameterizedSignature<S extends ParameterizedSignature<S>
 
 	public Stream<? extends TypeVariableSignature> getTypeVariables() {
 		return typeVariables.stream();
+	}
+
+	protected void appendTypeParameters(StringBuilder builder) {
+		builder.append("<").append(getTypeVariables().map(Objects::toString).collect(joining(", "))).append(">");
 	}
 }

@@ -33,11 +33,13 @@
 package uk.co.strangeskies.reflection.codegen;
 
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.joining;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 public abstract class ExecutableSignature<S extends ExecutableSignature<S>> extends ParameterizedSignature<S> {
@@ -78,5 +80,9 @@ public abstract class ExecutableSignature<S extends ExecutableSignature<S>> exte
 
 	public S withParameters(Collection<? extends VariableSignature<?>> parameters) {
 		return withExecutableSignatureData(new ArrayList<>(parameters), typeVariables, annotations);
+	}
+
+	protected void appendParameters(StringBuilder builder) {
+		builder.append("(").append(getParameters().map(Objects::toString).collect(joining(", "))).append(")");
 	}
 }

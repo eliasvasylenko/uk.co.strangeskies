@@ -35,6 +35,7 @@ package uk.co.strangeskies.reflection.codegen;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Collections.emptySet;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 import java.lang.annotation.Annotation;
@@ -43,6 +44,7 @@ import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
@@ -165,5 +167,10 @@ public class TypeVariableSignature extends AnnotatedSignature<TypeVariableSignat
 
 	public TypeVariableSignature withBounds(Collection<? extends AnnotatedType> bounds) {
 		return new TypeVariableSignature(name, bounds, annotations);
+	}
+
+	@Override
+	public String toString() {
+		return getName() + (bounds == null ? "" : " extends " + bounds.stream().map(Objects::toString).collect(joining()));
 	}
 }

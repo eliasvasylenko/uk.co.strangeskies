@@ -32,6 +32,7 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toMap;
 
 import java.io.Serializable;
@@ -41,7 +42,6 @@ import java.lang.reflect.TypeVariable;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +58,7 @@ import uk.co.strangeskies.utilities.EquivalenceComparator;
 import uk.co.strangeskies.utilities.Isomorphism;
 import uk.co.strangeskies.utilities.collection.MultiMap;
 import uk.co.strangeskies.utilities.collection.MultiTreeMap;
+import uk.co.strangeskies.utilities.collection.StreamUtilities;
 
 /**
  * A collection of utility methods relating to parameterized types.
@@ -176,8 +177,10 @@ public class ParameterizedTypes {
 				MultiMap<ParameterizedType, ParameterizedType, Set<ParameterizedType>> equalitiesForThread = assumedEqualities
 						.get(currentThread);
 				if (equalitiesForThread == null) {
-					assumedEqualities.put(currentThread,
-							equalitiesForThread = new MultiTreeMap<>(EquivalenceComparator.identityComparator(),
+					assumedEqualities.put(
+							currentThread,
+							equalitiesForThread = new MultiTreeMap<>(
+									EquivalenceComparator.identityComparator(),
 									() -> new TreeSet<>(EquivalenceComparator.identityComparator())));
 					newThread = true;
 				}
@@ -276,10 +279,9 @@ public class ParameterizedTypes {
 
 			builder.append('<');
 
-			builder.append(Arrays
-					.stream(typeArguments)
-					.map(t -> Types.toString(t, imports, isomorphism))
-					.collect(Collectors.joining(", ")));
+			builder.append(
+					Arrays.stream(typeArguments).map(t -> Types.toString(t, imports, isomorphism)).collect(
+							Collectors.joining(", ")));
 
 			return builder.append('>').toString();
 		});
@@ -322,15 +324,18 @@ public class ParameterizedTypes {
 			TypeVariable<?>[] typeParameters = rawType.getTypeParameters();
 			Type[] actualTypeArguments = type.getActualTypeArguments();
 
-			typeArguments = Stream.concat(IntStream.range(0, typeParameters.length).mapToObj(
-					i -> new AbstractMap.SimpleEntry<>(typeParameters[i], actualTypeArguments[i])), typeArguments);
+			typeArguments = Stream.concat(
+					IntStream.range(0, typeParameters.length).mapToObj(
+							i -> new AbstractMap.SimpleEntry<>(typeParameters[i], actualTypeArguments[i])),
+					typeArguments);
 
 			type = type.getOwnerType() instanceof ParameterizedType ? (ParameterizedType) type.getOwnerType() : null;
 			rawType = Types.isStatic(rawType) ? null : rawType.getEnclosingClass();
 
 			if (rawType != null && type == null) {
 				do {
-					typeArguments = Stream.concat(typeArguments,
+					typeArguments = Stream.concat(
+							typeArguments,
 							Arrays.stream(rawType.getTypeParameters()).map(p -> new AbstractMap.SimpleEntry<>(p, p)));
 				} while ((rawType = Types.isStatic(rawType) ? null : rawType.getEnclosingClass()) != null);
 			}
@@ -487,50 +492,23 @@ public class ParameterizedTypes {
 		return arguments;
 	}
 
-	/**
-	 * TODO
-	 * 
-	 * @param type
-	 * @param superclass
-	 * @return a stream returning the given type and then each supertype
-	 *         recursively until the given superclass, or a parameterization
-	 *         thereof, is reached
-	 */
-	public static Stream<Type> resolveTypeHierarchy(Type type, Class<?> superclass) {
-		throw new UnsupportedOperationException();
-	}
+	private static Stream<Type> resolveSupertypeHierarchyImpl(Type type, Class<?> superclass) {
+		if (!(type instanceof ParameterizedType) && !(type instanceof Class)) {
+			throw new ReflectionException(
+					p -> p.cannotResolveSupertype(type, superclass),
+					new ReflectionException(p -> p.unsupportedType(type)));
+		}
 
-	/**
-	 * For a given generic superclass of a given exact type, determine the type
-	 * arguments of the exact supertype.
-	 * 
-	 * @param type
-	 *          The type providing a context within which to determine the
-	 *          arguments of the supertype.
-	 * @param superclass
-	 *          The class of the supertype parameterization we wish to determine.
-	 * @return the supertype of the requested class
-	 */
-	public static Type resolveSupertypeParameters(Type type, Class<?> superclass) {
-		if (!Types.isGeneric(superclass))
-			return superclass; // TODO make sure it's actually a super type, else
-													// throw
+		return StreamUtilities.iterate(type, supertype -> {
+			Class<?> subclass = Types.getRawType(supertype);
 
-		Class<?> subclass = Types.getRawType(type);
+			if (subclass.equals(superclass)) {
+				return null;
+			}
 
-		if (subclass.equals(superclass))
-			return type;
-
-		if (!(type instanceof ParameterizedType) && !(type instanceof Class))
-			throw new IllegalArgumentException("Unexpected class '" + type.getClass() + "' of type '" + type + "'.");
-
-		do {
-			if (Types.isGeneric(subclass) && type instanceof Class<?>)
-				return superclass;
-
-			Set<Type> lesserSubtypes = new HashSet<>(Arrays.asList(subclass.getGenericInterfaces()));
+			List<Type> lesserSubtypes = new ArrayList<>(asList(subclass.getGenericInterfaces()));
 			if (subclass.getSuperclass() != null)
-				lesserSubtypes.addAll(Arrays.asList(subclass.getGenericSuperclass()));
+				lesserSubtypes.add(subclass.getGenericSuperclass());
 			if (lesserSubtypes.isEmpty())
 				lesserSubtypes.add(Object.class);
 
@@ -540,16 +518,58 @@ public class ParameterizedTypes {
 					.findAny()
 					.get();
 
-			if (type instanceof ParameterizedType)
-				type = new TypeSubstitution(
-						getAllTypeArguments((ParameterizedType) type).collect(toMap(Entry::getKey, Entry::getValue)))
+			if (supertype instanceof ParameterizedType)
+				supertype = new TypeSubstitution(
+						getAllTypeArguments((ParameterizedType) supertype).collect(toMap(Entry::getKey, Entry::getValue)))
 								.resolve(subtype);
 			else
-				type = subtype;
+				supertype = subtype;
 
-			subclass = Types.getRawType(type);
-		} while (!subclass.equals(superclass));
+			subclass = Types.getRawType(supertype);
 
-		return type;
+			return supertype;
+		});
+	}
+
+	/**
+	 * Determine the recursive sequence of direct supertypes of a given type which
+	 * lead to either the given superclass or a parameterization thereof.
+	 * 
+	 * @param type
+	 *          the type providing a context within which to determine the
+	 *          arguments of the supertype
+	 * @param superclass
+	 *          the class of the supertype parameterization we wish to determine
+	 * @return a stream returning the given type and then each direct supertype
+	 *         recursively until the given superclass, or a parameterization
+	 *         thereof, is reached
+	 */
+	public static Stream<Type> resolveSupertypeHierarchy(Type type, Class<?> superclass) {
+		if (!Types.isAssignable(type, superclass)) {
+			throw new ReflectionException(p -> p.cannotResolveSupertype(type, superclass));
+		}
+
+		return resolveSupertypeHierarchyImpl(type, superclass);
+	}
+
+	/**
+	 * Determine the super type of a given type which is either equal to the given
+	 * superclass or a parameterization thereof.
+	 * 
+	 * @param type
+	 *          the type providing a context within which to determine the
+	 *          arguments of the supertype
+	 * @param superclass
+	 *          the class of the supertype parameterization we wish to determine
+	 * @return the supertype of the requested class
+	 */
+	public static Type resolveSupertype(Type type, Class<?> superclass) {
+		if (!Types.isAssignable(type, superclass)) {
+			throw new ReflectionException(p -> p.cannotResolveSupertype(type, superclass));
+		} else if (!Types.isGeneric(superclass)) {
+			return superclass;
+		}
+
+		return resolveSupertypeHierarchyImpl(type, superclass).reduce((a, b) -> b).get();
 	}
 }

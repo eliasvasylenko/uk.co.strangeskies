@@ -229,7 +229,7 @@ public class ConstraintFormula {
 
 		if (to instanceof ParameterizedType) {
 			return toRaw.isAssignableFrom(fromRaw)
-					&& ParameterizedTypes.resolveSupertypeParameters(from, toRaw) instanceof Class;
+					&& ParameterizedTypes.resolveSupertype(from, toRaw) instanceof Class;
 
 		} else if (to instanceof GenericArrayType) {
 			return fromRaw.isArray() && isUncheckedCompatibleOnly(Types.getComponentType(from), Types.getComponentType(to));
@@ -312,7 +312,7 @@ public class ConstraintFormula {
 						if (rawType.isAssignableFrom(Types.getRawType(from)) && from instanceof ParameterizedType) {
 
 							ParameterizedType fromParameterization = (ParameterizedType) ParameterizedTypes
-									.resolveSupertypeParameters(from, rawType);
+									.resolveSupertype(from, rawType);
 							if (!(fromParameterization instanceof ParameterizedType))
 								/*
 								 * If no such type exists, the constraint reduces to false.

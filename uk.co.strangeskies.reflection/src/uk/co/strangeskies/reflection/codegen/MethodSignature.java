@@ -51,7 +51,7 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 	public static <U> MethodSignature<U> methodSignature(ExecutableToken<?, U> executableToken) {
 		return new MethodSignature<>(executableToken.getName())
 				.withTypeVariables(
-						executableToken.getAllTypeParameters().map(TypeVariableSignature::typeVariableSignature).collect(toList()))
+						executableToken.getTypeParameters().map(TypeVariableSignature::typeVariableSignature).collect(toList()))
 				.withReturnType(executableToken.getReturnType())
 				.withParameters(executableToken.getParameters().map(VariableSignature::variableSignature).collect(toList()));
 	}
@@ -112,6 +112,12 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 
 	@Override
 	public String toString() {
-		return super.toString();
+		StringBuilder builder = new StringBuilder();
+
+		appendTypeParameters(builder);
+		builder.append(' ').append(returnType).append(' ').append(methodName);
+		appendParameters(builder);
+
+		return builder.toString();
 	}
 }

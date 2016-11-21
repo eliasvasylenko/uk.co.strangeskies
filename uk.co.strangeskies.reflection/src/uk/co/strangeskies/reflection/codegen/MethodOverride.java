@@ -98,7 +98,8 @@ public class MethodOverride<T> {
 				.getInvocable(method)
 				.withTypeArguments(method.getTypeParameters());
 
-		validateOverride(overriddenToken.getReturnType().getType(),
+		validateOverride(
+				overriddenToken.getReturnType().getType(),
 				overriddenToken.getParameters().map(ExecutableParameter::getType).toArray(Type[]::new),
 				method.getTypeParameters());
 	}
@@ -132,8 +133,10 @@ public class MethodOverride<T> {
 		}
 
 		this.override = override;
-		validateOverride(override.getReturnType().getType(),
-				override.getParameters().map(v -> v.getType().getType()).toArray(Type[]::new), override.getTypeParameters());
+		validateOverride(
+				override.getReturnType().getType(),
+				override.getParameters().map(v -> v.getType().getType()).toArray(Type[]::new),
+				override.getTypeParameters());
 	}
 
 	public void overrideIfNecessary() {
@@ -151,6 +154,7 @@ public class MethodOverride<T> {
 				ExecutableToken<?, ?> executableToken = methodOverrides.getInvocable(overrideSignatureMethod).withTypeArguments(
 						asList(overrideSignatureMethod.getTypeParameters()));
 				MethodSignature<?> signature = methodSignature(executableToken);
+
 				MethodDeclaration<T, ?> declaration = declareMethod(methodOverrides.getClassDeclaration(), signature);
 
 				override(declaration);
