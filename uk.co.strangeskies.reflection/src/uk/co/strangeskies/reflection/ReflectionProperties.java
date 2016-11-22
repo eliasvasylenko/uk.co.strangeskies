@@ -47,7 +47,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import uk.co.strangeskies.reflection.token.TypeToken;
 import uk.co.strangeskies.text.properties.Localized;
 import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
@@ -172,5 +171,7 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 
 	Localized<String> incorrectEnclosingDeclaration(Type rawType, GenericDeclaration declaration);
 
-	Localized<String> cannotResolveInvocationOnTypeWithWildcardParameters(TypeToken<?> containerType);
+	Localized<String> cannotResolveInvocationOnTypeWithWildcardParameters(Type type);
+
+	Localized<String> cannotParameterizeMethodOnRawType(Executable executable, Type containerType);
 }

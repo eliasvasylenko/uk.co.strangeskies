@@ -35,15 +35,23 @@ package uk.co.strangeskies.utilities.collection;
 import static java.util.stream.Stream.concat;
 import static java.util.stream.Stream.of;
 
+import java.util.AbstractMap.SimpleEntry;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -55,6 +63,57 @@ import java.util.stream.StreamSupport;
  */
 public class StreamUtilities {
 	private StreamUtilities() {}
+
+	public static <A, B> Collector<Entry<A, B>, ?, Map<A, B>> entriesToMap() {
+		return Collectors.toMap(Entry::getKey, Entry::getValue, throwingMerger(), LinkedHashMap::new);
+	}
+
+	public static <T> BinaryOperator<T> throwingMerger() {
+		return (u, v) -> {
+			throw new IllegalStateException(String.format("Duplicate key %s", u));
+		};
+	}
+
+	public static <A, B> Stream<Entry<A, B>> zip(Stream<A> first, Stream<B> second) {
+		return zip(first, second, (Supplier<RuntimeException>) null);
+	}
+
+	public static <A, B> Stream<Entry<A, B>> zip(Stream<A> first, Stream<B> second,
+			Supplier<RuntimeException> mismatchedStreams) {
+		return zip(first, second, SimpleEntry<A, B>::new, mismatchedStreams);
+	}
+
+	public static <A, B, R> Stream<R> zip(Stream<A> first, Stream<B> second, BiFunction<A, B, R> combiner) {
+		return zip(first, second, combiner, null);
+	}
+
+	public static <A, B, R> Stream<R> zip(Stream<A> first, Stream<B> second, BiFunction<A, B, R> combiner,
+			Supplier<RuntimeException> mismatchedStreams) {
+		Iterator<A> firstIterator = first.iterator();
+		Iterator<B> secondIterator = second.iterator();
+
+		Iterable<R> i = () -> new Iterator<R>() {
+			@Override
+			public boolean hasNext() {
+				if (firstIterator.hasNext() != secondIterator.hasNext()) {
+					if (mismatchedStreams != null) {
+						throw mismatchedStreams.get();
+					} else {
+						return false;
+					}
+				} else {
+					return firstIterator.hasNext();
+				}
+			}
+
+			@Override
+			public R next() {
+				return combiner.apply(firstIterator.next(), secondIterator.next());
+			}
+		};
+
+		return StreamSupport.stream(i.spliterator(), false);
+	}
 
 	/**
 	 * @param stream
@@ -82,7 +141,8 @@ public class StreamUtilities {
 		};
 
 		return StreamSupport.stream(
-				Spliterators.spliterator(iterator, collection.size(), Spliterator.ORDERED | Spliterator.IMMUTABLE), false);
+				Spliterators.spliterator(iterator, collection.size(), Spliterator.ORDERED | Spliterator.IMMUTABLE),
+				false);
 	}
 
 	/**
@@ -232,7 +292,8 @@ public class StreamUtilities {
 
 	protected static <T> Stream<T> flatMapRecursiveDistinct(Stream<? extends T> stream,
 			Function<? super T, ? extends Stream<? extends T>> mapping, Set<T> visited) {
-		return stream.filter(visited::add)
+		return stream
+				.filter(visited::add)
 				.flatMap(s -> concat(of(s), flatMapRecursiveDistinct(mapping.apply(s), mapping, visited)));
 	}
 }

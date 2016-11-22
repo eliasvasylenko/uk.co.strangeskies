@@ -32,19 +32,28 @@
  */
 package uk.co.strangeskies.reflection.token;
 
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcard;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -53,6 +62,8 @@ import uk.co.strangeskies.reflection.BoundSet;
 import uk.co.strangeskies.reflection.InferenceVariable;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.ReflectionException;
+import uk.co.strangeskies.reflection.TypeResolver;
+import uk.co.strangeskies.reflection.Types;
 
 /**
  * <p>
@@ -70,24 +81,21 @@ import uk.co.strangeskies.reflection.ReflectionException;
  * @param <T>
  *          the type of the field
  */
-public class FieldToken<O, T> implements MemberToken<O> {
+public class FieldToken<O, T> extends MemberTokenImpl<O> {
 	private final TypeToken<O> ownerType;
 	private final TypeToken<T> fieldType;
 	private final Field field;
 
-	private FieldToken(Field field, TypeToken<O> ownerType, TypeToken<T> fieldType) {
+	private FieldToken(Field field, TypeToken<O> receiverType, TypeToken<T> fieldType) {
 		this.field = field;
-		this.ownerType = ownerType;
+		this.ownerType = receiverType;
 		this.fieldType = fieldType;
 
-		if (!ownerType.isProper() || values().stream().anyMatch(WildcardType.class::isInstance)) {
-			/*
-			 * TODO this should actually check if there were any inference variables
-			 * in the type hierarchy between containerType and containerSuperType, as
-			 * it should still pass if the containerType is e.g. an intersection
-			 * containing an inference variables with an upper bound on
-			 * containerSuperClass.
-			 */
+		if (!ownerType.isProper() || .stream().anyMatch(WildcardType.class::isInstance)) {
+			List<TypeToken<?>> containerSupertypeList = containerType
+					.resolveSupertypeHierarchy(containerSuperClass)
+					.collect(toList());
+			
 			throw new ReflectionException(p -> p.cannotResolveInvocationOnTypeWithWildcardParameters(containerType));
 		}
 	}
@@ -100,8 +108,32 @@ public class FieldToken<O, T> implements MemberToken<O> {
 	 *          the field to wrap
 	 * @return a field member wrapping the given field
 	 */
-	public static FieldToken<?, ?> over(Field field) {
-		return over(field, TypeToken.overType(ParameterizedTypes.parameterize(field.getDeclaringClass(), a -> wildcard())));
+	public static FieldToken<Void, ?> overStaticField(Field field) {
+		return new FieldToken<>(field, TypeToken.overType(void.class), null);
+	}
+
+	/**
+	 * Create a new {@link FieldToken} instance from a reference to a
+	 * {@link Field}.
+	 * 
+	 * @param field
+	 *          the field to wrap
+	 * @return a field member wrapping the given field
+	 */
+	public static <E> FieldToken<E, ?> overStaticField(Field field, TypeToken<E> enclosingInstance) {
+		return new FieldToken<>(field, enclosingInstance, null);
+	}
+
+	/**
+	 * Create a new {@link FieldToken} instance from a reference to a
+	 * {@link Field}.
+	 * 
+	 * @param field
+	 *          the field to wrap
+	 * @return a field member wrapping the given field
+	 */
+	public static FieldToken<?, ?> overField(Field field) {
+		return new FieldToken<>(field, TypeToken.overType(field.getDeclaringClass()), null);
 	}
 
 	/**
@@ -112,12 +144,12 @@ public class FieldToken<O, T> implements MemberToken<O> {
 	 *          the type of the owner
 	 * @param field
 	 *          the field to wrap
-	 * @param ownerType
+	 * @param instance
 	 *          the type to which the field belongs
 	 * @return a field member wrapping the given field
 	 */
-	public static <O> FieldToken<O, ?> over(Field field, TypeToken<O> ownerType) {
-		return new FieldToken<>(field, ownerType, TypeToken.overType(ownerType.resolveType(field.getGenericType())));
+	public static <O> FieldToken<O, ?> overField(Field field, TypeToken<O> instance) {
+		return new FieldToken<>(field, instance, null);
 	}
 
 	@Override

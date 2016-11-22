@@ -211,4 +211,6 @@ public interface MemberToken<O> {
 	 * @return the derived {@link MemberToken} with inferred types
 	 */
 	MemberToken<O> infer();
+
+	boolean isRaw();
 }

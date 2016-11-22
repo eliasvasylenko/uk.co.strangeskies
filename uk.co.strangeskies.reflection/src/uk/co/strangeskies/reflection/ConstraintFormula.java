@@ -48,6 +48,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -228,8 +229,7 @@ public class ConstraintFormula {
 		Class<?> fromRaw = Types.getRawType(from);
 
 		if (to instanceof ParameterizedType) {
-			return toRaw.isAssignableFrom(fromRaw)
-					&& ParameterizedTypes.resolveSupertype(from, toRaw) instanceof Class;
+			return toRaw.isAssignableFrom(fromRaw) && ParameterizedTypes.resolveSupertype(from, toRaw) instanceof Class;
 
 		} else if (to instanceof GenericArrayType) {
 			return fromRaw.isArray() && isUncheckedCompatibleOnly(Types.getComponentType(from), Types.getComponentType(to));
@@ -293,8 +293,8 @@ public class ConstraintFormula {
 					 */
 					if (!(from instanceof InferenceVariable))
 						bounds.incorporateFalsehood(
-								"Raw types '" + Types.getRawTypes(from) + "' cannot be assigned from '" + Types.getRawType(to) + "': "
-										+ this);
+								"Raw types '" + Types.getRawTypes(from).map(Objects::toString).collect(Collectors.joining(", "))
+										+ "' cannot be assigned from '" + Types.getRawType(to) + "': " + this);
 				} else {
 					List<Map.Entry<TypeVariable<?>, Type>> toArguments = ParameterizedTypes
 							.getAllTypeArguments((ParameterizedType) to)
