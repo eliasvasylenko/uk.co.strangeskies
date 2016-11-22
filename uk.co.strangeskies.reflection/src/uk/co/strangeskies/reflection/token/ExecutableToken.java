@@ -36,8 +36,9 @@ import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static uk.co.strangeskies.reflection.BoundSet.emptyBoundSet;
 import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.LOOSE_COMPATIBILILTY;
-import static uk.co.strangeskies.reflection.token.ExecutableTokenStream.executableStream;
+import static uk.co.strangeskies.reflection.token.ExecutableTokenQuery.executableStream;
 import static uk.co.strangeskies.reflection.token.TypeToken.overType;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.entriesToMap;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.zip;
@@ -103,23 +104,22 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 
 	private final boolean variableArityInvocation;
 
-	private ExecutableToken(BoundSet bounds, TypeToken<O> receiverType, TypeToken<R> returnType,
+	protected ExecutableToken(BoundSet bounds, TypeToken<O> receiverType, TypeToken<R> returnType,
 			List<Type> methodTypeArguments, Executable executable, BiFunction<Object, List<?>, R> invocationFunction,
 			boolean variableArityInvocation) {
 		this(
-				bounds,
+				new TypeResolver(bounds),
 				receiverType,
 				returnType,
 				methodTypeArguments,
 				executable,
 				invocationFunction,
-				variableArityInvocation,
-				new TypeResolver(bounds));
+				variableArityInvocation);
 	}
 
-	private ExecutableToken(BoundSet bounds, TypeToken<O> receiverType, TypeToken<R> returnType,
+	protected ExecutableToken(TypeResolver resolver, TypeToken<O> receiverType, TypeToken<R> returnType,
 			List<Type> methodTypeArguments, Executable executable, BiFunction<Object, List<?>, R> invocationFunction,
-			boolean variableArityInvocation, TypeResolver resolver) {
+			boolean variableArityInvocation) {
 		super(executable, resolver, executable instanceof Constructor<?> ? returnType : receiverType);
 
 		this.invocationFunction = invocationFunction;
@@ -128,10 +128,7 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 		/*
 		 * Incorporate relevant type parameters:
 		 */
-		this.methodTypeArguments = determineMethodTypeArguments(
-				resolver,
-				isConstructor() ? returnType : receiverType,
-				methodTypeArguments);
+		this.methodTypeArguments = determineMethodTypeArguments(resolver, methodTypeArguments);
 
 		TypeSubstitution inferenceVariableSubstitution = new TypeSubstitution(
 				getAllTypeArguments().collect(entriesToMap()));
@@ -146,9 +143,7 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 		this.bounds = resolver.getBounds();
 	}
 
-	private List<Type> determineMethodTypeArguments(TypeResolver resolver, TypeToken<?> containerType,
-			List<Type> methodTypeArguments) {
-
+	private List<Type> determineMethodTypeArguments(TypeResolver resolver, List<Type> methodTypeArguments) {
 		Map<TypeVariable<?>, Type> containerArguments = getContainerTypeArguments();
 
 		if (containerArguments != null) {
@@ -168,7 +163,7 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 					.forEach(i -> finalTypeArguments.add(i.getValue()));
 		} else {
 			if (methodTypeArguments != null) {
-				throw new ReflectionException(p -> p.cannotParameterizeMethodOnRawType(getMember(), containerType.getType()));
+				throw new ReflectionException(p -> p.cannotParameterizeMethodOnRawType(getMember()));
 			}
 		}
 
@@ -177,23 +172,11 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 
 	private TypeToken<O> determineReceiverType(TypeResolver resolver, TypeSubstitution inferenceVariables,
 			TypeToken<O> receiverType) {
-		if (!receiverType.getType().equals(void.class)) {
-			Class<?> receiverClass;
-
-			if (getMember() instanceof Method && !isStatic()) {
-				receiverClass = getMember().getDeclaringClass();
-			} else {
-				receiverClass = getMember().getDeclaringClass().getEnclosingClass();
-			}
-
-			if (!receiverType.getRawType().equals(receiverClass)) {
-				receiverType.incorporateInto(resolver);
-			}
-
-			receiverType = receiverType.withBounds(resolver.getBounds()).resolve();
+		if (receiverType.getType().equals(void.class)) {
+			return receiverType;
+		} else {
+			return receiverType.withBounds(resolver.getBounds()).resolve();
 		}
-
-		return receiverType.resolve();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -325,7 +308,7 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 	 */
 	public static ExecutableToken<Void, ?> overStaticMethod(Method method) {
 		return new ExecutableToken<>(
-				new BoundSet(),
+				emptyBoundSet(),
 				TypeToken.overType(void.class),
 				null,
 				null,
@@ -599,7 +582,7 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 	 */
 	@Override
 	public ExecutableToken<O, R> withBounds(BoundSet bounds, Collection<? extends InferenceVariable> inferenceVariables) {
-		bounds = getBounds().withIncorporated(bounds, inferenceVariables);
+		bounds = getBounds().withBounds(bounds);
 
 		return new ExecutableToken<>(
 				bounds,
@@ -629,7 +612,7 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 	@SuppressWarnings("unchecked")
 	public <U extends O> ExecutableToken<U, ? extends R> withReceiverType(TypeToken<U> type) {
 		try {
-			BoundSet bounds = type.incorporateInto(getBounds());
+			BoundSet bounds = getBounds().withBounds(type.getBounds());
 			bounds = new ConstraintFormula(Kind.SUBTYPE, type.getType(), receiverType.getType()).reduce(bounds);
 
 			Class<?> mostSpecificOverridingClass = this.getMember().getDeclaringClass();
@@ -1006,7 +989,7 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 					}
 				}
 
-				argument.incorporateInto(resolver);
+				resolver.incorporateBounds(argument.getBounds());
 				resolver.reduce(new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, argument.getType(), parameter));
 			}
 
@@ -1306,7 +1289,7 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 	 * @return a list of all {@link Method} objects applicable to this type,
 	 *         wrapped in {@link ExecutableToken} instances
 	 */
-	public static ExecutableTokenStream<ExecutableToken<Void, ?>> getStaticMethods(Class<?> declaringClass) {
+	public static ExecutableTokenQuery<ExecutableToken<Void, ?>, ?> getStaticMethods(Class<?> declaringClass) {
 		Stream<Method> methodStream = Arrays
 				.stream(declaringClass.getMethods())
 				.filter(m -> Modifier.isStatic(m.getModifiers()));

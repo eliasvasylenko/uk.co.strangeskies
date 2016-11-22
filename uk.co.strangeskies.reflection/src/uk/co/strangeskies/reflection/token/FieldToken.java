@@ -32,38 +32,26 @@
  */
 package uk.co.strangeskies.reflection.token;
 
-import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
-import static uk.co.strangeskies.reflection.WildcardTypes.wildcard;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.BoundSet;
 import uk.co.strangeskies.reflection.InferenceVariable;
-import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeResolver;
-import uk.co.strangeskies.reflection.Types;
 
 /**
  * <p>
@@ -81,14 +69,18 @@ import uk.co.strangeskies.reflection.Types;
  * @param <T>
  *          the type of the field
  */
-public class FieldToken<O, T> extends MemberTokenImpl<O> {
-	private final TypeToken<O> ownerType;
+public class FieldToken<O, T> extends AbstractMemberToken<O, Field> {
+	private final TypeToken<O> receiverType;
 	private final TypeToken<T> fieldType;
-	private final Field field;
 
-	private FieldToken(Field field, TypeToken<O> receiverType, TypeToken<T> fieldType) {
-		this.field = field;
-		this.ownerType = receiverType;
+	protected FieldToken(Field field, TypeToken<O> receiverType, TypeToken<T> fieldType) {
+		this(field, receiverType, fieldType, new TypeResolver());
+	}
+
+	protected FieldToken(Field field, TypeToken<O> receiverType, TypeToken<T> fieldType, TypeResolver resolver) {
+		super(field, resolver, receiverType);
+		
+		this.receiverType = receiverType;
 		this.fieldType = fieldType;
 
 		if (!ownerType.isProper() || .stream().anyMatch(WildcardType.class::isInstance)) {
@@ -154,61 +146,56 @@ public class FieldToken<O, T> extends MemberTokenImpl<O> {
 
 	@Override
 	public String getName() {
-		return field.getName();
-	}
-
-	@Override
-	public Field getMember() {
-		return field;
+		return getMember().getName();
 	}
 
 	@Override
 	public BoundSet getBounds() {
-		return ownerType.getBounds();
+		return receiverType.getBounds();
 	}
 
 	@Override
 	public boolean isFinal() {
-		return Modifier.isFinal(field.getModifiers());
+		return Modifier.isFinal(getMember().getModifiers());
 	}
 
 	@Override
 	public boolean isPrivate() {
-		return Modifier.isPrivate(field.getModifiers());
+		return Modifier.isPrivate(getMember().getModifiers());
 	}
 
 	@Override
 	public boolean isProtected() {
-		return Modifier.isProtected(field.getModifiers());
+		return Modifier.isProtected(getMember().getModifiers());
 	}
 
 	@Override
 	public boolean isPublic() {
-		return Modifier.isPublic(field.getModifiers());
+		return Modifier.isPublic(getMember().getModifiers());
 	}
 
 	@Override
 	public boolean isStatic() {
-		return Modifier.isStatic(field.getModifiers());
+		return Modifier.isStatic(getMember().getModifiers());
 	}
 
 	/**
 	 * @return true if the wrapped field is volatile, false otherwise
 	 */
 	public boolean isVolatile() {
-		return Modifier.isVolatile(field.getModifiers());
+		return Modifier.isVolatile(getMember().getModifiers());
 	}
 
 	/**
 	 * @return true if the wrapped field is transient, false otherwise
 	 */
 	public boolean isTransient() {
-		return Modifier.isTransient(field.getModifiers());
+		return Modifier.isTransient(getMember().getModifiers());
 	}
 
 	@Override
 	public TypeToken<O> getReceiverType() {
-		return ownerType;
+		return receiverType;
 	}
 
 	/**
@@ -222,19 +209,19 @@ public class FieldToken<O, T> extends MemberTokenImpl<O> {
 	@SuppressWarnings("unchecked")
 	@Override
 	public FieldToken<O, T> withBounds(BoundSet bounds) {
-		return (FieldToken<O, T>) over(field, ownerType.withBounds(bounds));
+		return (FieldToken<O, T>) overField(getMember(), receiverType.withBounds(bounds));
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public FieldToken<O, T> withBounds(BoundSet bounds, Collection<? extends InferenceVariable> inferenceVariables) {
-		return (FieldToken<O, T>) over(field, ownerType.withBounds(bounds, inferenceVariables));
+		return (FieldToken<O, T>) overField(getMember(), receiverType.withBounds(bounds, inferenceVariables));
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public FieldToken<O, T> withBoundsFrom(TypeToken<?> type) {
-		return (FieldToken<O, T>) over(field, ownerType.withBoundsFrom(type));
+		return (FieldToken<O, T>) over(getMember(), receiverType.withBoundsFrom(type));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -245,7 +232,7 @@ public class FieldToken<O, T> extends MemberTokenImpl<O> {
 
 	@Override
 	public FieldToken<? extends O, ? extends T> withReceiverType(Type type) {
-		return new FieldToken<>(field, ownerType, fieldType);
+		return new FieldToken<>(getMember(), receiverType, fieldType);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -261,7 +248,7 @@ public class FieldToken<O, T> extends MemberTokenImpl<O> {
 	@SuppressWarnings("unchecked")
 	@Override
 	public FieldToken<O, T> infer() {
-		return (FieldToken<O, T>) over(field, ownerType.infer());
+		return (FieldToken<O, T>) overField(getMember(), receiverType.infer());
 	}
 
 	/**
@@ -272,7 +259,7 @@ public class FieldToken<O, T> extends MemberTokenImpl<O> {
 	@SuppressWarnings("unchecked")
 	public T get(O target) {
 		try {
-			return (T) field.get(target);
+			return (T) getMember().get(target);
 		} catch (IllegalArgumentException | IllegalAccessException e) {
 			throw new ReflectionException(p -> p.cannotGetField(target, this.getMember()), e);
 		}
@@ -286,7 +273,7 @@ public class FieldToken<O, T> extends MemberTokenImpl<O> {
 	 */
 	public void set(O target, T value) {
 		try {
-			field.set(target, value);
+			getMember().set(target, value);
 		} catch (IllegalArgumentException | IllegalAccessException e) {
 			throw new ReflectionException(p -> p.cannotSetField(target, value, this.getMember()), e);
 		}
@@ -326,9 +313,7 @@ public class FieldToken<O, T> extends MemberTokenImpl<O> {
 		return getFieldsImpl(type, filter, Class::getDeclaredFields);
 	}
 
-	private static <T> Set<? extends FieldToken<T, ?>> getFieldsImpl(
-			TypeToken<T> type,
-			Predicate<Field> filter,
+	private static <T> Set<? extends FieldToken<T, ?>> getFieldsImpl(TypeToken<T> type, Predicate<Field> filter,
 			Function<Class<?>, Field[]> fields) {
 		return Arrays
 				.stream(fields.apply(type.getRawType()))
@@ -372,9 +357,7 @@ public class FieldToken<O, T> extends MemberTokenImpl<O> {
 		return resolveFieldsImpl(type, name, p -> getFields(type, p));
 	}
 
-	private static <T> List<FieldToken<T, ?>> resolveFieldsImpl(
-			TypeToken<T> type,
-			String name,
+	private static <T> List<FieldToken<T, ?>> resolveFieldsImpl(TypeToken<T> type, String name,
 			Function<Predicate<Field>, Set<? extends FieldToken<T, ?>>> fields) {
 		Set<? extends FieldToken<T, ? extends Object>> candidates = fields.apply(m -> m.getName().equals(name));
 

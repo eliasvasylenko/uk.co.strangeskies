@@ -33,6 +33,7 @@
 package uk.co.strangeskies.reflection;
 
 import static java.util.Arrays.stream;
+import static uk.co.strangeskies.reflection.BoundSet.emptyBoundSet;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -115,7 +116,7 @@ public class IntersectionTypes {
 	 *         single type, if they can all be represented as such.
 	 */
 	public static Type intersectionOf(Collection<? extends Type> types) {
-		return intersectionOf(types, new BoundSet());
+		return intersectionOf(types, emptyBoundSet());
 	}
 
 	/*

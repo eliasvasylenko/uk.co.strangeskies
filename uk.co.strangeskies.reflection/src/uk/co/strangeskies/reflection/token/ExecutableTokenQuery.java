@@ -49,7 +49,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -58,50 +57,28 @@ import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeResolver;
 import uk.co.strangeskies.reflection.Types;
-import uk.co.strangeskies.utilities.collection.SelfStreamDecorator;
 import uk.co.strangeskies.utilities.tuple.Pair;
 
-public class ExecutableTokenStream<I extends ExecutableToken<?, ?>>
-		implements SelfStreamDecorator<I, ExecutableTokenStream<I>> {
-	private final Supplier<Stream<I>> membersSupplier;
-	private Stream<I> members;
+public class ExecutableTokenQuery<I extends ExecutableToken<?, ?>, E extends Executable> {
+	private final Stream<E> members;
+	private final Function<E, I> mapper;
 
-	private <E extends Executable> ExecutableTokenStream(Stream<E> members, Function<E, I> mapper) {
-		this.membersSupplier = () -> members.map(mapper);
-		this.members = null;
-	}
-
-	private <E extends Executable> ExecutableTokenStream(Stream<I> members) {
-		this.membersSupplier = null;
+	protected ExecutableTokenQuery(Stream<E> members, Function<E, I> mapper) {
 		this.members = members;
+		this.mapper = mapper;
 	}
 
-	public static <I extends ExecutableToken<?, ?>, E extends Executable> ExecutableTokenStream<I> executableStream(
-			Stream<E> members,
-			Function<E, I> mapper) {
-		return new ExecutableTokenStream<I>(members, mapper) {
-			@Override
-			public ExecutableTokenStream<I> named(String name) {
-				/*
-				 * optimization to avoid instantiating ExecutableTokens if we filter by
-				 * name early
-				 */
-				return new ExecutableTokenStream<>(members.filter(m -> m.getName().equals(name)), mapper);
-			}
-		};
+	public static <I extends ExecutableToken<?, ?>, E extends Executable> ExecutableTokenQuery<I, E> executableStream(
+			Stream<E> members, Function<E, I> mapper) {
+		return new ExecutableTokenQuery<>(members, mapper);
 	}
 
-	@Override
-	public Stream<I> getComponent() {
-		if (members == null) {
-			members = membersSupplier.get();
-		}
-		return members;
+	public ExecutableTokenQuery<I, E> named(String name) {
+		return new ExecutableTokenQuery<>(members.filter(m -> m.getName().equals(name)), mapper);
 	}
 
-	@Override
-	public ExecutableTokenStream<I> decorateIntermediate(Function<? super Stream<I>, Stream<I>> transformation) {
-		return new ExecutableTokenStream<>(transformation.apply(getComponent()));
+	public Stream<I> stream() {
+		return members.map(mapper);
 	}
 
 	public <T> I resolveOverload() {
@@ -117,7 +94,7 @@ public class ExecutableTokenStream<I extends ExecutableToken<?, ?>>
 	}
 
 	public <T> I resolveOverload(List<? extends TypeToken<?>> arguments) {
-		Set<? extends I> candidates = collect(Collectors.toSet());
+		Set<? extends I> candidates = stream().collect(Collectors.toSet());
 
 		if (candidates.isEmpty())
 			throw new IllegalArgumentException("Cannot find any applicable invocable for arguments '" + arguments + "'");
@@ -146,13 +123,14 @@ public class ExecutableTokenStream<I extends ExecutableToken<?, ?>>
 	 */
 	@SuppressWarnings("unchecked")
 	public static <I extends ExecutableToken<?, ?>> Set<? extends I> resolveApplicableExecutableMembers(
-			Set<? extends I> candidates,
-			List<? extends TypeToken<?>> parameters) {
+			Set<? extends I> candidates, List<? extends TypeToken<?>> parameters) {
 		Map<I, RuntimeException> failures = new LinkedHashMap<>();
 		BiConsumer<I, RuntimeException> putFailures = failures::put;
 
-		Set<? extends I> compatibleCandidates = filterOverloadCandidates(candidates,
-				i -> (I) i.withLooseApplicability(parameters), putFailures);
+		Set<? extends I> compatibleCandidates = filterOverloadCandidates(
+				candidates,
+				i -> (I) i.withLooseApplicability(parameters),
+				putFailures);
 
 		if (compatibleCandidates.isEmpty()) {
 			compatibleCandidates = new HashSet<>(candidates);
@@ -160,12 +138,16 @@ public class ExecutableTokenStream<I extends ExecutableToken<?, ?>>
 				if (!candidate.isVariableArityDefinition())
 					compatibleCandidates.remove(candidate);
 
-			compatibleCandidates = filterOverloadCandidates(compatibleCandidates,
-					i -> (I) i.withVariableArityApplicability(parameters), putFailures);
+			compatibleCandidates = filterOverloadCandidates(
+					compatibleCandidates,
+					i -> (I) i.withVariableArityApplicability(parameters),
+					putFailures);
 		} else {
 			Set<? extends I> oldCompatibleCandidates = compatibleCandidates;
-			compatibleCandidates = filterOverloadCandidates(compatibleCandidates,
-					i -> (I) i.withStrictApplicability(parameters), putFailures);
+			compatibleCandidates = filterOverloadCandidates(
+					compatibleCandidates,
+					i -> (I) i.withStrictApplicability(parameters),
+					putFailures);
 			if (compatibleCandidates.isEmpty())
 				compatibleCandidates = oldCompatibleCandidates;
 		}
@@ -187,8 +169,7 @@ public class ExecutableTokenStream<I extends ExecutableToken<?, ?>>
 	}
 
 	private static <I extends ExecutableToken<?, ?>> Set<? extends I> filterOverloadCandidates(
-			Collection<? extends I> candidates,
-			Function<? super I, I> applicabilityFunction,
+			Collection<? extends I> candidates, Function<? super I, I> applicabilityFunction,
 			BiConsumer<I, RuntimeException> failures) {
 		return candidates.stream().map(i -> {
 			try {
@@ -297,8 +278,7 @@ public class ExecutableTokenStream<I extends ExecutableToken<?, ?>>
 		return new HashSet<>(remainingCandidates);
 	}
 
-	private static Pair<Boolean, Boolean> compareCandidates(
-			ExecutableToken<?, ?> firstCandidate,
+	private static Pair<Boolean, Boolean> compareCandidates(ExecutableToken<?, ?> firstCandidate,
 			ExecutableToken<?, ?> secondCandidate) {
 		boolean firstMoreSpecific = true;
 		boolean secondMoreSpecific = true;
@@ -338,8 +318,7 @@ public class ExecutableTokenStream<I extends ExecutableToken<?, ?>>
 		return new Pair<>(firstMoreSpecific, secondMoreSpecific);
 	}
 
-	private static boolean compareGenericCandidate(
-			ExecutableToken<?, ?> firstCandidate,
+	private static boolean compareGenericCandidate(ExecutableToken<?, ?> firstCandidate,
 			ExecutableToken<?, ?> genericCandidate) {
 		TypeResolver resolver = new TypeResolver(genericCandidate.getBounds());
 
@@ -350,8 +329,11 @@ public class ExecutableTokenStream<I extends ExecutableToken<?, ?>>
 			if (firstCandidate.isVariableArityDefinition()) {
 				parameters--;
 
-				resolver.reduce(new ConstraintFormula(Kind.SUBTYPE, firstParameters.get(parameters).getType(),
-						genericParameters.get(parameters).getType()));
+				resolver.reduce(
+						new ConstraintFormula(
+								Kind.SUBTYPE,
+								firstParameters.get(parameters).getType(),
+								genericParameters.get(parameters).getType()));
 			}
 
 			for (int i = 0; i < parameters; i++) {
@@ -365,9 +347,5 @@ public class ExecutableTokenStream<I extends ExecutableToken<?, ?>>
 		}
 
 		return true;
-	}
-
-	public ExecutableTokenStream<I> named(String name) {
-		return filter(m -> m.getName().equals(name));
 	}
 }

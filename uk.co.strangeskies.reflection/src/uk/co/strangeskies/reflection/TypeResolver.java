@@ -39,6 +39,7 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Stream.concat;
 import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
+import static uk.co.strangeskies.reflection.BoundSet.emptyBoundSet;
 import static uk.co.strangeskies.reflection.IntersectionTypes.uncheckedIntersectionOf;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.getAllTypeArguments;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.entriesToMap;
@@ -117,7 +118,7 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 * Create a new resolver over a new bound set.
 	 */
 	public TypeResolver() {
-		this(new BoundSet());
+		this(emptyBoundSet());
 	}
 
 	@Override
@@ -168,11 +169,7 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	}
 
 	public void incorporateBounds(BoundSet bounds) {
-		this.bounds = this.bounds.withIncorporated(bounds);
-	}
-
-	public void incorporateBounds(BoundSet bounds, Collection<? extends InferenceVariable> inferenceVariables) {
-		this.bounds = this.bounds.withIncorporated(bounds, inferenceVariables);
+		this.bounds = this.bounds.withBounds(bounds);
 	}
 
 	private Map<TypeVariable<?>, InferenceVariable> inferOverTypeParametersImpl(GenericDeclaration declaration,

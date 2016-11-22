@@ -33,6 +33,7 @@
 package uk.co.strangeskies.reflection;
 
 import static java.util.stream.Collectors.toList;
+import static uk.co.strangeskies.reflection.BoundSet.emptyBoundSet;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
 
 import java.lang.reflect.ParameterizedType;
@@ -47,7 +48,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
@@ -122,39 +122,6 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		return copy;
 	}
 
-	public InferenceVariableBoundsImpl copyIntoFiltered(BoundSet boundSet, Predicate<InferenceVariable> ignoring) {
-		InferenceVariableBoundsImpl copy = copyInto(boundSet);
-
-		copy.filter(this.boundSet, ignoring);
-
-		return copy;
-	}
-
-	private void filter(BoundSet boundSet, Predicate<InferenceVariable> ignoring) {
-		Iterator<Type> boundIterator = upperBounds.iterator();
-		while (boundIterator.hasNext())
-			if (InferenceVariable.getMentionedBy(boundIterator.next()).anyMatch(ignoring::test))
-				boundIterator.remove();
-
-		boundIterator = lowerBounds.iterator();
-		while (boundIterator.hasNext())
-			if (InferenceVariable.getMentionedBy(boundIterator.next()).anyMatch(ignoring::test))
-				boundIterator.remove();
-
-		boundIterator = equalities.iterator();
-		while (boundIterator.hasNext())
-			if (InferenceVariable.getMentionedBy(boundIterator.next()).anyMatch(ignoring::test))
-				boundIterator.remove();
-
-		if (capture != null && capture.getInferenceVariablesMentioned().anyMatch(ignoring::test))
-			throw new ReflectionException(p -> p.cannotFilterCapture(capture));
-
-		Iterator<InferenceVariable> variableIterator = relations.iterator();
-		while (variableIterator.hasNext())
-			if (ignoring.test(variableIterator.next()))
-				variableIterator.remove();
-	}
-
 	public InferenceVariableBoundsImpl withInferenceVariableSubstitution(Isomorphism isomorphism) {
 		InferenceVariable inferenceVariableSubstitution = (InferenceVariable) isomorphism
 				.byIdentity()
@@ -167,8 +134,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		return copy;
 	}
 
-	private void addBoundsWithTypeSubstitution(
-			InferenceVariableBoundsImpl inferenceVariableBounds,
+	private void addBoundsWithTypeSubstitution(InferenceVariableBoundsImpl inferenceVariableBounds,
 			Isomorphism isomorphism) {
 		TypeSubstitution substitution = new TypeSubstitution().withIsomorphism(isomorphism);
 
@@ -411,7 +377,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				 * If we already have an instantiation, make sure the new one is equal
 				 * to it...
 				 */
-				new ConstraintFormula(Kind.EQUALITY, type, getInstantiation().get()).reduce(new BoundSet());
+				new ConstraintFormula(Kind.EQUALITY, type, getInstantiation().get()).reduce(emptyBoundSet());
 			} else {
 				/*
 				 * ...Otherwise, make sure there are no captures present, and remove all

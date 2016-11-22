@@ -68,9 +68,7 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 		return invalidTypeVariableCaptureBounds(capture, capture.getLowerBounds(), capture.getUpperBounds());
 	}
 
-	Localized<String> invalidTypeVariableCaptureBounds(
-			TypeVariableCapture capture,
-			Type[] lowerBounds,
+	Localized<String> invalidTypeVariableCaptureBounds(TypeVariableCapture capture, Type[] lowerBounds,
 			Type[] upperBounds);
 
 	Localized<String> improperCaptureType(TypeVariableCapture capture);
@@ -87,9 +85,7 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 
 	Localized<String> invalidAnnotationProperties(Class<? extends Annotation> annotationClass, Set<String> keySet);
 
-	Localized<String> invalidAnnotationValue(
-			Class<? extends Annotation> annotationClass,
-			String name,
+	Localized<String> invalidAnnotationValue(Class<? extends Annotation> annotationClass, String name,
 			Object propertyValue);
 
 	Localized<String> invalidEquality(Type first, Type second, BoundSet bounds);
@@ -114,9 +110,7 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 
 	Localized<String> cannotFilterCapture(CaptureConversion capture);
 
-	Localized<String> cannotCaptureMultipleTimes(
-			InferenceVariable inferenceVariable,
-			CaptureConversion capture,
+	Localized<String> cannotCaptureMultipleTimes(InferenceVariable inferenceVariable, CaptureConversion capture,
 			CaptureConversion captureConversion);
 
 	Localized<String> invalidStaticMethodArguments(Method method, List<?> a);
@@ -135,17 +129,10 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 
 	Localized<String> cannotResolveApplicable(Set<? extends Executable> candidates, List<? extends Type> parameters);
 
-	Localized<String> incompatibleArgument(
-			Type givenArgumentCaptured,
-			Type genericParameterCaptured,
-			int i,
+	Localized<String> incompatibleArgument(Type givenArgumentCaptured, Type genericParameterCaptured, int i,
 			Executable executableMember);
 
-	Localized<String> incompatibleArgument(
-			Object object,
-			Type objectType,
-			Type genericParameterCaptured,
-			int i,
+	Localized<String> incompatibleArgument(Object object, Type objectType, Type genericParameterCaptured, int i,
 			Executable executableMember);
 
 	Localized<String> cannotResolveInvocationType(Executable executableMember, List<? extends Type> arguments);
@@ -160,9 +147,7 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 		return incorrectTypeArgumentCount(declaration, asList(declaration.getTypeParameters()), typeArguments);
 	}
 
-	Localized<String> incorrectTypeArgumentCount(
-			GenericDeclaration declaration,
-			List<TypeVariable<?>> typeParameters,
+	Localized<String> incorrectTypeArgumentCount(GenericDeclaration declaration, List<TypeVariable<?>> typeParameters,
 			List<Type> typeArguments);
 
 	Localized<String> duplicateTypeVariable(String n);
@@ -173,5 +158,5 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 
 	Localized<String> cannotResolveInvocationOnTypeWithWildcardParameters(Type type);
 
-	Localized<String> cannotParameterizeMethodOnRawType(Executable executable, Type containerType);
+	Localized<String> cannotParameterizeMethodOnRawType(Executable executable);
 }
