@@ -198,11 +198,6 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 			(AnnotatedType) null,
 			(Type) null);
 
-	// private static final ComputingMap<AnnotatedType, Pair<Resolver, Type>>
-	// RESOLVER_CACHE = new LRUCacheComputingMap<>(
-	// annotatedType -> incorporateAnnotatedType(new Resolver(), annotatedType),
-	// 128, true);
-
 	private final BoundSet bounds;
 
 	private final Type type;
@@ -327,29 +322,18 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	}
 
 	private static Pair<BoundSet, Type> incorporateAnnotatedType(TypeResolver resolver, AnnotatedType annotatedType) {
-		if (resolver == null)
-			resolver = new TypeResolver();
-
 		Type type = substituteAnnotatedWildcards(new Isomorphism(), annotatedType, resolver);
 
 		return new Pair<>(resolver.getBounds(), type);
 	}
 
 	private static Pair<BoundSet, Type> incorporateAnnotatedType(AnnotatedType annotatedType) {
-		Pair<BoundSet, Type> resolvedType = incorporateAnnotatedType(null, annotatedType); // RESOLVER_CACHE.putGet(annotatedType);
-
-		/*-
-		Isomorphism isomorphism = new Isomorphism();
-		TypeResolver resolverCopy = resolvedType.getLeft().deepCopy(isomorphism);
-		
-		Type typeCopy = new TypeSubstitution().withIsomorphism(isomorphism).resolve(resolvedType.getRight());
-		
-		return new Pair<>(resolverCopy, typeCopy);
-		*/
-		return resolvedType;
+		return incorporateAnnotatedType(new TypeResolver(), annotatedType);
 	}
 
-	private static Type substituteAnnotatedWildcards(Isomorphism isomorphism, AnnotatedType annotatedType,
+	private static Type substituteAnnotatedWildcards(
+			Isomorphism isomorphism,
+			AnnotatedType annotatedType,
 			TypeResolver resolver) {
 		Wildcards behavior = annotatedType.isAnnotationPresent(Retain.class) ? Wildcards.RETAIN
 				: annotatedType.isAnnotationPresent(Infer.class) ? Wildcards.INFER
@@ -378,8 +362,11 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 		}
 	}
 
-	private static ParameterizedType substituteAnnotatedWildcardsForParameterizedType(Isomorphism isomorphism,
-			Wildcards behavior, AnnotatedParameterizedType annotatedType, TypeResolver resolver) {
+	private static ParameterizedType substituteAnnotatedWildcardsForParameterizedType(
+			Isomorphism isomorphism,
+			Wildcards behavior,
+			AnnotatedParameterizedType annotatedType,
+			TypeResolver resolver) {
 		return isomorphism.byIdentity().getProxiedMapping(annotatedType, ParameterizedType.class, t -> {
 			/*
 			 * Deal with annotations on types mentioned by parameters, preserving any
@@ -421,8 +408,11 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 		});
 	}
 
-	private static Type substituteAnnotatedWildcardsForWildcardType(Isomorphism isomorphism, Wildcards behavior,
-			AnnotatedWildcardType annotatedType, TypeResolver resolver) {
+	private static Type substituteAnnotatedWildcardsForWildcardType(
+			Isomorphism isomorphism,
+			Wildcards behavior,
+			AnnotatedWildcardType annotatedType,
+			TypeResolver resolver) {
 		AnnotatedWildcardType annotatedWildcardType = annotatedType;
 		WildcardType wildcardType;
 
@@ -460,7 +450,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 		return type;
 	}
 
-	private static Type[] substituteAnnotatedWildcardsForEach(Isomorphism isomorphism, AnnotatedType[] annotatedTypes,
+	private static Type[] substituteAnnotatedWildcardsForEach(
+			Isomorphism isomorphism,
+			AnnotatedType[] annotatedTypes,
 			TypeResolver resolver) {
 		Type[] types = new Type[annotatedTypes.length];
 		for (int i = 0; i < types.length; i++)
@@ -1302,9 +1294,6 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	/**
 	 * Find which fields can be resolved on this type.
 	 * 
-	 * @param type
-	 *          the type for which to retrieve the set of fields
-	 * 
 	 * @return a list of all {@link Field} objects applicable to this type,
 	 *         wrapped in {@link FieldToken} instances
 	 */
@@ -1316,9 +1305,6 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 
 	/**
 	 * Find which fields are declared on this type.
-	 * 
-	 * @param type
-	 *          the type for which to retrieve the set of fields
 	 * 
 	 * @return a list of all {@link Field} objects applicable to this type,
 	 *         wrapped in {@link FieldToken} instances

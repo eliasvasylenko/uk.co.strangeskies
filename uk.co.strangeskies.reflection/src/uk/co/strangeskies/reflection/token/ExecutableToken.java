@@ -103,8 +103,13 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 
 	private final boolean variableArityInvocation;
 
-	protected ExecutableToken(BoundSet bounds, TypeToken<O> receiverType, TypeToken<R> returnType,
-			List<Type> methodTypeArguments, Executable executable, BiFunction<Object, List<?>, R> invocationFunction,
+	protected ExecutableToken(
+			BoundSet bounds,
+			TypeToken<O> receiverType,
+			TypeToken<R> returnType,
+			List<Type> methodTypeArguments,
+			Executable executable,
+			BiFunction<Object, List<?>, R> invocationFunction,
 			boolean variableArityInvocation) {
 		this(
 				new TypeResolver(bounds),
@@ -116,8 +121,13 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 				variableArityInvocation);
 	}
 
-	protected ExecutableToken(TypeResolver resolver, TypeToken<O> receiverType, TypeToken<R> returnType,
-			List<Type> methodTypeArguments, Executable executable, BiFunction<Object, List<?>, R> invocationFunction,
+	protected ExecutableToken(
+			TypeResolver resolver,
+			TypeToken<O> receiverType,
+			TypeToken<R> returnType,
+			List<Type> methodTypeArguments,
+			Executable executable,
+			BiFunction<Object, List<?>, R> invocationFunction,
 			boolean variableArityInvocation) {
 		super(executable, resolver, executable instanceof Constructor<?> ? returnType : receiverType);
 
@@ -169,7 +179,9 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 		return methodTypeArguments;
 	}
 
-	private TypeToken<O> determineReceiverType(TypeResolver resolver, TypeSubstitution inferenceVariables,
+	private TypeToken<O> determineReceiverType(
+			TypeResolver resolver,
+			TypeSubstitution inferenceVariables,
 			TypeToken<O> receiverType) {
 		if (receiverType.getType().equals(void.class)) {
 			return receiverType;
@@ -179,7 +191,9 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 	}
 
 	@SuppressWarnings("unchecked")
-	private TypeToken<R> determineReturnType(TypeResolver resolver, TypeSubstitution inferenceVariables,
+	private TypeToken<R> determineReturnType(
+			TypeResolver resolver,
+			TypeSubstitution inferenceVariables,
 			TypeToken<R> returnType) {
 		if (isConstructor()) {
 			returnType = returnType.withBounds(resolver.getBounds());
@@ -236,7 +250,8 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 	 * @return an executable member wrapping the given constructor
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> ExecutableToken<Void, T> overConstructor(Constructor<? super T> constructor,
+	public static <T> ExecutableToken<Void, T> overConstructor(
+			Constructor<? super T> constructor,
 			TypeToken<T> instance) {
 		return new ExecutableToken<>(
 				instance.getBounds(),
@@ -269,8 +284,10 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 	 * @return an executable member wrapping the given constructor
 	 */
 	@SuppressWarnings("unchecked")
-	public static <E, T> ExecutableToken<E, T> overConstructor(Constructor<? super T> constructor,
-			TypeToken<E> enclosingInstance, TypeToken<T> instance) {
+	public static <E, T> ExecutableToken<E, T> overConstructor(
+			Constructor<? super T> constructor,
+			TypeToken<E> enclosingInstance,
+			TypeToken<T> instance) {
 
 		enclosingInstance = (TypeToken<E>) instance.getEnclosingType().withConstraintFrom(Kind.SUBTYPE, enclosingInstance);
 		instance.withBounds(enclosingInstance.getBounds());
@@ -579,7 +596,7 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 	@Override
 	public <U extends O> ExecutableToken<U, ? extends R> withReceiverType(TypeToken<U> type) {
 		try {
-			/*
+			/*-
 			 * 
 			 * 
 			 * 
@@ -590,6 +607,28 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 			 * constructor? Or not at all, even?
 			 * 
 			 * TODO obviously overload resolution is unnecessary for constructors...
+			 * 
+			 * 
+			 * 
+			 * TODO find best via Class::getMethods and looking for the one declared
+			 * on a class which extends all the others... no faster way I can find.
+			 * 
+			 * 
+			 * 
+			 * TODO do we want ExecutableTokenQuery to exclude overridden methods by
+			 * default? Do we want reflective access to an overridden method?
+			 * 
+			 * 
+			 * 
+			 * 
+			 * 
+			 * TODO maybe both of these:
+			 *  - ExecutableToken::getOverridden : Stream
+			 *  - ExecutableToken::getOverride : Optional
+			 * 
+			 * 
+			 * 
+			 * 
 			 * 
 			 * 
 			 * 

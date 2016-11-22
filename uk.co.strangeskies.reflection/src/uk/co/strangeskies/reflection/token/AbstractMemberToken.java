@@ -78,7 +78,8 @@ public abstract class AbstractMemberToken<O, M extends Member> implements Member
 		return member;
 	}
 
-	protected Map<TypeVariable<?>, Type> determineContainerTypeArguments(TypeResolver resolver,
+	protected Map<TypeVariable<?>, Type> determineContainerTypeArguments(
+			TypeResolver resolver,
 			TypeToken<?> containerType) {
 		Map<TypeVariable<?>, Type> containerArguments;
 

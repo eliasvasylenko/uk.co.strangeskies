@@ -77,7 +77,6 @@ public class FieldToken<O, T> extends AbstractMemberToken<O, Field> {
 		this(field, receiverType, new TypeResolver());
 	}
 
-	@SuppressWarnings("unchecked")
 	protected FieldToken(Field field, TypeToken<O> receiverType, TypeResolver resolver) {
 		super(field, resolver, receiverType);
 
