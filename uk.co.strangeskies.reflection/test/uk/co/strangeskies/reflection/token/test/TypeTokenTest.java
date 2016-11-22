@@ -35,7 +35,7 @@ package uk.co.strangeskies.reflection.token.test;
 import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.CONTAINMENT;
 import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.LOOSE_COMPATIBILILTY;
 import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.SUBTYPE;
-import static uk.co.strangeskies.reflection.token.ExecutableToken.getStaticMethods;
+import static uk.co.strangeskies.reflection.token.ExecutableToken.staticMethods;
 
 import java.io.Serializable;
 import java.lang.annotation.ElementType;
@@ -255,38 +255,38 @@ public class TypeTokenTest {
 		System.out.println();
 		System.out.println();
 
-		System.out.println(new TypeToken<Gurn<Integer>>() {}.getMethods().stream().findAny().get().infer());
+		System.out.println(new TypeToken<Gurn<Integer>>() {}.methods().stream().findAny().get().infer());
 		System.out.println();
 		System.out.println();
 
 		TypeToken<?> receiver = new TypeToken<BindingState>() {};
 		System.out.println("RESOLVE 1:");
-		System.out.println(receiver.getMethods().named("bindingNode").resolveOverload(int.class));
+		System.out.println(receiver.methods().named("bindingNode").resolveOverload(int.class));
 		System.out.println();
 		System.out.println();
 
 		receiver = new @Capture TypeToken<SchemaNodeConfigurator<?, ?>>() {};
 		System.out.println("RESOLVE 2:");
-		System.out.println(TypeToken.overType(receiver.getType()).getMethods().named("name").resolveOverload(String.class));
+		System.out.println(TypeToken.overType(receiver.getType()).methods().named("name").resolveOverload(String.class));
 		System.out.println();
 		System.out.println();
 
 		receiver = new @Capture TypeToken<ChildNodeConfigurator<?, ?>>() {};
 		System.out.println("RESOLVE 3:");
-		System.out.println(TypeToken.overType(receiver.getType()).getMethods().named("name").resolveOverload(String.class));
+		System.out.println(TypeToken.overType(receiver.getType()).methods().named("name").resolveOverload(String.class));
 		System.out.println();
 		System.out.println();
 
 		receiver = new @Capture TypeToken<DataBindingType.Effective<?>>() {};
 		System.out.println("RESOLVE 4:");
 		System.out
-				.println(TypeToken.overType(receiver.getType()).getMethods().named("child").resolveOverload(String.class));
+				.println(TypeToken.overType(receiver.getType()).methods().named("child").resolveOverload(String.class));
 		System.out.println();
 		System.out.println();
 
 		System.out.println(
 				new TypeToken<IncludeTarget>() {}
-						.getMethods()
+						.methods()
 						.named("includer")
 						.resolveOverload(Model.class, Collection.class));
 		System.out.println();
@@ -304,7 +304,7 @@ public class TypeTokenTest {
 		System.out.println(
 				TypeToken
 						.overType(B.class)
-						.getMethods()
+						.methods()
 						.named("method4")
 						.resolveOverload(
 								new TypeToken<Collection<? extends Integer>>() {}.getType(),
@@ -319,22 +319,22 @@ public class TypeTokenTest {
 		System.out.println(
 				TypeToken
 						.overType(B.class)
-						.getMethods()
+						.methods()
 						.named("bothways")
 						.resolveOverload(String.class, new TypeToken<List<String>>() {}.getType())
 						.infer());
 		System.out.println();
 
 		System.out.println(
-				TypeToken.overType(B.class).getMethods().named("moothod").resolveOverload(Integer.class, Number.class));
+				TypeToken.overType(B.class).methods().named("moothod").resolveOverload(Integer.class, Number.class));
 		System.out.println();
 
 		System.out.println(
-				TypeToken.overType(B.class).getMethods().named("moothod").resolveOverload(Number.class, Integer.class));
+				TypeToken.overType(B.class).methods().named("moothod").resolveOverload(Number.class, Integer.class));
 		System.out.println();
 
 		System.out
-				.println(TypeToken.overType(B.class).getMethods().named("moothod").resolveOverload(Number.class, Number.class));
+				.println(TypeToken.overType(B.class).methods().named("moothod").resolveOverload(Number.class, Number.class));
 		System.out.println();
 
 		/*-
@@ -345,7 +345,7 @@ public class TypeTokenTest {
 
 		System.out.println(new TypeToken<List<? extends Number>>() {}.getType());
 		System.out.println(
-				getStaticMethods(Arrays.class)
+				staticMethods(Arrays.class)
 						.named("asList")
 						.resolveOverload(int.class, double.class)
 						.withTargetType(new TypeToken<List<? extends Number>>() {})
@@ -353,16 +353,16 @@ public class TypeTokenTest {
 		System.out.println();
 
 		System.out.println(
-				getStaticMethods(Arrays.class).named("asList").resolveOverload(int.class, double.class).withTargetType(
+				staticMethods(Arrays.class).named("asList").resolveOverload(int.class, double.class).withTargetType(
 						new TypeToken<List<? super Comparable<? extends Number>>>() {}));
 		System.out.println();
 
 		System.out
-				.println(getStaticMethods(Arrays.class).named("asList").resolveOverload(int.class, double.class).getBounds());
+				.println(staticMethods(Arrays.class).named("asList").resolveOverload(int.class, double.class).getBounds());
 		System.out.println();
 
 		System.out.println(
-				getStaticMethods(Arrays.class)
+				staticMethods(Arrays.class)
 						.named("asList")
 						.resolveOverload(int.class, double.class)
 						.withTargetType(new TypeToken<List<? super Comparable<? extends Number>>>() {})
@@ -370,13 +370,13 @@ public class TypeTokenTest {
 		System.out.println();
 
 		System.out.println(
-				TypeToken.overType(B.class).getMethods().named("method").resolveOverload(
+				TypeToken.overType(B.class).methods().named("method").resolveOverload(
 						new TypeToken<List<Integer>>() {},
 						new TypeToken<List<Number>>() {}));
 		System.out.println();
 
 		System.out.println(
-				new TypeToken<B>() {}.getMethods().named("method2").resolveOverload(
+				new TypeToken<B>() {}.methods().named("method2").resolveOverload(
 						new TypeToken<List<Integer>>() {},
 						new TypeToken<List<Comparable<Integer>>>() {}));
 		System.out.println();
@@ -384,20 +384,20 @@ public class TypeTokenTest {
 		System.out.println(
 				TypeToken
 						.overType(B.class)
-						.getMethods()
+						.methods()
 						.named("method")
 						.resolveOverload(new TypeToken<Collection<? super Integer>>() {})
 						.infer());
 		System.out.println();
 
 		System.out.println(
-				new TypeToken<B>() {}.getMethods().named("okay").resolveOverload(
+				new TypeToken<B>() {}.methods().named("okay").resolveOverload(
 						new TypeToken<Set<ExecutableToken<H, ?>>>() {},
 						new TypeToken<List<? extends Type>>() {}));
 		System.out.println();
 
 		System.out.println(
-				getStaticMethods(B.class)
+				staticMethods(B.class)
 						.named("testeroonie")
 						.resolveOverload(new TypeToken<Class<?>>() {}.getType(), String.class)
 						.infer());
@@ -439,7 +439,7 @@ public class TypeTokenTest {
 		System.out.println(
 				new TypeToken<List<? super Number>>() {}
 						.getExtending(Wildcards.INFER)
-						.getMethods()
+						.methods()
 						.named("add")
 						.resolveOverload(Integer.class)
 						.getReceiverType()
@@ -468,11 +468,11 @@ public class TypeTokenTest {
 		System.out.println(
 				new @Infer TypeToken<List<? extends Number>>() {}
 						.getExtending(Wildcards.INFER)
-						.getMethods()
+						.methods()
 						.named("add")
 						.resolveOverload(Integer.class)
 						.getReceiverType()
-						.getMethods()
+						.methods()
 						.named("add")
 						.resolveOverload(Double.class)
 						.getReceiverType()
@@ -480,11 +480,11 @@ public class TypeTokenTest {
 		System.out.println();
 
 		System.out
-				.println(new TypeToken<HashMap<?, ?>>() {}.getExtending(Wildcards.INFER).getConstructors().resolveOverload());
+				.println(new TypeToken<HashMap<?, ?>>() {}.getExtending(Wildcards.INFER).constructors().resolveOverload());
 		System.out.println(
 				new TypeToken<HashMap<?, ?>>() {}
 						.getExtending(Wildcards.INFER)
-						.getConstructors()
+						.constructors()
 						.resolveOverload()
 						.getBounds());
 
@@ -494,7 +494,7 @@ public class TypeTokenTest {
 		System.out.println(
 				new TypeToken<HashMap<?, ?>>() {}
 						.getExtending(Wildcards.INFER)
-						.getConstructors()
+						.constructors()
 						.resolveOverload()
 						.withTargetType(new TypeToken<Map<? extends String, ? extends Number>>() {})
 						.infer());
@@ -503,7 +503,7 @@ public class TypeTokenTest {
 		System.out.println(
 				new TypeToken<HashMap<String, Number>>() {}
 						.getExtending(Wildcards.INFER)
-						.getConstructors()
+						.constructors()
 						.resolveOverload()
 						.withTargetType(new TypeToken<@Infer Map<?, ?>>() {})
 						.infer());
@@ -512,7 +512,7 @@ public class TypeTokenTest {
 		System.out.println(new TypeToken<List<?>>() {}.getAnnotatedDeclaration());
 		System.out.println(
 				new TypeToken<Set<String>>() {}
-						.getMethods()
+						.methods()
 						.named("addAll")
 						.resolveOverload(new TypeToken<List<@Infer ?>>() {})
 						.inferParameterTypes());
@@ -543,7 +543,7 @@ public class TypeTokenTest {
 		System.out.println();
 
 		ExecutableToken<?, ?> blurner = new @Infer TypeToken<Blurn<? extends List<? extends Number>>>() {}
-				.getMethods()
+				.methods()
 				.named("blurn")
 				.resolveOverload()
 				.withReceiverType(new TypeToken<Gurn<Integer>>() {});
@@ -558,16 +558,16 @@ public class TypeTokenTest {
 		System.out.println();
 
 		System.out.println(
-				new @Capture TypeToken<SchemaNode<?, ?>>() {}.getMethods().named("children").resolveOverload().withTargetType(
+				new @Capture TypeToken<SchemaNode<?, ?>>() {}.methods().named("children").resolveOverload().withTargetType(
 						getIteratorExtending(new TypeToken<ChildNode<?, ?>>() {})));
 		System.out.println();
 
-		System.out.println(new TypeToken<ChoiceNode>() {}.getMethods().named("getName").resolveOverload(new ArrayList<>()));
+		System.out.println(new TypeToken<ChoiceNode>() {}.methods().named("getName").resolveOverload(new ArrayList<>()));
 		System.out.println();
 
 		System.out.println(
 				new @Infer TypeToken<LinkedHashSet<?>>() {}
-						.getMethods()
+						.methods()
 						.named("add")
 						.resolveOverload(new TypeToken<StringBuffer>() {})
 						.infer());
@@ -575,11 +575,11 @@ public class TypeTokenTest {
 
 		System.out.println(
 				new @Infer TypeToken<Set<?>>() {}
-						.getMethods()
+						.methods()
 						.named("addAll")
 						.resolveOverload(
 								new TypeToken<@Infer ArrayList<? super Integer>>() {}
-										.getConstructors()
+										.constructors()
 										.resolveOverload()
 										.getReturnType())
 						.infer());
@@ -587,10 +587,10 @@ public class TypeTokenTest {
 
 		System.out.println(
 				new TypeToken<@Infer HashSet<? super Double>>() {}
-						.getConstructors()
+						.constructors()
 						.resolveOverload(
 								new TypeToken<@Infer ArrayList<? super Integer>>() {}
-										.getConstructors()
+										.constructors()
 										.resolveOverload()
 										.getReturnType())
 						.getReturnType()
@@ -598,9 +598,9 @@ public class TypeTokenTest {
 		System.out.println();
 
 		TypeToken<?> bball = new TypeToken<@Infer HashSet<? super Double>>() {}
-				.getConstructors()
+				.constructors()
 				.resolveOverload(
-						new @Capture TypeToken<ArrayList<? super Integer>>() {}.getConstructors().resolveOverload().getReturnType())
+						new @Capture TypeToken<ArrayList<? super Integer>>() {}.constructors().resolveOverload().getReturnType())
 				.getReturnType();
 		System.out.println(bball.getBounds());
 		System.out.println(bball.deepCopy().getBounds());
@@ -766,7 +766,7 @@ public class TypeTokenTest {
 
 		System.out.println(
 				new TypeToken<DataBindingType<Object>>() {}
-						.getMethods()
+						.methods()
 						.named("baseModel")
 						.resolveOverload(new TypeToken<Model<?>>() {})
 						.infer()

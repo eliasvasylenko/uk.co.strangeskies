@@ -41,8 +41,10 @@ import static uk.co.strangeskies.reflection.BoundSet.emptyBoundSet;
 import static uk.co.strangeskies.reflection.Methods.findMethod;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardExtending;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardSuper;
+import static uk.co.strangeskies.reflection.token.ExecutableToken.overConstructor;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.overMethod;
-import static uk.co.strangeskies.reflection.token.ExecutableTokenQuery.executableStream;
+import static uk.co.strangeskies.reflection.token.ExecutableTokenQuery.executableQuery;
+import static uk.co.strangeskies.reflection.token.FieldTokenQuery.fieldQuery;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
@@ -55,6 +57,7 @@ import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.AnnotatedTypeVariable;
 import java.lang.reflect.AnnotatedWildcardType;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
@@ -1297,39 +1300,69 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	}
 
 	/**
+	 * Find which fields can be resolved on this type.
+	 * 
+	 * @param type
+	 *          the type for which to retrieve the set of fields
+	 * 
+	 * @return a list of all {@link Field} objects applicable to this type,
+	 *         wrapped in {@link FieldToken} instances
+	 */
+	public FieldTokenQuery<FieldToken<T, ?>, ?> fields() {
+		Stream<Field> fields = stream(getRawType().getFields());
+
+		return fieldQuery(fields, f -> FieldToken.overField(f, this));
+	}
+
+	/**
+	 * Find which fields are declared on this type.
+	 * 
+	 * @param type
+	 *          the type for which to retrieve the set of fields
+	 * 
+	 * @return a list of all {@link Field} objects applicable to this type,
+	 *         wrapped in {@link FieldToken} instances
+	 */
+	public FieldTokenQuery<FieldToken<T, ?>, ?> declaredFields() {
+		Stream<Field> fields = stream(getRawType().getDeclaredFields());
+
+		return fieldQuery(fields, f -> FieldToken.overField(f, this));
+	}
+
+	/**
 	 * Find which constructors can be invoked for this type.
 	 * 
-	 * @return A list of all {@link Constructor} objects applicable to this type,
-	 *         wrapped in {@link ExecutableToken} instances.
+	 * @return a list of all {@link Constructor} objects applicable to this type,
+	 *         wrapped in {@link ExecutableToken} instances
 	 */
 	@SuppressWarnings("unchecked")
-	public ExecutableTokenQuery<ExecutableToken<Void, T>, ?> getConstructors() {
+	public ExecutableTokenQuery<ExecutableToken<Void, T>, ?> constructors() {
 		Stream<Constructor<?>> constructors = stream(getRawType().getConstructors());
 
-		return executableStream(constructors, m -> ExecutableToken.overConstructor((Constructor<T>) m, this));
+		return executableQuery(constructors, m -> overConstructor((Constructor<T>) m, this));
 	}
 
 	/**
 	 * Find which constructors can be invoked for this type.
 	 * 
-	 * @return A list of all {@link Constructor} objects applicable to this type,
-	 *         wrapped in {@link ExecutableToken} instances.
+	 * @return a list of all {@link Constructor} objects applicable to this type,
+	 *         wrapped in {@link ExecutableToken} instances
 	 */
 	@SuppressWarnings("unchecked")
-	public ExecutableTokenQuery<ExecutableToken<Void, T>, ?> getDeclaredConstructors() {
+	public ExecutableTokenQuery<ExecutableToken<Void, T>, ?> declaredConstructors() {
 		Stream<Constructor<?>> constructors = stream(getRawType().getDeclaredConstructors());
 
-		return executableStream(constructors, m -> ExecutableToken.overConstructor((Constructor<T>) m, this));
+		return executableQuery(constructors, m -> overConstructor((Constructor<T>) m, this));
 	}
 
 	/**
-	 * find which methods of the given name can be invoked on instances of this
-	 * type
+	 * Find which methods of the given name can be invoked on instances of this
+	 * type.
 	 * 
 	 * @return a list of all {@link Method} objects applicable to this type,
-	 *         wrapped in {@link ExecutableToken} instances.
+	 *         wrapped in {@link ExecutableToken} instances
 	 */
-	public ExecutableTokenQuery<ExecutableToken<? super T, ?>, ?> getMethods() {
+	public ExecutableTokenQuery<ExecutableToken<T, ?>, ?> methods() {
 		Stream<Method> methodStream = getRawTypes().flatMap(t -> Arrays.stream(t.getMethods()));
 
 		if (getRawTypes().allMatch(Types::isInterface))
@@ -1337,21 +1370,21 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 
 		methodStream = methodStream.filter(m -> !Modifier.isStatic(m.getModifiers()));
 
-		return executableStream(methodStream, m -> (ExecutableToken<? super T, ?>) ExecutableToken.overMethod(m, this));
+		return executableQuery(methodStream, m -> overMethod(m, this));
 	}
 
 	/**
 	 * Find which methods can be invoked on this type, whether statically or on
 	 * instances.
 	 * 
-	 * @return A list of all {@link Method} objects applicable to this type,
-	 *         wrapped in {@link ExecutableToken} instances.
+	 * @return a list of all {@link Method} objects applicable to this type,
+	 *         wrapped in {@link ExecutableToken} instances
 	 */
-	public ExecutableTokenQuery<ExecutableToken<? super T, ?>, ?> getDeclaredMethods() {
+	public ExecutableTokenQuery<ExecutableToken<T, ?>, ?> declaredMethods() {
 		Stream<Method> methodStream = stream(getRawType().getDeclaredMethods())
 				.filter(m -> !Modifier.isStatic(m.getModifiers()));
 
-		return executableStream(methodStream, m -> (ExecutableToken<? super T, ?>) ExecutableToken.overMethod(m, this));
+		return executableQuery(methodStream, m -> overMethod(m, this));
 	}
 
 	@SuppressWarnings("unchecked")

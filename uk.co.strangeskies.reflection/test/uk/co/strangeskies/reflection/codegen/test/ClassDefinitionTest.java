@@ -83,7 +83,7 @@ public class ClassDefinitionTest {
 	@Test
 	public void functionClassInvocationTest() {
 		ExecutableToken<? super String, String> concatMethod = STRING_TYPE
-				.getMethods()
+				.methods()
 				.named("concat")
 				.resolveOverload(STRING_TYPE)
 				.withTargetType(STRING_TYPE);

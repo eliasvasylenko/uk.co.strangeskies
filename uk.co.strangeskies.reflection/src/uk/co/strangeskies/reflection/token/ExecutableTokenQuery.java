@@ -36,6 +36,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 import java.lang.reflect.Executable;
+import java.lang.reflect.Member;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -59,7 +60,7 @@ import uk.co.strangeskies.reflection.TypeResolver;
 import uk.co.strangeskies.reflection.Types;
 import uk.co.strangeskies.utilities.tuple.Pair;
 
-public class ExecutableTokenQuery<I extends ExecutableToken<?, ?>, E extends Executable> {
+public class ExecutableTokenQuery<I extends ExecutableToken<?, ?>, E extends Member> {
 	private final Stream<E> members;
 	private final Function<E, I> mapper;
 
@@ -68,7 +69,7 @@ public class ExecutableTokenQuery<I extends ExecutableToken<?, ?>, E extends Exe
 		this.mapper = mapper;
 	}
 
-	public static <I extends ExecutableToken<?, ?>, E extends Executable> ExecutableTokenQuery<I, E> executableStream(
+	public static <I extends ExecutableToken<?, ?>, E extends Executable> ExecutableTokenQuery<I, E> executableQuery(
 			Stream<E> members, Function<E, I> mapper) {
 		return new ExecutableTokenQuery<>(members, mapper);
 	}

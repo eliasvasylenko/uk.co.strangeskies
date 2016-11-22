@@ -287,7 +287,6 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		 * Substitutions of capture conversions:
 		 */
 		for (CaptureConversion captureConversion : captureConversions) {
-
 			captureConversion = isomorphism
 					.byIdentity()
 					.getMapping(captureConversion, c -> c.withInferenceVariableSubstitution(isomorphism));

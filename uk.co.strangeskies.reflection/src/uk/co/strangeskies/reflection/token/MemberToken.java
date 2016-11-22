@@ -34,10 +34,8 @@ package uk.co.strangeskies.reflection.token;
 
 import java.lang.reflect.Member;
 import java.lang.reflect.Type;
-import java.util.Collection;
 
 import uk.co.strangeskies.reflection.BoundSet;
-import uk.co.strangeskies.reflection.InferenceVariable;
 
 /**
  * A type safe wrapper around {@link Member} instances, with proper handling of
@@ -125,31 +123,6 @@ public interface MemberToken<O> {
 	 * @return the newly derived {@link MemberToken}
 	 */
 	MemberToken<O> withBounds(BoundSet bounds);
-
-	/**
-	 * Derive a new {@link MemberToken} instance, with the bounds on the given
-	 * inference variables, with respect to the given bound set, incorporated into
-	 * the bounds of the underlying resolver. The original {@link MemberToken}
-	 * will remain unmodified.
-	 * 
-	 * @param bounds
-	 *          The new bounds to incorporate.
-	 * @param inferenceVariables
-	 *          The new inference variables whose bounds are to be incorporated.
-	 * @return The newly derived {@link MemberToken}.
-	 */
-	MemberToken<O> withBounds(BoundSet bounds, Collection<? extends InferenceVariable> inferenceVariables);
-
-	/**
-	 * Derive a new {@link MemberToken} instance, with the bounds on the given
-	 * type incorporated into the bounds of the underlying resolver. The original
-	 * {@link MemberToken} will remain unmodified.
-	 * 
-	 * @param type
-	 *          The type whose bounds are to be incorporated.
-	 * @return The newly derived {@link MemberToken}.
-	 */
-	MemberToken<O> withBoundsFrom(TypeToken<?> type);
 
 	/**
 	 * Derive a new instance of {@link MemberToken} with the given owner type.

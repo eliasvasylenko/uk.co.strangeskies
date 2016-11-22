@@ -32,26 +32,26 @@
  */
 package uk.co.strangeskies.reflection.token;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.Arrays.stream;
+import static uk.co.strangeskies.reflection.token.FieldTokenQuery.fieldQuery;
+import static uk.co.strangeskies.reflection.token.TypeToken.overType;
+import static uk.co.strangeskies.utilities.collection.StreamUtilities.entriesToMap;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
+import java.lang.reflect.TypeVariable;
+import java.util.Map;
+import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.BoundSet;
-import uk.co.strangeskies.reflection.InferenceVariable;
+import uk.co.strangeskies.reflection.ConstraintFormula;
+import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeResolver;
+import uk.co.strangeskies.reflection.TypeSubstitution;
+import uk.co.strangeskies.reflection.token.TypeToken.Wildcards;
 
 /**
  * <p>
@@ -73,23 +73,36 @@ public class FieldToken<O, T> extends AbstractMemberToken<O, Field> {
 	private final TypeToken<O> receiverType;
 	private final TypeToken<T> fieldType;
 
-	protected FieldToken(Field field, TypeToken<O> receiverType, TypeToken<T> fieldType) {
-		this(field, receiverType, fieldType, new TypeResolver());
+	protected FieldToken(Field field, TypeToken<O> receiverType) {
+		this(field, receiverType, new TypeResolver());
 	}
 
-	protected FieldToken(Field field, TypeToken<O> receiverType, TypeToken<T> fieldType, TypeResolver resolver) {
+	@SuppressWarnings("unchecked")
+	protected FieldToken(Field field, TypeToken<O> receiverType, TypeResolver resolver) {
 		super(field, resolver, receiverType);
-		
-		this.receiverType = receiverType;
-		this.fieldType = fieldType;
 
-		if (!ownerType.isProper() || .stream().anyMatch(WildcardType.class::isInstance)) {
-			List<TypeToken<?>> containerSupertypeList = containerType
-					.resolveSupertypeHierarchy(containerSuperClass)
-					.collect(toList());
-			
-			throw new ReflectionException(p -> p.cannotResolveInvocationOnTypeWithWildcardParameters(containerType));
+		TypeSubstitution inferenceVariableSubstitution = new TypeSubstitution(
+				getAllTypeArguments().collect(entriesToMap()));
+
+		this.receiverType = determineReceiverType(inferenceVariableSubstitution, receiverType);
+		this.fieldType = determineFieldType(resolver, inferenceVariableSubstitution);
+	}
+
+	private TypeToken<O> determineReceiverType(TypeSubstitution inferenceVariables, TypeToken<O> receiverType) {
+		if (receiverType.getType().equals(void.class)) {
+			return receiverType;
+		} else {
+			return receiverType.resolve();
 		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private TypeToken<T> determineFieldType(TypeResolver resolver, TypeSubstitution inferenceVariables) {
+		Type genericReturnType = inferenceVariables.resolve(getMember().getGenericType());
+
+		TypeToken<T> returnType = (TypeToken<T>) overType(resolver.getBounds(), genericReturnType, Wildcards.RETAIN);
+
+		return returnType.resolve();
 	}
 
 	/**
@@ -214,35 +227,34 @@ public class FieldToken<O, T> extends AbstractMemberToken<O, Field> {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public FieldToken<O, T> withBounds(BoundSet bounds, Collection<? extends InferenceVariable> inferenceVariables) {
-		return (FieldToken<O, T>) overField(getMember(), receiverType.withBounds(bounds, inferenceVariables));
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public FieldToken<O, T> withBoundsFrom(TypeToken<?> type) {
-		return (FieldToken<O, T>) over(getMember(), receiverType.withBoundsFrom(type));
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
 	public <U extends O> FieldToken<U, ? extends T> withReceiverType(TypeToken<U> type) {
-		return (FieldToken<U, ? extends T>) withBoundsFrom(type).withReceiverType(type.getType());
+		return (FieldToken<U, ? extends T>) withBounds(type.getBounds()).withReceiverType(type.getType());
 	}
 
 	@Override
 	public FieldToken<? extends O, ? extends T> withReceiverType(Type type) {
-		return new FieldToken<>(getMember(), receiverType, fieldType);
+		return new FieldToken<>(getMember(), receiverType);
 	}
 
 	@SuppressWarnings("unchecked")
 	public <U> FieldToken<O, U> withType(TypeToken<U> type) {
-		return (FieldToken<O, U>) withBoundsFrom(type).withType(type.getType());
+		return (FieldToken<O, U>) withBounds(type.getBounds()).withType(type.getType());
 	}
 
 	public FieldToken<O, ? extends T> withType(Type type) {
-		getFieldType().withLooseCompatibilityTo(type);
-		return this;
+		return withTypeCapture(type);
+	}
+
+	@SuppressWarnings("unchecked")
+	private <S extends T> FieldToken<O, S> withTypeCapture(Type type) {
+		if (type == null)
+			return (FieldToken<O, S>) this;
+
+		BoundSet bounds = new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, fieldType.getType(), type).reduce(getBounds());
+
+		TypeToken<O> receiverType = this.receiverType.withBounds(bounds);
+
+		return new FieldToken<>(getMember(), receiverType);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -280,90 +292,39 @@ public class FieldToken<O, T> extends AbstractMemberToken<O, Field> {
 	}
 
 	/**
-	 * Find which fields can be resolved on this type.
-	 * 
-	 * @param type
-	 *          the type for which to retrieve the set of fields
-	 * 
-	 * @return A list of all {@link Field} objects applicable to this type,
-	 *         wrapped in {@link FieldToken} instances.
+	 * @return All generic type parameters of the wrapped {@link Executable}.
 	 */
-	public static <T> Set<? extends FieldToken<T, ?>> getFields(TypeToken<T> type) {
-		return getFields(type, c -> true);
+	public Stream<TypeVariable<?>> getAllTypeParameters() {
+		if (isRaw())
+			return Stream.empty();
+		else
+			return getContainerTypeArguments().keySet().stream();
 	}
 
-	static <T> Set<? extends FieldToken<T, ?>> getFields(TypeToken<T> type, Predicate<Field> filter) {
-		return getFieldsImpl(type, filter, Class::getFields);
+	/**
+	 * @return All generic type parameter instantiations of the wrapped
+	 *         {@link Executable}, or their inference variables if not yet
+	 *         instantiated.
+	 */
+	public Stream<Map.Entry<TypeVariable<?>, Type>> getAllTypeArguments() {
+		if (isRaw())
+			return Stream.empty();
+		else
+			return getContainerTypeArguments().entrySet().stream();
 	}
 
 	/**
 	 * Find which fields are declared on this type.
 	 * 
-	 * @param type
-	 *          the type for which to retrieve the set of fields
-	 * 
-	 * @return A list of all {@link Field} objects applicable to this type,
-	 *         wrapped in {@link FieldToken} instances.
+	 * @param declaringClass
+	 *          the declaring class for which to retrieve the fields
+	 * @return all {@link Field} objects applicable to this type, wrapped in
+	 *         {@link FieldToken} instances
 	 */
-	public static <T> Set<? extends FieldToken<T, ?>> getDeclaredFields(TypeToken<T> type) {
-		return getDeclaredFields(type, c -> true);
-	}
+	@SuppressWarnings("unchecked")
+	public static FieldTokenQuery<FieldToken<Void, ?>, ?> staticFields(Class<?> declaringClass) {
+		Stream<Field> fields = stream(declaringClass.getDeclaredFields()).filter(f -> Modifier.isStatic(f.getModifiers()));
 
-	static <T> Set<? extends FieldToken<T, ?>> getDeclaredFields(TypeToken<T> type, Predicate<Field> filter) {
-		return getFieldsImpl(type, filter, Class::getDeclaredFields);
-	}
-
-	private static <T> Set<? extends FieldToken<T, ?>> getFieldsImpl(TypeToken<T> type, Predicate<Field> filter,
-			Function<Class<?>, Field[]> fields) {
-		return Arrays
-				.stream(fields.apply(type.getRawType()))
-				.filter(filter)
-				.map(m -> (FieldToken<T, ?>) FieldToken.over(m, type))
-				.collect(Collectors.toCollection(LinkedHashSet::new));
-	}
-
-	/**
-	 * Resolve the most specific accessible field on this type and its supertypes
-	 * which match the given name.
-	 * 
-	 * @param name
-	 *          the name of the field
-	 * @return a field matching the given name
-	 */
-	public static <T> FieldToken<T, ?> resolveField(TypeToken<T> type, String name) {
-		return resolveFieldsImpl(type, name, p -> getFields(type, p)).stream().findFirst().get();
-	}
-
-	/**
-	 * Resolve the declared field on this type which match the given name.
-	 * 
-	 * @param name
-	 *          the name of the field
-	 * @return a field matching the given name
-	 */
-	public static <T> FieldToken<T, ?> resolveDeclaredField(TypeToken<T> type, String name) {
-		return resolveFieldsImpl(type, name, p -> getDeclaredFields(type, p)).stream().findFirst().get();
-	}
-
-	/**
-	 * Resolve all accessible fields on this type and its supertypes which match
-	 * the given name.
-	 * 
-	 * @param name
-	 *          the name of the field
-	 * @return a field matching the given name
-	 */
-	public static <T> List<FieldToken<T, ?>> resolveFields(TypeToken<T> type, String name) {
-		return resolveFieldsImpl(type, name, p -> getFields(type, p));
-	}
-
-	private static <T> List<FieldToken<T, ?>> resolveFieldsImpl(TypeToken<T> type, String name,
-			Function<Predicate<Field>, Set<? extends FieldToken<T, ?>>> fields) {
-		Set<? extends FieldToken<T, ? extends Object>> candidates = fields.apply(m -> m.getName().equals(name));
-
-		if (candidates.isEmpty())
-			throw new IllegalArgumentException("Cannot find any field '" + name + "' in '" + type + "'");
-
-		return new ArrayList<>(candidates);
+		return fieldQuery(fields, FieldToken::overStaticField);
 	}
 }

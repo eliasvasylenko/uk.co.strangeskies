@@ -37,7 +37,7 @@ import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
-import static uk.co.strangeskies.reflection.token.ExecutableToken.getStaticMethods;
+import static uk.co.strangeskies.reflection.token.ExecutableToken.staticMethods;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.overConstructor;
 
 import java.lang.reflect.Constructor;
@@ -133,23 +133,23 @@ public class ExecutableTokenTest {
 
 	@Test
 	public void emptyVarargsResolutionTest() throws NoSuchMethodException, SecurityException {
-		ExecutableToken<?, ?> asList = getStaticMethods(Arrays.class).named("asList").resolveOverload();
+		ExecutableToken<?, ?> asList = staticMethods(Arrays.class).named("asList").resolveOverload();
 
 		assertThat(asList.isVariableArityInvocation(), is(true));
 	}
 
 	@Test
 	public void singleVarargsResolutionTest() throws NoSuchMethodException, SecurityException {
-		System.out.println(getStaticMethods(Arrays.class).named("asList").stream().findAny().get());
+		System.out.println(staticMethods(Arrays.class).named("asList").stream().findAny().get());
 
-		ExecutableToken<?, ?> asList = getStaticMethods(Arrays.class).named("asList").resolveOverload(String.class);
+		ExecutableToken<?, ?> asList = staticMethods(Arrays.class).named("asList").resolveOverload(String.class);
 
 		assertThat(asList.isVariableArityInvocation(), is(true));
 	}
 
 	@Test
 	public void varargsResolutionTest() throws NoSuchMethodException, SecurityException {
-		ExecutableToken<?, ?> asList = getStaticMethods(Arrays.class)
+		ExecutableToken<?, ?> asList = staticMethods(Arrays.class)
 				.named("asList")
 				.resolveOverload(String.class, String.class, String.class);
 
@@ -167,7 +167,7 @@ public class ExecutableTokenTest {
 
 	@Test
 	public void varargsDefinitionResolutionTest() throws NoSuchMethodException, SecurityException {
-		ExecutableToken<?, ?> asList = getStaticMethods(Arrays.class)
+		ExecutableToken<?, ?> asList = staticMethods(Arrays.class)
 				.named("asList")
 				.resolveOverload(new TypeToken<String[]>() {});
 

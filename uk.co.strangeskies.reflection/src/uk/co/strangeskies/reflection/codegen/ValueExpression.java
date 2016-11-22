@@ -32,8 +32,6 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import static uk.co.strangeskies.reflection.token.FieldToken.resolveField;
-
 import java.util.Arrays;
 import java.util.List;
 
@@ -57,7 +55,7 @@ public interface ValueExpression<T> extends Expression {
 	}
 
 	default FieldExpression<? super T, ?> accessResolvedField(String fieldName) {
-		return accessField(resolveField(getType(), fieldName));
+		return null; // TODO
 	}
 
 	default <R> InvocationExpression<? super T, R> invokeMethod(ExecutableToken<? super T, R> invocable,

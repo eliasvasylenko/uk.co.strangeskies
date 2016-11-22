@@ -38,7 +38,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.BoundSet.emptyBoundSet;
 import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.LOOSE_COMPATIBILILTY;
-import static uk.co.strangeskies.reflection.token.ExecutableTokenQuery.executableStream;
+import static uk.co.strangeskies.reflection.token.ExecutableTokenQuery.executableQuery;
 import static uk.co.strangeskies.reflection.token.TypeToken.overType;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.entriesToMap;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.zip;
@@ -52,7 +52,6 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -565,23 +564,6 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 	 */
 	@Override
 	public ExecutableToken<O, R> withBounds(BoundSet bounds) {
-		return withBounds(bounds, bounds.getInferenceVariables().collect(toList()));
-	}
-
-	/**
-	 * Derive a new {@link ExecutableToken} instance, with the bounds on the given
-	 * inference variables, with respect to the given bound set, incorporated into
-	 * the bounds of the underlying resolver. The original {@link ExecutableToken}
-	 * will remain unmodified.
-	 * 
-	 * @param bounds
-	 *          The new bounds to incorporate.
-	 * @param inferenceVariables
-	 *          The new inference variables whose bounds are to be incorporated.
-	 * @return The newly derived {@link ExecutableToken}.
-	 */
-	@Override
-	public ExecutableToken<O, R> withBounds(BoundSet bounds, Collection<? extends InferenceVariable> inferenceVariables) {
 		bounds = getBounds().withBounds(bounds);
 
 		return new ExecutableToken<>(
@@ -594,24 +576,27 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 				variableArityInvocation);
 	}
 
-	/**
-	 * Derive a new {@link ExecutableToken} instance, with the bounds on the given
-	 * type incorporated into the bounds of the underlying resolver. The original
-	 * {@link ExecutableToken} will remain unmodified.
-	 * 
-	 * @param type
-	 *          The type whose bounds are to be incorporated.
-	 * @return The newly derived {@link ExecutableToken}.
-	 */
 	@Override
-	public ExecutableToken<O, R> withBoundsFrom(TypeToken<?> type) {
-		return withBounds(type.getBounds(), type.getInferenceVariablesMentioned().collect(toList()));
-	}
-
-	@Override
-	@SuppressWarnings("unchecked")
 	public <U extends O> ExecutableToken<U, ? extends R> withReceiverType(TypeToken<U> type) {
 		try {
+			/*
+			 * 
+			 * 
+			 * 
+			 * 
+			 * 
+			 * 
+			 * TODO sort out overload resolution. Should we do this here, or in the
+			 * constructor? Or not at all, even?
+			 * 
+			 * TODO obviously overload resolution is unnecessary for constructors...
+			 * 
+			 * 
+			 * 
+			 * 
+			 * 
+			 * 
+			 */
 			BoundSet bounds = getBounds().withBounds(type.getBounds());
 			bounds = new ConstraintFormula(Kind.SUBTYPE, type.getType(), receiverType.getType()).reduce(bounds);
 
@@ -707,7 +692,7 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 		if (target == null)
 			return (ExecutableToken<O, S>) this;
 
-		return (ExecutableToken<O, S>) withBoundsFrom(target).withTargetType(target.getType());
+		return (ExecutableToken<O, S>) withBounds(target.getBounds()).withTargetType(target.getType());
 	}
 
 	/**
@@ -1068,7 +1053,6 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 	 * @return a new derived {@link ExecutableToken} instance with the given
 	 *         instantiation substituted for the given type variable
 	 */
-	@SuppressWarnings("unchecked")
 	public <U> ExecutableToken<O, ? extends R> withTypeArgument(TypeParameter<U> variable, TypeToken<U> instantiation) {
 		return withTypeArgument(variable.getType(), instantiation.getType());
 	}
@@ -1283,17 +1267,18 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 	}
 
 	/**
-	 * find which methods can be invoked on this type, whether statically or on
-	 * instances
+	 * Find which methods can be invoked on this type, whether statically or on
+	 * instances.
 	 * 
-	 * @return a list of all {@link Method} objects applicable to this type,
-	 *         wrapped in {@link ExecutableToken} instances
+	 * @param declaringClass
+	 *          the declaring class for which to retrieve the methods
+	 * @return all {@link Method} objects applicable to this type, wrapped in
+	 *         {@link ExecutableToken} instances
 	 */
-	public static ExecutableTokenQuery<ExecutableToken<Void, ?>, ?> getStaticMethods(Class<?> declaringClass) {
-		Stream<Method> methodStream = Arrays
-				.stream(declaringClass.getMethods())
+	public static ExecutableTokenQuery<ExecutableToken<Void, ?>, ?> staticMethods(Class<?> declaringClass) {
+		Stream<Method> methodStream = stream(declaringClass.getDeclaredMethods())
 				.filter(m -> Modifier.isStatic(m.getModifiers()));
 
-		return executableStream(methodStream, m -> (ExecutableToken<Void, ?>) ExecutableToken.overStaticMethod(m));
+		return executableQuery(methodStream, ExecutableToken::overStaticMethod);
 	}
 }
