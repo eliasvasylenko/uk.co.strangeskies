@@ -51,7 +51,6 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
-import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.Isomorphism;
 
 class InferenceVariableBoundsImpl implements InferenceVariableBounds {
@@ -66,21 +65,16 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 
 	private CaptureConversion capture;
 
-	private Set<InferenceVariable> relations;
-
 	private Set<InferenceVariable> remainingDependencies;
 
 	public InferenceVariableBoundsImpl(BoundSet boundSet, InferenceVariable inferenceVariable) {
 		this.boundSet = boundSet;
 		this.inferenceVariable = inferenceVariable;
 
+		equalities = new HashSet<>();
 		upperBounds = new HashSet<>();
 		lowerBounds = new HashSet<>();
-		equalities = new HashSet<>();
 		equalities.add(inferenceVariable);
-
-		relations = new HashSet<>();
-		relations.add(inferenceVariable);
 	}
 
 	BoundSet getBoundSet() {
@@ -103,8 +97,6 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				copy.upperBounds = bounds.upperBounds;
 				copy.lowerBounds = bounds.lowerBounds;
 
-				copy.relations = bounds.relations;
-
 				copy.instantiation = bounds.instantiation;
 
 				return copy;
@@ -114,8 +106,6 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		copy.upperBounds.addAll(upperBounds);
 		copy.lowerBounds.addAll(lowerBounds);
 		copy.equalities.addAll(equalities);
-
-		copy.relations.addAll(relations);
 
 		copy.instantiation = instantiation;
 
@@ -134,7 +124,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		return copy;
 	}
 
-	private void addBoundsWithTypeSubstitution(InferenceVariableBoundsImpl inferenceVariableBounds,
+	private void addBoundsWithTypeSubstitution(
+			InferenceVariableBoundsImpl inferenceVariableBounds,
 			Isomorphism isomorphism) {
 		TypeSubstitution substitution = new TypeSubstitution().withIsomorphism(isomorphism);
 
@@ -148,12 +139,6 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		inferenceVariableBounds.lowerBounds.stream().map(substitution::resolve).forEach(lowerBounds::add);
 
 		capture = (CaptureConversion) isomorphism.byIdentity().getMapping(inferenceVariableBounds.capture);
-
-		inferenceVariableBounds.relations
-				.stream()
-				.map(substitution::resolve)
-				.map(InferenceVariable.class::cast)
-				.forEach(relations::add);
 	}
 
 	@Override
@@ -170,12 +155,6 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		invalidateDependencies();
 
 		List<InferenceVariable> mentions = captureConversion.getInferenceVariablesMentioned().collect(toList());
-
-		for (InferenceVariable mention : mentions)
-			this.relations.addAll(boundSet.getBoundsOnImpl(mention).relations);
-
-		for (InferenceVariable mention : mentions)
-			boundSet.getBoundsOnImpl(mention).relations.addAll(relations);
 	}
 
 	public void removeCaptureConversion() {
@@ -193,15 +172,6 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		 * through that mechanism.
 		 */
 		capture = null;
-	}
-
-	private void addMentions(Stream<? extends InferenceVariable> mentions) {
-		invalidateDependencies();
-
-		mentions.forEach(mention -> this.relations.addAll(boundSet.getBoundsOnImpl(mention).relations));
-
-		for (InferenceVariable relation : relations)
-			boundSet.getBoundsOnImpl(relation).relations.addAll(relations);
 	}
 
 	@Override
@@ -269,18 +239,18 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		 * variable β if there exists an inference variable γ such that α depends on
 		 * the resolution of γ and γ depends on the resolution of β.
 		 */
-		IdentityProperty<Boolean> added = new IdentityProperty<>();
+		boolean added;
 		do {
-			added.set(false);
+			added = false;
 			for (InferenceVariableBoundsImpl bounds : recalculated) {
 				for (InferenceVariable dependency : new ArrayList<>(bounds.remainingDependencies)) {
 					if (bounds.remainingDependencies
 							.addAll(boundSet.getBoundsOnImpl(dependency).getRemainingDependencies().collect(toList()))) {
-						added.set(true);
+						added = true;
 					}
 				}
 			}
-		} while (added.get());
+		} while (added);
 
 		return remainingDependencies.stream();
 	}
@@ -339,11 +309,6 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		}
 	}
 
-	@Override
-	public Stream<InferenceVariable> getRelated() {
-		return relations.stream();
-	}
-
 	protected void addEquality(Type type) {
 		if (this.equalities.add(type)) {
 			logBound(inferenceVariable, type, "=");
@@ -358,7 +323,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				addTypeEquality(type, mentions);
 			}
 
-			addMentions(mentions.stream());
+			invalidateDependencies();
 		}
 	}
 
@@ -488,18 +453,16 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		this.equalities.addAll(thoseBounds.equalities);
 		this.upperBounds.addAll(thoseBounds.upperBounds);
 		this.lowerBounds.addAll(thoseBounds.lowerBounds);
-		this.relations.addAll(thoseBounds.relations);
 		thoseBounds.equalities = this.equalities;
 		thoseBounds.upperBounds = this.upperBounds;
 		thoseBounds.lowerBounds = this.lowerBounds;
-		thoseBounds.relations = this.relations;
 	}
 
 	protected void addUpperBound(Type type) {
 		if (this.upperBounds.add(type)) {
 			logBound(inferenceVariable, type, "<:");
 
-			addMentions(InferenceVariable.getMentionedBy(type));
+			invalidateDependencies();
 
 			List<Type> equalities = new ArrayList<>(this.equalities);
 			List<Type> upperBounds = new ArrayList<>(this.upperBounds);
@@ -572,7 +535,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		if (lowerBounds.add(type)) {
 			logBound(type, inferenceVariable, "<:");
 
-			addMentions(InferenceVariable.getMentionedBy(type));
+			invalidateDependencies();
 
 			List<Type> equalities = new ArrayList<>(this.equalities);
 			List<Type> upperBounds = new ArrayList<>(this.upperBounds);

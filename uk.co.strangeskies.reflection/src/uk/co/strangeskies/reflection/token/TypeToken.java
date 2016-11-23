@@ -1211,18 +1211,6 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	}
 
 	/**
-	 * Determine which inference variables are dependencies or dependents of those
-	 * mentioned by the type of this {@link TypeToken}.
-	 * 
-	 * @return A set of all the dependencies of the inference variables which are
-	 *         contained within the bound set backing this {@link TypeToken} and
-	 *         which are mentioned by its type.
-	 */
-	public Stream<InferenceVariable> getRelatedInferenceVariables() {
-		return getInferenceVariablesMentioned().flatMap(d -> getBounds().getBoundsOn(d).getRelated());
-	}
-
-	/**
 	 * @return The annotated declaring type of this type token, if one exists,
 	 *         else an unannotated representation of the type of this type token.
 	 */

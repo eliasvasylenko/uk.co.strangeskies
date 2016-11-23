@@ -95,12 +95,10 @@ import uk.co.strangeskies.utilities.collection.StreamUtilities;
  */
 public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 	private final BoundSet bounds;
+	private final List<Type> methodTypeArguments;
 
 	private final TypeToken<O> receiverType;
 	private final TypeToken<R> returnType;
-
-	private final List<Type> methodTypeArguments;
-
 	private final List<ExecutableParameter> parameters;
 
 	private final BiFunction<Object, List<?>, R> invocationFunction;
@@ -123,6 +121,21 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 				executable,
 				invocationFunction,
 				variableArityInvocation);
+	}
+
+	protected ExecutableToken(ExecutableToken<O, R> from, boolean variableArityInvocation) {
+		super(from);
+
+		bounds = from.bounds;
+		methodTypeArguments = from.methodTypeArguments;
+
+		receiverType = from.receiverType;
+		returnType = from.returnType;
+		parameters = from.parameters;
+
+		invocationFunction = from.invocationFunction;
+
+		this.variableArityInvocation = variableArityInvocation;
 	}
 
 	private ExecutableToken(
@@ -543,14 +556,7 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 		} else if (!isVariableArityDefinition()) {
 			throw new ReflectionException(p -> p.invalidVariableArityInvocation(getMember()));
 		} else {
-			return new ExecutableToken<>(
-					bounds,
-					receiverType,
-					returnType,
-					methodTypeArguments,
-					getMember(),
-					invocationFunction,
-					true);
+			return new ExecutableToken<>(this, true);
 		}
 	}
 
@@ -655,7 +661,8 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 	}
 
 	public Optional<ExecutableToken<O, ? extends R>> getOverride() {
-		Stream<Class<?>> candidates = getre; // TODO get from TypeToken.upperBounds()
+		Stream<Class<?>> candidates = getre; // TODO get from
+																					// TypeToken.upperBounds()
 
 		Class<?>[] parameters = getParameters().map(ExecutableParameter::getErasure).toArray(Class<?>[]::new);
 

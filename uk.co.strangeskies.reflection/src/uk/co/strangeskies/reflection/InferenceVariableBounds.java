@@ -80,11 +80,4 @@ public interface InferenceVariableBounds {
 	 *         set includes the inference variable itself.
 	 */
 	public abstract Stream<InferenceVariable> getRemainingDependencies();
-
-	/**
-	 * @return All inference variables related to this one through bounds. This
-	 *         set includes the inference variable itself.
-	 */
-	public abstract Stream<InferenceVariable> getRelated();
-
 }

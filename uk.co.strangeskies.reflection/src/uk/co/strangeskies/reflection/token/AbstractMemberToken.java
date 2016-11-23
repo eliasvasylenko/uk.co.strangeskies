@@ -73,6 +73,11 @@ public abstract class AbstractMemberToken<O, M extends Member> implements Member
 		containerTypeArguments = determineContainerTypeArguments(resolver, containerType);
 	}
 
+	protected AbstractMemberToken(AbstractMemberToken<O, M> from) {
+		this.member = from.member;
+		this.containerTypeArguments = from.containerTypeArguments;
+	}
+
 	@Override
 	public M getMember() {
 		return member;
