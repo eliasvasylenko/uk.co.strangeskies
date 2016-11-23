@@ -6,10 +6,12 @@ import java.util.Objects;
 public class ExecutableParameter {
 	private final String name;
 	private final Type type;
+	private final Class<?> erasure;
 
-	public ExecutableParameter(String name, Type type) {
+	protected ExecutableParameter(String name, Type type, Class<?> erasure) {
 		this.name = name;
 		this.type = type;
+		this.erasure = erasure;
 	}
 
 	public String getName() {
@@ -18,6 +20,10 @@ public class ExecutableParameter {
 
 	public Type getType() {
 		return type;
+	}
+
+	public Class<?> getErasure() {
+		return erasure;
 	}
 
 	@Override

@@ -37,8 +37,8 @@ import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
-import static uk.co.strangeskies.reflection.token.ExecutableToken.staticMethods;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.overConstructor;
+import static uk.co.strangeskies.reflection.token.ExecutableToken.staticMethods;
 
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
@@ -140,8 +140,6 @@ public class ExecutableTokenTest {
 
 	@Test
 	public void singleVarargsResolutionTest() throws NoSuchMethodException, SecurityException {
-		System.out.println(staticMethods(Arrays.class).named("asList").stream().findAny().get());
-
 		ExecutableToken<?, ?> asList = staticMethods(Arrays.class).named("asList").resolveOverload(String.class);
 
 		assertThat(asList.isVariableArityInvocation(), is(true));

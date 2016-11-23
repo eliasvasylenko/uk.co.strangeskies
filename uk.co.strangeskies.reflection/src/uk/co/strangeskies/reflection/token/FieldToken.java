@@ -320,7 +320,6 @@ public class FieldToken<O, T> extends AbstractMemberToken<O, Field> {
 	 * @return all {@link Field} objects applicable to this type, wrapped in
 	 *         {@link FieldToken} instances
 	 */
-	@SuppressWarnings("unchecked")
 	public static FieldTokenQuery<FieldToken<Void, ?>, ?> staticFields(Class<?> declaringClass) {
 		Stream<Field> fields = stream(declaringClass.getDeclaredFields()).filter(f -> Modifier.isStatic(f.getModifiers()));
 

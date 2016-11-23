@@ -78,24 +78,28 @@ public class ExecutableTokenQuery<I extends ExecutableToken<?, ?>, E extends Mem
 		return new ExecutableTokenQuery<>(members.filter(m -> m.getName().equals(name)), mapper);
 	}
 
-	public Stream<I> stream() {
+	public Stream<I> streamAccessible() {
 		return members.map(mapper);
 	}
 
-	public <T> I resolveOverload() {
+	public Stream<I> streamAll() {
+		return members.map(mapper);
+	}
+
+	public I resolveOverload() {
 		return resolveOverload(Collections.emptyList());
 	}
 
-	public <T> I resolveOverload(Type... arguments) {
+	public I resolveOverload(Type... arguments) {
 		return resolveOverload(Arrays.stream(arguments).map(TypeToken::overType).collect(toList()));
 	}
 
-	public <T> I resolveOverload(TypeToken<?>... arguments) {
+	public I resolveOverload(TypeToken<?>... arguments) {
 		return resolveOverload(Arrays.asList(arguments));
 	}
 
-	public <T> I resolveOverload(List<? extends TypeToken<?>> arguments) {
-		Set<? extends I> candidates = stream().collect(Collectors.toSet());
+	public I resolveOverload(List<? extends TypeToken<?>> arguments) {
+		Set<? extends I> candidates = streamAll().collect(Collectors.toSet());
 
 		if (candidates.isEmpty())
 			throw new IllegalArgumentException("Cannot find any applicable invocable for arguments '" + arguments + "'");

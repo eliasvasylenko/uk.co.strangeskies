@@ -41,6 +41,7 @@ import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.LOOSE_COMPATI
 import static uk.co.strangeskies.reflection.token.ExecutableTokenQuery.executableQuery;
 import static uk.co.strangeskies.reflection.token.TypeToken.overType;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.entriesToMap;
+import static uk.co.strangeskies.utilities.collection.StreamUtilities.tryOptional;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.zip;
 
 import java.lang.reflect.Array;
@@ -48,6 +49,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
@@ -58,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -72,6 +75,7 @@ import uk.co.strangeskies.reflection.TypeSubstitution;
 import uk.co.strangeskies.reflection.TypeVariableCapture;
 import uk.co.strangeskies.reflection.Types;
 import uk.co.strangeskies.reflection.token.TypeToken.Wildcards;
+import uk.co.strangeskies.utilities.collection.StreamUtilities;
 
 /**
  * <p>
@@ -121,7 +125,7 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 				variableArityInvocation);
 	}
 
-	protected ExecutableToken(
+	private ExecutableToken(
 			TypeResolver resolver,
 			TypeToken<O> receiverType,
 			TypeToken<R> returnType,
@@ -207,6 +211,7 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 	}
 
 	private List<ExecutableParameter> determineParameterTypes(TypeSubstitution inferenceVariables) {
+		Parameter[] parameters = getMember().getParameters();
 		Type[] genericParameters;
 		if (isRaw()) {
 			genericParameters = getMember().getParameterTypes();
@@ -219,7 +224,7 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 
 		return IntStream
 				.range(0, genericParameters.length)
-				.mapToObj(i -> new ExecutableParameter(getMember().getParameters()[i].getName(), genericParameters[i]))
+				.mapToObj(i -> new ExecutableParameter(parameters[i].getName(), genericParameters[i], parameters[i].getType()))
 				.collect(toList());
 	}
 
@@ -606,29 +611,18 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 			 * TODO sort out overload resolution. Should we do this here, or in the
 			 * constructor? Or not at all, even?
 			 * 
+			 * 
+			 * 
 			 * TODO obviously overload resolution is unnecessary for constructors...
 			 * 
 			 * 
 			 * 
-			 * TODO find best via Class::getMethods and looking for the one declared
-			 * on a class which extends all the others... no faster way I can find.
+			 * TODO Best way to find best override is simply using getMethod on the real class (which may be multiple in the case of intersection types etc...)
 			 * 
 			 * 
 			 * 
 			 * TODO do we want ExecutableTokenQuery to exclude overridden methods by
 			 * default? Do we want reflective access to an overridden method?
-			 * 
-			 * 
-			 * 
-			 * 
-			 * 
-			 * TODO maybe both of these:
-			 *  - ExecutableToken::getOverridden : Stream
-			 *  - ExecutableToken::getOverride : Optional
-			 * 
-			 * 
-			 * 
-			 * 
 			 * 
 			 * 
 			 * 
@@ -658,6 +652,53 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 		} catch (NoSuchMethodException | SecurityException e) {
 			throw new ReflectionException(p -> p.cannotResolveOverride(getMember(), type.getType()), e);
 		}
+	}
+
+	public Optional<ExecutableToken<O, ? extends R>> getOverride() {
+		Stream<Class<?>> candidates = getre; // TODO get from TypeToken.upperBounds()
+
+		Class<?>[] parameters = getParameters().map(ExecutableParameter::getErasure).toArray(Class<?>[]::new);
+
+		return candidates
+				.map(c -> tryOptional(() -> c.getMethod(getName(), parameters)))
+				.flatMap(StreamUtilities::optionalStream)
+				.reduce((a, b) -> {
+					if (a.getDeclaringClass().isAssignableFrom(b.getDeclaringClass())) {
+						return b;
+					} else if (b.getDeclaringClass().isAssignableFrom(a.getDeclaringClass())) {
+						return a;
+					} else if (!a.getDeclaringClass().isInterface()) {
+						return a;
+					} else {
+						return b;
+					}
+				})
+				.map(
+						m -> new ExecutableToken<>(
+								bounds,
+								receiverType,
+								returnType,
+								methodTypeArguments,
+								m,
+								invocationFunction,
+								variableArityInvocation));
+	}
+
+	public Stream<ExecutableToken<O, ? super R>> getOverridden() {
+		Optional<Method> override = tryOptional(
+				() -> getMember().getDeclaringClass().getMethod(
+						getName(),
+						getParameters().map(ExecutableParameter::getErasure).toArray(Class<?>[]::new)));
+
+		return override.map(
+				m -> new ExecutableToken<>(
+						bounds,
+						receiverType,
+						returnType,
+						methodTypeArguments,
+						m,
+						invocationFunction,
+						variableArityInvocation));
 	}
 
 	@Override

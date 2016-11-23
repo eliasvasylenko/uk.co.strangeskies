@@ -56,6 +56,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import uk.co.strangeskies.utilities.function.ThrowingSupplier;
+
 /**
  * A collection of static utility methods for working with streams.
  * 
@@ -63,6 +65,18 @@ import java.util.stream.StreamSupport;
  */
 public class StreamUtilities {
 	private StreamUtilities() {}
+
+	public static <T> Stream<T> optionalStream(Optional<T> optional) {
+		return optional.map(Stream::of).orElse(Stream.empty());
+	}
+
+	public static <T> Optional<T> tryOptional(ThrowingSupplier<T, ?> attempt) {
+		try {
+			return Optional.of(attempt.get());
+		} catch (Exception exception) {
+			return Optional.empty();
+		}
+	}
 
 	public static <A, B> Collector<Entry<A, B>, ?, Map<A, B>> entriesToMap() {
 		return Collectors.toMap(Entry::getKey, Entry::getValue, throwingMerger(), LinkedHashMap::new);
@@ -78,7 +92,9 @@ public class StreamUtilities {
 		return zip(first, second, (Supplier<RuntimeException>) null);
 	}
 
-	public static <A, B> Stream<Entry<A, B>> zip(Stream<A> first, Stream<B> second,
+	public static <A, B> Stream<Entry<A, B>> zip(
+			Stream<A> first,
+			Stream<B> second,
 			Supplier<RuntimeException> mismatchedStreams) {
 		return zip(first, second, SimpleEntry<A, B>::new, mismatchedStreams);
 	}
@@ -87,7 +103,10 @@ public class StreamUtilities {
 		return zip(first, second, combiner, null);
 	}
 
-	public static <A, B, R> Stream<R> zip(Stream<A> first, Stream<B> second, BiFunction<A, B, R> combiner,
+	public static <A, B, R> Stream<R> zip(
+			Stream<A> first,
+			Stream<B> second,
+			BiFunction<A, B, R> combiner,
 			Supplier<RuntimeException> mismatchedStreams) {
 		Iterator<A> firstIterator = first.iterator();
 		Iterator<B> secondIterator = second.iterator();
@@ -194,7 +213,8 @@ public class StreamUtilities {
 	 *          a mapping from an element to the next element
 	 * @return a stream over each element in sequence
 	 */
-	public static <T> Stream<T> iterateOptional(Optional<? extends T> root,
+	public static <T> Stream<T> iterateOptional(
+			Optional<? extends T> root,
 			Function<? super T, Optional<? extends T>> mapping) {
 		Iterator<T> iterator = new Iterator<T>() {
 			private Optional<? extends T> item = root;
@@ -247,7 +267,8 @@ public class StreamUtilities {
 	 * @return a stream over elements in a tree and each of their children, as
 	 *         well as each of their children, in a depth first manner
 	 */
-	public static <T> Stream<T> flatMapRecursive(Stream<? extends T> stream,
+	public static <T> Stream<T> flatMapRecursive(
+			Stream<? extends T> stream,
 			Function<? super T, ? extends Stream<? extends T>> mapping) {
 		return stream.flatMap(s -> concat(of(s), flatMapRecursive(mapping.apply(s), mapping)));
 	}
@@ -265,7 +286,8 @@ public class StreamUtilities {
 	 * @return a stream over the root and each of its children, as well as each of
 	 *         their children, in a depth first manner
 	 */
-	public static <T> Stream<T> flatMapRecursiveDistinct(T root,
+	public static <T> Stream<T> flatMapRecursiveDistinct(
+			T root,
 			Function<? super T, ? extends Stream<? extends T>> mapping) {
 		return flatMapRecursiveDistinct(Stream.of(root), mapping);
 	}
@@ -285,13 +307,16 @@ public class StreamUtilities {
 	 * @return a stream over elements in a tree and each of their children, as
 	 *         well as each of their children, in a depth first manner
 	 */
-	public static <T> Stream<T> flatMapRecursiveDistinct(Stream<? extends T> stream,
+	public static <T> Stream<T> flatMapRecursiveDistinct(
+			Stream<? extends T> stream,
 			Function<? super T, ? extends Stream<? extends T>> mapping) {
 		return flatMapRecursiveDistinct(stream, mapping, new HashSet<>());
 	}
 
-	protected static <T> Stream<T> flatMapRecursiveDistinct(Stream<? extends T> stream,
-			Function<? super T, ? extends Stream<? extends T>> mapping, Set<T> visited) {
+	protected static <T> Stream<T> flatMapRecursiveDistinct(
+			Stream<? extends T> stream,
+			Function<? super T, ? extends Stream<? extends T>> mapping,
+			Set<T> visited) {
 		return stream
 				.filter(visited::add)
 				.flatMap(s -> concat(of(s), flatMapRecursiveDistinct(mapping.apply(s), mapping, visited)));
