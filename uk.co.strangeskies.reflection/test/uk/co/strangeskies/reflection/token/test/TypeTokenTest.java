@@ -143,11 +143,11 @@ public class TypeTokenTest {
 
 	@Test
 	public void makeTestsFromThese() {
-		System.out.println(
+		printlines(
 				"#" + Types
 						.leastUpperBound(Integer.class, Double.class, new TypeToken<Comparable<? extends Number>>() {}.getType()));
 
-		System.out.println(
+		printlines(
 				"#" + Types
 						.leastUpperBound(new TypeToken<Comparable<? extends Number>>() {}.getType(), Integer.class, Double.class));
 
@@ -156,23 +156,23 @@ public class TypeTokenTest {
 				(ParameterizedType) new TypeToken<Comparable<Double>>() {}.getType(),
 				(ParameterizedType) new TypeToken<Comparable<Integer>>() {}.getType());
 		Type bestType = ((ParameterizedType) Types.best(Comparable.class, bestTypes)).getActualTypeArguments()[0];
-		System.out.println("!  " + bestType);
+		printlines("!  " + bestType);
 
 		List<ParameterizedType> bestTypes2 = Arrays.asList(
 				(ParameterizedType) new TypeToken<Comparable<Double>>() {}.getType(),
 				(ParameterizedType) new TypeToken<Comparable<Integer>>() {}.getType(),
 				(ParameterizedType) new TypeToken<Comparable<? extends Number>>() {}.getType());
 		Type bestType2 = ((ParameterizedType) Types.best(Comparable.class, bestTypes2)).getActualTypeArguments()[0];
-		System.out.println("!  " + bestType2);
+		printlines("!  " + bestType2);
 
 		List<ParameterizedType> bestTypes3 = Arrays.asList(
 				(ParameterizedType) new TypeToken<Comparable<Double>>() {}.getType(),
 				(ParameterizedType) new TypeToken<Comparable<Integer>>() {}.getType());
 		Type bestType3 = ((ParameterizedType) Types.best(Comparable.class, bestTypes3)).getActualTypeArguments()[0];
-		System.out.println("!  " + bestType3);
+		printlines("!  " + bestType3);
 
-		System.out.println();
-		System.out.println(Types.leastContainingArgument(bestType, bestType3));
+		printlines();
+		printlines(Types.leastContainingArgument(bestType, bestType3));
 	}
 
 	// @Test
@@ -184,118 +184,125 @@ public class TypeTokenTest {
 
 	@Test
 	public void hugeTest1() {
-		System.out.println(new TypeToken<HashSet<String>>() {}.resolveSupertype(Set.class));
-		System.out.println();
-		System.out.println();
+		printlines(new TypeToken<HashSet<String>>() {}.resolveSupertype(Set.class));
+		printlines();
+		printlines();
 
-		System.out.println("List with T = String: " + listOf(String.class));
-		System.out.println();
-		System.out.println();
+		printlines("List with T = String: " + listOf(String.class));
+		printlines();
+		printlines();
 
 		new TypeToken<Outer1<Serializable>.Inner<String, HashSet<Serializable>, Set<String>>>() {}.getBounds();
-		System.out.println();
-		System.out.println();
+		printlines();
+		printlines();
 
-		System.out.println(
+		printlines(
 				new TypeToken<Outer2<Serializable, String>.Inner3<HashSet<Serializable>>>() {}
 						.resolveSupertype(Outer1.Inner.class));
-		System.out.println();
-		System.out.println();
+		printlines();
+		printlines();
 
-		System.out.println(new TypeToken<Outer1<String>.Inner2<Double>>() {}.resolveSupertype(Outer1.Inner.class));
-		System.out.println();
-		System.out.println();
+		printlines(new TypeToken<Outer1<String>.Inner2<Double>>() {}.resolveSupertype(Outer1.Inner.class));
+		printlines();
+		printlines();
 
-		System.out.println("type test: " + new TypeToken<String>() {}.resolveSupertype(Comparable.class));
-		System.out.println();
-		System.out.println();
+		printlines("type test: " + new TypeToken<String>() {}.resolveSupertype(Comparable.class));
+		printlines();
+		printlines();
 
 		class SM<YO> {}
 		class NM<V extends Number> extends SM<V> {}
-		System.out.println(new TypeToken<NM<?>>() {});
-		System.out.println(new TypeToken<NM<?>>() {}.resolveSupertype(SM.class));
-		System.out.println();
-		System.out.println();
+		printlines(new TypeToken<NM<?>>() {});
+		printlines(new TypeToken<NM<?>>() {}.resolveSupertype(SM.class));
+		printlines();
+		printlines();
 
-		System.out.println(TypeToken.overType(new TypeToken<Nest<?>>() {}.getType()));
-		System.out.println();
-		System.out.println();
+		printlines(TypeToken.overType(new TypeToken<Nest<?>>() {}.getType()));
+		printlines();
+		printlines();
 
-		System.out.println(TypeToken.overType(new TypeToken<C2<?>>() {}.getType()));
-		System.out.println();
-		System.out.println();
+		printlines(TypeToken.overType(new TypeToken<C2<?>>() {}.getType()));
+		printlines();
+		printlines();
 
-		System.out.println(TypeToken.overType(new TypeToken<C1<?>>() {}.getType()));
-		System.out.println();
-		System.out.println();
+		printlines(TypeToken.overType(new TypeToken<C1<?>>() {}.getType()));
+		printlines();
+		printlines();
 
-		System.out.println(TypeToken.overType(new TypeToken<Base<LeftN, RightN>>() {}.getType()));
-		System.out.println();
-		System.out.println();
+		printlines(TypeToken.overType(new TypeToken<Base<LeftN, RightN>>() {}.getType()));
+		printlines();
+		printlines();
 
-		System.out.println(TypeToken.overType(new TypeToken<RightN>() {}.resolveSupertype(Base.class).getType()));
-		System.out.println();
-		System.out.println();
+		printlines(TypeToken.overType(new TypeToken<RightN>() {}.resolveSupertype(Base.class).getType()));
+		printlines();
+		printlines();
 
-		System.out.println("TYPELITTEST: " + new TT<String>() {});
-		System.out.println("TYPELITTEST-2: " + new YY<String>() {});
-		System.out.println("TYPELITTEST-3: " + new G() {});
-		System.out.println("TYPELITTEST-4: " + new YY<Integer>() {}.resolveSupertype(Collection.class));
-		System.out.println();
-		System.out.println();
+		printlines("TYPELITTEST: " + new TT<String>() {});
+		printlines("TYPELITTEST-2: " + new YY<String>() {});
+		printlines("TYPELITTEST-3: " + new G() {});
+		printlines("TYPELITTEST-4: " + new YY<Integer>() {}.resolveSupertype(Collection.class));
+		printlines();
+		printlines();
 
-		System.out.println(
-				new TypeToken<Self<?>>() {}.satisfiesConstraintFrom(LOOSE_COMPATIBILILTY, new TypeToken<Nest<?>>() {}));
-		System.out.println();
-		System.out.println();
+		printlines(new TypeToken<Self<?>>() {}.satisfiesConstraintFrom(LOOSE_COMPATIBILILTY, new TypeToken<Nest<?>>() {}));
+		printlines();
+		printlines();
 
-		System.out.println(TypeToken.overType(new TypeToken<C1<? extends C1<?>>>() {}.getType()));
-		System.out.println();
-		System.out.println();
+		printlines(TypeToken.overType(new TypeToken<C1<? extends C1<?>>>() {}.getType()));
+		printlines();
+		printlines();
 
-		System.out.println(new TypeToken<SchemaNode.Effective<?, ?>>() {}.resolveSupertype(SchemaNode.class));
-		System.out.println();
-		System.out.println();
+		printlines(new TypeToken<SchemaNode.Effective<?, ?>>() {}.resolveSupertype(SchemaNode.class));
+		printlines();
+		printlines();
 
 		TypeToken<?> receiver = new TypeToken<BindingState>() {};
-		System.out.println("RESOLVE 1:");
-		System.out.println(receiver.methods().named("bindingNode").resolveOverload(int.class));
-		System.out.println();
-		System.out.println();
+		printlines("RESOLVE 1:");
+		printlines(receiver.methods().named("bindingNode").resolveOverload(int.class));
+		printlines();
+		printlines();
 
 		receiver = new @Capture TypeToken<SchemaNodeConfigurator<?, ?>>() {};
-		System.out.println("RESOLVE 2:");
-		System.out.println(TypeToken.overType(receiver.getType()).methods().named("name").resolveOverload(String.class));
-		System.out.println();
-		System.out.println();
+		printlines("RESOLVE 2:");
+		printlines(TypeToken.overType(receiver.getType()).methods().named("name").resolveOverload(String.class));
+		printlines();
+		printlines();
 
 		receiver = new @Capture TypeToken<ChildNodeConfigurator<?, ?>>() {};
-		System.out.println("RESOLVE 3:");
-		System.out.println(TypeToken.overType(receiver.getType()).methods().named("name").resolveOverload(String.class));
-		System.out.println();
-		System.out.println();
+		printlines("RESOLVE 3:");
+		printlines(TypeToken.overType(receiver.getType()).methods().named("name").resolveOverload(String.class));
+		printlines();
+		printlines();
 
 		receiver = new @Capture TypeToken<DataBindingType.Effective<?>>() {};
-		System.out.println("RESOLVE 4:");
-		System.out.println(TypeToken.overType(receiver.getType()).methods().named("child").resolveOverload(String.class));
-		System.out.println();
-		System.out.println();
+		printlines("RESOLVE 4:");
+		printlines(TypeToken.overType(receiver.getType()).methods().named("child").resolveOverload(String.class));
+		printlines();
+		printlines();
 
-		System.out.println(
+		printlines(
 				new TypeToken<IncludeTarget>() {}.methods().named("includer").resolveOverload(Model.class, Collection.class));
-		System.out.println();
-		System.out.println();
+		printlines();
+		printlines();
 
-		System.out.println(new TypeToken<Map<String, ?>>() {}.getThisType());
-		System.out.println();
-		System.out.println();
+		printlines(new TypeToken<Map<String, ?>>() {}.getThisType());
+		printlines();
+		printlines();
+	}
+
+	@Test
+	public <H extends C2<H>> void yugeTestTheBiggest() {
+		for (int i = 0; i < 3500; i++) {
+			hugeTest1();
+			huge2Test();
+		}
 	}
 
 	@Test
 	public <H extends C2<H>> void huge2Test() {
-		System.out.println("<T extends Number, U extends List<? super T>> U method4(Collection<? extends T> a, U b)");
-		System.out.println("((B) null).method4((Collection<? extends Integer>) null, (List<? super Number>) null)");
-		System.out.println(
+		printlines("<T extends Number, U extends List<? super T>> U method4(Collection<? extends T> a, U b)");
+		printlines("((B) null).method4((Collection<? extends Integer>) null, (List<? super Number>) null)");
+		printlines(
 				TypeToken
 						.overType(B.class)
 						.methods()
@@ -304,133 +311,127 @@ public class TypeTokenTest {
 								new TypeToken<Collection<? extends Integer>>() {}.getType(),
 								new TypeToken<List<? super Number>>() {}.getType())
 						.infer());
-		System.out.println();
+		printlines();
 
-		System.out.println(new TypeParameter<H>() {});
-		System.out.println(new TypeToken<List<String>>() {});
-		System.out.println();
+		printlines(new TypeParameter<H>() {});
+		printlines(new TypeToken<List<String>>() {});
+		printlines();
 
-		System.out.println(
+		printlines(
 				TypeToken
 						.overType(B.class)
 						.methods()
 						.named("bothways")
 						.resolveOverload(String.class, new TypeToken<List<String>>() {}.getType())
 						.infer());
-		System.out.println();
+		printlines();
 
-		System.out
-				.println(TypeToken.overType(B.class).methods().named("moothod").resolveOverload(Integer.class, Number.class));
-		System.out.println();
+		printlines(TypeToken.overType(B.class).methods().named("moothod").resolveOverload(Integer.class, Number.class));
+		printlines();
 
-		System.out
-				.println(TypeToken.overType(B.class).methods().named("moothod").resolveOverload(Number.class, Integer.class));
-		System.out.println();
+		printlines(TypeToken.overType(B.class).methods().named("moothod").resolveOverload(Number.class, Integer.class));
+		printlines();
 
-		System.out
-				.println(TypeToken.overType(B.class).methods().named("moothod").resolveOverload(Number.class, Number.class));
-		System.out.println();
+		printlines(TypeToken.overType(B.class).methods().named("moothod").resolveOverload(Number.class, Number.class));
+		printlines();
 
 		/*-
-		System.out.println(TypeToken.of(B.class).getMethods(
+		systemOutPrintln(TypeToken.of(B.class).getMethods(
 				"moothod", Integer.class, Integer.class));
-		System.out.println();
+		systemOutPrintln();
 		 */
 
-		System.out.println(new TypeToken<List<? extends Number>>() {}.getType());
-		System.out.println(
+		printlines(new TypeToken<List<? extends Number>>() {}.getType());
+		printlines(
 				staticMethods(Arrays.class)
 						.named("asList")
 						.resolveOverload(int.class, double.class)
 						.withTargetType(new TypeToken<List<? extends Number>>() {})
 						.infer());
-		System.out.println();
+		printlines();
 
-		System.out.println(
+		printlines(
 				staticMethods(Arrays.class).named("asList").resolveOverload(int.class, double.class).withTargetType(
 						new TypeToken<List<? super Comparable<? extends Number>>>() {}));
-		System.out.println();
+		printlines();
 
-		System.out
-				.println(staticMethods(Arrays.class).named("asList").resolveOverload(int.class, double.class).getBounds());
-		System.out.println();
+		printlines(staticMethods(Arrays.class).named("asList").resolveOverload(int.class, double.class).getBounds());
+		printlines();
 
-		System.out.println(
+		printlines(
 				staticMethods(Arrays.class)
 						.named("asList")
 						.resolveOverload(int.class, double.class)
 						.withTargetType(new TypeToken<List<? super Comparable<? extends Number>>>() {})
 						.infer());
-		System.out.println();
+		printlines();
 
-		System.out.println(
+		printlines(
 				TypeToken.overType(B.class).methods().named("method").resolveOverload(
 						new TypeToken<List<Integer>>() {},
 						new TypeToken<List<Number>>() {}));
-		System.out.println();
+		printlines();
 
-		System.out.println(
+		printlines(
 				new TypeToken<B>() {}.methods().named("method2").resolveOverload(
 						new TypeToken<List<Integer>>() {},
 						new TypeToken<List<Comparable<Integer>>>() {}));
-		System.out.println();
+		printlines();
 
-		System.out.println(
+		printlines(
 				TypeToken
 						.overType(B.class)
 						.methods()
 						.named("method")
 						.resolveOverload(new TypeToken<Collection<? super Integer>>() {})
 						.infer());
-		System.out.println();
+		printlines();
 
-		System.out.println(
+		printlines(
 				new TypeToken<B>() {}.methods().named("okay").resolveOverload(
 						new TypeToken<Set<ExecutableToken<H, ?>>>() {},
 						new TypeToken<List<? extends Type>>() {}));
-		System.out.println();
+		printlines();
 
-		System.out.println(
+		printlines(
 				staticMethods(B.class)
 						.named("testeroonie")
 						.resolveOverload(new TypeToken<Class<?>>() {}.getType(), String.class)
 						.infer());
-		System.out.println();
+		printlines();
 
 		TypeToken<?> targetClass = new TypeToken<List<?>>() {};
 		TypeToken<?> resultClass = new TypeToken<Iterable<String>>() {};
-		System.out.println(
-				resultClass.satisfiesConstraintTo(CONTAINMENT, targetClass.resolveSupertype(resultClass.getRawType())));
-		System.out.println();
+		printlines(resultClass.satisfiesConstraintTo(CONTAINMENT, targetClass.resolveSupertype(resultClass.getRawType())));
+		printlines();
 
-		System.out.println(new TypeToken<List<?>>() {}.getExtending(Wildcards.CAPTURE));
-		System.out.println();
+		printlines(new TypeToken<List<?>>() {}.getExtending(Wildcards.CAPTURE));
+		printlines();
 
-		System.out.println(new TypeToken<List<?>>() {}.getExtending(Wildcards.CAPTURE).resolveSupertype(Collection.class));
-		System.out.println();
+		printlines(new TypeToken<List<?>>() {}.getExtending(Wildcards.CAPTURE).resolveSupertype(Collection.class));
+		printlines();
 
-		System.out
-				.println(new TypeToken<List<BigInteger>>() {}.getExtending(Wildcards.INFER).resolveSupertype(Collection.class));
-		System.out.println();
+		printlines(new TypeToken<List<BigInteger>>() {}.getExtending(Wildcards.INFER).resolveSupertype(Collection.class));
+		printlines();
 
-		System.out.println(new TypeToken<HashSet<?>>() {}.getBounds());
-		System.out.println();
+		printlines(new TypeToken<HashSet<?>>() {}.getBounds());
+		printlines();
 
-		System.out.println(
+		printlines(
 				new TypeToken<Collection<? extends String>>() {}
 						.getExtending(Wildcards.INFER)
 						.withConstraintTo(SUBTYPE, new TypeToken<ArrayList<?>>() {}.getType())
 						.getBounds());
-		System.out.println();
+		printlines();
 
-		System.out.println(
+		printlines(
 				new TypeToken<Collection<? extends String>>() {}
 						.getExtending(Wildcards.INFER)
 						.withConstraintTo(SUBTYPE, new TypeToken<ArrayList<?>>() {}.getType())
 						.infer());
-		System.out.println();
+		printlines();
 
-		System.out.println(
+		printlines(
 				new TypeToken<List<? super Number>>() {}
 						.getExtending(Wildcards.INFER)
 						.methods()
@@ -438,28 +439,28 @@ public class TypeTokenTest {
 						.resolveOverload(Integer.class)
 						.getReceiverType()
 						.infer());
-		System.out.println();
+		printlines();
 
-		System.out.println(new TypeToken<@Infer List<@Infer ? extends Number>>() {}.getBounds());
-		System.out.println();
+		printlines(new TypeToken<@Infer List<@Infer ? extends Number>>() {}.getBounds());
+		printlines();
 
-		System.out.println(new TypeToken<@Infer List<? extends Number>>() {});
-		System.out.println(
+		printlines(new TypeToken<@Infer List<? extends Number>>() {});
+		printlines(
 				AnnotatedTypes.wrap(new TypeToken<@Infer List<? extends Number>>() {}.getClass().getAnnotatedSuperclass()));
-		System.out.println(new @Infer TypeToken<List<@Infer ? extends Number>>() {});
-		System.out.println(new @Infer TypeToken<List<@Infer ? extends Number>>() {}.getExtending(Wildcards.INFER));
-		System.out.println(new @Infer TypeToken<List<? extends Number>>() {}.getExtending(Wildcards.INFER));
-		System.out.println(new TypeToken<@Infer List<? extends Number>>() {}.getExtending(Wildcards.INFER).getBounds());
+		printlines(new @Infer TypeToken<List<@Infer ? extends Number>>() {});
+		printlines(new @Infer TypeToken<List<@Infer ? extends Number>>() {}.getExtending(Wildcards.INFER));
+		printlines(new @Infer TypeToken<List<? extends Number>>() {}.getExtending(Wildcards.INFER));
+		printlines(new TypeToken<@Infer List<? extends Number>>() {}.getExtending(Wildcards.INFER).getBounds());
 
-		System.out.println(
+		printlines(
 				new TypeToken<@Infer Collection<? extends String>>() {}
 						.getExtending(Wildcards.INFER)
 						.withConstraintTo(SUBTYPE, new TypeToken<ArrayList<? super String>>() {}.getType())
 						.infer()
 						.resolveSupertype(Iterable.class));
-		System.out.println();
+		printlines();
 
-		System.out.println(
+		printlines(
 				new @Infer TypeToken<List<? extends Number>>() {}
 						.getExtending(Wildcards.INFER)
 						.methods()
@@ -471,163 +472,162 @@ public class TypeTokenTest {
 						.resolveOverload(Double.class)
 						.getReceiverType()
 						.infer());
-		System.out.println();
+		printlines();
 
-		System.out
-				.println(new TypeToken<HashMap<?, ?>>() {}.getExtending(Wildcards.INFER).constructors().resolveOverload());
-		System.out.println(
+		printlines(new TypeToken<HashMap<?, ?>>() {}.getExtending(Wildcards.INFER).constructors().resolveOverload());
+		printlines(
 				new TypeToken<HashMap<?, ?>>() {}.getExtending(Wildcards.INFER).constructors().resolveOverload().getBounds());
 
-		System.out.println(new TypeToken<HashMap<?, ?>>() {}.getExtending(Wildcards.INFER));
-		System.out.println(new TypeToken<HashMap<?, ?>>() {}.getExtending(Wildcards.INFER).getBounds());
+		printlines(new TypeToken<HashMap<?, ?>>() {}.getExtending(Wildcards.INFER));
+		printlines(new TypeToken<HashMap<?, ?>>() {}.getExtending(Wildcards.INFER).getBounds());
 
-		System.out.println(
+		printlines(
 				new TypeToken<HashMap<?, ?>>() {}
 						.getExtending(Wildcards.INFER)
 						.constructors()
 						.resolveOverload()
 						.withTargetType(new TypeToken<Map<? extends String, ? extends Number>>() {})
 						.infer());
-		System.out.println();
+		printlines();
 
-		System.out.println(
+		printlines(
 				new TypeToken<HashMap<String, Number>>() {}
 						.getExtending(Wildcards.INFER)
 						.constructors()
 						.resolveOverload()
 						.withTargetType(new TypeToken<@Infer Map<?, ?>>() {})
 						.infer());
-		System.out.println();
+		printlines();
 
-		System.out.println(new TypeToken<List<?>>() {}.getAnnotatedDeclaration());
-		System.out.println(
+		printlines(new TypeToken<List<?>>() {}.getAnnotatedDeclaration());
+		printlines(
 				new TypeToken<Set<String>>() {}
 						.methods()
 						.named("addAll")
 						.resolveOverload(new TypeToken<List<@Infer ?>>() {})
 						.inferParameterTypes());
-		System.out.println();
+		printlines();
 
-		System.out.println(
+		printlines(
 				new TypeToken<ChildNode<?, ?>>() {}.getType() + " + + + " + new TypeToken<ChildNode<?, ?>>() {}
 						.satisfiesConstraintTo(LOOSE_COMPATIBILILTY, new TypeToken<ChildNode<?, ?>>() {}));
-		System.out.println();
+		printlines();
 
-		System.out.println(
+		printlines(
 				new TypeToken<ChildNode<?, ?>>() {}.getType() + " ~ = ~ " + new TypeToken<ChildNode<?, ?>>() {}.resolve());
-		System.out.println();
+		printlines();
 
-		System.out.println(getIteratorType(new TypeToken<String>() {}));
-		System.out.println();
+		printlines(getIteratorType(new TypeToken<String>() {}));
+		printlines();
 
-		System.out.println(getIteratorType2(String.class));
-		System.out.println();
+		printlines(getIteratorType2(String.class));
+		printlines();
 
-		System.out.println(getIteratorType3(new TypeToken<String>() {}));
-		System.out.println();
+		printlines(getIteratorType3(new TypeToken<String>() {}));
+		printlines();
 
-		System.out.println(getIteratorExtending(new @Infer TypeToken<List<? extends String>>() {}));
-		System.out.println();
+		printlines(getIteratorExtending(new @Infer TypeToken<List<? extends String>>() {}));
+		printlines();
 
-		System.out.println(getIteratorExtending(new @Infer TypeToken<List<? extends String>>() {}).infer());
-		System.out.println();
+		printlines(getIteratorExtending(new @Infer TypeToken<List<? extends String>>() {}).infer());
+		printlines();
 
 		ExecutableToken<?, ?> blurner = new @Infer TypeToken<Blurn<? extends List<? extends Number>>>() {}
 				.methods()
 				.named("blurn")
 				.resolveOverload()
 				.withReceiverType(new TypeToken<Gurn<Integer>>() {});
-		System.out.println(blurner);
-		System.out.println();
+		printlines(blurner);
+		printlines();
 
 		try {
-			System.out.println(ExecutableToken.overMethod(Blurn.class.getMethod("blurn"), new TypeToken<Blurn<Long>>() {}));
+			printlines(ExecutableToken.overMethod(Blurn.class.getMethod("blurn"), new TypeToken<Blurn<Long>>() {}));
 		} catch (NoSuchMethodException | SecurityException e) {
 			throw new RuntimeException(e);
 		}
-		System.out.println();
+		printlines();
 
-		System.out.println(
+		printlines(
 				new @Capture TypeToken<SchemaNode<?, ?>>() {}.methods().named("children").resolveOverload().withTargetType(
 						getIteratorExtending(new TypeToken<ChildNode<?, ?>>() {})));
-		System.out.println();
+		printlines();
 
-		System.out.println(new TypeToken<ChoiceNode>() {}.methods().named("getName").resolveOverload(new ArrayList<>()));
-		System.out.println();
+		printlines(new TypeToken<ChoiceNode>() {}.methods().named("getName").resolveOverload(new ArrayList<>()));
+		printlines();
 
-		System.out.println(
+		printlines(
 				new @Infer TypeToken<LinkedHashSet<?>>() {}
 						.methods()
 						.named("add")
 						.resolveOverload(new TypeToken<StringBuffer>() {})
 						.infer());
-		System.out.println();
+		printlines();
 
-		System.out.println(
+		printlines(
 				new @Infer TypeToken<Set<?>>() {}
 						.methods()
 						.named("addAll")
 						.resolveOverload(
 								new TypeToken<@Infer ArrayList<? super Integer>>() {}.constructors().resolveOverload().getReturnType())
 						.infer());
-		System.out.println();
+		printlines();
 
-		System.out.println(
+		printlines(
 				new TypeToken<@Infer HashSet<? super Double>>() {}
 						.constructors()
 						.resolveOverload(
 								new TypeToken<@Infer ArrayList<? super Integer>>() {}.constructors().resolveOverload().getReturnType())
 						.getReturnType()
 						.infer());
-		System.out.println();
+		printlines();
 
 		TypeToken<?> bball = new TypeToken<@Infer HashSet<? super Double>>() {}
 				.constructors()
 				.resolveOverload(
 						new @Capture TypeToken<ArrayList<? super Integer>>() {}.constructors().resolveOverload().getReturnType())
 				.getReturnType();
-		System.out.println(bball.getBounds());
-		System.out.println(bball.deepCopy().getBounds());
-		System.out.println();
+		printlines(bball.getBounds());
+		printlines(bball.deepCopy().getBounds());
+		printlines();
 
 		TypeToken<?> eqselente = new TypeToken<SchemaNode<?, ?>>() {};
-		System.out.println(eqselente);
-		System.out.println(eqselente.getBounds());
+		printlines(eqselente);
+		printlines(eqselente.getBounds());
 
 		TypeToken<?> dc = eqselente.deepCopy();
-		System.out.println(dc);
-		System.out.println(dc.getBounds());
+		printlines(dc);
+		printlines(dc.getBounds());
 
 		eqselente = eqselente.withConstraintTo(SUBTYPE, dc);
-		System.out.println(eqselente.getBounds());
-		System.out.println(eqselente.infer());
-		System.out.println();
+		printlines(eqselente.getBounds());
+		printlines(eqselente.infer());
+		printlines();
 
-		System.out.println(new TypeToken<List<? extends String>>() {});
-		System.out.println();
+		printlines(new TypeToken<List<? extends String>>() {});
+		printlines();
 
-		System.out.println(new TypeToken<List<? extends String>>() {});
-		System.out.println();
+		printlines(new TypeToken<List<? extends String>>() {});
+		printlines();
 
-		System.out.println(new TypeToken<List<? extends String>>() {});
-		System.out.println();
+		printlines(new TypeToken<List<? extends String>>() {});
+		printlines();
 
-		System.out.println(new TypeToken<List<? extends String>>() {});
-		System.out.println();
+		printlines(new TypeToken<List<? extends String>>() {});
+		printlines();
 
-		System.out.println(new TypeToken<List<? extends Long>>() {}.resolveSupertype(Iterable.class).getType());
-		System.out.println();
+		printlines(new TypeToken<List<? extends Long>>() {}.resolveSupertype(Iterable.class).getType());
+		printlines();
 
-		System.out.println(new TypeToken<List<? extends Long>>() {}.resolveSupertype(Iterable.class).getType());
-		System.out.println();
+		printlines(new TypeToken<List<? extends Long>>() {}.resolveSupertype(Iterable.class).getType());
+		printlines();
 
-		System.out.println(new TypeToken<List<? extends @Capture Set<?>>>() {});
-		System.out.println();
+		printlines(new TypeToken<List<? extends @Capture Set<?>>>() {});
+		printlines();
 
-		System.out.println(
+		printlines(
 				new TypeToken<C1<C2<String>>>() {}
 						.satisfiesConstraintFrom(LOOSE_COMPATIBILILTY, new TypeToken<C2<String>>() {}));
-		System.out.println();
+		printlines();
 
 		Imports imports = Imports.empty().withImports(Capture.class, Retain.class, Test2.class, List.class, Type.class);
 		String annotationString = AnnotatedTypes.toString(
@@ -635,128 +635,126 @@ public class TypeTokenTest {
 						idk = "helo",
 						wat = 2) ? extends @Retain Number> @Capture [] @Infer []>() {}.getAnnotatedDeclaration(),
 				imports);
-		System.out.println(annotationString);
-		System.out.println();
+		printlines(annotationString);
+		printlines();
 
-		System.out.println(AnnotatedTypes.getParser().getRawType().append("-000").parse("java.lang.reflect.Type-000"));
-		System.out.println();
+		printlines(AnnotatedTypes.getParser().getRawType().append("-000").parse("java.lang.reflect.Type-000"));
+		printlines();
 
-		System.out.println(AnnotatedTypes.fromString("Type", imports));
-		System.out.println();
+		printlines(AnnotatedTypes.fromString("Type", imports));
+		printlines();
 
 		imports = imports.withImport(Test3.class);
 
-		System.out.println(Annotations.getParser(imports).getProperty().parse("thisIsTest = \"yeah!\""));
-		System.out.println();
+		printlines(Annotations.getParser(imports).getProperty().parse("thisIsTest = \"yeah!\""));
+		printlines();
 
-		System.out.println(Annotations.getParser(imports).getPropertyMap().parse("wat = 2.5"));
-		System.out.println();
+		printlines(Annotations.getParser(imports).getPropertyMap().parse("wat = 2.5"));
+		printlines();
 
-		System.out.println(AnnotatedTypes.fromString("@Capture() java.lang.reflect.Type", imports));
-		System.out.println();
+		printlines(AnnotatedTypes.fromString("@Capture() java.lang.reflect.Type", imports));
+		printlines();
 
-		System.out.println(Annotations.getParser(imports).getPropertyMap().parse("thisIsTest = \"yeah!\", wat = 2.5"));
-		System.out.println();
+		printlines(Annotations.getParser(imports).getPropertyMap().parse("thisIsTest = \"yeah!\", wat = 2.5"));
+		printlines();
 
-		System.out.println(Annotations.fromString("@Test3(thisIsTest = \"yeah!\", wat = 2.5f)", imports));
-		System.out.println();
+		printlines(Annotations.fromString("@Test3(thisIsTest = \"yeah!\", wat = 2.5f)", imports));
+		printlines();
 
-		System.out.println(AnnotatedTypes.fromString("java.util.ArrayList<java.lang.String>", imports));
-		System.out.println();
+		printlines(AnnotatedTypes.fromString("java.util.ArrayList<java.lang.String>", imports));
+		printlines();
 
-		System.out.println(
+		printlines(
 				AnnotatedTypes.fromString(
 						"@Test3(thisIsTest = \"yeah!\", wat = .2f) java.util.ArrayList<@Capture java.lang.String>",
 						imports));
-		System.out.println();
+		printlines();
 
-		System.out.println(Annotations.getParser(imports).getAnnotation().parse("@Test2(idk = \"helo\", wat = 2)"));
-		System.out.println();
+		printlines(Annotations.getParser(imports).getAnnotation().parse("@Test2(idk = \"helo\", wat = 2)"));
+		printlines();
 
-		System.out.println(AnnotatedTypes.fromString("@Capture java.util.ArrayList @Retain [][]", imports));
-		System.out.println();
+		printlines(AnnotatedTypes.fromString("@Capture java.util.ArrayList @Retain [][]", imports));
+		printlines();
 
-		System.out
-				.println(AnnotatedTypes.fromString("@Capture java.util.ArrayList<java.lang.String> [] @Retain []", imports));
-		System.out.println();
+		printlines(AnnotatedTypes.fromString("@Capture java.util.ArrayList<java.lang.String> [] @Retain []", imports));
+		printlines();
 
-		System.out.println(AnnotatedTypes.fromString("java.util.ArrayList<@Retain?>", imports));
-		System.out.println();
+		printlines(AnnotatedTypes.fromString("java.util.ArrayList<@Retain?>", imports));
+		printlines();
 
-		System.out.println(Annotations.fromString("@uk.co.strangeskies.reflection.token.TypeToken.Infer", imports));
-		System.out.println();
+		printlines(Annotations.fromString("@uk.co.strangeskies.reflection.token.TypeToken.Infer", imports));
+		printlines();
 
-		System.out.println(
+		printlines(
 				AnnotatedTypes.fromString(
 						"@uk.co.strangeskies.reflection.token.TypeToken.Infer List<? extends java.lang.String>",
 						imports));
-		System.out.println();
+		printlines();
 
-		System.out.println(
+		printlines(
 				AnnotatedTypes.fromString(
 						"@Test3(thisIsTest = \"yeah!\", wat = 2.5f) List<@Test2(idk = \"helo\", wat = 2) ? extends @Retain java.lang.String>",
 						imports));
-		System.out.println();
+		printlines();
 
-		System.out.println(
+		printlines(
 				AnnotatedTypes.fromString(
 						"List<@Test2(idk = \"helo\", wat = 2) ? extends @Retain java.lang.Number>@Capture []@Capture []",
 						imports));
-		System.out.println();
+		printlines();
 
-		System.out.println(
+		printlines(
 				AnnotatedTypes.fromString(
 						"@Test3(thisIsTest = \"yeah!\", wat = 2.5f) List<@Test2(idk = \"helo\", wat = 2) ? extends @Retain java.lang.Number> @Capture [] @uk.co.strangeskies.reflection.token.TypeToken.Infer []",
 						imports));
-		System.out.println();
+		printlines();
 
-		System.out.println(Annotations.fromString("@Test3(thisIsTest = \"yeah!\", wat = 2.5f)", imports));
+		printlines(Annotations.fromString("@Test3(thisIsTest = \"yeah!\", wat = 2.5f)", imports));
 
-		System.out.println(AnnotatedTypes.fromString(annotationString, imports));
-		System.out.println();
+		printlines(AnnotatedTypes.fromString(annotationString, imports));
+		printlines();
 
-		System.out.println(new TypeToken<TreeSet<? extends C2<?>>>() {});
-		System.out.println();
+		printlines(new TypeToken<TreeSet<? extends C2<?>>>() {});
+		printlines();
 
-		System.out.println(
+		printlines(
 				new TypeToken<SchemaNode<?, ?>>() {}
 						.satisfiesConstraintTo(LOOSE_COMPATIBILILTY, new TypeToken<SchemaNode<?, ?>>() {}));
-		System.out.println();
+		printlines();
 
-		System.out.println(
+		printlines(
 				TypeToken.fromString("uk.co.strangeskies.reflection.token.test.SchemaNode<?, ?>").getAnnotatedDeclaration());
-		System.out.println();
+		printlines();
 
-		System.out.println(
+		printlines(
 				TypeToken
 						.fromString("java.util.Map<?, @uk.co.strangeskies.reflection.token.TypeToken.Infer ?>")
 						.deepCopy()
 						.getAnnotatedDeclaration());
-		System.out.println();
+		printlines();
 
-		System.out.println(
-				"annotationseq: " + AnnotatedWildcardTypes
-						.wildcard()
-						.equals(AnnotatedWildcardTypes.wildcardExtending(AnnotatedTypes.annotated(Object.class))));
-		System.out.println();
+		printlines(
+				"annotationseq: " + AnnotatedWildcardTypes.wildcard().equals(
+						AnnotatedWildcardTypes.wildcardExtending(AnnotatedTypes.annotated(Object.class))));
+		printlines();
 
 		Imports imports2 = Imports.empty().withImports(Infer.class, Capture.class, Set.class, Map.class);
 
-		System.out.println(TypeToken.fromString("@Infer Set<?>", imports2));
-		System.out.println(TypeToken.fromString("@Infer ?", imports2));
-		System.out.println(TypeToken.fromString("Map<?, @Capture ?>", imports2));
-		System.out.println(TypeToken.fromString("Map<@Infer ?, @Capture ?>", imports2));
-		System.out.println(TypeToken.fromString("@Capture Map<@Infer ?, ?>", imports2));
-		System.out.println();
+		printlines(TypeToken.fromString("@Infer Set<?>", imports2));
+		printlines(TypeToken.fromString("@Infer ?", imports2));
+		printlines(TypeToken.fromString("Map<?, @Capture ?>", imports2));
+		printlines(TypeToken.fromString("Map<@Infer ?, @Capture ?>", imports2));
+		printlines(TypeToken.fromString("@Capture Map<@Infer ?, ?>", imports2));
+		printlines();
 
-		System.out.println(
+		printlines(
 				new TypeToken<DataBindingType<Object>>() {}
 						.methods()
 						.named("baseModel")
 						.resolveOverload(new TypeToken<Model<?>>() {})
 						.infer()
 						.getBounds());
-		System.out.println();
+		printlines();
 
 		/*- TODO Current open question on compiler-dev
 		 * 
@@ -764,12 +762,18 @@ public class TypeTokenTest {
 		 * something iirc. So I guess we need to realize that CAP#1 can only be C2<String>
 		 * exactly, by lifting the resolved type for T = C2<String> from the bound on the capture
 		 * 
-		System.out.println(new TypeToken<C1<? extends C2<String>>>() {});
-		System.out.println();
+		systemOutPrintln(new TypeToken<C1<? extends C2<String>>>() {});
+		systemOutPrintln();
 		
-		System.out.println(new TypeToken<C1<? extends C2<?>>>() {});
-		System.out.println();
+		systemOutPrintln(new TypeToken<C1<? extends C2<?>>>() {});
+		systemOutPrintln();
 		 */
+	}
+
+	public void printlines(Object... lines) {
+		for (Object line : lines) {
+			// System.out.println(line);
+		}
 	}
 
 	@Retention(RetentionPolicy.RUNTIME)

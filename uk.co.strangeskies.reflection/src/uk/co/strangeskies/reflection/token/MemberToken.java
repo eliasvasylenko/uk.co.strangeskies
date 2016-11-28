@@ -99,14 +99,23 @@ public interface MemberToken<O> {
 	}
 
 	/**
-	 * This is the exact instance type of this member, and may be parameterized.
+	 * This is the exact instance type this member belongs to. It will be a
+	 * subtype of the declaring class of the member.
+	 * 
+	 * @return a type token over the owner type
+	 */
+	TypeToken<?> getOwnerType();
+
+	/**
+	 * This is the exact receiver type which this member should be accessed from
+	 * or invoked upon.
 	 * <p>
-	 * For instance methods, this should be a subtype of the raw
-	 * {@link #getDeclaringClass() declaring class}. For constructors of inner
-	 * classes, or static fields of inner classes, the instance should be a
-	 * subtype of the enclosing class.
+	 * For non-static members, this type will be identical to the
+	 * {@link #getOwnerType() owning type}.
 	 * <p>
-	 * Static members and constructors of static classes have no receiver type.
+	 * For constructors and static members, if they are declared on a non-static
+	 * inner class then the receiver type should be a subtype of the enclosing
+	 * class, otherwise the receiver type should be void.
 	 * 
 	 * @return a type token over the receiver type for invocation or field access,
 	 *         or over <code>void.class</code> if the member has no receiver type

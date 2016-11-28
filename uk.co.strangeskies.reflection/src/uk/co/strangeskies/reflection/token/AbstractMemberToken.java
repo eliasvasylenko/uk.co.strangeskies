@@ -64,18 +64,25 @@ import uk.co.strangeskies.reflection.Types;
  */
 public abstract class AbstractMemberToken<O, M extends Member> implements MemberToken<O> {
 	private final M member;
-
+	private final TypeToken<?> ownerType;
 	private final Map<TypeVariable<?>, Type> containerTypeArguments;
 
-	public AbstractMemberToken(M member, TypeResolver resolver, TypeToken<?> containerType) {
+	public AbstractMemberToken(M member, TypeResolver resolver, TypeToken<?> ownerType) {
 		this.member = member;
+		this.ownerType = ownerType;
 
-		containerTypeArguments = determineContainerTypeArguments(resolver, containerType);
+		containerTypeArguments = determineContainerTypeArguments(resolver);
 	}
 
 	protected AbstractMemberToken(AbstractMemberToken<O, M> from) {
 		this.member = from.member;
+		this.ownerType = from.ownerType;
 		this.containerTypeArguments = from.containerTypeArguments;
+	}
+
+	@Override
+	public TypeToken<?> getOwnerType() {
+		return ownerType;
 	}
 
 	@Override
@@ -83,15 +90,13 @@ public abstract class AbstractMemberToken<O, M extends Member> implements Member
 		return member;
 	}
 
-	protected Map<TypeVariable<?>, Type> determineContainerTypeArguments(
-			TypeResolver resolver,
-			TypeToken<?> containerType) {
+	protected Map<TypeVariable<?>, Type> determineContainerTypeArguments(TypeResolver resolver) {
 		Map<TypeVariable<?>, Type> containerArguments;
 
-		if (containerType.getType() == void.class || !Types.isGeneric(getMember().getDeclaringClass())) {
+		if (ownerType.getType() == void.class || !Types.isGeneric(getMember().getDeclaringClass())) {
 			containerArguments = new LinkedHashMap<>();
 		} else {
-			List<TypeToken<?>> containerSupertypeList = containerType
+			List<TypeToken<?>> containerSupertypeList = ownerType
 					.resolveSupertypeHierarchy(getMember().getDeclaringClass())
 					.collect(toList());
 
@@ -108,7 +113,7 @@ public abstract class AbstractMemberToken<O, M extends Member> implements Member
 				if (containerSupertypeIsExact && stream(((ParameterizedType) containerSupertype).getActualTypeArguments())
 						.anyMatch(WildcardType.class::isInstance)) {
 					throw new ReflectionException(
-							p -> p.cannotResolveInvocationOnTypeWithWildcardParameters(containerType.getType()));
+							p -> p.cannotResolveInvocationOnTypeWithWildcardParameters(ownerType.getType()));
 				}
 
 				containerArguments = ParameterizedTypes.getAllTypeArguments((ParameterizedType) containerSupertype).collect(

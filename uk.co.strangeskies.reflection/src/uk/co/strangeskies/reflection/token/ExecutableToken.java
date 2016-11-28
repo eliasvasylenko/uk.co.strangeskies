@@ -41,7 +41,6 @@ import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.LOOSE_COMPATI
 import static uk.co.strangeskies.reflection.token.ExecutableTokenQuery.executableQuery;
 import static uk.co.strangeskies.reflection.token.TypeToken.overType;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.entriesToMap;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.tryOptional;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.zip;
 
 import java.lang.reflect.Array;
@@ -75,7 +74,6 @@ import uk.co.strangeskies.reflection.TypeSubstitution;
 import uk.co.strangeskies.reflection.TypeVariableCapture;
 import uk.co.strangeskies.reflection.Types;
 import uk.co.strangeskies.reflection.token.TypeToken.Wildcards;
-import uk.co.strangeskies.utilities.collection.StreamUtilities;
 
 /**
  * <p>
@@ -606,71 +604,59 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 
 	@Override
 	public <U extends O> ExecutableToken<U, ? extends R> withReceiverType(TypeToken<U> type) {
-		try {
-			/*-
-			 * 
-			 * 
-			 * 
-			 * 
-			 * 
-			 * 
-			 * TODO sort out overload resolution. Should we do this here, or in the
-			 * constructor? Or not at all, even?
-			 * 
-			 * 
-			 * 
-			 * TODO obviously overload resolution is unnecessary for constructors...
-			 * 
-			 * 
-			 * 
-			 * TODO Best way to find best override is simply using getMethod on the real class (which may be multiple in the case of intersection types etc...)
-			 * 
-			 * 
-			 * 
-			 * TODO do we want ExecutableTokenQuery to exclude overridden methods by
-			 * default? Do we want reflective access to an overridden method?
-			 * 
-			 * 
-			 * 
-			 * 
-			 * 
-			 * 
-			 */
-			BoundSet bounds = getBounds().withBounds(type.getBounds());
-			bounds = new ConstraintFormula(Kind.SUBTYPE, type.getType(), receiverType.getType()).reduce(bounds);
+		/*-
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * TODO sort out overload resolution. Should we do this here, or in the
+		 * constructor? Or not at all, even?
+		 * 
+		 * 
+		 * 
+		 * TODO obviously overload resolution is unnecessary for constructors...
+		 * 
+		 * 
+		 * 
+		 * TODO Best way to find best override is simply using getMethod on the real class (which may be multiple in the case of intersection types etc...)
+		 * 
+		 * 
+		 * 
+		 * TODO do we want ExecutableTokenQuery to exclude overridden methods by
+		 * default? Do we want reflective access to an overridden method?
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 */
+		BoundSet bounds = getBounds().withBounds(type.getBounds());
+		bounds = new ConstraintFormula(Kind.SUBTYPE, type.getType(), receiverType.getType()).reduce(bounds);
 
-			Class<?> mostSpecificOverridingClass = this.getMember().getDeclaringClass();
-			mostSpecificOverridingClass = type
-					.getRawTypes()
-					.reduce(mostSpecificOverridingClass, (a, b) -> a.isAssignableFrom(b) ? b : a);
-
-			Executable override = mostSpecificOverridingClass.equals(getMember().getDeclaringClass()) ? getMember()
-					: mostSpecificOverridingClass.getMethod(getMember().getName(), getMember().getParameterTypes());
-
-			return new ExecutableToken<>(
-					bounds,
-					type,
-					null,
-					methodTypeArguments,
-					override,
-					invocationFunction,
-					variableArityInvocation);
-		} catch (NoSuchMethodException | SecurityException e) {
-			throw new ReflectionException(p -> p.cannotResolveOverride(getMember(), type.getType()), e);
-		}
+		return new ExecutableToken<>(
+				bounds,
+				type,
+				null,
+				methodTypeArguments,
+				getMember(),
+				invocationFunction,
+				variableArityInvocation);
 	}
 
 	public Optional<ExecutableToken<O, ? extends R>> getOverride() {
-		Stream<Class<?>> candidates = getre; // TODO get from
-																					// TypeToken.upperBounds()
-
 		Class<?>[] parameters = getParameters().map(ExecutableParameter::getErasure).toArray(Class<?>[]::new);
 
-		return candidates
-				.map(c -> tryOptional(() -> c.getMethod(getName(), parameters)))
-				.flatMap(StreamUtilities::optionalStream)
+		return getOwnerType()
+				.getRawTypes()
+				.flatMap(c -> stream(c.getMethods()))
+				.filter(m -> m.getName().equals(getName()) && Arrays.equals(m.getParameterTypes(), parameters))
 				.reduce((a, b) -> {
-					if (a.getDeclaringClass().isAssignableFrom(b.getDeclaringClass())) {
+					if (a.getDeclaringClass() == b.getDeclaringClass()) {
+						return a.isBridge() ? b : a;
+					} else if (a.getDeclaringClass().isAssignableFrom(b.getDeclaringClass())) {
 						return b;
 					} else if (b.getDeclaringClass().isAssignableFrom(a.getDeclaringClass())) {
 						return a;
@@ -685,27 +671,27 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 								bounds,
 								receiverType,
 								returnType,
-								methodTypeArguments,
+								m.getTypeParameters().length > 0 ? methodTypeArguments : null,
 								m,
 								invocationFunction,
 								variableArityInvocation));
 	}
 
 	public Stream<ExecutableToken<O, ? super R>> getOverridden() {
-		Optional<Method> override = tryOptional(
-				() -> getMember().getDeclaringClass().getMethod(
-						getName(),
-						getParameters().map(ExecutableParameter::getErasure).toArray(Class<?>[]::new)));
+		Class<?>[] erasedParameters = getParameters().map(ExecutableParameter::getErasure).toArray(Class<?>[]::new);
 
-		return override.map(
-				m -> new ExecutableToken<>(
-						bounds,
-						receiverType,
-						returnType,
-						methodTypeArguments,
-						m,
-						invocationFunction,
-						variableArityInvocation));
+		return Arrays
+				.stream(getMember().getDeclaringClass().getMethods())
+				.filter(m -> m.getName().equals(getName()) && m.getParameterTypes().equals(erasedParameters))
+				.map(
+						m -> new ExecutableToken<>(
+								bounds,
+								receiverType,
+								returnType,
+								methodTypeArguments,
+								m,
+								invocationFunction,
+								variableArityInvocation));
 	}
 
 	@Override

@@ -56,13 +56,48 @@ import java.util.stream.Collectors;
  * A constraint formula, as they are described in chapter 18 of that Java 8
  * language specification.
  * 
- * 
  * <p>
  * Roughly, a constraint formula describes an assertion of compatibility between
  * two types, with respect to a particular constraining relationship. This
  * relationship may be reduced into a number of secondary, tertiary, etc.
  * constraint formulae, and then ultimately into a number of bounds, which in
  * turn may be incorporated into a {@link BoundSet}.
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * TODO
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
  * 
  * 
  * @author Elias N Vasylenko
@@ -169,16 +204,15 @@ public class ConstraintFormula {
 	private void reduceLooseCompatibilityConstraint(BoundSet bounds) {
 		Type from = this.from;
 
+		/*
+		 * TODO should this capture be lifted to the invocation?:
+		 */
 		if (from instanceof ParameterizedType)
 			if (InferenceVariable.isProperType(from)) {
 				from = TypeVariableCapture.captureWildcardArguments((ParameterizedType) from);
 			} else {
 				from = InferenceVariable.captureConversion((ParameterizedType) from, bounds);
 			}
-
-		/*
-		 * TODO why do we do the following capture conversion?:
-		 */
 
 		if (InferenceVariable.isProperType(from) && InferenceVariable.isProperType(to)) {
 			/*

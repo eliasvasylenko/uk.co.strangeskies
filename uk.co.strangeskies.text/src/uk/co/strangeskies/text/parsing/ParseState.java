@@ -32,12 +32,11 @@
  */
 package uk.co.strangeskies.text.parsing;
 
-import java.util.Deque;
 import java.util.LinkedList;
 import java.util.function.Function;
 
 public class ParseState {
-	private final Deque<Parser<?>> parserStack;
+	private final LinkedList<Parser<?>> parserStack;
 	private final ParseException furthestException;
 
 	private final String literal;
@@ -48,7 +47,11 @@ public class ParseState {
 		this(new LinkedList<>(), literal, 0, true, null);
 	}
 
-	private ParseState(Deque<Parser<?>> parserStack, String literal, int fromIndex, boolean toEnd,
+	private ParseState(
+			LinkedList<Parser<?>> parserStack,
+			String literal,
+			int fromIndex,
+			boolean toEnd,
 			ParseException furthestException) {
 		this.parserStack = parserStack;
 		this.literal = literal;
@@ -110,21 +113,20 @@ public class ParseState {
 	}
 
 	public ParseState push(Parser<?> parser) {
-		StringBuilder builder = new StringBuilder();
-		for (int i = 0; i < parserStack.size(); i++)
-			builder.append("  ");
-		builder.append(parser);
-		// log(builder);
-
-		Deque<Parser<?>> stack = new LinkedList<>(parserStack);
+		@SuppressWarnings("unchecked")
+		LinkedList<Parser<?>> stack = (LinkedList<Parser<?>>) parserStack.clone();
 		stack.push(parser);
 		return new ParseState(stack, literal, fromIndex, toEnd, furthestException);
 	}
 
 	public ParseState pop(Parser<?> expected) {
-		Deque<Parser<?>> stack = new LinkedList<>(parserStack);
+		@SuppressWarnings("unchecked")
+		LinkedList<Parser<?>> stack = (LinkedList<Parser<?>>) parserStack.clone();
 		if (stack.pop() != expected)
-			throw new ParseException("Illegal parse state exception on completing '" + expected + "'", literal, fromIndex,
+			throw new ParseException(
+					"Illegal parse state exception on completing '" + expected + "'",
+					literal,
+					fromIndex,
 					fromIndex);
 
 		return new ParseState(stack, literal, fromIndex, toEnd, furthestException);

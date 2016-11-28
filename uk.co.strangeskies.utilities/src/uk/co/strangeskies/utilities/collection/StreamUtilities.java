@@ -48,6 +48,7 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -66,14 +67,35 @@ import uk.co.strangeskies.utilities.function.ThrowingSupplier;
 public class StreamUtilities {
 	private StreamUtilities() {}
 
-	public static <T> Stream<T> optionalStream(Optional<T> optional) {
+	public static <T> Stream<T> streamOptional(Optional<T> optional) {
 		return optional.map(Stream::of).orElse(Stream.empty());
 	}
 
 	public static <T> Optional<T> tryOptional(ThrowingSupplier<T, ?> attempt) {
+		return tryOptional(attempt, e -> {}, e -> {});
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T, E extends Exception> Optional<T> tryOptional(
+			ThrowingSupplier<T, E> attempt,
+			Consumer<? super Exception> runtimeExceptions,
+			Consumer<? super E> checkedExceptions) {
 		try {
 			return Optional.of(attempt.get());
-		} catch (Exception exception) {
+		} catch (RuntimeException e) {
+			runtimeExceptions.accept(e);
+			return Optional.empty();
+		} catch (Exception e) {
+			checkedExceptions.accept((E) e);
+			return Optional.empty();
+		}
+	}
+
+	public static <T> Optional<T> tryOptional(Supplier<T> attempt, Consumer<? super RuntimeException> exceptions) {
+		try {
+			return Optional.of(attempt.get());
+		} catch (RuntimeException e) {
+			exceptions.accept(e);
 			return Optional.empty();
 		}
 	}

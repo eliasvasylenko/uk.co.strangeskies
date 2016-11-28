@@ -326,7 +326,10 @@ public class Isomorphism {
 		 * @return a mapping of the given node
 		 */
 		@SuppressWarnings("unchecked")
-		public <S, C> S getProxiedMapping(C node, ClassLoader classLoader, Class<? extends S> proxyClass,
+		public <S, C> S getProxiedMapping(
+				C node,
+				ClassLoader classLoader,
+				Class<? extends S> proxyClass,
 				Function<C, S> mapping) {
 			while (node instanceof IsomorphismProxy) {
 				C proxiedNode = (C) ((IsomorphismProxy) node).getProxiedObjectFromIsomorphism();
@@ -340,17 +343,19 @@ public class Isomorphism {
 			return getPartialMapping(node, (C n, Consumer<Supplier<S>> partial) -> {
 				IdentityProperty<S> property = new IdentityProperty<>();
 
-				partial.accept(() -> (S) Proxy.newProxyInstance(
-						new DelegatingClassLoader(classLoader, IsomorphismProxy.class.getClassLoader()),
-						new Class[] { proxyClass, IsomorphismProxy.class }, new InvocationHandler() {
-							@Override
-							public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-								if (method.getDeclaringClass().equals(IsomorphismProxy.class)) {
-									return property.get();
-								}
-								return method.invoke(property.get(), args);
-							}
-						}));
+				partial.accept(
+						() -> (S) Proxy.newProxyInstance(
+								new DelegatingClassLoader(classLoader, IsomorphismProxy.class.getClassLoader()),
+								new Class[] { proxyClass, IsomorphismProxy.class },
+								new InvocationHandler() {
+									@Override
+									public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+										if (method.getDeclaringClass().equals(IsomorphismProxy.class)) {
+											return property.get();
+										}
+										return method.invoke(property.get(), args);
+									}
+								}));
 
 				S result = mapping.apply(n);
 

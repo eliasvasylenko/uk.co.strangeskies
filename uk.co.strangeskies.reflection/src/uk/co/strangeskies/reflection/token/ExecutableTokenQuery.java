@@ -34,6 +34,8 @@ package uk.co.strangeskies.reflection.token;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
+import static uk.co.strangeskies.utilities.collection.StreamUtilities.streamOptional;
+import static uk.co.strangeskies.utilities.collection.StreamUtilities.tryOptional;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
@@ -70,7 +72,8 @@ public class ExecutableTokenQuery<I extends ExecutableToken<?, ?>, E extends Mem
 	}
 
 	public static <I extends ExecutableToken<?, ?>, E extends Executable> ExecutableTokenQuery<I, E> executableQuery(
-			Stream<E> members, Function<E, I> mapper) {
+			Stream<E> members,
+			Function<E, I> mapper) {
 		return new ExecutableTokenQuery<>(members, mapper);
 	}
 
@@ -128,7 +131,8 @@ public class ExecutableTokenQuery<I extends ExecutableToken<?, ?>, E extends Mem
 	 */
 	@SuppressWarnings("unchecked")
 	public static <I extends ExecutableToken<?, ?>> Set<? extends I> resolveApplicableExecutableMembers(
-			Set<? extends I> candidates, List<? extends TypeToken<?>> parameters) {
+			Set<? extends I> candidates,
+			List<? extends TypeToken<?>> parameters) {
 		Map<I, RuntimeException> failures = new LinkedHashMap<>();
 		BiConsumer<I, RuntimeException> putFailures = failures::put;
 
@@ -174,16 +178,13 @@ public class ExecutableTokenQuery<I extends ExecutableToken<?, ?>, E extends Mem
 	}
 
 	private static <I extends ExecutableToken<?, ?>> Set<? extends I> filterOverloadCandidates(
-			Collection<? extends I> candidates, Function<? super I, I> applicabilityFunction,
+			Collection<? extends I> candidates,
+			Function<? super I, I> applicabilityFunction,
 			BiConsumer<I, RuntimeException> failures) {
-		return candidates.stream().map(i -> {
-			try {
-				return applicabilityFunction.apply(i);
-			} catch (RuntimeException e) {
-				failures.accept(i, e);
-				return null;
-			}
-		}).filter(o -> o != null).collect(Collectors.toSet());
+		return candidates
+				.stream()
+				.flatMap(i -> streamOptional(tryOptional(() -> applicabilityFunction.apply(i), e -> failures.accept(i, e))))
+				.collect(toSet());
 	}
 
 	/**
@@ -283,7 +284,8 @@ public class ExecutableTokenQuery<I extends ExecutableToken<?, ?>, E extends Mem
 		return new HashSet<>(remainingCandidates);
 	}
 
-	private static Pair<Boolean, Boolean> compareCandidates(ExecutableToken<?, ?> firstCandidate,
+	private static Pair<Boolean, Boolean> compareCandidates(
+			ExecutableToken<?, ?> firstCandidate,
 			ExecutableToken<?, ?> secondCandidate) {
 		boolean firstMoreSpecific = true;
 		boolean secondMoreSpecific = true;
@@ -323,7 +325,8 @@ public class ExecutableTokenQuery<I extends ExecutableToken<?, ?>, E extends Mem
 		return new Pair<>(firstMoreSpecific, secondMoreSpecific);
 	}
 
-	private static boolean compareGenericCandidate(ExecutableToken<?, ?> firstCandidate,
+	private static boolean compareGenericCandidate(
+			ExecutableToken<?, ?> firstCandidate,
 			ExecutableToken<?, ?> genericCandidate) {
 		TypeResolver resolver = new TypeResolver(genericCandidate.getBounds());
 
