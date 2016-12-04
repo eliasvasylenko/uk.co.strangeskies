@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import static uk.co.strangeskies.reflection.codegen.ConstructorSignature.constructorSignature;
+import static uk.co.strangeskies.reflection.codegen.ClassSignature.classSignature;
 import static uk.co.strangeskies.reflection.codegen.InvocationExpression.invokeStatic;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -58,13 +58,13 @@ public class Expressions {
 	private static final AtomicLong TYPE_TOKEN_EXPRESSION_COUNT = new AtomicLong(0);
 
 	public static <T> ValueExpression<? extends TypeToken<T>> typeTokenExpression(TypeToken<T> type) {
-		ClassDefinition<Void, ? extends TypeToken<T>> typeTokenClass = new ClassSignature<>(
+		ClassDefinition<Void, ? extends TypeToken<T>> typeTokenClass = classSignature(
 				"TypeTokenExpression$" + TYPE_TOKEN_EXPRESSION_COUNT.incrementAndGet())
 						.withSuperType(type.getThisTypeToken())
 						.declare()
 						.define();
 
-		return invokeStatic(typeTokenClass.getConstructorDeclaration(constructorSignature()).asToken());
+		return invokeStatic(typeTokenClass.getDeclaration().getConstructorDeclaration().asToken());
 	}
 
 	@SuppressWarnings("unchecked")

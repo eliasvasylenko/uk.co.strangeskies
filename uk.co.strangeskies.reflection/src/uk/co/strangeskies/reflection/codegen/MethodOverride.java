@@ -54,15 +54,13 @@ import uk.co.strangeskies.reflection.token.ExecutableToken;
 public class MethodOverride<T> {
 	private final MethodOverrides<T> methodOverrides;
 
-	private final ErasedMethodSignature signature;
 	private final Set<Method> interfaceMethods;
 	private Method classMethod;
 
 	private MethodDeclaration<T, ?> override;
 
-	public MethodOverride(MethodOverrides<T> methodOverrides, ErasedMethodSignature signature) {
+	public MethodOverride(MethodOverrides<T> methodOverrides) {
 		this.methodOverrides = methodOverrides;
-		this.signature = signature;
 		interfaceMethods = new HashSet<>();
 	}
 
@@ -77,13 +75,21 @@ public class MethodOverride<T> {
 	public void validate() {
 		if (classMethod == null) {
 			Set<Method> defaultMethods = interfaceMethods.stream().filter(m -> m.isDefault()).collect(Collectors.toSet());
-			if (defaultMethods.size() != 1) {
+			if (defaultMethods.size() > 1) {
 				throw new CodeGenerationException(p -> p.mustOverrideMethods(interfaceMethods));
+			} else if (defaultMethods.isEmpty()) {
+				for (Method interfaceMethod : interfaceMethods) {
+					try {
+						validateOverride(interfaceMethod);
+						return;
+					} catch (Exception e) {}
+				}
+				throw new CodeGenerationException(p -> p.mustOverrideMethods(interfaceMethods));
+			} else {
+				Method defaultMethod = defaultMethods.iterator().next();
+
+				validateOverride(defaultMethod);
 			}
-
-			Method defaultMethod = defaultMethods.iterator().next();
-
-			validateOverride(defaultMethod);
 		} else {
 			if (isAbstract(classMethod.getModifiers())) {
 				throw new CodeGenerationException(p -> p.mustOverrideMethods(Arrays.asList(classMethod)));
@@ -94,31 +100,43 @@ public class MethodOverride<T> {
 	}
 
 	private void validateOverride(Method method) {
-		ExecutableToken<?, ?> overriddenToken = methodOverrides
-				.getInvocable(method)
-				.withTypeArguments(method.getTypeParameters());
-
-		validateOverride(
-				overriddenToken.getReturnType().getType(),
-				overriddenToken.getParameters().map(ExecutableParameter::getType).toArray(Type[]::new),
+		ExecutableToken<?, ?> overriddenToken = methodOverrides.getInvocable(method).withTypeArguments(
 				method.getTypeParameters());
+
+		getMethods().stream().filter(m -> m != method).forEach(
+				m -> validateOverrideAgainst(
+						overriddenToken.getReturnType().getType(),
+						overriddenToken.getParameters().map(ExecutableParameter::getType).toArray(Type[]::new),
+						method.getTypeParameters(),
+						m));
 	}
 
-	private void validateOverride(Type returnType, Type[] parameters, TypeVariable<?>[] typeParameters) {
+	private void validateOverrideAgainst(
+			Type returnType,
+			Type[] parameters,
+			TypeVariable<?>[] typeParameters,
+			Method inherited) {
+		ExecutableToken<?, ?> inheritedToken = methodOverrides.getInvocable(inherited).withTypeArguments(
+				asList(typeParameters));
+
+		if (!isAssignable(returnType, inheritedToken.getReturnType().resolve().getType())) {
+			throw new CodeGenerationException(p -> p.incompatibleReturnTypes(returnType, inherited));
+		}
+
+		for (int i = 0; i < parameters.length; i++) {
+			if (!isAssignable(inheritedToken.getParameters().skip(i).findFirst().get().getType(), parameters[i])) {
+				throw new CodeGenerationException(p -> p.incompatibleParameterTypes(parameters, inherited));
+			}
+		}
+	}
+
+	private void validateOverride() {
 		for (Method inherited : getMethods()) {
-			ExecutableToken<?, ?> inheritedToken = methodOverrides
-					.getInvocable(inherited)
-					.withTypeArguments(asList(typeParameters));
-
-			if (!isAssignable(returnType, inheritedToken.getReturnType().resolve().getType())) {
-				throw new CodeGenerationException(p -> p.incompatibleReturnTypes(returnType, inherited));
-			}
-
-			for (int i = 0; i < parameters.length; i++) {
-				if (!isAssignable(inheritedToken.getParameters().skip(i).findFirst().get().getType(), parameters[i])) {
-					throw new CodeGenerationException(p -> p.incompatibleParameterTypes(parameters, inherited));
-				}
-			}
+			validateOverrideAgainst(
+					override.getReturnType().getType(),
+					override.getParameters().map(v -> v.getType().getType()).toArray(Type[]::new),
+					override.getTypeParameters(),
+					inherited);
 		}
 	}
 
@@ -133,10 +151,7 @@ public class MethodOverride<T> {
 		}
 
 		this.override = override;
-		validateOverride(
-				override.getReturnType().getType(),
-				override.getParameters().map(v -> v.getType().getType()).toArray(Type[]::new),
-				override.getTypeParameters());
+		validateOverride();
 	}
 
 	public void overrideIfNecessary() {
@@ -178,10 +193,15 @@ public class MethodOverride<T> {
 
 	public Set<Method> getMethods() {
 		HashSet<Method> methods = new HashSet<>(interfaceMethods.size() + 1);
-		methods.addAll(interfaceMethods);
 		if (classMethod != null) {
 			methods.add(classMethod);
 		}
+		methods.addAll(interfaceMethods);
 		return methods;
+	}
+
+	@Override
+	public String toString() {
+		return getMethods() + " : " + getOverride();
 	}
 }

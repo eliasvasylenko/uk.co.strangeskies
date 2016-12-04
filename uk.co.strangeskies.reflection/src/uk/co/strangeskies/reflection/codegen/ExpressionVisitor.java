@@ -50,19 +50,19 @@ public interface ExpressionVisitor {
 
 		void visitNull();
 
-		void visitReceiver(ClassDefinition<?, U> classDefinition);
+		void visitReceiver(ClassDeclaration<?, U> classDeclaration);
 
 		<O> void visitMethod(
 				ValueExpression<O> receiver,
 				ExecutableToken<? super O, U> invocable,
 				List<ValueExpression<?>> arguments);
 
-		void visitLocal(LocalVariable<? extends U> local);
+		void visitLocal(VariableSignature<? extends U> local);
 	}
 
 	interface VariableExpressionVisitor<U> {
 		<O> void visitField(ValueExpression<? extends O> value, FieldToken<O, U> field);
 
-		void visitLocal(LocalVariable<U> local);
+		void visitLocal(VariableSignature<U> local);
 	}
 }

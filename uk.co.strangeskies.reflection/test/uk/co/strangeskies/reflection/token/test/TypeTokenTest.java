@@ -290,7 +290,7 @@ public class TypeTokenTest {
 		printlines();
 	}
 
-	@Test
+	//@Test
 	public <H extends C2<H>> void yugeTestTheBiggest() {
 		for (int i = 0; i < 3500; i++) {
 			hugeTest1();

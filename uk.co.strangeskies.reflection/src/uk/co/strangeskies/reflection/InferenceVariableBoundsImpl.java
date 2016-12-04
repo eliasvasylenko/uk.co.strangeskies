@@ -128,8 +128,10 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	}
 
 	public void putBound(BoundKind boundKind, Type type) {
-		if (bounds.containsKey(type)) {
-			BoundKind kind = bounds.get(type).getKind();
+		Bound existingBound = bounds.get(type);
+
+		if (existingBound != null) {
+			BoundKind kind = existingBound.getKind();
 
 			if (kind == boundKind || kind == EQUAILTY) {
 				return;

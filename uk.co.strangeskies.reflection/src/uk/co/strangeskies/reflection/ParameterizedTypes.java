@@ -42,22 +42,16 @@ import java.lang.reflect.TypeVariable;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.utilities.EquivalenceComparator;
 import uk.co.strangeskies.utilities.Isomorphism;
-import uk.co.strangeskies.utilities.collection.MultiMap;
-import uk.co.strangeskies.utilities.collection.MultiTreeMap;
 import uk.co.strangeskies.utilities.collection.StreamUtilities;
 
 /**
@@ -69,11 +63,11 @@ public class ParameterizedTypes {
 	static final class ParameterizedTypeImpl implements ParameterizedType, Serializable {
 		private static final long serialVersionUID = 1L;
 
+		private static final Integer PROCESSING = new Integer(0);
+
 		private final Type ownerType;
 		private final List<Type> typeArguments;
 		private final Class<?> rawType;
-
-		private final Map<Thread, MultiMap<ParameterizedType, ParameterizedType, Set<ParameterizedType>>> assumedEqualities;
 
 		private Integer hashCode;
 
@@ -93,8 +87,6 @@ public class ParameterizedTypes {
 				}
 				i++;
 			}
-
-			assumedEqualities = new IdentityHashMap<>();
 		}
 
 		ParameterizedTypeImpl(ParameterizedType type) {
@@ -138,21 +130,24 @@ public class ParameterizedTypes {
 		}
 
 		@Override
-		public synchronized int hashCode() {
-			if (hashCode == null) {
-				/*
-				 * This way the hash code will return 0 if we encounter it again in the
-				 * parameters, rather than recurring infinitely:
-				 * 
-				 * (this is not a problem for other threads as hashCode is synchronized)
-				 */
-				hashCode = 0;
+		public int hashCode() {
+			if (hashCode == null || hashCode == PROCESSING) {
+				synchronized (this) {
+					/*
+					 * This way the hash code will return 0 if we encounter it again in
+					 * the parameters, rather than recurring infinitely:
+					 * 
+					 * (this is not a problem for other threads as hashCode is
+					 * synchronized until given a proper result)
+					 */
+					hashCode = PROCESSING;
 
-				/*
-				 * Calculate the hash code properly, now we're guarded against
-				 * recursion:
-				 */
-				this.hashCode = Objects.hashCode(ownerType) ^ Objects.hashCode(rawType) ^ Objects.hashCode(typeArguments);
+					/*
+					 * Calculate the hash code properly, now we're guarded against
+					 * recursion:
+					 */
+					this.hashCode = Objects.hashCode(ownerType) ^ Objects.hashCode(rawType) ^ Objects.hashCode(typeArguments);
+				}
 			}
 
 			return hashCode;
@@ -160,54 +155,6 @@ public class ParameterizedTypes {
 
 		@Override
 		public boolean equals(Object other) {
-			boolean equals;
-
-			if (other == this)
-				equals = true;
-			else if (other instanceof IntersectionType)
-				equals = other.equals(this);
-			else if (other == null || !(other instanceof ParameterizedType))
-				equals = false;
-			else if (other instanceof ParameterizedTypeImpl && other.hashCode() != hashCode())
-				equals = false;
-			else {
-				Thread currentThread = Thread.currentThread();
-				boolean newThread = false;
-
-				MultiMap<ParameterizedType, ParameterizedType, Set<ParameterizedType>> equalitiesForThread = assumedEqualities
-						.get(currentThread);
-				if (equalitiesForThread == null) {
-					assumedEqualities.put(
-							currentThread,
-							equalitiesForThread = new MultiTreeMap<>(
-									EquivalenceComparator.identityComparator(),
-									() -> new TreeSet<>(EquivalenceComparator.identityComparator())));
-					newThread = true;
-				}
-
-				ParameterizedType that = (ParameterizedType) other;
-
-				if (equalitiesForThread.contains(this, that) || equalitiesForThread.contains(that, this))
-					equals = true;
-				else {
-					equalitiesForThread.add(this, that);
-					equalitiesForThread.add(that, this);
-
-					equals = getRawType().equals(that.getRawType()) && Objects.equals(getOwnerType(), that.getOwnerType())
-							&& Arrays.equals(getActualTypeArguments(), that.getActualTypeArguments());
-
-					equalitiesForThread.remove(this, that);
-					equalitiesForThread.remove(that, this);
-				}
-
-				if (newThread)
-					assumedEqualities.remove(currentThread);
-			}
-
-			return equals;
-		}
-
-		public boolean equals2(Object other) {
 			if (!(other instanceof Type))
 				return false;
 			else

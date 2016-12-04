@@ -1,3 +1,7 @@
 Bundle-Name: Strange Skies :: Reflection :: Resource
 
 Export-Package: uk.co.strangeskies.reflection.resource
+
+-buildpath: \
+	uk.co.strangeskies.utilities;version=snapshot,\
+	uk.co.strangeskies.text;version=snapshot

@@ -64,9 +64,8 @@ public class ParameterizedDeclaration<S extends ParameterizedSignature<?>> exten
 	public ParameterizedDeclaration(S signature) {
 		super(signature);
 
-		Map<String, TypeVariableSignature> typeVariableSignatures = signature
-				.getTypeVariables()
-				.collect(toMap(TypeVariableSignature::getName, identity()));
+		Map<String, TypeVariableSignature> typeVariableSignatures = signature.getTypeVariables().collect(
+				toMap(TypeVariableSignature::getName, identity()));
 
 		isomorphism = new Isomorphism();
 		List<TypeVariable<? extends ParameterizedDeclaration<S>>> typeVariables = new ArrayList<>(
@@ -111,10 +110,8 @@ public class ParameterizedDeclaration<S extends ParameterizedSignature<?>> exten
 
 	protected TypeVariable<? extends ParameterizedDeclaration<S>> substituteTypeVariableSignature(
 			TypeVariableSignature typeVariable) {
-		List<AnnotatedType> bounds = typeVariable
-				.getBounds()
-				.map(b -> boundSubstitution.resolve(b, isomorphism))
-				.collect(toList());
+		List<AnnotatedType> bounds = typeVariable.getBounds().map(b -> boundSubstitution.resolve(b, isomorphism)).collect(
+				toList());
 
 		return typeVariableExtending(this, typeVariable.getName(), bounds);
 	}

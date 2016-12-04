@@ -100,7 +100,7 @@ public class StreamUtilities {
 		}
 	}
 
-	public static <A, B> Collector<Entry<A, B>, ?, Map<A, B>> entriesToMap() {
+	public static <A, B> Collector<Entry<? extends A, ? extends B>, ?, Map<A, B>> entriesToMap() {
 		return Collectors.toMap(Entry::getKey, Entry::getValue, throwingMerger(), LinkedHashMap::new);
 	}
 
@@ -339,8 +339,7 @@ public class StreamUtilities {
 			Stream<? extends T> stream,
 			Function<? super T, ? extends Stream<? extends T>> mapping,
 			Set<T> visited) {
-		return stream
-				.filter(visited::add)
-				.flatMap(s -> concat(of(s), flatMapRecursiveDistinct(mapping.apply(s), mapping, visited)));
+		return stream.filter(visited::add).flatMap(
+				s -> concat(of(s), flatMapRecursiveDistinct(mapping.apply(s), mapping, visited)));
 	}
 }

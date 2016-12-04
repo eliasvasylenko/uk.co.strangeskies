@@ -42,8 +42,8 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -63,16 +63,14 @@ public class GenericSignatureTest {
 	static class ParameterizedSignatureImpl extends ParameterizedSignature<ParameterizedSignatureImpl> {
 		public ParameterizedSignatureImpl() {}
 
-		private ParameterizedSignatureImpl(
-				Collection<? extends TypeVariableSignature> typeVariables,
-				Collection<? extends Annotation> annotations) {
+		private ParameterizedSignatureImpl(List<TypeVariableSignature> typeVariables, Set<Annotation> annotations) {
 			super(typeVariables, annotations);
 		}
 
 		@Override
 		protected ParameterizedSignatureImpl withParameterizedSignatureData(
-				Collection<? extends TypeVariableSignature> typeVariables,
-				Collection<? extends Annotation> annotations) {
+				List<TypeVariableSignature> typeVariables,
+				Set<Annotation> annotations) {
 			return new ParameterizedSignatureImpl(typeVariables, annotations);
 		}
 	}

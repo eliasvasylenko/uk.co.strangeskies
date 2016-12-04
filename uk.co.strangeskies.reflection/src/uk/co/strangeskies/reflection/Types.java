@@ -32,6 +32,7 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
@@ -60,7 +61,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.reflection.ParameterizedTypes.ParameterizedTypeImpl;
 import uk.co.strangeskies.text.parsing.Parser;
 import uk.co.strangeskies.utilities.Isomorphism;
 import uk.co.strangeskies.utilities.collection.MultiHashMap;
@@ -505,6 +505,29 @@ public final class Types {
 		return (T) object;
 	}
 
+	private static class EqualityRelation {
+		private Type a, b;
+
+		public EqualityRelation(Type a, Type b) {
+			this.a = a;
+			this.b = b;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (!(obj instanceof EqualityRelation))
+				return false;
+
+			EqualityRelation that = (EqualityRelation) obj;
+			return (a == that.a && b == that.b) || (a == that.b && b == that.a);
+		}
+
+		@Override
+		public int hashCode() {
+			return System.identityHashCode(a) ^ (System.identityHashCode(b) * 7);
+		}
+	}
+
 	/**
 	 * Test whether two types are equal to one another.
 	 * 
@@ -518,32 +541,27 @@ public final class Types {
 		return equals(a, b, new Isomorphism());
 	}
 
-	private static class Equality {
-		private Type a, b;
-
-		public Equality(Type a, Type b) {
-			this.a = a;
-			this.b = b;
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (!(obj instanceof Equality))
-				return false;
-
-			Equality that = (Equality) obj;
-			return (a == that.a && b == that.b) || (a == that.b && b == that.a);
-		}
-
-		@Override
-		public int hashCode() {
-			return System.identityHashCode(a) ^ (System.identityHashCode(b) * 7);
+	private static boolean equals(Type[] first, Type[] second, Isomorphism isomorphism) {
+		if (first.length != second.length) {
+			return false;
+		} else if (first.length == 0) {
+			return true;
+		} else if (first.length == 1) {
+			return equals(first[0], second[0], isomorphism);
+		} else {
+			return stream(first).allMatch(f -> stream(second).anyMatch(s -> equals(f, s, isomorphism)));
 		}
 	}
 
 	private static boolean equals(Type first, Type second, Isomorphism isomorphism) {
 		Type a;
 		Type b;
+
+		if (first == second) {
+			return true;
+		} else if (first == null || second == null) {
+			return false;
+		}
 
 		if (first instanceof IntersectionType && ((IntersectionType) first).getTypes().length == 1) {
 			a = ((IntersectionType) first).getTypes()[0];
@@ -556,59 +574,35 @@ public final class Types {
 			b = second;
 		}
 
-		return isomorphism.byEquality().getPartialMapping(new Equality(a, b), () -> true, e -> {
-
-			boolean equal;
-
+		return isomorphism.byEquality().getPartialMapping(new EqualityRelation(a, b), () -> true, e -> {
 			if (a == b) {
-				equal = true;
+				return true;
 
-			} else if (a instanceof ParameterizedTypeImpl && b instanceof ParameterizedTypeImpl) {
-				equal = a.hashCode() == b.hashCode() && parameterizedTypeEquals((ParameterizedType) a, (ParameterizedType) b);
+			} else if (a instanceof ParameterizedType) {
+				return b instanceof ParameterizedType
+						&& parameterizedTypeEquals((ParameterizedType) a, (ParameterizedType) b, isomorphism);
 
-			} else if (a instanceof ParameterizedType && b instanceof ParameterizedType) {
-				equal = parameterizedTypeEquals((ParameterizedType) a, (ParameterizedType) b);
+			} else if (a instanceof IntersectionType) {
+				return b instanceof IntersectionType
+						&& equals(((IntersectionType) a).getTypes(), ((IntersectionType) b).getTypes(), isomorphism);
 
-			} else if (a instanceof IntersectionType && b instanceof IntersectionType) {
-				IntersectionType aIntersectionType = (IntersectionType) a;
-				IntersectionType bIntersectionType = (IntersectionType) b;
+			} else if (a instanceof Class) {
+				return a.equals(b);
 
-				if (aIntersectionType.getTypes().length != bIntersectionType.getTypes().length) {
-					equal = false;
-				} else {
-					equal = true;
-
-					for (Type aType : ((IntersectionType) a).getTypes()) {
-						boolean contains = false;
-
-						for (Type bType : ((IntersectionType) b).getTypes()) {
-							if (Types.equals(aType, bType)) {
-								contains = true;
-								break;
-							}
-						}
-
-						if (!contains) {
-							equal = false;
-							break;
-						}
-					}
-				}
-
-			} else if (a instanceof Class && b instanceof Class) {
-				equal = a.equals(b);
+			} else if (a instanceof WildcardType) {
+				return b instanceof WildcardType
+						&& equals(((WildcardType) a).getUpperBounds(), ((WildcardType) b).getUpperBounds(), isomorphism)
+						&& equals(((WildcardType) a).getLowerBounds(), ((WildcardType) b).getLowerBounds(), isomorphism);
 
 			} else {
-				equal = false;
+				return a.equals(b);
 			}
-
-			return equal;
 		});
 	}
 
-	private static boolean parameterizedTypeEquals(ParameterizedType a, ParameterizedType b) {
-		// TODO Auto-generated method stub
-		return false;
+	private static boolean parameterizedTypeEquals(ParameterizedType a, ParameterizedType b, Isomorphism isomorphism) {
+		return Objects.equals(a.getRawType(), b.getRawType()) && equals(a.getOwnerType(), b.getOwnerType(), isomorphism)
+				&& equals(a.getActualTypeArguments(), b.getActualTypeArguments(), isomorphism);
 	}
 
 	/**
@@ -643,7 +637,7 @@ public final class Types {
 				return false;
 
 			SubtypeRelation that = (SubtypeRelation) obj;
-			return from == that.from && to == that.to;
+			return this.from == that.from && this.to == that.to;
 		}
 
 		@Override
@@ -948,16 +942,14 @@ public final class Types {
 	 */
 	public static boolean isLooseInvocationContextCompatible(Type from, Type to) {
 		if (from instanceof IntersectionType) {
-			return Arrays
-					.stream(((IntersectionType) from).getTypes())
-					.anyMatch(f -> isLooseInvocationContextCompatible(f, to));
+			return Arrays.stream(((IntersectionType) from).getTypes()).anyMatch(
+					f -> isLooseInvocationContextCompatible(f, to));
 
 		}
 
 		if (to instanceof IntersectionType) {
-			return Arrays
-					.stream(((IntersectionType) to).getTypes())
-					.allMatch(t -> isLooseInvocationContextCompatible(from, t));
+			return Arrays.stream(((IntersectionType) to).getTypes()).allMatch(
+					t -> isLooseInvocationContextCompatible(from, t));
 
 		}
 

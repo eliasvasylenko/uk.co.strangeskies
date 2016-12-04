@@ -36,23 +36,25 @@ import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVi
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class LocalValueExpression<T> implements ValueExpression<T> {
-	private final LocalVariable<T> local;
+	private final VariableSignature<T> localSignature;
+	private final TypeToken<T> type;
 
-	public LocalValueExpression(TypeToken<T> type) {
-		this.local = new LocalVariable<>(type);
+	public LocalValueExpression(String name, TypeToken<T> type) {
+		this.localSignature = new VariableSignature<>(name, type.getAnnotatedDeclaration());
+		this.type = type;
 	}
 
 	@Override
 	public void accept(ValueExpressionVisitor<T> visitor) {
-		visitor.visitLocal(getId());
+		visitor.visitLocal(getSignature());
 	}
 
-	public LocalVariable<T> getId() {
-		return local;
+	public VariableSignature<T> getSignature() {
+		return localSignature;
 	}
 
 	@Override
 	public TypeToken<T> getType() {
-		return local.getType();
+		return type;
 	}
 }

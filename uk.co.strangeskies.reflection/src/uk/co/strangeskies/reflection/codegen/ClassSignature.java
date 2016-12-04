@@ -42,6 +42,9 @@ import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -68,15 +71,14 @@ import uk.co.strangeskies.reflection.token.TypeToken;
  *          the intersection of the supertypes of the described class
  */
 public class ClassSignature<T> extends ParameterizedSignature<ClassSignature<T>> {
-	// Well how about them apples or whatever
 	private final String typeName;
-	private final Collection<? extends AnnotatedType> superType;
+	private final Set<AnnotatedType> superType;
 
-	private final Collection<? extends ConstructorSignature> constructorSignatures;
-	private final Collection<? extends MethodSignature<?>> staticMethodSignatures;
-	private final Collection<? extends MethodSignature<?>> methodSignatures;
+	private final Set<ConstructorSignature> constructorSignatures;
+	private final Set<MethodSignature<?>> staticMethodSignatures;
+	private final Set<MethodSignature<?>> methodSignatures;
 
-	public ClassSignature(String typeName) {
+	protected ClassSignature(String typeName) {
 		this.typeName = typeName;
 		this.superType = emptySet();
 		this.constructorSignatures = emptySet();
@@ -86,12 +88,12 @@ public class ClassSignature<T> extends ParameterizedSignature<ClassSignature<T>>
 
 	protected ClassSignature(
 			String typeName,
-			Collection<? extends AnnotatedType> superType,
-			Collection<? extends ConstructorSignature> constructorSignatures,
-			Collection<? extends MethodSignature<?>> staticMethodSignatures,
-			Collection<? extends MethodSignature<?>> methodSignatures,
-			Collection<? extends TypeVariableSignature> typeVariables,
-			Collection<? extends Annotation> annotations) {
+			Set<AnnotatedType> superType,
+			Set<ConstructorSignature> constructorSignatures,
+			Set<MethodSignature<?>> staticMethodSignatures,
+			Set<MethodSignature<?>> methodSignatures,
+			List<TypeVariableSignature> typeVariables,
+			Set<Annotation> annotations) {
 		super(typeVariables, annotations);
 
 		this.typeName = typeName;
@@ -101,12 +103,22 @@ public class ClassSignature<T> extends ParameterizedSignature<ClassSignature<T>>
 		this.staticMethodSignatures = staticMethodSignatures;
 	}
 
+	public static ClassSignature<Object> classSignature(String name) {
+		return new ClassSignature<>(name);
+	}
+
 	@Override
 	protected ClassSignature<T> withParameterizedSignatureData(
-			Collection<? extends TypeVariableSignature> typeVariables,
-			Collection<? extends Annotation> annotations) {
-		return new ClassSignature<>(typeName, superType, constructorSignatures, staticMethodSignatures, methodSignatures,
-				typeVariables, annotations);
+			List<TypeVariableSignature> typeVariables,
+			Set<Annotation> annotations) {
+		return new ClassSignature<>(
+				typeName,
+				superType,
+				constructorSignatures,
+				staticMethodSignatures,
+				methodSignatures,
+				typeVariables,
+				annotations);
 	}
 
 	protected String getTypeName() {
@@ -190,35 +202,81 @@ public class ClassSignature<T> extends ParameterizedSignature<ClassSignature<T>>
 	 * @return the receiver
 	 */
 	public ClassSignature<?> withSuperType(Collection<? extends AnnotatedType> superType) {
-		return new ClassSignature<>(typeName, superType, constructorSignatures, staticMethodSignatures, methodSignatures,
-				typeVariables, annotations);
+		return new ClassSignature<>(
+				typeName,
+				new HashSet<>(superType),
+				constructorSignatures,
+				staticMethodSignatures,
+				methodSignatures,
+				typeVariables,
+				annotations);
 	}
 
 	public ClassSignature<? extends T> declareConstructor(ConstructorSignature constructorSignature) {
 		HashSet<ConstructorSignature> constructorSignatures = new HashSet<>(this.constructorSignatures);
 		constructorSignatures.add(constructorSignature);
 
-		return new ClassSignature<>(typeName, superType, constructorSignatures, staticMethodSignatures, methodSignatures,
-				typeVariables, annotations);
+		return new ClassSignature<>(
+				typeName,
+				superType,
+				new HashSet<>(constructorSignatures),
+				staticMethodSignatures,
+				methodSignatures,
+				typeVariables,
+				annotations);
 	}
 
 	public ClassSignature<? extends T> declareStaticMethod(MethodSignature<?> methodSignature) {
 		HashSet<MethodSignature<?>> staticMethodSignatures = new HashSet<>(this.staticMethodSignatures);
 		staticMethodSignatures.add(methodSignature);
 
-		return new ClassSignature<>(typeName, superType, constructorSignatures, staticMethodSignatures, methodSignatures,
-				typeVariables, annotations);
+		return new ClassSignature<>(
+				typeName,
+				superType,
+				constructorSignatures,
+				staticMethodSignatures,
+				methodSignatures,
+				typeVariables,
+				annotations);
 	}
 
 	public ClassSignature<? extends T> declareMethod(MethodSignature<?> methodSignature) {
 		HashSet<MethodSignature<?>> methodSignatures = new HashSet<>(this.methodSignatures);
 		methodSignatures.add(methodSignature);
 
-		return new ClassSignature<>(typeName, superType, constructorSignatures, staticMethodSignatures, methodSignatures,
-				typeVariables, annotations);
+		return new ClassSignature<>(
+				typeName,
+				superType,
+				constructorSignatures,
+				staticMethodSignatures,
+				methodSignatures,
+				typeVariables,
+				annotations);
 	}
 
 	public ClassDeclaration<Void, ? extends T> declare() {
 		return new ClassDeclaration<>(null, this);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == this)
+			return true;
+		if (!(obj instanceof ClassSignature<?>))
+			return false;
+
+		ClassSignature<?> that = (ClassSignature<?>) obj;
+
+		return super.equals(that) && Objects.equals(this.typeName, that.typeName)
+				&& Objects.equals(this.superType, that.superType)
+				&& Objects.equals(this.constructorSignatures, that.constructorSignatures)
+				&& Objects.equals(this.staticMethodSignatures, that.staticMethodSignatures)
+				&& Objects.equals(this.methodSignatures, that.methodSignatures);
+	}
+
+	@Override
+	public int hashCode() {
+		return super.hashCode() ^ superType.hashCode() ^ constructorSignatures.hashCode()
+				^ staticMethodSignatures.hashCode() ^ methodSignatures.hashCode();
 	}
 }

@@ -32,10 +32,6 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import static java.util.Arrays.asList;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.Collection;
@@ -46,9 +42,9 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.Reified;
-import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 /**
@@ -158,7 +154,7 @@ import uk.co.strangeskies.reflection.token.TypeToken;
 public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 	class ReflectiveInstanceImpl implements ReflectiveInstance<E, T> {
 		private T instance;
-		private final Map<FieldDefinition<?, ?>, Object> fieldValues = new HashMap<>();
+		private final Map<FieldDeclaration<?, ?>, Object> fieldValues = new HashMap<>();
 
 		@Override
 		public ClassDefinition<E, T> getReflectiveClassDefinition() {
@@ -167,12 +163,12 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 
 		@SuppressWarnings("unchecked")
 		@Override
-		public <U> U getReflectiveFieldValue(FieldDefinition<? super T, U> field) {
+		public <U> U getReflectiveFieldValue(FieldDeclaration<? super T, U> field) {
 			return (U) fieldValues.get(field);
 		}
 
 		@Override
-		public <U> void setReflectiveFieldValue(FieldDefinition<? super T, U> field, U value) {
+		public <U> void setReflectiveFieldValue(FieldDeclaration<? super T, U> field, U value) {
 			fieldValues.put(field, value);
 		}
 
@@ -184,7 +180,9 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 
 	private final String typeName;
 
-	private final ValueExpression<T> receiverExpression;
+	private final Map<MethodDeclaration<E, T>, MethodDefinition<E, T>> constructorDefinitions;
+	private final Map<MethodDeclaration<E, ?>, MethodDefinition<E, ?>> staticMethodDefinitions;
+	private final Map<MethodDeclaration<T, ?>, MethodDefinition<T, ?>> methodDefinitions;
 
 	@SuppressWarnings("unchecked")
 	protected ClassDefinition(ClassDeclaration<E, T> declaration) {
@@ -192,20 +190,23 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 
 		typeName = declaration.getSignature().getTypeName();
 
-		this.receiverExpression = new ValueExpression<T>() {
-			@Override
-			public void accept(ValueExpressionVisitor<T> visitor) {
-				visitor.visitReceiver(ClassDefinition.this);
-			};
+		constructorDefinitions = new HashMap<>();
+		staticMethodDefinitions = new HashMap<>();
+		methodDefinitions = new HashMap<>();
+	}
 
-			@Override
-			public TypeToken<T> getType() {
-				/*
-				 * TODO this needs to be the actual Type
-				 */
-				return (TypeToken<T>) declaration.getSuperType();
-			}
-		};
+	protected ClassDefinition(
+			ClassDefinition<E, T> definition,
+			Map<MethodDeclaration<E, T>, MethodDefinition<E, T>> constructorDefinitions,
+			Map<MethodDeclaration<E, ?>, MethodDefinition<E, ?>> staticMethodDefinitions,
+			Map<MethodDeclaration<T, ?>, MethodDefinition<T, ?>> methodDefinitions) {
+		super(definition.getDeclaration());
+
+		typeName = definition.getName();
+
+		this.constructorDefinitions = constructorDefinitions;
+		this.staticMethodDefinitions = staticMethodDefinitions;
+		this.methodDefinitions = methodDefinitions;
 	}
 
 	/**
@@ -213,21 +214,6 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 	 */
 	public String getName() {
 		return typeName;
-	}
-
-	/**
-	 * Verify that the class definition describes a valid and complete class such
-	 * that implementation/compilation or instantiation is possible.
-	 */
-	public void validate() {
-		/*
-		 * TODO check we have a default super constructor, or a valid constructor
-		 * defined explicitly.
-		 */
-
-		for (MethodOverride<T> override : methods.values()) {
-			override.validate();
-		}
 	}
 
 	public ReflectiveInstance<E, T> instantiate(Object... arguments) {
@@ -244,16 +230,13 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 
 	@SuppressWarnings("unchecked")
 	public ReflectiveInstance<E, T> instantiate(ClassLoader classLoader, Collection<? extends Object> arguments) {
-		validate();
-
-		Set<Class<?>> rawTypes = superTypes
-				.stream()
-				.flatMap(t -> t.getRawTypes().stream())
-				.collect(Collectors.toCollection(LinkedHashSet::new));
+		Set<Class<?>> rawTypes = getDeclaration().getSuperTypes().flatMap(t -> t.getRawTypes()).collect(
+				Collectors.toCollection(LinkedHashSet::new));
 
 		for (Class<?> rawType : rawTypes) {
 			if (!rawType.isInterface()) {
-				throw new CodeGenerationException(p -> p.cannotInstantiateClassDefinition(this, superType));
+				throw new CodeGenerationException(
+						p -> p.cannotInstantiateClassDefinition(this, getDeclaration().getSuperType()));
 			}
 		}
 
@@ -262,36 +245,21 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 
 		ReflectiveInstance<E, T> instance = (ReflectiveInstance<E, T>) Proxy
 				.newProxyInstance(classLoader, rawTypes.toArray(new Class<?>[rawTypes.size()]), (proxy, method, args) -> {
-					if (method.getDeclaringClass().equals(ReflectiveInstance.class)) {
+					if (method.getDeclaringClass().equals(ReflectiveInstance.class)
+							|| method.getDeclaringClass().equals(Object.class)) {
 						return method.invoke(reflectiveInstance, args);
 					}
 
-					MethodOverride<T> override = methods.get(new ErasedMethodSignature(method));
+					MethodDeclaration<T, ?> override = getDeclaration()
+							.getMethodDeclaration(method.getName(), method.getParameterTypes());
 
-					if (override.getOverride().isPresent()) {
-						return override.getOverride().get().invoke((ReflectiveInstance<E, T>) proxy, args);
-					} else {
-						try {
-							return override
-									.getInterfaceMethods()
-									.stream()
-									.filter(Method::isDefault)
-									.findAny()
-									.get()
-									.invoke(proxy, args);
-						} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-							throw new ReflectionException(
-									p -> p.invalidMethodArguments(method, getSuperType().getType(), asList(args)));
-						}
-					}
+					StatementExecutor executor = new StatementExecutor((ReflectiveInstance<E, T>) proxy);
+
+					return methodDefinitions.get(override).invoke(executor, args);
 				});
 		reflectiveInstance.instance = (T) instance;
 
 		return instance;
-	}
-
-	public ValueExpression<T> receiver() {
-		return receiverExpression;
 	}
 
 	@Override
@@ -299,26 +267,34 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 		return getName();
 	}
 
-	public <U> FieldDeclaration<T, U> getFieldDeclaration(FieldSignature<U> signature) {
+	@SuppressWarnings("unchecked")
+	public <U> ClassDefinition<E, T> defineMethod(
+			ErasedMethodSignature erasedSignature,
+			TypeToken<U> returnType,
+			Function<MethodDefinition<T, U>, MethodDefinition<T, U>> definitionFunction) {
+		MethodDeclaration<T, ?> methodDeclaration = getDeclaration()
+				.getMethodDeclaration(erasedSignature.getName(), erasedSignature.getParameterClasses());
 
-	}
+		if (!methodDeclaration.getReturnType().satisfiesConstraintTo(Kind.LOOSE_COMPATIBILILTY, returnType))
+			throw new ReflectionException(p -> p.incompatibleReturnType(returnType, methodDeclaration));
 
-	public MethodDeclaration<E, T> getConstructorDeclaration(ConstructorSignature signature) {
-
-	}
-
-	public <U> MethodDeclaration<E, U> getStaticMethodDeclaration(MethodSignature<U> signature) {
-
-	}
-
-	public <U> MethodDeclaration<T, U> getMethodDeclaration(MethodSignature<U> signature) {
-
+		return defineMethod((MethodDeclaration<T, U>) methodDeclaration, definitionFunction);
 	}
 
 	public <U> ClassDefinition<E, T> defineMethod(
-			MethodSignature<U> signature,
-			Function<MethodDefinition<T, U>, MethodDefinition<T, U>> definition) {
-		// TODO Auto-generated method stub
+			MethodDeclaration<T, U> declaration,
+			Function<MethodDefinition<T, U>, MethodDefinition<T, U>> definitionFunction) {
+		MethodDefinition<T, U> definition = new MethodDefinition<>(declaration);
+		definition = definitionFunction.apply(definition);
 
+		Map<MethodDeclaration<T, ?>, MethodDefinition<T, ?>> methodDefinitions = new HashMap<>(this.methodDefinitions);
+		methodDefinitions.put(declaration, definition);
+		ClassDefinition<E, T> derivedClass = new ClassDefinition<>(
+				this,
+				constructorDefinitions,
+				staticMethodDefinitions,
+				methodDefinitions);
+
+		return derivedClass;
 	}
 }

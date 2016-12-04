@@ -37,7 +37,8 @@ import static java.util.stream.Collectors.toList;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Type;
-import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.token.ExecutableToken;
@@ -50,6 +51,7 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 
 	public static <U> MethodSignature<U> methodSignature(ExecutableToken<?, U> executableToken) {
 		return new MethodSignature<>(executableToken.getName())
+				.withAnnotations(executableToken.getMember().getAnnotations())
 				.withTypeVariables(
 						executableToken.getTypeParameters().map(TypeVariableSignature::typeVariableSignature).collect(toList()))
 				.withReturnType(executableToken.getReturnType())
@@ -66,10 +68,10 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 
 	protected MethodSignature(
 			String methodName,
-			Collection<? extends VariableSignature<?>> parameters,
+			List<VariableSignature<?>> parameters,
 			AnnotatedType returnType,
-			Collection<? extends TypeVariableSignature> typeVariables,
-			Collection<? extends Annotation> annotations) {
+			List<TypeVariableSignature> typeVariables,
+			Set<Annotation> annotations) {
 		super(parameters, typeVariables, annotations);
 
 		this.methodName = methodName;
@@ -78,12 +80,13 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 
 	@Override
 	protected MethodSignature<T> withExecutableSignatureData(
-			Collection<? extends VariableSignature<?>> parameters,
-			Collection<? extends TypeVariableSignature> typeVariables,
-			Collection<? extends Annotation> annotations) {
+			List<VariableSignature<?>> parameters,
+			List<TypeVariableSignature> typeVariables,
+			Set<Annotation> annotations) {
 		return new MethodSignature<>(methodName, parameters, returnType, typeVariables, annotations);
 	}
 
+	@Override
 	public String getName() {
 		return methodName;
 	}

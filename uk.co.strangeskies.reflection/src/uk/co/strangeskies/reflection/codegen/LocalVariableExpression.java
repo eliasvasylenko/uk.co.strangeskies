@@ -37,8 +37,8 @@ import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.VariableExpressio
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class LocalVariableExpression<T> extends LocalValueExpression<T> implements VariableExpression<T> {
-	public LocalVariableExpression(TypeToken<T> type) {
-		super(type);
+	public LocalVariableExpression(String name, TypeToken<T> type) {
+		super(name, type);
 	}
 
 	@Override
@@ -48,6 +48,6 @@ public class LocalVariableExpression<T> extends LocalValueExpression<T> implemen
 
 	@Override
 	public void accept(VariableExpressionVisitor<T> visitor) {
-		visitor.visitLocal(getId());
+		visitor.visitLocal(getSignature());
 	}
 }

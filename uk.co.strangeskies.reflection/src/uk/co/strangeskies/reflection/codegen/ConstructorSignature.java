@@ -33,28 +33,37 @@
 package uk.co.strangeskies.reflection.codegen;
 
 import java.lang.annotation.Annotation;
-import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 
 public class ConstructorSignature extends ExecutableSignature<ConstructorSignature> {
+	private static final ConstructorSignature EMPTY_SIGNATURE = new ConstructorSignature();
+	protected static final String INIT = "<init>";
+
 	public static ConstructorSignature constructorSignature() {
-		return new ConstructorSignature();
+		return EMPTY_SIGNATURE;
 	}
 
 	protected ConstructorSignature() {}
 
 	protected ConstructorSignature(
-			Collection<? extends VariableSignature<?>> parameters,
-			Collection<? extends TypeVariableSignature> typeVariables,
-			Collection<? extends Annotation> annotations) {
+			List<VariableSignature<?>> parameters,
+			List<TypeVariableSignature> typeVariables,
+			Set<Annotation> annotations) {
 		super(parameters, typeVariables, annotations);
 	}
 
 	@Override
 	protected ConstructorSignature withExecutableSignatureData(
-			Collection<? extends VariableSignature<?>> parameters,
-			Collection<? extends TypeVariableSignature> typeVariables,
-			Collection<? extends Annotation> annotations) {
+			List<VariableSignature<?>> parameters,
+			List<TypeVariableSignature> typeVariables,
+			Set<Annotation> annotations) {
 		return new ConstructorSignature(parameters, typeVariables, annotations);
+	}
+
+	@Override
+	public String getName() {
+		return INIT;
 	}
 
 	@Override
@@ -62,7 +71,7 @@ public class ConstructorSignature extends ExecutableSignature<ConstructorSignatu
 		StringBuilder builder = new StringBuilder();
 
 		appendTypeParameters(builder);
-		builder.append(' ');
+		builder.append(' ').append(getName());
 		appendParameters(builder);
 
 		return builder.toString();

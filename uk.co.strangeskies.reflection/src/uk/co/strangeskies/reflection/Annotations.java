@@ -121,8 +121,12 @@ public final class Annotations {
 			 * If value is not equal to default, output:
 			 */
 			if (!equal) {
-				annotationProperties.add(new StringBuilder().append(propertyMethod.getName()).append(" = ")
-						.append(toPropertyString(value, imports)).toString());
+				annotationProperties.add(
+						new StringBuilder()
+								.append(propertyMethod.getName())
+								.append(" = ")
+								.append(toPropertyString(value, imports))
+								.toString());
 			}
 		}
 
@@ -139,7 +143,8 @@ public final class Annotations {
 
 	protected static StringBuilder toPropertyString(Object object, Imports imports) {
 		if (object.getClass().isArray()) {
-			return new StringBuilder().append(" { ")
+			return new StringBuilder()
+					.append(" { ")
 					.append(Arrays.stream((Object[]) object).map(Annotations::toPropertyString).collect(Collectors.joining(", ")))
 					.append(" }");
 		} else {
@@ -200,7 +205,8 @@ public final class Annotations {
 		return new AnnotationParser(imports).getAnnotation().parse(typeString);
 	}
 
-	static Map<Method, Object> sanitizeProperties(Class<? extends Annotation> annotationClass,
+	static Map<Method, Object> sanitizeProperties(
+			Class<? extends Annotation> annotationClass,
 			Map<String, Object> properties) {
 		properties = new HashMap<>(properties);
 		Map<Method, Object> castProperties = new HashMap<>();
@@ -212,7 +218,9 @@ public final class Annotations {
 					propertyValue = Types.assign(propertyValue, method.getReturnType());
 				} catch (ReflectionException e) {
 					Object finalValue = propertyValue;
-					throw new ReflectionException(p -> p.invalidAnnotationValue(annotationClass, method.getName(), finalValue), e);
+					throw new ReflectionException(
+							p -> p.invalidAnnotationValue(annotationClass, method.getName(), finalValue),
+							e);
 				}
 
 				castProperties.put(method, propertyValue);
@@ -259,8 +267,8 @@ public final class Annotations {
 		Map<Method, Object> castProperties = sanitizeProperties(annotationClass, properties);
 
 		@SuppressWarnings("unchecked")
-		T proxy = (T) Proxy.newProxyInstance(annotationClass.getClassLoader(), new Class[] { annotationClass },
-				new InvocationHandler() {
+		T proxy = (T) Proxy
+				.newProxyInstance(annotationClass.getClassLoader(), new Class[] { annotationClass }, new InvocationHandler() {
 					@Override
 					public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 						if (method.getName().equals("annotationType") && method.getParameterTypes().length == 0) {
@@ -362,7 +370,11 @@ public final class Annotations {
 		private AnnotationParser(Imports imports) {
 			TypeParser typeParser = Types.getParser(imports);
 
-			propertyValue = Parser.matching("[a-zA-Z0-9_!]*").prepend("\"").append("\"").transform(Object.class::cast)
+			propertyValue = Parser
+					.matching("[a-zA-Z0-9_!]*")
+					.prepend("\"")
+					.append("\"")
+					.transform(Object.class::cast)
 					.orElse(Parser.matching("[0-9]*\\.[0-9]+").append("d").transform(Double::parseDouble))
 					.orElse(Parser.matching("[0-9]*\\.[0-9]+").append("f").transform(Float::parseFloat))
 					.orElse(Parser.matching("[0-9]+").append("l").transform(Long::parseLong))
@@ -370,15 +382,23 @@ public final class Annotations {
 					.orElse(Parser.matching("[0-9]*\\.[0-9]+").transform(Double::parseDouble))
 					.orElse(Parser.matching("[0-9]+").transform(Integer::parseInt));
 
-			property = Parser.matching("[_a-zA-Z][_a-zA-Z0-9]*").append("\\s*=\\s*").appendTransform(propertyValue,
+			property = Parser.matching("[_a-zA-Z][_a-zA-Z0-9]*").append("\\s*=\\s*").appendTransform(
+					propertyValue,
 					(s, t) -> new Pair<>(s, t));
 
-			propertyMap = Parser.proxy(this::getPropertyMap).prepend("\\s*,\\s*").orElse(HashMap::new)
-					.prepend(property, (m, p) -> m.put(p.getLeft(), p.getRight())).orElse(HashMap::new);
+			propertyMap = Parser
+					.proxy(this::getPropertyMap)
+					.prepend("\\s*,\\s*")
+					.orElse(HashMap::new)
+					.prepend(property, (m, p) -> m.put(p.getLeft(), p.getRight()))
+					.orElse(HashMap::new);
 
-			annotation = typeParser.getRawType().prepend("@")
+			annotation = typeParser
+					.getRawType()
+					.prepend("@")
 					.<Class<? extends Annotation>>transform(t -> t.asSubclass(Annotation.class))
-					.appendTransform(propertyMap.prepend("\\(\\s*").append("\\s*\\)").orElse(Collections::emptyMap),
+					.appendTransform(
+							propertyMap.prepend("\\(\\s*").append("\\s*\\)").orElse(Collections::emptyMap),
 							(a, m) -> Annotations.from(a, m));
 
 			annotationList = Parser.list(annotation, "\\s*");

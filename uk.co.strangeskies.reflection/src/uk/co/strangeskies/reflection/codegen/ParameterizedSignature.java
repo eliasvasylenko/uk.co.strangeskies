@@ -34,49 +34,49 @@ package uk.co.strangeskies.reflection.codegen;
 
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
-import static java.util.Collections.emptySet;
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 import java.lang.annotation.Annotation;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 
 public abstract class ParameterizedSignature<S extends ParameterizedSignature<S>> extends AnnotatedSignature<S> {
-	protected final Collection<? extends TypeVariableSignature> typeVariables;
+	protected final List<TypeVariableSignature> typeVariables;
 
 	public ParameterizedSignature() {
-		typeVariables = emptySet();
+		typeVariables = emptyList();
 	}
 
-	protected ParameterizedSignature(
-			Collection<? extends TypeVariableSignature> typeVariables,
-			Collection<? extends Annotation> annotations) {
+	protected ParameterizedSignature(List<TypeVariableSignature> typeVariables, Set<Annotation> annotations) {
 		super(annotations);
 		this.typeVariables = typeVariables;
 	}
 
 	@Override
-	protected S withAnnotatedDeclarationData(Collection<? extends Annotation> annotations) {
+	protected S withAnnotatedDeclarationData(Set<Annotation> annotations) {
 		return withParameterizedSignatureData(typeVariables, annotations);
 	}
 
 	protected abstract S withParameterizedSignatureData(
-			Collection<? extends TypeVariableSignature> typeVariables,
-			Collection<? extends Annotation> annotations);
+			List<TypeVariableSignature> typeVariables,
+			Set<Annotation> annotations);
 
 	public S withTypeVariables(String... names) {
 		return withTypeVariables(stream(names).map(TypeVariableSignature::typeVariableSignature).collect(toList()));
 	}
 
 	public S withTypeVariables(TypeVariableSignature... typeVariables) {
-		return withTypeVariables(asList(typeVariables));
+		return withParameterizedSignatureData(asList(typeVariables), annotations);
 	}
 
 	public S withTypeVariables(List<TypeVariableSignature> typeVariables) {
-		return withParameterizedSignatureData(typeVariables, annotations);
+		return withParameterizedSignatureData(new ArrayList<>(typeVariables), annotations);
 	}
 
 	public Stream<? extends TypeVariableSignature> getTypeVariables() {
@@ -85,5 +85,23 @@ public abstract class ParameterizedSignature<S extends ParameterizedSignature<S>
 
 	protected void appendTypeParameters(StringBuilder builder) {
 		builder.append("<").append(getTypeVariables().map(Objects::toString).collect(joining(", "))).append(">");
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == this)
+			return true;
+		if (!(obj instanceof ParameterizedSignature<?>))
+			return false;
+
+		ParameterizedSignature<?> that = (ParameterizedSignature<?>) obj;
+
+		return super.equals(that)
+				&& Objects.equals(this.getTypeVariables().collect(toSet()), that.getTypeVariables().collect(toSet()));
+	}
+
+	@Override
+	public int hashCode() {
+		return super.hashCode() ^ getTypeVariables().mapToInt(Objects::hashCode).reduce(0, (a, b) -> a ^ b);
 	}
 }

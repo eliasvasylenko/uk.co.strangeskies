@@ -93,7 +93,7 @@ public class ExpressionEvaluator {
 		}
 
 		@Override
-		public void visitReceiver(ClassDefinition<?, T> classDefinition) {
+		public void visitReceiver(ClassDeclaration<?, T> classDefinition) {
 			complete(() -> state.getEnclosingInstance(classDefinition));
 		}
 
@@ -111,7 +111,7 @@ public class ExpressionEvaluator {
 		}
 
 		@Override
-		public void visitLocal(LocalVariable<? extends T> local) {
+		public void visitLocal(VariableSignature<? extends T> local) {
 			complete(() -> state.getEnclosedLocal(local));
 		}
 	}
@@ -149,7 +149,7 @@ public class ExpressionEvaluator {
 		}
 
 		@Override
-		public void visitLocal(LocalVariable<T> local) {
+		public void visitLocal(VariableSignature<T> local) {
 			complete(new VariableResult<T>() {
 				@Override
 				public T get() {

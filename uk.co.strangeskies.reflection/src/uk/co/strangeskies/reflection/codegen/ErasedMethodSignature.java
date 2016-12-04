@@ -35,7 +35,6 @@ package uk.co.strangeskies.reflection.codegen;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
 
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -51,22 +50,22 @@ public class ErasedMethodSignature {
 	private final Class<?>[] parameterClasses;
 
 	/**
-	 * @param method
-	 *          the method for which we require the signature
-	 */
-	public ErasedMethodSignature(Method method) {
-		this(method.getName(), method.getParameterTypes());
-	}
-
-	/**
 	 * @param name
 	 *          the name of the method signature
 	 * @param parameterClasses
 	 *          the erased type of the method signature
 	 */
-	public ErasedMethodSignature(String name, Class<?>[] parameterClasses) {
+	public ErasedMethodSignature(String name, Class<?>... parameterClasses) {
 		this.name = name;
 		this.parameterClasses = parameterClasses;
+	}
+
+	public static ErasedMethodSignature erasedMethodSignature(String name, Class<?>... parameterClasses) {
+		return new ErasedMethodSignature(name, parameterClasses);
+	}
+
+	public static ErasedMethodSignature erasedConstructorSignature(Class<?>... parameterClasses) {
+		return new ErasedMethodSignature(ConstructorSignature.INIT, parameterClasses);
 	}
 
 	/**

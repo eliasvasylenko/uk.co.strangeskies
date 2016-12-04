@@ -44,7 +44,9 @@ import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
@@ -115,7 +117,7 @@ public class TypeVariableSignature extends AnnotatedSignature<TypeVariableSignat
 	}
 
 	private final String name;
-	private final Collection<? extends AnnotatedType> bounds;
+	private final Set<AnnotatedType> bounds;
 
 	/**
 	 * @param name
@@ -126,10 +128,7 @@ public class TypeVariableSignature extends AnnotatedSignature<TypeVariableSignat
 		bounds = emptySet();
 	}
 
-	protected TypeVariableSignature(
-			String name,
-			Collection<? extends AnnotatedType> bounds,
-			Collection<? extends Annotation> annotations) {
+	protected TypeVariableSignature(String name, Set<AnnotatedType> bounds, Set<Annotation> annotations) {
 		super(annotations);
 
 		this.name = name;
@@ -137,7 +136,7 @@ public class TypeVariableSignature extends AnnotatedSignature<TypeVariableSignat
 	}
 
 	@Override
-	protected TypeVariableSignature withAnnotatedDeclarationData(Collection<? extends Annotation> annotations) {
+	protected TypeVariableSignature withAnnotatedDeclarationData(Set<Annotation> annotations) {
 		return new TypeVariableSignature(name, bounds, annotations);
 	}
 
@@ -166,11 +165,29 @@ public class TypeVariableSignature extends AnnotatedSignature<TypeVariableSignat
 	}
 
 	public TypeVariableSignature withBounds(Collection<? extends AnnotatedType> bounds) {
-		return new TypeVariableSignature(name, bounds, annotations);
+		return new TypeVariableSignature(name, new HashSet<>(bounds), annotations);
 	}
 
 	@Override
 	public String toString() {
 		return getName() + (bounds == null ? "" : " extends " + bounds.stream().map(Objects::toString).collect(joining()));
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == this)
+			return true;
+		if (!(obj instanceof TypeVariableSignature))
+			return false;
+
+		TypeVariableSignature that = (TypeVariableSignature) obj;
+
+		return super.equals(that) && Objects.equals(this.getName(), that.getName())
+				&& Objects.equals(this.bounds, that.bounds);
+	}
+
+	@Override
+	public int hashCode() {
+		return super.hashCode() ^ this.getName().hashCode() ^ bounds.hashCode();
 	}
 }

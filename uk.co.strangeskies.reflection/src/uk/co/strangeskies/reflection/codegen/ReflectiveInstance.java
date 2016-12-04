@@ -35,7 +35,7 @@ package uk.co.strangeskies.reflection.codegen;
 /**
  * This interface is not for outside consumption. It allows instances of
  * {@link ClassDefinition class definitions} which are created reflectively to
- * simulate normal class state by providing access to {@link FieldDefinition
+ * simulate normal class state by providing access to {@link FieldDeclaration
  * defined fields}.
  * 
  * @author Elias N Vasylenko
@@ -46,9 +46,9 @@ package uk.co.strangeskies.reflection.codegen;
 public interface ReflectiveInstance<E, T> {
 	ClassDefinition<E, T> getReflectiveClassDefinition();
 
-	<U> U getReflectiveFieldValue(FieldDefinition<? super T, U> field);
+	<U> U getReflectiveFieldValue(FieldDeclaration<? super T, U> field);
 
-	<U> void setReflectiveFieldValue(FieldDefinition<? super T, U> field, U value);
+	<U> void setReflectiveFieldValue(FieldDeclaration<? super T, U> field, U value);
 
 	T cast();
 }

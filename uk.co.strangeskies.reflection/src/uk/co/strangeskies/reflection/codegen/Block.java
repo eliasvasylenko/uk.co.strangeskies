@@ -56,6 +56,7 @@ public class Block<T> {
 
 	protected Block<T> withStatement(Statement statement) {
 		List<Statement> statements = new ArrayList<>(this.statements.size() + 1);
+		statements.addAll(this.statements);
 		statements.add(statement);
 
 		return new Block<>(statements);
@@ -65,36 +66,42 @@ public class Block<T> {
 		return withStatement(v -> v.visitExpression(expression));
 	}
 
-	public <U> LocalVariableExpression<U> withVariableDeclaration(Class<U> type) {
-		return declareVariable(TypeToken.overType(type));
+	public <U> LocalVariableExpression<U> withVariableDeclaration(String name, Class<U> type) {
+		return declareVariable(name, TypeToken.overType(type));
 	}
 
-	public <U> LocalVariableExpression<U> declareVariable(TypeToken<U> type) {
-		LocalVariableExpression<U> variable = new LocalVariableExpression<>(type);
+	public <U> LocalVariableExpression<U> declareVariable(String name, TypeToken<U> type) {
+		LocalVariableExpression<U> variable = new LocalVariableExpression<>(name, type);
 
 		withStatement(s -> s.visitDeclaration(variable));
 
 		return variable;
 	}
 
-	public <U> LocalVariableExpression<U> declareVariable(Class<U> type, ValueExpression<? extends U> value) {
-		return declareVariable(TypeToken.overType(type), value);
+	public <U> LocalVariableExpression<U> declareVariable(
+			String name,
+			Class<U> type,
+			ValueExpression<? extends U> value) {
+		return declareVariable(name, TypeToken.overType(type), value);
 	}
 
-	public <U> LocalVariableExpression<U> declareVariable(TypeToken<U> type, ValueExpression<? extends U> value) {
-		LocalVariableExpression<U> variable = new LocalVariableExpression<>(type);
+	public <U> LocalVariableExpression<U> declareVariable(
+			String name,
+			TypeToken<U> type,
+			ValueExpression<? extends U> value) {
+		LocalVariableExpression<U> variable = new LocalVariableExpression<>(name, type);
 
 		withStatement(s -> s.visitDeclaration(variable, value));
 
 		return variable;
 	}
 
-	public <U> LocalValueExpression<U> declareValue(Class<U> type, ValueExpression<? extends U> value) {
-		return declareValue(TypeToken.overType(type), value);
+	public <U> LocalValueExpression<U> declareValue(String name, Class<U> type, ValueExpression<? extends U> value) {
+		return declareValue(name, TypeToken.overType(type), value);
 	}
 
-	public <U> LocalValueExpression<U> declareValue(TypeToken<U> type, ValueExpression<? extends U> value) {
-		LocalValueExpression<U> variable = new LocalValueExpression<>(type);
+	public <U> LocalValueExpression<U> declareValue(String name, TypeToken<U> type, ValueExpression<? extends U> value) {
+		LocalValueExpression<U> variable = new LocalValueExpression<>(name, type);
 
 		withStatement(s -> s.visitDeclaration(variable, value));
 

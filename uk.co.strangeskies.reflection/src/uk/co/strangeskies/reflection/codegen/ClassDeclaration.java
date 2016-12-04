@@ -2,20 +2,28 @@ package uk.co.strangeskies.reflection.codegen;
 
 import static java.util.Collections.unmodifiableList;
 import static java.util.Optional.of;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
 import static uk.co.strangeskies.reflection.Types.getRawType;
 import static uk.co.strangeskies.reflection.Types.isInterface;
+import static uk.co.strangeskies.reflection.codegen.ErasedMethodSignature.erasedConstructorSignature;
+import static uk.co.strangeskies.reflection.codegen.ErasedMethodSignature.erasedMethodSignature;
 import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.declareConstructor;
 import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.declareStaticMethod;
 import static uk.co.strangeskies.reflection.token.TypeToken.overType;
+import static uk.co.strangeskies.utilities.collection.StreamUtilities.entriesToMap;
 
 import java.lang.reflect.Type;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import uk.co.strangeskies.reflection.ReflectionException;
+import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignature<T>>
@@ -27,9 +35,11 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 	private final List<TypeToken<? super T>> superTypes;
 	private final TypeToken<T> superType;
 
-	private final List<MethodDeclaration<E, T>> constructorDeclarations;
-	private final List<MethodDeclaration<E, ?>> staticMethodDeclarations;
-	private final List<MethodDeclaration<T, ?>> methodDeclarations;
+	private final Map<ErasedMethodSignature, MethodDeclaration<E, T>> constructorDeclarations;
+	private final Map<ErasedMethodSignature, MethodDeclaration<E, ?>> staticMethodDeclarations;
+	private final Map<ErasedMethodSignature, MethodDeclaration<T, ?>> methodDeclarations;
+
+	private final ValueExpression<T> receiverExpression;
 
 	@SuppressWarnings("unchecked")
 	public ClassDeclaration(ClassDeclaration<?, E> enclosingClass, ClassSignature<T> signature) {
@@ -38,7 +48,7 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 		this.enclosingClass = enclosingClass;
 		this.signature = signature;
 
-		superTypes = unmodifiableList(
+		this.superTypes = unmodifiableList(
 				signature
 						.getSuperTypes()
 						.map(this::substituteTypeVariableSignatures)
@@ -48,19 +58,36 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 
 		Type superType = intersectionOf(superTypes.stream().map(TypeToken::getType).collect(toList()));
 		this.superType = (TypeToken<T>) overType(superType);
-		superClass = (Class<? super T>) of(getRawType(superType)).filter(t -> !isInterface(t)).orElse(null);
+		this.superClass = (Class<? super T>) of(getRawType(superType)).filter(t -> !isInterface(t)).orElse(null);
 
-		constructorDeclarations = signature
-				.getConstructorSignatures()
-				.map(s -> declareConstructor(this, s))
-				.collect(toList());
+		this.constructorDeclarations = signature.getConstructorSignatures().map(s -> declareConstructor(this, s)).collect(
+				toMap(d -> d.getSignature().erased(), identity()));
 
-		staticMethodDeclarations = signature
+		this.staticMethodDeclarations = signature
 				.getStaticMethodSignatures()
 				.map(s -> declareStaticMethod(this, (MethodSignature<?>) s))
-				.collect(toList());
+				.collect(toMap(d -> d.getSignature().erased(), identity()));
 
-		methodDeclarations = new MethodOverrides<>(this).getDeclarations().collect(toList());
+		this.methodDeclarations = new MethodOverrides<>(this).getSignatureDeclarations().collect(entriesToMap());
+
+		this.receiverExpression = new ValueExpression<T>() {
+			@Override
+			public void accept(ValueExpressionVisitor<T> visitor) {
+				visitor.visitReceiver(ClassDeclaration.this);
+			};
+
+			@Override
+			public TypeToken<T> getType() {
+				/*
+				 * TODO this needs to be the actual Type
+				 */
+				return (TypeToken<T>) getSuperType();
+			}
+		};
+	}
+
+	public ValueExpression<T> receiver() {
+		return receiverExpression;
 	}
 
 	/**
@@ -94,16 +121,46 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 		return signature;
 	}
 
-	public Stream<? extends MethodDeclaration<E, T>> constructorDeclarations() {
-		return constructorDeclarations.stream();
+	public Stream<MethodDeclaration<E, T>> constructorDeclarations() {
+		return constructorDeclarations.values().stream();
 	}
 
-	public Stream<? extends MethodDeclaration<E, ?>> staticMethodDeclarations() {
-		return staticMethodDeclarations.stream();
+	public Stream<MethodDeclaration<E, ?>> staticMethodDeclarations() {
+		return staticMethodDeclarations.values().stream();
 	}
 
-	public Stream<? extends MethodDeclaration<T, ?>> methodDeclarations() {
-		return methodDeclarations.stream();
+	public Stream<MethodDeclaration<T, ?>> methodDeclarations() {
+		return methodDeclarations.values().stream();
+	}
+
+	public MethodDeclaration<E, T> getConstructorDeclaration(Class<?>... erasedParameters) {
+		ErasedMethodSignature erasedSignature = erasedConstructorSignature(erasedParameters);
+
+		MethodDeclaration<E, T> declaration = constructorDeclarations.get(erasedSignature);
+		if (declaration == null) {
+			throw new ReflectionException(p -> p.cannotFindMethodOn(superClass, erasedSignature));
+		}
+		return declaration;
+	}
+
+	public MethodDeclaration<E, ?> getStaticMethodDeclaration(String name, Class<?>... erasedParameters) {
+		ErasedMethodSignature erasedSignature = erasedMethodSignature(name, erasedParameters);
+
+		MethodDeclaration<E, ?> declaration = staticMethodDeclarations.get(erasedSignature);
+		if (declaration == null) {
+			throw new ReflectionException(p -> p.cannotFindMethodOn(superClass, erasedSignature));
+		}
+		return declaration;
+	}
+
+	public MethodDeclaration<T, ?> getMethodDeclaration(String name, Class<?>... erasedParameters) {
+		ErasedMethodSignature erasedSignature = erasedMethodSignature(name, erasedParameters);
+
+		MethodDeclaration<T, ?> declaration = methodDeclarations.get(erasedSignature);
+		if (declaration == null) {
+			throw new ReflectionException(p -> p.cannotFindMethodOn(superClass, erasedSignature));
+		}
+		return declaration;
 	}
 
 	public ClassDefinition<E, ? extends T> define() {

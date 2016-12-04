@@ -1,11 +1,12 @@
 package uk.co.strangeskies.reflection.codegen;
 
+import static java.lang.System.identityHashCode;
 import static uk.co.strangeskies.reflection.AnnotatedTypes.annotated;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Type;
-import java.util.Collection;
+import java.util.Set;
 
 import uk.co.strangeskies.reflection.token.ExecutableParameter;
 import uk.co.strangeskies.reflection.token.TypeToken;
@@ -39,14 +40,14 @@ public class VariableSignature<T> extends AnnotatedSignature<VariableSignature<T
 		this.type = type;
 	}
 
-	protected VariableSignature(String variableName, AnnotatedType type, Collection<? extends Annotation> annotations) {
+	protected VariableSignature(String variableName, AnnotatedType type, Set<Annotation> annotations) {
 		super(annotations);
 		this.variableName = variableName;
 		this.type = type;
 	}
 
 	@Override
-	protected VariableSignature<T> withAnnotatedDeclarationData(Collection<? extends Annotation> annotations) {
+	protected VariableSignature<T> withAnnotatedDeclarationData(Set<Annotation> annotations) {
 		return new VariableSignature<>(variableName, type, annotations);
 	}
 
@@ -61,5 +62,15 @@ public class VariableSignature<T> extends AnnotatedSignature<VariableSignature<T
 	@Override
 	public String toString() {
 		return getType() + " " + getVariableName();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return this == obj;
+	}
+
+	@Override
+	public int hashCode() {
+		return identityHashCode(this);
 	}
 }

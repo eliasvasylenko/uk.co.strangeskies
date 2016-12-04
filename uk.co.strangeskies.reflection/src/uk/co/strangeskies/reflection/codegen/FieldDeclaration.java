@@ -32,13 +32,35 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import static uk.co.strangeskies.reflection.token.TypeToken.overAnnotatedType;
+
 import uk.co.strangeskies.reflection.token.TypeToken;
 
-public class LocalVariable<T> {
+public class FieldDeclaration<C, T> extends AnnotatedDeclaration<VariableSignature<T>> {
+	private final String name;
+
+	private final ClassDeclaration<?, ?> declaringClass;
+	private final ClassDeclaration<?, C> owningDeclaration;
+
 	private final TypeToken<T> type;
 
-	public LocalVariable(TypeToken<T> type) {
-		this.type = type;
+	@SuppressWarnings("unchecked")
+	protected FieldDeclaration(
+			String name,
+			ClassDeclaration<?, ?> declaringClass,
+			ClassDeclaration<?, C> owningDeclaration,
+			VariableSignature<T> signature) {
+		super(signature);
+
+		this.name = name;
+		this.declaringClass = declaringClass;
+		this.owningDeclaration = owningDeclaration;
+		this.type = (TypeToken<T>) overAnnotatedType(
+				owningDeclaration.substituteTypeVariableSignatures(signature.getType()));
+	}
+
+	public String getName() {
+		return name;
 	}
 
 	public TypeToken<T> getType() {

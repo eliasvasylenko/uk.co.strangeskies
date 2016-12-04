@@ -33,13 +33,14 @@
 package uk.co.strangeskies.reflection.codegen.test;
 
 import static uk.co.strangeskies.reflection.codegen.LiteralExpression.literal;
+import static uk.co.strangeskies.reflection.codegen.VariableSignature.variableSignature;
 
 import org.junit.Assert;
 import org.junit.Test;
 
 import uk.co.strangeskies.reflection.codegen.Block;
-import uk.co.strangeskies.reflection.codegen.LocalVariableExpression;
 import uk.co.strangeskies.reflection.codegen.StatementExecutor;
+import uk.co.strangeskies.reflection.codegen.VariableSignature;
 import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.FieldToken;
 import uk.co.strangeskies.reflection.token.TypeToken;
@@ -83,10 +84,9 @@ public class ExpressionTest {
 		Block<Void> block = new Block<>();
 		TestClass instance = new TestClass();
 
-		LocalVariableExpression<TestClass> variable = new LocalVariableExpression<>(TEST_CLASS_TYPE);
-		state.declareLocal(variable.getId());
-		state.setEnclosedLocal(variable.getId(), instance);
-
+		VariableSignature<TestClass> variable = variableSignature("testClass", TEST_CLASS_TYPE);
+		state.declareLocal(variable);
+		state.setEnclosedLocal(variable, instance);
 		block.withExpression(variable.accessField(TEST_FIELD).assign(literal("value")));
 
 		state.executeBlock(block);
@@ -98,16 +98,16 @@ public class ExpressionTest {
 		StatementExecutor state = new StatementExecutor();
 		Block<Void> block = new Block<>();
 
-		LocalVariableExpression<String> local = new LocalVariableExpression<>(STRING_TYPE);
-		state.declareLocal(local.getId());
-		LocalVariableExpression<Object> result = new LocalVariableExpression<>(OBJECT_TYPE);
-		state.declareLocal(result.getId());
+		VariableSignature<String> local = variableSignature("string", STRING_TYPE);
+		state.declareLocal(local.getSignature());
+		VariableSignature<Object> result = variableSignature(OBJECT_TYPE);
+		state.declareLocal(result.getSignature());
 
 		block.withExpression(local.assign(literal("value")));
 		block.withExpression(result.assign(local));
 
 		state.executeBlock(block);
-		Assert.assertEquals("value", state.getEnclosedLocal(result.getId()));
+		Assert.assertEquals("value", state.getEnclosedLocal(result.getSignature()));
 	}
 
 	@Test
@@ -116,14 +116,14 @@ public class ExpressionTest {
 		Block<Void> block = new Block<>();
 		TestClass instance = new TestClass();
 
-		LocalVariableExpression<TestClass> variable = new LocalVariableExpression<>(TEST_CLASS_TYPE);
-		state.declareLocal(variable.getId());
-		state.setEnclosedLocal(variable.getId(), instance);
+		VariableSignature<TestClass> variable = variableSignature("testClass", TEST_CLASS_TYPE);
+		state.declareLocal(variable.getSignature());
+		state.setEnclosedLocal(variable.getSignature(), instance);
 
 		block.withExpression(variable.invokeMethod(TEST_SET_METHOD, literal("value")));
 		state.executeBlock(block);
 
-		Assert.assertEquals(instance, state.getEnclosedLocal(variable.getId()));
+		Assert.assertEquals(instance, state.getEnclosedLocal(variable.getSignature()));
 		Assert.assertEquals("value", instance.field);
 	}
 }

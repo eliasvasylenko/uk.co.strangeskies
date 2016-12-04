@@ -58,13 +58,13 @@ public class StatementExecutor {
 
 		@Override
 		public <T> void visitDeclaration(LocalVariableExpression<T> variable) {
-			declareLocal(variable.getId());
+			declareLocal(variable.getSignature());
 		}
 
 		@Override
 		public <T> void visitDeclaration(LocalValueExpression<T> variable, ValueExpression<? extends T> initializer) {
-			declareLocal(variable.getId());
-			setEnclosedLocal(variable.getId(), expressionEvaluator.evaluate(initializer).get());
+			declareLocal(variable.getSignature());
+			setEnclosedLocal(variable.getSignature(), expressionEvaluator.evaluate(initializer).get());
 		}
 
 		private boolean isComplete() {
@@ -79,7 +79,7 @@ public class StatementExecutor {
 	private final ReflectiveInstance<?, ?> receiver;
 	private final StatementExecutor enclosingState;
 
-	private final Map<LocalVariable<?>, Object> locals;
+	private final Map<VariableSignature<?>, Object> locals;
 
 	private final ExpressionEvaluator expressionEvaluator;
 
@@ -108,7 +108,7 @@ public class StatementExecutor {
 		return enclose(null);
 	}
 
-	public <T> void declareLocal(LocalVariable<T> variable) {
+	public <T> void declareLocal(VariableSignature<T> variable) {
 		if (locals.containsKey(variable)) {
 			throw new CodeGenerationException(p -> p.cannotRedeclareVariable(variable));
 		}
@@ -116,7 +116,7 @@ public class StatementExecutor {
 	}
 
 	@SuppressWarnings("unchecked")
-	public <T> T getEnclosedLocal(LocalVariable<T> variable) {
+	public <T> T getEnclosedLocal(VariableSignature<T> variable) {
 		if (locals.containsKey(variable)) {
 			return (T) locals.get(variable);
 		} else if (enclosingState != null) {
@@ -126,7 +126,7 @@ public class StatementExecutor {
 		}
 	}
 
-	public <T> void setEnclosedLocal(LocalVariable<T> variable, T value) {
+	public <T> void setEnclosedLocal(VariableSignature<T> variable, T value) {
 		if (locals.containsKey(variable)) {
 			locals.put(variable, value);
 		} else if (enclosingState != null) {
@@ -137,8 +137,8 @@ public class StatementExecutor {
 	}
 
 	@SuppressWarnings("unchecked")
-	public <J> J getEnclosingInstance(ClassDefinition<?, J> receiverClass) {
-		if (receiver.getReflectiveClassDefinition() == receiverClass) {
+	public <J> J getEnclosingInstance(ClassDeclaration<?, J> receiverClass) {
+		if (receiver.getReflectiveClassDefinition().getDeclaration() == receiverClass) {
 			return (J) receiver;
 		} else if (enclosingState != null) {
 			return enclosingState.getEnclosingInstance(receiverClass);

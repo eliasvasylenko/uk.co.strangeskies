@@ -1,11 +1,12 @@
 package uk.co.strangeskies.reflection.codegen;
 
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.token.TypeToken.overAnnotatedType;
+import static uk.co.strangeskies.utilities.collection.StreamUtilities.entriesToMap;
 
 import java.lang.reflect.AnnotatedType;
-import java.util.List;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -23,9 +24,7 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 	private final ClassDeclaration<?, ?> declaringClass;
 	private final ClassDeclaration<?, C> owningDeclaration;
 	private final TypeToken<T> returnType;
-	private final List<LocalVariableExpression<?>> parameters;
-
-	private final ErasedMethodSignature erasedSignature;
+	private final Map<VariableSignature<?>, LocalVariableExpression<?>> parameters;
 
 	@SuppressWarnings("unchecked")
 	protected MethodDeclaration(
@@ -44,12 +43,8 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 		this.returnType = (TypeToken<T>) overAnnotatedType(substituteTypeVariableSignatures(returnType));
 		this.parameters = signature
 				.getParameters()
-				.map(parameter -> createParameter((VariableSignature<?>) parameter))
-				.collect(toList());
-
-		this.erasedSignature = new ErasedMethodSignature(
-				getName(),
-				parameters.stream().map(v -> v.getType().getRawType()).toArray(Class<?>[]::new));
+				.map(parameter -> new SimpleEntry<>(parameter, createParameter((VariableSignature<?>) parameter)))
+				.collect(entriesToMap());
 	}
 
 	protected static <C, T> MethodDeclaration<C, T> declareConstructor(
@@ -88,21 +83,28 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 				signature);
 	}
 
+	public ClassDeclaration<?, ?> getDeclaringClass() {
+		return declaringClass;
+	}
+
+	public ClassDeclaration<?, C> getOwningDeclaration() {
+		return owningDeclaration;
+	}
+
+	@SuppressWarnings("unchecked")
 	public <U> LocalVariableExpression<U> getParameter(VariableSignature<U> parameterSignature) {
-		return null;
+		return (LocalVariableExpression<U>) parameters.get(parameterSignature);
 	}
 
 	private <U> LocalVariableExpression<U> createParameter(VariableSignature<U> parameterSignature) {
 		TypeToken<?> typeToken = overAnnotatedType(substituteTypeVariableSignatures(parameterSignature.getType()));
 
 		@SuppressWarnings("unchecked")
-		LocalVariableExpression<U> variable = new LocalVariableExpression<>((TypeToken<U>) typeToken);
+		LocalVariableExpression<U> variable = new LocalVariableExpression<>(
+				parameterSignature.getVariableName(),
+				(TypeToken<U>) typeToken);
 
 		return variable;
-	}
-
-	public ErasedMethodSignature getErasedSignature() {
-		return erasedSignature;
 	}
 
 	public ExecutableToken<C, T> asToken() {
@@ -122,7 +124,7 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 	}
 
 	public Stream<LocalVariableExpression<?>> getParameters() {
-		return parameters.stream();
+		return parameters.values().stream();
 	}
 
 	@Override
@@ -165,5 +167,17 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 				.append(signature.getParameters().map(Objects::toString).collect(joining(", ")))
 				.append(")")
 				.toString();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		// TODO Auto-generated method stub
+		return super.equals(obj);
+	}
+
+	@Override
+	public int hashCode() {
+		// TODO Auto-generated method stub
+		return super.hashCode();
 	}
 }

@@ -32,11 +32,9 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import java.util.List;
 import java.util.function.Function;
 
 import uk.co.strangeskies.reflection.token.ExecutableToken;
-import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class MethodDefinition<C, T> implements MemberDefinition<C> {
 	private final MethodDeclaration<C, T> methodDeclaration;
@@ -48,17 +46,9 @@ public class MethodDefinition<C, T> implements MemberDefinition<C> {
 		this.body = new Block<>();
 	}
 
-	@SuppressWarnings("unchecked")
-	public List<VariableExpression<?>> getParameters() {
-		return (List<VariableExpression<?>>) (List<?>) parameters;
-	}
-
-	public TypeToken<T> getReturnType() {
-		return returnType;
-	}
-
-	public ErasedMethodSignature getOverrideSignature() {
-		return overrideSignature;
+	public MethodDefinition(MethodDefinition<C, T> definition, Block<T> body) {
+		this.methodDeclaration = definition.getDeclaration();
+		this.body = body;
 	}
 
 	public Block<T> body() {
@@ -66,17 +56,28 @@ public class MethodDefinition<C, T> implements MemberDefinition<C> {
 	}
 
 	public MethodDeclaration<C, T> getDeclaration() {
-
-	}
-
-	@Override
-	public ClassDeclaration<?, C> getOwningClassDeclaration() {
 		return methodDeclaration;
 	}
 
 	@Override
+	public ClassDeclaration<?, C> getOwningClassDeclaration() {
+		return getDeclaration().getOwningDeclaration();
+	}
+
+	@Override
+	public Class<?> getDeclaringClass() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ClassDeclaration<?, ?> getClassDeclaration() {
+		return getDeclaration().getDeclaringClass();
+	}
+
+	@Override
 	public String getName() {
-		return getd;
+		return getDeclaration().getName();
 	}
 
 	@Override
@@ -90,23 +91,17 @@ public class MethodDefinition<C, T> implements MemberDefinition<C> {
 		return false;
 	}
 
-	public void validate() {
-		/*
-		 * TODO check all expressions in body are in scope
-		 */
-	}
-
 	protected T invoke(StatementExecutor state, Object[] arguments) {
 		int i = 0;
-		for (LocalVariableExpression<?> parameter : parameters) {
-			setParameterUnsafe(state, parameter.getId(), arguments[i]);
-		}
+		getDeclaration().getParameters().forEach(
+				parameter -> setParameterUnsafe(state, parameter.getSignature(), arguments[i]));
 
 		return state.executeBlock(body);
+
 	}
 
 	@SuppressWarnings("unchecked")
-	private static <T> void setParameterUnsafe(StatementExecutor state, LocalVariable<T> parameter, Object argument) {
+	private static <T> void setParameterUnsafe(StatementExecutor state, VariableSignature<T> parameter, Object argument) {
 		state.declareLocal(parameter);
 		state.setEnclosedLocal(parameter, (T) argument);
 	}
@@ -116,12 +111,11 @@ public class MethodDefinition<C, T> implements MemberDefinition<C> {
 		return null;
 	}
 
-	public MethodDefinition<C, T> withBody(Function<Block<T>, Block<T>> object) {
-		// TODO Auto-generated method stub
-		return null;
+	public MethodDefinition<C, T> withBody(Function<Block<T>, Block<T>> bodyFunction) {
+		return new MethodDefinition<>(this, bodyFunction.apply(body));
 	}
 
 	public <U> LocalVariableExpression<U> getParameter(VariableSignature<U> parameterSignature) {
-		return null;
+		return getDeclaration().getParameter(parameterSignature);
 	}
 }

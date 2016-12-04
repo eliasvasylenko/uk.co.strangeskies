@@ -2,10 +2,14 @@ package uk.co.strangeskies.reflection.codegen;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
+import static java.util.stream.Collectors.toSet;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Target;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -24,13 +28,13 @@ import java.util.stream.Stream;
  *          a self-bound over the type of the implementing class
  */
 public abstract class AnnotatedSignature<S extends AnnotatedSignature<S>> implements Signature<S> {
-	protected final Collection<? extends Annotation> annotations;
+	protected final Set<Annotation> annotations;
 
 	public AnnotatedSignature() {
 		annotations = emptySet();
 	}
 
-	protected AnnotatedSignature(Collection<? extends Annotation> annotations) {
+	protected AnnotatedSignature(Set<Annotation> annotations) {
 		this.annotations = annotations;
 	}
 
@@ -57,7 +61,7 @@ public abstract class AnnotatedSignature<S extends AnnotatedSignature<S>> implem
 	 *         with the given annotations
 	 */
 	public S withAnnotations(Annotation... annotations) {
-		return withAnnotatedDeclarationData(asList(annotations));
+		return withAnnotations(asList(annotations));
 	}
 
 	/**
@@ -76,8 +80,25 @@ public abstract class AnnotatedSignature<S extends AnnotatedSignature<S>> implem
 	 *         with the given annotations
 	 */
 	public S withAnnotations(Collection<? extends Annotation> annotations) {
-		return withAnnotatedDeclarationData(annotations);
+		return withAnnotatedDeclarationData(new HashSet<>(annotations));
 	}
 
-	protected abstract S withAnnotatedDeclarationData(Collection<? extends Annotation> annotations);
+	protected abstract S withAnnotatedDeclarationData(Set<Annotation> annotations);
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == this)
+			return true;
+		if (!(obj instanceof AnnotatedSignature<?>))
+			return false;
+
+		AnnotatedSignature<?> that = (AnnotatedSignature<?>) obj;
+
+		return this.getAnnotations().collect(toSet()).equals(that.getAnnotations().collect(toSet()));
+	}
+
+	@Override
+	public int hashCode() {
+		return getAnnotations().mapToInt(Objects::hashCode).reduce(0, (a, b) -> a ^ b);
+	}
 }
