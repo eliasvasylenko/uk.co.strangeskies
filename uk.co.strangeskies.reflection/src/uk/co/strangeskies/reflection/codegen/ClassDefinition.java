@@ -184,7 +184,6 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 	private final Map<MethodDeclaration<E, ?>, MethodDefinition<E, ?>> staticMethodDefinitions;
 	private final Map<MethodDeclaration<T, ?>, MethodDefinition<T, ?>> methodDefinitions;
 
-	@SuppressWarnings("unchecked")
 	protected ClassDefinition(ClassDeclaration<E, T> declaration) {
 		super(declaration);
 
@@ -202,7 +201,7 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 			Map<MethodDeclaration<T, ?>, MethodDefinition<T, ?>> methodDefinitions) {
 		super(definition.getDeclaration());
 
-		typeName = definition.getName();
+		this.typeName = definition.typeName;
 
 		this.constructorDefinitions = constructorDefinitions;
 		this.staticMethodDefinitions = staticMethodDefinitions;
@@ -230,6 +229,8 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 
 	@SuppressWarnings("unchecked")
 	public ReflectiveInstance<E, T> instantiate(ClassLoader classLoader, Collection<? extends Object> arguments) {
+		validate();
+
 		Set<Class<?>> rawTypes = getDeclaration().getSuperTypes().flatMap(t -> t.getRawTypes()).collect(
 				Collectors.toCollection(LinkedHashSet::new));
 
@@ -260,6 +261,29 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 		reflectiveInstance.instance = (T) instance;
 
 		return instance;
+	}
+
+	private void validate() {
+		getDeclaration().methodDeclarations().filter(m -> !methodDefinitions.keySet().contains(m)).findAny().ifPresent(
+				m -> {
+					throw new ReflectionException(p -> p.mustImplementMethod(getDeclaration(), m));
+				});
+
+		getDeclaration()
+				.staticMethodDeclarations()
+				.filter(m -> !staticMethodDefinitions.keySet().contains(m))
+				.findAny()
+				.ifPresent(m -> {
+					throw new ReflectionException(p -> p.mustImplementMethod(getDeclaration(), m));
+				});
+
+		getDeclaration()
+				.constructorDeclarations()
+				.filter(m -> !constructorDefinitions.keySet().contains(m))
+				.findAny()
+				.ifPresent(m -> {
+					throw new ReflectionException(p -> p.mustImplementMethod(getDeclaration(), m));
+				});
 	}
 
 	@Override

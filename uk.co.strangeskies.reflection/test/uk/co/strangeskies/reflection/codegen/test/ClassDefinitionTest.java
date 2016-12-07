@@ -33,6 +33,7 @@
 package uk.co.strangeskies.reflection.codegen.test;
 
 import static uk.co.strangeskies.reflection.codegen.ClassSignature.classSignature;
+import static uk.co.strangeskies.reflection.codegen.ErasedMethodSignature.erasedMethodSignature;
 import static uk.co.strangeskies.reflection.codegen.VariableSignature.variableSignature;
 
 import java.util.Set;
@@ -44,7 +45,6 @@ import org.junit.Test;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.codegen.ClassDeclaration;
 import uk.co.strangeskies.reflection.codegen.ClassDefinition;
-import uk.co.strangeskies.reflection.codegen.ErasedMethodSignature;
 import uk.co.strangeskies.reflection.codegen.VariableSignature;
 import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.TypeToken;
@@ -100,7 +100,7 @@ public class ClassDefinitionTest {
 		Function<String, String> instance = classDeclaration
 				.define()
 				.defineMethod(
-						new ErasedMethodSignature("apply", String.class),
+						erasedMethodSignature("apply", String.class),
 						STRING_TYPE,
 						d -> d.withBody(
 								b -> b.withReturnStatement(
@@ -151,6 +151,6 @@ public class ClassDefinitionTest {
 
 	@Test(expected = ReflectionException.class)
 	public void defineWithAbstractMethodTest() {
-		classSignature(TEST_CLASS_NAME).withSuperType(new TypeToken<ObjectMethod>() {}).declare().define();
+		classSignature(TEST_CLASS_NAME).withSuperType(new TypeToken<ObjectMethod>() {}).declare().define().instantiate();
 	}
 }
