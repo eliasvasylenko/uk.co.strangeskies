@@ -1234,18 +1234,6 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	}
 
 	/**
-	 * Convenience method to return a {@link TypedObject} wrapper around an object
-	 * instance of this type.
-	 * 
-	 * @param object
-	 *          The object to wrap with a typed container
-	 * @return A typed container for the given object
-	 */
-	public TypedObject<T> typedObject(T object) {
-		return new TypedObject<>(this, object);
-	}
-
-	/**
 	 * @param object
 	 *          an object to cast to this type
 	 * @return the given object cast to a reference of this type
