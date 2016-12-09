@@ -39,6 +39,7 @@ import static java.util.stream.Stream.of;
 import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
 import static uk.co.strangeskies.reflection.BoundSet.emptyBoundSet;
 import static uk.co.strangeskies.reflection.Methods.findMethod;
+import static uk.co.strangeskies.reflection.ParameterizedTypes.getAllTypeArguments;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardExtending;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardSuper;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.overConstructor;
@@ -1123,6 +1124,20 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 
 	private TypeToken<?> withTypeArgument(TypeVariable<?> parameter, Type argument) {
 		return new TypeToken<>(getBounds(), new TypeSubstitution().where(parameter, argument).resolve(getType()));
+	}
+
+	@SuppressWarnings("unchecked")
+	public <U> TypeToken<U> resolveTypeArgument(TypeParameter<U> parameter) {
+		if (!(getType() instanceof ParameterizedType)) {
+			throw new ReflectionException(p -> p.canotResolveTypeVariable(parameter.getType(), this));
+		} else {
+			return (TypeToken<U>) overType(
+					getAllTypeArguments((ParameterizedType) getType())
+							.filter(e -> e.getKey().equals(parameter.getType()))
+							.findAny()
+							.orElseThrow(() -> new ReflectionException(p -> p.canotResolveTypeVariable(parameter.getType(), this)))
+							.getValue());
+		}
 	}
 
 	/**

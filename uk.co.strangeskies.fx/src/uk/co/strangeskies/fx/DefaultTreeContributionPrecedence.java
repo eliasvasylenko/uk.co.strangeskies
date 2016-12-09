@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.fx;
 
+import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.LOOSE_COMPATIBILILTY;
+
 import java.util.Comparator;
 
 import javafx.util.Pair;
@@ -48,10 +50,13 @@ public class DefaultTreeContributionPrecedence implements Comparator<Pair<TreeCo
 		int precedence = first.getValue() - second.getValue();
 
 		if (precedence == 0) {
-			if (second.getKey().getDataType().isAssignableFrom(first.getKey().getDataType())) {
+			if (second.getKey().getDataType().satisfiesConstraintFrom(LOOSE_COMPATIBILILTY, first.getKey().getDataType())) {
 				precedence = 1;
 
-			} else if (first.getKey().getDataType().isAssignableFrom(second.getKey().getDataType())) {
+			} else if (first
+					.getKey()
+					.getDataType()
+					.satisfiesConstraintFrom(LOOSE_COMPATIBILILTY, second.getKey().getDataType())) {
 				precedence = -1;
 			}
 		}

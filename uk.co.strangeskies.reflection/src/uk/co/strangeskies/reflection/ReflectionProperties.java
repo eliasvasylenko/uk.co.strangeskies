@@ -181,4 +181,6 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 	Localized<String> cannotFindMethodOn(Class<?> superClass, ErasedMethodSignature erasedMethodSignature);
 
 	Localized<String> incompatibleReturnType(TypeToken<?> returnType, MethodDeclaration<?, ?> methodDeclaration);
+
+	Localized<String> canotResolveTypeVariable(TypeVariable<?> parameter, TypeToken<?> type);
 }
