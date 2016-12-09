@@ -16,6 +16,7 @@ import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.declareSta
 import static uk.co.strangeskies.reflection.token.TypeToken.overType;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.entriesToMap;
 
+import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
@@ -23,8 +24,10 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.ReflectionException;
+import uk.co.strangeskies.reflection.Types;
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
 import uk.co.strangeskies.reflection.token.TypeToken;
+import uk.co.strangeskies.utilities.collection.StreamUtilities;
 
 public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignature<T>>
 		implements Declaration<ClassSignature<T>> {
@@ -163,7 +166,66 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 		return declaration;
 	}
 
-	public ClassDefinition<E, ? extends T> define() {
+	@SuppressWarnings("unchecked")
+	public MethodDeclaration<E, T> getConstructorDeclaration(ConstructorSignature signature) {
+		MethodDeclaration<E, ?> declaration = getConstructorDeclaration(
+				signature
+						.getParameters()
+						.map(VariableSignature::getType)
+						.map(AnnotatedType::getType)
+						.map(Types::getRawType)
+						.toArray(Class<?>[]::new));
+
+		if (!StreamUtilities.equals(
+				signature.getParameters().map(VariableSignature::getType),
+				declaration.getSignature().getParameters().map(VariableSignature::getType))) {
+			throw new ReflectionException(p -> p.cannotFindMethodOn(superClass, signature.erased()));
+		}
+
+		return (MethodDeclaration<E, T>) declaration;
+	}
+
+	@SuppressWarnings("unchecked")
+	public <U> MethodDeclaration<E, U> getStaticMethodDeclaration(MethodSignature<U> signature) {
+		MethodDeclaration<E, ?> declaration = getStaticMethodDeclaration(
+				signature.getName(),
+				signature
+						.getParameters()
+						.map(VariableSignature::getType)
+						.map(AnnotatedType::getType)
+						.map(Types::getRawType)
+						.toArray(Class<?>[]::new));
+
+		if (!StreamUtilities.equals(
+				signature.getParameters().map(VariableSignature::getType),
+				declaration.getSignature().getParameters().map(VariableSignature::getType))) {
+			throw new ReflectionException(p -> p.cannotFindMethodOn(superClass, signature.erased()));
+		}
+
+		return (MethodDeclaration<E, U>) declaration;
+	}
+
+	@SuppressWarnings("unchecked")
+	public <U> MethodDeclaration<T, U> getMethodDeclaration(MethodSignature<U> signature) {
+		MethodDeclaration<T, ?> declaration = getMethodDeclaration(
+				signature.getName(),
+				signature
+						.getParameters()
+						.map(VariableSignature::getType)
+						.map(AnnotatedType::getType)
+						.map(Types::getRawType)
+						.toArray(Class<?>[]::new));
+
+		if (!StreamUtilities.equals(
+				signature.getParameters().map(VariableSignature::getType),
+				declaration.getSignature().getParameters().map(VariableSignature::getType))) {
+			throw new ReflectionException(p -> p.cannotFindMethodOn(superClass, signature.erased()));
+		}
+
+		return (MethodDeclaration<T, U>) declaration;
+	}
+
+	public ClassDefinition<E, T> define() {
 		return new ClassDefinition<>(this);
 	}
 

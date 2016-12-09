@@ -33,11 +33,9 @@
 package uk.co.strangeskies.reflection.codegen.test;
 
 import static uk.co.strangeskies.reflection.codegen.ClassSignature.classSignature;
-import static uk.co.strangeskies.reflection.codegen.ErasedMethodSignature.erasedMethodSignature;
+import static uk.co.strangeskies.reflection.codegen.LiteralExpression.literal;
+import static uk.co.strangeskies.reflection.codegen.MethodSignature.methodSignature;
 import static uk.co.strangeskies.reflection.codegen.VariableSignature.variableSignature;
-
-import java.util.Set;
-import java.util.function.Function;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -45,66 +43,91 @@ import org.junit.Test;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.codegen.ClassDeclaration;
 import uk.co.strangeskies.reflection.codegen.ClassDefinition;
+import uk.co.strangeskies.reflection.codegen.MethodDeclaration;
+import uk.co.strangeskies.reflection.codegen.MethodSignature;
 import uk.co.strangeskies.reflection.codegen.VariableSignature;
 import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 @SuppressWarnings("javadoc")
 public class ClassDefinitionTest {
+	private interface Func<A, B> {
+		B apply(A value);
+	}
+
+	private interface Default {
+		@SuppressWarnings("unused")
+		default void method() {}
+	}
+
 	private static final String TEST_CLASS_NAME = ClassDefinitionTest.class.getPackage().getName() + ".SelfSet";
 	private static final TypeToken<String> STRING_TYPE = new TypeToken<String>() {};
 
-	public interface StringMethod {
-		String method(String parameter);
-	}
-
-	public interface ObjectMethod {
-		String method(Object parameter);
-	}
-
-	public interface NumberMethod<N> {
-		Number method(N parameter);
-	}
-
-	public interface TMethod<T> {
-		T method(String parameter);
-	}
-
-	public interface NumberMethodSubType extends NumberMethod<String> {}
-
+	@Test
 	public void runnableClassInvocationTest() {
 		ClassDefinition<Void, ? extends Runnable> classDefinition = classSignature(TEST_CLASS_NAME)
 				.withSuperType(Runnable.class)
 				.declare()
-				.define();
+				.define()
+				.defineMethod(methodSignature("run"), d -> d.withBody(b -> b.withReturnStatement()));
 
 		Runnable instance = classDefinition.instantiate().cast();
 
 		instance.run();
 	}
 
+	private ExecutableToken<String, String> concatMethod() {
+		return STRING_TYPE.methods().named("concat").resolveOverload(STRING_TYPE).withTargetType(STRING_TYPE);
+	}
+
 	@Test
-	public void functionClassInvocationTest() {
-		ExecutableToken<? super String, String> concatMethod = STRING_TYPE
-				.methods()
-				.named("concat")
-				.resolveOverload(STRING_TYPE)
-				.withTargetType(STRING_TYPE);
+	public void functionClassExplicitMethpdDeclarationTest() {
+		VariableSignature<String> applyParameter = variableSignature("value", STRING_TYPE);
+		MethodSignature<String> applyMethod = methodSignature("apply").withReturnType(STRING_TYPE).withParameters(
+				applyParameter);
 
-		VariableSignature<String> parameterSignature = variableSignature("string", STRING_TYPE);
-
-		ClassDeclaration<Void, ? extends Function<String, String>> classDeclaration = classSignature(TEST_CLASS_NAME)
-				.withSuperType(new TypeToken<Function<String, String>>() {})
+		ClassDeclaration<Void, ? extends Func<String, String>> classDeclaration = classSignature(TEST_CLASS_NAME)
+				.withSuperType(new TypeToken<Func<String, String>>() {})
+				.declareMethod(applyMethod)
 				.declare();
 
-		Function<String, String> instance = classDeclaration
+		Func<String, String> instance = classDeclaration
 				.define()
 				.defineMethod(
-						erasedMethodSignature("apply", String.class),
-						STRING_TYPE,
+						applyMethod,
 						d -> d.withBody(
 								b -> b.withReturnStatement(
-										d.getParameter(parameterSignature).invokeMethod(concatMethod, d.getParameter(parameterSignature)))))
+										d.getParameter(applyParameter).invokeMethod(concatMethod(), literal("append")))))
+				.instantiate()
+				.cast();
+
+		String result = instance.apply("string");
+
+		Assert.assertEquals("stringappend", result);
+	}
+
+	@Test
+	public void functionClassInvocationTest() {
+		ClassDeclaration<Void, ? extends Func<String, String>> classDeclaration = classSignature(TEST_CLASS_NAME)
+				.withSuperType(new TypeToken<Func<String, String>>() {})
+				.declare();
+
+		defineFunctionClass(classDeclaration);
+	}
+
+	private <F extends Func<String, String>> void defineFunctionClass(ClassDeclaration<Void, F> classDeclaration) {
+		VariableSignature<String> applyParameter = variableSignature("value", STRING_TYPE);
+
+		MethodDeclaration<F, String> applyMethod = classDeclaration
+				.getMethodDeclaration(methodSignature("apply").withReturnType(String.class).withParameters(applyParameter));
+
+		Func<String, String> instance = classDeclaration
+				.define()
+				.defineMethod(
+						applyMethod,
+						d -> d.withBody(
+								b -> b.withReturnStatement(
+										d.getParameter(applyParameter).invokeMethod(concatMethod(), d.getParameter(applyParameter)))))
 				.instantiate()
 				.cast();
 
@@ -114,43 +137,12 @@ public class ClassDefinitionTest {
 	}
 
 	@Test(expected = ReflectionException.class)
-	public void supertypesWithIncompatibleParameterizationsTest() {
-		classSignature(TEST_CLASS_NAME)
-				.withSuperType(new TypeToken<Set<String>>() {}, new TypeToken<Iterable<Number>>() {})
-				.declare();
-	}
-
-	@Test(expected = ReflectionException.class)
-	public void inheritedMethodFromParameterizedTypeCollisionTest() {
-		classSignature(TEST_CLASS_NAME)
-				.withSuperType(new TypeToken<StringMethod>() {}, new TypeToken<NumberMethod<String>>() {})
-				.declare();
-	}
-
-	@Test(expected = ReflectionException.class)
-	public void inheritedMethodCollisionTest() {
-		classSignature(TEST_CLASS_NAME)
-				.withSuperType(new TypeToken<ObjectMethod>() {}, new TypeToken<NumberMethod<String>>() {})
-				.declare();
-	}
-
-	@Test(expected = ReflectionException.class)
-	public void indirectlyInheritedMethodCollisionTest() {
-		classSignature(TEST_CLASS_NAME)
-				.withSuperType(new TypeToken<ObjectMethod>() {}, new TypeToken<NumberMethodSubType>() {})
-				.declare();
+	public void defineWithAbstractMethodTest() {
+		classSignature(TEST_CLASS_NAME).withSuperType(Runnable.class).declare().define().instantiate();
 	}
 
 	@Test
-	public void simpleOverrideMethodTest() {
-		ClassDeclaration<?, ?> declaration = classSignature(TEST_CLASS_NAME)
-				.withSuperType(new TypeToken<ObjectMethod>() {})
-				.declare();
-		declaration.getMethodDeclaration("method", Object.class);
-	}
-
-	@Test(expected = ReflectionException.class)
-	public void defineWithAbstractMethodTest() {
-		classSignature(TEST_CLASS_NAME).withSuperType(new TypeToken<ObjectMethod>() {}).declare().define().instantiate();
+	public void defineWithDefaultMethodTest() {
+		classSignature(TEST_CLASS_NAME).withSuperType(Default.class).declare().define().instantiate();
 	}
 }

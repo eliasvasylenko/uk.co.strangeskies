@@ -42,7 +42,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.Reified;
 import uk.co.strangeskies.reflection.token.TypeToken;
@@ -264,10 +263,9 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 	}
 
 	private void validate() {
-		getDeclaration().methodDeclarations().filter(m -> !methodDefinitions.keySet().contains(m)).findAny().ifPresent(
-				m -> {
-					throw new ReflectionException(p -> p.mustImplementMethod(getDeclaration(), m));
-				});
+		getDeclaration().methodDeclarations().filter(m -> !methodDefinitions.containsKey(m)).findAny().ifPresent(m -> {
+			throw new ReflectionException(p -> p.mustImplementMethod(getDeclaration(), m));
+		});
 
 		getDeclaration()
 				.staticMethodDeclarations()
@@ -293,14 +291,9 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 
 	@SuppressWarnings("unchecked")
 	public <U> ClassDefinition<E, T> defineMethod(
-			ErasedMethodSignature erasedSignature,
-			TypeToken<U> returnType,
+			MethodSignature<U> signature,
 			Function<MethodDefinition<T, U>, MethodDefinition<T, U>> definitionFunction) {
-		MethodDeclaration<T, ?> methodDeclaration = getDeclaration()
-				.getMethodDeclaration(erasedSignature.getName(), erasedSignature.getParameterClasses());
-
-		if (!methodDeclaration.getReturnType().satisfiesConstraintTo(Kind.LOOSE_COMPATIBILILTY, returnType))
-			throw new ReflectionException(p -> p.incompatibleReturnType(returnType, methodDeclaration));
+		MethodDeclaration<T, ?> methodDeclaration = getDeclaration().getMethodDeclaration(signature);
 
 		return defineMethod((MethodDeclaration<T, U>) methodDeclaration, definitionFunction);
 	}

@@ -42,6 +42,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
@@ -66,6 +67,19 @@ import uk.co.strangeskies.utilities.function.ThrowingSupplier;
  */
 public class StreamUtilities {
 	private StreamUtilities() {}
+
+	public static boolean equals(Stream<?> first, Stream<?> second) {
+		Iterator<?> firstIterator = first.iterator();
+		Iterator<?> secondIterator = second.iterator();
+
+		while (firstIterator.hasNext() && secondIterator.hasNext()) {
+			if (!Objects.equals(firstIterator.next(), secondIterator.next())) {
+				return false;
+			}
+		}
+
+		return !firstIterator.hasNext() && !secondIterator.hasNext();
+	}
 
 	public static <T> Stream<T> streamOptional(Optional<T> optional) {
 		return optional.map(Stream::of).orElse(Stream.empty());
