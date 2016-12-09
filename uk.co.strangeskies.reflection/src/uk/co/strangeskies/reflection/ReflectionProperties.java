@@ -47,6 +47,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import uk.co.strangeskies.reflection.codegen.ClassDeclaration;
 import uk.co.strangeskies.reflection.codegen.ErasedMethodSignature;
 import uk.co.strangeskies.reflection.codegen.MethodDeclaration;
 import uk.co.strangeskies.reflection.token.TypeToken;
@@ -183,4 +184,6 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 	Localized<String> incompatibleReturnType(TypeToken<?> returnType, MethodDeclaration<?, ?> methodDeclaration);
 
 	Localized<String> canotResolveTypeVariable(TypeVariable<?> parameter, TypeToken<?> type);
+
+	Localized<String> mustImplementMethod(ClassDeclaration<?, ?> declaration, MethodDeclaration<?, ?> method);
 }

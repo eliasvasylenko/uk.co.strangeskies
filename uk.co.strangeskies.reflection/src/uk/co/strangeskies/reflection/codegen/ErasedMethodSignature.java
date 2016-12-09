@@ -55,7 +55,7 @@ public class ErasedMethodSignature {
 	 * @param parameterClasses
 	 *          the erased type of the method signature
 	 */
-	public ErasedMethodSignature(String name, Class<?>... parameterClasses) {
+	private ErasedMethodSignature(String name, Class<?>... parameterClasses) {
 		this.name = name;
 		this.parameterClasses = parameterClasses;
 	}

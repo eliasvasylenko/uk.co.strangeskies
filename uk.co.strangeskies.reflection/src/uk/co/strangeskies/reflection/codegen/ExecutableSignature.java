@@ -37,6 +37,7 @@ import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
 import static uk.co.strangeskies.reflection.Types.getRawType;
+import static uk.co.strangeskies.reflection.codegen.ErasedMethodSignature.erasedMethodSignature;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
@@ -67,7 +68,7 @@ public abstract class ExecutableSignature<S extends ExecutableSignature<S>> exte
 
 	public ErasedMethodSignature erased() {
 		if (erasedSignature == null) {
-			this.erasedSignature = new ErasedMethodSignature(
+			this.erasedSignature = erasedMethodSignature(
 					getName(),
 					parameters.stream().map(v -> getRawType(v.getType().getType())).toArray(Class<?>[]::new));
 		}

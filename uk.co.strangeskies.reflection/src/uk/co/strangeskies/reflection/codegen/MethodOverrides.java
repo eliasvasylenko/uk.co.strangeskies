@@ -3,6 +3,7 @@ package uk.co.strangeskies.reflection.codegen;
 import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Arrays.stream;
 import static java.util.stream.Stream.concat;
+import static uk.co.strangeskies.reflection.codegen.ErasedMethodSignature.erasedMethodSignature;
 import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.declareMethod;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.overMethod;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.streamOptional;
@@ -70,7 +71,7 @@ public class MethodOverrides<T> {
 	}
 
 	protected void inheritMethod(Method method) {
-		ErasedMethodSignature overridingSignature = new ErasedMethodSignature(
+		ErasedMethodSignature overridingSignature = erasedMethodSignature(
 				method.getName(),
 				getInvocable(method).getParameters().map(ExecutableParameter::getType).map(Types::getRawType).toArray(
 						Class<?>[]::new));
@@ -80,7 +81,7 @@ public class MethodOverrides<T> {
 		override.inherit(method);
 
 		MethodOverride<T> mergeOverride = methods
-				.put(new ErasedMethodSignature(method.getName(), method.getParameterTypes()), override);
+				.put(erasedMethodSignature(method.getName(), method.getParameterTypes()), override);
 		if (mergeOverride != null && mergeOverride != override) {
 			for (Method mergeMethod : mergeOverride.getMethods()) {
 				override.inherit(mergeMethod);
