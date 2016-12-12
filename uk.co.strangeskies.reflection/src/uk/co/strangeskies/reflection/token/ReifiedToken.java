@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.reflection.token;
 
+import static uk.co.strangeskies.reflection.token.TypedObject.typedObject;
+
 import java.lang.reflect.Type;
 
 import uk.co.strangeskies.reflection.Reified;
@@ -63,6 +65,6 @@ public interface ReifiedToken<S extends ReifiedToken<S>> extends Reified, Self<S
 	 * @return this object as a {@link TypedObject}
 	 */
 	default TypedObject<S> asTypedObject() {
-		return getThisTypeToken().typedObject(getThis());
+		return typedObject(getThis(), getThisTypeToken());
 	}
 }

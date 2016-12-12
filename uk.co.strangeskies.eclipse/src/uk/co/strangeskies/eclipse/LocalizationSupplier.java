@@ -32,6 +32,10 @@
  */
 package uk.co.strangeskies.eclipse;
 
+import static uk.co.strangeskies.reflection.ParameterizedTypes.getAllTypeArguments;
+import static uk.co.strangeskies.reflection.token.TypeToken.overType;
+
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.List;
@@ -51,7 +55,6 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
 import uk.co.strangeskies.reflection.Types;
-import uk.co.strangeskies.reflection.token.TypeToken;
 import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertyLoader;
 import uk.co.strangeskies.text.properties.PropertyLoaderException;
@@ -127,8 +130,9 @@ public class LocalizationSupplier extends ExtendedObjectSupplier {
 		if (!(accessor instanceof Class) || !Properties.class.isAssignableFrom((Class<?>) accessor))
 			return false;
 
-		List<Map.Entry<TypeVariable<?>, Type>> accessorParameters = TypeToken.overType(accessor)
-				.resolveSupertype(Properties.class).getAllTypeArguments().collect(Collectors.toList());
+		List<Map.Entry<TypeVariable<?>, Type>> accessorParameters = getAllTypeArguments(
+				(ParameterizedType) overType(accessor).resolveSupertype(Properties.class).getType())
+						.collect(Collectors.toList());
 
 		if (accessorParameters.size() != 1)
 			return false;

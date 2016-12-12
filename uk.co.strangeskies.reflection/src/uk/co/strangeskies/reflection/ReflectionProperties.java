@@ -183,5 +183,7 @@ public interface ReflectionProperties extends Properties<ReflectionProperties> {
 
 	Localized<String> incompatibleReturnType(TypeToken<?> returnType, MethodDeclaration<?, ?> methodDeclaration);
 
+	Localized<String> canotResolveTypeVariable(TypeVariable<?> parameter, TypeToken<?> type);
+
 	Localized<String> mustImplementMethod(ClassDeclaration<?, ?> declaration, MethodDeclaration<?, ?> method);
 }

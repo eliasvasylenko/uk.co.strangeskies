@@ -39,6 +39,7 @@ import static java.util.stream.Stream.of;
 import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
 import static uk.co.strangeskies.reflection.BoundSet.emptyBoundSet;
 import static uk.co.strangeskies.reflection.Methods.findMethod;
+import static uk.co.strangeskies.reflection.ParameterizedTypes.getAllTypeArguments;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardExtending;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardSuper;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.overConstructor;
@@ -1125,6 +1126,20 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 		return new TypeToken<>(getBounds(), new TypeSubstitution().where(parameter, argument).resolve(getType()));
 	}
 
+	@SuppressWarnings("unchecked")
+	public <U> TypeToken<U> resolveTypeArgument(TypeParameter<U> parameter) {
+		if (!(getType() instanceof ParameterizedType)) {
+			throw new ReflectionException(p -> p.canotResolveTypeVariable(parameter.getType(), this));
+		} else {
+			return (TypeToken<U>) overType(
+					getAllTypeArguments((ParameterizedType) getType())
+							.filter(e -> e.getKey().equals(parameter.getType()))
+							.findAny()
+							.orElseThrow(() -> new ReflectionException(p -> p.canotResolveTypeVariable(parameter.getType(), this)))
+							.getValue());
+		}
+	}
+
 	/**
 	 * This method will attempt to substitute any inference variables mentioned by
 	 * this type with their instantiations, if instantiations are available, and
@@ -1216,18 +1231,6 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 */
 	public AnnotatedType getAnnotatedDeclaration() {
 		return declaration;
-	}
-
-	/**
-	 * Convenience method to return a {@link TypedObject} wrapper around an object
-	 * instance of this type.
-	 * 
-	 * @param object
-	 *          The object to wrap with a typed container
-	 * @return A typed container for the given object
-	 */
-	public TypedObject<T> typedObject(T object) {
-		return new TypedObject<>(this, object);
 	}
 
 	/**

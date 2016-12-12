@@ -81,17 +81,28 @@ public class StreamUtilities {
 		return !firstIterator.hasNext() && !secondIterator.hasNext();
 	}
 
-	public static <T> Stream<T> streamOptional(Optional<T> optional) {
-		return optional.map(Stream::of).orElse(Stream.empty());
+	@SuppressWarnings("unchecked")
+	public static <T> Stream<T> upcastStream(Stream<? extends T> stream) {
+		return (Stream<T>) stream;
 	}
 
-	public static <T> Optional<T> tryOptional(ThrowingSupplier<T, ?> attempt) {
+	@SuppressWarnings("unchecked")
+	public static <T> Optional<T> upcastOptional(Optional<? extends T> stream) {
+		return (Optional<T>) stream;
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T> Stream<T> streamOptional(Optional<? extends T> optional) {
+		return (Stream<T>) optional.map(Stream::of).orElse(Stream.empty());
+	}
+
+	public static <T> Optional<T> tryOptional(ThrowingSupplier<? extends T, ?> attempt) {
 		return tryOptional(attempt, e -> {}, e -> {});
 	}
 
 	@SuppressWarnings("unchecked")
 	public static <T, E extends Exception> Optional<T> tryOptional(
-			ThrowingSupplier<T, E> attempt,
+			ThrowingSupplier<? extends T, E> attempt,
 			Consumer<? super Exception> runtimeExceptions,
 			Consumer<? super E> checkedExceptions) {
 		try {

@@ -33,6 +33,7 @@
 package uk.co.strangeskies.fx;
 
 import static java.util.stream.Collectors.toList;
+import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.LOOSE_COMPATIBILILTY;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -80,12 +81,14 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 	}
 
 	protected boolean hasChildrenContributions() {
-		return getData().contributions(new TypeToken<TreeChildContribution<? super T>>() {}).stream()
-				.anyMatch(c -> c.hasChildren(getData()));
+		return getData().contributions(new TypeToken<TreeChildContribution<? super T>>() {}).stream().anyMatch(
+				c -> c.hasChildren(getData()));
 	}
 
 	protected List<TypedObject<?>> getChildrenContributions() {
-		return getData().contributions(new TypeToken<TreeChildContribution<? super T>>() {}).stream()
+		return getData()
+				.contributions(new TypeToken<TreeChildContribution<? super T>>() {})
+				.stream()
 
 				.flatMap(c -> c.getChildren(getData()).stream())
 
@@ -206,8 +209,13 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 
 		@SuppressWarnings("unchecked")
 		protected void refreshContributions() {
-			itemContributions = treeView.getContributions().stream().filter(c -> c.getDataType().isAssignableFrom(type()))
-					.map(c -> (TreeContribution<? super U>) c).filter(c -> c.appliesTo(this)).collect(Collectors.toList());
+			itemContributions = treeView
+					.getContributions()
+					.stream()
+					.filter(c -> c.getDataType().satisfiesConstraintFrom(LOOSE_COMPATIBILILTY, type()))
+					.map(c -> (TreeContribution<? super U>) c)
+					.filter(c -> c.appliesTo(this))
+					.collect(Collectors.toList());
 		}
 
 		@Override
@@ -217,8 +225,12 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 
 		@Override
 		public <V extends TreeContribution<? super U>> List<V> contributions(TypeToken<V> type) {
-			return itemContributions.stream().filter(c -> TypeToken.overType(type.getRawType()).isAssignableFrom(c.getClass()))
-					.map(type::cast).collect(Collectors.toList());
+			return itemContributions
+					.stream()
+					.filter(
+							c -> TypeToken.overType(type.getRawType()).satisfiesConstraintFrom(LOOSE_COMPATIBILILTY, c.getClass()))
+					.map(type::cast)
+					.collect(Collectors.toList());
 		}
 
 		@Override

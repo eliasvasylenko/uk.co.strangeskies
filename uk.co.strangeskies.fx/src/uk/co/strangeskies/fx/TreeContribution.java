@@ -60,8 +60,11 @@ public interface TreeContribution<T> {
 	 * @return the type of data item to apply to
 	 */
 	default TypeToken<T> getDataType() {
-		return TypeToken.overType(getClass()).resolveSupertype(TreeContribution.class)
-				.resolveTypeArgument(new TypeParameter<T>() {}).infer();
+		return TypeToken
+				.overType(getClass())
+				.resolveSupertype(TreeContribution.class)
+				.resolveTypeArgument(new TypeParameter<T>() {})
+				.infer();
 	}
 
 	/**

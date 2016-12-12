@@ -18,6 +18,7 @@
 	org.eclipse.e4.ui.workbench,\
 	org.eclipse.e4.core.commands,\
 	org.eclipse.e4.core.contexts,\
+	org.eclipse.equinox.app,\
 	org.eclipse.equinox.common,\
 	org.eclipse.jface,\
 	org.eclipse.osgi,\
