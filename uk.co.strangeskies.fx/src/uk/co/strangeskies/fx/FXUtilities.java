@@ -270,6 +270,8 @@ public class FXUtilities {
 			}
 		});
 
+		list.addAll(component);
+
 		return FXCollections.unmodifiableObservableList(list);
 	}
 
@@ -305,6 +307,8 @@ public class FXUtilities {
 				set.retainAll(component);
 			}
 		});
+
+		set.addAll(component);
 
 		return FXCollections.unmodifiableObservableSet(set);
 	}
