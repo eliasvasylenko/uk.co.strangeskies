@@ -182,9 +182,8 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 			}
 
 			List<Type> finalTypeArguments = methodTypeArguments;
-			resolver
-					.inferOverTypeParameters(getMember(), containerArguments)
-					.forEach(i -> finalTypeArguments.add(i.getValue()));
+			resolver.inferOverTypeParameters(getMember(), containerArguments).forEach(
+					i -> finalTypeArguments.add(i.getValue()));
 		} else {
 			if (methodTypeArguments != null) {
 				throw new ReflectionException(p -> p.cannotParameterizeMethodOnRawType(getMember()));
@@ -411,12 +410,7 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 	private String toString(List<ExecutableParameter> parameters) {
 		StringBuilder builder = new StringBuilder();
 
-		if (isPrivate())
-			builder.append("private ");
-		else if (isProtected())
-			builder.append("protected ");
-		else if (isPublic())
-			builder.append("public ");
+		getVisibility().getKeyword().ifPresent(visibility -> builder.append(visibility).append(" "));
 
 		if (isNative())
 			builder.append("native ");
@@ -457,36 +451,11 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 		return Modifier.isAbstract(getMember().getModifiers());
 	}
 
-	@Override
-	public boolean isFinal() {
-		return Modifier.isFinal(getMember().getModifiers());
-	}
-
 	/**
 	 * @return true if the wrapped executable is native, false otherwise
 	 */
 	public boolean isNative() {
 		return Modifier.isNative(getMember().getModifiers());
-	}
-
-	@Override
-	public boolean isPrivate() {
-		return Modifier.isPrivate(getMember().getModifiers());
-	}
-
-	@Override
-	public boolean isProtected() {
-		return Modifier.isProtected(getMember().getModifiers());
-	}
-
-	@Override
-	public boolean isPublic() {
-		return Modifier.isPublic(getMember().getModifiers());
-	}
-
-	@Override
-	public boolean isStatic() {
-		return Modifier.isStatic(getMember().getModifiers());
 	}
 
 	/**

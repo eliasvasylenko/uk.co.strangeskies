@@ -2,8 +2,8 @@
 language: Python
 
 -buildpath:\
-	org.python:jython-standalone
-#	uk.co.strangeskies.scripting.api;version=snapshot
+	org.python:jython-standalone,\
+	uk.co.strangeskies.reflection.resource;version=snapshot
 
 -includeresource:\
 \

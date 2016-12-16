@@ -166,31 +166,6 @@ public class FieldToken<O, T> extends AbstractMemberToken<O, Field> {
 		return receiverType.getBounds();
 	}
 
-	@Override
-	public boolean isFinal() {
-		return Modifier.isFinal(getMember().getModifiers());
-	}
-
-	@Override
-	public boolean isPrivate() {
-		return Modifier.isPrivate(getMember().getModifiers());
-	}
-
-	@Override
-	public boolean isProtected() {
-		return Modifier.isProtected(getMember().getModifiers());
-	}
-
-	@Override
-	public boolean isPublic() {
-		return Modifier.isPublic(getMember().getModifiers());
-	}
-
-	@Override
-	public boolean isStatic() {
-		return Modifier.isStatic(getMember().getModifiers());
-	}
-
 	/**
 	 * @return true if the wrapped field is volatile, false otherwise
 	 */

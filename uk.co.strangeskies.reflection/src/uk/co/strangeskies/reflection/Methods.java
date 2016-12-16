@@ -33,6 +33,7 @@
 package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -86,5 +87,26 @@ public final class Methods {
 		}
 
 		return lastCalled.get();
+	}
+
+	/**
+	 * Determine the visibility of the method
+	 * 
+	 * @param method
+	 *          the method whose visibility we wish to determine
+	 * @return a {@link Visibility} object describing the method
+	 */
+	public static Visibility getVisibility(Method method) {
+		int modifiers = method.getModifiers();
+
+		if (Modifier.isPrivate(modifiers)) {
+			return Visibility.PRIVATE;
+		} else if (Modifier.isProtected(modifiers)) {
+			return Visibility.PROTECTED;
+		} else if (Modifier.isPublic(modifiers)) {
+			return Visibility.PUBLIC;
+		} else {
+			return Visibility.PACKAGE_PRIVATE;
+		}
 	}
 }
