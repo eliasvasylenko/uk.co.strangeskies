@@ -36,6 +36,8 @@ import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Set;
 
+import uk.co.strangeskies.reflection.Visibility;
+
 public class ConstructorSignature extends ExecutableSignature<ConstructorSignature> {
 	private static final ConstructorSignature EMPTY_SIGNATURE = new ConstructorSignature();
 	protected static final String INIT = "<init>";
@@ -44,33 +46,33 @@ public class ConstructorSignature extends ExecutableSignature<ConstructorSignatu
 		return EMPTY_SIGNATURE;
 	}
 
-	protected ConstructorSignature() {}
+	protected ConstructorSignature() {
+		super(INIT);
+	}
 
 	protected ConstructorSignature(
+			Set<Annotation> annotations,
+			Visibility visibility,
 			List<VariableSignature<?>> parameters,
-			List<TypeVariableSignature> typeVariables,
-			Set<Annotation> annotations) {
-		super(parameters, typeVariables, annotations);
+			List<TypeVariableSignature> typeVariables) {
+		super(INIT, annotations, visibility, parameters, typeVariables);
 	}
 
 	@Override
 	protected ConstructorSignature withExecutableSignatureData(
+			String name,
+			Set<Annotation> annotations,
+			Visibility visibility,
 			List<VariableSignature<?>> parameters,
-			List<TypeVariableSignature> typeVariables,
-			Set<Annotation> annotations) {
-		return new ConstructorSignature(parameters, typeVariables, annotations);
-	}
-
-	@Override
-	public String getName() {
-		return INIT;
+			List<TypeVariableSignature> typeVariables) {
+		return new ConstructorSignature(annotations, visibility, parameters, typeVariables);
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
 
-		appendTypeParameters(builder);
+		ParameterizedSignature.appendTypeParametersTo(this, builder);
 		builder.append(' ').append(getName());
 		appendParameters(builder);
 

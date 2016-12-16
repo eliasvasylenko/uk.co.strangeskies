@@ -33,12 +33,14 @@
 package uk.co.strangeskies.reflection.codegen;
 
 import static java.util.Arrays.stream;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toList;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -70,20 +72,22 @@ import uk.co.strangeskies.reflection.token.TypeToken;
  * @param <T>
  *          the intersection of the supertypes of the described class
  */
-public class ClassSignature<T> extends ParameterizedSignature<ClassSignature<T>> {
+public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<T>> {
+	public static ClassSignature<Object> classSignature(String name) {
+		return new ClassSignature<>(name);
+	}
+
 	private final String typeName;
 	private final Set<AnnotatedType> superType;
 
 	private final Set<ConstructorSignature> constructorSignatures;
 	private final Set<MethodSignature<?>> staticMethodSignatures;
 	private final Set<MethodSignature<?>> methodSignatures;
+	private final List<TypeVariableSignature> typeVariables;
+	private final Set<Annotation> annotations;
 
 	protected ClassSignature(String typeName) {
-		this.typeName = typeName;
-		this.superType = emptySet();
-		this.constructorSignatures = emptySet();
-		this.methodSignatures = emptySet();
-		this.staticMethodSignatures = emptySet();
+		this(typeName, emptySet(), emptySet(), emptySet(), emptySet(), emptyList(), emptySet());
 	}
 
 	protected ClassSignature(
@@ -94,31 +98,13 @@ public class ClassSignature<T> extends ParameterizedSignature<ClassSignature<T>>
 			Set<MethodSignature<?>> methodSignatures,
 			List<TypeVariableSignature> typeVariables,
 			Set<Annotation> annotations) {
-		super(typeVariables, annotations);
-
 		this.typeName = typeName;
 		this.superType = superType;
 		this.constructorSignatures = constructorSignatures;
 		this.methodSignatures = methodSignatures;
 		this.staticMethodSignatures = staticMethodSignatures;
-	}
-
-	public static ClassSignature<Object> classSignature(String name) {
-		return new ClassSignature<>(name);
-	}
-
-	@Override
-	protected ClassSignature<T> withParameterizedSignatureData(
-			List<TypeVariableSignature> typeVariables,
-			Set<Annotation> annotations) {
-		return new ClassSignature<>(
-				typeName,
-				superType,
-				constructorSignatures,
-				staticMethodSignatures,
-				methodSignatures,
-				typeVariables,
-				annotations);
+		this.typeVariables = typeVariables;
+		this.annotations = annotations;
 	}
 
 	protected String getTypeName() {
@@ -251,6 +237,40 @@ public class ClassSignature<T> extends ParameterizedSignature<ClassSignature<T>>
 				staticMethodSignatures,
 				methodSignatures,
 				typeVariables,
+				annotations);
+	}
+
+	@Override
+	public Stream<? extends Annotation> getAnnotations() {
+		return annotations.stream();
+	}
+
+	@Override
+	public ClassSignature<T> withAnnotations(Collection<? extends Annotation> annotations) {
+		return new ClassSignature<>(
+				typeName,
+				superType,
+				constructorSignatures,
+				staticMethodSignatures,
+				methodSignatures,
+				typeVariables,
+				new HashSet<>(annotations));
+	}
+
+	@Override
+	public Stream<? extends TypeVariableSignature> getTypeVariables() {
+		return typeVariables.stream();
+	}
+
+	@Override
+	public ClassSignature<T> withTypeVariables(Collection<? extends TypeVariableSignature> typeVariables) {
+		return new ClassSignature<>(
+				typeName,
+				superType,
+				constructorSignatures,
+				staticMethodSignatures,
+				methodSignatures,
+				new ArrayList<>(typeVariables),
 				annotations);
 	}
 

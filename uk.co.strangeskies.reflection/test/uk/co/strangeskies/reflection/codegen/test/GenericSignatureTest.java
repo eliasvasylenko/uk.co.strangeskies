@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.reflection.codegen.test;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterize;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterizeUnchecked;
@@ -41,8 +43,11 @@ import static uk.co.strangeskies.reflection.codegen.TypeVariableSignature.typeVa
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -60,18 +65,37 @@ import uk.co.strangeskies.utilities.Self;
 
 @SuppressWarnings("javadoc")
 public class GenericSignatureTest {
-	static class ParameterizedSignatureImpl extends ParameterizedSignature<ParameterizedSignatureImpl> {
-		public ParameterizedSignatureImpl() {}
+	static class ParameterizedSignatureImpl implements ParameterizedSignature<ParameterizedSignatureImpl> {
+		private final Set<Annotation> annotations;
+		private final List<TypeVariableSignature> typeVariables;
 
-		private ParameterizedSignatureImpl(List<TypeVariableSignature> typeVariables, Set<Annotation> annotations) {
-			super(typeVariables, annotations);
+		public ParameterizedSignatureImpl() {
+			this(emptySet(), emptyList());
+		}
+
+		private ParameterizedSignatureImpl(Set<Annotation> annotations, List<TypeVariableSignature> typeVariables) {
+			this.annotations = annotations;
+			this.typeVariables = typeVariables;
 		}
 
 		@Override
-		protected ParameterizedSignatureImpl withParameterizedSignatureData(
-				List<TypeVariableSignature> typeVariables,
-				Set<Annotation> annotations) {
-			return new ParameterizedSignatureImpl(typeVariables, annotations);
+		public Stream<? extends Annotation> getAnnotations() {
+			return annotations.stream();
+		}
+
+		@Override
+		public ParameterizedSignatureImpl withAnnotations(Collection<? extends Annotation> annotations) {
+			return new ParameterizedSignatureImpl(new HashSet<>(annotations), typeVariables);
+		}
+
+		@Override
+		public Stream<? extends TypeVariableSignature> getTypeVariables() {
+			return typeVariables.stream();
+		}
+
+		@Override
+		public ParameterizedSignatureImpl withTypeVariables(Collection<? extends TypeVariableSignature> typeVariables) {
+			return new ParameterizedSignatureImpl(annotations, new ArrayList<>(typeVariables));
 		}
 	}
 

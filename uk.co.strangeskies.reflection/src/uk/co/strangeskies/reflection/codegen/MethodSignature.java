@@ -38,9 +38,11 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Type;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
+import uk.co.strangeskies.reflection.Visibility;
 import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
@@ -58,37 +60,34 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 				.withParameters(executableToken.getParameters().map(VariableSignature::variableSignature).collect(toList()));
 	}
 
-	private final String methodName;
 	private final AnnotatedType returnType;
 
 	protected MethodSignature(String methodName) {
-		this.methodName = methodName;
+		super(methodName);
+
 		this.returnType = AnnotatedTypes.annotated(void.class);
 	}
 
 	protected MethodSignature(
-			String methodName,
+			String name,
+			Set<Annotation> annotations,
+			Visibility visibility,
 			List<VariableSignature<?>> parameters,
-			AnnotatedType returnType,
 			List<TypeVariableSignature> typeVariables,
-			Set<Annotation> annotations) {
-		super(parameters, typeVariables, annotations);
+			AnnotatedType returnType) {
+		super(name, annotations, visibility, parameters, typeVariables);
 
-		this.methodName = methodName;
 		this.returnType = returnType;
 	}
 
 	@Override
 	protected MethodSignature<T> withExecutableSignatureData(
+			String name,
+			Set<Annotation> annotations,
+			Visibility visibility,
 			List<VariableSignature<?>> parameters,
-			List<TypeVariableSignature> typeVariables,
-			Set<Annotation> annotations) {
-		return new MethodSignature<>(methodName, parameters, returnType, typeVariables, annotations);
-	}
-
-	@Override
-	public String getName() {
-		return methodName;
+			List<TypeVariableSignature> typeVariables) {
+		return new MethodSignature<>(name, annotations, visibility, parameters, typeVariables, returnType);
 	}
 
 	public AnnotatedType getReturnType() {
@@ -96,7 +95,7 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 	}
 
 	public MethodSignature<?> withReturnType(AnnotatedType type) {
-		return new MethodSignature<>(methodName, parameters, type, typeVariables, annotations);
+		return new MethodSignature<>(name, annotations, visibility, parameters, typeVariables, type);
 	}
 
 	public MethodSignature<?> withReturnType(Type type) {
@@ -117,10 +116,27 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
 
-		appendTypeParameters(builder);
-		builder.append(' ').append(returnType).append(' ').append(methodName);
+		ParameterizedSignature.appendTypeParametersTo(this, builder);
+		builder.append(' ').append(getReturnType()).append(' ').append(getName());
 		appendParameters(builder);
 
 		return builder.toString();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == this)
+			return true;
+		if (!(obj instanceof MethodSignature<?>))
+			return false;
+
+		MethodSignature<?> that = (MethodSignature<?>) obj;
+
+		return super.equals(that) && Objects.equals(this.getReturnType(), that.getReturnType());
+	}
+
+	@Override
+	public int hashCode() {
+		return super.hashCode() ^ this.getReturnType().hashCode();
 	}
 }

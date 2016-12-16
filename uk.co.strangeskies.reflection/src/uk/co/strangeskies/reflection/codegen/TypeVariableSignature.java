@@ -59,7 +59,7 @@ import uk.co.strangeskies.reflection.token.TypeToken;
  * 
  * @author Elias N Vasylenko
  */
-public class TypeVariableSignature extends AnnotatedSignature<TypeVariableSignature> {
+public class TypeVariableSignature implements AnnotatedSignature<TypeVariableSignature> {
 	static class Reference implements Type {
 		private final String name;
 
@@ -118,26 +118,30 @@ public class TypeVariableSignature extends AnnotatedSignature<TypeVariableSignat
 
 	private final String name;
 	private final Set<AnnotatedType> bounds;
+	private final Set<Annotation> annotations;
 
 	/**
 	 * @param name
 	 *          the name of the declared type parameter
 	 */
 	protected TypeVariableSignature(String name) {
-		this.name = name;
-		bounds = emptySet();
+		this(name, emptySet(), emptySet());
 	}
 
 	protected TypeVariableSignature(String name, Set<AnnotatedType> bounds, Set<Annotation> annotations) {
-		super(annotations);
-
 		this.name = name;
 		this.bounds = bounds;
+		this.annotations = annotations;
 	}
 
 	@Override
-	protected TypeVariableSignature withAnnotatedDeclarationData(Set<Annotation> annotations) {
-		return new TypeVariableSignature(name, bounds, annotations);
+	public Stream<? extends Annotation> getAnnotations() {
+		return annotations.stream();
+	}
+
+	@Override
+	public TypeVariableSignature withAnnotations(Collection<? extends Annotation> annotations) {
+		return new TypeVariableSignature(name, bounds, new HashSet<>(annotations));
 	}
 
 	public String getName() {
@@ -182,12 +186,12 @@ public class TypeVariableSignature extends AnnotatedSignature<TypeVariableSignat
 
 		TypeVariableSignature that = (TypeVariableSignature) obj;
 
-		return super.equals(that) && Objects.equals(this.getName(), that.getName())
+		return AnnotatedSignature.equals(this, that) && Objects.equals(this.getName(), that.getName())
 				&& Objects.equals(this.bounds, that.bounds);
 	}
 
 	@Override
 	public int hashCode() {
-		return super.hashCode() ^ this.getName().hashCode() ^ bounds.hashCode();
+		return AnnotatedSignature.hashCode(this) ^ this.getName().hashCode() ^ bounds.hashCode();
 	}
 }
