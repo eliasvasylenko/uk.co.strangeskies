@@ -68,6 +68,24 @@ import uk.co.strangeskies.utilities.function.ThrowingSupplier;
 public class StreamUtilities {
 	private StreamUtilities() {}
 
+	private static final BinaryOperator<Object> THROWING_SERIAL_COMBINER = (a, b) -> {
+		throw new IllegalArgumentException("Cannot combine parallel execution of serial stream");
+	};
+
+	@SuppressWarnings("unchecked")
+	public static <T> BinaryOperator<T> throwingSerialCombiner() {
+		return (BinaryOperator<T>) THROWING_SERIAL_COMBINER;
+	}
+
+	private static final BinaryOperator<Object> THROWING_MERGER = (a, b) -> {
+		throw new IllegalArgumentException("Cannot combine duplicate key %s");
+	};
+
+	@SuppressWarnings("unchecked")
+	public static <T> BinaryOperator<T> throwingMerger() {
+		return (BinaryOperator<T>) THROWING_MERGER;
+	}
+
 	public static boolean equals(Stream<?> first, Stream<?> second) {
 		Iterator<?> firstIterator = first.iterator();
 		Iterator<?> secondIterator = second.iterator();
@@ -127,12 +145,6 @@ public class StreamUtilities {
 
 	public static <A, B> Collector<Entry<? extends A, ? extends B>, ?, Map<A, B>> entriesToMap() {
 		return Collectors.toMap(Entry::getKey, Entry::getValue, throwingMerger(), LinkedHashMap::new);
-	}
-
-	public static <T> BinaryOperator<T> throwingMerger() {
-		return (u, v) -> {
-			throw new IllegalStateException(String.format("Duplicate key %s", u));
-		};
 	}
 
 	public static <A, B> Stream<Entry<A, B>> zip(Stream<A> first, Stream<B> second) {
@@ -364,7 +376,8 @@ public class StreamUtilities {
 			Stream<? extends T> stream,
 			Function<? super T, ? extends Stream<? extends T>> mapping,
 			Set<T> visited) {
-		return stream.filter(visited::add).flatMap(
-				s -> concat(of(s), flatMapRecursiveDistinct(mapping.apply(s), mapping, visited)));
+		return stream
+				.filter(visited::add)
+				.flatMap(s -> concat(of(s), flatMapRecursiveDistinct(mapping.apply(s), mapping, visited)));
 	}
 }

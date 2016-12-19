@@ -33,7 +33,7 @@
 package uk.co.strangeskies.fx;
 
 import java.util.Collection;
-import java.util.List;
+import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.token.TypedObject;
 
@@ -69,5 +69,5 @@ public interface TreeChildContribution<T> extends TreeContribution<T> {
 	 *          a data item in the tree
 	 * @return a list of children to be contributed
 	 */
-	<U extends T> List<TypedObject<?>> getChildren(TreeItemData<U> data);
+	<U extends T> Stream<TypedObject<?>> getChildren(TreeItemData<U> data);
 }

@@ -42,42 +42,42 @@ runrequires.eclipse.linux64:\
 runrequires.eclipse.help: false
 
 runrequires.eclipse.help.addon:\
-	${req;javax.el},\
-	${req;javax.servlet},\
-	${req;javax.servlet.jsp},\
-	${req;org.apache.commons.logging},\
-	${req;org.apache.lucene.analysis},\
-	${req;org.apache.lucene.core},\
-	${req;org.eclipse.ant.core},\
-	${req;org.eclipse.equinox.http.jetty},\
-	${req;org.eclipse.equinox.http.registry},\
-	${req;org.eclipse.equinox.http.servlet},\
-	${req;org.eclipse.equinox.jsp.jasper},\
-	${req;org.eclipse.equinox.jsp.jasper.registry},\
-	${req;org.eclipse.help},\
-	${req;org.eclipse.help.base},\
-	${req;org.eclipse.help.ui},\
-	${req;org.eclipse.help.webapp},\
-	${req;org.eclipse.platform.doc.user},\
-	${req;org.eclipse.search},\
-	${req;org.eclipse.ui.cheatsheets},\
-	${req;org.eclipse.ui.net}
+	${req\\;javax.el},\
+	${req\\;javax.servlet},\
+	${req\\;javax.servlet.jsp},\
+	${req\\;org.apache.commons.logging},\
+	${req\\;org.apache.lucene.analysis},\
+	${req\\;org.apache.lucene.core},\
+	${req\\;org.eclipse.ant.core},\
+	${req\\;org.eclipse.equinox.http.jetty},\
+	${req\\;org.eclipse.equinox.http.registry},\
+	${req\\;org.eclipse.equinox.http.servlet},\
+	${req\\;org.eclipse.equinox.jsp.jasper},\
+	${req\\;org.eclipse.equinox.jsp.jasper.registry},\
+	${req\\;org.eclipse.help},\
+	${req\\;org.eclipse.help.base},\
+	${req\\;org.eclipse.help.ui},\
+	${req\\;org.eclipse.help.webapp},\
+	${req\\;org.eclipse.platform.doc.user},\
+	${req\\;org.eclipse.search},\
+	${req\\;org.eclipse.ui.cheatsheets},\
+	${req\\;org.eclipse.ui.net}
 
 runrequires.eclipse.sdk: false
 
 runrequires.eclipse.sdk.addon:\
-	${req;org.eclipse.pde.runtime},\
-	${req;org.eclipse.sdk}
+	${req\\;org.eclipse.pde.runtime},\
+	${req\\;org.eclipse.sdk}
 
 runrequires.eclipse.p2: false
 
 runrequires.eclipse.p2.addon:\
-	${req;org.eclipse.equinox.p2.core},\
-	${req;org.eclipse.equinox.p2.engine},\
-	${req;org.eclipse.equinox.p2.jarprocessor},\
-	${req;org.eclipse.equinox.p2.metadata},\
-	${req;org.eclipse.equinox.p2.metadata.repository},\
-	${req;org.eclipse.equinox.p2.repository}
+	${req\\;org.eclipse.equinox.p2.core},\
+	${req\\;org.eclipse.equinox.p2.engine},\
+	${req\\;org.eclipse.equinox.p2.jarprocessor},\
+	${req\\;org.eclipse.equinox.p2.metadata},\
+	${req\\;org.eclipse.equinox.p2.metadata.repository},\
+	${req\\;org.eclipse.equinox.p2.repository}
 
 ## Run properties groups:
 -runproperties.eclipse:\

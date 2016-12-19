@@ -63,7 +63,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
-import uk.co.strangeskies.fx.FXUtilities;
+import uk.co.strangeskies.fx.FxUtilities;
 import uk.co.strangeskies.osgi.ServiceWiringException;
 import uk.co.strangeskies.text.properties.PropertyLoader;
 
@@ -138,11 +138,11 @@ public class ObservableServiceSupplier extends ExtendedObjectSupplier {
 		}
 
 		public ObservableList<T> getServiceList() {
-			return FXUtilities.map(references, serviceObjects::get);
+			return FxUtilities.map(references, serviceObjects::get);
 		}
 
 		public ObservableSet<T> getServiceSet() {
-			return FXUtilities.asSet(getServiceList());
+			return FxUtilities.asSet(getServiceList());
 		}
 
 		public ObservableValue<T> getServiceValue() {

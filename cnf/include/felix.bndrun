@@ -4,13 +4,6 @@
 	${req;org.apache.felix.gogo.runtime}
 
 -runrequires.felix.web=\
-	${req;org.apache.felix.http.whiteboard},\
-	${req;aQute.xray.plugin},\
-	${req;org.apache.felix.webconsole.plugins.event},\
-	${req;org.apache.felix.webconsole.plugins.memoryusage},\
-	${req;org.apache.felix.webconsole.plugins.scriptconsole},\
-	${req;org.apache.felix.webconsole.plugins.useradmin}
-
--runrequires.eclipselink.jpa=\
-	${req;org.apache.aries.jpa.eclipselink.adapter},\
-	${req;javax.persistence}
+	${req;osgi.enroute.webconsole.xray.provider},\
+	${req;org.apache.felix.webconsole},\
+	${req;org.apache.felix.http.jetty}

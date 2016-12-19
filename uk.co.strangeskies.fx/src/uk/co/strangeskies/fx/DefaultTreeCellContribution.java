@@ -32,7 +32,10 @@
  */
 package uk.co.strangeskies.fx;
 
+import static java.util.Optional.ofNullable;
+
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import javafx.scene.Node;
 import uk.co.strangeskies.reflection.token.TypeToken;
@@ -45,26 +48,48 @@ import uk.co.strangeskies.reflection.token.TypeToken;
  * @author Elias N Vasylenko
  */
 public class DefaultTreeCellContribution implements TreeCellContribution<Object> {
+	class CellTexts<U> {
+		private final Supplier<String> text;
+		private final Supplier<String> supplementalText;
+
+		public CellTexts(TreeTextContribution<? super U> contribution, TreeItemData<U> data) {
+			this.text = () -> contribution.getText(data);
+			this.supplementalText = () -> contribution.getSupplementalText(data);
+		}
+
+		public CellTexts(Supplier<String> text, Supplier<String> supplementalText) {
+			this.text = text;
+			this.supplementalText = supplementalText;
+		}
+
+		public CellTexts<U> override(CellTexts<U> texts) {
+			return new CellTexts<>(
+					() -> ofNullable(text.get()).orElse(texts.getText()),
+					() -> ofNullable(supplementalText.get()).orElse(texts.getSupplementalText()));
+		}
+
+		public String getText() {
+			return text.get();
+		}
+
+		public String getSupplementalText() {
+			return supplementalText.get();
+		}
+	}
+
 	@Override
 	public <U> Node configureCell(TreeItemData<U> data, Node ignore) {
-		String text = null;
-		String supplementalText = null;
+		CellTexts<U> texts = data
+				.contributions(new TypeToken<TreeTextContribution<? super U>>() {})
+				.map(c -> new CellTexts<>(c, data))
+				.reduce(CellTexts::override)
+				.map(t -> t.override(getDefaultTexts(data)))
+				.orElseGet(() -> getDefaultTexts(data));
 
-		for (TreeTextContribution<? super U> contribution : data
-				.contributions(new TypeToken<TreeTextContribution<? super U>>() {})) {
+		return new DefaultTreeCellContent(texts.getText(), texts.getSupplementalText());
+	}
 
-			if (text == null) {
-				text = contribution.getText(data);
-			}
-			if (supplementalText == null) {
-				supplementalText = contribution.getSupplementalText(data);
-			}
-		}
-
-		if (text == null) {
-			text = Objects.toString(data.data());
-		}
-
-		return new DefaultTreeCellContent(text, supplementalText);
+	private <U> CellTexts<U> getDefaultTexts(TreeItemData<U> data) {
+		return new CellTexts<>(() -> null, () -> Objects.toString(data.data()));
 	}
 }

@@ -32,12 +32,16 @@
  */
 package uk.co.strangeskies.eclipse;
 
+import static java.util.Optional.ofNullable;
+
 import java.util.function.Predicate;
 
+import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 
 import org.eclipse.e4.core.contexts.ContextInjectionFactory;
 import org.eclipse.e4.core.contexts.IEclipseContext;
+import org.eclipse.e4.ui.workbench.modeling.ESelectionService;
 import org.osgi.framework.Constants;
 
 import javafx.beans.property.SimpleStringProperty;
@@ -45,6 +49,7 @@ import javafx.beans.property.StringProperty;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.control.TreeItem;
 import uk.co.strangeskies.fx.ModularTreeView;
 import uk.co.strangeskies.fx.TreeContribution;
 import uk.co.strangeskies.fx.TreeItemData;
@@ -68,7 +73,7 @@ public class EclipseModularTreeController {
 	private ModularTreeView modularTree;
 
 	@Inject
-	IEclipseContext context;
+	private IEclipseContext context;
 
 	/*
 	 * As we are injecting into the contributions from the eclipse context of the
@@ -76,7 +81,10 @@ public class EclipseModularTreeController {
 	 */
 	@Inject
 	@ObservableService(target = "(" + Constants.SERVICE_SCOPE + "=" + Constants.SCOPE_PROTOTYPE + ")")
-	ObservableList<EclipseTreeContribution<?>> contributions;
+	private ObservableList<EclipseTreeContribution<?>> contributions;
+
+	@Inject
+	private ESelectionService selectionService;
 
 	/**
 	 * Instantiate a controller with the default id - the simple name of the class
@@ -117,7 +125,14 @@ public class EclipseModularTreeController {
 		});
 
 		contributions.stream().forEach(this::contribute);
+
+		modularTree.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+			selectionService.setSelection(ofNullable(newValue).map(TreeItem::getValue).map(TreeItemData::data).orElse(null));
+		});
 	}
+
+	@PreDestroy
+	void destroy() {}
 
 	/**
 	 * @return The ID property of the controller. This is used to allow
@@ -145,6 +160,7 @@ public class EclipseModularTreeController {
 
 	protected void contribute(EclipseTreeContribution<?> contribution) {
 		if ((filter == null || filter.test(contribution.getContributionId())) && contribution.appliesToTree(getId())) {
+			context.set(EclipseModularTreeController.class, this);
 			ContextInjectionFactory.inject(contribution, context);
 			modularTree.addContribution(contribution);
 		}

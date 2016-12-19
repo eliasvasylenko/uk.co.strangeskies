@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.fx;
 
-import static uk.co.strangeskies.fx.FXUtilities.getResource;
+import static uk.co.strangeskies.fx.FxUtilities.getResource;
 
 import java.io.IOException;
 import java.net.URL;
@@ -51,7 +51,7 @@ import javafx.util.Pair;
  * @param <C>
  *          the controller type
  */
-public class FXMLLoadBuilder<C> {
+public class FxmlLoadBuilder<C> {
 	private final FXMLLoader loader;
 
 	private C controller;
@@ -64,23 +64,23 @@ public class FXMLLoadBuilder<C> {
 	 * @param loader
 	 *          The FXML loader to use
 	 */
-	protected FXMLLoadBuilder(FXMLLoader loader) {
+	protected FxmlLoadBuilder(FXMLLoader loader) {
 		this.loader = loader;
 	}
 
 	/**
 	 * @param loader
 	 *          the {@link FXMLLoader} to back the builder
-	 * @return an {@link FXMLLoadBuilder} over the given backing loader
+	 * @return an {@link FxmlLoadBuilder} over the given backing loader
 	 */
-	public static FXMLLoadBuilder<Object> buildWith(FXMLLoader loader) {
-		return new FXMLLoadBuilder<>(loader);
+	public static FxmlLoadBuilder<Object> buildWith(FXMLLoader loader) {
+		return new FxmlLoadBuilder<>(loader);
 	}
 
 	/**
-	 * @return an {@link FXMLLoadBuilder} over the default backing loader
+	 * @return an {@link FxmlLoadBuilder} over the default backing loader
 	 */
-	public static FXMLLoadBuilder<Object> build() {
+	public static FxmlLoadBuilder<Object> build() {
 		return buildWith(new FXMLLoader());
 	}
 
@@ -90,8 +90,8 @@ public class FXMLLoadBuilder<C> {
 	 * <p>
 	 * Unless an {@link #resource(URL) exact resource} is given, the resource
 	 * location will be derived according to
-	 * {@link FXUtilities#getResource(Class)}, or
-	 * {@link FXUtilities#getResource(Class, String)} if a
+	 * {@link FxUtilities#getResource(Class)}, or
+	 * {@link FxUtilities#getResource(Class, String)} if a
 	 * {@link #resource(String) resource name} is specified.
 	 * 
 	 * @param <D>
@@ -101,11 +101,11 @@ public class FXMLLoadBuilder<C> {
 	 * @return the receiving instance
 	 */
 	@SuppressWarnings("unchecked")
-	public <D> FXMLLoadBuilder<D> controller(D controller) {
+	public <D> FxmlLoadBuilder<D> controller(D controller) {
 		this.controller = (C) controller;
 		controllerClass = (Class<? extends C>) controller.getClass();
 
-		return (FXMLLoadBuilder<D>) this;
+		return (FxmlLoadBuilder<D>) this;
 	}
 
 	/**
@@ -114,8 +114,8 @@ public class FXMLLoadBuilder<C> {
 	 * <p>
 	 * Unless an {@link #resource(URL) exact resource} is given, the resource
 	 * location will be derived according to
-	 * {@link FXUtilities#getResource(Class)}, or
-	 * {@link FXUtilities#getResource(Class, String)} if a
+	 * {@link FxUtilities#getResource(Class)}, or
+	 * {@link FxUtilities#getResource(Class, String)} if a
 	 * {@link #resource(String) resource name} is specified.
 	 * 
 	 * @param <D>
@@ -127,11 +127,11 @@ public class FXMLLoadBuilder<C> {
 	 * @return the receiving instance
 	 */
 	@SuppressWarnings("unchecked")
-	public <D> FXMLLoadBuilder<D> controller(Class<D> controllerClass, D controller) {
+	public <D> FxmlLoadBuilder<D> controller(Class<D> controllerClass, D controller) {
 		this.controller = (C) controller;
 		this.controllerClass = (Class<? extends C>) controllerClass;
 
-		return (FXMLLoadBuilder<D>) this;
+		return (FxmlLoadBuilder<D>) this;
 	}
 
 	/**
@@ -141,8 +141,8 @@ public class FXMLLoadBuilder<C> {
 	 * <p>
 	 * Unless an {@link #resource(URL) exact resource} is given, the resource
 	 * location will be derived according to
-	 * {@link FXUtilities#getResource(Class)}, or
-	 * {@link FXUtilities#getResource(Class, String)} if a
+	 * {@link FxUtilities#getResource(Class)}, or
+	 * {@link FxUtilities#getResource(Class, String)} if a
 	 * {@link #resource(String) resource name} is specified.
 	 * 
 	 * @param <D>
@@ -152,22 +152,22 @@ public class FXMLLoadBuilder<C> {
 	 * @return the receiving instance
 	 */
 	@SuppressWarnings("unchecked")
-	public <D> FXMLLoadBuilder<D> controller(Class<D> controllerClass) {
+	public <D> FxmlLoadBuilder<D> controller(Class<D> controllerClass) {
 		this.controllerClass = (Class<? extends C>) controllerClass;
 		controller = null;
 
-		return (FXMLLoadBuilder<D>) this;
+		return (FxmlLoadBuilder<D>) this;
 	}
 
 	/**
 	 * The FXML resource name, such that the resource be located according to
-	 * {@link FXUtilities#getResource(Class, String)}.
+	 * {@link FxUtilities#getResource(Class, String)}.
 	 * 
 	 * @param resourceName
 	 *          the name of the FXML resource
 	 * @return the receiving instance
 	 */
-	public FXMLLoadBuilder<C> resource(String resourceName) {
+	public FxmlLoadBuilder<C> resource(String resourceName) {
 		this.resourceName = resourceName;
 		resource = null;
 
@@ -179,7 +179,7 @@ public class FXMLLoadBuilder<C> {
 	 *          the exact FXML resource
 	 * @return the receiving instance
 	 */
-	public FXMLLoadBuilder<C> resource(URL resource) {
+	public FxmlLoadBuilder<C> resource(URL resource) {
 		this.resource = resource;
 		this.resourceName = null;
 
@@ -191,7 +191,7 @@ public class FXMLLoadBuilder<C> {
 	 *          the root node to load the FXML into
 	 * @return the receiving instance
 	 */
-	public FXMLLoadBuilder<C> root(Node root) {
+	public FxmlLoadBuilder<C> root(Node root) {
 		this.root = root;
 
 		return this;
@@ -202,7 +202,7 @@ public class FXMLLoadBuilder<C> {
 	 *          the new class loader for the {@link FXMLLoader}.
 	 * @return the receiving instance
 	 */
-	public FXMLLoadBuilder<C> classLoader(ClassLoader classLoader) {
+	public FxmlLoadBuilder<C> classLoader(ClassLoader classLoader) {
 		loader.setClassLoader(classLoader);
 
 		return this;
@@ -215,7 +215,7 @@ public class FXMLLoadBuilder<C> {
 	 *          the root node <em>and</em> the controller to load the FXML into
 	 * @return the receiving instance
 	 */
-	public <D extends Node> FXMLLoadBuilder<D> object(D object) {
+	public <D extends Node> FxmlLoadBuilder<D> object(D object) {
 		return controller(object).root(object);
 	}
 

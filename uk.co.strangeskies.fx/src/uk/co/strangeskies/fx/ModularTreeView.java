@@ -32,14 +32,12 @@
  */
 package uk.co.strangeskies.fx;
 
-import static java.util.Collections.emptySet;
-import static uk.co.strangeskies.fx.FXMLLoadBuilder.build;
-
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import javafx.scene.Node;
 import javafx.scene.control.TreeView;
@@ -76,21 +74,23 @@ public class ModularTreeView extends TreeView<TreeItemData<?>> {
 	 * the {@link DefaultTreeContributionPrecedence default precedence}.
 	 */
 	public ModularTreeView() {
-		build().object(this).load();
+		FxmlLoadBuilder.build().object(this).load();
 		setCellFactory(v -> new TreeCellImpl(this));
 
 		contributionRankings = new HashMap<>();
 
-		contributions = Graph.build().<TreeContribution<?>> vertices(emptySet()).edgeFactory(Object::new)
+		contributions = Graph
+				.build()
+				.vertices(Collections.<TreeContribution<?>> emptySet())
+				.edgeFactory(Object::new)
 				.direction(this::compareDescending)
-
 				.addInternalListener(GraphListeners::vertexAdded, added -> {
-
 					for (TreeContribution<?> existingVertex : added.graph().vertices())
 						if (existingVertex != added.vertex())
 							added.graph().edges().add(added.vertex(), existingVertex);
 
-				}).create();
+				})
+				.create();
 
 		setPrecedence(new DefaultTreeContributionPrecedence());
 
@@ -243,8 +243,8 @@ public class ModularTreeView extends TreeView<TreeItemData<?>> {
 	 * @return all contributions added to the view in order of from most to least
 	 *         preferred
 	 */
-	public List<TreeContribution<?>> getContributions() {
-		return Collections.unmodifiableList(orderedContributions);
+	public Stream<TreeContribution<?>> getContributions() {
+		return orderedContributions.stream();
 	}
 
 	@Override
