@@ -32,11 +32,10 @@
  */
 package uk.co.strangeskies.fx;
 
-import static uk.co.strangeskies.fx.FXMLLoadBuilder.build;
-import static uk.co.strangeskies.fx.FXUtilities.getResource;
-
-import java.util.ArrayList;
-import java.util.Collections;
+import static uk.co.strangeskies.fx.FxmlLoadBuilder.build;
+import static uk.co.strangeskies.fx.FxUtilities.getResource;
+import static uk.co.strangeskies.utilities.collection.StreamUtilities.reverse;
+import static uk.co.strangeskies.utilities.collection.StreamUtilities.throwingSerialCombiner;
 
 import javafx.geometry.Bounds;
 import javafx.scene.Node;
@@ -58,7 +57,7 @@ import uk.co.strangeskies.reflection.token.TypeToken;
 public class TreeCellImpl extends TreeCell<TreeItemData<?>> {
 	/**
 	 * Load a new instance from the FXML located according to
-	 * {@link FXUtilities#getResource(Class)} for this class.
+	 * {@link FxUtilities#getResource(Class)} for this class.
 	 * 
 	 * @param tree
 	 *          the owning tree view
@@ -83,8 +82,15 @@ public class TreeCellImpl extends TreeCell<TreeItemData<?>> {
 
 					PickResult pickResult = new PickResult(getGraphic(), sceneBounds.getMaxX(), sceneBounds.getMaxY());
 
-					getGraphic().fireEvent(new ContextMenuEvent(ContextMenuEvent.CONTEXT_MENU_REQUESTED, sceneBounds.getMaxX(),
-							sceneBounds.getMaxY(), screenBounds.getMaxX(), screenBounds.getMaxY(), true, pickResult));
+					getGraphic().fireEvent(
+							new ContextMenuEvent(
+									ContextMenuEvent.CONTEXT_MENU_REQUESTED,
+									sceneBounds.getMaxX(),
+									sceneBounds.getMaxY(),
+									screenBounds.getMaxX(),
+									screenBounds.getMaxY(),
+									true,
+									pickResult));
 				}
 			}
 		});
@@ -106,17 +112,11 @@ public class TreeCellImpl extends TreeCell<TreeItemData<?>> {
 	}
 
 	protected <T> void updateItem(TreeItemData<T> item) {
-		ArrayList<TreeCellContribution<? super T>> contributions = new ArrayList<>(
-				item.contributions(new TypeToken<TreeCellContribution<? super T>>() {}));
-
-		Collections.reverse(contributions);
-
 		Node content = new HBox();
 		content.prefWidth(0);
 
-		for (TreeCellContribution<? super T> contribution : contributions) {
-			content = contribution.configureCell(item, content);
-		}
+		content = reverse(item.contributions(new TypeToken<TreeCellContribution<? super T>>() {}))
+				.reduce(content, (c, contribution) -> contribution.configureCell(item, c), throwingSerialCombiner());
 
 		setGraphic(content);
 	}

@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.fx;
 
-import static uk.co.strangeskies.fx.FXMLLoadBuilder.build;
+import static uk.co.strangeskies.fx.FxmlLoadBuilder.build;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;

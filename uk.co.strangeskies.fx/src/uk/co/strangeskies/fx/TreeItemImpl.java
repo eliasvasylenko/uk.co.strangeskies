@@ -35,7 +35,6 @@ package uk.co.strangeskies.fx;
 import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.LOOSE_COMPATIBILILTY;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -43,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
@@ -81,19 +81,16 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 	}
 
 	protected boolean hasChildrenContributions() {
-		return getData().contributions(new TypeToken<TreeChildContribution<? super T>>() {}).stream().anyMatch(
-				c -> c.hasChildren(getData()));
+		return getData()
+				.contributions(new TypeToken<TreeChildContribution<? super T>>() {})
+				.anyMatch(c -> c.hasChildren(getData()));
 	}
 
 	protected List<TypedObject<?>> getChildrenContributions() {
 		return getData()
 				.contributions(new TypeToken<TreeChildContribution<? super T>>() {})
-				.stream()
-
-				.flatMap(c -> c.getChildren(getData()).stream())
-
+				.flatMap(c -> c.getChildren(getData()))
 				.distinct()
-
 				.collect(Collectors.toList());
 	}
 
@@ -211,7 +208,6 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 		protected void refreshContributions() {
 			itemContributions = treeView
 					.getContributions()
-					.stream()
 					.filter(c -> c.getDataType().satisfiesConstraintFrom(LOOSE_COMPATIBILILTY, type()))
 					.map(c -> (TreeContribution<? super U>) c)
 					.filter(c -> c.appliesTo(this))
@@ -219,18 +215,17 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 		}
 
 		@Override
-		public List<TreeContribution<? super U>> contributions() {
-			return new ArrayList<>(itemContributions);
+		public Stream<TreeContribution<? super U>> contributions() {
+			return itemContributions.stream();
 		}
 
 		@Override
-		public <V extends TreeContribution<? super U>> List<V> contributions(TypeToken<V> type) {
+		public <V extends TreeContribution<? super U>> Stream<V> contributions(TypeToken<V> type) {
 			return itemContributions
 					.stream()
 					.filter(
 							c -> TypeToken.overType(type.getRawType()).satisfiesConstraintFrom(LOOSE_COMPATIBILILTY, c.getClass()))
-					.map(type::cast)
-					.collect(Collectors.toList());
+					.map(type::cast);
 		}
 
 		@Override

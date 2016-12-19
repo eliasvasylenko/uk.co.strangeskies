@@ -32,8 +32,8 @@
  */
 package uk.co.strangeskies.fx;
 
-import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import javafx.scene.control.TreeItem;
 import uk.co.strangeskies.reflection.token.TypeToken;
@@ -86,7 +86,7 @@ public interface TreeItemData<T> {
 	 * 
 	 * @return the contributions which apply to this tree item
 	 */
-	List<TreeContribution<? super T>> contributions();
+	Stream<TreeContribution<? super T>> contributions();
 
 	/**
 	 * Get all contributions which should be applied to a tree item and which
@@ -98,7 +98,7 @@ public interface TreeItemData<T> {
 	 *          the type of contribution
 	 * @return the matching contributions which apply to this tree item
 	 */
-	<U extends TreeContribution<? super T>> List<U> contributions(TypeToken<U> type);
+	<U extends TreeContribution<? super T>> Stream<U> contributions(TypeToken<U> type);
 
 	/**
 	 * Refresh the tree cell associated with this tree item.

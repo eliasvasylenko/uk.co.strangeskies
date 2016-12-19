@@ -61,10 +61,10 @@ import uk.co.strangeskies.utilities.collection.computingmap.ComputingMap;
  * 
  * @author Elias N Vasylenko
  */
-public class FXUtilities {
+public class FxUtilities {
 	private static final String CONTROLLER_STRING = "Controller";
 
-	private FXUtilities() {}
+	private FxUtilities() {}
 
 	/**
 	 * Perform the given action on the JavaFX event thread as soon as possible,
@@ -270,6 +270,8 @@ public class FXUtilities {
 			}
 		});
 
+		list.addAll(component);
+
 		return FXCollections.unmodifiableObservableList(list);
 	}
 
@@ -305,6 +307,8 @@ public class FXUtilities {
 				set.retainAll(component);
 			}
 		});
+
+		set.addAll(component);
 
 		return FXCollections.unmodifiableObservableSet(set);
 	}
