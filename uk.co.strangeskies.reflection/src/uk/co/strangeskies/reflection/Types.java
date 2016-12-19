@@ -341,36 +341,24 @@ public final class Types {
 	}
 
 	/**
-	 * Determine whether a given class is private.
+	 * Determine the visibility of the type
 	 * 
-	 * @param rawType
-	 *          The type we wish to classify.
-	 * @return True if the type is private, false otherwise.
+	 * @param type
+	 *          the type whose visibility we wish to determine
+	 * @return a {@link Visibility} object describing the type
 	 */
-	public static boolean isPrivate(Class<?> rawType) {
-		return Modifier.isPrivate(rawType.getModifiers());
-	}
+	public static Visibility getVisibility(Class<?> type) {
+		int modifiers = type.getModifiers();
 
-	/**
-	 * Determine whether a given class is protected.
-	 * 
-	 * @param rawType
-	 *          The type we wish to classify.
-	 * @return True if the type is protected, false otherwise.
-	 */
-	public static boolean isProtected(Class<?> rawType) {
-		return Modifier.isProtected(rawType.getModifiers());
-	}
-
-	/**
-	 * Determine whether a given class is public.
-	 * 
-	 * @param rawType
-	 *          The type we wish to classify.
-	 * @return True if the type is public, false otherwise.
-	 */
-	public static boolean isPublic(Class<?> rawType) {
-		return Modifier.isPublic(rawType.getModifiers());
+		if (Modifier.isPrivate(modifiers)) {
+			return Visibility.PRIVATE;
+		} else if (Modifier.isProtected(modifiers)) {
+			return Visibility.PROTECTED;
+		} else if (Modifier.isPublic(modifiers)) {
+			return Visibility.PUBLIC;
+		} else {
+			return Visibility.PACKAGE_PRIVATE;
+		}
 	}
 
 	/**

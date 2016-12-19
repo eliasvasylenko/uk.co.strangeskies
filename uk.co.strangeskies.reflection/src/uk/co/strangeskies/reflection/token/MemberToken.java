@@ -33,9 +33,11 @@
 package uk.co.strangeskies.reflection.token;
 
 import java.lang.reflect.Member;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 
 import uk.co.strangeskies.reflection.BoundSet;
+import uk.co.strangeskies.reflection.Visibility;
 
 /**
  * A type safe wrapper around {@link Member} instances, with proper handling of
@@ -69,27 +71,36 @@ public interface MemberToken<O> {
 	/**
 	 * @return true if the wrapped member is final, false otherwise
 	 */
-	boolean isFinal();
+
+	default boolean isFinal() {
+		return Modifier.isFinal(getMember().getModifiers());
+	}
 
 	/**
-	 * @return true if the wrapped member is private, false otherwise
+	 * Determine the visibility of the member
+	 * 
+	 * @return a {@link Visibility} object describing the member
 	 */
-	boolean isPrivate();
+	default Visibility getVisibility() {
+		int modifiers = getMember().getModifiers();
 
-	/**
-	 * @return true if the wrapped member is protected, false otherwise
-	 */
-	boolean isProtected();
-
-	/**
-	 * @return true if the wrapped member is public, false otherwise
-	 */
-	boolean isPublic();
+		if (Modifier.isPrivate(modifiers)) {
+			return Visibility.PRIVATE;
+		} else if (Modifier.isProtected(modifiers)) {
+			return Visibility.PROTECTED;
+		} else if (Modifier.isPublic(modifiers)) {
+			return Visibility.PUBLIC;
+		} else {
+			return Visibility.PACKAGE_PRIVATE;
+		}
+	}
 
 	/**
 	 * @return true if the wrapped member is static, false otherwise
 	 */
-	boolean isStatic();
+	default boolean isStatic() {
+		return Modifier.isStatic(getMember().getModifiers());
+	}
 
 	/**
 	 * @return The exact declaring class of this member.

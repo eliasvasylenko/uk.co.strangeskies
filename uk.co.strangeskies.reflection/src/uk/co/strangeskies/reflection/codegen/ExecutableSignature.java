@@ -47,6 +47,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import uk.co.strangeskies.reflection.Visibility;
+
 public abstract class ExecutableSignature<S extends ExecutableSignature<S>> extends ParameterizedSignature<S> {
 	protected final List<VariableSignature<?>> parameters;
 	protected ErasedMethodSignature erasedSignature;
@@ -99,6 +101,14 @@ public abstract class ExecutableSignature<S extends ExecutableSignature<S>> exte
 
 	protected void appendParameters(StringBuilder builder) {
 		builder.append("(").append(getParameters().map(Objects::toString).collect(joining(", "))).append(")");
+	}
+
+	public S withVisibility(Visibility visibility) {
+		
+	}
+
+	public Visibility getVisibility() {
+		return visibility;
 	}
 
 	@Override

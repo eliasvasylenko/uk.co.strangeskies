@@ -64,7 +64,7 @@ public class ClassDefinitionTest {
 	private static final TypeToken<String> STRING_TYPE = new TypeToken<String>() {};
 
 	@Test
-	public void runnableClassInvocationTest() {
+	public void runnableClassInvocation() {
 		ClassDefinition<Void, ? extends Runnable> classDefinition = classSignature(TEST_CLASS_NAME)
 				.withSuperType(Runnable.class)
 				.declare()
@@ -81,7 +81,7 @@ public class ClassDefinitionTest {
 	}
 
 	@Test
-	public void functionClassExplicitMethpdDeclarationTest() {
+	public void defineWithExplicitMethodDeclaration() {
 		VariableSignature<String> applyParameter = variableSignature("value", STRING_TYPE);
 		MethodSignature<String> applyMethod = methodSignature("apply").withReturnType(STRING_TYPE).withParameters(
 				applyParameter);
@@ -107,7 +107,7 @@ public class ClassDefinitionTest {
 	}
 
 	@Test
-	public void functionClassInvocationTest() {
+	public void defineWithInheritedMethodDeclaration() {
 		ClassDeclaration<Void, ? extends Func<String, String>> classDeclaration = classSignature(TEST_CLASS_NAME)
 				.withSuperType(new TypeToken<Func<String, String>>() {})
 				.declare();
@@ -137,12 +137,12 @@ public class ClassDefinitionTest {
 	}
 
 	@Test(expected = ReflectionException.class)
-	public void defineWithAbstractMethodTest() {
+	public void defineWithAbstractMethod() {
 		classSignature(TEST_CLASS_NAME).withSuperType(Runnable.class).declare().define().instantiate();
 	}
 
 	@Test
-	public void defineWithDefaultMethodTest() {
+	public void defineWithDefaultMethod() {
 		classSignature(TEST_CLASS_NAME).withSuperType(Default.class).declare().define().instantiate();
 	}
 }
