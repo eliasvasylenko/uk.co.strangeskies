@@ -36,6 +36,7 @@ import static java.util.stream.Collectors.toList;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Objects;
@@ -57,15 +58,18 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 				.withTypeVariables(
 						executableToken.getTypeParameters().map(TypeVariableSignature::typeVariableSignature).collect(toList()))
 				.withReturnType(executableToken.getReturnType())
-				.withParameters(executableToken.getParameters().map(VariableSignature::variableSignature).collect(toList()));
+				.withParameters(executableToken.getParameters().map(VariableSignature::variableSignature).collect(toList()))
+				.asDefault(((Method) executableToken.getMember()).isDefault());
 	}
 
 	private final AnnotatedType returnType;
+	private final boolean defaultImplementation;
 
 	protected MethodSignature(String methodName) {
 		super(methodName);
 
 		this.returnType = AnnotatedTypes.annotated(void.class);
+		this.defaultImplementation = false;
 	}
 
 	protected MethodSignature(
@@ -74,10 +78,12 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 			Visibility visibility,
 			List<VariableSignature<?>> parameters,
 			List<TypeVariableSignature> typeVariables,
-			AnnotatedType returnType) {
+			AnnotatedType returnType,
+			boolean defaultImplementation) {
 		super(name, annotations, visibility, parameters, typeVariables);
 
 		this.returnType = returnType;
+		this.defaultImplementation = defaultImplementation;
 	}
 
 	@Override
@@ -87,29 +93,62 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 			Visibility visibility,
 			List<VariableSignature<?>> parameters,
 			List<TypeVariableSignature> typeVariables) {
-		return new MethodSignature<>(name, annotations, visibility, parameters, typeVariables, returnType);
+		return new MethodSignature<>(
+				name,
+				annotations,
+				visibility,
+				parameters,
+				typeVariables,
+				returnType,
+				defaultImplementation);
+	}
+
+	public boolean isDefault() {
+		return defaultImplementation;
+	}
+
+	public MethodSignature<T> asDefault(boolean defaultImplementation) {
+		return new MethodSignature<>(
+				name,
+				annotations,
+				visibility,
+				parameters,
+				typeVariables,
+				returnType,
+				defaultImplementation);
+	}
+
+	public MethodSignature<T> asDefault() {
+		return asDefault(true);
 	}
 
 	public AnnotatedType getReturnType() {
 		return returnType;
 	}
 
-	public MethodSignature<?> withReturnType(AnnotatedType type) {
-		return new MethodSignature<>(name, annotations, visibility, parameters, typeVariables, type);
+	public MethodSignature<?> withReturnType(AnnotatedType returnType) {
+		return new MethodSignature<>(
+				name,
+				annotations,
+				visibility,
+				parameters,
+				typeVariables,
+				returnType,
+				defaultImplementation);
 	}
 
-	public MethodSignature<?> withReturnType(Type type) {
-		return withReturnType(AnnotatedTypes.annotated(type));
+	public MethodSignature<?> withReturnType(Type returnType) {
+		return withReturnType(AnnotatedTypes.annotated(returnType));
 	}
 
 	@SuppressWarnings("unchecked")
-	public <U> MethodSignature<U> withReturnType(Class<U> type) {
-		return (MethodSignature<U>) withReturnType(AnnotatedTypes.annotated(type));
+	public <U> MethodSignature<U> withReturnType(Class<U> returnType) {
+		return (MethodSignature<U>) withReturnType(AnnotatedTypes.annotated(returnType));
 	}
 
 	@SuppressWarnings("unchecked")
-	public <U> MethodSignature<U> withReturnType(TypeToken<U> type) {
-		return (MethodSignature<U>) withReturnType(type.getAnnotatedDeclaration());
+	public <U> MethodSignature<U> withReturnType(TypeToken<U> returnType) {
+		return (MethodSignature<U>) withReturnType(returnType.getAnnotatedDeclaration());
 	}
 
 	@Override

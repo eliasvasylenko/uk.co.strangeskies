@@ -117,7 +117,6 @@ public class ClassDefinitionTest {
 
 	private <F extends Func<String, String>> void defineFunctionClass(ClassDeclaration<Void, F> classDeclaration) {
 		VariableSignature<String> applyParameter = variableSignature("value", STRING_TYPE);
-
 		MethodDeclaration<F, String> applyMethod = classDeclaration
 				.getMethodDeclaration(methodSignature("apply").withReturnType(String.class).withParameters(applyParameter));
 
@@ -125,6 +124,29 @@ public class ClassDefinitionTest {
 				.define()
 				.defineMethod(
 						applyMethod,
+						d -> d.withBody(
+								b -> b.withReturnStatement(
+										d.getParameter(applyParameter).invokeMethod(concatMethod(), d.getParameter(applyParameter)))))
+				.instantiate()
+				.cast();
+
+		String result = instance.apply("string");
+
+		Assert.assertEquals("stringstring", result);
+	}
+
+	@Test
+	public void defineWithInheritedMethodDeclarationBySignature() {
+		ClassDeclaration<Void, ? extends Func<String, String>> classDeclaration = classSignature(TEST_CLASS_NAME)
+				.withSuperType(new TypeToken<Func<String, String>>() {})
+				.declare();
+
+		VariableSignature<String> applyParameter = variableSignature("value", STRING_TYPE);
+
+		Func<String, String> instance = classDeclaration
+				.define()
+				.defineMethod(
+						methodSignature("apply").withReturnType(String.class).withParameters(applyParameter),
 						d -> d.withBody(
 								b -> b.withReturnStatement(
 										d.getParameter(applyParameter).invokeMethod(concatMethod(), d.getParameter(applyParameter)))))

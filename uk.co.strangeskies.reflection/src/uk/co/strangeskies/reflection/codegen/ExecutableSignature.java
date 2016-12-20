@@ -56,7 +56,7 @@ public abstract class ExecutableSignature<S extends ExecutableSignature<S>> exte
 
 	ErasedMethodSignature erasedSignature;
 
-	public ExecutableSignature(String name) {
+	protected ExecutableSignature(String name) {
 		super(name);
 
 		this.parameters = emptyList();

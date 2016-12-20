@@ -263,9 +263,13 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 	}
 
 	private void validate() {
-		getDeclaration().methodDeclarations().filter(m -> !methodDefinitions.containsKey(m)).findAny().ifPresent(m -> {
-			throw new ReflectionException(p -> p.mustImplementMethod(getDeclaration(), m));
-		});
+		getDeclaration()
+				.methodDeclarations()
+				.filter(m -> !methodDefinitions.containsKey(m) && !((MethodSignature<?>) m.getSignature()).isDefault())
+				.findAny()
+				.ifPresent(m -> {
+					throw new ReflectionException(p -> p.mustImplementMethod(getDeclaration(), m));
+				});
 
 		getDeclaration()
 				.staticMethodDeclarations()
