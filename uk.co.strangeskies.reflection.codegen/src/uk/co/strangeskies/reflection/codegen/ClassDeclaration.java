@@ -23,14 +23,27 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.Types;
+import uk.co.strangeskies.reflection.codegen.ClassSpace.ClassDeclarationContext;
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
 import uk.co.strangeskies.reflection.token.TypeToken;
 import uk.co.strangeskies.utilities.collection.StreamUtilities;
 
 public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignature<T>>
 		implements Declaration<ClassSignature<T>> {
+	static class Reference implements Type {
+		private final String name;
+
+		public Reference(String name) {
+			this.name = name;
+		}
+
+		@Override
+		public String getTypeName() {
+			return name;
+		}
+	}
+
 	private final ClassDeclaration<?, E> enclosingClass;
 	private final ClassSignature<T> signature;
 
@@ -45,11 +58,16 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 	private final ValueExpression<T> receiverExpression;
 
 	@SuppressWarnings("unchecked")
-	public ClassDeclaration(ClassDeclaration<?, E> enclosingClass, ClassSignature<T> signature) {
+	protected ClassDeclaration(ClassDeclarationContext context, ClassSignature<T> signature) {
 		super(signature);
 
-		this.enclosingClass = enclosingClass;
+		this.enclosingClass = (ClassDeclaration<?, E>) signature
+				.getEnclosingClassName()
+				.map(context::getClassDeclaration)
+				.orElse(null);
 		this.signature = signature;
+
+		context.addClassDeclaration(this);
 
 		this.superTypes = unmodifiableList(
 				signature
@@ -87,6 +105,14 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 				return (TypeToken<T>) getSuperType();
 			}
 		};
+	}
+
+	public static <T> ClassDeclaration<?, T> declareClass(ClassDeclarationContext context, ClassSignature<T> signature) {
+		return new ClassDeclaration<>(context, signature);
+	}
+
+	public static Type referenceClassDeclaration(String name) {
+		return new Reference(name);
 	}
 
 	public ValueExpression<T> receiver() {
@@ -141,7 +167,7 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 
 		MethodDeclaration<E, T> declaration = constructorDeclarations.get(erasedSignature);
 		if (declaration == null) {
-			throw new ReflectionException(p -> p.cannotFindMethodOn(superClass, erasedSignature));
+			throw new CodeGenerationException(p -> p.cannotFindMethodOn(superClass, erasedSignature));
 		}
 		return declaration;
 	}
@@ -151,7 +177,7 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 
 		MethodDeclaration<E, ?> declaration = staticMethodDeclarations.get(erasedSignature);
 		if (declaration == null) {
-			throw new ReflectionException(p -> p.cannotFindMethodOn(superClass, erasedSignature));
+			throw new CodeGenerationException(p -> p.cannotFindMethodOn(superClass, erasedSignature));
 		}
 		return declaration;
 	}
@@ -161,7 +187,7 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 
 		MethodDeclaration<T, ?> declaration = methodDeclarations.get(erasedSignature);
 		if (declaration == null) {
-			throw new ReflectionException(p -> p.cannotFindMethodOn(superClass, erasedSignature));
+			throw new CodeGenerationException(p -> p.cannotFindMethodOn(superClass, erasedSignature));
 		}
 		return declaration;
 	}
@@ -179,7 +205,7 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 		if (!StreamUtilities.equals(
 				signature.getParameters().map(VariableSignature::getType),
 				declaration.getSignature().getParameters().map(VariableSignature::getType))) {
-			throw new ReflectionException(p -> p.cannotFindMethodOn(superClass, signature.erased()));
+			throw new CodeGenerationException(p -> p.cannotFindMethodOn(superClass, signature.erased()));
 		}
 
 		return (MethodDeclaration<E, T>) declaration;
@@ -199,7 +225,7 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 		if (!StreamUtilities.equals(
 				signature.getParameters().map(VariableSignature::getType),
 				declaration.getSignature().getParameters().map(VariableSignature::getType))) {
-			throw new ReflectionException(p -> p.cannotFindMethodOn(superClass, signature.erased()));
+			throw new CodeGenerationException(p -> p.cannotFindMethodOn(superClass, signature.erased()));
 		}
 
 		return (MethodDeclaration<E, U>) declaration;
@@ -219,14 +245,10 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 		if (!StreamUtilities.equals(
 				signature.getParameters().map(VariableSignature::getType),
 				declaration.getSignature().getParameters().map(VariableSignature::getType))) {
-			throw new ReflectionException(p -> p.cannotFindMethodOn(superClass, signature.erased()));
+			throw new CodeGenerationException(p -> p.cannotFindMethodOn(superClass, signature.erased()));
 		}
 
 		return (MethodDeclaration<T, U>) declaration;
-	}
-
-	public ClassDefinition<E, T> define() {
-		return new ClassDefinition<>(this);
 	}
 
 	public TypeToken<T> asToken() {

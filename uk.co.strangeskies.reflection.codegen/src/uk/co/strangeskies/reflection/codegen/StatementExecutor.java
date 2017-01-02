@@ -138,7 +138,7 @@ public class StatementExecutor {
 
 	@SuppressWarnings("unchecked")
 	public <J> J getEnclosingInstance(ClassDeclaration<?, J> receiverClass) {
-		if (receiver.getReflectiveClassDefinition().getDeclaration() == receiverClass) {
+		if (receiver.getClassDefinition().getDeclaration() == receiverClass) {
 			return (J) receiver;
 		} else if (enclosingState != null) {
 			return enclosingState.getEnclosingInstance(receiverClass);

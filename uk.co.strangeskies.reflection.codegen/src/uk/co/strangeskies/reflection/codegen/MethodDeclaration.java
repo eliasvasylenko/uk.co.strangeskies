@@ -5,6 +5,7 @@ import static uk.co.strangeskies.reflection.token.TypeToken.overAnnotatedType;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.entriesToMap;
 
 import java.lang.reflect.AnnotatedType;
+import java.lang.reflect.Constructor;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Map;
 import java.util.Objects;
@@ -179,5 +180,13 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 	public int hashCode() {
 		// TODO Auto-generated method stub
 		return super.hashCode();
+	}
+
+	public boolean isConstructor() {
+		return getSignature() instanceof ConstructorSignature;
+	}
+
+	public boolean isStaticMethod() {
+		return getSignature() instanceof MethodSignature<?> && ((MethodSignature<?>)getSignature()).get;
 	}
 }

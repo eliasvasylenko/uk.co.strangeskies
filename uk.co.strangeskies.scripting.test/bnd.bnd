@@ -4,7 +4,7 @@ Bundle-Description: \
 Test-Cases: ${test-cases}
 
 Private-Package:\
-	uk.co.strangeskies.scripting.test.*,\
+	uk.co.strangeskies.scripting.test.*
 
 -includeresource:\
 	res

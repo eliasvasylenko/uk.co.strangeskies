@@ -11,6 +11,10 @@ runpath.eclipse.win64:\
 runpath.eclipse.linux64:\
 	org.eclipse.equinox.launcher.gtk.linux.x86_64
 
+-augment.org.eclipse.core.runtime:\
+	org.eclipse.core.runtime;\
+		capability:="osgi.service;objectClass:List<String>=org.eclipse.core.runtime.IAdapterManager;effective:=active"
+
 ## Run requirement groups:
 -runrequires.eclipse:\
 	${req;bndtools.runtime.eclipse.applaunch},\

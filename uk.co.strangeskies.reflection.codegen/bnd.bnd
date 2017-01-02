@@ -1,0 +1,11 @@
+Bundle-Name: Strange Skies :: Reflection :: Codegen
+
+-includeresource:\
+	res
+
+Export-Package: uk.co.strangeskies.reflection.codegen
+
+-buildpath: \
+	uk.co.strangeskies.utilities;version=snapshot,\
+	uk.co.strangeskies.reflection;version=snapshot,\
+	uk.co.strangeskies.text;version=snapshot

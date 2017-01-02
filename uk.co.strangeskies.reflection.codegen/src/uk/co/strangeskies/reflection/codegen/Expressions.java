@@ -32,23 +32,42 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-/**
- * This interface is not for outside consumption. It allows instances of
- * {@link ClassDefinition class definitions} which are created reflectively to
- * simulate normal class state by providing access to {@link FieldDeclaration
- * defined fields}.
- * 
- * @author Elias N Vasylenko
- *
- * @param <T>
- *          the actual type of the instance
- */
-public interface ReflectiveInstance<E, T> {
-	ClassDefinition<E, T> getReflectiveClassDefinition();
+import static uk.co.strangeskies.reflection.codegen.ClassSignature.classSignature;
+import static uk.co.strangeskies.reflection.codegen.InvocationExpression.invokeStatic;
 
-	<U> U getReflectiveFieldValue(FieldDeclaration<? super T, U> field);
+import java.util.concurrent.atomic.AtomicLong;
 
-	<U> void setReflectiveFieldValue(FieldDeclaration<? super T, U> field, U value);
+import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
+import uk.co.strangeskies.reflection.token.TypeToken;
 
-	T cast();
+public class Expressions {
+	private Expressions() {}
+
+	private static final ValueExpression<Object> NULL_EXPRESSION = new ValueExpression<Object>() {
+		@Override
+		public void accept(ValueExpressionVisitor<Object> visitor) {
+			visitor.visitNull();
+		}
+
+		@Override
+		public TypeToken<Object> getType() {
+			return TypeToken.overNull();
+		}
+	};
+
+	private static final AtomicLong TYPE_TOKEN_EXPRESSION_COUNT = new AtomicLong(0);
+
+	public static <T> ValueExpression<? extends TypeToken<T>> typeTokenExpression(TypeToken<T> type) {
+		ClassDefinition<Void, ? extends TypeToken<T>> typeTokenClass = classSignature(
+				"TypeTokenExpression$" + TYPE_TOKEN_EXPRESSION_COUNT.incrementAndGet())
+						.withSuperType(type.getThisTypeToken())
+						.defineSingleton();
+
+		return invokeStatic(typeTokenClass.getDeclaration().getConstructorDeclaration().asToken());
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T> ValueExpression<T> nullExpression() {
+		return (ValueExpression<T>) NULL_EXPRESSION;
+	}
 }

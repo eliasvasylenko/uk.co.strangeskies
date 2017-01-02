@@ -75,4 +75,12 @@ public interface CodeGenerationProperties extends Properties<CodeGenerationPrope
 	Localized<String> incompleteStatementExecution();
 
 	Localized<String> incompleteExpressionEvaluation();
+
+	Localized<String> cannotFindMethodOn(Class<?> superClass, ErasedMethodSignature erasedMethodSignature);
+
+	Localized<String> incompatibleReturnType(TypeToken<?> returnType, MethodDeclaration<?, ?> methodDeclaration);
+
+	Localized<String> mustImplementMethod(MethodDeclaration<?, ?> method);
+
+	Localized<String> classNameAlreadyRegistered(ClassSignature<?> classSignature);
 }

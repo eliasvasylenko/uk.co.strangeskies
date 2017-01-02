@@ -41,6 +41,8 @@ import uk.co.strangeskies.reflection.ReflectionProperties;
 import uk.co.strangeskies.text.properties.Localized;
 
 public class CodeGenerationException extends ReflectionException {
+	private static final long serialVersionUID = 1L;
+
 	/**
 	 * @param message
 	 *          a function from the {@link ReflectionProperties} to the exception

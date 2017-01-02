@@ -2,6 +2,10 @@
 -runpath.eclipse.fx:\
 	org.eclipse.fx.osgi
 
+-augment.org.eclipse.fx.ui.services:\
+	org.eclipse.fx.ui.services;\
+		capability:="org.eclipse.fx.ui.services;version=1.2.0"
+
 ## Run requirement groups:
 -runrequires.eclipse.fx:\
 	${req;org.eclipse.fx.ui.databinding},\

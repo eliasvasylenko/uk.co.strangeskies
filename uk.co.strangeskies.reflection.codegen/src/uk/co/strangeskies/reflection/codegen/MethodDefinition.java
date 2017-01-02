@@ -40,7 +40,6 @@ public class MethodDefinition<C, T> implements MemberDefinition<C> {
 	private final MethodDeclaration<C, T> methodDeclaration;
 	private final Block<T> body;
 
-	@SuppressWarnings("unchecked")
 	public MethodDefinition(MethodDeclaration<C, T> classDeclaration) {
 		this.methodDeclaration = classDeclaration;
 		this.body = new Block<>();

@@ -44,7 +44,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 
-public class FilteringClassLoader extends ClassLoader {
+public abstract class FilteringClassLoader extends ClassLoader {
 	private static final ClassLoader SYSTEM_CLASS_LOADER = ClassLoader.getSystemClassLoader();
 	private static final Set<Package> SYSTEM_PACKAGES = new HashSet<>();
 
@@ -60,21 +60,42 @@ public class FilteringClassLoader extends ClassLoader {
 		}
 	}
 
-	private final Predicate<Class<?>> classFilter;
-	private final Predicate<Package> packageFilter;
-	private final Predicate<String> resourceFilter;
-
-	public FilteringClassLoader(ClassLoader parent, Predicate<Class<?>> classFilter) {
-		this(parent, classFilter, p -> true, r -> true);
-	}
-
-	public FilteringClassLoader(ClassLoader parent, Predicate<Class<?>> classFilter, Predicate<Package> packageFilter,
-			Predicate<String> resourceFilter) {
+	public FilteringClassLoader(ClassLoader parent) {
 		super(parent);
-		this.classFilter = classFilter;
-		this.packageFilter = packageFilter;
-		this.resourceFilter = resourceFilter;
 	}
+
+	public static FilteringClassLoader filteringClassLoader(ClassLoader parent, Predicate<Class<?>> classFilter) {
+		return filteringClassLoader(parent, classFilter, p -> true, r -> true);
+	}
+
+	public static FilteringClassLoader filteringClassLoader(
+			ClassLoader parent,
+			Predicate<Class<?>> classFilter,
+			Predicate<Package> packageFilter,
+			Predicate<String> resourceFilter) {
+		return new FilteringClassLoader(parent) {
+			@Override
+			protected boolean filterResource(String resourceName) {
+				return resourceFilter.test(resourceName);
+			}
+
+			@Override
+			protected boolean filterPackage(Package filterPackage) {
+				return packageFilter.test(filterPackage);
+			}
+
+			@Override
+			protected boolean filterClass(Class<?> filterClass) {
+				return classFilter.test(filterClass);
+			}
+		};
+	}
+
+	protected abstract boolean filterClass(Class<?> filterClass);
+
+	protected abstract boolean filterPackage(Package filterPackage);
+
+	protected abstract boolean filterResource(String resourceName);
 
 	@Override
 	protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
@@ -87,7 +108,7 @@ public class FilteringClassLoader extends ClassLoader {
 			resolveClass(clazz);
 		}
 
-		if (!classFilter.test(clazz) || !packageFilter.test(clazz.getPackage())) {
+		if (!filterClass(clazz) || !filterPackage(clazz.getPackage())) {
 			throw new ClassNotFoundException(name + " not found.");
 		}
 
@@ -97,7 +118,7 @@ public class FilteringClassLoader extends ClassLoader {
 	@Override
 	protected Package getPackage(String name) {
 		Package p = super.getPackage(name);
-		if (p == null || !packageFilter.test(p)) {
+		if (p == null || !filterPackage(p)) {
 			return null;
 		}
 		return p;
@@ -107,16 +128,16 @@ public class FilteringClassLoader extends ClassLoader {
 	protected Package[] getPackages() {
 		List<Package> packages = new ArrayList<>();
 		for (Package p : super.getPackages()) {
-			if (packageFilter.test(p)) {
+			if (filterPackage(p)) {
 				packages.add(p);
 			}
 		}
-		return packages.toArray(new Package[0]);
+		return packages.toArray(new Package[packages.size()]);
 	}
 
 	@Override
 	public URL getResource(String name) {
-		if (resourceFilter.test(name)) {
+		if (filterResource(name)) {
 			return super.getResource(name);
 		}
 		return SYSTEM_CLASS_LOADER.getResource(name);
@@ -124,7 +145,7 @@ public class FilteringClassLoader extends ClassLoader {
 
 	@Override
 	public Enumeration<URL> getResources(String name) throws IOException {
-		if (resourceFilter.test(name)) {
+		if (filterResource(name)) {
 			return super.getResources(name);
 		}
 		return SYSTEM_CLASS_LOADER.getResources(name);
