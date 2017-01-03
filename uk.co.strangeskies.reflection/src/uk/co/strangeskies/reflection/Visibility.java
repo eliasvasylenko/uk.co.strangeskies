@@ -3,6 +3,7 @@ package uk.co.strangeskies.reflection;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 
+import java.lang.reflect.Modifier;
 import java.util.Optional;
 
 public enum Visibility {
@@ -28,6 +29,18 @@ public enum Visibility {
 			return of("private");
 		default:
 			throw new AssertionError();
+		}
+	}
+
+	public static Visibility forModifiers(int modifiers) {
+		if (Modifier.isPublic(modifiers)) {
+			return Visibility.PUBLIC;
+		} else if (Modifier.isProtected(modifiers)) {
+			return Visibility.PROTECTED;
+		} else if (Modifier.isPrivate(modifiers)) {
+			return Visibility.PRIVATE;
+		} else {
+			return Visibility.PACKAGE_PRIVATE;
 		}
 	}
 }

@@ -5,7 +5,6 @@ import static uk.co.strangeskies.reflection.token.TypeToken.overAnnotatedType;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.entriesToMap;
 
 import java.lang.reflect.AnnotatedType;
-import java.lang.reflect.Constructor;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Map;
 import java.util.Objects;
@@ -26,6 +25,7 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 	private final ClassDeclaration<?, C> owningDeclaration;
 	private final TypeToken<T> returnType;
 	private final Map<VariableSignature<?>, LocalVariableExpression<?>> parameters;
+	private final boolean staticMethod;
 
 	@SuppressWarnings("unchecked")
 	protected MethodDeclaration(
@@ -34,7 +34,8 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 			ClassDeclaration<?, ?> declaringClass,
 			ClassDeclaration<?, C> owningDeclaration,
 			AnnotatedType returnType,
-			ExecutableSignature<?> signature) {
+			ExecutableSignature<?> signature,
+			boolean staticMethod) {
 		super(signature);
 
 		this.name = name;
@@ -46,18 +47,24 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 				.getParameters()
 				.map(parameter -> new SimpleEntry<>(parameter, createParameter((VariableSignature<?>) parameter)))
 				.collect(entriesToMap());
+		this.staticMethod = staticMethod;
+
+		if (isStatic() && isDefault()) {
+			throw new CodeGenerationException(m -> m.staticMethodCannotBeDefault(this));
+		}
 	}
 
 	protected static <C, T> MethodDeclaration<C, T> declareConstructor(
 			ClassDeclaration<C, T> classDeclaration,
 			ConstructorSignature signature) {
 		return new MethodDeclaration<>(
-				classDeclaration.getSignature().getTypeName(),
+				classDeclaration.getSignature().getClassName(),
 				Kind.CONSTRUCTOR,
 				classDeclaration,
 				classDeclaration.getEnclosingClass(),
 				classDeclaration.asToken().getAnnotatedDeclaration(),
-				signature);
+				signature,
+				false);
 	}
 
 	protected static <C, T> MethodDeclaration<C, T> declareStaticMethod(
@@ -69,7 +76,8 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 				classDeclaration,
 				classDeclaration.getEnclosingClass(),
 				signature.getReturnType(),
-				signature);
+				signature,
+				true);
 	}
 
 	protected static <C, T> MethodDeclaration<C, T> declareMethod(
@@ -81,7 +89,8 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 				classDeclaration,
 				classDeclaration,
 				signature.getReturnType(),
-				signature);
+				signature,
+				false);
 	}
 
 	public ClassDeclaration<?, ?> getDeclaringClass() {
@@ -170,23 +179,15 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 				.toString();
 	}
 
-	@Override
-	public boolean equals(Object obj) {
-		// TODO Auto-generated method stub
-		return super.equals(obj);
-	}
-
-	@Override
-	public int hashCode() {
-		// TODO Auto-generated method stub
-		return super.hashCode();
-	}
-
 	public boolean isConstructor() {
 		return getSignature() instanceof ConstructorSignature;
 	}
 
-	public boolean isStaticMethod() {
-		return getSignature() instanceof MethodSignature<?> && ((MethodSignature<?>)getSignature()).get;
+	public boolean isStatic() {
+		return staticMethod;
+	}
+
+	public boolean isDefault() {
+		return !isConstructor() && ((MethodSignature<?>) getSignature()).isDefault();
 	}
 }

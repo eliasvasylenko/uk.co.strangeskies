@@ -58,10 +58,10 @@ public class Expressions {
 	private static final AtomicLong TYPE_TOKEN_EXPRESSION_COUNT = new AtomicLong(0);
 
 	public static <T> ValueExpression<? extends TypeToken<T>> typeTokenExpression(TypeToken<T> type) {
-		ClassDefinition<Void, ? extends TypeToken<T>> typeTokenClass = classSignature(
-				"TypeTokenExpression$" + TYPE_TOKEN_EXPRESSION_COUNT.incrementAndGet())
-						.withSuperType(type.getThisTypeToken())
-						.defineSingleton();
+		ClassDefinition<Void, ? extends TypeToken<T>> typeTokenClass = classSignature()
+				.withSimpleName("TypeTokenExpression$" + TYPE_TOKEN_EXPRESSION_COUNT.incrementAndGet())
+				.withSuperType(type.getThisTypeToken())
+				.defineSingle();
 
 		return invokeStatic(typeTokenClass.getDeclaration().getConstructorDeclaration().asToken());
 	}

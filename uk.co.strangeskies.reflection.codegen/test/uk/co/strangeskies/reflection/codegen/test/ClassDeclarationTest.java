@@ -39,12 +39,16 @@ import java.util.Set;
 import org.junit.Test;
 
 import uk.co.strangeskies.reflection.ReflectionException;
-import uk.co.strangeskies.reflection.codegen.ClassDeclaration;
+import uk.co.strangeskies.reflection.codegen.ClassRegister;
+import uk.co.strangeskies.reflection.codegen.ClassSignature;
+import uk.co.strangeskies.reflection.codegen.ClassSpace;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 @SuppressWarnings("javadoc")
 public class ClassDeclarationTest {
-	private static final String TEST_CLASS_NAME = ClassDeclarationTest.class.getPackage().getName() + ".SelfSet";
+	private static final ClassSignature<?> TEST_CLASS_SIGNATURE = classSignature()
+			.withPackageName(ClassDeclarationTest.class.getPackage().getName())
+			.withSimpleName("SelfSet");
 
 	private interface StringMethod {
 		String method(String parameter);
@@ -58,45 +62,46 @@ public class ClassDeclarationTest {
 		Number method(N parameter);
 	}
 
-	private interface TMethod<T> {
-		T method(String parameter);
-	}
-
 	private interface NumberMethodSubType extends NumberMethod<String> {}
 
 	@Test(expected = ReflectionException.class)
 	public void supertypesWithIncompatibleParameterizationsTest() {
-		classSignature(TEST_CLASS_NAME)
-				.withSuperType(new TypeToken<Set<String>>() {}, new TypeToken<Iterable<Number>>() {})
-				.declare();
+		ClassSignature<?> signature = TEST_CLASS_SIGNATURE
+				.withSuperType(new TypeToken<Set<String>>() {}, new TypeToken<Iterable<Number>>() {});
+
+		new ClassRegister().withClassSignature(signature).declare();
 	}
 
 	@Test(expected = ReflectionException.class)
 	public void inheritedMethodFromParameterizedTypeCollisionTest() {
-		classSignature(TEST_CLASS_NAME)
-				.withSuperType(new TypeToken<StringMethod>() {}, new TypeToken<NumberMethod<String>>() {})
-				.declare();
+		ClassSignature<?> signature = TEST_CLASS_SIGNATURE
+				.withSuperType(new TypeToken<StringMethod>() {}, new TypeToken<NumberMethod<String>>() {});
+
+		new ClassRegister().withClassSignature(signature).declare();
 	}
 
 	@Test(expected = ReflectionException.class)
 	public void inheritedMethodCollisionTest() {
-		classSignature(TEST_CLASS_NAME)
-				.withSuperType(new TypeToken<ObjectMethod>() {}, new TypeToken<NumberMethod<String>>() {})
-				.declare();
+		ClassSignature<?> signature = TEST_CLASS_SIGNATURE
+				.withSuperType(new TypeToken<ObjectMethod>() {}, new TypeToken<NumberMethod<String>>() {});
+
+		new ClassRegister().withClassSignature(signature).declare();
 	}
 
 	@Test(expected = ReflectionException.class)
 	public void indirectlyInheritedMethodCollisionTest() {
-		classSignature(TEST_CLASS_NAME)
-				.withSuperType(new TypeToken<ObjectMethod>() {}, new TypeToken<NumberMethodSubType>() {})
-				.declare();
+		ClassSignature<?> signature = TEST_CLASS_SIGNATURE
+				.withSuperType(new TypeToken<ObjectMethod>() {}, new TypeToken<NumberMethodSubType>() {});
+
+		new ClassRegister().withClassSignature(signature).declare();
 	}
 
 	@Test
 	public void simpleOverrideMethodTest() {
-		ClassDeclaration<?, ?> declaration = classSignature(TEST_CLASS_NAME)
-				.withSuperType(new TypeToken<ObjectMethod>() {})
-				.declare();
-		declaration.getMethodDeclaration("method", Object.class);
+		ClassSignature<?> signature = TEST_CLASS_SIGNATURE.withSuperType(new TypeToken<ObjectMethod>() {});
+
+		ClassSpace classSpace = new ClassRegister().withClassSignature(signature).declare();
+
+		classSpace.getClassDeclaration(signature).getMethodDeclaration("method", Object.class);
 	}
 }

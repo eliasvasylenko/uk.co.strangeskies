@@ -83,4 +83,6 @@ public interface CodeGenerationProperties extends Properties<CodeGenerationPrope
 	Localized<String> mustImplementMethod(MethodDeclaration<?, ?> method);
 
 	Localized<String> classNameAlreadyRegistered(ClassSignature<?> classSignature);
+
+	Localized<String> staticMethodCannotBeDefault(MethodDeclaration<?, ?> methodDeclaration);
 }

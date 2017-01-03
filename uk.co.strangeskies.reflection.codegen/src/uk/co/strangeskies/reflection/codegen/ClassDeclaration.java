@@ -283,7 +283,7 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 			builder.append("final ");
 		 */
 
-		builder.append(signature.getTypeName());
+		builder.append(signature.getClassName());
 
 		if (isParameterized()) {
 			builder.append("<").append(getTypeVariables().map(Objects::toString).collect(joining(", "))).append("> ");

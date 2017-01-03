@@ -19,7 +19,7 @@ import java.util.stream.Stream;
  * <p>
  * Classes signatures with no interdependencies may be declared into an
  * anonymous, unit-set register and class space via
- * {@link ClassSignature#declare()}
+ * {@link ClassSignature#defineSingle()}
  * 
  * @author Elias N Vasylenko
  */
@@ -36,7 +36,7 @@ public class ClassRegister {
 
 	public ClassRegister withClassSignature(ClassSignature<?> classSignature) {
 		Map<String, ClassSignature<?>> classSignatures = new HashMap<>(this.classSignatures);
-		if (classSignatures.putIfAbsent(classSignature.getTypeName(), classSignature) != null) {
+		if (classSignatures.putIfAbsent(classSignature.getClassName(), classSignature) != null) {
 			throw new CodeGenerationException(m -> m.classNameAlreadyRegistered(classSignature));
 		}
 		return new ClassRegister(classSignatures);

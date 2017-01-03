@@ -31,6 +31,9 @@ public class ClassSpace {
 	private boolean allowPartialImplementation;
 	private final Set<MethodDeclaration<?, ?>> undefinedMethods;
 
+	private final ClassLoader parentClassLoader;
+	private final ClassLoadingStrategy classLoadingStrategy;
+
 	public ClassSpace(ClassRegister classRegister) {
 		this.classRegister = classRegister;
 
@@ -47,6 +50,9 @@ public class ClassSpace {
 					.filter(m -> !methodDefinitions.keySet().contains(m))
 					.forEach(undefinedMethods::add);
 		});
+
+		parentClassLoader = getClass().getClassLoader();
+		classLoadingStrategy = ClassLoadingStrategy.DERIVE;
 	}
 
 	protected ClassSpace(
@@ -54,12 +60,16 @@ public class ClassSpace {
 			Map<ClassSignature<?>, ClassDeclaration<?, ?>> classDeclarations,
 			Map<MethodDeclaration<?, ?>, MethodDefinition<?, ?>> methodDefinitions,
 			boolean allowPartialImplementation,
-			Set<MethodDeclaration<?, ?>> undefinedMethods) {
+			Set<MethodDeclaration<?, ?>> undefinedMethods,
+			ClassLoader parentClassLoader,
+			ClassLoadingStrategy classLoadingStrategy) {
 		this.classRegister = classRegister;
 		this.classDeclarations = classDeclarations;
 		this.methodDefinitions = methodDefinitions;
 		this.allowPartialImplementation = allowPartialImplementation;
 		this.undefinedMethods = undefinedMethods;
+		this.parentClassLoader = parentClassLoader;
+		this.classLoadingStrategy = classLoadingStrategy;
 	}
 
 	ClassSpace withMethodDefinition(MethodDeclaration<?, ?> declaration, MethodDefinition<?, ?> definition) {
@@ -74,7 +84,9 @@ public class ClassSpace {
 				classDeclarations,
 				methodDefinitions,
 				allowPartialImplementation,
-				undefinedMethods);
+				undefinedMethods,
+				parentClassLoader,
+				classLoadingStrategy);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -83,9 +95,10 @@ public class ClassSpace {
 	}
 
 	public void validate() {
-		undefinedMethods.stream().filter(m -> m.isConstructor() ).findAny().ifPresent(m -> {
-			throw new CodeGenerationException(o -> o.mustImplementMethod(m));
-		});
+		undefinedMethods.stream().filter(m -> m.isConstructor() || m.isStatic() || !m.isDefault()).findAny().ifPresent(
+				m -> {
+					throw new CodeGenerationException(o -> o.mustImplementMethod(m));
+				});
 	}
 
 	public boolean isFullyImplemented() {
@@ -94,8 +107,8 @@ public class ClassSpace {
 
 	/**
 	 * Is the class space not {@link #isFullyImplemented() fully implemented}, and
-	 * is partial implementation {@link #asPartialImplementation(boolean) allowed}
-	 * and possible.
+	 * is partial implementation {@link #withPartialImplementation(boolean)
+	 * allowed} and possible.
 	 * 
 	 * @return true if the class space is partially implemented, false otherwise
 	 */
@@ -106,10 +119,11 @@ public class ClassSpace {
 	/**
 	 * {@code partialImplementation} defaults to true.
 	 *
-	 * @see #asPartialImplementation(boolean)
+	 * @see #withPartialImplementation(boolean)
 	 */
+	@SuppressWarnings("javadoc")
 	public ClassSpace asPartialImplementation() {
-		return asPartialImplementation(true);
+		return withPartialImplementation(true);
 	}
 
 	/**
@@ -120,33 +134,73 @@ public class ClassSpace {
 	 * some method implementations are not provided. This is achieved by providing
 	 * default implementations to throw an error on invocation.
 	 * 
-	 * @param partialImplementation
+	 * @param allowPartialImplementation
 	 *          true if partial implementation should be allowed, false otherwise
 	 * @return the derived class space
 	 */
-	public ClassSpace asPartialImplementation(boolean partialImplementation) {
-		return new ClassSpace(classRegister, classDeclarations, methodDefinitions, partialImplementation, undefinedMethods);
+	public ClassSpace withPartialImplementation(boolean allowPartialImplementation) {
+		return new ClassSpace(
+				classRegister,
+				classDeclarations,
+				methodDefinitions,
+				allowPartialImplementation,
+				undefinedMethods,
+				parentClassLoader,
+				classLoadingStrategy);
 	}
 
 	/**
-	 * Create a new class loader with the given parent and load all class
-	 * definitions into it.
+	 * Derive a new class space with the given parent class loader.
+	 * 
+	 * <p>
+	 * To be able to load generated classes, this class loader should give access
+	 * to all classes mentioned in the class definitions.
 	 * 
 	 * @param parentClassLoader
-	 * @return
+	 *          the parent class loader
+	 * @return the derived class space
 	 */
-	public ClassLoader loadClasses(ClassLoader parentClassLoader) {
-		return loadClassesInto(new ClassLoader(parentClassLoader) {});
+	public ClassSpace withParentClassLoader(ClassLoader parentClassLoader) {
+		return new ClassSpace(
+				classRegister,
+				classDeclarations,
+				methodDefinitions,
+				allowPartialImplementation,
+				undefinedMethods,
+				parentClassLoader,
+				classLoadingStrategy);
 	}
 
 	/**
-	 * Inject all class definitions into the given class loader.
+	 * Derive a new class space with the given class loading strategy.
 	 * 
-	 * @param classLoader
-	 * @return
+	 * @param classLoadingStrategy
+	 *          the class loading strategy
+	 * @return the derived class space
 	 */
-	public ClassLoader loadClassesInto(ClassLoader classLoader) {
-		return classLoader;
+	public ClassSpace withClassLoadingStrategy(ClassLoadingStrategy classLoadingStrategy) {
+		return new ClassSpace(
+				classRegister,
+				classDeclarations,
+				methodDefinitions,
+				allowPartialImplementation,
+				undefinedMethods,
+				parentClassLoader,
+				classLoadingStrategy);
+	}
+
+	public ClassSpace generateClasses() {
+		return this;
+	}
+
+	/**
+	 * Generate the classes and load them into the runtime.
+	 * 
+	 * @return the class loader containing, or allowing the loading of, the
+	 *         generated classes
+	 */
+	public ClassLoader loadClasses() {
+		return parentClassLoader;
 	}
 
 	@SuppressWarnings("unchecked")

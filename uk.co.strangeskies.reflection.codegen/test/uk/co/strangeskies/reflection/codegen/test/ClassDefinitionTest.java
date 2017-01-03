@@ -42,6 +42,7 @@ import org.junit.Test;
 
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.codegen.ClassDefinition;
+import uk.co.strangeskies.reflection.codegen.ClassSignature;
 import uk.co.strangeskies.reflection.codegen.MethodDeclaration;
 import uk.co.strangeskies.reflection.codegen.MethodSignature;
 import uk.co.strangeskies.reflection.codegen.VariableSignature;
@@ -59,14 +60,24 @@ public class ClassDefinitionTest {
 		default void method() {}
 	}
 
-	private static final String TEST_CLASS_NAME = ClassDefinitionTest.class.getPackage().getName() + ".SelfSet";
+	private static final ClassSignature<?> TEST_CLASS_SIGNATURE = classSignature()
+			.withPackageName(ClassDeclarationTest.class.getPackage().getName())
+			.withSimpleName("SelfSet");
+
 	private static final TypeToken<String> STRING_TYPE = new TypeToken<String>() {};
 
 	@Test
+	public void defineObject() {
+		Object instance = TEST_CLASS_SIGNATURE.defineSingle().instantiateReflectively().cast();
+
+		instance.hashCode();
+	}
+
+	@Test
 	public void runnableClassInvocation() {
-		ClassDefinition<Void, ? extends Runnable> classDefinition = classSignature(TEST_CLASS_NAME)
+		ClassDefinition<Void, ? extends Runnable> classDefinition = TEST_CLASS_SIGNATURE
 				.withSuperType(Runnable.class)
-				.defineSingleton()
+				.defineSingle()
 				.withMethodDefinition(methodSignature("run"), d -> d.withBody(b -> b.withReturnStatement()));
 
 		Runnable instance = classDefinition.instantiateReflectively().cast();
@@ -84,10 +95,10 @@ public class ClassDefinitionTest {
 		MethodSignature<String> applyMethod = methodSignature("apply").withReturnType(STRING_TYPE).withParameters(
 				applyParameter);
 
-		Func<String, String> instance = classSignature(TEST_CLASS_NAME)
+		Func<String, String> instance = TEST_CLASS_SIGNATURE
 				.withSuperType(new TypeToken<Func<String, String>>() {})
 				.withMethod(applyMethod)
-				.defineSingleton()
+				.defineSingle()
 				.withMethodDefinition(
 						applyMethod,
 						d -> d.withBody(
@@ -105,9 +116,9 @@ public class ClassDefinitionTest {
 	public void defineWithInheritedMethodDeclarationBySignature() {
 		VariableSignature<String> applyParameter = variableSignature("value", STRING_TYPE);
 
-		Func<String, String> instance = classSignature(TEST_CLASS_NAME)
+		Func<String, String> instance = TEST_CLASS_SIGNATURE
 				.withSuperType(new TypeToken<Func<String, String>>() {})
-				.defineSingleton()
+				.defineSingle()
 				.withMethodDefinition(
 						methodSignature("apply").withReturnType(String.class).withParameters(applyParameter),
 						d -> d.withBody(
@@ -123,8 +134,7 @@ public class ClassDefinitionTest {
 
 	@Test
 	public void defineWithInheritedMethodDeclaration() {
-		defineFunctionClass(
-				classSignature(TEST_CLASS_NAME).withSuperType(new TypeToken<Func<String, String>>() {}).defineSingleton());
+		defineFunctionClass(TEST_CLASS_SIGNATURE.withSuperType(new TypeToken<Func<String, String>>() {}).defineSingle());
 	}
 
 	private <F extends Func<String, String>> void defineFunctionClass(ClassDefinition<Void, F> classDefinition) {
@@ -148,11 +158,11 @@ public class ClassDefinitionTest {
 
 	@Test(expected = ReflectionException.class)
 	public void defineWithAbstractMethod() {
-		classSignature(TEST_CLASS_NAME).withSuperType(Runnable.class).defineSingleton().instantiateReflectively();
+		TEST_CLASS_SIGNATURE.withSuperType(Runnable.class).defineSingle().instantiateReflectively();
 	}
 
 	@Test
 	public void defineWithDefaultMethod() {
-		classSignature(TEST_CLASS_NAME).withSuperType(Default.class).defineSingleton().instantiateReflectively();
+		TEST_CLASS_SIGNATURE.withSuperType(Default.class).defineSingle().instantiateReflectively();
 	}
 }

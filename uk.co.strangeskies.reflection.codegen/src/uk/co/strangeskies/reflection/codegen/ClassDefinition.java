@@ -133,7 +133,7 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 	protected ClassDefinition(ClassDeclaration<E, T> declaration, ClassSpace classSpace) {
 		super(declaration);
 
-		this.typeName = declaration.getSignature().getTypeName();
+		this.typeName = declaration.getSignature().getClassName();
 		this.classSpace = classSpace;
 	}
 

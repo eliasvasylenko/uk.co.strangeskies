@@ -32,7 +32,12 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.toList;
+import static uk.co.strangeskies.reflection.Visibility.forModifiers;
+
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
 import java.util.List;
 import java.util.Set;
 
@@ -44,6 +49,15 @@ public class ConstructorSignature extends ExecutableSignature<ConstructorSignatu
 
 	public static ConstructorSignature constructorSignature() {
 		return EMPTY_SIGNATURE;
+	}
+
+	public static ConstructorSignature constructorSignature(Constructor<?> method) {
+		return new ConstructorSignature()
+				.withAnnotations(method.getAnnotations())
+				.withVisibility(forModifiers(method.getModifiers()))
+				.withTypeVariables(
+						stream(method.getTypeParameters()).map(TypeVariableSignature::typeVariableSignature).collect(toList()))
+				.withParameters(stream(method.getParameters()).map(VariableSignature::variableSignature).collect(toList()));
 	}
 
 	protected ConstructorSignature() {

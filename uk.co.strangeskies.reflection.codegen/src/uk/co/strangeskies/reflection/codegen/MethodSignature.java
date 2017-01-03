@@ -32,7 +32,9 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
+import static uk.co.strangeskies.reflection.Visibility.forModifiers;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
@@ -44,7 +46,6 @@ import java.util.Set;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.Visibility;
-import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> {
@@ -52,14 +53,15 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 		return new MethodSignature<>(methodName);
 	}
 
-	public static <U> MethodSignature<U> methodSignature(ExecutableToken<?, U> executableToken) {
-		return new MethodSignature<>(executableToken.getName())
-				.withAnnotations(executableToken.getMember().getAnnotations())
+	public static MethodSignature<?> methodSignature(Method method) {
+		return new MethodSignature<>(method.getName())
+				.withAnnotations(method.getAnnotations())
+				.withVisibility(forModifiers(method.getModifiers()))
+				.withReturnType(method.getAnnotatedReturnType())
+				.asDefault(method.isDefault())
 				.withTypeVariables(
-						executableToken.getTypeParameters().map(TypeVariableSignature::typeVariableSignature).collect(toList()))
-				.withReturnType(executableToken.getReturnType())
-				.withParameters(executableToken.getParameters().map(VariableSignature::variableSignature).collect(toList()))
-				.asDefault(((Method) executableToken.getMember()).isDefault());
+						stream(method.getTypeParameters()).map(TypeVariableSignature::typeVariableSignature).collect(toList()))
+				.withParameters(stream(method.getParameters()).map(VariableSignature::variableSignature).collect(toList()));
 	}
 
 	private final AnnotatedType returnType;

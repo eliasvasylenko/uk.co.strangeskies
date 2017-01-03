@@ -60,7 +60,6 @@ public class ExpressionTest {
 	}
 
 	private static final TypeToken<Object> OBJECT_TYPE = new TypeToken<Object>() {};
-
 	private static final TypeToken<String> STRING_TYPE = new TypeToken<String>() {};
 
 	private static final TypeToken<TestClass> TEST_CLASS_TYPE = new TypeToken<TestClass>() {};
