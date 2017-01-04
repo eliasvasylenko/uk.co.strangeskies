@@ -143,7 +143,7 @@ public class AdaptingNamedObjectSupplier extends ExtendedObjectSupplier {
 					}
 
 					Object namedObject = request.get(context);
-					if (!Tracker.this.namedObject.equals(namedObject)) {
+					if (!Objects.equals(Tracker.this.namedObject, namedObject)) {
 						Tracker.this.namedObject = namedObject;
 
 						// if this is not the first time ...
