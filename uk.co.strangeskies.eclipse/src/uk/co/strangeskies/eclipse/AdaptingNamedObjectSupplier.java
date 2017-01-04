@@ -63,7 +63,7 @@ import uk.co.strangeskies.text.properties.PropertyLoader;
 		service = ExtendedObjectSupplier.class,
 		property = "dependency.injection.annotation:String=uk.co.strangeskies.eclipse.AdaptNamed",
 		immediate = true)
-public class NamedAdapterSupplier extends ExtendedObjectSupplier {
+public class AdaptingNamedObjectSupplier extends ExtendedObjectSupplier {
 	class Request {
 		private final String name;
 		private final Class<?> adapterType;
@@ -142,12 +142,15 @@ public class NamedAdapterSupplier extends ExtendedObjectSupplier {
 						return false;
 					}
 
-					namedObject = request.get(context);
+					Object namedObject = request.get(context);
+					if (!Tracker.this.namedObject.equals(namedObject)) {
+						Tracker.this.namedObject = namedObject;
 
-					// if this is not the first time ...
-					if (Tracker.this.request != null) {
-						request.requestor.resolveArguments(false);
-						request.requestor.execute();
+						// if this is not the first time ...
+						if (Tracker.this.request != null) {
+							request.requestor.resolveArguments(false);
+							request.requestor.execute();
+						}
 					}
 
 					return true;
