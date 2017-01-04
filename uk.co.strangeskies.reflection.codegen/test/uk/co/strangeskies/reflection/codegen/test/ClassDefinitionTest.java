@@ -92,8 +92,9 @@ public class ClassDefinitionTest {
 	@Test
 	public void defineWithExplicitMethodDeclaration() {
 		VariableSignature<String> applyParameter = variableSignature("value", STRING_TYPE);
-		MethodSignature<String> applyMethod = methodSignature("apply").withReturnType(STRING_TYPE).withParameters(
-				applyParameter);
+		MethodSignature<String> applyMethod = methodSignature("apply")
+				.withReturnType(STRING_TYPE)
+				.withParameters(applyParameter);
 
 		Func<String, String> instance = TEST_CLASS_SIGNATURE
 				.withSuperType(new TypeToken<Func<String, String>>() {})
@@ -112,7 +113,7 @@ public class ClassDefinitionTest {
 		Assert.assertEquals("stringappend", result);
 	}
 
-	@Test
+	@Test(expected = NullPointerException.class)
 	public void defineWithInheritedMethodDeclarationBySignature() {
 		VariableSignature<String> applyParameter = variableSignature("value", STRING_TYPE);
 
@@ -132,7 +133,7 @@ public class ClassDefinitionTest {
 		Assert.assertEquals("stringstring", result);
 	}
 
-	@Test
+	@Test(expected = NullPointerException.class)
 	public void defineWithInheritedMethodDeclaration() {
 		defineFunctionClass(TEST_CLASS_SIGNATURE.withSuperType(new TypeToken<Func<String, String>>() {}).defineSingle());
 	}
