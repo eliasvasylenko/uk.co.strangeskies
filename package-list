@@ -19,6 +19,9 @@ uk.co.strangeskies.mathematics.values
 uk.co.strangeskies.mathematics.values.quantities
 uk.co.strangeskies.osgi
 uk.co.strangeskies.reflection
+uk.co.strangeskies.reflection.codegen
+uk.co.strangeskies.reflection.resource
+uk.co.strangeskies.reflection.token
 uk.co.strangeskies.scripting
 uk.co.strangeskies.scripting.engine.clojure
 uk.co.strangeskies.scripting.engine.groovy
