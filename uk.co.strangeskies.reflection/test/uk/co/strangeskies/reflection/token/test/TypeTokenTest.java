@@ -290,7 +290,7 @@ public class TypeTokenTest {
 		printlines();
 	}
 
-	//@Test
+	// @Test
 	public <H extends C2<H>> void yugeTestTheBiggest() {
 		for (int i = 0; i < 3500; i++) {
 			hugeTest1();
@@ -568,20 +568,20 @@ public class TypeTokenTest {
 						.methods()
 						.named("addAll")
 						.resolveOverload(
-								new TypeToken<@Infer ArrayList<? super Integer>>() {}.constructors().resolveOverload().getReturnType())
+								new @Infer TypeToken<ArrayList<? super Integer>>() {}.constructors().resolveOverload().getReturnType())
 						.infer());
 		printlines();
 
 		printlines(
-				new TypeToken<@Infer HashSet<? super Double>>() {}
+				new @Infer TypeToken<HashSet<? super Double>>() {}
 						.constructors()
 						.resolveOverload(
-								new TypeToken<@Infer ArrayList<? super Integer>>() {}.constructors().resolveOverload().getReturnType())
+								new @Infer TypeToken<ArrayList<? super Integer>>() {}.constructors().resolveOverload().getReturnType())
 						.getReturnType()
 						.infer());
 		printlines();
 
-		TypeToken<?> bball = new TypeToken<@Infer HashSet<? super Double>>() {}
+		TypeToken<?> bball = new @Infer TypeToken<HashSet<? super Double>>() {}
 				.constructors()
 				.resolveOverload(
 						new @Capture TypeToken<ArrayList<? super Integer>>() {}.constructors().resolveOverload().getReturnType())
@@ -734,8 +734,9 @@ public class TypeTokenTest {
 		printlines();
 
 		printlines(
-				"annotationseq: " + AnnotatedWildcardTypes.wildcard().equals(
-						AnnotatedWildcardTypes.wildcardExtending(AnnotatedTypes.annotated(Object.class))));
+				"annotationseq: " + AnnotatedWildcardTypes
+						.wildcard()
+						.equals(AnnotatedWildcardTypes.wildcardExtending(AnnotatedTypes.annotated(Object.class))));
 		printlines();
 
 		Imports imports2 = Imports.empty().withImports(Infer.class, Capture.class, Set.class, Map.class);
