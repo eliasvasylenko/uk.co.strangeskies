@@ -504,7 +504,7 @@ public class TypeTokenTest {
 				new TypeToken<Set<String>>() {}
 						.methods()
 						.named("addAll")
-						.resolveOverload(new TypeToken<List<@Infer ?>>() {})
+						.resolveOverload(new @Infer TypeToken<List<?>>() {})
 						.inferParameterTypes());
 		printlines();
 
