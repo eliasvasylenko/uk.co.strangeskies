@@ -85,15 +85,8 @@ runrequires.eclipse.p2.addon:\
 
 ## Run properties groups:
 -runproperties.eclipse:\
-	${if;${runproperties.eclipse.clean};${runproperties.eclipse.clean.addon},}\
 	osgi.console=,\
 	eclipse.consoleLog=true,\
 	equinox.use.ds=true,\
 	osgi.instance.area.default=./workspace,\
 	osgi.console.enable.builtin=true
-
-runproperties.eclipse.clean: false
-
-runproperties.eclipse.clean.addon:\
-	osgi.clean=true,\
-	clearPersistedState=true

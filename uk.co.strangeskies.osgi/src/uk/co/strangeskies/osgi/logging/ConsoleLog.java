@@ -53,7 +53,10 @@ import org.osgi.service.metatype.annotations.Designate;
  * @author Elias N Vasylenko
  */
 @Designate(ocd = ConsoleLogConfiguration.class)
-@Component(name = ConsoleLog.CONFIGURATION_PID, configurationPolicy = ConfigurationPolicy.REQUIRE, immediate = true)
+@Component(
+		configurationPid = ConsoleLog.CONFIGURATION_PID,
+		configurationPolicy = ConfigurationPolicy.REQUIRE,
+		immediate = true)
 public class ConsoleLog implements LogListener {
 	static final String CONFIGURATION_PID = "uk.co.strangeskies.console.log";
 
