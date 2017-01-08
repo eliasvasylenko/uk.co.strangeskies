@@ -37,16 +37,16 @@ package uk.co.strangeskies.reflection.codegen;
  * 
  * @author Elias N Vasylenko
  */
-public enum ClassLoadingStrategy {
+public enum ClassLoaderStrategy {
 	/**
 	 * Inject loaded classes directly into the parent class loader of the
-	 * {@link ClassSpace class space}.
+	 * {@link ClassDefinitionSpace class definition space}.
 	 */
 	INJECT,
 
 	/**
 	 * Derive a new class loader based on the parent class loader of the
-	 * {@link ClassSpace class space}.
+	 * {@link ClassDefinitionSpace class definition space}.
 	 */
 	DERIVE
 }

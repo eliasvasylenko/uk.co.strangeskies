@@ -41,8 +41,6 @@ import java.lang.reflect.Constructor;
 import java.util.List;
 import java.util.Set;
 
-import uk.co.strangeskies.reflection.Visibility;
-
 public class ConstructorSignature extends ExecutableSignature<ConstructorSignature> {
 	private static final ConstructorSignature EMPTY_SIGNATURE = new ConstructorSignature();
 	protected static final String INIT = "<init>";
@@ -57,7 +55,7 @@ public class ConstructorSignature extends ExecutableSignature<ConstructorSignatu
 				.withVisibility(forModifiers(method.getModifiers()))
 				.withTypeVariables(
 						stream(method.getTypeParameters()).map(TypeVariableSignature::typeVariableSignature).collect(toList()))
-				.withParameters(stream(method.getParameters()).map(VariableSignature::variableSignature).collect(toList()));
+				.withParameters(stream(method.getParameters()).map(ParameterSignature::parameterSignature).collect(toList()));
 	}
 
 	protected ConstructorSignature() {
@@ -66,20 +64,20 @@ public class ConstructorSignature extends ExecutableSignature<ConstructorSignatu
 
 	protected ConstructorSignature(
 			Set<Annotation> annotations,
-			Visibility visibility,
-			List<VariableSignature<?>> parameters,
+			Modifiers modifiers,
+			List<ParameterSignature<?>> parameters,
 			List<TypeVariableSignature> typeVariables) {
-		super(INIT, annotations, visibility, parameters, typeVariables);
+		super(INIT, annotations, modifiers, parameters, typeVariables);
 	}
 
 	@Override
 	protected ConstructorSignature withExecutableSignatureData(
 			String name,
 			Set<Annotation> annotations,
-			Visibility visibility,
-			List<VariableSignature<?>> parameters,
+			Modifiers modifiers,
+			List<ParameterSignature<?>> parameters,
 			List<TypeVariableSignature> typeVariables) {
-		return new ConstructorSignature(annotations, visibility, parameters, typeVariables);
+		return new ConstructorSignature(annotations, modifiers, parameters, typeVariables);
 	}
 
 	@Override

@@ -41,7 +41,7 @@ import org.junit.Test;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.codegen.ClassRegister;
 import uk.co.strangeskies.reflection.codegen.ClassSignature;
-import uk.co.strangeskies.reflection.codegen.ClassSpace;
+import uk.co.strangeskies.reflection.codegen.ClassDefinitionSpace;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 @SuppressWarnings("javadoc")
@@ -100,7 +100,7 @@ public class ClassDeclarationTest {
 	public void simpleOverrideMethodTest() {
 		ClassSignature<?> signature = TEST_CLASS_SIGNATURE.withSuperType(new TypeToken<ObjectMethod>() {});
 
-		ClassSpace classSpace = new ClassRegister().withClassSignature(signature).declare();
+		ClassDefinitionSpace classSpace = new ClassRegister().withClassSignature(signature).declare();
 
 		classSpace.getClassDeclaration(signature).getMethodDeclaration("method", Object.class);
 	}

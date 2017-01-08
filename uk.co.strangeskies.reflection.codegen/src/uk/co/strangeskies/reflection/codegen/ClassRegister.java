@@ -42,7 +42,7 @@ import java.util.stream.Stream;
  * An immutable register of class signatures to be declared.
  * 
  * <p>
- * Class registers are declared to create a {@link ClassSpace class space},
+ * Class registers are declared to create a {@link ClassDefinitionSpace class space},
  * containing {@link ClassDeclaration class declarations} for each signature in
  * the register. We build a registry of class signatures before declaring them
  * as a group so that we may naturally facilitate cycles in the class
@@ -74,8 +74,8 @@ public class ClassRegister {
 		return new ClassRegister(classSignatures);
 	}
 
-	public ClassSpace declare() {
-		return new ClassSpace(this);
+	public ClassDefinitionSpace declare() {
+		return new ClassDefinitionSpace(this);
 	}
 
 	public ClassSignature<?> getClassSignature(String className) {

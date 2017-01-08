@@ -57,12 +57,12 @@ public interface ExpressionVisitor {
 				ExecutableToken<? super O, U> invocable,
 				List<ValueExpression<?>> arguments);
 
-		void visitLocal(VariableSignature<? extends U> local);
+		void visitLocal(ParameterSignature<? extends U> local);
 	}
 
 	interface VariableExpressionVisitor<U> {
 		<O> void visitField(ValueExpression<? extends O> value, FieldToken<O, U> field);
 
-		void visitLocal(VariableSignature<U> local);
+		void visitLocal(ParameterSignature<U> local);
 	}
 }

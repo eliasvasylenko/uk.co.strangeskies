@@ -36,7 +36,7 @@ import static uk.co.strangeskies.reflection.token.TypeToken.overAnnotatedType;
 
 import uk.co.strangeskies.reflection.token.TypeToken;
 
-public class FieldDeclaration<C, T> extends AnnotatedDeclaration<VariableSignature<T>> {
+public class FieldDeclaration<C, T> extends AnnotatedDeclaration<ParameterSignature<T>> {
 	private final String name;
 
 	private final ClassDeclaration<?, ?> declaringClass;
@@ -49,7 +49,7 @@ public class FieldDeclaration<C, T> extends AnnotatedDeclaration<VariableSignatu
 			String name,
 			ClassDeclaration<?, ?> declaringClass,
 			ClassDeclaration<?, C> owningDeclaration,
-			VariableSignature<T> signature) {
+			ParameterSignature<T> signature) {
 		super(signature);
 
 		this.name = name;

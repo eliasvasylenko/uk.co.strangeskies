@@ -47,11 +47,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.reflection.Visibility;
-
 public abstract class ExecutableSignature<S extends ExecutableSignature<S>> extends MemberSignature<S>
 		implements ParameterizedSignature<S> {
-	final List<VariableSignature<?>> parameters;
+	final List<ParameterSignature<?>> parameters;
 	final List<TypeVariableSignature> typeVariables;
 
 	ErasedMethodSignature erasedSignature;
@@ -66,10 +64,10 @@ public abstract class ExecutableSignature<S extends ExecutableSignature<S>> exte
 	protected ExecutableSignature(
 			String name,
 			Set<Annotation> annotations,
-			Visibility visibility,
-			List<VariableSignature<?>> parameters,
+			Modifiers modifiers,
+			List<ParameterSignature<?>> parameters,
 			List<TypeVariableSignature> typeVariables) {
-		super(name, annotations, visibility);
+		super(name, annotations, modifiers);
 
 		this.parameters = parameters;
 		this.typeVariables = typeVariables;
@@ -85,15 +83,15 @@ public abstract class ExecutableSignature<S extends ExecutableSignature<S>> exte
 	}
 
 	@Override
-	protected S withMemberSignatureData(String name, Set<Annotation> annotations, Visibility visibility) {
-		return withExecutableSignatureData(name, annotations, visibility, parameters, typeVariables);
+	protected S withMemberSignatureData(String name, Set<Annotation> annotations, Modifiers modifiers) {
+		return withExecutableSignatureData(name, annotations, modifiers, parameters, typeVariables);
 	}
 
 	protected abstract S withExecutableSignatureData(
 			String name,
 			Set<Annotation> annotations,
-			Visibility visibility,
-			List<VariableSignature<?>> parameters,
+			Modifiers modifiers,
+			List<ParameterSignature<?>> parameters,
 			List<TypeVariableSignature> typeVariables);
 
 	@Override
@@ -103,19 +101,19 @@ public abstract class ExecutableSignature<S extends ExecutableSignature<S>> exte
 
 	@Override
 	public S withTypeVariables(Collection<? extends TypeVariableSignature> typeVariables) {
-		return withExecutableSignatureData(name, annotations, visibility, parameters, new ArrayList<>(typeVariables));
+		return withExecutableSignatureData(name, annotations, modifiers, parameters, new ArrayList<>(typeVariables));
 	}
 
-	public Stream<? extends VariableSignature<?>> getParameters() {
+	public Stream<? extends ParameterSignature<?>> getParameters() {
 		return parameters.stream();
 	}
 
-	public S withParameters(VariableSignature<?>... parameters) {
+	public S withParameters(ParameterSignature<?>... parameters) {
 		return withParameters(asList(parameters));
 	}
 
-	public S withParameters(Collection<? extends VariableSignature<?>> parameters) {
-		return withExecutableSignatureData(name, annotations, visibility, new ArrayList<>(parameters), typeVariables);
+	public S withParameters(Collection<? extends ParameterSignature<?>> parameters) {
+		return withExecutableSignatureData(name, annotations, modifiers, new ArrayList<>(parameters), typeVariables);
 	}
 
 	protected void appendParameters(StringBuilder builder) {

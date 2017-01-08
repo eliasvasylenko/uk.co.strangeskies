@@ -56,7 +56,7 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 	private final ClassDeclaration<?, ?> declaringClass;
 	private final ClassDeclaration<?, C> owningDeclaration;
 	private final TypeToken<T> returnType;
-	private final Map<VariableSignature<?>, LocalVariableExpression<?>> parameters;
+	private final Map<ParameterSignature<?>, LocalVariableExpression<?>> parameters;
 	private final boolean staticMethod;
 
 	@SuppressWarnings("unchecked")
@@ -77,7 +77,7 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 		this.returnType = (TypeToken<T>) overAnnotatedType(substituteTypeVariableSignatures(returnType));
 		this.parameters = signature
 				.getParameters()
-				.map(parameter -> new SimpleEntry<>(parameter, createParameter((VariableSignature<?>) parameter)))
+				.map(parameter -> new SimpleEntry<>(parameter, createParameter((ParameterSignature<?>) parameter)))
 				.collect(entriesToMap());
 		this.staticMethod = staticMethod;
 
@@ -134,11 +134,11 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 	}
 
 	@SuppressWarnings("unchecked")
-	public <U> LocalVariableExpression<U> getParameter(VariableSignature<U> parameterSignature) {
+	public <U> LocalVariableExpression<U> getParameter(ParameterSignature<U> parameterSignature) {
 		return (LocalVariableExpression<U>) parameters.get(parameterSignature);
 	}
 
-	private <U> LocalVariableExpression<U> createParameter(VariableSignature<U> parameterSignature) {
+	private <U> LocalVariableExpression<U> createParameter(ParameterSignature<U> parameterSignature) {
 		TypeToken<?> typeToken = overAnnotatedType(substituteTypeVariableSignatures(parameterSignature.getType()));
 
 		@SuppressWarnings("unchecked")
@@ -220,6 +220,6 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 	}
 
 	public boolean isDefault() {
-		return !isConstructor() && ((MethodSignature<?>) getSignature()).isDefault();
+		return !isConstructor() && ((MethodSignature<?>) getSignature()).getModifiers().isDefault();
 	}
 }

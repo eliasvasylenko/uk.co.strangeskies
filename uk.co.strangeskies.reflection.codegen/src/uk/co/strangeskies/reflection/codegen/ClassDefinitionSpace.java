@@ -32,12 +32,54 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class ClassSpace {
+import uk.co.strangeskies.reflection.token.TypeToken;
+
+/**
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * TODO generate byte code early for everything except method definitions!!!! at
+ * this point all those parts should never change since they're derived only
+ * from the immutable {@link ClassDeclaration}s rather than the
+ * {@link ClassDefinition}s
+ * 
+ * ... By doing this we can load these proto-classes into a class loader and
+ * reflect over them, so we get all the type checking provided by
+ * {@link TypeToken} without support for special {@link Type}
+ * implementations!!!!!
+ * 
+ * 
+ * 
+ * Think about how we can achieve clever re-definition abilities here by loading
+ * existing classes into the class definition space and then modifying them.
+ * Remember that we can then use instrumentation to reload the classes into the
+ * same class loader if we really need to.
+ * 
+ * 
+ * Load classes into ClassDefinitionSpace so we can reuse their methods:
+ *  - ClassDefinition.withMethodsFrom(Class)
+ *  - ClassDefinition.withMethodFrom(Class, String)
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * @author Elias N Vasylenko
+ */
+public class ClassDefinitionSpace {
 	class ClassDeclarationContext {
 		ClassDeclaration<?, ?> getClassDeclaration(String className) {
 			return getClassDeclaration(classRegister.getClassSignature(className));
@@ -64,9 +106,9 @@ public class ClassSpace {
 	private final Set<MethodDeclaration<?, ?>> undefinedMethods;
 
 	private final ClassLoader parentClassLoader;
-	private final ClassLoadingStrategy classLoadingStrategy;
+	private final ClassLoaderStrategy classLoadingStrategy;
 
-	public ClassSpace(ClassRegister classRegister) {
+	public ClassDefinitionSpace(ClassRegister classRegister) {
 		this.classRegister = classRegister;
 
 		classDeclarations = new HashMap<>();
@@ -84,17 +126,17 @@ public class ClassSpace {
 		});
 
 		parentClassLoader = getClass().getClassLoader();
-		classLoadingStrategy = ClassLoadingStrategy.DERIVE;
+		classLoadingStrategy = ClassLoaderStrategy.DERIVE;
 	}
 
-	protected ClassSpace(
+	protected ClassDefinitionSpace(
 			ClassRegister classRegister,
 			Map<ClassSignature<?>, ClassDeclaration<?, ?>> classDeclarations,
 			Map<MethodDeclaration<?, ?>, MethodDefinition<?, ?>> methodDefinitions,
 			boolean allowPartialImplementation,
 			Set<MethodDeclaration<?, ?>> undefinedMethods,
 			ClassLoader parentClassLoader,
-			ClassLoadingStrategy classLoadingStrategy) {
+			ClassLoaderStrategy classLoadingStrategy) {
 		this.classRegister = classRegister;
 		this.classDeclarations = classDeclarations;
 		this.methodDefinitions = methodDefinitions;
@@ -104,14 +146,14 @@ public class ClassSpace {
 		this.classLoadingStrategy = classLoadingStrategy;
 	}
 
-	ClassSpace withMethodDefinition(MethodDeclaration<?, ?> declaration, MethodDefinition<?, ?> definition) {
+	ClassDefinitionSpace withMethodDefinition(MethodDeclaration<?, ?> declaration, MethodDefinition<?, ?> definition) {
 		Map<MethodDeclaration<?, ?>, MethodDefinition<?, ?>> methodDefinitions = new HashMap<>(this.methodDefinitions);
 		methodDefinitions.put(declaration, definition);
 
 		Set<MethodDeclaration<?, ?>> undefinedMethods = new HashSet<>(this.undefinedMethods);
 		undefinedMethods.remove(declaration);
 
-		return new ClassSpace(
+		return new ClassDefinitionSpace(
 				classRegister,
 				classDeclarations,
 				methodDefinitions,
@@ -154,7 +196,7 @@ public class ClassSpace {
 	 * @see #withPartialImplementation(boolean)
 	 */
 	@SuppressWarnings("javadoc")
-	public ClassSpace asPartialImplementation() {
+	public ClassDefinitionSpace asPartialImplementation() {
 		return withPartialImplementation(true);
 	}
 
@@ -170,8 +212,8 @@ public class ClassSpace {
 	 *          true if partial implementation should be allowed, false otherwise
 	 * @return the derived class space
 	 */
-	public ClassSpace withPartialImplementation(boolean allowPartialImplementation) {
-		return new ClassSpace(
+	public ClassDefinitionSpace withPartialImplementation(boolean allowPartialImplementation) {
+		return new ClassDefinitionSpace(
 				classRegister,
 				classDeclarations,
 				methodDefinitions,
@@ -192,8 +234,8 @@ public class ClassSpace {
 	 *          the parent class loader
 	 * @return the derived class space
 	 */
-	public ClassSpace withParentClassLoader(ClassLoader parentClassLoader) {
-		return new ClassSpace(
+	public ClassDefinitionSpace withParentClassLoader(ClassLoader parentClassLoader) {
+		return new ClassDefinitionSpace(
 				classRegister,
 				classDeclarations,
 				methodDefinitions,
@@ -210,8 +252,8 @@ public class ClassSpace {
 	 *          the class loading strategy
 	 * @return the derived class space
 	 */
-	public ClassSpace withClassLoadingStrategy(ClassLoadingStrategy classLoadingStrategy) {
-		return new ClassSpace(
+	public ClassDefinitionSpace withClassLoadingStrategy(ClassLoaderStrategy classLoadingStrategy) {
+		return new ClassDefinitionSpace(
 				classRegister,
 				classDeclarations,
 				methodDefinitions,
@@ -221,7 +263,7 @@ public class ClassSpace {
 				classLoadingStrategy);
 	}
 
-	public ClassSpace generateClasses() {
+	public ClassDefinitionSpace generateClasses() {
 		return this;
 	}
 

@@ -79,7 +79,7 @@ public class StatementExecutor {
 	private final ReflectiveInstance<?, ?> receiver;
 	private final StatementExecutor enclosingState;
 
-	private final Map<VariableSignature<?>, Object> locals;
+	private final Map<ParameterSignature<?>, Object> locals;
 
 	private final ExpressionEvaluator expressionEvaluator;
 
@@ -108,7 +108,7 @@ public class StatementExecutor {
 		return enclose(null);
 	}
 
-	public <T> void declareLocal(VariableSignature<T> variable) {
+	public <T> void declareLocal(ParameterSignature<T> variable) {
 		if (locals.containsKey(variable)) {
 			throw new CodeGenerationException(p -> p.cannotRedeclareVariable(variable));
 		}
@@ -116,7 +116,7 @@ public class StatementExecutor {
 	}
 
 	@SuppressWarnings("unchecked")
-	public <T> T getEnclosedLocal(VariableSignature<T> variable) {
+	public <T> T getEnclosedLocal(ParameterSignature<T> variable) {
 		if (locals.containsKey(variable)) {
 			return (T) locals.get(variable);
 		} else if (enclosingState != null) {
@@ -126,7 +126,7 @@ public class StatementExecutor {
 		}
 	}
 
-	public <T> void setEnclosedLocal(VariableSignature<T> variable, T value) {
+	public <T> void setEnclosedLocal(ParameterSignature<T> variable, T value) {
 		if (locals.containsKey(variable)) {
 			locals.put(variable, value);
 		} else if (enclosingState != null) {

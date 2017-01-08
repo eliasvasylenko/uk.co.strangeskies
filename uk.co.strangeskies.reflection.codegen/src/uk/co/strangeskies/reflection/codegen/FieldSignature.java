@@ -35,10 +35,11 @@ package uk.co.strangeskies.reflection.codegen;
 import static java.lang.System.identityHashCode;
 import static java.util.Collections.emptySet;
 import static uk.co.strangeskies.reflection.AnnotatedTypes.annotated;
+import static uk.co.strangeskies.reflection.codegen.Modifiers.modifiers;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
-import java.lang.reflect.Parameter;
+import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.HashSet;
@@ -47,42 +48,72 @@ import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.token.TypeToken;
 
-public class VariableSignature<T> implements AnnotatedSignature<VariableSignature<T>> {
-	private final String variableName;
+public class FieldSignature<T> extends MemberSignature<FieldSignature<T>> {
 	private final AnnotatedType type;
 	private final Set<Annotation> annotations;
 
-	protected VariableSignature(String variableName, AnnotatedType type) {
-		this.variableName = variableName;
+	protected FieldSignature(String variableName, AnnotatedType type) {
+		super(variableName);
+
 		this.type = type;
 		this.annotations = emptySet();
 	}
 
-	protected VariableSignature(String variableName, AnnotatedType type, Set<Annotation> annotations) {
-		this.variableName = variableName;
+	protected FieldSignature(String variableName, Set<Annotation> annotations, Modifiers modifiers, AnnotatedType type) {
+		super(variableName, annotations, modifiers);
+
 		this.type = type;
 		this.annotations = annotations;
 	}
 
-	public static VariableSignature<?> variableSignature(String variableName, AnnotatedType type) {
-		return new VariableSignature<>(variableName, type);
+	@Override
+	protected FieldSignature<T> withMemberSignatureData(
+			String variableName,
+			Set<Annotation> annotations,
+			Modifiers modifiers) {
+		return new FieldSignature<>(variableName, annotations, modifiers, type);
 	}
 
-	public static VariableSignature<?> variableSignature(String variableName, Type type) {
-		return new VariableSignature<>(variableName, annotated(type));
+	public static FieldSignature<?> fieldSignature(String variableName, AnnotatedType type) {
+		return new FieldSignature<>(variableName, type);
 	}
 
-	public static <U> VariableSignature<U> variableSignature(String variableName, Class<U> type) {
-		return new VariableSignature<>(variableName, annotated(type));
+	public static FieldSignature<?> fieldSignature(String variableName, Type type) {
+		return new FieldSignature<>(variableName, annotated(type));
 	}
 
-	public static <U> VariableSignature<U> variableSignature(String variableName, TypeToken<U> type) {
-		return new VariableSignature<>(variableName, type.getAnnotatedDeclaration());
+	public static <U> FieldSignature<U> fieldSignature(String variableName, Class<U> type) {
+		return new FieldSignature<>(variableName, annotated(type));
 	}
 
-	public static <U> VariableSignature<U> variableSignature(Parameter parameter) {
-		return new VariableSignature<U>(parameter.getName(), annotated(parameter.getType()))
-				.withAnnotations(parameter.getAnnotations());
+	public static <U> FieldSignature<U> fieldSignature(String variableName, TypeToken<U> type) {
+		return new FieldSignature<>(variableName, type.getAnnotatedDeclaration());
+	}
+
+	public static <U> FieldSignature<U> fieldSignature(Field field) {
+		return new FieldSignature<U>(field.getName(), annotated(field.getType()))
+				.withAnnotations(field.getAnnotations())
+				.withModifiers(modifiers(field.getModifiers()));
+	}
+
+	private FieldSignature<T> withModifiers(Modifiers modifiers) {
+		return withMemberSignatureData(name, annotations, modifiers);
+	}
+
+	public FieldSignature<T> asStatic(boolean isStatic) {
+		return withModifiers(modifiers.withStatic(isStatic));
+	}
+
+	public FieldSignature<T> asFinal(boolean isFinal) {
+		return withModifiers(modifiers.withFinal(isFinal));
+	}
+
+	public FieldSignature<T> asTransient(boolean isTransient) {
+		return withModifiers(modifiers.withTransient(isTransient));
+	}
+
+	public FieldSignature<T> asVolatile(boolean isVolatile) {
+		return withModifiers(modifiers.withVolatile(isVolatile));
 	}
 
 	@Override
@@ -91,12 +122,8 @@ public class VariableSignature<T> implements AnnotatedSignature<VariableSignatur
 	}
 
 	@Override
-	public VariableSignature<T> withAnnotations(Collection<? extends Annotation> annotations) {
-		return new VariableSignature<>(variableName, type, new HashSet<>(annotations));
-	}
-
-	public String getVariableName() {
-		return variableName;
+	public FieldSignature<T> withAnnotations(Collection<? extends Annotation> annotations) {
+		return new FieldSignature<>(name, new HashSet<>(annotations), modifiers, type);
 	}
 
 	public AnnotatedType getType() {
@@ -105,7 +132,7 @@ public class VariableSignature<T> implements AnnotatedSignature<VariableSignatur
 
 	@Override
 	public String toString() {
-		return getType() + " " + getVariableName();
+		return getType() + " " + getName();
 	}
 
 	@Override

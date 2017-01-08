@@ -32,6 +32,7 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static java.util.Arrays.stream;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 
@@ -74,5 +75,27 @@ public enum Visibility {
 		} else {
 			return Visibility.PACKAGE_PRIVATE;
 		}
+	}
+
+	public int getModifier() {
+		switch (this) {
+		case PUBLIC:
+			return Modifier.PUBLIC;
+		case PROTECTED:
+			return Modifier.PROTECTED;
+		case PACKAGE_PRIVATE:
+			return 0;
+		case PRIVATE:
+			return Modifier.PRIVATE;
+		default:
+			throw new AssertionError();
+		}
+	}
+
+	public int withModifiers(int modifiers) {
+		int present = getModifier();
+		int missing = stream(values()).map(Visibility::getModifier).reduce((a, b) -> a | b).get();
+
+		return modifiers & ~missing | present;
 	}
 }

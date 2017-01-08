@@ -34,6 +34,7 @@ package uk.co.strangeskies.reflection.codegen;
 
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
+import static uk.co.strangeskies.reflection.AnnotatedTypes.annotated;
 import static uk.co.strangeskies.reflection.Visibility.forModifiers;
 
 import java.lang.annotation.Annotation;
@@ -45,7 +46,6 @@ import java.util.Objects;
 import java.util.Set;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
-import uk.co.strangeskies.reflection.Visibility;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> {
@@ -61,67 +61,69 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 				.asDefault(method.isDefault())
 				.withTypeVariables(
 						stream(method.getTypeParameters()).map(TypeVariableSignature::typeVariableSignature).collect(toList()))
-				.withParameters(stream(method.getParameters()).map(VariableSignature::variableSignature).collect(toList()));
+				.withParameters(stream(method.getParameters()).map(ParameterSignature::parameterSignature).collect(toList()));
 	}
 
 	private final AnnotatedType returnType;
-	private final boolean defaultImplementation;
 
 	protected MethodSignature(String methodName) {
 		super(methodName);
 
-		this.returnType = AnnotatedTypes.annotated(void.class);
-		this.defaultImplementation = false;
+		this.returnType = annotated(void.class);
 	}
 
 	protected MethodSignature(
 			String name,
 			Set<Annotation> annotations,
-			Visibility visibility,
-			List<VariableSignature<?>> parameters,
+			Modifiers modifiers,
+			List<ParameterSignature<?>> parameters,
 			List<TypeVariableSignature> typeVariables,
-			AnnotatedType returnType,
-			boolean defaultImplementation) {
-		super(name, annotations, visibility, parameters, typeVariables);
+			AnnotatedType returnType) {
+		super(name, annotations, modifiers, parameters, typeVariables);
 
 		this.returnType = returnType;
-		this.defaultImplementation = defaultImplementation;
 	}
 
 	@Override
 	protected MethodSignature<T> withExecutableSignatureData(
 			String name,
 			Set<Annotation> annotations,
-			Visibility visibility,
-			List<VariableSignature<?>> parameters,
+			Modifiers modifiers,
+			List<ParameterSignature<?>> parameters,
 			List<TypeVariableSignature> typeVariables) {
-		return new MethodSignature<>(
-				name,
-				annotations,
-				visibility,
-				parameters,
-				typeVariables,
-				returnType,
-				defaultImplementation);
+		return new MethodSignature<>(name, annotations, modifiers, parameters, typeVariables, returnType);
 	}
 
-	public boolean isDefault() {
-		return defaultImplementation;
+	private MethodSignature<T> withModifiers(Modifiers modifiers) {
+		return withExecutableSignatureData(name, annotations, modifiers, parameters, typeVariables);
 	}
 
-	public MethodSignature<T> asDefault(boolean defaultImplementation) {
-		return new MethodSignature<>(
-				name,
-				annotations,
-				visibility,
-				parameters,
-				typeVariables,
-				returnType,
-				defaultImplementation);
+	public MethodSignature<T> asStatic(boolean isStatic) {
+		return withModifiers(modifiers.withStatic(isStatic));
 	}
 
-	public MethodSignature<T> asDefault() {
-		return asDefault(true);
+	public MethodSignature<T> asFinal(boolean isFinal) {
+		return withModifiers(modifiers.withFinal(isFinal));
+	}
+
+	public MethodSignature<T> asAbstract(boolean isAbstract) {
+		return withModifiers(modifiers.withAbstract(isAbstract));
+	}
+
+	public MethodSignature<T> asSynchronized(boolean isSynchronized) {
+		return withModifiers(modifiers.withSynchronized(isSynchronized));
+	}
+
+	public MethodSignature<T> asStrict(boolean isStrict) {
+		return withModifiers(modifiers.withStrict(isStrict));
+	}
+
+	public MethodSignature<T> asNative(boolean isNative) {
+		return withModifiers(modifiers.withNative(isNative));
+	}
+
+	public MethodSignature<T> asDefault(boolean isDefault) {
+		return withModifiers(modifiers.withDefault(isDefault));
 	}
 
 	public AnnotatedType getReturnType() {
@@ -129,14 +131,7 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 	}
 
 	public MethodSignature<?> withReturnType(AnnotatedType returnType) {
-		return new MethodSignature<>(
-				name,
-				annotations,
-				visibility,
-				parameters,
-				typeVariables,
-				returnType,
-				defaultImplementation);
+		return new MethodSignature<>(name, annotations, modifiers, parameters, typeVariables, returnType);
 	}
 
 	public MethodSignature<?> withReturnType(Type returnType) {

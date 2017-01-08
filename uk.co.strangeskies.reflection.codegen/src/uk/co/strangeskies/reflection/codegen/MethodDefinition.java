@@ -100,7 +100,7 @@ public class MethodDefinition<C, T> implements MemberDefinition<C> {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static <T> void setParameterUnsafe(StatementExecutor state, VariableSignature<T> parameter, Object argument) {
+	private static <T> void setParameterUnsafe(StatementExecutor state, ParameterSignature<T> parameter, Object argument) {
 		state.declareLocal(parameter);
 		state.setEnclosedLocal(parameter, (T) argument);
 	}
@@ -114,7 +114,7 @@ public class MethodDefinition<C, T> implements MemberDefinition<C> {
 		return new MethodDefinition<>(this, bodyFunction.apply(body));
 	}
 
-	public <U> LocalVariableExpression<U> getParameter(VariableSignature<U> parameterSignature) {
+	public <U> LocalVariableExpression<U> getParameter(ParameterSignature<U> parameterSignature) {
 		return getDeclaration().getParameter(parameterSignature);
 	}
 }

@@ -35,7 +35,7 @@ package uk.co.strangeskies.reflection.codegen.test;
 import static uk.co.strangeskies.reflection.codegen.ClassSignature.classSignature;
 import static uk.co.strangeskies.reflection.codegen.LiteralExpression.literal;
 import static uk.co.strangeskies.reflection.codegen.MethodSignature.methodSignature;
-import static uk.co.strangeskies.reflection.codegen.VariableSignature.variableSignature;
+import static uk.co.strangeskies.reflection.codegen.ParameterSignature.parameterSignature;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -45,7 +45,7 @@ import uk.co.strangeskies.reflection.codegen.ClassDefinition;
 import uk.co.strangeskies.reflection.codegen.ClassSignature;
 import uk.co.strangeskies.reflection.codegen.MethodDeclaration;
 import uk.co.strangeskies.reflection.codegen.MethodSignature;
-import uk.co.strangeskies.reflection.codegen.VariableSignature;
+import uk.co.strangeskies.reflection.codegen.ParameterSignature;
 import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
@@ -91,10 +91,9 @@ public class ClassDefinitionTest {
 
 	@Test
 	public void defineWithExplicitMethodDeclaration() {
-		VariableSignature<String> applyParameter = variableSignature("value", STRING_TYPE);
-		MethodSignature<String> applyMethod = methodSignature("apply")
-				.withReturnType(STRING_TYPE)
-				.withParameters(applyParameter);
+		ParameterSignature<String> applyParameter = parameterSignature("value", STRING_TYPE);
+		MethodSignature<String> applyMethod = methodSignature("apply").withReturnType(STRING_TYPE).withParameters(
+				applyParameter);
 
 		Func<String, String> instance = TEST_CLASS_SIGNATURE
 				.withSuperType(new TypeToken<Func<String, String>>() {})
@@ -115,7 +114,7 @@ public class ClassDefinitionTest {
 
 	@Test(expected = NullPointerException.class)
 	public void defineWithInheritedMethodDeclarationBySignature() {
-		VariableSignature<String> applyParameter = variableSignature("value", STRING_TYPE);
+		ParameterSignature<String> applyParameter = parameterSignature("value", STRING_TYPE);
 
 		Func<String, String> instance = TEST_CLASS_SIGNATURE
 				.withSuperType(new TypeToken<Func<String, String>>() {})
@@ -139,7 +138,7 @@ public class ClassDefinitionTest {
 	}
 
 	private <F extends Func<String, String>> void defineFunctionClass(ClassDefinition<Void, F> classDefinition) {
-		VariableSignature<String> applyParameter = variableSignature("value", STRING_TYPE);
+		ParameterSignature<String> applyParameter = parameterSignature("value", STRING_TYPE);
 		MethodDeclaration<F, String> applyMethod = classDefinition.getDeclaration().getMethodDeclaration(
 				methodSignature("apply").withReturnType(String.class).withParameters(applyParameter));
 

@@ -66,11 +66,11 @@ public interface CodeGenerationProperties extends Properties<CodeGenerationPrope
 
 	Localized<String> mustOverrideMethods(Collection<Method> classMethod);
 
-	Localized<String> undefinedVariable(VariableSignature<?> variable);
+	Localized<String> undefinedVariable(ParameterSignature<?> variable);
 
 	Localized<String> cannotResolveEnclosingInstance(ClassDeclaration<?, ?> receiverClass);
 
-	Localized<String> cannotRedeclareVariable(VariableSignature<?> variable);
+	Localized<String> cannotRedeclareVariable(ParameterSignature<?> variable);
 
 	Localized<String> incompleteStatementExecution();
 

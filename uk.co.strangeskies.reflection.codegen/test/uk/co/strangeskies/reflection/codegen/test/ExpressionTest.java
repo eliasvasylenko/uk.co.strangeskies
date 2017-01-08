@@ -74,46 +74,46 @@ public class ExpressionTest {
 		StatementExecutor state = new StatementExecutor();
 		Block<Void> block = new Block<>();
 		TestClass instance = new TestClass();
-
-		VariableSignature<TestClass> variable = variableSignature("testClass", TEST_CLASS_TYPE);
+	
+		ParameterSignature<TestClass> variable = variableSignature("testClass", TEST_CLASS_TYPE);
 		state.declareLocal(variable);
 		state.setEnclosedLocal(variable, instance);
 		block.withExpression(variable.accessField(TEST_FIELD).assign(literal("value")));
-
+	
 		state.executeBlock(block);
 		Assert.assertEquals("value", instance.getMethod());
 	}
-
+	
 	@Test
 	public void localAssignmentTest() {
 		StatementExecutor state = new StatementExecutor();
 		Block<Void> block = new Block<>();
-
-		VariableSignature<String> local = variableSignature("string", STRING_TYPE);
+	
+		ParameterSignature<String> local = variableSignature("string", STRING_TYPE);
 		state.declareLocal(local.getSignature());
-		VariableSignature<Object> result = variableSignature(OBJECT_TYPE);
+		ParameterSignature<Object> result = variableSignature(OBJECT_TYPE);
 		state.declareLocal(result.getSignature());
-
+	
 		block.withExpression(local.assign(literal("value")));
 		block.withExpression(result.assign(local));
-
+	
 		state.executeBlock(block);
 		Assert.assertEquals("value", state.getEnclosedLocal(result.getSignature()));
 	}
-
+	
 	@Test
 	public void localMethodInvocationTest() {
 		StatementExecutor state = new StatementExecutor();
 		Block<Void> block = new Block<>();
 		TestClass instance = new TestClass();
-
-		VariableSignature<TestClass> variable = variableSignature("testClass", TEST_CLASS_TYPE);
+	
+		ParameterSignature<TestClass> variable = variableSignature("testClass", TEST_CLASS_TYPE);
 		state.declareLocal(variable.getSignature());
 		state.setEnclosedLocal(variable.getSignature(), instance);
-
+	
 		block.withExpression(variable.invokeMethod(TEST_SET_METHOD, literal("value")));
 		state.executeBlock(block);
-
+	
 		Assert.assertEquals(instance, state.getEnclosedLocal(variable.getSignature()));
 		Assert.assertEquals("value", instance.field);
 	}

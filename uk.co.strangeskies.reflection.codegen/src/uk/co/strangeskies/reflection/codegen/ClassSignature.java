@@ -43,7 +43,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -87,13 +86,12 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 	private final Set<AnnotatedType> superType;
 
 	private final Set<ConstructorSignature> constructorSignatures;
-	private final Set<MethodSignature<?>> staticMethodSignatures;
 	private final Set<MethodSignature<?>> methodSignatures;
 	private final List<TypeVariableSignature> typeVariables;
 	private final Set<Annotation> annotations;
 
 	protected ClassSignature() {
-		this(null, null, null, emptySet(), emptySet(), emptySet(), emptySet(), emptyList(), emptySet());
+		this(null, null, null, emptySet(), emptySet(), emptySet(), emptyList(), emptySet());
 	}
 
 	protected ClassSignature(
@@ -102,7 +100,6 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 			String enclosingClassName,
 			Set<AnnotatedType> superType,
 			Set<ConstructorSignature> constructorSignatures,
-			Set<MethodSignature<?>> staticMethodSignatures,
 			Set<MethodSignature<?>> methodSignatures,
 			List<TypeVariableSignature> typeVariables,
 			Set<Annotation> annotations) {
@@ -112,7 +109,6 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 		this.superType = superType;
 		this.constructorSignatures = constructorSignatures;
 		this.methodSignatures = methodSignatures;
-		this.staticMethodSignatures = staticMethodSignatures;
 		this.typeVariables = typeVariables;
 		this.annotations = annotations;
 	}
@@ -125,7 +121,8 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 	 * Create the class signature describing the given class.
 	 * 
 	 * @param clazz
-	 * @return
+	 *          the class whose signature we wish to create
+	 * @return a signature describing the given class
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T> ClassSignature<T> classSignature(Class<T> clazz) {
@@ -148,11 +145,7 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 			classSignature = classSignature.withConstructor(constructorSignature(constructor));
 		}
 		for (Method method : clazz.getDeclaredMethods()) {
-			if (Modifier.isStatic(method.getModifiers())) {
-				classSignature = classSignature.withStaticMethod(methodSignature(method));
-			} else {
-				classSignature = classSignature.withMethod(methodSignature(method));
-			}
+			classSignature = classSignature.withMethod(methodSignature(method));
 		}
 
 		return (ClassSignature<T>) classSignature;
@@ -183,7 +176,6 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 				enclosingClassName,
 				superType,
 				constructorSignatures,
-				staticMethodSignatures,
 				methodSignatures,
 				typeVariables,
 				annotations);
@@ -196,7 +188,6 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 				enclosingClassName,
 				superType,
 				constructorSignatures,
-				staticMethodSignatures,
 				methodSignatures,
 				typeVariables,
 				annotations);
@@ -213,7 +204,6 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 				enclosingClassName,
 				superType,
 				constructorSignatures,
-				staticMethodSignatures,
 				methodSignatures,
 				typeVariables,
 				annotations);
@@ -226,7 +216,6 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 				enclosingClassName,
 				superType,
 				constructorSignatures,
-				staticMethodSignatures,
 				methodSignatures,
 				typeVariables,
 				annotations);
@@ -243,7 +232,6 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 				enclosingClassName,
 				superType,
 				constructorSignatures,
-				staticMethodSignatures,
 				methodSignatures,
 				typeVariables,
 				annotations);
@@ -320,7 +308,6 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 				enclosingClassName,
 				new HashSet<>(superType),
 				constructorSignatures,
-				staticMethodSignatures,
 				methodSignatures,
 				typeVariables,
 				annotations);
@@ -339,28 +326,7 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 				simpleName,
 				enclosingClassName,
 				superType,
-				new HashSet<>(constructorSignatures),
-				staticMethodSignatures,
-				methodSignatures,
-				typeVariables,
-				annotations);
-	}
-
-	public Stream<? extends MethodSignature<?>> getStaticMethodSignatures() {
-		return staticMethodSignatures.stream();
-	}
-
-	public ClassSignature<T> withStaticMethod(MethodSignature<?> methodSignature) {
-		HashSet<MethodSignature<?>> staticMethodSignatures = new HashSet<>(this.staticMethodSignatures);
-		staticMethodSignatures.add(methodSignature);
-
-		return new ClassSignature<>(
-				packageName,
-				simpleName,
-				enclosingClassName,
-				superType,
 				constructorSignatures,
-				staticMethodSignatures,
 				methodSignatures,
 				typeVariables,
 				annotations);
@@ -380,7 +346,6 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 				enclosingClassName,
 				superType,
 				constructorSignatures,
-				staticMethodSignatures,
 				methodSignatures,
 				typeVariables,
 				annotations);
@@ -399,7 +364,6 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 				enclosingClassName,
 				superType,
 				constructorSignatures,
-				staticMethodSignatures,
 				methodSignatures,
 				typeVariables,
 				new HashSet<>(annotations));
@@ -418,14 +382,13 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 				enclosingClassName,
 				superType,
 				constructorSignatures,
-				staticMethodSignatures,
 				methodSignatures,
 				new ArrayList<>(typeVariables),
 				annotations);
 	}
 
 	public ClassDefinition<Void, T> defineSingle() {
-		ClassSpace classSpace = new ClassRegister().withClassSignature(this).declare();
+		ClassDefinitionSpace classSpace = new ClassRegister().withClassSignature(this).declare();
 		return new ClassDefinition<>(classSpace.getClassDeclaration(this), classSpace);
 	}
 
@@ -441,13 +404,11 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 		return super.equals(that) && Objects.equals(this.simpleName, that.simpleName)
 				&& Objects.equals(this.superType, that.superType)
 				&& Objects.equals(this.constructorSignatures, that.constructorSignatures)
-				&& Objects.equals(this.staticMethodSignatures, that.staticMethodSignatures)
 				&& Objects.equals(this.methodSignatures, that.methodSignatures);
 	}
 
 	@Override
 	public int hashCode() {
-		return super.hashCode() ^ superType.hashCode() ^ constructorSignatures.hashCode()
-				^ staticMethodSignatures.hashCode() ^ methodSignatures.hashCode();
+		return super.hashCode() ^ superType.hashCode() ^ constructorSignatures.hashCode() ^ methodSignatures.hashCode();
 	}
 }

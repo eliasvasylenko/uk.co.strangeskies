@@ -128,9 +128,9 @@ import uk.co.strangeskies.reflection.token.TypeToken;
  */
 public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 	private final String typeName;
-	private final ClassSpace classSpace;
+	private final ClassDefinitionSpace classSpace;
 
-	protected ClassDefinition(ClassDeclaration<E, T> declaration, ClassSpace classSpace) {
+	protected ClassDefinition(ClassDeclaration<E, T> declaration, ClassDefinitionSpace classSpace) {
 		super(declaration);
 
 		this.typeName = declaration.getSignature().getClassName();
@@ -144,7 +144,7 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 		return typeName;
 	}
 
-	public ClassSpace getClassSpace() {
+	public ClassDefinitionSpace getClassSpace() {
 		return classSpace;
 	}
 

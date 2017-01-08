@@ -111,7 +111,7 @@ public class ExpressionEvaluator {
 		}
 
 		@Override
-		public void visitLocal(VariableSignature<? extends T> local) {
+		public void visitLocal(ParameterSignature<? extends T> local) {
 			complete(() -> state.getEnclosedLocal(local));
 		}
 	}
@@ -149,7 +149,7 @@ public class ExpressionEvaluator {
 		}
 
 		@Override
-		public void visitLocal(VariableSignature<T> local) {
+		public void visitLocal(ParameterSignature<T> local) {
 			complete(new VariableResult<T>() {
 				@Override
 				public T get() {

@@ -33,6 +33,7 @@
 package uk.co.strangeskies.reflection.codegen;
 
 import static java.util.Collections.emptySet;
+import static uk.co.strangeskies.reflection.codegen.Modifiers.emptyModifiers;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.GenericDeclaration;
@@ -54,23 +55,23 @@ import uk.co.strangeskies.reflection.Visibility;
 public abstract class MemberSignature<S extends MemberSignature<S>> implements AnnotatedSignature<S> {
 	final String name;
 	final Set<Annotation> annotations;
-	final Visibility visibility;
+	final Modifiers modifiers;
 
 	/**
 	 * @param name
 	 *          the name of the declared type parameter
 	 */
 	protected MemberSignature(String name) {
-		this(name, emptySet(), Visibility.PACKAGE_PRIVATE);
+		this(name, emptySet(), emptyModifiers());
 	}
 
-	protected MemberSignature(String name, Set<Annotation> annotations, Visibility visibility) {
+	protected MemberSignature(String name, Set<Annotation> annotations, Modifiers modifiers) {
 		this.name = name;
 		this.annotations = annotations;
-		this.visibility = visibility;
+		this.modifiers = modifiers;
 	}
 
-	protected abstract S withMemberSignatureData(String name, Set<Annotation> annotations, Visibility visibility);
+	protected abstract S withMemberSignatureData(String name, Set<Annotation> annotations, Modifiers modifiers);
 
 	@Override
 	public Stream<? extends Annotation> getAnnotations() {
@@ -79,19 +80,19 @@ public abstract class MemberSignature<S extends MemberSignature<S>> implements A
 
 	@Override
 	public S withAnnotations(Collection<? extends Annotation> annotations) {
-		return withMemberSignatureData(name, new HashSet<>(annotations), visibility);
+		return withMemberSignatureData(name, new HashSet<>(annotations), modifiers);
 	}
 
 	public String getName() {
 		return name;
 	}
 
-	public S withVisibility(Visibility visibility) {
-		return withMemberSignatureData(name, annotations, visibility);
+	public Modifiers getModifiers() {
+		return modifiers;
 	}
 
-	public Visibility getVisibility() {
-		return visibility;
+	public S withVisibility(Visibility visibility) {
+		return withMemberSignatureData(name, annotations, modifiers.withVisibility(visibility));
 	}
 
 	@Override
@@ -104,11 +105,11 @@ public abstract class MemberSignature<S extends MemberSignature<S>> implements A
 		MemberSignature<?> that = (MemberSignature<?>) obj;
 
 		return AnnotatedSignature.equals(this, that) && Objects.equals(this.getName(), that.getName())
-				&& Objects.equals(this.getVisibility(), that.getVisibility());
+				&& Objects.equals(this.getModifiers(), that.getModifiers());
 	}
 
 	@Override
 	public int hashCode() {
-		return AnnotatedSignature.hashCode(this) ^ getName().hashCode() ^ getVisibility().hashCode();
+		return AnnotatedSignature.hashCode(this) ^ getName().hashCode() ^ getModifiers().hashCode();
 	}
 }
