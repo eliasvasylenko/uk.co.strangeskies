@@ -30,7 +30,8 @@ runpath.eclipse.linux64:\
 	${req;org.eclipse.equinox.concurrent},\
 	${req;org.eclipse.equinox.console},\
 	${req;org.eclipse.equinox.event},\
-	${req;org.eclipse.equinox.launcher}
+	${req;org.eclipse.equinox.launcher},\
+	${req;org.eclipse.e4.ui.bindings}
 
 runrequires.eclipse.win64:\
 	${req;org.eclipse.core.filesystem.win32.x86_64},\
