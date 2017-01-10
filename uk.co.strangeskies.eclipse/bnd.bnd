@@ -11,8 +11,7 @@ Bundle-Name: Strange Skies :: Utilities :: Eclipse
 	uk.co.strangeskies.mathematics;version=snapshot,\
 	uk.co.strangeskies.reflection;version=snapshot,\
 	uk.co.strangeskies.osgi.api;version=snapshot,\
-	org.eclipse.osgi.compatibility.state,\
-	org.eclipse.osgi
+	org.eclipse.osgi.compatibility.state
 
 Bundle-Description: \
 	Common Java utilities for Strange Skies projects, including generic \
