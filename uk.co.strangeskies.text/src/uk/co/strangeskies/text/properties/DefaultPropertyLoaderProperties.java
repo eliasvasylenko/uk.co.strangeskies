@@ -32,8 +32,6 @@
  */
 package uk.co.strangeskies.text.properties;
 
-import static java.lang.String.format;
-
 import java.util.Locale;
 
 final class DefaultPropertyLoaderProperties extends StaticPropertyAccessor<PropertyLoaderProperties>
@@ -46,7 +44,7 @@ final class DefaultPropertyLoaderProperties extends StaticPropertyAccessor<Prope
 	private static final String CANNOT_INSTANTIATE_STRATEGY = "Cannot instantiate strategy %s";
 
 	public DefaultPropertyLoaderProperties() {
-		super(Locale.ENGLISH, PropertyLoaderProperties.class);
+		super(Locale.ENGLISH);
 	}
 
 	@Override

@@ -84,7 +84,7 @@ public interface PropertyResource {
 	/**
 	 * @return the property resource configuration
 	 */
-	Class<? extends Properties<?>> getAccessor();
+	Class<?> getAccessor();
 
 	/**
 	 * Create a {@link PropertyResource localizing resource bundle} over the given
@@ -111,8 +111,7 @@ public interface PropertyResource {
 	 *          they exist in
 	 * @return a resource bundle over all resources at each given location
 	 */
-	public static <T extends Properties<T>> PropertyResource getBundle(Locale locale, Class<T> accessor,
-			String resource) {
+	public static <T> PropertyResource getBundle(Locale locale, Class<T> accessor, String resource) {
 		return PropertyResourceBundleStrategy.getInstance().getPropertyResourceBundle(accessor, resource);
 	}
 }

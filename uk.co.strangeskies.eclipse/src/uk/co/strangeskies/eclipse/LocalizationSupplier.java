@@ -32,15 +32,7 @@
  */
 package uk.co.strangeskies.eclipse;
 
-import static uk.co.strangeskies.reflection.ParameterizedTypes.getAllTypeArguments;
-import static uk.co.strangeskies.reflection.token.TypeToken.overType;
-
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.eclipse.e4.core.di.suppliers.ExtendedObjectSupplier;
 import org.eclipse.e4.core.di.suppliers.IObjectDescriptor;
@@ -54,8 +46,6 @@ import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
-import uk.co.strangeskies.reflection.Types;
-import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertyLoader;
 import uk.co.strangeskies.text.properties.PropertyLoaderException;
 
@@ -97,7 +87,7 @@ public class LocalizationSupplier extends ExtendedObjectSupplier {
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T extends Properties<T>> Object localizeAccessor(IRequestor requestor, Class<?> accessor) {
+	private <T> Object localizeAccessor(IRequestor requestor, Class<?> accessor) {
 		try {
 			BundleContext context = FrameworkUtil.getBundle(accessor).getBundleContext();
 
@@ -127,16 +117,6 @@ public class LocalizationSupplier extends ExtendedObjectSupplier {
 	}
 
 	private boolean validateAccessorType(Type accessor) {
-		if (!(accessor instanceof Class) || !Properties.class.isAssignableFrom((Class<?>) accessor))
-			return false;
-
-		List<Map.Entry<TypeVariable<?>, Type>> accessorParameters = getAllTypeArguments(
-				(ParameterizedType) overType(accessor).resolveSupertype(Properties.class).getType())
-						.collect(Collectors.toList());
-
-		if (accessorParameters.size() != 1)
-			return false;
-
-		return Types.equals(accessorParameters.get(0).getValue(), accessor);
+		return accessor instanceof Class && ((Class<?>) accessor).isInterface();
 	}
 }

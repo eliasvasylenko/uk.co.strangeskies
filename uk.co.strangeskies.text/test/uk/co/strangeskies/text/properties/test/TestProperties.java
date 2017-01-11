@@ -38,14 +38,14 @@ import static uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase.L
 import java.util.List;
 import java.util.Optional;
 
-import uk.co.strangeskies.text.properties.Properties;
+import uk.co.strangeskies.text.properties.Nested;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.Defaults;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.Evaluation;
 
 @SuppressWarnings("javadoc")
 @PropertyConfiguration(key = UNQUALIFIED_SLASHED, keySplitString = ".", keyCase = LOWER)
-public interface TestProperties extends Properties<TestProperties> {
+public interface TestProperties {
 	String simple();
 
 	String substitution(String item);
@@ -56,6 +56,7 @@ public interface TestProperties extends Properties<TestProperties> {
 		return substitution("default");
 	}
 
+	@Nested
 	NestedTestProperties nesting();
 
 	Optional<String> optional();

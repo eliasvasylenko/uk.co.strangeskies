@@ -39,13 +39,12 @@ import java.util.Collection;
 import uk.co.strangeskies.reflection.ReflectionProperties;
 import uk.co.strangeskies.reflection.token.TypeToken;
 import uk.co.strangeskies.text.properties.Localized;
-import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;
 
 @SuppressWarnings("javadoc")
 @PropertyConfiguration(keyCase = KeyCase.LOWER, keySplitString = ".")
-public interface CodeGenerationProperties extends Properties<CodeGenerationProperties> {
+public interface CodeGenerationProperties {
 	ReflectionProperties reflection();
 
 	Localized<String> invalidExpressionForStatement(Expression expression);

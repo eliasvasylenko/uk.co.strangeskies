@@ -46,7 +46,6 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ServiceScope;
 
 import uk.co.strangeskies.text.properties.LocaleProvider;
-import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertyAccessorConfiguration;
 import uk.co.strangeskies.text.properties.PropertyLoader;
 import uk.co.strangeskies.text.properties.PropertyLoaderProperties;
@@ -146,12 +145,12 @@ public class PropertyLoaderService implements PropertyLoader {
 	}
 
 	@Override
-	public <T extends Properties<T>> T getProperties(Class<T> accessor) {
+	public <T> T getProperties(Class<T> accessor) {
 		return component.getProperties(accessor);
 	}
 
 	@Override
-	public <T extends Properties<T>> T getProperties(PropertyAccessorConfiguration<T> accessorConfiguration) {
+	public <T> T getProperties(PropertyAccessorConfiguration<T> accessorConfiguration) {
 		return component.getProperties(accessorConfiguration);
 	}
 

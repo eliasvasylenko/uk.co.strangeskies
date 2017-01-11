@@ -35,12 +35,11 @@ package uk.co.strangeskies.text.properties.test;
 import static uk.co.strangeskies.text.properties.PropertyConfiguration.UNQUALIFIED_SLASHED;
 import static uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase.LOWER;
 
-import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
 
 @SuppressWarnings("javadoc")
 @PropertyConfiguration(key = UNQUALIFIED_SLASHED, keySplitString = ".", keyCase = LOWER)
-public interface DeeplyNestedTestProperties extends Properties<DeeplyNestedTestProperties> {
+public interface DeeplyNestedTestProperties {
 	String deeplyNestedText();
 
 	String deeplyNestedOverrideText();

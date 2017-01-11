@@ -32,13 +32,12 @@
  */
 package uk.co.strangeskies.text.properties.test;
 
-import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.Defaults;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.Evaluation;
 
 @SuppressWarnings("javadoc")
 @PropertyConfiguration(evaluation = Evaluation.IMMEDIATE, defaults = Defaults.IGNORE)
-public interface ImmediateRequirementTestProperties extends Properties<ImmediateRequirementTestProperties> {
+public interface ImmediateRequirementTestProperties {
 	String requiredProperty();
 }

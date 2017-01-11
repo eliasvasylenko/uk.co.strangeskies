@@ -32,11 +32,9 @@
  */
 package uk.co.strangeskies.eclipse;
 
-import uk.co.strangeskies.text.properties.Properties;
-
 /**
  * Text resource accessor for Eclipse OSGi utilities
  * 
  * @author Elias N Vasylenko
  */
-public interface NamedAdapterSupplierProperties extends Properties<NamedAdapterSupplierProperties> {}
+public interface NamedAdapterSupplierProperties {}

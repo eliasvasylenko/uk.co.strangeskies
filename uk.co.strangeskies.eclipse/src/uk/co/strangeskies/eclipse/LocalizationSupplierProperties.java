@@ -33,20 +33,19 @@
 package uk.co.strangeskies.eclipse;
 
 import uk.co.strangeskies.text.properties.Localized;
-import uk.co.strangeskies.text.properties.Properties;
 
 /**
  * Text resource accessor for Eclipse OSGi utilities
  * 
  * @author Elias N Vasylenko
  */
-public interface LocalizationSupplierProperties extends Properties<LocalizationSupplierProperties> {
+public interface LocalizationSupplierProperties {
 	/**
 	 * @return invalid type was annotated with {@link Localize} for localization
 	 *         supplier
 	 */
 	default Localized<String> illegalInjectionTarget() {
-		return illegalInjectionTarget(Localize.class, Properties.class);
+		return illegalInjectionTarget(Localize.class);
 	}
 
 	/**
@@ -57,8 +56,7 @@ public interface LocalizationSupplierProperties extends Properties<LocalizationS
 	 * @return invalid type was annotated with {@link Localize} for localization
 	 *         supplier
 	 */
-	Localized<String> illegalInjectionTarget(Class<Localize> localizeClass,
-			@SuppressWarnings("rawtypes") Class<Properties> localizedTextClass);
+	Localized<String> illegalInjectionTarget(Class<Localize> localizeClass);
 
 	/**
 	 * @return an unexpected error occurred

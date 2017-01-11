@@ -40,7 +40,6 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.wiring.BundleWiring;
 
-import uk.co.strangeskies.text.properties.Properties;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
 import uk.co.strangeskies.text.properties.PropertyResource;
 import uk.co.strangeskies.text.properties.PropertyResourceBundle;
@@ -64,17 +63,16 @@ public class OsgiPropertyResourceStrategy implements PropertyResourceStrategy<Os
 	}
 
 	@Override
-	public <T extends Properties<T>> PropertyResource getPropertyResourceBundle(Class<T> accessor, String resource) {
+	public <T> PropertyResource getPropertyResourceBundle(Class<T> accessor, String resource) {
 		return new PropertyResourceBundle(this, accessor, resource) {
 			@Override
-			protected <U extends Properties<U>> List<ResourceBundleDescriptor> getResources(Class<U> accessor,
-					String resource) {
+			protected <U> List<ResourceBundleDescriptor> getResources(Class<U> accessor, String resource) {
 				List<ResourceBundleDescriptor> resources = new ArrayList<>();
 
 				boolean unspecifiedResource = resource.equals(PropertyConfiguration.UNSPECIFIED_RESOURCE);
 
 				if (unspecifiedResource) {
-					resource = Properties.removePropertiesPostfix(accessor.getName());
+					resource = removePropertiesPostfix(accessor.getName());
 				}
 
 				addResources(resources, resource, unspecifiedResource, usingBundle);
@@ -86,7 +84,10 @@ public class OsgiPropertyResourceStrategy implements PropertyResourceStrategy<Os
 				return resources;
 			}
 
-			private void addResources(List<ResourceBundleDescriptor> resources, String resource, boolean unspecifiedResource,
+			private void addResources(
+					List<ResourceBundleDescriptor> resources,
+					String resource,
+					boolean unspecifiedResource,
 					Bundle bundle) {
 				if (bundle != null) {
 					ClassLoader classLoader = bundle.adapt(BundleWiring.class).getClassLoader();

@@ -87,23 +87,6 @@ public class LocalizedPropertiesTest {
 	}
 
 	@Test
-	public void localeChangeEventTest() {
-		LocaleManager manager = manager();
-
-		LocalizerTestProperties text = text(manager);
-
-		IdentityProperty<String> result = new IdentityProperty<>();
-		text.addObserver(t -> {
-			result.set(t.simpleLocalized().toString());
-		});
-
-		manager.setLocale(Locale.FRENCH);
-
-		assertNotNull(result);
-		assertEquals("French simple property value", result.get());
-	}
-
-	@Test
 	public void localeChangeStringEventTest() {
 		LocaleManager manager = manager();
 
