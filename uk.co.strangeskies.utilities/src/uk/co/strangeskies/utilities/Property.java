@@ -66,6 +66,15 @@ public interface Property<T extends R, R> {
 	 */
 	/* @I */T get();
 
+	/**
+	 * Create a property which defers its implementation to the given callbacks.
+	 * 
+	 * @param get
+	 *          the property retrieval callback
+	 * @param set
+	 *          the property assignment callback
+	 * @return a property over the given callbacks
+	 */
 	static <T extends R, R> Property<T, R> over(Supplier<T> get, Consumer<R> set) {
 		return over(get, r -> {
 			T previous = get.get();
@@ -74,6 +83,15 @@ public interface Property<T extends R, R> {
 		});
 	}
 
+	/**
+	 * Create a property which defers its implementation to the given callbacks.
+	 * 
+	 * @param get
+	 *          the property retrieval callback
+	 * @param set
+	 *          the property assignment callback, returning the previous value
+	 * @return a property over the given callbacks
+	 */
 	static <T extends R, R> Property<T, R> over(Supplier<T> get, Function<R, T> set) {
 		return new Property<T, R>() {
 			@Override

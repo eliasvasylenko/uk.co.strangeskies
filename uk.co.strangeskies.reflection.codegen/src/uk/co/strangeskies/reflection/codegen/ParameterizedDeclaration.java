@@ -79,8 +79,13 @@ public class ParameterizedDeclaration<S extends ParameterizedSignature<?>> exten
 				t -> t.getType() instanceof TypeVariableSignature.Reference || t.getType() instanceof TypeVariable<?>,
 
 				t -> {
-					TypeVariable<?> typeVariable = substituteTypeVariableSignature(
-							typeVariableSignatures.get(t.getType().getTypeName()));
+					TypeVariableSignature typeVariableSignature = typeVariableSignatures.get(t.getType().getTypeName());
+
+					if (typeVariableSignature == null) {
+						throw new CodeGenerationException(p -> p.cannotResolveTypeVariable(t.getType().getTypeName(), signature));
+					}
+
+					TypeVariable<?> typeVariable = substituteTypeVariableSignature(typeVariableSignature);
 
 					return AnnotatedTypeVariables.over(typeVariable, t.getAnnotations());
 				});

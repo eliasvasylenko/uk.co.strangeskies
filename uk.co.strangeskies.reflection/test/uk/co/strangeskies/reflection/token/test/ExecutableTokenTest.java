@@ -32,17 +32,21 @@
  */
 package uk.co.strangeskies.reflection.token.test;
 
+import static java.util.stream.Collectors.toList;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.Assert.assertThat;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.overConstructor;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.staticMethods;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.junit.Test;
 
@@ -58,11 +62,22 @@ public class ExecutableTokenTest {
 		class Inner<U extends T> {
 			public Inner(U parameter) {}
 		}
+
+		public <U> void method() {}
+	}
+
+	@Test
+	public void methodWithDefaultTypeArguments() throws NoSuchMethodException, SecurityException {
+		ExecutableToken<?, ?> method = ExecutableToken.overMethod(Outer.class.getMethod("method"));
+
+		assertThat(
+				method.getAllTypeArguments().map(Entry::getValue).collect(toList()),
+				contains(instanceOf(TypeVariable.class)));
 	}
 
 	@SuppressWarnings("unchecked")
 	@Test
-	public void constructorWithEnclosingTypeTest() throws NoSuchMethodException, SecurityException {
+	public void constructorWithEnclosingTypeTest() {
 		ExecutableToken.overConstructor(
 				(Constructor<Object>) Inner.class.getConstructors()[0],
 				new TypeToken<Outer<Number>>() {},
@@ -71,7 +86,7 @@ public class ExecutableTokenTest {
 
 	@SuppressWarnings("unchecked")
 	@Test(expected = ReflectionException.class)
-	public void constructorWithWrongEnclosingTypeTest() throws NoSuchMethodException, SecurityException {
+	public void constructorWithWrongEnclosingTypeTest() {
 		ExecutableToken.overConstructor(
 				(Constructor<Object>) Inner.class.getConstructors()[0],
 				new TypeToken<Outer<Number>>() {},
@@ -80,7 +95,7 @@ public class ExecutableTokenTest {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
-	public void constructorWithRawEnclosingTypeTest() throws NoSuchMethodException, SecurityException {
+	public void constructorWithRawEnclosingTypeTest() {
 		ExecutableToken.overConstructor(
 				(Constructor<Object>) Inner.class.getConstructors()[0],
 				new TypeToken<Outer<Number>>() {},
@@ -89,7 +104,7 @@ public class ExecutableTokenTest {
 
 	@SuppressWarnings("unchecked")
 	@Test
-	public void constructorWithUninferredEnclosingTypeTest() throws NoSuchMethodException, SecurityException {
+	public void constructorWithUninferredEnclosingTypeTest() {
 		ExecutableToken<?, ?> constructor = overConstructor(
 				(Constructor<Object>) Inner.class.getConstructors()[0],
 				new TypeToken<Outer<Number>>() {},
@@ -132,21 +147,21 @@ public class ExecutableTokenTest {
 	}
 
 	@Test
-	public void emptyVarargsResolutionTest() throws NoSuchMethodException, SecurityException {
+	public void emptyVarargsResolutionTest() {
 		ExecutableToken<?, ?> asList = staticMethods(Arrays.class).named("asList").resolveOverload();
 
 		assertThat(asList.isVariableArityInvocation(), is(true));
 	}
 
 	@Test
-	public void singleVarargsResolutionTest() throws NoSuchMethodException, SecurityException {
+	public void singleVarargsResolutionTest() {
 		ExecutableToken<?, ?> asList = staticMethods(Arrays.class).named("asList").resolveOverload(String.class);
 
 		assertThat(asList.isVariableArityInvocation(), is(true));
 	}
 
 	@Test
-	public void varargsResolutionTest() throws NoSuchMethodException, SecurityException {
+	public void varargsResolutionTest() {
 		ExecutableToken<?, ?> asList = staticMethods(Arrays.class)
 				.named("asList")
 				.resolveOverload(String.class, String.class, String.class);
@@ -164,10 +179,9 @@ public class ExecutableTokenTest {
 	}
 
 	@Test
-	public void varargsDefinitionResolutionTest() throws NoSuchMethodException, SecurityException {
-		ExecutableToken<?, ?> asList = staticMethods(Arrays.class)
-				.named("asList")
-				.resolveOverload(new TypeToken<String[]>() {});
+	public void varargsDefinitionResolutionTest() {
+		ExecutableToken<?, ?> asList = staticMethods(Arrays.class).named("asList").resolveOverload(
+				new TypeToken<String[]>() {});
 
 		assertThat(asList.isVariableArityInvocation(), is(false));
 	}

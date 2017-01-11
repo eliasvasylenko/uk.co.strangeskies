@@ -112,7 +112,7 @@ public class ClassDefinitionTest {
 		Assert.assertEquals("stringappend", result);
 	}
 
-	@Test(expected = NullPointerException.class)
+	@Test
 	public void defineWithInheritedMethodDeclarationBySignature() {
 		ParameterSignature<String> applyParameter = parameterSignature("value", STRING_TYPE);
 
@@ -123,7 +123,9 @@ public class ClassDefinitionTest {
 						methodSignature("apply").withReturnType(String.class).withParameters(applyParameter),
 						d -> d.withBody(
 								b -> b.withReturnStatement(
-										d.getParameter(applyParameter).invokeMethod(concatMethod(), d.getParameter(applyParameter)))))
+										d
+												.getParameter(applyParameter)
+												.invokeMethod(concatMethod(), d.getParameter(parameterSignature("", Integer.class))))))
 				.instantiateReflectively()
 				.cast();
 
@@ -132,7 +134,7 @@ public class ClassDefinitionTest {
 		Assert.assertEquals("stringstring", result);
 	}
 
-	@Test(expected = NullPointerException.class)
+	@Test
 	public void defineWithInheritedMethodDeclaration() {
 		defineFunctionClass(TEST_CLASS_SIGNATURE.withSuperType(new TypeToken<Func<String, String>>() {}).defineSingle());
 	}

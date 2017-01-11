@@ -85,4 +85,6 @@ public interface CodeGenerationProperties extends Properties<CodeGenerationPrope
 	Localized<String> classNameAlreadyRegistered(ClassSignature<?> classSignature);
 
 	Localized<String> staticMethodCannotBeDefault(MethodDeclaration<?, ?> methodDeclaration);
+
+	Localized<String> cannotResolveTypeVariable(String typeVariableName, ParameterizedSignature<?> signature);
 }

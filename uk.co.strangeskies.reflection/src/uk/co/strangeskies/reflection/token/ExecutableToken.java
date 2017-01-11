@@ -32,12 +32,12 @@
  */
 package uk.co.strangeskies.reflection.token;
 
-import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.BoundSet.emptyBoundSet;
 import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.LOOSE_COMPATIBILILTY;
+import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterize;
 import static uk.co.strangeskies.reflection.token.ExecutableTokenQuery.executableQuery;
 import static uk.co.strangeskies.reflection.token.TypeToken.overType;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.entriesToMap;
@@ -68,6 +68,7 @@ import uk.co.strangeskies.reflection.BoundSet;
 import uk.co.strangeskies.reflection.ConstraintFormula;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.reflection.InferenceVariable;
+import uk.co.strangeskies.reflection.ParameterizedToken;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeResolver;
 import uk.co.strangeskies.reflection.TypeSubstitution;
@@ -91,7 +92,8 @@ import uk.co.strangeskies.reflection.token.TypeToken.Wildcards;
  * @param <R>
  *          the return type of the executable
  */
-public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
+public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable>
+		implements ParameterizedToken<ExecutableToken<O, R>> {
 	private final BoundSet bounds;
 	private final List<Type> methodTypeArguments;
 
@@ -363,8 +365,16 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 	 * @return an executable member wrapping the given method
 	 */
 	public static ExecutableToken<?, ?> overMethod(Method method) {
-		TypeToken<?> receiver = TypeToken.overType(method.getDeclaringClass());
+		TypeToken<?> receiver = TypeToken.overType(parameterizeIfGeneric(method.getDeclaringClass()));
 		return overMethod(method, receiver);
+	}
+
+	private static Type parameterizeIfGeneric(Class<?> declaringClass) {
+		if (declaringClass.getTypeParameters().length > 0) {
+			return parameterize(declaringClass);
+		} else {
+			return declaringClass;
+		}
 	}
 
 	/**
@@ -1037,6 +1047,7 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 	/**
 	 * @return All generic type parameters of the wrapped {@link Executable}.
 	 */
+	@Override
 	public Stream<TypeVariable<?>> getAllTypeParameters() {
 		if (isRaw())
 			return Stream.empty();
@@ -1049,6 +1060,7 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 	 *         {@link Executable}, or their inference variables if not yet
 	 *         instantiated.
 	 */
+	@Override
 	public Stream<Map.Entry<TypeVariable<?>, Type>> getAllTypeArguments() {
 		if (isRaw())
 			return Stream.empty();
@@ -1061,6 +1073,7 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 	 *         {@link Executable}, or their inference variables if not yet
 	 *         instantiated.
 	 */
+	@Override
 	public Stream<TypeVariable<?>> getTypeParameters() {
 		return stream(getMember().getTypeParameters());
 	}
@@ -1070,33 +1083,9 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 	 *         {@link Executable}, or their inference variables if not yet
 	 *         instantiated.
 	 */
+	@Override
 	public Stream<Map.Entry<TypeVariable<?>, Type>> getTypeArguments() {
 		return zip(getTypeParameters(), methodTypeArguments.stream());
-	}
-
-	/**
-	 * Derive a new {@link ExecutableToken} instance from this, with the given
-	 * instantiation substituted for the given {@link TypeVariable}.
-	 * 
-	 * <p>
-	 * The substitution will only succeed if it is compatible with the bounds on
-	 * that type variable, and if it is more specific than the current type of the
-	 * type variable, whether it is an {@link InferenceVariable}, a
-	 * {@link TypeVariableCapture}, or another class of {@link Type}.
-	 * 
-	 * @param <U>
-	 *          the type variable on the generic declaration which is the
-	 *          {@link Executable} wrapped by this {@link ExecutableToken}
-	 * @param variable
-	 *          the type variable on the generic declaration which is the
-	 *          {@link Executable} wrapped by this {@link ExecutableToken}
-	 * @param instantiation
-	 *          the type with which to instantiate the given type variable
-	 * @return a new derived {@link ExecutableToken} instance with the given
-	 *         instantiation substituted for the given type variable
-	 */
-	public <U> ExecutableToken<O, ? extends R> withTypeArgument(TypeParameter<U> variable, TypeToken<U> instantiation) {
-		return withTypeArgument(variable.getType(), instantiation.getType());
 	}
 
 	/**
@@ -1117,7 +1106,8 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 	 * @return a new derived {@link ExecutableToken} instance with the given
 	 *         instantiation substituted for the given type variable
 	 */
-	public ExecutableToken<O, ? extends R> withTypeArgument(TypeVariable<?> parameter, Type argument) {
+	@Override
+	public ExecutableToken<O, R> withTypeArgument(TypeVariable<?> parameter, Type argument) {
 		int index = getTypeParameters().collect(toList()).indexOf(parameter);
 
 		if (index >= 0) {
@@ -1143,23 +1133,6 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 	 * {@link #withTypeArgument(TypeVariable, Type)}, but with every argument
 	 * provided in order.
 	 * 
-	 * @param typeArguments
-	 *          a list of arguments for each generic type parameter of the
-	 *          underlying {@link Executable}
-	 * @return a new derived {@link ExecutableToken} instance with the given
-	 *         instantiations substituted for each generic type parameter, in
-	 *         order
-	 */
-	public ExecutableToken<O, ? extends R> withTypeArguments(Type... typeArguments) {
-		return withTypeArguments(asList(typeArguments));
-	}
-
-	/**
-	 * Derive a new {@link ExecutableToken} instance with the given generic type
-	 * argument substitutions, as per the behavior of
-	 * {@link #withTypeArgument(TypeVariable, Type)}, but with every argument
-	 * provided in order.
-	 * 
 	 * @param methodTypeArguments
 	 *          a list of arguments for each generic type parameter of the
 	 *          underlying {@link Executable}
@@ -1167,7 +1140,8 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 	 *         instantiations substituted for each generic type parameter, in
 	 *         order
 	 */
-	public ExecutableToken<O, ? extends R> withTypeArguments(List<Type> methodTypeArguments) {
+	@Override
+	public ExecutableToken<O, R> withTypeArguments(List<Type> methodTypeArguments) {
 		if (methodTypeArguments.size() != getMember().getTypeParameters().length) {
 			new ReflectionException(e -> e.incorrectTypeArgumentCount(getMember(), methodTypeArguments));
 		}
@@ -1180,6 +1154,18 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable> {
 				getMember(),
 				invocationFunction,
 				variableArityInvocation);
+	}
+
+	@Override
+	public <U> TypeToken<U> resolveTypeArgument(TypeParameter<U> parameter) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Type resolveTypeArgument(TypeVariable<?> parameter) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	/**

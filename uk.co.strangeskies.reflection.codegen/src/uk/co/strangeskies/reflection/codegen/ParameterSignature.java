@@ -39,13 +39,13 @@ import static uk.co.strangeskies.reflection.AnnotatedTypes.annotated;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import uk.co.strangeskies.reflection.token.ExecutableParameter;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class ParameterSignature<T> implements AnnotatedSignature<ParameterSignature<T>> {
@@ -84,7 +84,7 @@ public class ParameterSignature<T> implements AnnotatedSignature<ParameterSignat
 		return new ParameterSignature<>(variableName, type.getAnnotatedDeclaration());
 	}
 
-	public static <U> ParameterSignature<U> parameterSignature(Parameter parameter) {
+	public static <U> ParameterSignature<U> parameterSignature(ExecutableParameter parameter) {
 		return new ParameterSignature<U>(parameter.getName(), annotated(parameter.getType()))
 				.withAnnotations(parameter.getAnnotations())
 				.asFinal(Modifier.isFinal(parameter.getModifiers()));

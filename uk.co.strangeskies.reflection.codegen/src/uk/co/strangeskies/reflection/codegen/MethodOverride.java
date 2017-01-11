@@ -169,7 +169,7 @@ public class MethodOverride<T> {
 				ExecutableToken<?, ?> executableToken = methodOverrides.getInvocable(overrideSignatureMethod).withTypeArguments(
 						asList(overrideSignatureMethod.getTypeParameters()));
 
-				MethodSignature<?> signature = methodSignature((Method) executableToken.getMember());
+				MethodSignature<?> signature = methodSignature(executableToken);
 
 				MethodDeclaration<T, ?> declaration = declareMethod(methodOverrides.getClassDeclaration(), signature);
 

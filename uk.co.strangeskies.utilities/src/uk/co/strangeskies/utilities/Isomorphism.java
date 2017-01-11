@@ -143,10 +143,17 @@ public class Isomorphism {
 			((Map<C, S>) copiedNodes).put(node, mapping);
 		}
 
+		/**
+		 * @return true if no node mappings exist yet in the isomorphism, false
+		 *         otherwise
+		 */
 		public boolean isEmpty() {
 			return getMappedNodes().isEmpty();
 		}
 
+		/**
+		 * @return all the nodes which currently have mappings in the isomorphism
+		 */
 		public Set<?> getMappedNodes() {
 			return copiedNodes.keySet();
 		}

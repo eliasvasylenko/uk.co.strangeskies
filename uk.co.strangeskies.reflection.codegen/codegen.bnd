@@ -1,6 +1,0 @@
-Bundle-Name: Strange Skies :: Reflection :: Codegen
-
--includeresource:\
-	uk/co/strangeskies/reflection/codegen=res/uk/co/strangeskies/reflection/codegen
-
-Export-Package: uk.co.strangeskies.reflection.codegen
