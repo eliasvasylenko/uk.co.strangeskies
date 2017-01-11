@@ -106,7 +106,7 @@ class PropertyLoaderImpl implements PropertyLoader {
 
 	private final Map<Class<? extends PropertyResourceStrategy<?>>, PropertyResourceStrategy<?>> resourceStrategies;
 	private final Set<PropertyValueProviderFactory> propertyProviders;
-	private final ComputingMap<PropertyAccessorConfiguration<?>, Properties<?>> localizationCache;
+	private final ComputingMap<PropertyAccessorConfiguration<?>, Object> localizationCache;
 
 	private final LocaleProvider locale;
 	private Log log;
@@ -153,7 +153,8 @@ class PropertyLoaderImpl implements PropertyLoader {
 	}
 
 	private PropertyValueProviderFactory stringProvider() {
-		return PropertyValueProviderFactory.over(String.class,
+		return PropertyValueProviderFactory.over(
+				String.class,
 				a -> Parser.matchingAll().transform(s -> String.format(s, a.toArray())),
 				(s, a) -> getProperties().translationNotFoundSubstitution(s));
 	}
@@ -162,7 +163,8 @@ class PropertyLoaderImpl implements PropertyLoader {
 		return new PropertyValueProviderFactory() {
 			@SuppressWarnings("unchecked")
 			@Override
-			public <T> Optional<PropertyValueProvider<T>> getPropertyProvider(AnnotatedType exactType,
+			public <T> Optional<PropertyValueProvider<T>> getPropertyProvider(
+					AnnotatedType exactType,
 					PropertyLoader loader) {
 
 				if (exactType instanceof AnnotatedParameterizedType
@@ -180,11 +182,13 @@ class PropertyLoaderImpl implements PropertyLoader {
 						String finalDelimiter = delimiter;
 
 						if (delimit == null || delimit.eager()) {
-							return (PropertyValueProvider<T>) PropertyValueProvider.over(arguments -> Parser.matchingAll().transform(
-									s -> stream(s.split(finalDelimiter)).map(e.getParser(arguments)::parse).collect(toList())));
+							return (PropertyValueProvider<T>) PropertyValueProvider.over(
+									arguments -> Parser.matchingAll().transform(
+											s -> stream(s.split(finalDelimiter)).map(e.getParser(arguments)::parse).collect(toList())));
 						} else {
 							return (PropertyValueProvider<T>) PropertyValueProvider.over(
-									arguments -> Parser.list(e.getParser(arguments), finalDelimiter), (k, a) -> Collections.emptyList());
+									arguments -> Parser.list(e.getParser(arguments), finalDelimiter),
+									(k, a) -> Collections.emptyList());
 						}
 					});
 				} else {
@@ -198,7 +202,8 @@ class PropertyLoaderImpl implements PropertyLoader {
 		return new PropertyValueProviderFactory() {
 			@SuppressWarnings("unchecked")
 			@Override
-			public <T> Optional<PropertyValueProvider<T>> getPropertyProvider(AnnotatedType exactType,
+			public <T> Optional<PropertyValueProvider<T>> getPropertyProvider(
+					AnnotatedType exactType,
 					PropertyLoader loader) {
 
 				if (exactType instanceof AnnotatedParameterizedType
@@ -206,7 +211,8 @@ class PropertyLoaderImpl implements PropertyLoader {
 
 					AnnotatedType elementType = ((AnnotatedParameterizedType) exactType).getAnnotatedActualTypeArguments()[0];
 
-					return loader.getValueProvider(elementType)
+					return loader
+							.getValueProvider(elementType)
 							.<PropertyValueProvider<T>> map(p -> new PropertyValueProvider<T>() {
 								@Override
 								public Parser<T> getParser(List<?> arguments) {
@@ -268,13 +274,13 @@ class PropertyLoaderImpl implements PropertyLoader {
 		return locale;
 	}
 
-	protected <T extends Properties<T>> T instantiateProperties(PropertyAccessorConfiguration<T> source) {
-		return new PropertyAccessorDelegate<>(this, getLog(), source).copy();
+	protected <T> T instantiateProperties(PropertyAccessorConfiguration<T> source) {
+		return new PropertyAccessorDelegate<>(this, getLog(), source).getProxy();
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public <T extends Properties<T>> T getProperties(PropertyAccessorConfiguration<T> accessorConfiguration) {
+	public <T> T getProperties(PropertyAccessorConfiguration<T> accessorConfiguration) {
 		return (T) localizationCache.putGet(accessorConfiguration);
 	}
 
@@ -297,10 +303,14 @@ class PropertyLoaderImpl implements PropertyLoader {
 	public Optional<PropertyValueProvider<?>> getValueProvider(AnnotatedType type) {
 		PropertyValueProviderFactory aggregateProvider = new PropertyValueProviderFactory() {
 			@Override
-			public <T> Optional<PropertyValueProvider<T>> getPropertyProvider(AnnotatedType exactType,
+			public <T> Optional<PropertyValueProvider<T>> getPropertyProvider(
+					AnnotatedType exactType,
 					PropertyLoader loader) {
-				List<PropertyValueProvider<?>> providers = getValueProviders().stream()
-						.map(p -> p.getPropertyProvider(exactType, loader)).filter(Optional::isPresent).map(Optional::get)
+				List<PropertyValueProvider<?>> providers = getValueProviders()
+						.stream()
+						.map(p -> p.getPropertyProvider(exactType, loader))
+						.filter(Optional::isPresent)
+						.map(Optional::get)
 						.collect(Collectors.toList());
 
 				if (!providers.isEmpty()) {
@@ -308,7 +318,11 @@ class PropertyLoaderImpl implements PropertyLoader {
 						@SuppressWarnings("unchecked")
 						@Override
 						public Parser<T> getParser(List<?> arguments) {
-							return providers.stream().map(p -> p.getParser(arguments)).reduce(Parser::orElse).get()
+							return providers
+									.stream()
+									.map(p -> p.getParser(arguments))
+									.reduce(Parser::orElse)
+									.get()
 									.transform(v -> (T) v);
 						}
 
@@ -320,8 +334,11 @@ class PropertyLoaderImpl implements PropertyLoader {
 						@SuppressWarnings("unchecked")
 						@Override
 						public T getDefault(String keyString, List<?> arguments) {
-							return providers.stream().filter(PropertyValueProvider::providesDefault)
-									.map(p -> (T) p.getDefault(keyString, arguments)).findFirst()
+							return providers
+									.stream()
+									.filter(PropertyValueProvider::providesDefault)
+									.map(p -> (T) p.getDefault(keyString, arguments))
+									.findFirst()
 									.orElseGet(() -> PropertyValueProvider.super.getDefault(keyString, arguments));
 						}
 					});

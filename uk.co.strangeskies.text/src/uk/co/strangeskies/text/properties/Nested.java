@@ -30,22 +30,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.text.properties.test;
+package uk.co.strangeskies.text.properties;
 
-import static uk.co.strangeskies.text.properties.PropertyConfiguration.UNQUALIFIED_SLASHED;
-import static uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase.LOWER;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import uk.co.strangeskies.text.properties.Localized;
-import uk.co.strangeskies.text.properties.PropertyConfiguration;
-
-@SuppressWarnings("javadoc")
-@PropertyConfiguration(key = UNQUALIFIED_SLASHED, keySplitString = ".", keyCase = LOWER)
-public interface LocalizerTestProperties {
-	Localized<String> simpleLocalized();
-
-	Localized<String> anotherSimpleLocalized();
-
-	String nonLocalized();
-
-	String nonLocalizedMissing();
-}
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface Nested {}

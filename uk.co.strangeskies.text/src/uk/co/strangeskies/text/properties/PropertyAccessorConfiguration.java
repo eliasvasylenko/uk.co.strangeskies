@@ -35,6 +35,7 @@ package uk.co.strangeskies.text.properties;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Objects;
+import java.util.Properties;
 
 import uk.co.strangeskies.text.properties.PropertyConfiguration.Defaults;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.Evaluation;
@@ -49,7 +50,7 @@ import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;
  * @param <T>
  *          the type of the property accessor interface
  */
-public class PropertyAccessorConfiguration<T extends Properties<T>> {
+public class PropertyAccessorConfiguration<T> {
 	@PropertyConfiguration
 	private final class DefaultPropertyConfigurationAnnotation {}
 
@@ -66,8 +67,9 @@ public class PropertyAccessorConfiguration<T extends Properties<T>> {
 				: DefaultPropertyConfigurationAnnotation.class.getAnnotation(PropertyConfiguration.class);
 	}
 
-	public <A extends Properties<A>> PropertyAccessorConfiguration<A> derive(Class<A> accessor) {
-		return new PropertyAccessorConfiguration<>(accessor,
+	public <A> PropertyAccessorConfiguration<A> derive(Class<A> accessor) {
+		return new PropertyAccessorConfiguration<>(
+				accessor,
 				deriveConfiguration(accessor.getAnnotation(PropertyConfiguration.class)));
 	}
 

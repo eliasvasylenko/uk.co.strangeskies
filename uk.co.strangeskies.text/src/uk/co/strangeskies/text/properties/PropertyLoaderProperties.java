@@ -34,6 +34,7 @@ package uk.co.strangeskies.text.properties;
 
 import java.lang.reflect.AnnotatedType;
 import java.util.Locale;
+import java.util.Properties;
 
 import uk.co.strangeskies.text.properties.PropertyConfiguration.Defaults;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.Evaluation;
@@ -49,7 +50,7 @@ import uk.co.strangeskies.text.properties.PropertyConfiguration.Evaluation;
  * @author Elias N Vasylenko
  */
 @PropertyConfiguration(resource = "OSGI-INF.l10n.bundle", evaluation = Evaluation.IMMEDIATE)
-public interface PropertyLoaderProperties extends Properties<PropertyLoaderProperties> {
+public interface PropertyLoaderProperties {
 	/**
 	 * Load the property with the key {@code property.loader.must.be.interface}.
 	 * 

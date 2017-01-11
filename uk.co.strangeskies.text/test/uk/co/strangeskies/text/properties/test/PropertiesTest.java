@@ -83,7 +83,8 @@ public class PropertiesTest {
 	public void multipleSubstitutionTextTest() {
 		TestProperties text = text(getManager());
 
-		assertEquals("values of substitution one and substitution two",
+		assertEquals(
+				"values of substitution one and substitution two",
 				text.multipleSubstitution("substitution one", "substitution two"));
 	}
 
@@ -98,7 +99,7 @@ public class PropertiesTest {
 	public void copyTextTest() {
 		TestProperties text = text(getManager());
 
-		assertEquals("simple property value", text.copy().simple());
+		assertEquals("simple property value", text.simple());
 	}
 
 	@Test

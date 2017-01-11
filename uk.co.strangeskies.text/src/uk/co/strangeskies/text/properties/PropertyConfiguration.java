@@ -40,9 +40,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * Annotation for {@link Properties property accessor interfaces}, and for
- * methods on those interfaces, to specify how property resources should be
- * fetched to back the implementation of the accessor.
+ * Annotation for property accessor interfaces, and for methods on those
+ * interfaces, to specify how property resources should be fetched to back the
+ * implementation of the accessor.
  * 
  * @author Elias N Vasylenko
  */
@@ -84,14 +84,14 @@ public @interface PropertyConfiguration {
 	enum Evaluation {
 		/**
 		 * Verify that a value is available for the property in the root locale
-		 * during construction of a {@link Properties} instance, and fail the
+		 * during construction of a properties interface instance, and fail the
 		 * request with an exception if it is not.
 		 */
 		IMMEDIATE,
 
 		/**
 		 * Verify that a value is available for the property in the requested locale
-		 * upon invocation of the accessing method of a {@link Properties} instance,
+		 * upon invocation of the accessing method of a properties interface instance,
 		 * and fail the request with an exception if it is not.
 		 */
 		DEFERRED,

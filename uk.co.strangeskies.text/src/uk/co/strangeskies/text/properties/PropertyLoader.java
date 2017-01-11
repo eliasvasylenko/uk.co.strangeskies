@@ -36,10 +36,12 @@ import java.lang.reflect.AnnotatedType;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.Set;
 
 import uk.co.strangeskies.utilities.Log;
+import uk.co.strangeskies.utilities.Observable;
 import uk.co.strangeskies.utilities.ObservableValue;
 
 /**
@@ -48,6 +50,29 @@ import uk.co.strangeskies.utilities.ObservableValue;
  * implementations of sub-interfaces of {@link Properties} according to a
  * {@link Locale} setting, which delegate method invocations to be fetched from
  * {@link ResourceBundle resource bundles}.
+ * 
+ * <p>
+ * A property accessor interface is an interface to provide an API over static
+ * properties and localized text and data. Users should not implement this class
+ * themselves, instead they should define sub-interfaces, allowing
+ * implementations to be automatically provided by {@link PropertyLoader}.
+ * <p>
+ * User defined methods on a property accessor interface may return values of
+ * any type, so long as a {@link PropertyValueProvider} is given to the property
+ * loader which supports that type. Special handling is performed for the
+ * {@link Localized} type, and for methods returning nested accessor classes.
+ * <p>
+ * A key is generated for each method based on the class and method name. The
+ * key is generated according to the {@link PropertyConfiguration} used to load
+ * the {@link Properties} instance.
+ * <p>
+ * Default and static methods will be invoked directly.
+ * <p>
+ * A {@link Properties} instance is {@link Observable} over changes to its
+ * locale, with the instance itself being passed as the message to observers.
+ * <p>
+ * For an example of how to use this interface, users may wish to take a look at
+ * the {@link PropertyLoaderProperties} interface.
  * 
  * @author Elias N Vasylenko
  */
@@ -124,7 +149,7 @@ public interface PropertyLoader {
 	 * @param <T>
 	 *          the type of the localization text accessor interface
 	 */
-	<T extends Properties<T>> T getProperties(PropertyAccessorConfiguration<T> accessorConfiguration);
+	<T> T getProperties(PropertyAccessorConfiguration<T> accessorConfiguration);
 
 	/**
 	 * Generate an implementing instance of the given accessor interface class,
@@ -136,7 +161,7 @@ public interface PropertyLoader {
 	 *          the sub-interface of {@link Properties} we wish to implement
 	 * @return an implementation of the accessor interface
 	 */
-	default <T extends Properties<T>> T getProperties(Class<T> accessor) {
+	default <T> T getProperties(Class<T> accessor) {
 		return getProperties(new PropertyAccessorConfiguration<>(accessor));
 	}
 
@@ -167,7 +192,7 @@ public interface PropertyLoader {
 	 * @param <T>
 	 *          the type of the localization text accessor interface
 	 */
-	static <T extends Properties<T>> T getDefaultProperties(PropertyAccessorConfiguration<T> accessorConfiguration) {
+	static <T> T getDefaultProperties(PropertyAccessorConfiguration<T> accessorConfiguration) {
 		return getDefaultPropertyLoader().getProperties(accessorConfiguration);
 	}
 
@@ -181,7 +206,7 @@ public interface PropertyLoader {
 	 *          the sub-interface of {@link Properties} we wish to implement
 	 * @return an implementation of the accessor interface
 	 */
-	static <T extends Properties<T>> T getDefaultProperties(Class<T> accessor) {
+	static <T> T getDefaultProperties(Class<T> accessor) {
 		return getDefaultPropertyLoader().getProperties(new PropertyAccessorConfiguration<>(accessor));
 	}
 

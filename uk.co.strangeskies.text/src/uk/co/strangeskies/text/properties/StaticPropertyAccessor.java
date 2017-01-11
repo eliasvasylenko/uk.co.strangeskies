@@ -33,8 +33,7 @@
 package uk.co.strangeskies.text.properties;
 
 import java.util.Locale;
-
-import uk.co.strangeskies.utilities.Observer;
+import java.util.Properties;
 
 /**
  * A partial implementation for {@link Properties} manually implemented types
@@ -48,39 +47,15 @@ import uk.co.strangeskies.utilities.Observer;
  * @param <S>
  *          self bound type
  */
-public abstract class StaticPropertyAccessor<S extends Properties<S>> implements Properties<S> {
+public abstract class StaticPropertyAccessor<S> {
 	private final Locale locale;
-	private final Class<S> accessorClass;
 
 	/**
 	 * @param locale
 	 *          the static locale for the text
-	 * @param accessorClass
-	 *          the class of the property accessor
 	 */
-	public StaticPropertyAccessor(Locale locale, Class<S> accessorClass) {
+	public StaticPropertyAccessor(Locale locale) {
 		this.locale = locale;
-		this.accessorClass = accessorClass;
-	}
-
-	@Override
-	public Class<S> getAccessorClass() {
-		return accessorClass;
-	}
-
-	@Override
-	public boolean addObserver(Observer<? super S> observer) {
-		return true;
-	}
-
-	@Override
-	public boolean removeObserver(Observer<? super S> observer) {
-		return true;
-	}
-
-	@Override
-	public Locale getLocale() {
-		return locale;
 	}
 
 	/**
@@ -89,9 +64,23 @@ public abstract class StaticPropertyAccessor<S extends Properties<S>> implements
 	 * @param arguments
 	 *          the arguments to substitute into the string
 	 * @return a {@link Localized} instance over the given string and the static
-	 *         {@link #getLocale() locale}
+	 *         locale
 	 */
-	public Localized<String> localize(String string, Object... arguments) {
-		return Localized.forStaticLocale(String.format(string, arguments), locale);
+	protected Localized<String> localize(String string, Object... arguments) {
+		return Localized.forStaticLocale(format(string, arguments), locale);
+	}
+
+	protected String format(String string, Object... arguments) {
+		return String.format(string, arguments);
+	}
+
+	/**
+	 * @param property
+	 *          the property to create a localized view of
+	 * @return a {@link Localized} instance over the given string and the static
+	 *         locale
+	 */
+	protected <T> Localized<T> localize(T property) {
+		return Localized.forStaticLocale(property, locale);
 	}
 }
