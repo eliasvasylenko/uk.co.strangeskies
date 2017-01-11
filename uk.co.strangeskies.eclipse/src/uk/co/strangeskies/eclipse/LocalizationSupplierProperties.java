@@ -51,8 +51,6 @@ public interface LocalizationSupplierProperties {
 	/**
 	 * @param localizeClass
 	 *          the {@link Localize} class for formatting
-	 * @param localizedTextClass
-	 *          the {@link Properties} class for formatting
 	 * @return invalid type was annotated with {@link Localize} for localization
 	 *         supplier
 	 */

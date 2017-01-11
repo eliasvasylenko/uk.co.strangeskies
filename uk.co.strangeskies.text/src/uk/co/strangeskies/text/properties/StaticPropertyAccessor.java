@@ -53,8 +53,6 @@ public abstract class StaticPropertyAccessor<S> {
 	/**
 	 * @param locale
 	 *          the static locale for the text
-	 * @param accessorClass
-	 *          the class of the property accessor
 	 */
 	public StaticPropertyAccessor(Locale locale) {
 		this.locale = locale;
@@ -66,7 +64,7 @@ public abstract class StaticPropertyAccessor<S> {
 	 * @param arguments
 	 *          the arguments to substitute into the string
 	 * @return a {@link Localized} instance over the given string and the static
-	 *         {@link #getLocale() locale}
+	 *         locale
 	 */
 	protected Localized<String> localize(String string, Object... arguments) {
 		return Localized.forStaticLocale(format(string, arguments), locale);
@@ -77,10 +75,10 @@ public abstract class StaticPropertyAccessor<S> {
 	}
 
 	/**
-	 * @param string
+	 * @param property
 	 *          the property to create a localized view of
 	 * @return a {@link Localized} instance over the given string and the static
-	 *         {@link #getLocale() locale}
+	 *         locale
 	 */
 	protected <T> Localized<T> localize(T property) {
 		return Localized.forStaticLocale(property, locale);

@@ -39,8 +39,7 @@ import java.util.function.Function;
 import uk.co.strangeskies.text.parsing.Parser;
 
 /**
- * A provider of property values for {@link Properties properties} of a certain
- * class.
+ * A provider of values a certain class for property interface.
  * 
  * @author Elias N Vasylenko
  *
@@ -58,7 +57,8 @@ public interface PropertyValueProvider<T> {
 		throw new UnsupportedOperationException();
 	}
 
-	static <T> PropertyValueProvider<T> over(Function<List<?>, Parser<T>> getValue,
+	static <T> PropertyValueProvider<T> over(
+			Function<List<?>, Parser<T>> getValue,
 			BiFunction<String, List<?>, T> defaultValue) {
 		return new PropertyValueProvider<T>() {
 			@Override
