@@ -42,6 +42,8 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static uk.co.strangeskies.utilities.Observable.Observation.CONTINUE;
+import static uk.co.strangeskies.utilities.Observable.Observation.TERMINATE;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -171,7 +173,7 @@ public class ObservableTest {
 		List<String> list = new ArrayList<>();
 
 		ObservableImpl<String> stringObservable = new ObservableImpl<>();
-		stringObservable.addTerminatingObserver(list, list::add);
+		stringObservable.addTerminatingObserver(list, e -> list.add(e) ? CONTINUE : TERMINATE);
 
 		stringObservable.fire("test1");
 		stringObservable.fire("test2");
@@ -188,7 +190,7 @@ public class ObservableTest {
 		Set<String> list = new LinkedHashSet<>();
 
 		ObservableImpl<String> stringObservable = new ObservableImpl<>();
-		stringObservable.addTerminatingObserver(list::add);
+		stringObservable.addTerminatingObserver(e -> list.add(e) ? CONTINUE : TERMINATE);
 
 		stringObservable.fire("test1");
 		stringObservable.fire("test2");

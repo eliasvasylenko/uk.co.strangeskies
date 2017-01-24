@@ -32,6 +32,9 @@
  */
 package uk.co.strangeskies.utilities.collection;
 
+import static uk.co.strangeskies.utilities.Observable.Observation.CONTINUE;
+import static uk.co.strangeskies.utilities.Observable.Observation.TERMINATE;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -99,11 +102,11 @@ public interface ObservableSet<S extends ObservableSet<S, E>, E>
 	}
 
 	public static <C extends Set<E>, E> ObservableSet<?, E> over(C set, Function<? super C, ? extends C> copy) {
-		return new ObservableSetDecoratorImpl<C, E>(set, copy);
+		return new ObservableSetDecoratorImpl<>(set, copy);
 	}
 
 	public static <C extends Copyable<? extends C> & Set<E>, E> ObservableSet<?, E> over(C set) {
-		return new ObservableSetDecoratorImpl<C, E>(set, Copyable::copy);
+		return new ObservableSetDecoratorImpl<>(set, Copyable::copy);
 	}
 
 	public static <C extends Set<E>, E> ObservableSet<?, E> over(C set) {
@@ -145,7 +148,7 @@ public interface ObservableSet<S extends ObservableSet<S, E>, E>
 			changes().addTerminatingObserver(c -> {
 				synchronized (complete) {
 					if (complete.get()) {
-						return true;
+						return CONTINUE;
 					}
 
 					if (c.added().contains(element)) {
@@ -154,11 +157,11 @@ public interface ObservableSet<S extends ObservableSet<S, E>, E>
 						complete.set(true);
 						complete.notifyAll();
 
-						return true;
+						return CONTINUE;
 					}
 				}
 
-				return false;
+				return TERMINATE;
 			});
 
 			if (contains(element)) {
