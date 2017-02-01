@@ -111,7 +111,9 @@ public interface Observable<M> {
 		private final Function<? super O, Observer<? super M>> Observer;
 		private final WeakReference<O> owner;
 
-		protected WeakObserver(Observable<? extends M> observable, Function<? super O, Observer<? super M>> Observer,
+		protected WeakObserver(
+				Observable<? extends M> observable,
+				Function<? super O, Observer<? super M>> Observer,
 				O owner) {
 			this.observable = observable;
 
@@ -141,10 +143,12 @@ public interface Observable<M> {
 	@SuppressWarnings("javadoc")
 	class TerminatingObserver<M> extends OwnedObserver<M> {
 		private final Observable<? extends M> observable;
-		private final Function<? super M, Boolean> observer;
+		private final Function<? super M, Observation> observer;
 		private final Object owner;
 
-		protected TerminatingObserver(Observable<? extends M> observable, Function<? super M, Boolean> observer,
+		protected TerminatingObserver(
+				Observable<? extends M> observable,
+				Function<? super M, Observation> observer,
 				Object owner) {
 			this.observable = observable;
 			this.observer = observer;
@@ -158,10 +162,26 @@ public interface Observable<M> {
 
 		@Override
 		public void notify(M event) {
-			if (!observer.apply(event)) {
+			if (observer.apply(event) == Observation.TERMINATE) {
 				observable.removeObserver(this);
 			}
 		}
+	}
+
+	/**
+	 * Control token for terminating observer behavior.
+	 * 
+	 * @author Elias N Vasylenko
+	 */
+	public static enum Observation {
+		/**
+		 * Terminate observation.
+		 */
+		TERMINATE,
+		/**
+		 * Continue observation.
+		 */
+		CONTINUE
 	}
 
 	/**
@@ -221,17 +241,18 @@ public interface Observable<M> {
 	 * 
 	 * @param observer
 	 *          an observer to add, a function from event type to a boolean, a
-	 *          true value of which will remove the observer
+	 *          false value of which will remove the observer
 	 * @return true if the observer was successfully added, false otherwise
 	 */
-	default boolean addTerminatingObserver(Function<? super M, Boolean> observer) {
+	default boolean addTerminatingObserver(Function<? super M, Observation> observer) {
 		return addTerminatingObserver(observer, observer);
 	}
 
 	/**
 	 * Observers added will receive messages from this Observable. Terminating
 	 * observers may conditionally remove themselves from the observable upon
-	 * receipt of events by returning {@code false} from the observer function.
+	 * receipt of events by returning the {@link Observation#TERMINATE termination
+	 * token} from the observer function.
 	 * 
 	 * @see #addOwnedObserver(Object, Observer)
 	 * 
@@ -243,7 +264,7 @@ public interface Observable<M> {
 	 *          the owner of the observer
 	 * @return true if the observer was successfully added, false otherwise
 	 */
-	default <O> boolean addTerminatingObserver(Object owner, Function<? super M, Boolean> observer) {
+	default <O> boolean addTerminatingObserver(Object owner, Function<? super M, Observation> observer) {
 		return addObserver(new TerminatingObserver<>(this, observer, owner));
 	}
 

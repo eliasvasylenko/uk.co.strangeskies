@@ -44,7 +44,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TreeItem;
 import uk.co.strangeskies.reflection.token.TypeToken;
@@ -236,7 +235,7 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 			TreeItem<TreeItemData<?>> focused = treeView.getFocusModel().getFocusedItem();
 			treeView.getFocusModel().focus(-1);
 
-			Platform.runLater(() -> {
+			FxUtilities.runNow(() -> {
 				rebuild(recursive);
 
 				for (int i = 0; i < treeView.getExpandedItemCount(); i++) {

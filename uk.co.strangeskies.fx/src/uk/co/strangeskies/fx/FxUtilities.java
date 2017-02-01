@@ -100,8 +100,16 @@ public class FxUtilities {
 			Platform.runLater(task);
 			try {
 				return task.get();
-			} catch (InterruptedException | ExecutionException e) {
-				throw new IllegalArgumentException(e);
+			} catch (InterruptedException e) {
+				throw new RuntimeException(e);
+			} catch (ExecutionException e) {
+				try {
+					throw e.getCause();
+				} catch (Error | RuntimeException c) {
+					throw c;
+				} catch (Throwable t) {
+					throw new RuntimeException(t);
+				}
 			}
 		}
 	}
