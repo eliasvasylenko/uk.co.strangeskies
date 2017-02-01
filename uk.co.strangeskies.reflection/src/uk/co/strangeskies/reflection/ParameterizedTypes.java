@@ -33,7 +33,11 @@
 package uk.co.strangeskies.reflection;
 
 import static java.util.Arrays.asList;
+import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Stream.concat;
+import static java.util.stream.Stream.empty;
+import static java.util.stream.Stream.of;
 import static uk.co.strangeskies.reflection.Types.getRawType;
 
 import java.io.Serializable;
@@ -47,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -459,41 +464,6 @@ public class ParameterizedTypes {
 		return arguments;
 	}
 
-	private static Stream<Type> resolveSupertypeHierarchyImpl(Type type, Class<?> superclass) {
-		if (!(type instanceof ParameterizedType) && !(type instanceof Class)) {
-			throw new ReflectionException(
-					p -> p.cannotResolveSupertype(type, superclass),
-					new ReflectionException(p -> p.unsupportedType(type)));
-		}
-
-		return StreamUtilities.iterate(type, supertype -> {
-			Class<?> subclass = Types.getRawType(supertype);
-
-			if (subclass.equals(superclass)) {
-				return null;
-			}
-
-			List<Type> lesserSubtypes = new ArrayList<>(asList(subclass.getGenericInterfaces()));
-			if (subclass.getSuperclass() != null)
-				lesserSubtypes.add(subclass.getGenericSuperclass());
-			if (lesserSubtypes.isEmpty())
-				lesserSubtypes.add(Object.class);
-
-			Type subtype = lesserSubtypes.stream().filter(t -> superclass.isAssignableFrom(getRawType(t))).findAny().get();
-
-			if (supertype instanceof ParameterizedType)
-				supertype = new TypeSubstitution(
-						getAllTypeArguments((ParameterizedType) supertype).collect(toMap(Entry::getKey, Entry::getValue)))
-								.resolve(subtype);
-			else
-				supertype = subtype;
-
-			subclass = Types.getRawType(supertype);
-
-			return supertype;
-		});
-	}
-
 	/**
 	 * Determine the recursive sequence of direct supertypes of a given type which
 	 * lead to either the given superclass or a parameterization thereof.
@@ -534,5 +504,53 @@ public class ParameterizedTypes {
 		}
 
 		return resolveSupertypeHierarchyImpl(type, superclass).reduce((a, b) -> b).get();
+	}
+
+	public static Stream<Type> resolveDirectSupertypes(Type type) {
+		return resolveDirectSupertypes(type, Object.class);
+	}
+
+	private static Stream<Type> resolveSupertypeHierarchyImpl(Type type, Class<?> superclass) {
+		if (!(type instanceof ParameterizedType) && !(type instanceof Class)) {
+			throw new ReflectionException(
+					p -> p.cannotResolveSupertype(type, superclass),
+					new ReflectionException(p -> p.unsupportedType(type)));
+		}
+
+		return StreamUtilities.iterateOptional(type, t -> resolveDirectSupertypes(t, superclass).findFirst());
+	}
+
+	/*
+	 * TODO encountered only needs to track types when the hierarchy diverges,
+	 * then we must perform some extra subtype checks to make sure partial
+	 * ordering is maintained.
+	 */
+	private static Stream<Type> resolveDirectSupertypes(Set<Class<?>> encountered, Type type, Class<?> superclass) {
+		Class<?> subclass = getRawType(type);
+
+		if (subclass.equals(superclass)) {
+			return empty();
+		}
+
+		encountered.remove(subclass);
+
+		Type genericSuperclass = subclass.getGenericSuperclass();
+		Type[] genericInterfaces = subclass.getGenericInterfaces();
+
+		Stream<Type> lesserSubtypes = stream(genericInterfaces);
+		if (genericSuperclass != null) {
+			lesserSubtypes = concat(lesserSubtypes, of(genericSuperclass));
+		} else if (genericInterfaces.length == 0) {
+			lesserSubtypes = concat(lesserSubtypes, of(Object.class));
+		}
+
+		return lesserSubtypes.filter(t -> superclass.isAssignableFrom(getRawType(t))).map(subtype -> {
+			if (type instanceof ParameterizedType)
+				return new TypeSubstitution(
+						getAllTypeArguments((ParameterizedType) type).collect(toMap(Entry::getKey, Entry::getValue)))
+								.resolve(subtype);
+			else
+				return subtype;
+		});
 	}
 }
