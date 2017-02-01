@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import static uk.co.strangeskies.reflection.token.TypeToken.overAnnotatedType;
+import static uk.co.strangeskies.reflection.token.TypeToken.forAnnotatedType;
 
 import uk.co.strangeskies.reflection.token.TypeToken;
 
@@ -55,7 +55,7 @@ public class FieldDeclaration<C, T> extends AnnotatedDeclaration<ParameterSignat
 		this.name = name;
 		this.declaringClass = declaringClass;
 		this.owningDeclaration = owningDeclaration;
-		this.type = (TypeToken<T>) overAnnotatedType(
+		this.type = (TypeToken<T>) forAnnotatedType(
 				owningDeclaration.substituteTypeVariableSignatures(signature.getType()));
 	}
 

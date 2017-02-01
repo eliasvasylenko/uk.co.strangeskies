@@ -90,7 +90,7 @@ import uk.co.strangeskies.utilities.Isomorphism;
  * {@link InferenceVariable} may by created for any given {@link TypeVariable}.
  * A {@link TypeResolver} always creates {@link InferenceVariable} according to
  * the behavior of
- * {@link TypeResolver#inferOverTypeParameters(GenericDeclaration)}.
+ * {@link TypeResolver#inferforTypeParameters(GenericDeclaration)}.
  * 
  * <p>
  * A {@link TypeResolver} is a flexible and powerful tool, but for typical
@@ -156,7 +156,7 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 		this.bounds = this.bounds.withBounds(bounds);
 	}
 
-	private Map<TypeVariable<?>, InferenceVariable> inferOverTypeParametersImpl(
+	private Map<TypeVariable<?>, InferenceVariable> inferforTypeParametersImpl(
 			GenericDeclaration declaration,
 			Map<TypeVariable<?>, ? extends Type> existingCaptures) {
 
@@ -190,10 +190,10 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 		return newCaptures;
 	}
 
-	public Stream<Map.Entry<TypeVariable<?>, InferenceVariable>> inferOverTypeParameters(
+	public Stream<Map.Entry<TypeVariable<?>, InferenceVariable>> inferforTypeParameters(
 			GenericDeclaration declaration,
 			Map<TypeVariable<?>, ? extends Type> existingCaptures) {
-		return inferOverTypeParametersImpl(declaration, existingCaptures).entrySet().stream();
+		return inferforTypeParametersImpl(declaration, existingCaptures).entrySet().stream();
 	}
 
 	/**
@@ -208,18 +208,18 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 * @return mapping from the {@link InferenceVariable}s on the given
 	 *         declaration, to their new capturing {@link InferenceVariable}s
 	 */
-	public Stream<Map.Entry<TypeVariable<?>, InferenceVariable>> inferOverTypeParameters(
+	public Stream<Map.Entry<TypeVariable<?>, InferenceVariable>> inferforTypeParameters(
 			GenericDeclaration declaration,
 			ParameterizedType enclosing) {
 		if (enclosing == null) {
-			return inferOverTypeParameters(declaration);
+			return inferforTypeParameters(declaration);
 		}
 
 		if (!getEnclosingDeclaration(declaration).get().equals(enclosing.getRawType())) {
 			throw new ReflectionException(p -> p.incorrectEnclosingDeclaration(enclosing.getRawType(), declaration));
 		}
 
-		return inferOverTypeParameters(
+		return inferforTypeParameters(
 				declaration,
 				ParameterizedTypes.getAllTypeArguments(enclosing).collect(entriesToMap()));
 	}
@@ -234,16 +234,16 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 * @return a mapping from the {@link InferenceVariable}s on the given
 	 *         declaration, to their new capturing {@link InferenceVariable}s
 	 */
-	public Stream<Map.Entry<TypeVariable<?>, InferenceVariable>> inferOverTypeParameters(GenericDeclaration declaration) {
+	public Stream<Map.Entry<TypeVariable<?>, InferenceVariable>> inferforTypeParameters(GenericDeclaration declaration) {
 		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getEnclosingDeclaration(declaration)
-				.map(this::inferOverTypeParametersImpl)
+				.map(this::inferforTypeParametersImpl)
 				.orElse(emptyMap());
 
-		return concat(inferenceVariables.entrySet().stream(), inferOverTypeParameters(declaration, inferenceVariables));
+		return concat(inferenceVariables.entrySet().stream(), inferforTypeParameters(declaration, inferenceVariables));
 	}
 
-	private Map<TypeVariable<?>, InferenceVariable> inferOverTypeParametersImpl(GenericDeclaration declaration) {
-		return inferOverTypeParameters(declaration).collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+	private Map<TypeVariable<?>, InferenceVariable> inferforTypeParametersImpl(GenericDeclaration declaration) {
+		return inferforTypeParameters(declaration).collect(Collectors.toMap(Entry::getKey, Entry::getValue));
 	}
 
 	private Optional<GenericDeclaration> getEnclosingDeclaration(GenericDeclaration declaration) {
@@ -269,11 +269,11 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 * @return A parameterized type derived from the given type, with inference
 	 *         variables in place of wildcards where appropriate.
 	 */
-	public GenericArrayType inferOverTypeArguments(GenericArrayType type) {
+	public GenericArrayType inferforTypeArguments(GenericArrayType type) {
 		Type innerComponent = Types.getInnerComponentType(type);
 		if (innerComponent instanceof ParameterizedType) {
 			return arrayFromComponent(
-					inferOverTypeArguments((ParameterizedType) innerComponent),
+					inferforTypeArguments((ParameterizedType) innerComponent),
 					Types.getArrayDimensions(type));
 		} else
 			return type;
@@ -290,12 +290,12 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 * @return A parameterized type derived from the given type, with inference
 	 *         variables in place of wildcards where appropriate.
 	 */
-	public ParameterizedType inferOverTypeArguments(ParameterizedType type) {
+	public ParameterizedType inferforTypeArguments(ParameterizedType type) {
 		Class<?> rawType = Types.getRawType(type);
 
 		List<Entry<TypeVariable<?>, Type>> typeArguments = getAllTypeArguments(type).collect(toList());
 
-		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = inferOverTypeParametersImpl(rawType);
+		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = inferforTypeParametersImpl(rawType);
 
 		for (Map.Entry<TypeVariable<?>, Type> argument : typeArguments) {
 			bounds = new ConstraintFormula(Kind.CONTAINMENT, inferenceVariables.get(argument.getKey()), argument.getValue())
@@ -305,8 +305,8 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 		return (ParameterizedType) resolveType(ParameterizedTypes.parameterizeUnchecked(rawType, inferenceVariables::get));
 	}
 
-	public ParameterizedType inferOverTypeParameters(Class<?> declaration) {
-		return ParameterizedTypes.parameterize(declaration, inferOverTypeParametersImpl(declaration)::get);
+	public ParameterizedType inferforTypeParameters(Class<?> declaration) {
+		return ParameterizedTypes.parameterize(declaration, inferforTypeParametersImpl(declaration)::get);
 	}
 
 	/**

@@ -89,15 +89,6 @@ public class ParameterizedTypes {
 			}
 		}
 
-		ParameterizedTypeImpl(ParameterizedType type) {
-			this(getOwner(type.getOwnerType()), (Class<?>) type.getRawType(), getArguments(type.getActualTypeArguments()));
-		}
-
-		private static Type getOwner(Type ownerType) {
-			return ownerType instanceof ParameterizedType ? new ParameterizedTypeImpl((ParameterizedType) ownerType)
-					: ownerType;
-		}
-
 		private static List<Type> getArguments(Type[] actualTypeArguments) {
 			List<Type> arguments = new ArrayList<>(actualTypeArguments.length);
 			for (Type argument : actualTypeArguments)
@@ -295,18 +286,23 @@ public class ParameterizedTypes {
 		return new ParameterizedTypeImpl(ownerType, rawType, new ArrayList<>(typeArguments));
 	}
 
+	public static ParameterizedType parameterizeUnchecked(Class<?> rawType, Type... typeArguments) {
+		return parameterizeUnchecked(rawType, Arrays.asList(typeArguments));
+	}
+
 	public static ParameterizedType parameterizeUnchecked(Class<?> rawType, List<Type> typeArguments) {
 		List<TypeVariable<?>> parameters = getAllTypeParameters(rawType).collect(Collectors.toList());
 
 		if (parameters.size() != typeArguments.size()) {
 			List<Type> typeArgumentsFinal = typeArguments;
-			throw new ReflectionException(p -> p.incorrectTypeArgumentCount(rawType, typeArgumentsFinal));
+			throw new ReflectionException(
+					p -> p.incorrectTypeArgumentCount(asList(rawType.getTypeParameters()), typeArgumentsFinal));
 		}
 
 		return parameterizeUncheckedImpl(rawType, typeArguments);
 	}
 
-	public static ParameterizedType parameterizeUncheckedImpl(Class<?> rawType, List<Type> typeArguments) {
+	private static ParameterizedType parameterizeUncheckedImpl(Class<?> rawType, List<Type> typeArguments) {
 		int totalArgumentCount = typeArguments.size();
 		int parametersOnTypeCount = rawType.getTypeParameters().length;
 		int parametersOnOwnerCount = totalArgumentCount - parametersOnTypeCount;
@@ -322,14 +318,6 @@ public class ParameterizedTypes {
 		return parameterizeUnchecked(owner, rawType, typeArguments);
 	}
 
-	public static ParameterizedType parameterizeUnchecked(Class<?> rawType) {
-		return parameterizeUnchecked(rawType, i -> null);
-	}
-
-	public static ParameterizedType parameterizeUnchecked(Class<?> rawType, Type... typeArguments) {
-		return parameterizeUnchecked(rawType, Arrays.asList(typeArguments));
-	}
-
 	public static <T> ParameterizedType parameterizeUnchecked(
 			Class<T> rawType,
 			Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
@@ -341,10 +329,11 @@ public class ParameterizedTypes {
 			Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
 		Class<?> enclosing = rawType.getEnclosingClass();
 		Type ownerType;
-		if (enclosing == null || Types.isStatic(rawType))
+		if (enclosing == null || Types.isStatic(rawType)) {
 			ownerType = enclosing;
-		else
-			ownerType = parameterizeUncheckedImpl(enclosing, typeArguments);
+		} else {
+			ownerType = parameterizeUncheckedImpl(enclosing, argumentsForOwner(rawType, typeArguments));
+		}
 
 		if ((ownerType == null || ownerType instanceof Class) && rawType.getTypeParameters().length == 0)
 			return rawType;
@@ -363,7 +352,7 @@ public class ParameterizedTypes {
 	 * @return A {@link ParameterizedType} instance over the given class.
 	 */
 	public static ParameterizedType parameterize(Class<?> rawType) {
-		return parameterize(rawType, i -> null);
+		return parameterizeUnchecked(rawType, i -> null);
 	}
 
 	/**
@@ -426,6 +415,28 @@ public class ParameterizedTypes {
 	public static ParameterizedType validate(ParameterizedType type) {
 		// TODO validation of ParameterizedTypeImpl parameters
 		return type;
+	}
+
+	/*
+	 * An enclosing type of a method local or constructor local type, such as an
+	 * anonymous type, cannot be parameterized.
+	 */
+	private static Function<? super TypeVariable<?>, ? extends Type> argumentsForOwner(
+			Class<?> enclosedClass,
+			Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
+
+		if (enclosedClass.getEnclosingConstructor() != null || enclosedClass.getEnclosingMethod() != null) {
+			return t -> {
+				Type argument = typeArguments.apply(t);
+				if (argument != t && argument != null) {
+					throw new ReflectionException(p -> p.cannotParameterizeEnclosingExecutable(enclosedClass));
+				}
+				return argument;
+			};
+
+		} else {
+			return typeArguments;
+		}
 	}
 
 	private static List<Type> argumentsForClass(

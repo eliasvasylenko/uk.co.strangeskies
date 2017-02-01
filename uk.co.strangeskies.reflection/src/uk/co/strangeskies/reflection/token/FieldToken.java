@@ -34,15 +34,15 @@ package uk.co.strangeskies.reflection.token;
 
 import static java.util.Arrays.stream;
 import static uk.co.strangeskies.reflection.token.FieldTokenQuery.fieldQuery;
-import static uk.co.strangeskies.reflection.token.TypeToken.overType;
+import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
+import static uk.co.strangeskies.reflection.token.TypeToken.forType;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.entriesToMap;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.util.Map;
+import java.util.Collection;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.BoundSet;
@@ -69,9 +69,10 @@ import uk.co.strangeskies.reflection.token.TypeToken.Wildcards;
  * @param <T>
  *          the type of the field
  */
-public class FieldToken<O, T> extends AbstractMemberToken<O, Field> {
-	private final TypeToken<O> receiverType;
+public class FieldToken<O, T> implements MemberToken<O, FieldToken<O, T>> {
+	private final TypeToken<? super O> receiverType;
 	private final TypeToken<T> fieldType;
+	private final Field field;
 
 	protected FieldToken(Field field, TypeToken<O> receiverType) {
 		this(field, receiverType, new TypeResolver());
@@ -99,7 +100,7 @@ public class FieldToken<O, T> extends AbstractMemberToken<O, Field> {
 	private TypeToken<T> determineFieldType(TypeResolver resolver, TypeSubstitution inferenceVariables) {
 		Type genericReturnType = inferenceVariables.resolve(getMember().getGenericType());
 
-		TypeToken<T> returnType = (TypeToken<T>) overType(resolver.getBounds(), genericReturnType, Wildcards.RETAIN);
+		TypeToken<T> returnType = (TypeToken<T>) forType(resolver.getBounds(), genericReturnType, Wildcards.RETAIN);
 
 		return returnType.resolve();
 	}
@@ -113,7 +114,7 @@ public class FieldToken<O, T> extends AbstractMemberToken<O, Field> {
 	 * @return a field member wrapping the given field
 	 */
 	public static FieldToken<Void, ?> overStaticField(Field field) {
-		return new FieldToken<>(field, TypeToken.overType(void.class), null);
+		return new FieldToken<>(field, forClass(void.class), null);
 	}
 
 	/**
@@ -137,7 +138,7 @@ public class FieldToken<O, T> extends AbstractMemberToken<O, Field> {
 	 * @return a field member wrapping the given field
 	 */
 	public static FieldToken<?, ?> overField(Field field) {
-		return new FieldToken<>(field, TypeToken.overType(field.getDeclaringClass()), null);
+		return new FieldToken<>(field, forClass(field.getDeclaringClass()), null);
 	}
 
 	/**
@@ -159,6 +160,11 @@ public class FieldToken<O, T> extends AbstractMemberToken<O, Field> {
 	@Override
 	public String getName() {
 		return getMember().getName();
+	}
+
+	@Override
+	public Field getMember() {
+		return field;
 	}
 
 	@Override
@@ -201,12 +207,12 @@ public class FieldToken<O, T> extends AbstractMemberToken<O, Field> {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <U extends O> FieldToken<U, ? extends T> withReceiverType(TypeToken<U> type) {
-		return (FieldToken<U, ? extends T>) withBounds(type.getBounds()).withReceiverType(type.getType());
+	public FieldToken<O, T> withReceiverType(TypeToken<?> type) {
+		return withBounds(type.getBounds()).withReceiverType(type.getType());
 	}
 
 	@Override
-	public FieldToken<? extends O, ? extends T> withReceiverType(Type type) {
+	public FieldToken<O, T> withReceiverType(Type type) {
 		return new FieldToken<>(getMember(), receiverType);
 	}
 
@@ -266,28 +272,6 @@ public class FieldToken<O, T> extends AbstractMemberToken<O, Field> {
 	}
 
 	/**
-	 * @return All generic type parameters of the wrapped {@link Executable}.
-	 */
-	public Stream<TypeVariable<?>> getAllTypeParameters() {
-		if (isRaw())
-			return Stream.empty();
-		else
-			return getContainerTypeArguments().keySet().stream();
-	}
-
-	/**
-	 * @return All generic type parameter instantiations of the wrapped
-	 *         {@link Executable}, or their inference variables if not yet
-	 *         instantiated.
-	 */
-	public Stream<Map.Entry<TypeVariable<?>, Type>> getAllTypeArguments() {
-		if (isRaw())
-			return Stream.empty();
-		else
-			return getContainerTypeArguments().entrySet().stream();
-	}
-
-	/**
 	 * Find which fields are declared on this type.
 	 * 
 	 * @param declaringClass
@@ -299,5 +283,34 @@ public class FieldToken<O, T> extends AbstractMemberToken<O, Field> {
 		Stream<Field> fields = stream(declaringClass.getDeclaredFields()).filter(f -> Modifier.isStatic(f.getModifiers()));
 
 		return fieldQuery(fields, FieldToken::overStaticField);
+	}
+
+	@Override
+	public DeclarationToken<?> getOwningDeclaration() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public int getTypeParameterCount() {
+		return getDeclaringClass().getTypeParameters().length;
+	}
+
+	@Override
+	public Stream<TypeParameter<?>> getTypeParameters() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Stream<TypeArgument<?>> getTypeArguments() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public FieldToken<O, T> withTypeArguments(Collection<? extends TypeArgument<?>> arguments) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

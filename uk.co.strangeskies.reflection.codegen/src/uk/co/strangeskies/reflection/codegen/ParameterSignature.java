@@ -35,10 +35,11 @@ package uk.co.strangeskies.reflection.codegen;
 import static java.lang.System.identityHashCode;
 import static java.util.Collections.emptySet;
 import static uk.co.strangeskies.reflection.AnnotatedTypes.annotated;
+import static uk.co.strangeskies.reflection.codegen.Modifiers.emptyModifiers;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.HashSet;
@@ -52,20 +53,24 @@ public class ParameterSignature<T> implements AnnotatedSignature<ParameterSignat
 	private final String variableName;
 	private final AnnotatedType type;
 	private final Set<Annotation> annotations;
-	private final boolean isFinal;
+	private final Modifiers modifiers;
 
 	protected ParameterSignature(String variableName, AnnotatedType type) {
 		this.variableName = variableName;
 		this.type = type;
 		this.annotations = emptySet();
-		this.isFinal = false;
+		this.modifiers = emptyModifiers();
 	}
 
-	protected ParameterSignature(String variableName, AnnotatedType type, Set<Annotation> annotations, boolean isFinal) {
+	protected ParameterSignature(
+			String variableName,
+			AnnotatedType type,
+			Set<Annotation> annotations,
+			Modifiers modifiers) {
 		this.variableName = variableName;
 		this.type = type;
 		this.annotations = annotations;
-		this.isFinal = isFinal;
+		this.modifiers = modifiers;
 	}
 
 	public static ParameterSignature<?> parameterSignature(String variableName, AnnotatedType type) {
@@ -84,18 +89,26 @@ public class ParameterSignature<T> implements AnnotatedSignature<ParameterSignat
 		return new ParameterSignature<>(variableName, type.getAnnotatedDeclaration());
 	}
 
-	public static <U> ParameterSignature<U> parameterSignature(ExecutableParameter parameter) {
-		return new ParameterSignature<U>(parameter.getName(), annotated(parameter.getType()))
-				.withAnnotations(parameter.getAnnotations())
-				.asFinal(Modifier.isFinal(parameter.getModifiers()));
+	public static <U> ParameterSignature<U> parameterSignature(Parameter parameter) {
+		return new ParameterSignature<U>(parameter.getName(), annotated(parameter.getParameterizedType()))
+				.withAnnotations(parameter.getDeclaredAnnotations())
+				.withModifiers(Modifiers.modifiers(parameter.getModifiers()));
 	}
 
-	public boolean isFinal() {
-		return isFinal;
+	public static <U> ParameterSignature<U> overrideParameterSignature(ExecutableParameter parameter) {
+		return new ParameterSignature<>(parameter.getName(), annotated(parameter.getType()));
+	}
+
+	public Modifiers getModifiers() {
+		return modifiers;
+	}
+
+	private ParameterSignature<T> withModifiers(Modifiers modifiers) {
+		return new ParameterSignature<>(variableName, type, annotations, modifiers);
 	}
 
 	public ParameterSignature<T> asFinal(boolean isFinal) {
-		return new ParameterSignature<>(variableName, type, annotations, isFinal);
+		return withModifiers(modifiers);
 	}
 
 	@Override
@@ -105,7 +118,7 @@ public class ParameterSignature<T> implements AnnotatedSignature<ParameterSignat
 
 	@Override
 	public ParameterSignature<T> withAnnotations(Collection<? extends Annotation> annotations) {
-		return new ParameterSignature<>(variableName, type, new HashSet<>(annotations), isFinal);
+		return new ParameterSignature<>(variableName, type, new HashSet<>(annotations), modifiers);
 	}
 
 	public String getVariableName() {

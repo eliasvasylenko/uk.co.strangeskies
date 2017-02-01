@@ -32,6 +32,7 @@
  */
 package uk.co.strangeskies.reflection.token;
 
+import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 
 /**
@@ -70,7 +71,20 @@ public class TypeParameter<T> extends TypeToken<T> {
 	 *          The type variable to capture.
 	 * @return A type token instance over the given type.
 	 */
-	public static TypeParameter<?> of(TypeVariable<?> type) {
+	public static TypeParameter<?> forTypeVariable(TypeVariable<?> type) {
 		return new TypeParameter<>(type);
+	}
+
+	public TypeArgument<T> asType(TypeToken<T> type) {
+		return new TypeArgument<T>(this, type) {};
+	}
+
+	public TypeArgument<T> asClass(Class<T> type) {
+		return new TypeArgument<T>(this, forClass(type)) {};
+	}
+
+	@SuppressWarnings("unchecked")
+	public TypeArgument<?> asType(Type type) {
+		return new TypeArgument<T>(this, (TypeToken<T>) TypeToken.forType(type)) {};
 	}
 }

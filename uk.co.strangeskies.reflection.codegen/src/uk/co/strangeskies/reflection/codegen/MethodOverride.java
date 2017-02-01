@@ -36,7 +36,7 @@ import static java.lang.reflect.Modifier.isAbstract;
 import static java.util.Arrays.asList;
 import static uk.co.strangeskies.reflection.Types.isAssignable;
 import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.declareMethod;
-import static uk.co.strangeskies.reflection.codegen.MethodSignature.methodSignature;
+import static uk.co.strangeskies.reflection.codegen.MethodSignature.overrideMethodSignature;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -169,7 +169,7 @@ public class MethodOverride<T> {
 				ExecutableToken<?, ?> executableToken = methodOverrides.getInvocable(overrideSignatureMethod).withTypeArguments(
 						asList(overrideSignatureMethod.getTypeParameters()));
 
-				MethodSignature<?> signature = methodSignature(executableToken);
+				MethodSignature<?> signature = overrideMethodSignature(executableToken);
 
 				MethodDeclaration<T, ?> declaration = declareMethod(methodOverrides.getClassDeclaration(), signature);
 

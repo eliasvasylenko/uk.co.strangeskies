@@ -32,22 +32,25 @@
  */
 package uk.co.strangeskies.reflection.token;
 
+import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.util.Objects;
 
 public class ExecutableParameter {
-	private final String name;
+	private final Parameter parameter;
 	private final Type type;
-	private final Class<?> erasure;
 
-	protected ExecutableParameter(String name, Type type, Class<?> erasure) {
-		this.name = name;
+	protected ExecutableParameter(Parameter parameter, Type type) {
+		this.parameter = parameter;
 		this.type = type;
-		this.erasure = erasure;
+	}
+
+	public Parameter getParameter() {
+		return parameter;
 	}
 
 	public String getName() {
-		return name;
+		return parameter.getName();
 	}
 
 	public Type getType() {
@@ -55,7 +58,7 @@ public class ExecutableParameter {
 	}
 
 	public Class<?> getErasure() {
-		return erasure;
+		return parameter.getType();
 	}
 
 	@Override
@@ -67,12 +70,12 @@ public class ExecutableParameter {
 
 		ExecutableParameter that = (ExecutableParameter) obj;
 
-		return Objects.equals(this.name, that.name) && Objects.equals(this.type, that.type);
+		return Objects.equals(this.parameter, that.parameter) && Objects.equals(this.type, that.type);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(name, type);
+		return Objects.hash(parameter, type);
 	}
 
 	@Override

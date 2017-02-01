@@ -94,7 +94,7 @@ public class ExecutableTokenQuery<I extends ExecutableToken<?, ?>, E extends Mem
 	}
 
 	public I resolveOverload(Type... arguments) {
-		return resolveOverload(Arrays.stream(arguments).map(TypeToken::overType).collect(toList()));
+		return resolveOverload(Arrays.stream(arguments).map(TypeToken::forType).collect(toList()));
 	}
 
 	public I resolveOverload(TypeToken<?>... arguments) {

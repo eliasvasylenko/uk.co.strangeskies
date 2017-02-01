@@ -45,7 +45,7 @@ import static uk.co.strangeskies.reflection.codegen.ErasedMethodSignature.erased
 import static uk.co.strangeskies.reflection.codegen.ErasedMethodSignature.erasedMethodSignature;
 import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.declareConstructor;
 import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.declareStaticMethod;
-import static uk.co.strangeskies.reflection.token.TypeToken.overType;
+import static uk.co.strangeskies.reflection.token.TypeToken.forType;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.entriesToMap;
 
 import java.lang.reflect.AnnotatedType;
@@ -105,12 +105,12 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 				signature
 						.getSuperTypes()
 						.map(this::substituteTypeVariableSignatures)
-						.map(TypeToken::overAnnotatedType)
+						.map(TypeToken::forAnnotatedType)
 						.map(t -> (TypeToken<? super T>) t)
 						.collect(toList()));
 
 		Type superType = intersectionOf(superTypes.stream().map(TypeToken::getType).collect(toList()));
-		this.superType = (TypeToken<T>) overType(superType);
+		this.superType = (TypeToken<T>) forType(superType);
 		this.superClass = (Class<? super T>) of(getRawType(superType)).filter(t -> !isInterface(t)).orElse(null);
 
 		this.constructorDeclarations = signature.getConstructorSignatures().map(s -> declareConstructor(this, s)).collect(

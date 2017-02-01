@@ -39,13 +39,46 @@ import static java.util.Optional.of;
 import java.lang.reflect.Modifier;
 import java.util.Optional;
 
+/**
+ * The visibility of a declaration.
+ * 
+ * @author Elias N Vasylenko
+ */
 public enum Visibility {
-	PUBLIC, PROTECTED, PACKAGE_PRIVATE, PRIVATE;
+	/**
+	 * Public visibility.
+	 */
+	PUBLIC,
 
+	/**
+	 * Protected visibility.
+	 */
+	PROTECTED,
+
+	/**
+	 * Package-private, or default, visibility.
+	 */
+	PACKAGE_PRIVATE,
+
+	/**
+	 * Private visibility.
+	 */
+	PRIVATE;
+
+	/**
+	 * @param visibility
+	 *          the minimum visibility level
+	 * @return true if the visibility is at least as much as the one given
+	 */
 	public boolean visibilityIsAtLeast(Visibility visibility) {
 		return ordinal() <= visibility.ordinal();
 	}
 
+	/**
+	 * @param visibility
+	 *          the maximum visibility level
+	 * @return true if the visibility is at most as much as the one given
+	 */
 	public boolean visibilityIsAtMost(Visibility visibility) {
 		return ordinal() >= visibility.ordinal();
 	}

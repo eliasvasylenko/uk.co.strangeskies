@@ -34,17 +34,17 @@ package uk.co.strangeskies.reflection.token;
 
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Stream.empty;
-import static java.util.stream.Stream.of;
+import static java.util.stream.Collectors.toMap;
 import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
 import static uk.co.strangeskies.reflection.BoundSet.emptyBoundSet;
-import static uk.co.strangeskies.reflection.Methods.findMethod;
+import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterize;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardExtending;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardSuper;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.overConstructor;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.overMethod;
 import static uk.co.strangeskies.reflection.token.ExecutableTokenQuery.executableQuery;
 import static uk.co.strangeskies.reflection.token.FieldTokenQuery.fieldQuery;
+import static uk.co.strangeskies.reflection.token.TypeParameter.forTypeVariable;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
@@ -58,6 +58,7 @@ import java.lang.reflect.AnnotatedTypeVariable;
 import java.lang.reflect.AnnotatedWildcardType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
@@ -65,13 +66,12 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -85,7 +85,6 @@ import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.reflection.Imports;
 import uk.co.strangeskies.reflection.InferenceVariable;
 import uk.co.strangeskies.reflection.InferenceVariableBounds;
-import uk.co.strangeskies.reflection.ParameterizedToken;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeResolver;
@@ -116,7 +115,7 @@ import uk.co.strangeskies.utilities.tuple.Pair;
  *          This is the type which the TypeToken object references.
  */
 public class TypeToken<T>
-		implements DeepCopyable<TypeToken<T>>, ReifiedToken<TypeToken<T>>, ParameterizedToken<TypeToken<T>> {
+		implements DeepCopyable<TypeToken<T>>, ReifiedToken<TypeToken<T>>, DeclarationToken<TypeToken<T>> {
 	/**
 	 * Treatment of wildcards for {@link TypeToken}s created over parameterized
 	 * types.
@@ -245,21 +244,13 @@ public class TypeToken<T>
 		this(bounds, AnnotatedTypes.annotated(type, wildcards.getAnnotation()));
 	}
 
-	/*
-	 * Warning: This is a dangerous constructor to use without a thorough
-	 * understanding of the potential consequences.
-	 */
-	private TypeToken(BoundSet bounds, AnnotatedType declaration, Type type) {
+	protected TypeToken(BoundSet bounds, AnnotatedType declaration, Type type) {
 		this.declaration = declaration;
 		this.bounds = bounds;
 		this.type = type;
 	}
 
-	/*
-	 * Warning: This is a dangerous constructor to use without a thorough
-	 * understanding of the potential consequences.
-	 */
-	private TypeToken(BoundSet bounds, Type type) {
+	protected TypeToken(BoundSet bounds, Type type) {
 		this.declaration = AnnotatedTypes.annotated(type);
 		this.bounds = bounds;
 		this.type = type;
@@ -403,7 +394,7 @@ public class TypeToken<T>
 					parameterizedType = TypeVariableCapture.captureWildcardArguments(parameterizedType);
 				} else if (behavior == Wildcards.INFER) {
 					TypeResolver inferenceResolver = new TypeResolver(resolver.getBounds());
-					parameterizedType = inferenceResolver.inferOverTypeArguments(parameterizedType);
+					parameterizedType = inferenceResolver.inferforTypeArguments(parameterizedType);
 					resolver.incorporateBounds(inferenceResolver.getBounds());
 				}
 			}
@@ -472,7 +463,7 @@ public class TypeToken<T>
 	 *          the class to create a TypeToken for
 	 * @return a TypeToken over the requested class
 	 */
-	public static <T> TypeToken<T> overType(Class<T> type) {
+	public static <T> TypeToken<T> forClass(Class<T> type) {
 		return new TypeToken<>(type);
 	}
 
@@ -484,7 +475,7 @@ public class TypeToken<T>
 	 *          the requested type
 	 * @return a TypeToken over the requested type
 	 */
-	public static TypeToken<?> overType(Type type) {
+	public static TypeToken<?> forType(Type type) {
 		return new TypeToken<>(type);
 	}
 
@@ -500,7 +491,7 @@ public class TypeToken<T>
 	 *          how to deal with wildcard parameters on the given type
 	 * @return a TypeToken over the requested type
 	 */
-	public static TypeToken<?> overType(BoundSet bounds, Type type, Wildcards wildcards) {
+	public static TypeToken<?> forType(BoundSet bounds, Type type, Wildcards wildcards) {
 		return new TypeToken<>(bounds, type, wildcards);
 	}
 
@@ -512,7 +503,7 @@ public class TypeToken<T>
 	 *          the requested type
 	 * @return a TypeToken over the requested type
 	 */
-	public static TypeToken<?> overAnnotatedType(AnnotatedType type) {
+	public static TypeToken<?> forAnnotatedType(AnnotatedType type) {
 		return new TypeToken<>(type);
 	}
 
@@ -525,7 +516,7 @@ public class TypeToken<T>
 	 *          how to deal with wildcard parameters on the given type
 	 * @return a TypeToken over the requested type
 	 */
-	public static TypeToken<?> overType(Type type, Wildcards wildcards) {
+	public static TypeToken<?> forType(Type type, Wildcards wildcards) {
 		return new TypeToken<>(type, wildcards);
 	}
 
@@ -537,7 +528,7 @@ public class TypeToken<T>
 	 * @return a TypeToken over the null type
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> TypeToken<T> overNull() {
+	public static <T> TypeToken<T> forNull() {
 		return (TypeToken<T>) NULL_TYPE_TOKEN;
 	}
 
@@ -558,7 +549,7 @@ public class TypeToken<T>
 
 	@Override
 	public TypeToken<TypeToken<T>> getThisTypeToken() {
-		return new TypeToken<TypeToken<T>>() {}.withTypeArgument(new TypeParameter<T>() {}, this);
+		return new TypeToken<TypeToken<T>>() {}.withTypeArguments(new TypeParameter<T>() {}.asType(this));
 	}
 
 	@Override
@@ -592,7 +583,7 @@ public class TypeToken<T>
 	}
 
 	/**
-	 * Equivalent to the application of {@link TypeToken#overType(Type)} to the
+	 * Equivalent to the application of {@link TypeToken#forType(Type)} to the
 	 * result of {@link Types#fromString(String)}.
 	 * 
 	 * @param typeString
@@ -600,11 +591,11 @@ public class TypeToken<T>
 	 * @return a TypeToken representing the type described by the String
 	 */
 	public static TypeToken<?> fromString(String typeString) {
-		return overAnnotatedType(AnnotatedTypes.fromString(typeString));
+		return forAnnotatedType(AnnotatedTypes.fromString(typeString));
 	}
 
 	/**
-	 * Equivalent to the application of {@link TypeToken#overType(Type)} to the
+	 * Equivalent to the application of {@link TypeToken#forType(Type)} to the
 	 * result of {@link AnnotatedTypes#fromString(String, Imports)}, with the
 	 * given imports.
 	 * 
@@ -616,7 +607,7 @@ public class TypeToken<T>
 	 * @return a TypeToken representing the type described by the string
 	 */
 	public static TypeToken<?> fromString(String typeString, Imports imports) {
-		return overAnnotatedType(AnnotatedTypes.fromString(typeString, imports));
+		return forAnnotatedType(AnnotatedTypes.fromString(typeString, imports));
 	}
 
 	/**
@@ -631,6 +622,22 @@ public class TypeToken<T>
 	 */
 	public String toString(Imports imports) {
 		return AnnotatedTypes.toString(declaration, imports);
+	}
+
+	/**
+	 * If the type is a raw type, parameterize it with its own type parameters,
+	 * otherwise return the type itself.
+	 * 
+	 * @return the parameterized version of the type where applicable, else the
+	 *         type
+	 */
+	@SuppressWarnings("unchecked")
+	public TypeToken<? extends T> withTypeArguments() {
+		if (isRaw()) {
+			return (TypeToken<? extends T>) forType(parameterize(getRawType()));
+		} else {
+			return this;
+		}
 	}
 
 	/**
@@ -670,7 +677,7 @@ public class TypeToken<T>
 
 			return new TypeToken<>(resolver.getBounds(), inferenceVariable);
 		} else {
-			return (TypeToken<? extends T>) overType(wildcardExtending(getType()), wildcards);
+			return (TypeToken<? extends T>) forType(wildcardExtending(getType()), wildcards);
 		}
 	}
 
@@ -710,7 +717,7 @@ public class TypeToken<T>
 			InferenceVariable inferenceVariable = resolver.inferOverWildcardType(wildcardSuper(getType()));
 			return new TypeToken<>(resolver.getBounds(), inferenceVariable);
 		} else {
-			return (TypeToken<? super T>) overType(WildcardTypes.wildcardSuper(getType()), wildcards);
+			return (TypeToken<? super T>) forType(WildcardTypes.wildcardSuper(getType()), wildcards);
 		}
 	}
 
@@ -817,7 +824,7 @@ public class TypeToken<T>
 	@SuppressWarnings("unchecked")
 	public TypeToken<T> wrapPrimitive() {
 		if (isPrimitive())
-			return (TypeToken<T>) overType(Types.wrapPrimitive(getRawType()));
+			return (TypeToken<T>) forClass(Types.wrapPrimitive(getRawType()));
 		else
 			return this;
 	}
@@ -832,7 +839,7 @@ public class TypeToken<T>
 	@SuppressWarnings("unchecked")
 	public TypeToken<T> unwrapPrimitive() {
 		if (isPrimitiveWrapper())
-			return (TypeToken<T>) overType(Types.unwrapPrimitive(getRawType()));
+			return (TypeToken<T>) forClass(Types.unwrapPrimitive(getRawType()));
 		else
 			return this;
 	}
@@ -1016,7 +1023,7 @@ public class TypeToken<T>
 		Type type = getUpperBounds().filter(t -> Types.isAssignable(t, superclass)).findFirst().orElseThrow(
 				() -> new ReflectionException(p -> p.cannotResolveSupertype(getType(), superclass)));
 
-		return (TypeToken<? extends U>) overType(
+		return (TypeToken<? extends U>) forType(
 				getBounds(),
 				ParameterizedTypes.resolveSupertype(type, superclass),
 				Wildcards.RETAIN);
@@ -1068,82 +1075,13 @@ public class TypeToken<T>
 
 		Stream<TypeToken<? extends U>> supertypeHierarchy = ParameterizedTypes
 				.resolveSupertypeHierarchy(type, superclass)
-				.map(t -> (TypeToken<? extends U>) overType(getBounds(), t, Wildcards.RETAIN));
+				.map(t -> (TypeToken<? extends U>) forType(getBounds(), t, Wildcards.RETAIN));
 
 		if (type != this.type) {
 			supertypeHierarchy = Stream.concat(Stream.of((TypeToken<? extends U>) this), supertypeHierarchy);
 		}
 
 		return supertypeHierarchy;
-	}
-
-	/**
-	 * <p>
-	 * Substitute all occurrences of a TypeParameter instance mentioned by this
-	 * type with a specific type satisfying the bounds of that parameter.
-	 * 
-	 * As an example, the following method could be used to derive instances of
-	 * TypeToken over different parameterizations of {@code List<?>} at runtime.
-	 * 
-	 * <pre>
-	 * <code>
-	 * public List&lt;T&gt; getList(TypeToken&lt;T&gt; clazz)} {
-	 * 	 return new TypeToken&lt;T&gt;()} {}.withTypeArgument(new TypeParameter&lt;T&gt;() {}, clazz);
-	 * }
-	 * </code>
-	 * </pre>
-	 * 
-	 * @param <V>
-	 *          The parameter to make a substitution for.
-	 * @param parameter
-	 *          The parameter to make a substitution for.
-	 * @param argument
-	 *          The argument to substitute for that parameter.
-	 * @return A new TypeToken instance over the type resulting from the
-	 *         substitution.
-	 */
-	@Override
-	@SuppressWarnings("unchecked")
-	public <V> TypeToken<T> withTypeArgument(TypeParameter<V> parameter, TypeToken<V> argument) {
-		return withBounds(argument.getBounds()).withTypeArgument(parameter.getType(), argument.getType());
-	}
-
-	/**
-	 * As with {@link TypeToken#withTypeArgument(TypeParameter, TypeToken)}.
-	 * 
-	 * @param <V>
-	 *          The parameter to make a substitution for.
-	 * @param parameter
-	 *          The parameter to make a substitution for.
-	 * @param argument
-	 *          The argument to substitute for that parameter.
-	 * @return A new TypeToken instance over the type resulting from the
-	 *         substitution.
-	 */
-	@Override
-	@SuppressWarnings("unchecked")
-	public <V> TypeToken<T> withTypeArgument(TypeParameter<V> parameter, Class<V> argument) {
-		return withTypeArgument(parameter.getType(), argument);
-	}
-
-	@Override
-	public TypeToken<T> withTypeArgument(TypeVariable<?> parameter, Type argument) {
-		return new TypeToken<>(getBounds(), new TypeSubstitution().where(parameter, argument).resolve(getType()));
-	}
-
-	@Override
-	@SuppressWarnings("unchecked")
-	public <U> TypeToken<U> resolveTypeArgument(TypeParameter<U> parameter) {
-		if (!(getType() instanceof ParameterizedType)) {
-			throw new ReflectionException(p -> p.cannotResolveTypeVariable(parameter.getType(), this));
-		} else {
-			return (TypeToken<U>) overType(
-					getAllTypeArguments()
-							.filter(e -> e.getKey().equals(parameter.getType()))
-							.findAny()
-							.orElseThrow(() -> new ReflectionException(p -> p.cannotResolveTypeVariable(parameter.getType(), this)))
-							.getValue());
-		}
 	}
 
 	/**
@@ -1162,22 +1100,6 @@ public class TypeToken<T>
 		}
 
 		return new TypeToken<>(bounds, type);
-	}
-
-	public TypeToken<?> getEnclosingType() {
-		Type enclosingType;
-
-		if (getType() instanceof ParameterizedType) {
-			enclosingType = ((ParameterizedType) getType()).getOwnerType();
-		} else {
-			enclosingType = getRawType().getEnclosingClass();
-		}
-
-		if (enclosingType == null) {
-			return null;
-		}
-
-		return TypeToken.overType(getBounds(), enclosingType, Wildcards.RETAIN);
 	}
 
 	/**
@@ -1318,11 +1240,10 @@ public class TypeToken<T>
 	 * @return a list of all {@link Constructor} objects applicable to this type,
 	 *         wrapped in {@link ExecutableToken} instances
 	 */
-	@SuppressWarnings("unchecked")
 	public ExecutableTokenQuery<ExecutableToken<Void, T>, ?> constructors() {
 		Stream<Constructor<?>> constructors = stream(getRawType().getConstructors());
 
-		return executableQuery(constructors, m -> overConstructor((Constructor<T>) m, this));
+		return executableQuery(constructors, m -> overConstructor(m).withTargetType(this));
 	}
 
 	/**
@@ -1331,11 +1252,10 @@ public class TypeToken<T>
 	 * @return a list of all {@link Constructor} objects applicable to this type,
 	 *         wrapped in {@link ExecutableToken} instances
 	 */
-	@SuppressWarnings("unchecked")
 	public ExecutableTokenQuery<ExecutableToken<Void, T>, ?> declaredConstructors() {
 		Stream<Constructor<?>> constructors = stream(getRawType().getDeclaredConstructors());
 
-		return executableQuery(constructors, m -> overConstructor((Constructor<T>) m, this));
+		return executableQuery(constructors, m -> overConstructor(m).withTargetType(this));
 	}
 
 	/**
@@ -1353,7 +1273,7 @@ public class TypeToken<T>
 
 		methodStream = methodStream.filter(m -> !Modifier.isStatic(m.getModifiers()));
 
-		return executableQuery(methodStream, m -> overMethod(m, this));
+		return executableQuery(methodStream, m -> overMethod(m).getOverride(this));
 	}
 
 	/**
@@ -1367,54 +1287,105 @@ public class TypeToken<T>
 		Stream<Method> methodStream = stream(getRawType().getDeclaredMethods())
 				.filter(m -> !Modifier.isStatic(m.getModifiers()));
 
-		return executableQuery(methodStream, m -> overMethod(m, this));
+		return executableQuery(methodStream, m -> overMethod(m).getOverride(this));
 	}
 
-	@SuppressWarnings("unchecked")
-	public ExecutableToken<T, ?> findInterfaceMethod(Consumer<? super T> methodLambda) {
-		return getRawTypes().filter(Class::isInterface).flatMap(superType -> {
-			try {
-				return of(findMethod(superType, (Consumer<Object>) methodLambda));
-			} catch (Exception e) {
-				return empty();
+	@Override
+	public boolean isRaw() {
+		return getType() instanceof Class<?> && ((Class<?>) getType()).getTypeParameters().length > 0;
+	}
+
+	@Override
+	public int getTypeParameterCount() {
+		if (getType() instanceof ParameterizedType) {
+			return ((ParameterizedType) getType()).getActualTypeArguments().length;
+		} else {
+			return 0;
+		}
+	}
+
+	@Override
+	public Stream<TypeParameter<?>> getTypeParameters() {
+		if (getType() instanceof ParameterizedType) {
+			return ParameterizedTypes.getAllTypeParameters((Class<?>) ((ParameterizedType) getType()).getRawType()).map(
+					e -> forTypeVariable(e));
+		} else {
+			return Stream.empty();
+		}
+	}
+
+	@Override
+	public Stream<TypeArgument<?>> getTypeArguments() {
+		if (getType() instanceof ParameterizedType) {
+			return ParameterizedTypes.getAllTypeArguments((ParameterizedType) getType()).map(
+					e -> forTypeVariable(e.getKey()).asType(e.getValue()));
+		} else {
+			return Stream.empty();
+		}
+	}
+
+	@Override
+	public TypeToken<T> withTypeArguments(Collection<? extends TypeArgument<?>> arguments) {
+		BoundSet bounds = arguments.stream().map(TypeArgument::getTypeToken).map(TypeToken::getBounds).reduce(
+				getBounds(),
+				(a, b) -> a.withBounds(b));
+
+		Map<TypeVariable<?>, Type> argumentMap = arguments.stream().collect(
+				toMap(TypeArgument::getParameter, TypeArgument::getType));
+
+		return new TypeToken<>(bounds, new TypeSubstitution(argumentMap).resolve(getType()));
+	}
+
+	@Override
+	public DeclarationToken<?> getOwningDeclaration() {
+		if (getType() instanceof ParameterizedType) {
+			ParameterizedType type = (ParameterizedType) getType();
+			Class<?> rawType = (Class<?>) type.getRawType();
+			/*
+			 * Classes enclosed by constructors or methods cannot be parameterized
+			 * with anything other than their own type parameters.
+			 */
+			if (rawType.getEnclosingConstructor() != null) {
+				return ExecutableToken.overConstructor(rawType.getEnclosingConstructor());
+
+			} else if (rawType.getEnclosingMethod() != null) {
+				return ExecutableToken.overMethod(rawType.getEnclosingMethod());
+
+			} else if (rawType.getEnclosingClass() != null) {
+				return new TypeToken<>(getBounds(), type.getOwnerType());
+
+			} else {
+				throw new ReflectionException(p -> p.noEnclosingDeclaration(getType()));
 			}
-		}).findAny().map(method -> (ExecutableToken<T, ?>) overMethod(method, this)).orElseThrow(
-				() -> new ReflectionException(p -> p.cannotFindMethodOn(getType())));
-	}
 
-	@Override
-	public Stream<TypeVariable<?>> getAllTypeParameters() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+		} else if (getType() instanceof Class<?>) {
+			Class<?> type = (Class<?>) getType();
+			if (type.getEnclosingClass() != null) {
+				return new TypeToken<>(emptyBoundSet(), type.getEnclosingClass());
 
-	@Override
-	public Stream<Entry<TypeVariable<?>, Type>> getAllTypeArguments() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+			} else {
+				throw new ReflectionException(p -> p.noEnclosingDeclaration(getType()));
+			}
 
-	@Override
-	public Stream<Entry<TypeVariable<?>, Type>> getTypeArguments() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+		} else if (getType() instanceof TypeVariable<?>) {
+			GenericDeclaration enclosingDeclaration = ((TypeVariable<?>) getType()).getGenericDeclaration();
 
-	@Override
-	public Type resolveTypeArgument(TypeVariable<?> parameter) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+			if (enclosingDeclaration instanceof Class<?>) {
+				Class<?> enclosingClass = (Class<?>) enclosingDeclaration;
+				return forType(Types.isGeneric(enclosingClass) ? parameterize(enclosingClass) : enclosingClass);
 
-	@Override
-	public TypeToken<T> withTypeArguments(List<Type> methodTypeArguments) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+			} else if (enclosingDeclaration instanceof Method) {
+				return ExecutableToken.overMethod((Method) enclosingDeclaration);
 
-	@Override
-	public Stream<TypeVariable<?>> getTypeParameters() {
-		// TODO Auto-generated method stub
-		return null;
+			} else if (enclosingDeclaration instanceof Constructor<?>) {
+				return ExecutableToken.overConstructor((Constructor<?>) enclosingDeclaration);
+
+			} else {
+				throw new ReflectionException(p -> p.noEnclosingDeclaration(getType()));
+			}
+
+		} else {
+			throw new ReflectionException(p -> p.noEnclosingDeclaration(getType()));
+		}
 	}
 }

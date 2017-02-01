@@ -32,9 +32,10 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.AnnotatedTypes.annotated;
-import static uk.co.strangeskies.reflection.Visibility.forModifiers;
+import static uk.co.strangeskies.reflection.codegen.Modifiers.modifiers;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
@@ -53,15 +54,26 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 		return new MethodSignature<>(methodName);
 	}
 
-	public static MethodSignature<?> methodSignature(ExecutableToken<?, ?> method) {
+	public static MethodSignature<?> methodSignature(Method method) {
+		return new MethodSignature<>(method.getName())
+				.withAnnotations(method.getAnnotations())
+				.withModifiers(modifiers(method.getModifiers()))
+				.withReturnType(method.getReturnType())
+				.asDefault(method.isDefault())
+				.withTypeVariables(
+						stream(method.getTypeParameters()).map(TypeVariableSignature::typeVariableSignature).collect(toList()))
+				.withParameters(stream(method.getParameters()).map(ParameterSignature::parameterSignature).collect(toList()));
+	}
+
+	public static MethodSignature<?> overrideMethodSignature(ExecutableToken<?, ?> method) {
 		return new MethodSignature<>(method.getName())
 				.withAnnotations(method.getMember().getAnnotations())
-				.withVisibility(forModifiers(method.getMember().getModifiers()))
-				.withReturnType(method.getReturnType().getAnnotatedDeclaration())
+				.withModifiers(modifiers(method.getMember().getModifiers()))
+				.withReturnType(method.getReturnType().getType())
 				.asDefault(((Method) method.getMember()).isDefault())
 				.withTypeVariables(
 						method.getTypeParameters().map(TypeVariableSignature::typeVariableSignature).collect(toList()))
-				.withParameters(method.getParameters().map(ParameterSignature::parameterSignature).collect(toList()));
+				.withParameters(method.getParameters().map(ParameterSignature::overrideParameterSignature).collect(toList()));
 	}
 
 	private final AnnotatedType returnType;

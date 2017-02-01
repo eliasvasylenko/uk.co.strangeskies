@@ -67,7 +67,7 @@ public class Block<T> {
 	}
 
 	public <U> LocalVariableExpression<U> withVariableDeclaration(String name, Class<U> type) {
-		return declareVariable(name, TypeToken.overType(type));
+		return declareVariable(name, TypeToken.forParameterizedType(type));
 	}
 
 	public <U> LocalVariableExpression<U> declareVariable(String name, TypeToken<U> type) {
@@ -82,7 +82,7 @@ public class Block<T> {
 			String name,
 			Class<U> type,
 			ValueExpression<? extends U> value) {
-		return declareVariable(name, TypeToken.overType(type), value);
+		return declareVariable(name, TypeToken.forParameterizedType(type), value);
 	}
 
 	public <U> LocalVariableExpression<U> declareVariable(
@@ -97,7 +97,7 @@ public class Block<T> {
 	}
 
 	public <U> LocalValueExpression<U> declareValue(String name, Class<U> type, ValueExpression<? extends U> value) {
-		return declareValue(name, TypeToken.overType(type), value);
+		return declareValue(name, TypeToken.forParameterizedType(type), value);
 	}
 
 	public <U> LocalValueExpression<U> declareValue(String name, TypeToken<U> type, ValueExpression<? extends U> value) {

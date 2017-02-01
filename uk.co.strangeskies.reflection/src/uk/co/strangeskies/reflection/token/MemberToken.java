@@ -49,10 +49,12 @@ import uk.co.strangeskies.reflection.Visibility;
  * 
  * @author Elias N Vasylenko
  *
- * @param <O>
+ * @param <T>
  *          the owner type of the member
+ * @param <S>
+ *          the type of member token
  */
-public interface MemberToken<O> {
+public interface MemberToken<T, S extends MemberToken<T, S>> extends DeclarationToken<S> {
 	/**
 	 * @return the name of the member
 	 */
@@ -67,6 +69,13 @@ public interface MemberToken<O> {
 	 * @return the inference bounds involved in this {@link MemberToken}
 	 */
 	BoundSet getBounds();
+
+	/**
+	 * @return true if the wrapped member is static, false otherwise
+	 */
+	default boolean isStatic() {
+		return Modifier.isStatic(getMember().getModifiers());
+	}
 
 	/**
 	 * @return true if the wrapped member is final, false otherwise
@@ -96,13 +105,6 @@ public interface MemberToken<O> {
 	}
 
 	/**
-	 * @return true if the wrapped member is static, false otherwise
-	 */
-	default boolean isStatic() {
-		return Modifier.isStatic(getMember().getModifiers());
-	}
-
-	/**
 	 * @return The exact declaring class of this member.
 	 */
 	default Class<?> getDeclaringClass() {
@@ -110,19 +112,11 @@ public interface MemberToken<O> {
 	}
 
 	/**
-	 * This is the exact instance type this member belongs to. It will be a
-	 * subtype of the declaring class of the member.
-	 * 
-	 * @return a type token over the owner type
-	 */
-	TypeToken<?> getOwnerType();
-
-	/**
 	 * This is the exact receiver type which this member should be accessed from
 	 * or invoked upon.
 	 * <p>
 	 * For non-static members, this type will be identical to the
-	 * {@link #getOwnerType() owning type}.
+	 * {@link #getOwningDeclaration() owning type}.
 	 * <p>
 	 * For constructors and static members, if they are declared on a non-static
 	 * inner class then the receiver type should be a subtype of the enclosing
@@ -131,7 +125,7 @@ public interface MemberToken<O> {
 	 * @return a type token over the receiver type for invocation or field access,
 	 *         or over <code>void.class</code> if the member has no receiver type
 	 */
-	TypeToken<O> getReceiverType();
+	TypeToken<? super T> getReceiverType();
 
 	/**
 	 * Derive a new {@link MemberToken} instance, with the given bounds
@@ -142,35 +136,7 @@ public interface MemberToken<O> {
 	 *          the new bounds to incorporate
 	 * @return the newly derived {@link MemberToken}
 	 */
-	MemberToken<O> withBounds(BoundSet bounds);
-
-	/**
-	 * Derive a new instance of {@link MemberToken} with the given owner type.
-	 * 
-	 * <p>
-	 * The new {@link MemberToken} will always have a owner type which is as or
-	 * more specific than both the current receiver type <em>and</em> the given
-	 * type. This means that the new owner will be assignment compatible with the
-	 * given type, but if the given type contains wildcards or inference variables
-	 * which are less specific that those implied by the <em>current</em> receiver
-	 * type, new type arguments will be inferred in their place, or further bounds
-	 * may be added to them.
-	 * 
-	 * @param <U>
-	 *          The new owner type. The raw type of this type must be a subtype of
-	 *          the raw type of the current owner type.
-	 * @param type
-	 *          The new owner type. The raw type of this type must be a subtype of
-	 *          the raw type of the current receiver type.
-	 * @return A new {@link MemberToken} compatible with the given owner type.
-	 * 
-	 *         <p>
-	 *         The new owner type will not be effectively more specific than the
-	 *         intersection type of the current owner type and the given type.
-	 *         That is, any type which can be assigned to both the given type and
-	 *         the current owner type, will also be assignable to the new type.
-	 */
-	<U extends O> MemberToken<U> withReceiverType(TypeToken<U> type);
+	S withBounds(BoundSet bounds);
 
 	/**
 	 * Derive a new instance of {@link MemberToken} with the given owner type.
@@ -195,7 +161,34 @@ public interface MemberToken<O> {
 	 *         That is, any type which can be assigned to both the given type and
 	 *         the current owner type, will also be assignable to the new type.
 	 */
-	MemberToken<? extends O> withReceiverType(Type type);
+	default S withReceiverType(TypeToken<?> type) {
+		return withBounds(type.getBounds()).withReceiverType(type.getType());
+	}
+
+	/**
+	 * Derive a new instance of {@link MemberToken} with the given owner type.
+	 * 
+	 * <p>
+	 * The new {@link MemberToken} will always have a owner type which is as or
+	 * more specific than both the current receiver type <em>and</em> the given
+	 * type. This means that the new owner will be assignment compatible with the
+	 * given type, but if the given type contains wildcards or inference variables
+	 * which are less specific that those implied by the <em>current</em> receiver
+	 * type, new type arguments will be inferred in their place, or further bounds
+	 * may be added to them.
+	 * 
+	 * @param type
+	 *          The new owner type. The raw type of this type must be a subtype of
+	 *          the raw type of the current receiver type.
+	 * @return A new {@link MemberToken} compatible with the given owner type.
+	 * 
+	 *         <p>
+	 *         The new owner type will not be effectively more specific than the
+	 *         intersection type of the current owner type and the given type.
+	 *         That is, any type which can be assigned to both the given type and
+	 *         the current owner type, will also be assignable to the new type.
+	 */
+	S withReceiverType(Type type);
 
 	/**
 	 * Derived a new {@link MemberToken} instance with all associated generic
@@ -203,7 +196,13 @@ public interface MemberToken<O> {
 	 * 
 	 * @return the derived {@link MemberToken} with inferred types
 	 */
-	MemberToken<O> infer();
+	S infer();
 
-	boolean isRaw();
+	/**
+	 * @return true if the member is declared on a raw type, false otherwise
+	 */
+	@Override
+	default boolean isRaw() {
+		return getOwningDeclaration().isRaw();
+	}
 }

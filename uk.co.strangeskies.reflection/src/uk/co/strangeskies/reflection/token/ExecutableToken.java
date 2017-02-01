@@ -35,46 +35,40 @@ package uk.co.strangeskies.reflection.token;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
-import static uk.co.strangeskies.reflection.BoundSet.emptyBoundSet;
+import static java.util.stream.Collectors.toMap;
 import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.LOOSE_COMPATIBILILTY;
-import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterize;
 import static uk.co.strangeskies.reflection.token.ExecutableTokenQuery.executableQuery;
-import static uk.co.strangeskies.reflection.token.TypeToken.overType;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.entriesToMap;
+import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.zip;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
-import java.util.ArrayList;
+import java.lang.reflect.WildcardType;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BiFunction;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.BoundSet;
 import uk.co.strangeskies.reflection.ConstraintFormula;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.reflection.InferenceVariable;
-import uk.co.strangeskies.reflection.ParameterizedToken;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeResolver;
 import uk.co.strangeskies.reflection.TypeSubstitution;
-import uk.co.strangeskies.reflection.TypeVariableCapture;
 import uk.co.strangeskies.reflection.Types;
-import uk.co.strangeskies.reflection.token.TypeToken.Wildcards;
 
 /**
  * <p>
@@ -92,312 +86,148 @@ import uk.co.strangeskies.reflection.token.TypeToken.Wildcards;
  * @param <R>
  *          the return type of the executable
  */
-public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable>
-		implements ParameterizedToken<ExecutableToken<O, R>> {
-	private final BoundSet bounds;
-	private final List<Type> methodTypeArguments;
+public abstract class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, R>> {
+	private final Executable executable;
+	private final List<Type> typeArguments;
 
-	private final TypeToken<O> receiverType;
-	private final TypeToken<R> returnType;
+	private final TypeToken<? super O> receiverType;
+	private final TypeToken<? extends R> returnType;
 	private final List<ExecutableParameter> parameters;
-
-	private final BiFunction<Object, List<?>, R> invocationFunction;
 
 	private final boolean variableArityInvocation;
 
-	protected ExecutableToken(
-			BoundSet bounds,
-			TypeToken<O> receiverType,
-			TypeToken<R> returnType,
-			List<Type> methodTypeArguments,
-			Executable executable,
-			BiFunction<Object, List<?>, R> invocationFunction,
-			boolean variableArityInvocation) {
-		this(
-				new TypeResolver(bounds),
-				receiverType,
-				returnType,
-				methodTypeArguments,
-				executable,
-				invocationFunction,
-				variableArityInvocation);
-	}
-
-	protected ExecutableToken(ExecutableToken<O, R> from, boolean variableArityInvocation) {
-		super(from);
-
-		bounds = from.bounds;
-		methodTypeArguments = from.methodTypeArguments;
-
-		receiverType = from.receiverType;
-		returnType = from.returnType;
-		parameters = from.parameters;
-
-		invocationFunction = from.invocationFunction;
-
-		this.variableArityInvocation = variableArityInvocation;
-	}
-
-	private ExecutableToken(
-			TypeResolver resolver,
-			TypeToken<O> receiverType,
-			TypeToken<R> returnType,
-			List<Type> methodTypeArguments,
-			Executable executable,
-			BiFunction<Object, List<?>, R> invocationFunction,
-			boolean variableArityInvocation) {
-		super(executable, resolver, executable instanceof Constructor<?> ? returnType : receiverType);
-
-		this.invocationFunction = invocationFunction;
-		this.variableArityInvocation = variableArityInvocation;
-
-		/*
-		 * Incorporate relevant type parameters:
-		 */
-		this.methodTypeArguments = determineMethodTypeArguments(resolver, methodTypeArguments);
-
-		TypeSubstitution inferenceVariableSubstitution = new TypeSubstitution(
-				getAllTypeArguments().collect(entriesToMap()));
-
-		/*
-		 * Resolve types within context of given Resolver:
-		 */
-		this.receiverType = determineReceiverType(resolver, inferenceVariableSubstitution, receiverType);
-		this.returnType = determineReturnType(resolver, inferenceVariableSubstitution, returnType);
-		this.parameters = determineParameterTypes(inferenceVariableSubstitution);
-
-		this.bounds = resolver.getBounds();
-	}
-
-	private List<Type> determineMethodTypeArguments(TypeResolver resolver, List<Type> methodTypeArguments) {
-		Map<TypeVariable<?>, Type> containerArguments = getContainerTypeArguments();
-
-		if (containerArguments != null) {
-			containerArguments = new HashMap<>(containerArguments);
-
-			if (methodTypeArguments != null) {
-				for (int i = 0; i < methodTypeArguments.size(); i++) {
-					containerArguments.put(getMember().getTypeParameters()[i], methodTypeArguments.get(i));
-				}
-			} else {
-				methodTypeArguments = new ArrayList<>(getMember().getTypeParameters().length);
-			}
-
-			List<Type> finalTypeArguments = methodTypeArguments;
-			resolver.inferOverTypeParameters(getMember(), containerArguments).forEach(
-					i -> finalTypeArguments.add(i.getValue()));
-		} else {
-			if (methodTypeArguments != null) {
-				throw new ReflectionException(p -> p.cannotParameterizeMethodOnRawType(getMember()));
-			}
-		}
-
-		return methodTypeArguments;
-	}
-
-	private TypeToken<O> determineReceiverType(
-			TypeResolver resolver,
-			TypeSubstitution inferenceVariables,
-			TypeToken<O> receiverType) {
-		if (receiverType.getType().equals(void.class)) {
-			return receiverType;
-		} else {
-			return receiverType.withBounds(resolver.getBounds()).resolve();
-		}
-	}
-
 	@SuppressWarnings("unchecked")
-	private TypeToken<R> determineReturnType(
-			TypeResolver resolver,
-			TypeSubstitution inferenceVariables,
-			TypeToken<R> returnType) {
-		if (isConstructor()) {
-			returnType = returnType.withBounds(resolver.getBounds());
-		} else {
-			Type genericReturnType = inferenceVariables.resolve(((Method) getMember()).getGenericReturnType());
+	protected ExecutableToken(Class<?> receiverType, Class<?> returnType, Executable executable) {
+		this.executable = executable;
+		this.typeArguments = null;
 
-			returnType = (TypeToken<R>) overType(resolver.getBounds(), genericReturnType, Wildcards.RETAIN);
-		}
-
-		return returnType.resolve();
-	}
-
-	private List<ExecutableParameter> determineParameterTypes(TypeSubstitution inferenceVariables) {
-		Parameter[] parameters = getMember().getParameters();
-		Type[] genericParameters;
-		if (isRaw()) {
-			genericParameters = getMember().getParameterTypes();
-		} else {
-			genericParameters = getMember().getGenericParameterTypes();
-			for (int i = 0; i < genericParameters.length; i++) {
-				genericParameters[i] = inferenceVariables.resolve(genericParameters[i]);
-			}
-		}
-
-		return IntStream
-				.range(0, genericParameters.length)
-				.mapToObj(i -> new ExecutableParameter(parameters[i].getName(), genericParameters[i], parameters[i].getType()))
+		this.receiverType = (TypeToken<? super O>) forClass(receiverType);
+		this.returnType = (TypeToken<? extends R>) forClass(returnType);
+		this.parameters = Arrays
+				.stream(executable.getParameters())
+				.map(p -> new ExecutableParameter(p, p.getType()))
 				.collect(toList());
+
+		this.variableArityInvocation = false;
 	}
 
-	/**
-	 * Create a new {@link ExecutableToken} instance from a reference to a
-	 * {@link Constructor}.
-	 * 
-	 * @param <T>
-	 *          The type of the given {@link Constructor}.
-	 * @param constructor
-	 *          The constructor to wrap.
-	 * @return An executable member wrapping the given constructor.
+	/*
+	 * To avoid unnecessary recalculation, or a huge list of constructors, the
+	 * receiver type, return type, type arguments etc. are assumed to be in a
+	 * consistent state at this point. The responsibility to ensure this is with
+	 * the caller.
 	 */
-	public static <T> ExecutableToken<Void, T> overConstructor(Constructor<T> constructor) {
-		return overConstructor(constructor, TypeToken.overType(constructor.getDeclaringClass()));
+	protected ExecutableToken(
+			TypeToken<? super O> receiverType,
+			TypeToken<? extends R> returnType,
+			List<ExecutableParameter> parameters,
+			List<Type> typeArguments,
+			Executable executable,
+			boolean variableArityInvocation) {
+		this.executable = executable;
+		this.variableArityInvocation = variableArityInvocation;
+		this.typeArguments = typeArguments;
+		this.receiverType = receiverType;
+		this.returnType = returnType;
+		this.parameters = parameters;
 	}
+
+	protected abstract <P, S> ExecutableToken<P, S> withExecutableTokenData(
+			TypeToken<? super P> receiverType,
+			TypeToken<? extends S> returnType,
+			List<ExecutableParameter> parameters,
+			List<Type> typeArguments,
+			Executable executable,
+			boolean variableArityInvocation);
 
 	/**
 	 * Create a new {@link ExecutableToken} instance from a reference to a
-	 * {@link Constructor}.
+	 * {@link Constructor} of an outer or static class.
 	 * 
-	 * @param <T>
-	 *          the exact type of the constructor
+	 * <p>
+	 * If the method is generic it will be parameterized with its own type
+	 * variables.
+	 * 
 	 * @param constructor
 	 *          the constructor to wrap
-	 * @param instance
-	 *          the type of the instantiated instance
 	 * @return an executable member wrapping the given constructor
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> ExecutableToken<Void, T> overConstructor(
-			Constructor<? super T> constructor,
-			TypeToken<T> instance) {
-		return new ExecutableToken<>(
-				instance.getBounds(),
-				TypeToken.overType(void.class),
-				instance,
-				null,
-				constructor,
-				(Object r, List<?> a) -> {
-					try {
-						return (T) constructor.newInstance(a.toArray());
-					} catch (Exception e) {
-						throw new ReflectionException(p -> p.invalidConstructorArguments(constructor, instance.getType(), a), e);
-					}
-				},
-				false);
+	public static ExecutableToken<Void, ?> overConstructor(Constructor<?> constructor) {
+		if (!Modifier.isStatic(constructor.getDeclaringClass().getModifiers())) {
+			throw new ReflectionException(m -> m.declaringClassMustBeStatic(constructor));
+		}
+		return new ConstructorToken<>(void.class, constructor);
 	}
 
 	/**
 	 * Create a new {@link ExecutableToken} instance from a reference to a
-	 * {@link Constructor}.
+	 * {@link Constructor} of an inner class.
 	 * 
-	 * @param <T>
-	 *          the exact type of the constructor
+	 * <p>
+	 * If the constructor or the enclosing class are generic they will be
+	 * parameterized with their own type variables.
+	 * 
 	 * @param constructor
 	 *          the constructor to wrap
-	 * @param enclosingInstance
-	 *          the receiving type for a constructor on an inner class
-	 * @param instance
-	 *          the type of the instantiated instance
-	 * @return an executable member wrapping the given constructor
+	 * @return an executable member wrapping the given method
 	 */
 	@SuppressWarnings("unchecked")
-	public static <E, T> ExecutableToken<E, T> overConstructor(
-			Constructor<? super T> constructor,
-			TypeToken<E> enclosingInstance,
-			TypeToken<T> instance) {
-
-		enclosingInstance = (TypeToken<E>) instance.getEnclosingType().withConstraintFrom(Kind.SUBTYPE, enclosingInstance);
-		instance.withBounds(enclosingInstance.getBounds());
-
-		return new ExecutableToken<>(
-				enclosingInstance.getBounds(),
-				enclosingInstance,
-				instance,
-				null,
-				constructor,
-				(Object r, List<?> a) -> {
-					try {
-						Object[] arguments = new Object[a.size() + 1];
-						arguments[0] = r;
-						Iterator<?> argumentIterator = a.iterator();
-						for (int i = 1; i <= a.size(); i++) {
-							arguments[i] = argumentIterator.next();
-						}
-						return (T) constructor.newInstance(arguments);
-					} catch (Exception e) {
-						throw new ReflectionException(p -> p.invalidConstructorArguments(constructor, instance.getType(), a), e);
-					}
-				},
-				false);
+	public static ExecutableToken<?, ?> overInnerConstructor(Constructor<?> constructor) {
+		return new ConstructorToken<>(constructor.getDeclaringClass().getEnclosingClass(), constructor);
 	}
 
 	/**
-	 * Create a new {@link ExecutableToken} instance from a reference to a
+	 * Create a new {@link ExecutableToken} instance from a reference to a static
 	 * {@link Method}.
+	 * 
+	 * <p>
+	 * If the method is generic it will be parameterized with its own type
+	 * variables.
 	 * 
 	 * @param method
 	 *          the method to wrap
 	 * @return an executable member wrapping the given method
 	 */
 	public static ExecutableToken<Void, ?> overStaticMethod(Method method) {
-		return new ExecutableToken<>(
-				emptyBoundSet(),
-				TypeToken.overType(void.class),
-				null,
-				null,
-				method,
-				(Object r, List<?> a) -> {
-					try {
-						return method.invoke(null, a.toArray());
-					} catch (Exception e) {
-						throw new ReflectionException(p -> p.invalidStaticMethodArguments(method, a), e);
-					}
-				},
-				false);
+		if (!Modifier.isStatic(method.getModifiers())) {
+			throw new ReflectionException(m -> m.methodMustBeStatic(method));
+		}
+		return new MethodToken<>(void.class, method);
 	}
 
 	/**
-	 * Create a new {@link ExecutableToken} instance from a reference to a
-	 * {@link Method}.
+	 * Create a new {@link ExecutableToken} instance from a reference to an
+	 * instance {@link Method}.
+	 * 
+	 * <p>
+	 * If the method or its declaring class are generic they will be parameterized
+	 * with their own type variables.
 	 * 
 	 * @param method
 	 *          the method to wrap
 	 * @return an executable member wrapping the given method
 	 */
 	public static ExecutableToken<?, ?> overMethod(Method method) {
-		TypeToken<?> receiver = TypeToken.overType(parameterizeIfGeneric(method.getDeclaringClass()));
-		return overMethod(method, receiver);
-	}
-
-	private static Type parameterizeIfGeneric(Class<?> declaringClass) {
-		if (declaringClass.getTypeParameters().length > 0) {
-			return parameterize(declaringClass);
-		} else {
-			return declaringClass;
-		}
+		return new MethodToken<>(method.getDeclaringClass(), method);
 	}
 
 	/**
-	 * Create a new {@link ExecutableToken} instance from a reference to a
-	 * {@link Constructor}.
+	 * If the executable represents a raw invocation, parameterize it with its own
+	 * type parameters, otherwise return the executable itself.
 	 * 
-	 * @param <T>
-	 *          the exact type of the method receiver
-	 * @param method
-	 *          the method to wrap
-	 * @param receiver
-	 *          the target type of the given {@link Method}
-	 * @return an executable member wrapping the given method
+	 * @return the parameterized version of the executable where applicable, else
+	 *         the executable
 	 */
-	public static <T> ExecutableToken<T, ?> overMethod(Method method, TypeToken<T> receiver) {
-		return new ExecutableToken<>(receiver.getBounds(), receiver, null, null, method, (Object r, List<?> a) -> {
-			try {
-				return method.invoke(r, a.toArray());
-			} catch (Exception e) {
-				throw new ReflectionException(p -> p.invalidMethodArguments(method, receiver.getType(), a), e);
-			}
-		}, false);
+	public abstract ExecutableToken<? extends O, ? extends R> withTypeArguments();
+
+	@Override
+	public Executable getMember() {
+		return executable;
 	}
+
+	@Override
+	public abstract TypeToken<?> getOwningDeclaration();
 
 	/**
 	 * @return the name of the executable member
@@ -409,7 +239,7 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable>
 
 	@Override
 	public BoundSet getBounds() {
-		return bounds;
+		return receiverType.getBounds();
 	}
 
 	@Override
@@ -439,7 +269,7 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable>
 		if (isGeneric()) {
 			builder
 					.append("<")
-					.append(getTypeArguments().map(Entry::getValue).map(Objects::toString).collect(joining(", ")))
+					.append(getTypeArguments().map(TypeArgument::getType).map(Objects::toString).collect(joining(", ")))
 					.append("> ");
 		}
 
@@ -533,12 +363,12 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable>
 		} else if (!isVariableArityDefinition()) {
 			throw new ReflectionException(p -> p.invalidVariableArityInvocation(getMember()));
 		} else {
-			return new ExecutableToken<>(this, true);
+			return withExecutableTokenData(receiverType, returnType, parameters, typeArguments, executable, true);
 		}
 	}
 
 	@Override
-	public TypeToken<O> getReceiverType() {
+	public TypeToken<? super O> getReceiverType() {
 		return receiverType;
 	}
 
@@ -546,7 +376,7 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable>
 	 * @return The exact return type of this executable member instance. Generic
 	 *         type parameters may include inference variables.
 	 */
-	public TypeToken<R> getReturnType() {
+	public TypeToken<? extends R> getReturnType() {
 		return returnType;
 	}
 
@@ -569,21 +399,20 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable>
 	 */
 	@Override
 	public ExecutableToken<O, R> withBounds(BoundSet bounds) {
-		bounds = getBounds().withBounds(bounds);
-
-		return new ExecutableToken<>(
-				bounds,
-				receiverType,
-				returnType,
-				methodTypeArguments,
-				getMember(),
-				invocationFunction,
-				variableArityInvocation);
+		if (isRaw()) {
+			return this;
+		} else {
+			return withTypeSubstitution(getBounds().withBounds(bounds), new TypeSubstitution());
+		}
 	}
 
 	@Override
-	public <U extends O> ExecutableToken<U, ? extends R> withReceiverType(TypeToken<U> type) {
-		/*-
+	public ExecutableToken<O, R> withReceiverType(Type type) {
+		return withBounds(receiverType.withConstraintFrom(Kind.SUBTYPE, type).getBounds());
+	}
+
+	public <U> ExecutableToken<U, R> getOverride(TypeToken<U> type) {
+		/*
 		 * 
 		 * 
 		 * 
@@ -599,7 +428,8 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable>
 		 * 
 		 * 
 		 * 
-		 * TODO Best way to find best override is simply using getMethod on the real class (which may be multiple in the case of intersection types etc...)
+		 * TODO Best way to find best override is simply using getMethod on the real
+		 * class (which may be multiple in the case of intersection types etc...)
 		 * 
 		 * 
 		 * 
@@ -612,71 +442,99 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable>
 		 * 
 		 * 
 		 */
-		BoundSet bounds = getBounds().withBounds(type.getBounds());
-		bounds = new ConstraintFormula(Kind.SUBTYPE, type.getType(), receiverType.getType()).reduce(bounds);
-
-		return new ExecutableToken<>(
-				bounds,
-				type,
+		return withExecutableTokenData(
+				type.withConstraintTo(Kind.SUBTYPE, receiverType),
 				null,
-				methodTypeArguments,
+				typeArguments,
 				getMember(),
-				invocationFunction,
 				variableArityInvocation);
 	}
 
-	public Optional<ExecutableToken<O, ? extends R>> getOverride() {
-		Class<?>[] parameters = getParameters().map(ExecutableParameter::getErasure).toArray(Class<?>[]::new);
+	/*
+	 * TODO the receiverType for an instance method is always THE ACTUAL DECLARING
+	 * TYPE of the exact Method object. Not a subtype. That way, this
+	 * "determineOwningDeclaration" calculation only needs to be done where we are
+	 * resolving an override, then the "owning declaration" simply becomes the
+	 * receiver of the derived executable token.
+	 */
+	private TypeToken<?> determineOwningDeclaration() {
+		Type declaringType;
 
-		return getOwnerType()
-				.getRawTypes()
-				.flatMap(c -> stream(c.getMethods()))
-				.filter(m -> m.getName().equals(getName()) && Arrays.equals(m.getParameterTypes(), parameters))
-				.reduce((a, b) -> {
-					if (a.getDeclaringClass() == b.getDeclaringClass()) {
-						return a.isBridge() ? b : a;
-					} else if (a.getDeclaringClass().isAssignableFrom(b.getDeclaringClass())) {
-						return b;
-					} else if (b.getDeclaringClass().isAssignableFrom(a.getDeclaringClass())) {
-						return a;
-					} else if (!a.getDeclaringClass().isInterface()) {
-						return a;
-					} else {
-						return b;
-					}
-				})
-				.map(
-						m -> new ExecutableToken<>(
-								bounds,
-								receiverType,
-								returnType,
-								m.getTypeParameters().length > 0 ? methodTypeArguments : null,
-								m,
-								invocationFunction,
-								variableArityInvocation));
+		if (!Types.isGeneric(getMember().getDeclaringClass())) {
+			declaringType = getMember().getDeclaringClass();
+		} else {
+			List<TypeToken<?>> declaringSubtypeList = getReceiverType()
+					.resolveSupertypeHierarchy(getMember().getDeclaringClass())
+					.collect(toList());
+
+			declaringType = declaringSubtypeList.get(declaringSubtypeList.size() - 1).getType();
+
+			if (declaringType instanceof ParameterizedType) {
+				boolean declaringTypeIsExact = !declaringSubtypeList.stream().anyMatch(
+						t -> t.getType() instanceof InferenceVariable);
+
+				if (declaringTypeIsExact && stream(((ParameterizedType) declaringType).getActualTypeArguments())
+						.anyMatch(WildcardType.class::isInstance)) {
+					throw new ReflectionException(
+							p -> p.cannotResolveInvocationOnTypeWithWildcardParameters(getDeclaringType().getType()));
+				}
+			}
+		}
+
+		return declaringType;
+	}
+
+	public Optional<ExecutableToken<O, R>> getOverride() {
+		if (isConstructor()) {
+			return Optional.empty();
+		} else {
+			Class<?>[] parameters = getParameters().map(ExecutableParameter::getErasure).toArray(Class<?>[]::new);
+
+			return getReceiverType()
+					.getRawTypes()
+					.flatMap(c -> stream(c.getMethods()))
+					.filter(m -> m.getName().equals(getName()) && Arrays.equals(m.getParameterTypes(), parameters))
+					.reduce((a, b) -> {
+						if (a.getDeclaringClass() == b.getDeclaringClass()) {
+							return a.isBridge() ? b : a;
+						} else if (a.getDeclaringClass().isAssignableFrom(b.getDeclaringClass())) {
+							return b;
+						} else if (b.getDeclaringClass().isAssignableFrom(a.getDeclaringClass())) {
+							return a;
+						} else if (!a.getDeclaringClass().isInterface()) {
+							return a;
+						} else {
+							return b;
+						}
+					})
+					.map(
+							m -> withExecutableTokenData(
+									receiverType,
+									returnType,
+									m.getTypeParameters().length > 0 ? typeArguments : null,
+									m,
+									variableArityInvocation));
+		}
 	}
 
 	public Stream<ExecutableToken<O, ? super R>> getOverridden() {
-		Class<?>[] erasedParameters = getParameters().map(ExecutableParameter::getErasure).toArray(Class<?>[]::new);
+		if (isConstructor()) {
+			return Stream.empty();
+		} else {
+			Class<?>[] erasedParameters = getParameters().map(ExecutableParameter::getErasure).toArray(Class<?>[]::new);
 
-		return Arrays
-				.stream(getMember().getDeclaringClass().getMethods())
-				.filter(m -> m.getName().equals(getName()) && m.getParameterTypes().equals(erasedParameters))
-				.map(
-						m -> new ExecutableToken<>(
-								bounds,
-								receiverType,
-								returnType,
-								methodTypeArguments,
-								m,
-								invocationFunction,
-								variableArityInvocation));
-	}
-
-	@Override
-	@SuppressWarnings("unchecked")
-	public ExecutableToken<? extends O, ? extends R> withReceiverType(Type type) {
-		return withReceiverType((TypeToken<? extends O>) overType(type));
+			return Arrays
+					.stream(getMember().getDeclaringClass().getMethods())
+					.filter(m -> m.getName().equals(getName()) && m.getParameterTypes().equals(erasedParameters))
+					.map(
+							m -> withExecutableTokenData(
+									receiverType,
+									returnType,
+									parameters,
+									typeArguments,
+									m,
+									variableArityInvocation));
+		}
 	}
 
 	/**
@@ -708,7 +566,7 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable>
 	 *         the current target type, will also be assignable to the new type.
 	 */
 	public <S extends R> ExecutableToken<O, S> withTargetType(Class<S> target) {
-		return withTargetType(TypeToken.overType(target));
+		return withTargetType(TypeToken.forClass(target));
 	}
 
 	/**
@@ -772,71 +630,12 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable>
 	 *         That is, any type which can be assigned to both the given type and
 	 *         the current target type, will also be assignable to the new type.
 	 */
-	public ExecutableToken<O, ? extends R> withTargetType(Type target) {
-		return withTargetTypeCapture(target);
-	}
-
-	@SuppressWarnings("unchecked")
-	private <S extends R> ExecutableToken<O, S> withTargetTypeCapture(Type target) {
+	public ExecutableToken<O, R> withTargetType(Type target) {
 		if (target == null)
-			return (ExecutableToken<O, S>) this;
+			return this;
 
-		BoundSet bounds = new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, returnType.getType(), target)
-				.reduce(getBounds());
-
-		return new ExecutableToken<>(
-				bounds,
-				receiverType,
-				(TypeToken<S>) returnType,
-				methodTypeArguments,
-				getMember(),
-				(BiFunction<Object, List<?>, S>) invocationFunction,
-				variableArityInvocation);
-	}
-
-	/**
-	 * Derive a new {@link ExecutableToken} fulfilling two conditions.
-	 * 
-	 * <ul>
-	 * <li>Firstly, that the result be assignment compatible with the given target
-	 * type.</li>
-	 * <li>Secondly, that the arguments are compatible in either a
-	 * {@link #withLooseApplicability(List) loose invocation context}, or failing
-	 * that, a {@link #withVariableArityApplicability(List) variable arity
-	 * invocation context}.</li>
-	 * </ul>
-	 * 
-	 * <p>
-	 * This method uses the same type inference algorithm as the Java language,
-	 * and so will only fail in those cases where the Java compiler would have
-	 * failed to infer a type.
-	 * 
-	 * @param <U>
-	 *          The derived {@link ExecutableToken} must be assignment compatible
-	 *          with this type.
-	 * @param targetType
-	 *          The derived {@link ExecutableToken} must be assignment compatible
-	 *          with this type.
-	 * @param arguments
-	 *          The derived {@link ExecutableToken} must be loose invocation
-	 *          compatible, or failing that variable arity compatible, with the
-	 *          given arguments.
-	 * @return A new {@link ExecutableToken} compatible with the given target type
-	 *         and parameters, and which has more specific arguments, type
-	 *         arguments, and return type than the receiving
-	 *         {@link ExecutableToken}.
-	 */
-	public <U> ExecutableToken<O, U> withInferredType(TypeToken<U> targetType, TypeToken<?>... arguments) {
-		ExecutableToken<O, R> executableMember;
-		try {
-			executableMember = withLooseApplicability(arguments);
-		} catch (Exception e) {
-			if (isVariableArityDefinition())
-				executableMember = withVariableArityApplicability(arguments);
-			else
-				throw e;
-		}
-		return executableMember.withTargetType(targetType);
+		return withBounds(
+				new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, returnType.getType(), target).reduce(getBounds()));
 	}
 
 	/**
@@ -850,36 +649,7 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable>
 	public ExecutableToken<O, R> infer() {
 		TypeResolver resolver = new TypeResolver(getBounds());
 		resolver.infer();
-
-		return new ExecutableToken<>(
-				resolver.getBounds(),
-				receiverType,
-				returnType,
-				methodTypeArguments,
-				getMember(),
-				invocationFunction,
-				variableArityInvocation);
-	}
-
-	/**
-	 * @return A new derived {@link ExecutableToken} instance with generic method
-	 *         parameters inferred, and if this is a constructor on a generic
-	 *         type, with generic type parameters inferred, also.
-	 */
-	public ExecutableToken<O, R> inferParameterTypes() {
-		TypeResolver resolver = new TypeResolver(getBounds());
-
-		for (ExecutableParameter parameter : parameters)
-			resolver.infer(parameter.getType());
-
-		return new ExecutableToken<>(
-				resolver.getBounds(),
-				receiverType,
-				returnType,
-				methodTypeArguments,
-				getMember(),
-				invocationFunction,
-				variableArityInvocation);
+		return withBounds(resolver.getBounds());
 	}
 
 	/**
@@ -1034,38 +804,7 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable>
 			resolver.copy().infer();
 		}
 
-		return new ExecutableToken<>(
-				resolver.getBounds(),
-				receiverType,
-				returnType,
-				methodTypeArguments,
-				getMember(),
-				invocationFunction,
-				variableArity);
-	}
-
-	/**
-	 * @return All generic type parameters of the wrapped {@link Executable}.
-	 */
-	@Override
-	public Stream<TypeVariable<?>> getAllTypeParameters() {
-		if (isRaw())
-			return Stream.empty();
-		else
-			return Stream.concat(getTypeParameters(), getContainerTypeArguments().keySet().stream());
-	}
-
-	/**
-	 * @return All generic type parameter instantiations of the wrapped
-	 *         {@link Executable}, or their inference variables if not yet
-	 *         instantiated.
-	 */
-	@Override
-	public Stream<Map.Entry<TypeVariable<?>, Type>> getAllTypeArguments() {
-		if (isRaw())
-			return Stream.empty();
-		else
-			return Stream.concat(getTypeArguments(), getContainerTypeArguments().entrySet().stream());
+		return withBounds(resolver.getBounds());
 	}
 
 	/**
@@ -1074,8 +813,8 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable>
 	 *         instantiated.
 	 */
 	@Override
-	public Stream<TypeVariable<?>> getTypeParameters() {
-		return stream(getMember().getTypeParameters());
+	public Stream<TypeParameter<?>> getTypeParameters() {
+		return stream(getMember().getTypeParameters()).map(TypeParameter::forTypeVariable);
 	}
 
 	/**
@@ -1084,88 +823,89 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable>
 	 *         instantiated.
 	 */
 	@Override
-	public Stream<Map.Entry<TypeVariable<?>, Type>> getTypeArguments() {
-		return zip(getTypeParameters(), methodTypeArguments.stream());
+	public Stream<TypeArgument<?>> getTypeArguments() {
+		return zip(getTypeParameters(), typeArguments.stream(), TypeParameter::asType);
 	}
 
-	/**
-	 * Derive a new {@link ExecutableToken} instance from this, with the given
-	 * instantiation substituted for the given {@link TypeVariable}.
-	 * 
-	 * <p>
-	 * The substitution will only succeed if it is compatible with the bounds on
-	 * that type variable, and if it is more specific than the current type of the
-	 * type variable, whether it is an {@link InferenceVariable}, a
-	 * {@link TypeVariableCapture}, or another class of {@link Type}.
-	 * 
-	 * @param parameter
-	 *          the type variable on the generic declaration which is the
-	 *          {@link Executable} wrapped by this {@link ExecutableToken}
-	 * @param argument
-	 *          the type with which to instantiate the given type variable
-	 * @return a new derived {@link ExecutableToken} instance with the given
-	 *         instantiation substituted for the given type variable
-	 */
 	@Override
-	public ExecutableToken<O, R> withTypeArgument(TypeVariable<?> parameter, Type argument) {
-		int index = getTypeParameters().collect(toList()).indexOf(parameter);
+	public int getTypeParameterCount() {
+		return getMember().getTypeParameters().length;
+	}
 
-		if (index >= 0) {
-			List<Type> methodTypeArguments = new ArrayList<>(this.methodTypeArguments);
-			methodTypeArguments.set(index, argument);
-
-			return new ExecutableToken<>(
-					bounds,
-					receiverType,
-					returnType,
-					methodTypeArguments,
-					getMember(),
-					invocationFunction,
-					variableArityInvocation);
-		} else {
+	@Override
+	public ExecutableToken<O, R> withTypeArguments(Collection<? extends TypeArgument<?>> arguments) {
+		if (arguments.isEmpty()) {
 			return this;
 		}
-	}
 
-	/**
-	 * Derive a new {@link ExecutableToken} instance with the given generic type
-	 * argument substitutions, as per the behavior of
-	 * {@link #withTypeArgument(TypeVariable, Type)}, but with every argument
-	 * provided in order.
-	 * 
-	 * @param methodTypeArguments
-	 *          a list of arguments for each generic type parameter of the
-	 *          underlying {@link Executable}
-	 * @return a new derived {@link ExecutableToken} instance with the given
-	 *         instantiations substituted for each generic type parameter, in
-	 *         order
-	 */
-	@Override
-	public ExecutableToken<O, R> withTypeArguments(List<Type> methodTypeArguments) {
-		if (methodTypeArguments.size() != getMember().getTypeParameters().length) {
-			new ReflectionException(e -> e.incorrectTypeArgumentCount(getMember(), methodTypeArguments));
+		Map<TypeVariable<?>, Type> argumentTypes = getAllTypeArguments()
+				.collect(toMap(TypeArgument::getParameter, TypeArgument::getType));
+
+		Map<Type, Type> argumentSubstitutions = new HashMap<>();
+		Map<InferenceVariable, Type> inferenceVariableInstantiations = new HashMap<>();
+		for (TypeArgument<?> argument : arguments) {
+			TypeVariable<?> parameter = argument.getParameter();
+			Type type = argument.getType();
+
+			Type previousType = argumentTypes.put(parameter, type);
+
+			if (previousType == null) {
+				throw new ReflectionException(m -> m.cannotParameterizeOnDeclaration(parameter, getMember()));
+			} else if (previousType.equals(parameter)) {
+				argumentSubstitutions.put(parameter, type);
+			} else if (previousType instanceof InferenceVariable) {
+				argumentSubstitutions.put(previousType, type);
+				inferenceVariableInstantiations.put((InferenceVariable) previousType, type);
+			} else if (!previousType.equals(type)) {
+				throw new ReflectionException(m -> m.cannotParameterizeWithReplacement(type, previousType));
+			}
 		}
 
-		return new ExecutableToken<>(
-				bounds,
-				receiverType,
-				returnType,
-				methodTypeArguments,
-				getMember(),
-				invocationFunction,
+		BoundSet bounds = getBounds().withInstantiations(inferenceVariableInstantiations);
+		TypeSubstitution typeSubstitution = new TypeSubstitution(argumentSubstitutions);
+
+		typeSubstitution = typeSubstitution.where(
+				bounds::containsInferenceVariable,
+				t -> bounds.getBoundsOn((InferenceVariable) t).getInstantiation().orElse(null));
+
+		return withTypeSubstitution(bounds, typeSubstitution);
+	}
+
+	protected ExecutableToken<O, R> withTypeSubstitution(BoundSet bounds, TypeSubstitution typeSubstitution) {
+		return withExecutableTokenData(
+				determineReceiverType(bounds, typeSubstitution),
+				determineReturnType(bounds, typeSubstitution),
+				determineParameterTypes(typeSubstitution),
+				determineTypeArguments(typeSubstitution),
+				executable,
 				variableArityInvocation);
 	}
 
-	@Override
-	public <U> TypeToken<U> resolveTypeArgument(TypeParameter<U> parameter) {
-		// TODO Auto-generated method stub
-		return null;
+	private TypeToken<? super O> determineReceiverType(BoundSet bounds, TypeSubstitution typeArguments) {
+		if (getReceiverType().getType() instanceof Class<?>) {
+			return getReceiverType();
+		} else {
+			return new TypeToken<>(bounds, typeArguments.resolve(getReceiverType().getType()));
+		}
 	}
 
-	@Override
-	public Type resolveTypeArgument(TypeVariable<?> parameter) {
-		// TODO Auto-generated method stub
-		return null;
+	@SuppressWarnings("unchecked")
+	private TypeToken<? extends R> determineReturnType(BoundSet bounds, TypeSubstitution typeArguments) {
+		if (getReturnType().getType() instanceof Class<?>) {
+			return getReturnType();
+		} else {
+			return new TypeToken<>(bounds, typeArguments.resolve(getReturnType().getType()));
+		}
+	}
+
+	private List<ExecutableParameter> determineParameterTypes(TypeSubstitution typeSubstitution) {
+		return getParameters()
+				.map(p -> new ExecutableParameter(p.getParameter(), p.getParameter().getParameterizedType()))
+				.collect(toList());
+	}
+
+	private List<Type> determineTypeArguments(TypeSubstitution typeSubstitution) {
+		return isRaw() ? null : typeArguments.stream().map(typeSubstitution::resolve).collect(toList());
 	}
 
 	/**
@@ -1189,7 +929,32 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable>
 	 * @return the result of the invocation
 	 */
 	public R invoke(O receiver, Object... arguments) {
-		return invoke(receiver, Arrays.asList(arguments));
+		try {
+			if (variableArityInvocation) {
+				Object[] actualArguments = new Object[parameters.size()];
+				Object[] varargs = (Object[]) Array.newInstance(
+						Types.getRawType(parameters.get(parameters.size() - 1).getType()).getComponentType(),
+						arguments.length - parameters.size() + 1);
+
+				for (int i = 0; i < actualArguments.length - 1; i++) {
+					actualArguments[i] = arguments[i];
+				}
+				actualArguments[actualArguments.length - 1] = varargs;
+
+				int j = 0;
+				for (int i = parameters.size() - 1; i < arguments.length; i++) {
+					varargs[j++] = arguments[i];
+				}
+
+				return invokeImpl(receiver, actualArguments);
+			} else {
+				return invokeImpl(receiver, arguments);
+			}
+		} catch (IllegalArgumentException e) {
+			throw new ReflectionException(
+					p -> p.invalidInvocationArguments(getMember(), receiverType.getType(), arguments),
+					e);
+		}
 	}
 
 	/**
@@ -1213,27 +978,11 @@ public class ExecutableToken<O, R> extends AbstractMemberToken<O, Executable>
 	 * @return the result of the invocation
 	 */
 	public R invoke(O receiver, List<? extends Object> arguments) {
-		if (variableArityInvocation) {
-			List<Object> actualArguments = new ArrayList<>(parameters.size());
-			Object[] varargs = (Object[]) Array.newInstance(
-					Types.getRawType(parameters.get(parameters.size() - 1).getType()).getComponentType(),
-					arguments.size() - parameters.size() + 1);
-
-			for (int i = 0; i < parameters.size() - 1; i++) {
-				actualArguments.add(arguments.get(0));
-			}
-
-			int j = 0;
-			for (int i = parameters.size() - 1; i < arguments.size(); i++) {
-				varargs[j++] = arguments.get(i);
-			}
-			actualArguments.add(varargs);
-
-			return invocationFunction.apply(receiver, actualArguments);
-		} else {
-			return invocationFunction.apply(receiver, arguments);
-		}
+		return invoke(receiver, arguments.toArray());
 	}
+
+	protected abstract R invokeImpl(O receiver, Object[] arguments)
+			throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException;
 
 	/**
 	 * <p>

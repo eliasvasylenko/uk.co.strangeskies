@@ -33,7 +33,7 @@
 package uk.co.strangeskies.reflection.codegen;
 
 import static java.util.stream.Collectors.joining;
-import static uk.co.strangeskies.reflection.token.TypeToken.overAnnotatedType;
+import static uk.co.strangeskies.reflection.token.TypeToken.forAnnotatedType;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.entriesToMap;
 
 import java.lang.reflect.AnnotatedType;
@@ -74,7 +74,7 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 		this.kind = kind;
 		this.declaringClass = declaringClass;
 		this.owningDeclaration = owningDeclaration;
-		this.returnType = (TypeToken<T>) overAnnotatedType(substituteTypeVariableSignatures(returnType));
+		this.returnType = (TypeToken<T>) forAnnotatedType(substituteTypeVariableSignatures(returnType));
 		this.parameters = signature
 				.getParameters()
 				.map(parameter -> new SimpleEntry<>(parameter, createParameter((ParameterSignature<?>) parameter)))
@@ -139,7 +139,7 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 	}
 
 	private <U> LocalVariableExpression<U> createParameter(ParameterSignature<U> parameterSignature) {
-		TypeToken<?> typeToken = overAnnotatedType(substituteTypeVariableSignatures(parameterSignature.getType()));
+		TypeToken<?> typeToken = forAnnotatedType(substituteTypeVariableSignatures(parameterSignature.getType()));
 
 		@SuppressWarnings("unchecked")
 		LocalVariableExpression<U> variable = new LocalVariableExpression<>(

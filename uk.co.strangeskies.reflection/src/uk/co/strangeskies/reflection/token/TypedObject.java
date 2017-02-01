@@ -33,7 +33,7 @@
 package uk.co.strangeskies.reflection.token;
 
 import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.LOOSE_COMPATIBILILTY;
-import static uk.co.strangeskies.reflection.token.TypeToken.overType;
+import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
 
 import java.lang.reflect.Type;
 import java.util.Objects;
@@ -89,7 +89,7 @@ public class TypedObject<T> implements ReifiedToken<TypedObject<T>> {
 	 * @return A typed container for the given object
 	 */
 	public static <T> TypedObject<T> typedObject(T object, Class<T> type) {
-		return typedObject(object, overType(type));
+		return typedObject(object, forClass(type));
 	}
 
 	/**
@@ -226,7 +226,7 @@ public class TypedObject<T> implements ReifiedToken<TypedObject<T>> {
 
 	@Override
 	public TypeToken<TypedObject<T>> getThisTypeToken() {
-		return new TypeToken<TypedObject<T>>() {}.withTypeArgument(new TypeParameter<T>(), type);
+		return new TypeToken<TypedObject<T>>() {}.withTypeArguments(new TypeParameter<T>().asType(type));
 	}
 
 	@Override

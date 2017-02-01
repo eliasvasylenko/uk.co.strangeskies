@@ -41,7 +41,6 @@ import static uk.co.strangeskies.reflection.TypeVariables.typeVariableExtending;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
-import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -53,8 +52,7 @@ import uk.co.strangeskies.reflection.AnnotatedTypeSubstitution;
 import uk.co.strangeskies.reflection.AnnotatedTypeVariables;
 import uk.co.strangeskies.utilities.Isomorphism;
 
-public class ParameterizedDeclaration<S extends ParameterizedSignature<?>> extends AnnotatedDeclaration<S>
-		implements GenericDeclaration {
+public class ParameterizedDeclaration<S extends ParameterizedSignature<?>> extends AnnotatedDeclaration<S> {
 	private final List<TypeVariable<? extends ParameterizedDeclaration<S>>> typeVariables;
 	private final Map<Class<? extends Annotation>, Annotation> annotations;
 

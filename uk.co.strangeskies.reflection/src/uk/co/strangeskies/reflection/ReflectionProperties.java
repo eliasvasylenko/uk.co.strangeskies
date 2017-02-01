@@ -32,8 +32,6 @@
  */
 package uk.co.strangeskies.reflection;
 
-import static java.util.Arrays.asList;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
@@ -43,11 +41,11 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import uk.co.strangeskies.reflection.token.TypeToken;
 import uk.co.strangeskies.text.properties.Localized;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;
@@ -125,10 +123,6 @@ public interface ReflectionProperties {
 
 	Localized<String> invalidVariableArityInvocation(Executable executableMember);
 
-	Localized<String> invalidConstructorArguments(Constructor<?> constructor, Type t, List<?> a);
-
-	Localized<String> invalidMethodArguments(Method method, Type receiver, List<?> a);
-
 	Localized<String> cannotResolveOverride(Executable executableMember, Type type);
 
 	Localized<String> cannotResolveAmbiguity(Executable firstCandidate, Executable secondCandidate);
@@ -157,13 +151,10 @@ public interface ReflectionProperties {
 	Localized<String> cannotFindMethodOn(Type type);
 
 	default Localized<String> incorrectTypeArgumentCount(GenericDeclaration declaration, List<Type> typeArguments) {
-		return incorrectTypeArgumentCount(declaration, asList(declaration.getTypeParameters()), typeArguments);
+		return incorrectTypeArgumentCount(Arrays.asList(declaration.getTypeParameters()), typeArguments);
 	}
 
-	Localized<String> incorrectTypeArgumentCount(
-			GenericDeclaration declaration,
-			List<TypeVariable<?>> typeParameters,
-			List<Type> typeArguments);
+	Localized<String> incorrectTypeArgumentCount(List<TypeVariable<?>> parameters, List<Type> typeArguments);
 
 	Localized<String> duplicateTypeVariable(String n);
 
@@ -175,5 +166,23 @@ public interface ReflectionProperties {
 
 	Localized<String> cannotParameterizeMethodOnRawType(Executable executable);
 
-	Localized<String> cannotResolveTypeVariable(TypeVariable<?> parameter, TypeToken<?> type);
+	Localized<String> cannotResolveTypeVariable(TypeVariable<?> parameter, Object object);
+
+	Localized<String> methodMustBeStatic(Method method);
+
+	Localized<String> declaringClassMustBeStatic(Constructor<?> constructor);
+
+	Localized<String> invalidInvocationArguments(Executable executable, Type instance, Object[] arguments);
+
+	Localized<String> cannotParameterizeEnclosingExecutable(Class<?> enclosedClass);
+
+	Localized<String> noEnclosingDeclaration(Type type);
+
+	Localized<String> cannotParameterizeWithReplacement(Type type, Type currentType);
+
+	/*
+	 * The given type variable cannot be found in the context of the given
+	 * declaration and so cannot be parameterized.
+	 */
+	Localized<String> cannotParameterizeOnDeclaration(TypeVariable<?> type, GenericDeclaration declaration);
 }

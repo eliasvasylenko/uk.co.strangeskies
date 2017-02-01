@@ -36,6 +36,7 @@ import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.CONTAINMENT;
 import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.LOOSE_COMPATIBILILTY;
 import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.SUBTYPE;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.staticMethods;
+import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
 
 import java.io.Serializable;
 import java.lang.annotation.ElementType;
@@ -65,6 +66,7 @@ import uk.co.strangeskies.reflection.Annotations;
 import uk.co.strangeskies.reflection.Imports;
 import uk.co.strangeskies.reflection.Types;
 import uk.co.strangeskies.reflection.token.ExecutableToken;
+import uk.co.strangeskies.reflection.token.TypeArgument;
 import uk.co.strangeskies.reflection.token.TypeParameter;
 import uk.co.strangeskies.reflection.token.TypeToken;
 import uk.co.strangeskies.reflection.token.TypeToken.Capture;
@@ -128,7 +130,7 @@ public class TypeTokenTest {
 
 	@Test
 	public void nullTypeTokenTest() {
-		TypeToken<?> nullType = TypeToken.overNull();
+		TypeToken<?> nullType = TypeToken.forNull();
 		TypeToken<String> stringType = new TypeToken<String>() {};
 
 		Assert.assertTrue(nullType.satisfiesConstraintTo(LOOSE_COMPATIBILILTY, String.class));
@@ -217,23 +219,23 @@ public class TypeTokenTest {
 		printlines();
 		printlines();
 
-		printlines(TypeToken.overType(new TypeToken<Nest<?>>() {}.getType()));
+		printlines(TypeToken.forType(new TypeToken<Nest<?>>() {}.getType()));
 		printlines();
 		printlines();
 
-		printlines(TypeToken.overType(new TypeToken<C2<?>>() {}.getType()));
+		printlines(TypeToken.forType(new TypeToken<C2<?>>() {}.getType()));
 		printlines();
 		printlines();
 
-		printlines(TypeToken.overType(new TypeToken<C1<?>>() {}.getType()));
+		printlines(TypeToken.forType(new TypeToken<C1<?>>() {}.getType()));
 		printlines();
 		printlines();
 
-		printlines(TypeToken.overType(new TypeToken<Base<LeftN, RightN>>() {}.getType()));
+		printlines(TypeToken.forType(new TypeToken<Base<LeftN, RightN>>() {}.getType()));
 		printlines();
 		printlines();
 
-		printlines(TypeToken.overType(new TypeToken<RightN>() {}.resolveSupertype(Base.class).getType()));
+		printlines(TypeToken.forType(new TypeToken<RightN>() {}.resolveSupertype(Base.class).getType()));
 		printlines();
 		printlines();
 
@@ -248,7 +250,7 @@ public class TypeTokenTest {
 		printlines();
 		printlines();
 
-		printlines(TypeToken.overType(new TypeToken<C1<? extends C1<?>>>() {}.getType()));
+		printlines(TypeToken.forType(new TypeToken<C1<? extends C1<?>>>() {}.getType()));
 		printlines();
 		printlines();
 
@@ -264,19 +266,19 @@ public class TypeTokenTest {
 
 		receiver = new @Capture TypeToken<SchemaNodeConfigurator<?, ?>>() {};
 		printlines("RESOLVE 2:");
-		printlines(TypeToken.overType(receiver.getType()).methods().named("name").resolveOverload(String.class));
+		printlines(TypeToken.forType(receiver.getType()).methods().named("name").resolveOverload(String.class));
 		printlines();
 		printlines();
 
 		receiver = new @Capture TypeToken<ChildNodeConfigurator<?, ?>>() {};
 		printlines("RESOLVE 3:");
-		printlines(TypeToken.overType(receiver.getType()).methods().named("name").resolveOverload(String.class));
+		printlines(TypeToken.forType(receiver.getType()).methods().named("name").resolveOverload(String.class));
 		printlines();
 		printlines();
 
 		receiver = new @Capture TypeToken<DataBindingType.Effective<?>>() {};
 		printlines("RESOLVE 4:");
-		printlines(TypeToken.overType(receiver.getType()).methods().named("child").resolveOverload(String.class));
+		printlines(TypeToken.forType(receiver.getType()).methods().named("child").resolveOverload(String.class));
 		printlines();
 		printlines();
 
@@ -303,8 +305,7 @@ public class TypeTokenTest {
 		printlines("<T extends Number, U extends List<? super T>> U method4(Collection<? extends T> a, U b)");
 		printlines("((B) null).method4((Collection<? extends Integer>) null, (List<? super Number>) null)");
 		printlines(
-				TypeToken
-						.overType(B.class)
+				forClass(B.class)
 						.methods()
 						.named("method4")
 						.resolveOverload(
@@ -318,21 +319,20 @@ public class TypeTokenTest {
 		printlines();
 
 		printlines(
-				TypeToken
-						.overType(B.class)
+				forClass(B.class)
 						.methods()
 						.named("bothways")
 						.resolveOverload(String.class, new TypeToken<List<String>>() {}.getType())
 						.infer());
 		printlines();
 
-		printlines(TypeToken.overType(B.class).methods().named("moothod").resolveOverload(Integer.class, Number.class));
+		printlines(forClass(B.class).methods().named("moothod").resolveOverload(Integer.class, Number.class));
 		printlines();
 
-		printlines(TypeToken.overType(B.class).methods().named("moothod").resolveOverload(Number.class, Integer.class));
+		printlines(forClass(B.class).methods().named("moothod").resolveOverload(Number.class, Integer.class));
 		printlines();
 
-		printlines(TypeToken.overType(B.class).methods().named("moothod").resolveOverload(Number.class, Number.class));
+		printlines(forClass(B.class).methods().named("moothod").resolveOverload(Number.class, Number.class));
 		printlines();
 
 		/*-
@@ -367,7 +367,7 @@ public class TypeTokenTest {
 		printlines();
 
 		printlines(
-				TypeToken.overType(B.class).methods().named("method").resolveOverload(
+				forClass(B.class).methods().named("method").resolveOverload(
 						new TypeToken<List<Integer>>() {},
 						new TypeToken<List<Number>>() {}));
 		printlines();
@@ -379,8 +379,7 @@ public class TypeTokenTest {
 		printlines();
 
 		printlines(
-				TypeToken
-						.overType(B.class)
+				forClass(B.class)
 						.methods()
 						.named("method")
 						.resolveOverload(new TypeToken<Collection<? super Integer>>() {})
@@ -505,7 +504,7 @@ public class TypeTokenTest {
 						.methods()
 						.named("addAll")
 						.resolveOverload(new @Infer TypeToken<List<?>>() {})
-						.inferParameterTypes());
+						.infer());
 		printlines();
 
 		printlines(
@@ -540,11 +539,7 @@ public class TypeTokenTest {
 		printlines(blurner);
 		printlines();
 
-		try {
-			printlines(ExecutableToken.overMethod(Blurn.class.getMethod("blurn"), new TypeToken<Blurn<Long>>() {}));
-		} catch (NoSuchMethodException | SecurityException e) {
-			throw new RuntimeException(e);
-		}
+		printlines(new TypeToken<Blurn<Long>>() {}.methods().named("blurn").resolveOverload());
 		printlines();
 
 		printlines(
@@ -734,9 +729,8 @@ public class TypeTokenTest {
 		printlines();
 
 		printlines(
-				"annotationseq: " + AnnotatedWildcardTypes
-						.wildcard()
-						.equals(AnnotatedWildcardTypes.wildcardExtending(AnnotatedTypes.annotated(Object.class))));
+				"annotationseq: " + AnnotatedWildcardTypes.wildcard().equals(
+						AnnotatedWildcardTypes.wildcardExtending(AnnotatedTypes.annotated(Object.class))));
 		printlines();
 
 		Imports imports2 = Imports.empty().withImports(Infer.class, Capture.class, Set.class, Map.class);
@@ -817,27 +811,27 @@ public class TypeTokenTest {
 	static class C6<Y, Z> extends C3<C6<Z, Y>> {}
 
 	private static <U> TypeToken<Iterable<? extends U>> getIteratorExtending(TypeToken<U> type) {
-		return new TypeToken<Iterable<? extends U>>() {}.withTypeArgument(new TypeParameter<U>() {}, type);
+		return new TypeToken<Iterable<? extends U>>() {}.withTypeArguments(new TypeArgument<U>(type) {});
 	}
 
 	static <T> TypeToken<List<T>> listOf(Class<T> sub) {
-		return new TypeToken<List<T>>() {}.withTypeArgument(new TypeParameter<T>() {}, sub);
+		return new TypeToken<List<T>>() {}.withTypeArguments(new TypeArgument<T>(sub) {});
 	}
 
 	static <T> TypeToken<List<T>> listOf(TypeToken<T> sub) {
-		return new TypeToken<List<T>>() {}.withTypeArgument(new TypeParameter<T>() {}, sub);
+		return new TypeToken<List<T>>() {}.withTypeArguments(new TypeArgument<T>(sub) {});
 	}
 
 	static <U> TypeToken<Iterable<U>> getIteratorType(TypeToken<U> type) {
-		return new TypeToken<Iterable<U>>() {}.withTypeArgument(new TypeParameter<U>() {}, type);
+		return new TypeToken<Iterable<U>>() {}.withTypeArguments(new TypeArgument<U>(type) {});
 	}
 
 	static <U> TypeToken<Iterable<U>> getIteratorType2(Class<U> type) {
-		return new TypeToken<Iterable<U>>() {}.withTypeArgument(new TypeParameter<U>() {}, type);
+		return new TypeToken<Iterable<U>>() {}.withTypeArguments(new TypeArgument<U>(type) {});
 	}
 
 	static <U> TypeToken<Iterable<? extends U>> getIteratorType3(TypeToken<U> type) {
-		return new TypeToken<Iterable<? extends U>>() {}.withTypeArgument(new TypeParameter<U>() {}, type);
+		return new TypeToken<Iterable<? extends U>>() {}.withTypeArguments(new TypeArgument<U>(type) {});
 	}
 }
 

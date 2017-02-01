@@ -111,7 +111,7 @@ public class TypeSubstitution {
 	 *          A mapping function for transforming encountered types to their
 	 *          substitution types.
 	 */
-	public TypeSubstitution(Map<?, ? extends Type> mapping) {
+	public TypeSubstitution(Map<? extends Type, ? extends Type> mapping) {
 		isomorphism = new Isomorphism();
 		this.mapping = mapping::get;
 		empty = mapping::isEmpty;

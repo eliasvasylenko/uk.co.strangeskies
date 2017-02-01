@@ -224,7 +224,7 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 			return itemContributions
 					.stream()
 					.filter(
-							c -> TypeToken.overType(type.getRawType()).satisfiesConstraintFrom(LOOSE_COMPATIBILILTY, c.getClass()))
+							c -> TypeToken.forParameterizedType(type.getRawType()).satisfiesConstraintFrom(LOOSE_COMPATIBILILTY, c.getClass()))
 					.map(type::cast);
 		}
 
