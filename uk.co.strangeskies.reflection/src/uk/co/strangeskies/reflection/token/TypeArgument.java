@@ -2,7 +2,6 @@ package uk.co.strangeskies.reflection.token;
 
 import static uk.co.strangeskies.reflection.ParameterizedTypes.resolveSupertype;
 import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
-import static uk.co.strangeskies.reflection.token.TypeToken.forType;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -20,12 +19,6 @@ public abstract class TypeArgument<T> {
 	public TypeArgument(Class<T> type) {
 		this.parameter = resolveSupertypeParameter();
 		this.type = forClass(type);
-	}
-
-	@SuppressWarnings("unchecked")
-	public TypeArgument(Type type) {
-		this.parameter = resolveSupertypeParameter();
-		this.type = (TypeToken<T>) forType(type);
 	}
 
 	protected TypeArgument(TypeParameter<T> parameter, TypeToken<T> type) {
@@ -52,7 +45,7 @@ public abstract class TypeArgument<T> {
 		return parameter.getType();
 	}
 
-	public TypeToken<?> getTypeToken() {
+	public TypeToken<T> getTypeToken() {
 		return type;
 	}
 

@@ -38,7 +38,7 @@ import static java.util.stream.Stream.concat;
 import static uk.co.strangeskies.reflection.codegen.ErasedMethodSignature.erasedMethodSignature;
 import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.declareMethod;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.overMethod;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.streamOptional;
+import static uk.co.strangeskies.utilities.collection.StreamUtilities.streamNullable;
 
 import java.lang.reflect.Method;
 import java.util.AbstractMap.SimpleEntry;

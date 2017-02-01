@@ -34,6 +34,7 @@ package uk.co.strangeskies.reflection;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toMap;
+import static uk.co.strangeskies.reflection.Types.getRawType;
 
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
@@ -87,13 +88,6 @@ public class ParameterizedTypes {
 				}
 				i++;
 			}
-		}
-
-		private static List<Type> getArguments(Type[] actualTypeArguments) {
-			List<Type> arguments = new ArrayList<>(actualTypeArguments.length);
-			for (Type argument : actualTypeArguments)
-				arguments.add(argument);
-			return arguments;
 		}
 
 		@Override
@@ -286,10 +280,20 @@ public class ParameterizedTypes {
 		return new ParameterizedTypeImpl(ownerType, rawType, new ArrayList<>(typeArguments));
 	}
 
+	/**
+	 * As @see {@link #parameterize(Class, Type[])}, but without checking type
+	 * arguments for consistency.
+	 */
+	@SuppressWarnings("javadoc")
 	public static ParameterizedType parameterizeUnchecked(Class<?> rawType, Type... typeArguments) {
 		return parameterizeUnchecked(rawType, Arrays.asList(typeArguments));
 	}
 
+	/**
+	 * As @see {@link #parameterize(Class, List)}, but without checking type
+	 * arguments for consistency.
+	 */
+	@SuppressWarnings("javadoc")
 	public static ParameterizedType parameterizeUnchecked(Class<?> rawType, List<Type> typeArguments) {
 		List<TypeVariable<?>> parameters = getAllTypeParameters(rawType).collect(Collectors.toList());
 
@@ -318,6 +322,11 @@ public class ParameterizedTypes {
 		return parameterizeUnchecked(owner, rawType, typeArguments);
 	}
 
+	/**
+	 * As @see {@link #parameterize(Class, Function)}, but without checking type
+	 * arguments for consistency.
+	 */
+	@SuppressWarnings("javadoc")
 	public static <T> ParameterizedType parameterizeUnchecked(
 			Class<T> rawType,
 			Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
@@ -470,11 +479,7 @@ public class ParameterizedTypes {
 			if (lesserSubtypes.isEmpty())
 				lesserSubtypes.add(Object.class);
 
-			Type subtype = lesserSubtypes
-					.stream()
-					.filter(t -> Types.isAssignable(Types.getRawType(t), superclass))
-					.findAny()
-					.get();
+			Type subtype = lesserSubtypes.stream().filter(t -> superclass.isAssignableFrom(getRawType(t))).findAny().get();
 
 			if (supertype instanceof ParameterizedType)
 				supertype = new TypeSubstitution(

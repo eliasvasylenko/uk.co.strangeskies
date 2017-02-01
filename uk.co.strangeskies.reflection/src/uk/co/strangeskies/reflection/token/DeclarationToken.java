@@ -155,6 +155,8 @@ public interface DeclarationToken<S extends DeclarationToken<S>> {
 	 * Resolve the instantiation of the given type variable in the context of this
 	 * declaration.
 	 * 
+	 * @param <U>
+	 *          the type of the type variable to resolve
 	 * @param parameter
 	 *          the type parameter
 	 * @return the argument of the given parameter with respect to this

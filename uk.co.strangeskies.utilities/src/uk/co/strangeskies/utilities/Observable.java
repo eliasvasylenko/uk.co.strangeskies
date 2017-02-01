@@ -264,6 +264,43 @@ public interface Observable<M> {
 	 *          the owner of the observer
 	 * @return true if the observer was successfully added, false otherwise
 	 */
+	default <O> boolean addTerminatingObserver(Object owner, Observer<? super M> observer) {
+		return addObserver(new TerminatingObserver<>(this, m -> {
+			observer.notify(m);
+			return Observation.TERMINATE;
+		}, owner));
+	}
+
+	/**
+	 * Observers added will receive messages from this Observable. Terminating
+	 * observers may conditionally remove themselves from the observable upon
+	 * receipt of events by returning from the observer function.
+	 * 
+	 * @param observer
+	 *          an observer to add, a function from event type to a boolean, a
+	 *          false value of which will remove the observer
+	 * @return true if the observer was successfully added, false otherwise
+	 */
+	default boolean addTerminatingObserver(Observer<? super M> observer) {
+		return addTerminatingObserver(observer, observer);
+	}
+
+	/**
+	 * Observers added will receive messages from this Observable. Terminating
+	 * observers may conditionally remove themselves from the observable upon
+	 * receipt of events by returning the {@link Observation#TERMINATE termination
+	 * token} from the observer function.
+	 * 
+	 * @see #addOwnedObserver(Object, Observer)
+	 * 
+	 * @param <O>
+	 *          the type of the owner
+	 * @param observer
+	 *          an observer to add
+	 * @param owner
+	 *          the owner of the observer
+	 * @return true if the observer was successfully added, false otherwise
+	 */
 	default <O> boolean addTerminatingObserver(Object owner, Function<? super M, Observation> observer) {
 		return addObserver(new TerminatingObserver<>(this, observer, owner));
 	}

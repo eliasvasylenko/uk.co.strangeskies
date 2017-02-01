@@ -32,6 +32,7 @@
  */
 package uk.co.strangeskies.utilities.collection;
 
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Stream.concat;
 import static java.util.stream.Stream.of;
 
@@ -112,6 +113,10 @@ public class StreamUtilities {
 	@SuppressWarnings("unchecked")
 	public static <T> Stream<T> streamOptional(Optional<? extends T> optional) {
 		return (Stream<T>) optional.map(Stream::of).orElse(Stream.empty());
+	}
+
+	public static <T> Stream<T> streamNullable(T optional) {
+		return ofNullable(optional).map(Stream::of).orElse(Stream.empty());
 	}
 
 	public static <T> Optional<T> tryOptional(ThrowingSupplier<? extends T, ?> attempt) {

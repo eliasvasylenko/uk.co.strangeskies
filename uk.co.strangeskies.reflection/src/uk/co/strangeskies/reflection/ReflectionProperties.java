@@ -172,7 +172,7 @@ public interface ReflectionProperties {
 
 	Localized<String> declaringClassMustBeStatic(Constructor<?> constructor);
 
-	Localized<String> invalidInvocationArguments(Executable executable, Type instance, Object[] arguments);
+	Localized<String> invocationFailed(Executable executable, Type instance, Object[] arguments);
 
 	Localized<String> cannotParameterizeEnclosingExecutable(Class<?> enclosedClass);
 

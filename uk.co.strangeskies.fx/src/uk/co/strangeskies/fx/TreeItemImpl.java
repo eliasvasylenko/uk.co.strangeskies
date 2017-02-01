@@ -34,6 +34,7 @@ package uk.co.strangeskies.fx;
 
 import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.LOOSE_COMPATIBILILTY;
+import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -222,8 +223,7 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 		public <V extends TreeContribution<? super U>> Stream<V> contributions(TypeToken<V> type) {
 			return itemContributions
 					.stream()
-					.filter(
-							c -> TypeToken.forParameterizedType(type.getRawType()).satisfiesConstraintFrom(LOOSE_COMPATIBILILTY, c.getClass()))
+					.filter(c -> forClass(type.getRawType()).satisfiesConstraintFrom(LOOSE_COMPATIBILILTY, c.getClass()))
 					.map(type::cast);
 		}
 

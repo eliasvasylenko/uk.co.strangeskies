@@ -61,10 +61,10 @@ public interface TreeContribution<T> {
 	 */
 	default TypeToken<T> getDataType() {
 		return TypeToken
-				.forParameterizedType(getClass())
+				.forClass(getClass())
 				.resolveSupertype(TreeContribution.class)
 				.resolveTypeArgument(new TypeParameter<T>() {})
-				.getType();
+				.getTypeToken();
 	}
 
 	/**

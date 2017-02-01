@@ -70,9 +70,7 @@ public class OverrideResolutionTest {
 	public void withReceiverTypeDoesNotOverride() throws NoSuchMethodException, SecurityException {
 		ExecutableToken<? extends A, ?> method = forClass(A.class).methods().named(METHOD_NAME).resolveOverload();
 
-		assertThat(method.getMember(), equalTo(A.class.getMethod(METHOD_NAME)));
-
-		method = method.withReceiverType(C.class);
+		method = method.getOverride(forClass(D.class));
 
 		assertThat(method.getMember(), equalTo(A.class.getMethod(METHOD_NAME)));
 	}
@@ -81,43 +79,28 @@ public class OverrideResolutionTest {
 	public void withReceiverThenGetOverride() throws NoSuchMethodException, SecurityException {
 		ExecutableToken<? extends A, ?> method = forClass(A.class).methods().named(METHOD_NAME).resolveOverload();
 
-		method = method.withReceiverType(C.class).getOverride().get();
+		method = method.getOverride(forClass(C.class));
 
 		assertThat(method.getMember(), equalTo(C.class.getMethod(METHOD_NAME)));
 	}
 
 	@Test
 	public void getOverride() throws NoSuchMethodException, SecurityException {
-		ExecutableToken<? extends A, ?> method = overMethod(A.class.getMethod(METHOD_NAME))
-				.getOverride(forClass(C.class));
-
-		assertThat(method.getMember().getDeclaringClass(), equalTo(A.class));
-
-		method = method.getOverride().get();
+		ExecutableToken<? extends A, ?> method = overMethod(A.class.getMethod(METHOD_NAME)).getOverride(forClass(C.class));
 
 		assertThat(method.getMember().getDeclaringClass(), equalTo(C.class));
 	}
 
 	@Test
 	public void getIndirectOverride() throws NoSuchMethodException, SecurityException {
-		ExecutableToken<? extends A, ?> method = overMethod(A.class.getMethod(METHOD_NAME))
-				.getOverride(forClass(F.class));
-
-		assertThat(method.getMember().getDeclaringClass(), equalTo(A.class));
-
-		method = method.getOverride().get();
+		ExecutableToken<? extends A, ?> method = overMethod(A.class.getMethod(METHOD_NAME)).getOverride(forClass(F.class));
 
 		assertThat(method.getMember().getDeclaringClass(), equalTo(F.class));
 	}
 
 	@Test
 	public void getInterfaceBeforeClassOverride() throws NoSuchMethodException, SecurityException {
-		ExecutableToken<? extends A, ?> method = overMethod(A.class.getMethod(METHOD_NAME))
-				.getOverride(forClass(E.class));
-
-		assertThat(method.getMember().getDeclaringClass(), equalTo(A.class));
-
-		method = method.getOverride().get();
+		ExecutableToken<? extends A, ?> method = overMethod(A.class.getMethod(METHOD_NAME)).getOverride(forClass(E.class));
 
 		assertThat(method.getMember().getDeclaringClass(), equalTo(C.class));
 	}

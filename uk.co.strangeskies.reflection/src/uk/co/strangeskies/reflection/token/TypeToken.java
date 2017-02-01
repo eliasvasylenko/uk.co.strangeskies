@@ -1265,6 +1265,7 @@ public class TypeToken<T>
 	 * @return a list of all {@link Method} objects applicable to this type,
 	 *         wrapped in {@link ExecutableToken} instances
 	 */
+	@SuppressWarnings("unchecked")
 	public ExecutableTokenQuery<ExecutableToken<T, ?>, ?> methods() {
 		Stream<Method> methodStream = getRawTypes().flatMap(t -> Arrays.stream(t.getMethods()));
 
@@ -1273,7 +1274,7 @@ public class TypeToken<T>
 
 		methodStream = methodStream.filter(m -> !Modifier.isStatic(m.getModifiers()));
 
-		return executableQuery(methodStream, m -> overMethod(m).getOverride(this));
+		return executableQuery(methodStream, m -> (ExecutableToken<T, ?>) overMethod(m).withReceiverType(this));
 	}
 
 	/**
@@ -1283,11 +1284,12 @@ public class TypeToken<T>
 	 * @return a list of all {@link Method} objects applicable to this type,
 	 *         wrapped in {@link ExecutableToken} instances
 	 */
+	@SuppressWarnings("unchecked")
 	public ExecutableTokenQuery<ExecutableToken<T, ?>, ?> declaredMethods() {
 		Stream<Method> methodStream = stream(getRawType().getDeclaredMethods())
 				.filter(m -> !Modifier.isStatic(m.getModifiers()));
 
-		return executableQuery(methodStream, m -> overMethod(m).getOverride(this));
+		return executableQuery(methodStream, m -> (ExecutableToken<T, ?>) overMethod(m).withReceiverType(this));
 	}
 
 	@Override
@@ -1307,8 +1309,9 @@ public class TypeToken<T>
 	@Override
 	public Stream<TypeParameter<?>> getTypeParameters() {
 		if (getType() instanceof ParameterizedType) {
-			return ParameterizedTypes.getAllTypeParameters((Class<?>) ((ParameterizedType) getType()).getRawType()).map(
-					e -> forTypeVariable(e));
+			return ParameterizedTypes
+					.getAllTypeParameters((Class<?>) ((ParameterizedType) getType()).getRawType())
+					.map(e -> forTypeVariable(e));
 		} else {
 			return Stream.empty();
 		}
@@ -1330,8 +1333,9 @@ public class TypeToken<T>
 				getBounds(),
 				(a, b) -> a.withBounds(b));
 
-		Map<TypeVariable<?>, Type> argumentMap = arguments.stream().collect(
-				toMap(TypeArgument::getParameter, TypeArgument::getType));
+		Map<TypeVariable<?>, Type> argumentMap = arguments
+				.stream()
+				.collect(toMap(TypeArgument::getParameter, TypeArgument::getType));
 
 		return new TypeToken<>(bounds, new TypeSubstitution(argumentMap).resolve(getType()));
 	}

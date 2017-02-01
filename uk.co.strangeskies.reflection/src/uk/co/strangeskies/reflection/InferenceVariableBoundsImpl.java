@@ -197,8 +197,9 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	}
 
 	protected InferenceVariableBoundsImpl withInferenceVariableSubstitution(Isomorphism isomorphism) {
-		InferenceVariable inferenceVariableSubstitution = (InferenceVariable) isomorphism.byIdentity().getMapping(
-				inferenceVariable);
+		InferenceVariable inferenceVariableSubstitution = (InferenceVariable) isomorphism
+				.byIdentity()
+				.getMapping(inferenceVariable);
 
 		InferenceVariableBoundsImpl copy = new InferenceVariableBoundsImpl(boundSet, inferenceVariableSubstitution);
 
@@ -229,8 +230,6 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			capture = captureConversion;
 
 		invalidateDependencies();
-
-		List<InferenceVariable> mentions = captureConversion.getInferenceVariablesMentioned().collect(toList());
 	}
 
 	public void removeCaptureConversion() {
@@ -593,9 +592,10 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 
 				for (Bound equality : new ArrayList<>(otherBounds.bounds.values()))
 					if (equality.getKind() == EQUAILTY && equality.isProper())
-						boundSet
-								.getBoundsOnImpl(otherBounds.inferenceVariable)
-								.incorporateProperSubtypeSubstitution(equality.getType(), inferenceVariable, bound);
+						boundSet.getBoundsOnImpl(otherBounds.inferenceVariable).incorporateProperSubtypeSubstitution(
+								equality.getType(),
+								inferenceVariable,
+								bound);
 			});
 		}
 	}
@@ -644,9 +644,10 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 
 				for (Bound equality : new ArrayList<>(otherBounds.bounds.values()))
 					if (equality.getKind() == EQUAILTY && equality != bound && equality.isProper())
-						boundSet
-								.getBoundsOnImpl(otherBounds.inferenceVariable)
-								.incorporateProperSupertypeSubstitution(equality.getType(), bound, inferenceVariable);
+						boundSet.getBoundsOnImpl(otherBounds.inferenceVariable).incorporateProperSupertypeSubstitution(
+								equality.getType(),
+								bound,
+								inferenceVariable);
 			});
 		}
 	}

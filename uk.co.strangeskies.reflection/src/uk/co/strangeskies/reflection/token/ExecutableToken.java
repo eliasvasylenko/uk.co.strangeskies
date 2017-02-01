@@ -34,6 +34,7 @@ package uk.co.strangeskies.reflection.token;
 
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.LOOSE_COMPATIBILILTY;
@@ -51,6 +52,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -58,7 +60,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.Queue;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.BoundSet;
@@ -411,43 +413,47 @@ public abstract class ExecutableToken<O, R> implements MemberToken<O, Executable
 		return withBounds(receiverType.withConstraintFrom(Kind.SUBTYPE, type).getBounds());
 	}
 
+	@SuppressWarnings("unchecked")
 	public <U> ExecutableToken<U, R> getOverride(TypeToken<U> type) {
-		/*
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * TODO sort out overload resolution. Should we do this here, or in the
-		 * constructor? Or not at all, even?
-		 * 
-		 * 
-		 * 
-		 * TODO obviously overload resolution is unnecessary for constructors...
-		 * 
-		 * 
-		 * 
-		 * TODO Best way to find best override is simply using getMethod on the real
-		 * class (which may be multiple in the case of intersection types etc...)
-		 * 
-		 * 
-		 * 
-		 * TODO do we want ExecutableTokenQuery to exclude overridden methods by
-		 * default? Do we want reflective access to an overridden method?
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 */
-		return withExecutableTokenData(
-				type.withConstraintTo(Kind.SUBTYPE, receiverType),
-				null,
-				typeArguments,
-				getMember(),
-				variableArityInvocation);
+		Class<?> declaringClass = getMember().getDeclaringClass();
+
+		Queue<Class<?>> queue = type.getRawTypes().collect(toCollection(ArrayDeque::new));
+		while (!queue.isEmpty()) {
+			Class<?> overridingType = queue.poll();
+			if (declaringClass.isAssignableFrom(overridingType) && !declaringClass.equals(overridingType)) {
+				stream(overridingType.getDeclaredMethods())
+						.filter(m -> m.getName().equals(getName()))
+						.filter(m -> m.isVarArgs() == isVariableArityDefinition())
+						.filter(m -> m.getParameterCount() == getParameters().count());
+			}
+		}
+
+		return type
+				.getRawTypes()
+				.flatMap(c -> stream(c.getMethods()))
+				.filter(
+						m -> m.getName().equals(getName()) && !m.isBridge()
+								&& m.getParameterTypes().length == parameterClasses.length)
+				.reduce((a, b) -> {
+					if (a.getDeclaringClass().isAssignableFrom(b.getDeclaringClass())) {
+						return b;
+					} else if (b.getDeclaringClass().isAssignableFrom(a.getDeclaringClass())) {
+						return a;
+					} else if (!a.getDeclaringClass().isInterface()) {
+						return a;
+					} else {
+						return b;
+					}
+				})
+				.map(
+						method -> (ExecutableToken<U, R>) withExecutableTokenData(
+								type.withConstraintTo(Kind.SUBTYPE, receiverType),
+								returnType,
+								parameters,
+								typeArguments,
+								method,
+								variableArityInvocation))
+				.orElse((ExecutableToken<U, R>) withReceiverType(type));
 	}
 
 	/*
@@ -457,7 +463,7 @@ public abstract class ExecutableToken<O, R> implements MemberToken<O, Executable
 	 * resolving an override, then the "owning declaration" simply becomes the
 	 * receiver of the derived executable token.
 	 */
-	private TypeToken<?> determineOwningDeclaration() {
+	private TypeToken<?> determineOwningDeclaration(TypeToken<?> subtype) {
 		Type declaringType;
 
 		if (!Types.isGeneric(getMember().getDeclaringClass())) {
@@ -470,8 +476,9 @@ public abstract class ExecutableToken<O, R> implements MemberToken<O, Executable
 			declaringType = declaringSubtypeList.get(declaringSubtypeList.size() - 1).getType();
 
 			if (declaringType instanceof ParameterizedType) {
-				boolean declaringTypeIsExact = !declaringSubtypeList.stream().anyMatch(
-						t -> t.getType() instanceof InferenceVariable);
+				boolean declaringTypeIsExact = !declaringSubtypeList
+						.stream()
+						.anyMatch(t -> t.getType() instanceof InferenceVariable);
 
 				if (declaringTypeIsExact && stream(((ParameterizedType) declaringType).getActualTypeArguments())
 						.anyMatch(WildcardType.class::isInstance)) {
@@ -482,39 +489,6 @@ public abstract class ExecutableToken<O, R> implements MemberToken<O, Executable
 		}
 
 		return declaringType;
-	}
-
-	public Optional<ExecutableToken<O, R>> getOverride() {
-		if (isConstructor()) {
-			return Optional.empty();
-		} else {
-			Class<?>[] parameters = getParameters().map(ExecutableParameter::getErasure).toArray(Class<?>[]::new);
-
-			return getReceiverType()
-					.getRawTypes()
-					.flatMap(c -> stream(c.getMethods()))
-					.filter(m -> m.getName().equals(getName()) && Arrays.equals(m.getParameterTypes(), parameters))
-					.reduce((a, b) -> {
-						if (a.getDeclaringClass() == b.getDeclaringClass()) {
-							return a.isBridge() ? b : a;
-						} else if (a.getDeclaringClass().isAssignableFrom(b.getDeclaringClass())) {
-							return b;
-						} else if (b.getDeclaringClass().isAssignableFrom(a.getDeclaringClass())) {
-							return a;
-						} else if (!a.getDeclaringClass().isInterface()) {
-							return a;
-						} else {
-							return b;
-						}
-					})
-					.map(
-							m -> withExecutableTokenData(
-									receiverType,
-									returnType,
-									m.getTypeParameters().length > 0 ? typeArguments : null,
-									m,
-									variableArityInvocation));
-		}
 	}
 
 	public Stream<ExecutableToken<O, ? super R>> getOverridden() {
@@ -931,29 +905,24 @@ public abstract class ExecutableToken<O, R> implements MemberToken<O, Executable
 	public R invoke(O receiver, Object... arguments) {
 		try {
 			if (variableArityInvocation) {
+				int regularArgumentCount = parameters.size() - 1;
+
 				Object[] actualArguments = new Object[parameters.size()];
 				Object[] varargs = (Object[]) Array.newInstance(
-						Types.getRawType(parameters.get(parameters.size() - 1).getType()).getComponentType(),
-						arguments.length - parameters.size() + 1);
+						Types.getRawType(parameters.get(regularArgumentCount).getType()).getComponentType(),
+						arguments.length - regularArgumentCount);
 
-				for (int i = 0; i < actualArguments.length - 1; i++) {
-					actualArguments[i] = arguments[i];
-				}
+				System.arraycopy(arguments, 0, actualArguments, 0, regularArgumentCount);
 				actualArguments[actualArguments.length - 1] = varargs;
 
-				int j = 0;
-				for (int i = parameters.size() - 1; i < arguments.length; i++) {
-					varargs[j++] = arguments[i];
-				}
+				System.arraycopy(arguments, 0, varargs, regularArgumentCount, arguments.length - regularArgumentCount);
 
 				return invokeImpl(receiver, actualArguments);
 			} else {
 				return invokeImpl(receiver, arguments);
 			}
-		} catch (IllegalArgumentException e) {
-			throw new ReflectionException(
-					p -> p.invalidInvocationArguments(getMember(), receiverType.getType(), arguments),
-					e);
+		} catch (IllegalArgumentException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+			throw new ReflectionException(p -> p.invocationFailed(getMember(), receiverType.getType(), arguments), e);
 		}
 	}
 
