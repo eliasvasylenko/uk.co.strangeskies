@@ -739,7 +739,7 @@ public class TypeToken<T>
 	 * @return the upper bounds of the type represented by this TypeToken
 	 */
 	public Stream<Type> getUpperBounds() {
-		List<Type> upperBounds = Types.getUpperBounds(getType()).collect(toList());
+		List<Type> upperBounds = Types.getUpperBounds(resolveType()).collect(toList());
 
 		for (int i = 0; i < upperBounds.size(); i++) {
 			Type upperBound = upperBounds.get(i);
@@ -748,10 +748,7 @@ public class TypeToken<T>
 				upperBounds.remove(upperBound);
 
 				InferenceVariableBounds bounds = getBounds().getBoundsOn((InferenceVariable) upperBound);
-				Stream
-						.concat(bounds.getUpperBounds(), bounds.getEqualities())
-						.filter(t -> !getBounds().containsInferenceVariable(t))
-						.forEach(upperBounds::add);
+				bounds.getUpperBounds().filter(t -> !getBounds().containsInferenceVariable(t)).forEach(upperBounds::add);
 			}
 		}
 
@@ -1033,6 +1030,8 @@ public class TypeToken<T>
 	 * Determine the recursive sequence of direct supertypes of this type which
 	 * lead to either the given superclass or a parameterization thereof.
 	 * 
+	 * @param <U>
+	 *          the superclass type
 	 * @param superclass
 	 *          the class of the supertype parameterization we wish to determine
 	 * @return a stream returning the given type and then each direct supertype
@@ -1040,41 +1039,12 @@ public class TypeToken<T>
 	 *         thereof, is reached
 	 */
 	@SuppressWarnings("unchecked")
-	public <U> Stream<TypeToken<? extends U>> resolveSupertypeHierarchy(Class<U> superclass) {
-		/*
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * TODO This first part is not good enough. We need to retain every step in
-		 * the getUpperBounds() calculation, as it may be recursive
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 */
+	public <U> Stream<TypeToken<? extends U>> resolveDirectSupertypeHierarchy(Class<U> superclass) {
 		Type type = getUpperBounds().filter(t -> Types.isAssignable(t, superclass)).findFirst().orElseThrow(
 				() -> new ReflectionException(p -> p.cannotResolveSupertype(getType(), superclass)));
 
 		Stream<TypeToken<? extends U>> supertypeHierarchy = ParameterizedTypes
-				.resolveSupertypeHierarchy(type, superclass)
+				.resolveDirectSupertypeHierarchy(type, superclass)
 				.map(t -> (TypeToken<? extends U>) forType(getBounds(), t, Wildcards.RETAIN));
 
 		if (type != this.type) {
@@ -1082,6 +1052,10 @@ public class TypeToken<T>
 		}
 
 		return supertypeHierarchy;
+	}
+
+	public <U> Stream<TypeToken<? extends U>> resolveCompleteSupertypeHierarchy(Class<U> superclass) {
+		
 	}
 
 	/**

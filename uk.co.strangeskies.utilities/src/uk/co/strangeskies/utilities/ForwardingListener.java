@@ -32,6 +32,9 @@
  */
 package uk.co.strangeskies.utilities;
 
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 /**
  * A buffer to decouple the delivery of events with their sequential
  * consumption, such that the event firing threads are not blocked by listeners.
@@ -76,65 +79,23 @@ public abstract class ForwardingListener<T, U> implements Observer<T>, Observabl
 		void put(T item);
 	}
 
-	private final Buffer<T, U> buffer;
+	private final Consumer<T> consumer;
 	private final ObservableImpl<U> listeners;
-	private boolean disposed;
 
 	/**
-	 * Initialise a buffering listener with an empty queue and an empty set of
+	 * Initialize a buffering listener with an empty queue and an empty set of
 	 * listeners.
 	 * 
-	 * @param buffer
+	 * @param consumer
 	 *          The buffering strategy by which to provide consumed events
 	 */
-	public ForwardingListener(Buffer<T, U> buffer) {
-		this.buffer = buffer;
-
-		listeners = new ObservableImpl<>();
-		disposed = false;
-
-		Thread forwardThread = new Thread(() -> {
-			boolean finished = false;
-
-			do {
-				U item;
-				synchronized (listeners) {
-					while (!buffer.isReady() && !finished) {
-						if (disposed) {
-							finished = true;
-						} else {
-							try {
-								listeners.wait();
-							} catch (Exception e) {}
-						}
-					}
-					item = buffer.get();
-				}
-
-				listeners.fire(item);
-			} while (!finished);
-		});
-		forwardThread.setDaemon(true);
-		forwardThread.start();
+	public ForwardingListener(Function<Consumer<U>, Consumer<T>> consumer) {
+		this.consumer = consumer.apply(this::fire);
+		this.listeners = new ObservableImpl<>();
 	}
 
-	@Override
-	protected void finalize() throws Throwable {
-		try {
-			dispose();
-		} finally {
-			super.finalize();
-		}
-	}
-
-	/**
-	 * Discard the event queue and cease forwarding of events to listeners.
-	 */
-	public void dispose() {
-		synchronized (listeners) {
-			disposed = true;
-			listeners.notifyAll();
-		}
+	protected void fire(U item) {
+		listeners.fire(item);
 	}
 
 	/**
@@ -145,10 +106,7 @@ public abstract class ForwardingListener<T, U> implements Observer<T>, Observabl
 	 */
 	@Override
 	public void notify(T item) {
-		synchronized (listeners) {
-			buffer.put(item);
-			listeners.notifyAll();
-		}
+		consumer.accept(item);
 	}
 
 	@Override

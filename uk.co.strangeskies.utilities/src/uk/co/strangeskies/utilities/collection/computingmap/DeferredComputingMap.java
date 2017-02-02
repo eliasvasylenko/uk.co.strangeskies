@@ -32,11 +32,17 @@
  */
 package uk.co.strangeskies.utilities.collection.computingmap;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.function.Function;
 
 public class DeferredComputingMap<K, V> extends ComputingEntryHashMap<K, V> {
 	public DeferredComputingMap(Function<K, V> computation) {
-		super(computation);
+		this(computation, Executors.newFixedThreadPool(4));
+	}
+
+	public DeferredComputingMap(Function<K, V> computation, Executor executor) {
+		super(computation, executor);
 	}
 
 	public DeferredComputingMap(ComputingEntryHashMap<K, V> other) {

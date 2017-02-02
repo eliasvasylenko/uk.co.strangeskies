@@ -33,22 +33,30 @@
 package uk.co.strangeskies.utilities;
 
 import java.util.concurrent.Executor;
+import java.util.function.Function;
 
 /**
- * An implementation of {@link ForwardingListener} which simply pipes event
- * objects to chained listeners asynchronously with the original event thread.
+ * An implementation of {@link ForwardingListener} which pipes the latest
+ * available event objects to listeners as quickly as they can keep up with
+ * production.
  * 
  * @author Elias N Vasylenko
  *
  * @param <T>
- *          The type of event to listen for
+ *          the type of event to listen for
+ * @param <R>
+ *          the type of the event to emit
  */
-public class BufferingListener<T> extends ForwardingListener<T, T> {
+public class MappingListener<T, R> extends ForwardingListener<T, R> {
+	public MappingListener(Function<T, R> mapping, Executor executor) {
+		super(fire -> item -> executor.execute(() -> fire.accept(mapping.apply(item))));
+	}
+
 	/**
 	 * Initialize a buffering listener with an empty queue and an empty set of
 	 * listeners.
 	 */
-	public BufferingListener(Executor executor) {
-		super(fire -> item -> executor.execute(() -> fire.accept(item)));
+	public MappingListener(Function<T, R> mapping) {
+		this(mapping, r -> r.run());
 	}
 }

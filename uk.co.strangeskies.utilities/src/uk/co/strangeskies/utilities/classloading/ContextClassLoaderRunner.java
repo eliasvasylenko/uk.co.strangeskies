@@ -100,8 +100,4 @@ public class ContextClassLoaderRunner {
 			return null;
 		});
 	}
-
-	public void runLater(Runnable runnable) {
-		new Thread(() -> run(runnable)).start();
-	}
 }

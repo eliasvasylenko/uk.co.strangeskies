@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -76,21 +77,24 @@ public class ComputingEntryHashMap<K, V> implements ComputingMap<K, V> {
 	protected class ComputingEntry extends DeferredEntry {
 		public ComputingEntry(K key) {
 			super(key);
-			new Thread(this::getValue).start();
+			executor.execute(this::getValue);
 		}
 	}
 
 	private final Map<K, Entry<K, V>> map;
 	private final Function<K, V> computation;
+	private final Executor executor;
 
-	protected ComputingEntryHashMap(Function<K, V> computation) {
+	protected ComputingEntryHashMap(Function<K, V> computation, Executor executor) {
 		this.map = new HashMap<>();
 		this.computation = computation;
+		this.executor = executor;
 	}
 
 	protected ComputingEntryHashMap(ComputingEntryHashMap<K, V> other) {
-		map = new HashMap<>(other.map);
-		computation = other.computation;
+		this.map = new HashMap<>(other.map);
+		this.computation = other.computation;
+		this.executor = other.executor;
 	}
 
 	@Override
@@ -178,6 +182,7 @@ public class ComputingEntryHashMap<K, V> implements ComputingMap<K, V> {
 		};
 	}
 
+	@Override
 	public Collection<V> values() {
 		return new AbstractCollection<V>() {
 			@Override

@@ -32,14 +32,19 @@
  */
 package uk.co.strangeskies.reflection.test;
 
+import static java.util.stream.Collectors.toList;
+import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
+import static org.hamcrest.collection.IsIterableContainingInRelativeOrder.containsInRelativeOrder;
+import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterize;
+import static uk.co.strangeskies.reflection.ParameterizedTypes.resolveSupertype;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.HashSet;
+import java.util.List;
 
-import org.hamcrest.core.IsEqual;
 import org.junit.Test;
 
 import uk.co.strangeskies.reflection.ParameterizedTypes;
@@ -54,8 +59,80 @@ public class SuperTypeParametersTest {
 	public void indirectParameterizedSupertype() {
 		ParameterizedType parameterizedType = parameterize(HashSet.class, String.class);
 
-		Type supertype = ParameterizedTypes.resolveSupertype(parameterizedType, Iterable.class);
+		Type supertype = resolveSupertype(parameterizedType, Iterable.class);
 
-		assertThat(supertype, IsEqual.equalTo(parameterize(Iterable.class, String.class)));
+		assertThat(supertype, equalTo(parameterize(Iterable.class, String.class)));
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void partialOrderingOverAllSupertypes() {
+		List<Class<?>> supertypes = ParameterizedTypes
+				.resolveCompleteSupertypeHierarchy(A_SUPER.class, Object.class)
+				.map(t -> ((Class<?>) t))
+				.collect(toList());
+
+		assertThat(
+				supertypes,
+				containsInRelativeOrder(
+						A_SUPER.class,
+						B_SUPER.class,
+						C_SUPER.class,
+						E_SUPER.class,
+						G_SUPER.class,
+						H_SUPER.class));
+
+		assertThat(
+				supertypes,
+				containsInRelativeOrder(
+						A_SUPER.class,
+						B_SUPER.class,
+						D_SUPER.class,
+						F_SUPER.class,
+						G_SUPER.class,
+						H_SUPER.class));
+
+		assertThat(
+				supertypes,
+				containsInAnyOrder(
+						A_SUPER.class,
+						B_SUPER.class,
+						C_SUPER.class,
+						D_SUPER.class,
+						E_SUPER.class,
+						F_SUPER.class,
+						G_SUPER.class,
+						H_SUPER.class,
+						Object.class));
 	}
 }
+
+interface A_SUPER extends B_SUPER {
+
+}
+
+interface B_SUPER extends C_SUPER, D_SUPER {
+
+}
+
+interface C_SUPER extends E_SUPER {
+
+}
+
+interface D_SUPER extends F_SUPER {
+
+}
+
+interface E_SUPER extends G_SUPER {
+
+}
+
+interface F_SUPER extends G_SUPER {
+
+}
+
+interface G_SUPER extends H_SUPER {
+
+}
+
+interface H_SUPER {}

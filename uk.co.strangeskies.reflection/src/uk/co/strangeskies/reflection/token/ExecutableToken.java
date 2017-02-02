@@ -34,12 +34,13 @@ package uk.co.strangeskies.reflection.token;
 
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Stream.empty;
 import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.LOOSE_COMPATIBILILTY;
 import static uk.co.strangeskies.reflection.token.ExecutableTokenQuery.executableQuery;
 import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
+import static uk.co.strangeskies.utilities.collection.StreamUtilities.upcastStream;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.zip;
 
 import java.lang.reflect.Array;
@@ -52,7 +53,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
-import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -60,7 +60,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Queue;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.BoundSet;
@@ -71,6 +70,7 @@ import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeResolver;
 import uk.co.strangeskies.reflection.TypeSubstitution;
 import uk.co.strangeskies.reflection.Types;
+import uk.co.strangeskies.utilities.collection.StreamUtilities;
 
 /**
  * <p>
@@ -415,45 +415,39 @@ public abstract class ExecutableToken<O, R> implements MemberToken<O, Executable
 
 	@SuppressWarnings("unchecked")
 	public <U> ExecutableToken<U, R> getOverride(TypeToken<U> type) {
+		type = type.withConstraintTo(Kind.SUBTYPE, getReceiverType());
 		Class<?> declaringClass = getMember().getDeclaringClass();
 
-		Queue<Class<?>> queue = type.getRawTypes().collect(toCollection(ArrayDeque::new));
-		while (!queue.isEmpty()) {
-			Class<?> overridingType = queue.poll();
-			if (declaringClass.isAssignableFrom(overridingType) && !declaringClass.equals(overridingType)) {
-				stream(overridingType.getDeclaredMethods())
-						.filter(m -> m.getName().equals(getName()))
-						.filter(m -> m.isVarArgs() == isVariableArityDefinition())
-						.filter(m -> m.getParameterCount() == getParameters().count());
-			}
-		}
+		ExecutableToken<?, ?> override = type
+				.resolveCompleteSupertypeHierarchy(declaringClass)
+				.flatMap(this::getValidOverrides)
+				.findFirst()
+				.orElse(this);
 
-		return type
-				.getRawTypes()
-				.flatMap(c -> stream(c.getMethods()))
-				.filter(
-						m -> m.getName().equals(getName()) && !m.isBridge()
-								&& m.getParameterTypes().length == parameterClasses.length)
-				.reduce((a, b) -> {
-					if (a.getDeclaringClass().isAssignableFrom(b.getDeclaringClass())) {
-						return b;
-					} else if (b.getDeclaringClass().isAssignableFrom(a.getDeclaringClass())) {
-						return a;
-					} else if (!a.getDeclaringClass().isInterface()) {
-						return a;
-					} else {
-						return b;
-					}
-				})
-				.map(
-						method -> (ExecutableToken<U, R>) withExecutableTokenData(
-								type.withConstraintTo(Kind.SUBTYPE, receiverType),
-								returnType,
-								parameters,
-								typeArguments,
-								method,
-								variableArityInvocation))
-				.orElse((ExecutableToken<U, R>) withReceiverType(type));
+		return (ExecutableToken<U, R>) override;
+	}
+
+	private Stream<ExecutableToken<?, ?>> getValidOverrides(TypeToken<?> type) {
+		if (type.getType() instanceof ParameterizedType || type.getType() instanceof Class<?>) {
+			return upcastStream(
+					stream(type.getRawType().getDeclaredMethods())
+							.filter(this::isPotentialOverride)
+							.map(m -> overMethod(m).withReceiverType(type).withTypeArguments(getMember().getTypeParameters()))
+							.filter(this::isValidOverride));
+		} else {
+			return empty();
+		}
+	}
+
+	private boolean isPotentialOverride(Method method) {
+		return method.getName().equals(getName()) && method.isVarArgs() == isVariableArityDefinition()
+				&& method.getParameterCount() == getParameters().count();
+	}
+
+	private boolean isValidOverride(ExecutableToken<?, ?> executable) {
+		StreamUtilities.zip(getParameters(), executable.getParameters(), (a, b) -> {
+
+		});
 	}
 
 	/*

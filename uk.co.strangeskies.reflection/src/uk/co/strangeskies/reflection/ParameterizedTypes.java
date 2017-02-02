@@ -35,10 +35,10 @@ package uk.co.strangeskies.reflection;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Stream.concat;
 import static java.util.stream.Stream.empty;
-import static java.util.stream.Stream.of;
 import static uk.co.strangeskies.reflection.Types.getRawType;
+import static uk.co.strangeskies.utilities.collection.StreamUtilities.flatMapRecursive;
+import static uk.co.strangeskies.utilities.collection.StreamUtilities.iterateOptional;
 
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
@@ -47,6 +47,8 @@ import java.lang.reflect.TypeVariable;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -58,7 +60,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.utilities.Isomorphism;
-import uk.co.strangeskies.utilities.collection.StreamUtilities;
 
 /**
  * A collection of utility methods relating to parameterized types.
@@ -477,12 +478,33 @@ public class ParameterizedTypes {
 	 *         recursively until the given superclass, or a parameterization
 	 *         thereof, is reached
 	 */
-	public static Stream<Type> resolveSupertypeHierarchy(Type type, Class<?> superclass) {
+	public static Stream<Type> resolveDirectSupertypeHierarchy(Type type, Class<?> superclass) {
 		if (!Types.isAssignable(type, superclass)) {
 			throw new ReflectionException(p -> p.cannotResolveSupertype(type, superclass));
 		}
 
 		return resolveSupertypeHierarchyImpl(type, superclass);
+	}
+
+	/**
+	 * Determine the recursive sequence of direct supertypes of a given type which
+	 * lead to either the given superclass or a parameterization thereof.
+	 * 
+	 * @param type
+	 *          the type providing a context within which to determine the
+	 *          arguments of the supertype
+	 * @param superclass
+	 *          the class of the supertype parameterization we wish to determine
+	 * @return a stream returning the given type and then each direct supertype
+	 *         recursively until the given superclass, or a parameterization
+	 *         thereof, is reached
+	 */
+	public static Stream<Type> resolveCompleteSupertypeHierarchy(Type type, Class<?> superclass) {
+		validateResolvableSupertype(type, superclass);
+
+		Set<Class<?>> encountered = new HashSet<>();
+
+		return flatMapRecursive(type, t -> resolveImmediateSupertypes(encountered, t, superclass));
 	}
 
 	/**
@@ -506,18 +528,30 @@ public class ParameterizedTypes {
 		return resolveSupertypeHierarchyImpl(type, superclass).reduce((a, b) -> b).get();
 	}
 
-	public static Stream<Type> resolveDirectSupertypes(Type type) {
-		return resolveDirectSupertypes(type, Object.class);
+	/**
+	 * Determine the immediate supertypes of the given type.
+	 * 
+	 * @param type
+	 *          the type providing a context within which to determine the
+	 *          arguments of the supertypes
+	 * @return a stream of the supertypes of the requested class
+	 */
+	public static Stream<Type> resolveImmediateSupertypes(Type type) {
+		return resolveImmediateSupertypes(null, type, Object.class);
 	}
 
 	private static Stream<Type> resolveSupertypeHierarchyImpl(Type type, Class<?> superclass) {
+		validateResolvableSupertype(type, superclass);
+
+		return iterateOptional(type, t -> resolveImmediateSupertypes(null, t, superclass).findFirst());
+	}
+
+	private static void validateResolvableSupertype(Type type, Class<?> superclass) {
 		if (!(type instanceof ParameterizedType) && !(type instanceof Class)) {
 			throw new ReflectionException(
 					p -> p.cannotResolveSupertype(type, superclass),
 					new ReflectionException(p -> p.unsupportedType(type)));
 		}
-
-		return StreamUtilities.iterateOptional(type, t -> resolveDirectSupertypes(t, superclass).findFirst());
 	}
 
 	/*
@@ -525,26 +559,44 @@ public class ParameterizedTypes {
 	 * then we must perform some extra subtype checks to make sure partial
 	 * ordering is maintained.
 	 */
-	private static Stream<Type> resolveDirectSupertypes(Set<Class<?>> encountered, Type type, Class<?> superclass) {
+	private static Stream<Type> resolveImmediateSupertypes(Set<Class<?>> encountered, Type type, Class<?> superclass) {
 		Class<?> subclass = getRawType(type);
 
 		if (subclass.equals(superclass)) {
 			return empty();
 		}
 
-		encountered.remove(subclass);
+		if (encountered != null && !encountered.isEmpty()) {
+			encountered.remove(subclass);
+		}
 
 		Type genericSuperclass = subclass.getGenericSuperclass();
 		Type[] genericInterfaces = subclass.getGenericInterfaces();
 
-		Stream<Type> lesserSubtypes = stream(genericInterfaces);
+		List<Type> lesserSubtypes = new ArrayList<>(genericInterfaces.length + 1);
+		stream(genericInterfaces).forEach(lesserSubtypes::add);
 		if (genericSuperclass != null) {
-			lesserSubtypes = concat(lesserSubtypes, of(genericSuperclass));
+			lesserSubtypes.add(genericSuperclass);
 		} else if (genericInterfaces.length == 0) {
-			lesserSubtypes = concat(lesserSubtypes, of(Object.class));
+			lesserSubtypes.add(Object.class);
 		}
 
-		return lesserSubtypes.filter(t -> superclass.isAssignableFrom(getRawType(t))).map(subtype -> {
+		/*
+		 * If there is more than one supertype in evaluation
+		 */
+		if (encountered != null && (!encountered.isEmpty() || lesserSubtypes.size() > 1)) {
+			for (Iterator<Type> lesserSubtypeIterator = lesserSubtypes.iterator(); lesserSubtypeIterator.hasNext();) {
+				Class<?> rawClass = getRawType(lesserSubtypeIterator.next());
+
+				if (encountered.stream().anyMatch(rawClass::isAssignableFrom)) {
+					lesserSubtypeIterator.remove();
+				} else {
+					encountered.add(rawClass);
+				}
+			}
+		}
+
+		return lesserSubtypes.stream().filter(t -> superclass.isAssignableFrom(getRawType(t))).map(subtype -> {
 			if (type instanceof ParameterizedType)
 				return new TypeSubstitution(
 						getAllTypeArguments((ParameterizedType) type).collect(toMap(Entry::getKey, Entry::getValue)))

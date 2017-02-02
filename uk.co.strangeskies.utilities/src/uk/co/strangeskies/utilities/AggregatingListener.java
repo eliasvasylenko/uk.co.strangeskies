@@ -34,6 +34,9 @@ package uk.co.strangeskies.utilities;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
+
+import uk.co.strangeskies.utilities.flowcontrol.SerialExecutor;
 
 /**
  * An implementation of {@link ForwardingListener} which aggregates consumed
@@ -46,13 +49,17 @@ import java.util.List;
  *          The type of event to listen for
  */
 public class AggregatingListener<T> extends ForwardingListener<T, List<T>> {
-	/**
-	 * Initialise a buffering listener with an empty queue and an empty set of
-	 * listeners.
-	 */
+	public AggregatingListener(Executor executor) {
+		this(new SerialExecutor(executor), new ArrayList<>());
+	}
+
+	private AggregatingListener(SerialExecutor executor, List<T> list) {
+		super(fire -> item -> executor.execute(() -> fire.accept(item)));
+	}
+
 	public AggregatingListener() {
 		super(new Buffer<T, List<T>>() {
-			private final List<T> list = new ArrayList<>();
+			private final  = new ArrayList<>();
 
 			@Override
 			public boolean isReady() {

@@ -130,7 +130,7 @@ public interface Observable<M> {
 		public void notify(M t) {
 			O owner = getOwner();
 			if (owner == null) {
-				new Thread(() -> observable.removeObserver(this)).start();
+				observable.removeObserver(this);
 			} else {
 				Observer.apply(owner).notify(t);
 			}

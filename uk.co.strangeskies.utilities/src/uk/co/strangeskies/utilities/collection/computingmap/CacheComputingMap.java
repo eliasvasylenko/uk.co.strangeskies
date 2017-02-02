@@ -36,6 +36,8 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -98,7 +100,11 @@ public class CacheComputingMap<K, V> extends ComputingEntryHashMap<K, V> {
 	private final boolean softReferences;
 
 	public CacheComputingMap(Function<K, V> computation, boolean softReferences) {
-		super(computation);
+		this(computation, softReferences, Executors.newFixedThreadPool(4));
+	}
+
+	public CacheComputingMap(Function<K, V> computation, boolean softReferences, Executor executor) {
+		super(computation, executor);
 		references = new ReferenceQueue<>();
 		this.softReferences = softReferences;
 	}
