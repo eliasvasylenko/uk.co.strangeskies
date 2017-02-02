@@ -48,15 +48,33 @@ import java.util.function.Function;
  *          the type of the event to emit
  */
 public class MappingListener<T, R> extends ForwardingListener<T, R> {
+	private final Executor executor;
+	private final Function<T, R> mapping;
+
+	/**
+	 * Initialize a mapping listener with an empty set of listeners.
+	 * 
+	 * @param mapping
+	 *          the mapping to perform for forwarded events
+	 * @param executor
+	 *          the executor to issue forwarded events
+	 */
 	public MappingListener(Function<T, R> mapping, Executor executor) {
-		super(fire -> item -> executor.execute(() -> fire.accept(mapping.apply(item))));
+		this.executor = executor;
+		this.mapping = mapping;
 	}
 
 	/**
-	 * Initialize a buffering listener with an empty queue and an empty set of
-	 * listeners.
+	 * As @see {@link #MappingListener(Function, Executor)} with an executor which
+	 * invokes immediately on the calling thread.
 	 */
+	@SuppressWarnings("javadoc")
 	public MappingListener(Function<T, R> mapping) {
 		this(mapping, r -> r.run());
+	}
+
+	@Override
+	public void notify(T item) {
+		executor.execute(() -> fire(mapping.apply(item)));
 	}
 }

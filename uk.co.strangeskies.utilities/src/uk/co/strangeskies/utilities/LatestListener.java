@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.utilities;
 
+import java.util.concurrent.Executor;
+
 /**
  * An implementation of {@link ForwardingListener} which pipes the latest
  * available event objects to listeners as quickly as they can keep up with
@@ -43,30 +45,32 @@ package uk.co.strangeskies.utilities;
  *          The type of event to listen for
  */
 public class LatestListener<T> extends ForwardingListener<T, T> {
+	private final Executor executor;
+	private T latest;
+
 	/**
-	 * Initialize a buffering listener with an empty queue and an empty set of
-	 * listeners.
+	 * @param executor
+	 *          the executor with which to forward events
 	 */
-	public LatestListener() {
-		super(new Buffer<T, T>() {
-			private T latest;
+	public LatestListener(Executor executor) {
+		this.executor = executor;
+	}
 
-			@Override
-			public boolean isReady() {
-				return latest != null;
-			}
+	@Override
+	public synchronized void notify(T item) {
+		queueNext();
+		latest = item;
+	}
 
-			@Override
-			public T get() {
-				T latest = this.latest;
-				this.latest = null;
-				return latest;
-			}
+	private synchronized T getLatest() {
+		T latest = this.latest;
+		this.latest = null;
+		return latest;
+	}
 
-			@Override
-			public void put(T item) {
-				latest = item;
-			}
-		});
+	private void queueNext() {
+		if (latest == null) {
+			executor.execute(() -> fire(getLatest()));
+		}
 	}
 }

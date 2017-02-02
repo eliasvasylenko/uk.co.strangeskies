@@ -32,16 +32,9 @@
  */
 package uk.co.strangeskies.utilities;
 
-import java.util.function.Consumer;
-import java.util.function.Function;
-
 /**
  * A buffer to decouple the delivery of events with their sequential
  * consumption, such that the event firing threads are not blocked by listeners.
- * <p>
- * Consumed events are translated to produced events by way of an implementation
- * of {@link Buffer}, the implemented methods of which are guaranteed to be
- * invoked synchronously.
  * 
  * @author Elias N Vasylenko
  *
@@ -51,46 +44,12 @@ import java.util.function.Function;
  *          The type of event message to produce
  */
 public abstract class ForwardingListener<T, U> implements Observer<T>, Observable<U> {
-	/**
-	 * An interface for provision of a buffering strategy.
-	 *
-	 * @author Elias N Vasylenko
-	 * @param <T>
-	 *          The type of event to consume
-	 * @param <U>
-	 *          The type of event to produce
-	 */
-	public interface Buffer<T, U> {
-		/**
-		 * @return True if the buffer contains data which can be usefully forwarded
-		 *         to a listener, false otherwise
-		 */
-		boolean isReady();
-
-		/**
-		 * @return Provide the next piece of buffered data ready for consumption
-		 */
-		U get();
-
-		/**
-		 * @param item
-		 *          Buffer another piece of data for provision
-		 */
-		void put(T item);
-	}
-
-	private final Consumer<T> consumer;
 	private final ObservableImpl<U> listeners;
 
 	/**
-	 * Initialize a buffering listener with an empty queue and an empty set of
-	 * listeners.
-	 * 
-	 * @param consumer
-	 *          The buffering strategy by which to provide consumed events
+	 * Initialize a buffering listener with an empty set of listeners.
 	 */
-	public ForwardingListener(Function<Consumer<U>, Consumer<T>> consumer) {
-		this.consumer = consumer.apply(this::fire);
+	public ForwardingListener() {
 		this.listeners = new ObservableImpl<>();
 	}
 
@@ -105,9 +64,7 @@ public abstract class ForwardingListener<T, U> implements Observer<T>, Observabl
 	 *          The event data
 	 */
 	@Override
-	public void notify(T item) {
-		consumer.accept(item);
-	}
+	public abstract void notify(T item);
 
 	@Override
 	public synchronized boolean addObserver(Observer<? super U> listener) {

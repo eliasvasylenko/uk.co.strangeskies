@@ -36,8 +36,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 
-import uk.co.strangeskies.utilities.flowcontrol.SerialExecutor;
-
 /**
  * An implementation of {@link ForwardingListener} which aggregates consumed
  * data into a list, then provides it to listeners in chunks of all remaining
@@ -49,34 +47,29 @@ import uk.co.strangeskies.utilities.flowcontrol.SerialExecutor;
  *          The type of event to listen for
  */
 public class AggregatingListener<T> extends ForwardingListener<T, List<T>> {
-	public AggregatingListener(Executor executor) {
-		this(new SerialExecutor(executor), new ArrayList<>());
+	private final Executor executor;
+	private final List<T> list;
+
+	private AggregatingListener(Executor executor) {
+		this.executor = executor;
+		this.list = new ArrayList<>();
 	}
 
-	private AggregatingListener(SerialExecutor executor, List<T> list) {
-		super(fire -> item -> executor.execute(() -> fire.accept(item)));
+	@Override
+	public synchronized void notify(T item) {
+		queueNext();
+		list.add(item);
 	}
 
-	public AggregatingListener() {
-		super(new Buffer<T, List<T>>() {
-			private final  = new ArrayList<>();
+	private synchronized List<T> getAggregate() {
+		List<T> aggregate = new ArrayList<>(list);
+		list.clear();
+		return aggregate;
+	}
 
-			@Override
-			public boolean isReady() {
-				return !list.isEmpty();
-			}
-
-			@Override
-			public List<T> get() {
-				List<T> aggregate = new ArrayList<>(list);
-				list.clear();
-				return aggregate;
-			}
-
-			@Override
-			public void put(T item) {
-				list.add(item);
-			}
-		});
+	private void queueNext() {
+		if (list.isEmpty()) {
+			executor.execute(() -> fire(getAggregate()));
+		}
 	}
 }

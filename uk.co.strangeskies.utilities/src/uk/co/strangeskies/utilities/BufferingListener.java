@@ -32,6 +32,9 @@
  */
 package uk.co.strangeskies.utilities;
 
+import static java.util.concurrent.Executors.newSingleThreadExecutor;
+import static java.util.function.Function.identity;
+
 import java.util.concurrent.Executor;
 
 /**
@@ -43,12 +46,23 @@ import java.util.concurrent.Executor;
  * @param <T>
  *          The type of event to listen for
  */
-public class BufferingListener<T> extends ForwardingListener<T, T> {
+public class BufferingListener<T> extends MappingListener<T, T> {
 	/**
-	 * Initialize a buffering listener with an empty queue and an empty set of
-	 * listeners.
+	 * As @see {@link #BufferingListener(Executor)} with a sequential, single
+	 * thread executor.
+	 */
+	public BufferingListener() {
+		this(newSingleThreadExecutor());
+	}
+
+	/**
+	 * Initialize a buffering listener with an empty set of listeners. Events will
+	 * be forwarded from the given executor.
+	 * 
+	 * @param executor
+	 *          the executor through which to issue forwarded events
 	 */
 	public BufferingListener(Executor executor) {
-		super(fire -> item -> executor.execute(() -> fire.accept(item)));
+		super(identity(), executor);
 	}
 }
