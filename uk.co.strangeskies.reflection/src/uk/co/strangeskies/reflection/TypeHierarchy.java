@@ -119,8 +119,15 @@ public class TypeHierarchy {
 			encountered.remove(subclass);
 		}
 
-		Type genericSuperclass = subclass.getGenericSuperclass();
-		Type[] genericInterfaces = subclass.getGenericInterfaces();
+		Type genericSuperclass;
+		Type[] genericInterfaces;
+		if (Types.isGeneric(subclass) && type instanceof Class<?>) {
+			genericSuperclass = subclass.getSuperclass();
+			genericInterfaces = subclass.getInterfaces();
+		} else {
+			genericSuperclass = subclass.getGenericSuperclass();
+			genericInterfaces = subclass.getGenericInterfaces();
+		}
 
 		List<Type> lesserSubtypes = new ArrayList<>(genericInterfaces.length + 1);
 		stream(genericInterfaces).forEach(lesserSubtypes::add);

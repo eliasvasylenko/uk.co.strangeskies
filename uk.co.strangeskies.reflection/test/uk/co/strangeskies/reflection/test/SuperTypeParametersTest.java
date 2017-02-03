@@ -38,7 +38,7 @@ import static org.hamcrest.collection.IsIterableContainingInRelativeOrder.contai
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterize;
-import static uk.co.strangeskies.reflection.ParameterizedTypes.resolveSupertype;
+import static uk.co.strangeskies.reflection.TypeHierarchy.resolveSupertype;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -47,7 +47,7 @@ import java.util.List;
 
 import org.junit.Test;
 
-import uk.co.strangeskies.reflection.ParameterizedTypes;
+import uk.co.strangeskies.reflection.TypeHierarchy;
 
 @SuppressWarnings("javadoc")
 public class SuperTypeParametersTest {
@@ -67,7 +67,7 @@ public class SuperTypeParametersTest {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void partialOrderingOverAllSupertypes() {
-		List<Class<?>> supertypes = ParameterizedTypes
+		List<Class<?>> supertypes = TypeHierarchy
 				.resolveCompleteSupertypeHierarchy(A_SUPER.class, Object.class)
 				.map(t -> ((Class<?>) t))
 				.collect(toList());
@@ -105,34 +105,42 @@ public class SuperTypeParametersTest {
 						H_SUPER.class,
 						Object.class));
 	}
+
+	@Test
+	public void directGenericSupertypeOfRawSupertypes() {
+		Type supertype = resolveSupertype(A_ERASURE.class, C_ERASURE.class);
+
+		assertThat(supertype, equalTo(C_ERASURE.class));
+	}
+
+	@Test
+	public void indirectGenericSupertypeOfRawSupertypes() {
+		Type supertype = resolveSupertype(A_ERASURE.class, E_ERASURE.class);
+
+		assertThat(supertype, equalTo(parameterize(E_ERASURE.class, String.class)));
+	}
 }
 
-interface A_SUPER extends B_SUPER {
+interface A_ERASURE<T> extends C_ERASURE<String>, D_ERASURE {}
 
-}
+interface C_ERASURE<T> {}
 
-interface B_SUPER extends C_SUPER, D_SUPER {
+interface D_ERASURE extends E_ERASURE<String> {}
 
-}
+interface E_ERASURE<T> {}
 
-interface C_SUPER extends E_SUPER {
+interface A_SUPER extends B_SUPER {}
 
-}
+interface B_SUPER extends C_SUPER, D_SUPER {}
 
-interface D_SUPER extends F_SUPER {
+interface C_SUPER extends E_SUPER {}
 
-}
+interface D_SUPER extends F_SUPER {}
 
-interface E_SUPER extends G_SUPER {
+interface E_SUPER extends G_SUPER {}
 
-}
+interface F_SUPER extends G_SUPER {}
 
-interface F_SUPER extends G_SUPER {
-
-}
-
-interface G_SUPER extends H_SUPER {
-
-}
+interface G_SUPER extends H_SUPER {}
 
 interface H_SUPER {}

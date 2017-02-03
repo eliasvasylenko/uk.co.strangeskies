@@ -1,6 +1,6 @@
 package uk.co.strangeskies.reflection.token;
 
-import static uk.co.strangeskies.reflection.ParameterizedTypes.resolveSupertype;
+import static uk.co.strangeskies.reflection.TypeHierarchy.resolveSupertype;
 import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
 
 import java.lang.reflect.ParameterizedType;

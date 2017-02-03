@@ -38,6 +38,9 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.empty;
 import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.LOOSE_COMPATIBILILTY;
+import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
+import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterize;
+import static uk.co.strangeskies.reflection.Types.getRawType;
 import static uk.co.strangeskies.reflection.token.ExecutableTokenQuery.executableQuery;
 import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.upcastStream;
@@ -414,9 +417,9 @@ public abstract class ExecutableToken<O, R> implements MemberToken<O, Executable
 
 	@SuppressWarnings("unchecked")
 	public <U> ExecutableToken<U, R> getOverride(TypeToken<U> type) {
-		/*
-		 * Find the most specific overriding method first
-		 */
+		Type upperBound = intersectionOf(
+				type.getUpperBounds().map(t -> t instanceof ParameterizedType ? parameterize(getRawType(t)) : t).toArray(
+						Type[]::new));
 
 		return (ExecutableToken<U, R>) override;
 	}
@@ -477,8 +480,9 @@ public abstract class ExecutableToken<O, R> implements MemberToken<O, Executable
 			declaringType = declaringSubtypeList.get(declaringSubtypeList.size() - 1).getType();
 
 			if (declaringType instanceof ParameterizedType) {
-				boolean declaringTypeIsExact = !declaringSubtypeList.stream().anyMatch(
-						t -> t.getType() instanceof InferenceVariable);
+				boolean declaringTypeIsExact = !declaringSubtypeList
+						.stream()
+						.anyMatch(t -> t.getType() instanceof InferenceVariable);
 
 				if (declaringTypeIsExact && stream(((ParameterizedType) declaringType).getActualTypeArguments())
 						.anyMatch(WildcardType.class::isInstance)) {

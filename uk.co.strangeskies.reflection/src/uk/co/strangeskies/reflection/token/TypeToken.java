@@ -732,9 +732,9 @@ public class TypeToken<T>
 	}
 
 	/**
-	 * Find the upper bounds of a given type. Unlike
-	 * {@link Types#getUpperBounds(Type)} this respects bounds on the inference
-	 * variables in this resolver.
+	 * Find the upper bounding classes and parameterized types of a given type.
+	 * Unlike {@link Types#getUpperBounds(Type)} this respects bounds on the
+	 * inference variables in this resolver.
 	 * 
 	 * @return the upper bounds of the type represented by this TypeToken
 	 */
@@ -1239,8 +1239,9 @@ public class TypeToken<T>
 	@Override
 	public Stream<TypeParameter<?>> getTypeParameters() {
 		if (getType() instanceof ParameterizedType) {
-			return ParameterizedTypes.getAllTypeParameters((Class<?>) ((ParameterizedType) getType()).getRawType()).map(
-					e -> forTypeVariable(e));
+			return ParameterizedTypes
+					.getAllTypeParameters((Class<?>) ((ParameterizedType) getType()).getRawType())
+					.map(e -> forTypeVariable(e));
 		} else {
 			return Stream.empty();
 		}
@@ -1262,8 +1263,9 @@ public class TypeToken<T>
 				getBounds(),
 				(a, b) -> a.withBounds(b));
 
-		Map<TypeVariable<?>, Type> argumentMap = arguments.stream().collect(
-				toMap(TypeArgument::getParameter, TypeArgument::getType));
+		Map<TypeVariable<?>, Type> argumentMap = arguments
+				.stream()
+				.collect(toMap(TypeArgument::getParameter, TypeArgument::getType));
 
 		return new TypeToken<>(bounds, new TypeSubstitution(argumentMap).resolve(getType()));
 	}

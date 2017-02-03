@@ -44,12 +44,26 @@ import java.util.stream.Collectors;
 /**
  * A collection of utility methods relating to wildcard types.
  * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * TODO the spec currently only allows one upper or lower bound.
+ * We should probably move in line with this since the rest of
+ * the spec isn't designed to handle the alternative.
+ * 
  * @author Elias N Vasylenko
  */
 public class WildcardTypes {
 	private static final Type[] DEFAULT_UPPER_BOUND = new Type[] { Object.class };
 	private static final Type[] EMPTY_BOUND = new Type[] {};
 
+	List<? extends Comparable<?> & Serializable> a;
+	
 	private static final WildcardType UNBOUNDED = new WildcardType() {
 		@Override
 		public Type[] getUpperBounds() {

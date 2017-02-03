@@ -34,6 +34,7 @@ package uk.co.strangeskies.reflection;
 
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Stream.of;
 import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
 import static uk.co.strangeskies.reflection.IntersectionTypes.uncheckedIntersectionOf;
@@ -192,7 +193,7 @@ public final class Types {
 	}
 
 	/**
-	 * Find the upper bounds of a given type.
+	 * Find the upper bounding classes and parameterized types of a given type.
 	 * 
 	 * @param type
 	 *          The type whose bounds we wish to discover.
@@ -203,16 +204,20 @@ public final class Types {
 
 		if (type instanceof IntersectionType)
 			types = ((IntersectionType) type).getTypes();
+
 		else if (type instanceof WildcardType)
 			types = ((WildcardType) type).getUpperBounds();
+
 		else if (type instanceof TypeVariable)
 			types = ((TypeVariable<?>) type).getBounds();
+
 		else if (type instanceof TypeVariableCapture)
 			types = ((TypeVariableCapture) type).getUpperBounds();
-		else
-			types = new Type[] { type };
 
-		return Arrays.stream(types);
+		else
+			return of(type);
+
+		return stream(types).flatMap(Types::getUpperBounds);
 	}
 
 	/**
@@ -930,14 +935,16 @@ public final class Types {
 	 */
 	public static boolean isLooseInvocationContextCompatible(Type from, Type to) {
 		if (from instanceof IntersectionType) {
-			return Arrays.stream(((IntersectionType) from).getTypes()).anyMatch(
-					f -> isLooseInvocationContextCompatible(f, to));
+			return Arrays
+					.stream(((IntersectionType) from).getTypes())
+					.anyMatch(f -> isLooseInvocationContextCompatible(f, to));
 
 		}
 
 		if (to instanceof IntersectionType) {
-			return Arrays.stream(((IntersectionType) to).getTypes()).allMatch(
-					t -> isLooseInvocationContextCompatible(from, t));
+			return Arrays
+					.stream(((IntersectionType) to).getTypes())
+					.allMatch(t -> isLooseInvocationContextCompatible(from, t));
 
 		}
 

@@ -72,7 +72,7 @@ public class ParameterizedTypes {
 		ParameterizedTypeImpl(Type ownerType, Class<?> rawType, List<Type> typeArguments) {
 			this.ownerType = ownerType;
 			this.rawType = rawType;
-			this.typeArguments = typeArguments;
+			this.typeArguments = typeArguments;rawType.getm
 
 			int i = 0;
 			for (Type argument : typeArguments) {
