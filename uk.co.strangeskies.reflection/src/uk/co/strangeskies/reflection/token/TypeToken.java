@@ -1008,57 +1008,6 @@ public class TypeToken<T>
 	}
 
 	/**
-	 * Determine the super type of this type which is either equal to the given
-	 * superclass or a parameterization thereof.
-	 * 
-	 * @param superclass
-	 *          the class of the supertype parameterization we wish to determine
-	 * @return the supertype of the requested class
-	 */
-	@SuppressWarnings("unchecked")
-	public <U> TypeToken<? extends U> resolveSupertype(Class<U> superclass) {
-		Type type = getUpperBounds().filter(t -> Types.isAssignable(t, superclass)).findFirst().orElseThrow(
-				() -> new ReflectionException(p -> p.cannotResolveSupertype(getType(), superclass)));
-
-		return (TypeToken<? extends U>) forType(
-				getBounds(),
-				ParameterizedTypes.resolveSupertype(type, superclass),
-				Wildcards.RETAIN);
-	}
-
-	/**
-	 * Determine the recursive sequence of direct supertypes of this type which
-	 * lead to either the given superclass or a parameterization thereof.
-	 * 
-	 * @param <U>
-	 *          the superclass type
-	 * @param superclass
-	 *          the class of the supertype parameterization we wish to determine
-	 * @return a stream returning the given type and then each direct supertype
-	 *         recursively until the given superclass, or a parameterization
-	 *         thereof, is reached
-	 */
-	@SuppressWarnings("unchecked")
-	public <U> Stream<TypeToken<? extends U>> resolveDirectSupertypeHierarchy(Class<U> superclass) {
-		Type type = getUpperBounds().filter(t -> Types.isAssignable(t, superclass)).findFirst().orElseThrow(
-				() -> new ReflectionException(p -> p.cannotResolveSupertype(getType(), superclass)));
-
-		Stream<TypeToken<? extends U>> supertypeHierarchy = ParameterizedTypes
-				.resolveDirectSupertypeHierarchy(type, superclass)
-				.map(t -> (TypeToken<? extends U>) forType(getBounds(), t, Wildcards.RETAIN));
-
-		if (type != this.type) {
-			supertypeHierarchy = Stream.concat(Stream.of((TypeToken<? extends U>) this), supertypeHierarchy);
-		}
-
-		return supertypeHierarchy;
-	}
-
-	public <U> Stream<TypeToken<? extends U>> resolveCompleteSupertypeHierarchy(Class<U> superclass) {
-		
-	}
-
-	/**
 	 * This method will attempt to substitute any inference variables mentioned by
 	 * this type with their instantiations, if instantiations are available, and
 	 * return a TypeToken over the resulting type.
@@ -1243,6 +1192,13 @@ public class TypeToken<T>
 	public ExecutableTokenQuery<ExecutableToken<T, ?>, ?> methods() {
 		Stream<Method> methodStream = getRawTypes().flatMap(t -> Arrays.stream(t.getMethods()));
 
+		/*
+		 * TODO resolve entire type hierarchy once and reduce to a map from raw
+		 * class to parameterized version, that way we know the exact invocation type
+		 * for everything without repeating calculations.
+		 */
+		xxx
+
 		if (getRawTypes().allMatch(Types::isInterface))
 			methodStream = Stream.concat(methodStream, Arrays.stream(Object.class.getMethods()));
 
@@ -1283,9 +1239,8 @@ public class TypeToken<T>
 	@Override
 	public Stream<TypeParameter<?>> getTypeParameters() {
 		if (getType() instanceof ParameterizedType) {
-			return ParameterizedTypes
-					.getAllTypeParameters((Class<?>) ((ParameterizedType) getType()).getRawType())
-					.map(e -> forTypeVariable(e));
+			return ParameterizedTypes.getAllTypeParameters((Class<?>) ((ParameterizedType) getType()).getRawType()).map(
+					e -> forTypeVariable(e));
 		} else {
 			return Stream.empty();
 		}
@@ -1307,9 +1262,8 @@ public class TypeToken<T>
 				getBounds(),
 				(a, b) -> a.withBounds(b));
 
-		Map<TypeVariable<?>, Type> argumentMap = arguments
-				.stream()
-				.collect(toMap(TypeArgument::getParameter, TypeArgument::getType));
+		Map<TypeVariable<?>, Type> argumentMap = arguments.stream().collect(
+				toMap(TypeArgument::getParameter, TypeArgument::getType));
 
 		return new TypeToken<>(bounds, new TypeSubstitution(argumentMap).resolve(getType()));
 	}

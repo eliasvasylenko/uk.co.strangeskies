@@ -197,9 +197,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	}
 
 	protected InferenceVariableBoundsImpl withInferenceVariableSubstitution(Isomorphism isomorphism) {
-		InferenceVariable inferenceVariableSubstitution = (InferenceVariable) isomorphism
-				.byIdentity()
-				.getMapping(inferenceVariable);
+		InferenceVariable inferenceVariableSubstitution = (InferenceVariable) isomorphism.byIdentity().getMapping(
+				inferenceVariable);
 
 		InferenceVariableBoundsImpl copy = new InferenceVariableBoundsImpl(boundSet, inferenceVariableSubstitution);
 
@@ -592,10 +591,9 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 
 				for (Bound equality : new ArrayList<>(otherBounds.bounds.values()))
 					if (equality.getKind() == EQUAILTY && equality.isProper())
-						boundSet.getBoundsOnImpl(otherBounds.inferenceVariable).incorporateProperSubtypeSubstitution(
-								equality.getType(),
-								inferenceVariable,
-								bound);
+						boundSet
+								.getBoundsOnImpl(otherBounds.inferenceVariable)
+								.incorporateProperSubtypeSubstitution(equality.getType(), inferenceVariable, bound);
 			});
 		}
 	}
@@ -644,10 +642,9 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 
 				for (Bound equality : new ArrayList<>(otherBounds.bounds.values()))
 					if (equality.getKind() == EQUAILTY && equality != bound && equality.isProper())
-						boundSet.getBoundsOnImpl(otherBounds.inferenceVariable).incorporateProperSupertypeSubstitution(
-								equality.getType(),
-								bound,
-								inferenceVariable);
+						boundSet
+								.getBoundsOnImpl(otherBounds.inferenceVariable)
+								.incorporateProperSupertypeSubstitution(equality.getType(), bound, inferenceVariable);
 			});
 		}
 	}
@@ -747,8 +744,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				@Override
 				protected void visitClass(Class<?> type) {
 					if (type.isAssignableFrom(Types.getRawType(T)) && type.getTypeParameters().length > 0) {
-						Type supertypeS = ParameterizedTypes.resolveSupertype(S, type);
-						Type supertypeT = ParameterizedTypes.resolveSupertype(T, type);
+						Type supertypeS = TypeHierarchy.resolveSupertype(S, type);
+						Type supertypeT = TypeHierarchy.resolveSupertype(T, type);
 
 						Iterator<Type> argumentsS = ParameterizedTypes
 								.getAllTypeArguments((ParameterizedType) supertypeS)

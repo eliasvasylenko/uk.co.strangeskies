@@ -70,7 +70,6 @@ import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeResolver;
 import uk.co.strangeskies.reflection.TypeSubstitution;
 import uk.co.strangeskies.reflection.Types;
-import uk.co.strangeskies.utilities.collection.StreamUtilities;
 
 /**
  * <p>
@@ -415,14 +414,9 @@ public abstract class ExecutableToken<O, R> implements MemberToken<O, Executable
 
 	@SuppressWarnings("unchecked")
 	public <U> ExecutableToken<U, R> getOverride(TypeToken<U> type) {
-		type = type.withConstraintTo(Kind.SUBTYPE, getReceiverType());
-		Class<?> declaringClass = getMember().getDeclaringClass();
-
-		ExecutableToken<?, ?> override = type
-				.resolveCompleteSupertypeHierarchy(declaringClass)
-				.flatMap(this::getValidOverrides)
-				.findFirst()
-				.orElse(this);
+		/*
+		 * Find the most specific overriding method first
+		 */
 
 		return (ExecutableToken<U, R>) override;
 	}
@@ -445,9 +439,22 @@ public abstract class ExecutableToken<O, R> implements MemberToken<O, Executable
 	}
 
 	private boolean isValidOverride(ExecutableToken<?, ?> executable) {
-		StreamUtilities.zip(getParameters(), executable.getParameters(), (a, b) -> {
+		boolean match = true;
+		boolean erasureMatch = true;
 
-		});
+		for (int i = 0; i < parameters.size(); i++) {
+			ExecutableParameter parameter = parameters.get(i);
+			Type otherType = executable.parameters.get(i).getType();
+
+			match = match && parameter.getType().equals(otherType);
+			erasureMatch = erasureMatch && parameter.getErasure().equals(otherType);
+
+			if (!match && !erasureMatch) {
+				return false;
+			}
+		}
+
+		return Types.isAssignable(executable.getReturnType().getType(), to);
 	}
 
 	/*
@@ -470,9 +477,8 @@ public abstract class ExecutableToken<O, R> implements MemberToken<O, Executable
 			declaringType = declaringSubtypeList.get(declaringSubtypeList.size() - 1).getType();
 
 			if (declaringType instanceof ParameterizedType) {
-				boolean declaringTypeIsExact = !declaringSubtypeList
-						.stream()
-						.anyMatch(t -> t.getType() instanceof InferenceVariable);
+				boolean declaringTypeIsExact = !declaringSubtypeList.stream().anyMatch(
+						t -> t.getType() instanceof InferenceVariable);
 
 				if (declaringTypeIsExact && stream(((ParameterizedType) declaringType).getActualTypeArguments())
 						.anyMatch(WildcardType.class::isInstance)) {

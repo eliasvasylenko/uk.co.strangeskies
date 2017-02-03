@@ -63,43 +63,6 @@ import java.util.stream.Collectors;
  * constraint formulae, and then ultimately into a number of bounds, which in
  * turn may be incorporated into a {@link BoundSet}.
  * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * TODO
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
  * @author Elias N Vasylenko
  */
 public class ConstraintFormula {
@@ -263,7 +226,7 @@ public class ConstraintFormula {
 		Class<?> fromRaw = Types.getRawType(from);
 
 		if (to instanceof ParameterizedType) {
-			return toRaw.isAssignableFrom(fromRaw) && ParameterizedTypes.resolveSupertype(from, toRaw) instanceof Class;
+			return toRaw.isAssignableFrom(fromRaw) && TypeHierarchy.resolveSupertype(from, toRaw) instanceof Class;
 
 		} else if (to instanceof GenericArrayType) {
 			return fromRaw.isArray() && isUncheckedCompatibleOnly(Types.getComponentType(from), Types.getComponentType(to));
@@ -345,7 +308,7 @@ public class ConstraintFormula {
 					for (Type from : fromSet) {
 						if (rawType.isAssignableFrom(Types.getRawType(from)) && from instanceof ParameterizedType) {
 
-							ParameterizedType fromParameterization = (ParameterizedType) ParameterizedTypes
+							ParameterizedType fromParameterization = (ParameterizedType) TypeHierarchy
 									.resolveSupertype(from, rawType);
 							if (!(fromParameterization instanceof ParameterizedType))
 								/*

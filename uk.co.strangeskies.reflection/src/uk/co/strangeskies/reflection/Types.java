@@ -789,7 +789,7 @@ public final class Types {
 			if (!matchedClass.isAssignableFrom(getRawType(subtype))) {
 				assignable = false;
 			} else {
-				Type subtypeParameterization = ParameterizedTypes.resolveSupertype(subtype, matchedClass);
+				Type subtypeParameterization = TypeHierarchy.resolveSupertype(subtype, matchedClass);
 
 				if (!(subtypeParameterization instanceof ParameterizedType))
 					assignable = false;
@@ -1268,7 +1268,7 @@ public final class Types {
 		Map<Class<?>, ParameterizedType> supertypes = new HashMap<>();
 
 		RecursiveTypeVisitor.build().visitSupertypes().classVisitor(type -> {
-			Type parameterized = ParameterizedTypes.resolveSupertype(of, type);
+			Type parameterized = TypeHierarchy.resolveSupertype(of, type);
 			supertypes.put(type, (parameterized instanceof ParameterizedType) ? (ParameterizedType) parameterized : null);
 		}).parameterizedTypeVisitor(type -> supertypes.put(getRawType(type), type)).create().visit(of);
 
