@@ -111,9 +111,9 @@ public final class Types {
 	 * with a generic class as a component type.
 	 * 
 	 * @param type
-	 *          The type we wish to classify.
-	 * @return True if the given class is generic or if a non-statically enclosing
-	 *         class is generic, false otherwise.
+	 *          the type we wish to classify
+	 * @return true if the given class is generic or if a non-statically enclosing
+	 *         class is generic, false otherwise
 	 */
 	public static boolean isGeneric(Class<?> type) {
 		while (type.isArray()) {
@@ -126,6 +126,19 @@ public final class Types {
 		} while (!Types.isStatic(type) && (type = type.getEnclosingClass()) != null);
 
 		return false;
+	}
+
+	/**
+	 * Determine whether a type is raw, i.e. a generic type without a
+	 * parameterization.
+	 * 
+	 * @param type
+	 *          the type we wish to classify
+	 * @return true if the given class is raw or if a non-statically enclosing
+	 *         class is raw, false otherwise
+	 */
+	public static boolean isRaw(Type type) {
+		return type instanceof Class<?> && isGeneric((Class<?>) type);
 	}
 
 	/**
@@ -935,16 +948,14 @@ public final class Types {
 	 */
 	public static boolean isLooseInvocationContextCompatible(Type from, Type to) {
 		if (from instanceof IntersectionType) {
-			return Arrays
-					.stream(((IntersectionType) from).getTypes())
-					.anyMatch(f -> isLooseInvocationContextCompatible(f, to));
+			return Arrays.stream(((IntersectionType) from).getTypes()).anyMatch(
+					f -> isLooseInvocationContextCompatible(f, to));
 
 		}
 
 		if (to instanceof IntersectionType) {
-			return Arrays
-					.stream(((IntersectionType) to).getTypes())
-					.allMatch(t -> isLooseInvocationContextCompatible(from, t));
+			return Arrays.stream(((IntersectionType) to).getTypes()).allMatch(
+					t -> isLooseInvocationContextCompatible(from, t));
 
 		}
 

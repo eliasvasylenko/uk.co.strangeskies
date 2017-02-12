@@ -146,7 +146,9 @@ public class TypeVariables {
 	 * @return An instance of {@link WildcardType} representing a wildcard with
 	 *         the given upper bound.
 	 */
-	public static <T extends GenericDeclaration> TypeVariable<T> typeVariableExtending(T declaration, String name,
+	public static <T extends GenericDeclaration> TypeVariable<T> typeVariableExtending(
+			T declaration,
+			String name,
 			AnnotatedType... bounds) {
 		return typeVariableExtending(declaration, name, Arrays.asList(bounds));
 	}
@@ -165,7 +167,9 @@ public class TypeVariables {
 	 * @return An instance of {@link WildcardType} representing a wildcard with
 	 *         the given upper bound.
 	 */
-	public static <T extends GenericDeclaration> TypeVariable<T> typeVariableExtending(T declaration, String name,
+	public static <T extends GenericDeclaration> TypeVariable<T> typeVariableExtending(
+			T declaration,
+			String name,
 			Collection<? extends AnnotatedType> bounds) {
 		return typeVariableExtending(declaration, name, Collections.emptySet(), bounds);
 	}
@@ -186,8 +190,11 @@ public class TypeVariables {
 	 * @return An instance of {@link WildcardType} representing a wildcard with
 	 *         the given upper bound.
 	 */
-	public static <T extends GenericDeclaration> TypeVariable<T> typeVariableExtending(T declaration, String name,
-			Collection<Annotation> annotations, AnnotatedType... bounds) {
+	public static <T extends GenericDeclaration> TypeVariable<T> typeVariableExtending(
+			T declaration,
+			String name,
+			Collection<Annotation> annotations,
+			AnnotatedType... bounds) {
 		return typeVariableExtending(declaration, name, annotations, Arrays.asList(bounds));
 	}
 
@@ -207,8 +214,11 @@ public class TypeVariables {
 	 * @return An instance of {@link WildcardType} representing a wildcard with
 	 *         the given upper bound.
 	 */
-	public static <T extends GenericDeclaration> TypeVariable<T> typeVariableExtending(T declaration, String name,
-			Collection<Annotation> annotations, Collection<? extends AnnotatedType> bounds) {
+	public static <T extends GenericDeclaration> TypeVariable<T> typeVariableExtending(
+			T declaration,
+			String name,
+			Collection<Annotation> annotations,
+			Collection<? extends AnnotatedType> bounds) {
 		AnnotatedType[] annotatedBounds = bounds.toArray(new AnnotatedType[bounds.size()]);
 
 		return new TypeVariable<T>() {

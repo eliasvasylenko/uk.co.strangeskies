@@ -2,6 +2,7 @@ package uk.co.strangeskies.reflection.token;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Stream.empty;
 import static uk.co.strangeskies.reflection.token.TypeParameter.forTypeVariable;
 
 import java.lang.reflect.Executable;
@@ -10,6 +11,7 @@ import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -37,7 +39,7 @@ public interface DeclarationToken<S extends DeclarationToken<S>> {
 	/**
 	 * @return the declaration directly enclosing this declaration
 	 */
-	DeclarationToken<?> getOwningDeclaration();
+	Optional<? extends DeclarationToken<?>> getOwningDeclaration();
 
 	/**
 	 * @return the count of all generic type parameters of the declaration and any
@@ -47,7 +49,7 @@ public interface DeclarationToken<S extends DeclarationToken<S>> {
 		if (isRaw())
 			return 0;
 		else
-			return getTypeParameterCount() + getOwningDeclaration().getAllTypeParameterCount();
+			return getTypeParameterCount() + getOwningDeclaration().map(DeclarationToken::getAllTypeParameterCount).orElse(0);
 	}
 
 	/**
@@ -58,7 +60,9 @@ public interface DeclarationToken<S extends DeclarationToken<S>> {
 		if (isRaw())
 			return Stream.empty();
 		else
-			return Stream.concat(getTypeParameters(), getOwningDeclaration().getAllTypeParameters());
+			return Stream.concat(
+					getTypeParameters(),
+					getOwningDeclaration().map(DeclarationToken::getAllTypeParameters).orElse(empty()));
 	}
 
 	/**
@@ -69,7 +73,9 @@ public interface DeclarationToken<S extends DeclarationToken<S>> {
 		if (isRaw())
 			return Stream.empty();
 		else
-			return Stream.concat(getTypeArguments(), getOwningDeclaration().getAllTypeArguments());
+			return Stream.concat(
+					getTypeArguments(),
+					getOwningDeclaration().map(DeclarationToken::getAllTypeArguments).orElse(empty()));
 	}
 
 	/**

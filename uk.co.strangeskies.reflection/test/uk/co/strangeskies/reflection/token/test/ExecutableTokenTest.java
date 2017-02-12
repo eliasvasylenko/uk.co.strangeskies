@@ -35,13 +35,15 @@ package uk.co.strangeskies.reflection.token.test;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
+import static org.hamcrest.core.Every.everyItem;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.Assert.assertThat;
-import static uk.co.strangeskies.reflection.token.ExecutableToken.overConstructor;
+import static uk.co.strangeskies.reflection.token.ExecutableToken.overInnerConstructor;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.staticMethods;
 
+import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.List;
@@ -67,11 +69,11 @@ public class ExecutableTokenTest {
 
 	@Test
 	public void methodWithDefaultTypeArguments() throws NoSuchMethodException, SecurityException {
-		ExecutableToken<?, ?> method = ExecutableToken.overMethod(Outer.class.getMethod("method"));
+		ExecutableToken<?, ?> method = ExecutableToken.overMethod(Outer.class.getMethod("method")).parameterize();
 
-		assertThat(
-				method.getAllTypeArguments().map(TypeArgument::getType).collect(toList()),
-				contains(instanceOf(TypeVariable.class)));
+		List<Type> typeArguments = method.getAllTypeArguments().map(TypeArgument::getType).collect(toList());
+
+		assertThat(typeArguments, everyItem(instanceOf(TypeVariable.class)));
 	}
 
 	@Test
@@ -86,6 +88,7 @@ public class ExecutableTokenTest {
 	public void constructorWithWrongEnclosingTypeTest() {
 		ExecutableToken
 				.overInnerConstructor(Inner.class.getConstructors()[0])
+				.parameterize()
 				.withReceiverType(new TypeToken<Outer<Number>>() {})
 				.withTargetType(new TypeToken<Outer<Integer>.Inner<Integer>>() {});
 	}
@@ -94,14 +97,20 @@ public class ExecutableTokenTest {
 	@Test
 	public void constructorWithRawEnclosingTypeTest() {
 		ExecutableToken
-				.overConstructor(Inner.class.getConstructors()[0])
+				.overInnerConstructor(Inner.class.getConstructors()[0])
 				.withReceiverType(new TypeToken<Outer<Number>>() {})
 				.withTargetType(new TypeToken<Outer.Inner>() {});
 	}
 
+	@Test(expected = ReflectionException.class)
+
+	public void overInnerConstructorWithoutSpecifying() {
+		ExecutableToken.overConstructor(Inner.class.getConstructors()[0]);
+	}
+
 	@Test
 	public void constructorWithUninferredEnclosingTypeTest() {
-		ExecutableToken<?, ?> constructor = overConstructor(Inner.class.getConstructors()[0])
+		ExecutableToken<?, ?> constructor = overInnerConstructor(Inner.class.getConstructors()[0])
 				.withReceiverType(new TypeToken<Outer<Number>>() {})
 				.withTargetType(new @Infer TypeToken<Outer<? super Number>.Inner<Integer>>() {});
 

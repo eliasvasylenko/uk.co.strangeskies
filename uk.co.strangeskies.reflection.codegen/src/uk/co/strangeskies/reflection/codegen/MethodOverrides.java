@@ -38,7 +38,7 @@ import static java.util.stream.Stream.concat;
 import static uk.co.strangeskies.reflection.codegen.ErasedMethodSignature.erasedMethodSignature;
 import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.declareMethod;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.overMethod;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.streamNullable;
+import static uk.co.strangeskies.utilities.collection.StreamUtilities.streamOptional;
 
 import java.lang.reflect.Method;
 import java.util.AbstractMap.SimpleEntry;
@@ -89,7 +89,7 @@ public class MethodOverrides<T> {
 
 	protected ExecutableToken<?, ?> getInvocable(Method method) {
 		ExecutableToken<?, ?> token = invocables
-				.computeIfAbsent(method, m -> overMethod(method, classDeclaration.getSuperType()));
+				.computeIfAbsent(method, m -> overMethod(method).withTargetType(classDeclaration.getSuperType()));
 
 		return token;
 	}

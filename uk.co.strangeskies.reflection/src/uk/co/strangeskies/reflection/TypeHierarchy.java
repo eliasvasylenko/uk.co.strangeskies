@@ -18,6 +18,18 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Stream;
 
+class Fuk<T> {
+	public void ass(T t) {}
+}
+
+interface Kig {
+	void ass(String s);
+}
+
+class Pog extends Fuk<String> implements Kig {
+	
+}
+
 public class TypeHierarchy {
 	/**
 	 * Determine the recursive sequence of direct supertypes of a given type which

@@ -427,7 +427,7 @@ public class TypeTokenTest {
 				new TypeToken<Collection<? extends String>>() {}
 						.getExtending(Wildcards.INFER)
 						.withConstraintTo(SUBTYPE, new TypeToken<ArrayList<?>>() {}.getType())
-						.infer());
+						.resolve());
 		printlines();
 
 		printlines(
@@ -437,7 +437,7 @@ public class TypeTokenTest {
 						.named("add")
 						.resolveOverload(Integer.class)
 						.getReceiverType()
-						.infer());
+						.resolve());
 		printlines();
 
 		printlines(new TypeToken<@Infer List<@Infer ? extends Number>>() {}.getBounds());
@@ -455,7 +455,7 @@ public class TypeTokenTest {
 				new TypeToken<@Infer Collection<? extends String>>() {}
 						.getExtending(Wildcards.INFER)
 						.withConstraintTo(SUBTYPE, new TypeToken<ArrayList<? super String>>() {}.getType())
-						.infer()
+						.resolve()
 						.resolveSupertype(Iterable.class));
 		printlines();
 
@@ -470,7 +470,7 @@ public class TypeTokenTest {
 						.named("add")
 						.resolveOverload(Double.class)
 						.getReceiverType()
-						.infer());
+						.resolve());
 		printlines();
 
 		printlines(new TypeToken<HashMap<?, ?>>() {}.getExtending(Wildcards.INFER).constructors().resolveOverload());
@@ -555,7 +555,7 @@ public class TypeTokenTest {
 						.methods()
 						.named("add")
 						.resolveOverload(new TypeToken<StringBuffer>() {})
-						.infer());
+						.resolve());
 		printlines();
 
 		printlines(
@@ -564,7 +564,7 @@ public class TypeTokenTest {
 						.named("addAll")
 						.resolveOverload(
 								new @Infer TypeToken<ArrayList<? super Integer>>() {}.constructors().resolveOverload().getReturnType())
-						.infer());
+						.resolve());
 		printlines();
 
 		printlines(
@@ -573,7 +573,7 @@ public class TypeTokenTest {
 						.resolveOverload(
 								new @Infer TypeToken<ArrayList<? super Integer>>() {}.constructors().resolveOverload().getReturnType())
 						.getReturnType()
-						.infer());
+						.resolve());
 		printlines();
 
 		TypeToken<?> bball = new @Infer TypeToken<HashSet<? super Double>>() {}
@@ -595,7 +595,7 @@ public class TypeTokenTest {
 
 		eqselente = eqselente.withConstraintTo(SUBTYPE, dc);
 		printlines(eqselente.getBounds());
-		printlines(eqselente.infer());
+		printlines(eqselente.resolve());
 		printlines();
 
 		printlines(new TypeToken<List<? extends String>>() {});
@@ -747,7 +747,7 @@ public class TypeTokenTest {
 						.methods()
 						.named("baseModel")
 						.resolveOverload(new TypeToken<Model<?>>() {})
-						.infer()
+						.resolve()
 						.getBounds());
 		printlines();
 

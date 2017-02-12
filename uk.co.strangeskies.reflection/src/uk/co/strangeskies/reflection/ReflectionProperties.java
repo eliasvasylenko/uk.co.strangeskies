@@ -185,4 +185,6 @@ public interface ReflectionProperties {
 	 * declaration and so cannot be parameterized.
 	 */
 	Localized<String> cannotParameterizeOnDeclaration(TypeVariable<?> type, GenericDeclaration declaration);
+
+	Localized<String> cannotOverrideConstructor(Executable member, Type type);
 }

@@ -43,6 +43,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.BoundSet;
@@ -187,7 +188,7 @@ public class FieldToken<O, T> implements MemberToken<O, FieldToken<O, T>> {
 	}
 
 	@Override
-	public TypeToken<O> getReceiverType() {
+	public TypeToken<? super O> getReceiverType() {
 		return receiverType;
 	}
 
@@ -239,8 +240,8 @@ public class FieldToken<O, T> implements MemberToken<O, FieldToken<O, T>> {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public FieldToken<O, T> infer() {
-		return (FieldToken<O, T>) overField(getMember(), receiverType.infer());
+	public FieldToken<O, T> resolve() {
+		return (FieldToken<O, T>) overField(getMember(), receiverType.resolve());
 	}
 
 	/**
@@ -286,7 +287,7 @@ public class FieldToken<O, T> implements MemberToken<O, FieldToken<O, T>> {
 	}
 
 	@Override
-	public DeclarationToken<?> getOwningDeclaration() {
+	public Optional<? extends DeclarationToken<?>> getOwningDeclaration() {
 		// TODO Auto-generated method stub
 		return null;
 	}

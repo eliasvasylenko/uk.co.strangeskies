@@ -196,13 +196,13 @@ public interface MemberToken<T, S extends MemberToken<T, S>> extends Declaration
 	 * 
 	 * @return the derived {@link MemberToken} with inferred types
 	 */
-	S infer();
+	S resolve();
 
 	/**
 	 * @return true if the member is declared on a raw type, false otherwise
 	 */
 	@Override
 	default boolean isRaw() {
-		return getOwningDeclaration().isRaw();
+		return getOwningDeclaration().map(DeclarationToken::isRaw).get();
 	}
 }

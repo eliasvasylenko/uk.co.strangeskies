@@ -253,9 +253,7 @@ public class InferenceVariable implements Type {
 			}
 
 			@Override
-			protected void visitTypeVariable(TypeVariable<?> type) {
-				visit(type.getBounds());
-			}
+			protected void visitTypeVariable(TypeVariable<?> type) {}
 
 			@Override
 			protected void visitInferenceVariable(InferenceVariable type) {

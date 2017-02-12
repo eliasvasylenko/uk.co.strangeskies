@@ -337,7 +337,7 @@ public class ExecutableTokenQuery<I extends ExecutableToken<?, ?>, E extends Mem
 			if (firstCandidate.isVariableArityDefinition()) {
 				parameters--;
 
-				resolver.reduce(
+				resolver.reduceConstraint(
 						new ConstraintFormula(
 								Kind.SUBTYPE,
 								firstParameters.get(parameters).getType(),
@@ -345,11 +345,11 @@ public class ExecutableTokenQuery<I extends ExecutableToken<?, ?>, E extends Mem
 			}
 
 			for (int i = 0; i < parameters; i++) {
-				resolver.reduce(
+				resolver.reduceConstraint(
 						new ConstraintFormula(Kind.SUBTYPE, firstParameters.get(i).getType(), genericParameters.get(i).getType()));
 			}
 
-			resolver.infer();
+			resolver.resolve();
 		} catch (Exception e) {
 			return false;
 		}

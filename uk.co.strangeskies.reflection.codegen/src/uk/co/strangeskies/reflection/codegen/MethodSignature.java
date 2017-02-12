@@ -47,6 +47,7 @@ import java.util.Set;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.token.ExecutableToken;
+import uk.co.strangeskies.reflection.token.TypeParameter;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> {
@@ -72,7 +73,11 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 				.withReturnType(method.getReturnType().getType())
 				.asDefault(((Method) method.getMember()).isDefault())
 				.withTypeVariables(
-						method.getTypeParameters().map(TypeVariableSignature::typeVariableSignature).collect(toList()))
+						method
+								.getTypeParameters()
+								.map(TypeParameter::getType)
+								.map(TypeVariableSignature::typeVariableSignature)
+								.collect(toList()))
 				.withParameters(method.getParameters().map(ParameterSignature::overrideParameterSignature).collect(toList()));
 	}
 

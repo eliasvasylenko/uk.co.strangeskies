@@ -405,6 +405,13 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	}
 
 	/**
+	 * @return true if the set contains no actual bounds, false otherwise
+	 */
+	public boolean isEmpty() {
+		return inferenceVariableBounds.isEmpty();
+	}
+
+	/**
 	 * @return A set of all inference variables contained by this bound set.
 	 */
 	public Stream<InferenceVariableBounds> getInferenceVariableBounds() {
@@ -497,6 +504,12 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	 * @return the derived bound set
 	 */
 	public BoundSet withBounds(BoundSet boundSet) {
+		if (boundSet.isEmpty())
+			return this;
+
+		if (isEmpty())
+			return boundSet;
+
 		BoundSet copy = copyInternal();
 		copy.incorporate(boundSet);
 		return copy;

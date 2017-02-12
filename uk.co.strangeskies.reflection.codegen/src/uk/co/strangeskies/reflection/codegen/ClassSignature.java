@@ -267,7 +267,7 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 	 * @return the receiver
 	 */
 	public <U> ClassSignature<? extends U> withSuperType(Class<U> superType) {
-		return withSuperType(TypeToken.forParameterizedType(superType));
+		return withSuperType(TypeToken.forClass(superType));
 	}
 
 	/**
