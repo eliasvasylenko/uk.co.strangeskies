@@ -528,7 +528,7 @@ public class TypeTokenTest {
 		printlines(getIteratorExtending(new @Infer TypeToken<List<? extends String>>() {}));
 		printlines();
 
-		printlines(getIteratorExtending(new @Infer TypeToken<List<? extends String>>() {}).infer());
+		printlines(getIteratorExtending(new @Infer TypeToken<List<? extends String>>() {}).resolve());
 		printlines();
 
 		ExecutableToken<?, ?> blurner = new @Infer TypeToken<Blurn<? extends List<? extends Number>>>() {}
@@ -729,8 +729,9 @@ public class TypeTokenTest {
 		printlines();
 
 		printlines(
-				"annotationseq: " + AnnotatedWildcardTypes.wildcard().equals(
-						AnnotatedWildcardTypes.wildcardExtending(AnnotatedTypes.annotated(Object.class))));
+				"annotationseq: " + AnnotatedWildcardTypes
+						.wildcard()
+						.equals(AnnotatedWildcardTypes.wildcardExtending(AnnotatedTypes.annotated(Object.class))));
 		printlines();
 
 		Imports imports2 = Imports.empty().withImports(Infer.class, Capture.class, Set.class, Map.class);

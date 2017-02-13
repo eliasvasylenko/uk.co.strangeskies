@@ -175,7 +175,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 	 *          the constructor to wrap
 	 * @return an executable member wrapping the given constructor
 	 */
-	public static ExecutableToken<Void, ?> overConstructor(Constructor<?> constructor) {
+	public static ExecutableToken<Void, ?> forConstructor(Constructor<?> constructor) {
 		if (!Modifier.isStatic(constructor.getDeclaringClass().getModifiers())) {
 			throw new ReflectionException(m -> m.declaringClassMustBeStatic(constructor));
 		}
@@ -194,7 +194,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 	 *          the constructor to wrap
 	 * @return an executable member wrapping the given method
 	 */
-	public static ExecutableToken<?, ?> overInnerConstructor(Constructor<?> constructor) {
+	public static ExecutableToken<?, ?> forInnerConstructor(Constructor<?> constructor) {
 		return new ExecutableToken<>(constructor.getDeclaringClass().getEnclosingClass(), constructor);
 	}
 
@@ -210,7 +210,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 	 *          the method to wrap
 	 * @return an executable member wrapping the given method
 	 */
-	public static ExecutableToken<Void, ?> overStaticMethod(Method method) {
+	public static ExecutableToken<Void, ?> forStaticMethod(Method method) {
 		if (!Modifier.isStatic(method.getModifiers())) {
 			throw new ReflectionException(m -> m.methodMustBeStatic(method));
 		}
@@ -229,7 +229,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 	 *          the method to wrap
 	 * @return an executable member wrapping the given method
 	 */
-	public static ExecutableToken<?, ?> overMethod(Method method) {
+	public static ExecutableToken<?, ?> forMethod(Method method) {
 		return new ExecutableToken<>(method.getDeclaringClass(), method);
 	}
 
@@ -291,7 +291,8 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 	 * @return the parameterized version of the executable where applicable, else
 	 *         the executable
 	 */
-	public ExecutableToken<? extends O, R> parameterize() {
+	@Override
+	public ExecutableToken<O, R> parameterize() {
 		if (isRaw()) {
 			@SuppressWarnings("unchecked")
 			TypeToken<? extends R> returnType = isConstructor() ? getReturnType().parameterize()
@@ -500,10 +501,56 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 	}
 
 	@Override
-	public ExecutableToken<O, R> withReceiverType(Type type) {
-		return withBounds(receiverType.withConstraintFrom(Kind.SUBTYPE, type).getBounds());
+	public ExecutableToken<O, R> withReceiverType(TypeToken<?> type) {
+		if (!type.satisfiesConstraintTo(SUBTYPE, getReceiverType())) {
+			throw new ReflectionException(m -> m.cannotResolveOverride(getMember(), type.getType()));
+		}
+
+		if (!isGeneric()) {
+			return this;
+		}
+
+		Class<?> rawType = getReceiverType().getRawType();
+		@SuppressWarnings("unchecked")
+		TypeToken<? extends O> receiverType = (TypeToken<? extends O>) type.resolveSupertype(rawType);
+
+		if (receiverType.isRaw()) {
+			if (isRaw()) {
+				return this;
+			} else {
+				/*
+				 * If the requested receiver type is raw but this isn't the preceding
+				 * subtype check should have already failed.
+				 */
+				throw new AssertionError();
+			}
+		} else if (isRaw()) {
+			return parameterize().withTypeArguments(receiverType.getAllTypeArguments().collect(toList()));
+		} else {
+			/*
+			 * TODO replace wildcards with more specific (i.e. contained) types,
+			 * replace type variables with instantiations, replace inference variables
+			 * with equality constraints.
+			 */
+			return withBounds(receiverType.withConstraintFrom(Kind.SUBTYPE, type).getBounds());
+		}
 	}
 
+	@Override
+	public ExecutableToken<O, R> withReceiverType(Type type) {
+		return withReceiverType(forType(type));
+	}
+
+	/**
+	 * Get the overriding method in the given type, or the same method if there is
+	 * no override.
+	 * 
+	 * @param <U>
+	 *          the type possibly containing the override
+	 * @param type
+	 *          the type possibly containing the override
+	 * @return the override
+	 */
 	@SuppressWarnings("unchecked")
 	public <U> ExecutableToken<U, R> getOverride(TypeToken<U> type) {
 		boolean matchingRawType = (type.getType() instanceof Class<?> || type.getType() instanceof ParameterizedType)
@@ -538,7 +585,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 			 * erased signature is different we will still find a bridge.
 			 */
 			override = StreamUtilities
-					.<Class<?>>iterate(type.getRawType(), Class::getSuperclass)
+					.<Class<?>> iterate(type.getRawType(), Class::getSuperclass)
 					.flatMap(
 							t -> streamOptional(
 									tryOptional(() -> getRawType(t).getDeclaredMethod(getName(), getMember().getParameterTypes()))))
@@ -935,6 +982,11 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 	}
 
 	private TypeToken<? extends R> determineReturnType(BoundSet bounds, TypeSubstitution typeArguments) {
+		/*
+		 * TODO base this on a full substitution from the raw parameterization
+		 * rather than a partial substitution from the current parameterization.
+		 * That way we can deal with replacement arguments e.g. from infer()
+		 */
 		if (getReturnType().getType() instanceof Class<?>) {
 			return getReturnType();
 		} else {
@@ -1109,6 +1161,6 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 		Stream<Method> methodStream = stream(declaringClass.getDeclaredMethods())
 				.filter(m -> Modifier.isStatic(m.getModifiers()));
 
-		return executableQuery(methodStream, ExecutableToken::overStaticMethod);
+		return executableQuery(methodStream, ExecutableToken::forStaticMethod);
 	}
 }

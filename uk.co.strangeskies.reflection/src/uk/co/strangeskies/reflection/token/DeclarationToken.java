@@ -37,6 +37,15 @@ public interface DeclarationToken<S extends DeclarationToken<S>> {
 	boolean isRaw();
 
 	/**
+	 * If the declaration is raw, parameterize it with its own type parameters,
+	 * otherwise return the declaration itself.
+	 * 
+	 * @return the parameterized version of the declaration where applicable, else
+	 *         the unmodified declaration
+	 */
+	S parameterize();
+
+	/**
 	 * @return the declaration directly enclosing this declaration
 	 */
 	Optional<? extends DeclarationToken<?>> getOwningDeclaration();

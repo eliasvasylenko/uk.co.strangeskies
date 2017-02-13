@@ -150,6 +150,12 @@ public interface MemberToken<T, S extends MemberToken<T, S>> extends Declaration
 	 * type, new type arguments will be inferred in their place, or further bounds
 	 * may be added to them.
 	 * 
+	 * <p>
+	 * This may result in unsafe transformations when we convert from a raw
+	 * receiver to a parameterized receiver, but declarations of those types
+	 * should give a raw type warning from the Java compiler and this is
+	 * considered sufficient.
+	 * 
 	 * @param type
 	 *          The new owner type. The raw type of this type must be a subtype of
 	 *          the raw type of the current receiver type.
@@ -176,6 +182,11 @@ public interface MemberToken<T, S extends MemberToken<T, S>> extends Declaration
 	 * which are less specific that those implied by the <em>current</em> receiver
 	 * type, new type arguments will be inferred in their place, or further bounds
 	 * may be added to them.
+	 * 
+	 * <p>
+	 * If the receiver type is not generic, the method will always return the same
+	 * token, or will throw an exception if the given type is not a subtype of the
+	 * receiver.
 	 * 
 	 * @param type
 	 *          The new owner type. The raw type of this type must be a subtype of

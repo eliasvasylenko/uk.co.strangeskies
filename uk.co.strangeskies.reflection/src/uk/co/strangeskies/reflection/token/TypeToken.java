@@ -39,8 +39,8 @@ import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
 import static uk.co.strangeskies.reflection.BoundSet.emptyBoundSet;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardExtending;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardSuper;
-import static uk.co.strangeskies.reflection.token.ExecutableToken.overConstructor;
-import static uk.co.strangeskies.reflection.token.ExecutableToken.overMethod;
+import static uk.co.strangeskies.reflection.token.ExecutableToken.forConstructor;
+import static uk.co.strangeskies.reflection.token.ExecutableToken.forMethod;
 import static uk.co.strangeskies.reflection.token.ExecutableTokenQuery.executableQuery;
 import static uk.co.strangeskies.reflection.token.FieldTokenQuery.fieldQuery;
 import static uk.co.strangeskies.reflection.token.TypeParameter.forTypeVariable;
@@ -621,17 +621,11 @@ public class TypeToken<T>
 		return AnnotatedTypes.toString(declaration, imports);
 	}
 
-	/**
-	 * If the type is a raw type, parameterize it with its own type parameters,
-	 * otherwise return the type itself.
-	 * 
-	 * @return the parameterized version of the type where applicable, else the
-	 *         type
-	 */
+	@Override
 	@SuppressWarnings("unchecked")
-	public TypeToken<? extends T> parameterize() {
+	public TypeToken<T> parameterize() {
 		if (isRaw()) {
-			return (TypeToken<? extends T>) forType(ParameterizedTypes.parameterize(getRawType()));
+			return (TypeToken<T>) forType(ParameterizedTypes.parameterize(getRawType()));
 		} else {
 			return this;
 		}
@@ -1160,7 +1154,7 @@ public class TypeToken<T>
 	public ExecutableTokenQuery<ExecutableToken<Void, T>, ?> constructors() {
 		Stream<Constructor<?>> constructors = stream(getRawType().getConstructors());
 
-		return executableQuery(constructors, m -> overConstructor(m).withTargetType(this));
+		return executableQuery(constructors, m -> forConstructor(m).withTargetType(this));
 	}
 
 	/**
@@ -1172,7 +1166,7 @@ public class TypeToken<T>
 	public ExecutableTokenQuery<ExecutableToken<Void, T>, ?> declaredConstructors() {
 		Stream<Constructor<?>> constructors = stream(getRawType().getDeclaredConstructors());
 
-		return executableQuery(constructors, m -> overConstructor(m).withTargetType(this));
+		return executableQuery(constructors, m -> forConstructor(m).withTargetType(this));
 	}
 
 	/**
@@ -1197,7 +1191,7 @@ public class TypeToken<T>
 
 		methodStream = methodStream.filter(m -> !Modifier.isStatic(m.getModifiers()));
 
-		return executableQuery(methodStream, m -> (ExecutableToken<T, ?>) overMethod(m).withReceiverType(this));
+		return executableQuery(methodStream, m -> (ExecutableToken<T, ?>) forMethod(m).withReceiverType(this));
 	}
 
 	/**
@@ -1212,7 +1206,7 @@ public class TypeToken<T>
 		Stream<Method> methodStream = stream(getRawType().getDeclaredMethods())
 				.filter(m -> !Modifier.isStatic(m.getModifiers()));
 
-		return executableQuery(methodStream, m -> (ExecutableToken<T, ?>) overMethod(m).withReceiverType(this));
+		return executableQuery(methodStream, m -> (ExecutableToken<T, ?>) forMethod(m).withReceiverType(this));
 	}
 
 	@Override
@@ -1232,8 +1226,9 @@ public class TypeToken<T>
 	@Override
 	public Stream<TypeParameter<?>> getTypeParameters() {
 		if (getType() instanceof ParameterizedType) {
-			return ParameterizedTypes.getAllTypeParameters((Class<?>) ((ParameterizedType) getType()).getRawType()).map(
-					e -> forTypeVariable(e));
+			return ParameterizedTypes
+					.getAllTypeParameters((Class<?>) ((ParameterizedType) getType()).getRawType())
+					.map(e -> forTypeVariable(e));
 		} else {
 			return Stream.empty();
 		}
@@ -1255,8 +1250,9 @@ public class TypeToken<T>
 				getBounds(),
 				(a, b) -> a.withBounds(b));
 
-		Map<TypeVariable<?>, Type> argumentMap = arguments.stream().collect(
-				toMap(TypeArgument::getParameter, TypeArgument::getType));
+		Map<TypeVariable<?>, Type> argumentMap = arguments
+				.stream()
+				.collect(toMap(TypeArgument::getParameter, TypeArgument::getType));
 
 		return new TypeToken<>(bounds, new TypeSubstitution(argumentMap).resolve(getType()));
 	}
@@ -1271,10 +1267,10 @@ public class TypeToken<T>
 			 * with anything other than their own type parameters.
 			 */
 			if (rawType.getEnclosingConstructor() != null) {
-				return Optional.of(ExecutableToken.overConstructor(rawType.getEnclosingConstructor()));
+				return Optional.of(ExecutableToken.forConstructor(rawType.getEnclosingConstructor()));
 
 			} else if (rawType.getEnclosingMethod() != null) {
-				return Optional.of(ExecutableToken.overMethod(rawType.getEnclosingMethod()));
+				return Optional.of(ExecutableToken.forMethod(rawType.getEnclosingMethod()));
 
 			} else if (rawType.getEnclosingClass() != null) {
 				return Optional.of(new TypeToken<>(getBounds(), type.getOwnerType()));
@@ -1302,10 +1298,10 @@ public class TypeToken<T>
 								Types.isGeneric(enclosingClass) ? ParameterizedTypes.parameterize(enclosingClass) : enclosingClass));
 
 			} else if (enclosingDeclaration instanceof Method) {
-				return Optional.of(ExecutableToken.overMethod((Method) enclosingDeclaration));
+				return Optional.of(ExecutableToken.forMethod((Method) enclosingDeclaration));
 
 			} else if (enclosingDeclaration instanceof Constructor<?>) {
-				return Optional.of(ExecutableToken.overConstructor((Constructor<?>) enclosingDeclaration));
+				return Optional.of(ExecutableToken.forConstructor((Constructor<?>) enclosingDeclaration));
 
 			} else {
 				return Optional.empty();
