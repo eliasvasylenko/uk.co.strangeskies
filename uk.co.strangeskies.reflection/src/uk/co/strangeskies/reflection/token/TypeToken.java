@@ -37,6 +37,8 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
 import static uk.co.strangeskies.reflection.BoundSet.emptyBoundSet;
+import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
+import static uk.co.strangeskies.reflection.Types.isSubtype;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardExtending;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardSuper;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.forConstructor;
@@ -44,6 +46,9 @@ import static uk.co.strangeskies.reflection.token.ExecutableToken.forMethod;
 import static uk.co.strangeskies.reflection.token.ExecutableTokenQuery.executableQuery;
 import static uk.co.strangeskies.reflection.token.FieldTokenQuery.fieldQuery;
 import static uk.co.strangeskies.reflection.token.TypeParameter.forTypeVariable;
+import static uk.co.strangeskies.utilities.collection.StreamUtilities.streamOptional;
+import static uk.co.strangeskies.utilities.collection.StreamUtilities.tryOptional;
+import static uk.co.strangeskies.utilities.collection.StreamUtilities.zip;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
@@ -64,6 +69,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -85,6 +91,8 @@ import uk.co.strangeskies.reflection.Imports;
 import uk.co.strangeskies.reflection.InferenceVariable;
 import uk.co.strangeskies.reflection.InferenceVariableBounds;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
+import uk.co.strangeskies.reflection.ReflectionException;
+import uk.co.strangeskies.reflection.TypeHierarchy;
 import uk.co.strangeskies.reflection.TypeResolver;
 import uk.co.strangeskies.reflection.TypeSubstitution;
 import uk.co.strangeskies.reflection.TypeVariableCapture;
@@ -621,9 +629,15 @@ public class TypeToken<T>
 		return AnnotatedTypes.toString(declaration, imports);
 	}
 
-	@Override
+	/**
+	 * If the declaration is raw, parameterize it with its own type parameters,
+	 * otherwise return the declaration itself.
+	 * 
+	 * @return the parameterized version of the declaration where applicable, else
+	 *         the unmodified declaration
+	 */
 	@SuppressWarnings("unchecked")
-	public TypeToken<T> parameterize() {
+	public TypeToken<? extends T> parameterize() {
 		if (isRaw()) {
 			return (TypeToken<T>) forType(ParameterizedTypes.parameterize(getRawType()));
 		} else {
@@ -720,6 +734,20 @@ public class TypeToken<T>
 	@SuppressWarnings("unchecked")
 	public Class<? super T> getRawType() {
 		return (Class<? super T>) getRawTypes().findFirst().orElse(Object.class);
+	}
+
+	/**
+	 * See {@link Types#getRawType(Type)}.
+	 * 
+	 * @return the raw type of the type represented by this TypeToken
+	 */
+	@SuppressWarnings("unchecked")
+	public TypeToken<? super T> getRawTypeToken() {
+		if (isRaw()) {
+			return this;
+		} else {
+			return (TypeToken<? super T>) forType(getRawTypes().findFirst().orElse(Object.class));
+		}
 	}
 
 	/**
@@ -1079,9 +1107,9 @@ public class TypeToken<T>
 	 */
 	@SuppressWarnings("unchecked")
 	public T cast(Object object) {
-		/*
-		 * TODO actually test castability ...
-		 */
+		if (!isSubtype(object.getClass(), intersectionOf(getRawTypes().collect(toList())))) {
+			throw new ClassCastException();
+		}
 		return (T) object;
 	}
 
@@ -1176,7 +1204,6 @@ public class TypeToken<T>
 	 * @return a list of all {@link Method} objects applicable to this type,
 	 *         wrapped in {@link ExecutableToken} instances
 	 */
-	@SuppressWarnings("unchecked")
 	public ExecutableTokenQuery<ExecutableToken<T, ?>, ?> methods() {
 		Stream<Method> methodStream = getRawTypes().flatMap(t -> stream(t.getMethods()));
 
@@ -1191,7 +1218,7 @@ public class TypeToken<T>
 
 		methodStream = methodStream.filter(m -> !Modifier.isStatic(m.getModifiers()));
 
-		return executableQuery(methodStream, m -> (ExecutableToken<T, ?>) forMethod(m).withReceiverType(this));
+		return executableQuery(methodStream, m -> forMethod(m).withReceiverType(this));
 	}
 
 	/**
@@ -1201,17 +1228,21 @@ public class TypeToken<T>
 	 * @return a list of all {@link Method} objects applicable to this type,
 	 *         wrapped in {@link ExecutableToken} instances
 	 */
-	@SuppressWarnings("unchecked")
 	public ExecutableTokenQuery<ExecutableToken<T, ?>, ?> declaredMethods() {
 		Stream<Method> methodStream = stream(getRawType().getDeclaredMethods())
 				.filter(m -> !Modifier.isStatic(m.getModifiers()));
 
-		return executableQuery(methodStream, m -> (ExecutableToken<T, ?>) forMethod(m).withReceiverType(this));
+		return executableQuery(methodStream, m -> forMethod(m).withReceiverType(this));
 	}
 
 	@Override
 	public boolean isRaw() {
 		return getType() instanceof Class<?> && ((Class<?>) getType()).getTypeParameters().length > 0;
+	}
+
+	@Override
+	public boolean isGeneric() {
+		return isRaw() || getType() instanceof ParameterizedType;
 	}
 
 	@Override
@@ -1226,9 +1257,7 @@ public class TypeToken<T>
 	@Override
 	public Stream<TypeParameter<?>> getTypeParameters() {
 		if (getType() instanceof ParameterizedType) {
-			return ParameterizedTypes
-					.getAllTypeParameters((Class<?>) ((ParameterizedType) getType()).getRawType())
-					.map(e -> forTypeVariable(e));
+			return Arrays.stream(getRawType().getTypeParameters()).map(e -> forTypeVariable(e));
 		} else {
 			return Stream.empty();
 		}
@@ -1237,8 +1266,11 @@ public class TypeToken<T>
 	@Override
 	public Stream<TypeArgument<?>> getTypeArguments() {
 		if (getType() instanceof ParameterizedType) {
-			return ParameterizedTypes.getAllTypeArguments((ParameterizedType) getType()).map(
-					e -> forTypeVariable(e.getKey()).asType(e.getValue()));
+
+			Stream<TypeVariable<?>> parameters = Arrays.stream(getRawType().getTypeParameters());
+			Stream<Type> arguments = Arrays.stream(((ParameterizedType) getType()).getActualTypeArguments());
+
+			return zip(parameters, arguments).map(e -> forTypeVariable(e.getKey()).asType(e.getValue()));
 		} else {
 			return Stream.empty();
 		}
@@ -1250,9 +1282,8 @@ public class TypeToken<T>
 				getBounds(),
 				(a, b) -> a.withBounds(b));
 
-		Map<TypeVariable<?>, Type> argumentMap = arguments
-				.stream()
-				.collect(toMap(TypeArgument::getParameter, TypeArgument::getType));
+		Map<TypeVariable<?>, Type> argumentMap = arguments.stream().collect(
+				toMap(TypeArgument::getParameter, TypeArgument::getType));
 
 		return new TypeToken<>(bounds, new TypeSubstitution(argumentMap).resolve(getType()));
 	}
@@ -1312,8 +1343,17 @@ public class TypeToken<T>
 		}
 	}
 
-	public TypeToken<T> resolveSupertype(Class<?> superclass) {
-		// TODO Auto-generated method stub
-		return null;
+	/**
+	 * As @see {@link TypeHierarchy#resolveSupertype(Type, Class)}.
+	 */
+	@SuppressWarnings({ "unchecked", "javadoc" })
+	public TypeToken<? super T> resolveSupertype(Class<?> superclass) {
+		TypeToken<?> superType = forType(
+				getUpperBounds()
+						.flatMap(b -> streamOptional(tryOptional(() -> TypeHierarchy.resolveSupertype(b, superclass))))
+						.findFirst()
+						.orElseThrow(() -> new ReflectionException(p -> p.cannotResolveSupertype(type, superclass))));
+
+		return (TypeToken<? super T>) superType;
 	}
 }

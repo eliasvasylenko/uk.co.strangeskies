@@ -151,10 +151,9 @@ public interface MemberToken<T, S extends MemberToken<T, S>> extends Declaration
 	 * may be added to them.
 	 * 
 	 * <p>
-	 * This may result in unsafe transformations when we convert from a raw
-	 * receiver to a parameterized receiver, but declarations of those types
-	 * should give a raw type warning from the Java compiler and this is
-	 * considered sufficient.
+	 * If the receiver type is not generic, the method will always return the same
+	 * token, or will throw an exception if the given type is not a subtype of the
+	 * receiver.
 	 * 
 	 * @param type
 	 *          The new owner type. The raw type of this type must be a subtype of
@@ -167,9 +166,7 @@ public interface MemberToken<T, S extends MemberToken<T, S>> extends Declaration
 	 *         That is, any type which can be assigned to both the given type and
 	 *         the current owner type, will also be assignable to the new type.
 	 */
-	default S withReceiverType(TypeToken<?> type) {
-		return withBounds(type.getBounds()).withReceiverType(type.getType());
-	}
+	<U> MemberToken<U, ?> withReceiverType(TypeToken<U> type);
 
 	/**
 	 * Derive a new instance of {@link MemberToken} with the given owner type.
@@ -187,6 +184,12 @@ public interface MemberToken<T, S extends MemberToken<T, S>> extends Declaration
 	 * If the receiver type is not generic, the method will always return the same
 	 * token, or will throw an exception if the given type is not a subtype of the
 	 * receiver.
+	 * 
+	 * <p>
+	 * This may result in unsafe transformations when we convert from a raw
+	 * receiver to a parameterized receiver, but declarations of those types
+	 * should give a raw type warning from the Java compiler and this is
+	 * considered sufficient.
 	 * 
 	 * @param type
 	 *          The new owner type. The raw type of this type must be a subtype of

@@ -285,32 +285,35 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 	}
 
 	/**
-	 * If the executable represents a raw invocation, parameterize it with its own
-	 * type parameters, otherwise return the executable itself.
+	 * If the declaration is raw, parameterize it with its own type parameters,
+	 * otherwise return the declaration itself.
 	 * 
-	 * @return the parameterized version of the executable where applicable, else
-	 *         the executable
+	 * @return the parameterized version of the declaration where applicable, else
+	 *         the unmodified declaration
 	 */
-	@Override
-	public ExecutableToken<O, R> parameterize() {
+	public ExecutableToken<? extends O, R> parameterize() {
 		if (isRaw()) {
-			@SuppressWarnings("unchecked")
-			TypeToken<? extends R> returnType = isConstructor() ? getReturnType().parameterize()
-					: (TypeToken<? extends R>) forType(((Method) getMember()).getGenericReturnType());
-
-			return withExecutableTokenData(
-					getReceiverType().parameterize(),
-					returnType,
-					Arrays
-							.stream(getMember().getParameters())
-							.map(p -> new ExecutableParameter(p, p.getParameterizedType()))
-							.collect(toList()),
-					asList(getMember().getTypeParameters()),
-					getMember(),
-					isVariableArityInvocation());
+			return getParameterizedFromRaw();
 		} else {
 			return this;
 		}
+	}
+
+	private ExecutableToken<? extends O, R> getParameterizedFromRaw() {
+		@SuppressWarnings("unchecked")
+		TypeToken<? extends R> returnType = isConstructor() ? getReturnType().parameterize()
+				: (TypeToken<? extends R>) forType(((Method) getMember()).getGenericReturnType());
+
+		return withExecutableTokenData(
+				getReceiverType().getRawTypeToken().parameterize(),
+				returnType,
+				Arrays
+						.stream(getMember().getParameters())
+						.map(p -> new ExecutableParameter(p, p.getParameterizedType()))
+						.collect(toList()),
+				asList(getMember().getTypeParameters()),
+				getMember(),
+				isVariableArityInvocation());
 	}
 
 	@Override
@@ -423,8 +426,10 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 	/**
 	 * @return true if the wrapped executable is generic, false otherwise
 	 */
+	@Override
 	public boolean isGeneric() {
-		return getMember().getTypeParameters().length > 0;
+		return getMember().getTypeParameters().length > 0
+				|| getOwningDeclaration().map(DeclarationToken::isGeneric).orElse(false);
 	}
 
 	/**
@@ -500,23 +505,23 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public ExecutableToken<O, R> withReceiverType(TypeToken<?> type) {
+	public <U> ExecutableToken<U, R> withReceiverType(TypeToken<U> type) {
 		if (!type.satisfiesConstraintTo(SUBTYPE, getReceiverType())) {
 			throw new ReflectionException(m -> m.cannotResolveOverride(getMember(), type.getType()));
 		}
 
 		if (!isGeneric()) {
-			return this;
+			return (ExecutableToken<U, R>) this;
 		}
 
 		Class<?> rawType = getReceiverType().getRawType();
-		@SuppressWarnings("unchecked")
-		TypeToken<? extends O> receiverType = (TypeToken<? extends O>) type.resolveSupertype(rawType);
+		TypeToken<? super U> receiverType = type.resolveSupertype(rawType);
 
 		if (receiverType.isRaw()) {
 			if (isRaw()) {
-				return this;
+				return (ExecutableToken<U, R>) this;
 			} else {
 				/*
 				 * If the requested receiver type is raw but this isn't the preceding
@@ -525,20 +530,26 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 				throw new AssertionError();
 			}
 		} else if (isRaw()) {
-			return parameterize().withTypeArguments(receiverType.getAllTypeArguments().collect(toList()));
+			return (ExecutableToken<U, R>) parameterize()
+					.withTypeArguments(receiverType.getAllTypeArguments().collect(toList()));
 		} else {
 			/*
 			 * TODO replace wildcards with more specific (i.e. contained) types,
 			 * replace type variables with instantiations, replace inference variables
 			 * with equality constraints.
+			 * 
+			 * For this we need to re-parameterize from raw
 			 */
-			return withBounds(receiverType.withConstraintFrom(Kind.SUBTYPE, type).getBounds());
+			ExecutableToken<O, R> parameterized = (ExecutableToken<O, R>) getParameterizedFromRaw();
+
+			return (ExecutableToken<U, R>) withBounds(receiverType.withConstraintFrom(Kind.SUBTYPE, type).getBounds());
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public ExecutableToken<O, R> withReceiverType(Type type) {
-		return withReceiverType(forType(type));
+		return (ExecutableToken<O, R>) withReceiverType(forType(type));
 	}
 
 	/**
@@ -551,13 +562,12 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 	 *          the type possibly containing the override
 	 * @return the override
 	 */
-	@SuppressWarnings("unchecked")
 	public <U> ExecutableToken<U, R> getOverride(TypeToken<U> type) {
 		boolean matchingRawType = (type.getType() instanceof Class<?> || type.getType() instanceof ParameterizedType)
 				&& type.getRawType().equals(receiverType.getRawType());
 
 		if (matchingRawType) {
-			return (ExecutableToken<U, R>) withReceiverType(type);
+			return withReceiverType(type);
 		} else if (isConstructor()) {
 			throw new ReflectionException(m -> m.cannotOverrideConstructor(getMember(), type.getType()));
 		}
@@ -585,7 +595,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 			 * erased signature is different we will still find a bridge.
 			 */
 			override = StreamUtilities
-					.<Class<?>> iterate(type.getRawType(), Class::getSuperclass)
+					.<Class<?>>iterate(type.getRawType(), Class::getSuperclass)
 					.flatMap(
 							t -> streamOptional(
 									tryOptional(() -> getRawType(t).getDeclaredMethod(getName(), getMember().getParameterTypes()))))
@@ -594,7 +604,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 		}
 
 		if (override == null) {
-			return (ExecutableToken<U, R>) withReceiverType(type);
+			return withReceiverType(type);
 		}
 
 		if (override.isBridge()) {
@@ -982,11 +992,6 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 	}
 
 	private TypeToken<? extends R> determineReturnType(BoundSet bounds, TypeSubstitution typeArguments) {
-		/*
-		 * TODO base this on a full substitution from the raw parameterization
-		 * rather than a partial substitution from the current parameterization.
-		 * That way we can deal with replacement arguments e.g. from infer()
-		 */
 		if (getReturnType().getType() instanceof Class<?>) {
 			return getReturnType();
 		} else {

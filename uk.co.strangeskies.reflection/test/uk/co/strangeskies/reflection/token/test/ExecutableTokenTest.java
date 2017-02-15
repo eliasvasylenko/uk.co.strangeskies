@@ -110,8 +110,27 @@ public class ExecutableTokenTest {
 	public void constructorWithUninferredEnclosingTypeTest() {
 		ExecutableToken<?, ?> constructor = ExecutableToken
 				.forInnerConstructor(Inner.class.getConstructors()[0])
-				.withReceiverType(new TypeToken<Outer<Number>>() {})
-				.withTargetType(new @Infer TypeToken<Outer<? super Number>.Inner<Integer>>() {});
+				.withTargetType(new @Infer TypeToken<Outer<? super Number>.Inner<Integer>>() {})
+				.withReceiverType(new TypeToken<Outer<Number>>() {});
+
+		assertThat(constructor.getReturnType().resolve(), equalTo(new TypeToken<Outer<Number>.Inner<Integer>>() {}));
+	}
+
+	@Test
+	public void constructorWithUninferredEnclosingTypeTest() {
+		ExecutableToken<?, ?> constructor = ExecutableToken
+				.forInnerConstructor(Inner.class.getConstructors()[0])
+				.withTargetType(new @Infer TypeToken<Outer<? super Number>.Inner<Integer>>() {})
+				.withReceiverType(new TypeToken<Outer<Number>>() {});
+
+		assertThat(constructor.getReturnType().resolve(), equalTo(new TypeToken<Outer<Number>.Inner<Integer>>() {}));
+	}
+
+	@Test
+	public void constructorWithReceiverTypeTest() {
+		ExecutableToken<?, ?> constructor = ExecutableToken
+				.forInnerConstructor(Inner.class.getConstructors()[0])
+				.withReceiverType(new TypeToken<Outer<Number>>() {});
 
 		assertThat(constructor.getReturnType().resolve(), equalTo(new TypeToken<Outer<Number>.Inner<Integer>>() {}));
 	}
@@ -183,9 +202,8 @@ public class ExecutableTokenTest {
 
 	@Test
 	public void varargsDefinitionResolutionTest() {
-		ExecutableToken<Void, ?> asList = staticMethods(Arrays.class)
-				.named("asList")
-				.resolveOverload(new TypeToken<String[]>() {});
+		ExecutableToken<Void, ?> asList = staticMethods(Arrays.class).named("asList").resolveOverload(
+				new TypeToken<String[]>() {});
 
 		assertThat(asList.isVariableArityInvocation(), is(false));
 	}
