@@ -165,7 +165,7 @@ public class IntersectionTypes {
 				 * For each proper type i
 				 */
 
-				boolean iInterface = Types.getRawType(iType).isInterface();
+				boolean iInterface = Types.getErasedType(iType).isInterface();
 
 				if (mostSpecificIndex == -1 && !iInterface) {
 					mostSpecificIndex = i;
@@ -195,7 +195,7 @@ public class IntersectionTypes {
 								mostSpecificIndex--;
 							}
 							break;
-						} else if (!iInterface && !Types.getRawType(jType).isInterface()) {
+						} else if (!iInterface && !Types.getErasedType(jType).isInterface()) {
 							throw new ReflectionException(p -> p.invalidIntersectionTypes(flattenedTypes, iType, jType));
 						}
 					}

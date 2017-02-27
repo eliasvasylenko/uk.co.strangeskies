@@ -34,7 +34,7 @@ package uk.co.strangeskies.eclipse;
 
 import static java.util.Collections.synchronizedMap;
 import static java.util.Objects.hash;
-import static uk.co.strangeskies.reflection.Types.getRawType;
+import static uk.co.strangeskies.reflection.Types.getErasedType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -73,7 +73,7 @@ public class AdaptingNamedObjectSupplier extends ExtendedObjectSupplier {
 
 		public Request(IObjectDescriptor descriptor, IRequestor requestor) {
 			this.name = descriptor.getQualifier(AdaptNamed.class).value();
-			this.adapterType = getRawType(descriptor.getDesiredType());
+			this.adapterType = getErasedType(descriptor.getDesiredType());
 
 			this.requestor = requestor;
 			this.context = ((ContextObjectSupplier) ((Requestor<?>) requestor).getPrimarySupplier()).getContext();

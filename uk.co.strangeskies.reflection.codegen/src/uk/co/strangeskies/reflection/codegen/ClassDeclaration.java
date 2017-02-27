@@ -39,7 +39,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
-import static uk.co.strangeskies.reflection.Types.getRawType;
+import static uk.co.strangeskies.reflection.Types.getErasedType;
 import static uk.co.strangeskies.reflection.Types.isInterface;
 import static uk.co.strangeskies.reflection.codegen.ErasedMethodSignature.erasedConstructorSignature;
 import static uk.co.strangeskies.reflection.codegen.ErasedMethodSignature.erasedMethodSignature;
@@ -111,7 +111,7 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 
 		Type superType = intersectionOf(superTypes.stream().map(TypeToken::getType).collect(toList()));
 		this.superType = (TypeToken<T>) forType(superType);
-		this.superClass = (Class<? super T>) of(getRawType(superType)).filter(t -> !isInterface(t)).orElse(null);
+		this.superClass = (Class<? super T>) of(getErasedType(superType)).filter(t -> !isInterface(t)).orElse(null);
 
 		this.constructorDeclarations = signature.getConstructorSignatures().map(s -> declareConstructor(this, s)).collect(
 				toMap(d -> d.getSignature().erased(), identity()));
@@ -232,7 +232,7 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 						.getParameters()
 						.map(ParameterSignature::getType)
 						.map(AnnotatedType::getType)
-						.map(Types::getRawType)
+						.map(Types::getErasedType)
 						.toArray(Class<?>[]::new));
 
 		if (!StreamUtilities.equals(
@@ -252,7 +252,7 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 						.getParameters()
 						.map(ParameterSignature::getType)
 						.map(AnnotatedType::getType)
-						.map(Types::getRawType)
+						.map(Types::getErasedType)
 						.toArray(Class<?>[]::new));
 
 		if (!StreamUtilities.equals(
@@ -272,7 +272,7 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 						.getParameters()
 						.map(ParameterSignature::getType)
 						.map(AnnotatedType::getType)
-						.map(Types::getRawType)
+						.map(Types::getErasedType)
 						.toArray(Class<?>[]::new));
 
 		if (!StreamUtilities.equals(

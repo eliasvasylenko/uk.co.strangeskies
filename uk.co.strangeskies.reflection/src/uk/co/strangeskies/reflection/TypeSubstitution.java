@@ -39,7 +39,6 @@ import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
 import static uk.co.strangeskies.reflection.IntersectionTypes.uncheckedIntersectionOf;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterizeUnchecked;
 import static uk.co.strangeskies.reflection.TypeVariables.typeVariableExtending;
-import static uk.co.strangeskies.reflection.Types.getRawType;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardExtending;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardSuper;
 
@@ -370,7 +369,7 @@ public class TypeSubstitution {
 			Type owner = resolve(type.getOwnerType(), changed);
 
 			if (changed.get()) {
-				return parameterizeUnchecked(owner, getRawType(type), arguments);
+				return parameterizeUnchecked(owner, (Class<?>) type.getRawType(), arguments);
 			} else {
 				return type;
 			}

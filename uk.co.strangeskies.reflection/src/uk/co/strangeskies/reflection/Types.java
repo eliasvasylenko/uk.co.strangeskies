@@ -142,31 +142,13 @@ public final class Types {
 	}
 
 	/**
-	 * The raw types of the type represented by this TypeToken. In the case of
-	 * most simple TypeTokens, this will be a set with one entry, equal to the
-	 * result of {@link #getRawType(Type type)}. For more complex types, a set of
-	 * multiple raw types may be derived, for example, from each upper bound, of
-	 * from each item in an intersection type.
-	 * 
-	 * @param type
-	 *          The type of which we wish to determine the raw types.
-	 * @return The raw types of the type represented by this TypeToken.
-	 */
-	public static Stream<Class<?>> getRawTypes(Type type) {
-		return getUpperBounds(type).map(Types::getRawType);
-	}
-
-	/**
-	 * The raw type of the given type. In the case of Types of certain classes,
-	 * for example InferenceVariable or IntersectionType, this single raw type may
-	 * be insufficient to fully describe the type, in which case
-	 * {@link Types#getRawTypes(Type)} may be more appropriate.
+	 * Get the erasure of the given type.
 	 * 
 	 * @param type
 	 *          The type of which we wish to determine the raw type.
 	 * @return The raw type of the type represented by this TypeToken.
 	 */
-	public static Class<?> getRawType(Type type) {
+	public static Class<?> getErasedType(Type type) {
 		if (type == null) {
 			return null;
 		} else if (type instanceof TypeVariableCapture) {
@@ -174,13 +156,13 @@ public final class Types {
 			if (bounds.length == 0)
 				return Object.class;
 			else
-				return getRawType(bounds[0]);
+				return getErasedType(bounds[0]);
 		} else if (type instanceof TypeVariable<?>) {
 			Type[] bounds = ((TypeVariable<?>) type).getBounds();
 			if (bounds.length == 0)
 				return Object.class;
 			else
-				return getRawType(bounds[0]);
+				return getErasedType(bounds[0]);
 		} else if (type instanceof InferenceVariable) {
 			return Object.class;
 		} else if (type instanceof WildcardType) {
@@ -188,18 +170,18 @@ public final class Types {
 			if (bounds.length == 0)
 				return Object.class;
 			else
-				return getRawType(bounds[0]);
+				return getErasedType(bounds[0]);
 		} else if (type instanceof ParameterizedType) {
 			return (Class<?>) ((ParameterizedType) type).getRawType();
 		} else if (type instanceof Class) {
 			return (Class<?>) type;
 		} else if (type instanceof GenericArrayType) {
-			return Array.newInstance(getRawType(((GenericArrayType) type).getGenericComponentType()), 0).getClass();
+			return Array.newInstance(getErasedType(((GenericArrayType) type).getGenericComponentType()), 0).getClass();
 		} else if (type instanceof IntersectionType) {
 			if (((IntersectionType) type).getTypes().length == 0)
 				return Object.class;
 			else
-				return getRawType(((IntersectionType) type).getTypes()[0]);
+				return getErasedType(((IntersectionType) type).getTypes()[0]);
 		} else {
 			return Object.class;
 		}
@@ -484,7 +466,7 @@ public final class Types {
 	@SuppressWarnings("unchecked")
 	public static <T> T assign(Object object, Class<T> type) {
 		Class<?> currentType = unwrapPrimitive(object.getClass());
-		Class<?> rawTargetType = unwrapPrimitive(getRawType(type));
+		Class<?> rawTargetType = unwrapPrimitive(getErasedType(type));
 
 		if (isStrictInvocationContextCompatible(currentType, rawTargetType)) {
 			if (isPrimitive(rawTargetType)) {
@@ -800,11 +782,11 @@ public final class Types {
 			} else
 				assignable = false;
 		} else if (supertype instanceof Class<?>) {
-			assignable = ((Class<?>) supertype).isAssignableFrom(getRawType(subtype));
+			assignable = ((Class<?>) supertype).isAssignableFrom(getErasedType(subtype));
 		} else if (supertype instanceof ParameterizedType) {
-			Class<?> matchedClass = getRawType(supertype);
+			Class<?> matchedClass = getErasedType(supertype);
 
-			if (!matchedClass.isAssignableFrom(getRawType(subtype))) {
+			if (!matchedClass.isAssignableFrom(getErasedType(subtype))) {
 				assignable = false;
 			} else {
 				Type subtypeParameterization = TypeHierarchy.resolveSupertype(subtype, matchedClass);
@@ -960,7 +942,7 @@ public final class Types {
 		}
 
 		if (from instanceof Class<?> && isGeneric((Class<?>) from)) {
-			return isStrictInvocationContextCompatible(from, getRawType(to));
+			return isStrictInvocationContextCompatible(from, getErasedType(to));
 		}
 
 		if (isPrimitive(from) && !isPrimitive(to)) {
@@ -1288,7 +1270,7 @@ public final class Types {
 		RecursiveTypeVisitor.build().visitSupertypes().classVisitor(type -> {
 			Type parameterized = TypeHierarchy.resolveSupertype(of, type);
 			supertypes.put(type, (parameterized instanceof ParameterizedType) ? (ParameterizedType) parameterized : null);
-		}).parameterizedTypeVisitor(type -> supertypes.put(getRawType(type), type)).create().visit(of);
+		}).parameterizedTypeVisitor(type -> supertypes.put(getErasedType(type), type)).create().visit(of);
 
 		return supertypes;
 	}

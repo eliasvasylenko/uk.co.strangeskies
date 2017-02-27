@@ -155,36 +155,6 @@ public interface MemberToken<T, S extends MemberToken<T, S>> extends Declaration
 	 * token, or will throw an exception if the given type is not a subtype of the
 	 * receiver.
 	 * 
-	 * @param type
-	 *          The new owner type. The raw type of this type must be a subtype of
-	 *          the raw type of the current receiver type.
-	 * @return A new {@link MemberToken} compatible with the given owner type.
-	 * 
-	 *         <p>
-	 *         The new owner type will not be effectively more specific than the
-	 *         intersection type of the current owner type and the given type.
-	 *         That is, any type which can be assigned to both the given type and
-	 *         the current owner type, will also be assignable to the new type.
-	 */
-	<U> MemberToken<U, ?> withReceiverType(TypeToken<U> type);
-
-	/**
-	 * Derive a new instance of {@link MemberToken} with the given owner type.
-	 * 
-	 * <p>
-	 * The new {@link MemberToken} will always have a owner type which is as or
-	 * more specific than both the current receiver type <em>and</em> the given
-	 * type. This means that the new owner will be assignment compatible with the
-	 * given type, but if the given type contains wildcards or inference variables
-	 * which are less specific that those implied by the <em>current</em> receiver
-	 * type, new type arguments will be inferred in their place, or further bounds
-	 * may be added to them.
-	 * 
-	 * <p>
-	 * If the receiver type is not generic, the method will always return the same
-	 * token, or will throw an exception if the given type is not a subtype of the
-	 * receiver.
-	 * 
 	 * <p>
 	 * This may result in unsafe transformations when we convert from a raw
 	 * receiver to a parameterized receiver, but declarations of those types
@@ -202,7 +172,13 @@ public interface MemberToken<T, S extends MemberToken<T, S>> extends Declaration
 	 *         That is, any type which can be assigned to both the given type and
 	 *         the current owner type, will also be assignable to the new type.
 	 */
-	S withReceiverType(Type type);
+	<U> MemberToken<U, ?> withReceiverType(TypeToken<U> type);
+
+	/**
+	 * As @see {@link #withReceiverType(TypeToken)}.
+	 */
+	@SuppressWarnings("javadoc")
+	MemberToken<?, ?> withReceiverType(Type type);
 
 	/**
 	 * Derived a new {@link MemberToken} instance with all associated generic

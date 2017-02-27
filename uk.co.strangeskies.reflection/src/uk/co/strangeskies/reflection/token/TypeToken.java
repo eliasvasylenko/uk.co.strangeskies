@@ -32,6 +32,7 @@
  */
 package uk.co.strangeskies.reflection.token;
 
+import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -384,7 +385,7 @@ public class TypeToken<T>
 					.getAllTypeArguments((ParameterizedType) annotatedType.getType())
 					.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-			TypeVariable<?>[] parameters = Types.getRawType(annotatedType.getType()).getTypeParameters();
+			TypeVariable<?>[] parameters = Types.getErasedType(annotatedType.getType()).getTypeParameters();
 			for (int i = 0; i < arguments.length; i++) {
 				allArguments.put(parameters[i], arguments[i]);
 			}
@@ -393,7 +394,7 @@ public class TypeToken<T>
 			 * New parameterized type
 			 */
 			ParameterizedType parameterizedType = ParameterizedTypes
-					.parameterizeUnchecked(Types.getRawType(annotatedType.getType()), allArguments::get);
+					.parameterizeUnchecked(Types.getErasedType(annotatedType.getType()), allArguments::get);
 			if (allArguments.values().stream().anyMatch(WildcardType.class::isInstance)) {
 				if (behavior == Wildcards.CAPTURE) {
 					parameterizedType = TypeVariableCapture.captureWildcardArguments(parameterizedType);
@@ -630,22 +631,6 @@ public class TypeToken<T>
 	}
 
 	/**
-	 * If the declaration is raw, parameterize it with its own type parameters,
-	 * otherwise return the declaration itself.
-	 * 
-	 * @return the parameterized version of the declaration where applicable, else
-	 *         the unmodified declaration
-	 */
-	@SuppressWarnings("unchecked")
-	public TypeToken<? extends T> parameterize() {
-		if (isRaw()) {
-			return (TypeToken<T>) forType(ParameterizedTypes.parameterize(getRawType()));
-		} else {
-			return this;
-		}
-	}
-
-	/**
 	 * Create a TypeToken over a wildcard type which has the type represented by
 	 * this TypeToken as an upper bound.
 	 * 
@@ -727,7 +712,7 @@ public class TypeToken<T>
 	}
 
 	/**
-	 * See {@link Types#getRawType(Type)}.
+	 * See {@link Types#getErasedType(Type)}.
 	 * 
 	 * @return the raw type of the type represented by this TypeToken
 	 */
@@ -737,7 +722,7 @@ public class TypeToken<T>
 	}
 
 	/**
-	 * See {@link Types#getRawType(Type)}.
+	 * See {@link Types#getErasedType(Type)}.
 	 * 
 	 * @return the raw type of the type represented by this TypeToken
 	 */
@@ -785,7 +770,7 @@ public class TypeToken<T>
 	 * @return the raw types of the type represented by this TypeToken
 	 */
 	public Stream<Class<?>> getRawTypes() {
-		return getUpperBounds().map(Types::getRawType);
+		return getUpperBounds().map(Types::getErasedType);
 	}
 
 	/**
@@ -1027,13 +1012,29 @@ public class TypeToken<T>
 	}
 
 	/**
+	 * If the declaration is raw, parameterize it with its own type parameters,
+	 * otherwise return the declaration itself.
+	 * 
+	 * @return the parameterized version of the declaration where applicable, else
+	 *         the unmodified declaration
+	 */
+	@SuppressWarnings("unchecked")
+	public TypeToken<? extends T> parameterize() {
+		if (isRaw()) {
+			return (TypeToken<T>) forType(ParameterizedTypes.parameterize(getRawType()));
+		} else {
+			return this;
+		}
+	}
+
+	/**
 	 * This method will attempt to substitute any inference variables mentioned by
 	 * this type with their instantiations, if instantiations are available, and
 	 * return a TypeToken over the resulting type.
 	 * 
 	 * @return A TypeToken with the fully inferred type.
 	 */
-	public TypeToken<T> withSubstitutedInstantiations() {
+	public TypeToken<T> substituteInstantiations() {
 		Type type = new TypeResolver(getBounds()).substituteInstantiations(getType());
 
 		BoundSet bounds = getBounds();
@@ -1355,5 +1356,27 @@ public class TypeToken<T>
 						.orElseThrow(() -> new ReflectionException(p -> p.cannotResolveSupertype(type, superclass))));
 
 		return (TypeToken<? super T>) superType;
+	}
+
+	@Override
+	public TypeToken<T> withTypeArguments(List<Type> typeArguments) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public TypeToken<T> withAllTypeArguments(List<Type> typeArguments) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public TypeToken<T> withTypeArguments(Type... typeArguments) {
+		return withTypeArguments(asList(typeArguments));
+	}
+
+	@Override
+	public TypeToken<T> withAllTypeArguments(Type... typeArguments) {
+		return withAllTypeArguments(asList(typeArguments));
 	}
 }

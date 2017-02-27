@@ -284,7 +284,7 @@ public final class AnnotatedParameterizedTypes {
 	 *         of the given type.
 	 */
 	public static Stream<Map.Entry<TypeVariable<?>, AnnotatedType>> getAllTypeArguments(AnnotatedParameterizedType type) {
-		Class<?> rawType = Types.getRawType(type.getType());
+		Class<?> rawType = Types.getErasedType(type.getType());
 
 		TypeVariable<?>[] parameters = rawType.getTypeParameters();
 		AnnotatedType[] arguments = type.getAnnotatedActualTypeArguments();

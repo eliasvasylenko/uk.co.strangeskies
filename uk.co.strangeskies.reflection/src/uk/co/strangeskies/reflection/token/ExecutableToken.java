@@ -34,17 +34,20 @@ package uk.co.strangeskies.reflection.token;
 
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
+import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static uk.co.strangeskies.reflection.BoundSet.emptyBoundSet;
 import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.LOOSE_COMPATIBILILTY;
 import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.SUBTYPE;
-import static uk.co.strangeskies.reflection.Types.getRawType;
+import static uk.co.strangeskies.reflection.Types.getErasedType;
 import static uk.co.strangeskies.reflection.token.ExecutableTokenQuery.executableQuery;
-import static uk.co.strangeskies.reflection.token.TypeParameter.forTypeVariable;
 import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
 import static uk.co.strangeskies.reflection.token.TypeToken.forType;
+import static uk.co.strangeskies.utilities.collection.StreamUtilities.entriesToMap;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.streamOptional;
+import static uk.co.strangeskies.utilities.collection.StreamUtilities.throwingMerger;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.tryOptional;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.zip;
 
@@ -59,7 +62,6 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -255,31 +257,11 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 	public ExecutableToken<? extends O, R> infer() {
 		if (!isGeneric()) {
 			return this;
+
 		} else if (isRaw()) {
-			Collection<TypeArgument<?>> inferenceVariables = new TypeResolver()
-					.inferTypeParameters(getMember())
-					.map(e -> forTypeVariable(e.getKey()).asType(e.getValue()))
-					.collect(toList());
-			Map<TypeVariable<?>, Type> inferenceVariableMap = new HashMap<>();
+			return partialParameterization(emptyBoundSet(), emptyMap());
 
-			// TODO
-
-			return withExecutableTokenData(
-					getReceiverType().withTypeArguments(inferenceVariables),
-					getReturnType().withTypeArguments(inferenceVariables),
-					Arrays
-							.stream(getMember().getParameters())
-							.map(p -> new ExecutableParameter(p, p.getParameterizedType()))
-							.collect(toList()),
-					asList(getMember().getTypeParameters()),
-					getMember(),
-					isVariableArityInvocation());
 		} else {
-			Collection<TypeArgument<?>> inferenceVariables = new TypeResolver()
-					.inferTypeParameters(getMember())
-					.map(e -> forTypeVariable(e.getKey()).asType(e.getValue()))
-					.collect(toList());
-
 			return this;
 		}
 	}
@@ -505,51 +487,173 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 		}
 	}
 
+	@Override
+	public ExecutableToken<? extends O, R> withTypeArguments(Type... typeArguments) {
+		return withTypeArguments(asList(typeArguments));
+	}
+
+	@Override
+	public ExecutableToken<? extends O, R> withAllTypeArguments(Type... typeArguments) {
+		return withAllTypeArguments(asList(typeArguments));
+	}
+
 	@SuppressWarnings("unchecked")
 	@Override
-	public <U> ExecutableToken<U, R> withReceiverType(TypeToken<U> type) {
-		if (!type.satisfiesConstraintTo(SUBTYPE, getReceiverType())) {
-			throw new ReflectionException(m -> m.cannotResolveOverride(getMember(), type.getType()));
+	public ExecutableToken<? extends O, R> withTypeArguments(List<Type> typeArguments) {
+		if (typeArguments.size() != getTypeParameterCount()) {
+			throw new ReflectionException(
+					p -> p.incorrectTypeArgumentCount(
+							getTypeParameters().map(TypeParameter::getType).collect(toList()),
+							typeArguments));
 		}
 
-		if (!isGeneric()) {
-			return (ExecutableToken<U, R>) this;
-		}
+		if (isRaw()) {
+			Map<TypeVariable<?>, Type> argumentMap = zip(
+					getTypeParameters().map(TypeParameter::getType),
+					typeArguments.stream()).collect(entriesToMap());
 
-		Class<?> rawType = getReceiverType().getRawType();
-		TypeToken<? super U> receiverType = type.resolveSupertype(rawType);
+			return (ExecutableToken<? extends O, R>) partialParameterization(getBounds(), argumentMap);
 
-		if (receiverType.isRaw()) {
-			if (isRaw()) {
-				return (ExecutableToken<U, R>) this;
-			} else {
-				/*
-				 * If the requested receiver type is raw but this isn't the preceding
-				 * subtype check should have already failed.
-				 */
-				throw new AssertionError();
-			}
-		} else if (isRaw()) {
-			return (ExecutableToken<U, R>) parameterize()
-					.withTypeArguments(receiverType.getAllTypeArguments().collect(toList()));
 		} else {
-			/*
-			 * TODO replace wildcards with more specific (i.e. contained) types,
-			 * replace type variables with instantiations, replace inference variables
-			 * with equality constraints.
-			 * 
-			 * For this we need to re-parameterize from raw
-			 */
-			ExecutableToken<O, R> parameterized = (ExecutableToken<O, R>) getParameterizedFromRaw();
+			BoundSet bounds = zip(
+					typeArguments.stream(),
+					getTypeArguments(),
+					(a, b) -> new ConstraintFormula(Kind.EQUALITY, a, b.getType()))
+							.reduce(getBounds(), (b, c) -> c.reduce(b), throwingMerger());
 
-			return (ExecutableToken<U, R>) withBounds(receiverType.withConstraintFrom(Kind.SUBTYPE, type).getBounds());
+			return withBounds(bounds);
 		}
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public ExecutableToken<O, R> withReceiverType(Type type) {
-		return (ExecutableToken<O, R>) withReceiverType(forType(type));
+	public ExecutableToken<O, R> withAllTypeArguments(List<Type> typeArguments) {
+		if (typeArguments.size() != getAllTypeParameterCount()) {
+			throw new ReflectionException(
+					p -> p.incorrectTypeArgumentCount(
+							getAllTypeParameters().map(TypeParameter::getType).collect(toList()),
+							typeArguments));
+		}
+
+		if (isRaw()) {
+			ExecutableToken<?, ?> executable = getParameterizedFromRaw().withTypeArguments(
+					zip(getAllTypeParameters(), typeArguments.stream(), TypeParameter::asType).collect(toList()));
+
+			return (ExecutableToken<O, R>) executable;
+		} else {
+			BoundSet bounds = zip(
+					typeArguments.stream(),
+					getAllTypeArguments(),
+					(a, b) -> new ConstraintFormula(Kind.EQUALITY, a, b.getType()))
+							.reduce(getBounds(), (b, c) -> c.reduce(b), throwingMerger());
+
+			return withBounds(bounds);
+		}
+	}
+
+	@Override
+	public ExecutableToken<?, R> withReceiverType(Type type) {
+		return withReceiverType(forType(type));
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public <U> ExecutableToken<U, R> withReceiverType(TypeToken<U> type) {
+		if (!receiverType.isGeneric()) {
+			if (!receiverType.satisfiesConstraintFrom(SUBTYPE, type)) {
+				throw new ReflectionException(m -> m.cannotResolveOverride(getMember(), type.getType()));
+			}
+
+			return (ExecutableToken<U, R>) this;
+		}
+
+		if (isRaw()) {
+			Class<?> rawType = getReceiverType().getRawType();
+			TypeToken<? super U> receiverType = type.resolveSupertype(rawType);
+
+			return (ExecutableToken<U, R>) partialParameterization(
+					type.getBounds(),
+					receiverType.getAllTypeArguments().collect(toMap(TypeArgument::getParameter, TypeArgument::getType)));
+
+		} else {
+			return (ExecutableToken<U, R>) withBounds(
+					new ConstraintFormula(Kind.SUBTYPE, type.getType(), receiverType.getType()).reduce(getBounds()));
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private <P, Q> ExecutableToken<P, Q> partialParameterization(
+			BoundSet bounds,
+			Map<TypeVariable<?>, Type> argumentMap) {
+		TypeResolver resolver = new TypeResolver(bounds);
+
+		resolver.inferTypeParameters(executable, argumentMap).forEach(e -> argumentMap.put(e.getKey(), e.getValue()));
+
+		return (ExecutableToken<P, Q>) getParameterizedFromRaw()
+				.withTypeSubstitution(resolver.getBounds(), new TypeSubstitution(argumentMap));
+	}
+
+	/**
+	 * As @see {@link #withTargetType(TypeToken)}.
+	 */
+	@SuppressWarnings("javadoc")
+	public <S extends R> ExecutableToken<O, S> withTargetType(Class<S> target) {
+		return withTargetType(TypeToken.forClass(target));
+	}
+
+	public ExecutableToken<O, ?> withTargetType(Type target) {
+		if (target == null)
+			return this;
+
+		/*
+		 * TODO if the target is raw or not generic, just perform a loose
+		 * compatibility check and return this. This is the same for both
+		 * constructors and methods.
+		 */
+
+		/*
+		 * TODO if a constructor, first try to parameterize directly, unless the
+		 * given target is a super type
+		 */
+
+		return withBounds(
+				new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, returnType.getType(), target).reduce(getBounds()));
+	}
+
+	/**
+	 * Derive a new instance of {@link ExecutableToken} with the given target
+	 * type.
+	 * 
+	 * <p>
+	 * The new {@link ExecutableToken} will always have a target type which is as
+	 * or more specific than both the current target type <em>and</em> the given
+	 * type. This means that the new target will be assignment compatible with the
+	 * given type, but if the given type contains wildcards or inference variables
+	 * which are less specific that those implied by the <em>current</em> target
+	 * type, new type arguments will be inferred in their place, or further bounds
+	 * may be added to them.
+	 * 
+	 * @param <S>
+	 *          The derived {@link ExecutableToken} must be assignment compatible
+	 *          with this type.
+	 * @param target
+	 *          The derived {@link ExecutableToken} must be assignment compatible
+	 *          with this type.
+	 * @return A new {@link ExecutableToken} compatible with the given target
+	 *         type.
+	 * 
+	 *         <p>
+	 *         The new target type will not be effectively more specific than the
+	 *         intersection type of the current target type and the given type.
+	 *         That is, any type which can be assigned to both the given type and
+	 *         the current target type, will also be assignable to the new type.
+	 */
+	@SuppressWarnings("unchecked")
+	public <S> ExecutableToken<O, S> withTargetType(TypeToken<S> target) {
+		if (target.getType() == null)
+			return (ExecutableToken<O, S>) this;
+
+		return (ExecutableToken<O, S>) withBounds(target.getBounds()).withTargetType(target.getType());
 	}
 
 	/**
@@ -584,7 +688,8 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 		Method override = type
 				.getUpperBounds()
 				.flatMap(
-						t -> streamOptional(tryOptional(() -> getRawType(t).getMethod(getName(), getMember().getParameterTypes()))))
+						t -> streamOptional(
+								tryOptional(() -> getErasedType(t).getMethod(getName(), getMember().getParameterTypes()))))
 				.findFirst()
 				.orElse(null);
 
@@ -598,7 +703,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 					.<Class<?>>iterate(type.getRawType(), Class::getSuperclass)
 					.flatMap(
 							t -> streamOptional(
-									tryOptional(() -> getRawType(t).getDeclaredMethod(getName(), getMember().getParameterTypes()))))
+									tryOptional(() -> getErasedType(t).getDeclaredMethod(getName(), getMember().getParameterTypes()))))
 					.findFirst()
 					.orElse(null);
 		}
@@ -626,121 +731,9 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 		if (isConstructor()) {
 			return Stream.empty();
 		} else {
-			Class<?>[] erasedParameters = getParameters().map(ExecutableParameter::getErasure).toArray(Class<?>[]::new);
-
-			return Arrays
-					.stream(getMember().getDeclaringClass().getMethods())
-					.filter(m -> m.getName().equals(getName()) && m.getParameterTypes().equals(erasedParameters))
-					.map(
-							m -> withExecutableTokenData(
-									receiverType,
-									returnType,
-									parameters,
-									typeArguments,
-									m,
-									variableArityInvocation));
+			// TODO
+			throw new UnsupportedOperationException();
 		}
-	}
-
-	/**
-	 * Derive a new instance of {@link ExecutableToken} with the given target
-	 * type.
-	 * 
-	 * <p>
-	 * The new {@link ExecutableToken} will always have a target type which is as
-	 * or more specific than both the current target type <em>and</em> the given
-	 * type. This means that the new target will be assignment compatible with the
-	 * given type, but if the given type contains wildcards or inference variables
-	 * which are less specific that those implied by the <em>current</em> target
-	 * type, new type arguments will be inferred in their place, or further bounds
-	 * may be added to them.
-	 * 
-	 * @param <S>
-	 *          The derived {@link ExecutableToken} must be assignment compatible
-	 *          with this type.
-	 * @param target
-	 *          The derived {@link ExecutableToken} must be assignment compatible
-	 *          with this type.
-	 * @return A new {@link ExecutableToken} compatible with the given target
-	 *         type.
-	 * 
-	 *         <p>
-	 *         The new target type will not be effectively more specific than the
-	 *         intersection type of the current target type and the given type.
-	 *         That is, any type which can be assigned to both the given type and
-	 *         the current target type, will also be assignable to the new type.
-	 */
-	public <S extends R> ExecutableToken<O, S> withTargetType(Class<S> target) {
-		return withTargetType(TypeToken.forClass(target));
-	}
-
-	/**
-	 * Derive a new instance of {@link ExecutableToken} with the given target
-	 * type.
-	 * 
-	 * <p>
-	 * The new {@link ExecutableToken} will always have a target type which is as
-	 * or more specific than both the current target type <em>and</em> the given
-	 * type. This means that the new target will be assignment compatible with the
-	 * given type, but if the given type contains wildcards or inference variables
-	 * which are less specific that those implied by the <em>current</em> target
-	 * type, new type arguments will be inferred in their place, or further bounds
-	 * may be added to them.
-	 * 
-	 * @param <S>
-	 *          The derived {@link ExecutableToken} must be assignment compatible
-	 *          with this type.
-	 * @param target
-	 *          The derived {@link ExecutableToken} must be assignment compatible
-	 *          with this type.
-	 * @return A new {@link ExecutableToken} compatible with the given target
-	 *         type.
-	 * 
-	 *         <p>
-	 *         The new target type will not be effectively more specific than the
-	 *         intersection type of the current target type and the given type.
-	 *         That is, any type which can be assigned to both the given type and
-	 *         the current target type, will also be assignable to the new type.
-	 */
-	@SuppressWarnings("unchecked")
-	public <S> ExecutableToken<O, S> withTargetType(TypeToken<S> target) {
-		if (target == null)
-			return (ExecutableToken<O, S>) this;
-
-		return (ExecutableToken<O, S>) withBounds(target.getBounds()).withTargetType(target.getType());
-	}
-
-	/**
-	 * Derive a new instance of {@link ExecutableToken} with the given target
-	 * type.
-	 * 
-	 * <p>
-	 * The new {@link ExecutableToken} will always have a target type which is as
-	 * or more specific than both the current target type <em>and</em> the given
-	 * type. This means that the new target will be assignment compatible with the
-	 * given type, but if the given type contains wildcards or inference variables
-	 * which are less specific that those implied by the <em>current</em> target
-	 * type, new type arguments will be inferred in their place, or further bounds
-	 * may be added to them.
-	 * 
-	 * @param target
-	 *          The derived {@link ExecutableToken} must be assignment compatible
-	 *          with this type.
-	 * @return A new {@link ExecutableToken} compatible with the given target
-	 *         type.
-	 * 
-	 *         <p>
-	 *         The new target type will not be effectively more specific than the
-	 *         intersection type of the current target type and the given type.
-	 *         That is, any type which can be assigned to both the given type and
-	 *         the current target type, will also be assignable to the new type.
-	 */
-	public ExecutableToken<O, R> withTargetType(Type target) {
-		if (target == null)
-			return this;
-
-		return withBounds(
-				new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, returnType.getType(), target).reduce(getBounds()));
 	}
 
 	/**
@@ -940,37 +933,16 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 			return this;
 		}
 
-		Map<TypeVariable<?>, Type> argumentTypes = getAllTypeArguments()
-				.collect(toMap(TypeArgument::getParameter, TypeArgument::getType));
-
-		Map<Type, Type> argumentSubstitutions = new HashMap<>();
-		Map<InferenceVariable, Type> inferenceVariableInstantiations = new HashMap<>();
-		for (TypeArgument<?> argument : arguments) {
-			TypeVariable<?> parameter = argument.getParameter();
-			Type type = argument.getType();
-
-			Type previousType = argumentTypes.put(parameter, type);
-
-			if (previousType == null) {
-				throw new ReflectionException(m -> m.cannotParameterizeOnDeclaration(parameter, getMember()));
-			} else if (previousType.equals(parameter)) {
-				argumentSubstitutions.put(parameter, type);
-			} else if (previousType instanceof InferenceVariable) {
-				argumentSubstitutions.put(previousType, type);
-				inferenceVariableInstantiations.put((InferenceVariable) previousType, type);
-			} else if (!previousType.equals(type)) {
-				throw new ReflectionException(m -> m.cannotParameterizeWithReplacement(type, previousType));
-			}
-		}
-
-		BoundSet bounds = getBounds().withInstantiations(inferenceVariableInstantiations);
-		TypeSubstitution typeSubstitution = new TypeSubstitution(argumentSubstitutions);
+		TypeSubstitution typeSubstitution = new TypeSubstitution(
+				arguments.stream().collect(toMap(TypeArgument::getParameter, TypeArgument::getType)));
 
 		typeSubstitution = typeSubstitution.where(
-				bounds::containsInferenceVariable,
-				t -> bounds.getBoundsOn((InferenceVariable) t).getInstantiation().orElse(null));
+				getBounds()::containsInferenceVariable,
+				t -> getBounds().getBoundsOn((InferenceVariable) t).getInstantiation().orElse(null));
 
-		return withTypeSubstitution(bounds, typeSubstitution);
+		// TODO make sure is safe wrt to invalidating bounds on inference variables
+
+		return withTypeSubstitution(getBounds(), typeSubstitution);
 	}
 
 	protected ExecutableToken<O, R> withTypeSubstitution(BoundSet bounds, TypeSubstitution typeSubstitution) {
@@ -1036,7 +1008,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 
 				Object[] actualArguments = new Object[parameters.size()];
 				Object[] varargs = (Object[]) Array.newInstance(
-						Types.getRawType(parameters.get(regularArgumentCount).getType()).getComponentType(),
+						parameters.get(regularArgumentCount).getErasure().getComponentType(),
 						arguments.length - regularArgumentCount);
 
 				System.arraycopy(arguments, 0, actualArguments, 0, regularArgumentCount);

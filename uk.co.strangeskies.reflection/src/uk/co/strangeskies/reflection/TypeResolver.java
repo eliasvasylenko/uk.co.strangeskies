@@ -32,6 +32,7 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static java.util.Arrays.stream;
 import static java.util.Collections.emptyMap;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
@@ -58,7 +59,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -151,36 +151,37 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 		return bounds;
 	}
 
+	private Stream<TypeVariable<?>> getAllTypeParameters(GenericDeclaration declaration) {
+		if (declaration instanceof Class<?>) {
+			return ParameterizedTypes.getAllTypeParameters((Class<?>) declaration);
+		} else if (declaration instanceof Executable) {
+			return concat(
+					ParameterizedTypes.getAllTypeParameters(((Executable) declaration).getDeclaringClass()),
+					stream(declaration.getTypeParameters()));
+		} else {
+			throw new AssertionError();
+		}
+	}
+
 	private Map<TypeVariable<?>, InferenceVariable> inferTypeParametersImpl(
 			GenericDeclaration declaration,
 			Map<TypeVariable<?>, ? extends Type> existingCaptures) {
 
-		Map<TypeVariable<?>, InferenceVariable> newCaptures = Arrays
-				.stream(declaration.getTypeParameters())
+		Map<TypeVariable<?>, InferenceVariable> newCaptures = getAllTypeParameters(declaration)
 				.filter(p -> !existingCaptures.containsKey(p))
 				.collect(toMap(identity(), v -> new InferenceVariable(v.getName()), throwingMerger(), LinkedHashMap::new));
 
-		for (InferenceVariable newCapture : newCaptures.values()) {
-			bounds = bounds.withInferenceVariables(newCapture);
-		}
+		bounds = bounds.withInferenceVariables(newCaptures.values());
 
 		TypeSubstitution substitution = new TypeSubstitution(existingCaptures)
 				.where(newCaptures::containsKey, newCaptures::get);
-		for (Map.Entry<? extends TypeVariable<?>, InferenceVariable> capture : newCaptures.entrySet()) {
-			bounds = bounds
-					.withIncorporated()
-					.subtype(capture.getValue(), substitution.resolve(uncheckedIntersectionOf(capture.getKey().getBounds())));
-		}
 
-		for (Map.Entry<? extends TypeVariable<?>, InferenceVariable> capture : newCaptures.entrySet()) {
-			InferenceVariable inferenceVariable = capture.getValue();
-
-			Iterator<Type> iterator = bounds.getBoundsOn(inferenceVariable).getUpperBounds().iterator();
-			while (iterator.hasNext()) {
-				bounds = bounds.withIncorporated().subtype(inferenceVariable, iterator.next());
-			}
-			bounds = bounds.withIncorporated().subtype(inferenceVariable, Object.class);
-		}
+		bounds = concat(newCaptures.entrySet().stream(), existingCaptures.entrySet().stream()).reduce(
+				bounds,
+				(b, e) -> b
+						.withIncorporated()
+						.subtype(e.getValue(), substitution.resolve(uncheckedIntersectionOf(e.getKey().getBounds()))),
+				throwingMerger());
 
 		return newCaptures;
 	}
@@ -282,7 +283,7 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 *         variables in place of wildcards where appropriate.
 	 */
 	public ParameterizedType inferTypeArguments(ParameterizedType type) {
-		Class<?> rawType = Types.getRawType(type);
+		Class<?> rawType = (Class<?>) type.getRawType();
 
 		List<Entry<TypeVariable<?>, Type>> typeArguments = getAllTypeArguments(type).collect(toList());
 
@@ -345,7 +346,8 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 *         instantiations for each {@link InferenceVariable} mentioned
 	 */
 	public Type resolve(Type type) {
-		return new TypeSubstitution(t -> getBounds().containsInferenceVariable(t) ? resolve(t) : null).resolve(type);
+		return new TypeSubstitution(
+				t -> getBounds().containsInferenceVariable(t) ? getInstantiation((InferenceVariable) t) : null).resolve(type);
 	}
 
 	/**
@@ -565,9 +567,11 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 * 
 	 * @param bounds
 	 *          the bounds to incorporate
+	 * @return this resolver
 	 */
-	public void incorporateBounds(BoundSet bounds) {
+	public TypeResolver incorporateBounds(BoundSet bounds) {
 		this.bounds = this.bounds.withBounds(bounds);
+		return this;
 	}
 
 	/**
@@ -575,8 +579,10 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 * 
 	 * @param constraintFormula
 	 *          the constraint formula to reduce
+	 * @return this resolver
 	 */
-	public void reduceConstraint(ConstraintFormula constraintFormula) {
+	public TypeResolver reduceConstraint(ConstraintFormula constraintFormula) {
 		bounds = constraintFormula.reduce(bounds);
+		return this;
 	}
 }

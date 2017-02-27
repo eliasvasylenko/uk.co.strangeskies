@@ -46,7 +46,9 @@ public class InvocationExpression<O, T> implements ValueExpression<T> {
 	private final ExecutableToken<O, T> invocable;
 	private final List<ValueExpression<?>> arguments;
 
-	protected InvocationExpression(ValueExpression<? extends O> receiver, ExecutableToken<O, T> invocable,
+	protected InvocationExpression(
+			ValueExpression<? extends O> receiver,
+			ExecutableToken<O, T> invocable,
 			List<ValueExpression<?>> arguments) {
 		this.receiver = receiver;
 		this.invocable = invocable;
@@ -59,7 +61,7 @@ public class InvocationExpression<O, T> implements ValueExpression<T> {
 	}
 
 	@Override
-	public TypeToken<T> getType() {
+	public TypeToken<? extends T> getType() {
 		return invocable.getReturnType();
 	}
 
@@ -67,7 +69,8 @@ public class InvocationExpression<O, T> implements ValueExpression<T> {
 	 * @see #invokeStatic(ExecutableToken, List)
 	 */
 	@SuppressWarnings("javadoc")
-	public static <T> InvocationExpression<Void, T> invokeStatic(ExecutableToken<Void, T> executable,
+	public static <T> InvocationExpression<Void, T> invokeStatic(
+			ExecutableToken<Void, T> executable,
 			ValueExpression<?>... arguments) {
 		return invokeStatic(executable, asList(arguments));
 	}
@@ -82,17 +85,22 @@ public class InvocationExpression<O, T> implements ValueExpression<T> {
 	 * @return an expression describing the invocation of the given static
 	 *         executable with the given argument expressions
 	 */
-	public static <T> InvocationExpression<Void, T> invokeStatic(ExecutableToken<Void, T> executable,
+	public static <T> InvocationExpression<Void, T> invokeStatic(
+			ExecutableToken<Void, T> executable,
 			List<ValueExpression<?>> arguments) {
 		return new InvocationExpression<>(null, executable, arguments);
 	}
 
-	public static <R> InvocationExpression<Void, R> invokeResolvedStatic(Class<?> declaringClass, String invocableName,
+	public static <R> InvocationExpression<Void, R> invokeResolvedStatic(
+			Class<?> declaringClass,
+			String invocableName,
 			ValueExpression<?>... arguments) {
 		return invokeResolvedStatic(declaringClass, invocableName, Arrays.asList(arguments));
 	}
 
-	public static <R> InvocationExpression<Void, R> invokeResolvedStatic(Class<?> declaringClass, String invocableName,
+	public static <R> InvocationExpression<Void, R> invokeResolvedStatic(
+			Class<?> declaringClass,
+			String invocableName,
 			List<ValueExpression<?>> arguments) {
 		/*
 		 * TODO resolve method overload

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Elias N Vasylenko <eliasvasylenko@strangeskies.co.uk>
+s * Copyright (C) 2017 Elias N Vasylenko <eliasvasylenko@strangeskies.co.uk>
  *      __   _______  ____           _       __     _      __       __
  *    ,`_ `,|__   __||  _ `.        / \     |  \   | |  ,-`__`¬  ,-`__`¬
  *   ( (_`-'   | |   | | ) |       / . \    | . \  | | / .`  `' / .`  `'
@@ -41,6 +41,7 @@ import static uk.co.strangeskies.reflection.TypeVariables.typeVariableExtending;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
+import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -52,7 +53,8 @@ import uk.co.strangeskies.reflection.AnnotatedTypeSubstitution;
 import uk.co.strangeskies.reflection.AnnotatedTypeVariables;
 import uk.co.strangeskies.utilities.Isomorphism;
 
-public class ParameterizedDeclaration<S extends ParameterizedSignature<?>> extends AnnotatedDeclaration<S> {
+public class ParameterizedDeclaration<S extends ParameterizedSignature<?>> extends AnnotatedDeclaration<S>
+		implements GenericDeclaration {
 	private final List<TypeVariable<? extends ParameterizedDeclaration<S>>> typeVariables;
 	private final Map<Class<? extends Annotation>, Annotation> annotations;
 

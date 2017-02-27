@@ -58,7 +58,7 @@ public class AssignmentExpression<T> implements ValueExpression<T> {
 	}
 
 	@Override
-	public TypeToken<T> getType() {
+	public TypeToken<? extends T> getType() {
 		return target.getType();
 	}
 }

@@ -48,7 +48,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -222,8 +221,8 @@ public class ConstraintFormula {
 	}
 
 	private static boolean isUncheckedCompatibleOnly(Type from, Type to) {
-		Class<?> toRaw = Types.getRawType(to);
-		Class<?> fromRaw = Types.getRawType(from);
+		Class<?> toRaw = Types.getErasedType(to);
+		Class<?> fromRaw = Types.getErasedType(from);
 
 		if (to instanceof ParameterizedType) {
 			return toRaw.isAssignableFrom(fromRaw) && TypeHierarchy.resolveSupertype(from, toRaw) instanceof Class;
@@ -283,15 +282,14 @@ public class ConstraintFormula {
 				 * supertypes of S, a corresponding class or interface type is
 				 * identified, with type arguments B1, ..., Bn.
 				 */
-				Class<?> rawType = Types.getRawType(to);
-				if (!Types.getRawTypes(from).anyMatch(t -> rawType.isAssignableFrom(t))) {
+				Class<?> rawType = Types.getErasedType(to);
+				if (!Types.isAssignable(from, rawType)) {
 					/*
 					 * If no such type exists, the constraint reduces to false.
 					 */
 					if (!(from instanceof InferenceVariable))
 						bounds.incorporateFalsehood(
-								"Raw types '" + Types.getRawTypes(from).map(Objects::toString).collect(Collectors.joining(", "))
-										+ "' cannot be assigned from '" + Types.getRawType(to) + "': " + this);
+								"Type '" + from + "' cannot be assigned from '" + Types.getErasedType(to) + "': " + this);
 				} else {
 					List<Map.Entry<TypeVariable<?>, Type>> toArguments = ParameterizedTypes
 							.getAllTypeArguments((ParameterizedType) to)
@@ -306,7 +304,7 @@ public class ConstraintFormula {
 						fromSet = Arrays.asList(from);
 
 					for (Type from : fromSet) {
-						if (rawType.isAssignableFrom(Types.getRawType(from)) && from instanceof ParameterizedType) {
+						if (rawType.isAssignableFrom(Types.getErasedType(from)) && from instanceof ParameterizedType) {
 
 							ParameterizedType fromParameterization = (ParameterizedType) TypeHierarchy
 									.resolveSupertype(from, rawType);
@@ -341,7 +339,7 @@ public class ConstraintFormula {
 					from = intersectionOf(bounds.getBoundsOn((InferenceVariable) from).getUpperBounds().collect(toList()));
 				if (!Types.isAssignable(from, to))
 					bounds.incorporateFalsehood("Class types do not form subtype relation: " + this);
-			} else if (!(to instanceof IntersectionType) && Types.getRawType(to).isArray()) {
+			} else if (!(to instanceof IntersectionType) && Types.getErasedType(to).isArray()) {
 				/*
 				 * If T is an array type, T'[], then among the supertypes of S that are
 				 * array types, a most specific type is identified, S'[] (this may be S
@@ -410,7 +408,7 @@ public class ConstraintFormula {
 	}
 
 	private Type findMostSpecificArrayComponentType(Type from) {
-		if (Types.getRawType(from).isArray()) {
+		if (Types.getErasedType(from).isArray()) {
 			return Types.getComponentType(from);
 		}
 
@@ -424,7 +422,7 @@ public class ConstraintFormula {
 			// attempt to find most specific from candidates
 			return candidates
 					.stream()
-					.filter(t -> Types.getRawType(t).isArray())
+					.filter(t -> Types.getErasedType(t).isArray())
 					.map(Types::getComponentType)
 					.reduce(
 							(a, b) -> (a == null || b == null) ? null
@@ -628,7 +626,7 @@ public class ConstraintFormula {
 					 */
 					new ConstraintFormula(Kind.EQUALITY, Types.getComponentType(from), Types.getComponentType(to))
 							.reduceInPlace(bounds);
-				} else if (Types.getRawType(from).equals(Types.getRawType(to))) {
+				} else if (Types.getErasedType(from).equals(Types.getErasedType(to))) {
 					/*
 					 * Otherwise, if S and T are class or interface types with the same
 					 * erasure, where S has type arguments B1, ..., Bn and T has type

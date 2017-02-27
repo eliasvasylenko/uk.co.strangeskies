@@ -743,7 +743,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			new TypeVisitor() {
 				@Override
 				protected void visitClass(Class<?> type) {
-					if (type.isAssignableFrom(Types.getRawType(T)) && type.getTypeParameters().length > 0) {
+					if (Types.isAssignable(T, type) && type.getTypeParameters().length > 0) {
 						Type supertypeS = TypeHierarchy.resolveSupertype(S, type);
 						Type supertypeT = TypeHierarchy.resolveSupertype(T, type);
 

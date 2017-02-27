@@ -301,7 +301,7 @@ public class AnnotatedTypeSubstitution {
 
 			if (changed.get()) {
 				return (AnnotatedParameterizedType) AnnotatedParameterizedTypes
-						.parameterize(AnnotatedTypes.annotated(Types.getRawType(type.getType()), type.getAnnotations()), arguments);
+						.parameterize(AnnotatedTypes.annotated(Types.getErasedType(type.getType()), type.getAnnotations()), arguments);
 			} else {
 				return type;
 			}

@@ -48,7 +48,7 @@ public interface ValueExpression<T> extends Expression {
 
 	void accept(ValueExpressionVisitor<T> visitor);
 
-	TypeToken<T> getType();
+	TypeToken<? extends T> getType();
 
 	default <R> FieldExpression<? super T, R> accessField(FieldToken<? super T, R> field) {
 		return new FieldExpression<>(this, field);

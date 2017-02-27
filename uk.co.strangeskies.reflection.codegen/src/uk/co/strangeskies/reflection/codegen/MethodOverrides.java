@@ -37,7 +37,7 @@ import static java.util.Arrays.stream;
 import static java.util.stream.Stream.concat;
 import static uk.co.strangeskies.reflection.codegen.ErasedMethodSignature.erasedMethodSignature;
 import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.declareMethod;
-import static uk.co.strangeskies.reflection.token.ExecutableToken.overMethod;
+import static uk.co.strangeskies.reflection.token.ExecutableToken.forMethod;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.streamOptional;
 
 import java.lang.reflect.Method;
@@ -46,7 +46,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.reflection.Types;
 import uk.co.strangeskies.reflection.token.ExecutableParameter;
 import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.utilities.collection.StreamUtilities;
@@ -89,7 +88,7 @@ public class MethodOverrides<T> {
 
 	protected ExecutableToken<?, ?> getInvocable(Method method) {
 		ExecutableToken<?, ?> token = invocables
-				.computeIfAbsent(method, m -> overMethod(method).withTargetType(classDeclaration.getSuperType()));
+				.computeIfAbsent(method, m -> forMethod(method).withReceiverType(classDeclaration.getSuperType()));
 
 		return token;
 	}
@@ -106,8 +105,7 @@ public class MethodOverrides<T> {
 	protected void inheritMethod(Method method) {
 		ErasedMethodSignature overridingSignature = erasedMethodSignature(
 				method.getName(),
-				getInvocable(method).getParameters().map(ExecutableParameter::getType).map(Types::getRawType).toArray(
-						Class<?>[]::new));
+				getInvocable(method).getParameters().map(ExecutableParameter::getErasure).toArray(Class<?>[]::new));
 
 		MethodOverride<T> override = methods.computeIfAbsent(overridingSignature, k -> new MethodOverride<>(this));
 

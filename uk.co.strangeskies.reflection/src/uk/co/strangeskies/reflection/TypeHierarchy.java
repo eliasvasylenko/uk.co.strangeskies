@@ -4,7 +4,7 @@ import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.empty;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.getAllTypeArguments;
-import static uk.co.strangeskies.reflection.Types.getRawType;
+import static uk.co.strangeskies.reflection.Types.getErasedType;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.flatMapRecursive;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.iterateOptional;
 
@@ -27,7 +27,7 @@ interface Kig {
 }
 
 class Pog extends Fuk<String> implements Kig {
-	
+
 }
 
 public class TypeHierarchy {
@@ -121,7 +121,7 @@ public class TypeHierarchy {
 	}
 
 	private static Stream<Type> resolveImmediateSupertypes(Set<Class<?>> encountered, Type type, Class<?> superclass) {
-		Class<?> subclass = getRawType(type);
+		Class<?> subclass = getErasedType(type);
 
 		if (subclass.equals(superclass)) {
 			return empty();
@@ -154,7 +154,7 @@ public class TypeHierarchy {
 		 */
 		if (encountered != null && (!encountered.isEmpty() || lesserSubtypes.size() > 1)) {
 			for (Iterator<Type> lesserSubtypeIterator = lesserSubtypes.iterator(); lesserSubtypeIterator.hasNext();) {
-				Class<?> rawClass = getRawType(lesserSubtypeIterator.next());
+				Class<?> rawClass = getErasedType(lesserSubtypeIterator.next());
 
 				if (encountered.stream().anyMatch(rawClass::isAssignableFrom)) {
 					lesserSubtypeIterator.remove();
@@ -164,7 +164,7 @@ public class TypeHierarchy {
 			}
 		}
 
-		return lesserSubtypes.stream().filter(t -> superclass.isAssignableFrom(getRawType(t))).map(subtype -> {
+		return lesserSubtypes.stream().filter(t -> superclass.isAssignableFrom(getErasedType(t))).map(subtype -> {
 			if (type instanceof ParameterizedType)
 				return new TypeSubstitution(
 						getAllTypeArguments((ParameterizedType) type).collect(toMap(Entry::getKey, Entry::getValue)))

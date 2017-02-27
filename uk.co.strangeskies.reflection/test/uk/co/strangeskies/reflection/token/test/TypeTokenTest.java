@@ -729,9 +729,8 @@ public class TypeTokenTest {
 		printlines();
 
 		printlines(
-				"annotationseq: " + AnnotatedWildcardTypes
-						.wildcard()
-						.equals(AnnotatedWildcardTypes.wildcardExtending(AnnotatedTypes.annotated(Object.class))));
+				"annotationseq: " + AnnotatedWildcardTypes.wildcard().equals(
+						AnnotatedWildcardTypes.wildcardExtending(AnnotatedTypes.annotated(Object.class))));
 		printlines();
 
 		Imports imports2 = Imports.empty().withImports(Infer.class, Capture.class, Set.class, Map.class);

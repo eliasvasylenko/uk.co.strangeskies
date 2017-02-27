@@ -75,14 +75,6 @@ public class ExecutableTokenTest {
 		assertThat(typeArguments, everyItem(instanceOf(TypeVariable.class)));
 	}
 
-	@Test
-	public void constructorWithEnclosingTypeTest() {
-		ExecutableToken
-				.forInnerConstructor(Inner.class.getConstructors()[0])
-				.withReceiverType(new TypeToken<Outer<Number>>() {})
-				.withTargetType(new TypeToken<Outer<Number>.Inner<Integer>>() {});
-	}
-
 	@Test(expected = ReflectionException.class)
 	public void constructorWithWrongEnclosingTypeTest() {
 		ExecutableToken
@@ -107,13 +99,23 @@ public class ExecutableTokenTest {
 	}
 
 	@Test
+	public void constructorWithSameReceiverTypeTest() {
+		ExecutableToken
+				.forInnerConstructor(Inner.class.getConstructors()[0])
+				.withTargetType(new TypeToken<Outer<Number>.Inner<Integer>>() {})
+				.withReceiverType(new TypeToken<Outer<Number>>() {});
+	}
+
+	@Test
 	public void constructorWithMoreSpecificReceiverTypeTest() {
 		ExecutableToken<?, ?> constructor = ExecutableToken
 				.forInnerConstructor(Inner.class.getConstructors()[0])
 				.withTargetType(new @Infer TypeToken<Outer<? super Number>.Inner<Integer>>() {})
 				.withReceiverType(new TypeToken<Outer<Number>>() {});
 
-		assertThat(constructor.getReturnType().resolve(), equalTo(new TypeToken<Outer<Number>.Inner<Integer>>() {}));
+		assertThat(
+				constructor.getReturnType().substituteInstantiations(),
+				equalTo(new TypeToken<Outer<Number>.Inner<Integer>>() {}));
 	}
 
 	@Test
@@ -123,7 +125,17 @@ public class ExecutableTokenTest {
 				.withTargetType(new TypeToken<Outer<Number>.Inner<Integer>>() {})
 				.withReceiverType(new TypeToken<Outer<@Infer ? super Number>>() {});
 
-		assertThat(constructor.getReturnType().resolve(), equalTo(new TypeToken<Outer<Number>.Inner<Integer>>() {}));
+		assertThat(
+				constructor.getReturnType().substituteInstantiations(),
+				equalTo(new TypeToken<Outer<Number>.Inner<Integer>>() {}));
+	}
+
+	@Test
+	public void constructorWithSameEnclosingTargetTypeTest() {
+		ExecutableToken
+				.forInnerConstructor(Inner.class.getConstructors()[0])
+				.withReceiverType(new TypeToken<Outer<Number>>() {})
+				.withTargetType(new TypeToken<Outer<Number>.Inner<Integer>>() {});
 	}
 
 	@Test
@@ -133,7 +145,9 @@ public class ExecutableTokenTest {
 				.withReceiverType(new @Infer TypeToken<Outer<? super Number>>() {})
 				.withTargetType(new TypeToken<Outer<Number>.Inner<Integer>>() {});
 
-		assertThat(constructor.getReturnType().resolve(), equalTo(new TypeToken<Outer<Number>.Inner<Integer>>() {}));
+		assertThat(
+				constructor.getReturnType().substituteInstantiations(),
+				equalTo(new TypeToken<Outer<Number>.Inner<Integer>>() {}));
 	}
 
 	@Test
@@ -143,7 +157,9 @@ public class ExecutableTokenTest {
 				.withReceiverType(new TypeToken<Outer<Number>>() {})
 				.withTargetType(new @Infer TypeToken<Outer<? super Number>.Inner<Integer>>() {});
 
-		assertThat(constructor.getReturnType().resolve(), equalTo(new TypeToken<Outer<Number>.Inner<Integer>>() {}));
+		assertThat(
+				constructor.getReturnType().substituteInstantiations(),
+				equalTo(new TypeToken<Outer<Number>.Inner<Integer>>() {}));
 	}
 
 	@Test
@@ -152,7 +168,7 @@ public class ExecutableTokenTest {
 				.forInnerConstructor(Inner.class.getConstructors()[0])
 				.withReceiverType(new TypeToken<Outer<Number>>() {});
 
-		assertThat(constructor.getReturnType().resolve(), equalTo(new TypeToken<Outer<Number>.Inner<Integer>>() {}));
+		assertThat(constructor.getReceiverType().substituteInstantiations(), equalTo(new TypeToken<Outer<Number>>() {}));
 	}
 
 	@Test

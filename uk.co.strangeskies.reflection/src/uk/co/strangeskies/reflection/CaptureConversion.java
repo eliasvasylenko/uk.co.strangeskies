@@ -69,7 +69,7 @@ public class CaptureConversion {
 	private CaptureConversion(ParameterizedType originalType, Map<TypeVariable<?>, InferenceVariable> parameterCaptures) {
 		this.originalType = originalType;
 
-		captureType = ParameterizedTypes.parameterize(Types.getRawType(originalType), parameterCaptures::get);
+		captureType = ParameterizedTypes.parameterize(Types.getErasedType(originalType), parameterCaptures::get);
 
 		ParameterizedTypes.getAllTypeArguments(originalType).forEach(e -> {
 			Type argument = e.getValue();
@@ -92,7 +92,7 @@ public class CaptureConversion {
 	public CaptureConversion(ParameterizedType originalType) {
 		this(
 				originalType,
-				ParameterizedTypes.getAllTypeParameters(Types.getRawType(originalType)).collect(
+				ParameterizedTypes.getAllTypeParameters(Types.getErasedType(originalType)).collect(
 						Collectors.toMap(Function.identity(), t -> new InferenceVariable())));
 	}
 

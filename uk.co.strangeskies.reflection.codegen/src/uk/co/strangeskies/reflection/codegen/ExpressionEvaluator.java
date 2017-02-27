@@ -44,17 +44,17 @@ import uk.co.strangeskies.reflection.token.TypeToken;
 public class ExpressionEvaluator {
 	private class ExpressionVisitorImpl implements ExpressionVisitor {
 		@Override
-		public <U> ValueExpressionVisitor<U> value(TypeToken<U> type) {
+		public <U> ValueExpressionVisitor<U> value(TypeToken<? extends U> type) {
 			return new ValueExpressionVisitorImpl<>(type);
 		}
 	}
 
 	private class ValueExpressionVisitorImpl<T> implements ValueExpressionVisitor<T> {
-		private final TypeToken<T> type;
+		private final TypeToken<? extends T> type;
 		private boolean complete = false;
 		private ValueResult<T> result;
 
-		public ValueExpressionVisitorImpl(TypeToken<T> type) {
+		public ValueExpressionVisitorImpl(TypeToken<? extends T> type) {
 			this.type = type;
 		}
 

@@ -39,7 +39,7 @@ import uk.co.strangeskies.reflection.token.FieldToken;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 public interface ExpressionVisitor {
-	<U> ValueExpressionVisitor<U> value(TypeToken<U> type);
+	<U> ValueExpressionVisitor<U> value(TypeToken<? extends U> type);
 
 	interface ValueExpressionVisitor<U> {
 		VariableExpressionVisitor<U> variable();

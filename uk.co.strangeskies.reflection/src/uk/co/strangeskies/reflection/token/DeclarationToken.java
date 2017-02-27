@@ -1,7 +1,5 @@
 package uk.co.strangeskies.reflection.token;
 
-import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.empty;
 import static uk.co.strangeskies.reflection.token.TypeParameter.forTypeVariable;
 
@@ -12,13 +10,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.InferenceVariable;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeVariableCapture;
-import uk.co.strangeskies.utilities.collection.StreamUtilities;
 
 /**
  * A token representing a declaration. If the declaration is generic, it may be
@@ -51,10 +47,7 @@ public interface DeclarationToken<S extends DeclarationToken<S>> {
 	 *         enclosing declarations
 	 */
 	default int getAllTypeParameterCount() {
-		if (isRaw())
-			return 0;
-		else
-			return getTypeParameterCount() + getOwningDeclaration().map(DeclarationToken::getAllTypeParameterCount).orElse(0);
+		return getTypeParameterCount() + getOwningDeclaration().map(DeclarationToken::getAllTypeParameterCount).orElse(0);
 	}
 
 	/**
@@ -62,12 +55,9 @@ public interface DeclarationToken<S extends DeclarationToken<S>> {
 	 *         declarations
 	 */
 	default Stream<TypeParameter<?>> getAllTypeParameters() {
-		if (isRaw())
-			return Stream.empty();
-		else
-			return Stream.concat(
-					getTypeParameters(),
-					getOwningDeclaration().map(DeclarationToken::getAllTypeParameters).orElse(empty()));
+		return Stream.concat(
+				getTypeParameters(),
+				getOwningDeclaration().map(DeclarationToken::getAllTypeParameters).orElse(empty()));
 	}
 
 	/**
@@ -124,6 +114,11 @@ public interface DeclarationToken<S extends DeclarationToken<S>> {
 	 * </code>
 	 * </pre>
 	 * 
+	 * <p>
+	 * This behavior is different from {@link #withTypeArguments(List)}, which
+	 * re-instantiates every parameter on the declaration rather than performing a
+	 * substitution for arbitrary type variables.
+	 * 
 	 * @param arguments
 	 *          the type variable instantiations
 	 * @return a new derived {@link ExecutableToken} instance with the given
@@ -134,14 +129,18 @@ public interface DeclarationToken<S extends DeclarationToken<S>> {
 	}
 
 	/**
-	 * Derive a new {@link ExecutableToken} instance from this, with the given
-	 * instantiation substituted for the given {@link TypeVariable}.
+	 * Derive a new {@link ExecutableToken} instance from this, with types
+	 * substituted according to the given arguments.
 	 * 
 	 * <p>
-	 * The substitution will only succeed if it is compatible with the bounds on
-	 * that type variable, and if it is more specific than the current type of the
-	 * type variable, whether it is an {@link InferenceVariable}, a
-	 * {@link TypeVariableCapture}, or another class of {@link Type}.
+	 * More specifically, each of the given arguments represents a type variable
+	 * and an instantiation for that type variable. Occurrences of those type
+	 * variables in the declaration will be substituted for their instantiations
+	 * in the derived declaration.
+	 * 
+	 * <p>
+	 * The substitution will only succeed if it results in a valid
+	 * parameterization of the declaration.
 	 * 
 	 * <p>
 	 * For example, the following method could be used to derive instances of
@@ -194,15 +193,33 @@ public interface DeclarationToken<S extends DeclarationToken<S>> {
 	 * @see #withTypeArguments(List)
 	 */
 	@SuppressWarnings("javadoc")
-	default S withTypeArguments(Type... typeArguments) {
-		return withTypeArguments(asList(typeArguments));
-	}
+	DeclarationToken<?> withAllTypeArguments(Type... typeArguments);
 
 	/**
-	 * Derive a new {@link DeclarationToken} instance with the given generic type
-	 * argument substitutions, as per the behavior of
-	 * {@link #withTypeArguments(TypeArgument[])}, but with the types of each
-	 * argument provided in order.
+	 * @see #withTypeArguments(List)
+	 */
+	@SuppressWarnings("javadoc")
+	DeclarationToken<?> withTypeArguments(Type... typeArguments);
+
+	/**
+	 * Derive a new {@link DeclarationToken} instance with the given type argument
+	 * parameterization.
+	 * 
+	 * <p>
+	 * The types in the given list correspond, in order, to the
+	 * {@link #getTypeParameters() type parameters} of this declaration. The
+	 * current parameterization of the declaration is substituted for that given.
+	 * 
+	 * <p>
+	 * Each substitution will only succeed if it is compatible with the bounds on
+	 * that type variable, and if it is more specific than the current argument,
+	 * whether it is an {@link InferenceVariable}, a {@link TypeVariableCapture},
+	 * or another kind of {@link Type}.
+	 * 
+	 * <p>
+	 * This behavior is different from {@link #withTypeArguments(Collection)},
+	 * which performs a substitution for arbitrary type variables rather than
+	 * re-instantiating every parameter on the declaration.
 	 * 
 	 * @param typeArguments
 	 *          a list of arguments for each generic type parameter of the
@@ -211,21 +228,12 @@ public interface DeclarationToken<S extends DeclarationToken<S>> {
 	 *         instantiations substituted for each generic type parameter, in
 	 *         order
 	 */
-	default S withTypeArguments(List<Type> typeArguments) {
-		Stream<TypeParameter<?>> typeParameters;
+	DeclarationToken<?> withAllTypeArguments(List<Type> typeArguments);
 
-		if (typeArguments.size() == getTypeParameterCount()) {
-			typeParameters = getTypeParameters();
-		} else if (typeArguments.size() == getAllTypeParameterCount()) {
-			typeParameters = getAllTypeParameters();
-		} else {
-			throw new ReflectionException(
-					p -> p.incorrectTypeArgumentCount(
-							getTypeParameters().map(TypeParameter::getType).collect(Collectors.toList()),
-							typeArguments));
-		}
-
-		return withTypeArguments(
-				StreamUtilities.zip(typeParameters, typeArguments.stream(), (p, a) -> p.asType(a)).collect(toList()));
-	}
+	/**
+	 * As @see {@link #withAllTypeArguments(List)}, but only providing arguments
+	 * for the parameters occurring directly on the declaration.
+	 */
+	@SuppressWarnings("javadoc")
+	DeclarationToken<?> withTypeArguments(List<Type> typeArguments);
 }

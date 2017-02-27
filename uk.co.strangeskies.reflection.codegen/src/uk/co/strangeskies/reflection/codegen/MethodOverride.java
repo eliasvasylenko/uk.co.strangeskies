@@ -33,7 +33,6 @@
 package uk.co.strangeskies.reflection.codegen;
 
 import static java.lang.reflect.Modifier.isAbstract;
-import static java.util.Arrays.asList;
 import static uk.co.strangeskies.reflection.Types.isAssignable;
 import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.declareMethod;
 import static uk.co.strangeskies.reflection.codegen.MethodSignature.overrideMethodSignature;
@@ -100,8 +99,7 @@ public class MethodOverride<T> {
 	}
 
 	private void validateOverride(Method method) {
-		ExecutableToken<?, ?> overriddenToken = methodOverrides.getInvocable(method).withTypeArguments(
-				method.getTypeParameters());
+		ExecutableToken<?, ?> overriddenToken = methodOverrides.getInvocable(method).parameterize();
 
 		getMethods().stream().filter(m -> m != method).forEach(
 				m -> validateOverrideAgainst(
@@ -116,8 +114,7 @@ public class MethodOverride<T> {
 			Type[] parameters,
 			TypeVariable<?>[] typeParameters,
 			Method inherited) {
-		ExecutableToken<?, ?> inheritedToken = methodOverrides.getInvocable(inherited).withTypeArguments(
-				asList(typeParameters));
+		ExecutableToken<?, ?> inheritedToken = methodOverrides.getInvocable(inherited).parameterize();
 
 		if (!isAssignable(returnType, inheritedToken.getReturnType().resolve().getType())) {
 			throw new CodeGenerationException(p -> p.incompatibleReturnTypes(returnType, inherited));
@@ -166,8 +163,7 @@ public class MethodOverride<T> {
 					overrideSignatureMethod = interfaceMethods.iterator().next();
 				}
 
-				ExecutableToken<?, ?> executableToken = methodOverrides.getInvocable(overrideSignatureMethod).withTypeArguments(
-						asList(overrideSignatureMethod.getTypeParameters()));
+				ExecutableToken<?, ?> executableToken = methodOverrides.getInvocable(overrideSignatureMethod).parameterize();
 
 				MethodSignature<?> signature = overrideMethodSignature(executableToken);
 

@@ -32,17 +32,19 @@
  */
 package uk.co.strangeskies.reflection.token;
 
+import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.toMap;
 import static uk.co.strangeskies.reflection.token.FieldTokenQuery.fieldQuery;
 import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
 import static uk.co.strangeskies.reflection.token.TypeToken.forType;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.entriesToMap;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -75,21 +77,21 @@ public class FieldToken<O, T> implements MemberToken<O, FieldToken<O, T>> {
 	private final TypeToken<T> fieldType;
 	private final Field field;
 
-	protected FieldToken(Field field, TypeToken<O> receiverType) {
+	protected FieldToken(Field field, TypeToken<? super O> receiverType) {
 		this(field, receiverType, new TypeResolver());
 	}
 
-	protected FieldToken(Field field, TypeToken<O> receiverType, TypeResolver resolver) {
-		super(field, resolver, receiverType);
+	protected FieldToken(Field field, TypeToken<? super O> receiverType, TypeResolver resolver) {
+		this.field = field;
 
 		TypeSubstitution inferenceVariableSubstitution = new TypeSubstitution(
-				getAllTypeArguments().collect(entriesToMap()));
+				getAllTypeArguments().collect(toMap(TypeArgument::getParameter, TypeArgument::getType)));
 
 		this.receiverType = determineReceiverType(inferenceVariableSubstitution, receiverType);
 		this.fieldType = determineFieldType(resolver, inferenceVariableSubstitution);
 	}
 
-	private TypeToken<O> determineReceiverType(TypeSubstitution inferenceVariables, TypeToken<O> receiverType) {
+	private TypeToken<? super O> determineReceiverType(TypeSubstitution inferenceVariables, TypeToken<? super O> receiverType) {
 		if (receiverType.getType().equals(void.class)) {
 			return receiverType;
 		} else {
@@ -208,8 +210,8 @@ public class FieldToken<O, T> implements MemberToken<O, FieldToken<O, T>> {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public FieldToken<O, T> withReceiverType(TypeToken<?> type) {
-		return withBounds(type.getBounds()).withReceiverType(type.getType());
+	public <P> FieldToken<P, ?> withReceiverType(TypeToken<P> type) {
+		return (FieldToken<P, ?>) withBounds(type.getBounds()).withReceiverType(type.getType());
 	}
 
 	@Override
@@ -233,7 +235,7 @@ public class FieldToken<O, T> implements MemberToken<O, FieldToken<O, T>> {
 
 		BoundSet bounds = new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, fieldType.getType(), type).reduce(getBounds());
 
-		TypeToken<O> receiverType = this.receiverType.withBounds(bounds);
+		TypeToken<? super O> receiverType = this.receiverType.withBounds(bounds);
 
 		return new FieldToken<>(getMember(), receiverType);
 	}
@@ -313,5 +315,33 @@ public class FieldToken<O, T> implements MemberToken<O, FieldToken<O, T>> {
 	public FieldToken<O, T> withTypeArguments(Collection<? extends TypeArgument<?>> arguments) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public boolean isGeneric() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public FieldToken<O, T> withAllTypeArguments(List<Type> typeArguments) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public FieldToken<O, T> withTypeArguments(List<Type> typeArguments) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public FieldToken<O, T> withAllTypeArguments(Type... typeArguments) {
+		return withAllTypeArguments(asList(typeArguments));
+	}
+
+	@Override
+	public FieldToken<O, T> withTypeArguments(Type... typeArguments) {
+		return withTypeArguments(asList(typeArguments));
 	}
 }
