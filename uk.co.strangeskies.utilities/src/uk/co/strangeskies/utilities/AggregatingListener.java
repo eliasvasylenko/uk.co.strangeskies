@@ -50,7 +50,11 @@ public class AggregatingListener<T> extends ForwardingListener<T, List<T>> {
 	private final Executor executor;
 	private final List<T> list;
 
-	private AggregatingListener(Executor executor) {
+	/**
+	 * @param executor
+	 *          the executor with which to execute forwarded events
+	 */
+	public AggregatingListener(Executor executor) {
 		this.executor = executor;
 		this.list = new ArrayList<>();
 	}
