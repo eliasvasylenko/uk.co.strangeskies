@@ -287,7 +287,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 				: (TypeToken<? extends R>) forType(((Method) getMember()).getGenericReturnType());
 
 		return withExecutableTokenData(
-				getReceiverType().getRawTypeToken().parameterize(),
+				getReceiverType().getErasedTypeToken().parameterize(),
 				returnType,
 				Arrays
 						.stream(getMember().getParameters())
@@ -568,7 +568,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 		}
 
 		if (isRaw()) {
-			Class<?> rawType = getReceiverType().getRawType();
+			Class<?> rawType = getReceiverType().getErasedType();
 			TypeToken<? super U> receiverType = type.resolveSupertype(rawType);
 
 			return (ExecutableToken<U, R>) partialParameterization(
@@ -577,7 +577,8 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 
 		} else {
 			return (ExecutableToken<U, R>) withBounds(
-					new ConstraintFormula(Kind.SUBTYPE, type.getType(), receiverType.getType()).reduce(getBounds()));
+					new ConstraintFormula(Kind.SUBTYPE, type.getType(), receiverType.getType())
+							.reduce(getBounds().withBounds(type.getBounds())));
 		}
 	}
 
@@ -605,19 +606,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 		if (target == null)
 			return this;
 
-		/*
-		 * TODO if the target is raw or not generic, just perform a loose
-		 * compatibility check and return this. This is the same for both
-		 * constructors and methods.
-		 */
-
-		/*
-		 * TODO if a constructor, first try to parameterize directly, unless the
-		 * given target is a super type
-		 */
-
-		return withBounds(
-				new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, returnType.getType(), target).reduce(getBounds()));
+		return withTargetType(forType(target));
 	}
 
 	/**
@@ -650,10 +639,34 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 	 */
 	@SuppressWarnings("unchecked")
 	public <S> ExecutableToken<O, S> withTargetType(TypeToken<S> target) {
-		if (target.getType() == null)
+		if (!returnType.isGeneric()) {
+			if (!returnType.satisfiesConstraintTo(LOOSE_COMPATIBILILTY, target)) {
+				throw new ReflectionException(m -> m.cannotResolveOverride(getMember(), target.getType()));
+			}
 			return (ExecutableToken<O, S>) this;
 
-		return (ExecutableToken<O, S>) withBounds(target.getBounds()).withTargetType(target.getType());
+		} else if (target.getType() == null) {
+			return (ExecutableToken<O, S>) this;
+
+		} else if (isRaw()) {
+			if (isConstructor() && returnType.getType() == target.getErasedType()) {
+				return (ExecutableToken<O, S>) partialParameterization(
+						target.getBounds(),
+						target.getAllTypeArguments().collect(toMap(TypeArgument::getParameter, TypeArgument::getType)));
+
+			} else {
+				/*
+				 * TODO parameterize with inference variables then add loose
+				 * compatibility constraint
+				 */
+				return null;
+			}
+
+		} else {
+			return (ExecutableToken<O, S>) withBounds(
+					new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, returnType.getType(), target.getType())
+							.reduce(getBounds().withBounds(target.getBounds())));
+		}
 	}
 
 	/**
@@ -668,7 +681,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 	 */
 	public <U> ExecutableToken<U, R> getOverride(TypeToken<U> type) {
 		boolean matchingRawType = (type.getType() instanceof Class<?> || type.getType() instanceof ParameterizedType)
-				&& type.getRawType().equals(receiverType.getRawType());
+				&& type.getErasedType().equals(receiverType.getErasedType());
 
 		if (matchingRawType) {
 			return withReceiverType(type);
@@ -700,7 +713,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 			 * erased signature is different we will still find a bridge.
 			 */
 			override = StreamUtilities
-					.<Class<?>>iterate(type.getRawType(), Class::getSuperclass)
+					.<Class<?>>iterate(type.getErasedType(), Class::getSuperclass)
 					.flatMap(
 							t -> streamOptional(
 									tryOptional(() -> getErasedType(t).getDeclaredMethod(getName(), getMember().getParameterTypes()))))

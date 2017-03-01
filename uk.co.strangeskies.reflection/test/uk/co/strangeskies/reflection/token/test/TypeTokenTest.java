@@ -401,7 +401,7 @@ public class TypeTokenTest {
 
 		TypeToken<?> targetClass = new TypeToken<List<?>>() {};
 		TypeToken<?> resultClass = new TypeToken<Iterable<String>>() {};
-		printlines(resultClass.satisfiesConstraintTo(CONTAINMENT, targetClass.resolveSupertype(resultClass.getRawType())));
+		printlines(resultClass.satisfiesConstraintTo(CONTAINMENT, targetClass.resolveSupertype(resultClass.getErasedType())));
 		printlines();
 
 		printlines(new TypeToken<List<?>>() {}.getExtending(Wildcards.CAPTURE));
@@ -881,7 +881,7 @@ interface SchemaNode<S extends SchemaNode<S, E>, E extends SchemaNode.Effective<
 	List<? extends ChildNode<?, ?>> children();
 }
 
-interface ChildNode<S extends ChildNode<S, E>, E extends ChildNode.Effective<S, E>> extends SchemaNode<S, E> {
+interface ChildNode<S extends ChildNode<S, P>, P extends ChildNode.Effective<S, P>> extends SchemaNode<S, P> {
 	interface Effective<S extends ChildNode<S, E>, E extends Effective<S, E>>
 			extends ChildNode<S, E>, SchemaNode.Effective<S, E> {}
 }

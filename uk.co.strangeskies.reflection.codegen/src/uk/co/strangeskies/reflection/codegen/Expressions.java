@@ -50,7 +50,7 @@ public class Expressions {
 		}
 
 		@Override
-		public TypeToken<Object> getType() {
+		public TypeToken<?> getType() {
 			return TypeToken.forNull();
 		}
 	};

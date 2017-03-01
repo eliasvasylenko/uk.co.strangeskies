@@ -89,7 +89,7 @@ public class ReflectiveInstanceImpl<E, T> implements ReflectiveInstance<E, T> {
 			Collection<? extends Object> arguments) {
 		classDefinition.getClassSpace().validate();
 
-		Set<Class<?>> rawTypes = classDefinition.getDeclaration().getSuperTypes().flatMap(t -> t.getRawTypes()).collect(
+		Set<Class<?>> rawTypes = classDefinition.getDeclaration().getSuperTypes().flatMap(t -> t.getErasedUpperBounds()).collect(
 				Collectors.toCollection(LinkedHashSet::new));
 
 		for (Class<?> rawType : rawTypes) {

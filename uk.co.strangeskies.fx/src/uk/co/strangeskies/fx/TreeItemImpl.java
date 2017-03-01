@@ -223,7 +223,7 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 		public <V extends TreeContribution<? super U>> Stream<V> contributions(TypeToken<V> type) {
 			return itemContributions
 					.stream()
-					.filter(c -> forClass(type.getRawType()).satisfiesConstraintFrom(LOOSE_COMPATIBILILTY, c.getClass()))
+					.filter(c -> forClass(type.getErasedType()).satisfiesConstraintFrom(LOOSE_COMPATIBILILTY, c.getClass()))
 					.map(type::cast);
 		}
 

@@ -106,7 +106,7 @@ public class TypedObject<T> implements ReifiedToken<TypedObject<T>> {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T> TypedObject<T> castUnsafe(Object object, TypeToken<T> type) {
-		if (!type.getRawTypes().allMatch(r -> r.isAssignableFrom(object.getClass())))
+		if (!type.getErasedUpperBounds().allMatch(r -> r.isAssignableFrom(object.getClass())))
 			throw new ReflectionException(p -> p.invalidCastObject(object, object.getClass(), type.getType()));
 
 		return new TypedObject<>(type, (T) object);

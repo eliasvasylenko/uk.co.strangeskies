@@ -123,7 +123,7 @@ public class ExecutableTokenTest {
 		ExecutableToken<?, ?> constructor = ExecutableToken
 				.forInnerConstructor(Inner.class.getConstructors()[0])
 				.withTargetType(new TypeToken<Outer<Number>.Inner<Integer>>() {})
-				.withReceiverType(new TypeToken<Outer<@Infer ? super Number>>() {});
+				.withReceiverType(new @Infer TypeToken<Outer<? super Number>>() {});
 
 		assertThat(
 				constructor.getReturnType().substituteInstantiations(),

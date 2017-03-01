@@ -529,13 +529,10 @@ public class TypeToken<T>
 	/**
 	 * Create a TypeToken over the null type.
 	 * 
-	 * @param <T>
-	 *          the target type
 	 * @return a TypeToken over the null type
 	 */
-	@SuppressWarnings("unchecked")
-	public static <T> TypeToken<T> forNull() {
-		return (TypeToken<T>) NULL_TYPE_TOKEN;
+	public static TypeToken<?> forNull() {
+		return NULL_TYPE_TOKEN;
 	}
 
 	@Override
@@ -717,8 +714,8 @@ public class TypeToken<T>
 	 * @return the raw type of the type represented by this TypeToken
 	 */
 	@SuppressWarnings("unchecked")
-	public Class<? super T> getRawType() {
-		return (Class<? super T>) getRawTypes().findFirst().orElse(Object.class);
+	public Class<? super T> getErasedType() {
+		return (Class<? super T>) getErasedUpperBounds().findFirst().orElse(Object.class);
 	}
 
 	/**
@@ -727,11 +724,11 @@ public class TypeToken<T>
 	 * @return the raw type of the type represented by this TypeToken
 	 */
 	@SuppressWarnings("unchecked")
-	public TypeToken<? super T> getRawTypeToken() {
+	public TypeToken<? super T> getErasedTypeToken() {
 		if (isRaw()) {
 			return this;
 		} else {
-			return (TypeToken<? super T>) forType(getRawTypes().findFirst().orElse(Object.class));
+			return (TypeToken<? super T>) forType(getErasedUpperBounds().findFirst().orElse(Object.class));
 		}
 	}
 
@@ -769,7 +766,7 @@ public class TypeToken<T>
 	 * 
 	 * @return the raw types of the type represented by this TypeToken
 	 */
-	public Stream<Class<?>> getRawTypes() {
+	public Stream<Class<?>> getErasedUpperBounds() {
 		return getUpperBounds().map(Types::getErasedType);
 	}
 
@@ -825,7 +822,7 @@ public class TypeToken<T>
 	@SuppressWarnings("unchecked")
 	public TypeToken<T> wrapPrimitive() {
 		if (isPrimitive())
-			return (TypeToken<T>) forClass(Types.wrapPrimitive(getRawType()));
+			return (TypeToken<T>) forClass(Types.wrapPrimitive(getErasedType()));
 		else
 			return this;
 	}
@@ -840,7 +837,7 @@ public class TypeToken<T>
 	@SuppressWarnings("unchecked")
 	public TypeToken<T> unwrapPrimitive() {
 		if (isPrimitiveWrapper())
-			return (TypeToken<T>) forClass(Types.unwrapPrimitive(getRawType()));
+			return (TypeToken<T>) forClass(Types.unwrapPrimitive(getErasedType()));
 		else
 			return this;
 	}
@@ -1021,7 +1018,7 @@ public class TypeToken<T>
 	@SuppressWarnings("unchecked")
 	public TypeToken<? extends T> parameterize() {
 		if (isRaw()) {
-			return (TypeToken<T>) forType(ParameterizedTypes.parameterize(getRawType()));
+			return (TypeToken<T>) forType(ParameterizedTypes.parameterize(getErasedType()));
 		} else {
 			return this;
 		}
@@ -1108,7 +1105,7 @@ public class TypeToken<T>
 	 */
 	@SuppressWarnings("unchecked")
 	public T cast(Object object) {
-		if (!isSubtype(object.getClass(), intersectionOf(getRawTypes().collect(toList())))) {
+		if (!isSubtype(object.getClass(), intersectionOf(getErasedUpperBounds().collect(toList())))) {
 			throw new ClassCastException();
 		}
 		return (T) object;
@@ -1157,7 +1154,7 @@ public class TypeToken<T>
 	 *         wrapped in {@link FieldToken} instances
 	 */
 	public FieldTokenQuery<FieldToken<T, ?>, ?> fields() {
-		Stream<Field> fields = stream(getRawType().getFields());
+		Stream<Field> fields = stream(getErasedType().getFields());
 
 		return fieldQuery(fields, f -> FieldToken.overField(f, this));
 	}
@@ -1169,7 +1166,7 @@ public class TypeToken<T>
 	 *         wrapped in {@link FieldToken} instances
 	 */
 	public FieldTokenQuery<FieldToken<T, ?>, ?> declaredFields() {
-		Stream<Field> fields = stream(getRawType().getDeclaredFields());
+		Stream<Field> fields = stream(getErasedType().getDeclaredFields());
 
 		return fieldQuery(fields, f -> FieldToken.overField(f, this));
 	}
@@ -1181,7 +1178,7 @@ public class TypeToken<T>
 	 *         wrapped in {@link ExecutableToken} instances
 	 */
 	public ExecutableTokenQuery<ExecutableToken<Void, T>, ?> constructors() {
-		Stream<Constructor<?>> constructors = stream(getRawType().getConstructors());
+		Stream<Constructor<?>> constructors = stream(getErasedType().getConstructors());
 
 		return executableQuery(constructors, m -> forConstructor(m).withTargetType(this));
 	}
@@ -1193,7 +1190,7 @@ public class TypeToken<T>
 	 *         wrapped in {@link ExecutableToken} instances
 	 */
 	public ExecutableTokenQuery<ExecutableToken<Void, T>, ?> declaredConstructors() {
-		Stream<Constructor<?>> constructors = stream(getRawType().getDeclaredConstructors());
+		Stream<Constructor<?>> constructors = stream(getErasedType().getDeclaredConstructors());
 
 		return executableQuery(constructors, m -> forConstructor(m).withTargetType(this));
 	}
@@ -1206,7 +1203,7 @@ public class TypeToken<T>
 	 *         wrapped in {@link ExecutableToken} instances
 	 */
 	public ExecutableTokenQuery<ExecutableToken<T, ?>, ?> methods() {
-		Stream<Method> methodStream = getRawTypes().flatMap(t -> stream(t.getMethods()));
+		Stream<Method> methodStream = getErasedUpperBounds().flatMap(t -> stream(t.getMethods()));
 
 		/*
 		 * TODO resolve entire type hierarchy once and reduce to a map from raw
@@ -1214,7 +1211,7 @@ public class TypeToken<T>
 		 * type for everything without repeating calculations.
 		 */
 
-		if (getRawTypes().allMatch(Types::isInterface))
+		if (getErasedUpperBounds().allMatch(Types::isInterface))
 			methodStream = Stream.concat(methodStream, stream(Object.class.getMethods()));
 
 		methodStream = methodStream.filter(m -> !Modifier.isStatic(m.getModifiers()));
@@ -1230,7 +1227,7 @@ public class TypeToken<T>
 	 *         wrapped in {@link ExecutableToken} instances
 	 */
 	public ExecutableTokenQuery<ExecutableToken<T, ?>, ?> declaredMethods() {
-		Stream<Method> methodStream = stream(getRawType().getDeclaredMethods())
+		Stream<Method> methodStream = stream(getErasedType().getDeclaredMethods())
 				.filter(m -> !Modifier.isStatic(m.getModifiers()));
 
 		return executableQuery(methodStream, m -> forMethod(m).withReceiverType(this));
@@ -1258,7 +1255,7 @@ public class TypeToken<T>
 	@Override
 	public Stream<TypeParameter<?>> getTypeParameters() {
 		if (getType() instanceof ParameterizedType) {
-			return Arrays.stream(getRawType().getTypeParameters()).map(e -> forTypeVariable(e));
+			return Arrays.stream(getErasedType().getTypeParameters()).map(e -> forTypeVariable(e));
 		} else {
 			return Stream.empty();
 		}
@@ -1268,7 +1265,7 @@ public class TypeToken<T>
 	public Stream<TypeArgument<?>> getTypeArguments() {
 		if (getType() instanceof ParameterizedType) {
 
-			Stream<TypeVariable<?>> parameters = Arrays.stream(getRawType().getTypeParameters());
+			Stream<TypeVariable<?>> parameters = Arrays.stream(getErasedType().getTypeParameters());
 			Stream<Type> arguments = Arrays.stream(((ParameterizedType) getType()).getActualTypeArguments());
 
 			return zip(parameters, arguments).map(e -> forTypeVariable(e.getKey()).asType(e.getValue()));
