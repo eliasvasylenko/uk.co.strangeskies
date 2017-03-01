@@ -76,7 +76,7 @@ public class TypedObject<T> implements ReifiedToken<TypedObject<T>> {
 	 *          The object to wrap with a typed container
 	 * @return A typed container for the given object
 	 */
-	public static <T> TypedObject<T> typedObject(T object, TypeToken<T> type) {
+	public static <T> TypedObject<T> typedObject(TypeToken<T> type, T object) {
 		return new TypedObject<>(type, object);
 	}
 
@@ -88,8 +88,8 @@ public class TypedObject<T> implements ReifiedToken<TypedObject<T>> {
 	 *          The object to wrap with a typed container
 	 * @return A typed container for the given object
 	 */
-	public static <T> TypedObject<T> typedObject(T object, Class<T> type) {
-		return typedObject(object, forClass(type));
+	public static <T> TypedObject<T> typedObject(Class<T> type, T object) {
+		return typedObject(forClass(type), object);
 	}
 
 	/**

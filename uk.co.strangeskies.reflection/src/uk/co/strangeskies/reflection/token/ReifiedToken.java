@@ -65,6 +65,6 @@ public interface ReifiedToken<S extends ReifiedToken<S>> extends Reified, Self<S
 	 * @return this object as a {@link TypedObject}
 	 */
 	default TypedObject<S> asTypedObject() {
-		return typedObject(getThis(), getThisTypeToken());
+		return typedObject(getThisTypeToken(), getThis());
 	}
 }
