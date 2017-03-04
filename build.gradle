@@ -27,9 +27,18 @@ buildscript {
   }
 }
 
+plugins {
+    id 'com.gradle.build-scan' version '1.6'
+}
+
+buildScan {
+    licenseAgreementUrl = 'https://gradle.com/terms-of-service'
+    licenseAgree = 'yes'
+}
+
 task wrapper(type: Wrapper) {
   jarFile = rootProject.file(".gradle-wrapper/gradle-wrapper.jar")
-  gradleVersion = "3.1"
+  gradleVersion = "3.4"
 }
 
 /* Initialize the bnd workspace */
