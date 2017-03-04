@@ -192,7 +192,7 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 	}
 
 	public Stream<MethodDeclaration<T, ?>> methodDeclarations() {
-		return methodDeclarations.values().stream();
+		return methodDeclarations.values().stream().distinct();
 	}
 
 	public MethodDeclaration<E, T> getConstructorDeclaration(Class<?>... erasedParameters) {
