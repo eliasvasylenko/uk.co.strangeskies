@@ -572,7 +572,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 			Class<?> rawType = getReceiverType().getErasedType();
 			TypeToken<? super U> receiverType = type.resolveSupertype(rawType);
 
-			return (ExecutableToken<U, R>) partialParameterization(
+			return partialParameterization(
 					type.getBounds(),
 					receiverType.getAllTypeArguments().collect(toMap(TypeArgument::getParameter, TypeArgument::getType)));
 
@@ -640,7 +640,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 	 */
 	@SuppressWarnings("unchecked")
 	public <S> ExecutableToken<O, S> withTargetType(TypeToken<S> target) {
-		if (!returnType.isGeneric()) {
+		if (!isGeneric()) {
 			if (!returnType.satisfiesConstraintTo(LOOSE_COMPATIBILILTY, target)) {
 				throw new ReflectionException(m -> m.cannotResolveOverride(getMember(), target.getType()));
 			}
@@ -649,20 +649,16 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 		} else if (target.getType() == null) {
 			return (ExecutableToken<O, S>) this;
 
-		} else if (isRaw()) {
-			if (isConstructor() && returnType.getType() == target.getErasedType()) {
+		} else if (isRaw() && isConstructor()) {
+			if (returnType.getType() == target.getErasedType()) {
 				return (ExecutableToken<O, S>) partialParameterization(
 						target.getBounds(),
 						target.getAllTypeArguments().collect(toMap(TypeArgument::getParameter, TypeArgument::getType)));
 
 			} else {
-				/*
-				 * TODO parameterize with inference variables then add loose
-				 * compatibility constraint
-				 */
-				return null;
-			}
+				return this.<O, S>partialParameterization(target.getBounds(), emptyMap()).withTargetType(target);
 
+			}
 		} else {
 			return (ExecutableToken<O, S>) withBounds(
 					new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, returnType.getType(), target.getType())
@@ -680,14 +676,16 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 	 *          the type possibly containing the override
 	 * @return the override
 	 */
+	@SuppressWarnings("unchecked")
 	public <U> ExecutableToken<U, R> getOverride(TypeToken<U> type) {
+		if (isConstructor()) {
+			throw new ReflectionException(m -> m.cannotOverrideConstructor(getMember(), type.getType()));
+		}
+
 		boolean matchingRawType = (type.getType() instanceof Class<?> || type.getType() instanceof ParameterizedType)
 				&& type.getErasedType().equals(receiverType.getErasedType());
-
 		if (matchingRawType) {
 			return withReceiverType(type);
-		} else if (isConstructor()) {
-			throw new ReflectionException(m -> m.cannotOverrideConstructor(getMember(), type.getType()));
 		}
 
 		/*
@@ -702,9 +700,9 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 		Method override = type
 				.getUpperBounds()
 				.flatMap(
-						t -> streamOptional(
-								tryOptional(() -> getErasedType(t).getMethod(getName(), getMember().getParameterTypes()))))
-				.findFirst()
+						t -> stream(getErasedType(t).getMethods()).filter(m -> m.getName().equals(getName())).filter(
+								m -> Arrays.equals(m.getParameterTypes(), getMember().getParameterTypes())))
+				.reduce((a, b) -> Types.isAssignable(a.getGenericReturnType(), b.getGenericReturnType()) ? a : b)
 				.orElse(null);
 
 		if (override == null) {
@@ -736,9 +734,10 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 			 */
 		}
 
-		type.withConstraintTo(SUBTYPE, receiverType);
+		ExecutableToken<U, ?> overrideToken = forMethod(override)
+				.withReceiverType(type.withConstraintTo(SUBTYPE, receiverType));
 
-		return null;
+		return (ExecutableToken<U, R>) overrideToken;
 	}
 
 	public Stream<ExecutableToken<O, ? super R>> getOverridden() {
@@ -953,8 +952,6 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 		typeSubstitution = typeSubstitution.where(
 				getBounds()::containsInferenceVariable,
 				t -> getBounds().getBoundsOn((InferenceVariable) t).getInstantiation().orElse(null));
-
-		// TODO make sure is safe wrt to invalidating bounds on inference variables
 
 		return withTypeSubstitution(getBounds(), typeSubstitution);
 	}
