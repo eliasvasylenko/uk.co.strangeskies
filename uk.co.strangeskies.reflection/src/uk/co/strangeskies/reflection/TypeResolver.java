@@ -43,6 +43,7 @@ import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
 import static uk.co.strangeskies.reflection.BoundSet.emptyBoundSet;
 import static uk.co.strangeskies.reflection.IntersectionTypes.uncheckedIntersectionOf;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.getAllTypeArguments;
+import static uk.co.strangeskies.reflection.Types.getAllMentionedBy;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.entriesToMap;
 import static uk.co.strangeskies.utilities.collection.StreamUtilities.throwingMerger;
 
@@ -333,7 +334,8 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 *         resolver, to their newly inferred instantiations.
 	 */
 	public Stream<Entry<InferenceVariable, Type>> resolve() {
-		return resolve(bounds.getInferenceVariables().collect(toList()));
+		resolveIndependentSet(bounds.getInferenceVariables().collect(toList()));
+		return bounds.getInferenceVariables().map(i -> new AbstractMap.SimpleEntry<>(i, getInstantiation(i)));
 	}
 
 	/**
@@ -346,6 +348,10 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 *         instantiations for each {@link InferenceVariable} mentioned
 	 */
 	public Type resolve(Type type) {
+		resolve(
+				getAllMentionedBy(type, getBounds()::containsInferenceVariable).map(InferenceVariable.class::cast).collect(
+						toList()));
+
 		return new TypeSubstitution(
 				t -> getBounds().containsInferenceVariable(t) ? getInstantiation((InferenceVariable) t) : null).resolve(type);
 	}
@@ -391,12 +397,6 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 *         inferred instantiations.
 	 */
 	public Stream<Map.Entry<InferenceVariable, Type>> resolve(Collection<? extends InferenceVariable> variables) {
-		variables = variables
-				.stream()
-				.filter(getBounds()::containsInferenceVariable)
-				.map(InferenceVariable.class::cast)
-				.collect(Collectors.toSet());
-
 		/*
 		 * Given a set of inference variables to resolve, let V be the union of this
 		 * set and all variables upon which the resolution of at least one variable
@@ -404,9 +404,9 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 		 */
 		Set<InferenceVariable> independentSet = variables
 				.stream()
+				.filter(getBounds()::containsInferenceVariable)
 				.filter(v -> !bounds.getBoundsOn(v).getInstantiation().isPresent())
-				.map(v -> bounds.getBoundsOn(v).getRemainingDependencies())
-				.flatMap(identity())
+				.flatMap(v -> bounds.getBoundsOn(v).getRemainingDependencies())
 				.collect(toSet());
 
 		resolveIndependentSet(independentSet);
@@ -418,7 +418,7 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 								() -> new ReflectionException(p -> p.cannotInstantiateInferenceVariable(i, bounds)))));
 	}
 
-	private void resolveIndependentSet(Set<InferenceVariable> variables) {
+	private void resolveIndependentSet(Collection<InferenceVariable> variables) {
 		/*
 		 * If every variable in V has an instantiation, then resolution succeeds and
 		 * this procedure terminates.

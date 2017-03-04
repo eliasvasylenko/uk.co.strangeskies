@@ -38,9 +38,9 @@ import java.util.Objects;
 
 public class ExecutableParameter {
 	private final Parameter parameter;
-	private final Type type;
+	private final TypeToken<?> type;
 
-	protected ExecutableParameter(Parameter parameter, Type type) {
+	protected ExecutableParameter(Parameter parameter, TypeToken<?> type) {
 		this.parameter = parameter;
 		this.type = type;
 	}
@@ -54,6 +54,10 @@ public class ExecutableParameter {
 	}
 
 	public Type getType() {
+		return type.getType();
+	}
+
+	public TypeToken<?> getTypeToken() {
 		return type;
 	}
 

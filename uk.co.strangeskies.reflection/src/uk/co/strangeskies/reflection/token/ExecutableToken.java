@@ -122,7 +122,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 		this.returnType = (TypeToken<? extends R>) forClass(returnType);
 		this.parameters = Arrays
 				.stream(executable.getParameters())
-				.map(p -> new ExecutableParameter(p, p.getType()))
+				.map(p -> new ExecutableParameter(p, forType(p.getType())))
 				.collect(toList());
 
 		this.variableArityInvocation = false;
@@ -178,7 +178,8 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 	 * @return an executable member wrapping the given constructor
 	 */
 	public static ExecutableToken<Void, ?> forConstructor(Constructor<?> constructor) {
-		if (!Modifier.isStatic(constructor.getDeclaringClass().getModifiers())) {
+		if (!Modifier.isStatic(constructor.getDeclaringClass().getModifiers())
+				&& constructor.getDeclaringClass().getEnclosingClass() != null) {
 			throw new ReflectionException(m -> m.declaringClassMustBeStatic(constructor));
 		}
 		return new ExecutableToken<>(void.class, constructor);
@@ -291,7 +292,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 				returnType,
 				Arrays
 						.stream(getMember().getParameters())
-						.map(p -> new ExecutableParameter(p, p.getParameterizedType()))
+						.map(p -> new ExecutableParameter(p, forType(p.getParameterizedType())))
 						.collect(toList()),
 				asList(getMember().getTypeParameters()),
 				getMember(),
@@ -318,7 +319,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 
 	@Override
 	public BoundSet getBounds() {
-		return receiverType.getBounds();
+		return getOwningDeclaration().get().getBounds();
 	}
 
 	@Override
@@ -962,7 +963,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 		return withExecutableTokenData(
 				determineReceiverType(bounds, typeSubstitution),
 				determineReturnType(bounds, typeSubstitution),
-				determineParameterTypes(typeSubstitution),
+				determineParameterTypes(bounds, typeSubstitution),
 				determineTypeArguments(typeSubstitution),
 				executable,
 				variableArityInvocation);
@@ -984,9 +985,12 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 		}
 	}
 
-	private List<ExecutableParameter> determineParameterTypes(TypeSubstitution typeSubstitution) {
+	private List<ExecutableParameter> determineParameterTypes(BoundSet bounds, TypeSubstitution typeSubstitution) {
 		return getParameters()
-				.map(p -> new ExecutableParameter(p.getParameter(), p.getParameter().getParameterizedType()))
+				.map(
+						p -> new ExecutableParameter(
+								p.getParameter(),
+								new TypeToken<>(bounds, typeSubstitution.resolve(p.getParameter().getParameterizedType()))))
 				.collect(toList());
 	}
 

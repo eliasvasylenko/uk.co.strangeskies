@@ -401,7 +401,8 @@ public class TypeTokenTest {
 
 		TypeToken<?> targetClass = new TypeToken<List<?>>() {};
 		TypeToken<?> resultClass = new TypeToken<Iterable<String>>() {};
-		printlines(resultClass.satisfiesConstraintTo(CONTAINMENT, targetClass.resolveSupertype(resultClass.getErasedType())));
+		printlines(
+				resultClass.satisfiesConstraintTo(CONTAINMENT, targetClass.resolveSupertype(resultClass.getErasedType())));
 		printlines();
 
 		printlines(new TypeToken<List<?>>() {}.getExtending(Wildcards.CAPTURE));
@@ -454,7 +455,7 @@ public class TypeTokenTest {
 		printlines(
 				new TypeToken<@Infer Collection<? extends String>>() {}
 						.getExtending(Wildcards.INFER)
-						.withConstraintTo(SUBTYPE, new TypeToken<ArrayList<? super String>>() {}.getType())
+						.withConstraintTo(SUBTYPE, new TypeToken<ArrayList<? super String>>() {})
 						.resolve()
 						.resolveSupertype(Iterable.class));
 		printlines();
@@ -473,16 +474,8 @@ public class TypeTokenTest {
 						.resolve());
 		printlines();
 
-		printlines(new TypeToken<HashMap<?, ?>>() {}.getExtending(Wildcards.INFER).constructors().resolveOverload());
 		printlines(
-				new TypeToken<HashMap<?, ?>>() {}.getExtending(Wildcards.INFER).constructors().resolveOverload().getBounds());
-
-		printlines(new TypeToken<HashMap<?, ?>>() {}.getExtending(Wildcards.INFER));
-		printlines(new TypeToken<HashMap<?, ?>>() {}.getExtending(Wildcards.INFER).getBounds());
-
-		printlines(
-				new TypeToken<HashMap<?, ?>>() {}
-						.getExtending(Wildcards.INFER)
+				new @Infer TypeToken<HashMap<?, ?>>() {}
 						.constructors()
 						.resolveOverload()
 						.withTargetType(new TypeToken<Map<? extends String, ? extends Number>>() {})
