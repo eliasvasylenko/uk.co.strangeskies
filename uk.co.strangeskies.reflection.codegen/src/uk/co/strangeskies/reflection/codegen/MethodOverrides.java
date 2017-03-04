@@ -48,6 +48,7 @@ import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.token.ExecutableParameter;
 import uk.co.strangeskies.reflection.token.ExecutableToken;
+import uk.co.strangeskies.reflection.token.TypeToken;
 import uk.co.strangeskies.utilities.collection.StreamUtilities;
 
 public class MethodOverrides<T> {
@@ -105,7 +106,11 @@ public class MethodOverrides<T> {
 	protected void inheritMethod(Method method) {
 		ErasedMethodSignature overridingSignature = erasedMethodSignature(
 				method.getName(),
-				getInvocable(method).getParameters().map(ExecutableParameter::getErasure).toArray(Class<?>[]::new));
+				getInvocable(method)
+						.getParameters()
+						.map(ExecutableParameter::getTypeToken)
+						.map(TypeToken::getErasedType)
+						.toArray(Class<?>[]::new));
 
 		MethodOverride<T> override = methods.computeIfAbsent(overridingSignature, k -> new MethodOverride<>(this));
 
