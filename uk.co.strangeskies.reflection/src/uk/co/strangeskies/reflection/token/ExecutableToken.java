@@ -149,22 +149,6 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 		this.parameters = parameters;
 	}
 
-	private <P, S> ExecutableToken<P, S> withExecutableTokenData(
-			TypeToken<? super P> receiverType,
-			TypeToken<? extends S> returnType,
-			List<ExecutableParameter> parameters,
-			List<Type> typeArguments,
-			Executable executable,
-			boolean variableArityInvocation) {
-		return new ExecutableToken<>(
-				receiverType,
-				returnType,
-				parameters,
-				typeArguments,
-				executable,
-				variableArityInvocation);
-	}
-
 	/**
 	 * Create a new {@link ExecutableToken} instance from a reference to a
 	 * {@link Constructor} of an outer or static class.
@@ -274,21 +258,25 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 	 * @return the parameterized version of the declaration where applicable, else
 	 *         the unmodified declaration
 	 */
+	@SuppressWarnings("unchecked")
 	public ExecutableToken<? extends O, R> parameterize() {
 		if (isRaw()) {
-			return getParameterizedFromRaw();
+			return (ExecutableToken<? extends O, R>) getParameterizedFromRaw();
 		} else {
 			return this;
 		}
 	}
 
-	private ExecutableToken<? extends O, R> getParameterizedFromRaw() {
+	private ExecutableToken<?, R> getParameterizedFromRaw() {
+		@SuppressWarnings("unchecked")
+		TypeToken<Object> receiverType = (TypeToken<Object>) getReceiverType().getErasedTypeToken().parameterize();
+
 		@SuppressWarnings("unchecked")
 		TypeToken<? extends R> returnType = isConstructor() ? getReturnType().parameterize()
 				: (TypeToken<? extends R>) forType(((Method) getMember()).getGenericReturnType());
 
-		return withExecutableTokenData(
-				getReceiverType().getErasedTypeToken().parameterize(),
+		return new ExecutableToken<>(
+				receiverType,
 				returnType,
 				Arrays
 						.stream(getMember().getParameters())
@@ -445,7 +433,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 		} else if (!isVariableArityDefinition()) {
 			throw new ReflectionException(p -> p.invalidVariableArityInvocation(getMember()));
 		} else {
-			return withExecutableTokenData(receiverType, returnType, parameters, typeArguments, executable, true);
+			return new ExecutableToken<>(receiverType, returnType, parameters, typeArguments, executable, true);
 		}
 	}
 
@@ -957,7 +945,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 	}
 
 	protected ExecutableToken<O, R> withTypeSubstitution(BoundSet bounds, TypeSubstitution typeSubstitution) {
-		return withExecutableTokenData(
+		return new ExecutableToken<>(
 				determineReceiverType(bounds, typeSubstitution),
 				determineReturnType(bounds, typeSubstitution),
 				determineParameterTypes(bounds, typeSubstitution),
