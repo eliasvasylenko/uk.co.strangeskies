@@ -1,9 +1,12 @@
 -runrequires.felix.shell=\
 	${req;org.apache.felix.gogo.command},\
 	${req;org.apache.felix.gogo.runtime},\
-	${req;osgi.enroute.gogo.shell.provider}
+	${req;org.apache.felix.gogo.shell}
+
+#	${req;osgi.enroute.gogo.shell.provider} TODO this doesn't work in Windows yet...
 
 -runrequires.felix.web=\
 	${req;osgi.enroute.webconsole.xray.provider},\
 	${req;org.apache.felix.webconsole},\
-	${req;org.apache.felix.http.jetty}
+	${req;org.apache.felix.http.jetty},\
+	${req;uk.co.strangeskies.jetty.logger}

@@ -1,0 +1,6 @@
+Bundle-Name: Strange Skies :: Configuration Admin :: File Persistence
+
+-buildpath: \
+	org.apache.felix.configadmin;version=latest,\
+
+Private-Package: uk.co.strangeskies.configadmin.persistence

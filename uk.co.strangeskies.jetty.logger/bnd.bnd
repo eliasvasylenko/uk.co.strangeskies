@@ -1,0 +1,14 @@
+Bundle-Name: Strange Skies :: Jetty Logger
+
+-buildpath: \
+	org.apache.felix.http.jetty
+
+Private-Package: \
+	uk.co.strangeskies.jetty.logger,\
+	org.apache.felix.http.base.internal.logger
+
+-includeresource: \
+	res
+
+Fragment-Host: \
+	org.apache.felix.http.jetty
