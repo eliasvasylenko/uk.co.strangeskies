@@ -36,7 +36,6 @@ import java.util.Locale;
 
 final class DefaultPropertyLoaderProperties extends StaticPropertyAccessor<PropertyLoaderProperties>
 		implements PropertyLoaderProperties {
-	private static final String TRANSLATION_NOT_FOUND = "?%s?";
 	private static final String TRANSLATION_NOT_FOUND_MESSAGE = "Translation not found for key %s";
 	private static final String MUST_BE_INTERFACE = "Localization accessor %s must be an interface";
 	private static final String ILLEGAL_RETURN_TYPE = "Illegal return type %s for key %s";
@@ -45,11 +44,6 @@ final class DefaultPropertyLoaderProperties extends StaticPropertyAccessor<Prope
 
 	public DefaultPropertyLoaderProperties() {
 		super(Locale.ENGLISH);
-	}
-
-	@Override
-	public String translationNotFoundSubstitution(String key) {
-		return format(TRANSLATION_NOT_FOUND, key);
 	}
 
 	@Override
