@@ -148,22 +148,31 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 		return classSpace;
 	}
 
-	@SuppressWarnings("unchecked")
 	public <U> ClassDefinition<E, T> withMethodDefinition(
 			MethodSignature<U> signature,
-			Function<MethodDefinition<T, U>, MethodDefinition<T, U>> definitionFunction) {
-		MethodDeclaration<T, ?> methodDeclaration = getDeclaration().getMethodDeclaration(signature);
+			Function<? super MethodDeclaration<T, U>, ? extends Block<? extends U>> methodBodyFunction) {
+		MethodDeclaration<T, U> methodDeclaration = getDeclaration().getMethodDeclaration(signature);
 
-		return withMethodDefinition((MethodDeclaration<T, U>) methodDeclaration, definitionFunction);
+		return withMethodDefinition(methodDeclaration, methodBodyFunction);
 	}
 
 	public <U> ClassDefinition<E, T> withMethodDefinition(
-			MethodDeclaration<T, U> declaration,
-			Function<MethodDefinition<T, U>, MethodDefinition<T, U>> definitionFunction) {
-		MethodDefinition<T, U> definition = new MethodDefinition<>(declaration);
-		definition = definitionFunction.apply(definition);
+			MethodDeclaration<T, U> methodDeclaration,
+			Function<? super MethodDeclaration<T, U>, ? extends Block<? extends U>> methodBodyFunction) {
+		MethodDefinition<T, U> definition = new MethodDefinition<>(methodDeclaration)
+				.withBody(methodBodyFunction.apply(methodDeclaration));
 
-		return new ClassDefinition<>(getDeclaration(), classSpace.withMethodDefinition(declaration, definition));
+		return new ClassDefinition<>(getDeclaration(), classSpace.withMethodDefinition(methodDeclaration, definition));
+	}
+
+	public <U> ClassDefinition<E, T> withMethodDefinition(MethodSignature<U> signature, Block<? extends U> methodBody) {
+		return withMethodDefinition(signature, d -> methodBody);
+	}
+
+	public <U> ClassDefinition<E, T> withMethodDefinition(
+			MethodDeclaration<T, U> methodDeclaration,
+			Block<? extends U> methodBody) {
+		return withMethodDefinition(methodDeclaration, d -> methodBody);
 	}
 
 	@Override

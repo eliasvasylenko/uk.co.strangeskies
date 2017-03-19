@@ -41,6 +41,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import uk.co.strangeskies.reflection.ReflectionException;
+import uk.co.strangeskies.reflection.codegen.Block;
 import uk.co.strangeskies.reflection.codegen.ClassDefinition;
 import uk.co.strangeskies.reflection.codegen.ClassSignature;
 import uk.co.strangeskies.reflection.codegen.MethodDeclaration;
@@ -68,7 +69,7 @@ public class ClassDefinitionTest {
 
 	@Test
 	public void defineObject() {
-		Object instance = TEST_CLASS_SIGNATURE.defineSingle().instantiateReflectively().cast();
+		Object instance = TEST_CLASS_SIGNATURE.defineStandalone().instantiateReflectively().cast();
 
 		instance.hashCode();
 	}
@@ -77,8 +78,8 @@ public class ClassDefinitionTest {
 	public void runnableClassInvocation() {
 		ClassDefinition<Void, ? extends Runnable> classDefinition = TEST_CLASS_SIGNATURE
 				.withSuperType(Runnable.class)
-				.defineSingle()
-				.withMethodDefinition(methodSignature("run"), d -> d.withBody(b -> b.withReturnStatement()));
+				.defineStandalone()
+				.withMethodDefinition(methodSignature("run"), new Block<Void>().withReturnStatement());
 
 		Runnable instance = classDefinition.instantiateReflectively().cast();
 
@@ -95,15 +96,24 @@ public class ClassDefinitionTest {
 		MethodSignature<String> applyMethod = methodSignature("apply").withReturnType(STRING_TYPE).withParameters(
 				applyParameter);
 
+		/*
+		 * A block is something we don't always know the type of until we resolve
+		 * the type of it's context, e.g. in method overload resolution a lambda
+		 * body must be reinterpreted according to all applicable target types, and
+		 * any return statements examined according to that context.
+		 * 
+		 * Do we achieve this with a new kind of stand-in type? Or do existing
+		 * models already fit well (e.g. some sort of ad-hoc type variable)?
+		 */
+
 		Func<String, String> instance = TEST_CLASS_SIGNATURE
 				.withSuperType(new TypeToken<Func<String, String>>() {})
 				.withMethod(applyMethod)
-				.defineSingle()
+				.defineStandalone()
 				.withMethodDefinition(
 						applyMethod,
-						d -> d.withBody(
-								b -> b.withReturnStatement(
-										d.getParameter(applyParameter).invokeMethod(concatMethod(), literal("append")))))
+						d -> new Block<String>()
+								.withReturnStatement(d.getParameter(applyParameter).invokeMethod(concatMethod(), literal("append"))))
 				.instantiateReflectively()
 				.cast();
 
@@ -112,20 +122,19 @@ public class ClassDefinitionTest {
 		Assert.assertEquals("stringappend", result);
 	}
 
-	// @Test TODO
+	// @Test
 	public void defineWithInheritedMethodDeclarationBySignature() {
-		ParameterSignature<String> applyParameter = parameterSignature("arg0", STRING_TYPE);
+		ParameterSignature<String> applyParameter = parameterSignature("value", STRING_TYPE);
 
 		Func<String, String> instance = TEST_CLASS_SIGNATURE
 				.withSuperType(new TypeToken<Func<String, String>>() {})
-				.defineSingle()
+				.defineStandalone()
 				.withMethodDefinition(
 						methodSignature("apply").withReturnType(String.class).withParameters(applyParameter),
-						d -> d.withBody(
-								b -> b.withReturnStatement(
-										d
-												.getParameter(applyParameter)
-												.invokeMethod(concatMethod(), d.getParameter(parameterSignature("", Integer.class))))))
+						d -> new Block<String>().withReturnStatement(
+								d
+										.getParameter(applyParameter)
+										.invokeMethod(concatMethod(), d.getParameter(parameterSignature("", Integer.class)))))
 				.instantiateReflectively()
 				.cast();
 
@@ -134,9 +143,10 @@ public class ClassDefinitionTest {
 		Assert.assertEquals("stringstring", result);
 	}
 
-	// @Test TODO
+	// @Test
 	public void defineWithInheritedMethodDeclaration() {
-		defineFunctionClass(TEST_CLASS_SIGNATURE.withSuperType(new TypeToken<Func<String, String>>() {}).defineSingle());
+		defineFunctionClass(
+				TEST_CLASS_SIGNATURE.withSuperType(new TypeToken<Func<String, String>>() {}).defineStandalone());
 	}
 
 	private <F extends Func<String, String>> void defineFunctionClass(ClassDefinition<Void, F> classDefinition) {
@@ -147,9 +157,8 @@ public class ClassDefinitionTest {
 		Func<String, String> instance = classDefinition
 				.withMethodDefinition(
 						applyMethod,
-						d -> d.withBody(
-								b -> b.withReturnStatement(
-										d.getParameter(applyParameter).invokeMethod(concatMethod(), d.getParameter(applyParameter)))))
+						d -> new Block<String>().withReturnStatement(
+								d.getParameter(applyParameter).invokeMethod(concatMethod(), d.getParameter(applyParameter))))
 				.instantiateReflectively()
 				.cast();
 
@@ -160,11 +169,11 @@ public class ClassDefinitionTest {
 
 	@Test(expected = ReflectionException.class)
 	public void defineWithAbstractMethod() {
-		TEST_CLASS_SIGNATURE.withSuperType(Runnable.class).defineSingle().instantiateReflectively();
+		TEST_CLASS_SIGNATURE.withSuperType(Runnable.class).defineStandalone().instantiateReflectively();
 	}
 
 	@Test
 	public void defineWithDefaultMethod() {
-		TEST_CLASS_SIGNATURE.withSuperType(Default.class).defineSingle().instantiateReflectively();
+		TEST_CLASS_SIGNATURE.withSuperType(Default.class).defineStandalone().instantiateReflectively();
 	}
 }

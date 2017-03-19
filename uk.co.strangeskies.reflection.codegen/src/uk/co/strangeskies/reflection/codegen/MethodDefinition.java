@@ -32,25 +32,23 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import java.util.function.Function;
-
 import uk.co.strangeskies.reflection.token.ExecutableToken;
 
 public class MethodDefinition<C, T> implements MemberDefinition<C> {
 	private final MethodDeclaration<C, T> methodDeclaration;
-	private final Block<T> body;
+	private final Block<? extends T> body;
 
 	public MethodDefinition(MethodDeclaration<C, T> classDeclaration) {
 		this.methodDeclaration = classDeclaration;
 		this.body = new Block<>();
 	}
 
-	public MethodDefinition(MethodDefinition<C, T> definition, Block<T> body) {
+	public MethodDefinition(MethodDefinition<C, T> definition, Block<? extends T> body) {
 		this.methodDeclaration = definition.getDeclaration();
 		this.body = body;
 	}
 
-	public Block<T> body() {
+	public Block<? extends T> body() {
 		return body;
 	}
 
@@ -100,7 +98,10 @@ public class MethodDefinition<C, T> implements MemberDefinition<C> {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static <T> void setParameterUnsafe(StatementExecutor state, ParameterSignature<T> parameter, Object argument) {
+	private static <T> void setParameterUnsafe(
+			StatementExecutor state,
+			ParameterSignature<T> parameter,
+			Object argument) {
 		state.declareLocal(parameter);
 		state.setEnclosedLocal(parameter, (T) argument);
 	}
@@ -110,8 +111,8 @@ public class MethodDefinition<C, T> implements MemberDefinition<C> {
 		return null;
 	}
 
-	public MethodDefinition<C, T> withBody(Function<Block<T>, Block<T>> bodyFunction) {
-		return new MethodDefinition<>(this, bodyFunction.apply(body));
+	public MethodDefinition<C, T> withBody(Block<? extends T> body) {
+		return new MethodDefinition<>(this, body);
 	}
 
 	public <U> LocalVariableExpression<U> getParameter(ParameterSignature<U> parameterSignature) {
