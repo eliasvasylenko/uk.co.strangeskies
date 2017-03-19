@@ -1442,7 +1442,7 @@ public final class Types {
 	 * @return The type described by the String.
 	 */
 	private static Type fromString(String typeString, Imports imports) {
-		return new TypeParser(imports).getClassType().parse(typeString);
+		return new TypeParser(imports).classType().parse(typeString);
 	}
 
 	/**
@@ -1486,7 +1486,7 @@ public final class Types {
 			classOrArrayType = rawType
 					.transform(Type.class::cast)
 					.tryAppendTransform(
-							Parser.list(Parser.proxy(this::getType), "\\s*,\\s*").prepend("\\s*<\\s*").append("\\s*>\\s*"),
+							Parser.list(Parser.proxy(this::type), "\\s*,\\s*").prepend("\\s*<\\s*").append("\\s*>\\s*"),
 							(t, p) -> ParameterizedTypes.parameterize((Class<?>) t, p))
 					.appendTransform(Parser.list(Parser.matching("\\s*\\[\\s*\\]"), "\\s*").prepend("\\s*"), (t, l) -> {
 						t = arrayFromComponent(t, l.size());
@@ -1510,7 +1510,7 @@ public final class Types {
 		 * 
 		 * @return The raw type of the parsed type name
 		 */
-		public Parser<Class<?>> getRawType() {
+		public Parser<Class<?>> rawType() {
 			return rawType;
 		}
 
@@ -1520,7 +1520,7 @@ public final class Types {
 		 * @return The type of the expressed name, and the given parameterization
 		 *         where appropriate
 		 */
-		public Parser<Type> getClassType() {
+		public Parser<Type> classType() {
 			return classOrArrayType;
 		}
 
@@ -1529,7 +1529,7 @@ public final class Types {
 		 * 
 		 * @return The type of the expressed wildcard type
 		 */
-		public Parser<WildcardType> getWildcardType() {
+		public Parser<WildcardType> wildcardType() {
 			return wildcardType;
 		}
 
@@ -1538,7 +1538,7 @@ public final class Types {
 		 * 
 		 * @return The annotated type of the expressed type
 		 */
-		public Parser<Type> getType() {
+		public Parser<Type> type() {
 			return typeParameter;
 		}
 	}
