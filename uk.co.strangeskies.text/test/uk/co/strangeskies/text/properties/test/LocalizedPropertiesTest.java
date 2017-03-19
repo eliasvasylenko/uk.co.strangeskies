@@ -133,6 +133,6 @@ public class LocalizedPropertiesTest {
 	public void unavailableInRootLocaleStringTest() {
 		LocaleManager manager = manager(Locale.FRENCH);
 
-		assertEquals("?localizer.test/non.localized.missing?", text(manager).nonLocalizedMissing());
+		assertEquals("?localizer.test/non.localized.missing?[]", text(manager).nonLocalizedMissing());
 	}
 }
