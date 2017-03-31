@@ -31,6 +31,6 @@ after_success:
   - ./gradlew --continue publishGhPages -PgithubUser="${GITHUB_TOKEN}" -PgithubPassword="" -PjfrogUser="${JFROG_USER}" -PjfrogPassword="${JFROG_PASSWORD}" --stacktrace
   - bash <(curl -s https://codecov.io/bash)
 
-cache:
-  directories:
-    - $TRAVIS_BUILD_DIR/cnf/cache
+#cache:
+#  directories:
+#    - $TRAVIS_BUILD_DIR/cnf/cache
