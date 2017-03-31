@@ -118,7 +118,7 @@ import uk.co.strangeskies.reflection.token.TypeToken;
  * For a non-generic type this is simple enough: model as the intersection type
  * of all the super types of the definition and the secret capture
  * 
- * For a generic type, the raw can be modelled as the intersection type of all
+ * For a generic type, the raw can be modeled as the intersection type of all
  * the raw types of all the super types of the definition and the secret capture
  * 
  * @author Elias N Vasylenko
@@ -175,6 +175,22 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 		return withMethodDefinition(methodDeclaration, d -> methodBody);
 	}
 
+	/**
+	 * Derive a class definition which delegates to the given method intercepter
+	 * object.
+	 * <p>
+	 * When multiple intercepters are specified for the same class definition,
+	 * they will be attempted in the order they are given until one is found which
+	 * is able to delegate.
+	 * 
+	 * @param intercepter
+	 *          the intercepter
+	 * @return the derived class definition
+	 */
+	public <U> ClassDefinition<E, T> withMethodDelegation(MethodDelegation intercepter) {
+		throw new UnsupportedOperationException();
+	}
+
 	@Override
 	public String toString() {
 		return getName();
@@ -196,5 +212,9 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 			ClassLoader classLoader,
 			Collection<? extends Object> arguments) {
 		return ReflectiveInstanceImpl.instantiate(this, classLoader, Arrays.asList(arguments));
+	}
+
+	public Class<T> generateClass() {
+		throw new UnsupportedOperationException();
 	}
 }
