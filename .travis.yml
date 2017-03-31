@@ -23,8 +23,8 @@ install:
   - ./gradlew license >> "${BUILD_OUTPUT}" 2>&1; . $TRAVIS_BUILD_DIR/.travis/redirect-log-output-end.sh
 
 script:
-  - ./gradlew --continue compileJava compileTestJava
-  - ./gradlew --continue check
+  - ./gradlew --stacktrace --continue assemble
+  - ./gradlew --stacktrace --continue check
   - ./gradlew --stacktrace aggregateJavadoc -PgithubUser="${GITHUB_TOKEN}"
 
 after_success:
