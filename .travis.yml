@@ -23,7 +23,9 @@ install:
   - ./gradlew license >> "${BUILD_OUTPUT}" 2>&1; . $TRAVIS_BUILD_DIR/.travis/redirect-log-output-end.sh
 
 script:
-  - ./gradlew --continue build test aggregateJavadoc -PgithubUser="${GITHUB_TOKEN}" --stacktrace
+  - ./gradlew --continue build
+  - ./gradlew --continue check
+  - ./gradlew --stacktrace aggregateJavadoc -PgithubUser="${GITHUB_TOKEN}"
 
 after_success:
   - ./gradlew --continue publishGhPages -PgithubUser="${GITHUB_TOKEN}" -PgithubPassword="" -PjfrogUser="${JFROG_USER}" -PjfrogPassword="${JFROG_PASSWORD}" --stacktrace

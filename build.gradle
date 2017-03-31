@@ -60,6 +60,7 @@ configure(bndProjects()) {
 }
 
 /* Test Configuration */
+/*
 configure(bndProjects()) {
   test {
     // set heap size for the test JVM(s)
@@ -68,7 +69,7 @@ configure(bndProjects()) {
 
     jvmArgs '-Xms4096m -Xmx4096m'
   }
-}
+}*/
 
 /* Source License Generation */
 def copyrightProperties  = new Properties()
