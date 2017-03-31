@@ -20,7 +20,7 @@ before_install: $TRAVIS_BUILD_DIR/.travis/redirect-log-output.sh
 
 install: "./gradlew --version"
 
-script: ./gradlew --continue build test aggregateJavadoc -PgithubUser="${GITHUB_TOKEN}" --stacktrace
+script: ./gradlew --continue build test aggregateJavadoc -PgithubUser="${GITHUB_TOKEN}" --stacktrace >> $BUILD_OUTPUT 2>&1
 
 after_script: $TRAVIS_BUILD_DIR/.travis/redirect-log-output-end.sh
 
