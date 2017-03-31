@@ -59,6 +59,17 @@ configure(bndProjects()) {
   plugins.apply "biz.aQute.bnd"
 }
 
+/* Test Configuration */
+configure(bndProjects()) {
+  test {
+    // set heap size for the test JVM(s)
+    minHeapSize = "4096m"
+    maxHeapSize = "4096m"
+
+    jvmArgs '-Xms4096m -Xmx4096m'
+  }
+}
+
 /* Source License Generation */
 def copyrightProperties  = new Properties()
 rootProject.file("copyright.properties").withReader("UTF-8") { reader ->

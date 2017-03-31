@@ -50,8 +50,8 @@ import osgi.enroute.configurer.api.RequireConfigurerExtender;
 @RequireConfigurerExtender
 @RequireCapability(ns = "osgi.service", filter = "(" + Constants.OBJECTCLASS + "=javax.script.ScriptEngineManager)")
 public class ScriptEngineManagerTest {
-	private static final int SERVICE_TIMEOUT_MILLISECONDS = 1000;
-	private static final int TEST_TIMEOUT_MILLISECONDS = 10000;
+	private static final int SERVICE_TIMEOUT_MILLISECONDS = 10_000;
+	private static final int TEST_TIMEOUT_MILLISECONDS = 100_000;
 
 	private BundleContext getBundleContext() {
 		return FrameworkUtil.getBundle(this.getClass()).getBundleContext();
