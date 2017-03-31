@@ -118,7 +118,7 @@ import uk.co.strangeskies.reflection.token.TypeToken;
  * For a non-generic type this is simple enough: model as the intersection type
  * of all the super types of the definition and the secret capture
  * 
- * For a generic type, the raw can be modelled as the intersection type of all
+ * For a generic type, the raw can be modeled as the intersection type of all
  * the raw types of all the super types of the definition and the secret capture
  * 
  * @author Elias N Vasylenko
@@ -148,22 +148,47 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 		return classSpace;
 	}
 
-	@SuppressWarnings("unchecked")
 	public <U> ClassDefinition<E, T> withMethodDefinition(
 			MethodSignature<U> signature,
-			Function<MethodDefinition<T, U>, MethodDefinition<T, U>> definitionFunction) {
-		MethodDeclaration<T, ?> methodDeclaration = getDeclaration().getMethodDeclaration(signature);
+			Function<? super MethodDeclaration<T, U>, ? extends Block<? extends U>> methodBodyFunction) {
+		MethodDeclaration<T, U> methodDeclaration = getDeclaration().getMethodDeclaration(signature);
 
-		return withMethodDefinition((MethodDeclaration<T, U>) methodDeclaration, definitionFunction);
+		return withMethodDefinition(methodDeclaration, methodBodyFunction);
 	}
 
 	public <U> ClassDefinition<E, T> withMethodDefinition(
-			MethodDeclaration<T, U> declaration,
-			Function<MethodDefinition<T, U>, MethodDefinition<T, U>> definitionFunction) {
-		MethodDefinition<T, U> definition = new MethodDefinition<>(declaration);
-		definition = definitionFunction.apply(definition);
+			MethodDeclaration<T, U> methodDeclaration,
+			Function<? super MethodDeclaration<T, U>, ? extends Block<? extends U>> methodBodyFunction) {
+		MethodDefinition<T, U> definition = new MethodDefinition<>(methodDeclaration)
+				.withBody(methodBodyFunction.apply(methodDeclaration));
 
-		return new ClassDefinition<>(getDeclaration(), classSpace.withMethodDefinition(declaration, definition));
+		return new ClassDefinition<>(getDeclaration(), classSpace.withMethodDefinition(methodDeclaration, definition));
+	}
+
+	public <U> ClassDefinition<E, T> withMethodDefinition(MethodSignature<U> signature, Block<? extends U> methodBody) {
+		return withMethodDefinition(signature, d -> methodBody);
+	}
+
+	public <U> ClassDefinition<E, T> withMethodDefinition(
+			MethodDeclaration<T, U> methodDeclaration,
+			Block<? extends U> methodBody) {
+		return withMethodDefinition(methodDeclaration, d -> methodBody);
+	}
+
+	/**
+	 * Derive a class definition which delegates to the given method intercepter
+	 * object.
+	 * <p>
+	 * When multiple intercepters are specified for the same class definition,
+	 * they will be attempted in the order they are given until one is found which
+	 * is able to delegate.
+	 * 
+	 * @param intercepter
+	 *          the intercepter
+	 * @return the derived class definition
+	 */
+	public <U> ClassDefinition<E, T> withMethodDelegation(MethodDelegation intercepter) {
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -187,5 +212,9 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 			ClassLoader classLoader,
 			Collection<? extends Object> arguments) {
 		return ReflectiveInstanceImpl.instantiate(this, classLoader, Arrays.asList(arguments));
+	}
+
+	public Class<T> generateClass() {
+		throw new UnsupportedOperationException();
 	}
 }

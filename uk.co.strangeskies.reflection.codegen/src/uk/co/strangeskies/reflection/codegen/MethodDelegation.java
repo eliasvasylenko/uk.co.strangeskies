@@ -32,42 +32,64 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import static uk.co.strangeskies.reflection.codegen.ClassSignature.classSignature;
-import static uk.co.strangeskies.reflection.codegen.InvocationExpression.invokeStatic;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.util.function.Predicate;
 
-import java.util.concurrent.atomic.AtomicLong;
-
-import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
-import uk.co.strangeskies.reflection.token.TypeToken;
-
-public class Expressions {
-	private Expressions() {}
-
-	private static final ValueExpression<Object> NULL_EXPRESSION = new ValueExpression<Object>() {
-		@Override
-		public void accept(ValueExpressionVisitor<Object> visitor) {
-			visitor.visitNull();
-		}
-
-		@Override
-		public TypeToken<?> getType() {
-			return TypeToken.forNull();
-		}
-	};
-
-	private static final AtomicLong TYPE_TOKEN_EXPRESSION_COUNT = new AtomicLong(0);
-
-	public static <T> ValueExpression<? extends TypeToken<T>> typeTokenExpression(TypeToken<T> type) {
-		ClassDefinition<Void, ? extends TypeToken<T>> typeTokenClass = classSignature()
-				.withSimpleName("TypeTokenExpression$" + TYPE_TOKEN_EXPRESSION_COUNT.incrementAndGet())
-				.withSuperType(type.getThisTypeToken())
-				.defineStandalone();
-
-		return invokeStatic(typeTokenClass.getDeclaration().getConstructorDeclaration().asToken());
+public class MethodDelegation<T> {
+	/**
+	 * An intercepter which delegates invocation of every method which is present
+	 * on the given object, or which overrides a method which is present on the
+	 * given object, using the given object as the receiver.
+	 * <p>
+	 * Classes defined by way of such an intercepter may not be serialized and
+	 * must be instantiated from within the defining JVM instance, as they are
+	 * dependent on the specific instance given.
+	 * 
+	 * @param intercepter
+	 *          the object to which invocation should be delegated
+	 */
+	public static <T> MethodDelegation<T> instanceDelegation(Object intercepter) {
+		throw new UnsupportedOperationException();
 	}
 
-	@SuppressWarnings("unchecked")
-	public static <T> ValueExpression<T> nullExpression() {
-		return (ValueExpression<T>) NULL_EXPRESSION;
+	public static <T> MethodDelegation<T> invocationDelegation(InvocationHandler handler) {
+		throw new UnsupportedOperationException();
+	}
+
+	/*
+	 * TODO This filter can be applied at class compilation time when defining the
+	 * method behavior so doesn't restrict class writing like instanceDelegation
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * TODO this class should be redesigned pretty heavily ... problems include:
+	 * 
+	 * - not parameterized for return value
+	 * 
+	 * - parameterization is not inferred from target type because of method
+	 * chaining
+	 * 
+	 * - needs? forMethod declaratively for a method signature rather than just a
+	 * filter?
+	 * 
+	 * - do we filter for the overridden Method or the generated Method? If the
+	 * former, we can filter on methods which have a default implementation
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 */
+	public MethodDelegation<T> filterOverriddenMethod(Predicate<Method> receiver) {
+		throw new UnsupportedOperationException();
 	}
 }

@@ -80,7 +80,7 @@ public interface Parser<T> {
 
 		@Override
 		public String toString() {
-			return "Whole String Parser";
+			return "whole string";
 		}
 	};
 
@@ -125,8 +125,13 @@ public interface Parser<T> {
 	public static <T> Parser<List<T>> list(Parser<T> element, String delimiter, int minimum) {
 		IdentityProperty<Parser<List<T>>> listParser = new IdentityProperty<>();
 
-		listParser.set(Parser.proxy(listParser::get).prepend(delimiter).orElse(ArrayList::new)
-				.prepend(element, (l, e) -> l.add(0, e)).orElse(ArrayList::new));
+		listParser.set(
+				Parser
+						.proxy(listParser::get)
+						.prepend(delimiter)
+						.orElse(ArrayList::new)
+						.prepend(element, (l, e) -> l.add(0, e))
+						.orElse(ArrayList::new));
 
 		for (int i = 0; i < minimum; i++)
 			listParser.set(listParser.get().prepend(delimiter).prepend(element, List::add));

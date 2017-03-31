@@ -156,7 +156,7 @@ class PropertyLoaderImpl implements PropertyLoader {
 		return PropertyValueProviderFactory.over(
 				String.class,
 				a -> Parser.matchingAll().transform(s -> String.format(s, a.toArray())),
-				(s, a) -> getProperties().translationNotFoundSubstitution(s));
+				(s, a) -> "?" + s + "?" + a);
 	}
 
 	private PropertyValueProviderFactory listProvider() {
@@ -211,9 +211,8 @@ class PropertyLoaderImpl implements PropertyLoader {
 
 					AnnotatedType elementType = ((AnnotatedParameterizedType) exactType).getAnnotatedActualTypeArguments()[0];
 
-					return loader
-							.getValueProvider(elementType)
-							.<PropertyValueProvider<T>> map(p -> new PropertyValueProvider<T>() {
+					return loader.getValueProvider(elementType).<PropertyValueProvider<T>>map(
+							p -> new PropertyValueProvider<T>() {
 								@Override
 								public Parser<T> getParser(List<?> arguments) {
 									Parser<T> optionalParser = p.getParser(arguments).transform(v -> (T) Optional.ofNullable(v));
@@ -318,12 +317,8 @@ class PropertyLoaderImpl implements PropertyLoader {
 						@SuppressWarnings("unchecked")
 						@Override
 						public Parser<T> getParser(List<?> arguments) {
-							return providers
-									.stream()
-									.map(p -> p.getParser(arguments))
-									.reduce(Parser::orElse)
-									.get()
-									.transform(v -> (T) v);
+							return providers.stream().map(p -> p.getParser(arguments)).reduce(Parser::orElse).get().transform(
+									v -> (T) v);
 						}
 
 						@Override

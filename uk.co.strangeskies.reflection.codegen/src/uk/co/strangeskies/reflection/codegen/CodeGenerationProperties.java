@@ -35,6 +35,7 @@ package uk.co.strangeskies.reflection.codegen;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Collection;
+import java.util.List;
 
 import uk.co.strangeskies.reflection.ReflectionProperties;
 import uk.co.strangeskies.reflection.token.TypeToken;
@@ -59,7 +60,7 @@ public interface CodeGenerationProperties {
 
 	Localized<String> incompatibleOverride(MethodDefinition<?, ?> override);
 
-	Localized<String> incompatibleParameterTypes(Type[] parameterTypes, Method inherited);
+	Localized<String> incompatibleParameterTypes(List<Type> parameterTypes, Method inherited);
 
 	Localized<String> duplicateMethodDeclaration(MethodDeclaration<?, ?> override);
 

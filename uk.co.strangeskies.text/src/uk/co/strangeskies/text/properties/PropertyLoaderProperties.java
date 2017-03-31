@@ -36,7 +36,6 @@ import java.lang.reflect.AnnotatedType;
 import java.util.Locale;
 import java.util.Properties;
 
-import uk.co.strangeskies.text.properties.PropertyConfiguration.Defaults;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.Evaluation;
 
 /**
@@ -74,18 +73,6 @@ public interface PropertyLoaderProperties {
 	}
 
 	Localized<String> propertyValueTypeNotSupported(String typeName, String key);
-
-	/**
-	 * Load the property with the key
-	 * {@code property.loader.translation.not.found.substitution}. This should be
-	 * locale independent.
-	 * 
-	 * @param key
-	 *          the key to find a translation for
-	 * @return substitution when no translation is found for the given key
-	 */
-	@PropertyConfiguration(defaults = Defaults.IGNORE)
-	String translationNotFoundSubstitution(String key);
 
 	/**
 	 * Load the property with the key

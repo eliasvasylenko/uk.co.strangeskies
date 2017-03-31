@@ -33,6 +33,8 @@
 package uk.co.strangeskies.reflection.codegen;
 
 import static java.lang.reflect.Modifier.isAbstract;
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.Types.isAssignable;
 import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.declareMethod;
 import static uk.co.strangeskies.reflection.codegen.MethodSignature.overrideMethodSignature;
@@ -43,6 +45,7 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -120,9 +123,10 @@ public class MethodOverride<T> {
 			throw new CodeGenerationException(p -> p.incompatibleReturnTypes(returnType, inherited));
 		}
 
+		List<ExecutableParameter> overriddenParameters = inheritedToken.getParameters().collect(toList());
 		for (int i = 0; i < parameters.length; i++) {
-			if (!isAssignable(inheritedToken.getParameters().skip(i).findFirst().get().getType(), parameters[i])) {
-				throw new CodeGenerationException(p -> p.incompatibleParameterTypes(parameters, inherited));
+			if (!isAssignable(overriddenParameters.get(i).getType(), parameters[i])) {
+				throw new CodeGenerationException(p -> p.incompatibleParameterTypes(asList(parameters), inherited));
 			}
 		}
 	}

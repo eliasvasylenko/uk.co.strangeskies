@@ -394,7 +394,7 @@ public final class Annotations {
 					.orElse(HashMap::new);
 
 			annotation = typeParser
-					.getRawType()
+					.rawType()
 					.prepend("@")
 					.<Class<? extends Annotation>>transform(t -> t.asSubclass(Annotation.class))
 					.appendTransform(

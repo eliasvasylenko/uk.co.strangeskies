@@ -387,7 +387,7 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 				annotations);
 	}
 
-	public ClassDefinition<Void, T> defineSingle() {
+	public ClassDefinition<Void, T> defineStandalone() {
 		ClassDefinitionSpace classSpace = new ClassRegister().withClassSignature(this).declare();
 		return new ClassDefinition<>(classSpace.getClassDeclaration(this), classSpace);
 	}

@@ -36,8 +36,10 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 import static uk.co.strangeskies.reflection.token.TypeToken.forAnnotatedType;
+import static uk.co.strangeskies.utilities.collection.StreamUtilities.throwingMerger;
 
 import java.lang.reflect.AnnotatedType;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -76,7 +78,11 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 		this.owningDeclaration = owningDeclaration;
 		this.returnType = (TypeToken<T>) forAnnotatedType(substituteTypeVariableSignatures(returnType));
 		this.parameters = signature.getParameters().collect(
-				toMap(identity(), parameter -> createParameter((ParameterSignature<?>) parameter)));
+				toMap(
+						identity(),
+						parameter -> createParameter((ParameterSignature<?>) parameter),
+						throwingMerger(),
+						LinkedHashMap::new));
 		this.staticMethod = staticMethod;
 
 		if (isStatic() && isDefault()) {

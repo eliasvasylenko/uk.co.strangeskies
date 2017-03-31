@@ -588,7 +588,7 @@ public final class AnnotatedTypes {
 			AnnotationParser annotationParser = Annotations.getParser(imports);
 			TypeParser typeParser = Types.getParser(imports);
 
-			rawType = typeParser.getRawType().prependTransform(
+			rawType = typeParser.rawType().prependTransform(
 					annotationParser.getAnnotationList().append("\\s*").orElse(ArrayList::new),
 					AnnotatedTypes::annotated);
 

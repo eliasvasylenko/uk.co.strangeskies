@@ -51,7 +51,7 @@ import java.util.stream.Stream;
  * <p>
  * Classes signatures with no interdependencies may be declared into an
  * anonymous, unit-set register and class space via
- * {@link ClassSignature#defineSingle()}
+ * {@link ClassSignature#defineStandalone()}
  * 
  * @author Elias N Vasylenko
  */
