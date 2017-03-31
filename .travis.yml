@@ -22,6 +22,8 @@ install: "./gradlew --version"
 
 script: ./gradlew --continue build test aggregateJavadoc -PgithubUser="${GITHUB_TOKEN}" --stacktrace
 
+after_script: $TRAVIS_BUILD_DIR/.travis/redirect-log-output-end.sh
+
 after_success:
   - ./gradlew --continue publishGhPages -PgithubUser="${GITHUB_TOKEN}" -PgithubPassword="" -PjfrogUser="${JFROG_USER}" -PjfrogPassword="${JFROG_PASSWORD}" --stacktrace
   - bash <(curl -s https://codecov.io/bash)
