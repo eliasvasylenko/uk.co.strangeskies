@@ -47,7 +47,7 @@ import org.junit.Test;
 import uk.co.strangeskies.scripting.test.ScriptEngineTestBase;
 
 @SuppressWarnings("javadoc")
-// @RequireFregeScriptEngine
+//@RequireFregeScriptEngine
 @Ignore
 public class FregeScriptEngineTest extends ScriptEngineTestBase {
 	public FregeScriptEngineTest() {

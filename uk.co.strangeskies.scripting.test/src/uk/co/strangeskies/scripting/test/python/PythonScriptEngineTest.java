@@ -40,11 +40,13 @@ import java.net.URISyntaxException;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.co.strangeskies.scripting.RequirePythonScriptEngine;
 import uk.co.strangeskies.scripting.test.ScriptEngineTestBase;
 
+@Ignore
 @SuppressWarnings("javadoc")
 @RequirePythonScriptEngine
 public class PythonScriptEngineTest extends ScriptEngineTestBase {

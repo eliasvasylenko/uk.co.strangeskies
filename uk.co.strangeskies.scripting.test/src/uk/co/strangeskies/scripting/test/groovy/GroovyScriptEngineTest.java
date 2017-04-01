@@ -40,11 +40,14 @@ import java.net.URISyntaxException;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 
+import org.junit.Ignore;
+
 import uk.co.strangeskies.scripting.RequireGroovyScriptEngine;
 import uk.co.strangeskies.scripting.test.ScriptEngineTestBase;
 
 @SuppressWarnings("javadoc")
 @RequireGroovyScriptEngine
+@Ignore
 public class GroovyScriptEngineTest extends ScriptEngineTestBase {
 	public GroovyScriptEngineTest() {
 		super("groovy");
