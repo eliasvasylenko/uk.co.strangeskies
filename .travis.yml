@@ -33,7 +33,7 @@ install:
 #  - bash <(curl -s https://codecov.io/bash)
 
 before_cache:
-  -find $HOME/.bnd/urlcache/shas -name "*.content" -type f -delete
+  - find $HOME/.bnd/urlcache/shas -name "*.content" -type f -delete
 
 cache:
   directories:
