@@ -28,10 +28,6 @@ after_success:
 after_script:
   - bash <(curl -s https://codecov.io/bash)
 
-before_cache:
-  - find $HOME/.bnd/urlcache/shas -name "*.content" -type f -delete
-
 cache:
   directories:
     - $TRAVIS_BUILD_DIR/cnf/cache
-    - $HOME/.bnd/urlcache/shas
