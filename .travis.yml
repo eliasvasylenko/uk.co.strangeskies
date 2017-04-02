@@ -18,6 +18,7 @@ env:
 
 install:
   - ./gradlew --version
+  - ./gradlew --stacktrace license
 
 #script:
 #  - ./gradlew --stacktrace --continue build jacocoTestReport aggregateJavadoc -PgithubUser="${GITHUB_TOKEN}"
