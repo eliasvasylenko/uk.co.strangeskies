@@ -19,14 +19,17 @@ env:
 install:
   - ./gradlew --version
 
+#script:
+#  - ./gradlew --stacktrace --continue build jacocoTestReport aggregateJavadoc -PgithubUser="${GITHUB_TOKEN}"
+
 script:
-  - ./gradlew --stacktrace --continue build jacocoTestReport aggregateJavadoc -PgithubUser="${GITHUB_TOKEN}"
+  - echo hello
 
-after_success:
-  - ./gradlew --continue publishGhPages -PgithubUser="${GITHUB_TOKEN}" -PgithubPassword="" -PjfrogUser="${JFROG_USER}" -PjfrogPassword="${JFROG_PASSWORD}" --stacktrace
+#after_success:
+#  - ./gradlew --continue publishGhPages -PgithubUser="${GITHUB_TOKEN}" -PgithubPassword="" -PjfrogUser="${JFROG_USER}" -PjfrogPassword="${JFROG_PASSWORD}" --stacktrace
 
-after_script:
-  - bash <(curl -s https://codecov.io/bash)
+#after_script:
+#  - bash <(curl -s https://codecov.io/bash)
 
 cache:
   directories:
