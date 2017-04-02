@@ -23,7 +23,8 @@ script:
   - ./gradlew build jacocoTestReport --stacktrace --continue
 
 after_success:
-  - ./gradlew publishGhPages --stacktrace -PgithubUser="${GITHUB_TOKEN}" -PgithubPassword="" -PjfrogUser="${JFROG_USER}" -PjfrogPassword="${JFROG_PASSWORD}"
+  - ./gradlew publishGhPages --stacktrace -PgithubUser="${GITHUB_TOKEN}" -PgithubPassword=""
+  - ./gradlew release --stacktrace -PjfrogUser="${JFROG_USER}" -PjfrogPassword="${JFROG_PASSWORD}"
   - bash <(curl -s https://codecov.io/bash)
 
 cache:

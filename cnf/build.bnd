@@ -59,7 +59,7 @@ Bundle-Version: ${strangeskies-version}.${tstamp}
 		aQute.bnd.repository.maven.provider.MavenBndRepository;\
 			name				=		StrangeSkies;\
 			index				=		${.}/strangeskies.maven;\
-			releaseUrl			=		http://oss.jfrog.org/libs-snapshot/
+			snapshotUrl			=		http://oss.jfrog.org/libs-snapshot-local/
 
 -plugin.Central.Extras:\
 \
