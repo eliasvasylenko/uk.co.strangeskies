@@ -16,9 +16,14 @@ env:
   - secure: NGNsvBLaE0R40chmarx1ryDqoHv1wiycw96EvOUrFafQpjUDeEw5q0W2572IIzY5NmyUw57WQx0tETyniJaJB7d5t//skUNAa1wIDms7RwqsQUllZaPlZPJak7JXV6UnSfGqISXaaGd6OxxQFMioFl/bhOyivtL3n98Osyqm6pQ=
   - secure: DkJhDrFVkgQi33cRBuBS5LHpzEEMqAPVm4HiE6jQ2Ts1nFZHvkVsrrPIOgqNEXtiAak1zEy34tBB3nddq7YyJALHO/bbT7E9pIBi3A7A18UchQzl/60lhJ/NKD9+wh2UKHgZFvHyiLPXLBFI9WHp+xPEm4kIVlqmiRqYXFKbtJk=
 
+#install:
+#  - ./gradlew --version
+#  - ./gradlew --stacktrace license
+
+before_install: . $TRAVIS_BUILD_DIR/.travis/redirect-log-output.sh
 install:
-  - ./gradlew --version
-  - ./gradlew --stacktrace license
+   - ./gradlew --version
+   - ./gradlew license >> "${BUILD_OUTPUT}" 2>&1; . $TRAVIS_BUILD_DIR/.travis/redirect-log-output-end.sh
 
 #script:
 #  - ./gradlew --stacktrace --continue build jacocoTestReport aggregateJavadoc -PgithubUser="${GITHUB_TOKEN}"
