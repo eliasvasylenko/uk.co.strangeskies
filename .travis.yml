@@ -29,6 +29,8 @@ script:
 
 after_success:
   - ./gradlew --continue publishGhPages -PgithubUser="${GITHUB_TOKEN}" -PgithubPassword="" -PjfrogUser="${JFROG_USER}" -PjfrogPassword="${JFROG_PASSWORD}" --stacktrace
+
+after_script:
   - bash <(curl -s https://codecov.io/bash)
 
 #cache:

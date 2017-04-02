@@ -24,6 +24,7 @@ buildscript {
       /* Resolve dependency conflict with bndtools: */
       exclude group: "org.apache.httpcomponents"
     }
+    classpath 'org.jacoco:org.jacoco.agent:0.7.8'
   }
 }
 
@@ -70,6 +71,21 @@ configure(bndProjects()) {
     jvmArgs '-Xms4096m -Xmx4096m'
   }
 }*/
+
+configure(bndProjects()) {
+  apply plugin: 'jacoco'
+
+  repositories {
+    mavenCentral()
+  }
+
+  jacocoTestReport {
+    reports {
+      xml.enabled true
+      html.enabled false
+    }
+  }
+}
 
 /* Source License Generation */
 def copyrightProperties  = new Properties()
