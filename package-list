@@ -24,15 +24,6 @@ uk.co.strangeskies.reflection
 uk.co.strangeskies.reflection.codegen
 uk.co.strangeskies.reflection.resource
 uk.co.strangeskies.reflection.token
-uk.co.strangeskies.scripting
-uk.co.strangeskies.scripting.engine.clojure
-uk.co.strangeskies.scripting.engine.groovy
-uk.co.strangeskies.scripting.engine.kotlin
-uk.co.strangeskies.scripting.engine.lua
-uk.co.strangeskies.scripting.engine.python
-uk.co.strangeskies.scripting.engine.ruby
-uk.co.strangeskies.scripting.engine.scala
-uk.co.strangeskies.scripting.test
 uk.co.strangeskies.text
 uk.co.strangeskies.text.parsing
 uk.co.strangeskies.text.properties
