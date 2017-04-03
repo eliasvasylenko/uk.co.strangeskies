@@ -97,7 +97,7 @@ configure(bndProjects()) {
   apply plugin: "license"
 
   license {
-    header rootProject.file("LICENSE")
+    header rootProject.file("LICENSE.TEMPLATE")
 
     strictCheck = true
     encoding = "UTF-8"
