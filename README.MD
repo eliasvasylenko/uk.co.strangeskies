@@ -8,7 +8,7 @@
   <img src="https://img.shields.io/bintray/v/strangeskies/uk.co.strangeskies/uk.co.strangeskies.svg"
       alt="uk.co.strangeskies">
 </a>
-<a href="https://tldrlegal.com/license/gnu-general-public-license-v3-%28gpl-3%29">
+<a href="https://tldrlegal.com/license/gnu-lesser-general-public-license-v3-(lgpl-3)">
   <img src="https://img.shields.io/github/license/StrangeSkies/uk.co.strangeskies.svg"
       alt="License">
 </a>
