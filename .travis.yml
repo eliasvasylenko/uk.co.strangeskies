@@ -20,7 +20,7 @@ install:
   - ./gradlew --version
 
 before_script:
-  - mv .travis/maven-settings.xml ~/.m2/settings.xml
+  - envsubst < .travis/maven-settings.xml > ~/.m2/settings.xml
 
 script:
   - ./gradlew build jacocoTestReport --stacktrace --continue
