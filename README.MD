@@ -1,4 +1,4 @@
-# StrangeSkies - Common Libraries
+# Strange Skies - Common Libraries
 
 <a href="https://travis-ci.org/StrangeSkies/uk.co.strangeskies">
   <img src="http://img.shields.io/travis/StrangeSkies/uk.co.strangeskies.svg"
@@ -23,7 +23,6 @@
 
 * Comprehensive type system reflection utilities, including a full implementation of the Java language type inference algorithm.
 * Reactive programming constructs designed over an invalidate/lazy-revalidate model.
-* Modular, OSGi ready providers and consumers for a number of scripting language engines.
 * Rich mathematical programming API.
 
 ## Documentation
