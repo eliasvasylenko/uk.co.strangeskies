@@ -20,14 +20,12 @@ install:
   - ./gradlew --version
 
 before_script:
-  - echo $JFROG_USER
   - mv .travis/maven-settings.xml ~/.m2/settings.xml
 
 script:
   - ./gradlew build jacocoTestReport --stacktrace --continue
 
 after_success:
-  - echo $JFROG_USER
   - ./gradlew release publishGhPages --stacktrace -PgithubUser="${GITHUB_TOKEN}" -PgithubPassword=""
   - bash <(curl -s https://codecov.io/bash)
 
