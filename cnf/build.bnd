@@ -33,7 +33,7 @@ Bundle-Copyright:	${copyright}
 Bundle-License:\
 	LGPL;\
 	link					=	http://www.gnu.org/licenses/
-Bundle-DocURL:		http://bnd.bndtools.org/
+Bundle-DocURL:		https://github.com/StrangeSkies/uk.co.strangeskies/wiki
 Bundle-SCM:\
 	url						=	https://github.com/strangeskies/uk.co.strangeskies, \
 	connection				=	scm:git:https://github.com/strangeskies/uk.co.strangeskies.git, \
