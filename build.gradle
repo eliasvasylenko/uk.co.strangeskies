@@ -24,7 +24,6 @@ buildscript {
       /* Resolve dependency conflict with bndtools: */
       exclude group: "org.apache.httpcomponents"
     }
-    classpath 'org.jacoco:org.jacoco.agent:0.7.8'
   }
 }
 
