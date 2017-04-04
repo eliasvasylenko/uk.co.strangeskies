@@ -61,17 +61,6 @@ configure(bndProjects()) {
 }
 
 /* Test Configuration */
-/*
-configure(bndProjects()) {
-  test {
-    // set heap size for the test JVM(s)
-    minHeapSize = "4096m"
-    maxHeapSize = "4096m"
-
-    jvmArgs '-Xms4096m -Xmx4096m'
-  }
-}*/
-
 configure(bndProjects()) {
   apply plugin: 'jacoco'
 
