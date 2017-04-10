@@ -74,6 +74,7 @@ public class JavacSupertypeAnnotationsTest {
 	public static Object[][] testClasses() {
 		class StaticInner<T> {}
 
+		@SuppressWarnings("unused")
 		class StaticInnerExtendsStaticInner extends StaticInner<@TestAnnotation Object> {}
 
 		return new Object[][] {

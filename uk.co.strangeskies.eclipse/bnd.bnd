@@ -10,6 +10,7 @@ Bundle-Name: Strange Skies :: Utilities :: Eclipse
 	uk.co.strangeskies.fx;version=snapshot,\
 	uk.co.strangeskies.mathematics;version=snapshot,\
 	uk.co.strangeskies.reflection;version=snapshot,\
+	uk.co.strangeskies.reflection.token;version=snapshot,\
 	uk.co.strangeskies.osgi.api;version=snapshot,\
 	org.eclipse.osgi.compatibility.state
 

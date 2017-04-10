@@ -51,27 +51,29 @@ import org.junit.Test;
 
 import uk.co.strangeskies.reflection.AnnotatedTypeSubstitution;
 import uk.co.strangeskies.reflection.AnnotatedTypes;
-import uk.co.strangeskies.reflection.token.TypeToken.Capture;
-import uk.co.strangeskies.reflection.token.TypeToken.Infer;
-import uk.co.strangeskies.reflection.token.TypeToken.Retain;
 
 @SuppressWarnings("javadoc")
 public class AnnotatedTypeSubstitutionTest {
+	private @interface Test1 {
+	}
+
+	private @interface Test2 {
+	}
+
+	private @interface Test3 {
+	}
+
 	private AnnotatedType createTestType(AnnotatedType type) {
-		return parameterize(
-				annotated(Map.class),
-				wildcardExtending(
-						asList(from(Capture.class)),
-						arrayFromComponent(arrayFromComponent(annotated(Number.class), from(Retain.class)))),
-				parameterize(
-						annotated(Map.class),
-						wildcardSuper(type),
-						annotated(typeVariableExtending(Collection.class, "E"), from(Infer.class))));
+		return parameterize(annotated(Map.class),
+				wildcardExtending(asList(from(Test1.class)),
+						arrayFromComponent(arrayFromComponent(annotated(Number.class), from(Test3.class)))),
+				parameterize(annotated(Map.class), wildcardSuper(type),
+						annotated(typeVariableExtending(Collection.class, "E"), from(Test2.class))));
 	}
 
 	@Test
 	public <T extends Number> void noSubstitutionIdentityTest() {
-		AnnotatedType type = createTestType(annotated(Number.class, from(Infer.class)));
+		AnnotatedType type = createTestType(annotated(Number.class, from(Test2.class)));
 
 		AnnotatedType substitution = new AnnotatedTypeSubstitution().where(t -> false, t -> t).resolve(type);
 
@@ -80,7 +82,7 @@ public class AnnotatedTypeSubstitutionTest {
 
 	@Test
 	public <T extends Number> void doublyNestedWildcardSubstitutionTest() {
-		AnnotatedType type = createTestType(annotated(Number.class, from(Infer.class)));
+		AnnotatedType type = createTestType(annotated(Number.class, from(Test2.class)));
 
 		AnnotatedType expected = createTestType(annotated(Serializable.class));
 
