@@ -61,6 +61,12 @@ import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVi
 import uk.co.strangeskies.reflection.token.TypeToken;
 import uk.co.strangeskies.utilities.collection.StreamUtilities;
 
+/**
+ * @author Elias N Vasylenko
+ *
+ * @param <E>
+ * @param <T>
+ */
 public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignature<T>>
 		implements Declaration<ClassSignature<T>> {
 	static class Reference implements Type {
@@ -138,10 +144,6 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 				return (TypeToken<T>) getSuperType();
 			}
 		};
-	}
-
-	public static <T> ClassDeclaration<?, T> declareClass(ClassDeclarationContext context, ClassSignature<T> signature) {
-		return new ClassDeclaration<>(context, signature);
 	}
 
 	public static Type referenceClassDeclaration(String name) {
