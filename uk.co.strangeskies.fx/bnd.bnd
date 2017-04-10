@@ -5,4 +5,5 @@ Bundle-Name: Strange Skies :: FX
 -buildpath: \
 	uk.co.strangeskies.utilities;version=snapshot,\
 	uk.co.strangeskies.mathematics;version=snapshot,\
-	uk.co.strangeskies.reflection;version=snapshot
+	uk.co.strangeskies.reflection;version=snapshot,\
+	uk.co.strangeskies.reflection.token;version=snapshot

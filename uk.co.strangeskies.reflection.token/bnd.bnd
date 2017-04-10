@@ -8,12 +8,10 @@ Bundle-Description:\
 	method/constructor overload resolution and invocation type \
 	inference.
 
--includeresource:\
-	res
-
 Export-Package: \
-	uk.co.strangeskies.reflection
+	uk.co.strangeskies.reflection.token
 
 -buildpath: \
+	uk.co.strangeskies.reflection;version=snapshot,\
 	uk.co.strangeskies.utilities;version=snapshot,\
 	uk.co.strangeskies.text;version=snapshot

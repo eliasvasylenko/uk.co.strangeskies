@@ -70,8 +70,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
-import uk.co.strangeskies.reflection.token.ExecutableToken;
-import uk.co.strangeskies.reflection.token.TypeToken;
 import uk.co.strangeskies.utilities.DeepCopyable;
 import uk.co.strangeskies.utilities.IdentityProperty;
 import uk.co.strangeskies.utilities.Isomorphism;
@@ -91,12 +89,6 @@ import uk.co.strangeskies.utilities.Isomorphism;
  * {@link InferenceVariable} may by created for any given {@link TypeVariable}.
  * A {@link TypeResolver} always creates {@link InferenceVariable} according to
  * the behavior of {@link TypeResolver#inferTypeParameters(GenericDeclaration)}.
- * 
- * <p>
- * A {@link TypeResolver} is a flexible and powerful tool, but for typical
- * use-cases it may be recommended to use the more limited, but more type safe,
- * facilities provided by the {@link TypeToken} and {@link ExecutableToken}
- * classes.
  * 
  * @author Elias N Vasylenko
  */

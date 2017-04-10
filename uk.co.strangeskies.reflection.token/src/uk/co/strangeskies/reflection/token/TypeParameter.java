@@ -15,14 +15,14 @@
  *               \ \__.' /| |    \ \| | \ `.__,.\ \__.' /
  *                `.__.-` |_|    |_||_|  `-.__.J `.__.-`
  *
- * This file is part of uk.co.strangeskies.reflection.
+ * This file is part of uk.co.strangeskies.reflection.token.
  *
- * uk.co.strangeskies.reflection is free software: you can redistribute it and/or modify
+ * uk.co.strangeskies.reflection.token is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * uk.co.strangeskies.reflection is distributed in the hope that it will be useful,
+ * uk.co.strangeskies.reflection.token is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -32,39 +32,59 @@
  */
 package uk.co.strangeskies.reflection.token;
 
-import static uk.co.strangeskies.reflection.token.TypedObject.typedObject;
-
 import java.lang.reflect.Type;
-
-import uk.co.strangeskies.reflection.Reified;
-import uk.co.strangeskies.utilities.Self;
+import java.lang.reflect.TypeVariable;
 
 /**
- * A type whose instances know their own type, including any available generic
- * information.
- * <p>
- * As with the extended {@link Self} interface, generally only the most specific
- * <em>useful</em> type will be considered.
+ * A capture of a type variable, with all of the reflective functionality
+ * provided by {@link TypeToken}.
  * 
  * @author Elias N Vasylenko
- * @param <S>
- *          The type of the instance
+ *
+ * @param <T>
+ *          The type variable we wish to capture.
  */
-public interface ReifiedToken<S extends ReifiedToken<S>> extends Reified, Self<S> {
+public class TypeParameter<T> extends TypeToken<T> {
 	/**
-	 * @return a {@link TypeToken} over the value of {@link #getThisType()}
+	 * Capture the type variable provided as an argument to the type parameter of
+	 * this constructor. This should only ever be parameterized with an
+	 * uninstantiated type variable.
 	 */
-	TypeToken<S> getThisTypeToken();
+	protected TypeParameter() {
+		if (!(super.getType() instanceof TypeVariable))
+			throw new IllegalArgumentException();
+	}
+
+	private TypeParameter(TypeVariable<?> type) {
+		super(type);
+	}
 
 	@Override
-	default Type getThisType() {
-		return getThisTypeToken().getType();
+	public TypeVariable<?> getType() {
+		return (TypeVariable<?>) super.getType();
 	}
 
 	/**
-	 * @return this object as a {@link TypedObject}
+	 * Capture the given type variable in a TypeToken.
+	 * 
+	 * @param type
+	 *          The type variable to capture.
+	 * @return A type token instance over the given type.
 	 */
-	default TypedObject<S> asTypedObject() {
-		return typedObject(getThisTypeToken(), getThis());
+	public static TypeParameter<?> forTypeVariable(TypeVariable<?> type) {
+		return new TypeParameter<>(type);
+	}
+
+	public TypeArgument<T> asType(TypeToken<T> type) {
+		return new TypeArgument<T>(this, type) {};
+	}
+
+	public TypeArgument<T> asClass(Class<T> type) {
+		return new TypeArgument<T>(this, forClass(type)) {};
+	}
+
+	@SuppressWarnings("unchecked")
+	public TypeArgument<?> asType(Type type) {
+		return new TypeArgument<T>(this, (TypeToken<T>) TypeToken.forType(type)) {};
 	}
 }
