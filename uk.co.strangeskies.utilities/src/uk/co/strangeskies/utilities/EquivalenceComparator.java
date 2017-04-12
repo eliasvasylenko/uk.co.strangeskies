@@ -158,7 +158,7 @@ public class EquivalenceComparator<T> implements Comparator<T> {
 			if (collisions.size() > 1) {
 				collisions.remove(oldReference);
 			} else {
-				collisionMap.remove(collisions);
+				collisionMap.remove(oldReference.getId());
 			}
 		}
 	}
