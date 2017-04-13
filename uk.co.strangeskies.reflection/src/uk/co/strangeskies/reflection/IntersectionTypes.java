@@ -34,6 +34,7 @@ package uk.co.strangeskies.reflection;
 
 import static java.util.Arrays.stream;
 import static uk.co.strangeskies.reflection.BoundSet.emptyBoundSet;
+import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -196,7 +197,8 @@ public class IntersectionTypes {
 							}
 							break;
 						} else if (!iInterface && !Types.getErasedType(jType).isInterface()) {
-							throw new ReflectionException(p -> p.invalidIntersectionTypes(flattenedTypes, iType, jType));
+							throw new ReflectionException(
+									REFLECTION_PROPERTIES.invalidIntersectionTypes(flattenedTypes, iType, jType));
 						}
 					}
 				}
@@ -251,7 +253,7 @@ public class IntersectionTypes {
 				bounds = new ConstraintFormula(Kind.SUBTYPE, inferenceVariable, type).reduce(bounds);
 			}
 		} catch (Exception e) {
-			throw new ReflectionException(p -> p.invalidIntersectionType(flattenedTypes), e);
+			throw new ReflectionException(REFLECTION_PROPERTIES.invalidIntersectionType(flattenedTypes), e);
 		}
 
 		return intersectionOfImpl(flattenedTypes);

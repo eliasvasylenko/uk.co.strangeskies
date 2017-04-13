@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
+
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -67,9 +69,9 @@ import uk.co.strangeskies.reflection.token.TypeToken;
  * same class loader if we really need to.
  * 
  * 
- * Load classes into ClassDefinitionSpace so we can reuse their methods:
- *  - ClassDefinition.withMethodsFrom(Class)
- *  - ClassDefinition.withMethodFrom(Class, String)
+ * Load classes into ClassDefinitionSpace so we can reuse their methods: -
+ * ClassDefinition.withMethodsFrom(Class) -
+ * ClassDefinition.withMethodFrom(Class, String)
  * 
  * 
  * 
@@ -146,8 +148,11 @@ public class ClassDefinitionSpace {
 		this.classLoadingStrategy = classLoadingStrategy;
 	}
 
-	ClassDefinitionSpace withMethodDefinition(MethodDeclaration<?, ?> declaration, MethodDefinition<?, ?> definition) {
-		Map<MethodDeclaration<?, ?>, MethodDefinition<?, ?>> methodDefinitions = new HashMap<>(this.methodDefinitions);
+	ClassDefinitionSpace withMethodDefinition(
+			MethodDeclaration<?, ?> declaration,
+			MethodDefinition<?, ?> definition) {
+		Map<MethodDeclaration<?, ?>, MethodDefinition<?, ?>> methodDefinitions = new HashMap<>(
+				this.methodDefinitions);
 		methodDefinitions.put(declaration, definition);
 
 		Set<MethodDeclaration<?, ?>> undefinedMethods = new HashSet<>(this.undefinedMethods);
@@ -169,9 +174,12 @@ public class ClassDefinitionSpace {
 	}
 
 	public void validate() {
-		undefinedMethods.stream().filter(m -> m.isConstructor() || m.isStatic() || !m.isDefault()).findAny().ifPresent(
-				m -> {
-					throw new CodeGenerationException(o -> o.mustImplementMethod(m));
+		undefinedMethods
+				.stream()
+				.filter(m -> m.isConstructor() || m.isStatic() || !m.isDefault())
+				.findAny()
+				.ifPresent(m -> {
+					throw new CodeGenerationException(CODEGEN_PROPERTIES.mustImplementMethod(m));
 				});
 	}
 

@@ -33,6 +33,7 @@
 package uk.co.strangeskies.reflection.codegen;
 
 import static java.util.Collections.emptyMap;
+import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -42,11 +43,11 @@ import java.util.stream.Stream;
  * An immutable register of class signatures to be declared.
  * 
  * <p>
- * Class registers are declared to create a {@link ClassDefinitionSpace class space},
- * containing {@link ClassDeclaration class declarations} for each signature in
- * the register. We build a registry of class signatures before declaring them
- * as a group so that we may naturally facilitate cycles in the class
- * declaration graph without depending on mutable state.
+ * Class registers are declared to create a {@link ClassDefinitionSpace class
+ * space}, containing {@link ClassDeclaration class declarations} for each
+ * signature in the register. We build a registry of class signatures before
+ * declaring them as a group so that we may naturally facilitate cycles in the
+ * class declaration graph without depending on mutable state.
  * 
  * <p>
  * Classes signatures with no interdependencies may be declared into an
@@ -69,7 +70,8 @@ public class ClassRegister {
 	public ClassRegister withClassSignature(ClassSignature<?> classSignature) {
 		Map<String, ClassSignature<?>> classSignatures = new HashMap<>(this.classSignatures);
 		if (classSignatures.putIfAbsent(classSignature.getClassName(), classSignature) != null) {
-			throw new CodeGenerationException(m -> m.classNameAlreadyRegistered(classSignature));
+			throw new CodeGenerationException(
+					CODEGEN_PROPERTIES.classNameAlreadyRegistered(classSignature));
 		}
 		return new ClassRegister(classSignatures);
 	}

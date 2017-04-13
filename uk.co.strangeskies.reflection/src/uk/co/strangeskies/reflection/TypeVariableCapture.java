@@ -38,6 +38,7 @@ import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
 import static uk.co.strangeskies.reflection.IntersectionTypes.uncheckedIntersectionOf;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.getAllTypeArguments;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterizeUnchecked;
+import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
@@ -86,9 +87,9 @@ public class TypeVariableCapture implements Type {
 	}
 
 	private final void validate() {
-		if (lowerBounds.length > 0
-				&& !Types.isAssignable(uncheckedIntersectionOf(lowerBounds), uncheckedIntersectionOf(upperBounds))) {
-			throw new ReflectionException(p -> p.invalidTypeVariableCaptureBounds(this));
+		if (lowerBounds.length > 0 && !Types
+				.isAssignable(uncheckedIntersectionOf(lowerBounds), uncheckedIntersectionOf(upperBounds))) {
+			throw new ReflectionException(REFLECTION_PROPERTIES.invalidTypeVariableCaptureBounds(this));
 		}
 	}
 
@@ -179,7 +180,7 @@ public class TypeVariableCapture implements Type {
 					capture.upperBounds = new Type[] { upperBound };
 
 				if (!InferenceVariable.isProperType(capture)) {
-					throw new ReflectionException(p -> p.improperCaptureType(capture));
+					throw new ReflectionException(REFLECTION_PROPERTIES.improperCaptureType(capture));
 				}
 			}
 		}
@@ -200,7 +201,9 @@ public class TypeVariableCapture implements Type {
 		if (component instanceof ParameterizedType)
 			component = captureWildcardArguments((GenericArrayType) component);
 
-		component = type = (GenericArrayType) arrayFromComponent(component, Types.getArrayDimensions(type));
+		component = type = (GenericArrayType) arrayFromComponent(
+				component,
+				Types.getArrayDimensions(type));
 
 		return type;
 	}
@@ -237,7 +240,9 @@ public class TypeVariableCapture implements Type {
 		ParameterizedType capture;
 		if (containsWildcards) {
 			substituteBounds(arguments);
-			capture = parameterizeUnchecked((Class<?>) type.getRawType(), new ArrayList<>(arguments.values()));
+			capture = parameterizeUnchecked(
+					(Class<?>) type.getRawType(),
+					new ArrayList<>(arguments.values()));
 		} else {
 			capture = type;
 		}
@@ -256,7 +261,9 @@ public class TypeVariableCapture implements Type {
 	 * @return A new parameterized type of the same class as the passed type,
 	 *         parameterized with the captures of the original arguments.
 	 */
-	public static TypeVariableCapture captureWildcard(TypeVariable<?> typeVariable, WildcardType type) {
+	public static TypeVariableCapture captureWildcard(
+			TypeVariable<?> typeVariable,
+			WildcardType type) {
 		return captureWildcard(typeVariable, type, true);
 	}
 
@@ -315,7 +322,8 @@ public class TypeVariableCapture implements Type {
 			boolean validate) {
 		Type upperBound;
 
-		List<Type> aggregation = new ArrayList<>(typeVariable.getBounds().length + type.getUpperBounds().length);
+		List<Type> aggregation = new ArrayList<>(
+				typeVariable.getBounds().length + type.getUpperBounds().length);
 		for (int i = 0; i < typeVariable.getBounds().length; i++)
 			aggregation.add(typeVariable.getBounds()[i]);
 		for (int i = 0; i < type.getUpperBounds().length; i++)
@@ -352,7 +360,9 @@ public class TypeVariableCapture implements Type {
 	 * @return A mapping from the inference variables passes to their new
 	 *         captures.
 	 */
-	public static BoundSet captureInferenceVariables(Collection<? extends InferenceVariable> types, BoundSet bounds) {
+	public static BoundSet captureInferenceVariables(
+			Collection<? extends InferenceVariable> types,
+			BoundSet bounds) {
 		TypeSubstitution properTypeSubstitutuion = properTypeSubstitution(types, bounds);
 
 		Map<InferenceVariable, Type> typeVariableCaptures = new HashMap<>();
@@ -371,7 +381,8 @@ public class TypeVariableCapture implements Type {
 			} else {
 				Set<Type> equalitySet = new HashSet<>();
 
-				for (Type equality : bounds.getBoundsOn(inferenceVariable).getEqualities().collect(toList())) {
+				for (Type equality : bounds.getBoundsOn(inferenceVariable).getEqualities().collect(
+						toList())) {
 					if (!(equality instanceof InferenceVariable)) {
 						try {
 							equalitySet.add(properTypeSubstitutuion.resolve(equality));
@@ -401,7 +412,8 @@ public class TypeVariableCapture implements Type {
 						lowerBounds = new Type[0];
 					else {
 						Type lub = Types.leastUpperBound(lowerBoundSet);
-						lowerBounds = (lub instanceof IntersectionType) ? ((IntersectionType) lub).getTypes() : new Type[] { lub };
+						lowerBounds = (lub instanceof IntersectionType) ? ((IntersectionType) lub).getTypes()
+								: new Type[] { lub };
 					}
 
 					/*
@@ -411,13 +423,19 @@ public class TypeVariableCapture implements Type {
 					 */
 
 					BoundSet finalBounds = bounds;
-					Set<Type> upperBoundSet = bounds.getBoundsOn(inferenceVariable).getUpperBounds().map(t -> {
-						try {
-							return properTypeSubstitutuion.resolve(t);
-						} catch (ReflectionException e) {
-							throw new ReflectionException(p -> p.improperUpperBound(t, inferenceVariable, finalBounds), e);
-						}
-					}).collect(Collectors.toSet());
+					Set<Type> upperBoundSet = bounds
+							.getBoundsOn(inferenceVariable)
+							.getUpperBounds()
+							.map(t -> {
+								try {
+									return properTypeSubstitutuion.resolve(t);
+								} catch (ReflectionException e) {
+									throw new ReflectionException(
+											REFLECTION_PROPERTIES.improperUpperBound(t, inferenceVariable, finalBounds),
+											e);
+								}
+							})
+							.collect(Collectors.toSet());
 
 					/*
 					 * no need to be checked properly here, as we do this later in
@@ -431,7 +449,10 @@ public class TypeVariableCapture implements Type {
 					 * (that is, a lower bound is not a subtype of an upper bound, or an
 					 * intersection type is inconsistent), then resolution fails.
 					 */
-					TypeVariableCapture capture = new TypeVariableCapture(upperBounds, lowerBounds, inferenceVariable);
+					TypeVariableCapture capture = new TypeVariableCapture(
+							upperBounds,
+							lowerBounds,
+							inferenceVariable);
 
 					typeVariableCaptures.put(inferenceVariable, capture);
 				}
@@ -468,12 +489,19 @@ public class TypeVariableCapture implements Type {
 			if (inferenceVariableBounds.getInstantiation().isPresent()) {
 				replacement = inferenceVariableBounds.getInstantiation().get();
 			} else if (!types.contains(i)) {
-				replacement = inferenceVariableBounds.getEqualities().filter(types::contains).findAny().orElse(
-						inferenceVariableBounds
-								.getEqualities()
-								.filter(equality -> InferenceVariable.getMentionedBy(equality).allMatch(types::contains))
-								.findAny()
-								.orElseThrow(() -> new ReflectionException(p -> p.cannotFindSubstitution(i))));
+				replacement = inferenceVariableBounds
+						.getEqualities()
+						.filter(types::contains)
+						.findAny()
+						.orElse(
+								inferenceVariableBounds
+										.getEqualities()
+										.filter(
+												equality -> InferenceVariable.getMentionedBy(equality).allMatch(
+														types::contains))
+										.findAny()
+										.orElseThrow(
+												() -> new ReflectionException(REFLECTION_PROPERTIES.cannotFindSubstitution(i))));
 			} else {
 				replacement = i;
 			}

@@ -33,6 +33,7 @@
 package uk.co.strangeskies.reflection;
 
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
+import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
 
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
@@ -82,8 +83,9 @@ public class WildcardTypes {
 
 			WildcardType wildcard = (WildcardType) that;
 
-			return wildcard.getLowerBounds().length == 0 && (wildcard.getUpperBounds().length == 0
-					|| (wildcard.getUpperBounds().length == 1 && wildcard.getUpperBounds()[0].equals(Object.class)));
+			return wildcard.getLowerBounds().length == 0
+					&& (wildcard.getUpperBounds().length == 0 || (wildcard.getUpperBounds().length == 1
+							&& wildcard.getUpperBounds()[0].equals(Object.class)));
 		}
 
 		@Override
@@ -155,7 +157,8 @@ public class WildcardTypes {
 
 			@Override
 			public String toString() {
-				return "? super " + Arrays.stream(types.get()).map(Types::toString).collect(Collectors.joining(" & "));
+				return "? super "
+						+ Arrays.stream(types.get()).map(Types::toString).collect(Collectors.joining(" & "));
 			}
 
 			@Override
@@ -233,7 +236,7 @@ public class WildcardTypes {
 					if (type instanceof WildcardType) {
 						WildcardType wildcardType = ((WildcardType) type);
 						if (wildcardType.getLowerBounds().length == 0) {
-							throw new ReflectionException(p -> p.invalidUpperBound(wildcardType));
+							throw new ReflectionException(REFLECTION_PROPERTIES.invalidUpperBound(wildcardType));
 						} else {
 							types = wildcardType.getLowerBounds();
 						}
@@ -263,7 +266,8 @@ public class WildcardTypes {
 				if (bounds.length == 0 || (bounds.length == 1 && bounds[0].equals(Object.class)))
 					return "?";
 				else
-					return "? extends " + Arrays.stream(bounds).map(Types::toString).collect(Collectors.joining(" & "));
+					return "? extends "
+							+ Arrays.stream(bounds).map(Types::toString).collect(Collectors.joining(" & "));
 			}
 
 			@Override
@@ -282,7 +286,8 @@ public class WildcardTypes {
 				if (thatUpperBounds.length == 1 && thatUpperBounds[0].equals(Object.class))
 					thatUpperBounds = EMPTY_BOUND;
 
-				return wildcard.getLowerBounds().length == 0 && Arrays.equals(thisUpperBounds, thatUpperBounds);
+				return wildcard.getLowerBounds().length == 0
+						&& Arrays.equals(thisUpperBounds, thatUpperBounds);
 			}
 
 			@Override

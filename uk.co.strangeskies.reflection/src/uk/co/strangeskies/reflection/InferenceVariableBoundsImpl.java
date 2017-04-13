@@ -38,6 +38,7 @@ import static uk.co.strangeskies.reflection.InferenceVariableBoundsImpl.BoundKin
 import static uk.co.strangeskies.reflection.InferenceVariableBoundsImpl.BoundKind.LOWER;
 import static uk.co.strangeskies.reflection.InferenceVariableBoundsImpl.BoundKind.UPPER;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
+import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -173,12 +174,14 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		copy.capture = capture;
 
 		if (boundSet.containsInferenceVariable(inferenceVariable))
-			throw new ReflectionException(p -> p.cannotCopyInferenceVariable(inferenceVariable, boundSet));
+			throw new ReflectionException(
+					REFLECTION_PROPERTIES.cannotCopyInferenceVariable(inferenceVariable, boundSet));
 
 		for (Bound bound : bounds.values()) {
 			if (bound.getKind() == EQUAILTY) {
 				if (boundSet.containsInferenceVariable(bound.getType())) {
-					InferenceVariableBoundsImpl bounds = boundSet.getBoundsOnImpl((InferenceVariable) bound.getType());
+					InferenceVariableBoundsImpl bounds = boundSet
+							.getBoundsOnImpl((InferenceVariable) bound.getType());
 
 					copy.bounds = bounds.bounds;
 
@@ -197,10 +200,13 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	}
 
 	protected InferenceVariableBoundsImpl withInferenceVariableSubstitution(Isomorphism isomorphism) {
-		InferenceVariable inferenceVariableSubstitution = (InferenceVariable) isomorphism.byIdentity().getMapping(
-				inferenceVariable);
+		InferenceVariable inferenceVariableSubstitution = (InferenceVariable) isomorphism
+				.byIdentity()
+				.getMapping(inferenceVariable);
 
-		InferenceVariableBoundsImpl copy = new InferenceVariableBoundsImpl(boundSet, inferenceVariableSubstitution);
+		InferenceVariableBoundsImpl copy = new InferenceVariableBoundsImpl(
+				boundSet,
+				inferenceVariableSubstitution);
 
 		copy.addBoundsWithTypeSubstitution(this, isomorphism);
 
@@ -212,9 +218,11 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			Isomorphism isomorphism) {
 		TypeSubstitution substitution = new TypeSubstitution().withIsomorphism(isomorphism);
 
-		inferenceVariableBounds.bounds.replaceAll((t, b) -> new Bound(b.getKind(), substitution.resolve(t)));
+		inferenceVariableBounds.bounds
+				.replaceAll((t, b) -> new Bound(b.getKind(), substitution.resolve(t)));
 
-		capture = (CaptureConversion) isomorphism.byIdentity().getMapping(inferenceVariableBounds.capture);
+		capture = (CaptureConversion) isomorphism.byIdentity().getMapping(
+				inferenceVariableBounds.capture);
 	}
 
 	@Override
@@ -224,7 +232,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 
 	public void addCaptureConversion(CaptureConversion captureConversion) {
 		if (capture != null)
-			throw new ReflectionException(p -> p.cannotCaptureMultipleTimes(inferenceVariable, capture, captureConversion));
+			throw new ReflectionException(
+					REFLECTION_PROPERTIES.cannotCaptureMultipleTimes(inferenceVariable, capture, captureConversion));
 		else
 			capture = captureConversion;
 
@@ -234,8 +243,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	public void removeCaptureConversion() {
 		if (!getInstantiation().isPresent())
 			throw new IllegalStateException(
-					"Capture conversion '" + capture + "' should not be removed with no instantiation for '" + inferenceVariable
-							+ "' in bound set '" + boundSet + "'");
+					"Capture conversion '" + capture + "' should not be removed with no instantiation for '"
+							+ inferenceVariable + "' in bound set '" + boundSet + "'");
 
 		if (capture == null)
 			throw new IllegalStateException("Attempt to remove missing capture from '" + capture + "'");
@@ -281,7 +290,9 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 		boundSet
 				.getInferenceVariables()
 				.map(boundSet::getBoundsOnImpl)
-				.filter(b -> b.remainingDependencies != null && b.remainingDependencies.contains(inferenceVariable))
+				.filter(
+						b -> b.remainingDependencies != null
+								&& b.remainingDependencies.contains(inferenceVariable))
 				.forEach(b -> b.remainingDependencies = null);
 		remainingDependencies = null;
 	}
@@ -322,8 +333,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			added = false;
 			for (InferenceVariableBoundsImpl bounds : recalculated) {
 				for (InferenceVariable dependency : new ArrayList<>(bounds.remainingDependencies)) {
-					if (bounds.remainingDependencies
-							.addAll(boundSet.getBoundsOnImpl(dependency).getRemainingDependencies().collect(toList()))) {
+					if (bounds.remainingDependencies.addAll(
+							boundSet.getBoundsOnImpl(dependency).getRemainingDependencies().collect(toList()))) {
 						added = true;
 					}
 				}
@@ -408,7 +419,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				 * If we already have an instantiation, make sure the new one is equal
 				 * to it...
 				 */
-				new ConstraintFormula(Kind.EQUALITY, bound.getType(), getInstantiation().get()).reduce(emptyBoundSet());
+				new ConstraintFormula(Kind.EQUALITY, bound.getType(), getInstantiation().get())
+						.reduce(emptyBoundSet());
 			} else {
 				/*
 				 * ...Otherwise, make sure there are no captures present, and remove all
@@ -416,7 +428,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				 * equal to it.
 				 */
 				if (capture != null)
-					boundSet.withIncorporated().falsehood("Cannot add instantiation with capture conversion present: " + this);
+					boundSet.withIncorporated().falsehood(
+							"Cannot add instantiation with capture conversion present: " + this);
 
 				instantiation = bound.getType();
 
@@ -471,17 +484,26 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 						 */
 						switch (existingBound.getKind()) {
 						case EQUAILTY:
-							incorporateProperEqualitySubstitution(bound.getType(), otherBounds.inferenceVariable, existingBound);
+							incorporateProperEqualitySubstitution(
+									bound.getType(),
+									otherBounds.inferenceVariable,
+									existingBound);
 							break;
 
 						/*
 						 * α = U and S <: T imply ‹S[α:=U] <: T[α:=U]›
 						 */
 						case UPPER:
-							incorporateProperSubtypeSubstitution(bound.getType(), otherBounds.inferenceVariable, existingBound);
+							incorporateProperSubtypeSubstitution(
+									bound.getType(),
+									otherBounds.inferenceVariable,
+									existingBound);
 							break;
 						case LOWER:
-							incorporateProperSupertypeSubstitution(bound.getType(), existingBound, otherBounds.inferenceVariable);
+							incorporateProperSupertypeSubstitution(
+									bound.getType(),
+									existingBound,
+									otherBounds.inferenceVariable);
 							break;
 						}
 					}
@@ -563,10 +585,15 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			 */
 			boundSet.getCaptureConversions().forEach(captureConversion -> {
 				Type capturedArgument = captureConversion.getCapturedArgument(inferenceVariable);
-				TypeVariable<?> capturedParmeter = captureConversion.getCapturedParameter(inferenceVariable);
+				TypeVariable<?> capturedParmeter = captureConversion
+						.getCapturedParameter(inferenceVariable);
 
 				if (capturedArgument instanceof WildcardType)
-					incorporateCapturedSubtype(captureConversion, (WildcardType) capturedArgument, capturedParmeter, type);
+					incorporateCapturedSubtype(
+							captureConversion,
+							(WildcardType) capturedArgument,
+							capturedParmeter,
+							type);
 			});
 
 			/*
@@ -644,7 +671,10 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 					if (equality.getKind() == EQUAILTY && equality != bound && equality.isProper())
 						boundSet
 								.getBoundsOnImpl(otherBounds.inferenceVariable)
-								.incorporateProperSupertypeSubstitution(equality.getType(), bound, inferenceVariable);
+								.incorporateProperSupertypeSubstitution(
+										equality.getType(),
+										bound,
+										inferenceVariable);
 			});
 		}
 	}
@@ -801,7 +831,11 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			boundSet.withIncorporated().falsehood("Cannot incorporate equality: " + this);
 	}
 
-	public void incorporateCapturedSubtype(CaptureConversion c, WildcardType A, TypeVariable<?> P, Type R) {
+	public void incorporateCapturedSubtype(
+			CaptureConversion c,
+			WildcardType A,
+			TypeVariable<?> P,
+			Type R) {
 		TypeSubstitution θ = new TypeSubstitution();
 		for (InferenceVariable variable : c.getInferenceVariables())
 			θ = θ.where(c.getCapturedParameter(variable), variable);
@@ -820,7 +854,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 				 * If T is Object, then αi <: R implies the constraint formula ‹Bi θ <:
 				 * R›
 				 */
-				new ConstraintFormula(Kind.SUBTYPE, θ.resolve(intersectionOf(B)), R).reduceInPlace(boundSet);
+				new ConstraintFormula(Kind.SUBTYPE, θ.resolve(intersectionOf(B)), R)
+						.reduceInPlace(boundSet);
 			}
 
 			if (B.length == 0 || (B.length == 1 && B[0].equals(Object.class))) {
@@ -853,7 +888,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 			 * 
 			 * R <: αi implies the constraint formula ‹R <: T›
 			 */
-			new ConstraintFormula(Kind.SUBTYPE, R, intersectionOf(A.getLowerBounds())).reduceInPlace(boundSet);
+			new ConstraintFormula(Kind.SUBTYPE, R, intersectionOf(A.getLowerBounds()))
+					.reduceInPlace(boundSet);
 		} else if (A.getUpperBounds().length > 0) {
 			/*
 			 * If Ai is a wildcard of the form ? extends T:

@@ -70,6 +70,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
 import static uk.co.strangeskies.reflection.TypeVariables.typeVariableExtending;
+import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
@@ -85,8 +86,8 @@ import uk.co.strangeskies.reflection.AnnotatedTypeSubstitution;
 import uk.co.strangeskies.reflection.AnnotatedTypeVariables;
 import uk.co.strangeskies.utility.Isomorphism;
 
-public class ParameterizedDeclaration<S extends ParameterizedSignature<?>> extends AnnotatedDeclaration<S>
-		implements GenericDeclaration {
+public class ParameterizedDeclaration<S extends ParameterizedSignature<?>>
+		extends AnnotatedDeclaration<S> implements GenericDeclaration {
 	private final List<TypeVariable<? extends ParameterizedDeclaration<S>>> typeVariables;
 	private final Map<Class<? extends Annotation>, Annotation> annotations;
 
@@ -96,8 +97,9 @@ public class ParameterizedDeclaration<S extends ParameterizedSignature<?>> exten
 	public ParameterizedDeclaration(S signature) {
 		super(signature);
 
-		Map<String, TypeVariableSignature> typeVariableSignatures = signature.getTypeVariables().collect(
-				toMap(TypeVariableSignature::getName, identity()));
+		Map<String, TypeVariableSignature> typeVariableSignatures = signature
+				.getTypeVariables()
+				.collect(toMap(TypeVariableSignature::getName, identity()));
 
 		isomorphism = new Isomorphism();
 		List<TypeVariable<? extends ParameterizedDeclaration<S>>> typeVariables = new ArrayList<>(
@@ -108,13 +110,16 @@ public class ParameterizedDeclaration<S extends ParameterizedSignature<?>> exten
 		 * actual TypeVariables.
 		 */
 		boundSubstitution = new AnnotatedTypeSubstitution().where(
-				t -> t.getType() instanceof TypeVariableSignature.Reference || t.getType() instanceof TypeVariable<?>,
+				t -> t.getType() instanceof TypeVariableSignature.Reference
+						|| t.getType() instanceof TypeVariable<?>,
 
 				t -> {
-					TypeVariableSignature typeVariableSignature = typeVariableSignatures.get(t.getType().getTypeName());
+					TypeVariableSignature typeVariableSignature = typeVariableSignatures
+							.get(t.getType().getTypeName());
 
 					if (typeVariableSignature == null) {
-						throw new CodeGenerationException(p -> p.cannotResolveTypeVariable(t.getType().getTypeName(), signature));
+						throw new CodeGenerationException(
+								CODEGEN_PROPERTIES.cannotResolveTypeVariable(t.getType().getTypeName(), signature));
 					}
 
 					TypeVariable<?> typeVariable = substituteTypeVariableSignature(typeVariableSignature);
@@ -147,8 +152,10 @@ public class ParameterizedDeclaration<S extends ParameterizedSignature<?>> exten
 
 	protected TypeVariable<? extends ParameterizedDeclaration<S>> substituteTypeVariableSignature(
 			TypeVariableSignature typeVariable) {
-		List<AnnotatedType> bounds = typeVariable.getBounds().map(b -> boundSubstitution.resolve(b, isomorphism)).collect(
-				toList());
+		List<AnnotatedType> bounds = typeVariable
+				.getBounds()
+				.map(b -> boundSubstitution.resolve(b, isomorphism))
+				.collect(toList());
 
 		return typeVariableExtending(this, typeVariable.getName(), bounds);
 	}

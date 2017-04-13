@@ -45,6 +45,7 @@ import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
 import static uk.co.strangeskies.reflection.BoundSet.emptyBoundSet;
 import static uk.co.strangeskies.reflection.IntersectionTypes.uncheckedIntersectionOf;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.getAllTypeArguments;
+import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
 import static uk.co.strangeskies.reflection.Types.getAllMentionedBy;
 
 import java.lang.reflect.Executable;
@@ -69,7 +70,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.collection.stream.StreamUtilities;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.utility.DeepCopyable;
 import uk.co.strangeskies.utility.IdentityProperty;
@@ -163,7 +163,12 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 
 		Map<TypeVariable<?>, InferenceVariable> newCaptures = getAllTypeParameters(declaration)
 				.filter(p -> !existingCaptures.containsKey(p))
-				.collect(toMap(identity(), v -> new InferenceVariable(v.getName()), throwingMerger(), LinkedHashMap::new));
+				.collect(
+						toMap(
+								identity(),
+								v -> new InferenceVariable(v.getName()),
+								throwingMerger(),
+								LinkedHashMap::new));
 
 		bounds = bounds.withInferenceVariables(newCaptures.values());
 
@@ -172,9 +177,9 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 
 		bounds = concat(newCaptures.entrySet().stream(), existingCaptures.entrySet().stream()).reduce(
 				bounds,
-				(b, e) -> b
-						.withIncorporated()
-						.subtype(e.getValue(), substitution.resolve(uncheckedIntersectionOf(e.getKey().getBounds()))),
+				(b, e) -> b.withIncorporated().subtype(
+						e.getValue(),
+						substitution.resolve(uncheckedIntersectionOf(e.getKey().getBounds()))),
 				throwingMerger());
 
 		return newCaptures;
@@ -206,10 +211,13 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 		}
 
 		if (!getEnclosingDeclaration(declaration).get().equals(enclosing.getRawType())) {
-			throw new ReflectionException(p -> p.incorrectEnclosingDeclaration(enclosing.getRawType(), declaration));
+			throw new ReflectionException(
+					REFLECTION_PROPERTIES.incorrectEnclosingDeclaration(enclosing.getRawType(), declaration));
 		}
 
-		return inferTypeParameters(declaration, ParameterizedTypes.getAllTypeArguments(enclosing).collect(entriesToMap()));
+		return inferTypeParameters(
+				declaration,
+				ParameterizedTypes.getAllTypeArguments(enclosing).collect(entriesToMap()));
 	}
 
 	/**
@@ -222,23 +230,29 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 * @return a mapping from the {@link InferenceVariable}s on the given
 	 *         declaration, to their new capturing {@link InferenceVariable}s
 	 */
-	public Stream<Map.Entry<TypeVariable<?>, InferenceVariable>> inferTypeParameters(GenericDeclaration declaration) {
-		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getEnclosingDeclaration(declaration)
-				.map(this::inferTypeParametersImpl)
-				.orElse(emptyMap());
+	public Stream<Map.Entry<TypeVariable<?>, InferenceVariable>> inferTypeParameters(
+			GenericDeclaration declaration) {
+		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getEnclosingDeclaration(
+				declaration).map(this::inferTypeParametersImpl).orElse(emptyMap());
 
-		return concat(inferenceVariables.entrySet().stream(), inferTypeParameters(declaration, inferenceVariables));
+		return concat(
+				inferenceVariables.entrySet().stream(),
+				inferTypeParameters(declaration, inferenceVariables));
 	}
 
-	private Map<TypeVariable<?>, InferenceVariable> inferTypeParametersImpl(GenericDeclaration declaration) {
-		return inferTypeParameters(declaration).collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+	private Map<TypeVariable<?>, InferenceVariable> inferTypeParametersImpl(
+			GenericDeclaration declaration) {
+		return inferTypeParameters(declaration)
+				.collect(Collectors.toMap(Entry::getKey, Entry::getValue));
 	}
 
 	private Optional<GenericDeclaration> getEnclosingDeclaration(GenericDeclaration declaration) {
-		if (declaration instanceof Executable && !Modifier.isStatic(((Executable) declaration).getModifiers())) {
+		if (declaration instanceof Executable
+				&& !Modifier.isStatic(((Executable) declaration).getModifiers())) {
 			return Optional.of(((Executable) declaration).getDeclaringClass());
 
-		} else if (declaration instanceof Class<?> && !Modifier.isStatic(((Class<?>) declaration).getModifiers())) {
+		} else if (declaration instanceof Class<?>
+				&& !Modifier.isStatic(((Class<?>) declaration).getModifiers())) {
 			return Optional.ofNullable(((Class<?>) declaration).getEnclosingClass());
 
 		} else {
@@ -260,7 +274,9 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	public GenericArrayType inferTypeArguments(GenericArrayType type) {
 		Type innerComponent = Types.getInnerComponentType(type);
 		if (innerComponent instanceof ParameterizedType) {
-			return arrayFromComponent(inferTypeArguments((ParameterizedType) innerComponent), Types.getArrayDimensions(type));
+			return arrayFromComponent(
+					inferTypeArguments((ParameterizedType) innerComponent),
+					Types.getArrayDimensions(type));
 		} else
 			return type;
 	}
@@ -284,8 +300,10 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = inferTypeParametersImpl(rawType);
 
 		for (Map.Entry<TypeVariable<?>, Type> argument : typeArguments) {
-			bounds = new ConstraintFormula(Kind.CONTAINMENT, inferenceVariables.get(argument.getKey()), argument.getValue())
-					.reduce(bounds);
+			bounds = new ConstraintFormula(
+					Kind.CONTAINMENT,
+					inferenceVariables.get(argument.getKey()),
+					argument.getValue()).reduce(bounds);
 		}
 
 		return (ParameterizedType) substituteInstantiations(
@@ -328,7 +346,8 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 */
 	public Stream<Entry<InferenceVariable, Type>> resolve() {
 		resolveIndependentSet(bounds.getInferenceVariables().collect(toList()));
-		return bounds.getInferenceVariables().map(i -> new AbstractMap.SimpleEntry<>(i, getInstantiation(i)));
+		return bounds.getInferenceVariables().map(
+				i -> new AbstractMap.SimpleEntry<>(i, getInstantiation(i)));
 	}
 
 	/**
@@ -342,11 +361,13 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 */
 	public Type resolve(Type type) {
 		resolve(
-				getAllMentionedBy(type, getBounds()::containsInferenceVariable).map(InferenceVariable.class::cast).collect(
-						toList()));
+				getAllMentionedBy(type, getBounds()::containsInferenceVariable)
+						.map(InferenceVariable.class::cast)
+						.collect(toList()));
 
 		return new TypeSubstitution(
-				t -> getBounds().containsInferenceVariable(t) ? getInstantiation((InferenceVariable) t) : null).resolve(type);
+				t -> getBounds().containsInferenceVariable(t) ? getInstantiation((InferenceVariable) t)
+						: null).resolve(type);
 	}
 
 	/**
@@ -389,7 +410,8 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 	 * @return A mapping from each of the given inference variables to their
 	 *         inferred instantiations.
 	 */
-	public Stream<Map.Entry<InferenceVariable, Type>> resolve(Collection<? extends InferenceVariable> variables) {
+	public Stream<Map.Entry<InferenceVariable, Type>> resolve(
+			Collection<? extends InferenceVariable> variables) {
 		/*
 		 * Given a set of inference variables to resolve, let V be the union of this
 		 * set and all variables upon which the resolution of at least one variable
@@ -408,7 +430,8 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 				i -> new AbstractMap.SimpleEntry<>(
 						i,
 						bounds.getBoundsOn(i).getInstantiation().orElseThrow(
-								() -> new ReflectionException(p -> p.cannotInstantiateInferenceVariable(i, bounds)))));
+								() -> new ReflectionException(
+										REFLECTION_PROPERTIES.cannotInstantiateInferenceVariable(i, bounds)))));
 	}
 
 	private void resolveIndependentSet(Collection<InferenceVariable> variables) {
@@ -428,8 +451,10 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 			 */
 			Set<InferenceVariable> minimalSet = new HashSet<>(variables);
 			for (InferenceVariable variable : variables) {
-				Set<InferenceVariable> remainingOnVariable = bounds.getBoundsOn(variable).getRemainingDependencies().collect(
-						toSet());
+				Set<InferenceVariable> remainingOnVariable = bounds
+						.getBoundsOn(variable)
+						.getRemainingDependencies()
+						.collect(toSet());
 
 				if (remainingOnVariable.size() < minimalSet.size()) {
 					minimalSet = remainingOnVariable;
@@ -487,8 +512,11 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 						 * glb(U1, ..., Uk) (§5.1.10).
 						 */
 						instantiationCandidate = Types.greatestLowerBound(
-								bounds.getBoundsOn(variable).getUpperBounds().filter(InferenceVariable::isProperType).collect(
-										toList()));
+								bounds
+										.getBoundsOn(variable)
+										.getUpperBounds()
+										.filter(InferenceVariable::isProperType)
+										.collect(toList()));
 					}
 
 					instantiationCandidates.put(variable, instantiationCandidate);

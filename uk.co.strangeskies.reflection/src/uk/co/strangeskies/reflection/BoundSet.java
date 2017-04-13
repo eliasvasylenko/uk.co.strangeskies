@@ -34,6 +34,7 @@ package uk.co.strangeskies.reflection;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
+import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
 
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -264,8 +265,8 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		/*
 		 * Substitutions of inference variables:
 		 */
-		getInferenceVariables()
-				.forEach(i -> isomorphism.byIdentity().getMapping(i, t -> new InferenceVariable(t.getName())));
+		getInferenceVariables().forEach(
+				i -> isomorphism.byIdentity().getMapping(i, t -> new InferenceVariable(t.getName())));
 
 		return withInferenceVariableSubstitution(isomorphism);
 	}
@@ -286,17 +287,19 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 			copy.captureConversions.add(captureConversion);
 		}
 
-		for (Entry<InferenceVariable, InferenceVariableBoundsImpl> inferenceVariable : inferenceVariableBounds.entrySet()) {
+		for (Entry<InferenceVariable, InferenceVariableBoundsImpl> inferenceVariable : inferenceVariableBounds
+				.entrySet()) {
 			copy.addInferenceVariableBounds(
 					(InferenceVariable) isomorphism.byIdentity().getMapping(inferenceVariable.getKey()),
-					inferenceVariable.getValue().withInferenceVariableSubstitution(isomorphism).copyInto(copy));
+					inferenceVariable.getValue().withInferenceVariableSubstitution(isomorphism).copyInto(
+							copy));
 		}
 
 		return copy;
 	}
 
 	protected void incorporateFalsehood(String message) {
-		throw new ReflectionException(p -> p.invalidBoundSet(message, BoundSet.this));
+		throw new ReflectionException(REFLECTION_PROPERTIES.invalidBoundSet(message, BoundSet.this));
 	}
 
 	protected void incorporateEquality(Type first, Type second) {
@@ -308,7 +311,7 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 					inferenceVariableBounds.get(second).putBound(BoundKind.EQUAILTY, first);
 				}
 			} catch (Exception e) {
-				throw new ReflectionException(p -> p.invalidEquality(first, second, BoundSet.this), e);
+				throw new ReflectionException(REFLECTION_PROPERTIES.invalidEquality(first, second, BoundSet.this), e);
 			}
 		}
 	}
@@ -322,7 +325,9 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 				if (supertype instanceof InferenceVariable)
 					inferenceVariableBounds.get(supertype).putBound(BoundKind.LOWER, subtype);
 			} catch (Exception e) {
-				throw new ReflectionException(p -> p.invalidSubtype(subtype, supertype, BoundSet.this), e);
+				throw new ReflectionException(
+						REFLECTION_PROPERTIES.invalidSubtype(subtype, supertype, BoundSet.this),
+						e);
 			}
 		}
 	}
@@ -365,7 +370,8 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 				bounds.addCaptureConversion(captureConversion);
 
 				Type capturedArgument = captureConversion.getCapturedArgument(inferenceVariable);
-				TypeVariable<?> capturedParmeter = captureConversion.getCapturedParameter(inferenceVariable);
+				TypeVariable<?> capturedParmeter = captureConversion
+						.getCapturedParameter(inferenceVariable);
 
 				if (capturedArgument instanceof WildcardType) {
 					/*
@@ -377,15 +383,26 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 					 */
 					WildcardType capturedWildcard = (WildcardType) capturedArgument;
 
-					bounds.getEqualities().filter(equality -> !inferenceVariableBounds.containsKey(equality)).forEach(
-							equality -> bounds.incorporateCapturedEquality(capturedWildcard, equality));
+					bounds
+							.getEqualities()
+							.filter(equality -> !inferenceVariableBounds.containsKey(equality))
+							.forEach(equality -> bounds.incorporateCapturedEquality(capturedWildcard, equality));
 
-					bounds.getUpperBounds().filter(upperBound -> !inferenceVariableBounds.containsKey(upperBound)).forEach(
-							upperBound -> bounds
-									.incorporateCapturedSubtype(captureConversion, capturedWildcard, capturedParmeter, upperBound));
+					bounds
+							.getUpperBounds()
+							.filter(upperBound -> !inferenceVariableBounds.containsKey(upperBound))
+							.forEach(
+									upperBound -> bounds.incorporateCapturedSubtype(
+											captureConversion,
+											capturedWildcard,
+											capturedParmeter,
+											upperBound));
 
-					bounds.getLowerBounds().filter(lowerBound -> !inferenceVariableBounds.containsKey(lowerBound)).forEach(
-							lowerBound -> bounds.incorporateCapturedSupertype(capturedWildcard, lowerBound));
+					bounds
+							.getLowerBounds()
+							.filter(lowerBound -> !inferenceVariableBounds.containsKey(lowerBound))
+							.forEach(
+									lowerBound -> bounds.incorporateCapturedSupertype(capturedWildcard, lowerBound));
 				} else
 					/*
 					 * If Ai is not a wildcard, then the bound αi = Ai is implied.
@@ -393,7 +410,9 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 					withIncorporated().equality(inferenceVariable, capturedArgument);
 			}
 		} catch (Exception e) {
-			throw new ReflectionException(p -> p.invalidCaptureConversion(captureConversion, BoundSet.this), e);
+			throw new ReflectionException(
+					REFLECTION_PROPERTIES.invalidCaptureConversion(captureConversion, BoundSet.this),
+					e);
 		}
 	}
 
@@ -446,8 +465,10 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	 * @return all capture conversion bounds contained within this bound set
 	 *         related to the given inference variables
 	 */
-	public Stream<CaptureConversion> getRelatedCaptureConversions(Collection<? extends InferenceVariable> variables) {
-		return getCaptureConversions().filter(c -> c.getInferenceVariables().stream().anyMatch(variables::contains));
+	public Stream<CaptureConversion> getRelatedCaptureConversions(
+			Collection<? extends InferenceVariable> variables) {
+		return getCaptureConversions()
+				.filter(c -> c.getInferenceVariables().stream().anyMatch(variables::contains));
 	}
 
 	/**
@@ -525,7 +546,9 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 				 * directly in without worrying about implying any new bounds
 				 */
 				for (InferenceVariable inferenceVariable : newInferenceVariables) {
-					InferenceVariableBoundsImpl filtered = boundSet.getBoundsOnImpl(inferenceVariable).copyInto(this);
+					InferenceVariableBoundsImpl filtered = boundSet
+							.getBoundsOnImpl(inferenceVariable)
+							.copyInto(this);
 					addInferenceVariableBounds(inferenceVariable, filtered);
 				}
 			} else {
@@ -542,11 +565,14 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 				for (InferenceVariable inferenceVariable : newInferenceVariables) {
 					InferenceVariableBounds bounds = boundSet.getBoundsOn(inferenceVariable);
 
-					bounds.getEqualities().forEach(equality -> incorporateEquality(inferenceVariable, equality));
+					bounds.getEqualities().forEach(
+							equality -> incorporateEquality(inferenceVariable, equality));
 
-					bounds.getLowerBounds().forEach(lowerBound -> incorporateSubtype(lowerBound, inferenceVariable));
+					bounds.getLowerBounds().forEach(
+							lowerBound -> incorporateSubtype(lowerBound, inferenceVariable));
 
-					bounds.getUpperBounds().forEach(upperBound -> incorporateSubtype(inferenceVariable, upperBound));
+					bounds.getUpperBounds().forEach(
+							upperBound -> incorporateSubtype(inferenceVariable, upperBound));
 
 					CaptureConversion captureConversion = bounds.getCaptureConversion();
 					if (captureConversion != null)
@@ -576,7 +602,8 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	 *          the inference variable to add to the bound set
 	 * @return the newly added bounds, or the existing bounds
 	 */
-	public BoundSet withInferenceVariables(Collection<? extends InferenceVariable> inferenceVariables) {
+	public BoundSet withInferenceVariables(
+			Collection<? extends InferenceVariable> inferenceVariables) {
 		BoundSet bounds = copyInternal();
 		for (InferenceVariable inferenceVariable : inferenceVariables) {
 			bounds.addInferenceVariableImpl(inferenceVariable);
@@ -586,7 +613,9 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 
 	private void addInferenceVariableImpl(InferenceVariable inferenceVariable) {
 		if (!inferenceVariableBounds.containsKey(inferenceVariable)) {
-			addInferenceVariableBounds(inferenceVariable, new InferenceVariableBoundsImpl(this, inferenceVariable));
+			addInferenceVariableBounds(
+					inferenceVariable,
+					new InferenceVariableBoundsImpl(this, inferenceVariable));
 		}
 	}
 
@@ -613,7 +642,10 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 				copy.incorporateEquality(inferenceVariable.getKey(), inferenceVariable.getValue());
 			} catch (ReflectionException e) {
 				throw new ReflectionException(
-						p -> p.cannotCaptureInferenceVariable(inferenceVariable.getKey(), inferenceVariable.getValue(), copy),
+						REFLECTION_PROPERTIES.cannotCaptureInferenceVariable(
+								inferenceVariable.getKey(),
+								inferenceVariable.getValue(),
+								copy),
 						e);
 			}
 		}
@@ -628,12 +660,14 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 		 * variables when a type variable capture mentioning them is present...
 		 */
 
-		copy.removeCaptureConversions(getRelatedCaptureConversions(typeVariableCaptures.keySet()).collect(toList()));
+		copy.removeCaptureConversions(
+				getRelatedCaptureConversions(typeVariableCaptures.keySet()).collect(toList()));
 
 		return copy;
 	}
 
-	private void removeCaptureConversions(Collection<? extends CaptureConversion> captureConversions) {
+	private void removeCaptureConversions(
+			Collection<? extends CaptureConversion> captureConversions) {
 		this.captureConversions.removeAll(captureConversions);
 
 		for (CaptureConversion captureConversion : captureConversions)

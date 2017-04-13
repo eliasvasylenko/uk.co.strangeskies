@@ -34,40 +34,19 @@ package uk.co.strangeskies.reflection.codegen;
 
 import static uk.co.strangeskies.text.properties.PropertyLoader.getDefaultProperties;
 
-import java.util.function.Function;
-
 import uk.co.strangeskies.reflection.ReflectionException;
-import uk.co.strangeskies.reflection.ReflectionProperties;
-import uk.co.strangeskies.text.properties.Localized;
 
 public class CodeGenerationException extends ReflectionException {
 	private static final long serialVersionUID = 1L;
 
-	/**
-	 * @param message
-	 *          a function from the {@link ReflectionProperties} to the exception
-	 *          message
-	 */
-	public CodeGenerationException(Function<CodeGenerationProperties, Localized<String>> message) {
-		this(message.apply(getDefaultProperties(CodeGenerationProperties.class)));
-	}
+	public static final CodeGenerationProperties CODEGEN_PROPERTIES = getDefaultProperties(
+			CodeGenerationProperties.class);
 
-	/**
-	 * @param message
-	 *          a function from the {@link ReflectionProperties} to the exception
-	 *          message
-	 * @param cause
-	 *          the cause of the exception
-	 */
-	public CodeGenerationException(Function<CodeGenerationProperties, Localized<String>> message, Throwable cause) {
-		this(message.apply(getDefaultProperties(CodeGenerationProperties.class)), cause);
-	}
-
-	protected CodeGenerationException(Localized<String> message) {
+	public CodeGenerationException(String message) {
 		super(message);
 	}
 
-	protected CodeGenerationException(Localized<String> message, Throwable cause) {
+	public CodeGenerationException(String message, Throwable cause) {
 		super(message, cause);
 	}
 }

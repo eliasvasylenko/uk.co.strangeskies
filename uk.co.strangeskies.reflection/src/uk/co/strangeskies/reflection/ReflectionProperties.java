@@ -46,7 +46,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import uk.co.strangeskies.text.properties.Localized;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;
 
@@ -58,135 +57,149 @@ import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;
 @SuppressWarnings("javadoc")
 @PropertyConfiguration(keyCase = KeyCase.LOWER, keySplitString = ".")
 public interface ReflectionProperties {
-	Localized<String> unsupportedType(Type type);
+	String unsupportedType(Type type);
 
-	Localized<String> invalidAssignmentObject(Object object, Class<?> type);
+	String invalidAssignmentObject(Object object, Class<?> type);
 
-	default Localized<String> invalidTypeVariableCaptureBounds(TypeVariableCapture capture) {
-		return invalidTypeVariableCaptureBounds(capture, capture.getLowerBounds(), capture.getUpperBounds());
+	default String invalidTypeVariableCaptureBounds(TypeVariableCapture capture) {
+		return invalidTypeVariableCaptureBounds(
+				capture,
+				capture.getLowerBounds(),
+				capture.getUpperBounds());
 	}
 
-	Localized<String> invalidTypeVariableCaptureBounds(
+	String invalidTypeVariableCaptureBounds(
 			TypeVariableCapture capture,
 			Type[] lowerBounds,
 			Type[] upperBounds);
 
-	Localized<String> improperCaptureType(TypeVariableCapture capture);
+	String improperCaptureType(TypeVariableCapture capture);
 
-	Localized<String> improperUpperBound(Type t, InferenceVariable inferenceVariable, BoundSet bounds);
+	String improperUpperBound(Type t, InferenceVariable inferenceVariable, BoundSet bounds);
 
-	Localized<String> cannotCaptureInferenceVariable(InferenceVariable key, Type value, BoundSet bounds);
+	String cannotCaptureInferenceVariable(InferenceVariable key, Type value, BoundSet bounds);
 
-	Localized<String> cannotInstantiateInferenceVariable(InferenceVariable variable, BoundSet bounds);
+	String cannotInstantiateInferenceVariable(InferenceVariable variable, BoundSet bounds);
 
-	Localized<String> cannotFindSubstitution(Type i);
+	String cannotFindSubstitution(Type i);
 
-	Localized<String> invalidAnnotationValue(Method method, Object propertyValue);
+	String invalidAnnotationValue(Method method, Object propertyValue);
 
-	Localized<String> invalidAnnotationProperties(Class<? extends Annotation> annotationClass, Set<String> keySet);
+	String invalidAnnotationProperties(
+			Class<? extends Annotation> annotationClass,
+			Set<String> keySet);
 
-	Localized<String> invalidAnnotationValue(
+	String invalidAnnotationValue(
 			Class<? extends Annotation> annotationClass,
 			String name,
 			Object propertyValue);
 
-	Localized<String> invalidEquality(Type first, Type second, BoundSet bounds);
+	String invalidEquality(Type first, Type second, BoundSet bounds);
 
-	Localized<String> invalidSubtype(Type subtype, Type supertype, BoundSet boundSet);
+	String invalidSubtype(Type subtype, Type supertype, BoundSet boundSet);
 
-	Localized<String> invalidCaptureConversion(CaptureConversion captureConversion, BoundSet boundSet);
+	String invalidCaptureConversion(CaptureConversion captureConversion, BoundSet boundSet);
 
-	Localized<String> invalidBoundSet(String message, BoundSet boundSet);
+	String invalidBoundSet(String message, BoundSet boundSet);
 
-	Localized<String> cannotReduceConstraint(ConstraintFormula constraintFormula, BoundSet bounds);
+	String cannotReduceConstraint(ConstraintFormula constraintFormula, BoundSet bounds);
 
-	Localized<String> invalidIntersectionTypes(Collection<? extends Type> flattenedTypes, Type iType, Type jType);
+	String invalidIntersectionTypes(
+			Collection<? extends Type> flattenedTypes,
+			Type iType,
+			Type jType);
 
-	Localized<String> invalidIntersectionType(Collection<? extends Type> flattenedTypes);
+	String invalidIntersectionType(Collection<? extends Type> flattenedTypes);
 
-	Localized<String> incompatibleImports(Class<?> class1, Class<?> class2);
+	String incompatibleImports(Class<?> class1, Class<?> class2);
 
-	Localized<String> invalidUpperBound(WildcardType wildcardType);
+	String invalidUpperBound(WildcardType wildcardType);
 
-	Localized<String> cannotCopyInferenceVariable(InferenceVariable inferenceVariable, BoundSet boundSet);
+	String cannotCopyInferenceVariable(InferenceVariable inferenceVariable, BoundSet boundSet);
 
-	Localized<String> cannotFilterCapture(CaptureConversion capture);
+	String cannotFilterCapture(CaptureConversion capture);
 
-	Localized<String> cannotCaptureMultipleTimes(
+	String cannotCaptureMultipleTimes(
 			InferenceVariable inferenceVariable,
 			CaptureConversion capture,
 			CaptureConversion captureConversion);
 
-	Localized<String> invalidStaticMethodArguments(Method method, List<?> a);
+	String invalidStaticMethodArguments(Method method, List<?> a);
 
-	Localized<String> invalidCastObject(Object object, Type objectType, Type castType);
+	String invalidCastObject(Object object, Type objectType, Type castType);
 
-	Localized<String> invalidVariableArityInvocation(Executable executableMember);
+	String invalidVariableArityInvocation(Executable executableMember);
 
-	Localized<String> cannotResolveOverride(Executable executableMember, Type type);
+	String cannotResolveOverride(Executable executableMember, Type type);
 
-	Localized<String> cannotResolveAmbiguity(Executable firstCandidate, Executable secondCandidate);
+	String cannotResolveAmbiguity(Executable firstCandidate, Executable secondCandidate);
 
-	Localized<String> cannotResolveApplicable(Set<? extends Executable> candidates, List<? extends Type> parameters);
+	String cannotResolveApplicable(
+			Set<? extends Executable> candidates,
+			List<? extends Type> parameters);
 
-	Localized<String> incompatibleArgument(
+	String incompatibleArgument(
 			Type givenArgumentCaptured,
 			Type genericParameterCaptured,
 			int i,
 			Executable executableMember);
 
-	Localized<String> incompatibleArgument(
+	String incompatibleArgument(
 			Object object,
 			Type objectType,
 			Type genericParameterCaptured,
 			int i,
 			Executable executableMember);
 
-	Localized<String> cannotResolveInvocationType(Executable executableMember, List<? extends Type> arguments);
+	String cannotResolveInvocationType(Executable executableMember, List<? extends Type> arguments);
 
-	Localized<String> cannotGetField(Object target, Field fieldMember);
+	String cannotGetField(Object target, Field fieldMember);
 
-	Localized<String> cannotSetField(Object target, Object value, Field fieldMember);
+	String cannotSetField(Object target, Object value, Field fieldMember);
 
-	Localized<String> cannotFindMethodOn(Type type);
+	String cannotFindMethodOn(Type type);
 
-	default Localized<String> incorrectTypeArgumentCount(GenericDeclaration declaration, List<Type> typeArguments) {
-		return incorrectTypeArgumentCount(Arrays.asList(declaration.getTypeParameters()), typeArguments);
+	default String incorrectTypeArgumentCount(
+			GenericDeclaration declaration,
+			List<Type> typeArguments) {
+		return incorrectTypeArgumentCount(
+				Arrays.asList(declaration.getTypeParameters()),
+				typeArguments);
 	}
 
-	Localized<String> incorrectTypeArgumentCount(List<TypeVariable<?>> parameters, List<Type> typeArguments);
+	String incorrectTypeArgumentCount(List<TypeVariable<?>> parameters, List<Type> typeArguments);
 
-	Localized<String> duplicateTypeVariable(String n);
+	String duplicateTypeVariable(String n);
 
-	Localized<String> cannotResolveSupertype(Type type, Class<?> superclass);
+	String cannotResolveSupertype(Type type, Class<?> superclass);
 
-	Localized<String> incorrectEnclosingDeclaration(Type rawType, GenericDeclaration declaration);
+	String incorrectEnclosingDeclaration(Type rawType, GenericDeclaration declaration);
 
-	Localized<String> cannotResolveInvocationOnTypeWithWildcardParameters(Type type);
+	String cannotResolveInvocationOnTypeWithWildcardParameters(Type type);
 
-	Localized<String> cannotParameterizeMethodOnRawType(Executable executable);
+	String cannotParameterizeMethodOnRawType(Executable executable);
 
-	Localized<String> cannotResolveTypeVariable(TypeVariable<?> parameter, Object object);
+	String cannotResolveTypeVariable(TypeVariable<?> parameter, Object object);
 
-	Localized<String> methodMustBeStatic(Method method);
+	String methodMustBeStatic(Method method);
 
-	Localized<String> declaringClassMustBeStatic(Constructor<?> constructor);
+	String declaringClassMustBeStatic(Constructor<?> constructor);
 
-	Localized<String> invocationFailed(Executable executable, Type instance, Object[] arguments);
+	String invocationFailed(Executable executable, Type instance, Object[] arguments);
 
-	Localized<String> cannotParameterizeEnclosingExecutable(Class<?> enclosedClass);
+	String cannotParameterizeEnclosingExecutable(Class<?> enclosedClass);
 
-	Localized<String> noEnclosingDeclaration(Type type);
+	String noEnclosingDeclaration(Type type);
 
-	Localized<String> cannotParameterizeWithReplacement(Type type, Type currentType);
+	String cannotParameterizeWithReplacement(Type type, Type currentType);
 
 	/*
 	 * The given type variable cannot be found in the context of the given
 	 * declaration and so cannot be parameterized.
 	 */
-	Localized<String> cannotParameterizeOnDeclaration(TypeVariable<?> type, GenericDeclaration declaration);
+	String cannotParameterizeOnDeclaration(TypeVariable<?> type, GenericDeclaration declaration);
 
-	Localized<String> cannotOverrideConstructor(Executable member, Type type);
+	String cannotOverrideConstructor(Executable member, Type type);
 
-	Localized<String> cannotParameterizeInference();
+	String cannotParameterizeInference();
 }

@@ -6,7 +6,6 @@ Bundle-Name: Strange Skies :: Reflection :: Codegen
 Export-Package: uk.co.strangeskies.reflection.codegen
 
 -buildpath: \
-	uk.co.strangeskies.observable;version=snapshot,\
 	uk.co.strangeskies.collections;version=snapshot,\
 	uk.co.strangeskies.reflection;version=snapshot,\
 	uk.co.strangeskies.reflection.token;version=snapshot,\

@@ -36,6 +36,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static uk.co.strangeskies.collection.stream.StreamUtilities.streamOptional;
 import static uk.co.strangeskies.collection.stream.StreamUtilities.tryOptional;
+import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
@@ -105,7 +106,8 @@ public class ExecutableTokenQuery<I extends ExecutableToken<?, ?>, E extends Mem
 		Set<? extends I> candidates = streamAll().collect(Collectors.toSet());
 
 		if (candidates.isEmpty())
-			throw new IllegalArgumentException("Cannot find any applicable invocable for arguments '" + arguments + "'");
+			throw new IllegalArgumentException(
+					"Cannot find any applicable invocable for arguments '" + arguments + "'");
 
 		candidates = resolveApplicableExecutableMembers(candidates, arguments);
 
@@ -162,8 +164,14 @@ public class ExecutableTokenQuery<I extends ExecutableToken<?, ?>, E extends Mem
 		}
 
 		if (compatibleCandidates.isEmpty()) {
-			Set<? extends Executable> candidateMembers = candidates.stream().map(ExecutableToken::getMember).collect(toSet());
-			List<? extends Type> candidateParameters = parameters.stream().map(TypeToken::getType).collect(toList());
+			Set<? extends Executable> candidateMembers = candidates
+					.stream()
+					.map(ExecutableToken::getMember)
+					.collect(toSet());
+			List<? extends Type> candidateParameters = parameters
+					.stream()
+					.map(TypeToken::getType)
+					.collect(toList());
 
 			Iterator<RuntimeException> exceptionIterator = failures.values().iterator();
 			RuntimeException mainCause = exceptionIterator.next();
@@ -171,7 +179,9 @@ public class ExecutableTokenQuery<I extends ExecutableToken<?, ?>, E extends Mem
 				mainCause.addSuppressed(exceptionIterator.next());
 			}
 
-			throw new ReflectionException(p -> p.cannotResolveApplicable(candidateMembers, candidateParameters), mainCause);
+			throw new ReflectionException(
+					REFLECTION_PROPERTIES.cannotResolveApplicable(candidateMembers, candidateParameters),
+					mainCause);
 		}
 
 		return compatibleCandidates;
@@ -183,7 +193,9 @@ public class ExecutableTokenQuery<I extends ExecutableToken<?, ?>, E extends Mem
 			BiConsumer<I, RuntimeException> failures) {
 		return candidates
 				.stream()
-				.flatMap(i -> streamOptional(tryOptional(() -> applicabilityFunction.apply(i), e -> failures.accept(i, e))))
+				.flatMap(
+						i -> streamOptional(
+								tryOptional(() -> applicabilityFunction.apply(i), e -> failures.accept(i, e))))
 				.collect(toSet());
 	}
 
@@ -221,7 +233,8 @@ public class ExecutableTokenQuery<I extends ExecutableToken<?, ?>, E extends Mem
 					|| !candidate.getName().equals(mostSpecific.getName())) {
 				I mostSpecificFinal = mostSpecific;
 				throw new ReflectionException(
-						p -> p.cannotResolveAmbiguity(candidate.getMember(), mostSpecificFinal.getMember()));
+						REFLECTION_PROPERTIES
+								.cannotResolveAmbiguity(candidate.getMember(), mostSpecificFinal.getMember()));
 			}
 
 			mostSpecific = candidate.getMember().getDeclaringClass().isAssignableFrom(
@@ -276,7 +289,8 @@ public class ExecutableTokenQuery<I extends ExecutableToken<?, ?>, E extends Mem
 					 * Neither first nor second are more specific.
 					 */
 					throw new ReflectionException(
-							p -> p.cannotResolveAmbiguity(firstCandidate.getMember(), secondCandidate.getMember()));
+							REFLECTION_PROPERTIES
+									.cannotResolveAmbiguity(firstCandidate.getMember(), secondCandidate.getMember()));
 				}
 			}
 		}
@@ -296,8 +310,12 @@ public class ExecutableTokenQuery<I extends ExecutableToken<?, ?>, E extends Mem
 			firstMoreSpecific = compareGenericCandidate(firstCandidate, secondCandidate);
 
 		if (!firstCandidate.isGeneric() || !secondCandidate.isGeneric()) {
-			Iterator<ExecutableParameter> firstParameterIteror = firstCandidate.getParameters().iterator();
-			Iterator<ExecutableParameter> secondParameterIteror = secondCandidate.getParameters().iterator();
+			Iterator<ExecutableParameter> firstParameterIteror = firstCandidate
+					.getParameters()
+					.iterator();
+			Iterator<ExecutableParameter> secondParameterIteror = secondCandidate
+					.getParameters()
+					.iterator();
 			while (firstParameterIteror.hasNext()) {
 				ExecutableParameter firstParameter = firstParameterIteror.next();
 				ExecutableParameter secondParameter = secondParameterIteror.next();
@@ -313,8 +331,10 @@ public class ExecutableTokenQuery<I extends ExecutableToken<?, ?>, E extends Mem
 						break;
 					}
 				} else {
-					secondMoreSpecific = Types.isAssignable(secondParameter.getType(), firstParameter.getType());
-					firstMoreSpecific = Types.isAssignable(firstParameter.getType(), secondParameter.getType());
+					secondMoreSpecific = Types
+							.isAssignable(secondParameter.getType(), firstParameter.getType());
+					firstMoreSpecific = Types
+							.isAssignable(firstParameter.getType(), secondParameter.getType());
 
 					if (!(firstMoreSpecific || secondMoreSpecific))
 						break;
@@ -332,7 +352,8 @@ public class ExecutableTokenQuery<I extends ExecutableToken<?, ?>, E extends Mem
 
 		try {
 			List<ExecutableParameter> firstParameters = firstCandidate.getParameters().collect(toList());
-			List<ExecutableParameter> genericParameters = genericCandidate.getParameters().collect(toList());
+			List<ExecutableParameter> genericParameters = genericCandidate.getParameters().collect(
+					toList());
 			int parameters = firstParameters.size();
 			if (firstCandidate.isVariableArityDefinition()) {
 				parameters--;
@@ -346,7 +367,10 @@ public class ExecutableTokenQuery<I extends ExecutableToken<?, ?>, E extends Mem
 
 			for (int i = 0; i < parameters; i++) {
 				resolver.reduceConstraint(
-						new ConstraintFormula(Kind.SUBTYPE, firstParameters.get(i).getType(), genericParameters.get(i).getType()));
+						new ConstraintFormula(
+								Kind.SUBTYPE,
+								firstParameters.get(i).getType(),
+								genericParameters.get(i).getType()));
 			}
 
 			resolver.resolve();

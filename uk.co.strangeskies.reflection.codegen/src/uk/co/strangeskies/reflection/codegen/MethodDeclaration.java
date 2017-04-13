@@ -36,6 +36,7 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 import static uk.co.strangeskies.collection.stream.StreamUtilities.throwingMerger;
+import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
 import static uk.co.strangeskies.reflection.token.TypeToken.forAnnotatedType;
 
 import java.lang.reflect.AnnotatedType;
@@ -86,7 +87,7 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 		this.staticMethod = staticMethod;
 
 		if (isStatic() && isDefault()) {
-			throw new CodeGenerationException(m -> m.staticMethodCannotBeDefault(this));
+			throw new CodeGenerationException(CODEGEN_PROPERTIES.staticMethodCannotBeDefault(this));
 		}
 	}
 
@@ -143,7 +144,8 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 	}
 
 	private <U> LocalVariableExpression<U> createParameter(ParameterSignature<U> parameterSignature) {
-		TypeToken<?> typeToken = forAnnotatedType(substituteTypeVariableSignatures(parameterSignature.getType()));
+		TypeToken<?> typeToken = forAnnotatedType(
+				substituteTypeVariableSignatures(parameterSignature.getType()));
 
 		@SuppressWarnings("unchecked")
 		LocalVariableExpression<U> variable = new LocalVariableExpression<>(
@@ -201,7 +203,10 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 		 */
 
 		if (isParameterized()) {
-			builder.append("<").append(getTypeVariables().map(Objects::toString).collect(joining(", "))).append("> ");
+			builder
+					.append("<")
+					.append(getTypeVariables().map(Objects::toString).collect(joining(", ")))
+					.append("> ");
 		}
 
 		builder.append(returnType).toString();

@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -62,7 +64,9 @@ public class StatementExecutor {
 		}
 
 		@Override
-		public <T> void visitDeclaration(LocalValueExpression<T> variable, ValueExpression<? extends T> initializer) {
+		public <T> void visitDeclaration(
+				LocalValueExpression<T> variable,
+				ValueExpression<? extends T> initializer) {
 			declareLocal(variable.getSignature());
 			setEnclosedLocal(variable.getSignature(), expressionEvaluator.evaluate(initializer).get());
 		}
@@ -110,7 +114,7 @@ public class StatementExecutor {
 
 	public <T> void declareLocal(ParameterSignature<T> variable) {
 		if (locals.containsKey(variable)) {
-			throw new CodeGenerationException(p -> p.cannotRedeclareVariable(variable));
+			throw new CodeGenerationException(CODEGEN_PROPERTIES.cannotRedeclareVariable(variable));
 		}
 		locals.put(variable, null);
 	}
@@ -122,7 +126,7 @@ public class StatementExecutor {
 		} else if (enclosingState != null) {
 			return enclosingState.getEnclosedLocal(variable);
 		} else {
-			throw new CodeGenerationException(p -> p.undefinedVariable(variable));
+			throw new CodeGenerationException(CODEGEN_PROPERTIES.undefinedVariable(variable));
 		}
 	}
 
@@ -132,7 +136,7 @@ public class StatementExecutor {
 		} else if (enclosingState != null) {
 			enclosingState.setEnclosedLocal(variable, value);
 		} else {
-			throw new CodeGenerationException(p -> p.undefinedVariable(variable));
+			throw new CodeGenerationException(CODEGEN_PROPERTIES.undefinedVariable(variable));
 		}
 	}
 
@@ -143,7 +147,8 @@ public class StatementExecutor {
 		} else if (enclosingState != null) {
 			return enclosingState.getEnclosingInstance(receiverClass);
 		} else {
-			throw new CodeGenerationException(p -> p.cannotResolveEnclosingInstance(receiverClass));
+			throw new CodeGenerationException(
+					CODEGEN_PROPERTIES.cannotResolveEnclosingInstance(receiverClass));
 		}
 	}
 

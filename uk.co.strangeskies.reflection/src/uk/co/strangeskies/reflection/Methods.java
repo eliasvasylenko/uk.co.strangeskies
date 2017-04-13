@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
+
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
@@ -75,15 +77,16 @@ public final class Methods {
 		IdentityProperty<Method> lastCalled = new IdentityProperty<>();
 
 		@SuppressWarnings("unchecked")
-		N instance = (N) Proxy.newProxyInstance(type.getClassLoader(), new Class[] { type }, (proxy, method, args) -> {
-			lastCalled.set(method);
-			return null;
-		});
+		N instance = (N) Proxy
+				.newProxyInstance(type.getClassLoader(), new Class[] { type }, (proxy, method, args) -> {
+					lastCalled.set(method);
+					return null;
+				});
 
 		methodLambda.accept(instance);
 
 		if (lastCalled.get() == null) {
-			throw new ReflectionException(p -> p.cannotFindMethodOn(type));
+			throw new ReflectionException(REFLECTION_PROPERTIES.cannotFindMethodOn(type));
 		}
 
 		return lastCalled.get();

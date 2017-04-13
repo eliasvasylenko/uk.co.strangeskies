@@ -33,6 +33,7 @@
 package uk.co.strangeskies.reflection.token;
 
 import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.LOOSE_COMPATIBILILTY;
+import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
 import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
 
 import java.lang.reflect.Type;
@@ -107,7 +108,8 @@ public class TypedObject<T> implements ReifiedToken<TypedObject<T>> {
 	@SuppressWarnings("unchecked")
 	public static <T> TypedObject<T> castUnsafe(Object object, TypeToken<T> type) {
 		if (!type.getErasedUpperBounds().allMatch(r -> r.isAssignableFrom(object.getClass())))
-			throw new ReflectionException(p -> p.invalidCastObject(object, object.getClass(), type.getType()));
+			throw new ReflectionException(
+					REFLECTION_PROPERTIES.invalidCastObject(object, object.getClass(), type.getType()));
 
 		return new TypedObject<>(type, (T) object);
 	}
@@ -156,7 +158,8 @@ public class TypedObject<T> implements ReifiedToken<TypedObject<T>> {
 	 */
 	public <U> TypedObject<U> cast(TypeToken<U> type) {
 		return tryCast(type).orElseThrow(
-				() -> new ReflectionException(p -> p.invalidCastObject(this, this.type.getType(), type.getType())));
+				() -> new ReflectionException(
+						REFLECTION_PROPERTIES.invalidCastObject(this, this.type.getType(), type.getType())));
 	}
 
 	/**
@@ -172,7 +175,8 @@ public class TypedObject<T> implements ReifiedToken<TypedObject<T>> {
 	 *         is returned.
 	 */
 	public <U> Optional<TypedObject<U>> tryAssign(TypeToken<U> type) {
-		if (!type.satisfiesConstraintFrom(LOOSE_COMPATIBILILTY, this.type) || !type.isCastableFrom(object.getClass()))
+		if (!type.satisfiesConstraintFrom(LOOSE_COMPATIBILILTY, this.type)
+				|| !type.isCastableFrom(object.getClass()))
 			return Optional.empty();
 		else
 			return Optional.of(castUnsafe(object, type));
@@ -190,7 +194,8 @@ public class TypedObject<T> implements ReifiedToken<TypedObject<T>> {
 	 */
 	public <U> TypedObject<U> assign(TypeToken<U> type) {
 		return tryAssign(type).orElseThrow(
-				() -> new ReflectionException(p -> p.invalidCastObject(this, this.type.getType(), type.getType())));
+				() -> new ReflectionException(
+						REFLECTION_PROPERTIES.invalidCastObject(this, this.type.getType(), type.getType())));
 	}
 
 	/**
@@ -226,7 +231,8 @@ public class TypedObject<T> implements ReifiedToken<TypedObject<T>> {
 
 	@Override
 	public TypeToken<TypedObject<T>> getThisTypeToken() {
-		return new TypeToken<TypedObject<T>>() {}.withTypeArguments(new TypeParameter<T>().asType(type));
+		return new TypeToken<TypedObject<T>>() {}
+				.withTypeArguments(new TypeParameter<T>().asType(type));
 	}
 
 	@Override
