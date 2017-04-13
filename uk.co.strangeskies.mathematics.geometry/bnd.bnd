@@ -23,6 +23,8 @@ Export-Package:  \
 	uk.co.strangeskies.mathematics.geometry.shape.tessellation
 
 -buildpath:  \
+	uk.co.strangeskies.collections;version=snapshot,\
 	uk.co.strangeskies.mathematics;version=snapshot,\
+	uk.co.strangeskies.observable;version=snapshot,\
 	uk.co.strangeskies.expressions;version=snapshot,\
 	uk.co.strangeskies.utilities;version=snapshot

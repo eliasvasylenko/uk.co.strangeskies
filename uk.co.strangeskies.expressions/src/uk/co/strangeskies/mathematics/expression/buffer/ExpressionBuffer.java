@@ -36,7 +36,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import uk.co.strangeskies.mathematics.expression.Expression;
-import uk.co.strangeskies.utilities.Observer;
+import uk.co.strangeskies.observable.Observer;
 
 public class ExpressionBuffer<F extends Expression<?>, T> extends AbstractFunctionBuffer<F, T> {
 	private Observer<Expression<?>> backObserver;

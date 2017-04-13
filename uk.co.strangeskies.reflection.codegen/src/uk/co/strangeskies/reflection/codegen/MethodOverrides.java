@@ -35,10 +35,10 @@ package uk.co.strangeskies.reflection.codegen;
 import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Arrays.stream;
 import static java.util.stream.Stream.concat;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.streamOptional;
 import static uk.co.strangeskies.reflection.codegen.ErasedMethodSignature.erasedMethodSignature;
 import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.declareMethod;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.forMethod;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.streamOptional;
 
 import java.lang.reflect.Method;
 import java.util.AbstractMap.SimpleEntry;
@@ -46,10 +46,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import uk.co.strangeskies.collection.stream.StreamUtilities;
 import uk.co.strangeskies.reflection.token.ExecutableParameter;
 import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.TypeToken;
-import uk.co.strangeskies.utilities.collection.StreamUtilities;
 
 public class MethodOverrides<T> {
 	private final ClassDeclaration<?, T> classDeclaration;

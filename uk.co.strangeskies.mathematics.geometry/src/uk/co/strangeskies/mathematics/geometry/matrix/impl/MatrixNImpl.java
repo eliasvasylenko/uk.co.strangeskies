@@ -37,7 +37,7 @@ import java.util.List;
 import uk.co.strangeskies.mathematics.geometry.matrix.MatrixN;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.VectorNImpl;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.Factory;
+import uk.co.strangeskies.utility.Factory;
 
 public class MatrixNImpl<V extends Value<V>> extends MatrixSImpl<MatrixN<V>, V>
 		implements MatrixN<V> {

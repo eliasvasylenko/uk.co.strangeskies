@@ -38,6 +38,7 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.entriesToMap;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
 import static uk.co.strangeskies.reflection.Types.getErasedType;
 import static uk.co.strangeskies.reflection.Types.isInterface;
@@ -46,7 +47,6 @@ import static uk.co.strangeskies.reflection.codegen.ErasedMethodSignature.erased
 import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.declareConstructor;
 import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.declareStaticMethod;
 import static uk.co.strangeskies.reflection.token.TypeToken.forType;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.entriesToMap;
 
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Type;
@@ -55,11 +55,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import uk.co.strangeskies.collection.stream.StreamUtilities;
 import uk.co.strangeskies.reflection.Types;
 import uk.co.strangeskies.reflection.codegen.ClassDefinitionSpace.ClassDeclarationContext;
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
 import uk.co.strangeskies.reflection.token.TypeToken;
-import uk.co.strangeskies.utilities.collection.StreamUtilities;
 
 public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignature<T>>
 		implements Declaration<ClassSignature<T>> {

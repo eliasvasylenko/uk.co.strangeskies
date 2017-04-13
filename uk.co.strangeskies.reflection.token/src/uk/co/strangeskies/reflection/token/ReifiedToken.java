@@ -37,7 +37,7 @@ import static uk.co.strangeskies.reflection.token.TypedObject.typedObject;
 import java.lang.reflect.Type;
 
 import uk.co.strangeskies.reflection.Reified;
-import uk.co.strangeskies.utilities.Self;
+import uk.co.strangeskies.utility.Self;
 
 /**
  * A type whose instances know their own type, including any available generic

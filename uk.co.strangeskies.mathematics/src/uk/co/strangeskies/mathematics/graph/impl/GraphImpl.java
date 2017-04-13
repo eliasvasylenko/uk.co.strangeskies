@@ -47,6 +47,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import uk.co.strangeskies.collection.EquivalenceComparator;
+import uk.co.strangeskies.collection.MultiHashMap;
+import uk.co.strangeskies.collection.MultiMap;
+import uk.co.strangeskies.collection.MultiTreeMap;
+import uk.co.strangeskies.collection.SetDecorator;
 import uk.co.strangeskies.mathematics.graph.EdgeVertices;
 import uk.co.strangeskies.mathematics.graph.Graph;
 import uk.co.strangeskies.mathematics.graph.GraphListeners;
@@ -56,12 +61,7 @@ import uk.co.strangeskies.mathematics.graph.GraphListeners.EdgesEvent;
 import uk.co.strangeskies.mathematics.graph.GraphListeners.VertexEvent;
 import uk.co.strangeskies.mathematics.graph.GraphListeners.VerticesEvent;
 import uk.co.strangeskies.mathematics.graph.GraphTransformer;
-import uk.co.strangeskies.utilities.EquivalenceComparator;
-import uk.co.strangeskies.utilities.IdentityProperty;
-import uk.co.strangeskies.utilities.collection.MultiHashMap;
-import uk.co.strangeskies.utilities.collection.MultiMap;
-import uk.co.strangeskies.utilities.collection.MultiTreeMap;
-import uk.co.strangeskies.utilities.collection.SetDecorator;
+import uk.co.strangeskies.utility.IdentityProperty;
 
 class GraphImpl<V, E> implements Graph<V, E> {
 	private class VerticesImpl implements SetDecorator<V>, Vertices<V, E> {

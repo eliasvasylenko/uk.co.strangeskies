@@ -36,9 +36,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import uk.co.strangeskies.collection.ListTransformationView;
+import uk.co.strangeskies.collection.MergeIndicesListView;
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
 import uk.co.strangeskies.mathematics.expression.DependentExpression;
 import uk.co.strangeskies.mathematics.geometry.DimensionalityException;
@@ -51,11 +54,8 @@ import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.Vector2Impl;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.VectorNImpl;
 import uk.co.strangeskies.mathematics.values.IntValue;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.Factory;
-import uk.co.strangeskies.utilities.collection.MergeIndicesListView;
-import uk.co.strangeskies.utilities.collection.NullPointerInCollectionException;
-import uk.co.strangeskies.utilities.function.ListTransformationView;
-import uk.co.strangeskies.utilities.function.TriFunction;
+import uk.co.strangeskies.utility.Factory;
+import uk.co.strangeskies.utility.function.TriFunction;
 
 public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>> extends DependentExpression<S>
 		implements Matrix<S, V>, CopyDecouplingExpression<S> {
@@ -115,7 +115,7 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>> ext
 			if (values == null || order == null) {
 				throw new NullPointerException();
 			}
-			NullPointerInCollectionException.checkList(values);
+			values.stream().forEach(Objects::requireNonNull);
 
 			DimensionalityException.checkValid(values.size());
 
@@ -124,13 +124,13 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>> ext
 			List<? extends V> firstMajor = majorIterator.next();
 			DimensionalityException.checkValid(firstMajor.size());
 
-			NullPointerInCollectionException.checkList(firstMajor);
+			firstMajor.stream().forEach(Objects::requireNonNull);
 
 			while (majorIterator.hasNext()) {
 				List<? extends V> major = majorIterator.next();
 				DimensionalityException.checkEquivalence(firstMajor.size(), major.size());
 
-				NullPointerInCollectionException.checkList(major);
+				major.stream().forEach(Objects::requireNonNull);
 			}
 		} catch (Exception e) {
 			throw new IllegalArgumentException(e);
@@ -188,8 +188,8 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>> ext
 
 	@Override
 	public Vector2<IntValue> getDimensions2() {
-		return new Vector2Impl<>(Order.COLUMN_MAJOR, Orientation.COLUMN, IntValue::new).setData(getRowSize(),
-				getColumnSize());
+		return new Vector2Impl<>(Order.COLUMN_MAJOR, Orientation.COLUMN, IntValue::new)
+				.setData(getRowSize(), getColumnSize());
 	}
 
 	protected List<V> getRowVectorData(int row) {

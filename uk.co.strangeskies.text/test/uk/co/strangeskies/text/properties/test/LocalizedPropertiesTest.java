@@ -43,7 +43,7 @@ import org.junit.Test;
 import uk.co.strangeskies.text.properties.LocaleManager;
 import uk.co.strangeskies.text.properties.Localized;
 import uk.co.strangeskies.text.properties.PropertyLoader;
-import uk.co.strangeskies.utilities.IdentityProperty;
+import uk.co.strangeskies.utility.IdentityProperty;
 
 @SuppressWarnings("javadoc")
 public class LocalizedPropertiesTest {

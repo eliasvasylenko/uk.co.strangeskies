@@ -38,6 +38,11 @@ import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.entriesToMap;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.streamOptional;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.throwingMerger;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.tryOptional;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.zip;
 import static uk.co.strangeskies.reflection.BoundSet.emptyBoundSet;
 import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.LOOSE_COMPATIBILILTY;
 import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.SUBTYPE;
@@ -45,11 +50,6 @@ import static uk.co.strangeskies.reflection.Types.getErasedType;
 import static uk.co.strangeskies.reflection.token.ExecutableTokenQuery.executableQuery;
 import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
 import static uk.co.strangeskies.reflection.token.TypeToken.forType;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.entriesToMap;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.streamOptional;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.throwingMerger;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.tryOptional;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.zip;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
@@ -69,6 +69,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import uk.co.strangeskies.collection.stream.StreamUtilities;
 import uk.co.strangeskies.reflection.BoundSet;
 import uk.co.strangeskies.reflection.ConstraintFormula;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
@@ -77,7 +78,6 @@ import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeResolver;
 import uk.co.strangeskies.reflection.TypeSubstitution;
 import uk.co.strangeskies.reflection.Types;
-import uk.co.strangeskies.utilities.collection.StreamUtilities;
 
 /**
  * <p>
@@ -272,7 +272,8 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 		TypeToken<Object> receiverType = (TypeToken<Object>) getReceiverType().getErasedTypeToken().parameterize();
 
 		@SuppressWarnings("unchecked")
-		TypeToken<? extends R> returnType = isConstructor() ? getReturnType().parameterize()
+		TypeToken<? extends R> returnType = isConstructor()
+				? getReturnType().parameterize()
 				: (TypeToken<? extends R>) forType(((Method) getMember()).getGenericReturnType());
 
 		return new ExecutableToken<>(

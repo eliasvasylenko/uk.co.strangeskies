@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.mathematics.expression;
 
-import uk.co.strangeskies.utilities.Copyable;
+import uk.co.strangeskies.utility.Copyable;
 
 /**
  * A basic interface extension of {@link Expression} providing a default

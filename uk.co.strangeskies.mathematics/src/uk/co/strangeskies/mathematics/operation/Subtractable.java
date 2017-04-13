@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.mathematics.operation;
 
-import uk.co.strangeskies.utilities.Self;
+import uk.co.strangeskies.utility.Self;
 
 public interface Subtractable<S extends Subtractable<S, T>, T> extends
 		Addable<S, T>, Self<S> {

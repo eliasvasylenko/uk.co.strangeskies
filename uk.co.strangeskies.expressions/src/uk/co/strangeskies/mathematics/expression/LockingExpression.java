@@ -37,7 +37,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.util.function.Supplier;
 
-import uk.co.strangeskies.utilities.Observer;
+import uk.co.strangeskies.observable.Observer;
 
 /**
  * An abstract class to help designing mutable expression, implementing a simple

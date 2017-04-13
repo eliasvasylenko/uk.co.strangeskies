@@ -47,10 +47,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import uk.co.strangeskies.collection.tuple.Pair;
 import uk.co.strangeskies.reflection.Types.TypeParser;
 import uk.co.strangeskies.text.EscapeFormatter;
 import uk.co.strangeskies.text.parsing.Parser;
-import uk.co.strangeskies.utilities.tuple.Pair;
 
 /**
  * A collection of general utility methods relating to annotated types within

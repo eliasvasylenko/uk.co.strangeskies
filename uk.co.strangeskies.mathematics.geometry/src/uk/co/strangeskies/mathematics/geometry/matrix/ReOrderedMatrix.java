@@ -41,8 +41,8 @@ import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.values.IntValue;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.Observer;
-import uk.co.strangeskies.utilities.function.TriFunction;
+import uk.co.strangeskies.observable.Observer;
+import uk.co.strangeskies.utility.function.TriFunction;
 
 public class ReOrderedMatrix<V extends Value<V>> implements Matrix<ReOrderedMatrix<V>, V> {
 	private final Matrix<?, V> component;

@@ -45,7 +45,7 @@ import uk.co.strangeskies.mathematics.geometry.shape.ClosedPolyline2;
 import uk.co.strangeskies.mathematics.geometry.shape.ConvexPolygon;
 import uk.co.strangeskies.mathematics.geometry.shape.Shape;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.Observable;
+import uk.co.strangeskies.observable.Observable;
 
 //convex only polygon
 public class ConvexPolygonImpl<V extends Value<V>> extends DependentExpression<ConvexPolygonImpl<V>>

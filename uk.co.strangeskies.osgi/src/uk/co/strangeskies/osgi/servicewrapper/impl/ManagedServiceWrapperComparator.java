@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.osgi.servicewrapper.impl;
 
-import uk.co.strangeskies.utilities.EquivalenceComparator;
+import uk.co.strangeskies.collection.EquivalenceComparator;
 
 class ManagedServiceWrapperComparator extends
 		EquivalenceComparator<ManagedServiceWrapper<?>> {

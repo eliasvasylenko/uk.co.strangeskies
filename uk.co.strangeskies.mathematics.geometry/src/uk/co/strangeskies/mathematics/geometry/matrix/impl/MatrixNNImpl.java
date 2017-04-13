@@ -38,7 +38,7 @@ import uk.co.strangeskies.mathematics.geometry.matrix.MatrixNN;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorN;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.VectorNImpl;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.Factory;
+import uk.co.strangeskies.utility.Factory;
 
 public class MatrixNNImpl<V extends Value<V>> extends
 		MatrixImpl<MatrixNN<V>, V> implements MatrixNN<V> {

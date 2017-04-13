@@ -38,7 +38,7 @@ import java.lang.reflect.Proxy;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import uk.co.strangeskies.utilities.IdentityProperty;
+import uk.co.strangeskies.utility.IdentityProperty;
 
 /**
  * A collection of general utility methods relating to methods in the Java type

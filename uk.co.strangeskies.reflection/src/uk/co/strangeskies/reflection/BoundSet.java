@@ -47,8 +47,8 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.InferenceVariableBoundsImpl.BoundKind;
-import uk.co.strangeskies.utilities.DeepCopyable;
-import uk.co.strangeskies.utilities.Isomorphism;
+import uk.co.strangeskies.utility.DeepCopyable;
+import uk.co.strangeskies.utility.Isomorphism;
 
 /**
  * A bound set as described in chapter 18 of the Java 8 language specification.

@@ -32,10 +32,10 @@
  */
 package uk.co.strangeskies.fx;
 
-import static uk.co.strangeskies.fx.FxmlLoadBuilder.build;
 import static uk.co.strangeskies.fx.FxUtilities.getResource;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.reverse;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.throwingSerialCombiner;
+import static uk.co.strangeskies.fx.FxmlLoadBuilder.build;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.reverse;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.throwingSerialCombiner;
 
 import javafx.geometry.Bounds;
 import javafx.scene.Node;

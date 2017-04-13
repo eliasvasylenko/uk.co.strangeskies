@@ -83,7 +83,7 @@ import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.AnnotatedTypeSubstitution;
 import uk.co.strangeskies.reflection.AnnotatedTypeVariables;
-import uk.co.strangeskies.utilities.Isomorphism;
+import uk.co.strangeskies.utility.Isomorphism;
 
 public class ParameterizedDeclaration<S extends ParameterizedSignature<?>> extends AnnotatedDeclaration<S>
 		implements GenericDeclaration {

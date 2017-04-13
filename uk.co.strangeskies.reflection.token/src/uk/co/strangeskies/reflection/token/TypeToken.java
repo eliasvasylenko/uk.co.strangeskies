@@ -47,9 +47,9 @@ import static uk.co.strangeskies.reflection.token.ExecutableToken.forMethod;
 import static uk.co.strangeskies.reflection.token.ExecutableTokenQuery.executableQuery;
 import static uk.co.strangeskies.reflection.token.FieldTokenQuery.fieldQuery;
 import static uk.co.strangeskies.reflection.token.TypeParameter.forTypeVariable;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.streamOptional;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.tryOptional;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.zip;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.streamOptional;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.tryOptional;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.zip;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
@@ -81,6 +81,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import uk.co.strangeskies.collection.tuple.Pair;
 import uk.co.strangeskies.reflection.AnnotatedParameterizedTypes;
 import uk.co.strangeskies.reflection.AnnotatedTypeSubstitution;
 import uk.co.strangeskies.reflection.AnnotatedTypes;
@@ -99,9 +100,8 @@ import uk.co.strangeskies.reflection.TypeSubstitution;
 import uk.co.strangeskies.reflection.TypeVariableCapture;
 import uk.co.strangeskies.reflection.Types;
 import uk.co.strangeskies.reflection.WildcardTypes;
-import uk.co.strangeskies.utilities.DeepCopyable;
-import uk.co.strangeskies.utilities.Isomorphism;
-import uk.co.strangeskies.utilities.tuple.Pair;
+import uk.co.strangeskies.utility.DeepCopyable;
+import uk.co.strangeskies.utility.Isomorphism;
 
 /**
  * <p>
@@ -335,8 +335,10 @@ public class TypeToken<T>
 			Isomorphism isomorphism,
 			AnnotatedType annotatedType,
 			TypeResolver resolver) {
-		Wildcards behavior = annotatedType.isAnnotationPresent(Retain.class) ? Wildcards.RETAIN
-				: annotatedType.isAnnotationPresent(Infer.class) ? Wildcards.INFER
+		Wildcards behavior = annotatedType.isAnnotationPresent(Retain.class)
+				? Wildcards.RETAIN
+				: annotatedType.isAnnotationPresent(Infer.class)
+						? Wildcards.INFER
 						: annotatedType.isAnnotationPresent(Capture.class) ? Wildcards.CAPTURE : Wildcards.RETAIN;
 
 		if (annotatedType instanceof AnnotatedParameterizedType) {

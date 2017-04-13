@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.mathematics.logic;
 
-import uk.co.strangeskies.utilities.Self;
+import uk.co.strangeskies.utility.Self;
 
 public interface XORable<S extends XORable<S, T> & Self<? extends S>, T> {
 	public S xor(T value);

@@ -55,7 +55,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
-import uk.co.strangeskies.utilities.Isomorphism;
+import uk.co.strangeskies.utility.Isomorphism;
 
 class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 	enum BoundKind {

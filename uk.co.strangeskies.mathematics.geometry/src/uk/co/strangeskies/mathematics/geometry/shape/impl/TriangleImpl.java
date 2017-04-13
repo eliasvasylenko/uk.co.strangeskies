@@ -40,7 +40,7 @@ import uk.co.strangeskies.mathematics.geometry.shape.ClosedPolyline2;
 import uk.co.strangeskies.mathematics.geometry.shape.Shape;
 import uk.co.strangeskies.mathematics.geometry.shape.Triangle;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.Observer;
+import uk.co.strangeskies.observable.Observer;
 
 public class TriangleImpl<V extends Value<V>> implements Triangle<V> {
 	private Vector2<V> a;

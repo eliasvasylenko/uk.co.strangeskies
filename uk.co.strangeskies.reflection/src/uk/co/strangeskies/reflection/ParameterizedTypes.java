@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.utilities.Isomorphism;
+import uk.co.strangeskies.utility.Isomorphism;
 
 /**
  * A collection of utility methods relating to parameterized types.

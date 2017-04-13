@@ -35,7 +35,7 @@ package uk.co.strangeskies.mathematics.graph.impl;
 import org.osgi.annotation.versioning.ProviderType;
 
 import uk.co.strangeskies.mathematics.graph.GraphListeners;
-import uk.co.strangeskies.utilities.ObservableImpl;
+import uk.co.strangeskies.observable.ObservableImpl;
 
 @ProviderType
 public class GraphListenersImpl<V, E> implements GraphListeners<V, E> {

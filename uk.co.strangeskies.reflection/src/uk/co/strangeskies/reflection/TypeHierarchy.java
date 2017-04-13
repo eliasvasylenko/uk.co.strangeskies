@@ -35,10 +35,10 @@ package uk.co.strangeskies.reflection;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.empty;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.flatMapRecursive;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.iterateOptional;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.getAllTypeArguments;
 import static uk.co.strangeskies.reflection.Types.getErasedType;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.flatMapRecursive;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.iterateOptional;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

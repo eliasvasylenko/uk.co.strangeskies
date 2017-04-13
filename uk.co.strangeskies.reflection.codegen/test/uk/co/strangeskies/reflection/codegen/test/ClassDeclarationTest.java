@@ -39,9 +39,9 @@ import java.util.Set;
 import org.junit.Test;
 
 import uk.co.strangeskies.reflection.ReflectionException;
+import uk.co.strangeskies.reflection.codegen.ClassDefinitionSpace;
 import uk.co.strangeskies.reflection.codegen.ClassRegister;
 import uk.co.strangeskies.reflection.codegen.ClassSignature;
-import uk.co.strangeskies.reflection.codegen.ClassDefinitionSpace;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 @SuppressWarnings("javadoc")

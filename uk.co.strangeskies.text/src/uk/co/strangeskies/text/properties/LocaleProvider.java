@@ -34,11 +34,11 @@ package uk.co.strangeskies.text.properties;
 
 import java.util.Locale;
 
-import uk.co.strangeskies.utilities.ObservableValue;
+import uk.co.strangeskies.observable.ObservableValue;
 
 /**
- * Management interface over and associate {@link PropertyLoader localiser instance},
- * allowing the locale of that instance to be changed.
+ * Management interface over and associate {@link PropertyLoader localiser
+ * instance}, allowing the locale of that instance to be changed.
  * <p>
  * A locale manager is observable over changes to its locale.
  * 

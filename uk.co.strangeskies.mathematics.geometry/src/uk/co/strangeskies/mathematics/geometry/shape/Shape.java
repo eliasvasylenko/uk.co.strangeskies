@@ -37,8 +37,8 @@ import uk.co.strangeskies.mathematics.geometry.Bounds2;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.geometry.shape.mesh.Mesh;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.Copyable;
-import uk.co.strangeskies.utilities.Self;
+import uk.co.strangeskies.utility.Copyable;
+import uk.co.strangeskies.utility.Self;
 
 /**
  * TODO: Decide whether the following decision is sensible! Maybe we should

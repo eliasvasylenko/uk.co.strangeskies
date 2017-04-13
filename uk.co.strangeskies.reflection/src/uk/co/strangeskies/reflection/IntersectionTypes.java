@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
 import org.osgi.annotation.versioning.ProviderType;
 
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
-import uk.co.strangeskies.utilities.Isomorphism;
+import uk.co.strangeskies.utility.Isomorphism;
 
 /**
  * A collection of utility methods relating to intersection types.

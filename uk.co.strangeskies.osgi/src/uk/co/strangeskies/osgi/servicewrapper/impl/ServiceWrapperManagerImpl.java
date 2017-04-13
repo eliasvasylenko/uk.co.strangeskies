@@ -48,11 +48,11 @@ import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 
+import uk.co.strangeskies.collection.MultiHashMap;
+import uk.co.strangeskies.collection.MultiMap;
 import uk.co.strangeskies.osgi.servicewrapper.ServiceWrapper;
 import uk.co.strangeskies.osgi.servicewrapper.ServiceWrapper.HideServices;
 import uk.co.strangeskies.osgi.servicewrapper.ServiceWrapperManager;
-import uk.co.strangeskies.utilities.collection.MultiHashMap;
-import uk.co.strangeskies.utilities.collection.MultiMap;
 
 /**
  * This implementation will automatically pick up and apply any implementations

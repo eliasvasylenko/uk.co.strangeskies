@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.mathematics.operation;
 
-import uk.co.strangeskies.utilities.Self;
+import uk.co.strangeskies.utility.Self;
 
 public interface Negatable<S extends Negatable<S, N>, N extends Negatable<? extends N, ? extends S>>
 		extends Self<S> {

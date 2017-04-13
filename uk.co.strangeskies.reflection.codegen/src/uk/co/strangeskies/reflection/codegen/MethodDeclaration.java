@@ -35,8 +35,8 @@ package uk.co.strangeskies.reflection.codegen;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.throwingMerger;
 import static uk.co.strangeskies.reflection.token.TypeToken.forAnnotatedType;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.throwingMerger;
 
 import java.lang.reflect.AnnotatedType;
 import java.util.LinkedHashMap;

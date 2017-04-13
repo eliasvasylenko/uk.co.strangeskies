@@ -1,0 +1,86 @@
+/*
+ * Copyright (C) 2017 Elias N Vasylenko <eliasvasylenko@strangeskies.co.uk>
+ *      __   _______  ____           _       __     _      __       __
+ *    ,`_ `,|__   __||  _ `.        / \     |  \   | |  ,-`__`¬  ,-`__`¬
+ *   ( (_`-'   | |   | | ) |       / . \    | . \  | | / .`  `' / .`  `'
+ *    `._ `.   | |   | |<. L      / / \ \   | |\ \ | || |    _ | '--.
+ *   _   `. \  | |   | |  `.`.   / /   \ \  | | \ \| || |   | || +--'
+ *  \ \__.' /  | |   | |    \ \ / /     \ \ | |  \ ` | \ `._' | \ `.__,.
+ *   `.__.-`   |_|   |_|    |_|/_/       \_\|_|   \__|  `-.__.J  `-.__.J
+ *                   __    _         _      __      __
+ *                 ,`_ `, | |  _    | |  ,-`__`¬  ,`_ `,
+ *                ( (_`-' | | ) |   | | / .`  `' ( (_`-'
+ *                 `._ `. | L-' L   | || '--.     `._ `.
+ *                _   `. \| ,.-^.`. | || +--'    _   `. \
+ *               \ \__.' /| |    \ \| | \ `.__,.\ \__.' /
+ *                `.__.-` |_|    |_||_|  `-.__.J `.__.-`
+ *
+ * This file is part of uk.co.strangeskies.utility.
+ *
+ * uk.co.strangeskies.utilities is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * uk.co.strangeskies.utilities is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+package uk.co.strangeskies.observable;
+
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
+
+import uk.co.strangeskies.utility.Property;
+
+/**
+ * A {@link Property property} which is observable as per
+ * {@link ObservableValue}, and whose value can also be set.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <T>
+ *          the type of the value
+ * @param <R>
+ *          the type the value can be set to
+ */
+public interface ObservableProperty<T extends R, R> extends ObservableValue<T>, Property<T, R> {
+	/**
+	 * @param <T>
+	 *          the type of event message to produce
+	 * @param <R>
+	 *          the type we may assign from
+	 * @param assignmentFunction
+	 *          an assignment function, accepting the assigned value and the
+	 *          current value, and returning the new value
+	 * @param equality
+	 *          an equivalence relation over the value space
+	 * @param initialValue
+	 *          the initial value
+	 * @return an observable property with the given behavior and default value
+	 */
+	public static <T extends R, R> ObservableProperty<T, R> over(
+			BiFunction<R, T, T> assignmentFunction,
+			BiPredicate<T, T> equality,
+			T initialValue) {
+		return new ObservablePropertyImpl<>(assignmentFunction, equality, initialValue);
+	}
+
+	/**
+	 * Instantiate an observable property with identity assignment and identity
+	 * equality.
+	 * 
+	 * @param <T>
+	 *          the type of event message to produce and which we may assign from
+	 * @param initialValue
+	 *          the initial value
+	 * @return an observable property with the given default value
+	 */
+	public static <T> ObservableProperty<T, T> over(T initialValue) {
+		return new ObservablePropertyImpl<>((r, t) -> r, (a, b) -> a == b, initialValue);
+	}
+}

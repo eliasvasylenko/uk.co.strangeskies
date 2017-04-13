@@ -62,10 +62,10 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import uk.co.strangeskies.collection.MultiHashMap;
+import uk.co.strangeskies.collection.MultiMap;
 import uk.co.strangeskies.text.parsing.Parser;
-import uk.co.strangeskies.utilities.Isomorphism;
-import uk.co.strangeskies.utilities.collection.MultiHashMap;
-import uk.co.strangeskies.utilities.collection.MultiMap;
+import uk.co.strangeskies.utility.Isomorphism;
 
 /**
  * A collection of general utility methods relating to the Java type system.

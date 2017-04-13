@@ -42,7 +42,7 @@ import java.util.function.Consumer;
 import org.osgi.annotation.versioning.ProviderType;
 
 import uk.co.strangeskies.mathematics.graph.impl.GraphBuilderImpl;
-import uk.co.strangeskies.utilities.Copyable;
+import uk.co.strangeskies.utility.Copyable;
 
 /**
  * @author Elias N Vasylenko

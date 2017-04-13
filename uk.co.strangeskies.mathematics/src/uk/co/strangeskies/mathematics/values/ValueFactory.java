@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.mathematics.values;
 
-import uk.co.strangeskies.utilities.Factory;
+import uk.co.strangeskies.utility.Factory;
 
 public abstract class ValueFactory<V extends Value<V>> implements Factory<V> {
 	public V get(int value) {

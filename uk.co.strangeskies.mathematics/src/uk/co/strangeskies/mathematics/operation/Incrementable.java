@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.mathematics.operation;
 
-import uk.co.strangeskies.utilities.Self;
+import uk.co.strangeskies.utility.Self;
 
 public interface Incrementable<S extends Incrementable<S>> extends Self<S> {
 	public S increment();

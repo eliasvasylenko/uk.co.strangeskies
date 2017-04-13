@@ -44,8 +44,8 @@ import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.Set;
 
-import uk.co.strangeskies.utilities.collection.MultiHashMap;
-import uk.co.strangeskies.utilities.collection.MultiMap;
+import uk.co.strangeskies.collection.MultiHashMap;
+import uk.co.strangeskies.collection.MultiMap;
 
 /**
  * A simple {@link PropertyResource} implementation backed by one or more

@@ -34,8 +34,8 @@ package uk.co.strangeskies.reflection.token;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.streamOptional;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.tryOptional;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.streamOptional;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.tryOptional;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
@@ -55,12 +55,12 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import uk.co.strangeskies.collection.tuple.Pair;
 import uk.co.strangeskies.reflection.ConstraintFormula;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeResolver;
 import uk.co.strangeskies.reflection.Types;
-import uk.co.strangeskies.utilities.tuple.Pair;
 
 public class ExecutableTokenQuery<I extends ExecutableToken<?, ?>, E extends Member> {
 	private final Stream<E> members;

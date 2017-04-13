@@ -37,7 +37,7 @@ import java.util.Collections;
 import java.util.Random;
 import java.util.Set;
 
-import uk.co.strangeskies.utilities.Factory;
+import uk.co.strangeskies.utility.Factory;
 
 public class DoubleArrayListView<V extends Value<V>> extends AbstractList<V> {
 	private final double[] array;

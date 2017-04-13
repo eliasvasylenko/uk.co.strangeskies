@@ -35,7 +35,7 @@ package uk.co.strangeskies.text.test;
 import org.junit.experimental.theories.DataPoint;
 import org.junit.experimental.theories.Theory;
 
-import uk.co.strangeskies.utilities.Enumeration;
+import uk.co.strangeskies.utility.Enumeration;
 
 /**
  * Careful design is necessary here, as in some cases we are testing what

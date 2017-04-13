@@ -34,7 +34,7 @@ package uk.co.strangeskies.reflection;
 
 import java.lang.reflect.Type;
 
-import uk.co.strangeskies.utilities.Self;
+import uk.co.strangeskies.utility.Self;
 
 /**
  * A type whose instances know their own type, including any available generic

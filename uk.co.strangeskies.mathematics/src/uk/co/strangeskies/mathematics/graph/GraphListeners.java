@@ -37,7 +37,7 @@ import java.util.Set;
 
 import org.osgi.annotation.versioning.ProviderType;
 
-import uk.co.strangeskies.utilities.Observable;
+import uk.co.strangeskies.observable.Observable;
 
 public interface GraphListeners<V, E> {
 	@ProviderType

@@ -40,9 +40,9 @@ import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.Set;
 
-import uk.co.strangeskies.utilities.Log;
-import uk.co.strangeskies.utilities.Observable;
-import uk.co.strangeskies.utilities.ObservableValue;
+import uk.co.strangeskies.observable.Observable;
+import uk.co.strangeskies.observable.ObservableValue;
+import uk.co.strangeskies.utility.Log;
 
 /**
  * This interface represents a simple but powerful system for

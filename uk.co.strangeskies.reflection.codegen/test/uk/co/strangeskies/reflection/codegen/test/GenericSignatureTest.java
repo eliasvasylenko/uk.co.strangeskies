@@ -61,7 +61,7 @@ import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.codegen.ParameterizedDeclaration;
 import uk.co.strangeskies.reflection.codegen.ParameterizedSignature;
 import uk.co.strangeskies.reflection.codegen.TypeVariableSignature;
-import uk.co.strangeskies.utilities.Self;
+import uk.co.strangeskies.utility.Self;
 
 @SuppressWarnings("javadoc")
 public class GenericSignatureTest {

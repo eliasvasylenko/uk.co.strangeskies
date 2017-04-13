@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.mathematics.logic;
 
-import uk.co.strangeskies.utilities.Self;
+import uk.co.strangeskies.utility.Self;
 
 public interface NORable<S extends NORable<S, T> & Self<? extends S>, T> {
 	public S nor(T value);

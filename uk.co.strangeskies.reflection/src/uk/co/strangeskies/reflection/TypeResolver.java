@@ -39,13 +39,13 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Stream.concat;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.entriesToMap;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.throwingMerger;
 import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
 import static uk.co.strangeskies.reflection.BoundSet.emptyBoundSet;
 import static uk.co.strangeskies.reflection.IntersectionTypes.uncheckedIntersectionOf;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.getAllTypeArguments;
 import static uk.co.strangeskies.reflection.Types.getAllMentionedBy;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.entriesToMap;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.throwingMerger;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.GenericArrayType;
@@ -69,10 +69,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import uk.co.strangeskies.collection.stream.StreamUtilities;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
-import uk.co.strangeskies.utilities.DeepCopyable;
-import uk.co.strangeskies.utilities.IdentityProperty;
-import uk.co.strangeskies.utilities.Isomorphism;
+import uk.co.strangeskies.utility.DeepCopyable;
+import uk.co.strangeskies.utility.IdentityProperty;
+import uk.co.strangeskies.utility.Isomorphism;
 
 /**
  * <p>

@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.mathematics.operation;
 
-import uk.co.strangeskies.utilities.Self;
+import uk.co.strangeskies.utility.Self;
 
 public interface Multipliable<S extends Multipliable<S, T>, T> extends Self<S> {
 	public S multiply(T value);

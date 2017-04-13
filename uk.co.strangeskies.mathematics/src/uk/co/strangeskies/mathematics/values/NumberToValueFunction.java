@@ -34,7 +34,7 @@ package uk.co.strangeskies.mathematics.values;
 
 import java.util.function.Function;
 
-import uk.co.strangeskies.utilities.Factory;
+import uk.co.strangeskies.utility.Factory;
 
 public class NumberToValueFunction<V extends Value<V>> implements
 		Function<Number, V> {
