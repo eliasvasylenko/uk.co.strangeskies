@@ -322,7 +322,7 @@ public class FxUtilities {
 	}
 
 	/**
-	 * Wrap an {@link uk.co.strangeskies.utility.Observable} with a JavaFX
+	 * Wrap an {@link uk.co.strangeskies.observable.Observable} with a JavaFX
 	 * equivalent {@link ObservableValue}.
 	 * 
 	 * @param <T>
@@ -342,7 +342,7 @@ public class FxUtilities {
 	}
 
 	/**
-	 * Wrap an {@link uk.co.strangeskies.utility.ObservableValue} with a JavaFX
+	 * Wrap an {@link uk.co.strangeskies.observable.ObservableValue} with a JavaFX
 	 * equivalent {@link ObservableValue}.
 	 * 
 	 * @param <T>
