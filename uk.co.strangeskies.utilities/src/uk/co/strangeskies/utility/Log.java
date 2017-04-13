@@ -15,7 +15,7 @@
  *               \ \__.' /| |    \ \| | \ `.__,.\ \__.' /
  *                `.__.-` |_|    |_||_|  `-.__.J `.__.-`
  *
- * This file is part of uk.co.strangeskies.utility.
+ * This file is part of uk.co.strangeskies.utilities.
  *
  * uk.co.strangeskies.utilities is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

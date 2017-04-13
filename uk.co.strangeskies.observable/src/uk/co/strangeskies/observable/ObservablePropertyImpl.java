@@ -15,14 +15,14 @@
  *               \ \__.' /| |    \ \| | \ `.__,.\ \__.' /
  *                `.__.-` |_|    |_||_|  `-.__.J `.__.-`
  *
- * This file is part of uk.co.strangeskies.utility.
+ * This file is part of uk.co.strangeskies.observable.
  *
- * uk.co.strangeskies.utilities is free software: you can redistribute it and/or modify
+ * uk.co.strangeskies.observable is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * uk.co.strangeskies.utilities is distributed in the hope that it will be useful,
+ * uk.co.strangeskies.observable is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
