@@ -33,6 +33,7 @@
 package uk.co.strangeskies.reflection.token;
 
 import static java.util.stream.Stream.empty;
+import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
 import static uk.co.strangeskies.reflection.token.TypeParameter.forTypeVariable;
 
 import java.lang.reflect.Executable;
@@ -79,7 +80,8 @@ public interface DeclarationToken<S extends DeclarationToken<S>> {
 	 *         enclosing declarations
 	 */
 	default int getAllTypeParameterCount() {
-		return getTypeParameterCount() + getOwningDeclaration().map(DeclarationToken::getAllTypeParameterCount).orElse(0);
+		return getTypeParameterCount()
+				+ getOwningDeclaration().map(DeclarationToken::getAllTypeParameterCount).orElse(0);
 	}
 
 	/**
@@ -210,7 +212,9 @@ public interface DeclarationToken<S extends DeclarationToken<S>> {
 				.filter(a -> a.getParameter().equals(parameter))
 				.findAny()
 				.map(p -> (TypeArgument<U>) p)
-				.orElseThrow(() -> new ReflectionException(p -> p.cannotResolveTypeVariable(parameter.getType(), this)));
+				.orElseThrow(
+						() -> new ReflectionException(
+								REFLECTION_PROPERTIES.cannotResolveTypeVariable(parameter.getType(), this)));
 	}
 
 	/**

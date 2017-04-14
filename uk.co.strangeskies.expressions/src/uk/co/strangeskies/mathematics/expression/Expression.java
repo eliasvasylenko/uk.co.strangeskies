@@ -35,9 +35,9 @@ package uk.co.strangeskies.mathematics.expression;
 import java.util.Observer;
 import java.util.function.Supplier;
 
-import uk.co.strangeskies.utilities.Observable;
-import uk.co.strangeskies.utilities.ObservableImpl;
-import uk.co.strangeskies.utilities.ObservableValue;
+import uk.co.strangeskies.observable.Observable;
+import uk.co.strangeskies.observable.ObservableImpl;
+import uk.co.strangeskies.observable.ObservableValue;
 
 /**
  * <p>

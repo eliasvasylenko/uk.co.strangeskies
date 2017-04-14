@@ -36,9 +36,13 @@ import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.streamOptional;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.tryOptional;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.zip;
 import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
 import static uk.co.strangeskies.reflection.BoundSet.emptyBoundSet;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
+import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
 import static uk.co.strangeskies.reflection.Types.isSubtype;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardExtending;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardSuper;
@@ -47,9 +51,6 @@ import static uk.co.strangeskies.reflection.token.ExecutableToken.forMethod;
 import static uk.co.strangeskies.reflection.token.ExecutableTokenQuery.executableQuery;
 import static uk.co.strangeskies.reflection.token.FieldTokenQuery.fieldQuery;
 import static uk.co.strangeskies.reflection.token.TypeParameter.forTypeVariable;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.streamOptional;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.tryOptional;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.zip;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
@@ -81,6 +82,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import uk.co.strangeskies.collection.tuple.Pair;
 import uk.co.strangeskies.reflection.AnnotatedParameterizedTypes;
 import uk.co.strangeskies.reflection.AnnotatedTypeSubstitution;
 import uk.co.strangeskies.reflection.AnnotatedTypes;
@@ -99,9 +101,8 @@ import uk.co.strangeskies.reflection.TypeSubstitution;
 import uk.co.strangeskies.reflection.TypeVariableCapture;
 import uk.co.strangeskies.reflection.Types;
 import uk.co.strangeskies.reflection.WildcardTypes;
-import uk.co.strangeskies.utilities.DeepCopyable;
-import uk.co.strangeskies.utilities.Isomorphism;
-import uk.co.strangeskies.utilities.tuple.Pair;
+import uk.co.strangeskies.utility.DeepCopyable;
+import uk.co.strangeskies.utility.Isomorphism;
 
 /**
  * <p>
@@ -121,8 +122,8 @@ import uk.co.strangeskies.utilities.tuple.Pair;
  * @param <T>
  *          This is the type which the TypeToken object references.
  */
-public class TypeToken<T>
-		implements DeepCopyable<TypeToken<T>>, ReifiedToken<TypeToken<T>>, DeclarationToken<TypeToken<T>> {
+public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<TypeToken<T>>,
+		DeclarationToken<TypeToken<T>> {
 	/**
 	 * Treatment of wildcards for {@link TypeToken}s created over parameterized
 	 * types.
@@ -295,7 +296,8 @@ public class TypeToken<T>
 
 						Annotation givenAnnotation = getWildcardsAnnotation(parameter.getValue());
 						if (givenAnnotation == null) {
-							parameter.setValue(AnnotatedTypes.annotated(parameter.getValue().getType(), defaultAnnotation));
+							parameter.setValue(
+									AnnotatedTypes.annotated(parameter.getValue().getType(), defaultAnnotation));
 						}
 					}
 				}
@@ -321,7 +323,9 @@ public class TypeToken<T>
 		return annotation;
 	}
 
-	private static Pair<BoundSet, Type> incorporateAnnotatedType(TypeResolver resolver, AnnotatedType annotatedType) {
+	private static Pair<BoundSet, Type> incorporateAnnotatedType(
+			TypeResolver resolver,
+			AnnotatedType annotatedType) {
 		Type type = substituteAnnotatedWildcards(new Isomorphism(), annotatedType, resolver);
 
 		return new Pair<>(resolver.getBounds(), type);
@@ -337,7 +341,8 @@ public class TypeToken<T>
 			TypeResolver resolver) {
 		Wildcards behavior = annotatedType.isAnnotationPresent(Retain.class) ? Wildcards.RETAIN
 				: annotatedType.isAnnotationPresent(Infer.class) ? Wildcards.INFER
-						: annotatedType.isAnnotationPresent(Capture.class) ? Wildcards.CAPTURE : Wildcards.RETAIN;
+						: annotatedType.isAnnotationPresent(Capture.class) ? Wildcards.CAPTURE
+								: Wildcards.RETAIN;
 
 		if (annotatedType instanceof AnnotatedParameterizedType) {
 			return substituteAnnotatedWildcardsForParameterizedType(
@@ -385,7 +390,9 @@ public class TypeToken<T>
 					.getAllTypeArguments((ParameterizedType) annotatedType.getType())
 					.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-			TypeVariable<?>[] parameters = Types.getErasedType(annotatedType.getType()).getTypeParameters();
+			TypeVariable<?>[] parameters = Types
+					.getErasedType(annotatedType.getType())
+					.getTypeParameters();
 			for (int i = 0; i < arguments.length; i++) {
 				allArguments.put(parameters[i], arguments[i]);
 			}
@@ -418,11 +425,17 @@ public class TypeToken<T>
 
 		if (annotatedWildcardType.getAnnotatedLowerBounds().length > 0) {
 			wildcardType = WildcardTypes.wildcardSuper(
-					substituteAnnotatedWildcardsForEach(isomorphism, annotatedWildcardType.getAnnotatedLowerBounds(), resolver));
+					substituteAnnotatedWildcardsForEach(
+							isomorphism,
+							annotatedWildcardType.getAnnotatedLowerBounds(),
+							resolver));
 
 		} else if (annotatedWildcardType.getAnnotatedUpperBounds().length > 0) {
 			wildcardType = WildcardTypes.wildcardExtending(
-					substituteAnnotatedWildcardsForEach(isomorphism, annotatedWildcardType.getAnnotatedUpperBounds(), resolver));
+					substituteAnnotatedWildcardsForEach(
+							isomorphism,
+							annotatedWildcardType.getAnnotatedUpperBounds(),
+							resolver));
 
 		} else {
 			wildcardType = WildcardTypes.wildcard();
@@ -552,7 +565,8 @@ public class TypeToken<T>
 
 	@Override
 	public TypeToken<TypeToken<T>> getThisTypeToken() {
-		return new TypeToken<TypeToken<T>>() {}.withTypeArguments(new TypeParameter<T>() {}.asType(this));
+		return new TypeToken<TypeToken<T>>() {}
+				.withTypeArguments(new TypeParameter<T>() {}.asType(this));
 	}
 
 	@Override
@@ -660,7 +674,8 @@ public class TypeToken<T>
 	public TypeToken<? extends T> getExtending(Wildcards wildcards) {
 		if (wildcards == Wildcards.INFER) {
 			TypeResolver resolver = new TypeResolver(this.bounds);
-			InferenceVariable inferenceVariable = resolver.inferWildcardType(wildcardExtending(getType()));
+			InferenceVariable inferenceVariable = resolver
+					.inferWildcardType(wildcardExtending(getType()));
 
 			return new TypeToken<>(resolver.getBounds(), inferenceVariable);
 		} else {
@@ -728,7 +743,8 @@ public class TypeToken<T>
 		if (isRaw()) {
 			return this;
 		} else {
-			return (TypeToken<? super T>) forType(getErasedUpperBounds().findFirst().orElse(Object.class));
+			return (TypeToken<? super T>) forType(
+					getErasedUpperBounds().findFirst().orElse(Object.class));
 		}
 	}
 
@@ -749,7 +765,8 @@ public class TypeToken<T>
 				upperBounds.remove(upperBound);
 
 				InferenceVariableBounds bounds = getBounds().getBoundsOn((InferenceVariable) upperBound);
-				bounds.getUpperBounds().filter(t -> !getBounds().containsInferenceVariable(t)).forEach(upperBounds::add);
+				bounds.getUpperBounds().filter(t -> !getBounds().containsInferenceVariable(t)).forEach(
+						upperBounds::add);
 			}
 		}
 
@@ -1087,7 +1104,8 @@ public class TypeToken<T>
 	 *         which are mentioned by its type.
 	 */
 	public Stream<InferenceVariable> getRemainingInferenceVariableDependencies() {
-		return getInferenceVariablesMentioned().flatMap(d -> getBounds().getBoundsOn(d).getRemainingDependencies());
+		return getInferenceVariablesMentioned()
+				.flatMap(d -> getBounds().getBoundsOn(d).getRemainingDependencies());
 	}
 
 	/**
@@ -1266,7 +1284,8 @@ public class TypeToken<T>
 		if (getType() instanceof ParameterizedType) {
 
 			Stream<TypeVariable<?>> parameters = Arrays.stream(getErasedType().getTypeParameters());
-			Stream<Type> arguments = Arrays.stream(((ParameterizedType) getType()).getActualTypeArguments());
+			Stream<Type> arguments = Arrays
+					.stream(((ParameterizedType) getType()).getActualTypeArguments());
 
 			return zip(parameters, arguments).map(e -> forTypeVariable(e.getKey()).asType(e.getValue()));
 		} else {
@@ -1276,9 +1295,11 @@ public class TypeToken<T>
 
 	@Override
 	public TypeToken<T> withTypeArguments(Collection<? extends TypeArgument<?>> arguments) {
-		BoundSet bounds = arguments.stream().map(TypeArgument::getTypeToken).map(TypeToken::getBounds).reduce(
-				getBounds(),
-				(a, b) -> a.withBounds(b));
+		BoundSet bounds = arguments
+				.stream()
+				.map(TypeArgument::getTypeToken)
+				.map(TypeToken::getBounds)
+				.reduce(getBounds(), (a, b) -> a.withBounds(b));
 
 		Map<TypeVariable<?>, Type> argumentMap = arguments.stream().collect(
 				toMap(TypeArgument::getParameter, TypeArgument::getType));
@@ -1318,13 +1339,15 @@ public class TypeToken<T>
 			}
 
 		} else if (getType() instanceof TypeVariable<?>) {
-			GenericDeclaration enclosingDeclaration = ((TypeVariable<?>) getType()).getGenericDeclaration();
+			GenericDeclaration enclosingDeclaration = ((TypeVariable<?>) getType())
+					.getGenericDeclaration();
 
 			if (enclosingDeclaration instanceof Class<?>) {
 				Class<?> enclosingClass = (Class<?>) enclosingDeclaration;
 				return Optional.of(
 						forType(
-								Types.isGeneric(enclosingClass) ? ParameterizedTypes.parameterize(enclosingClass) : enclosingClass));
+								Types.isGeneric(enclosingClass) ? ParameterizedTypes.parameterize(enclosingClass)
+										: enclosingClass));
 
 			} else if (enclosingDeclaration instanceof Method) {
 				return Optional.of(ExecutableToken.forMethod((Method) enclosingDeclaration));
@@ -1348,9 +1371,13 @@ public class TypeToken<T>
 	public TypeToken<? super T> resolveSupertype(Class<?> superclass) {
 		TypeToken<?> superType = forType(
 				getUpperBounds()
-						.flatMap(b -> streamOptional(tryOptional(() -> TypeHierarchy.resolveSupertype(b, superclass))))
+						.flatMap(
+								b -> streamOptional(
+										tryOptional(() -> TypeHierarchy.resolveSupertype(b, superclass))))
 						.findFirst()
-						.orElseThrow(() -> new ReflectionException(p -> p.cannotResolveSupertype(type, superclass))));
+						.orElseThrow(
+								() -> new ReflectionException(
+										REFLECTION_PROPERTIES.cannotResolveSupertype(type, superclass))));
 
 		return (TypeToken<? super T>) superType;
 	}

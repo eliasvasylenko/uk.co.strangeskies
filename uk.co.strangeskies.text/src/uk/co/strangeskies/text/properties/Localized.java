@@ -34,9 +34,9 @@ package uk.co.strangeskies.text.properties;
 
 import java.util.Locale;
 
-import uk.co.strangeskies.utilities.Observable;
-import uk.co.strangeskies.utilities.ObservableValue;
-import uk.co.strangeskies.utilities.Observer;
+import uk.co.strangeskies.observable.Observable;
+import uk.co.strangeskies.observable.ObservableValue;
+import uk.co.strangeskies.observable.Observer;
 
 /**
  * A localized property interface which is observable over the value changes due

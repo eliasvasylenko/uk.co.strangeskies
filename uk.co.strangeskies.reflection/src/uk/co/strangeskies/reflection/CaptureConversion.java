@@ -46,7 +46,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.utilities.Isomorphism;
+import uk.co.strangeskies.utility.Isomorphism;
 
 /**
  * A {@link CaptureConversion} is a special sort of bound which can be contained

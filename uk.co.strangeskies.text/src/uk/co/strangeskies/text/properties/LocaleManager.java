@@ -35,8 +35,8 @@ package uk.co.strangeskies.text.properties;
 import java.util.Locale;
 import java.util.Objects;
 
-import uk.co.strangeskies.utilities.ObservableProperty;
-import uk.co.strangeskies.utilities.ObservablePropertyImpl;
+import uk.co.strangeskies.observable.ObservableProperty;
+import uk.co.strangeskies.observable.ObservablePropertyImpl;
 
 /**
  * Management interface over and associate {@link PropertyLoader localizer

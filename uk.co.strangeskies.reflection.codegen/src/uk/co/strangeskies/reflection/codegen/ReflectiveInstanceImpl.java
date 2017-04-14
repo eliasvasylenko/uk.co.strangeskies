@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
+
 import java.lang.reflect.Proxy;
 import java.util.Collection;
 import java.util.HashMap;
@@ -89,21 +91,29 @@ public class ReflectiveInstanceImpl<E, T> implements ReflectiveInstance<E, T> {
 			Collection<? extends Object> arguments) {
 		classDefinition.getClassSpace().validate();
 
-		Set<Class<?>> rawTypes = classDefinition.getDeclaration().getSuperTypes().flatMap(t -> t.getErasedUpperBounds()).collect(
-				Collectors.toCollection(LinkedHashSet::new));
+		Set<Class<?>> rawTypes = classDefinition
+				.getDeclaration()
+				.getSuperTypes()
+				.flatMap(t -> t.getErasedUpperBounds())
+				.collect(Collectors.toCollection(LinkedHashSet::new));
 
 		for (Class<?> rawType : rawTypes) {
 			if (!rawType.isInterface()) {
 				throw new CodeGenerationException(
-						p -> p.cannotInstantiateClassDefinition(classDefinition, classDefinition.getDeclaration().getSuperType()));
+						CODEGEN_PROPERTIES.cannotInstantiateClassDefinition(
+								classDefinition,
+								classDefinition.getDeclaration().getSuperType()));
 			}
 		}
 
 		rawTypes.add(ReflectiveInstance.class);
-		ReflectiveInstanceImpl<E, T> reflectiveInstance = new ReflectiveInstanceImpl<E, T>(classDefinition);
+		ReflectiveInstanceImpl<E, T> reflectiveInstance = new ReflectiveInstanceImpl<>(
+				classDefinition);
 
-		ReflectiveInstance<E, T> instance = (ReflectiveInstance<E, T>) Proxy
-				.newProxyInstance(classLoader, rawTypes.toArray(new Class<?>[rawTypes.size()]), (proxy, method, args) -> {
+		ReflectiveInstance<E, T> instance = (ReflectiveInstance<E, T>) Proxy.newProxyInstance(
+				classLoader,
+				rawTypes.toArray(new Class<?>[rawTypes.size()]),
+				(proxy, method, args) -> {
 					if (method.getDeclaringClass().equals(ReflectiveInstance.class)
 							|| method.getDeclaringClass().equals(Object.class)) {
 						return method.invoke(reflectiveInstance, args);
@@ -115,7 +125,9 @@ public class ReflectiveInstanceImpl<E, T> implements ReflectiveInstance<E, T> {
 
 					StatementExecutor executor = new StatementExecutor((ReflectiveInstance<E, T>) proxy);
 
-					return classDefinition.getClassSpace().getMethodDefinition(override).invoke(executor, args);
+					return classDefinition.getClassSpace().getMethodDefinition(override).invoke(
+							executor,
+							args);
 				});
 		reflectiveInstance.instance = (T) instance;
 

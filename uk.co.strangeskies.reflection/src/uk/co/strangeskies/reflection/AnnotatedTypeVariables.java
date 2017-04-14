@@ -41,7 +41,7 @@ import java.util.Collection;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes.AnnotatedTypeImpl;
 import uk.co.strangeskies.reflection.AnnotatedTypes.AnnotatedTypeInternal;
-import uk.co.strangeskies.utilities.Isomorphism;
+import uk.co.strangeskies.utility.Isomorphism;
 
 /**
  * A collection of utility methods relating to annotated type variables.

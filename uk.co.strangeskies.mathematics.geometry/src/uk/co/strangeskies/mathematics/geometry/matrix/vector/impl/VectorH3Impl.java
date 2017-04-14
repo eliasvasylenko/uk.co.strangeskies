@@ -37,7 +37,7 @@ import java.util.List;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector3;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorH3;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.Factory;
+import uk.co.strangeskies.utility.Factory;
 
 public class VectorH3Impl<V extends Value<V>> extends
 		VectorHImpl<VectorH3<V>, V> implements VectorH3<V> {

@@ -34,8 +34,8 @@ package uk.co.strangeskies.mathematics.expression;
 
 import java.util.Observer;
 
-import uk.co.strangeskies.utilities.IdentityProperty;
-import uk.co.strangeskies.utilities.Property;
+import uk.co.strangeskies.utility.IdentityProperty;
+import uk.co.strangeskies.utility.Property;
 
 /**
  * An {@link Expression} based on the behavior of the {@link IdentityProperty}

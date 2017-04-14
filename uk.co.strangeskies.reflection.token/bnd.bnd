@@ -12,6 +12,8 @@ Export-Package: \
 	uk.co.strangeskies.reflection.token
 
 -buildpath: \
+	uk.co.strangeskies.observable;version=snapshot,\
+	uk.co.strangeskies.collections;version=snapshot,\
 	uk.co.strangeskies.reflection;version=snapshot,\
 	uk.co.strangeskies.utilities;version=snapshot,\
 	uk.co.strangeskies.text;version=snapshot

@@ -51,9 +51,9 @@ import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener;
 import javafx.collections.transformation.TransformationList;
-import uk.co.strangeskies.utilities.Observable;
-import uk.co.strangeskies.utilities.collection.computingmap.ComputingHashMap;
-import uk.co.strangeskies.utilities.collection.computingmap.ComputingMap;
+import uk.co.strangeskies.collection.computingmap.ComputingHashMap;
+import uk.co.strangeskies.collection.computingmap.ComputingMap;
+import uk.co.strangeskies.observable.Observable;
 
 /**
  * A collection of general utility methods for working with JavaFX and
@@ -322,7 +322,7 @@ public class FxUtilities {
 	}
 
 	/**
-	 * Wrap an {@link uk.co.strangeskies.utilities.Observable} with a JavaFX
+	 * Wrap an {@link uk.co.strangeskies.observable.Observable} with a JavaFX
 	 * equivalent {@link ObservableValue}.
 	 * 
 	 * @param <T>
@@ -342,7 +342,7 @@ public class FxUtilities {
 	}
 
 	/**
-	 * Wrap an {@link uk.co.strangeskies.utilities.ObservableValue} with a JavaFX
+	 * Wrap an {@link uk.co.strangeskies.observable.ObservableValue} with a JavaFX
 	 * equivalent {@link ObservableValue}.
 	 * 
 	 * @param <T>
@@ -351,7 +351,7 @@ public class FxUtilities {
 	 *          the observable value to wrap
 	 * @return a JavaFX observable value backed by the given observable value
 	 */
-	public static <T> ObservableValue<T> wrap(uk.co.strangeskies.utilities.ObservableValue<T> observable) {
+	public static <T> ObservableValue<T> wrap(uk.co.strangeskies.observable.ObservableValue<T> observable) {
 		return wrap(observable, observable.get());
 	}
 
@@ -406,7 +406,10 @@ public class FxUtilities {
 	 *         class.
 	 */
 	public static URL getResource(Class<?> controllerClass, String resourceName) {
-		String resourceLocation = "/" + controllerClass.getPackage().getName().replace('.', '/') + "/" + resourceName
+		String resourceLocation = "/"
+				+ controllerClass.getPackage().getName().replace('.', '/')
+				+ "/"
+				+ resourceName
 				+ ".fxml";
 
 		return controllerClass.getResource(resourceLocation);

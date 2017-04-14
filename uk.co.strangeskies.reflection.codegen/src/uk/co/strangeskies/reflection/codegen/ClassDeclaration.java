@@ -38,15 +38,16 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.entriesToMap;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
 import static uk.co.strangeskies.reflection.Types.getErasedType;
 import static uk.co.strangeskies.reflection.Types.isInterface;
+import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
 import static uk.co.strangeskies.reflection.codegen.ErasedMethodSignature.erasedConstructorSignature;
 import static uk.co.strangeskies.reflection.codegen.ErasedMethodSignature.erasedMethodSignature;
 import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.declareConstructor;
 import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.declareStaticMethod;
 import static uk.co.strangeskies.reflection.token.TypeToken.forType;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.entriesToMap;
 
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Type;
@@ -55,11 +56,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import uk.co.strangeskies.collection.stream.StreamUtilities;
 import uk.co.strangeskies.reflection.Types;
 import uk.co.strangeskies.reflection.codegen.ClassDefinitionSpace.ClassDeclarationContext;
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
 import uk.co.strangeskies.reflection.token.TypeToken;
-import uk.co.strangeskies.utilities.collection.StreamUtilities;
 
 public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignature<T>>
 		implements Declaration<ClassSignature<T>> {
@@ -111,10 +112,14 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 
 		Type superType = intersectionOf(superTypes.stream().map(TypeToken::getType).collect(toList()));
 		this.superType = (TypeToken<T>) forType(superType);
-		this.superClass = (Class<? super T>) of(getErasedType(superType)).filter(t -> !isInterface(t)).orElse(null);
+		this.superClass = (Class<? super T>) of(getErasedType(superType))
+				.filter(t -> !isInterface(t))
+				.orElse(null);
 
-		this.constructorDeclarations = signature.getConstructorSignatures().map(s -> declareConstructor(this, s)).collect(
-				toMap(d -> d.getSignature().erased(), identity()));
+		this.constructorDeclarations = signature
+				.getConstructorSignatures()
+				.map(s -> declareConstructor(this, s))
+				.collect(toMap(d -> d.getSignature().erased(), identity()));
 
 		this.staticMethodDeclarations = signature
 				.getMethodSignatures()
@@ -122,7 +127,8 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 				.map(s -> declareStaticMethod(this, (MethodSignature<?>) s))
 				.collect(toMap(d -> d.getSignature().erased(), identity()));
 
-		this.methodDeclarations = new MethodOverrides<>(this).getSignatureDeclarations().collect(entriesToMap());
+		this.methodDeclarations = new MethodOverrides<>(this).getSignatureDeclarations().collect(
+				entriesToMap());
 
 		this.receiverExpression = new ValueExpression<T>() {
 			@Override
@@ -140,7 +146,9 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 		};
 	}
 
-	public static <T> ClassDeclaration<?, T> declareClass(ClassDeclarationContext context, ClassSignature<T> signature) {
+	public static <T> ClassDeclaration<?, T> declareClass(
+			ClassDeclarationContext context,
+			ClassSignature<T> signature) {
 		return new ClassDeclaration<>(context, signature);
 	}
 
@@ -200,17 +208,21 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 
 		MethodDeclaration<E, T> declaration = constructorDeclarations.get(erasedSignature);
 		if (declaration == null) {
-			throw new CodeGenerationException(p -> p.cannotFindMethodOn(superClass, erasedSignature));
+			throw new CodeGenerationException(
+					CODEGEN_PROPERTIES.cannotFindMethodOn(superClass, erasedSignature));
 		}
 		return declaration;
 	}
 
-	public MethodDeclaration<E, ?> getStaticMethodDeclaration(String name, Class<?>... erasedParameters) {
+	public MethodDeclaration<E, ?> getStaticMethodDeclaration(
+			String name,
+			Class<?>... erasedParameters) {
 		ErasedMethodSignature erasedSignature = erasedMethodSignature(name, erasedParameters);
 
 		MethodDeclaration<E, ?> declaration = staticMethodDeclarations.get(erasedSignature);
 		if (declaration == null) {
-			throw new CodeGenerationException(p -> p.cannotFindMethodOn(superClass, erasedSignature));
+			throw new CodeGenerationException(
+					CODEGEN_PROPERTIES.cannotFindMethodOn(superClass, erasedSignature));
 		}
 		return declaration;
 	}
@@ -220,7 +232,8 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 
 		MethodDeclaration<T, ?> declaration = methodDeclarations.get(erasedSignature);
 		if (declaration == null) {
-			throw new CodeGenerationException(p -> p.cannotFindMethodOn(superClass, erasedSignature));
+			throw new CodeGenerationException(
+					CODEGEN_PROPERTIES.cannotFindMethodOn(superClass, erasedSignature));
 		}
 		return declaration;
 	}
@@ -238,7 +251,8 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 		if (!StreamUtilities.equals(
 				signature.getParameters().map(ParameterSignature::getType),
 				declaration.getSignature().getParameters().map(ParameterSignature::getType))) {
-			throw new CodeGenerationException(p -> p.cannotFindMethodOn(superClass, signature.erased()));
+			throw new CodeGenerationException(
+					CODEGEN_PROPERTIES.cannotFindMethodOn(superClass, signature.erased()));
 		}
 
 		return (MethodDeclaration<E, T>) declaration;
@@ -258,7 +272,8 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 		if (!StreamUtilities.equals(
 				signature.getParameters().map(ParameterSignature::getType),
 				declaration.getSignature().getParameters().map(ParameterSignature::getType))) {
-			throw new CodeGenerationException(p -> p.cannotFindMethodOn(superClass, signature.erased()));
+			throw new CodeGenerationException(
+					CODEGEN_PROPERTIES.cannotFindMethodOn(superClass, signature.erased()));
 		}
 
 		return (MethodDeclaration<E, U>) declaration;
@@ -278,7 +293,8 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 		if (!StreamUtilities.equals(
 				signature.getParameters().map(ParameterSignature::getType),
 				declaration.getSignature().getParameters().map(ParameterSignature::getType))) {
-			throw new CodeGenerationException(p -> p.cannotFindMethodOn(superClass, signature.erased()));
+			throw new CodeGenerationException(
+					CODEGEN_PROPERTIES.cannotFindMethodOn(superClass, signature.erased()));
 		}
 
 		return (MethodDeclaration<T, U>) declaration;
@@ -319,7 +335,10 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 		builder.append(signature.getClassName());
 
 		if (isParameterized()) {
-			builder.append("<").append(getTypeVariables().map(Objects::toString).collect(joining(", "))).append("> ");
+			builder
+					.append("<")
+					.append(getTypeVariables().map(Objects::toString).collect(joining(", ")))
+					.append("> ");
 		}
 
 		return builder.toString();

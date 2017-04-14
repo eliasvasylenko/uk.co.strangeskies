@@ -36,8 +36,8 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Objects;
 
-import uk.co.strangeskies.utilities.Property;
-import uk.co.strangeskies.utilities.Self;
+import uk.co.strangeskies.utility.Property;
+import uk.co.strangeskies.utility.Self;
 
 public class Range<T> implements Self<Range<T>> {
 	private T from;

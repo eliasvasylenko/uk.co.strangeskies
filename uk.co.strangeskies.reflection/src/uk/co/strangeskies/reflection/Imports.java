@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -90,7 +92,8 @@ public class Imports {
 			return false;
 		Imports thatImports = (Imports) that;
 
-		return Objects.equals(namedClasses, thatImports.namedClasses) && Objects.equals(packages, thatImports.packages);
+		return Objects.equals(namedClasses, thatImports.namedClasses)
+				&& Objects.equals(packages, thatImports.packages);
 	}
 
 	@Override
@@ -140,7 +143,8 @@ public class Imports {
 	private void importClasses(Collection<? extends Class<?>> classes) {
 		for (Class<?> clazz : classes) {
 			if (namedClasses.containsKey(clazz.getSimpleName())) {
-				throw new ReflectionException(p -> p.incompatibleImports(namedClasses.get(clazz.getSimpleName()), clazz));
+				throw new ReflectionException(
+						REFLECTION_PROPERTIES.incompatibleImports(namedClasses.get(clazz.getSimpleName()), clazz));
 			} else {
 				namedClasses.put(clazz.getSimpleName(), clazz);
 			}
@@ -193,7 +197,10 @@ public class Imports {
 	 *         imports.
 	 */
 	public Class<?> getNamedClass(String name, ClassLoader classLoader) {
-		Optional<Class<?>> primitive = Types.getPrimitives().filter(p -> p.getName().equals(name)).findAny();
+		Optional<Class<?>> primitive = Types
+				.getPrimitives()
+				.filter(p -> p.getName().equals(name))
+				.findAny();
 		if (primitive.isPresent())
 			return primitive.get();
 
@@ -224,7 +231,9 @@ public class Imports {
 				int lastDot;
 				String transformedName = name;
 				while ((lastDot = transformedName.lastIndexOf('.')) >= 0) {
-					transformedName = new StringBuilder(transformedName).replace(lastDot, lastDot + 1, "$").toString();
+					transformedName = new StringBuilder(transformedName)
+							.replace(lastDot, lastDot + 1, "$")
+							.toString();
 
 					try {
 						if (classLoader == null) {
@@ -238,7 +247,9 @@ public class Imports {
 				}
 
 				if (namedClass == null)
-					throw new IllegalArgumentException("Cannot load class '" + name + "' with imports '" + this + "'", e);
+					throw new IllegalArgumentException(
+							"Cannot load class '" + name + "' with imports '" + this + "'",
+							e);
 			}
 		}
 

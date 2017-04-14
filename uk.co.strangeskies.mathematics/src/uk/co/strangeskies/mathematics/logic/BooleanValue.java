@@ -33,7 +33,7 @@
 package uk.co.strangeskies.mathematics.logic;
 
 import uk.co.strangeskies.mathematics.expression.LockingExpression;
-import uk.co.strangeskies.utilities.Self;
+import uk.co.strangeskies.utility.Self;
 
 public class BooleanValue extends LockingExpression<BooleanValue> implements
 		BooleanCombinationBehaviour<BooleanValue, BooleanValue>, NOTable<BooleanValue, BooleanValue>, Self<BooleanValue> {

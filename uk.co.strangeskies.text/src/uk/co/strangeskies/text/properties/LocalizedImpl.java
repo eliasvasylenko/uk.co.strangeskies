@@ -41,9 +41,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-import uk.co.strangeskies.utilities.ObservablePropertyImpl;
-import uk.co.strangeskies.utilities.ObservableValue;
-import uk.co.strangeskies.utilities.Observer;
+import uk.co.strangeskies.observable.ObservablePropertyImpl;
+import uk.co.strangeskies.observable.ObservableValue;
+import uk.co.strangeskies.observable.Observer;
 
 /*
  * Implementation of localized property

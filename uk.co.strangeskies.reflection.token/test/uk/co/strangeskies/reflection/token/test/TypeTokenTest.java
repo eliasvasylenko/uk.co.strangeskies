@@ -73,7 +73,7 @@ import uk.co.strangeskies.reflection.token.TypeToken.Capture;
 import uk.co.strangeskies.reflection.token.TypeToken.Infer;
 import uk.co.strangeskies.reflection.token.TypeToken.Retain;
 import uk.co.strangeskies.reflection.token.TypeToken.Wildcards;
-import uk.co.strangeskies.utilities.Self;
+import uk.co.strangeskies.utility.Self;
 
 /**
  * Tests for {@link TypeToken} class.

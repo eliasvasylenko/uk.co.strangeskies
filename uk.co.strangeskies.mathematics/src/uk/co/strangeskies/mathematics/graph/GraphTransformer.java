@@ -38,7 +38,7 @@ import java.util.function.Predicate;
 
 import org.osgi.annotation.versioning.ProviderType;
 
-import uk.co.strangeskies.utilities.Factory;
+import uk.co.strangeskies.utility.Factory;
 
 @ProviderType
 public interface GraphTransformer<V, E> extends Factory<Graph<V, E>> {

@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.text.properties;
 
-import uk.co.strangeskies.utilities.Self;
+import uk.co.strangeskies.utility.Self;
 
 /**
  * A strategy for providing a {@link PropertyResource} over a given locale and a

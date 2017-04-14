@@ -55,9 +55,8 @@ import java.util.function.Function;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.Defaults;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.Evaluation;
 import uk.co.strangeskies.text.properties.PropertyLoaderImpl.MethodSignature;
-import uk.co.strangeskies.utilities.Log;
-import uk.co.strangeskies.utilities.Log.Level;
-import uk.co.strangeskies.utilities.classloading.DelegatingClassLoader;
+import uk.co.strangeskies.utility.Log;
+import uk.co.strangeskies.utility.Log.Level;
 
 /**
  * Delegate implementation object for proxy instances of property accessor
@@ -195,7 +194,8 @@ public class PropertyAccessorDelegate<A> {
 		}
 	}
 
-	@SuppressWarnings("unchecked") <U> PropertyAccessorConfiguration<U> getPropertiesConfigurationUnsafe(Class<?> returnType) {
+	@SuppressWarnings("unchecked")
+	<U> PropertyAccessorConfiguration<U> getPropertiesConfigurationUnsafe(Class<?> returnType) {
 		return new PropertyAccessorConfiguration<>((Class<U>) returnType);
 	}
 
@@ -225,15 +225,15 @@ public class PropertyAccessorDelegate<A> {
 	@SuppressWarnings("unchecked")
 	private String loadValueString(PropertyAccessorConfiguration<?> configuration, String key, Locale locale) {
 		return bundleCache.computeIfAbsent(configuration, c -> {
-			return loader.getResourceStrategy(c.getConfiguration().strategy()).getPropertyResourceBundle(
-					c.getAccessor(),
-					c.getConfiguration().resource());
+			return loader
+					.getResourceStrategy(c.getConfiguration().strategy())
+					.getPropertyResourceBundle(c.getAccessor(), c.getConfiguration().resource());
 		}).getValue(key, locale);
 	}
 
 	@SuppressWarnings("unchecked")
 	A createProxy(Class<A> accessor) {
-		ClassLoader classLoader = new DelegatingClassLoader(getClass().getClassLoader(), accessor.getClassLoader());
+		ClassLoader classLoader = new PropertyAccessorClassLoader(accessor.getClassLoader());
 
 		return (A) Proxy
 				.newProxyInstance(classLoader, new Class<?>[] { accessor }, (Object p, Method method, Object[] args) -> {
@@ -253,6 +253,21 @@ public class PropertyAccessorDelegate<A> {
 
 					return getInstantiatedPropertyValue(signature, args);
 				});
+	}
+
+	class PropertyAccessorClassLoader extends ClassLoader {
+		public PropertyAccessorClassLoader(ClassLoader classLoader) {
+			super(classLoader);
+		}
+
+		@Override
+		protected Class<?> findClass(String name) throws ClassNotFoundException {
+			if (name.equals(PropertyAccessorDelegate.class.getName())) {
+				return PropertyAccessorDelegate.class;
+			} else {
+				return super.findClass(name);
+			}
+		}
 	}
 
 	public A getProxy() {

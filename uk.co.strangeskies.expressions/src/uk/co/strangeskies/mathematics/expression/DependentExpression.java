@@ -36,7 +36,7 @@ import static java.util.Arrays.asList;
 
 import java.util.Collection;
 
-import uk.co.strangeskies.utilities.Observer;
+import uk.co.strangeskies.observable.Observer;
 
 /**
  * An expression which is dependent upon the evaluation of a number of other

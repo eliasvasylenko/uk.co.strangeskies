@@ -39,7 +39,6 @@ import java.util.List;
 
 import uk.co.strangeskies.reflection.ReflectionProperties;
 import uk.co.strangeskies.reflection.token.TypeToken;
-import uk.co.strangeskies.text.properties.Localized;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;
 
@@ -48,43 +47,45 @@ import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;
 public interface CodeGenerationProperties {
 	ReflectionProperties reflection();
 
-	Localized<String> invalidExpressionForStatement(Expression expression);
+	String invalidExpressionForStatement(Expression expression);
 
-	Localized<String> cannotInstantiateClassDefinition(ClassDefinition<?, ?> classDefinition, TypeToken<?> superType);
+	String cannotInstantiateClassDefinition(
+			ClassDefinition<?, ?> classDefinition,
+			TypeToken<?> superType);
 
-	Localized<String> cannotAccessPlaceholderExpression(VariableExpressionProxy<?> variableExpressionProxy);
+	String cannotAccessPlaceholderExpression(VariableExpressionProxy<?> variableExpressionProxy);
 
-	Localized<String> cannotOverrideMethod(Method overriddenMethod);
+	String cannotOverrideMethod(Method overriddenMethod);
 
-	Localized<String> incompatibleReturnTypes(Type override, Method inherited);
+	String incompatibleReturnTypes(Type override, Method inherited);
 
-	Localized<String> incompatibleOverride(MethodDefinition<?, ?> override);
+	String incompatibleOverride(MethodDefinition<?, ?> override);
 
-	Localized<String> incompatibleParameterTypes(List<Type> parameterTypes, Method inherited);
+	String incompatibleParameterTypes(List<Type> parameterTypes, Method inherited);
 
-	Localized<String> duplicateMethodDeclaration(MethodDeclaration<?, ?> override);
+	String duplicateMethodDeclaration(MethodDeclaration<?, ?> override);
 
-	Localized<String> mustOverrideMethods(Collection<Method> classMethod);
+	String mustOverrideMethods(Collection<Method> classMethod);
 
-	Localized<String> undefinedVariable(ParameterSignature<?> variable);
+	String undefinedVariable(ParameterSignature<?> variable);
 
-	Localized<String> cannotResolveEnclosingInstance(ClassDeclaration<?, ?> receiverClass);
+	String cannotResolveEnclosingInstance(ClassDeclaration<?, ?> receiverClass);
 
-	Localized<String> cannotRedeclareVariable(ParameterSignature<?> variable);
+	String cannotRedeclareVariable(ParameterSignature<?> variable);
 
-	Localized<String> incompleteStatementExecution();
+	String incompleteStatementExecution();
 
-	Localized<String> incompleteExpressionEvaluation();
+	String incompleteExpressionEvaluation();
 
-	Localized<String> cannotFindMethodOn(Class<?> superClass, ErasedMethodSignature erasedMethodSignature);
+	String cannotFindMethodOn(Class<?> superClass, ErasedMethodSignature erasedMethodSignature);
 
-	Localized<String> incompatibleReturnType(TypeToken<?> returnType, MethodDeclaration<?, ?> methodDeclaration);
+	String incompatibleReturnType(TypeToken<?> returnType, MethodDeclaration<?, ?> methodDeclaration);
 
-	Localized<String> mustImplementMethod(MethodDeclaration<?, ?> method);
+	String mustImplementMethod(MethodDeclaration<?, ?> method);
 
-	Localized<String> classNameAlreadyRegistered(ClassSignature<?> classSignature);
+	String classNameAlreadyRegistered(ClassSignature<?> classSignature);
 
-	Localized<String> staticMethodCannotBeDefault(MethodDeclaration<?, ?> methodDeclaration);
+	String staticMethodCannotBeDefault(MethodDeclaration<?, ?> methodDeclaration);
 
-	Localized<String> cannotResolveTypeVariable(String typeVariableName, ParameterizedSignature<?> signature);
+	String cannotResolveTypeVariable(String typeVariableName, ParameterizedSignature<?> signature);
 }

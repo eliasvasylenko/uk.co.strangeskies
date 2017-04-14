@@ -35,10 +35,11 @@ package uk.co.strangeskies.reflection;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.empty;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.flatMapRecursive;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.iterateOptional;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.getAllTypeArguments;
+import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
 import static uk.co.strangeskies.reflection.Types.getErasedType;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.flatMapRecursive;
-import static uk.co.strangeskies.utilities.collection.StreamUtilities.iterateOptional;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -78,7 +79,7 @@ public class TypeHierarchy {
 	 */
 	public static Stream<Type> resolveDirectSupertypeHierarchy(Type type, Class<?> superclass) {
 		if (!Types.isAssignable(type, superclass)) {
-			throw new ReflectionException(p -> p.cannotResolveSupertype(type, superclass));
+			throw new ReflectionException(REFLECTION_PROPERTIES.cannotResolveSupertype(type, superclass));
 		}
 
 		return resolveSupertypeHierarchyImpl(type, superclass);
@@ -118,7 +119,7 @@ public class TypeHierarchy {
 	 */
 	public static Type resolveSupertype(Type type, Class<?> superclass) {
 		if (!Types.isAssignable(type, superclass)) {
-			throw new ReflectionException(p -> p.cannotResolveSupertype(type, superclass));
+			throw new ReflectionException(REFLECTION_PROPERTIES.cannotResolveSupertype(type, superclass));
 		} else if (!Types.isGeneric(superclass)) {
 			return superclass;
 		}
@@ -147,12 +148,15 @@ public class TypeHierarchy {
 	private static void validateResolvableSupertype(Type type, Class<?> superclass) {
 		if (!(type instanceof ParameterizedType) && !(type instanceof Class)) {
 			throw new ReflectionException(
-					p -> p.cannotResolveSupertype(type, superclass),
-					new ReflectionException(p -> p.unsupportedType(type)));
+					REFLECTION_PROPERTIES.cannotResolveSupertype(type, superclass),
+					new ReflectionException(REFLECTION_PROPERTIES.unsupportedType(type)));
 		}
 	}
 
-	private static Stream<Type> resolveImmediateSupertypes(Set<Class<?>> encountered, Type type, Class<?> superclass) {
+	private static Stream<Type> resolveImmediateSupertypes(
+			Set<Class<?>> encountered,
+			Type type,
+			Class<?> superclass) {
 		Class<?> subclass = getErasedType(type);
 
 		if (subclass.equals(superclass)) {
@@ -185,7 +189,8 @@ public class TypeHierarchy {
 		 * If there is more than one supertype in evaluation
 		 */
 		if (encountered != null && (!encountered.isEmpty() || lesserSubtypes.size() > 1)) {
-			for (Iterator<Type> lesserSubtypeIterator = lesserSubtypes.iterator(); lesserSubtypeIterator.hasNext();) {
+			for (Iterator<Type> lesserSubtypeIterator = lesserSubtypes.iterator(); lesserSubtypeIterator
+					.hasNext();) {
 				Class<?> rawClass = getErasedType(lesserSubtypeIterator.next());
 
 				if (encountered.stream().anyMatch(rawClass::isAssignableFrom)) {
@@ -196,13 +201,14 @@ public class TypeHierarchy {
 			}
 		}
 
-		return lesserSubtypes.stream().filter(t -> superclass.isAssignableFrom(getErasedType(t))).map(subtype -> {
-			if (type instanceof ParameterizedType)
-				return new TypeSubstitution(
-						getAllTypeArguments((ParameterizedType) type).collect(toMap(Entry::getKey, Entry::getValue)))
-								.resolve(subtype);
-			else
-				return subtype;
-		});
+		return lesserSubtypes.stream().filter(t -> superclass.isAssignableFrom(getErasedType(t))).map(
+				subtype -> {
+					if (type instanceof ParameterizedType)
+						return new TypeSubstitution(
+								getAllTypeArguments((ParameterizedType) type)
+										.collect(toMap(Entry::getKey, Entry::getValue))).resolve(subtype);
+					else
+						return subtype;
+				});
 	}
 }

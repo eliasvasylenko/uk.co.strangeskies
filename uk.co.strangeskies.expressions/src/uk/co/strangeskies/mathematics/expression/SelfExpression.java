@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.mathematics.expression;
 
-import uk.co.strangeskies.utilities.Self;
+import uk.co.strangeskies.utility.Self;
 
 /**
  * A variable for use in reactive programming. A Variable in this sense is a

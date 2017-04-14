@@ -39,7 +39,7 @@ import uk.co.strangeskies.mathematics.operation.NonCommutativelyMultipliable;
 import uk.co.strangeskies.mathematics.operation.Scalable;
 import uk.co.strangeskies.mathematics.operation.Subtractable;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.Self;
+import uk.co.strangeskies.utility.Self;
 
 public interface VectorH<S extends VectorH<S, V>, V extends Value<V>> extends
 /**/Vector<S, V>, Translatable<S>, /**/

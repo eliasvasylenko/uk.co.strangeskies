@@ -1,0 +1,14 @@
+Export-Package: \
+	uk.co.strangeskies.observable,\
+	uk.co.strangeskies.collection.observable
+
+Bundle-Name: Strange Skies :: Utilities
+Bundle-Description: \
+	Common Java utilities for Strange Skies projects, including generic \
+	pseudo-enums, fast, in-memory caches, tuples, functional helpers, \
+	and more.
+
+-buildpath: \
+	uk.co.strangeskies.utilities;version=snapshot,\
+	uk.co.strangeskies.observable;version=snapshot,\
+	uk.co.strangeskies.collections;version=snapshot

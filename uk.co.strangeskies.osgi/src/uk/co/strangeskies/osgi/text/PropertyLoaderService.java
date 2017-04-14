@@ -45,6 +45,7 @@ import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ServiceScope;
 
+import uk.co.strangeskies.observable.ObservableValue;
 import uk.co.strangeskies.text.properties.LocaleProvider;
 import uk.co.strangeskies.text.properties.PropertyAccessorConfiguration;
 import uk.co.strangeskies.text.properties.PropertyLoader;
@@ -52,8 +53,7 @@ import uk.co.strangeskies.text.properties.PropertyLoaderProperties;
 import uk.co.strangeskies.text.properties.PropertyResourceStrategy;
 import uk.co.strangeskies.text.properties.PropertyValueProvider;
 import uk.co.strangeskies.text.properties.PropertyValueProviderFactory;
-import uk.co.strangeskies.utilities.Log;
-import uk.co.strangeskies.utilities.ObservableValue;
+import uk.co.strangeskies.utility.Log;
 
 @Component(scope = ServiceScope.PROTOTYPE)
 @SuppressWarnings("javadoc")

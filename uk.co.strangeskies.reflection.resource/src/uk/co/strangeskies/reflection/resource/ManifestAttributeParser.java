@@ -34,15 +34,16 @@ package uk.co.strangeskies.reflection.resource;
 
 import static uk.co.strangeskies.text.parsing.Parser.matching;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map.Entry;
 
 import uk.co.strangeskies.text.EscapeFormatter;
 import uk.co.strangeskies.text.parsing.Parser;
-import uk.co.strangeskies.utilities.tuple.Pair;
 
 public class ManifestAttributeParser {
 	static final EscapeFormatter DOUBLE_QUOTE_ESCAPER = new EscapeFormatter('\\', "\"");
@@ -66,34 +67,38 @@ public class ManifestAttributeParser {
 		Parser<PropertyType<?>> type = matching("([" + ALPHANUMERIC + "]+(<[" + ALPHANUMERIC + "]+>)?)|")
 				.transform(s -> PropertyType.fromName(s, knownPropertyTypes));
 
-		Parser<String> doubleQuotedString = matching("([^\"\\\\]*(\\\\.[^\"\\\\]*)*)").prepend("\"").append("\"")
-				.transform(DOUBLE_QUOTE_ESCAPER::unescape);
-		Parser<String> singleQuotedString = matching("([^'\\\\]*(\\\\.[^\'\\\\]*)*)").prepend("'").append("'")
-				.transform(SINGLE_QUOTE_ESCAPER::unescape);
+		Parser<String> doubleQuotedString = matching("([^\"\\\\]*(\\\\.[^\"\\\\]*)*)").prepend("\"").append("\"").transform(
+				DOUBLE_QUOTE_ESCAPER::unescape);
+		Parser<String> singleQuotedString = matching("([^'\\\\]*(\\\\.[^\'\\\\]*)*)").prepend("'").append("'").transform(
+				SINGLE_QUOTE_ESCAPER::unescape);
 
 		valueString = doubleQuotedString.orElse(singleQuotedString).orElse(matching(SIMPLE_VALUE));
 
-		attributeProperty = matching(KEY).appendTransform(type.prepend(":").orElse(() -> null), this::newPair).append("=")
+		attributeProperty = matching(KEY)
+				.appendTransform(type.prepend(":").orElse(() -> null), this::newPair)
+				.append("=")
 				.appendTransform(valueString, this::newAttributeProperty);
 
-		attribute = matching(KEY).appendTransform(Parser.list(attributeProperty, WHITESPACE + ";" + WHITESPACE, 0)
-				.prepend(WHITESPACE + ";" + WHITESPACE).orElse(Collections.emptyList()), Attribute::new);
+		attribute = matching(KEY).appendTransform(
+				Parser.list(attributeProperty, WHITESPACE + ";" + WHITESPACE, 0).prepend(WHITESPACE + ";" + WHITESPACE).orElse(
+						Collections.emptyList()),
+				Attribute::new);
 
 		attributes = Parser.list(attribute, WHITESPACE + "," + WHITESPACE);
 	}
 
-	private Pair<String, PropertyType<?>> newPair(String name, PropertyType<?> type) {
-		return new Pair<>(name, type);
+	private Entry<String, PropertyType<?>> newPair(String name, PropertyType<?> type) {
+		return new AbstractMap.SimpleEntry<>(name, type);
 	}
 
-	private AttributeProperty<?> newAttributeProperty(Pair<String, PropertyType<?>> nameAndType, String valueString) {
-		String name = nameAndType.getLeft();
-		PropertyType<?> type = nameAndType.getRight();
+	private AttributeProperty<?> newAttributeProperty(Entry<String, PropertyType<?>> nameAndType, String valueString) {
+		String name = nameAndType.getKey();
+		PropertyType<?> type = nameAndType.getValue();
 
 		if (type == null) {
 			return AttributeProperty.untyped(name, valueString);
 		} else {
-			return AttributeProperty.parseValueString(nameAndType.getLeft(), nameAndType.getRight(), valueString);
+			return AttributeProperty.parseValueString(nameAndType.getKey(), nameAndType.getValue(), valueString);
 		}
 	}
 

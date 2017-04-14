@@ -55,8 +55,8 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import uk.co.strangeskies.utilities.IdentityProperty;
-import uk.co.strangeskies.utilities.Isomorphism;
+import uk.co.strangeskies.utility.IdentityProperty;
+import uk.co.strangeskies.utility.Isomorphism;
 
 /**
  * A TypeSubstitution object is a function mapping Type to Type, which

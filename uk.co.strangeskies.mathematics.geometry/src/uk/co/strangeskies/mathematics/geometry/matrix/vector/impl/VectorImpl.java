@@ -39,10 +39,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import uk.co.strangeskies.collection.ListTransformOnceView;
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
 import uk.co.strangeskies.mathematics.expression.DependentExpression;
 import uk.co.strangeskies.mathematics.geometry.DimensionalityException;
@@ -54,11 +56,9 @@ import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorN;
 import uk.co.strangeskies.mathematics.values.DoubleValue;
 import uk.co.strangeskies.mathematics.values.IntValue;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.Factory;
-import uk.co.strangeskies.utilities.Self;
-import uk.co.strangeskies.utilities.collection.NullPointerInCollectionException;
-import uk.co.strangeskies.utilities.function.ListTransformOnceView;
-import uk.co.strangeskies.utilities.function.TriFunction;
+import uk.co.strangeskies.utility.Factory;
+import uk.co.strangeskies.utility.Self;
+import uk.co.strangeskies.utility.function.TriFunction;
 
 /**
  *
@@ -107,7 +107,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>> ext
 			data.add(valueFactory.create());
 		}
 
-		//getDependencies().addAll(getData());
+		// getDependencies().addAll(getData());
 	}
 
 	public VectorImpl(Order order, Orientation orientation, List<? extends V> values) {
@@ -117,7 +117,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>> ext
 			if (values == null || order == null || orientation == null) {
 				throw new NullPointerException();
 			}
-			NullPointerInCollectionException.checkList(values);
+			values.stream().forEach(Objects::requireNonNull);
 
 			DimensionalityException.checkValid(values.size());
 		} catch (Exception e) {
@@ -128,7 +128,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>> ext
 			data.add(value);
 		}
 
-		//getDependencies().addAll(getData());
+		// getDependencies().addAll(getData());
 	}
 
 	@Override
@@ -220,7 +220,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>> ext
 			for (V element : data)
 				element = operator.apply(element);
 
-			//getDependencies().set(getData());
+			// getDependencies().set(getData());
 
 			return getThis();
 		} finally {
@@ -237,7 +237,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>> ext
 			for (V element : data)
 				element = operator.apply(element, i++);
 
-			//getDependencies().set(getData());
+			// getDependencies().set(getData());
 
 			return getThis();
 		} finally {
@@ -259,7 +259,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>> ext
 				for (V element : data)
 					element = operator.apply(element, i, j++);
 
-			//getDependencies().set(getData());
+			// getDependencies().set(getData());
 
 			return getThis();
 		} finally {

@@ -37,7 +37,7 @@ import java.util.List;
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix;
 import uk.co.strangeskies.mathematics.geometry.matrix.MatrixS;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.Factory;
+import uk.co.strangeskies.utility.Factory;
 
 public abstract class MatrixSImpl<S extends MatrixS<S, V>, V extends Value<V>>
 		extends MatrixImpl<S, V> implements MatrixS<S, V> {

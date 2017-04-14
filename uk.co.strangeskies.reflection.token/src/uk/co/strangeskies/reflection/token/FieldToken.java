@@ -35,6 +35,7 @@ package uk.co.strangeskies.reflection.token;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toMap;
+import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
 import static uk.co.strangeskies.reflection.token.FieldTokenQuery.fieldQuery;
 import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
 import static uk.co.strangeskies.reflection.token.TypeToken.forType;
@@ -91,7 +92,9 @@ public class FieldToken<O, T> implements MemberToken<O, FieldToken<O, T>> {
 		this.fieldType = determineFieldType(resolver, inferenceVariableSubstitution);
 	}
 
-	private TypeToken<? super O> determineReceiverType(TypeSubstitution inferenceVariables, TypeToken<? super O> receiverType) {
+	private TypeToken<? super O> determineReceiverType(
+			TypeSubstitution inferenceVariables,
+			TypeToken<? super O> receiverType) {
 		if (receiverType.getType().equals(void.class)) {
 			return receiverType;
 		} else {
@@ -100,10 +103,15 @@ public class FieldToken<O, T> implements MemberToken<O, FieldToken<O, T>> {
 	}
 
 	@SuppressWarnings("unchecked")
-	private TypeToken<T> determineFieldType(TypeResolver resolver, TypeSubstitution inferenceVariables) {
+	private TypeToken<T> determineFieldType(
+			TypeResolver resolver,
+			TypeSubstitution inferenceVariables) {
 		Type genericReturnType = inferenceVariables.resolve(getMember().getGenericType());
 
-		TypeToken<T> returnType = (TypeToken<T>) forType(resolver.getBounds(), genericReturnType, Wildcards.RETAIN);
+		TypeToken<T> returnType = (TypeToken<T>) forType(
+				resolver.getBounds(),
+				genericReturnType,
+				Wildcards.RETAIN);
 
 		return returnType.resolve();
 	}
@@ -233,7 +241,8 @@ public class FieldToken<O, T> implements MemberToken<O, FieldToken<O, T>> {
 		if (type == null)
 			return (FieldToken<O, S>) this;
 
-		BoundSet bounds = new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, fieldType.getType(), type).reduce(getBounds());
+		BoundSet bounds = new ConstraintFormula(Kind.LOOSE_COMPATIBILILTY, fieldType.getType(), type)
+				.reduce(getBounds());
 
 		TypeToken<? super O> receiverType = this.receiverType.withBounds(bounds);
 
@@ -256,7 +265,9 @@ public class FieldToken<O, T> implements MemberToken<O, FieldToken<O, T>> {
 		try {
 			return (T) getMember().get(target);
 		} catch (IllegalArgumentException | IllegalAccessException e) {
-			throw new ReflectionException(p -> p.cannotGetField(target, this.getMember()), e);
+			throw new ReflectionException(
+					REFLECTION_PROPERTIES.cannotGetField(target, this.getMember()),
+					e);
 		}
 	}
 
@@ -270,7 +281,7 @@ public class FieldToken<O, T> implements MemberToken<O, FieldToken<O, T>> {
 		try {
 			getMember().set(target, value);
 		} catch (IllegalArgumentException | IllegalAccessException e) {
-			throw new ReflectionException(p -> p.cannotSetField(target, value, this.getMember()), e);
+			throw new ReflectionException(REFLECTION_PROPERTIES.cannotSetField(target, value, this.getMember()), e);
 		}
 	}
 
@@ -283,7 +294,8 @@ public class FieldToken<O, T> implements MemberToken<O, FieldToken<O, T>> {
 	 *         {@link FieldToken} instances
 	 */
 	public static FieldTokenQuery<FieldToken<Void, ?>, ?> staticFields(Class<?> declaringClass) {
-		Stream<Field> fields = stream(declaringClass.getDeclaredFields()).filter(f -> Modifier.isStatic(f.getModifiers()));
+		Stream<Field> fields = stream(declaringClass.getDeclaredFields())
+				.filter(f -> Modifier.isStatic(f.getModifiers()));
 
 		return fieldQuery(fields, FieldToken::overStaticField);
 	}

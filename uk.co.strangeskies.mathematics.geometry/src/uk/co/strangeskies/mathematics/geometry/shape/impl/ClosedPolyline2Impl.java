@@ -41,7 +41,7 @@ import uk.co.strangeskies.mathematics.geometry.shape.ClosedPolyline2;
 import uk.co.strangeskies.mathematics.geometry.shape.Line2;
 import uk.co.strangeskies.mathematics.geometry.shape.Shape;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.Observer;
+import uk.co.strangeskies.observable.Observer;
 
 public class ClosedPolyline2Impl<V extends Value<V>> implements ClosedPolyline2<V> {
 	@Override

@@ -44,13 +44,13 @@ import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import uk.co.strangeskies.collection.EquivalenceComparator;
 import uk.co.strangeskies.mathematics.graph.EdgeVertices;
 import uk.co.strangeskies.mathematics.graph.Graph;
 import uk.co.strangeskies.mathematics.graph.GraphConfigurator;
 import uk.co.strangeskies.mathematics.graph.GraphException;
 import uk.co.strangeskies.mathematics.graph.GraphListeners;
 import uk.co.strangeskies.mathematics.graph.GraphProperties;
-import uk.co.strangeskies.utilities.EquivalenceComparator;
 
 public class GraphConfiguratorImpl<V, E> implements GraphConfigurator<V, E> {
 	private List<V> vertices;

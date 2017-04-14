@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.mathematics.expression;
 
-import uk.co.strangeskies.utilities.ObservableImpl;
+import uk.co.strangeskies.observable.ObservableImpl;
 
 /**
  * An abstract class to help designing mutable expression, implementing a simple

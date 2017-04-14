@@ -36,7 +36,7 @@ import java.util.Collection;
 
 import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.mathematics.expression.SelfExpression;
-import uk.co.strangeskies.utilities.Self;
+import uk.co.strangeskies.utility.Self;
 
 public interface ExpressionCollection<S extends ExpressionCollection<S, E>, E extends Expression<?>>
 		extends Self<S>, SelfExpression<S> {

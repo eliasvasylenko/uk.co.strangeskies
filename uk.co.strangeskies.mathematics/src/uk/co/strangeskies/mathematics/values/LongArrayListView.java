@@ -34,7 +34,7 @@ package uk.co.strangeskies.mathematics.values;
 
 import java.util.AbstractList;
 
-import uk.co.strangeskies.utilities.Factory;
+import uk.co.strangeskies.utility.Factory;
 
 public class LongArrayListView<V extends Value<V>> extends AbstractList<V> {
 	private final long[] array;

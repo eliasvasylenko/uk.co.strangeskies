@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -60,7 +62,7 @@ public class ExpressionEvaluator {
 
 		private ValueResult<T> getResult() {
 			if (!complete) {
-				throw new CodeGenerationException(p -> p.incompleteExpressionEvaluation());
+				throw new CodeGenerationException(CODEGEN_PROPERTIES.incompleteExpressionEvaluation());
 			}
 			return result;
 		}
@@ -104,8 +106,9 @@ public class ExpressionEvaluator {
 				List<ValueExpression<?>> arguments) {
 			O targetObject = evaluate(receiver).get();
 
-			T result = invocable
-					.invoke(targetObject, arguments.stream().map(a -> evaluate(a).get()).collect(Collectors.toList()));
+			T result = invocable.invoke(
+					targetObject,
+					arguments.stream().map(a -> evaluate(a).get()).collect(Collectors.toList()));
 
 			complete(() -> result);
 		}
@@ -184,7 +187,8 @@ public class ExpressionEvaluator {
 	}
 
 	public synchronized <T> VariableResult<T> evaluate(VariableExpression<T> expression) {
-		VariableExpressionVisitorImpl<T> visitor = new ValueExpressionVisitorImpl<>(expression.getType()).variable();
+		VariableExpressionVisitorImpl<T> visitor = new ValueExpressionVisitorImpl<>(
+				expression.getType()).variable();
 
 		expression.accept(visitor);
 

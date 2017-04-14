@@ -43,11 +43,11 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
 
+import uk.co.strangeskies.observable.Observable;
+import uk.co.strangeskies.observable.Observer;
 import uk.co.strangeskies.osgi.LocaleManagerServiceConstants;
 import uk.co.strangeskies.text.properties.LocaleManager;
 import uk.co.strangeskies.text.properties.LocaleProvider;
-import uk.co.strangeskies.utilities.Observable;
-import uk.co.strangeskies.utilities.Observer;
 
 /**
  * A locale manager configurable via the config admin service.

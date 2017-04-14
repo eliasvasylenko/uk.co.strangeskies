@@ -36,7 +36,7 @@ import java.util.List;
 
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorHN;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.Factory;
+import uk.co.strangeskies.utility.Factory;
 
 public class VectorHNImpl<V extends Value<V>> extends
 		VectorHImpl<VectorHN<V>, V> implements VectorHN<V> {

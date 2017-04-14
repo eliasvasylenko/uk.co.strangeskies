@@ -36,7 +36,7 @@ import java.util.List;
 
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.Factory;
+import uk.co.strangeskies.utility.Factory;
 
 public class Vector2Impl<V extends Value<V>> extends VectorImpl<Vector2<V>, V>
 		implements Vector2<V> {

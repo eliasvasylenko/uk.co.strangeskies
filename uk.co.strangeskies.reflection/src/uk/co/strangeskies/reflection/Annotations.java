@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -47,10 +49,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import uk.co.strangeskies.collection.tuple.Pair;
 import uk.co.strangeskies.reflection.Types.TypeParser;
 import uk.co.strangeskies.text.EscapeFormatter;
 import uk.co.strangeskies.text.parsing.Parser;
-import uk.co.strangeskies.utilities.tuple.Pair;
 
 /**
  * A collection of general utility methods relating to annotated types within
@@ -131,7 +133,10 @@ public final class Annotations {
 		}
 
 		if (!annotationProperties.isEmpty()) {
-			builder.append("(").append(annotationProperties.stream().collect(Collectors.joining(", "))).append(")");
+			builder
+					.append("(")
+					.append(annotationProperties.stream().collect(Collectors.joining(", ")))
+					.append(")");
 		}
 
 		return builder.toString();
@@ -145,7 +150,9 @@ public final class Annotations {
 		if (object.getClass().isArray()) {
 			return new StringBuilder()
 					.append(" { ")
-					.append(Arrays.stream((Object[]) object).map(Annotations::toPropertyString).collect(Collectors.joining(", ")))
+					.append(
+							Arrays.stream((Object[]) object).map(Annotations::toPropertyString).collect(
+									Collectors.joining(", ")))
 					.append(" }");
 		} else {
 			StringBuilder builder = new StringBuilder();
@@ -219,7 +226,7 @@ public final class Annotations {
 				} catch (ReflectionException e) {
 					Object finalValue = propertyValue;
 					throw new ReflectionException(
-							p -> p.invalidAnnotationValue(annotationClass, method.getName(), finalValue),
+							REFLECTION_PROPERTIES.invalidAnnotationValue(annotationClass, method.getName(), finalValue),
 							e);
 				}
 
@@ -231,7 +238,8 @@ public final class Annotations {
 
 		if (!properties.isEmpty()) {
 			Set<String> finalValues = properties.keySet();
-			throw new ReflectionException(p -> p.invalidAnnotationProperties(annotationClass, finalValues));
+			throw new ReflectionException(
+					REFLECTION_PROPERTIES.invalidAnnotationProperties(annotationClass, finalValues));
 		}
 
 		return castProperties;
@@ -263,15 +271,20 @@ public final class Annotations {
 	 *          A mapping from names of properties on the annotation to values
 	 * @return A new annotation of the given type and properties
 	 */
-	public static <T extends Annotation> T from(Class<T> annotationClass, Map<String, Object> properties) {
+	public static <T extends Annotation> T from(
+			Class<T> annotationClass,
+			Map<String, Object> properties) {
 		Map<Method, Object> castProperties = sanitizeProperties(annotationClass, properties);
 
 		@SuppressWarnings("unchecked")
-		T proxy = (T) Proxy
-				.newProxyInstance(annotationClass.getClassLoader(), new Class[] { annotationClass }, new InvocationHandler() {
+		T proxy = (T) Proxy.newProxyInstance(
+				annotationClass.getClassLoader(),
+				new Class[] { annotationClass },
+				new InvocationHandler() {
 					@Override
 					public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-						if (method.getName().equals("annotationType") && method.getParameterTypes().length == 0) {
+						if (method.getName().equals("annotationType")
+								&& method.getParameterTypes().length == 0) {
 							return annotationClass;
 						} else if (method.getName().equals("equals")
 								&& Arrays.equals(method.getParameterTypes(), new Class<?>[] { Object.class })) {
@@ -301,7 +314,8 @@ public final class Annotations {
 							}
 							return true;
 
-						} else if (method.getName().equals("hashCode") && method.getParameterTypes().length == 0) {
+						} else if (method.getName().equals("hashCode")
+								&& method.getParameterTypes().length == 0) {
 							/*
 							 * Generate hash code
 							 */
@@ -318,7 +332,8 @@ public final class Annotations {
 							}
 							return hashCode;
 
-						} else if (method.getName().equals("toString") && method.getParameterTypes().length == 0) {
+						} else if (method.getName().equals("toString")
+								&& method.getParameterTypes().length == 0) {
 							return Annotations.toString((Annotation) proxy);
 
 						} else if (method.getDeclaringClass().equals(annotationClass)) {
@@ -396,7 +411,7 @@ public final class Annotations {
 			annotation = typeParser
 					.rawType()
 					.prepend("@")
-					.<Class<? extends Annotation>>transform(t -> t.asSubclass(Annotation.class))
+					.<Class<? extends Annotation>> transform(t -> t.asSubclass(Annotation.class))
 					.appendTransform(
 							propertyMap.prepend("\\(\\s*").append("\\s*\\)").orElse(Collections::emptyMap),
 							(a, m) -> Annotations.from(a, m));

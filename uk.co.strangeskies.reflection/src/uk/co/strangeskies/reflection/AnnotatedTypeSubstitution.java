@@ -50,8 +50,8 @@ import java.util.stream.Collectors;
 import uk.co.strangeskies.reflection.AnnotatedParameterizedTypes.AnnotatedParameterizedTypeInternal;
 import uk.co.strangeskies.reflection.AnnotatedTypeVariables.AnnotatedTypeVariableInternal;
 import uk.co.strangeskies.reflection.AnnotatedWildcardTypes.AnnotatedWildcardTypeInternal;
-import uk.co.strangeskies.utilities.IdentityProperty;
-import uk.co.strangeskies.utilities.Isomorphism;
+import uk.co.strangeskies.utility.IdentityProperty;
+import uk.co.strangeskies.utility.Isomorphism;
 
 /**
  * TODO update the javadocs to take about ANNOTATED types...

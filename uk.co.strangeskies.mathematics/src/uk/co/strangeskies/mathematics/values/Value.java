@@ -43,10 +43,10 @@ import uk.co.strangeskies.mathematics.operation.Multipliable;
 import uk.co.strangeskies.mathematics.operation.Negatable;
 import uk.co.strangeskies.mathematics.operation.Scalable;
 import uk.co.strangeskies.mathematics.operation.Subtractable;
-import uk.co.strangeskies.utilities.Copyable;
-import uk.co.strangeskies.utilities.Observer;
-import uk.co.strangeskies.utilities.Property;
-import uk.co.strangeskies.utilities.Self;
+import uk.co.strangeskies.observable.Observer;
+import uk.co.strangeskies.utility.Copyable;
+import uk.co.strangeskies.utility.Property;
+import uk.co.strangeskies.utility.Self;
 
 public abstract class Value<S extends Value<S>> extends Number implements Multipliable<S, Value<?>>,
 		Subtractable<S, Value<?>>, Negatable<S, S>, Scalable<S>, Property<S, Value<?>>, Incrementable<S>, Self<S>,

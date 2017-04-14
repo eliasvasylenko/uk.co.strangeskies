@@ -33,6 +33,7 @@
 package uk.co.strangeskies.reflection;
 
 import static java.util.Arrays.asList;
+import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
 
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
@@ -50,7 +51,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.utilities.Isomorphism;
+import uk.co.strangeskies.utility.Isomorphism;
 
 /**
  * A collection of utility methods relating to parameterized types.
@@ -128,7 +129,8 @@ public class ParameterizedTypes {
 					 * Calculate the hash code properly, now we're guarded against
 					 * recursion:
 					 */
-					this.hashCode = Objects.hashCode(ownerType) ^ Objects.hashCode(rawType) ^ Objects.hashCode(typeArguments);
+					this.hashCode = Objects.hashCode(ownerType) ^ Objects.hashCode(rawType)
+							^ Objects.hashCode(typeArguments);
 				}
 			}
 
@@ -173,7 +175,10 @@ public class ParameterizedTypes {
 	 *          the isomorphism with which to skip repeated types
 	 * @return a string representation of the given parameterized type
 	 */
-	public static String toString(ParameterizedType parameterizedType, Imports imports, Isomorphism isomorphism) {
+	public static String toString(
+			ParameterizedType parameterizedType,
+			Imports imports,
+			Isomorphism isomorphism) {
 		return isomorphism.byIdentity().getPartialMapping(parameterizedType, (p, partial) -> {
 			/*
 			 * This way the string will return "..." if we encounter it again in the
@@ -245,7 +250,8 @@ public class ParameterizedTypes {
 	 * @return A mapping of all type variables to their arguments in the context
 	 *         of the given type.
 	 */
-	public static Stream<Map.Entry<TypeVariable<?>, Type>> getAllTypeArguments(ParameterizedType type) {
+	public static Stream<Map.Entry<TypeVariable<?>, Type>> getAllTypeArguments(
+			ParameterizedType type) {
 		Stream<Entry<TypeVariable<?>, Type>> typeArguments = Stream.empty();
 
 		Class<?> rawType = (Class<?>) type.getRawType();
@@ -258,14 +264,17 @@ public class ParameterizedTypes {
 							i -> new AbstractMap.SimpleEntry<>(typeParameters[i], actualTypeArguments[i])),
 					typeArguments);
 
-			type = type.getOwnerType() instanceof ParameterizedType ? (ParameterizedType) type.getOwnerType() : null;
+			type = type.getOwnerType() instanceof ParameterizedType
+					? (ParameterizedType) type.getOwnerType()
+					: null;
 			rawType = Types.isStatic(rawType) ? null : rawType.getEnclosingClass();
 
 			if (rawType != null && type == null) {
 				do {
 					typeArguments = Stream.concat(
 							typeArguments,
-							Arrays.stream(rawType.getTypeParameters()).map(p -> new AbstractMap.SimpleEntry<>(p, p)));
+							Arrays.stream(rawType.getTypeParameters()).map(
+									p -> new AbstractMap.SimpleEntry<>(p, p)));
 				} while ((rawType = Types.isStatic(rawType) ? null : rawType.getEnclosingClass()) != null);
 			}
 		} while (type != null && rawType != null);
@@ -289,7 +298,10 @@ public class ParameterizedTypes {
 	 * @return A {@link ParameterizedType} instance over the given class,
 	 *         parameterized with the given type arguments.
 	 */
-	public static ParameterizedType parameterizeUnchecked(Type ownerType, Class<?> rawType, List<Type> typeArguments) {
+	public static ParameterizedType parameterizeUnchecked(
+			Type ownerType,
+			Class<?> rawType,
+			List<Type> typeArguments) {
 		return new ParameterizedTypeImpl(ownerType, rawType, new ArrayList<>(typeArguments));
 	}
 
@@ -307,19 +319,24 @@ public class ParameterizedTypes {
 	 * arguments for consistency.
 	 */
 	@SuppressWarnings("javadoc")
-	public static ParameterizedType parameterizeUnchecked(Class<?> rawType, List<Type> typeArguments) {
+	public static ParameterizedType parameterizeUnchecked(
+			Class<?> rawType,
+			List<Type> typeArguments) {
 		List<TypeVariable<?>> parameters = getAllTypeParameters(rawType).collect(Collectors.toList());
 
 		if (parameters.size() != typeArguments.size()) {
 			List<Type> typeArgumentsFinal = typeArguments;
 			throw new ReflectionException(
-					p -> p.incorrectTypeArgumentCount(asList(rawType.getTypeParameters()), typeArgumentsFinal));
+					REFLECTION_PROPERTIES
+							.incorrectTypeArgumentCount(asList(rawType.getTypeParameters()), typeArgumentsFinal));
 		}
 
 		return parameterizeUncheckedImpl(rawType, typeArguments);
 	}
 
-	private static ParameterizedType parameterizeUncheckedImpl(Class<?> rawType, List<Type> typeArguments) {
+	private static ParameterizedType parameterizeUncheckedImpl(
+			Class<?> rawType,
+			List<Type> typeArguments) {
 		int totalArgumentCount = typeArguments.size();
 		int parametersOnTypeCount = rawType.getTypeParameters().length;
 		int parametersOnOwnerCount = totalArgumentCount - parametersOnTypeCount;
@@ -327,7 +344,9 @@ public class ParameterizedTypes {
 		Type owner = rawType.getEnclosingClass();
 
 		if (totalArgumentCount > parametersOnTypeCount) {
-			owner = parameterizeUncheckedImpl((Class<?>) owner, typeArguments.subList(0, parametersOnOwnerCount));
+			owner = parameterizeUncheckedImpl(
+					(Class<?>) owner,
+					typeArguments.subList(0, parametersOnOwnerCount));
 
 			typeArguments = typeArguments.subList(parametersOnOwnerCount, totalArgumentCount);
 		}
@@ -357,7 +376,8 @@ public class ParameterizedTypes {
 			ownerType = parameterizeUncheckedImpl(enclosing, argumentsForOwner(rawType, typeArguments));
 		}
 
-		if ((ownerType == null || ownerType instanceof Class) && rawType.getTypeParameters().length == 0)
+		if ((ownerType == null || ownerType instanceof Class)
+				&& rawType.getTypeParameters().length == 0)
 			return rawType;
 
 		return new ParameterizedTypeImpl(ownerType, rawType, argumentsForClass(rawType, typeArguments));
@@ -447,11 +467,13 @@ public class ParameterizedTypes {
 			Class<?> enclosedClass,
 			Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
 
-		if (enclosedClass.getEnclosingConstructor() != null || enclosedClass.getEnclosingMethod() != null) {
+		if (enclosedClass.getEnclosingConstructor() != null
+				|| enclosedClass.getEnclosingMethod() != null) {
 			return t -> {
 				Type argument = typeArguments.apply(t);
 				if (argument != t && argument != null) {
-					throw new ReflectionException(p -> p.cannotParameterizeEnclosingExecutable(enclosedClass));
+					throw new ReflectionException(
+							REFLECTION_PROPERTIES.cannotParameterizeEnclosingExecutable(enclosedClass));
 				}
 				return argument;
 			};

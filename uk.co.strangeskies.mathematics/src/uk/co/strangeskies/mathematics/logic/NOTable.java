@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.mathematics.logic;
 
-import uk.co.strangeskies.utilities.Self;
+import uk.co.strangeskies.utility.Self;
 
 public interface NOTable<S extends NOTable<S, N> & Self<S>, N extends NOTable<? extends N, ? extends S> & Self<N>> {
 	public N not();

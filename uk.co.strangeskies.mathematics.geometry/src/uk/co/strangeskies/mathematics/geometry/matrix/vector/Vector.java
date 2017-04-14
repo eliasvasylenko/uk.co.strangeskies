@@ -36,7 +36,7 @@ import uk.co.strangeskies.mathematics.geometry.Translatable;
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix;
 import uk.co.strangeskies.mathematics.values.DoubleValue;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utilities.Self;
+import uk.co.strangeskies.utility.Self;
 
 public interface Vector<S extends Vector<S, V>, V extends Value<V>>
 	extends Self<S>, Matrix<S, V>, Translatable<S> {

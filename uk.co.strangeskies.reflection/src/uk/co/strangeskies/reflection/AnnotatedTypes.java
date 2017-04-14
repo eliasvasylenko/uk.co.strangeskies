@@ -59,7 +59,7 @@ import java.util.stream.Collectors;
 import uk.co.strangeskies.reflection.Annotations.AnnotationParser;
 import uk.co.strangeskies.reflection.Types.TypeParser;
 import uk.co.strangeskies.text.parsing.Parser;
-import uk.co.strangeskies.utilities.Isomorphism;
+import uk.co.strangeskies.utility.Isomorphism;
 
 /**
  * A collection of general utility methods relating to annotated types within
