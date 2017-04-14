@@ -15,6 +15,7 @@ Export-Package: \
 	uk.co.strangeskies.reflection
 
 -buildpath: \
+	uk.co.strangeskies.observable;version=snapshot,\
 	uk.co.strangeskies.utilities;version=snapshot,\
 	uk.co.strangeskies.collections;version=snapshot,\
 	uk.co.strangeskies.text;version=snapshot
