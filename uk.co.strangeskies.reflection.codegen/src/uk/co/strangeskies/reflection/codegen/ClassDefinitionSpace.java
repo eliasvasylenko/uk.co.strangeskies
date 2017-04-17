@@ -43,14 +43,6 @@ import java.util.Set;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 /**
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
  * TODO generate byte code early for everything except method definitions!!!! at
  * this point all those parts should never change since they're derived only
  * from the immutable {@link ClassDeclaration}s rather than the
@@ -58,26 +50,18 @@ import uk.co.strangeskies.reflection.token.TypeToken;
  * 
  * ... By doing this we can load these proto-classes into a class loader and
  * reflect over them, so we get all the type checking provided by
- * {@link TypeToken} without support for special {@link Type}
- * implementations!!!!!
- * 
- * 
+ * {@link TypeToken} without support for special {@link Type} implementations.
  * 
  * Think about how we can achieve clever re-definition abilities here by loading
  * existing classes into the class definition space and then modifying them.
  * Remember that we can then use instrumentation to reload the classes into the
  * same class loader if we really need to.
  * 
+ * Load classes into ClassDefinitionSpace so we can reuse their methods:
  * 
- * Load classes into ClassDefinitionSpace so we can reuse their methods: -
- * ClassDefinition.withMethodsFrom(Class) -
- * ClassDefinition.withMethodFrom(Class, String)
+ * - ClassDefinition.withMethodsFrom(Class)
  * 
- * 
- * 
- * 
- * 
- * 
+ * - ClassDefinition.withMethodFrom(Class, String)
  * 
  * @author Elias N Vasylenko
  */
@@ -148,11 +132,8 @@ public class ClassDefinitionSpace {
 		this.classLoadingStrategy = classLoadingStrategy;
 	}
 
-	ClassDefinitionSpace withMethodDefinition(
-			MethodDeclaration<?, ?> declaration,
-			MethodDefinition<?, ?> definition) {
-		Map<MethodDeclaration<?, ?>, MethodDefinition<?, ?>> methodDefinitions = new HashMap<>(
-				this.methodDefinitions);
+	ClassDefinitionSpace withMethodDefinition(MethodDeclaration<?, ?> declaration, MethodDefinition<?, ?> definition) {
+		Map<MethodDeclaration<?, ?>, MethodDefinition<?, ?>> methodDefinitions = new HashMap<>(this.methodDefinitions);
 		methodDefinitions.put(declaration, definition);
 
 		Set<MethodDeclaration<?, ?>> undefinedMethods = new HashSet<>(this.undefinedMethods);
@@ -174,11 +155,8 @@ public class ClassDefinitionSpace {
 	}
 
 	public void validate() {
-		undefinedMethods
-				.stream()
-				.filter(m -> m.isConstructor() || m.isStatic() || !m.isDefault())
-				.findAny()
-				.ifPresent(m -> {
+		undefinedMethods.stream().filter(m -> m.isConstructor() || m.isStatic() || !m.isDefault()).findAny().ifPresent(
+				m -> {
 					throw new CodeGenerationException(CODEGEN_PROPERTIES.mustImplementMethod(m));
 				});
 	}

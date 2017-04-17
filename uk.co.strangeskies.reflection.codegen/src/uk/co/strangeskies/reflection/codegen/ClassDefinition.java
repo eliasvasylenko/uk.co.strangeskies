@@ -32,95 +32,11 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.function.Function;
 
-import uk.co.strangeskies.reflection.Reified;
-import uk.co.strangeskies.reflection.token.TypeToken;
-
 /**
- * A class definition is a description of a class implementation. It may extend
- * an existing class, and implement existing interfaces, as well as provide
- * {@link MethodDefinition method implementations} and overrides for those
- * supertypes.
- * 
- * <p>
- * A class definition may be implemented reflectively via {@link Proxy},
- * delegating invocations to direct evaluation of {@link MethodDefinition method
- * definition bodies}, and the{@link Statement statements} therein. A class
- * definition also contains enough information to generate the bytecode for a
- * true implementation, with performance comparable to a regular compiled Java
- * class, though this is not yet implemented.
- * 
- * <p>
- * Aside from this than this, there are currently a number of significant
- * limitations to class definitions:
- * 
- * <ul>
- * <li>Though supertypes may be parameterized generic types, it is not supported
- * for the class definition itself to be a generic type.</li>
- * 
- * <li>It is not supported to declare new methods which are not simply overrides
- * of existing methods. Variance is technically supported where appropriate in
- * method declarations, but the information is not available reflectively so
- * this provides limited utility.</li>
- * 
- * <li>It is possible to define an implementation for a default constructor if
- * necessary, but it is not supported to define constructors with
- * arguments.</li>
- * </ul>
- * 
- * <p>
- * These limitations help to keep class definitions simple, as their type can be
- * effectively reflected over via {@link TypeToken} with no special
- * consideration. Also the need for interdependencies between class definitions
- * should be largely avoided.
- * 
- * <p>
- * There are a few potential paths to evolving this class beyond some or all of
- * these limitations ... But they are likely to require significant work, and
- * may challenge some pervasive assumptions made by the existing library design,
- * for example that the raw type of any type is a {@link Class}.
- * 
- * <p>
- * Every implementation generated via a class definition also be cast to
- * {@link Reified} to reflect over its exact type. The implementation of all
- * relevant methods will be generated automatically <em>where possible</em>. If
- * the {@link Reified} class is overridden explicitly however, or if any method
- * in {@link Reified} is shadowed by an explicitly overridden class, the user
- * should provide their own implementations for these methods.
- * 
- * Note that if supported is added for generation of generic classes in the
- * future, the exact type of such classes may not be determined statically so
- * they will not implement reified by default.
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * TODO model the type using existing types so it can participate in inference
- * etc.
- * 
- * each definition holds a secret type variable capture with no bounds
- * 
- * For a non-generic type this is simple enough: model as the intersection type
- * of all the super types of the definition and the secret capture
- * 
- * For a generic type, the raw can be modeled as the intersection type of all
- * the raw types of all the super types of the definition and the secret capture
- * 
  * @author Elias N Vasylenko
  * 
  * @param <T>
@@ -187,7 +103,7 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 	 *          the intercepter
 	 * @return the derived class definition
 	 */
-	public <U> ClassDefinition<E, T> withMethodDelegation(MethodDelegation intercepter) {
+	public <U> ClassDefinition<E, T> withMethodDelegation(MethodDelegation<? super T> intercepter) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -208,9 +124,7 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 		return instantiateReflectively(classLoader, Arrays.asList(arguments));
 	}
 
-	public ReflectiveInstance<E, T> instantiateReflectively(
-			ClassLoader classLoader,
-			Collection<? extends Object> arguments) {
+	public ReflectiveInstance<E, T> instantiateReflectively(ClassLoader classLoader, Collection<?> arguments) {
 		return ReflectiveInstanceImpl.instantiate(this, classLoader, Arrays.asList(arguments));
 	}
 

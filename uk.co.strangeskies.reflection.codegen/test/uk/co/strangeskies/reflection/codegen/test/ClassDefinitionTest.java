@@ -44,6 +44,7 @@ import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.codegen.Block;
 import uk.co.strangeskies.reflection.codegen.ClassDefinition;
 import uk.co.strangeskies.reflection.codegen.ClassSignature;
+import uk.co.strangeskies.reflection.codegen.Expressions;
 import uk.co.strangeskies.reflection.codegen.MethodDeclaration;
 import uk.co.strangeskies.reflection.codegen.MethodSignature;
 import uk.co.strangeskies.reflection.codegen.ParameterSignature;
