@@ -34,17 +34,17 @@ package uk.co.strangeskies.mathematics.geometry.matrix.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix;
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix4;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector4;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.Vector4Impl;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utility.Factory;
 
 public class Matrix4Impl<V extends Value<V>> extends MatrixSImpl<Matrix4<V>, V>
 		implements Matrix4<V> {
-	public Matrix4Impl(Order order, Factory<V> valueFactory) {
+	public Matrix4Impl(Order order, Supplier<V> valueFactory) {
 		super(4, order, valueFactory);
 	}
 
@@ -56,7 +56,7 @@ public class Matrix4Impl<V extends Value<V>> extends MatrixSImpl<Matrix4<V>, V>
 
 	@Override
 	public Matrix4<V> copy() {
-		return new Matrix4Impl<V>(getOrder(), getData2());
+		return new Matrix4Impl<>(getOrder(), getData2());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -97,17 +97,21 @@ public class Matrix4Impl<V extends Value<V>> extends MatrixSImpl<Matrix4<V>, V>
 
 	@Override
 	public final Vector4<V> getMajorVector(int index) {
-		return new Vector4Impl<V>(getOrder(),
-				getOrder().getAssociatedOrientation(), getData2().get(index));
+		return new Vector4Impl<>(
+				getOrder(),
+				getOrder().getAssociatedOrientation(),
+				getData2().get(index));
 	}
 
 	@Override
 	public final Vector4<V> getMinorVector(int index) {
-		List<V> minorElements = new ArrayList<V>();
+		List<V> minorElements = new ArrayList<>();
 		for (List<V> elements : getData2()) {
 			minorElements.add(elements.get(index));
 		}
-		return new Vector4Impl<V>(getOrder(), getOrder().getAssociatedOrientation()
-				.getOther(), minorElements);
+		return new Vector4Impl<>(
+				getOrder(),
+				getOrder().getAssociatedOrientation().getOther(),
+				minorElements);
 	}
 }

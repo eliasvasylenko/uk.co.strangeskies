@@ -1,11 +1,8 @@
 Export-Package: \
 	uk.co.strangeskies.utility,\
-	uk.co.strangeskies.reflection.classloading,\
-	uk.co.strangeskies.utility.collection,\
-	uk.co.strangeskies.utility.collection.computingmap,\
-	uk.co.strangeskies.utility.factory,\
-	uk.co.strangeskies.utility.flowcontrol,\
-	uk.co.strangeskies.utility.function,\
+	uk.co.strangeskies.log,\
+	uk.co.strangeskies.flowcontrol,\
+	uk.co.strangeskies.function,\
 	uk.co.strangeskies.utility.tuple
 
 Bundle-Name: Strange Skies :: Utilities

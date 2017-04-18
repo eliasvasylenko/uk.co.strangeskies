@@ -38,17 +38,17 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Supplier;
 
 import uk.co.strangeskies.mathematics.Range;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utility.Factory;
 import uk.co.strangeskies.utility.Self;
 
 public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>> implements Self<S> {
 	ArrayList<Range<V>> ranges;
 
-	public Bounds(int dimensions, Factory<V> valueFactory) {
+	public Bounds(int dimensions, Supplier<V> valueFactory) {
 		try {
 			DimensionalityException.checkValid(dimensions);
 		} catch (DimensionalityException e) {
@@ -57,7 +57,7 @@ public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>> impleme
 
 		ranges = new ArrayList<>();
 		for (int i = 0; i < dimensions; i++) {
-			ranges.add(Range.between(valueFactory.create(), valueFactory.create()));
+			ranges.add(Range.between(valueFactory.get(), valueFactory.get()));
 		}
 	}
 

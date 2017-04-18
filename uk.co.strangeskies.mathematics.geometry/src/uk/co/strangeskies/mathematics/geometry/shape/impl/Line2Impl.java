@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.mathematics.geometry.shape.impl;
 
+import java.util.function.Supplier;
+
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
 import uk.co.strangeskies.mathematics.expression.DependentExpression;
 import uk.co.strangeskies.mathematics.geometry.Bounds2;
@@ -45,14 +47,13 @@ import uk.co.strangeskies.mathematics.geometry.shape.Shape;
 import uk.co.strangeskies.mathematics.values.DoubleValue;
 import uk.co.strangeskies.mathematics.values.IntValue;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utility.Factory;
 
 public class Line2Impl<V extends Value<V>> extends DependentExpression<Line2<V>>
 		implements Line2<V>, CopyDecouplingExpression<Line2<V>> {
 	private final Vector2<V> a;
 	private final Vector2<V> b;
 
-	public Line2Impl(Factory<V> valueFactory) {
+	public Line2Impl(Supplier<V> valueFactory) {
 		a = new Vector2Impl<>(Order.COLUMN_MAJOR, Orientation.COLUMN, valueFactory);
 		b = new Vector2Impl<>(Order.COLUMN_MAJOR, Orientation.COLUMN, valueFactory);
 	}

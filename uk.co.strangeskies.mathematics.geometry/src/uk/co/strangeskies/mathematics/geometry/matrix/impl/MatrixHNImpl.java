@@ -34,6 +34,7 @@ package uk.co.strangeskies.mathematics.geometry.matrix.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 import uk.co.strangeskies.mathematics.geometry.matrix.MatrixHN;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
@@ -42,11 +43,10 @@ import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorH.Type;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.VectorHNImpl;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.VectorNImpl;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utility.Factory;
 
-public class MatrixHNImpl<V extends Value<V>> extends
-		MatrixHImpl<MatrixHN<V>, V> implements MatrixHN<V> {
-	public MatrixHNImpl(int size, Order order, Factory<V> valueFactory) {
+public class MatrixHNImpl<V extends Value<V>> extends MatrixHImpl<MatrixHN<V>, V>
+		implements MatrixHN<V> {
+	public MatrixHNImpl(int size, Order order, Supplier<V> valueFactory) {
 		super(size, order, valueFactory);
 	}
 
@@ -56,7 +56,7 @@ public class MatrixHNImpl<V extends Value<V>> extends
 
 	@Override
 	public MatrixNImpl<V> getTransformationMatrix() {
-		return new MatrixNImpl<V>(getOrder(), getTransformationData2());
+		return new MatrixNImpl<>(getOrder(), getTransformationData2());
 	}
 
 	@Override
@@ -78,17 +78,15 @@ public class MatrixHNImpl<V extends Value<V>> extends
 				newType = Type.Relative;
 			}
 
-			return new VectorHNImpl<V>(newType, Order.COLUMN_MAJOR,
-					Orientation.COLUMN, majorElements);
+			return new VectorHNImpl<>(newType, Order.COLUMN_MAJOR, Orientation.COLUMN, majorElements);
 		} else {
-			return new VectorNImpl<V>(Order.ROW_MAJOR, Orientation.ROW, getData2()
-					.get(index));
+			return new VectorNImpl<>(Order.ROW_MAJOR, Orientation.ROW, getData2().get(index));
 		}
 	}
 
 	@Override
 	public final Vector<?, V> getMinorVector(int index) {
-		List<V> minorElements = new ArrayList<V>();
+		List<V> minorElements = new ArrayList<>();
 		for (List<V> elements : getData2()) {
 			minorElements.add(elements.get(index));
 		}
@@ -103,11 +101,9 @@ public class MatrixHNImpl<V extends Value<V>> extends
 				newType = Type.Relative;
 			}
 
-			return new VectorHNImpl<V>(newType, Order.ROW_MAJOR, Orientation.COLUMN,
-					minorElements);
+			return new VectorHNImpl<>(newType, Order.ROW_MAJOR, Orientation.COLUMN, minorElements);
 		} else {
-			return new VectorNImpl<V>(Order.COLUMN_MAJOR, Orientation.ROW, getData2()
-					.get(index));
+			return new VectorNImpl<>(Order.COLUMN_MAJOR, Orientation.ROW, getData2().get(index));
 		}
 	}
 }

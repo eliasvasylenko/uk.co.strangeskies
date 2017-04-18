@@ -41,7 +41,7 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.utility.function.InvertibleFunction;
+import uk.co.strangeskies.function.InvertibleFunction;
 
 /**
  * A view of a {@link List} which will be automatically updated along with the

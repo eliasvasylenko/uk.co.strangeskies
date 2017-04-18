@@ -42,9 +42,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.collection.ListTransformOnceView;
+import uk.co.strangeskies.function.TriFunction;
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
 import uk.co.strangeskies.mathematics.expression.DependentExpression;
 import uk.co.strangeskies.mathematics.geometry.DimensionalityException;
@@ -56,9 +58,7 @@ import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorN;
 import uk.co.strangeskies.mathematics.values.DoubleValue;
 import uk.co.strangeskies.mathematics.values.IntValue;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utility.Factory;
 import uk.co.strangeskies.utility.Self;
-import uk.co.strangeskies.utility.function.TriFunction;
 
 /**
  *
@@ -69,8 +69,8 @@ import uk.co.strangeskies.utility.function.TriFunction;
  * @param <V>
  *          The type of {@link Value} this Vector operates on.
  */
-public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>> extends DependentExpression<S>
-		implements Vector<S, V>, CopyDecouplingExpression<S> {
+public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>>
+		extends DependentExpression<S> implements Vector<S, V>, CopyDecouplingExpression<S> {
 	private final List<V> data;
 	private final Order order;
 
@@ -90,7 +90,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>> ext
 		this.orientation = orientation;
 	}
 
-	public VectorImpl(int size, Order order, Orientation orientation, Factory<V> valueFactory) {
+	public VectorImpl(int size, Order order, Orientation orientation, Supplier<V> valueFactory) {
 		this(order, orientation);
 
 		try {
@@ -104,7 +104,7 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>> ext
 		}
 
 		for (int i = 0; i < size; i++) {
-			data.add(valueFactory.create());
+			data.add(valueFactory.get());
 		}
 
 		// getDependencies().addAll(getData());
@@ -284,7 +284,10 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>> ext
 
 	@Override
 	public Vector2<IntValue> getDimensions2() {
-		Vector2<IntValue> dimensions = new Vector2Impl<>(Order.COLUMN_MAJOR, Orientation.COLUMN, IntValue::new);
+		Vector2<IntValue> dimensions = new Vector2Impl<>(
+				Order.COLUMN_MAJOR,
+				Orientation.COLUMN,
+				IntValue::new);
 
 		if (getOrientation() == Orientation.COLUMN) {
 			return dimensions.setData(1, getDimensions());
@@ -337,7 +340,10 @@ public abstract class VectorImpl<S extends Vector<S, V>, V extends Value<V>> ext
 
 	@Override
 	public final VectorN<V> getMinorVector(int index) {
-		return new VectorNImpl<>(getOrder(), getOrientation().getOther(), Arrays.asList(data.get(index)));
+		return new VectorNImpl<>(
+				getOrder(),
+				getOrientation().getOther(),
+				Arrays.asList(data.get(index)));
 	}
 
 	@Override

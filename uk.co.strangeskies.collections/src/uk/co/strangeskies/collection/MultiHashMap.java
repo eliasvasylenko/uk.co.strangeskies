@@ -34,20 +34,20 @@ package uk.co.strangeskies.collection;
 
 import java.util.Collection;
 import java.util.HashMap;
-
-import uk.co.strangeskies.utility.Factory;
+import java.util.function.Supplier;
 
 public class MultiHashMap<K, V, C extends Collection<V>> extends HashMap<K, C>
 		implements MultiMap<K, V, C> {
 	private static final long serialVersionUID = 1L;
 
-	private final Factory<C> collectionFactory;
+	private final Supplier<C> collectionFactory;
 
-	public MultiHashMap(Factory<C> collectionFactory) {
+	public MultiHashMap(Supplier<C> collectionFactory) {
 		this.collectionFactory = collectionFactory;
 	}
 
-	public MultiHashMap(Factory<C> collectionFactory,
+	public MultiHashMap(
+			Supplier<C> collectionFactory,
 			MultiMap<? extends K, ? extends V, ? extends C> that) {
 		this(collectionFactory);
 
@@ -56,6 +56,6 @@ public class MultiHashMap<K, V, C extends Collection<V>> extends HashMap<K, C>
 
 	@Override
 	public C createCollection() {
-		return collectionFactory.create();
+		return collectionFactory.get();
 	}
 }

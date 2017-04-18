@@ -30,45 +30,21 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.utility.flowcontrol;
-
-import java.util.Collection;
-import java.util.Set;
+package uk.co.strangeskies.function;
 
 /**
- * An interface exposing part of the functionality of a
- * {@link StripedReadWriteLock}. This interface allows clients to release locks,
- * but not to obtain them or wait for them. Isolating the authority to obtain
- * locks in this way can help protect against deadlock.
+ * As {@link Runnable} but parameterized over an exception type which is allowed
+ * to be thrown by {@link #run()}.
  * 
  * @author Elias N Vasylenko
- * @param <K>
- *          The type of the keys used to index into the locks.
+ *
+ * @param <E>
+ *          the type of exception which may be thrown
  */
-public interface StripedReadWriteLockRelease<K> {
-	public Set<K> readLocksHeldByCurrentThread();
-
-	public Set<K> writeLocksHeldByCurrentThread();
-
-	public boolean releaseLocks(Collection<? extends K> readKeys, Collection<? extends K> writeKeys);
-
-	public boolean releaseLocks(Collection<? extends K> keys);
-
-	public boolean releaseLock(K key);
-
-	public boolean downgradeLock(K key);
-
-	public boolean isLockHeldByCurrentThread(K key);
-
-	public boolean releaseReadLocks(Collection<? extends K> readKeys);
-
-	public boolean releaseReadLock(K key);
-
-	public boolean isReadLockHeldByCurrentThread(K key);
-
-	public boolean releaseWriteLocks(Collection<? extends K> writeKeys);
-
-	public boolean releaseWriteLock(K key);
-
-	public boolean isWriteLockHeldByCurrentThread(K key);
+public interface ThrowingRunnable<E extends Exception> {
+	/**
+	 * @throws E
+	 *           an exception thrown by the implementor
+	 */
+	void run() throws E;
 }

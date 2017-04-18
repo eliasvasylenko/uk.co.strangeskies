@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.mathematics.geometry.matrix.building;
 
+import java.util.function.Supplier;
+
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix.Order;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector.Orientation;
 import uk.co.strangeskies.mathematics.values.DoubleValue;
@@ -39,7 +41,6 @@ import uk.co.strangeskies.mathematics.values.FloatValue;
 import uk.co.strangeskies.mathematics.values.IntValue;
 import uk.co.strangeskies.mathematics.values.LongValue;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utility.Factory;
 
 public interface MatrixBuilder {
 	public Order getDefaultOrder();
@@ -58,6 +59,5 @@ public interface MatrixBuilder {
 
 	public ValueMatrixBuilder<DoubleValue> doubles();
 
-	public <V extends Value<V>> ValueMatrixBuilder<V> values(
-			Factory<V> valueFactory);
+	public <V extends Value<V>> ValueMatrixBuilder<V> values(Supplier<V> valueFactory);
 }

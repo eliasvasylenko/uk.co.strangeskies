@@ -34,19 +34,23 @@ package uk.co.strangeskies.mathematics.geometry.matrix.vector.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorH;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utility.Factory;
 
 public abstract class VectorHImpl<S extends VectorH<S, V>, V extends Value<V>>
 		extends /*  */VectorImpl<S, V> implements VectorH<S, V> {
 	private Type type;
 
-	public VectorHImpl(Type type, int size, Order order, Orientation orientation,
-			Factory<V> valueFactory) {
+	public VectorHImpl(
+			Type type,
+			int size,
+			Order order,
+			Orientation orientation,
+			Supplier<V> valueFactory) {
 		super(size + 1, order, orientation, valueFactory);
 
 		getElement(size).setValue(type == Type.Relative ? 0 : 1);
@@ -54,15 +58,15 @@ public abstract class VectorHImpl<S extends VectorH<S, V>, V extends Value<V>>
 		this.type = type;
 	}
 
-	public VectorHImpl(Type type, Order order, Orientation orientation,
-			List<? extends V> values) {
+	public VectorHImpl(Type type, Order order, Orientation orientation, List<? extends V> values) {
 		super(order, orientation, resizeColumnImplementation(type, values));
 
 		this.type = type;
 	}
 
 	protected static <V extends Value<V>> List<V> resizeColumnImplementation(
-			Type type, List<? extends V> data) {
+			Type type,
+			List<? extends V> data) {
 		List<V> newData = new ArrayList<>(data);
 
 		newData.add(data.get(0).copy().setValue(type == Type.Relative ? 0 : 1));
@@ -200,13 +204,12 @@ public abstract class VectorHImpl<S extends VectorH<S, V>, V extends Value<V>>
 
 	@Override
 	public final S multiply(Matrix<?, ?> other) {
-		List<List<Value<V>>> multiplied = Matrix.multiplyData(getData2(),
-				other.getData2());
+		List<List<Value<V>>> multiplied = Matrix.multiplyData(getData2(), other.getData2());
 
 		List<Value<V>> lastElements = multiplied.get(multiplied.size() - 1);
 		Value<V> lastElement = lastElements.get(lastElements.size() - 1);
-		if (!((lastElement.equals(0) && getType() == Type.Relative) || (lastElement
-				.equals(1) && getType() == Type.Absolute)))
+		if (!((lastElement.equals(0) && getType() == Type.Relative)
+				|| (lastElement.equals(1) && getType() == Type.Absolute)))
 			throw new IllegalArgumentException();
 
 		return setData2(multiplied);
@@ -214,13 +217,12 @@ public abstract class VectorHImpl<S extends VectorH<S, V>, V extends Value<V>>
 
 	@Override
 	public final S preMultiply(Matrix<?, ?> other) {
-		List<List<Value<V>>> multiplied = Matrix.preMultiplyData(getData2(),
-				other.getData2());
+		List<List<Value<V>>> multiplied = Matrix.preMultiplyData(getData2(), other.getData2());
 
 		List<Value<V>> lastElements = multiplied.get(multiplied.size() - 1);
 		Value<V> lastElement = lastElements.get(lastElements.size() - 1);
-		if (!((lastElement.equals(0) && getType() == Type.Relative) || (lastElement
-				.equals(1) && getType() == Type.Absolute)))
+		if (!((lastElement.equals(0) && getType() == Type.Relative)
+				|| (lastElement.equals(1) && getType() == Type.Absolute)))
 			throw new IllegalArgumentException();
 
 		return setData2(multiplied);

@@ -33,17 +33,16 @@
 package uk.co.strangeskies.mathematics.geometry.matrix.impl;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 import uk.co.strangeskies.mathematics.geometry.matrix.MatrixNN;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorN;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.VectorNImpl;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utility.Factory;
 
-public class MatrixNNImpl<V extends Value<V>> extends
-		MatrixImpl<MatrixNN<V>, V> implements MatrixNN<V> {
-	public MatrixNNImpl(int rows, int columns, Order order,
-			Factory<V> valueFactory) {
+public class MatrixNNImpl<V extends Value<V>> extends MatrixImpl<MatrixNN<V>, V>
+		implements MatrixNN<V> {
+	public MatrixNNImpl(int rows, int columns, Order order, Supplier<V> valueFactory) {
 		super(rows, columns, order, valueFactory);
 	}
 
@@ -58,7 +57,7 @@ public class MatrixNNImpl<V extends Value<V>> extends
 
 	@Override
 	public MatrixNN<V> copy() {
-		return new MatrixNNImpl<V>(getOrder(), getData2());
+		return new MatrixNNImpl<>(getOrder(), getData2());
 	}
 
 	@SuppressWarnings("unchecked")

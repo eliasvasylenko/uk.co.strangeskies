@@ -38,19 +38,19 @@ import java.util.function.Predicate;
 
 import org.osgi.annotation.versioning.ProviderType;
 
-import uk.co.strangeskies.utility.Factory;
-
 @ProviderType
-public interface GraphTransformer<V, E> extends Factory<Graph<V, E>> {
-	public <W> GraphTransformer<W, E> vertices(Function<V, W> transformation);
+public interface GraphTransformer<V, E> {
+	Graph<V, E> create();
 
-	public <W> GraphTransformer<W, E> filterVertices(Predicate<V> filter);
+	<W> GraphTransformer<W, E> vertices(Function<V, W> transformation);
 
-	public <F> GraphTransformer<V, F> edges(Function<E, F> transformation);
+	<W> GraphTransformer<W, E> filterVertices(Predicate<V> filter);
 
-	public <W> GraphTransformer<W, E> filterEdges(Predicate<E> filter);
+	<F> GraphTransformer<V, F> edges(Function<E, F> transformation);
 
-	public GraphTransformer<V, E> edgeWeight(Function<E, Double> weight, boolean mutable);
+	<W> GraphTransformer<W, E> filterEdges(Predicate<E> filter);
 
-	public GraphTransformer<V, E> direction(Comparator<V> lowToHigh);
+	GraphTransformer<V, E> edgeWeight(Function<E, Double> weight, boolean mutable);
+
+	GraphTransformer<V, E> direction(Comparator<V> lowToHigh);
 }

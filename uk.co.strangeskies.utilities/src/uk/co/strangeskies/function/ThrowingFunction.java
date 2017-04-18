@@ -30,27 +30,32 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.utility.function;
+package uk.co.strangeskies.function;
 
-import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
- * As {@link Consumer} but parameterized over an exception type which is allowed
- * to be thrown by {@link #accept(Object)}.
+ * As {@link Function} but parameterized over an exception type which is allowed
+ * to be thrown by {@link #apply(Object)}.
  * 
  * @author Elias N Vasylenko
  *
  * @param <T>
- *          the type of the item to accept
+ *          the type of the input to the function
+ * @param <R>
+ *          the type of the result of the function
  * @param <E>
  *          the type of exception which may be thrown
  */
-public interface ThrowingConsumer<T, E extends Exception> {
+public interface ThrowingFunction<T, R, E extends Exception> {
 	/**
-	 * @param value
-	 *          an instance of the expected type
+	 * Applies this function to the given argument.
+	 *
+	 * @param t
+	 *          the function argument
+	 * @return the function result
 	 * @throws E
 	 *           an exception thrown by the implementor
 	 */
-	void accept(T value) throws E;
+	R apply(T t) throws E;
 }

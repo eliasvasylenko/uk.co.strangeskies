@@ -30,5 +30,38 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-@org.osgi.annotation.versioning.Version("1.0.0")
-package uk.co.strangeskies.utility.flowcontrol;
+package uk.co.strangeskies.flowcontrol;
+
+import java.util.ArrayDeque;
+import java.util.Queue;
+import java.util.concurrent.Executor;
+
+public class SerialExecutor implements Executor {
+	private final Queue<Runnable> tasks = new ArrayDeque<>();
+	private final Executor executor;
+	private Runnable active;
+
+	public SerialExecutor(Executor executor) {
+		this.executor = executor;
+	}
+
+	@Override
+	public synchronized void execute(final Runnable r) {
+		tasks.offer(() -> {
+			try {
+				r.run();
+			} finally {
+				scheduleNext();
+			}
+		});
+		if (active == null) {
+			scheduleNext();
+		}
+	}
+
+	protected synchronized void scheduleNext() {
+		if ((active = tasks.poll()) != null) {
+			executor.execute(active);
+		}
+	}
+}

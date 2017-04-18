@@ -33,25 +33,23 @@
 package uk.co.strangeskies.mathematics.geometry.matrix.vector.impl;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorN;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utility.Factory;
 
 public class VectorNImpl<V extends Value<V>> extends VectorImpl<VectorN<V>, V>
 		implements VectorN<V> {
-	public VectorNImpl(int size, Order order, Orientation orientation,
-			Factory<V> valueFactory) {
+	public VectorNImpl(int size, Order order, Orientation orientation, Supplier<V> valueFactory) {
 		super(size, order, orientation, valueFactory);
 	}
 
-	public VectorNImpl(Order order, Orientation orientation,
-			List<? extends V> values) {
+	public VectorNImpl(Order order, Orientation orientation, List<? extends V> values) {
 		super(order, orientation, values);
 	}
 
 	@Override
 	public VectorN<V> copy() {
-		return new VectorNImpl<V>(getOrder(), getOrientation(), getData());
+		return new VectorNImpl<>(getOrder(), getOrientation(), getData());
 	}
 }

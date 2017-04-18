@@ -39,8 +39,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
-import uk.co.strangeskies.utility.Factory;
 import uk.co.strangeskies.utility.Scoped;
 import uk.co.strangeskies.utility.Self;
 
@@ -53,24 +53,27 @@ import uk.co.strangeskies.utility.Self;
  * @param <E>
  *          the element type, as per {@link Collection}
  */
-public abstract class ScopedObservableSet<S extends ObservableSet<S, E>, E> extends ObservableSetDecorator<S, E>
-		implements Scoped<S> {
+public abstract class ScopedObservableSet<S extends ObservableSet<S, E>, E>
+		extends ObservableSetDecorator<S, E> implements Scoped<S> {
 	/**
 	 * @author Elias N Vasylenko
 	 *
 	 * @param <E>
 	 *          the element type, as per {@link Collection}
 	 */
-	public static class ScopedObservableSetImpl<E> extends ScopedObservableSet<ScopedObservableSetImpl<E>, E> {
-		private final Factory<Set<E>> componentFactory;
+	public static class ScopedObservableSetImpl<E>
+			extends ScopedObservableSet<ScopedObservableSetImpl<E>, E> {
+		private final Supplier<? extends Set<E>> componentFactory;
 
-		ScopedObservableSetImpl(Factory<Set<E>> componentFactory) {
-			super(componentFactory.create());
+		ScopedObservableSetImpl(Supplier<? extends Set<E>> componentFactory) {
+			super(componentFactory.get());
 			this.componentFactory = componentFactory;
 		}
 
-		private ScopedObservableSetImpl(ScopedObservableSetImpl<E> parent, Factory<Set<E>> componentFactory) {
-			super(parent, componentFactory.create());
+		private ScopedObservableSetImpl(
+				ScopedObservableSetImpl<E> parent,
+				Supplier<? extends Set<E>> componentFactory) {
+			super(parent, componentFactory.get());
 
 			this.componentFactory = componentFactory;
 		}
@@ -102,7 +105,7 @@ public abstract class ScopedObservableSet<S extends ObservableSet<S, E>, E> exte
 		forwardEvents();
 	}
 
-	public static <T> ScopedObservableSetImpl<T> over(Factory<Set<T>> componentFactory) {
+	public static <T> ScopedObservableSetImpl<T> over(Supplier<? extends Set<T>> componentFactory) {
 		return new ScopedObservableSetImpl<>(componentFactory);
 	}
 
@@ -186,7 +189,8 @@ public abstract class ScopedObservableSet<S extends ObservableSet<S, E>, E> exte
 
 	@Override
 	public boolean contains(Object o) {
-		return ScopedObservableSet.super.contains(o) || getParentScope().map(p -> p.contains(o)).orElse(false);
+		return ScopedObservableSet.super.contains(o)
+				|| getParentScope().map(p -> p.contains(o)).orElse(false);
 	}
 
 	@Override
@@ -204,7 +208,8 @@ public abstract class ScopedObservableSet<S extends ObservableSet<S, E>, E> exte
 	@Override
 	public Iterator<E> iterator() {
 		Iterator<E> iterator = localIterator();
-		Iterator<E> parentIterator = getParentScope().map(Collection::iterator).orElse(emptyListIterator());
+		Iterator<E> parentIterator = getParentScope().map(Collection::iterator).orElse(
+				emptyListIterator());
 
 		return new Iterator<E>() {
 			@Override

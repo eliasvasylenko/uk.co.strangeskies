@@ -33,15 +33,15 @@
 package uk.co.strangeskies.mathematics.geometry.matrix.impl;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 import uk.co.strangeskies.mathematics.geometry.matrix.MatrixN;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.VectorNImpl;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utility.Factory;
 
 public class MatrixNImpl<V extends Value<V>> extends MatrixSImpl<MatrixN<V>, V>
 		implements MatrixN<V> {
-	public MatrixNImpl(int size, Order order, Factory<V> valueFactory) {
+	public MatrixNImpl(int size, Order order, Supplier<V> valueFactory) {
 		super(size, order, valueFactory);
 	}
 

@@ -39,9 +39,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import uk.co.strangeskies.collection.ListTransformationView;
 import uk.co.strangeskies.collection.MergeIndicesListView;
+import uk.co.strangeskies.function.TriFunction;
 import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
 import uk.co.strangeskies.mathematics.expression.DependentExpression;
 import uk.co.strangeskies.mathematics.geometry.DimensionalityException;
@@ -54,11 +56,9 @@ import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.Vector2Impl;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.VectorNImpl;
 import uk.co.strangeskies.mathematics.values.IntValue;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utility.Factory;
-import uk.co.strangeskies.utility.function.TriFunction;
 
-public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>> extends DependentExpression<S>
-		implements Matrix<S, V>, CopyDecouplingExpression<S> {
+public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>>
+		extends DependentExpression<S> implements Matrix<S, V>, CopyDecouplingExpression<S> {
 	private final List<List<V>> data;
 	private final Order order;
 
@@ -73,7 +73,7 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>> ext
 		this.order = order;
 	}
 
-	public MatrixImpl(int rows, int columns, Order order, Factory<V> valueFactory) {
+	public MatrixImpl(int rows, int columns, Order order, Supplier<V> valueFactory) {
 		this(order);
 
 		try {
@@ -101,7 +101,7 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>> ext
 			List<V> elements = new ArrayList<>();
 			data.add(elements);
 			for (int j = 0; j < minor; j++) {
-				elements.add(valueFactory.create());
+				elements.add(valueFactory.get());
 			}
 		}
 
@@ -210,7 +210,10 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>> ext
 
 	@Override
 	public Vector<?, V> getMajorVector(int index) {
-		return new VectorNImpl<>(getOrder(), getOrder().getAssociatedOrientation(), getMajorVectorData(index));
+		return new VectorNImpl<>(
+				getOrder(),
+				getOrder().getAssociatedOrientation(),
+				getMajorVectorData(index));
 	}
 
 	protected List<V> getMajorVectorData(int index) {
@@ -219,7 +222,10 @@ public abstract class MatrixImpl<S extends Matrix<S, V>, V extends Value<V>> ext
 
 	@Override
 	public Vector<?, V> getMinorVector(int index) {
-		return new VectorNImpl<>(getOrder(), getOrder().getOther().getAssociatedOrientation(), getMinorVectorData(index));
+		return new VectorNImpl<>(
+				getOrder(),
+				getOrder().getOther().getAssociatedOrientation(),
+				getMinorVectorData(index));
 	}
 
 	protected List<V> getMinorVectorData(int index) {

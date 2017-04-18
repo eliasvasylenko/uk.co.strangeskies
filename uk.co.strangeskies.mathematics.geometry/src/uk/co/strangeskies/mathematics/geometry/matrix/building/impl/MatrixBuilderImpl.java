@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.mathematics.geometry.matrix.building.impl;
 
+import java.util.function.Supplier;
+
 import org.osgi.service.component.annotations.Component;
 
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix.Order;
@@ -43,7 +45,6 @@ import uk.co.strangeskies.mathematics.values.FloatValue;
 import uk.co.strangeskies.mathematics.values.IntValue;
 import uk.co.strangeskies.mathematics.values.LongValue;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utility.Factory;
 
 @Component
 public class MatrixBuilderImpl implements MatrixBuilder {
@@ -71,10 +72,9 @@ public class MatrixBuilderImpl implements MatrixBuilder {
 	}
 
 	@Override
-	public <V extends Value<V>> ValueMatrixBuilder<V> values(
-			Factory<V> valueFactory) {
-		return new ValueMatrixBuilderImpl<>(valueFactory).order(defaultOrder)
-				.orientation(defaultOrientation);
+	public <V extends Value<V>> ValueMatrixBuilder<V> values(Supplier<V> valueFactory) {
+		return new ValueMatrixBuilderImpl<>(valueFactory).order(defaultOrder).orientation(
+				defaultOrientation);
 	}
 
 	@Override

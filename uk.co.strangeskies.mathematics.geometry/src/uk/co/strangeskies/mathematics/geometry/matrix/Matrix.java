@@ -40,6 +40,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import uk.co.strangeskies.collection.ListTransformationView;
+import uk.co.strangeskies.function.TriFunction;
 import uk.co.strangeskies.mathematics.expression.SelfExpression;
 import uk.co.strangeskies.mathematics.geometry.DimensionalityException;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
@@ -52,7 +53,6 @@ import uk.co.strangeskies.mathematics.operation.Subtractable;
 import uk.co.strangeskies.mathematics.values.IntValue;
 import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utility.Property;
-import uk.co.strangeskies.utility.function.TriFunction;
 
 public interface Matrix<S extends Matrix<S, V>, V extends Value<V>>
 		extends Comparable<Matrix<?, ?>>, SelfExpression<S>, Scalable<S>, Subtractable<S, Matrix<?, ?>>,

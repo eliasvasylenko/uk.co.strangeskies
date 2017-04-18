@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.utility.function.InvertibleFunction;
+import uk.co.strangeskies.function.InvertibleFunction;
 
 /**
  * A view of a list which will be automatically updated along with the original,
