@@ -38,8 +38,6 @@ import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.function.Consumer;
 
-import uk.co.strangeskies.utility.Factory;
-
 /**
  * <p>
  * An implementation of TypeVisitor which provides recursion over the related
@@ -66,7 +64,7 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 	 * 
 	 * @author Elias N Vasylenko
 	 */
-	public static class Builder implements Factory<RecursiveTypeVisitor> {
+	public static class Builder {
 		private boolean allowRepeatVisits = false;
 
 		private boolean supertypes = false;
@@ -90,11 +88,24 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 
 		private Builder() {}
 
-		@Override
 		public RecursiveTypeVisitor create() {
-			return new RecursiveTypeVisitor(allowRepeatVisits, supertypes, enclosed, enclosing, parameters, bounds, postOrder,
-					classVisitor, genericArrayVisitor, parameterizedTypeVisitor, typeVariableCaptureVisitor, typeVariableVisitor,
-					inferenceVariableVisitor, wildcardVisitor, intersectionTypeVisitor, boundSet);
+			return new RecursiveTypeVisitor(
+					allowRepeatVisits,
+					supertypes,
+					enclosed,
+					enclosing,
+					parameters,
+					bounds,
+					postOrder,
+					classVisitor,
+					genericArrayVisitor,
+					parameterizedTypeVisitor,
+					typeVariableCaptureVisitor,
+					typeVariableVisitor,
+					inferenceVariableVisitor,
+					wildcardVisitor,
+					intersectionTypeVisitor,
+					boundSet);
 		}
 
 		/**
@@ -234,7 +245,8 @@ public class RecursiveTypeVisitor extends TypeVisitor {
 		 *          The visitation method for {@link TypeVariableCapture}s.
 		 * @return The receiving builder instance.
 		 */
-		public Builder typeVariableCaptureVisitor(Consumer<TypeVariableCapture> typeVariableCaptureVisitor) {
+		public Builder typeVariableCaptureVisitor(
+				Consumer<TypeVariableCapture> typeVariableCaptureVisitor) {
 			this.typeVariableCaptureVisitor = typeVariableCaptureVisitor;
 			return this;
 		}

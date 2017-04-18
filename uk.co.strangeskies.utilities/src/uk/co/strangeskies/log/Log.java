@@ -30,21 +30,75 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.utility.function;
+package uk.co.strangeskies.log;
 
 /**
- * As {@link Runnable} but parameterized over an exception type which is allowed
- * to be thrown by {@link #run()}.
+ * A log interface for clients to write events to.
  * 
  * @author Elias N Vasylenko
- *
- * @param <E>
- *          the type of exception which may be thrown
  */
-public interface ThrowingRunnable<E extends Exception> {
+public interface Log {
 	/**
-	 * @throws E
-	 *           an exception thrown by the implementor
+	 * The level of importance of a log entry.
+	 *
+	 * @author Elias N Vasylenko
 	 */
-	void run() throws E;
+	public enum Level {
+		/**
+		 * Trace level – Huge output
+		 */
+		TRACE,
+		/**
+		 * Debug level – Very large output
+		 */
+		DEBUG,
+		/**
+		 * Info – Provide information about processes that go ok
+		 */
+		INFO,
+		/**
+		 * Warning – A failure or unwanted situation that is not blocking
+		 */
+		WARN,
+		/**
+		 * Error – An error situation
+		 */
+		ERROR
+	}
+
+	/**
+	 * Log a message.
+	 * 
+	 * @param level
+	 *          The importance level of the given message
+	 * @param message
+	 *          The message to log
+	 */
+	void log(Level level, String message);
+
+	/**
+	 * Log a message and an associated throwable.
+	 * 
+	 * @param level
+	 *          The importance level of the given message
+	 * @param message
+	 *          The message to log
+	 * @param exception
+	 *          The exception associated with the message
+	 */
+	default void log(Level level, String message, Throwable exception) {
+		log(level, message + ": " + exception.getLocalizedMessage());
+	}
+
+	/**
+	 * Log a message and an associated throwable.
+	 * 
+	 * @param level
+	 *          The importance level of the given message
+	 * @param exception
+	 *          The exception associated with the message
+	 */
+	default void log(Level level, Throwable exception) {
+		log(level, exception.getMessage(), exception);
+	}
 }

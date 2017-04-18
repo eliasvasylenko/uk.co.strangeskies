@@ -34,6 +34,7 @@ package uk.co.strangeskies.mathematics.geometry.matrix.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix2;
 import uk.co.strangeskies.mathematics.geometry.matrix.MatrixH2;
@@ -46,11 +47,10 @@ import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorH2;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.Vector3Impl;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.VectorH2Impl;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utility.Factory;
 
-public class MatrixH2Impl<V extends Value<V>> extends
-		MatrixHImpl<MatrixH2<V>, V> implements MatrixH2<V> {
-	public MatrixH2Impl(Order order, Factory<V> valueFactory) {
+public class MatrixH2Impl<V extends Value<V>> extends MatrixHImpl<MatrixH2<V>, V>
+		implements MatrixH2<V> {
+	public MatrixH2Impl(Order order, Supplier<V> valueFactory) {
 		super(2, order, valueFactory);
 	}
 
@@ -60,12 +60,12 @@ public class MatrixH2Impl<V extends Value<V>> extends
 
 	@Override
 	public Matrix2<V> getTransformationMatrix() {
-		return new Matrix2Impl<V>(getOrder(), getTransformationData2());
+		return new Matrix2Impl<>(getOrder(), getTransformationData2());
 	}
 
 	@Override
 	public MatrixH2<V> copy() {
-		return new MatrixH2Impl<V>(getOrder(), getData2());
+		return new MatrixH2Impl<>(getOrder(), getData2());
 	}
 
 	@Override
@@ -110,15 +110,16 @@ public class MatrixH2Impl<V extends Value<V>> extends
 
 	@Override
 	public final Vector3<V> getRowVector(int row) {
-		return new Vector3Impl<V>(getOrder(), Orientation.ROW,
-				getRowVectorData(row));
+		return new Vector3Impl<>(getOrder(), Orientation.ROW, getRowVectorData(row));
 	}
 
 	@Override
 	public final VectorH2<V> getColumnVector(int column) {
-		return new VectorH2Impl<V>(column == getDimensions() - 1 ? Type.Absolute
-				: Type.Relative, getOrder(), Orientation.COLUMN, getColumnVectorData(
-				getProjectedDimensions()).subList(0, getProjectedDimensions()));
+		return new VectorH2Impl<>(
+				column == getDimensions() - 1 ? Type.Absolute : Type.Relative,
+				getOrder(),
+				Orientation.COLUMN,
+				getColumnVectorData(getProjectedDimensions()).subList(0, getProjectedDimensions()));
 	}
 
 	@Override
@@ -135,17 +136,15 @@ public class MatrixH2Impl<V extends Value<V>> extends
 				newType = Type.Relative;
 			}
 
-			return new VectorH2Impl<V>(newType, Order.COLUMN_MAJOR,
-					Orientation.COLUMN, majorElements);
+			return new VectorH2Impl<>(newType, Order.COLUMN_MAJOR, Orientation.COLUMN, majorElements);
 		} else {
-			return new Vector3Impl<V>(Order.ROW_MAJOR, Orientation.ROW, getData2()
-					.get(index));
+			return new Vector3Impl<>(Order.ROW_MAJOR, Orientation.ROW, getData2().get(index));
 		}
 	}
 
 	@Override
 	public final Vector<?, V> getMinorVector(int index) {
-		List<V> minorElements = new ArrayList<V>();
+		List<V> minorElements = new ArrayList<>();
 		for (List<V> elements : getData2()) {
 			minorElements.add(elements.get(index));
 		}
@@ -160,11 +159,9 @@ public class MatrixH2Impl<V extends Value<V>> extends
 				newType = Type.Relative;
 			}
 
-			return new VectorH2Impl<V>(newType, Order.ROW_MAJOR, Orientation.COLUMN,
-					minorElements);
+			return new VectorH2Impl<>(newType, Order.ROW_MAJOR, Orientation.COLUMN, minorElements);
 		} else {
-			return new Vector3Impl<V>(Order.COLUMN_MAJOR, Orientation.ROW, getData2()
-					.get(index));
+			return new Vector3Impl<>(Order.COLUMN_MAJOR, Orientation.ROW, getData2().get(index));
 		}
 	}
 }

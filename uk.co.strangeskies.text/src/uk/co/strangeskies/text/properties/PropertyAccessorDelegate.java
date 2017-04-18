@@ -52,11 +52,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
+import uk.co.strangeskies.log.Log;
+import uk.co.strangeskies.log.Log.Level;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.Defaults;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.Evaluation;
 import uk.co.strangeskies.text.properties.PropertyLoaderImpl.MethodSignature;
-import uk.co.strangeskies.utility.Log;
-import uk.co.strangeskies.utility.Log.Level;
 
 /**
  * Delegate implementation object for proxy instances of property accessor

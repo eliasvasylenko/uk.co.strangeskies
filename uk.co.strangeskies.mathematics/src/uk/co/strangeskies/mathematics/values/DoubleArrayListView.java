@@ -36,14 +36,13 @@ import java.util.AbstractList;
 import java.util.Collections;
 import java.util.Random;
 import java.util.Set;
-
-import uk.co.strangeskies.utility.Factory;
+import java.util.function.Supplier;
 
 public class DoubleArrayListView<V extends Value<V>> extends AbstractList<V> {
 	private final double[] array;
-	private final Factory<V> valueFactory;
+	private final Supplier<V> valueFactory;
 
-	public DoubleArrayListView(double[] array, Factory<V> valueFactory) {
+	public DoubleArrayListView(double[] array, Supplier<V> valueFactory) {
 		if (array == null) {
 			throw new IllegalArgumentException(new NullPointerException());
 		}
@@ -54,7 +53,7 @@ public class DoubleArrayListView<V extends Value<V>> extends AbstractList<V> {
 
 	@Override
 	public final V get(int index) {
-		return valueFactory.create().setValue(array[index]);
+		return valueFactory.get().setValue(array[index]);
 	}
 
 	public V set(int index, Value<?> element) {
@@ -62,11 +61,7 @@ public class DoubleArrayListView<V extends Value<V>> extends AbstractList<V> {
 
 		array[index] = element.intValue();
 
-		return valueFactory.create().setValue(previousValue);
-	}
-
-	public Factory<V> getValueFactory() {
-		return valueFactory;
+		return valueFactory.get().setValue(previousValue);
 	}
 
 	@Override
@@ -124,8 +119,8 @@ public class DoubleArrayListView<V extends Value<V>> extends AbstractList<V> {
 			IntValue[] intValues = new IntValue[size];
 			for (int i = 0; i < size; i++) {
 				intValues[i] = new IntValue(
-						testerInts[i] = ints[i] = integers[i] = new Random(
-								System.currentTimeMillis()).nextInt(1000));
+						testerInts[i] = ints[i] = integers[i] = new Random(System.currentTimeMillis())
+								.nextInt(1000));
 			}
 
 			count = 0;
@@ -134,8 +129,8 @@ public class DoubleArrayListView<V extends Value<V>> extends AbstractList<V> {
 				for (int i = 0; i < size; i++) {
 					count += ints[i];
 				}
-			System.out.println("ints adding: "
-					+ (System.currentTimeMillis() - startTime) + " count = " + count);
+			System.out.println(
+					"ints adding: " + (System.currentTimeMillis() - startTime) + " count = " + count);
 
 			count = 0;
 			startTime = System.currentTimeMillis();
@@ -143,8 +138,8 @@ public class DoubleArrayListView<V extends Value<V>> extends AbstractList<V> {
 				for (int i = 0; i < size; i++) {
 					count += integers[i];
 				}
-			System.out.println("integers adding: "
-					+ (System.currentTimeMillis() - startTime) + " count = " + count);
+			System.out.println(
+					"integers adding: " + (System.currentTimeMillis() - startTime) + " count = " + count);
 
 			count = 0l;
 			startTime = System.currentTimeMillis();
@@ -157,8 +152,8 @@ public class DoubleArrayListView<V extends Value<V>> extends AbstractList<V> {
 						}
 					}
 				}
-			System.out.println("ints adding with if: "
-					+ (System.currentTimeMillis() - startTime) + " count = " + count);
+			System.out.println(
+					"ints adding with if: " + (System.currentTimeMillis() - startTime) + " count = " + count);
 
 			count = 0l;
 			startTime = System.currentTimeMillis();
@@ -171,8 +166,9 @@ public class DoubleArrayListView<V extends Value<V>> extends AbstractList<V> {
 						}
 					}
 				}
-			System.out.println("integers adding with if: "
-					+ (System.currentTimeMillis() - startTime) + " count = " + count);
+			System.out.println(
+					"integers adding with if: " + (System.currentTimeMillis() - startTime) + " count = "
+							+ count);
 
 			count = 0l;
 			startTime = System.currentTimeMillis();
@@ -183,8 +179,9 @@ public class DoubleArrayListView<V extends Value<V>> extends AbstractList<V> {
 						System.out.println(nonsense);
 					}
 				}
-			System.out.println("getints adding with if: "
-					+ (System.currentTimeMillis() - startTime) + " count = " + count);
+			System.out.println(
+					"getints adding with if: " + (System.currentTimeMillis() - startTime) + " count = "
+							+ count);
 
 			count = 0l;
 			startTime = System.currentTimeMillis();
@@ -195,8 +192,9 @@ public class DoubleArrayListView<V extends Value<V>> extends AbstractList<V> {
 						System.out.println(nonsense);
 					}
 				}
-			System.out.println("getints adding with if: "
-					+ (System.currentTimeMillis() - startTime) + " count = " + count);
+			System.out.println(
+					"getints adding with if: " + (System.currentTimeMillis() - startTime) + " count = "
+							+ count);
 
 			System.out.println();
 		}

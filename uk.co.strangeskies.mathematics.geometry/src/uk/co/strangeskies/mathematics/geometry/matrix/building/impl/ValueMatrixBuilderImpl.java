@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.mathematics.geometry.matrix.building.impl;
 
+import java.util.function.Supplier;
+
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix.Order;
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix2;
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix3;
@@ -67,12 +69,9 @@ import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.VectorH3Impl;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.VectorHNImpl;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.VectorNImpl;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utility.Factory;
 
-public class ValueMatrixBuilderImpl<V extends Value<V>> implements
-		ValueMatrixBuilder<V> {
-	protected class HomogeneousValueMatrixBuilderImpl implements
-			HomogeneousValueMatrixBuilder<V> {
+public class ValueMatrixBuilderImpl<V extends Value<V>> implements ValueMatrixBuilder<V> {
+	protected class HomogeneousValueMatrixBuilderImpl implements HomogeneousValueMatrixBuilder<V> {
 		private final Type type;
 
 		public HomogeneousValueMatrixBuilderImpl(Type type) {
@@ -86,8 +85,7 @@ public class ValueMatrixBuilderImpl<V extends Value<V>> implements
 		}
 
 		@Override
-		public final HomogeneousValueMatrixBuilder<V> orientation(
-				Orientation orientation) {
+		public final HomogeneousValueMatrixBuilder<V> orientation(Orientation orientation) {
 			ValueMatrixBuilderImpl.this.orientation(orientation);
 			return this;
 		}
@@ -104,8 +102,7 @@ public class ValueMatrixBuilderImpl<V extends Value<V>> implements
 
 		@Override
 		public VectorHN<V> vectorHN(int size) {
-			return new VectorHNImpl<>(type, size, order, orientation,
-					getValueFactory());
+			return new VectorHNImpl<>(type, size, order, orientation, getValueFactory());
 		}
 
 		@Override
@@ -124,11 +121,11 @@ public class ValueMatrixBuilderImpl<V extends Value<V>> implements
 		}
 	}
 
-	private final Factory<V> valueFactory;
+	private final Supplier<V> valueFactory;
 	private Order order;
 	private Orientation orientation;
 
-	public ValueMatrixBuilderImpl(Factory<V> valueFactory) {
+	public ValueMatrixBuilderImpl(Supplier<V> valueFactory) {
 		this.valueFactory = valueFactory;
 	}
 
@@ -144,7 +141,7 @@ public class ValueMatrixBuilderImpl<V extends Value<V>> implements
 		return this;
 	}
 
-	protected final Factory<V> getValueFactory() {
+	protected final Supplier<V> getValueFactory() {
 		return valueFactory;
 	}
 

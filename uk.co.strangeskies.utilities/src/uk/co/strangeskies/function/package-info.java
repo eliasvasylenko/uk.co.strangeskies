@@ -30,32 +30,5 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.utility.function;
-
-import java.util.function.Function;
-
-/**
- * As {@link Function} but parameterized over an exception type which is allowed
- * to be thrown by {@link #apply(Object)}.
- * 
- * @author Elias N Vasylenko
- *
- * @param <T>
- *          the type of the input to the function
- * @param <R>
- *          the type of the result of the function
- * @param <E>
- *          the type of exception which may be thrown
- */
-public interface ThrowingFunction<T, R, E extends Exception> {
-	/**
-	 * Applies this function to the given argument.
-	 *
-	 * @param t
-	 *          the function argument
-	 * @return the function result
-	 * @throws E
-	 *           an exception thrown by the implementor
-	 */
-	R apply(T t) throws E;
-}
+@org.osgi.annotation.versioning.Version("1.0.0")
+package uk.co.strangeskies.function;

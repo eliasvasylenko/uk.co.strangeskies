@@ -34,6 +34,7 @@ package uk.co.strangeskies.mathematics.geometry.matrix.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import uk.co.strangeskies.collection.ListTransformOnceView;
@@ -48,11 +49,10 @@ import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorH;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorH.Type;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.impl.VectorHNImpl;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utility.Factory;
 
 public abstract class MatrixHImpl<S extends MatrixH<S, V>, V extends Value<V>>
 		extends /*  */MatrixImpl<S, V> implements MatrixH<S, V> {
-	public MatrixHImpl(int size, Order order, Factory<V> valueFactory) {
+	public MatrixHImpl(int size, Order order, Supplier<V> valueFactory) {
 		super(size + 1, size, order, valueFactory);
 
 		for (int i = 0; i < getProjectedDimensions(); i++) {
@@ -67,7 +67,8 @@ public abstract class MatrixHImpl<S extends MatrixH<S, V>, V extends Value<V>>
 	}
 
 	protected static <V extends Value<V>> List<List<V>> resizeColumnsImplementation(
-			List<? extends List<? extends V>> data, Order order) {
+			List<? extends List<? extends V>> data,
+			Order order) {
 		List<List<V>> newData = new ArrayList<>();
 		List<V> newElements = null;
 
@@ -83,7 +84,7 @@ public abstract class MatrixHImpl<S extends MatrixH<S, V>, V extends Value<V>>
 			for (List<? extends V> elements : data)
 				newData.add(new ArrayList<>(elements));
 
-			newElements = new ArrayList<V>();
+			newElements = new ArrayList<>();
 			for (V element : data.get(0))
 				newElements.add(element.copy().setValue(0));
 
@@ -110,17 +111,20 @@ public abstract class MatrixHImpl<S extends MatrixH<S, V>, V extends Value<V>>
 		List<List<V>> dataView;
 
 		if (getOrder() == Order.COLUMN_MAJOR) {
-			dataView = new ListTransformOnceView<List<V>, List<V>>(getData2(),
+			dataView = new ListTransformOnceView<>(
+					getData2(),
 					l -> l.subList(0, getProjectedDimensions()));
 		} else {
 			dataView = new SubList<>(getData2(), 0, getProjectedDimensions());
 		}
 
-		return new MatrixNNImpl<V>(getOrder(), dataView);
+		return new MatrixNNImpl<>(getOrder(), dataView);
 	}
 
 	protected List<List<V>> getTransformationData2() {
-		return getData2().subList(0, getProjectedDimensions()).stream()
+		return getData2()
+				.subList(0, getProjectedDimensions())
+				.stream()
 				.map(l -> l.subList(0, getProjectedDimensions()))
 				.collect(Collectors.toList());
 	}
@@ -159,9 +163,11 @@ public abstract class MatrixHImpl<S extends MatrixH<S, V>, V extends Value<V>>
 
 	@Override
 	public VectorH<?, V> getColumnVector(int column) {
-		return new VectorHNImpl<V>(column == getDimensions() - 1 ? Type.Absolute
-				: Type.Relative, getOrder(), Orientation.COLUMN, getColumnVectorData(
-				column).subList(0, getProjectedDimensions()));
+		return new VectorHNImpl<>(
+				column == getDimensions() - 1 ? Type.Absolute : Type.Relative,
+				getOrder(),
+				Orientation.COLUMN,
+				getColumnVectorData(column).subList(0, getProjectedDimensions()));
 	}
 
 	@Override

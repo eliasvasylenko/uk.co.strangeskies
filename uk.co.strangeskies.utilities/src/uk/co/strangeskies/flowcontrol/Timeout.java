@@ -30,16 +30,75 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.utility;
+package uk.co.strangeskies.flowcontrol;
 
-/**
- * An interface to provides a canonical description for an object.
- * 
- * @author Elias N Vasylenko
- */
-public interface Described {
-	/**
-	 * @return The canonical description of this instance.
-	 */
-	public String getDescription();
+public class Timeout {
+	private final Runnable action;
+	private int timeoutMilliseconds;
+	private final Object lock;
+
+	private boolean ending = false;
+	private Thread thread;
+
+	public Timeout(Runnable action, int timeoutSeconds) {
+		this(action, timeoutSeconds, null);
+	}
+
+	public Timeout(Runnable action, int timeoutSeconds, Object lock) {
+		this.action = action;
+		this.timeoutMilliseconds = timeoutSeconds;
+
+		if (lock == null)
+			this.lock = this;
+		else
+			this.lock = lock;
+	}
+
+	public boolean reset() {
+		synchronized (lock) {
+			if (thread != null) {
+				ending = false;
+				lock.notifyAll();
+
+				return true;
+			} else {
+				return false;
+			}
+		}
+	}
+
+	public void stop() {
+		synchronized (lock) {
+			if (thread != null) {
+				thread.interrupt();
+			}
+		}
+	}
+
+	public void set() {
+		synchronized (lock) {
+			if (!reset()) {
+				thread = new Thread(() -> {
+					synchronized (lock) {
+						while (!ending) {
+							try {
+								ending = true;
+								lock.wait(timeoutMilliseconds);
+							} catch (InterruptedException e) {
+								return;
+							}
+						}
+
+						thread = null;
+						action.run();
+					}
+				});
+				thread.start();
+			}
+		}
+	}
+
+	public void setTimeoutMilliseconds(int timeoutMilliseconds) {
+		this.timeoutMilliseconds = timeoutMilliseconds;
+	}
 }

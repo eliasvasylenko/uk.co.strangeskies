@@ -37,8 +37,8 @@ import java.net.URLClassLoader;
 import java.util.Collection;
 import java.util.function.Supplier;
 
-import uk.co.strangeskies.utility.function.ThrowingRunnable;
-import uk.co.strangeskies.utility.function.ThrowingSupplier;
+import uk.co.strangeskies.function.ThrowingRunnable;
+import uk.co.strangeskies.function.ThrowingSupplier;
 
 /**
  * Utilities for safely running code under a different thread context class

@@ -207,7 +207,8 @@ public class GraphConfiguratorImpl<V, E> implements GraphConfigurator<V, E> {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <F extends E> GraphConfigurator<V, F> edgeMultiFactory(Function<EdgeVertices<V>, Set<F>> factory) {
+	public <F extends E> GraphConfigurator<V, F> edgeMultiFactory(
+			Function<EdgeVertices<V>, Set<F>> factory) {
 		assertConfigurable(edgeFactory, GraphProperties::edgeFactory);
 		assertConfigurable(edgeMultiFactory, GraphProperties::edgeMultiFactory);
 
@@ -241,7 +242,8 @@ public class GraphConfiguratorImpl<V, E> implements GraphConfigurator<V, E> {
 	}
 
 	@Override
-	public GraphConfigurator<V, E> internalListeners(Consumer<GraphListeners<V, E>> internalListeners) {
+	public GraphConfigurator<V, E> internalListeners(
+			Consumer<GraphListeners<V, E>> internalListeners) {
 		internalListeners.accept(this.internalListeners);
 		return this;
 	}

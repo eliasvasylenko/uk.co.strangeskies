@@ -32,9 +32,10 @@
  */
 package uk.co.strangeskies.mathematics.geometry.shape;
 
+import java.util.function.Supplier;
+
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utility.Factory;
 
 public interface ShapeBuilder {
-	<V extends Value<V>> ShapeConfigurator<V> with(Factory<V> valueFactory);
+	<V extends Value<V>> ShapeConfigurator<V> with(Supplier<V> valueFactory);
 }

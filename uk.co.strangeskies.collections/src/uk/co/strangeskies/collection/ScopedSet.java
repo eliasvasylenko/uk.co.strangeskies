@@ -38,21 +38,22 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
-import uk.co.strangeskies.utility.Factory;
 import uk.co.strangeskies.utility.Scoped;
 
-public abstract class ScopedSet<S extends ScopedSet<S, T>, T> implements SetDecorator<T>, Scoped<S> {
+public abstract class ScopedSet<S extends ScopedSet<S, T>, T>
+		implements SetDecorator<T>, Scoped<S> {
 	static class ScopedSetImpl<T> extends ScopedSet<ScopedSetImpl<T>, T> {
-		private final Factory<Set<T>> componentFactory;
+		private final Supplier<? extends Set<T>> componentFactory;
 
-		ScopedSetImpl(Factory<Set<T>> componentFactory) {
-			super(componentFactory.create());
+		ScopedSetImpl(Supplier<? extends Set<T>> componentFactory) {
+			super(componentFactory.get());
 			this.componentFactory = componentFactory;
 		}
 
-		private ScopedSetImpl(ScopedSetImpl<T> parent, Factory<Set<T>> componentFactory) {
-			super(parent, componentFactory.create());
+		private ScopedSetImpl(ScopedSetImpl<T> parent, Supplier<? extends Set<T>> componentFactory) {
+			super(parent, componentFactory.get());
 			this.componentFactory = componentFactory;
 		}
 
@@ -86,7 +87,7 @@ public abstract class ScopedSet<S extends ScopedSet<S, T>, T> implements SetDeco
 		return component;
 	}
 
-	public static <T> ScopedSet<?, T> over(Factory<Set<T>> componentFactory) {
+	public static <T> ScopedSet<?, T> over(Supplier<? extends Set<T>> componentFactory) {
 		return new ScopedSetImpl<>(componentFactory);
 	}
 
@@ -122,7 +123,8 @@ public abstract class ScopedSet<S extends ScopedSet<S, T>, T> implements SetDeco
 	@Override
 	public Iterator<T> iterator() {
 		Iterator<T> iterator = SetDecorator.super.iterator();
-		Iterator<T> parentIterator = getParentScope().map(Collection::iterator).orElse(emptyListIterator());
+		Iterator<T> parentIterator = getParentScope().map(Collection::iterator).orElse(
+				emptyListIterator());
 
 		return new Iterator<T>() {
 			@Override

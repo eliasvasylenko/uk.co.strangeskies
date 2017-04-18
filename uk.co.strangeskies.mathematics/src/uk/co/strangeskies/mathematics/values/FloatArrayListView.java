@@ -33,14 +33,13 @@
 package uk.co.strangeskies.mathematics.values;
 
 import java.util.AbstractList;
-
-import uk.co.strangeskies.utility.Factory;
+import java.util.function.Supplier;
 
 public class FloatArrayListView<V extends Value<V>> extends AbstractList<V> {
 	private final float[] array;
-	private final Factory<V> valueFactory;
+	private final Supplier<V> valueFactory;
 
-	public FloatArrayListView(float[] array, Factory<V> valueFactory) {
+	public FloatArrayListView(float[] array, Supplier<V> valueFactory) {
 		if (array == null) {
 			throw new IllegalArgumentException(new NullPointerException());
 		}
@@ -51,7 +50,7 @@ public class FloatArrayListView<V extends Value<V>> extends AbstractList<V> {
 
 	@Override
 	public final V get(int index) {
-		return valueFactory.create().setValue(array[index]);
+		return valueFactory.get().setValue(array[index]);
 	}
 
 	public V set(int index, Value<?> element) {
@@ -59,11 +58,7 @@ public class FloatArrayListView<V extends Value<V>> extends AbstractList<V> {
 
 		array[index] = element.intValue();
 
-		return valueFactory.create().setValue(previousValue);
-	}
-
-	public Factory<V> getValueFactory() {
-		return valueFactory;
+		return valueFactory.get().setValue(previousValue);
 	}
 
 	@Override

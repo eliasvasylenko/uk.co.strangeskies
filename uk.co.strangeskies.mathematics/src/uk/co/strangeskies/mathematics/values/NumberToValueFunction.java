@@ -33,19 +33,17 @@
 package uk.co.strangeskies.mathematics.values;
 
 import java.util.function.Function;
+import java.util.function.Supplier;
 
-import uk.co.strangeskies.utility.Factory;
+public class NumberToValueFunction<V extends Value<V>> implements Function<Number, V> {
+	private final Supplier<V> valueFactory;
 
-public class NumberToValueFunction<V extends Value<V>> implements
-		Function<Number, V> {
-	private final Factory<V> valueFactory;
-
-	public <X extends V> NumberToValueFunction(Factory<V> valueFactory) {
+	public <X extends V> NumberToValueFunction(Supplier<V> valueFactory) {
 		this.valueFactory = valueFactory;
 	}
 
 	@Override
 	public V apply(Number input) {
-		return valueFactory.create().setValue(input);
+		return valueFactory.get().setValue(input);
 	}
 }

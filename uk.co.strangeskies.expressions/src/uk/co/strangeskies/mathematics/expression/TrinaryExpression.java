@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.mathematics.expression;
 
-import uk.co.strangeskies.utility.function.TriFunction;
+import uk.co.strangeskies.function.TriFunction;
 
 /**
  * As {@link UnaryExpression}, but with three operands.

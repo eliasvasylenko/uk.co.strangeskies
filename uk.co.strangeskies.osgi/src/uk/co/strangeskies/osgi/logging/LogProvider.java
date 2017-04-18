@@ -42,7 +42,7 @@ import org.osgi.service.component.annotations.ServiceScope;
 import org.osgi.service.log.LogListener;
 import org.osgi.service.log.LogService;
 
-import uk.co.strangeskies.utility.Log;
+import uk.co.strangeskies.log.Log;
 
 /**
  * {@link LogListener} implementation dumping all logs to console

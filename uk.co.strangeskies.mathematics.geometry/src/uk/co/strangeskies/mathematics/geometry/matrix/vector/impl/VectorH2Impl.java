@@ -33,21 +33,19 @@
 package uk.co.strangeskies.mathematics.geometry.matrix.vector.impl;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.VectorH2;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utility.Factory;
 
-public class VectorH2Impl<V extends Value<V>> extends
-		VectorHImpl<VectorH2<V>, V> implements VectorH2<V> {
-	public VectorH2Impl(Type type, Order order, Orientation orientation,
-			Factory<V> valueFactory) {
+public class VectorH2Impl<V extends Value<V>> extends VectorHImpl<VectorH2<V>, V>
+		implements VectorH2<V> {
+	public VectorH2Impl(Type type, Order order, Orientation orientation, Supplier<V> valueFactory) {
 		super(type, 2, order, orientation, valueFactory);
 	}
 
-	public VectorH2Impl(Type type, Order order, Orientation orientation,
-			List<? extends V> values) {
+	public VectorH2Impl(Type type, Order order, Orientation orientation, List<? extends V> values) {
 		super(type, order, orientation, values);
 
 		assertDimensions(this, 3);
@@ -55,8 +53,7 @@ public class VectorH2Impl<V extends Value<V>> extends
 
 	@Override
 	public VectorH2<V> copy() {
-		return new VectorH2Impl<>(getType(), getOrder(), getOrientation(),
-				getData());
+		return new VectorH2Impl<>(getType(), getOrder(), getOrientation(), getData());
 	}
 
 	@Override
@@ -75,7 +72,9 @@ public class VectorH2Impl<V extends Value<V>> extends
 
 	@Override
 	public Vector2<V> getMutableVector() {
-		Vector2<V> mutableVector = new Vector2Impl<V>(getOrder(), getOrientation(),
+		Vector2<V> mutableVector = new Vector2Impl<>(
+				getOrder(),
+				getOrientation(),
 				getData().subList(0, 2));
 
 		return mutableVector;

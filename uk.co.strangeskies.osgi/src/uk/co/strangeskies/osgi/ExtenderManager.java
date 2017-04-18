@@ -51,7 +51,7 @@ import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 
-import uk.co.strangeskies.utility.Log;
+import uk.co.strangeskies.log.Log;
 
 /**
  * An abstract class intended to facilitate implementation of OSGi extenders.

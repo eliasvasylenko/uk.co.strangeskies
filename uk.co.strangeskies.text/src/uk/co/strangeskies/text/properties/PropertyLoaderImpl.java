@@ -56,11 +56,11 @@ import java.util.stream.Collectors;
 
 import uk.co.strangeskies.collection.computingmap.CacheComputingMap;
 import uk.co.strangeskies.collection.computingmap.ComputingMap;
+import uk.co.strangeskies.log.Log;
+import uk.co.strangeskies.log.Log.Level;
 import uk.co.strangeskies.observable.ObservableValue;
 import uk.co.strangeskies.text.parsing.DateTimeParser;
 import uk.co.strangeskies.text.parsing.Parser;
-import uk.co.strangeskies.utility.Log;
-import uk.co.strangeskies.utility.Log.Level;
 
 class PropertyLoaderImpl implements PropertyLoader {
 	static class MethodSignature {

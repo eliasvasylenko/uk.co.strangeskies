@@ -40,12 +40,12 @@ import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.osgi.annotation.versioning.ProviderType;
 
 import uk.co.strangeskies.observable.Observable;
 import uk.co.strangeskies.observable.Observer;
-import uk.co.strangeskies.utility.Factory;
 
 /**
  *
@@ -56,7 +56,12 @@ import uk.co.strangeskies.utility.Factory;
  *          The type of edges in the graph
  */
 @ProviderType
-public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
+public interface GraphConfigurator<V, E> {
+	/**
+	 * @return the configured graph instance
+	 */
+	Graph<V, E> create();
+
 	/**
 	 * Calling this method has the same effect as calling both
 	 * {@link #readOnlyVertices()} and {@link #readOnlyEdges()}.
@@ -98,7 +103,8 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 *          Vertex objects to include in the graph
 	 * @return A derived configurator with the requested configuration
 	 */
-	default <W extends V> GraphConfigurator<W, E> vertices(@SuppressWarnings("unchecked") W... vertices) {
+	default <W extends V> GraphConfigurator<W, E> vertices(
+			@SuppressWarnings("unchecked") W... vertices) {
 		return vertices(Arrays.asList(vertices));
 	}
 
@@ -224,8 +230,8 @@ public interface GraphConfigurator<V, E> extends Factory<Graph<V, E>> {
 	 *          The factory with which to create edge objects
 	 * @return A derived configurator with the requested configuration
 	 */
-	default <F extends E> GraphConfigurator<V, F> edgeFactory(Factory<F> factory) {
-		return edgeFactory(v -> factory.create());
+	default <F extends E> GraphConfigurator<V, F> edgeFactory(Supplier<F> factory) {
+		return edgeFactory(v -> factory.get());
 	}
 
 	/**

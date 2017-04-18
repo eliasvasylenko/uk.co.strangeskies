@@ -59,7 +59,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import uk.co.strangeskies.utility.function.ThrowingSupplier;
+import uk.co.strangeskies.function.ThrowingSupplier;
 
 /**
  * A collection of static utility methods for working with streams.

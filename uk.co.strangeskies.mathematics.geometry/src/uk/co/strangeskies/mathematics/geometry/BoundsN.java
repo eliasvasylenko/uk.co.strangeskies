@@ -33,10 +33,10 @@
 package uk.co.strangeskies.mathematics.geometry;
 
 import java.util.Collection;
+import java.util.function.Supplier;
 
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utility.Factory;
 
 public class BoundsN<V extends Value<V>> extends Bounds<BoundsN<V>, V> {
 	public BoundsN(Bounds<?, V> other) {
@@ -55,12 +55,12 @@ public class BoundsN<V extends Value<V>> extends Bounds<BoundsN<V>, V> {
 		super(points);
 	}
 
-	public BoundsN(int size, Factory<V> valueFactory) {
+	public BoundsN(int size, Supplier<V> valueFactory) {
 		super(size, valueFactory);
 	}
 
 	@Override
 	public final BoundsN<V> copy() {
-		return new BoundsN<V>(this);
+		return new BoundsN<>(this);
 	}
 }

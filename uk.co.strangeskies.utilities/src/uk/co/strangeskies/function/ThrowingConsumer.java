@@ -30,17 +30,27 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.utility;
+package uk.co.strangeskies.function;
+
+import java.util.function.Consumer;
 
 /**
- * An interface to provides a canonical name for an object.
+ * As {@link Consumer} but parameterized over an exception type which is allowed
+ * to be thrown by {@link #accept(Object)}.
  * 
  * @author Elias N Vasylenko
  *
+ * @param <T>
+ *          the type of the item to accept
+ * @param <E>
+ *          the type of exception which may be thrown
  */
-public interface Named {
+public interface ThrowingConsumer<T, E extends Exception> {
 	/**
-	 * @return The canonical name of this instance.
+	 * @param value
+	 *          an instance of the expected type
+	 * @throws E
+	 *           an exception thrown by the implementor
 	 */
-	public String getName();
+	void accept(T value) throws E;
 }

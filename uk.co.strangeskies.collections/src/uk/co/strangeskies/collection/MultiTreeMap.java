@@ -35,27 +35,25 @@ package uk.co.strangeskies.collection;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.TreeMap;
-
-import uk.co.strangeskies.utility.Factory;
+import java.util.function.Supplier;
 
 public class MultiTreeMap<K, V, C extends Collection<V>> extends TreeMap<K, C>
 		implements MultiMap<K, V, C> {
 	private static final long serialVersionUID = 1L;
 
-	private final Factory<C> collectionFactory;
+	private final Supplier<? extends C> collectionFactory;
 
-	public MultiTreeMap(Factory<C> collectionFactory) {
+	public MultiTreeMap(Supplier<? extends C> collectionFactory) {
 		this.collectionFactory = collectionFactory;
 	}
 
-	public MultiTreeMap(Comparator<? super K> comparator,
-			Factory<C> collectionFactory) {
+	public MultiTreeMap(Comparator<? super K> comparator, Supplier<? extends C> collectionFactory) {
 		super(comparator);
 		this.collectionFactory = collectionFactory;
 	}
 
 	@Override
 	public C createCollection() {
-		return collectionFactory.create();
+		return collectionFactory.get();
 	}
 }
