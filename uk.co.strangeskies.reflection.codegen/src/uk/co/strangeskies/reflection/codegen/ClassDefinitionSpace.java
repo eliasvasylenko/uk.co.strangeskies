@@ -132,8 +132,11 @@ public class ClassDefinitionSpace {
 		this.classLoadingStrategy = classLoadingStrategy;
 	}
 
-	ClassDefinitionSpace withMethodDefinition(MethodDeclaration<?, ?> declaration, MethodDefinition<?, ?> definition) {
-		Map<MethodDeclaration<?, ?>, MethodDefinition<?, ?>> methodDefinitions = new HashMap<>(this.methodDefinitions);
+	ClassDefinitionSpace withMethodDefinition(
+			MethodDeclaration<?, ?> declaration,
+			MethodDefinition<?, ?> definition) {
+		Map<MethodDeclaration<?, ?>, MethodDefinition<?, ?>> methodDefinitions = new HashMap<>(
+				this.methodDefinitions);
 		methodDefinitions.put(declaration, definition);
 
 		Set<MethodDeclaration<?, ?>> undefinedMethods = new HashSet<>(this.undefinedMethods);
@@ -155,8 +158,11 @@ public class ClassDefinitionSpace {
 	}
 
 	public void validate() {
-		undefinedMethods.stream().filter(m -> m.isConstructor() || m.isStatic() || !m.isDefault()).findAny().ifPresent(
-				m -> {
+		undefinedMethods
+				.stream()
+				.filter(m -> m.isConstructor() || m.isStatic() || !m.isDefault())
+				.findAny()
+				.ifPresent(m -> {
 					throw new CodeGenerationException(CODEGEN_PROPERTIES.mustImplementMethod(m));
 				});
 	}
