@@ -140,7 +140,7 @@ public class TypeVariableSignature implements AnnotatedSignature<TypeVariableSig
 	}
 
 	@Override
-	public TypeVariableSignature withAnnotations(Collection<? extends Annotation> annotations) {
+	public TypeVariableSignature annotated(Collection<? extends Annotation> annotations) {
 		return new TypeVariableSignature(name, bounds, new HashSet<>(annotations));
 	}
 

@@ -63,8 +63,8 @@ public class ClassDefinitionTest {
 	}
 
 	private static final ClassSignature<?> TEST_CLASS_SIGNATURE = classSignature()
-			.withPackageName(ClassDeclarationTest.class.getPackage().getName())
-			.withSimpleName("SelfSet");
+			.packageName(ClassDeclarationTest.class.getPackage().getName())
+			.simpleName("SelfSet");
 
 	private static final TypeToken<String> STRING_TYPE = new TypeToken<String>() {};
 
@@ -78,9 +78,9 @@ public class ClassDefinitionTest {
 	@Test
 	public void runnableClassInvocation() {
 		ClassDefinition<Void, ? extends Runnable> classDefinition = TEST_CLASS_SIGNATURE
-				.withSuperType(Runnable.class)
+				.extending(Runnable.class)
 				.defineStandalone()
-				.withMethodDefinition(methodSignature("run"), new Block<Void>().withReturnStatement());
+				.defineMethod(methodSignature("run"), new Block<Void>().withReturnStatement());
 
 		Runnable instance = classDefinition.instantiateReflectively().cast();
 
@@ -108,10 +108,10 @@ public class ClassDefinitionTest {
 		 */
 
 		Func<String, String> instance = TEST_CLASS_SIGNATURE
-				.withSuperType(new TypeToken<Func<String, String>>() {})
-				.withMethod(applyMethod)
+				.extending(new TypeToken<Func<String, String>>() {})
+				.method(applyMethod)
 				.defineStandalone()
-				.withMethodDefinition(
+				.defineMethod(
 						applyMethod,
 						d -> new Block<String>()
 								.withReturnStatement(d.getParameter(applyParameter).invokeMethod(concatMethod(), literal("append"))))
@@ -128,9 +128,9 @@ public class ClassDefinitionTest {
 		ParameterSignature<String> applyParameter = parameterSignature("value", STRING_TYPE);
 
 		Func<String, String> instance = TEST_CLASS_SIGNATURE
-				.withSuperType(new TypeToken<Func<String, String>>() {})
+				.extending(new TypeToken<Func<String, String>>() {})
 				.defineStandalone()
-				.withMethodDefinition(
+				.defineMethod(
 						methodSignature("apply").withReturnType(String.class).withParameters(applyParameter),
 						d -> new Block<String>().withReturnStatement(
 								d
@@ -146,8 +146,7 @@ public class ClassDefinitionTest {
 
 	// @Test
 	public void defineWithInheritedMethodDeclaration() {
-		defineFunctionClass(
-				TEST_CLASS_SIGNATURE.withSuperType(new TypeToken<Func<String, String>>() {}).defineStandalone());
+		defineFunctionClass(TEST_CLASS_SIGNATURE.extending(new TypeToken<Func<String, String>>() {}).defineStandalone());
 	}
 
 	private <F extends Func<String, String>> void defineFunctionClass(ClassDefinition<Void, F> classDefinition) {
@@ -156,7 +155,7 @@ public class ClassDefinitionTest {
 				methodSignature("apply").withReturnType(String.class).withParameters(applyParameter));
 
 		Func<String, String> instance = classDefinition
-				.withMethodDefinition(
+				.defineMethod(
 						applyMethod,
 						d -> new Block<String>().withReturnStatement(
 								d.getParameter(applyParameter).invokeMethod(concatMethod(), d.getParameter(applyParameter))))
@@ -170,11 +169,11 @@ public class ClassDefinitionTest {
 
 	@Test(expected = ReflectionException.class)
 	public void defineWithAbstractMethod() {
-		TEST_CLASS_SIGNATURE.withSuperType(Runnable.class).defineStandalone().instantiateReflectively();
+		TEST_CLASS_SIGNATURE.extending(Runnable.class).defineStandalone().instantiateReflectively();
 	}
 
 	@Test
 	public void defineWithDefaultMethod() {
-		TEST_CLASS_SIGNATURE.withSuperType(Default.class).defineStandalone().instantiateReflectively();
+		TEST_CLASS_SIGNATURE.extending(Default.class).defineStandalone().instantiateReflectively();
 	}
 }

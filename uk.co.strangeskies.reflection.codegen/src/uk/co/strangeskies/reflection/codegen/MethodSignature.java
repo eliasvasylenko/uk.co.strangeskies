@@ -34,7 +34,6 @@ package uk.co.strangeskies.reflection.codegen;
 
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
-import static uk.co.strangeskies.reflection.AnnotatedTypes.annotated;
 import static uk.co.strangeskies.reflection.codegen.Modifiers.modifiers;
 
 import java.lang.annotation.Annotation;
@@ -57,22 +56,22 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 
 	public static MethodSignature<?> methodSignature(Method method) {
 		return new MethodSignature<>(method.getName())
-				.withAnnotations(method.getAnnotations())
+				.annotated(method.getAnnotations())
 				.withModifiers(modifiers(method.getModifiers()))
 				.withReturnType(method.getReturnType())
 				.asDefault(method.isDefault())
-				.withTypeVariables(
+				.typeVariables(
 						stream(method.getTypeParameters()).map(TypeVariableSignature::typeVariableSignature).collect(toList()))
 				.withParameters(stream(method.getParameters()).map(ParameterSignature::parameterSignature).collect(toList()));
 	}
 
 	public static MethodSignature<?> overrideMethodSignature(ExecutableToken<?, ?> method) {
 		return new MethodSignature<>(method.getName())
-				.withAnnotations(method.getMember().getAnnotations())
+				.annotated(method.getMember().getAnnotations())
 				.withModifiers(modifiers(method.getMember().getModifiers()))
 				.withReturnType(method.getReturnType().getType())
 				.asDefault(((Method) method.getMember()).isDefault())
-				.withTypeVariables(
+				.typeVariables(
 						method
 								.getTypeParameters()
 								.map(TypeParameter::getType)
@@ -86,7 +85,7 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 	protected MethodSignature(String methodName) {
 		super(methodName);
 
-		this.returnType = annotated(void.class);
+		this.returnType = AnnotatedTypes.annotated(void.class);
 	}
 
 	protected MethodSignature(

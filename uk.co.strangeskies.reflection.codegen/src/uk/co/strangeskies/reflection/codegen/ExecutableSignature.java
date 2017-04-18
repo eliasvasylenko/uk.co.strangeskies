@@ -100,7 +100,7 @@ public abstract class ExecutableSignature<S extends ExecutableSignature<S>> exte
 	}
 
 	@Override
-	public S withTypeVariables(Collection<? extends TypeVariableSignature> typeVariables) {
+	public S typeVariables(Collection<? extends TypeVariableSignature> typeVariables) {
 		return withExecutableSignatureData(name, annotations, modifiers, parameters, new ArrayList<>(typeVariables));
 	}
 

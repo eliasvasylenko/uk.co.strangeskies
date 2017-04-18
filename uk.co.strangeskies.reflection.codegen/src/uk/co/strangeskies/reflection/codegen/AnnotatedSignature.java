@@ -71,8 +71,8 @@ public interface AnnotatedSignature<S extends AnnotatedSignature<S>> extends Sig
 	 * @return a new declaration of the same type, and with the same content, but
 	 *         with the given annotations
 	 */
-	default S withAnnotations(Annotation... annotations) {
-		return withAnnotations(asList(annotations));
+	default S annotated(Annotation... annotations) {
+		return annotated(asList(annotations));
 	}
 
 	/**
@@ -90,7 +90,7 @@ public interface AnnotatedSignature<S extends AnnotatedSignature<S>> extends Sig
 	 * @return a new declaration of the same type, and with the same content, but
 	 *         with the given annotations
 	 */
-	S withAnnotations(Collection<? extends Annotation> annotations);
+	S annotated(Collection<? extends Annotation> annotations);
 
 	static boolean equals(AnnotatedSignature<?> first, AnnotatedSignature<?> second) {
 		return first == second

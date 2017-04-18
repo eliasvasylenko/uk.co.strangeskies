@@ -64,15 +64,15 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 		return classSpace;
 	}
 
-	public <U> ClassDefinition<E, T> withMethodDefinition(
+	public <U> ClassDefinition<E, T> defineMethod(
 			MethodSignature<U> signature,
 			Function<? super MethodDeclaration<T, U>, ? extends Block<? extends U>> methodBodyFunction) {
 		MethodDeclaration<T, U> methodDeclaration = getDeclaration().getMethodDeclaration(signature);
 
-		return withMethodDefinition(methodDeclaration, methodBodyFunction);
+		return defineMethod(methodDeclaration, methodBodyFunction);
 	}
 
-	public <U> ClassDefinition<E, T> withMethodDefinition(
+	public <U> ClassDefinition<E, T> defineMethod(
 			MethodDeclaration<T, U> methodDeclaration,
 			Function<? super MethodDeclaration<T, U>, ? extends Block<? extends U>> methodBodyFunction) {
 		MethodDefinition<T, U> definition = new MethodDefinition<>(methodDeclaration)
@@ -81,14 +81,14 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 		return new ClassDefinition<>(getDeclaration(), classSpace.withMethodDefinition(methodDeclaration, definition));
 	}
 
-	public <U> ClassDefinition<E, T> withMethodDefinition(MethodSignature<U> signature, Block<? extends U> methodBody) {
-		return withMethodDefinition(signature, d -> methodBody);
+	public <U> ClassDefinition<E, T> defineMethod(MethodSignature<U> signature, Block<? extends U> methodBody) {
+		return defineMethod(signature, d -> methodBody);
 	}
 
-	public <U> ClassDefinition<E, T> withMethodDefinition(
+	public <U> ClassDefinition<E, T> defineMethod(
 			MethodDeclaration<T, U> methodDeclaration,
 			Block<? extends U> methodBody) {
-		return withMethodDefinition(methodDeclaration, d -> methodBody);
+		return defineMethod(methodDeclaration, d -> methodBody);
 	}
 
 	/**
@@ -103,7 +103,7 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 	 *          the intercepter
 	 * @return the derived class definition
 	 */
-	public <U> ClassDefinition<E, T> withMethodDelegation(MethodDelegation<? super T> intercepter) {
+	public <U> ClassDefinition<E, T> delegate(MethodDelegation<? super T> intercepter) {
 		throw new UnsupportedOperationException();
 	}
 

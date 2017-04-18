@@ -79,7 +79,7 @@ public abstract class MemberSignature<S extends MemberSignature<S>> implements A
 	}
 
 	@Override
-	public S withAnnotations(Collection<? extends Annotation> annotations) {
+	public S annotated(Collection<? extends Annotation> annotations) {
 		return withMemberSignatureData(name, new HashSet<>(annotations), modifiers);
 	}
 

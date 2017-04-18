@@ -51,9 +51,9 @@ public class ConstructorSignature extends ExecutableSignature<ConstructorSignatu
 
 	public static ConstructorSignature constructorSignature(Constructor<?> method) {
 		return new ConstructorSignature()
-				.withAnnotations(method.getAnnotations())
+				.annotated(method.getAnnotations())
 				.withVisibility(forModifiers(method.getModifiers()))
-				.withTypeVariables(
+				.typeVariables(
 						stream(method.getTypeParameters()).map(TypeVariableSignature::typeVariableSignature).collect(toList()))
 				.withParameters(stream(method.getParameters()).map(ParameterSignature::parameterSignature).collect(toList()));
 	}

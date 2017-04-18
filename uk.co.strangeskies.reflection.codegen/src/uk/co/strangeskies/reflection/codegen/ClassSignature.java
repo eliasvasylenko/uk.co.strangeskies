@@ -127,11 +127,11 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 	@SuppressWarnings("unchecked")
 	public static <T> ClassSignature<T> classSignature(Class<T> clazz) {
 		ClassSignature<?> classSignature = new ClassSignature<>()
-				.withPackageName(clazz.getPackage().getName())
-				.withSimpleName(clazz.getSimpleName())
-				.withEnclosingClass(clazz.getEnclosingClass().getName())
-				.withAnnotations(clazz.getDeclaredAnnotations())
-				.withTypeVariables(
+				.packageName(clazz.getPackage().getName())
+				.simpleName(clazz.getSimpleName())
+				.enclosingClassName(clazz.getEnclosingClass().getName())
+				.annotated(clazz.getDeclaredAnnotations())
+				.typeVariables(
 						stream(clazz.getTypeParameters()).map(TypeVariableSignature::typeVariableSignature).collect(toList()));
 
 		List<AnnotatedType> superType = new ArrayList<>(clazz.getInterfaces().length);
@@ -139,13 +139,13 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 			superType.add(clazz.getAnnotatedSuperclass());
 		}
 		stream(clazz.getAnnotatedInterfaces()).forEach(superType::add);
-		classSignature = classSignature.withSuperType(superType);
+		classSignature = classSignature.extending(superType);
 
 		for (Constructor<?> constructor : clazz.getDeclaredConstructors()) {
-			classSignature = classSignature.withConstructor(constructorSignature(constructor));
+			classSignature = classSignature.constructor(constructorSignature(constructor));
 		}
 		for (Method method : clazz.getDeclaredMethods()) {
-			classSignature = classSignature.withMethod(methodSignature(method));
+			classSignature = classSignature.method(methodSignature(method));
 		}
 
 		return (ClassSignature<T>) classSignature;
@@ -165,15 +165,11 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 		return Optional.ofNullable(packageName);
 	}
 
-	public ClassSignature<T> withPackageName(String packageName) {
-		if (packageName.equals("")) {
-			packageName = null;
-		}
-
+	public ClassSignature<T> packageName(String packageName) {
 		return new ClassSignature<>(
 				packageName,
 				simpleName,
-				enclosingClassName,
+				null,
 				superType,
 				constructorSignatures,
 				methodSignatures,
@@ -181,11 +177,11 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 				annotations);
 	}
 
-	public ClassSignature<T> withPackageName(Function<String, String> packageNameTransformation) {
+	public ClassSignature<T> packageName(Function<String, String> packageNameTransformation) {
 		return new ClassSignature<>(
 				packageNameTransformation.apply(packageName),
 				simpleName,
-				enclosingClassName,
+				null,
 				superType,
 				constructorSignatures,
 				methodSignatures,
@@ -197,7 +193,7 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 		return simpleName;
 	}
 
-	public ClassSignature<T> withSimpleName(String simpleName) {
+	public ClassSignature<T> simpleName(String simpleName) {
 		return new ClassSignature<>(
 				packageName,
 				simpleName,
@@ -209,7 +205,7 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 				annotations);
 	}
 
-	public ClassSignature<T> withSimpleName(Function<String, String> simpleNameTransformation) {
+	public ClassSignature<T> simpleName(Function<String, String> simpleNameTransformation) {
 		return new ClassSignature<>(
 				packageName,
 				simpleNameTransformation.apply(simpleName),
@@ -225,9 +221,9 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 		return Optional.ofNullable(enclosingClassName);
 	}
 
-	public ClassSignature<T> withEnclosingClass(String enclosingClassName) {
+	public ClassSignature<T> enclosingClassName(String enclosingClassName) {
 		return new ClassSignature<>(
-				packageName,
+				null,
 				simpleName,
 				enclosingClassName,
 				superType,
@@ -246,8 +242,8 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 	 *          the supertype for the class signature
 	 * @return the receiver
 	 */
-	public ClassSignature<?> withSuperType(Type... superType) {
-		return withSuperType(Arrays.stream(superType).map(AnnotatedTypes::annotated).collect(Collectors.toList()));
+	public ClassSignature<?> extending(Type... superType) {
+		return extending(Arrays.stream(superType).map(AnnotatedTypes::annotated).collect(Collectors.toList()));
 	}
 
 	/**
@@ -255,8 +251,8 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 	 *          the supertype for the class signature
 	 * @return the receiver
 	 */
-	public ClassSignature<?> withSuperType(AnnotatedType... superType) {
-		return withSuperType(Arrays.asList(superType));
+	public ClassSignature<?> extending(AnnotatedType... superType) {
+		return extending(Arrays.asList(superType));
 	}
 
 	/**
@@ -266,8 +262,8 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 	 *          the supertype for the class signature
 	 * @return the receiver
 	 */
-	public <U> ClassSignature<? extends U> withSuperType(Class<U> superType) {
-		return withSuperType(TypeToken.forClass(superType));
+	public <U> ClassSignature<? extends U> extending(Class<U> superType) {
+		return extending(TypeToken.forClass(superType));
 	}
 
 	/**
@@ -278,8 +274,8 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 	 * @return the receiver
 	 */
 	@SuppressWarnings("unchecked")
-	public <U> ClassSignature<? extends U> withSuperType(TypeToken<U> superType) {
-		return (ClassSignature<U>) withSuperType(superType.getAnnotatedDeclaration());
+	public <U> ClassSignature<? extends U> extending(TypeToken<U> superType) {
+		return (ClassSignature<U>) extending(superType.getAnnotatedDeclaration());
 	}
 
 	/**
@@ -291,9 +287,8 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 	 */
 	@SafeVarargs
 	@SuppressWarnings("unchecked")
-	public final <U> ClassSignature<? extends U> withSuperType(TypeToken<? extends U>... superType) {
-		return (ClassSignature<U>) withSuperType(
-				stream(superType).map(TypeToken::getAnnotatedDeclaration).collect(toList()));
+	public final <U> ClassSignature<? extends U> extending(TypeToken<? extends U>... superType) {
+		return (ClassSignature<U>) extending(stream(superType).map(TypeToken::getAnnotatedDeclaration).collect(toList()));
 	}
 
 	/**
@@ -301,7 +296,7 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 	 *          the supertype for the class signature
 	 * @return the receiver
 	 */
-	public ClassSignature<?> withSuperType(Collection<? extends AnnotatedType> superType) {
+	public ClassSignature<?> extending(Collection<? extends AnnotatedType> superType) {
 		return new ClassSignature<>(
 				packageName,
 				simpleName,
@@ -317,7 +312,7 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 		return constructorSignatures.stream();
 	}
 
-	public ClassSignature<T> withConstructor(ConstructorSignature constructorSignature) {
+	public ClassSignature<T> constructor(ConstructorSignature constructorSignature) {
 		HashSet<ConstructorSignature> constructorSignatures = new HashSet<>(this.constructorSignatures);
 		constructorSignatures.add(constructorSignature);
 
@@ -336,7 +331,7 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 		return methodSignatures.stream();
 	}
 
-	public ClassSignature<T> withMethod(MethodSignature<?> methodSignature) {
+	public ClassSignature<T> method(MethodSignature<?> methodSignature) {
 		HashSet<MethodSignature<?>> methodSignatures = new HashSet<>(this.methodSignatures);
 		methodSignatures.add(methodSignature);
 
@@ -357,7 +352,7 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 	}
 
 	@Override
-	public ClassSignature<T> withAnnotations(Collection<? extends Annotation> annotations) {
+	public ClassSignature<T> annotated(Collection<? extends Annotation> annotations) {
 		return new ClassSignature<>(
 				packageName,
 				simpleName,
@@ -375,7 +370,7 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 	}
 
 	@Override
-	public ClassSignature<T> withTypeVariables(Collection<? extends TypeVariableSignature> typeVariables) {
+	public ClassSignature<T> typeVariables(Collection<? extends TypeVariableSignature> typeVariables) {
 		return new ClassSignature<>(
 				packageName,
 				simpleName,
@@ -401,7 +396,8 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 
 		ClassSignature<?> that = (ClassSignature<?>) obj;
 
-		return super.equals(that) && Objects.equals(this.simpleName, that.simpleName)
+		return super.equals(that)
+				&& Objects.equals(this.simpleName, that.simpleName)
 				&& Objects.equals(this.superType, that.superType)
 				&& Objects.equals(this.constructorSignatures, that.constructorSignatures)
 				&& Objects.equals(this.methodSignatures, that.methodSignatures);

@@ -59,8 +59,8 @@ public class Expressions {
 
 	public static <T> ValueExpression<? extends TypeToken<T>> typeTokenExpression(TypeToken<T> type) {
 		ClassDefinition<Void, ? extends TypeToken<T>> typeTokenClass = classSignature()
-				.withSimpleName("TypeTokenExpression$" + TYPE_TOKEN_EXPRESSION_COUNT.incrementAndGet())
-				.withSuperType(type.getThisTypeToken())
+				.simpleName("TypeTokenExpression$" + TYPE_TOKEN_EXPRESSION_COUNT.incrementAndGet())
+				.extending(type.getThisTypeToken())
 				.defineStandalone();
 
 		return invokeStatic(typeTokenClass.getDeclaration().getConstructorDeclaration().asToken());

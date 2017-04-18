@@ -84,7 +84,7 @@ public class GenericSignatureTest {
 		}
 
 		@Override
-		public ParameterizedSignatureImpl withAnnotations(Collection<? extends Annotation> annotations) {
+		public ParameterizedSignatureImpl annotated(Collection<? extends Annotation> annotations) {
 			return new ParameterizedSignatureImpl(new HashSet<>(annotations), typeVariables);
 		}
 
@@ -94,7 +94,7 @@ public class GenericSignatureTest {
 		}
 
 		@Override
-		public ParameterizedSignatureImpl withTypeVariables(Collection<? extends TypeVariableSignature> typeVariables) {
+		public ParameterizedSignatureImpl typeVariables(Collection<? extends TypeVariableSignature> typeVariables) {
 			return new ParameterizedSignatureImpl(annotations, new ArrayList<>(typeVariables));
 		}
 	}
@@ -108,7 +108,7 @@ public class GenericSignatureTest {
 
 	@Test
 	public void unboundedParameterSignatureTest() {
-		ParameterizedSignatureImpl signature = new ParameterizedSignatureImpl().withTypeVariables("A");
+		ParameterizedSignatureImpl signature = new ParameterizedSignatureImpl().typeVariables("A");
 
 		Stream<? extends TypeVariable<?>> typeVariables = new ParameterizedDeclaration<>(signature).getTypeVariables();
 
@@ -117,7 +117,7 @@ public class GenericSignatureTest {
 
 	@Test
 	public void parameterNamesTest() {
-		ParameterizedSignatureImpl signature = new ParameterizedSignatureImpl().withTypeVariables("A", "B", "C");
+		ParameterizedSignatureImpl signature = new ParameterizedSignatureImpl().typeVariables("A", "B", "C");
 
 		Stream<? extends TypeVariable<?>> typeVariables = new ParameterizedDeclaration<>(signature).getTypeVariables();
 
@@ -126,7 +126,7 @@ public class GenericSignatureTest {
 
 	@Test
 	public void selfBoundingTypeVariableTest() {
-		ParameterizedSignatureImpl signature = new ParameterizedSignatureImpl().withTypeVariables(
+		ParameterizedSignatureImpl signature = new ParameterizedSignatureImpl().typeVariables(
 				typeVariableSignature("A").withBounds(parameterizeUnchecked(Self.class, referenceTypeVariable("A"))));
 
 		TypeVariable<?> typeVariable = new ParameterizedDeclaration<>(signature).getTypeParameters()[0];
@@ -138,7 +138,7 @@ public class GenericSignatureTest {
 
 	@Test(expected = ReflectionException.class)
 	public void invalidBoundsTest() {
-		ParameterizedSignatureImpl signature = new ParameterizedSignatureImpl().withTypeVariables(
+		ParameterizedSignatureImpl signature = new ParameterizedSignatureImpl().typeVariables(
 				typeVariableSignature("A")
 						.withBounds(parameterize(Set.class, String.class), parameterize(Set.class, Number.class)));
 

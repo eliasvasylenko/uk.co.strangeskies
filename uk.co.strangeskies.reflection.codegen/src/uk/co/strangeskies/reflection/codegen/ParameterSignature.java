@@ -34,7 +34,6 @@ package uk.co.strangeskies.reflection.codegen;
 
 import static java.lang.System.identityHashCode;
 import static java.util.Collections.emptySet;
-import static uk.co.strangeskies.reflection.AnnotatedTypes.annotated;
 import static uk.co.strangeskies.reflection.codegen.Modifiers.emptyModifiers;
 
 import java.lang.annotation.Annotation;
@@ -46,6 +45,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.token.ExecutableParameter;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
@@ -78,11 +78,11 @@ public class ParameterSignature<T> implements AnnotatedSignature<ParameterSignat
 	}
 
 	public static ParameterSignature<?> parameterSignature(String variableName, Type type) {
-		return new ParameterSignature<>(variableName, annotated(type));
+		return new ParameterSignature<>(variableName, AnnotatedTypes.annotated(type));
 	}
 
 	public static <U> ParameterSignature<U> parameterSignature(String variableName, Class<U> type) {
-		return new ParameterSignature<>(variableName, annotated(type));
+		return new ParameterSignature<>(variableName, AnnotatedTypes.annotated(type));
 	}
 
 	public static <U> ParameterSignature<U> parameterSignature(String variableName, TypeToken<U> type) {
@@ -90,13 +90,13 @@ public class ParameterSignature<T> implements AnnotatedSignature<ParameterSignat
 	}
 
 	public static <U> ParameterSignature<U> parameterSignature(Parameter parameter) {
-		return new ParameterSignature<U>(parameter.getName(), annotated(parameter.getParameterizedType()))
-				.withAnnotations(parameter.getDeclaredAnnotations())
+		return new ParameterSignature<U>(parameter.getName(), AnnotatedTypes.annotated(parameter.getParameterizedType()))
+				.annotated(parameter.getDeclaredAnnotations())
 				.withModifiers(Modifiers.modifiers(parameter.getModifiers()));
 	}
 
 	public static <U> ParameterSignature<U> overrideParameterSignature(ExecutableParameter parameter) {
-		return new ParameterSignature<>(parameter.getName(), annotated(parameter.getType()));
+		return new ParameterSignature<>(parameter.getName(), AnnotatedTypes.annotated(parameter.getType()));
 	}
 
 	public Modifiers getModifiers() {
@@ -117,7 +117,7 @@ public class ParameterSignature<T> implements AnnotatedSignature<ParameterSignat
 	}
 
 	@Override
-	public ParameterSignature<T> withAnnotations(Collection<? extends Annotation> annotations) {
+	public ParameterSignature<T> annotated(Collection<? extends Annotation> annotations) {
 		return new ParameterSignature<>(variableName, type, new HashSet<>(annotations), modifiers);
 	}
 
