@@ -53,7 +53,6 @@ public class LocalValueExpression<T> implements ValueExpression<T> {
 		return localSignature;
 	}
 
-	@Override
 	public TypeToken<T> getType() {
 		return type;
 	}

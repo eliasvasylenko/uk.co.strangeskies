@@ -32,6 +32,7 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
 
 import java.util.List;
@@ -39,25 +40,25 @@ import java.util.stream.Collectors;
 
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.VariableExpressionVisitor;
-import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.FieldToken;
+import uk.co.strangeskies.reflection.token.MethodMatcher;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class ExpressionEvaluator {
 	private class ExpressionVisitorImpl implements ExpressionVisitor {
 		@Override
-		public <U> ValueExpressionVisitor<U> value(TypeToken<? extends U> type) {
-			return new ValueExpressionVisitorImpl<>(type);
+		public <U> ValueExpressionVisitor<U> value(ValueExpression<U> expression) {
+			return new ValueExpressionVisitorImpl<>(expression);
 		}
 	}
 
 	private class ValueExpressionVisitorImpl<T> implements ValueExpressionVisitor<T> {
-		private final TypeToken<? extends T> type;
+		private final ValueExpression<T> expression;
 		private boolean complete = false;
 		private ValueResult<T> result;
 
-		public ValueExpressionVisitorImpl(TypeToken<? extends T> type) {
-			this.type = type;
+		public ValueExpressionVisitorImpl(ValueExpression<T> expression) {
+			this.expression = expression;
 		}
 
 		private ValueResult<T> getResult() {
@@ -102,13 +103,12 @@ public class ExpressionEvaluator {
 		@Override
 		public <O> void visitMethod(
 				ValueExpression<O> receiver,
-				ExecutableToken<? super O, T> invocable,
+				MethodMatcher<? super O, T> invocable,
 				List<ValueExpression<?>> arguments) {
 			O targetObject = evaluate(receiver).get();
 
-			T result = invocable.invoke(
-					targetObject,
-					arguments.stream().map(a -> evaluate(a).get()).collect(Collectors.toList()));
+			T result = invocable
+					.invoke(targetObject, arguments.stream().map(a -> evaluate(a).get()).collect(toList()));
 
 			complete(() -> result);
 		}
@@ -179,7 +179,7 @@ public class ExpressionEvaluator {
 	}
 
 	public synchronized <T> ValueResult<T> evaluate(ValueExpression<T> expression) {
-		ValueExpressionVisitorImpl<T> visitor = new ValueExpressionVisitorImpl<>(expression.getType());
+		ValueExpressionVisitorImpl<T> visitor = new ValueExpressionVisitorImpl<>(expression);
 
 		expression.accept(visitor);
 
@@ -187,8 +187,8 @@ public class ExpressionEvaluator {
 	}
 
 	public synchronized <T> VariableResult<T> evaluate(VariableExpression<T> expression) {
-		VariableExpressionVisitorImpl<T> visitor = new ValueExpressionVisitorImpl<>(
-				expression.getType()).variable();
+		VariableExpressionVisitorImpl<T> visitor = new ValueExpressionVisitorImpl<>(expression)
+				.variable();
 
 		expression.accept(visitor);
 

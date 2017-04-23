@@ -33,7 +33,6 @@
 package uk.co.strangeskies.reflection.codegen;
 
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
-import uk.co.strangeskies.reflection.token.TypeToken;
 
 /**
  * An expression denoting assignment to a {@link VariableExpression}.
@@ -55,10 +54,5 @@ public class AssignmentExpression<T> implements ValueExpression<T> {
 	@Override
 	public void accept(ValueExpressionVisitor<T> visitor) {
 		visitor.visitAssignment(target, value);
-	}
-
-	@Override
-	public TypeToken<? extends T> getType() {
-		return target.getType();
 	}
 }

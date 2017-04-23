@@ -35,19 +35,9 @@ package uk.co.strangeskies.reflection.codegen;
 import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
 
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.VariableExpressionVisitor;
-import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class VariableExpressionProxy<T> implements VariableExpression<T> {
 	private VariableExpression<T> component;
-
-	@Override
-	public TypeToken<T> getType() {
-		if (component != null) {
-			return component.getType();
-		} else {
-			throw new CodeGenerationException(CODEGEN_PROPERTIES.cannotAccessPlaceholderExpression(this));
-		}
-	}
 
 	@Override
 	public void accept(VariableExpressionVisitor<T> visitor) {

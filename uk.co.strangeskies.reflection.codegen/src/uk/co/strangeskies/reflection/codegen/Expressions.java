@@ -48,11 +48,6 @@ public class Expressions {
 		public void accept(ValueExpressionVisitor<Object> visitor) {
 			visitor.visitNull();
 		}
-
-		@Override
-		public TypeToken<?> getType() {
-			return TypeToken.forNull();
-		}
 	};
 
 	private static final AtomicLong TYPE_TOKEN_EXPRESSION_COUNT = new AtomicLong(0);
@@ -63,7 +58,7 @@ public class Expressions {
 				.extending(type.getThisTypeToken())
 				.defineStandalone();
 
-		return invokeStatic(typeTokenClass.getDeclaration().getConstructorDeclaration().asToken());
+		return invokeStatic(typeTokenClass.getDeclaration().getConstructorDeclaration());
 	}
 
 	@SuppressWarnings("unchecked")

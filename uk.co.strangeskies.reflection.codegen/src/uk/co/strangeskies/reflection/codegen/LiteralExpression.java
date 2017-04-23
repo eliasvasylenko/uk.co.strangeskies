@@ -55,7 +55,6 @@ public class LiteralExpression<T> implements ValueExpression<T> {
 		visitor.visitLiteral(value);
 	}
 
-	@Override
 	public TypeToken<T> getType() {
 		return type;
 	}
@@ -65,27 +64,27 @@ public class LiteralExpression<T> implements ValueExpression<T> {
 	}
 
 	public static ValueExpression<Integer> literal(int value) {
-		return new LiteralExpression<>(value, Integer.class);
+		return new LiteralExpression<>(value, int.class);
 	}
 
 	public static ValueExpression<Float> literal(float value) {
-		return new LiteralExpression<>(value, Float.class);
+		return new LiteralExpression<>(value, float.class);
 	}
 
 	public static ValueExpression<Long> literal(long value) {
-		return new LiteralExpression<>(value, Long.class);
+		return new LiteralExpression<>(value, long.class);
 	}
 
 	public static ValueExpression<Double> literal(double value) {
-		return new LiteralExpression<>(value, Double.class);
+		return new LiteralExpression<>(value, double.class);
 	}
 
 	public static ValueExpression<Byte> literal(byte value) {
-		return new LiteralExpression<>(value, Byte.class);
+		return new LiteralExpression<>(value, byte.class);
 	}
 
 	public static ValueExpression<Character> literal(char value) {
-		return new LiteralExpression<>(value, Character.class);
+		return new LiteralExpression<>(value, char.class);
 	}
 
 	public static <T> ValueExpression<Class<T>> literal(Class<T> value) {

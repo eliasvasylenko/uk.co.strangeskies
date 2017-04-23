@@ -32,9 +32,14 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import static uk.co.strangeskies.collection.stream.StreamUtilities.throwingMerger;
+import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.function.Function;
+
+import uk.co.strangeskies.reflection.token.MethodMatcher;
 
 /**
  * @author Elias N Vasylenko
@@ -65,28 +70,27 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 	}
 
 	public <U> ClassDefinition<E, T> defineMethod(
-			MethodSignature<U> signature,
+			MethodMatcher<?, ? super U> methodMatcher,
 			Function<? super MethodDeclaration<T, U>, ? extends Block<? extends U>> methodBodyFunction) {
-		MethodDeclaration<T, U> methodDeclaration = getDeclaration().getMethodDeclaration(signature);
+		@SuppressWarnings("unchecked")
+		MethodDeclaration<T, U> methodDeclaration = getDeclaration()
+				.methodDeclarations()
+				.filter(m -> methodMatcher.match(m.asToken()))
+				.reduce(throwingMerger())
+				.map(m -> (MethodDeclaration<T, U>) m)
+				.orElseThrow(
+						() -> new CodeGenerationException(CODEGEN_PROPERTIES.cannotFindMethodOn(null, null)));
 
-		return defineMethod(methodDeclaration, methodBodyFunction);
-	}
-
-	public <U> ClassDefinition<E, T> defineMethod(
-			MethodDeclaration<T, U> methodDeclaration,
-			Function<? super MethodDeclaration<T, U>, ? extends Block<? extends U>> methodBodyFunction) {
 		MethodDefinition<T, U> definition = new MethodDefinition<>(methodDeclaration)
 				.withBody(methodBodyFunction.apply(methodDeclaration));
 
-		return new ClassDefinition<>(getDeclaration(), classSpace.withMethodDefinition(methodDeclaration, definition));
-	}
-
-	public <U> ClassDefinition<E, T> defineMethod(MethodSignature<U> signature, Block<? extends U> methodBody) {
-		return defineMethod(signature, d -> methodBody);
+		return new ClassDefinition<>(
+				getDeclaration(),
+				classSpace.withMethodDefinition(methodDeclaration, definition));
 	}
 
 	public <U> ClassDefinition<E, T> defineMethod(
-			MethodDeclaration<T, U> methodDeclaration,
+			MethodMatcher<?, U> methodDeclaration,
 			Block<? extends U> methodBody) {
 		return defineMethod(methodDeclaration, d -> methodBody);
 	}
@@ -120,11 +124,15 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 		return instantiateReflectively(getClass().getClassLoader(), arguments);
 	}
 
-	public ReflectiveInstance<E, T> instantiateReflectively(ClassLoader classLoader, Object... arguments) {
+	public ReflectiveInstance<E, T> instantiateReflectively(
+			ClassLoader classLoader,
+			Object... arguments) {
 		return instantiateReflectively(classLoader, Arrays.asList(arguments));
 	}
 
-	public ReflectiveInstance<E, T> instantiateReflectively(ClassLoader classLoader, Collection<?> arguments) {
+	public ReflectiveInstance<E, T> instantiateReflectively(
+			ClassLoader classLoader,
+			Collection<?> arguments) {
 		return ReflectiveInstanceImpl.instantiate(this, classLoader, Arrays.asList(arguments));
 	}
 

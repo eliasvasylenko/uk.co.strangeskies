@@ -132,7 +132,9 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 				.enclosingClassName(clazz.getEnclosingClass().getName())
 				.annotated(clazz.getDeclaredAnnotations())
 				.typeVariables(
-						stream(clazz.getTypeParameters()).map(TypeVariableSignature::typeVariableSignature).collect(toList()));
+						stream(clazz.getTypeParameters())
+								.map(TypeVariableSignature::typeVariableSignature)
+								.collect(toList()));
 
 		List<AnnotatedType> superType = new ArrayList<>(clazz.getInterfaces().length);
 		if (clazz.getSuperclass() != null) {
@@ -243,7 +245,8 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 	 * @return the receiver
 	 */
 	public ClassSignature<?> extending(Type... superType) {
-		return extending(Arrays.stream(superType).map(AnnotatedTypes::annotated).collect(Collectors.toList()));
+		return extending(
+				Arrays.stream(superType).map(AnnotatedTypes::annotated).collect(Collectors.toList()));
 	}
 
 	/**
@@ -288,7 +291,8 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 	@SafeVarargs
 	@SuppressWarnings("unchecked")
 	public final <U> ClassSignature<? extends U> extending(TypeToken<? extends U>... superType) {
-		return (ClassSignature<U>) extending(stream(superType).map(TypeToken::getAnnotatedDeclaration).collect(toList()));
+		return (ClassSignature<U>) extending(
+				stream(superType).map(TypeToken::getAnnotatedDeclaration).collect(toList()));
 	}
 
 	/**
@@ -308,7 +312,7 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 				annotations);
 	}
 
-	public Stream<? extends ConstructorSignature> getConstructorSignatures() {
+	public Stream<? extends ConstructorSignature> getConstructors() {
 		return constructorSignatures.stream();
 	}
 
@@ -327,7 +331,7 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 				annotations);
 	}
 
-	public Stream<? extends MethodSignature<?>> getMethodSignatures() {
+	public Stream<? extends MethodSignature<?>> getMethods() {
 		return methodSignatures.stream();
 	}
 
@@ -370,7 +374,8 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 	}
 
 	@Override
-	public ClassSignature<T> typeVariables(Collection<? extends TypeVariableSignature> typeVariables) {
+	public ClassSignature<T> typeVariables(
+			Collection<? extends TypeVariableSignature> typeVariables) {
 		return new ClassSignature<>(
 				packageName,
 				simpleName,
@@ -405,6 +410,9 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 
 	@Override
 	public int hashCode() {
-		return super.hashCode() ^ superType.hashCode() ^ constructorSignatures.hashCode() ^ methodSignatures.hashCode();
+		return super.hashCode()
+				^ superType.hashCode()
+				^ constructorSignatures.hashCode()
+				^ methodSignatures.hashCode();
 	}
 }

@@ -36,19 +36,16 @@ import java.util.Arrays;
 import java.util.List;
 
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
-import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.FieldToken;
-import uk.co.strangeskies.reflection.token.TypeToken;
+import uk.co.strangeskies.reflection.token.MethodMatcher;
 
 public interface ValueExpression<T> extends Expression {
 	@Override
 	default void accept(ExpressionVisitor visitor) {
-		accept(visitor.value(getType()));
+		accept(visitor.value(this));
 	}
 
 	void accept(ValueExpressionVisitor<T> visitor);
-
-	TypeToken<? extends T> getType();
 
 	default <R> FieldExpression<? super T, R> accessField(FieldToken<? super T, R> field) {
 		return new FieldExpression<>(this, field);
@@ -58,27 +55,15 @@ public interface ValueExpression<T> extends Expression {
 		return null; // TODO
 	}
 
-	default <R> InvocationExpression<? super T, R> invokeMethod(ExecutableToken<? super T, R> invocable,
+	default <R> InvocationExpression<? super T, R> invokeMethod(
+			MethodMatcher<? super T, R> invocable,
 			ValueExpression<?>... arguments) {
 		return invokeMethod(invocable, Arrays.asList(arguments));
 	}
 
-	default <R> InvocationExpression<? super T, R> invokeMethod(ExecutableToken<? super T, R> invocable,
+	default <R> InvocationExpression<? super T, R> invokeMethod(
+			MethodMatcher<? super T, R> invocable,
 			List<ValueExpression<?>> arguments) {
 		return new InvocationExpression<>(this, invocable, arguments);
-	}
-
-	default <R> InvocationExpression<? super T, R> invokeResolvedMethod(String invocableName,
-			ValueExpression<?>... arguments) {
-		return invokeResolvedMethod(invocableName, Arrays.asList(arguments));
-	}
-
-	default <R> InvocationExpression<? super T, R> invokeResolvedMethod(String invocableName,
-			List<ValueExpression<?>> arguments) {
-		/*
-		 * TODO resolve method overload
-		 */
-		return null; /*- new MethodExpression<>(this, InvocableMember.resolveMethodOverload(getType(), invocableName, arguments),
-									arguments);*/
 	}
 }

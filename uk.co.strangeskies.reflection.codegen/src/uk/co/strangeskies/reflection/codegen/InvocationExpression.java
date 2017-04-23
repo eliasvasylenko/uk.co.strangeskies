@@ -39,16 +39,16 @@ import java.util.List;
 
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
 import uk.co.strangeskies.reflection.token.ExecutableToken;
-import uk.co.strangeskies.reflection.token.TypeToken;
+import uk.co.strangeskies.reflection.token.MethodMatcher;
 
 public class InvocationExpression<O, T> implements ValueExpression<T> {
 	private final ValueExpression<? extends O> receiver;
-	private final ExecutableToken<O, T> invocable;
+	private final MethodMatcher<O, T> invocable;
 	private final List<ValueExpression<?>> arguments;
 
 	protected InvocationExpression(
 			ValueExpression<? extends O> receiver,
-			ExecutableToken<O, T> invocable,
+			MethodMatcher<O, T> invocable,
 			List<ValueExpression<?>> arguments) {
 		this.receiver = receiver;
 		this.invocable = invocable;
@@ -60,17 +60,12 @@ public class InvocationExpression<O, T> implements ValueExpression<T> {
 		visitor.visitMethod(receiver, invocable, arguments);
 	}
 
-	@Override
-	public TypeToken<? extends T> getType() {
-		return invocable.getReturnType();
-	}
-
 	/**
 	 * @see #invokeStatic(ExecutableToken, List)
 	 */
 	@SuppressWarnings("javadoc")
 	public static <T> InvocationExpression<Void, T> invokeStatic(
-			ExecutableToken<Void, T> executable,
+			MethodMatcher<Void, T> executable,
 			ValueExpression<?>... arguments) {
 		return invokeStatic(executable, asList(arguments));
 	}
@@ -86,7 +81,7 @@ public class InvocationExpression<O, T> implements ValueExpression<T> {
 	 *         executable with the given argument expressions
 	 */
 	public static <T> InvocationExpression<Void, T> invokeStatic(
-			ExecutableToken<Void, T> executable,
+			MethodMatcher<Void, T> executable,
 			List<ValueExpression<?>> arguments) {
 		return new InvocationExpression<>(null, executable, arguments);
 	}

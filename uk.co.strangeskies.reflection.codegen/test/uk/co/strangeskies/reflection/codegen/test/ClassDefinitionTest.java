@@ -36,6 +36,7 @@ import static uk.co.strangeskies.reflection.codegen.ClassSignature.classSignatur
 import static uk.co.strangeskies.reflection.codegen.LiteralExpression.literal;
 import static uk.co.strangeskies.reflection.codegen.MethodSignature.methodSignature;
 import static uk.co.strangeskies.reflection.codegen.ParameterSignature.parameterSignature;
+import static uk.co.strangeskies.reflection.token.MethodMatcher.matchMethod;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -44,11 +45,7 @@ import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.codegen.Block;
 import uk.co.strangeskies.reflection.codegen.ClassDefinition;
 import uk.co.strangeskies.reflection.codegen.ClassSignature;
-import uk.co.strangeskies.reflection.codegen.Expressions;
-import uk.co.strangeskies.reflection.codegen.MethodDeclaration;
-import uk.co.strangeskies.reflection.codegen.MethodSignature;
 import uk.co.strangeskies.reflection.codegen.ParameterSignature;
-import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 @SuppressWarnings("javadoc")
@@ -80,22 +77,16 @@ public class ClassDefinitionTest {
 		ClassDefinition<Void, ? extends Runnable> classDefinition = TEST_CLASS_SIGNATURE
 				.extending(Runnable.class)
 				.defineStandalone()
-				.defineMethod(methodSignature("run"), new Block<Void>().withReturnStatement());
+				.defineMethod(matchMethod().named("run"), new Block<Void>().withReturnStatement());
 
 		Runnable instance = classDefinition.instantiateReflectively().cast();
 
 		instance.run();
 	}
 
-	private ExecutableToken<String, String> concatMethod() {
-		return STRING_TYPE.methods().named("concat").resolveOverload(STRING_TYPE).withTargetType(STRING_TYPE);
-	}
-
 	@Test
 	public void defineWithExplicitMethodDeclaration() {
 		ParameterSignature<String> applyParameter = parameterSignature("value", STRING_TYPE);
-		MethodSignature<String> applyMethod = methodSignature("apply").withReturnType(STRING_TYPE).withParameters(
-				applyParameter);
 
 		/*
 		 * A block is something we don't always know the type of until we resolve
@@ -109,12 +100,14 @@ public class ClassDefinitionTest {
 
 		Func<String, String> instance = TEST_CLASS_SIGNATURE
 				.extending(new TypeToken<Func<String, String>>() {})
-				.method(applyMethod)
+				.method(methodSignature("apply").withReturnType(STRING_TYPE).withParameters(applyParameter))
 				.defineStandalone()
 				.defineMethod(
-						applyMethod,
-						d -> new Block<String>()
-								.withReturnStatement(d.getParameter(applyParameter).invokeMethod(concatMethod(), literal("append"))))
+						matchMethod().named("apply"),
+						d -> new Block<String>().withReturnStatement(
+								d.getParameter(applyParameter).invokeMethod(
+										matchMethod().named("concat").returning(String.class),
+										literal("append"))))
 				.instantiateReflectively()
 				.cast();
 
@@ -123,7 +116,7 @@ public class ClassDefinitionTest {
 		Assert.assertEquals("stringappend", result);
 	}
 
-	// @Test
+	@Test
 	public void defineWithInheritedMethodDeclarationBySignature() {
 		ParameterSignature<String> applyParameter = parameterSignature("value", STRING_TYPE);
 
@@ -131,11 +124,11 @@ public class ClassDefinitionTest {
 				.extending(new TypeToken<Func<String, String>>() {})
 				.defineStandalone()
 				.defineMethod(
-						methodSignature("apply").withReturnType(String.class).withParameters(applyParameter),
+						matchMethod().named("apply").returning(String.class),
 						d -> new Block<String>().withReturnStatement(
-								d
-										.getParameter(applyParameter)
-										.invokeMethod(concatMethod(), d.getParameter(parameterSignature("", Integer.class)))))
+								d.getParameter(applyParameter).invokeMethod(
+										matchMethod().named("concat").returning(String.class),
+										d.getParameter(parameterSignature("", Integer.class)))))
 				.instantiateReflectively()
 				.cast();
 
@@ -144,21 +137,19 @@ public class ClassDefinitionTest {
 		Assert.assertEquals("stringstring", result);
 	}
 
-	// @Test
+	@Test
 	public void defineWithInheritedMethodDeclaration() {
-		defineFunctionClass(TEST_CLASS_SIGNATURE.extending(new TypeToken<Func<String, String>>() {}).defineStandalone());
-	}
-
-	private <F extends Func<String, String>> void defineFunctionClass(ClassDefinition<Void, F> classDefinition) {
 		ParameterSignature<String> applyParameter = parameterSignature("value", STRING_TYPE);
-		MethodDeclaration<F, String> applyMethod = classDefinition.getDeclaration().getMethodDeclaration(
-				methodSignature("apply").withReturnType(String.class).withParameters(applyParameter));
 
-		Func<String, String> instance = classDefinition
+		Func<String, String> instance = TEST_CLASS_SIGNATURE
+				.extending(new TypeToken<Func<String, String>>() {})
+				.defineStandalone()
 				.defineMethod(
-						applyMethod,
+						matchMethod().named("apply").returning(String.class),
 						d -> new Block<String>().withReturnStatement(
-								d.getParameter(applyParameter).invokeMethod(concatMethod(), d.getParameter(applyParameter))))
+								d.getParameter(applyParameter).invokeMethod(
+										matchMethod().named("concat").returning(String.class),
+										d.getParameter(applyParameter))))
 				.instantiateReflectively()
 				.cast();
 

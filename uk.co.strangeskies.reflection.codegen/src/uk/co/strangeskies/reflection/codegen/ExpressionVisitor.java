@@ -34,12 +34,11 @@ package uk.co.strangeskies.reflection.codegen;
 
 import java.util.List;
 
-import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.FieldToken;
-import uk.co.strangeskies.reflection.token.TypeToken;
+import uk.co.strangeskies.reflection.token.MethodMatcher;
 
 public interface ExpressionVisitor {
-	<U> ValueExpressionVisitor<U> value(TypeToken<? extends U> type);
+	<U> ValueExpressionVisitor<U> value(ValueExpression<U> expression);
 
 	interface ValueExpressionVisitor<U> {
 		VariableExpressionVisitor<U> variable();
@@ -54,7 +53,7 @@ public interface ExpressionVisitor {
 
 		<O> void visitMethod(
 				ValueExpression<O> receiver,
-				ExecutableToken<? super O, U> invocable,
+				MethodMatcher<? super O, U> invocable,
 				List<ValueExpression<?>> arguments);
 
 		void visitLocal(ParameterSignature<? extends U> local);

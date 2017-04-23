@@ -56,7 +56,6 @@ public class FieldExpression<O, T> implements VariableExpression<T> {
 		visitor.visitField(value, field);
 	}
 
-	@Override
 	public TypeToken<T> getType() {
 		return field.getFieldType();
 	}

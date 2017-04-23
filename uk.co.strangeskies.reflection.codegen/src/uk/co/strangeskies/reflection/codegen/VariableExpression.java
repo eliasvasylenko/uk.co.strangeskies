@@ -34,12 +34,8 @@ package uk.co.strangeskies.reflection.codegen;
 
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.VariableExpressionVisitor;
-import uk.co.strangeskies.reflection.token.TypeToken;
 
 public interface VariableExpression<T> extends ValueExpression<T> {
-	@Override
-	TypeToken<T> getType();
-	
 	default ValueExpression<T> assign(ValueExpression<? extends T> value) {
 		return new AssignmentExpression<>(this, value);
 	}

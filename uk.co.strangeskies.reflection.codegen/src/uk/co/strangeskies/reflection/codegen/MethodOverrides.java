@@ -81,7 +81,7 @@ public class MethodOverrides<T> {
 	}
 
 	private void overrideMethods() {
-		classDeclaration.getSignature().getMethodSignatures().filter(s -> !s.getModifiers().isStatic()).forEach(
+		classDeclaration.getSignature().getMethods().filter(s -> !s.getModifiers().isStatic()).forEach(
 				this::overrideMethod);
 
 		methods.values().stream().forEach(MethodOverride::overrideIfNecessary);
