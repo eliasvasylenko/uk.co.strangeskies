@@ -52,7 +52,8 @@ import uk.co.strangeskies.reflection.Visibility;
  * 
  * @author Elias N Vasylenko
  */
-public abstract class MemberSignature<S extends MemberSignature<S>> implements AnnotatedSignature<S> {
+public abstract class MemberSignature<S extends MemberSignature<S>>
+		implements AnnotatedSignature<S> {
 	final String name;
 	final Set<Annotation> annotations;
 	final Modifiers modifiers;
@@ -65,13 +66,19 @@ public abstract class MemberSignature<S extends MemberSignature<S>> implements A
 		this(name, emptySet(), emptyModifiers());
 	}
 
-	protected MemberSignature(String name, Set<Annotation> annotations, Modifiers modifiers) {
+	protected MemberSignature(
+			String name,
+			Set<Annotation> annotations,
+			Modifiers modifiers) {
 		this.name = name;
 		this.annotations = annotations;
 		this.modifiers = modifiers;
 	}
 
-	protected abstract S withMemberSignatureData(String name, Set<Annotation> annotations, Modifiers modifiers);
+	protected abstract S withMemberSignatureData(
+			String name,
+			Set<Annotation> annotations,
+			Modifiers modifiers);
 
 	@Override
 	public Stream<? extends Annotation> getAnnotations() {
@@ -87,12 +94,19 @@ public abstract class MemberSignature<S extends MemberSignature<S>> implements A
 		return name;
 	}
 
+	protected S withModifiers(Modifiers modifiers) {
+		return withMemberSignatureData(name, annotations, modifiers);
+	}
+
 	public Modifiers getModifiers() {
 		return modifiers;
 	}
 
 	public S withVisibility(Visibility visibility) {
-		return withMemberSignatureData(name, annotations, modifiers.withVisibility(visibility));
+		return withMemberSignatureData(
+				name,
+				annotations,
+				modifiers.withVisibility(visibility));
 	}
 
 	@Override
@@ -104,12 +118,15 @@ public abstract class MemberSignature<S extends MemberSignature<S>> implements A
 
 		MemberSignature<?> that = (MemberSignature<?>) obj;
 
-		return AnnotatedSignature.equals(this, that) && Objects.equals(this.getName(), that.getName())
+		return AnnotatedSignature.equals(this, that)
+				&& Objects.equals(this.getName(), that.getName())
 				&& Objects.equals(this.getModifiers(), that.getModifiers());
 	}
 
 	@Override
 	public int hashCode() {
-		return AnnotatedSignature.hashCode(this) ^ getName().hashCode() ^ getModifiers().hashCode();
+		return AnnotatedSignature.hashCode(this)
+				^ getName().hashCode()
+				^ getModifiers().hashCode();
 	}
 }

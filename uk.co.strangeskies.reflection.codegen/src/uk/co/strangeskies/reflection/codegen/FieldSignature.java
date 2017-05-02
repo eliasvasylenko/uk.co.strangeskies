@@ -59,7 +59,11 @@ public class FieldSignature<T> extends MemberSignature<FieldSignature<T>> {
 		this.annotations = emptySet();
 	}
 
-	protected FieldSignature(String variableName, Set<Annotation> annotations, Modifiers modifiers, AnnotatedType type) {
+	protected FieldSignature(
+			String variableName,
+			Set<Annotation> annotations,
+			Modifiers modifiers,
+			AnnotatedType type) {
 		super(variableName, annotations, modifiers);
 
 		this.type = type;
@@ -74,30 +78,35 @@ public class FieldSignature<T> extends MemberSignature<FieldSignature<T>> {
 		return new FieldSignature<>(variableName, annotations, modifiers, type);
 	}
 
-	public static FieldSignature<?> fieldSignature(String variableName, AnnotatedType type) {
+	public static
+			FieldSignature<?>
+			fieldSignature(String variableName, AnnotatedType type) {
 		return new FieldSignature<>(variableName, type);
 	}
 
-	public static FieldSignature<?> fieldSignature(String variableName, Type type) {
+	public static
+			FieldSignature<?>
+			fieldSignature(String variableName, Type type) {
 		return new FieldSignature<>(variableName, AnnotatedTypes.annotated(type));
 	}
 
-	public static <U> FieldSignature<U> fieldSignature(String variableName, Class<U> type) {
+	public static <
+			U> FieldSignature<U> fieldSignature(String variableName, Class<U> type) {
 		return new FieldSignature<>(variableName, AnnotatedTypes.annotated(type));
 	}
 
-	public static <U> FieldSignature<U> fieldSignature(String variableName, TypeToken<U> type) {
+	public static <U> FieldSignature<U> fieldSignature(
+			String variableName,
+			TypeToken<U> type) {
 		return new FieldSignature<>(variableName, type.getAnnotatedDeclaration());
 	}
 
 	public static <U> FieldSignature<U> fieldSignature(Field field) {
-		return new FieldSignature<U>(field.getName(), AnnotatedTypes.annotated(field.getType()))
-				.annotated(field.getAnnotations())
-				.withModifiers(modifiers(field.getModifiers()));
-	}
-
-	private FieldSignature<T> withModifiers(Modifiers modifiers) {
-		return withMemberSignatureData(name, annotations, modifiers);
+		return new FieldSignature<U>(
+				field.getName(),
+				AnnotatedTypes.annotated(field.getType()))
+						.annotated(field.getAnnotations())
+						.withModifiers(modifiers(field.getModifiers()));
 	}
 
 	public FieldSignature<T> asStatic(boolean isStatic) {
@@ -122,8 +131,13 @@ public class FieldSignature<T> extends MemberSignature<FieldSignature<T>> {
 	}
 
 	@Override
-	public FieldSignature<T> annotated(Collection<? extends Annotation> annotations) {
-		return new FieldSignature<>(name, new HashSet<>(annotations), modifiers, type);
+	public FieldSignature<T> annotated(
+			Collection<? extends Annotation> annotations) {
+		return new FieldSignature<>(
+				name,
+				new HashSet<>(annotations),
+				modifiers,
+				type);
 	}
 
 	public AnnotatedType getType() {

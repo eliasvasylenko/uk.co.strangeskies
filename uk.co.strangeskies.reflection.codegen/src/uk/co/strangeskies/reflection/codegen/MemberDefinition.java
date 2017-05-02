@@ -32,9 +32,7 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import java.lang.reflect.Member;
-
-public interface MemberDefinition<C> extends Member {
+public interface MemberDefinition<C> {
 	ClassDeclaration<?, C> getOwningClassDeclaration();
 
 	ClassDeclaration<?, ?> getClassDeclaration();

@@ -50,7 +50,8 @@ import java.util.stream.Stream;
  * @param <S>
  *          a self-bound over the type of the implementing class
  */
-public interface AnnotatedSignature<S extends AnnotatedSignature<S>> extends Signature<S> {
+public interface AnnotatedSignature<S extends AnnotatedSignature<S>>
+		extends Signature<S> {
 	/**
 	 * @return the annotations on this declaration
 	 */
@@ -92,12 +93,17 @@ public interface AnnotatedSignature<S extends AnnotatedSignature<S>> extends Sig
 	 */
 	S annotated(Collection<? extends Annotation> annotations);
 
-	static boolean equals(AnnotatedSignature<?> first, AnnotatedSignature<?> second) {
+	static
+			boolean
+			equals(AnnotatedSignature<?> first, AnnotatedSignature<?> second) {
 		return first == second
-				|| (first.getAnnotations().collect(toSet()).equals(second.getAnnotations().collect(toSet())));
+				|| (first.getAnnotations().collect(toSet()).equals(
+						second.getAnnotations().collect(toSet())));
 	}
 
 	static int hashCode(AnnotatedSignature<?> signature) {
-		return signature.getAnnotations().mapToInt(Objects::hashCode).reduce(0, (a, b) -> a ^ b);
+		return signature.getAnnotations().mapToInt(Objects::hashCode).reduce(
+				0,
+				(a, b) -> a ^ b);
 	}
 }

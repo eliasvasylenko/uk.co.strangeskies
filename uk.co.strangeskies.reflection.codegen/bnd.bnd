@@ -11,4 +11,5 @@ Export-Package: uk.co.strangeskies.reflection.codegen
 	uk.co.strangeskies.reflection;version=snapshot,\
 	uk.co.strangeskies.reflection.token;version=snapshot,\
 	uk.co.strangeskies.utilities;version=snapshot,\
-	uk.co.strangeskies.text;version=snapshot
+	uk.co.strangeskies.text;version=snapshot,\
+	org.objectweb.asm.all

@@ -32,8 +32,6 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import uk.co.strangeskies.reflection.token.ExecutableToken;
-
 public class MethodDefinition<C, T> implements MemberDefinition<C> {
 	private final MethodDeclaration<C, T> methodDeclaration;
 	private final Block<? extends T> body;
@@ -43,7 +41,9 @@ public class MethodDefinition<C, T> implements MemberDefinition<C> {
 		this.body = new Block<>();
 	}
 
-	public MethodDefinition(MethodDefinition<C, T> definition, Block<? extends T> body) {
+	public MethodDefinition(
+			MethodDefinition<C, T> definition,
+			Block<? extends T> body) {
 		this.methodDeclaration = definition.getDeclaration();
 		this.body = body;
 	}
@@ -62,60 +62,16 @@ public class MethodDefinition<C, T> implements MemberDefinition<C> {
 	}
 
 	@Override
-	public Class<?> getDeclaringClass() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public ClassDeclaration<?, ?> getClassDeclaration() {
 		return getDeclaration().getDeclaringClass();
-	}
-
-	@Override
-	public String getName() {
-		return getDeclaration().getName();
-	}
-
-	@Override
-	public int getModifiers() {
-		// TODO
-		return 0;
-	}
-
-	@Override
-	public boolean isSynthetic() {
-		return false;
-	}
-
-	protected T invoke(StatementExecutor state, Object[] arguments) {
-		int i = 0;
-		getDeclaration().getParameters().forEach(
-				parameter -> setParameterUnsafe(state, parameter.getSignature(), arguments[i]));
-
-		return state.executeBlock(body);
-
-	}
-
-	@SuppressWarnings("unchecked")
-	private static <T> void setParameterUnsafe(
-			StatementExecutor state,
-			ParameterSignature<T> parameter,
-			Object argument) {
-		state.declareLocal(parameter);
-		state.setEnclosedLocal(parameter, (T) argument);
-	}
-
-	public ExecutableToken<C, T> asToken() {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 	public MethodDefinition<C, T> withBody(Block<? extends T> body) {
 		return new MethodDefinition<>(this, body);
 	}
 
-	public <U> LocalVariableExpression<U> getParameter(ParameterSignature<U> parameterSignature) {
+	public <U> LocalVariableExpression<U> getParameter(
+			ParameterSignature<U> parameterSignature) {
 		return getDeclaration().getParameter(parameterSignature);
 	}
 }

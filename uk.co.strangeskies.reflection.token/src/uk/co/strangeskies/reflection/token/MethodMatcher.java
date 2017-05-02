@@ -2,7 +2,8 @@ package uk.co.strangeskies.reflection.token;
 
 import static uk.co.strangeskies.reflection.token.MethodMatcher.Builder.matchTrue;
 
-import java.lang.reflect.Method;
+import java.lang.reflect.Executable;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -10,7 +11,12 @@ import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.reflection.Visibility;
 
 public interface MethodMatcher<O, T> {
-	public boolean match(Method method);
+	public default boolean match(Executable executable) {
+		return match(ExecutableToken.forExecutable(executable)).isPresent();
+	}
+
+	public Optional<ExecutableToken<O, T>> match(
+			ExecutableToken<?, ?> executable);
 
 	public static Builder<Object, Object> matchMethod() {
 		return new Builder<>(matchTrue(), matchTrue(), matchTrue(), matchTrue());
@@ -37,21 +43,37 @@ public interface MethodMatcher<O, T> {
 			this.arguments = arguments;
 		}
 
-		public boolean match(Method method) {
-			return name.test(method.getName())
-					&& returnType.test(method.getReturnType())
-					&& visibility.test(method.getVisibility())
-					&& arguments.test(method.getParameters());
+		@Override
+		@SuppressWarnings("unchecked")
+		public Optional<ExecutableToken<O, T>> match(
+				ExecutableToken<?, ?> executable) {
+			if (matchImpl(executable)) {
+				return Optional.of((ExecutableToken<O, T>) executable);
+			} else {
+				return Optional.empty();
+			}
+		}
+
+		private boolean matchImpl(ExecutableToken<?, ?> executable) {
+			return name.test(executable.getName())
+					&& returnType.test(executable.getReturnType())
+					&& visibility.test(executable.getVisibility())
+					&& arguments.test(executable.getParameters());
 		}
 
 		public Builder<O, T> named(String name) {
-			return new Builder<>(this.name.and(name::equals), returnType, visibility, arguments);
+			return new Builder<>(
+					this.name.and(name::equals),
+					returnType,
+					visibility,
+					arguments);
 		}
 
 		public <U> Builder<O, U> returning(TypeToken<U> returnType) {
 			return new Builder<>(
 					name,
-					this.returnType.and(t -> returnType.satisfiesConstraintFrom(Kind.SUBTYPE, t)),
+					this.returnType
+							.and(t -> returnType.satisfiesConstraintFrom(Kind.SUBTYPE, t)),
 					visibility,
 					arguments);
 		}
@@ -66,6 +88,11 @@ public interface MethodMatcher<O, T> {
 
 		public <U> Builder<U, T> receiving(Class<U> type) {
 			return receiving(TypeToken.forClass(type));
+		}
+
+		public Builder<O, T> parameters() {
+			// TODO Auto-generated method stub
+			return null;
 		}
 
 		// TODO "accepting(...)" by parameter types and by parameter count

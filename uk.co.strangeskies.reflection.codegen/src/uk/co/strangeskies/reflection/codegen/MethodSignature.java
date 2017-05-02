@@ -49,7 +49,8 @@ import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.TypeParameter;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
-public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> {
+public class MethodSignature<T>
+		extends ExecutableSignature<MethodSignature<T>> {
 	public static MethodSignature<Void> methodSignature(String methodName) {
 		return new MethodSignature<>(methodName);
 	}
@@ -61,11 +62,17 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 				.withReturnType(method.getReturnType())
 				.asDefault(method.isDefault())
 				.typeVariables(
-						stream(method.getTypeParameters()).map(TypeVariableSignature::typeVariableSignature).collect(toList()))
-				.withParameters(stream(method.getParameters()).map(ParameterSignature::parameterSignature).collect(toList()));
+						stream(method.getTypeParameters())
+								.map(TypeVariableSignature::typeVariableSignature)
+								.collect(toList()))
+				.withParameters(
+						stream(method.getParameters())
+								.map(ParameterSignature::parameterSignature)
+								.collect(toList()));
 	}
 
-	public static MethodSignature<?> overrideMethodSignature(ExecutableToken<?, ?> method) {
+	public static MethodSignature<?> overrideMethodSignature(
+			ExecutableToken<?, ?> method) {
 		return new MethodSignature<>(method.getName())
 				.annotated(method.getMember().getAnnotations())
 				.withModifiers(modifiers(method.getMember().getModifiers()))
@@ -77,7 +84,11 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 								.map(TypeParameter::getType)
 								.map(TypeVariableSignature::typeVariableSignature)
 								.collect(toList()))
-				.withParameters(method.getParameters().map(ParameterSignature::overrideParameterSignature).collect(toList()));
+				.withParameters(
+						method
+								.getParameters()
+								.map(ParameterSignature::overrideParameterSignature)
+								.collect(toList()));
 	}
 
 	private final AnnotatedType returnType;
@@ -107,11 +118,13 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 			Modifiers modifiers,
 			List<ParameterSignature<?>> parameters,
 			List<TypeVariableSignature> typeVariables) {
-		return new MethodSignature<>(name, annotations, modifiers, parameters, typeVariables, returnType);
-	}
-
-	private MethodSignature<T> withModifiers(Modifiers modifiers) {
-		return withExecutableSignatureData(name, annotations, modifiers, parameters, typeVariables);
+		return new MethodSignature<>(
+				name,
+				annotations,
+				modifiers,
+				parameters,
+				typeVariables,
+				returnType);
 	}
 
 	public MethodSignature<T> asStatic(boolean isStatic) {
@@ -147,7 +160,13 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 	}
 
 	public MethodSignature<?> withReturnType(AnnotatedType returnType) {
-		return new MethodSignature<>(name, annotations, modifiers, parameters, typeVariables, returnType);
+		return new MethodSignature<>(
+				name,
+				annotations,
+				modifiers,
+				parameters,
+				typeVariables,
+				returnType);
 	}
 
 	public MethodSignature<?> withReturnType(Type returnType) {
@@ -156,12 +175,14 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 
 	@SuppressWarnings("unchecked")
 	public <U> MethodSignature<U> withReturnType(Class<U> returnType) {
-		return (MethodSignature<U>) withReturnType(AnnotatedTypes.annotated(returnType));
+		return (MethodSignature<U>) withReturnType(
+				AnnotatedTypes.annotated(returnType));
 	}
 
 	@SuppressWarnings("unchecked")
 	public <U> MethodSignature<U> withReturnType(TypeToken<U> returnType) {
-		return (MethodSignature<U>) withReturnType(returnType.getAnnotatedDeclaration());
+		return (MethodSignature<U>) withReturnType(
+				returnType.getAnnotatedDeclaration());
 	}
 
 	@Override
@@ -184,7 +205,8 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 
 		MethodSignature<?> that = (MethodSignature<?>) obj;
 
-		return super.equals(that) && Objects.equals(this.getReturnType(), that.getReturnType());
+		return super.equals(that)
+				&& Objects.equals(this.getReturnType(), that.getReturnType());
 	}
 
 	@Override

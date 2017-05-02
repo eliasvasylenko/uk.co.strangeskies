@@ -32,6 +32,7 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import static java.util.Optional.of;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
@@ -40,15 +41,20 @@ import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODE
 import static uk.co.strangeskies.reflection.token.TypeToken.forAnnotatedType;
 
 import java.lang.reflect.AnnotatedType;
+import java.lang.reflect.Executable;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.token.ExecutableToken;
+import uk.co.strangeskies.reflection.token.MethodMatcher;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
-public class MethodDeclaration<C, T> extends ParameterizedDeclaration<ExecutableSignature<?>> {
+public class MethodDeclaration<C, T>
+		extends ParameterizedDeclaration<ExecutableSignature<?>>
+		implements MethodMatcher<C, T> {
 	enum Kind {
 		CONSTRUCTOR, INSTANCE_METHOD, STATIC_METHOD
 	}
@@ -77,7 +83,8 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 		this.kind = kind;
 		this.declaringClass = declaringClass;
 		this.owningDeclaration = owningDeclaration;
-		this.returnType = (TypeToken<T>) forAnnotatedType(substituteTypeVariableSignatures(returnType));
+		this.returnType = (TypeToken<T>) forAnnotatedType(
+				substituteTypeVariableSignatures(returnType));
 		this.parameters = signature.getParameters().collect(
 				toMap(
 						identity(),
@@ -87,7 +94,8 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 		this.staticMethod = staticMethod;
 
 		if (isStatic() && isDefault()) {
-			throw new CodeGenerationException(CODEGEN_PROPERTIES.staticMethodCannotBeDefault(this));
+			throw new CodeGenerationException(
+					CODEGEN_PROPERTIES.staticMethodCannotBeDefault(this));
 		}
 	}
 
@@ -139,11 +147,13 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 	}
 
 	@SuppressWarnings("unchecked")
-	public <U> LocalVariableExpression<U> getParameter(ParameterSignature<U> parameterSignature) {
+	public <U> LocalVariableExpression<U> getParameter(
+			ParameterSignature<U> parameterSignature) {
 		return (LocalVariableExpression<U>) parameters.get(parameterSignature);
 	}
 
-	private <U> LocalVariableExpression<U> createParameter(ParameterSignature<U> parameterSignature) {
+	private <U> LocalVariableExpression<U> createParameter(
+			ParameterSignature<U> parameterSignature) {
 		TypeToken<?> typeToken = forAnnotatedType(
 				substituteTypeVariableSignatures(parameterSignature.getType()));
 
@@ -157,6 +167,20 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 
 	public ExecutableToken<C, T> asToken() {
 		return null;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public Optional<ExecutableToken<C, T>> match(
+			ExecutableToken<?, ?> executable) {
+		return match(executable.getMember())
+				? of((ExecutableToken<C, T>) executable)
+				: Optional.empty();
+	}
+
+	@Override
+	public boolean match(Executable executable) {
+		return asToken().getMember() == executable;
 	}
 
 	public String getName() {
@@ -205,7 +229,8 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 		if (isParameterized()) {
 			builder
 					.append("<")
-					.append(getTypeVariables().map(Objects::toString).collect(joining(", ")))
+					.append(
+							getTypeVariables().map(Objects::toString).collect(joining(", ")))
 					.append("> ");
 		}
 
@@ -215,7 +240,9 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 
 		return builder
 				.append("(")
-				.append(signature.getParameters().map(Objects::toString).collect(joining(", ")))
+				.append(
+						signature.getParameters().map(Objects::toString).collect(
+								joining(", ")))
 				.append(")")
 				.toString();
 	}
@@ -229,6 +256,7 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 	}
 
 	public boolean isDefault() {
-		return !isConstructor() && ((MethodSignature<?>) getSignature()).getModifiers().isDefault();
+		return !isConstructor()
+				&& ((MethodSignature<?>) getSignature()).getModifiers().isDefault();
 	}
 }

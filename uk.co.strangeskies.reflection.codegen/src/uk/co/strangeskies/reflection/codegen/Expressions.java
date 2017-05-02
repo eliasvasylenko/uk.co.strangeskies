@@ -37,32 +37,64 @@ import static uk.co.strangeskies.reflection.codegen.InvocationExpression.invokeS
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class Expressions {
 	private Expressions() {}
 
-	private static final ValueExpression<Object> NULL_EXPRESSION = new ValueExpression<Object>() {
-		@Override
-		public void accept(ValueExpressionVisitor<Object> visitor) {
-			visitor.visitNull();
-		}
-	};
+	private static final AtomicLong TYPE_TOKEN_EXPRESSION_COUNT = new AtomicLong(
+			0);
 
-	private static final AtomicLong TYPE_TOKEN_EXPRESSION_COUNT = new AtomicLong(0);
-
-	public static <T> ValueExpression<? extends TypeToken<T>> typeTokenExpression(TypeToken<T> type) {
+	public static <T> ValueExpression<? extends TypeToken<T>> typeTokenExpression(
+			TypeToken<T> type) {
 		ClassDefinition<Void, ? extends TypeToken<T>> typeTokenClass = classSignature()
-				.simpleName("TypeTokenExpression$" + TYPE_TOKEN_EXPRESSION_COUNT.incrementAndGet())
+				.simpleName(
+						"TypeTokenExpression$"
+								+ TYPE_TOKEN_EXPRESSION_COUNT.incrementAndGet())
 				.extending(type.getThisTypeToken())
 				.defineStandalone();
 
-		return invokeStatic(typeTokenClass.getDeclaration().getConstructorDeclaration());
+		return invokeStatic(
+				typeTokenClass.getDeclaration().getConstructorDeclaration());
 	}
 
-	@SuppressWarnings("unchecked")
-	public static <T> ValueExpression<T> nullExpression() {
-		return (ValueExpression<T>) NULL_EXPRESSION;
+	public static <T> ValueExpression<T> nullLiteral() {
+		return (ValueExpression<T>) v -> v.visitNull();
+	}
+
+	private static <T> ValueExpression<T> literalImpl(T value) {
+		return v -> v.visitLiteral(value);
+	}
+
+	public static ValueExpression<String> literal(String value) {
+		return literalImpl(value);
+	}
+
+	public static ValueExpression<Integer> literal(int value) {
+		return literalImpl(value);
+	}
+
+	public static ValueExpression<Float> literal(float value) {
+		return literalImpl(value);
+	}
+
+	public static ValueExpression<Long> literal(long value) {
+		return literalImpl(value);
+	}
+
+	public static ValueExpression<Double> literal(double value) {
+		return literalImpl(value);
+	}
+
+	public static ValueExpression<Byte> literal(byte value) {
+		return literalImpl(value);
+	}
+
+	public static ValueExpression<Character> literal(char value) {
+		return literalImpl(value);
+	}
+
+	public static <T> ValueExpression<Class<T>> literal(Class<T> value) {
+		return literalImpl(value);
 	}
 }
