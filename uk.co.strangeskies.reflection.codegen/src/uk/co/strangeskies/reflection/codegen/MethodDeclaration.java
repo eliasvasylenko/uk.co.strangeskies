@@ -106,7 +106,7 @@ public class MethodDeclaration<C, T>
 				classDeclaration.getSignature().getClassName(),
 				Kind.CONSTRUCTOR,
 				classDeclaration,
-				classDeclaration.getEnclosingClass(),
+				classDeclaration.getEnclosingClassDeclaration(),
 				classDeclaration.asToken().getAnnotatedDeclaration(),
 				signature,
 				false);
@@ -119,7 +119,7 @@ public class MethodDeclaration<C, T>
 				signature.getName(),
 				Kind.STATIC_METHOD,
 				classDeclaration,
-				classDeclaration.getEnclosingClass(),
+				classDeclaration.getEnclosingClassDeclaration(),
 				signature.getReturnType(),
 				signature,
 				true);

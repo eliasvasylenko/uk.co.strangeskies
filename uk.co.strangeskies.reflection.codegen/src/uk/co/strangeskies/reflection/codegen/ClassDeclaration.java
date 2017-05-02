@@ -32,30 +32,20 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import static java.util.Collections.unmodifiableList;
-import static java.util.Optional.of;
 import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.objectweb.asm.ClassWriter.COMPUTE_FRAMES;
 import static org.objectweb.asm.Opcodes.V1_8;
 import static uk.co.strangeskies.collection.stream.StreamUtilities.entriesToMap;
-import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
-import static uk.co.strangeskies.reflection.Types.getErasedType;
-import static uk.co.strangeskies.reflection.Types.isInterface;
 import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
 import static uk.co.strangeskies.reflection.codegen.ErasedMethodSignature.erasedConstructorSignature;
 import static uk.co.strangeskies.reflection.codegen.ErasedMethodSignature.erasedMethodSignature;
 import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.declareConstructor;
 import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.declareStaticMethod;
-import static uk.co.strangeskies.reflection.token.TypeToken.forType;
 
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Type;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.objectweb.asm.ClassWriter;
@@ -93,10 +83,6 @@ public class ClassDeclaration<E, T>
 	private final ClassDeclaration<?, E> enclosingClass;
 	private final ClassSignature<T> signature;
 
-	private final Class<? super T> superClass;
-	private final List<TypeToken<? super T>> superTypes;
-	private final TypeToken<T> superType;
-
 	private final Map<ErasedMethodSignature, MethodDeclaration<E, T>> constructorDeclarations;
 	private final Map<ErasedMethodSignature, MethodDeclaration<E, ?>> staticMethodDeclarations;
 	private final Map<ErasedMethodSignature, MethodDeclaration<T, ?>> methodDeclarations;
@@ -118,21 +104,6 @@ public class ClassDeclaration<E, T>
 		this.signature = signature;
 
 		context.addClassDeclaration(this);
-
-		this.superTypes = unmodifiableList(
-				signature
-						.getSuperTypes()
-						.map(this::substituteTypeVariableSignatures)
-						.map(TypeToken::forAnnotatedType)
-						.map(t -> (TypeToken<? super T>) t)
-						.collect(toList()));
-
-		Type superType = intersectionOf(
-				superTypes.stream().map(TypeToken::getType).collect(toList()));
-		this.superType = (TypeToken<T>) forType(superType);
-		this.superClass = (Class<? super T>) of(getErasedType(superType))
-				.filter(t -> !isInterface(t))
-				.orElse(null);
 
 		this.constructorDeclarations = signature
 				.getConstructors()
@@ -166,6 +137,9 @@ public class ClassDeclaration<E, T>
 				getSignature().getModifiers().toInt(),
 				getSignature().getClassName().replace('.', '/'),
 				/* TODO */null,
+				/*
+				 * TODO make sure to consider bounds on type variables for erasure
+				 */
 				getSuperClass().getName().replace('.', '/'),
 				getSuperTypes()
 						.map(TypeToken::getErasedType)
@@ -176,38 +150,16 @@ public class ClassDeclaration<E, T>
 		return null;
 	}
 
+	public ClassDeclaration<?, E> getEnclosingClassDeclaration() {
+		return enclosingClass;
+	}
+
 	public static Type referenceClassDeclaration(String name) {
 		return new Reference(name);
 	}
 
 	public ValueExpression<T> receiver() {
 		return receiverExpression;
-	}
-
-	/**
-	 * @return the declared supertypes of the class definition
-	 */
-	public Stream<? extends TypeToken<? super T>> getSuperTypes() {
-		return superTypes.stream();
-	}
-
-	/**
-	 * @return the intersection of the declared supertypes of the class definition
-	 */
-	public TypeToken<? super T> getSuperType() {
-		return superType;
-	}
-
-	/**
-	 * @return the non-interface superclass of the class definition, which will be
-	 *         {@link Object} if none is explicitly given
-	 */
-	public Class<? super T> getSuperClass() {
-		return superClass;
-	}
-
-	public ClassDeclaration<?, E> getEnclosingClass() {
-		return enclosingClass;
 	}
 
 	@Override
@@ -350,41 +302,6 @@ public class ClassDeclaration<E, T>
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-
-		/*-
-		if (isPrivate())
-			builder.append("private ");
-		else if (isProtected())
-			builder.append("protected ");
-		else if (isPublic())
-			builder.append("public ");
-		
-		if (isNative())
-			builder.append("native ");
-		if (isStatic())
-			builder.append("static ");
-		if (isStrict())
-			builder.append("strictfp ");
-		if (isSynchronized())
-			builder.append("synchronized ");
-		
-		if (isAbstract())
-			builder.append("abstract ");
-		else if (isFinal())
-			builder.append("final ");
-		 */
-
-		builder.append(signature.getClassName());
-
-		if (isParameterized()) {
-			builder
-					.append("<")
-					.append(
-							getTypeVariables().map(Objects::toString).collect(joining(", ")))
-					.append("> ");
-		}
-
-		return builder.toString();
+		return stubClass.toString();
 	}
 }

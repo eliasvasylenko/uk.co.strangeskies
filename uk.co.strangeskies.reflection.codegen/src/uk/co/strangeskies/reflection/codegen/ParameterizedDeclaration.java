@@ -104,6 +104,10 @@ public class ParameterizedDeclaration<S extends ParameterizedSignature<?>>
 		typeParametersSignature = signature.toString();
 	}
 
+	protected String getTypeParametersSignature() {
+		return typeParametersSignature;
+	}
+
 	/**
 	 * @return true if the declaration has type parameters, false otherwise
 	 */

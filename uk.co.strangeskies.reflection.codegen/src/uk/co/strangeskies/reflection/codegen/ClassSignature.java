@@ -38,6 +38,7 @@ import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.codegen.ConstructorSignature.constructorSignature;
 import static uk.co.strangeskies.reflection.codegen.MethodSignature.methodSignature;
+import static uk.co.strangeskies.reflection.codegen.Modifiers.emptyModifiers;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
@@ -102,7 +103,8 @@ public class ClassSignature<T>
 				emptySet(),
 				emptySet(),
 				emptyList(),
-				emptySet());
+				emptySet(),
+				emptyModifiers());
 	}
 
 	protected ClassSignature(
@@ -113,7 +115,8 @@ public class ClassSignature<T>
 			Set<ConstructorSignature> constructorSignatures,
 			Set<MethodSignature<?>> methodSignatures,
 			List<TypeVariableSignature> typeVariables,
-			Set<Annotation> annotations) {
+			Set<Annotation> annotations,
+			Modifiers modifiers) {
 		this.packageName = packageName;
 		this.simpleName = simpleName;
 		this.enclosingClassName = enclosingClassName;
@@ -122,6 +125,7 @@ public class ClassSignature<T>
 		this.methodSignatures = methodSignatures;
 		this.typeVariables = typeVariables;
 		this.annotations = annotations;
+		this.modifiers = modifiers;
 	}
 
 	public static ClassSignature<Object> classSignature() {
@@ -189,7 +193,8 @@ public class ClassSignature<T>
 				constructorSignatures,
 				methodSignatures,
 				typeVariables,
-				annotations);
+				annotations,
+				modifiers);
 	}
 
 	public ClassSignature<T> packageName(
@@ -202,7 +207,8 @@ public class ClassSignature<T>
 				constructorSignatures,
 				methodSignatures,
 				typeVariables,
-				annotations);
+				annotations,
+				modifiers);
 	}
 
 	protected String getSimpleName() {
@@ -218,7 +224,8 @@ public class ClassSignature<T>
 				constructorSignatures,
 				methodSignatures,
 				typeVariables,
-				annotations);
+				annotations,
+				modifiers);
 	}
 
 	public ClassSignature<T> simpleName(
@@ -231,7 +238,8 @@ public class ClassSignature<T>
 				constructorSignatures,
 				methodSignatures,
 				typeVariables,
-				annotations);
+				annotations,
+				modifiers);
 	}
 
 	public Modifiers getModifiers() {
@@ -251,7 +259,8 @@ public class ClassSignature<T>
 				constructorSignatures,
 				methodSignatures,
 				typeVariables,
-				annotations);
+				annotations,
+				modifiers);
 	}
 
 	protected Stream<? extends AnnotatedType> getSuperTypes() {
@@ -332,7 +341,8 @@ public class ClassSignature<T>
 				constructorSignatures,
 				methodSignatures,
 				typeVariables,
-				annotations);
+				annotations,
+				modifiers);
 	}
 
 	public Stream<? extends ConstructorSignature> getConstructors() {
@@ -353,7 +363,8 @@ public class ClassSignature<T>
 				constructorSignatures,
 				methodSignatures,
 				typeVariables,
-				annotations);
+				annotations,
+				modifiers);
 	}
 
 	public Stream<? extends MethodSignature<?>> getMethods() {
@@ -373,7 +384,8 @@ public class ClassSignature<T>
 				constructorSignatures,
 				methodSignatures,
 				typeVariables,
-				annotations);
+				annotations,
+				modifiers);
 	}
 
 	@Override
@@ -392,7 +404,8 @@ public class ClassSignature<T>
 				constructorSignatures,
 				methodSignatures,
 				typeVariables,
-				new HashSet<>(annotations));
+				new HashSet<>(annotations),
+				modifiers);
 	}
 
 	@Override
@@ -411,7 +424,8 @@ public class ClassSignature<T>
 				constructorSignatures,
 				methodSignatures,
 				new ArrayList<>(typeVariables),
-				annotations);
+				annotations,
+				modifiers);
 	}
 
 	public ClassDefinition<Void, T> defineStandalone() {
