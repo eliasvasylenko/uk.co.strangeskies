@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import static uk.co.strangeskies.reflection.token.TypeToken.forAnnotatedType;
+import java.lang.reflect.Field;
 
 import uk.co.strangeskies.reflection.token.TypeToken;
 
@@ -42,9 +42,6 @@ public class FieldDeclaration<C, T> extends AnnotatedDeclaration<ParameterSignat
 	private final ClassDeclaration<?, ?> declaringClass;
 	private final ClassDeclaration<?, C> owningDeclaration;
 
-	private final TypeToken<T> type;
-
-	@SuppressWarnings("unchecked")
 	protected FieldDeclaration(
 			String name,
 			ClassDeclaration<?, ?> declaringClass,
@@ -55,15 +52,18 @@ public class FieldDeclaration<C, T> extends AnnotatedDeclaration<ParameterSignat
 		this.name = name;
 		this.declaringClass = declaringClass;
 		this.owningDeclaration = owningDeclaration;
-		this.type = (TypeToken<T>) forAnnotatedType(
-				owningDeclaration.substituteTypeVariableSignatures(signature.getType()));
+	}
+
+	public Field getFieldStub() {
+		throw new UnsupportedOperationException();
 	}
 
 	public String getName() {
 		return name;
 	}
 
+	@SuppressWarnings("unchecked")
 	public TypeToken<T> getType() {
-		return type;
+		return (TypeToken<T>) TypeToken.forType(getFieldStub().getGenericType());
 	}
 }

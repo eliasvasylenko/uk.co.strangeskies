@@ -33,6 +33,7 @@
 package uk.co.strangeskies.reflection.codegen;
 
 import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
+import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.Kind.CONSTRUCTOR;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -160,7 +161,10 @@ public class ClassDefinitionSpace {
 	public void validate() {
 		undefinedMethods
 				.stream()
-				.filter(m -> m.isConstructor() || m.isStatic() || !m.isDefault())
+				.filter(
+						m -> m.getKind().equals(CONSTRUCTOR)
+								|| m.getSignature().getModifiers().isStatic()
+								|| !m.getSignature().getModifiers().isDefault())
 				.findAny()
 				.ifPresent(m -> {
 					throw new CodeGenerationException(CODEGEN_PROPERTIES.mustImplementMethod(m));

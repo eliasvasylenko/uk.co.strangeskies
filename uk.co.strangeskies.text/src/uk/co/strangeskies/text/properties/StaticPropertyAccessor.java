@@ -37,10 +37,7 @@ import java.util.Properties;
 
 /**
  * A partial implementation for {@link Properties} manually implemented types
- * with static locale.
- * <p>
- * Implementations can use the {@link #localize(String, Object[])} helper method
- * to provide static {@link Localized} instances of the correct locale.
+ * with static locale. Provides a handful of protected helper methods.
  * 
  * @author Elias N Vasylenko
  *

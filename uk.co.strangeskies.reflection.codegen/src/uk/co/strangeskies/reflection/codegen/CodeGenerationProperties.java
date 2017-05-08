@@ -32,6 +32,7 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -63,7 +64,7 @@ public interface CodeGenerationProperties {
 
 	String incompatibleParameterTypes(List<Type> parameterTypes, Method inherited);
 
-	String duplicateMethodDeclaration(MethodDeclaration<?, ?> override);
+	String duplicateMethodDeclaration(MethodSignature<?> override);
 
 	String mustOverrideMethods(Collection<Method> classMethod);
 
@@ -85,7 +86,9 @@ public interface CodeGenerationProperties {
 
 	String classNameAlreadyRegistered(ClassSignature<?> classSignature);
 
-	String staticMethodCannotBeDefault(MethodDeclaration<?, ?> methodDeclaration);
+	String staticMethodCannotBeDefault(MethodSignature<?> methodDeclaration);
 
 	String cannotResolveTypeVariable(String typeVariableName, ParameterizedSignature<?> signature);
+
+	String cannotExtendMultipleClassTypes(AnnotatedType first, AnnotatedType second);
 }

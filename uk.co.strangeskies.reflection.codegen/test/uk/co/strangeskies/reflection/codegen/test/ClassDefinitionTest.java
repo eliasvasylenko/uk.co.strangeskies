@@ -36,7 +36,9 @@ import static uk.co.strangeskies.reflection.codegen.ClassSignature.classSignatur
 import static uk.co.strangeskies.reflection.codegen.Expressions.literal;
 import static uk.co.strangeskies.reflection.codegen.MethodSignature.methodSignature;
 import static uk.co.strangeskies.reflection.codegen.ParameterSignature.parameterSignature;
+import static uk.co.strangeskies.reflection.codegen.VariableExpression.resolveVariable;
 import static uk.co.strangeskies.reflection.token.MethodMatcher.matchMethod;
+import static uk.co.strangeskies.reflection.token.VariableMatcher.matchVariable;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -45,7 +47,6 @@ import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.codegen.Block;
 import uk.co.strangeskies.reflection.codegen.ClassDefinition;
 import uk.co.strangeskies.reflection.codegen.ClassSignature;
-import uk.co.strangeskies.reflection.codegen.ParameterSignature;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 @SuppressWarnings("javadoc")
@@ -66,25 +67,18 @@ public class ClassDefinitionTest {
 	private static final TypeToken<String> STRING_TYPE = new TypeToken<String>() {};
 
 	@Test
-	public void defineObject()
-			throws InstantiationException, IllegalAccessException {
-		Object instance = TEST_CLASS_SIGNATURE
-				.defineStandalone()
-				.generateClass()
-				.newInstance();
+	public void defineObject() throws InstantiationException, IllegalAccessException {
+		Object instance = TEST_CLASS_SIGNATURE.defineStandalone().generateClass().newInstance();
 
 		instance.hashCode();
 	}
 
 	@Test
-	public void runnableClassInvocation()
-			throws InstantiationException, IllegalAccessException {
+	public void runnableClassInvocation() throws InstantiationException, IllegalAccessException {
 		ClassDefinition<Void, ? extends Runnable> classDefinition = TEST_CLASS_SIGNATURE
 				.extending(Runnable.class)
 				.defineStandalone()
-				.defineMethod(
-						matchMethod().named("run"),
-						new Block<Void>().withReturnStatement());
+				.defineMethod(matchMethod().named("run"), new Block<Void>().withReturnStatement());
 
 		Runnable instance = classDefinition.generateClass().newInstance();
 
@@ -94,10 +88,6 @@ public class ClassDefinitionTest {
 	@Test
 	public void defineWithExplicitMethodDeclaration()
 			throws InstantiationException, IllegalAccessException {
-		ParameterSignature<String> applyParameter = parameterSignature(
-				"value",
-				STRING_TYPE);
-
 		/*
 		 * A block is something we don't always know the type of until we resolve
 		 * the type of it's context, e.g. in method overload resolution a lambda
@@ -112,12 +102,12 @@ public class ClassDefinitionTest {
 				.extending(new TypeToken<Func<String, String>>() {})
 				.method(
 						methodSignature("apply").withReturnType(STRING_TYPE).withParameters(
-								applyParameter))
+								parameterSignature("value", STRING_TYPE)))
 				.defineStandalone()
 				.defineMethod(
 						matchMethod().named("apply"),
-						d -> new Block<String>().withReturnStatement(
-								d.getParameter(applyParameter).invokeMethod(
+						new Block<String>().withReturnStatement(
+								resolveVariable(matchVariable().named("value")).invokeMethod(
 										matchMethod().named("concat").returning(String.class),
 										literal("append"))))
 				.generateClass()
@@ -131,19 +121,15 @@ public class ClassDefinitionTest {
 	@Test
 	public void defineWithInheritedMethodDeclarationBySignature()
 			throws InstantiationException, IllegalAccessException {
-		ParameterSignature<String> applyParameter = parameterSignature(
-				"value",
-				STRING_TYPE);
-
 		Func<String, String> instance = TEST_CLASS_SIGNATURE
 				.extending(new TypeToken<Func<String, String>>() {})
 				.defineStandalone()
 				.defineMethod(
 						matchMethod().named("apply").returning(String.class),
-						d -> new Block<String>().withReturnStatement(
-								d.getParameter(applyParameter).invokeMethod(
+						new Block<String>().withReturnStatement(
+								resolveVariable(matchVariable().named("value")).invokeMethod(
 										matchMethod().named("concat").returning(String.class),
-										d.getParameter(parameterSignature("", Integer.class)))))
+										resolveVariable(matchVariable().named("value")))))
 				.generateClass()
 				.newInstance();
 
@@ -155,19 +141,15 @@ public class ClassDefinitionTest {
 	@Test
 	public void defineWithInheritedMethodDeclaration()
 			throws InstantiationException, IllegalAccessException {
-		ParameterSignature<String> applyParameter = parameterSignature(
-				"value",
-				STRING_TYPE);
-
 		Func<String, String> instance = TEST_CLASS_SIGNATURE
 				.extending(new TypeToken<Func<String, String>>() {})
 				.defineStandalone()
 				.defineMethod(
 						matchMethod().named("apply").returning(String.class),
-						d -> new Block<String>().withReturnStatement(
-								d.getParameter(applyParameter).invokeMethod(
+						new Block<String>().withReturnStatement(
+								resolveVariable(matchVariable().named("value")).invokeMethod(
 										matchMethod().named("concat").returning(String.class),
-										d.getParameter(applyParameter))))
+										resolveVariable(matchVariable().named("value")))))
 				.generateClass()
 				.newInstance();
 
@@ -177,22 +159,12 @@ public class ClassDefinitionTest {
 	}
 
 	@Test(expected = ReflectionException.class)
-	public void defineWithAbstractMethod()
-			throws InstantiationException, IllegalAccessException {
-		TEST_CLASS_SIGNATURE
-				.extending(Runnable.class)
-				.defineStandalone()
-				.generateClass()
-				.newInstance();
+	public void defineWithAbstractMethod() throws InstantiationException, IllegalAccessException {
+		TEST_CLASS_SIGNATURE.extending(Runnable.class).defineStandalone().generateClass().newInstance();
 	}
 
 	@Test
-	public void defineWithDefaultMethod()
-			throws InstantiationException, IllegalAccessException {
-		TEST_CLASS_SIGNATURE
-				.extending(Default.class)
-				.defineStandalone()
-				.generateClass()
-				.newInstance();
+	public void defineWithDefaultMethod() throws InstantiationException, IllegalAccessException {
+		TEST_CLASS_SIGNATURE.extending(Default.class).defineStandalone().generateClass().newInstance();
 	}
 }

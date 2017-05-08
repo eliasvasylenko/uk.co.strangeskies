@@ -34,29 +34,23 @@ package uk.co.strangeskies.reflection.codegen.test;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
-import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterize;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterizeUnchecked;
 import static uk.co.strangeskies.reflection.codegen.TypeVariableSignature.referenceTypeVariable;
 import static uk.co.strangeskies.reflection.codegen.TypeVariableSignature.typeVariableSignature;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.objectweb.asm.signature.SignatureWriter;
 
-import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.codegen.ParameterizedDeclaration;
 import uk.co.strangeskies.reflection.codegen.ParameterizedSignature;
@@ -65,7 +59,8 @@ import uk.co.strangeskies.utility.Self;
 
 @SuppressWarnings("javadoc")
 public class GenericSignatureTest {
-	static class ParameterizedSignatureImpl implements ParameterizedSignature<ParameterizedSignatureImpl> {
+	static class ParameterizedSignatureImpl
+			implements ParameterizedSignature<ParameterizedSignatureImpl> {
 		private final Set<Annotation> annotations;
 		private final List<TypeVariableSignature> typeVariables;
 
@@ -73,7 +68,9 @@ public class GenericSignatureTest {
 			this(emptySet(), emptyList());
 		}
 
-		private ParameterizedSignatureImpl(Set<Annotation> annotations, List<TypeVariableSignature> typeVariables) {
+		private ParameterizedSignatureImpl(
+				Set<Annotation> annotations,
+				List<TypeVariableSignature> typeVariables) {
 			this.annotations = annotations;
 			this.typeVariables = typeVariables;
 		}
@@ -94,54 +91,66 @@ public class GenericSignatureTest {
 		}
 
 		@Override
-		public ParameterizedSignatureImpl typeVariables(Collection<? extends TypeVariableSignature> typeVariables) {
+		public ParameterizedSignatureImpl typeVariables(
+				Collection<? extends TypeVariableSignature> typeVariables) {
 			return new ParameterizedSignatureImpl(annotations, new ArrayList<>(typeVariables));
 		}
 	}
 
 	@Test
 	public void noParametersSignatureTest() {
-		Assert.assertEquals(
-				Collections.emptyList(),
-				new ParameterizedDeclaration<>(new ParameterizedSignatureImpl()).getTypeVariables().collect(toList()));
+		SignatureWriter writer = new SignatureWriter();
+		new ParameterizedDeclaration<>(new ParameterizedSignatureImpl(), writer);
+		writer.visitSuperclass();
+
+		Assert.assertEquals("", writer.toString());
 	}
 
 	@Test
 	public void unboundedParameterSignatureTest() {
 		ParameterizedSignatureImpl signature = new ParameterizedSignatureImpl().typeVariables("A");
 
-		Stream<? extends TypeVariable<?>> typeVariables = new ParameterizedDeclaration<>(signature).getTypeVariables();
+		SignatureWriter writer = new SignatureWriter();
+		new ParameterizedDeclaration<>(signature, writer);
+		writer.visitSuperclass();
 
-		Assert.assertEquals(1, typeVariables.count());
+		Assert.assertEquals("<A:Ljava/lang/Object;>", writer.toString());
 	}
 
 	@Test
 	public void parameterNamesTest() {
-		ParameterizedSignatureImpl signature = new ParameterizedSignatureImpl().typeVariables("A", "B", "C");
+		ParameterizedSignatureImpl signature = new ParameterizedSignatureImpl()
+				.typeVariables("A", "B", "C");
 
-		Stream<? extends TypeVariable<?>> typeVariables = new ParameterizedDeclaration<>(signature).getTypeVariables();
+		SignatureWriter writer = new SignatureWriter();
+		new ParameterizedDeclaration<>(signature, writer);
+		writer.visitSuperclass();
 
-		Assert.assertEquals(Arrays.asList("A", "B", "C"), typeVariables.map(t -> t.getName()).collect(Collectors.toList()));
+		Assert.assertEquals(
+				"<A:Ljava/lang/Object;B:Ljava/lang/Object;C:Ljava/lang/Object;>",
+				writer.toString());
 	}
 
 	@Test
 	public void selfBoundingTypeVariableTest() {
 		ParameterizedSignatureImpl signature = new ParameterizedSignatureImpl().typeVariables(
-				typeVariableSignature("A").withBounds(parameterizeUnchecked(Self.class, referenceTypeVariable("A"))));
+				typeVariableSignature("A")
+						.withBounds(parameterizeUnchecked(Self.class, referenceTypeVariable("A"))));
 
-		TypeVariable<?> typeVariable = new ParameterizedDeclaration<>(signature).getTypeParameters()[0];
+		SignatureWriter writer = new SignatureWriter();
+		new ParameterizedDeclaration<>(signature, writer);
+		writer.visitSuperclass();
 
-		Type[] expectedBounds = new Type[] { ParameterizedTypes.parameterizeUnchecked(Self.class, typeVariable) };
-		Type[] bounds = typeVariable.getBounds();
-		Assert.assertArrayEquals(expectedBounds, bounds);
+		Assert.assertEquals("<A::Luk/co/strangeskies/utility/Self<TA;>;>", writer.toString());
 	}
 
 	@Test(expected = ReflectionException.class)
 	public void invalidBoundsTest() {
 		ParameterizedSignatureImpl signature = new ParameterizedSignatureImpl().typeVariables(
-				typeVariableSignature("A")
-						.withBounds(parameterize(Set.class, String.class), parameterize(Set.class, Number.class)));
+				typeVariableSignature("A").withBounds(
+						parameterize(Set.class, String.class),
+						parameterize(Set.class, Number.class)));
 
-		new ParameterizedDeclaration<>(signature);
+		new ParameterizedDeclaration<>(signature, new SignatureWriter());
 	}
 }

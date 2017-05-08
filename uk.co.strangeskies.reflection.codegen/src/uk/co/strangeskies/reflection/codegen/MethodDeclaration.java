@@ -33,27 +33,22 @@
 package uk.co.strangeskies.reflection.codegen;
 
 import static java.util.Optional.of;
-import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toMap;
-import static uk.co.strangeskies.collection.stream.StreamUtilities.throwingMerger;
 import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
-import static uk.co.strangeskies.reflection.token.TypeToken.forAnnotatedType;
 
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Executable;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Stream;
 
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.signature.SignatureWriter;
+
+import uk.co.strangeskies.reflection.Types;
 import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.MethodMatcher;
-import uk.co.strangeskies.reflection.token.TypeToken;
 
-public class MethodDeclaration<C, T>
-		extends ParameterizedDeclaration<ExecutableSignature<?>>
+public class MethodDeclaration<C, T> extends ParameterizedDeclaration<ExecutableSignature<?>>
 		implements MethodMatcher<C, T> {
 	enum Kind {
 		CONSTRUCTOR, INSTANCE_METHOD, STATIC_METHOD
@@ -64,78 +59,111 @@ public class MethodDeclaration<C, T>
 
 	private final ClassDeclaration<?, ?> declaringClass;
 	private final ClassDeclaration<?, C> owningDeclaration;
-	private final TypeToken<T> returnType;
-	private final Map<ParameterSignature<?>, LocalVariableExpression<?>> parameters;
-	private final boolean staticMethod;
 
-	@SuppressWarnings("unchecked")
 	protected MethodDeclaration(
 			String name,
 			Kind kind,
 			ClassDeclaration<?, ?> declaringClass,
 			ClassDeclaration<?, C> owningDeclaration,
-			AnnotatedType returnType,
 			ExecutableSignature<?> signature,
-			boolean staticMethod) {
-		super(signature);
+			ClassWriter classWriter) {
+		this(
+				name,
+				kind,
+				declaringClass,
+				owningDeclaration,
+				signature,
+				classWriter,
+				new SignatureWriter());
+	}
+
+	protected MethodDeclaration(
+			String name,
+			Kind kind,
+			ClassDeclaration<?, ?> declaringClass,
+			ClassDeclaration<?, C> owningDeclaration,
+			ExecutableSignature<?> signature,
+			ClassWriter classWriter,
+			SignatureWriter signatureWriter) {
+		super(signature, signatureWriter);
+
+		String typeSignature = writeGenericParameters(signatureWriter);
+
+		MethodVisitor methodVisitor = classWriter.visitMethod(
+				signature.getModifiers().toInt(),
+				signature.getName(),
+				getMethodDescriptor(signature),
+				typeSignature,
+				null);
 
 		this.name = name;
 		this.kind = kind;
 		this.declaringClass = declaringClass;
 		this.owningDeclaration = owningDeclaration;
-		this.returnType = (TypeToken<T>) forAnnotatedType(
-				substituteTypeVariableSignatures(returnType));
-		this.parameters = signature.getParameters().collect(
-				toMap(
-						identity(),
-						parameter -> createParameter((ParameterSignature<?>) parameter),
-						throwingMerger(),
-						LinkedHashMap::new));
-		this.staticMethod = staticMethod;
+	}
 
-		if (isStatic() && isDefault()) {
-			throw new CodeGenerationException(
-					CODEGEN_PROPERTIES.staticMethodCannotBeDefault(this));
+	private String getMethodDescriptor(ExecutableSignature<?> signature) {
+		return Type.getMethodDescriptor(
+				Type.getType(Types.getErasedType(signature.getReturnType().getType())),
+				signature
+						.getParameters()
+						.map(ParameterSignature::getType)
+						.map(AnnotatedType::getType)
+						.map(Types::getErasedType)
+						.map(Type::getType)
+						.toArray(Type[]::new));
+	}
+
+	private String writeGenericParameters(SignatureWriter signatureWriter) {
+		String typeSignature;
+		if (getSignature().getTypeVariables().count() > 0) {
+			typeSignature = null;
+		} else {
+			typeSignature = null;
 		}
+		return typeSignature;
 	}
 
 	protected static <C, T> MethodDeclaration<C, T> declareConstructor(
 			ClassDeclaration<C, T> classDeclaration,
-			ConstructorSignature signature) {
+			ConstructorSignature signature,
+			ClassWriter writer) {
 		return new MethodDeclaration<>(
 				classDeclaration.getSignature().getClassName(),
 				Kind.CONSTRUCTOR,
 				classDeclaration,
 				classDeclaration.getEnclosingClassDeclaration(),
-				classDeclaration.asToken().getAnnotatedDeclaration(),
 				signature,
-				false);
+				writer);
 	}
 
 	protected static <C, T> MethodDeclaration<C, T> declareStaticMethod(
 			ClassDeclaration<C, ?> classDeclaration,
-			MethodSignature<T> signature) {
+			MethodSignature<T> signature,
+			ClassWriter writer) {
+		if (signature.getModifiers().isDefault())
+			throw new CodeGenerationException(CODEGEN_PROPERTIES.staticMethodCannotBeDefault(signature));
+
 		return new MethodDeclaration<>(
 				signature.getName(),
 				Kind.STATIC_METHOD,
 				classDeclaration,
 				classDeclaration.getEnclosingClassDeclaration(),
-				signature.getReturnType(),
 				signature,
-				true);
+				writer);
 	}
 
 	protected static <C, T> MethodDeclaration<C, T> declareMethod(
 			ClassDeclaration<?, C> classDeclaration,
-			MethodSignature<T> signature) {
+			MethodSignature<T> signature,
+			ClassWriter writer) {
 		return new MethodDeclaration<>(
 				signature.getName(),
 				Kind.INSTANCE_METHOD,
 				classDeclaration,
 				classDeclaration,
-				signature.getReturnType(),
 				signature,
-				false);
+				writer);
 	}
 
 	public ClassDeclaration<?, ?> getDeclaringClass() {
@@ -146,33 +174,13 @@ public class MethodDeclaration<C, T>
 		return owningDeclaration;
 	}
 
-	@SuppressWarnings("unchecked")
-	public <U> LocalVariableExpression<U> getParameter(
-			ParameterSignature<U> parameterSignature) {
-		return (LocalVariableExpression<U>) parameters.get(parameterSignature);
-	}
-
-	private <U> LocalVariableExpression<U> createParameter(
-			ParameterSignature<U> parameterSignature) {
-		TypeToken<?> typeToken = forAnnotatedType(
-				substituteTypeVariableSignatures(parameterSignature.getType()));
-
-		@SuppressWarnings("unchecked")
-		LocalVariableExpression<U> variable = new LocalVariableExpression<>(
-				parameterSignature.getVariableName(),
-				(TypeToken<U>) typeToken);
-
-		return variable;
-	}
-
-	public ExecutableToken<C, T> asToken() {
-		return null;
+	public Executable getExecutableStub() {
+		throw new UnsupportedOperationException();
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public Optional<ExecutableToken<C, T>> match(
-			ExecutableToken<?, ?> executable) {
+	public Optional<ExecutableToken<C, T>> match(ExecutableToken<?, ?> executable) {
 		return match(executable.getMember())
 				? of((ExecutableToken<C, T>) executable)
 				: Optional.empty();
@@ -180,7 +188,7 @@ public class MethodDeclaration<C, T>
 
 	@Override
 	public boolean match(Executable executable) {
-		return asToken().getMember() == executable;
+		return getExecutableStub() == executable;
 	}
 
 	public String getName() {
@@ -191,72 +199,8 @@ public class MethodDeclaration<C, T>
 		return kind;
 	}
 
-	public TypeToken<T> getReturnType() {
-		return returnType;
-	}
-
-	public Stream<LocalVariableExpression<?>> getParameters() {
-		return parameters.values().stream();
-	}
-
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-
-		/*-
-		if (isPrivate())
-			builder.append("private ");
-		else if (isProtected())
-			builder.append("protected ");
-		else if (isPublic())
-			builder.append("public ");
-		
-		if (isNative())
-			builder.append("native ");
-		if (isStatic())
-			builder.append("static ");
-		if (isStrict())
-			builder.append("strictfp ");
-		if (isSynchronized())
-			builder.append("synchronized ");
-		
-		if (isAbstract())
-			builder.append("abstract ");
-		else if (isFinal())
-			builder.append("final ");
-		 */
-
-		if (isParameterized()) {
-			builder
-					.append("<")
-					.append(
-							getTypeVariables().map(Objects::toString).collect(joining(", ")))
-					.append("> ");
-		}
-
-		builder.append(returnType).toString();
-		if (getKind() != Kind.CONSTRUCTOR)
-			builder.append(" ").append(declaringClass).append(".").append(name);
-
-		return builder
-				.append("(")
-				.append(
-						signature.getParameters().map(Objects::toString).collect(
-								joining(", ")))
-				.append(")")
-				.toString();
-	}
-
-	public boolean isConstructor() {
-		return getSignature() instanceof ConstructorSignature;
-	}
-
-	public boolean isStatic() {
-		return staticMethod;
-	}
-
-	public boolean isDefault() {
-		return !isConstructor()
-				&& ((MethodSignature<?>) getSignature()).getModifiers().isDefault();
+		return getExecutableStub().toGenericString();
 	}
 }

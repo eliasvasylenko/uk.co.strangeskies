@@ -41,9 +41,7 @@ public class MethodDefinition<C, T> implements MemberDefinition<C> {
 		this.body = new Block<>();
 	}
 
-	public MethodDefinition(
-			MethodDefinition<C, T> definition,
-			Block<? extends T> body) {
+	public MethodDefinition(MethodDefinition<C, T> definition, Block<? extends T> body) {
 		this.methodDeclaration = definition.getDeclaration();
 		this.body = body;
 	}
@@ -70,8 +68,7 @@ public class MethodDefinition<C, T> implements MemberDefinition<C> {
 		return new MethodDefinition<>(this, body);
 	}
 
-	public <U> LocalVariableExpression<U> getParameter(
-			ParameterSignature<U> parameterSignature) {
-		return getDeclaration().getParameter(parameterSignature);
+	public <U> LocalVariableExpression<U> getParameter(ParameterSignature<U> parameterSignature) {
+		return null;
 	}
 }

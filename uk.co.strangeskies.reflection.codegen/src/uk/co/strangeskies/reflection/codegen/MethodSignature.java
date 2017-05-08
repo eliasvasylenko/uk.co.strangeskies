@@ -49,8 +49,7 @@ import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.TypeParameter;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
-public class MethodSignature<T>
-		extends ExecutableSignature<MethodSignature<T>> {
+public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> {
 	public static MethodSignature<Void> methodSignature(String methodName) {
 		return new MethodSignature<>(methodName);
 	}
@@ -66,13 +65,11 @@ public class MethodSignature<T>
 								.map(TypeVariableSignature::typeVariableSignature)
 								.collect(toList()))
 				.withParameters(
-						stream(method.getParameters())
-								.map(ParameterSignature::parameterSignature)
-								.collect(toList()));
+						stream(method.getParameters()).map(ParameterSignature::parameterSignature).collect(
+								toList()));
 	}
 
-	public static MethodSignature<?> overrideMethodSignature(
-			ExecutableToken<?, ?> method) {
+	public static MethodSignature<?> overrideMethodSignature(ExecutableToken<?, ?> method) {
 		return new MethodSignature<>(method.getName())
 				.annotated(method.getMember().getAnnotations())
 				.withModifiers(modifiers(method.getMember().getModifiers()))
@@ -85,10 +82,8 @@ public class MethodSignature<T>
 								.map(TypeVariableSignature::typeVariableSignature)
 								.collect(toList()))
 				.withParameters(
-						method
-								.getParameters()
-								.map(ParameterSignature::overrideParameterSignature)
-								.collect(toList()));
+						method.getParameters().map(ParameterSignature::overrideParameterSignature).collect(
+								toList()));
 	}
 
 	private final AnnotatedType returnType;
@@ -175,14 +170,12 @@ public class MethodSignature<T>
 
 	@SuppressWarnings("unchecked")
 	public <U> MethodSignature<U> withReturnType(Class<U> returnType) {
-		return (MethodSignature<U>) withReturnType(
-				AnnotatedTypes.annotated(returnType));
+		return (MethodSignature<U>) withReturnType(AnnotatedTypes.annotated(returnType));
 	}
 
 	@SuppressWarnings("unchecked")
 	public <U> MethodSignature<U> withReturnType(TypeToken<U> returnType) {
-		return (MethodSignature<U>) withReturnType(
-				returnType.getAnnotatedDeclaration());
+		return (MethodSignature<U>) withReturnType(returnType.getAnnotatedDeclaration());
 	}
 
 	@Override
@@ -205,8 +198,7 @@ public class MethodSignature<T>
 
 		MethodSignature<?> that = (MethodSignature<?>) obj;
 
-		return super.equals(that)
-				&& Objects.equals(this.getReturnType(), that.getReturnType());
+		return super.equals(that) && Objects.equals(this.getReturnType(), that.getReturnType());
 	}
 
 	@Override

@@ -37,12 +37,14 @@ import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.Visibility.forModifiers;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Constructor;
 import java.util.List;
 import java.util.Set;
 
-public class ConstructorSignature
-		extends ExecutableSignature<ConstructorSignature> {
+import uk.co.strangeskies.reflection.AnnotatedTypes;
+
+public class ConstructorSignature extends ExecutableSignature<ConstructorSignature> {
 	private static final ConstructorSignature EMPTY_SIGNATURE = new ConstructorSignature();
 	protected static final String INIT = "<init>";
 
@@ -50,8 +52,7 @@ public class ConstructorSignature
 		return EMPTY_SIGNATURE;
 	}
 
-	public static ConstructorSignature constructorSignature(
-			Constructor<?> method) {
+	public static ConstructorSignature constructorSignature(Constructor<?> method) {
 		return new ConstructorSignature()
 				.annotated(method.getAnnotations())
 				.withVisibility(forModifiers(method.getModifiers()))
@@ -60,9 +61,8 @@ public class ConstructorSignature
 								.map(TypeVariableSignature::typeVariableSignature)
 								.collect(toList()))
 				.withParameters(
-						stream(method.getParameters())
-								.map(ParameterSignature::parameterSignature)
-								.collect(toList()));
+						stream(method.getParameters()).map(ParameterSignature::parameterSignature).collect(
+								toList()));
 	}
 
 	protected ConstructorSignature() {
@@ -84,11 +84,7 @@ public class ConstructorSignature
 			Modifiers modifiers,
 			List<ParameterSignature<?>> parameters,
 			List<TypeVariableSignature> typeVariables) {
-		return new ConstructorSignature(
-				annotations,
-				modifiers,
-				parameters,
-				typeVariables);
+		return new ConstructorSignature(annotations, modifiers, parameters, typeVariables);
 	}
 
 	@Override
@@ -100,5 +96,10 @@ public class ConstructorSignature
 		appendParameters(builder);
 
 		return builder.toString();
+	}
+
+	@Override
+	public AnnotatedType getReturnType() {
+		return AnnotatedTypes.annotated(void.class);
 	}
 }

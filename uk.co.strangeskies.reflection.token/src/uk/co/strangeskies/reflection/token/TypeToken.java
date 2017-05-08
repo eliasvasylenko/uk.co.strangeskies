@@ -339,9 +339,12 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 			Isomorphism isomorphism,
 			AnnotatedType annotatedType,
 			TypeResolver resolver) {
-		Wildcards behavior = annotatedType.isAnnotationPresent(Retain.class) ? Wildcards.RETAIN
-				: annotatedType.isAnnotationPresent(Infer.class) ? Wildcards.INFER
-						: annotatedType.isAnnotationPresent(Capture.class) ? Wildcards.CAPTURE
+		Wildcards behavior = annotatedType.isAnnotationPresent(Retain.class)
+				? Wildcards.RETAIN
+				: annotatedType.isAnnotationPresent(Infer.class)
+						? Wildcards.INFER
+						: annotatedType.isAnnotationPresent(Capture.class)
+								? Wildcards.CAPTURE
 								: Wildcards.RETAIN;
 
 		if (annotatedType instanceof AnnotatedParameterizedType) {
@@ -1220,7 +1223,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * @return a list of all {@link Method} objects applicable to this type,
 	 *         wrapped in {@link ExecutableToken} instances
 	 */
-	public ExecutableTokenQuery<ExecutableToken<T, ?>, ?> methods() {
+	public ExecutableTokenQuery<ExecutableToken<T, ?>, Method> methods() {
 		Stream<Method> methodStream = getErasedUpperBounds().flatMap(t -> stream(t.getMethods()));
 
 		/*
@@ -1244,7 +1247,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * @return a list of all {@link Method} objects applicable to this type,
 	 *         wrapped in {@link ExecutableToken} instances
 	 */
-	public ExecutableTokenQuery<ExecutableToken<T, ?>, ?> declaredMethods() {
+	public ExecutableTokenQuery<ExecutableToken<T, ?>, Method> declaredMethods() {
 		Stream<Method> methodStream = stream(getErasedType().getDeclaredMethods())
 				.filter(m -> !Modifier.isStatic(m.getModifiers()));
 
@@ -1346,7 +1349,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 				Class<?> enclosingClass = (Class<?>) enclosingDeclaration;
 				return Optional.of(
 						forType(
-								Types.isGeneric(enclosingClass) ? ParameterizedTypes.parameterize(enclosingClass)
+								Types.isGeneric(enclosingClass)
+										? ParameterizedTypes.parameterize(enclosingClass)
 										: enclosingClass));
 
 			} else if (enclosingDeclaration instanceof Method) {

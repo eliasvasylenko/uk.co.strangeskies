@@ -79,7 +79,11 @@ public class ExecutableTokenQuery<I extends ExecutableToken<?, ?>, E extends Mem
 	}
 
 	public ExecutableTokenQuery<I, E> named(String name) {
-		return new ExecutableTokenQuery<>(members.filter(m -> m.getName().equals(name)), mapper);
+		return mapStream(s -> s.filter(m -> m.getName().equals(name)));
+	}
+
+	public ExecutableTokenQuery<I, E> mapStream(Function<Stream<E>, Stream<E>> mapping) {
+		return new ExecutableTokenQuery<>(mapping.apply(members), mapper);
 	}
 
 	public Stream<I> streamAccessible() {

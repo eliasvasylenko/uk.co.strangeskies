@@ -56,5 +56,10 @@ public class VariableMatcher<O, T> {
 		return receiving(TypeToken.forClass(type));
 	}
 
+	public String ofType(Class<Integer> class1) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	// TODO "accepting(...)" by parameter types and by parameter count
 }

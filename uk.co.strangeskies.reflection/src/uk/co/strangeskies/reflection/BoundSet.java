@@ -68,9 +68,9 @@ import uk.co.strangeskies.utility.Isomorphism;
  * within a bound set are not considered inference variables within that
  * context, and are treated as proper types. Inference variables are considered
  * contained within a bound set if they were added through
- * {@link #copyInternal()}, {@link #withInferenceVariables(Collection)} , or as
- * part of a capture conversion added through a {@link IncorporationTarget}
- * belonging to that bound set.
+ * {@link #withInferenceVariables(Collection)} , or as part of a capture
+ * conversion added through a {@link IncorporationTarget} belonging to that
+ * bound set.
  * 
  * <p>
  * The types of bounds which may be included in a bound set are as follows:
@@ -311,7 +311,9 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 					inferenceVariableBounds.get(second).putBound(BoundKind.EQUAILTY, first);
 				}
 			} catch (Exception e) {
-				throw new ReflectionException(REFLECTION_PROPERTIES.invalidEquality(first, second, BoundSet.this), e);
+				throw new ReflectionException(
+						REFLECTION_PROPERTIES.invalidEquality(first, second, BoundSet.this),
+						e);
 			}
 		}
 	}

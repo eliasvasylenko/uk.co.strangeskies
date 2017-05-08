@@ -32,8 +32,11 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import static uk.co.strangeskies.reflection.token.VariableMatcher.matchVariable;
+
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.VariableExpressionVisitor;
+import uk.co.strangeskies.reflection.token.VariableMatcher;
 
 public interface VariableExpression<T> extends ValueExpression<T> {
 	default ValueExpression<T> assign(ValueExpression<? extends T> value) {
@@ -46,4 +49,12 @@ public interface VariableExpression<T> extends ValueExpression<T> {
 	}
 
 	void accept(VariableExpressionVisitor<T> visitor);
+
+	static VariableExpression<Object> resolveVariable(String name) {
+		return resolveVariable(matchVariable().named(name));
+	}
+
+	static <T> VariableExpression<T> resolveVariable(VariableMatcher<?, T> matcher) {
+		return new MatchedVariableExpression<>(matcher);
+	}
 }

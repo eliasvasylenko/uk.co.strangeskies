@@ -37,7 +37,6 @@ import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.Types.isAssignable;
 import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
-import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.declareMethod;
 import static uk.co.strangeskies.reflection.codegen.MethodSignature.overrideMethodSignature;
 
 import java.lang.reflect.Method;
@@ -60,7 +59,7 @@ public class MethodOverride<T> {
 	private final Set<Method> interfaceMethods;
 	private Method classMethod;
 
-	private MethodDeclaration<T, ?> override;
+	private MethodSignature<?> override;
 
 	public MethodOverride(MethodOverrides<T> methodOverrides) {
 		this.methodOverrides = methodOverrides;
@@ -142,18 +141,19 @@ public class MethodOverride<T> {
 			validateOverrideAgainst(
 					override.getReturnType().getType(),
 					override.getParameters().map(v -> v.getType().getType()).toArray(Type[]::new),
-					override.getTypeParameters(),
+					override.getTypeVariables().toArray(TypeVariable<?>[]::new),
 					inherited);
 		}
 	}
 
-	public void override(MethodDeclaration<T, ?> override) {
+	public void override(MethodSignature<?> override) {
 		if (this.override != null) {
 			throw new CodeGenerationException(CODEGEN_PROPERTIES.duplicateMethodDeclaration(override));
 		}
 
-		if (classMethod != null && (Modifier.isPrivate(classMethod.getModifiers())
-				|| Modifier.isFinal(classMethod.getModifiers()))) {
+		if (classMethod != null
+				&& (Modifier.isPrivate(classMethod.getModifiers())
+						|| Modifier.isFinal(classMethod.getModifiers()))) {
 			throw new CodeGenerationException(CODEGEN_PROPERTIES.cannotOverrideMethod(classMethod));
 		}
 
@@ -180,18 +180,14 @@ public class MethodOverride<T> {
 
 				MethodSignature<?> signature = overrideMethodSignature(executableToken);
 
-				MethodDeclaration<T, ?> declaration = declareMethod(
-						methodOverrides.getClassDeclaration(),
-						signature);
-
-				override(declaration);
+				override(signature);
 			} else {
 				validate();
 			}
 		}
 	}
 
-	public Optional<MethodDeclaration<T, ?>> getOverride() {
+	public Optional<MethodSignature<?>> getOverride() {
 		return Optional.ofNullable(override);
 	}
 

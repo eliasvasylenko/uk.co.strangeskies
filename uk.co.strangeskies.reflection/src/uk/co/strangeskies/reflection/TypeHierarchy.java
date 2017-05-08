@@ -51,6 +51,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import uk.co.strangeskies.collection.stream.StreamUtilities;
+
 class Fuk<T> {
 	public void ass(T t) {}
 }
@@ -64,6 +66,28 @@ class Pog extends Fuk<String> implements Kig {
 }
 
 public class TypeHierarchy {
+	/**
+	 * Determine the recursive sequence of direct supertypes of a given type which
+	 * lead to either the given superclass or a parameterization thereof.
+	 * 
+	 * @param type
+	 *          the type providing a context within which to determine the
+	 *          arguments of the supertype
+	 * @return a stream returning the given type and then each direct supertype
+	 *         recursively until the given superclass, or a parameterization
+	 *         thereof, is reached
+	 */
+	public static Stream<Type> resolveSuperClassHierarchy(Type type) {
+		validateResolvableSupertype(type, Object.class);
+		if (Types.getErasedType(type).isInterface()) {
+			throw new ReflectionException(
+					REFLECTION_PROPERTIES.cannotResolveSupertype(type, Object.class));
+		}
+
+		return StreamUtilities
+				.iterate(type, t -> resolveSupertype(t, Types.getErasedType(t).getSuperclass()));
+	}
+
 	/**
 	 * Determine the recursive sequence of direct supertypes of a given type which
 	 * lead to either the given superclass or a parameterization thereof.

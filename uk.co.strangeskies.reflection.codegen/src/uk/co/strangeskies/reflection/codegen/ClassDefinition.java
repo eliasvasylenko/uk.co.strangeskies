@@ -35,8 +35,6 @@ package uk.co.strangeskies.reflection.codegen;
 import static uk.co.strangeskies.collection.stream.StreamUtilities.throwingMerger;
 import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
 
-import java.util.function.Function;
-
 import uk.co.strangeskies.reflection.token.MethodMatcher;
 
 /**
@@ -49,9 +47,7 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 	private final String typeName;
 	private final ClassDefinitionSpace classSpace;
 
-	protected ClassDefinition(
-			ClassDeclaration<E, T> declaration,
-			ClassDefinitionSpace classSpace) {
+	protected ClassDefinition(ClassDeclaration<E, T> declaration, ClassDefinitionSpace classSpace) {
 		super(declaration);
 
 		this.typeName = declaration.getSignature().getClassName();
@@ -71,30 +67,22 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 
 	public <U> ClassDefinition<E, T> defineMethod(
 			MethodMatcher<?, ? super U> methodMatcher,
-			Function<? super MethodDeclaration<T, U>, ? extends Block<? extends U>> methodBodyFunction) {
+			Block<? extends U> methodBody) {
 		@SuppressWarnings("unchecked")
 		MethodDeclaration<T, U> methodDeclaration = getDeclaration()
 				.methodDeclarations()
-				.filter(m -> methodMatcher.match(m.asToken()).isPresent())
+				.filter(m -> methodMatcher.match(m.getExecutableStub()))
 				.reduce(throwingMerger())
 				.map(m -> (MethodDeclaration<T, U>) m)
 				.orElseThrow(
-						() -> new CodeGenerationException(
-								CODEGEN_PROPERTIES.cannotFindMethodOn(null, null)));
+						() -> new CodeGenerationException(CODEGEN_PROPERTIES.cannotFindMethodOn(null, null)));
 
-		MethodDefinition<T, U> definition = new MethodDefinition<>(
-				methodDeclaration)
-						.withBody(methodBodyFunction.apply(methodDeclaration));
+		MethodDefinition<T, U> definition = new MethodDefinition<>(methodDeclaration)
+				.withBody(methodBody);
 
 		return new ClassDefinition<>(
 				getDeclaration(),
 				classSpace.withMethodDefinition(methodDeclaration, definition));
-	}
-
-	public <U> ClassDefinition<E, T> defineMethod(
-			MethodMatcher<?, U> methodDeclaration,
-			Block<? extends U> methodBody) {
-		return defineMethod(methodDeclaration, d -> methodBody);
 	}
 
 	/**
@@ -109,8 +97,7 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 	 *          the intercepter
 	 * @return the derived class definition
 	 */
-	public <U> ClassDefinition<E, T> delegate(
-			MethodDelegation<? super T> intercepter) {
+	public <U> ClassDefinition<E, T> delegate(MethodDelegation<? super T> intercepter) {
 		throw new UnsupportedOperationException();
 	}
 

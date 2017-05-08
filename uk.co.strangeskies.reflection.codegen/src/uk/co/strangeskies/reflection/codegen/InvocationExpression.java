@@ -38,7 +38,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
-import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.MethodMatcher;
 
 public class InvocationExpression<O, T> implements ValueExpression<T> {
@@ -61,7 +60,7 @@ public class InvocationExpression<O, T> implements ValueExpression<T> {
 	}
 
 	/**
-	 * @see #invokeStatic(ExecutableToken, List)
+	 * @see #invokeStatic(MethodMatcher, List)
 	 */
 	@SuppressWarnings("javadoc")
 	public static <T> InvocationExpression<Void, T> invokeStatic(

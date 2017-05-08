@@ -64,6 +64,7 @@ s * Copyright (C) 2017 Elias N Vasylenko <eliasvasylenko@strangeskies.co.uk>
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import static org.objectweb.asm.Type.getInternalName;
 import static uk.co.strangeskies.collection.stream.StreamUtilities.throwingMerger;
 import static uk.co.strangeskies.reflection.Types.getErasedType;
 
@@ -74,38 +75,46 @@ import org.objectweb.asm.signature.SignatureWriter;
 
 public class ParameterizedDeclaration<S extends ParameterizedSignature<?>>
 		extends AnnotatedDeclaration<S> {
-	private final String typeParametersSignature;
-
-	public ParameterizedDeclaration(S signature) {
+	public ParameterizedDeclaration(S signature, SignatureWriter writer) {
 		super(signature);
 
 		/*
 		 * TODO validate type parameter bounds
 		 */
 
-		SignatureWriter writer = new SignatureWriter();
-
 		signature.getTypeVariables().forEach(typeVariable -> {
 			writer.visitFormalTypeParameter(typeVariable.getName());
 
-			typeVariable
-					.getBounds()
-					.filter(
-							b -> b.getType() instanceof TypeVariable<?>
-									|| !getErasedType(b.getType()).isInterface())
-					.reduce(throwingMerger())
-					.ifPresent(bound -> {
-						SignatureVisitor classBound = writer.visitClassBound();
-						ASMUtilities.visitTypeSignature(writer, bound.getType());
-						classBound.visitEnd();
-					});
+			if (typeVariable.getBounds().count() == 0) {
+				SignatureVisitor classBound = writer.visitClassBound();
+				classBound.visitClassType(getInternalName(Object.class));
+				classBound.visitEnd();
+			} else {
+				typeVariable
+						.getBounds()
+						.filter(
+								b -> b.getType() instanceof TypeVariable<?>
+										|| !getErasedType(b.getType()).isInterface())
+						.reduce(throwingMerger())
+						.ifPresent(bound -> {
+							SignatureVisitor classBound = writer.visitClassBound();
+							ClassWritingContext.visitTypeSignature(writer, bound.getType());
+							classBound.visitEnd();
+						});
+
+				typeVariable
+						.getBounds()
+						.filter(
+								b -> !(b.getType() instanceof TypeVariable<?>)
+										&& getErasedType(b.getType()).isInterface())
+						.reduce(throwingMerger())
+						.ifPresent(bound -> {
+							SignatureVisitor classBound = writer.visitInterfaceBound();
+							ClassWritingContext.visitTypeSignature(writer, bound.getType());
+							classBound.visitEnd();
+						});
+			}
 		});
-
-		typeParametersSignature = signature.toString();
-	}
-
-	protected String getTypeParametersSignature() {
-		return typeParametersSignature;
 	}
 
 	/**
