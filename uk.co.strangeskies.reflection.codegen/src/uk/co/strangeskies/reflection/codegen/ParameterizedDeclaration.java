@@ -66,9 +66,12 @@ package uk.co.strangeskies.reflection.codegen;
 
 import static org.objectweb.asm.Type.getInternalName;
 import static uk.co.strangeskies.collection.stream.StreamUtilities.throwingMerger;
+import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
 import static uk.co.strangeskies.reflection.Types.getErasedType;
 
+import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.TypeVariable;
+import java.util.stream.Collectors;
 
 import org.objectweb.asm.signature.SignatureVisitor;
 import org.objectweb.asm.signature.SignatureWriter;
@@ -78,43 +81,48 @@ public class ParameterizedDeclaration<S extends ParameterizedSignature<?>>
 	public ParameterizedDeclaration(S signature, SignatureWriter writer) {
 		super(signature);
 
-		/*
-		 * TODO validate type parameter bounds
-		 */
-
 		signature.getTypeVariables().forEach(typeVariable -> {
-			writer.visitFormalTypeParameter(typeVariable.getName());
-
-			if (typeVariable.getBounds().count() == 0) {
-				SignatureVisitor classBound = writer.visitClassBound();
-				classBound.visitClassType(getInternalName(Object.class));
-				classBound.visitEnd();
-			} else {
-				typeVariable
-						.getBounds()
-						.filter(
-								b -> b.getType() instanceof TypeVariable<?>
-										|| !getErasedType(b.getType()).isInterface())
-						.reduce(throwingMerger())
-						.ifPresent(bound -> {
-							SignatureVisitor classBound = writer.visitClassBound();
-							ClassWritingContext.visitTypeSignature(writer, bound.getType());
-							classBound.visitEnd();
-						});
-
-				typeVariable
-						.getBounds()
-						.filter(
-								b -> !(b.getType() instanceof TypeVariable<?>)
-										&& getErasedType(b.getType()).isInterface())
-						.reduce(throwingMerger())
-						.ifPresent(bound -> {
-							SignatureVisitor classBound = writer.visitInterfaceBound();
-							ClassWritingContext.visitTypeSignature(writer, bound.getType());
-							classBound.visitEnd();
-						});
-			}
+			validateBounds(typeVariable);
+			writeTypeVariable(typeVariable, writer);
 		});
+	}
+
+	private void writeTypeVariable(TypeVariableSignature typeVariable, SignatureWriter writer) {
+		writer.visitFormalTypeParameter(typeVariable.getName());
+
+		if (typeVariable.getBounds().count() == 0) {
+			SignatureVisitor classBound = writer.visitClassBound();
+			classBound.visitClassType(getInternalName(Object.class));
+			classBound.visitEnd();
+		} else {
+			typeVariable
+					.getBounds()
+					.filter(
+							b -> b.getType() instanceof TypeVariable<?>
+									|| !getErasedType(b.getType()).isInterface())
+					.reduce(throwingMerger())
+					.ifPresent(bound -> {
+						SignatureVisitor classBound = writer.visitClassBound();
+						ClassWritingContext.visitTypeSignature(writer, bound.getType());
+						classBound.visitEnd();
+					});
+
+			typeVariable
+					.getBounds()
+					.filter(
+							b -> !(b.getType() instanceof TypeVariable<?>)
+									&& getErasedType(b.getType()).isInterface())
+					.forEach(bound -> {
+						SignatureVisitor classBound = writer.visitInterfaceBound();
+						ClassWritingContext.visitTypeSignature(writer, bound.getType());
+						classBound.visitEnd();
+					});
+		}
+	}
+
+	private void validateBounds(TypeVariableSignature typeVariable) {
+		intersectionOf(
+				typeVariable.getBounds().map(AnnotatedType::getType).collect(Collectors.toList()));
 	}
 
 	/**

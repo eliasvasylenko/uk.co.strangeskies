@@ -139,7 +139,7 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 				.map(s -> declareMethod(this, s, classWriter))
 				.collect(toMap(d -> d.getSignature().erased(), identity()));
 
-		this.stubClass = generateStubClass(typeSignature);
+		this.stubClass = generateStubClass(classWriter);
 	}
 
 	private String writeGenericSupertypes(SignatureWriter writer) {
@@ -159,9 +159,10 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 		return typeSignature;
 	}
 
-	private Class<T> generateStubClass(String typeSignature) {
-
-		return null;
+	@SuppressWarnings("unchecked")
+	private Class<T> generateStubClass(ClassWriter writer) {
+		DynamicClassLoader classLoader = new DynamicClassLoader(getClass().getClassLoader());
+		return (Class<T>) classLoader.injectClass(getSignature().getClassName(), writer.toByteArray());
 	}
 
 	public ClassDeclaration<?, E> getEnclosingClassDeclaration() {
