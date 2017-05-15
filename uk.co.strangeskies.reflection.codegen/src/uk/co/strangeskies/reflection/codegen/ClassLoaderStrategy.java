@@ -40,13 +40,13 @@ package uk.co.strangeskies.reflection.codegen;
 public enum ClassLoaderStrategy {
 	/**
 	 * Inject loaded classes directly into the parent class loader of the
-	 * {@link ClassDefinitionSpace class definition space}.
+	 * {@link ClassRegister class register}.
 	 */
 	INJECT,
 
 	/**
 	 * Derive a new class loader based on the parent class loader of the
-	 * {@link ClassDefinitionSpace class definition space}.
+	 * {@link ClassRegister class register}.
 	 */
 	DERIVE
 }

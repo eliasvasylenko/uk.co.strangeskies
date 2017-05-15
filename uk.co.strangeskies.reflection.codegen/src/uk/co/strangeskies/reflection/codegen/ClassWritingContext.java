@@ -46,6 +46,7 @@ class ClassWritingContext {
 			type = type.getComponentType();
 		}
 		visitor.visitClassType(getInternalName(type));
+		visitor.visitEnd();
 	}
 
 	private static void visitParameterizedTypeSignature(
@@ -71,6 +72,7 @@ class ClassWritingContext {
 				visitTypeSignature(visitor, argument);
 			}
 		}
+		visitor.visitEnd();
 	}
 
 	private static void visitGenericArrayTypeSignature(

@@ -55,15 +55,15 @@ import org.objectweb.asm.signature.SignatureWriter;
 
 import uk.co.strangeskies.collection.stream.StreamUtilities;
 import uk.co.strangeskies.reflection.Types;
-import uk.co.strangeskies.reflection.codegen.ClassDefinitionSpace.ClassDeclarationContext;
+import uk.co.strangeskies.reflection.codegen.ClassRegister.ClassDeclarationContext;
 
 /**
- * 
- * 
  * @author Elias N Vasylenko
  *
  * @param <E>
+ *          the type of the enclosing class
  * @param <T>
+ *          the type of the class
  */
 public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignature<T>>
 		implements Declaration<ClassSignature<T>> {
@@ -100,21 +100,7 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 		super(signature, signatureWriter);
 
 		String typeSignature = writeGenericSupertypes(signatureWriter);
-
-		ClassWriter classWriter = new ClassWriter(COMPUTE_FRAMES);
-		classWriter.visit(
-				V1_8,
-				getSignature().getModifiers().toInt(),
-				getSignature().getClassName().replace('.', '/'),
-				typeSignature,
-				getInternalName(
-						getErasedType(
-								getSignature().getSuperClass().map(AnnotatedType::getType).orElse(Object.class))),
-				getSignature()
-						.getSuperInterfaces()
-						.map(AnnotatedType::getType)
-						.map(i -> getInternalName(getErasedType(i)))
-						.toArray(String[]::new));
+		ClassWriter classWriter = writeClassHeader(typeSignature);
 
 		this.enclosingClass = (ClassDeclaration<?, E>) signature
 				.getEnclosingClassName()
@@ -139,29 +125,42 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 				.map(s -> declareMethod(this, s, classWriter))
 				.collect(toMap(d -> d.getSignature().erased(), identity()));
 
-		this.stubClass = generateStubClass(classWriter);
+		this.stubClass = generateStubClass(classWriter, context.getStubClassLoader());
 	}
 
 	private String writeGenericSupertypes(SignatureWriter writer) {
 		String typeSignature;
-		if (getSignature().getTypeVariables().count() > 0) {
-			writer.visitSuperclass();
-			ClassWritingContext.visitTypeSignature(
-					writer,
-					getSignature().getSuperClass().map(AnnotatedType::getType).orElse(Object.class));
-			getSignature().getSuperInterfaces().map(AnnotatedType::getType).forEach(type -> {
-				ClassWritingContext.visitTypeSignature(writer, type);
-			});
-			typeSignature = writer.toString();
-		} else {
-			typeSignature = null;
-		}
+		writer.visitSuperclass();
+		ClassWritingContext.visitTypeSignature(
+				writer,
+				getSignature().getSuperClass().map(AnnotatedType::getType).orElse(Object.class));
+		getSignature().getSuperInterfaces().map(AnnotatedType::getType).forEach(type -> {
+			writer.visitInterface();
+			ClassWritingContext.visitTypeSignature(writer, type);
+		});
+		typeSignature = writer.toString();
 		return typeSignature;
 	}
 
+	private ClassWriter writeClassHeader(String typeSignature) {
+		int modifiers = getSignature().getModifiers().toInt();
+		String name = getSignature().getClassName().replace('.', '/');
+		String superClass = getInternalName(
+				getErasedType(
+						getSignature().getSuperClass().map(AnnotatedType::getType).orElse(Object.class)));
+		String[] superInterfaces = getSignature()
+				.getSuperInterfaces()
+				.map(AnnotatedType::getType)
+				.map(i -> getInternalName(getErasedType(i)))
+				.toArray(String[]::new);
+		ClassWriter classWriter = new ClassWriter(COMPUTE_FRAMES);
+		classWriter.visit(V1_8, modifiers, name, typeSignature, superClass, superInterfaces);
+		return classWriter;
+	}
+
 	@SuppressWarnings("unchecked")
-	private Class<T> generateStubClass(ClassWriter writer) {
-		DynamicClassLoader classLoader = new DynamicClassLoader(getClass().getClassLoader());
+	private Class<T> generateStubClass(ClassWriter writer, ClassLoader parentClassLoader) {
+		ByteArrayClassLoader classLoader = new ByteArrayClassLoader(parentClassLoader);
 		return (Class<T>) classLoader.injectClass(getSignature().getClassName(), writer.toByteArray());
 	}
 

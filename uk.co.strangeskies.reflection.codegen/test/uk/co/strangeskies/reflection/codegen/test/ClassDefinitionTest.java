@@ -46,41 +46,45 @@ import org.junit.Test;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.codegen.Block;
 import uk.co.strangeskies.reflection.codegen.ClassDefinition;
+import uk.co.strangeskies.reflection.codegen.ClassRegister;
 import uk.co.strangeskies.reflection.codegen.ClassSignature;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 @SuppressWarnings("javadoc")
 public class ClassDefinitionTest {
-	private interface Func<A, B> {
+	public interface Func<A, B> {
 		B apply(A value);
 	}
 
-	private interface Default {
-		@SuppressWarnings("unused")
+	public interface Default {
 		default void method() {}
 	}
 
-	private static final ClassSignature<?> TEST_CLASS_SIGNATURE = classSignature()
+	public static final ClassSignature<?> TEST_CLASS_SIGNATURE = classSignature()
 			.packageName(ClassDeclarationTest.class.getPackage().getName())
 			.simpleName("SelfSet");
 
-	private static final TypeToken<String> STRING_TYPE = new TypeToken<String>() {};
+	public static final TypeToken<String> STRING_TYPE = new TypeToken<String>() {};
 
 	@Test
 	public void defineObject() throws InstantiationException, IllegalAccessException {
-		Object instance = TEST_CLASS_SIGNATURE.defineStandalone().generateClass().newInstance();
+		Object instance = new ClassRegister(getClass().getClassLoader())
+				.withClassSignature(TEST_CLASS_SIGNATURE)
+				.loadClass()
+				.newInstance();
 
 		instance.hashCode();
 	}
 
 	@Test
 	public void runnableClassInvocation() throws InstantiationException, IllegalAccessException {
-		ClassDefinition<Void, ? extends Runnable> classDefinition = TEST_CLASS_SIGNATURE
-				.extending(Runnable.class)
-				.defineStandalone()
+		ClassDefinition<Void, ? extends Runnable> classDefinition = new ClassRegister(
+				getClass().getClassLoader())
+						.withClassSignature(TEST_CLASS_SIGNATURE.extending(Runnable.class));
+		classDefinition = classDefinition
 				.defineMethod(matchMethod().named("run"), new Block<Void>().withReturnStatement());
 
-		Runnable instance = classDefinition.generateClass().newInstance();
+		Runnable instance = classDefinition.loadClass().newInstance();
 
 		instance.run();
 	}
@@ -98,19 +102,18 @@ public class ClassDefinitionTest {
 		 * models already fit well (e.g. some sort of ad-hoc type variable)?
 		 */
 
-		Func<String, String> instance = TEST_CLASS_SIGNATURE
-				.extending(new TypeToken<Func<String, String>>() {})
-				.method(
-						methodSignature("apply").withReturnType(STRING_TYPE).withParameters(
-								parameterSignature("value", STRING_TYPE)))
-				.defineStandalone()
+		Func<String, String> instance = new ClassRegister(getClass().getClassLoader())
+				.withClassSignature(
+						TEST_CLASS_SIGNATURE.extending(new TypeToken<Func<String, String>>() {}).method(
+								methodSignature("apply").withReturnType(STRING_TYPE).withParameters(
+										parameterSignature("value", STRING_TYPE))))
 				.defineMethod(
 						matchMethod().named("apply"),
 						new Block<String>().withReturnStatement(
 								resolveVariable(matchVariable().named("value")).invokeMethod(
 										matchMethod().named("concat").returning(String.class),
 										literal("append"))))
-				.generateClass()
+				.loadClass()
 				.newInstance();
 
 		String result = instance.apply("string");
@@ -121,17 +124,18 @@ public class ClassDefinitionTest {
 	@Test
 	public void defineWithInheritedMethodDeclarationBySignature()
 			throws InstantiationException, IllegalAccessException {
-		Func<String, String> instance = TEST_CLASS_SIGNATURE
-				.extending(new TypeToken<Func<String, String>>() {})
-				.defineStandalone()
-				.defineMethod(
-						matchMethod().named("apply").returning(String.class),
-						new Block<String>().withReturnStatement(
-								resolveVariable(matchVariable().named("value")).invokeMethod(
-										matchMethod().named("concat").returning(String.class),
-										resolveVariable(matchVariable().named("value")))))
-				.generateClass()
-				.newInstance();
+		Func<String, String> instance = (Func<String, String>) new ClassRegister(
+				getClass().getClassLoader())
+						.withClassSignature(
+								TEST_CLASS_SIGNATURE.extending(new TypeToken<Func<String, String>>() {}))
+						.defineMethod(
+								matchMethod().named("apply").returning(String.class),
+								new Block<String>().withReturnStatement(
+										resolveVariable(matchVariable().named("value")).invokeMethod(
+												matchMethod().named("concat").returning(String.class),
+												resolveVariable(matchVariable().named("value")))))
+						.loadClass()
+						.newInstance();
 
 		String result = instance.apply("string");
 
@@ -141,17 +145,18 @@ public class ClassDefinitionTest {
 	@Test
 	public void defineWithInheritedMethodDeclaration()
 			throws InstantiationException, IllegalAccessException {
-		Func<String, String> instance = TEST_CLASS_SIGNATURE
-				.extending(new TypeToken<Func<String, String>>() {})
-				.defineStandalone()
-				.defineMethod(
-						matchMethod().named("apply").returning(String.class),
-						new Block<String>().withReturnStatement(
-								resolveVariable(matchVariable().named("value")).invokeMethod(
-										matchMethod().named("concat").returning(String.class),
-										resolveVariable(matchVariable().named("value")))))
-				.generateClass()
-				.newInstance();
+		Func<String, String> instance = (Func<String, String>) new ClassRegister(
+				getClass().getClassLoader())
+						.withClassSignature(
+								TEST_CLASS_SIGNATURE.extending(new TypeToken<Func<String, String>>() {}))
+						.defineMethod(
+								matchMethod().named("apply").returning(String.class),
+								new Block<String>().withReturnStatement(
+										resolveVariable(matchVariable().named("value")).invokeMethod(
+												matchMethod().named("concat").returning(String.class),
+												resolveVariable(matchVariable().named("value")))))
+						.loadClass()
+						.newInstance();
 
 		String result = instance.apply("string");
 
@@ -160,11 +165,17 @@ public class ClassDefinitionTest {
 
 	@Test(expected = ReflectionException.class)
 	public void defineWithAbstractMethod() throws InstantiationException, IllegalAccessException {
-		TEST_CLASS_SIGNATURE.extending(Runnable.class).defineStandalone().generateClass().newInstance();
+		new ClassRegister(getClass().getClassLoader())
+				.withClassSignature(TEST_CLASS_SIGNATURE.extending(Runnable.class))
+				.loadClass()
+				.newInstance();
 	}
 
 	@Test
 	public void defineWithDefaultMethod() throws InstantiationException, IllegalAccessException {
-		TEST_CLASS_SIGNATURE.extending(Default.class).defineStandalone().generateClass().newInstance();
+		new ClassRegister(getClass().getClassLoader())
+				.withClassSignature(TEST_CLASS_SIGNATURE.extending(Default.class))
+				.loadClass()
+				.newInstance();
 	}
 }

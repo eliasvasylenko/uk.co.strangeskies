@@ -64,7 +64,6 @@ s * Copyright (C) 2017 Elias N Vasylenko <eliasvasylenko@strangeskies.co.uk>
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import static org.objectweb.asm.Type.getInternalName;
 import static uk.co.strangeskies.collection.stream.StreamUtilities.throwingMerger;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
 import static uk.co.strangeskies.reflection.Types.getErasedType;
@@ -91,9 +90,8 @@ public class ParameterizedDeclaration<S extends ParameterizedSignature<?>>
 		writer.visitFormalTypeParameter(typeVariable.getName());
 
 		if (typeVariable.getBounds().count() == 0) {
-			SignatureVisitor classBound = writer.visitClassBound();
-			classBound.visitClassType(getInternalName(Object.class));
-			classBound.visitEnd();
+			SignatureVisitor classBoundWriter = writer.visitClassBound();
+			ClassWritingContext.visitTypeSignature(classBoundWriter, Object.class);
 		} else {
 			typeVariable
 					.getBounds()
@@ -102,9 +100,8 @@ public class ParameterizedDeclaration<S extends ParameterizedSignature<?>>
 									|| !getErasedType(b.getType()).isInterface())
 					.reduce(throwingMerger())
 					.ifPresent(bound -> {
-						SignatureVisitor classBound = writer.visitClassBound();
-						ClassWritingContext.visitTypeSignature(writer, bound.getType());
-						classBound.visitEnd();
+						SignatureVisitor classBoundWriter = writer.visitClassBound();
+						ClassWritingContext.visitTypeSignature(classBoundWriter, bound.getType());
 					});
 
 			typeVariable
@@ -113,9 +110,8 @@ public class ParameterizedDeclaration<S extends ParameterizedSignature<?>>
 							b -> !(b.getType() instanceof TypeVariable<?>)
 									&& getErasedType(b.getType()).isInterface())
 					.forEach(bound -> {
-						SignatureVisitor classBound = writer.visitInterfaceBound();
-						ClassWritingContext.visitTypeSignature(writer, bound.getType());
-						classBound.visitEnd();
+						SignatureVisitor interfaceBoundWriter = writer.visitInterfaceBound();
+						ClassWritingContext.visitTypeSignature(interfaceBoundWriter, bound.getType());
 					});
 		}
 	}

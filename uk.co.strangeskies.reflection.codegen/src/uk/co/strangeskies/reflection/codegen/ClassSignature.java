@@ -449,11 +449,6 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 				modifiers);
 	}
 
-	public ClassDefinition<Void, T> defineStandalone() {
-		ClassDefinitionSpace classSpace = new ClassRegister().withClassSignature(this).declare();
-		return new ClassDefinition<>(classSpace.getClassDeclaration(this), classSpace);
-	}
-
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == this)

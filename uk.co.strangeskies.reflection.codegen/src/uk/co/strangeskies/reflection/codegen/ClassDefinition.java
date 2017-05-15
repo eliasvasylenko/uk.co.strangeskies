@@ -45,9 +45,9 @@ import uk.co.strangeskies.reflection.token.MethodMatcher;
  */
 public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 	private final String typeName;
-	private final ClassDefinitionSpace classSpace;
+	private final ClassRegister classSpace;
 
-	protected ClassDefinition(ClassDeclaration<E, T> declaration, ClassDefinitionSpace classSpace) {
+	protected ClassDefinition(ClassDeclaration<E, T> declaration, ClassRegister classSpace) {
 		super(declaration);
 
 		this.typeName = declaration.getSignature().getClassName();
@@ -61,7 +61,7 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 		return typeName;
 	}
 
-	public ClassDefinitionSpace getClassSpace() {
+	public ClassRegister getClassSpace() {
 		return classSpace;
 	}
 
@@ -106,7 +106,12 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 		return getName();
 	}
 
-	public Class<T> generateClass() {
-		throw new UnsupportedOperationException();
+	@SuppressWarnings("unchecked")
+	public Class<T> loadClass() {
+		try {
+			return (Class<T>) classSpace.loadClasses().loadClass(getName());
+		} catch (ClassNotFoundException e) {
+			throw new AssertionError(e);
+		}
 	}
 }

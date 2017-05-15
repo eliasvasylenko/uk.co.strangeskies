@@ -42,20 +42,16 @@ import uk.co.strangeskies.reflection.token.TypeToken;
 public class Expressions {
 	private Expressions() {}
 
-	private static final AtomicLong TYPE_TOKEN_EXPRESSION_COUNT = new AtomicLong(
-			0);
+	private static final AtomicLong TYPE_TOKEN_EXPRESSION_COUNT = new AtomicLong(0);
 
-	public static <T> ValueExpression<? extends TypeToken<T>> typeTokenExpression(
-			TypeToken<T> type) {
-		ClassDefinition<Void, ? extends TypeToken<T>> typeTokenClass = classSignature()
-				.simpleName(
-						"TypeTokenExpression$"
-								+ TYPE_TOKEN_EXPRESSION_COUNT.incrementAndGet())
-				.extending(type.getThisTypeToken())
-				.defineStandalone();
+	public static <T> ValueExpression<? extends TypeToken<T>> typeTokenExpression(TypeToken<T> type) {
+		ClassDefinition<Void, ? extends TypeToken<T>> typeTokenClass = new ClassRegister()
+				.withClassSignature(
+						classSignature()
+								.simpleName("TypeTokenExpression$" + TYPE_TOKEN_EXPRESSION_COUNT.incrementAndGet())
+								.extending(type.getThisTypeToken()));
 
-		return invokeStatic(
-				typeTokenClass.getDeclaration().getConstructorDeclaration());
+		return invokeStatic(typeTokenClass.getDeclaration().getConstructorDeclaration());
 	}
 
 	public static <T> ValueExpression<T> nullLiteral() {

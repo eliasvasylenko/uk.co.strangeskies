@@ -1,7 +1,7 @@
 package uk.co.strangeskies.reflection.codegen;
 
-public class DynamicClassLoader extends ClassLoader {
-	public DynamicClassLoader(ClassLoader parent) {
+public class ByteArrayClassLoader extends ClassLoader {
+	public ByteArrayClassLoader(ClassLoader parent) {
 		super(parent);
 	}
 

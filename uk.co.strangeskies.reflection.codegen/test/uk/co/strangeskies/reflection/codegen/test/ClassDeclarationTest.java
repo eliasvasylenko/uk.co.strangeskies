@@ -39,7 +39,6 @@ import java.util.Set;
 import org.junit.Test;
 
 import uk.co.strangeskies.reflection.ReflectionException;
-import uk.co.strangeskies.reflection.codegen.ClassDefinitionSpace;
 import uk.co.strangeskies.reflection.codegen.ClassRegister;
 import uk.co.strangeskies.reflection.codegen.ClassSignature;
 import uk.co.strangeskies.reflection.token.TypeToken;
@@ -54,7 +53,7 @@ public class ClassDeclarationTest {
 		String method(String parameter);
 	}
 
-	private interface ObjectMethod {
+	public interface ObjectMethod {
 		String method(Object parameter);
 	}
 
@@ -66,48 +65,39 @@ public class ClassDeclarationTest {
 
 	@Test(expected = ReflectionException.class)
 	public void supertypesWithIncompatibleParameterizationsTest() {
-		new ClassRegister()
-				.withClassSignature(
-						TEST_CLASS
-								.extending(new TypeToken<Set<String>>() {}, new TypeToken<Iterable<Number>>() {}))
-				.declare();
+		new ClassRegister().withClassSignature(
+				TEST_CLASS
+						.extending(new TypeToken<Set<String>>() {}, new TypeToken<Iterable<Number>>() {}));
 	}
 
 	@Test(expected = ReflectionException.class)
 	public void inheritedMethodFromParameterizedTypeCollisionTest() {
-		new ClassRegister()
-				.withClassSignature(
-						TEST_CLASS.extending(
-								new TypeToken<StringMethod>() {},
-								new TypeToken<NumberMethod<String>>() {}))
-				.declare();
+		new ClassRegister().withClassSignature(
+				TEST_CLASS
+						.extending(new TypeToken<StringMethod>() {}, new TypeToken<NumberMethod<String>>() {}));
 	}
 
 	@Test(expected = ReflectionException.class)
 	public void inheritedMethodCollisionTest() {
-		new ClassRegister()
-				.withClassSignature(
-						TEST_CLASS.extending(
-								new TypeToken<ObjectMethod>() {},
-								new TypeToken<NumberMethod<String>>() {}))
-				.declare();
+		new ClassRegister().withClassSignature(
+				TEST_CLASS
+						.extending(new TypeToken<ObjectMethod>() {}, new TypeToken<NumberMethod<String>>() {}));
 	}
 
 	@Test(expected = ReflectionException.class)
 	public void indirectlyInheritedMethodCollisionTest() {
-		new ClassRegister()
-				.withClassSignature(
-						TEST_CLASS.extending(
-								new TypeToken<ObjectMethod>() {},
-								new TypeToken<NumberMethodSubType>() {}))
-				.declare();
+		new ClassRegister().withClassSignature(
+				TEST_CLASS
+						.extending(new TypeToken<ObjectMethod>() {}, new TypeToken<NumberMethodSubType>() {}));
 	}
 
 	@Test
 	public void simpleOverrideMethodTest() {
 		ClassSignature<?> signature = TEST_CLASS.extending(ObjectMethod.class);
 
-		ClassDefinitionSpace classSpace = new ClassRegister().withClassSignature(signature).declare();
+		ClassRegister classSpace = new ClassRegister(ObjectMethod.class.getClassLoader())
+				.withClassSignature(signature)
+				.getClassSpace();
 
 		classSpace.getClassDeclaration(signature).getMethodDeclaration("method", Object.class);
 	}

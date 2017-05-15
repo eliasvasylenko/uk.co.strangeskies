@@ -72,7 +72,7 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 	public static MethodSignature<?> overrideMethodSignature(ExecutableToken<?, ?> method) {
 		return new MethodSignature<>(method.getName())
 				.annotated(method.getMember().getAnnotations())
-				.withModifiers(modifiers(method.getMember().getModifiers()))
+				.withModifiers(modifiers(method.getMember().getModifiers()).withAbstract(false))
 				.withReturnType(method.getReturnType().getType())
 				.asDefault(((Method) method.getMember()).isDefault())
 				.typeVariables(
@@ -150,6 +150,7 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 		return withModifiers(modifiers.withDefault(isDefault));
 	}
 
+	@Override
 	public AnnotatedType getReturnType() {
 		return returnType;
 	}

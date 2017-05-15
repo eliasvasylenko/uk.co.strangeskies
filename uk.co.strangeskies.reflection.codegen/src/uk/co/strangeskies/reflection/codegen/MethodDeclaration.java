@@ -33,6 +33,11 @@
 package uk.co.strangeskies.reflection.codegen;
 
 import static java.util.Optional.of;
+import static org.objectweb.asm.Opcodes.ATHROW;
+import static org.objectweb.asm.Opcodes.DUP;
+import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
+import static org.objectweb.asm.Opcodes.NEW;
+import static org.objectweb.asm.Type.getInternalName;
 import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
 
 import java.lang.reflect.AnnotatedType;
@@ -54,6 +59,8 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 		CONSTRUCTOR, INSTANCE_METHOD, STATIC_METHOD
 	}
 
+	private static final ExecutableSignature<?> VOID_SIGNATURE = new ConstructorSignature();
+
 	private final String name;
 	private final Kind kind;
 
@@ -61,24 +68,15 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 	private final ClassDeclaration<?, C> owningDeclaration;
 
 	protected MethodDeclaration(
-			String name,
 			Kind kind,
 			ClassDeclaration<?, ?> declaringClass,
 			ClassDeclaration<?, C> owningDeclaration,
 			ExecutableSignature<?> signature,
 			ClassWriter classWriter) {
-		this(
-				name,
-				kind,
-				declaringClass,
-				owningDeclaration,
-				signature,
-				classWriter,
-				new SignatureWriter());
+		this(kind, declaringClass, owningDeclaration, signature, classWriter, new SignatureWriter());
 	}
 
 	protected MethodDeclaration(
-			String name,
 			Kind kind,
 			ClassDeclaration<?, ?> declaringClass,
 			ClassDeclaration<?, C> owningDeclaration,
@@ -95,8 +93,20 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 				getMethodDescriptor(signature),
 				typeSignature,
 				null);
+		methodVisitor.visitCode();
+		methodVisitor.visitTypeInsn(NEW, getInternalName(RuntimeException.class));
+		methodVisitor.visitInsn(DUP);
+		methodVisitor.visitMethodInsn(
+				INVOKESPECIAL,
+				getInternalName(RuntimeException.class),
+				VOID_SIGNATURE.getName(),
+				getMethodDescriptor(VOID_SIGNATURE),
+				false);
+		methodVisitor.visitInsn(ATHROW);
+		methodVisitor.visitMaxs(2, 1);
+		methodVisitor.visitEnd();
 
-		this.name = name;
+		this.name = signature.getName();
 		this.kind = kind;
 		this.declaringClass = declaringClass;
 		this.owningDeclaration = owningDeclaration;
@@ -129,7 +139,6 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 			ConstructorSignature signature,
 			ClassWriter writer) {
 		return new MethodDeclaration<>(
-				classDeclaration.getSignature().getClassName(),
 				Kind.CONSTRUCTOR,
 				classDeclaration,
 				classDeclaration.getEnclosingClassDeclaration(),
@@ -145,7 +154,6 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 			throw new CodeGenerationException(CODEGEN_PROPERTIES.staticMethodCannotBeDefault(signature));
 
 		return new MethodDeclaration<>(
-				signature.getName(),
 				Kind.STATIC_METHOD,
 				classDeclaration,
 				classDeclaration.getEnclosingClassDeclaration(),
@@ -158,7 +166,6 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 			MethodSignature<T> signature,
 			ClassWriter writer) {
 		return new MethodDeclaration<>(
-				signature.getName(),
 				Kind.INSTANCE_METHOD,
 				classDeclaration,
 				classDeclaration,
