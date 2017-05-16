@@ -63,8 +63,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.collection.MultiHashMap;
-import uk.co.strangeskies.collection.MultiMap;
+import uk.co.strangeskies.collection.multimap.MultiHashMap;
+import uk.co.strangeskies.collection.multimap.MultiMap;
 import uk.co.strangeskies.text.parsing.Parser;
 import uk.co.strangeskies.utility.Isomorphism;
 
