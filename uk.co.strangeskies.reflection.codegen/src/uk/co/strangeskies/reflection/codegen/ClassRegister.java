@@ -85,8 +85,15 @@ public class ClassRegister {
 			classDeclarations.put(declaration.getSignature(), declaration);
 		}
 
-		ClassLoader getStubClassLoader() {
-			return ClassRegister.this.getStubClassLoader();
+		@SuppressWarnings("unchecked")
+		<T> Class<T> loadStubClass(ClassSignature<T> signature, byte[] bytes) {
+			if (stubClassLoader != null) {
+				return (Class<T>) stubClassLoader.injectClass(signature.getClassName(), bytes);
+			} else {
+				// TODO do this by reflection
+				throw new CodeGenerationException(
+						CODEGEN_PROPERTIES.cannotOverrideExistingClass(signature.getClassName()));
+			}
 		}
 	}
 
@@ -194,6 +201,10 @@ public class ClassRegister {
 					classLoader,
 					stubClassLoader);
 		}
+	}
+
+	public boolean isClassOverridingSupported() {
+		return false; // TODO overriding loaded classes using instrumentation
 	}
 
 	public ClassLoader getParentClassLoader() {

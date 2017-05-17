@@ -91,4 +91,6 @@ public interface CodeGenerationProperties {
 	String cannotResolveTypeVariable(String typeVariableName, ParameterizedSignature<?> signature);
 
 	String cannotExtendMultipleClassTypes(AnnotatedType first, AnnotatedType second);
+
+	String cannotOverrideExistingClass(String name);
 }
