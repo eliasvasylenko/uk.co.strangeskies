@@ -69,6 +69,7 @@ public class ClassDefinitionTest {
 	@Test
 	public void defineObject() throws InstantiationException, IllegalAccessException {
 		Object instance = new ClassRegister(getClass().getClassLoader())
+				.deriveClassLoader()
 				.withClassSignature(TEST_CLASS_SIGNATURE)
 				.loadClass()
 				.newInstance();
@@ -79,8 +80,8 @@ public class ClassDefinitionTest {
 	@Test
 	public void runnableClassInvocation() throws InstantiationException, IllegalAccessException {
 		ClassDefinition<Void, ? extends Runnable> classDefinition = new ClassRegister(
-				getClass().getClassLoader())
-						.withClassSignature(TEST_CLASS_SIGNATURE.extending(Runnable.class));
+				getClass().getClassLoader()).deriveClassLoader().withClassSignature(
+						TEST_CLASS_SIGNATURE.extending(Runnable.class));
 		classDefinition = classDefinition
 				.defineMethod(matchMethod().named("run"), new Block<Void>().withReturnStatement());
 
@@ -103,6 +104,7 @@ public class ClassDefinitionTest {
 		 */
 
 		Func<String, String> instance = new ClassRegister(getClass().getClassLoader())
+				.deriveClassLoader()
 				.withClassSignature(
 						TEST_CLASS_SIGNATURE.extending(new TypeToken<Func<String, String>>() {}).method(
 								methodSignature("apply").withReturnType(STRING_TYPE).withParameters(
@@ -126,6 +128,7 @@ public class ClassDefinitionTest {
 			throws InstantiationException, IllegalAccessException {
 		Func<String, String> instance = (Func<String, String>) new ClassRegister(
 				getClass().getClassLoader())
+						.deriveClassLoader()
 						.withClassSignature(
 								TEST_CLASS_SIGNATURE.extending(new TypeToken<Func<String, String>>() {}))
 						.defineMethod(
@@ -147,6 +150,7 @@ public class ClassDefinitionTest {
 			throws InstantiationException, IllegalAccessException {
 		Func<String, String> instance = (Func<String, String>) new ClassRegister(
 				getClass().getClassLoader())
+						.deriveClassLoader()
 						.withClassSignature(
 								TEST_CLASS_SIGNATURE.extending(new TypeToken<Func<String, String>>() {}))
 						.defineMethod(
@@ -166,6 +170,7 @@ public class ClassDefinitionTest {
 	@Test(expected = ReflectionException.class)
 	public void defineWithAbstractMethod() throws InstantiationException, IllegalAccessException {
 		new ClassRegister(getClass().getClassLoader())
+				.deriveClassLoader()
 				.withClassSignature(TEST_CLASS_SIGNATURE.extending(Runnable.class))
 				.loadClass()
 				.newInstance();
@@ -174,6 +179,7 @@ public class ClassDefinitionTest {
 	@Test
 	public void defineWithDefaultMethod() throws InstantiationException, IllegalAccessException {
 		new ClassRegister(getClass().getClassLoader())
+				.deriveClassLoader()
 				.withClassSignature(TEST_CLASS_SIGNATURE.extending(Default.class))
 				.loadClass()
 				.newInstance();

@@ -73,8 +73,6 @@ import uk.co.strangeskies.reflection.token.TypeToken;
  */
 public class ClassRegister {
 	class ClassDeclarationContext {
-		private final ClassLoader stubClassLoader = new ByteArrayClassLoader(getParentClassLoader());
-
 		ClassDeclaration<?, ?> getClassDeclaration(String className) {
 			return getClassDeclaration(getClassSignature(className));
 		}
@@ -87,31 +85,29 @@ public class ClassRegister {
 			classDeclarations.put(declaration.getSignature(), declaration);
 		}
 
-		public ClassLoader getStubClassLoader() {
-			return stubClassLoader;
+		ClassLoader getStubClassLoader() {
+			return ClassRegister.this.getStubClassLoader();
 		}
 	}
 
 	private final Map<ClassSignature<?>, ClassDeclaration<?, ?>> classDeclarations;
 
 	private final Map<MethodDeclaration<?, ?>, MethodDefinition<?, ?>> methodDefinitions;
-	private boolean allowPartialImplementation;
+	private final boolean allowPartialImplementation;
 	private final Set<MethodDeclaration<?, ?>> undefinedMethods;
 
 	private final ClassLoader parentClassLoader;
-	private final ClassLoaderStrategy classLoaderStrategy;
+	private final InjectionClassLoader stubClassLoader;
+	private final ByteArrayClassLoader classLoader;
 
 	public ClassRegister() {
 		this(ClassRegister.class.getClassLoader());
 	}
 
 	public ClassRegister(ClassLoader parentClassLoader) {
-		this(parentClassLoader, ClassLoaderStrategy.DERIVE);
-	}
-
-	public ClassRegister(ClassLoader parentClassLoader, ClassLoaderStrategy classLoaderStrategy) {
 		this.parentClassLoader = parentClassLoader;
-		this.classLoaderStrategy = classLoaderStrategy;
+		this.classLoader = null;
+		this.stubClassLoader = null;
 		this.classDeclarations = new HashMap<>();
 		this.methodDefinitions = new HashMap<>();
 		this.allowPartialImplementation = false;
@@ -142,7 +138,8 @@ public class ClassRegister {
 				allowPartialImplementation,
 				undefinedMethods,
 				parentClassLoader,
-				classLoaderStrategy);
+				classLoader,
+				stubClassLoader);
 	}
 
 	protected ClassRegister(
@@ -151,13 +148,15 @@ public class ClassRegister {
 			boolean allowPartialImplementation,
 			Set<MethodDeclaration<?, ?>> undefinedMethods,
 			ClassLoader parentClassLoader,
-			ClassLoaderStrategy classLoaderStrategy) {
+			ByteArrayClassLoader classLoader,
+			InjectionClassLoader stubClassLoader) {
 		this.classDeclarations = classDeclarations;
 		this.methodDefinitions = methodDefinitions;
 		this.allowPartialImplementation = allowPartialImplementation;
 		this.undefinedMethods = undefinedMethods;
 		this.parentClassLoader = parentClassLoader;
-		this.classLoaderStrategy = classLoaderStrategy;
+		this.classLoader = classLoader;
+		this.stubClassLoader = stubClassLoader;
 	}
 
 	ClassRegister withMethodDefinition(
@@ -176,15 +175,37 @@ public class ClassRegister {
 				allowPartialImplementation,
 				undefinedMethods,
 				parentClassLoader,
-				classLoaderStrategy);
+				classLoader,
+				stubClassLoader);
+	}
+
+	public ClassRegister deriveClassLoader() {
+		if (stubClassLoader != null && !stubClassLoader.getInjectedClasses().findAny().isPresent()) {
+			return this;
+		} else {
+			ByteArrayClassLoader classLoader = new ByteArrayClassLoader(getClassLoader());
+			InjectionClassLoader stubClassLoader = new InjectionClassLoader(getStubClassLoader());
+			return new ClassRegister(
+					classDeclarations,
+					methodDefinitions,
+					allowPartialImplementation,
+					undefinedMethods,
+					parentClassLoader,
+					classLoader,
+					stubClassLoader);
+		}
 	}
 
 	public ClassLoader getParentClassLoader() {
 		return parentClassLoader;
 	}
 
-	public ClassLoaderStrategy getClassLoaderStrategy() {
-		return classLoaderStrategy;
+	public ClassLoader getClassLoader() {
+		return classLoader != null ? classLoader : parentClassLoader;
+	}
+
+	public ClassLoader getStubClassLoader() {
+		return stubClassLoader != null ? stubClassLoader : parentClassLoader;
 	}
 
 	private ClassSignature<?> getClassSignature(String className) {
@@ -260,7 +281,8 @@ public class ClassRegister {
 				allowPartialImplementation,
 				undefinedMethods,
 				parentClassLoader,
-				classLoaderStrategy);
+				classLoader,
+				stubClassLoader);
 	}
 
 	public ClassRegister generateClasses() {
