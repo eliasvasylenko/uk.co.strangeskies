@@ -48,10 +48,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.collection.EquivalenceComparator;
-import uk.co.strangeskies.collection.MultiHashMap;
-import uk.co.strangeskies.collection.MultiMap;
-import uk.co.strangeskies.collection.MultiTreeMap;
 import uk.co.strangeskies.collection.SetDecorator;
+import uk.co.strangeskies.collection.multimap.MultiHashMap;
+import uk.co.strangeskies.collection.multimap.MultiMap;
+import uk.co.strangeskies.collection.multimap.MultiTreeMap;
 import uk.co.strangeskies.mathematics.graph.EdgeVertices;
 import uk.co.strangeskies.mathematics.graph.Graph;
 import uk.co.strangeskies.mathematics.graph.GraphListeners;

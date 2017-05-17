@@ -1,6 +1,7 @@
 Export-Package: \
 	uk.co.strangeskies.collection,\
 	uk.co.strangeskies.collection.computingmap,\
+	uk.co.strangeskies.collection.multimap,\
 	uk.co.strangeskies.collection.stream,\
 	uk.co.strangeskies.collection.tuple
 

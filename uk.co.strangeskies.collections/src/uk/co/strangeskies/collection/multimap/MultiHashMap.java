@@ -30,7 +30,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.collection;
+package uk.co.strangeskies.collection.multimap;
 
 import java.util.Collection;
 import java.util.HashMap;

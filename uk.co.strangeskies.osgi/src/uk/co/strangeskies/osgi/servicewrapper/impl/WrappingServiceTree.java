@@ -42,7 +42,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 
-import uk.co.strangeskies.collection.MultiMap;
+import uk.co.strangeskies.collection.multimap.MultiMap;
 
 class WrappingServiceTree {
 	private final ServiceReference<?> serviceReference;
