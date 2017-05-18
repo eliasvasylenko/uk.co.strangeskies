@@ -32,8 +32,17 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import static org.objectweb.asm.ClassWriter.COMPUTE_FRAMES;
+import static org.objectweb.asm.ClassWriter.COMPUTE_MAXS;
+import static org.objectweb.asm.Opcodes.ASM5;
 import static uk.co.strangeskies.collection.stream.StreamUtilities.throwingMerger;
 import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
+
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.MethodVisitor;
 
 import uk.co.strangeskies.reflection.token.MethodMatcher;
 
@@ -61,7 +70,7 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 		return typeName;
 	}
 
-	public ClassRegister getClassSpace() {
+	public ClassRegister getRegister() {
 		return classSpace;
 	}
 
@@ -104,6 +113,34 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 	@Override
 	public String toString() {
 		return getName();
+	}
+
+	public byte[] writeClass() {
+		ClassReader stubClassReader = new ClassReader(getDeclaration().getStubClassBytes());
+		ClassWriter classWriter = new ClassWriter(stubClassReader, COMPUTE_MAXS | COMPUTE_FRAMES);
+
+		stubClassReader.accept(new ClassVisitor(ASM5, classWriter) {
+			@Override
+			public FieldVisitor visitField(int arg0, String arg1, String arg2, String arg3, Object arg4) {
+				return new FieldVisitor(ASM5, super.visitField(arg0, arg1, arg2, arg3, arg4)) {
+					// TODO
+				};
+			}
+
+			@Override
+			public MethodVisitor visitMethod(
+					int arg0,
+					String arg1,
+					String arg2,
+					String arg3,
+					String[] arg4) {
+				return new MethodVisitor(ASM5, super.visitMethod(arg0, arg1, arg2, arg3, arg4)) {
+					// TODO
+				};
+			}
+		}, 0);
+
+		return classWriter.toByteArray();
 	}
 
 	@SuppressWarnings("unchecked")

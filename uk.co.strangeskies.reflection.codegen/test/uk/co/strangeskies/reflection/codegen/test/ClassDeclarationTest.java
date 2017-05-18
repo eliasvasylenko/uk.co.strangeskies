@@ -97,7 +97,7 @@ public class ClassDeclarationTest {
 
 		ClassRegister classSpace = new ClassRegister(ObjectMethod.class.getClassLoader())
 				.withClassSignature(signature)
-				.getClassSpace();
+				.getRegister();
 
 		classSpace.getClassDeclaration(signature).getMethodDeclaration("method", Object.class);
 	}

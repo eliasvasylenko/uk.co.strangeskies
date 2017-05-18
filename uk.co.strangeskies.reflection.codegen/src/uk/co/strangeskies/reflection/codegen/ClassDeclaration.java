@@ -35,6 +35,7 @@ package uk.co.strangeskies.reflection.codegen;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static org.objectweb.asm.ClassWriter.COMPUTE_FRAMES;
+import static org.objectweb.asm.ClassWriter.COMPUTE_MAXS;
 import static org.objectweb.asm.Opcodes.V1_8;
 import static org.objectweb.asm.Type.getInternalName;
 import static uk.co.strangeskies.reflection.Types.getErasedType;
@@ -47,6 +48,7 @@ import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.declareSta
 
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -86,6 +88,7 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 	private final Map<ErasedMethodSignature, MethodDeclaration<E, ?>> staticMethodDeclarations;
 	private final Map<ErasedMethodSignature, MethodDeclaration<T, ?>> methodDeclarations;
 
+	private final byte[] stubClassBytes;
 	private final Class<T> stubClass;
 
 	protected ClassDeclaration(ClassDeclarationContext context, ClassSignature<T> signature) {
@@ -100,7 +103,7 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 		super(signature, signatureWriter);
 
 		String typeSignature = writeGenericSupertypes(signatureWriter);
-		ClassWriter classWriter = writeClassHeader(typeSignature);
+		ClassWriter stubClassWriter = writeClassHeader(typeSignature);
 
 		this.enclosingClass = (ClassDeclaration<?, E>) signature
 				.getEnclosingClassName()
@@ -111,21 +114,22 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 
 		this.constructorDeclarations = signature
 				.getConstructors()
-				.map(s -> declareConstructor(this, s, classWriter))
+				.map(s -> declareConstructor(this, s, stubClassWriter))
 				.collect(toMap(d -> d.getSignature().erased(), identity()));
 
 		this.staticMethodDeclarations = signature
 				.getMethods()
 				.filter(s -> s.getModifiers().isStatic())
-				.map(s -> declareStaticMethod(this, (MethodSignature<?>) s, classWriter))
+				.map(s -> declareStaticMethod(this, (MethodSignature<?>) s, stubClassWriter))
 				.collect(toMap(d -> d.getSignature().erased(), identity()));
 
 		this.methodDeclarations = new MethodOverrides<>(signature)
 				.getSignatures()
-				.map(s -> declareMethod(this, s, classWriter))
+				.map(s -> declareMethod(this, s, stubClassWriter))
 				.collect(toMap(d -> d.getSignature().erased(), identity()));
 
-		this.stubClass = context.loadStubClass(getSignature(), classWriter.toByteArray());
+		this.stubClassBytes = stubClassWriter.toByteArray();
+		this.stubClass = context.loadStubClass(getSignature(), stubClassBytes);
 	}
 
 	private String writeGenericSupertypes(SignatureWriter writer) {
@@ -153,7 +157,7 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 				.map(AnnotatedType::getType)
 				.map(i -> getInternalName(getErasedType(i)))
 				.toArray(String[]::new);
-		ClassWriter classWriter = new ClassWriter(COMPUTE_FRAMES);
+		ClassWriter classWriter = new ClassWriter(COMPUTE_MAXS | COMPUTE_FRAMES);
 		classWriter.visit(V1_8, modifiers, name, typeSignature, superClass, superInterfaces);
 		return classWriter;
 	}
@@ -282,6 +286,10 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
 
 	public Class<T> getStubClass() {
 		return stubClass;
+	}
+
+	public byte[] getStubClassBytes() {
+		return Arrays.copyOf(stubClassBytes, stubClassBytes.length);
 	}
 
 	@Override

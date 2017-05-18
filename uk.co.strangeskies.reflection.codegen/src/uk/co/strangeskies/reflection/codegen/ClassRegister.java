@@ -32,11 +32,13 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import static java.util.Arrays.stream;
 import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
 import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.Kind.CONSTRUCTOR;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -73,6 +75,7 @@ import uk.co.strangeskies.reflection.token.TypeToken;
  */
 public class ClassRegister {
 	class ClassDeclarationContext {
+
 		ClassDeclaration<?, ?> getClassDeclaration(String className) {
 			return getClassDeclaration(getClassSignature(className));
 		}
@@ -87,21 +90,49 @@ public class ClassRegister {
 
 		@SuppressWarnings("unchecked")
 		<T> Class<T> loadStubClass(ClassSignature<T> signature, byte[] bytes) {
-			if (stubClassLoader != null) {
-				return (Class<T>) stubClassLoader.injectClass(signature.getClassName(), bytes);
+			String name = signature.getClassName();
+			ClassLoader stubClassLoader = getStubClassLoader();
+
+			try {
+				stubClassLoader.loadClass(name);
+
+				if (isClassOverridingSupported()) {
+					throw new AssertionError(); // TODO support class overriding
+				} else {
+					throw new CodeGenerationException(CODEGEN_PROPERTIES.cannotOverrideExistingClass(name));
+				}
+			} catch (ClassNotFoundException e) {}
+
+			if (stubClassLoader instanceof InjectionClassLoader) {
+				return (Class<T>) ((InjectionClassLoader) stubClassLoader).injectClass(name, bytes);
 			} else {
-				// TODO do this by reflection
-				throw new CodeGenerationException(
-						CODEGEN_PROPERTIES.cannotOverrideExistingClass(signature.getClassName()));
+				try {
+					return (Class<T>) DEFINE_CLASS_METHOD
+							.invoke(stubClassLoader, name, bytes, 0, bytes.length);
+				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+					throw new CodeGenerationException(CODEGEN_PROPERTIES.cannotInjectClass(name), e);
+				}
 			}
 		}
 	}
 
+	private static final Method DEFINE_CLASS_METHOD;
+	static {
+		try {
+			DEFINE_CLASS_METHOD = ClassLoader.class
+					.getDeclaredMethod("defineClass", String.class, byte[].class, int.class, int.class);
+			DEFINE_CLASS_METHOD.setAccessible(true);
+		} catch (NoSuchMethodException | SecurityException e) {
+			throw new AssertionError(e);
+		}
+	}
+
 	private final Map<ClassSignature<?>, ClassDeclaration<?, ?>> classDeclarations;
+	private final Map<ClassDeclaration<?, ?>, byte[]> classBytecodes;
 
 	private final Map<MethodDeclaration<?, ?>, MethodDefinition<?, ?>> methodDefinitions;
-	private final boolean allowPartialImplementation;
 	private final Set<MethodDeclaration<?, ?>> undefinedMethods;
+	private final boolean allowPartialImplementation;
 
 	private final ClassLoader parentClassLoader;
 	private final InjectionClassLoader stubClassLoader;
@@ -116,9 +147,29 @@ public class ClassRegister {
 		this.classLoader = null;
 		this.stubClassLoader = null;
 		this.classDeclarations = new HashMap<>();
+		this.classBytecodes = new HashMap<>();
 		this.methodDefinitions = new HashMap<>();
-		this.allowPartialImplementation = false;
 		this.undefinedMethods = new HashSet<>();
+		this.allowPartialImplementation = false;
+	}
+
+	protected ClassRegister(
+			Map<ClassSignature<?>, ClassDeclaration<?, ?>> classDeclarations,
+			Map<ClassDeclaration<?, ?>, byte[]> classBytecodes,
+			Map<MethodDeclaration<?, ?>, MethodDefinition<?, ?>> methodDefinitions,
+			Set<MethodDeclaration<?, ?>> undefinedMethods,
+			boolean allowPartialImplementation,
+			ClassLoader parentClassLoader,
+			ByteArrayClassLoader classLoader,
+			InjectionClassLoader stubClassLoader) {
+		this.classDeclarations = classDeclarations;
+		this.classBytecodes = classBytecodes;
+		this.methodDefinitions = methodDefinitions;
+		this.undefinedMethods = undefinedMethods;
+		this.allowPartialImplementation = allowPartialImplementation;
+		this.parentClassLoader = parentClassLoader;
+		this.classLoader = classLoader;
+		this.stubClassLoader = stubClassLoader;
 	}
 
 	public <T> ClassDefinition<Void, T> withClassSignature(ClassSignature<T> classSignature) {
@@ -130,40 +181,22 @@ public class ClassRegister {
 		Map<MethodDeclaration<?, ?>, MethodDefinition<?, ?>> methodDefinitions = this.methodDefinitions;
 		Set<MethodDeclaration<?, ?>> undefinedMethods = this.undefinedMethods;
 
-		ClassDeclarationContext context = new ClassDeclarationContext();
-		Arrays.stream(classSignatures).forEach(signature -> {
-			context
-					.getClassDeclaration(signature)
-					.methodDeclarations()
-					.filter(m -> !methodDefinitions.keySet().contains(m))
-					.forEach(undefinedMethods::add);
-		});
+		stream(classSignatures).forEach(
+				signature -> new ClassDeclarationContext()
+						.getClassDeclaration(signature)
+						.methodDeclarations()
+						.filter(m -> !methodDefinitions.keySet().contains(m))
+						.forEach(undefinedMethods::add));
 
 		return new ClassRegister(
 				classDeclarations,
+				classBytecodes,
 				methodDefinitions,
-				allowPartialImplementation,
 				undefinedMethods,
+				allowPartialImplementation,
 				parentClassLoader,
 				classLoader,
 				stubClassLoader);
-	}
-
-	protected ClassRegister(
-			Map<ClassSignature<?>, ClassDeclaration<?, ?>> classDeclarations,
-			Map<MethodDeclaration<?, ?>, MethodDefinition<?, ?>> methodDefinitions,
-			boolean allowPartialImplementation,
-			Set<MethodDeclaration<?, ?>> undefinedMethods,
-			ClassLoader parentClassLoader,
-			ByteArrayClassLoader classLoader,
-			InjectionClassLoader stubClassLoader) {
-		this.classDeclarations = classDeclarations;
-		this.methodDefinitions = methodDefinitions;
-		this.allowPartialImplementation = allowPartialImplementation;
-		this.undefinedMethods = undefinedMethods;
-		this.parentClassLoader = parentClassLoader;
-		this.classLoader = classLoader;
-		this.stubClassLoader = stubClassLoader;
 	}
 
 	ClassRegister withMethodDefinition(
@@ -178,9 +211,10 @@ public class ClassRegister {
 
 		return new ClassRegister(
 				classDeclarations,
+				classBytecodes,
 				methodDefinitions,
-				allowPartialImplementation,
 				undefinedMethods,
+				allowPartialImplementation,
 				parentClassLoader,
 				classLoader,
 				stubClassLoader);
@@ -194,9 +228,10 @@ public class ClassRegister {
 			InjectionClassLoader stubClassLoader = new InjectionClassLoader(getStubClassLoader());
 			return new ClassRegister(
 					classDeclarations,
+					classBytecodes,
 					methodDefinitions,
-					allowPartialImplementation,
 					undefinedMethods,
+					allowPartialImplementation,
 					parentClassLoader,
 					classLoader,
 					stubClassLoader);
@@ -239,8 +274,7 @@ public class ClassRegister {
 		undefinedMethods
 				.stream()
 				.filter(
-						m -> m.getKind().equals(CONSTRUCTOR)
-								|| m.getSignature().getModifiers().isStatic()
+						m -> m.getKind().equals(CONSTRUCTOR) || m.getSignature().getModifiers().isStatic()
 								|| !m.getSignature().getModifiers().isDefault())
 				.findAny()
 				.ifPresent(m -> {
@@ -288,9 +322,10 @@ public class ClassRegister {
 	public ClassRegister withPartialImplementation(boolean allowPartialImplementation) {
 		return new ClassRegister(
 				classDeclarations,
+				classBytecodes,
 				methodDefinitions,
-				allowPartialImplementation,
 				undefinedMethods,
+				allowPartialImplementation,
 				parentClassLoader,
 				classLoader,
 				stubClassLoader);
@@ -307,7 +342,8 @@ public class ClassRegister {
 	 *         generated classes
 	 */
 	public ClassLoader loadClasses() {
-		return getParentClassLoader();
+		generateClasses();
+		return getClassLoader();
 	}
 
 	@SuppressWarnings("unchecked")
