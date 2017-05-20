@@ -44,7 +44,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 
-public abstract class FilteringClassLoader extends ClassLoader {
+public class FilteringClassLoader extends ClassLoader {
 	private static final ClassLoader SYSTEM_CLASS_LOADER = ClassLoader.getSystemClassLoader();
 	private static final Set<Package> SYSTEM_PACKAGES = new HashSet<>();
 
@@ -60,42 +60,39 @@ public abstract class FilteringClassLoader extends ClassLoader {
 		}
 	}
 
+	private final Predicate<Class<?>> classFilter;
+	private final Predicate<Package> packageFilter;
+	private final Predicate<String> resourceFilter;
+
 	public FilteringClassLoader(ClassLoader parent) {
 		super(parent);
+		classFilter = i -> true;
+		packageFilter = i -> true;
+		resourceFilter = i -> true;
 	}
 
-	public static FilteringClassLoader filteringClassLoader(ClassLoader parent, Predicate<Class<?>> classFilter) {
-		return filteringClassLoader(parent, classFilter, p -> true, r -> true);
-	}
-
-	public static FilteringClassLoader filteringClassLoader(
+	public FilteringClassLoader(
 			ClassLoader parent,
 			Predicate<Class<?>> classFilter,
 			Predicate<Package> packageFilter,
 			Predicate<String> resourceFilter) {
-		return new FilteringClassLoader(parent) {
-			@Override
-			protected boolean filterResource(String resourceName) {
-				return resourceFilter.test(resourceName);
-			}
-
-			@Override
-			protected boolean filterPackage(Package filterPackage) {
-				return packageFilter.test(filterPackage);
-			}
-
-			@Override
-			protected boolean filterClass(Class<?> filterClass) {
-				return classFilter.test(filterClass);
-			}
-		};
+		super(parent);
+		this.classFilter = classFilter;
+		this.packageFilter = packageFilter;
+		this.resourceFilter = resourceFilter;
 	}
 
-	protected abstract boolean filterClass(Class<?> filterClass);
+	public FilteringClassLoader withClassFilter(Predicate<Class<?>> classFilter) {
+		return new FilteringClassLoader(getParent(), classFilter, packageFilter, resourceFilter);
+	}
 
-	protected abstract boolean filterPackage(Package filterPackage);
+	public FilteringClassLoader withPackageFilter(Predicate<Package> packageFilter) {
+		return new FilteringClassLoader(getParent(), classFilter, packageFilter, resourceFilter);
+	}
 
-	protected abstract boolean filterResource(String resourceName);
+	public FilteringClassLoader withResourceFilter(Predicate<String> resourceFilter) {
+		return new FilteringClassLoader(getParent(), classFilter, packageFilter, resourceFilter);
+	}
 
 	@Override
 	protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
@@ -108,7 +105,7 @@ public abstract class FilteringClassLoader extends ClassLoader {
 			resolveClass(clazz);
 		}
 
-		if (!filterClass(clazz) || !filterPackage(clazz.getPackage())) {
+		if (!classFilter.test(clazz) || !packageFilter.test(clazz.getPackage())) {
 			throw new ClassNotFoundException(name + " not found.");
 		}
 
@@ -118,7 +115,7 @@ public abstract class FilteringClassLoader extends ClassLoader {
 	@Override
 	protected Package getPackage(String name) {
 		Package p = super.getPackage(name);
-		if (p == null || !filterPackage(p)) {
+		if (p == null || !packageFilter.test(p)) {
 			return null;
 		}
 		return p;
@@ -128,7 +125,7 @@ public abstract class FilteringClassLoader extends ClassLoader {
 	protected Package[] getPackages() {
 		List<Package> packages = new ArrayList<>();
 		for (Package p : super.getPackages()) {
-			if (filterPackage(p)) {
+			if (packageFilter.test(p)) {
 				packages.add(p);
 			}
 		}
@@ -137,7 +134,7 @@ public abstract class FilteringClassLoader extends ClassLoader {
 
 	@Override
 	public URL getResource(String name) {
-		if (filterResource(name)) {
+		if (resourceFilter.test(name)) {
 			return super.getResource(name);
 		}
 		return SYSTEM_CLASS_LOADER.getResource(name);
@@ -145,7 +142,7 @@ public abstract class FilteringClassLoader extends ClassLoader {
 
 	@Override
 	public Enumeration<URL> getResources(String name) throws IOException {
-		if (filterResource(name)) {
+		if (resourceFilter.test(name)) {
 			return super.getResources(name);
 		}
 		return SYSTEM_CLASS_LOADER.getResources(name);
