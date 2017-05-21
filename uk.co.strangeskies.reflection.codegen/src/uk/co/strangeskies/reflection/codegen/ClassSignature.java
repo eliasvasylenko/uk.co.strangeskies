@@ -60,6 +60,7 @@ import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.Types;
+import uk.co.strangeskies.reflection.Visibility;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 /**
@@ -249,6 +250,24 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 
 	public Modifiers getModifiers() {
 		return modifiers;
+	}
+
+	protected ClassSignature<T> withModifiers(Modifiers modifiers) {
+		return new ClassSignature<>(
+				packageName,
+				simpleName,
+				enclosingClassName,
+				superClass,
+				superInterfaces,
+				constructorSignatures,
+				methodSignatures,
+				typeVariables,
+				annotations,
+				modifiers);
+	}
+
+	public ClassSignature<T> withVisibility(Visibility visibility) {
+		return withModifiers(modifiers.withVisibility(visibility));
 	}
 
 	public Optional<String> getEnclosingClassName() {
