@@ -24,17 +24,6 @@ class ClassWritingContext {
 			visitTypeVariableSignature(visitor, (TypeVariable<?>) type);
 		} else if (type instanceof TypeVariableSignature.Reference) {
 			visitTypeVariableSignature(visitor, (TypeVariableSignature.Reference) type);
-			/*-TODO
-			
-			
-			
-			} else if (type instanceof ClassSignature.Reference) {
-				visitClassSignature(visitor, (ClassSignature.Reference) type);
-			}
-			
-			
-			
-			 */
 		} else {
 			throw new IllegalArgumentException();
 		}
