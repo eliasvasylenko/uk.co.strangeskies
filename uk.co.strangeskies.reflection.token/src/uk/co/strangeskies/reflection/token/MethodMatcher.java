@@ -15,8 +15,7 @@ public interface MethodMatcher<O, T> {
 		return match(ExecutableToken.forExecutable(executable)).isPresent();
 	}
 
-	public Optional<ExecutableToken<O, T>> match(
-			ExecutableToken<?, ?> executable);
+	public Optional<ExecutableToken<O, T>> match(ExecutableToken<?, ?> executable);
 
 	public static Builder<Object, Object> matchMethod() {
 		return new Builder<>(matchTrue(), matchTrue(), matchTrue(), matchTrue());
@@ -45,8 +44,7 @@ public interface MethodMatcher<O, T> {
 
 		@Override
 		@SuppressWarnings("unchecked")
-		public Optional<ExecutableToken<O, T>> match(
-				ExecutableToken<?, ?> executable) {
+		public Optional<ExecutableToken<O, T>> match(ExecutableToken<?, ?> executable) {
 			if (matchImpl(executable)) {
 				return Optional.of((ExecutableToken<O, T>) executable);
 			} else {
@@ -61,19 +59,22 @@ public interface MethodMatcher<O, T> {
 					&& arguments.test(executable.getParameters());
 		}
 
+		public Builder<O, T> constructor() {
+			return named("<init>");
+		}
+
+		public Builder<O, T> staticInitializer() {
+			return named("<cinit>");
+		}
+
 		public Builder<O, T> named(String name) {
-			return new Builder<>(
-					this.name.and(name::equals),
-					returnType,
-					visibility,
-					arguments);
+			return new Builder<>(this.name.and(name::equals), returnType, visibility, arguments);
 		}
 
 		public <U> Builder<O, U> returning(TypeToken<U> returnType) {
 			return new Builder<>(
 					name,
-					this.returnType
-							.and(t -> returnType.satisfiesConstraintFrom(Kind.SUBTYPE, t)),
+					this.returnType.and(t -> returnType.satisfiesConstraintFrom(Kind.SUBTYPE, t)),
 					visibility,
 					arguments);
 		}

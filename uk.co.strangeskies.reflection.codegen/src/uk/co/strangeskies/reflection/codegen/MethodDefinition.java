@@ -41,7 +41,7 @@ public class MethodDefinition<C, T> implements MemberDefinition<C> {
 		this.body = new Block<>();
 	}
 
-	public MethodDefinition(MethodDefinition<C, T> definition, Block<? extends T> body) {
+	private MethodDefinition(MethodDefinition<C, T> definition, Block<? extends T> body) {
 		this.methodDeclaration = definition.getDeclaration();
 		this.body = body;
 	}

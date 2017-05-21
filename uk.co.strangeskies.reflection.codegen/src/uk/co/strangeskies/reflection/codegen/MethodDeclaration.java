@@ -40,7 +40,6 @@ import static org.objectweb.asm.Opcodes.NEW;
 import static org.objectweb.asm.Type.getInternalName;
 import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
 
-import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Executable;
 import java.util.Optional;
 
@@ -67,6 +66,8 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 	private final ClassDeclaration<?, ?> declaringClass;
 	private final ClassDeclaration<?, C> owningDeclaration;
 
+	private Executable executableStub;
+
 	protected MethodDeclaration(
 			Kind kind,
 			ClassDeclaration<?, ?> declaringClass,
@@ -85,7 +86,7 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 			SignatureWriter signatureWriter) {
 		super(signature, signatureWriter);
 
-		String typeSignature = writeGenericParameters(signatureWriter);
+		String typeSignature = signatureWriter.toString();
 
 		MethodVisitor methodVisitor = classWriter.visitMethod(
 				signature.getModifiers().toInt(),
@@ -94,16 +95,16 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 				typeSignature,
 				null);
 		methodVisitor.visitCode();
-		methodVisitor.visitTypeInsn(NEW, getInternalName(RuntimeException.class));
+		methodVisitor.visitTypeInsn(NEW, getInternalName(StubInvocationError.class));
 		methodVisitor.visitInsn(DUP);
 		methodVisitor.visitMethodInsn(
 				INVOKESPECIAL,
-				getInternalName(RuntimeException.class),
+				getInternalName(StubInvocationError.class),
 				VOID_SIGNATURE.getName(),
 				getMethodDescriptor(VOID_SIGNATURE),
 				false);
 		methodVisitor.visitInsn(ATHROW);
-		methodVisitor.visitMaxs(2, 1);
+		methodVisitor.visitMaxs(0, 0);
 		methodVisitor.visitEnd();
 
 		this.name = signature.getName();
@@ -112,26 +113,11 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 		this.owningDeclaration = owningDeclaration;
 	}
 
-	private String getMethodDescriptor(ExecutableSignature<?> signature) {
+	protected static String getMethodDescriptor(ExecutableSignature<?> signature) {
 		return Type.getMethodDescriptor(
 				Type.getType(Types.getErasedType(signature.getReturnType().getType())),
-				signature
-						.getParameters()
-						.map(ParameterSignature::getType)
-						.map(AnnotatedType::getType)
-						.map(Types::getErasedType)
-						.map(Type::getType)
-						.toArray(Type[]::new));
-	}
-
-	private String writeGenericParameters(SignatureWriter signatureWriter) {
-		String typeSignature;
-		if (getSignature().getTypeVariables().count() > 0) {
-			typeSignature = null;
-		} else {
-			typeSignature = null;
-		}
-		return typeSignature;
+				signature.getParameters().map(ParameterSignature::getErasedType).map(Type::getType).toArray(
+						Type[]::new));
 	}
 
 	protected static <C, T> MethodDeclaration<C, T> declareConstructor(
@@ -182,7 +168,21 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 	}
 
 	public Executable getExecutableStub() {
-		throw new UnsupportedOperationException();
+		if (executableStub == null) {
+			Class<?>[] erasedParameters = getSignature()
+					.getParameters()
+					.map(ParameterSignature::getErasedType)
+					.toArray(Class<?>[]::new);
+			try {
+				executableStub = getKind() == Kind.CONSTRUCTOR
+						? getDeclaringClass().getStubClass().getConstructor(erasedParameters)
+						: getDeclaringClass().getStubClass().getMethod(name, erasedParameters);
+			} catch (NoSuchMethodException | SecurityException e) {
+				throw new AssertionError(e);
+			}
+		}
+
+		return executableStub;
 	}
 
 	@SuppressWarnings("unchecked")

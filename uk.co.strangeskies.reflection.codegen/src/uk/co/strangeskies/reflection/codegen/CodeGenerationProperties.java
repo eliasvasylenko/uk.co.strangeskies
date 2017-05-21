@@ -92,7 +92,7 @@ public interface CodeGenerationProperties {
 
 	String cannotExtendMultipleClassTypes(AnnotatedType first, AnnotatedType second);
 
-	String cannotOverrideExistingClass(String name);
+	String classOverridingNotSupported();
 
-	String cannotInjectClass(String name);
+	String cannotOverrideExistingClass(String className);
 }

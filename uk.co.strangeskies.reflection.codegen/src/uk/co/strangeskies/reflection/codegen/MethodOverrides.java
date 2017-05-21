@@ -49,7 +49,7 @@ import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.ExecutableTokenQuery;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
-public class MethodOverrides<T> {
+class MethodOverrides<T> {
 	private final ClassSignature<T> classSignature;
 	private final Map<Method, ExecutableToken<?, ?>> inheritedMethods;
 	private final Map<ErasedMethodSignature, MethodOverride<T>> overrides;

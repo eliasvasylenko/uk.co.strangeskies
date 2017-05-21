@@ -53,7 +53,7 @@ import java.util.stream.Collectors;
 import uk.co.strangeskies.reflection.token.ExecutableParameter;
 import uk.co.strangeskies.reflection.token.ExecutableToken;
 
-public class MethodOverride<T> {
+class MethodOverride<T> {
 	private final MethodOverrides<T> methodOverrides;
 
 	private final Set<Method> interfaceMethods;

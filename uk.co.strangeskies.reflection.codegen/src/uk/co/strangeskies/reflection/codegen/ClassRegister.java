@@ -33,29 +33,19 @@
 package uk.co.strangeskies.reflection.codegen;
 
 import static java.util.Arrays.stream;
+import static java.util.Optional.ofNullable;
 import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
 import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.Kind.CONSTRUCTOR;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-
-import uk.co.strangeskies.reflection.token.TypeToken;
+import java.util.stream.Collectors;
 
 /**
- * TODO generate byte code early for everything except method definitions!!!! at
- * this point all those parts should never change since they're derived only
- * from the immutable {@link ClassDeclaration}s rather than the
- * {@link ClassDefinition}s
- * 
- * ... By doing this we can load these proto-classes into a class loader and
- * reflect over them, so we get all the type checking provided by
- * {@link TypeToken} without support for special {@link Type} implementations.
- * 
  * Loading stub-classes first then overriding with full implementations as a
  * two-step process means we can inject into existing class loaders without any
  * of the circularity restrictions present in other solutions.
@@ -81,38 +71,17 @@ public class ClassRegister {
 		}
 
 		ClassDeclaration<?, ?> getClassDeclaration(ClassSignature<?> signature) {
-			return classDeclarations.computeIfAbsent(signature, s -> new ClassDeclaration<>(this, s));
+			return classDeclarations
+					.computeIfAbsent(signature.getClassName(), s -> new ClassDeclaration<>(this, signature));
 		}
 
 		void addClassDeclaration(ClassDeclaration<?, ?> declaration) {
-			classDeclarations.put(declaration.getSignature(), declaration);
+			classDeclarations.put(declaration.getSignature().getClassName(), declaration);
 		}
 
 		@SuppressWarnings("unchecked")
 		<T> Class<T> loadStubClass(ClassSignature<T> signature, byte[] bytes) {
-			String name = signature.getClassName();
-			ClassLoader stubClassLoader = getStubClassLoader();
-
-			try {
-				stubClassLoader.loadClass(name);
-
-				if (isClassOverridingSupported()) {
-					throw new AssertionError(); // TODO support class overriding
-				} else {
-					throw new CodeGenerationException(CODEGEN_PROPERTIES.cannotOverrideExistingClass(name));
-				}
-			} catch (ClassNotFoundException e) {}
-
-			if (stubClassLoader instanceof InjectionClassLoader) {
-				return (Class<T>) ((InjectionClassLoader) stubClassLoader).injectClass(name, bytes);
-			} else {
-				try {
-					return (Class<T>) DEFINE_CLASS_METHOD
-							.invoke(stubClassLoader, name, bytes, 0, bytes.length);
-				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-					throw new CodeGenerationException(CODEGEN_PROPERTIES.cannotInjectClass(name), e);
-				}
-			}
+			return (Class<T>) stubClassLoader.defineClass(signature.getClassName(), bytes);
 		}
 	}
 
@@ -127,25 +96,23 @@ public class ClassRegister {
 		}
 	}
 
-	private final Map<ClassSignature<?>, ClassDeclaration<?, ?>> classDeclarations;
-	private final Map<ClassDeclaration<?, ?>, byte[]> classBytecodes;
+	private final Map<String, ClassDeclaration<?, ?>> classDeclarations;
+	private final Map<String, byte[]> classBytecodes;
 
 	private final Map<MethodDeclaration<?, ?>, MethodDefinition<?, ?>> methodDefinitions;
 	private final Set<MethodDeclaration<?, ?>> undefinedMethods;
 	private final boolean allowPartialImplementation;
 
-	private final ClassLoader parentClassLoader;
-	private final InjectionClassLoader stubClassLoader;
-	private final ByteArrayClassLoader classLoader;
+	private final ClassLoader classLoader;
+	private final ByteArrayClassLoader stubClassLoader;
 
 	public ClassRegister() {
 		this(ClassRegister.class.getClassLoader());
 	}
 
-	public ClassRegister(ClassLoader parentClassLoader) {
-		this.parentClassLoader = parentClassLoader;
-		this.classLoader = null;
-		this.stubClassLoader = null;
+	public ClassRegister(ClassLoader classLoader) {
+		this.classLoader = classLoader;
+		this.stubClassLoader = new ByteArrayClassLoader(classLoader);
 		this.classDeclarations = new HashMap<>();
 		this.classBytecodes = new HashMap<>();
 		this.methodDefinitions = new HashMap<>();
@@ -154,30 +121,40 @@ public class ClassRegister {
 	}
 
 	protected ClassRegister(
-			Map<ClassSignature<?>, ClassDeclaration<?, ?>> classDeclarations,
-			Map<ClassDeclaration<?, ?>, byte[]> classBytecodes,
+			Map<String, ClassDeclaration<?, ?>> classDeclarations,
+			Map<String, byte[]> classBytecodes,
 			Map<MethodDeclaration<?, ?>, MethodDefinition<?, ?>> methodDefinitions,
 			Set<MethodDeclaration<?, ?>> undefinedMethods,
 			boolean allowPartialImplementation,
-			ClassLoader parentClassLoader,
-			ByteArrayClassLoader classLoader,
-			InjectionClassLoader stubClassLoader) {
+			ClassLoader classLoader,
+			ByteArrayClassLoader stubClassLoader) {
 		this.classDeclarations = classDeclarations;
 		this.classBytecodes = classBytecodes;
 		this.methodDefinitions = methodDefinitions;
 		this.undefinedMethods = undefinedMethods;
 		this.allowPartialImplementation = allowPartialImplementation;
-		this.parentClassLoader = parentClassLoader;
 		this.classLoader = classLoader;
 		this.stubClassLoader = stubClassLoader;
 	}
 
+	@SuppressWarnings("unchecked")
 	public <T> ClassDefinition<Void, T> withClassSignature(ClassSignature<T> classSignature) {
-		ClassRegister register = withClassSignatures(classSignature);
-		return new ClassDefinition<>(register.getClassDeclaration(classSignature), register);
+		return (ClassDefinition<Void, T>) withClassSignatures(classSignature)
+				.getClassDefinition(classSignature)
+				.get();
 	}
 
 	public ClassRegister withClassSignatures(ClassSignature<?>... classSignatures) {
+		if (!isClassOverridingSupported()) {
+			stream(classSignatures).forEach(s -> {
+				try {
+					stubClassLoader.loadClass(s.getClassName());
+					throw new CodeGenerationException(
+							CODEGEN_PROPERTIES.cannotOverrideExistingClass(s.getClassName()));
+				} catch (ClassNotFoundException e) {}
+			});
+		}
+
 		Map<MethodDeclaration<?, ?>, MethodDefinition<?, ?>> methodDefinitions = this.methodDefinitions;
 		Set<MethodDeclaration<?, ?>> undefinedMethods = this.undefinedMethods;
 
@@ -194,7 +171,6 @@ public class ClassRegister {
 				methodDefinitions,
 				undefinedMethods,
 				allowPartialImplementation,
-				parentClassLoader,
 				classLoader,
 				stubClassLoader);
 	}
@@ -215,43 +191,16 @@ public class ClassRegister {
 				methodDefinitions,
 				undefinedMethods,
 				allowPartialImplementation,
-				parentClassLoader,
 				classLoader,
 				stubClassLoader);
-	}
-
-	public ClassRegister deriveClassLoader() {
-		if (stubClassLoader != null && !stubClassLoader.getInjectedClasses().findAny().isPresent()) {
-			return this;
-		} else {
-			ByteArrayClassLoader classLoader = new ByteArrayClassLoader(getClassLoader());
-			InjectionClassLoader stubClassLoader = new InjectionClassLoader(getStubClassLoader());
-			return new ClassRegister(
-					classDeclarations,
-					classBytecodes,
-					methodDefinitions,
-					undefinedMethods,
-					allowPartialImplementation,
-					parentClassLoader,
-					classLoader,
-					stubClassLoader);
-		}
 	}
 
 	public boolean isClassOverridingSupported() {
 		return false; // TODO overriding loaded classes using instrumentation
 	}
 
-	public ClassLoader getParentClassLoader() {
-		return parentClassLoader;
-	}
-
 	public ClassLoader getClassLoader() {
-		return classLoader != null ? classLoader : parentClassLoader;
-	}
-
-	public ClassLoader getStubClassLoader() {
-		return stubClassLoader != null ? stubClassLoader : parentClassLoader;
+		return classLoader;
 	}
 
 	private ClassSignature<?> getClassSignature(String className) {
@@ -266,15 +215,23 @@ public class ClassRegister {
 	}
 
 	@SuppressWarnings("unchecked")
-	public <T> ClassDeclaration<Void, T> getClassDeclaration(ClassSignature<T> classSignature) {
-		return (ClassDeclaration<Void, T>) classDeclarations.get(classSignature);
+	public <T> Optional<ClassDefinition<?, T>> getClassDefinition(ClassSignature<T> classSignature) {
+		return getClassDefinition(classSignature.getClassName())
+				.filter(definition -> definition.getDeclaration().getSignature().equals(classSignature))
+				.map(definition -> (ClassDefinition<?, T>) definition);
+	}
+
+	public Optional<ClassDefinition<?, ?>> getClassDefinition(String className) {
+		return ofNullable(classDeclarations.get(className))
+				.map(declaration -> new ClassDefinition<>(declaration, this));
 	}
 
 	public void validate() {
 		undefinedMethods
 				.stream()
 				.filter(
-						m -> m.getKind().equals(CONSTRUCTOR) || m.getSignature().getModifiers().isStatic()
+						m -> m.getKind().equals(CONSTRUCTOR)
+								|| m.getSignature().getModifiers().isStatic()
 								|| !m.getSignature().getModifiers().isDefault())
 				.findAny()
 				.ifPresent(m -> {
@@ -326,13 +283,15 @@ public class ClassRegister {
 				methodDefinitions,
 				undefinedMethods,
 				allowPartialImplementation,
-				parentClassLoader,
 				classLoader,
 				stubClassLoader);
 	}
 
-	public ClassRegister generateClasses() {
-		return this;
+	public Map<String, byte[]> generateClasses() {
+		return classDeclarations.values().stream().collect(
+				Collectors.toMap(
+						declaration -> declaration.getSignature().getClassName(),
+						declaration -> new ClassDefinition<>(declaration, this).writeClass()));
 	}
 
 	/**
@@ -342,8 +301,21 @@ public class ClassRegister {
 	 *         generated classes
 	 */
 	public ClassLoader loadClasses() {
-		generateClasses();
-		return getClassLoader();
+		Map<String, byte[]> bytecodes = generateClasses();
+
+		if (getClassLoader() instanceof ByteArrayClassLoader) {
+			((ByteArrayClassLoader) classLoader).addClasses(bytecodes);
+		} else {
+			/*
+			 * TODO if there are cycles in the class dependency graph and the class
+			 * loader in not a ByteArrayClassLoader then we must support class
+			 * overriding for this to work. This should be detected so we can load in
+			 * the correct order where possible, and throw an exception early where
+			 * not.
+			 */
+		}
+
+		return classLoader;
 	}
 
 	@SuppressWarnings("unchecked")

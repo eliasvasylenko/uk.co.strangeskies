@@ -99,6 +99,8 @@ public class ClassDeclarationTest {
 				.withClassSignature(signature)
 				.getRegister();
 
-		classSpace.getClassDeclaration(signature).getMethodDeclaration("method", Object.class);
+		classSpace.getClassDefinition(signature).get().getDeclaration().getMethodDeclaration(
+				"method",
+				Object.class);
 	}
 }

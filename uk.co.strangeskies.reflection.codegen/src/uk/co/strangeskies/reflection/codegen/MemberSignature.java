@@ -66,10 +66,7 @@ public abstract class MemberSignature<S extends MemberSignature<S>>
 		this(name, emptySet(), emptyModifiers());
 	}
 
-	protected MemberSignature(
-			String name,
-			Set<Annotation> annotations,
-			Modifiers modifiers) {
+	protected MemberSignature(String name, Set<Annotation> annotations, Modifiers modifiers) {
 		this.name = name;
 		this.annotations = annotations;
 		this.modifiers = modifiers;
@@ -103,10 +100,7 @@ public abstract class MemberSignature<S extends MemberSignature<S>>
 	}
 
 	public S withVisibility(Visibility visibility) {
-		return withMemberSignatureData(
-				name,
-				annotations,
-				modifiers.withVisibility(visibility));
+		return withModifiers(modifiers.withVisibility(visibility));
 	}
 
 	@Override
@@ -125,8 +119,6 @@ public abstract class MemberSignature<S extends MemberSignature<S>>
 
 	@Override
 	public int hashCode() {
-		return AnnotatedSignature.hashCode(this)
-				^ getName().hashCode()
-				^ getModifiers().hashCode();
+		return AnnotatedSignature.hashCode(this) ^ getName().hashCode() ^ getModifiers().hashCode();
 	}
 }

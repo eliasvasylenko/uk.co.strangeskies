@@ -46,6 +46,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
+import uk.co.strangeskies.reflection.Types;
 import uk.co.strangeskies.reflection.token.ExecutableParameter;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
@@ -85,18 +86,25 @@ public class ParameterSignature<T> implements AnnotatedSignature<ParameterSignat
 		return new ParameterSignature<>(variableName, AnnotatedTypes.annotated(type));
 	}
 
-	public static <U> ParameterSignature<U> parameterSignature(String variableName, TypeToken<U> type) {
+	public static <U> ParameterSignature<U> parameterSignature(
+			String variableName,
+			TypeToken<U> type) {
 		return new ParameterSignature<>(variableName, type.getAnnotatedDeclaration());
 	}
 
 	public static <U> ParameterSignature<U> parameterSignature(Parameter parameter) {
-		return new ParameterSignature<U>(parameter.getName(), AnnotatedTypes.annotated(parameter.getParameterizedType()))
-				.annotated(parameter.getDeclaredAnnotations())
-				.withModifiers(Modifiers.modifiers(parameter.getModifiers()));
+		return new ParameterSignature<U>(
+				parameter.getName(),
+				AnnotatedTypes.annotated(parameter.getParameterizedType()))
+						.annotated(parameter.getDeclaredAnnotations())
+						.withModifiers(Modifiers.modifiers(parameter.getModifiers()));
 	}
 
-	public static <U> ParameterSignature<U> overrideParameterSignature(ExecutableParameter parameter) {
-		return new ParameterSignature<>(parameter.getName(), AnnotatedTypes.annotated(parameter.getType()));
+	public static <U> ParameterSignature<U> overrideParameterSignature(
+			ExecutableParameter parameter) {
+		return new ParameterSignature<>(
+				parameter.getName(),
+				AnnotatedTypes.annotated(parameter.getType()));
 	}
 
 	public Modifiers getModifiers() {
@@ -127,6 +135,10 @@ public class ParameterSignature<T> implements AnnotatedSignature<ParameterSignat
 
 	public AnnotatedType getType() {
 		return type;
+	}
+
+	public Class<?> getErasedType() {
+		return Types.getErasedType(type.getType());
 	}
 
 	@Override

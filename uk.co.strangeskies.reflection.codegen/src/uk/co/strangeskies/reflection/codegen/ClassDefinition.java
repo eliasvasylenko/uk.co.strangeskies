@@ -32,17 +32,25 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import static java.util.stream.Stream.concat;
 import static org.objectweb.asm.ClassWriter.COMPUTE_FRAMES;
 import static org.objectweb.asm.ClassWriter.COMPUTE_MAXS;
 import static org.objectweb.asm.Opcodes.ASM5;
+import static org.objectweb.asm.Opcodes.ATHROW;
+import static org.objectweb.asm.Opcodes.DUP;
+import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
+import static org.objectweb.asm.Opcodes.NEW;
+import static org.objectweb.asm.Type.getInternalName;
 import static uk.co.strangeskies.collection.stream.StreamUtilities.throwingMerger;
 import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
+
+import javax.naming.OperationNotSupportedException;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 
 import uk.co.strangeskies.reflection.token.MethodMatcher;
 
@@ -74,17 +82,39 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 		return classSpace;
 	}
 
-	public <U> ClassDefinition<E, T> defineMethod(
+	public <U> ClassDefinition<E, T> defineConstructor(
 			MethodMatcher<?, ? super U> methodMatcher,
 			Block<? extends U> methodBody) {
 		@SuppressWarnings("unchecked")
 		MethodDeclaration<T, U> methodDeclaration = getDeclaration()
-				.methodDeclarations()
+				.constructorDeclarations()
 				.filter(m -> methodMatcher.match(m.getExecutableStub()))
 				.reduce(throwingMerger())
 				.map(m -> (MethodDeclaration<T, U>) m)
 				.orElseThrow(
 						() -> new CodeGenerationException(CODEGEN_PROPERTIES.cannotFindMethodOn(null, null)));
+
+		MethodDefinition<T, U> definition = new MethodDefinition<>(methodDeclaration)
+				.withBody(methodBody);
+
+		return new ClassDefinition<>(
+				getDeclaration(),
+				classSpace.withMethodDefinition(methodDeclaration, definition));
+	}
+
+	public <U> ClassDefinition<E, T> defineMethod(
+			MethodMatcher<?, ? super U> methodMatcher,
+			Block<? extends U> methodBody) {
+		@SuppressWarnings("unchecked")
+		MethodDeclaration<T, U> methodDeclaration = concat(
+				getDeclaration().methodDeclarations(),
+				getDeclaration().staticMethodDeclarations())
+						.filter(m -> methodMatcher.match(m.getExecutableStub()))
+						.reduce(throwingMerger())
+						.map(m -> (MethodDeclaration<T, U>) m)
+						.orElseThrow(
+								() -> new CodeGenerationException(
+										CODEGEN_PROPERTIES.cannotFindMethodOn(null, null)));
 
 		MethodDefinition<T, U> definition = new MethodDefinition<>(methodDeclaration)
 				.withBody(methodBody);
@@ -121,22 +151,32 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 
 		stubClassReader.accept(new ClassVisitor(ASM5, classWriter) {
 			@Override
-			public FieldVisitor visitField(int arg0, String arg1, String arg2, String arg3, Object arg4) {
-				return new FieldVisitor(ASM5, super.visitField(arg0, arg1, arg2, arg3, arg4)) {
-					// TODO
-				};
-			}
-
-			@Override
 			public MethodVisitor visitMethod(
 					int arg0,
 					String arg1,
 					String arg2,
 					String arg3,
 					String[] arg4) {
-				return new MethodVisitor(ASM5, super.visitMethod(arg0, arg1, arg2, arg3, arg4)) {
-					// TODO
-				};
+				MethodVisitor methodVisitor = super.visitMethod(arg0, arg1, arg2, arg3, arg4);
+
+				methodVisitor.visitCode();
+				methodVisitor.visitTypeInsn(NEW, getInternalName(OperationNotSupportedException.class));
+				methodVisitor.visitInsn(DUP);
+				try {
+					methodVisitor.visitMethodInsn(
+							INVOKESPECIAL,
+							getInternalName(OperationNotSupportedException.class),
+							"<init>",
+							Type.getConstructorDescriptor(OperationNotSupportedException.class.getConstructor()),
+							false);
+				} catch (NoSuchMethodException | SecurityException e) {
+					throw new AssertionError(e);
+				}
+				methodVisitor.visitInsn(ATHROW);
+				methodVisitor.visitMaxs(0, 0);
+				methodVisitor.visitEnd();
+
+				return null;
 			}
 		}, 0);
 
