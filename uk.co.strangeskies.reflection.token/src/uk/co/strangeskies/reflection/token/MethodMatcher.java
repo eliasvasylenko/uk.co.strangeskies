@@ -1,101 +1,116 @@
 package uk.co.strangeskies.reflection.token;
 
-import static uk.co.strangeskies.reflection.token.MethodMatcher.Builder.matchTrue;
+import static java.util.Arrays.stream;
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.zip;
+import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.SUBTYPE;
+import static uk.co.strangeskies.reflection.Visibility.forModifiers;
+import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
 
 import java.lang.reflect.Executable;
+import java.lang.reflect.Type;
+import java.util.List;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.reflection.Visibility;
 
-public interface MethodMatcher<O, T> {
-	public default boolean match(Executable executable) {
-		return match(ExecutableToken.forExecutable(executable)).isPresent();
+public class MethodMatcher<O, T> {
+	public static MethodMatcher<Object, Object> matchMethod() {
+		return new MethodMatcher<>(empty(), empty(), empty(), empty());
 	}
 
-	public Optional<ExecutableToken<O, T>> match(ExecutableToken<?, ?> executable);
+	private final Optional<String> name;
+	private final Optional<Visibility> visibility;
+	private final Optional<TypeToken<?>> returnType;
+	private final Optional<List<TypeToken<?>>> argumentTypes;
 
-	public static Builder<Object, Object> matchMethod() {
-		return new Builder<>(matchTrue(), matchTrue(), matchTrue(), matchTrue());
+	protected MethodMatcher(
+			Optional<String> name,
+			Optional<Visibility> visibility,
+			Optional<TypeToken<?>> returnType,
+			Optional<List<TypeToken<?>>> argumentTypes) {
+		this.name = name;
+		this.visibility = visibility;
+		this.returnType = returnType;
+		this.argumentTypes = argumentTypes;
 	}
 
-	public class Builder<O, T> implements MethodMatcher<O, T> {
-		static <T> Predicate<T> matchTrue() {
-			return o -> true;
-		}
-
-		private final Predicate<String> name;
-		private final Predicate<TypeToken<?>> returnType;
-		private final Predicate<Visibility> visibility;
-		private final Predicate<Stream<ExecutableParameter>> arguments;
-
-		protected Builder(
-				Predicate<String> name,
-				Predicate<TypeToken<?>> returnType,
-				Predicate<Visibility> visibility,
-				Predicate<Stream<ExecutableParameter>> arguments) {
-			this.name = name;
-			this.returnType = returnType;
-			this.visibility = visibility;
-			this.arguments = arguments;
-		}
-
-		@Override
-		@SuppressWarnings("unchecked")
-		public Optional<ExecutableToken<O, T>> match(ExecutableToken<?, ?> executable) {
-			if (matchImpl(executable)) {
-				return Optional.of((ExecutableToken<O, T>) executable);
-			} else {
-				return Optional.empty();
-			}
-		}
-
-		private boolean matchImpl(ExecutableToken<?, ?> executable) {
-			return name.test(executable.getName())
-					&& returnType.test(executable.getReturnType())
-					&& visibility.test(executable.getVisibility())
-					&& arguments.test(executable.getParameters());
-		}
-
-		public Builder<O, T> constructor() {
-			return named("<init>");
-		}
-
-		public Builder<O, T> staticInitializer() {
-			return named("<cinit>");
-		}
-
-		public Builder<O, T> named(String name) {
-			return new Builder<>(this.name.and(name::equals), returnType, visibility, arguments);
-		}
-
-		public <U> Builder<O, U> returning(TypeToken<U> returnType) {
-			return new Builder<>(
-					name,
-					this.returnType.and(t -> returnType.satisfiesConstraintFrom(Kind.SUBTYPE, t)),
-					visibility,
-					arguments);
-		}
-
-		public <U> Builder<O, U> returning(Class<U> type) {
-			return returning(TypeToken.forClass(type));
-		}
-
-		public <U> Builder<U, T> receiving(TypeToken<U> type) {
-			return null;
-		}
-
-		public <U> Builder<U, T> receiving(Class<U> type) {
-			return receiving(TypeToken.forClass(type));
-		}
-
-		public Builder<O, T> parameters() {
-			// TODO Auto-generated method stub
-			return null;
-		}
-
-		// TODO "accepting(...)" by parameter types and by parameter count
+	public boolean match(Executable executable) {
+		return matchImpl(
+				executable.getName(),
+				forModifiers(executable.getModifiers()),
+				executable.getAnnotatedReturnType().getType(),
+				stream(executable.getGenericParameterTypes()));
 	}
+
+	@SuppressWarnings("unchecked")
+	public Optional<ExecutableToken<O, T>> match(ExecutableToken<?, ?> executable) {
+		if (matchImpl(
+				executable.getName(),
+				executable.getVisibility(),
+				executable.getReturnType().getType(),
+				executable.getParameters().map(ExecutableParameter::getType)))
+			return of((ExecutableToken<O, T>) executable);
+		else
+			return empty();
+	}
+
+	private boolean matchImpl(
+			String name,
+			Visibility visibility,
+			Type returnType,
+			Stream<Type> argumentTypes) {
+		return this.name.map(name::equals).orElse(true)
+				&& this.visibility.map(visibility::visibilityIsAtLeast).orElse(true)
+				&& this.returnType.map(type -> type.satisfiesConstraintFrom(SUBTYPE, returnType)).orElse(
+						true)
+				&& this.argumentTypes
+						.map(
+								arguments -> zip(
+										arguments.stream(),
+										argumentTypes,
+										(a, b) -> a.satisfiesConstraintTo(SUBTYPE, b)).reduce((a, b) -> a && b).get())
+						.orElse(true);
+	}
+
+	public MethodMatcher<O, T> constructor() {
+		return named("<init>");
+	}
+
+	public MethodMatcher<O, T> staticInitializer() {
+		return named("<cinit>");
+	}
+
+	public MethodMatcher<O, T> named(String name) {
+		return new MethodMatcher<>(of(name), visibility, returnType, argumentTypes);
+	}
+
+	public MethodMatcher<O, T> visibleTo(Visibility visibility) {
+		return new MethodMatcher<>(name, of(visibility), returnType, argumentTypes);
+	}
+
+	public <U> MethodMatcher<O, U> returning(TypeToken<U> returnType) {
+		return new MethodMatcher<>(name, visibility, of(returnType), argumentTypes);
+	}
+
+	public <U> MethodMatcher<O, U> returning(Class<U> type) {
+		return returning(forClass(type));
+	}
+
+	public <U> MethodMatcher<U, T> receiving(TypeToken<U> type) {
+		return null;
+	}
+
+	public <U> MethodMatcher<U, T> receiving(Class<U> type) {
+		return receiving(forClass(type));
+	}
+
+	public MethodMatcher<O, T> parameters() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	// TODO "accepting(...)" by parameter types and by parameter count
 }

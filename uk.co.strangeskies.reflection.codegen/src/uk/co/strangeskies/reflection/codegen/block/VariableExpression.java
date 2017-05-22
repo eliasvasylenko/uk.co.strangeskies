@@ -30,40 +30,31 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection.codegen;
+package uk.co.strangeskies.reflection.codegen.block;
 
-import java.util.Arrays;
-import java.util.List;
+import static uk.co.strangeskies.reflection.token.VariableMatcher.matchVariable;
 
-import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
-import uk.co.strangeskies.reflection.token.FieldToken;
-import uk.co.strangeskies.reflection.token.MethodMatcher;
+import uk.co.strangeskies.reflection.codegen.block.ExpressionVisitor.ValueExpressionVisitor;
+import uk.co.strangeskies.reflection.codegen.block.ExpressionVisitor.VariableExpressionVisitor;
+import uk.co.strangeskies.reflection.token.VariableMatcher;
 
-public interface ValueExpression<T> extends Expression {
+public interface VariableExpression<T> extends ValueExpression<T> {
+	default ValueExpression<T> assign(ValueExpression<? extends T> value) {
+		return new AssignmentExpression<>(this, value);
+	}
+
 	@Override
-	default void accept(ExpressionVisitor visitor) {
-		accept(visitor.value(this));
+	default void accept(ValueExpressionVisitor<T> visitor) {
+		accept(visitor.variable());
 	}
 
-	void accept(ValueExpressionVisitor<T> visitor);
+	void accept(VariableExpressionVisitor<T> visitor);
 
-	default <R> FieldExpression<? super T, R> accessField(FieldToken<? super T, R> field) {
-		return new FieldExpression<>(this, field);
+	static VariableExpression<Object> resolveVariable(String name) {
+		return resolveVariable(matchVariable().named(name));
 	}
 
-	default FieldExpression<? super T, ?> accessResolvedField(String fieldName) {
-		return null; // TODO
-	}
-
-	default <R> InvocationExpression<? super T, R> invokeMethod(
-			MethodMatcher<? super T, R> invocable,
-			ValueExpression<?>... arguments) {
-		return invokeMethod(invocable, Arrays.asList(arguments));
-	}
-
-	default <R> InvocationExpression<? super T, R> invokeMethod(
-			MethodMatcher<? super T, R> invocable,
-			List<ValueExpression<?>> arguments) {
-		return new InvocationExpression<>(this, invocable, arguments);
+	static <T> VariableExpression<T> resolveVariable(VariableMatcher<?, T> matcher) {
+		return new MatchedVariableExpression<>(matcher);
 	}
 }

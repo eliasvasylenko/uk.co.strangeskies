@@ -30,38 +30,30 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection.codegen;
+package uk.co.strangeskies.reflection.codegen.block;
 
-import java.util.List;
+import uk.co.strangeskies.reflection.codegen.block.ExpressionVisitor.ValueExpressionVisitor;
+import uk.co.strangeskies.reflection.token.TypeToken;
 
-import uk.co.strangeskies.reflection.token.FieldToken;
-import uk.co.strangeskies.reflection.token.MethodMatcher;
+public class LocalValueExpression<T> implements ValueExpression<T> {
+	private final String name;
+	private final TypeToken<T> type;
 
-public interface ExpressionVisitor {
-	<U> ValueExpressionVisitor<U> value(ValueExpression<U> expression);
-
-	interface ValueExpressionVisitor<U> {
-		VariableExpressionVisitor<U> variable();
-
-		void visitAssignment(VariableExpression<U> target, ValueExpression<? extends U> value);
-
-		void visitLiteral(U value);
-
-		void visitNull();
-
-		void visitReceiver(ClassDeclaration<?, U> classDeclaration);
-
-		<O> void visitMethod(
-				ValueExpression<O> receiver,
-				MethodMatcher<? super O, U> invocable,
-				List<ValueExpression<?>> arguments);
-
-		void visitLocal(ParameterSignature<? extends U> local);
+	public LocalValueExpression(String name, TypeToken<T> type) {
+		this.name = name;
+		this.type = type;
 	}
 
-	interface VariableExpressionVisitor<U> {
-		<O> void visitField(ValueExpression<? extends O> value, FieldToken<O, U> field);
+	@Override
+	public void accept(ValueExpressionVisitor<T> visitor) {
+		visitor.visitLocal(getSignature());
+	}
 
-		void visitLocal(ParameterSignature<U> local);
+	public String getName() {
+		return name;
+	}
+
+	public TypeToken<T> getType() {
+		return type;
 	}
 }

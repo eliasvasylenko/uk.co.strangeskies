@@ -30,8 +30,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection.codegen;
+package uk.co.strangeskies.reflection.codegen.block;
 
-public interface Statement {
-	void accept(StatementVisitor visitor);
+import uk.co.strangeskies.reflection.codegen.block.ExpressionVisitor.ValueExpressionVisitor;
+import uk.co.strangeskies.reflection.codegen.block.ExpressionVisitor.VariableExpressionVisitor;
+import uk.co.strangeskies.reflection.token.TypeToken;
+
+public class LocalVariableExpression<T> extends LocalValueExpression<T> implements VariableExpression<T> {
+	public LocalVariableExpression(String name, TypeToken<T> type) {
+		super(name, type);
+	}
+
+	@Override
+	public void accept(ValueExpressionVisitor<T> visitor) {
+		accept(visitor.variable());
+	}
+
+	@Override
+	public void accept(VariableExpressionVisitor<T> visitor) {
+		visitor.visitLocal(getSignature());
+	}
 }

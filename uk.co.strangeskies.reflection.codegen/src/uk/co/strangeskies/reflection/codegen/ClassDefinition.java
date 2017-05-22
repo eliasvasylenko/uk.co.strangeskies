@@ -52,6 +52,7 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
+import uk.co.strangeskies.reflection.codegen.block.Block;
 import uk.co.strangeskies.reflection.token.MethodMatcher;
 
 /**

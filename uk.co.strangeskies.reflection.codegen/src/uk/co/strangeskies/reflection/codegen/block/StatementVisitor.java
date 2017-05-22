@@ -30,31 +30,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection.codegen;
+package uk.co.strangeskies.reflection.codegen.block;
 
-import static uk.co.strangeskies.reflection.token.VariableMatcher.matchVariable;
+public interface StatementVisitor {
+	void visitReturn();
 
-import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
-import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.VariableExpressionVisitor;
-import uk.co.strangeskies.reflection.token.VariableMatcher;
+	<T> void visitReturn(ValueExpression<T> expression);
 
-public interface VariableExpression<T> extends ValueExpression<T> {
-	default ValueExpression<T> assign(ValueExpression<? extends T> value) {
-		return new AssignmentExpression<>(this, value);
-	}
+	void visitExpression(Expression expression);
 
-	@Override
-	default void accept(ValueExpressionVisitor<T> visitor) {
-		accept(visitor.variable());
-	}
+	<T> void visitDeclaration(LocalVariableExpression<T> variable);
 
-	void accept(VariableExpressionVisitor<T> visitor);
-
-	static VariableExpression<Object> resolveVariable(String name) {
-		return resolveVariable(matchVariable().named(name));
-	}
-
-	static <T> VariableExpression<T> resolveVariable(VariableMatcher<?, T> matcher) {
-		return new MatchedVariableExpression<>(matcher);
-	}
+	<T> void visitDeclaration(LocalValueExpression<T> variable, ValueExpression<? extends T> initializer);
 }

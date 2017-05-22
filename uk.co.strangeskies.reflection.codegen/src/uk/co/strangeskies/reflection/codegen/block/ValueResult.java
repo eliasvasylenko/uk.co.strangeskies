@@ -30,16 +30,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection.codegen;
+package uk.co.strangeskies.reflection.codegen.block;
 
-public interface StatementVisitor {
-	void visitReturn();
-
-	<T> void visitReturn(ValueExpression<T> expression);
-
-	void visitExpression(Expression expression);
-
-	<T> void visitDeclaration(LocalVariableExpression<T> variable);
-
-	<T> void visitDeclaration(LocalValueExpression<T> variable, ValueExpression<? extends T> initializer);
+public interface ValueResult<T> {
+	T get();
 }

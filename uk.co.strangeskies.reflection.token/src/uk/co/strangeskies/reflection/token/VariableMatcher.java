@@ -1,65 +1,82 @@
 package uk.co.strangeskies.reflection.token;
 
-import java.util.function.Predicate;
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
+import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.SUBTYPE;
+import static uk.co.strangeskies.reflection.Visibility.forModifiers;
+import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
 
-import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
+import java.lang.reflect.Field;
+import java.util.Optional;
+
 import uk.co.strangeskies.reflection.Visibility;
 
 public class VariableMatcher<O, T> {
-	private static <T> Predicate<T> match() {
-		return o -> true;
-	}
-
 	public static VariableMatcher<Object, Object> matchVariable() {
-		return new VariableMatcher<>(match(), match(), match());
+		return new VariableMatcher<>(empty(), empty(), empty(), empty());
 	}
 
-	private final Predicate<String> name;
-	private final Predicate<TypeToken<?>> type;
-	private final Predicate<Visibility> visibility;
+	private final Optional<String> name;
+	private final Optional<Visibility> visibility;
+	private final Optional<TypeToken<?>> assignableTo;
+	private final Optional<TypeToken<?>> assignableFrom;
 
 	protected VariableMatcher(
-			Predicate<String> name,
-			Predicate<TypeToken<?>> type,
-			Predicate<Visibility> visibility) {
+			Optional<String> name,
+			Optional<Visibility> visibility,
+			Optional<TypeToken<?>> assignableTo,
+			Optional<TypeToken<?>> assignableFrom) {
 		this.name = name;
-		this.type = type;
 		this.visibility = visibility;
+		this.assignableTo = assignableTo;
+		this.assignableFrom = assignableFrom;
 	}
 
-	public boolean match(FieldToken<?, ?> field) {
-		return name.test(field.getName())
-				&& type.test(field.getFieldType())
-				&& visibility.test(field.getVisibility());
+	@SuppressWarnings("unchecked")
+	public Optional<FieldToken<O, T>> match(FieldToken<?, ?> field) {
+		return match(field.getMember()) ? of((FieldToken<O, T>) field) : empty();
+	}
+
+	public boolean match(Field field) {
+		return name.filter(field.getName()::equals).isPresent()
+				&& visibility.filter(forModifiers(field.getModifiers())::equals).isPresent()
+				&& assignableTo
+						.filter(t -> t.satisfiesConstraintFrom(SUBTYPE, field.getGenericType()))
+						.isPresent()
+				&& assignableFrom
+						.filter(t -> t.satisfiesConstraintTo(SUBTYPE, field.getGenericType()))
+						.isPresent();
 	}
 
 	public VariableMatcher<O, T> named(String name) {
-		return new VariableMatcher<>(this.name.and(name::equals), type, visibility);
+		return new VariableMatcher<>(of(name), visibility, assignableTo, assignableFrom);
 	}
 
-	public <U> VariableMatcher<O, U> returning(TypeToken<U> type) {
-		return new VariableMatcher<>(
-				name,
-				this.type.and(t -> type.satisfiesConstraintFrom(Kind.SUBTYPE, t)),
-				visibility);
+	public VariableMatcher<O, T> visibleTo(Visibility visibility) {
+		return new VariableMatcher<>(name, of(visibility), assignableTo, assignableFrom);
 	}
 
-	public <U> VariableMatcher<O, U> returning(Class<U> type) {
-		return returning(TypeToken.forClass(type));
+	public VariableMatcher<O, T> typed(TypeToken<T> type) {
+		return new VariableMatcher<>(name, visibility, of(type), of(type));
 	}
 
-	public <U> VariableMatcher<U, T> receiving(TypeToken<U> type) {
-		return null;
+	public VariableMatcher<O, T> typed(Class<T> type) {
+		return typed(forClass(type));
 	}
 
-	public <U> VariableMatcher<U, T> receiving(Class<U> type) {
-		return receiving(TypeToken.forClass(type));
+	public VariableMatcher<O, T> assignableTo(TypeToken<T> type) {
+		return new VariableMatcher<>(name, visibility, of(type), assignableFrom);
 	}
 
-	public String ofType(Class<Integer> class1) {
-		// TODO Auto-generated method stub
-		return null;
+	public VariableMatcher<O, T> assignableTo(Class<T> type) {
+		return assignableTo(forClass(type));
 	}
 
-	// TODO "accepting(...)" by parameter types and by parameter count
+	public VariableMatcher<O, T> assignableFrom(TypeToken<T> type) {
+		return new VariableMatcher<>(name, visibility, assignableTo, of(type));
+	}
+
+	public VariableMatcher<O, T> assignableFrom(Class<T> type) {
+		return assignableFrom(forClass(type));
+	}
 }

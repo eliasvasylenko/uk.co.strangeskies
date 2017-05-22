@@ -30,33 +30,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection.codegen;
+package uk.co.strangeskies.reflection.codegen.block;
 
-import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
-import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.VariableExpressionVisitor;
-import uk.co.strangeskies.reflection.token.FieldToken;
-import uk.co.strangeskies.reflection.token.TypeToken;
-
-public class FieldExpression<O, T> implements VariableExpression<T> {
-	private final ValueExpression<? extends O> value;
-	private final FieldToken<O, T> field;
-
-	protected FieldExpression(ValueExpression<? extends O> value, FieldToken<O, T> field) {
-		this.value = value;
-		this.field = field;
-	}
-
-	@Override
-	public void accept(ValueExpressionVisitor<T> visitor) {
-		accept(visitor.variable());
-	}
-
-	@Override
-	public void accept(VariableExpressionVisitor<T> visitor) {
-		visitor.visitField(value, field);
-	}
-
-	public TypeToken<T> getType() {
-		return field.getFieldType();
-	}
+public interface VariableResult<T> extends ValueResult<T> {
+	void set(T value);
 }

@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import uk.co.strangeskies.reflection.codegen.block.Block;
+
 public class MethodDefinition<C, T> implements MemberDefinition<C> {
 	private final MethodDeclaration<C, T> methodDeclaration;
 	private final Block<? extends T> body;
@@ -66,9 +68,5 @@ public class MethodDefinition<C, T> implements MemberDefinition<C> {
 
 	public MethodDefinition<C, T> withBody(Block<? extends T> body) {
 		return new MethodDefinition<>(this, body);
-	}
-
-	public <U> LocalVariableExpression<U> getParameter(ParameterSignature<U> parameterSignature) {
-		return null;
 	}
 }

@@ -30,29 +30,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection.codegen;
-
-import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
+package uk.co.strangeskies.reflection.codegen.block;
 
 /**
- * An expression denoting assignment to a {@link VariableExpression}.
+ * An expression for evaluation of
  * 
  * @author Elias N Vasylenko
- *
- * @param <T>
- *          the type of the variable to assign to
  */
-public class AssignmentExpression<T> implements ValueExpression<T> {
-	private final VariableExpression<T> target;
-	private final ValueExpression<? extends T> value;
-
-	protected AssignmentExpression(VariableExpression<T> target, ValueExpression<? extends T> value) {
-		this.target = target;
-		this.value = value;
-	}
-
-	@Override
-	public void accept(ValueExpressionVisitor<T> visitor) {
-		visitor.visitAssignment(target, value);
-	}
+public interface Expression {
+	void accept(ExpressionVisitor visitor);
 }

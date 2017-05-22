@@ -1,6 +1,6 @@
-package uk.co.strangeskies.reflection.codegen;
+package uk.co.strangeskies.reflection.codegen.block;
 
-import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.VariableExpressionVisitor;
+import uk.co.strangeskies.reflection.codegen.block.ExpressionVisitor.VariableExpressionVisitor;
 import uk.co.strangeskies.reflection.token.VariableMatcher;
 
 class MatchedVariableExpression<T> implements VariableExpression<T> {

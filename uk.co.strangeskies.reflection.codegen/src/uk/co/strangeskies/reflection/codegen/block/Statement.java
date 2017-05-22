@@ -30,8 +30,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection.codegen;
+package uk.co.strangeskies.reflection.codegen.block;
 
-public interface VariableResult<T> extends ValueResult<T> {
-	void set(T value);
+public interface Statement {
+	void accept(StatementVisitor visitor);
 }

@@ -30,24 +30,26 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection.codegen;
+package uk.co.strangeskies.reflection.codegen.block;
 
-import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.ValueExpressionVisitor;
-import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.VariableExpressionVisitor;
-import uk.co.strangeskies.reflection.token.TypeToken;
+import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
 
-public class LocalVariableExpression<T> extends LocalValueExpression<T> implements VariableExpression<T> {
-	public LocalVariableExpression(String name, TypeToken<T> type) {
-		super(name, type);
-	}
+import uk.co.strangeskies.reflection.codegen.CodeGenerationException;
+import uk.co.strangeskies.reflection.codegen.block.ExpressionVisitor.VariableExpressionVisitor;
 
-	@Override
-	public void accept(ValueExpressionVisitor<T> visitor) {
-		accept(visitor.variable());
-	}
+public class VariableExpressionProxy<T> implements VariableExpression<T> {
+	private VariableExpression<T> component;
 
 	@Override
 	public void accept(VariableExpressionVisitor<T> visitor) {
-		visitor.visitLocal(getSignature());
+		if (component != null) {
+			component.accept(visitor);
+		} else {
+			throw new CodeGenerationException(CODEGEN_PROPERTIES.cannotAccessPlaceholderExpression(this));
+		}
+	}
+
+	public void setComponent(VariableExpression<T> component) {
+		this.component = component;
 	}
 }

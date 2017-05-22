@@ -32,7 +32,6 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import static java.util.Optional.of;
 import static org.objectweb.asm.Opcodes.ATHROW;
 import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
@@ -41,7 +40,6 @@ import static org.objectweb.asm.Type.getInternalName;
 import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
 
 import java.lang.reflect.Executable;
-import java.util.Optional;
 
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
@@ -49,11 +47,8 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.signature.SignatureWriter;
 
 import uk.co.strangeskies.reflection.Types;
-import uk.co.strangeskies.reflection.token.ExecutableToken;
-import uk.co.strangeskies.reflection.token.MethodMatcher;
 
-public class MethodDeclaration<C, T> extends ParameterizedDeclaration<ExecutableSignature<?>>
-		implements MethodMatcher<C, T> {
+public class MethodDeclaration<C, T> extends ParameterizedDeclaration<ExecutableSignature<?>> {
 	enum Kind {
 		CONSTRUCTOR, INSTANCE_METHOD, STATIC_METHOD
 	}
@@ -183,19 +178,6 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 		}
 
 		return executableStub;
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public Optional<ExecutableToken<C, T>> match(ExecutableToken<?, ?> executable) {
-		return match(executable.getMember())
-				? of((ExecutableToken<C, T>) executable)
-				: Optional.empty();
-	}
-
-	@Override
-	public boolean match(Executable executable) {
-		return getExecutableStub() == executable;
 	}
 
 	public String getName() {

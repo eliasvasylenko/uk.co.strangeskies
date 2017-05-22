@@ -39,6 +39,8 @@ import java.util.Collection;
 import java.util.List;
 
 import uk.co.strangeskies.reflection.ReflectionProperties;
+import uk.co.strangeskies.reflection.codegen.block.Expression;
+import uk.co.strangeskies.reflection.codegen.block.VariableExpressionProxy;
 import uk.co.strangeskies.reflection.token.TypeToken;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;

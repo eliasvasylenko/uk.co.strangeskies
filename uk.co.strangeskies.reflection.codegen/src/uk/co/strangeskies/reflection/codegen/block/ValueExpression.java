@@ -30,8 +30,40 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection.codegen;
+package uk.co.strangeskies.reflection.codegen.block;
 
-public interface ValueResult<T> {
-	T get();
+import java.util.Arrays;
+import java.util.List;
+
+import uk.co.strangeskies.reflection.codegen.block.ExpressionVisitor.ValueExpressionVisitor;
+import uk.co.strangeskies.reflection.token.FieldToken;
+import uk.co.strangeskies.reflection.token.MethodMatcher;
+
+public interface ValueExpression<T> extends Expression {
+	@Override
+	default void accept(ExpressionVisitor visitor) {
+		accept(visitor.value(this));
+	}
+
+	void accept(ValueExpressionVisitor<T> visitor);
+
+	default <R> FieldExpression<? super T, R> accessField(FieldToken<? super T, R> field) {
+		return new FieldExpression<>(this, field);
+	}
+
+	default FieldExpression<? super T, ?> accessResolvedField(String fieldName) {
+		return null; // TODO
+	}
+
+	default <R> InvocationExpression<? super T, R> invokeMethod(
+			MethodMatcher<? super T, R> invocable,
+			ValueExpression<?>... arguments) {
+		return invokeMethod(invocable, Arrays.asList(arguments));
+	}
+
+	default <R> InvocationExpression<? super T, R> invokeMethod(
+			MethodMatcher<? super T, R> invocable,
+			List<ValueExpression<?>> arguments) {
+		return new InvocationExpression<>(this, invocable, arguments);
+	}
 }

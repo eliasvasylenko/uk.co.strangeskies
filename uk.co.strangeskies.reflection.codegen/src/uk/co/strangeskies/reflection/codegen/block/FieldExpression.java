@@ -30,25 +30,33 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection.codegen;
+package uk.co.strangeskies.reflection.codegen.block;
 
-import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
+import uk.co.strangeskies.reflection.codegen.block.ExpressionVisitor.ValueExpressionVisitor;
+import uk.co.strangeskies.reflection.codegen.block.ExpressionVisitor.VariableExpressionVisitor;
+import uk.co.strangeskies.reflection.token.FieldToken;
+import uk.co.strangeskies.reflection.token.TypeToken;
 
-import uk.co.strangeskies.reflection.codegen.ExpressionVisitor.VariableExpressionVisitor;
+public class FieldExpression<O, T> implements VariableExpression<T> {
+	private final ValueExpression<? extends O> value;
+	private final FieldToken<O, T> field;
 
-public class VariableExpressionProxy<T> implements VariableExpression<T> {
-	private VariableExpression<T> component;
+	protected FieldExpression(ValueExpression<? extends O> value, FieldToken<O, T> field) {
+		this.value = value;
+		this.field = field;
+	}
+
+	@Override
+	public void accept(ValueExpressionVisitor<T> visitor) {
+		accept(visitor.variable());
+	}
 
 	@Override
 	public void accept(VariableExpressionVisitor<T> visitor) {
-		if (component != null) {
-			component.accept(visitor);
-		} else {
-			throw new CodeGenerationException(CODEGEN_PROPERTIES.cannotAccessPlaceholderExpression(this));
-		}
+		visitor.visitField(value, field);
 	}
 
-	public void setComponent(VariableExpression<T> component) {
-		this.component = component;
+	public TypeToken<T> getType() {
+		return field.getFieldType();
 	}
 }

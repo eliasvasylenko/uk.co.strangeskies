@@ -35,10 +35,10 @@ package uk.co.strangeskies.reflection.codegen.test;
 import static uk.co.strangeskies.reflection.Visibility.PUBLIC;
 import static uk.co.strangeskies.reflection.codegen.ClassSignature.classSignature;
 import static uk.co.strangeskies.reflection.codegen.ConstructorSignature.constructorSignature;
-import static uk.co.strangeskies.reflection.codegen.Expressions.literal;
 import static uk.co.strangeskies.reflection.codegen.MethodSignature.methodSignature;
 import static uk.co.strangeskies.reflection.codegen.ParameterSignature.parameterSignature;
-import static uk.co.strangeskies.reflection.codegen.VariableExpression.resolveVariable;
+import static uk.co.strangeskies.reflection.codegen.block.Expressions.literal;
+import static uk.co.strangeskies.reflection.codegen.block.VariableExpression.resolveVariable;
 import static uk.co.strangeskies.reflection.token.MethodMatcher.matchMethod;
 import static uk.co.strangeskies.reflection.token.VariableMatcher.matchVariable;
 
@@ -46,11 +46,11 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import uk.co.strangeskies.reflection.ReflectionException;
-import uk.co.strangeskies.reflection.codegen.Block;
 import uk.co.strangeskies.reflection.codegen.ByteArrayClassLoader;
 import uk.co.strangeskies.reflection.codegen.ClassDefinition;
 import uk.co.strangeskies.reflection.codegen.ClassRegister;
 import uk.co.strangeskies.reflection.codegen.ClassSignature;
+import uk.co.strangeskies.reflection.codegen.block.Block;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 @SuppressWarnings("javadoc")

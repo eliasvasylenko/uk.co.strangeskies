@@ -30,13 +30,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection.codegen;
+package uk.co.strangeskies.reflection.codegen.block;
 
 import static uk.co.strangeskies.reflection.codegen.ClassSignature.classSignature;
-import static uk.co.strangeskies.reflection.codegen.InvocationExpression.invokeStatic;
+import static uk.co.strangeskies.reflection.codegen.block.InvocationExpression.invokeStatic;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import uk.co.strangeskies.reflection.codegen.ClassDefinition;
+import uk.co.strangeskies.reflection.codegen.ClassRegister;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class Expressions {
