@@ -35,7 +35,6 @@ package uk.co.strangeskies.reflection.codegen;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toSet;
 import static uk.co.strangeskies.reflection.Types.getErasedType;
 import static uk.co.strangeskies.reflection.codegen.ErasedMethodSignature.erasedMethodSignature;
 
@@ -62,12 +61,8 @@ public abstract class ExecutableSignature<S extends ExecutableSignature<S>>
 		this.typeVariables = emptyList();
 	}
 
-	protected ExecutableSignature(
-			String name,
-			Set<Annotation> annotations,
-			Modifiers modifiers,
-			List<ParameterSignature<?>> parameters,
-			List<TypeVariableSignature> typeVariables) {
+	protected ExecutableSignature(String name, Set<Annotation> annotations, Modifiers modifiers,
+			List<ParameterSignature<?>> parameters, List<TypeVariableSignature> typeVariables) {
 		super(name, annotations, modifiers);
 
 		this.parameters = parameters;
@@ -76,8 +71,7 @@ public abstract class ExecutableSignature<S extends ExecutableSignature<S>>
 
 	public ErasedMethodSignature erased() {
 		if (erasedSignature == null) {
-			this.erasedSignature = erasedMethodSignature(
-					getName(),
+			this.erasedSignature = erasedMethodSignature(getName(),
 					parameters.stream().map(v -> getErasedType(v.getType().getType())).toArray(
 							Class<?>[]::new));
 		}
@@ -85,18 +79,13 @@ public abstract class ExecutableSignature<S extends ExecutableSignature<S>>
 	}
 
 	@Override
-	protected S withMemberSignatureData(
-			String name,
-			Set<Annotation> annotations,
+	protected S withMemberSignatureData(String name, Set<Annotation> annotations,
 			Modifiers modifiers) {
 		return withExecutableSignatureData(name, annotations, modifiers, parameters, typeVariables);
 	}
 
-	protected abstract S withExecutableSignatureData(
-			String name,
-			Set<Annotation> annotations,
-			Modifiers modifiers,
-			List<ParameterSignature<?>> parameters,
+	protected abstract S withExecutableSignatureData(String name, Set<Annotation> annotations,
+			Modifiers modifiers, List<ParameterSignature<?>> parameters,
 			List<TypeVariableSignature> typeVariables);
 
 	@Override
@@ -106,11 +95,7 @@ public abstract class ExecutableSignature<S extends ExecutableSignature<S>>
 
 	@Override
 	public S typeVariables(Collection<? extends TypeVariableSignature> typeVariables) {
-		return withExecutableSignatureData(
-				name,
-				annotations,
-				modifiers,
-				parameters,
+		return withExecutableSignatureData(name, annotations, modifiers, parameters,
 				new ArrayList<>(typeVariables));
 	}
 
@@ -125,11 +110,7 @@ public abstract class ExecutableSignature<S extends ExecutableSignature<S>>
 	}
 
 	public S withParameters(Collection<? extends ParameterSignature<?>> parameters) {
-		return withExecutableSignatureData(
-				name,
-				annotations,
-				modifiers,
-				new ArrayList<>(parameters),
+		return withExecutableSignatureData(name, annotations, modifiers, new ArrayList<>(parameters),
 				typeVariables);
 	}
 
@@ -138,25 +119,5 @@ public abstract class ExecutableSignature<S extends ExecutableSignature<S>>
 				.append("(")
 				.append(getParameters().map(Objects::toString).collect(joining(", ")))
 				.append(")");
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (obj == this)
-			return true;
-		if (!(obj instanceof ExecutableSignature<?>))
-			return false;
-
-		ExecutableSignature<?> that = (ExecutableSignature<?>) obj;
-
-		return super.equals(that)
-				&& Objects.equals(this.getName(), that.getName())
-				&& Objects
-						.equals(this.getParameters().collect(toSet()), that.getParameters().collect(toSet()));
-	}
-
-	@Override
-	public int hashCode() {
-		return super.hashCode() ^ this.getName().hashCode() ^ parameters.hashCode();
 	}
 }

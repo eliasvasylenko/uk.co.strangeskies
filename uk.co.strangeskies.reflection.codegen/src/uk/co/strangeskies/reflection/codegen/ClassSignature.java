@@ -467,42 +467,4 @@ public class ClassSignature<T> implements ParameterizedSignature<ClassSignature<
 				annotations,
 				modifiers);
 	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (obj == this)
-			return true;
-		if (!(obj instanceof ClassSignature<?>))
-			return false;
-
-		ClassSignature<?> that = (ClassSignature<?>) obj;
-
-		return super.equals(that)
-				&& Objects.equals(this.packageName, that.packageName)
-				&& Objects.equals(this.simpleName, that.simpleName)
-				&& Objects.equals(this.enclosingClassName, that.enclosingClassName)
-				&& Objects.equals(this.superClass, that.superClass)
-				&& Objects.equals(this.superInterfaces, that.superInterfaces)
-				&& Objects.equals(this.constructorSignatures, that.constructorSignatures)
-				&& Objects.equals(this.methodSignatures, that.methodSignatures)
-				&& Objects.equals(this.typeVariables, that.typeVariables)
-				&& Objects.equals(this.annotations, that.annotations)
-				&& Objects.equals(this.modifiers, that.modifiers);
-	}
-
-	@Override
-	public int hashCode() {
-		return super.hashCode()
-				^ Objects.hash(
-						packageName,
-						simpleName,
-						enclosingClassName,
-						superClass,
-						superInterfaces,
-						constructorSignatures,
-						methodSignatures,
-						typeVariables,
-						annotations,
-						modifiers);
-	}
 }

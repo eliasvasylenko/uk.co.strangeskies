@@ -7,10 +7,30 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.objectweb.asm.signature.SignatureVisitor;
 
 class ClassWritingContext {
+	private static final Map<Class<?>, Character> PRIMITIVE_DESCRIPTORS = Collections
+			.unmodifiableMap(new HashMap<Class<?>, Character>() {
+				private static final long serialVersionUID = 1L;
+
+				{
+					put(void.class, 'V');
+					put(boolean.class, 'Z');
+					put(byte.class, 'B');
+					put(char.class, 'C');
+					put(short.class, 'S');
+					put(int.class, 'S');
+					put(long.class, 'J');
+					put(float.class, 'F');
+					put(double.class, 'D');
+				}
+			});
+
 	private ClassWritingContext() {}
 
 	public static void visitTypeSignature(SignatureVisitor visitor, Type type) {
@@ -31,11 +51,16 @@ class ClassWritingContext {
 
 	private static void visitClassSignature(SignatureVisitor visitor, Class<?> type) {
 		while (type.isArray()) {
-			visitor.visitArrayType();
+			visitor = visitor.visitArrayType();
 			type = type.getComponentType();
 		}
-		visitor.visitClassType(getInternalName(type));
-		visitor.visitEnd();
+
+		if (PRIMITIVE_DESCRIPTORS.containsKey(type)) {
+			visitor.visitBaseType(PRIMITIVE_DESCRIPTORS.get(type));
+		} else {
+			visitor.visitClassType(getInternalName(type));
+			visitor.visitEnd();
+		}
 	}
 
 	private static void visitParameterizedTypeSignature(
@@ -70,7 +95,7 @@ class ClassWritingContext {
 		Type component;
 
 		do {
-			visitor.visitArrayType();
+			visitor = visitor.visitArrayType();
 			component = type.getGenericComponentType();
 
 			if (!(component instanceof GenericArrayType))

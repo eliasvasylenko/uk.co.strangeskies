@@ -66,11 +66,11 @@ public class Block<T> {
 		return withStatement(v -> v.visitExpression(expression));
 	}
 
-	public <U> LocalVariableExpression<U> withVariableDeclaration(String name, Class<U> type) {
+	public <U> Block<T> withVariableDeclaration(String name, Class<U> type) {
 		return declareVariable(name, TypeToken.forClass(type));
 	}
 
-	public <U> LocalVariableExpression<U> declareVariable(String name, TypeToken<U> type) {
+	public <U> Block<T> declareVariable(String name, TypeToken<U> type) {
 		LocalVariableExpression<U> variable = new LocalVariableExpression<>(name, type);
 
 		withStatement(s -> s.visitDeclaration(variable));
@@ -78,16 +78,12 @@ public class Block<T> {
 		return variable;
 	}
 
-	public <U> LocalVariableExpression<U> declareVariable(
-			String name,
-			Class<U> type,
+	public <U> Block<T> declareVariable(String name, Class<U> type,
 			ValueExpression<? extends U> value) {
 		return declareVariable(name, TypeToken.forClass(type), value);
 	}
 
-	public <U> LocalVariableExpression<U> declareVariable(
-			String name,
-			TypeToken<U> type,
+	public <U> Block<T> declareVariable(String name, TypeToken<U> type,
 			ValueExpression<? extends U> value) {
 		LocalVariableExpression<U> variable = new LocalVariableExpression<>(name, type);
 
@@ -96,11 +92,12 @@ public class Block<T> {
 		return variable;
 	}
 
-	public <U> LocalValueExpression<U> declareValue(String name, Class<U> type, ValueExpression<? extends U> value) {
+	public <U> Block<T> declareValue(String name, Class<U> type, ValueExpression<? extends U> value) {
 		return declareValue(name, TypeToken.forClass(type), value);
 	}
 
-	public <U> LocalValueExpression<U> declareValue(String name, TypeToken<U> type, ValueExpression<? extends U> value) {
+	public <U> Block<T> declareValue(String name, TypeToken<U> type,
+			ValueExpression<? extends U> value) {
 		LocalValueExpression<U> variable = new LocalValueExpression<>(name, type);
 
 		withStatement(s -> s.visitDeclaration(variable, value));

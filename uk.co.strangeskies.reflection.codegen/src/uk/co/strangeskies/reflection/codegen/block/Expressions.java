@@ -32,29 +32,16 @@
  */
 package uk.co.strangeskies.reflection.codegen.block;
 
-import static uk.co.strangeskies.reflection.codegen.ClassSignature.classSignature;
-import static uk.co.strangeskies.reflection.codegen.block.InvocationExpression.invokeStatic;
+import static java.util.Arrays.asList;
 
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.List;
 
-import uk.co.strangeskies.reflection.codegen.ClassDefinition;
-import uk.co.strangeskies.reflection.codegen.ClassRegister;
+import uk.co.strangeskies.reflection.token.ExecutableToken;
+import uk.co.strangeskies.reflection.token.MethodMatcher;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class Expressions {
 	private Expressions() {}
-
-	private static final AtomicLong TYPE_TOKEN_EXPRESSION_COUNT = new AtomicLong(0);
-
-	public static <T> ValueExpression<? extends TypeToken<T>> typeTokenExpression(TypeToken<T> type) {
-		ClassDefinition<Void, ? extends TypeToken<T>> typeTokenClass = new ClassRegister()
-				.withClassSignature(
-						classSignature()
-								.simpleName("TypeTokenExpression$" + TYPE_TOKEN_EXPRESSION_COUNT.incrementAndGet())
-								.extending(type.getThisTypeToken()));
-
-		return invokeStatic(typeTokenClass.getDeclaration().getConstructorDeclaration());
-	}
 
 	public static <T> ValueExpression<T> nullLiteral() {
 		return (ValueExpression<T>) v -> v.visitNull();
@@ -94,5 +81,61 @@ public class Expressions {
 
 	public static <T> ValueExpression<Class<T>> literal(Class<T> value) {
 		return literalImpl(value);
+	}
+
+	public static <T> ValueExpression<? extends TypeToken<T>> typeTokenExpression(TypeToken<T> type) {
+		return new TypeTokenExpression<>(type);
+	}
+
+	/**
+	 * @see #invokeStatic(MethodMatcher, List)
+	 */
+	@SuppressWarnings("javadoc")
+	public static <T> InvocationExpression<Void, T> invokeStatic(
+			MethodMatcher<Void, T> executable,
+			ValueExpression<?>... arguments) {
+		return invokeStatic(executable, asList(arguments));
+	}
+
+	/**
+	 * @param <T>
+	 *          the type of the result of the execution
+	 * @param executable
+	 *          the executable to be invoked
+	 * @param arguments
+	 *          the expressions of the arguments of the invocation
+	 * @return an expression describing the invocation of the given static
+	 *         executable with the given argument expressions
+	 */
+	public static <T> InvocationExpression<Void, T> invokeStatic(
+			MethodMatcher<Void, T> executable,
+			List<ValueExpression<?>> arguments) {
+		return new InvocationExpression<>(nullLiteral(), executable, arguments);
+	}
+
+	/**
+	 * @see #invokeStatic(MethodMatcher, List)
+	 */
+	@SuppressWarnings("javadoc")
+	public static <T> InvocationExpression<Void, T> invokeStatic(
+			ExecutableToken<Void, T> executable,
+			ValueExpression<?>... arguments) {
+		return invokeStatic(executable, asList(arguments));
+	}
+
+	/**
+	 * @param <T>
+	 *          the type of the result of the execution
+	 * @param executable
+	 *          the executable to be invoked
+	 * @param arguments
+	 *          the expressions of the arguments of the invocation
+	 * @return an expression describing the invocation of the given static
+	 *         executable with the given argument expressions
+	 */
+	public static <T> InvocationExpression<Void, T> invokeStatic(
+			ExecutableToken<Void, T> executable,
+			List<ValueExpression<?>> arguments) {
+		return new InvocationExpression<>(nullLiteral(), executable, arguments);
 	}
 }

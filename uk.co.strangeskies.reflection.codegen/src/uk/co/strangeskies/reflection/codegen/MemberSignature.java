@@ -40,7 +40,6 @@ import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.TypeVariable;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -101,24 +100,5 @@ public abstract class MemberSignature<S extends MemberSignature<S>>
 
 	public S withVisibility(Visibility visibility) {
 		return withModifiers(modifiers.withVisibility(visibility));
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (obj == this)
-			return true;
-		if (!(obj instanceof MemberSignature<?>))
-			return false;
-
-		MemberSignature<?> that = (MemberSignature<?>) obj;
-
-		return AnnotatedSignature.equals(this, that)
-				&& Objects.equals(this.getName(), that.getName())
-				&& Objects.equals(this.getModifiers(), that.getModifiers());
-	}
-
-	@Override
-	public int hashCode() {
-		return AnnotatedSignature.hashCode(this) ^ getName().hashCode() ^ getModifiers().hashCode();
 	}
 }

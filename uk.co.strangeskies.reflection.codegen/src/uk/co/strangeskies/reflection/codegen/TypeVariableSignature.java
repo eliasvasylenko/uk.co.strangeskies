@@ -182,23 +182,4 @@ public class TypeVariableSignature implements AnnotatedSignature<TypeVariableSig
 						? ""
 						: " extends " + bounds.stream().map(Objects::toString).collect(joining()));
 	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (obj == this)
-			return true;
-		if (!(obj instanceof TypeVariableSignature))
-			return false;
-
-		TypeVariableSignature that = (TypeVariableSignature) obj;
-
-		return AnnotatedSignature.equals(this, that)
-				&& Objects.equals(this.getName(), that.getName())
-				&& Objects.equals(this.bounds, that.bounds);
-	}
-
-	@Override
-	public int hashCode() {
-		return AnnotatedSignature.hashCode(this) ^ this.getName().hashCode() ^ bounds.hashCode();
-	}
 }

@@ -37,6 +37,7 @@ import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.NEW;
 import static org.objectweb.asm.Type.getInternalName;
+import static uk.co.strangeskies.reflection.codegen.ClassWritingContext.visitTypeSignature;
 import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
 
 import java.lang.reflect.Executable;
@@ -63,25 +64,18 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 
 	private Executable executableStub;
 
-	protected MethodDeclaration(
-			Kind kind,
-			ClassDeclaration<?, ?> declaringClass,
-			ClassDeclaration<?, C> owningDeclaration,
-			ExecutableSignature<?> signature,
+	protected MethodDeclaration(Kind kind, ClassDeclaration<?, ?> declaringClass,
+			ClassDeclaration<?, C> owningDeclaration, ExecutableSignature<?> signature,
 			ClassWriter classWriter) {
 		this(kind, declaringClass, owningDeclaration, signature, classWriter, new SignatureWriter());
 	}
 
-	protected MethodDeclaration(
-			Kind kind,
-			ClassDeclaration<?, ?> declaringClass,
-			ClassDeclaration<?, C> owningDeclaration,
-			ExecutableSignature<?> signature,
-			ClassWriter classWriter,
-			SignatureWriter signatureWriter) {
+	protected MethodDeclaration(Kind kind, ClassDeclaration<?, ?> declaringClass,
+			ClassDeclaration<?, C> owningDeclaration, ExecutableSignature<?> signature,
+			ClassWriter classWriter, SignatureWriter signatureWriter) {
 		super(signature, signatureWriter);
 
-		String typeSignature = signatureWriter.toString();
+		String typeSignature = writeGenericParameters(signatureWriter).toString();
 
 		MethodVisitor methodVisitor = classWriter.visitMethod(
 				signature.getModifiers().toInt(),
@@ -106,6 +100,15 @@ public class MethodDeclaration<C, T> extends ParameterizedDeclaration<Executable
 		this.kind = kind;
 		this.declaringClass = declaringClass;
 		this.owningDeclaration = owningDeclaration;
+	}
+
+	private SignatureWriter writeGenericParameters(SignatureWriter signatureWriter) {
+		getSignature().getParameters().forEach(parameter -> {
+			visitTypeSignature(signatureWriter.visitParameterType(), parameter.getType().getType());
+		});
+		visitTypeSignature(signatureWriter.visitReturnType(), getSignature().getReturnType().getType());
+
+		return signatureWriter;
 	}
 
 	protected static String getMethodDescriptor(ExecutableSignature<?> signature) {

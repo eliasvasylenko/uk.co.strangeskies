@@ -32,7 +32,6 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import static java.lang.System.identityHashCode;
 import static java.util.Collections.emptySet;
 import static uk.co.strangeskies.reflection.codegen.Modifiers.modifiers;
 
@@ -147,15 +146,5 @@ public class FieldSignature<T> extends MemberSignature<FieldSignature<T>> {
 	@Override
 	public String toString() {
 		return getType() + " " + getName();
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		return this == obj;
-	}
-
-	@Override
-	public int hashCode() {
-		return identityHashCode(this);
 	}
 }

@@ -41,7 +41,6 @@ import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
@@ -188,22 +187,5 @@ public class MethodSignature<T> extends ExecutableSignature<MethodSignature<T>> 
 		appendParameters(builder);
 
 		return builder.toString();
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (obj == this)
-			return true;
-		if (!(obj instanceof MethodSignature<?>))
-			return false;
-
-		MethodSignature<?> that = (MethodSignature<?>) obj;
-
-		return super.equals(that) && Objects.equals(this.getReturnType(), that.getReturnType());
-	}
-
-	@Override
-	public int hashCode() {
-		return super.hashCode() ^ this.getReturnType().hashCode();
 	}
 }
