@@ -2,8 +2,10 @@ package uk.co.strangeskies.reflection.codegen.block;
 
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
+import static uk.co.strangeskies.reflection.Annotations.getModifiedProperties;
 import static uk.co.strangeskies.reflection.codegen.block.Expressions.invokeStatic;
 import static uk.co.strangeskies.reflection.codegen.block.Expressions.literal;
+import static uk.co.strangeskies.reflection.codegen.block.Expressions.tryLiteral;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.staticMethods;
 
 import java.lang.annotation.Annotation;
@@ -13,6 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
+import uk.co.strangeskies.reflection.AnnotationProperty;
+import uk.co.strangeskies.reflection.Annotations;
 import uk.co.strangeskies.reflection.codegen.block.ExpressionVisitor.ValueExpressionVisitor;
 import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.TypeToken;
@@ -24,7 +28,21 @@ class TypeTokenExpression<T> implements ValueExpression<TypeToken<T>> {
 
 	@SuppressWarnings("unchecked")
 	private static final ExecutableToken<Void, AnnotatedType> ANNOTATED_METHOD = (ExecutableToken<Void, AnnotatedType>) staticMethods(
-			AnnotatedTypes.class).named("annotated").resolveOverload(Type.class, Annotation[].class);
+			AnnotatedTypes.class)
+					.named("annotated")
+					.resolveOverload(Type.class, Annotation[].class)
+					.asVariableArityInvocation();
+
+	private static final ExecutableToken<Void, AnnotationProperty> ANNOTATION_PROPERTY_CONSTRUCTOR = new TypeToken<AnnotationProperty>() {}
+			.constructors()
+			.resolveOverload(String.class, Object.class);
+
+	@SuppressWarnings("unchecked")
+	private static final ExecutableToken<Void, Annotation> ANNOTATION_FROM_METHOD = (ExecutableToken<Void, Annotation>) staticMethods(
+			Annotations.class)
+					.named("from")
+					.resolveOverload(Class.class, AnnotationProperty[].class)
+					.asVariableArityInvocation();
 
 	private final ValueExpression<? extends TypeToken<?>> expression;
 
@@ -51,8 +69,23 @@ class TypeTokenExpression<T> implements ValueExpression<TypeToken<T>> {
 		return stream(annotations).map(this::getAnnotationExpression).collect(toList());
 	}
 
-	private ValueExpression<Annotation> getAnnotationExpression(Annotation annotations) {
+	private ValueExpression<Annotation> getAnnotationExpression(Annotation annotation) {
+		List<ValueExpression<?>> arguments = new ArrayList<>();
 
+		arguments.add(literal(annotation.annotationType()));
+
+		getModifiedProperties(annotation).forEach(property -> {
+			ValueExpression<?> value;
+			if (property.value() instanceof Annotation) {
+				value = getAnnotationExpression((Annotation) property.value());
+			} else {
+				value = tryLiteral(property.value());
+			}
+
+			arguments.add(invokeStatic(ANNOTATION_PROPERTY_CONSTRUCTOR, literal(property.name()), value));
+		});
+
+		return invokeStatic(ANNOTATION_FROM_METHOD, arguments);
 	}
 
 	@Override

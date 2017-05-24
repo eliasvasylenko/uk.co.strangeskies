@@ -51,6 +51,20 @@ public class Expressions {
 		return v -> v.visitLiteral(value);
 	}
 
+	public static ValueExpression<?> tryLiteral(Object object) {
+		if (object instanceof String
+				|| object instanceof Integer
+				|| object instanceof Float
+				|| object instanceof Long
+				|| object instanceof Double
+				|| object instanceof Byte
+				|| object instanceof Character
+				|| object instanceof Class<?>) {
+			return literalImpl(object);
+		}
+		throw new IllegalArgumentException();
+	}
+
 	public static ValueExpression<String> literal(String value) {
 		return literalImpl(value);
 	}
