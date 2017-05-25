@@ -38,7 +38,6 @@ import static org.hamcrest.collection.IsIterableContainingInRelativeOrder.contai
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterize;
-import static uk.co.strangeskies.reflection.TypeHierarchy.resolveSupertype;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -59,7 +58,7 @@ public class SuperTypeParametersTest {
 	public void indirectParameterizedSupertype() {
 		ParameterizedType parameterizedType = parameterize(HashSet.class, String.class);
 
-		Type supertype = resolveSupertype(parameterizedType, Iterable.class);
+		Type supertype = new TypeHierarchy(parameterizedType).resolveSupertype(Iterable.class);
 
 		assertThat(supertype, equalTo(parameterize(Iterable.class, String.class)));
 	}
@@ -67,8 +66,8 @@ public class SuperTypeParametersTest {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void partialOrderingOverAllSupertypes() {
-		List<Class<?>> supertypes = TypeHierarchy
-				.resolveCompleteSupertypeHierarchy(A_SUPER.class, Object.class)
+		List<Class<?>> supertypes = new TypeHierarchy(A_SUPER.class)
+				.resolveCompleteSupertypeHierarchy(Object.class)
 				.map(t -> ((Class<?>) t))
 				.collect(toList());
 
@@ -108,14 +107,14 @@ public class SuperTypeParametersTest {
 
 	@Test
 	public void directGenericSupertypeOfRawSupertypes() {
-		Type supertype = resolveSupertype(A_ERASURE.class, C_ERASURE.class);
+		Type supertype = new TypeHierarchy(A_ERASURE.class).resolveSupertype(C_ERASURE.class);
 
 		assertThat(supertype, equalTo(C_ERASURE.class));
 	}
 
 	@Test
 	public void indirectGenericSupertypeOfRawSupertypes() {
-		Type supertype = resolveSupertype(A_ERASURE.class, E_ERASURE.class);
+		Type supertype = new TypeHierarchy(A_ERASURE.class).resolveSupertype(E_ERASURE.class);
 
 		assertThat(supertype, equalTo(parameterize(E_ERASURE.class, String.class)));
 	}

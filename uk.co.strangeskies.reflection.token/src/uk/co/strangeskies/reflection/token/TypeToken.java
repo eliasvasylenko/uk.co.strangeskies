@@ -36,13 +36,10 @@ import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
-import static uk.co.strangeskies.collection.stream.StreamUtilities.streamOptional;
-import static uk.co.strangeskies.collection.stream.StreamUtilities.tryOptional;
 import static uk.co.strangeskies.collection.stream.StreamUtilities.zip;
 import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
 import static uk.co.strangeskies.reflection.BoundSet.emptyBoundSet;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
-import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
 import static uk.co.strangeskies.reflection.Types.isSubtype;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardExtending;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardSuper;
@@ -94,7 +91,6 @@ import uk.co.strangeskies.reflection.Imports;
 import uk.co.strangeskies.reflection.InferenceVariable;
 import uk.co.strangeskies.reflection.InferenceVariableBounds;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
-import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeHierarchy;
 import uk.co.strangeskies.reflection.TypeResolver;
 import uk.co.strangeskies.reflection.TypeSubstitution;
@@ -133,15 +129,14 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	public enum Wildcards {
 		/**
 		 * Wildcards will be left alone, though capture may be necessary for
-		 * incorporation into backing {@link TypeResolver}, as wildcards alone do
-		 * not always fully specify valid bounds.
+		 * incorporation into backing {@link TypeResolver}, as wildcards alone do not
+		 * always fully specify valid bounds.
 		 */
 		RETAIN(Retain.class),
 
 		/**
-		 * Wildcards should be substituted with inference variables, with
-		 * appropriate bounds incorporated based on both type variable bounds and
-		 * wildcard bounds.
+		 * Wildcards should be substituted with inference variables, with appropriate
+		 * bounds incorporated based on both type variable bounds and wildcard bounds.
 		 */
 		INFER(Infer.class),
 
@@ -168,8 +163,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	}
 
 	/**
-	 * Specifies behavior of wildcards. If the annotated type is a wildcard type,
-	 * it will behave according to {@link Wildcards#RETAIN}, and if it is a
+	 * Specifies behavior of wildcards. If the annotated type is a wildcard type, it
+	 * will behave according to {@link Wildcards#RETAIN}, and if it is a
 	 * parameterized type, this rule will apply to its parameters instead.
 	 * Annotations on wildcards directly override annotations on declaring types.
 	 * 
@@ -180,8 +175,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	public @interface Retain {}
 
 	/**
-	 * Specifies behavior of wildcards. If the annotated type is a wildcard type,
-	 * it will behave according to {@link Wildcards#INFER}, and if it is a
+	 * Specifies behavior of wildcards. If the annotated type is a wildcard type, it
+	 * will behave according to {@link Wildcards#INFER}, and if it is a
 	 * parameterized type, this rule will apply to its parameters instead.
 	 * Annotations on wildcards directly override annotations on declaring types.
 	 * 
@@ -192,8 +187,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	public @interface Infer {}
 
 	/**
-	 * Specifies behavior of wildcards. If the annotated type is a wildcard type,
-	 * it will behave according to {@link Wildcards#CAPTURE}, and if it is a
+	 * Specifies behavior of wildcards. If the annotated type is a wildcard type, it
+	 * will behave according to {@link Wildcards#CAPTURE}, and if it is a
 	 * parameterized type, this rule will apply to its parameters instead.
 	 * Annotations on wildcards directly override annotations on declaring types.
 	 * 
@@ -591,8 +586,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * will remain unmodified.
 	 * 
 	 * <p>
-	 * All bounds are incorporated if and only if they have the potential to
-	 * affect the resolution of inference variables mentioned by this type.
+	 * All bounds are incorporated if and only if they have the potential to affect
+	 * the resolution of inference variables mentioned by this type.
 	 * 
 	 * @param bounds
 	 *          the new bounds to incorporate
@@ -616,8 +611,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 
 	/**
 	 * Equivalent to the application of {@link TypeToken#forType(Type)} to the
-	 * result of {@link AnnotatedTypes#fromString(String, Imports)}, with the
-	 * given imports.
+	 * result of {@link AnnotatedTypes#fromString(String, Imports)}, with the given
+	 * imports.
 	 * 
 	 * @param typeString
 	 *          the String to parse
@@ -648,8 +643,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * Create a TypeToken over a wildcard type which has the type represented by
 	 * this TypeToken as an upper bound.
 	 * 
-	 * For example, invoking this method on a {@code TypeToken<List<?>>} will give
-	 * a {@code TypeToken<? extends List<?>>}.
+	 * For example, invoking this method on a {@code TypeToken<List<?>>} will give a
+	 * {@code TypeToken<? extends List<?>>}.
 	 * 
 	 * @return the TypeToken representing a capture of the wildcard described
 	 */
@@ -661,13 +656,13 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * Create a TypeToken over a wildcard type which has the type represented by
 	 * this TypeToken as an upper bound.
 	 * 
-	 * The wildcard will be represented according to the {@link Wildcards}
-	 * argument given. Either the wildcard will be preserved, a fresh
+	 * The wildcard will be represented according to the {@link Wildcards} argument
+	 * given. Either the wildcard will be preserved, a fresh
 	 * {@link TypeVariableCapture} of the wildcard type will be captured, or an
 	 * {@link InferenceVariable} will be substituted.
 	 * 
-	 * For example, invoking this method on a {@code TypeToken<List<?>>} will give
-	 * a {@code TypeToken<? extends List<?>>}.
+	 * For example, invoking this method on a {@code TypeToken<List<?>>} will give a
+	 * {@code TypeToken<? extends List<?>>}.
 	 * 
 	 * @param wildcards
 	 *          how to deal with the wildcard parameter on the new type
@@ -690,8 +685,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * Create a TypeToken over a wildcard type which has the type represented by
 	 * this TypeToken as a lower bound.
 	 * 
-	 * For example, invoking this method on a {@code TypeToken<List<?>>} will give
-	 * a {@code TypeToken<? super List<?>>}.
+	 * For example, invoking this method on a {@code TypeToken<List<?>>} will give a
+	 * {@code TypeToken<? super List<?>>}.
 	 * 
 	 * @return the TypeToken representing a capture of the wildcard described
 	 */
@@ -703,13 +698,13 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * Create a TypeToken over a wildcard type which has the type represented by
 	 * this TypeToken as a lower bound.
 	 * 
-	 * The wildcard will be represented according to the {@link Wildcards}
-	 * argument given. Either the wildcard will be preserved, a fresh
+	 * The wildcard will be represented according to the {@link Wildcards} argument
+	 * given. Either the wildcard will be preserved, a fresh
 	 * {@link TypeVariableCapture} of the wildcard type will be captured, or an
 	 * {@link InferenceVariable} will be substituted.
 	 * 
-	 * For example, invoking this method on a {@code TypeToken<List<?>>} will give
-	 * a {@code TypeToken<? super List<?>>}.
+	 * For example, invoking this method on a {@code TypeToken<List<?>>} will give a
+	 * {@code TypeToken<? super List<?>>}.
 	 * 
 	 * @param wildcards
 	 *          how to deal with the wildcard parameter on the new type
@@ -833,8 +828,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	}
 
 	/**
-	 * If this TypeToken is a primitive type, determine the wrapped primitive
-	 * type.
+	 * If this TypeToken is a primitive type, determine the wrapped primitive type.
 	 * 
 	 * @return The wrapper type of the primitive type this TypeToken represents,
 	 *         otherwise this TypeToken itself.
@@ -866,8 +860,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * Derive a new type from this one, with a constraint between this type and a
 	 * given type. The invocation will fail if the constraint cannot be satisfied.
 	 * For types which mention inference variables, this constraint may have an
-	 * effect on the bounds of those inference variables within the resulting
-	 * type.
+	 * effect on the bounds of those inference variables within the resulting type.
 	 * 
 	 * @param type
 	 *          the type to constrain against
@@ -885,8 +878,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * Derive a new type from this one, with a constraint between this type and a
 	 * given type. The invocation will fail if the constraint cannot be satisfied.
 	 * For types which mention inference variables, this constraint may have an
-	 * effect on the bounds of those inference variables within the resulting
-	 * type.
+	 * effect on the bounds of those inference variables within the resulting type.
 	 * 
 	 * @param type
 	 *          the type to constrain against
@@ -905,8 +897,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * Derive a new type from this one, with a constraint between this type and a
 	 * given type. The invocation will fail if the constraint cannot be satisfied.
 	 * For types which mention inference variables, this constraint may have an
-	 * effect on the bounds of those inference variables within the resulting
-	 * type.
+	 * effect on the bounds of those inference variables within the resulting type.
 	 * 
 	 * @param type
 	 *          the type to constrain against
@@ -924,8 +915,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * Derive a new type from this one, with a constraint between this type and a
 	 * given type. The invocation will fail if the constraint cannot be satisfied.
 	 * For types which mention inference variables, this constraint may have an
-	 * effect on the bounds of those inference variables within the resulting
-	 * type.
+	 * effect on the bounds of those inference variables within the resulting type.
 	 * 
 	 * @param type
 	 *          the type to constrain against
@@ -944,8 +934,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * Derive a new type from this one, with a constraint between this type and a
 	 * given type. The invocation will fail if the constraint cannot be satisfied.
 	 * For types which mention inference variables, this constraint may have an
-	 * effect on the bounds of those inference variables within the resulting
-	 * type.
+	 * effect on the bounds of those inference variables within the resulting type.
 	 * 
 	 * @param type
 	 *          the type to constrain against
@@ -966,8 +955,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * Derive a new type from this one, with a constraint between this type and a
 	 * given type. The invocation will fail if the constraint cannot be satisfied.
 	 * For types which mention inference variables, this constraint may have an
-	 * effect on the bounds of those inference variables within the resulting
-	 * type.
+	 * effect on the bounds of those inference variables within the resulting type.
 	 * 
 	 * @param type
 	 *          the type to constrain against
@@ -988,8 +976,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * Derive a new type from this one, with a constraint between this type and a
 	 * given type. The invocation will fail if the constraint cannot be satisfied.
 	 * For types which mention inference variables, this constraint may have an
-	 * effect on the bounds of those inference variables within the resulting
-	 * type.
+	 * effect on the bounds of those inference variables within the resulting type.
 	 * 
 	 * @param type
 	 *          the type to constrain against
@@ -1010,8 +997,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * Derive a new type from this one, with a constraint between this type and a
 	 * given type. The invocation will fail if the constraint cannot be satisfied.
 	 * For types which mention inference variables, this constraint may have an
-	 * effect on the bounds of those inference variables within the resulting
-	 * type.
+	 * effect on the bounds of those inference variables within the resulting type.
 	 * 
 	 * @param type
 	 *          the type to constrain against
@@ -1065,8 +1051,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 
 	/**
 	 * This method will attempt to infer the actual type represented by this
-	 * TypeToken, which means the types of any inference variables mentioned will
-	 * be inferred and substituted. The receiver TypeToken instance will not be
+	 * TypeToken, which means the types of any inference variables mentioned will be
+	 * inferred and substituted. The receiver TypeToken instance will not be
 	 * changed.
 	 * 
 	 * @return A TypeToken with the fully inferred type.
@@ -1112,8 +1098,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	}
 
 	/**
-	 * @return The annotated declaring type of this type token, if one exists,
-	 *         else an unannotated representation of the type of this type token.
+	 * @return The annotated declaring type of this type token, if one exists, else
+	 *         an unannotated representation of the type of this type token.
 	 */
 	public AnnotatedType getAnnotatedDeclaration() {
 		return declaration;
@@ -1171,8 +1157,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	/**
 	 * Find which fields can be resolved on this type.
 	 * 
-	 * @return a list of all {@link Field} objects applicable to this type,
-	 *         wrapped in {@link FieldToken} instances
+	 * @return a list of all {@link Field} objects applicable to this type, wrapped
+	 *         in {@link FieldToken} instances
 	 */
 	public FieldTokenQuery<FieldToken<T, ?>, ?> fields() {
 		Stream<Field> fields = stream(getErasedType().getFields());
@@ -1183,8 +1169,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	/**
 	 * Find which fields are declared on this type.
 	 * 
-	 * @return a list of all {@link Field} objects applicable to this type,
-	 *         wrapped in {@link FieldToken} instances
+	 * @return a list of all {@link Field} objects applicable to this type, wrapped
+	 *         in {@link FieldToken} instances
 	 */
 	public FieldTokenQuery<FieldToken<T, ?>, ?> declaredFields() {
 		Stream<Field> fields = stream(getErasedType().getDeclaredFields());
@@ -1220,32 +1206,31 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * Find which methods of the given name can be invoked on instances of this
 	 * type.
 	 * 
-	 * @return a list of all {@link Method} objects applicable to this type,
-	 *         wrapped in {@link ExecutableToken} instances
+	 * @return a list of all {@link Method} objects applicable to this type, wrapped
+	 *         in {@link ExecutableToken} instances
 	 */
 	public ExecutableTokenQuery<ExecutableToken<T, ?>, Method> methods() {
 		Stream<Method> methodStream = getErasedUpperBounds().flatMap(t -> stream(t.getMethods()));
-
-		/*
-		 * TODO resolve entire type hierarchy once and reduce to a map from raw
-		 * class to parameterized version, that way we know the exact invocation
-		 * type for everything without repeating calculations.
-		 */
 
 		if (getErasedUpperBounds().allMatch(Types::isInterface))
 			methodStream = Stream.concat(methodStream, stream(Object.class.getMethods()));
 
 		methodStream = methodStream.filter(m -> !Modifier.isStatic(m.getModifiers()));
 
-		return executableQuery(methodStream, m -> forMethod(m).withReceiverType(this));
+		TypeHierarchy typeHierarchy = new TypeHierarchy(getType());
+
+		return executableQuery(
+				methodStream,
+				m -> forMethod(m).withReceiverType(
+						new TypeToken<>(getBounds(), typeHierarchy.resolveSupertype(m.getDeclaringClass()))));
 	}
 
 	/**
 	 * Find which methods can be invoked on this type, whether statically or on
 	 * instances.
 	 * 
-	 * @return a list of all {@link Method} objects applicable to this type,
-	 *         wrapped in {@link ExecutableToken} instances
+	 * @return a list of all {@link Method} objects applicable to this type, wrapped
+	 *         in {@link ExecutableToken} instances
 	 */
 	public ExecutableTokenQuery<ExecutableToken<T, ?>, Method> declaredMethods() {
 		Stream<Method> methodStream = stream(getErasedType().getDeclaredMethods())
@@ -1316,8 +1301,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 			ParameterizedType type = (ParameterizedType) getType();
 			Class<?> rawType = (Class<?>) type.getRawType();
 			/*
-			 * Classes enclosed by constructors or methods cannot be parameterized
-			 * with anything other than their own type parameters.
+			 * Classes enclosed by constructors or methods cannot be parameterized with
+			 * anything other than their own type parameters.
 			 */
 			if (rawType.getEnclosingConstructor() != null) {
 				return Optional.of(ExecutableToken.forConstructor(rawType.getEnclosingConstructor()));
@@ -1369,19 +1354,11 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	}
 
 	/**
-	 * As @see {@link TypeHierarchy#resolveSupertype(Type, Class)}.
+	 * As @see {@link TypeHierarchy#resolveSupertype( Class)}.
 	 */
 	@SuppressWarnings({ "unchecked", "javadoc" })
 	public TypeToken<? super T> resolveSupertype(Class<?> superclass) {
-		TypeToken<?> superType = forType(
-				getUpperBounds()
-						.flatMap(
-								b -> streamOptional(
-										tryOptional(() -> TypeHierarchy.resolveSupertype(b, superclass))))
-						.findFirst()
-						.orElseThrow(
-								() -> new ReflectionException(
-										REFLECTION_PROPERTIES.cannotResolveSupertype(type, superclass))));
+		TypeToken<?> superType = forType(new TypeHierarchy(getType()).resolveSupertype(superclass));
 
 		return (TypeToken<? super T>) superType;
 	}

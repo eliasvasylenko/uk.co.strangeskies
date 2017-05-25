@@ -54,20 +54,21 @@ import uk.co.strangeskies.reflection.AnnotatedTypes;
 
 @SuppressWarnings("javadoc")
 public class AnnotatedTypeSubstitutionTest {
-	private @interface Test1 {
-	}
+	private @interface Test1 {}
 
-	private @interface Test2 {
-	}
+	private @interface Test2 {}
 
-	private @interface Test3 {
-	}
+	private @interface Test3 {}
 
 	private AnnotatedType createTestType(AnnotatedType type) {
-		return parameterize(annotated(Map.class),
-				wildcardExtending(asList(from(Test1.class)),
+		return parameterize(
+				annotated(Map.class),
+				wildcardExtending(
+						asList(from(Test1.class)),
 						arrayFromComponent(arrayFromComponent(annotated(Number.class), from(Test3.class)))),
-				parameterize(annotated(Map.class), wildcardSuper(type),
+				parameterize(
+						annotated(Map.class),
+						wildcardSuper(type),
 						annotated(typeVariableExtending(Collection.class, "E"), from(Test2.class))));
 	}
 
@@ -75,7 +76,8 @@ public class AnnotatedTypeSubstitutionTest {
 	public <T extends Number> void noSubstitutionIdentityTest() {
 		AnnotatedType type = createTestType(annotated(Number.class, from(Test2.class)));
 
-		AnnotatedType substitution = new AnnotatedTypeSubstitution().where(t -> false, t -> t).resolve(type);
+		AnnotatedType substitution = new AnnotatedTypeSubstitution().where(t -> false, t -> t).resolve(
+				type);
 
 		Assert.assertTrue(type == substitution);
 	}
@@ -87,7 +89,9 @@ public class AnnotatedTypeSubstitutionTest {
 		AnnotatedType expected = createTestType(annotated(Serializable.class));
 
 		AnnotatedType substitution = new AnnotatedTypeSubstitution()
-				.where(t -> t.getType().equals(Number.class), t -> AnnotatedTypes.annotated(Serializable.class))
+				.where(
+						t -> t.getType().equals(Number.class),
+						t -> AnnotatedTypes.annotated(Serializable.class))
 				.resolve(type);
 
 		Assert.assertEquals(expected.getType(), substitution.getType());

@@ -606,6 +606,10 @@ public class BoundSet implements DeepCopyable<BoundSet> {
 	 */
 	public BoundSet withInferenceVariables(
 			Collection<? extends InferenceVariable> inferenceVariables) {
+		if (inferenceVariables.isEmpty()) {
+			return this;
+		}
+
 		BoundSet bounds = copyInternal();
 		for (InferenceVariable inferenceVariable : inferenceVariables) {
 			bounds.addInferenceVariableImpl(inferenceVariable);

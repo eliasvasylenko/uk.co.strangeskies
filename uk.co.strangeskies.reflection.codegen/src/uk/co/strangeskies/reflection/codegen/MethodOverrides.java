@@ -87,7 +87,8 @@ class MethodOverrides<T> {
 		return classSignature
 				.getSuperClass()
 				.map(AnnotatedType::getType)
-				.map(TypeHierarchy::resolveSuperClassHierarchy)
+				.map(TypeHierarchy::new)
+				.map(TypeHierarchy::resolveSuperClasses)
 				.orElse(Stream.of(Object.class))
 				.map(TypeToken::forType)
 				.map(TypeToken::declaredMethods);
