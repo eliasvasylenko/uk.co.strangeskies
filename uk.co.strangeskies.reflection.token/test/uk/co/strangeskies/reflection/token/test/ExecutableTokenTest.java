@@ -41,6 +41,8 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.Assert.assertThat;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.staticMethods;
+import static uk.co.strangeskies.reflection.token.MethodMatcher.matchMethod;
+import static uk.co.strangeskies.reflection.token.OverloadResolver.resolveOverload;
 
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -68,9 +70,12 @@ public class ExecutableTokenTest {
 
 	@Test
 	public void methodWithDefaultTypeArguments() throws NoSuchMethodException, SecurityException {
-		ExecutableToken<?, ?> method = ExecutableToken.forMethod(Outer.class.getMethod("method")).parameterize();
+		ExecutableToken<?, ?> method = ExecutableToken
+				.forMethod(Outer.class.getMethod("method"))
+				.parameterize();
 
-		List<Type> typeArguments = method.getAllTypeArguments().map(TypeArgument::getType).collect(toList());
+		List<Type> typeArguments = method.getAllTypeArguments().map(TypeArgument::getType).collect(
+				toList());
 
 		assertThat(typeArguments, everyItem(instanceOf(TypeVariable.class)));
 	}
@@ -168,7 +173,9 @@ public class ExecutableTokenTest {
 				.forInnerConstructor(Inner.class.getConstructors()[0])
 				.withReceiverType(new TypeToken<Outer<Number>>() {});
 
-		assertThat(constructor.getReceiverType().substituteInstantiations(), equalTo(new TypeToken<Outer<Number>>() {}));
+		assertThat(
+				constructor.getReceiverType().substituteInstantiations(),
+				equalTo(new TypeToken<Outer<Number>>() {}));
 	}
 
 	@Test
@@ -206,14 +213,18 @@ public class ExecutableTokenTest {
 
 	@Test
 	public void emptyVarargsResolutionTest() {
-		ExecutableToken<Void, ?> asList = staticMethods(Arrays.class).named("asList").resolveOverload();
+		ExecutableToken<Void, ?> asList = staticMethods(Arrays.class)
+				.filter(matchMethod().named("asList"))
+				.collect(resolveOverload());
 
 		assertThat(asList.isVariableArityInvocation(), is(true));
 	}
 
 	@Test
 	public void singleVarargsResolutionTest() {
-		ExecutableToken<Void, ?> asList = staticMethods(Arrays.class).named("asList").resolveOverload(String.class);
+		ExecutableToken<Void, ?> asList = staticMethods(Arrays.class)
+				.filter(matchMethod().named("asList"))
+				.collect(resolveOverload(String.class));
 
 		assertThat(asList.isVariableArityInvocation(), is(true));
 	}
@@ -221,15 +232,16 @@ public class ExecutableTokenTest {
 	@Test
 	public void varargsResolutionTest() {
 		ExecutableToken<Void, ?> asList = staticMethods(Arrays.class)
-				.named("asList")
-				.resolveOverload(String.class, String.class, String.class);
+				.filter(matchMethod().named("asList"))
+				.collect(resolveOverload(String.class, String.class, String.class));
 
 		assertThat(asList.isVariableArityInvocation(), is(true));
 	}
 
 	@Test
 	public void varargsDefinitionTest() throws NoSuchMethodException, SecurityException {
-		ExecutableToken<Void, ?> asList = ExecutableToken.forStaticMethod(Arrays.class.getMethod("asList", Object[].class));
+		ExecutableToken<Void, ?> asList = ExecutableToken
+				.forStaticMethod(Arrays.class.getMethod("asList", Object[].class));
 
 		List<?> list = (List<?>) asList.invoke(null, new Object[] { new Object[] { "A", "B", "C" } });
 
@@ -238,8 +250,9 @@ public class ExecutableTokenTest {
 
 	@Test
 	public void varargsDefinitionResolutionTest() {
-		ExecutableToken<Void, ?> asList = staticMethods(Arrays.class).named("asList").resolveOverload(
-				new TypeToken<String[]>() {});
+		ExecutableToken<Void, ?> asList = staticMethods(Arrays.class)
+				.filter(matchMethod().named("asList"))
+				.collect(resolveOverload(String[].class));
 
 		assertThat(asList.isVariableArityInvocation(), is(false));
 	}

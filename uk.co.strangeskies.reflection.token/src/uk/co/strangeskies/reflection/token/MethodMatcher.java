@@ -12,11 +12,12 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.Visibility;
 
-public class MethodMatcher<O, T> {
+public class MethodMatcher<O, T> implements Predicate<ExecutableToken<?, ?>> {
 	public static MethodMatcher<Object, Object> matchMethod() {
 		return new MethodMatcher<>(empty(), empty(), empty(), empty());
 	}
@@ -47,14 +48,19 @@ public class MethodMatcher<O, T> {
 
 	@SuppressWarnings("unchecked")
 	public Optional<ExecutableToken<O, T>> match(ExecutableToken<?, ?> executable) {
-		if (matchImpl(
-				executable.getName(),
-				executable.getVisibility(),
-				executable.getReturnType().getType(),
-				executable.getParameters().map(ExecutableParameter::getType)))
+		if (test(executable))
 			return of((ExecutableToken<O, T>) executable);
 		else
 			return empty();
+	}
+
+	@Override
+	public boolean test(ExecutableToken<?, ?> executable) {
+		return matchImpl(
+				executable.getName(),
+				executable.getVisibility(),
+				executable.getReturnType().getType(),
+				executable.getParameters().map(ExecutableParameter::getType));
 	}
 
 	private boolean matchImpl(

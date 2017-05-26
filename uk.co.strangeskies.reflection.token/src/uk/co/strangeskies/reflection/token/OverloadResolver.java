@@ -39,7 +39,6 @@ import static uk.co.strangeskies.collection.stream.StreamUtilities.tryOptional;
 import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
 
 import java.lang.reflect.Executable;
-import java.lang.reflect.Member;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -63,35 +62,56 @@ import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeResolver;
 import uk.co.strangeskies.reflection.Types;
 
-public class OverloadResolver<I extends ExecutableToken<?, ?>, E extends Member> {
-	public OverloadResolver() {
-		// TODO Auto-generated constructor stub
+public class OverloadResolver<I extends ExecutableToken<?, ?>> {
+	private final Set<I> candidates;
+
+	public OverloadResolver(Collection<? extends I> candidates) {
+		this.candidates = new HashSet<>(candidates);
 	}
 
-	public Collector<I, ?, I> resolveOverload() {
-		return resolveOverload(Collections.emptyList());
+	public I resolve() {
+		return resolve(Collections.emptyList());
 	}
 
-	public Collector<I, ?, I> resolveOverload(Type... arguments) {
-		return resolveOverload(Arrays.stream(arguments).map(TypeToken::forType).collect(toList()));
+	public I resolve(Type... arguments) {
+		return resolve(Arrays.stream(arguments).map(TypeToken::forType).collect(toList()));
 	}
 
-	public Collector<I, ?, I> resolveOverload(TypeToken<?>... arguments) {
-		return resolveOverload(Arrays.asList(arguments));
+	public I resolve(TypeToken<?>... arguments) {
+		return resolve(Arrays.asList(arguments));
 	}
 
-	public Collector<I, ?, I> resolveOverload(List<? extends TypeToken<?>> arguments) {
-		return Collectors.collectingAndThen(Collectors.toSet(), candidates ->
-		
-		Set<? extends I> candidates = streamAll().collect(Collectors.toSet());
-
+	public I resolve(Collection<? extends TypeToken<?>> arguments) {
 		if (candidates.isEmpty())
 			throw new IllegalArgumentException(
 					"Cannot find any applicable invocable for arguments '" + arguments + "'");
 
-		candidates = resolveApplicableExecutableMembers(candidates, arguments);
+		Set<? extends I> applicableCandidates = resolveApplicableExecutableMembers(
+				candidates,
+				arguments);
 
-		return resolveMostSpecificExecutableMember(candidates);
+		return resolveMostSpecificExecutableMember(applicableCandidates);
+	}
+
+	public static <I extends ExecutableToken<?, ?>> Collector<I, ?, I> resolveOverload() {
+		return resolveOverload(Collections.emptyList());
+	}
+
+	public static <I extends ExecutableToken<?, ?>> Collector<I, ?, I> resolveOverload(
+			Type... arguments) {
+		return resolveOverload(Arrays.stream(arguments).map(TypeToken::forType).collect(toList()));
+	}
+
+	public static <I extends ExecutableToken<?, ?>> Collector<I, ?, I> resolveOverload(
+			TypeToken<?>... arguments) {
+		return resolveOverload(Arrays.asList(arguments));
+	}
+
+	public static <I extends ExecutableToken<?, ?>> Collector<I, ?, I> resolveOverload(
+			Collection<? extends TypeToken<?>> arguments) {
+		return Collectors.collectingAndThen(
+				Collectors.<I> toSet(),
+				candidates -> new OverloadResolver<>(candidates).resolve(arguments));
 	}
 
 	/**
@@ -114,7 +134,7 @@ public class OverloadResolver<I extends ExecutableToken<?, ?>, E extends Member>
 	@SuppressWarnings("unchecked")
 	public static <I extends ExecutableToken<?, ?>> Set<? extends I> resolveApplicableExecutableMembers(
 			Set<? extends I> candidates,
-			List<? extends TypeToken<?>> parameters) {
+			Collection<? extends TypeToken<?>> parameters) {
 		Map<I, RuntimeException> failures = new LinkedHashMap<>();
 		BiConsumer<I, RuntimeException> putFailures = failures::put;
 

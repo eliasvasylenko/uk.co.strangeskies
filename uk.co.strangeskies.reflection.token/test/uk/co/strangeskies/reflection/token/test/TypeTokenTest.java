@@ -36,6 +36,8 @@ import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.CONTAINMENT;
 import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.LOOSE_COMPATIBILILTY;
 import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.SUBTYPE;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.staticMethods;
+import static uk.co.strangeskies.reflection.token.MethodMatcher.matchMethod;
+import static uk.co.strangeskies.reflection.token.OverloadResolver.resolveOverload;
 import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
 
 import java.io.Serializable;
@@ -275,38 +277,42 @@ public class TypeTokenTest {
 
 		TypeToken<?> receiver = new TypeToken<BindingState>() {};
 		printlines("RESOLVE 1:");
-		printlines(receiver.methods().named("bindingNode").resolveOverload(int.class));
+		printlines(
+				receiver.methods().filter(matchMethod().named("bindingNode")).collect(
+						resolveOverload(int.class)));
 		printlines();
 		printlines();
 
 		receiver = new @Capture TypeToken<SchemaNodeConfigurator<?, ?>>() {};
 		printlines("RESOLVE 2:");
 		printlines(
-				TypeToken.forType(receiver.getType()).methods().named("name").resolveOverload(
-						String.class));
+				TypeToken.forType(receiver.getType()).methods().filter(matchMethod().named("name")).collect(
+						resolveOverload(String.class)));
 		printlines();
 		printlines();
 
 		receiver = new @Capture TypeToken<ChildNodeConfigurator<?, ?>>() {};
 		printlines("RESOLVE 3:");
 		printlines(
-				TypeToken.forType(receiver.getType()).methods().named("name").resolveOverload(
-						String.class));
+				TypeToken.forType(receiver.getType()).methods().filter(matchMethod().named("name")).collect(
+						resolveOverload(String.class)));
 		printlines();
 		printlines();
 
 		receiver = new @Capture TypeToken<DataBindingType.Effective<?>>() {};
 		printlines("RESOLVE 4:");
 		printlines(
-				TypeToken.forType(receiver.getType()).methods().named("child").resolveOverload(
-						String.class));
+				TypeToken
+						.forType(receiver.getType())
+						.methods()
+						.filter(matchMethod().named("child"))
+						.collect(resolveOverload(String.class)));
 		printlines();
 		printlines();
 
 		printlines(
-				new TypeToken<IncludeTarget>() {}.methods().named("includer").resolveOverload(
-						Model.class,
-						Collection.class));
+				new TypeToken<IncludeTarget>() {}.methods().filter(matchMethod().named("includer")).collect(
+						resolveOverload(Model.class, Collection.class)));
 		printlines();
 		printlines();
 
@@ -332,10 +338,11 @@ public class TypeTokenTest {
 		printlines(
 				forClass(B.class)
 						.methods()
-						.named("method4")
-						.resolveOverload(
-								new TypeToken<Collection<? extends Integer>>() {}.getType(),
-								new TypeToken<List<? super Number>>() {}.getType())
+						.filter(matchMethod().named("method4"))
+						.collect(
+								resolveOverload(
+										new TypeToken<Collection<? extends Integer>>() {}.getType(),
+										new TypeToken<List<? super Number>>() {}.getType()))
 						.infer());
 		printlines();
 
@@ -346,21 +353,24 @@ public class TypeTokenTest {
 		printlines(
 				forClass(B.class)
 						.methods()
-						.named("bothways")
-						.resolveOverload(String.class, new TypeToken<List<String>>() {}.getType())
+						.filter(matchMethod().named("bothways"))
+						.collect(resolveOverload(String.class, new TypeToken<List<String>>() {}.getType()))
 						.infer());
 		printlines();
 
 		printlines(
-				forClass(B.class).methods().named("moothod").resolveOverload(Integer.class, Number.class));
+				forClass(B.class).methods().filter(matchMethod().named("moothod")).collect(
+						resolveOverload(Integer.class, Number.class)));
 		printlines();
 
 		printlines(
-				forClass(B.class).methods().named("moothod").resolveOverload(Number.class, Integer.class));
+				forClass(B.class).methods().filter(matchMethod().named("moothod")).collect(
+						resolveOverload(Number.class, Integer.class)));
 		printlines();
 
 		printlines(
-				forClass(B.class).methods().named("moothod").resolveOverload(Number.class, Number.class));
+				forClass(B.class).methods().filter(matchMethod().named("moothod")).collect(
+						resolveOverload(Number.class, Number.class)));
 		printlines();
 
 		/*-
@@ -372,64 +382,65 @@ public class TypeTokenTest {
 		printlines(new TypeToken<List<? extends Number>>() {}.getType());
 		printlines(
 				staticMethods(Arrays.class)
-						.named("asList")
-						.resolveOverload(int.class, double.class)
+						.filter(matchMethod().named("asList"))
+						.collect(resolveOverload(int.class, double.class))
 						.withTargetType(new TypeToken<List<? extends Number>>() {})
 						.infer());
 		printlines();
 
 		printlines(
 				staticMethods(Arrays.class)
-						.named("asList")
-						.resolveOverload(int.class, double.class)
+						.filter(matchMethod().named("asList"))
+						.collect(resolveOverload(int.class, double.class))
 						.withTargetType(new TypeToken<List<? super Comparable<? extends Number>>>() {}));
 		printlines();
 
 		printlines(
 				staticMethods(Arrays.class)
-						.named("asList")
-						.resolveOverload(int.class, double.class)
+						.filter(matchMethod().named("asList"))
+						.collect(resolveOverload(int.class, double.class))
 						.getBounds());
 		printlines();
 
 		printlines(
 				staticMethods(Arrays.class)
-						.named("asList")
-						.resolveOverload(int.class, double.class)
+						.filter(matchMethod().named("asList"))
+						.collect(resolveOverload(int.class, double.class))
 						.withTargetType(new TypeToken<List<? super Comparable<? extends Number>>>() {})
 						.infer());
 		printlines();
 
 		printlines(
-				forClass(B.class).methods().named("method").resolveOverload(
-						new TypeToken<List<Integer>>() {},
-						new TypeToken<List<Number>>() {}));
+				forClass(B.class).methods().filter(matchMethod().named("method")).collect(
+						resolveOverload(new TypeToken<List<Integer>>() {}, new TypeToken<List<Number>>() {})));
 		printlines();
 
 		printlines(
-				new TypeToken<B>() {}.methods().named("method2").resolveOverload(
-						new TypeToken<List<Integer>>() {},
-						new TypeToken<List<Comparable<Integer>>>() {}));
+				new TypeToken<B>() {}.methods().filter(matchMethod().named("method2")).collect(
+						resolveOverload(
+								new TypeToken<List<Integer>>() {},
+								new TypeToken<List<Comparable<Integer>>>() {})));
 		printlines();
 
 		printlines(
 				forClass(B.class)
 						.methods()
-						.named("method")
-						.resolveOverload(new TypeToken<Collection<? super Integer>>() {})
+						.filter(matchMethod().named("method"))
+						.collect(resolveOverload(new TypeToken<Collection<? super Integer>>() {}))
 						.infer());
 		printlines();
 
 		printlines(
-				new TypeToken<B>() {}.methods().named("okay").resolveOverload(
-						new TypeToken<Set<ExecutableToken<H, ?>>>() {},
-						new TypeToken<List<? extends Type>>() {}));
+				new TypeToken<B>() {}.methods().filter(matchMethod().named("okay")).collect(
+						resolveOverload(
+								new TypeToken<Set<ExecutableToken<H, ?>>>() {},
+								new TypeToken<List<? extends Type>>() {})));
 		printlines();
 
 		printlines(
 				staticMethods(B.class)
-						.named("testeroonie")
-						.resolveOverload(new TypeToken<Class<?>>() {}.getType(), String.class)
+						.filter(matchMethod().named("testeroonie"))
+						.collect(resolveOverload(new TypeToken<Class<?>>() {}.getType(), String.class))
 						.infer());
 		printlines();
 
@@ -471,8 +482,8 @@ public class TypeTokenTest {
 						.getExtending(Wildcards.INFER)
 						.resolve()
 						.methods()
-						.named("add")
-						.resolveOverload(Integer.class)
+						.filter(matchMethod().named("add"))
+						.collect(resolveOverload(Integer.class))
 						.getReceiverType()
 						.resolve());
 		printlines();
@@ -506,12 +517,12 @@ public class TypeTokenTest {
 						.getExtending(Wildcards.INFER)
 						.resolve()
 						.methods()
-						.named("add")
-						.resolveOverload(Integer.class)
+						.filter(matchMethod().named("add"))
+						.collect(resolveOverload(Integer.class))
 						.getReceiverType()
 						.methods()
-						.named("add")
-						.resolveOverload(Double.class)
+						.filter(matchMethod().named("add"))
+						.collect(resolveOverload(Double.class))
 						.getReceiverType()
 						.resolve());
 		printlines();
@@ -519,7 +530,7 @@ public class TypeTokenTest {
 		printlines(
 				new @Infer TypeToken<HashMap<?, ?>>() {}
 						.constructors()
-						.resolveOverload()
+						.collect(resolveOverload())
 						.withTargetType(new TypeToken<Map<? extends String, ? extends Number>>() {})
 						.infer());
 		printlines();
@@ -528,7 +539,7 @@ public class TypeTokenTest {
 				new TypeToken<HashMap<String, Number>>() {}
 						.getExtending(Wildcards.INFER)
 						.constructors()
-						.resolveOverload()
+						.collect(resolveOverload())
 						.withTargetType(new TypeToken<@Infer Map<?, ?>>() {})
 						.infer());
 		printlines();
@@ -537,8 +548,8 @@ public class TypeTokenTest {
 		printlines(
 				new TypeToken<Set<String>>() {}
 						.methods()
-						.named("addAll")
-						.resolveOverload(new @Infer TypeToken<List<?>>() {})
+						.filter(matchMethod().named("addAll"))
+						.collect(resolveOverload(new @Infer TypeToken<List<?>>() {}))
 						.infer());
 		printlines();
 
@@ -572,67 +583,72 @@ public class TypeTokenTest {
 
 		ExecutableToken<?, ?> blurner = new @Infer TypeToken<Blurn<? extends List<? extends Number>>>() {}
 				.methods()
-				.named("blurn")
-				.resolveOverload()
+				.filter(matchMethod().named("blurn"))
+				.collect(resolveOverload())
 				.withReceiverType(new TypeToken<Gurn<Integer>>() {});
 		printlines(blurner);
 		printlines();
 
-		printlines(new TypeToken<Blurn<Long>>() {}.methods().named("blurn").resolveOverload());
+		printlines(
+				new TypeToken<Blurn<Long>>() {}.methods().filter(matchMethod().named("blurn")).collect(
+						resolveOverload()));
 		printlines();
 
 		printlines(
 				new @Capture TypeToken<SchemaNode<?, ?>>() {}
 						.methods()
-						.named("children")
-						.resolveOverload()
+						.filter(matchMethod().named("children"))
+						.collect(resolveOverload())
 						.withTargetType(getIteratorExtending(new TypeToken<ChildNode<?, ?>>() {})));
 		printlines();
 
 		printlines(
-				new TypeToken<ChoiceNode>() {}.methods().named("getName").resolveOverload(
-						new ArrayList<>()));
+				new TypeToken<ChoiceNode>() {}.methods().filter(matchMethod().named("getName")).collect(
+						resolveOverload(new ArrayList<>())));
 		printlines();
 
 		printlines(
 				new @Infer TypeToken<LinkedHashSet<?>>() {}
 						.methods()
-						.named("add")
-						.resolveOverload(new TypeToken<StringBuffer>() {})
+						.filter(matchMethod().named("add"))
+						.collect(resolveOverload(new TypeToken<StringBuffer>() {}))
 						.resolve());
 		printlines();
 
 		printlines(
 				new @Infer TypeToken<Set<?>>() {}
 						.methods()
-						.named("addAll")
-						.resolveOverload(
-								new @Infer TypeToken<ArrayList<? super Integer>>() {}
-										.constructors()
-										.resolveOverload()
-										.getReturnType())
+						.filter(matchMethod().named("addAll"))
+						.collect(
+								resolveOverload(
+										new @Infer TypeToken<ArrayList<? super Integer>>() {}
+												.constructors()
+												.collect(resolveOverload())
+												.getReturnType()))
 						.resolve());
 		printlines();
 
 		printlines(
 				new @Infer TypeToken<HashSet<? super Double>>() {}
 						.constructors()
-						.resolveOverload(
-								new @Infer TypeToken<ArrayList<? super Integer>>() {}
-										.constructors()
-										.resolveOverload()
-										.getReturnType())
+						.collect(
+								resolveOverload(
+										new @Infer TypeToken<ArrayList<? super Integer>>() {}
+												.constructors()
+												.collect(resolveOverload())
+												.getReturnType()))
 						.getReturnType()
 						.resolve());
 		printlines();
 
 		TypeToken<?> bball = new @Infer TypeToken<HashSet<? super Double>>() {}
 				.constructors()
-				.resolveOverload(
-						new @Capture TypeToken<ArrayList<? super Integer>>() {}
-								.constructors()
-								.resolveOverload()
-								.getReturnType())
+				.collect(
+						resolveOverload(
+								new @Capture TypeToken<ArrayList<? super Integer>>() {}
+										.constructors()
+										.collect(resolveOverload())
+										.getReturnType()))
 				.getReturnType();
 		printlines(bball.getBounds());
 		printlines(bball.deepCopy().getBounds());
@@ -810,8 +826,8 @@ public class TypeTokenTest {
 		printlines(
 				new TypeToken<DataBindingType<Object>>() {}
 						.methods()
-						.named("baseModel")
-						.resolveOverload(new TypeToken<Model<?>>() {})
+						.filter(matchMethod().named("baseModel"))
+						.collect(resolveOverload(new TypeToken<Model<?>>() {}))
 						.resolve()
 						.getBounds());
 		printlines();

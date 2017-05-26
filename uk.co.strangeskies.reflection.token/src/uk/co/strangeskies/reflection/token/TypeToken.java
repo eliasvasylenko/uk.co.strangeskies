@@ -45,7 +45,6 @@ import static uk.co.strangeskies.reflection.WildcardTypes.wildcardExtending;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardSuper;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.forConstructor;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.forMethod;
-import static uk.co.strangeskies.reflection.token.ExecutableTokenQuery.executableQuery;
 import static uk.co.strangeskies.reflection.token.FieldTokenQuery.fieldQuery;
 import static uk.co.strangeskies.reflection.token.TypeParameter.forTypeVariable;
 
@@ -1184,10 +1183,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * @return a list of all {@link Constructor} objects applicable to this type,
 	 *         wrapped in {@link ExecutableToken} instances
 	 */
-	public ExecutableTokenQuery<ExecutableToken<Void, T>, ?> constructors() {
-		Stream<Constructor<?>> constructors = stream(getErasedType().getConstructors());
-
-		return executableQuery(constructors, m -> forConstructor(m).withTargetType(this));
+	public Stream<ExecutableToken<Void, T>> constructors() {
+		return stream(getErasedType().getConstructors())
+				.map(m -> forConstructor(m).withTargetType(this));
 	}
 
 	/**
@@ -1196,10 +1194,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * @return a list of all {@link Constructor} objects applicable to this type,
 	 *         wrapped in {@link ExecutableToken} instances
 	 */
-	public ExecutableTokenQuery<ExecutableToken<Void, T>, ?> declaredConstructors() {
-		Stream<Constructor<?>> constructors = stream(getErasedType().getDeclaredConstructors());
-
-		return executableQuery(constructors, m -> forConstructor(m).withTargetType(this));
+	public Stream<ExecutableToken<Void, T>> declaredConstructors() {
+		return stream(getErasedType().getDeclaredConstructors())
+				.map(m -> forConstructor(m).withTargetType(this));
 	}
 
 	/**
@@ -1209,7 +1206,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * @return a list of all {@link Method} objects applicable to this type, wrapped
 	 *         in {@link ExecutableToken} instances
 	 */
-	public ExecutableTokenQuery<ExecutableToken<T, ?>, Method> methods() {
+	public Stream<ExecutableToken<T, ?>> methods() {
 		Stream<Method> methodStream = getErasedUpperBounds().flatMap(t -> stream(t.getMethods()));
 
 		if (getErasedUpperBounds().allMatch(Types::isInterface))
@@ -1219,8 +1216,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 
 		TypeHierarchy typeHierarchy = new TypeHierarchy(getType());
 
-		return executableQuery(
-				methodStream,
+		return methodStream.map(
 				m -> forMethod(m).withReceiverType(
 						new TypeToken<>(getBounds(), typeHierarchy.resolveSupertype(m.getDeclaringClass()))));
 	}
@@ -1232,11 +1228,10 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * @return a list of all {@link Method} objects applicable to this type, wrapped
 	 *         in {@link ExecutableToken} instances
 	 */
-	public ExecutableTokenQuery<ExecutableToken<T, ?>, Method> declaredMethods() {
-		Stream<Method> methodStream = stream(getErasedType().getDeclaredMethods())
-				.filter(m -> !Modifier.isStatic(m.getModifiers()));
-
-		return executableQuery(methodStream, m -> forMethod(m).withReceiverType(this));
+	public Stream<ExecutableToken<T, ?>> declaredMethods() {
+		return stream(getErasedType().getDeclaredMethods())
+				.filter(m -> !Modifier.isStatic(m.getModifiers()))
+				.map(m -> forMethod(m).withReceiverType(this));
 	}
 
 	@Override

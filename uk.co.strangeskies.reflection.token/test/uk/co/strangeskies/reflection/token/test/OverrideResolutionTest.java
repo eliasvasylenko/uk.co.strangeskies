@@ -35,6 +35,8 @@ package uk.co.strangeskies.reflection.token.test;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.forMethod;
+import static uk.co.strangeskies.reflection.token.MethodMatcher.matchMethod;
+import static uk.co.strangeskies.reflection.token.OverloadResolver.resolveOverload;
 import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
 
 import org.junit.Test;
@@ -68,7 +70,10 @@ public class OverrideResolutionTest {
 
 	@Test
 	public void withReceiverTypeDoesNotOverride() throws NoSuchMethodException, SecurityException {
-		ExecutableToken<? extends A, ?> method = forClass(A.class).methods().named(METHOD_NAME).resolveOverload();
+		ExecutableToken<? extends A, ?> method = forClass(A.class)
+				.methods()
+				.filter(matchMethod().named(METHOD_NAME))
+				.collect(resolveOverload());
 
 		method = method.getOverride(forClass(D.class));
 
@@ -77,7 +82,10 @@ public class OverrideResolutionTest {
 
 	@Test
 	public void withReceiverThenGetOverride() throws NoSuchMethodException, SecurityException {
-		ExecutableToken<? extends A, ?> method = forClass(A.class).methods().named(METHOD_NAME).resolveOverload();
+		ExecutableToken<? extends A, ?> method = forClass(A.class)
+				.methods()
+				.filter(matchMethod().named(METHOD_NAME))
+				.collect(resolveOverload());
 
 		method = method.getOverride(forClass(C.class));
 
@@ -86,21 +94,24 @@ public class OverrideResolutionTest {
 
 	@Test
 	public void getOverride() throws NoSuchMethodException, SecurityException {
-		ExecutableToken<? extends A, ?> method = forMethod(A.class.getMethod(METHOD_NAME)).getOverride(forClass(C.class));
+		ExecutableToken<? extends A, ?> method = forMethod(A.class.getMethod(METHOD_NAME))
+				.getOverride(forClass(C.class));
 
 		assertThat(method.getMember().getDeclaringClass(), equalTo(C.class));
 	}
 
 	@Test
 	public void getIndirectOverride() throws NoSuchMethodException, SecurityException {
-		ExecutableToken<? extends A, ?> method = forMethod(A.class.getMethod(METHOD_NAME)).getOverride(forClass(F.class));
+		ExecutableToken<? extends A, ?> method = forMethod(A.class.getMethod(METHOD_NAME))
+				.getOverride(forClass(F.class));
 
 		assertThat(method.getMember().getDeclaringClass(), equalTo(F.class));
 	}
 
 	@Test
 	public void getInterfaceBeforeClassOverride() throws NoSuchMethodException, SecurityException {
-		ExecutableToken<? extends A, ?> method = forMethod(A.class.getMethod(METHOD_NAME)).getOverride(forClass(E.class));
+		ExecutableToken<? extends A, ?> method = forMethod(A.class.getMethod(METHOD_NAME))
+				.getOverride(forClass(E.class));
 
 		assertThat(method.getMember().getDeclaringClass(), equalTo(C.class));
 	}
