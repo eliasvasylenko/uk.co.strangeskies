@@ -70,12 +70,8 @@ public abstract class TypeArgument<T> {
 		return (TypeParameter<T>) TypeParameter.forTypeVariable((TypeVariable<?>) type);
 	}
 
-	public TypeToken<T> getParameterToken() {
+	public TypeParameter<T> getParameter() {
 		return parameter;
-	}
-
-	public TypeVariable<?> getParameter() {
-		return parameter.getType();
 	}
 
 	public TypeToken<T> getTypeToken() {

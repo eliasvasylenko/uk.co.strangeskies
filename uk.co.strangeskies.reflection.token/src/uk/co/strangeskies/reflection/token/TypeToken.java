@@ -1285,7 +1285,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 				.reduce(getBounds(), (a, b) -> a.withBounds(b));
 
 		Map<TypeVariable<?>, Type> argumentMap = arguments.stream().collect(
-				toMap(TypeArgument::getParameter, TypeArgument::getType));
+				toMap(a -> a.getParameter().getType(), TypeArgument::getType));
 
 		return new TypeToken<>(bounds, new TypeSubstitution(argumentMap).resolve(getType()));
 	}

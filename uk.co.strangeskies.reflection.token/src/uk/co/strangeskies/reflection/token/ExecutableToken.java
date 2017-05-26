@@ -589,7 +589,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 			return partialParameterization(
 					type.getBounds(),
 					receiverType.getAllTypeArguments().collect(
-							toMap(TypeArgument::getParameter, TypeArgument::getType)));
+							toMap(a -> a.getParameter().getType(), TypeArgument::getType)));
 
 		} else {
 			return (ExecutableToken<U, R>) withBounds(
@@ -669,7 +669,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 				return (ExecutableToken<O, S>) partialParameterization(
 						target.getBounds(),
 						target.getAllTypeArguments().collect(
-								toMap(TypeArgument::getParameter, TypeArgument::getType)));
+								toMap(a -> a.getParameter().getType(), TypeArgument::getType)));
 
 			} else {
 				return this.<O, S> partialParameterization(target.getBounds(), emptyMap()).withTargetType(
@@ -967,7 +967,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 		}
 
 		TypeSubstitution typeSubstitution = new TypeSubstitution(
-				arguments.stream().collect(toMap(TypeArgument::getParameter, TypeArgument::getType)));
+				arguments.stream().collect(toMap(a -> a.getParameter().getType(), TypeArgument::getType)));
 
 		typeSubstitution = typeSubstitution.where(
 				getBounds()::containsInferenceVariable,

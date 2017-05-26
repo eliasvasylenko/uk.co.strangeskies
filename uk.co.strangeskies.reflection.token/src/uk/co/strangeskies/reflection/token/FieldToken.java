@@ -86,7 +86,7 @@ public class FieldToken<O, T> implements MemberToken<O, FieldToken<O, T>> {
 		this.field = field;
 
 		TypeSubstitution inferenceVariableSubstitution = new TypeSubstitution(
-				getAllTypeArguments().collect(toMap(TypeArgument::getParameter, TypeArgument::getType)));
+				getAllTypeArguments().collect(toMap(a -> a.getParameter().getType(), TypeArgument::getType)));
 
 		this.receiverType = determineReceiverType(inferenceVariableSubstitution, receiverType);
 		this.fieldType = determineFieldType(resolver, inferenceVariableSubstitution);
