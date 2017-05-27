@@ -7,12 +7,14 @@ import static uk.co.strangeskies.reflection.Visibility.forModifiers;
 import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Type;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import uk.co.strangeskies.reflection.Visibility;
 
-public class VariableMatcher<O, T> {
-	public static VariableMatcher<Object, Object> matchVariable() {
+public class VariableMatcher<O, T> implements Predicate<FieldToken<?, ?>> {
+	public static VariableMatcher<Object, Object> allVariables() {
 		return new VariableMatcher<>(empty(), empty(), empty(), empty());
 	}
 
@@ -34,18 +36,26 @@ public class VariableMatcher<O, T> {
 
 	@SuppressWarnings("unchecked")
 	public Optional<FieldToken<O, T>> match(FieldToken<?, ?> field) {
-		return match(field.getMember()) ? of((FieldToken<O, T>) field) : empty();
+		if (test(field))
+			return of((FieldToken<O, T>) field);
+		else
+			return empty();
 	}
 
-	public boolean match(Field field) {
-		return name.filter(field.getName()::equals).isPresent()
-				&& visibility.filter(forModifiers(field.getModifiers())::equals).isPresent()
-				&& assignableTo
-						.filter(t -> t.satisfiesConstraintFrom(SUBTYPE, field.getGenericType()))
-						.isPresent()
-				&& assignableFrom
-						.filter(t -> t.satisfiesConstraintTo(SUBTYPE, field.getGenericType()))
-						.isPresent();
+	@Override
+	public boolean test(FieldToken<?, ?> field) {
+		return testImpl(field.getName(), field.getVisibility(), field.getFieldType().getType());
+	}
+
+	public boolean test(Field field) {
+		return testImpl(field.getName(), forModifiers(field.getModifiers()), field.getGenericType());
+	}
+
+	private boolean testImpl(String name, Visibility visibility, Type type) {
+		return this.name.map(name::equals).orElse(true)
+				&& this.visibility.filter(visibility::equals).isPresent()
+				&& this.assignableTo.filter(t -> t.satisfiesConstraintFrom(SUBTYPE, type)).isPresent()
+				&& this.assignableFrom.filter(t -> t.satisfiesConstraintTo(SUBTYPE, type)).isPresent();
 	}
 
 	public VariableMatcher<O, T> named(String name) {

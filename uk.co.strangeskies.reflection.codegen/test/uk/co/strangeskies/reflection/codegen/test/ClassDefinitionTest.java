@@ -39,8 +39,8 @@ import static uk.co.strangeskies.reflection.codegen.MethodSignature.methodSignat
 import static uk.co.strangeskies.reflection.codegen.ParameterSignature.parameterSignature;
 import static uk.co.strangeskies.reflection.codegen.block.Expressions.literal;
 import static uk.co.strangeskies.reflection.codegen.block.VariableExpression.resolveVariable;
-import static uk.co.strangeskies.reflection.token.MethodMatcher.matchMethod;
-import static uk.co.strangeskies.reflection.token.VariableMatcher.matchVariable;
+import static uk.co.strangeskies.reflection.token.MethodMatcher.allMethods;
+import static uk.co.strangeskies.reflection.token.VariableMatcher.allVariables;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -86,7 +86,7 @@ public class ClassDefinitionTest {
 		ClassDefinition<Void, ? extends Runnable> classDefinition = new ClassRegister(
 				createClassLoader()).withClassSignature(TEST_CLASS_SIGNATURE.extending(Runnable.class));
 		classDefinition = classDefinition
-				.defineMethod(matchMethod().named("run"), new Block<Void>().withReturnStatement());
+				.defineMethod(allMethods().named("run"), new Block<Void>().withReturnStatement());
 
 		Runnable instance = classDefinition.loadClass().newInstance();
 
@@ -112,10 +112,10 @@ public class ClassDefinitionTest {
 								methodSignature("apply").withReturnType(STRING_TYPE).withParameters(
 										parameterSignature("value", STRING_TYPE))))
 				.defineMethod(
-						matchMethod().named("apply"),
+						allMethods().named("apply"),
 						new Block<String>().withReturnStatement(
-								resolveVariable(matchVariable().named("value")).invokeMethod(
-										matchMethod().named("concat").returning(String.class),
+								resolveVariable(allVariables().named("value")).invokeMethod(
+										allMethods().named("concat").returning(String.class),
 										literal("append"))))
 				.loadClass()
 				.newInstance();
@@ -132,11 +132,11 @@ public class ClassDefinitionTest {
 				.withClassSignature(
 						TEST_CLASS_SIGNATURE.extending(new TypeToken<Func<String, String>>() {}))
 				.defineMethod(
-						matchMethod().named("apply").returning(String.class),
+						allMethods().named("apply").returning(String.class),
 						new Block<String>().withReturnStatement(
-								resolveVariable(matchVariable().named("value")).invokeMethod(
-										matchMethod().named("concat").returning(String.class),
-										resolveVariable(matchVariable().named("value")))))
+								resolveVariable(allVariables().named("value")).invokeMethod(
+										allMethods().named("concat").returning(String.class),
+										resolveVariable(allVariables().named("value")))))
 				.loadClass()
 				.newInstance();
 
@@ -152,11 +152,11 @@ public class ClassDefinitionTest {
 				.withClassSignature(
 						TEST_CLASS_SIGNATURE.extending(new TypeToken<Func<String, String>>() {}))
 				.defineMethod(
-						matchMethod().named("apply").returning(String.class),
+						allMethods().named("apply").returning(String.class),
 						new Block<String>().withReturnStatement(
-								resolveVariable(matchVariable().named("value")).invokeMethod(
-										matchMethod().named("concat").returning(String.class),
-										resolveVariable(matchVariable().named("value")))))
+								resolveVariable(allVariables().named("value")).invokeMethod(
+										allMethods().named("concat").returning(String.class),
+										resolveVariable(allVariables().named("value")))))
 				.loadClass()
 				.newInstance();
 
@@ -177,7 +177,7 @@ public class ClassDefinitionTest {
 	public void defineWithDefaultMethod() throws InstantiationException, IllegalAccessException {
 		new ClassRegister(createClassLoader())
 				.withClassSignature(TEST_CLASS_SIGNATURE.extending(Default.class))
-				.defineConstructor(matchMethod(), new Block<>())
+				.defineConstructor(allMethods(), new Block<>())
 				.loadClass()
 				.newInstance();
 	}

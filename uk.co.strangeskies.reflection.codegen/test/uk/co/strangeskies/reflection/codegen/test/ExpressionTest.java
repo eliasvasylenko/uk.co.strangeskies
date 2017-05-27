@@ -32,6 +32,10 @@
  */
 package uk.co.strangeskies.reflection.codegen.test;
 
+import static uk.co.strangeskies.reflection.token.MethodMatcher.allMethods;
+import static uk.co.strangeskies.reflection.token.OverloadResolver.resolveOverload;
+import static uk.co.strangeskies.reflection.token.VariableMatcher.allVariables;
+
 import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.FieldToken;
 import uk.co.strangeskies.reflection.token.TypeToken;
@@ -57,15 +61,16 @@ public class ExpressionTest {
 	private static final String TEST_FIELD_NAME = "field";
 	private static final FieldToken<TestClass, String> TEST_FIELD = TEST_CLASS_TYPE
 			.fields()
-			.named(TEST_FIELD_NAME)
-			.resolveAccessible()
+			.filter(allVariables().named(TEST_FIELD_NAME))
+			.findAny()
+			.get()
 			.withType(STRING_TYPE);
 
 	private static final String TEST_SET_METHOD_NAME = "setMethod";
 	private static final ExecutableToken<? super TestClass, String> TEST_SET_METHOD = TEST_CLASS_TYPE
 			.methods()
-			.named(TEST_SET_METHOD_NAME)
-			.resolveOverload(STRING_TYPE)
+			.filter(allMethods().named(TEST_SET_METHOD_NAME))
+			.collect(resolveOverload(STRING_TYPE))
 			.withTargetType(STRING_TYPE);
 
 	/*-

@@ -33,7 +33,11 @@
 package uk.co.strangeskies.reflection.codegen.block;
 
 import static java.util.Arrays.asList;
+import static uk.co.strangeskies.reflection.token.ExecutableToken.staticMethods;
+import static uk.co.strangeskies.reflection.token.MethodMatcher.allMethods;
+import static uk.co.strangeskies.reflection.token.OverloadResolver.resolveOverload;
 
+import java.lang.reflect.Type;
 import java.util.List;
 
 import uk.co.strangeskies.reflection.token.ExecutableToken;
@@ -41,6 +45,10 @@ import uk.co.strangeskies.reflection.token.MethodMatcher;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class Expressions {
+	@SuppressWarnings("unchecked")
+	private static final ExecutableToken<Void, TypeToken<?>> FOR_TYPE_METHOD = (ExecutableToken<Void, TypeToken<?>>) staticMethods(
+			TypeToken.class).filter(allMethods().named("forType")).collect(resolveOverload(Type.class));
+
 	private Expressions() {}
 
 	public static <T> ValueExpression<T> nullLiteral() {
@@ -97,8 +105,13 @@ public class Expressions {
 		return literalImpl(value);
 	}
 
-	public static <T> ValueExpression<? extends TypeToken<T>> typeTokenExpression(TypeToken<T> type) {
-		return new TypeTokenExpression<>(type);
+	public static <T> ValueExpression<? extends TypeToken<T>> typeTokenExpression(
+			TypeToken<T> token) {
+		return new CastValueExpression<>(
+				token.getThisTypeToken(),
+				invokeStatic(
+						FOR_TYPE_METHOD,
+						new AnnotatedTypeExpression(token.getAnnotatedDeclaration())));
 	}
 
 	/**

@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 import uk.co.strangeskies.reflection.Visibility;
 
 public class MethodMatcher<O, T> implements Predicate<ExecutableToken<?, ?>> {
-	public static MethodMatcher<Object, Object> matchMethod() {
+	public static MethodMatcher<Object, Object> allMethods() {
 		return new MethodMatcher<>(empty(), empty(), empty(), empty());
 	}
 
@@ -38,14 +38,6 @@ public class MethodMatcher<O, T> implements Predicate<ExecutableToken<?, ?>> {
 		this.argumentTypes = argumentTypes;
 	}
 
-	public boolean match(Executable executable) {
-		return matchImpl(
-				executable.getName(),
-				forModifiers(executable.getModifiers()),
-				executable.getAnnotatedReturnType().getType(),
-				stream(executable.getGenericParameterTypes()));
-	}
-
 	@SuppressWarnings("unchecked")
 	public Optional<ExecutableToken<O, T>> match(ExecutableToken<?, ?> executable) {
 		if (test(executable))
@@ -56,14 +48,22 @@ public class MethodMatcher<O, T> implements Predicate<ExecutableToken<?, ?>> {
 
 	@Override
 	public boolean test(ExecutableToken<?, ?> executable) {
-		return matchImpl(
+		return testImpl(
 				executable.getName(),
 				executable.getVisibility(),
 				executable.getReturnType().getType(),
 				executable.getParameters().map(ExecutableParameter::getType));
 	}
 
-	private boolean matchImpl(
+	public boolean test(Executable executable) {
+		return testImpl(
+				executable.getName(),
+				forModifiers(executable.getModifiers()),
+				executable.getAnnotatedReturnType().getType(),
+				stream(executable.getGenericParameterTypes()));
+	}
+
+	private boolean testImpl(
 			String name,
 			Visibility visibility,
 			Type returnType,

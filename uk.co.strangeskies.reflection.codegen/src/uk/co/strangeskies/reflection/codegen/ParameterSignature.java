@@ -32,7 +32,6 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import static java.lang.System.identityHashCode;
 import static java.util.Collections.emptySet;
 import static uk.co.strangeskies.reflection.codegen.Modifiers.emptyModifiers;
 

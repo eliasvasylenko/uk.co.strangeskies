@@ -44,8 +44,6 @@ import static org.objectweb.asm.Type.getInternalName;
 import static uk.co.strangeskies.collection.stream.StreamUtilities.throwingMerger;
 import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
 
-import javax.naming.OperationNotSupportedException;
-
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -89,7 +87,7 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 		@SuppressWarnings("unchecked")
 		MethodDeclaration<T, U> methodDeclaration = getDeclaration()
 				.constructorDeclarations()
-				.filter(m -> methodMatcher.match(m.getExecutableStub()))
+				.filter(m -> methodMatcher.test(m.getExecutableStub()))
 				.reduce(throwingMerger())
 				.map(m -> (MethodDeclaration<T, U>) m)
 				.orElseThrow(
@@ -110,7 +108,7 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 		MethodDeclaration<T, U> methodDeclaration = concat(
 				getDeclaration().methodDeclarations(),
 				getDeclaration().staticMethodDeclarations())
-						.filter(m -> methodMatcher.match(m.getExecutableStub()))
+						.filter(m -> methodMatcher.test(m.getExecutableStub()))
 						.reduce(throwingMerger())
 						.map(m -> (MethodDeclaration<T, U>) m)
 						.orElseThrow(
@@ -161,14 +159,14 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
 				MethodVisitor methodVisitor = super.visitMethod(arg0, arg1, arg2, arg3, arg4);
 
 				methodVisitor.visitCode();
-				methodVisitor.visitTypeInsn(NEW, getInternalName(OperationNotSupportedException.class));
+				methodVisitor.visitTypeInsn(NEW, getInternalName(UnsupportedOperationException.class));
 				methodVisitor.visitInsn(DUP);
 				try {
 					methodVisitor.visitMethodInsn(
 							INVOKESPECIAL,
-							getInternalName(OperationNotSupportedException.class),
+							getInternalName(UnsupportedOperationException.class),
 							"<init>",
-							Type.getConstructorDescriptor(OperationNotSupportedException.class.getConstructor()),
+							Type.getConstructorDescriptor(UnsupportedOperationException.class.getConstructor()),
 							false);
 				} catch (NoSuchMethodException | SecurityException e) {
 					throw new AssertionError(e);
