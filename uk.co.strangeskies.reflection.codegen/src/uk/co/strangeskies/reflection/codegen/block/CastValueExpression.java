@@ -1,6 +1,6 @@
 package uk.co.strangeskies.reflection.codegen.block;
 
-import uk.co.strangeskies.reflection.codegen.block.ExpressionVisitor.ValueExpressionVisitor;
+import uk.co.strangeskies.reflection.codegen.block.InstructionVisitor.ValueExpressionVisitor;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class CastValueExpression<T> implements ValueExpression<T> {

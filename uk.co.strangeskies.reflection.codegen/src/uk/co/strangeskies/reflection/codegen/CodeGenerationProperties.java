@@ -39,8 +39,7 @@ import java.util.Collection;
 import java.util.List;
 
 import uk.co.strangeskies.reflection.ReflectionProperties;
-import uk.co.strangeskies.reflection.codegen.block.Expression;
-import uk.co.strangeskies.reflection.codegen.block.VariableExpressionProxy;
+import uk.co.strangeskies.reflection.codegen.block.Instruction;
 import uk.co.strangeskies.reflection.token.TypeToken;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;
@@ -50,13 +49,11 @@ import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;
 public interface CodeGenerationProperties {
 	ReflectionProperties reflection();
 
-	String invalidExpressionForStatement(Expression expression);
+	String invalidExpressionForStatement(Instruction expression);
 
 	String cannotInstantiateClassDefinition(
 			ClassDefinition<?, ?> classDefinition,
 			TypeToken<?> superType);
-
-	String cannotAccessPlaceholderExpression(VariableExpressionProxy<?> variableExpressionProxy);
 
 	String cannotOverrideMethod(Method overriddenMethod);
 

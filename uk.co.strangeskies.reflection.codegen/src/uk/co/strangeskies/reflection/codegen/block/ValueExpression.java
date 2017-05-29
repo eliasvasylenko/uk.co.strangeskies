@@ -35,18 +35,10 @@ package uk.co.strangeskies.reflection.codegen.block;
 import java.util.Arrays;
 import java.util.List;
 
-import uk.co.strangeskies.reflection.codegen.block.ExpressionVisitor.ValueExpressionVisitor;
 import uk.co.strangeskies.reflection.token.FieldToken;
 import uk.co.strangeskies.reflection.token.MethodMatcher;
 
 public interface ValueExpression<T> extends Expression {
-	@Override
-	default void accept(ExpressionVisitor visitor) {
-		accept(visitor.value(this));
-	}
-
-	void accept(ValueExpressionVisitor<T> visitor);
-
 	default <R> FieldExpression<? super T, R> accessField(FieldToken<? super T, R> field) {
 		return new FieldExpression<>(this, field);
 	}

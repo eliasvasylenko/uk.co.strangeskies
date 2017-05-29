@@ -34,7 +34,6 @@ package uk.co.strangeskies.reflection.codegen.block;
 
 import java.util.List;
 
-import uk.co.strangeskies.reflection.codegen.block.ExpressionVisitor.ValueExpressionVisitor;
 import uk.co.strangeskies.reflection.token.MethodMatcher;
 
 class InvocationExpression<O, T> implements ValueExpression<T> {
@@ -42,15 +41,19 @@ class InvocationExpression<O, T> implements ValueExpression<T> {
 	private final MethodMatcher<O, T> invocable;
 	private final List<ValueExpression<?>> arguments;
 
-	protected InvocationExpression(ValueExpression<? extends O> receiver,
-			MethodMatcher<O, T> invocable, List<ValueExpression<?>> arguments) {
+	protected InvocationExpression(
+			ValueExpression<? extends O> receiver,
+			MethodMatcher<O, T> invocable,
+			List<ValueExpression<?>> arguments) {
 		this.receiver = receiver;
 		this.invocable = invocable;
 		this.arguments = arguments;
 	}
 
 	@Override
-	public void accept(ValueExpressionVisitor<T> visitor) {
-		visitor.visitMethod(receiver, invocable, arguments);
+	public void evaluate(Scope scope) {
+		receiver.evaluate(scope);
+		arguments.forEach(a -> a.evaluate(scope));
+		scope.instructions().value(null).visitMethod(scope.resolve(invocable));
 	}
 }

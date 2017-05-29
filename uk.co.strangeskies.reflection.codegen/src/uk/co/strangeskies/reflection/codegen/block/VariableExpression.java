@@ -34,21 +34,10 @@ package uk.co.strangeskies.reflection.codegen.block;
 
 import static uk.co.strangeskies.reflection.token.VariableMatcher.allVariables;
 
-import uk.co.strangeskies.reflection.codegen.block.ExpressionVisitor.ValueExpressionVisitor;
-import uk.co.strangeskies.reflection.codegen.block.ExpressionVisitor.VariableExpressionVisitor;
 import uk.co.strangeskies.reflection.token.VariableMatcher;
 
 public interface VariableExpression<T> extends ValueExpression<T> {
-	default ValueExpression<T> assign(ValueExpression<? extends T> value) {
-		return new AssignmentExpression<>(this, value);
-	}
-
-	@Override
-	default void accept(ValueExpressionVisitor<T> visitor) {
-		accept(visitor.variable());
-	}
-
-	void accept(VariableExpressionVisitor<T> visitor);
+	ValueExpression<T> assign(ValueExpression<? extends T> value);
 
 	static VariableExpression<Object> resolveVariable(String name) {
 		return resolveVariable(allVariables().named(name));

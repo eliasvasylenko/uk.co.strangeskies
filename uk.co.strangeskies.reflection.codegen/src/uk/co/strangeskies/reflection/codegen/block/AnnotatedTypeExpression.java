@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
-import uk.co.strangeskies.reflection.codegen.block.ExpressionVisitor.ValueExpressionVisitor;
 import uk.co.strangeskies.reflection.token.ExecutableToken;
 
 class AnnotatedTypeExpression implements ValueExpression<AnnotatedType> {
@@ -46,7 +45,7 @@ class AnnotatedTypeExpression implements ValueExpression<AnnotatedType> {
 	}
 
 	@Override
-	public void accept(ValueExpressionVisitor<AnnotatedType> visitor) {
-		expression.accept(visitor);
+	public void evaluate(Scope scope) {
+		expression.evaluate(scope);
 	}
 }

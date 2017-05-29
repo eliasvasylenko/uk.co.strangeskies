@@ -36,6 +36,7 @@ import static java.util.Arrays.asList;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.staticMethods;
 import static uk.co.strangeskies.reflection.token.MethodMatcher.allMethods;
 import static uk.co.strangeskies.reflection.token.OverloadResolver.resolveOverload;
+import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
 
 import java.lang.reflect.Type;
 import java.util.List;
@@ -52,11 +53,13 @@ public class Expressions {
 	private Expressions() {}
 
 	public static <T> ValueExpression<T> nullLiteral() {
-		return (ValueExpression<T>) v -> v.visitNull();
+		return scope -> scope.instructions().value(null).visitNull();
 	}
 
+	@SuppressWarnings("unchecked")
 	private static <T> ValueExpression<T> literalImpl(T value) {
-		return v -> v.visitLiteral(value);
+		return scope -> scope.instructions().value(forClass((Class<T>) value.getClass())).visitLiteral(
+				value);
 	}
 
 	public static ValueExpression<?> tryLiteral(Object object) {

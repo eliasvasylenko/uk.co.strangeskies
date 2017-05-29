@@ -40,30 +40,30 @@ import java.util.stream.Stream;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class Block<T> {
-	private final List<Statement> statements;
+	private final List<Instruction> instructions;
 
 	public Block() {
-		this.statements = Collections.emptyList();
+		this.instructions = Collections.emptyList();
 	}
 
-	protected Block(List<Statement> statements) {
-		this.statements = statements;
+	protected Block(List<Instruction> instructions) {
+		this.instructions = instructions;
 	}
 
-	public Stream<Statement> getStatements() {
-		return statements.stream();
+	public Stream<Instruction> getInstructions() {
+		return instructions.stream();
 	}
 
-	protected Block<T> withStatement(Statement statement) {
-		List<Statement> statements = new ArrayList<>(this.statements.size() + 1);
-		statements.addAll(this.statements);
-		statements.add(statement);
+	protected Block<T> withInstruction(Instruction instruction) {
+		List<Instruction> instructions = new ArrayList<>(this.instructions.size() + 1);
+		instructions.addAll(this.instructions);
+		instructions.add(instruction);
 
-		return new Block<>(statements);
+		return new Block<>(instructions);
 	}
 
 	public Block<T> withExpression(Expression expression) {
-		return withStatement(v -> v.visitExpression(expression));
+		return withInstruction(v -> v.visitExpression(expression));
 	}
 
 	public <U> Block<T> withVariableDeclaration(String name, Class<U> type) {
@@ -73,21 +73,25 @@ public class Block<T> {
 	public <U> Block<T> declareVariable(String name, TypeToken<U> type) {
 		LocalVariableExpression<U> variable = new LocalVariableExpression<>(name, type);
 
-		withStatement(s -> s.visitDeclaration(variable));
+		withInstruction(s -> s.visitDeclaration(variable));
 
 		return variable;
 	}
 
-	public <U> Block<T> declareVariable(String name, Class<U> type,
+	public <U> Block<T> declareVariable(
+			String name,
+			Class<U> type,
 			ValueExpression<? extends U> value) {
 		return declareVariable(name, TypeToken.forClass(type), value);
 	}
 
-	public <U> Block<T> declareVariable(String name, TypeToken<U> type,
+	public <U> Block<T> declareVariable(
+			String name,
+			TypeToken<U> type,
 			ValueExpression<? extends U> value) {
 		LocalVariableExpression<U> variable = new LocalVariableExpression<>(name, type);
 
-		withStatement(s -> s.visitDeclaration(variable, value));
+		withInstruction(s -> s.visitDeclaration(variable, value));
 
 		return variable;
 	}
@@ -96,20 +100,22 @@ public class Block<T> {
 		return declareValue(name, TypeToken.forClass(type), value);
 	}
 
-	public <U> Block<T> declareValue(String name, TypeToken<U> type,
+	public <U> Block<T> declareValue(
+			String name,
+			TypeToken<U> type,
 			ValueExpression<? extends U> value) {
 		LocalValueExpression<U> variable = new LocalValueExpression<>(name, type);
 
-		withStatement(s -> s.visitDeclaration(variable, value));
+		withInstruction(s -> s.visitDeclaration(variable, value));
 
 		return variable;
 	}
 
 	public Block<T> withReturnStatement() {
-		return withStatement(StatementVisitor::visitReturn);
+		return withInstruction(StatementVisitor::visitReturn);
 	}
 
 	public Block<T> withReturnStatement(ValueExpression<? extends T> expression) {
-		return withStatement(v -> v.visitReturn(expression));
+		return withInstruction(v -> v.visitReturn(expression));
 	}
 }

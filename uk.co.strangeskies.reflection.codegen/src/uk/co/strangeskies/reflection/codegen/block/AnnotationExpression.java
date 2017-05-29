@@ -14,7 +14,6 @@ import java.util.List;
 
 import uk.co.strangeskies.reflection.AnnotationProperty;
 import uk.co.strangeskies.reflection.Annotations;
-import uk.co.strangeskies.reflection.codegen.block.ExpressionVisitor.ValueExpressionVisitor;
 import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
@@ -52,7 +51,7 @@ public class AnnotationExpression implements ValueExpression<Annotation> {
 	}
 
 	@Override
-	public void accept(ValueExpressionVisitor<Annotation> visitor) {
-		expression.accept(visitor);
+	public void evaluate(Scope scope) {
+		expression.evaluate(scope);
 	}
 }

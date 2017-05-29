@@ -1,6 +1,5 @@
 package uk.co.strangeskies.reflection.codegen.block;
 
-import uk.co.strangeskies.reflection.codegen.block.ExpressionVisitor.VariableExpressionVisitor;
 import uk.co.strangeskies.reflection.token.VariableMatcher;
 
 class MatchedVariableExpression<T> implements VariableExpression<T> {
@@ -11,7 +10,7 @@ class MatchedVariableExpression<T> implements VariableExpression<T> {
 	}
 
 	@Override
-	public void accept(VariableExpressionVisitor<T> visitor) {
+	public void evaluate(Scope scope) {
 		throw new UnsupportedOperationException();
 	}
 }

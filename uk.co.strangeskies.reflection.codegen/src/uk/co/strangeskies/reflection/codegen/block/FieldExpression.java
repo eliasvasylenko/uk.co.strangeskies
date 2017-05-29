@@ -32,8 +32,6 @@
  */
 package uk.co.strangeskies.reflection.codegen.block;
 
-import uk.co.strangeskies.reflection.codegen.block.ExpressionVisitor.ValueExpressionVisitor;
-import uk.co.strangeskies.reflection.codegen.block.ExpressionVisitor.VariableExpressionVisitor;
 import uk.co.strangeskies.reflection.token.FieldToken;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
@@ -46,17 +44,18 @@ public class FieldExpression<O, T> implements VariableExpression<T> {
 		this.field = field;
 	}
 
-	@Override
-	public void accept(ValueExpressionVisitor<T> visitor) {
-		accept(visitor.variable());
-	}
-
-	@Override
-	public void accept(VariableExpressionVisitor<T> visitor) {
-		visitor.visitField(value, field);
-	}
-
 	public TypeToken<T> getType() {
 		return field.getFieldType();
+	}
+
+	@Override
+	public void evaluate(Scope scope) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public ValueExpression<T> assign(ValueExpression<? extends T> value) {
+		return new FieldAssignmentExpression<>(target, value);
 	}
 }
