@@ -158,6 +158,7 @@ public class TreeItemImpl<T> extends TreeItem<TreeItemData<?>> {
 				childrenCalculated = false;
 			}
 		} else {
+		  setExpanded(false);
 			childTreeItems.clear();
 
 			childrenItems = Collections.emptyList();
