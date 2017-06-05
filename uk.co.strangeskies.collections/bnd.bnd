@@ -5,7 +5,7 @@ Export-Package: \
 	uk.co.strangeskies.collection.stream,\
 	uk.co.strangeskies.collection.tuple
 
-Bundle-Name: Strange Skies :: Utilities
+Bundle-Name: Strange Skies :: Collections
 Bundle-Description: \
 	Common Java utilities for Strange Skies projects, including generic \
 	pseudo-enums, fast, in-memory caches, tuples, functional helpers, \
