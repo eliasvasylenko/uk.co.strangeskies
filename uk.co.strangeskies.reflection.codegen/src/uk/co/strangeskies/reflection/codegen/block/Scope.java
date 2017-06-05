@@ -50,7 +50,7 @@ public interface Scope {
 
   Field resolveQualified(VariableMatcher<?, ?> matcher);
 
-  LocalVariable resolveLocal(VariableMatcher<?, ?> matcher);
+  Local resolveLocal(VariableMatcher<?, ?> matcher);
 
   Parameter resolveParameter(VariableMatcher<?, ?> matcher);
 }

@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.reflection.codegen.block;
 
+import uk.co.strangeskies.reflection.token.FieldToken;
+
 /**
  * An expression denoting assignment to a {@link VariableExpression}.
  * 
@@ -40,12 +42,17 @@ package uk.co.strangeskies.reflection.codegen.block;
  * @param <T>
  *          the type of the variable to assign to
  */
-public class FieldAssignmentExpression<T> implements ValueExpression<T> {
-	private final VariableExpression<T> target;
+public class FieldAssignmentExpression<O, T> implements ValueExpression<T> {
+	private final ValueExpression<? extends O> target;
+	private final FieldToken<O, T> field;
 	private final ValueExpression<? extends T> value;
 
-	protected FieldAssignmentExpression(VariableExpression<T> target, ValueExpression<? extends T> value) {
+	protected FieldAssignmentExpression(
+			ValueExpression<? extends O> target,
+			FieldToken<O, T> field,
+			ValueExpression<? extends T> value) {
 		this.target = target;
+		this.field = field;
 		this.value = value;
 	}
 
@@ -53,6 +60,6 @@ public class FieldAssignmentExpression<T> implements ValueExpression<T> {
 	public void evaluate(Scope scope) {
 		target.evaluate(scope);
 		value.evaluate(scope);
-		scope.instructions().value(null).visitAssignment();
+		scope.instructions().visitFieldAssignment(field.getMember());
 	}
 }

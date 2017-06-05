@@ -35,43 +35,26 @@ package uk.co.strangeskies.reflection.codegen.block;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
-import uk.co.strangeskies.reflection.codegen.ParameterSignature;
-import uk.co.strangeskies.reflection.token.TypeToken;
-
 public interface InstructionVisitor {
-	<U> ValueExpressionVisitor<U> value(TypeToken<U> expression);
+	void visitFieldAssignment(Field field);
 
-	interface ValueExpressionVisitor<U> {
-		VariableExpressionVisitor<U> variable();
+	void visitField(Field field);
 
-		void visitAssignment(Instruction target, Instruction value);
+	void visitLiteral(Object value);
 
-		void visitLiteral(U value);
+	void visitNull();
 
-		void visitNull();
+	void visitReceiver(Class<?> receivingClass);
 
-		void visitReceiver(Class<U> classDeclaration);
+	void visitMethod(Method method);
 
-		void visitMethod(Method method);
+	void visitStaticField(Field field);
 
-		void visitLocal(ParameterSignature<? extends U> local);
-	}
-
-	interface VariableExpressionVisitor<U> {
-		void visitStaticField(Field field);
-
-		<O> void visitField(Instruction value, Field field);
-
-		void visitLocal(ParameterSignature<U> local);
-	}
+	void visitField(Instruction value, Field field);
 
 	void visitReturn();
 
-	<T> void visitReturn(Instruction expression);
+	void visitReturn(Instruction expression);
 
 	void visitExpression(Instruction expression);
-
-	<T> void visitDeclaration(LocalVariable<T> variable);
-
-	<T> void visitDeclaration(LocalVariable<T> variable, ValueExpression<? extends T> initializer);
 }

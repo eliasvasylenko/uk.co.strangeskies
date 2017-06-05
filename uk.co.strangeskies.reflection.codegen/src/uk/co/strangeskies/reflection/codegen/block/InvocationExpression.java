@@ -54,6 +54,6 @@ class InvocationExpression<O, T> implements ValueExpression<T> {
 	public void evaluate(Scope scope) {
 		receiver.evaluate(scope);
 		arguments.forEach(a -> a.evaluate(scope));
-		scope.instructions().value(null).visitMethod(scope.resolve(invocable));
+		scope.instructions().visitMethod(scope.resolve(invocable));
 	}
 }

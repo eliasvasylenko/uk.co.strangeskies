@@ -32,8 +32,36 @@
  */
 package uk.co.strangeskies.reflection.codegen.block;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 
-public class Local implements AnnotatedElement {
-	
+public final class Local implements AnnotatedElement {
+	private final int index;
+
+	Local(int index) {
+		this.index = index;
+	}
+
+	public int getIndex() {
+		return index;
+	}
+
+	@Override
+	public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Annotation[] getAnnotations() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Annotation[] getDeclaredAnnotations() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

@@ -36,11 +36,11 @@ import uk.co.strangeskies.reflection.token.FieldToken;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class FieldExpression<O, T> implements VariableExpression<T> {
-	private final ValueExpression<? extends O> value;
+	private final ValueExpression<? extends O> target;
 	private final FieldToken<O, T> field;
 
-	protected FieldExpression(ValueExpression<? extends O> value, FieldToken<O, T> field) {
-		this.value = value;
+	protected FieldExpression(ValueExpression<? extends O> target, FieldToken<O, T> field) {
+		this.target = target;
 		this.field = field;
 	}
 
@@ -50,12 +50,12 @@ public class FieldExpression<O, T> implements VariableExpression<T> {
 
 	@Override
 	public void evaluate(Scope scope) {
-		// TODO Auto-generated method stub
-
+		target.evaluate(scope);
+		scope.instructions().visitField(field.getMember());
 	}
 
 	@Override
 	public ValueExpression<T> assign(ValueExpression<? extends T> value) {
-		return new FieldAssignmentExpression<>(target, value);
+		return new FieldAssignmentExpression<>(target, field, value);
 	}
 }
