@@ -47,27 +47,27 @@ final class DefaultPropertyLoaderProperties extends StaticPropertyAccessor<Prope
 	}
 
 	@Override
-	public Localized<String> translationNotFoundMessage(String key) {
-		return localize(TRANSLATION_NOT_FOUND_MESSAGE, key);
+	public String translationNotFoundMessage(String key) {
+		return format(TRANSLATION_NOT_FOUND_MESSAGE, key);
 	}
 
 	@Override
-	public Localized<String> mustBeInterface(Class<?> accessor) {
-		return localize(MUST_BE_INTERFACE, accessor);
+	public String mustBeInterface(Class<?> accessor) {
+		return format(MUST_BE_INTERFACE, accessor);
 	}
 
 	@Override
-	public Localized<String> propertyValueTypeNotSupported(String typeName, String key) {
-		return localize(ILLEGAL_RETURN_TYPE, typeName, key);
+	public String propertyValueTypeNotSupported(String typeName, String key) {
+		return format(ILLEGAL_RETURN_TYPE, typeName, key);
 	}
 
 	@Override
-	public Localized<String> localeChanged(LocaleProvider manager, Locale locale) {
-		return localize(LOCALE_CHANGED, locale);
+	public String localeChanged(LocaleProvider manager, Locale locale) {
+		return format(LOCALE_CHANGED, locale);
 	}
 
 	@Override
-	public Localized<String> cannotInstantiateStrategy(Class<? extends PropertyResourceStrategy<?>> strategy) {
-		return localize(CANNOT_INSTANTIATE_STRATEGY, strategy);
+	public String cannotInstantiateStrategy(Class<? extends PropertyResourceStrategy<?>> strategy) {
+		return format(CANNOT_INSTANTIATE_STRATEGY, strategy);
 	}
 }

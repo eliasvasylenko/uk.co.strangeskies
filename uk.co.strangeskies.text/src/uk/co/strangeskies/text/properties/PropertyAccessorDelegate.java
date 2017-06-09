@@ -85,7 +85,8 @@ public class PropertyAccessorDelegate<A> {
 
 	private static Constructor<Lookup> getMethodHandleConstructor() {
 		try {
-			Constructor<Lookup> constructor = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class, int.class);
+			Constructor<Lookup> constructor = MethodHandles.Lookup.class
+					.getDeclaredConstructor(Class.class, int.class);
 
 			if (!constructor.isAccessible()) {
 				constructor.setAccessible(true);
@@ -116,13 +117,17 @@ public class PropertyAccessorDelegate<A> {
 	 * @param source
 	 *          the property accessor class and configuration
 	 */
-	public PropertyAccessorDelegate(PropertyLoader loader, Log log, PropertyAccessorConfiguration<A> source) {
+	public PropertyAccessorDelegate(
+			PropertyLoader loader,
+			Log log,
+			PropertyAccessorConfiguration<A> source) {
 		this.loader = loader;
 		this.log = log != null ? log : (l, m) -> {};
 		this.source = source;
 
 		if (!source.getAccessor().isInterface()) {
-			PropertyLoaderException e = new PropertyLoaderException(getText().mustBeInterface(source.getAccessor()));
+			PropertyLoaderException e = new PropertyLoaderException(
+					getText().mustBeInterface(source.getAccessor()));
 			log.log(Level.ERROR, e);
 			throw e;
 		}
@@ -149,10 +154,12 @@ public class PropertyAccessorDelegate<A> {
 			MethodSignature signature = new MethodSignature(method);
 
 			if (!DIRECT_METHODS.contains(signature) && !method.isDefault()) {
-				PropertyConfiguration methodConfiguration = method.getAnnotation(PropertyConfiguration.class);
+				PropertyConfiguration methodConfiguration = method
+						.getAnnotation(PropertyConfiguration.class);
 
 				Evaluation evaluate = source.getConfiguration().evaluation();
-				if (methodConfiguration != null && methodConfiguration.evaluation() != Evaluation.UNSPECIFIED) {
+				if (methodConfiguration != null
+						&& methodConfiguration.evaluation() != Evaluation.UNSPECIFIED) {
 					evaluate = methodConfiguration.evaluation();
 				}
 
@@ -205,8 +212,11 @@ public class PropertyAccessorDelegate<A> {
 			String key,
 			Locale locale) {
 		@SuppressWarnings("unchecked")
-		PropertyValueProvider<T> provider = (PropertyValueProvider<T>) loader.getValueProvider(propertyType).orElseThrow(
-				() -> new PropertyLoaderException(getText().propertyValueTypeNotSupported(propertyType, key)));
+		PropertyValueProvider<T> provider = (PropertyValueProvider<T>) loader
+				.getValueProvider(propertyType)
+				.orElseThrow(
+						() -> new PropertyLoaderException(
+								getText().propertyValueTypeNotSupported(propertyType, key)));
 
 		try {
 			String valueString = loadValueString(source, key, locale);
@@ -216,14 +226,19 @@ public class PropertyAccessorDelegate<A> {
 			if (source.getConfiguration().defaults() != Defaults.IGNORE && provider.providesDefault()) {
 				return arguments -> provider.getDefault(key, arguments);
 			}
-			PropertyLoaderException ple = new PropertyLoaderException(getText().translationNotFoundMessage(key), e);
+			PropertyLoaderException ple = new PropertyLoaderException(
+					getText().translationNotFoundMessage(key),
+					e);
 			log.log(Level.WARN, ple);
 			throw ple;
 		}
 	}
 
 	@SuppressWarnings("unchecked")
-	private String loadValueString(PropertyAccessorConfiguration<?> configuration, String key, Locale locale) {
+	private String loadValueString(
+			PropertyAccessorConfiguration<?> configuration,
+			String key,
+			Locale locale) {
 		return bundleCache.computeIfAbsent(configuration, c -> {
 			return loader
 					.getResourceStrategy(c.getConfiguration().strategy())
@@ -235,8 +250,10 @@ public class PropertyAccessorDelegate<A> {
 	A createProxy(Class<A> accessor) {
 		ClassLoader classLoader = new PropertyAccessorClassLoader(accessor.getClassLoader());
 
-		return (A) Proxy
-				.newProxyInstance(classLoader, new Class<?>[] { accessor }, (Object p, Method method, Object[] args) -> {
+		return (A) Proxy.newProxyInstance(
+				classLoader,
+				new Class<?>[] { accessor },
+				(Object p, Method method, Object[] args) -> {
 					MethodSignature signature = new MethodSignature(method);
 
 					if (DIRECT_METHODS.contains(signature)) {

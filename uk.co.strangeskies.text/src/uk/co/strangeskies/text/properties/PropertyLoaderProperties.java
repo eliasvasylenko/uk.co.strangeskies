@@ -57,7 +57,7 @@ public interface PropertyLoaderProperties {
 	 *          the accessor to localize
 	 * @return the accessor class must be an interface
 	 */
-	Localized<String> mustBeInterface(Class<?> accessor);
+	String mustBeInterface(Class<?> accessor);
 
 	/**
 	 * Load the property with the key {@code property.loader.illegal.return.type}.
@@ -68,11 +68,11 @@ public interface PropertyLoaderProperties {
 	 *          the key for the value with the illegal type
 	 * @return the method must return the expected type
 	 */
-	default Localized<String> propertyValueTypeNotSupported(AnnotatedType type, String key) {
+	default String propertyValueTypeNotSupported(AnnotatedType type, String key) {
 		return propertyValueTypeNotSupported(type.getType().getTypeName(), key);
 	}
 
-	Localized<String> propertyValueTypeNotSupported(String typeName, String key);
+	String propertyValueTypeNotSupported(String typeName, String key);
 
 	/**
 	 * Load the property with the key
@@ -82,7 +82,7 @@ public interface PropertyLoaderProperties {
 	 *          the method to find a translation for
 	 * @return no translation for the given method
 	 */
-	Localized<String> translationNotFoundMessage(String key);
+	String translationNotFoundMessage(String key);
 
 	/**
 	 * Load the property with the key {@code property.loader.locale.changed}.
@@ -93,7 +93,7 @@ public interface PropertyLoaderProperties {
 	 *          the new locale
 	 * @return locale has been changed for manager
 	 */
-	Localized<String> localeChanged(LocaleProvider manager, Locale locale);
+	String localeChanged(LocaleProvider manager, Locale locale);
 
 	/**
 	 * Load the property with the key
@@ -103,5 +103,5 @@ public interface PropertyLoaderProperties {
 	 *          the requested strategy
 	 * @return cannot get an instance of the given resource strategy
 	 */
-	Localized<String> cannotInstantiateStrategy(Class<? extends PropertyResourceStrategy<?>> strategy);
+	String cannotInstantiateStrategy(Class<? extends PropertyResourceStrategy<?>> strategy);
 }

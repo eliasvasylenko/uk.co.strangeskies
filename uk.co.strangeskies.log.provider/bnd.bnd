@@ -1,0 +1,9 @@
+Bundle-Name: Strange Skies :: OSGi Utilities :: Provider
+Bundle-Description: \
+	Logging utilities for OSGi systems.
+
+-buildpath: \
+	uk.co.strangeskies.utilities;version=snapshot
+
+Private-Package: \
+	uk.co.strangeskies.log.provider

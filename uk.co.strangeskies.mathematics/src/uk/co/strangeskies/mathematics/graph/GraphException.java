@@ -32,27 +32,14 @@
  */
 package uk.co.strangeskies.mathematics.graph;
 
-import static uk.co.strangeskies.text.properties.PropertyLoader.getDefaultProperties;
+public class GraphException extends RuntimeException {
+	private static final long serialVersionUID = 1L;
 
-import java.util.function.Function;
-
-import uk.co.strangeskies.text.properties.Localized;
-import uk.co.strangeskies.text.properties.LocalizedRuntimeException;
-
-public class GraphException extends LocalizedRuntimeException {
-	public GraphException(Localized<String> message) {
+	public GraphException(String message) {
 		super(message);
 	}
 
-	public GraphException(Localized<String> message, Throwable cause) {
+	public GraphException(String message, Throwable cause) {
 		super(message, cause);
-	}
-
-	public GraphException(Function<GraphProperties, Localized<String>> message) {
-		this(message.apply(getDefaultProperties(GraphProperties.class)));
-	}
-
-	public GraphException(Function<GraphProperties, Localized<String>> message, Throwable cause) {
-		this(message.apply(getDefaultProperties(GraphProperties.class)), cause);
 	}
 }

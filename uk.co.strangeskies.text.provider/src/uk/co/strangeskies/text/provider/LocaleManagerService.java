@@ -30,7 +30,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.osgi.text;
+package uk.co.strangeskies.text.provider;
 
 import java.io.IOException;
 import java.util.Dictionary;
@@ -45,7 +45,6 @@ import org.osgi.service.component.annotations.Reference;
 
 import uk.co.strangeskies.observable.Observable;
 import uk.co.strangeskies.observable.Observer;
-import uk.co.strangeskies.osgi.LocaleManagerServiceConstants;
 import uk.co.strangeskies.text.properties.LocaleManager;
 import uk.co.strangeskies.text.properties.LocaleProvider;
 

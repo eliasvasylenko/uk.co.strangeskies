@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.mathematics.graph.impl;
 
+import static uk.co.strangeskies.text.properties.PropertyLoader.getDefaultProperties;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -53,6 +55,8 @@ import uk.co.strangeskies.mathematics.graph.GraphListeners;
 import uk.co.strangeskies.mathematics.graph.GraphProperties;
 
 public class GraphConfiguratorImpl<V, E> implements GraphConfigurator<V, E> {
+	private final GraphProperties text;
+
 	private List<V> vertices;
 	private boolean unmodifiableVertices;
 	private BiPredicate<? super V, ? super V> vertexEquality;
@@ -75,11 +79,12 @@ public class GraphConfiguratorImpl<V, E> implements GraphConfigurator<V, E> {
 
 	public GraphConfiguratorImpl() {
 		internalListeners = new GraphListenersImpl<>();
+		text = getDefaultProperties(GraphProperties.class);
 	}
 
 	private void assertConfigurable(Object reference, Function<GraphProperties, Object> property) {
 		if (reference != null)
-			throw new GraphException(t -> t.alreadyConfigured(property));
+			throw new GraphException(text.alreadyConfigured(property));
 	}
 
 	protected static GraphConfigurator<Object, Object> configure() {
