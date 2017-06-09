@@ -7,9 +7,8 @@ Export-Package: \
 
 Bundle-Name: Strange Skies :: Collections
 Bundle-Description: \
-	Common Java utilities for Strange Skies projects, including generic \
-	pseudo-enums, fast, in-memory caches, tuples, functional helpers, \
-	and more.
+	Common utilities to extend and facilitate use of the Java\
+	collections framework and related classes.
 
 -buildpath: \
 	uk.co.strangeskies.utilities;version=snapshot

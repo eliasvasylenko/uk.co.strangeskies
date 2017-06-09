@@ -1,12 +1,9 @@
 Export-Package: \
-	uk.co.strangeskies.observable,\
-	uk.co.strangeskies.observable.collection
+	uk.co.strangeskies.observable
 
 Bundle-Name: Strange Skies :: Observable
 Bundle-Description: \
-	Common Java utilities for Strange Skies projects, including generic \
-	pseudo-enums, fast, in-memory caches, tuples, functional helpers, \
-	and more.
+	A small set of classes and interfaces for supporting the observer pattern.
 
 -buildpath: \
 	uk.co.strangeskies.utilities;version=snapshot

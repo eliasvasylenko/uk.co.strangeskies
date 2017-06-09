@@ -15,9 +15,7 @@ Bundle-Name: Strange Skies :: Utilities :: Eclipse
 	org.eclipse.osgi.compatibility.state
 
 Bundle-Description: \
-	Common Java utilities for Strange Skies projects, including generic \
-	pseudo-enums, fast, in-memory caches, tuples, functional helpers, \
-	and more.
+	Classes for working with Eclipse RCP and IDE projects with JavaFX.
 
 Export-Package: \
 	uk.co.strangeskies.eclipse
