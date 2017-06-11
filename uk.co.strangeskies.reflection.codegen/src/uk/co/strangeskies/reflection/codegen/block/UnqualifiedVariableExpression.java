@@ -32,34 +32,22 @@
  */
 package uk.co.strangeskies.reflection.codegen.block;
 
-import uk.co.strangeskies.reflection.token.FieldToken;
+import uk.co.strangeskies.reflection.token.VariableMatcher;
 
-/**
- * An expression denoting assignment to a {@link VariableExpression}.
- * 
- * @author Elias N Vasylenko
- *
- * @param <T>
- *          the type of the variable to assign to
- */
-public class FieldAssignmentExpression<O, T> implements ValueExpression<T> {
-	private final ValueExpression<? extends O> target;
-	private final FieldToken<O, T> field;
-	private final ValueExpression<? extends T> value;
+class UnqualifiedVariableExpression<T> implements VariableExpression<T> {
+  private final VariableMatcher<?, T> variable;
 
-	protected FieldAssignmentExpression(
-			ValueExpression<? extends O> target,
-			FieldToken<O, T> field,
-			ValueExpression<? extends T> value) {
-		this.target = target;
-		this.field = field;
-		this.value = value;
-	}
+  public UnqualifiedVariableExpression(VariableMatcher<?, T> variable) {
+    this.variable = variable;
+  }
 
-	@Override
-	public void evaluate(Scope scope) {
-		target.evaluate(scope);
-		value.evaluate(scope);
-		scope.instructions().visitFieldAssignment(field.getMember());
-	}
+  @Override
+  public void evaluate(Scope scope) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public ValueExpression<T> assign(ValueExpression<? extends T> value) {
+    throw new UnsupportedOperationException();
+  }
 }

@@ -36,24 +36,20 @@ import java.util.List;
 
 import uk.co.strangeskies.reflection.token.MethodMatcher;
 
-class InvocationExpression<O, T> implements ValueExpression<T> {
-	private final ValueExpression<? extends O> receiver;
-	private final MethodMatcher<O, T> invocable;
-	private final List<ValueExpression<?>> arguments;
+class UnqualifiedInvocationExpression<O, T> implements ValueExpression<T> {
+  private final MethodMatcher<O, T> invocable;
+  private final List<ValueExpression<?>> arguments;
 
-	protected InvocationExpression(
-			ValueExpression<? extends O> receiver,
-			MethodMatcher<O, T> invocable,
-			List<ValueExpression<?>> arguments) {
-		this.receiver = receiver;
-		this.invocable = invocable;
-		this.arguments = arguments;
-	}
+  protected UnqualifiedInvocationExpression(
+      MethodMatcher<O, T> invocable,
+      List<ValueExpression<?>> arguments) {
+    this.invocable = invocable;
+    this.arguments = arguments;
+  }
 
-	@Override
-	public void evaluate(Scope scope) {
-		receiver.evaluate(scope);
-		arguments.forEach(a -> a.evaluate(scope));
-		scope.instructions().visitMethod(scope.resolve(invocable));
-	}
+  @Override
+  public void evaluate(Scope scope) {
+    arguments.forEach(a -> a.evaluate(scope));
+    scope.instructions().visitMethod(scope.resolve(invocable, arguments.size()));
+  }
 }

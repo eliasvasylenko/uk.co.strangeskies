@@ -32,17 +32,24 @@
  */
 package uk.co.strangeskies.reflection.codegen.block;
 
-import uk.co.strangeskies.reflection.codegen.block.InstructionVisitor.ValueExpressionVisitor;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class CastValueExpression<T> implements ValueExpression<T> {
-	public CastValueExpression(TypeToken<T> token, ValueExpression<?> value) {
-		// TODO Auto-generated constructor stub
-	}
+  private final TypeToken<T> type;
+  private final ValueExpression<?> value;
 
-	@Override
-	public void accept(ValueExpressionVisitor<T> visitor) {
-		// TODO Auto-generated method stub
+  public CastValueExpression(TypeToken<T> type, ValueExpression<?> value) {
+    this.type = type;
+    this.value = value;
+  }
 
-	}
+  @Override
+  public void evaluate(Scope scope) {
+    value.evaluate(scope);
+    if (!type.isCastableFrom(scope.popType())) {
+      throw new ClassCastException();
+    }
+    scope.pushType(this.type);
+    scope.instructions().visitCast(type.getErasedType());
+  }
 }

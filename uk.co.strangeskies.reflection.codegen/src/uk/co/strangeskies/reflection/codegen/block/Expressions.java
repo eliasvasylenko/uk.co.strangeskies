@@ -45,125 +45,119 @@ import uk.co.strangeskies.reflection.token.MethodMatcher;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class Expressions {
-	@SuppressWarnings("unchecked")
-	private static final ExecutableToken<Void, TypeToken<?>> FOR_TYPE_METHOD = (ExecutableToken<Void, TypeToken<?>>) staticMethods(
-			TypeToken.class).filter(allMethods().named("forType")).collect(resolveOverload(Type.class));
+  @SuppressWarnings("unchecked")
+  private static final ExecutableToken<Void, TypeToken<?>> FOR_TYPE_METHOD = (ExecutableToken<Void, TypeToken<?>>) staticMethods(
+      TypeToken.class).filter(allMethods().named("forType")).collect(resolveOverload(Type.class));
 
-	private Expressions() {}
+  private Expressions() {}
 
-	public static <T> ValueExpression<T> nullLiteral() {
-		return scope -> scope.instructions().visitNull();
-	}
+  public static <T> ValueExpression<T> nullLiteral() {
+    return scope -> scope.instructions().visitNull();
+  }
 
-	@SuppressWarnings("unchecked")
-	private static <T> ValueExpression<T> literalImpl(T value) {
-		return scope -> scope.instructions().visitLiteral(value);
-	}
+  private static <T> ValueExpression<T> literalImpl(T value) {
+    return scope -> scope.instructions().visitLiteral(value);
+  }
 
-	public static ValueExpression<?> tryLiteral(Object object) {
-		if (object instanceof String
-				|| object instanceof Integer
-				|| object instanceof Float
-				|| object instanceof Long
-				|| object instanceof Double
-				|| object instanceof Byte
-				|| object instanceof Character
-				|| object instanceof Class<?>) {
-			return literalImpl(object);
-		}
-		throw new IllegalArgumentException();
-	}
+  public static ValueExpression<?> tryLiteral(Object object) {
+    if (object instanceof String || object instanceof Integer || object instanceof Float
+        || object instanceof Long || object instanceof Double || object instanceof Byte
+        || object instanceof Character || object instanceof Class<?>) {
+      return literalImpl(object);
+    }
+    throw new IllegalArgumentException();
+  }
 
-	public static ValueExpression<String> literal(String value) {
-		return literalImpl(value);
-	}
+  public static ValueExpression<String> literal(String value) {
+    return literalImpl(value);
+  }
 
-	public static ValueExpression<Integer> literal(int value) {
-		return literalImpl(value);
-	}
+  public static ValueExpression<Integer> literal(int value) {
+    return literalImpl(value);
+  }
 
-	public static ValueExpression<Float> literal(float value) {
-		return literalImpl(value);
-	}
+  public static ValueExpression<Float> literal(float value) {
+    return literalImpl(value);
+  }
 
-	public static ValueExpression<Long> literal(long value) {
-		return literalImpl(value);
-	}
+  public static ValueExpression<Long> literal(long value) {
+    return literalImpl(value);
+  }
 
-	public static ValueExpression<Double> literal(double value) {
-		return literalImpl(value);
-	}
+  public static ValueExpression<Double> literal(double value) {
+    return literalImpl(value);
+  }
 
-	public static ValueExpression<Byte> literal(byte value) {
-		return literalImpl(value);
-	}
+  public static ValueExpression<Byte> literal(byte value) {
+    return literalImpl(value);
+  }
 
-	public static ValueExpression<Character> literal(char value) {
-		return literalImpl(value);
-	}
+  public static ValueExpression<Character> literal(char value) {
+    return literalImpl(value);
+  }
 
-	public static <T> ValueExpression<Class<T>> literal(Class<T> value) {
-		return literalImpl(value);
-	}
+  public static <T> ValueExpression<Class<T>> literal(Class<T> value) {
+    return literalImpl(value);
+  }
 
-	public static <T> ValueExpression<? extends TypeToken<T>> typeTokenExpression(
-			TypeToken<T> token) {
-		return new CastValueExpression<>(
-				token.getThisTypeToken(),
-				invokeStatic(
-						FOR_TYPE_METHOD,
-						new AnnotatedTypeExpression(token.getAnnotatedDeclaration())));
-	}
+  public static <T> ValueExpression<? extends TypeToken<T>> typeTokenExpression(
+      TypeToken<T> token) {
+    return new CastValueExpression<>(
+        token.getThisTypeToken(),
+        invokeStatic(
+            FOR_TYPE_METHOD,
+            new AnnotatedTypeExpression(token.getAnnotatedDeclaration())));
+  }
 
-	/**
-	 * @see #invokeStatic(MethodMatcher, List)
-	 */
-	@SuppressWarnings("javadoc")
-	public static <T> InvocationExpression<Void, T> invokeStatic(
-			MethodMatcher<Void, T> executable,
-			ValueExpression<?>... arguments) {
-		return invokeStatic(executable, asList(arguments));
-	}
+  /**
+   * @see #invoke(MethodMatcher, List)
+   */
+  @SuppressWarnings("javadoc")
+  public static <T> ValueExpression<T> invoke(
+      MethodMatcher<Void, T> executable,
+      ValueExpression<?>... arguments) {
+    return invoke(executable, asList(arguments));
+  }
 
-	/**
-	 * @param <T>
-	 *          the type of the result of the execution
-	 * @param executable
-	 *          the executable to be invoked
-	 * @param arguments
-	 *          the expressions of the arguments of the invocation
-	 * @return an expression describing the invocation of the given static
-	 *         executable with the given argument expressions
-	 */
-	public static <T> InvocationExpression<Void, T> invokeStatic(
-			MethodMatcher<Void, T> executable,
-			List<ValueExpression<?>> arguments) {
-		return new InvocationExpression<>(nullLiteral(), executable, arguments);
-	}
+  /**
+   * @param <T>
+   *          the type of the result of the execution
+   * @param executable
+   *          the executable to be invoked
+   * @param arguments
+   *          the expressions of the arguments of the invocation
+   * @return an expression describing the invocation of the given static
+   *         executable with the given argument expressions
+   */
+  public static <T> ValueExpression<T> invoke(
+      MethodMatcher<Void, T> executable,
+      List<ValueExpression<?>> arguments) {
+    return new UnqualifiedInvocationExpression<>(executable, arguments);
+  }
 
-	/**
-	 * @see #invokeStatic(MethodMatcher, List)
-	 */
-	@SuppressWarnings("javadoc")
-	public static <T> InvocationExpression<Void, T> invokeStatic(
-			ExecutableToken<Void, T> executable,
-			ValueExpression<?>... arguments) {
-		return invokeStatic(executable, asList(arguments));
-	}
+  /**
+   * @see #invoke(MethodMatcher, List)
+   */
+  @SuppressWarnings("javadoc")
+  public static <T> ValueExpression<T> invokeStatic(
+      ExecutableToken<Void, T> executable,
+      ValueExpression<?>... arguments) {
+    return invokeStatic(executable, asList(arguments));
+  }
 
-	/**
-	 * @param <T>
-	 *          the type of the result of the execution
-	 * @param executable
-	 *          the executable to be invoked
-	 * @param arguments
-	 *          the expressions of the arguments of the invocation
-	 * @return an expression describing the invocation of the given static
-	 *         executable with the given argument expressions
-	 */
-	public static <T> InvocationExpression<Void, T> invokeStatic(
-			ExecutableToken<Void, T> executable,
-			List<ValueExpression<?>> arguments) {
-		return new InvocationExpression<>(nullLiteral(), executable, arguments);
-	}
+  /**
+   * @param <T>
+   *          the type of the result of the execution
+   * @param executable
+   *          the executable to be invoked
+   * @param arguments
+   *          the expressions of the arguments of the invocation
+   * @return an expression describing the invocation of the given static
+   *         executable with the given argument expressions
+   */
+  public static <T> ValueExpression<T> invokeStatic(
+      ExecutableToken<Void, T> executable,
+      List<ValueExpression<?>> arguments) {
+    return new StaticMethodExpression<>(executable, arguments);
+  }
 }

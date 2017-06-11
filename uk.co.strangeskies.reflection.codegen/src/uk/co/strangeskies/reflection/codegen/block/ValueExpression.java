@@ -32,30 +32,45 @@
  */
 package uk.co.strangeskies.reflection.codegen.block;
 
-import java.util.Arrays;
+import static java.util.Arrays.asList;
+
 import java.util.List;
 
+import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.FieldToken;
 import uk.co.strangeskies.reflection.token.MethodMatcher;
+import uk.co.strangeskies.reflection.token.VariableMatcher;
 
 public interface ValueExpression<T> extends Expression {
-	default <R> FieldExpression<? super T, R> accessField(FieldToken<? super T, R> field) {
-		return new FieldExpression<>(this, field);
-	}
+  default <R> VariableExpression<R> getField(FieldToken<? super T, R> field) {
+    return new FieldExpression<>(this, field);
+  }
 
-	default FieldExpression<? super T, ?> accessResolvedField(String fieldName) {
-		return null; // TODO
-	}
+  default <R> VariableExpression<R> getField(VariableMatcher<? super T, R> field) {
+    return new QualifiedVariableExpression<>(this, field);
+  }
 
-	default <R> InvocationExpression<? super T, R> invokeMethod(
-			MethodMatcher<? super T, R> invocable,
-			ValueExpression<?>... arguments) {
-		return invokeMethod(invocable, Arrays.asList(arguments));
-	}
+  default <R> ValueExpression<R> invoke(
+      ExecutableToken<? super T, R> invocable,
+      ValueExpression<?>... arguments) {
+    return invoke(invocable, asList(arguments));
+  }
 
-	default <R> InvocationExpression<? super T, R> invokeMethod(
-			MethodMatcher<? super T, R> invocable,
-			List<ValueExpression<?>> arguments) {
-		return new InvocationExpression<>(this, invocable, arguments);
-	}
+  default <R> ValueExpression<R> invoke(
+      ExecutableToken<? super T, R> invocable,
+      List<ValueExpression<?>> arguments) {
+    return new MethodExpression<>(this, invocable, arguments);
+  }
+
+  default <R> ValueExpression<R> invoke(
+      MethodMatcher<? super T, R> invocable,
+      ValueExpression<?>... arguments) {
+    return invoke(invocable, asList(arguments));
+  }
+
+  default <R> ValueExpression<R> invoke(
+      MethodMatcher<? super T, R> invocable,
+      List<ValueExpression<?>> arguments) {
+    return new QualifiedInvocationExpression<>(this, invocable, arguments);
+  }
 }

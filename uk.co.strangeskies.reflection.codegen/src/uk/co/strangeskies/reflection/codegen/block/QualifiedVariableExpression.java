@@ -32,18 +32,31 @@
  */
 package uk.co.strangeskies.reflection.codegen.block;
 
-import static uk.co.strangeskies.reflection.token.VariableMatcher.allVariables;
-
 import uk.co.strangeskies.reflection.token.VariableMatcher;
 
-public interface VariableExpression<T> extends ValueExpression<T> {
-  ValueExpression<T> assign(ValueExpression<? extends T> value);
+class QualifiedVariableExpression<O, T> implements VariableExpression<T> {
+  private final ValueExpression<? extends O> target;
+  private final VariableMatcher<O, T> variable;
 
-  static VariableExpression<Object> resolveVariable(String name) {
-    return resolveVariable(allVariables().named(name));
+  protected QualifiedVariableExpression(
+      ValueExpression<? extends O> target,
+      VariableMatcher<O, T> variable) {
+    this.target = target;
+    this.variable = variable;
   }
 
-  static <T> VariableExpression<T> resolveVariable(VariableMatcher<?, T> matcher) {
-    return new UnqualifiedVariableExpression<>(matcher);
+  @Override
+  public void evaluate(Scope scope) {
+    target.evaluate(scope);
+    scope.instructions().visitField(scope.resolveQualified(variable));
+  }
+
+  @Override
+  public ValueExpression<T> assign(ValueExpression<? extends T> value) {
+    return scope -> {
+      target.evaluate(scope);
+      value.evaluate(scope);
+      scope.instructions().visitFieldAssignment(scope.resolveQualified(variable));
+    };
   }
 }

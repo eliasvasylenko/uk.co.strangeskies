@@ -33,29 +33,32 @@
 package uk.co.strangeskies.reflection.codegen.block;
 
 import uk.co.strangeskies.reflection.token.FieldToken;
-import uk.co.strangeskies.reflection.token.TypeToken;
 
-public class FieldExpression<O, T> implements VariableExpression<T> {
-	private final ValueExpression<? extends O> target;
-	private final FieldToken<O, T> field;
+class FieldExpression<O, T> implements VariableExpression<T> {
+  private final ValueExpression<? extends O> target;
+  private final FieldToken<O, T> field;
 
-	protected FieldExpression(ValueExpression<? extends O> target, FieldToken<O, T> field) {
-		this.target = target;
-		this.field = field;
-	}
+  protected FieldExpression(ValueExpression<? extends O> target, FieldToken<O, T> field) {
+    this.target = target;
+    this.field = field;
+  }
 
-	public TypeToken<T> getType() {
-		return field.getFieldType();
-	}
+  public FieldToken<O, T> getField() {
+    return field;
+  }
 
-	@Override
-	public void evaluate(Scope scope) {
-		target.evaluate(scope);
-		scope.instructions().visitField(field.getMember());
-	}
+  @Override
+  public void evaluate(Scope scope) {
+    target.evaluate(scope);
+    scope.instructions().visitField(field.getMember());
+  }
 
-	@Override
-	public ValueExpression<T> assign(ValueExpression<? extends T> value) {
-		return new FieldAssignmentExpression<>(target, field, value);
-	}
+  @Override
+  public ValueExpression<T> assign(ValueExpression<? extends T> value) {
+    return scope -> {
+      target.evaluate(scope);
+      value.evaluate(scope);
+      scope.instructions().visitFieldAssignment(field.getMember());
+    };
+  }
 }

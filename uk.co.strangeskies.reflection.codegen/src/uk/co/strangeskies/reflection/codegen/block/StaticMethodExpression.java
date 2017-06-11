@@ -32,18 +32,30 @@
  */
 package uk.co.strangeskies.reflection.codegen.block;
 
-import static uk.co.strangeskies.reflection.token.VariableMatcher.allVariables;
+import java.lang.reflect.Method;
+import java.util.List;
 
-import uk.co.strangeskies.reflection.token.VariableMatcher;
+import uk.co.strangeskies.reflection.token.ExecutableToken;
 
-public interface VariableExpression<T> extends ValueExpression<T> {
-  ValueExpression<T> assign(ValueExpression<? extends T> value);
+public class StaticMethodExpression<T> implements ValueExpression<T> {
+  private final ExecutableToken<Void, T> method;
+  private final List<ValueExpression<?>> arguments;
 
-  static VariableExpression<Object> resolveVariable(String name) {
-    return resolveVariable(allVariables().named(name));
+  protected StaticMethodExpression(
+      ExecutableToken<Void, T> method,
+      List<ValueExpression<?>> arguments) {
+    this.method = method;
+    this.arguments = arguments;
   }
 
-  static <T> VariableExpression<T> resolveVariable(VariableMatcher<?, T> matcher) {
-    return new UnqualifiedVariableExpression<>(matcher);
+  public ExecutableToken<Void, T> getMethod() {
+    return method;
+  }
+
+  @Override
+  public void evaluate(Scope scope) {
+    // TODO do array creation in case of varargs
+    arguments.forEach(a -> a.evaluate(scope));
+    scope.instructions().visitStaticMethod((Method) method.getMember());
   }
 }

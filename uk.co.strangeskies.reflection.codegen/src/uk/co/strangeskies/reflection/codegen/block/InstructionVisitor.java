@@ -36,25 +36,29 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 public interface InstructionVisitor {
-	void visitFieldAssignment(Field field);
+  void visitFieldAssignment(Field field);
 
-	void visitField(Field field);
+  void visitField(Field field);
 
-	void visitLiteral(Object value);
+  void visitLiteral(Object value);
 
-	void visitNull();
+  void visitNull();
 
-	void visitReceiver(Class<?> receivingClass);
+  void visitReceiver(Class<?> receivingClass);
 
-	void visitMethod(Method method);
+  void visitMethod(Method method);
 
-	void visitStaticField(Field field);
+  void visitStaticMethod(Method member);
 
-	void visitField(Instruction value, Field field);
+  void visitStaticField(Field field);
 
-	void visitReturn();
+  void visitField(Instruction value, Field field);
 
-	void visitReturn(Instruction expression);
+  void visitReturn();
 
-	void visitExpression(Instruction expression);
+  void visitReturn(Instruction expression);
+
+  void visitExpression(Instruction expression);
+
+  void visitCast(Class<?> erasedType);
 }

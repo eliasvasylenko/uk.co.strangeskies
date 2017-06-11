@@ -32,17 +32,31 @@
  */
 package uk.co.strangeskies.reflection.codegen.block;
 
-import uk.co.strangeskies.reflection.token.VariableMatcher;
+import java.lang.reflect.Method;
+import java.util.List;
 
-class MatchedVariableExpression<T> implements VariableExpression<T> {
-	private final VariableMatcher<?, T> matcher;
+import uk.co.strangeskies.reflection.token.MethodMatcher;
 
-	public MatchedVariableExpression(VariableMatcher<?, T> matcher) {
-		this.matcher = matcher;
-	}
+class QualifiedInvocationExpression<O, T> implements ValueExpression<T> {
+  private final ValueExpression<? extends O> receiver;
+  private final MethodMatcher<O, T> invocable;
+  private final List<ValueExpression<?>> arguments;
 
-	@Override
-	public void evaluate(Scope scope) {
-		throw new UnsupportedOperationException();
-	}
+  protected QualifiedInvocationExpression(
+      ValueExpression<? extends O> receiver,
+      MethodMatcher<O, T> invocable,
+      List<ValueExpression<?>> arguments) {
+    this.receiver = receiver;
+    this.invocable = invocable;
+    this.arguments = arguments;
+  }
+
+  @Override
+  public void evaluate(Scope scope) {
+    receiver.evaluate(scope);
+    arguments.forEach(a -> a.evaluate(scope));
+    Method resolved = scope.resolveQualified(invocable, arguments.size());
+    // TODO do array creation in case of varargs
+    scope.instructions().visitMethod(resolved);
+  }
 }

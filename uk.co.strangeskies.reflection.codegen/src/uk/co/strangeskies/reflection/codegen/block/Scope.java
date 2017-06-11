@@ -37,14 +37,15 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 
 import uk.co.strangeskies.reflection.token.MethodMatcher;
+import uk.co.strangeskies.reflection.token.TypeToken;
 import uk.co.strangeskies.reflection.token.VariableMatcher;
 
 public interface Scope {
   InstructionVisitor instructions();
 
-  Method resolve(MethodMatcher<?, ?> matcher);
+  Method resolve(MethodMatcher<?, ?> matcher, int arguments);
 
-  Method resolveQualified(MethodMatcher<?, ?> matcher);
+  Method resolveQualified(MethodMatcher<?, ?> matcher, int arguments);
 
   Field resolve(VariableMatcher<?, ?> matcher);
 
@@ -53,4 +54,8 @@ public interface Scope {
   Local resolveLocal(VariableMatcher<?, ?> matcher);
 
   Parameter resolveParameter(VariableMatcher<?, ?> matcher);
+
+  TypeToken<?> popType();
+
+  void pushType(TypeToken<?> type);
 }
