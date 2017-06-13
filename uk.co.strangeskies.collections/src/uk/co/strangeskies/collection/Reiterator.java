@@ -49,120 +49,122 @@ import java.util.stream.StreamSupport;
  * @author Elias N Vasylenko
  *
  * @param <T>
- *          The type of event message to consume
+ *          the type of event message to consume
+ * @param <R>
+ *          the type of event message to produce
  */
 public interface Reiterator<T, R> extends Consumer<T>, Supplier<R>, Iterable<R> {
-	static <T> Reiterator<T, T> queueReiterator() {
-		return new Reiterator<T, T>() {
-			private final Deque<T> queue = new ArrayDeque<>();
+  static <T> Reiterator<T, T> queueReiterator() {
+    return new Reiterator<T, T>() {
+      private final Deque<T> queue = new ArrayDeque<>();
 
-			@Override
-			public synchronized void accept(T t) {
-				queue.push(t);
-				notifyAll();
-			}
+      @Override
+      public synchronized void accept(T t) {
+        queue.push(t);
+        notifyAll();
+      }
 
-			@Override
-			public synchronized T get() {
-				try {
-					while (queue.isEmpty()) {
-						wait();
-					}
-					return queue.pop();
-				} catch (InterruptedException e) {
-					throw new RuntimeException(e);
-				}
-			}
-		};
-	}
+      @Override
+      public synchronized T get() {
+        try {
+          while (queue.isEmpty()) {
+            wait();
+          }
+          return queue.pop();
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    };
+  }
 
-	static <T> Reiterator<T, T> latestReiterator() {
-		return new Reiterator<T, T>() {
-			private T latest;
+  static <T> Reiterator<T, T> latestReiterator() {
+    return new Reiterator<T, T>() {
+      private T latest;
 
-			@Override
-			public synchronized void accept(T t) {
-				latest = t;
-				notifyAll();
-			}
+      @Override
+      public synchronized void accept(T t) {
+        latest = t;
+        notifyAll();
+      }
 
-			@Override
-			public synchronized T get() {
-				try {
-					while (latest == null) {
-						wait();
-					}
-					T latest = this.latest;
-					this.latest = null;
-					return latest;
-				} catch (InterruptedException e) {
-					throw new RuntimeException(e);
-				}
-			}
-		};
-	}
+      @Override
+      public synchronized T get() {
+        try {
+          while (latest == null) {
+            wait();
+          }
+          T latest = this.latest;
+          this.latest = null;
+          return latest;
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    };
+  }
 
-	static <T> Reiterator<T, Stream<T>> aggregatingReiterator() {
-		return new Reiterator<T, Stream<T>>() {
-			private List<T> aggregate;
+  static <T> Reiterator<T, Stream<T>> aggregatingReiterator() {
+    return new Reiterator<T, Stream<T>>() {
+      private List<T> aggregate;
 
-			@Override
-			public synchronized void accept(T t) {
-				aggregate.add(t);
-				notifyAll();
-			}
+      @Override
+      public synchronized void accept(T t) {
+        aggregate.add(t);
+        notifyAll();
+      }
 
-			@Override
-			public synchronized Stream<T> get() {
-				try {
-					while (aggregate.isEmpty()) {
-						wait();
-					}
-					List<T> latest = aggregate;
-					aggregate = null;
-					return latest.stream();
-				} catch (InterruptedException e) {
-					throw new RuntimeException(e);
-				}
-			}
-		};
-	}
+      @Override
+      public synchronized Stream<T> get() {
+        try {
+          while (aggregate.isEmpty()) {
+            wait();
+          }
+          List<T> latest = aggregate;
+          aggregate = null;
+          return latest.stream();
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    };
+  }
 
-	default <U> Reiterator<T, U> map(Function<R, U> map) {
-		Reiterator<T, R> source = this;
+  default <U> Reiterator<T, U> map(Function<R, U> map) {
+    Reiterator<T, R> source = this;
 
-		return new Reiterator<T, U>() {
-			@Override
-			public void accept(T t) {
-				source.accept(t);
-			}
+    return new Reiterator<T, U>() {
+      @Override
+      public void accept(T t) {
+        source.accept(t);
+      }
 
-			@Override
-			public U get() {
-				return map.apply(source.get());
-			}
-		};
-	}
+      @Override
+      public U get() {
+        return map.apply(source.get());
+      }
+    };
+  }
 
-	@Override
-	default Iterator<R> iterator() {
-		return new Iterator<R>() {
-			@Override
-			public boolean hasNext() {
-				return true;
-			}
+  @Override
+  default Iterator<R> iterator() {
+    return new Iterator<R>() {
+      @Override
+      public boolean hasNext() {
+        return true;
+      }
 
-			@Override
-			public R next() {
-				return get();
-			}
-		};
-	}
+      @Override
+      public R next() {
+        return get();
+      }
+    };
+  }
 
-	/**
-	 * @return A never-ending, blocking stream of events
-	 */
-	default Stream<R> stream() {
-		return StreamSupport.stream(spliterator(), false);
-	}
+  /**
+   * @return A never-ending, blocking stream of events
+   */
+  default Stream<R> stream() {
+    return StreamSupport.stream(spliterator(), false);
+  }
 }

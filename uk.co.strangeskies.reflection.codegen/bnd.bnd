@@ -3,7 +3,9 @@ Bundle-Name: Strange Skies :: Reflection :: Codegen
 -includeresource:\
 	res
 
-Export-Package: uk.co.strangeskies.reflection.codegen
+Export-Package: \
+	uk.co.strangeskies.reflection.codegen,\
+	uk.co.strangeskies.reflection.codegen.block
 
 -buildpath: \
 	uk.co.strangeskies.observable;version=snapshot,\
