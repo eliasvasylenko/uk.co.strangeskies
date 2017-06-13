@@ -33,7 +33,6 @@
 package uk.co.strangeskies.reflection.codegen;
 
 import static java.lang.reflect.Modifier.isAbstract;
-import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.Types.isAssignable;
@@ -43,7 +42,6 @@ import static uk.co.strangeskies.reflection.codegen.MethodSignature.overrideMeth
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;

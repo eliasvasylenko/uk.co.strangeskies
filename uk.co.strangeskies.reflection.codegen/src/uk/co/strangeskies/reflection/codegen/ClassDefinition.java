@@ -54,140 +54,146 @@ import uk.co.strangeskies.reflection.codegen.block.Block;
 import uk.co.strangeskies.reflection.token.MethodMatcher;
 
 /**
- * @author Elias N Vasylenko
+ * An immutable representation of a class.
+ * <p>
+ * Class definitions can be derived with constructor and method definitions or
+ * delegation strategies. The derived definitions will share the same signature.
  * 
+ * @author Elias N Vasylenko
+ * @param <E>
+ *          the type of the enclosing class
  * @param <T>
- *          the intersection of the supertypes of the described class
+ *          the type of the described class
  */
 public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
-	private final String typeName;
-	private final ClassRegister classSpace;
+  private final String typeName;
+  private final ClassRegister classSpace;
 
-	protected ClassDefinition(ClassDeclaration<E, T> declaration, ClassRegister classSpace) {
-		super(declaration);
+  protected ClassDefinition(ClassDeclaration<E, T> declaration, ClassRegister classSpace) {
+    super(declaration);
 
-		this.typeName = declaration.getSignature().getClassName();
-		this.classSpace = classSpace;
-	}
+    this.typeName = declaration.getSignature().getClassName();
+    this.classSpace = classSpace;
+  }
 
-	/**
-	 * @return the fully qualified class name
-	 */
-	public String getName() {
-		return typeName;
-	}
+  /**
+   * @return the fully qualified class name
+   */
+  public String getName() {
+    return typeName;
+  }
 
-	public ClassRegister getRegister() {
-		return classSpace;
-	}
+  public ClassRegister getRegister() {
+    return classSpace;
+  }
 
-	public <U> ClassDefinition<E, T> defineConstructor(
-			MethodMatcher<?, ? super U> methodMatcher,
-			Block<? extends U> methodBody) {
-		@SuppressWarnings("unchecked")
-		MethodDeclaration<T, U> methodDeclaration = getDeclaration()
-				.constructorDeclarations()
-				.filter(m -> methodMatcher.test(m.getExecutableStub()))
-				.reduce(throwingMerger())
-				.map(m -> (MethodDeclaration<T, U>) m)
-				.orElseThrow(
-						() -> new CodeGenerationException(CODEGEN_PROPERTIES.cannotFindMethodOn(null, null)));
+  public <U> ClassDefinition<E, T> defineConstructor(
+      MethodMatcher<?, ? super U> methodMatcher,
+      Block<? extends U> methodBody) {
+    @SuppressWarnings("unchecked")
+    MethodDeclaration<T, U> methodDeclaration = getDeclaration()
+        .constructorDeclarations()
+        .filter(m -> methodMatcher.test(m.getExecutableStub()))
+        .reduce(throwingMerger())
+        .map(m -> (MethodDeclaration<T, U>) m)
+        .orElseThrow(
+            () -> new CodeGenerationException(CODEGEN_PROPERTIES.cannotFindMethodOn(null, null)));
 
-		MethodDefinition<T, U> definition = new MethodDefinition<>(methodDeclaration)
-				.withBody(methodBody);
+    MethodDefinition<T, U> definition = new MethodDefinition<>(methodDeclaration)
+        .withBody(methodBody);
 
-		return new ClassDefinition<>(
-				getDeclaration(),
-				classSpace.withMethodDefinition(methodDeclaration, definition));
-	}
+    return new ClassDefinition<>(
+        getDeclaration(),
+        classSpace.withMethodDefinition(methodDeclaration, definition));
+  }
 
-	public <U> ClassDefinition<E, T> defineMethod(
-			MethodMatcher<?, ? super U> methodMatcher,
-			Block<? extends U> methodBody) {
-		@SuppressWarnings("unchecked")
-		MethodDeclaration<T, U> methodDeclaration = concat(
-				getDeclaration().methodDeclarations(),
-				getDeclaration().staticMethodDeclarations())
-						.filter(m -> methodMatcher.test(m.getExecutableStub()))
-						.reduce(throwingMerger())
-						.map(m -> (MethodDeclaration<T, U>) m)
-						.orElseThrow(
-								() -> new CodeGenerationException(
-										CODEGEN_PROPERTIES.cannotFindMethodOn(null, null)));
+  public <U> ClassDefinition<E, T> defineMethod(
+      MethodMatcher<?, ? super U> methodMatcher,
+      Block<? extends U> methodBody) {
+    @SuppressWarnings("unchecked")
+    MethodDeclaration<T, U> methodDeclaration = concat(
+        getDeclaration().methodDeclarations(),
+        getDeclaration().staticMethodDeclarations())
+            .filter(m -> methodMatcher.test(m.getExecutableStub()))
+            .reduce(throwingMerger())
+            .map(m -> (MethodDeclaration<T, U>) m)
+            .orElseThrow(
+                () -> new CodeGenerationException(
+                    CODEGEN_PROPERTIES.cannotFindMethodOn(null, null)));
 
-		MethodDefinition<T, U> definition = new MethodDefinition<>(methodDeclaration)
-				.withBody(methodBody);
+    MethodDefinition<T, U> definition = new MethodDefinition<>(methodDeclaration)
+        .withBody(methodBody);
 
-		return new ClassDefinition<>(
-				getDeclaration(),
-				classSpace.withMethodDefinition(methodDeclaration, definition));
-	}
+    return new ClassDefinition<>(
+        getDeclaration(),
+        classSpace.withMethodDefinition(methodDeclaration, definition));
+  }
 
-	/**
-	 * Derive a class definition which delegates to the given method intercepter
-	 * object.
-	 * <p>
-	 * When multiple intercepters are specified for the same class definition,
-	 * they will be attempted in the order they are given until one is found which
-	 * is able to delegate.
-	 * 
-	 * @param intercepter
-	 *          the intercepter
-	 * @return the derived class definition
-	 */
-	public <U> ClassDefinition<E, T> delegate(MethodDelegation<? super T> intercepter) {
-		throw new UnsupportedOperationException();
-	}
+  /**
+   * Derive a class definition which delegates to the given method intercepter
+   * object.
+   * <p>
+   * When multiple intercepters are specified for the same class definition, they
+   * will be attempted in the order they are given until one is found which is
+   * able to delegate.
+   * 
+   * @param intercepter
+   *          the intercepter
+   * @return the derived class definition
+   */
+  public <U> ClassDefinition<E, T> delegate(MethodDelegation<? super T> intercepter) {
+    throw new UnsupportedOperationException();
+  }
 
-	@Override
-	public String toString() {
-		return getName();
-	}
+  @Override
+  public String toString() {
+    return getName();
+  }
 
-	public byte[] writeClass() {
-		ClassReader stubClassReader = new ClassReader(getDeclaration().getStubClassBytes());
-		ClassWriter classWriter = new ClassWriter(stubClassReader, COMPUTE_MAXS | COMPUTE_FRAMES);
+  public byte[] writeClass() {
+    ClassReader stubClassReader = new ClassReader(getDeclaration().getStubClassBytes());
+    ClassWriter classWriter = new ClassWriter(stubClassReader, COMPUTE_MAXS | COMPUTE_FRAMES);
 
-		stubClassReader.accept(new ClassVisitor(ASM5, classWriter) {
-			@Override
-			public MethodVisitor visitMethod(
-					int arg0,
-					String arg1,
-					String arg2,
-					String arg3,
-					String[] arg4) {
-				MethodVisitor methodVisitor = super.visitMethod(arg0, arg1, arg2, arg3, arg4);
+    stubClassReader.accept(new ClassVisitor(ASM5, classWriter) {
+      @Override
+      public MethodVisitor visitMethod(
+          int arg0,
+          String arg1,
+          String arg2,
+          String arg3,
+          String[] arg4) {
+        MethodVisitor methodVisitor = super.visitMethod(arg0, arg1, arg2, arg3, arg4);
 
-				methodVisitor.visitCode();
-				methodVisitor.visitTypeInsn(NEW, getInternalName(UnsupportedOperationException.class));
-				methodVisitor.visitInsn(DUP);
-				try {
-					methodVisitor.visitMethodInsn(
-							INVOKESPECIAL,
-							getInternalName(UnsupportedOperationException.class),
-							"<init>",
-							Type.getConstructorDescriptor(UnsupportedOperationException.class.getConstructor()),
-							false);
-				} catch (NoSuchMethodException | SecurityException e) {
-					throw new AssertionError(e);
-				}
-				methodVisitor.visitInsn(ATHROW);
-				methodVisitor.visitMaxs(0, 0);
-				methodVisitor.visitEnd();
+        methodVisitor.visitCode();
+        methodVisitor.visitTypeInsn(NEW, getInternalName(UnsupportedOperationException.class));
+        methodVisitor.visitInsn(DUP);
+        try {
+          methodVisitor.visitMethodInsn(
+              INVOKESPECIAL,
+              getInternalName(UnsupportedOperationException.class),
+              "<init>",
+              Type.getConstructorDescriptor(UnsupportedOperationException.class.getConstructor()),
+              false);
+        } catch (NoSuchMethodException | SecurityException e) {
+          throw new AssertionError(e);
+        }
+        methodVisitor.visitInsn(ATHROW);
+        methodVisitor.visitMaxs(0, 0);
+        methodVisitor.visitEnd();
 
-				return null;
-			}
-		}, 0);
+        return null;
+      }
+    }, 0);
 
-		return classWriter.toByteArray();
-	}
+    return classWriter.toByteArray();
+  }
 
-	@SuppressWarnings("unchecked")
-	public Class<T> loadClass() {
-		try {
-			return (Class<T>) classSpace.loadClasses().loadClass(getName());
-		} catch (ClassNotFoundException e) {
-			throw new AssertionError(e);
-		}
-	}
+  @SuppressWarnings("unchecked")
+  public Class<T> loadClass() {
+    try {
+      return (Class<T>) classSpace.loadClasses().loadClass(getName());
+    } catch (ClassNotFoundException e) {
+      throw new AssertionError(e);
+    }
+  }
 }
