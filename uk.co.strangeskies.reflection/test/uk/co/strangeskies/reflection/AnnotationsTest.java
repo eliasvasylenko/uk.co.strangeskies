@@ -53,7 +53,7 @@ import uk.co.strangeskies.reflection.annotations.StringProperty;
 public class AnnotationsTest {
 	@DataPoint
 	public static AnnotationToken PLAIN = new @Plain AnnotationToken(
-			"@uk.co.strangeskies.reflection.test.annotations.Plain") {};
+			"@uk.co.strangeskies.reflection.annotations.Plain") {};
 
 	@DataPoint
 	public static AnnotationToken PLAIN_IMPORTED = new @Plain AnnotationToken(
@@ -61,7 +61,7 @@ public class AnnotationsTest {
 
 	@DataPoint
 	public static AnnotationToken CLASS_PROPERTY = new @ClassProperty(property = Object.class) AnnotationToken(
-			"@uk.co.strangeskies.reflection.test.annotations.ClassProperty(property = java.lang.Object.class)") {};
+			"@uk.co.strangeskies.reflection.annotations.ClassProperty(property = java.lang.Object.class)") {};
 
 	@DataPoint
 	public static AnnotationToken CLASS_PROPERTY_IMPORTED = new @ClassProperty(property = Object.class) AnnotationToken(
@@ -70,7 +70,7 @@ public class AnnotationsTest {
 
 	@DataPoint
 	public static AnnotationToken STRING_PROPERTY = new @StringProperty(property = "string") AnnotationToken(
-			"@uk.co.strangeskies.reflection.test.annotations.StringProperty(property = \"string\")") {};
+			"@uk.co.strangeskies.reflection.annotations.StringProperty(property = \"string\")") {};
 
 	@DataPoint
 	public static AnnotationToken STRING_PROPERTY_IMPORTED = new @StringProperty(property = "string") AnnotationToken(

@@ -795,7 +795,7 @@ public class TypeTokenTest {
 
 		printlines(
 				TypeToken
-						.fromString("uk.co.strangeskies.reflection.token.test.SchemaNode<?, ?>")
+						.fromString("uk.co.strangeskies.reflection.token.SchemaNode<?, ?>")
 						.getAnnotatedDeclaration());
 		printlines();
 
