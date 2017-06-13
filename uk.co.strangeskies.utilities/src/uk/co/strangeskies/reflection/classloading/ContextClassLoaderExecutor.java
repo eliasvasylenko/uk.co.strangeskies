@@ -32,59 +32,53 @@
  */
 package uk.co.strangeskies.reflection.classloading;
 
-import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.net.URLClassLoader;
 import java.util.Collection;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Vector;
+import java.util.concurrent.Executor;
+import java.util.function.Function;
 
-public class DelegatingClassLoader extends ClassLoader {
-	private List<ClassLoader> delegateClassLoaders;
+/**
+ * Utilities for safely running code under a different thread context class
+ * loader.
+ * 
+ * @author Elias N Vasylenko
+ */
+public class ContextClassLoaderExecutor implements Executor {
+	private final Executor executor;
+	private final Function<ClassLoader, ClassLoader> classLoaderTransformation;
 
-	public DelegatingClassLoader(ClassLoader parent, ClassLoader... delegateClassLoaders) {
-		this(parent, Arrays.asList(delegateClassLoaders));
+	public ContextClassLoaderExecutor(
+			Executor executor,
+			Function<ClassLoader, ClassLoader> classLoaderTransformation) {
+		this.executor = executor;
+		this.classLoaderTransformation = classLoaderTransformation;
 	}
 
-	public DelegatingClassLoader(ClassLoader parent, Collection<? extends ClassLoader> delegateClassLoaders) {
-		super(parent);
-		this.delegateClassLoaders = new ArrayList<>(delegateClassLoaders);
+	public ContextClassLoaderExecutor(Executor executor, ClassLoader classLoader) {
+		this(executor, c -> classLoader);
+	}
+
+	public ContextClassLoaderExecutor(Executor executor, URL... jars) {
+		this(executor, c -> new URLClassLoader(jars, c));
+	}
+
+	public ContextClassLoaderExecutor(Executor executor, Collection<URL> jars) {
+		this(executor, jars.toArray(new URL[jars.size()]));
 	}
 
 	@Override
-	protected Class<?> findClass(String name) throws ClassNotFoundException {
-		for (ClassLoader loader : delegateClassLoaders) {
+	public void execute(Runnable command) {
+		executor.execute(() -> {
+			ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
+			Thread.currentThread().setContextClassLoader(
+					classLoaderTransformation.apply(originalClassLoader));
+
 			try {
-				return loader.loadClass(name);
-			} catch (ClassNotFoundException e) {}
-		}
-		throw new ClassNotFoundException(
-				"Class '" + name + "' not found in any classloader '" + getParent() + "' or '" + delegateClassLoaders + "'");
-	}
-
-	@Override
-	protected URL findResource(String name) {
-		for (ClassLoader delegate : delegateClassLoaders) {
-			URL resource = delegate.getResource(name);
-			if (resource != null)
-				return resource;
-		}
-		return null;
-	}
-
-	@Override
-	protected Enumeration<URL> findResources(String name) throws IOException {
-		Vector<URL> vector = new Vector<>();
-
-		for (ClassLoader delegate : delegateClassLoaders) {
-			Enumeration<URL> enumeration = delegate.getResources(name);
-			while (enumeration.hasMoreElements()) {
-				vector.add(enumeration.nextElement());
+				command.run();
+			} finally {
+				Thread.currentThread().setContextClassLoader(originalClassLoader);
 			}
-		}
-
-		return vector.elements();
+		});
 	}
 }
