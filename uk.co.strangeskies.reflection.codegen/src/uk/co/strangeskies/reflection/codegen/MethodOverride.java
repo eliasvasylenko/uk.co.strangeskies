@@ -162,8 +162,8 @@ class MethodOverride<T> {
   }
 
   public void overrideIfNecessary() {
-    boolean classMethodMustBeOverridden = classMethod == null
-        || isAbstract(classMethod.getModifiers());
+    boolean classMethodMustBeOverridden = classMethod != null
+        && isAbstract(classMethod.getModifiers());
     boolean interfaceMethodsMustBeOverridden = classMethod == null
         && interfaceMethods.stream().allMatch(i -> !i.isDefault());
 

@@ -43,148 +43,142 @@ import static uk.co.strangeskies.reflection.token.MethodMatcher.allMethods;
 import static uk.co.strangeskies.reflection.token.VariableMatcher.allVariables;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.co.strangeskies.reflection.ReflectionException;
-import uk.co.strangeskies.reflection.codegen.ByteArrayClassLoader;
-import uk.co.strangeskies.reflection.codegen.ClassDefinition;
-import uk.co.strangeskies.reflection.codegen.ClassRegister;
-import uk.co.strangeskies.reflection.codegen.ClassSignature;
 import uk.co.strangeskies.reflection.codegen.block.Block;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
-@Ignore
 @SuppressWarnings("javadoc")
 public class ClassDefinitionTest {
-	public interface Func<A, B> {
-		B apply(A value);
-	}
+  public interface Func<A, B> {
+    B apply(A value);
+  }
 
-	public interface Default {
-		default void method() {}
-	}
+  public interface Default {
+    default void method() {}
+  }
 
-	public static final ClassSignature<?> TEST_CLASS_SIGNATURE = classSignature()
-			.packageName(ClassDeclarationTest.class.getPackage().getName())
-			.simpleName("SelfSet")
-			.withVisibility(PUBLIC)
-			.constructor(constructorSignature().withVisibility(PUBLIC));
+  public static final ClassSignature<?> TEST_CLASS_SIGNATURE = classSignature()
+      .packageName(ClassDeclarationTest.class.getPackage().getName())
+      .simpleName("SelfSet")
+      .withVisibility(PUBLIC)
+      .constructor(constructorSignature().withVisibility(PUBLIC));
 
-	public static final TypeToken<String> STRING_TYPE = new TypeToken<String>() {};
+  public static final TypeToken<String> STRING_TYPE = new TypeToken<String>() {};
 
-	@Test
-	public void defineObject() throws InstantiationException, IllegalAccessException {
-		Object instance = new ClassRegister(createClassLoader())
-				.withClassSignature(TEST_CLASS_SIGNATURE)
-				.loadClass()
-				.newInstance();
+  @Test
+  public void defineObject() throws InstantiationException, IllegalAccessException {
+    Object instance = new ClassRegister(createClassLoader())
+        .withClassSignature(TEST_CLASS_SIGNATURE)
+        .loadClass()
+        .newInstance();
 
-		instance.hashCode();
-	}
+    instance.hashCode();
+  }
 
-	@Test
-	public void runnableClassInvocation() throws InstantiationException, IllegalAccessException {
-		ClassDefinition<Void, ? extends Runnable> classDefinition = new ClassRegister(
-				createClassLoader()).withClassSignature(TEST_CLASS_SIGNATURE.extending(Runnable.class));
-		classDefinition = classDefinition
-				.defineMethod(allMethods().named("run"), new Block<Void>().withReturnStatement());
+  @Test
+  public void runnableClassInvocation() throws InstantiationException, IllegalAccessException {
+    ClassDefinition<Void, ? extends Runnable> classDefinition = new ClassRegister(
+        createClassLoader()).withClassSignature(TEST_CLASS_SIGNATURE.extending(Runnable.class));
+    classDefinition = classDefinition
+        .defineMethod(allMethods().named("run"), new Block<Void>().withReturnStatement());
 
-		Runnable instance = classDefinition.loadClass().newInstance();
+    Runnable instance = classDefinition.loadClass().newInstance();
 
-		instance.run();
-	}
+    instance.run();
+  }
 
-	@Test
-	public void defineWithExplicitMethodDeclaration()
-			throws InstantiationException, IllegalAccessException {
-		/*
-		 * A block is something we don't always know the type of until we resolve
-		 * the type of it's context, e.g. in method overload resolution a lambda
-		 * body must be reinterpreted according to all applicable target types, and
-		 * any return statements examined according to that context.
-		 * 
-		 * Do we achieve this with a new kind of stand-in type? Or do existing
-		 * models already fit well (e.g. some sort of ad-hoc type variable)?
-		 */
+  @Test
+  public void defineWithExplicitMethodDeclaration()
+      throws InstantiationException, IllegalAccessException {
+    /*
+     * A block is something we don't always know the type of until we resolve the
+     * type of it's context, e.g. in method overload resolution a lambda body must
+     * be reinterpreted according to all applicable target types, and any return
+     * statements examined according to that context.
+     * 
+     * Do we achieve this with a new kind of stand-in type? Or do existing models
+     * already fit well (e.g. some sort of ad-hoc type variable)?
+     */
 
-		Func<String, String> instance = new ClassRegister(createClassLoader())
-				.withClassSignature(
-						TEST_CLASS_SIGNATURE.extending(new TypeToken<Func<String, String>>() {}).method(
-								methodSignature("apply").withReturnType(STRING_TYPE).withParameters(
-										parameterSignature("value", STRING_TYPE))))
-				.defineMethod(
-						allMethods().named("apply"),
-						new Block<String>().withReturnStatement(
-								resolveVariable(allVariables().named("value")).invoke(
-										allMethods().named("concat").returning(String.class),
-										literal("append"))))
-				.loadClass()
-				.newInstance();
+    Func<String, String> instance = new ClassRegister(createClassLoader())
+        .withClassSignature(
+            TEST_CLASS_SIGNATURE.extending(new TypeToken<Func<String, String>>() {}).method(
+                methodSignature("apply").withReturnType(STRING_TYPE).withParameters(
+                    parameterSignature("value", STRING_TYPE))))
+        .defineMethod(
+            allMethods().named("apply"),
+            new Block<String>().withReturnStatement(
+                resolveVariable(allVariables().named("value")).invoke(
+                    allMethods().named("concat").returning(String.class),
+                    literal("append"))))
+        .loadClass()
+        .newInstance();
 
-		String result = instance.apply("string");
+    String result = instance.apply("string");
 
-		Assert.assertEquals("stringappend", result);
-	}
+    Assert.assertEquals("stringappend", result);
+  }
 
-	@Test
-	public void defineWithInheritedMethodDeclarationBySignature()
-			throws InstantiationException, IllegalAccessException {
-		Func<String, String> instance = (Func<String, String>) new ClassRegister(createClassLoader())
-				.withClassSignature(
-						TEST_CLASS_SIGNATURE.extending(new TypeToken<Func<String, String>>() {}))
-				.defineMethod(
-						allMethods().named("apply").returning(String.class),
-						new Block<String>().withReturnStatement(
-								resolveVariable(allVariables().named("value")).invoke(
-										allMethods().named("concat").returning(String.class),
-										resolveVariable(allVariables().named("value")))))
-				.loadClass()
-				.newInstance();
+  @Test
+  public void defineWithInheritedMethodDeclarationBySignature()
+      throws InstantiationException, IllegalAccessException {
+    Func<String, String> instance = (Func<String, String>) new ClassRegister(createClassLoader())
+        .withClassSignature(
+            TEST_CLASS_SIGNATURE.extending(new TypeToken<Func<String, String>>() {}))
+        .defineMethod(
+            allMethods().named("apply").returning(String.class),
+            new Block<String>().withReturnStatement(
+                resolveVariable(allVariables().named("value")).invoke(
+                    allMethods().named("concat").returning(String.class),
+                    resolveVariable(allVariables().named("value")))))
+        .loadClass()
+        .newInstance();
 
-		String result = instance.apply("string");
+    String result = instance.apply("string");
 
-		Assert.assertEquals("stringstring", result);
-	}
+    Assert.assertEquals("stringstring", result);
+  }
 
-	@Test
-	public void defineWithInheritedMethodDeclaration()
-			throws InstantiationException, IllegalAccessException {
-		Func<String, String> instance = (Func<String, String>) new ClassRegister(createClassLoader())
-				.withClassSignature(
-						TEST_CLASS_SIGNATURE.extending(new TypeToken<Func<String, String>>() {}))
-				.defineMethod(
-						allMethods().named("apply").returning(String.class),
-						new Block<String>().withReturnStatement(
-								resolveVariable(allVariables().named("value")).invoke(
-										allMethods().named("concat").returning(String.class),
-										resolveVariable(allVariables().named("value")))))
-				.loadClass()
-				.newInstance();
+  @Test
+  public void defineWithInheritedMethodDeclaration()
+      throws InstantiationException, IllegalAccessException {
+    Func<String, String> instance = (Func<String, String>) new ClassRegister(createClassLoader())
+        .withClassSignature(
+            TEST_CLASS_SIGNATURE.extending(new TypeToken<Func<String, String>>() {}))
+        .defineMethod(
+            allMethods().named("apply").returning(String.class),
+            new Block<String>().withReturnStatement(
+                resolveVariable(allVariables().named("value")).invoke(
+                    allMethods().named("concat").returning(String.class),
+                    resolveVariable(allVariables().named("value")))))
+        .loadClass()
+        .newInstance();
 
-		String result = instance.apply("string");
+    String result = instance.apply("string");
 
-		Assert.assertEquals("stringstring", result);
-	}
+    Assert.assertEquals("stringstring", result);
+  }
 
-	@Test(expected = ReflectionException.class)
-	public void defineWithAbstractMethod() throws InstantiationException, IllegalAccessException {
-		new ClassRegister(createClassLoader())
-				.withClassSignature(TEST_CLASS_SIGNATURE.extending(Runnable.class))
-				.loadClass()
-				.newInstance();
-	}
+  @Test(expected = ReflectionException.class)
+  public void defineWithAbstractMethod() throws InstantiationException, IllegalAccessException {
+    new ClassRegister(createClassLoader())
+        .withClassSignature(TEST_CLASS_SIGNATURE.extending(Runnable.class))
+        .loadClass()
+        .newInstance();
+  }
 
-	@Test
-	public void defineWithDefaultMethod() throws InstantiationException, IllegalAccessException {
-		new ClassRegister(createClassLoader())
-				.withClassSignature(TEST_CLASS_SIGNATURE.extending(Default.class))
-				.defineConstructor(allMethods(), new Block<>())
-				.loadClass()
-				.newInstance();
-	}
+  @Test
+  public void defineWithDefaultMethod() throws InstantiationException, IllegalAccessException {
+    new ClassRegister(createClassLoader())
+        .withClassSignature(TEST_CLASS_SIGNATURE.extending(Default.class))
+        .defineConstructor(allMethods(), new Block<>())
+        .loadClass()
+        .newInstance();
+  }
 
-	private ClassLoader createClassLoader() {
-		return new ByteArrayClassLoader(getClass().getClassLoader());
-	}
+  private ClassLoader createClassLoader() {
+    return new ByteArrayClassLoader(getClass().getClassLoader());
+  }
 }

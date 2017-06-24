@@ -37,33 +37,32 @@ import java.lang.reflect.Field;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class FieldDeclaration<C, T> extends AnnotatedDeclaration<ParameterSignature<T>> {
-	private final String name;
+  private final String name;
+  private final ClassDeclaration<?, ?> declaringClass;
+  private final ClassDeclaration<?, C> owningDeclaration;
 
-	private final ClassDeclaration<?, ?> declaringClass;
-	private final ClassDeclaration<?, C> owningDeclaration;
+  protected FieldDeclaration(
+      String name,
+      ClassDeclaration<?, ?> declaringClass,
+      ClassDeclaration<?, C> owningDeclaration,
+      ParameterSignature<T> signature) {
+    super(signature);
 
-	protected FieldDeclaration(
-			String name,
-			ClassDeclaration<?, ?> declaringClass,
-			ClassDeclaration<?, C> owningDeclaration,
-			ParameterSignature<T> signature) {
-		super(signature);
+    this.name = name;
+    this.declaringClass = declaringClass;
+    this.owningDeclaration = owningDeclaration;
+  }
 
-		this.name = name;
-		this.declaringClass = declaringClass;
-		this.owningDeclaration = owningDeclaration;
-	}
+  public Field getFieldStub() {
+    throw new UnsupportedOperationException();
+  }
 
-	public Field getFieldStub() {
-		throw new UnsupportedOperationException();
-	}
+  public String getName() {
+    return name;
+  }
 
-	public String getName() {
-		return name;
-	}
-
-	@SuppressWarnings("unchecked")
-	public TypeToken<T> getType() {
-		return (TypeToken<T>) TypeToken.forType(getFieldStub().getGenericType());
-	}
+  @SuppressWarnings("unchecked")
+  public TypeToken<T> getType() {
+    return (TypeToken<T>) TypeToken.forType(getFieldStub().getGenericType());
+  }
 }

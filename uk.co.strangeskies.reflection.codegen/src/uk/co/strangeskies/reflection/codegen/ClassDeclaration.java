@@ -68,232 +68,233 @@ import uk.co.strangeskies.reflection.codegen.ClassRegister.ClassDeclarationConte
  *          the type of the class
  */
 public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignature<T>>
-		implements Declaration<ClassSignature<T>> {
-	static class Reference implements Type {
-		private final String name;
+    implements Declaration<ClassSignature<T>> {
+  static class Reference implements Type {
+    private final String name;
 
-		public Reference(String name) {
-			this.name = name;
-		}
+    public Reference(String name) {
+      this.name = name;
+    }
 
-		@Override
-		public String getTypeName() {
-			return name;
-		}
-	}
+    @Override
+    public String getTypeName() {
+      return name;
+    }
+  }
 
-	private final ClassDeclaration<?, E> enclosingClass;
+  private final ClassDeclaration<?, E> enclosingClass;
 
-	private final Map<ErasedMethodSignature, MethodDeclaration<E, T>> constructorDeclarations;
-	private final Map<ErasedMethodSignature, MethodDeclaration<E, ?>> staticMethodDeclarations;
-	private final Map<ErasedMethodSignature, MethodDeclaration<T, ?>> methodDeclarations;
+  private final Map<ErasedMethodSignature, MethodDeclaration<E, T>> constructorDeclarations;
+  private final Map<ErasedMethodSignature, MethodDeclaration<E, ?>> staticMethodDeclarations;
+  private final Map<ErasedMethodSignature, MethodDeclaration<T, ?>> methodDeclarations;
 
-	private final byte[] stubClassBytes;
-	private final Class<T> stubClass;
+  private final byte[] stubClassBytes;
+  private final Class<T> stubClass;
 
-	protected ClassDeclaration(ClassDeclarationContext context, ClassSignature<T> signature) {
-		this(context, signature, new SignatureWriter());
-	}
+  protected ClassDeclaration(ClassDeclarationContext context, ClassSignature<T> signature) {
+    this(context, signature, new SignatureWriter());
+  }
 
-	@SuppressWarnings("unchecked")
-	protected ClassDeclaration(
-			ClassDeclarationContext context,
-			ClassSignature<T> signature,
-			SignatureWriter signatureWriter) {
-		super(signature, signatureWriter);
+  @SuppressWarnings("unchecked")
+  protected ClassDeclaration(
+      ClassDeclarationContext context,
+      ClassSignature<T> signature,
+      SignatureWriter signatureWriter) {
+    super(signature, signatureWriter);
 
-		String typeSignature = writeGenericSupertypes(signatureWriter);
-		ClassWriter stubClassWriter = writeClassHeader(typeSignature);
+    String typeSignature = writeGenericSupertypes(signatureWriter);
+    ClassWriter stubClassWriter = writeClassHeader(typeSignature);
 
-		this.enclosingClass = (ClassDeclaration<?, E>) signature
-				.getEnclosingClassName()
-				.map(context::getClassDeclaration)
-				.orElse(null);
+    this.enclosingClass = (ClassDeclaration<?, E>) signature
+        .getEnclosingClassName()
+        .map(context::getClassDeclaration)
+        .orElse(null);
 
-		context.addClassDeclaration(this);
+    context.addClassDeclaration(this);
 
-		this.constructorDeclarations = signature
-				.getConstructors()
-				.map(s -> declareConstructor(this, s, stubClassWriter))
-				.collect(toMap(d -> d.getSignature().erased(), identity()));
+    this.constructorDeclarations = signature
+        .getConstructors()
+        .map(s -> declareConstructor(this, s, stubClassWriter))
+        .collect(toMap(d -> d.getSignature().erased(), identity()));
 
-		this.staticMethodDeclarations = signature
-				.getMethods()
-				.filter(s -> s.getModifiers().isStatic())
-				.map(s -> declareStaticMethod(this, (MethodSignature<?>) s, stubClassWriter))
-				.collect(toMap(d -> d.getSignature().erased(), identity()));
+    this.staticMethodDeclarations = signature
+        .getMethods()
+        .filter(s -> s.getModifiers().isStatic())
+        .map(s -> declareStaticMethod(this, (MethodSignature<?>) s, stubClassWriter))
+        .collect(toMap(d -> d.getSignature().erased(), identity()));
 
-		this.methodDeclarations = new MethodOverrides<>(signature)
-				.getSignatures()
-				.map(s -> declareMethod(this, s, stubClassWriter))
-				.collect(toMap(d -> d.getSignature().erased(), identity()));
+    this.methodDeclarations = new MethodOverrides<>(signature)
+        .getSignatures()
+        .map(s -> declareMethod(this, s, stubClassWriter))
+        .collect(toMap(d -> d.getSignature().erased(), identity()));
 
-		this.stubClassBytes = stubClassWriter.toByteArray();
-		this.stubClass = context.loadStubClass(getSignature(), stubClassBytes);
-	}
+    this.stubClassBytes = stubClassWriter.toByteArray();
+    this.stubClass = context.loadStubClass(getSignature(), stubClassBytes);
+  }
 
-	private String writeGenericSupertypes(SignatureWriter writer) {
-		String typeSignature;
-		writer.visitSuperclass();
-		ClassWritingContext.visitTypeSignature(
-				writer,
-				getSignature().getSuperClass().map(AnnotatedType::getType).orElse(Object.class));
-		getSignature().getSuperInterfaces().map(AnnotatedType::getType).forEach(type -> {
-			writer.visitInterface();
-			ClassWritingContext.visitTypeSignature(writer, type);
-		});
-		typeSignature = writer.toString();
-		return typeSignature;
-	}
+  private String writeGenericSupertypes(SignatureWriter writer) {
+    String typeSignature;
+    writer.visitSuperclass();
+    ClassWritingContext.visitTypeSignature(
+        writer,
+        getSignature().getSuperClass().map(AnnotatedType::getType).orElse(Object.class));
+    getSignature().getSuperInterfaces().map(AnnotatedType::getType).forEach(type -> {
+      writer.visitInterface();
+      ClassWritingContext.visitTypeSignature(writer, type);
+    });
+    typeSignature = writer.toString();
+    return typeSignature;
+  }
 
-	private ClassWriter writeClassHeader(String typeSignature) {
-		int modifiers = getSignature().getModifiers().toInt();
-		String name = getSignature().getClassName().replace('.', '/');
-		String superClass = getInternalName(
-				getErasedType(
-						getSignature().getSuperClass().map(AnnotatedType::getType).orElse(Object.class)));
-		String[] superInterfaces = getSignature()
-				.getSuperInterfaces()
-				.map(AnnotatedType::getType)
-				.map(i -> getInternalName(getErasedType(i)))
-				.toArray(String[]::new);
-		ClassWriter classWriter = new ClassWriter(COMPUTE_MAXS | COMPUTE_FRAMES);
-		classWriter.visit(V1_8, modifiers, name, typeSignature, superClass, superInterfaces);
-		return classWriter;
-	}
+  private ClassWriter writeClassHeader(String typeSignature) {
+    int modifiers = getSignature().getModifiers().toInt();
+    String name = getSignature().getClassName().replace('.', '/');
+    String superClass = getInternalName(
+        getErasedType(
+            getSignature().getSuperClass().map(AnnotatedType::getType).orElse(Object.class)));
+    String[] superInterfaces = getSignature()
+        .getSuperInterfaces()
+        .map(AnnotatedType::getType)
+        .map(i -> getInternalName(getErasedType(i)))
+        .toArray(String[]::new);
 
-	public ClassDeclaration<?, E> getEnclosingClassDeclaration() {
-		return enclosingClass;
-	}
+    ClassWriter classWriter = new ClassWriter(COMPUTE_MAXS | COMPUTE_FRAMES);
+    classWriter.visit(V1_8, modifiers, name, typeSignature, superClass, superInterfaces);
+    return classWriter;
+  }
 
-	public static Type referenceClassDeclaration(String name) {
-		return new Reference(name);
-	}
+  public ClassDeclaration<?, E> getEnclosingClassDeclaration() {
+    return enclosingClass;
+  }
 
-	@Override
-	public ClassSignature<T> getSignature() {
-		return super.getSignature();
-	}
+  public static Type referenceClassDeclaration(String name) {
+    return new Reference(name);
+  }
 
-	public Stream<MethodDeclaration<E, T>> constructorDeclarations() {
-		return constructorDeclarations.values().stream();
-	}
+  @Override
+  public ClassSignature<T> getSignature() {
+    return super.getSignature();
+  }
 
-	public Stream<MethodDeclaration<E, ?>> staticMethodDeclarations() {
-		return staticMethodDeclarations.values().stream();
-	}
+  public Stream<MethodDeclaration<E, T>> constructorDeclarations() {
+    return constructorDeclarations.values().stream();
+  }
 
-	public Stream<MethodDeclaration<T, ?>> methodDeclarations() {
-		return methodDeclarations.values().stream().distinct();
-	}
+  public Stream<MethodDeclaration<E, ?>> staticMethodDeclarations() {
+    return staticMethodDeclarations.values().stream();
+  }
 
-	public MethodDeclaration<E, T> getConstructorDeclaration(Class<?>... erasedParameters) {
-		ErasedMethodSignature erasedSignature = erasedConstructorSignature(erasedParameters);
+  public Stream<MethodDeclaration<T, ?>> methodDeclarations() {
+    return methodDeclarations.values().stream().distinct();
+  }
 
-		MethodDeclaration<E, T> declaration = constructorDeclarations.get(erasedSignature);
-		if (declaration == null) {
-			throw new CodeGenerationException(
-					CODEGEN_PROPERTIES.cannotFindMethodOn(stubClass, erasedSignature));
-		}
-		return declaration;
-	}
+  public MethodDeclaration<E, T> getConstructorDeclaration(Class<?>... erasedParameters) {
+    ErasedMethodSignature erasedSignature = erasedConstructorSignature(erasedParameters);
 
-	public MethodDeclaration<E, ?> getStaticMethodDeclaration(
-			String name,
-			Class<?>... erasedParameters) {
-		ErasedMethodSignature erasedSignature = erasedMethodSignature(name, erasedParameters);
+    MethodDeclaration<E, T> declaration = constructorDeclarations.get(erasedSignature);
+    if (declaration == null) {
+      throw new CodeGenerationException(
+          CODEGEN_PROPERTIES.cannotFindMethodOn(stubClass, erasedSignature));
+    }
+    return declaration;
+  }
 
-		MethodDeclaration<E, ?> declaration = staticMethodDeclarations.get(erasedSignature);
-		if (declaration == null) {
-			throw new CodeGenerationException(
-					CODEGEN_PROPERTIES.cannotFindMethodOn(stubClass, erasedSignature));
-		}
-		return declaration;
-	}
+  public MethodDeclaration<E, ?> getStaticMethodDeclaration(
+      String name,
+      Class<?>... erasedParameters) {
+    ErasedMethodSignature erasedSignature = erasedMethodSignature(name, erasedParameters);
 
-	public MethodDeclaration<T, ?> getMethodDeclaration(String name, Class<?>... erasedParameters) {
-		ErasedMethodSignature erasedSignature = erasedMethodSignature(name, erasedParameters);
+    MethodDeclaration<E, ?> declaration = staticMethodDeclarations.get(erasedSignature);
+    if (declaration == null) {
+      throw new CodeGenerationException(
+          CODEGEN_PROPERTIES.cannotFindMethodOn(stubClass, erasedSignature));
+    }
+    return declaration;
+  }
 
-		MethodDeclaration<T, ?> declaration = methodDeclarations.get(erasedSignature);
-		if (declaration == null) {
-			throw new CodeGenerationException(
-					CODEGEN_PROPERTIES.cannotFindMethodOn(stubClass, erasedSignature));
-		}
-		return declaration;
-	}
+  public MethodDeclaration<T, ?> getMethodDeclaration(String name, Class<?>... erasedParameters) {
+    ErasedMethodSignature erasedSignature = erasedMethodSignature(name, erasedParameters);
 
-	@SuppressWarnings("unchecked")
-	public MethodDeclaration<E, T> getConstructorDeclaration(ConstructorSignature signature) {
-		MethodDeclaration<E, ?> declaration = getConstructorDeclaration(
-				signature
-						.getParameters()
-						.map(ParameterSignature::getType)
-						.map(AnnotatedType::getType)
-						.map(Types::getErasedType)
-						.toArray(Class<?>[]::new));
+    MethodDeclaration<T, ?> declaration = methodDeclarations.get(erasedSignature);
+    if (declaration == null) {
+      throw new CodeGenerationException(
+          CODEGEN_PROPERTIES.cannotFindMethodOn(stubClass, erasedSignature));
+    }
+    return declaration;
+  }
 
-		if (!StreamUtilities.equals(
-				signature.getParameters().map(ParameterSignature::getType),
-				declaration.getSignature().getParameters().map(ParameterSignature::getType))) {
-			throw new CodeGenerationException(
-					CODEGEN_PROPERTIES.cannotFindMethodOn(stubClass, signature.erased()));
-		}
+  @SuppressWarnings("unchecked")
+  public MethodDeclaration<E, T> getConstructorDeclaration(ConstructorSignature signature) {
+    MethodDeclaration<E, ?> declaration = getConstructorDeclaration(
+        signature
+            .getParameters()
+            .map(ParameterSignature::getType)
+            .map(AnnotatedType::getType)
+            .map(Types::getErasedType)
+            .toArray(Class<?>[]::new));
 
-		return (MethodDeclaration<E, T>) declaration;
-	}
+    if (!StreamUtilities.equals(
+        signature.getParameters().map(ParameterSignature::getType),
+        declaration.getSignature().getParameters().map(ParameterSignature::getType))) {
+      throw new CodeGenerationException(
+          CODEGEN_PROPERTIES.cannotFindMethodOn(stubClass, signature.erased()));
+    }
 
-	@SuppressWarnings("unchecked")
-	public <U> MethodDeclaration<E, U> getStaticMethodDeclaration(MethodSignature<U> signature) {
-		MethodDeclaration<E, ?> declaration = getStaticMethodDeclaration(
-				signature.getName(),
-				signature
-						.getParameters()
-						.map(ParameterSignature::getType)
-						.map(AnnotatedType::getType)
-						.map(Types::getErasedType)
-						.toArray(Class<?>[]::new));
+    return (MethodDeclaration<E, T>) declaration;
+  }
 
-		if (!StreamUtilities.equals(
-				signature.getParameters().map(ParameterSignature::getType),
-				declaration.getSignature().getParameters().map(ParameterSignature::getType))) {
-			throw new CodeGenerationException(
-					CODEGEN_PROPERTIES.cannotFindMethodOn(stubClass, signature.erased()));
-		}
+  @SuppressWarnings("unchecked")
+  public <U> MethodDeclaration<E, U> getStaticMethodDeclaration(MethodSignature<U> signature) {
+    MethodDeclaration<E, ?> declaration = getStaticMethodDeclaration(
+        signature.getName(),
+        signature
+            .getParameters()
+            .map(ParameterSignature::getType)
+            .map(AnnotatedType::getType)
+            .map(Types::getErasedType)
+            .toArray(Class<?>[]::new));
 
-		return (MethodDeclaration<E, U>) declaration;
-	}
+    if (!StreamUtilities.equals(
+        signature.getParameters().map(ParameterSignature::getType),
+        declaration.getSignature().getParameters().map(ParameterSignature::getType))) {
+      throw new CodeGenerationException(
+          CODEGEN_PROPERTIES.cannotFindMethodOn(stubClass, signature.erased()));
+    }
 
-	@SuppressWarnings("unchecked")
-	public <U> MethodDeclaration<T, U> getMethodDeclaration(MethodSignature<U> signature) {
-		MethodDeclaration<T, ?> declaration = getMethodDeclaration(
-				signature.getName(),
-				signature
-						.getParameters()
-						.map(ParameterSignature::getType)
-						.map(AnnotatedType::getType)
-						.map(Types::getErasedType)
-						.toArray(Class<?>[]::new));
+    return (MethodDeclaration<E, U>) declaration;
+  }
 
-		if (!StreamUtilities.equals(
-				signature.getParameters().map(ParameterSignature::getType),
-				declaration.getSignature().getParameters().map(ParameterSignature::getType))) {
-			throw new CodeGenerationException(
-					CODEGEN_PROPERTIES.cannotFindMethodOn(stubClass, signature.erased()));
-		}
+  @SuppressWarnings("unchecked")
+  public <U> MethodDeclaration<T, U> getMethodDeclaration(MethodSignature<U> signature) {
+    MethodDeclaration<T, ?> declaration = getMethodDeclaration(
+        signature.getName(),
+        signature
+            .getParameters()
+            .map(ParameterSignature::getType)
+            .map(AnnotatedType::getType)
+            .map(Types::getErasedType)
+            .toArray(Class<?>[]::new));
 
-		return (MethodDeclaration<T, U>) declaration;
-	}
+    if (!StreamUtilities.equals(
+        signature.getParameters().map(ParameterSignature::getType),
+        declaration.getSignature().getParameters().map(ParameterSignature::getType))) {
+      throw new CodeGenerationException(
+          CODEGEN_PROPERTIES.cannotFindMethodOn(stubClass, signature.erased()));
+    }
 
-	public Class<T> getStubClass() {
-		return stubClass;
-	}
+    return (MethodDeclaration<T, U>) declaration;
+  }
 
-	public byte[] getStubClassBytes() {
-		return Arrays.copyOf(stubClassBytes, stubClassBytes.length);
-	}
+  public Class<T> getStubClass() {
+    return stubClass;
+  }
 
-	@Override
-	public String toString() {
-		return stubClass.toString();
-	}
+  public byte[] getStubClassBytes() {
+    return Arrays.copyOf(stubClassBytes, stubClassBytes.length);
+  }
+
+  @Override
+  public String toString() {
+    return stubClass.toString();
+  }
 }

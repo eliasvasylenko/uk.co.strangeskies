@@ -50,149 +50,161 @@ import org.objectweb.asm.signature.SignatureWriter;
 import uk.co.strangeskies.reflection.Types;
 
 public class MethodDeclaration<C, T> extends ParameterizedDeclaration<ExecutableSignature<?>> {
-	enum Kind {
-		CONSTRUCTOR, INSTANCE_METHOD, STATIC_METHOD
-	}
+  enum Kind {
+    CONSTRUCTOR, INSTANCE_METHOD, STATIC_METHOD
+  }
 
-	private static final ExecutableSignature<?> VOID_SIGNATURE = new ConstructorSignature();
+  private static final ExecutableSignature<?> VOID_SIGNATURE = new ConstructorSignature();
+  private static final String VOID_DESCRIPTOR = getMethodDescriptor(VOID_SIGNATURE);
+  private static final String STUB_INVOCATION_ERROR = getInternalName(StubInvocationError.class);
 
-	private final String name;
-	private final Kind kind;
+  private final String name;
+  private final String descriptor;
+  private final Kind kind;
 
-	private final ClassDeclaration<?, ?> declaringClass;
-	private final ClassDeclaration<?, C> owningDeclaration;
+  private final ClassDeclaration<?, ?> declaringClass;
+  private final ClassDeclaration<?, C> owningDeclaration;
 
-	private Executable executableStub;
+  private Executable executableStub;
 
-	protected MethodDeclaration(Kind kind, ClassDeclaration<?, ?> declaringClass,
-			ClassDeclaration<?, C> owningDeclaration, ExecutableSignature<?> signature,
-			ClassWriter classWriter) {
-		this(kind, declaringClass, owningDeclaration, signature, classWriter, new SignatureWriter());
-	}
+  protected MethodDeclaration(
+      Kind kind,
+      ClassDeclaration<?, ?> declaringClass,
+      ClassDeclaration<?, C> owningDeclaration,
+      ExecutableSignature<?> signature,
+      ClassWriter classWriter) {
+    this(kind, declaringClass, owningDeclaration, signature, classWriter, new SignatureWriter());
+  }
 
-	protected MethodDeclaration(Kind kind, ClassDeclaration<?, ?> declaringClass,
-			ClassDeclaration<?, C> owningDeclaration, ExecutableSignature<?> signature,
-			ClassWriter classWriter, SignatureWriter signatureWriter) {
-		super(signature, signatureWriter);
+  protected MethodDeclaration(
+      Kind kind,
+      ClassDeclaration<?, ?> declaringClass,
+      ClassDeclaration<?, C> owningDeclaration,
+      ExecutableSignature<?> signature,
+      ClassWriter classWriter,
+      SignatureWriter signatureWriter) {
+    super(signature, signatureWriter);
 
-		String typeSignature = writeGenericParameters(signatureWriter).toString();
+    this.kind = kind;
+    this.name = signature.getName();
+    this.declaringClass = declaringClass;
+    this.owningDeclaration = owningDeclaration;
+    this.descriptor = getMethodDescriptor(signature);
 
-		MethodVisitor methodVisitor = classWriter.visitMethod(
-				signature.getModifiers().toInt(),
-				signature.getName(),
-				getMethodDescriptor(signature),
-				typeSignature,
-				null);
-		methodVisitor.visitCode();
-		methodVisitor.visitTypeInsn(NEW, getInternalName(StubInvocationError.class));
-		methodVisitor.visitInsn(DUP);
-		methodVisitor.visitMethodInsn(
-				INVOKESPECIAL,
-				getInternalName(StubInvocationError.class),
-				VOID_SIGNATURE.getName(),
-				getMethodDescriptor(VOID_SIGNATURE),
-				false);
-		methodVisitor.visitInsn(ATHROW);
-		methodVisitor.visitMaxs(0, 0);
-		methodVisitor.visitEnd();
+    String typeSignature = writeGenericParameters(signatureWriter).toString();
 
-		this.name = signature.getName();
-		this.kind = kind;
-		this.declaringClass = declaringClass;
-		this.owningDeclaration = owningDeclaration;
-	}
+    MethodVisitor methodVisitor = classWriter.visitMethod(
+        signature.getModifiers().toInt(),
+        signature.getName(),
+        descriptor,
+        typeSignature,
+        null);
 
-	private SignatureWriter writeGenericParameters(SignatureWriter signatureWriter) {
-		getSignature().getParameters().forEach(parameter -> {
-			visitTypeSignature(signatureWriter.visitParameterType(), parameter.getType().getType());
-		});
-		visitTypeSignature(signatureWriter.visitReturnType(), getSignature().getReturnType().getType());
+    methodVisitor.visitCode();
+    methodVisitor.visitTypeInsn(NEW, STUB_INVOCATION_ERROR);
+    methodVisitor.visitInsn(DUP);
+    methodVisitor.visitMethodInsn(
+        INVOKESPECIAL,
+        STUB_INVOCATION_ERROR,
+        VOID_SIGNATURE.getName(),
+        VOID_DESCRIPTOR,
+        false);
+    methodVisitor.visitInsn(ATHROW);
+    methodVisitor.visitMaxs(2, 1);
+    methodVisitor.visitEnd();
+  }
 
-		return signatureWriter;
-	}
+  private SignatureWriter writeGenericParameters(SignatureWriter signatureWriter) {
+    getSignature().getParameters().forEach(parameter -> {
+      visitTypeSignature(signatureWriter.visitParameterType(), parameter.getType().getType());
+    });
+    visitTypeSignature(signatureWriter.visitReturnType(), getSignature().getReturnType().getType());
 
-	protected static String getMethodDescriptor(ExecutableSignature<?> signature) {
-		return Type.getMethodDescriptor(
-				Type.getType(Types.getErasedType(signature.getReturnType().getType())),
-				signature.getParameters().map(ParameterSignature::getErasedType).map(Type::getType).toArray(
-						Type[]::new));
-	}
+    return signatureWriter;
+  }
 
-	protected static <C, T> MethodDeclaration<C, T> declareConstructor(
-			ClassDeclaration<C, T> classDeclaration,
-			ConstructorSignature signature,
-			ClassWriter writer) {
-		return new MethodDeclaration<>(
-				Kind.CONSTRUCTOR,
-				classDeclaration,
-				classDeclaration.getEnclosingClassDeclaration(),
-				signature,
-				writer);
-	}
+  protected static String getMethodDescriptor(ExecutableSignature<?> signature) {
+    return Type.getMethodDescriptor(
+        Type.getType(Types.getErasedType(signature.getReturnType().getType())),
+        signature.getParameters().map(ParameterSignature::getErasedType).map(Type::getType).toArray(
+            Type[]::new));
+  }
 
-	protected static <C, T> MethodDeclaration<C, T> declareStaticMethod(
-			ClassDeclaration<C, ?> classDeclaration,
-			MethodSignature<T> signature,
-			ClassWriter writer) {
-		if (signature.getModifiers().isDefault())
-			throw new CodeGenerationException(CODEGEN_PROPERTIES.staticMethodCannotBeDefault(signature));
+  protected static <C, T> MethodDeclaration<C, T> declareConstructor(
+      ClassDeclaration<C, T> classDeclaration,
+      ConstructorSignature signature,
+      ClassWriter writer) {
+    return new MethodDeclaration<>(
+        Kind.CONSTRUCTOR,
+        classDeclaration,
+        classDeclaration.getEnclosingClassDeclaration(),
+        signature,
+        writer);
+  }
 
-		return new MethodDeclaration<>(
-				Kind.STATIC_METHOD,
-				classDeclaration,
-				classDeclaration.getEnclosingClassDeclaration(),
-				signature,
-				writer);
-	}
+  protected static <C, T> MethodDeclaration<C, T> declareStaticMethod(
+      ClassDeclaration<C, ?> classDeclaration,
+      MethodSignature<T> signature,
+      ClassWriter writer) {
+    if (signature.getModifiers().isDefault())
+      throw new CodeGenerationException(CODEGEN_PROPERTIES.staticMethodCannotBeDefault(signature));
 
-	protected static <C, T> MethodDeclaration<C, T> declareMethod(
-			ClassDeclaration<?, C> classDeclaration,
-			MethodSignature<T> signature,
-			ClassWriter writer) {
-		return new MethodDeclaration<>(
-				Kind.INSTANCE_METHOD,
-				classDeclaration,
-				classDeclaration,
-				signature,
-				writer);
-	}
+    return new MethodDeclaration<>(
+        Kind.STATIC_METHOD,
+        classDeclaration,
+        classDeclaration.getEnclosingClassDeclaration(),
+        signature,
+        writer);
+  }
 
-	public ClassDeclaration<?, ?> getDeclaringClass() {
-		return declaringClass;
-	}
+  protected static <C, T> MethodDeclaration<C, T> declareMethod(
+      ClassDeclaration<?, C> classDeclaration,
+      MethodSignature<T> signature,
+      ClassWriter writer) {
+    return new MethodDeclaration<>(
+        Kind.INSTANCE_METHOD,
+        classDeclaration,
+        classDeclaration,
+        signature,
+        writer);
+  }
 
-	public ClassDeclaration<?, C> getOwningDeclaration() {
-		return owningDeclaration;
-	}
+  public ClassDeclaration<?, ?> getDeclaringClass() {
+    return declaringClass;
+  }
 
-	public Executable getExecutableStub() {
-		if (executableStub == null) {
-			Class<?>[] erasedParameters = getSignature()
-					.getParameters()
-					.map(ParameterSignature::getErasedType)
-					.toArray(Class<?>[]::new);
-			try {
-				executableStub = getKind() == Kind.CONSTRUCTOR
-						? getDeclaringClass().getStubClass().getConstructor(erasedParameters)
-						: getDeclaringClass().getStubClass().getMethod(name, erasedParameters);
-			} catch (NoSuchMethodException | SecurityException e) {
-				throw new AssertionError(e);
-			}
-		}
+  public ClassDeclaration<?, C> getOwningDeclaration() {
+    return owningDeclaration;
+  }
 
-		return executableStub;
-	}
+  public Executable getExecutableStub() {
+    if (executableStub == null) {
+      Class<?>[] erasedParameters = getSignature()
+          .getParameters()
+          .map(ParameterSignature::getErasedType)
+          .toArray(Class<?>[]::new);
+      try {
+        executableStub = getKind() == Kind.CONSTRUCTOR
+            ? getDeclaringClass().getStubClass().getConstructor(erasedParameters)
+            : getDeclaringClass().getStubClass().getMethod(name, erasedParameters);
+      } catch (NoSuchMethodException | SecurityException e) {
+        throw new AssertionError(e);
+      }
+    }
 
-	public String getName() {
-		return name;
-	}
+    return executableStub;
+  }
 
-	public Kind getKind() {
-		return kind;
-	}
+  public String getName() {
+    return name;
+  }
 
-	@Override
-	public String toString() {
-		return getExecutableStub().toGenericString();
-	}
+  public Kind getKind() {
+    return kind;
+  }
+
+  @Override
+  public String toString() {
+    return getExecutableStub().toGenericString();
+  }
 }

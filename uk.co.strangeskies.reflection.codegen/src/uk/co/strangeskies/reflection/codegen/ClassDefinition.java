@@ -178,7 +178,7 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
           throw new AssertionError(e);
         }
         methodVisitor.visitInsn(ATHROW);
-        methodVisitor.visitMaxs(0, 0);
+        methodVisitor.visitMaxs(2, 1);
         methodVisitor.visitEnd();
 
         return null;

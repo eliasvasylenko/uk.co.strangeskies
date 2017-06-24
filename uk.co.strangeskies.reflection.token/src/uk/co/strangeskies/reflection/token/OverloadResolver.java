@@ -32,6 +32,10 @@
  */
 package uk.co.strangeskies.reflection.token;
 
+import static java.util.Arrays.asList;
+import static java.util.Arrays.stream;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static uk.co.strangeskies.collection.stream.StreamUtilities.streamOptional;
@@ -41,9 +45,7 @@ import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPE
 import java.lang.reflect.Executable;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -53,7 +55,6 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 import uk.co.strangeskies.collection.tuple.Pair;
 import uk.co.strangeskies.reflection.ConstraintFormula;
@@ -63,320 +64,320 @@ import uk.co.strangeskies.reflection.TypeResolver;
 import uk.co.strangeskies.reflection.Types;
 
 public class OverloadResolver<I extends ExecutableToken<?, ?>> {
-	private final Set<I> candidates;
+  private final Set<I> candidates;
 
-	public OverloadResolver(Collection<? extends I> candidates) {
-		this.candidates = new HashSet<>(candidates);
-	}
+  public OverloadResolver(Collection<? extends I> candidates) {
+    this.candidates = new HashSet<>(candidates);
+  }
 
-	public I resolve() {
-		return resolve(Collections.emptyList());
-	}
+  public I resolve() {
+    return resolve(emptyList());
+  }
 
-	public I resolve(Type... arguments) {
-		return resolve(Arrays.stream(arguments).map(TypeToken::forType).collect(toList()));
-	}
+  public I resolve(Type... arguments) {
+    return resolve(stream(arguments).map(TypeToken::forType).collect(toList()));
+  }
 
-	public I resolve(TypeToken<?>... arguments) {
-		return resolve(Arrays.asList(arguments));
-	}
+  public I resolve(TypeToken<?>... arguments) {
+    return resolve(asList(arguments));
+  }
 
-	public I resolve(Collection<? extends TypeToken<?>> arguments) {
-		if (candidates.isEmpty())
-			throw new IllegalArgumentException(
-					"Cannot find any applicable invocable for arguments '" + arguments + "'");
+  public I resolve(Collection<? extends TypeToken<?>> arguments) {
+    if (candidates.isEmpty())
+      throw new IllegalArgumentException(
+          "Cannot find any applicable invocable for arguments '" + arguments + "'");
 
-		Set<? extends I> applicableCandidates = resolveApplicableExecutableMembers(
-				candidates,
-				arguments);
+    Set<? extends I> applicableCandidates = resolveApplicableExecutableMembers(
+        candidates,
+        arguments);
 
-		return resolveMostSpecificExecutableMember(applicableCandidates);
-	}
+    return resolveMostSpecificExecutableMember(applicableCandidates);
+  }
 
-	public static <I extends ExecutableToken<?, ?>> Collector<I, ?, I> resolveOverload() {
-		return resolveOverload(Collections.emptyList());
-	}
+  public static <I extends ExecutableToken<?, ?>> Collector<I, ?, I> resolveOverload() {
+    return resolveOverload(emptyList());
+  }
 
-	public static <I extends ExecutableToken<?, ?>> Collector<I, ?, I> resolveOverload(
-			Type... arguments) {
-		return resolveOverload(Arrays.stream(arguments).map(TypeToken::forType).collect(toList()));
-	}
+  public static <I extends ExecutableToken<?, ?>> Collector<I, ?, I> resolveOverload(
+      Type... arguments) {
+    return resolveOverload(stream(arguments).map(TypeToken::forType).collect(toList()));
+  }
 
-	public static <I extends ExecutableToken<?, ?>> Collector<I, ?, I> resolveOverload(
-			TypeToken<?>... arguments) {
-		return resolveOverload(Arrays.asList(arguments));
-	}
+  public static <I extends ExecutableToken<?, ?>> Collector<I, ?, I> resolveOverload(
+      TypeToken<?>... arguments) {
+    return resolveOverload(asList(arguments));
+  }
 
-	public static <I extends ExecutableToken<?, ?>> Collector<I, ?, I> resolveOverload(
-			Collection<? extends TypeToken<?>> arguments) {
-		return Collectors.collectingAndThen(
-				Collectors.<I> toSet(),
-				candidates -> new OverloadResolver<>(candidates).resolve(arguments));
-	}
+  public static <I extends ExecutableToken<?, ?>> Collector<I, ?, I> resolveOverload(
+      Collection<? extends TypeToken<?>> arguments) {
+    return collectingAndThen(
+        toSet(),
+        candidates -> new OverloadResolver<>(candidates).resolve(arguments));
+  }
 
-	/**
-	 * Find the set of all given overload candidates which are applicable to
-	 * invocation with the given parameters. Strict applicability is considered
-	 * first, then if no candidates are found loose applicability is considered,
-	 * then if still no candidates are found, variable arity applicability is
-	 * considered.
-	 * 
-	 * @param <I>
-	 *          the type of invokable
-	 * @param candidates
-	 *          The candidates for which we wish to determine applicability.
-	 * @param parameters
-	 *          The parameters representing the invocation for which we wish to
-	 *          determine applicability.
-	 * @return The set of all given overload candidates which are most applicable to
-	 *         invocation with the given parameters.
-	 */
-	@SuppressWarnings("unchecked")
-	public static <I extends ExecutableToken<?, ?>> Set<? extends I> resolveApplicableExecutableMembers(
-			Set<? extends I> candidates,
-			Collection<? extends TypeToken<?>> parameters) {
-		Map<I, RuntimeException> failures = new LinkedHashMap<>();
-		BiConsumer<I, RuntimeException> putFailures = failures::put;
+  /**
+   * Find the set of all given overload candidates which are applicable to
+   * invocation with the given parameters. Strict applicability is considered
+   * first, then if no candidates are found loose applicability is considered,
+   * then if still no candidates are found, variable arity applicability is
+   * considered.
+   * 
+   * @param <I>
+   *          the type of invokable
+   * @param candidates
+   *          The candidates for which we wish to determine applicability.
+   * @param parameters
+   *          The parameters representing the invocation for which we wish to
+   *          determine applicability.
+   * @return The set of all given overload candidates which are most applicable to
+   *         invocation with the given parameters.
+   */
+  @SuppressWarnings("unchecked")
+  public static <I extends ExecutableToken<?, ?>> Set<? extends I> resolveApplicableExecutableMembers(
+      Set<? extends I> candidates,
+      Collection<? extends TypeToken<?>> parameters) {
+    Map<I, RuntimeException> failures = new LinkedHashMap<>();
+    BiConsumer<I, RuntimeException> putFailures = failures::put;
 
-		Set<? extends I> compatibleCandidates = filterOverloadCandidates(
-				candidates,
-				i -> (I) i.withLooseApplicability(parameters),
-				putFailures);
+    Set<? extends I> compatibleCandidates = filterOverloadCandidates(
+        candidates,
+        i -> (I) i.withLooseApplicability(parameters),
+        putFailures);
 
-		if (compatibleCandidates.isEmpty()) {
-			compatibleCandidates = new HashSet<>(candidates);
-			for (I candidate : candidates)
-				if (!candidate.isVariableArityDefinition())
-					compatibleCandidates.remove(candidate);
+    if (compatibleCandidates.isEmpty()) {
+      compatibleCandidates = new HashSet<>(candidates);
+      for (I candidate : candidates)
+        if (!candidate.isVariableArityDefinition())
+          compatibleCandidates.remove(candidate);
 
-			compatibleCandidates = filterOverloadCandidates(
-					compatibleCandidates,
-					i -> (I) i.withVariableArityApplicability(parameters),
-					putFailures);
-		} else {
-			Set<? extends I> oldCompatibleCandidates = compatibleCandidates;
-			compatibleCandidates = filterOverloadCandidates(
-					compatibleCandidates,
-					i -> (I) i.withStrictApplicability(parameters),
-					putFailures);
-			if (compatibleCandidates.isEmpty())
-				compatibleCandidates = oldCompatibleCandidates;
-		}
+      compatibleCandidates = filterOverloadCandidates(
+          compatibleCandidates,
+          i -> (I) i.withVariableArityApplicability(parameters),
+          putFailures);
+    } else {
+      Set<? extends I> oldCompatibleCandidates = compatibleCandidates;
+      compatibleCandidates = filterOverloadCandidates(
+          compatibleCandidates,
+          i -> (I) i.withStrictApplicability(parameters),
+          putFailures);
+      if (compatibleCandidates.isEmpty())
+        compatibleCandidates = oldCompatibleCandidates;
+    }
 
-		if (compatibleCandidates.isEmpty()) {
-			Set<? extends Executable> candidateMembers = candidates
-					.stream()
-					.map(ExecutableToken::getMember)
-					.collect(toSet());
-			List<? extends Type> candidateParameters = parameters
-					.stream()
-					.map(TypeToken::getType)
-					.collect(toList());
+    if (compatibleCandidates.isEmpty()) {
+      Set<? extends Executable> candidateMembers = candidates
+          .stream()
+          .map(ExecutableToken::getMember)
+          .collect(toSet());
+      List<? extends Type> candidateParameters = parameters
+          .stream()
+          .map(TypeToken::getType)
+          .collect(toList());
 
-			Iterator<RuntimeException> exceptionIterator = failures.values().iterator();
-			RuntimeException mainCause = exceptionIterator.next();
-			while (exceptionIterator.hasNext()) {
-				mainCause.addSuppressed(exceptionIterator.next());
-			}
+      Iterator<RuntimeException> exceptionIterator = failures.values().iterator();
+      RuntimeException mainCause = exceptionIterator.next();
+      while (exceptionIterator.hasNext()) {
+        mainCause.addSuppressed(exceptionIterator.next());
+      }
 
-			throw new ReflectionException(
-					REFLECTION_PROPERTIES.cannotResolveApplicable(candidateMembers, candidateParameters),
-					mainCause);
-		}
+      throw new ReflectionException(
+          REFLECTION_PROPERTIES.cannotResolveApplicable(candidateMembers, candidateParameters),
+          mainCause);
+    }
 
-		return compatibleCandidates;
-	}
+    return compatibleCandidates;
+  }
 
-	private static <I extends ExecutableToken<?, ?>> Set<? extends I> filterOverloadCandidates(
-			Collection<? extends I> candidates,
-			Function<? super I, I> applicabilityFunction,
-			BiConsumer<I, RuntimeException> failures) {
-		return candidates
-				.stream()
-				.flatMap(
-						i -> streamOptional(
-								tryOptional(() -> applicabilityFunction.apply(i), e -> failures.accept(i, e))))
-				.collect(toSet());
-	}
+  private static <I extends ExecutableToken<?, ?>> Set<? extends I> filterOverloadCandidates(
+      Collection<? extends I> candidates,
+      Function<? super I, I> applicabilityFunction,
+      BiConsumer<I, RuntimeException> failures) {
+    return candidates
+        .stream()
+        .flatMap(
+            i -> streamOptional(
+                tryOptional(() -> applicabilityFunction.apply(i), e -> failures.accept(i, e))))
+        .collect(toSet());
+  }
 
-	/**
-	 * Find which of the given overload candidates is the most specific according to
-	 * the rules described by the Java 8 language specification.
-	 * 
-	 * <p>
-	 * If no single most specific candidate can be found, the method will throw a
-	 * {@link ReflectionException}.
-	 * 
-	 * @param <I>
-	 *          the type of invokable
-	 * @param candidates
-	 *          The candidates from which to select the most specific.
-	 * @return The most specific of the given candidates.
-	 */
-	public static <I extends ExecutableToken<?, ?>> I resolveMostSpecificExecutableMember(
-			Collection<? extends I> candidates) {
-		if (candidates.size() == 1)
-			return candidates.iterator().next();
+  /**
+   * Find which of the given overload candidates is the most specific according to
+   * the rules described by the Java 8 language specification.
+   * 
+   * <p>
+   * If no single most specific candidate can be found, the method will throw a
+   * {@link ReflectionException}.
+   * 
+   * @param <I>
+   *          the type of invokable
+   * @param candidates
+   *          The candidates from which to select the most specific.
+   * @return The most specific of the given candidates.
+   */
+  public static <I extends ExecutableToken<?, ?>> I resolveMostSpecificExecutableMember(
+      Collection<? extends I> candidates) {
+    if (candidates.size() == 1)
+      return candidates.iterator().next();
 
-		Set<I> mostSpecificSoFar = resolveMostSpecificCandidateSet(candidates);
+    Set<I> mostSpecificSoFar = resolveMostSpecificCandidateSet(candidates);
 
-		/*
-		 * Find which of the remaining candidates, which should all have identical
-		 * parameter types, is declared in the lowermost class.
-		 */
-		Iterator<I> overrideCandidateIterator = mostSpecificSoFar.iterator();
-		I mostSpecific = overrideCandidateIterator.next();
-		while (overrideCandidateIterator.hasNext()) {
-			I candidate = overrideCandidateIterator.next();
+    /*
+     * Find which of the remaining candidates, which should all have identical
+     * parameter types, is declared in the lowermost class.
+     */
+    Iterator<I> overrideCandidateIterator = mostSpecificSoFar.iterator();
+    I mostSpecific = overrideCandidateIterator.next();
+    while (overrideCandidateIterator.hasNext()) {
+      I candidate = overrideCandidateIterator.next();
 
-			if (!candidate.getParameters().equals(mostSpecific.getParameters())
-					|| !candidate.getName().equals(mostSpecific.getName())) {
-				I mostSpecificFinal = mostSpecific;
-				throw new ReflectionException(
-						REFLECTION_PROPERTIES
-								.cannotResolveAmbiguity(candidate.getMember(), mostSpecificFinal.getMember()));
-			}
+      if (!candidate.getParameters().equals(mostSpecific.getParameters())
+          || !candidate.getName().equals(mostSpecific.getName())) {
+        I mostSpecificFinal = mostSpecific;
+        throw new ReflectionException(
+            REFLECTION_PROPERTIES
+                .cannotResolveAmbiguity(candidate.getMember(), mostSpecificFinal.getMember()));
+      }
 
-			mostSpecific = candidate.getMember().getDeclaringClass().isAssignableFrom(
-					mostSpecific.getMember().getDeclaringClass()) ? candidate : mostSpecific;
-		}
+      mostSpecific = candidate.getMember().getDeclaringClass().isAssignableFrom(
+          mostSpecific.getMember().getDeclaringClass()) ? candidate : mostSpecific;
+    }
 
-		return mostSpecific;
-	}
+    return mostSpecific;
+  }
 
-	private static <I extends ExecutableToken<?, ?>> Set<I> resolveMostSpecificCandidateSet(
-			Collection<? extends I> candidates) {
-		List<I> remainingCandidates = new ArrayList<>(candidates);
+  private static <I extends ExecutableToken<?, ?>> Set<I> resolveMostSpecificCandidateSet(
+      Collection<? extends I> candidates) {
+    List<I> remainingCandidates = new ArrayList<>(candidates);
 
-		/*
-		 * For each remaining candidate in the list...
-		 */
-		for (int first = 0; first < remainingCandidates.size(); first++) {
-			I firstCandidate = remainingCandidates.get(first);
+    /*
+     * For each remaining candidate in the list...
+     */
+    for (int first = 0; first < remainingCandidates.size(); first++) {
+      I firstCandidate = remainingCandidates.get(first);
 
-			/*
-			 * Compare with each other remaining candidate...
-			 */
-			for (int second = first + 1; second < remainingCandidates.size(); second++) {
-				I secondCandidate = remainingCandidates.get(second);
+      /*
+       * Compare with each other remaining candidate...
+       */
+      for (int second = first + 1; second < remainingCandidates.size(); second++) {
+        I secondCandidate = remainingCandidates.get(second);
 
-				/*
-				 * Determine which of the executable members, if either, are more specific.
-				 */
-				Pair<Boolean, Boolean> moreSpecific = compareCandidates(firstCandidate, secondCandidate);
+        /*
+         * Determine which of the executable members, if either, are more specific.
+         */
+        Pair<Boolean, Boolean> moreSpecific = compareCandidates(firstCandidate, secondCandidate);
 
-				if (moreSpecific.getLeft()) {
-					if (moreSpecific.getRight()) {
-						/*
-						 * First and second are equally specific.
-						 */
-					} else {
-						/*
-						 * First is strictly more specific.
-						 */
-						remainingCandidates.remove(second--);
-					}
-				} else if (moreSpecific.getRight()) {
-					/*
-					 * Second is strictly more specific.
-					 */
-					remainingCandidates.remove(first--);
+        if (moreSpecific.getLeft()) {
+          if (moreSpecific.getRight()) {
+            /*
+             * First and second are equally specific.
+             */
+          } else {
+            /*
+             * First is strictly more specific.
+             */
+            remainingCandidates.remove(second--);
+          }
+        } else if (moreSpecific.getRight()) {
+          /*
+           * Second is strictly more specific.
+           */
+          remainingCandidates.remove(first--);
 
-					break;
-				} else {
-					/*
-					 * Neither first nor second are more specific.
-					 */
-					throw new ReflectionException(
-							REFLECTION_PROPERTIES
-									.cannotResolveAmbiguity(firstCandidate.getMember(), secondCandidate.getMember()));
-				}
-			}
-		}
+          break;
+        } else {
+          /*
+           * Neither first nor second are more specific.
+           */
+          throw new ReflectionException(
+              REFLECTION_PROPERTIES
+                  .cannotResolveAmbiguity(firstCandidate.getMember(), secondCandidate.getMember()));
+        }
+      }
+    }
 
-		return new HashSet<>(remainingCandidates);
-	}
+    return new HashSet<>(remainingCandidates);
+  }
 
-	private static Pair<Boolean, Boolean> compareCandidates(
-			ExecutableToken<?, ?> firstCandidate,
-			ExecutableToken<?, ?> secondCandidate) {
-		boolean firstMoreSpecific = true;
-		boolean secondMoreSpecific = true;
+  private static Pair<Boolean, Boolean> compareCandidates(
+      ExecutableToken<?, ?> firstCandidate,
+      ExecutableToken<?, ?> secondCandidate) {
+    boolean firstMoreSpecific = true;
+    boolean secondMoreSpecific = true;
 
-		if (firstCandidate.isGeneric())
-			secondMoreSpecific = compareGenericCandidate(secondCandidate, firstCandidate);
-		if (secondCandidate.isGeneric())
-			firstMoreSpecific = compareGenericCandidate(firstCandidate, secondCandidate);
+    if (firstCandidate.isGeneric())
+      secondMoreSpecific = compareGenericCandidate(secondCandidate, firstCandidate);
+    if (secondCandidate.isGeneric())
+      firstMoreSpecific = compareGenericCandidate(firstCandidate, secondCandidate);
 
-		if (!firstCandidate.isGeneric() || !secondCandidate.isGeneric()) {
-			Iterator<ExecutableParameter> firstParameterIteror = firstCandidate
-					.getParameters()
-					.iterator();
-			Iterator<ExecutableParameter> secondParameterIteror = secondCandidate
-					.getParameters()
-					.iterator();
-			while (firstParameterIteror.hasNext()) {
-				ExecutableParameter firstParameter = firstParameterIteror.next();
-				ExecutableParameter secondParameter = secondParameterIteror.next();
+    if (!firstCandidate.isGeneric() || !secondCandidate.isGeneric()) {
+      Iterator<ExecutableParameter> firstParameterIteror = firstCandidate
+          .getParameters()
+          .iterator();
+      Iterator<ExecutableParameter> secondParameterIteror = secondCandidate
+          .getParameters()
+          .iterator();
+      while (firstParameterIteror.hasNext()) {
+        ExecutableParameter firstParameter = firstParameterIteror.next();
+        ExecutableParameter secondParameter = secondParameterIteror.next();
 
-				if (!secondMoreSpecific && !secondCandidate.isGeneric()) {
-					if (!Types.isAssignable(firstParameter.getType(), secondParameter.getType())) {
-						firstMoreSpecific = false;
-						break;
-					}
-				} else if (!firstMoreSpecific && !firstCandidate.isGeneric()) {
-					if (!Types.isAssignable(secondParameter.getType(), firstParameter.getType())) {
-						secondMoreSpecific = false;
-						break;
-					}
-				} else {
-					secondMoreSpecific = Types
-							.isAssignable(secondParameter.getType(), firstParameter.getType());
-					firstMoreSpecific = Types
-							.isAssignable(firstParameter.getType(), secondParameter.getType());
+        if (!secondMoreSpecific && !secondCandidate.isGeneric()) {
+          if (!Types.isAssignable(firstParameter.getType(), secondParameter.getType())) {
+            firstMoreSpecific = false;
+            break;
+          }
+        } else if (!firstMoreSpecific && !firstCandidate.isGeneric()) {
+          if (!Types.isAssignable(secondParameter.getType(), firstParameter.getType())) {
+            secondMoreSpecific = false;
+            break;
+          }
+        } else {
+          secondMoreSpecific = Types
+              .isAssignable(secondParameter.getType(), firstParameter.getType());
+          firstMoreSpecific = Types
+              .isAssignable(firstParameter.getType(), secondParameter.getType());
 
-					if (!(firstMoreSpecific || secondMoreSpecific))
-						break;
-				}
-			}
-		}
+          if (!(firstMoreSpecific || secondMoreSpecific))
+            break;
+        }
+      }
+    }
 
-		return new Pair<>(firstMoreSpecific, secondMoreSpecific);
-	}
+    return new Pair<>(firstMoreSpecific, secondMoreSpecific);
+  }
 
-	private static boolean compareGenericCandidate(
-			ExecutableToken<?, ?> firstCandidate,
-			ExecutableToken<?, ?> genericCandidate) {
-		TypeResolver resolver = new TypeResolver(genericCandidate.getBounds());
+  private static boolean compareGenericCandidate(
+      ExecutableToken<?, ?> firstCandidate,
+      ExecutableToken<?, ?> genericCandidate) {
+    TypeResolver resolver = new TypeResolver(genericCandidate.getBounds());
 
-		try {
-			List<ExecutableParameter> firstParameters = firstCandidate.getParameters().collect(toList());
-			List<ExecutableParameter> genericParameters = genericCandidate.getParameters().collect(
-					toList());
-			int parameters = firstParameters.size();
-			if (firstCandidate.isVariableArityDefinition()) {
-				parameters--;
+    try {
+      List<ExecutableParameter> firstParameters = firstCandidate.getParameters().collect(toList());
+      List<ExecutableParameter> genericParameters = genericCandidate.getParameters().collect(
+          toList());
+      int parameters = firstParameters.size();
+      if (firstCandidate.isVariableArityDefinition()) {
+        parameters--;
 
-				resolver.reduceConstraint(
-						new ConstraintFormula(
-								Kind.SUBTYPE,
-								firstParameters.get(parameters).getType(),
-								genericParameters.get(parameters).getType()));
-			}
+        resolver.reduceConstraint(
+            new ConstraintFormula(
+                Kind.SUBTYPE,
+                firstParameters.get(parameters).getType(),
+                genericParameters.get(parameters).getType()));
+      }
 
-			for (int i = 0; i < parameters; i++) {
-				resolver.reduceConstraint(
-						new ConstraintFormula(
-								Kind.SUBTYPE,
-								firstParameters.get(i).getType(),
-								genericParameters.get(i).getType()));
-			}
+      for (int i = 0; i < parameters; i++) {
+        resolver.reduceConstraint(
+            new ConstraintFormula(
+                Kind.SUBTYPE,
+                firstParameters.get(i).getType(),
+                genericParameters.get(i).getType()));
+      }
 
-			resolver.resolve();
-		} catch (Exception e) {
-			return false;
-		}
+      resolver.resolve();
+    } catch (Exception e) {
+      return false;
+    }
 
-		return true;
-	}
+    return true;
+  }
 }
