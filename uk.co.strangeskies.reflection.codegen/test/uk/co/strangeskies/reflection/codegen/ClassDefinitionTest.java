@@ -43,12 +43,14 @@ import static uk.co.strangeskies.reflection.token.MethodMatcher.allMethods;
 import static uk.co.strangeskies.reflection.token.VariableMatcher.allVariables;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.codegen.block.Block;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
+@Ignore
 @SuppressWarnings("javadoc")
 public class ClassDefinitionTest {
   public interface Func<A, B> {
@@ -124,7 +126,7 @@ public class ClassDefinitionTest {
   @Test
   public void defineWithInheritedMethodDeclarationBySignature()
       throws InstantiationException, IllegalAccessException {
-    Func<String, String> instance = (Func<String, String>) new ClassRegister(createClassLoader())
+    Func<String, String> instance = new ClassRegister(createClassLoader())
         .withClassSignature(
             TEST_CLASS_SIGNATURE.extending(new TypeToken<Func<String, String>>() {}))
         .defineMethod(
@@ -144,7 +146,7 @@ public class ClassDefinitionTest {
   @Test
   public void defineWithInheritedMethodDeclaration()
       throws InstantiationException, IllegalAccessException {
-    Func<String, String> instance = (Func<String, String>) new ClassRegister(createClassLoader())
+    Func<String, String> instance = new ClassRegister(createClassLoader())
         .withClassSignature(
             TEST_CLASS_SIGNATURE.extending(new TypeToken<Func<String, String>>() {}))
         .defineMethod(
