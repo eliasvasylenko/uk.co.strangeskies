@@ -43,204 +43,192 @@ import uk.co.strangeskies.mathematics.operation.Multipliable;
 import uk.co.strangeskies.mathematics.operation.Negatable;
 import uk.co.strangeskies.mathematics.operation.Scalable;
 import uk.co.strangeskies.mathematics.operation.Subtractable;
+import uk.co.strangeskies.observable.Observable;
 import uk.co.strangeskies.observable.Observer;
 import uk.co.strangeskies.utility.Copyable;
-import uk.co.strangeskies.utility.Property;
 import uk.co.strangeskies.utility.Self;
 
 public abstract class Value<S extends Value<S>> extends Number implements Multipliable<S, Value<?>>,
-		Subtractable<S, Value<?>>, Negatable<S, S>, Scalable<S>, Property<S, Value<?>>, Incrementable<S>, Self<S>,
-		SelfExpression<S>, Copyable<S>, Comparable<Value<?>>, CopyDecouplingExpression<S> {
-	private static final long serialVersionUID = -979949605176385397L;
+    Subtractable<S, Value<?>>, Negatable<S, S>, Scalable<S>, Incrementable<S>, Self<S>,
+    SelfExpression<S>, Copyable<S>, Comparable<Value<?>>, CopyDecouplingExpression<S> {
+  private static final long serialVersionUID = -979949605176385397L;
 
-	private final Set<Observer<? super S>> observers;
-	private boolean evaluated = true;
+  private final Set<Observer<? super S>> observers;
+  private boolean evaluated = true;
 
-	public Value() {
-		this(0);
-	}
+  public Value() {
+    this(0);
+  }
 
-	public Value(Number value) {
-		observers = new LinkedHashSet<>();
+  public Value(Number value) {
+    observers = new LinkedHashSet<>();
 
-		setValue(value);
-	}
+    setValue(value);
+  }
 
-	public Value(Value<?> value) {
-		this((Number) value);
-	}
+  public Value(Value<?> value) {
+    this((Number) value);
+  }
 
-	@Override
-	public int compareTo(Value<?> other) {
-		int comparison = compareToAtSupportedPrecision(other);
+  @Override
+  public int compareTo(Value<?> other) {
+    int comparison = compareToAtSupportedPrecision(other);
 
-		if (comparison == 0) {
-			comparison = -other.compareToAtSupportedPrecision(this);
-		}
+    if (comparison == 0) {
+      comparison = -other.compareToAtSupportedPrecision(this);
+    }
 
-		return comparison;
-	}
+    return comparison;
+  }
 
-	@Override
-	public abstract S negate();
+  @Override
+  public abstract S negate();
 
-	public abstract S reciprocate();
+  public abstract S reciprocate();
 
-	public S getReciprocal() {
-		return copy().reciprocate();
-	}
+  public S getReciprocal() {
+    return copy().reciprocate();
+  }
 
-	@Override
-	public final S getMultiplied(Value<?> value) {
-		return Scalable.super.getMultiplied(value);
-	}
+  @Override
+  public final S getMultiplied(Value<?> value) {
+    return Scalable.super.getMultiplied(value);
+  }
 
-	@Override
-	public abstract String toString();
+  @Override
+  public abstract String toString();
 
-	@Override
-	public abstract S set(Value<?> value);
+  public abstract S setValue(Number value);
 
-	public abstract S setValue(Number value);
+  @Override
+  public abstract boolean equals(Object that);
 
-	@Override
-	public abstract boolean equals(Object that);
+  protected abstract boolean equals(Value<?> that);
 
-	protected abstract boolean equals(Value<?> that);
+  public abstract S unitInTheLastPlaceAbove();
 
-	public abstract S unitInTheLastPlaceAbove();
+  public abstract S unitInTheLastPlaceBelow();
 
-	public abstract S unitInTheLastPlaceBelow();
+  public final S unitInTheLastPlaceLarger() {
+    return maximum(unitInTheLastPlaceAbove(), unitInTheLastPlaceBelow());
+  }
 
-	public final S unitInTheLastPlaceLarger() {
-		return maximum(unitInTheLastPlaceAbove(), unitInTheLastPlaceBelow());
-	}
+  public final S unitInTheLastPlaceSmaller() {
+    return minimum(unitInTheLastPlaceAbove(), unitInTheLastPlaceBelow());
+  }
 
-	public final S unitInTheLastPlaceSmaller() {
-		return minimum(unitInTheLastPlaceAbove(), unitInTheLastPlaceBelow());
-	}
+  public static <S extends Value<S>> S maximum(S first, S second) {
+    if (first.compareTo(second) > 0) {
+      return first;
+    } else {
+      return second;
+    }
+  }
 
-	public static <S extends Value<S>> S maximum(S first, S second) {
-		if (first.compareTo(second) > 0) {
-			return first;
-		} else {
-			return second;
-		}
-	}
+  public static <S extends Value<S>> S minimum(S first, S second) {
+    if (first.compareTo(second) < 0) {
+      return first;
+    } else {
+      return second;
+    }
+  }
 
-	public static <S extends Value<S>> S minimum(S first, S second) {
-		if (first.compareTo(second) < 0) {
-			return first;
-		} else {
-			return second;
-		}
-	}
+  @Override
+  public synchronized final S getValue() {
+    evaluated = true;
+    S result = getThis();
+    return result;
+  }
 
-	@Override
-	public final S get() {
-		return getThis();
-	}
+  protected final void update() {
+    if (evaluated) {
+      evaluated = false;
+      postUpdate();
+    }
+  }
 
-	@Override
-	public synchronized final S getValue() {
-		evaluated = true;
-		S result = getThis();
-		return result;
-	}
+  protected final void postUpdate() {
+    for (Observer<? super S> observer : observers)
+      observer.onNext(null);
+  }
 
-	protected final void update() {
-		if (evaluated) {
-			evaluated = false;
-			postUpdate();
-		}
-	}
+  @Override
+  public Observable<Expression<? extends S>> invalidations() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-	protected final void postUpdate() {
-		for (Observer<? super S> observer : observers)
-			observer.notify(null);
-	}
+  @Override
+  public abstract S multiply(Value<?> value);
 
-	@Override
-	public final boolean addObserver(Observer<? super Expression<? extends S>> observer) {
-		return observers.add(observer);
-	}
+  @Override
+  public abstract S divide(Value<?> value);
 
-	@Override
-	public final boolean removeObserver(Observer<? super Expression<? extends S>> observer) {
-		return observers.remove(observer);
-	}
+  public abstract boolean equals(double value);
 
-	@Override
-	public abstract S multiply(Value<?> value);
+  public abstract boolean equals(float value);
 
-	@Override
-	public abstract S divide(Value<?> value);
+  public abstract boolean equals(int value);
 
-	public abstract boolean equals(double value);
+  public abstract boolean equals(long value);
 
-	public abstract boolean equals(float value);
+  public abstract int compareToAtSupportedPrecision(/*  */Value<?> other);
 
-	public abstract boolean equals(int value);
+  public abstract int getMultipliedPrimitive(int value);
 
-	public abstract boolean equals(long value);
+  public abstract long getMultipliedPrimitive(long value);
 
-	public abstract int compareToAtSupportedPrecision(/*  */Value<?> other);
+  public abstract float getMultipliedPrimitive(float value);
 
-	public abstract int getMultipliedPrimitive(int value);
+  public abstract double getMultipliedPrimitive(double value);
 
-	public abstract long getMultipliedPrimitive(long value);
+  public abstract int getDividedPrimitive(int value);
 
-	public abstract float getMultipliedPrimitive(float value);
+  public abstract long getDividedPrimitive(long value);
 
-	public abstract double getMultipliedPrimitive(double value);
+  public abstract float getDividedPrimitive(float value);
 
-	public abstract int getDividedPrimitive(int value);
+  public abstract double getDividedPrimitive(double value);
 
-	public abstract long getDividedPrimitive(long value);
+  @Override
+  public abstract int intValue();
 
-	public abstract float getDividedPrimitive(float value);
+  @Override
+  public abstract long longValue();
 
-	public abstract double getDividedPrimitive(double value);
+  @Override
+  public abstract float floatValue();
 
-	@Override
-	public abstract int intValue();
+  @Override
+  public abstract double doubleValue();
 
-	@Override
-	public abstract long longValue();
+  public abstract S square();
 
-	@Override
-	public abstract float floatValue();
+  public S getSquared() {
+    return copy().square();
+  }
 
-	@Override
-	public abstract double doubleValue();
+  public abstract S squareRoot();
 
-	public abstract S square();
+  public S getSquareRoot() {
+    return copy().squareRoot();
+  }
 
-	public S getSquared() {
-		return copy().square();
-	}
+  public abstract S exponentiate(Value<?> exponential);
 
-	public abstract S squareRoot();
+  public S getExponentiated(Value<?> exponential) {
+    return copy().exponentiate(exponential);
+  }
 
-	public S getSquareRoot() {
-		return copy().squareRoot();
-	}
+  public abstract S root(Value<?> root);
 
-	public abstract S exponentiate(Value<?> exponential);
+  public S getRoot(Value<?> root) {
+    return copy().root(root);
+  }
 
-	public S getExponentiated(Value<?> exponential) {
-		return copy().exponentiate(exponential);
-	}
+  public abstract S modulus();
 
-	public abstract S root(Value<?> root);
-
-	public S getRoot(Value<?> root) {
-		return copy().root(root);
-	}
-
-	public abstract S modulus();
-
-	public S getModulus() {
-		return copy().modulus();
-	}
+  public S getModulus() {
+    return copy().modulus();
+  }
 }

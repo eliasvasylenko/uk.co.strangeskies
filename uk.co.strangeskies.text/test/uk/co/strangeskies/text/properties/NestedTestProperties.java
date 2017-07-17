@@ -35,9 +35,6 @@ package uk.co.strangeskies.text.properties;
 import static uk.co.strangeskies.text.properties.PropertyConfiguration.UNQUALIFIED_SLASHED;
 import static uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase.LOWER;
 
-import uk.co.strangeskies.text.properties.Nested;
-import uk.co.strangeskies.text.properties.PropertyConfiguration;
-
 @SuppressWarnings("javadoc")
 @PropertyConfiguration(key = UNQUALIFIED_SLASHED, keySplitString = ".", keyCase = LOWER)
 public interface NestedTestProperties {

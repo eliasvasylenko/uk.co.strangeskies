@@ -48,7 +48,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import uk.co.strangeskies.text.CamelCaseFormatter;
 import uk.co.strangeskies.text.CamelCaseFormatter.UnformattingCase;
 
 @SuppressWarnings("javadoc")

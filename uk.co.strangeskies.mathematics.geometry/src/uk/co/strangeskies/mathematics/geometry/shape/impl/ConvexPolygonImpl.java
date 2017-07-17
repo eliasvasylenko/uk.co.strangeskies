@@ -39,192 +39,193 @@ import java.util.List;
 import java.util.Set;
 
 import uk.co.strangeskies.mathematics.expression.DependentExpression;
+import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.mathematics.expression.collection.ExpressionSet;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.geometry.shape.ClosedPolyline2;
 import uk.co.strangeskies.mathematics.geometry.shape.ConvexPolygon;
 import uk.co.strangeskies.mathematics.geometry.shape.Shape;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.observable.Observable;
 
 //convex only polygon
 public class ConvexPolygonImpl<V extends Value<V>> extends DependentExpression<ConvexPolygonImpl<V>>
-		implements ConvexPolygon<ConvexPolygonImpl<V>, V> {
-	public class ConvexHull<T> extends AbstractSet<Vector2<V>> {
-		private final ArrayList<Vector2<V>> backingList;
+    implements ConvexPolygon<ConvexPolygonImpl<V>, V> {
+  public class ConvexHull<T> extends AbstractSet<Vector2<V>> {
+    private final ArrayList<Vector2<V>> backingList;
 
-		private ConvexHull(Observable<?> hullVertexSet) {
-			backingList = new ArrayList<>();
-			hullVertexSet.addObserver(message -> invalidate());
-		}
+    private ConvexHull(Expression<?> hullVertexSet) {
+      backingList = new ArrayList<>();
+      hullVertexSet.invalidations().weakReference(this).observe(
+          message -> message.owner().invalidate());
+    }
 
-		public void invalidate() {
+    public void invalidate() {
 
-		}
+    }
 
-		protected boolean tryAdd(Vector2<V> point) {
-			if (backingList.contains(point)) {
-				return false;
-			}
+    protected boolean tryAdd(Vector2<V> point) {
+      if (backingList.contains(point)) {
+        return false;
+      }
 
-			List<Vector2<V>> vertices = boundary().vertices();
+      List<Vector2<V>> vertices = boundary().vertices();
 
-			// fail if point is already part of shape
-			if (touches(point))
-				return false;
+      // fail if point is already part of shape
+      if (touches(point))
+        return false;
 
-			// special case for current size < 3
-			if (vertices.size() < 3) {
-				vertices.add(point);
+      // special case for current size < 3
+      if (vertices.size() < 3) {
+        vertices.add(point);
 
-				// make sure wound in correct direction
-				/*-
-				if (vertices.size() == 3
-						&& ConvexPolygonImpl.super.getWindingDirection() != getWindingDirection()) {
-					vertices.add(vertices.remove(0));
-				}*/
-				return true;
-			}
+        // make sure wound in correct direction
+        /*-
+        if (vertices.size() == 3
+        		&& ConvexPolygonImpl.super.getWindingDirection() != getWindingDirection()) {
+        	vertices.add(vertices.remove(0));
+        }*/
+        return true;
+      }
 
-			// find the end points of the edge sequence which has the point on the
-			// right.
+      // find the end points of the edge sequence which has the point on the
+      // right.
 
-			// was the point on the right of the last edge
-			/*-
-			boolean right = false;
-			
-			for (int i = begin; i < end; i++) {
-				// is the point on the right of the edge from this vertex to the next
-				if (new Matrix2Impl<V>(i - (i + 1), i - point).Det() > 0.01) {
-					// was it on the other side last time
-					if (right == false) {
-						right = true;
-						first = i;
-						if (last >= begin)
-							i = end;
-					}
-				} else {
-					// was it on the other side last time
-					if (right == true) {
-						right = false;
-						last = i;
-						if (first > begin)
-							i = end;
-					}
-				}
-			}
-			if (last == begin - 1)
-				last = begin;
-			
-			// construct new convex polygon
-			List<Vector2Impl<V>> newVertices;
-			
-			if (first < last) {
-				for (i = first; i <= last; i++)
-					newVertices.push_back(i);
-				newVertices.push_back(point);
-			} else {
-				for (i = first; i < end; i++)
-					newVertices.push_back(i);
-				for (i = begin; i <= last; i++)
-					newVertices.push_back(i);
-				newVertices.push_back(point);
-			}
-			
-			vertices = newVertices;
-			 */
+      // was the point on the right of the last edge
+      /*-
+      boolean right = false;
+      
+      for (int i = begin; i < end; i++) {
+      	// is the point on the right of the edge from this vertex to the next
+      	if (new Matrix2Impl<V>(i - (i + 1), i - point).Det() > 0.01) {
+      		// was it on the other side last time
+      		if (right == false) {
+      			right = true;
+      			first = i;
+      			if (last >= begin)
+      				i = end;
+      		}
+      	} else {
+      		// was it on the other side last time
+      		if (right == true) {
+      			right = false;
+      			last = i;
+      			if (first > begin)
+      				i = end;
+      		}
+      	}
+      }
+      if (last == begin - 1)
+      	last = begin;
+      
+      // construct new convex polygon
+      List<Vector2Impl<V>> newVertices;
+      
+      if (first < last) {
+      	for (i = first; i <= last; i++)
+      		newVertices.push_back(i);
+      	newVertices.push_back(point);
+      } else {
+      	for (i = first; i < end; i++)
+      		newVertices.push_back(i);
+      	for (i = begin; i <= last; i++)
+      		newVertices.push_back(i);
+      	newVertices.push_back(point);
+      }
+      
+      vertices = newVertices;
+       */
 
-			return true;
-		}
+      return true;
+    }
 
-		@Override
-		public Iterator<Vector2<V>> iterator() {
-			return backingList.iterator();
-		}
+    @Override
+    public Iterator<Vector2<V>> iterator() {
+      return backingList.iterator();
+    }
 
-		@Override
-		public int size() {
-			return backingList.size();
-		}
-	}
+    @Override
+    public int size() {
+      return backingList.size();
+    }
+  }
 
-	private final ExpressionSet<?, Vector2<V>> vertexSet;
-	private final ConvexHull<V> convexHull;
+  private final ExpressionSet<?, Vector2<V>> vertexSet;
+  private final ConvexHull<V> convexHull;
 
-	private WindingDirection windingDirection;
+  private WindingDirection windingDirection;
 
-	public ConvexPolygonImpl() {
-		vertexSet = null; // TODO new ExpressionSetDecorator<Vector2<V>>();
-		convexHull = new ConvexHull<>(vertexSet);
-		// getDependencies().add(vertexSet);
+  public ConvexPolygonImpl() {
+    vertexSet = null; // TODO new ExpressionSetDecorator<Vector2<V>>();
+    convexHull = new ConvexHull<>(vertexSet);
+    // getDependencies().add(vertexSet);
 
-		windingDirection = WindingDirection.CLOCKWISE;
-	}
+    windingDirection = WindingDirection.CLOCKWISE;
+  }
 
-	public void setWindingDirection(WindingDirection windingDirection) {
-		this.windingDirection = windingDirection;
-	}
+  public void setWindingDirection(WindingDirection windingDirection) {
+    this.windingDirection = windingDirection;
+  }
 
-	@Override
-	public WindingDirection getWindingDirection() {
-		return windingDirection;
-	}
+  @Override
+  public WindingDirection getWindingDirection() {
+    return windingDirection;
+  }
 
-	@Override
-	public boolean contains(Vector2<?> point) {
-		// TODO test on right of left side and on left or right side.
-		return false;
-	}
+  @Override
+  public boolean contains(Vector2<?> point) {
+    // TODO test on right of left side and on left or right side.
+    return false;
+  }
 
-	@Override
-	public boolean touches(Vector2<?> point) {
-		// TODO test on right of left side and on left or right side.
-		return false;
-	}
+  @Override
+  public boolean touches(Vector2<?> point) {
+    // TODO test on right of left side and on left or right side.
+    return false;
+  }
 
-	@Override
-	public ConvexPolygonImpl<V> copy() {
-		ConvexPolygonImpl<V> copy = new ConvexPolygonImpl<>();
+  @Override
+  public ConvexPolygonImpl<V> copy() {
+    ConvexPolygonImpl<V> copy = new ConvexPolygonImpl<>();
 
-		Set<Vector2<V>> copyVertexSet = copy.vertexSet();
-		for (Vector2<V> vertex : vertexSet()) {
-			copyVertexSet.add(vertex.copy());
-		}
+    Set<Vector2<V>> copyVertexSet = copy.vertexSet();
+    for (Vector2<V> vertex : vertexSet()) {
+      copyVertexSet.add(vertex.copy());
+    }
 
-		return copy;
-	}
+    return copy;
+  }
 
-	@Override
-	public Set<Vector2<V>> hullVertexSet() {
-		return convexHull;
-	}
+  @Override
+  public Set<Vector2<V>> hullVertexSet() {
+    return convexHull;
+  }
 
-	@Override
-	public Set<Vector2<V>> vertexSet() {
-		return vertexSet;
-	}
+  @Override
+  public Set<Vector2<V>> vertexSet() {
+    return vertexSet;
+  }
 
-	@Override
-	public ClosedPolyline2<V> boundary() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+  @Override
+  public ClosedPolyline2<V> boundary() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-	@Override
-	public boolean intersects(Shape<?> shape) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+  @Override
+  public boolean intersects(Shape<?> shape) {
+    // TODO Auto-generated method stub
+    return false;
+  }
 
-	@Override
-	public boolean touches(Shape<?> shape) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+  @Override
+  public boolean touches(Shape<?> shape) {
+    // TODO Auto-generated method stub
+    return false;
+  }
 
-	@Override
-	protected ConvexPolygonImpl<V> evaluate() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+  @Override
+  protected ConvexPolygonImpl<V> evaluate() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 }

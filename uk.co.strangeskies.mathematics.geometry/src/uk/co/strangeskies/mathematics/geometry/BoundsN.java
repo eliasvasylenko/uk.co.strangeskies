@@ -39,28 +39,28 @@ import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 import uk.co.strangeskies.mathematics.values.Value;
 
 public class BoundsN<V extends Value<V>> extends Bounds<BoundsN<V>, V> {
-	public BoundsN(Bounds<?, V> other) {
-		super(other);
-	}
+  public BoundsN(Bounds<?, V> other) {
+    super(other);
+  }
 
-	public BoundsN(Vector<?, V> from, Vector<?, V> to) {
-		super(from, to);
-	}
+  public BoundsN(Vector<?, V> from, Vector<?, V> to) {
+    super(from, to);
+  }
 
-	public BoundsN(@SuppressWarnings("unchecked") Vector<?, V>... points) {
-		super(points);
-	}
+  public BoundsN(@SuppressWarnings("unchecked") Vector<?, V>... points) {
+    super(points);
+  }
 
-	public BoundsN(Collection<? extends Vector<?, V>> points) {
-		super(points);
-	}
+  public BoundsN(Collection<? extends Vector<?, V>> points) {
+    super(points);
+  }
 
-	public BoundsN(int size, Supplier<V> valueFactory) {
-		super(size, valueFactory);
-	}
+  public BoundsN(int size, Supplier<V> valueFactory) {
+    super(size, valueFactory);
+  }
 
-	@Override
-	public final BoundsN<V> copy() {
-		return new BoundsN<>(this);
-	}
+  @Override
+  public final BoundsN<V> copy() {
+    return new BoundsN<>(this);
+  }
 }

@@ -92,7 +92,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 
 				added.set(vertices.addAllImpl(vertexSet));
 
-				internalListeners.verticesAdded().fire(VerticesEvent.over(GraphImpl.this, vertexSet));
+				internalListeners.verticesAdded().sendNext(VerticesEvent.over(GraphImpl.this, vertexSet));
 			});
 			return added.get();
 		}
@@ -114,7 +114,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 					changeSet.verticesRemoved().add((V) vertex);
 					changeSet.verticesAdded().remove(vertex);
 
-					internalListeners.vertexRemoved().fire(VertexEvent.over(GraphImpl.this, (V) vertex));
+					internalListeners.vertexRemoved().sendNext(VertexEvent.over(GraphImpl.this, (V) vertex));
 				});
 			}
 
@@ -138,7 +138,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 
 				removed.set(vertices.removeAllImpl(vertexSet));
 
-				internalListeners.verticesRemoved().fire(VerticesEvent.over(GraphImpl.this, vertexSet));
+				internalListeners.verticesRemoved().sendNext(VerticesEvent.over(GraphImpl.this, vertexSet));
 
 			});
 			return removed.get();
@@ -291,7 +291,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 						changeSet.edgesRemoved().put((E) edge, vertices);
 					changeSet.edgesAdded().remove(edge);
 
-					internalListeners.edgeRemoved().fire(EdgeEvent.over(GraphImpl.this, (E) edge, vertices));
+					internalListeners.edgeRemoved().sendNext(EdgeEvent.over(GraphImpl.this, (E) edge, vertices));
 				});
 			}
 
@@ -325,7 +325,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 				Map<E, EdgeVertices<V>> edges = edgeSet.stream()
 						.collect(Collectors.toMap(Function.identity(), vertices::incidentTo));
 
-				internalListeners.edgesAdded().fire(EdgesEvent.over(GraphImpl.this, edges));
+				internalListeners.edgesAdded().sendNext(EdgesEvent.over(GraphImpl.this, edges));
 			});
 			return added.get();
 		}
@@ -352,7 +352,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 				Map<E, EdgeVertices<V>> edges = edgeSet.stream()
 						.collect(Collectors.toMap(Function.identity(), vertices::incidentTo));
 
-				internalListeners.edgesRemoved().fire(EdgesEvent.over(GraphImpl.this, edges));
+				internalListeners.edgesRemoved().sendNext(EdgesEvent.over(GraphImpl.this, edges));
 			});
 			return removed.get();
 		}
@@ -591,7 +591,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 				changeSet.edgesRemoved().remove(edge, vertices);
 				changeSet.edgesAdded().put(edge, vertices);
 
-				internalListeners.edgeAdded().fire(EdgeEvent.over(GraphImpl.this, edge, vertices));
+				internalListeners.edgeAdded().sendNext(EdgeEvent.over(GraphImpl.this, edge, vertices));
 			});
 		}
 
@@ -613,7 +613,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 				changeSet.verticesRemoved().remove(vertex);
 				changeSet.verticesAdded().add(vertex);
 
-				internalListeners.vertexAdded().fire(VertexEvent.over(GraphImpl.this, vertex));
+				internalListeners.vertexAdded().sendNext(VertexEvent.over(GraphImpl.this, vertex));
 			});
 
 			return true;
@@ -675,7 +675,7 @@ class GraphImpl<V, E> implements Graph<V, E> {
 			try {
 				action.run();
 
-				listeners.change().fire(ChangeEvent.over(GraphImpl.this, changeSet.copy()));
+				listeners.change().sendNext(ChangeEvent.over(GraphImpl.this, changeSet.copy()));
 			} catch (Exception e) {
 				/*
 				 * TODO discard change set

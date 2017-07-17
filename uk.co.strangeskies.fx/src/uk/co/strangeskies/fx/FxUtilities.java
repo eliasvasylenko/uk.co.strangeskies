@@ -62,356 +62,350 @@ import uk.co.strangeskies.observable.Observable;
  * @author Elias N Vasylenko
  */
 public class FxUtilities {
-	private static final String CONTROLLER_STRING = "Controller";
+  private static final String CONTROLLER_STRING = "Controller";
 
-	private FxUtilities() {}
+  private FxUtilities() {}
 
-	/**
-	 * Perform the given action on the JavaFX event thread as soon as possible,
-	 * returning upon completion. This method is safe whether or not the invoking
-	 * thread is the event thread.
-	 * 
-	 * @param runnable
-	 *          The action to execute
-	 */
-	public static void runNow(Runnable runnable) {
-		runNow(() -> {
-			runnable.run();
-			return null;
-		});
-	}
+  /**
+   * Perform the given action on the JavaFX event thread as soon as possible,
+   * returning upon completion. This method is safe whether or not the invoking
+   * thread is the event thread.
+   * 
+   * @param runnable
+   *          The action to execute
+   */
+  public static void runNow(Runnable runnable) {
+    runNow(() -> {
+      runnable.run();
+      return null;
+    });
+  }
 
-	/**
-	 * Perform the given action on the JavaFX event thread as soon as possible,
-	 * returning the result upon completion. This method is safe whether or not
-	 * the invoking thread is the event thread.
-	 * 
-	 * @param <T>
-	 *          The type of value to result from the action
-	 * @param runnable
-	 *          The action to execute
-	 * @return The result of invoking the given supplier
-	 */
-	public static <T> T runNow(Supplier<T> runnable) {
-		if (Platform.isFxApplicationThread()) {
-			return runnable.get();
-		} else {
-			FutureTask<T> task = new FutureTask<>(runnable::get);
-			Platform.runLater(task);
-			try {
-				return task.get();
-			} catch (InterruptedException e) {
-				throw new RuntimeException(e);
-			} catch (ExecutionException e) {
-				try {
-					throw e.getCause();
-				} catch (Error | RuntimeException c) {
-					throw c;
-				} catch (Throwable t) {
-					throw new RuntimeException(t);
-				}
-			}
-		}
-	}
+  /**
+   * Perform the given action on the JavaFX event thread as soon as possible,
+   * returning the result upon completion. This method is safe whether or not the
+   * invoking thread is the event thread.
+   * 
+   * @param <T>
+   *          The type of value to result from the action
+   * @param runnable
+   *          The action to execute
+   * @return The result of invoking the given supplier
+   */
+  public static <T> T runNow(Supplier<T> runnable) {
+    if (Platform.isFxApplicationThread()) {
+      return runnable.get();
+    } else {
+      FutureTask<T> task = new FutureTask<>(runnable::get);
+      Platform.runLater(task);
+      try {
+        return task.get();
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      } catch (ExecutionException e) {
+        try {
+          throw e.getCause();
+        } catch (Error | RuntimeException c) {
+          throw c;
+        } catch (Throwable t) {
+          throw new RuntimeException(t);
+        }
+      }
+    }
+  }
 
-	/**
-	 * Create a new observable list as a transformation of a component observable
-	 * list.
-	 * 
-	 * @param <T>
-	 *          the type of the elements of the new list
-	 * @param <U>
-	 *          the type of the elements of the component list
-	 * @param component
-	 *          the component list
-	 * @param mapper
-	 *          a mapping from the type of the elements of the component list to
-	 *          the type of the elements of the new list
-	 * @return a new observable list, backed by the given list, with each element
-	 *         in that list transformed according to the given function
-	 */
-	public static <T, U> ObservableList<T> map(ObservableList<U> component, Function<U, T> mapper) {
-		return new TransformationList<T, U>(component) {
-			@Override
-			public T get(int index) {
-				return mapper.apply(getSource().get(index));
-			}
+  /**
+   * Create a new observable list as a transformation of a component observable
+   * list.
+   * 
+   * @param <T>
+   *          the type of the elements of the new list
+   * @param <U>
+   *          the type of the elements of the component list
+   * @param component
+   *          the component list
+   * @param mapper
+   *          a mapping from the type of the elements of the component list to the
+   *          type of the elements of the new list
+   * @return a new observable list, backed by the given list, with each element in
+   *         that list transformed according to the given function
+   */
+  public static <T, U> ObservableList<T> map(ObservableList<U> component, Function<U, T> mapper) {
+    return new TransformationList<T, U>(component) {
+      @Override
+      public T get(int index) {
+        return mapper.apply(getSource().get(index));
+      }
 
-			@Override
-			public int size() {
-				return getSource().size();
-			}
+      @Override
+      public int size() {
+        return getSource().size();
+      }
 
-			@Override
-			public int getSourceIndex(int index) {
-				return index;
-			}
+      @Override
+      public int getSourceIndex(int index) {
+        return index;
+      }
 
-			@Override
-			protected void sourceChanged(Change<? extends U> change) {
-				fireChange(new Change<T>(this) {
-					@Override
-					public boolean wasAdded() {
-						return change.wasAdded();
-					}
+      @Override
+      protected void sourceChanged(Change<? extends U> change) {
+        fireChange(new Change<T>(this) {
+          @Override
+          public boolean wasAdded() {
+            return change.wasAdded();
+          }
 
-					@Override
-					public boolean wasRemoved() {
-						return change.wasRemoved();
-					}
+          @Override
+          public boolean wasRemoved() {
+            return change.wasRemoved();
+          }
 
-					@Override
-					public boolean wasReplaced() {
-						return change.wasReplaced();
-					}
+          @Override
+          public boolean wasReplaced() {
+            return change.wasReplaced();
+          }
 
-					@Override
-					public boolean wasUpdated() {
-						return change.wasUpdated();
-					}
+          @Override
+          public boolean wasUpdated() {
+            return change.wasUpdated();
+          }
 
-					@Override
-					public boolean wasPermutated() {
-						return change.wasPermutated();
-					}
+          @Override
+          public boolean wasPermutated() {
+            return change.wasPermutated();
+          }
 
-					@Override
-					public int getPermutation(int i) {
-						return change.getPermutation(i);
-					}
+          @Override
+          public int getPermutation(int i) {
+            return change.getPermutation(i);
+          }
 
-					@Override
-					protected int[] getPermutation() {
-						throw new AssertionError();
-					}
+          @Override
+          protected int[] getPermutation() {
+            throw new AssertionError();
+          }
 
-					@Override
-					public List<T> getRemoved() {
-						List<T> removed = new ArrayList<>(change.getRemovedSize());
-						for (U element : change.getRemoved()) {
-							removed.add(mapper.apply(element));
-						}
-						return removed;
-					}
+          @Override
+          public List<T> getRemoved() {
+            List<T> removed = new ArrayList<>(change.getRemovedSize());
+            for (U element : change.getRemoved()) {
+              removed.add(mapper.apply(element));
+            }
+            return removed;
+          }
 
-					@Override
-					public int getFrom() {
-						return change.getFrom();
-					}
+          @Override
+          public int getFrom() {
+            return change.getFrom();
+          }
 
-					@Override
-					public int getTo() {
-						return change.getTo();
-					}
+          @Override
+          public int getTo() {
+            return change.getTo();
+          }
 
-					@Override
-					public boolean next() {
-						return change.next();
-					}
+          @Override
+          public boolean next() {
+            return change.next();
+          }
 
-					@Override
-					public void reset() {
-						change.reset();
-					}
-				});
-			}
-		};
-	}
+          @Override
+          public void reset() {
+            change.reset();
+          }
+        });
+      }
+    };
+  }
 
-	/**
-	 * Create a new observable set as a transformation of a component observable
-	 * set.
-	 * 
-	 * @param <T>
-	 *          the type of the elements of the new set
-	 * @param <U>
-	 *          the type of the elements of the component set
-	 * @param component
-	 *          the component set
-	 * @param mapper
-	 *          a mapping from the type of the elements of the component set to
-	 *          the type of the elements of the new set
-	 * @return a new observable set, backed by the given set, with each element in
-	 *         that set transformed according to the given function
-	 */
-	public static <T, U> ObservableSet<T> map(ObservableSet<U> component, Function<U, T> mapper) {
-		@SuppressWarnings("unchecked")
-		ObservableSet<T> set = FXCollections.observableSet();
+  /**
+   * Create a new observable set as a transformation of a component observable
+   * set.
+   * 
+   * @param <T>
+   *          the type of the elements of the new set
+   * @param <U>
+   *          the type of the elements of the component set
+   * @param component
+   *          the component set
+   * @param mapper
+   *          a mapping from the type of the elements of the component set to the
+   *          type of the elements of the new set
+   * @return a new observable set, backed by the given set, with each element in
+   *         that set transformed according to the given function
+   */
+  public static <T, U> ObservableSet<T> map(ObservableSet<U> component, Function<U, T> mapper) {
+    @SuppressWarnings("unchecked")
+    ObservableSet<T> set = FXCollections.observableSet();
 
-		ComputingMap<U, T> map = new ComputingHashMap<>(mapper);
+    ComputingMap<U, T> map = new ComputingHashMap<>(mapper);
 
-		component.addListener((SetChangeListener<U>) event -> {
-			if (event.wasAdded()) {
-				set.add(map.putGet(event.getElementAdded()));
-			}
+    component.addListener((SetChangeListener<U>) event -> {
+      if (event.wasAdded()) {
+        set.add(map.putGet(event.getElementAdded()));
+      }
 
-			if (event.wasRemoved()) {
-				T removed = map.removeGet(event.getElementRemoved());
-				if (!map.values().contains(removed)) {
-					set.remove(event.getElementRemoved());
-				}
-			}
-		});
+      if (event.wasRemoved()) {
+        T removed = map.removeGet(event.getElementRemoved());
+        if (!map.values().contains(removed)) {
+          set.remove(event.getElementRemoved());
+        }
+      }
+    });
 
-		return FXCollections.unmodifiableObservableSet(set);
-	}
+    return FXCollections.unmodifiableObservableSet(set);
+  }
 
-	/**
-	 * Create an observable list view of an observable set.
-	 * 
-	 * @param <T>
-	 *          the type of the elements of the set
-	 * @param component
-	 *          the set to wrap as a list
-	 * @return a list whose contents are backed by the given set
-	 */
-	public static <T> ObservableList<T> asList(ObservableSet<T> component) {
-		ObservableList<T> list = FXCollections.observableArrayList();
+  /**
+   * Create an observable list view of an observable set.
+   * 
+   * @param <T>
+   *          the type of the elements of the set
+   * @param component
+   *          the set to wrap as a list
+   * @return a list whose contents are backed by the given set
+   */
+  public static <T> ObservableList<T> asList(ObservableSet<T> component) {
+    ObservableList<T> list = FXCollections.observableArrayList();
 
-		component.addListener((SetChangeListener<T>) event -> {
-			if (event.wasAdded()) {
-				list.add(event.getElementAdded());
-			}
+    component.addListener((SetChangeListener<T>) event -> {
+      if (event.wasAdded()) {
+        list.add(event.getElementAdded());
+      }
 
-			if (event.wasRemoved()) {
-				list.remove(event.getElementRemoved());
-			}
-		});
+      if (event.wasRemoved()) {
+        list.remove(event.getElementRemoved());
+      }
+    });
 
-		list.addAll(component);
+    list.addAll(component);
 
-		return FXCollections.unmodifiableObservableList(list);
-	}
+    return FXCollections.unmodifiableObservableList(list);
+  }
 
-	/**
-	 * Create an observable set view of an observable list.
-	 * 
-	 * @param <T>
-	 *          the type of the elements of the list
-	 * @param component
-	 *          the list to wrap as a set
-	 * @return a set whose contents are backed by the given list
-	 */
-	public static <T> ObservableSet<T> asSet(ObservableList<T> component) {
-		@SuppressWarnings("unchecked")
-		ObservableSet<T> set = FXCollections.observableSet();
+  /**
+   * Create an observable set view of an observable list.
+   * 
+   * @param <T>
+   *          the type of the elements of the list
+   * @param component
+   *          the list to wrap as a set
+   * @return a set whose contents are backed by the given list
+   */
+  public static <T> ObservableSet<T> asSet(ObservableList<T> component) {
+    @SuppressWarnings("unchecked")
+    ObservableSet<T> set = FXCollections.observableSet();
 
-		component.addListener((ListChangeListener<T>) event -> {
-			boolean removed = false;
+    component.addListener((ListChangeListener<T>) event -> {
+      boolean removed = false;
 
-			while (event.next()) {
-				if (event.wasAdded()) {
-					set.addAll(event.getAddedSubList());
-				} else if (event.wasRemoved()) {
-					/*
-					 * We can't simply remove everything, as the list may still contain
-					 * duplicates of those removed duplicates
-					 */
-					removed = true;
-				}
-			}
+      while (event.next()) {
+        if (event.wasAdded()) {
+          set.addAll(event.getAddedSubList());
+        } else if (event.wasRemoved()) {
+          /*
+           * We can't simply remove everything, as the list may still contain duplicates
+           * of those removed duplicates
+           */
+          removed = true;
+        }
+      }
 
-			if (removed) {
-				set.retainAll(component);
-			}
-		});
+      if (removed) {
+        set.retainAll(component);
+      }
+    });
 
-		set.addAll(component);
+    set.addAll(component);
 
-		return FXCollections.unmodifiableObservableSet(set);
-	}
+    return FXCollections.unmodifiableObservableSet(set);
+  }
 
-	/**
-	 * Wrap an {@link uk.co.strangeskies.observable.Observable} with a JavaFX
-	 * equivalent {@link ObservableValue}.
-	 * 
-	 * @param <T>
-	 *          the type of the value
-	 * @param observable
-	 *          the observable value to wrap
-	 * @param initial
-	 *          the initial value of the wrapping observable value
-	 * @return a JavaFX observable value backed by the given observable
-	 */
-	public static <T> ObservableValue<T> wrap(Observable<T> observable, T initial) {
-		ObjectProperty<T> property = new SimpleObjectProperty<>(initial);
+  /**
+   * Wrap an {@link uk.co.strangeskies.observable.Observable} with a JavaFX
+   * equivalent {@link ObservableValue}.
+   * 
+   * @param <T>
+   *          the type of the value
+   * @param observable
+   *          the observable value to wrap
+   * @param initial
+   *          the initial value of the wrapping observable value
+   * @return a JavaFX observable value backed by the given observable
+   */
+  public static <T> ObservableValue<T> wrap(Observable<T> observable, T initial) {
+    ObjectProperty<T> property = new SimpleObjectProperty<>(initial);
 
-		observable.addWeakObserver(property, p -> v -> p.set(v));
+    observable.weakReference(property).observe(m -> m.owner().set(m.message()));
 
-		return property;
-	}
+    return property;
+  }
 
-	/**
-	 * Wrap an {@link uk.co.strangeskies.observable.ObservableValue} with a JavaFX
-	 * equivalent {@link ObservableValue}.
-	 * 
-	 * @param <T>
-	 *          the type of the value
-	 * @param observable
-	 *          the observable value to wrap
-	 * @return a JavaFX observable value backed by the given observable value
-	 */
-	public static <T> ObservableValue<T> wrap(uk.co.strangeskies.observable.ObservableValue<T> observable) {
-		return wrap(observable, observable.get());
-	}
+  /**
+   * Wrap an {@link uk.co.strangeskies.observable.ObservableValue} with a JavaFX
+   * equivalent {@link ObservableValue}.
+   * 
+   * @param <T>
+   *          the type of the value
+   * @param observable
+   *          the observable value to wrap
+   * @return a JavaFX observable value backed by the given observable value
+   */
+  public static <T> ObservableValue<T> wrap(
+      uk.co.strangeskies.observable.ObservableValue<T> observable) {
+    return wrap(observable, observable.get());
+  }
 
-	/**
-	 * Find the {@code .fxml} resource associated with a given controller class by
-	 * location and naming conventions. The location of the file is assumed to be
-	 * the same package as the controller class. The name of the file is
-	 * determined according to the convention described by
-	 * {@link #getResourceName(Class)}.
-	 * 
-	 * @param controllerClass
-	 *          The controller class whose resource we wish to locate
-	 * @return The URL for the resource associated with the given controller
-	 *         class.
-	 */
-	public static URL getResource(Class<?> controllerClass) {
-		return getResource(controllerClass, getResourceName(controllerClass));
-	}
+  /**
+   * Find the {@code .fxml} resource associated with a given controller class by
+   * location and naming conventions. The location of the file is assumed to be
+   * the same package as the controller class. The name of the file is determined
+   * according to the convention described by {@link #getResourceName(Class)}.
+   * 
+   * @param controllerClass
+   *          The controller class whose resource we wish to locate
+   * @return The URL for the resource associated with the given controller class.
+   */
+  public static URL getResource(Class<?> controllerClass) {
+    return getResource(controllerClass, getResourceName(controllerClass));
+  }
 
-	/**
-	 * Find the name of the {@code .fxml} resource associated with a given
-	 * controller class by convention. The name of the file is assumed to be
-	 * {@code [classname].fxml}, or if {@code [classname]} takes the form
-	 * {@code [classnameprefix]Controller}, the name of the file is assumed to be
-	 * {@code [classnameprefix].fxml}.
-	 * 
-	 * @param controllerClass
-	 *          The controller class whose resource we wish to locate
-	 * @return The URL for the resource associated with the given controller
-	 *         class.
-	 */
-	public static String getResourceName(Class<?> controllerClass) {
-		String resourceName = controllerClass.getSimpleName();
+  /**
+   * Find the name of the {@code .fxml} resource associated with a given
+   * controller class by convention. The name of the file is assumed to be
+   * {@code [classname].fxml}, or if {@code [classname]} takes the form
+   * {@code [classnameprefix]Controller}, the name of the file is assumed to be
+   * {@code [classnameprefix].fxml}.
+   * 
+   * @param controllerClass
+   *          The controller class whose resource we wish to locate
+   * @return The URL for the resource associated with the given controller class.
+   */
+  public static String getResourceName(Class<?> controllerClass) {
+    String resourceName = controllerClass.getSimpleName();
 
-		if (resourceName.endsWith(CONTROLLER_STRING)) {
-			resourceName = resourceName.substring(0, resourceName.length() - CONTROLLER_STRING.length());
-		}
+    if (resourceName.endsWith(CONTROLLER_STRING)) {
+      resourceName = resourceName.substring(0, resourceName.length() - CONTROLLER_STRING.length());
+    }
 
-		return resourceName;
-	}
+    return resourceName;
+  }
 
-	/**
-	 * Find the {@code .fxml} resource for a given controller class by location
-	 * conventions. The location of the file is assumed to be the same package as
-	 * the controller class.
-	 * 
-	 * @param controllerClass
-	 *          The controller class whose resource we wish to locate
-	 * @param resourceName
-	 *          The name of the resource file
-	 * @return The URL for the resource associated with the given controller
-	 *         class.
-	 */
-	public static URL getResource(Class<?> controllerClass, String resourceName) {
-		String resourceLocation = "/"
-				+ controllerClass.getPackage().getName().replace('.', '/')
-				+ "/"
-				+ resourceName
-				+ ".fxml";
+  /**
+   * Find the {@code .fxml} resource for a given controller class by location
+   * conventions. The location of the file is assumed to be the same package as
+   * the controller class.
+   * 
+   * @param controllerClass
+   *          The controller class whose resource we wish to locate
+   * @param resourceName
+   *          The name of the resource file
+   * @return The URL for the resource associated with the given controller class.
+   */
+  public static URL getResource(Class<?> controllerClass, String resourceName) {
+    String resourceLocation = "/" + controllerClass.getPackage().getName().replace('.', '/') + "/"
+        + resourceName + ".fxml";
 
-		return controllerClass.getResource(resourceLocation);
-	}
+    return controllerClass.getResource(resourceLocation);
+  }
 }

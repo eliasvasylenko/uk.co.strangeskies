@@ -35,64 +35,71 @@ package uk.co.strangeskies.observable;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.function.Consumer;
 
 /**
  * A simple implementation of {@link Observable} which maintains a list of
- * listeners to receive events fired with {@link #fire(Object)}.
+ * listeners to receive events fired with {@link #sendNext(Object)}.
  * <p>
  * Addition and removal of observers, as well as the firing of events, are
  * synchronized on the implementation object.
+ * <p>
+ * This implementation does not support backpressure, so listeners which need to
+ * control demand must compose the observable with e.g. a buffering or dropping
+ * operation.
  * 
  * @author Elias N Vasylenko
  * @param <M>
  *          The type of event message to produce
  */
-public class ObservableImpl<M> implements Observable<M> {
-	private Set<Observer<? super M>> observers;
+public class HotObservable<M> implements Observable<M> {
+  private Set<HotObservation<M>> observations;
 
-	@Override
-	public boolean addObserver(Observer<? super M> observer) {
-		return getObservers().add(observer);
-	}
+  @Override
+  public Observation<M> observe(Observer<? super M> observer) {
+    HotObservation<M> observation = new HotObservation<>(this, observer);
 
-	@Override
-	public boolean removeObserver(Observer<? super M> observer) {
-		if (observers != null) {
-			return observers.remove(observer);
-		} else {
-			return false;
-		}
-	}
+    if (observations == null)
+      observations = new LinkedHashSet<>();
 
-	/**
-	 * Remove all observers from forwarding.
-	 */
-	public void clearObservers() {
-		observers = null;
-	}
+    observations.add(observation);
 
-	/**
-	 * Fire the given message to all observers.
-	 * 
-	 * @param item
-	 *          the message event to send
-	 */
-	public void fire(M item) {
-		if (observers != null) {
-			for (Observer<? super M> listener : new ArrayList<>(observers)) {
-				listener.notify(item);
-			}
-		}
-	}
+    return observation;
+  }
 
-	/**
-	 * @return a list of all observers attached to this observable
-	 */
-	public Set<Observer<? super M>> getObservers() {
-		if (observers == null) {
-			observers = new LinkedHashSet<>();
-		}
+  public Set<HotObservation<M>> getObservations() {
+    return observations;
+  }
 
-		return observers;
-	}
+  void stopObservation(Observation<M> observer) {
+    observations.remove(observer);
+  }
+
+  private void forObservers(Consumer<Observer<? super M>> action) {
+    if (observations != null && action != null) {
+      for (HotObservation<M> observation : new ArrayList<>(observations)) {
+        action.accept(observation.getObserver());
+      }
+    }
+  }
+
+  /**
+   * Fire the given message to all observers.
+   * 
+   * @param item
+   *          the message event to send
+   */
+  public void sendNext(M item) {
+    forObservers(o -> o.onNext(item));
+  }
+
+  public void complete() {
+    forObservers(o -> o.onComplete());
+    observations = null;
+  }
+
+  public void fail(Throwable t) {
+    forObservers(o -> o.onFail(t));
+    observations = null;
+  }
 }

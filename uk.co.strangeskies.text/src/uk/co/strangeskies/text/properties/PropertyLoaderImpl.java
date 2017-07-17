@@ -146,7 +146,7 @@ class PropertyLoaderImpl implements PropertyLoader {
 		this.text = text;
 
 		if (log != null) {
-			locale().addObserver(l -> {
+			locale().observe(l -> {
 				log.log(Level.INFO, getProperties().localeChanged(locale, getLocale()).toString());
 			});
 		}

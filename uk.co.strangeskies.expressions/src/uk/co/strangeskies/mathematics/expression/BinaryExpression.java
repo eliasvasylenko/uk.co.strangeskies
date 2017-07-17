@@ -45,127 +45,47 @@ import java.util.function.BiFunction;
  * @param <R>
  *          The type of the result.
  */
-public abstract class BinaryExpression<O1, O2, R> extends DependentExpression<R> {
-	private Expression<? extends O1> firstOperand;
-	private Expression<? extends O2> secondOperand;
-	private Expression<? extends BiFunction<? super O1, ? super O2, ? extends R>> operation;
+public abstract class BinaryExpression<O1, O2, R> extends PassiveExpression<R> {
+  private final Expression<? extends O1> firstOperand;
+  private final Expression<? extends O2> secondOperand;
+  private final BiFunction<? super O1, ? super O2, ? extends R> operation;
 
-	/**
-	 * @param firstOperand
-	 *          An expression providing the first operand for the function.
-	 * @param secondOperand
-	 *          An expression providing the second operand for the function.
-	 * @param operation
-	 *          A expression providing a function transforming the operands into a
-	 *          value of this expression's type.
-	 */
-	public BinaryExpression(Expression<? extends O1> firstOperand, Expression<? extends O2> secondOperand,
-			Expression<? extends BiFunction<? super O1, ? super O2, ? extends R>> operation) {
-		super(firstOperand, secondOperand);
+  /**
+   * @param firstOperand
+   *          An expression providing the first operand for the function.
+   * @param secondOperand
+   *          An expression providing the second operand for the function.
+   * @param operation
+   *          A function transforming the operands into a value of this
+   *          expression's type.
+   */
+  public BinaryExpression(
+      Expression<? extends O1> firstOperand,
+      Expression<? extends O2> secondOperand,
+      BiFunction<? super O1, ? super O2, ? extends R> operation) {
+    super(firstOperand, secondOperand);
 
-		this.firstOperand = firstOperand;
-		this.secondOperand = secondOperand;
+    this.firstOperand = firstOperand;
+    this.secondOperand = secondOperand;
+    this.operation = operation;
+  }
 
-		this.operation = operation;
-	}
+  /**
+   * @return The first operand expression.
+   */
+  public Expression<? extends O1> getFirstOperand() {
+    return firstOperand;
+  }
 
-	/**
-	 * @param firstOperand
-	 *          An expression providing the first operand for the function.
-	 * @param secondOperand
-	 *          An expression providing the second operand for the function.
-	 * @param operation
-	 *          A function transforming the operands into a value of this
-	 *          expression's type.
-	 */
-	public BinaryExpression(Expression<? extends O1> firstOperand, Expression<? extends O2> secondOperand,
-			BiFunction<? super O1, ? super O2, ? extends R> operation) {
-		this(firstOperand, secondOperand, Expression.immutable(operation));
-	}
+  /**
+   * @return The second operand expression.
+   */
+  public Expression<? extends O2> getSecondOperand() {
+    return secondOperand;
+  }
 
-	/**
-	 * @return The first operand expression.
-	 */
-	public Expression<? extends O1> getFirstOperand() {
-		return firstOperand;
-	}
-
-	/**
-	 * @return The second operand expression.
-	 */
-	public Expression<? extends O2> getSecondOperand() {
-		return secondOperand;
-	}
-
-	/**
-	 * @param firstOperand
-	 *          A new first operand.
-	 * @param secondOperand
-	 *          A new second operand.
-	 */
-	public void setOperands(Expression<? extends O1> firstOperand, Expression<? extends O2> secondOperand) {
-		try {
-			beginWrite();
-
-			if (this.firstOperand != firstOperand || this.secondOperand != secondOperand) {
-				removeDependency(this.firstOperand);
-				removeDependency(this.secondOperand);
-
-				this.firstOperand = firstOperand;
-				this.secondOperand = secondOperand;
-
-				addDependency(this.firstOperand);
-				addDependency(this.secondOperand);
-			}
-		} finally {
-			endWrite();
-		}
-	}
-
-	/**
-	 * @param operand
-	 *          A new first operand.
-	 */
-	public void setFirstOperand(Expression<? extends O1> operand) {
-		try {
-			beginWrite();
-
-			if (firstOperand != operand) {
-				if (firstOperand != secondOperand) {
-					removeDependency(firstOperand);
-				}
-
-				firstOperand = operand;
-				addDependency(firstOperand);
-			}
-		} finally {
-			endWrite();
-		}
-	}
-
-	/**
-	 * @param operand
-	 *          A new second operand.
-	 */
-	public void setSecondOperand(Expression<? extends O2> operand) {
-		try {
-			beginWrite();
-
-			if (secondOperand != operand) {
-				if (firstOperand != secondOperand) {
-					removeDependency(secondOperand);
-				}
-
-				secondOperand = operand;
-				addDependency(secondOperand);
-			}
-		} finally {
-			endWrite();
-		}
-	}
-
-	@Override
-	protected R evaluate() {
-		return operation.getValue().apply(firstOperand.getValue(), secondOperand.getValue());
-	}
+  @Override
+  protected R evaluate() {
+    return operation.apply(firstOperand.getValue(), secondOperand.getValue());
+  }
 }

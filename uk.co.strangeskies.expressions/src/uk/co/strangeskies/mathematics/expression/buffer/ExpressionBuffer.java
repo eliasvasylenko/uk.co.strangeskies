@@ -36,45 +36,40 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import uk.co.strangeskies.mathematics.expression.Expression;
-import uk.co.strangeskies.observable.Observer;
+import uk.co.strangeskies.observable.Observation;
 
 public class ExpressionBuffer<F extends Expression<?>, T> extends AbstractFunctionBuffer<F, T> {
-	private Observer<Expression<?>> backObserver;
+  private Observation<? extends Expression<?>> backObserver;
 
-	public ExpressionBuffer(T front, F back, BiFunction<? super T, ? super F, ? extends T> operation) {
-		super(front, back, operation);
-	}
+  public ExpressionBuffer(
+      T front,
+      F back,
+      BiFunction<? super T, ? super F, ? extends T> operation) {
+    super(front, back, operation);
+  }
 
-	public ExpressionBuffer(F back, Function<? super F, ? extends T> function) {
-		super(back, function);
-	}
+  public ExpressionBuffer(F back, Function<? super F, ? extends T> function) {
+    super(back, function);
+  }
 
-	public ExpressionBuffer(T front, F back, Function<? super F, ? extends T> function) {
-		super(front, back, function);
-	}
+  public ExpressionBuffer(T front, F back, Function<? super F, ? extends T> function) {
+    super(front, back, function);
+  }
 
-	public ExpressionBuffer(AbstractFunctionBuffer<F, T> doubleBuffer) {
-		super(doubleBuffer);
-	}
+  public ExpressionBuffer(AbstractFunctionBuffer<F, T> doubleBuffer) {
+    super(doubleBuffer);
+  }
 
-	@Override
-	public F setBack(F next) {
-		if (getBack() != null) {
-			getBack().removeObserver(getBackObserver());
-		}
+  @Override
+  public F setBack(F next) {
+    if (backObserver != null) {
+      backObserver.dispose();
+    }
 
-		if (next != null) {
-			next.addObserver(nextBackObserver());
-		}
+    if (next != null) {
+      backObserver = next.invalidations().observe(m -> invalidateBack());
+    }
 
-		return super.setBack(next);
-	}
-
-	private Observer<Expression<?>> nextBackObserver() {
-		return backObserver = m -> invalidateBack();
-	}
-
-	private Observer<Expression<?>> getBackObserver() {
-		return backObserver;
-	}
+    return super.setBack(next);
+  }
 }

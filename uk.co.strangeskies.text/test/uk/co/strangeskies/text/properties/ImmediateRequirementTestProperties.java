@@ -32,7 +32,6 @@
  */
 package uk.co.strangeskies.text.properties;
 
-import uk.co.strangeskies.text.properties.PropertyConfiguration;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.Defaults;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.Evaluation;
 

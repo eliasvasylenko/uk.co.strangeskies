@@ -32,277 +32,87 @@
  */
 package uk.co.strangeskies.observable;
 
-import static java.util.Collections.emptySet;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static uk.co.strangeskies.observable.Observable.Observation.CONTINUE;
-import static uk.co.strangeskies.observable.Observable.Observation.TERMINATE;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.junit.Test;
 
-import uk.co.strangeskies.observable.Observable;
-import uk.co.strangeskies.observable.ObservableImpl;
-import uk.co.strangeskies.observable.Observer;
-
 @SuppressWarnings("javadoc")
 public class ObservableTest {
-	@Test
-	public void ownedObserverEqualityTest() {
-		class StringObservable extends Observable.OwnedObserverImpl<String> {
-			protected StringObservable(Observer<? super String> observer, Object owner) {
-				super(observer, owner);
-			}
-		}
+  @Test(timeout = 5000)
+  public void weakReferenceTest() {
+    WeakReference<?> reference = new WeakReference<>(new Object());
 
-		String first = new String("test");
-		String second = new String("test");
+    while (reference.get() != null) {
+      new Object();
+      System.gc();
+      System.runFinalization();
+    }
 
-		assertEquals(new StringObservable(null, first), new StringObservable(null, first));
+    assertNull(reference.get());
+  }
 
-		assertEquals(new StringObservable(null, second), new StringObservable(null, second));
+  @Test(timeout = 5000)
+  public void holdWeakObserverTest() {
+    HotObservable<String> stringObservable = new HotObservable<>();
 
-		assertNotEquals(new StringObservable(null, first), new StringObservable(null, second));
+    List<String> list = new ArrayList<>();
 
-		assertNotEquals(new StringObservable(null, first), new Object());
+    stringObservable.weakReference(list).observe(m -> m.owner().add(m.message()));
 
-		Observer<String> Observer = new Observable.OwnedObserverImpl<String>(null, first) {};
-		assertEquals(Observer, Observer);
-	}
+    weakReferenceTest();
 
-	@Test(timeout = 5000)
-	public void weakReferenceTest() {
-		WeakReference<?> reference = new WeakReference<>(new Object());
+    stringObservable.sendNext("test");
 
-		while (reference.get() != null) {
-			new Object();
-			System.gc();
-			System.runFinalization();
-		}
+    assertThat(list, contains("test"));
+  }
 
-		assertNull(reference.get());
-	}
+  @Test(timeout = 5000)
+  public void dropWeakObserverTest() {
+    HotObservable<String> stringObservable = new HotObservable<>();
 
-	@Test(timeout = 5000)
-	public void holdWeakObserverTest() {
-		ObservableImpl<String> stringObservable = new ObservableImpl<>();
+    List<String> list = new ArrayList<>();
+    Observer<String> add = list::add;
 
-		List<String> list = new ArrayList<>();
+    stringObservable.weakReference().observe(add);
 
-		stringObservable.addWeakObserver(list, l -> s -> l.add(s));
+    stringObservable.sendNext("test1");
 
-		weakReferenceTest();
+    add = null;
+    weakReferenceTest();
 
-		stringObservable.fire("test");
+    stringObservable.sendNext("test2");
 
-		assertThat(list, contains("test"));
-	}
+    assertThat(list, contains("test1"));
+  }
 
-	@Test(timeout = 5000)
-	public void dropWeakObserverTest() {
-		ObservableImpl<String> stringObservable = new ObservableImpl<>();
+  @Test
+  public void observeEventTest() {
+    List<String> list = new ArrayList<>();
 
-		List<String> list = new ArrayList<>();
+    HotObservable<String> stringObservable = new HotObservable<>();
+    stringObservable.observe(list::add);
 
-		stringObservable.addWeakObserver(list::add);
+    stringObservable.sendNext("test");
 
-		stringObservable.fire("test1");
+    assertThat(list, contains("test"));
+  }
 
-		weakReferenceTest();
+  @Test
+  public void observeMultipleEventsTest() {
+    List<String> list = new ArrayList<>();
 
-		stringObservable.fire("test2");
+    HotObservable<String> stringObservable = new HotObservable<>();
+    stringObservable.observe(list::add);
 
-		assertThat(list, contains("test1"));
-	}
+    stringObservable.sendNext("test1");
+    stringObservable.sendNext("test2");
 
-	@Test(timeout = 5000)
-	public void onlyAllowSingleWeakObserverTest() {
-		ObservableImpl<String> stringObservable = new ObservableImpl<>();
-
-		Observer<String> observer = new ArrayList<>()::add;
-
-		assertTrue(stringObservable.addWeakObserver(observer));
-		assertFalse(stringObservable.addWeakObserver(observer));
-	}
-
-	@Test
-	public void removeOwnedObservableTest() {
-		ObservableImpl<String> stringObservable = new ObservableImpl<>();
-
-		List<String> list = new ArrayList<>();
-		Observer<String> listObserver = list::add;
-
-		assertTrue(stringObservable.addOwnedObserver(listObserver, listObserver));
-		assertFalse(stringObservable.removeObserver(list::remove));
-		stringObservable.fire("test1");
-		assertTrue(stringObservable.removeOwnedObserver(listObserver));
-		stringObservable.fire("test2");
-
-		assertThat(list, contains("test1"));
-	}
-
-	@Test
-	public void immutableObservableTest() {
-		Observable<String> observable = Observable.immutable();
-
-		Observer<String> listObserver = null;
-
-		assertTrue(observable.removeObserver(listObserver));
-
-		assertTrue(observable.addObserver(listObserver));
-		assertTrue(observable.addObserver(listObserver));
-
-		assertTrue(observable.removeObserver(listObserver));
-		assertTrue(observable.removeObserver(listObserver));
-	}
-
-	@Test
-	public void manuallyRemoveSelfTerminatingObserverTest() {
-		List<String> list = new ArrayList<>();
-
-		ObservableImpl<String> stringObservable = new ObservableImpl<>();
-		stringObservable.addTerminatingObserver(list, e -> list.add(e) ? CONTINUE : TERMINATE);
-
-		stringObservable.fire("test1");
-		stringObservable.fire("test2");
-
-		stringObservable.removeTerminatingObserver(list);
-
-		stringObservable.fire("test3");
-
-		assertThat(list, contains("test1", "test2"));
-	}
-
-	@Test
-	public void selfTerminatingObserverTest() {
-		Set<String> list = new LinkedHashSet<>();
-
-		ObservableImpl<String> stringObservable = new ObservableImpl<>();
-		stringObservable.addTerminatingObserver(e -> list.add(e) ? CONTINUE : TERMINATE);
-
-		stringObservable.fire("test1");
-		stringObservable.fire("test2");
-		stringObservable.fire("test3");
-		stringObservable.fire("test3");
-		stringObservable.fire("test4");
-
-		assertThat(list, contains("test1", "test2", "test3"));
-	}
-
-	@Test
-	public void observeEventTest() {
-		List<String> list = new ArrayList<>();
-
-		ObservableImpl<String> stringObservable = new ObservableImpl<>();
-		stringObservable.addObserver(list::add);
-
-		stringObservable.fire("test");
-
-		assertThat(list, contains("test"));
-	}
-
-	@Test
-	public void observeMultipleEventsTest() {
-		List<String> list = new ArrayList<>();
-
-		ObservableImpl<String> stringObservable = new ObservableImpl<>();
-		stringObservable.addObserver(list::add);
-
-		stringObservable.fire("test1");
-		stringObservable.fire("test2");
-
-		assertThat(list, contains("test1", "test2"));
-	}
-
-	@Test
-	public void addRemoveTest() {
-		List<String> list = new ArrayList<>();
-		Observer<String> listObserver = list::add;
-
-		ObservableImpl<String> stringObservable = new ObservableImpl<>();
-
-		assertFalse(stringObservable.removeObserver(listObserver));
-
-		assertTrue(stringObservable.addObserver(listObserver));
-		assertFalse(stringObservable.addObserver(listObserver));
-
-		stringObservable.fire("test");
-
-		assertTrue(stringObservable.removeObserver(listObserver));
-		assertFalse(stringObservable.removeObserver(listObserver));
-
-		assertThat(list, contains("test"));
-	}
-
-	@Test
-	public void addAndRemovemultipleObserversTest() {
-		List<String> list0 = new ArrayList<>();
-		List<String> list1 = new ArrayList<>();
-		List<String> list2 = new ArrayList<>();
-		List<String> list3 = new ArrayList<>();
-
-		ObservableImpl<String> stringObservable = new ObservableImpl<>();
-		stringObservable.addOwnedObserver(list0, list0::add);
-
-		stringObservable.addOwnedObserver(list1, list1::add);
-		stringObservable.fire("test1");
-
-		stringObservable.removeOwnedObserver(list1);
-		stringObservable.addOwnedObserver(list2, list2::add);
-		stringObservable.fire("test2");
-
-		stringObservable.removeOwnedObserver(list2);
-		stringObservable.addOwnedObserver(list3, list3::add);
-		stringObservable.fire("test3");
-
-		assertThat(list0, contains("test1", "test2", "test3"));
-		assertThat(list1, contains("test1"));
-		assertThat(list2, contains("test2"));
-		assertThat(list3, contains("test3"));
-	}
-
-	@Test
-	public void clearObserversTest() {
-		List<String> list1 = new ArrayList<>();
-		List<String> list2 = new ArrayList<>();
-		List<String> list3 = new ArrayList<>();
-
-		ObservableImpl<String> stringObservable = new ObservableImpl<>();
-
-		stringObservable.addObserver(list1::add);
-		stringObservable.fire("test1");
-
-		stringObservable.addObserver(list2::add);
-		stringObservable.fire("test2");
-
-		stringObservable.addObserver(list3::add);
-		stringObservable.clearObservers();
-		stringObservable.fire("test3");
-
-		stringObservable.clearObservers();
-		stringObservable.fire("test4");
-
-		stringObservable.addObserver(list3::add);
-		stringObservable.fire("test5");
-
-		stringObservable.clearObservers();
-
-		assertThat(stringObservable.getObservers(), is(equalTo(emptySet())));
-
-		assertThat(list1, contains("test1", "test2"));
-		assertThat(list2, contains("test2"));
-		assertThat(list3, contains("test5"));
-	}
+    assertThat(list, contains("test1", "test2"));
+  }
 }

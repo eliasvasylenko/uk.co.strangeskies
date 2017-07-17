@@ -35,8 +35,9 @@ package uk.co.strangeskies.mathematics.expression;
 import java.util.Observer;
 import java.util.function.Supplier;
 
+import uk.co.strangeskies.observable.ImmutableObservable;
 import uk.co.strangeskies.observable.Observable;
-import uk.co.strangeskies.observable.ObservableImpl;
+import uk.co.strangeskies.observable.HotObservable;
 import uk.co.strangeskies.observable.ObservableValue;
 
 /**
@@ -68,135 +69,149 @@ import uk.co.strangeskies.observable.ObservableValue;
  * @param <T>
  *          the type of the value of this expression
  */
-public interface Expression<T> extends Observable<Expression<? extends T>> {
-	/**
-	 * This should always return the correct current value for this Expression. Be
-	 * careful to remember that the reference returned should not be able to
-	 * mutate this {@link Expression}, i.e. it should be either an immutable
-	 * class, a const reference, or a copy of the underlying value. This is
-	 * important, but conversely it does <em>not</em> mean that the return value
-	 * can necessarily be relied upon not to not mutate when this expression is
-	 * updated, unless a read lock is held.
-	 *
-	 * <p>
-	 * Once a value has been returned, it is up to the implementing Expression as
-	 * to whether the value will be reliable such that it will remain the same
-	 * even if the conceptual value of this expression subsequently changes, or
-	 * whether it will update automatically with the expression. Please only rely
-	 * on either behavior if it is explicitly documented, otherwise use
-	 * {@link #decoupleValue()} if you need a persistent reference which is safe
-	 * <em>to</em> mutate and/or safe <em>from</em> external mutation.
-	 * 
-	 * <p>
-	 * The observers should only ever be notified of an update from the thread
-	 * which has the write lock on an {@link Expression}, and {@link Expression}s
-	 * should be careful to only notify observers when they are in a state where
-	 * their value can be fetched. Immediate fetch is discouraged, though.
-	 * Expressions should generally update lazily, not eagerly.
-	 * 
-	 * @return The fully evaluated value of this Expression at the time of method
-	 *         invocation.
-	 */
-	T getValue();
+public interface Expression<T> {
+  Observable<Expression<? extends T>> invalidations();
 
-	/**
-	 * @return a value which is equal to the result of {@link #getValue()} at time
-	 *         of invocation, with the added guarantee that it will not be further
-	 *         mutated by this {@link Expression}
-	 */
-	default T decoupleValue() {
-		return getValue();
-	}
+  /**
+   * This should always return the correct current value for this Expression. Be
+   * careful to remember that the reference returned should not be able to mutate
+   * this {@link Expression}, i.e. it should be either an immutable class, a const
+   * reference, or a copy of the underlying value. This is important, but
+   * conversely it does <em>not</em> mean that the return value can necessarily be
+   * relied upon not to not mutate when this expression is updated, unless a read
+   * lock is held.
+   *
+   * <p>
+   * Once a value has been returned, it is up to the implementing Expression as to
+   * whether the value will be reliable such that it will remain the same even if
+   * the conceptual value of this expression subsequently changes, or whether it
+   * will update automatically with the expression. Please only rely on either
+   * behavior if it is explicitly documented, otherwise use
+   * {@link #decoupleValue()} if you need a persistent reference which is safe
+   * <em>to</em> mutate and/or safe <em>from</em> external mutation.
+   * 
+   * <p>
+   * The observers should only ever be notified of an update from the thread which
+   * has the write lock on an {@link Expression}, and {@link Expression}s should
+   * be careful to only notify observers when they are in a state where their
+   * value can be fetched. Immediate fetch is discouraged, though. Expressions
+   * should generally update lazily, not eagerly.
+   * 
+   * @return The fully evaluated value of this Expression at the time of method
+   *         invocation.
+   */
+  T getValue();
 
-	/**
-	 * Create an immutable {@link Expression} instance whose value is always that
-	 * given, and upon which read locks are always available. Further, an observer
-	 * set is not maintained, as observers will never receive notifications, so
-	 * attempting to add or remove them will always return {@code true}.
-	 * 
-	 * @param <T>
-	 *          the type of the expression
-	 * @param value
-	 *          the value of the new immutable {@link Expression}
-	 * @return an immutable {@link Expression} instance whose value is always that
-	 *         given, and upon which read locks are always available
-	 */
-	static <T> AnonymousExpression<T> immutable(T value) {
-		return new ImmutableExpressionImpl<>(value);
-	}
+  /**
+   * @return a value which is equal to the result of {@link #getValue()} at time
+   *         of invocation, with the added guarantee that it will not be further
+   *         mutated by this {@link Expression}
+   */
+  default T decoupleValue() {
+    return getValue();
+  }
 
-	/**
-	 * Provide an expression view over an observable value.
-	 * 
-	 * @param changes
-	 *          the observable providing the value updates
-	 * @param initialValue
-	 *          the initial expression value
-	 * @return an observable with the given initial value, and whose value changes
-	 *         as per the given observable
-	 */
-	static <T> AnonymousExpression<T> over(Observable<T> changes, T initialValue) {
-		IdentityExpression<T> expression = new IdentityExpression<>(initialValue);
+  /**
+   * Create an immutable {@link Expression} instance whose value is always that
+   * given, and upon which read locks are always available. Further, an observer
+   * set is not maintained, as observers will never receive notifications, so
+   * attempting to add or remove them will always return {@code true}.
+   * 
+   * @param <T>
+   *          the type of the expression
+   * @param value
+   *          the value of the new immutable {@link Expression}
+   * @return an immutable {@link Expression} instance whose value is always that
+   *         given, and upon which read locks are always available
+   */
+  static <T> AnonymousExpression<T> immutable(T value) {
+    return new ImmutableExpressionImpl<>(value);
+  }
 
-		changes.addWeakObserver(expression, e -> v -> e.set(v));
+  /**
+   * Provide an expression view over an observable value.
+   * 
+   * @param changes
+   *          the observable providing the value updates
+   * @param initialValue
+   *          the initial expression value
+   * @return an observable with the given initial value, and whose value changes
+   *         as per the given observable
+   */
+  static <T> AnonymousExpression<T> over(Observable<T> changes, T initialValue) {
+    IdentityExpression<T> expression = new IdentityExpression<>(initialValue);
 
-		return expression.anonymize();
-	}
+    changes.weakReference(expression).observe(m -> m.owner().set(m.message()));
 
-	/**
-	 * Provide an expression view over an observable value.
-	 * 
-	 * @param value
-	 *          the observable providing the initial value, and the value updates
-	 * @return an observable with the given initial value, and whose value changes
-	 *         as per the given observable
-	 */
-	static <T> AnonymousExpression<T> over(ObservableValue<T> value) {
-		return new AnonymousExpressionImpl<>(value);
-	}
+    return expression.anonymize();
+  }
 
-	/**
-	 * @return an anonymous view of the expression
-	 */
-	default AnonymousExpression<T> anonymize() {
-		return new AnonymousExpressionImpl<>(this);
-	}
+  /**
+   * Provide an expression view over an observable value.
+   * 
+   * @param value
+   *          the observable providing the initial value, and the value updates
+   * @return an observable with the given initial value, and whose value changes
+   *         as per the given observable
+   */
+  static <T> AnonymousExpression<T> over(ObservableValue<T> value) {
+    return new AnonymousExpressionImpl<>(value);
+  }
+
+  /**
+   * @return an anonymous view of the expression
+   */
+  default AnonymousExpression<T> anonymize() {
+    return new AnonymousExpressionImpl<>(this);
+  }
 }
 
 /*
  * TODO with Valhalla we can probably make this a value type to just about get
  * rid of the overhead
  */
-class AnonymousExpressionImpl<T> extends ObservableImpl<Expression<? extends T>> implements AnonymousExpression<T> {
-	private final Supplier<T> base;
+class AnonymousExpressionImpl<T> extends HotObservable<Expression<? extends T>>
+    implements AnonymousExpression<T> {
+  private final Supplier<T> base;
 
-	AnonymousExpressionImpl(Expression<T> base) {
-		this.base = base::getValue;
+  AnonymousExpressionImpl(Expression<T> base) {
+    this.base = base::getValue;
 
-		base.addObserver(b -> fire(this));
-	}
+    base.invalidations().observe(b -> sendNext(this));
+  }
 
-	AnonymousExpressionImpl(ObservableValue<T> base) {
-		this.base = base::get;
+  AnonymousExpressionImpl(ObservableValue<T> base) {
+    this.base = base::get;
 
-		base.addObserver(b -> fire(this));
-	}
+    base.observe(b -> sendNext(this));
+  }
 
-	@Override
-	public T getValue() {
-		return base.get();
-	}
+  @Override
+  public Observable<Expression<? extends T>> invalidations() {
+    return this;
+  }
+
+  @Override
+  public T getValue() {
+    return base.get();
+  }
 }
 
-class ImmutableExpressionImpl<T> extends ImmutableExpression<T> implements AnonymousExpression<T> {
-	private final T value;
+class ImmutableExpressionImpl<T>
+    implements ImmutableObservable<Expression<? extends T>>, Expression<T>, AnonymousExpression<T> {
+  private final T value;
 
-	ImmutableExpressionImpl(T value) {
-		this.value = value;
-	}
+  ImmutableExpressionImpl(T value) {
+    this.value = value;
+  }
 
-	@Override
-	public T getValue() {
-		return value;
-	}
+  @Override
+  public T getValue() {
+    return value;
+  }
+
+  @Override
+  public Observable<Expression<? extends T>> invalidations() {
+    return this;
+  }
 }

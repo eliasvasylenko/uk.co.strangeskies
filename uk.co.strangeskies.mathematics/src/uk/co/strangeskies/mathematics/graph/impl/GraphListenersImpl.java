@@ -35,62 +35,62 @@ package uk.co.strangeskies.mathematics.graph.impl;
 import org.osgi.annotation.versioning.ProviderType;
 
 import uk.co.strangeskies.mathematics.graph.GraphListeners;
-import uk.co.strangeskies.observable.ObservableImpl;
+import uk.co.strangeskies.observable.HotObservable;
 
 @ProviderType
 public class GraphListenersImpl<V, E> implements GraphListeners<V, E> {
-	private final ObservableImpl<ChangeEvent<V, E>> change = new ObservableImpl<>();
-	private final ObservableImpl<EdgeEvent<V, E>> edgeAdded = new ObservableImpl<>();
-	private final ObservableImpl<EdgesEvent<V, E>> edgesAdded = new ObservableImpl<>();
-	private final ObservableImpl<EdgeEvent<V, E>> edgeRemoved = new ObservableImpl<>();
-	private final ObservableImpl<EdgesEvent<V, E>> edgesRemoved = new ObservableImpl<>();
-	private final ObservableImpl<VertexEvent<V, E>> vertexAdded = new ObservableImpl<>();
-	private final ObservableImpl<VerticesEvent<V, E>> verticesAdded = new ObservableImpl<>();
-	private final ObservableImpl<VertexEvent<V, E>> vertexRemoved = new ObservableImpl<>();
-	private final ObservableImpl<VerticesEvent<V, E>> verticesRemoved = new ObservableImpl<>();
+	private final HotObservable<ChangeEvent<V, E>> change = new HotObservable<>();
+	private final HotObservable<EdgeEvent<V, E>> edgeAdded = new HotObservable<>();
+	private final HotObservable<EdgesEvent<V, E>> edgesAdded = new HotObservable<>();
+	private final HotObservable<EdgeEvent<V, E>> edgeRemoved = new HotObservable<>();
+	private final HotObservable<EdgesEvent<V, E>> edgesRemoved = new HotObservable<>();
+	private final HotObservable<VertexEvent<V, E>> vertexAdded = new HotObservable<>();
+	private final HotObservable<VerticesEvent<V, E>> verticesAdded = new HotObservable<>();
+	private final HotObservable<VertexEvent<V, E>> vertexRemoved = new HotObservable<>();
+	private final HotObservable<VerticesEvent<V, E>> verticesRemoved = new HotObservable<>();
 
 	@Override
-	public ObservableImpl<ChangeEvent<V, E>> change() {
+	public HotObservable<ChangeEvent<V, E>> change() {
 		return change;
 	}
 
 	@Override
-	public ObservableImpl<EdgeEvent<V, E>> edgeAdded() {
+	public HotObservable<EdgeEvent<V, E>> edgeAdded() {
 		return edgeAdded;
 	}
 
 	@Override
-	public ObservableImpl<EdgesEvent<V, E>> edgesAdded() {
+	public HotObservable<EdgesEvent<V, E>> edgesAdded() {
 		return edgesAdded;
 	}
 
 	@Override
-	public ObservableImpl<EdgeEvent<V, E>> edgeRemoved() {
+	public HotObservable<EdgeEvent<V, E>> edgeRemoved() {
 		return edgeRemoved;
 	}
 
 	@Override
-	public ObservableImpl<EdgesEvent<V, E>> edgesRemoved() {
+	public HotObservable<EdgesEvent<V, E>> edgesRemoved() {
 		return edgesRemoved;
 	}
 
 	@Override
-	public ObservableImpl<VertexEvent<V, E>> vertexAdded() {
+	public HotObservable<VertexEvent<V, E>> vertexAdded() {
 		return vertexAdded;
 	}
 
 	@Override
-	public ObservableImpl<VerticesEvent<V, E>> verticesAdded() {
+	public HotObservable<VerticesEvent<V, E>> verticesAdded() {
 		return verticesAdded;
 	}
 
 	@Override
-	public ObservableImpl<VertexEvent<V, E>> vertexRemoved() {
+	public HotObservable<VertexEvent<V, E>> vertexRemoved() {
 		return vertexRemoved;
 	}
 
 	@Override
-	public ObservableImpl<VerticesEvent<V, E>> verticesRemoved() {
+	public HotObservable<VerticesEvent<V, E>> verticesRemoved() {
 		return verticesRemoved;
 	}
 }

@@ -139,7 +139,7 @@ public class GraphBuilderTest {
 		Set<EdgeVertices<String>> edges = set(EdgeVertices.between("one", "two"));
 
 		Graph<String, Object> graph = graph().vertices(vertices).edges(edges).edgeFactory(Object::new)
-				.internalListeners(l -> l.vertexAdded().addObserver(e -> {
+				.internalListeners(l -> l.vertexAdded().observe(e -> {
 					for (String vertex : e.graph().vertices())
 						if (vertex != e.vertex() && vertex.length() == e.vertex().length())
 							e.graph().edges().add(vertex, e.vertex());
@@ -164,7 +164,7 @@ public class GraphBuilderTest {
 	public void buildComparatorDirectedTest() {
 		Set<String> vertices = set("one", "two", "three");
 
-		Graph<String, Object> graph = graph().vertices(vertices).internalListeners(l -> l.vertexAdded().addObserver(e -> {
+		Graph<String, Object> graph = graph().vertices(vertices).internalListeners(l -> l.vertexAdded().observe(e -> {
 			for (String vertex : e.graph().vertices())
 				if (vertex != e.vertex())
 					e.graph().edges().add(vertex, e.vertex());
@@ -186,7 +186,7 @@ public class GraphBuilderTest {
 	public void buildInsertionDirectedTest() {
 		Set<String> vertices = set("one", "two", "three");
 
-		Graph<String, Object> graph = graph().<String> vertices().internalListeners(l -> l.vertexAdded().addObserver(e -> {
+		Graph<String, Object> graph = graph().<String> vertices().internalListeners(l -> l.vertexAdded().observe(e -> {
 			for (String vertex : e.graph().vertices())
 				if (vertex != e.vertex())
 					e.graph().edges().add(vertex, e.vertex());

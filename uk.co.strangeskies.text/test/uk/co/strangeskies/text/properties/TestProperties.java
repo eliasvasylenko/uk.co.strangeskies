@@ -38,8 +38,6 @@ import static uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase.L
 import java.util.List;
 import java.util.Optional;
 
-import uk.co.strangeskies.text.properties.Nested;
-import uk.co.strangeskies.text.properties.PropertyConfiguration;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.Defaults;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.Evaluation;
 

@@ -267,6 +267,6 @@ public interface GraphConfigurator<V, E> {
 	default <L> GraphConfigurator<V, E> addInternalListener(
 			Function<GraphListeners<V, E>, Observable<L>> listenerSet,
 			Observer<L> listener) {
-		return internalListeners(l -> listenerSet.apply(l).addObserver(listener));
+		return internalListeners(l -> listenerSet.apply(l).observe(listener));
 	}
 }

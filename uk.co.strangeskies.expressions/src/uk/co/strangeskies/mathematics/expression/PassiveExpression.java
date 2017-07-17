@@ -32,91 +32,60 @@
  */
 package uk.co.strangeskies.mathematics.expression;
 
-import uk.co.strangeskies.observable.ObservableImpl;
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
+import static uk.co.strangeskies.observable.Observable.merge;
+
+import java.util.Collection;
+
+import uk.co.strangeskies.observable.Observable;
 
 /**
- * An abstract class to help designing mutable expression, implementing a simple
- * observer list, locking mechanism, and update mechanism.
+ * An expression which is dependent upon the evaluation of a number of other
+ * expressions.
  * 
  * @author Elias N Vasylenko
  * @param <T>
- *          The type of the value of this expression
+ *          The type of the expression.
  */
-public abstract class ExpressionImpl<T> extends ObservableImpl<Expression<? extends T>> implements Expression<T> {
-	private boolean dirty = true;
+public abstract class PassiveExpression<T> implements Expression<T> {
+  private final Observable<Expression<? extends T>> dependencies;
+  private T value;
 
-	private boolean changing;
-	private int changeDepth = 0;
+  public PassiveExpression(Collection<? extends Expression<?>> dependencies) {
+    this.dependencies = merge(
+        dependencies.stream().map(Expression::invalidations).collect(toList())).map(e -> {
+          invalidate();
+          return this;
+        });
+    this.dependencies.observe();
+  }
 
-	protected void cancelChange() {
-		changing = false;
-	}
+  public PassiveExpression(Expression<?>... dependencies) {
+    this(asList(dependencies));
+  }
 
-	protected boolean isChanging() {
-		return changing;
-	}
+  @Override
+  public Observable<Expression<? extends T>> invalidations() {
+    return dependencies;
+  }
 
-	protected void write(Runnable runnable) {
-		beginWrite();
+  private void invalidate() {
+    value = null;
+  }
 
-		try {
-			runnable.run();
-		} finally {
-			endWrite();
-		}
-	}
+  @Override
+  public final T getValue() {
+    if (value == null) {
+      value = evaluate();
+    }
 
-	protected boolean beginWrite() {
-		boolean begun = changeDepth++ == 0;
+    return value;
+  }
 
-		if (begun) {
-			changing = !getObservers().isEmpty();
-		}
-
-		return begun;
-	}
-
-	protected boolean endWrite() {
-		boolean ended = --changeDepth == 0;
-
-		if (ended && changing) {
-			fireChange();
-		}
-
-		return ended;
-	}
-
-	private boolean fireChange() {
-		boolean fired = !dirty;
-
-		if (fired) {
-			dirty = true;
-			fire(this);
-		}
-
-		return fired;
-	}
-
-	@Override
-	public T getValue() {
-		boolean dirty = this.dirty;
-
-		if (this.dirty) {
-			this.dirty = false;
-		}
-
-		return getValueImpl(dirty);
-	}
-
-	/**
-	 * Implementing classes should compute the value of the {@link Expression}
-	 * here. Read lock is guaranteed to be obtained. This method should never be
-	 * invoked manually.
-	 * 
-	 * @param dirty
-	 *          Whether the expression has been mutated since this method was last
-	 *          invoked.
-	 * @return The value of this {@link Expression}.
-	 */
-	protected abstract T getValueImpl(boolean dirty);
+  /**
+   * @return The value of this {@link Expression} as derived from the dependency
+   *         {@link Expression}s.
+   */
+  protected abstract T evaluate();
 }

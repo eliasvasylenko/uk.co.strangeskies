@@ -40,9 +40,6 @@ import java.util.Locale;
 
 import org.junit.Test;
 
-import uk.co.strangeskies.text.properties.LocaleManager;
-import uk.co.strangeskies.text.properties.Localized;
-import uk.co.strangeskies.text.properties.PropertyLoader;
 import uk.co.strangeskies.utility.IdentityProperty;
 
 @SuppressWarnings("javadoc")
@@ -93,7 +90,7 @@ public class LocalizedPropertiesTest {
 		Localized<String> string = text(manager).simpleLocalized();
 
 		IdentityProperty<String> result = new IdentityProperty<>();
-		string.addObserver(t -> {
+		string.observe(t -> {
 			result.set(t);
 		});
 
@@ -111,7 +108,7 @@ public class LocalizedPropertiesTest {
 		Localized<String> string = text(manager).anotherSimpleLocalized();
 
 		IdentityProperty<String> result = new IdentityProperty<>();
-		string.addObserver(t -> {
+		string.observe(t -> {
 			result.set(t);
 		});
 

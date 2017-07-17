@@ -47,176 +47,68 @@ import uk.co.strangeskies.function.TriFunction;
  * @param <R>
  *          The type of the result.
  */
-public abstract class TrinaryExpression<O1, O2, O3, R> extends DependentExpression<R> {
-	private Expression<? extends O1> firstOperand;
-	private Expression<? extends O2> secondOperand;
-	private Expression<? extends O3> thirdOperand;
-	private Expression<? extends TriFunction<? super O1, ? super O2, ? super O3, ? extends R>> operation;
+public abstract class TrinaryExpression<O1, O2, O3, R> extends PassiveExpression<R> {
+  private final Expression<? extends O1> firstOperand;
+  private final Expression<? extends O2> secondOperand;
+  private final Expression<? extends O3> thirdOperand;
+  private final TriFunction<? super O1, ? super O2, ? super O3, ? extends R> operation;
 
-	/**
-	 * @param firstOperand
-	 *          An expression providing the first operand for the function.
-	 * @param secondOperand
-	 *          An expression providing the second operand for the function.
-	 * @param thirdOperand
-	 *          An expression providing the third operand for the function.
-	 * @param operation
-	 *          A expression providing a function transforming the operands into a
-	 *          value of this expression's type.
-	 */
-	public TrinaryExpression(Expression<? extends O1> firstOperand, Expression<? extends O2> secondOperand,
-			Expression<? extends O3> thirdOperand,
-			Expression<? extends TriFunction<? super O1, ? super O2, ? super O3, ? extends R>> operation) {
-		super(firstOperand, secondOperand, thirdOperand);
+  /**
+   * @param firstOperand
+   *          An expression providing the first operand for the function.
+   * @param secondOperand
+   *          An expression providing the second operand for the function.
+   * @param thirdOperand
+   *          An expression providing the third operand for the function.
+   * @param operation
+   *          A expression providing a function transforming the operands into a
+   *          value of this expression's type.
+   */
+  public TrinaryExpression(
+      Expression<? extends O1> firstOperand,
+      Expression<? extends O2> secondOperand,
+      Expression<? extends O3> thirdOperand,
+      TriFunction<? super O1, ? super O2, ? super O3, ? extends R> operation) {
+    super(firstOperand, secondOperand, thirdOperand);
 
-		this.firstOperand = firstOperand;
-		this.secondOperand = secondOperand;
-		this.thirdOperand = thirdOperand;
+    this.firstOperand = firstOperand;
+    this.secondOperand = secondOperand;
+    this.thirdOperand = thirdOperand;
 
-		this.operation = operation;
-	}
+    this.operation = operation;
+  }
 
-	/**
-	 * @param firstOperand
-	 *          An expression providing the first operand for the function.
-	 * @param secondOperand
-	 *          An expression providing the second operand for the function.
-	 * @param thirdOperand
-	 *          An expression providing the third operand for the function.
-	 * @param operation
-	 *          A function transforming the operands into a value of this
-	 *          expression's type.
-	 */
-	public TrinaryExpression(Expression<? extends O1> firstOperand, Expression<? extends O2> secondOperand,
-			Expression<? extends O3> thirdOperand, TriFunction<? super O1, ? super O2, ? super O3, ? extends R> operation) {
-		this(firstOperand, secondOperand, thirdOperand, Expression.immutable(operation));
-	}
+  /**
+   * @return The first operand expression.
+   */
+  public Expression<? extends O1> getFirstOperand() {
+    return firstOperand;
+  }
 
-	/**
-	 * @return The first operand expression.
-	 */
-	public Expression<? extends O1> getFirstOperand() {
-		return firstOperand;
-	}
+  /**
+   * @return The second operand expression.
+   */
+  public Expression<? extends O2> getSecondOperand() {
+    return secondOperand;
+  }
 
-	/**
-	 * @return The second operand expression.
-	 */
-	public Expression<? extends O2> getSecondOperand() {
-		return secondOperand;
-	}
+  /**
+   * @return The third operand expression.
+   */
+  public Expression<? extends O3> getThirdOperand() {
+    return thirdOperand;
+  }
 
-	/**
-	 * @return The third operand expression.
-	 */
-	public Expression<? extends O3> getThirdOperand() {
-		return thirdOperand;
-	}
+  /**
+   * @return the operation
+   */
+  public TriFunction<? super O1, ? super O2, ? super O3, ? extends R> getOperation() {
+    return operation;
+  }
 
-	/**
-	 * @return the operation
-	 */
-	public Expression<? extends TriFunction<? super O1, ? super O2, ? super O3, ? extends R>> getOperation() {
-		return operation;
-	}
-
-	/**
-	 * @param firstOperand
-	 *          A new first operand.
-	 * @param secondOperand
-	 *          A new second operand.
-	 * @param thirdOperand
-	 *          A new third operand.
-	 */
-	public void setOperands(Expression<? extends O1> firstOperand, Expression<? extends O2> secondOperand,
-			Expression<? extends O3> thirdOperand) {
-		try {
-			beginWrite();
-
-			if (this.firstOperand != firstOperand || this.secondOperand != secondOperand
-					|| this.thirdOperand != thirdOperand) {
-				removeDependency(this.firstOperand);
-				removeDependency(this.secondOperand);
-				removeDependency(this.thirdOperand);
-
-				this.firstOperand = firstOperand;
-				this.secondOperand = secondOperand;
-				this.thirdOperand = thirdOperand;
-
-				addDependency(this.firstOperand);
-				addDependency(this.secondOperand);
-				addDependency(this.thirdOperand);
-			}
-		} finally {
-			endWrite();
-		}
-	}
-
-	/**
-	 * @param operand
-	 *          A new first operand.
-	 */
-	public void setFirstOperand(Expression<? extends O1> operand) {
-		try {
-			beginWrite();
-
-			if (firstOperand != operand) {
-				if (firstOperand != secondOperand && firstOperand != thirdOperand) {
-					removeDependency(firstOperand);
-				}
-
-				firstOperand = operand;
-				addDependency(firstOperand);
-			}
-		} finally {
-			endWrite();
-		}
-	}
-
-	/**
-	 * @param operand
-	 *          A new second operand.
-	 */
-	public void setSecondOperand(Expression<? extends O2> operand) {
-		try {
-			beginWrite();
-
-			if (secondOperand != operand) {
-				if (firstOperand != secondOperand && secondOperand != thirdOperand) {
-					removeDependency(secondOperand);
-				}
-
-				secondOperand = operand;
-				addDependency(secondOperand);
-			}
-		} finally {
-			endWrite();
-		}
-	}
-
-	/**
-	 * @param operand
-	 *          A new third operand.
-	 */
-	public void setThirdOperand(Expression<? extends O3> operand) {
-		try {
-			beginWrite();
-
-			if (thirdOperand != operand) {
-				if (firstOperand != thirdOperand && secondOperand != thirdOperand) {
-					removeDependency(secondOperand);
-				}
-
-				thirdOperand = operand;
-				addDependency(secondOperand);
-			}
-		} finally {
-			endWrite();
-		}
-	}
-
-	@Override
-	protected R evaluate() {
-		return operation.getValue().apply(firstOperand.getValue(), secondOperand.getValue(), thirdOperand.getValue());
-	}
+  @Override
+  protected R evaluate() {
+    return operation
+        .apply(firstOperand.getValue(), secondOperand.getValue(), thirdOperand.getValue());
+  }
 }

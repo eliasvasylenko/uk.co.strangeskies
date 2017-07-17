@@ -40,10 +40,6 @@ import static uk.co.strangeskies.text.properties.LocaleManager.getManager;
 
 import org.junit.Test;
 
-import uk.co.strangeskies.text.properties.LocaleManager;
-import uk.co.strangeskies.text.properties.PropertyLoader;
-import uk.co.strangeskies.text.properties.PropertyLoaderException;
-
 @SuppressWarnings("javadoc")
 public class PropertiesTest {
 	public TestProperties text(LocaleManager manager) {

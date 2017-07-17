@@ -50,8 +50,6 @@ import java.util.TreeSet;
 
 import org.junit.Test;
 
-import uk.co.strangeskies.collection.observable.ObservableSet;
-import uk.co.strangeskies.collection.observable.ScopedObservableSet;
 import uk.co.strangeskies.collection.observable.ScopedObservableSet.ScopedObservableSetImpl;
 
 /**
@@ -69,25 +67,25 @@ public class ObservableSetTest {
 
 	private <E> List<E> addedList(ObservableSet<?, E> set) {
 		List<E> list = new ArrayList<>();
-		set.changes().addObserver(c -> list.addAll(c.added()));
+		set.changes().observe(c -> list.addAll(c.added()));
 		return list;
 	}
 
 	private <E> List<E> removedList(ObservableSet<?, E> set) {
 		List<E> list = new ArrayList<>();
-		set.changes().addObserver(c -> list.addAll(c.removed()));
+		set.changes().observe(c -> list.addAll(c.removed()));
 		return list;
 	}
 
 	private <E> Set<E> addedSet(ObservableSet<?, E> set) {
 		Set<E> list = new HashSet<>();
-		set.changes().addObserver(c -> list.addAll(c.added()));
+		set.changes().observe(c -> list.addAll(c.added()));
 		return list;
 	}
 
 	private <E> Set<E> removedSet(ObservableSet<?, E> set) {
 		Set<E> list = new HashSet<>();
-		set.changes().addObserver(c -> list.addAll(c.removed()));
+		set.changes().observe(c -> list.addAll(c.removed()));
 		return list;
 	}
 
