@@ -44,6 +44,7 @@ import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
 
 import uk.co.strangeskies.observable.Observable;
+import uk.co.strangeskies.observable.Observation;
 import uk.co.strangeskies.observable.Observer;
 import uk.co.strangeskies.text.properties.LocaleManager;
 import uk.co.strangeskies.text.properties.LocaleProvider;
@@ -55,68 +56,63 @@ import uk.co.strangeskies.text.properties.LocaleProvider;
  */
 @Component(configurationPid = LocaleManagerServiceConstants.CONFIGURATION_PID)
 public class LocaleManagerService implements LocaleManager, LocaleProvider {
-	private final LocaleManager component;
-	@Reference
-	ConfigurationAdmin configurationAdmin;
+  private final LocaleManager component;
+  @Reference
+  ConfigurationAdmin configurationAdmin;
 
-	/**
-	 * Create empty manager
-	 */
-	public LocaleManagerService() {
-		component = LocaleManager.getManager(Locale.getDefault());
-	}
+  /**
+   * Create empty manager
+   */
+  public LocaleManagerService() {
+    component = LocaleManager.getManager(Locale.getDefault());
+  }
 
-	@Override
-	public Locale get() {
-		return component.getLocale();
-	}
+  @Override
+  public Locale get() {
+    return component.getLocale();
+  }
 
-	@Override
-	public Locale set(Locale locale) {
-		Locale previous = setImpl(locale);
+  @Override
+  public Locale set(Locale locale) {
+    Locale previous = setImpl(locale);
 
-		if (!previous.equals(locale)) {
-			try {
-				Configuration configuration = configurationAdmin
-						.getConfiguration(LocaleManagerServiceConstants.CONFIGURATION_PID);
+    if (!previous.equals(locale)) {
+      try {
+        Configuration configuration = configurationAdmin
+            .getConfiguration(LocaleManagerServiceConstants.CONFIGURATION_PID);
 
-				Dictionary<String, Object> properties = configuration.getProperties();
-				properties.put(LocaleManagerServiceConstants.LOCALE_KEY, locale.toLanguageTag());
-				configuration.update(properties);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-		}
+        Dictionary<String, Object> properties = configuration.getProperties();
+        properties.put(LocaleManagerServiceConstants.LOCALE_KEY, locale.toLanguageTag());
+        configuration.update(properties);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
 
-		return previous;
-	}
+    return previous;
+  }
 
-	private Locale setImpl(Locale locale) {
-		return component.set(locale);
-	}
+  private Locale setImpl(Locale locale) {
+    return component.set(locale);
+  }
 
-	@Modified
-	void update(Map<String, String> configuration) {
-		if (configuration != null) {
-			String locale = configuration.get(LocaleManagerServiceConstants.LOCALE_KEY);
-			if (locale != null) {
-				setImpl(Locale.forLanguageTag(locale));
-			}
-		}
-	}
+  @Modified
+  void update(Map<String, String> configuration) {
+    if (configuration != null) {
+      String locale = configuration.get(LocaleManagerServiceConstants.LOCALE_KEY);
+      if (locale != null) {
+        setImpl(Locale.forLanguageTag(locale));
+      }
+    }
+  }
 
-	@Override
-	public boolean addObserver(Observer<? super Locale> observer) {
-		return component.addObserver(observer);
-	}
+  @Override
+  public Observation<Locale> observe(Observer<? super Locale> observer) {
+    return component.observe();
+  }
 
-	@Override
-	public boolean removeObserver(Observer<? super Locale> observer) {
-		return component.removeObserver(observer);
-	}
-
-	@Override
-	public Observable<Change<Locale>> changes() {
-		return component.changes();
-	}
+  @Override
+  public Observable<Change<Locale>> changes() {
+    return component.changes();
+  }
 }
