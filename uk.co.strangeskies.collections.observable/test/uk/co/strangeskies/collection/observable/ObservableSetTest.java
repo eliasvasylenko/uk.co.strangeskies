@@ -57,150 +57,150 @@ import uk.co.strangeskies.collection.observable.ScopedObservableSet.ScopedObserv
  */
 @SuppressWarnings("javadoc")
 public class ObservableSetTest {
-	private static final String ONE = "one";
-	private static final String TWO = "two";
-	private static final String THREE = "three";
-	private static final String FOUR = "four";
-	private static final String FIVE = "five";
+  private static final String ONE = "one";
+  private static final String TWO = "two";
+  private static final String THREE = "three";
+  private static final String FOUR = "four";
+  private static final String FIVE = "five";
 
-	private static final Set<String> STRINGS = unmodifiableSet(of(ONE, TWO, THREE).collect(toSet()));
+  private static final Set<String> STRINGS = unmodifiableSet(of(ONE, TWO, THREE).collect(toSet()));
 
-	private <E> List<E> addedList(ObservableSet<?, E> set) {
-		List<E> list = new ArrayList<>();
-		set.changes().observe(c -> list.addAll(c.added()));
-		return list;
-	}
+  private <E> List<E> addedList(ObservableSet<?, E> set) {
+    List<E> list = new ArrayList<>();
+    set.changes().observe(c -> list.addAll(c.added()));
+    return list;
+  }
 
-	private <E> List<E> removedList(ObservableSet<?, E> set) {
-		List<E> list = new ArrayList<>();
-		set.changes().observe(c -> list.addAll(c.removed()));
-		return list;
-	}
+  private <E> List<E> removedList(ObservableSet<?, E> set) {
+    List<E> list = new ArrayList<>();
+    set.changes().observe(c -> list.addAll(c.removed()));
+    return list;
+  }
 
-	private <E> Set<E> addedSet(ObservableSet<?, E> set) {
-		Set<E> list = new HashSet<>();
-		set.changes().observe(c -> list.addAll(c.added()));
-		return list;
-	}
+  private <E> Set<E> addedSet(ObservableSet<?, E> set) {
+    Set<E> list = new HashSet<>();
+    set.changes().observe(c -> list.addAll(c.added()));
+    return list;
+  }
 
-	private <E> Set<E> removedSet(ObservableSet<?, E> set) {
-		Set<E> list = new HashSet<>();
-		set.changes().observe(c -> list.addAll(c.removed()));
-		return list;
-	}
+  private <E> Set<E> removedSet(ObservableSet<?, E> set) {
+    Set<E> list = new HashSet<>();
+    set.changes().observe(c -> list.addAll(c.removed()));
+    return list;
+  }
 
-	@Test
-	public void sortedTest() {
-		ObservableSet<?, String> strings = ObservableSet.over(new TreeSet<>());
-		strings.addAll(STRINGS);
+  @Test
+  public void sortedTest() {
+    ObservableSet<?, String> strings = ObservableSet.over(new TreeSet<>());
+    strings.addAll(STRINGS);
 
-		assertTrue(strings.add(FOUR));
+    assertTrue(strings.add(FOUR));
 
-		assertEquals(asList(FOUR, ONE, THREE, TWO), new ArrayList<>(strings));
-	}
+    assertEquals(asList(FOUR, ONE, THREE, TWO), new ArrayList<>(strings));
+  }
 
-	@Test
-	public void addItemTest() {
-		ObservableSet<?, String> strings = ObservableSet.ofElements(STRINGS);
-		List<String> added = addedList(strings);
+  @Test
+  public void addItemTest() {
+    ObservableSet<?, String> strings = ObservableSet.ofElements(STRINGS);
+    List<String> added = addedList(strings);
 
-		assertTrue(strings.add(FOUR));
+    assertTrue(strings.add(FOUR));
 
-		assertEquals(asList(FOUR), added);
-		assertNotEquals(STRINGS, strings);
-	}
+    assertEquals(asList(FOUR), added);
+    assertNotEquals(STRINGS, strings);
+  }
 
-	@Test
-	public void addItemsTest() {
-		ObservableSet<?, String> strings = ObservableSet.ofElements(STRINGS);
-		List<String> added = addedList(strings);
+  @Test
+  public void addItemsTest() {
+    ObservableSet<?, String> strings = ObservableSet.ofElements(STRINGS);
+    List<String> added = addedList(strings);
 
-		assertTrue(strings.add(FOUR));
-		assertTrue(strings.add(FIVE));
+    assertTrue(strings.add(FOUR));
+    assertTrue(strings.add(FIVE));
 
-		assertEquals(asList(FOUR, FIVE), added);
-		assertNotEquals(STRINGS, strings);
-	}
+    assertEquals(asList(FOUR, FIVE), added);
+    assertNotEquals(STRINGS, strings);
+  }
 
-	@Test
-	public void addExistingItemTest() {
-		ObservableSet<?, String> strings = ObservableSet.ofElements(STRINGS);
-		List<String> added = addedList(strings);
+  @Test
+  public void addExistingItemTest() {
+    ObservableSet<?, String> strings = ObservableSet.ofElements(STRINGS);
+    List<String> added = addedList(strings);
 
-		assertFalse(strings.add(ONE));
+    assertFalse(strings.add(ONE));
 
-		assertEquals(asList(), added);
-		assertEquals(STRINGS, strings);
-	}
+    assertEquals(asList(), added);
+    assertEquals(STRINGS, strings);
+  }
 
-	@Test
-	public void removeItemTest() {
-		ObservableSet<?, String> strings = ObservableSet.ofElements(STRINGS);
-		Set<String> removed = removedSet(strings);
+  @Test
+  public void removeItemTest() {
+    ObservableSet<?, String> strings = ObservableSet.ofElements(STRINGS);
+    Set<String> removed = removedSet(strings);
 
-		assertTrue(strings.remove(ONE));
+    assertTrue(strings.remove(ONE));
 
-		assertEquals(new HashSet<>(asList(ONE)), removed);
-	}
+    assertEquals(new HashSet<>(asList(ONE)), removed);
+  }
 
-	@Test
-	public void removeMissingItemTest() {
-		ObservableSet<?, String> strings = ObservableSet.ofElements(STRINGS);
-		List<String> removed = removedList(strings);
+  @Test
+  public void removeMissingItemTest() {
+    ObservableSet<?, String> strings = ObservableSet.ofElements(STRINGS);
+    List<String> removed = removedList(strings);
 
-		assertFalse(strings.remove(FOUR));
+    assertFalse(strings.remove(FOUR));
 
-		assertEquals(asList(), removed);
-	}
+    assertEquals(asList(), removed);
+  }
 
-	@Test
-	public void addToParentScope() {
-		ScopedObservableSetImpl<String> strings = ScopedObservableSet.over(HashSet::new);
-		ScopedObservableSetImpl<String> stringsChildren = strings.nestChildScope();
-		Set<String> added = addedSet(stringsChildren);
+  @Test
+  public void addToParentScope() {
+    ScopedObservableSetImpl<String> strings = ScopedObservableSet.over(HashSet::new);
+    ScopedObservableSetImpl<String> stringsChildren = strings.nestChildScope();
+    Set<String> added = addedSet(stringsChildren);
 
-		assertTrue(strings.addAll(STRINGS));
+    assertTrue(strings.addAll(STRINGS));
 
-		assertEquals(STRINGS, added);
+    assertEquals(STRINGS, added);
 
-		assertTrue(stringsChildren.containsAll(STRINGS));
-	}
+    assertTrue(stringsChildren.containsAll(STRINGS));
+  }
 
-	@Test
-	public void addToChildScope() {
-		ScopedObservableSetImpl<String> strings = ScopedObservableSet.over(HashSet::new);
-		ScopedObservableSet<?, String> stringsChildren = strings.nestChildScope();
-		Set<String> added = addedSet(strings);
+  @Test
+  public void addToChildScope() {
+    ScopedObservableSetImpl<String> strings = ScopedObservableSet.over(HashSet::new);
+    ScopedObservableSet<?, String> stringsChildren = strings.nestChildScope();
+    Set<String> added = addedSet(strings);
 
-		assertTrue(stringsChildren.addAll(STRINGS));
+    assertTrue(stringsChildren.addAll(STRINGS));
 
-		assertEquals(emptySet(), added);
-	}
+    assertEquals(emptySet(), added);
+  }
 
-	@Test
-	public void promoteToParentScope() {
-		ScopedObservableSetImpl<String> strings = ScopedObservableSet.over(HashSet::new);
-		ScopedObservableSetImpl<String> stringsChildren = strings.nestChildScope();
+  @Test
+  public void promoteToParentScope() {
+    ScopedObservableSetImpl<String> strings = ScopedObservableSet.over(HashSet::new);
+    ScopedObservableSetImpl<String> stringsChildren = strings.nestChildScope();
 
-		// add all to children and assert status
-		assertTrue(stringsChildren.addAll(STRINGS));
+    // add all to children and assert status
+    assertTrue(stringsChildren.addAll(STRINGS));
 
-		assertEquals(STRINGS, stringsChildren);
-		assertEquals(emptySet(), strings);
+    assertEquals(STRINGS, stringsChildren);
+    assertEquals(emptySet(), strings);
 
-		// listen for changes in the child
-		List<String> added = addedList(stringsChildren);
-		List<String> removed = addedList(stringsChildren);
+    // listen for changes in the child
+    List<String> added = addedList(stringsChildren);
+    List<String> removed = addedList(stringsChildren);
 
-		// promote to parent and assert status
-		assertTrue(strings.addAll(STRINGS));
+    // promote to parent and assert status
+    assertTrue(strings.addAll(STRINGS));
 
-		assertEquals(STRINGS, stringsChildren);
-		assertEquals(STRINGS, strings);
+    assertEquals(STRINGS, stringsChildren);
+    assertEquals(STRINGS, strings);
 
-		assertTrue(added.isEmpty());
-		assertTrue(removed.isEmpty());
+    assertTrue(added.isEmpty());
+    assertTrue(removed.isEmpty());
 
-		assertFalse(stringsChildren.localIterator().hasNext());
-	}
+    assertFalse(stringsChildren.localIterator().hasNext());
+  }
 }

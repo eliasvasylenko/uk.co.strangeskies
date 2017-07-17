@@ -99,7 +99,7 @@ public abstract class ObservableSetDecorator<S extends ObservableSet<S, E>, E>
 
   protected boolean beginChange() {
     if (changeDepth++ == 0) {
-      doChange = changeObservable.getObservations().size() > 0;
+      doChange = changeObservable.hasObservers();
 
       if (doChange) {
         if (change == null || firingDepth > 0) {

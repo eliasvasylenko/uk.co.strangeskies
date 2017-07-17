@@ -67,12 +67,14 @@ public class HotObservable<M> implements Observable<M> {
     return observation;
   }
 
-  public Set<HotObservation<M>> getObservations() {
-    return observations;
+  public boolean hasObservers() {
+    return observations != null;
   }
 
   void stopObservation(Observation<M> observer) {
-    observations.remove(observer);
+    if (observations.remove(observer) && observations.isEmpty()) {
+      observations = null;
+    }
   }
 
   private void forObservers(Consumer<Observer<? super M>> action) {

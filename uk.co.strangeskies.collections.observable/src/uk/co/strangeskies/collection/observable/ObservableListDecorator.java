@@ -112,7 +112,7 @@ public abstract class ObservableListDecorator<S extends ObservableList<S, E>, E>
 
   protected boolean beginChange() {
     if (changeDepth++ == 0) {
-      firing = changeObservable.getObservations().size() > 0;
+      firing = changeObservable.hasObservers();
 
       return true;
     } else {
