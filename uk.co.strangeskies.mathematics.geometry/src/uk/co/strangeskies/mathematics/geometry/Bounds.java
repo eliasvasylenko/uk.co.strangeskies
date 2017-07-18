@@ -40,13 +40,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Supplier;
 
-import uk.co.strangeskies.mathematics.Range;
+import uk.co.strangeskies.mathematics.Interval;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 import uk.co.strangeskies.mathematics.values.Value;
 import uk.co.strangeskies.utility.Self;
 
 public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>> implements Self<S> {
-  ArrayList<Range<V>> ranges;
+  ArrayList<Interval<V>> ranges;
 
   public Bounds(int dimensions, Supplier<V> valueFactory) {
     try {
@@ -57,7 +57,7 @@ public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>> impleme
 
     ranges = new ArrayList<>();
     for (int i = 0; i < dimensions; i++) {
-      ranges.add(Range.between(valueFactory.get(), valueFactory.get()));
+      ranges.add(Interval.bounded(valueFactory.get(), valueFactory.get()));
     }
   }
 
@@ -77,7 +77,7 @@ public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>> impleme
     Iterator<? extends V> fromIterator = from.getData().iterator();
     Iterator<? extends V> toIterator = to.getData().iterator();
     while (fromIterator.hasNext()) {
-      ranges.add(Range.between(fromIterator.next(), toIterator.next()));
+      ranges.add(Interval.bounded(fromIterator.next(), toIterator.next()));
     }
   }
 
@@ -106,7 +106,7 @@ public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>> impleme
     Iterator<? extends Vector<?, V>> pointIterator = points.iterator();
     Vector<?, V> firstPoint = pointIterator.next();
     for (V value : firstPoint.getData()) {
-      ranges.add(Range.between(value, value));
+      ranges.add(Interval.bounded(value, value));
     }
     while (pointIterator.hasNext()) {
       int i = 0;
@@ -118,7 +118,7 @@ public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>> impleme
 
   public Bounds(Bounds<?, V> other) {
     ranges = new ArrayList<>();
-    for (Range<V> range : other.getData()) {
+    for (Interval<V> range : other.getData()) {
       ranges.add(range);
     }
   }
@@ -130,16 +130,16 @@ public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>> impleme
       throw new IllegalArgumentException(e);
     }
     ranges = new ArrayList<>();
-    for (Range<V> range : other.getData()) {
+    for (Interval<V> range : other.getData()) {
       ranges.add(range);
     }
   }
 
-  public final List<Range<V>> getData() {
+  public final List<Interval<V>> getData() {
     return Collections.unmodifiableList(ranges);
   }
 
-  public final Range<V> getRange(int index) {
+  public final Interval<V> getRange(int index) {
     return getData().get(index);
   }
 
