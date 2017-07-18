@@ -32,51 +32,23 @@
  */
 package uk.co.strangeskies.text.properties;
 
-import java.util.Locale;
-
 /**
- * Exception relating to localisation.
+ * Exception relating to localization.
  * 
  * @author Elias N Vasylenko
  */
-public class PropertyLoaderException extends LocalizedRuntimeException {
+public class PropertyLoaderException extends RuntimeException {
 	private static final long serialVersionUID = 1L;
 
 	/**
 	 * Build with the given developer locale
 	 * 
 	 * @param message
-	 *          the localised message string
-	 * @param developerLocale
-	 *          the developer's locale
+	 *          the message string
 	 * @param cause
 	 *          the cause
 	 */
-	protected PropertyLoaderException(Localized<String> message, Locale developerLocale, Throwable cause) {
-		super(message, developerLocale, cause);
-	}
-
-	/**
-	 * Build with the given developer locale
-	 * 
-	 * @param message
-	 *          the localised message string
-	 * @param developerLocale
-	 *          the developer's locale
-	 */
-	protected PropertyLoaderException(Localized<String> message, Locale developerLocale) {
-		super(message, developerLocale);
-	}
-
-	/**
-	 * Build with an English developer locale
-	 * 
-	 * @param message
-	 *          the localised message string
-	 * @param cause
-	 *          the cause
-	 */
-	public PropertyLoaderException(Localized<String> message, Throwable cause) {
+	public PropertyLoaderException(String message, Throwable cause) {
 		super(message, cause);
 	}
 
@@ -84,9 +56,9 @@ public class PropertyLoaderException extends LocalizedRuntimeException {
 	 * Build with an English developer locale
 	 * 
 	 * @param message
-	 *          the localised message string
+	 *          the message string
 	 */
-	public PropertyLoaderException(Localized<String> message) {
+	public PropertyLoaderException(String message) {
 		super(message);
 	}
 }

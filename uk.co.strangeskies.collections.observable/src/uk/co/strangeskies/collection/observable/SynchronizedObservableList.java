@@ -37,134 +37,103 @@ import java.util.List;
 
 import uk.co.strangeskies.collection.ListDecorator;
 import uk.co.strangeskies.observable.Observable;
-import uk.co.strangeskies.observable.ObservableImpl;
+import uk.co.strangeskies.observable.HotObservable;
+import uk.co.strangeskies.observable.Observation;
 import uk.co.strangeskies.observable.Observer;
 
-public abstract class SynchronizedObservableList<S extends ObservableList<S, E>, E> extends ObservableImpl<S>
-		implements ListDecorator<E>, ObservableList<S, E> {
-	static class SynchronizedObservableListImpl<E>
-			extends SynchronizedObservableList<SynchronizedObservableListImpl<E>, E> {
-		SynchronizedObservableListImpl(ObservableList<?, E> component) {
-			super(component);
-		}
+public abstract class SynchronizedObservableList<S extends ObservableList<S, E>, E>
+    extends HotObservable<S> implements ListDecorator<E>, ObservableList<S, E> {
+  static class SynchronizedObservableListImpl<E>
+      extends SynchronizedObservableList<SynchronizedObservableListImpl<E>, E> {
+    SynchronizedObservableListImpl(ObservableList<?, E> component) {
+      super(component);
+    }
 
-		@SuppressWarnings("unchecked")
-		@Override
-		public SynchronizedObservableListImpl<E> copy() {
-			return new SynchronizedObservableListImpl<>(((ObservableList<?, E>) getComponent()).copy());
-		}
-	}
+    @SuppressWarnings("unchecked")
+    @Override
+    public SynchronizedObservableListImpl<E> copy() {
+      return new SynchronizedObservableListImpl<>(((ObservableList<?, E>) getComponent()).copy());
+    }
+  }
 
-	private final List<E> component;
-	private final List<E> silentComponent;
+  private final List<E> component;
+  private final List<E> silentComponent;
 
-	private final Observer<ObservableList<?, ? extends E>> observer;
-	private final ObservableImpl<Change<E>> changes;
-	private final Observer<Change<E>> changeObserver;
+  private final HotObservable<Change<E>> changes;
 
-	protected SynchronizedObservableList(ObservableList<?, E> component) {
-		this.component = Collections.synchronizedList(component);
-		silentComponent = component.silent();
+  protected SynchronizedObservableList(ObservableList<?, E> component) {
+    this.component = Collections.synchronizedList(component);
+    silentComponent = component.silent();
 
-		observer = l -> fire(getThis());
-		component.addWeakObserver(observer);
+    component.weakReference(this).observe(m -> m.owner().sendNext(m.owner().getThis()));
 
-		changes = new ObservableImpl<Change<E>>() {
-			@Override
-			public boolean addObserver(Observer<? super Change<E>> observer) {
-				synchronized (getMutex()) {
-					return super.addObserver(observer);
-				}
-			}
+    changes = new HotObservable<Change<E>>() {
+      @Override
+      public Observation<Change<E>> observe(Observer<? super Change<E>> observer) {
+        synchronized (getMutex()) {
+          return super.observe(observer);
+        }
+      }
 
-			@Override
-			public boolean removeObserver(Observer<? super Change<E>> observer) {
-				synchronized (getMutex()) {
-					return super.removeObserver(observer);
-				}
-			}
+      @Override
+      public void sendNext(Change<E> item) {
+        synchronized (getMutex()) {
+          super.sendNext(item);
+        }
+      }
+    };
+    component.changes().weakReference(this).observe(m -> m.owner().changes.sendNext(m.message()));
+  }
 
-			@Override
-			public void clearObservers() {
-				synchronized (getMutex()) {
-					super.clearObservers();
-				}
-			}
+  public static <E> SynchronizedObservableListImpl<E> over(ObservableList<?, E> component) {
+    return new SynchronizedObservableListImpl<>(component);
+  }
 
-			@Override
-			public void fire(Change<E> item) {
-				synchronized (getMutex()) {
-					super.fire(item);
-				}
-			}
-		};
-		changeObserver = changes::fire;
-		component.changes().addWeakObserver(changeObserver);
-	}
+  public Object getMutex() {
+    return component;
+  }
 
-	public static <E> SynchronizedObservableListImpl<E> over(ObservableList<?, E> component) {
-		return new SynchronizedObservableListImpl<>(component);
-	}
+  @Override
+  public List<E> getComponent() {
+    return component;
+  }
 
-	public Object getMutex() {
-		return component;
-	}
+  @Override
+  public Observable<Change<E>> changes() {
+    return changes;
+  }
 
-	@Override
-	public List<E> getComponent() {
-		return component;
-	}
+  @Override
+  public List<E> silent() {
+    return silentComponent;
+  }
 
-	@Override
-	public Observable<Change<E>> changes() {
-		return changes;
-	}
+  @Override
+  public String toString() {
+    return getComponent().toString();
+  }
 
-	@Override
-	public List<E> silent() {
-		return silentComponent;
-	}
+  @Override
+  public int hashCode() {
+    return getComponent().hashCode();
+  }
 
-	@Override
-	public String toString() {
-		return getComponent().toString();
-	}
+  @Override
+  public boolean equals(Object obj) {
+    return getComponent().equals(obj);
+  }
 
-	@Override
-	public int hashCode() {
-		return getComponent().hashCode();
-	}
+  @Override
+  public Observation<S> observe(Observer<? super S> observer) {
+    synchronized (getMutex()) {
+      return super.observe(observer);
+    }
+  }
 
-	@Override
-	public boolean equals(Object obj) {
-		return getComponent().equals(obj);
-	}
-
-	@Override
-	public boolean addObserver(Observer<? super S> observer) {
-		synchronized (getMutex()) {
-			return super.addObserver(observer);
-		}
-	}
-
-	@Override
-	public boolean removeObserver(Observer<? super S> observer) {
-		synchronized (getMutex()) {
-			return super.removeObserver(observer);
-		}
-	}
-
-	@Override
-	public void clearObservers() {
-		synchronized (getMutex()) {
-			super.clearObservers();
-		}
-	}
-
-	@Override
-	public void fire(S item) {
-		synchronized (getMutex()) {
-			super.fire(item);
-		}
-	}
+  @Override
+  public void sendNext(S item) {
+    synchronized (getMutex()) {
+      super.sendNext(item);
+    }
+  }
 }

@@ -37,9 +37,12 @@ import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.Visibility.forModifiers;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Constructor;
 import java.util.List;
 import java.util.Set;
+
+import uk.co.strangeskies.reflection.AnnotatedTypes;
 
 public class ConstructorSignature extends ExecutableSignature<ConstructorSignature> {
 	private static final ConstructorSignature EMPTY_SIGNATURE = new ConstructorSignature();
@@ -51,11 +54,15 @@ public class ConstructorSignature extends ExecutableSignature<ConstructorSignatu
 
 	public static ConstructorSignature constructorSignature(Constructor<?> method) {
 		return new ConstructorSignature()
-				.withAnnotations(method.getAnnotations())
+				.annotated(method.getAnnotations())
 				.withVisibility(forModifiers(method.getModifiers()))
-				.withTypeVariables(
-						stream(method.getTypeParameters()).map(TypeVariableSignature::typeVariableSignature).collect(toList()))
-				.withParameters(stream(method.getParameters()).map(ParameterSignature::parameterSignature).collect(toList()));
+				.typeVariables(
+						stream(method.getTypeParameters())
+								.map(TypeVariableSignature::typeVariableSignature)
+								.collect(toList()))
+				.withParameters(
+						stream(method.getParameters()).map(ParameterSignature::parameterSignature).collect(
+								toList()));
 	}
 
 	protected ConstructorSignature() {
@@ -89,5 +96,10 @@ public class ConstructorSignature extends ExecutableSignature<ConstructorSignatu
 		appendParameters(builder);
 
 		return builder.toString();
+	}
+
+	@Override
+	public AnnotatedType getReturnType() {
+		return AnnotatedTypes.annotated(void.class);
 	}
 }

@@ -36,80 +36,68 @@ import static java.util.Collections.emptySet;
 import static uk.co.strangeskies.reflection.codegen.Modifiers.emptyModifiers;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.GenericDeclaration;
-import java.lang.reflect.TypeVariable;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.Visibility;
 
 /**
- * This type is a placeholder for a {@link TypeVariable} on a
- * {@link GenericDeclaration} produced from a {@link ParameterizedSignature}.
+ * A base type for signatures representing class members.
  * 
  * @author Elias N Vasylenko
+ * @param <S>
+ *          self bound
  */
-public abstract class MemberSignature<S extends MemberSignature<S>> implements AnnotatedSignature<S> {
-	final String name;
-	final Set<Annotation> annotations;
-	final Modifiers modifiers;
+public abstract class MemberSignature<S extends MemberSignature<S>>
+    implements AnnotatedSignature<S> {
+  final String name;
+  final Set<Annotation> annotations;
+  final Modifiers modifiers;
 
-	/**
-	 * @param name
-	 *          the name of the declared type parameter
-	 */
-	protected MemberSignature(String name) {
-		this(name, emptySet(), emptyModifiers());
-	}
+  /**
+   * @param name
+   *          the name of the declared type parameter
+   */
+  protected MemberSignature(String name) {
+    this(name, emptySet(), emptyModifiers());
+  }
 
-	protected MemberSignature(String name, Set<Annotation> annotations, Modifiers modifiers) {
-		this.name = name;
-		this.annotations = annotations;
-		this.modifiers = modifiers;
-	}
+  protected MemberSignature(String name, Set<Annotation> annotations, Modifiers modifiers) {
+    this.name = name;
+    this.annotations = annotations;
+    this.modifiers = modifiers;
+  }
 
-	protected abstract S withMemberSignatureData(String name, Set<Annotation> annotations, Modifiers modifiers);
+  protected abstract S withMemberSignatureData(
+      String name,
+      Set<Annotation> annotations,
+      Modifiers modifiers);
 
-	@Override
-	public Stream<? extends Annotation> getAnnotations() {
-		return annotations.stream();
-	}
+  @Override
+  public Stream<? extends Annotation> getAnnotations() {
+    return annotations.stream();
+  }
 
-	@Override
-	public S withAnnotations(Collection<? extends Annotation> annotations) {
-		return withMemberSignatureData(name, new HashSet<>(annotations), modifiers);
-	}
+  @Override
+  public S annotated(Collection<? extends Annotation> annotations) {
+    return withMemberSignatureData(name, new HashSet<>(annotations), modifiers);
+  }
 
-	public String getName() {
-		return name;
-	}
+  public String getName() {
+    return name;
+  }
 
-	public Modifiers getModifiers() {
-		return modifiers;
-	}
+  protected S withModifiers(Modifiers modifiers) {
+    return withMemberSignatureData(name, annotations, modifiers);
+  }
 
-	public S withVisibility(Visibility visibility) {
-		return withMemberSignatureData(name, annotations, modifiers.withVisibility(visibility));
-	}
+  public Modifiers getModifiers() {
+    return modifiers;
+  }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (obj == this)
-			return true;
-		if (!(obj instanceof MemberSignature<?>))
-			return false;
-
-		MemberSignature<?> that = (MemberSignature<?>) obj;
-
-		return AnnotatedSignature.equals(this, that) && Objects.equals(this.getName(), that.getName())
-				&& Objects.equals(this.getModifiers(), that.getModifiers());
-	}
-
-	@Override
-	public int hashCode() {
-		return AnnotatedSignature.hashCode(this) ^ getName().hashCode() ^ getModifiers().hashCode();
-	}
+  public S withVisibility(Visibility visibility) {
+    return withModifiers(modifiers.withVisibility(visibility));
+  }
 }

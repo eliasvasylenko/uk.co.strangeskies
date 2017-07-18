@@ -34,284 +34,278 @@ package uk.co.strangeskies.mathematics.values;
 
 // TODO put all the update() read() lock protection stuff in the other Value implementations
 public class LongValue extends IntegralValue<LongValue> {
-	private static final long serialVersionUID = 5916143538083079342L;
+  private static final long serialVersionUID = 5916143538083079342L;
 
-	private long value;
+  private long value;
 
-	public LongValue() {}
+  public LongValue() {}
 
-	public LongValue(Value<?> value) {
-		super((Number) value);
-	}
+  public LongValue(Value<?> value) {
+    super((Number) value);
+  }
 
-	public LongValue(Number value) {
-		super(value);
-	}
+  public LongValue(Number value) {
+    super(value);
+  }
 
-	@Override
-	public final LongValue reciprocate() {
-		value = 1 / value;
-		return this;
-	}
+  @Override
+  public final LongValue reciprocate() {
+    value = 1 / value;
+    return this;
+  }
 
-	@Override
-	public final LongValue add(Value<?> value) {
-		this.value += value.longValue();
-		return this;
-	}
+  @Override
+  public final LongValue add(Value<?> value) {
+    this.value += value.longValue();
+    return this;
+  }
 
-	@Override
-	public final LongValue negate() {
-		value = -value;
-		return this;
-	}
+  @Override
+  public final LongValue negate() {
+    value = -value;
+    return this;
+  }
 
-	@Override
-	public final LongValue multiply(int value) {
-		this.value *= value;
-		return this;
-	}
+  @Override
+  public final LongValue multiply(int value) {
+    this.value *= value;
+    return this;
+  }
 
-	@Override
-	public final LongValue multiply(long value) {
-		this.value *= value;
-		return this;
-	}
+  @Override
+  public final LongValue multiply(long value) {
+    this.value *= value;
+    return this;
+  }
 
-	@Override
-	public final LongValue multiply(float value) {
-		this.value *= value;
-		return this;
-	}
+  @Override
+  public final LongValue multiply(float value) {
+    this.value *= value;
+    return this;
+  }
 
-	@Override
-	public final LongValue multiply(double value) {
-		this.value *= value;
-		return this;
-	}
+  @Override
+  public final LongValue multiply(double value) {
+    this.value *= value;
+    return this;
+  }
 
-	@Override
-	public final LongValue multiply(Value<?> value) {
-		this.value = value.getMultipliedPrimitive(this.value);
-		return this;
-	}
+  @Override
+  public final LongValue multiply(Value<?> value) {
+    this.value = value.getMultipliedPrimitive(this.value);
+    return this;
+  }
 
-	@Override
-	public final LongValue divide(int value) {
-		this.value /= value;
-		return this;
-	}
+  @Override
+  public final LongValue divide(int value) {
+    this.value /= value;
+    return this;
+  }
 
-	@Override
-	public final LongValue divide(long value) {
-		this.value /= value;
-		return this;
-	}
+  @Override
+  public final LongValue divide(long value) {
+    this.value /= value;
+    return this;
+  }
 
-	@Override
-	public final LongValue divide(float value) {
-		this.value /= value;
-		return this;
-	}
+  @Override
+  public final LongValue divide(float value) {
+    this.value /= value;
+    return this;
+  }
 
-	@Override
-	public final LongValue divide(double value) {
-		this.value /= value;
-		return this;
-	}
+  @Override
+  public final LongValue divide(double value) {
+    this.value /= value;
+    return this;
+  }
 
-	@Override
-	public final LongValue divide(Value<?> value) {
-		this.value = value.getDividedPrimitive(this.value);
-		return this;
-	}
+  @Override
+  public final LongValue divide(Value<?> value) {
+    this.value = value.getDividedPrimitive(this.value);
+    return this;
+  }
 
-	@Override
-	public final LongValue subtract(Value<?> value) {
-		this.value -= value.longValue();
-		return this;
-	}
+  @Override
+  public final LongValue subtract(Value<?> value) {
+    this.value -= value.longValue();
+    return this;
+  }
 
-	@Override
-	public final double doubleValue() {
-		return value;
-	}
+  @Override
+  public final double doubleValue() {
+    return value;
+  }
 
-	@Override
-	public final float floatValue() {
-		return value;
-	}
+  @Override
+  public final float floatValue() {
+    return value;
+  }
 
-	@Override
-	public final int intValue() {
-		return (int) value;
-	}
+  @Override
+  public final int intValue() {
+    return (int) value;
+  }
 
-	@Override
-	public final long longValue() {
-		return value;
-	}
+  @Override
+  public final long longValue() {
+    return value;
+  }
 
-	@Override
-	public final String toString() {
-		return Long.toString(value);
-	}
+  @Override
+  public final String toString() {
+    return Long.toString(value);
+  }
 
-	@Override
-	public final LongValue set(Value<?> value) {
-		this.value = value.longValue();
-		return this;
-	}
+  @Override
+  public final LongValue setValue(Number value) {
+    this.value = value.longValue();
+    return this;
+  }
 
-	@Override
-	public final LongValue setValue(Number value) {
-		this.value = value.longValue();
-		return this;
-	}
+  @Override
+  public final int compareToAtSupportedPrecision(Value<?> other) {
+    return Long.compare(this.value, new Long(other.longValue()));
+  }
 
-	@Override
-	public final int compareToAtSupportedPrecision(Value<?> other) {
-		return Long.compare(this.value, new Long(other.longValue()));
-	}
+  @Override
+  public final boolean equals(Object that) {
+    if (this == that) {
+      return true;
+    }
+    if (that instanceof Value<?>) {
+      return equals((Value<?>) that);
+    }
+    if (that instanceof Number) {
+      return ((Number) that).equals(this.value);
+    }
+    return false;
+  }
 
-	@Override
-	public final boolean equals(Object that) {
-		if (this == that) {
-			return true;
-		}
-		if (that instanceof Value<?>) {
-			return equals((Value<?>) that);
-		}
-		if (that instanceof Number) {
-			return ((Number) that).equals(this.value);
-		}
-		return false;
-	}
+  @Override
+  protected final boolean equals(Value<?> that) {
+    return that.equals(this.value);
+  }
 
-	@Override
-	protected final boolean equals(Value<?> that) {
-		return that.equals(this.value);
-	}
+  @Override
+  public final int hashCode() {
+    return Long.hashCode(value);
+  }
 
-	@Override
-	public final int hashCode() {
-		return Long.hashCode(value);
-	}
+  @Override
+  public final boolean equals(double value) {
+    return this.value == value;
+  }
 
-	@Override
-	public final boolean equals(double value) {
-		return this.value == value;
-	}
+  @Override
+  public final boolean equals(float value) {
+    return this.value == value;
+  }
 
-	@Override
-	public final boolean equals(float value) {
-		return this.value == value;
-	}
+  @Override
+  public final boolean equals(int value) {
+    return this.value == value;
+  }
 
-	@Override
-	public final boolean equals(int value) {
-		return this.value == value;
-	}
+  @Override
+  public final boolean equals(long value) {
+    return this.value == value;
+  }
 
-	@Override
-	public final boolean equals(long value) {
-		return this.value == value;
-	}
+  @Override
+  public final LongValue increment() {
+    value++;
+    return this;
+  }
 
-	@Override
-	public final LongValue increment() {
-		value++;
-		return this;
-	}
+  @Override
+  public final LongValue decrement() {
+    value--;
+    return this;
+  }
 
-	@Override
-	public final LongValue decrement() {
-		value--;
-		return this;
-	}
+  @Override
+  public final LongValue copy() {
+    return new LongValue(this);
+  }
 
-	@Override
-	public final LongValue copy() {
-		return new LongValue(this);
-	}
+  @Override
+  public final LongValue unitInTheLastPlaceAbove() {
+    return new LongValue(1);
+  }
 
-	@Override
-	public final LongValue unitInTheLastPlaceAbove() {
-		return new LongValue(1);
-	}
+  @Override
+  public final LongValue unitInTheLastPlaceBelow() {
+    return new LongValue(1);
+  }
 
-	@Override
-	public final LongValue unitInTheLastPlaceBelow() {
-		return new LongValue(1);
-	}
+  @Override
+  public final int getMultipliedPrimitive(int value) {
+    return (int) (this.value * value);
+  }
 
-	@Override
-	public final int getMultipliedPrimitive(int value) {
-		return (int) (this.value * value);
-	}
+  @Override
+  public final long getMultipliedPrimitive(long value) {
+    return this.value * value;
+  }
 
-	@Override
-	public final long getMultipliedPrimitive(long value) {
-		return this.value * value;
-	}
+  @Override
+  public final float getMultipliedPrimitive(float value) {
+    return (float) this.value * value;
+  }
 
-	@Override
-	public final float getMultipliedPrimitive(float value) {
-		return (float) this.value * value;
-	}
+  @Override
+  public final double getMultipliedPrimitive(double value) {
+    return this.value * value;
+  }
 
-	@Override
-	public final double getMultipliedPrimitive(double value) {
-		return this.value * value;
-	}
+  @Override
+  public final int getDividedPrimitive(int value) {
+    return (int) (this.value * value);
+  }
 
-	@Override
-	public final int getDividedPrimitive(int value) {
-		return (int) (this.value * value);
-	}
+  @Override
+  public final long getDividedPrimitive(long value) {
+    return this.value * value;
+  }
 
-	@Override
-	public final long getDividedPrimitive(long value) {
-		return this.value * value;
-	}
+  @Override
+  public final float getDividedPrimitive(float value) {
+    return this.value * value;
+  }
 
-	@Override
-	public final float getDividedPrimitive(float value) {
-		return this.value * value;
-	}
+  @Override
+  public final double getDividedPrimitive(double value) {
+    return this.value * value;
+  }
 
-	@Override
-	public final double getDividedPrimitive(double value) {
-		return this.value * value;
-	}
+  @Override
+  public LongValue square() {
+    value *= value;
+    return this;
+  }
 
-	@Override
-	public LongValue square() {
-		value *= value;
-		return this;
-	}
+  @Override
+  public LongValue squareRoot() {
+    value = (int) Math.sqrt(value);
+    return this;
+  }
 
-	@Override
-	public LongValue squareRoot() {
-		value = (int) Math.sqrt(value);
-		return this;
-	}
+  @Override
+  public LongValue exponentiate(Value<?> exponential) {
+    value = (int) Math.pow(value, exponential.doubleValue());
+    return this;
+  }
 
-	@Override
-	public LongValue exponentiate(Value<?> exponential) {
-		value = (int) Math.pow(value, exponential.doubleValue());
-		return this;
-	}
+  @Override
+  public LongValue root(Value<?> root) {
+    value = (int) Math.pow(value, root.reciprocate().doubleValue());
+    return this;
+  }
 
-	@Override
-	public LongValue root(Value<?> root) {
-		value = (int) Math.pow(value, root.reciprocate().doubleValue());
-		return this;
-	}
-
-	@Override
-	public LongValue modulus() {
-		value = Math.abs(value);
-		return this;
-	}
+  @Override
+  public LongValue modulus() {
+    value = Math.abs(value);
+    return this;
+  }
 }

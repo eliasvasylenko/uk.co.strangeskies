@@ -79,7 +79,7 @@ public class StreamUtilities {
 	}
 
 	private static final BinaryOperator<Object> THROWING_MERGER = (a, b) -> {
-		throw new IllegalArgumentException("Cannot combine duplicate key %s");
+		throw new IllegalArgumentException("Cannot combine items " + a + ", " + b);
 	};
 
 	@SuppressWarnings("unchecked")
@@ -139,7 +139,9 @@ public class StreamUtilities {
 		}
 	}
 
-	public static <T> Optional<T> tryOptional(Supplier<T> attempt, Consumer<? super RuntimeException> exceptions) {
+	public static <T> Optional<T> tryOptional(
+			Supplier<T> attempt,
+			Consumer<? super RuntimeException> exceptions) {
 		try {
 			return Optional.of(attempt.get());
 		} catch (RuntimeException e) {
@@ -163,7 +165,10 @@ public class StreamUtilities {
 		return zip(first, second, SimpleEntry<A, B>::new, mismatchedStreams);
 	}
 
-	public static <A, B, R> Stream<R> zip(Stream<A> first, Stream<B> second, BiFunction<A, B, R> combiner) {
+	public static <A, B, R> Stream<R> zip(
+			Stream<A> first,
+			Stream<B> second,
+			BiFunction<A, B, R> combiner) {
 		return zip(first, second, combiner, null);
 	}
 
@@ -224,7 +229,8 @@ public class StreamUtilities {
 		};
 
 		return StreamSupport.stream(
-				Spliterators.spliterator(iterator, collection.size(), Spliterator.ORDERED | Spliterator.IMMUTABLE),
+				Spliterators
+						.spliterator(iterator, collection.size(), Spliterator.ORDERED | Spliterator.IMMUTABLE),
 				false);
 	}
 
@@ -260,7 +266,9 @@ public class StreamUtilities {
 	 *          a mapping from an element to the next element
 	 * @return a stream over each element in sequence
 	 */
-	public static <T> Stream<T> iterateOptional(T root, Function<? super T, Optional<? extends T>> mapping) {
+	public static <T> Stream<T> iterateOptional(
+			T root,
+			Function<? super T, Optional<? extends T>> mapping) {
 		return iterateOptional(Optional.ofNullable(root), mapping);
 	}
 
@@ -297,8 +305,9 @@ public class StreamUtilities {
 				return result;
 			}
 		};
-		return StreamSupport
-				.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED | Spliterator.IMMUTABLE), false);
+		return StreamSupport.stream(
+				Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED | Spliterator.IMMUTABLE),
+				false);
 	}
 
 	/**
@@ -314,7 +323,9 @@ public class StreamUtilities {
 	 * @return a stream over the root and each of its children, as well as each of
 	 *         their children, in a depth first manner
 	 */
-	public static <T> Stream<T> flatMapRecursive(T root, Function<? super T, ? extends Stream<? extends T>> mapping) {
+	public static <T> Stream<T> flatMapRecursive(
+			T root,
+			Function<? super T, ? extends Stream<? extends T>> mapping) {
 		return flatMapRecursive(Stream.of(root), mapping);
 	}
 
@@ -381,8 +392,7 @@ public class StreamUtilities {
 			Stream<? extends T> stream,
 			Function<? super T, ? extends Stream<? extends T>> mapping,
 			Set<T> visited) {
-		return stream
-				.filter(visited::add)
-				.flatMap(s -> concat(of(s), flatMapRecursiveDistinct(mapping.apply(s), mapping, visited)));
+		return stream.filter(visited::add).flatMap(
+				s -> concat(of(s), flatMapRecursiveDistinct(mapping.apply(s), mapping, visited)));
 	}
 }

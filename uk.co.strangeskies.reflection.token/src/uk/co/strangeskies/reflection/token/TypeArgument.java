@@ -32,12 +32,13 @@
  */
 package uk.co.strangeskies.reflection.token;
 
-import static uk.co.strangeskies.reflection.TypeHierarchy.resolveSupertype;
 import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+
+import uk.co.strangeskies.reflection.TypeHierarchy;
 
 public abstract class TypeArgument<T> {
 	private final TypeParameter<T> parameter;
@@ -60,8 +61,8 @@ public abstract class TypeArgument<T> {
 
 	@SuppressWarnings("unchecked")
 	private TypeParameter<T> resolveSupertypeParameter() {
-		Type type = ((ParameterizedType) resolveSupertype(getClass().getGenericSuperclass(), TypeArgument.class))
-				.getActualTypeArguments()[0];
+		Type type = ((ParameterizedType) new TypeHierarchy(getClass().getGenericSuperclass())
+				.resolveSupertype(TypeArgument.class)).getActualTypeArguments()[0];
 
 		if (!(type instanceof TypeVariable<?>))
 			throw new IllegalArgumentException();
@@ -69,12 +70,8 @@ public abstract class TypeArgument<T> {
 		return (TypeParameter<T>) TypeParameter.forTypeVariable((TypeVariable<?>) type);
 	}
 
-	public TypeToken<T> getParameterToken() {
+	public TypeParameter<T> getParameter() {
 		return parameter;
-	}
-
-	public TypeVariable<?> getParameter() {
-		return parameter.getType();
 	}
 
 	public TypeToken<T> getTypeToken() {

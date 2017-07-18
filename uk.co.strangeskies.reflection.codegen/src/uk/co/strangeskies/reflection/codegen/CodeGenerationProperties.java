@@ -32,12 +32,14 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
+import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.List;
 
 import uk.co.strangeskies.reflection.ReflectionProperties;
+import uk.co.strangeskies.reflection.codegen.block.Instruction;
 import uk.co.strangeskies.reflection.token.TypeToken;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;
@@ -47,13 +49,11 @@ import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;
 public interface CodeGenerationProperties {
 	ReflectionProperties reflection();
 
-	String invalidExpressionForStatement(Expression expression);
+	String invalidExpressionForStatement(Instruction expression);
 
 	String cannotInstantiateClassDefinition(
 			ClassDefinition<?, ?> classDefinition,
 			TypeToken<?> superType);
-
-	String cannotAccessPlaceholderExpression(VariableExpressionProxy<?> variableExpressionProxy);
 
 	String cannotOverrideMethod(Method overriddenMethod);
 
@@ -63,7 +63,7 @@ public interface CodeGenerationProperties {
 
 	String incompatibleParameterTypes(List<Type> parameterTypes, Method inherited);
 
-	String duplicateMethodDeclaration(MethodDeclaration<?, ?> override);
+	String duplicateMethodDeclaration(MethodSignature<?> override);
 
 	String mustOverrideMethods(Collection<Method> classMethod);
 
@@ -85,7 +85,13 @@ public interface CodeGenerationProperties {
 
 	String classNameAlreadyRegistered(ClassSignature<?> classSignature);
 
-	String staticMethodCannotBeDefault(MethodDeclaration<?, ?> methodDeclaration);
+	String staticMethodCannotBeDefault(MethodSignature<?> methodDeclaration);
 
 	String cannotResolveTypeVariable(String typeVariableName, ParameterizedSignature<?> signature);
+
+	String cannotExtendMultipleClassTypes(AnnotatedType first, AnnotatedType second);
+
+	String classOverridingNotSupported();
+
+	String cannotOverrideExistingClass(String className);
 }

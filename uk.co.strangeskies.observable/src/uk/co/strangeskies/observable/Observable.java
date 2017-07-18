@@ -32,9 +32,20 @@
  */
 package uk.co.strangeskies.observable;
 
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toList;
+
+import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collector;
 
 /**
  * Simple interface for an observable object, with methods to add and remove
@@ -52,380 +63,199 @@ import java.util.function.Function;
  *          sent.
  */
 public interface Observable<M> {
-	/**
-	 * @see Observable#addOwnedObserver(Object, Observer)
-	 */
-	@SuppressWarnings("javadoc")
-	abstract class OwnedObserver<M> implements Observer<M> {
-		abstract Object getOwner();
+  /**
+   * Observers added will receive messages from this Observable.
+   * 
+   * @param observer
+   *          an observer to add
+   * @return true if the observer was successfully added, false otherwise
+   */
+  Observation<M> observe(Observer<? super M> observer);
 
-		protected OwnedObserver() {}
+  default Observation<M> observe() {
+    return observe(m -> {});
+  }
 
-		@Override
-		public final boolean equals(Object obj) {
-			if (this == obj) {
-				return true;
-			} else if (!getClass().equals(obj.getClass())) {
-				return false;
-			}
+  default <T> Observable<T> compose(Function<Observable<M>, Observable<T>> transformation) {
+    return transformation.apply(this);
+  }
 
-			return getOwner() == ((OwnedObserver<?>) obj).getOwner();
-		}
+  public static <M> Collector<M, ?, Observable<M>> toObservable() {
+    return collectingAndThen(toList(), Observable::of);
+  }
 
-		@Override
-		public final int hashCode() {
-			return System.identityHashCode(getOwner());
-		}
-	}
+  default <R, A> CompletableFuture<R> collect(Collector<? super M, A, ? extends R> collector) {
+    CompletableFuture<R> future = new CompletableFuture<>();
 
-	/**
-	 * @see Observable#addOwnedObserver(Object, Observer)
-	 */
-	@SuppressWarnings("javadoc")
-	class OwnedObserverImpl<M> extends OwnedObserver<M> {
-		private final Observer<? super M> observer;
-		private final Object owner;
+    observe(new Observer<M>() {
+      private A accumulation = collector.supplier().get();
 
-		protected OwnedObserverImpl(Observer<? super M> observer, Object owner) {
-			this.observer = observer;
-			this.owner = owner;
-		}
+      @Override
+      public void onComplete() {
+        future.complete(collector.finisher().apply(accumulation));
+      }
 
-		@Override
-		Object getOwner() {
-			return owner;
-		}
+      @Override
+      public void onFail(Throwable t) {
+        future.completeExceptionally(t);
+      }
 
-		@Override
-		public void notify(M event) {
-			observer.notify(event);
-		}
-	}
+      @Override
+      public void onNext(M message) {
+        collector.accumulator().accept(accumulation, message);
+      }
+    });
 
-	/**
-	 * @see Observable#addWeakObserver(Observer)
-	 */
-	@SuppressWarnings("javadoc")
-	class WeakObserver<M, O> extends OwnedObserver<M> {
-		private final Observable<? extends M> observable;
-		private final Function<? super O, Observer<? super M>> Observer;
-		private final WeakReference<O> owner;
+    return future;
+  }
 
-		protected WeakObserver(
-				Observable<? extends M> observable,
-				Function<? super O, Observer<? super M>> Observer,
-				O owner) {
-			this.observable = observable;
+  /**
+   * Derive an observable which automatically disposes of observers at some point
+   * after they are no longer weakly reachable.
+   * 
+   * @return the derived observable
+   */
+  default Observable<M> weakReference() {
+    return observer -> new ReferenceObservation<>(this, observer, WeakReference::new);
+  }
 
-			this.Observer = Observer;
-			this.owner = new WeakReference<>(owner);
-		}
+  /**
+   * Derive an observable which automatically disposes of observers at some point
+   * after the given owner is no longer weakly reachable.
+   * <p>
+   * Care should be taken not to refer to the owner directly in any observer
+   * logic, as this will create a strong reference to the owner, preventing it
+   * from becoming unreachable. For this reason, the message is transformed into
+   * an {@link OwnedMessage}, which may create references to the owner on demand
+   * within observer logic without retainment.
+   * 
+   * @param owner
+   *          the referent
+   * @return the derived observable
+   */
+  default <O> Observable<OwnedMessage<O, M>> weakReference(O owner) {
+    return observer -> new ReferenceOwnedObservation<>(this, observer, owner, WeakReference::new);
+  }
 
-		@Override
-		O getOwner() {
-			return owner.get();
-		}
+  /**
+   * Derive an observable which automatically disposes of observers at some point
+   * after they are no longer softly reachable.
+   * 
+   * @return the derived observable
+   */
+  default Observable<M> softReference() {
+    return observer -> new ReferenceObservation<>(this, observer, SoftReference::new);
+  }
 
-		@Override
-		public void notify(M t) {
-			O owner = getOwner();
-			if (owner == null) {
-				observable.removeObserver(this);
-			} else {
-				Observer.apply(owner).notify(t);
-			}
-		}
-	}
+  /**
+   * Derive an observable which automatically disposes of observers at some point
+   * after the given owner is no longer softly reachable.
+   * <p>
+   * Care should be taken not to refer to the owner directly in any observer
+   * logic, as this will create a strong reference to the owner, preventing it
+   * from becoming unreachable. For this reason, the message is transformed into
+   * an {@link OwnedMessage}, which may create references to the owner on demand
+   * within observer logic without retainment.
+   * 
+   * @param owner
+   *          the referent
+   * @return the derived observable
+   */
+  default <O> Observable<OwnedMessage<O, M>> softReference(O owner) {
+    return observer -> new ReferenceOwnedObservation<>(this, observer, owner, SoftReference::new);
+  }
 
-	/**
-	 * @see Observable#addTerminatingObserver(Function)
-	 */
-	@SuppressWarnings("javadoc")
-	class TerminatingObserver<M> extends OwnedObserver<M> {
-		private final Observable<? extends M> observable;
-		private final Function<? super M, Observation> observer;
-		private final Object owner;
+  /**
+   * Derive an observable which re-emits messages on the given executor.
+   * 
+   * @param executor
+   *          the target executor
+   * @return the derived observable
+   */
+  default Observable<M> executeOn(Executor executor) {
+    return new ExecutorObservable<>(this, executor);
+  }
 
-		protected TerminatingObserver(
-				Observable<? extends M> observable,
-				Function<? super M, Observation> observer,
-				Object owner) {
-			this.observable = observable;
-			this.observer = observer;
-			this.owner = owner;
-		}
+  /**
+   * Derive an observable which transforms messages according to the given
+   * mapping.
+   * 
+   * @param mapping
+   *          the mapping function
+   * @return the derived observable
+   */
+  default <T> Observable<T> map(Function<? super M, ? extends T> mapping) {
+    return observer -> new MappingObservation<>(this, observer, mapping);
+  }
 
-		@Override
-		Object getOwner() {
-			return owner;
-		}
+  /**
+   * Derive an observable which passes along only those messages which match the
+   * given condition.
+   * 
+   * @param condition
+   *          the terminating condition
+   * @return the derived observable
+   */
+  default Observable<M> filter(Predicate<? super M> condition) {
+    return observer -> new FilteringObservation<>(this, observer, condition);
+  }
 
-		@Override
-		public void notify(M event) {
-			if (observer.apply(event) == Observation.TERMINATE) {
-				observable.removeObserver(this);
-			}
-		}
-	}
+  /**
+   * Derive an observable which completes and disposes itself after receiving a
+   * message which matches the given condition.
+   * 
+   * @param condition
+   *          the terminating condition
+   * @return the derived observable
+   */
+  default Observable<M> takeWhile(Predicate<? super M> condition) {
+    return observer -> new TerminatingObservation<>(this, observer, condition);
+  }
 
-	/**
-	 * Control token for terminating observer behavior.
-	 * 
-	 * @author Elias N Vasylenko
-	 */
-	public static enum Observation {
-		/**
-		 * Terminate observation.
-		 */
-		TERMINATE,
-		/**
-		 * Continue observation.
-		 */
-		CONTINUE
-	}
+  /**
+   * Derive an observable which completes and disposes itself after receiving a
+   * message which matches the given condition.
+   * 
+   * @param condition
+   *          the terminating condition
+   * @return the derived observable
+   */
+  default Observable<M> dropWhile(Predicate<? super M> condition) {
+    return observer -> new SkippingObservation<>(this, observer, condition);
+  }
 
-	/**
-	 * Observers added will receive messages from this Observable. A weak observer
-	 * will be removed automatically once it is otherwise available for garbage
-	 * collection.
-	 * 
-	 * @param observer
-	 *          an observer to add
-	 * @return true if the observer was successfully added, false otherwise
-	 */
-	default boolean addWeakObserver(Observer<? super M> observer) {
-		return addWeakObserver(observer, o -> o);
-	}
+  /**
+   * Derive an observable which completes and disposes itself after receiving a
+   * message which matches the given condition.
+   * 
+   * @param mapping
+   *          the terminating condition
+   * @return the derived observable
+   */
+  default <T> Observable<T> flatMap(
+      Function<? super M, ? extends Observable<? extends T>> mapping) {
+    return new MergingObservable<>(map(mapping));
+  }
 
-	/**
-	 * Observers added will receive messages from this Observable. A weak observer
-	 * will be removed automatically once the given owner is available for garbage
-	 * collection.
-	 * <p>
-	 * The observer itself must be given in the form of a function applicable to
-	 * the owner to ensure it does not create a reference to the owner and prevent
-	 * garbage collection.
-	 * 
-	 * TODO be careful not to capture the owner in a lambda as this will prevent
-	 * garbage collection (give code example)
-	 * 
-	 * @see #addOwnedObserver(Object, Observer)
-	 * 
-	 * @param <O>
-	 *          the type of the owner
-	 * @param observer
-	 *          an observer to add
-	 * @param owner
-	 *          the owner of the observer
-	 * @return true if the observer was successfully added, false otherwise
-	 */
-	default <O> boolean addWeakObserver(O owner, Function<? super O, Observer<? super M>> observer) {
-		return addObserver(new WeakObserver<>(this, observer, owner));
-	}
+  /*
+   * Static factories
+   */
 
-	/**
-	 * Observers removed will no longer receive messages from this Observable.
-	 * 
-	 * @param owner
-	 *          the owner of the observer to remove
-	 * @return true if the observer was successfully removed, false otherwise
-	 */
-	default boolean removeWeakObserver(Object owner) {
-		return removeObserver(new WeakObserver<>(this, null, owner));
-	}
+  @SafeVarargs
+  public static <M> Observable<M> of(M... messages) {
+    return of(Arrays.asList(messages));
+  }
 
-	/**
-	 * Observers added will receive messages from this Observable. Terminating
-	 * observers may conditionally remove themselves from the observable upon
-	 * receipt of events by returning from the observer function.
-	 * 
-	 * @param observer
-	 *          an observer to add, a function from event type to a boolean, a
-	 *          false value of which will remove the observer
-	 * @return true if the observer was successfully added, false otherwise
-	 */
-	default boolean addTerminatingObserver(Function<? super M, Observation> observer) {
-		return addTerminatingObserver(observer, observer);
-	}
+  public static <M> Observable<M> of(Collection<? extends M> messages) {
+    return new IterableObservable<>(messages);
+  }
 
-	/**
-	 * Observers added will receive messages from this Observable. Terminating
-	 * observers may conditionally remove themselves from the observable upon
-	 * receipt of events by returning the {@link Observation#TERMINATE termination
-	 * token} from the observer function.
-	 * 
-	 * @see #addOwnedObserver(Object, Observer)
-	 * 
-	 * @param <O>
-	 *          the type of the owner
-	 * @param observer
-	 *          an observer to add
-	 * @param owner
-	 *          the owner of the observer
-	 * @return true if the observer was successfully added, false otherwise
-	 */
-	default <O> boolean addTerminatingObserver(Object owner, Observer<? super M> observer) {
-		return addObserver(new TerminatingObserver<>(this, m -> {
-			observer.notify(m);
-			return Observation.TERMINATE;
-		}, owner));
-	}
+  @SafeVarargs
+  public static <M> Observable<M> merge(Observable<? extends M>... observables) {
+    return merge(Arrays.asList(observables));
+  }
 
-	/**
-	 * Observers added will receive messages from this Observable. Terminating
-	 * observers may conditionally remove themselves from the observable upon
-	 * receipt of events by returning from the observer function.
-	 * 
-	 * @param observer
-	 *          an observer to add, a function from event type to a boolean, a
-	 *          false value of which will remove the observer
-	 * @return true if the observer was successfully added, false otherwise
-	 */
-	default boolean addTerminatingObserver(Observer<? super M> observer) {
-		return addTerminatingObserver(observer, observer);
-	}
-
-	/**
-	 * Observers added will receive messages from this Observable. Terminating
-	 * observers may conditionally remove themselves from the observable upon
-	 * receipt of events by returning the {@link Observation#TERMINATE termination
-	 * token} from the observer function.
-	 * 
-	 * @see #addOwnedObserver(Object, Observer)
-	 * 
-	 * @param <O>
-	 *          the type of the owner
-	 * @param observer
-	 *          an observer to add
-	 * @param owner
-	 *          the owner of the observer
-	 * @return true if the observer was successfully added, false otherwise
-	 */
-	default <O> boolean addTerminatingObserver(Object owner, Function<? super M, Observation> observer) {
-		return addObserver(new TerminatingObserver<>(this, observer, owner));
-	}
-
-	/**
-	 * Observers removed will no longer receive messages from this Observable.
-	 * 
-	 * @param owner
-	 *          the owner of the observer to remove
-	 * @return true if the observer was successfully removed, false otherwise
-	 */
-	default boolean removeTerminatingObserver(Object owner) {
-		return removeObserver(new TerminatingObserver<>(this, null, owner));
-	}
-
-	/**
-	 * This method adds an observable and marks it as "owned" by a specific object
-	 * instance. Ownership implies the following properties:
-	 * <p>
-	 * 
-	 * <ul>
-	 * <li>
-	 * 
-	 * An observer with an owner may only be removed by reference to its owner via
-	 * {@link #removeOwnedObserver(Object)}, though the owner may be the
-	 * observable itself.
-	 * 
-	 * </li>
-	 * <li>
-	 * 
-	 * Only one observable may be added per owner, where owners are compared by
-	 * identity.
-	 * 
-	 * </li>
-	 * </ul>
-	 * <p>
-	 * 
-	 * This allows us, for example, to add an observer as a method reference and
-	 * still be able to manually remove the observer:
-	 * 
-	 * <pre>
-	 * {@code
-	 * Observable<String> observable = ...;
-	 * List<String> list = ...;
-	 * 
-	 * observable.addObserver(list, list:add);
-	 * observable.removeObserver(list);
-	 * }
-	 * </pre>
-	 * 
-	 * Whereas the following more naive attempt may fail to remove the observer:
-	 * 
-	 * <pre>
-	 * {@code
-	 * observable.addObserver(list:add);
-	 * observable.removeObserver(list:add);
-	 * }
-	 * </pre>
-	 * 
-	 * @param owner
-	 *          the owner of the observer
-	 * @param observer
-	 *          an observer to add
-	 * @return true if the observer was successfully added, false otherwise
-	 */
-	default boolean addOwnedObserver(Object owner, Observer<? super M> observer) {
-		return addObserver(new OwnedObserverImpl<>(observer, owner));
-	}
-
-	/**
-	 * Observers removed will no longer receive messages from this Observable.
-	 * 
-	 * @param owner
-	 *          the owner of the observer to remove
-	 * @return true if the observer was successfully removed, false otherwise
-	 */
-	default boolean removeOwnedObserver(Object owner) {
-		return removeObserver(new OwnedObserverImpl<>(null, owner));
-	}
-
-	/**
-	 * Observers added will receive messages from this Observable.
-	 * 
-	 * @param observer
-	 *          an observer to add
-	 * @return true if the observer was successfully added, false otherwise
-	 */
-	boolean addObserver(Observer<? super M> observer);
-
-	/**
-	 * Observers removed will no longer receive messages from this Observable.
-	 * 
-	 * @param observer
-	 *          an observer to remove
-	 * @return true if the observer was successfully removed, false otherwise
-	 */
-	boolean removeObserver(Observer<? super M> observer);
-
-	/**
-	 * Get an observable instance which never fires events. As an optimization,
-	 * attempts to add and remove observers will always succeed regardless of
-	 * whether or not the observer is already added. In cases where this is a
-	 * problem, consider using an instance of {@link ObservableImpl} instead.
-	 * 
-	 * @param <M>
-	 *          the message type for the immutable observable
-	 * 
-	 * @return an observable instance which never fires events
-	 */
-	@SuppressWarnings("unchecked")
-	static <M> Observable<M> immutable() {
-		return (Observable<M>) ImmutableObservable.IMMUTABLE;
-	}
-}
-
-interface ImmutableObservable<M> extends Observable<M> {
-	static Observable<?> IMMUTABLE = new ImmutableObservable<Object>() {};
-
-	@Override
-	default boolean addObserver(Observer<? super M> observer) {
-		return true;
-	}
-
-	@Override
-	default boolean removeObserver(Observer<? super M> observer) {
-		return true;
-	}
+  public static <M> Observable<M> merge(Collection<? extends Observable<? extends M>> observables) {
+    return of(observables).flatMap(identity());
+  }
 }

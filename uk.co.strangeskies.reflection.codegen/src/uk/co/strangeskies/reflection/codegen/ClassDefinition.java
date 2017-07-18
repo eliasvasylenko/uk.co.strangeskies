@@ -32,189 +32,168 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import java.lang.reflect.Proxy;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.function.Function;
+import static java.util.stream.Stream.concat;
+import static org.objectweb.asm.ClassWriter.COMPUTE_FRAMES;
+import static org.objectweb.asm.ClassWriter.COMPUTE_MAXS;
+import static org.objectweb.asm.Opcodes.ASM5;
+import static org.objectweb.asm.Opcodes.ATHROW;
+import static org.objectweb.asm.Opcodes.DUP;
+import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
+import static org.objectweb.asm.Opcodes.NEW;
+import static org.objectweb.asm.Type.getInternalName;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.throwingMerger;
+import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
 
-import uk.co.strangeskies.reflection.Reified;
-import uk.co.strangeskies.reflection.token.TypeToken;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
+
+import uk.co.strangeskies.reflection.codegen.block.Block;
+import uk.co.strangeskies.reflection.token.MethodMatcher;
 
 /**
- * A class definition is a description of a class implementation. It may extend
- * an existing class, and implement existing interfaces, as well as provide
- * {@link MethodDefinition method implementations} and overrides for those
- * supertypes.
- * 
+ * An immutable representation of a class.
  * <p>
- * A class definition may be implemented reflectively via {@link Proxy},
- * delegating invocations to direct evaluation of {@link MethodDefinition method
- * definition bodies}, and the{@link Statement statements} therein. A class
- * definition also contains enough information to generate the bytecode for a
- * true implementation, with performance comparable to a regular compiled Java
- * class, though this is not yet implemented.
- * 
- * <p>
- * Aside from this than this, there are currently a number of significant
- * limitations to class definitions:
- * 
- * <ul>
- * <li>Though supertypes may be parameterized generic types, it is not supported
- * for the class definition itself to be a generic type.</li>
- * 
- * <li>It is not supported to declare new methods which are not simply overrides
- * of existing methods. Variance is technically supported where appropriate in
- * method declarations, but the information is not available reflectively so
- * this provides limited utility.</li>
- * 
- * <li>It is possible to define an implementation for a default constructor if
- * necessary, but it is not supported to define constructors with
- * arguments.</li>
- * </ul>
- * 
- * <p>
- * These limitations help to keep class definitions simple, as their type can be
- * effectively reflected over via {@link TypeToken} with no special
- * consideration. Also the need for interdependencies between class definitions
- * should be largely avoided.
- * 
- * <p>
- * There are a few potential paths to evolving this class beyond some or all of
- * these limitations ... But they are likely to require significant work, and
- * may challenge some pervasive assumptions made by the existing library design,
- * for example that the raw type of any type is a {@link Class}.
- * 
- * <p>
- * Every implementation generated via a class definition also be cast to
- * {@link Reified} to reflect over its exact type. The implementation of all
- * relevant methods will be generated automatically <em>where possible</em>. If
- * the {@link Reified} class is overridden explicitly however, or if any method
- * in {@link Reified} is shadowed by an explicitly overridden class, the user
- * should provide their own implementations for these methods.
- * 
- * Note that if supported is added for generation of generic classes in the
- * future, the exact type of such classes may not be determined statically so
- * they will not implement reified by default.
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * TODO model the type using existing types so it can participate in inference
- * etc.
- * 
- * each definition holds a secret type variable capture with no bounds
- * 
- * For a non-generic type this is simple enough: model as the intersection type
- * of all the super types of the definition and the secret capture
- * 
- * For a generic type, the raw can be modeled as the intersection type of all
- * the raw types of all the super types of the definition and the secret capture
+ * Class definitions can be derived with constructor and method definitions or
+ * delegation strategies. The derived definitions will share the same signature.
  * 
  * @author Elias N Vasylenko
- * 
+ * @param <E>
+ *          the type of the enclosing class
  * @param <T>
- *          the intersection of the supertypes of the described class
+ *          the type of the described class
  */
 public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
-	private final String typeName;
-	private final ClassDefinitionSpace classSpace;
+  private final String typeName;
+  private final ClassRegister classSpace;
 
-	protected ClassDefinition(ClassDeclaration<E, T> declaration, ClassDefinitionSpace classSpace) {
-		super(declaration);
+  protected ClassDefinition(ClassDeclaration<E, T> declaration, ClassRegister classSpace) {
+    super(declaration);
 
-		this.typeName = declaration.getSignature().getClassName();
-		this.classSpace = classSpace;
-	}
+    this.typeName = declaration.getSignature().getClassName();
+    this.classSpace = classSpace;
+  }
 
-	/**
-	 * @return the fully qualified class name
-	 */
-	public String getName() {
-		return typeName;
-	}
+  /**
+   * @return the fully qualified class name
+   */
+  public String getName() {
+    return typeName;
+  }
 
-	public ClassDefinitionSpace getClassSpace() {
-		return classSpace;
-	}
+  public ClassRegister getRegister() {
+    return classSpace;
+  }
 
-	public <U> ClassDefinition<E, T> withMethodDefinition(
-			MethodSignature<U> signature,
-			Function<? super MethodDeclaration<T, U>, ? extends Block<? extends U>> methodBodyFunction) {
-		MethodDeclaration<T, U> methodDeclaration = getDeclaration().getMethodDeclaration(signature);
+  public <U> ClassDefinition<E, T> defineConstructor(
+      MethodMatcher<?, ? super U> methodMatcher,
+      Block<? extends U> methodBody) {
+    @SuppressWarnings("unchecked")
+    MethodDeclaration<T, U> methodDeclaration = getDeclaration()
+        .constructorDeclarations()
+        .filter(m -> methodMatcher.test(m.getExecutableStub()))
+        .reduce(throwingMerger())
+        .map(m -> (MethodDeclaration<T, U>) m)
+        .orElseThrow(
+            () -> new CodeGenerationException(CODEGEN_PROPERTIES.cannotFindMethodOn(null, null)));
 
-		return withMethodDefinition(methodDeclaration, methodBodyFunction);
-	}
+    MethodDefinition<T, U> definition = new MethodDefinition<>(methodDeclaration)
+        .withBody(methodBody);
 
-	public <U> ClassDefinition<E, T> withMethodDefinition(
-			MethodDeclaration<T, U> methodDeclaration,
-			Function<? super MethodDeclaration<T, U>, ? extends Block<? extends U>> methodBodyFunction) {
-		MethodDefinition<T, U> definition = new MethodDefinition<>(methodDeclaration)
-				.withBody(methodBodyFunction.apply(methodDeclaration));
+    return new ClassDefinition<>(
+        getDeclaration(),
+        classSpace.withMethodDefinition(methodDeclaration, definition));
+  }
 
-		return new ClassDefinition<>(getDeclaration(), classSpace.withMethodDefinition(methodDeclaration, definition));
-	}
+  public <U> ClassDefinition<E, T> defineMethod(
+      MethodMatcher<?, ? super U> methodMatcher,
+      Block<? extends U> methodBody) {
+    @SuppressWarnings("unchecked")
+    MethodDeclaration<T, U> methodDeclaration = concat(
+        getDeclaration().methodDeclarations(),
+        getDeclaration().staticMethodDeclarations())
+            .filter(m -> methodMatcher.test(m.getExecutableStub()))
+            .reduce(throwingMerger())
+            .map(m -> (MethodDeclaration<T, U>) m)
+            .orElseThrow(
+                () -> new CodeGenerationException(
+                    CODEGEN_PROPERTIES.cannotFindMethodOn(null, null)));
 
-	public <U> ClassDefinition<E, T> withMethodDefinition(MethodSignature<U> signature, Block<? extends U> methodBody) {
-		return withMethodDefinition(signature, d -> methodBody);
-	}
+    MethodDefinition<T, U> definition = new MethodDefinition<>(methodDeclaration)
+        .withBody(methodBody);
 
-	public <U> ClassDefinition<E, T> withMethodDefinition(
-			MethodDeclaration<T, U> methodDeclaration,
-			Block<? extends U> methodBody) {
-		return withMethodDefinition(methodDeclaration, d -> methodBody);
-	}
+    return new ClassDefinition<>(
+        getDeclaration(),
+        classSpace.withMethodDefinition(methodDeclaration, definition));
+  }
 
-	/**
-	 * Derive a class definition which delegates to the given method intercepter
-	 * object.
-	 * <p>
-	 * When multiple intercepters are specified for the same class definition,
-	 * they will be attempted in the order they are given until one is found which
-	 * is able to delegate.
-	 * 
-	 * @param intercepter
-	 *          the intercepter
-	 * @return the derived class definition
-	 */
-	public <U> ClassDefinition<E, T> withMethodDelegation(MethodDelegation intercepter) {
-		throw new UnsupportedOperationException();
-	}
+  /**
+   * Derive a class definition which delegates to the given method intercepter
+   * object.
+   * <p>
+   * When multiple intercepters are specified for the same class definition, they
+   * will be attempted in the order they are given until one is found which is
+   * able to delegate.
+   * 
+   * @param intercepter
+   *          the intercepter
+   * @return the derived class definition
+   */
+  public <U> ClassDefinition<E, T> delegate(MethodDelegation<? super T> intercepter) {
+    throw new UnsupportedOperationException();
+  }
 
-	@Override
-	public String toString() {
-		return getName();
-	}
+  @Override
+  public String toString() {
+    return getName();
+  }
 
-	public ReflectiveInstance<E, T> instantiateReflectively(Object... arguments) {
-		return instantiateReflectively(getClass().getClassLoader(), arguments);
-	}
+  public byte[] writeClass() {
+    ClassReader stubClassReader = new ClassReader(getDeclaration().getStubClassBytes());
+    ClassWriter classWriter = new ClassWriter(stubClassReader, COMPUTE_MAXS | COMPUTE_FRAMES);
 
-	public ReflectiveInstance<E, T> instantiateReflectively(Collection<? extends Object> arguments) {
-		return instantiateReflectively(getClass().getClassLoader(), arguments);
-	}
+    stubClassReader.accept(new ClassVisitor(ASM5, classWriter) {
+      @Override
+      public MethodVisitor visitMethod(
+          int arg0,
+          String arg1,
+          String arg2,
+          String arg3,
+          String[] arg4) {
+        MethodVisitor methodVisitor = super.visitMethod(arg0, arg1, arg2, arg3, arg4);
 
-	public ReflectiveInstance<E, T> instantiateReflectively(ClassLoader classLoader, Object... arguments) {
-		return instantiateReflectively(classLoader, Arrays.asList(arguments));
-	}
+        methodVisitor.visitCode();
+        methodVisitor.visitTypeInsn(NEW, getInternalName(UnsupportedOperationException.class));
+        methodVisitor.visitInsn(DUP);
+        try {
+          methodVisitor.visitMethodInsn(
+              INVOKESPECIAL,
+              getInternalName(UnsupportedOperationException.class),
+              "<init>",
+              Type.getConstructorDescriptor(UnsupportedOperationException.class.getConstructor()),
+              false);
+        } catch (NoSuchMethodException | SecurityException e) {
+          throw new AssertionError(e);
+        }
+        methodVisitor.visitInsn(ATHROW);
+        methodVisitor.visitMaxs(2, 1);
+        methodVisitor.visitEnd();
 
-	public ReflectiveInstance<E, T> instantiateReflectively(
-			ClassLoader classLoader,
-			Collection<? extends Object> arguments) {
-		return ReflectiveInstanceImpl.instantiate(this, classLoader, Arrays.asList(arguments));
-	}
+        return null;
+      }
+    }, 0);
 
-	public Class<T> generateClass() {
-		throw new UnsupportedOperationException();
-	}
+    return classWriter.toByteArray();
+  }
+
+  @SuppressWarnings("unchecked")
+  public Class<T> loadClass() {
+    try {
+      return (Class<T>) classSpace.loadClasses().loadClass(getName());
+    } catch (ClassNotFoundException e) {
+      throw new AssertionError(e);
+    }
+  }
 }

@@ -36,6 +36,7 @@ import static java.util.Arrays.asList;
 
 import java.util.Collection;
 
+import uk.co.strangeskies.observable.Disposable;
 import uk.co.strangeskies.observable.Observer;
 
 /**
@@ -46,44 +47,39 @@ import uk.co.strangeskies.observable.Observer;
  * @param <T>
  *          The type of the expression.
  */
-public abstract class DependentExpression<T> extends ExpressionImpl<T> {
-	private final Observer<Expression<?>> dependencyObserver = d -> {
-		beginWrite();
-		endWrite();
-	};
+public abstract class DependentExpression<T> extends ActiveExpression<T> {
+  private final Observer<Expression<?>> dependencyObserver = d -> {
+    fireChange();
+  };
 
-	private T value;
+  private T value;
 
-	public DependentExpression(Collection<? extends Expression<?>> dependencies) {
-		for (Expression<?> dependency : dependencies) {
-			addDependency(dependency);
-		}
-	}
+  public DependentExpression(Collection<? extends Expression<?>> dependencies) {
+    for (Expression<?> dependency : dependencies) {
+      addDependency(dependency);
+    }
+  }
 
-	public DependentExpression(Expression<?>... dependencies) {
-		this(asList(dependencies));
-	}
+  public DependentExpression(Expression<?>... dependencies) {
+    this(asList(dependencies));
+  }
 
-	protected boolean addDependency(Expression<?> dependency) {
-		return dependency != null && dependency.addWeakObserver(this, t -> t.dependencyObserver);
-	}
+  protected Disposable addDependency(Expression<?> dependency) {
+    return dependency.invalidations().weakReference().observe(dependencyObserver);
+  }
 
-	protected boolean removeDependency(Expression<?> dependency) {
-		return dependency != null && dependency.removeWeakObserver(this);
-	}
+  @Override
+  public final T getValueImpl(boolean dirty) {
+    if (dirty) {
+      value = evaluate();
+    }
 
-	@Override
-	public final T getValueImpl(boolean dirty) {
-		if (dirty) {
-			value = evaluate();
-		}
+    return value;
+  }
 
-		return value;
-	}
-
-	/**
-	 * @return The value of this {@link Expression} as derived from the dependency
-	 *         {@link Expression}s.
-	 */
-	protected abstract T evaluate();
+  /**
+   * @return The value of this {@link Expression} as derived from the dependency
+   *         {@link Expression}s.
+   */
+  protected abstract T evaluate();
 }

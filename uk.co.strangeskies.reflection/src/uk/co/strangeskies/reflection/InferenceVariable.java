@@ -129,7 +129,8 @@ public class InferenceVariable implements Type {
 	 * parameters A1,...,An with corresponding bounds U1,...,Un.
 	 */
 	public static ParameterizedType captureConversion(ParameterizedType type, BoundSet bounds) {
-		if (ParameterizedTypes.getAllTypeArguments(type).map(Entry::getValue).anyMatch(WildcardType.class::isInstance)) {
+		if (ParameterizedTypes.getAllTypeArguments(type).map(Entry::getValue).anyMatch(
+				WildcardType.class::isInstance)) {
 			/*
 			 * There exists a capture conversion from a parameterized type
 			 * G<T1,...,Tn> (§4.5) to a parameterized type G<S1,...,Sn>, where, for 1
@@ -215,6 +216,10 @@ public class InferenceVariable implements Type {
 			return true;
 		}
 
+		if (type instanceof InferenceVariable) {
+			return false;
+		}
+
 		IdentityProperty<Boolean> proper = new IdentityProperty<>(true);
 
 		new TypeVisitor() {
@@ -237,7 +242,6 @@ public class InferenceVariable implements Type {
 			@Override
 			protected void visitGenericArrayType(GenericArrayType type) {
 				visit(type.getGenericComponentType());
-
 			}
 
 			@Override
@@ -247,10 +251,7 @@ public class InferenceVariable implements Type {
 			}
 
 			@Override
-			protected void visitTypeVariableCapture(TypeVariableCapture type) {
-				visit(type.getUpperBounds());
-				visit(type.getLowerBounds());
-			}
+			protected void visitTypeVariableCapture(TypeVariableCapture type) {}
 
 			@Override
 			protected void visitTypeVariable(TypeVariable<?> type) {}

@@ -42,56 +42,39 @@ package uk.co.strangeskies.observable;
  *          the type of the value
  */
 public interface ObservableValue<T> extends Observable<T> {
-	/**
-	 * A value change event.
-	 * 
-	 * @author Elias N Vasylenko
-	 *
-	 * @param <T>
-	 *          the type of the value
-	 */
-	interface Change<T> {
-		T newValue();
+  /**
+   * A value change event.
+   * 
+   * @author Elias N Vasylenko
+   *
+   * @param <T>
+   *          the type of the value
+   */
+  interface Change<T> {
+    T newValue();
 
-		T previousValue();
-	}
+    T previousValue();
+  }
 
-	/**
-	 * @return the current value
-	 */
-	T get();
+  /**
+   * @return the current value
+   */
+  T get();
 
-	/**
-	 * @return an observable over changes to the value
-	 */
-	Observable<Change<T>> changes();
+  /**
+   * @return an observable over changes to the value
+   */
+  Observable<Change<T>> changes();
 
-	/**
-	 * @param <T>
-	 *          the type of the immutable value
-	 * @param value
-	 *          the immutable value to create an observable over
-	 * @return an observable over the given value which never changes or fires
-	 *         events
-	 */
-	static <T> ObservableValue<T> immutableOver(T value) {
-		return (ImmutableObservableValue<T>) () -> value;
-	}
-}
-
-interface ImmutableObservableValue<T> extends ObservableValue<T> {
-	@Override
-	default boolean addObserver(Observer<? super T> observer) {
-		return true;
-	}
-
-	@Override
-	default boolean removeObserver(Observer<? super T> observer) {
-		return true;
-	}
-
-	@Override
-	default Observable<Change<T>> changes() {
-		return Observable.immutable();
-	}
+  /**
+   * @param <T>
+   *          the type of the immutable value
+   * @param value
+   *          the immutable value to create an observable over
+   * @return an observable over the given value which never changes or fires
+   *         events
+   */
+  static <T> ObservableValue<T> immutableOver(T value) {
+    return (ImmutableObservableValue<T>) () -> value;
+  }
 }

@@ -41,11 +41,17 @@ package uk.co.strangeskies.observable;
  *          the type of message to observe
  */
 public interface Observer<T> {
-	/**
-	 * The method which will receive notification from an {@link Observable}.
-	 * 
-	 * @param message
-	 *          the message object instance
-	 */
-	void notify(T message);
+  /**
+   * The method which will receive notification from an {@link Observable}.
+   * 
+   * @param message
+   *          the message object instance
+   */
+  void onNext(T message);
+
+  default void onObserve(Observation<? extends T> subscription) {}
+
+  default void onComplete() {}
+
+  default void onFail(Throwable t) {}
 }

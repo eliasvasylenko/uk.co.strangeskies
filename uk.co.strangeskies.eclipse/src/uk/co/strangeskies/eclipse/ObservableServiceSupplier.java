@@ -82,12 +82,15 @@ public class ObservableServiceSupplier extends ExtendedObjectSupplier {
 		private final String filter;
 
 		@SuppressWarnings("unchecked")
-		public ServiceUpdateListener(BundleContext context, Type elementType, ObservableService annotation)
-				throws InvalidSyntaxException {
+		public ServiceUpdateListener(
+				BundleContext context,
+				Type elementType,
+				ObservableService annotation) throws InvalidSyntaxException {
 			this.context = context;
 			this.references = FXCollections.observableArrayList();
 			this.elementType = elementType instanceof ParameterizedType
-					? (Class<T>) ((ParameterizedType) elementType).getRawType() : (Class<T>) elementType;
+					? (Class<T>) ((ParameterizedType) elementType).getRawType()
+					: (Class<T>) elementType;
 			this.serviceObjects = new HashMap<>();
 
 			synchronized (this) {
@@ -112,7 +115,8 @@ public class ObservableServiceSupplier extends ExtendedObjectSupplier {
 
 		private synchronized void refreshServices() {
 			try {
-				List<ServiceReference<T>> newReferences = new ArrayList<>(context.getServiceReferences(elementType, filter));
+				List<ServiceReference<T>> newReferences = new ArrayList<>(
+						context.getServiceReferences(elementType, filter));
 				Collections.sort(newReferences);
 
 				for (Iterator<ServiceReference<T>> services = references.iterator(); services.hasNext();) {
@@ -166,7 +170,11 @@ public class ObservableServiceSupplier extends ExtendedObjectSupplier {
 	}
 
 	@Override
-	public Object get(IObjectDescriptor descriptor, IRequestor requestor, boolean track, boolean group) {
+	public Object get(
+			IObjectDescriptor descriptor,
+			IRequestor requestor,
+			boolean track,
+			boolean group) {
 		try {
 			Type collectionType = descriptor.getDesiredType();
 			Bundle bundle = FrameworkUtil.getBundle(requestor.getRequestingObjectClass());
@@ -174,8 +182,10 @@ public class ObservableServiceSupplier extends ExtendedObjectSupplier {
 			if (collectionType instanceof ParameterizedType) {
 				ParameterizedType parameterizedType = (ParameterizedType) collectionType;
 
-				ServiceUpdateListener<?> listener = new ServiceUpdateListener<>(bundle.getBundleContext(),
-						parameterizedType.getActualTypeArguments()[0], descriptor.getQualifier(ObservableService.class));
+				ServiceUpdateListener<?> listener = new ServiceUpdateListener<>(
+						bundle.getBundleContext(),
+						parameterizedType.getActualTypeArguments()[0],
+						descriptor.getQualifier(ObservableService.class));
 
 				if (parameterizedType.getRawType() == ObservableList.class) {
 					return listener.getServiceList();

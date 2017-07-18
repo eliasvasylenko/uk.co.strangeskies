@@ -170,17 +170,19 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 								throwingMerger(),
 								LinkedHashMap::new));
 
-		bounds = bounds.withInferenceVariables(newCaptures.values());
+		if (!newCaptures.isEmpty()) {
+			bounds = bounds.withInferenceVariables(newCaptures.values());
 
-		TypeSubstitution substitution = new TypeSubstitution(existingCaptures)
-				.where(newCaptures::containsKey, newCaptures::get);
+			TypeSubstitution substitution = new TypeSubstitution(existingCaptures)
+					.where(newCaptures::containsKey, newCaptures::get);
 
-		bounds = concat(newCaptures.entrySet().stream(), existingCaptures.entrySet().stream()).reduce(
-				bounds,
-				(b, e) -> b.withIncorporated().subtype(
-						e.getValue(),
-						substitution.resolve(uncheckedIntersectionOf(e.getKey().getBounds()))),
-				throwingMerger());
+			bounds = concat(newCaptures.entrySet().stream(), existingCaptures.entrySet().stream()).reduce(
+					bounds,
+					(b, e) -> b.withIncorporated().subtype(
+							e.getValue(),
+							substitution.resolve(uncheckedIntersectionOf(e.getKey().getBounds()))),
+					throwingMerger());
+		}
 
 		return newCaptures;
 	}
@@ -210,7 +212,8 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 			return inferTypeParameters(declaration);
 		}
 
-		if (!getEnclosingDeclaration(declaration).get().equals(enclosing.getRawType())) {
+		Object enclosingClass = enclosing.getRawType();
+		if (!getEnclosingDeclaration(declaration).get().equals(enclosingClass)) {
 			throw new ReflectionException(
 					REFLECTION_PROPERTIES.incorrectEnclosingDeclaration(enclosing.getRawType(), declaration));
 		}
@@ -366,7 +369,8 @@ public class TypeResolver implements DeepCopyable<TypeResolver> {
 						.collect(toList()));
 
 		return new TypeSubstitution(
-				t -> getBounds().containsInferenceVariable(t) ? getInstantiation((InferenceVariable) t)
+				t -> getBounds().containsInferenceVariable(t)
+						? getInstantiation((InferenceVariable) t)
 						: null).resolve(type);
 	}
 

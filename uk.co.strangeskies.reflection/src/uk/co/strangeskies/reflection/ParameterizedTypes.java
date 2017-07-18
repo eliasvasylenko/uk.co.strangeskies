@@ -129,7 +129,8 @@ public class ParameterizedTypes {
 					 * Calculate the hash code properly, now we're guarded against
 					 * recursion:
 					 */
-					this.hashCode = Objects.hashCode(ownerType) ^ Objects.hashCode(rawType)
+					this.hashCode = Objects.hashCode(ownerType)
+							^ Objects.hashCode(rawType)
 							^ Objects.hashCode(typeArguments);
 				}
 			}
@@ -325,10 +326,9 @@ public class ParameterizedTypes {
 		List<TypeVariable<?>> parameters = getAllTypeParameters(rawType).collect(Collectors.toList());
 
 		if (parameters.size() != typeArguments.size()) {
-			List<Type> typeArgumentsFinal = typeArguments;
 			throw new ReflectionException(
 					REFLECTION_PROPERTIES
-							.incorrectTypeArgumentCount(asList(rawType.getTypeParameters()), typeArgumentsFinal));
+							.incorrectTypeArgumentCount(asList(rawType.getTypeParameters()), typeArguments));
 		}
 
 		return parameterizeUncheckedImpl(rawType, typeArguments);

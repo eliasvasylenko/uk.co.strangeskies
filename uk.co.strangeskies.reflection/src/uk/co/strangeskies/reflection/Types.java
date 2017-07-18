@@ -63,8 +63,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.collection.MultiHashMap;
-import uk.co.strangeskies.collection.MultiMap;
+import uk.co.strangeskies.collection.multimap.MultiHashMap;
+import uk.co.strangeskies.collection.multimap.MultiMap;
 import uk.co.strangeskies.text.parsing.Parser;
 import uk.co.strangeskies.utility.Isomorphism;
 
@@ -108,8 +108,8 @@ public final class Types {
 	private Types() {}
 
 	/**
-	 * Determine whether a {@link Class} represents a generic class or an array
-	 * with a generic class as a component type.
+	 * Determine whether a {@link Class} represents a generic class or an array with
+	 * a generic class as a component type.
 	 * 
 	 * @param type
 	 *          the type we wish to classify
@@ -135,8 +135,8 @@ public final class Types {
 	 * 
 	 * @param type
 	 *          the type we wish to classify
-	 * @return true if the given class is raw or if a non-statically enclosing
-	 *         class is raw, false otherwise
+	 * @return true if the given class is raw or if a non-statically enclosing class
+	 *         is raw, false otherwise
 	 */
 	public static boolean isRaw(Type type) {
 		return type instanceof Class<?> && isGeneric((Class<?>) type);
@@ -223,8 +223,7 @@ public final class Types {
 	 * 
 	 * @param type
 	 *          The type whose bounds we wish to discover.
-	 * @return The lower bounds of the given type, or null if no such bounds
-	 *         exist.
+	 * @return The lower bounds of the given type, or null if no such bounds exist.
 	 */
 	public static Stream<Type> getLowerBounds(Type type) {
 		Type[] types;
@@ -273,8 +272,7 @@ public final class Types {
 	}
 
 	/**
-	 * If this TypeToken is a primitive type, determine the wrapped primitive
-	 * type.
+	 * If this TypeToken is a primitive type, determine the wrapped primitive type.
 	 * 
 	 * @param <T>
 	 *          The type we wish to wrap.
@@ -376,9 +374,8 @@ public final class Types {
 	}
 
 	/**
-	 * Find the component type of the given type, if the given {@link Type}
-	 * instance is an array {@link Class} or an instance of
-	 * {@link GenericArrayType}.
+	 * Find the component type of the given type, if the given {@link Type} instance
+	 * is an array {@link Class} or an instance of {@link GenericArrayType}.
 	 * 
 	 * @param type
 	 *          The type of which we wish to determine the component type.
@@ -441,8 +438,8 @@ public final class Types {
 	}
 
 	/**
-	 * Determine if a given type, {@code to}, is legally castable from another
-	 * given type, {@code from}.
+	 * Determine if a given type, {@code to}, is legally castable from another given
+	 * type, {@code from}.
 	 * 
 	 * @param from
 	 *          The type from which we wish to determine castability.
@@ -455,8 +452,8 @@ public final class Types {
 	}
 
 	/**
-	 * If a given object is assignable to a given raw type, it will be converted
-	 * to that type. Generally this is an identity conversion, but for wrapped
+	 * If a given object is assignable to a given raw type, it will be converted to
+	 * that type. Generally this is an identity conversion, but for wrapped
 	 * primitive types the extra step is taken to make conversions to which are
 	 * consistent with widening primitive conversions.
 	 * 
@@ -492,7 +489,8 @@ public final class Types {
 			}
 		} else {
 			Object finalObject = object; // Get your shit together Eclipse ffs.
-			throw new ReflectionException(REFLECTION_PROPERTIES.invalidAssignmentObject(finalObject, type));
+			throw new ReflectionException(
+					REFLECTION_PROPERTIES.invalidAssignmentObject(finalObject, type));
 		}
 
 		return (T) object;
@@ -576,10 +574,11 @@ public final class Types {
 						&& parameterizedTypeEquals((ParameterizedType) a, (ParameterizedType) b, isomorphism);
 
 			} else if (a instanceof IntersectionType) {
-				return b instanceof IntersectionType && equals(
-						((IntersectionType) a).getTypes(),
-						((IntersectionType) b).getTypes(),
-						isomorphism);
+				return b instanceof IntersectionType
+						&& equals(
+								((IntersectionType) a).getTypes(),
+								((IntersectionType) b).getTypes(),
+								isomorphism);
 
 			} else if (a instanceof Class) {
 				return a.equals(b);
@@ -652,16 +651,21 @@ public final class Types {
 
 		@Override
 		public String toString() {
-			return from + "@" + System.identityHashCode(from) + " <: " + to + "@"
+			return from
+					+ "@"
+					+ System.identityHashCode(from)
+					+ " <: "
+					+ to
+					+ "@"
 					+ System.identityHashCode(to);
 		}
 	}
 
 	/**
 	 * Determine if a given type, {@code supertype}, is a subtype of another given
-	 * type, {@code subtype}. Or in other words, if {@code supertype} is a
-	 * supertype of {@code subtype}. Types are considered assignable if they
-	 * involve unchecked generic casts.
+	 * type, {@code subtype}. Or in other words, if {@code supertype} is a supertype
+	 * of {@code subtype}. Types are considered assignable if they involve unchecked
+	 * generic casts.
 	 * 
 	 * @param subtype
 	 *          the type from which we wish to determine assignability
@@ -698,11 +702,12 @@ public final class Types {
 	private static Boolean isSubtypeImpl(Type subtype, Type supertype, Isomorphism isomorphism) {
 		boolean assignable;
 
-		if (subtype == null || supertype == null || supertype.equals(Object.class)
+		if (subtype == null
+				|| supertype == null
+				|| supertype.equals(Object.class)
 				|| subtype == supertype) {
 			/*
-			 * We can always assign to or from 'null', and we can always assign to
-			 * Object.
+			 * We can always assign to or from 'null', and we can always assign to Object.
 			 */
 			assignable = true;
 		} else if (supertype instanceof IntersectionType) {
@@ -714,25 +719,24 @@ public final class Types {
 			assignable = Arrays.stream(types).allMatch(t -> isSubtype(subtype, t, isomorphism));
 		} else if (subtype instanceof IntersectionType) {
 			/*
-			 * We must be able to assign from at least one member of the intersection
-			 * type.
+			 * We must be able to assign from at least one member of the intersection type.
 			 */
 			Type[] types = ((IntersectionType) subtype).getTypes();
 
 			assignable = isSubtype(types, supertype, isomorphism);
 		} else if (subtype instanceof WildcardType) {
 			/*
-			 * We must be able to assign from at least one of the upper bounds,
-			 * including the implied upper bound of Object, to the target type.
+			 * We must be able to assign from at least one of the upper bounds, including
+			 * the implied upper bound of Object, to the target type.
 			 */
 			Type[] upperBounds = ((WildcardType) subtype).getUpperBounds();
 
 			assignable = isSubtype(upperBounds, supertype, isomorphism);
 		} else if (supertype instanceof WildcardType) {
 			/*
-			 * If there are no lower bounds the target may be arbitrarily specific, so
-			 * we can never assign to it. Otherwise we must be able to assign to each
-			 * lower bound.
+			 * If there are no lower bounds the target may be arbitrarily specific, so we
+			 * can never assign to it. Otherwise we must be able to assign to each lower
+			 * bound.
 			 */
 			Type[] lowerBounds = ((WildcardType) supertype).getLowerBounds();
 
@@ -742,8 +746,8 @@ public final class Types {
 				assignable = isSubtype(subtype, lowerBounds, isomorphism);
 		} else if (subtype instanceof TypeVariableCapture) {
 			/*
-			 * We must be able to assign from at least one of the upper bound,
-			 * including the implied upper bound of Object, to the target type.
+			 * We must be able to assign from at least one of the upper bound, including the
+			 * implied upper bound of Object, to the target type.
 			 */
 			Type[] upperBounds = ((TypeVariableCapture) subtype).getUpperBounds();
 
@@ -755,8 +759,8 @@ public final class Types {
 			}
 		} else if (subtype instanceof TypeVariable) {
 			/*
-			 * We must be able to assign from at least one of the upper bound,
-			 * including the implied upper bound of Object, to the target type.
+			 * We must be able to assign from at least one of the upper bound, including the
+			 * implied upper bound of Object, to the target type.
 			 */
 			Type[] upperBounds = ((TypeVariable<?>) subtype).getBounds();
 
@@ -768,17 +772,17 @@ public final class Types {
 			}
 		} else if (supertype instanceof TypeVariableCapture) {
 			/*
-			 * We assign to a type variable capture if we can assign to its lower
-			 * bounds, or if it is from the exact same type, or explicitly mentioned
-			 * in an upper bound or intersection type.
+			 * We assign to a type variable capture if we can assign to its lower bounds, or
+			 * if it is from the exact same type, or explicitly mentioned in an upper bound
+			 * or intersection type.
 			 */
 			assignable = ((TypeVariableCapture) supertype).getLowerBounds().length > 0
 					&& isSubtype(subtype, ((TypeVariableCapture) supertype).getLowerBounds(), isomorphism);
 
 		} else if (supertype instanceof TypeVariable) {
 			/*
-			 * We can only assign to a type variable if it is from the exact same
-			 * type, or explicitly mentioned in an upper bound or intersection type.
+			 * We can only assign to a type variable if it is from the exact same type, or
+			 * explicitly mentioned in an upper bound or intersection type.
 			 */
 			assignable = false;
 
@@ -788,10 +792,11 @@ public final class Types {
 			if (supertype instanceof Class<?>) {
 				Class<?> toClass = (Class<?>) supertype;
 
-				assignable = toClass.isArray() && isSubtype(
-						fromArray.getGenericComponentType(),
-						toClass.getComponentType(),
-						isomorphism);
+				assignable = toClass.isArray()
+						&& isSubtype(
+								fromArray.getGenericComponentType(),
+								toClass.getComponentType(),
+								isomorphism);
 			} else if (supertype instanceof GenericArrayType) {
 				GenericArrayType toArray = (GenericArrayType) supertype;
 
@@ -805,10 +810,11 @@ public final class Types {
 			GenericArrayType toArray = (GenericArrayType) supertype;
 			if (subtype instanceof Class<?>) {
 				Class<?> fromClass = (Class<?>) subtype;
-				assignable = fromClass.isArray() && isSubtype(
-						fromClass.getComponentType(),
-						toArray.getGenericComponentType(),
-						isomorphism);
+				assignable = fromClass.isArray()
+						&& isSubtype(
+								fromClass.getComponentType(),
+								toArray.getGenericComponentType(),
+								isomorphism);
 			} else
 				assignable = false;
 		} else if (supertype instanceof Class<?>) {
@@ -819,7 +825,7 @@ public final class Types {
 			if (!matchedClass.isAssignableFrom(getErasedType(subtype))) {
 				assignable = false;
 			} else {
-				Type subtypeParameterization = TypeHierarchy.resolveSupertype(subtype, matchedClass);
+				Type subtypeParameterization = new TypeHierarchy(subtype).resolveSupertype(matchedClass);
 
 				if (!(subtypeParameterization instanceof ParameterizedType))
 					assignable = false;
@@ -857,8 +863,9 @@ public final class Types {
 
 			contained = isSubtype(from, toWildcard.getUpperBounds(), isomorphism);
 
-			contained = contained && (toWildcard.getLowerBounds().length == 0
-					|| isSubtype(toWildcard.getLowerBounds(), from, isomorphism));
+			contained = contained
+					&& (toWildcard.getLowerBounds().length == 0
+							|| isSubtype(toWildcard.getLowerBounds(), from, isomorphism));
 		} else {
 			contained = isSubtype(from, to, isomorphism) && isSubtype(to, from, isomorphism);
 		}
@@ -867,8 +874,8 @@ public final class Types {
 	}
 
 	/**
-	 * Determine if a given type, {@code to}, is assignable from another given
-	 * type, {@code from}. Or in other words, if {@code to} is a supertype of
+	 * Determine if a given type, {@code to}, is assignable from another given type,
+	 * {@code from}. Or in other words, if {@code to} is a supertype of
 	 * {@code from}. Types are considered assignable if they involve unchecked
 	 * generic casts.
 	 * 
@@ -902,8 +909,8 @@ public final class Types {
 	 *          The type from which to determine compatibility.
 	 * @param to
 	 *          The type to which to determine compatibility.
-	 * @return True if the type {@code from} is compatible with the type
-	 *         {@code to}, false otherwise.
+	 * @return True if the type {@code from} is compatible with the type {@code to},
+	 *         false otherwise.
 	 */
 	public static boolean isStrictInvocationContextCompatible(Type from, Type to) {
 		if (isPrimitive(from)) {
@@ -955,8 +962,8 @@ public final class Types {
 	 *          The type from which to determine compatibility.
 	 * @param to
 	 *          The type to which to determine compatibility.
-	 * @return True if the type {@code from} is compatible with the type
-	 *         {@code to}, false otherwise.
+	 * @return True if the type {@code from} is compatible with the type {@code to},
+	 *         false otherwise.
 	 */
 	public static boolean isLooseInvocationContextCompatible(Type from, Type to) {
 		if (from instanceof IntersectionType) {
@@ -987,8 +994,8 @@ public final class Types {
 	}
 
 	/**
-	 * Ensure all intersection types and parameterized types mentioned by the
-	 * given type are sound. An exception is thrown if the type is not valid.
+	 * Ensure all intersection types and parameterized types mentioned by the given
+	 * type are sound. An exception is thrown if the type is not valid.
 	 * 
 	 * @param type
 	 *          the type to be validated
@@ -1069,9 +1076,9 @@ public final class Types {
 		Type upperBound = leastUpperBoundImpl(upperBounds, new Isomorphism());
 
 		/*
-		 * Not sure if this is necessary! But it's cheap enough to check. Can't
-		 * validate IntersectionTypes and ParameterizedTypes as we create them, as
-		 * they may contain uninitialised proxies in place of ParameterizedTypes.
+		 * Not sure if this is necessary! But it's cheap enough to check. Can't validate
+		 * IntersectionTypes and ParameterizedTypes as we create them, as they may
+		 * contain uninitialised proxies in place of ParameterizedTypes.
 		 */
 		Types.validate(upperBound);
 
@@ -1247,8 +1254,9 @@ public final class Types {
 			Type argumentU,
 			Type argumentV,
 			Isomorphism isomorphism) {
-		if (argumentU instanceof WildcardType && (!(argumentV instanceof WildcardType)
-				|| ((WildcardType) argumentV).getUpperBounds().length > 0)) {
+		if (argumentU instanceof WildcardType
+				&& (!(argumentV instanceof WildcardType)
+						|| ((WildcardType) argumentV).getUpperBounds().length > 0)) {
 			Type swap = argumentU;
 			argumentU = argumentV;
 			argumentV = swap;
@@ -1304,7 +1312,8 @@ public final class Types {
 			/*
 			 * lcta(U, V) = U if U = V, otherwise ? extends lub(U, V)
 			 */
-			return argumentU.equals(argumentV) ? argumentU
+			return argumentU.equals(argumentV)
+					? argumentU
 					: WildcardTypes.wildcardExtending(
 							leastUpperBoundImpl(Arrays.asList(argumentU, argumentV), isomorphism));
 		}
@@ -1313,13 +1322,14 @@ public final class Types {
 	private static Map<Class<?>, ParameterizedType> getErasedSupertypes(Type of) {
 		Map<Class<?>, ParameterizedType> supertypes = new HashMap<>();
 
-		RecursiveTypeVisitor.build().visitSupertypes().classVisitor(type -> {
-			Type parameterized = TypeHierarchy.resolveSupertype(of, type);
-			supertypes.put(
-					type,
-					(parameterized instanceof ParameterizedType) ? (ParameterizedType) parameterized : null);
-		}).parameterizedTypeVisitor(type -> supertypes.put(getErasedType(type), type)).create().visit(
-				of);
+		new TypeHierarchy(of).resolveCompleteSupertypeHierarchy(Object.class).skip(1).forEach(type -> {
+			if (type instanceof Class<?>) {
+				supertypes.put((Class<?>) type, null);
+			} else if (type instanceof ParameterizedType) {
+				ParameterizedType parameterizedType = (ParameterizedType) type;
+				supertypes.put((Class<?>) parameterizedType.getRawType(), parameterizedType);
+			}
+		});
 
 		return supertypes;
 	}
@@ -1350,8 +1360,8 @@ public final class Types {
 	}
 
 	/**
-	 * Give a canonical String representation of a given type, which is intended
-	 * to be more easily human-readable than implementations of
+	 * Give a canonical String representation of a given type, which is intended to
+	 * be more easily human-readable than implementations of
 	 * {@link Object#toString()} for certain implementations of {@link Type}.
 	 * 
 	 * @param type
@@ -1363,8 +1373,8 @@ public final class Types {
 	}
 
 	/**
-	 * Give a canonical String representation of a given type, which is intended
-	 * to be more easily human-readable than implementations of
+	 * Give a canonical String representation of a given type, which is intended to
+	 * be more easily human-readable than implementations of
 	 * {@link Object#toString()} for certain implementations of {@link Type}.
 	 * Provided class and package imports allow the names of some classes to be
 	 * output without full package qualification.
@@ -1381,8 +1391,8 @@ public final class Types {
 	}
 
 	/**
-	 * Give a canonical String representation of a given type, which is intended
-	 * to be more easily human-readable than implementations of
+	 * Give a canonical String representation of a given type, which is intended to
+	 * be more easily human-readable than implementations of
 	 * {@link Object#toString()} for certain implementations of {@link Type}.
 	 * Provided class and package imports allow the names of some classes to be
 	 * output without full package qualification.
@@ -1454,8 +1464,9 @@ public final class Types {
 			Type[] lowerBounds,
 			Imports imports,
 			Isomorphism isomorphism) {
-		if (upperBounds.length > 0 && (upperBounds.length != 1
-				|| (upperBounds[0] != null && !upperBounds[0].equals(Object.class))))
+		if (upperBounds.length > 0
+				&& (upperBounds.length != 1
+						|| (upperBounds[0] != null && !upperBounds[0].equals(Object.class))))
 			builder.append(" extends ").append(toString(upperBounds, " & ", imports, isomorphism));
 
 		if (lowerBounds.length > 0 && !(lowerBounds.length == 1 && lowerBounds[0] == null))
@@ -1463,8 +1474,8 @@ public final class Types {
 	}
 
 	/**
-	 * Create a Type instance from a parsed String. Here infinitely recurring
-	 * types are represented by, for example:
+	 * Create a Type instance from a parsed String. Here infinitely recurring types
+	 * are represented by, for example:
 	 * 
 	 * {@code java.util.List<java.lang.Number & java.lang.Comparable<? extends java.lang.Number & java.lang.Comparable<? extends java.lang.Number & java.lang.Comparable
 	 * <...>>>>}
@@ -1482,8 +1493,8 @@ public final class Types {
 	}
 
 	/**
-	 * Create a Type instance from a parsed String. Here infinitely recurring
-	 * types are represented by, for example:
+	 * Create a Type instance from a parsed String. Here infinitely recurring types
+	 * are represented by, for example:
 	 * 
 	 * {@code java.util.List<java.lang.Number & java.lang.Comparable<? extends java.lang.Number & java.lang.Comparable<? extends java.lang.Number & java.lang.Comparable
 	 * <...>>>>}
@@ -1581,8 +1592,8 @@ public final class Types {
 		/**
 		 * A parser for a class type, which may be parameterized.
 		 * 
-		 * @return The type of the expressed name, and the given parameterization
-		 *         where appropriate
+		 * @return The type of the expressed name, and the given parameterization where
+		 *         appropriate
 		 */
 		public Parser<Type> classType() {
 			return classOrArrayType;
