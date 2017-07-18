@@ -49,43 +49,43 @@ import uk.co.strangeskies.observable.Observable;
  *          The type of the expression.
  */
 public abstract class PassiveExpression<T> implements Expression<T> {
-  private final Observable<Expression<? extends T>> dependencies;
-  private T value;
+	private final Observable<Expression<? extends T>> dependencies;
+	private T value;
 
-  public PassiveExpression(Collection<? extends Expression<?>> dependencies) {
-    this.dependencies = merge(
-        dependencies.stream().map(Expression::invalidations).collect(toList())).map(e -> {
-          invalidate();
-          return this;
-        });
-    this.dependencies.observe();
-  }
+	public PassiveExpression(Collection<? extends Expression<?>> dependencies) {
+		this.dependencies = merge(
+				dependencies.stream().map(Expression::invalidations).collect(toList())).map(e -> {
+					invalidate();
+					return this;
+				});
+		this.dependencies.observe();
+	}
 
-  public PassiveExpression(Expression<?>... dependencies) {
-    this(asList(dependencies));
-  }
+	public PassiveExpression(Expression<?>... dependencies) {
+		this(asList(dependencies));
+	}
 
-  @Override
-  public Observable<Expression<? extends T>> invalidations() {
-    return dependencies;
-  }
+	@Override
+	public Observable<Expression<? extends T>> invalidations() {
+		return dependencies;
+	}
 
-  private void invalidate() {
-    value = null;
-  }
+	private void invalidate() {
+		value = null;
+	}
 
-  @Override
-  public final T getValue() {
-    if (value == null) {
-      value = evaluate();
-    }
+	@Override
+	public final T getValue() {
+		if (value == null) {
+			value = evaluate();
+		}
 
-    return value;
-  }
+		return value;
+	}
 
-  /**
-   * @return The value of this {@link Expression} as derived from the dependency
-   *         {@link Expression}s.
-   */
-  protected abstract T evaluate();
+	/**
+	 * @return The value of this {@link Expression} as derived from the dependency
+	 *         {@link Expression}s.
+	 */
+	protected abstract T evaluate();
 }
