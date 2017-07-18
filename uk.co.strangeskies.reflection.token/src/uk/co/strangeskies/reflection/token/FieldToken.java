@@ -36,7 +36,6 @@ import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toMap;
 import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
-import static uk.co.strangeskies.reflection.token.FieldTokenQuery.fieldQuery;
 import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
 import static uk.co.strangeskies.reflection.token.TypeToken.forType;
 
@@ -86,7 +85,8 @@ public class FieldToken<O, T> implements MemberToken<O, FieldToken<O, T>> {
 		this.field = field;
 
 		TypeSubstitution inferenceVariableSubstitution = new TypeSubstitution(
-				getAllTypeArguments().collect(toMap(TypeArgument::getParameter, TypeArgument::getType)));
+				getAllTypeArguments()
+						.collect(toMap(a -> a.getParameter().getType(), TypeArgument::getType)));
 
 		this.receiverType = determineReceiverType(inferenceVariableSubstitution, receiverType);
 		this.fieldType = determineFieldType(resolver, inferenceVariableSubstitution);
@@ -281,7 +281,9 @@ public class FieldToken<O, T> implements MemberToken<O, FieldToken<O, T>> {
 		try {
 			getMember().set(target, value);
 		} catch (IllegalArgumentException | IllegalAccessException e) {
-			throw new ReflectionException(REFLECTION_PROPERTIES.cannotSetField(target, value, this.getMember()), e);
+			throw new ReflectionException(
+					REFLECTION_PROPERTIES.cannotSetField(target, value, this.getMember()),
+					e);
 		}
 	}
 
@@ -293,11 +295,10 @@ public class FieldToken<O, T> implements MemberToken<O, FieldToken<O, T>> {
 	 * @return all {@link Field} objects applicable to this type, wrapped in
 	 *         {@link FieldToken} instances
 	 */
-	public static FieldTokenQuery<FieldToken<Void, ?>, ?> staticFields(Class<?> declaringClass) {
-		Stream<Field> fields = stream(declaringClass.getDeclaredFields())
-				.filter(f -> Modifier.isStatic(f.getModifiers()));
-
-		return fieldQuery(fields, FieldToken::overStaticField);
+	public static Stream<FieldToken<Void, ?>> staticFields(Class<?> declaringClass) {
+		return stream(declaringClass.getDeclaredFields())
+				.filter(f -> Modifier.isStatic(f.getModifiers()))
+				.map(FieldToken::overStaticField);
 	}
 
 	@Override

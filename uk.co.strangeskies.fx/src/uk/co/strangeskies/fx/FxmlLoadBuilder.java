@@ -256,7 +256,7 @@ public class FxmlLoadBuilder<C> {
 			loader.setController(controller);
 		} else if (controllerClass != null) {
 			Callback<Class<?>, Object> originalFactory = loader.getControllerFactory();
-			
+
 			loader.setControllerFactory(c -> {
 				if (!c.isAssignableFrom(controllerClass)) {
 					throw new ClassCastException();

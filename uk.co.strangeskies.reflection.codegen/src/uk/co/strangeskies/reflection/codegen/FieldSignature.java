@@ -32,9 +32,7 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import static java.lang.System.identityHashCode;
 import static java.util.Collections.emptySet;
-import static uk.co.strangeskies.reflection.AnnotatedTypes.annotated;
 import static uk.co.strangeskies.reflection.codegen.Modifiers.modifiers;
 
 import java.lang.annotation.Annotation;
@@ -46,6 +44,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 public class FieldSignature<T> extends MemberSignature<FieldSignature<T>> {
@@ -59,7 +58,11 @@ public class FieldSignature<T> extends MemberSignature<FieldSignature<T>> {
 		this.annotations = emptySet();
 	}
 
-	protected FieldSignature(String variableName, Set<Annotation> annotations, Modifiers modifiers, AnnotatedType type) {
+	protected FieldSignature(
+			String variableName,
+			Set<Annotation> annotations,
+			Modifiers modifiers,
+			AnnotatedType type) {
 		super(variableName, annotations, modifiers);
 
 		this.type = type;
@@ -74,30 +77,35 @@ public class FieldSignature<T> extends MemberSignature<FieldSignature<T>> {
 		return new FieldSignature<>(variableName, annotations, modifiers, type);
 	}
 
-	public static FieldSignature<?> fieldSignature(String variableName, AnnotatedType type) {
+	public static
+			FieldSignature<?>
+			fieldSignature(String variableName, AnnotatedType type) {
 		return new FieldSignature<>(variableName, type);
 	}
 
-	public static FieldSignature<?> fieldSignature(String variableName, Type type) {
-		return new FieldSignature<>(variableName, annotated(type));
+	public static
+			FieldSignature<?>
+			fieldSignature(String variableName, Type type) {
+		return new FieldSignature<>(variableName, AnnotatedTypes.annotated(type));
 	}
 
-	public static <U> FieldSignature<U> fieldSignature(String variableName, Class<U> type) {
-		return new FieldSignature<>(variableName, annotated(type));
+	public static <
+			U> FieldSignature<U> fieldSignature(String variableName, Class<U> type) {
+		return new FieldSignature<>(variableName, AnnotatedTypes.annotated(type));
 	}
 
-	public static <U> FieldSignature<U> fieldSignature(String variableName, TypeToken<U> type) {
+	public static <U> FieldSignature<U> fieldSignature(
+			String variableName,
+			TypeToken<U> type) {
 		return new FieldSignature<>(variableName, type.getAnnotatedDeclaration());
 	}
 
 	public static <U> FieldSignature<U> fieldSignature(Field field) {
-		return new FieldSignature<U>(field.getName(), annotated(field.getType()))
-				.withAnnotations(field.getAnnotations())
-				.withModifiers(modifiers(field.getModifiers()));
-	}
-
-	private FieldSignature<T> withModifiers(Modifiers modifiers) {
-		return withMemberSignatureData(name, annotations, modifiers);
+		return new FieldSignature<U>(
+				field.getName(),
+				AnnotatedTypes.annotated(field.getType()))
+						.annotated(field.getAnnotations())
+						.withModifiers(modifiers(field.getModifiers()));
 	}
 
 	public FieldSignature<T> asStatic(boolean isStatic) {
@@ -122,8 +130,13 @@ public class FieldSignature<T> extends MemberSignature<FieldSignature<T>> {
 	}
 
 	@Override
-	public FieldSignature<T> withAnnotations(Collection<? extends Annotation> annotations) {
-		return new FieldSignature<>(name, new HashSet<>(annotations), modifiers, type);
+	public FieldSignature<T> annotated(
+			Collection<? extends Annotation> annotations) {
+		return new FieldSignature<>(
+				name,
+				new HashSet<>(annotations),
+				modifiers,
+				type);
 	}
 
 	public AnnotatedType getType() {
@@ -133,15 +146,5 @@ public class FieldSignature<T> extends MemberSignature<FieldSignature<T>> {
 	@Override
 	public String toString() {
 		return getType() + " " + getName();
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		return this == obj;
-	}
-
-	@Override
-	public int hashCode() {
-		return identityHashCode(this);
 	}
 }

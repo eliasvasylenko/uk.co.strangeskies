@@ -48,62 +48,65 @@ import uk.co.strangeskies.observable.Observer;
 /*
  * Implementation of localized property
  */
-class LocalizedImpl<A> extends ObservablePropertyImpl<Object, Object> implements Localized<Object>, Observer<Locale> {
-	private final PropertyAccessorDelegate<A> propertyAccessorDelegate;
+class LocalizedImpl<A> extends ObservablePropertyImpl<Object>
+    implements Localized<Object>, Observer<Locale> {
+  private final PropertyAccessorDelegate<A> propertyAccessorDelegate;
 
-	private final PropertyAccessorConfiguration<A> source;
-	private final String key;
-	private final AnnotatedType propertyType;
-	private final List<Object> arguments;
-	private final Map<Locale, Object> cache;
+  private final PropertyAccessorConfiguration<A> source;
+  private final String key;
+  private final AnnotatedType propertyType;
+  private final List<Object> arguments;
+  private final Map<Locale, Object> cache;
 
-	public LocalizedImpl(
-			PropertyAccessorDelegate<A> propertyAccessorDelegate,
-			PropertyAccessorConfiguration<A> source,
-			String key,
-			AnnotatedType propertyType,
-			List<?> arguments) {
-		super((r, t) -> r, Objects::equals, null);
+  public LocalizedImpl(
+      PropertyAccessorDelegate<A> propertyAccessorDelegate,
+      PropertyAccessorConfiguration<A> source,
+      String key,
+      AnnotatedType propertyType,
+      List<?> arguments) {
+    super((r, t) -> r, Objects::equals, null);
 
-		this.propertyAccessorDelegate = propertyAccessorDelegate;
+    this.propertyAccessorDelegate = propertyAccessorDelegate;
 
-		this.source = source;
-		this.key = key;
-		this.propertyType = getElementType(propertyType);
-		this.arguments = new ArrayList<>(arguments);
-		this.cache = new ConcurrentHashMap<>();
+    this.source = source;
+    this.key = key;
+    this.propertyType = getElementType(propertyType);
+    this.arguments = new ArrayList<>(arguments);
+    this.cache = new ConcurrentHashMap<>();
 
-		locale().addWeakObserver(this);
-		updateText(locale().get());
-	}
+    locale().weakReference().observe(this);
+    updateText(locale().get());
+  }
 
-	private AnnotatedType getElementType(AnnotatedType propertyType) {
-		return ((AnnotatedParameterizedType) propertyType).getAnnotatedActualTypeArguments()[0];
-	}
+  private AnnotatedType getElementType(AnnotatedType propertyType) {
+    return ((AnnotatedParameterizedType) propertyType).getAnnotatedActualTypeArguments()[0];
+  }
 
-	private synchronized void updateText(Locale locale) {
-		set(get(locale));
-	}
+  private synchronized void updateText(Locale locale) {
+    set(get(locale));
+  }
 
-	@Override
-	public String toString() {
-		return get().toString();
-	}
+  @Override
+  public String toString() {
+    return get().toString();
+  }
 
-	@Override
-	public Object get(Locale locale) {
-		return cache.computeIfAbsent(locale, l -> {
-			return this.propertyAccessorDelegate.parseValueString(source, propertyType, key, locale).apply(arguments);
-		});
-	}
+  @Override
+  public Object get(Locale locale) {
+    return cache.computeIfAbsent(locale, l -> {
+      return this.propertyAccessorDelegate
+          .parseValueString(source, propertyType, key, locale)
+          .apply(arguments);
+    });
+  }
 
-	@Override
-	public void notify(Locale locale) {
-		updateText(locale);
-	}
+  @Override
+  public void onNext(Locale locale) {
+    updateText(locale);
+  }
 
-	@Override
-	public ObservableValue<Locale> locale() {
-		return this.propertyAccessorDelegate.getLoader().locale();
-	}
+  @Override
+  public ObservableValue<Locale> locale() {
+    return this.propertyAccessorDelegate.getLoader().locale();
+  }
 }

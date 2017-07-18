@@ -34,7 +34,6 @@ package uk.co.strangeskies.utility;
 
 import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -44,70 +43,52 @@ import java.util.function.Supplier;
  *
  * @param <T>
  *          The type of the property.
- * @param <R>
- *          The supertype of the property type with which we can set a property.
- *          Commonly this is the same as {@code T}.
  */
 /* @I */
-public interface Property<T extends R, R> {
-	/**
-	 * Set the value of this property to the given value.
-	 * 
-	 * @param to
-	 *          The new value to set for this property.
-	 * @return The previous value of this property.
-	 */
-	T set(/* @Mutable Property<T, R> this, */R to);
+public interface Property<T> {
+  /**
+   * Set the value of this property to the given value.
+   * 
+   * @param to
+   *          The new value to set for this property.
+   * @return The previous value of this property.
+   */
+  T set(/* @Mutable Property<T, R> this, */T to);
 
-	/**
-	 * Get the current value of the property.
-	 * 
-	 * @return The current value.
-	 */
-	/* @I */T get();
+  /**
+   * Get the current value of the property.
+   * 
+   * @return The current value.
+   */
+  /* @I */T get();
 
-	/**
-	 * Create a property which defers its implementation to the given callbacks.
-	 * 
-	 * @param get
-	 *          the property retrieval callback
-	 * @param set
-	 *          the property assignment callback
-	 * @return a property over the given callbacks
-	 */
-	static <T extends R, R> Property<T, R> over(Supplier<T> get, Consumer<R> set) {
-		return over(get, r -> {
-			T previous = get.get();
-			set.accept(r);
-			return previous;
-		});
-	}
+  /**
+   * Create a property which defers its implementation to the given callbacks.
+   * 
+   * @param get
+   *          the property retrieval callback
+   * @param set
+   *          the property assignment callback
+   * @return a property over the given callbacks
+   */
+  static <T> Property<T> over(Supplier<T> get, Consumer<T> set) {
+    return new Property<T>() {
+      @Override
+      public T set(T to) {
+        T previous = get();
+        set.accept(to);
+        return previous;
+      }
 
-	/**
-	 * Create a property which defers its implementation to the given callbacks.
-	 * 
-	 * @param get
-	 *          the property retrieval callback
-	 * @param set
-	 *          the property assignment callback, returning the previous value
-	 * @return a property over the given callbacks
-	 */
-	static <T extends R, R> Property<T, R> over(Supplier<T> get, Function<R, T> set) {
-		return new Property<T, R>() {
-			@Override
-			public T set(R to) {
-				return set.apply(to);
-			}
+      @Override
+      public T get() {
+        return get.get();
+      }
 
-			@Override
-			public T get() {
-				return get.get();
-			}
-
-			@Override
-			public String toString() {
-				return Objects.toString(get());
-			}
-		};
-	}
+      @Override
+      public String toString() {
+        return Objects.toString(get());
+      }
+    };
+  }
 }

@@ -32,8 +32,6 @@
  */
 package uk.co.strangeskies.mathematics.expression;
 
-import java.util.Arrays;
-
 /**
  * An {@link Expression} whose primary dependency is conditional on a
  * {@link Boolean} {@link Expression} dependency. The primary dependency, in
@@ -43,74 +41,44 @@ import java.util.Arrays;
  * @param <O>
  *          The type of the expression.
  */
-public class ConditionalExpression<O> extends DependentExpression<O> {
-	private final Expression<? extends /*  */Boolean> condition;
-	private final Expression<? extends O> expressionWhenFulfilled;
-	private final Expression<? extends O> expressionWhenUnfulfilled;
+public class ConditionalExpression<O> extends TrinaryExpression<Boolean, O, O, O> {
+  /**
+   * @param condition
+   *          The condition to switch between primary dependencies.
+   * @param expressionWhenFulfilled
+   *          The {@link Expression} to set as primary dependency when the given
+   *          condition is fulfilled.
+   * @param expressionWhenUnfulfilled
+   *          The {@link Expression} to set as primary dependency when the given
+   *          condition is unfulfilled.
+   */
+  public ConditionalExpression(
+      Expression<? extends Boolean> condition,
+      Expression<? extends O> expressionWhenFulfilled,
+      Expression<? extends O> expressionWhenUnfulfilled) {
+    super(condition, expressionWhenFulfilled, expressionWhenUnfulfilled, (c, f, u) -> c ? f : u);
+  }
 
-	/**
-	 * @param condition
-	 *          The condition to switch between primary dependencies.
-	 * @param expressionWhenFulfilled
-	 *          The {@link Expression} to set as primary dependency when the given
-	 *          condition is fulfilled.
-	 * @param expressionWhenUnfulfilled
-	 *          The {@link Expression} to set as primary dependency when the given
-	 *          condition is unfulfilled.
-	 */
-	public ConditionalExpression(Expression<? extends /*  */Boolean> condition,
-			Expression<? extends O> expressionWhenFulfilled, Expression<? extends O> expressionWhenUnfulfilled) {
-		super(Arrays.asList(condition));
+  /**
+   * @return The condition to switch between primary dependencies.
+   */
+  public final Expression<? extends Boolean> getCondition() {
+    return getFirstOperand();
+  }
 
-		this.condition = condition;
-		this.expressionWhenFulfilled = expressionWhenFulfilled;
-		this.expressionWhenUnfulfilled = expressionWhenUnfulfilled;
+  /**
+   * @return The {@link Expression} which behaves as primary dependency when the
+   *         given condition is fulfilled.
+   */
+  public final Expression<? extends O> getExpressionWhenFulfilled() {
+    return getSecondOperand();
+  }
 
-		addDependency(condition);
-		if (condition.getValue()) {
-			addDependency(expressionWhenFulfilled);
-		} else {
-			addDependency(expressionWhenUnfulfilled);
-		}
-	}
-
-	@Override
-	protected final O evaluate() {
-		if (condition.getValue()) {
-			addDependency(expressionWhenFulfilled);
-			if (expressionWhenUnfulfilled != condition && expressionWhenUnfulfilled != expressionWhenFulfilled) {
-				removeDependency(expressionWhenUnfulfilled);
-			}
-			return expressionWhenFulfilled.getValue();
-		} else {
-			addDependency(expressionWhenUnfulfilled);
-			if (expressionWhenFulfilled != condition && expressionWhenFulfilled != expressionWhenUnfulfilled) {
-				removeDependency(expressionWhenFulfilled);
-			}
-			return expressionWhenUnfulfilled.getValue();
-		}
-	}
-
-	/**
-	 * @return The condition to switch between primary dependencies.
-	 */
-	public final Expression<? extends /*  */Boolean> getCondition() {
-		return condition;
-	}
-
-	/**
-	 * @return The {@link Expression} which behaves as primary dependency when the
-	 *         given condition is fulfilled.
-	 */
-	public final Expression<? extends O> getExpressionWhenFulfilled() {
-		return expressionWhenFulfilled;
-	}
-
-	/**
-	 * @return The {@link Expression} which behaves as primary dependency when the
-	 *         given condition is unfulfilled.
-	 */
-	public final Expression<? extends O> getExpressionWhenUnfulfilled() {
-		return expressionWhenUnfulfilled;
-	}
+  /**
+   * @return The {@link Expression} which behaves as primary dependency when the
+   *         given condition is unfulfilled.
+   */
+  public final Expression<? extends O> getExpressionWhenUnfulfilled() {
+    return getThirdOperand();
+  }
 }

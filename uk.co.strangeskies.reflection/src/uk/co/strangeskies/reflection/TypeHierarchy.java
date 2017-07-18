@@ -32,7 +32,9 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.empty;
 import static uk.co.strangeskies.collection.stream.StreamUtilities.flatMapRecursive;
@@ -40,127 +42,203 @@ import static uk.co.strangeskies.collection.stream.StreamUtilities.iterateOption
 import static uk.co.strangeskies.reflection.ParameterizedTypes.getAllTypeArguments;
 import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
 import static uk.co.strangeskies.reflection.Types.getErasedType;
+import static uk.co.strangeskies.reflection.Types.isAssignable;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Stream;
 
-class Fuk<T> {
-	public void ass(T t) {}
-}
-
-interface Kig {
-	void ass(String s);
-}
-
-class Pog extends Fuk<String> implements Kig {
-
-}
+import uk.co.strangeskies.collection.stream.StreamUtilities;
 
 public class TypeHierarchy {
-	/**
-	 * Determine the recursive sequence of direct supertypes of a given type which
-	 * lead to either the given superclass or a parameterization thereof.
-	 * 
-	 * @param type
-	 *          the type providing a context within which to determine the
-	 *          arguments of the supertype
-	 * @param superclass
-	 *          the class of the supertype parameterization we wish to determine
-	 * @return a stream returning the given type and then each direct supertype
-	 *         recursively until the given superclass, or a parameterization
-	 *         thereof, is reached
-	 */
-	public static Stream<Type> resolveDirectSupertypeHierarchy(Type type, Class<?> superclass) {
-		if (!Types.isAssignable(type, superclass)) {
-			throw new ReflectionException(REFLECTION_PROPERTIES.cannotResolveSupertype(type, superclass));
-		}
+	private final Type lowerBound;
+	private final Map<Class<?>, Type> supertypes;
 
-		return resolveSupertypeHierarchyImpl(type, superclass);
+	/**
+	 * @param lowerBound
+	 *          the type providing a context within which to determine the arguments
+	 *          of the supertypes
+	 */
+	public TypeHierarchy(Type lowerBound) {
+		this.lowerBound = lowerBound;
+		this.supertypes = new HashMap<>();
+	}
+
+	public Stream<Type> resolveSuperClasses() {
+		if (lowerBound == Object.class) {
+			return Stream.of(Object.class);
+		}
+		if (Types.getErasedType(lowerBound).isInterface()) {
+			throw new ReflectionException(
+					REFLECTION_PROPERTIES.cannotResolveSupertype(lowerBound, Object.class));
+		}
+		return StreamUtilities.iterate(
+				lowerBound,
+				t -> resolveSupertypeHierarchyImpl(t, getErasedType(t).getSuperclass())
+						.reduce((a, b) -> b)
+						.get());
 	}
 
 	/**
 	 * Determine the recursive sequence of direct supertypes of a given type which
 	 * lead to either the given superclass or a parameterization thereof.
 	 * 
-	 * @param type
-	 *          the type providing a context within which to determine the
-	 *          arguments of the supertype
 	 * @param superclass
 	 *          the class of the supertype parameterization we wish to determine
 	 * @return a stream returning the given type and then each direct supertype
 	 *         recursively until the given superclass, or a parameterization
 	 *         thereof, is reached
 	 */
-	public static Stream<Type> resolveCompleteSupertypeHierarchy(Type type, Class<?> superclass) {
-		validateResolvableSupertype(type, superclass);
+	public Stream<Type> resolveDirectSupertypeHierarchy(Class<?> superclass) {
+		if (!Types.isAssignable(lowerBound, superclass)) {
+			throw new ReflectionException(
+					REFLECTION_PROPERTIES.cannotResolveSupertype(lowerBound, superclass));
+		}
 
+		return resolveSupertypeHierarchyImpl(lowerBound, superclass);
+	}
+
+	/**
+	 * Determine the recursive sequence of direct supertypes of a given type which
+	 * lead to either the given superclass or a parameterization thereof.
+	 * 
+	 * @param superclass
+	 *          the class of the supertype parameterization we wish to determine
+	 * @return a stream returning the given type and then each direct supertype
+	 *         recursively until the given superclass, or a parameterization
+	 *         thereof, is reached
+	 */
+	public Stream<Type> resolveCompleteSupertypeHierarchy(Class<?> superclass) {
 		Set<Class<?>> encountered = new HashSet<>();
 
-		return flatMapRecursive(type, t -> resolveImmediateSupertypes(encountered, t, superclass));
+		return flatMapRecursive(
+				lowerBound,
+				t -> resolveImmediateSupertypes(encountered, t, superclass));
 	}
 
 	/**
 	 * Determine the super type of a given type which is either equal to the given
 	 * superclass or a parameterization thereof.
 	 * 
-	 * @param type
-	 *          the type providing a context within which to determine the
-	 *          arguments of the supertype
 	 * @param superclass
 	 *          the class of the supertype parameterization we wish to determine
 	 * @return the supertype of the requested class
 	 */
-	public static Type resolveSupertype(Type type, Class<?> superclass) {
-		if (!Types.isAssignable(type, superclass)) {
-			throw new ReflectionException(REFLECTION_PROPERTIES.cannotResolveSupertype(type, superclass));
+	public Type resolveSupertype(Class<?> superclass) {
+		if (supertypes.containsKey(superclass)) {
+			return supertypes.get(superclass);
+		}
+
+		if (!Types.isAssignable(lowerBound, superclass)) {
+			throw new ReflectionException(
+					REFLECTION_PROPERTIES.cannotResolveSupertype(lowerBound, superclass));
 		} else if (!Types.isGeneric(superclass)) {
 			return superclass;
 		}
 
-		return resolveSupertypeHierarchyImpl(type, superclass).reduce((a, b) -> b).get();
+		return resolveSupertypeHierarchyImpl(lowerBound, superclass).reduce((a, b) -> b).get();
 	}
 
 	/**
 	 * Determine the immediate supertypes of the given type.
 	 * 
-	 * @param type
-	 *          the type providing a context within which to determine the
-	 *          arguments of the supertypes
 	 * @return a stream of the supertypes of the requested class
 	 */
-	public static Stream<Type> resolveImmediateSupertypes(Type type) {
-		return resolveImmediateSupertypes(null, type, Object.class);
+	public Stream<Type> resolveImmediateSupertypes() {
+		return resolveImmediateSupertypes(null, lowerBound, Object.class);
 	}
 
-	private static Stream<Type> resolveSupertypeHierarchyImpl(Type type, Class<?> superclass) {
-		validateResolvableSupertype(type, superclass);
-
+	private Stream<Type> resolveSupertypeHierarchyImpl(Type type, Class<?> superclass) {
 		return iterateOptional(type, t -> resolveImmediateSupertypes(null, t, superclass).findFirst());
 	}
 
-	private static void validateResolvableSupertype(Type type, Class<?> superclass) {
-		if (!(type instanceof ParameterizedType) && !(type instanceof Class)) {
+	private Stream<Type> resolveImmediateSupertypes(
+			Set<Class<?>> encountered,
+			Type type,
+			Class<?> superclass) {
+		List<Type> lesserSubtypes;
+		if (type instanceof Class<?> || type instanceof ParameterizedType) {
+			lesserSubtypes = resolveClassLesserSubtypes(encountered, type, superclass);
+		} else if (type instanceof IntersectionType) {
+			lesserSubtypes = asList(((IntersectionType) type).getTypes());
+		} else if (type instanceof TypeVariableCapture) {
+			lesserSubtypes = asList(((TypeVariableCapture) type).getUpperBounds());
+		} else if (type instanceof TypeVariable<?>) {
+			lesserSubtypes = asList(((TypeVariable<?>) type).getBounds());
+		} else {
 			throw new ReflectionException(
 					REFLECTION_PROPERTIES.cannotResolveSupertype(type, superclass),
 					new ReflectionException(REFLECTION_PROPERTIES.unsupportedType(type)));
 		}
+
+		if (lesserSubtypes.isEmpty()) {
+			return empty();
+		}
+
+		/*
+		 * If there is more than one supertype in evaluation
+		 */
+		boolean removeEncounters = encountered != null
+				&& (!encountered.isEmpty() || lesserSubtypes.size() > 1);
+
+		for (Iterator<Type> lesserSubtypeIterator = lesserSubtypes.iterator(); lesserSubtypeIterator
+				.hasNext();) {
+			Type lesserSubtype = lesserSubtypeIterator.next();
+
+			if (!isAssignable(lesserSubtype, superclass)) {
+				lesserSubtypeIterator.remove();
+			} else if (removeEncounters) {
+				Class<?> rawClass;
+				if (lesserSubtype instanceof Class<?>) {
+					rawClass = (Class<?>) lesserSubtype;
+				} else if (lesserSubtype instanceof ParameterizedType) {
+					rawClass = (Class<?>) ((ParameterizedType) lesserSubtype).getRawType();
+				} else {
+					rawClass = null;
+				}
+
+				if (rawClass != null && encountered.stream().anyMatch(rawClass::isAssignableFrom)) {
+					lesserSubtypeIterator.remove();
+				} else if (!isAssignable(lesserSubtype, superclass)) {
+					lesserSubtypeIterator.remove();
+				} else {
+					encountered.add(rawClass);
+				}
+			}
+		}
+
+		return lesserSubtypes.stream().map(subtype -> {
+			Class<?> rawType = Types.getErasedType(subtype);
+
+			if (type instanceof ParameterizedType) {
+				return supertypes.computeIfAbsent(
+						rawType,
+						r -> new TypeSubstitution(
+								getAllTypeArguments((ParameterizedType) type)
+										.collect(toMap(Entry::getKey, Entry::getValue))).resolve(subtype));
+			} else {
+				supertypes.put(rawType, subtype);
+				return subtype;
+			}
+		});
 	}
 
-	private static Stream<Type> resolveImmediateSupertypes(
+	private List<Type> resolveClassLesserSubtypes(
 			Set<Class<?>> encountered,
 			Type type,
 			Class<?> superclass) {
-		Class<?> subclass = getErasedType(type);
-
-		if (subclass.equals(superclass)) {
-			return empty();
+		Class<?> subclass = Types.getErasedType(type);
+		if (subclass == superclass) {
+			return emptyList();
 		}
 
 		if (encountered != null && !encountered.isEmpty()) {
@@ -184,31 +262,11 @@ public class TypeHierarchy {
 		} else if (genericInterfaces.length == 0) {
 			lesserSubtypes.add(Object.class);
 		}
+		return lesserSubtypes;
+	}
 
-		/*
-		 * If there is more than one supertype in evaluation
-		 */
-		if (encountered != null && (!encountered.isEmpty() || lesserSubtypes.size() > 1)) {
-			for (Iterator<Type> lesserSubtypeIterator = lesserSubtypes.iterator(); lesserSubtypeIterator
-					.hasNext();) {
-				Class<?> rawClass = getErasedType(lesserSubtypeIterator.next());
-
-				if (encountered.stream().anyMatch(rawClass::isAssignableFrom)) {
-					lesserSubtypeIterator.remove();
-				} else {
-					encountered.add(rawClass);
-				}
-			}
-		}
-
-		return lesserSubtypes.stream().filter(t -> superclass.isAssignableFrom(getErasedType(t))).map(
-				subtype -> {
-					if (type instanceof ParameterizedType)
-						return new TypeSubstitution(
-								getAllTypeArguments((ParameterizedType) type)
-										.collect(toMap(Entry::getKey, Entry::getValue))).resolve(subtype);
-					else
-						return subtype;
-				});
+	@Override
+	public String toString() {
+		return lowerBound + " <: " + supertypes;
 	}
 }

@@ -34,8 +34,10 @@ package uk.co.strangeskies.text.properties;
 
 import java.util.Locale;
 
+import uk.co.strangeskies.observable.ImmutableObservable;
 import uk.co.strangeskies.observable.Observable;
 import uk.co.strangeskies.observable.ObservableValue;
+import uk.co.strangeskies.observable.Observation;
 import uk.co.strangeskies.observable.Observer;
 
 /**
@@ -47,68 +49,81 @@ import uk.co.strangeskies.observable.Observer;
  *          the type of the value
  */
 public interface Localized<T> extends ObservableValue<T> {
-	/**
-	 * @return the current locale of the string
-	 */
-	ObservableValue<Locale> locale();
+  /**
+   * @return the current locale of the string
+   */
+  ObservableValue<Locale> locale();
 
-	@Override
-	T get();
+  @Override
+  T get();
 
-	/**
-	 * @param locale
-	 *          the locale to translate to
-	 * @return the localized string value according to the given locale
-	 */
-	T get(Locale locale);
+  /**
+   * @param locale
+   *          the locale to translate to
+   * @return the localized string value according to the given locale
+   */
+  T get(Locale locale);
 
-	/**
-	 * Create a localized view of a value with a static locale.
-	 * 
-	 * @param <T>
-	 *          the type of the localized value
-	 * @param value
-	 *          the localized value
-	 * @param locale
-	 *          the locale of the given text
-	 * @return a localized string over the given text and locale
-	 */
-	static <T> Localized<T> forStaticLocale(T value, Locale locale) {
-		return new Localized<T>() {
-			@Override
-			public T get() {
-				return value;
-			}
+  /**
+   * Create a localized view of a value with a static locale.
+   * 
+   * @param <T>
+   *          the type of the localized value
+   * @param value
+   *          the localized value
+   * @param locale
+   *          the locale of the given text
+   * @return a localized string over the given text and locale
+   */
+  static <T> Localized<T> forStaticLocale(T value, Locale locale) {
+    return new Localized<T>() {
+      Localized<T> getThis() {
+        return this;
+      }
 
-			@Override
-			public String toString() {
-				return value.toString();
-			}
+      @Override
+      public T get() {
+        return value;
+      }
 
-			@Override
-			public T get(Locale locale) {
-				return get();
-			}
+      @Override
+      public String toString() {
+        return value.toString();
+      }
 
-			@Override
-			public boolean removeObserver(Observer<? super T> observer) {
-				return true;
-			}
+      @Override
+      public T get(Locale locale) {
+        return get();
+      }
 
-			@Override
-			public boolean addObserver(Observer<? super T> observer) {
-				return true;
-			}
+      @Override
+      public Observation<T> observe(Observer<? super T> observer) {
+        Observation<T> observation = new Observation<T>() {
+          private boolean disposed = false;
 
-			@Override
-			public ObservableValue<Locale> locale() {
-				return ObservableValue.immutableOver(locale);
-			}
+          @Override
+          public boolean isDisposed() {
+            return disposed;
+          }
 
-			@Override
-			public Observable<Change<T>> changes() {
-				return Observable.immutable();
-			}
-		};
-	}
+          @Override
+          public void dispose() {
+            disposed = true;
+          }
+        };
+        observer.onObserve(observation);
+        return observation;
+      }
+
+      @Override
+      public ObservableValue<Locale> locale() {
+        return ObservableValue.immutableOver(locale);
+      }
+
+      @Override
+      public Observable<Change<T>> changes() {
+        return ImmutableObservable.instance();
+      }
+    };
+  }
 }

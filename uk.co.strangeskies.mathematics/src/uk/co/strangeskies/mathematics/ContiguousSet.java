@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.mathematics;
 
+import static uk.co.strangeskies.mathematics.Interval.bounded;
+
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -42,22 +44,20 @@ import uk.co.strangeskies.mathematics.operation.Incrementable;
 import uk.co.strangeskies.mathematics.operation.Incrementor;
 import uk.co.strangeskies.mathematics.operation.NaturalIncrementor;
 
-public class ContiguousSet<T> implements Iterable<T>, Collection<T>,
-		NavigableSet<T>, SortedSet<T> {
-	private final Range<T> range;
+public class ContiguousSet<T> implements Iterable<T>, Collection<T>, NavigableSet<T>, SortedSet<T> {
+	private final Interval<T> range;
 	private final Incrementor<T> incrementor;
 
-	public ContiguousSet(Range<T> range, Incrementor<T> incrementor) {
+	public ContiguousSet(Interval<T> range, Incrementor<T> incrementor) {
 		this.range = range;
 		this.incrementor = incrementor;
 	}
 
-	public static <T extends Incrementable<? extends T>> ContiguousSet<T> create(
-			Range<T> range) {
+	public static <T extends Incrementable<? extends T>> ContiguousSet<T> create(Interval<T> range) {
 		return new ContiguousSet<>(range, new NaturalIncrementor<T>());
 	}
 
-	public final Range<T> getRange() {
+	public final Interval<T> getRange() {
 		return range;
 	}
 
@@ -76,8 +76,8 @@ public class ContiguousSet<T> implements Iterable<T>, Collection<T>,
 
 	@Override
 	public T first() {
-		T first = range.getFrom();
-		if (!range.isFromInclusive()) {
+		T first = range.getLeftEndpoint();
+		if (!range.isLeftClosed()) {
 			first = incrementor.getIncremented(first);
 		}
 		return first;
@@ -85,8 +85,8 @@ public class ContiguousSet<T> implements Iterable<T>, Collection<T>,
 
 	@Override
 	public T last() {
-		T last = range.getTo();
-		if (!range.isToInclusive()) {
+		T last = range.getRightEndpoint();
+		if (!range.isRightClosed()) {
 			last = incrementor.getDecremented(last);
 		}
 		return last;
@@ -130,8 +130,9 @@ public class ContiguousSet<T> implements Iterable<T>, Collection<T>,
 	@Override
 	public Iterator<T> iterator() {
 		return new Iterator<T>() {
-			T on = getRange().isFromInclusive() ? getRange().getFrom() : incrementor
-					.increment(getRange().getFrom());
+			T on = getRange().isLeftClosed()
+					? getRange().getLeftEndpoint()
+					: incrementor.increment(getRange().getLeftEndpoint());
 
 			@Override
 			public boolean hasNext() {
@@ -142,8 +143,8 @@ public class ContiguousSet<T> implements Iterable<T>, Collection<T>,
 			public T next() {
 				T was = on;
 				on = incrementor.increment(on);
-				int compare = comparator().compare(on, getRange().getTo());
-				if (getRange().isToInclusive() ? compare < 0 : compare <= 0)
+				int compare = comparator().compare(on, getRange().getRightEndpoint());
+				if (getRange().isRightClosed() ? compare < 0 : compare <= 0)
 					on = null;
 				return was;
 			}
@@ -157,8 +158,7 @@ public class ContiguousSet<T> implements Iterable<T>, Collection<T>,
 
 	@Override
 	public NavigableSet<T> descendingSet() {
-		return new ContiguousSet<>(getRange().reversed(), getIncrementor()
-				.reversed());
+		return new ContiguousSet<>(getRange(), getIncrementor().reversed());
 	}
 
 	@Override
@@ -167,12 +167,12 @@ public class ContiguousSet<T> implements Iterable<T>, Collection<T>,
 	}
 
 	@Override
-	public ContiguousSet<T> subSet(T from, boolean fromInclusive, T to,
-			boolean toInclusive) {
+	public ContiguousSet<T> subSet(T from, boolean fromInclusive, T to, boolean toInclusive) {
 		T fromRounded = ceiling(from);
 		T toRounded = floor(to);
-		return new ContiguousSet<>(new Range<T>(fromRounded, toRounded,
-				getComparator()).setInclusive(fromInclusive, toInclusive),
+		return new ContiguousSet<>(
+				bounded(fromRounded, toRounded, getComparator())
+						.withClosedEndpoints(fromInclusive, toInclusive),
 				getIncrementor());
 	}
 

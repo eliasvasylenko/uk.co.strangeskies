@@ -36,20 +36,15 @@ import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
-import static uk.co.strangeskies.collection.stream.StreamUtilities.streamOptional;
-import static uk.co.strangeskies.collection.stream.StreamUtilities.tryOptional;
 import static uk.co.strangeskies.collection.stream.StreamUtilities.zip;
 import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
 import static uk.co.strangeskies.reflection.BoundSet.emptyBoundSet;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
-import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
 import static uk.co.strangeskies.reflection.Types.isSubtype;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardExtending;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardSuper;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.forConstructor;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.forMethod;
-import static uk.co.strangeskies.reflection.token.ExecutableTokenQuery.executableQuery;
-import static uk.co.strangeskies.reflection.token.FieldTokenQuery.fieldQuery;
 import static uk.co.strangeskies.reflection.token.TypeParameter.forTypeVariable;
 
 import java.lang.annotation.Annotation;
@@ -94,7 +89,6 @@ import uk.co.strangeskies.reflection.Imports;
 import uk.co.strangeskies.reflection.InferenceVariable;
 import uk.co.strangeskies.reflection.InferenceVariableBounds;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
-import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypeHierarchy;
 import uk.co.strangeskies.reflection.TypeResolver;
 import uk.co.strangeskies.reflection.TypeSubstitution;
@@ -339,9 +333,12 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 			Isomorphism isomorphism,
 			AnnotatedType annotatedType,
 			TypeResolver resolver) {
-		Wildcards behavior = annotatedType.isAnnotationPresent(Retain.class) ? Wildcards.RETAIN
-				: annotatedType.isAnnotationPresent(Infer.class) ? Wildcards.INFER
-						: annotatedType.isAnnotationPresent(Capture.class) ? Wildcards.CAPTURE
+		Wildcards behavior = annotatedType.isAnnotationPresent(Retain.class)
+				? Wildcards.RETAIN
+				: annotatedType.isAnnotationPresent(Infer.class)
+						? Wildcards.INFER
+						: annotatedType.isAnnotationPresent(Capture.class)
+								? Wildcards.CAPTURE
 								: Wildcards.RETAIN;
 
 		if (annotatedType instanceof AnnotatedParameterizedType) {
@@ -1171,10 +1168,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * @return a list of all {@link Field} objects applicable to this type,
 	 *         wrapped in {@link FieldToken} instances
 	 */
-	public FieldTokenQuery<FieldToken<T, ?>, ?> fields() {
-		Stream<Field> fields = stream(getErasedType().getFields());
-
-		return fieldQuery(fields, f -> FieldToken.overField(f, this));
+	public Stream<FieldToken<T, ?>> fields() {
+		return stream(getErasedType().getFields()).map(f -> FieldToken.overField(f, this));
 	}
 
 	/**
@@ -1183,10 +1178,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * @return a list of all {@link Field} objects applicable to this type,
 	 *         wrapped in {@link FieldToken} instances
 	 */
-	public FieldTokenQuery<FieldToken<T, ?>, ?> declaredFields() {
-		Stream<Field> fields = stream(getErasedType().getDeclaredFields());
-
-		return fieldQuery(fields, f -> FieldToken.overField(f, this));
+	public Stream<FieldToken<T, ?>> declaredFields() {
+		return stream(getErasedType().getDeclaredFields()).map(f -> FieldToken.overField(f, this));
 	}
 
 	/**
@@ -1195,10 +1188,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * @return a list of all {@link Constructor} objects applicable to this type,
 	 *         wrapped in {@link ExecutableToken} instances
 	 */
-	public ExecutableTokenQuery<ExecutableToken<Void, T>, ?> constructors() {
-		Stream<Constructor<?>> constructors = stream(getErasedType().getConstructors());
-
-		return executableQuery(constructors, m -> forConstructor(m).withTargetType(this));
+	public Stream<ExecutableToken<Void, T>> constructors() {
+		return stream(getErasedType().getConstructors())
+				.map(m -> forConstructor(m).withTargetType(this));
 	}
 
 	/**
@@ -1207,10 +1199,9 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * @return a list of all {@link Constructor} objects applicable to this type,
 	 *         wrapped in {@link ExecutableToken} instances
 	 */
-	public ExecutableTokenQuery<ExecutableToken<Void, T>, ?> declaredConstructors() {
-		Stream<Constructor<?>> constructors = stream(getErasedType().getDeclaredConstructors());
-
-		return executableQuery(constructors, m -> forConstructor(m).withTargetType(this));
+	public Stream<ExecutableToken<Void, T>> declaredConstructors() {
+		return stream(getErasedType().getDeclaredConstructors())
+				.map(m -> forConstructor(m).withTargetType(this));
 	}
 
 	/**
@@ -1220,21 +1211,19 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * @return a list of all {@link Method} objects applicable to this type,
 	 *         wrapped in {@link ExecutableToken} instances
 	 */
-	public ExecutableTokenQuery<ExecutableToken<T, ?>, ?> methods() {
+	public Stream<ExecutableToken<T, ?>> methods() {
 		Stream<Method> methodStream = getErasedUpperBounds().flatMap(t -> stream(t.getMethods()));
-
-		/*
-		 * TODO resolve entire type hierarchy once and reduce to a map from raw
-		 * class to parameterized version, that way we know the exact invocation
-		 * type for everything without repeating calculations.
-		 */
 
 		if (getErasedUpperBounds().allMatch(Types::isInterface))
 			methodStream = Stream.concat(methodStream, stream(Object.class.getMethods()));
 
 		methodStream = methodStream.filter(m -> !Modifier.isStatic(m.getModifiers()));
 
-		return executableQuery(methodStream, m -> forMethod(m).withReceiverType(this));
+		TypeHierarchy typeHierarchy = new TypeHierarchy(getType());
+
+		return methodStream.map(
+				m -> forMethod(m).withReceiverType(
+						new TypeToken<>(getBounds(), typeHierarchy.resolveSupertype(m.getDeclaringClass()))));
 	}
 
 	/**
@@ -1244,11 +1233,10 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	 * @return a list of all {@link Method} objects applicable to this type,
 	 *         wrapped in {@link ExecutableToken} instances
 	 */
-	public ExecutableTokenQuery<ExecutableToken<T, ?>, ?> declaredMethods() {
-		Stream<Method> methodStream = stream(getErasedType().getDeclaredMethods())
-				.filter(m -> !Modifier.isStatic(m.getModifiers()));
-
-		return executableQuery(methodStream, m -> forMethod(m).withReceiverType(this));
+	public Stream<ExecutableToken<T, ?>> declaredMethods() {
+		return stream(getErasedType().getDeclaredMethods())
+				.filter(m -> !Modifier.isStatic(m.getModifiers()))
+				.map(m -> forMethod(m).withReceiverType(this));
 	}
 
 	@Override
@@ -1302,7 +1290,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 				.reduce(getBounds(), (a, b) -> a.withBounds(b));
 
 		Map<TypeVariable<?>, Type> argumentMap = arguments.stream().collect(
-				toMap(TypeArgument::getParameter, TypeArgument::getType));
+				toMap(a -> a.getParameter().getType(), TypeArgument::getType));
 
 		return new TypeToken<>(bounds, new TypeSubstitution(argumentMap).resolve(getType()));
 	}
@@ -1346,7 +1334,8 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 				Class<?> enclosingClass = (Class<?>) enclosingDeclaration;
 				return Optional.of(
 						forType(
-								Types.isGeneric(enclosingClass) ? ParameterizedTypes.parameterize(enclosingClass)
+								Types.isGeneric(enclosingClass)
+										? ParameterizedTypes.parameterize(enclosingClass)
 										: enclosingClass));
 
 			} else if (enclosingDeclaration instanceof Method) {
@@ -1365,19 +1354,11 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedToken<Ty
 	}
 
 	/**
-	 * As @see {@link TypeHierarchy#resolveSupertype(Type, Class)}.
+	 * As @see {@link TypeHierarchy#resolveSupertype( Class)}.
 	 */
 	@SuppressWarnings({ "unchecked", "javadoc" })
 	public TypeToken<? super T> resolveSupertype(Class<?> superclass) {
-		TypeToken<?> superType = forType(
-				getUpperBounds()
-						.flatMap(
-								b -> streamOptional(
-										tryOptional(() -> TypeHierarchy.resolveSupertype(b, superclass))))
-						.findFirst()
-						.orElseThrow(
-								() -> new ReflectionException(
-										REFLECTION_PROPERTIES.cannotResolveSupertype(type, superclass))));
+		TypeToken<?> superType = forType(new TypeHierarchy(getType()).resolveSupertype(superclass));
 
 		return (TypeToken<? super T>) superType;
 	}

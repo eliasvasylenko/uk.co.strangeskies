@@ -41,67 +41,85 @@ import uk.co.strangeskies.mathematics.geometry.shape.ClosedPolyline2;
 import uk.co.strangeskies.mathematics.geometry.shape.Line2;
 import uk.co.strangeskies.mathematics.geometry.shape.Shape;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.observable.Observer;
+import uk.co.strangeskies.observable.Observable;
 
 public class ClosedPolyline2Impl<V extends Value<V>> implements ClosedPolyline2<V> {
-	@Override
-	public boolean intersects(Shape<?> shape) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+  @Override
+  public boolean intersects(Shape<?> shape) {
+    // TODO Auto-generated method stub
+    return false;
+  }
 
-	@Override
-	public boolean touches(Shape<?> shape) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+  @Override
+  public boolean touches(Shape<?> shape) {
+    // TODO Auto-generated method stub
+    return false;
+  }
 
-	@Override
-	public Bounds2<V> getBounds() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+  @Override
+  public Bounds2<V> getBounds() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-	@Override
-	public ClosedPolyline2<V> copy() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+  @Override
+  public ClosedPolyline2<V> copy() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-	@Override
-	public ClosedPolyline2<V> getValue() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+  @Override
+  public ClosedPolyline2<V> getValue() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-	@Override
-	public boolean addObserver(Observer<? super Expression<? extends ClosedPolyline2<V>>> observer) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+  @Override
+  public List<Line2<V>> lines() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-	@Override
-	public boolean removeObserver(Observer<? super Expression<? extends ClosedPolyline2<V>>> observer) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+  @Override
+  public List<Vector2<V>> vertices() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-	@Override
-	public List<Line2<V>> lines() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+  @Override
+  public Value<?> getLength() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-	@Override
-	public List<Vector2<V>> vertices() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+  @Override
+  public Value<?> getArea() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-	@Override
-	public Value<?> getLength() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+  @Override
+  public Value<?> getPerimeter() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public boolean contains(Vector2<?> point) {
+    // TODO Auto-generated method stub
+    return false;
+  }
+
+  @Override
+  public boolean touches(Vector2<?> point) {
+    // TODO Auto-generated method stub
+    return false;
+  }
+
+  @Override
+  public Observable<Expression<? extends ClosedPolyline2<V>>> invalidations() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
 }

@@ -32,113 +32,105 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import static java.lang.reflect.Modifier.isStatic;
-import static java.util.Arrays.stream;
 import static java.util.stream.Stream.concat;
 import static uk.co.strangeskies.collection.stream.StreamUtilities.streamOptional;
 import static uk.co.strangeskies.reflection.codegen.ErasedMethodSignature.erasedMethodSignature;
-import static uk.co.strangeskies.reflection.codegen.MethodDeclaration.declareMethod;
-import static uk.co.strangeskies.reflection.token.ExecutableToken.forMethod;
 
+import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Method;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.collection.stream.StreamUtilities;
+import uk.co.strangeskies.reflection.TypeHierarchy;
 import uk.co.strangeskies.reflection.token.ExecutableParameter;
 import uk.co.strangeskies.reflection.token.ExecutableToken;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
-public class MethodOverrides<T> {
-	private final ClassDeclaration<?, T> classDeclaration;
-	private final Map<Method, ExecutableToken<?, ?>> invocables;
-	private final Map<ErasedMethodSignature, MethodOverride<T>> methods;
+class MethodOverrides<T> {
+	private final ClassSignature<T> classSignature;
+	private final Map<Method, ExecutableToken<?, ?>> inheritedMethods;
+	private final Map<ErasedMethodSignature, MethodOverride<T>> overrides;
 
-	public MethodOverrides(ClassDeclaration<?, T> classDeclaration) {
-		this.classDeclaration = classDeclaration;
-		this.invocables = new HashMap<>();
-		this.methods = new HashMap<>();
+	public MethodOverrides(ClassSignature<T> classSignature) {
+		this.classSignature = classSignature;
+		this.inheritedMethods = new HashMap<>();
+		this.overrides = new HashMap<>();
 
 		inheritMethods();
-
 		overrideMethods();
 	}
 
 	private void inheritMethods() {
-		concat(interfaceMethods(), classMethods()).filter(method -> !isStatic(method.getModifiers())).forEach(
-				this::inheritMethod);
+		concat(inheritInterfaceMethods(), inheritClassMethods()).filter(m -> !m.isStatic()).forEach(
+				m -> {
+					inheritMethod((Method) m.getMember(), m);
+				});
 	}
 
-	private Stream<Method> interfaceMethods() {
-		return classDeclaration.getSuperTypes().flatMap(t -> t.getErasedUpperBounds()).flatMap(t -> stream(t.getMethods()));
+	private Stream<ExecutableToken<?, ?>> inheritInterfaceMethods() {
+		return classSignature
+				.getSuperInterfaces()
+				.map(AnnotatedType::getType)
+				.map(TypeToken::forType)
+				.flatMap(TypeToken::methods);
 	}
 
-	private Stream<Method> classMethods() {
-		return StreamUtilities.<Class<?>>iterate(classDeclaration.getSuperClass(), Class::getSuperclass).flatMap(
-				c -> stream(c.getDeclaredMethods()));
+	private Stream<ExecutableToken<?, ?>> inheritClassMethods() {
+		return classSignature
+				.getSuperClass()
+				.map(AnnotatedType::getType)
+				.map(TypeHierarchy::new)
+				.map(TypeHierarchy::resolveSuperClasses)
+				.orElse(Stream.of(Object.class))
+				.map(TypeToken::forType)
+				.flatMap(TypeToken::declaredMethods);
 	}
 
-	private void overrideMethods() {
-		classDeclaration.getSignature().getMethodSignatures().filter(s -> !s.getModifiers().isStatic()).forEach(
-				this::overrideMethod);
+	protected void inheritMethod(Method method, ExecutableToken<?, ?> token) {
+		if (inheritedMethods.put(method, token) == null) {
+			ErasedMethodSignature overridingSignature = erasedMethodSignature(
+					method.getName(),
+					token
+							.getParameters()
+							.map(ExecutableParameter::getTypeToken)
+							.map(TypeToken::getErasedType)
+							.toArray(Class<?>[]::new));
 
-		methods.values().stream().forEach(MethodOverride::overrideIfNecessary);
-	}
+			MethodOverride<T> override = overrides
+					.computeIfAbsent(overridingSignature, k -> new MethodOverride<>(this));
 
-	protected ExecutableToken<?, ?> getInvocable(Method method) {
-		ExecutableToken<?, ?> token = invocables
-				.computeIfAbsent(method, m -> forMethod(method).withReceiverType(classDeclaration.getSuperType()));
+			override.inherit(method);
 
-		return token;
-	}
-
-	protected void overrideMethod(MethodSignature<?> methodSignature) {
-		MethodDeclaration<T, ?> methodDeclaration = declareMethod(classDeclaration, methodSignature);
-
-		MethodOverride<T> override = methods
-				.computeIfAbsent(methodDeclaration.getSignature().erased(), k -> new MethodOverride<>(this));
-
-		override.override(methodDeclaration);
-	}
-
-	protected void inheritMethod(Method method) {
-		ErasedMethodSignature overridingSignature = erasedMethodSignature(
-				method.getName(),
-				getInvocable(method)
-						.getParameters()
-						.map(ExecutableParameter::getTypeToken)
-						.map(TypeToken::getErasedType)
-						.toArray(Class<?>[]::new));
-
-		MethodOverride<T> override = methods.computeIfAbsent(overridingSignature, k -> new MethodOverride<>(this));
-
-		override.inherit(method);
-
-		MethodOverride<T> mergeOverride = methods
-				.put(erasedMethodSignature(method.getName(), method.getParameterTypes()), override);
-		if (mergeOverride != null && mergeOverride != override) {
-			for (Method mergeMethod : mergeOverride.getMethods()) {
-				override.inherit(mergeMethod);
+			MethodOverride<T> mergeOverride = overrides
+					.put(erasedMethodSignature(method.getName(), method.getParameterTypes()), override);
+			if (mergeOverride != null && mergeOverride != override) {
+				for (Method mergeMethod : mergeOverride.getMethods()) {
+					override.inherit(mergeMethod);
+				}
 			}
 		}
 	}
 
-	public Stream<MethodDeclaration<T, ?>> getDeclarations() {
-		return methods.values().stream().flatMap(d -> streamOptional(d.getOverride())).distinct();
+	private void overrideMethods() {
+		classSignature.getMethods().filter(s -> !s.getModifiers().isStatic()).forEach(
+				this::overrideMethod);
+
+		overrides.values().stream().forEach(MethodOverride::overrideIfNecessary);
 	}
 
-	public Stream<ErasedMethodSignature> getSignatures() {
-		return methods.keySet().stream();
+	protected ExecutableToken<?, ?> getInvocable(Method method) {
+		return inheritedMethods.get(method);
 	}
 
-	public Stream<Map.Entry<ErasedMethodSignature, ? extends MethodDeclaration<T, ?>>> getSignatureDeclarations() {
-		return methods.entrySet().stream().filter(e -> e.getValue().getOverride().isPresent()).map(
-				e -> new SimpleEntry<>(e.getKey(), e.getValue().getOverride().get()));
+	protected void overrideMethod(MethodSignature<?> methodSignature) {
+		MethodOverride<T> override = overrides
+				.computeIfAbsent(methodSignature.erased(), k -> new MethodOverride<>(this));
+
+		override.override(methodSignature);
 	}
 
-	public ClassDeclaration<?, T> getClassDeclaration() {
-		return classDeclaration;
+	public Stream<MethodSignature<?>> getSignatures() {
+		return overrides.values().stream().flatMap(d -> streamOptional(d.getOverride())).distinct();
 	}
 }

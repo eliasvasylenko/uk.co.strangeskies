@@ -4,6 +4,4 @@ Bundle-Description: \
 	interceptor and wrapper/decorator.
 
 Private-Package: \
-	uk.co.strangeskies.osgi.logging,\
-	uk.co.strangeskies.osgi.text,\
 	uk.co.strangeskies.osgi.servicewrapper.impl

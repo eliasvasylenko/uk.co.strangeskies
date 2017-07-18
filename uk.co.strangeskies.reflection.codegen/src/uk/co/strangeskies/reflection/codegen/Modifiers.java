@@ -140,6 +140,14 @@ public class Modifiers {
 		return with(Modifier.NATIVE, isNative);
 	}
 
+	public boolean isInterface() {
+		return Modifier.isInterface(modifiers);
+	}
+
+	public Modifiers withInterface(boolean isInterface) {
+		return with(Modifier.INTERFACE, isInterface);
+	}
+
 	public boolean isDefault() {
 		return isDefault;
 	}
@@ -163,5 +171,9 @@ public class Modifiers {
 	@Override
 	public int hashCode() {
 		return hash(isDefault, modifiers);
+	}
+
+	public int toInt() {
+		return modifiers;
 	}
 }

@@ -128,19 +128,22 @@ public class TypeVariableSignature implements AnnotatedSignature<TypeVariableSig
 		this(name, emptySet(), emptySet());
 	}
 
-	protected TypeVariableSignature(String name, Set<AnnotatedType> bounds, Set<Annotation> annotations) {
+	protected TypeVariableSignature(
+			String name,
+			Set<AnnotatedType> bounds,
+			Set<Annotation> annotations) {
 		this.name = name;
 		this.bounds = bounds;
 		this.annotations = annotations;
 	}
 
 	@Override
-	public Stream<? extends Annotation> getAnnotations() {
+	public Stream<Annotation> getAnnotations() {
 		return annotations.stream();
 	}
 
 	@Override
-	public TypeVariableSignature withAnnotations(Collection<? extends Annotation> annotations) {
+	public TypeVariableSignature annotated(Collection<? extends Annotation> annotations) {
 		return new TypeVariableSignature(name, bounds, new HashSet<>(annotations));
 	}
 
@@ -152,7 +155,7 @@ public class TypeVariableSignature implements AnnotatedSignature<TypeVariableSig
 		return referenceTypeVariable(name);
 	}
 
-	public Stream<? extends AnnotatedType> getBounds() {
+	public Stream<AnnotatedType> getBounds() {
 		return bounds.stream();
 	}
 
@@ -174,24 +177,9 @@ public class TypeVariableSignature implements AnnotatedSignature<TypeVariableSig
 
 	@Override
 	public String toString() {
-		return getName() + (bounds == null ? "" : " extends " + bounds.stream().map(Objects::toString).collect(joining()));
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (obj == this)
-			return true;
-		if (!(obj instanceof TypeVariableSignature))
-			return false;
-
-		TypeVariableSignature that = (TypeVariableSignature) obj;
-
-		return AnnotatedSignature.equals(this, that) && Objects.equals(this.getName(), that.getName())
-				&& Objects.equals(this.bounds, that.bounds);
-	}
-
-	@Override
-	public int hashCode() {
-		return AnnotatedSignature.hashCode(this) ^ this.getName().hashCode() ^ bounds.hashCode();
+		return getName()
+				+ (bounds == null
+						? ""
+						: " extends " + bounds.stream().map(Objects::toString).collect(joining()));
 	}
 }

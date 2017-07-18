@@ -36,71 +36,70 @@ import java.util.Collections;
 import java.util.List;
 
 import uk.co.strangeskies.collection.ListDecorator;
-import uk.co.strangeskies.observable.ObservableImpl;
+import uk.co.strangeskies.observable.Observable;
+import uk.co.strangeskies.observable.Observation;
 import uk.co.strangeskies.observable.Observer;
 
-public abstract class UnmodifiableObservableList<S extends ObservableList<S, E>, E> extends ObservableImpl<S>
-		implements ListDecorator<E>, ObservableList<S, E> {
-	static class UnmodifiableObservableListImpl<E>
-			extends UnmodifiableObservableList<UnmodifiableObservableListImpl<E>, E> {
-		UnmodifiableObservableListImpl(ObservableList<?, ? extends E> component) {
-			super(component);
-		}
+public abstract class UnmodifiableObservableList<S extends ObservableList<S, E>, E>
+    implements ListDecorator<E>, ObservableList<S, E> {
+  static class UnmodifiableObservableListImpl<E>
+      extends UnmodifiableObservableList<UnmodifiableObservableListImpl<E>, E> {
+    UnmodifiableObservableListImpl(ObservableList<?, ? extends E> component) {
+      super(component);
+    }
 
-		@SuppressWarnings("unchecked")
-		@Override
-		public UnmodifiableObservableListImpl<E> copy() {
-			return new UnmodifiableObservableListImpl<>(((ObservableList<?, E>) getComponent()).copy());
-		}
-	}
+    @SuppressWarnings("unchecked")
+    @Override
+    public UnmodifiableObservableListImpl<E> copy() {
+      return new UnmodifiableObservableListImpl<>(((ObservableList<?, E>) getComponent()).copy());
+    }
+  }
 
-	private final List<E> component;
-	private final List<E> silentComponent;
+  private final List<E> component;
 
-	private final Observer<ObservableList<?, ? extends E>> observer;
-	private final ObservableImpl<Change<E>> changes;
-	private final Observer<? super Change<? extends E>> changeObserver;
+  private final Observable<S> observable;
+  private final Observable<Change<E>> changes;
 
-	@SuppressWarnings("unchecked")
-	protected UnmodifiableObservableList(ObservableList<?, ? extends E> component) {
-		this.component = Collections.unmodifiableList(component);
-		silentComponent = Collections.unmodifiableList(component.silent());
+  @SuppressWarnings("unchecked")
+  protected UnmodifiableObservableList(ObservableList<?, ? extends E> component) {
+    this.component = Collections.unmodifiableList(component);
 
-		observer = l -> fire(getThis());
-		component.addWeakObserver(observer);
+    observable = component.weakReference(this).map(m -> m.owner().getThis());
+    changes = component.changes().weakReference(this).map(m -> (Change<E>) m.message());
+  }
 
-		changes = new ObservableImpl<>();
-		changeObserver = c -> changes.fire((Change<E>) c);
-		component.changes().addWeakObserver(changeObserver);
-	}
+  @Override
+  public List<E> getComponent() {
+    return component;
+  }
 
-	@Override
-	public List<E> getComponent() {
-		return component;
-	}
+  @Override
+  public Observation<S> observe(Observer<? super S> observer) {
+    return observable.observe(observer);
+  }
 
-	@Override
-	public ObservableImpl<Change<E>> changes() {
-		return changes;
-	}
+  @Override
+  public Observable<Change<E>> changes() {
+    return changes;
+  }
 
-	@Override
-	public List<E> silent() {
-		return silentComponent;
-	}
+  @Override
+  public List<E> silent() {
+    return component;
+  }
 
-	@Override
-	public String toString() {
-		return getComponent().toString();
-	}
+  @Override
+  public String toString() {
+    return getComponent().toString();
+  }
 
-	@Override
-	public int hashCode() {
-		return getComponent().hashCode();
-	}
+  @Override
+  public int hashCode() {
+    return getComponent().hashCode();
+  }
 
-	@Override
-	public boolean equals(Object obj) {
-		return getComponent().equals(obj);
-	}
+  @Override
+  public boolean equals(Object obj) {
+    return getComponent().equals(obj);
+  }
 }

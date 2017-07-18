@@ -42,32 +42,32 @@ package uk.co.strangeskies.utility;
  *          The type of the property.
  */
 /* @I */
-public class IdentityProperty<T> implements Property<T, T> {
-	private/* @I */T value;
+public class IdentityProperty<T> implements Property<T> {
+  private/* @I */T value;
 
-	/**
-	 * Create an IndentityProperty with null as the initial value.
-	 */
-	public IdentityProperty() {}
+  /**
+   * Create an IndentityProperty with null as the initial value.
+   */
+  public IdentityProperty() {}
 
-	/**
-	 * Create an identity with the given initial value.
-	 * 
-	 * @param value
-	 *          The initial value for this property.
-	 */
-	public IdentityProperty(T value) {
-		this.value = value;
-	}
+  /**
+   * Create an identity with the given initial value.
+   * 
+   * @param value
+   *          The initial value for this property.
+   */
+  public IdentityProperty(T value) {
+    this.value = value;
+  }
 
-	@Override
-	public T set(/* @Mutable IdentityProperty<T> this, */T to) {
-		value = to;
-		return value;
-	}
+  @Override
+  public T set(/* @Mutable IdentityProperty<T> this, */T to) {
+    value = to;
+    return value;
+  }
 
-	@Override
-	public/* @I */T get() {
-		return value;
-	}
+  @Override
+  public/* @I */T get() {
+    return value;
+  }
 }

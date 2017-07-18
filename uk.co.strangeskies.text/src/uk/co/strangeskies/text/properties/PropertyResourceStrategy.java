@@ -32,21 +32,14 @@
  */
 package uk.co.strangeskies.text.properties;
 
-import uk.co.strangeskies.utility.Self;
-
 /**
  * A strategy for providing a {@link PropertyResource} over a given locale and a
  * list of resource description strings in priority order.
  * 
  * @author Elias N Vasylenko
  */
-public interface PropertyResourceStrategy<S extends PropertyResourceStrategy<S>> extends Self<S> {
+public interface PropertyResourceStrategy<S extends PropertyResourceStrategy<S>> {
 	Class<S> strategyClass();
 
 	<T> PropertyResource getPropertyResourceBundle(Class<T> accessor, String resource);
-
-	@Override
-	default S copy() {
-		return getThis();
-	}
 }

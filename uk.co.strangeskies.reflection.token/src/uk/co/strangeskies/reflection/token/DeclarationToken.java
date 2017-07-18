@@ -209,7 +209,7 @@ public interface DeclarationToken<S extends DeclarationToken<S>> {
 	@SuppressWarnings("unchecked")
 	default <U> TypeArgument<U> resolveTypeArgument(TypeParameter<U> parameter) {
 		return getAllTypeArguments()
-				.filter(a -> a.getParameter().equals(parameter))
+				.filter(a -> a.getParameter().equals(parameter.getType()))
 				.findAny()
 				.map(p -> (TypeArgument<U>) p)
 				.orElseThrow(

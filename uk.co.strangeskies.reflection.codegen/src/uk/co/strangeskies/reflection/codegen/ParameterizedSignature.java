@@ -36,7 +36,6 @@ import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
 
 import java.util.Collection;
 import java.util.Objects;
@@ -45,27 +44,17 @@ import java.util.stream.Stream;
 public interface ParameterizedSignature<S extends ParameterizedSignature<S>> extends AnnotatedSignature<S> {
 	Stream<? extends TypeVariableSignature> getTypeVariables();
 
-	default S withTypeVariables(String... names) {
-		return withTypeVariables(stream(names).map(TypeVariableSignature::typeVariableSignature).collect(toList()));
+	default S typeVariables(String... names) {
+		return typeVariables(stream(names).map(TypeVariableSignature::typeVariableSignature).collect(toList()));
 	}
 
-	default S withTypeVariables(TypeVariableSignature... typeVariables) {
-		return withTypeVariables(asList(typeVariables));
+	default S typeVariables(TypeVariableSignature... typeVariables) {
+		return typeVariables(asList(typeVariables));
 	}
 
-	S withTypeVariables(Collection<? extends TypeVariableSignature> typeVariables);
+	S typeVariables(Collection<? extends TypeVariableSignature> typeVariables);
 
 	static void appendTypeParametersTo(ParameterizedSignature<?> signature, StringBuilder builder) {
 		builder.append("<").append(signature.getTypeVariables().map(Objects::toString).collect(joining(", "))).append(">");
-	}
-
-	static boolean equals(ParameterizedSignature<?> first, ParameterizedSignature<?> second) {
-		return first == second || (AnnotatedSignature.equals(first, second)
-				&& Objects.equals(first.getTypeVariables().collect(toSet()), second.getTypeVariables().collect(toSet())));
-	}
-
-	static int hashCode(ParameterizedSignature<?> signature) {
-		return AnnotatedSignature.hashCode(signature)
-				^ signature.getTypeVariables().mapToInt(Objects::hashCode).reduce(0, (a, b) -> a ^ b);
 	}
 }

@@ -114,7 +114,7 @@ public abstract class ScopedObservableSet<S extends ObservableSet<S, E>, E>
 			S parent = getParentScope().get();
 			Set<E> silent = silent();
 
-			parent.changes().addObserver(change -> {
+			parent.changes().observe(change -> {
 				/*
 				 * If we add items to the parent which are currently in the child, we
 				 * must silently remove them, and modify the change event so that those
@@ -148,8 +148,8 @@ public abstract class ScopedObservableSet<S extends ObservableSet<S, E>, E>
 				/*
 				 * Forward change events
 				 */
-				changes().fire(effectiveChange);
-				fire(getThis());
+				changes().sendNext(effectiveChange);
+				sendNext(getThis());
 			});
 		}
 	}

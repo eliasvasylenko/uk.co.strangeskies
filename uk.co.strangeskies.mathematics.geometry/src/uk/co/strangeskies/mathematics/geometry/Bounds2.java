@@ -35,7 +35,7 @@ package uk.co.strangeskies.mathematics.geometry;
 import java.util.Collection;
 import java.util.function.Supplier;
 
-import uk.co.strangeskies.mathematics.Range;
+import uk.co.strangeskies.mathematics.Interval;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.values.Value;
@@ -73,11 +73,11 @@ public class Bounds2<V extends Value<V>> extends Bounds<Bounds2<V>, V> {
 		super(2, valueFactory);
 	}
 
-	public final Range<V> getRangeX() {
+	public final Interval<V> getRangeX() {
 		return super.getRange(0);
 	}
 
-	public final Range<V> getRangeY() {
+	public final Interval<V> getRangeY() {
 		return super.getRange(1);
 	}
 

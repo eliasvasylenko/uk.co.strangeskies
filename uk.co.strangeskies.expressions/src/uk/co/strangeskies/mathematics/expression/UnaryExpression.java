@@ -46,69 +46,35 @@ import java.util.function.Function;
  * @param <R>
  *          The type of the result.
  */
-public abstract class UnaryExpression<O, R> extends DependentExpression<R> {
-	private Expression<? extends O> operand;
-	private final Expression<? extends Function<? super O, ? extends R>> operation;
+public abstract class UnaryExpression<O, R> extends PassiveExpression<R> {
+  private final Expression<? extends O> operand;
+  private final Function<? super O, ? extends R> operation;
 
-	/**
-	 * @param operand
-	 *          An expression providing an operand for the function.
-	 * @param operation
-	 *          A expression providing a function transforming an operand into a
-	 *          value of this expression's type.
-	 */
-	public UnaryExpression(Expression<? extends O> operand,
-			Expression<? extends Function<? super O, ? extends R>> operation) {
-		super(operand, operation);
+  /**
+   * @param operand
+   *          An expression providing an operand for the function.
+   * @param operation
+   *          A function transforming an operand into a value of this expression's
+   *          type.
+   */
+  public UnaryExpression(
+      Expression<? extends O> operand,
+      Function<? super O, ? extends R> operation) {
+    super(operand);
 
-		this.operand = operand;
+    this.operand = operand;
+    this.operation = operation;
+  }
 
-		this.operation = operation;
-	}
+  /**
+   * @return The operand expression.
+   */
+  public Expression<? extends O> getOperand() {
+    return operand;
+  }
 
-	/**
-	 * @param operand
-	 *          An expression providing an operand for the function.
-	 * @param operation
-	 *          A function transforming an operand into a value of this
-	 *          expression's type.
-	 */
-	public UnaryExpression(Expression<? extends O> operand, Function<? super O, ? extends R> operation) {
-		super(operand);
-
-		this.operand = operand;
-
-		this.operation = Expression.immutable(operation);
-	}
-
-	/**
-	 * @return The operand expression.
-	 */
-	public Expression<? extends O> getOperand() {
-		return operand;
-	}
-
-	/**
-	 * @param operand
-	 *          A new operand.
-	 */
-	public void setOperand(Expression<? extends O> operand) {
-		try {
-			beginWrite();
-
-			if (this.operand != operand) {
-				removeDependency(this.operand);
-
-				this.operand = operand;
-				addDependency(this.operand);
-			}
-		} finally {
-			endWrite();
-		}
-	}
-
-	@Override
-	protected R evaluate() {
-		return operation.getValue().apply(operand.getValue());
-	}
+  @Override
+  protected R evaluate() {
+    return operation.apply(operand.getValue());
+  }
 }

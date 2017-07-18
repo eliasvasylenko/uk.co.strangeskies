@@ -35,58 +35,58 @@ package uk.co.strangeskies.mathematics.geometry;
 import java.util.Collection;
 import java.util.function.Supplier;
 
-import uk.co.strangeskies.mathematics.Range;
+import uk.co.strangeskies.mathematics.Interval;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector3;
 import uk.co.strangeskies.mathematics.values.Value;
 
 public class Bounds3<V extends Value<V>> extends Bounds<Bounds3<V>, V> {
-	public Bounds3(Bounds<?, V> other) {
-		super(other, 3);
-	}
+  public Bounds3(Bounds<?, V> other) {
+    super(other, 3);
+  }
 
-	public Bounds3(Bounds3<V> other) {
-		super(other);
-	}
+  public Bounds3(Bounds3<V> other) {
+    super(other);
+  }
 
-	public Bounds3(Vector<?, V> from, Vector<?, V> to) {
-		super(from, to, 3);
-	}
+  public Bounds3(Vector<?, V> from, Vector<?, V> to) {
+    super(from, to, 3);
+  }
 
-	public Bounds3(Vector3<V> from, Vector3<V> to) {
-		super(from, to);
-	}
+  public Bounds3(Vector3<V> from, Vector3<V> to) {
+    super(from, to);
+  }
 
-	public Bounds3(@SuppressWarnings("unchecked") Vector3<V>... points) {
-		super(points);
-	}
+  public Bounds3(@SuppressWarnings("unchecked") Vector3<V>... points) {
+    super(points);
+  }
 
-	public Bounds3(@SuppressWarnings("unchecked") Vector<?, V>... points) {
-		super(3, points);
-	}
+  public Bounds3(@SuppressWarnings("unchecked") Vector<?, V>... points) {
+    super(3, points);
+  }
 
-	public Bounds3(Collection<? extends Vector<?, V>> points) {
-		super(3, points);
-	}
+  public Bounds3(Collection<? extends Vector<?, V>> points) {
+    super(3, points);
+  }
 
-	public Bounds3(Supplier<V> valueFactory) {
-		super(3, valueFactory);
-	}
+  public Bounds3(Supplier<V> valueFactory) {
+    super(3, valueFactory);
+  }
 
-	public final Range<V> getRangeX() {
-		return super.getRange(0);
-	}
+  public final Interval<V> getRangeX() {
+    return super.getRange(0);
+  }
 
-	public final Range<V> getRangeY() {
-		return super.getRange(1);
-	}
+  public final Interval<V> getRangeY() {
+    return super.getRange(1);
+  }
 
-	public final Range<V> getRangeZ() {
-		return super.getRange(2);
-	}
+  public final Interval<V> getRangeZ() {
+    return super.getRange(2);
+  }
 
-	@Override
-	public final Bounds3<V> copy() {
-		return new Bounds3<>(this);
-	}
+  @Override
+  public final Bounds3<V> copy() {
+    return new Bounds3<>(this);
+  }
 }

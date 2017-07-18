@@ -32,10 +32,8 @@
  */
 package uk.co.strangeskies.mathematics.graph;
 
-import uk.co.strangeskies.text.properties.Localized;
-
 public interface GraphProperties {
-	Localized<String> alreadyConfigured(Object item);
+	String alreadyConfigured(Object item);
 
 	String edgeMap();
 

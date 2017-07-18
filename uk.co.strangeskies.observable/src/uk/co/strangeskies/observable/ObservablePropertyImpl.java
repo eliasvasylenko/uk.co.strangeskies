@@ -32,9 +32,6 @@
  */
 package uk.co.strangeskies.observable;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 
@@ -48,106 +45,84 @@ import java.util.function.BiPredicate;
  * @author Elias N Vasylenko
  * @param <T>
  *          the type of event message to produce
- * @param <R>
- *          the type we may assign from
- * 
  */
-public class ObservablePropertyImpl<T extends R, R> implements ObservableProperty<T, R> {
-	protected class ChangeImpl implements Change<T> {
-		T previous;
-		T current;
+public class ObservablePropertyImpl<T> extends HotObservable<T> implements ObservableProperty<T> {
+  protected class ChangeImpl implements Change<T> {
+    T previous;
+    T current;
 
-		@Override
-		public T newValue() {
-			if (currentChange == this) {
-				synchronized (ObservablePropertyImpl.this) {
-					if (currentChange == this) {
-						currentChange = null;
-					}
-				}
-			}
-			return current;
-		}
+    @Override
+    public T newValue() {
+      if (currentChange == this) {
+        synchronized (ObservablePropertyImpl.this) {
+          if (currentChange == this) {
+            currentChange = null;
+          }
+        }
+      }
+      return current;
+    }
 
-		@Override
-		public T previousValue() {
-			return previous;
-		}
-	}
+    @Override
+    public T previousValue() {
+      return previous;
+    }
+  }
 
-	private T value;
-	private final BiFunction<R, T, T> assignmentFunction;
-	private final BiPredicate<T, T> equality;
-	private final Set<Observer<? super T>> observers = new LinkedHashSet<>();
-	private final ObservableImpl<Change<T>> changeObservable = new ObservableImpl<>();
-	private ChangeImpl currentChange;
+  private T value;
+  private final BiFunction<T, T, T> assignmentFunction;
+  private final BiPredicate<T, T> equality;
+  private final HotObservable<Change<T>> changeObservable = new HotObservable<>();
+  private ChangeImpl currentChange;
 
-	protected ObservablePropertyImpl(BiFunction<R, T, T> assignmentFunction, BiPredicate<T, T> equality, T initialValue) {
-		this.assignmentFunction = assignmentFunction;
-		this.equality = equality;
-		value = initialValue;
-	}
+  protected ObservablePropertyImpl(
+      BiFunction<T, T, T> assignmentFunction,
+      BiPredicate<T, T> equality,
+      T initialValue) {
+    this.assignmentFunction = assignmentFunction;
+    this.equality = equality;
+    value = initialValue;
+  }
 
-	@Override
-	public boolean addObserver(Observer<? super T> observer) {
-		return observers.add(observer);
-	}
+  @Override
+  public Observable<Change<T>> changes() {
+    return changeObservable;
+  }
 
-	@Override
-	public boolean removeObserver(Observer<? super T> observer) {
-		return observers.remove(observer);
-	}
+  @Override
+  public void sendNext(T item) {
+    set(item);
+  }
 
-	@Override
-	public Observable<Change<T>> changes() {
-		return changeObservable;
-	}
+  /**
+   * Fire the given message to all observers.
+   * 
+   * @param value
+   *          the message event to send
+   */
+  @Override
+  public synchronized T set(T value) {
+    T previous = this.value;
+    this.value = assignmentFunction.apply(value, this.value);
 
-	/**
-	 * Remove all observers from forwarding.
-	 */
-	public void clearObservers() {
-		observers.clear();
-	}
+    if (!equality.test(this.value, previous)) {
+      super.sendNext(this.value);
 
-	/**
-	 * Fire the given message to all observers.
-	 * 
-	 * @param value
-	 *          the message event to send
-	 */
-	@Override
-	public synchronized T set(R value) {
-		T previous = this.value;
-		this.value = assignmentFunction.apply(value, this.value);
+      ChangeImpl currentChange = this.currentChange;
+      if (currentChange == null) {
+        this.currentChange = new ChangeImpl();
+        this.currentChange.previous = previous;
+        changeObservable.sendNext(this.currentChange);
+      } else {
+        currentChange.current = this.value;
+      }
+    }
 
-		if (!equality.test(this.value, previous)) {
-			for (Observer<? super T> listener : new ArrayList<>(observers)) {
-				listener.notify(this.value);
-			}
+    return previous;
+  }
 
-			ChangeImpl currentChange = this.currentChange;
-			if (currentChange == null) {
-				this.currentChange = new ChangeImpl();
-				this.currentChange.previous = previous;
-				changeObservable.fire(this.currentChange);
-			} else {
-				currentChange.current = this.value;
-			}
-		}
-
-		return previous;
-	}
-
-	@Override
-	public T get() {
-		return value;
-	}
-
-	/**
-	 * @return a list of all observers attached to this observable
-	 */
-	public Set<Observer<? super T>> getObservers() {
-		return observers;
-	}
+  @Override
+  public T get() {
+    return value;
+  }
 }

@@ -32,15 +32,39 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-public class AnnotatedDeclaration<S extends AnnotatedSignature<?>> implements Declaration<S> {
-	protected final S signature;
+import static java.util.Collections.unmodifiableMap;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
+
+import java.lang.annotation.Annotation;
+import java.util.Map;
+
+public class AnnotatedDeclaration<S extends AnnotatedSignature<?>>
+		implements Declaration<S> {
+	private final S signature;
+
+	private final Map<Class<? extends Annotation>, Annotation> annotations;
 
 	public AnnotatedDeclaration(S signature) {
 		this.signature = signature;
+		this.annotations = unmodifiableMap(
+				signature.getAnnotations().collect(
+						toMap(Annotation::annotationType, identity())));
 	}
 
 	@Override
 	public S getSignature() {
 		return signature;
 	}
+
+	@SuppressWarnings("unchecked")
+	public final <U extends Annotation> U getAnnotation(
+			Class<U> annotationClass) {
+		return (U) annotations.get(annotationClass);
+	}
+
+	public final Annotation[] getAnnotations() {
+		return annotations.values().toArray(new Annotation[annotations.size()]);
+	}
+
 }

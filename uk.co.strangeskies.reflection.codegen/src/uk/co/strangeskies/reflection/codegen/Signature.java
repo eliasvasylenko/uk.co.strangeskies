@@ -32,4 +32,19 @@
  */
 package uk.co.strangeskies.reflection.codegen;
 
-public interface Signature<S extends Signature<S>> {}
+/**
+ * An object describing a Java language source element for a static declaration.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <S>
+ *          the self-bounded type of the signature
+ */
+public interface Signature<S extends Signature<S>> {
+	/**
+	 * @return A single-line, canonical string representation of the signature in
+	 *         the format of a Java language source element.
+	 */
+	@Override
+	String toString();
+}

@@ -32,6 +32,7 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static java.util.Arrays.asList;
 import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
 
 import java.lang.annotation.Annotation;
@@ -41,6 +42,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -48,8 +50,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import uk.co.strangeskies.collection.tuple.Pair;
 import uk.co.strangeskies.reflection.Types.TypeParser;
 import uk.co.strangeskies.text.EscapeFormatter;
 import uk.co.strangeskies.text.parsing.Parser;
@@ -98,39 +100,14 @@ public final class Annotations {
 
 		List<String> annotationProperties = new ArrayList<>();
 
-		for (Method propertyMethod : annotationType.getDeclaredMethods()) {
-			propertyMethod.setAccessible(true);
-
-			Object value;
-			try {
-				value = propertyMethod.invoke(annotation);
-			} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-				throw new IllegalArgumentException(e);
-			}
-			Object defaultValue = propertyMethod.getDefaultValue();
-
-			/*
-			 * For each method declared on the annotation type...
-			 */
-			boolean equal;
-			if (propertyMethod.getReturnType().isArray()) {
-				equal = Arrays.equals((Object[]) value, (Object[]) defaultValue);
-			} else {
-				equal = Objects.equals(value, defaultValue);
-			}
-
-			/*
-			 * If value is not equal to default, output:
-			 */
-			if (!equal) {
-				annotationProperties.add(
-						new StringBuilder()
-								.append(propertyMethod.getName())
-								.append(" = ")
-								.append(toPropertyString(value, imports))
-								.toString());
-			}
-		}
+		getModifiedProperties(annotation).forEach(property -> {
+			annotationProperties.add(
+					new StringBuilder()
+							.append(property.name())
+							.append(" = ")
+							.append(toPropertyString(property.value(), imports))
+							.toString());
+		});
 
 		if (!annotationProperties.isEmpty()) {
 			builder
@@ -226,7 +203,8 @@ public final class Annotations {
 				} catch (ReflectionException e) {
 					Object finalValue = propertyValue;
 					throw new ReflectionException(
-							REFLECTION_PROPERTIES.invalidAnnotationValue(annotationClass, method.getName(), finalValue),
+							REFLECTION_PROPERTIES
+									.invalidAnnotationValue(annotationClass, method.getName(), finalValue),
 							e);
 				}
 
@@ -245,6 +223,56 @@ public final class Annotations {
 		return castProperties;
 	}
 
+	public static Stream<AnnotationProperty> getProperties(Annotation annotation) {
+		return Arrays.stream(annotation.annotationType().getDeclaredMethods()).map(propertyMethod -> {
+			propertyMethod.setAccessible(true);
+
+			String name = propertyMethod.getName();
+			Object value;
+			try {
+				value = propertyMethod.invoke(annotation);
+			} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+				throw new IllegalArgumentException(e);
+			}
+
+			return new AnnotationProperty(name, value);
+		});
+	}
+
+	public static Stream<AnnotationProperty> getModifiedProperties(Annotation annotation) {
+		return Arrays.stream(annotation.annotationType().getDeclaredMethods()).flatMap(
+				propertyMethod -> {
+					propertyMethod.setAccessible(true);
+
+					String name = propertyMethod.getName();
+					Object value;
+					try {
+						value = propertyMethod.invoke(annotation);
+					} catch (IllegalAccessException | IllegalArgumentException
+							| InvocationTargetException e) {
+						throw new IllegalArgumentException(e);
+					}
+
+					Object defaultValue = propertyMethod.getDefaultValue();
+
+					/*
+					 * For each method declared on the annotation type...
+					 */
+					boolean equal;
+					if (propertyMethod.getReturnType().isArray()) {
+						equal = Arrays.equals((Object[]) value, (Object[]) defaultValue);
+					} else {
+						equal = Objects.equals(value, defaultValue);
+					}
+
+					if (equal) {
+						return Stream.empty();
+					} else {
+						return Stream.of(new AnnotationProperty(name, value));
+					}
+				});
+	}
+
 	/**
 	 * Try to instantiate an instance of a given annotation type, with default
 	 * values for any properties.
@@ -257,6 +285,22 @@ public final class Annotations {
 	 */
 	public static <T extends Annotation> T from(Class<T> annotationClass) {
 		return from(annotationClass, new HashMap<>());
+	}
+
+	public static <T extends Annotation> T from(
+			Class<T> annotationClass,
+			AnnotationProperty... properties) {
+		return from(annotationClass, asList(properties));
+	}
+
+	public static <T extends Annotation> T from(
+			Class<T> annotationClass,
+			Collection<? extends AnnotationProperty> properties) {
+		Map<String, Object> propertyMap = new HashMap<>();
+		for (AnnotationProperty property : properties) {
+			propertyMap.put(property.name(), property.value());
+		}
+		return from(annotationClass, propertyMap);
 	}
 
 	/**
@@ -292,7 +336,7 @@ public final class Annotations {
 							 * Check equality
 							 */
 							for (Method propertyMethod : annotationClass.getDeclaredMethods()) {
-								Object value = castProperties.get(proxy);
+								Object value = castProperties.get(propertyMethod);
 								Object otherValue = propertyMethod.invoke(args[0]);
 
 								/*
@@ -379,7 +423,7 @@ public final class Annotations {
 		private final Parser<Annotation> annotation;
 		private final Parser<List<Annotation>> annotationList;
 		private final Parser<Map<String, Object>> propertyMap;
-		private final Parser<Pair<String, Object>> property;
+		private final Parser<AnnotationProperty> property;
 		private final Parser<Object> propertyValue;
 
 		private AnnotationParser(Imports imports) {
@@ -399,19 +443,19 @@ public final class Annotations {
 
 			property = Parser.matching("[_a-zA-Z][_a-zA-Z0-9]*").append("\\s*=\\s*").appendTransform(
 					propertyValue,
-					(s, t) -> new Pair<>(s, t));
+					(s, t) -> new AnnotationProperty(s, t));
 
 			propertyMap = Parser
 					.proxy(this::getPropertyMap)
 					.prepend("\\s*,\\s*")
 					.orElse(HashMap::new)
-					.prepend(property, (m, p) -> m.put(p.getLeft(), p.getRight()))
+					.prepend(property, (m, p) -> m.put(p.name(), p.value()))
 					.orElse(HashMap::new);
 
 			annotation = typeParser
 					.rawType()
 					.prepend("@")
-					.<Class<? extends Annotation>> transform(t -> t.asSubclass(Annotation.class))
+					.<Class<? extends Annotation>>transform(t -> t.asSubclass(Annotation.class))
 					.appendTransform(
 							propertyMap.prepend("\\(\\s*").append("\\s*\\)").orElse(Collections::emptyMap),
 							(a, m) -> Annotations.from(a, m));
@@ -433,7 +477,7 @@ public final class Annotations {
 		 * 
 		 * @return A pair representing the properties name and value
 		 */
-		public Parser<Pair<String, Object>> getProperty() {
+		public Parser<AnnotationProperty> getProperty() {
 			return property;
 		}
 

@@ -1,7 +1,5 @@
 -buildpath: \
 	uk.co.strangeskies.collections;version=snapshot,\
-	uk.co.strangeskies.utilities;version=snapshot,\
-	uk.co.strangeskies.observable;version=snapshot,\
-	uk.co.strangeskies.text;version=snapshot
+	uk.co.strangeskies.utilities;version=snapshot
 
 -sub: *.bnd

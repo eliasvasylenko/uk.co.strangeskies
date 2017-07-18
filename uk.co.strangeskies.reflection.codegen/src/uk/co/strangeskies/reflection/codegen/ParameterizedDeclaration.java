@@ -64,131 +64,67 @@ s * Copyright (C) 2017 Elias N Vasylenko <eliasvasylenko@strangeskies.co.uk>
  */
 package uk.co.strangeskies.reflection.codegen;
 
-import static java.util.Collections.unmodifiableMap;
-import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.throwingMerger;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
-import static uk.co.strangeskies.reflection.TypeVariables.typeVariableExtending;
-import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
+import static uk.co.strangeskies.reflection.Types.getErasedType;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
-import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.TypeVariable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
-import uk.co.strangeskies.reflection.AnnotatedTypeSubstitution;
-import uk.co.strangeskies.reflection.AnnotatedTypeVariables;
-import uk.co.strangeskies.utility.Isomorphism;
+import org.objectweb.asm.signature.SignatureVisitor;
+import org.objectweb.asm.signature.SignatureWriter;
 
 public class ParameterizedDeclaration<S extends ParameterizedSignature<?>>
-		extends AnnotatedDeclaration<S> implements GenericDeclaration {
-	private final List<TypeVariable<? extends ParameterizedDeclaration<S>>> typeVariables;
-	private final Map<Class<? extends Annotation>, Annotation> annotations;
-
-	private final Isomorphism isomorphism;
-	private final AnnotatedTypeSubstitution boundSubstitution;
-
-	public ParameterizedDeclaration(S signature) {
+		extends AnnotatedDeclaration<S> {
+	public ParameterizedDeclaration(S signature, SignatureWriter writer) {
 		super(signature);
 
-		Map<String, TypeVariableSignature> typeVariableSignatures = signature
-				.getTypeVariables()
-				.collect(toMap(TypeVariableSignature::getName, identity()));
+		signature.getTypeVariables().forEach(typeVariable -> {
+			validateBounds(typeVariable);
+			writeTypeVariable(typeVariable, writer);
+		});
+	}
 
-		isomorphism = new Isomorphism();
-		List<TypeVariable<? extends ParameterizedDeclaration<S>>> typeVariables = new ArrayList<>(
-				typeVariableSignatures.size());
+	private void writeTypeVariable(TypeVariableSignature typeVariable, SignatureWriter writer) {
+		writer.visitFormalTypeParameter(typeVariable.getName());
 
-		/*
-		 * create type substitutions mapping out TypeVariableSignatures to their
-		 * actual TypeVariables.
-		 */
-		boundSubstitution = new AnnotatedTypeSubstitution().where(
-				t -> t.getType() instanceof TypeVariableSignature.Reference
-						|| t.getType() instanceof TypeVariable<?>,
+		if (typeVariable.getBounds().count() == 0) {
+			SignatureVisitor classBoundWriter = writer.visitClassBound();
+			ClassWritingContext.visitTypeSignature(classBoundWriter, Object.class);
+		} else {
+			typeVariable
+					.getBounds()
+					.filter(
+							b -> b.getType() instanceof TypeVariable<?>
+									|| !getErasedType(b.getType()).isInterface())
+					.reduce(throwingMerger())
+					.ifPresent(bound -> {
+						SignatureVisitor classBoundWriter = writer.visitClassBound();
+						ClassWritingContext.visitTypeSignature(classBoundWriter, bound.getType());
+					});
 
-				t -> {
-					TypeVariableSignature typeVariableSignature = typeVariableSignatures
-							.get(t.getType().getTypeName());
-
-					if (typeVariableSignature == null) {
-						throw new CodeGenerationException(
-								CODEGEN_PROPERTIES.cannotResolveTypeVariable(t.getType().getTypeName(), signature));
-					}
-
-					TypeVariable<?> typeVariable = substituteTypeVariableSignature(typeVariableSignature);
-
-					return AnnotatedTypeVariables.over(typeVariable, t.getAnnotations());
-				});
-
-		/*
-		 * Perform the substitution for each signature
-		 */
-		for (TypeVariableSignature typeVariableSignature : typeVariableSignatures.values()) {
-			typeVariables.add(substituteTypeVariableSignature(typeVariableSignature));
+			typeVariable
+					.getBounds()
+					.filter(
+							b -> !(b.getType() instanceof TypeVariable<?>)
+									&& getErasedType(b.getType()).isInterface())
+					.forEach(bound -> {
+						SignatureVisitor interfaceBoundWriter = writer.visitInterfaceBound();
+						ClassWritingContext.visitTypeSignature(interfaceBoundWriter, bound.getType());
+					});
 		}
-		this.typeVariables = Collections.unmodifiableList(typeVariables);
-
-		/*
-		 * Check consistency of type bounds
-		 */
-		for (TypeVariable<?> typeVariable : typeVariables) {
-			intersectionOf(typeVariable.getBounds());
-		}
-
-		this.annotations = unmodifiableMap(
-				signature.getAnnotations().collect(toMap(Annotation::annotationType, identity())));
 	}
 
-	protected AnnotatedType substituteTypeVariableSignatures(AnnotatedType annotatedType) {
-		return boundSubstitution.resolve(annotatedType, isomorphism);
-	}
-
-	protected TypeVariable<? extends ParameterizedDeclaration<S>> substituteTypeVariableSignature(
-			TypeVariableSignature typeVariable) {
-		List<AnnotatedType> bounds = typeVariable
-				.getBounds()
-				.map(b -> boundSubstitution.resolve(b, isomorphism))
-				.collect(toList());
-
-		return typeVariableExtending(this, typeVariable.getName(), bounds);
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public final <U extends Annotation> U getAnnotation(Class<U> annotationClass) {
-		return (U) annotations.get(annotationClass);
-	}
-
-	@Override
-	public final Annotation[] getAnnotations() {
-		return annotations.values().toArray(new Annotation[annotations.size()]);
-	}
-
-	@Override
-	public final Annotation[] getDeclaredAnnotations() {
-		return getAnnotations();
-	}
-
-	@Override
-	public TypeVariable<?>[] getTypeParameters() {
-		return typeVariables.toArray(new TypeVariable<?>[typeVariables.size()]);
-	}
-
-	public Stream<? extends TypeVariable<? extends ParameterizedDeclaration<S>>> getTypeVariables() {
-		return typeVariables.stream();
+	private void validateBounds(TypeVariableSignature typeVariable) {
+		intersectionOf(
+				typeVariable.getBounds().map(AnnotatedType::getType).collect(Collectors.toList()));
 	}
 
 	/**
 	 * @return true if the declaration has type parameters, false otherwise
 	 */
 	public boolean isParameterized() {
-		return !typeVariables.isEmpty();
+		return getSignature().getTypeVariables().count() > 0;
 	}
 }
