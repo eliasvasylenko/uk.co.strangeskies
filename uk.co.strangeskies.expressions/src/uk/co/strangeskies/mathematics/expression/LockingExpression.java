@@ -111,8 +111,7 @@ public abstract class LockingExpression<T> extends DependentExpression<T> implem
   }
 
   @Override
-  public Observation<Expression<? extends T>> observe(
-      Observer<? super Expression<? extends T>> observer) {
+  public Observation observe(Observer<? super Expression<? extends T>> observer) {
     getReadLock().lock();
 
     try {

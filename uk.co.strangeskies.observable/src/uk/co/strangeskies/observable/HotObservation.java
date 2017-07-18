@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.observable;
 
-public class HotObservation<M> implements Observation<M> {
+public class HotObservation<M> implements Observation {
   private final HotObservable<M> observable;
   private final Observer<? super M> observer;
   private boolean disposed;

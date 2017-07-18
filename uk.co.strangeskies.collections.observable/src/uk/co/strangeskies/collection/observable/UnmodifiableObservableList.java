@@ -74,7 +74,7 @@ public abstract class UnmodifiableObservableList<S extends ObservableList<S, E>,
   }
 
   @Override
-  public Observation<S> observe(Observer<? super S> observer) {
+  public Observation observe(Observer<? super S> observer) {
     return observable.observe(observer);
   }
 

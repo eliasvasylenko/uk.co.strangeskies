@@ -40,7 +40,7 @@ public class ExecutorObservable<M> implements Observable<M> {
   }
 
   @Override
-  public Observation<M> observe(Observer<? super M> observer) {
+  public Observation observe(Observer<? super M> observer) {
     // TODO Auto-generated method stub
     return null;
   }

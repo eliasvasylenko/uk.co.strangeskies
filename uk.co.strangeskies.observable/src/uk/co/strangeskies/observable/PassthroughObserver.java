@@ -32,48 +32,56 @@
  */
 package uk.co.strangeskies.observable;
 
-import java.util.function.Predicate;
+import java.util.function.Supplier;
 
-public class TerminatingObservation<M> extends PassthroughObservation<M, M> {
-  private final Observer<? super M> observer;
-  private final Predicate<? super M> condition;
+/**
+ * This is a helper class for implementing {@link Observable passive
+ * observables}.
+ * <p>
+ * A passive observable is one which does not maintain a set of observations or
+ * manage its own events, instead deferring to one or more upstream observables.
+ * When an observer subscribes to a passive observable, typically the observer
+ * is decorated, and the decorator is then subscribed to the parents. This way
+ * the decorator can modify, inspect, or filter events as appropriate before
+ * passing them back through to the original observer.
+ * <p>
+ * This class is a partial implementation of such a decorator.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <T>
+ *          The message type of the upstream observable
+ * @param <U>
+ *          The message type of the downstream observer
+ */
+public abstract class PassthroughObserver<T, U> extends SingleUseObserver<T> {
+  private final Supplier<Observer<? super U>> downstreamObserver;
 
-  public TerminatingObservation(
-      Observable<? extends M> parentObservable,
-      Observer<? super M> observer,
-      Predicate<? super M> condition) {
-    this.observer = observer;
-    this.condition = condition;
+  public PassthroughObserver(Observer<? super U> downstreamObserver) {
+    this(() -> downstreamObserver);
+  }
 
-    passthroughObservation(parentObservable);
+  public PassthroughObserver(Supplier<Observer<? super U>> downstreamObserver) {
+    this.downstreamObserver = downstreamObserver;
+  }
+
+  public Observer<? super U> getDownstreamObserver() {
+    return downstreamObserver.get();
   }
 
   @Override
-  public void onObserve() {
-    observer.onObserve(this);
-  }
-
-  @Override
-  public void onNext(M message) {
-    if (condition.test(message)) {
-      observer.onComplete();
-      dispose();
-    } else
-      observer.onNext(message);
+  public void onObserve(Observation observation) {
+    super.onObserve(observation);
+    getDownstreamObserver().onObserve(observation);
   }
 
   @Override
   public void onComplete() {
-    observer.onComplete();
+    getDownstreamObserver().onComplete();
   }
 
   @Override
   public void onFail(Throwable t) {
-    observer.onFail(t);
-  }
-
-  @Override
-  public String toString() {
-    return getParentObservation() + " -> " + getClass().getSimpleName();
+    getDownstreamObserver().onFail(t);
   }
 }

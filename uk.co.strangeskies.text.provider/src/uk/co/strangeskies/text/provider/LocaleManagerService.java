@@ -107,7 +107,7 @@ public class LocaleManagerService implements LocaleManager, LocaleProvider {
   }
 
   @Override
-  public Observation<Locale> observe(Observer<? super Locale> observer) {
+  public Observation observe(Observer<? super Locale> observer) {
     return component.observe();
   }
 

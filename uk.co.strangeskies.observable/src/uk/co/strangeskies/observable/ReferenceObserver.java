@@ -32,40 +32,43 @@
  */
 package uk.co.strangeskies.observable;
 
-import java.util.function.Predicate;
+import java.lang.ref.Reference;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
-public class FilteringObservation<M> extends PassthroughObservation<M, M> {
-  private final Observer<? super M> observer;
-  private final Predicate<? super M> condition;
+public class ReferenceObserver<M> extends PassthroughObserver<M, M> {
+  public ReferenceObserver(
+      Observer<? super M> downstreamObserver,
+      Function<Observer<? super M>, Reference<Observer<? super M>>> referenceFunction) {
+    super(referenceFunction.apply(downstreamObserver)::get);
+  }
 
-  public FilteringObservation(
-      Observable<? extends M> parentObservable,
-      Observer<? super M> observer,
-      Predicate<? super M> condition) {
-    this.observer = observer;
-    this.condition = condition;
-
-    passthroughObservation(parentObservable);
+  public void withObserver(Consumer<Observer<? super M>> action) {
+    Observer<? super M> observer = getDownstreamObserver();
+    if (observer != null) {
+      action.accept(observer);
+    } else {
+      getObservation().dispose();
+    }
   }
 
   @Override
-  public void onObserve() {
-    observer.onObserve(this);
+  public void onObserve(Observation observation) {
+    withObserver(o -> o.onObserve(observation));
   }
 
   @Override
   public void onNext(M message) {
-    if (condition.test(message))
-      observer.onNext(message);
+    withObserver(o -> o.onNext(message));
   }
 
   @Override
   public void onComplete() {
-    observer.onComplete();
+    withObserver(o -> o.onComplete());
   }
 
   @Override
   public void onFail(Throwable t) {
-    observer.onFail(t);
+    withObserver(o -> o.onFail(t));
   }
 }

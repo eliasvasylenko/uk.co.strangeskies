@@ -40,8 +40,8 @@ public class IterableObservable<M> extends HotObservable<M> {
   }
 
   @Override
-  public Observation<M> observe(Observer<? super M> observer) {
-    Observation<M> observation = super.observe(observer);
+  public Observation observe(Observer<? super M> observer) {
+    Observation observation = super.observe(observer);
     for (M message : messages) {
       try {
         observer.onNext(message);

@@ -32,49 +32,44 @@
  */
 package uk.co.strangeskies.observable;
 
-import java.util.concurrent.Executor;
+import static java.util.Objects.requireNonNull;
 
-public class LatestObservation<M> extends PassthroughObservation<M, M> {
-  private final Observer<? super M> observer;
-  private final Executor executor;
+import java.lang.ref.Reference;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
-  public LatestObservation(Observer<? super M> observer, Executor executor) {
-    this.observer = observer;
-    this.executor = executor;
+public class ReferenceOwnedObserver<O, M> extends PassthroughObserver<M, OwnedMessage<O, M>> {
+  private final Reference<O> ownerReference;
+
+  public ReferenceOwnedObserver(
+      Observer<? super OwnedMessage<O, M>> upstreamObserver,
+      O owner,
+      Function<O, Reference<O>> referenceFunction) {
+    super(upstreamObserver);
+    this.ownerReference = requireNonNull(referenceFunction.apply(owner));
   }
 
-  private Runnable latest;
-
-  @Override
-  public void onObserve() {
-    observer.onObserve(this);
+  public void withOwner(Consumer<O> action) {
+    O owner = ownerReference.get();
+    if (owner != null) {
+      action.accept(owner);
+    } else {
+      getObservation().dispose();
+    }
   }
 
   @Override
   public void onNext(M message) {
-    setLatest(() -> observer.onNext(message));
-  }
+    withOwner(o -> getDownstreamObserver().onNext(new OwnedMessage<O, M>() {
+      @Override
+      public O owner() {
+        return o;
+      }
 
-  @Override
-  public void onComplete() {
-    setLatest(observer::onComplete);
-  }
-
-  @Override
-  public void onFail(Throwable t) {
-    setLatest(() -> observer.onFail(t));
-  }
-
-  public synchronized void setLatest(Runnable item) {
-    boolean ready = latest == null;
-    latest = item;
-    if (ready)
-      executor.execute(() -> getLatest().run());
-  }
-
-  private synchronized Runnable getLatest() {
-    Runnable latest = this.latest;
-    this.latest = null;
-    return latest;
+      @Override
+      public M message() {
+        return message;
+      }
+    }));
   }
 }

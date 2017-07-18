@@ -71,7 +71,7 @@ public abstract class SynchronizedObservableSet<S extends ObservableSet<S, E>, E
 
     changes = new HotObservable<Change<E>>() {
       @Override
-      public Observation<Change<E>> observe(Observer<? super Change<E>> observer) {
+      public Observation observe(Observer<? super Change<E>> observer) {
         synchronized (getMutex()) {
           return super.observe(observer);
         }
@@ -127,7 +127,7 @@ public abstract class SynchronizedObservableSet<S extends ObservableSet<S, E>, E
   }
 
   @Override
-  public Observation<S> observe(Observer<? super S> observer) {
+  public Observation observe(Observer<? super S> observer) {
     synchronized (getMutex()) {
       return super.observe(observer);
     }

@@ -97,8 +97,8 @@ public interface Localized<T> extends ObservableValue<T> {
       }
 
       @Override
-      public Observation<T> observe(Observer<? super T> observer) {
-        Observation<T> observation = new Observation<T>() {
+      public Observation observe(Observer<? super T> observer) {
+        Observation observation = new Observation() {
           private boolean disposed = false;
 
           @Override

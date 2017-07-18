@@ -32,39 +32,58 @@
  */
 package uk.co.strangeskies.observable;
 
-import java.util.function.Function;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
-public class MappingObservation<T, M> extends PassthroughObservation<T, M> {
-  private final Observer<? super M> observer;
-  private final Function<? super T, ? extends M> mapping;
+/**
+ * This is a helper class for implementing {@link Observable passive
+ * observables}.
+ * <p>
+ * A passive observable is one which does not maintain a set of observations or
+ * manage its own events, instead deferring to one or more upstream observables.
+ * When an observer subscribes to a passive observable, typically the observer
+ * is decorated, and the decorator is then subscribed to the parents. This way
+ * the decorator can modify, inspect, or filter events as appropriate before
+ * passing them back through to the original observer.
+ * <p>
+ * This class is a partial implementation of such a decorator.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <T>
+ *          The message type of the upstream observable and downstream observer
+ */
+public class MultiPassthroughObserver<T> implements Observer<T> {
+  private final List<Observer<? super T>> downstreamObservers;
 
-  public MappingObservation(
-      Observable<? extends T> parentObservable,
-      Observer<? super M> observer,
-      Function<? super T, ? extends M> mapping) {
-    this.observer = observer;
-    this.mapping = mapping;
+  @SafeVarargs
+  public MultiPassthroughObserver(Observer<? super T>... downstreamObservers) {
+    this.downstreamObservers = Arrays.asList(downstreamObservers);
+  }
 
-    passthroughObservation(parentObservable);
+  public MultiPassthroughObserver(Collection<Observer<? super T>> downstreamObservers) {
+    this.downstreamObservers = new ArrayList<>(downstreamObservers);
   }
 
   @Override
-  public void onObserve() {
-    observer.onObserve(this);
+  public void onObserve(Observation observation) {
+    downstreamObservers.forEach(o -> o.onObserve(observation));
   }
 
   @Override
   public void onNext(T message) {
-    observer.onNext(mapping.apply(message));
+    downstreamObservers.forEach(o -> o.onNext(message));
   }
 
   @Override
   public void onComplete() {
-    observer.onComplete();
+    downstreamObservers.forEach(o -> o.onComplete());
   }
 
   @Override
   public void onFail(Throwable t) {
-    observer.onFail(t);
+    downstreamObservers.forEach(o -> o.onFail(t));
   }
 }

@@ -39,7 +39,7 @@ import uk.co.strangeskies.mathematics.expression.Expression;
 import uk.co.strangeskies.observable.Observation;
 
 public class ExpressionBuffer<F extends Expression<?>, T> extends AbstractFunctionBuffer<F, T> {
-  private Observation<? extends Expression<?>> backObserver;
+  private Observation backObserver;
 
   public ExpressionBuffer(
       T front,

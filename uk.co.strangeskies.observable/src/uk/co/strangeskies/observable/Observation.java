@@ -32,10 +32,14 @@
  */
 package uk.co.strangeskies.observable;
 
-public interface Observation<M> extends Disposable {
+public interface Observation extends Disposable {
   default void request(long count) {
     throw new MissingBackpressureException(this);
   }
 
   default void requestUnbounded() {}
+
+  default void requestNext() {
+    request(1);
+  }
 }

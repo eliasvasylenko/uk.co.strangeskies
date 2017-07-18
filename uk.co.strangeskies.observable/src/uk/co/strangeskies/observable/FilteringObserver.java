@@ -32,47 +32,19 @@
  */
 package uk.co.strangeskies.observable;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.function.Predicate;
 
-public class MergingObservable<M> implements Observable<M> {
-  private final Observable<? extends Observable<? extends M>> parentObservables;
+public class FilteringObserver<M> extends PassthroughObserver<M, M> {
+  private final Predicate<? super M> condition;
 
-  public MergingObservable(Observable<? extends Observable<? extends M>> parentObservables) {
-    this.parentObservables = parentObservables;
+  public FilteringObserver(Observer<? super M> downstreamObserver, Predicate<? super M> condition) {
+    super(downstreamObserver);
+    this.condition = condition;
   }
 
   @Override
-  public Observation observe(Observer<? super M> observer) {
-    List<Observable<? extends M>> parentObservables = new ArrayList<>();
-
-    Observation parentObservablesObservation = this.parentObservables
-        .observe(parentObservables::add);
-    parentObservablesObservation.requestUnbounded();
-
-    return new Observation() {
-      @Override
-      public boolean isDisposed() {
-        // TODO Auto-generated method stub
-        return false;
-      }
-
-      @Override
-      public void dispose() {
-        parentObservablesObservation.dispose();
-      }
-
-      @Override
-      public void request(long count) {
-        // TODO Auto-generated method stub
-        Observation.super.request(count);
-      }
-
-      @Override
-      public void requestUnbounded() {
-        // TODO Auto-generated method stub
-        Observation.super.requestUnbounded();
-      }
-    };
+  public void onNext(M message) {
+    if (condition.test(message))
+      getDownstreamObserver().onNext(message);
   }
 }

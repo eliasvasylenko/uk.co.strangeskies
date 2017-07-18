@@ -56,7 +56,7 @@ public class HotObservable<M> implements Observable<M> {
   private Set<HotObservation<M>> observations;
 
   @Override
-  public Observation<M> observe(Observer<? super M> observer) {
+  public Observation observe(Observer<? super M> observer) {
     HotObservation<M> observation = new HotObservation<>(this, observer);
 
     if (observations == null)
@@ -71,7 +71,7 @@ public class HotObservable<M> implements Observable<M> {
     return observations != null;
   }
 
-  void stopObservation(Observation<M> observer) {
+  void stopObservation(Observation observer) {
     if (observations.remove(observer) && observations.isEmpty()) {
       observations = null;
     }

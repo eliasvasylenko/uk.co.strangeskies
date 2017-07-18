@@ -36,8 +36,8 @@ import java.util.Collections;
 import java.util.List;
 
 import uk.co.strangeskies.collection.ListDecorator;
-import uk.co.strangeskies.observable.Observable;
 import uk.co.strangeskies.observable.HotObservable;
+import uk.co.strangeskies.observable.Observable;
 import uk.co.strangeskies.observable.Observation;
 import uk.co.strangeskies.observable.Observer;
 
@@ -69,7 +69,7 @@ public abstract class SynchronizedObservableList<S extends ObservableList<S, E>,
 
     changes = new HotObservable<Change<E>>() {
       @Override
-      public Observation<Change<E>> observe(Observer<? super Change<E>> observer) {
+      public Observation observe(Observer<? super Change<E>> observer) {
         synchronized (getMutex()) {
           return super.observe(observer);
         }
@@ -124,7 +124,7 @@ public abstract class SynchronizedObservableList<S extends ObservableList<S, E>,
   }
 
   @Override
-  public Observation<S> observe(Observer<? super S> observer) {
+  public Observation observe(Observer<? super S> observer) {
     synchronized (getMutex()) {
       return super.observe(observer);
     }

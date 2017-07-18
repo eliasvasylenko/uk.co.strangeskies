@@ -32,61 +32,28 @@
  */
 package uk.co.strangeskies.observable;
 
-/**
- * This is a helper class for implementing {@link Observable passive
- * observables}.
- * <p>
- * A passive observable is one which does not maintain a set of observations or
- * manage its own events, instead deferring to one or more parents. When an
- * observer subscribes to a passive observable, typically the observer is
- * decorated, and the decorator is then subscribed to the parents. This way the
- * decorator can modify, inspect, or filter events as appropriate before passing
- * them back through to the original observer.
- * <p>
- * This class is a partial implementation of such a decorator, taking care of
- * the subscription process and providing default event handling implementations
- * which simply pass the events along without modification.
- * 
- * @author Elias N Vasylenko
- *
- * @param <T>
- *          The message type of the parent observables
- */
-public class SimplePassthroughObservation<T> extends PassthroughObservation<T, T> {
-	private final Observer<? super T> observer;
-	private final Observer<T> actions;
+import static java.util.Objects.requireNonNull;
 
-	public SimplePassthroughObservation(
-			Observable<? extends T> parentObservable,
-			Observer<? super T> observer,
-			Observer<T> actions) {
-		this.observer = observer;
-		this.actions = actions;
+import java.util.function.Predicate;
 
-		passthroughObservation(parentObservable);
-	}
+public class SkipWhileObserver<M> extends PassthroughObserver<M, M> {
+  private Predicate<? super M> condition;
 
-	@Override
-	public void onNext(T message) {
-		actions.onNext(message);
-		observer.onNext(message);
-	}
+  public SkipWhileObserver(
+      Observer<? super M> downstreamObserver,
+      Predicate<? super M> condition) {
+    super(downstreamObserver);
 
-	@Override
-	public void onObserve() {
-		actions.onObserve(this);
-		observer.onObserve(this);
-	}
+    this.condition = requireNonNull(condition);
+  }
 
-	@Override
-	public void onComplete() {
-		actions.onComplete();
-		observer.onComplete();
-	}
-
-	@Override
-	public void onFail(Throwable t) {
-		actions.onFail(t);
-		observer.onFail(t);
-	}
+  @Override
+  public void onNext(M message) {
+    if (condition.test(message)) {
+      getObservation().requestNext();
+    } else {
+      condition = null;
+      getDownstreamObserver().onNext(message);
+    }
+  }
 }

@@ -55,13 +55,13 @@ public class ColdObservable<M> implements Observable<M> {
   }
 
   @Override
-  public synchronized Observation<M> observe(Observer<? super M> observer) {
-    Observation<M> observation = new ColdObservation<>(iterable, observer);
+  public synchronized Observation observe(Observer<? super M> observer) {
+    Observation observation = new ColdObservation<>(iterable, observer);
     observer.onObserve(observation);
     return observation;
   }
 
-  static class ColdObservation<M> implements Observation<M> {
+  static class ColdObservation<M> implements Observation {
     private final Observer<? super M> observer;
     private final Iterator<? extends M> iterator;
 
