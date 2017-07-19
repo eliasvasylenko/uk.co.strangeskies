@@ -37,38 +37,39 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class ReferenceObserver<M> extends PassthroughObserver<M, M> {
-  public ReferenceObserver(
-      Observer<? super M> downstreamObserver,
-      Function<Observer<? super M>, Reference<Observer<? super M>>> referenceFunction) {
-    super(referenceFunction.apply(downstreamObserver)::get);
-  }
+	public ReferenceObserver(
+			Observer<? super M> downstreamObserver,
+			Function<Observer<? super M>, Reference<Observer<? super M>>> referenceFunction) {
+		super(referenceFunction.apply(downstreamObserver)::get);
+	}
 
-  public void withObserver(Consumer<Observer<? super M>> action) {
-    Observer<? super M> observer = getDownstreamObserver();
-    if (observer != null) {
-      action.accept(observer);
-    } else {
-      getObservation().dispose();
-    }
-  }
+	public void withObserver(Consumer<Observer<? super M>> action) {
+		Observer<? super M> observer = getDownstreamObserver();
+		if (observer != null) {
+			action.accept(observer);
+		} else {
+			getObservation().dispose();
+		}
+	}
 
-  @Override
-  public void onObserve(Observation observation) {
-    withObserver(o -> o.onObserve(observation));
-  }
+	@Override
+	public void onObserve(Observation observation) {
+		configureObservation(observation);
+		withObserver(o -> o.onObserve(observation));
+	}
 
-  @Override
-  public void onNext(M message) {
-    withObserver(o -> o.onNext(message));
-  }
+	@Override
+	public void onNext(M message) {
+		withObserver(o -> o.onNext(message));
+	}
 
-  @Override
-  public void onComplete() {
-    withObserver(o -> o.onComplete());
-  }
+	@Override
+	public void onComplete() {
+		withObserver(o -> o.onComplete());
+	}
 
-  @Override
-  public void onFail(Throwable t) {
-    withObserver(o -> o.onFail(t));
-  }
+	@Override
+	public void onFail(Throwable t) {
+		withObserver(o -> o.onFail(t));
+	}
 }

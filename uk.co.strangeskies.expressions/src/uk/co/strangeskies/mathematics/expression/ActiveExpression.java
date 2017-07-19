@@ -32,8 +32,8 @@
  */
 package uk.co.strangeskies.mathematics.expression;
 
-import uk.co.strangeskies.observable.Observable;
 import uk.co.strangeskies.observable.HotObservable;
+import uk.co.strangeskies.observable.Observable;
 
 /**
  * An abstract class to help designing mutable expression, implementing a simple
@@ -48,92 +48,97 @@ import uk.co.strangeskies.observable.HotObservable;
  * @param <T>
  *          The type of the value of this expression
  */
-public abstract class ActiveExpression<T> extends HotObservable<Expression<? extends T>>
-    implements Expression<T> {
-  private boolean dirty = true;
+public abstract class ActiveExpression<T> implements Expression<T> {
+	private HotObservable<Expression<? extends T>> observable = createObservable();
 
-  private boolean changing;
-  private int changeDepth = 0;
+	private boolean dirty = true;
 
-  @Override
-  public Observable<Expression<? extends T>> invalidations() {
-    return this;
-  }
+	private boolean changing;
+	private int changeDepth = 0;
 
-  protected void cancelChange() {
-    changing = false;
-  }
+	@Override
+	public Observable<Expression<? extends T>> invalidations() {
+		return observable;
+	}
 
-  protected boolean isChanging() {
-    return changing;
-  }
+	protected HotObservable<Expression<? extends T>> createObservable() {
+		return new HotObservable<>();
+	}
 
-  protected void write(Runnable runnable) {
-    beginWrite();
+	protected void cancelChange() {
+		changing = false;
+	}
 
-    try {
-      runnable.run();
-    } finally {
-      endWrite();
-    }
-  }
+	protected boolean isChanging() {
+		return changing;
+	}
 
-  protected boolean beginWrite() {
-    boolean begun = changeDepth++ == 0;
+	protected void write(Runnable runnable) {
+		beginWrite();
 
-    if (begun) {
-      changing = true;
-    }
+		try {
+			runnable.run();
+		} finally {
+			endWrite();
+		}
+	}
 
-    return begun;
-  }
+	protected boolean beginWrite() {
+		boolean begun = changeDepth++ == 0;
 
-  protected boolean endWrite() {
-    boolean ended = --changeDepth == 0;
+		if (begun) {
+			changing = true;
+		}
 
-    if (ended && changing) {
-      fireChangeImpl();
-    }
+		return begun;
+	}
 
-    return ended;
-  }
+	protected boolean endWrite() {
+		boolean ended = --changeDepth == 0;
 
-  protected void fireChange() {
-    beginWrite();
-    endWrite();
-  }
+		if (ended && changing) {
+			fireChangeImpl();
+		}
 
-  private boolean fireChangeImpl() {
-    boolean fired = !dirty;
+		return ended;
+	}
 
-    if (fired) {
-      dirty = true;
-      sendNext(this);
-    }
+	protected void fireChange() {
+		beginWrite();
+		endWrite();
+	}
 
-    return fired;
-  }
+	private boolean fireChangeImpl() {
+		boolean fired = !dirty;
 
-  @Override
-  public T getValue() {
-    boolean dirty = this.dirty;
+		if (fired) {
+			dirty = true;
+			observable.sendNext(this);
+		}
 
-    if (this.dirty) {
-      this.dirty = false;
-    }
+		return fired;
+	}
 
-    return getValueImpl(dirty);
-  }
+	@Override
+	public T getValue() {
+		boolean dirty = this.dirty;
 
-  /**
-   * Implementing classes should compute the value of the {@link Expression} here.
-   * Read lock is guaranteed to be obtained. This method should never be invoked
-   * manually.
-   * 
-   * @param dirty
-   *          Whether the expression has been mutated since this method was last
-   *          invoked.
-   * @return The value of this {@link Expression}.
-   */
-  protected abstract T getValueImpl(boolean dirty);
+		if (this.dirty) {
+			this.dirty = false;
+		}
+
+		return getValueImpl(dirty);
+	}
+
+	/**
+	 * Implementing classes should compute the value of the {@link Expression} here.
+	 * Read lock is guaranteed to be obtained. This method should never be invoked
+	 * manually.
+	 * 
+	 * @param dirty
+	 *          Whether the expression has been mutated since this method was last
+	 *          invoked.
+	 * @return The value of this {@link Expression}.
+	 */
+	protected abstract T getValueImpl(boolean dirty);
 }

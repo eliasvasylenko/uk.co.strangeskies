@@ -32,56 +32,10 @@
  */
 package uk.co.strangeskies.observable;
 
-import java.util.function.Supplier;
+public class AlreadyCompletedException extends RuntimeException {
+	private static final long serialVersionUID = 1L;
 
-/**
- * This is a helper class for implementing {@link Observable passive
- * observables}.
- * <p>
- * A passive observable is one which does not maintain a set of observations or
- * manage its own events, instead deferring to one or more upstream observables.
- * When an observer subscribes to a passive observable, typically the observer
- * is decorated, and the decorator is then subscribed to the parents. This way
- * the decorator can modify, inspect, or filter events as appropriate before
- * passing them back through to the original observer.
- * <p>
- * This class is a partial implementation of such a decorator.
- * 
- * @author Elias N Vasylenko
- *
- * @param <T>
- *          The message type of the upstream observable
- * @param <U>
- *          The message type of the downstream observer
- */
-public abstract class PassthroughObserver<T, U> extends SingleUseObserver<T> {
-	private final Supplier<Observer<? super U>> downstreamObserver;
-
-	public PassthroughObserver(Observer<? super U> downstreamObserver) {
-		this(() -> downstreamObserver);
-	}
-
-	public PassthroughObserver(Supplier<Observer<? super U>> downstreamObserver) {
-		this.downstreamObserver = downstreamObserver;
-	}
-
-	public Observer<? super U> getDownstreamObserver() {
-		return downstreamObserver.get();
-	}
-
-	@Override
-	public void onObserve(Observation observation) {
-		configureObservation(observation);
-		getDownstreamObserver().onObserve(observation);
-	}
-
-	@Override
-	public void onComplete() {
-		getDownstreamObserver().onComplete();
-	}
-
-	@Override
-	public void onFail(Throwable t) {
-		getDownstreamObserver().onFail(t);
+	public AlreadyCompletedException(Observation observation) {
+		super("The observation has already completed " + observation);
 	}
 }

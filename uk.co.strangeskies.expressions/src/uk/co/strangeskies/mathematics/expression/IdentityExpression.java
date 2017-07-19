@@ -47,43 +47,43 @@ import uk.co.strangeskies.utility.Property;
  *          The type of the expression.
  */
 public class IdentityExpression<T> extends ActiveExpression<T> implements Property<T> {
-  private T value;
+	private T value;
 
-  /**
-   * Construct with a default value of {@code null}.
-   */
-  public IdentityExpression() {}
+	/**
+	 * Construct with a default value of {@code null}.
+	 */
+	public IdentityExpression() {}
 
-  /**
-   * Construct with the given default value.
-   * 
-   * @param value
-   *          The initial value of the expression.
-   */
-  public IdentityExpression(T value) {
-    this.value = value;
-  }
+	/**
+	 * Construct with the given default value.
+	 * 
+	 * @param value
+	 *          The initial value of the expression.
+	 */
+	public IdentityExpression(T value) {
+		this.value = value;
+	}
 
-  @Override
-  public T set(T value) {
-    beginWrite();
+	@Override
+	public T set(T value) {
+		beginWrite();
 
-    try {
-      T previous = this.value;
-      this.value = value;
-      return previous;
-    } finally {
-      endWrite();
-    }
-  }
+		try {
+			T previous = this.value;
+			this.value = value;
+			return previous;
+		} finally {
+			endWrite();
+		}
+	}
 
-  @Override
-  protected final T getValueImpl(boolean dirty) {
-    return value;
-  }
+	@Override
+	protected final T getValueImpl(boolean dirty) {
+		return value;
+	}
 
-  @Override
-  public final T get() {
-    return getValue();
-  }
+	@Override
+	public final T get() {
+		return getValue();
+	}
 }

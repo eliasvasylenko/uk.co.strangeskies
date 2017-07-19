@@ -35,16 +35,18 @@ package uk.co.strangeskies.observable;
 import java.util.function.Predicate;
 
 public class FilteringObserver<M> extends PassthroughObserver<M, M> {
-  private final Predicate<? super M> condition;
+	private final Predicate<? super M> condition;
 
-  public FilteringObserver(Observer<? super M> downstreamObserver, Predicate<? super M> condition) {
-    super(downstreamObserver);
-    this.condition = condition;
-  }
+	public FilteringObserver(Observer<? super M> downstreamObserver, Predicate<? super M> condition) {
+		super(downstreamObserver);
+		this.condition = condition;
+	}
 
-  @Override
-  public void onNext(M message) {
-    if (condition.test(message))
-      getDownstreamObserver().onNext(message);
-  }
+	@Override
+	public void onNext(M message) {
+		if (condition.test(message))
+			getDownstreamObserver().onNext(message);
+		else
+			getObservation().requestNext();
+	}
 }

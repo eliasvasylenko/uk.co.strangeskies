@@ -32,6 +32,7 @@
  */
 package uk.co.strangeskies.observable;
 
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 
@@ -47,82 +48,94 @@ import java.util.function.BiPredicate;
  *          the type of event message to produce
  */
 public class ObservablePropertyImpl<T> extends HotObservable<T> implements ObservableProperty<T> {
-  protected class ChangeImpl implements Change<T> {
-    T previous;
-    T current;
+	protected class ChangeImpl implements Change<T> {
+		T previous;
+		T current;
 
-    @Override
-    public T newValue() {
-      if (currentChange == this) {
-        synchronized (ObservablePropertyImpl.this) {
-          if (currentChange == this) {
-            currentChange = null;
-          }
-        }
-      }
-      return current;
-    }
+		@Override
+		public Optional<T> newValue() {
+			if (currentChange == this) {
+				synchronized (ObservablePropertyImpl.this) {
+					if (currentChange == this) {
+						currentChange = null;
+					}
+				}
+			}
+			return Optional.ofNullable(current);
+		}
 
-    @Override
-    public T previousValue() {
-      return previous;
-    }
-  }
+		@Override
+		public Optional<T> previousValue() {
+			return Optional.ofNullable(previous);
+		}
 
-  private T value;
-  private final BiFunction<T, T, T> assignmentFunction;
-  private final BiPredicate<T, T> equality;
-  private final HotObservable<Change<T>> changeObservable = new HotObservable<>();
-  private ChangeImpl currentChange;
+		@Override
+		public T tryNewValue() {
+			// TODO Auto-generated method stub
+			return null;
+		}
 
-  protected ObservablePropertyImpl(
-      BiFunction<T, T, T> assignmentFunction,
-      BiPredicate<T, T> equality,
-      T initialValue) {
-    this.assignmentFunction = assignmentFunction;
-    this.equality = equality;
-    value = initialValue;
-  }
+		@Override
+		public T tryPreviousValue() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+	}
 
-  @Override
-  public Observable<Change<T>> changes() {
-    return changeObservable;
-  }
+	private T value;
+	private final BiFunction<T, T, T> assignmentFunction;
+	private final BiPredicate<T, T> equality;
+	private final HotObservable<Change<T>> changeObservable = new HotObservable<>();
+	private ChangeImpl currentChange;
 
-  @Override
-  public void sendNext(T item) {
-    set(item);
-  }
+	protected ObservablePropertyImpl(
+			BiFunction<T, T, T> assignmentFunction,
+			BiPredicate<T, T> equality,
+			T initialValue) {
+		this.assignmentFunction = assignmentFunction;
+		this.equality = equality;
+		value = initialValue;
+	}
 
-  /**
-   * Fire the given message to all observers.
-   * 
-   * @param value
-   *          the message event to send
-   */
-  @Override
-  public synchronized T set(T value) {
-    T previous = this.value;
-    this.value = assignmentFunction.apply(value, this.value);
+	@Override
+	public Observable<Change<T>> changes() {
+		return changeObservable;
+	}
 
-    if (!equality.test(this.value, previous)) {
-      super.sendNext(this.value);
+	@Override
+	public void sendNext(T item) {
+		set(item);
+	}
 
-      ChangeImpl currentChange = this.currentChange;
-      if (currentChange == null) {
-        this.currentChange = new ChangeImpl();
-        this.currentChange.previous = previous;
-        changeObservable.sendNext(this.currentChange);
-      } else {
-        currentChange.current = this.value;
-      }
-    }
+	/**
+	 * Fire the given message to all observers.
+	 * 
+	 * @param value
+	 *          the message event to send
+	 */
+	@Override
+	public synchronized T set(T value) {
+		T previous = this.value;
+		this.value = assignmentFunction.apply(value, this.value);
 
-    return previous;
-  }
+		if (!equality.test(this.value, previous)) {
+			super.sendNext(this.value);
 
-  @Override
-  public T get() {
-    return value;
-  }
+			ChangeImpl currentChange = this.currentChange;
+			if (currentChange == null) {
+				this.currentChange = new ChangeImpl();
+				this.currentChange.previous = previous;
+				changeObservable.sendNext(this.currentChange);
+			} else {
+				currentChange.current = this.value;
+			}
+		}
+
+		return previous;
+	}
+
+	@Override
+	public T get() {
+		return value;
+	}
 }

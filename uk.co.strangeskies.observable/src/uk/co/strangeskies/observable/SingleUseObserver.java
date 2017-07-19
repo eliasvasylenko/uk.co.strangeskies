@@ -41,19 +41,23 @@ package uk.co.strangeskies.observable;
  *          The message type of the upstream observable
  */
 public abstract class SingleUseObserver<T> implements Observer<T> {
-  private Observation observation;
+	private Observation observation;
 
-  public Observation getObservation() {
-    if (this.observation == null)
-      throw new IllegalStateException("Observation unavailable " + this);
-    return observation;
-  }
+	public Observation getObservation() {
+		if (this.observation == null)
+			throw new IllegalStateException("Observation unavailable " + this);
+		return observation;
+	}
 
-  @Override
-  public void onObserve(Observation observation) {
-    if (this.observation != null)
-      throw new IllegalStateException(
-          "Passthrough observer cannot be used more than once " + observation);
-    this.observation = observation;
-  }
+	protected void configureObservation(Observation observation) {
+		if (this.observation != null)
+			throw new IllegalStateException(
+					"Passthrough observer cannot be used more than once " + observation);
+		this.observation = observation;
+	}
+
+	@Override
+	public void onObserve(Observation observation) {
+		configureObservation(observation);
+	}
 }
