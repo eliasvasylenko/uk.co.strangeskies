@@ -38,8 +38,9 @@ import java.util.Optional;
  * A value which can be {@link #get() fetched} and observed for updates and
  * {@link #changes() changes}.
  * <p>
- * Observable value adheres to the contract of {@link Observable}, but adds the
- * semantics of a mutable value.
+ * Observable value adheres to the contract of {@link Observable}, with a few
+ * extra restrictions on its behavior to conform to the semantics of a mutable
+ * value.
  * <p>
  * An instance may send a {@link Observer#onComplete() completion} event to
  * indicate that it will not mutate beyond that point, but it should only send
@@ -66,49 +67,59 @@ import java.util.Optional;
  *          the type of the value
  */
 public interface ObservableValue<T> extends Observable<T> {
-	/**
-	 * A value change event.
-	 * 
-	 * @author Elias N Vasylenko
-	 *
-	 * @param <T>
-	 *          the type of the value
-	 */
-	interface Change<T> {
-		Optional<T> newValue();
+  /**
+   * A value change event.
+   * 
+   * @author Elias N Vasylenko
+   *
+   * @param <T>
+   *          the type of the value
+   */
+  interface Change<T> {
+    Optional<T> newValue();
 
-		T tryNewValue();
+    T tryNewValue();
 
-		Optional<T> previousValue();
+    Optional<T> previousValue();
 
-		T tryPreviousValue();
-	}
+    T tryPreviousValue();
+  }
 
-	/**
-	 * @return immediately return the current value
-	 */
-	@Override
-	T get();
+  /**
+   * Immediately resolve the current value if one exists, otherwise throw a
+   * {@link MissingValueException} with a cause representing the current failure
+   * state.
+   * 
+   * @return the current value
+   */
+  @Override
+  T get();
 
-	@Override
-	default Optional<T> tryGet() {
-		return Observable.super.tryGet();
-	}
+  /**
+   * Immediately resolve the current value, if one exists.
+   * 
+   * @return an optional containing the current value, or an empty option if no
+   *         value is available
+   */
+  @Override
+  default Optional<T> tryGet() {
+    return Observable.super.tryGet();
+  }
 
-	/**
-	 * @return an observable over changes to the value
-	 */
-	Observable<Change<T>> changes();
+  /**
+   * @return an observable over changes to the value
+   */
+  Observable<Change<T>> changes();
 
-	/**
-	 * @param <T>
-	 *          the type of the immutable value
-	 * @param value
-	 *          the immutable value to create an observable over
-	 * @return an observable over the given value which never changes or fires
-	 *         events
-	 */
-	static <T> ObservableValue<T> immutableOver(T value) {
-		return (ImmutableObservableValue<T>) () -> value;
-	}
+  /**
+   * @param <T>
+   *          the type of the immutable value
+   * @param value
+   *          the immutable value to create an observable over
+   * @return an observable over the given value which never changes or fires
+   *         events
+   */
+  static <T> ObservableValue<T> immutableOver(T value) {
+    return (ImmutableObservableValue<T>) () -> value;
+  }
 }

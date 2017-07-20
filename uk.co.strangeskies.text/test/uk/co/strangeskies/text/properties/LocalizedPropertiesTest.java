@@ -34,7 +34,6 @@ package uk.co.strangeskies.text.properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 
 import java.util.Locale;
 
@@ -44,92 +43,92 @@ import uk.co.strangeskies.utility.IdentityProperty;
 
 @SuppressWarnings("javadoc")
 public class LocalizedPropertiesTest {
-	public LocalizerTestProperties text(LocaleManager manager) {
-		return PropertyLoader.getPropertyLoader(manager).getProperties(LocalizerTestProperties.class);
-	}
+  public LocalizerTestProperties text(LocaleManager manager) {
+    return PropertyLoader.getPropertyLoader(manager).getProperties(LocalizerTestProperties.class);
+  }
 
-	private LocaleManager manager() {
-		return LocaleManager.getManager(Locale.ENGLISH);
-	}
+  private LocaleManager manager() {
+    return LocaleManager.getManager(Locale.ENGLISH);
+  }
 
-	private LocaleManager manager(Locale locale) {
-		return LocaleManager.getManager(locale);
-	}
+  private LocaleManager manager(Locale locale) {
+    return LocaleManager.getManager(locale);
+  }
 
-	@Test
-	public void languageTest() {
-		LocalizerTestProperties text = text(manager(Locale.FRENCH));
+  @Test
+  public void languageTest() {
+    LocalizerTestProperties text = text(manager(Locale.FRENCH));
 
-		assertEquals("French simple property value", text.simpleLocalized().toString());
-	}
+    assertEquals("French simple property value", text.simpleLocalized().toString());
+  }
 
-	@Test
-	public void languageDefaultTest() {
-		LocalizerTestProperties text = text(manager(Locale.FRENCH));
+  @Test
+  public void languageDefaultTest() {
+    LocalizerTestProperties text = text(manager(Locale.FRENCH));
 
-		assertEquals("another simple property value", text.anotherSimpleLocalized().toString());
-	}
+    assertEquals("another simple property value", text.anotherSimpleLocalized().toString());
+  }
 
-	@Test
-	public void languageChangeTest() {
-		LocaleManager manager = manager();
+  @Test
+  public void languageChangeTest() {
+    LocaleManager manager = manager();
 
-		LocalizerTestProperties text = text(manager);
+    LocalizerTestProperties text = text(manager);
 
-		assertEquals("simple property value", text.simpleLocalized().toString());
+    assertEquals("simple property value", text.simpleLocalized().toString());
 
-		manager.setLocale(Locale.FRENCH);
+    manager.setLocale(Locale.FRENCH);
 
-		assertEquals("French simple property value", text.simpleLocalized().toString());
-	}
+    assertEquals("French simple property value", text.simpleLocalized().toString());
+  }
 
-	@Test
-	public void localeChangeStringEventTest() {
-		LocaleManager manager = manager();
+  @Test
+  public void localeChangeStringEventTest() {
+    LocaleManager manager = manager();
 
-		Localized<String> string = text(manager).simpleLocalized();
+    Localized<String> string = text(manager).simpleLocalized();
 
-		IdentityProperty<String> result = new IdentityProperty<>();
-		string.observe(t -> {
-			result.set(t);
-		});
+    IdentityProperty<String> result = new IdentityProperty<>();
+    string.observe(t -> {
+      result.set(t);
+    });
 
-		manager.setLocale(Locale.FRENCH);
+    manager.setLocale(Locale.FRENCH);
 
-		assertNotNull(result);
-		assertEquals("French simple property value", string.get());
-		assertEquals("French simple property value", result.get());
-	}
+    assertNotNull(result);
+    assertEquals("French simple property value", string.get());
+    assertEquals("French simple property value", result.get());
+  }
 
-	@Test
-	public void localeChangeStringNoEventTest() {
-		LocaleManager manager = manager();
+  @Test
+  public void localeChangeStringNoEventTest() {
+    LocaleManager manager = manager();
 
-		Localized<String> string = text(manager).anotherSimpleLocalized();
+    Localized<String> string = text(manager).anotherSimpleLocalized();
 
-		IdentityProperty<String> result = new IdentityProperty<>();
-		string.observe(t -> {
-			result.set(t);
-		});
+    IdentityProperty<String> result = new IdentityProperty<>();
+    string.observe(t -> {
+      result.set(t);
+    });
 
-		manager.setLocale(Locale.FRENCH);
+    manager.setLocale(Locale.FRENCH);
 
-		assertNull(result.get());
-	}
+    assertEquals("another simple property value", result.get());
+  }
 
-	@Test
-	public void unlocalizedStringTest() {
-		LocaleManager manager = manager(Locale.FRENCH);
+  @Test
+  public void unlocalizedStringTest() {
+    LocaleManager manager = manager(Locale.FRENCH);
 
-		String string = text(manager).nonLocalized();
+    String string = text(manager).nonLocalized();
 
-		assertEquals("This is not localized", string);
-	}
+    assertEquals("This is not localized", string);
+  }
 
-	@Test
-	public void unavailableInRootLocaleStringTest() {
-		LocaleManager manager = manager(Locale.FRENCH);
+  @Test
+  public void unavailableInRootLocaleStringTest() {
+    LocaleManager manager = manager(Locale.FRENCH);
 
-		assertEquals("?localizer.test/non.localized.missing?[]", text(manager).nonLocalizedMissing());
-	}
+    assertEquals("?localizer.test/non.localized.missing?[]", text(manager).nonLocalizedMissing());
+  }
 }
