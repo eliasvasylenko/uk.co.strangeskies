@@ -90,6 +90,11 @@ public interface ObservableValue<T> extends Observable<T> {
 	@Override
 	T get();
 
+	@Override
+	default Optional<T> tryGet() {
+		return Observable.super.tryGet();
+	}
+
 	/**
 	 * @return an observable over changes to the value
 	 */

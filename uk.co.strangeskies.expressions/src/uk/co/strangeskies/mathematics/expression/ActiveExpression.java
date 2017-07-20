@@ -113,7 +113,7 @@ public abstract class ActiveExpression<T> implements Expression<T> {
 
 		if (fired) {
 			dirty = true;
-			observable.sendNext(this);
+			observable.next(this);
 		}
 
 		return fired;

@@ -39,7 +39,7 @@ import java.util.function.Consumer;
 
 /**
  * A simple implementation of {@link Observable} which maintains a list of
- * listeners to receive events fired with {@link #sendNext(Object)}.
+ * listeners to receive events fired with {@link #next(Object)}.
  * <p>
  * Addition and removal of observers, as well as the firing of events, are
  * synchronized on the implementation object.
@@ -91,7 +91,7 @@ public class HotObservable<M> implements Observable<M> {
    * @param item
    *          the message event to send
    */
-  public void sendNext(M item) {
+  public void next(M item) {
     forObservers(o -> o.onNext(item));
   }
 

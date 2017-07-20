@@ -67,7 +67,7 @@ public class ObservableTest {
 
     weakReferenceTest();
 
-    stringObservable.sendNext("test");
+    stringObservable.next("test");
 
     assertThat(list, contains("test"));
   }
@@ -81,12 +81,12 @@ public class ObservableTest {
 
     stringObservable.weakReference().observe(add);
 
-    stringObservable.sendNext("test1");
+    stringObservable.next("test1");
 
     add = null;
     weakReferenceTest();
 
-    stringObservable.sendNext("test2");
+    stringObservable.next("test2");
 
     assertThat(list, contains("test1"));
   }
@@ -98,7 +98,7 @@ public class ObservableTest {
     HotObservable<String> stringObservable = new HotObservable<>();
     stringObservable.observe(list::add);
 
-    stringObservable.sendNext("test");
+    stringObservable.next("test");
 
     assertThat(list, contains("test"));
   }
@@ -110,8 +110,8 @@ public class ObservableTest {
     HotObservable<String> stringObservable = new HotObservable<>();
     stringObservable.observe(list::add);
 
-    stringObservable.sendNext("test1");
-    stringObservable.sendNext("test2");
+    stringObservable.next("test1");
+    stringObservable.next("test2");
 
     assertThat(list, contains("test1", "test2"));
   }

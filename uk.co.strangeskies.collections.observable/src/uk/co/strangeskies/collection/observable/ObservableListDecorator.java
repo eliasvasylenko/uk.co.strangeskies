@@ -133,12 +133,12 @@ public abstract class ObservableListDecorator<S extends ObservableList<S, E>, E>
   }
 
   protected void fireChange(Change<E> change) {
-    changeObservable.sendNext(change);
+    changeObservable.next(change);
     fireEvent();
   }
 
   protected void fireEvent() {
-    sendNext(getThis());
+    next(getThis());
   }
 
   @Override

@@ -41,102 +41,102 @@ import uk.co.strangeskies.observable.Observation;
 import uk.co.strangeskies.observable.Observer;
 
 public abstract class SynchronizedObservableSet<S extends ObservableSet<S, E>, E>
-    extends HotObservable<S> implements SetDecorator<E>, ObservableSet<S, E> {
-  static class SynchronizedObservableSetImpl<E>
-      extends SynchronizedObservableSet<SynchronizedObservableSetImpl<E>, E> {
-    SynchronizedObservableSetImpl(ObservableSet<?, E> component) {
-      super(component);
-    }
+		extends HotObservable<S> implements SetDecorator<E>, ObservableSet<S, E> {
+	static class SynchronizedObservableSetImpl<E>
+			extends SynchronizedObservableSet<SynchronizedObservableSetImpl<E>, E> {
+		SynchronizedObservableSetImpl(ObservableSet<?, E> component) {
+			super(component);
+		}
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public SynchronizedObservableSetImpl<E> copy() {
-      return new SynchronizedObservableSetImpl<>(((ObservableSet<?, E>) getComponent()).copy());
-    }
-  }
+		@SuppressWarnings("unchecked")
+		@Override
+		public SynchronizedObservableSetImpl<E> copy() {
+			return new SynchronizedObservableSetImpl<>(((ObservableSet<?, E>) getComponent()).copy());
+		}
+	}
 
-  private final Set<E> component;
-  private final Set<E> silentComponent;
+	private final Set<E> component;
+	private final Set<E> silentComponent;
 
-  private final Observer<ObservableSet<?, ? extends E>> observer;
-  private final HotObservable<Change<E>> changes;
-  private final Observer<Change<E>> changeObserver;
+	private final Observer<ObservableSet<?, ? extends E>> observer;
+	private final HotObservable<Change<E>> changes;
+	private final Observer<Change<E>> changeObserver;
 
-  protected SynchronizedObservableSet(ObservableSet<?, E> component) {
-    this.component = Collections.synchronizedSet(component);
-    silentComponent = component.silent();
+	protected SynchronizedObservableSet(ObservableSet<?, E> component) {
+		this.component = Collections.synchronizedSet(component);
+		silentComponent = component.silent();
 
-    observer = l -> sendNext(getThis());
-    component.weakReference().observe(observer);
+		observer = l -> next(getThis());
+		component.weakReference().observe(observer);
 
-    changes = new HotObservable<Change<E>>() {
-      @Override
-      public Observation observe(Observer<? super Change<E>> observer) {
-        synchronized (getMutex()) {
-          return super.observe(observer);
-        }
-      }
+		changes = new HotObservable<Change<E>>() {
+			@Override
+			public Observation observe(Observer<? super Change<E>> observer) {
+				synchronized (getMutex()) {
+					return super.observe(observer);
+				}
+			}
 
-      @Override
-      public void sendNext(Change<E> item) {
-        synchronized (getMutex()) {
-          super.sendNext(item);
-        }
-      }
-    };
-    changeObserver = changes::sendNext;
-    component.changes().weakReference().observe(changeObserver);
-  }
+			@Override
+			public void next(Change<E> item) {
+				synchronized (getMutex()) {
+					super.next(item);
+				}
+			}
+		};
+		changeObserver = changes::next;
+		component.changes().weakReference().observe(changeObserver);
+	}
 
-  public static <E> SynchronizedObservableSetImpl<E> over(ObservableSet<?, E> component) {
-    return new SynchronizedObservableSetImpl<>(component);
-  }
+	public static <E> SynchronizedObservableSetImpl<E> over(ObservableSet<?, E> component) {
+		return new SynchronizedObservableSetImpl<>(component);
+	}
 
-  public Object getMutex() {
-    return component;
-  }
+	public Object getMutex() {
+		return component;
+	}
 
-  @Override
-  public Set<E> getComponent() {
-    return component;
-  }
+	@Override
+	public Set<E> getComponent() {
+		return component;
+	}
 
-  @Override
-  public HotObservable<Change<E>> changes() {
-    return changes;
-  }
+	@Override
+	public HotObservable<Change<E>> changes() {
+		return changes;
+	}
 
-  @Override
-  public Set<E> silent() {
-    return silentComponent;
-  }
+	@Override
+	public Set<E> silent() {
+		return silentComponent;
+	}
 
-  @Override
-  public String toString() {
-    return getComponent().toString();
-  }
+	@Override
+	public String toString() {
+		return getComponent().toString();
+	}
 
-  @Override
-  public int hashCode() {
-    return getComponent().hashCode();
-  }
+	@Override
+	public int hashCode() {
+		return getComponent().hashCode();
+	}
 
-  @Override
-  public boolean equals(Object obj) {
-    return getComponent().equals(obj);
-  }
+	@Override
+	public boolean equals(Object obj) {
+		return getComponent().equals(obj);
+	}
 
-  @Override
-  public Observation observe(Observer<? super S> observer) {
-    synchronized (getMutex()) {
-      return super.observe(observer);
-    }
-  }
+	@Override
+	public Observation observe(Observer<? super S> observer) {
+		synchronized (getMutex()) {
+			return super.observe(observer);
+		}
+	}
 
-  @Override
-  public void sendNext(S item) {
-    synchronized (getMutex()) {
-      super.sendNext(item);
-    }
-  }
+	@Override
+	public void next(S item) {
+		synchronized (getMutex()) {
+			super.next(item);
+		}
+	}
 }

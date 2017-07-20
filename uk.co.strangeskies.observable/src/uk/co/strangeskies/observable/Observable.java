@@ -46,6 +46,7 @@ import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -110,31 +111,38 @@ public interface Observable<M> {
 	default M get() {
 		CompletableFuture<M> result = new CompletableFuture<>();
 
-		Observation observation = thenAfter(onObservation(o -> o.requestUnbounded()))
-				.observe(singleUse(o -> new Observer<M>() {
-					@Override
-					public void onComplete() {
-						result.completeExceptionally(new AlreadyCompletedException(o));
-					}
+		thenAfter(onObservation(o -> o.requestUnbounded())).observe(singleUse(o -> new Observer<M>() {
+			@Override
+			public void onComplete() {
+				result.completeExceptionally(new AlreadyCompletedException(o));
+			}
 
-					@Override
-					public void onFail(Throwable t) {
-						result.completeExceptionally(t);
-					}
+			@Override
+			public void onFail(Throwable t) {
+				result.completeExceptionally(t);
+			}
 
-					@Override
-					public void onNext(M message) {
-						o.dispose();
-						result.complete(message);
-					}
-				}));
+			@Override
+			public void onNext(M message) {
+				o.dispose();
+				result.complete(message);
+			}
+		}));
 
 		try {
 			return result.get();
 		} catch (ExecutionException e) {
-			throw new MissingValueException(observation, e);
+			throw new MissingValueException(this, e);
 		} catch (Exception e) {
 			throw new RuntimeException("Unexpected error", e);
+		}
+	}
+
+	default Optional<M> tryGet() {
+		try {
+			return Optional.of(get());
+		} catch (MissingValueException e) {
+			return Optional.empty();
 		}
 	}
 
@@ -267,7 +275,7 @@ public interface Observable<M> {
 	 * @return the derived observable
 	 */
 	default Observable<M> executeOn(Executor executor) {
-		return new ExecutorObservable<>(this, executor);
+		return observer -> observe(new ExecutorObserver<>(observer, executor));
 	}
 
 	/**

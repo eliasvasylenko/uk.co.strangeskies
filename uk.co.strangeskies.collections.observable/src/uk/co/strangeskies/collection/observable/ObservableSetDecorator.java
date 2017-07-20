@@ -133,14 +133,14 @@ public abstract class ObservableSetDecorator<S extends ObservableSet<S, E>, E>
   protected void fireChange(Change<E> change) {
     if (!change.added().isEmpty() || !change.removed().isEmpty()) {
       firingDepth++;
-      changeObservable.sendNext(change);
+      changeObservable.next(change);
       firingDepth--;
       fireEvent();
     }
   }
 
   protected void fireEvent() {
-    sendNext(getThis());
+    next(getThis());
   }
 
   @Override

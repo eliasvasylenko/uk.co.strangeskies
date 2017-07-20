@@ -35,11 +35,11 @@ package uk.co.strangeskies.observable;
 public class MissingValueException extends RuntimeException {
 	private static final long serialVersionUID = 1L;
 
-	public MissingValueException(Observation observation, Throwable t) {
-		super("Unable to obtain value from source " + observation, t);
+	public MissingValueException(Observable<?> observable, Throwable t) {
+		super("Unable to obtain value from source " + observable, t);
 	}
 
-	public MissingValueException(Observation observation) {
-		super("Unable to obtain value from source " + observation);
+	public MissingValueException(Observable<?> observable) {
+		super("Unable to obtain value from source " + observable);
 	}
 }

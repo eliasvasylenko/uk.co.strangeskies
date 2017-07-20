@@ -48,9 +48,22 @@ import java.util.function.BiPredicate;
  *          the type of event message to produce
  */
 public class ObservablePropertyImpl<T> extends HotObservable<T> implements ObservableProperty<T> {
-	protected class ChangeImpl implements Change<T> {
-		T previous;
-		T current;
+	enum State {
+		VALUE, FAILURE, COMPLETE_FAILURE, COMPLETE_VALUE
+	}
+
+	class ChangeImpl implements Change<T> {
+		private final T previous;
+		private final T current;
+		private final Throwable previousFailure;
+		private final Throwable currentFailure;
+
+		ChangeImpl(T previous, T current, Throwable previousFailure, Throwable currentFailure) {
+			this.previous = previous;
+			this.current = current;
+			this.previousFailure = previousFailure;
+			this.currentFailure = currentFailure;
+		}
 
 		@Override
 		public Optional<T> newValue() {
@@ -71,24 +84,28 @@ public class ObservablePropertyImpl<T> extends HotObservable<T> implements Obser
 
 		@Override
 		public T tryNewValue() {
-			// TODO Auto-generated method stub
-			return null;
+			if (currentFailure != null)
+				throw new MissingValueException(ObservablePropertyImpl.this, currentFailure);
+			return current;
 		}
 
 		@Override
 		public T tryPreviousValue() {
-			// TODO Auto-generated method stub
-			return null;
+			if (previousFailure != null)
+				throw new MissingValueException(ObservablePropertyImpl.this, previousFailure);
+			return previous;
 		}
 	}
 
+	private boolean complete;
 	private T value;
+	private Throwable failure;
+
 	private final BiFunction<T, T, T> assignmentFunction;
 	private final BiPredicate<T, T> equality;
-	private final HotObservable<Change<T>> changeObservable = new HotObservable<>();
 	private ChangeImpl currentChange;
 
-	protected ObservablePropertyImpl(
+	public ObservablePropertyImpl(
 			BiFunction<T, T, T> assignmentFunction,
 			BiPredicate<T, T> equality,
 			T initialValue) {
@@ -99,12 +116,82 @@ public class ObservablePropertyImpl<T> extends HotObservable<T> implements Obser
 
 	@Override
 	public Observable<Change<T>> changes() {
-		return changeObservable;
+		return observable -> observe(new PassthroughObserver<T, Change<T>>(observable) {
+			private T previous;
+			private Throwable previousFailure;
+
+			private Change<T> nextMessage() {
+				return new ChangeImpl(previous, value, previousFailure, failure);
+			}
+
+			@Override
+			public void onNext(T message) {
+				observable.onNext(nextMessage());
+
+				previous = message;
+				previousFailure = null;
+			}
+
+			@Override
+			public void onFail(Throwable t) {
+				observable.onNext(nextMessage());
+
+				previous = null;
+				previousFailure = t;
+			}
+		});
 	}
 
 	@Override
-	public void sendNext(T item) {
-		set(item);
+	public void next(T item) {
+		if (complete)
+			throw new IllegalStateException();
+
+		item = assignmentFunction.apply(value, this.value);
+
+		if (failure != null || !equality.test(this.value, item)) {
+			failure = null;
+			value = item;
+			super.next(item);
+		}
+	}
+
+	@Override
+	public void fail(Throwable t) {
+		if (complete)
+			throw new IllegalStateException();
+
+		value = null;
+
+		if (t == null) {
+			failure = new NullPointerException();
+			super.fail(t);
+			throw (NullPointerException) failure;
+		}
+
+		failure = t;
+		super.fail(failure);
+	}
+
+	@Override
+	public void complete() {
+		complete = true;
+		super.complete();
+	}
+
+	@Override
+	public Observation observe(Observer<? super T> observer) {
+		Observation observation = super.observe(observer);
+
+		if (failure == null)
+			observer.onNext(value);
+		else
+			observer.onFail(failure);
+
+		if (complete)
+			observer.onComplete();
+
+		return observation;
 	}
 
 	/**
@@ -116,26 +203,14 @@ public class ObservablePropertyImpl<T> extends HotObservable<T> implements Obser
 	@Override
 	public synchronized T set(T value) {
 		T previous = this.value;
-		this.value = assignmentFunction.apply(value, this.value);
-
-		if (!equality.test(this.value, previous)) {
-			super.sendNext(this.value);
-
-			ChangeImpl currentChange = this.currentChange;
-			if (currentChange == null) {
-				this.currentChange = new ChangeImpl();
-				this.currentChange.previous = previous;
-				changeObservable.sendNext(this.currentChange);
-			} else {
-				currentChange.current = this.value;
-			}
-		}
-
+		next(value);
 		return previous;
 	}
 
 	@Override
 	public T get() {
+		if (failure != null)
+			throw new MissingValueException(this, failure);
 		return value;
 	}
 }
