@@ -1,4 +1,4 @@
-Bundle-Name: Strange Skies :: Utilities :: Eclipse
+Bundle-Name: Strange Skies :: Eclipse
 
 -include: \
 	${build}/include/eclipse.platform.neon.bnd,\

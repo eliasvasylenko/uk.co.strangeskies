@@ -42,23 +42,51 @@ import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.metatype.annotations.AttributeDefinition;
+import org.osgi.service.metatype.annotations.Designate;
+import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 
 import uk.co.strangeskies.observable.Observable;
 import uk.co.strangeskies.observable.Observation;
 import uk.co.strangeskies.observable.Observer;
 import uk.co.strangeskies.text.properties.LocaleManager;
 import uk.co.strangeskies.text.properties.LocaleProvider;
+import uk.co.strangeskies.text.provider.LocaleManagerService.LocaleManagerConfiguration;
 
 /**
  * A locale manager configurable via the config admin service.
  * 
  * @author Elias N Vasylenko
  */
-@Component(configurationPid = LocaleManagerServiceConstants.CONFIGURATION_PID)
+@Designate(ocd = LocaleManagerConfiguration.class)
+@Component(
+    name = LocaleManagerService.CONFIGURATION_PID,
+    configurationPid = LocaleManagerService.CONFIGURATION_PID)
 public class LocaleManagerService implements LocaleManager, LocaleProvider {
-  private final LocaleManager component;
+  @SuppressWarnings("javadoc")
+  @ObjectClassDefinition(
+      id = CONFIGURATION_PID,
+      name = "Locale Configuration",
+      description = "The configuration for the user locale for the application")
+  public @interface LocaleManagerConfiguration {
+    @AttributeDefinition(name = "Locale", description = "The user locale for the application")
+    String locale();
+  }
+
   @Reference
-  ConfigurationAdmin configurationAdmin;
+  private ConfigurationAdmin configurationAdmin;
+
+  /**
+   * Configuration pid for OSGi configuration.
+   */
+  static final String CONFIGURATION_PID = "uk.co.strangeskies.text.locale.manager";
+  /**
+   * Key for locale setting string, in the format specified by
+   * {@link Locale#forLanguageTag(String)}.
+   */
+  static final String LOCALE_KEY = "locale";
+
+  private final LocaleManager component;
 
   /**
    * Create empty manager
@@ -78,11 +106,10 @@ public class LocaleManagerService implements LocaleManager, LocaleProvider {
 
     if (!previous.equals(locale)) {
       try {
-        Configuration configuration = configurationAdmin
-            .getConfiguration(LocaleManagerServiceConstants.CONFIGURATION_PID);
+        Configuration configuration = configurationAdmin.getConfiguration(CONFIGURATION_PID);
 
         Dictionary<String, Object> properties = configuration.getProperties();
-        properties.put(LocaleManagerServiceConstants.LOCALE_KEY, locale.toLanguageTag());
+        properties.put(LOCALE_KEY, locale.toLanguageTag());
         configuration.update(properties);
       } catch (IOException e) {
         throw new RuntimeException(e);
@@ -99,7 +126,7 @@ public class LocaleManagerService implements LocaleManager, LocaleProvider {
   @Modified
   void update(Map<String, String> configuration) {
     if (configuration != null) {
-      String locale = configuration.get(LocaleManagerServiceConstants.LOCALE_KEY);
+      String locale = configuration.get(LOCALE_KEY);
       if (locale != null) {
         setImpl(Locale.forLanguageTag(locale));
       }

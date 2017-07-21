@@ -78,9 +78,9 @@ public abstract class SynchronizedObservableSet<S extends ObservableSet<S, E>, E
 			}
 
 			@Override
-			public void next(Change<E> item) {
+			public HotObservable<Change<E>> next(Change<E> item) {
 				synchronized (getMutex()) {
-					super.next(item);
+					return super.next(item);
 				}
 			}
 		};
@@ -134,9 +134,9 @@ public abstract class SynchronizedObservableSet<S extends ObservableSet<S, E>, E
 	}
 
 	@Override
-	public void next(S item) {
+	public HotObservable<S> next(S item) {
 		synchronized (getMutex()) {
-			super.next(item);
+			return super.next(item);
 		}
 	}
 }

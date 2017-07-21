@@ -53,55 +53,83 @@ import java.util.function.Consumer;
  *          The type of event message to produce
  */
 public class HotObservable<M> implements Observable<M> {
-  private Set<HotObservation<M>> observations;
+	private boolean live = true;
+	private Set<HotObservation<M>> observations;
 
-  @Override
-  public Observation observe(Observer<? super M> observer) {
-    HotObservation<M> observation = new HotObservation<>(this, observer);
+	@Override
+	public Observation observe(Observer<? super M> observer) {
+		HotObservation<M> observation = new HotObservation<>(this, observer);
 
-    if (observations == null)
-      observations = new LinkedHashSet<>();
+		if (observations == null)
+			observations = new LinkedHashSet<>();
 
-    observations.add(observation);
+		observations.add(observation);
 
-    return observation;
-  }
+		if (live)
+			observation.startObservation();
 
-  public boolean hasObservers() {
-    return observations != null;
-  }
+		return observation;
+	}
 
-  void stopObservation(Observation observer) {
-    if (observations.remove(observer) && observations.isEmpty()) {
-      observations = null;
-    }
-  }
+	public boolean hasObservers() {
+		return observations != null;
+	}
 
-  private void forObservers(Consumer<Observer<? super M>> action) {
-    if (observations != null && action != null) {
-      for (HotObservation<M> observation : new ArrayList<>(observations)) {
-        action.accept(observation.getObserver());
-      }
-    }
-  }
+	void stopObservation(Observation observer) {
+		if (observations.remove(observer) && observations.isEmpty()) {
+			observations = null;
+		}
+	}
 
-  /**
-   * Fire the given message to all observers.
-   * 
-   * @param item
-   *          the message event to send
-   */
-  public void next(M item) {
-    forObservers(o -> o.onNext(item));
-  }
+	private void forObservers(Consumer<HotObservation<M>> action) {
+		if (observations != null && action != null) {
+			for (HotObservation<M> observation : new ArrayList<>(observations)) {
+				action.accept(observation);
+			}
+		}
+	}
 
-  public void complete() {
-    forObservers(o -> o.onComplete());
-    observations = null;
-  }
+	void assertLive() {
+		if (!live)
+			throw new IllegalStateException();
+	}
 
-  public void fail(Throwable t) {
-    forObservers(o -> o.onFail(t));
-    observations = null;
-  }
+	void assertDead() {
+		if (live)
+			throw new IllegalStateException();
+	}
+
+	public HotObservable<M> start() {
+		assertDead();
+		forObservers(o -> o.startObservation());
+		return this;
+	}
+
+	/**
+	 * Fire the given message to all observers.
+	 * 
+	 * @param item
+	 *          the message event to send
+	 */
+	public HotObservable<M> next(M item) {
+		assertLive();
+		forObservers(o -> o.getObserver().onNext(item));
+		return this;
+	}
+
+	public HotObservable<M> complete() {
+		assertLive();
+		forObservers(o -> o.getObserver().onComplete());
+		live = false;
+		observations = null;
+		return this;
+	}
+
+	public HotObservable<M> fail(Throwable t) {
+		assertLive();
+		forObservers(o -> o.getObserver().onFail(t));
+		live = false;
+		observations = null;
+		return this;
+	}
 }
