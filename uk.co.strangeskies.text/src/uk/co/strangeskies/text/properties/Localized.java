@@ -34,6 +34,7 @@ package uk.co.strangeskies.text.properties;
 
 import java.util.Locale;
 
+import uk.co.strangeskies.observable.Disposable;
 import uk.co.strangeskies.observable.ImmutableObservable;
 import uk.co.strangeskies.observable.Observable;
 import uk.co.strangeskies.observable.ObservableValue;
@@ -97,20 +98,8 @@ public interface Localized<T> extends ObservableValue<T> {
       }
 
       @Override
-      public Observation observe(Observer<? super T> observer) {
-        Observation observation = new Observation() {
-          private boolean disposed = false;
-
-          @Override
-          public boolean isDisposed() {
-            return disposed;
-          }
-
-          @Override
-          public void dispose() {
-            disposed = true;
-          }
-        };
+      public Disposable observe(Observer<? super T> observer) {
+        Observation observation = () -> {};
         observer.onObserve(observation);
         return observation;
       }

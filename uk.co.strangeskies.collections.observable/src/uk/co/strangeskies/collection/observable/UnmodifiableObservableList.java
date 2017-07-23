@@ -36,8 +36,8 @@ import java.util.Collections;
 import java.util.List;
 
 import uk.co.strangeskies.collection.ListDecorator;
+import uk.co.strangeskies.observable.Disposable;
 import uk.co.strangeskies.observable.Observable;
-import uk.co.strangeskies.observable.Observation;
 import uk.co.strangeskies.observable.Observer;
 
 public abstract class UnmodifiableObservableList<S extends ObservableList<S, E>, E>
@@ -74,7 +74,7 @@ public abstract class UnmodifiableObservableList<S extends ObservableList<S, E>,
   }
 
   @Override
-  public Observation observe(Observer<? super S> observer) {
+  public Disposable observe(Observer<? super S> observer) {
     return observable.observe(observer);
   }
 

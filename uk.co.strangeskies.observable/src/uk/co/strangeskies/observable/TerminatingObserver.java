@@ -41,13 +41,8 @@ public class TerminatingObserver<T> extends PassthroughObserver<T, DisposableMes
   public void onNext(T message) {
     new DisposableMessage<T>() {
       @Override
-      public boolean isDisposed() {
-        return getObservation().isDisposed();
-      }
-
-      @Override
-      public void dispose() {
-        getObservation().dispose();
+      public void cancel() {
+        getObservation().cancel();
       }
 
       @Override

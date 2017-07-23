@@ -48,54 +48,49 @@ import uk.co.strangeskies.observable.Observer;
  *          The type of the expression.
  */
 public abstract class DependentExpression<T> extends ActiveExpression<T> {
-	private final Observer<Expression<?>> dependencyObserver = d -> {
-		fireChange();
-	};
+  private final Observer<Expression<?>> dependencyObserver = d -> {
+    fireChange();
+  };
 
-	private T value;
+  private T value;
 
-	public DependentExpression(Collection<? extends Expression<?>> dependencies) {
-		for (Expression<?> dependency : dependencies) {
-			addDependency(dependency);
-		}
-	}
+  public DependentExpression(Collection<? extends Expression<?>> dependencies) {
+    for (Expression<?> dependency : dependencies) {
+      addDependency(dependency);
+    }
+  }
 
-	public DependentExpression(Expression<?>... dependencies) {
-		this(asList(dependencies));
-	}
+  public DependentExpression(Expression<?>... dependencies) {
+    this(asList(dependencies));
+  }
 
-	protected <U> ExpressionDependency<U> addDependency(Expression<U> dependency) {
-		Disposable disposable = dependency.invalidations().weakReference().observe(dependencyObserver);
-		return new ExpressionDependency<U>() {
-			@Override
-			public boolean isDisposed() {
-				return disposable.isDisposed();
-			}
+  protected <U> ExpressionDependency<U> addDependency(Expression<U> dependency) {
+    Disposable disposable = dependency.invalidations().weakReference().observe(dependencyObserver);
+    return new ExpressionDependency<U>() {
+      @Override
+      public void cancel() {
+        disposable.cancel();
+      }
 
-			@Override
-			public void dispose() {
-				disposable.dispose();
-			}
+      @Override
+      public Expression<U> getExpression() {
+        return dependency;
+      }
+    };
+  }
 
-			@Override
-			public Expression<U> getExpression() {
-				return dependency;
-			}
-		};
-	}
+  @Override
+  public final T getValueImpl(boolean dirty) {
+    if (dirty) {
+      value = evaluate();
+    }
 
-	@Override
-	public final T getValueImpl(boolean dirty) {
-		if (dirty) {
-			value = evaluate();
-		}
+    return value;
+  }
 
-		return value;
-	}
-
-	/**
-	 * @return The value of this {@link Expression} as derived from the dependency
-	 *         {@link Expression}s.
-	 */
-	protected abstract T evaluate();
+  /**
+   * @return The value of this {@link Expression} as derived from the dependency
+   *         {@link Expression}s.
+   */
+  protected abstract T evaluate();
 }

@@ -37,8 +37,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.util.function.Supplier;
 
+import uk.co.strangeskies.observable.Disposable;
 import uk.co.strangeskies.observable.HotObservable;
-import uk.co.strangeskies.observable.Observation;
 import uk.co.strangeskies.observable.Observer;
 
 /**
@@ -59,82 +59,82 @@ import uk.co.strangeskies.observable.Observer;
  *          The type of the value of this expression
  */
 public abstract class LockingExpression<T> extends DependentExpression<T> implements Expression<T> {
-	private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+  private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
-	protected <U> U read(Supplier<U> read) {
-		getReadLock().lock();
+  protected <U> U read(Supplier<U> read) {
+    getReadLock().lock();
 
-		try {
-			return read.get();
-		} finally {
-			getReadLock().unlock();
-		}
-	}
+    try {
+      return read.get();
+    } finally {
+      getReadLock().unlock();
+    }
+  }
 
-	@Override
-	protected boolean beginWrite() {
-		getWriteLock().lock();
-		return super.beginWrite();
-	}
+  @Override
+  protected boolean beginWrite() {
+    getWriteLock().lock();
+    return super.beginWrite();
+  }
 
-	@Override
-	protected boolean endWrite() {
-		getReadLock().lock();
-		getWriteLock().unlock();
+  @Override
+  protected boolean endWrite() {
+    getReadLock().lock();
+    getWriteLock().unlock();
 
-		try {
-			return super.endWrite();
-		} finally {
-			getReadLock().unlock();
-		}
-	}
+    try {
+      return super.endWrite();
+    } finally {
+      getReadLock().unlock();
+    }
+  }
 
-	@Override
-	public final T getValue() {
-		getReadLock().lock();
+  @Override
+  public final T getValue() {
+    getReadLock().lock();
 
-		try {
-			return super.getValue();
-		} finally {
-			getReadLock().unlock();
-		}
-	}
+    try {
+      return super.getValue();
+    } finally {
+      getReadLock().unlock();
+    }
+  }
 
-	/**
-	 * @return a read lock over the expression
-	 */
-	public ReadLock getReadLock() {
-		return lock.readLock();
-	}
+  /**
+   * @return a read lock over the expression
+   */
+  public ReadLock getReadLock() {
+    return lock.readLock();
+  }
 
-	protected WriteLock getWriteLock() {
-		return lock.writeLock();
-	}
+  protected WriteLock getWriteLock() {
+    return lock.writeLock();
+  }
 
-	@Override
-	protected HotObservable<Expression<? extends T>> createObservable() {
-		return new HotObservable<Expression<? extends T>>() {
-			@Override
-			public Observation observe(Observer<? super Expression<? extends T>> observer) {
-				getReadLock().lock();
+  @Override
+  protected HotObservable<Expression<? extends T>> createObservable() {
+    return new HotObservable<Expression<? extends T>>() {
+      @Override
+      public Disposable observe(Observer<? super Expression<? extends T>> observer) {
+        getReadLock().lock();
 
-				try {
-					return super.observe(observer);
-				} finally {
-					getReadLock().unlock();
-				}
-			}
-		};
-	}
+        try {
+          return super.observe(observer);
+        } finally {
+          getReadLock().unlock();
+        }
+      }
+    };
+  }
 
-	@Override
-	protected void fireChange() {
-		getReadLock().lock();
+  @Override
+  protected void fireChange() {
+    getReadLock().lock();
 
-		try {
-			super.fireChange();
-		} finally {
-			getReadLock().unlock();
-		}
-	}
+    try {
+      super.fireChange();
+    } finally {
+      getReadLock().unlock();
+    }
+  }
 }

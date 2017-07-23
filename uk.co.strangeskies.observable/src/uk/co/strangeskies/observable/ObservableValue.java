@@ -68,88 +68,88 @@ import java.util.function.Predicate;
  *          the type of the value
  */
 public interface ObservableValue<T> extends Observable<T> {
-	/**
-	 * A value change event.
-	 * 
-	 * @author Elias N Vasylenko
-	 *
-	 * @param <T>
-	 *          the type of the value
-	 */
-	interface Change<T> {
-		T newValue();
+  /**
+   * A value change event.
+   * 
+   * @author Elias N Vasylenko
+   *
+   * @param <T>
+   *          the type of the value
+   */
+  interface Change<T> {
+    T newValue();
 
-		Optional<T> tryNewValue();
+    Optional<T> tryNewValue();
 
-		T previousValue();
+    T previousValue();
 
-		Optional<T> tryPreviousValue();
-	}
+    Optional<T> tryPreviousValue();
+  }
 
-	/**
-	 * Immediately resolve the current value if one exists, otherwise throw a
-	 * {@link MissingValueException} with a cause representing the current failure
-	 * state.
-	 * 
-	 * @return the current value
-	 */
-	@Override
-	T get();
+  /**
+   * Immediately resolve the current value if one exists, otherwise throw a
+   * {@link MissingValueException} with a cause representing the current failure
+   * state.
+   * 
+   * @return the current value
+   */
+  @Override
+  T get();
 
-	/**
-	 * Immediately resolve the current value, if one exists.
-	 * 
-	 * @return an optional containing the current value, or an empty option if no
-	 *         value is available
-	 */
-	@Override
-	default Optional<T> tryGet() {
-		return Observable.super.tryGet();
-	}
+  /**
+   * Immediately resolve the current value, if one exists.
+   * 
+   * @return an optional containing the current value, or an empty option if no
+   *         value is available
+   */
+  @Override
+  default Optional<T> tryGet() {
+    return Observable.super.tryGet();
+  }
 
-	default boolean isValid() {
-		return tryGet().isPresent();
-	}
+  default boolean isValid() {
+    return tryGet().isPresent();
+  }
 
-	default boolean isEqual(T value) {
-		return isMatching(value::equals);
-	}
+  default boolean isEqual(T value) {
+    return isMatching(value::equals);
+  }
 
-	default boolean isMatching(Predicate<? super T> value) {
-		return tryGet().filter(value::test).isPresent();
-	}
+  default boolean isMatching(Predicate<? super T> value) {
+    return tryGet().filter(value::test).isPresent();
+  }
 
-	default Throwable getFailure() {
-		try {
-			get();
-			throw new IllegalStateException();
-		} catch (MissingValueException e) {
-			return e.getCause();
-		}
-	}
+  default Throwable getFailure() {
+    try {
+      get();
+      throw new IllegalStateException();
+    } catch (MissingValueException e) {
+      return e.getCause();
+    }
+  }
 
-	default Optional<Throwable> tryGetFailure() {
-		try {
-			return Optional.of(getFailure());
-		} catch (IllegalStateException e) {
-			return Optional.empty();
-		}
-	}
+  default Optional<Throwable> tryGetFailure() {
+    try {
+      return Optional.of(getFailure());
+    } catch (IllegalStateException e) {
+      return Optional.empty();
+    }
+  }
 
-	/**
-	 * @return an observable over changes to the value
-	 */
-	Observable<Change<T>> changes();
+  /**
+   * @return an observable over changes to the value
+   */
+  Observable<Change<T>> changes();
 
-	/**
-	 * @param <T>
-	 *          the type of the immutable value
-	 * @param value
-	 *          the immutable value to create an observable over
-	 * @return an observable over the given value which never changes or fires
-	 *         events
-	 */
-	static <T> ObservableValue<T> immutableOver(T value) {
-		return (ImmutableObservableValue<T>) () -> value;
-	}
+  /**
+   * @param <T>
+   *          the type of the immutable value
+   * @param value
+   *          the immutable value to create an observable over
+   * @return an observable over the given value which never changes or fires
+   *         events
+   */
+  static <T> ObservableValue<T> immutableOver(T value) {
+    return (ImmutableObservableValue<T>) () -> value;
+  }
 }

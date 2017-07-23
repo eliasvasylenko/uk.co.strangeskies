@@ -54,7 +54,7 @@ public class ReferenceOwnedObserver<O, M> extends PassthroughObserver<M, OwnedMe
     if (owner != null) {
       action.accept(owner);
     } else {
-      getObservation().dispose();
+      getObservation().cancel();
     }
   }
 

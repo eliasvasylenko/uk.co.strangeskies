@@ -53,83 +53,84 @@ import java.util.function.Consumer;
  *          The type of event message to produce
  */
 public class HotObservable<M> implements Observable<M> {
-	private boolean live = true;
-	private Set<HotObservation<M>> observations;
+  private boolean live = true;
+  private Set<HotObservation<M>> observations;
 
-	@Override
-	public Observation observe(Observer<? super M> observer) {
-		HotObservation<M> observation = new HotObservation<>(this, observer);
+  @Override
+  public Disposable observe(Observer<? super M> observer) {
+    HotObservation<M> observation = new HotObservation<>(this, observer);
 
-		if (observations == null)
-			observations = new LinkedHashSet<>();
+    if (observations == null)
+      observations = new LinkedHashSet<>();
 
-		observations.add(observation);
+    observations.add(observation);
 
-		if (live)
-			observation.startObservation();
+    if (live)
+      observation.startObservation();
 
-		return observation;
-	}
+    return observation;
+  }
 
-	public boolean hasObservers() {
-		return observations != null;
-	}
+  public boolean hasObservers() {
+    return observations != null;
+  }
 
-	void stopObservation(Observation observer) {
-		if (observations.remove(observer) && observations.isEmpty()) {
-			observations = null;
-		}
-	}
+  void stopObservation(Observation observer) {
+    if (observations.remove(observer) && observations.isEmpty()) {
+      observations = null;
+    }
+  }
 
-	private void forObservers(Consumer<HotObservation<M>> action) {
-		if (observations != null && action != null) {
-			for (HotObservation<M> observation : new ArrayList<>(observations)) {
-				action.accept(observation);
-			}
-		}
-	}
+  private void forObservers(Consumer<HotObservation<M>> action) {
+    if (observations != null && action != null) {
+      for (HotObservation<M> observation : new ArrayList<>(observations)) {
+        action.accept(observation);
+      }
+    }
+  }
 
-	void assertLive() {
-		if (!live)
-			throw new IllegalStateException();
-	}
+  void assertLive() {
+    if (!live)
+      throw new IllegalStateException();
+  }
 
-	void assertDead() {
-		if (live)
-			throw new IllegalStateException();
-	}
+  void assertDead() {
+    if (live)
+      throw new IllegalStateException();
+  }
 
-	public HotObservable<M> start() {
-		assertDead();
-		forObservers(o -> o.startObservation());
-		return this;
-	}
+  public HotObservable<M> start() {
+    assertDead();
+    forObservers(o -> o.startObservation());
+    return this;
+  }
 
-	/**
-	 * Fire the given message to all observers.
-	 * 
-	 * @param item
-	 *          the message event to send
-	 */
-	public HotObservable<M> next(M item) {
-		assertLive();
-		forObservers(o -> o.getObserver().onNext(item));
-		return this;
-	}
+  /**
+   * Fire the given message to all observers.
+   * 
+   * @param item
+   *          the message event to send
+   * @return the receiver for method chaining
+   */
+  public HotObservable<M> next(M item) {
+    assertLive();
+    forObservers(o -> o.getObserver().onNext(item));
+    return this;
+  }
 
-	public HotObservable<M> complete() {
-		assertLive();
-		forObservers(o -> o.getObserver().onComplete());
-		live = false;
-		observations = null;
-		return this;
-	}
+  public HotObservable<M> complete() {
+    assertLive();
+    forObservers(o -> o.getObserver().onComplete());
+    live = false;
+    observations = null;
+    return this;
+  }
 
-	public HotObservable<M> fail(Throwable t) {
-		assertLive();
-		forObservers(o -> o.getObserver().onFail(t));
-		live = false;
-		observations = null;
-		return this;
-	}
+  public HotObservable<M> fail(Throwable t) {
+    assertLive();
+    forObservers(o -> o.getObserver().onFail(t));
+    live = false;
+    observations = null;
+    return this;
+  }
 }

@@ -41,20 +41,8 @@ public interface ImmutableObservable<T> extends Observable<T> {
   static Observable<?> INSTANCE = new ImmutableObservable<Object>() {};
 
   @Override
-  default Observation observe(Observer<? super T> observer) {
-    Observation observation = new Observation() {
-      private boolean disposed = false;
-
-      @Override
-      public boolean isDisposed() {
-        return disposed;
-      }
-
-      @Override
-      public void dispose() {
-        disposed = true;
-      }
-    };
+  default Disposable observe(Observer<? super T> observer) {
+    Observation observation = () -> {};
     observer.onObserve(observation);
     return observation;
   }

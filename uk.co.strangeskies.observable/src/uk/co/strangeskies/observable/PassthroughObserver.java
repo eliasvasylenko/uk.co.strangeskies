@@ -55,33 +55,36 @@ import java.util.function.Supplier;
  *          The message type of the downstream observer
  */
 public abstract class PassthroughObserver<T, U> extends SingleUseObserver<T> {
-	private final Supplier<Observer<? super U>> downstreamObserver;
+  private final Supplier<Observer<? super U>> downstreamObserver;
 
-	public PassthroughObserver(Observer<? super U> downstreamObserver) {
-		this(() -> downstreamObserver);
-	}
+  public PassthroughObserver(Observer<? super U> downstreamObserver) {
+    this(() -> downstreamObserver);
+  }
 
-	public PassthroughObserver(Supplier<Observer<? super U>> downstreamObserver) {
-		this.downstreamObserver = downstreamObserver;
-	}
+  public PassthroughObserver(Supplier<Observer<? super U>> downstreamObserver) {
+    this.downstreamObserver = downstreamObserver;
+  }
 
-	public Observer<? super U> getDownstreamObserver() {
-		return downstreamObserver.get();
-	}
+  public Observer<? super U> getDownstreamObserver() {
+    return downstreamObserver.get();
+  }
 
-	@Override
-	public void onObserve(Observation observation) {
-		configureObservation(observation);
-		getDownstreamObserver().onObserve(observation);
-	}
+  @Override
+  public abstract void onNext(T message);
 
-	@Override
-	public void onComplete() {
-		getDownstreamObserver().onComplete();
-	}
+  @Override
+  public void onObserve(Observation upstreamObservation) {
+    configureObservation(upstreamObservation);
+    getDownstreamObserver().onObserve(upstreamObservation);
+  }
 
-	@Override
-	public void onFail(Throwable t) {
-		getDownstreamObserver().onFail(t);
-	}
+  @Override
+  public void onComplete() {
+    getDownstreamObserver().onComplete();
+  }
+
+  @Override
+  public void onFail(Throwable t) {
+    getDownstreamObserver().onFail(t);
+  }
 }

@@ -46,8 +46,8 @@ import org.osgi.service.metatype.annotations.AttributeDefinition;
 import org.osgi.service.metatype.annotations.Designate;
 import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 
+import uk.co.strangeskies.observable.Disposable;
 import uk.co.strangeskies.observable.Observable;
-import uk.co.strangeskies.observable.Observation;
 import uk.co.strangeskies.observable.Observer;
 import uk.co.strangeskies.text.properties.LocaleManager;
 import uk.co.strangeskies.text.properties.LocaleProvider;
@@ -134,7 +134,7 @@ public class LocaleManagerService implements LocaleManager, LocaleProvider {
   }
 
   @Override
-  public Observation observe(Observer<? super Locale> observer) {
+  public Disposable observe(Observer<? super Locale> observer) {
     return component.observe();
   }
 

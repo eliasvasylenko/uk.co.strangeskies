@@ -48,7 +48,7 @@ public class ReferenceObserver<M> extends PassthroughObserver<M, M> {
 		if (observer != null) {
 			action.accept(observer);
 		} else {
-			getObservation().dispose();
+			getObservation().cancel();
 		}
 	}
 

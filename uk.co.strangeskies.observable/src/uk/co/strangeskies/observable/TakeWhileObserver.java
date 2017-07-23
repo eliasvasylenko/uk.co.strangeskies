@@ -48,7 +48,7 @@ public class TakeWhileObserver<M> extends PassthroughObserver<M, M> {
   public void onNext(M message) {
     if (condition.test(message)) {
       getDownstreamObserver().onComplete();
-      getObservation().dispose();
+      getObservation().cancel();
     } else
       getDownstreamObserver().onNext(message);
   }

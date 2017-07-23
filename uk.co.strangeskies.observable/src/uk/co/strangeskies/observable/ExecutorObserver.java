@@ -35,30 +35,60 @@ package uk.co.strangeskies.observable;
 import java.util.concurrent.Executor;
 
 public class ExecutorObserver<T> extends PassthroughObserver<T, T> {
-	private final Executor executor;
+  private final Executor executor;
+  private RequestCount requests;
 
-	public ExecutorObserver(Observer<? super T> downstreamObserver, Executor executor) {
-		super(downstreamObserver);
-		this.executor = executor;
-	}
+  public ExecutorObserver(Observer<? super T> downstreamObserver, Executor executor) {
+    super(downstreamObserver);
+    this.executor = executor;
+    this.requests = new RequestCount();
+  }
 
-	@Override
-	public void onNext(T message) {
-		executor.execute(() -> getDownstreamObserver().onNext(message));
-	}
+  @Override
+  public void onNext(T message) {
+    executor.execute(() -> {
+      getDownstreamObserver().onNext(message);
+      boolean outstandingRequests;
+      synchronized (requests) {
+        requests.fulfil();
+        outstandingRequests = requests.isFulfilled();
+      }
+      if (outstandingRequests) {
+        getObservation().requestNext();
+      }
+    });
+  }
 
-	@Override
-	public void onObserve(Observation observation) {
-		executor.execute(() -> getDownstreamObserver().onObserve(observation));
-	}
+  @Override
+  public void onObserve(Observation observation) {
+    Observation downstreamObservation = new Observation() {
+      @Override
+      public void request(long count) {
+        requests.request(count);
+        observation.requestNext();
+      }
 
-	@Override
-	public void onComplete() {
-		executor.execute(() -> getDownstreamObserver().onComplete());
-	}
+      @Override
+      public void requestUnbounded() {
+        requests.requestUnbounded();
+      }
 
-	@Override
-	public void onFail(Throwable t) {
-		executor.execute(() -> getDownstreamObserver().onFail(t));
-	}
+      @Override
+      public void cancel() {
+        observation.cancel();
+      }
+    };
+    configureObservation(downstreamObservation);
+    executor.execute(() -> super.onObserve(downstreamObservation));
+  }
+
+  @Override
+  public void onComplete() {
+    executor.execute(() -> super.onComplete());
+  }
+
+  @Override
+  public void onFail(Throwable t) {
+    executor.execute(() -> super.onFail(t));
+  }
 }

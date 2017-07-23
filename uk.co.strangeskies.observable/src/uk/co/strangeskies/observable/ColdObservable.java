@@ -55,7 +55,7 @@ public class ColdObservable<M> implements Observable<M> {
   }
 
   @Override
-  public synchronized Observation observe(Observer<? super M> observer) {
+  public synchronized Disposable observe(Observer<? super M> observer) {
     Observation observation = new ColdObservation<>(iterable, observer);
     observer.onObserve(observation);
     return observation;
@@ -77,7 +77,7 @@ public class ColdObservable<M> implements Observable<M> {
     public void request(long count) {
       if (count < 0) {
         observer.onFail(new IllegalArgumentException());
-        dispose();
+        cancel();
       }
 
       Optional<M> next = getNext();
@@ -102,13 +102,8 @@ public class ColdObservable<M> implements Observable<M> {
     }
 
     @Override
-    public synchronized void dispose() {
+    public synchronized void cancel() {
       complete = true;
-    }
-
-    @Override
-    public synchronized boolean isDisposed() {
-      return complete;
     }
   }
 }
