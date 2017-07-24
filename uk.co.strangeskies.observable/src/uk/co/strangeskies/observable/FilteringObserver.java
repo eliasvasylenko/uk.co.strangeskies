@@ -32,21 +32,42 @@
  */
 package uk.co.strangeskies.observable;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.function.Predicate;
 
 public class FilteringObserver<M> extends PassthroughObserver<M, M> {
-	private final Predicate<? super M> condition;
+  private final Predicate<? super M> condition;
+  private boolean requesting;
 
-	public FilteringObserver(Observer<? super M> downstreamObserver, Predicate<? super M> condition) {
-		super(downstreamObserver);
-		this.condition = condition;
-	}
+  public FilteringObserver(Observer<? super M> downstreamObserver, Predicate<? super M> condition) {
+    super(downstreamObserver);
 
-	@Override
-	public void onNext(M message) {
-		if (condition.test(message))
-			getDownstreamObserver().onNext(message);
-		else
-			getObservation().requestNext();
-	}
+    this.condition = requireNonNull(condition);
+  }
+
+  @Override
+  public void onObserve(Observation upstreamObservation) {
+    super.onObserve(new Observation() {
+      @Override
+      public void request(long count) {
+        upstreamObservation.request(count);
+        if (count != Long.MAX_VALUE)
+          requesting = true;
+      }
+
+      @Override
+      public void cancel() {
+        upstreamObservation.cancel();
+      }
+    });
+  }
+
+  @Override
+  public void onNext(M message) {
+    if (condition.test(message))
+      getDownstreamObserver().onNext(message);
+    else if (requesting)
+      getObservation().requestNext();
+  }
 }

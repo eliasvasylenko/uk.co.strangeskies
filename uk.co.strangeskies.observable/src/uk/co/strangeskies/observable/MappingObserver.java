@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.observable;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.function.Function;
 
 public class MappingObserver<T, M> extends PassthroughObserver<T, M> {
@@ -41,7 +43,8 @@ public class MappingObserver<T, M> extends PassthroughObserver<T, M> {
       Observer<? super M> downstreamObserver,
       Function<? super T, ? extends M> mapping) {
     super(downstreamObserver);
-    this.mapping = mapping;
+
+    this.mapping = requireNonNull(mapping);
   }
 
   @Override

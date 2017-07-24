@@ -32,24 +32,29 @@
  */
 package uk.co.strangeskies.observable;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.function.Predicate;
 
 public class TakeWhileObserver<M> extends PassthroughObserver<M, M> {
-  private final Predicate<? super M> condition;
+  private Predicate<? super M> condition;
 
-  public TakeWhileObserver(
-      Observer<? super M> downstreamObserver,
-      Predicate<? super M> condition) {
+  public TakeWhileObserver(Observer<? super M> downstreamObserver, Predicate<? super M> condition) {
     super(downstreamObserver);
-    this.condition = condition;
+
+    this.condition = requireNonNull(condition);
   }
 
   @Override
   public void onNext(M message) {
-    if (condition.test(message)) {
-      getDownstreamObserver().onComplete();
-      getObservation().cancel();
-    } else
-      getDownstreamObserver().onNext(message);
+    if (condition != null) {
+      if (condition.test(message)) {
+        getDownstreamObserver().onNext(message);
+      } else {
+        condition = null;
+        getDownstreamObserver().onComplete();
+        getObservation().cancel();
+      }
+    }
   }
 }

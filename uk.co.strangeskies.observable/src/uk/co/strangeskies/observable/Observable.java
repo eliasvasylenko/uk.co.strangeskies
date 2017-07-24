@@ -41,8 +41,6 @@ import static uk.co.strangeskies.observable.Observer.onFailure;
 import static uk.co.strangeskies.observable.Observer.onObservation;
 import static uk.co.strangeskies.observable.Observer.singleUse;
 
-import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -176,7 +174,7 @@ public interface Observable<M> {
    * @return an observable which performs the injected behavior
    */
   default Observable<M> then(Observer<M> action) {
-    return observer -> observe(new MultiPassthroughObserver<>(observer, action));
+    return observer -> observe(new MultiplePassthroughObserver<>(observer, action));
   }
 
   /**
@@ -188,12 +186,12 @@ public interface Observable<M> {
    * @return an observable which performs the injected behavior
    */
   default Observable<M> thenAfter(Observer<M> action) {
-    return observer -> observe(new MultiPassthroughObserver<>(action, observer));
+    return observer -> observe(new MultiplePassthroughObserver<>(action, observer));
   }
 
   default Observable<M> retrying() {
     return observer -> observe(
-        new MultiPassthroughObserver<>(onFailure(t -> observe(observer)), observer));
+        new MultiplePassthroughObserver<>(onFailure(t -> observe(observer)), observer));
   }
 
   /**
@@ -203,7 +201,7 @@ public interface Observable<M> {
    * @return the derived observable
    */
   default Observable<M> weakReference() {
-    return observer -> observe(new ReferenceObserver<>(observer, WeakReference::new));
+    return observer -> observe(ReferenceObserver.weak(observer));
   }
 
   /**
@@ -223,7 +221,7 @@ public interface Observable<M> {
    * @return the derived observable
    */
   default <O> Observable<OwnedMessage<O, M>> weakReference(O owner) {
-    return observer -> observe(new ReferenceOwnedObserver<>(observer, owner, WeakReference::new));
+    return observer -> observe(ReferenceOwnedObserver.weak(owner, observer));
   }
 
   /**
@@ -233,7 +231,7 @@ public interface Observable<M> {
    * @return the derived observable
    */
   default Observable<M> softReference() {
-    return observer -> observe(new ReferenceObserver<>(observer, SoftReference::new));
+    return observer -> observe(ReferenceObserver.soft(observer));
   }
 
   /**
@@ -253,11 +251,7 @@ public interface Observable<M> {
    * @return the derived observable
    */
   default <O> Observable<OwnedMessage<O, M>> softReference(O owner) {
-    return observer -> observe(new ReferenceOwnedObserver<>(observer, owner, SoftReference::new));
-  }
-
-  default Observable<DisposableMessage<M>> terminating() {
-    return observer -> observe(new TerminatingObserver<>(observer));
+    return observer -> observe(ReferenceOwnedObserver.soft(owner, observer));
   }
 
   /**
@@ -334,6 +328,9 @@ public interface Observable<M> {
    * forward every message as soon as it is available. Because of this, The
    * downstream observable does not support backpressure.
    * 
+   * @param <T>
+   *          the resulting observable message type
+   * 
    * @param mapping
    *          the terminating condition
    * @return the derived observable
@@ -356,6 +353,9 @@ public interface Observable<M> {
    * fewest outstanding requests, then fewest total requests, then first taken
    * from upstream.
    * 
+   * @param <T>
+   *          the resulting observable message type
+   * 
    * @param mapping
    *          the terminating condition
    * @return the derived observable
@@ -374,6 +374,9 @@ public interface Observable<M> {
    * repeated.
    * <p>
    * The upstream and intermediate observables must both support backpressure.
+   * 
+   * @param <T>
+   *          the resulting observable message type
    * 
    * @param mapping
    *          the terminating condition
@@ -403,6 +406,9 @@ public interface Observable<M> {
    * Introduce backpressure by reducing messages until a request is made
    * downstream, then forwarding the reduction.
    * 
+   * @param <R>
+   *          the resulting reduction type
+   * 
    * @param identity
    *          the identity value for the accumulating function
    * @param accumulator
@@ -419,6 +425,9 @@ public interface Observable<M> {
   /**
    * Introduce backpressure by reducing messages until a request is made
    * downstream, then forwarding the reduction.
+   * 
+   * @param <R>
+   *          the resulting reduction type
    * 
    * @param initial
    *          the initial value for the accumulating function
@@ -456,6 +465,11 @@ public interface Observable<M> {
   /**
    * Introduce backpressure by collecting messages until a request is made
    * downstream, then forwarding the collection.
+   * 
+   * @param <R>
+   *          the resulting collection type
+   * @param <A>
+   *          the intermediate collection type
    * 
    * @param collector
    *          the collector to apply to incoming messages

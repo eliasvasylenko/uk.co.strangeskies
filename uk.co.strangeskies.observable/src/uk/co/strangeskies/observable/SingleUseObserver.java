@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.observable;
 
+import java.util.Objects;
+
 /**
  * A partial implementation of an observer which remembers its subscription.
  * 
@@ -53,7 +55,7 @@ public abstract class SingleUseObserver<T> implements Observer<T> {
     if (this.observation != null)
       throw new IllegalStateException(
           "Passthrough observer cannot be used more than once " + observation);
-    this.observation = observation;
+    this.observation = Objects.requireNonNull(observation);
   }
 
   @Override

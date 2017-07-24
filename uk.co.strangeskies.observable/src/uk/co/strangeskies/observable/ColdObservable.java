@@ -33,7 +33,6 @@
 package uk.co.strangeskies.observable;
 
 import java.util.Iterator;
-import java.util.Optional;
 
 /**
  * A simple implementation of {@link Observable} which implements backpressure
@@ -56,54 +55,44 @@ public class ColdObservable<M> implements Observable<M> {
 
   @Override
   public synchronized Disposable observe(Observer<? super M> observer) {
-    Observation observation = new ColdObservation<>(iterable, observer);
-    observer.onObserve(observation);
-    return observation;
+    return new ColdObservation<>(iterable, observer);
   }
 
-  static class ColdObservation<M> implements Observation {
-    private final Observer<? super M> observer;
+  static class ColdObservation<M> extends SafeObservation<M> {
     private final Iterator<? extends M> iterator;
 
-    private boolean complete;
-
     ColdObservation(Iterable<? extends M> iterable, Observer<? super M> observer) {
-      this.observer = observer;
+      super(observer);
       this.iterator = iterable.iterator();
-      complete = false;
     }
 
     @Override
     public void request(long count) {
       if (count < 0) {
-        observer.onFail(new IllegalArgumentException());
-        cancel();
+        throw new IllegalArgumentException();
       }
 
-      Optional<M> next = getNext();
-      while (next != null && --count > 0) {
-        observer.onNext(next.orElse(null));
-        next = getNext();
+      if (count == Long.MAX_VALUE) {
+        requestUnbounded();
+        return;
       }
+
+      while (--count > 0 && tryNext()) {}
     }
 
     @Override
     public void requestUnbounded() {
-      Optional<M> next = getNext();
-      while (next != null) {
-        observer.onNext(next.orElse(null));
-        next = getNext();
+      while (tryNext()) {}
+    }
+
+    private synchronized boolean tryNext() {
+      if (!isDisposed() && iterator.hasNext()) {
+        onNext(iterator.next());
+        return true;
+      } else {
+        cancel();
+        return false;
       }
-    }
-
-    private synchronized Optional<M> getNext() {
-      complete = complete || !iterator.hasNext();
-      return complete ? null : Optional.ofNullable(iterator.next());
-    }
-
-    @Override
-    public synchronized void cancel() {
-      complete = true;
     }
   }
 }

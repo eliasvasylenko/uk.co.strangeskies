@@ -54,11 +54,18 @@ import java.util.function.Consumer;
  */
 public class HotObservable<M> implements Observable<M> {
   private boolean live = true;
-  private Set<HotObservation<M>> observations;
+  private Set<SafeObservation<M>> observations;
 
   @Override
   public Disposable observe(Observer<? super M> observer) {
-    HotObservation<M> observation = new HotObservation<>(this, observer);
+    SafeObservation<M> observation = new SafeObservation<M>(observer) {
+      @Override
+      public void cancel() {
+        super.cancel();
+        if (observations != null)
+          observations.remove(this);
+      }
+    };
 
     if (observations == null)
       observations = new LinkedHashSet<>();
@@ -66,7 +73,7 @@ public class HotObservable<M> implements Observable<M> {
     observations.add(observation);
 
     if (live)
-      observation.startObservation();
+      observation.onObserve();
 
     return observation;
   }
@@ -81,9 +88,9 @@ public class HotObservable<M> implements Observable<M> {
     }
   }
 
-  private void forObservers(Consumer<HotObservation<M>> action) {
+  private void forObservers(Consumer<SafeObservation<M>> action) {
     if (observations != null && action != null) {
-      for (HotObservation<M> observation : new ArrayList<>(observations)) {
+      for (SafeObservation<M> observation : new ArrayList<>(observations)) {
         action.accept(observation);
       }
     }
@@ -101,7 +108,8 @@ public class HotObservable<M> implements Observable<M> {
 
   public HotObservable<M> start() {
     assertDead();
-    forObservers(o -> o.startObservation());
+    live = true;
+    forObservers(o -> o.onObserve());
     return this;
   }
 
@@ -114,13 +122,13 @@ public class HotObservable<M> implements Observable<M> {
    */
   public HotObservable<M> next(M item) {
     assertLive();
-    forObservers(o -> o.getObserver().onNext(item));
+    forObservers(o -> o.onNext(item));
     return this;
   }
 
   public HotObservable<M> complete() {
     assertLive();
-    forObservers(o -> o.getObserver().onComplete());
+    forObservers(o -> o.onComplete());
     live = false;
     observations = null;
     return this;
@@ -128,7 +136,7 @@ public class HotObservable<M> implements Observable<M> {
 
   public HotObservable<M> fail(Throwable t) {
     assertLive();
-    forObservers(o -> o.getObserver().onFail(t));
+    forObservers(o -> o.onFail(t));
     live = false;
     observations = null;
     return this;

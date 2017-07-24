@@ -35,17 +35,31 @@ package uk.co.strangeskies.observable;
 import static java.util.Objects.requireNonNull;
 
 import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class ReferenceOwnedObserver<O, M> extends PassthroughObserver<M, OwnedMessage<O, M>> {
+  public static <O, M> ReferenceOwnedObserver<O, M> weak(
+      O owner,
+      Observer<? super OwnedMessage<O, M>> downstreamObserver) {
+    return new ReferenceOwnedObserver<>(owner, downstreamObserver, WeakReference::new);
+  }
+
+  public static <O, M> ReferenceOwnedObserver<O, M> soft(
+      O owner,
+      Observer<? super OwnedMessage<O, M>> downstreamObserver) {
+    return new ReferenceOwnedObserver<>(owner, downstreamObserver, SoftReference::new);
+  }
+
   private final Reference<O> ownerReference;
 
-  public ReferenceOwnedObserver(
-      Observer<? super OwnedMessage<O, M>> upstreamObserver,
+  protected ReferenceOwnedObserver(
       O owner,
+      Observer<? super OwnedMessage<O, M>> downstreamObserver,
       Function<O, Reference<O>> referenceFunction) {
-    super(upstreamObserver);
+    super(downstreamObserver);
     this.ownerReference = requireNonNull(referenceFunction.apply(owner));
   }
 

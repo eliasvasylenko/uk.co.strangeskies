@@ -38,19 +38,36 @@ import java.util.function.Predicate;
 
 public class SkipWhileObserver<M> extends PassthroughObserver<M, M> {
   private Predicate<? super M> condition;
+  private boolean requesting;
 
-  public SkipWhileObserver(
-      Observer<? super M> downstreamObserver,
-      Predicate<? super M> condition) {
+  public SkipWhileObserver(Observer<? super M> downstreamObserver, Predicate<? super M> condition) {
     super(downstreamObserver);
 
     this.condition = requireNonNull(condition);
   }
 
   @Override
+  public void onObserve(Observation upstreamObservation) {
+    super.onObserve(new Observation() {
+      @Override
+      public void request(long count) {
+        upstreamObservation.request(count);
+        if (count != Long.MAX_VALUE)
+          requesting = true;
+      }
+
+      @Override
+      public void cancel() {
+        upstreamObservation.cancel();
+      }
+    });
+  }
+
+  @Override
   public void onNext(M message) {
-    if (condition.test(message)) {
-      getObservation().requestNext();
+    if (condition != null && condition.test(message)) {
+      if (requesting)
+        getObservation().requestNext();
     } else {
       condition = null;
       getDownstreamObserver().onNext(message);
