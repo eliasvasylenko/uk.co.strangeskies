@@ -52,47 +52,52 @@ import uk.co.strangeskies.log.Log;
 @Component(scope = ServiceScope.PROTOTYPE)
 @SuppressWarnings("javadoc")
 public class LogProvider implements Log {
-	private Bundle usingBundle;
+  private Bundle usingBundle;
 
-	private ServiceReference<LogService> logServiceReference;
-	private LogService logService;
+  private ServiceReference<LogService> logServiceReference;
+  private LogService logService;
 
-	@Activate
-	public void activate(ComponentContext context) {
-		usingBundle = context.getUsingBundle();
-		logServiceReference = usingBundle.getBundleContext().getServiceReference(LogService.class);
-		logService = usingBundle.getBundleContext().getService(logServiceReference);
-	}
+  @Activate
+  public void activate(ComponentContext context) {
+    usingBundle = context.getUsingBundle();
+    logServiceReference = usingBundle.getBundleContext().getServiceReference(LogService.class);
+    logService = usingBundle.getBundleContext().getService(logServiceReference);
+  }
 
-	@Deactivate
-	public void deactivate() {
-		usingBundle.getBundleContext().ungetService(logServiceReference);
-	}
+  @Deactivate
+  public void deactivate() {
+    usingBundle.getBundleContext().ungetService(logServiceReference);
+  }
 
-	private int getLogServiceLevel(Level level) {
-		switch (level) {
-		case TRACE:
-			return LogService.LOG_DEBUG;
-		case DEBUG:
-			return LogService.LOG_DEBUG;
-		case INFO:
-			return LogService.LOG_INFO;
-		case WARN:
-			return LogService.LOG_WARNING;
-		case ERROR:
-			return LogService.LOG_ERROR;
-		default:
-			throw new AssertionError();
-		}
-	}
+  private int getLogServiceLevel(Level level) {
+    switch (level) {
+    case TRACE:
+      return LogService.LOG_DEBUG;
+    case DEBUG:
+      return LogService.LOG_DEBUG;
+    case INFO:
+      return LogService.LOG_INFO;
+    case WARN:
+      return LogService.LOG_WARNING;
+    case ERROR:
+      return LogService.LOG_ERROR;
+    default:
+      throw new AssertionError();
+    }
+  }
 
-	@Override
-	public void log(Level level, String message) {
-		logService.log(getLogServiceLevel(level), message);
-	}
+  @Override
+  public void log(Level level, String message) {
+    logService.log(getLogServiceLevel(level), message);
+  }
 
-	@Override
-	public void log(Level level, String message, Throwable exception) {
-		logService.log(getLogServiceLevel(level), message, exception);
-	}
+  @Override
+  public void log(Level level, Throwable exception) {
+    logService.log(getLogServiceLevel(level), exception.getMessage(), exception);
+  }
+
+  @Override
+  public void log(Level level, String message, Throwable exception) {
+    logService.log(getLogServiceLevel(level), message, exception);
+  }
 }
