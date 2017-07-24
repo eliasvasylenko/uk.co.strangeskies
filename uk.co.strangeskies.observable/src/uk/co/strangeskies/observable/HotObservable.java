@@ -54,11 +54,11 @@ import java.util.function.Consumer;
  */
 public class HotObservable<M> implements Observable<M> {
   private boolean live = true;
-  private Set<SafeObservation<M>> observations;
+  private Set<ObservationImpl<M>> observations;
 
   @Override
   public Disposable observe(Observer<? super M> observer) {
-    SafeObservation<M> observation = new SafeObservation<M>(observer) {
+    ObservationImpl<M> observation = new ObservationImpl<M>(observer) {
       @Override
       public void cancel() {
         super.cancel();
@@ -88,9 +88,9 @@ public class HotObservable<M> implements Observable<M> {
     }
   }
 
-  private void forObservers(Consumer<SafeObservation<M>> action) {
+  private void forObservers(Consumer<ObservationImpl<M>> action) {
     if (observations != null && action != null) {
-      for (SafeObservation<M> observation : new ArrayList<>(observations)) {
+      for (ObservationImpl<M> observation : new ArrayList<>(observations)) {
         action.accept(observation);
       }
     }

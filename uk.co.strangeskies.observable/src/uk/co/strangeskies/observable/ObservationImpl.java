@@ -32,12 +32,12 @@
  */
 package uk.co.strangeskies.observable;
 
-public class SafeObservation<T> implements Observation {
+class ObservationImpl<T> implements Observation {
   private final Observer<? super T> observer;
   private boolean disposed;
 
-  public SafeObservation(Observer<? super T> observer) {
-    this.observer = observer;
+  public ObservationImpl(Observer<? super T> observer) {
+    this.observer = new SafeObserver<>(observer);
   }
 
   @Override
@@ -50,40 +50,22 @@ public class SafeObservation<T> implements Observation {
   }
 
   public void onObserve() {
-    tryAction(() -> observer.onObserve(this));
+    if (!isDisposed())
+      observer.onObserve(this);
   }
 
   public void onNext(T message) {
-    if (message == null) {
-      tryAction(() -> observer.onFail(new NullPointerException()));
-    } else {
-      tryAction(() -> observer.onNext(message));
-    }
+    if (!isDisposed())
+      observer.onNext(message);
   }
 
   public void onComplete() {
-    tryAction(() -> observer.onComplete());
+    if (!isDisposed())
+      observer.onComplete();
   }
 
   public void onFail(Throwable t) {
-    tryAction(() -> observer.onFail(t));
-  }
-
-  public void tryAction(Runnable action) {
-    if (disposed)
-      return;
-
-    try {
-      action.run();
-    } catch (VirtualMachineError | ThreadDeath | LinkageError t) {
-      throw t;
-    } catch (Throwable t) {
-      try {
-        cancel();
-        observer.onFail(t);
-      } catch (Throwable u) {
-
-      }
-    }
+    if (!isDisposed())
+      observer.onFail(t);
   }
 }

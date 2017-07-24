@@ -36,12 +36,10 @@ public class RequestCount {
   private long requestCount;
 
   public synchronized void request(long count) {
-    if (requestCount >= 0)
+    if (count == Long.MAX_VALUE)
+      requestCount = -1;
+    else if (requestCount >= 0)
       requestCount += count;
-  }
-
-  public synchronized void requestUnbounded() {
-    requestCount = -1;
   }
 
   public synchronized boolean isFulfilled() {
@@ -49,9 +47,15 @@ public class RequestCount {
   }
 
   public synchronized void fulfil() {
-    if (requestCount > 0)
-      requestCount--;
-    else if (requestCount == 0)
+    if (!tryFulfil())
       throw new IllegalStateException("No request to fulfil");
+  }
+
+  public synchronized boolean tryFulfil() {
+    if (requestCount > 0) {
+      requestCount--;
+      return true;
+    } else
+      return false;
   }
 }

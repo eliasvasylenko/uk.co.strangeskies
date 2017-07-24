@@ -32,41 +32,67 @@
  */
 package uk.co.strangeskies.observable;
 
-import static java.util.Objects.requireNonNull;
+import java.util.Objects;
+import java.util.function.Consumer;
 
-import java.util.function.Predicate;
+public class SafeObserver<T> extends PassthroughObserver<T, T> {
+  private boolean disposed;
 
-public class FilteringObserver<M> extends PassthroughObserver<M, M> {
-  private final Predicate<? super M> condition;
-  private boolean requesting;
-
-  public FilteringObserver(Observer<? super M> downstreamObserver, Predicate<? super M> condition) {
+  public SafeObserver(Observer<? super T> downstreamObserver) {
     super(downstreamObserver);
+  }
 
-    this.condition = requireNonNull(condition);
+  public void cancel() {
+    disposed = true;
+  }
+
+  public boolean isDisposed() {
+    return disposed;
   }
 
   @Override
   public void onObserve(Observation upstreamObservation) {
-    super.onObserve(new Observation() {
-      @Override
-      public void request(long count) {
-        upstreamObservation.request(count);
-        requesting = true;
-      }
+    Observation downstreamObservation = upstreamObservation; // TODO
 
-      @Override
-      public void cancel() {
-        upstreamObservation.cancel();
-      }
+    tryAction(o -> o.onObserve(downstreamObservation));
+  }
+
+  @Override
+  public void onNext(T message) {
+    tryAction(o -> {
+      Objects.requireNonNull(message, "Observable message must not be null");
+      o.onNext(message);
     });
   }
 
   @Override
-  public void onNext(M message) {
-    if (condition.test(message))
-      getDownstreamObserver().onNext(message);
-    else if (requesting)
-      getObservation().requestNext();
+  public void onComplete() {
+    tryAction(o -> o.onComplete());
+  }
+
+  @Override
+  public void onFail(Throwable t) {
+    tryAction(o -> {
+      Objects.requireNonNull(t, "Observable failure throwable must not be null");
+      o.onFail(t);
+    });
+  }
+
+  public void tryAction(Consumer<? super Observer<? super T>> action) {
+    if (disposed)
+      return;
+
+    try {
+      action.accept(getDownstreamObserver());
+    } catch (VirtualMachineError | ThreadDeath | LinkageError t) {
+      throw t;
+    } catch (Throwable t) {
+      try {
+        cancel();
+        getDownstreamObserver().onFail(t);
+      } catch (Throwable u) {
+
+      }
+    }
   }
 }

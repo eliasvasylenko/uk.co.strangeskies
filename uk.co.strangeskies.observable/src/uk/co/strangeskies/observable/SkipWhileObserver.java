@@ -52,8 +52,7 @@ public class SkipWhileObserver<M> extends PassthroughObserver<M, M> {
       @Override
       public void request(long count) {
         upstreamObservation.request(count);
-        if (count != Long.MAX_VALUE)
-          requesting = true;
+        requesting = true;
       }
 
       @Override

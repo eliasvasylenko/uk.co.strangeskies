@@ -32,13 +32,114 @@
  */
 package uk.co.strangeskies.observable;
 
-import org.junit.Ignore;
+import java.util.concurrent.Executor;
+
 import org.junit.Test;
 
-@Ignore
+import mockit.Expectations;
+import mockit.FullVerificationsInOrder;
+import mockit.Mocked;
+
 @SuppressWarnings("javadoc")
 public class ExecutorObserverTest {
-  // TODO
+  @Mocked
+  Observation upstreamObservation;
+
+  @Mocked
+  Observer<String> downstreamObserver;
+
   @Test
-  public void testsNotImplementedYet() {}
+  public void messageEventOnInlineExecutorTest() {
+    Observer<String> test = new ExecutorObserver<>(downstreamObserver, r -> r.run());
+
+    test.onObserve(upstreamObservation);
+    test.onNext("message");
+
+    new FullVerificationsInOrder() {
+      {
+        downstreamObserver.onObserve((Observation) any);
+        downstreamObserver.onNext("message");
+      }
+    };
+  }
+
+  @Test
+  public void messageEventOnDiscardingExecutorTest() {
+    Observer<String> test = new ExecutorObserver<>(downstreamObserver, r -> {});
+
+    test.onObserve(upstreamObservation);
+    test.onNext("message");
+
+    new FullVerificationsInOrder() {
+      {}
+    };
+  }
+
+  @Test
+  public void messageEventOnMockedExecutorTest(@Mocked Executor executor) {
+    Observer<String> test = new ExecutorObserver<>(downstreamObserver, executor);
+
+    test.onObserve(upstreamObservation);
+    test.onNext("message");
+
+    new FullVerificationsInOrder() {
+      {
+        executor.execute((Runnable) any);
+        executor.execute((Runnable) any);
+      }
+    };
+  }
+
+  @Test
+  public void throwFromOnObserveTest() {
+    Throwable throwable = new Exception();
+
+    new Expectations() {
+      {
+        downstreamObserver.onObserve((Observation) any);
+        result = throwable;
+      }
+    };
+
+    Observer<String> test = new ExecutorObserver<>(downstreamObserver, r -> r.run());
+
+    test.onObserve(upstreamObservation);
+
+    new FullVerificationsInOrder() {
+      {
+        downstreamObserver.onObserve((Observation) any);
+        downstreamObserver.onFail(throwable);
+      }
+    };
+  }
+
+  @Test
+  public void throwFromOnNextTest() {
+    Throwable throwable = new Exception();
+
+    new Expectations() {
+      {
+        downstreamObserver.onNext(anyString);
+        result = throwable;
+      }
+    };
+
+    Observer<String> test = new ExecutorObserver<>(downstreamObserver, r -> r.run());
+
+    test.onObserve(upstreamObservation);
+    test.onNext("message");
+
+    new FullVerificationsInOrder() {
+      {
+        downstreamObserver.onObserve((Observation) any);
+        downstreamObserver.onNext("message");
+        downstreamObserver.onFail(throwable);
+      }
+    };
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void nullExecutorTest() {
+    new ExecutorObserver<>(downstreamObserver, null);
+  }
 }

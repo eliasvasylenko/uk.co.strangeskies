@@ -58,7 +58,7 @@ public class ColdObservable<M> implements Observable<M> {
     return new ColdObservation<>(iterable, observer);
   }
 
-  static class ColdObservation<M> extends SafeObservation<M> {
+  static class ColdObservation<M> extends ObservationImpl<M> {
     private final Iterator<? extends M> iterator;
 
     ColdObservation(Iterable<? extends M> iterable, Observer<? super M> observer) {
