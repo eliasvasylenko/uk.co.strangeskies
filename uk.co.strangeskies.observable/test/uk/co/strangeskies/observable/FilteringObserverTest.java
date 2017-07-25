@@ -55,6 +55,7 @@ public class FilteringObserverTest {
     new FullVerificationsInOrder() {
       {
         downstreamObserver.onObserve((Observation) any);
+        upstreamObservation.requestNext();
       }
     };
   }
@@ -87,8 +88,10 @@ public class FilteringObserverTest {
     new FullVerificationsInOrder() {
       {
         downstreamObserver.onObserve((Observation) any);
+        upstreamObservation.requestNext();
         downstreamObserver.onNext("two");
         downstreamObserver.onNext("three");
+        upstreamObservation.requestNext();
       }
     };
   }

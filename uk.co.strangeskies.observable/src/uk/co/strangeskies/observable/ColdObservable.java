@@ -33,6 +33,7 @@
 package uk.co.strangeskies.observable;
 
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A simple implementation of {@link Observable} which implements backpressure
@@ -60,6 +61,7 @@ public class ColdObservable<M> implements Observable<M> {
 
   static class ColdObservation<M> extends ObservationImpl<M> {
     private final Iterator<? extends M> iterator;
+    private final AtomicLong totalCount = new AtomicLong();
 
     ColdObservation(Iterable<? extends M> iterable, Observer<? super M> observer) {
       super(observer);
@@ -72,6 +74,8 @@ public class ColdObservable<M> implements Observable<M> {
         throw new IllegalArgumentException();
       }
 
+      totalCount.addAndGet(count);
+
       if (count == Long.MAX_VALUE) {
         requestUnbounded();
         return;
@@ -82,6 +86,7 @@ public class ColdObservable<M> implements Observable<M> {
 
     @Override
     public void requestUnbounded() {
+      totalCount.set(Long.MAX_VALUE);
       while (tryNext()) {}
     }
 
@@ -94,5 +99,13 @@ public class ColdObservable<M> implements Observable<M> {
         return false;
       }
     }
+
+    @Override
+    public long getPendingRequestCount() {
+      return totalCount.get();
+    }
+
+    @Override
+    protected void cancelImpl() {}
   }
 }

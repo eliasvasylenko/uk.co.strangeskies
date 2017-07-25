@@ -32,40 +32,42 @@
  */
 package uk.co.strangeskies.observable;
 
-class ObservationImpl<T> implements Observation {
-  private final Observer<? super T> observer;
-  private boolean disposed;
+abstract class ObservationImpl<T> implements Observation {
+  private final SafeObserver<? super T> observer;
 
   public ObservationImpl(Observer<? super T> observer) {
     this.observer = new SafeObserver<>(observer);
   }
 
-  @Override
-  public void cancel() {
-    disposed = true;
+  protected SafeObserver<? super T> getObserver() {
+    return observer;
   }
 
+  @Override
+  public void cancel() {
+    observer.cancel();
+    cancelImpl();
+  }
+
+  protected abstract void cancelImpl();
+
   public boolean isDisposed() {
-    return disposed;
+    return observer.isDone();
   }
 
   public void onObserve() {
-    if (!isDisposed())
-      observer.onObserve(this);
+    observer.onObserve(this);
   }
 
   public void onNext(T message) {
-    if (!isDisposed())
-      observer.onNext(message);
+    observer.onNext(message);
   }
 
   public void onComplete() {
-    if (!isDisposed())
-      observer.onComplete();
+    observer.onComplete();
   }
 
   public void onFail(Throwable t) {
-    if (!isDisposed())
-      observer.onFail(t);
+    observer.onFail(t);
   }
 }

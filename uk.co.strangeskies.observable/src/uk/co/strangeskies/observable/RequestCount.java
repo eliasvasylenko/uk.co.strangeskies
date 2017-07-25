@@ -35,6 +35,10 @@ package uk.co.strangeskies.observable;
 public class RequestCount {
   private long requestCount;
 
+  public long getCount() {
+    return requestCount;
+  }
+
   public synchronized void request(long count) {
     if (count == Long.MAX_VALUE)
       requestCount = -1;

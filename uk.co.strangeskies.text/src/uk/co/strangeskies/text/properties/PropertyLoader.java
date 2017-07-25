@@ -77,162 +77,164 @@ import uk.co.strangeskies.observable.ObservableValue;
  * @author Elias N Vasylenko
  */
 public interface PropertyLoader {
-	/**
-	 * As returned by {@link #getDefaultPropertyLoader()}.
-	 */
-	PropertyLoader DEFAULT_PROPERTY_LOADER = getPropertyLoader(LocaleManager.getDefaultManager());
+  /**
+   * As returned by {@link #getDefaultPropertyLoader()}.
+   */
+  PropertyLoader DEFAULT_PROPERTY_LOADER = getPropertyLoader(LocaleManager.getDefaultManager());
 
-	/**
-	 * @return the current locale of all localized texts implemented by this
-	 *         {@link PropertyLoader}
-	 */
-	Locale getLocale();
+  /**
+   * @return the current locale of all localized texts implemented by this
+   *         {@link PropertyLoader}
+   */
+  Locale getLocale();
 
-	/**
-	 * @return an observable over changes to the locale
-	 */
-	ObservableValue<Locale> locale();
+  /**
+   * @return an observable over changes to the locale
+   */
+  ObservableValue<Locale> locale();
 
-	/**
-	 * @param propertyProvider
-	 *          a provider for a type of property
-	 * @return true if the provider was registered, false otherwise
-	 */
-	boolean registerValueProvider(PropertyValueProviderFactory propertyProvider);
+  /**
+   * @param propertyProvider
+   *          a provider for a type of property
+   * @return true if the provider was registered, false otherwise
+   */
+  boolean registerValueProvider(PropertyValueProviderFactory propertyProvider);
 
-	/**
-	 * 
-	 * @param propertyProvider
-	 *          a provider for a type of property
-	 * @return true if the provider was unregistered, false otherwise
-	 */
-	boolean unregisterValueProvider(PropertyValueProviderFactory propertyProvider);
+  /**
+   * 
+   * @param propertyProvider
+   *          a provider for a type of property
+   * @return true if the provider was unregistered, false otherwise
+   */
+  boolean unregisterValueProvider(PropertyValueProviderFactory propertyProvider);
 
-	/**
-	 * @return all available property providers
-	 */
-	List<PropertyValueProviderFactory> getValueProviders();
+  /**
+   * @return all available property providers
+   */
+  List<PropertyValueProviderFactory> getValueProviders();
 
-	/**
-	 * @param type
-	 *          the exact annotated type to provide
-	 * @return a property value provider aggregating all available
-	 *         {@link PropertyValueProviderFactory factories} over the given type
-	 */
-	Optional<PropertyValueProvider<?>> getValueProvider(AnnotatedType type);
+  /**
+   * @param type
+   *          the exact annotated type to provide
+   * @return a property value provider aggregating all available
+   *         {@link PropertyValueProviderFactory factories} over the given type
+   */
+  Optional<PropertyValueProvider<?>> getValueProvider(AnnotatedType type);
 
-	/**
-	 * @return true if the strategy was registered, false otherwise
-	 */
-	<T extends PropertyResourceStrategy<T>> boolean registerResourceStrategy(T strategy);
+  /**
+   * @param strategy
+   *          the strategy to register
+   * @return true if the strategy was registered, false otherwise
+   */
+  <T extends PropertyResourceStrategy<T>> boolean registerResourceStrategy(T strategy);
 
-	/**
-	 * @return true if the strategy was unregistered, false otherwise
-	 */
-	<T extends PropertyResourceStrategy<T>> boolean unregisterResourceStrategy(T strategy);
+  /**
+   * @param strategy
+   *          the strategy to unregister
+   * @return true if the strategy was unregistered, false otherwise
+   */
+  <T extends PropertyResourceStrategy<T>> boolean unregisterResourceStrategy(T strategy);
 
-	Set<Class<? extends PropertyResourceStrategy<?>>> getResourceStrategies();
+  Set<Class<? extends PropertyResourceStrategy<?>>> getResourceStrategies();
 
-	<T extends PropertyResourceStrategy<T>> T getResourceStrategy(Class<T> strategy);
+  <T extends PropertyResourceStrategy<T>> T getResourceStrategy(Class<T> strategy);
 
-	<T extends PropertyResourceStrategy<T>> void setDefaultResourceStrategy(T strategy);
+  <T extends PropertyResourceStrategy<T>> void setDefaultResourceStrategy(T strategy);
 
-	/**
-	 * Generate an implementing instance of the given accessor interface class,
-	 * according to the rules described by {@link Properties}.
-	 * 
-	 * @param accessorConfiguration
-	 *          configuration object for the sub-interface of {@link Properties}
-	 *          we wish to implement, and the default property configuration to
-	 *          apply
-	 * @return an implementation of the accessor interface
-	 * @param <T>
-	 *          the type of the localization text accessor interface
-	 */
-	<T> T getProperties(PropertyAccessorConfiguration<T> accessorConfiguration);
+  /**
+   * Generate an implementing instance of the given accessor interface class,
+   * according to the rules described by {@link Properties}.
+   * 
+   * @param accessorConfiguration
+   *          configuration object for the sub-interface of {@link Properties} we
+   *          wish to implement, and the default property configuration to apply
+   * @return an implementation of the accessor interface
+   * @param <T>
+   *          the type of the localization text accessor interface
+   */
+  <T> T getProperties(PropertyAccessorConfiguration<T> accessorConfiguration);
 
-	/**
-	 * Generate an implementing instance of the given accessor interface class,
-	 * according to the rules described by {@link Properties}.
-	 * 
-	 * @param <T>
-	 *          the type of the localization text accessor interface
-	 * @param accessor
-	 *          the sub-interface of {@link Properties} we wish to implement
-	 * @return an implementation of the accessor interface
-	 */
-	default <T> T getProperties(Class<T> accessor) {
-		return getProperties(new PropertyAccessorConfiguration<>(accessor));
-	}
+  /**
+   * Generate an implementing instance of the given accessor interface class,
+   * according to the rules described by {@link Properties}.
+   * 
+   * @param <T>
+   *          the type of the localization text accessor interface
+   * @param accessor
+   *          the sub-interface of {@link Properties} we wish to implement
+   * @return an implementation of the accessor interface
+   */
+  default <T> T getProperties(Class<T> accessor) {
+    return getProperties(new PropertyAccessorConfiguration<>(accessor));
+  }
 
-	/**
-	 * @return the properties associated directly with the property loader itself
-	 */
-	PropertyLoaderProperties getProperties();
+  /**
+   * @return the properties associated directly with the property loader itself
+   */
+  PropertyLoaderProperties getProperties();
 
-	/**
-	 * Get a simple {@link PropertyLoader} implementation over the
-	 * {@link LocaleManager#getDefaultManager() system locale}.
-	 * 
-	 * @return a {@link PropertyLoader} for the system locale
-	 */
-	static PropertyLoader getDefaultPropertyLoader() {
-		return DEFAULT_PROPERTY_LOADER;
-	}
+  /**
+   * Get a simple {@link PropertyLoader} implementation over the
+   * {@link LocaleManager#getDefaultManager() system locale}.
+   * 
+   * @return a {@link PropertyLoader} for the system locale
+   */
+  static PropertyLoader getDefaultPropertyLoader() {
+    return DEFAULT_PROPERTY_LOADER;
+  }
 
-	/**
-	 * Get a {@link #getProperties() property implementation} from the
-	 * {@link #getDefaultPropertyLoader() default loader}.
-	 * 
-	 * @param accessorConfiguration
-	 *          configuration object for the sub-interface of {@link Properties}
-	 *          we wish to implement, and the default property configuration to
-	 *          apply
-	 * @return an implementation of the accessor interface
-	 * @param <T>
-	 *          the type of the localization text accessor interface
-	 */
-	static <T> T getDefaultProperties(PropertyAccessorConfiguration<T> accessorConfiguration) {
-		return getDefaultPropertyLoader().getProperties(accessorConfiguration);
-	}
+  /**
+   * Get a {@link #getProperties() property implementation} from the
+   * {@link #getDefaultPropertyLoader() default loader}.
+   * 
+   * @param accessorConfiguration
+   *          configuration object for the sub-interface of {@link Properties} we
+   *          wish to implement, and the default property configuration to apply
+   * @return an implementation of the accessor interface
+   * @param <T>
+   *          the type of the localization text accessor interface
+   */
+  static <T> T getDefaultProperties(PropertyAccessorConfiguration<T> accessorConfiguration) {
+    return getDefaultPropertyLoader().getProperties(accessorConfiguration);
+  }
 
-	/**
-	 * Generate an implementing instance of the given accessor interface class,
-	 * according to the rules described by {@link Properties}.
-	 * 
-	 * @param <T>
-	 *          the type of the localization text accessor interface
-	 * @param accessor
-	 *          the sub-interface of {@link Properties} we wish to implement
-	 * @return an implementation of the accessor interface
-	 */
-	static <T> T getDefaultProperties(Class<T> accessor) {
-		return getDefaultPropertyLoader().getProperties(new PropertyAccessorConfiguration<>(accessor));
-	}
+  /**
+   * Generate an implementing instance of the given accessor interface class,
+   * according to the rules described by {@link Properties}.
+   * 
+   * @param <T>
+   *          the type of the localization text accessor interface
+   * @param accessor
+   *          the sub-interface of {@link Properties} we wish to implement
+   * @return an implementation of the accessor interface
+   */
+  static <T> T getDefaultProperties(Class<T> accessor) {
+    return getDefaultPropertyLoader().getProperties(new PropertyAccessorConfiguration<>(accessor));
+  }
 
-	/**
-	 * Get a simple {@link PropertyLoader} implementation over the given locale
-	 * provider.
-	 * 
-	 * @param provider
-	 *          a provider to establish a locale setting
-	 * @return a {@link PropertyLoader} for the given locale
-	 */
-	static PropertyLoader getPropertyLoader(LocaleProvider provider) {
-		return getPropertyLoader(provider, null);
-	}
+  /**
+   * Get a simple {@link PropertyLoader} implementation over the given locale
+   * provider.
+   * 
+   * @param provider
+   *          a provider to establish a locale setting
+   * @return a {@link PropertyLoader} for the given locale
+   */
+  static PropertyLoader getPropertyLoader(LocaleProvider provider) {
+    return getPropertyLoader(provider, null);
+  }
 
-	/**
-	 * Get a simple {@link PropertyLoader} implementation over the given locale
-	 * provider.
-	 * 
-	 * @param provider
-	 *          a provider to establish a locale setting
-	 * @param log
-	 *          a log for localization information
-	 * @return a {@link PropertyLoader} for the given locale
-	 */
-	static PropertyLoader getPropertyLoader(LocaleProvider provider, Log log) {
-		return new PropertyLoaderImpl(provider, log);
-	}
+  /**
+   * Get a simple {@link PropertyLoader} implementation over the given locale
+   * provider.
+   * 
+   * @param provider
+   *          a provider to establish a locale setting
+   * @param log
+   *          a log for localization information
+   * @return a {@link PropertyLoader} for the given locale
+   */
+  static PropertyLoader getPropertyLoader(LocaleProvider provider, Log log) {
+    return new PropertyLoaderImpl(provider, log);
+  }
 }

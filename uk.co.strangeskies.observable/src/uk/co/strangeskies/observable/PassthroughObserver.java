@@ -73,9 +73,9 @@ public abstract class PassthroughObserver<T, U> extends SingleUseObserver<T> {
   public abstract void onNext(T message);
 
   @Override
-  public void onObserve(Observation upstreamObservation) {
-    initializeObservation(upstreamObservation);
-    getDownstreamObserver().onObserve(upstreamObservation);
+  public void onObserve(Observation observation) {
+    initializeObservation(observation);
+    getDownstreamObserver().onObserve(observation);
   }
 
   @Override

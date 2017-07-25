@@ -42,7 +42,7 @@ public interface ImmutableObservable<T> extends Observable<T> {
 
   @Override
   default Disposable observe(Observer<? super T> observer) {
-    Observation observation = () -> {};
+    UnboundedObservation observation = () -> {};
     observer.onObserve(observation);
     return observation;
   }

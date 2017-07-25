@@ -70,6 +70,7 @@ public class SkipWhileObserverTest {
     new FullVerificationsInOrder() {
       {
         downstreamObserver.onObserve((Observation) any);
+        upstreamObservation.requestNext();
       }
     };
   }
@@ -85,6 +86,7 @@ public class SkipWhileObserverTest {
     new FullVerificationsInOrder() {
       {
         downstreamObserver.onObserve((Observation) any);
+        upstreamObservation.requestNext();
         downstreamObserver.onNext("fail");
       }
     };

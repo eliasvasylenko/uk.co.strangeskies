@@ -37,6 +37,7 @@ import org.junit.Test;
 import mockit.Expectations;
 import mockit.FullVerificationsInOrder;
 import mockit.Mocked;
+import mockit.VerificationsInOrder;
 
 @SuppressWarnings("javadoc")
 public class SafeObserverTest {
@@ -53,10 +54,12 @@ public class SafeObserverTest {
     test.getObservation().cancel();
     test.onNext("message");
 
-    new FullVerificationsInOrder() {
+    new VerificationsInOrder() {
       {
         downstreamObserver.onObserve((Observation) any);
         upstreamObservation.cancel();
+        downstreamObserver.onNext(anyString);
+        times = 0;
       }
     };
   }
@@ -68,10 +71,12 @@ public class SafeObserverTest {
     test.onComplete();
     test.onNext("message");
 
-    new FullVerificationsInOrder() {
+    new VerificationsInOrder() {
       {
         downstreamObserver.onObserve((Observation) any);
         downstreamObserver.onComplete();
+        downstreamObserver.onNext(anyString);
+        times = 0;
       }
     };
   }
@@ -100,7 +105,7 @@ public class SafeObserverTest {
     Observer<String> test = new SafeObserver<>(downstreamObserver);
     test.onObserve(upstreamObservation);
 
-    new FullVerificationsInOrder() {
+    new VerificationsInOrder() {
       {
         downstreamObserver.onObserve((Observation) any);
         downstreamObserver.onFail(throwable);
@@ -119,15 +124,44 @@ public class SafeObserverTest {
       }
     };
 
-    Observer<String> test = new SafeObserver<>(downstreamObserver);
+    SafeObserver<String> test = new SafeObserver<>(downstreamObserver);
     test.onObserve(upstreamObservation);
+    test.getObservation().requestNext();
     test.onNext("message");
 
-    new FullVerificationsInOrder() {
+    new VerificationsInOrder() {
       {
         downstreamObserver.onObserve((Observation) any);
         downstreamObserver.onNext("message");
         downstreamObserver.onFail(throwable);
+      }
+    };
+  }
+
+  @Test
+  public void sendMessageWithRequestTest() {
+    SafeObserver<String> test = new SafeObserver<>(downstreamObserver);
+    test.onObserve(upstreamObservation);
+    test.getObservation().requestNext();
+    test.onNext("message");
+
+    new VerificationsInOrder() {
+      {
+        downstreamObserver.onObserve((Observation) any);
+        downstreamObserver.onNext("message");
+      }
+    };
+  }
+
+  @Test
+  public void sendMessageWithoutRequestTest() {
+    SafeObserver<String> test = new SafeObserver<>(downstreamObserver);
+    test.onObserve(upstreamObservation);
+    test.onNext("message");
+
+    new VerificationsInOrder() {
+      {
+        downstreamObserver.onObserve((Observation) any);
       }
     };
   }

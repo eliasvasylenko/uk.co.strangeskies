@@ -99,13 +99,18 @@ public class BackpressureReducingObserver<T, M> extends PassthroughObserver<T, M
       }
 
       @Override
-      public void requestUnbounded() {
-        throw new UnsupportedOperationException();
+      public boolean isRequestUnbounded() {
+        return Observation.super.isRequestUnbounded();
       }
 
       @Override
       public void cancel() {
         observation.cancel();
+      }
+
+      @Override
+      public long getPendingRequestCount() {
+        return outstandingRequests.getCount();
       }
     });
 

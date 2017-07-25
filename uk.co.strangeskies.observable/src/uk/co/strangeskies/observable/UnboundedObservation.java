@@ -32,22 +32,12 @@
  */
 package uk.co.strangeskies.observable;
 
-public class RetryingObserver<T> extends PassthroughObserver<T, T> {
-  private final Observable<? extends T> retryOn;
-
-  public RetryingObserver(Observer<? super T> downstreamObserver, Observable<? extends T> retryOn) {
-    super(downstreamObserver);
-
-    this.retryOn = retryOn;
-  }
+public interface UnboundedObservation extends Observation {
+  @Override
+  default void request(long count) {}
 
   @Override
-  public void onFail(Throwable t) {
-    retryOn.observe(this);
-  }
-
-  @Override
-  public void onNext(T message) {
-    getDownstreamObserver().onNext(message);
+  default long getPendingRequestCount() {
+    return Long.MAX_VALUE;
   }
 }

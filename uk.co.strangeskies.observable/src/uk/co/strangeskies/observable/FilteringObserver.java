@@ -38,7 +38,6 @@ import java.util.function.Predicate;
 
 public class FilteringObserver<M> extends PassthroughObserver<M, M> {
   private final Predicate<? super M> condition;
-  private boolean requesting;
 
   public FilteringObserver(Observer<? super M> downstreamObserver, Predicate<? super M> condition) {
     super(downstreamObserver);
@@ -47,26 +46,10 @@ public class FilteringObserver<M> extends PassthroughObserver<M, M> {
   }
 
   @Override
-  public void onObserve(Observation upstreamObservation) {
-    super.onObserve(new Observation() {
-      @Override
-      public void request(long count) {
-        upstreamObservation.request(count);
-        requesting = true;
-      }
-
-      @Override
-      public void cancel() {
-        upstreamObservation.cancel();
-      }
-    });
-  }
-
-  @Override
   public void onNext(M message) {
     if (condition.test(message))
       getDownstreamObserver().onNext(message);
-    else if (requesting)
+    else
       getObservation().requestNext();
   }
 }

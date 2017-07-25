@@ -32,10 +32,22 @@
  */
 package uk.co.strangeskies.observable;
 
-public class MissingBackpressureException extends RuntimeException {
-  private static final long serialVersionUID = 1L;
+abstract class UnboundedObservationImpl<T> extends ObservationImpl<T> {
+  public UnboundedObservationImpl(Observer<? super T> observer) {
+    super(observer);
+  }
 
-  public MissingBackpressureException(Observation observation) {
-    super("Source observable does not implement backpressure " + observation);
+  @Override
+  public void onObserve() {
+    super.onObserve();
+    getObserver().getObservation().requestUnbounded();
+  }
+
+  @Override
+  public void request(long count) {}
+
+  @Override
+  public long getPendingRequestCount() {
+    return Long.MAX_VALUE;
   }
 }

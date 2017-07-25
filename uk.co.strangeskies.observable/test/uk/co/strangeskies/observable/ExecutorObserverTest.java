@@ -39,6 +39,7 @@ import org.junit.Test;
 import mockit.Expectations;
 import mockit.FullVerificationsInOrder;
 import mockit.Mocked;
+import mockit.VerificationsInOrder;
 
 @SuppressWarnings("javadoc")
 public class ExecutorObserverTest {
@@ -50,12 +51,13 @@ public class ExecutorObserverTest {
 
   @Test
   public void messageEventOnInlineExecutorTest() {
-    Observer<String> test = new ExecutorObserver<>(downstreamObserver, r -> r.run());
+    SafeObserver<String> test = new ExecutorObserver<>(downstreamObserver, r -> r.run());
 
     test.onObserve(upstreamObservation);
+    test.getObservation().requestNext();
     test.onNext("message");
 
-    new FullVerificationsInOrder() {
+    new VerificationsInOrder() {
       {
         downstreamObserver.onObserve((Observation) any);
         downstreamObserver.onNext("message");
@@ -102,10 +104,9 @@ public class ExecutorObserverTest {
     };
 
     Observer<String> test = new ExecutorObserver<>(downstreamObserver, r -> r.run());
-
     test.onObserve(upstreamObservation);
 
-    new FullVerificationsInOrder() {
+    new VerificationsInOrder() {
       {
         downstreamObserver.onObserve((Observation) any);
         downstreamObserver.onFail(throwable);
@@ -124,12 +125,13 @@ public class ExecutorObserverTest {
       }
     };
 
-    Observer<String> test = new ExecutorObserver<>(downstreamObserver, r -> r.run());
+    SafeObserver<String> test = new ExecutorObserver<>(downstreamObserver, r -> r.run());
 
     test.onObserve(upstreamObservation);
+    test.getObservation().requestNext();
     test.onNext("message");
 
-    new FullVerificationsInOrder() {
+    new VerificationsInOrder() {
       {
         downstreamObserver.onObserve((Observation) any);
         downstreamObserver.onNext("message");

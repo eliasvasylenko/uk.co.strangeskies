@@ -38,45 +38,24 @@ import java.util.concurrent.Executor;
 
 public class ExecutorObserver<T> extends SafeObserver<T> {
   private final Executor executor;
-  private RequestCount requests;
 
   public ExecutorObserver(Observer<? super T> downstreamObserver, Executor executor) {
     super(downstreamObserver);
 
     this.executor = requireNonNull(executor);
-    this.requests = new RequestCount();
   }
 
   @Override
   public void onNext(T message) {
     executor.execute(() -> {
       super.onNext(message);
-      boolean outstandingRequests;
-      synchronized (requests) {
-        requests.tryFulfil();
-        outstandingRequests = !requests.isFulfilled();
-      }
-      if (outstandingRequests) {
-        getObservation().requestNext();
-      }
+      getObservation().requestNext();
     });
   }
 
   @Override
-  public void onObserve(Observation upstreamObservation) {
-    Observation downstreamObservation = new Observation() {
-      @Override
-      public void request(long count) {
-        requests.request(count);
-        upstreamObservation.requestNext();
-      }
-
-      @Override
-      public void cancel() {
-        upstreamObservation.cancel();
-      }
-    };
-    executor.execute(() -> super.onObserve(downstreamObservation));
+  public void onObserve(Observation observation) {
+    executor.execute(() -> super.onObserve(observation));
   }
 
   @Override
