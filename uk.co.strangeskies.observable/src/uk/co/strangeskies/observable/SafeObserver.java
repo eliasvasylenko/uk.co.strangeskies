@@ -32,66 +32,103 @@
  */
 package uk.co.strangeskies.observable;
 
+import static java.lang.Thread.currentThread;
+
 import java.util.Objects;
-import java.util.function.Consumer;
 
 public class SafeObserver<T> extends PassthroughObserver<T, T> {
-  private boolean disposed;
+  private boolean done;
 
   public SafeObserver(Observer<? super T> downstreamObserver) {
     super(downstreamObserver);
   }
 
-  public void cancel() {
-    disposed = true;
-  }
-
-  public boolean isDisposed() {
-    return disposed;
-  }
-
   @Override
   public void onObserve(Observation upstreamObservation) {
-    Observation downstreamObservation = upstreamObservation; // TODO
+    Observation downstreamObservation = new Observation() {
+      @Override
+      public void request(long count) {
+        // TODO Auto-generated method stub
+        upstreamObservation.request(count);
+      }
 
-    tryAction(o -> o.onObserve(downstreamObservation));
+      @Override
+      public void cancel() {
+        upstreamObservation.cancel();
+        done = true;
+      }
+    };
+
+    tryAction(() -> {
+      initializeObservation(downstreamObservation);
+      getDownstreamObserver().onObserve(downstreamObservation);
+    });
+  }
+
+  protected boolean assertMadeObservation() {
+    try {
+      getObservation();
+      return true;
+    } catch (Throwable t) {
+      done = true;
+      unmanagedError(t);
+      return false;
+    }
+  }
+
+  protected void unmanagedError(Throwable t) {
+    currentThread().getUncaughtExceptionHandler().uncaughtException(currentThread(), t);
   }
 
   @Override
   public void onNext(T message) {
-    tryAction(o -> {
+    if (!assertMadeObservation())
+      return;
+
+    tryAction(() -> {
       Objects.requireNonNull(message, "Observable message must not be null");
-      o.onNext(message);
+      getDownstreamObserver().onNext(message);
     });
   }
 
   @Override
   public void onComplete() {
-    tryAction(o -> o.onComplete());
+    if (!assertMadeObservation())
+      return;
+
+    tryAction(() -> getDownstreamObserver().onComplete());
+    done = true;
   }
 
   @Override
   public void onFail(Throwable t) {
-    tryAction(o -> {
-      Objects.requireNonNull(t, "Observable failure throwable must not be null");
-      o.onFail(t);
-    });
-  }
-
-  public void tryAction(Consumer<? super Observer<? super T>> action) {
-    if (disposed)
+    if (!assertMadeObservation())
       return;
 
+    tryAction(() -> {
+      Objects.requireNonNull(t, "Observable failure throwable must not be null");
+      getDownstreamObserver().onFail(t);
+    });
+    done = true;
+  }
+
+  public void tryAction(Runnable action) {
+    if (done) {
+      return;
+    }
+
     try {
-      action.accept(getDownstreamObserver());
+      action.run();
     } catch (VirtualMachineError | ThreadDeath | LinkageError t) {
+      done = true;
       throw t;
     } catch (Throwable t) {
+      done = true;
       try {
-        cancel();
         getDownstreamObserver().onFail(t);
       } catch (Throwable u) {
-
+        t.addSuppressed(u);
+        unmanagedError(t);
       }
     }
   }

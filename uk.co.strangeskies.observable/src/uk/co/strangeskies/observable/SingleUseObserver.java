@@ -45,14 +45,18 @@ import java.util.Objects;
 public abstract class SingleUseObserver<T> implements Observer<T> {
   private Observation observation;
 
+  public boolean isObservationInitialized() {
+    return observation != null;
+  }
+
   public Observation getObservation() {
-    if (this.observation == null)
+    if (!isObservationInitialized())
       throw new IllegalStateException("Observation unavailable " + this);
     return observation;
   }
 
-  protected void configureObservation(Observation observation) {
-    if (this.observation != null)
+  protected void initializeObservation(Observation observation) {
+    if (isObservationInitialized())
       throw new IllegalStateException(
           "Passthrough observer cannot be used more than once " + observation);
     this.observation = Objects.requireNonNull(observation);
@@ -60,7 +64,7 @@ public abstract class SingleUseObserver<T> implements Observer<T> {
 
   @Override
   public void onObserve(Observation observation) {
-    configureObservation(observation);
+    initializeObservation(observation);
   }
 
   @Override

@@ -62,8 +62,7 @@ public class HotObservable<M> implements Observable<M> {
       @Override
       public void cancel() {
         super.cancel();
-        if (observations != null)
-          observations.remove(this);
+        cancelObservation(this);
       }
     };
 
@@ -72,8 +71,7 @@ public class HotObservable<M> implements Observable<M> {
 
     observations.add(observation);
 
-    if (live)
-      observation.onObserve();
+    observation.onObserve();
 
     return observation;
   }
@@ -82,14 +80,14 @@ public class HotObservable<M> implements Observable<M> {
     return observations != null;
   }
 
-  void stopObservation(Observation observer) {
-    if (observations.remove(observer) && observations.isEmpty()) {
+  void cancelObservation(Observation observer) {
+    if (observations != null && observations.remove(observer) && observations.isEmpty()) {
       observations = null;
     }
   }
 
   private void forObservers(Consumer<ObservationImpl<M>> action) {
-    if (observations != null && action != null) {
+    if (observations != null) {
       for (ObservationImpl<M> observation : new ArrayList<>(observations)) {
         action.accept(observation);
       }

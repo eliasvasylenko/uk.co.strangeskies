@@ -47,7 +47,7 @@ public class SkipWhileObserverTest {
 
   @Test
   public void failSkipFilterMessageEventTest() {
-    Observer<String> test = new SkipWhileObserver<>(downstreamObserver, s -> false);
+    Observer<String> test = new DropWhileObserver<>(downstreamObserver, s -> false);
 
     test.onObserve(upstreamObservation);
     test.onNext("message");
@@ -62,7 +62,7 @@ public class SkipWhileObserverTest {
 
   @Test
   public void passSkipFilterMessageEventTest() {
-    Observer<String> test = new SkipWhileObserver<>(downstreamObserver, s -> true);
+    Observer<String> test = new DropWhileObserver<>(downstreamObserver, s -> true);
 
     test.onObserve(upstreamObservation);
     test.onNext("message");
@@ -76,7 +76,7 @@ public class SkipWhileObserverTest {
 
   @Test
   public void passThenFailSkipFilterMessageEventTest() {
-    Observer<String> test = new SkipWhileObserver<>(downstreamObserver, "pass"::equals);
+    Observer<String> test = new DropWhileObserver<>(downstreamObserver, "pass"::equals);
 
     test.onObserve(upstreamObservation);
     test.onNext("pass");
@@ -92,7 +92,7 @@ public class SkipWhileObserverTest {
 
   @Test
   public void failThenPassSkipFilterMessageEventTest() {
-    Observer<String> test = new SkipWhileObserver<>(downstreamObserver, "pass"::equals);
+    Observer<String> test = new DropWhileObserver<>(downstreamObserver, "pass"::equals);
 
     test.onObserve(upstreamObservation);
     test.onNext("fail");
@@ -109,6 +109,6 @@ public class SkipWhileObserverTest {
 
   @Test(expected = NullPointerException.class)
   public void nullSkipFilterTest() {
-    new SkipWhileObserver<>(downstreamObserver, null);
+    new DropWhileObserver<>(downstreamObserver, null);
   }
 }

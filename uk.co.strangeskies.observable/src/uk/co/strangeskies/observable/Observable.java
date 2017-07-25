@@ -37,7 +37,6 @@ import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.observable.Observer.onCompletion;
-import static uk.co.strangeskies.observable.Observer.onFailure;
 import static uk.co.strangeskies.observable.Observer.onObservation;
 import static uk.co.strangeskies.observable.Observer.singleUse;
 
@@ -190,8 +189,7 @@ public interface Observable<M> {
   }
 
   default Observable<M> retrying() {
-    return observer -> observe(
-        new MultiplePassthroughObserver<>(onFailure(t -> observe(observer)), observer));
+    return observer -> observe(new RetryingObserver<>(observer, this));
   }
 
   /**
@@ -312,7 +310,7 @@ public interface Observable<M> {
    * @return the derived observable
    */
   default Observable<M> dropWhile(Predicate<? super M> condition) {
-    return observer -> observe(new SkipWhileObserver<>(observer, condition));
+    return observer -> observe(new DropWhileObserver<>(observer, condition));
   }
 
   /**

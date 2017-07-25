@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * This is a helper class for implementing {@link Observable passive
@@ -61,10 +62,12 @@ public class MultiplePassthroughObserver<T> implements Observer<T> {
   @SafeVarargs
   public MultiplePassthroughObserver(Observer<? super T>... downstreamObservers) {
     this.downstreamObservers = Arrays.asList(downstreamObservers);
+    this.downstreamObservers.forEach(Objects::requireNonNull);
   }
 
   public MultiplePassthroughObserver(Collection<Observer<? super T>> downstreamObservers) {
     this.downstreamObservers = new ArrayList<>(downstreamObservers);
+    this.downstreamObservers.forEach(Objects::requireNonNull);
   }
 
   @Override

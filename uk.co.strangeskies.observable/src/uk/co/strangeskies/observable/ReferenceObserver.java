@@ -64,7 +64,7 @@ public class ReferenceObserver<M> extends PassthroughObserver<M, M> {
 
   @Override
   public void onObserve(Observation observation) {
-    configureObservation(observation);
+    initializeObservation(observation);
     withObserver(o -> o.onObserve(observation));
   }
 

@@ -43,7 +43,7 @@ public class RequestCount {
   }
 
   public synchronized boolean isFulfilled() {
-    return requestCount != 0;
+    return requestCount == 0;
   }
 
   public synchronized void fulfil() {

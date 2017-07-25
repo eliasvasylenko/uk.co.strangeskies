@@ -54,7 +54,7 @@ public class ExecutorObserver<T> extends SafeObserver<T> {
       boolean outstandingRequests;
       synchronized (requests) {
         requests.tryFulfil();
-        outstandingRequests = requests.isFulfilled();
+        outstandingRequests = !requests.isFulfilled();
       }
       if (outstandingRequests) {
         getObservation().requestNext();

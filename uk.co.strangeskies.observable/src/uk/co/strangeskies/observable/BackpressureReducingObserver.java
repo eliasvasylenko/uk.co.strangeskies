@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.observable;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -50,9 +52,10 @@ public class BackpressureReducingObserver<T, M> extends PassthroughObserver<T, M
       Supplier<? extends M> identity,
       BiFunction<? super M, ? super T, ? extends M> accumulator) {
     super(downstreamObserver);
-    this.identity = identity;
+
+    this.accumulator = requireNonNull(accumulator);
+    this.identity = requireNonNull(identity);
     this.initial = m -> accumulator.apply(identity.get(), m);
-    this.accumulator = accumulator;
   }
 
   public BackpressureReducingObserver(
@@ -60,16 +63,20 @@ public class BackpressureReducingObserver<T, M> extends PassthroughObserver<T, M
       Function<? super T, ? extends M> initial,
       BiFunction<? super M, ? super T, ? extends M> accumulator) {
     super(downstreamObserver);
+
+    this.accumulator = requireNonNull(accumulator);
     this.identity = null;
-    this.initial = initial;
-    this.accumulator = accumulator;
+    this.initial = requireNonNull(initial);
   }
 
   @Override
   public void onObserve(Observation observation) {
-    observation.requestUnbounded();
-
     super.onObserve(new Observation() {
+      @Override
+      public void requestNext() {
+        request(1);
+      }
+
       @Override
       public void request(long count) {
         for (int i = 0; i < count; i++) {
@@ -101,6 +108,8 @@ public class BackpressureReducingObserver<T, M> extends PassthroughObserver<T, M
         observation.cancel();
       }
     });
+
+    observation.requestUnbounded();
   }
 
   @Override
@@ -121,6 +130,9 @@ public class BackpressureReducingObserver<T, M> extends PassthroughObserver<T, M
   @Override
   public void onComplete() {
     synchronized (outstandingRequests) {
+      if (current == null) {
+        getDownstreamObserver().onComplete();
+      }
       complete = true;
     }
   }
