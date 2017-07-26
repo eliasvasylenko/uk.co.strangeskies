@@ -32,6 +32,12 @@
  */
 package uk.co.strangeskies.observable;
 
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+
 import org.junit.Test;
 
 import mockit.Expectations;
@@ -41,11 +47,15 @@ import mockit.VerificationsInOrder;
 
 @SuppressWarnings("javadoc")
 public class SafeObserverTest {
-  @Mocked
-  Observation upstreamObservation;
+  interface MockObserver<T> extends Observer<T> {}
+
+  interface MockObservation extends Observation {}
 
   @Mocked
-  Observer<String> downstreamObserver;
+  MockObservation upstreamObservation;
+
+  @Mocked
+  MockObserver<String> downstreamObserver;
 
   @Test
   public void sendMessageAfterCancelTest() {
@@ -162,12 +172,64 @@ public class SafeObserverTest {
     new VerificationsInOrder() {
       {
         downstreamObserver.onObserve((Observation) any);
+        downstreamObserver.onFail(withArgThat(instanceOf(UnexpectedMessageException.class)));
       }
     };
   }
 
-  @Test(expected = NullPointerException.class)
-  public void nullExecutorTest() {
-    new ExecutorObserver<>(downstreamObserver, null);
+  @Test
+  public void initialRequestCountTest() {
+    SafeObserver<String> test = new SafeObserver<>(downstreamObserver);
+    test.onObserve(upstreamObservation);
+    assertThat(test.getObservation().getPendingRequestCount(), equalTo(0l));
+  }
+
+  @Test
+  public void requestCountAfterRequestNextTest() {
+    SafeObserver<String> test = new SafeObserver<>(downstreamObserver);
+    test.onObserve(upstreamObservation);
+    test.getObservation().requestNext();
+    assertThat(test.getObservation().getPendingRequestCount(), equalTo(1l));
+  }
+
+  @Test
+  public void requestCountAfterRequestFulfilledTest() {
+    SafeObserver<String> test = new SafeObserver<>(downstreamObserver);
+    test.onObserve(upstreamObservation);
+    test.getObservation().requestNext();
+    test.onNext("message");
+    assertThat(test.getObservation().getPendingRequestCount(), equalTo(0l));
+  }
+
+  @Test
+  public void requestCountAfterUnboundedRequestTest() {
+    SafeObserver<String> test = new SafeObserver<>(downstreamObserver);
+    test.onObserve(upstreamObservation);
+    test.getObservation().requestUnbounded();
+    assertThat(test.getObservation().getPendingRequestCount(), equalTo(Long.MAX_VALUE));
+  }
+
+  @Test
+  public void requestCountAfterUnboundedRequestFulfilledTest() {
+    SafeObserver<String> test = new SafeObserver<>(downstreamObserver);
+    test.onObserve(upstreamObservation);
+    test.getObservation().requestUnbounded();
+    test.onNext("message");
+    assertThat(test.getObservation().getPendingRequestCount(), equalTo(Long.MAX_VALUE));
+  }
+
+  @Test
+  public void requestUnboundedPassTest() {
+    SafeObserver<String> test = new SafeObserver<>(downstreamObserver);
+    test.onObserve(upstreamObservation);
+    test.getObservation().requestUnbounded();
+    assertTrue(test.getObservation().isRequestUnbounded());
+  }
+
+  @Test
+  public void requestUnboundedFailTest() {
+    SafeObserver<String> test = new SafeObserver<>(downstreamObserver);
+    test.onObserve(upstreamObservation);
+    assertFalse(test.getObservation().isRequestUnbounded());
   }
 }

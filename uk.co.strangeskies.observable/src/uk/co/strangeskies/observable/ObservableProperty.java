@@ -32,7 +32,6 @@
  */
 package uk.co.strangeskies.observable;
 
-import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 
 import uk.co.strangeskies.utility.Property;
@@ -50,20 +49,14 @@ public interface ObservableProperty<T> extends ObservableValue<T>, Property<T> {
   /**
    * @param <T>
    *          the type of event message to produce
-   * @param assignmentFunction
-   *          an assignment function, accepting the assigned value and the current
-   *          value, and returning the new value
    * @param equality
    *          an equivalence relation over the value space
    * @param initialValue
    *          the initial value
    * @return an observable property with the given behavior and default value
    */
-  public static <T> ObservableProperty<T> over(
-      BiFunction<T, T, T> assignmentFunction,
-      BiPredicate<T, T> equality,
-      T initialValue) {
-    return new ObservablePropertyImpl<>(assignmentFunction, equality, initialValue);
+  static <T> ObservableProperty<T> over(BiPredicate<T, T> equality, T initialValue) {
+    return new ObservablePropertyImpl<>(equality, initialValue);
   }
 
   /**
@@ -76,7 +69,9 @@ public interface ObservableProperty<T> extends ObservableValue<T>, Property<T> {
    *          the initial value
    * @return an observable property with the given default value
    */
-  public static <T> ObservableProperty<T> over(T initialValue) {
-    return new ObservablePropertyImpl<>((r, t) -> r, (a, b) -> a == b, initialValue);
+  static <T> ObservableProperty<T> over(T initialValue) {
+    return new ObservablePropertyImpl<>(initialValue);
   }
+
+  void setProblem(Throwable t);
 }

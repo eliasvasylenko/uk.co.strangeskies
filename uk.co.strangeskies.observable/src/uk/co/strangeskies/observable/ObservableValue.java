@@ -119,7 +119,7 @@ public interface ObservableValue<T> extends Observable<T> {
     return tryGet().filter(value::test).isPresent();
   }
 
-  default Throwable getFailure() {
+  default Throwable getProblem() {
     try {
       get();
       throw new IllegalStateException();
@@ -128,9 +128,9 @@ public interface ObservableValue<T> extends Observable<T> {
     }
   }
 
-  default Optional<Throwable> tryGetFailure() {
+  default Optional<Throwable> tryGetProblem() {
     try {
-      return Optional.of(getFailure());
+      return Optional.of(getProblem());
     } catch (IllegalStateException e) {
       return Optional.empty();
     }

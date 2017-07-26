@@ -34,6 +34,7 @@ package uk.co.strangeskies.observable;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -93,6 +94,10 @@ public class HotObservable<M> implements Observable<M> {
     }
   }
 
+  boolean isLive() {
+    return live;
+  }
+
   void assertLive() {
     if (!live)
       throw new IllegalStateException();
@@ -119,6 +124,7 @@ public class HotObservable<M> implements Observable<M> {
    */
   public HotObservable<M> next(M item) {
     assertLive();
+    Objects.requireNonNull(item);
     forObservers(o -> o.onNext(item));
     return this;
   }
@@ -133,6 +139,7 @@ public class HotObservable<M> implements Observable<M> {
 
   public HotObservable<M> fail(Throwable t) {
     assertLive();
+    Objects.requireNonNull(t);
     forObservers(o -> o.onFail(t));
     live = false;
     observations = null;

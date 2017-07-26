@@ -43,11 +43,15 @@ import mockit.VerificationsInOrder;
 
 @SuppressWarnings("javadoc")
 public class ExecutorObserverTest {
-  @Mocked
-  Observation upstreamObservation;
+  interface MockObserver<T> extends Observer<T> {}
+
+  interface MockObservation extends Observation {}
 
   @Mocked
-  Observer<String> downstreamObserver;
+  MockObservation upstreamObservation;
+
+  @Mocked
+  MockObserver<String> downstreamObserver;
 
   @Test
   public void messageEventOnInlineExecutorTest() {

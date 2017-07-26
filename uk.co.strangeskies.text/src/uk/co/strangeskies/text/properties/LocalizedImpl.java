@@ -38,7 +38,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import uk.co.strangeskies.observable.ObservablePropertyImpl;
@@ -64,7 +63,7 @@ class LocalizedImpl<A> extends ObservablePropertyImpl<Object>
       String key,
       AnnotatedType propertyType,
       List<?> arguments) {
-    super((r, t) -> r, Objects::equals, null);
+    super(null);
 
     this.propertyAccessorDelegate = propertyAccessorDelegate;
 

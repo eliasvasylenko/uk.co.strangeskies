@@ -35,7 +35,6 @@ package uk.co.strangeskies.text.provider;
 import java.io.IOException;
 import java.util.Dictionary;
 import java.util.Locale;
-import java.util.Map;
 
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
@@ -124,13 +123,8 @@ public class LocaleManagerService implements LocaleManager, LocaleProvider {
   }
 
   @Modified
-  void update(Map<String, String> configuration) {
-    if (configuration != null) {
-      String locale = configuration.get(LOCALE_KEY);
-      if (locale != null) {
-        setImpl(Locale.forLanguageTag(locale));
-      }
-    }
+  void update(LocaleManagerConfiguration configuration) {
+    setImpl(Locale.forLanguageTag(configuration.locale()));
   }
 
   @Override
@@ -141,5 +135,10 @@ public class LocaleManagerService implements LocaleManager, LocaleProvider {
   @Override
   public Observable<Change<Locale>> changes() {
     return component.changes();
+  }
+
+  @Override
+  public void setProblem(Throwable t) {
+    component.setProblem(t);
   }
 }

@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.observable;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.function.Supplier;
 
 /**
@@ -58,7 +60,7 @@ public abstract class PassthroughObserver<T, U> extends SingleUseObserver<T> {
   private final Supplier<Observer<? super U>> downstreamObserver;
 
   public PassthroughObserver(Observer<? super U> downstreamObserver) {
-    this(() -> downstreamObserver);
+    this(() -> requireNonNull(downstreamObserver));
   }
 
   public PassthroughObserver(Supplier<Observer<? super U>> downstreamObserver) {

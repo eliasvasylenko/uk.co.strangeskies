@@ -50,16 +50,6 @@ public class SafeObserver<T> extends PassthroughObserver<T, T> {
 
     Observation downstreamObservation = new Observation() {
       @Override
-      public void requestUnbounded() {
-        request(Long.MAX_VALUE);
-      }
-
-      @Override
-      public void requestNext() {
-        request(1);
-      }
-
-      @Override
       public void request(long count) {
         if (isDone())
           return;
@@ -77,7 +67,7 @@ public class SafeObserver<T> extends PassthroughObserver<T, T> {
 
       @Override
       public long getPendingRequestCount() {
-        return observation.getPendingRequestCount();
+        return pendingRequestCount;
       }
 
       @Override
@@ -122,7 +112,7 @@ public class SafeObserver<T> extends PassthroughObserver<T, T> {
       return;
 
     if (pendingRequestCount == 0) {
-      onFail(new IllegalStateException("Unrequested message " + message));
+      onFail(new UnexpectedMessageException("Unrequested message " + message));
       return;
     }
 

@@ -104,7 +104,7 @@ public class HotObservableTest {
   @Test
   public void isDeadAfterFailTest() {
     HotObservable<String> observable = new HotObservable<>();
-    observable.fail(null);
+    observable.fail(new Throwable());
     observable.assertDead();
   }
 
@@ -202,5 +202,19 @@ public class HotObservableTest {
     observable.observe();
     observable.observe().cancel();
     assertThat(observable.hasObservers(), equalTo(true));
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void failWithNullThrowableTest() {
+    HotObservable<String> observable = new HotObservable<>();
+    observable.observe();
+    observable.fail(null);
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void failWithNullMessageTest() {
+    HotObservable<String> observable = new HotObservable<>();
+    observable.observe();
+    observable.next(null);
   }
 }

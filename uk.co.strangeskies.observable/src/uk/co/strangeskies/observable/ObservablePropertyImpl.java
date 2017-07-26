@@ -32,8 +32,10 @@
  */
 package uk.co.strangeskies.observable;
 
+import static java.util.Objects.requireNonNull;
+
+import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 
 /**
@@ -48,10 +50,6 @@ import java.util.function.BiPredicate;
  *          the type of event message to produce
  */
 public class ObservablePropertyImpl<T> extends HotObservable<T> implements ObservableProperty<T> {
-  enum State {
-    VALUE, FAILURE, COMPLETE_FAILURE, COMPLETE_VALUE
-  }
-
   class ChangeImpl implements Change<T> {
     private final T previous;
     private final T current;
@@ -97,36 +95,35 @@ public class ObservablePropertyImpl<T> extends HotObservable<T> implements Obser
     }
   }
 
-  private boolean complete;
   private T value;
   private Throwable failure;
 
-  private final BiFunction<T, T, T> assignmentFunction;
   private final BiPredicate<T, T> equality;
   private ChangeImpl currentChange;
 
-  public ObservablePropertyImpl(
-      BiFunction<T, T, T> assignmentFunction,
-      BiPredicate<T, T> equality,
-      T initialValue) {
-    this.assignmentFunction = assignmentFunction;
+  public ObservablePropertyImpl(T initialValue) {
+    this(Objects::equals, initialValue);
+  }
+
+  public ObservablePropertyImpl(BiPredicate<T, T> equality, T initialValue) {
     this.equality = equality;
-    value = initialValue;
+    value = requireNonNull(initialValue);
   }
 
   @Override
   public Observable<Change<T>> changes() {
-    return observable -> observe(new PassthroughObserver<T, Change<T>>(observable) {
+    return observer -> observe(new PassthroughObserver<T, Change<T>>(observer) {
       private T previous;
       private Throwable previousFailure;
 
-      private Change<T> nextMessage() {
-        return new ChangeImpl(previous, value, previousFailure, failure);
+      private void nextMessage() {
+        if (previous != null || previousFailure != null)
+          getDownstreamObserver().onNext(new ChangeImpl(previous, value, previousFailure, failure));
       }
 
       @Override
       public void onNext(T message) {
-        observable.onNext(nextMessage());
+        nextMessage();
 
         previous = message;
         previousFailure = null;
@@ -134,7 +131,7 @@ public class ObservablePropertyImpl<T> extends HotObservable<T> implements Obser
 
       @Override
       public void onFail(Throwable t) {
-        observable.onNext(nextMessage());
+        nextMessage();
 
         previous = null;
         previousFailure = t;
@@ -149,10 +146,9 @@ public class ObservablePropertyImpl<T> extends HotObservable<T> implements Obser
 
   @Override
   public ObservablePropertyImpl<T> next(T item) {
-    if (complete)
-      throw new IllegalStateException();
+    assertLive();
+    Objects.requireNonNull(item);
 
-    item = assignmentFunction.apply(item, this.value);
     if (failure != null || !equality.test(this.value, item)) {
       failure = null;
       value = item;
@@ -163,16 +159,10 @@ public class ObservablePropertyImpl<T> extends HotObservable<T> implements Obser
 
   @Override
   public ObservablePropertyImpl<T> fail(Throwable t) {
-    if (complete)
-      throw new IllegalStateException();
+    assertLive();
+    Objects.requireNonNull(t);
 
     value = null;
-
-    if (t == null) {
-      failure = new NullPointerException();
-      super.fail(t);
-      throw (NullPointerException) failure;
-    }
 
     failure = t;
     super.fail(failure);
@@ -181,7 +171,6 @@ public class ObservablePropertyImpl<T> extends HotObservable<T> implements Obser
 
   @Override
   public ObservablePropertyImpl<T> complete() {
-    complete = true;
     super.complete();
     return this;
   }
@@ -190,33 +179,35 @@ public class ObservablePropertyImpl<T> extends HotObservable<T> implements Obser
   public Disposable observe(Observer<? super T> observer) {
     Disposable disposable = super.observe(observer);
 
-    if (failure == null)
+    if (value != null) {
       observer.onNext(value);
-    else
+      if (!isLive()) {
+        observer.onComplete();
+      }
+    } else {
       observer.onFail(failure);
-
-    if (complete)
-      observer.onComplete();
+    }
 
     return disposable;
   }
 
-  /**
-   * Fire the given message to all observers.
-   * 
-   * @param value
-   *          the message event to send
-   */
   @Override
   public synchronized T set(T value) {
+    if (!isLive())
+      super.start();
     T previous = this.value;
     next(value);
     return previous;
   }
 
   @Override
+  public synchronized void setProblem(Throwable t) {
+    fail(t);
+  }
+
+  @Override
   public T get() {
-    if (failure != null)
+    if (value == null)
       throw new MissingValueException(this, failure);
     return value;
   }

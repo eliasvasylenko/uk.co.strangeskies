@@ -56,67 +56,72 @@ import uk.co.strangeskies.text.properties.PropertyLoaderException;
  * @since 1.2
  */
 @Component(
-		service = ExtendedObjectSupplier.class,
-		property = "dependency.injection.annotation:String=uk.co.strangeskies.eclipse.Localize",
-		immediate = true)
+    service = ExtendedObjectSupplier.class,
+    property = "dependency.injection.annotation:String=uk.co.strangeskies.eclipse.Localize",
+    immediate = true)
 public class LocalizationSupplier extends ExtendedObjectSupplier {
-	@Reference
-	PropertyLoader generalLocalizer;
-	private LocalizationSupplierProperties text;
+  @Reference
+  PropertyLoader generalLocalizer;
+  private LocalizationSupplierProperties text;
 
-	@Activate
-	void activate() {
-		text = generalLocalizer.getProperties(LocalizationSupplierProperties.class);
-	}
+  @Activate
+  void activate() {
+    text = generalLocalizer.getProperties(LocalizationSupplierProperties.class);
+  }
 
-	@Override
-	public Object get(IObjectDescriptor descriptor, IRequestor requestor, boolean track, boolean group) {
-		try {
-			Type accessor = descriptor.getDesiredType();
+  @Override
+  public Object get(
+      IObjectDescriptor descriptor,
+      IRequestor requestor,
+      boolean track,
+      boolean group) {
+    try {
+      Type accessor = descriptor.getDesiredType();
 
-			if (validateAccessorType(accessor)) {
-				return localizeAccessor(requestor, (Class<?>) accessor);
-			} else {
-				throw new PropertyLoaderException(text.illegalInjectionTarget());
-			}
-		} catch (PropertyLoaderException e) {
-			throw e;
-		} catch (Exception e) {
-			throw new PropertyLoaderException(text.unexpectedError(), e);
-		}
-	}
+      if (validateAccessorType(accessor)) {
+        return localizeAccessor(requestor, (Class<?>) accessor);
+      } else {
+        throw new PropertyLoaderException(text.illegalInjectionTarget());
+      }
+    } catch (PropertyLoaderException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new PropertyLoaderException(text.unexpectedError(), e);
+    }
+  }
 
-	@SuppressWarnings("unchecked")
-	private <T> Object localizeAccessor(IRequestor requestor, Class<?> accessor) {
-		try {
-			BundleContext context = FrameworkUtil.getBundle(accessor).getBundleContext();
+  @SuppressWarnings("unchecked")
+  private <T> Object localizeAccessor(IRequestor requestor, Class<?> accessor) {
+    try {
+      BundleContext context = FrameworkUtil.getBundle(accessor).getBundleContext();
 
-			ServiceReference<PropertyLoader> localizerServiceRererence = context.getServiceReference(PropertyLoader.class);
-			PropertyLoader localizer = context.getService(localizerServiceRererence);
+      ServiceReference<PropertyLoader> localizerServiceRererence = context
+          .getServiceReference(PropertyLoader.class);
+      PropertyLoader localizer = context.getService(localizerServiceRererence);
 
-			T localization = localizer.getProperties((Class<T>) accessor);
+      T localization = localizer.getProperties((Class<T>) accessor);
 
-			context.addServiceListener(new ServiceListener() {
-				@Override
-				public void serviceChanged(ServiceEvent event) {
-					if (event.getType() == ServiceEvent.UNREGISTERING
-							&& event.getServiceReference().equals(localizerServiceRererence)) {
-						try {
-							requestor.resolveArguments(false);
-							requestor.execute();
-						} catch (Exception e) {}
-					}
-				}
-			});
+      context.addServiceListener(new ServiceListener() {
+        @Override
+        public void serviceChanged(ServiceEvent event) {
+          if (event.getType() == ServiceEvent.UNREGISTERING
+              && event.getServiceReference().equals(localizerServiceRererence)) {
+            try {
+              requestor.resolveArguments(false);
+              requestor.execute();
+            } catch (Exception e) {}
+          }
+        }
+      });
 
-			return localization;
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw e;
-		}
-	}
+      return localization;
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw e;
+    }
+  }
 
-	private boolean validateAccessorType(Type accessor) {
-		return accessor instanceof Class && ((Class<?>) accessor).isInterface();
-	}
+  private boolean validateAccessorType(Type accessor) {
+    return accessor instanceof Class && ((Class<?>) accessor).isInterface();
+  }
 }
