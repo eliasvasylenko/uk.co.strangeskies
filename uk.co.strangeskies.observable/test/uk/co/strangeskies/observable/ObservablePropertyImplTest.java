@@ -36,6 +36,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import mockit.FullVerifications;
@@ -273,6 +274,44 @@ public class ObservablePropertyImplTest {
         Change<String> change;
         changeObserver.onNext(change = withCapture());
         assertThat(change.previousValue(), equalTo("initial"));
+        assertFalse(change.tryNewValue().isPresent());
+      }
+    };
+  }
+
+  @Ignore // TODO
+  @Test
+  public void changeProblemToNextMessageTest() {
+    ObservablePropertyImpl<String> observable = new ObservablePropertyImpl<>("initial");
+    observable.changes().observe(changeObserver);
+    observable.setProblem(new Throwable());
+    observable.set("message");
+
+    new FullVerifications() {
+      {
+        changeObserver.onObserve((Observation) any);
+        Change<String> change;
+        changeObserver.onNext(change = withCapture());
+        assertFalse(change.tryPreviousValue().isPresent());
+        assertThat(change.newValue(), equalTo("message"));
+      }
+    };
+  }
+
+  @Ignore // TODO
+  @Test
+  public void changeProblemToProblemTest() {
+    ObservablePropertyImpl<String> observable = new ObservablePropertyImpl<>("initial");
+    observable.changes().observe(changeObserver);
+    observable.setProblem(new Throwable());
+    observable.setProblem(new Throwable());
+
+    new FullVerifications() {
+      {
+        changeObserver.onObserve((Observation) any);
+        Change<String> change;
+        changeObserver.onNext(change = withCapture());
+        assertFalse(change.tryPreviousValue().isPresent());
         assertFalse(change.tryNewValue().isPresent());
       }
     };

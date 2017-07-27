@@ -203,7 +203,7 @@ public class BackpressureReducingObserverTest {
       }
     };
 
-    SingleUseObserver<String> test = new BackpressureReducingObserver<>(
+    SingleObservationObserver<String> test = new BackpressureReducingObserver<>(
         downstreamObserver,
         identity,
         accumulator);
@@ -223,7 +223,7 @@ public class BackpressureReducingObserverTest {
 
   @Test
   public void requestNextFromMissingInitialMessage() {
-    SingleUseObserver<String> test = new BackpressureReducingObserver<>(
+    SingleObservationObserver<String> test = new BackpressureReducingObserver<>(
         downstreamObserver,
         initial,
         accumulator);
@@ -248,7 +248,7 @@ public class BackpressureReducingObserverTest {
       }
     };
 
-    SingleUseObserver<String> test = new BackpressureReducingObserver<>(
+    SingleObservationObserver<String> test = new BackpressureReducingObserver<>(
         downstreamObserver,
         initial,
         accumulator);

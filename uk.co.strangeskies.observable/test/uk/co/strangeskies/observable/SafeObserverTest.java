@@ -34,6 +34,7 @@ package uk.co.strangeskies.observable;
 
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -43,6 +44,7 @@ import org.junit.Test;
 import mockit.Expectations;
 import mockit.FullVerificationsInOrder;
 import mockit.Mocked;
+import mockit.Verifications;
 import mockit.VerificationsInOrder;
 
 @SuppressWarnings("javadoc")
@@ -231,5 +233,35 @@ public class SafeObserverTest {
     SafeObserver<String> test = new SafeObserver<>(downstreamObserver);
     test.onObserve(upstreamObservation);
     assertFalse(test.getObservation().isRequestUnbounded());
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void useNullObserverTest() {
+    SafeObserver<String> test = new SafeObserver<>(downstreamObserver);
+
+    test.onObserve(null);
+  }
+
+  @Test
+  public void useObserverNoTimesTest() {
+    SafeObserver<String> test = new SafeObserver<>(downstreamObserver);
+
+    assertThat(test.getObservation(), nullValue());
+  }
+
+  @Test
+  public void useObserverMoreThanOnceTest() {
+    SafeObserver<String> test = new SafeObserver<>(downstreamObserver);
+
+    test.onObserve(upstreamObservation);
+    test.onObserve(upstreamObservation);
+
+    new Verifications() {
+      {
+        downstreamObserver.onObserve((Observation) any);
+        times = 1;
+        upstreamObservation.cancel();
+      }
+    };
   }
 }

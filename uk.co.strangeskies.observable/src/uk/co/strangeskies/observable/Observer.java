@@ -96,7 +96,7 @@ public interface Observer<T> {
   }
 
   static <T> Observer<T> singleUse(Function<Observation, Observer<T>> observerProvider) {
-    return new SingleUseObserver<T>() {
+    return new SingleObservationObserver<T>() {
       Observer<T> observer;
 
       @Override

@@ -68,28 +68,6 @@ public class PassthroughObserverTest {
     };
   }
 
-  @Test(expected = NullPointerException.class)
-  public void useNullObserverTest() {
-    Observer<String> test = createDefaultObserver(downstreamObserver);
-
-    test.onObserve(null);
-  }
-
-  @Test(expected = IllegalStateException.class)
-  public void useObserverNoTimesTest() {
-    SingleUseObserver<String> test = createDefaultObserver(downstreamObserver);
-
-    test.getObservation();
-  }
-
-  @Test(expected = IllegalStateException.class)
-  public void useObserverMoreThanOnceTest() {
-    Observer<String> test = createDefaultObserver(downstreamObserver);
-
-    test.onObserve(upstreamObservation);
-    test.onObserve(upstreamObservation);
-  }
-
   @Test
   public void passSomeMessageEventTest() {
     Observer<String> test = createDefaultObserver(downstreamObserver);

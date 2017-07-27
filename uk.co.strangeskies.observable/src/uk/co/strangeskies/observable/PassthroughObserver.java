@@ -56,7 +56,7 @@ import java.util.function.Supplier;
  * @param <U>
  *          The message type of the downstream observer
  */
-public abstract class PassthroughObserver<T, U> extends SingleUseObserver<T> {
+public abstract class PassthroughObserver<T, U> extends SingleObservationObserver<T> {
   private final Supplier<Observer<? super U>> downstreamObserver;
 
   public PassthroughObserver(Observer<? super U> downstreamObserver) {

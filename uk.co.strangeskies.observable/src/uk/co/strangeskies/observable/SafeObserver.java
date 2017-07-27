@@ -46,6 +46,11 @@ public class SafeObserver<T> extends PassthroughObserver<T, T> {
 
   @Override
   public void onObserve(Observation observation) {
+    Objects.requireNonNull(observation, "Observation must not be null");
+
+    if (!assertCanMakeObservation(observation))
+      return;
+
     pendingRequestCount = observation.getPendingRequestCount();
 
     Observation downstreamObservation = new Observation() {
@@ -92,12 +97,21 @@ public class SafeObserver<T> extends PassthroughObserver<T, T> {
   }
 
   protected boolean assertMadeObservation() {
-    try {
-      getObservation();
+    if (isObservationInitialized()) {
       return true;
-    } catch (Throwable t) {
-      cancel();
-      unmanagedError(t);
+    } else {
+      unmanagedError(new IllegalStateException("Observation unavailable " + this));
+      return false;
+    }
+  }
+
+  protected boolean assertCanMakeObservation(Observation observation) {
+    if (!isObservationInitialized()) {
+      return true;
+    } else {
+      observation.cancel();
+      unmanagedError(
+          new IllegalStateException("Cannot make multiple concurrent observations " + this));
       return false;
     }
   }
@@ -107,7 +121,18 @@ public class SafeObserver<T> extends PassthroughObserver<T, T> {
   }
 
   @Override
+  protected void initializeObservation(Observation observation) {
+    if (isObservationInitialized() && !isDone()) {
+      observation.cancel();
+    } else {
+      super.initializeObservation(observation);
+    }
+  }
+
+  @Override
   public void onNext(T message) {
+    Objects.requireNonNull(message, "Observable message must not be null");
+
     if (!assertMadeObservation())
       return;
 
@@ -117,7 +142,6 @@ public class SafeObserver<T> extends PassthroughObserver<T, T> {
     }
 
     tryAction(() -> {
-      Objects.requireNonNull(message, "Observable message must not be null");
       getDownstreamObserver().onNext(message);
 
       if (pendingRequestCount < Long.MAX_VALUE)
@@ -136,11 +160,12 @@ public class SafeObserver<T> extends PassthroughObserver<T, T> {
 
   @Override
   public void onFail(Throwable t) {
+    Objects.requireNonNull(t, "Observable failure throwable must not be null");
+
     if (!assertMadeObservation())
       return;
 
     tryAction(() -> {
-      Objects.requireNonNull(t, "Observable failure throwable must not be null");
       getDownstreamObserver().onFail(t);
     });
     cancel();

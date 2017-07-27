@@ -79,13 +79,6 @@ public class ObservablePropertyImpl<T> extends HotObservable<T> implements Obser
 
     @Override
     public Optional<T> tryNewValue() {
-      if (currentChange == this) {
-        synchronized (ObservablePropertyImpl.this) {
-          if (currentChange == this) {
-            currentChange = null;
-          }
-        }
-      }
       return Optional.ofNullable(current);
     }
 
@@ -99,7 +92,6 @@ public class ObservablePropertyImpl<T> extends HotObservable<T> implements Obser
   private Throwable failure;
 
   private final BiPredicate<T, T> equality;
-  private ChangeImpl currentChange;
 
   public ObservablePropertyImpl(T initialValue) {
     this(Objects::equals, initialValue);
@@ -117,7 +109,7 @@ public class ObservablePropertyImpl<T> extends HotObservable<T> implements Obser
       private Throwable previousFailure;
 
       private void nextMessage() {
-        if (previous != null || previousFailure != null)
+        if (isStarted())
           getDownstreamObserver().onNext(new ChangeImpl(previous, value, previousFailure, failure));
       }
 
@@ -133,8 +125,20 @@ public class ObservablePropertyImpl<T> extends HotObservable<T> implements Obser
       public void onFail(Throwable t) {
         nextMessage();
 
+        boolean started = isStarted();
+
         previous = null;
         previousFailure = t;
+
+        if (started) {
+          previous = null;
+          previousFailure = null;
+          ObservablePropertyImpl.this.observe(this);
+        }
+      }
+
+      private boolean isStarted() {
+        return previous != null || previousFailure != null;
       }
     });
   }
@@ -163,7 +167,6 @@ public class ObservablePropertyImpl<T> extends HotObservable<T> implements Obser
     Objects.requireNonNull(t);
 
     value = null;
-
     failure = t;
     super.fail(failure);
     return this;
@@ -202,6 +205,8 @@ public class ObservablePropertyImpl<T> extends HotObservable<T> implements Obser
 
   @Override
   public synchronized void setProblem(Throwable t) {
+    if (!isLive())
+      super.start();
     fail(t);
   }
 

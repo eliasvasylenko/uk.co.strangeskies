@@ -32,8 +32,6 @@
  */
 package uk.co.strangeskies.observable;
 
-import java.util.Objects;
-
 /**
  * A partial implementation of an observer which remembers its subscription.
  * 
@@ -42,7 +40,7 @@ import java.util.Objects;
  * @param <T>
  *          The message type of the upstream observable
  */
-public abstract class SingleUseObserver<T> implements Observer<T> {
+public abstract class SingleObservationObserver<T> implements Observer<T> {
   private Observation observation;
 
   public boolean isObservationInitialized() {
@@ -50,16 +48,14 @@ public abstract class SingleUseObserver<T> implements Observer<T> {
   }
 
   public Observation getObservation() {
-    if (!isObservationInitialized())
-      throw new IllegalStateException("Observation unavailable " + this);
     return observation;
   }
 
   protected void initializeObservation(Observation observation) {
-    if (isObservationInitialized())
-      throw new IllegalStateException(
-          "Passthrough observer cannot be used more than once " + observation);
-    this.observation = Objects.requireNonNull(observation);
+    if (this.observation != null) {
+      this.observation.cancel();
+    }
+    this.observation = observation;
   }
 
   @Override
