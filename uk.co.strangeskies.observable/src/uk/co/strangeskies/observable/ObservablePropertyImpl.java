@@ -104,20 +104,28 @@ public class ObservablePropertyImpl<T> extends HotObservable<T> implements Obser
 
   @Override
   public Observable<Change<T>> changes() {
-    return observer -> observe(new PassthroughObserver<T, Change<T>>(observer) {
-      private T previous;
+    return observer -> super.observe(new PassthroughObserver<T, Change<T>>(observer) {
+      private T previousValue;
       private Throwable previousFailure;
 
       private void nextMessage() {
-        if (isStarted())
-          getDownstreamObserver().onNext(new ChangeImpl(previous, value, previousFailure, failure));
+        getDownstreamObserver()
+            .onNext(new ChangeImpl(previousValue, value, previousFailure, failure));
+      }
+
+      @Override
+      public void onObserve(Observation observation) {
+        super.onObserve(observation);
+
+        previousValue = value;
+        previousFailure = failure;
       }
 
       @Override
       public void onNext(T message) {
         nextMessage();
 
-        previous = message;
+        previousValue = message;
         previousFailure = null;
       }
 
@@ -125,20 +133,10 @@ public class ObservablePropertyImpl<T> extends HotObservable<T> implements Obser
       public void onFail(Throwable t) {
         nextMessage();
 
-        boolean started = isStarted();
-
-        previous = null;
+        previousValue = null;
         previousFailure = t;
 
-        if (started) {
-          previous = null;
-          previousFailure = null;
-          ObservablePropertyImpl.this.observe(this);
-        }
-      }
-
-      private boolean isStarted() {
-        return previous != null || previousFailure != null;
+        ObservablePropertyImpl.super.observe(this);
       }
     });
   }

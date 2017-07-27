@@ -36,7 +36,6 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import mockit.FullVerifications;
@@ -279,7 +278,6 @@ public class ObservablePropertyImplTest {
     };
   }
 
-  @Ignore // TODO
   @Test
   public void changeProblemToNextMessageTest() {
     ObservablePropertyImpl<String> observable = new ObservablePropertyImpl<>("initial");
@@ -298,7 +296,6 @@ public class ObservablePropertyImplTest {
     };
   }
 
-  @Ignore // TODO
   @Test
   public void changeProblemToProblemTest() {
     ObservablePropertyImpl<String> observable = new ObservablePropertyImpl<>("initial");
@@ -308,8 +305,14 @@ public class ObservablePropertyImplTest {
 
     new FullVerifications() {
       {
-        changeObserver.onObserve((Observation) any);
         Change<String> change;
+
+        changeObserver.onObserve((Observation) any);
+
+        changeObserver.onNext(change = withCapture());
+        assertThat(change.previousValue(), equalTo("initial"));
+        assertFalse(change.tryNewValue().isPresent());
+
         changeObserver.onNext(change = withCapture());
         assertFalse(change.tryPreviousValue().isPresent());
         assertFalse(change.tryNewValue().isPresent());
