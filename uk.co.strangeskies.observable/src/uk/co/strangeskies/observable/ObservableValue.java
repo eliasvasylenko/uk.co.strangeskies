@@ -77,13 +77,9 @@ public interface ObservableValue<T> extends Observable<T> {
    *          the type of the value
    */
   interface Change<T> {
-    T newValue();
+    ObservableValue<T> previousValue();
 
-    Optional<T> tryNewValue();
-
-    T previousValue();
-
-    Optional<T> tryPreviousValue();
+    ObservableValue<T> newValue();
   }
 
   /**

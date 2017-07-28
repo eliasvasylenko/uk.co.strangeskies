@@ -35,7 +35,6 @@ package uk.co.strangeskies.observable;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.BiPredicate;
 
 /**
@@ -50,44 +49,6 @@ import java.util.function.BiPredicate;
  *          the type of event message to produce
  */
 public class ObservablePropertyImpl<T> implements ObservableProperty<T> {
-  class ChangeImpl implements Change<T> {
-    private final T previous;
-    private final T current;
-    private final Throwable previousFailure;
-    private final Throwable currentFailure;
-
-    ChangeImpl(T previous, T current, Throwable previousFailure, Throwable currentFailure) {
-      this.previous = previous;
-      this.current = current;
-      this.previousFailure = previousFailure;
-      this.currentFailure = currentFailure;
-    }
-
-    @Override
-    public T newValue() {
-      if (currentFailure != null)
-        throw new MissingValueException(ObservablePropertyImpl.this, currentFailure);
-      return current;
-    }
-
-    @Override
-    public T previousValue() {
-      if (previousFailure != null)
-        throw new MissingValueException(ObservablePropertyImpl.this, previousFailure);
-      return previous;
-    }
-
-    @Override
-    public Optional<T> tryNewValue() {
-      return Optional.ofNullable(current);
-    }
-
-    @Override
-    public Optional<T> tryPreviousValue() {
-      return Optional.ofNullable(previous);
-    }
-  }
-
   private final HotObservable<T> backingObservable;
 
   private T value;
@@ -105,67 +66,49 @@ public class ObservablePropertyImpl<T> implements ObservableProperty<T> {
     this.value = requireNonNull(initialValue);
   }
 
-  @Override
-  public Observable<Change<T>> changes() {
-    return observer -> observeChangePassthrough(new PassthroughObserver<T, Change<T>>(observer) {
-      private T previousValue;
-      private Throwable previousFailure;
-
-      {
-        observer.onObserve(new Observation() {
-          @Override
-          public void cancel() {
-            getObservation().cancel();
-          }
-
-          @Override
-          public void request(long count) {
-            getObservation().request(count);
-          }
-
-          @Override
-          public long getPendingRequestCount() {
-            return getObservation().getPendingRequestCount();
-          }
-        });
-      }
-
-      private void nextMessage(Change<T> change) {
-        getDownstreamObserver().onNext(change);
-      }
-
-      @Override
-      public void onObserve(Observation observation) {
-        initializeObservation(observation);
-
-        previousValue = value;
-        previousFailure = failure;
-      }
-
-      @Override
-      public void onNext(T message) {
-        nextMessage(new ChangeImpl(previousValue, message, previousFailure, null));
-
-        previousValue = message;
-        previousFailure = null;
-      }
-
-      @Override
-      public void onFail(Throwable t) {
-        nextMessage(new ChangeImpl(previousValue, null, previousFailure, t));
-
-        previousValue = null;
-        previousFailure = t;
-
-        getObservation().cancel();
-        observeChangePassthrough(this);
-      }
-    });
+  public ObservablePropertyImpl(Throwable initialProblem) {
+    this(Objects::equals, initialProblem);
   }
 
-  private Disposable observeChangePassthrough(
-      PassthroughObserver<T, Change<T>> changePassthroughObserver) {
-    return backingObservable.observe(changePassthroughObserver);
+  public ObservablePropertyImpl(BiPredicate<T, T> equality, Throwable initialProblem) {
+    this.backingObservable = new HotObservable<>();
+    this.equality = equality;
+    this.failure = requireNonNull(initialProblem);
+  }
+
+  @Override
+  public Observable<Change<T>> changes() {
+    return observer -> backingObservable.materialize().retrying().observe(
+        new PassthroughObserver<ObservableValue<T>, Change<T>>(observer) {
+          private ObservableValue<T> previousValue;
+
+          @Override
+          public void onObserve(Observation observation) {
+            previousValue = value != null
+                ? new ObservablePropertyImpl<>(value)
+                : new ObservablePropertyImpl<>(failure);
+
+            super.onObserve(observation);
+          }
+
+          @Override
+          public void onNext(ObservableValue<T> message) {
+            ObservableValue<T> previousValue = this.previousValue;
+            this.previousValue = message;
+
+            getDownstreamObserver().onNext(new Change<T>() {
+              @Override
+              public ObservableValue<T> previousValue() {
+                return previousValue;
+              }
+
+              @Override
+              public ObservableValue<T> newValue() {
+                return message;
+              }
+            });
+          }
+        });
   }
 
   @Override

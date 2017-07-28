@@ -215,8 +215,8 @@ public class ObservablePropertyImplTest {
         changeObserver.onObserve((Observation) any);
         Change<String> change;
         changeObserver.onNext(change = withCapture());
-        assertThat(change.previousValue(), equalTo("initial"));
-        assertThat(change.newValue(), equalTo("message"));
+        assertThat(change.previousValue().get(), equalTo("initial"));
+        assertThat(change.newValue().get(), equalTo("message"));
       }
     };
   }
@@ -232,8 +232,8 @@ public class ObservablePropertyImplTest {
         changeObserver.onObserve((Observation) any);
         Change<String> change;
         changeObserver.onNext(change = withCapture());
-        assertThat(change.previousValue(), equalTo("initial"));
-        assertFalse(change.tryNewValue().isPresent());
+        assertThat(change.previousValue().get(), equalTo("initial"));
+        assertFalse(change.newValue().isValid());
       }
     };
   }
@@ -251,12 +251,12 @@ public class ObservablePropertyImplTest {
         changeObserver.onObserve((Observation) any);
 
         changeObserver.onNext(change = withCapture());
-        assertThat(change.previousValue(), equalTo("initial"));
-        assertFalse(change.tryNewValue().isPresent());
+        assertThat(change.previousValue().get(), equalTo("initial"));
+        assertFalse(change.newValue().isValid());
 
         changeObserver.onNext(change = withCapture());
-        assertFalse(change.tryPreviousValue().isPresent());
-        assertThat(change.newValue(), equalTo("message"));
+        assertFalse(change.previousValue().isValid());
+        assertThat(change.newValue().get(), equalTo("message"));
       }
     };
   }
@@ -274,12 +274,12 @@ public class ObservablePropertyImplTest {
         changeObserver.onObserve((Observation) any);
 
         changeObserver.onNext(change = withCapture());
-        assertThat(change.previousValue(), equalTo("initial"));
-        assertFalse(change.tryNewValue().isPresent());
+        assertThat(change.previousValue().get(), equalTo("initial"));
+        assertFalse(change.newValue().isValid());
 
         changeObserver.onNext(change = withCapture());
-        assertFalse(change.tryPreviousValue().isPresent());
-        assertFalse(change.tryNewValue().isPresent());
+        assertFalse(change.previousValue().isValid());
+        assertFalse(change.newValue().isValid());
       }
     };
   }
