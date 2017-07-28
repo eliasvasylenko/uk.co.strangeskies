@@ -96,12 +96,11 @@ public interface Observer<T> {
   }
 
   static <T> Observer<T> singleUse(Function<Observation, Observer<T>> observerProvider) {
-    return new SingleObservationObserver<T>() {
+    return new Observer<T>() {
       Observer<T> observer;
 
       @Override
       public void onObserve(Observation observation) {
-        super.onObserve(observation);
         observer = observerProvider.apply(observation);
         observer.onObserve(observation);
       }

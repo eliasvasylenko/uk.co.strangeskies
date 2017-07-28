@@ -33,12 +33,63 @@
 package uk.co.strangeskies.observable;
 
 public class RetryingObserver<T> extends PassthroughObserver<T, T> {
+  static class RetryingObservation implements Observation {
+    private Observation upstreamObservation;
+    private long pendingRequests;
+
+    public RetryingObservation(Observation observation) {
+      pendingRequests = observation.getPendingRequestCount();
+    }
+
+    public RetryingObservation setUpstreamObservation(Observation upstreamObservation) {
+      this.upstreamObservation = upstreamObservation;
+      upstreamObservation.request(pendingRequests - upstreamObservation.getPendingRequestCount());
+      pendingRequests = upstreamObservation.getPendingRequestCount();
+      return this;
+    }
+
+    @Override
+    public void cancel() {
+      upstreamObservation.cancel();
+    }
+
+    @Override
+    public void request(long count) {
+      pendingRequests += count;
+      upstreamObservation.request(count);
+    }
+
+    public void fulfilRequest() {
+      pendingRequests--;
+    }
+
+    @Override
+    public long getPendingRequestCount() {
+      return pendingRequests;
+    }
+  }
+
   private final Observable<? extends T> retryOn;
 
   public RetryingObserver(Observer<? super T> downstreamObserver, Observable<? extends T> retryOn) {
     super(downstreamObserver);
-
     this.retryOn = retryOn;
+  }
+
+  @Override
+  public RetryingObservation getObservation() {
+    return (RetryingObservation) super.getObservation();
+  }
+
+  @Override
+  public void onObserve(Observation observation) {
+    boolean firstObservation = getObservation() == null;
+
+    if (firstObservation) {
+      super.onObserve(new RetryingObservation(observation));
+    } else {
+      getObservation().setUpstreamObservation(observation);
+    }
   }
 
   @Override
@@ -48,6 +99,7 @@ public class RetryingObserver<T> extends PassthroughObserver<T, T> {
 
   @Override
   public void onNext(T message) {
+    getObservation().fulfilRequest();
     getDownstreamObserver().onNext(message);
   }
 }

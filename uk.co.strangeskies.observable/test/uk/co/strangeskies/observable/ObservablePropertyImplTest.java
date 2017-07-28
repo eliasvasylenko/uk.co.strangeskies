@@ -38,7 +38,6 @@ import static org.junit.Assert.assertThat;
 
 import org.junit.Test;
 
-import mockit.FullVerifications;
 import mockit.FullVerificationsInOrder;
 import mockit.Mocked;
 import uk.co.strangeskies.observable.ObservableValue.Change;
@@ -92,38 +91,6 @@ public class ObservablePropertyImplTest {
         downstreamObserver.onNext("initial");
         downstreamObserver.onObserve((Observation) any);
         downstreamObserver.onNext("initial");
-      }
-    };
-  }
-
-  @Test
-  public void initialValueMessageThenCompleteTest() {
-    ObservablePropertyImpl<String> property = new ObservablePropertyImpl<>("initial");
-
-    property.observe(downstreamObserver);
-    property.complete();
-
-    new FullVerificationsInOrder() {
-      {
-        downstreamObserver.onObserve((Observation) any);
-        downstreamObserver.onNext("initial");
-        downstreamObserver.onComplete();
-      }
-    };
-  }
-
-  @Test
-  public void initialValueThenCompleteThenSubscribeTest() {
-    ObservablePropertyImpl<String> property = new ObservablePropertyImpl<>("initial");
-
-    property.complete();
-    property.observe(downstreamObserver);
-
-    new FullVerificationsInOrder() {
-      {
-        downstreamObserver.onObserve((Observation) any);
-        downstreamObserver.onNext("initial");
-        downstreamObserver.onComplete();
       }
     };
   }
@@ -211,13 +178,6 @@ public class ObservablePropertyImplTest {
     assertThat(property.get(), equalTo("message"));
   }
 
-  @Test(expected = UnsupportedOperationException.class)
-  public void completeThenStartTest() {
-    ObservablePropertyImpl<String> observable = new ObservablePropertyImpl<>("initial");
-    observable.complete();
-    observable.start();
-  }
-
   @Test(expected = NullPointerException.class)
   public void failWithNullThrowableTest() {
     ObservablePropertyImpl<String> observable = new ObservablePropertyImpl<>("initial");
@@ -237,7 +197,7 @@ public class ObservablePropertyImplTest {
     ObservablePropertyImpl<String> observable = new ObservablePropertyImpl<>("initial");
     observable.changes().observe(changeObserver);
 
-    new FullVerifications() {
+    new FullVerificationsInOrder() {
       {
         changeObserver.onObserve((Observation) any);
       }
@@ -250,7 +210,7 @@ public class ObservablePropertyImplTest {
     observable.changes().observe(changeObserver);
     observable.set("message");
 
-    new FullVerifications() {
+    new FullVerificationsInOrder() {
       {
         changeObserver.onObserve((Observation) any);
         Change<String> change;
@@ -267,7 +227,7 @@ public class ObservablePropertyImplTest {
     observable.changes().observe(changeObserver);
     observable.setProblem(new Throwable());
 
-    new FullVerifications() {
+    new FullVerificationsInOrder() {
       {
         changeObserver.onObserve((Observation) any);
         Change<String> change;
@@ -285,10 +245,15 @@ public class ObservablePropertyImplTest {
     observable.setProblem(new Throwable());
     observable.set("message");
 
-    new FullVerifications() {
+    new FullVerificationsInOrder() {
       {
-        changeObserver.onObserve((Observation) any);
         Change<String> change;
+        changeObserver.onObserve((Observation) any);
+
+        changeObserver.onNext(change = withCapture());
+        assertThat(change.previousValue(), equalTo("initial"));
+        assertFalse(change.tryNewValue().isPresent());
+
         changeObserver.onNext(change = withCapture());
         assertFalse(change.tryPreviousValue().isPresent());
         assertThat(change.newValue(), equalTo("message"));
@@ -303,10 +268,9 @@ public class ObservablePropertyImplTest {
     observable.setProblem(new Throwable());
     observable.setProblem(new Throwable());
 
-    new FullVerifications() {
+    new FullVerificationsInOrder() {
       {
         Change<String> change;
-
         changeObserver.onObserve((Observation) any);
 
         changeObserver.onNext(change = withCapture());

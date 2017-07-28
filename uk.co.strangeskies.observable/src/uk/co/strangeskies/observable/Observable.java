@@ -192,6 +192,10 @@ public interface Observable<M> {
     return observer -> observe(new RetryingObserver<>(observer, this));
   }
 
+  default Observable<ObservableValue<M>> materialize() {
+    return observer -> observe(new MaterializingObserver<>(observer));
+  }
+
   /**
    * Derive an observable which automatically disposes of observers at some point
    * after they are no longer weakly reachable.

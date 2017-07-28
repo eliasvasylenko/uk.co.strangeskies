@@ -45,14 +45,14 @@ abstract class ObservationImpl<T> implements Observation {
 
   @Override
   public void cancel() {
-    observer.cancel();
+    observer.getObservation().cancel();
     cancelImpl();
   }
 
   protected abstract void cancelImpl();
 
   public boolean isDisposed() {
-    return observer.isDone();
+    return !observer.isMakingObservation();
   }
 
   public void onObserve() {

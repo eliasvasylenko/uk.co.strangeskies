@@ -71,7 +71,8 @@ public class HotObservable<M> implements Observable<M> {
 
     observations.add(observation);
 
-    observation.onObserve();
+    if (isLive())
+      observation.onObserve();
 
     return observation;
   }
@@ -86,7 +87,9 @@ public class HotObservable<M> implements Observable<M> {
     }
   }
 
-  private void forObservers(Consumer<ObservationImpl<M>> action) {
+  private void forObservers(
+      Set<ObservationImpl<M>> observations,
+      Consumer<ObservationImpl<M>> action) {
     if (observations != null) {
       for (ObservationImpl<M> observation : new ArrayList<>(observations)) {
         action.accept(observation);
@@ -111,7 +114,7 @@ public class HotObservable<M> implements Observable<M> {
   public HotObservable<M> start() {
     assertDead();
     live = true;
-    forObservers(o -> o.onObserve());
+    forObservers(observations, o -> o.onObserve());
     return this;
   }
 
@@ -125,24 +128,28 @@ public class HotObservable<M> implements Observable<M> {
   public HotObservable<M> next(M item) {
     assertLive();
     Objects.requireNonNull(item);
-    forObservers(o -> o.onNext(item));
+    forObservers(observations, o -> o.onNext(item));
     return this;
   }
 
   public HotObservable<M> complete() {
     assertLive();
-    forObservers(o -> o.onComplete());
+    Set<ObservationImpl<M>> observations = this.observations;
+    this.observations = null;
     live = false;
-    observations = null;
+
+    forObservers(observations, o -> o.onComplete());
     return this;
   }
 
   public HotObservable<M> fail(Throwable t) {
     assertLive();
     Objects.requireNonNull(t);
-    forObservers(o -> o.onFail(t));
+    Set<ObservationImpl<M>> observations = this.observations;
+    this.observations = null;
     live = false;
-    observations = null;
+
+    forObservers(observations, o -> o.onFail(t));
     return this;
   }
 }

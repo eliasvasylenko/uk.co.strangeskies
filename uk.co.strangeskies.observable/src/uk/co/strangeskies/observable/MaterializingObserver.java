@@ -32,37 +32,34 @@
  */
 package uk.co.strangeskies.observable;
 
-/**
- * A partial implementation of an observer which remembers its subscription.
- * 
- * @author Elias N Vasylenko
- *
- * @param <T>
- *          The message type of the upstream observable
- */
-public abstract class SingleObservationObserver<T> implements Observer<T> {
-  private Observation observation;
-
-  public boolean isObservationInitialized() {
-    return observation != null;
-  }
-
-  public Observation getObservation() {
-    return observation;
-  }
-
-  protected void initializeObservation(Observation observation) {
-    if (this.observation != null) {
-      this.observation.cancel();
-    }
-    this.observation = observation;
+public class MaterializingObserver<T> extends PassthroughObserver<T, ObservableValue<T>> {
+  public MaterializingObserver(Observer<? super ObservableValue<T>> downstreamObserver) {
+    super(downstreamObserver);
   }
 
   @Override
   public void onObserve(Observation observation) {
-    initializeObservation(observation);
+    /*
+     * TODO deal with backpressure properly! Consider that the extra "onNext" from
+     * "onFail" may not be requested.
+     */
+    super.onObserve(observation);
   }
 
   @Override
-  public void onNext(T message) {}
+  public void onNext(T message) {
+    ObservableValue<T> observableMessage = new ObservablePropertyImpl<>(message);
+
+    getDownstreamObserver().onNext(observableMessage);
+  }
+
+  @Override
+  public void onFail(Throwable t) {
+    ObservablePropertyImpl<T> observableMessage = new ObservablePropertyImpl<>(null);
+    observableMessage.setProblem(t);
+
+    getDownstreamObserver().onNext(observableMessage);
+
+    super.onFail(t);
+  }
 }

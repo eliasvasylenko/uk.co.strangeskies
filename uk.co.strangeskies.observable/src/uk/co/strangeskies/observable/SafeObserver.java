@@ -37,8 +37,55 @@ import static java.lang.Thread.currentThread;
 import java.util.Objects;
 
 public class SafeObserver<T> extends PassthroughObserver<T, T> {
-  private boolean done;
-  private long pendingRequestCount;
+  static class SafeObservation implements Observation {
+    private final Observation upstreamObservation;
+    private boolean done;
+    private long pendingRequestCount;
+
+    public SafeObservation(Observation upstreamObservation) {
+      this.upstreamObservation = upstreamObservation;
+      this.pendingRequestCount = upstreamObservation.getPendingRequestCount();
+    }
+
+    @Override
+    public void request(long count) {
+      if (done)
+        return;
+
+      if (pendingRequestCount + count < pendingRequestCount) {
+        pendingRequestCount = Long.MAX_VALUE;
+        upstreamObservation.request(count);
+      } else if (pendingRequestCount < Long.MAX_VALUE) {
+        pendingRequestCount += count;
+        upstreamObservation.request(count);
+      } else {
+        pendingRequestCount = Long.MAX_VALUE;
+      }
+    }
+
+    @Override
+    public long getPendingRequestCount() {
+      return pendingRequestCount;
+    }
+
+    public void fulfilPendingRequest() {
+      if (pendingRequestCount < Long.MAX_VALUE)
+        pendingRequestCount--;
+    }
+
+    @Override
+    public void cancel() {
+      if (done)
+        return;
+
+      done = true;
+      upstreamObservation.cancel();
+    }
+
+    public boolean isDone() {
+      return done;
+    }
+  }
 
   public SafeObserver(Observer<? super T> downstreamObserver) {
     super(downstreamObserver);
@@ -51,36 +98,7 @@ public class SafeObserver<T> extends PassthroughObserver<T, T> {
     if (!assertCanMakeObservation(observation))
       return;
 
-    pendingRequestCount = observation.getPendingRequestCount();
-
-    Observation downstreamObservation = new Observation() {
-      @Override
-      public void request(long count) {
-        if (isDone())
-          return;
-
-        if (pendingRequestCount + count < pendingRequestCount) {
-          pendingRequestCount = Long.MAX_VALUE;
-          observation.request(count);
-        } else if (pendingRequestCount < Long.MAX_VALUE) {
-          pendingRequestCount += count;
-          observation.request(count);
-        } else {
-          pendingRequestCount = Long.MAX_VALUE;
-        }
-      }
-
-      @Override
-      public long getPendingRequestCount() {
-        return pendingRequestCount;
-      }
-
-      @Override
-      public void cancel() {
-        SafeObserver.this.cancel();
-        observation.cancel();
-      }
-    };
+    Observation downstreamObservation = new SafeObservation(observation);
 
     tryAction(() -> {
       initializeObservation(downstreamObservation);
@@ -88,17 +106,17 @@ public class SafeObserver<T> extends PassthroughObserver<T, T> {
     });
   }
 
-  boolean isDone() {
-    return done;
+  protected boolean isMakingObservation() {
+    return getObservation() != null && !getObservation().isDone();
   }
 
-  void cancel() {
-    done = true;
+  protected void cancelObservation() {
+    getObservation().cancel();
   }
 
-  protected boolean assertMadeObservation() {
-    if (isObservationInitialized()) {
-      return true;
+  protected boolean assertIsMakingObservation() {
+    if (getObservation() != null) {
+      return !getObservation().isDone();
     } else {
       unmanagedError(new IllegalStateException("Observation unavailable " + this));
       return false;
@@ -106,7 +124,7 @@ public class SafeObserver<T> extends PassthroughObserver<T, T> {
   }
 
   protected boolean assertCanMakeObservation(Observation observation) {
-    if (!isObservationInitialized()) {
+    if (getObservation() == null || getObservation().isDone()) {
       return true;
     } else {
       observation.cancel();
@@ -122,7 +140,7 @@ public class SafeObserver<T> extends PassthroughObserver<T, T> {
 
   @Override
   protected void initializeObservation(Observation observation) {
-    if (isObservationInitialized() && !isDone()) {
+    if (isMakingObservation()) {
       observation.cancel();
     } else {
       super.initializeObservation(observation);
@@ -130,13 +148,18 @@ public class SafeObserver<T> extends PassthroughObserver<T, T> {
   }
 
   @Override
+  public SafeObservation getObservation() {
+    return (SafeObservation) super.getObservation();
+  }
+
+  @Override
   public void onNext(T message) {
     Objects.requireNonNull(message, "Observable message must not be null");
 
-    if (!assertMadeObservation())
+    if (!assertIsMakingObservation())
       return;
 
-    if (pendingRequestCount == 0) {
+    if (getObservation().getPendingRequestCount() == 0) {
       onFail(new UnexpectedMessageException("Unrequested message " + message));
       return;
     }
@@ -144,45 +167,40 @@ public class SafeObserver<T> extends PassthroughObserver<T, T> {
     tryAction(() -> {
       getDownstreamObserver().onNext(message);
 
-      if (pendingRequestCount < Long.MAX_VALUE)
-        pendingRequestCount--;
+      getObservation().fulfilPendingRequest();
     });
   }
 
   @Override
   public void onComplete() {
-    if (!assertMadeObservation())
+    if (!assertIsMakingObservation())
       return;
 
     tryAction(() -> getDownstreamObserver().onComplete());
-    cancel();
+    cancelObservation();
   }
 
   @Override
   public void onFail(Throwable t) {
     Objects.requireNonNull(t, "Observable failure throwable must not be null");
 
-    if (!assertMadeObservation())
+    if (!assertIsMakingObservation())
       return;
 
     tryAction(() -> {
       getDownstreamObserver().onFail(t);
     });
-    cancel();
+    cancelObservation();
   }
 
   public void tryAction(Runnable action) {
-    if (isDone()) {
-      return;
-    }
-
     try {
       action.run();
     } catch (VirtualMachineError | ThreadDeath | LinkageError t) {
-      cancel();
+      cancelObservation();
       throw t;
     } catch (Throwable t) {
-      cancel();
+      cancelObservation();
       try {
         getDownstreamObserver().onFail(t);
       } catch (Throwable u) {

@@ -49,7 +49,7 @@ import java.util.function.BiPredicate;
  * @param <T>
  *          the type of event message to produce
  */
-public class ObservablePropertyImpl<T> extends HotObservable<T> implements ObservableProperty<T> {
+public class ObservablePropertyImpl<T> implements ObservableProperty<T> {
   class ChangeImpl implements Change<T> {
     private final T previous;
     private final T current;
@@ -88,6 +88,8 @@ public class ObservablePropertyImpl<T> extends HotObservable<T> implements Obser
     }
   }
 
+  private final HotObservable<T> backingObservable;
+
   private T value;
   private Throwable failure;
 
@@ -98,24 +100,43 @@ public class ObservablePropertyImpl<T> extends HotObservable<T> implements Obser
   }
 
   public ObservablePropertyImpl(BiPredicate<T, T> equality, T initialValue) {
+    this.backingObservable = new HotObservable<>();
     this.equality = equality;
-    value = requireNonNull(initialValue);
+    this.value = requireNonNull(initialValue);
   }
 
   @Override
   public Observable<Change<T>> changes() {
-    return observer -> super.observe(new PassthroughObserver<T, Change<T>>(observer) {
+    return observer -> observeChangePassthrough(new PassthroughObserver<T, Change<T>>(observer) {
       private T previousValue;
       private Throwable previousFailure;
 
-      private void nextMessage() {
-        getDownstreamObserver()
-            .onNext(new ChangeImpl(previousValue, value, previousFailure, failure));
+      {
+        observer.onObserve(new Observation() {
+          @Override
+          public void cancel() {
+            getObservation().cancel();
+          }
+
+          @Override
+          public void request(long count) {
+            getObservation().request(count);
+          }
+
+          @Override
+          public long getPendingRequestCount() {
+            return getObservation().getPendingRequestCount();
+          }
+        });
+      }
+
+      private void nextMessage(Change<T> change) {
+        getDownstreamObserver().onNext(change);
       }
 
       @Override
       public void onObserve(Observation observation) {
-        super.onObserve(observation);
+        initializeObservation(observation);
 
         previousValue = value;
         previousFailure = failure;
@@ -123,7 +144,7 @@ public class ObservablePropertyImpl<T> extends HotObservable<T> implements Obser
 
       @Override
       public void onNext(T message) {
-        nextMessage();
+        nextMessage(new ChangeImpl(previousValue, message, previousFailure, null));
 
         previousValue = message;
         previousFailure = null;
@@ -131,60 +152,28 @@ public class ObservablePropertyImpl<T> extends HotObservable<T> implements Obser
 
       @Override
       public void onFail(Throwable t) {
-        nextMessage();
+        nextMessage(new ChangeImpl(previousValue, null, previousFailure, t));
 
         previousValue = null;
         previousFailure = t;
 
-        ObservablePropertyImpl.super.observe(this);
+        getObservation().cancel();
+        observeChangePassthrough(this);
       }
     });
   }
 
-  @Override
-  public HotObservable<T> start() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public ObservablePropertyImpl<T> next(T item) {
-    assertLive();
-    Objects.requireNonNull(item);
-
-    if (failure != null || !equality.test(this.value, item)) {
-      failure = null;
-      value = item;
-      super.next(item);
-    }
-    return this;
-  }
-
-  @Override
-  public ObservablePropertyImpl<T> fail(Throwable t) {
-    assertLive();
-    Objects.requireNonNull(t);
-
-    value = null;
-    failure = t;
-    super.fail(failure);
-    return this;
-  }
-
-  @Override
-  public ObservablePropertyImpl<T> complete() {
-    super.complete();
-    return this;
+  private Disposable observeChangePassthrough(
+      PassthroughObserver<T, Change<T>> changePassthroughObserver) {
+    return backingObservable.observe(changePassthroughObserver);
   }
 
   @Override
   public Disposable observe(Observer<? super T> observer) {
-    Disposable disposable = super.observe(observer);
+    Disposable disposable = backingObservable.observe(observer);
 
     if (value != null) {
       observer.onNext(value);
-      if (!isLive()) {
-        observer.onComplete();
-      }
     } else {
       observer.onFail(failure);
     }
@@ -194,18 +183,26 @@ public class ObservablePropertyImpl<T> extends HotObservable<T> implements Obser
 
   @Override
   public synchronized T set(T value) {
-    if (!isLive())
-      super.start();
+    if (failure == null && equality.test(this.value, value))
+      return value;
+
+    backingObservable.next(value);
+
     T previous = this.value;
-    next(value);
+    failure = null;
+    this.value = value;
+
     return previous;
   }
 
   @Override
   public synchronized void setProblem(Throwable t) {
-    if (!isLive())
-      super.start();
-    fail(t);
+    backingObservable.fail(t);
+
+    value = null;
+    failure = t;
+
+    backingObservable.start();
   }
 
   @Override
