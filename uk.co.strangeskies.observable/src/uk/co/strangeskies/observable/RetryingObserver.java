@@ -32,6 +32,8 @@
  */
 package uk.co.strangeskies.observable;
 
+import static java.util.Objects.requireNonNull;
+
 public class RetryingObserver<T> extends PassthroughObserver<T, T> {
   static class RetryingObservation implements Observation {
     private Observation upstreamObservation;
@@ -73,7 +75,7 @@ public class RetryingObserver<T> extends PassthroughObserver<T, T> {
 
   public RetryingObserver(Observer<? super T> downstreamObserver, Observable<? extends T> retryOn) {
     super(downstreamObserver);
-    this.retryOn = retryOn;
+    this.retryOn = requireNonNull(retryOn);
   }
 
   @Override

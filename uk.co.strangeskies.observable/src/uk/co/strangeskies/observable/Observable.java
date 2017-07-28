@@ -192,6 +192,13 @@ public interface Observable<M> {
     return observer -> observe(new RetryingObserver<>(observer, this));
   }
 
+  /*
+   * TODO refactor this so it works from an Observable<? extends Observable<? extends M>>
+   */
+  default Observable<M> retrying(Observable<? extends M> retryOn) {
+    return observer -> observe(new RetryingObserver<>(observer, retryOn));
+  }
+
   default Observable<ObservableValue<M>> materialize() {
     return observer -> observe(new MaterializingObserver<>(observer));
   }

@@ -32,10 +32,22 @@
  */
 package uk.co.strangeskies.observable;
 
-public class MissingValueException extends RuntimeException {
-	private static final long serialVersionUID = 1L;
+import org.junit.Ignore;
+import org.junit.Test;
 
-	public MissingValueException(Observable<?> observable, Throwable t) {
-		super("Unable to obtain value from source " + observable, t);
-	}
+import mockit.Mocked;
+
+@Ignore
+@SuppressWarnings("javadoc")
+public class MaterializingObserverTest {
+  @Mocked
+  Observation upstreamObservation;
+
+  @Mocked
+  Observer<String> downstreamObserver;
+
+  @Test
+  public void _NOTHING_HERE_() {
+    // TODO
+  }
 }

@@ -78,35 +78,28 @@ public class ObservablePropertyImpl<T> implements ObservableProperty<T> {
 
   @Override
   public Observable<Change<T>> changes() {
-    return observer -> backingObservable.materialize().retrying().observe(
+    return observer -> materialize().retrying(backingObservable.materialize()).observe(
         new PassthroughObserver<ObservableValue<T>, Change<T>>(observer) {
           private ObservableValue<T> previousValue;
-
-          @Override
-          public void onObserve(Observation observation) {
-            previousValue = value != null
-                ? new ObservablePropertyImpl<>(value)
-                : new ObservablePropertyImpl<>(failure);
-
-            super.onObserve(observation);
-          }
 
           @Override
           public void onNext(ObservableValue<T> message) {
             ObservableValue<T> previousValue = this.previousValue;
             this.previousValue = message;
 
-            getDownstreamObserver().onNext(new Change<T>() {
-              @Override
-              public ObservableValue<T> previousValue() {
-                return previousValue;
-              }
+            if (previousValue != null) {
+              getDownstreamObserver().onNext(new Change<T>() {
+                @Override
+                public ObservableValue<T> previousValue() {
+                  return previousValue;
+                }
 
-              @Override
-              public ObservableValue<T> newValue() {
-                return message;
-              }
-            });
+                @Override
+                public ObservableValue<T> newValue() {
+                  return message;
+                }
+              });
+            }
           }
         });
   }

@@ -63,7 +63,7 @@ class LocalizedImpl<A> extends ObservablePropertyImpl<Object>
       String key,
       AnnotatedType propertyType,
       List<?> arguments) {
-    super(null);
+    super(new IllegalStateException("Locale has failed to initialize"));
 
     this.propertyAccessorDelegate = propertyAccessorDelegate;
 

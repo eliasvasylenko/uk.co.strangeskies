@@ -38,7 +38,7 @@ import mockit.FullVerificationsInOrder;
 import mockit.Mocked;
 
 @SuppressWarnings("javadoc")
-public class SkipWhileObserverTest {
+public class DropWhileObserverTest {
   @Mocked
   Observation upstreamObservation;
 
