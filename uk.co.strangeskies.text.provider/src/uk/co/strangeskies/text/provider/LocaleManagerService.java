@@ -38,6 +38,7 @@ import java.util.Locale;
 
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
@@ -69,7 +70,7 @@ public class LocaleManagerService implements LocaleManager, LocaleProvider {
       description = "The configuration for the user locale for the application")
   public @interface LocaleManagerConfiguration {
     @AttributeDefinition(name = "Locale", description = "The user locale for the application")
-    String locale();
+    String locale() default "";
   }
 
   @Reference
@@ -122,9 +123,21 @@ public class LocaleManagerService implements LocaleManager, LocaleProvider {
     return component.set(locale);
   }
 
+  @Activate
+  void activate(LocaleManagerConfiguration configuration) {
+    update(configuration);
+  }
+
   @Modified
   void update(LocaleManagerConfiguration configuration) {
-    setImpl(Locale.forLanguageTag(configuration.locale()));
+    Locale locale;
+
+    String localeString = configuration.locale();
+    if (localeString.equals(""))
+      locale = Locale.getDefault();
+    else
+      locale = Locale.forLanguageTag(localeString);
+    setImpl(locale);
   }
 
   @Override

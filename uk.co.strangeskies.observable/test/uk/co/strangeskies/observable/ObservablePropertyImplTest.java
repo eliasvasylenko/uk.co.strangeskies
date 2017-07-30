@@ -239,6 +239,19 @@ public class ObservablePropertyImplTest {
   }
 
   @Test
+  public void changeInitialToEqualValueTest() {
+    ObservablePropertyImpl<String> observable = new ObservablePropertyImpl<>("initial");
+    observable.changes().observe(changeObserver);
+    observable.set("initial");
+
+    new FullVerificationsInOrder() {
+      {
+        changeObserver.onObserve((Observation) any);
+      }
+    };
+  }
+
+  @Test
   public void changeProblemToNextMessageTest() {
     ObservablePropertyImpl<String> observable = new ObservablePropertyImpl<>("initial");
     observable.changes().observe(changeObserver);
