@@ -52,33 +52,33 @@ import uk.co.strangeskies.reflection.token.TypeToken;
  *          the type of data item to apply to
  */
 public interface TreeContribution<T> {
-	/**
-	 * Get the type of item which the contribution applies to. It is possible to
-	 * include wildcards in the type, and any tree item whose type is assignable
-	 * to this type are suitable for application of this contribution.
-	 * 
-	 * @return the type of data item to apply to
-	 */
-	default TypeToken<T> getDataType() {
-		return TypeToken
-				.forClass(getClass())
-				.resolveSupertype(TreeContribution.class)
-				.resolveTypeArgument(new TypeParameter<T>() {})
-				.getTypeToken();
-	}
+  /**
+   * Get the type of item which the contribution applies to. It is possible to
+   * include wildcards in the type, and any tree item whose type is assignable to
+   * this type are suitable for application of this contribution.
+   * 
+   * @return the type of data item to apply to
+   */
+  default TypeToken<T> getDataType() {
+    return TypeToken
+        .forClass(getClass())
+        .resolveSupertype(TreeContribution.class)
+        .resolveTypeArgument(new TypeParameter<T>() {})
+        .getTypeToken();
+  }
 
-	/**
-	 * Determine whether the contribution should be applied to the given data
-	 * item. This method will only be invoked <em>after</em>
-	 * {@link #getDataType()} has checked against the exact item type.
-	 * 
-	 * @param <U>
-	 *          the specific type of the tree item
-	 * @param data
-	 *          a data item in the tree
-	 * @return true if the contribution is applicable, false otherwise
-	 */
-	default <U extends T> boolean appliesTo(TreeItemData<U> data) {
-		return true;
-	}
+  /**
+   * Determine whether the contribution should be applied to the given data item.
+   * This method will only be invoked <em>after</em> {@link #getDataType()} has
+   * checked against the exact item type.
+   * 
+   * @param <U>
+   *          the specific type of the tree item
+   * @param data
+   *          a data item in the tree
+   * @return true if the contribution is applicable, false otherwise
+   */
+  default <U extends T> boolean appliesTo(TreeItemData<U> data) {
+    return true;
+  }
 }
