@@ -32,40 +32,22 @@
  */
 package uk.co.strangeskies.observable;
 
-import java.util.function.Predicate;
-
-public class FilteringObservation<M> extends PassthroughObservation<M, M> {
-  private final Observer<? super M> observer;
-  private final Predicate<? super M> condition;
-
-  public FilteringObservation(
-      Observable<? extends M> parentObservable,
-      Observer<? super M> observer,
-      Predicate<? super M> condition) {
-    this.observer = observer;
-    this.condition = condition;
-
-    passthroughObservation(parentObservable);
+abstract class UnboundedObservationImpl<T> extends ObservationImpl<T> {
+  public UnboundedObservationImpl(Observer<? super T> observer) {
+    super(observer);
   }
 
   @Override
   public void onObserve() {
-    observer.onObserve(this);
+    super.onObserve();
+    getObserver().getObservation().requestUnbounded();
   }
 
   @Override
-  public void onNext(M message) {
-    if (condition.test(message))
-      observer.onNext(message);
-  }
+  public void request(long count) {}
 
   @Override
-  public void onComplete() {
-    observer.onComplete();
-  }
-
-  @Override
-  public void onFail(Throwable t) {
-    observer.onFail(t);
+  public long getPendingRequestCount() {
+    return Long.MAX_VALUE;
   }
 }

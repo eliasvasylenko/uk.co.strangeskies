@@ -34,28 +34,33 @@ package uk.co.strangeskies.observable;
 
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
+import static uk.co.strangeskies.observable.Observer.onCompletion;
+import static uk.co.strangeskies.observable.Observer.onObservation;
+import static uk.co.strangeskies.observable.Observer.singleUse;
 
-import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Set;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collector;
+import java.util.stream.Stream;
+
+import uk.co.strangeskies.utility.IdentityProperty;
+import uk.co.strangeskies.utility.Property;
 
 /**
  * Simple interface for an observable object, with methods to add and remove
  * observers expecting the applicable type of message.
- * <p>
- * Unless otherwise specified, implementations should conceptually maintain the
- * collection of observers according to the semantics of {@link Set} by object
- * equality. Implementers should note that methods for weak observers and
- * terminating observers must be reimplemented if anything other than default
- * equality is used to determine membership.
  * 
  * @author Elias N Vasylenko
  * @param <M>
@@ -68,45 +73,134 @@ public interface Observable<M> {
    * 
    * @param observer
    *          an observer to add
-   * @return true if the observer was successfully added, false otherwise
+   * @return a disposable over the observation
    */
-  Observation<M> observe(Observer<? super M> observer);
+  Disposable observe(Observer<? super M> observer);
 
-  default Observation<M> observe() {
+  /**
+   * As {@link #observe(Observer)} with an empty observer.
+   * 
+   * @return a disposable over the observation
+   */
+  default Disposable observe() {
     return observe(m -> {});
   }
 
-  default <T> Observable<T> compose(Function<Observable<M>, Observable<T>> transformation) {
-    return transformation.apply(this);
-  }
+  /**
+   * Block until we either receive the next message event of the next failure
+   * event. In the case of the former, return it, and in the case of the latter,
+   * throw a {@link MissingValueException}.
+   * 
+   * @return the next value
+   * @throws MissingValueException
+   *           If a failure or completion event is received before the next
+   *           message event. In the former case the cause will be the failure
+   *           throwable, in the latter case an instance of
+   *           {@link AlreadyCompletedException}.
+   */
+  default M get() {
+    CompletableFuture<M> result = new CompletableFuture<>();
 
-  public static <M> Collector<M, ?, Observable<M>> toObservable() {
-    return collectingAndThen(toList(), Observable::of);
-  }
-
-  default <R, A> CompletableFuture<R> collect(Collector<? super M, A, ? extends R> collector) {
-    CompletableFuture<R> future = new CompletableFuture<>();
-
-    observe(new Observer<M>() {
-      private A accumulation = collector.supplier().get();
-
+    thenAfter(onObservation(o -> o.requestUnbounded())).observe(singleUse(o -> new Observer<M>() {
       @Override
       public void onComplete() {
-        future.complete(collector.finisher().apply(accumulation));
+        result.completeExceptionally(new AlreadyCompletedException(o));
       }
 
       @Override
       public void onFail(Throwable t) {
-        future.completeExceptionally(t);
+        result.completeExceptionally(t);
       }
 
       @Override
       public void onNext(M message) {
-        collector.accumulator().accept(accumulation, message);
+        o.cancel();
+        result.complete(message);
       }
-    });
+    }));
 
-    return future;
+    try {
+      return result.get();
+    } catch (ExecutionException e) {
+      throw new MissingValueException(this, e);
+    } catch (Exception e) {
+      throw new RuntimeException("Unexpected error", e);
+    }
+  }
+
+  default Optional<M> tryGet() {
+    try {
+      return Optional.of(get());
+    } catch (MissingValueException e) {
+      return Optional.empty();
+    }
+  }
+
+  /**
+   * Derive a new observable by application of the given function. This gives the
+   * same result as just applying the function to the observable directly, and
+   * exists only to create a more natural fit into the fluent API by making the
+   * order of operations clearer in method chains.
+   * 
+   * @param <T>
+   *          the type of the resulting observable
+   * @param transformation
+   *          the transformation function to apply to the observable
+   * @return the derived observable
+   */
+  default <T> Observable<T> compose(Function<Observable<M>, Observable<T>> transformation) {
+    return transformation.apply(this);
+  }
+
+  /**
+   * A collector which can be applied to a {@link Stream} to derive a cold
+   * observable.
+   * 
+   * @param <M>
+   *          the type of the observable
+   * @return an observable over the given stream
+   */
+  public static <M> Collector<M, ?, Observable<M>> toObservable() {
+    return collectingAndThen(toList(), Observable::of);
+  }
+
+  /**
+   * Derive an observable which passes events to the given observer directly
+   * before passing them downstream.
+   * 
+   * @param action
+   *          an observer representing the action to take
+   * @return an observable which performs the injected behavior
+   */
+  default Observable<M> then(Observer<M> action) {
+    return observer -> observe(new MultiplePassthroughObserver<>(observer, action));
+  }
+
+  /**
+   * Derive an observable which passes events to the given observer directly after
+   * passing them downstream.
+   * 
+   * @param action
+   *          an observer representing the action to take
+   * @return an observable which performs the injected behavior
+   */
+  default Observable<M> thenAfter(Observer<M> action) {
+    return observer -> observe(new MultiplePassthroughObserver<>(action, observer));
+  }
+
+  default Observable<M> retrying() {
+    return observer -> observe(new RetryingObserver<>(observer, this));
+  }
+
+  /*
+   * TODO refactor this so it works from an Observable<? extends Observable<? extends M>>
+   */
+  default Observable<M> retrying(Observable<? extends M> retryOn) {
+    return observer -> observe(new RetryingObserver<>(observer, retryOn));
+  }
+
+  default Observable<ObservableValue<M>> materialize() {
+    return observer -> observe(new MaterializingObserver<>(observer));
   }
 
   /**
@@ -116,7 +210,7 @@ public interface Observable<M> {
    * @return the derived observable
    */
   default Observable<M> weakReference() {
-    return observer -> new ReferenceObservation<>(this, observer, WeakReference::new);
+    return observer -> observe(ReferenceObserver.weak(observer));
   }
 
   /**
@@ -129,12 +223,14 @@ public interface Observable<M> {
    * an {@link OwnedMessage}, which may create references to the owner on demand
    * within observer logic without retainment.
    * 
+   * @param <O>
+   *          the type of the owning object
    * @param owner
-   *          the referent
+   *          the owning referent object
    * @return the derived observable
    */
   default <O> Observable<OwnedMessage<O, M>> weakReference(O owner) {
-    return observer -> new ReferenceOwnedObservation<>(this, observer, owner, WeakReference::new);
+    return observer -> observe(ReferenceOwnedObserver.weak(owner, observer));
   }
 
   /**
@@ -144,7 +240,7 @@ public interface Observable<M> {
    * @return the derived observable
    */
   default Observable<M> softReference() {
-    return observer -> new ReferenceObservation<>(this, observer, SoftReference::new);
+    return observer -> observe(ReferenceObserver.soft(observer));
   }
 
   /**
@@ -157,12 +253,14 @@ public interface Observable<M> {
    * an {@link OwnedMessage}, which may create references to the owner on demand
    * within observer logic without retainment.
    * 
+   * @param <O>
+   *          the type of the owning object
    * @param owner
-   *          the referent
+   *          the owning referent object
    * @return the derived observable
    */
   default <O> Observable<OwnedMessage<O, M>> softReference(O owner) {
-    return observer -> new ReferenceOwnedObservation<>(this, observer, owner, SoftReference::new);
+    return observer -> observe(ReferenceOwnedObserver.soft(owner, observer));
   }
 
   /**
@@ -173,19 +271,21 @@ public interface Observable<M> {
    * @return the derived observable
    */
   default Observable<M> executeOn(Executor executor) {
-    return new ExecutorObservable<>(this, executor);
+    return observer -> observe(new ExecutorObserver<>(observer, executor));
   }
 
   /**
    * Derive an observable which transforms messages according to the given
    * mapping.
    * 
+   * @param <T>
+   *          the type of the derived observable
    * @param mapping
    *          the mapping function
-   * @return the derived observable
+   * @return an observable over the mapped messages
    */
   default <T> Observable<T> map(Function<? super M, ? extends T> mapping) {
-    return observer -> new MappingObservation<>(this, observer, mapping);
+    return observer -> observe(new MappingObserver<>(observer, mapping));
   }
 
   /**
@@ -197,7 +297,7 @@ public interface Observable<M> {
    * @return the derived observable
    */
   default Observable<M> filter(Predicate<? super M> condition) {
-    return observer -> new FilteringObservation<>(this, observer, condition);
+    return observer -> observe(new FilteringObserver<>(observer, condition));
   }
 
   /**
@@ -209,7 +309,7 @@ public interface Observable<M> {
    * @return the derived observable
    */
   default Observable<M> takeWhile(Predicate<? super M> condition) {
-    return observer -> new TerminatingObservation<>(this, observer, condition);
+    return observer -> observe(new TakeWhileObserver<>(observer, condition));
   }
 
   /**
@@ -221,12 +321,71 @@ public interface Observable<M> {
    * @return the derived observable
    */
   default Observable<M> dropWhile(Predicate<? super M> condition) {
-    return observer -> new SkippingObservation<>(this, observer, condition);
+    return observer -> observe(new DropWhileObserver<>(observer, condition));
   }
 
   /**
-   * Derive an observable which completes and disposes itself after receiving a
-   * message which matches the given condition.
+   * Derive an observable which maps each message to an intermediate observable,
+   * then merges the messages from the intermediate observables into a single
+   * source.
+   * <p>
+   * An unbounded request is made to the upstream observable, so it is not
+   * required to support backpressure.
+   * <p>
+   * The intermediate observables are not required to support backpressure, as an
+   * unbounded request will be made to them and the downstream observable will
+   * forward every message as soon as it is available. Because of this, The
+   * downstream observable does not support backpressure.
+   * 
+   * @param <T>
+   *          the resulting observable message type
+   * 
+   * @param mapping
+   *          the terminating condition
+   * @return the derived observable
+   */
+  default <T> Observable<T> mergeMap(
+      Function<? super M, ? extends Observable<? extends T>> mapping) {
+    throw new UnsupportedOperationException(); // TODO
+  }
+
+  /**
+   * Introduce backpressure by mapping each message to an intermediate observable
+   * which supports backpressure and then interleaving these observables
+   * downstream.
+   * <p>
+   * An unbounded request is made to the upstream observable, so it is not
+   * required to support backpressure.
+   * <p>
+   * The intermediate observables must support backpressure. Priority for
+   * forwarding requests to intermediate observables is determined as follows:
+   * fewest outstanding requests, then fewest total requests, then first taken
+   * from upstream.
+   * 
+   * @param <T>
+   *          the resulting observable message type
+   * 
+   * @param mapping
+   *          the terminating condition
+   * @return the derived observable
+   */
+  default <T> Observable<T> interleaveMap(
+      Function<? super M, ? extends Observable<? extends T>> mapping) {
+    throw new UnsupportedOperationException(); // TODO
+  }
+
+  /**
+   * Derive an observable which sequentially maps each message to an intermediate
+   * observable.
+   * <p>
+   * The intermediate accepts observations from downstream until it is complete,
+   * at which point the next message is requested from upstream and the process is
+   * repeated.
+   * <p>
+   * The upstream and intermediate observables must both support backpressure.
+   * 
+   * @param <T>
+   *          the resulting observable message type
    * 
    * @param mapping
    *          the terminating condition
@@ -234,7 +393,110 @@ public interface Observable<M> {
    */
   default <T> Observable<T> flatMap(
       Function<? super M, ? extends Observable<? extends T>> mapping) {
-    return new MergingObservable<>(map(mapping));
+    throw new UnsupportedOperationException(); // TODO
+  }
+
+  default <R> CompletableFuture<R> reduce(
+      Supplier<R> identity,
+      BiFunction<R, ? super M, R> accumulator) {
+    CompletableFuture<R> future = new CompletableFuture<>();
+
+    Property<Observation> observation = new IdentityProperty<>();
+    this
+        .thenAfter(onCompletion(() -> observation.get().requestNext()))
+        .reduceBackpressure(identity, accumulator)
+        .then(onObservation(o -> observation.set(o)))
+        .observe(m -> future.complete(m));
+
+    return future;
+  }
+
+  /**
+   * Introduce backpressure by reducing messages until a request is made
+   * downstream, then forwarding the reduction.
+   * 
+   * @param <R>
+   *          the resulting reduction type
+   * 
+   * @param identity
+   *          the identity value for the accumulating function
+   * @param accumulator
+   *          an associative, non-interfering, stateless function for combining
+   *          two values
+   * @return an observable over the reduced values
+   */
+  default <R> Observable<R> reduceBackpressure(
+      Supplier<? extends R> identity,
+      BiFunction<? super R, ? super M, ? extends R> accumulator) {
+    return observer -> observe(new BackpressureReducingObserver<>(observer, identity, accumulator));
+  }
+
+  /**
+   * Introduce backpressure by reducing messages until a request is made
+   * downstream, then forwarding the reduction.
+   * 
+   * @param <R>
+   *          the resulting reduction type
+   * 
+   * @param initial
+   *          the initial value for the accumulating function
+   * @param accumulator
+   *          an associative, non-interfering, stateless function for combining
+   *          two values
+   * @return an observable over the reduced values
+   */
+  default <R> Observable<R> reduceBackpressure(
+      Function<? super M, ? extends R> initial,
+      BiFunction<? super R, ? super M, ? extends R> accumulator) {
+    return observer -> observe(new BackpressureReducingObserver<>(observer, initial, accumulator));
+  }
+
+  /**
+   * Introduce backpressure by reducing messages until a request is made
+   * downstream, then forwarding the reduction.
+   * 
+   * @param accumulator
+   *          an associative, non-interfering, stateless function for combining
+   *          two values
+   * @return an observable over the reduced values
+   */
+  default Observable<M> reduceBackpressure(BinaryOperator<M> accumulator) {
+    return reduceBackpressure(m -> m, accumulator);
+  }
+
+  default <R, A> CompletableFuture<R> collect(Collector<? super M, A, ? extends R> collector) {
+    return reduce(collector.supplier(), (a, m) -> {
+      collector.accumulator();
+      return a;
+    }).thenApply(collector.finisher());
+  }
+
+  /**
+   * Introduce backpressure by collecting messages until a request is made
+   * downstream, then forwarding the collection.
+   * 
+   * @param <R>
+   *          the resulting collection type
+   * @param <A>
+   *          the intermediate collection type
+   * 
+   * @param collector
+   *          the collector to apply to incoming messages
+   * @return an observable over the collected values
+   */
+  default <R, A> Observable<R> collectBackpressure(Collector<? super M, A, ? extends R> collector) {
+    return reduceBackpressure(collector.supplier(), (a, m) -> {
+      collector.accumulator();
+      return a;
+    }).map(collector.finisher());
+  }
+
+  default Observable<List<M>> aggregateBackpressure() {
+    return aggregateBackpressure(256);
+  }
+
+  default Observable<List<M>> aggregateBackpressure(long toCapacity) {
+    return collectBackpressure(toCollection(() -> new MaximumCapacityList<>(toCapacity)));
   }
 
   /*
@@ -247,7 +509,7 @@ public interface Observable<M> {
   }
 
   public static <M> Observable<M> of(Collection<? extends M> messages) {
-    return new IterableObservable<>(messages);
+    return new ColdObservable<>(messages);
   }
 
   @SafeVarargs
@@ -256,6 +518,6 @@ public interface Observable<M> {
   }
 
   public static <M> Observable<M> merge(Collection<? extends Observable<? extends M>> observables) {
-    return of(observables).flatMap(identity());
+    return of(observables).mergeMap(identity());
   }
 }

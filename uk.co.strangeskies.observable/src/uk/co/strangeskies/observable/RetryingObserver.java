@@ -32,48 +32,76 @@
  */
 package uk.co.strangeskies.observable;
 
-import java.util.function.Predicate;
+import static java.util.Objects.requireNonNull;
 
-public class TerminatingObservation<M> extends PassthroughObservation<M, M> {
-  private final Observer<? super M> observer;
-  private final Predicate<? super M> condition;
+public class RetryingObserver<T> extends PassthroughObserver<T, T> {
+  static class RetryingObservation implements Observation {
+    private Observation upstreamObservation;
+    private long pendingRequests;
 
-  public TerminatingObservation(
-      Observable<? extends M> parentObservable,
-      Observer<? super M> observer,
-      Predicate<? super M> condition) {
-    this.observer = observer;
-    this.condition = condition;
+    public RetryingObservation(Observation observation) {
+      pendingRequests = observation.getPendingRequestCount();
+    }
 
-    passthroughObservation(parentObservable);
+    public RetryingObservation setUpstreamObservation(Observation upstreamObservation) {
+      this.upstreamObservation = upstreamObservation;
+      upstreamObservation.request(pendingRequests - upstreamObservation.getPendingRequestCount());
+      pendingRequests = upstreamObservation.getPendingRequestCount();
+      return this;
+    }
+
+    @Override
+    public void cancel() {
+      upstreamObservation.cancel();
+    }
+
+    @Override
+    public void request(long count) {
+      pendingRequests += count;
+      upstreamObservation.request(count);
+    }
+
+    public void fulfilRequest() {
+      pendingRequests--;
+    }
+
+    @Override
+    public long getPendingRequestCount() {
+      return pendingRequests;
+    }
+  }
+
+  private final Observable<? extends T> retryOn;
+
+  public RetryingObserver(Observer<? super T> downstreamObserver, Observable<? extends T> retryOn) {
+    super(downstreamObserver);
+    this.retryOn = requireNonNull(retryOn);
   }
 
   @Override
-  public void onObserve() {
-    observer.onObserve(this);
+  public RetryingObservation getObservation() {
+    return (RetryingObservation) super.getObservation();
   }
 
   @Override
-  public void onNext(M message) {
-    if (condition.test(message)) {
-      observer.onComplete();
-      dispose();
-    } else
-      observer.onNext(message);
-  }
+  public void onObserve(Observation observation) {
+    boolean firstObservation = getObservation() == null;
 
-  @Override
-  public void onComplete() {
-    observer.onComplete();
+    if (firstObservation) {
+      super.onObserve(new RetryingObservation(observation));
+    } else {
+      getObservation().setUpstreamObservation(observation);
+    }
   }
 
   @Override
   public void onFail(Throwable t) {
-    observer.onFail(t);
+    retryOn.observe(this);
   }
 
   @Override
-  public String toString() {
-    return getParentObservation() + " -> " + getClass().getSimpleName();
+  public void onNext(T message) {
+    getObservation().fulfilRequest();
+    getDownstreamObserver().onNext(message);
   }
 }

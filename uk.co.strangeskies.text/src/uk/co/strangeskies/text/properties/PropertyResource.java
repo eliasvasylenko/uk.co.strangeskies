@@ -112,6 +112,8 @@ public interface PropertyResource {
 	 * @return a resource bundle over all resources at each given location
 	 */
 	public static <T> PropertyResource getBundle(Locale locale, Class<T> accessor, String resource) {
-		return PropertyResourceBundleStrategy.getInstance().getPropertyResourceBundle(accessor, resource);
-	}
+    return PropertyResourceBundleStrategy
+        .getInstance()
+        .getPropertyResourceBundle(accessor, resource);
+  }
 }

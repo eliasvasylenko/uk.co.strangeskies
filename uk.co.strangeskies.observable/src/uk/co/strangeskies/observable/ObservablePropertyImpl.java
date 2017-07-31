@@ -32,7 +32,9 @@
  */
 package uk.co.strangeskies.observable;
 
-import java.util.function.BiFunction;
+import static java.util.Objects.requireNonNull;
+
+import java.util.Objects;
 import java.util.function.BiPredicate;
 
 /**
@@ -46,83 +48,103 @@ import java.util.function.BiPredicate;
  * @param <T>
  *          the type of event message to produce
  */
-public class ObservablePropertyImpl<T> extends HotObservable<T> implements ObservableProperty<T> {
-  protected class ChangeImpl implements Change<T> {
-    T previous;
-    T current;
-
-    @Override
-    public T newValue() {
-      if (currentChange == this) {
-        synchronized (ObservablePropertyImpl.this) {
-          if (currentChange == this) {
-            currentChange = null;
-          }
-        }
-      }
-      return current;
-    }
-
-    @Override
-    public T previousValue() {
-      return previous;
-    }
-  }
+public class ObservablePropertyImpl<T> implements ObservableProperty<T> {
+  private final HotObservable<T> backingObservable;
 
   private T value;
-  private final BiFunction<T, T, T> assignmentFunction;
-  private final BiPredicate<T, T> equality;
-  private final HotObservable<Change<T>> changeObservable = new HotObservable<>();
-  private ChangeImpl currentChange;
+  private Throwable failure;
 
-  protected ObservablePropertyImpl(
-      BiFunction<T, T, T> assignmentFunction,
-      BiPredicate<T, T> equality,
-      T initialValue) {
-    this.assignmentFunction = assignmentFunction;
+  private final BiPredicate<T, T> equality;
+
+  public ObservablePropertyImpl(T initialValue) {
+    this(Objects::equals, initialValue);
+  }
+
+  public ObservablePropertyImpl(BiPredicate<T, T> equality, T initialValue) {
+    this.backingObservable = new HotObservable<>();
     this.equality = equality;
-    value = initialValue;
+    this.value = requireNonNull(initialValue);
+  }
+
+  public ObservablePropertyImpl(Throwable initialProblem) {
+    this(Objects::equals, initialProblem);
+  }
+
+  public ObservablePropertyImpl(BiPredicate<T, T> equality, Throwable initialProblem) {
+    this.backingObservable = new HotObservable<>();
+    this.equality = equality;
+    this.failure = requireNonNull(initialProblem);
   }
 
   @Override
   public Observable<Change<T>> changes() {
-    return changeObservable;
+    return observer -> materialize().retrying(backingObservable.materialize()).observe(
+        new PassthroughObserver<ObservableValue<T>, Change<T>>(observer) {
+          private ObservableValue<T> previousValue;
+
+          @Override
+          public void onNext(ObservableValue<T> message) {
+            ObservableValue<T> previousValue = this.previousValue;
+            this.previousValue = message;
+
+            if (previousValue != null) {
+              getDownstreamObserver().onNext(new Change<T>() {
+                @Override
+                public ObservableValue<T> previousValue() {
+                  return previousValue;
+                }
+
+                @Override
+                public ObservableValue<T> newValue() {
+                  return message;
+                }
+              });
+            }
+          }
+        });
   }
 
   @Override
-  public void sendNext(T item) {
-    set(item);
+  public Disposable observe(Observer<? super T> observer) {
+    Disposable disposable = backingObservable.observe(observer);
+
+    if (value != null) {
+      observer.onNext(value);
+    } else {
+      observer.onFail(failure);
+    }
+
+    return disposable;
   }
 
-  /**
-   * Fire the given message to all observers.
-   * 
-   * @param value
-   *          the message event to send
-   */
   @Override
   public synchronized T set(T value) {
+    if (failure == null && equality.test(this.value, value))
+      return value;
+
+    backingObservable.next(value);
+
     T previous = this.value;
-    this.value = assignmentFunction.apply(value, this.value);
-
-    if (!equality.test(this.value, previous)) {
-      super.sendNext(this.value);
-
-      ChangeImpl currentChange = this.currentChange;
-      if (currentChange == null) {
-        this.currentChange = new ChangeImpl();
-        this.currentChange.previous = previous;
-        changeObservable.sendNext(this.currentChange);
-      } else {
-        currentChange.current = this.value;
-      }
-    }
+    failure = null;
+    this.value = value;
 
     return previous;
   }
 
   @Override
+  public synchronized void setProblem(Throwable t) {
+    backingObservable.fail(t);
+
+    value = null;
+    failure = t;
+
+    backingObservable.start();
+  }
+
+  @Override
   public T get() {
+    if (value == null)
+      throw new MissingValueException(this, failure);
     return value;
   }
 }

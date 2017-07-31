@@ -32,16 +32,10 @@
  */
 package uk.co.strangeskies.observable;
 
-import java.util.concurrent.Executor;
+public class MissingValueException extends RuntimeException {
+	private static final long serialVersionUID = 1L;
 
-public class ExecutorObservable<M> implements Observable<M> {
-  public ExecutorObservable(Observable<M> observable, Executor executor) {
-    // TODO Auto-generated constructor stub
-  }
-
-  @Override
-  public Observation<M> observe(Observer<? super M> observer) {
-    // TODO Auto-generated method stub
-    return null;
-  }
+	public MissingValueException(Observable<?> observable, Throwable t) {
+		super("Unable to obtain value from source " + observable, t);
+	}
 }

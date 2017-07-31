@@ -32,25 +32,72 @@
  */
 package uk.co.strangeskies.observable;
 
-public class IterableObservable<M> extends HotObservable<M> {
-  private final Iterable<? extends M> messages;
+import org.junit.Test;
 
-  public IterableObservable(Iterable<? extends M> messages) {
-    this.messages = messages;
+import mockit.FullVerificationsInOrder;
+import mockit.Mocked;
+
+@SuppressWarnings("javadoc")
+public class FilteringObserverTest {
+  @Mocked
+  Observation upstreamObservation;
+
+  @Mocked
+  Observer<String> downstreamObserver;
+
+  @Test
+  public void filterFailMessageEventTest() {
+    Observer<String> test = new FilteringObserver<>(downstreamObserver, s -> false);
+
+    test.onObserve(upstreamObservation);
+    test.onNext("message");
+
+    new FullVerificationsInOrder() {
+      {
+        downstreamObserver.onObserve((Observation) any);
+        upstreamObservation.requestNext();
+      }
+    };
   }
 
-  @Override
-  public Observation<M> observe(Observer<? super M> observer) {
-    Observation<M> observation = super.observe(observer);
-    for (M message : messages) {
-      try {
-        observer.onNext(message);
-      } catch (Throwable t) {
-        observer.onFail(t);
-        throw t;
+  @Test
+  public void filterPassMessageEventTest() {
+    Observer<String> test = new FilteringObserver<>(downstreamObserver, s -> true);
+
+    test.onObserve(upstreamObservation);
+    test.onNext("message");
+
+    new FullVerificationsInOrder() {
+      {
+        downstreamObserver.onObserve((Observation) any);
+        downstreamObserver.onNext("message");
       }
-    }
-    observer.onComplete();
-    return observation;
+    };
+  }
+
+  @Test
+  public void filterMultipleMessageEventsTest() {
+    Observer<String> test = new FilteringObserver<>(downstreamObserver, s -> s.startsWith("t"));
+
+    test.onObserve(upstreamObservation);
+    test.onNext("one");
+    test.onNext("two");
+    test.onNext("three");
+    test.onNext("four");
+
+    new FullVerificationsInOrder() {
+      {
+        downstreamObserver.onObserve((Observation) any);
+        upstreamObservation.requestNext();
+        downstreamObserver.onNext("two");
+        downstreamObserver.onNext("three");
+        upstreamObservation.requestNext();
+      }
+    };
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void nullFilterTest() {
+    new FilteringObserver<>(downstreamObserver, null);
   }
 }

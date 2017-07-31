@@ -34,12 +34,13 @@ package uk.co.strangeskies.observable;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
 /**
  * A simple implementation of {@link Observable} which maintains a list of
- * listeners to receive events fired with {@link #sendNext(Object)}.
+ * listeners to receive events fired with {@link #next(Object)}.
  * <p>
  * Addition and removal of observers, as well as the firing of events, are
  * synchronized on the implementation object.
@@ -53,16 +54,25 @@ import java.util.function.Consumer;
  *          The type of event message to produce
  */
 public class HotObservable<M> implements Observable<M> {
-  private Set<HotObservation<M>> observations;
+  private boolean live = true;
+  private Set<ObservationImpl<M>> observations;
 
   @Override
-  public Observation<M> observe(Observer<? super M> observer) {
-    HotObservation<M> observation = new HotObservation<>(this, observer);
+  public Disposable observe(Observer<? super M> observer) {
+    ObservationImpl<M> observation = new UnboundedObservationImpl<M>(observer) {
+      @Override
+      public void cancelImpl() {
+        cancelObservation(this);
+      }
+    };
 
     if (observations == null)
       observations = new LinkedHashSet<>();
 
     observations.add(observation);
+
+    if (isLive())
+      observation.onObserve();
 
     return observation;
   }
@@ -71,18 +81,41 @@ public class HotObservable<M> implements Observable<M> {
     return observations != null;
   }
 
-  void stopObservation(Observation<M> observer) {
-    if (observations.remove(observer) && observations.isEmpty()) {
+  void cancelObservation(Observation observer) {
+    if (observations != null && observations.remove(observer) && observations.isEmpty()) {
       observations = null;
     }
   }
 
-  private void forObservers(Consumer<Observer<? super M>> action) {
-    if (observations != null && action != null) {
-      for (HotObservation<M> observation : new ArrayList<>(observations)) {
-        action.accept(observation.getObserver());
+  private void forObservers(
+      Set<ObservationImpl<M>> observations,
+      Consumer<ObservationImpl<M>> action) {
+    if (observations != null) {
+      for (ObservationImpl<M> observation : new ArrayList<>(observations)) {
+        action.accept(observation);
       }
     }
+  }
+
+  boolean isLive() {
+    return live;
+  }
+
+  void assertLive() {
+    if (!live)
+      throw new IllegalStateException();
+  }
+
+  void assertDead() {
+    if (live)
+      throw new IllegalStateException();
+  }
+
+  public HotObservable<M> start() {
+    assertDead();
+    live = true;
+    forObservers(observations, o -> o.onObserve());
+    return this;
   }
 
   /**
@@ -90,18 +123,33 @@ public class HotObservable<M> implements Observable<M> {
    * 
    * @param item
    *          the message event to send
+   * @return the receiver for method chaining
    */
-  public void sendNext(M item) {
-    forObservers(o -> o.onNext(item));
+  public HotObservable<M> next(M item) {
+    assertLive();
+    Objects.requireNonNull(item);
+    forObservers(observations, o -> o.onNext(item));
+    return this;
   }
 
-  public void complete() {
-    forObservers(o -> o.onComplete());
-    observations = null;
+  public HotObservable<M> complete() {
+    assertLive();
+    Set<ObservationImpl<M>> observations = this.observations;
+    this.observations = null;
+    live = false;
+
+    forObservers(observations, o -> o.onComplete());
+    return this;
   }
 
-  public void fail(Throwable t) {
-    forObservers(o -> o.onFail(t));
-    observations = null;
+  public HotObservable<M> fail(Throwable t) {
+    assertLive();
+    Objects.requireNonNull(t);
+    Set<ObservationImpl<M>> observations = this.observations;
+    this.observations = null;
+    live = false;
+
+    forObservers(observations, o -> o.onFail(t));
+    return this;
   }
 }

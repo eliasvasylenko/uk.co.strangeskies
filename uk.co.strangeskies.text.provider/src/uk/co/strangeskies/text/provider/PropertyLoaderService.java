@@ -58,104 +58,90 @@ import uk.co.strangeskies.text.properties.PropertyValueProviderFactory;
 @Component(scope = ServiceScope.PROTOTYPE)
 @SuppressWarnings("javadoc")
 public class PropertyLoaderService implements PropertyLoader {
-	@Reference
-	LocaleProvider provider;
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL)
-	Log log;
-	private PropertyLoader component;
+  @Reference
+  LocaleProvider provider;
+  @Reference(cardinality = ReferenceCardinality.OPTIONAL)
+  Log log;
+  private PropertyLoader component;
 
-	@Activate
-	void activate(ComponentContext context) {
-		component = PropertyLoader.getPropertyLoader(provider, new Log() {
-			@Override
-			public void log(Level level, String message) {
-				if (log != null) {
-					log.log(level, message);
-				}
-			}
+  @Activate
+  void activate(ComponentContext context) {
+    component = PropertyLoader.getPropertyLoader(provider, Log.forwardingLog(() -> log));
 
-			@Override
-			public void log(Level level, String message, Throwable exception) {
-				if (log != null) {
-					log.log(level, message, exception);
-				}
-			}
-		});
+    OsgiPropertyResourceStrategy osgiPropertyResourceStrategy = new OsgiPropertyResourceStrategy(
+        context.getUsingBundle());
 
-		OsgiPropertyResourceStrategy osgiPropertyResourceStrategy = new OsgiPropertyResourceStrategy(
-				context.getUsingBundle());
+    component.setDefaultResourceStrategy(osgiPropertyResourceStrategy);
+    component.registerResourceStrategy(osgiPropertyResourceStrategy);
+  }
 
-		component.setDefaultResourceStrategy(osgiPropertyResourceStrategy);
-		component.registerResourceStrategy(osgiPropertyResourceStrategy);
-	}
+  @Override
+  public Locale getLocale() {
+    return provider.getLocale();
+  }
 
-	@Override
-	public Locale getLocale() {
-		return provider.getLocale();
-	}
+  @Override
+  public ObservableValue<Locale> locale() {
+    return provider;
+  }
 
-	@Override
-	public ObservableValue<Locale> locale() {
-		return provider;
-	}
+  @Override
+  public boolean registerValueProvider(PropertyValueProviderFactory propertyProvider) {
+    return component.registerValueProvider(propertyProvider);
+  }
 
-	@Override
-	public boolean registerValueProvider(PropertyValueProviderFactory propertyProvider) {
-		return component.registerValueProvider(propertyProvider);
-	}
+  @Override
+  public boolean unregisterValueProvider(PropertyValueProviderFactory propertyProvider) {
+    return component.unregisterValueProvider(propertyProvider);
+  }
 
-	@Override
-	public boolean unregisterValueProvider(PropertyValueProviderFactory propertyProvider) {
-		return component.unregisterValueProvider(propertyProvider);
-	}
+  @Override
+  public List<PropertyValueProviderFactory> getValueProviders() {
+    return component.getValueProviders();
+  }
 
-	@Override
-	public List<PropertyValueProviderFactory> getValueProviders() {
-		return component.getValueProviders();
-	}
+  @Override
+  public Optional<PropertyValueProvider<?>> getValueProvider(AnnotatedType type) {
+    return component.getValueProvider(type);
+  }
 
-	@Override
-	public Optional<PropertyValueProvider<?>> getValueProvider(AnnotatedType type) {
-		return component.getValueProvider(type);
-	}
+  @Override
+  public <T extends PropertyResourceStrategy<T>> void setDefaultResourceStrategy(T strategy) {
+    component.setDefaultResourceStrategy(strategy);
+  }
 
-	@Override
-	public <T extends PropertyResourceStrategy<T>> void setDefaultResourceStrategy(T strategy) {
-		component.setDefaultResourceStrategy(strategy);
-	}
+  @Override
+  public <T extends PropertyResourceStrategy<T>> boolean registerResourceStrategy(T strategy) {
+    return component.registerResourceStrategy(strategy);
+  }
 
-	@Override
-	public <T extends PropertyResourceStrategy<T>> boolean registerResourceStrategy(T strategy) {
-		return component.registerResourceStrategy(strategy);
-	}
+  @Override
+  public <T extends PropertyResourceStrategy<T>> boolean unregisterResourceStrategy(T strategy) {
+    return component.unregisterResourceStrategy(strategy);
+  }
 
-	@Override
-	public <T extends PropertyResourceStrategy<T>> boolean unregisterResourceStrategy(T strategy) {
-		return component.unregisterResourceStrategy(strategy);
-	}
+  @Override
+  public Set<Class<? extends PropertyResourceStrategy<?>>> getResourceStrategies() {
+    return component.getResourceStrategies();
+  }
 
-	@Override
-	public Set<Class<? extends PropertyResourceStrategy<?>>> getResourceStrategies() {
-		return component.getResourceStrategies();
-	}
+  @Override
+  public <T extends PropertyResourceStrategy<T>> T getResourceStrategy(Class<T> strategy) {
+    return component.getResourceStrategy(strategy);
+  }
 
-	@Override
-	public <T extends PropertyResourceStrategy<T>> T getResourceStrategy(Class<T> strategy) {
-		return component.getResourceStrategy(strategy);
-	}
+  @Override
+  public <T> T getProperties(Class<T> accessor) {
+    return component.getProperties(accessor);
+  }
 
-	@Override
-	public <T> T getProperties(Class<T> accessor) {
-		return component.getProperties(accessor);
-	}
+  @Override
+  public <T> T getProperties(PropertyAccessorConfiguration<T> accessorConfiguration) {
+    return component.getProperties(accessorConfiguration);
+  }
 
-	@Override
-	public <T> T getProperties(PropertyAccessorConfiguration<T> accessorConfiguration) {
-		return component.getProperties(accessorConfiguration);
-	}
-
-	@Override
-	public PropertyLoaderProperties getProperties() {
-		return component.getProperties();
-	}
+  @Override
+  public PropertyLoaderProperties getProperties() {
+    return component.getProperties();
+  }
 }

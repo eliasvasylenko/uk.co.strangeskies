@@ -32,47 +32,22 @@
  */
 package uk.co.strangeskies.observable;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.junit.Ignore;
+import org.junit.Test;
 
-public class MergingObservable<M> implements Observable<M> {
-  private final Observable<? extends Observable<? extends M>> parentObservables;
+import mockit.Mocked;
 
-  public MergingObservable(Observable<? extends Observable<? extends M>> parentObservables) {
-    this.parentObservables = parentObservables;
-  }
+@Ignore
+@SuppressWarnings("javadoc")
+public class MaterializingObserverTest {
+  @Mocked
+  Observation upstreamObservation;
 
-  @Override
-  public Observation<M> observe(Observer<? super M> observer) {
-    List<Observable<? extends M>> parentObservables = new ArrayList<>();
+  @Mocked
+  Observer<String> downstreamObserver;
 
-    Observation<? extends Observable<? extends M>> parentObservablesObservation = this.parentObservables
-        .observe(parentObservables::add);
-    parentObservablesObservation.requestUnbounded();
-
-    return new Observation<M>() {
-      @Override
-      public boolean isDisposed() {
-        // TODO Auto-generated method stub
-        return false;
-      }
-
-      @Override
-      public void dispose() {
-        parentObservablesObservation.dispose();
-      }
-
-      @Override
-      public void request(long count) {
-        // TODO Auto-generated method stub
-        Observation.super.request(count);
-      }
-
-      @Override
-      public void requestUnbounded() {
-        // TODO Auto-generated method stub
-        Observation.super.requestUnbounded();
-      }
-    };
+  @Test
+  public void _NOTHING_HERE_() {
+    // TODO
   }
 }

@@ -83,6 +83,7 @@ runreq.base=\
 	osgi.enroute.base.api
 
 -testpath.base=\
+	org.jmockit:jmockit,\
 	osgi.enroute.junit.wrapper,\
 	osgi.enroute.hamcrest.wrapper,\
 	org.hamcrest:java-hamcrest

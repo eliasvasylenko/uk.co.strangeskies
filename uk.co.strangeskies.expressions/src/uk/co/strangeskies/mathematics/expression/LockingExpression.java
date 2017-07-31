@@ -37,7 +37,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.util.function.Supplier;
 
-import uk.co.strangeskies.observable.Observation;
+import uk.co.strangeskies.observable.Disposable;
+import uk.co.strangeskies.observable.HotObservable;
 import uk.co.strangeskies.observable.Observer;
 
 /**
@@ -111,23 +112,27 @@ public abstract class LockingExpression<T> extends DependentExpression<T> implem
   }
 
   @Override
-  public Observation<Expression<? extends T>> observe(
-      Observer<? super Expression<? extends T>> observer) {
-    getReadLock().lock();
+  protected HotObservable<Expression<? extends T>> createObservable() {
+    return new HotObservable<Expression<? extends T>>() {
+      @Override
+      public Disposable observe(Observer<? super Expression<? extends T>> observer) {
+        getReadLock().lock();
 
-    try {
-      return super.observe(observer);
-    } finally {
-      getReadLock().unlock();
-    }
+        try {
+          return super.observe(observer);
+        } finally {
+          getReadLock().unlock();
+        }
+      }
+    };
   }
 
   @Override
-  public void sendNext(Expression<? extends T> item) {
+  protected void fireChange() {
     getReadLock().lock();
 
     try {
-      super.sendNext(item);
+      super.fireChange();
     } finally {
       getReadLock().unlock();
     }

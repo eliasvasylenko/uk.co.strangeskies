@@ -32,6 +32,10 @@
  */
 package uk.co.strangeskies.observable;
 
+import java.util.Observable;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 /**
  * An observer over one or more {@link Observable} instances.
  * 
@@ -49,9 +53,72 @@ public interface Observer<T> {
    */
   void onNext(T message);
 
-  default void onObserve(Observation<? extends T> subscription) {}
+  default void onObserve(Observation observation) {}
 
   default void onComplete() {}
 
   default void onFail(Throwable t) {}
+
+  static <T> Observer<T> onObservation(Consumer<Observation> action) {
+    return new Observer<T>() {
+      @Override
+      public void onNext(T message) {}
+
+      @Override
+      public void onObserve(Observation observation) {
+        action.accept(observation);
+      }
+    };
+  }
+
+  static <T> Observer<T> onCompletion(Runnable action) {
+    return new Observer<T>() {
+      @Override
+      public void onNext(T message) {}
+
+      @Override
+      public void onComplete() {
+        action.run();
+      }
+    };
+  }
+
+  static <T> Observer<T> onFailure(Consumer<Throwable> action) {
+    return new Observer<T>() {
+      @Override
+      public void onNext(T message) {}
+
+      @Override
+      public void onFail(Throwable t) {
+        action.accept(t);
+      }
+    };
+  }
+
+  static <T> Observer<T> singleUse(Function<Observation, Observer<T>> observerProvider) {
+    return new Observer<T>() {
+      Observer<T> observer;
+
+      @Override
+      public void onObserve(Observation observation) {
+        observer = observerProvider.apply(observation);
+        observer.onObserve(observation);
+      }
+
+      @Override
+      public void onNext(T message) {
+        observer.onNext(message);
+      }
+
+      @Override
+      public void onComplete() {
+        observer.onComplete();
+      }
+
+      @Override
+      public void onFail(Throwable t) {
+        observer.onFail(t);
+      }
+    };
+  }
 }

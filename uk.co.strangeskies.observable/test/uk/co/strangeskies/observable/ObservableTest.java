@@ -32,87 +32,149 @@
  */
 package uk.co.strangeskies.observable;
 
-import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.List;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
 
 import org.junit.Test;
 
+import mockit.Mocked;
+import mockit.Verifications;
+
 @SuppressWarnings("javadoc")
 public class ObservableTest {
-  @Test(timeout = 5000)
+  Observable<String> upstreamObservable = a -> null;
+
+  @Mocked
+  Observer<String> downstreamObserver;
+
+  @Test
+  public void thenTest() {
+    upstreamObservable.then(m -> {});
+
+    new Verifications() {
+      {
+        upstreamObservable.observe(withArgThat(instanceOf(MultiplePassthroughObserver.class)));
+      }
+    };
+  }
+
+  @Test
+  public void thenAfterTest() {
+    upstreamObservable.thenAfter(m -> {});
+
+    new Verifications() {
+      {
+        upstreamObservable.observe(withArgThat(instanceOf(MultiplePassthroughObserver.class)));
+      }
+    };
+  }
+
+  @Test
+  public void retryingTest() {
+    upstreamObservable.retrying();
+
+    new Verifications() {
+      {
+        upstreamObservable.observe(withArgThat(instanceOf(RetryingObserver.class)));
+      }
+    };
+  }
+
+  @Test
+  public void softReferenceOwnedTest() {
+    upstreamObservable.softReference(new Object());
+
+    new Verifications() {
+      {
+        upstreamObservable.observe(withArgThat(instanceOf(ReferenceOwnedObserver.class)));
+      }
+    };
+  }
+
+  @Test
+  public void softReferenceTest() {
+    upstreamObservable.softReference();
+
+    new Verifications() {
+      {
+        upstreamObservable.observe(withArgThat(instanceOf(ReferenceOwnedObserver.class)));
+      }
+    };
+  }
+
+  @Test
+  public void weakReferenceOwnedTest() {
+    upstreamObservable.weakReference(new Object());
+
+    new Verifications() {
+      {
+        upstreamObservable.observe(withArgThat(instanceOf(ReferenceOwnedObserver.class)));
+      }
+    };
+  }
+
+  @Test
   public void weakReferenceTest() {
-    WeakReference<?> reference = new WeakReference<>(new Object());
+    upstreamObservable.weakReference();
 
-    while (reference.get() != null) {
-      new Object();
-      System.gc();
-      System.runFinalization();
-    }
-
-    assertNull(reference.get());
-  }
-
-  @Test(timeout = 5000)
-  public void holdWeakObserverTest() {
-    HotObservable<String> stringObservable = new HotObservable<>();
-
-    List<String> list = new ArrayList<>();
-
-    stringObservable.weakReference(list).observe(m -> m.owner().add(m.message()));
-
-    weakReferenceTest();
-
-    stringObservable.sendNext("test");
-
-    assertThat(list, contains("test"));
-  }
-
-  @Test(timeout = 5000)
-  public void dropWeakObserverTest() {
-    HotObservable<String> stringObservable = new HotObservable<>();
-
-    List<String> list = new ArrayList<>();
-    Observer<String> add = list::add;
-
-    stringObservable.weakReference().observe(add);
-
-    stringObservable.sendNext("test1");
-
-    add = null;
-    weakReferenceTest();
-
-    stringObservable.sendNext("test2");
-
-    assertThat(list, contains("test1"));
+    new Verifications() {
+      {
+        upstreamObservable.observe(withArgThat(instanceOf(ReferenceOwnedObserver.class)));
+      }
+    };
   }
 
   @Test
-  public void observeEventTest() {
-    List<String> list = new ArrayList<>();
+  public void executeOnTest() {
+    upstreamObservable.executeOn(r -> {});
 
-    HotObservable<String> stringObservable = new HotObservable<>();
-    stringObservable.observe(list::add);
-
-    stringObservable.sendNext("test");
-
-    assertThat(list, contains("test"));
+    new Verifications() {
+      {
+        upstreamObservable.observe(withArgThat(instanceOf(ExecutorObserver.class)));
+      }
+    };
   }
 
   @Test
-  public void observeMultipleEventsTest() {
-    List<String> list = new ArrayList<>();
+  public void mapTest() {
+    upstreamObservable.map(s -> s);
 
-    HotObservable<String> stringObservable = new HotObservable<>();
-    stringObservable.observe(list::add);
+    new Verifications() {
+      {
+        upstreamObservable.observe(withArgThat(instanceOf(MappingObserver.class)));
+      }
+    };
+  }
 
-    stringObservable.sendNext("test1");
-    stringObservable.sendNext("test2");
+  @Test
+  public void filterTest() {
+    upstreamObservable.filter(s -> true);
 
-    assertThat(list, contains("test1", "test2"));
+    new Verifications() {
+      {
+        upstreamObservable.observe(withArgThat(instanceOf(FilteringObserver.class)));
+      }
+    };
+  }
+
+  @Test
+  public void takeWhileTest() {
+    upstreamObservable.takeWhile(s -> true);
+
+    new Verifications() {
+      {
+        upstreamObservable.observe(withArgThat(instanceOf(TakeWhileObserver.class)));
+      }
+    };
+  }
+
+  @Test
+  public void dropWhileTest() {
+    upstreamObservable.dropWhile(s -> true);
+
+    new Verifications() {
+      {
+        upstreamObservable.observe(withArgThat(instanceOf(DropWhileObserver.class)));
+      }
+    };
   }
 }

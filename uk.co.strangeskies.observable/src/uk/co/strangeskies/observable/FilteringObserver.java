@@ -32,49 +32,24 @@
  */
 package uk.co.strangeskies.observable;
 
-import java.util.concurrent.Executor;
+import static java.util.Objects.requireNonNull;
 
-public class LatestObservation<M> extends PassthroughObservation<M, M> {
-  private final Observer<? super M> observer;
-  private final Executor executor;
+import java.util.function.Predicate;
 
-  public LatestObservation(Observer<? super M> observer, Executor executor) {
-    this.observer = observer;
-    this.executor = executor;
-  }
+public class FilteringObserver<M> extends PassthroughObserver<M, M> {
+  private final Predicate<? super M> condition;
 
-  private Runnable latest;
+  public FilteringObserver(Observer<? super M> downstreamObserver, Predicate<? super M> condition) {
+    super(downstreamObserver);
 
-  @Override
-  public void onObserve() {
-    observer.onObserve(this);
+    this.condition = requireNonNull(condition);
   }
 
   @Override
   public void onNext(M message) {
-    setLatest(() -> observer.onNext(message));
-  }
-
-  @Override
-  public void onComplete() {
-    setLatest(observer::onComplete);
-  }
-
-  @Override
-  public void onFail(Throwable t) {
-    setLatest(() -> observer.onFail(t));
-  }
-
-  public synchronized void setLatest(Runnable item) {
-    boolean ready = latest == null;
-    latest = item;
-    if (ready)
-      executor.execute(() -> getLatest().run());
-  }
-
-  private synchronized Runnable getLatest() {
-    Runnable latest = this.latest;
-    this.latest = null;
-    return latest;
+    if (condition.test(message))
+      getDownstreamObserver().onNext(message);
+    else
+      getObservation().requestNext();
   }
 }

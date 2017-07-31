@@ -69,225 +69,225 @@ import uk.co.strangeskies.text.properties.PropertyLoaderImpl.MethodSignature;
  *          the type of the delegating proxy
  */
 public class PropertyAccessorDelegate<A> {
-	private static final Set<MethodSignature> DIRECT_METHODS = getDirectMethods();
+  private static final Set<MethodSignature> DIRECT_METHODS = getDirectMethods();
 
-	private static Set<MethodSignature> getDirectMethods() {
-		Set<MethodSignature> signatures = new HashSet<>();
+  private static Set<MethodSignature> getDirectMethods() {
+    Set<MethodSignature> signatures = new HashSet<>();
 
-		for (Method method : Object.class.getDeclaredMethods()) {
-			signatures.add(new MethodSignature(method));
-		}
+    for (Method method : Object.class.getDeclaredMethods()) {
+      signatures.add(new MethodSignature(method));
+    }
 
-		return unmodifiableSet(signatures);
-	}
+    return unmodifiableSet(signatures);
+  }
 
-	private static final Constructor<MethodHandles.Lookup> METHOD_HANDLE_CONSTRUCTOR = getMethodHandleConstructor();
+  private static final Constructor<MethodHandles.Lookup> METHOD_HANDLE_CONSTRUCTOR = getMethodHandleConstructor();
 
-	private static Constructor<Lookup> getMethodHandleConstructor() {
-		try {
-			Constructor<Lookup> constructor = MethodHandles.Lookup.class
-					.getDeclaredConstructor(Class.class, int.class);
+  private static Constructor<Lookup> getMethodHandleConstructor() {
+    try {
+      Constructor<Lookup> constructor = MethodHandles.Lookup.class
+          .getDeclaredConstructor(Class.class, int.class);
 
-			if (!constructor.isAccessible()) {
-				constructor.setAccessible(true);
-			}
+      if (!constructor.isAccessible()) {
+        constructor.setAccessible(true);
+      }
 
-			return constructor;
-		} catch (NoSuchMethodException | SecurityException e) {
-			throw new RuntimeException(e);
-		}
-	}
+      return constructor;
+    } catch (NoSuchMethodException | SecurityException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
-	private final PropertyLoader loader;
-	private final Log log;
-	private final PropertyAccessorConfiguration<A> source;
-	private final A proxy;
+  private final PropertyLoader loader;
+  private final Log log;
+  private final PropertyAccessorConfiguration<A> source;
+  private final A proxy;
 
-	/**
-	 * TODO GC of bundle cache if all properties are loaded & none localized!
-	 */
-	private final Map<PropertyAccessorConfiguration<?>, PropertyResource> bundleCache = new ConcurrentHashMap<>();
-	private final Map<MethodSignature, PropertyValueDelegate<A>> valueDelegateCache = new ConcurrentHashMap<>();
+  /**
+   * TODO GC of bundle cache if all properties are loaded & none localized!
+   */
+  private final Map<PropertyAccessorConfiguration<?>, PropertyResource> bundleCache = new ConcurrentHashMap<>();
+  private final Map<MethodSignature, PropertyValueDelegate<A>> valueDelegateCache = new ConcurrentHashMap<>();
 
-	/**
-	 * @param loader
-	 *          which created the delegate, to call back to
-	 * @param log
-	 *          the log, or null
-	 * @param source
-	 *          the property accessor class and configuration
-	 */
-	public PropertyAccessorDelegate(
-			PropertyLoader loader,
-			Log log,
-			PropertyAccessorConfiguration<A> source) {
-		this.loader = loader;
-		this.log = log != null ? log : (l, m) -> {};
-		this.source = source;
+  /**
+   * @param loader
+   *          which created the delegate, to call back to
+   * @param log
+   *          the log, or null
+   * @param source
+   *          the property accessor class and configuration
+   */
+  public PropertyAccessorDelegate(
+      PropertyLoader loader,
+      Log log,
+      PropertyAccessorConfiguration<A> source) {
+    this.loader = loader;
+    this.log = Log.forwardingLog(log);
+    this.source = source;
 
-		if (!source.getAccessor().isInterface()) {
-			PropertyLoaderException e = new PropertyLoaderException(
-					getText().mustBeInterface(source.getAccessor()));
-			log.log(Level.ERROR, e);
-			throw e;
-		}
+    if (!source.getAccessor().isInterface()) {
+      PropertyLoaderException e = new PropertyLoaderException(
+          getText().mustBeInterface(source.getAccessor()));
+      log.log(Level.ERROR, e);
+      throw e;
+    }
 
-		proxy = createProxy(source.getAccessor());
+    proxy = createProxy(source.getAccessor());
 
-		initialize();
-	}
+    initialize();
+  }
 
-	PropertyLoader getLoader() {
-		return loader;
-	}
+  PropertyLoader getLoader() {
+    return loader;
+  }
 
-	PropertyAccessorConfiguration<A> getSource() {
-		return source;
-	}
+  PropertyAccessorConfiguration<A> getSource() {
+    return source;
+  }
 
-	private PropertyLoaderProperties getText() {
-		return loader.getProperties();
-	}
+  private PropertyLoaderProperties getText() {
+    return loader.getProperties();
+  }
 
-	private void initialize() {
-		for (Method method : source.getAccessor().getMethods()) {
-			MethodSignature signature = new MethodSignature(method);
+  private void initialize() {
+    for (Method method : source.getAccessor().getMethods()) {
+      MethodSignature signature = new MethodSignature(method);
 
-			if (!DIRECT_METHODS.contains(signature) && !method.isDefault()) {
-				PropertyConfiguration methodConfiguration = method
-						.getAnnotation(PropertyConfiguration.class);
+      if (!DIRECT_METHODS.contains(signature) && !method.isDefault()) {
+        PropertyConfiguration methodConfiguration = method
+            .getAnnotation(PropertyConfiguration.class);
 
-				Evaluation evaluate = source.getConfiguration().evaluation();
-				if (methodConfiguration != null
-						&& methodConfiguration.evaluation() != Evaluation.UNSPECIFIED) {
-					evaluate = methodConfiguration.evaluation();
-				}
+        Evaluation evaluate = source.getConfiguration().evaluation();
+        if (methodConfiguration != null
+            && methodConfiguration.evaluation() != Evaluation.UNSPECIFIED) {
+          evaluate = methodConfiguration.evaluation();
+        }
 
-				if (evaluate == Evaluation.IMMEDIATE) {
-					loadPropertyValueDelegate(signature);
-				}
-			}
-		}
-	}
+        if (evaluate == Evaluation.IMMEDIATE) {
+          loadPropertyValueDelegate(signature);
+        }
+      }
+    }
+  }
 
-	private PropertyValueDelegate<A> loadPropertyValueDelegate(MethodSignature signature) {
-		return valueDelegateCache.computeIfAbsent(signature, s -> new PropertyValueDelegate<>(this, s));
-	}
+  private PropertyValueDelegate<A> loadPropertyValueDelegate(MethodSignature signature) {
+    return valueDelegateCache.computeIfAbsent(signature, s -> new PropertyValueDelegate<>(this, s));
+  }
 
-	private Object getInstantiatedPropertyValue(MethodSignature signature, Object... arguments) {
-		List<?> argumentList;
-		if (arguments == null) {
-			argumentList = emptyList();
-		} else {
-			argumentList = asList(arguments);
-		}
+  private Object getInstantiatedPropertyValue(MethodSignature signature, Object... arguments) {
+    List<?> argumentList;
+    if (arguments == null) {
+      argumentList = emptyList();
+    } else {
+      argumentList = asList(arguments);
+    }
 
-		try {
-			return loadPropertyValueDelegate(signature).getValue(argumentList);
-		} catch (Exception e) {
-			/*
-			 * Extra layer of protection for internal properties, so things can still
-			 * function if there is a problem retrieving them...
-			 */
-			if (source.getAccessor().equals(PropertyLoaderProperties.class)) {
-				try {
-					return signature.method().invoke(new DefaultPropertyLoaderProperties(), arguments);
-				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
-					throw new RuntimeException(e1);
-				}
-			} else {
-				throw e;
-			}
-		}
-	}
+    try {
+      return loadPropertyValueDelegate(signature).getValue(argumentList);
+    } catch (Exception e) {
+      /*
+       * Extra layer of protection for internal properties, so things can still
+       * function if there is a problem retrieving them...
+       */
+      if (source.getAccessor().equals(PropertyLoaderProperties.class)) {
+        try {
+          return signature.method().invoke(new DefaultPropertyLoaderProperties(), arguments);
+        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+          throw new RuntimeException(e1);
+        }
+      } else {
+        throw e;
+      }
+    }
+  }
 
-	@SuppressWarnings("unchecked")
-	<U> PropertyAccessorConfiguration<U> getPropertiesConfigurationUnsafe(Class<?> returnType) {
-		return new PropertyAccessorConfiguration<>((Class<U>) returnType);
-	}
+  @SuppressWarnings("unchecked")
+  <U> PropertyAccessorConfiguration<U> getPropertiesConfigurationUnsafe(Class<?> returnType) {
+    return new PropertyAccessorConfiguration<>((Class<U>) returnType);
+  }
 
-	<T> Function<List<?>, T> parseValueString(
-			PropertyAccessorConfiguration<A> source,
-			AnnotatedType propertyType,
-			String key,
-			Locale locale) {
-		@SuppressWarnings("unchecked")
-		PropertyValueProvider<T> provider = (PropertyValueProvider<T>) loader
-				.getValueProvider(propertyType)
-				.orElseThrow(
-						() -> new PropertyLoaderException(
-								getText().propertyValueTypeNotSupported(propertyType, key)));
+  <T> Function<List<?>, T> parseValueString(
+      PropertyAccessorConfiguration<A> source,
+      AnnotatedType propertyType,
+      String key,
+      Locale locale) {
+    @SuppressWarnings("unchecked")
+    PropertyValueProvider<T> provider = (PropertyValueProvider<T>) loader
+        .getValueProvider(propertyType)
+        .orElseThrow(
+            () -> new PropertyLoaderException(
+                getText().propertyValueTypeNotSupported(propertyType, key)));
 
-		try {
-			String valueString = loadValueString(source, key, locale);
+    try {
+      String valueString = loadValueString(source, key, locale);
 
-			return arguments -> provider.getParser(arguments).parse(valueString);
-		} catch (MissingResourceException e) {
-			if (source.getConfiguration().defaults() != Defaults.IGNORE && provider.providesDefault()) {
-				return arguments -> provider.getDefault(key, arguments);
-			}
-			PropertyLoaderException ple = new PropertyLoaderException(
-					getText().translationNotFoundMessage(key),
-					e);
-			log.log(Level.WARN, ple);
-			throw ple;
-		}
-	}
+      return arguments -> provider.getParser(arguments).parse(valueString);
+    } catch (MissingResourceException e) {
+      if (source.getConfiguration().defaults() != Defaults.IGNORE && provider.providesDefault()) {
+        return arguments -> provider.getDefault(key, arguments);
+      }
+      PropertyLoaderException ple = new PropertyLoaderException(
+          getText().translationNotFoundMessage(key),
+          e);
+      log.log(Level.WARN, ple);
+      throw ple;
+    }
+  }
 
-	@SuppressWarnings("unchecked")
-	private String loadValueString(
-			PropertyAccessorConfiguration<?> configuration,
-			String key,
-			Locale locale) {
-		return bundleCache.computeIfAbsent(configuration, c -> {
-			return loader
-					.getResourceStrategy(c.getConfiguration().strategy())
-					.getPropertyResourceBundle(c.getAccessor(), c.getConfiguration().resource());
-		}).getValue(key, locale);
-	}
+  @SuppressWarnings("unchecked")
+  private String loadValueString(
+      PropertyAccessorConfiguration<?> configuration,
+      String key,
+      Locale locale) {
+    return bundleCache.computeIfAbsent(configuration, c -> {
+      return loader
+          .getResourceStrategy(c.getConfiguration().strategy())
+          .getPropertyResourceBundle(c.getAccessor(), c.getConfiguration().resource());
+    }).getValue(key, locale);
+  }
 
-	@SuppressWarnings("unchecked")
-	A createProxy(Class<A> accessor) {
-		ClassLoader classLoader = new PropertyAccessorClassLoader(accessor.getClassLoader());
+  @SuppressWarnings("unchecked")
+  A createProxy(Class<A> accessor) {
+    ClassLoader classLoader = new PropertyAccessorClassLoader(accessor.getClassLoader());
 
-		return (A) Proxy.newProxyInstance(
-				classLoader,
-				new Class<?>[] { accessor },
-				(Object p, Method method, Object[] args) -> {
-					MethodSignature signature = new MethodSignature(method);
+    return (A) Proxy.newProxyInstance(
+        classLoader,
+        new Class<?>[] { accessor },
+        (Object p, Method method, Object[] args) -> {
+          MethodSignature signature = new MethodSignature(method);
 
-					if (DIRECT_METHODS.contains(signature)) {
-						return method.invoke(PropertyAccessorDelegate.this, args);
-					}
+          if (DIRECT_METHODS.contains(signature)) {
+            return method.invoke(PropertyAccessorDelegate.this, args);
+          }
 
-					if (method.isDefault()) {
-						return METHOD_HANDLE_CONSTRUCTOR
-								.newInstance(method.getDeclaringClass(), MethodHandles.Lookup.PRIVATE)
-								.unreflectSpecial(method, method.getDeclaringClass())
-								.bindTo(p)
-								.invokeWithArguments(args);
-					}
+          if (method.isDefault()) {
+            return METHOD_HANDLE_CONSTRUCTOR
+                .newInstance(method.getDeclaringClass(), MethodHandles.Lookup.PRIVATE)
+                .unreflectSpecial(method, method.getDeclaringClass())
+                .bindTo(p)
+                .invokeWithArguments(args);
+          }
 
-					return getInstantiatedPropertyValue(signature, args);
-				});
-	}
+          return getInstantiatedPropertyValue(signature, args);
+        });
+  }
 
-	class PropertyAccessorClassLoader extends ClassLoader {
-		public PropertyAccessorClassLoader(ClassLoader classLoader) {
-			super(classLoader);
-		}
+  class PropertyAccessorClassLoader extends ClassLoader {
+    public PropertyAccessorClassLoader(ClassLoader classLoader) {
+      super(classLoader);
+    }
 
-		@Override
-		protected Class<?> findClass(String name) throws ClassNotFoundException {
-			if (name.equals(PropertyAccessorDelegate.class.getName())) {
-				return PropertyAccessorDelegate.class;
-			} else {
-				return super.findClass(name);
-			}
-		}
-	}
+    @Override
+    protected Class<?> findClass(String name) throws ClassNotFoundException {
+      if (name.equals(PropertyAccessorDelegate.class.getName())) {
+        return PropertyAccessorDelegate.class;
+      } else {
+        return super.findClass(name);
+      }
+    }
+  }
 
-	public A getProxy() {
-		return proxy;
-	}
+  public A getProxy() {
+    return proxy;
+  }
 }

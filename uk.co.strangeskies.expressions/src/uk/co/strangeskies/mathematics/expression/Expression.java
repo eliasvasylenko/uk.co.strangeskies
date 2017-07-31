@@ -177,13 +177,13 @@ class AnonymousExpressionImpl<T> extends HotObservable<Expression<? extends T>>
   AnonymousExpressionImpl(Expression<T> base) {
     this.base = base::getValue;
 
-    base.invalidations().observe(b -> sendNext(this));
+    base.invalidations().observe(b -> next(this));
   }
 
   AnonymousExpressionImpl(ObservableValue<T> base) {
     this.base = base::get;
 
-    base.observe(b -> sendNext(this));
+    base.observe(b -> next(this));
   }
 
   @Override

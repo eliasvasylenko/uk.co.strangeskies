@@ -36,9 +36,9 @@ import java.util.Collections;
 import java.util.List;
 
 import uk.co.strangeskies.collection.ListDecorator;
-import uk.co.strangeskies.observable.Observable;
+import uk.co.strangeskies.observable.Disposable;
 import uk.co.strangeskies.observable.HotObservable;
-import uk.co.strangeskies.observable.Observation;
+import uk.co.strangeskies.observable.Observable;
 import uk.co.strangeskies.observable.Observer;
 
 public abstract class SynchronizedObservableList<S extends ObservableList<S, E>, E>
@@ -65,24 +65,24 @@ public abstract class SynchronizedObservableList<S extends ObservableList<S, E>,
     this.component = Collections.synchronizedList(component);
     silentComponent = component.silent();
 
-    component.weakReference(this).observe(m -> m.owner().sendNext(m.owner().getThis()));
+    component.weakReference(this).observe(m -> m.owner().next(m.owner().getThis()));
 
     changes = new HotObservable<Change<E>>() {
       @Override
-      public Observation<Change<E>> observe(Observer<? super Change<E>> observer) {
+      public Disposable observe(Observer<? super Change<E>> observer) {
         synchronized (getMutex()) {
           return super.observe(observer);
         }
       }
 
       @Override
-      public void sendNext(Change<E> item) {
+      public HotObservable<Change<E>> next(Change<E> item) {
         synchronized (getMutex()) {
-          super.sendNext(item);
+          return super.next(item);
         }
       }
     };
-    component.changes().weakReference(this).observe(m -> m.owner().changes.sendNext(m.message()));
+    component.changes().weakReference(this).observe(m -> m.owner().changes.next(m.message()));
   }
 
   public static <E> SynchronizedObservableListImpl<E> over(ObservableList<?, E> component) {
@@ -124,16 +124,16 @@ public abstract class SynchronizedObservableList<S extends ObservableList<S, E>,
   }
 
   @Override
-  public Observation<S> observe(Observer<? super S> observer) {
+  public Disposable observe(Observer<? super S> observer) {
     synchronized (getMutex()) {
       return super.observe(observer);
     }
   }
 
   @Override
-  public void sendNext(S item) {
+  public HotObservable<S> next(S item) {
     synchronized (getMutex()) {
-      super.sendNext(item);
+      return super.next(item);
     }
   }
 }

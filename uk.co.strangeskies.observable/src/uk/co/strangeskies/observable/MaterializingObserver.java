@@ -32,42 +32,31 @@
  */
 package uk.co.strangeskies.observable;
 
-import java.util.function.Predicate;
-
-public class SkippingObservation<M> extends PassthroughObservation<M, M> {
-  private final Observer<? super M> observer;
-  private Predicate<? super M> condition;
-
-  public SkippingObservation(
-      Observable<? extends M> parentObservable,
-      Observer<? super M> observer,
-      Predicate<? super M> condition) {
-    this.observer = observer;
-    this.condition = condition;
-
-    passthroughObservation(parentObservable);
+public class MaterializingObserver<T> extends PassthroughObserver<T, ObservableValue<T>> {
+  public MaterializingObserver(Observer<? super ObservableValue<T>> downstreamObserver) {
+    super(downstreamObserver);
   }
 
   @Override
-  public void onObserve() {
-    observer.onObserve(this);
+  public void onObserve(Observation observation) {
+    /*
+     * TODO deal with backpressure properly! Consider that the extra "onNext" from
+     * "onFail" may not be requested.
+     */
+    super.onObserve(observation);
   }
 
   @Override
-  public void onNext(M message) {
-    if (condition != null && !condition.test(message)) {
-      condition = null;
-      observer.onNext(message);
-    }
-  }
-
-  @Override
-  public void onComplete() {
-    observer.onComplete();
+  public void onNext(T message) {
+    ObservableValue<T> observableMessage = new ObservablePropertyImpl<>(message);
+    getDownstreamObserver().onNext(observableMessage);
   }
 
   @Override
   public void onFail(Throwable t) {
-    observer.onFail(t);
+    ObservablePropertyImpl<T> observableMessage = new ObservablePropertyImpl<>(t);
+    getDownstreamObserver().onNext(observableMessage);
+
+    super.onFail(t);
   }
 }

@@ -32,39 +32,39 @@
  */
 package uk.co.strangeskies.observable;
 
-import java.util.function.Function;
+import static java.util.Objects.requireNonNull;
 
-public class MappingObservation<T, M> extends PassthroughObservation<T, M> {
-  private final Observer<? super M> observer;
-  private final Function<? super T, ? extends M> mapping;
+import java.util.concurrent.Executor;
 
-  public MappingObservation(
-      Observable<? extends T> parentObservable,
-      Observer<? super M> observer,
-      Function<? super T, ? extends M> mapping) {
-    this.observer = observer;
-    this.mapping = mapping;
+public class ExecutorObserver<T> extends SafeObserver<T> {
+  private final Executor executor;
 
-    passthroughObservation(parentObservable);
-  }
+  public ExecutorObserver(Observer<? super T> downstreamObserver, Executor executor) {
+    super(downstreamObserver);
 
-  @Override
-  public void onObserve() {
-    observer.onObserve(this);
+    this.executor = requireNonNull(executor);
   }
 
   @Override
   public void onNext(T message) {
-    observer.onNext(mapping.apply(message));
+    executor.execute(() -> {
+      super.onNext(message);
+      getObservation().requestNext();
+    });
+  }
+
+  @Override
+  public void onObserve(Observation observation) {
+    executor.execute(() -> super.onObserve(observation));
   }
 
   @Override
   public void onComplete() {
-    observer.onComplete();
+    executor.execute(() -> super.onComplete());
   }
 
   @Override
   public void onFail(Throwable t) {
-    observer.onFail(t);
+    executor.execute(() -> super.onFail(t));
   }
 }

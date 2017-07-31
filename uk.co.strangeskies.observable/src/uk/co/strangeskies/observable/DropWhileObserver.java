@@ -32,10 +32,26 @@
  */
 package uk.co.strangeskies.observable;
 
-public class MissingBackpressureException extends RuntimeException {
-  private static final long serialVersionUID = 1L;
+import static java.util.Objects.requireNonNull;
 
-  public MissingBackpressureException(Observation<?> observation) {
-    super("Source observable does not implement backpressure " + observation);
+import java.util.function.Predicate;
+
+public class DropWhileObserver<M> extends PassthroughObserver<M, M> {
+  private Predicate<? super M> condition;
+
+  public DropWhileObserver(Observer<? super M> downstreamObserver, Predicate<? super M> condition) {
+    super(downstreamObserver);
+
+    this.condition = requireNonNull(condition);
+  }
+
+  @Override
+  public void onNext(M message) {
+    if (condition != null && condition.test(message)) {
+      getObservation().requestNext();
+    } else {
+      condition = null;
+      getDownstreamObserver().onNext(message);
+    }
   }
 }

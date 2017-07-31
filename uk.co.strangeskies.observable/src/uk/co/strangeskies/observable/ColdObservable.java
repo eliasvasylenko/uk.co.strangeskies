@@ -33,7 +33,7 @@
 package uk.co.strangeskies.observable;
 
 import java.util.Iterator;
-import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A simple implementation of {@link Observable} which implements backpressure
@@ -55,60 +55,57 @@ public class ColdObservable<M> implements Observable<M> {
   }
 
   @Override
-  public synchronized Observation<M> observe(Observer<? super M> observer) {
-    Observation<M> observation = new ColdObservation<>(iterable, observer);
-    observer.onObserve(observation);
-    return observation;
+  public synchronized Disposable observe(Observer<? super M> observer) {
+    return new ColdObservation<>(iterable, observer);
   }
 
-  static class ColdObservation<M> implements Observation<M> {
-    private final Observer<? super M> observer;
+  static class ColdObservation<M> extends ObservationImpl<M> {
     private final Iterator<? extends M> iterator;
-
-    private boolean complete;
+    private final AtomicLong totalCount = new AtomicLong();
 
     ColdObservation(Iterable<? extends M> iterable, Observer<? super M> observer) {
-      this.observer = observer;
+      super(observer);
       this.iterator = iterable.iterator();
-      complete = false;
     }
 
     @Override
     public void request(long count) {
       if (count < 0) {
-        observer.onFail(new IllegalArgumentException());
-        dispose();
+        throw new IllegalArgumentException();
       }
 
-      Optional<M> next = getNext();
-      while (next != null && --count > 0) {
-        observer.onNext(next.orElse(null));
-        next = getNext();
+      totalCount.addAndGet(count);
+
+      if (count == Long.MAX_VALUE) {
+        requestUnbounded();
+        return;
       }
+
+      while (--count > 0 && tryNext()) {}
     }
 
     @Override
     public void requestUnbounded() {
-      Optional<M> next = getNext();
-      while (next != null) {
-        observer.onNext(next.orElse(null));
-        next = getNext();
+      totalCount.set(Long.MAX_VALUE);
+      while (tryNext()) {}
+    }
+
+    private synchronized boolean tryNext() {
+      if (!isDisposed() && iterator.hasNext()) {
+        onNext(iterator.next());
+        return true;
+      } else {
+        cancel();
+        return false;
       }
     }
 
-    private synchronized Optional<M> getNext() {
-      complete = complete || !iterator.hasNext();
-      return complete ? null : Optional.ofNullable(iterator.next());
+    @Override
+    public long getPendingRequestCount() {
+      return totalCount.get();
     }
 
     @Override
-    public synchronized void dispose() {
-      complete = true;
-    }
-
-    @Override
-    public synchronized boolean isDisposed() {
-      return complete;
-    }
+    protected void cancelImpl() {}
   }
 }

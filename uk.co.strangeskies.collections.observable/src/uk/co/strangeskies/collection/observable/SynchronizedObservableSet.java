@@ -36,8 +36,8 @@ import java.util.Collections;
 import java.util.Set;
 
 import uk.co.strangeskies.collection.SetDecorator;
+import uk.co.strangeskies.observable.Disposable;
 import uk.co.strangeskies.observable.HotObservable;
-import uk.co.strangeskies.observable.Observation;
 import uk.co.strangeskies.observable.Observer;
 
 public abstract class SynchronizedObservableSet<S extends ObservableSet<S, E>, E>
@@ -66,25 +66,25 @@ public abstract class SynchronizedObservableSet<S extends ObservableSet<S, E>, E
     this.component = Collections.synchronizedSet(component);
     silentComponent = component.silent();
 
-    observer = l -> sendNext(getThis());
+    observer = l -> next(getThis());
     component.weakReference().observe(observer);
 
     changes = new HotObservable<Change<E>>() {
       @Override
-      public Observation<Change<E>> observe(Observer<? super Change<E>> observer) {
+      public Disposable observe(Observer<? super Change<E>> observer) {
         synchronized (getMutex()) {
           return super.observe(observer);
         }
       }
 
       @Override
-      public void sendNext(Change<E> item) {
+      public HotObservable<Change<E>> next(Change<E> item) {
         synchronized (getMutex()) {
-          super.sendNext(item);
+          return super.next(item);
         }
       }
     };
-    changeObserver = changes::sendNext;
+    changeObserver = changes::next;
     component.changes().weakReference().observe(changeObserver);
   }
 
@@ -127,16 +127,16 @@ public abstract class SynchronizedObservableSet<S extends ObservableSet<S, E>, E
   }
 
   @Override
-  public Observation<S> observe(Observer<? super S> observer) {
+  public Disposable observe(Observer<? super S> observer) {
     synchronized (getMutex()) {
       return super.observe(observer);
     }
   }
 
   @Override
-  public void sendNext(S item) {
+  public HotObservable<S> next(S item) {
     synchronized (getMutex()) {
-      super.sendNext(item);
+      return super.next(item);
     }
   }
 }

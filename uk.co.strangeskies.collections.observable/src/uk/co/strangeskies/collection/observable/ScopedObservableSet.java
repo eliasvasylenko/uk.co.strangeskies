@@ -148,8 +148,8 @@ public abstract class ScopedObservableSet<S extends ObservableSet<S, E>, E>
 				/*
 				 * Forward change events
 				 */
-				changes().sendNext(effectiveChange);
-				sendNext(getThis());
+				changes().next(effectiveChange);
+				next(getThis());
 			});
 		}
 	}

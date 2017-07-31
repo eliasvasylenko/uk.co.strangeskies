@@ -64,8 +64,19 @@ public abstract class DependentExpression<T> extends ActiveExpression<T> {
     this(asList(dependencies));
   }
 
-  protected Disposable addDependency(Expression<?> dependency) {
-    return dependency.invalidations().weakReference().observe(dependencyObserver);
+  protected <U> ExpressionDependency<U> addDependency(Expression<U> dependency) {
+    Disposable disposable = dependency.invalidations().weakReference().observe(dependencyObserver);
+    return new ExpressionDependency<U>() {
+      @Override
+      public void cancel() {
+        disposable.cancel();
+      }
+
+      @Override
+      public Expression<U> getExpression() {
+        return dependency;
+      }
+    };
   }
 
   @Override

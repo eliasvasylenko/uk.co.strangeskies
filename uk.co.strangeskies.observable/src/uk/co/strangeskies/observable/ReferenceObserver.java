@@ -32,36 +32,54 @@
  */
 package uk.co.strangeskies.observable;
 
-public class HotObservation<M> implements Observation<M> {
-  private final HotObservable<M> observable;
-  private final Observer<? super M> observer;
-  private boolean disposed;
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
-  public HotObservation(HotObservable<M> observable, Observer<? super M> observer) {
-    this.observable = observable;
-    this.observer = observer;
-    observer.onObserve(this);
+public class ReferenceObserver<M> extends PassthroughObserver<M, M> {
+  public static <M> ReferenceObserver<M> weak(Observer<? super M> downstreamObserver) {
+    return new ReferenceObserver<>(downstreamObserver, WeakReference::new);
   }
 
-  @Override
-  public String toString() {
-    return observer + ": " + observable;
+  public static <M> ReferenceObserver<M> soft(Observer<? super M> downstreamObserver) {
+    return new ReferenceObserver<>(downstreamObserver, SoftReference::new);
   }
 
-  public Observer<? super M> getObserver() {
-    return observer;
+  protected ReferenceObserver(
+      Observer<? super M> downstreamObserver,
+      Function<Observer<? super M>, Reference<Observer<? super M>>> referenceFunction) {
+    super(referenceFunction.apply(downstreamObserver)::get);
   }
 
-  @Override
-  public boolean isDisposed() {
-    return disposed;
-  }
-
-  @Override
-  public void dispose() {
-    if (!disposed) {
-      disposed = true;
-      observable.stopObservation(this);
+  public void withObserver(Consumer<Observer<? super M>> action) {
+    Observer<? super M> observer = getDownstreamObserver();
+    if (observer != null) {
+      action.accept(observer);
+    } else {
+      getObservation().cancel();
     }
+  }
+
+  @Override
+  public void onObserve(Observation observation) {
+    initializeObservation(observation);
+    withObserver(o -> o.onObserve(observation));
+  }
+
+  @Override
+  public void onNext(M message) {
+    withObserver(o -> o.onNext(message));
+  }
+
+  @Override
+  public void onComplete() {
+    withObserver(o -> o.onComplete());
+  }
+
+  @Override
+  public void onFail(Throwable t) {
+    withObserver(o -> o.onFail(t));
   }
 }
