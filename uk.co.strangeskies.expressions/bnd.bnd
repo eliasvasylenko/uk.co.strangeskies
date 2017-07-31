@@ -1,7 +1,3 @@
-Export-Package: \
-	uk.co.strangeskies.mathematics.expression,\
-	uk.co.strangeskies.mathematics.expression.buffer,\
-	uk.co.strangeskies.mathematics.expression.collection
 Bundle-Name: Strange Skies :: Expressions
 Bundle-Description: \
 	A set of reactive programming utilities for Java, built around the concept \
@@ -12,3 +8,8 @@ Bundle-Description: \
 -buildpath: \
 	uk.co.strangeskies.utilities;version=snapshot,\
 	uk.co.strangeskies.observable;version=snapshot
+
+Export-Package: \
+	uk.co.strangeskies.expression,\
+	uk.co.strangeskies.expression.buffer,\
+	uk.co.strangeskies.expression.collection

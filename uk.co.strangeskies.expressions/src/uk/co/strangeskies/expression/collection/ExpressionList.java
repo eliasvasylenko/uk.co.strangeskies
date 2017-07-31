@@ -30,20 +30,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.mathematics.expression.collection;
+package uk.co.strangeskies.expression.collection;
 
 import java.util.Collection;
-import java.util.Set;
+import java.util.List;
 
-import uk.co.strangeskies.mathematics.expression.Expression;
+import uk.co.strangeskies.expression.Expression;
 
-public interface ExpressionSet<S extends ExpressionSet<S, E>, E extends Expression<?>>
-		extends Set<E>, ExpressionCollection<S, E> {
+public interface ExpressionList<S extends ExpressionList<S, E>, E extends Expression<?>>
+		extends List<E>, ExpressionCollection<S, E> {
 	@Override
-	ExpressionSet<?, E> unmodifiableView();
+	ExpressionList<?, E> unmodifiableView();
 
 	@Override
-	ExpressionSet<?, E> synchronizedView();
+	ExpressionList<?, E> synchronizedView();
 
 	@Override
 	void set(Collection<? extends E> expressions);

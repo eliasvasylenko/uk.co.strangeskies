@@ -30,15 +30,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.mathematics.expression.buffer;
+package uk.co.strangeskies.expression.buffer;
 
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import uk.co.strangeskies.mathematics.expression.Expression;
-import uk.co.strangeskies.mathematics.expression.IdentityExpression;
-import uk.co.strangeskies.mathematics.expression.LockingExpression;
+import uk.co.strangeskies.expression.Expression;
+import uk.co.strangeskies.expression.IdentityExpression;
+import uk.co.strangeskies.expression.LockingExpression;
 
 public abstract class AbstractFunctionBuffer<B, F> extends LockingExpression<F> implements DoubleBuffer<B, F> {
 	private F frontValue;

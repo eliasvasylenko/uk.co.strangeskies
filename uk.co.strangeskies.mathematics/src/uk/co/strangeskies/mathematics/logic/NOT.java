@@ -32,8 +32,8 @@
  */
 package uk.co.strangeskies.mathematics.logic;
 
-import uk.co.strangeskies.mathematics.expression.Expression;
-import uk.co.strangeskies.mathematics.expression.UnaryExpression;
+import uk.co.strangeskies.expression.Expression;
+import uk.co.strangeskies.expression.UnaryExpression;
 
 public class NOT<O> extends UnaryExpression<NOTable<?, ? extends O>, O> {
 	public NOT(Expression<? extends NOTable<?, ? extends O>> operand) {

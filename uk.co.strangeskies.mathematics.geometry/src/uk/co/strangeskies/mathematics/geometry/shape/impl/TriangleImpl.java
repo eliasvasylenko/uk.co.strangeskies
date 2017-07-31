@@ -34,7 +34,7 @@ package uk.co.strangeskies.mathematics.geometry.shape.impl;
 
 import java.util.Set;
 
-import uk.co.strangeskies.mathematics.expression.Expression;
+import uk.co.strangeskies.expression.Expression;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.geometry.shape.ClosedPolyline2;
 import uk.co.strangeskies.mathematics.geometry.shape.Shape;

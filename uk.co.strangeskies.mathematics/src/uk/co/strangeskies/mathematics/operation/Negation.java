@@ -32,8 +32,8 @@
  */
 package uk.co.strangeskies.mathematics.operation;
 
-import uk.co.strangeskies.mathematics.expression.Expression;
-import uk.co.strangeskies.mathematics.expression.UnaryExpression;
+import uk.co.strangeskies.expression.Expression;
+import uk.co.strangeskies.expression.UnaryExpression;
 
 public class Negation<O> extends UnaryExpression<Negatable<?, ? extends O>, O> {
 	public Negation(Expression<? extends Negatable<?, ? extends O>> operand) {

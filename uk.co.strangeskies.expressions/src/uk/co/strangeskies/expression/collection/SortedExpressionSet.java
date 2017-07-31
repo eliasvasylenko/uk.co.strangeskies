@@ -30,5 +30,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-@org.osgi.annotation.versioning.Version("1.0.0")
-package uk.co.strangeskies.mathematics.expression;
+package uk.co.strangeskies.expression.collection;
+
+import java.util.SortedSet;
+
+import uk.co.strangeskies.expression.Expression;
+
+public interface SortedExpressionSet<S extends SortedExpressionSet<S, E>, E extends Expression<?>>
+		extends ExpressionSet<S, E>, SortedSet<E> {}

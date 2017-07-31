@@ -30,19 +30,5 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.mathematics.expression.collection;
-
-import java.util.Collection;
-
-import uk.co.strangeskies.mathematics.expression.Expression;
-import uk.co.strangeskies.mathematics.expression.SelfExpression;
-import uk.co.strangeskies.utility.Self;
-
-public interface ExpressionCollection<S extends ExpressionCollection<S, E>, E extends Expression<?>>
-		extends Self<S>, SelfExpression<S> {
-	ExpressionCollection<?, E> unmodifiableView();
-
-	ExpressionCollection<?, E> synchronizedView();
-
-	void set(Collection<? extends E> expressions);
-}
+@org.osgi.annotation.versioning.Version("1.0.0")
+package uk.co.strangeskies.expression.buffer;

@@ -35,9 +35,9 @@ package uk.co.strangeskies.mathematics.values;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
-import uk.co.strangeskies.mathematics.expression.Expression;
-import uk.co.strangeskies.mathematics.expression.SelfExpression;
+import uk.co.strangeskies.expression.CopyDecouplingExpression;
+import uk.co.strangeskies.expression.Expression;
+import uk.co.strangeskies.expression.SelfExpression;
 import uk.co.strangeskies.mathematics.operation.Incrementable;
 import uk.co.strangeskies.mathematics.operation.Multipliable;
 import uk.co.strangeskies.mathematics.operation.Negatable;

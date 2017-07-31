@@ -30,36 +30,21 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.mathematics.expression.buffer;
+package uk.co.strangeskies.expression;
 
-import uk.co.strangeskies.mathematics.expression.Expression;
+import uk.co.strangeskies.expression.Expression;
+import uk.co.strangeskies.expression.SelfExpression;
+import uk.co.strangeskies.utility.Self;
 
-public interface DoubleBuffer<B, F> extends Expression<F> {
-	public abstract F setFront(F front);
-
-	public abstract B setBack(B back);
-
-	public default void set(B value) {
-		setBack(value);
-		push();
-	}
-
-	public default void set(DoubleBuffer<? extends B, ? extends F> value) {
-		setFront(value.getFront());
-		setBack(value.getBack());
-	}
-
-	public abstract F getFront();
-
-	public abstract B getBack();
-
-	public abstract Expression<B> getBackExpression();
-
-	public abstract void push();
-
-	public abstract boolean isFlat();
-
-	public default void invalidateBack() {
-		setBack(getBack());
-	}
-}
+/**
+ * A variable for use in reactive programming. A Variable in this sense is a
+ * first class expression, that is to say it is an expression whose value is
+ * itself.
+ *
+ * @author Elias N Vasylenko
+ *
+ * @param <S>
+ *          See {@link Self} for more information. This must be self-bounding as
+ *          the value of the expression is the variable itself.
+ */
+public interface SelfExpression<S extends SelfExpression<S>> extends Expression<S>, Self<S> {}

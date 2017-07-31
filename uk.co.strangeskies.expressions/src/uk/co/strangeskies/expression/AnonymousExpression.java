@@ -30,11 +30,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.mathematics.expression.collection;
+package uk.co.strangeskies.expression;
 
-import java.util.SortedSet;
+import uk.co.strangeskies.expression.Expression;
 
-import uk.co.strangeskies.mathematics.expression.Expression;
-
-public interface SortedExpressionSet<S extends SortedExpressionSet<S, E>, E extends Expression<?>>
-		extends ExpressionSet<S, E>, SortedSet<E> {}
+/**
+ * A simple interface for expressions when the type of the expression object
+ * itself is unimportant or unavailable, and we only care about the type of the
+ * expressions value. This helps avoid API surface containing types such as
+ * {@code Expression<?, T>}, where the omission of the recursive self bound can
+ * cause issues.
+ * 
+ * @author Elias N Vasylenko
+ *
+ * @param <T>
+ *          the type of the value of this expression
+ */
+public interface AnonymousExpression<T> extends Expression<T> {}

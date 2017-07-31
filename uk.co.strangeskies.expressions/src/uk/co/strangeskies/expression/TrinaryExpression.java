@@ -30,9 +30,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.mathematics.expression;
+package uk.co.strangeskies.expression;
 
 import uk.co.strangeskies.function.TriFunction;
+import uk.co.strangeskies.expression.Expression;
+import uk.co.strangeskies.expression.PassiveExpression;
+import uk.co.strangeskies.expression.UnaryExpression;
 
 /**
  * As {@link UnaryExpression}, but with three operands.

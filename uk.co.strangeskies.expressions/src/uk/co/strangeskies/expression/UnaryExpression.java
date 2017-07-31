@@ -30,46 +30,54 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.mathematics.expression.buffer;
+package uk.co.strangeskies.expression;
 
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import uk.co.strangeskies.mathematics.expression.Expression;
-import uk.co.strangeskies.observable.Disposable;
+import uk.co.strangeskies.expression.Expression;
+import uk.co.strangeskies.expression.PassiveExpression;
 
-public class ExpressionBuffer<F extends Expression<?>, T> extends AbstractFunctionBuffer<F, T> {
-  private Disposable backObserver;
+/**
+ * An implementation of {@link Expression} with a single data dependency, whose
+ * value is derived through the application of a function to the value of that
+ * dependency. This function may also be provided through an {@link Expression}
+ * dependency.
+ * 
+ * @author Elias N Vasylenko
+ * @param <O>
+ *          The type of the operand.
+ * @param <R>
+ *          The type of the result.
+ */
+public abstract class UnaryExpression<O, R> extends PassiveExpression<R> {
+  private final Expression<? extends O> operand;
+  private final Function<? super O, ? extends R> operation;
 
-  public ExpressionBuffer(
-      T front,
-      F back,
-      BiFunction<? super T, ? super F, ? extends T> operation) {
-    super(front, back, operation);
+  /**
+   * @param operand
+   *          An expression providing an operand for the function.
+   * @param operation
+   *          A function transforming an operand into a value of this expression's
+   *          type.
+   */
+  public UnaryExpression(
+      Expression<? extends O> operand,
+      Function<? super O, ? extends R> operation) {
+    super(operand);
+
+    this.operand = operand;
+    this.operation = operation;
   }
 
-  public ExpressionBuffer(F back, Function<? super F, ? extends T> function) {
-    super(back, function);
-  }
-
-  public ExpressionBuffer(T front, F back, Function<? super F, ? extends T> function) {
-    super(front, back, function);
-  }
-
-  public ExpressionBuffer(AbstractFunctionBuffer<F, T> doubleBuffer) {
-    super(doubleBuffer);
+  /**
+   * @return The operand expression.
+   */
+  public Expression<? extends O> getOperand() {
+    return operand;
   }
 
   @Override
-  public F setBack(F next) {
-    if (backObserver != null) {
-      backObserver.cancel();
-    }
-
-    if (next != null) {
-      backObserver = next.invalidations().observe(m -> invalidateBack());
-    }
-
-    return super.setBack(next);
+  protected R evaluate() {
+    return operation.apply(operand.getValue());
   }
 }

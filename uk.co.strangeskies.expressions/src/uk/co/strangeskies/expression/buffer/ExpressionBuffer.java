@@ -30,18 +30,46 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.mathematics.expression;
+package uk.co.strangeskies.expression.buffer;
 
-/**
- * A simple interface for expressions when the type of the expression object
- * itself is unimportant or unavailable, and we only care about the type of the
- * expressions value. This helps avoid API surface containing types such as
- * {@code Expression<?, T>}, where the omission of the recursive self bound can
- * cause issues.
- * 
- * @author Elias N Vasylenko
- *
- * @param <T>
- *          the type of the value of this expression
- */
-public interface AnonymousExpression<T> extends Expression<T> {}
+import java.util.function.BiFunction;
+import java.util.function.Function;
+
+import uk.co.strangeskies.expression.Expression;
+import uk.co.strangeskies.observable.Disposable;
+
+public class ExpressionBuffer<F extends Expression<?>, T> extends AbstractFunctionBuffer<F, T> {
+  private Disposable backObserver;
+
+  public ExpressionBuffer(
+      T front,
+      F back,
+      BiFunction<? super T, ? super F, ? extends T> operation) {
+    super(front, back, operation);
+  }
+
+  public ExpressionBuffer(F back, Function<? super F, ? extends T> function) {
+    super(back, function);
+  }
+
+  public ExpressionBuffer(T front, F back, Function<? super F, ? extends T> function) {
+    super(front, back, function);
+  }
+
+  public ExpressionBuffer(AbstractFunctionBuffer<F, T> doubleBuffer) {
+    super(doubleBuffer);
+  }
+
+  @Override
+  public F setBack(F next) {
+    if (backObserver != null) {
+      backObserver.cancel();
+    }
+
+    if (next != null) {
+      backObserver = next.invalidations().observe(m -> invalidateBack());
+    }
+
+    return super.setBack(next);
+  }
+}

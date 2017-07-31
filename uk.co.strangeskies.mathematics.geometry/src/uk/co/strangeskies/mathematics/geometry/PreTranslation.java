@@ -32,8 +32,8 @@
  */
 package uk.co.strangeskies.mathematics.geometry;
 
-import uk.co.strangeskies.mathematics.expression.BinaryExpression;
-import uk.co.strangeskies.mathematics.expression.Expression;
+import uk.co.strangeskies.expression.BinaryExpression;
+import uk.co.strangeskies.expression.Expression;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 
 public class PreTranslation<O> extends BinaryExpression<NonCommutativelyTranslatable<? extends O>, Vector<?, ?>, O> {

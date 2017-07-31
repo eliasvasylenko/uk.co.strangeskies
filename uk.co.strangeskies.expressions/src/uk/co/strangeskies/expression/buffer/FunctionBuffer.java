@@ -30,21 +30,25 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.mathematics.expression.collection;
+package uk.co.strangeskies.expression.buffer;
 
-import java.util.Collection;
-import java.util.List;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
-import uk.co.strangeskies.mathematics.expression.Expression;
+public class FunctionBuffer<B, F> extends AbstractFunctionBuffer<B, F> {
+	public FunctionBuffer(F front, B back, BiFunction<? super F, ? super B, ? extends F> operation) {
+		super(front, back, operation);
+	}
 
-public interface ExpressionList<S extends ExpressionList<S, E>, E extends Expression<?>>
-		extends List<E>, ExpressionCollection<S, E> {
-	@Override
-	ExpressionList<?, E> unmodifiableView();
+	public FunctionBuffer(F front, B back, Function<? super B, ? extends F> function) {
+		super(front, back, function);
+	}
 
-	@Override
-	ExpressionList<?, E> synchronizedView();
+	public FunctionBuffer(B back, Function<? super B, ? extends F> function) {
+		super(back, function);
+	}
 
-	@Override
-	void set(Collection<? extends E> expressions);
+	public FunctionBuffer(FunctionBuffer<B, F> doubleBuffer) {
+		super(doubleBuffer);
+	}
 }

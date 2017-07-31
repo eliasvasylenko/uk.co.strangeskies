@@ -32,8 +32,8 @@
  */
 package uk.co.strangeskies.mathematics.operation;
 
-import uk.co.strangeskies.mathematics.expression.BinaryExpression;
-import uk.co.strangeskies.mathematics.expression.Expression;
+import uk.co.strangeskies.expression.BinaryExpression;
+import uk.co.strangeskies.expression.Expression;
 
 public class PreMultiplication<O extends NonCommutativelyMultipliable<?, ? super T>, T>
 		extends BinaryExpression<NonCommutativelyMultipliable<? extends O, ? super T>, T, O> {

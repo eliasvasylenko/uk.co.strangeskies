@@ -30,67 +30,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.mathematics.expression;
-
-import static java.util.Arrays.asList;
+package uk.co.strangeskies.expression.collection;
 
 import java.util.Collection;
 
-import uk.co.strangeskies.observable.Disposable;
-import uk.co.strangeskies.observable.Observer;
+import uk.co.strangeskies.expression.Expression;
+import uk.co.strangeskies.expression.SelfExpression;
+import uk.co.strangeskies.utility.Self;
 
-/**
- * An expression which is dependent upon the evaluation of a number of other
- * expressions.
- * 
- * @author Elias N Vasylenko
- * @param <T>
- *          The type of the expression.
- */
-public abstract class DependentExpression<T> extends ActiveExpression<T> {
-  private final Observer<Expression<?>> dependencyObserver = d -> {
-    fireChange();
-  };
+public interface ExpressionCollection<S extends ExpressionCollection<S, E>, E extends Expression<?>>
+		extends Self<S>, SelfExpression<S> {
+	ExpressionCollection<?, E> unmodifiableView();
 
-  private T value;
+	ExpressionCollection<?, E> synchronizedView();
 
-  public DependentExpression(Collection<? extends Expression<?>> dependencies) {
-    for (Expression<?> dependency : dependencies) {
-      addDependency(dependency);
-    }
-  }
-
-  public DependentExpression(Expression<?>... dependencies) {
-    this(asList(dependencies));
-  }
-
-  protected <U> ExpressionDependency<U> addDependency(Expression<U> dependency) {
-    Disposable disposable = dependency.invalidations().weakReference().observe(dependencyObserver);
-    return new ExpressionDependency<U>() {
-      @Override
-      public void cancel() {
-        disposable.cancel();
-      }
-
-      @Override
-      public Expression<U> getExpression() {
-        return dependency;
-      }
-    };
-  }
-
-  @Override
-  public final T getValueImpl(boolean dirty) {
-    if (dirty) {
-      value = evaluate();
-    }
-
-    return value;
-  }
-
-  /**
-   * @return The value of this {@link Expression} as derived from the dependency
-   *         {@link Expression}s.
-   */
-  protected abstract T evaluate();
+	void set(Collection<? extends E> expressions);
 }

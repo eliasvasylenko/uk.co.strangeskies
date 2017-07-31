@@ -30,27 +30,70 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.mathematics.expression;
+package uk.co.strangeskies.expression;
 
-import java.lang.reflect.InvocationTargetException;
+import static java.util.Arrays.asList;
+
+import java.util.Collection;
+
+import uk.co.strangeskies.expression.ActiveExpression;
+import uk.co.strangeskies.expression.Expression;
+import uk.co.strangeskies.expression.ExpressionDependency;
+import uk.co.strangeskies.observable.Disposable;
+import uk.co.strangeskies.observable.Observer;
 
 /**
- * Similar to {@link CopyDecouplingExpression} for {@link Cloneable}
- * {@link Expression} types.
+ * An expression which is dependent upon the evaluation of a number of other
+ * expressions.
  * 
  * @author Elias N Vasylenko
  * @param <T>
  *          The type of the expression.
  */
-public interface CloneDecouplingExpression<T extends Cloneable> extends Expression<T> {
-	@Override
-	@SuppressWarnings("unchecked")
-	public default T decoupleValue() {
-		try {
-			return (T) Object.class.getMethod("clone").invoke(getValue());
-		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException
-				| SecurityException e) {
-			throw new UnsupportedOperationException();
-		}
-	}
+public abstract class DependentExpression<T> extends ActiveExpression<T> {
+  private final Observer<Expression<?>> dependencyObserver = d -> {
+    fireChange();
+  };
+
+  private T value;
+
+  public DependentExpression(Collection<? extends Expression<?>> dependencies) {
+    for (Expression<?> dependency : dependencies) {
+      addDependency(dependency);
+    }
+  }
+
+  public DependentExpression(Expression<?>... dependencies) {
+    this(asList(dependencies));
+  }
+
+  protected <U> ExpressionDependency<U> addDependency(Expression<U> dependency) {
+    Disposable disposable = dependency.invalidations().weakReference().observe(dependencyObserver);
+    return new ExpressionDependency<U>() {
+      @Override
+      public void cancel() {
+        disposable.cancel();
+      }
+
+      @Override
+      public Expression<U> getExpression() {
+        return dependency;
+      }
+    };
+  }
+
+  @Override
+  public final T getValueImpl(boolean dirty) {
+    if (dirty) {
+      value = evaluate();
+    }
+
+    return value;
+  }
+
+  /**
+   * @return The value of this {@link Expression} as derived from the dependency
+   *         {@link Expression}s.
+   */
+  protected abstract T evaluate();
 }

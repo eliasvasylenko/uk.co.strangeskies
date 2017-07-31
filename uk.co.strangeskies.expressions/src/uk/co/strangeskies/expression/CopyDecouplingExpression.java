@@ -30,10 +30,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.mathematics.expression;
+package uk.co.strangeskies.expression;
 
-import uk.co.strangeskies.observable.Disposable;
+import uk.co.strangeskies.expression.Expression;
+import uk.co.strangeskies.utility.Copyable;
 
-public interface ExpressionDependency<T> extends Disposable {
-	Expression<T> getExpression();
+/**
+ * A basic interface extension of {@link Expression} providing a default
+ * implementation of {@link #decoupleValue()} which simply copies the result of
+ * {@link #getValue()}.
+ * 
+ * @author Elias N Vasylenko
+ * @param <T>
+ *          The type of the expression.
+ */
+public interface CopyDecouplingExpression<T extends Copyable<T>> extends Expression<T> {
+	@Override
+	public default T decoupleValue() {
+		return getValue().copy();
+	}
 }

@@ -30,51 +30,58 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.mathematics.expression;
+package uk.co.strangeskies.expression;
 
-import java.util.function.Function;
+import uk.co.strangeskies.expression.Expression;
+import uk.co.strangeskies.expression.TrinaryExpression;
 
 /**
- * An implementation of {@link Expression} with a single data dependency, whose
- * value is derived through the application of a function to the value of that
- * dependency. This function may also be provided through an {@link Expression}
- * dependency.
+ * An {@link Expression} whose primary dependency is conditional on a
+ * {@link Boolean} {@link Expression} dependency. The primary dependency, in
+ * this instance, provides the value of this {@link Expression} directly.
  * 
  * @author Elias N Vasylenko
  * @param <O>
- *          The type of the operand.
- * @param <R>
- *          The type of the result.
+ *          The type of the expression.
  */
-public abstract class UnaryExpression<O, R> extends PassiveExpression<R> {
-  private final Expression<? extends O> operand;
-  private final Function<? super O, ? extends R> operation;
-
+public class ConditionalExpression<O> extends TrinaryExpression<Boolean, O, O, O> {
   /**
-   * @param operand
-   *          An expression providing an operand for the function.
-   * @param operation
-   *          A function transforming an operand into a value of this expression's
-   *          type.
+   * @param condition
+   *          The condition to switch between primary dependencies.
+   * @param expressionWhenFulfilled
+   *          The {@link Expression} to set as primary dependency when the given
+   *          condition is fulfilled.
+   * @param expressionWhenUnfulfilled
+   *          The {@link Expression} to set as primary dependency when the given
+   *          condition is unfulfilled.
    */
-  public UnaryExpression(
-      Expression<? extends O> operand,
-      Function<? super O, ? extends R> operation) {
-    super(operand);
-
-    this.operand = operand;
-    this.operation = operation;
+  public ConditionalExpression(
+      Expression<? extends Boolean> condition,
+      Expression<? extends O> expressionWhenFulfilled,
+      Expression<? extends O> expressionWhenUnfulfilled) {
+    super(condition, expressionWhenFulfilled, expressionWhenUnfulfilled, (c, f, u) -> c ? f : u);
   }
 
   /**
-   * @return The operand expression.
+   * @return The condition to switch between primary dependencies.
    */
-  public Expression<? extends O> getOperand() {
-    return operand;
+  public final Expression<? extends Boolean> getCondition() {
+    return getFirstOperand();
   }
 
-  @Override
-  protected R evaluate() {
-    return operation.apply(operand.getValue());
+  /**
+   * @return The {@link Expression} which behaves as primary dependency when the
+   *         given condition is fulfilled.
+   */
+  public final Expression<? extends O> getExpressionWhenFulfilled() {
+    return getSecondOperand();
+  }
+
+  /**
+   * @return The {@link Expression} which behaves as primary dependency when the
+   *         given condition is unfulfilled.
+   */
+  public final Expression<? extends O> getExpressionWhenUnfulfilled() {
+    return getThirdOperand();
   }
 }

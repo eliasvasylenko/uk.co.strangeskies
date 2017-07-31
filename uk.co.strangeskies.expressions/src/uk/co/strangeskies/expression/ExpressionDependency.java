@@ -30,25 +30,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.mathematics.expression.buffer;
+package uk.co.strangeskies.expression;
 
-import java.util.function.BiFunction;
-import java.util.function.Function;
+import uk.co.strangeskies.expression.Expression;
+import uk.co.strangeskies.observable.Disposable;
 
-public class FunctionBuffer<B, F> extends AbstractFunctionBuffer<B, F> {
-	public FunctionBuffer(F front, B back, BiFunction<? super F, ? super B, ? extends F> operation) {
-		super(front, back, operation);
-	}
-
-	public FunctionBuffer(F front, B back, Function<? super B, ? extends F> function) {
-		super(front, back, function);
-	}
-
-	public FunctionBuffer(B back, Function<? super B, ? extends F> function) {
-		super(back, function);
-	}
-
-	public FunctionBuffer(FunctionBuffer<B, F> doubleBuffer) {
-		super(doubleBuffer);
-	}
+public interface ExpressionDependency<T> extends Disposable {
+	Expression<T> getExpression();
 }

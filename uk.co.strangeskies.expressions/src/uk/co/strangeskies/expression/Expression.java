@@ -30,13 +30,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.mathematics.expression;
+package uk.co.strangeskies.expression;
 
 import java.util.Observer;
 import java.util.function.Supplier;
 
 import uk.co.strangeskies.observable.ImmutableObservable;
 import uk.co.strangeskies.observable.Observable;
+import uk.co.strangeskies.expression.AnonymousExpression;
+import uk.co.strangeskies.expression.AnonymousExpressionImpl;
+import uk.co.strangeskies.expression.Expression;
+import uk.co.strangeskies.expression.IdentityExpression;
+import uk.co.strangeskies.expression.ImmutableExpressionImpl;
 import uk.co.strangeskies.observable.HotObservable;
 import uk.co.strangeskies.observable.ObservableValue;
 

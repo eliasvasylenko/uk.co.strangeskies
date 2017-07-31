@@ -30,60 +30,21 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.mathematics.expression;
+package uk.co.strangeskies.expression.collection;
 
-import java.util.Observer;
+import java.util.Collection;
+import java.util.Set;
 
-import uk.co.strangeskies.utility.IdentityProperty;
-import uk.co.strangeskies.utility.Property;
+import uk.co.strangeskies.expression.Expression;
 
-/**
- * An {@link Expression} based on the behavior of the {@link IdentityProperty}
- * class, with the lazy updating behavior of {@link LockingExpression} for
- * {@link Observer}s.
- * 
- * @author Elias N Vasylenko
- * @param <T>
- *          The type of the expression.
- */
-public class IdentityExpression<T> extends ActiveExpression<T> implements Property<T> {
-	private T value;
-
-	/**
-	 * Construct with a default value of {@code null}.
-	 */
-	public IdentityExpression() {}
-
-	/**
-	 * Construct with the given default value.
-	 * 
-	 * @param value
-	 *          The initial value of the expression.
-	 */
-	public IdentityExpression(T value) {
-		this.value = value;
-	}
+public interface ExpressionSet<S extends ExpressionSet<S, E>, E extends Expression<?>>
+		extends Set<E>, ExpressionCollection<S, E> {
+	@Override
+	ExpressionSet<?, E> unmodifiableView();
 
 	@Override
-	public T set(T value) {
-		beginWrite();
-
-		try {
-			T previous = this.value;
-			this.value = value;
-			return previous;
-		} finally {
-			endWrite();
-		}
-	}
+	ExpressionSet<?, E> synchronizedView();
 
 	@Override
-	protected final T getValueImpl(boolean dirty) {
-		return value;
-	}
-
-	@Override
-	public final T get() {
-		return getValue();
-	}
+	void set(Collection<? extends E> expressions);
 }

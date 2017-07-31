@@ -30,5 +30,36 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-@org.osgi.annotation.versioning.Version("1.0.0")
-package uk.co.strangeskies.mathematics.expression.collection;
+package uk.co.strangeskies.expression.buffer;
+
+import uk.co.strangeskies.expression.Expression;
+
+public interface DoubleBuffer<B, F> extends Expression<F> {
+	public abstract F setFront(F front);
+
+	public abstract B setBack(B back);
+
+	public default void set(B value) {
+		setBack(value);
+		push();
+	}
+
+	public default void set(DoubleBuffer<? extends B, ? extends F> value) {
+		setFront(value.getFront());
+		setBack(value.getBack());
+	}
+
+	public abstract F getFront();
+
+	public abstract B getBack();
+
+	public abstract Expression<B> getBackExpression();
+
+	public abstract void push();
+
+	public abstract boolean isFlat();
+
+	public default void invalidateBack() {
+		setBack(getBack());
+	}
+}

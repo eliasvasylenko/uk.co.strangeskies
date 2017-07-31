@@ -30,62 +30,30 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.mathematics.expression;
+package uk.co.strangeskies.expression;
 
-import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.toList;
-import static uk.co.strangeskies.observable.Observable.merge;
+import java.lang.reflect.InvocationTargetException;
 
-import java.util.Collection;
-
-import uk.co.strangeskies.observable.Observable;
+import uk.co.strangeskies.expression.CopyDecouplingExpression;
+import uk.co.strangeskies.expression.Expression;
 
 /**
- * An expression which is dependent upon the evaluation of a number of other
- * expressions.
+ * Similar to {@link CopyDecouplingExpression} for {@link Cloneable}
+ * {@link Expression} types.
  * 
  * @author Elias N Vasylenko
  * @param <T>
  *          The type of the expression.
  */
-public abstract class PassiveExpression<T> implements Expression<T> {
-	private final Observable<Expression<? extends T>> dependencies;
-	private T value;
-
-	public PassiveExpression(Collection<? extends Expression<?>> dependencies) {
-		this.dependencies = merge(
-				dependencies.stream().map(Expression::invalidations).collect(toList())).map(e -> {
-					invalidate();
-					return this;
-				});
-		this.dependencies.observe();
-	}
-
-	public PassiveExpression(Expression<?>... dependencies) {
-		this(asList(dependencies));
-	}
-
+public interface CloneDecouplingExpression<T extends Cloneable> extends Expression<T> {
 	@Override
-	public Observable<Expression<? extends T>> invalidations() {
-		return dependencies;
-	}
-
-	private void invalidate() {
-		value = null;
-	}
-
-	@Override
-	public final T getValue() {
-		if (value == null) {
-			value = evaluate();
+	@SuppressWarnings("unchecked")
+	public default T decoupleValue() {
+		try {
+			return (T) Object.class.getMethod("clone").invoke(getValue());
+		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException
+				| SecurityException e) {
+			throw new UnsupportedOperationException();
 		}
-
-		return value;
 	}
-
-	/**
-	 * @return The value of this {@link Expression} as derived from the dependency
-	 *         {@link Expression}s.
-	 */
-	protected abstract T evaluate();
 }

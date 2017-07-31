@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.mathematics.logic;
 
-import uk.co.strangeskies.mathematics.expression.LockingExpression;
+import uk.co.strangeskies.expression.LockingExpression;
 import uk.co.strangeskies.utility.Self;
 
 public class BooleanValue extends LockingExpression<BooleanValue> implements

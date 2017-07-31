@@ -30,13 +30,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.mathematics.expression;
+package uk.co.strangeskies.expression;
 
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.util.function.Supplier;
 
+import uk.co.strangeskies.expression.DependentExpression;
+import uk.co.strangeskies.expression.Expression;
 import uk.co.strangeskies.observable.Disposable;
 import uk.co.strangeskies.observable.HotObservable;
 import uk.co.strangeskies.observable.Observer;

@@ -32,8 +32,8 @@
  */
 package uk.co.strangeskies.mathematics.operation;
 
-import uk.co.strangeskies.mathematics.expression.BinaryExpression;
-import uk.co.strangeskies.mathematics.expression.Expression;
+import uk.co.strangeskies.expression.BinaryExpression;
+import uk.co.strangeskies.expression.Expression;
 
 public class Addition<O extends Addable<?, ? super T>, T>
 		extends BinaryExpression<Addable<? extends O, ? super T>, T, O> {

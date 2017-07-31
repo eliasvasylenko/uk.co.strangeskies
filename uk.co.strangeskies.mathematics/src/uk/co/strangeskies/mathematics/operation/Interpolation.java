@@ -32,8 +32,8 @@
  */
 package uk.co.strangeskies.mathematics.operation;
 
-import uk.co.strangeskies.mathematics.expression.Expression;
-import uk.co.strangeskies.mathematics.expression.TrinaryExpression;
+import uk.co.strangeskies.expression.Expression;
+import uk.co.strangeskies.expression.TrinaryExpression;
 import uk.co.strangeskies.mathematics.values.Value;
 
 public class Interpolation<T, I> extends TrinaryExpression<T, T, Value<?>, I> {

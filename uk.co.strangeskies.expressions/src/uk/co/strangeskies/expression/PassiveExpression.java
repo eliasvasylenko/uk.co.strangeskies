@@ -30,22 +30,63 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.mathematics.expression;
+package uk.co.strangeskies.expression;
 
-import uk.co.strangeskies.utility.Copyable;
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
+import static uk.co.strangeskies.observable.Observable.merge;
+
+import java.util.Collection;
+
+import uk.co.strangeskies.expression.Expression;
+import uk.co.strangeskies.observable.Observable;
 
 /**
- * A basic interface extension of {@link Expression} providing a default
- * implementation of {@link #decoupleValue()} which simply copies the result of
- * {@link #getValue()}.
+ * An expression which is dependent upon the evaluation of a number of other
+ * expressions.
  * 
  * @author Elias N Vasylenko
  * @param <T>
  *          The type of the expression.
  */
-public interface CopyDecouplingExpression<T extends Copyable<T>> extends Expression<T> {
-	@Override
-	public default T decoupleValue() {
-		return getValue().copy();
+public abstract class PassiveExpression<T> implements Expression<T> {
+	private final Observable<Expression<? extends T>> dependencies;
+	private T value;
+
+	public PassiveExpression(Collection<? extends Expression<?>> dependencies) {
+		this.dependencies = merge(
+				dependencies.stream().map(Expression::invalidations).collect(toList())).map(e -> {
+					invalidate();
+					return this;
+				});
+		this.dependencies.observe();
 	}
+
+	public PassiveExpression(Expression<?>... dependencies) {
+		this(asList(dependencies));
+	}
+
+	@Override
+	public Observable<Expression<? extends T>> invalidations() {
+		return dependencies;
+	}
+
+	private void invalidate() {
+		value = null;
+	}
+
+	@Override
+	public final T getValue() {
+		if (value == null) {
+			value = evaluate();
+		}
+
+		return value;
+	}
+
+	/**
+	 * @return The value of this {@link Expression} as derived from the dependency
+	 *         {@link Expression}s.
+	 */
+	protected abstract T evaluate();
 }

@@ -32,8 +32,8 @@
  */
 package uk.co.strangeskies.mathematics.operation;
 
-import uk.co.strangeskies.mathematics.expression.BinaryExpression;
-import uk.co.strangeskies.mathematics.expression.Expression;
+import uk.co.strangeskies.expression.BinaryExpression;
+import uk.co.strangeskies.expression.Expression;
 import uk.co.strangeskies.mathematics.values.Value;
 
 public class Scaling<O> extends BinaryExpression<Scalable<? extends O>, Value<?>, O> {

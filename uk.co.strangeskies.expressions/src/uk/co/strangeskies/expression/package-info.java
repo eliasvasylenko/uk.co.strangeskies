@@ -31,4 +31,4 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 @org.osgi.annotation.versioning.Version("1.0.0")
-package uk.co.strangeskies.mathematics.expression.buffer;
+package uk.co.strangeskies.expression;

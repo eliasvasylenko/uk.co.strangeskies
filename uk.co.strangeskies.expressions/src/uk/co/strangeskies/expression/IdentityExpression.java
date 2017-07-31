@@ -30,19 +30,63 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.mathematics.expression;
+package uk.co.strangeskies.expression;
 
-import uk.co.strangeskies.utility.Self;
+import java.util.Observer;
+
+import uk.co.strangeskies.expression.ActiveExpression;
+import uk.co.strangeskies.expression.Expression;
+import uk.co.strangeskies.expression.LockingExpression;
+import uk.co.strangeskies.utility.IdentityProperty;
+import uk.co.strangeskies.utility.Property;
 
 /**
- * A variable for use in reactive programming. A Variable in this sense is a
- * first class expression, that is to say it is an expression whose value is
- * itself.
- *
+ * An {@link Expression} based on the behavior of the {@link IdentityProperty}
+ * class, with the lazy updating behavior of {@link LockingExpression} for
+ * {@link Observer}s.
+ * 
  * @author Elias N Vasylenko
- *
- * @param <S>
- *          See {@link Self} for more information. This must be self-bounding as
- *          the value of the expression is the variable itself.
+ * @param <T>
+ *          The type of the expression.
  */
-public interface SelfExpression<S extends SelfExpression<S>> extends Expression<S>, Self<S> {}
+public class IdentityExpression<T> extends ActiveExpression<T> implements Property<T> {
+	private T value;
+
+	/**
+	 * Construct with a default value of {@code null}.
+	 */
+	public IdentityExpression() {}
+
+	/**
+	 * Construct with the given default value.
+	 * 
+	 * @param value
+	 *          The initial value of the expression.
+	 */
+	public IdentityExpression(T value) {
+		this.value = value;
+	}
+
+	@Override
+	public T set(T value) {
+		beginWrite();
+
+		try {
+			T previous = this.value;
+			this.value = value;
+			return previous;
+		} finally {
+			endWrite();
+		}
+	}
+
+	@Override
+	protected final T getValueImpl(boolean dirty) {
+		return value;
+	}
+
+	@Override
+	public final T get() {
+		return getValue();
+	}
+}

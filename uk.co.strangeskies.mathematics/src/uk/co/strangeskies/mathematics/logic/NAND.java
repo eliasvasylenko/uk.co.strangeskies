@@ -32,8 +32,8 @@
  */
 package uk.co.strangeskies.mathematics.logic;
 
-import uk.co.strangeskies.mathematics.expression.BinaryExpression;
-import uk.co.strangeskies.mathematics.expression.Expression;
+import uk.co.strangeskies.expression.BinaryExpression;
+import uk.co.strangeskies.expression.Expression;
 
 public class NAND<O extends NANDable<?, ? super T>, T>
 		extends BinaryExpression<NANDable<? extends O, ? super T>, T, O> {
