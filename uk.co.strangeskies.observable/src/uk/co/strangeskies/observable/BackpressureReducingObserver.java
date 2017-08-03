@@ -92,6 +92,7 @@ public class BackpressureReducingObserver<T, M> extends PassthroughObserver<T, M
                 current = identity.get();
               }
             }
+            outstandingRequests.fulfil();
             getDownstreamObserver().onNext(current);
             current = null;
           }
@@ -126,6 +127,7 @@ public class BackpressureReducingObserver<T, M> extends PassthroughObserver<T, M
         current = accumulator.apply(current, message);
 
       if (!outstandingRequests.isFulfilled()) {
+        outstandingRequests.fulfil();
         getDownstreamObserver().onNext(current);
         current = null;
       }
@@ -144,6 +146,6 @@ public class BackpressureReducingObserver<T, M> extends PassthroughObserver<T, M
 
   @Override
   public void onFail(Throwable t) {
-    super.onFail(t);
+    getDownstreamObserver().onFail(t);
   }
 }
