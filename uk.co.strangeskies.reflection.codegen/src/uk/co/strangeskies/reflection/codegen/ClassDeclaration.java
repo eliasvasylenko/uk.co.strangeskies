@@ -57,7 +57,7 @@ import org.objectweb.asm.signature.SignatureWriter;
 
 import uk.co.strangeskies.collection.stream.StreamUtilities;
 import uk.co.strangeskies.reflection.Types;
-import uk.co.strangeskies.reflection.codegen.ClassRegister.ClassDeclarationContext;
+import uk.co.strangeskies.reflection.codegen.ClassRegister.ClassRegistrationContext;
 
 /**
  * @author Elias N Vasylenko
@@ -91,13 +91,13 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
   private final byte[] stubClassBytes;
   private final Class<T> stubClass;
 
-  protected ClassDeclaration(ClassDeclarationContext context, ClassSignature<T> signature) {
+  protected ClassDeclaration(ClassRegistrationContext context, ClassSignature<T> signature) {
     this(context, signature, new SignatureWriter());
   }
 
   @SuppressWarnings("unchecked")
   protected ClassDeclaration(
-      ClassDeclarationContext context,
+      ClassRegistrationContext context,
       ClassSignature<T> signature,
       SignatureWriter signatureWriter) {
     super(signature, signatureWriter);
@@ -110,7 +110,7 @@ public class ClassDeclaration<E, T> extends ParameterizedDeclaration<ClassSignat
         .map(context::getClassDeclaration)
         .orElse(null);
 
-    context.addClassDeclaration(this);
+    context.registerClassDeclaration(this);
 
     this.constructorDeclarations = signature
         .getConstructors()

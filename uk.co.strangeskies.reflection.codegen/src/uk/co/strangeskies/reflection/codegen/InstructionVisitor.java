@@ -30,20 +30,29 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection.codegen.block;
+package uk.co.strangeskies.reflection.codegen;
 
-import static uk.co.strangeskies.reflection.token.VariableMatcher.allVariables;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
-import uk.co.strangeskies.reflection.token.VariableMatcher;
+public interface InstructionVisitor {
+  void visitFieldAssignment(Field field);
 
-public interface VariableExpression<T> extends ValueExpression<T> {
-  ValueExpression<T> assign(ValueExpression<? extends T> value);
+  void visitField(Field field);
 
-  static VariableExpression<Object> resolveVariable(String name) {
-    return resolveVariable(allVariables().named(name));
-  }
+  void visitLiteral(Object value);
 
-  static <T> VariableExpression<T> resolveVariable(VariableMatcher<?, T> matcher) {
-    return new UnqualifiedVariableExpression<>(matcher);
-  }
+  void visitNull();
+
+  void visitReceiver(Class<?> receivingClass);
+
+  void visitMethod(Method method);
+
+  void visitStaticMethod(Method member);
+
+  void visitStaticField(Field field);
+
+  void visitReturn();
+
+  void visitCast(Class<?> erasedType);
 }

@@ -30,38 +30,27 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection.codegen.block;
+package uk.co.strangeskies.reflection.codegen;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 
-public final class Local implements AnnotatedElement {
-	private final int index;
+import uk.co.strangeskies.reflection.token.MethodMatcher;
+import uk.co.strangeskies.reflection.token.VariableMatcher;
 
-	Local(int index) {
-		this.index = index;
-	}
+public interface Scope {
+  InstructionVisitor instructions();
 
-	public int getIndex() {
-		return index;
-	}
+  Method resolve(MethodMatcher<?, ?> matcher, int arguments);
 
-	@Override
-	public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+  Method resolveQualified(MethodMatcher<?, ?> matcher, int arguments);
 
-	@Override
-	public Annotation[] getAnnotations() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+  Field resolve(VariableMatcher<?, ?> matcher);
 
-	@Override
-	public Annotation[] getDeclaredAnnotations() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+  Field resolveQualified(VariableMatcher<?, ?> matcher);
 
+  Local resolveLocal(VariableMatcher<?, ?> matcher);
+
+  Parameter resolveParameter(VariableMatcher<?, ?> matcher);
 }

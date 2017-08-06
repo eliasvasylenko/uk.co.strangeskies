@@ -30,24 +30,38 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.reflection.codegen.block;
+package uk.co.strangeskies.reflection.codegen;
 
-import uk.co.strangeskies.reflection.token.VariableMatcher;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 
-class UnqualifiedVariableExpression<T> implements VariableExpression<T> {
-  private final VariableMatcher<?, T> variable;
+public final class Local implements AnnotatedElement {
+	private final int index;
 
-  public UnqualifiedVariableExpression(VariableMatcher<?, T> variable) {
-    this.variable = variable;
-  }
+	Local(int index) {
+		this.index = index;
+	}
 
-  @Override
-  public void evaluate(Scope scope) {
-    throw new UnsupportedOperationException();
-  }
+	public int getIndex() {
+		return index;
+	}
 
-  @Override
-  public ValueExpression<T> assign(ValueExpression<? extends T> value) {
-    throw new UnsupportedOperationException();
-  }
+	@Override
+	public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Annotation[] getAnnotations() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Annotation[] getDeclaredAnnotations() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

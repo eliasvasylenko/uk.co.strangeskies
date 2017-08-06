@@ -53,8 +53,16 @@ import java.util.stream.Stream;
 import uk.co.strangeskies.reflection.Visibility;
 
 public class MethodMatcher<O, T> implements Predicate<ExecutableToken<?, ?>> {
-  public static MethodMatcher<Object, Object> allMethods() {
+  public static MethodMatcher<Object, Object> anyMethod() {
     return new MethodMatcher<>(empty(), empty(), empty(), empty());
+  }
+
+  public static MethodMatcher<Object, Object> anyConstructor() {
+    return anyMethod().named("<init>");
+  }
+
+  public MethodMatcher<Void, Void> anyStaticInitializer() {
+    return anyMethod().named("<cinit>").receiving(Void.class).returning(Void.class).accepting();
   }
 
   private final Optional<String> name;
@@ -119,14 +127,6 @@ public class MethodMatcher<O, T> implements Predicate<ExecutableToken<?, ?>> {
                     (a, b) -> a.satisfiesConstraintTo(SUBTYPE, b)).reduce((a, b) -> a && b).orElse(
                         true))
             .orElse(true);
-  }
-
-  public MethodMatcher<O, T> constructor() {
-    return named("<init>");
-  }
-
-  public MethodMatcher<O, T> staticInitializer() {
-    return named("<cinit>");
   }
 
   public MethodMatcher<O, T> named(String name) {

@@ -41,8 +41,12 @@ import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.NEW;
 import static org.objectweb.asm.Type.getInternalName;
+import static uk.co.strangeskies.collection.stream.StreamUtilities.streamOptional;
 import static uk.co.strangeskies.collection.stream.StreamUtilities.throwingMerger;
 import static uk.co.strangeskies.reflection.codegen.CodeGenerationException.CODEGEN_PROPERTIES;
+
+import java.util.AbstractMap.SimpleEntry;
+import java.util.Optional;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -50,7 +54,6 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
-import uk.co.strangeskies.reflection.codegen.block.Block;
 import uk.co.strangeskies.reflection.token.MethodMatcher;
 
 /**
@@ -87,62 +90,65 @@ public class ClassDefinition<E, T> extends Definition<ClassDeclaration<E, T>> {
     return classSpace;
   }
 
-  public <U> ClassDefinition<E, T> defineConstructor(
+  private <U> MethodImplementor implementorForMethods(
       MethodMatcher<?, ? super U> methodMatcher,
-      Block<? extends U> methodBody) {
-    @SuppressWarnings("unchecked")
-    MethodDeclaration<T, U> methodDeclaration = getDeclaration()
-        .constructorDeclarations()
-        .filter(m -> methodMatcher.test(m.getExecutableStub()))
-        .reduce(throwingMerger())
-        .map(m -> (MethodDeclaration<T, U>) m)
-        .orElseThrow(
-            () -> new CodeGenerationException(CODEGEN_PROPERTIES.cannotFindMethodOn(null, null)));
-
-    MethodDefinition<T, U> definition = new MethodDefinition<>(methodDeclaration)
-        .withBody(methodBody);
-
-    return new ClassDefinition<>(
-        getDeclaration(),
-        classSpace.withMethodDefinition(methodDeclaration, definition));
+      MethodImplementation<? extends U> methodImplementation) {
+    return new MethodImplementor() {
+      @SuppressWarnings("unchecked")
+      @Override
+      public <O, R> Optional<MethodImplementation<R>> getImplementation(
+          MethodDeclaration<O, R> declaration) {
+        if (methodMatcher.test(declaration.getExecutableStub())) {
+          return Optional.of((MethodImplementation<R>) methodImplementation);
+        } else {
+          return Optional.empty();
+        }
+      }
+    };
   }
 
-  public <U> ClassDefinition<E, T> defineMethod(
+  public <U> ClassDefinition<E, T> withImplementation(
       MethodMatcher<?, ? super U> methodMatcher,
-      Block<? extends U> methodBody) {
-    @SuppressWarnings("unchecked")
-    MethodDeclaration<T, U> methodDeclaration = concat(
+      MethodImplementation<? extends U> methodImplementation) {
+    return withImplementation(implementorForMethods(methodMatcher, methodImplementation));
+  }
+
+  public <U> ClassDefinition<E, T> withImplementations(
+      MethodMatcher<?, ? super U> methodMatcher,
+      MethodImplementation<? extends U> methodImplementation) {
+    return withImplementations(implementorForMethods(methodMatcher, methodImplementation));
+  }
+
+  public <U> ClassDefinition<E, T> withImplementation(MethodImplementor methodImplementor) {
+    return concat(
         getDeclaration().methodDeclarations(),
         getDeclaration().staticMethodDeclarations())
-            .filter(m -> methodMatcher.test(m.getExecutableStub()))
+            .flatMap(
+                m -> streamOptional(
+                    methodImplementor.getImplementation(m).map(i -> new SimpleEntry<>(m, i))))
             .reduce(throwingMerger())
-            .map(m -> (MethodDeclaration<T, U>) m)
+            .map(
+                e -> new ClassDefinition<>(
+                    getDeclaration(),
+                    classSpace.withMethodDefinition(e.getKey(), e.getValue())))
             .orElseThrow(
                 () -> new CodeGenerationException(
                     CODEGEN_PROPERTIES.cannotFindMethodOn(null, null)));
-
-    MethodDefinition<T, U> definition = new MethodDefinition<>(methodDeclaration)
-        .withBody(methodBody);
-
-    return new ClassDefinition<>(
-        getDeclaration(),
-        classSpace.withMethodDefinition(methodDeclaration, definition));
   }
 
-  /**
-   * Derive a class definition which delegates to the given method intercepter
-   * object.
-   * <p>
-   * When multiple intercepters are specified for the same class definition, they
-   * will be attempted in the order they are given until one is found which is
-   * able to delegate.
-   * 
-   * @param intercepter
-   *          the intercepter
-   * @return the derived class definition
-   */
-  public <U> ClassDefinition<E, T> delegate(MethodDelegation<? super T> intercepter) {
-    throw new UnsupportedOperationException();
+  public <U> ClassDefinition<E, T> withImplementations(MethodImplementor methodImplementor) {
+    return concat(
+        getDeclaration().methodDeclarations(),
+        getDeclaration().staticMethodDeclarations())
+            .flatMap(
+                m -> streamOptional(
+                    methodImplementor.getImplementation(m).map(i -> new SimpleEntry<>(m, i))))
+            .reduce(
+                this,
+                (c, e) -> new ClassDefinition<>(
+                    getDeclaration(),
+                    c.classSpace.withMethodDefinition(e.getKey(), e.getValue())),
+                throwingMerger());
   }
 
   @Override

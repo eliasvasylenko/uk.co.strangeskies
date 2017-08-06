@@ -41,7 +41,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.Assert.assertThat;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.staticMethods;
-import static uk.co.strangeskies.reflection.token.MethodMatcher.allMethods;
+import static uk.co.strangeskies.reflection.token.MethodMatcher.anyMethod;
 import static uk.co.strangeskies.reflection.token.OverloadResolver.resolveOverload;
 
 import java.lang.reflect.Type;
@@ -214,7 +214,7 @@ public class ExecutableTokenTest {
 	@Test
 	public void emptyVarargsResolutionTest() {
 		ExecutableToken<Void, ?> asList = staticMethods(Arrays.class)
-				.filter(allMethods().named("asList"))
+				.filter(anyMethod().named("asList"))
 				.collect(resolveOverload());
 
 		assertThat(asList.isVariableArityInvocation(), is(true));
@@ -223,7 +223,7 @@ public class ExecutableTokenTest {
 	@Test
 	public void singleVarargsResolutionTest() {
 		ExecutableToken<Void, ?> asList = staticMethods(Arrays.class)
-				.filter(allMethods().named("asList"))
+				.filter(anyMethod().named("asList"))
 				.collect(resolveOverload(String.class));
 
 		assertThat(asList.isVariableArityInvocation(), is(true));
@@ -232,7 +232,7 @@ public class ExecutableTokenTest {
 	@Test
 	public void varargsResolutionTest() {
 		ExecutableToken<Void, ?> asList = staticMethods(Arrays.class)
-				.filter(allMethods().named("asList"))
+				.filter(anyMethod().named("asList"))
 				.collect(resolveOverload(String.class, String.class, String.class));
 
 		assertThat(asList.isVariableArityInvocation(), is(true));
@@ -251,7 +251,7 @@ public class ExecutableTokenTest {
 	@Test
 	public void varargsDefinitionResolutionTest() {
 		ExecutableToken<Void, ?> asList = staticMethods(Arrays.class)
-				.filter(allMethods().named("asList"))
+				.filter(anyMethod().named("asList"))
 				.collect(resolveOverload(String[].class));
 
 		assertThat(asList.isVariableArityInvocation(), is(false));

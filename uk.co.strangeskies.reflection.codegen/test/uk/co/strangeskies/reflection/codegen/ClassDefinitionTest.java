@@ -35,22 +35,22 @@ package uk.co.strangeskies.reflection.codegen;
 import static uk.co.strangeskies.reflection.Visibility.PUBLIC;
 import static uk.co.strangeskies.reflection.codegen.ClassSignature.classSignature;
 import static uk.co.strangeskies.reflection.codegen.ConstructorSignature.constructorSignature;
+import static uk.co.strangeskies.reflection.codegen.MethodImplementations.empty;
+import static uk.co.strangeskies.reflection.codegen.MethodImplementations.returningLiteral;
+import static uk.co.strangeskies.reflection.codegen.MethodImplementations.returningNull;
+import static uk.co.strangeskies.reflection.codegen.MethodImplementations.returningVariable;
 import static uk.co.strangeskies.reflection.codegen.MethodSignature.methodSignature;
 import static uk.co.strangeskies.reflection.codegen.ParameterSignature.parameterSignature;
-import static uk.co.strangeskies.reflection.codegen.block.Expressions.literal;
-import static uk.co.strangeskies.reflection.codegen.block.VariableExpression.resolveVariable;
-import static uk.co.strangeskies.reflection.token.MethodMatcher.allMethods;
-import static uk.co.strangeskies.reflection.token.VariableMatcher.allVariables;
+import static uk.co.strangeskies.reflection.token.MethodMatcher.anyConstructor;
+import static uk.co.strangeskies.reflection.token.MethodMatcher.anyMethod;
+import static uk.co.strangeskies.reflection.token.VariableMatcher.anyVariable;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.co.strangeskies.reflection.ReflectionException;
-import uk.co.strangeskies.reflection.codegen.block.Block;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
-@Ignore
 @SuppressWarnings("javadoc")
 public class ClassDefinitionTest {
   public interface Func<A, B> {
@@ -83,8 +83,7 @@ public class ClassDefinitionTest {
   public void runnableClassInvocation() throws InstantiationException, IllegalAccessException {
     ClassDefinition<Void, ? extends Runnable> classDefinition = new ClassRegister(
         createClassLoader()).withClassSignature(TEST_CLASS_SIGNATURE.extending(Runnable.class));
-    classDefinition = classDefinition
-        .defineMethod(allMethods().named("run"), new Block<Void>().withReturnStatement());
+    classDefinition = classDefinition.withImplementation(anyMethod().named("run"), empty());
 
     Runnable instance = classDefinition.loadClass().newInstance();
 
@@ -109,12 +108,9 @@ public class ClassDefinitionTest {
             TEST_CLASS_SIGNATURE.extending(new TypeToken<Func<String, String>>() {}).method(
                 methodSignature("apply").withReturnType(STRING_TYPE).withParameters(
                     parameterSignature("value", STRING_TYPE))))
-        .defineMethod(
-            allMethods().named("apply"),
-            new Block<String>().withReturnStatement(
-                resolveVariable(allVariables().named("value")).invoke(
-                    allMethods().named("concat").returning(String.class),
-                    literal("append"))))
+        .withImplementation(
+            anyMethod().named("apply"),
+            returningVariable(anyVariable().named("value")))
         .loadClass()
         .newInstance();
 
@@ -129,12 +125,9 @@ public class ClassDefinitionTest {
     Func<String, String> instance = new ClassRegister(createClassLoader())
         .withClassSignature(
             TEST_CLASS_SIGNATURE.extending(new TypeToken<Func<String, String>>() {}))
-        .defineMethod(
-            allMethods().named("apply").returning(String.class),
-            new Block<String>().withReturnStatement(
-                resolveVariable(allVariables().named("value")).invoke(
-                    allMethods().named("concat").returning(String.class),
-                    resolveVariable(allVariables().named("value")))))
+        .withImplementation(
+            anyMethod().named("apply").returning(String.class),
+            returningLiteral(""))
         .loadClass()
         .newInstance();
 
@@ -149,12 +142,7 @@ public class ClassDefinitionTest {
     Func<String, String> instance = new ClassRegister(createClassLoader())
         .withClassSignature(
             TEST_CLASS_SIGNATURE.extending(new TypeToken<Func<String, String>>() {}))
-        .defineMethod(
-            allMethods().named("apply").returning(String.class),
-            new Block<String>().withReturnStatement(
-                resolveVariable(allVariables().named("value")).invoke(
-                    allMethods().named("concat").returning(String.class),
-                    resolveVariable(allVariables().named("value")))))
+        .withImplementation(anyMethod().named("apply"), returningNull())
         .loadClass()
         .newInstance();
 
@@ -175,7 +163,7 @@ public class ClassDefinitionTest {
   public void defineWithDefaultMethod() throws InstantiationException, IllegalAccessException {
     new ClassRegister(createClassLoader())
         .withClassSignature(TEST_CLASS_SIGNATURE.extending(Default.class))
-        .defineConstructor(allMethods(), new Block<>())
+        .withImplementation(anyConstructor(), empty())
         .loadClass()
         .newInstance();
   }

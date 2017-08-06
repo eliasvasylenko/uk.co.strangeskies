@@ -46,7 +46,7 @@ import java.util.function.Predicate;
 import uk.co.strangeskies.reflection.Visibility;
 
 public class VariableMatcher<O, T> implements Predicate<FieldToken<?, ?>> {
-	public static VariableMatcher<Object, Object> allVariables() {
+	public static VariableMatcher<Object, Object> anyVariable() {
 		return new VariableMatcher<>(empty(), empty(), empty(), empty());
 	}
 
