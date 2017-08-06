@@ -65,28 +65,28 @@ import uk.co.strangeskies.utility.Self;
  *          the change event message type
  */
 public interface ObservableCollection<S extends ObservableCollection<S, E, C>, E, C>
-		extends Collection<E>, Observable<S>, Self<S> {
-	/**
-	 * @return a view of the collections which does not allow modification
-	 */
-	ObservableCollection<?, E, ?> unmodifiableView();
+    extends Collection<E>, Observable<S>, Self<S> {
+  /**
+   * @return a view of the collections which does not allow modification
+   */
+  ObservableCollection<?, E, ?> unmodifiableView();
 
-	/**
-	 * @return a view of the collections which is safe in concurrent contexts
-	 */
-	ObservableCollection<?, E, ?> synchronizedView();
+  /**
+   * @return a view of the collections which is safe in concurrent contexts
+   */
+  ObservableCollection<?, E, ?> synchronizedView();
 
-	/**
-	 * @return an observable instance over changes
-	 */
-	Observable<C> changes();
+  /**
+   * @return an observable instance over changes
+   */
+  Observable<C> changes();
 
-	/**
-	 * Get a view of the collection which can be mutated without triggering
-	 * events. Operations performed on the returned list may need to be
-	 * synchronized manually with the backing list.
-	 * 
-	 * @return a view transparent to listeners
-	 */
-	Collection<E> silent();
+  /**
+   * Get a view of the collection which can be mutated without triggering events.
+   * Operations performed on the returned list may need to be synchronized
+   * manually with the backing list.
+   * 
+   * @return a view transparent to listeners
+   */
+  Collection<E> silent();
 }

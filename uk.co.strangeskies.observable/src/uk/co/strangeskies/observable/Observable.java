@@ -98,7 +98,7 @@ public interface Observable<M> {
    *           throwable, in the latter case an instance of
    *           {@link AlreadyCompletedException}.
    */
-  default M get() {
+  default CompletableFuture<M> getNext() {
     CompletableFuture<M> result = new CompletableFuture<>();
 
     thenAfter(onObservation(o -> o.requestUnbounded())).observe(singleUse(o -> new Observer<M>() {
@@ -118,6 +118,24 @@ public interface Observable<M> {
         result.complete(message);
       }
     }));
+
+    return result;
+  }
+
+  /**
+   * Block until we either receive the next message event of the next failure
+   * event. In the case of the former, return it, and in the case of the latter,
+   * throw a {@link MissingValueException}.
+   * 
+   * @return the next value
+   * @throws MissingValueException
+   *           If a failure or completion event is received before the next
+   *           message event. In the former case the cause will be the failure
+   *           throwable, in the latter case an instance of
+   *           {@link AlreadyCompletedException}.
+   */
+  default M get() {
+    CompletableFuture<M> result = getNext();
 
     try {
       return result.get();
@@ -193,7 +211,8 @@ public interface Observable<M> {
   }
 
   /*
-   * TODO refactor this so it works from an Observable<? extends Observable<? extends M>>
+   * TODO refactor this so it works from an Observable<? extends Observable<?
+   * extends M>>
    */
   default Observable<M> retrying(Observable<? extends M> retryOn) {
     return observer -> observe(new RetryingObserver<>(observer, retryOn));
@@ -201,6 +220,24 @@ public interface Observable<M> {
 
   default Observable<ObservableValue<M>> materialize() {
     return observer -> observe(new MaterializingObserver<>(observer));
+  }
+
+  default ObservableValue<M> toValue() {
+    return toValue(new MissingValueException(this));
+  }
+
+  default ObservableValue<M> toValue(M initial) {
+    initial = getNext().getNow(initial);
+    return new ObservablePropertyImpl<M>(initial);
+  }
+
+  default ObservableValue<M> toValue(Throwable initialProblem) {
+    M initial = getNext().getNow(null);
+    if (initial == null) {
+      return new ObservablePropertyImpl<>(initial);
+    } else {
+      return new ObservablePropertyImpl<>(initialProblem);
+    }
   }
 
   /**
