@@ -361,6 +361,14 @@ public interface Observable<M> {
     return observer -> observe(new DropWhileObserver<>(observer, condition));
   }
 
+  default Observable<M> synchronize() {
+    return synchronize(new Object());
+  }
+
+  default Observable<M> synchronize(Object mutex) {
+    return observer -> observe(new SynchronizedObserver<>(observer, mutex));
+  }
+
   /**
    * Derive an observable which maps each message to an intermediate observable,
    * then merges the messages from the intermediate observables into a single
