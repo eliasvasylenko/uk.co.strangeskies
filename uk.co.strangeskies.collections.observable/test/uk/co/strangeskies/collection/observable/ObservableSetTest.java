@@ -50,8 +50,6 @@ import java.util.TreeSet;
 
 import org.junit.Test;
 
-import uk.co.strangeskies.collection.observable.ScopedObservableSet.ScopedObservableSetImpl;
-
 /**
  * @author Elias N Vasylenko
  */
@@ -65,25 +63,25 @@ public class ObservableSetTest {
 
   private static final Set<String> STRINGS = unmodifiableSet(of(ONE, TWO, THREE).collect(toSet()));
 
-  private <E> List<E> addedList(ObservableSet<?, E> set) {
+  private <E> List<E> addedList(ObservableSet<E> set) {
     List<E> list = new ArrayList<>();
     set.changes().observe(c -> list.addAll(c.added()));
     return list;
   }
 
-  private <E> List<E> removedList(ObservableSet<?, E> set) {
+  private <E> List<E> removedList(ObservableSet<E> set) {
     List<E> list = new ArrayList<>();
     set.changes().observe(c -> list.addAll(c.removed()));
     return list;
   }
 
-  private <E> Set<E> addedSet(ObservableSet<?, E> set) {
+  private <E> Set<E> addedSet(ObservableSet<E> set) {
     Set<E> list = new HashSet<>();
     set.changes().observe(c -> list.addAll(c.added()));
     return list;
   }
 
-  private <E> Set<E> removedSet(ObservableSet<?, E> set) {
+  private <E> Set<E> removedSet(ObservableSet<E> set) {
     Set<E> list = new HashSet<>();
     set.changes().observe(c -> list.addAll(c.removed()));
     return list;
@@ -91,7 +89,7 @@ public class ObservableSetTest {
 
   @Test
   public void sortedTest() {
-    ObservableSet<?, String> strings = ObservableSet.over(new TreeSet<>());
+    ObservableSet<String> strings = new ObservableSetDecorator<>(new TreeSet<>());
     strings.addAll(STRINGS);
 
     assertTrue(strings.add(FOUR));
@@ -101,7 +99,7 @@ public class ObservableSetTest {
 
   @Test
   public void addItemTest() {
-    ObservableSet<?, String> strings = ObservableSet.ofElements(STRINGS);
+    ObservableSet<String> strings = new ObservableSetDecorator<>(new HashSet<>(STRINGS));
     List<String> added = addedList(strings);
 
     assertTrue(strings.add(FOUR));
@@ -112,7 +110,7 @@ public class ObservableSetTest {
 
   @Test
   public void addItemsTest() {
-    ObservableSet<?, String> strings = ObservableSet.ofElements(STRINGS);
+    ObservableSet<String> strings = new ObservableSetDecorator<>(new HashSet<>(STRINGS));
     List<String> added = addedList(strings);
 
     assertTrue(strings.add(FOUR));
@@ -124,7 +122,7 @@ public class ObservableSetTest {
 
   @Test
   public void addExistingItemTest() {
-    ObservableSet<?, String> strings = ObservableSet.ofElements(STRINGS);
+    ObservableSet<String> strings = new ObservableSetDecorator<>(new HashSet<>(STRINGS));
     List<String> added = addedList(strings);
 
     assertFalse(strings.add(ONE));
@@ -135,7 +133,7 @@ public class ObservableSetTest {
 
   @Test
   public void removeItemTest() {
-    ObservableSet<?, String> strings = ObservableSet.ofElements(STRINGS);
+    ObservableSet<String> strings = new ObservableSetDecorator<>(new HashSet<>(STRINGS));
     Set<String> removed = removedSet(strings);
 
     assertTrue(strings.remove(ONE));
@@ -145,7 +143,7 @@ public class ObservableSetTest {
 
   @Test
   public void removeMissingItemTest() {
-    ObservableSet<?, String> strings = ObservableSet.ofElements(STRINGS);
+    ObservableSet<String> strings = new ObservableSetDecorator<>(new HashSet<>(STRINGS));
     List<String> removed = removedList(strings);
 
     assertFalse(strings.remove(FOUR));
@@ -155,8 +153,8 @@ public class ObservableSetTest {
 
   @Test
   public void addToParentScope() {
-    ScopedObservableSetImpl<String> strings = ScopedObservableSet.over(HashSet::new);
-    ScopedObservableSetImpl<String> stringsChildren = strings.nestChildScope();
+    ScopedObservableSet<String> strings = new ScopedObservableSet<>(HashSet::new);
+    ScopedObservableSet<String> stringsChildren = strings.nestChildScope();
     Set<String> added = addedSet(stringsChildren);
 
     assertTrue(strings.addAll(STRINGS));
@@ -168,8 +166,8 @@ public class ObservableSetTest {
 
   @Test
   public void addToChildScope() {
-    ScopedObservableSetImpl<String> strings = ScopedObservableSet.over(HashSet::new);
-    ScopedObservableSet<?, String> stringsChildren = strings.nestChildScope();
+    ScopedObservableSet<String> strings = new ScopedObservableSet<>(HashSet::new);
+    ScopedObservableSet<String> stringsChildren = strings.nestChildScope();
     Set<String> added = addedSet(strings);
 
     assertTrue(stringsChildren.addAll(STRINGS));
@@ -179,8 +177,8 @@ public class ObservableSetTest {
 
   @Test
   public void promoteToParentScope() {
-    ScopedObservableSetImpl<String> strings = ScopedObservableSet.over(HashSet::new);
-    ScopedObservableSetImpl<String> stringsChildren = strings.nestChildScope();
+    ScopedObservableSet<String> strings = new ScopedObservableSet<>(HashSet::new);
+    ScopedObservableSet<String> stringsChildren = strings.nestChildScope();
 
     // add all to children and assert status
     assertTrue(stringsChildren.addAll(STRINGS));

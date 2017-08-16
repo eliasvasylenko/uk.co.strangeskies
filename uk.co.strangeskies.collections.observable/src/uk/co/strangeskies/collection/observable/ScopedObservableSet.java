@@ -42,206 +42,171 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import uk.co.strangeskies.utility.Scoped;
-import uk.co.strangeskies.utility.Self;
 
 /**
  * 
  * 
  * @author Elias N Vasylenko
- * @param <S>
- *          the self-bound, as per {@link Self}
  * @param <E>
  *          the element type, as per {@link Collection}
  */
-public abstract class ScopedObservableSet<S extends ObservableSet<S, E>, E>
-		extends ObservableSetDecorator<S, E> implements Scoped<S> {
-	/**
-	 * @author Elias N Vasylenko
-	 *
-	 * @param <E>
-	 *          the element type, as per {@link Collection}
-	 */
-	public static class ScopedObservableSetImpl<E>
-			extends ScopedObservableSet<ScopedObservableSetImpl<E>, E> {
-		private final Supplier<? extends Set<E>> componentFactory;
+public class ScopedObservableSet<E> extends ObservableSetDecorator<E>
+    implements Scoped<ScopedObservableSet<E>> {
+  private final Supplier<? extends Set<E>> componentFactory;
+  private final ScopedObservableSet<E> parent;
 
-		ScopedObservableSetImpl(Supplier<? extends Set<E>> componentFactory) {
-			super(componentFactory.get());
-			this.componentFactory = componentFactory;
-		}
+  public ScopedObservableSet(Supplier<? extends Set<E>> componentFactory) {
+    this(null, componentFactory);
+  }
 
-		private ScopedObservableSetImpl(
-				ScopedObservableSetImpl<E> parent,
-				Supplier<? extends Set<E>> componentFactory) {
-			super(parent, componentFactory.get());
+  protected ScopedObservableSet(
+      ScopedObservableSet<E> parent,
+      Supplier<? extends Set<E>> componentFactory) {
+    super(componentFactory.get());
 
-			this.componentFactory = componentFactory;
-		}
+    this.parent = parent;
+    this.componentFactory = componentFactory;
 
-		@Override
-		public ScopedObservableSetImpl<E> nestChildScope() {
-			return new ScopedObservableSetImpl<>(this, componentFactory);
-		}
+    forwardEvents();
+  }
 
-		@Override
-		public ScopedObservableSetImpl<E> copy() {
-			ScopedObservableSetImpl<E> copy = new ScopedObservableSetImpl<>(componentFactory);
-			copy.addAll(this);
-			return copy;
-		}
-	}
+  private void forwardEvents() {
+    if (getParentScope().isPresent()) {
+      ScopedObservableSet<E> parent = getParentScope().get();
+      Set<E> silent = silent();
 
-	private final S parent;
+      parent.changes().observe(change -> {
+        /*
+         * If we add items to the parent which are currently in the child, we must
+         * silently remove them, and modify the change event so that those additions are
+         * not seen from the child scope when we forward it...
+         */
+        Set<E> effectivelyAdded = null;
+        for (E item : change.added()) {
+          if (silent.remove(item)) {
+            if (effectivelyAdded == null) {
+              effectivelyAdded = new HashSet<>(change.added());
+            }
+            effectivelyAdded.remove(item);
+          }
+        }
 
-	public ScopedObservableSet(Set<E> component) {
-		this(null, component);
-	}
+        Change<E> effectiveChange;
+        if (effectivelyAdded == null) {
+          effectiveChange = change;
+        } else {
+          if (effectivelyAdded.isEmpty() && change.removed().isEmpty()) {
+            /*
+             * No items were *effectively* added, and none were removed, so we can drop the
+             * event.
+             */
+            return;
+          } else {
+            effectiveChange = wrapChange(change, effectivelyAdded);
+          }
+        }
 
-	protected ScopedObservableSet(S parent, Set<E> component) {
-		super(component);
+        /*
+         * Forward change events
+         */
+        fireChange(effectiveChange);
+      });
+    }
+  }
 
-		this.parent = parent;
+  private static <T> Change<T> wrapChange(Change<T> change, Set<T> effectivelyAdded) {
+    return new Change<T>() {
+      @Override
+      public Set<T> added() {
+        return effectivelyAdded;
+      }
 
-		forwardEvents();
-	}
+      @Override
+      public Set<T> removed() {
+        return change.removed();
+      }
+    };
+  }
 
-	public static <T> ScopedObservableSetImpl<T> over(Supplier<? extends Set<T>> componentFactory) {
-		return new ScopedObservableSetImpl<>(componentFactory);
-	}
+  @Override
+  public boolean add(E e) {
+    if (getParentScope().map(p -> p.contains(e)).orElse(false))
+      return false;
 
-	private void forwardEvents() {
-		if (getParentScope().isPresent()) {
-			S parent = getParentScope().get();
-			Set<E> silent = silent();
+    return super.add(e);
+  }
 
-			parent.changes().observe(change -> {
-				/*
-				 * If we add items to the parent which are currently in the child, we
-				 * must silently remove them, and modify the change event so that those
-				 * additions are not seen from the child scope when we forward it...
-				 */
-				Set<E> effectivelyAdded = null;
-				for (E item : change.added()) {
-					if (silent.remove(item)) {
-						if (effectivelyAdded == null) {
-							effectivelyAdded = new HashSet<>(change.added());
-						}
-						effectivelyAdded.remove(item);
-					}
-				}
+  @Override
+  public boolean addAll(Collection<? extends E> c) {
+    boolean changed = false;
 
-				Change<E> effectiveChange;
-				if (effectivelyAdded == null) {
-					effectiveChange = change;
-				} else {
-					if (effectivelyAdded.isEmpty() && change.removed().isEmpty()) {
-						/*
-						 * No items were *effectively* added, and none were removed, so we
-						 * can drop the event.
-						 */
-						return;
-					} else {
-						effectiveChange = wrapChange(change, effectivelyAdded);
-					}
-				}
+    for (E e : c) {
+      changed = add(e) || changed;
+    }
 
-				/*
-				 * Forward change events
-				 */
-				changes().next(effectiveChange);
-				next(getThis());
-			});
-		}
-	}
+    return changed;
+  }
 
-	private static <T> Change<T> wrapChange(Change<T> change, Set<T> effectivelyAdded) {
-		return new Change<T>() {
-			@Override
-			public Set<T> added() {
-				return effectivelyAdded;
-			}
+  @Override
+  public boolean contains(Object o) {
+    return ScopedObservableSet.super.contains(o)
+        || getParentScope().map(p -> p.contains(o)).orElse(false);
+  }
 
-			@Override
-			public Set<T> removed() {
-				return change.removed();
-			}
-		};
-	}
+  @Override
+  public boolean containsAll(Collection<?> c) {
+    return c.stream().allMatch(this::contains);
+  }
 
-	@Override
-	public boolean add(E e) {
-		if (getParentScope().map(p -> p.contains(e)).orElse(false))
-			return false;
+  /**
+   * @return an iterator over only those items which are local to this scope
+   */
+  public Iterator<E> localIterator() {
+    return super.iterator();
+  }
 
-		return super.add(e);
-	}
+  @Override
+  public Iterator<E> iterator() {
+    Iterator<E> iterator = localIterator();
+    Iterator<E> parentIterator = getParentScope().map(Collection::iterator).orElse(
+        emptyListIterator());
 
-	@Override
-	public boolean addAll(Collection<? extends E> c) {
-		boolean changed = false;
+    return new Iterator<E>() {
+      @Override
+      public boolean hasNext() {
+        return iterator.hasNext() || parentIterator.hasNext();
+      }
 
-		for (E e : c) {
-			changed = add(e) || changed;
-		}
+      @Override
+      public E next() {
+        return iterator.hasNext() ? iterator.next() : parentIterator.next();
+      }
+    };
+  }
 
-		return changed;
-	}
+  @Override
+  public int size() {
+    return super.size() + getParentScope().map(Set::size).orElse(0);
+  }
 
-	@Override
-	public boolean contains(Object o) {
-		return ScopedObservableSet.super.contains(o)
-				|| getParentScope().map(p -> p.contains(o)).orElse(false);
-	}
+  @Override
+  public boolean isEmpty() {
+    return super.isEmpty() && getParentScope().map(Collection::isEmpty).orElse(true);
+  }
 
-	@Override
-	public boolean containsAll(Collection<?> c) {
-		return c.stream().allMatch(this::contains);
-	}
+  @Override
+  public Optional<ScopedObservableSet<E>> getParentScope() {
+    return Optional.ofNullable(parent);
+  }
 
-	/**
-	 * @return an iterator over only those items which are local to this scope
-	 */
-	public Iterator<E> localIterator() {
-		return super.iterator();
-	}
+  @Override
+  public void collapseIntoParentScope() {
+    getParentScope().get().silent().addAll(this);
+    silent().clear();
+  }
 
-	@Override
-	public Iterator<E> iterator() {
-		Iterator<E> iterator = localIterator();
-		Iterator<E> parentIterator = getParentScope().map(Collection::iterator).orElse(
-				emptyListIterator());
-
-		return new Iterator<E>() {
-			@Override
-			public boolean hasNext() {
-				return iterator.hasNext() || parentIterator.hasNext();
-			}
-
-			@Override
-			public E next() {
-				return iterator.hasNext() ? iterator.next() : parentIterator.next();
-			}
-		};
-	}
-
-	@Override
-	public int size() {
-		return super.size() + getParentScope().map(Set::size).orElse(0);
-	}
-
-	@Override
-	public boolean isEmpty() {
-		return super.isEmpty() && getParentScope().map(Collection::isEmpty).orElse(true);
-	}
-
-	@Override
-	public Optional<S> getParentScope() {
-		return Optional.ofNullable(parent);
-	}
-
-	@Override
-	public void collapseIntoParentScope() {
-		getParentScope().get().silent().addAll(this);
-		silent().clear();
-	}
+  @Override
+  public ScopedObservableSet<E> nestChildScope() {
+    return new ScopedObservableSet<>(this, componentFactory);
+  }
 }

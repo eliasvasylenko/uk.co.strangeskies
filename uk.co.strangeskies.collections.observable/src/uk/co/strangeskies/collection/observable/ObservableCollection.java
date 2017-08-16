@@ -36,7 +36,6 @@ import java.util.Collection;
 import java.util.function.Consumer;
 
 import uk.co.strangeskies.observable.Observable;
-import uk.co.strangeskies.utility.Self;
 
 /**
  * A collections which can be observed for changes. The collection is
@@ -57,24 +56,23 @@ import uk.co.strangeskies.utility.Self;
  * typically not be held beyond this point.
  *
  * @author Elias N Vasylenko
- * @param <S>
- *          the self-bound, as per {@link Self}
  * @param <E>
  *          the element type, as per {@link Collection}
  * @param <C>
  *          the change event message type
  */
-public interface ObservableCollection<S extends ObservableCollection<S, E, C>, E, C>
-    extends Collection<E>, Observable<S>, Self<S> {
+public interface ObservableCollection<E, C> extends Collection<E> {
   /**
    * @return a view of the collections which does not allow modification
    */
-  ObservableCollection<?, E, ?> unmodifiableView();
+  ObservableCollection<E, ?> unmodifiableView();
 
   /**
    * @return a view of the collections which is safe in concurrent contexts
    */
-  ObservableCollection<?, E, ?> synchronizedView();
+  ObservableCollection<E, ?> synchronizedView();
+
+  Observable<? extends ObservableCollection<E, C>> invalidations();
 
   /**
    * @return an observable instance over changes

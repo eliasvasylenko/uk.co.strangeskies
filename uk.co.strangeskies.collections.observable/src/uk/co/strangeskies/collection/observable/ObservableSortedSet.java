@@ -50,65 +50,25 @@
  */
 package uk.co.strangeskies.collection.observable;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.function.Function;
-
-import uk.co.strangeskies.collection.observable.ObservableSortedSetDecorator.ObservableSortedSetDecoratorImpl;
-import uk.co.strangeskies.collection.observable.SynchronizedObservableSortedSet.SynchronizedObservableSortedSetImpl;
-import uk.co.strangeskies.collection.observable.UnmodifiableObservableSortedSet.UnmodifiableObservableSortedSetImpl;
-import uk.co.strangeskies.utility.Self;
 
 /**
  * A set which can be observed for changes, as per the contract of
  * {@link ObservableCollection}.
  * 
  * @author Elias N Vasylenko
- * @param <S>
- *          the self-bound, as per {@link Self}
  * @param <E>
  *          the element type, as per {@link Collection}
  */
-public interface ObservableSortedSet<S extends ObservableSortedSet<S, E>, E> extends SortedSet<E>, ObservableSet<S, E> {
-	@Override
-	default ObservableSet<?, E> unmodifiableView() {
-		return new UnmodifiableObservableSortedSetImpl<>(this);
-	}
+public interface ObservableSortedSet<E> extends SortedSet<E>, ObservableSet<E> {
+  @Override
+  default ObservableSortedSet<E> unmodifiableView() {
+    return new UnmodifiableObservableSortedSet<>(this);
+  }
 
-	/**
-	 * As {@link #unmodifiableView()}, but a little more lenient with target type,
-	 * taking advantage of the variance properties of a read-only collection.
-	 * 
-	 * @param <E>
-	 *          the target element type
-	 * @param set
-	 *          the list over which we want a view
-	 * @return an unmodifiable view over the given list
-	 */
-	static <E> ObservableSet<?, E> unmodifiableViewOf(ObservableSortedSet<?, ? extends E> set) {
-		return new UnmodifiableObservableSortedSetImpl<>(set);
-	}
-
-	@Override
-	default ObservableSet<?, E> synchronizedView() {
-		return new SynchronizedObservableSortedSetImpl<>(this);
-	}
-
-	public static <C extends SortedSet<E>, E> ObservableSortedSet<?, E> over(C set,
-			Function<? super C, ? extends C> copy) {
-		return new ObservableSortedSetDecoratorImpl<C, E>(set, copy);
-	}
-
-	public static <E> ObservableSortedSet<?, E> ofElements(Collection<? extends E> elements) {
-		ObservableSortedSet<?, E> set = new ObservableSortedSetDecoratorImpl<>(new TreeSet<>(), s -> new TreeSet<>(s));
-		set.addAll(elements);
-		return set;
-	}
-
-	@SafeVarargs
-	public static <E> ObservableSet<?, E> ofElements(E... elements) {
-		return ofElements(Arrays.asList(elements));
-	}
+  @Override
+  default ObservableSortedSet<E> synchronizedView() {
+    return new SynchronizedObservableSortedSet<>(this);
+  }
 }
