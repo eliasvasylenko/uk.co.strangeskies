@@ -43,9 +43,9 @@ import java.util.function.Supplier;
 import uk.co.strangeskies.mathematics.Interval;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 import uk.co.strangeskies.mathematics.values.Value;
-import uk.co.strangeskies.utility.Self;
+import uk.co.strangeskies.utility.Copyable;
 
-public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>> implements Self<S> {
+public abstract class Bounds<S extends Bounds<S, V>, V extends Value<V>> implements Copyable<S> {
   ArrayList<Interval<V>> ranges;
 
   public Bounds(int dimensions, Supplier<V> valueFactory) {

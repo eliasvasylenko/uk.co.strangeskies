@@ -40,133 +40,134 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import uk.co.strangeskies.utility.Copyable;
 import uk.co.strangeskies.utility.Scoped;
 
 public abstract class ScopedSet<S extends ScopedSet<S, T>, T>
-		implements SetDecorator<T>, Scoped<S> {
-	static class ScopedSetImpl<T> extends ScopedSet<ScopedSetImpl<T>, T> {
-		private final Supplier<? extends Set<T>> componentFactory;
+    implements SetDecorator<T>, Scoped<S>, Copyable<S> {
+  static class ScopedSetImpl<T> extends ScopedSet<ScopedSetImpl<T>, T> {
+    private final Supplier<? extends Set<T>> componentFactory;
 
-		ScopedSetImpl(Supplier<? extends Set<T>> componentFactory) {
-			super(componentFactory.get());
-			this.componentFactory = componentFactory;
-		}
+    ScopedSetImpl(Supplier<? extends Set<T>> componentFactory) {
+      super(componentFactory.get());
+      this.componentFactory = componentFactory;
+    }
 
-		private ScopedSetImpl(ScopedSetImpl<T> parent, Supplier<? extends Set<T>> componentFactory) {
-			super(parent, componentFactory.get());
-			this.componentFactory = componentFactory;
-		}
+    private ScopedSetImpl(ScopedSetImpl<T> parent, Supplier<? extends Set<T>> componentFactory) {
+      super(parent, componentFactory.get());
+      this.componentFactory = componentFactory;
+    }
 
-		@Override
-		public ScopedSetImpl<T> nestChildScope() {
-			return new ScopedSetImpl<>(this, componentFactory);
-		}
+    @Override
+    public ScopedSetImpl<T> nestChildScope() {
+      return new ScopedSetImpl<>(this, componentFactory);
+    }
 
-		@Override
-		public ScopedSetImpl<T> copy() {
-			ScopedSetImpl<T> copy = new ScopedSetImpl<>(componentFactory);
-			copy.addAll(this);
-			return copy;
-		}
-	}
+    @Override
+    public ScopedSetImpl<T> copy() {
+      ScopedSetImpl<T> copy = new ScopedSetImpl<>(componentFactory);
+      copy.addAll(this);
+      return copy;
+    }
+  }
 
-	private final S parent;
-	private final Set<T> component;
+  private final S parent;
+  private final Set<T> component;
 
-	public ScopedSet(Set<T> component) {
-		this(null, component);
-	}
+  public ScopedSet(Set<T> component) {
+    this(null, component);
+  }
 
-	protected ScopedSet(S parent, Set<T> component) {
-		this.parent = parent;
-		this.component = component;
-	}
+  protected ScopedSet(S parent, Set<T> component) {
+    this.parent = parent;
+    this.component = component;
+  }
 
-	@Override
-	public Set<T> getComponent() {
-		return component;
-	}
+  @Override
+  public Set<T> getComponent() {
+    return component;
+  }
 
-	public static <T> ScopedSet<?, T> over(Supplier<? extends Set<T>> componentFactory) {
-		return new ScopedSetImpl<>(componentFactory);
-	}
+  public static <T> ScopedSet<?, T> over(Supplier<? extends Set<T>> componentFactory) {
+    return new ScopedSetImpl<>(componentFactory);
+  }
 
-	@Override
-	public boolean add(T e) {
-		if (getParentScope().map(p -> p.contains(e)).orElse(false))
-			return false;
+  @Override
+  public boolean add(T e) {
+    if (getParentScope().map(p -> p.contains(e)).orElse(false))
+      return false;
 
-		return SetDecorator.super.add(e);
-	}
+    return SetDecorator.super.add(e);
+  }
 
-	@Override
-	public boolean addAll(Collection<? extends T> c) {
-		boolean changed = false;
+  @Override
+  public boolean addAll(Collection<? extends T> c) {
+    boolean changed = false;
 
-		for (T e : c) {
-			changed = add(e) || changed;
-		}
+    for (T e : c) {
+      changed = add(e) || changed;
+    }
 
-		return changed;
-	}
+    return changed;
+  }
 
-	@Override
-	public boolean contains(Object o) {
-		return SetDecorator.super.contains(o) || getParentScope().map(p -> p.contains(o)).orElse(false);
-	}
+  @Override
+  public boolean contains(Object o) {
+    return SetDecorator.super.contains(o) || getParentScope().map(p -> p.contains(o)).orElse(false);
+  }
 
-	@Override
-	public boolean containsAll(Collection<?> c) {
-		return c.stream().allMatch(this::contains);
-	}
+  @Override
+  public boolean containsAll(Collection<?> c) {
+    return c.stream().allMatch(this::contains);
+  }
 
-	@Override
-	public Iterator<T> iterator() {
-		Iterator<T> iterator = SetDecorator.super.iterator();
-		Iterator<T> parentIterator = getParentScope().map(Collection::iterator).orElse(
-				emptyListIterator());
+  @Override
+  public Iterator<T> iterator() {
+    Iterator<T> iterator = SetDecorator.super.iterator();
+    Iterator<T> parentIterator = getParentScope().map(Collection::iterator).orElse(
+        emptyListIterator());
 
-		return new Iterator<T>() {
-			@Override
-			public boolean hasNext() {
-				return iterator.hasNext() || parentIterator.hasNext();
-			}
+    return new Iterator<T>() {
+      @Override
+      public boolean hasNext() {
+        return iterator.hasNext() || parentIterator.hasNext();
+      }
 
-			@Override
-			public T next() {
-				return iterator.hasNext() ? iterator.next() : parentIterator.next();
-			}
-		};
-	}
+      @Override
+      public T next() {
+        return iterator.hasNext() ? iterator.next() : parentIterator.next();
+      }
+    };
+  }
 
-	@Override
-	public boolean isEmpty() {
-		return SetDecorator.super.isEmpty() && getParentScope().map(Collection::isEmpty).orElse(true);
-	}
+  @Override
+  public boolean isEmpty() {
+    return SetDecorator.super.isEmpty() && getParentScope().map(Collection::isEmpty).orElse(true);
+  }
 
-	@Override
-	public Optional<S> getParentScope() {
-		return Optional.ofNullable(parent);
-	}
+  @Override
+  public Optional<S> getParentScope() {
+    return Optional.ofNullable(parent);
+  }
 
-	@Override
-	public void collapseIntoParentScope() {
-		getParentScope().get().addAll(this);
-		clear();
-	}
+  @Override
+  public void collapseIntoParentScope() {
+    getParentScope().get().addAll(this);
+    clear();
+  }
 
-	@Override
-	public String toString() {
-		return getComponent().toString();
-	}
+  @Override
+  public String toString() {
+    return getComponent().toString();
+  }
 
-	@Override
-	public int hashCode() {
-		return getComponent().hashCode();
-	}
+  @Override
+  public int hashCode() {
+    return getComponent().hashCode();
+  }
 
-	@Override
-	public boolean equals(Object obj) {
-		return getComponent().equals(obj);
-	}
+  @Override
+  public boolean equals(Object obj) {
+    return getComponent().equals(obj);
+  }
 }

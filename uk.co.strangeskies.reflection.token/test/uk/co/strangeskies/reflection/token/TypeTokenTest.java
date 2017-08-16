@@ -66,14 +66,11 @@ import uk.co.strangeskies.reflection.AnnotatedWildcardTypes;
 import uk.co.strangeskies.reflection.Annotations;
 import uk.co.strangeskies.reflection.Imports;
 import uk.co.strangeskies.reflection.Types;
-import uk.co.strangeskies.reflection.token.ExecutableToken;
-import uk.co.strangeskies.reflection.token.TypeArgument;
-import uk.co.strangeskies.reflection.token.TypeParameter;
-import uk.co.strangeskies.reflection.token.TypeToken;
 import uk.co.strangeskies.reflection.token.TypeToken.Capture;
 import uk.co.strangeskies.reflection.token.TypeToken.Infer;
 import uk.co.strangeskies.reflection.token.TypeToken.Retain;
 import uk.co.strangeskies.reflection.token.TypeToken.Wildcards;
+import uk.co.strangeskies.utility.Copyable;
 import uk.co.strangeskies.utility.Self;
 
 /**
@@ -1001,7 +998,7 @@ interface BindingNode<T, S extends BindingNode<T, S, Q>, Q extends BindingNode.E
 			extends BindingNode<T, S, W>, SchemaNode.Effective<S, W> {}
 }
 
-class Nest<T extends Set<Nest<T>>> implements Self<Nest<T>> {
+class Nest<T extends Set<Nest<T>>> implements Copyable<Nest<T>> {
 	@Override
 	public Nest<T> copy() {
 		return null;

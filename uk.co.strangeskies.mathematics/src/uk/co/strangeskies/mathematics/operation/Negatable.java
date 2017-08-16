@@ -32,13 +32,13 @@
  */
 package uk.co.strangeskies.mathematics.operation;
 
-import uk.co.strangeskies.utility.Self;
+import uk.co.strangeskies.utility.Copyable;
 
 public interface Negatable<S extends Negatable<S, N>, N extends Negatable<? extends N, ? extends S>>
-		extends Self<S> {
-	public N negate();
+    extends Copyable<S> {
+  public N negate();
 
-	public default N getNegated() {
-		return copy().negate();
-	}
+  public default N getNegated() {
+    return copy().negate();
+  }
 }

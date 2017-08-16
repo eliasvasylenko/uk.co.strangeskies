@@ -33,12 +33,12 @@
 package uk.co.strangeskies.mathematics.geometry;
 
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
-import uk.co.strangeskies.utility.Self;
+import uk.co.strangeskies.utility.Copyable;
 
-public interface Translatable<S extends Translatable<S>> extends Self<S> {
-	public S translate(Vector<?, ?> translation);
+public interface Translatable<S extends Translatable<S>> extends Copyable<S> {
+  public S translate(Vector<?, ?> translation);
 
-	public default S getTranslated(Vector<?, ?> translation) {
-		return copy().translate(translation);
-	}
+  public default S getTranslated(Vector<?, ?> translation) {
+    return copy().translate(translation);
+  }
 }
