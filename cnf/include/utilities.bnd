@@ -36,7 +36,7 @@ shade.project: @${jarsource.project;${1}}
 Embedded-Runpath: ${map;jardestination;${join;${embedded.bundles};${embedded.projects}}}
 
 # for extracting the filename from a path or uri
-filename.uri: ${first;${split;\\?;${first;${split;#;${last;${split;/;${1}}}}}}}
+filename.uri: ${first;${split;\\?;${first;${split;;${last;${split;/;${1}}}}}}}
 filename.uri.noext: ${first;${split;\\.;${filename.uri;${1}}}}
 filename: ${filename.uri;${fileuri;${1}}}
 filename.noext: ${filename.uri.noext;${fileuri;${1}}}

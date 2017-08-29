@@ -228,7 +228,7 @@ public interface Observable<M> {
 
   default ObservableValue<M> toValue(M initial) {
     initial = getNext().getNow(initial);
-    return new ObservablePropertyImpl<M>(initial);
+    return new ObservablePropertyImpl<>(initial);
   }
 
   default ObservableValue<M> toValue(Throwable initialProblem) {
@@ -391,7 +391,7 @@ public interface Observable<M> {
    */
   default <T> Observable<T> mergeMap(
       Function<? super M, ? extends Observable<? extends T>> mapping) {
-    throw new UnsupportedOperationException(); // TODO
+    return observer -> observe(new MergingObserver<>(observer, mapping));
   }
 
   /**
@@ -413,7 +413,8 @@ public interface Observable<M> {
    */
   default <T> Observable<T> flatMap(
       Function<? super M, ? extends Observable<? extends T>> mapping) {
-    throw new UnsupportedOperationException(); // TODO
+    // TODO based on MergingObserver. Perhaps factor out common behavior.
+    throw new UnsupportedOperationException();
   }
 
   default <R> CompletableFuture<R> reduce(
