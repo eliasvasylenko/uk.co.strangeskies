@@ -395,31 +395,6 @@ public interface Observable<M> {
   }
 
   /**
-   * Introduce backpressure by mapping each message to an intermediate observable
-   * which supports backpressure and then interleaving these observables
-   * downstream.
-   * <p>
-   * An unbounded request is made to the upstream observable, so it is not
-   * required to support backpressure.
-   * <p>
-   * The intermediate observables must support backpressure. Priority for
-   * forwarding requests to intermediate observables is determined as follows:
-   * fewest outstanding requests, then fewest total requests, then first taken
-   * from upstream.
-   * 
-   * @param <T>
-   *          the resulting observable message type
-   * 
-   * @param mapping
-   *          the terminating condition
-   * @return the derived observable
-   */
-  default <T> Observable<T> interleaveMap(
-      Function<? super M, ? extends Observable<? extends T>> mapping) {
-    throw new UnsupportedOperationException(); // TODO
-  }
-
-  /**
    * Derive an observable which sequentially maps each message to an intermediate
    * observable.
    * <p>
@@ -564,5 +539,15 @@ public interface Observable<M> {
 
   public static <M> Observable<M> merge(Collection<? extends Observable<? extends M>> observables) {
     return of(observables).mergeMap(identity());
+  }
+
+  @SafeVarargs
+  public static <M> Observable<M> concat(Observable<? extends M>... observables) {
+    return concat(Arrays.asList(observables));
+  }
+
+  public static <M> Observable<M> concat(
+      Collection<? extends Observable<? extends M>> observables) {
+    return of(observables).flatMap(identity());
   }
 }
