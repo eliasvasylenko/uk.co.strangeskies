@@ -32,6 +32,7 @@
  */
 package uk.co.strangeskies.observable;
 
+import static java.util.Collections.emptySet;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toCollection;
@@ -42,6 +43,7 @@ import static uk.co.strangeskies.observable.Observer.singleUse;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -530,6 +532,10 @@ public interface Observable<M> {
 
   public static <M> Observable<M> of(Collection<? extends M> messages) {
     return new ColdObservable<>(messages);
+  }
+
+  public static <M> Observable<M> of(Optional<? extends M> messages) {
+    return of(messages.map(Collections::singleton).orElse(emptySet()));
   }
 
   @SafeVarargs
