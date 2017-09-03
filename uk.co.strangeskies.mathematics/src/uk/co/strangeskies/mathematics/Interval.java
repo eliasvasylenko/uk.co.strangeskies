@@ -47,11 +47,7 @@ public final class Interval<T> {
 
 	private final Comparator<? super T> comparator;
 
-	private Interval(
-			T leftEndpoint,
-			T rightEndpoint,
-			boolean leftClosed,
-			boolean rightClosed,
+	private Interval(T leftEndpoint, T rightEndpoint, boolean leftClosed, boolean rightClosed,
 			Comparator<? super T> comparator) {
 		this.leftEndpoint = leftEndpoint;
 		this.rightEndpoint = rightEndpoint;
@@ -62,18 +58,13 @@ public final class Interval<T> {
 		this.comparator = comparator;
 	}
 
-	public static <T> Interval<T> bounded(
-			T leftEndpoint,
-			T rightEndpoint,
-			Comparator<? super T> comparator) {
+	public static <T> Interval<T> bounded(T leftEndpoint, T rightEndpoint, Comparator<? super T> comparator) {
 		Objects.requireNonNull(leftEndpoint);
 		Objects.requireNonNull(rightEndpoint);
 		return new Interval<>(leftEndpoint, rightEndpoint, true, true, comparator);
 	}
 
-	public static <T extends Comparable<? super T>> Interval<T> bounded(
-			T leftEndpoint,
-			T rightEndpoint) {
+	public static <T extends Comparable<? super T>> Interval<T> bounded(T leftEndpoint, T rightEndpoint) {
 		return bounded(leftEndpoint, rightEndpoint, Comparable::compareTo);
 	}
 
@@ -83,7 +74,7 @@ public final class Interval<T> {
 	}
 
 	public static <T extends Comparable<? super T>> Interval<T> leftBounded(T leftEndpoint) {
-		return bounded(leftEndpoint, null, Comparable::compareTo);
+		return leftBounded(leftEndpoint, Comparable::compareTo);
 	}
 
 	public static <T> Interval<T> rightBounded(T rightEndpoint, Comparator<? super T> comparator) {
@@ -92,7 +83,7 @@ public final class Interval<T> {
 	}
 
 	public static <T extends Comparable<? super T>> Interval<T> rightBounded(T rightEndpoint) {
-		return bounded(null, rightEndpoint, Comparable::compareTo);
+		return rightBounded(rightEndpoint, Comparable::compareTo);
 	}
 
 	public static <T> Interval<T> unbounded(Comparator<? super T> comparator) {
@@ -100,20 +91,14 @@ public final class Interval<T> {
 	}
 
 	public static <T extends Comparable<? super T>> Interval<T> unbounded() {
-		return bounded(null, null, Comparable::compareTo);
+		return unbounded(Comparable::compareTo);
 	}
 
-	public static <T> Interval<T> over(
-			Collection<? extends T> over,
-			Comparator<? super T> comparator) {
+	public static <T> Interval<T> over(Collection<? extends T> over, Comparator<? super T> comparator) {
 		if (over.isEmpty())
 			throw new IllegalArgumentException("No elements given to range over");
 
-		return new Interval<>(
-				over.stream().min(comparator).get(),
-				over.stream().max(comparator).get(),
-				true,
-				true,
+		return new Interval<>(over.stream().min(comparator).get(), over.stream().max(comparator).get(), true, true,
 				comparator);
 	}
 
@@ -135,16 +120,12 @@ public final class Interval<T> {
 	}
 
 	public static String compose(Interval<Integer> range) {
-		String from = range.getLeftEndpoint() == null
-				? ""
-				: (range.isLeftClosed()
-						? range.getLeftEndpoint().toString()
+		String from = range.getLeftEndpoint() == null ? ""
+				: (range.isLeftClosed() ? range.getLeftEndpoint().toString()
 						: Integer.toString(range.getLeftEndpoint() + 1));
 
-		String to = range.getRightEndpoint() == null
-				? ""
-				: (range.isRightClosed()
-						? range.getRightEndpoint().toString()
+		String to = range.getRightEndpoint() == null ? ""
+				: (range.isRightClosed() ? range.getRightEndpoint().toString()
 						: Integer.toString(range.getRightEndpoint() - 1));
 
 		return from + ".." + to;
@@ -152,11 +133,8 @@ public final class Interval<T> {
 
 	@Override
 	public String toString() {
-		return (leftClosed ? "[" : "(")
-				+ (leftEndpoint != null ? leftEndpoint : "")
-				+ ","
-				+ (rightEndpoint != null ? rightEndpoint : "")
-				+ (rightClosed ? "]" : ")");
+		return (leftClosed ? "[" : "(") + (leftEndpoint != null ? leftEndpoint : "") + ","
+				+ (rightEndpoint != null ? rightEndpoint : "") + (rightClosed ? "]" : ")");
 	}
 
 	public Comparator<? super T> getComparator() {
@@ -474,12 +452,7 @@ public final class Interval<T> {
 			fromInclusive = (inclusive && compareFrom == 0) || isLeftClosed();
 			toInclusive = (inclusive && compareTo == 0) || isRightClosed();
 
-			return new Interval<>(
-					getLeftEndpoint(),
-					getRightEndpoint(),
-					fromInclusive,
-					toInclusive,
-					comparator);
+			return new Interval<>(getLeftEndpoint(), getRightEndpoint(), fromInclusive, toInclusive, comparator);
 		}
 
 		return new Interval<>(from, to, fromInclusive, toInclusive, comparator);
@@ -509,8 +482,7 @@ public final class Interval<T> {
 		}
 
 		if (comparator.compare(newFrom, newTo) > 0)
-			throw new IllegalArgumentException(
-					"Ranges '" + this + "' and '" + other + "' do not intersect");
+			throw new IllegalArgumentException("Ranges '" + this + "' and '" + other + "' do not intersect");
 
 		return new Interval<>(newFrom, newTo, newFromInclusive, newToInclusive, comparator);
 	}
