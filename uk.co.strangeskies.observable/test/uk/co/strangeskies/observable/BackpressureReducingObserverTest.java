@@ -196,13 +196,6 @@ public class BackpressureReducingObserverTest {
 
   @Test
   public void requestNextFromIdentity() {
-    new Expectations() {
-      {
-        identity.get();
-        result = "identity";
-      }
-    };
-
     PassthroughObserver<String, String> test = new BackpressureReducingObserver<>(
         downstreamObserver,
         identity,
@@ -215,8 +208,6 @@ public class BackpressureReducingObserverTest {
       {
         downstreamObserver.onObserve((Observation) any);
         upstreamObservation.requestUnbounded();
-        identity.get();
-        downstreamObserver.onNext("identity");
       }
     };
   }

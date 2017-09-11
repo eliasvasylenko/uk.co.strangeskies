@@ -39,7 +39,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class BackpressureReducingObserver<T, M> extends PassthroughObserver<T, M> {
-  private final Supplier<? extends M> identity;
   private final Function<? super T, ? extends M> initial;
   private final BiFunction<? super M, ? super T, ? extends M> accumulator;
 
@@ -53,8 +52,8 @@ public class BackpressureReducingObserver<T, M> extends PassthroughObserver<T, M
       BiFunction<? super M, ? super T, ? extends M> accumulator) {
     super(downstreamObserver);
 
+    requireNonNull(identity);
     this.accumulator = requireNonNull(accumulator);
-    this.identity = requireNonNull(identity);
     this.initial = m -> accumulator.apply(identity.get(), m);
   }
 
@@ -65,7 +64,6 @@ public class BackpressureReducingObserver<T, M> extends PassthroughObserver<T, M
     super(downstreamObserver);
 
     this.accumulator = requireNonNull(accumulator);
-    this.identity = null;
     this.initial = requireNonNull(initial);
   }
 
@@ -79,22 +77,16 @@ public class BackpressureReducingObserver<T, M> extends PassthroughObserver<T, M
 
       @Override
       public void request(long count) {
-        for (int i = 0; i < count; i++) {
-          synchronized (outstandingRequests) {
-            if (current == null) {
-              if (complete) {
-                getDownstreamObserver().onComplete();
-                break;
-              } else if (identity == null) {
-                outstandingRequests.request(count);
-                break;
-              } else {
-                current = identity.get();
-              }
+        synchronized (outstandingRequests) {
+          outstandingRequests.request(count);
+
+          if (current != null) {
+            if (complete) {
+              current = null;
+              getDownstreamObserver().onComplete();
+            } else if (count > 0) {
+              sendNext();
             }
-            outstandingRequests.fulfil();
-            getDownstreamObserver().onNext(current);
-            current = null;
           }
         }
       }
@@ -113,9 +105,19 @@ public class BackpressureReducingObserver<T, M> extends PassthroughObserver<T, M
       public long getPendingRequestCount() {
         return outstandingRequests.getCount();
       }
+
     });
 
     observation.requestUnbounded();
+  }
+
+  private void sendNext() {
+    synchronized (outstandingRequests) {
+      outstandingRequests.fulfil();
+      M message = current;
+      current = null;
+      getDownstreamObserver().onNext(message);
+    }
   }
 
   @Override
@@ -127,9 +129,7 @@ public class BackpressureReducingObserver<T, M> extends PassthroughObserver<T, M
         current = accumulator.apply(current, message);
 
       if (!outstandingRequests.isFulfilled()) {
-        outstandingRequests.fulfil();
-        getDownstreamObserver().onNext(current);
-        current = null;
+        sendNext();
       }
     }
   }
@@ -137,15 +137,19 @@ public class BackpressureReducingObserver<T, M> extends PassthroughObserver<T, M
   @Override
   public void onComplete() {
     synchronized (outstandingRequests) {
+      complete = true;
       if (current == null) {
         getDownstreamObserver().onComplete();
       }
-      complete = true;
     }
   }
 
   @Override
   public void onFail(Throwable t) {
-    getDownstreamObserver().onFail(t);
+    synchronized (outstandingRequests) {
+      complete = true;
+      current = null;
+      getDownstreamObserver().onFail(t);
+    }
   }
 }
