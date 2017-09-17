@@ -40,6 +40,8 @@ import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.observable.Observer.onCompletion;
 import static uk.co.strangeskies.observable.Observer.onObservation;
 import static uk.co.strangeskies.observable.Observer.singleUse;
+import static uk.co.strangeskies.observable.RequestAllocator.balanced;
+import static uk.co.strangeskies.observable.RequestAllocator.sequential;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -168,8 +170,14 @@ public interface Observable<M> {
    *          the transformation function to apply to the observable
    * @return the derived observable
    */
-  default <T> Observable<T> compose(Function<Observable<M>, Observable<T>> transformation) {
-    return transformation.apply(this);
+  default <T> Observable<T> compose(
+      Function<Observable<? super M>, Observable<? extends T>> transformation) {
+    return upcast(transformation.apply(this));
+  }
+
+  @SuppressWarnings("unchecked")
+  static <T, U extends T> Observable<T> upcast(Observable<U> from) {
+    return (Observable<T>) from;
   }
 
   /**
@@ -180,7 +188,7 @@ public interface Observable<M> {
    *          the type of the observable
    * @return an observable over the given stream
    */
-  public static <M> Collector<M, ?, Observable<M>> toObservable() {
+  public static <M> Collector<? extends M, ?, Observable<M>> toObservable() {
     return collectingAndThen(toList(), Observable::of);
   }
 
@@ -192,7 +200,7 @@ public interface Observable<M> {
    *          an observer representing the action to take
    * @return an observable which performs the injected behavior
    */
-  default Observable<M> then(Observer<M> action) {
+  default Observable<M> then(Observer<? super M> action) {
     return observer -> observe(new MultiplePassthroughObserver<>(observer, action));
   }
 
@@ -204,8 +212,12 @@ public interface Observable<M> {
    *          an observer representing the action to take
    * @return an observable which performs the injected behavior
    */
-  default Observable<M> thenAfter(Observer<M> action) {
+  default Observable<M> thenAfter(Observer<? super M> action) {
     return observer -> observe(new MultiplePassthroughObserver<>(action, observer));
+  }
+
+  default Observable<M> requestUnbounded() {
+    return then(onObservation(o -> o.requestUnbounded()));
   }
 
   default Observable<M> retrying() {
@@ -372,9 +384,8 @@ public interface Observable<M> {
   }
 
   /**
-   * Derive an observable which maps each message to an intermediate observable,
-   * then merges the messages from the intermediate observables into a single
-   * source.
+   * A common case of {@link #flatMap(Function, RequestAllocator)} using
+   * {@link RequestAllocator#sequential() balanced request allocation}.
    * <p>
    * An unbounded request is made to the upstream observable, so it is not
    * required to support backpressure.
@@ -393,18 +404,12 @@ public interface Observable<M> {
    */
   default <T> Observable<T> mergeMap(
       Function<? super M, ? extends Observable<? extends T>> mapping) {
-    return observer -> observe(new MergingObserver<>(observer, mapping));
+    return requestUnbounded().flatMap(mapping.andThen(Observable::requestUnbounded), balanced());
   }
 
   /**
-   * Derive an observable which sequentially maps each message to an intermediate
-   * observable.
-   * <p>
-   * The intermediate accepts observations from downstream until it is complete,
-   * at which point the next message is requested from upstream and the process is
-   * repeated.
-   * <p>
-   * The upstream and intermediate observables must both support backpressure.
+   * As {@link #flatMap(Function, RequestAllocator)} using
+   * {@link RequestAllocator#sequential() sequential request allocation}.
    * 
    * @param <T>
    *          the resulting observable message type
@@ -413,10 +418,40 @@ public interface Observable<M> {
    *          the terminating condition
    * @return the derived observable
    */
-  default <T> Observable<T> flatMap(
+  default <T> Observable<T> concatMap(
       Function<? super M, ? extends Observable<? extends T>> mapping) {
-    // TODO based on MergingObserver. Perhaps factor out common behavior.
-    throw new UnsupportedOperationException();
+    return flatMap(mapping, sequential());
+  }
+
+  /**
+   * Derive an observable which maps each message to an intermediate observable,
+   * then combines those intermediate observables into one.
+   * <P>
+   * The intermediate observables accept requests from downstream until they are
+   * complete. Requests are allocated to the intermediate observables by the given
+   * {@link RequestAllocator request allocation strategy}.
+   * <p>
+   * The upstream observable is not required to support backpressure. If a request
+   * is made downstream when there are no intermediate observables to fulfill that
+   * request, another message is requested from upstream.
+   * <p>
+   * The resulting observable supports backpressure if and only if the
+   * intermediate observables support backpressure.
+   * 
+   * @param <T>
+   *          the resulting observable message type
+   * 
+   * @param mapping
+   *          the terminating condition
+   * @param requestAllocator
+   *          the strategy for allocating downstream requests to upstream
+   *          observations
+   * @return the derived observable
+   */
+  default <T> Observable<T> flatMap(
+      Function<? super M, ? extends Observable<? extends T>> mapping,
+      RequestAllocator requestAllocator) {
+    return observer -> observe(new FlatMappingObserver<>(observer, mapping, requestAllocator));
   }
 
   default <R> CompletableFuture<R> reduce(
@@ -555,6 +590,6 @@ public interface Observable<M> {
 
   public static <M> Observable<M> concat(
       Collection<? extends Observable<? extends M>> observables) {
-    return of(observables).flatMap(identity());
+    return of(observables).concatMap(identity());
   }
 }
