@@ -39,7 +39,6 @@ import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.observable.Observer.onCompletion;
 import static uk.co.strangeskies.observable.Observer.onObservation;
-import static uk.co.strangeskies.observable.Observer.singleUse;
 import static uk.co.strangeskies.observable.RequestAllocator.balanced;
 import static uk.co.strangeskies.observable.RequestAllocator.sequential;
 
@@ -105,23 +104,35 @@ public interface Observable<M> {
   default CompletableFuture<M> getNext() {
     CompletableFuture<M> result = new CompletableFuture<>();
 
-    thenAfter(onObservation(o -> o.requestUnbounded())).observe(singleUse(o -> new Observer<M>() {
+    thenAfter(onObservation(o -> o.requestNext())).observe(new Observer<M>() {
+      Observation ob;
+
+      @Override
+      public void onObserve(Observation o) {
+        new Exception("onObserve").printStackTrace();
+        ob = o;
+      }
+
       @Override
       public void onComplete() {
-        result.completeExceptionally(new AlreadyCompletedException(o));
+        new Exception("onComplete").printStackTrace();
+        result.completeExceptionally(new AlreadyCompletedException(ob));
       }
 
       @Override
       public void onFail(Throwable t) {
+        new Exception("onFail").printStackTrace();
+        ob.cancel();
         result.completeExceptionally(t);
       }
 
       @Override
       public void onNext(M message) {
-        o.cancel();
+        new Exception("onNext").printStackTrace();
+        ob.cancel();
         result.complete(message);
       }
-    }));
+    });
 
     return result;
   }
@@ -188,7 +199,7 @@ public interface Observable<M> {
    *          the type of the observable
    * @return an observable over the given stream
    */
-  public static <M> Collector<? extends M, ?, Observable<M>> toObservable() {
+  static <M> Collector<? extends M, ?, Observable<M>> toObservable() {
     return collectingAndThen(toList(), Observable::of);
   }
 
@@ -201,7 +212,7 @@ public interface Observable<M> {
    * @return an observable which performs the injected behavior
    */
   default Observable<M> then(Observer<? super M> action) {
-    return observer -> observe(new MultiplePassthroughObserver<>(observer, action));
+    return observer -> observe(new MultiplePassthroughObserver<>(action, observer));
   }
 
   /**
@@ -213,26 +224,36 @@ public interface Observable<M> {
    * @return an observable which performs the injected behavior
    */
   default Observable<M> thenAfter(Observer<? super M> action) {
-    return observer -> observe(new MultiplePassthroughObserver<>(action, observer));
+    return observer -> observe(new MultiplePassthroughObserver<>(observer, action));
   }
 
   default Observable<M> requestUnbounded() {
-    return then(onObservation(o -> o.requestUnbounded()));
+    // return then(onObservation(o -> o.requestUnbounded()));
+
+    return then(new Observer<M>() {
+      @Override
+      public void onNext(M message) {
+        // TODO Auto-generated method stub
+
+      }
+
+      @Override
+      public void onObserve(Observation observation) {
+        observation.requestUnbounded();
+      }
+    });
   }
 
   default Observable<M> retrying() {
     return observer -> observe(new RetryingObserver<>(observer, this));
   }
 
-  /*
-   * TODO refactor this so it works from an Observable<? extends Observable<?
-   * extends M>>
-   */
-  default Observable<M> retrying(Observable<? extends M> retryOn) {
-    return observer -> observe(new RetryingObserver<>(observer, retryOn));
+  default Observable<M> repeating() {
+    // TODO
+    throw new UnsupportedOperationException();
   }
 
-  default Observable<ObservableValue<M>> materialize() {
+  default Observable<Observable<M>> materialize() {
     return observer -> observe(new MaterializingObserver<>(observer));
   }
 
@@ -241,17 +262,45 @@ public interface Observable<M> {
   }
 
   default ObservableValue<M> toValue(M initial) {
-    initial = getNext().getNow(initial);
-    return new ObservablePropertyImpl<>(initial);
+    ObservableProperty<M> value = new ObservablePropertyImpl<>(initial);
+    observe(new Observer<M>() {
+      @Override
+      public void onObserve(Observation observation) {
+        observation.requestUnbounded();
+      }
+
+      @Override
+      public void onNext(M message) {
+        value.set(message);
+      }
+
+      @Override
+      public void onFail(Throwable t) {
+        value.setProblem(t);
+      }
+    });
+    return value;
   }
 
   default ObservableValue<M> toValue(Throwable initialProblem) {
-    M initial = getNext().getNow(null);
-    if (initial == null) {
-      return new ObservablePropertyImpl<>(initial);
-    } else {
-      return new ObservablePropertyImpl<>(initialProblem);
-    }
+    ObservableProperty<M> value = new ObservablePropertyImpl<>(initialProblem);
+    observe(new Observer<M>() {
+      @Override
+      public void onObserve(Observation observation) {
+        observation.requestUnbounded();
+      }
+
+      @Override
+      public void onNext(M message) {
+        value.set(message);
+      }
+
+      @Override
+      public void onFail(Throwable t) {
+        value.setProblem(t);
+      }
+    });
+    return value;
   }
 
   /**
@@ -562,34 +611,41 @@ public interface Observable<M> {
    */
 
   @SafeVarargs
-  public static <M> Observable<M> of(M... messages) {
+  static <M> Observable<M> of(M... messages) {
     return of(Arrays.asList(messages));
   }
 
-  public static <M> Observable<M> of(Collection<? extends M> messages) {
+  static <M> Observable<M> of(Collection<? extends M> messages) {
     return new ColdObservable<>(messages);
   }
 
-  public static <M> Observable<M> of(Optional<? extends M> messages) {
+  static <M> Observable<M> of(Optional<? extends M> messages) {
     return of(messages.map(Collections::singleton).orElse(emptySet()));
   }
 
   @SafeVarargs
-  public static <M> Observable<M> merge(Observable<? extends M>... observables) {
+  static <M> Observable<M> merge(Observable<? extends M>... observables) {
     return merge(Arrays.asList(observables));
   }
 
-  public static <M> Observable<M> merge(Collection<? extends Observable<? extends M>> observables) {
+  static <M> Observable<M> merge(Collection<? extends Observable<? extends M>> observables) {
     return of(observables).mergeMap(identity());
   }
 
   @SafeVarargs
-  public static <M> Observable<M> concat(Observable<? extends M>... observables) {
+  static <M> Observable<M> concat(Observable<? extends M>... observables) {
     return concat(Arrays.asList(observables));
   }
 
-  public static <M> Observable<M> concat(
-      Collection<? extends Observable<? extends M>> observables) {
+  static <M> Observable<M> concat(Collection<? extends Observable<? extends M>> observables) {
     return of(observables).concatMap(identity());
+  }
+
+  static <M> ObservableValue<M> failingValue(Throwable failure) {
+    return new ObservablePropertyImpl<>(failure);
+  }
+
+  static <M> ObservableValue<M> value(M value) {
+    return new ObservablePropertyImpl<>(value);
   }
 }

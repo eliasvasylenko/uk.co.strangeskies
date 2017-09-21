@@ -61,6 +61,8 @@ import java.util.function.Predicate;
  * to the observable should receive the last such event directly subsequent to
  * observation. This means that the {@link #get()} method inherited from
  * observable should never have to block.
+ * <p>
+ * Observable values should never support backpressure.
  * 
  * @author Elias N Vasylenko
  *

@@ -32,8 +32,8 @@
  */
 package uk.co.strangeskies.observable;
 
-public class MaterializingObserver<T> extends PassthroughObserver<T, ObservableValue<T>> {
-  public MaterializingObserver(Observer<? super ObservableValue<T>> downstreamObserver) {
+public class MaterializingObserver<T> extends PassthroughObserver<T, Observable<T>> {
+  public MaterializingObserver(Observer<? super Observable<T>> downstreamObserver) {
     super(downstreamObserver);
   }
 
@@ -57,6 +57,13 @@ public class MaterializingObserver<T> extends PassthroughObserver<T, ObservableV
     ObservablePropertyImpl<T> observableMessage = new ObservablePropertyImpl<>(t);
     getDownstreamObserver().onNext(observableMessage);
 
-    super.onFail(t);
+    super.onComplete();
+  }
+
+  @Override
+  public void onComplete() {
+    getDownstreamObserver().onNext(Observable.of());
+
+    super.onComplete();
   }
 }

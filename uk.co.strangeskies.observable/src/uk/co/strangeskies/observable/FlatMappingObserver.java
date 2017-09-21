@@ -42,6 +42,7 @@ public class FlatMappingObserver<T, U> extends PassthroughObserver<T, U> {
   private final RequestAllocator requestAllocator;
   private final Function<? super T, ? extends Observable<? extends U>> mapping;
 
+  private Observation upstreamObservation;
   private final LinkedHashMap<Observer<? extends U>, Observation> observations;
   private long outstandingRequests;
   private boolean cancelled;
@@ -56,41 +57,57 @@ public class FlatMappingObserver<T, U> extends PassthroughObserver<T, U> {
     this.requestAllocator = requireNonNull(requestAllocator);
   }
 
+  protected Object getMutex() {
+    return observations;
+  }
+
   private void allocateRequests() {
-    synchronized (observations) {
-      if (!observations.isEmpty()) {
+    synchronized (getMutex()) {
+      if (observations.isEmpty()) {
+        upstreamObservation.requestNext();
+      } else {
         outstandingRequests = requestAllocator
             .allocateRequests(outstandingRequests, new ArrayList<>(observations.values()));
-
-      } else if (getObservation().getPendingRequestCount() == 0) {
-        getObservation().requestNext();
       }
     }
   }
 
   @Override
   public void onObserve(Observation observation) {
+    upstreamObservation = observation;
     super.onObserve(new Observation() {
       @Override
       public void cancel() {
         observation.cancel();
         cancelled = true;
-        synchronized (observations) {
+        synchronized (getMutex()) {
           observations.values().forEach(Observation::cancel);
         }
       }
 
       @Override
       public void request(long count) {
-        synchronized (observations) {
-          outstandingRequests += count;
+        synchronized (getMutex()) {
+          if (outstandingRequests < Long.MAX_VALUE) {
+            outstandingRequests += count;
+          }
           allocateRequests();
         }
       }
 
       @Override
+      public void requestUnbounded() {
+        Observation.super.requestUnbounded();
+      }
+
+      @Override
+      public void requestNext() {
+        Observation.super.requestNext();
+      }
+
+      @Override
       public long getPendingRequestCount() {
-        synchronized (observations) {
+        synchronized (getMutex()) {
           return observations
               .values()
               .stream()
@@ -99,18 +116,17 @@ public class FlatMappingObserver<T, U> extends PassthroughObserver<T, U> {
         }
       }
     });
-    observation.requestUnbounded();
   }
 
   @Override
   public void onNext(T message) {
-    synchronized (observations) {
+    synchronized (getMutex()) {
       if (!cancelled) {
         mapping.apply(message).observe(new Observer<U>() {
           @Override
-          public void onNext(U message) {
-            getDownstreamObserver().onNext(message);
-            synchronized (observations) {
+          public void onNext(U m) {
+            getDownstreamObserver().onNext(m);
+            synchronized (getMutex()) {
               if (observations.get(this).getPendingRequestCount() == 0) {
                 allocateRequests();
               }
@@ -119,7 +135,7 @@ public class FlatMappingObserver<T, U> extends PassthroughObserver<T, U> {
 
           @Override
           public void onObserve(Observation observation) {
-            synchronized (observations) {
+            synchronized (getMutex()) {
               observations.put(this, observation);
               allocateRequests();
             }
@@ -127,14 +143,14 @@ public class FlatMappingObserver<T, U> extends PassthroughObserver<T, U> {
 
           @Override
           public void onComplete() {
-            synchronized (observations) {
+            synchronized (getMutex()) {
               getObservation().request(observations.remove(this).getPendingRequestCount());
             }
           }
 
           @Override
           public void onFail(Throwable t) {
-            synchronized (observations) {
+            synchronized (getMutex()) {
               observations.values().forEach(Observation::cancel);
             }
             getDownstreamObserver().onFail(t);

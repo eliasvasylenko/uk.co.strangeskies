@@ -39,14 +39,14 @@ import static org.junit.Assert.assertThat;
 import org.junit.Test;
 
 import mockit.FullVerificationsInOrder;
-import mockit.Mocked;
+import mockit.Injectable;
 import uk.co.strangeskies.observable.ObservableValue.Change;
 
 @SuppressWarnings("javadoc")
 public class ObservablePropertyImplTest {
-  @Mocked
+  @Injectable
   Observer<String> downstreamObserver;
-  @Mocked
+  @Injectable
   Observer<Change<String>> changeObserver;
 
   @Test
@@ -154,6 +154,24 @@ public class ObservablePropertyImplTest {
     new FullVerificationsInOrder() {
       {
         downstreamObserver.onObserve((Observation) any);
+        downstreamObserver.onFail(problem);
+      }
+    };
+  }
+
+  @Test
+  public void setValueEventAfterProblemEventTest() {
+    ObservableProperty<String> property = new ObservablePropertyImpl<>("initial");
+    Throwable problem = new Throwable();
+
+    property.observe(downstreamObserver);
+    property.setProblem(problem);
+    property.set("ignore");
+
+    new FullVerificationsInOrder() {
+      {
+        downstreamObserver.onObserve((Observation) any);
+        downstreamObserver.onNext("initial");
         downstreamObserver.onFail(problem);
       }
     };

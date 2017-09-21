@@ -58,7 +58,7 @@ public class HotObservable<M> implements Observable<M> {
   private Set<ObservationImpl<M>> observations;
 
   @Override
-  public Disposable observe(Observer<? super M> observer) {
+  public ObservationImpl<M> observe(Observer<? super M> observer) {
     ObservationImpl<M> observation = new UnboundedObservationImpl<M>(observer) {
       @Override
       public void cancelImpl() {
