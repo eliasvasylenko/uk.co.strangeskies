@@ -48,21 +48,19 @@ public class MaterializingObserver<T> extends PassthroughObserver<T, Observable<
 
   @Override
   public void onNext(T message) {
-    ObservableValue<T> observableMessage = new ObservablePropertyImpl<>(message);
-    getDownstreamObserver().onNext(observableMessage);
+    getDownstreamObserver().onNext(Observable.value(message));
   }
 
   @Override
   public void onFail(Throwable t) {
-    ObservablePropertyImpl<T> observableMessage = new ObservablePropertyImpl<>(t);
-    getDownstreamObserver().onNext(observableMessage);
+    getDownstreamObserver().onNext(Observable.failingValue(t));
 
     super.onComplete();
   }
 
   @Override
   public void onComplete() {
-    getDownstreamObserver().onNext(Observable.of());
+    getDownstreamObserver().onNext(Observable.empty());
 
     super.onComplete();
   }

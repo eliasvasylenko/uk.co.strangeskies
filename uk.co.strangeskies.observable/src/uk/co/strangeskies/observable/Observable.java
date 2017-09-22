@@ -228,20 +228,7 @@ public interface Observable<M> {
   }
 
   default Observable<M> requestUnbounded() {
-    // return then(onObservation(o -> o.requestUnbounded()));
-
-    return then(new Observer<M>() {
-      @Override
-      public void onNext(M message) {
-        // TODO Auto-generated method stub
-
-      }
-
-      @Override
-      public void onObserve(Observation observation) {
-        observation.requestUnbounded();
-      }
-    });
+    return then(onObservation(o -> o.requestUnbounded()));
   }
 
   default Observable<M> retrying() {
@@ -249,8 +236,7 @@ public interface Observable<M> {
   }
 
   default Observable<M> repeating() {
-    // TODO
-    throw new UnsupportedOperationException();
+    return observer -> observe(new RepeatingObserver<>(observer, this));
   }
 
   default Observable<Observable<M>> materialize() {
@@ -642,10 +628,14 @@ public interface Observable<M> {
   }
 
   static <M> ObservableValue<M> failingValue(Throwable failure) {
-    return new ObservablePropertyImpl<>(failure);
+    return new ImmutableObservableValue<>(failure);
   }
 
   static <M> ObservableValue<M> value(M value) {
-    return new ObservablePropertyImpl<>(value);
+    return new ImmutableObservableValue<>(value);
+  }
+
+  static <T> Observable<T> empty() {
+    return new ImmutableObservable<>();
   }
 }

@@ -37,8 +37,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.util.function.Supplier;
 
-import uk.co.strangeskies.expression.DependentExpression;
-import uk.co.strangeskies.expression.Expression;
 import uk.co.strangeskies.observable.Disposable;
 import uk.co.strangeskies.observable.HotObservable;
 import uk.co.strangeskies.observable.Observer;

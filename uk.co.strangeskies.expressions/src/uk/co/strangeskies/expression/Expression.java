@@ -35,14 +35,9 @@ package uk.co.strangeskies.expression;
 import java.util.Observer;
 import java.util.function.Supplier;
 
+import uk.co.strangeskies.observable.HotObservable;
 import uk.co.strangeskies.observable.ImmutableObservable;
 import uk.co.strangeskies.observable.Observable;
-import uk.co.strangeskies.expression.AnonymousExpression;
-import uk.co.strangeskies.expression.AnonymousExpressionImpl;
-import uk.co.strangeskies.expression.Expression;
-import uk.co.strangeskies.expression.IdentityExpression;
-import uk.co.strangeskies.expression.ImmutableExpressionImpl;
-import uk.co.strangeskies.observable.HotObservable;
 import uk.co.strangeskies.observable.ObservableValue;
 
 /**
@@ -202,8 +197,8 @@ class AnonymousExpressionImpl<T> extends HotObservable<Expression<? extends T>>
   }
 }
 
-class ImmutableExpressionImpl<T>
-    implements ImmutableObservable<Expression<? extends T>>, Expression<T>, AnonymousExpression<T> {
+class ImmutableExpressionImpl<T> extends ImmutableObservable<Expression<? extends T>>
+    implements Expression<T>, AnonymousExpression<T> {
   private final T value;
 
   ImmutableExpressionImpl(T value) {

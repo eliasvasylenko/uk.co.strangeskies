@@ -65,7 +65,7 @@ public class ObservablePropertyImpl<T> implements ObservableProperty<T> {
 
   @Override
   public Observable<Change<T>> changes() {
-    return observer -> backingObservable.materialize().retrying().observe(
+    return observer -> backingObservable.materialize().repeating().observe(
         new PassthroughObserver<Observable<T>, Change<T>>(observer) {
           private ObservableValue<T> previousValue;
 
@@ -77,18 +77,20 @@ public class ObservablePropertyImpl<T> implements ObservableProperty<T> {
 
           @Override
           public void onNext(Observable<T> message) {
-            Observable<T> previousValue = this.previousValue;
-            this.previousValue = message; // TODO can't use toValue as that remains backed
+            ObservableValue<T> previousValue = this.previousValue;
+            ObservableValue<T> nextValue = message.toValue();
+
+            this.previousValue = nextValue;
 
             getDownstreamObserver().onNext(new Change<T>() {
               @Override
               public ObservableValue<T> previousValue() {
-                return previousValue.toValue();
+                return previousValue;
               }
 
               @Override
               public ObservableValue<T> newValue() {
-                return message.toValue();
+                return nextValue;
               }
             });
           }
@@ -105,12 +107,14 @@ public class ObservablePropertyImpl<T> implements ObservableProperty<T> {
 
   @Override
   public synchronized Disposable observe(Observer<? super T> observer) {
-    ObservationImpl<T> disposable = backingObservable.observe(observer);
+    SafeObserver<? super T> safeObserver = new SafeObserver<>(observer);
+
+    Disposable disposable = backingObservable.observe(safeObserver);
 
     if (value != null) {
-      disposable.onNext(value);
+      safeObserver.onNext(value);
     } else {
-      disposable.onFail(failure);
+      safeObserver.onFail(failure);
     }
 
     return disposable;

@@ -138,16 +138,4 @@ public interface ObservableValue<T> extends Observable<T> {
    * @return an observable over changes to the value
    */
   Observable<Change<T>> changes();
-
-  /**
-   * @param <T>
-   *          the type of the immutable value
-   * @param value
-   *          the immutable value to create an observable over
-   * @return an observable over the given value which never changes or fires
-   *         events
-   */
-  static <T> ObservableValue<T> immutableOver(T value) {
-    return (ImmutableObservableValue<T>) () -> value;
-  }
 }
