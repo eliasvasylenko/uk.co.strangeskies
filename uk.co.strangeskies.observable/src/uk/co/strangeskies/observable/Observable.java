@@ -228,7 +228,11 @@ public interface Observable<M> {
   }
 
   default Observable<M> requestUnbounded() {
-    return then(onObservation(o -> o.requestUnbounded()));
+    return thenAfter(onObservation(o -> o.requestUnbounded()));
+  }
+
+  default Observable<M> requestNext() {
+    return thenAfter(onObservation(o -> o.requestNext()));
   }
 
   default Observable<M> retrying() {

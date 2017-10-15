@@ -67,7 +67,7 @@ public class ColdObservable<M> implements Observable<M> {
       super(observer);
       this.iterator = iterable.iterator();
       onObserve();
-      tryComplete();
+      tryContinue();
     }
 
     @Override
@@ -93,23 +93,23 @@ public class ColdObservable<M> implements Observable<M> {
     }
 
     private synchronized boolean tryNext() {
-      if (isDisposed()) {
-        cancel();
-        return false;
-      } else {
+      if (tryContinue()) {
         if (totalCount.get() < Long.MAX_VALUE)
           totalCount.decrementAndGet();
         onNext(iterator.next());
-        tryComplete();
+        tryContinue();
         return true;
       }
+      return false;
     }
 
-    private void tryComplete() {
-      if (!iterator.hasNext()) {
+    private boolean tryContinue() {
+      if (!isDisposed() && !iterator.hasNext()) {
         onComplete();
         cancel();
+        return false;
       }
+      return true;
     }
 
     @Override
