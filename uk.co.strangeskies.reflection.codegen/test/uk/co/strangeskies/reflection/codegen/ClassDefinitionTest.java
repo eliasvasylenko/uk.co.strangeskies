@@ -46,12 +46,14 @@ import static uk.co.strangeskies.reflection.token.MethodMatcher.anyMethod;
 import static uk.co.strangeskies.reflection.token.VariableMatcher.anyVariable;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.token.TypeToken;
 
 @SuppressWarnings("javadoc")
+@Ignore
 public class ClassDefinitionTest {
   public interface Func<A, B> {
     B apply(A value);

@@ -38,11 +38,11 @@ import static org.junit.Assert.assertThat;
 import org.junit.Test;
 
 import mockit.FullVerificationsInOrder;
-import mockit.Mocked;
+import mockit.Injectable;
 
 @SuppressWarnings("javadoc")
 public class HotObservableTest {
-  @Mocked
+  @Injectable
   Observer<String> downstreamObserver;
 
   @Test

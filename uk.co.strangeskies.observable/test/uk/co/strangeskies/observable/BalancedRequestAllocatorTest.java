@@ -41,18 +41,18 @@ import org.junit.Test;
 
 import mockit.Expectations;
 import mockit.FullVerificationsInOrder;
-import mockit.Mocked;
+import mockit.Injectable;
 import mockit.VerificationsInOrder;
 
 @SuppressWarnings("javadoc")
 public class BalancedRequestAllocatorTest {
   private final RequestAllocator balanced = balanced();
 
-  @Mocked
+  @Injectable
   Observation firstObservation;
-  @Mocked
+  @Injectable
   Observation secondObservation;
-  @Mocked
+  @Injectable
   Observation thirdObservation;
 
   @Test

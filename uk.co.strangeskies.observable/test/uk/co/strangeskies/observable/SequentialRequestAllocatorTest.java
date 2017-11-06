@@ -40,17 +40,17 @@ import static uk.co.strangeskies.observable.RequestAllocator.sequential;
 import org.junit.Test;
 
 import mockit.FullVerificationsInOrder;
-import mockit.Mocked;
+import mockit.Injectable;
 
 @SuppressWarnings("javadoc")
 public class SequentialRequestAllocatorTest {
   private final RequestAllocator sequential = sequential();
 
-  @Mocked
+  @Injectable
   Observation firstObservation;
-  @Mocked
+  @Injectable
   Observation secondObservation;
-  @Mocked
+  @Injectable
   Observation thirdObservation;
 
   @Test

@@ -36,17 +36,17 @@ import static java.util.function.Function.identity;
 
 import org.junit.Test;
 
-import mockit.Mocked;
+import mockit.Injectable;
 
 @SuppressWarnings("javadoc")
 public class FlatMappingObserverTest {
-  @Mocked
+  @Injectable
   Observation upstreamObservation;
 
-  @Mocked
+  @Injectable
   RequestAllocator requestAllocator;
 
-  @Mocked
+  @Injectable
   Observer<String> downstreamObserver;
 
   @Test(expected = NullPointerException.class)

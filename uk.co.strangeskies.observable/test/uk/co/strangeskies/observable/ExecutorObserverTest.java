@@ -38,7 +38,7 @@ import org.junit.Test;
 
 import mockit.Expectations;
 import mockit.FullVerificationsInOrder;
-import mockit.Mocked;
+import mockit.Injectable;
 import mockit.VerificationsInOrder;
 
 @SuppressWarnings("javadoc")
@@ -47,10 +47,10 @@ public class ExecutorObserverTest {
 
   interface MockObservation extends Observation {}
 
-  @Mocked
+  @Injectable
   MockObservation upstreamObservation;
 
-  @Mocked
+  @Injectable
   MockObserver<String> downstreamObserver;
 
   @Test
@@ -82,7 +82,7 @@ public class ExecutorObserverTest {
   }
 
   @Test
-  public void messageEventOnMockedExecutorTest(@Mocked Executor executor) {
+  public void messageEventOnMockedExecutorTest(@Injectable Executor executor) {
     Observer<String> test = new ExecutorObserver<>(downstreamObserver, executor);
 
     test.onObserve(upstreamObservation);

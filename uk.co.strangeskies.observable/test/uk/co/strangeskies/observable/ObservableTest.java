@@ -36,14 +36,14 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 
 import org.junit.Test;
 
-import mockit.Mocked;
+import mockit.Injectable;
 import mockit.Verifications;
 
 @SuppressWarnings("javadoc")
 public class ObservableTest {
   Observable<String> upstreamObservable = a -> null;
 
-  @Mocked
+  @Injectable
   Observer<String> downstreamObserver;
 
   @Test
