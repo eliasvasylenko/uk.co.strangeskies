@@ -59,10 +59,22 @@ public class HotObservable<M> implements Observable<M> {
 
   @Override
   public Disposable observe(Observer<? super M> observer) {
-    ObservationImpl<M> observation = new UnboundedObservationImpl<M>(observer) {
+    return observe(new SafeObserver<>(observer));
+  }
+
+  public Disposable observe(SafeObserver<? super M> observer) {
+    ObservationImpl<M> observation = new ObservationImpl<M>(observer) {
       @Override
       public void cancelImpl() {
         cancelObservation(this);
+      }
+
+      @Override
+      public void request(long count) {}
+
+      @Override
+      public long getPendingRequestCount() {
+        return Long.MAX_VALUE;
       }
     };
 

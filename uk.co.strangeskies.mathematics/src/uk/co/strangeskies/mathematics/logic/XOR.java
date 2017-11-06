@@ -32,8 +32,8 @@
  */
 package uk.co.strangeskies.mathematics.logic;
 
-import uk.co.strangeskies.mathematics.expression.BinaryExpression;
-import uk.co.strangeskies.mathematics.expression.Expression;
+import uk.co.strangeskies.expression.BinaryExpression;
+import uk.co.strangeskies.expression.Expression;
 
 public class XOR<O extends XORable<?, ? super T>, T> extends BinaryExpression<XORable<? extends O, ? super T>, T, O> {
 	public XOR(Expression<? extends XORable<? extends O, ? super T>> firstOperand,

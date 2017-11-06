@@ -35,14 +35,14 @@ package uk.co.strangeskies.observable;
 import org.junit.Test;
 
 import mockit.FullVerificationsInOrder;
-import mockit.Mocked;
+import mockit.Injectable;
 
 @SuppressWarnings("javadoc")
 public class PassthroughObserverTest {
-  @Mocked
+  @Injectable
   Observation upstreamObservation;
 
-  @Mocked
+  @Injectable
   Observer<String> downstreamObserver;
 
   protected PassthroughObserver<String, String> createDefaultObserver(

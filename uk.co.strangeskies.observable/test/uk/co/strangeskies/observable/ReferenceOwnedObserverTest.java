@@ -39,14 +39,14 @@ import java.lang.ref.WeakReference;
 import org.junit.Test;
 
 import mockit.FullVerificationsInOrder;
-import mockit.Mocked;
+import mockit.Injectable;
 
 @SuppressWarnings("javadoc")
 public class ReferenceOwnedObserverTest {
-  @Mocked
+  @Injectable
   Observation upstreamObservation;
 
-  @Mocked
+  @Injectable
   Observer<OwnedMessage<Object, String>> downstreamObserver;
 
   @Test(timeout = 5000)

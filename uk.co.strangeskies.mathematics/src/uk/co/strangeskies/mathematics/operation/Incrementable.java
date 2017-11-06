@@ -32,18 +32,18 @@
  */
 package uk.co.strangeskies.mathematics.operation;
 
-import uk.co.strangeskies.utility.Self;
+import uk.co.strangeskies.utility.Copyable;
 
-public interface Incrementable<S extends Incrementable<S>> extends Self<S> {
-	public S increment();
+public interface Incrementable<S extends Incrementable<S>> extends Copyable<S> {
+  public S increment();
 
-	public S decrement();
+  public S decrement();
 
-	public default S getIncremented() {
-		return copy().increment();
-	}
+  public default S getIncremented() {
+    return copy().increment();
+  }
 
-	public default S getDecremented() {
-		return copy().decrement();
-	}
+  public default S getDecremented() {
+    return copy().decrement();
+  }
 }

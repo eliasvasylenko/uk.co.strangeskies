@@ -36,7 +36,11 @@ abstract class ObservationImpl<T> implements Observation {
   private final SafeObserver<? super T> observer;
 
   public ObservationImpl(Observer<? super T> observer) {
-    this.observer = new SafeObserver<>(observer);
+    this(new SafeObserver<>(observer));
+  }
+
+  public ObservationImpl(SafeObserver<? super T> observer) {
+    this.observer = observer;
   }
 
   protected SafeObserver<? super T> getObserver() {

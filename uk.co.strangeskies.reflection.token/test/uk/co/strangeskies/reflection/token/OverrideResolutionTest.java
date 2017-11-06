@@ -35,7 +35,7 @@ package uk.co.strangeskies.reflection.token;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.forMethod;
-import static uk.co.strangeskies.reflection.token.MethodMatcher.allMethods;
+import static uk.co.strangeskies.reflection.token.MethodMatcher.anyMethod;
 import static uk.co.strangeskies.reflection.token.OverloadResolver.resolveOverload;
 import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
 
@@ -72,7 +72,7 @@ public class OverrideResolutionTest {
 	public void withReceiverTypeDoesNotOverride() throws NoSuchMethodException, SecurityException {
 		ExecutableToken<? extends A, ?> method = forClass(A.class)
 				.methods()
-				.filter(allMethods().named(METHOD_NAME))
+				.filter(anyMethod().named(METHOD_NAME))
 				.collect(resolveOverload());
 
 		method = method.getOverride(forClass(D.class));
@@ -84,7 +84,7 @@ public class OverrideResolutionTest {
 	public void withReceiverThenGetOverride() throws NoSuchMethodException, SecurityException {
 		ExecutableToken<? extends A, ?> method = forClass(A.class)
 				.methods()
-				.filter(allMethods().named(METHOD_NAME))
+				.filter(anyMethod().named(METHOD_NAME))
 				.collect(resolveOverload());
 
 		method = method.getOverride(forClass(C.class));

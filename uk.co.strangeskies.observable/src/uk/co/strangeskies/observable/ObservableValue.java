@@ -61,6 +61,8 @@ import java.util.function.Predicate;
  * to the observable should receive the last such event directly subsequent to
  * observation. This means that the {@link #get()} method inherited from
  * observable should never have to block.
+ * <p>
+ * Observable values should never support backpressure.
  * 
  * @author Elias N Vasylenko
  *
@@ -136,16 +138,4 @@ public interface ObservableValue<T> extends Observable<T> {
    * @return an observable over changes to the value
    */
   Observable<Change<T>> changes();
-
-  /**
-   * @param <T>
-   *          the type of the immutable value
-   * @param value
-   *          the immutable value to create an observable over
-   * @return an observable over the given value which never changes or fires
-   *         events
-   */
-  static <T> ObservableValue<T> immutableOver(T value) {
-    return (ImmutableObservableValue<T>) () -> value;
-  }
 }

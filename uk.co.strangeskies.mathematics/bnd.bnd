@@ -4,14 +4,18 @@ Bundle-Description: \
 	and performant graph API, and a rich set of composable logic and value \
 	expressions, built on the uk.co.strangeskies.expressions library.
 
+-buildpath: \
+	uk.co.strangeskies.utilities;version=snapshot,\
+	uk.co.strangeskies.collections;version=snapshot,\
+	uk.co.strangeskies.observable;version=snapshot,\
+	uk.co.strangeskies.text;version=snapshot,\
+	uk.co.strangeskies.expressions;version=snapshot
+
 Private-Package:  \
 	uk.co.strangeskies.mathematics.graph.impl
 
 Export-Package: \
 	uk.co.strangeskies.mathematics,\
-	uk.co.strangeskies.mathematics.expression,\
-	uk.co.strangeskies.mathematics.expression.buffer,\
-	uk.co.strangeskies.mathematics.expression.collection,\
 	uk.co.strangeskies.mathematics.graph,\
 	uk.co.strangeskies.mathematics.graph.building,\
 	uk.co.strangeskies.mathematics.graph.processing,\
@@ -20,10 +24,3 @@ Export-Package: \
 	uk.co.strangeskies.mathematics.operation,\
 	uk.co.strangeskies.mathematics.values,\
 	uk.co.strangeskies.mathematics.values.quantities
-
--buildpath: \
-	uk.co.strangeskies.utilities;version=snapshot,\
-	uk.co.strangeskies.collections;version=snapshot,\
-	uk.co.strangeskies.observable;version=snapshot,\
-	uk.co.strangeskies.text;version=snapshot,\
-	uk.co.strangeskies.expressions;version=snapshot

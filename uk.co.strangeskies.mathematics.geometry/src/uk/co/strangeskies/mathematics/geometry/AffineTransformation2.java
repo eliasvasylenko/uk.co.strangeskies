@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.mathematics.geometry;
 
-import uk.co.strangeskies.mathematics.expression.Expression;
+import uk.co.strangeskies.expression.Expression;
 import uk.co.strangeskies.mathematics.geometry.matrix.MatrixH2;
 import uk.co.strangeskies.mathematics.values.Value;
 

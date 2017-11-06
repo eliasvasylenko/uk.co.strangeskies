@@ -32,8 +32,8 @@
  */
 package uk.co.strangeskies.mathematics.operation;
 
-import uk.co.strangeskies.mathematics.expression.BinaryExpression;
-import uk.co.strangeskies.mathematics.expression.Expression;
+import uk.co.strangeskies.expression.BinaryExpression;
+import uk.co.strangeskies.expression.Expression;
 
 public class Multiplication<O extends Multipliable<?, ? super T>, T>
 		extends BinaryExpression<Multipliable<? extends O, ? super T>, T, O> {

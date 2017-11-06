@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.mathematics.geometry.shape.tessellation;
 
-import uk.co.strangeskies.mathematics.expression.Expression;
+import uk.co.strangeskies.expression.Expression;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.geometry.shape.SimplePolygon;
 import uk.co.strangeskies.mathematics.geometry.shape.mesh.Mesh;

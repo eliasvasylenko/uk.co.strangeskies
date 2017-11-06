@@ -40,23 +40,23 @@ import org.junit.Test;
 
 import mockit.Expectations;
 import mockit.FullVerificationsInOrder;
-import mockit.Mocked;
+import mockit.Injectable;
 
 @SuppressWarnings("javadoc")
 public class BackpressureReducingObserverTest {
-  @Mocked
+  @Injectable
   Observation upstreamObservation;
 
-  @Mocked
+  @Injectable
   Observer<String> downstreamObserver;
 
-  @Mocked
+  @Injectable
   Supplier<String> identity;
 
-  @Mocked
+  @Injectable
   Function<String, String> initial;
 
-  @Mocked
+  @Injectable
   BiFunction<String, String, String> accumulator;
 
   @Test
@@ -196,13 +196,6 @@ public class BackpressureReducingObserverTest {
 
   @Test
   public void requestNextFromIdentity() {
-    new Expectations() {
-      {
-        identity.get();
-        result = "identity";
-      }
-    };
-
     PassthroughObserver<String, String> test = new BackpressureReducingObserver<>(
         downstreamObserver,
         identity,
@@ -215,8 +208,6 @@ public class BackpressureReducingObserverTest {
       {
         downstreamObserver.onObserve((Observation) any);
         upstreamObservation.requestUnbounded();
-        identity.get();
-        downstreamObserver.onNext("identity");
       }
     };
   }

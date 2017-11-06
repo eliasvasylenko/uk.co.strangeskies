@@ -37,29 +37,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.function.Function;
 
 import uk.co.strangeskies.collection.SetDecorator;
 import uk.co.strangeskies.observable.HotObservable;
+import uk.co.strangeskies.observable.Observable;
 
-public abstract class ObservableSetDecorator<S extends ObservableSet<S, E>, E>
-    extends HotObservable<S> implements SetDecorator<E>, ObservableSet<S, E> {
-  static class ObservableSetDecoratorImpl<C extends Set<E>, E>
-      extends ObservableSetDecorator<ObservableSetDecoratorImpl<C, E>, E> {
-    private Function<? super C, ? extends C> copy;
-
-    ObservableSetDecoratorImpl(C set, Function<? super C, ? extends C> copy) {
-      super(set);
-      this.copy = copy;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public ObservableSetDecoratorImpl<C, E> copy() {
-      return new ObservableSetDecoratorImpl<>(copy.apply((C) getComponent()), copy);
-    }
-  }
-
+public class ObservableSetDecorator<E> implements SetDecorator<E>, ObservableSet<E> {
   class ChangeImpl implements Change<E> {
     Set<E> adding = new HashSet<>();
     Set<E> removing = new HashSet<>();
@@ -80,6 +63,7 @@ public abstract class ObservableSetDecorator<S extends ObservableSet<S, E>, E>
 
   private final Set<E> component;
 
+  private final HotObservable<ObservableSet<E>> invalidationObservable = new HotObservable<>();
   private final HotObservable<Change<E>> changeObservable = new HotObservable<>();
 
   private int firingDepth = 0;
@@ -88,7 +72,7 @@ public abstract class ObservableSetDecorator<S extends ObservableSet<S, E>, E>
   private int changeDepth = 0;
   private ChangeImpl change;
 
-  protected ObservableSetDecorator(Set<E> component) {
+  public ObservableSetDecorator(Set<E> component) {
     this.component = component;
   }
 
@@ -140,7 +124,12 @@ public abstract class ObservableSetDecorator<S extends ObservableSet<S, E>, E>
   }
 
   protected void fireEvent() {
-    next(getThis());
+    invalidationObservable.next(this);
+  }
+
+  @Override
+  public Observable<? extends ObservableCollection<E, Change<E>>> invalidations() {
+    return invalidationObservable;
   }
 
   @Override
@@ -252,7 +241,7 @@ public abstract class ObservableSetDecorator<S extends ObservableSet<S, E>, E>
   }
 
   @Override
-  public HotObservable<Change<E>> changes() {
+  public Observable<Change<E>> changes() {
     return changeObservable;
   }
 

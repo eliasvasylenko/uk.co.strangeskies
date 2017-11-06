@@ -32,7 +32,7 @@
  */
 package uk.co.strangeskies.mathematics.logic;
 
-import uk.co.strangeskies.mathematics.expression.Expression;
+import uk.co.strangeskies.expression.Expression;
 
 public class ExpressionCondition implements Condition {
 	private final Expression<? extends /**/BooleanValue> expression;

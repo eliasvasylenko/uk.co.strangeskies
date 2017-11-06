@@ -34,8 +34,8 @@ package uk.co.strangeskies.mathematics.geometry.shape.impl;
 
 import java.util.List;
 
-import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
-import uk.co.strangeskies.mathematics.expression.DependentExpression;
+import uk.co.strangeskies.expression.CopyDecouplingExpression;
+import uk.co.strangeskies.expression.DependentExpression;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.geometry.shape.ComplexPolygon;
 import uk.co.strangeskies.mathematics.geometry.shape.Shape;

@@ -36,56 +36,36 @@ import java.util.Collections;
 import java.util.Set;
 
 import uk.co.strangeskies.collection.SetDecorator;
-import uk.co.strangeskies.observable.Disposable;
 import uk.co.strangeskies.observable.Observable;
-import uk.co.strangeskies.observable.Observer;
 
-public abstract class UnmodifiableObservableSet<S extends ObservableSet<S, E>, E>
-    implements SetDecorator<E>, ObservableSet<S, E> {
-  static class UnmodifiableObservableSetImpl<E>
-      extends UnmodifiableObservableSet<UnmodifiableObservableSetImpl<E>, E> {
-    UnmodifiableObservableSetImpl(ObservableSet<?, ? extends E> component) {
-      super(component);
-    }
+public class UnmodifiableObservableSet<E> implements SetDecorator<E>, ObservableSet<E> {
+  private final ObservableSet<? extends E> component;
+  private final Set<E> unmodifiableComponent;
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public UnmodifiableObservableSetImpl<E> copy() {
-      return new UnmodifiableObservableSetImpl<>(((ObservableSet<?, E>) getComponent()).copy());
-    }
-  }
-
-  private final Set<E> component;
-
-  private final Observable<S> observable;
-  private final Observable<Change<E>> changes;
-
-  @SuppressWarnings("unchecked")
-  protected UnmodifiableObservableSet(ObservableSet<?, ? extends E> component) {
-    this.component = Collections.unmodifiableSet(component);
-
-    observable = component.weakReference(this).map(m -> m.owner().getThis());
-    changes = component.changes().weakReference(this).map(m -> (Change<E>) m.message());
+  public UnmodifiableObservableSet(ObservableSet<? extends E> component) {
+    this.component = component;
+    this.unmodifiableComponent = Collections.unmodifiableSet(component);
   }
 
   @Override
   public Set<E> getComponent() {
-    return component;
+    return unmodifiableComponent;
   }
 
   @Override
-  public Disposable observe(Observer<? super S> observer) {
-    return observable.observe(observer);
+  public Observable<? extends ObservableCollection<E, Change<E>>> invalidations() {
+    return component.invalidations().weakReference(this).map(m -> m.owner());
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public Observable<Change<E>> changes() {
-    return changes;
+    return component.changes().weakReference(this).map(m -> (Change<E>) m.message());
   }
 
   @Override
   public Set<E> silent() {
-    return component;
+    return unmodifiableComponent;
   }
 
   @Override

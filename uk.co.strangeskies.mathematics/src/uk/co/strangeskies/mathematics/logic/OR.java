@@ -32,8 +32,8 @@
  */
 package uk.co.strangeskies.mathematics.logic;
 
-import uk.co.strangeskies.mathematics.expression.BinaryExpression;
-import uk.co.strangeskies.mathematics.expression.Expression;
+import uk.co.strangeskies.expression.BinaryExpression;
+import uk.co.strangeskies.expression.Expression;
 
 public class OR<O extends ORable<?, ? super T>, T> extends BinaryExpression<ORable<? extends O, ? super T>, T, O> {
 	public OR(Expression<? extends ORable<? extends O, ? super T>> firstOperand, Expression<? extends T> secondOperand) {

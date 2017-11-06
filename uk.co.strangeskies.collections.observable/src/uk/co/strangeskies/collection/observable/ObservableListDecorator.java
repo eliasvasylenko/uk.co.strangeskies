@@ -35,29 +35,12 @@ package uk.co.strangeskies.collection.observable;
 import java.util.AbstractList;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Function;
 
 import uk.co.strangeskies.collection.ListDecorator;
 import uk.co.strangeskies.observable.HotObservable;
+import uk.co.strangeskies.observable.Observable;
 
-public abstract class ObservableListDecorator<S extends ObservableList<S, E>, E>
-    extends HotObservable<S> implements ListDecorator<E>, ObservableList<S, E> {
-  static class ObservableListDecoratorImpl<C extends List<E>, E>
-      extends ObservableListDecorator<ObservableListDecoratorImpl<C, E>, E> {
-    private Function<? super C, ? extends C> copy;
-
-    ObservableListDecoratorImpl(C list, Function<? super C, ? extends C> copy) {
-      super(list);
-      this.copy = copy;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public ObservableListDecoratorImpl<C, E> copy() {
-      return new ObservableListDecoratorImpl<>(copy.apply((C) getComponent()), copy);
-    }
-  }
-
+public class ObservableListDecorator<E> implements ListDecorator<E>, ObservableList<E> {
   final class ChangeImpl implements Change<E> {
     @Override
     public int[] removedIndices() {
@@ -92,6 +75,7 @@ public abstract class ObservableListDecorator<S extends ObservableList<S, E>, E>
 
   private final List<E> component;
 
+  private final HotObservable<ObservableList<E>> invalidationObservable = new HotObservable<>();
   private final HotObservable<Change<E>> changeObservable = new HotObservable<>();
 
   private boolean firing;
@@ -138,7 +122,12 @@ public abstract class ObservableListDecorator<S extends ObservableList<S, E>, E>
   }
 
   protected void fireEvent() {
-    next(getThis());
+    invalidationObservable.next(this);
+  }
+
+  @Override
+  public Observable<? extends ObservableCollection<E, Change<E>>> invalidations() {
+    return invalidationObservable;
   }
 
   @Override

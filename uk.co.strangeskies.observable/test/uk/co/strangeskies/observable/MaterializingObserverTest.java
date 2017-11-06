@@ -35,15 +35,15 @@ package uk.co.strangeskies.observable;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import mockit.Mocked;
+import mockit.Injectable;
 
 @Ignore
 @SuppressWarnings("javadoc")
 public class MaterializingObserverTest {
-  @Mocked
+  @Injectable
   Observation upstreamObservation;
 
-  @Mocked
+  @Injectable
   Observer<String> downstreamObserver;
 
   @Test

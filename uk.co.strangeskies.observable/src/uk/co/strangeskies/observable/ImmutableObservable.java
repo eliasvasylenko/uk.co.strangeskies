@@ -32,18 +32,28 @@
  */
 package uk.co.strangeskies.observable;
 
-public interface ImmutableObservable<T> extends Observable<T> {
-  @SuppressWarnings("unchecked")
-  static <T> Observable<T> instance() {
-    return (Observable<T>) INSTANCE;
-  }
-
-  static Observable<?> INSTANCE = new ImmutableObservable<Object>() {};
-
+public class ImmutableObservable<T> implements Observable<T> {
   @Override
-  default Disposable observe(Observer<? super T> observer) {
-    UnboundedObservation observation = () -> {};
-    observer.onObserve(observation);
+  public Disposable observe(Observer<? super T> observer) {
+    Observation observation = new Observation() {
+      RequestCount requests = new RequestCount();
+
+      @Override
+      public void cancel() {}
+
+      @Override
+      public void request(long count) {
+        requests.request(count);
+      }
+
+      @Override
+      public long getPendingRequestCount() {
+        return requests.getCount();
+      }
+    };
+
+    new SafeObserver<>(observer).onObserve(observation);
+
     return observation;
   }
 }

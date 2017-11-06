@@ -86,7 +86,8 @@ runreq.base=\
 	org.jmockit:jmockit,\
 	osgi.enroute.junit.wrapper,\
 	osgi.enroute.hamcrest.wrapper,\
-	org.hamcrest:java-hamcrest
+	org.hamcrest:java-hamcrest,\
+	org.assertj.core
 
 ## Fix warnings
 -fixupmessages.res: "Bndtools: Found source folder 'res' that is not on bnd's source path 'src'"

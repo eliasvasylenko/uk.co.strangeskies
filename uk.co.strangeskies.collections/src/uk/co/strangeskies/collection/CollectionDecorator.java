@@ -36,70 +36,70 @@ import java.util.Collection;
 import java.util.Iterator;
 
 public interface CollectionDecorator<T extends Collection<E>, E> extends Collection<E> {
-	Collection<E> getComponent();
+  Collection<E> getComponent();
 
-	@Override
-	default boolean add(E e) {
-		return getComponent().add(e);
-	}
+  @Override
+  default boolean add(E e) {
+    return getComponent().add(e);
+  }
 
-	@Override
-	default boolean addAll(Collection<? extends E> c) {
-		return getComponent().addAll(c);
-	}
+  @Override
+  default boolean addAll(Collection<? extends E> c) {
+    return getComponent().addAll(c);
+  }
 
-	@Override
-	default void clear() {
-		getComponent().clear();
-	}
+  @Override
+  default void clear() {
+    getComponent().clear();
+  }
 
-	@Override
-	default boolean contains(Object o) {
-		return getComponent().contains(o);
-	}
+  @Override
+  default boolean contains(Object o) {
+    return getComponent().contains(o);
+  }
 
-	@Override
-	default boolean containsAll(Collection<?> c) {
-		return getComponent().containsAll(c);
-	}
+  @Override
+  default boolean containsAll(Collection<?> c) {
+    return getComponent().containsAll(c);
+  }
 
-	@Override
-	default boolean isEmpty() {
-		return getComponent().isEmpty();
-	}
+  @Override
+  default boolean isEmpty() {
+    return getComponent().isEmpty();
+  }
 
-	@Override
-	default Iterator<E> iterator() {
-		return getComponent().iterator();
-	}
+  @Override
+  default Iterator<E> iterator() {
+    return getComponent().iterator();
+  }
 
-	@Override
-	default boolean remove(Object o) {
-		return getComponent().remove(o);
-	}
+  @Override
+  default boolean remove(Object o) {
+    return getComponent().remove(o);
+  }
 
-	@Override
-	default boolean removeAll(Collection<?> c) {
-		return getComponent().removeAll(c);
-	}
+  @Override
+  default boolean removeAll(Collection<?> c) {
+    return getComponent().removeAll(c);
+  }
 
-	@Override
-	default boolean retainAll(Collection<?> c) {
-		return getComponent().retainAll(c);
-	}
+  @Override
+  default boolean retainAll(Collection<?> c) {
+    return getComponent().retainAll(c);
+  }
 
-	@Override
-	default int size() {
-		return getComponent().size();
-	}
+  @Override
+  default int size() {
+    return getComponent().size();
+  }
 
-	@Override
-	default Object[] toArray() {
-		return getComponent().toArray();
-	}
+  @Override
+  default Object[] toArray() {
+    return getComponent().toArray();
+  }
 
-	@Override
-	default <A> A[] toArray(A[] a) {
-		return getComponent().toArray(a);
-	}
+  @Override
+  default <A> A[] toArray(A[] a) {
+    return getComponent().toArray(a);
+  }
 }

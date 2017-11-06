@@ -43,9 +43,9 @@ import java.util.function.Supplier;
 
 import uk.co.strangeskies.collection.ListTransformationView;
 import uk.co.strangeskies.collection.MergeIndicesListView;
+import uk.co.strangeskies.expression.CopyDecouplingExpression;
+import uk.co.strangeskies.expression.DependentExpression;
 import uk.co.strangeskies.function.TriFunction;
-import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
-import uk.co.strangeskies.mathematics.expression.DependentExpression;
 import uk.co.strangeskies.mathematics.geometry.DimensionalityException;
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix;
 import uk.co.strangeskies.mathematics.geometry.matrix.ReOrderedMatrix;

@@ -32,8 +32,8 @@
  */
 package uk.co.strangeskies.mathematics.geometry;
 
-import uk.co.strangeskies.mathematics.expression.BinaryExpression;
-import uk.co.strangeskies.mathematics.expression.Expression;
+import uk.co.strangeskies.expression.BinaryExpression;
+import uk.co.strangeskies.expression.Expression;
 import uk.co.strangeskies.mathematics.values.Value;
 
 public class PreRotation2<O> extends BinaryExpression<NonCommutativelyRotatable2<? extends O>, Value<?>, O> {

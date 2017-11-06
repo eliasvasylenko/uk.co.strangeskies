@@ -36,56 +36,36 @@ import java.util.Collections;
 import java.util.List;
 
 import uk.co.strangeskies.collection.ListDecorator;
-import uk.co.strangeskies.observable.Disposable;
 import uk.co.strangeskies.observable.Observable;
-import uk.co.strangeskies.observable.Observer;
 
-public abstract class UnmodifiableObservableList<S extends ObservableList<S, E>, E>
-    implements ListDecorator<E>, ObservableList<S, E> {
-  static class UnmodifiableObservableListImpl<E>
-      extends UnmodifiableObservableList<UnmodifiableObservableListImpl<E>, E> {
-    UnmodifiableObservableListImpl(ObservableList<?, ? extends E> component) {
-      super(component);
-    }
+public class UnmodifiableObservableList<E> implements ListDecorator<E>, ObservableList<E> {
+  private final ObservableList<? extends E> component;
+  private final List<E> unmodifiableComponent;
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public UnmodifiableObservableListImpl<E> copy() {
-      return new UnmodifiableObservableListImpl<>(((ObservableList<?, E>) getComponent()).copy());
-    }
-  }
-
-  private final List<E> component;
-
-  private final Observable<S> observable;
-  private final Observable<Change<E>> changes;
-
-  @SuppressWarnings("unchecked")
-  protected UnmodifiableObservableList(ObservableList<?, ? extends E> component) {
-    this.component = Collections.unmodifiableList(component);
-
-    observable = component.weakReference(this).map(m -> m.owner().getThis());
-    changes = component.changes().weakReference(this).map(m -> (Change<E>) m.message());
+  public UnmodifiableObservableList(ObservableList<? extends E> component) {
+    this.component = component;
+    this.unmodifiableComponent = Collections.unmodifiableList(component);
   }
 
   @Override
   public List<E> getComponent() {
-    return component;
+    return unmodifiableComponent;
   }
 
   @Override
-  public Disposable observe(Observer<? super S> observer) {
-    return observable.observe(observer);
+  public Observable<? extends ObservableCollection<E, Change<E>>> invalidations() {
+    return component.invalidations().weakReference(this).map(m -> m.owner());
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public Observable<Change<E>> changes() {
-    return changes;
+    return component.changes().weakReference(this).map(m -> (Change<E>) m.message());
   }
 
   @Override
   public List<E> silent() {
-    return component;
+    return unmodifiableComponent;
   }
 
   @Override

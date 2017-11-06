@@ -43,7 +43,7 @@ import org.junit.Test;
 
 import mockit.Expectations;
 import mockit.FullVerificationsInOrder;
-import mockit.Mocked;
+import mockit.Injectable;
 import mockit.Verifications;
 import mockit.VerificationsInOrder;
 
@@ -53,10 +53,10 @@ public class SafeObserverTest {
 
   interface MockObservation extends Observation {}
 
-  @Mocked
+  @Injectable
   MockObservation upstreamObservation;
 
-  @Mocked
+  @Injectable
   MockObserver<String> downstreamObserver;
 
   @Test

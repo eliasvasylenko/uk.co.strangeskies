@@ -32,8 +32,8 @@
  */
 package uk.co.strangeskies.mathematics.logic;
 
-import uk.co.strangeskies.mathematics.expression.BinaryExpression;
-import uk.co.strangeskies.mathematics.expression.Expression;
+import uk.co.strangeskies.expression.BinaryExpression;
+import uk.co.strangeskies.expression.Expression;
 
 public class NOR<O extends NORable<?, ? super T>, T> extends BinaryExpression<NORable<? extends O, ? super T>, T, O> {
 	public NOR(Expression<? extends NORable<? extends O, ? super T>> firstOperand,

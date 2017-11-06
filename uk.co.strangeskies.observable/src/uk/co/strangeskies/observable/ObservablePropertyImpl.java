@@ -35,7 +35,6 @@ package uk.co.strangeskies.observable;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Objects;
-import java.util.function.BiPredicate;
 
 /**
  * A simple implementation of {@link ObservableProperty} which maintains a list
@@ -54,64 +53,68 @@ public class ObservablePropertyImpl<T> implements ObservableProperty<T> {
   private T value;
   private Throwable failure;
 
-  private final BiPredicate<T, T> equality;
-
   public ObservablePropertyImpl(T initialValue) {
-    this(Objects::equals, initialValue);
-  }
-
-  public ObservablePropertyImpl(BiPredicate<T, T> equality, T initialValue) {
     this.backingObservable = new HotObservable<>();
-    this.equality = equality;
     this.value = requireNonNull(initialValue);
   }
 
   public ObservablePropertyImpl(Throwable initialProblem) {
-    this(Objects::equals, initialProblem);
-  }
-
-  public ObservablePropertyImpl(BiPredicate<T, T> equality, Throwable initialProblem) {
     this.backingObservable = new HotObservable<>();
-    this.equality = equality;
     this.failure = requireNonNull(initialProblem);
   }
 
   @Override
   public Observable<Change<T>> changes() {
-    return observer -> materialize().retrying(backingObservable.materialize()).observe(
-        new PassthroughObserver<ObservableValue<T>, Change<T>>(observer) {
+    return observer -> backingObservable.materialize().repeating().observe(
+        new PassthroughObserver<Observable<T>, Change<T>>(observer) {
           private ObservableValue<T> previousValue;
 
           @Override
-          public void onNext(ObservableValue<T> message) {
+          public void onObserve(Observation observation) {
+            this.previousValue = currentState();
+            super.onObserve(observation);
+          }
+
+          @Override
+          public void onNext(Observable<T> message) {
             ObservableValue<T> previousValue = this.previousValue;
-            this.previousValue = message;
+            ObservableValue<T> nextValue = message.toValue();
 
-            if (previousValue != null) {
-              getDownstreamObserver().onNext(new Change<T>() {
-                @Override
-                public ObservableValue<T> previousValue() {
-                  return previousValue;
-                }
+            this.previousValue = nextValue;
 
-                @Override
-                public ObservableValue<T> newValue() {
-                  return message;
-                }
-              });
-            }
+            getDownstreamObserver().onNext(new Change<T>() {
+              @Override
+              public ObservableValue<T> previousValue() {
+                return previousValue;
+              }
+
+              @Override
+              public ObservableValue<T> newValue() {
+                return nextValue;
+              }
+            });
           }
         });
   }
 
+  public ObservableValue<T> currentState() {
+    if (value != null) {
+      return Observable.value(value);
+    } else {
+      return Observable.failingValue(failure);
+    }
+  }
+
   @Override
-  public Disposable observe(Observer<? super T> observer) {
-    Disposable disposable = backingObservable.observe(observer);
+  public synchronized Disposable observe(Observer<? super T> observer) {
+    SafeObserver<? super T> safeObserver = new SafeObserver<>(observer);
+
+    Disposable disposable = backingObservable.observe(safeObserver);
 
     if (value != null) {
-      observer.onNext(value);
+      safeObserver.onNext(value);
     } else {
-      observer.onFail(failure);
+      safeObserver.onFail(failure);
     }
 
     return disposable;
@@ -119,7 +122,7 @@ public class ObservablePropertyImpl<T> implements ObservableProperty<T> {
 
   @Override
   public synchronized T set(T value) {
-    if (failure == null && equality.test(this.value, value))
+    if (failure == null && Objects.equals(this.value, value))
       return value;
 
     backingObservable.next(value);
@@ -142,7 +145,7 @@ public class ObservablePropertyImpl<T> implements ObservableProperty<T> {
   }
 
   @Override
-  public T get() {
+  public synchronized T get() {
     if (value == null)
       throw new MissingValueException(this, failure);
     return value;

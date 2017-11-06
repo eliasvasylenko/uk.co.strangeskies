@@ -52,248 +52,250 @@ import javafx.util.Pair;
  *          the controller type
  */
 public class FxmlLoadBuilder<C> {
-	private final FXMLLoader loader;
+  private final FXMLLoader loader;
 
-	private C controller;
-	private Class<? extends C> controllerClass;
-	private Node root;
-	private URL resource;
-	private String resourceName;
+  private C controller;
+  private Class<? extends C> controllerClass;
+  private Node root;
+  private URL resource;
+  private String resourceName;
 
-	/**
-	 * @param loader
-	 *          The FXML loader to use
-	 */
-	protected FxmlLoadBuilder(FXMLLoader loader) {
-		this.loader = loader;
-	}
+  /**
+   * @param loader
+   *          The FXML loader to use
+   */
+  protected FxmlLoadBuilder(FXMLLoader loader) {
+    this.loader = loader;
+  }
 
-	/**
-	 * @param loader
-	 *          the {@link FXMLLoader} to back the builder
-	 * @return an {@link FxmlLoadBuilder} over the given backing loader
-	 */
-	public static FxmlLoadBuilder<Object> buildWith(FXMLLoader loader) {
-		return new FxmlLoadBuilder<>(loader);
-	}
+  /**
+   * @param loader
+   *          the {@link FXMLLoader} to back the builder
+   * @return an {@link FxmlLoadBuilder} over the given backing loader
+   */
+  public static FxmlLoadBuilder<Object> buildWith(FXMLLoader loader) {
+    return new FxmlLoadBuilder<>(loader);
+  }
 
-	/**
-	 * @return an {@link FxmlLoadBuilder} over the default backing loader
-	 */
-	public static FxmlLoadBuilder<Object> build() {
-		return buildWith(new FXMLLoader());
-	}
+  /**
+   * @return an {@link FxmlLoadBuilder} over the default backing loader
+   */
+  public static FxmlLoadBuilder<Object> build() {
+    return buildWith(new FXMLLoader());
+  }
 
-	/**
-	 * Configure the builder to load directly into the given controller instance.
-	 * 
-	 * <p>
-	 * Unless an {@link #resource(URL) exact resource} is given, the resource
-	 * location will be derived according to
-	 * {@link FxUtilities#getResource(Class)}, or
-	 * {@link FxUtilities#getResource(Class, String)} if a
-	 * {@link #resource(String) resource name} is specified.
-	 * 
-	 * @param <D>
-	 *          the type of the controller object
-	 * @param controller
-	 *          the controller object to load into
-	 * @return the receiving instance
-	 */
-	@SuppressWarnings("unchecked")
-	public <D> FxmlLoadBuilder<D> controller(D controller) {
-		this.controller = (C) controller;
-		controllerClass = (Class<? extends C>) controller.getClass();
+  /**
+   * Configure the builder to load directly into the given controller instance.
+   * 
+   * <p>
+   * Unless an {@link #resource(URL) exact resource} is given, the resource
+   * location will be derived according to {@link FxUtilities#getResource(Class)},
+   * or {@link FxUtilities#getResource(Class, String)} if a
+   * {@link #resource(String) resource name} is specified.
+   * 
+   * @param <D>
+   *          the type of the controller object
+   * @param controller
+   *          the controller object to load into
+   * @return the receiving instance
+   */
+  @SuppressWarnings("unchecked")
+  public <D> FxmlLoadBuilder<D> controller(D controller) {
+    this.controller = (C) controller;
+    controllerClass = (Class<? extends C>) controller.getClass();
 
-		return (FxmlLoadBuilder<D>) this;
-	}
+    return (FxmlLoadBuilder<D>) this;
+  }
 
-	/**
-	 * Configure the builder to load directly into the given controller instance.
-	 * 
-	 * <p>
-	 * Unless an {@link #resource(URL) exact resource} is given, the resource
-	 * location will be derived according to
-	 * {@link FxUtilities#getResource(Class)}, or
-	 * {@link FxUtilities#getResource(Class, String)} if a
-	 * {@link #resource(String) resource name} is specified.
-	 * 
-	 * @param <D>
-	 *          the type of the controller object
-	 * @param controllerClass
-	 *          the controller class to load into
-	 * @param controller
-	 *          the controller object to load into
-	 * @return the receiving instance
-	 */
-	@SuppressWarnings("unchecked")
-	public <D> FxmlLoadBuilder<D> controller(Class<D> controllerClass, D controller) {
-		this.controller = (C) controller;
-		this.controllerClass = (Class<? extends C>) controllerClass;
+  /**
+   * Configure the builder to load directly into the given controller instance.
+   * 
+   * <p>
+   * Unless an {@link #resource(URL) exact resource} is given, the resource
+   * location will be derived according to {@link FxUtilities#getResource(Class)},
+   * or {@link FxUtilities#getResource(Class, String)} if a
+   * {@link #resource(String) resource name} is specified.
+   * 
+   * @param <D>
+   *          the type of the controller object
+   * @param controllerClass
+   *          the controller class to load into
+   * @param controller
+   *          the controller object to load into
+   * @return the receiving instance
+   */
+  @SuppressWarnings("unchecked")
+  public <D> FxmlLoadBuilder<D> controller(Class<D> controllerClass, D controller) {
+    this.controller = (C) controller;
+    this.controllerClass = (Class<? extends C>) controllerClass;
 
-		return (FxmlLoadBuilder<D>) this;
-	}
+    return (FxmlLoadBuilder<D>) this;
+  }
 
-	/**
-	 * Configure the builder to load into a controller of the given class via
-	 * {@link FXMLLoader#setControllerFactory(javafx.util.Callback)}.
-	 * 
-	 * <p>
-	 * Unless an {@link #resource(URL) exact resource} is given, the resource
-	 * location will be derived according to
-	 * {@link FxUtilities#getResource(Class)}, or
-	 * {@link FxUtilities#getResource(Class, String)} if a
-	 * {@link #resource(String) resource name} is specified.
-	 * 
-	 * @param <D>
-	 *          the type of the controller class
-	 * @param controllerClass
-	 *          the controller class to load into
-	 * @return the receiving instance
-	 */
-	@SuppressWarnings("unchecked")
-	public <D> FxmlLoadBuilder<D> controller(Class<D> controllerClass) {
-		this.controllerClass = (Class<? extends C>) controllerClass;
-		controller = null;
+  /**
+   * Configure the builder to load into a controller of the given class via
+   * {@link FXMLLoader#setControllerFactory(javafx.util.Callback)}.
+   * 
+   * <p>
+   * Unless an {@link #resource(URL) exact resource} is given, the resource
+   * location will be derived according to {@link FxUtilities#getResource(Class)},
+   * or {@link FxUtilities#getResource(Class, String)} if a
+   * {@link #resource(String) resource name} is specified.
+   * 
+   * @param <D>
+   *          the type of the controller class
+   * @param controllerClass
+   *          the controller class to load into
+   * @return the receiving instance
+   */
+  @SuppressWarnings("unchecked")
+  public <D> FxmlLoadBuilder<D> controller(Class<D> controllerClass) {
+    this.controllerClass = (Class<? extends C>) controllerClass;
+    controller = null;
 
-		return (FxmlLoadBuilder<D>) this;
-	}
+    return (FxmlLoadBuilder<D>) this;
+  }
 
-	/**
-	 * The FXML resource name, such that the resource be located according to
-	 * {@link FxUtilities#getResource(Class, String)}.
-	 * 
-	 * @param resourceName
-	 *          the name of the FXML resource
-	 * @return the receiving instance
-	 */
-	public FxmlLoadBuilder<C> resource(String resourceName) {
-		this.resourceName = resourceName;
-		resource = null;
+  /**
+   * The FXML resource name, such that the resource be located according to
+   * {@link FxUtilities#getResource(Class, String)}.
+   * 
+   * @param resourceName
+   *          the name of the FXML resource
+   * @return the receiving instance
+   */
+  public FxmlLoadBuilder<C> resource(String resourceName) {
+    this.resourceName = resourceName;
+    resource = null;
 
-		return this;
-	}
+    return this;
+  }
 
-	/**
-	 * @param resource
-	 *          the exact FXML resource
-	 * @return the receiving instance
-	 */
-	public FxmlLoadBuilder<C> resource(URL resource) {
-		this.resource = resource;
-		this.resourceName = null;
+  /**
+   * @param resource
+   *          the exact FXML resource
+   * @return the receiving instance
+   */
+  public FxmlLoadBuilder<C> resource(URL resource) {
+    this.resource = resource;
+    this.resourceName = null;
 
-		return this;
-	}
+    return this;
+  }
 
-	/**
-	 * @param root
-	 *          the root node to load the FXML into
-	 * @return the receiving instance
-	 */
-	public FxmlLoadBuilder<C> root(Node root) {
-		this.root = root;
+  /**
+   * @param root
+   *          the root node to load the FXML into
+   * @return the receiving instance
+   */
+  public FxmlLoadBuilder<C> root(Node root) {
+    this.root = root;
 
-		return this;
-	}
+    return this;
+  }
 
-	/**
-	 * @param classLoader
-	 *          the new class loader for the {@link FXMLLoader}.
-	 * @return the receiving instance
-	 */
-	public FxmlLoadBuilder<C> classLoader(ClassLoader classLoader) {
-		loader.setClassLoader(classLoader);
+  /**
+   * @param classLoader
+   *          the new class loader for the {@link FXMLLoader}.
+   * @return the receiving instance
+   */
+  public FxmlLoadBuilder<C> classLoader(ClassLoader classLoader) {
+    loader.setClassLoader(classLoader);
 
-		return this;
-	}
+    return this;
+  }
 
-	/**
-	 * @param <D>
-	 *          the type of the controller/root object
-	 * @param object
-	 *          the root node <em>and</em> the controller to load the FXML into
-	 * @return the receiving instance
-	 */
-	public <D extends Node> FxmlLoadBuilder<D> object(D object) {
-		return controller(object).root(object);
-	}
+  /**
+   * @param <D>
+   *          the type of the controller/root object
+   * @param object
+   *          the root node <em>and</em> the controller to load the FXML into
+   * @return the receiving instance
+   */
+  public <D extends Node> FxmlLoadBuilder<D> object(D object) {
+    return controller(object).root(object);
+  }
 
-	/**
-	 * {@link #load() Load} the FXML item and return the root node.
-	 * 
-	 * @param <T>
-	 *          the expected type of the root node
-	 * 
-	 * @return the resulting root node
-	 */
-	@SuppressWarnings("unchecked")
-	public <T> T loadRoot() {
-		load();
+  /**
+   * {@link #load() Load} the FXML item and return the root node.
+   * 
+   * @param <T>
+   *          the expected type of the root node
+   * 
+   * @return the resulting root node
+   */
+  @SuppressWarnings("unchecked")
+  public <T> T loadRoot() {
+    load();
 
-		return (T) root;
-	}
+    return (T) root;
+  }
 
-	/**
-	 * {@link #load() Load} the FXML item and return the controller.
-	 * 
-	 * @return the resulting controller
-	 */
-	public C loadController() {
-		load();
+  /**
+   * {@link #load() Load} the FXML item and return the controller.
+   * 
+   * @return the resulting controller
+   */
+  public C loadController() {
+    load();
 
-		return controller;
-	}
+    return controller;
+  }
 
-	/**
-	 * Load the TODO
-	 * 
-	 * @return a pair containing the controller object and the root node object
-	 */
-	public Pair<C, Node> load() {
-		// set controller
-		if (controller != null) {
-			loader.setController(controller);
-		} else if (controllerClass != null) {
-			Callback<Class<?>, Object> originalFactory = loader.getControllerFactory();
+  /**
+   * Load the TODO
+   * 
+   * @return a pair containing the controller object and the root node object
+   */
+  public Pair<C, Node> load() {
+    // set controller
+    if (controller != null) {
+      loader.setController(controller);
+    } else if (controllerClass != null) {
+      Callback<Class<?>, Object> originalFactory = loader.getControllerFactory();
 
-			loader.setControllerFactory(c -> {
-				if (!c.isAssignableFrom(controllerClass)) {
-					throw new ClassCastException();
-				} else {
-					return originalFactory.call(c);
-				}
-			});
-		}
+      loader.setControllerFactory(c -> {
+        if (!c.isAssignableFrom(controllerClass)) {
+          throw new ClassCastException();
+        } else {
+          return originalFactory.call(c);
+        }
+      });
+    }
 
-		// set root
-		if (root != null) {
-			loader.setRoot(root);
-		}
+    // set root
+    if (root != null) {
+      loader.setRoot(root);
+    }
 
-		// set location
-		if (resource == null) {
-			if (resourceName != null) {
-				resource = getResource(controllerClass, resourceName);
-			} else {
-				resource = getResource(controllerClass);
-			}
-		}
-		loader.setLocation(resource);
+    try {
+      // set location
+      if (resource == null) {
+        if (resourceName != null) {
+          resource = getResource(controllerClass, resourceName);
+          if (resource == null)
+            throw new IllegalStateException(
+                "Resource not found for class " + controllerClass + " named " + resourceName);
+        } else {
+          resource = getResource(controllerClass);
+          if (resource == null)
+            throw new IllegalStateException("Resource not found for class " + controllerClass);
+        }
+      }
+      loader.setLocation(resource);
 
-		// load
-		try {
-			loader.load();
-			controller = loader.getController();
-			root = loader.getRoot();
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		} finally {
-			loader.setRoot(null);
-			loader.setController(null);
-			loader.setLocation(null);
-		}
+      // load
+      loader.load();
+      controller = loader.getController();
+      root = loader.getRoot();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    } finally {
+      loader.setRoot(null);
+      loader.setController(null);
+      loader.setLocation(null);
+    }
 
-		return new Pair<>(controller, root);
-	}
+    return new Pair<>(controller, root);
+  }
 }

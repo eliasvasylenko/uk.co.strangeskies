@@ -38,9 +38,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import uk.co.strangeskies.mathematics.expression.DependentExpression;
-import uk.co.strangeskies.mathematics.expression.Expression;
-import uk.co.strangeskies.mathematics.expression.collection.ExpressionSet;
+import uk.co.strangeskies.expression.DependentExpression;
+import uk.co.strangeskies.expression.Expression;
+import uk.co.strangeskies.expression.collection.ExpressionSet;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector2;
 import uk.co.strangeskies.mathematics.geometry.shape.ClosedPolyline2;
 import uk.co.strangeskies.mathematics.geometry.shape.ConvexPolygon;

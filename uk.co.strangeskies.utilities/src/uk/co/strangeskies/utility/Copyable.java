@@ -41,19 +41,19 @@ package uk.co.strangeskies.utility;
  *          self bounding on the type of the object, so that copies can be
  *          correctly typed
  */
-public interface Copyable<S extends Copyable<S>> {
-	/**
-	 * @return a copy of the receiving instance
-	 */
-	S copy();
+public interface Copyable<S extends Copyable<S>> extends Self<S> {
+  /**
+   * @return a copy of the receiving instance
+   */
+  S copy();
 
-	/**
-	 * @param context
-	 *          an object graph {@link Isomorphism}
-	 * @return a deep copy of the receiving instance, consistent with the given
-	 *         {@link Isomorphism}
-	 */
-	default S deepCopy(Isomorphism context) {
-		return context.byIdentity().getDeepCopy(this);
-	}
+  /**
+   * @param context
+   *          an object graph {@link Isomorphism}
+   * @return a deep copy of the receiving instance, consistent with the given
+   *         {@link Isomorphism}
+   */
+  default S deepCopy(Isomorphism context) {
+    return context.byIdentity().getDeepCopy(this);
+  }
 }

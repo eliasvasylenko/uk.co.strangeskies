@@ -34,8 +34,8 @@ package uk.co.strangeskies.mathematics.geometry.shape.impl;
 
 import java.util.function.Supplier;
 
-import uk.co.strangeskies.mathematics.expression.CopyDecouplingExpression;
-import uk.co.strangeskies.mathematics.expression.DependentExpression;
+import uk.co.strangeskies.expression.CopyDecouplingExpression;
+import uk.co.strangeskies.expression.DependentExpression;
 import uk.co.strangeskies.mathematics.geometry.Bounds2;
 import uk.co.strangeskies.mathematics.geometry.matrix.Matrix.Order;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;

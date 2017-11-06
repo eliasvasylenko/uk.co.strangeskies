@@ -39,7 +39,6 @@ import java.util.Collection;
 import java.util.List;
 
 import uk.co.strangeskies.reflection.ReflectionProperties;
-import uk.co.strangeskies.reflection.codegen.block.Instruction;
 import uk.co.strangeskies.reflection.token.TypeToken;
 import uk.co.strangeskies.text.properties.PropertyConfiguration;
 import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;
@@ -47,51 +46,47 @@ import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;
 @SuppressWarnings("javadoc")
 @PropertyConfiguration(keyCase = KeyCase.LOWER, keySplitString = ".")
 public interface CodeGenerationProperties {
-	ReflectionProperties reflection();
+  ReflectionProperties reflection();
 
-	String invalidExpressionForStatement(Instruction expression);
+  String cannotInstantiateClassDefinition(
+      ClassDefinition<?, ?> classDefinition,
+      TypeToken<?> superType);
 
-	String cannotInstantiateClassDefinition(
-			ClassDefinition<?, ?> classDefinition,
-			TypeToken<?> superType);
+  String cannotOverrideMethod(Method overriddenMethod);
 
-	String cannotOverrideMethod(Method overriddenMethod);
+  String incompatibleReturnTypes(Type override, Method inherited);
 
-	String incompatibleReturnTypes(Type override, Method inherited);
+  String incompatibleParameterTypes(List<Type> parameterTypes, Method inherited);
 
-	String incompatibleOverride(MethodDefinition<?, ?> override);
+  String duplicateMethodDeclaration(MethodSignature<?> override);
 
-	String incompatibleParameterTypes(List<Type> parameterTypes, Method inherited);
+  String mustOverrideMethods(Collection<Method> classMethod);
 
-	String duplicateMethodDeclaration(MethodSignature<?> override);
+  String undefinedVariable(ParameterSignature<?> variable);
 
-	String mustOverrideMethods(Collection<Method> classMethod);
+  String cannotResolveEnclosingInstance(ClassDeclaration<?, ?> receiverClass);
 
-	String undefinedVariable(ParameterSignature<?> variable);
+  String cannotRedeclareVariable(ParameterSignature<?> variable);
 
-	String cannotResolveEnclosingInstance(ClassDeclaration<?, ?> receiverClass);
+  String incompleteStatementExecution();
 
-	String cannotRedeclareVariable(ParameterSignature<?> variable);
+  String incompleteExpressionEvaluation();
 
-	String incompleteStatementExecution();
+  String cannotFindMethodOn(Class<?> superClass, ErasedMethodSignature erasedMethodSignature);
 
-	String incompleteExpressionEvaluation();
+  String incompatibleReturnType(TypeToken<?> returnType, MethodDeclaration<?, ?> methodDeclaration);
 
-	String cannotFindMethodOn(Class<?> superClass, ErasedMethodSignature erasedMethodSignature);
+  String mustImplementMethod(MethodDeclaration<?, ?> method);
 
-	String incompatibleReturnType(TypeToken<?> returnType, MethodDeclaration<?, ?> methodDeclaration);
+  String classNameAlreadyRegistered(ClassSignature<?> classSignature);
 
-	String mustImplementMethod(MethodDeclaration<?, ?> method);
+  String staticMethodCannotBeDefault(MethodSignature<?> methodDeclaration);
 
-	String classNameAlreadyRegistered(ClassSignature<?> classSignature);
+  String cannotResolveTypeVariable(String typeVariableName, ParameterizedSignature<?> signature);
 
-	String staticMethodCannotBeDefault(MethodSignature<?> methodDeclaration);
+  String cannotExtendMultipleClassTypes(AnnotatedType first, AnnotatedType second);
 
-	String cannotResolveTypeVariable(String typeVariableName, ParameterizedSignature<?> signature);
+  String classOverridingNotSupported();
 
-	String cannotExtendMultipleClassTypes(AnnotatedType first, AnnotatedType second);
-
-	String classOverridingNotSupported();
-
-	String cannotOverrideExistingClass(String className);
+  String cannotOverrideExistingClass(String className);
 }

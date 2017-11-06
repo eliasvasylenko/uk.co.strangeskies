@@ -32,12 +32,12 @@
  */
 package uk.co.strangeskies.mathematics.operation;
 
-import uk.co.strangeskies.utility.Self;
+import uk.co.strangeskies.utility.Copyable;
 
-public interface Multipliable<S extends Multipliable<S, T>, T> extends Self<S> {
-	public S multiply(T value);
+public interface Multipliable<S extends Multipliable<S, T>, T> extends Copyable<S> {
+  public S multiply(T value);
 
-	public default S getMultiplied(T value) {
-		return copy().multiply(value);
-	}
+  public default S getMultiplied(T value) {
+    return copy().multiply(value);
+  }
 }

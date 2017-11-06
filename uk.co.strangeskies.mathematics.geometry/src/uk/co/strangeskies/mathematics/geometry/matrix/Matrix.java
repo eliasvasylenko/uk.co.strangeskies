@@ -40,8 +40,8 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import uk.co.strangeskies.collection.ListTransformationView;
+import uk.co.strangeskies.expression.SelfExpression;
 import uk.co.strangeskies.function.TriFunction;
-import uk.co.strangeskies.mathematics.expression.SelfExpression;
 import uk.co.strangeskies.mathematics.geometry.DimensionalityException;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector;
 import uk.co.strangeskies.mathematics.geometry.matrix.vector.Vector.Orientation;
