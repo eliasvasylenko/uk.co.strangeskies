@@ -47,10 +47,10 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import uk.co.strangeskies.property.IdentityProperty;
 import uk.co.strangeskies.reflection.AnnotatedParameterizedTypes.AnnotatedParameterizedTypeInternal;
 import uk.co.strangeskies.reflection.AnnotatedTypeVariables.AnnotatedTypeVariableInternal;
 import uk.co.strangeskies.reflection.AnnotatedWildcardTypes.AnnotatedWildcardTypeInternal;
-import uk.co.strangeskies.utility.IdentityProperty;
 import uk.co.strangeskies.utility.Isomorphism;
 
 /**

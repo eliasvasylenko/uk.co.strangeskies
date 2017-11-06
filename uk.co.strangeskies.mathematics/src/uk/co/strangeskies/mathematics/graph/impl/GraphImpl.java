@@ -60,8 +60,8 @@ import uk.co.strangeskies.mathematics.graph.GraphListeners.EdgeEvent;
 import uk.co.strangeskies.mathematics.graph.GraphListeners.EdgesEvent;
 import uk.co.strangeskies.mathematics.graph.GraphListeners.VertexEvent;
 import uk.co.strangeskies.mathematics.graph.GraphListeners.VerticesEvent;
+import uk.co.strangeskies.property.IdentityProperty;
 import uk.co.strangeskies.mathematics.graph.GraphTransformer;
-import uk.co.strangeskies.utility.IdentityProperty;
 
 class GraphImpl<V, E> implements Graph<V, E> {
 	private class VerticesImpl implements SetDecorator<V>, Vertices<V, E> {

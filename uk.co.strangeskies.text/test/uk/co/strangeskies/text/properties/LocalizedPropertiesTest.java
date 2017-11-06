@@ -39,7 +39,7 @@ import java.util.Locale;
 
 import org.junit.Test;
 
-import uk.co.strangeskies.utility.IdentityProperty;
+import uk.co.strangeskies.property.IdentityProperty;
 
 @SuppressWarnings("javadoc")
 public class LocalizedPropertiesTest {

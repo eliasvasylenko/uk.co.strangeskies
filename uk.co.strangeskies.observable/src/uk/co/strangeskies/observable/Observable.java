@@ -58,8 +58,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.utility.IdentityProperty;
-import uk.co.strangeskies.utility.Property;
+import uk.co.strangeskies.property.IdentityProperty;
+import uk.co.strangeskies.property.Property;
 
 /**
  * Simple interface for an observable object, with methods to add and remove

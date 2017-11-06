@@ -30,7 +30,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.utility;
+package uk.co.strangeskies.property;
 
 /**
  * A basic implementation of {@link Property} which simple stores it's value as

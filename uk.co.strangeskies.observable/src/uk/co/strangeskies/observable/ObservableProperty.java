@@ -32,7 +32,9 @@
  */
 package uk.co.strangeskies.observable;
 
-import uk.co.strangeskies.utility.Property;
+import java.util.Optional;
+
+import uk.co.strangeskies.property.Property;
 
 /**
  * A {@link Property property} which is observable as per
@@ -59,4 +61,9 @@ public interface ObservableProperty<T> extends ObservableValue<T>, Property<T> {
   }
 
   void setProblem(Throwable t);
+
+  @Override
+  default Optional<T> tryGet() {
+    return ObservableValue.super.tryGet();
+  }
 }
