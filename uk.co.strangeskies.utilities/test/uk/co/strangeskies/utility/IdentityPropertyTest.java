@@ -35,7 +35,7 @@ package uk.co.strangeskies.utility;
 import org.junit.Assert;
 import org.junit.Test;
 
-import uk.co.strangeskies.utility.IdentityProperty;
+import uk.co.strangeskies.property.IdentityProperty;
 
 /**
  * It is very difficult or impossible to test this class properly, as the

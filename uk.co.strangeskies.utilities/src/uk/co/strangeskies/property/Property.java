@@ -30,10 +30,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package uk.co.strangeskies.utility;
+package uk.co.strangeskies.property;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -44,7 +46,6 @@ import java.util.function.Supplier;
  * @param <T>
  *          The type of the property.
  */
-/* @I */
 public interface Property<T> {
   /**
    * Set the value of this property to the given value.
@@ -53,14 +54,57 @@ public interface Property<T> {
    *          The new value to set for this property.
    * @return The previous value of this property.
    */
-  T set(/* @Mutable Property<T, R> this, */T to);
+  T set(T to);
+
+  /**
+   * Set the value of this property to null. This may throw a
+   * {@link NullPointerException} if null values are not supported by the
+   * underlying implementation.
+   * 
+   * @return The previous value of this property.
+   */
+  default T unset() {
+    return set(null);
+  }
 
   /**
    * Get the current value of the property.
    * 
    * @return The current value.
    */
-  /* @I */T get();
+  T get();
+
+  default Optional<T> tryGet() {
+    return Optional.ofNullable(get());
+  }
+
+  default Property<T> setDefault(Supplier<T> defaultValue) {
+    T value = get();
+    if (value == null)
+      set(defaultValue.get());
+    return this;
+  }
+
+  default <U> Property<U> map(
+      Function<? super T, ? extends U> out,
+      Function<? super U, ? extends T> in) {
+    Property<T> base = this;
+    return new Property<U>() {
+      @Override
+      public U set(U to) {
+        U previous = get();
+        base.set(in.apply(to));
+        return previous;
+      }
+
+      @Override
+      public U get() {
+        T baseValue = base.get();
+        return baseValue == null ? null : out.apply(baseValue);
+      }
+
+    };
+  }
 
   /**
    * Create a property which defers its implementation to the given callbacks.

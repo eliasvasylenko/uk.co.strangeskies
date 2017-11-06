@@ -36,7 +36,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Objects;
 
-import uk.co.strangeskies.utility.Property;
+import uk.co.strangeskies.property.Property;
 
 public final class Interval<T> {
 	private final T leftEndpoint;

@@ -70,9 +70,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import uk.co.strangeskies.property.IdentityProperty;
 import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
 import uk.co.strangeskies.utility.DeepCopyable;
-import uk.co.strangeskies.utility.IdentityProperty;
 import uk.co.strangeskies.utility.Isomorphism;
 
 /**

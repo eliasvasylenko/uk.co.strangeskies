@@ -37,8 +37,8 @@ import java.util.Observer;
 import uk.co.strangeskies.expression.ActiveExpression;
 import uk.co.strangeskies.expression.Expression;
 import uk.co.strangeskies.expression.LockingExpression;
-import uk.co.strangeskies.utility.IdentityProperty;
-import uk.co.strangeskies.utility.Property;
+import uk.co.strangeskies.property.IdentityProperty;
+import uk.co.strangeskies.property.Property;
 
 /**
  * An {@link Expression} based on the behavior of the {@link IdentityProperty}

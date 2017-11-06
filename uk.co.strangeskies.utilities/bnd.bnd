@@ -4,7 +4,7 @@ Export-Package: \
 	uk.co.strangeskies.log,\
 	uk.co.strangeskies.reflection.classloading,\
 	uk.co.strangeskies.utility,\
-	uk.co.strangeskies.utility.tuple
+	uk.co.strangeskies.property
 
 Bundle-Name: Strange Skies :: Utilities
 Bundle-Description: \
