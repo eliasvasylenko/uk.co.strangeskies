@@ -94,520 +94,522 @@ import uk.co.strangeskies.utility.Isomorphism;
  * @author Elias N Vasylenko
  */
 public class TypeResolver implements DeepCopyable<TypeResolver> {
-	private BoundSet bounds;
+  private BoundSet bounds;
 
-	/**
-	 * Create a new {@link TypeResolver} over the given {@link BoundSet}.
-	 * 
-	 * @param bounds
-	 *          The exact bound set we wish to create a resolver over. Operations
-	 *          on the new resolver may mutate the given bound set.
-	 */
-	public TypeResolver(BoundSet bounds) {
-		this.bounds = bounds;
-	}
+  /**
+   * Create a new {@link TypeResolver} over the given {@link BoundSet}.
+   * 
+   * @param bounds
+   *          The exact bound set we wish to create a resolver over. Operations on
+   *          the new resolver may mutate the given bound set.
+   */
+  public TypeResolver(BoundSet bounds) {
+    this.bounds = bounds;
+  }
 
-	/**
-	 * Create a new resolver over a new bound set.
-	 */
-	public TypeResolver() {
-		this(emptyBoundSet());
-	}
+  /**
+   * Create a new resolver over a new bound set.
+   */
+  public TypeResolver() {
+    this(emptyBoundSet());
+  }
 
-	@Override
-	public TypeResolver copy() {
-		TypeResolver copy = new TypeResolver(bounds.copy());
+  @Override
+  public TypeResolver copy() {
+    TypeResolver copy = new TypeResolver(bounds.copy());
 
-		return copy;
-	}
+    return copy;
+  }
 
-	/**
-	 * Create a copy of an existing resolver. All the inference variables
-	 * contained within the resolver will be substituted for the new inference
-	 * variables, and all the bounds on them will be substituted for equivalent
-	 * bounds. These mappings will be entered into the given map when they are
-	 * made.
-	 * 
-	 * @param isomorphism
-	 *          an isomorphism for inference variables
-	 * @return A newly derived resolver, with each instance of an inference
-	 *         variable substituted for new mappings.
-	 */
-	@Override
-	public TypeResolver deepCopy(Isomorphism isomorphism) {
-		return new TypeResolver(bounds.deepCopy(isomorphism));
-	}
+  /**
+   * Create a copy of an existing resolver. All the inference variables contained
+   * within the resolver will be substituted for the new inference variables, and
+   * all the bounds on them will be substituted for equivalent bounds. These
+   * mappings will be entered into the given map when they are made.
+   * 
+   * @param isomorphism
+   *          an isomorphism for inference variables
+   * @return A newly derived resolver, with each instance of an inference variable
+   *         substituted for new mappings.
+   */
+  @Override
+  public TypeResolver deepCopy(Isomorphism isomorphism) {
+    return new TypeResolver(bounds.deepCopy(isomorphism));
+  }
 
-	/**
-	 * @return The bound set backing this resolver.
-	 */
-	public BoundSet getBounds() {
-		return bounds;
-	}
+  /**
+   * @return The bound set backing this resolver.
+   */
+  public BoundSet getBounds() {
+    return bounds;
+  }
 
-	private Stream<TypeVariable<?>> getAllTypeParameters(GenericDeclaration declaration) {
-		if (declaration instanceof Class<?>) {
-			return ParameterizedTypes.getAllTypeParameters((Class<?>) declaration);
-		} else if (declaration instanceof Executable) {
-			return concat(
-					ParameterizedTypes.getAllTypeParameters(((Executable) declaration).getDeclaringClass()),
-					stream(declaration.getTypeParameters()));
-		} else {
-			throw new AssertionError();
-		}
-	}
+  private Stream<TypeVariable<?>> getAllTypeParameters(GenericDeclaration declaration) {
+    if (declaration instanceof Class<?>) {
+      return ParameterizedTypes.getAllTypeParameters((Class<?>) declaration);
+    } else if (declaration instanceof Executable) {
+      return concat(
+          ParameterizedTypes.getAllTypeParameters(((Executable) declaration).getDeclaringClass()),
+          stream(declaration.getTypeParameters()));
+    } else {
+      throw new AssertionError();
+    }
+  }
 
-	private Map<TypeVariable<?>, InferenceVariable> inferTypeParametersImpl(
-			GenericDeclaration declaration,
-			Map<TypeVariable<?>, ? extends Type> existingCaptures) {
+  private Map<TypeVariable<?>, InferenceVariable> inferTypeParametersImpl(
+      GenericDeclaration declaration,
+      Map<TypeVariable<?>, ? extends Type> existingCaptures) {
 
-		Map<TypeVariable<?>, InferenceVariable> newCaptures = getAllTypeParameters(declaration)
-				.filter(p -> !existingCaptures.containsKey(p))
-				.collect(
-						toMap(
-								identity(),
-								v -> new InferenceVariable(v.getName()),
-								throwingMerger(),
-								LinkedHashMap::new));
+    Map<TypeVariable<?>, InferenceVariable> newCaptures = getAllTypeParameters(declaration)
+        .filter(p -> !existingCaptures.containsKey(p))
+        .collect(
+            toMap(
+                identity(),
+                v -> new InferenceVariable(v.getName()),
+                throwingMerger(),
+                LinkedHashMap::new));
 
-		if (!newCaptures.isEmpty()) {
-			bounds = bounds.withInferenceVariables(newCaptures.values());
+    if (!newCaptures.isEmpty()) {
+      bounds = bounds.withInferenceVariables(newCaptures.values());
 
-			TypeSubstitution substitution = new TypeSubstitution(existingCaptures)
-					.where(newCaptures::containsKey, newCaptures::get);
+      TypeSubstitution substitution = new TypeSubstitution(existingCaptures)
+          .where(newCaptures::containsKey, newCaptures::get);
 
-			bounds = concat(newCaptures.entrySet().stream(), existingCaptures.entrySet().stream()).reduce(
-					bounds,
-					(b, e) -> b.withIncorporated().subtype(
-							e.getValue(),
-							substitution.resolve(uncheckedIntersectionOf(e.getKey().getBounds()))),
-					throwingMerger());
-		}
+      bounds = concat(newCaptures.entrySet().stream(), existingCaptures.entrySet().stream()).reduce(
+          bounds,
+          (b, e) -> b.withIncorporated().subtype(
+              e.getValue(),
+              substitution.resolve(uncheckedIntersectionOf(e.getKey().getBounds()))),
+          throwingMerger());
+    }
 
-		return newCaptures;
-	}
+    return newCaptures;
+  }
 
-	public Stream<Map.Entry<TypeVariable<?>, InferenceVariable>> inferTypeParameters(
-			GenericDeclaration declaration,
-			Map<TypeVariable<?>, ? extends Type> existingCaptures) {
-		return inferTypeParametersImpl(declaration, existingCaptures).entrySet().stream();
-	}
+  public Stream<Map.Entry<TypeVariable<?>, InferenceVariable>> inferTypeParameters(
+      GenericDeclaration declaration,
+      Map<TypeVariable<?>, ? extends Type> existingCaptures) {
+    return inferTypeParametersImpl(declaration, existingCaptures).entrySet().stream();
+  }
 
-	/**
-	 * Each type variable within the given {@link GenericDeclaration}, and each
-	 * non-statically enclosing declaration thereof, is incorporated into the
-	 * backing {@link BoundSet}.
-	 * 
-	 * @param declaration
-	 *          the declaration we wish to incorporate
-	 * @param enclosing
-	 *          the parameterized enclosing declaration
-	 * @return mapping from the {@link InferenceVariable}s on the given
-	 *         declaration, to their new capturing {@link InferenceVariable}s
-	 */
-	public Stream<Map.Entry<TypeVariable<?>, InferenceVariable>> inferTypeParameters(
-			GenericDeclaration declaration,
-			ParameterizedType enclosing) {
-		if (enclosing == null) {
-			return inferTypeParameters(declaration);
-		}
+  /**
+   * Each type variable within the given {@link GenericDeclaration}, and each
+   * non-statically enclosing declaration thereof, is incorporated into the
+   * backing {@link BoundSet}.
+   * 
+   * @param declaration
+   *          the declaration we wish to incorporate
+   * @param enclosing
+   *          the parameterized enclosing declaration
+   * @return mapping from the {@link InferenceVariable}s on the given declaration,
+   *         to their new capturing {@link InferenceVariable}s
+   */
+  public Stream<Map.Entry<TypeVariable<?>, InferenceVariable>> inferTypeParameters(
+      GenericDeclaration declaration,
+      ParameterizedType enclosing) {
+    if (enclosing == null) {
+      return inferTypeParameters(declaration);
+    }
 
-		Object enclosingClass = enclosing.getRawType();
-		if (!getEnclosingDeclaration(declaration).get().equals(enclosingClass)) {
-			throw new ReflectionException(
-					REFLECTION_PROPERTIES.incorrectEnclosingDeclaration(enclosing.getRawType(), declaration));
-		}
+    Object enclosingClass = enclosing.getRawType();
+    if (!getEnclosingDeclaration(declaration).get().equals(enclosingClass)) {
+      throw new ReflectionException(
+          REFLECTION_PROPERTIES.incorrectEnclosingDeclaration(enclosing.getRawType(), declaration));
+    }
 
-		return inferTypeParameters(
-				declaration,
-				ParameterizedTypes.getAllTypeArguments(enclosing).collect(entriesToMap()));
-	}
+    return inferTypeParameters(
+        declaration,
+        ParameterizedTypes.getAllTypeArguments(enclosing).collect(entriesToMap()));
+  }
 
-	/**
-	 * Each type variable within the given {@link GenericDeclaration}, and each
-	 * non-statically enclosing declaration thereof, is incorporated into the
-	 * backing {@link BoundSet}.
-	 * 
-	 * @param declaration
-	 *          the declaration we wish to incorporate
-	 * @return a mapping from the {@link InferenceVariable}s on the given
-	 *         declaration, to their new capturing {@link InferenceVariable}s
-	 */
-	public Stream<Map.Entry<TypeVariable<?>, InferenceVariable>> inferTypeParameters(
-			GenericDeclaration declaration) {
-		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getEnclosingDeclaration(
-				declaration).map(this::inferTypeParametersImpl).orElse(emptyMap());
+  /**
+   * Each type variable within the given {@link GenericDeclaration}, and each
+   * non-statically enclosing declaration thereof, is incorporated into the
+   * backing {@link BoundSet}.
+   * 
+   * @param declaration
+   *          the declaration we wish to incorporate
+   * @return a mapping from the {@link InferenceVariable}s on the given
+   *         declaration, to their new capturing {@link InferenceVariable}s
+   */
+  public Stream<Map.Entry<TypeVariable<?>, InferenceVariable>> inferTypeParameters(
+      GenericDeclaration declaration) {
+    Map<TypeVariable<?>, InferenceVariable> inferenceVariables = getEnclosingDeclaration(
+        declaration).map(this::inferTypeParametersImpl).orElse(emptyMap());
 
-		return concat(
-				inferenceVariables.entrySet().stream(),
-				inferTypeParameters(declaration, inferenceVariables));
-	}
+    return concat(
+        inferenceVariables.entrySet().stream(),
+        inferTypeParameters(declaration, inferenceVariables));
+  }
 
-	private Map<TypeVariable<?>, InferenceVariable> inferTypeParametersImpl(
-			GenericDeclaration declaration) {
-		return inferTypeParameters(declaration)
-				.collect(Collectors.toMap(Entry::getKey, Entry::getValue));
-	}
+  private Map<TypeVariable<?>, InferenceVariable> inferTypeParametersImpl(
+      GenericDeclaration declaration) {
+    return inferTypeParameters(declaration)
+        .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+  }
 
-	private Optional<GenericDeclaration> getEnclosingDeclaration(GenericDeclaration declaration) {
-		if (declaration instanceof Executable
-				&& !Modifier.isStatic(((Executable) declaration).getModifiers())) {
-			return Optional.of(((Executable) declaration).getDeclaringClass());
+  private Optional<GenericDeclaration> getEnclosingDeclaration(GenericDeclaration declaration) {
+    if (declaration instanceof Executable
+        && !Modifier.isStatic(((Executable) declaration).getModifiers())) {
+      return Optional.of(((Executable) declaration).getDeclaringClass());
 
-		} else if (declaration instanceof Class<?>
-				&& !Modifier.isStatic(((Class<?>) declaration).getModifiers())) {
-			return Optional.ofNullable(((Class<?>) declaration).getEnclosingClass());
+    } else if (declaration instanceof Class<?>
+        && !Modifier.isStatic(((Class<?>) declaration).getModifiers())) {
+      return Optional.ofNullable(((Class<?>) declaration).getEnclosingClass());
 
-		} else {
-			return Optional.empty();
-		}
-	}
+    } else {
+      return Optional.empty();
+    }
+  }
 
-	/**
-	 * Add inference variables for the type parameters of the given type to the
-	 * resolver, then incorporate containment constraints based on the arguments
-	 * of the given type.
-	 * 
-	 * @param type
-	 *          The type whose generic type arguments we wish to perform inference
-	 *          operations over.
-	 * @return A parameterized type derived from the given type, with inference
-	 *         variables in place of wildcards where appropriate.
-	 */
-	public GenericArrayType inferTypeArguments(GenericArrayType type) {
-		Type innerComponent = Types.getInnerComponentType(type);
-		if (innerComponent instanceof ParameterizedType) {
-			return arrayFromComponent(
-					inferTypeArguments((ParameterizedType) innerComponent),
-					Types.getArrayDimensions(type));
-		} else
-			return type;
-	}
+  /**
+   * Add inference variables for the type parameters of the given type to the
+   * resolver, then incorporate containment constraints based on the arguments of
+   * the given type.
+   * 
+   * @param type
+   *          The type whose generic type arguments we wish to perform inference
+   *          operations over.
+   * @return A parameterized type derived from the given type, with inference
+   *         variables in place of wildcards where appropriate.
+   */
+  public GenericArrayType inferTypeArguments(GenericArrayType type) {
+    Type innerComponent = Types.getInnerComponentType(type);
+    if (innerComponent instanceof ParameterizedType) {
+      return arrayFromComponent(
+          inferTypeArguments((ParameterizedType) innerComponent),
+          Types.getArrayDimensions(type));
+    } else
+      return type;
+  }
 
-	/**
-	 * Add inference variables for the type parameters of the given type to the
-	 * resolver, then incorporate containment constraints based on the arguments
-	 * of the given type.
-	 * 
-	 * @param type
-	 *          The type whose generic type arguments we wish to perform inference
-	 *          operations over.
-	 * @return A parameterized type derived from the given type, with inference
-	 *         variables in place of wildcards where appropriate.
-	 */
-	public ParameterizedType inferTypeArguments(ParameterizedType type) {
-		Class<?> rawType = (Class<?>) type.getRawType();
+  /**
+   * Add inference variables for the type parameters of the given type to the
+   * resolver, then incorporate containment constraints based on the arguments of
+   * the given type.
+   * 
+   * @param type
+   *          The type whose generic type arguments we wish to perform inference
+   *          operations over.
+   * @return A parameterized type derived from the given type, with inference
+   *         variables in place of wildcards where appropriate.
+   */
+  public ParameterizedType inferTypeArguments(ParameterizedType type) {
+    Class<?> rawType = (Class<?>) type.getRawType();
 
-		List<Entry<TypeVariable<?>, Type>> typeArguments = getAllTypeArguments(type).collect(toList());
+    List<Entry<TypeVariable<?>, Type>> typeArguments = getAllTypeArguments(type).collect(toList());
 
-		Map<TypeVariable<?>, InferenceVariable> inferenceVariables = inferTypeParametersImpl(rawType);
+    /*
+     * TODO this is a bit lazy, we should probably only create new inference
+     * variables for parameters with wildcard arguments.
+     */
+    Map<TypeVariable<?>, InferenceVariable> inferenceVariables = inferTypeParametersImpl(rawType);
 
-		for (Map.Entry<TypeVariable<?>, Type> argument : typeArguments) {
-			bounds = new ConstraintFormula(
-					Kind.CONTAINMENT,
-					inferenceVariables.get(argument.getKey()),
-					argument.getValue()).reduce(bounds);
-		}
+    for (Map.Entry<TypeVariable<?>, Type> argument : typeArguments) {
+      bounds = new ConstraintFormula(
+          Kind.CONTAINMENT,
+          inferenceVariables.get(argument.getKey()),
+          argument.getValue()).reduce(bounds);
+    }
 
-		return (ParameterizedType) substituteInstantiations(
-				ParameterizedTypes.parameterizeUnchecked(rawType, inferenceVariables::get));
-	}
+    return (ParameterizedType) substituteInstantiations(
+        ParameterizedTypes.parameterizeUnchecked(rawType, inferenceVariables::get));
+  }
 
-	public ParameterizedType inferTypeParameters(Class<?> declaration) {
-		return ParameterizedTypes.parameterize(declaration, inferTypeParametersImpl(declaration)::get);
-	}
+  public ParameterizedType inferTypeParameters(Class<?> declaration) {
+    return ParameterizedTypes.parameterize(declaration, inferTypeParametersImpl(declaration)::get);
+  }
 
-	/**
-	 * Incorporate a new inference variable for a given wildcard type, and add the
-	 * bounds of the wildcard as bounds to the inference variable.
-	 * 
-	 * @param type
-	 *          The wildcard type to capture as a bounded inference variable.
-	 * @return The new inference variable created to satisfy the given wildcard.
-	 */
-	public InferenceVariable inferWildcardType(WildcardType type) {
-		InferenceVariable w = new InferenceVariable();
-		BoundSet bounds = this.bounds.withInferenceVariables(w);
+  /**
+   * Incorporate a new inference variable for a given wildcard type, and add the
+   * bounds of the wildcard as bounds to the inference variable.
+   * 
+   * @param type
+   *          The wildcard type to capture as a bounded inference variable.
+   * @return The new inference variable created to satisfy the given wildcard.
+   */
+  public InferenceVariable inferWildcardType(WildcardType type) {
+    InferenceVariable w = new InferenceVariable();
+    BoundSet bounds = this.bounds.withInferenceVariables(w);
 
-		for (Type lowerBound : type.getLowerBounds())
-			bounds = new ConstraintFormula(Kind.SUBTYPE, lowerBound, w).reduce(bounds);
+    for (Type lowerBound : type.getLowerBounds())
+      bounds = new ConstraintFormula(Kind.SUBTYPE, lowerBound, w).reduce(bounds);
 
-		for (Type upperBound : type.getUpperBounds())
-			bounds = new ConstraintFormula(Kind.SUBTYPE, w, upperBound).reduce(bounds);
+    for (Type upperBound : type.getUpperBounds())
+      bounds = new ConstraintFormula(Kind.SUBTYPE, w, upperBound).reduce(bounds);
 
-		this.bounds = bounds;
+    this.bounds = bounds;
 
-		return w;
-	}
+    return w;
+  }
 
-	/**
-	 * Infer proper instantiations for each inference variable registered within
-	 * this {@link TypeResolver} instance.
-	 * 
-	 * @return A mapping from each inference variable registered under this
-	 *         resolver, to their newly inferred instantiations.
-	 */
-	public Stream<Entry<InferenceVariable, Type>> resolve() {
-		resolveIndependentSet(bounds.getInferenceVariables().collect(toList()));
-		return bounds.getInferenceVariables().map(
-				i -> new AbstractMap.SimpleEntry<>(i, getInstantiation(i)));
-	}
+  /**
+   * Infer proper instantiations for each inference variable registered within
+   * this {@link TypeResolver} instance.
+   * 
+   * @return A mapping from each inference variable registered under this
+   *         resolver, to their newly inferred instantiations.
+   */
+  public Stream<Entry<InferenceVariable, Type>> resolve() {
+    resolveIndependentSet(bounds.getInferenceVariables().collect(toList()));
+    return bounds.getInferenceVariables().map(
+        i -> new AbstractMap.SimpleEntry<>(i, getInstantiation(i)));
+  }
 
-	/**
-	 * Infer a proper instantiations for each {@link InferenceVariable} mentioned
-	 * by the given type.
-	 * 
-	 * @param type
-	 *          the type whose proper form we wish to infer
-	 * @return a new type derived from the given type by substitution of
-	 *         instantiations for each {@link InferenceVariable} mentioned
-	 */
-	public Type resolve(Type type) {
-		resolve(
-				getAllMentionedBy(type, getBounds()::containsInferenceVariable)
-						.map(InferenceVariable.class::cast)
-						.collect(toList()));
+  /**
+   * Infer a proper instantiations for each {@link InferenceVariable} mentioned by
+   * the given type.
+   * 
+   * @param type
+   *          the type whose proper form we wish to infer
+   * @return a new type derived from the given type by substitution of
+   *         instantiations for each {@link InferenceVariable} mentioned
+   */
+  public Type resolve(Type type) {
+    resolve(
+        getAllMentionedBy(type, getBounds()::containsInferenceVariable)
+            .map(InferenceVariable.class::cast)
+            .collect(toList()));
 
-		return new TypeSubstitution(
-				t -> getBounds().containsInferenceVariable(t)
-						? getInstantiation((InferenceVariable) t)
-						: null).resolve(type);
-	}
+    return new TypeSubstitution(
+        t -> getBounds().containsInferenceVariable(t)
+            ? getInstantiation((InferenceVariable) t)
+            : null).resolve(type);
+  }
 
-	/**
-	 * Infer a proper instantiations for a single given {@link InferenceVariable}.
-	 * 
-	 * @param inferenceVariable
-	 *          the type whose proper form we wish to infer
-	 * @return a new instantiation for the given {@link InferenceVariable}
-	 */
-	public Type resolve(InferenceVariable inferenceVariable) {
-		if (getBounds().containsInferenceVariable(inferenceVariable)) {
-			if (!getBounds().getBoundsOn(inferenceVariable).getInstantiation().isPresent()) {
-				Set<InferenceVariable> set = new HashSet<>(1);
-				set.add(inferenceVariable);
-				resolve(set);
-			}
-			return getInstantiation(inferenceVariable);
-		} else {
-			return inferenceVariable;
-		}
-	}
+  /**
+   * Infer a proper instantiations for a single given {@link InferenceVariable}.
+   * 
+   * @param inferenceVariable
+   *          the type whose proper form we wish to infer
+   * @return a new instantiation for the given {@link InferenceVariable}
+   */
+  public Type resolve(InferenceVariable inferenceVariable) {
+    if (getBounds().containsInferenceVariable(inferenceVariable)) {
+      if (!getBounds().getBoundsOn(inferenceVariable).getInstantiation().isPresent()) {
+        Set<InferenceVariable> set = new HashSet<>(1);
+        set.add(inferenceVariable);
+        resolve(set);
+      }
+      return getInstantiation(inferenceVariable);
+    } else {
+      return inferenceVariable;
+    }
+  }
 
-	/**
-	 * Infer proper instantiations for the given {@link InferenceVariable}s.
-	 * 
-	 * @param variables
-	 *          the inference variables for which we wish to infer instantiations
-	 * @return a mapping from each of the given inference variables to their
-	 *         inferred instantiations
-	 */
-	public Stream<Map.Entry<InferenceVariable, Type>> resolve(InferenceVariable... variables) {
-		return resolve(Arrays.asList(variables));
-	}
+  /**
+   * Infer proper instantiations for the given {@link InferenceVariable}s.
+   * 
+   * @param variables
+   *          the inference variables for which we wish to infer instantiations
+   * @return a mapping from each of the given inference variables to their
+   *         inferred instantiations
+   */
+  public Stream<Map.Entry<InferenceVariable, Type>> resolve(InferenceVariable... variables) {
+    return resolve(Arrays.asList(variables));
+  }
 
-	/**
-	 * Infer proper instantiations for the given {@link InferenceVariable}s.
-	 * 
-	 * @param variables
-	 *          The inference variables for which we wish to infer instantiations.
-	 * @return A mapping from each of the given inference variables to their
-	 *         inferred instantiations.
-	 */
-	public Stream<Map.Entry<InferenceVariable, Type>> resolve(
-			Collection<? extends InferenceVariable> variables) {
-		/*
-		 * Given a set of inference variables to resolve, let V be the union of this
-		 * set and all variables upon which the resolution of at least one variable
-		 * in this set depends.
-		 */
-		Set<InferenceVariable> independentSet = variables
-				.stream()
-				.filter(getBounds()::containsInferenceVariable)
-				.filter(v -> !bounds.getBoundsOn(v).getInstantiation().isPresent())
-				.flatMap(v -> bounds.getBoundsOn(v).getRemainingDependencies())
-				.collect(toSet());
+  /**
+   * Infer proper instantiations for the given {@link InferenceVariable}s.
+   * 
+   * @param variables
+   *          The inference variables for which we wish to infer instantiations.
+   * @return A mapping from each of the given inference variables to their
+   *         inferred instantiations.
+   */
+  public Stream<Map.Entry<InferenceVariable, Type>> resolve(
+      Collection<? extends InferenceVariable> variables) {
+    /*
+     * Given a set of inference variables to resolve, let V be the union of this set
+     * and all variables upon which the resolution of at least one variable in this
+     * set depends.
+     */
+    Set<InferenceVariable> independentSet = variables
+        .stream()
+        .filter(getBounds()::containsInferenceVariable)
+        .filter(v -> !bounds.getBoundsOn(v).getInstantiation().isPresent())
+        .flatMap(v -> bounds.getBoundsOn(v).getRemainingDependencies())
+        .collect(toSet());
 
-		resolveIndependentSet(independentSet);
+    resolveIndependentSet(independentSet);
 
-		return variables.stream().map(
-				i -> new AbstractMap.SimpleEntry<>(
-						i,
-						bounds.getBoundsOn(i).getInstantiation().orElseThrow(
-								() -> new ReflectionException(
-										REFLECTION_PROPERTIES.cannotInstantiateInferenceVariable(i, bounds)))));
-	}
+    return variables.stream().map(
+        i -> new AbstractMap.SimpleEntry<>(
+            i,
+            bounds.getBoundsOn(i).getInstantiation().orElseThrow(
+                () -> new ReflectionException(
+                    REFLECTION_PROPERTIES.cannotInstantiateInferenceVariable(i, bounds)))));
+  }
 
-	private void resolveIndependentSet(Collection<InferenceVariable> variables) {
-		/*
-		 * If every variable in V has an instantiation, then resolution succeeds and
-		 * this procedure terminates.
-		 */
-		while (variables != null && !variables.isEmpty()) {
-			/*
-			 * Otherwise, let { α1, ..., αn } be a non-empty subset of uninstantiated
-			 * variables in V such that i) for all i (1 ≤ i ≤ n), if αi depends on the
-			 * resolution of a variable β, then either β has an instantiation or there
-			 * is some j such that β = αj; and ii) there exists no non-empty proper
-			 * subset of { α1, ..., αn } with this property. Resolution proceeds by
-			 * generating an instantiation for each of α1, ..., αn based on the bounds
-			 * in the bound set:
-			 */
-			Set<InferenceVariable> minimalSet = new HashSet<>(variables);
-			for (InferenceVariable variable : variables) {
-				Set<InferenceVariable> remainingOnVariable = bounds
-						.getBoundsOn(variable)
-						.getRemainingDependencies()
-						.collect(toSet());
+  private void resolveIndependentSet(Collection<InferenceVariable> variables) {
+    /*
+     * If every variable in V has an instantiation, then resolution succeeds and
+     * this procedure terminates.
+     */
+    while (variables != null && !variables.isEmpty()) {
+      /*
+       * Otherwise, let { α1, ..., αn } be a non-empty subset of uninstantiated
+       * variables in V such that i) for all i (1 ≤ i ≤ n), if αi depends on the
+       * resolution of a variable β, then either β has an instantiation or there is
+       * some j such that β = αj; and ii) there exists no non-empty proper subset of {
+       * α1, ..., αn } with this property. Resolution proceeds by generating an
+       * instantiation for each of α1, ..., αn based on the bounds in the bound set:
+       */
+      Set<InferenceVariable> minimalSet = new HashSet<>(variables);
+      for (InferenceVariable variable : variables) {
+        Set<InferenceVariable> remainingOnVariable = bounds
+            .getBoundsOn(variable)
+            .getRemainingDependencies()
+            .collect(toSet());
 
-				if (remainingOnVariable.size() < minimalSet.size()) {
-					minimalSet = remainingOnVariable;
-				} else if (remainingOnVariable.size() == minimalSet.size()
-						&& !bounds.getRelatedCaptureConversions(remainingOnVariable).findAny().isPresent()) {
-					minimalSet = remainingOnVariable;
-				}
-			}
+        if (remainingOnVariable.size() < minimalSet.size()) {
+          minimalSet = remainingOnVariable;
+        } else if (remainingOnVariable.size() == minimalSet.size()
+            && !bounds.getRelatedCaptureConversions(remainingOnVariable).findAny().isPresent()) {
+          minimalSet = remainingOnVariable;
+        }
+      }
 
-			resolveMinimalIndepdendentSet(minimalSet);
+      resolveMinimalIndepdendentSet(minimalSet);
 
-			bounds
-					.getInferenceVariableBounds()
-					.filter(i -> i.getInstantiation().isPresent())
-					.map(InferenceVariableBounds::getInferenceVariable)
-					.forEach(variables::remove);
-		}
-	}
+      bounds
+          .getInferenceVariableBounds()
+          .filter(i -> i.getInstantiation().isPresent())
+          .map(InferenceVariableBounds::getInferenceVariable)
+          .forEach(variables::remove);
+    }
+  }
 
-	private void resolveMinimalIndepdendentSet(Set<InferenceVariable> minimalSet) {
-		if (!bounds.getRelatedCaptureConversions(minimalSet).findAny().isPresent()) {
-			/*
-			 * If the bound set does not contain a bound of the form G<..., αi, ...> =
-			 * capture(G<...>) for all i (1 ≤ i ≤ n), then a candidate instantiation
-			 * Ti is defined for each αi:
-			 */
-			Map<InferenceVariable, Type> instantiationCandidates = new HashMap<>();
+  private void resolveMinimalIndepdendentSet(Set<InferenceVariable> minimalSet) {
+    if (!bounds.getRelatedCaptureConversions(minimalSet).findAny().isPresent()) {
+      /*
+       * If the bound set does not contain a bound of the form G<..., αi, ...> =
+       * capture(G<...>) for all i (1 ≤ i ≤ n), then a candidate instantiation Ti is
+       * defined for each αi:
+       */
+      Map<InferenceVariable, Type> instantiationCandidates = new HashMap<>();
 
-			try {
-				for (InferenceVariable variable : minimalSet) {
-					IdentityProperty<Boolean> hasThrowableBounds = new IdentityProperty<>(false);
+      try {
+        for (InferenceVariable variable : minimalSet) {
+          IdentityProperty<Boolean> hasThrowableBounds = new IdentityProperty<>(false);
 
-					Type instantiationCandidate;
-					List<Type> properLowerBounds = bounds
-							.getBoundsOn(variable)
-							.getLowerBounds()
-							.filter(InferenceVariable::isProperType)
-							.collect(toList());
-					if (!properLowerBounds.isEmpty()) {
-						/*
-						 * If αi has one or more proper lower bounds, L1, ..., Lk, then Ti =
-						 * lub(L1, ..., Lk) (§4.10.4).
-						 */
-						instantiationCandidate = Types.leastUpperBound(properLowerBounds);
-					} else if (hasThrowableBounds.get()) {
-						/*
-						 * Otherwise, if the bound set contains throws αi, and the proper
-						 * upper bounds of αi are, at most, Exception, Throwable, and
-						 * Object, then Ti = RuntimeException.
-						 */
-						throw new AssertionError();
-					} else {
-						/*
-						 * Otherwise, where αi has proper upper bounds U1, ..., Uk, Ti =
-						 * glb(U1, ..., Uk) (§5.1.10).
-						 */
-						instantiationCandidate = Types.greatestLowerBound(
-								bounds
-										.getBoundsOn(variable)
-										.getUpperBounds()
-										.filter(InferenceVariable::isProperType)
-										.collect(toList()));
-					}
+          Type instantiationCandidate;
+          List<Type> properLowerBounds = bounds
+              .getBoundsOn(variable)
+              .getLowerBounds()
+              .filter(InferenceVariable::isProperType)
+              .collect(toList());
+          if (!properLowerBounds.isEmpty()) {
+            /*
+             * If αi has one or more proper lower bounds, L1, ..., Lk, then Ti = lub(L1,
+             * ..., Lk) (§4.10.4).
+             */
+            instantiationCandidate = Types.leastUpperBound(properLowerBounds);
+          } else if (hasThrowableBounds.get()) {
+            /*
+             * Otherwise, if the bound set contains throws αi, and the proper upper bounds
+             * of αi are, at most, Exception, Throwable, and Object, then Ti =
+             * RuntimeException.
+             */
+            throw new AssertionError();
+          } else {
+            /*
+             * Otherwise, where αi has proper upper bounds U1, ..., Uk, Ti = glb(U1, ...,
+             * Uk) (§5.1.10).
+             */
+            instantiationCandidate = Types.greatestLowerBound(
+                bounds
+                    .getBoundsOn(variable)
+                    .getUpperBounds()
+                    .filter(InferenceVariable::isProperType)
+                    .collect(toList()));
+          }
 
-					instantiationCandidates.put(variable, instantiationCandidate);
-				}
+          instantiationCandidates.put(variable, instantiationCandidate);
+        }
 
-				bounds = bounds.withInstantiations(instantiationCandidates);
+        bounds = bounds.withInstantiations(instantiationCandidates);
 
-				return;
-			} catch (ReflectionException e) {}
-		}
+        return;
+      } catch (ReflectionException e) {}
+    }
 
-		/*
-		 * the bound set contains a bound of the form G<..., αi, ...> =
-		 * capture(G<...>) for some i (1 ≤ i ≤ n), or;
-		 * 
-		 * If the bound set produced in the step above contains the bound false;
-		 * 
-		 * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
-		 * 
-		 * ...
-		 * 
-		 * Otherwise, for all i (1 ≤ i ≤ n), all bounds of the form G<..., αi, ...>
-		 * = capture(G<...>) are removed from the current bound set, and the bounds
-		 * α1 = Y1, ..., αn = Yn are incorporated.
-		 * 
-		 * If the result does not contain the bound false, then the result becomes
-		 * the new bound set, and resolution proceeds by selecting a new set of
-		 * variables to instantiate (if necessary), as described above.
-		 * 
-		 * Otherwise, the result contains the bound false, and resolution fails.
-		 */
-		bounds = TypeVariableCapture.captureInferenceVariables(minimalSet, getBounds());
-	}
+    /*
+     * the bound set contains a bound of the form G<..., αi, ...> = capture(G<...>)
+     * for some i (1 ≤ i ≤ n), or;
+     * 
+     * If the bound set produced in the step above contains the bound false;
+     * 
+     * then let Y1, ..., Yn be fresh type variables whose bounds are as follows:
+     * 
+     * ...
+     * 
+     * Otherwise, for all i (1 ≤ i ≤ n), all bounds of the form G<..., αi, ...> =
+     * capture(G<...>) are removed from the current bound set, and the bounds α1 =
+     * Y1, ..., αn = Yn are incorporated.
+     * 
+     * If the result does not contain the bound false, then the result becomes the
+     * new bound set, and resolution proceeds by selecting a new set of variables to
+     * instantiate (if necessary), as described above.
+     * 
+     * Otherwise, the result contains the bound false, and resolution fails.
+     */
+    bounds = TypeVariableCapture.captureInferenceVariables(minimalSet, getBounds());
+  }
 
-	/**
-	 * Derive a new type from the type given, with any mentioned instances of
-	 * {@link InferenceVariable} substituted with their proper instantiations
-	 * where available, as per {@link #getInstantiation(InferenceVariable)}.
-	 * 
-	 * @param type
-	 *          The type we wish to resolve.
-	 * @return The resolved type.
-	 */
-	public Type substituteInstantiations(Type type) {
-		return new TypeSubstitution()
-				.where(InferenceVariable.class::isInstance, t -> getInstantiation((InferenceVariable) t))
-				.resolve(type);
-	}
+  /**
+   * Derive a new type from the type given, with any mentioned instances of
+   * {@link InferenceVariable} substituted with their proper instantiations where
+   * available, as per {@link #getInstantiation(InferenceVariable)}.
+   * 
+   * @param type
+   *          The type we wish to resolve.
+   * @return The resolved type.
+   */
+  public Type substituteInstantiations(Type type) {
+    return new TypeSubstitution()
+        .where(InferenceVariable.class::isInstance, t -> getInstantiation((InferenceVariable) t))
+        .resolve(type);
+  }
 
-	/**
-	 * Resolve the proper instantiation of a given {@link InferenceVariable} if
-	 * one exists.
-	 * 
-	 * @param variable
-	 *          The inference variable whose proper instantiation we wish to
-	 *          determine.
-	 * @return The proper instantiation of the given {@link InferenceVariable} if
-	 *         one exists, otherwise the {@link InferenceVariable} itself.
-	 */
-	public Type getInstantiation(InferenceVariable variable) {
-		if (bounds.getInferenceVariables().anyMatch(variable::equals))
-			return bounds.getBoundsOn(variable).getInstantiation().orElse(variable);
-		else
-			return variable;
-	}
+  /**
+   * Resolve the proper instantiation of a given {@link InferenceVariable} if one
+   * exists.
+   * 
+   * @param variable
+   *          The inference variable whose proper instantiation we wish to
+   *          determine.
+   * @return The proper instantiation of the given {@link InferenceVariable} if
+   *         one exists, otherwise the {@link InferenceVariable} itself.
+   */
+  public Type getInstantiation(InferenceVariable variable) {
+    if (bounds.getInferenceVariables().anyMatch(variable::equals))
+      return bounds.getBoundsOn(variable).getInstantiation().orElse(variable);
+    else
+      return variable;
+  }
 
-	/**
-	 * Incorporate the given bounds into the bounds of the resolver.
-	 * 
-	 * @param bounds
-	 *          the bounds to incorporate
-	 * @return this resolver
-	 */
-	public TypeResolver incorporateBounds(BoundSet bounds) {
-		this.bounds = this.bounds.withBounds(bounds);
-		return this;
-	}
+  /**
+   * Incorporate the given bounds into the bounds of the resolver.
+   * 
+   * @param bounds
+   *          the bounds to incorporate
+   * @return this resolver
+   */
+  public TypeResolver incorporateBounds(BoundSet bounds) {
+    this.bounds = this.bounds.withBounds(bounds);
+    return this;
+  }
 
-	/**
-	 * Reduce the given constraint formula into the bound set of the resolver.
-	 * 
-	 * @param constraintFormula
-	 *          the constraint formula to reduce
-	 * @return this resolver
-	 */
-	public TypeResolver reduceConstraint(ConstraintFormula constraintFormula) {
-		bounds = constraintFormula.reduce(bounds);
-		return this;
-	}
+  /**
+   * Reduce the given constraint formula into the bound set of the resolver.
+   * 
+   * @param constraintFormula
+   *          the constraint formula to reduce
+   * @return this resolver
+   */
+  public TypeResolver reduceConstraint(ConstraintFormula constraintFormula) {
+    bounds = constraintFormula.reduce(bounds);
+    return this;
+  }
 }
