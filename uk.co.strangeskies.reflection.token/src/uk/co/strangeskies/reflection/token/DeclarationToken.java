@@ -143,7 +143,7 @@ public interface DeclarationToken<S extends DeclarationToken<S>> {
    * <pre>
    * <code>
    * public TypeToken&lt;List&lt;T&gt;&gt; getListType(TypeToken&lt;T&gt; elementType)} {
-   * 	 return new TypeToken&lt;T&gt;()} {}.withTypeArguments(new TypeParameter&lt;T&gt;() {}.as(elementType));
+   *   return new TypeToken&lt;T&gt;()} {}.withTypeArguments(new TypeParameter&lt;T&gt;() {}.as(elementType));
    * }
    * </code>
    * </pre>
@@ -183,7 +183,7 @@ public interface DeclarationToken<S extends DeclarationToken<S>> {
    * <pre>
    * <code>
    * public TypeToken&lt;List&lt;T&gt;&gt; getListType(TypeToken&lt;T&gt; elementType)} {
-   * 	 return new TypeToken&lt;T&gt;()} {}.withTypeArguments(new TypeParameter&lt;T&gt;() {}.as(elementType));
+   *   return new TypeToken&lt;T&gt;()} {}.withTypeArguments(new TypeParameter&lt;T&gt;() {}.as(elementType));
    * }
    * </code>
    * </pre>
