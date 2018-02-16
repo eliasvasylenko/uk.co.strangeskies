@@ -937,7 +937,6 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
                   arguments.stream().map(TypeToken::getType).collect(toList())));
     }
 
-    System.out.println(getBounds());
     TypeResolver resolver = new TypeResolver(getBounds());
 
     if (!getParametersImpl().isEmpty()) {
