@@ -140,7 +140,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
    * consistent state at this point. The responsibility to ensure this is with the
    * caller.
    */
-  protected ExecutableToken(
+  private ExecutableToken(
       BoundSet bounds,
       TypeToken<? super O> receiverType,
       TypeToken<? extends R> returnType,
@@ -207,7 +207,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
    */
   public static ExecutableToken<Void, ?> forStaticMethod(Method method) {
     if (!Modifier.isStatic(method.getModifiers())) {
-      throw new ReflectionException(REFLECTION_PROPERTIES.methodMustBeStatic(method));
+      throw new ReflectionException(REFLECTION_PROPERTIES.memberMustBeStatic(method));
     }
     return new ExecutableToken<>(void.class, method);
   }
@@ -317,7 +317,9 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
 
   @Override
   public Optional<TypeToken<?>> getOwningDeclaration() {
-    return Optional.of(isConstructor() ? getReturnType() : getReceiverType());
+    return isConstructor()
+        ? Optional.of(getReturnType())
+        : (isStatic() ? Optional.empty() : Optional.of(getReceiverType()));
   }
 
   /**
@@ -599,7 +601,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
     if (!receiverType.isGeneric()) {
       if (!receiverType.satisfiesConstraintFrom(SUBTYPE, type)) {
         throw new ReflectionException(
-            REFLECTION_PROPERTIES.cannotResolveOverride(getMember(), type.getType()));
+            REFLECTION_PROPERTIES.cannotResolveReceiver(getMember(), type.getType()));
       }
 
       return (ExecutableToken<U, R>) this;
@@ -632,8 +634,6 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
         .inferTypeParameters(executable, argumentMap)
         .forEach(e -> argumentMap.put(e.getKey(), e.getValue()));
 
-    System.out.println("   '''   " + resolver.getBounds());
-
     return (ExecutableToken<P, Q>) getParameterizedFromRaw()
         .withTypeSubstitution(resolver.getBounds(), new TypeSubstitution(argumentMap));
   }
@@ -642,7 +642,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
    * As @see {@link #withTargetType(TypeToken)}.
    */
   @SuppressWarnings("javadoc")
-  public <S extends R> ExecutableToken<O, S> withTargetType(Class<S> target) {
+  public <S> ExecutableToken<O, S> withTargetType(Class<S> target) {
     return withTargetType(TypeToken.forClass(target));
   }
 
@@ -684,7 +684,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
     if (!isGeneric()) {
       if (!returnType.satisfiesConstraintTo(LOOSE_COMPATIBILILTY, target)) {
         throw new ReflectionException(
-            REFLECTION_PROPERTIES.cannotResolveOverride(getMember(), target.getType()));
+            REFLECTION_PROPERTIES.cannotResolveTarget(getMember(), target.getType()));
       }
       return (ExecutableToken<O, S>) this;
 

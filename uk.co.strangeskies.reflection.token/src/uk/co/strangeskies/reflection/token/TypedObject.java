@@ -52,7 +52,7 @@ import uk.co.strangeskies.reflection.ReflectionException;
  * @param <T>
  *          The type of the object instance to track.
  */
-public class TypedObject<T> implements ReifiedToken<TypedObject<T>> {
+public class TypedObject<T> implements ReifiedType<TypedObject<T>> {
   private final TypeToken<T> type;
   private final T object;
 
@@ -157,9 +157,11 @@ public class TypedObject<T> implements ReifiedToken<TypedObject<T>> {
    * @return A typed object over the given type and object
    */
   public <U> TypedObject<U> cast(TypeToken<U> type) {
-    return tryCast(type).orElseThrow(
-        () -> new ReflectionException(
-            REFLECTION_PROPERTIES.invalidCastObject(this, this.type.getType(), type.getType())));
+    return tryCast(type)
+        .orElseThrow(
+            () -> new ReflectionException(
+                REFLECTION_PROPERTIES
+                    .invalidCastObject(this, this.type.getType(), type.getType())));
   }
 
   /**
@@ -193,9 +195,11 @@ public class TypedObject<T> implements ReifiedToken<TypedObject<T>> {
    * @return A typed object over the given type and object
    */
   public <U> TypedObject<U> assign(TypeToken<U> type) {
-    return tryAssign(type).orElseThrow(
-        () -> new ReflectionException(
-            REFLECTION_PROPERTIES.invalidCastObject(this, this.type.getType(), type.getType())));
+    return tryAssign(type)
+        .orElseThrow(
+            () -> new ReflectionException(
+                REFLECTION_PROPERTIES
+                    .invalidCastObject(this, this.type.getType(), type.getType())));
   }
 
   /**
