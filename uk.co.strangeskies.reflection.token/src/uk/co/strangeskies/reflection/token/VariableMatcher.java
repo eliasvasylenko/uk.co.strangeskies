@@ -85,9 +85,9 @@ public class VariableMatcher<O, T> implements Predicate<FieldToken<?, ?>> {
 
   private boolean testImpl(String name, Visibility visibility, Type type) {
     return this.name.map(name::equals).orElse(true)
-        && this.visibility.filter(visibility::equals).isPresent()
-        && this.assignableTo.filter(t -> t.satisfiesConstraintFrom(SUBTYPE, type)).isPresent()
-        && this.assignableFrom.filter(t -> t.satisfiesConstraintTo(SUBTYPE, type)).isPresent();
+        && this.visibility.map(v -> visibility.visibilityIsAtLeast(v)).orElse(true)
+        && this.assignableTo.map(t -> t.satisfiesConstraintFrom(SUBTYPE, type)).orElse(true)
+        && this.assignableFrom.map(t -> t.satisfiesConstraintTo(SUBTYPE, type)).orElse(true);
   }
 
   public VariableMatcher<O, T> named(String name) {
