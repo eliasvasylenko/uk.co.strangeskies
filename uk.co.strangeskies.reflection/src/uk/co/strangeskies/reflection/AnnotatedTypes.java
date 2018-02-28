@@ -98,24 +98,42 @@ public final class AnnotatedTypes {
     private Integer annotationHash;
 
     private final Type type;
+    private final AnnotatedType annotatedOwnerType;
     private final Map<Class<? extends Annotation>, Annotation> annotations;
 
     public AnnotatedTypeImpl(AnnotatedType annotatedType) {
-      this(annotatedType.getType(), Arrays.asList(annotatedType.getAnnotations()));
+      this(
+          AnnotatedTypes.wrapImpl(annotatedType.getAnnotatedOwnerType()),
+          annotatedType.getType(),
+          Arrays.asList(annotatedType.getAnnotations()));
     }
 
     public AnnotatedTypeImpl(Type type, Collection<? extends Annotation> annotations) {
+      this(getOwnerType(type), type, annotations);
+    }
+
+    public AnnotatedTypeImpl(
+        AnnotatedType annotatedOwnerType,
+        Type type,
+        Collection<? extends Annotation> annotations) {
+      this.annotatedOwnerType = annotatedOwnerType;
       this.type = type;
       this.annotations = new LinkedHashMap<>();
       for (Annotation annotation : annotations)
         this.annotations.put(annotation.annotationType(), annotation);
     }
 
-    /*
-     * TODO for Java 9...
-     */
+    private static AnnotatedType getOwnerType(Type type) {
+      if (type instanceof Class<?>)
+        return annotated(((Class<?>) type).getDeclaringClass());
+      else if (type instanceof ParameterizedType)
+        return annotated(((ParameterizedType) type).getOwnerType());
+      return null;
+    }
+
+    @Override
     public AnnotatedType getAnnotatedOwnerType() {
-      throw new UnsupportedOperationException();
+      return annotatedOwnerType;
     }
 
     @SuppressWarnings("unchecked")
@@ -451,9 +469,11 @@ public final class AnnotatedTypes {
       IntersectionType intersectionType,
       Collection<Annotation> annotations) {
     if (annotations.isEmpty()) {
-      return isomorphism.byIdentity().getMapping(
-          intersectionType,
-          type -> annotatedIntersectionImpl(isomorphism, type, annotations));
+      return isomorphism
+          .byIdentity()
+          .getMapping(
+              intersectionType,
+              type -> annotatedIntersectionImpl(isomorphism, type, annotations));
     } else {
       return annotatedIntersectionImpl(isomorphism, intersectionType, annotations);
     }
@@ -474,8 +494,10 @@ public final class AnnotatedTypes {
   protected static AnnotatedTypeInternal[] wrapImpl(
       Isomorphism isomorphism,
       AnnotatedType... type) {
-    return Arrays.stream(type).map(t -> wrapImpl(isomorphism, t)).toArray(
-        AnnotatedTypeInternal[]::new);
+    return Arrays
+        .stream(type)
+        .map(t -> wrapImpl(isomorphism, t))
+        .toArray(AnnotatedTypeInternal[]::new);
   }
 
   protected static AnnotatedTypeInternal wrapImpl(AnnotatedType type) {
@@ -607,14 +629,18 @@ public final class AnnotatedTypes {
       AnnotationParser annotationParser = Annotations.getParser(imports);
       TypeParser typeParser = Types.getParser(imports);
 
-      rawType = typeParser.rawType().prependTransform(
-          annotationParser.getAnnotationList().append("\\s*").orElse(ArrayList::new),
-          AnnotatedTypes::annotated);
+      rawType = typeParser
+          .rawType()
+          .prependTransform(
+              annotationParser.getAnnotationList().append("\\s*").orElse(ArrayList::new),
+              AnnotatedTypes::annotated);
 
       classOrArrayType = rawType
           .tryAppendTransform(
-              Parser.list(Parser.proxy(this::getType), "\\s*,\\s*").prepend("\\s*<\\s*").append(
-                  "\\s*>\\s*"),
+              Parser
+                  .list(Parser.proxy(this::getType), "\\s*,\\s*")
+                  .prepend("\\s*<\\s*")
+                  .append("\\s*>\\s*"),
               AnnotatedParameterizedTypes::parameterize)
           .appendTransform(
               Parser
@@ -640,8 +666,10 @@ public final class AnnotatedTypes {
                       Parser.list(classOrArrayType, "\\s*\\&\\s*"),
                       AnnotatedWildcardTypes::wildcardSuper))
           .orElse(
-              annotationParser.getAnnotationList().append("\\s*\\?").transform(
-                  AnnotatedWildcardTypes::wildcard));
+              annotationParser
+                  .getAnnotationList()
+                  .append("\\s*\\?")
+                  .transform(AnnotatedWildcardTypes::wildcard));
 
       typeParameter = classOrArrayType.orElse(wildcardType.transform(AnnotatedType.class::cast));
     }

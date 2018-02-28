@@ -148,6 +148,11 @@ public class FxUtilities {
       }
 
       @Override
+      public int getViewIndex(int index) {
+        return index;
+      }
+
+      @Override
       protected void sourceChanged(Change<? extends U> change) {
         fireChange(new Change<T>(this) {
           @Override
