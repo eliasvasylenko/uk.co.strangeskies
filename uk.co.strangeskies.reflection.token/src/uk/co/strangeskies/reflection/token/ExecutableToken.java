@@ -359,7 +359,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
     else if (isFinal())
       builder.append("final ");
 
-    if (isGeneric()) {
+    if (isGeneric() && !isRaw()) {
       builder
           .append("<")
           .append(
