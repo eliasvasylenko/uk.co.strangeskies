@@ -45,7 +45,6 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -65,7 +64,6 @@ import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.AnnotatedWildcardTypes;
 import uk.co.strangeskies.reflection.Annotations;
 import uk.co.strangeskies.reflection.Imports;
-import uk.co.strangeskies.reflection.Types;
 import uk.co.strangeskies.reflection.token.TypeToken.Capture;
 import uk.co.strangeskies.reflection.token.TypeToken.Infer;
 import uk.co.strangeskies.reflection.token.TypeToken.Retain;
@@ -142,56 +140,10 @@ public class TypeTokenTest {
   }
 
   @Test
-  public void makeTestsFromThese() {
-    printlines(
-        "#" + Types
-            .leastUpperBound(
-                Integer.class,
-                Double.class,
-                new TypeToken<Comparable<? extends Number>>() {}.getType()));
-
-    printlines(
-        "#" + Types
-            .leastUpperBound(
-                new TypeToken<Comparable<? extends Number>>() {}.getType(),
-                Integer.class,
-                Double.class));
-
-    List<ParameterizedType> bestTypes = Arrays
-        .asList(
-            (ParameterizedType) new TypeToken<Comparable<? extends Number>>() {}.getType(),
-            (ParameterizedType) new TypeToken<Comparable<Double>>() {}.getType(),
-            (ParameterizedType) new TypeToken<Comparable<Integer>>() {}.getType());
-    Type bestType = ((ParameterizedType) Types.best(Comparable.class, bestTypes))
-        .getActualTypeArguments()[0];
-    printlines("!  " + bestType);
-
-    List<ParameterizedType> bestTypes2 = Arrays
-        .asList(
-            (ParameterizedType) new TypeToken<Comparable<Double>>() {}.getType(),
-            (ParameterizedType) new TypeToken<Comparable<Integer>>() {}.getType(),
-            (ParameterizedType) new TypeToken<Comparable<? extends Number>>() {}.getType());
-    Type bestType2 = ((ParameterizedType) Types.best(Comparable.class, bestTypes2))
-        .getActualTypeArguments()[0];
-    printlines("!  " + bestType2);
-
-    List<ParameterizedType> bestTypes3 = Arrays
-        .asList(
-            (ParameterizedType) new TypeToken<Comparable<Double>>() {}.getType(),
-            (ParameterizedType) new TypeToken<Comparable<Integer>>() {}.getType());
-    Type bestType3 = ((ParameterizedType) Types.best(Comparable.class, bestTypes3))
-        .getActualTypeArguments()[0];
-    printlines("!  " + bestType3);
-
-    printlines();
-    printlines(Types.leastContainingArgument(bestType, bestType3));
-  }
-
-  // @Test
   public void supertypeParameterTest() {
     Assert
         .assertEquals(
-            "uk.co.strangeskies.reflection.test.SchemaNode<?, ?>",
+            "uk.co.strangeskies.reflection.token.SchemaNode<?, ?>",
             new TypeToken<SchemaNode.Effective<?, ?>>() {}
                 .resolveSupertype(SchemaNode.class)
                 .toString());

@@ -36,7 +36,7 @@ import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.AnnotatedTypes.annotated;
 import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
-import static uk.co.strangeskies.reflection.IntersectionTypes.uncheckedIntersectionOf;
+import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOfImpl;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterizeUnchecked;
 import static uk.co.strangeskies.reflection.TypeVariables.typeVariableExtending;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardExtending;
@@ -367,7 +367,7 @@ public class TypeSubstitution {
 
       List<Type> types = resolveTypes(type.getTypes(), changed);
       if (changed.get()) {
-        result = uncheckedIntersectionOf(types);
+        result = intersectionOfImpl(types);
       } else {
         result = type;
       }
