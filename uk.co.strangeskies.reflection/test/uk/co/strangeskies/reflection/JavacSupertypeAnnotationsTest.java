@@ -102,12 +102,14 @@ public class JavacSupertypeAnnotationsTest {
         // ecj fails
         {
             "anonymous extends static inner",
-            new StaticInner<@TestAnnotation Object>() {}.getClass() },
+            new StaticInner<@TestAnnotation Object>() {}.getClass() } };
 
-        // !javac compiler errors!
-        {
-            "anonymous extends inner",
-            new Container().new Inner<@TestAnnotation Object>() {}.getClass() } };
+    /*-
+    // !javac compiler errors!
+    {
+        "anonymous extends inner",
+        new Container().new Inner<@TestAnnotation Object>() {}.getClass() } };
+     */
   }
 
   private final Class<?> testClass;
