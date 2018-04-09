@@ -102,9 +102,7 @@ public class AnnotationsTest {
     Assume.assumeTrue("Assuming no package imports", token.getPackages().isEmpty());
     Annotation annotation = assumeSingleAnnotation(token);
 
-    assertThat(token)
-        .extracting(AnnotationToken::getStringRepresentation)
-        .isEqualTo(Annotations.toString(annotation));
+    assertThat(Annotations.toString(annotation)).isEqualTo(token.getStringRepresentation());
   }
 
   @Theory
@@ -113,11 +111,9 @@ public class AnnotationsTest {
 
     Annotation annotation = assumeSingleAnnotation(token);
 
-    assertThat(token)
-        .extracting(AnnotationToken::getStringRepresentation)
-        .isEqualTo(
-            Annotations
-                .toString(annotation, Imports.empty().withPackageImports(token.getPackages())));
+    assertThat(
+        Annotations.toString(annotation, Imports.empty().withPackageImports(token.getPackages())))
+            .isEqualTo(token.getStringRepresentation());
   }
 
   private Annotation assumeSingleAnnotation(AnnotationToken token) {
