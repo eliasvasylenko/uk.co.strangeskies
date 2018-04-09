@@ -32,10 +32,55 @@
  */
 package uk.co.strangeskies.text.grammar;
 
-import uk.co.strangeskies.text.grammar.Symbol.Nonterminal;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
-public class Grammar {
-  public <T> void addRule(Nonterminal<T> symbol, Production<? extends T> production) {
+public class Production2 {
+  public static Production2 empty() {
+    return null;
+  }
 
+  public static Production2 produce2(Symbol... symbols) {
+    return null;
+  }
+
+  public Production2 repeat() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  public Production2 not() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  public Production2 not(Production2 production) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  public Production2 repeat(int minimum) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  public Production2 repeat(int minimum, int maximum) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  public Production2 then(Symbol symbol) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  public Production2 then(Production2 symbol) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  public <T> Production<T> action(Function<SymbolsIn, T> in, BiConsumer<SymbolsOut, T> out) {
+    // TODO Auto-generated method stub
+    return null;
   }
 }

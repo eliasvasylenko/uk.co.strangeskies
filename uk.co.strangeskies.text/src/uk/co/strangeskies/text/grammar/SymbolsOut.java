@@ -32,10 +32,15 @@
  */
 package uk.co.strangeskies.text.grammar;
 
+import java.util.Collection;
+import java.util.stream.Stream;
+
 import uk.co.strangeskies.text.grammar.Symbol.Nonterminal;
 
-public class Grammar {
-  public <T> void addRule(Nonterminal<T> symbol, Production<? extends T> production) {
+public interface SymbolsOut {
+  <T> void put(Nonterminal<T> symbol, T value);
 
-  }
+  <T> void putAll(Nonterminal<T> symbol, Stream<T> values);
+
+  <T> void putAll(Nonterminal<T> symbol, Collection<T> values);
 }
