@@ -109,11 +109,6 @@ public class StreamUtilities {
     return (Optional<T>) stream;
   }
 
-  @SuppressWarnings("unchecked")
-  public static <T> Stream<T> streamOptional(Optional<? extends T> optional) {
-    return (Stream<T>) optional.map(Stream::of).orElse(Stream.empty());
-  }
-
   public static <T> Stream<T> streamNullable(T optional) {
     return ofNullable(optional).map(Stream::of).orElse(Stream.empty());
   }
