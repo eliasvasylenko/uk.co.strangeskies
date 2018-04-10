@@ -98,24 +98,42 @@ public final class AnnotatedTypes {
     private Integer annotationHash;
 
     private final Type type;
+    private final AnnotatedType annotatedOwnerType;
     private final Map<Class<? extends Annotation>, Annotation> annotations;
 
     public AnnotatedTypeImpl(AnnotatedType annotatedType) {
-      this(annotatedType.getType(), Arrays.asList(annotatedType.getAnnotations()));
+      this(
+          AnnotatedTypes.wrapImpl(annotatedType.getAnnotatedOwnerType()),
+          annotatedType.getType(),
+          Arrays.asList(annotatedType.getAnnotations()));
     }
 
     public AnnotatedTypeImpl(Type type, Collection<? extends Annotation> annotations) {
+      this(getOwnerType(type), type, annotations);
+    }
+
+    public AnnotatedTypeImpl(
+        AnnotatedType annotatedOwnerType,
+        Type type,
+        Collection<? extends Annotation> annotations) {
+      this.annotatedOwnerType = annotatedOwnerType;
       this.type = type;
       this.annotations = new LinkedHashMap<>();
       for (Annotation annotation : annotations)
         this.annotations.put(annotation.annotationType(), annotation);
     }
 
-    /*
-     * TODO for Java 9...
-     */
+    private static AnnotatedType getOwnerType(Type type) {
+      if (type instanceof Class<?>)
+        return annotated(((Class<?>) type).getDeclaringClass());
+      else if (type instanceof ParameterizedType)
+        return annotated(((ParameterizedType) type).getOwnerType());
+      return null;
+    }
+
+    @Override
     public AnnotatedType getAnnotatedOwnerType() {
-      throw new UnsupportedOperationException();
+      return annotatedOwnerType;
     }
 
     @SuppressWarnings("unchecked")
