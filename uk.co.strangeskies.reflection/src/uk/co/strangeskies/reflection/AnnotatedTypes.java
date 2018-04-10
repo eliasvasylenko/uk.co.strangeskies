@@ -500,7 +500,9 @@ public final class AnnotatedTypes {
   }
 
   protected static AnnotatedTypeInternal wrapImpl(Isomorphism isomorphism, AnnotatedType type) {
-    if (type instanceof AnnotatedTypeInternal) {
+    if (type == null) {
+      return null;
+    } else if (type instanceof AnnotatedTypeInternal) {
       return (AnnotatedTypeInternal) type;
     } else if (type instanceof AnnotatedParameterizedType) {
       return AnnotatedParameterizedTypes.wrapImpl(isomorphism, (AnnotatedParameterizedType) type);
