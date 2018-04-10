@@ -87,10 +87,7 @@ public class PropertyAccessorDelegate<A> {
     try {
       Constructor<Lookup> constructor = MethodHandles.Lookup.class
           .getDeclaredConstructor(Class.class, int.class);
-
-      if (!constructor.isAccessible()) {
-        constructor.setAccessible(true);
-      }
+      constructor.setAccessible(true);
 
       return constructor;
     } catch (NoSuchMethodException | SecurityException e) {
@@ -250,26 +247,27 @@ public class PropertyAccessorDelegate<A> {
   A createProxy(Class<A> accessor) {
     ClassLoader classLoader = new PropertyAccessorClassLoader(accessor.getClassLoader());
 
-    return (A) Proxy.newProxyInstance(
-        classLoader,
-        new Class<?>[] { accessor },
-        (Object p, Method method, Object[] args) -> {
-          MethodSignature signature = new MethodSignature(method);
+    return (A) Proxy
+        .newProxyInstance(
+            classLoader,
+            new Class<?>[] { accessor },
+            (Object p, Method method, Object[] args) -> {
+              MethodSignature signature = new MethodSignature(method);
 
-          if (DIRECT_METHODS.contains(signature)) {
-            return method.invoke(PropertyAccessorDelegate.this, args);
-          }
+              if (DIRECT_METHODS.contains(signature)) {
+                return method.invoke(PropertyAccessorDelegate.this, args);
+              }
 
-          if (method.isDefault()) {
-            return METHOD_HANDLE_CONSTRUCTOR
-                .newInstance(method.getDeclaringClass(), MethodHandles.Lookup.PRIVATE)
-                .unreflectSpecial(method, method.getDeclaringClass())
-                .bindTo(p)
-                .invokeWithArguments(args);
-          }
+              if (method.isDefault()) {
+                return METHOD_HANDLE_CONSTRUCTOR
+                    .newInstance(method.getDeclaringClass(), MethodHandles.Lookup.PRIVATE)
+                    .unreflectSpecial(method, method.getDeclaringClass())
+                    .bindTo(p)
+                    .invokeWithArguments(args);
+              }
 
-          return getInstantiatedPropertyValue(signature, args);
-        });
+              return getInstantiatedPropertyValue(signature, args);
+            });
   }
 
   class PropertyAccessorClassLoader extends ClassLoader {
