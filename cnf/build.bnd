@@ -75,8 +75,8 @@ Bundle-Developers:\
 
 # Run requirement groups:
 runreq.base=\
-	${req;osgi.enroute.logger.simple.provider},\
-	${req;uk.co.strangeskies.osgi.provider}
+	bnd.identity; osgi.enroute.logger.simple.provider,\
+	bnd.identity; uk.co.strangeskies.osgi.provider
 
 ## Build path groups:
 -buildpath.base=\

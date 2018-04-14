@@ -355,14 +355,14 @@ public class ParameterizedTypes {
    * arguments for consistency.
    */
   @SuppressWarnings("javadoc")
-  public static <T> ParameterizedType parameterizeUnchecked(
-      Class<T> rawType,
+  public static ParameterizedType parameterizeUnchecked(
+      Class<?> rawType,
       Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
     return (ParameterizedType) parameterizeUncheckedImpl(rawType, typeArguments);
   }
 
-  private static <T> Type parameterizeUncheckedImpl(
-      Class<T> rawType,
+  private static Type parameterizeUncheckedImpl(
+      Class<?> rawType,
       Function<? super TypeVariable<?>, ? extends Type> typeArguments) {
     Class<?> enclosing = rawType.getEnclosingClass();
     Type ownerType;
