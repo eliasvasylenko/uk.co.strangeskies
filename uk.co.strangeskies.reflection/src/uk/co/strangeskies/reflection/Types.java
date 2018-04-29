@@ -34,7 +34,6 @@ package uk.co.strangeskies.reflection;
 
 import static java.util.Arrays.stream;
 import static java.util.stream.Stream.of;
-import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
 import static uk.co.strangeskies.reflection.PrimitiveTypes.isPrimitive;
 import static uk.co.strangeskies.reflection.PrimitiveTypes.unwrapPrimitive;
 import static uk.co.strangeskies.reflection.PrimitiveTypes.wrapPrimitive;
@@ -58,7 +57,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.text.parsing.Parser;
 import uk.co.strangeskies.utility.Isomorphism;
 
 /**
@@ -69,8 +67,6 @@ import uk.co.strangeskies.utility.Isomorphism;
  * @author Elias N Vasylenko
  */
 public final class Types {
-  private static final TypeParser TYPE_PARSER = new TypeParser(Imports.empty());
-
   private Types() {}
 
   /**
@@ -1023,155 +1019,5 @@ public final class Types {
 
     if (lowerBounds.length > 0 && !(lowerBounds.length == 1 && lowerBounds[0] == null))
       builder.append(" super ").append(toString(lowerBounds, " & ", imports, isomorphism));
-  }
-
-  /**
-   * Create a Type instance from a parsed String. Here infinitely recurring types
-   * are represented by, for example:
-   * 
-   * {@code java.util.List<java.lang.Number & java.lang.Comparable<? extends java.lang.Number & java.lang.Comparable<? extends java.lang.Number & java.lang.Comparable
-   * <...>>>>}
-   * 
-   * Where "..." would be substituted, recursively, with the parameterization of
-   * the an outer instance of the same raw class. TODO add clarity, and a proper
-   * description of how ambiguity is resolved here.
-   * 
-   * @param typeString
-   *          The String to parse.
-   * @return The type described by the String.
-   */
-  public static Type fromString(String typeString) {
-    return fromString(typeString, Imports.empty());
-  }
-
-  /**
-   * Create a Type instance from a parsed String. Here infinitely recurring types
-   * are represented by, for example:
-   * 
-   * {@code java.util.List<java.lang.Number & java.lang.Comparable<? extends java.lang.Number & java.lang.Comparable<? extends java.lang.Number & java.lang.Comparable
-   * <...>>>>}
-   * 
-   * Where "..." would be substituted, recursively, with the parameterization of
-   * the an outer instance of the same raw class. TODO add clarity, and a proper
-   * description of how ambiguity is resolved here.
-   * 
-   * @param typeString
-   *          The String to parse.
-   * @param imports
-   *          Classes and packages for which full package qualification may be
-   *          omitted from input.
-   * @return The type described by the String.
-   */
-  private static Type fromString(String typeString, Imports imports) {
-    return new TypeParser(imports).classType().parse(typeString);
-  }
-
-  /**
-   * Get the default type parser. All type names will need to be fully qualified
-   * to correctly parse.
-   * 
-   * @return The default annotated type parser
-   */
-  public static TypeParser getParser() {
-    return TYPE_PARSER;
-  }
-
-  /**
-   * Get a type parser with knowledge of the given imports. Type names may omit
-   * full qualification if those types are imported according to the given
-   * imports.
-   * 
-   * @param imports
-   *          A list of imports the type parser should be aware of
-   * @return A type parser with knowledge of the given imports
-   */
-  public static TypeParser getParser(Imports imports) {
-    return new TypeParser(imports);
-  }
-
-  /**
-   * A parser for {@link Type}s, and various related types.
-   * 
-   * @author Elias N Vasylenko
-   */
-  public static class TypeParser {
-    private final Parser<Class<?>> rawType;
-
-    private final Parser<Type> classOrArrayType;
-    private final Parser<WildcardType> wildcardType;
-    private final Parser<Type> typeParameter;
-
-    private TypeParser(Imports imports) {
-      rawType = Parser
-          .matching("[_a-zA-Z][_a-zA-Z0-9]*(\\.[_a-zA-Z][_a-zA-Z0-9]*)*")
-          .transform(imports::getNamedClass);
-
-      classOrArrayType = rawType
-          .transform(Type.class::cast)
-          .tryAppendTransform(
-              Parser
-                  .list(Parser.proxy(this::type), "\\s*,\\s*")
-                  .prepend("\\s*<\\s*")
-                  .append("\\s*>\\s*"),
-              (t, p) -> ParameterizedTypes.parameterize((Class<?>) t, p))
-          .appendTransform(
-              Parser.list(Parser.matching("\\s*\\[\\s*\\]"), "\\s*").prepend("\\s*"),
-              (t, l) -> {
-                t = arrayFromComponent(t, l.size());
-                return t;
-              });
-
-      wildcardType = Parser
-          .matching("\\s*\\?\\s*extends(?![_a-zA-Z0-9])\\s*")
-          .appendTransform(
-              Parser.list(classOrArrayType, "\\s*\\&\\s*"),
-              (s, t) -> WildcardTypes.wildcardExtending(t))
-          .orElse(
-              Parser
-                  .matching("\\s*\\?\\s*super(?![_a-zA-Z0-9])\\s*")
-                  .appendTransform(
-                      Parser.list(classOrArrayType, "\\s*\\&\\s*"),
-                      (s, t) -> WildcardTypes.wildcardSuper(t)))
-          .orElse(Parser.matching("\\s*\\?").transform(s -> WildcardTypes.wildcard()));
-
-      typeParameter = classOrArrayType.orElse(wildcardType.transform(Type.class::cast));
-    }
-
-    /**
-     * A parser for raw class types.
-     * 
-     * @return The raw type of the parsed type name
-     */
-    public Parser<Class<?>> rawType() {
-      return rawType;
-    }
-
-    /**
-     * A parser for a class type, which may be parameterized.
-     * 
-     * @return The type of the expressed name, and the given parameterization where
-     *         appropriate
-     */
-    public Parser<Type> classType() {
-      return classOrArrayType;
-    }
-
-    /**
-     * A parser for a wildcard type.
-     * 
-     * @return The type of the expressed wildcard type
-     */
-    public Parser<WildcardType> wildcardType() {
-      return wildcardType;
-    }
-
-    /**
-     * A parser for a class type or wildcard type.
-     * 
-     * @return The annotated type of the expressed type
-     */
-    public Parser<Type> type() {
-      return typeParameter;
-    }
   }
 }

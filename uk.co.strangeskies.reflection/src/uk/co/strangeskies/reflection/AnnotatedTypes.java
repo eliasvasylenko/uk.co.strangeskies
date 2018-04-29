@@ -45,7 +45,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -56,9 +55,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import uk.co.strangeskies.reflection.Annotations.AnnotationParser;
-import uk.co.strangeskies.reflection.Types.TypeParser;
-import uk.co.strangeskies.text.parsing.Parser;
 import uk.co.strangeskies.utility.Isomorphism;
 
 /**
@@ -70,9 +66,6 @@ import uk.co.strangeskies.utility.Isomorphism;
  * @author Elias N Vasylenko
  */
 public final class AnnotatedTypes {
-  private static final AnnotatedTypeParser ANNOTATED_TYPE_PARSER = new AnnotatedTypeParser(
-      Imports.empty());
-
   /**
    * An internal interface to add some extra functionality onto annotated types.
    * 
@@ -558,154 +551,5 @@ public final class AnnotatedTypes {
    */
   public static String toString(AnnotatedType annotatedType) {
     return wrap(annotatedType).toString();
-  }
-
-  /**
-   * Create an AnnotatedType instance from a parsed String.
-   * 
-   * @param typeString
-   *          The String to parse.
-   * @return The type described by the String.
-   */
-  public static AnnotatedType fromString(String typeString) {
-    return fromString(typeString, Imports.empty());
-  }
-
-  /**
-   * Create an AnnotatedType instance from a parsed String. Provided class and
-   * package imports allow the names of some classes to be given without full
-   * package qualification.
-   * 
-   * @param typeString
-   *          The String to parse.
-   * @param imports
-   *          Classes and packages for which full package qualification may be
-   *          omitted from input.
-   * @return The type described by the String.
-   */
-  public static AnnotatedType fromString(String typeString, Imports imports) {
-    return new AnnotatedTypeParser(imports).getType().parse(typeString);
-  }
-
-  /**
-   * Get the default annotated type parser. All type names will need to be fully
-   * qualified to correctly parse.
-   * 
-   * @return The default annotated type parser
-   */
-  public static AnnotatedTypeParser getParser() {
-    return ANNOTATED_TYPE_PARSER;
-  }
-
-  /**
-   * Get an annotated type parser with knowledge of the given imports. Type names
-   * may omit full qualification if those types are imported according to the
-   * given imports.
-   * 
-   * @param imports
-   *          A list of imports the annotated type parser should be aware of
-   * @return An annotated type parser with knowledge of the given imports
-   */
-  public static AnnotatedTypeParser getParser(Imports imports) {
-    return new AnnotatedTypeParser(imports);
-  }
-
-  /**
-   * A parser for {@link AnnotatedType}s, and various related types.
-   * 
-   * @author Elias N Vasylenko
-   */
-  public static class AnnotatedTypeParser {
-    private final Parser<AnnotatedType> rawType;
-
-    private final Parser<AnnotatedType> classOrArrayType;
-    private final Parser<AnnotatedWildcardType> wildcardType;
-    private final Parser<AnnotatedType> typeParameter;
-
-    private AnnotatedTypeParser(Imports imports) {
-      AnnotationParser annotationParser = Annotations.getParser(imports);
-      TypeParser typeParser = Types.getParser(imports);
-
-      rawType = typeParser
-          .rawType()
-          .prependTransform(
-              annotationParser.getAnnotationList().append("\\s*").orElse(ArrayList::new),
-              AnnotatedTypes::annotated);
-
-      classOrArrayType = rawType
-          .tryAppendTransform(
-              Parser
-                  .list(Parser.proxy(this::getType), "\\s*,\\s*")
-                  .prepend("\\s*<\\s*")
-                  .append("\\s*>\\s*"),
-              AnnotatedParameterizedTypes::parameterize)
-          .appendTransform(
-              Parser
-                  .list(annotationParser.getAnnotationList().append("\\s*\\[\\s*\\]"), "\\s*")
-                  .prepend("\\s*"),
-              (t, l) -> {
-                for (List<Annotation> annotationList : l)
-                  t = AnnotatedArrayTypes.arrayFromComponent(t, annotationList);
-                return t;
-              });
-
-      wildcardType = annotationParser
-          .getAnnotationList()
-          .append("\\s*\\?\\s*extends(?![_a-zA-Z0-9])\\s*")
-          .appendTransform(
-              Parser.list(classOrArrayType, "\\s*\\&\\s*"),
-              AnnotatedWildcardTypes::wildcardExtending)
-          .orElse(
-              annotationParser
-                  .getAnnotationList()
-                  .append("\\s*\\?\\s*super(?![_a-zA-Z0-9])\\s*")
-                  .appendTransform(
-                      Parser.list(classOrArrayType, "\\s*\\&\\s*"),
-                      AnnotatedWildcardTypes::wildcardSuper))
-          .orElse(
-              annotationParser
-                  .getAnnotationList()
-                  .append("\\s*\\?")
-                  .transform(AnnotatedWildcardTypes::wildcard));
-
-      typeParameter = classOrArrayType.orElse(wildcardType.transform(AnnotatedType.class::cast));
-    }
-
-    /**
-     * A parser for annotated raw class types.
-     * 
-     * @return The annotated raw type of the parsed type name
-     */
-    public Parser<AnnotatedType> getRawType() {
-      return rawType;
-    }
-
-    /**
-     * A parser for an annotated class type, which may be parameterized.
-     * 
-     * @return The type of the expressed name, and the given parameterization where
-     *         appropriate
-     */
-    public Parser<AnnotatedType> getClassType() {
-      return classOrArrayType;
-    }
-
-    /**
-     * A parser for an annotated wildcard type.
-     * 
-     * @return The type of the expressed wildcard type
-     */
-    public Parser<AnnotatedWildcardType> getWildcardType() {
-      return wildcardType;
-    }
-
-    /**
-     * A parser for an annotated class type or wildcard type.
-     * 
-     * @return The annotated type of the expressed type
-     */
-    public Parser<AnnotatedType> getType() {
-      return typeParameter;
-    }
   }
 }

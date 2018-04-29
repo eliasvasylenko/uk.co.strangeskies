@@ -82,6 +82,7 @@ import java.util.stream.Stream;
 
 import uk.co.strangeskies.collection.tuple.Pair;
 import uk.co.strangeskies.reflection.AnnotatedParameterizedTypes;
+import uk.co.strangeskies.reflection.AnnotatedTypeParser;
 import uk.co.strangeskies.reflection.AnnotatedTypeSubstitution;
 import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.Annotations;
@@ -129,25 +130,25 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedType<Typ
    * @author Elias N Vasylenko
    */
   public enum Wildcards {
-    /**
-     * Wildcards will be left alone, though capture may be necessary for
-     * incorporation into backing {@link TypeResolver}, as wildcards alone do not
-     * always fully specify valid bounds.
-     */
-    RETAIN(Retain.class),
+      /**
+       * Wildcards will be left alone, though capture may be necessary for
+       * incorporation into backing {@link TypeResolver}, as wildcards alone do not
+       * always fully specify valid bounds.
+       */
+      RETAIN(Retain.class),
 
-    /**
-     * Wildcards should be substituted with inference variables, with appropriate
-     * bounds incorporated based on both type variable bounds and wildcard bounds.
-     */
-    INFER(Infer.class),
+      /**
+       * Wildcards should be substituted with inference variables, with appropriate
+       * bounds incorporated based on both type variable bounds and wildcard bounds.
+       */
+      INFER(Infer.class),
 
-    /**
-     * Wildcards should be substituted with fresh {@link TypeVariableCapture}
-     * instances, as per
-     * {@link TypeVariableCapture#captureWildcardArguments(ParameterizedType)} .
-     */
-    CAPTURE(Capture.class);
+      /**
+       * Wildcards should be substituted with fresh {@link TypeVariableCapture}
+       * instances, as per
+       * {@link TypeVariableCapture#captureWildcardArguments(ParameterizedType)} .
+       */
+      CAPTURE(Capture.class);
 
     private final Annotation annotation;
 
@@ -593,32 +594,12 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedType<Typ
     return new TypeToken<>(this.bounds.withBounds(bounds), getType());
   }
 
-  /**
-   * Equivalent to the application of {@link TypeToken#forType(Type)} to the
-   * result of {@link Types#fromString(String)}.
-   * 
-   * @param typeString
-   *          the String to parse
-   * @return a TypeToken representing the type described by the String
-   */
   public static TypeToken<?> fromString(String typeString) {
-    return forAnnotatedType(AnnotatedTypes.fromString(typeString));
+    return forAnnotatedType(new AnnotatedTypeParser(Imports.empty()).getType().parse(typeString));
   }
 
-  /**
-   * Equivalent to the application of {@link TypeToken#forType(Type)} to the
-   * result of {@link AnnotatedTypes#fromString(String, Imports)}, with the given
-   * imports.
-   * 
-   * @param typeString
-   *          the String to parse
-   * @param imports
-   *          classes and packages for which full package qualification may be
-   *          omitted from input
-   * @return a TypeToken representing the type described by the string
-   */
   public static TypeToken<?> fromString(String typeString, Imports imports) {
-    return forAnnotatedType(AnnotatedTypes.fromString(typeString, imports));
+    return forAnnotatedType(new AnnotatedTypeParser(imports).getType().parse(typeString));
   }
 
   /**

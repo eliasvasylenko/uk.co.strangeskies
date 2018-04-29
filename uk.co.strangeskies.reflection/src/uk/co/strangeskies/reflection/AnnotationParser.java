@@ -1,0 +1,107 @@
+package uk.co.strangeskies.reflection;
+
+import java.lang.annotation.Annotation;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import uk.co.strangeskies.text.parsing.Parser;
+
+/**
+ * A parser for {@link Annotation}s, and various related types.
+ * 
+ * @author Elias N Vasylenko
+ */
+public class AnnotationParser {
+  private final Parser<Annotation> annotation;
+  private final Parser<List<Annotation>> annotationList;
+  private final Parser<Map<String, Object>> propertyMap;
+  private final Parser<AnnotationProperty> property;
+  private final Parser<Object> propertyValue;
+
+  public AnnotationParser(Imports imports) {
+    this(new TypeParser(imports));
+  }
+
+  public AnnotationParser(TypeParser typeParser) {
+    propertyValue = Parser
+        .matching("[a-zA-Z0-9_!]*")
+        .prepend("\"")
+        .append("\"")
+        .transform(Object.class::cast)
+        .orElse(Parser.matching("[0-9]*\\.[0-9]+").append("d").transform(Double::parseDouble))
+        .orElse(Parser.matching("[0-9]*\\.[0-9]+").append("f").transform(Float::parseFloat))
+        .orElse(Parser.matching("[0-9]+").append("l").transform(Long::parseLong))
+        .orElse(Parser.matching("[0-9]+").append("i").transform(Integer::parseInt))
+        .orElse(Parser.matching("[0-9]*\\.[0-9]+").transform(Double::parseDouble))
+        .orElse(Parser.matching("[0-9]+").transform(Integer::parseInt));
+
+    property = Parser
+        .matching("[_a-zA-Z][_a-zA-Z0-9]*")
+        .append("\\s*=\\s*")
+        .appendTransform(propertyValue, (s, t) -> new AnnotationProperty(s, t));
+
+    propertyMap = Parser
+        .proxy(this::getPropertyMap)
+        .prepend("\\s*,\\s*")
+        .orElse(HashMap::new)
+        .prepend(property, (m, p) -> m.put(p.name(), p.value()))
+        .orElse(HashMap::new);
+
+    annotation = typeParser
+        .rawType()
+        .prepend("@")
+        .<Class<? extends Annotation>>transform(t -> t.asSubclass(Annotation.class))
+        .appendTransform(
+            propertyMap.prepend("\\(\\s*").append("\\s*\\)").orElse(Collections::emptyMap),
+            (a, m) -> Annotations.from(a, m));
+
+    annotationList = Parser.list(annotation, "\\s*");
+  }
+
+  /**
+   * A parser for the properties of an annotation.
+   * 
+   * @return A mapping from property names to parsed values
+   */
+  public Parser<Map<String, Object>> getPropertyMap() {
+    return propertyMap;
+  }
+
+  /**
+   * A parser for a property of an annotation, as a key, value pair.
+   * 
+   * @return A pair representing the properties name and value
+   */
+  public Parser<AnnotationProperty> getProperty() {
+    return property;
+  }
+
+  /**
+   * A parser for the value of a property of an annotation
+   * 
+   * @return An object of a valid type for an annotation
+   */
+  public Parser<Object> getPropertyValue() {
+    return propertyValue;
+  }
+
+  /**
+   * A parser for a Java language annotation.
+   * 
+   * @return An {@link Annotation} object parsed from a given string
+   */
+  public Parser<Annotation> getAnnotation() {
+    return annotation;
+  }
+
+  /**
+   * A parser for a whitespace delimited list of Java language annotations.
+   * 
+   * @return A list of {@link Annotation} objects parsed from a given string
+   */
+  public Parser<List<Annotation>> getAnnotationList() {
+    return annotationList;
+  }
+}
