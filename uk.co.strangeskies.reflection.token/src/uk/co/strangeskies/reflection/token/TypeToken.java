@@ -593,7 +593,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, DeclarationToke
 
   /**
    * Equivalent to the application of
-   * {@link AnnotatedTypes#toString(AnnotatedType, Imports)} to
+   * {@link AnnotatedTypeParser#toString(AnnotatedType)} to
    * {@link #getAnnotatedDeclaration()}, with the given imports.
    * 
    * @param imports
@@ -602,7 +602,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, DeclarationToke
    * @return a string representing the type described by this type token
    */
   public String toString(Imports imports) {
-    return AnnotatedTypes.toString(getAnnotatedDeclaration(), imports);
+    return new AnnotatedTypeParser(imports).toString(getAnnotatedDeclaration());
   }
 
   /**

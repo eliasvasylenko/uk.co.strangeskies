@@ -64,6 +64,10 @@ public class TypeParser {
     typeParameter = classOrArrayType.orElse(wildcardType.transform(Type.class::cast));
   }
 
+  public Imports getImports() {
+    return imports;
+  }
+
   /**
    * A parser for raw class types.
    * 

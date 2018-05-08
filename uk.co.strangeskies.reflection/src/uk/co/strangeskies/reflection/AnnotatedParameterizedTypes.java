@@ -138,7 +138,7 @@ public final class AnnotatedParameterizedTypes {
             .append(
                 Arrays
                     .stream(getAnnotatedActualTypeArguments())
-                    .map(t -> AnnotatedTypes.toString(t, imports))
+                    .map(t -> new AnnotatedTypeParser(imports).toString(t))
                     .collect(Collectors.joining(", ")));
 
         string = builder.append(">").toString();

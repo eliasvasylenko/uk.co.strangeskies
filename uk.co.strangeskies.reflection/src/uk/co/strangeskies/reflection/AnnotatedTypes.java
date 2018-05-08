@@ -521,35 +521,4 @@ public final class AnnotatedTypes {
   public static AnnotatedType wrap(AnnotatedType type) {
     return wrapImpl(new Isomorphism(), type);
   }
-
-  /**
-   * Give a canonical String representation of a given annotated type, which is
-   * intended to be more easily human-readable than implementations of
-   * {@link Object#toString()} for certain implementations of {@link Type}.
-   * Provided class and package imports allow the names of some classes to be
-   * output without full package qualification.
-   * 
-   * @param annotatedType
-   *          The type of which we wish to determine a string representation.
-   * @param imports
-   *          Classes and packages for which full package qualification may be
-   *          omitted from output.
-   * @return A canonical string representation of the given type.
-   */
-  public static String toString(AnnotatedType annotatedType, Imports imports) {
-    return wrapImpl(annotatedType).toString(imports);
-  }
-
-  /**
-   * Give a canonical String representation of a given annotated type, which is
-   * intended to be more easily human-readable than implementations of
-   * {@link Object#toString()} for certain implementations of {@link Type}.
-   * 
-   * @param annotatedType
-   *          The type of which we wish to determine a string representation.
-   * @return A canonical string representation of the given type.
-   */
-  public static String toString(AnnotatedType annotatedType) {
-    return wrap(annotatedType).toString();
-  }
 }

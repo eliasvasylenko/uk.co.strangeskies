@@ -1,8 +1,11 @@
 package uk.co.strangeskies.reflection;
 
+import static uk.co.strangeskies.reflection.AnnotatedTypes.wrapImpl;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.AnnotatedWildcardType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,6 +17,8 @@ import uk.co.strangeskies.text.parsing.Parser;
  * @author Elias N Vasylenko
  */
 public class AnnotatedTypeParser {
+  private final TypeParser typeParser;
+
   private final Parser<AnnotatedType> rawType;
 
   private final Parser<AnnotatedType> classOrArrayType;
@@ -29,6 +34,8 @@ public class AnnotatedTypeParser {
   }
 
   public AnnotatedTypeParser(TypeParser typeParser, AnnotationParser annotationParser) {
+    this.typeParser = typeParser;
+
     rawType = typeParser
         .rawType()
         .prependTransform(
@@ -74,6 +81,10 @@ public class AnnotatedTypeParser {
     typeParameter = classOrArrayType.orElse(wildcardType.transform(AnnotatedType.class::cast));
   }
 
+  public Imports getImports() {
+    return typeParser.getImports();
+  }
+
   /**
    * A parser for annotated raw class types.
    * 
@@ -109,5 +120,20 @@ public class AnnotatedTypeParser {
    */
   public Parser<AnnotatedType> getType() {
     return typeParameter;
+  }
+
+  /**
+   * Give a canonical String representation of a given annotated type, which is
+   * intended to be more easily human-readable than implementations of
+   * {@link Object#toString()} for certain implementations of {@link Type}.
+   * Provided class and package imports allow the names of some classes to be
+   * output without full package qualification.
+   * 
+   * @param annotatedType
+   *          The type of which we wish to determine a string representation.
+   * @return A canonical string representation of the given type.
+   */
+  public String toString(AnnotatedType annotatedType) {
+    return wrapImpl(annotatedType).toString(getImports());
   }
 }

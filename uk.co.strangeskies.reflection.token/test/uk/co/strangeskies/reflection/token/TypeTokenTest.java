@@ -680,13 +680,12 @@ public class TypeTokenTest {
     Imports imports = Imports
         .empty()
         .withImports(Capture.class, Retain.class, Test2.class, List.class, Type.class);
-    String annotationString = AnnotatedTypes
+    String annotationString = new AnnotatedTypeParser(imports)
         .toString(
             new TypeToken<@Test3(thisIsTest = "yeah!", wat = 2.5f) List<@Test2(
                 idk = "helo",
                 wat = 2) ? extends @Retain Number> @Capture [] @Infer []>() {}
-                    .getAnnotatedDeclaration(),
-            imports);
+                    .getAnnotatedDeclaration());
     printlines(annotationString);
     printlines();
 
