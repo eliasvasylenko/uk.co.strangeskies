@@ -35,6 +35,7 @@ package uk.co.strangeskies.reflection.token;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -82,9 +83,13 @@ public class OverloadResolver<I extends ExecutableToken<?, ?>> {
   }
 
   public I resolve(Collection<? extends TypeToken<?>> arguments) {
-    if (candidates.isEmpty())
-      throw new IllegalArgumentException(
-          "Cannot find any applicable invocable for arguments '" + arguments + "'");
+    if (candidates.isEmpty()) {
+      throw new ReflectionException(
+          REFLECTION_PROPERTIES
+              .cannotResolveApplicable(
+                  emptySet(),
+                  arguments.stream().map(TypeToken::getType).collect(toList())));
+    }
 
     Set<? extends I> applicableCandidates = resolveApplicableExecutableMembers(
         candidates,

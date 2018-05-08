@@ -279,10 +279,6 @@ public class TypeTokenTest {
             .collect(resolveOverload(Model.class, Collection.class)));
     printlines();
     printlines();
-
-    printlines(new TypeToken<Map<String, ?>>() {}.getThisType());
-    printlines();
-    printlines();
   }
 
   // @Test

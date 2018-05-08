@@ -52,7 +52,7 @@ import uk.co.strangeskies.reflection.ReflectionException;
  * @param <T>
  *          The type of the object instance to track.
  */
-public class TypedObject<T> implements ReifiedType<TypedObject<T>> {
+public class TypedObject<T> {
   private final TypeToken<T> type;
   private final T object;
 
@@ -226,12 +226,6 @@ public class TypedObject<T> implements ReifiedType<TypedObject<T>> {
   @Override
   public String toString() {
     return object + ": " + type;
-  }
-
-  @Override
-  public TypeToken<TypedObject<T>> getThisTypeToken() {
-    return new TypeToken<TypedObject<T>>() {}
-        .withTypeArguments(new TypeParameter<T>().asType(type));
   }
 
   @Override

@@ -121,8 +121,7 @@ import uk.co.strangeskies.utility.Isomorphism;
  * @param <T>
  *          This is the type which the TypeToken object references.
  */
-public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedType<TypeToken<T>>,
-    DeclarationToken<TypeToken<T>> {
+public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, DeclarationToken<TypeToken<T>> {
   /**
    * Treatment of wildcards for {@link TypeToken}s created over parameterized
    * types.
@@ -130,25 +129,25 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedType<Typ
    * @author Elias N Vasylenko
    */
   public enum Wildcards {
-      /**
-       * Wildcards will be left alone, though capture may be necessary for
-       * incorporation into backing {@link TypeResolver}, as wildcards alone do not
-       * always fully specify valid bounds.
-       */
-      RETAIN(Retain.class),
+  /**
+   * Wildcards will be left alone, though capture may be necessary for
+   * incorporation into backing {@link TypeResolver}, as wildcards alone do not
+   * always fully specify valid bounds.
+   */
+  RETAIN(Retain.class),
 
-      /**
-       * Wildcards should be substituted with inference variables, with appropriate
-       * bounds incorporated based on both type variable bounds and wildcard bounds.
-       */
-      INFER(Infer.class),
+  /**
+   * Wildcards should be substituted with inference variables, with appropriate
+   * bounds incorporated based on both type variable bounds and wildcard bounds.
+   */
+  INFER(Infer.class),
 
-      /**
-       * Wildcards should be substituted with fresh {@link TypeVariableCapture}
-       * instances, as per
-       * {@link TypeVariableCapture#captureWildcardArguments(ParameterizedType)} .
-       */
-      CAPTURE(Capture.class);
+  /**
+   * Wildcards should be substituted with fresh {@link TypeVariableCapture}
+   * instances, as per
+   * {@link TypeVariableCapture#captureWildcardArguments(ParameterizedType)} .
+   */
+  CAPTURE(Capture.class);
 
     private final Annotation annotation;
 
@@ -552,17 +551,6 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, ReifiedType<Typ
   @Override
   public int hashCode() {
     return getType().hashCode();
-  }
-
-  @Override
-  public TypeToken<T> getThis() {
-    return ReifiedType.super.getThis();
-  }
-
-  @Override
-  public TypeToken<TypeToken<T>> getThisTypeToken() {
-    return new TypeToken<TypeToken<T>>() {}
-        .withTypeArguments(new TypeParameter<T>() {}.asType(this));
   }
 
   @Override

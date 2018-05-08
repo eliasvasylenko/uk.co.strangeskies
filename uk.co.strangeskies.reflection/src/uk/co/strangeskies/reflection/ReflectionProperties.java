@@ -137,8 +137,8 @@ public interface ReflectionProperties {
   String cannotResolveAmbiguity(Executable firstCandidate, Executable secondCandidate);
 
   String cannotResolveApplicable(
-      Set<? extends Executable> candidates,
-      List<? extends Type> parameters);
+      Collection<? extends Executable> candidates,
+      Collection<? extends Type> parameters);
 
   String incompatibleArgument(
       Type givenArgumentCaptured,
