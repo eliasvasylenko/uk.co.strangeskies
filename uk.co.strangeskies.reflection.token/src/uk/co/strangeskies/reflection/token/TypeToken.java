@@ -584,11 +584,11 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, DeclarationToke
   }
 
   public static TypeToken<?> fromString(String typeString) {
-    return forAnnotatedType(new AnnotatedTypeParser(Imports.empty()).getType().parse(typeString));
+    return forAnnotatedType(new AnnotatedTypeParser(Imports.empty()).type().parse(typeString));
   }
 
   public static TypeToken<?> fromString(String typeString, Imports imports) {
-    return forAnnotatedType(new AnnotatedTypeParser(imports).getType().parse(typeString));
+    return forAnnotatedType(new AnnotatedTypeParser(imports).type().parse(typeString));
   }
 
   /**

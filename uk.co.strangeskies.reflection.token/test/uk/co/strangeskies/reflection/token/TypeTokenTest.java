@@ -691,12 +691,12 @@ public class TypeTokenTest {
 
     printlines(
         new AnnotatedTypeParser(Imports.empty())
-            .getRawType()
+            .rawType()
             .append("-000")
             .parse("java.lang.reflect.Type-000"));
     printlines();
 
-    printlines(new AnnotatedTypeParser(imports).getType().parse("Type"));
+    printlines(new AnnotatedTypeParser(imports).type().parse("Type"));
     printlines();
 
     imports = imports.withImport(Test3.class);
@@ -707,8 +707,7 @@ public class TypeTokenTest {
     printlines(new AnnotationParser(imports).getPropertyMap().parse("wat = 2.5"));
     printlines();
 
-    printlines(
-        new AnnotatedTypeParser(imports).getType().parse("@Capture() java.lang.reflect.Type"));
+    printlines(new AnnotatedTypeParser(imports).type().parse("@Capture() java.lang.reflect.Type"));
     printlines();
 
     printlines(
@@ -722,12 +721,12 @@ public class TypeTokenTest {
     printlines();
 
     printlines(
-        new AnnotatedTypeParser(imports).getType().parse("java.util.ArrayList<java.lang.String>"));
+        new AnnotatedTypeParser(imports).type().parse("java.util.ArrayList<java.lang.String>"));
     printlines();
 
     printlines(
         new AnnotatedTypeParser(imports)
-            .getType()
+            .type()
             .parse(
                 "@Test3(thisIsTest = \"yeah!\", wat = .2f) java.util.ArrayList<@Capture java.lang.String>"));
     printlines();
@@ -737,18 +736,16 @@ public class TypeTokenTest {
     printlines();
 
     printlines(
-        new AnnotatedTypeParser(imports)
-            .getType()
-            .parse("@Capture java.util.ArrayList @Retain [][]"));
+        new AnnotatedTypeParser(imports).type().parse("@Capture java.util.ArrayList @Retain [][]"));
     printlines();
 
     printlines(
         new AnnotatedTypeParser(imports)
-            .getType()
+            .type()
             .parse("@Capture java.util.ArrayList<java.lang.String> [] @Retain []"));
     printlines();
 
-    printlines(new AnnotatedTypeParser(imports).getType().parse("java.util.ArrayList<@Retain?>"));
+    printlines(new AnnotatedTypeParser(imports).type().parse("java.util.ArrayList<@Retain?>"));
     printlines();
 
     printlines(
@@ -759,28 +756,28 @@ public class TypeTokenTest {
 
     printlines(
         new AnnotatedTypeParser(imports)
-            .getType()
+            .type()
             .parse(
                 "@uk.co.strangeskies.reflection.token.TypeToken.Infer List<? extends java.lang.String>"));
     printlines();
 
     printlines(
         new AnnotatedTypeParser(imports)
-            .getType()
+            .type()
             .parse(
                 "@Test3(thisIsTest = \"yeah!\", wat = 2.5f) List<@Test2(idk = \"helo\", wat = 2) ? extends @Retain java.lang.String>"));
     printlines();
 
     printlines(
         new AnnotatedTypeParser(imports)
-            .getType()
+            .type()
             .parse(
                 "List<@Test2(idk = \"helo\", wat = 2) ? extends @Retain java.lang.Number>@Capture []@Capture []"));
     printlines();
 
     printlines(
         new AnnotatedTypeParser(imports)
-            .getType()
+            .type()
             .parse(
                 "@Test3(thisIsTest = \"yeah!\", wat = 2.5f) List<@Test2(idk = \"helo\", wat = 2) ? extends @Retain java.lang.Number> @Capture [] @uk.co.strangeskies.reflection.token.TypeToken.Infer []"));
     printlines();
@@ -790,7 +787,7 @@ public class TypeTokenTest {
             .getAnnotation()
             .parse("@Test3(thisIsTest = \"yeah!\", wat = 2.5f)"));
 
-    printlines(new AnnotatedTypeParser(imports).getType().parse(annotationString));
+    printlines(new AnnotatedTypeParser(imports).type().parse(annotationString));
     printlines();
 
     printlines(new TypeToken<TreeSet<? extends C2<?>>>() {});

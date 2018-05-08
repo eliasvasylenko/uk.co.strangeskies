@@ -45,7 +45,7 @@ public class AnnotatedTypeParser {
     classOrArrayType = rawType
         .tryAppendTransform(
             Parser
-                .list(Parser.proxy(this::getType), "\\s*,\\s*")
+                .list(Parser.proxy(this::type), "\\s*,\\s*")
                 .prepend("\\s*<\\s*")
                 .append("\\s*>\\s*"),
             AnnotatedParameterizedTypes::parameterize)
@@ -90,7 +90,7 @@ public class AnnotatedTypeParser {
    * 
    * @return The annotated raw type of the parsed type name
    */
-  public Parser<AnnotatedType> getRawType() {
+  public Parser<AnnotatedType> rawType() {
     return rawType;
   }
 
@@ -100,7 +100,7 @@ public class AnnotatedTypeParser {
    * @return The type of the expressed name, and the given parameterization where
    *         appropriate
    */
-  public Parser<AnnotatedType> getClassType() {
+  public Parser<AnnotatedType> classType() {
     return classOrArrayType;
   }
 
@@ -109,7 +109,7 @@ public class AnnotatedTypeParser {
    * 
    * @return The type of the expressed wildcard type
    */
-  public Parser<AnnotatedWildcardType> getWildcardType() {
+  public Parser<AnnotatedWildcardType> wildcardType() {
     return wildcardType;
   }
 
@@ -118,7 +118,7 @@ public class AnnotatedTypeParser {
    * 
    * @return The annotated type of the expressed type
    */
-  public Parser<AnnotatedType> getType() {
+  public Parser<AnnotatedType> type() {
     return typeParameter;
   }
 
