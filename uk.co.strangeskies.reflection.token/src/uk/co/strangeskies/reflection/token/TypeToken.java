@@ -95,6 +95,7 @@ import uk.co.strangeskies.reflection.InferenceVariableBounds;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.PrimitiveTypes;
 import uk.co.strangeskies.reflection.TypeHierarchy;
+import uk.co.strangeskies.reflection.TypeParser;
 import uk.co.strangeskies.reflection.TypeResolver;
 import uk.co.strangeskies.reflection.TypeSubstitution;
 import uk.co.strangeskies.reflection.TypeVariableCapture;
@@ -764,7 +765,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, DeclarationToke
 
   @Override
   public String toString() {
-    return Types.toString(getType());
+    return new TypeParser(Imports.empty()).toString(getType());
   }
 
   /**

@@ -199,7 +199,7 @@ public final class AnnotatedTypes {
     public String toString(Imports imports) {
       return new StringBuilder()
           .append(annotationString(imports, annotations.values()))
-          .append(Types.toString(type, imports))
+          .append(new TypeParser(imports).toString(type))
           .toString();
     }
 

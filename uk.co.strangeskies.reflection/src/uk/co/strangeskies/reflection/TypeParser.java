@@ -2,10 +2,16 @@ package uk.co.strangeskies.reflection;
 
 import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
 
+import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import uk.co.strangeskies.text.parsing.Parser;
+import uk.co.strangeskies.utility.Isomorphism;
 
 /**
  * A parser for {@link Type}s, and various related types.
@@ -13,6 +19,7 @@ import uk.co.strangeskies.text.parsing.Parser;
  * @author Elias N Vasylenko
  */
 public class TypeParser {
+  private final Imports imports;
   private final Parser<Class<?>> rawType;
 
   private final Parser<Type> classOrArrayType;
@@ -20,6 +27,8 @@ public class TypeParser {
   private final Parser<Type> typeParameter;
 
   public TypeParser(Imports imports) {
+    this.imports = imports;
+
     rawType = Parser
         .matching("[_a-zA-Z][_a-zA-Z0-9]*(\\.[_a-zA-Z][_a-zA-Z0-9]*)*")
         .transform(imports::getNamedClass);
@@ -90,5 +99,98 @@ public class TypeParser {
    */
   public Parser<Type> type() {
     return typeParameter;
+  }
+
+  /**
+   * Give a canonical String representation of a given type, which is intended to
+   * be more easily human-readable than implementations of
+   * {@link Object#toString()} for certain implementations of {@link Type}.
+   * 
+   * @param type
+   *          The type for which we wish to determine a string representation.
+   * @return A canonical string representation of the given type.
+   */
+  public String toString(Type type) {
+    return toString(type, new Isomorphism());
+  }
+
+  /**
+   * Give a canonical String representation of a given type, which is intended to
+   * be more easily human-readable than implementations of
+   * {@link Object#toString()} for certain implementations of {@link Type}.
+   * Provided class and package imports allow the names of some classes to be
+   * output without full package qualification.
+   * 
+   * @param type
+   *          the type for which we wish to determine a string representation
+   * @param isomorphism
+   *          a type to string isomorphic mapping to deal with recursion
+   * @return A canonical string representation of the given type.
+   */
+  public String toString(Type type, Isomorphism isomorphism) {
+    if (type == null) {
+      return Objects.toString(null);
+    } else if (type instanceof Class) {
+      if (((Class<?>) type).isArray())
+        return new StringBuilder(toString(((Class<?>) type).getComponentType()))
+            .append("[]")
+            .toString();
+      else
+        return imports.getClassName((Class<?>) type);
+    } else if (type instanceof ParameterizedType) {
+      return ParameterizedTypes.toString((ParameterizedType) type, imports, isomorphism);
+    } else if (type instanceof GenericArrayType) {
+      return new StringBuilder(toString(((GenericArrayType) type).getGenericComponentType()))
+          .append("[]")
+          .toString();
+    } else if (type instanceof WildcardType) {
+      WildcardType wildcardType = (WildcardType) type;
+      StringBuilder builder = new StringBuilder("?");
+
+      appendBounds(
+          builder,
+          wildcardType.getUpperBounds(),
+          wildcardType.getLowerBounds(),
+          imports,
+          isomorphism);
+
+      return builder.toString();
+    } else if (type instanceof TypeVariableCapture) {
+      TypeVariableCapture typeVariableCapture = (TypeVariableCapture) type;
+      StringBuilder builder = new StringBuilder(typeVariableCapture.getName());
+
+      appendBounds(
+          builder,
+          typeVariableCapture.getUpperBounds(),
+          typeVariableCapture.getLowerBounds(),
+          imports,
+          isomorphism);
+
+      return builder.toString();
+    } else if (type instanceof IntersectionType) {
+      return IntersectionTypes.toString((IntersectionType) type, imports, isomorphism);
+    } else
+      return type.getTypeName();
+  }
+
+  String toString(Type[] types, String delimiter, Isomorphism isomorphism) {
+    return Arrays
+        .stream(types)
+        .map(t -> toString(t, isomorphism))
+        .collect(Collectors.joining(delimiter));
+  }
+
+  private void appendBounds(
+      StringBuilder builder,
+      Type[] upperBounds,
+      Type[] lowerBounds,
+      Imports imports,
+      Isomorphism isomorphism) {
+    if (upperBounds.length > 0 && (upperBounds.length != 1
+        || (upperBounds[0] != null && !upperBounds[0].equals(Object.class))))
+      builder.append(" extends ").append(toString(upperBounds, " & ", isomorphism));
+
+    if (lowerBounds.length > 0 && !(lowerBounds.length == 1 && lowerBounds[0] == null))
+      builder.append(" super ").append(toString(lowerBounds, " & ", isomorphism));
   }
 }

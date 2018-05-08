@@ -38,6 +38,8 @@ import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 
+import uk.co.strangeskies.reflection.Imports;
+import uk.co.strangeskies.reflection.TypeParser;
 import uk.co.strangeskies.reflection.Types;
 
 public class IsSubtypeOf extends BaseMatcher<Type> {
@@ -58,6 +60,6 @@ public class IsSubtypeOf extends BaseMatcher<Type> {
 
 	@Override
 	public void describeTo(Description description) {
-		description.appendText(" subtype of " + Types.toString(assignmentTarget));
+		description.appendText(" subtype of " + new TypeParser(Imports.empty()).toString(assignmentTarget));
 	}
 }

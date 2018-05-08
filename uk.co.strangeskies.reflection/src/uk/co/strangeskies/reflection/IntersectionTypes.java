@@ -351,7 +351,7 @@ public class IntersectionTypes {
             () -> "...",
 
             i -> stream(i.getTypes()).map(t -> {
-              String typeName = Types.toString(t, imports, isomorphism);
+              String typeName = new TypeParser(imports).toString(t, isomorphism);
               if (t instanceof TypeVariableCapture)
                 typeName = new StringBuilder()
                     .append("[ ")

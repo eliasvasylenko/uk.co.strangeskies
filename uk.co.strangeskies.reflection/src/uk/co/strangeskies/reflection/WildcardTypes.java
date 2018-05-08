@@ -153,8 +153,9 @@ public class WildcardTypes {
 
       @Override
       public String toString() {
+        TypeParser parser = new TypeParser(Imports.empty());
         return "? super "
-            + Arrays.stream(types.get()).map(Types::toString).collect(Collectors.joining(" & "));
+            + Arrays.stream(types.get()).map(parser::toString).collect(Collectors.joining(" & "));
       }
 
       @Override
@@ -252,9 +253,11 @@ public class WildcardTypes {
         Type[] bounds = getUpperBounds();
         if (bounds.length == 0 || (bounds.length == 1 && bounds[0].equals(Object.class)))
           return "?";
-        else
+        else {
+          TypeParser parser = new TypeParser(Imports.empty());
           return "? extends "
-              + Arrays.stream(bounds).map(Types::toString).collect(Collectors.joining(" & "));
+              + Arrays.stream(bounds).map(parser::toString).collect(Collectors.joining(" & "));
+        }
       }
 
       @Override
