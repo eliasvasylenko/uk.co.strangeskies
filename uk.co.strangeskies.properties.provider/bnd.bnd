@@ -1,0 +1,11 @@
+Bundle-Name: Strange Skies :: Text :: Provider
+Bundle-Description: \
+	Service provider for text utilities.
+
+-buildpath: \
+	uk.co.strangeskies.utilities;version=snapshot,\
+	uk.co.strangeskies.observable;version=snapshot,\
+	uk.co.strangeskies.properties;version=snapshot
+
+Private-Package: \
+	uk.co.strangeskies.text.provider

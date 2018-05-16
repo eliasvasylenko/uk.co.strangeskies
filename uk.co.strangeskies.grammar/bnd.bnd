@@ -1,0 +1,19 @@
+Export-Package: \
+	uk.co.strangeskies.text,\
+	uk.co.strangeskies.text.grammar,\
+	uk.co.strangeskies.text.parsing,\
+	uk.co.strangeskies.grammar,\
+	uk.co.strangeskies.text.properties.localization
+
+Bundle-Name: Strange Skies :: Text
+
+Bundle-Description: \
+	Common Java utilities for dealing with text.
+
+-buildpath: \
+	uk.co.strangeskies.utilities;version=snapshot,\
+	uk.co.strangeskies.observable;version=snapshot,\
+	uk.co.strangeskies.collections;version=snapshot
+
+-includeresource: \
+	OSGI-INF/l10n=l10n
