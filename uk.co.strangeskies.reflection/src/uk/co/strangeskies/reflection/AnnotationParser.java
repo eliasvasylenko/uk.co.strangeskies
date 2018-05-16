@@ -32,13 +32,18 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static uk.co.strangeskies.text.grammar.RuleBuilder.buildRuleFor;
+import static uk.co.strangeskies.text.grammar.Symbol.regex;
+import static uk.co.strangeskies.text.grammar.Symbol.string;
+
 import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import uk.co.strangeskies.text.parsing.Parser;
+import uk.co.strangeskies.text.grammar.Grammar;
+import uk.co.strangeskies.text.grammar.Variable;
 
 /**
  * A parser for {@link Annotation}s, and various related types.
@@ -46,28 +51,47 @@ import uk.co.strangeskies.text.parsing.Parser;
  * @author Elias N Vasylenko
  */
 public class AnnotationParser {
-  private final Parser<Annotation> annotation;
-  private final Parser<List<Annotation>> annotationList;
-  private final Parser<Map<String, Object>> propertyMap;
-  private final Parser<AnnotationProperty> property;
-  private final Parser<Object> propertyValue;
+  private final Grammar grammar;
+
+  private final Variable<Annotation> annotation;
+  private final Variable<List<Annotation>> annotationList;
+  private final Variable<Map<String, Object>> propertyMap;
+  private final Variable<AnnotationProperty> property;
+  private final Variable<Object> propertyValue;
 
   public AnnotationParser(Imports imports) {
     this(new TypeParser(imports));
   }
 
   public AnnotationParser(TypeParser typeParser) {
-    propertyValue = Parser
-        .matching("[a-zA-Z0-9_!]*")
-        .prepend("\"")
-        .append("\"")
-        .transform(Object.class::cast)
-        .orElse(Parser.matching("[0-9]*\\.[0-9]+").append("d").transform(Double::parseDouble))
-        .orElse(Parser.matching("[0-9]*\\.[0-9]+").append("f").transform(Float::parseFloat))
-        .orElse(Parser.matching("[0-9]+").append("l").transform(Long::parseLong))
-        .orElse(Parser.matching("[0-9]+").append("i").transform(Integer::parseInt))
-        .orElse(Parser.matching("[0-9]*\\.[0-9]+").transform(Double::parseDouble))
-        .orElse(Parser.matching("[0-9]+").transform(Integer::parseInt));
+    grammar = null; // TODO
+
+    propertyValue = new Variable<>("property-value");
+
+    grammar = grammar
+        .withRule(
+            buildRuleFor(propertyValue)
+                .producing(string("\""), regex("[a-zA-Z0-9_!]*"), string("\"")))
+        .withRule(
+            buildRuleFor(propertyValue)
+                .producing(regex("[0-9]*\\.[0-9]+"),
+                string("d")
+                .transform(Double::parseDouble))
+        .withRule(
+            buildRuleFor(propertyValue)
+                .producing("[0-9]*\\.[0-9]+")
+                .append("f")
+                .transform(Float::parseFloat))
+        .withRule(
+            buildRuleFor(propertyValue).producing("[0-9]+").append("l").transform(Long::parseLong))
+        .withRule(
+            buildRuleFor(propertyValue)
+                .producing("[0-9]+")
+                .append("i")
+                .transform(Integer::parseInt))
+        .withRule(
+            buildRuleFor(propertyValue).producing("[0-9]*\\.[0-9]+").transform(Double::parseDouble))
+        .withRule(buildRuleFor(propertyValue).producing("[0-9]+").transform(Integer::parseInt));
 
     property = Parser
         .matching("[_a-zA-Z][_a-zA-Z0-9]*")

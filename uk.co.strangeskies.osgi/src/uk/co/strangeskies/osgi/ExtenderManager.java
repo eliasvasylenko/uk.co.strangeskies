@@ -155,11 +155,12 @@ public abstract class ExtenderManager implements BundleListener {
       synchronized (added) {
         added.remove(bundle);
       }
-      getLog().log(
-          Level.ERROR,
-          "Cannot register bundle '" + bundle.getSymbolicName() + "' with extension manager '"
-              + this + "'",
-          e);
+      getLog()
+          .log(
+              Level.ERROR,
+              "Cannot register bundle '" + bundle.getSymbolicName() + "' with extension manager '"
+                  + this + "'",
+              e);
     } finally {
       lock.unlock();
     }

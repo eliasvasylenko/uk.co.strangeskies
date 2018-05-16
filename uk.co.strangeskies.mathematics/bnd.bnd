@@ -8,7 +8,7 @@ Bundle-Description: \
 	uk.co.strangeskies.utilities;version=snapshot,\
 	uk.co.strangeskies.collections;version=snapshot,\
 	uk.co.strangeskies.observable;version=snapshot,\
-	uk.co.strangeskies.text;version=snapshot,\
+	uk.co.strangeskies.properties;version=snapshot,\
 	uk.co.strangeskies.expressions;version=snapshot
 
 Private-Package:  \

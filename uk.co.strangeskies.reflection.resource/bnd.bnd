@@ -5,5 +5,5 @@ Export-Package: \
 
 # utilities project must be on the build path for tests
 -buildpath: \
-	uk.co.strangeskies.text;version=snapshot,\
+	uk.co.strangeskies.grammar;version=snapshot,\
 	uk.co.strangeskies.utilities;version=snapshot
