@@ -32,12 +32,58 @@
  */
 package uk.co.strangeskies.text.grammar;
 
-public interface Parser<T> {
-  Grammar grammar();
+import static java.util.stream.Collectors.toList;
 
-  Variable<T> symbol();
+import java.util.List;
 
-  T parse(String string);
+/**
+ * A production is something that can be produced by a symbol.
+ * 
+ * @author Elias N Vasylenko
+ *
+ */
+public class ListVariable<T> extends Variable<List<T>> {
+  private final Variable<T> element;
 
-  String compose(T object);
+  public ListVariable(String id, Variable<T> element) {
+    super(id);
+    this.element = element;
+  }
+
+  public Variable<T> getElement() {
+    return element;
+  }
+
+  public void a() {
+    new Rule() {
+      @SuppressWarnings("unchecked")
+      @Override
+      public <E> Action<E> getProduction(Variable<E> symbol) {
+        if (symbol instanceof ListVariable<?>)
+          return (Action<E>) getListProduction((ListVariable<?>) symbol);
+        else
+          return null;
+      }
+
+      private <E> Action<List<E>> getListProduction(ListVariable<E> symbol) {
+        Variable<E> element = symbol.getElement();
+
+        return new Action<List<E>>(
+            Symbol.string("["),
+            element.then(Symbol.string(",").then(element).repeated()).optionally(),
+            Symbol.string("]")) {
+          @Override
+          public List<E> input(SymbolsIn symbols) {
+            return symbols.getAll(element).collect(toList());
+          }
+
+          @Override
+          public boolean output(SymbolsOut symbols, List<E> out) {
+            symbols.putAll(element, out);
+            return true;
+          }
+        };
+      }
+    };
+  }
 }

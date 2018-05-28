@@ -46,16 +46,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import uk.co.strangeskies.text.properties.PropertyConfiguration;
-import uk.co.strangeskies.text.properties.PropertyConfiguration.KeyCase;
-
 /**
  * Properties and localized strings relating to types.
  * 
  * @author Elias N Vasylenko
  */
 @SuppressWarnings("javadoc")
-@PropertyConfiguration(keyCase = KeyCase.LOWER, keySplitString = ".")
 public interface ReflectionProperties {
   String unsupportedType(Type type);
 

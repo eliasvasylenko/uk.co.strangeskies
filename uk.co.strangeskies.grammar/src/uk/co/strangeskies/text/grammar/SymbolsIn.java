@@ -35,11 +35,11 @@ package uk.co.strangeskies.text.grammar;
 import java.util.stream.Stream;
 
 public interface SymbolsIn {
-  <T> T getNext(Variable<T> symbol);
+  <T> T get(Symbol<T> symbol);
 
-  <T> T get(Variable<T> symbol, int index);
+  <T> T get(Symbol<T> symbol, int index);
 
-  <T> Stream<T> getRemaining(Variable<T> symbol);
+  <T> Stream<T> getRemaining(Symbol<T> symbol);
 
-  <T> Stream<T> getAll(Variable<T> symbol);
+  <T> Stream<T> getAll(Symbol<T> symbol);
 }

@@ -150,7 +150,7 @@ public final class Annotations {
         builder.append("l");
 
       } else if (Class.class.isInstance(object)) {
-        builder.append(new TypeParser(imports).toString((Class<?>) object)).append(".class");
+        builder.append(new TypeGrammar(imports).toString((Class<?>) object)).append(".class");
 
       } else {
         builder.append(object.toString());

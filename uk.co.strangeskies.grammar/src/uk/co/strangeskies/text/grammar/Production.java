@@ -9,13 +9,13 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class Production {
-  private final List<Symbol> entries;
+  private final List<Expression> entries;
 
-  public Production(Symbol... entries) {
+  public Production(Expression... entries) {
     this(asList(entries));
   }
 
-  public Production(Collection<? extends Symbol> entries) {
+  public Production(Collection<? extends Expression> entries) {
     this.entries = new ArrayList<>(entries);
   }
 
@@ -24,7 +24,7 @@ public class Production {
     return entries.stream().map(Object::toString).collect(joining(", "));
   }
 
-  public Stream<Symbol> getElements() {
+  public Stream<Expression> getElements() {
     return entries.stream();
   }
 

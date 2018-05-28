@@ -9,11 +9,11 @@ import java.util.stream.Stream;
 public class Concatenation implements AnonymousSymbol {
   private final Production elements;
 
-  public Concatenation(Symbol... elements) {
+  public Concatenation(Expression... elements) {
     this(asList(elements));
   }
 
-  public Concatenation(Collection<? extends Symbol> elements) {
+  public Concatenation(Collection<? extends Expression> elements) {
     this.elements = new Production(elements);
   }
 

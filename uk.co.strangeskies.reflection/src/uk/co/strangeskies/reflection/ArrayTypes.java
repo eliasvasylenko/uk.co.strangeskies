@@ -59,7 +59,7 @@ public class ArrayTypes {
     @Override
     public String toString() {
       StringBuilder builder = new StringBuilder(
-          new TypeParser(Imports.empty()).toString(getGenericComponentType()));
+          new TypeGrammar(Imports.empty()).toString(getGenericComponentType()));
       if (getGenericComponentType() instanceof IntersectionType)
         builder.append(" ");
       return builder.append("[]").toString();

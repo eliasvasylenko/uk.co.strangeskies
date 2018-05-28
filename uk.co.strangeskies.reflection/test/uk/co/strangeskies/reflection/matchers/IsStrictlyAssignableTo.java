@@ -39,7 +39,7 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 
 import uk.co.strangeskies.reflection.Imports;
-import uk.co.strangeskies.reflection.TypeParser;
+import uk.co.strangeskies.reflection.TypeGrammar;
 import uk.co.strangeskies.reflection.Types;
 
 public class IsStrictlyAssignableTo extends BaseMatcher<Type> {
@@ -61,6 +61,6 @@ public class IsStrictlyAssignableTo extends BaseMatcher<Type> {
 
 	@Override
 	public void describeTo(Description description) {
-		description.appendText(" strictly assignable to " + new TypeParser(Imports.empty()).toString(assignmentTarget));
+		description.appendText(" strictly assignable to " + new TypeGrammar(Imports.empty()).toString(assignmentTarget));
 	}
 }

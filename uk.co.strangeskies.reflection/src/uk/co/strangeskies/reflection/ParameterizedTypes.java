@@ -182,9 +182,9 @@ public class ParameterizedTypes {
        */
       StringBuilder builder = new StringBuilder();
       if (ownerType == null) {
-        builder.append(new TypeParser(imports).toString(rawType, isomorphism));
+        builder.append(new TypeGrammar(imports).toString(rawType, isomorphism));
       } else {
-        builder.append(new TypeParser(imports).toString(ownerType, isomorphism)).append(".");
+        builder.append(new TypeGrammar(imports).toString(ownerType, isomorphism)).append(".");
 
         if (ownerType instanceof ParameterizedType) {
           String rawTypeName = rawType.getTypeName();
@@ -194,7 +194,7 @@ public class ParameterizedTypes {
           }
           builder.append(rawTypeName);
         } else {
-          builder.append(new TypeParser(imports).toString(rawType, isomorphism));
+          builder.append(new TypeGrammar(imports).toString(rawType, isomorphism));
         }
       }
 
@@ -204,7 +204,7 @@ public class ParameterizedTypes {
           .append(
               Arrays
                   .stream(typeArguments)
-                  .map(t -> new TypeParser(imports).toString(t, isomorphism))
+                  .map(t -> new TypeGrammar(imports).toString(t, isomorphism))
                   .collect(Collectors.joining(", ")));
 
       return builder.append('>').toString();

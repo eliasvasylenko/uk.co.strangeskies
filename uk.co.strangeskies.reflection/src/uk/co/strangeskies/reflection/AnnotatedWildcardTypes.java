@@ -146,7 +146,7 @@ public final class AnnotatedWildcardTypes {
     private String annotatedBounds(AnnotatedType[] bounds, Imports imports) {
       return Arrays
           .stream(bounds)
-          .map(t -> new AnnotatedTypeParser(imports).toString(t))
+          .map(t -> new AnnotatedTypeGrammar(imports).toString(t))
           .collect(Collectors.joining(" & "));
     }
 

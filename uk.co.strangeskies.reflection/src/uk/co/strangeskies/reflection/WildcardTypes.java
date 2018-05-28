@@ -153,7 +153,7 @@ public class WildcardTypes {
 
       @Override
       public String toString() {
-        TypeParser parser = new TypeParser(Imports.empty());
+        TypeGrammar parser = new TypeGrammar(Imports.empty());
         return "? super "
             + Arrays.stream(types.get()).map(parser::toString).collect(Collectors.joining(" & "));
       }
@@ -254,7 +254,7 @@ public class WildcardTypes {
         if (bounds.length == 0 || (bounds.length == 1 && bounds[0].equals(Object.class)))
           return "?";
         else {
-          TypeParser parser = new TypeParser(Imports.empty());
+          TypeGrammar parser = new TypeGrammar(Imports.empty());
           return "? extends "
               + Arrays.stream(bounds).map(parser::toString).collect(Collectors.joining(" & "));
         }
@@ -301,5 +301,15 @@ public class WildcardTypes {
   public static boolean hasUpperBound(WildcardType wildcard) {
     return wildcard.getUpperBounds().length > 0
         && !Arrays.equals(wildcard.getUpperBounds(), new Type[] { Object.class });
+  }
+
+  /**
+   * @param wildcard
+   *          the wildcard to test
+   * @return true if the given types has a meaningful upper bound, i.e. other than
+   *         {@link Object}
+   */
+  public static boolean hasLowerBound(WildcardType wildcard) {
+    return wildcard.getLowerBounds().length > 0;
   }
 }

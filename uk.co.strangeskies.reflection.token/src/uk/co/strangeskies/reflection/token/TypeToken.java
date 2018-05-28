@@ -82,7 +82,7 @@ import java.util.stream.Stream;
 
 import uk.co.strangeskies.collection.tuple.Pair;
 import uk.co.strangeskies.reflection.AnnotatedParameterizedTypes;
-import uk.co.strangeskies.reflection.AnnotatedTypeParser;
+import uk.co.strangeskies.reflection.AnnotatedTypeGrammar;
 import uk.co.strangeskies.reflection.AnnotatedTypeSubstitution;
 import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.Annotations;
@@ -95,7 +95,7 @@ import uk.co.strangeskies.reflection.InferenceVariableBounds;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.PrimitiveTypes;
 import uk.co.strangeskies.reflection.TypeHierarchy;
-import uk.co.strangeskies.reflection.TypeParser;
+import uk.co.strangeskies.reflection.TypeGrammar;
 import uk.co.strangeskies.reflection.TypeResolver;
 import uk.co.strangeskies.reflection.TypeSubstitution;
 import uk.co.strangeskies.reflection.TypeVariableCapture;
@@ -584,16 +584,16 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, DeclarationToke
   }
 
   public static TypeToken<?> fromString(String typeString) {
-    return forAnnotatedType(new AnnotatedTypeParser(Imports.empty()).type().parse(typeString));
+    return forAnnotatedType(new AnnotatedTypeGrammar(Imports.empty()).type().parse(typeString));
   }
 
   public static TypeToken<?> fromString(String typeString, Imports imports) {
-    return forAnnotatedType(new AnnotatedTypeParser(imports).type().parse(typeString));
+    return forAnnotatedType(new AnnotatedTypeGrammar(imports).type().parse(typeString));
   }
 
   /**
    * Equivalent to the application of
-   * {@link AnnotatedTypeParser#toString(AnnotatedType)} to
+   * {@link AnnotatedTypeGrammar#toString(AnnotatedType)} to
    * {@link #getAnnotatedDeclaration()}, with the given imports.
    * 
    * @param imports
@@ -602,7 +602,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, DeclarationToke
    * @return a string representing the type described by this type token
    */
   public String toString(Imports imports) {
-    return new AnnotatedTypeParser(imports).toString(getAnnotatedDeclaration());
+    return new AnnotatedTypeGrammar(imports).toString(getAnnotatedDeclaration());
   }
 
   /**
@@ -765,7 +765,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, DeclarationToke
 
   @Override
   public String toString() {
-    return new TypeParser(Imports.empty()).toString(getType());
+    return new TypeGrammar(Imports.empty()).toString(getType());
   }
 
   /**

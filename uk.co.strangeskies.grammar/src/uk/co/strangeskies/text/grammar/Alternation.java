@@ -11,10 +11,10 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 public class Alternation implements AnonymousSymbol {
-  private final Set<Symbol> elements;
+  private final Set<Expression> elements;
   private final List<Production> options;
 
-  public Alternation(Collection<? extends Symbol> elements) {
+  public Alternation(Collection<? extends Expression> elements) {
     this.elements = new LinkedHashSet<>(elements);
     this.options = elements.stream().map(Production::new).collect(toList());
   }

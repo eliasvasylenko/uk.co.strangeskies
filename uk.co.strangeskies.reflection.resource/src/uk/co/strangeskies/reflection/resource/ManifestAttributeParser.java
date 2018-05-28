@@ -32,8 +32,6 @@
  */
 package uk.co.strangeskies.reflection.resource;
 
-import static uk.co.strangeskies.text.parsing.Parser.matching;
-
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,78 +41,88 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import uk.co.strangeskies.text.EscapeFormatter;
-import uk.co.strangeskies.text.parsing.Parser;
 
 public class ManifestAttributeParser {
-	static final EscapeFormatter DOUBLE_QUOTE_ESCAPER = new EscapeFormatter('\\', "\"");
-	static final EscapeFormatter SINGLE_QUOTE_ESCAPER = new EscapeFormatter('\\', "'");
+  static final EscapeFormatter DOUBLE_QUOTE_ESCAPER = new EscapeFormatter('\\', "\"");
+  static final EscapeFormatter SINGLE_QUOTE_ESCAPER = new EscapeFormatter('\\', "'");
 
-	static final String ALPHANUMERIC = "a-zA-Z0-9";
-	static final String KEY = "[\\-\\._" + ALPHANUMERIC + "]+";
-	static final String SIMPLE_VALUE = "[^;,=]*";
-	static final String WHITESPACE = "\\s*";
+  static final String ALPHANUMERIC = "a-zA-Z0-9";
+  static final String KEY = "[\\-\\._" + ALPHANUMERIC + "]+";
+  static final String SIMPLE_VALUE = "[^;,=]*";
+  static final String WHITESPACE = "\\s*";
 
-	private final Parser<? extends List<? extends Attribute>> attributes;
-	private final Parser<? extends Attribute> attribute;
-	private final Parser<? extends AttributeProperty<?>> attributeProperty;
-	private final Parser<? extends String> valueString;
+  private final Parser<? extends List<? extends Attribute>> attributes;
+  private final Parser<? extends Attribute> attribute;
+  private final Parser<? extends AttributeProperty<?>> attributeProperty;
+  private final Parser<? extends String> valueString;
 
-	public ManifestAttributeParser(PropertyType<?>... knownPropertyTypes) {
-		this(Arrays.asList(knownPropertyTypes));
-	}
+  public ManifestAttributeParser(PropertyType<?>... knownPropertyTypes) {
+    this(Arrays.asList(knownPropertyTypes));
+  }
 
-	public ManifestAttributeParser(Collection<? extends PropertyType<?>> knownPropertyTypes) {
-		Parser<PropertyType<?>> type = matching("([" + ALPHANUMERIC + "]+(<[" + ALPHANUMERIC + "]+>)?)|")
-				.transform(s -> PropertyType.fromName(s, knownPropertyTypes));
+  public ManifestAttributeParser(Collection<? extends PropertyType<?>> knownPropertyTypes) {
+    Parser<PropertyType<?>> type = matching(
+        "([" + ALPHANUMERIC + "]+(<[" + ALPHANUMERIC + "]+>)?)|")
+            .transform(s -> PropertyType.fromName(s, knownPropertyTypes));
 
-		Parser<String> doubleQuotedString = matching("([^\"\\\\]*(\\\\.[^\"\\\\]*)*)").prepend("\"").append("\"").transform(
-				DOUBLE_QUOTE_ESCAPER::unescape);
-		Parser<String> singleQuotedString = matching("([^'\\\\]*(\\\\.[^\'\\\\]*)*)").prepend("'").append("'").transform(
-				SINGLE_QUOTE_ESCAPER::unescape);
+    Parser<String> doubleQuotedString = matching("([^\"\\\\]*(\\\\.[^\"\\\\]*)*)")
+        .prepend("\"")
+        .append("\"")
+        .transform(DOUBLE_QUOTE_ESCAPER::unescape);
+    Parser<String> singleQuotedString = matching("([^'\\\\]*(\\\\.[^\'\\\\]*)*)")
+        .prepend("'")
+        .append("'")
+        .transform(SINGLE_QUOTE_ESCAPER::unescape);
 
-		valueString = doubleQuotedString.orElse(singleQuotedString).orElse(matching(SIMPLE_VALUE));
+    valueString = doubleQuotedString.orElse(singleQuotedString).orElse(matching(SIMPLE_VALUE));
 
-		attributeProperty = matching(KEY)
-				.appendTransform(type.prepend(":").orElse(() -> null), this::newPair)
-				.append("=")
-				.appendTransform(valueString, this::newAttributeProperty);
+    attributeProperty = matching(KEY)
+        .appendTransform(type.prepend(":").orElse(() -> null), this::newPair)
+        .append("=")
+        .appendTransform(valueString, this::newAttributeProperty);
 
-		attribute = matching(KEY).appendTransform(
-				Parser.list(attributeProperty, WHITESPACE + ";" + WHITESPACE, 0).prepend(WHITESPACE + ";" + WHITESPACE).orElse(
-						Collections.emptyList()),
-				Attribute::new);
+    attribute = matching(KEY)
+        .appendTransform(
+            Parser
+                .list(attributeProperty, WHITESPACE + ";" + WHITESPACE, 0)
+                .prepend(WHITESPACE + ";" + WHITESPACE)
+                .orElse(Collections.emptyList()),
+            Attribute::new);
 
-		attributes = Parser.list(attribute, WHITESPACE + "," + WHITESPACE);
-	}
+    attributes = Parser.list(attribute, WHITESPACE + "," + WHITESPACE);
+  }
 
-	private Entry<String, PropertyType<?>> newPair(String name, PropertyType<?> type) {
-		return new AbstractMap.SimpleEntry<>(name, type);
-	}
+  private Entry<String, PropertyType<?>> newPair(String name, PropertyType<?> type) {
+    return new AbstractMap.SimpleEntry<>(name, type);
+  }
 
-	private AttributeProperty<?> newAttributeProperty(Entry<String, PropertyType<?>> nameAndType, String valueString) {
-		String name = nameAndType.getKey();
-		PropertyType<?> type = nameAndType.getValue();
+  private AttributeProperty<?> newAttributeProperty(
+      Entry<String, PropertyType<?>> nameAndType,
+      String valueString) {
+    String name = nameAndType.getKey();
+    PropertyType<?> type = nameAndType.getValue();
 
-		if (type == null) {
-			return AttributeProperty.untyped(name, valueString);
-		} else {
-			return AttributeProperty.parseValueString(nameAndType.getKey(), nameAndType.getValue(), valueString);
-		}
-	}
+    if (type == null) {
+      return AttributeProperty.untyped(name, valueString);
+    } else {
+      return AttributeProperty
+          .parseValueString(nameAndType.getKey(), nameAndType.getValue(), valueString);
+    }
+  }
 
-	public String parseValueString(String valueString) {
-		return this.valueString.parse(valueString);
-	}
+  public String parseValueString(String valueString) {
+    return this.valueString.parse(valueString);
+  }
 
-	public AttributeProperty<?> parseAttributeProperty(String attribute) {
-		return this.attributeProperty.parse(attribute);
-	}
+  public AttributeProperty<?> parseAttributeProperty(String attribute) {
+    return this.attributeProperty.parse(attribute);
+  }
 
-	public Attribute parseAttribute(String entry) {
-		return this.attribute.parse(entry);
-	}
+  public Attribute parseAttribute(String entry) {
+    return this.attribute.parse(entry);
+  }
 
-	public List<Attribute> parseAttributes(String entry) {
-		return new ArrayList<>(this.attributes.parse(entry));
-	}
+  public List<Attribute> parseAttributes(String entry) {
+    return new ArrayList<>(this.attributes.parse(entry));
+  }
 }

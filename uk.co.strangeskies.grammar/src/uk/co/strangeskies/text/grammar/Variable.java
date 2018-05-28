@@ -1,6 +1,6 @@
 package uk.co.strangeskies.text.grammar;
 
-public class Variable<T> implements Symbol {
+public class Variable<T> implements Symbol<T> {
   private final String id;
 
   public Variable(String id) {

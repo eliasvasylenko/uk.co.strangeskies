@@ -6,11 +6,11 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 public class Repetition implements AnonymousSymbol {
-  private final Symbol element;
+  private final Expression element;
   private final Production termination;
   private final Production continuation;
 
-  public Repetition(Symbol element) {
+  public Repetition(Expression element) {
     this.element = requireNonNull(element);
     this.termination = new Production(Symbol.empty());
     this.continuation = new Production(this, element);
@@ -26,7 +26,7 @@ public class Repetition implements AnonymousSymbol {
     return "{ " + element + " }";
   }
 
-  public Symbol getElement() {
+  public Expression getElement() {
     return element;
   }
 

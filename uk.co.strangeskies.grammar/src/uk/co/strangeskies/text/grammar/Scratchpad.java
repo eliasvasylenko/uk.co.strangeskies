@@ -82,25 +82,25 @@ public class Scratchpad {
             buildRuleFor(expression)
                 .matchingOutput(Addition.class)
                 .producing(expression, whitespace, string("+"), whitespace, expression)
-                .input(in -> new Addition(in.getNext(expression), in.getNext(expression)))
+                .input(in -> new Addition(in.get(expression), in.get(expression)))
                 .output(out -> t -> out.putAll(expression, t.getA(), t.getB())),
 
             buildRuleFor(expression)
                 .matchingOutput(Subtraction.class)
                 .producing(expression, whitespace, string("-"), whitespace, expression)
-                .input(in -> new Subtraction(in.getNext(expression), in.getNext(expression)))
+                .input(in -> new Subtraction(in.get(expression), in.get(expression)))
                 .output(out -> t -> out.putAll(expression, t.getA(), t.getB())),
 
             buildRuleFor(expression)
                 .matchingOutput(Multiplication.class)
                 .producing(expression, whitespace, string("*"), whitespace, expression)
-                .input(in -> new Multiplication(in.getNext(expression), in.getNext(expression)))
+                .input(in -> new Multiplication(in.get(expression), in.get(expression)))
                 .output(out -> t -> out.putAll(expression, t.getA(), t.getB())),
 
             buildRuleFor(expression)
                 .matchingOutput(Division.class)
                 .producing(expression, whitespace, string("/"), whitespace, expression)
-                .input(in -> new Division(in.getNext(expression), in.getNext(expression)))
+                .input(in -> new Division(in.get(expression), in.get(expression)))
                 .output(out -> t -> out.putAll(expression, t.getA(), t.getB())),
 
             buildRuleFor(sentence)

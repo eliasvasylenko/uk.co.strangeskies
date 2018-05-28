@@ -1,16 +1,22 @@
 package uk.co.strangeskies.text.grammar;
 
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.joining;
+
+import java.util.Collection;
 import java.util.Objects;
 import java.util.stream.Stream;
 
 public class Option implements AnonymousSymbol {
-  private final Symbol element;
   private final Production accept;
   private final Production decline;
 
-  public Option(Symbol element) {
-    this.element = Objects.requireNonNull(element);
-    this.accept = new Production(element);
+  public Option(Expression... elements) {
+    this(asList(elements));
+  }
+
+  public Option(Collection<? extends Expression> elements) {
+    this.accept = new Production(elements);
     this.decline = new Production(Symbol.empty());
   }
 
@@ -21,16 +27,12 @@ public class Option implements AnonymousSymbol {
 
   @Override
   public String toString() {
-    return "{ " + element + " }";
-  }
-
-  public Symbol getElement() {
-    return element;
+    return "{ " + accept.getElements().map(Object::toString).collect(joining(", ")) + " }";
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(element);
+    return Objects.hash(accept);
   }
 
   @Override
@@ -42,6 +44,6 @@ public class Option implements AnonymousSymbol {
 
     Option that = (Option) obj;
 
-    return this.element.equals(that.element);
+    return this.accept.equals(that.accept);
   }
 }

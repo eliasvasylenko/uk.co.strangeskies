@@ -33,11 +33,18 @@
 package uk.co.strangeskies.text.grammar;
 
 import java.util.Collection;
+import java.util.function.Supplier;
 
 public interface SymbolsOut {
-  <T> void put(Variable<T> symbol, T value);
+  <T> T get(Class<T> type);
 
-  <T> void putAll(Variable<T> symbol, @SuppressWarnings("unchecked") T... values);
+  <T> T set(Class<T> type, T value);
 
-  <T> void putAll(Variable<T> symbol, Collection<? extends T> values);
+  <T> T setIfAbsent(Class<T> type, Supplier<? extends T> value);
+
+  <T> SymbolsOut put(Symbol<T> symbol, T value);
+
+  <T> SymbolsOut putAll(Symbol<T> symbol, @SuppressWarnings("unchecked") T... values);
+
+  <T> SymbolsOut putAll(Symbol<T> symbol, Collection<? extends T> values);
 }

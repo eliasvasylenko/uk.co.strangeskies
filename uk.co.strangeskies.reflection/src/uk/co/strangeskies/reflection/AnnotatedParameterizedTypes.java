@@ -39,6 +39,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -131,14 +132,14 @@ public final class AnnotatedParameterizedTypes {
         string = "...";
 
         StringBuilder builder = new StringBuilder(annotationString(imports, getAnnotations()))
-            .append(new TypeParser(imports).toString(getType().getRawType()))
+            .append(new TypeGrammar(imports).toString(getType().getRawType()))
             .append("<");
 
         builder
             .append(
                 Arrays
                     .stream(getAnnotatedActualTypeArguments())
-                    .map(t -> new AnnotatedTypeParser(imports).toString(t))
+                    .map(t -> new AnnotatedTypeGrammar(imports).toString(t))
                     .collect(Collectors.joining(", ")));
 
         string = builder.append(">").toString();
@@ -256,7 +257,9 @@ public final class AnnotatedParameterizedTypes {
    * @return A new {@link AnnotatedParameterizedType} instance with the given type
    *         arguments, and the given annotations.
    */
-  public static AnnotatedType parameterize(AnnotatedType rawType, AnnotatedType... arguments) {
+  public static AnnotatedParameterizedType parameterize(
+      AnnotatedType rawType,
+      AnnotatedType... arguments) {
     return parameterize(rawType, Arrays.asList(arguments));
   }
 
@@ -271,15 +274,19 @@ public final class AnnotatedParameterizedTypes {
    * @return A new {@link AnnotatedParameterizedType} instance with the given type
    *         arguments, and the given annotations.
    */
-  public static AnnotatedType parameterize(AnnotatedType rawType, List<AnnotatedType> arguments) {
+  public static AnnotatedParameterizedType parameterize(
+      AnnotatedType rawType,
+      Collection<? extends AnnotatedType> arguments) {
     Map<TypeVariable<?>, AnnotatedType> annotatedTypes = new HashMap<>();
     TypeVariable<?>[] typeVariables = ((Class<?>) rawType.getType()).getTypeParameters();
 
     if (typeVariables.length != arguments.size())
       throw new IllegalArgumentException();
 
+    List<AnnotatedType> argumentList = new ArrayList<>(arguments);
+
     for (int i = 0; i < arguments.size(); i++)
-      annotatedTypes.put(typeVariables[i], arguments.get(i));
+      annotatedTypes.put(typeVariables[i], argumentList.get(i));
 
     return AnnotatedParameterizedTypes
         .parameterize((Class<?>) rawType.getType(), annotatedTypes::get, rawType.getAnnotations());

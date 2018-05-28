@@ -32,12 +32,59 @@
  */
 package uk.co.strangeskies.text.grammar;
 
-public interface Parser<T> {
-  Grammar grammar();
+import static java.util.Arrays.asList;
+import static uk.co.strangeskies.text.grammar.Symbol.string;
 
-  Variable<T> symbol();
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
-  T parse(String string);
+/**
+ * A production is something that can be produced by a symbol.
+ * 
+ * @author Elias N Vasylenko
+ *
+ */
+public interface Expression {
+  default Expression repeated() {
+    return new Repetition(this);
+  }
 
-  String compose(T object);
+  default Expression repeated(int minimum) {
+    List<Expression> symbols = new ArrayList<>(minimum + 1);
+    symbols.add(new Repetition(this));
+    for (int i = 0; i < minimum; i++) {
+      symbols.add(this);
+    }
+    return new Concatenation(symbols);
+  }
+
+  default Expression except(Terminal<?> terminal) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  default Expression optionally() {
+    return new Option(this);
+  }
+
+  default Expression or(Variable<Class<?>> rawType) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  default Expression then(Expression... append) {
+    return then(asList(append));
+  }
+
+  default Expression then(Collection<? extends Expression> append) {
+    List<Expression> symbols = new ArrayList<>(append.size() + 1);
+    symbols.add(this);
+    symbols.addAll(append);
+    return new Concatenation(symbols);
+  }
+
+  default Expression then(String string) {
+    return then(string(string));
+  }
 }

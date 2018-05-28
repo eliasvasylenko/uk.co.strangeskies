@@ -36,17 +36,17 @@ import java.util.Collection;
 import java.util.stream.Stream;
 
 public interface Grammar {
-  Grammar withRule(Rule<?> rule);
+  Grammar withRule(Rule rule);
 
-  Grammar withRules(Rule<?>... rules);
+  Grammar withRules(Rule... rules);
 
-  Grammar withRules(Collection<? extends Rule<?>> rules);
+  Grammar withRules(Collection<? extends Rule> rules);
 
   GrammarImporter withRulesFor(Variable<?> symbol);
 
   Stream<Variable<?>> getVariables();
 
-  <T> Stream<Rule<? extends T>> getRules(Variable<T> symbol);
+  Stream<Rule> getRules();
 
   <T> Parser<T> forSymbol(Variable<T> symbol);
 

@@ -43,16 +43,16 @@ import java.lang.reflect.Type;
  * @author Elias N Vasylenko
  */
 public class ReflectionException extends RuntimeException {
-	private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-	public static final ReflectionProperties REFLECTION_PROPERTIES = getDefaultProperties(
-			ReflectionProperties.class);
+  public static final ReflectionProperties REFLECTION_PROPERTIES = getDefaultProperties(
+      ReflectionProperties.class);
 
-	public ReflectionException(String message) {
-		super(message);
-	}
+  public ReflectionException(String message) {
+    super(message);
+  }
 
-	public ReflectionException(String message, Throwable cause) {
-		super(message, cause);
-	}
+  public ReflectionException(String message, Throwable cause) {
+    super(message, cause);
+  }
 }

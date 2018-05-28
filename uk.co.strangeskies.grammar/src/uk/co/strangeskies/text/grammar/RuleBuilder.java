@@ -1,27 +1,53 @@
 package uk.co.strangeskies.text.grammar;
 
+import static java.util.function.Function.identity;
+
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-public interface RuleBuilder<T> {
-  static <T> RuleBuilder<T> buildRuleFor(Variable<T> symbol) {
-    return null;// TODO
+public class RuleBuilder<T> {
+  private final Variable<T> variable;
+
+  public RuleBuilder(Variable<T> variable) {
+    this.variable = variable;
   }
 
-  <U extends T> RuleBuilder<U> matchingOutput(Class<U> type, Predicate<? super U> matcher);
+  public <U> RuleBuilder<U> transforming(
+      Function<? super T, ? extends U> transformationOut,
+      Function<? super U, ? extends T> transformationIn) {
 
-  <U extends T> RuleBuilder<U> matchingOutput(Class<U> type);
+  }
 
-  RuleBuilder<T> matchingOutput(Predicate<? super T> matcher);
+  public <U extends T> RuleBuilder<U> matchingOutput(Class<U> type, Predicate<? super U> matcher) {
+    return matchingOutput(type).matchingOutput(matcher);
+  }
 
-  ProductionRuleInputBuilder<T> producing(Symbol... productions);
+  public <U extends T> RuleBuilder<U> matchingOutput(Class<U> type);
 
-  interface ProductionRuleInputBuilder<T> {
+  public RuleBuilder<T> matchingOutput(Predicate<? super T> matcher);
+
+  public ProductionRuleInputBuilder<T> producing(Expression... productions);
+
+  public <U> SingleProductionRuleInputBuilder<T, U> producingSymbol(Symbol<U> production);
+
+  public Rule producingIdentity(Symbol<T> production) {
+    return producingSymbol(production).input(identity()).output(identity());
+  }
+
+  public interface ProductionRuleInputBuilder<T> {
     ProductionRuleOutputBuilder<T> input(Function<? super SymbolsIn, ? extends T> in);
   }
 
-  interface ProductionRuleOutputBuilder<T> {
-    Rule<T> output(Function<? super SymbolsOut, ? extends Consumer<? super T>> out);
+  public interface ProductionRuleOutputBuilder<T> {
+    Rule output(Function<? super SymbolsOut, ? extends Consumer<? super T>> out);
+  }
+
+  public interface SingleProductionRuleInputBuilder<T, U> {
+    SingleProductionRuleOutputBuilder<T, U> input(Function<? super U, ? extends T> in);
+  }
+
+  public interface SingleProductionRuleOutputBuilder<T, U> {
+    Rule output(Function<? super T, ? extends U> out);
   }
 }
