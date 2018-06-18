@@ -33,6 +33,7 @@
 package uk.co.strangeskies.reflection;
 
 import static java.util.Collections.emptySet;
+import static java.util.stream.Collectors.joining;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedArrayType;
@@ -55,6 +56,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import uk.co.strangeskies.reflection.grammar.TypeGrammar;
 import uk.co.strangeskies.utility.Isomorphism;
 
 /**
@@ -198,28 +200,14 @@ public final class AnnotatedTypes {
     @Override
     public String toString(Imports imports) {
       return new StringBuilder()
-          .append(annotationString(imports, annotations.values()))
+          .append(
+              annotations
+                  .values()
+                  .stream()
+                  .map(a -> Annotations.toString(a, imports) + " ")
+                  .collect(joining()))
           .append(new TypeGrammar(imports).toString(type))
           .toString();
-    }
-
-    protected static String annotationString(Imports imports, Annotation... annotations) {
-      return annotationString(imports, Arrays.asList(annotations));
-    }
-
-    protected static String annotationString(
-        Imports imports,
-        Collection<? extends Annotation> annotations) {
-      if (!annotations.isEmpty()) {
-        StringBuilder builder = new StringBuilder();
-
-        for (Annotation annotation : annotations)
-          builder.append(Annotations.toString(annotation, imports)).append(" ");
-
-        return builder.toString();
-      } else {
-        return "";
-      }
     }
   }
 

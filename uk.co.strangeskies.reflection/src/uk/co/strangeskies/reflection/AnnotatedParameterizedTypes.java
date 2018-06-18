@@ -52,6 +52,8 @@ import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes.AnnotatedTypeImpl;
 import uk.co.strangeskies.reflection.AnnotatedTypes.AnnotatedTypeInternal;
+import uk.co.strangeskies.reflection.grammar.AnnotatedTypeGrammar;
+import uk.co.strangeskies.reflection.grammar.TypeGrammar;
 import uk.co.strangeskies.utility.Isomorphism;
 
 /**
@@ -66,7 +68,6 @@ public final class AnnotatedParameterizedTypes {
 
   private static class AnnotatedParameterizedTypeImpl extends AnnotatedTypeImpl
       implements AnnotatedParameterizedTypeInternal {
-    private String string;
     private final AnnotatedTypeInternal[] annotatedTypeArguments;
 
     public AnnotatedParameterizedTypeImpl(
@@ -127,12 +128,14 @@ public final class AnnotatedParameterizedTypes {
     }
 
     @Override
-    public synchronized String toString(Imports imports) {
-      if (string == null) {
-        string = "...";
+    public String toString(Imports imports) {
+      if (ThreadLocalRecursionDetector.repeatCount(this) == 2)
+        return "...";
 
+      ThreadLocalRecursionDetector.push(this);
+      try {
         StringBuilder builder = new StringBuilder(annotationString(imports, getAnnotations()))
-            .append(new TypeGrammar(imports).toString(getType().getRawType()))
+            .append(new TypeGrammar().type(imports).compose(getType().getRawType()))
             .append("<");
 
         builder
@@ -142,16 +145,17 @@ public final class AnnotatedParameterizedTypes {
                     .map(t -> new AnnotatedTypeGrammar(imports).toString(t))
                     .collect(Collectors.joining(", ")));
 
-        string = builder.append(">").toString();
+        return builder.append(">").toString();
+      } finally {
+        ThreadLocalRecursionDetector.pop();
       }
-
-      return string;
     }
 
     @Override
     public int annotationHashImpl() {
       return super.annotationHashImpl() ^ annotationHash(annotatedTypeArguments);
     }
+
   }
 
   private AnnotatedParameterizedTypes() {}
@@ -306,7 +310,7 @@ public final class AnnotatedParameterizedTypes {
    */
   public static Stream<Map.Entry<TypeVariable<?>, AnnotatedType>> getAllTypeArguments(
       AnnotatedParameterizedType type) {
-    Class<?> rawType = Types.getErasedType(type.getType());
+    Class<?> rawType = TypesOLD.getErasedType(type.getType());
 
     TypeVariable<?>[] parameters = rawType.getTypeParameters();
     AnnotatedType[] arguments = type.getAnnotatedActualTypeArguments();

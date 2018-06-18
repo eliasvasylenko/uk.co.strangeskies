@@ -36,8 +36,8 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 
-import uk.co.strangeskies.reflection.BoundSet;
 import uk.co.strangeskies.reflection.Visibility;
+import uk.co.strangeskies.reflection.inference.BoundSet;
 
 /**
  * A type safe wrapper around {@link Member} instances, with proper handling of

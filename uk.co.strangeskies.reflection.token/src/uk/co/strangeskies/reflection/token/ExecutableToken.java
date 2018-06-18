@@ -42,11 +42,11 @@ import static uk.co.strangeskies.collection.stream.StreamUtilities.entriesToMap;
 import static uk.co.strangeskies.collection.stream.StreamUtilities.throwingReduce;
 import static uk.co.strangeskies.collection.stream.StreamUtilities.tryOptional;
 import static uk.co.strangeskies.collection.stream.StreamUtilities.zip;
-import static uk.co.strangeskies.reflection.BoundSet.emptyBoundSet;
-import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.LOOSE_COMPATIBILILTY;
-import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.SUBTYPE;
 import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
-import static uk.co.strangeskies.reflection.Types.getErasedType;
+import static uk.co.strangeskies.reflection.TypesOLD.getErasedType;
+import static uk.co.strangeskies.reflection.inference.BoundSet.emptyBoundSet;
+import static uk.co.strangeskies.reflection.inference.ConstraintFormula.Kind.LOOSE_COMPATIBILILTY;
+import static uk.co.strangeskies.reflection.inference.ConstraintFormula.Kind.SUBTYPE;
 import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
 import static uk.co.strangeskies.reflection.token.TypeToken.forType;
 
@@ -70,14 +70,14 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import uk.co.strangeskies.collection.stream.StreamUtilities;
-import uk.co.strangeskies.reflection.BoundSet;
-import uk.co.strangeskies.reflection.ConstraintFormula;
-import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
-import uk.co.strangeskies.reflection.InferenceVariable;
+import uk.co.strangeskies.reflection.inference.BoundSet;
+import uk.co.strangeskies.reflection.inference.ConstraintFormula;
+import uk.co.strangeskies.reflection.inference.InferenceVariable;
+import uk.co.strangeskies.reflection.inference.TypeResolver;
+import uk.co.strangeskies.reflection.inference.ConstraintFormula.Kind;
 import uk.co.strangeskies.reflection.ReflectionException;
-import uk.co.strangeskies.reflection.TypeResolver;
 import uk.co.strangeskies.reflection.TypeSubstitution;
-import uk.co.strangeskies.reflection.Types;
+import uk.co.strangeskies.reflection.TypesOLD;
 
 /**
  * <p>
@@ -751,7 +751,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
                 .filter(m -> m.getName().equals(getName()))
                 .filter(m -> Arrays.equals(m.getParameterTypes(), getMember().getParameterTypes())))
         .reduce(
-            (a, b) -> Types.isAssignable(a.getGenericReturnType(), b.getGenericReturnType())
+            (a, b) -> TypesOLD.isAssignable(a.getGenericReturnType(), b.getGenericReturnType())
                 ? a
                 : b)
         .orElse(null);
@@ -957,7 +957,7 @@ public class ExecutableToken<O, R> implements MemberToken<O, ExecutableToken<O, 
           if (parameters.hasNext()) {
             nextParameter = parameters.next().getType();
           } else if (variableArity) {
-            parameter = Types.getComponentType(parameter);
+            parameter = TypesOLD.getComponentType(parameter);
             nextParameter = null;
           }
         }

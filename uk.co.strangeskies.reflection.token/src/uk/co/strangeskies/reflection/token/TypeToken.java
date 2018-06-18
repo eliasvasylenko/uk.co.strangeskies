@@ -39,11 +39,11 @@ import static java.util.stream.Collectors.toMap;
 import static uk.co.strangeskies.collection.stream.StreamUtilities.zip;
 import static uk.co.strangeskies.reflection.AnnotatedTypes.annotated;
 import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
-import static uk.co.strangeskies.reflection.BoundSet.emptyBoundSet;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
-import static uk.co.strangeskies.reflection.Types.isSubtype;
+import static uk.co.strangeskies.reflection.TypesOLD.isSubtype;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardExtending;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcardSuper;
+import static uk.co.strangeskies.reflection.inference.BoundSet.emptyBoundSet;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.forConstructor;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.forMethod;
 import static uk.co.strangeskies.reflection.token.FieldToken.forField;
@@ -82,24 +82,24 @@ import java.util.stream.Stream;
 
 import uk.co.strangeskies.collection.tuple.Pair;
 import uk.co.strangeskies.reflection.AnnotatedParameterizedTypes;
-import uk.co.strangeskies.reflection.AnnotatedTypeGrammar;
 import uk.co.strangeskies.reflection.AnnotatedTypeSubstitution;
 import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.Annotations;
-import uk.co.strangeskies.reflection.BoundSet;
-import uk.co.strangeskies.reflection.ConstraintFormula;
-import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
+import uk.co.strangeskies.reflection.grammar.AnnotatedTypeGrammar;
+import uk.co.strangeskies.reflection.grammar.TypeGrammar;
+import uk.co.strangeskies.reflection.inference.BoundSet;
+import uk.co.strangeskies.reflection.inference.ConstraintFormula;
+import uk.co.strangeskies.reflection.inference.InferenceVariable;
+import uk.co.strangeskies.reflection.inference.InferenceVariableBounds;
+import uk.co.strangeskies.reflection.inference.TypeResolver;
+import uk.co.strangeskies.reflection.inference.ConstraintFormula.Kind;
+import uk.co.strangeskies.reflection.model.TypeVariableCapture;
 import uk.co.strangeskies.reflection.Imports;
-import uk.co.strangeskies.reflection.InferenceVariable;
-import uk.co.strangeskies.reflection.InferenceVariableBounds;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.PrimitiveTypes;
 import uk.co.strangeskies.reflection.TypeHierarchy;
-import uk.co.strangeskies.reflection.TypeGrammar;
-import uk.co.strangeskies.reflection.TypeResolver;
 import uk.co.strangeskies.reflection.TypeSubstitution;
-import uk.co.strangeskies.reflection.TypeVariableCapture;
-import uk.co.strangeskies.reflection.Types;
+import uk.co.strangeskies.reflection.TypesOLD;
 import uk.co.strangeskies.reflection.WildcardTypes;
 import uk.co.strangeskies.utility.DeepCopyable;
 import uk.co.strangeskies.utility.Isomorphism;
@@ -384,7 +384,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, DeclarationToke
           .getAllTypeArguments((ParameterizedType) annotatedType.getType())
           .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-      TypeVariable<?>[] parameters = Types
+      TypeVariable<?>[] parameters = TypesOLD
           .getErasedType(annotatedType.getType())
           .getTypeParameters();
       for (int i = 0; i < arguments.length; i++) {
@@ -395,7 +395,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, DeclarationToke
        * New parameterized type
        */
       ParameterizedType parameterizedType = ParameterizedTypes
-          .parameterizeUnchecked(Types.getErasedType(annotatedType.getType()), allArguments::get);
+          .parameterizeUnchecked(TypesOLD.getErasedType(annotatedType.getType()), allArguments::get);
       if (allArguments.values().stream().anyMatch(WildcardType.class::isInstance)) {
         if (behavior == Wildcards.CAPTURE) {
           parameterizedType = TypeVariableCapture.captureWildcardArguments(parameterizedType);
@@ -688,7 +688,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, DeclarationToke
   }
 
   /**
-   * See {@link Types#getErasedType(Type)}.
+   * See {@link TypesOLD#getErasedType(Type)}.
    * 
    * @return the raw type of the type represented by this TypeToken
    */
@@ -698,7 +698,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, DeclarationToke
   }
 
   /**
-   * See {@link Types#getErasedType(Type)}.
+   * See {@link TypesOLD#getErasedType(Type)}.
    * 
    * @return the raw type of the type represented by this TypeToken
    */
@@ -714,13 +714,13 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, DeclarationToke
 
   /**
    * Find the upper bounding classes and parameterized types of a given type.
-   * Unlike {@link Types#getUpperBounds(Type)} this respects bounds on the
+   * Unlike {@link TypesOLD#getUpperBounds(Type)} this respects bounds on the
    * inference variables in this resolver.
    * 
    * @return the upper bounds of the type represented by this TypeToken
    */
   public Stream<Type> getUpperBounds() {
-    List<Type> upperBounds = Types.getUpperBounds(getType()).collect(toList());
+    List<Type> upperBounds = TypesOLD.getUpperBounds(getType()).collect(toList());
 
     for (int i = 0; i < upperBounds.size(); i++) {
       Type upperBound = upperBounds.get(i);
@@ -750,7 +750,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, DeclarationToke
    * @return the raw types of the type represented by this TypeToken
    */
   public Stream<Class<?>> getErasedUpperBounds() {
-    return getUpperBounds().map(Types::getErasedType);
+    return getUpperBounds().map(TypesOLD::getErasedType);
   }
 
   /**
@@ -1226,7 +1226,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, DeclarationToke
 
     Stream<Method> methodStream = upperBounds.stream().flatMap(t -> stream(t.getMethods()));
 
-    if (upperBounds.stream().allMatch(Types::isInterface))
+    if (upperBounds.stream().allMatch(TypesOLD::isInterface))
       methodStream = Stream.concat(methodStream, stream(Object.class.getMethods()));
 
     TypeHierarchy typeHierarchy = new TypeHierarchy(getType());
@@ -1351,7 +1351,7 @@ public class TypeToken<T> implements DeepCopyable<TypeToken<T>>, DeclarationToke
         return Optional
             .of(
                 forType(
-                    Types.isGeneric(enclosingClass)
+                    TypesOLD.isGeneric(enclosingClass)
                         ? ParameterizedTypes.parameterize(enclosingClass)
                         : enclosingClass));
 

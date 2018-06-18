@@ -37,17 +37,17 @@ import java.lang.reflect.Type;
 import org.junit.Assert;
 import org.junit.Test;
 
-import uk.co.strangeskies.reflection.Types;
+import uk.co.strangeskies.reflection.TypesOLD;
 
 @SuppressWarnings("javadoc")
 public class NullTypeTest {
 	@Test
 	public void assignabilityFromNullTest() {
-		Assert.assertTrue(Types.isAssignable((Type) null, String.class));
+		Assert.assertTrue(TypesOLD.isAssignable((Type) null, String.class));
 	}
 
 	@Test
 	public void assignabilityToNullTest() {
-		Assert.assertTrue(Types.isAssignable(String.class, (Type) null));
+		Assert.assertTrue(TypesOLD.isAssignable(String.class, (Type) null));
 	}
 }

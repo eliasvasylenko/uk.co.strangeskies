@@ -33,15 +33,8 @@
 package uk.co.strangeskies.text.grammar;
 
 import java.util.Collection;
-import java.util.function.Supplier;
 
-public interface SymbolsOut {
-  <T> T get(Class<T> type);
-
-  <T> T set(Class<T> type, T value);
-
-  <T> T setIfAbsent(Class<T> type, Supplier<? extends T> value);
-
+public interface SymbolsOut extends Context {
   <T> SymbolsOut put(Symbol<T> symbol, T value);
 
   <T> SymbolsOut putAll(Symbol<T> symbol, @SuppressWarnings("unchecked") T... values);

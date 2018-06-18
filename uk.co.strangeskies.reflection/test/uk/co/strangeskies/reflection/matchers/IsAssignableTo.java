@@ -39,8 +39,8 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 
 import uk.co.strangeskies.reflection.Imports;
-import uk.co.strangeskies.reflection.TypeGrammar;
-import uk.co.strangeskies.reflection.Types;
+import uk.co.strangeskies.reflection.TypesOLD;
+import uk.co.strangeskies.reflection.grammar.TypeGrammar;
 
 public class IsAssignableTo extends BaseMatcher<Type> {
 	private final Type assignmentTarget;
@@ -55,7 +55,7 @@ public class IsAssignableTo extends BaseMatcher<Type> {
 
 	@Override
 	public boolean matches(Object item) {
-		return (item == null || item instanceof Type) && Types.isAssignable((Type) item, assignmentTarget);
+		return (item == null || item instanceof Type) && TypesOLD.isAssignable((Type) item, assignmentTarget);
 	}
 
 	@Override

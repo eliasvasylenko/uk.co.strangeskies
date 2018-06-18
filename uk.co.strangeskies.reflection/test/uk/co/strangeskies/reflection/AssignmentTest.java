@@ -37,7 +37,6 @@ import static org.junit.Assert.assertThat;
 import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
 import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterize;
-import static uk.co.strangeskies.reflection.TypeVariableCapture.captureWildcard;
 import static uk.co.strangeskies.reflection.TypeVariables.typeVariableExtending;
 import static uk.co.strangeskies.reflection.TypeVariables.unboundedTypeVariable;
 import static uk.co.strangeskies.reflection.WildcardTypes.wildcard;
@@ -46,6 +45,7 @@ import static uk.co.strangeskies.reflection.WildcardTypes.wildcardSuper;
 import static uk.co.strangeskies.reflection.matchers.IsAssignableTo.isAssignableTo;
 import static uk.co.strangeskies.reflection.matchers.IsStrictlyAssignableTo.isStrictlyAssignableTo;
 import static uk.co.strangeskies.reflection.matchers.IsSubtypeOf.isSubtypeOf;
+import static uk.co.strangeskies.reflection.model.TypeVariableCapture.captureWildcard;
 
 import java.io.Serializable;
 import java.lang.reflect.Type;
@@ -56,7 +56,7 @@ import org.junit.Test;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.IntersectionType;
-import uk.co.strangeskies.reflection.TypeVariableCapture;
+import uk.co.strangeskies.reflection.model.TypeVariableCapture;
 
 @SuppressWarnings({ "rawtypes", "javadoc" })
 public class AssignmentTest {

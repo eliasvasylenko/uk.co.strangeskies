@@ -39,8 +39,8 @@ import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.collection.stream.StreamUtilities.zip;
-import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.SUBTYPE;
 import static uk.co.strangeskies.reflection.Visibility.forModifiers;
+import static uk.co.strangeskies.reflection.inference.ConstraintFormula.Kind.SUBTYPE;
 import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
 
 import java.lang.reflect.Executable;

@@ -57,11 +57,11 @@ import java.util.function.Function;
 import java.util.stream.Collector;
 
 import uk.co.strangeskies.collection.tuple.Pair;
-import uk.co.strangeskies.reflection.ConstraintFormula;
-import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
+import uk.co.strangeskies.reflection.inference.ConstraintFormula;
+import uk.co.strangeskies.reflection.inference.TypeResolver;
+import uk.co.strangeskies.reflection.inference.ConstraintFormula.Kind;
 import uk.co.strangeskies.reflection.ReflectionException;
-import uk.co.strangeskies.reflection.TypeResolver;
-import uk.co.strangeskies.reflection.Types;
+import uk.co.strangeskies.reflection.TypesOLD;
 
 public class OverloadResolver<I extends ExecutableToken<?, ?>> {
   private final Set<I> candidates;
@@ -330,19 +330,19 @@ public class OverloadResolver<I extends ExecutableToken<?, ?>> {
         ExecutableParameter secondParameter = secondParameterIteror.next();
 
         if (!secondMoreSpecific && !secondCandidate.isGeneric()) {
-          if (!Types.isAssignable(firstParameter.getType(), secondParameter.getType())) {
+          if (!TypesOLD.isAssignable(firstParameter.getType(), secondParameter.getType())) {
             firstMoreSpecific = false;
             break;
           }
         } else if (!firstMoreSpecific && !firstCandidate.isGeneric()) {
-          if (!Types.isAssignable(secondParameter.getType(), firstParameter.getType())) {
+          if (!TypesOLD.isAssignable(secondParameter.getType(), firstParameter.getType())) {
             secondMoreSpecific = false;
             break;
           }
         } else {
-          secondMoreSpecific = Types
+          secondMoreSpecific = TypesOLD
               .isAssignable(secondParameter.getType(), firstParameter.getType());
-          firstMoreSpecific = Types
+          firstMoreSpecific = TypesOLD
               .isAssignable(firstParameter.getType(), secondParameter.getType());
 
           if (!(firstMoreSpecific || secondMoreSpecific))

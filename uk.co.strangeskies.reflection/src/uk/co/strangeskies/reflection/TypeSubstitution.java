@@ -32,22 +32,8 @@
  */
 package uk.co.strangeskies.reflection;
 
-import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
-import static uk.co.strangeskies.reflection.AnnotatedTypes.annotated;
-import static uk.co.strangeskies.reflection.ArrayTypes.arrayFromComponent;
-import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOfImpl;
-import static uk.co.strangeskies.reflection.ParameterizedTypes.parameterizeUnchecked;
-import static uk.co.strangeskies.reflection.TypeVariables.typeVariableExtending;
-import static uk.co.strangeskies.reflection.WildcardTypes.wildcardExtending;
-import static uk.co.strangeskies.reflection.WildcardTypes.wildcardSuper;
 
-import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -55,7 +41,19 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.ArrayType;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.IntersectionType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.UnionType;
+import javax.lang.model.type.WildcardType;
+
 import uk.co.strangeskies.property.IdentityProperty;
+import uk.co.strangeskies.reflection.inference.InferenceVariable;
+import uk.co.strangeskies.reflection.model.ExtendedTypes;
+import uk.co.strangeskies.reflection.model.TypeMirrorProxy;
 import uk.co.strangeskies.utility.Isomorphism;
 
 /**
@@ -67,19 +65,20 @@ import uk.co.strangeskies.utility.Isomorphism;
  *
  */
 public class TypeSubstitution {
+  private final ExtendedTypes types;
   private final Isomorphism isomorphism;
-  private final Function<? super Type, ? extends Type> mapping;
+  private final Function<? super TypeMirror, ? extends TypeMirror> mapping;
   private final Supplier<Boolean> empty;
-  private final boolean includeTypeVariables;
 
   /**
    * Create a new TypeSubstitution with no initial substitution rules.
    */
-  public TypeSubstitution() {
+  public TypeSubstitution(ExtendedTypes types) {
+    this.types = types;
+
     isomorphism = new Isomorphism();
     mapping = t -> null;
     empty = () -> true;
-    includeTypeVariables = false;
   }
 
   /**
@@ -87,48 +86,55 @@ public class TypeSubstitution {
    * we do something like create an instance from a {@link Map} of Type instances
    * to other Type instances, then pass the method reference of
    * {@link Map#get(Object)} for that map to this constructor. For this specific
-   * example use case though, {@link #TypeSubstitution(Map)} would perform
-   * slightly better.
+   * example use case though, {@link #TypeSubstitution(ExtendedTypes,Map)} would
+   * perform slightly better.
    * 
    * @param mapping
    *          A mapping function for transforming encountered types to their
    *          substitution types.
    */
-  public TypeSubstitution(Function<? super Type, ? extends Type> mapping) {
+  public TypeSubstitution(
+      ExtendedTypes types,
+      Function<? super TypeMirror, ? extends TypeMirror> mapping) {
+    this.types = types;
+
     isomorphism = new Isomorphism();
     this.mapping = mapping;
     empty = () -> false;
-    includeTypeVariables = false;
   }
 
   /**
    * Create a new TypeSubstitution to apply the given mapping. This is more
-   * efficient than the more general {@link #TypeSubstitution(Function)}
-   * constructor, as it can skip type traversal for empty maps.
+   * efficient than the more general
+   * {@link #TypeSubstitution(ExtendedTypes,Function)} constructor, as it can skip
+   * type traversal for empty maps.
    * 
    * @param mapping
    *          A mapping function for transforming encountered types to their
    *          substitution types.
    */
-  public TypeSubstitution(Map<? extends Type, ? extends Type> mapping) {
+  public TypeSubstitution(
+      ExtendedTypes types,
+      Map<? extends TypeMirror, ? extends TypeMirror> mapping) {
+    this.types = types;
+
     isomorphism = new Isomorphism();
     this.mapping = mapping::get;
     empty = mapping::isEmpty;
-    includeTypeVariables = false;
   }
 
   private TypeSubstitution(TypeSubstitution substitution) {
+    this.types = substitution.types;
     isomorphism = substitution.isomorphism;
     mapping = substitution.mapping;
     empty = substitution.empty;
-    includeTypeVariables = true;
   }
 
   private TypeSubstitution(TypeSubstitution substitution, Isomorphism isomorphism) {
+    this.types = substitution.types;
     this.isomorphism = isomorphism;
     this.mapping = substitution.mapping;
     this.empty = () -> false;
-    this.includeTypeVariables = substitution.includeTypeVariables;
   }
 
   /**
@@ -143,7 +149,7 @@ public class TypeSubstitution {
    *          The type to substitute for types which match the rule.
    * @return A new TypeSubstitution object with the rule added.
    */
-  public TypeSubstitution where(Type from, Type to) {
+  public TypeSubstitution where(TypeMirror from, TypeMirror to) {
     return where(t -> Objects.equals(from, t), t -> to);
   }
 
@@ -161,10 +167,10 @@ public class TypeSubstitution {
    * @return A new TypeSubstitution object with the rule added.
    */
   public TypeSubstitution where(
-      Predicate<? super Type> from,
-      Function<? super Type, ? extends Type> to) {
-    return new TypeSubstitution(t -> {
-      Type result = null;
+      Predicate<? super TypeMirror> from,
+      Function<? super TypeMirror, ? extends TypeMirror> to) {
+    return new TypeSubstitution(types, t -> {
+      TypeMirror result = null;
       if (from.test(t)) {
         result = to.apply(t);
       }
@@ -209,23 +215,23 @@ public class TypeSubstitution {
    * @return The result of application of this substitution. The result is
    *         <em>not</em> guaranteed to be well formed with respect to bounds.
    */
-  public Type resolve(Type type) {
+  public TypeMirror resolve(TypeMirror type) {
     if (empty.get())
       return type;
     else
       return resolve(type, new IdentityProperty<>(false));
   }
 
-  protected Type resolve(Type type, IdentityProperty<Boolean> changed) {
+  protected TypeMirror resolve(TypeMirror type, IdentityProperty<Boolean> changed) {
     if (isomorphism.byIdentity().getMappedNodes().contains(type)) {
-      Type mapping = (Type) isomorphism.byIdentity().getMapping(type);
+      TypeMirror mapping = (TypeMirror) isomorphism.byIdentity().getMapping(type);
       if (mapping != type) {
         changed.set(true);
       }
       return mapping;
 
     } else {
-      Type mapping = this.mapping.apply(type);
+      TypeMirror mapping = this.mapping.apply(type);
       if (mapping != null) {
         if (mapping != type) {
           changed.set(true);
@@ -237,34 +243,51 @@ public class TypeSubstitution {
           changed = new IdentityProperty<>(false);
         }
 
-        if (type == null) {
-          return null;
+        switch (type.getKind()) {
+        case NULL:
+        case VOID:
+          return type;
 
-        } else if (type instanceof Class) {
+        case DECLARED:
           return resolveType(type);
+          return resolveDeclaredType((DeclaredType) type, changed);
 
-        } else if (type instanceof TypeVariableCapture) {
-          return includeTypeVariables
-              ? resolveTypeVariableCapture((TypeVariableCapture) type, changed)
-              : type;
-
-        } else if (type instanceof TypeVariable<?>) {
-          return includeTypeVariables ? resolveTypeVariable((TypeVariable<?>) type, changed) : type;
-
-        } else if (type instanceof InferenceVariable) {
-          return resolveType(type);
-
-        } else if (type instanceof IntersectionType) {
+        case INTERSECTION:
           return resolveIntersectionType((IntersectionType) type, changed);
 
-        } else if (type instanceof WildcardType) {
+        case UNION:
+          return resolveUnionType((UnionType) type, changed);
+
+        case WILDCARD:
           return resolveWildcardType((WildcardType) type, changed);
 
-        } else if (type instanceof GenericArrayType) {
-          return resolveGenericArrayType((GenericArrayType) type, changed);
+        case ARRAY:
+          return resolveArrayType((ArrayType) type, changed);
 
-        } else if (type instanceof ParameterizedType) {
-          return resolveParameterizedType((ParameterizedType) type, changed);
+        case OTHER:
+          if (type instanceof InferenceVariable) {
+            return resolveType(type);
+          } else {
+            throw null;
+          }
+        case ERROR:
+          break;
+        case EXECUTABLE:
+          break;
+        case TYPEVAR:
+        case BOOLEAN:
+        case BYTE:
+        case CHAR:
+        case DOUBLE:
+        case FLOAT:
+        case INT:
+        case LONG:
+        case MODULE:
+        case NONE:
+        case PACKAGE:
+        case SHORT:
+        default:
+          break;
         }
       }
 
@@ -273,80 +296,31 @@ public class TypeSubstitution {
     }
   }
 
-  private Type resolveType(Type type) {
+  private TypeMirror resolveType(TypeMirror type) {
     return isomorphism.byIdentity().getMapping(type, Function.identity());
   }
 
-  private Type resolveGenericArrayType(
-      GenericArrayType type,
-      IdentityProperty<Boolean> changedScoped) {
+  private ArrayType resolveArrayType(ArrayType type, IdentityProperty<Boolean> changedScoped) {
     return isomorphism
         .byIdentity()
-        .getMapping(
-            type,
-            t -> arrayFromComponent(resolve(t.getGenericComponentType(), changedScoped)));
+        .getMapping(type, t -> types.getArrayType(resolve(t.getComponentType(), changedScoped)));
   }
 
-  private Type resolveTypeVariableCapture(
-      TypeVariableCapture type,
-      IdentityProperty<Boolean> changed) {
-    return isomorphism.byIdentity().getProxiedMapping(type, TypeVariable.class, i -> {
-
-      List<Type> upperBounds = Collections.emptyList();
-      if (type.getUpperBounds().length > 0) {
-        upperBounds = resolveTypes(type.getUpperBounds(), changed);
-      }
-
-      List<Type> lowerBounds = Collections.emptyList();
-      if (type.getLowerBounds().length > 0) {
-        upperBounds = resolveTypes(type.getLowerBounds(), changed);
-      }
-
-      if (changed.get()) {
-        return new TypeVariableCapture(
-            (Type[]) upperBounds.toArray(),
-            (Type[]) lowerBounds.toArray(),
-            type);
-      } else {
-        return type;
-      }
-    });
-  }
-
-  private Type resolveTypeVariable(TypeVariable<?> type, IdentityProperty<Boolean> changed) {
-    return isomorphism.byIdentity().getProxiedMapping(type, TypeVariable.class, i -> {
-
-      if (type.getBounds().length > 0) {
-        List<Type> bounds = resolveTypes(type.getBounds(), changed);
-        if (changed.get()) {
-          return typeVariableExtending(
-              type.getGenericDeclaration(),
-              type.getName(),
-              annotated(bounds));
-        } else {
-          return type;
-        }
-
-      } else
-        return type;
-    });
-  }
-
-  private Type resolveWildcardType(WildcardType type, IdentityProperty<Boolean> changed) {
+  private WildcardType resolveWildcardType(WildcardType type, IdentityProperty<Boolean> changed) {
     return isomorphism.byIdentity().getProxiedMapping(type, WildcardType.class, i -> {
 
-      if (type.getLowerBounds().length > 0) {
-        List<Type> bounds = resolveTypes(type.getLowerBounds(), changed);
+      if (type.getSuperBound() != null) {
+        TypeMirror bounds = resolve(type.getSuperBound(), changed);
         if (changed.get()) {
-          return wildcardSuper(bounds);
+          return types.getWildcardType(null, bounds);
         } else {
           return type;
         }
 
-      } else if (type.getUpperBounds().length > 0) {
-        List<Type> bounds = resolveTypes(type.getUpperBounds(), changed);
+      } else if (type.getExtendsBound() != null) {
+        TypeMirror bounds = resolve(type.getExtendsBound(), changed);
         if (changed.get()) {
-          return wildcardExtending(bounds);
+          return types.getWildcardType(bounds, null);
         } else {
           return type;
         }
@@ -356,43 +330,57 @@ public class TypeSubstitution {
     });
   }
 
-  private Type resolveIntersectionType(IntersectionType type, IdentityProperty<Boolean> changed) {
+  private TypeMirror resolveIntersectionType(
+      IntersectionType type,
+      IdentityProperty<Boolean> changed) {
     return isomorphism.byIdentity().getPartialMapping(type, (i, partial) -> {
 
-      IdentityProperty<IntersectionType> property = new IdentityProperty<>();
-      Type proxy = IntersectionTypes.proxy(property::get);
+      TypeMirrorProxy proxy = types.getProxy();
       partial.accept(() -> proxy);
 
-      IntersectionType result;
+      TypeMirror result;
 
-      List<Type> types = resolveTypes(type.getTypes(), changed);
+      List<TypeMirror> bounds = type
+          .getBounds()
+          .stream()
+          .map(bound -> resolve(bound, changed))
+          .collect(toList());
       if (changed.get()) {
-        result = intersectionOfImpl(types);
+        result = types.getIntersection(bounds);
       } else {
         result = type;
       }
 
-      property.set(result);
+      proxy.setInstance(result);
 
       return result;
     });
   }
 
-  private Type resolveParameterizedType(ParameterizedType type, IdentityProperty<Boolean> changed) {
-    return isomorphism.byIdentity().getProxiedMapping(type, ParameterizedType.class, i -> {
+  private DeclaredType resolveDeclaredType(DeclaredType type, IdentityProperty<Boolean> changed) {
+    TypeMirrorProxy proxy = types.getProxy();
+    return isomorphism.byIdentity().getPartialMapping(type, () -> proxy, i -> {
 
-      List<Type> arguments = resolveTypes(type.getActualTypeArguments(), changed);
-      Type owner = resolve(type.getOwnerType(), changed);
+      TypeElement element = (TypeElement) i.asElement();
 
-      if (changed.get()) {
-        return parameterizeUnchecked(owner, (Class<?>) type.getRawType(), arguments);
+      TypeMirror[] arguments = i
+          .getTypeArguments()
+          .stream()
+          .map(argument -> resolve(argument, changed))
+          .toArray(TypeMirror[]::new);
+
+      TypeMirror enclosing = i.getEnclosingType();
+      DeclaredType instance;
+      if (enclosing.getKind() == TypeKind.DECLARED) {
+        enclosing = resolve(enclosing, changed);
+
+        instance = types.getDeclaredType((DeclaredType) enclosing, element, arguments);
+
       } else {
-        return type;
+        instance = types.getDeclaredType(element, arguments);
       }
+      proxy.setInstance(instance);
+      return proxy;
     });
-  }
-
-  private List<Type> resolveTypes(Type[] types, IdentityProperty<Boolean> changed) {
-    return stream(types).map(t -> resolve(t, changed)).collect(toList());
   }
 }

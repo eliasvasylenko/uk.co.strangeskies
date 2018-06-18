@@ -65,21 +65,21 @@ interface SelfBoundedMultiplyInheritingB extends SelfBound<SelfBoundedMultiplyIn
 public class TypeBoundsTest {
   @Test
   public void lubSingleClass() {
-    Type lub = new TypeBounds().leastUpperBound(StandAloneClass.class);
+    Type lub = new TypeBounds().getLeastUpperBound(StandAloneClass.class);
 
     assertThat(lub).isEqualTo(StandAloneClass.class);
   }
 
   @Test
   public void lubSingleParameterizedType(@Mocked ParameterizedType type) {
-    Type lub = new TypeBounds().leastUpperBound(type);
+    Type lub = new TypeBounds().getLeastUpperBound(type);
 
     assertThat(lub).isEqualTo(type);
   }
 
   @Test
   public void lubDirectSupertypeRecursiveBoundTest() {
-    Type lub = new TypeBounds().leastUpperBound(SelfBoundedA.class, SelfBoundedB.class);
+    Type lub = new TypeBounds().getLeastUpperBound(SelfBoundedA.class, SelfBoundedB.class);
 
     assertThat(lub)
         .as("least upper bound")
@@ -99,14 +99,14 @@ public class TypeBoundsTest {
               });
         });
 
-    Type lubReorder = new TypeBounds().leastUpperBound(SelfBoundedB.class, SelfBoundedA.class);
+    Type lubReorder = new TypeBounds().getLeastUpperBound(SelfBoundedB.class, SelfBoundedA.class);
     assertThat(lub).isEqualTo(lubReorder);
   }
 
   @Test
   public void lubDirectSupertypeRecursiveIntersectingBoundTest() {
     Type lub = new TypeBounds()
-        .leastUpperBound(
+        .getLeastUpperBound(
             SelfBoundedMultiplyInheritingA.class,
             SelfBoundedMultiplyInheritingB.class);
 
@@ -139,7 +139,7 @@ public class TypeBoundsTest {
         });
 
     Type lubReorder = new TypeBounds()
-        .leastUpperBound(
+        .getLeastUpperBound(
             SelfBoundedMultiplyInheritingB.class,
             SelfBoundedMultiplyInheritingA.class);
     assertThat(lub).isEqualTo(lubReorder);
@@ -164,7 +164,7 @@ public class TypeBoundsTest {
     };
 
     Type lub = new TypeBounds()
-        .leastUpperBound(
+        .getLeastUpperBound(
             SelfBoundedMultiplyInheritingA.class,
             SelfBoundedMultiplyInheritingB.class,
             selfBoundType);
@@ -183,14 +183,14 @@ public class TypeBoundsTest {
     });
 
     Type lubReorder1 = new TypeBounds()
-        .leastUpperBound(
+        .getLeastUpperBound(
             SelfBoundedMultiplyInheritingA.class,
             selfBoundType,
             SelfBoundedMultiplyInheritingB.class);
     assertThat(lub).isEqualTo(lubReorder1);
 
     Type lubReorder2 = new TypeBounds()
-        .leastUpperBound(
+        .getLeastUpperBound(
             selfBoundType,
             SelfBoundedMultiplyInheritingA.class,
             SelfBoundedMultiplyInheritingB.class);

@@ -32,6 +32,7 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static java.util.stream.Collectors.joining;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
 import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
 
@@ -40,7 +41,9 @@ import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
+
+import uk.co.strangeskies.reflection.grammar.TypeGrammar;
+import uk.co.strangeskies.text.grammar.Parser;
 
 /**
  * A collection of utility methods relating to wildcard types.
@@ -50,13 +53,6 @@ import java.util.stream.Collectors;
 public class WildcardTypes {
   private static final Type[] DEFAULT_UPPER_BOUND = new Type[] { Object.class };
   private static final Type[] EMPTY_BOUND = new Type[] {};
-
-  /*
-   * TODO the spec currently only allows one upper or lower bound. We should
-   * probably move in line with this since the rest of the spec isn't designed to
-   * handle the alternative? Or do we want bounds which are intersection types to
-   * be expanded into arrays?
-   */
 
   private static final WildcardType UNBOUNDED = new WildcardType() {
     @Override
@@ -153,9 +149,8 @@ public class WildcardTypes {
 
       @Override
       public String toString() {
-        TypeGrammar parser = new TypeGrammar(Imports.empty());
-        return "? super "
-            + Arrays.stream(types.get()).map(parser::toString).collect(Collectors.joining(" & "));
+        Parser<Type> parser = new TypeGrammar().type();
+        return "? super " + Arrays.stream(types.get()).map(parser::compose).collect(joining(" & "));
       }
 
       @Override
@@ -254,9 +249,8 @@ public class WildcardTypes {
         if (bounds.length == 0 || (bounds.length == 1 && bounds[0].equals(Object.class)))
           return "?";
         else {
-          TypeGrammar parser = new TypeGrammar(Imports.empty());
-          return "? extends "
-              + Arrays.stream(bounds).map(parser::toString).collect(Collectors.joining(" & "));
+          Parser<Type> parser = new TypeGrammar().type();
+          return "? extends " + Arrays.stream(bounds).map(parser::compose).collect(joining(" & "));
         }
       }
 

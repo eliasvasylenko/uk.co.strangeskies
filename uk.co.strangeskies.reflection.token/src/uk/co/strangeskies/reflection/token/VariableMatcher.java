@@ -34,8 +34,8 @@ package uk.co.strangeskies.reflection.token;
 
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
-import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.SUBTYPE;
 import static uk.co.strangeskies.reflection.Visibility.forModifiers;
+import static uk.co.strangeskies.reflection.inference.ConstraintFormula.Kind.SUBTYPE;
 import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
 
 import java.lang.reflect.Field;

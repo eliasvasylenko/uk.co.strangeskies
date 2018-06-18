@@ -32,8 +32,8 @@
  */
 package uk.co.strangeskies.reflection.token;
 
-import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.LOOSE_COMPATIBILILTY;
 import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
+import static uk.co.strangeskies.reflection.inference.ConstraintFormula.Kind.LOOSE_COMPATIBILILTY;
 import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
 
 import java.lang.reflect.Type;

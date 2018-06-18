@@ -34,7 +34,7 @@ package uk.co.strangeskies.text.grammar;
 
 import java.util.stream.Stream;
 
-public interface SymbolsIn {
+public interface SymbolsIn extends Context {
   <T> T get(Symbol<T> symbol);
 
   <T> T get(Symbol<T> symbol, int index);

@@ -1,7 +1,6 @@
 package uk.co.strangeskies.text.grammar;
 
 import static java.util.stream.Collectors.toList;
-import static uk.co.strangeskies.text.grammar.RuleBuilder.buildRuleFor;
 import static uk.co.strangeskies.text.grammar.Symbol.regex;
 import static uk.co.strangeskies.text.grammar.Symbol.string;
 
@@ -79,36 +78,36 @@ public class Scratchpad {
 
     mathematics = mathematics
         .withRules(
-            buildRuleFor(expression)
+            new RuleBuilder<>(expression)
                 .matchingOutput(Addition.class)
                 .producing(expression, whitespace, string("+"), whitespace, expression)
                 .input(in -> new Addition(in.get(expression), in.get(expression)))
                 .output(out -> t -> out.putAll(expression, t.getA(), t.getB())),
 
-            buildRuleFor(expression)
+            new RuleBuilder<>(expression)
                 .matchingOutput(Subtraction.class)
                 .producing(expression, whitespace, string("-"), whitespace, expression)
                 .input(in -> new Subtraction(in.get(expression), in.get(expression)))
                 .output(out -> t -> out.putAll(expression, t.getA(), t.getB())),
 
-            buildRuleFor(expression)
+            new RuleBuilder<>(expression)
                 .matchingOutput(Multiplication.class)
                 .producing(expression, whitespace, string("*"), whitespace, expression)
                 .input(in -> new Multiplication(in.get(expression), in.get(expression)))
                 .output(out -> t -> out.putAll(expression, t.getA(), t.getB())),
 
-            buildRuleFor(expression)
+            new RuleBuilder<>(expression)
                 .matchingOutput(Division.class)
                 .producing(expression, whitespace, string("/"), whitespace, expression)
                 .input(in -> new Division(in.get(expression), in.get(expression)))
                 .output(out -> t -> out.putAll(expression, t.getA(), t.getB())),
 
-            buildRuleFor(sentence)
+            new RuleBuilder<>(sentence)
                 .producing(word, whitespace.then(word).repeated())
                 .input(in -> in.getAll(word).collect(toList()))
                 .output(out -> t -> out.putAll(word, t)),
 
-            buildRuleFor(word)
+            new RuleBuilder<>(word)
                 .producing(character.except(whitespace).repeated(1))
                 .input(in -> new String(in.getAll(character).mapToInt(i -> i).toArray(), 0, 0))
                 .output(out -> t -> t.codePoints().forEach(l -> out.put(character, l))));

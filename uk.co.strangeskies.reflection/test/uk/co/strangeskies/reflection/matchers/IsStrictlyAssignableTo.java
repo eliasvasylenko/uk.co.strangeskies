@@ -39,8 +39,8 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 
 import uk.co.strangeskies.reflection.Imports;
-import uk.co.strangeskies.reflection.TypeGrammar;
-import uk.co.strangeskies.reflection.Types;
+import uk.co.strangeskies.reflection.TypesOLD;
+import uk.co.strangeskies.reflection.grammar.TypeGrammar;
 
 public class IsStrictlyAssignableTo extends BaseMatcher<Type> {
 	private final Type assignmentTarget;
@@ -56,7 +56,7 @@ public class IsStrictlyAssignableTo extends BaseMatcher<Type> {
 	@Override
 	public boolean matches(Object item) {
 		return (item == null || item instanceof Type)
-				&& Types.isStrictInvocationContextCompatible((Type) item, assignmentTarget);
+				&& TypesOLD.isStrictInvocationContextCompatible((Type) item, assignmentTarget);
 	}
 
 	@Override

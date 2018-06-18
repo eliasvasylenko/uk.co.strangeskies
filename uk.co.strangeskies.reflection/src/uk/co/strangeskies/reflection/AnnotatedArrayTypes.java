@@ -85,23 +85,23 @@ public final class AnnotatedArrayTypes {
 			return annotatedComponentType;
 		}
 
-		@Override
-		public String toString(Imports imports) {
-			StringBuilder builder = new StringBuilder();
+    @Override
+    public String toString(Imports imports) {
+      StringBuilder builder = new StringBuilder();
 
-			AnnotatedType type = this;
-			do {
-				if (type.getAnnotations().length > 0) {
-					builder.append(" ").append(annotationString(imports, type.getAnnotations()));
-				}
+      AnnotatedType type = this;
+      do {
+        if (type.getAnnotations().length > 0) {
+          builder.append(" ").append(annotationString(imports, type.getAnnotations()));
+        }
 
-				builder.append("[]");
+        builder.append("[]");
 
-				type = ((AnnotatedArrayType) type).getAnnotatedGenericComponentType();
-			} while (type instanceof AnnotatedArrayType);
+        type = ((AnnotatedArrayType) type).getAnnotatedGenericComponentType();
+      } while (type instanceof AnnotatedArrayType);
 
-			return builder.insert(0, AnnotatedTypes.wrapImpl(type).toString(imports)).toString();
-		}
+      return builder.insert(0, AnnotatedTypes.wrapImpl(type).toString(imports)).toString();
+    }
 
 		@Override
 		public int annotationHashImpl() {

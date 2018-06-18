@@ -35,9 +35,9 @@ package uk.co.strangeskies.reflection.token;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
-import static uk.co.strangeskies.reflection.BoundSet.emptyBoundSet;
-import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.SUBTYPE;
 import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
+import static uk.co.strangeskies.reflection.inference.BoundSet.emptyBoundSet;
+import static uk.co.strangeskies.reflection.inference.ConstraintFormula.Kind.SUBTYPE;
 import static uk.co.strangeskies.reflection.token.TypeToken.forClass;
 import static uk.co.strangeskies.reflection.token.TypeToken.forType;
 
@@ -49,11 +49,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import uk.co.strangeskies.reflection.BoundSet;
-import uk.co.strangeskies.reflection.ConstraintFormula;
-import uk.co.strangeskies.reflection.ConstraintFormula.Kind;
+import uk.co.strangeskies.reflection.inference.BoundSet;
+import uk.co.strangeskies.reflection.inference.ConstraintFormula;
+import uk.co.strangeskies.reflection.inference.TypeResolver;
+import uk.co.strangeskies.reflection.inference.ConstraintFormula.Kind;
 import uk.co.strangeskies.reflection.ReflectionException;
-import uk.co.strangeskies.reflection.TypeResolver;
 import uk.co.strangeskies.reflection.TypeSubstitution;
 
 /**

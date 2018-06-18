@@ -33,6 +33,7 @@
 package uk.co.strangeskies.reflection;
 
 import uk.co.strangeskies.reflection.Annotations;
+import uk.co.strangeskies.reflection.grammar.AnnotationGrammar;
 
 /**
  * Tests for {@link AnnotationGrammar} class. This is necessary alongside

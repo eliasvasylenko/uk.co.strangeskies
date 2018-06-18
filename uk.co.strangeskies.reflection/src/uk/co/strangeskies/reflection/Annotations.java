@@ -101,7 +101,7 @@ public final class Annotations {
               new StringBuilder()
                   .append(property.name())
                   .append(" = ")
-                  .append(toPropertyString(property.value(), imports))
+                  .append(toValueString(property.value(), imports))
                   .toString());
     });
 
@@ -115,18 +115,18 @@ public final class Annotations {
     return builder.toString();
   }
 
-  protected static StringBuilder toPropertyString(Object object) {
-    return toPropertyString(object, Imports.empty());
+  protected static StringBuilder toValueString(Object object) {
+    return toValueString(object, Imports.empty());
   }
 
-  protected static StringBuilder toPropertyString(Object object, Imports imports) {
+  protected static StringBuilder toValueString(Object object, Imports imports) {
     if (object.getClass().isArray()) {
       return new StringBuilder()
           .append(" { ")
           .append(
               Arrays
                   .stream((Object[]) object)
-                  .map(Annotations::toPropertyString)
+                  .map(Annotations::toValueString)
                   .collect(Collectors.joining(", ")))
           .append(" }");
     } else {
@@ -150,7 +150,10 @@ public final class Annotations {
         builder.append("l");
 
       } else if (Class.class.isInstance(object)) {
-        builder.append(new TypeGrammar(imports).toString((Class<?>) object)).append(".class");
+        builder.append(imports.getClassName((Class<?>) object)).append(".class");
+
+      } else if (Annotation.class.isInstance(object)) {
+        builder.append(toString((Annotation) object, imports));
 
       } else {
         builder.append(object.toString());
@@ -170,7 +173,7 @@ public final class Annotations {
       Object propertyValue = properties.remove(method.getName());
       if (propertyValue != null) {
         try {
-          propertyValue = Types.assign(propertyValue, method.getReturnType());
+          propertyValue = TypesOLD.assign(propertyValue, method.getReturnType());
         } catch (ReflectionException e) {
           Object finalValue = propertyValue;
           throw new ReflectionException(

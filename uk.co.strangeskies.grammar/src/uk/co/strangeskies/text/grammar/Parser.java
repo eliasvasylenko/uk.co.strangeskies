@@ -37,6 +37,8 @@ public interface Parser<T> {
 
   Variable<T> symbol();
 
+  <U> Parser<T> with(Class<U> type, U value);
+
   T parse(String string);
 
   String compose(T object);

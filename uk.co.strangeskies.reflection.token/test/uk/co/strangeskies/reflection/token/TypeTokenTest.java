@@ -32,9 +32,9 @@
  */
 package uk.co.strangeskies.reflection.token;
 
-import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.CONTAINMENT;
-import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.LOOSE_COMPATIBILILTY;
-import static uk.co.strangeskies.reflection.ConstraintFormula.Kind.SUBTYPE;
+import static uk.co.strangeskies.reflection.inference.ConstraintFormula.Kind.CONTAINMENT;
+import static uk.co.strangeskies.reflection.inference.ConstraintFormula.Kind.LOOSE_COMPATIBILILTY;
+import static uk.co.strangeskies.reflection.inference.ConstraintFormula.Kind.SUBTYPE;
 import static uk.co.strangeskies.reflection.token.ExecutableToken.staticMethods;
 import static uk.co.strangeskies.reflection.token.MethodMatcher.anyMethod;
 import static uk.co.strangeskies.reflection.token.OverloadResolver.resolveOverload;
@@ -60,11 +60,11 @@ import java.util.TreeSet;
 import org.junit.Assert;
 import org.junit.Test;
 
-import uk.co.strangeskies.reflection.AnnotatedTypeGrammar;
 import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.AnnotatedWildcardTypes;
-import uk.co.strangeskies.reflection.AnnotationGrammar;
 import uk.co.strangeskies.reflection.Imports;
+import uk.co.strangeskies.reflection.grammar.AnnotatedTypeGrammar;
+import uk.co.strangeskies.reflection.grammar.AnnotationGrammar;
 import uk.co.strangeskies.reflection.token.TypeToken.Capture;
 import uk.co.strangeskies.reflection.token.TypeToken.Infer;
 import uk.co.strangeskies.reflection.token.TypeToken.Retain;

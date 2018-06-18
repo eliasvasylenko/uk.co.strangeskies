@@ -46,6 +46,15 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeMirror;
+
+import uk.co.strangeskies.reflection.inference.BoundSet;
+import uk.co.strangeskies.reflection.inference.CaptureConversion;
+import uk.co.strangeskies.reflection.inference.ConstraintFormula;
+import uk.co.strangeskies.reflection.inference.InferenceVariable;
+import uk.co.strangeskies.reflection.model.TypeVariableCapture;
+
 /**
  * Properties and localized strings relating to types.
  * 
@@ -53,31 +62,33 @@ import java.util.Set;
  */
 @SuppressWarnings("javadoc")
 public interface ReflectionProperties {
-  String unsupportedType(Type type);
+  String unsupportedType(TypeMirror type);
 
   String invalidAssignmentObject(Object object, Class<?> type);
 
   default String invalidTypeVariableCaptureBounds(TypeVariableCapture capture) {
     return invalidTypeVariableCaptureBounds(
         capture,
-        capture.getLowerBounds(),
-        capture.getUpperBounds());
+        capture.getLowerBound(),
+        capture.getUpperBound());
   }
 
   String invalidTypeVariableCaptureBounds(
       TypeVariableCapture capture,
-      Type[] lowerBounds,
-      Type[] upperBounds);
+      TypeMirror lowerBounds,
+      TypeMirror upperBounds);
 
   String improperCaptureType(TypeVariableCapture capture);
 
-  String improperUpperBound(Type t, InferenceVariable inferenceVariable, BoundSet bounds);
+  String improperUpperBound(TypeMirror t, InferenceVariable inferenceVariable, BoundSet bounds);
 
-  String cannotCaptureInferenceVariable(InferenceVariable key, Type value, BoundSet bounds);
+  String cannotCaptureInferenceVariable(InferenceVariable key, TypeMirror value, BoundSet bounds);
+
+  String cannotCaptureTypeOfKind(TypeMirror component);
 
   String cannotInstantiateInferenceVariable(InferenceVariable variable, BoundSet bounds);
 
-  String cannotFindSubstitution(Type i);
+  String cannotFindSubstitution(TypeMirror i);
 
   String invalidAnnotationValue(Method method, Object propertyValue);
 
@@ -90,9 +101,9 @@ public interface ReflectionProperties {
       String name,
       Object propertyValue);
 
-  String invalidEquality(Type first, Type second, BoundSet bounds);
+  String invalidEquality(TypeMirror first, TypeMirror second, BoundSet bounds);
 
-  String invalidSubtype(Type subtype, Type supertype, BoundSet boundSet);
+  String invalidSubtype(TypeMirror subtype, TypeMirror supertype, BoundSet boundSet);
 
   String invalidCaptureConversion(CaptureConversion captureConversion, BoundSet boundSet);
 
@@ -101,11 +112,11 @@ public interface ReflectionProperties {
   String cannotReduceConstraint(ConstraintFormula constraintFormula, BoundSet bounds);
 
   String invalidIntersectionTypes(
-      Collection<? extends Type> flattenedTypes,
-      Type iType,
-      Type jType);
+      Collection<? extends TypeMirror> flattenedTypes,
+      TypeMirror iType,
+      TypeMirror jType);
 
-  String invalidIntersectionType(Collection<? extends Type> flattenedTypes);
+  String invalidIntersectionType(Collection<? extends TypeMirror> flattenedTypes);
 
   String incompatibleImports(Class<?> class1, Class<?> class2);
 
@@ -122,13 +133,13 @@ public interface ReflectionProperties {
 
   String invalidStaticMethodArguments(Method method, List<?> a);
 
-  String invalidCastObject(Object object, Type objectType, Type castType);
+  String invalidCastObject(Object object, TypeMirror objectType, TypeMirror castType);
 
   String invalidVariableArityInvocation(Executable executableMember);
 
-  String cannotResolveReceiver(Member executableMember, Type type);
+  String cannotResolveReceiver(Member executableMember, TypeMirror type);
 
-  String cannotResolveTarget(Member executableMember, Type type);
+  String cannotResolveTarget(Member executableMember, TypeMirror type);
 
   String cannotResolveAmbiguity(Executable firstCandidate, Executable secondCandidate);
 
@@ -169,7 +180,7 @@ public interface ReflectionProperties {
 
   String duplicateTypeVariable(String n);
 
-  String cannotResolveSupertype(Type type, Class<?> superclass);
+  String cannotResolveSupertype(TypeMirror type, DeclaredType superclass);
 
   String incorrectEnclosingDeclaration(Type rawType, GenericDeclaration declaration);
 
@@ -187,9 +198,9 @@ public interface ReflectionProperties {
 
   String cannotParameterizeEnclosingExecutable(Class<?> enclosedClass);
 
-  String noEnclosingDeclaration(Type type);
+  String noEnclosingDeclaration(DeclaredType type);
 
-  String cannotParameterizeWithReplacement(Type type, Type currentType);
+  String cannotParameterizeWithReplacement(DeclaredType type, DeclaredType currentType);
 
   /*
    * The given type variable cannot be found in the context of the given
@@ -200,4 +211,6 @@ public interface ReflectionProperties {
   String cannotOverrideConstructor(Executable member, Type type);
 
   String cannotParameterizeInference();
+
+  String cannotResolveGenericSupertype(TypeMirror lowerBound, DeclaredType superclass);
 }
