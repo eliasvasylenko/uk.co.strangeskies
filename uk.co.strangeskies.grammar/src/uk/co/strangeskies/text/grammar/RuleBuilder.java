@@ -16,20 +16,28 @@ public class RuleBuilder<T> {
   public <U> RuleBuilder<U> transforming(
       Function<? super T, ? extends U> transformationOut,
       Function<? super U, ? extends T> transformationIn) {
-
+	  return null; // TODO
   }
 
   public <U extends T> RuleBuilder<U> matchingOutput(Class<U> type, Predicate<? super U> matcher) {
     return matchingOutput(type).matchingOutput(matcher);
   }
 
-  public <U extends T> RuleBuilder<U> matchingOutput(Class<U> type);
+  public <U extends T> RuleBuilder<U> matchingOutput(Class<U> type) {
+	return null;
+}
 
-  public RuleBuilder<T> matchingOutput(Predicate<? super T> matcher);
+  public RuleBuilder<T> matchingOutput(Predicate<? super T> matcher) {
+	return null;
+}
 
-  public ProductionRuleInputBuilder<T> producing(Expression... productions);
+  public ProductionRuleInputBuilder<T> producing(Expression... productions) {
+	return null;
+}
 
-  public <U> SingleProductionRuleInputBuilder<T, U> producingSymbol(Symbol<U> production);
+  public <U> SingleProductionRuleInputBuilder<T, U> producingSymbol(Symbol<U> production) {
+	return null;
+}
 
   public Rule producingIdentity(Symbol<T> production) {
     return producingSymbol(production).input(identity()).output(identity());
