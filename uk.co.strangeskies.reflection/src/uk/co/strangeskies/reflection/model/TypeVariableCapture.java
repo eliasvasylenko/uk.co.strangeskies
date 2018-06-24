@@ -45,7 +45,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import javax.lang.model.element.AnnotationMirror;
@@ -74,8 +73,6 @@ import uk.co.strangeskies.reflection.inference.InferenceVariableBounds;
  * @author Elias N Vasylenko
  */
 public class TypeVariableCapture implements TypeVariable {
-  private final static AtomicLong COUNTER = new AtomicLong();
-
   private static final TypeMirror DEFAULT_UPPER_BOUND = CoreReflectionFactory
       .createTypeMirror(Object.class);
   private static final TypeMirror DEFAULT_LOWER_BOUND = ReflectionTypes.instance().getNullType();
@@ -85,12 +82,12 @@ public class TypeVariableCapture implements TypeVariable {
   private TypeMirror upperBound;
   private TypeMirror lowerBound;
 
-  public TypeVariableCapture(TypeMirror upperBound, TypeMirror lowerBound) {
-
+  private TypeVariableCapture() {
+    this.name = "CAP";
   }
 
-  private TypeVariableCapture() {
-    this.name = "CAP#" + COUNTER.incrementAndGet();
+  private TypeVariableCapture(String capturedType) {
+    this.name = "CAP_" + capturedType;
   }
 
   private final void complete() {
@@ -228,7 +225,7 @@ public class TypeVariableCapture implements TypeVariable {
       var argument = arguments.get(i);
 
       if (argument.getKind() == TypeKind.WILDCARD) {
-        var capture = new TypeVariableCapture();
+        var capture = new TypeVariableCapture(parameter.toString());
         capture.upperBound = parameter.getUpperBound();
         capture.lowerBound = parameter.getLowerBound();
         captures.put(capture, (WildcardType) argument);
@@ -342,9 +339,7 @@ public class TypeVariableCapture implements TypeVariable {
 
         if (!equalitySet.isEmpty()) {
           typeVariableCaptures
-              .put(
-                  inferenceVariable,
-                  ReflectionTypes.instance().getIntersection(equalitySet));
+              .put(inferenceVariable, ReflectionTypes.instance().getIntersection(equalitySet));
         } else {
           /*
            * For all i (1 ≤ i ≤ n), if αi has one or more proper lower bounds L1, ..., Lk,
@@ -361,7 +356,7 @@ public class TypeVariableCapture implements TypeVariable {
           if (lowerBoundSet.isEmpty())
             lowerBound = ReflectionTypes.instance().getNullType();
           else {
-            lowerBound = ReflectionTypes.instance().getLeastUpperBound(lowerBoundSet);
+            lowerBound = ReflectionTypes.instance().getIntersection(lowerBoundSet);
           }
 
           /*
@@ -395,10 +390,9 @@ public class TypeVariableCapture implements TypeVariable {
            * lower bound is not a subtype of an upper bound, or an intersection type is
            * inconsistent), then resolution fails.
            */
-          TypeVariableCapture capture = new TypeVariableCapture(
-              upperBound,
-              lowerBound,
-              inferenceVariable);
+          TypeVariableCapture capture = new TypeVariableCapture(inferenceVariable.toString());
+          capture.upperBound = upperBound;
+          capture.lowerBound = lowerBound;
 
           typeVariableCaptures.put(inferenceVariable, capture);
         }
@@ -419,8 +413,6 @@ public class TypeVariableCapture implements TypeVariable {
 
         capture.upperBound = substitution.resolve(capture.upperBound);
         capture.lowerBound = substitution.resolve(capture.lowerBound);
-
-        capture.validate();
       } else {
         TypeMirror capture = substitution.resolve(captures.get(type));
         if (capture instanceof IntersectionType) {

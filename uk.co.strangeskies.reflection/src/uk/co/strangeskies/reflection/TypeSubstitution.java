@@ -243,10 +243,6 @@ public class TypeSubstitution {
         }
 
         switch (type.getKind()) {
-        case NULL:
-        case VOID:
-          return type;
-
         case DECLARED:
           return resolveDeclaredType((DeclaredType) type, changed);
 
@@ -265,6 +261,8 @@ public class TypeSubstitution {
         case EXECUTABLE:
           break;
 
+        case NULL:
+        case VOID:
         case OTHER:
         case ERROR:
         case TYPEVAR:
@@ -342,7 +340,7 @@ public class TypeSubstitution {
 
       proxy.setInstance(result);
 
-      return proxy;
+      return result;
     });
   }
 
@@ -367,7 +365,7 @@ public class TypeSubstitution {
 
       proxy.setInstance(result);
 
-      return proxy;
+      return result;
     });
   }
 
@@ -394,7 +392,7 @@ public class TypeSubstitution {
         instance = types.getDeclaredType(element, arguments);
       }
       proxy.setInstance(instance);
-      return proxy;
+      return instance;
     });
   }
 }

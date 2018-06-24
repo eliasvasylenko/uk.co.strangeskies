@@ -1,6 +1,7 @@
 package uk.co.strangeskies.reflection.model;
 
 import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.joining;
 
 import java.lang.reflect.MalformedParameterizedTypeException;
 import java.lang.reflect.ParameterizedType;
@@ -262,7 +263,7 @@ abstract class ReflectionDeclaredType extends ReflectionTypeMirror
     }
 
     private void validateConstructorArguments() {
-      java.lang.reflect.TypeVariable/* <?> */[] formals = rawType.getTypeParameters();
+      java.lang.reflect.TypeVariable<?>[] formals = rawType.getTypeParameters();
       // check correct arity of actual type args
       if (formals.length != actualTypeArguments.length) {
         throw new MalformedParameterizedTypeException();
@@ -413,7 +414,7 @@ abstract class ReflectionDeclaredType extends ReflectionTypeMirror
         if (ownerType == null) {
           builder.append(rawType.getName());
         } else {
-          builder.append(typeParser.compose(ownerType)).append(".");
+          builder.append(ownerType.getTypeName()).append(".");
 
           if (ownerType instanceof ParameterizedType) {
             String rawTypeName = rawType.getTypeName();
@@ -423,14 +424,13 @@ abstract class ReflectionDeclaredType extends ReflectionTypeMirror
             }
             builder.append(rawTypeName);
           } else {
-            builder.append(imports.getClassName(rawType));
+            builder.append(rawType.getTypeName());
           }
         }
 
         builder.append('<');
 
-        builder
-            .append(stream(typeArguments).map(t -> typeParser.compose(t)).collect(joining(", ")));
+        builder.append(stream(typeArguments).map(Type::getTypeName).collect(joining(", ")));
 
         return builder.append('>').toString();
       } finally {
