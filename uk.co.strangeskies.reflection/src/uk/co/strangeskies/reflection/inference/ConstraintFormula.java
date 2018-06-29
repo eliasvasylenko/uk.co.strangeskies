@@ -56,9 +56,9 @@ import javax.lang.model.type.TypeMirror;
 
 import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.ReflectionException;
-import uk.co.strangeskies.reflection.TypeHierarchy;
 import uk.co.strangeskies.reflection.TypesOLD;
-import uk.co.strangeskies.reflection.model.TypeVariableCapture;
+import uk.co.strangeskies.reflection.model.TypeHierarchy;
+import uk.co.strangeskies.reflection.model.core.types.impl.TypeVariableCapture;
 
 /**
  * <p>

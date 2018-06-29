@@ -13,7 +13,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
@@ -23,7 +22,6 @@ import javax.lang.model.type.WildcardType;
 
 import uk.co.strangeskies.collection.multimap.MultiHashMap;
 import uk.co.strangeskies.collection.multimap.MultiMap;
-import uk.co.strangeskies.reflection.TypeHierarchy;
 import uk.co.strangeskies.utility.Isomorphism;
 
 public class TypeBounds {
@@ -74,11 +72,11 @@ public class TypeBounds {
 
       minimiseCandidates(erasedCandidates);
 
-      List<DeclaredType> bestTypes = erasedCandidates
+      DeclaredType[] bestTypes = erasedCandidates
           .entrySet()
           .stream()
           .map(e -> best(e.getKey(), new ArrayList<>(e.getValue())))
-          .collect(Collectors.toList());
+          .toArray(DeclaredType[]::new);
 
       return types.getIntersection(bestTypes);
     }

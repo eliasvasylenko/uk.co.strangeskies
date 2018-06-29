@@ -46,7 +46,7 @@ import java.util.List;
 
 import org.junit.Test;
 
-import uk.co.strangeskies.reflection.TypeHierarchy;
+import uk.co.strangeskies.reflection.model.TypeHierarchy;
 
 @SuppressWarnings("javadoc")
 public class SuperTypeParametersTest {

@@ -53,7 +53,7 @@ import uk.co.strangeskies.reflection.inference.BoundSet;
 import uk.co.strangeskies.reflection.inference.CaptureConversion;
 import uk.co.strangeskies.reflection.inference.ConstraintFormula;
 import uk.co.strangeskies.reflection.inference.InferenceVariable;
-import uk.co.strangeskies.reflection.model.TypeVariableCapture;
+import uk.co.strangeskies.reflection.model.core.types.impl.TypeVariableCapture;
 
 /**
  * Properties and localized strings relating to types.

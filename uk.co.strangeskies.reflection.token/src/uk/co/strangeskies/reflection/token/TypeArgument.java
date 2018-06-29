@@ -38,7 +38,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 
-import uk.co.strangeskies.reflection.TypeHierarchy;
+import uk.co.strangeskies.reflection.model.TypeHierarchy;
 
 public abstract class TypeArgument<T> {
 	private final TypeParameter<T> parameter;

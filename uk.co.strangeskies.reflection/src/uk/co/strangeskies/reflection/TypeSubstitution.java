@@ -32,9 +32,6 @@
  */
 package uk.co.strangeskies.reflection;
 
-import static java.util.stream.Collectors.toList;
-
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -327,11 +324,11 @@ public class TypeSubstitution {
 
       TypeMirror result;
 
-      List<TypeMirror> bounds = type
+      TypeMirror[] bounds = type
           .getBounds()
           .stream()
           .map(bound -> resolve(bound, changed))
-          .collect(toList());
+          .toArray(TypeMirror[]::new);
       if (changed.get()) {
         result = types.getIntersection(bounds);
       } else {
@@ -352,11 +349,11 @@ public class TypeSubstitution {
 
       TypeMirror result;
 
-      List<TypeMirror> alternatives = type
+      TypeMirror[] alternatives = type
           .getAlternatives()
           .stream()
           .map(bound -> resolve(bound, changed))
-          .collect(toList());
+          .toArray(TypeMirror[]::new);
       if (changed.get()) {
         result = types.getUnion(alternatives);
       } else {

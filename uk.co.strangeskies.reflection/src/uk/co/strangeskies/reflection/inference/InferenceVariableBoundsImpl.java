@@ -59,10 +59,10 @@ import javax.lang.model.type.TypeMirror;
 
 import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.ReflectionException;
-import uk.co.strangeskies.reflection.TypeHierarchy;
 import uk.co.strangeskies.reflection.TypeSubstitution;
 import uk.co.strangeskies.reflection.TypesOLD;
 import uk.co.strangeskies.reflection.inference.ConstraintFormula.Kind;
+import uk.co.strangeskies.reflection.model.TypeHierarchy;
 import uk.co.strangeskies.utility.Isomorphism;
 
 class InferenceVariableBoundsImpl implements InferenceVariableBounds {
