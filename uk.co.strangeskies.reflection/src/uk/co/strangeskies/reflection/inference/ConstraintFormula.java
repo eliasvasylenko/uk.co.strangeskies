@@ -58,7 +58,7 @@ import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.TypesOLD;
 import uk.co.strangeskies.reflection.model.TypeHierarchy;
-import uk.co.strangeskies.reflection.model.core.types.impl.TypeVariableCapture;
+import uk.co.strangeskies.reflection.model.runtime.types.impl.TypeVariableCapture;
 
 /**
  * <p>

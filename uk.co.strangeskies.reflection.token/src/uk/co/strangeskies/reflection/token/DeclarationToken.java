@@ -47,7 +47,7 @@ import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.ReflectionException;
 import uk.co.strangeskies.reflection.inference.InferenceVariable;
-import uk.co.strangeskies.reflection.model.core.types.impl.TypeVariableCapture;
+import uk.co.strangeskies.reflection.model.runtime.types.impl.TypeVariableCapture;
 
 /**
  * A token representing a declaration. If the declaration is generic, it may be

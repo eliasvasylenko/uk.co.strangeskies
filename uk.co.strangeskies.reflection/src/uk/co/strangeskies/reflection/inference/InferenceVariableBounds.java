@@ -36,10 +36,14 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
+import javax.lang.model.util.Types;
 
 /**
  * This object describes the bounds present on a particular inference variable
  * within the context of a particular bound set.
+ * <p>
+ * Since inference should operate over any {@link Types} instance
  * 
  * @author Elias N Vasylenko
  */
@@ -53,7 +57,7 @@ public interface InferenceVariableBounds {
   /**
    * @return The inference variable the bounds described by this object apply to.
    */
-  public abstract InferenceVariable getInferenceVariable();
+  public abstract TypeVariable getInferenceVariable();
 
   /**
    * @return All equality bounds on the described inference variable.
@@ -79,5 +83,5 @@ public interface InferenceVariableBounds {
    * @return All inference variables related to this one through bounds. This set
    *         includes the inference variable itself.
    */
-  public abstract Stream<InferenceVariable> getRemainingDependencies();
+  public abstract Stream<TypeVariable> getRemainingDependencies();
 }

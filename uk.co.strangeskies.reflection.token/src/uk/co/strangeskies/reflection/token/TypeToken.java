@@ -94,7 +94,7 @@ import uk.co.strangeskies.reflection.inference.InferenceVariableBounds;
 import uk.co.strangeskies.reflection.inference.TypeResolver;
 import uk.co.strangeskies.reflection.inference.ConstraintFormula.Kind;
 import uk.co.strangeskies.reflection.model.TypeHierarchy;
-import uk.co.strangeskies.reflection.model.core.types.impl.TypeVariableCapture;
+import uk.co.strangeskies.reflection.model.runtime.types.impl.TypeVariableCapture;
 import uk.co.strangeskies.reflection.Imports;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.PrimitiveTypes;

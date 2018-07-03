@@ -45,7 +45,7 @@ import static uk.co.strangeskies.reflection.WildcardTypes.wildcardSuper;
 import static uk.co.strangeskies.reflection.matchers.IsAssignableTo.isAssignableTo;
 import static uk.co.strangeskies.reflection.matchers.IsStrictlyAssignableTo.isStrictlyAssignableTo;
 import static uk.co.strangeskies.reflection.matchers.IsSubtypeOf.isSubtypeOf;
-import static uk.co.strangeskies.reflection.model.core.types.impl.TypeVariableCapture.captureWildcard;
+import static uk.co.strangeskies.reflection.model.runtime.types.impl.TypeVariableCapture.captureWildcard;
 
 import java.io.Serializable;
 import java.lang.reflect.Type;
@@ -56,7 +56,7 @@ import org.junit.Test;
 
 import uk.co.strangeskies.reflection.AnnotatedTypes;
 import uk.co.strangeskies.reflection.IntersectionType;
-import uk.co.strangeskies.reflection.model.core.types.impl.TypeVariableCapture;
+import uk.co.strangeskies.reflection.model.runtime.types.impl.TypeVariableCapture;
 
 @SuppressWarnings({ "rawtypes", "javadoc" })
 public class AssignmentTest {

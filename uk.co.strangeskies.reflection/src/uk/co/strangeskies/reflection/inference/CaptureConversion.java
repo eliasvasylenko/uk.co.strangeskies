@@ -67,12 +67,12 @@ public class CaptureConversion {
   private final DeclaredType originalType;
   private final DeclaredType captureType;
 
-  private final Map<InferenceVariable, TypeVariable> capturedParameters = new HashMap<>();
-  private final Map<InferenceVariable, TypeMirror> capturedArguments = new HashMap<>();
+  private final Map<TypeVariable, TypeVariable> capturedParameters = new HashMap<>();
+  private final Map<TypeVariable, TypeMirror> capturedArguments = new HashMap<>();
 
   private CaptureConversion(
       DeclaredType originalType,
-      Map<TypeVariable, InferenceVariable> parameterCaptures) {
+      Map<TypeVariable, TypeVariable> parameterCaptures) {
     this.originalType = originalType;
 
     captureType = ParameterizedTypes
@@ -80,7 +80,7 @@ public class CaptureConversion {
 
     ParameterizedTypes.getAllTypeArguments(originalType).forEach(e -> {
       Type argument = e.getValue();
-      InferenceVariable inferenceVariable = parameterCaptures.get(e.getKey());
+      TypeVariable inferenceVariable = parameterCaptures.get(e.getKey());
 
       capturedArguments.put(inferenceVariable, argument);
       capturedParameters.put(inferenceVariable, e.getKey());
@@ -89,7 +89,7 @@ public class CaptureConversion {
 
   /**
    * Create a capture conversion over a given {@link ParameterizedType}. Arguments
-   * will be substituted with new {@link InferenceVariable}s, such that a new type
+   * will be substituted with new {@link TypeVariable}s, such that a new type
    * is described which represents the result of capture conversion on the given
    * type.
    * 
@@ -135,7 +135,7 @@ public class CaptureConversion {
    * @return The set of inference variables created through this capture
    *         conversion operation.
    */
-  public Set<InferenceVariable> getInferenceVariables() {
+  public Set<TypeVariable> getInferenceVariables() {
     return capturedParameters.keySet();
   }
 
@@ -144,9 +144,9 @@ public class CaptureConversion {
    *          An inference variable which may represent a capture which is part of
    *          this capture conversion.
    * @return The argument of the {@link #getOriginalType() original type} captured
-   *         by a given {@link InferenceVariable}.
+   *         by a given {@link TypeVariable}.
    */
-  public TypeMirror getCapturedArgument(InferenceVariable variable) {
+  public TypeMirror getCapturedArgument(TypeVariable variable) {
     return capturedArguments.get(variable);
   }
 
@@ -155,9 +155,9 @@ public class CaptureConversion {
    *          An inference variable which may represent a capture which is part of
    *          this capture conversion.
    * @return The parameter of the {@link #getOriginalType() original type}
-   *         captured by a given {@link InferenceVariable}.
+   *         captured by a given {@link TypeVariable}.
    */
-  public TypeVariable getCapturedParameter(InferenceVariable variable) {
+  public TypeVariable getCapturedParameter(TypeVariable variable) {
     return capturedParameters.get(variable);
   }
 
@@ -175,7 +175,7 @@ public class CaptureConversion {
         .withIsomorphism(isomorphism)
         .resolve(getOriginalType());
 
-    Map<TypeVariable, InferenceVariable> newCaptures = ParameterizedTypes
+    Map<TypeVariable, TypeVariable> newCaptures = ParameterizedTypes
         .getAllTypeArguments(getCaptureType())
         .collect(
             toMap(
@@ -195,8 +195,8 @@ public class CaptureConversion {
    * @return A set containing all inference variables mentioned on either side of
    *         this capture conversion with respect to the given bound set.
    */
-  public Stream<InferenceVariable> getInferenceVariablesMentioned() {
-    Set<InferenceVariable> allMentioned = new HashSet<>(getInferenceVariables());
+  public Stream<TypeVariable> getInferenceVariablesMentioned() {
+    Set<TypeVariable> allMentioned = new HashSet<>(getInferenceVariables());
 
     ParameterizedTypes
         .getAllTypeArguments(getOriginalType())

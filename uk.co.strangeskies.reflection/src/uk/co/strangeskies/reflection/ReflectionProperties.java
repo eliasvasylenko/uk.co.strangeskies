@@ -34,26 +34,22 @@ package uk.co.strangeskies.reflection;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
-import java.lang.reflect.Field;
 import java.lang.reflect.GenericDeclaration;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
+import javax.lang.model.type.WildcardType;
 
 import uk.co.strangeskies.reflection.inference.BoundSet;
 import uk.co.strangeskies.reflection.inference.CaptureConversion;
 import uk.co.strangeskies.reflection.inference.ConstraintFormula;
-import uk.co.strangeskies.reflection.inference.InferenceVariable;
-import uk.co.strangeskies.reflection.model.core.types.impl.TypeVariableCapture;
+import uk.co.strangeskies.reflection.model.runtime.types.impl.TypeVariableCapture;
 
 /**
  * Properties and localized strings relating to types.
@@ -80,17 +76,17 @@ public interface ReflectionProperties {
 
   String improperCaptureType(TypeVariableCapture capture);
 
-  String improperUpperBound(TypeMirror t, InferenceVariable inferenceVariable, BoundSet bounds);
+  String improperUpperBound(TypeMirror t, TypeVariable inferenceVariable, BoundSet bounds);
 
-  String cannotCaptureInferenceVariable(InferenceVariable key, TypeMirror value, BoundSet bounds);
+  String cannotCaptureInferenceVariable(TypeVariable key, TypeMirror value, BoundSet bounds);
 
   String cannotCaptureTypeOfKind(TypeMirror component);
 
-  String cannotInstantiateInferenceVariable(InferenceVariable variable, BoundSet bounds);
+  String cannotInstantiateInferenceVariable(TypeVariable variable, BoundSet bounds);
 
   String cannotFindSubstitution(TypeMirror i);
 
-  String invalidAnnotationValue(Method method, Object propertyValue);
+  String invalidAnnotationValue(ExecutableType method, Object propertyValue);
 
   String invalidAnnotationProperties(
       Class<? extends Annotation> annotationClass,
@@ -122,30 +118,30 @@ public interface ReflectionProperties {
 
   String invalidUpperBound(WildcardType wildcardType);
 
-  String cannotCopyInferenceVariable(InferenceVariable inferenceVariable, BoundSet boundSet);
+  String cannotCopyInferenceVariable(TypeVariable inferenceVariable, BoundSet boundSet);
 
   String cannotFilterCapture(CaptureConversion capture);
 
   String cannotCaptureMultipleTimes(
-      InferenceVariable inferenceVariable,
+      TypeVariable inferenceVariable,
       CaptureConversion capture,
       CaptureConversion captureConversion);
 
-  String invalidStaticMethodArguments(Method method, List<?> a);
+  String invalidStaticMethodArguments(ExecutableType method, List<?> a);
 
   String invalidCastObject(Object object, TypeMirror objectType, TypeMirror castType);
 
   String invalidVariableArityInvocation(Executable executableMember);
 
-  String cannotResolveReceiver(Member executableMember, TypeMirror type);
+  String cannotResolveReceiver(ExecutableType executableMember, TypeMirror type);
 
-  String cannotResolveTarget(Member executableMember, TypeMirror type);
+  String cannotResolveTarget(ExecutableType executableMember, TypeMirror type);
 
   String cannotResolveAmbiguity(Executable firstCandidate, Executable secondCandidate);
 
   String cannotResolveApplicable(
-      Collection<? extends Executable> candidates,
-      Collection<? extends Type> parameters);
+      Collection<? extends ExecutableType> candidates,
+      Collection<? extends TypeMirror> parameters);
 
   String incompatibleArgument(
       Type givenArgumentCaptured,

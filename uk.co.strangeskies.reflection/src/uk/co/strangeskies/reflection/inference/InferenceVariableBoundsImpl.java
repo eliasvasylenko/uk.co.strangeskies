@@ -40,10 +40,6 @@ import static uk.co.strangeskies.reflection.inference.InferenceVariableBoundsImp
 import static uk.co.strangeskies.reflection.inference.InferenceVariableBoundsImpl.BoundKind.LOWER;
 import static uk.co.strangeskies.reflection.inference.InferenceVariableBoundsImpl.BoundKind.UPPER;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -55,7 +51,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import javax.lang.model.type.IntersectionType;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
+import javax.lang.model.type.WildcardType;
 
 import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.ReflectionException;
@@ -70,15 +69,15 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
     UPPER, LOWER, EQUAILTY
   }
 
-  static class Bound {
+  class Bound {
     private final BoundKind bound;
     private final TypeMirror type;
-    private final List<InferenceVariable> mentions;
+    private final List<TypeVariable> mentions;
 
     public Bound(BoundKind bound, TypeMirror type) {
       this.bound = bound;
       this.type = type;
-      this.mentions = InferenceVariable.getMentionedBy(type).collect(toList());
+      this.mentions = boundSet.getInferenceVariablesMentioned(type).collect(toList());
     }
 
     public BoundKind getKind() {
@@ -89,7 +88,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
       return type;
     }
 
-    public List<InferenceVariable> getMentions() {
+    public List<TypeVariable> getMentions() {
       return mentions;
     }
 
@@ -100,16 +99,16 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
 
   private final BoundSet boundSet;
 
-  private final InferenceVariable inferenceVariable;
+  private final TypeVariable inferenceVariable;
   private TypeMirror instantiation;
 
   private HashMap<TypeMirror, Bound> bounds;
 
   private CaptureConversion capture;
 
-  private HashSet<InferenceVariable> remainingDependencies;
+  private HashSet<TypeVariable> remainingDependencies;
 
-  public InferenceVariableBoundsImpl(BoundSet boundSet, InferenceVariable inferenceVariable) {
+  public InferenceVariableBoundsImpl(BoundSet boundSet, TypeVariable inferenceVariable) {
     this.boundSet = boundSet;
     this.inferenceVariable = inferenceVariable;
 
@@ -129,7 +128,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
     this.capture = that.capture;
 
     if (that.remainingDependencies != null) {
-      this.remainingDependencies = (HashSet<InferenceVariable>) that.remainingDependencies.clone();
+      this.remainingDependencies = (HashSet<TypeVariable>) that.remainingDependencies.clone();
     } else {
       this.remainingDependencies = null;
     }
@@ -188,7 +187,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
       if (bound.getKind() == EQUAILTY) {
         if (boundSet.containsInferenceVariable(bound.getType())) {
           InferenceVariableBoundsImpl bounds = boundSet
-              .getBoundsOnImpl((InferenceVariable) bound.getType());
+              .getBoundsOnImpl((TypeVariable) bound.getType());
 
           copy.bounds = bounds.bounds;
 
@@ -207,7 +206,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
   }
 
   protected InferenceVariableBoundsImpl withInferenceVariableSubstitution(Isomorphism isomorphism) {
-    InferenceVariable inferenceVariableSubstitution = (InferenceVariable) isomorphism
+    TypeVariable inferenceVariableSubstitution = (TypeVariable) isomorphism
         .byIdentity()
         .getMapping(inferenceVariable);
 
@@ -267,7 +266,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
   }
 
   @Override
-  public InferenceVariable getInferenceVariable() {
+  public TypeVariable getInferenceVariable() {
     return inferenceVariable;
   }
 
@@ -307,7 +306,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
   }
 
   @Override
-  public Stream<InferenceVariable> getRemainingDependencies() {
+  public Stream<TypeVariable> getRemainingDependencies() {
     Set<InferenceVariableBoundsImpl> recalculated = new HashSet<>();
 
     if (remainingDependencies == null) {
@@ -341,7 +340,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
     do {
       added = false;
       for (InferenceVariableBoundsImpl bounds : recalculated) {
-        for (InferenceVariable dependency : new ArrayList<>(bounds.remainingDependencies)) {
+        for (TypeVariable dependency : new ArrayList<>(bounds.remainingDependencies)) {
           if (bounds.remainingDependencies
               .addAll(
                   boundSet
@@ -845,10 +844,10 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
   public void incorporateCapturedSubtype(
       CaptureConversion c,
       WildcardType A,
-      TypeVariable<?> P,
+      TypeVariable P,
       TypeMirror R) {
     TypeSubstitution θ = new TypeSubstitution();
-    for (InferenceVariable variable : c.getInferenceVariables())
+    for (TypeVariable variable : c.getInferenceVariables())
       θ = θ.where(c.getCapturedParameter(variable), variable);
 
     Type[] B = P.getBounds();
@@ -891,7 +890,7 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
     }
   }
 
-  public void incorporateCapturedSupertype(WildcardType A, Type R) {
+  public void incorporateCapturedSupertype(WildcardType A, TypeMirror R) {
     if (A.getLowerBounds().length > 0) {
       /*
        * If Ai is a wildcard of the form ? super T:

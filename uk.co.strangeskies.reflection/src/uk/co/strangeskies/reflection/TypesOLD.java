@@ -54,7 +54,7 @@ import java.util.stream.Stream;
 
 import uk.co.strangeskies.reflection.inference.InferenceVariable;
 import uk.co.strangeskies.reflection.model.TypeHierarchy;
-import uk.co.strangeskies.reflection.model.core.types.impl.TypeVariableCapture;
+import uk.co.strangeskies.reflection.model.runtime.types.impl.TypeVariableCapture;
 import uk.co.strangeskies.utility.Isomorphism;
 
 public final class TypesOLD {
