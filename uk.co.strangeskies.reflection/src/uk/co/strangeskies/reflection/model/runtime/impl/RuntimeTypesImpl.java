@@ -15,6 +15,7 @@ import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import javax.lang.model.element.Element;
@@ -24,6 +25,7 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
 
 import uk.co.strangeskies.reflection.model.runtime.RuntimeModel;
 import uk.co.strangeskies.reflection.model.runtime.RuntimeTypes;
@@ -37,19 +39,17 @@ import uk.co.strangeskies.reflection.model.runtime.types.RuntimeNoType;
 import uk.co.strangeskies.reflection.model.runtime.types.RuntimeNullType;
 import uk.co.strangeskies.reflection.model.runtime.types.RuntimePrimitiveType;
 import uk.co.strangeskies.reflection.model.runtime.types.RuntimeTypeMirror;
-import uk.co.strangeskies.reflection.model.runtime.types.RuntimeTypeMirrorProxy;
 import uk.co.strangeskies.reflection.model.runtime.types.RuntimeTypeVariable;
 import uk.co.strangeskies.reflection.model.runtime.types.RuntimeWildcardType;
 import uk.co.strangeskies.reflection.model.runtime.types.impl.ExecutableMethodType;
 import uk.co.strangeskies.reflection.model.runtime.types.impl.ParameterizedTypeMirror;
 import uk.co.strangeskies.reflection.model.runtime.types.impl.ReflectionGenericArrayTypeMirror;
 import uk.co.strangeskies.reflection.model.runtime.types.impl.ReflectionIntersectionType;
-import uk.co.strangeskies.reflection.model.runtime.types.impl.RuntimeNoTypeImpl;
 import uk.co.strangeskies.reflection.model.runtime.types.impl.ReflectionPrimitiveType;
-import uk.co.strangeskies.reflection.model.runtime.types.impl.ReflectionTypeMirrorProxy;
 import uk.co.strangeskies.reflection.model.runtime.types.impl.ReflectionTypeVariable;
 import uk.co.strangeskies.reflection.model.runtime.types.impl.ReflectionUnionType;
 import uk.co.strangeskies.reflection.model.runtime.types.impl.ReflectionWildcardType;
+import uk.co.strangeskies.reflection.model.runtime.types.impl.RuntimeNoTypeImpl;
 import uk.co.strangeskies.reflection.model.runtime.types.impl.RuntimeNullTypeImpl;
 import uk.co.strangeskies.reflection.model.runtime.types.impl.RuntimeTypeMirrorImpl;
 
@@ -202,6 +202,14 @@ public class RuntimeTypesImpl implements RuntimeTypes {
   }
 
   @Override
+  public RuntimeTypeMirror substitute(
+      TypeMirror type,
+      Map<TypeVariable, TypeMirror> instantiations) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
   public RuntimePrimitiveType getPrimitiveType(TypeKind kind) {
     return ReflectionPrimitiveType.instance(kind);
   }
@@ -220,6 +228,12 @@ public class RuntimeTypesImpl implements RuntimeTypes {
     } else {
       throw new IllegalArgumentException("No NoType of kind: " + kind);
     }
+  }
+
+  @Override
+  public TypeVariable getTypeVariable(String name) {
+    // TODO Auto-generated method stub
+    return null;
   }
 
   @Override
@@ -271,11 +285,6 @@ public class RuntimeTypesImpl implements RuntimeTypes {
     return new ReflectionUnionType(checkTypes(alternatives));
   }
 
-  @Override
-  public RuntimeTypeMirrorProxy getProxy() {
-    return new ReflectionTypeMirrorProxy();
-  }
-
   private RuntimeTypeMirrorImpl[] checkTypes(TypeMirror[] lowerBounds) {
     for (var lowerBound : lowerBounds) {
       if (!(lowerBound instanceof RuntimeTypeMirrorImpl)) {
@@ -298,24 +307,18 @@ public class RuntimeTypesImpl implements RuntimeTypes {
   }
 
   @Override
-  public RuntimeDeclaredType asMirror(ParameterizedType parameterizedType) {
-    return new ParameterizedTypeMirror(parameterizedType);
-  }
+  public RuntimeDeclaredType asMirror(ParameterizedType parameterizedType) {}
 
   @Override
-  public RuntimeArrayType asMirror(GenericArrayType genericArrayType) {
-    return new ReflectionGenericArrayTypeMirror(genericArrayType);
-  }
+  public RuntimeArrayType asMirror(GenericArrayType genericArrayType) {}
 
   @Override
   public RuntimeTypeVariable asMirror(java.lang.reflect.TypeVariable<?> typeVariable) {
-    return new ReflectionTypeVariable(typeVariable);
+    return new ReflectionTypeVariable(model, typeVariable);
   }
 
   @Override
-  public RuntimeWildcardType asMirror(java.lang.reflect.WildcardType wildcardType) {
-    return new ReflectionWildcardType(wildcardType);
-  }
+  public RuntimeWildcardType asMirror(java.lang.reflect.WildcardType wildcardType) {}
 
   @Override
   public ReifiableRuntimeType asMirror(AnnotatedType type) {
@@ -325,25 +328,21 @@ public class RuntimeTypesImpl implements RuntimeTypes {
 
   @Override
   public RuntimeArrayType asMirror(AnnotatedArrayType annotatedArrayType) {
-    // TODO Auto-generated method stub
-    return null;
+    return new ReflectionGenericArrayTypeMirror(model, annotatedArrayType);
   }
 
   @Override
   public RuntimeDeclaredType asMirror(AnnotatedParameterizedType annotatedParameterizedType) {
-    // TODO Auto-generated method stub
-    return null;
+    return new ParameterizedTypeMirror(model, annotatedParameterizedType);
   }
 
   @Override
   public RuntimeTypeVariable asMirror(AnnotatedTypeVariable annotatedTypeVariable) {
-    // TODO Auto-generated method stub
-    return null;
+    return new ReflectionGenericArrayTypeMirror(model, genericArrayType);
   }
 
   @Override
   public RuntimeWildcardType asMirror(AnnotatedWildcardType annotatedWildcardType) {
-    // TODO Auto-generated method stub
-    return null;
+    return new ReflectionWildcardType(model, annotatedWildcardType);
   }
 }

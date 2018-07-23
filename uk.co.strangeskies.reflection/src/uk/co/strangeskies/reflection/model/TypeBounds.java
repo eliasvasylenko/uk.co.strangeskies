@@ -18,10 +18,13 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
 
 import uk.co.strangeskies.collection.multimap.MultiHashMap;
 import uk.co.strangeskies.collection.multimap.MultiMap;
+import uk.co.strangeskies.property.IdentityProperty;
+import uk.co.strangeskies.property.Property;
 import uk.co.strangeskies.utility.Isomorphism;
 
 public class TypeBounds {
@@ -121,14 +124,20 @@ public class TypeBounds {
     /*
      * Proxy guard against recursive generation of infinite types
      */
-    TypeMirrorProxy proxy = types.getProxy();
-    return isomorphism
+    Property<TypeVariable> recursion = new IdentityProperty<>();
+    TypeMirror type = isomorphism
         .byEquality()
-        .getPartialMapping(new LinkedHashSet<>(parameterizations), () -> proxy, p -> {
-          DeclaredType instance = bestImpl(rawClass, new ArrayList<>(p));
-          proxy.setInstance(instance);
-          return instance;
-        });
+        .getPartialMapping(new LinkedHashSet<>(parameterizations), () -> {
+          TypeVariable typeVariable = types.getTypeVariable("<recursion>");
+          recursion.set(typeVariable);
+          return typeVariable;
+        }, p -> bestImpl(rawClass, new ArrayList<>(p)));
+
+    if (recursion.get() != null) {
+      type = types.substitute(type, recursion.get(), type);
+    }
+
+    return (DeclaredType) type;
   }
 
   DeclaredType bestImpl(DeclaredType rawClass, List<DeclaredType> parameterizations) {

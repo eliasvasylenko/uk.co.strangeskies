@@ -49,7 +49,7 @@ import javax.lang.model.type.TypeVariable;
 
 import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.TypeSubstitution;
-import uk.co.strangeskies.reflection.TypesOLD;
+import uk.co.strangeskies.reflection.model.ExtendedTypes;
 import uk.co.strangeskies.utility.Isomorphism;
 
 /**
@@ -59,7 +59,7 @@ import uk.co.strangeskies.utility.Isomorphism;
  * <p>
  * The captures made by this capture conversion are not yet fully instantiated,
  * meaning that the types of the capturing variables, and the bounds on those
- * types, may involve {@link InferenceVariable}s.
+ * types, may involve {@link TypeVariable inference variables}.
  * 
  * @author Elias N Vasylenko
  */
@@ -71,12 +71,13 @@ public class CaptureConversion {
   private final Map<TypeVariable, TypeMirror> capturedArguments = new HashMap<>();
 
   private CaptureConversion(
+      ExtendedTypes types,
       DeclaredType originalType,
       Map<TypeVariable, TypeVariable> parameterCaptures) {
     this.originalType = originalType;
 
     captureType = ParameterizedTypes
-        .parameterize(TypesOLD.getErasedType(originalType), parameterCaptures::get);
+        .parameterize(types.erasure(originalType), parameterCaptures::get);
 
     ParameterizedTypes.getAllTypeArguments(originalType).forEach(e -> {
       Type argument = e.getValue();
@@ -88,19 +89,20 @@ public class CaptureConversion {
   }
 
   /**
-   * Create a capture conversion over a given {@link ParameterizedType}. Arguments
-   * will be substituted with new {@link TypeVariable}s, such that a new type
-   * is described which represents the result of capture conversion on the given
-   * type.
+   * Create a capture conversion over a given {@link TypeVariable inference
+   * variable}. Arguments will be substituted with new {@link TypeVariable}s, such
+   * that a new type is described which represents the result of capture
+   * conversion on the given type.
    * 
    * @param originalType
    *          The type to capture.
    */
-  public CaptureConversion(DeclaredType originalType) {
+  public CaptureConversion(ExtendedTypes types, DeclaredType originalType) {
     this(
+        types,
         originalType,
         ParameterizedTypes
-            .getAllTypeParameters(TypesOLD.getErasedType(originalType))
+            .getAllTypeParameters((DeclaredType) types.erasure(originalType))
             .collect(Collectors.toMap(Function.identity(), t -> new InferenceVariable())));
   }
 
@@ -124,8 +126,8 @@ public class CaptureConversion {
   /**
    * @return A {@link ParameterizedType} whose arguments are the same as those in
    *         the {@link #getOriginalType() original type}, or in the case of
-   *         {@link WildcardTypes}, the {@link InferenceVariable}s which capture
-   *         those arguments.
+   *         {@link WildcardTypes}, the inference variabless which capture those
+   *         arguments.
    */
   public DeclaredType getCaptureType() {
     return captureType;

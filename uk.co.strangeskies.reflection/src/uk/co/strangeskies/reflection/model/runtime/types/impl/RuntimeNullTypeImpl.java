@@ -5,7 +5,6 @@ import static uk.co.strangeskies.reflection.model.runtime.types.impl.RuntimeNoTy
 
 import java.util.List;
 
-import javax.lang.model.type.NullType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeVisitor;
 
@@ -15,7 +14,7 @@ import uk.co.strangeskies.reflection.model.runtime.types.RuntimeTypeMirror;
 public class RuntimeNullTypeImpl extends RuntimeTypeMirrorImpl implements RuntimeNullType {
   private static final RuntimeNullTypeImpl INSTANCE = new RuntimeNullTypeImpl();
 
-  public static NullType getInstance() {
+  public static RuntimeNullType getInstance() {
     return INSTANCE;
   }
 

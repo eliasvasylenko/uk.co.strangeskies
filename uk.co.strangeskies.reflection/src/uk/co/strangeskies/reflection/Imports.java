@@ -32,8 +32,8 @@
  */
 package uk.co.strangeskies.reflection;
 
+import static java.lang.String.format;
 import static uk.co.strangeskies.reflection.PrimitiveTypes.getPrimitives;
-import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -145,8 +145,10 @@ public class Imports {
     for (Class<?> clazz : classes) {
       if (namedClasses.containsKey(clazz.getSimpleName())) {
         throw new ReflectionException(
-            REFLECTION_PROPERTIES
-                .incompatibleImports(namedClasses.get(clazz.getSimpleName()), clazz));
+            format(
+                "Import name collision between %s and %s",
+                namedClasses.get(clazz.getSimpleName()),
+                clazz));
       } else {
         namedClasses.put(clazz.getSimpleName(), clazz);
       }

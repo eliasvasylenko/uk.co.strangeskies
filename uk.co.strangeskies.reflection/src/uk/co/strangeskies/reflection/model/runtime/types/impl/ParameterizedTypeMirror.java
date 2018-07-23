@@ -1,5 +1,7 @@
 package uk.co.strangeskies.reflection.model.runtime.types.impl;
 
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static javax.lang.model.type.TypeKind.DECLARED;
 
@@ -17,6 +19,7 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVisitor;
 
+import uk.co.strangeskies.reflection.ThreadLocalRecursionDetector;
 import uk.co.strangeskies.reflection.TypeSubstitution;
 import uk.co.strangeskies.reflection.model.runtime.RuntimeModel;
 import uk.co.strangeskies.reflection.model.runtime.elements.RuntimeElement;
@@ -46,7 +49,9 @@ public class ParameterizedTypeMirror extends ReifiableRuntimeTypeImpl
 
   @Override
   public RuntimeElement asElement() {
-    return getModel().elements().asMirror(clazz);
+    return getModel()
+        .elements()
+        .asMirror((Class<?>) ((ParameterizedType) source.getType()).getRawType());
   }
 
   @Override
@@ -114,7 +119,45 @@ public class ParameterizedTypeMirror extends ReifiableRuntimeTypeImpl
 
   @Override
   public String toString() {
-    return getKind().toString() + " " + genericSource.toString();
+    if (ThreadLocalRecursionDetector.repeatCount(this) == 2) {
+      return "...";
+    }
+
+    ThreadLocalRecursionDetector.push(this);
+    try {
+      Type ownerType = getOwnerType();
+      Class<?> rawType = getRawType();
+      Type[] typeArguments = getActualTypeArguments();
+
+      /*
+       * Calculate the string properly, now we're guarded against recursion:
+       */
+      StringBuilder builder = new StringBuilder();
+      if (ownerType == null) {
+        builder.append(rawType.getName());
+      } else {
+        builder.append(ownerType.getTypeName()).append(".");
+
+        if (ownerType instanceof ParameterizedType) {
+          String rawTypeName = rawType.getTypeName();
+          int index = rawTypeName.indexOf('$');
+          if (index > 0) {
+            rawTypeName = rawTypeName.substring(index + 1);
+          }
+          builder.append(rawTypeName);
+        } else {
+          builder.append(rawType.getTypeName());
+        }
+      }
+
+      builder.append('<');
+
+      builder.append(stream(typeArguments).map(Type::getTypeName).collect(joining(", ")));
+
+      return builder.append('>').toString();
+    } finally {
+      ThreadLocalRecursionDetector.pop();
+    }
   }
 
   @Override

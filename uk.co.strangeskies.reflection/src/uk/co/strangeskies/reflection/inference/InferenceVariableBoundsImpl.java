@@ -32,10 +32,10 @@
  */
 package uk.co.strangeskies.reflection.inference;
 
+import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 import static uk.co.strangeskies.reflection.IntersectionTypes.intersectionOf;
 import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
-import static uk.co.strangeskies.reflection.inference.BoundSet.emptyBoundSet;
 import static uk.co.strangeskies.reflection.inference.InferenceVariableBoundsImpl.BoundKind.EQUAILTY;
 import static uk.co.strangeskies.reflection.inference.InferenceVariableBoundsImpl.BoundKind.LOWER;
 import static uk.co.strangeskies.reflection.inference.InferenceVariableBoundsImpl.BoundKind.UPPER;
@@ -429,17 +429,19 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
         /*
          * If we already have an instantiation, make sure the new one is equal to it...
          */
-        new ConstraintFormula(Kind.EQUALITY, bound.getType(), getInstantiation().get())
-            .reduce(emptyBoundSet());
+        getBoundSet().getTypes().isSameType(bound.getType(), getInstantiation().get());
       } else {
         /*
          * ...Otherwise, make sure there are no captures present, and remove all
          * remaining dependencies on this inference variable, and all those equal to it.
          */
-        if (capture != null)
-          boundSet
-              .withIncorporated()
-              .falsehood("Cannot add instantiation with capture conversion present: " + this);
+        if (capture != null) {
+          throw new ReflectionException(
+              format(
+                  "Cannot instantiate inference variable %s with capture conversion present %s",
+                  this,
+                  capture));
+        }
 
         instantiation = bound.getType();
 
@@ -837,8 +839,9 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
     /*
      * αi = R implies the bound false
      */
-    if (inferenceVariable.equals(R))
-      boundSet.withIncorporated().falsehood("Cannot incorporate equality: " + this);
+    if (inferenceVariable.equals(R)) {
+      throw new ReflectionException(format("Cannot incorporate equality between %s and %s", A, R));
+    }
   }
 
   public void incorporateCapturedSubtype(
@@ -909,7 +912,8 @@ class InferenceVariableBoundsImpl implements InferenceVariableBounds {
        * 
        * R <: αi implies the bound false
        */
-      boundSet.withIncorporated().falsehood("Cannot incorporate supertype: " + this);
+      throw new ReflectionException(
+          format("Cannot incorporate supertype relation from %s to %s", A, R));
     }
   }
 }

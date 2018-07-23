@@ -1,14 +1,16 @@
 package uk.co.strangeskies.reflection.model.runtime.types.impl;
 
+import java.lang.reflect.AnnotatedType;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
-import javax.lang.model.type.TypeMirror;
 
 import uk.co.strangeskies.reflection.model.runtime.types.ReifiableRuntimeType;
+import uk.co.strangeskies.reflection.model.runtime.types.RuntimePrimitiveType;
+import uk.co.strangeskies.reflection.model.runtime.types.RuntimeTypeMirror;
 
 public class ReflectionPrimitiveType extends RuntimeTypeMirrorImpl
     implements PrimitiveType, ReifiableRuntimeType {
@@ -45,11 +47,11 @@ public class ReflectionPrimitiveType extends RuntimeTypeMirrorImpl
   }
 
   @Override
-  public Class<?> getSource() {
+  public AnnotatedType getSource() {
     return source;
   }
 
-  public static ReflectionPrimitiveType instance(Class<?> c) {
+  public static ReflectionPrimitiveType instance(Class<?> c, int i) {
     switch (c.getName()) {
     case "boolean":
       return booleanInstance;
@@ -72,7 +74,7 @@ public class ReflectionPrimitiveType extends RuntimeTypeMirrorImpl
     }
   }
 
-  public static ReflectionPrimitiveType instance(TypeKind k) {
+  public static RuntimePrimitiveType instance(TypeKind k) {
     switch (k) {
     case BOOLEAN:
       return booleanInstance;
@@ -101,7 +103,7 @@ public class ReflectionPrimitiveType extends RuntimeTypeMirrorImpl
   }
 
   @Override
-  public List<? extends TypeMirror> directSuperTypes() {
+  public List<RuntimeTypeMirror> directSuperTypes() {
     switch (getKind()) {
     case DOUBLE:
       return Collections.emptyList();

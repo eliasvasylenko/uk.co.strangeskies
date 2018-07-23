@@ -9,6 +9,7 @@ import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
+import java.util.Map;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
@@ -17,6 +18,7 @@ import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
 
 import uk.co.strangeskies.reflection.model.ExtendedTypes;
 import uk.co.strangeskies.reflection.model.runtime.elements.RuntimeElement;
@@ -28,7 +30,6 @@ import uk.co.strangeskies.reflection.model.runtime.types.RuntimeNoType;
 import uk.co.strangeskies.reflection.model.runtime.types.RuntimeNullType;
 import uk.co.strangeskies.reflection.model.runtime.types.RuntimePrimitiveType;
 import uk.co.strangeskies.reflection.model.runtime.types.RuntimeTypeMirror;
-import uk.co.strangeskies.reflection.model.runtime.types.RuntimeTypeMirrorProxy;
 import uk.co.strangeskies.reflection.model.runtime.types.RuntimeTypeVariable;
 import uk.co.strangeskies.reflection.model.runtime.types.RuntimeWildcardType;
 
@@ -54,15 +55,6 @@ public interface RuntimeTypes extends ExtendedTypes {
   RuntimeTypeVariable asMirror(AnnotatedTypeVariable annotatedTypeVariable);
 
   RuntimeWildcardType asMirror(AnnotatedWildcardType annotatedWildcardType);
-
-  @Override
-  RuntimeTypeMirrorProxy getProxy();
-
-  @Override
-  RuntimeTypeMirror getIntersection(TypeMirror... bounds);
-
-  @Override
-  RuntimeTypeMirror getUnion(TypeMirror... alternatives);
 
   @Override
   RuntimeElement asElement(TypeMirror t);
@@ -98,6 +90,9 @@ public interface RuntimeTypes extends ExtendedTypes {
   RuntimeTypeMirror capture(TypeMirror t);
 
   @Override
+  RuntimeTypeMirror substitute(TypeMirror type, Map<TypeVariable, TypeMirror> instantiations);
+
+  @Override
   RuntimePrimitiveType getPrimitiveType(TypeKind kind);
 
   @Override
@@ -120,6 +115,12 @@ public interface RuntimeTypes extends ExtendedTypes {
       DeclaredType containing,
       TypeElement typeElem,
       TypeMirror... typeArgs);
+
+  @Override
+  RuntimeTypeMirror getIntersection(TypeMirror... bounds);
+
+  @Override
+  RuntimeTypeMirror getUnion(TypeMirror... alternatives);
 
   @Override
   RuntimeTypeMirror asMemberOf(DeclaredType containing, Element element);

@@ -32,11 +32,10 @@
  */
 package uk.co.strangeskies.reflection.model;
 
+import static java.lang.String.format;
 import static java.util.stream.Stream.empty;
 import static uk.co.strangeskies.collection.stream.StreamUtilities.flatMapRecursive;
 import static uk.co.strangeskies.collection.stream.StreamUtilities.iterateOptional;
-import static uk.co.strangeskies.reflection.ParameterizedTypes.getAllTypeArguments;
-import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -49,14 +48,13 @@ import java.util.stream.Stream;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.Types;
 
 import uk.co.strangeskies.collection.stream.StreamUtilities;
 import uk.co.strangeskies.reflection.ParameterizedTypes;
 import uk.co.strangeskies.reflection.ReflectionException;
 
 public class TypeHierarchy {
-  private final Types types;
+  private final ExtendedTypes types;
   private final TypeMirror lowerBound;
   private final Map<DeclaredType, DeclaredType> supertypes;
 
@@ -67,7 +65,7 @@ public class TypeHierarchy {
    *          the type providing a context within which to determine the arguments
    *          of the supertypes
    */
-  public TypeHierarchy(Types types, TypeMirror lowerBound) {
+  public TypeHierarchy(ExtendedTypes types, TypeMirror lowerBound) {
     this.types = types;
     this.lowerBound = lowerBound;
     this.supertypes = new HashMap<>();
@@ -95,13 +93,13 @@ public class TypeHierarchy {
   }
 
   private void validateSuperclass(DeclaredType superclass) {
-    if (getAllTypeArguments(superclass).count() > 0) {
+    if (!types.isErased(superclass)) {
       throw new ReflectionException(
-          REFLECTION_PROPERTIES.cannotResolveGenericSupertype(lowerBound, superclass));
+          format("Cannot resolve generic supertype %s for type %s", superclass, lowerBound));
     }
     if (!types.isAssignable(lowerBound, superclass)) {
       throw new ReflectionException(
-          REFLECTION_PROPERTIES.cannotResolveSupertype(lowerBound, superclass));
+          format("Cannot resolve generic supertype of class %s for type", superclass, lowerBound));
     }
   }
 

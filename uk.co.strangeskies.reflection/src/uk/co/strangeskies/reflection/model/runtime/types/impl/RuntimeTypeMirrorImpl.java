@@ -27,4 +27,10 @@ public abstract class RuntimeTypeMirrorImpl implements RuntimeTypeMirror {
   public <T extends Annotation> T[] getAnnotationsByType(Class<T> annotationClass) {
     return (T[]) newInstance(annotationClass, 0);
   }
+
+  /*
+   * For classes which may appear in an infinite type, to allow detection of
+   * recursion such that a suitable finite string representation may be chosen.
+   */
+  protected abstract String toString(List<RuntimeTypeMirror> stack);
 }

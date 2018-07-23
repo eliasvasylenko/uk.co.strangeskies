@@ -32,9 +32,9 @@
  */
 package uk.co.strangeskies.reflection.inference;
 
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
-import static uk.co.strangeskies.reflection.ReflectionException.REFLECTION_PROPERTIES;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -183,24 +183,6 @@ public class BoundSet {
       bounds.incorporateCaptureConversion(captureConversion);
       return bounds;
     }
-
-    /**
-     * Derive a new bound set containing falsehood. The receiving bound set will not
-     * be mutated.
-     * 
-     * <p>
-     * False is added to the bound set, invalidating it, and an exception is thrown
-     * describing the problem.
-     * 
-     * @param message
-     *          message detailing the cause of the problem
-     * @return the derived bound set
-     */
-    public BoundSet falsehood(String message) {
-      BoundSet bounds = copyInternal();
-      bounds.incorporateFalsehood(message);
-      return bounds;
-    }
   }
 
   private final ExtendedTypes types;
@@ -229,8 +211,8 @@ public class BoundSet {
     return new BoundSet(this);
   }
 
-  protected void incorporateFalsehood(String message) {
-    throw new ReflectionException(REFLECTION_PROPERTIES.invalidBoundSet(message, BoundSet.this));
+  protected ExtendedTypes getTypes() {
+    return types;
   }
 
   protected void incorporateEquality(TypeMirror first, TypeMirror second) {
@@ -244,7 +226,11 @@ public class BoundSet {
         }
       } catch (Exception e) {
         throw new ReflectionException(
-            REFLECTION_PROPERTIES.invalidEquality(first, second, BoundSet.this),
+            format(
+                "Failed to incorporate equality between %s and %s into bound set %s",
+                first,
+                second,
+                BoundSet.this),
             e);
       }
     }
@@ -260,7 +246,11 @@ public class BoundSet {
           inferenceVariableBounds.get(supertype).putBound(BoundKind.LOWER, subtype);
       } catch (Exception e) {
         throw new ReflectionException(
-            REFLECTION_PROPERTIES.invalidSubtype(subtype, supertype, BoundSet.this),
+            format(
+                "Failed to incorporate subtype between %s and supertype %s into bound set %s",
+                subtype,
+                supertype,
+                BoundSet.this),
             e);
       }
     }
@@ -345,7 +335,10 @@ public class BoundSet {
       }
     } catch (Exception e) {
       throw new ReflectionException(
-          REFLECTION_PROPERTIES.invalidCaptureConversion(captureConversion, BoundSet.this),
+          format(
+              "Failed to incorporate capture conversion %s into bound set %s",
+              captureConversion,
+              this),
           e);
     }
   }
@@ -588,11 +581,11 @@ public class BoundSet {
         copy.incorporateEquality(inferenceVariable.getKey(), inferenceVariable.getValue());
       } catch (ReflectionException e) {
         throw new ReflectionException(
-            REFLECTION_PROPERTIES
-                .cannotCaptureInferenceVariable(
-                    inferenceVariable.getKey(),
-                    inferenceVariable.getValue(),
-                    copy),
+            format(
+                "Cannot instantiate inference variable %s with type %s in bound set %s",
+                inferenceVariable.getKey(),
+                inferenceVariable.getValue(),
+                copy),
             e);
       }
     }
@@ -624,6 +617,10 @@ public class BoundSet {
   }
 
   Stream<TypeVariable> getInferenceVariablesMentioned(TypeMirror type) {
-    return null;// TODO
+    return null; // TODO
+  }
+
+  boolean isProperType(TypeMirror type) {
+    return false; // TODO
   }
 }

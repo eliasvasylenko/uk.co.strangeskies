@@ -103,6 +103,11 @@ public class TypeVariableCapture extends ReifiableRuntimeTypeImpl implements Run
   }
 
   @Override
+  protected String toString(List<RuntimeTypeMirror> stack) {
+    return toString();
+  }
+
+  @Override
   public String toString() {
     StringBuilder builder = new StringBuilder(name);
 

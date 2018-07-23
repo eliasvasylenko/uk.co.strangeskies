@@ -32,8 +32,6 @@
  */
 package uk.co.strangeskies.reflection;
 
-import static uk.co.strangeskies.text.properties.PropertyLoader.getDefaultProperties;
-
 import java.lang.reflect.Type;
 
 /**
@@ -44,9 +42,6 @@ import java.lang.reflect.Type;
  */
 public class ReflectionException extends RuntimeException {
   private static final long serialVersionUID = 1L;
-
-  public static final ReflectionProperties REFLECTION_PROPERTIES = getDefaultProperties(
-      ReflectionProperties.class);
 
   public ReflectionException(String message) {
     super(message);
